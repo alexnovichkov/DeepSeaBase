@@ -3,6 +3,10 @@
 
 #include <QtCore>
 
+#include "qcustomplot.h"
+
+#define DebugPrint(s) qDebug()<<#s<<s;
+
 enum DfdDataType {
     // 0 - 15 - исходные данные
     SourceData =   0,		// исходные данные
@@ -39,47 +43,158 @@ enum DfdDataType {
     TrFuncIm   = 151,		// мнимая часть передаточной функции
     DiNike     = 152,		// диаграмма Найквиста для взаимных спектров
     Cepstr     = 153,		// кепстр
-    DiNikeP    = 154,           // диаграмма Найквиста для передаточной функции
+    DiNikeP    = 154,       // диаграмма Найквиста для передаточной функции
     GSpectr    = 155,		// спектр Гильберта
     OSpectr    = 156,		// октавный спектр
     ToSpectr   = 157,		// 1/3-октавный спектр
     NotDef     = 255		// неопределенный
 };
 
+enum PlotType {
+    PlotUnknown = 0,
+    PlotTime = 1,
+    PlotStatistics = 2,
+    PlotSpectre = 3,
+    PlotNykvist = 4,
+    PlotCorrelation = 5,
+    PlotOctave = 6
+};
+
+struct Method
+{
+    QString methodDll;
+    QString methodDescription;
+    DfdDataType dataType;
+    int panelType;
+};
+
+const Method methods[26] = {
+    {"TimeWv.dll", "Осциллограф", NotDef, 0},
+    {"spectr.dll", "Спектроанализатор", NotDef, 0},
+    {"zoom.dll", "Лупа спектральная", NotDef, 0},
+    {"InEx.dll", "Проходная функция", NotDef, 0},
+    {"xspect.dll", "Модуль взаимного сп.", NotDef, 0},
+    {"xcospect.dll", "Действ.взаимн.спектра", NotDef, 0},
+    {"xqspect.dll", "Мнимая взаимн.спектра", NotDef, 0},
+    {"nike.dll", "Д.Найквиста (взаимного)", NotDef, 1},
+    {"xphase.dll", "Фазовый спектр", NotDef, 0},
+    {"xresponcH1.dll", "Передаточная ф-я H1", NotDef, 0},
+    {"xresponcH2.dll", "Передаточная ф-я H2", NotDef, 0},
+    {"xrespreal.dll", "Действ.передаточной Н1", NotDef, 0},
+    {"xrespimage.dll", "Мнимая передаточной Н1", NotDef, 0},
+    {"xrespcon.dll", "Характерист.конструкций", NotDef, 0},
+    {"nikePer.dll", "Д.Найквиста(передаточной)", NotDef, 1},
+    {"xcogerent.dll", "Когерентость", NotDef, 0},
+    {"gistogr.dll", "Гистограмма", NotDef, 0},
+    {"cepstr.dll", "Кепстр", NotDef, 0},
+    {"octSpect8.dll", "Октавный спектр", NotDef, 0},
+    {"corel.dll", "АКорреляция", NotDef, 0},
+    {"corelF.dll", "АКорреляция (Фурье)", NotDef, 0},
+    {"xCorel.dll", "ХКорреляция", NotDef, 0},
+    {"xCorelF.dll", "ХКорреляция (Фурье)", NotDef, 0},
+    {"ogib.dll", "Огибающая по Гильберту", NotDef, 0},
+    {"xresponce.dll", "Модуль передаточной", NotDef, 0},
+    {"traceFlt.dll", "Следящий фильтр", NotDef, 0}
+};
+
+PlotType plotTypeByDataType(DfdDataType dataType);
+
+QString dataTypeDescription(int type);
+QString methodDescription(int methodType);
+QString methodDll(int methodType);
+int panelTypeForMethod(int methodType);
+
+class DfdFileDescriptor;
+
 class Channel
 {
 public:
     /** [Channel#] */
-    Channel() : IndType(0),
-        ChanBlockSize(0),
-        blockSizeInBytes(0),
-        ADC0(0.0),
-        ADCStep(0.0),
-        AmplShift(0.0),
-        AmplLevel(0.0),
-        Sens0Shift(0.0),
-        SensSensitivity(0.0),
-        BandWidth(0.0)
+    Channel(DfdFileDescriptor *parent, int channelIndex)
+        : IndType(0),
+          ChanBlockSize(0),
+          blockSizeInBytes(0),
+          xMin(0.0),
+          xMax(0.0),
+          yMin(0.0),
+          yMax(0.0),
+          xStep(0.0),
+          xMaxInitial(0.0),
+          yMinInitial(0.0),
+          yMaxInitial(0.0),
+          data(0),
+          parent(parent),
+          channelIndex(channelIndex),
+          checkState(Qt::Unchecked)
     {}
-    void read(QSettings &dfd, int chanIndex);
-    QString ChanAddress;
-    QString ChanName;
-    quint32 IndType;
-    int ChanBlockSize;
-    int blockSizeInBytes;
+    virtual ~Channel() {delete data;}
+    virtual void read(QSettings &dfd, int chanIndex);
+    virtual QStringList getHeaders();
+    virtual QStringList getData();
+    virtual void populateData();
+    //дополнительная обработка, напр.
+    //применение смещения и усиления,
+    //для получения реального значения
+    virtual double postprocess(double v) {return v;}
+    double getValue(QDataStream &readStream);
+    QString ChanAddress; //
+    QString ChanName; //
+    quint32 IndType; //характеристика отсчета
+    quint32 ChanBlockSize; //размер блока в отсчетах
+    quint32 blockSizeInBytes; //размер блока в байтах
+    quint8 sampleSize; //размер отсчета в байтах
+    QString YName;
+    QString InputType;
+    QString ChanDscr;
+
+    double xMin;
+    double xMax;
+    double yMin;
+    double yMax;
+    double xStep;
+    double xMaxInitial; // initial xMax value to display
+    double yMinInitial; // initial yMin value to display
+    double yMaxInitial; // initial yMax value to display
+
+    QCPDataMap *data;
+    DfdFileDescriptor *parent;
+    quint32 channelIndex;
+
+    Qt::CheckState checkState;
+
+    PlotType plotType;
+
+    QString legendName;
+};
+
+class RawChannel : public Channel
+{
+public:
+    /** [Channel#] */
+    RawChannel(DfdFileDescriptor *parent, int channelIndex)
+        : Channel(parent, channelIndex),
+          ADC0(0.0),
+          ADCStep(0.0),
+          AmplShift(0.0),
+          AmplLevel(0.0),
+          Sens0Shift(0.0),
+          SensSensitivity(0.0),
+          BandWidth(0.0)
+    {}
+    virtual ~RawChannel() {}
+    virtual void read(QSettings &dfd, int chanIndex);
+    virtual QStringList getHeaders();
+    virtual QStringList getData();
+    virtual double postprocess(double v);
+    void populateData();
+    QString SensName;
     double ADC0;
     double ADCStep;
     double AmplShift;
     double AmplLevel;
     double Sens0Shift;
     double SensSensitivity;
-    QString YName;
-    QString YNameOld;
-    QString SensName;
-    QString InputType;
     float BandWidth;
-    QString ChanDscr;
-    //QByteArray data;
 };
 
 class Source
@@ -118,10 +233,10 @@ public:
     virtual void read(QSettings &dfd);
     double pTime; //(0000000000000000)
     QString pBaseChan; //2,MBU00002\2,Сила,Н
-    int BlockIn; //4096
+    quint32 BlockIn; //4096
     QString Wind; //Хеннинга
     QString TypeAver; //линейное
-    int NAver; //300
+    quint32 NAver; //300
     QString Values; //измеряемые
     QString TypeScale; //в децибелах
 };
@@ -134,6 +249,7 @@ public:
     void read();
     void writeDfd();
     AbstractProcess *getProcess(DfdDataType DataType);
+    Channel *getChannel(DfdDataType DataType, int chanIndex);
     bool operator==(const DfdFileDescriptor &dfd){
         return (this->DFDGUID == dfd.DFDGUID);
     }
@@ -147,9 +263,9 @@ public:
     DfdDataType DataType; // см. выше
     QDate Date;
     QTime Time;
-    int NumChans;
-    int NumInd;
-    int BlockSize;
+    quint32 NumChans;
+    quint32 NumInd;
+    quint32 BlockSize;
     QString XName;
     double XBegin;
     double XStep;
@@ -165,7 +281,7 @@ public:
 
     QMap<QString, QString> userComments;
     //[Channel#]
-    QList<Channel> channels;
+    QList<Channel *> channels;
 };
 
 #endif // DFDFILEDESCRIPTOR_H

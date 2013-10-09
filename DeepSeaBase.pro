@@ -6,15 +6,22 @@
 
 QT       += core gui
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
 
 TARGET = DeepSeaBase
 TEMPLATE = app
 
+CONFIG += c++11
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-        dfdfiledescriptor.cpp
+        dfdfiledescriptor.cpp \
+        qcustomplot.cpp \
+    convertdialog.cpp \
+    sortabletreewidgetitem.cpp
 
 HEADERS  += mainwindow.h \
-        dfdfiledescriptor.h
+        dfdfiledescriptor.h \
+        qcustomplot.h \
+    convertdialog.h \
+    sortabletreewidgetitem.h
