@@ -1712,9 +1712,9 @@ Q_DECLARE_TYPEINFO(QCPData, Q_MOVABLE_TYPE);
   This is the container in which QCPGraph holds its data.
   \see QCPData, QCPGraph::setData
 */
-typedef QMap<double, QCPData> QCPDataMap;
-typedef QMapIterator<double, QCPData> QCPDataMapIterator;
-typedef QMutableMapIterator<double, QCPData> QCPDataMutableMapIterator;
+typedef QMap<double, double> QCPDataMap;
+typedef QMapIterator<double, double> QCPDataMapIterator;
+typedef QMutableMapIterator<double, double> QCPDataMutableMapIterator;
 
 
 class QCP_LIB_DECL QCPGraph : public QCPAbstractPlottable

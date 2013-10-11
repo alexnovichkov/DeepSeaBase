@@ -154,8 +154,6 @@ MainWindow::MainWindow(QWidget *parent)
 
     plot->xAxis->setMaxRange(QCPRange(0, 0));
     plot->yAxis->setMaxRange(QCPRange(0, 0));
-    plot->xAxis->setRange(0, 0);
-    plot->yAxis->setRange(0, 0);
 
     QWidget *tablesWidget = new QWidget(this);
     QGridLayout *tablesLayout = new QGridLayout;
@@ -249,19 +247,11 @@ void MainWindow::currentRecordChanged(QTreeWidgetItem *current, QTreeWidgetItem 
 {//qDebug()<<Q_FUNC_INFO;
     Q_UNUSED(previous)
     if (!current /*|| current==previous*/) return;
-    //int recordIndex = tree->indexOfTopLevelItem(current);
 
     SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(current);
 
     record = item?item->dfd:0;
     filePathLabel->setText(record->dfdFileName);
-
-//    qDebug()<<recordIndex << record->dfdFileName;
-
-//    QList<Qt::CheckState> list;
-//    for (int i=0; i<record->channels.size(); ++i)
-//        list << record->channels[i]->checkState;
-//    qDebug()<<list;
 
     int chanCount = record->channels.size();
     if (chanCount == 0) return;
@@ -367,8 +357,14 @@ void MainWindow::plotChannel(Channel *channel, const GraphIndex &idx, bool addTo
     }
 
     plot->xAxis->setMaxRange(QCPRange(channel->xMin, channel->xMax));
-    plot->xAxis->setRange(qMin(channel->xMin, plot->xAxis->range().lower),
-                          qMax(channel->xMaxInitial, plot->xAxis->range().upper));
+    double xmin = channel->xMin;
+    double xmax = channel->xMaxInitial;
+    if (plot->graphCount()>1) {
+        xmin = qMin(xmin, plot->xAxis->range().lower);
+        xmax = qMax(xmax, plot->xAxis->range().upper);
+    }
+
+    plot->xAxis->setRange(xmin, xmax);
     plot->xAxis->setLabel(channel->parent->XName);
 
     QCPAxis *ax = 0;
@@ -376,8 +372,13 @@ void MainWindow::plotChannel(Channel *channel, const GraphIndex &idx, bool addTo
     if (plotOnSecondYAxis) ax = plot->yAxis2;
     if (ax) {
         ax->setMaxRange(QCPRange(channel->yMin, channel->yMax));
-        ax->setRange(qMin(channel->yMinInitial, ax->range().lower),
-                     qMax(channel->yMaxInitial, ax->range().upper));
+        double ymin = channel->yMinInitial;
+        double ymax = channel->yMaxInitial;
+        if (plot->graphCount()>1) {
+            ymin = qMin(ymin, ax->range().lower);
+            ymax = qMax(ymax, ax->range().upper);
+        }
+        ax->setRange(ymin, ymax);
         ax->setLabel(channel->YName);
     }
 
@@ -510,9 +511,9 @@ void MainWindow::convertRecords()
             }
         }
     }
+    if (records.isEmpty()) return;
 
-    ConvertDialog dialog(this);
-    dialog.setDatabase(&records);
+    ConvertDialog dialog(&records, this);
 
     if (dialog.exec()) {
 

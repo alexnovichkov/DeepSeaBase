@@ -393,6 +393,9 @@ void Channel::read(QSettings &dfd, int chanIndex)
     ChanDscr = dfd.value("ChanDscr").toString();
     dfd.endGroup();
     legendName = parent->dfdFileName+"/"+(ChanName.isEmpty()?ChanAddress:ChanName);
+
+    NumInd = parent->BlockSize==0?ChanBlockSize:parent->NumInd*ChanBlockSize/parent->BlockSize;
+    xStep = double(parent->XStep * NumInd/parent->NumInd);
 }
 
 QStringList Channel::getHeaders()
@@ -427,8 +430,9 @@ void Channel::populateData()
     if (rawFile.open(QFile::ReadOnly)) {
 
         // число отсчетов в канале
-        quint32 NI = parent->BlockSize==0?ChanBlockSize:parent->NumInd*ChanBlockSize/parent->BlockSize;
-        xStep = double(parent->XStep * NI/parent->NumInd);
+
+        quint32 NI=NumInd;
+
         quint32 xCount = 0;
 
         while (NI>0) {
@@ -449,8 +453,7 @@ void Channel::populateData()
                         if (yValue < yMin) yMin = yValue;
                         if (yValue > yMax) yMax = yValue;
 
-                        QCPData newData(xValue, yValue);
-                        data->insertMulti(newData.key, newData);
+                        data->insertMulti(xValue, yValue);
                     }
                     NI -= ChanBlockSize;
                 }
@@ -583,6 +586,15 @@ void RawChannel::populateData()
 {
     Channel::populateData();
 
+//    DebugPrint(xMax);
+//    DebugPrint(xMin);
+//    DebugPrint(yMax);
+//    DebugPrint(yMin);
+//    DebugPrint(xMaxInitial);
+//    DebugPrint(xMin);
+//    DebugPrint(yMaxInitial);
+//    DebugPrint(yMinInitial);
+
     // rescale initial min and max values with first 200 values
     xMaxInitial = parent->XBegin + xStep*200;
     yMinInitial = 0.0;
@@ -591,15 +603,24 @@ void RawChannel::populateData()
     int steps = 200;
     while (it.hasNext() && steps > 0) {
         it.next();
-        double val = it.value().value;
+        double val = it.value();
         if (val > yMaxInitial) yMaxInitial = val;
         if (val < yMinInitial) yMinInitial = val;
         steps--;
     }
+//    DebugPrint("after:");
+//    DebugPrint(xMax);
+//    DebugPrint(xMin);
+//    DebugPrint(yMax);
+//    DebugPrint(yMin);
+//    DebugPrint(xMaxInitial);
+//    DebugPrint(xMin);
+//    DebugPrint(yMaxInitial);
+//    DebugPrint(yMinInitial);
 }
 
 
-QString methodDll(int methodType)
+QString dllForMethod(int methodType)
 {
     if (methodType<0 || methodType>25) return "";
     return methods[methodType].methodDll;
@@ -617,4 +638,11 @@ int panelTypeForMethod(int methodType)
 {
     if (methodType<0 || methodType>25) return -1;
     return methods[methodType].panelType;
+}
+
+
+DfdDataType dataTypeForMethod(int methodType)
+{
+    if (methodType<0 || methodType>25) return NotDef;
+    return methods[methodType].dataType;
 }

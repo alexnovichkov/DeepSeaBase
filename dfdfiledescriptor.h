@@ -70,7 +70,7 @@ struct Method
 
 const Method methods[26] = {
     {"TimeWv.dll", "Осциллограф", NotDef, 0},
-    {"spectr.dll", "Спектроанализатор", NotDef, 0},
+    {"spectr.dll", "Спектроанализатор", Spectr, 0},
     {"zoom.dll", "Лупа спектральная", NotDef, 0},
     {"InEx.dll", "Проходная функция", NotDef, 0},
     {"xspect.dll", "Модуль взаимного сп.", NotDef, 0},
@@ -101,8 +101,9 @@ PlotType plotTypeByDataType(DfdDataType dataType);
 
 QString dataTypeDescription(int type);
 QString methodDescription(int methodType);
-QString methodDll(int methodType);
+QString dllForMethod(int methodType);
 int panelTypeForMethod(int methodType);
+DfdDataType dataTypeForMethod(int methodType);
 
 class DfdFileDescriptor;
 
@@ -114,6 +115,7 @@ public:
         : IndType(0),
           ChanBlockSize(0),
           blockSizeInBytes(0),
+          NumInd(0),
           xMin(0.0),
           xMax(0.0),
           yMin(0.0),
@@ -143,6 +145,7 @@ public:
     quint32 ChanBlockSize; //размер блока в отсчетах
     quint32 blockSizeInBytes; //размер блока в байтах
     quint8 sampleSize; //размер отсчета в байтах
+    quint32 NumInd; //общее число отсчетов
     QString YName;
     QString InputType;
     QString ChanDscr;
