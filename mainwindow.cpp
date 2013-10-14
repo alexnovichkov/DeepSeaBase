@@ -13,8 +13,6 @@ const int channelsTableColumnsCount = 6;
 const float scrollBarRange = 1000.0;
 
 
-
-
 void maybeAppend(const QString &s, QStringList &list)
 {
     if (!list.contains(s)) list.append(s);
