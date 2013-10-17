@@ -16,23 +16,28 @@ class TabWidget;
 class Tab;
 class QMenu;
 class QTreeWidget;
-
 class QStatusBar;
-
 class QFileSystemModel;
 class QTreeView;
 class QSplitter;
 class QTableWidget;
 class QTreeWidgetItem;
-class QCustomPlot;
 class QScrollBar;
-class QCPGraph;
 class Channel;
 class QTableWidgetItem;
-class QCPRange;
-class QCPAbstractPlottable;
 
-typedef QPair<QString, int> GraphIndex;
+class CheckableHeaderView;
+
+class Plot;
+
+class QwtLegend;
+class QwtPlotGrid;
+class QwtPlotItem;
+class QwtPlotCurve;
+
+class Curve;
+
+//typedef QPair<QString, int> GraphIndex;
 
 class MainWindow : public QMainWindow
 {
@@ -41,22 +46,24 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
+
+    static QVariant getSetting(const QString &key, const QVariant &defValue=QVariant());
+    static void setSetting(const QString &key, const QVariant &value);
 private slots:
     void addFolder();
     void addExistingFiles();
     void deleteFiles();
 
-    void currentRecordChanged(QTreeWidgetItem *, QTreeWidgetItem *);
+    void updateChannelsTable(QTreeWidgetItem *, QTreeWidgetItem *);
 //    void updateCheckState(QTreeWidgetItem*item, int col);
 
-    void plotChannel(Channel *channel, const GraphIndex &index, bool addToFixed);
     void maybePlotChannel(int,int,int,int);
     void maybePlotChannel(QTableWidgetItem *item);
 
-    void xRangeChanged(const QCPRange &range);
-    void yRangeChanged(const QCPRange &range);
+//    void xRangeChanged(const QCPRange &range);
+//    void yRangeChanged(const QCPRange &range);
 
-    void graphClicked(QCPAbstractPlottable*);
+//    void graphClicked(QCPAbstractPlottable*);
     void plotSelectionChanged();
 
     /**
@@ -70,33 +77,55 @@ private slots:
      * Конвертирует выделенные записи в другой формат и добавляет их в базу
      */
     void convertRecords();
+    /**
+     * @brief headerToggled
+     * Вызывается, когда отмечена галочка в заголовке списка каналов
+     */
+    void headerToggled(int column,Qt::CheckState state);
+
+    /**
+     * @brief clearPlot
+     * Удаляет все графики с графика
+     */
+    void clearPlot();
+
+    /**
+     * @brief recordLegendChanged
+     * Обновляет легенду графика
+     * @param item
+     * @param column
+     */
+    void recordLegendChanged(QTreeWidgetItem *item, int column);
+
 private:
-    QVariant getSetting(const QString &key, const QVariant &defValue=QVariant());
-    void setSetting(const QString &key, const QVariant &value);
 
     void addFiles(const QStringList &files, bool addToDatabase);
+
+    void updateRecordState(int recordIndex);
+    void updateChannelsHeaderState();
+
     QTreeWidget *tree;
     QTableWidget *channelsTable;
 
-    //QList<DfdFileDescriptor *> records;
     QStringList alreadyAddedFiles;
     DfdFileDescriptor *record;
-    QHash<GraphIndex, QCPGraph *> graphs;
-    QHash<DfdDataType, QCustomPlot *> plots;
-    QCPGraph *freeGraph;
+
 
     QAction *addFolderAct;
     QAction *delFilesAct;
     QAction *plotAllChannelsAct;
     QAction *convertAct;
+    QAction *clearPlotAct;
+    QAction *savePlotAct;
 
-    QCustomPlot *plot;
-    QScrollBar *hScrollBar;
-    QScrollBar *vScrollBar;
+    Plot *plot;
 
     QSplitter *splitter;
-
+    QSplitter *upperSplitter;
+    CheckableHeaderView *tableHeader;
     QLabel *filePathLabel;
+
+
 };
 
 #endif // MAINWINDOW_H

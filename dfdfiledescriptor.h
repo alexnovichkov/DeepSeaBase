@@ -3,7 +3,9 @@
 
 #include <QtCore>
 
-#include "qcustomplot.h"
+//#include "qcustomplot.h"
+
+#include <qwt_series_data.h>
 
 #define DebugPrint(s) qDebug()<<#s<<s;
 
@@ -105,6 +107,7 @@ QString dllForMethod(int methodType);
 int panelTypeForMethod(int methodType);
 DfdDataType dataTypeForMethod(int methodType);
 
+
 class DfdFileDescriptor;
 
 class Channel
@@ -124,16 +127,18 @@ public:
           xMaxInitial(0.0),
           yMinInitial(0.0),
           yMaxInitial(0.0),
-          data(0),
+          yValues(0),
           parent(parent),
           channelIndex(channelIndex),
-          checkState(Qt::Unchecked)
+          checkState(Qt::Unchecked),
+          populated(false)
     {}
-    virtual ~Channel() {delete data;}
+    virtual ~Channel();
     virtual void read(QSettings &dfd, int chanIndex);
     virtual QStringList getHeaders();
     virtual QStringList getData();
     virtual void populateData();
+    virtual QString legendName();
     //дополнительная обработка, напр.
     //применение смещения и усиления,
     //для получения реального значения
@@ -159,7 +164,7 @@ public:
     double yMinInitial; // initial yMin value to display
     double yMaxInitial; // initial yMax value to display
 
-    QCPDataMap *data;
+    double *yValues;
     DfdFileDescriptor *parent;
     quint32 channelIndex;
 
@@ -167,7 +172,7 @@ public:
 
     PlotType plotType;
 
-    QString legendName;
+    bool populated;
 };
 
 class RawChannel : public Channel
@@ -244,6 +249,16 @@ public:
     QString TypeScale; //в децибелах
 };
 
+class DataDescription
+{
+public:
+    DataDescription();
+    void read(QSettings &dfd);
+    QString toString() const;
+private:
+    QList<QPair<QString, QString> > data;
+};
+
 class DfdFileDescriptor
 {
 public:
@@ -256,6 +271,7 @@ public:
     bool operator==(const DfdFileDescriptor &dfd){
         return (this->DFDGUID == dfd.DFDGUID);
     }
+    QString description() const;
 
     QString dfdFileName;
     QString rawFileName; // путь к RAW файлу
@@ -276,15 +292,20 @@ public:
     QString CreatedBy;
     QString DataReference; // путь к RAW файлу
 
+    QString legend; // editable description
+
     //[Sources], [Source]
     Source *source;
     //[Process]
     AbstractProcess *process;
 
-
-    QMap<QString, QString> userComments;
+    DataDescription *dataDescription;
+    //[DataDescription]
+    //QMap<QString, QString> userComments;
     //[Channel#]
     QList<Channel *> channels;
+
+
 };
 
 #endif // DFDFILEDESCRIPTOR_H

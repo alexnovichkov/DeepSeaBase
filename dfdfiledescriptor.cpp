@@ -185,7 +185,8 @@ DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
       XBegin(0.0),
       XStep(0.0),
       source(0),
-      process(0)
+      process(0),
+      dataDescription(0)
 {
     dfdFileName = fileName;
 }
@@ -194,6 +195,7 @@ DfdFileDescriptor::~DfdFileDescriptor()
 {
     delete process;
     delete source;
+    delete dataDescription;
     qDeleteAll(channels);
 }
 
@@ -227,16 +229,10 @@ void DfdFileDescriptor::read()
     dfd.endGroup();
 
     // [DataDescription]
-    dfd.beginGroup("DataDescription");
-    QStringList keys = dfd.childKeys();
-    foreach (QString key, keys) {
-        QString v = dfd.value(key).toString();
-        if (v.startsWith("\"")) v.remove(0,1);
-        if (v.endsWith("\"")) v.chop(1);
-        v = v.trimmed();
-        userComments.insert(key,v);
+    if (childGroups.contains("DataDescription")) {
+        dataDescription = new DataDescription;
+        dataDescription->read(dfd);
     }
-    dfd.endGroup();
 
     // [Source]
     if (childGroups.contains("Source") || childGroups.contains("Sources")) {
@@ -331,6 +327,12 @@ Channel *DfdFileDescriptor::getChannel(DfdDataType DataType, int chanIndex)
     return new Channel(this, chanIndex);
 }
 
+QString DfdFileDescriptor::description() const
+{
+    if (dataDescription) return dataDescription->toString();
+    return dfdFileName;
+}
+
 void TransFuncProcess::read(QSettings &dfd)
 {
     AbstractProcess::read(dfd);
@@ -379,6 +381,11 @@ void Source::read(QSettings &dfd)
     }
 }
 
+Channel::~Channel()
+{
+    delete [] yValues;
+}
+
 void Channel::read(QSettings &dfd, int chanIndex)
 {
     dfd.beginGroup(QString("Channel%1").arg(chanIndex));
@@ -392,7 +399,6 @@ void Channel::read(QSettings &dfd, int chanIndex)
     InputType = dfd.value("InputType").toString();
     ChanDscr = dfd.value("ChanDscr").toString();
     dfd.endGroup();
-    legendName = parent->dfdFileName+"/"+(ChanName.isEmpty()?ChanAddress:ChanName);
 
     NumInd = parent->BlockSize==0?ChanBlockSize:parent->NumInd*ChanBlockSize/parent->BlockSize;
     xStep = double(parent->XStep * NumInd/parent->NumInd);
@@ -401,9 +407,9 @@ void Channel::read(QSettings &dfd, int chanIndex)
 QStringList Channel::getHeaders()
 {
     return QStringList()
-            << QString("Канал") //ChanAddress
-            << QString("Имя") //ChanName
-            << QString("Вход") //InputType
+            //<< QString("Канал") //ChanAddress
+            << QString("       Имя") //ChanName
+            //<< QString("Вход") //InputType
             << QString("Ед.изм.") //YName
             << QString("Описание") //ChanDscr
                ;
@@ -412,9 +418,9 @@ QStringList Channel::getHeaders()
 QStringList Channel::getData()
 {
     return QStringList()
-            << ChanAddress
+          //  << ChanAddress
             << ChanName
-            << InputType
+          //  << InputType
             << YName
             << ChanDscr
                ;
@@ -423,15 +429,15 @@ QStringList Channel::getData()
 void Channel::populateData()
 {
     // clear previous data;
-    if (data) delete data;
-    data = new QCPDataMap();
+    delete [] yValues;
+    yValues = 0;
 
     QFile rawFile(parent->rawFileName);
     if (rawFile.open(QFile::ReadOnly)) {
 
         // число отсчетов в канале
-
-        quint32 NI=NumInd;
+        quint32 NI = NumInd;
+        yValues = new double[NI];
 
         quint32 xCount = 0;
 
@@ -448,12 +454,13 @@ void Channel::populateData()
 
                     while (!readStream.atEnd()) {
                         double yValue = getValue(readStream);
-                        double xValue = parent->XBegin + xStep*(xCount++);
 
                         if (yValue < yMin) yMin = yValue;
                         if (yValue > yMax) yMax = yValue;
 
-                        data->insertMulti(xValue, yValue);
+                        yValues[xCount] = yValue;
+
+                        xCount++;
                     }
                     NI -= ChanBlockSize;
                 }
@@ -467,12 +474,20 @@ void Channel::populateData()
         xMaxInitial = xMax;
         yMinInitial = yMin;
         yMaxInitial = yMax;
+
+        populated = true;
     }
     else {
-        delete data;
-        data=0;
         qDebug()<<"Cannot read raw file"<<parent->rawFileName;
     }
+}
+
+QString Channel::legendName()
+{
+    QString result = parent->legend;
+    if (!result.isEmpty()) result.prepend(" ");
+
+    return (ChanName.isEmpty()?ChanAddress:ChanName) + result;
 }
 
 double Channel::getValue(QDataStream &readStream)
@@ -563,12 +578,15 @@ QStringList RawChannel::getHeaders()
 
 QStringList RawChannel::getData()
 {
+    // пересчитываем усиление из В в дБ
+    double ampllevel = AmplLevel;
+    if (ampllevel <= 0.0) ampllevel = 1.0;
     QStringList result = Channel::getData();
     result.append(QStringList()
                   << QString::number(ADC0)
                   << QString::number(ADCStep)
                   << QString::number(AmplShift)
-                  << QString::number(AmplLevel)
+                  << QString::number(qRound(20*log(ampllevel)))
                   << QString::number(Sens0Shift)
                   << QString::number(SensSensitivity)
                   << QString::number(BandWidth)
@@ -599,14 +617,13 @@ void RawChannel::populateData()
     xMaxInitial = parent->XBegin + xStep*200;
     yMinInitial = 0.0;
     yMaxInitial = 0.0;
-    QCPDataMapIterator it(*data);
-    int steps = 200;
-    while (it.hasNext() && steps > 0) {
-        it.next();
-        double val = it.value();
+
+    if (!yValues) return;
+    const int steps = qMin(NumInd, 200u);
+    for (int i=0; i<steps; ++i) {
+        double val = yValues[i];
         if (val > yMaxInitial) yMaxInitial = val;
         if (val < yMinInitial) yMinInitial = val;
-        steps--;
     }
 //    DebugPrint("after:");
 //    DebugPrint(xMax);
@@ -645,4 +662,34 @@ DfdDataType dataTypeForMethod(int methodType)
 {
     if (methodType<0 || methodType>25) return NotDef;
     return methods[methodType].dataType;
+}
+
+
+DataDescription::DataDescription()
+{
+
+}
+
+void DataDescription::read(QSettings &dfd)
+{
+    dfd.beginGroup("DataDescription");
+    QStringList keys = dfd.childKeys();
+    foreach (QString key, keys) {
+        QString v = dfd.value(key).toString();
+        if (v.startsWith("\"")) v.remove(0,1);
+        if (v.endsWith("\"")) v.chop(1);
+        v = v.trimmed();
+        if (!v.isEmpty()) data.append(QPair<QString, QString>(key, v));
+    }
+    dfd.endGroup();
+}
+
+QString DataDescription::toString() const
+{
+    QStringList result;
+    for (int i=0; i<data.size(); ++i) {
+        QPair<QString, QString> item = data.at(i);
+        result.append(/*item.first+"="+*/item.second);
+    }
+    return result.join("; ");
 }

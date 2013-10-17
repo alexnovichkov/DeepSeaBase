@@ -1,17 +1,11 @@
 #include "mainwindow.h"
 
 #include <QtWidgets>
-#include "qcustomplot.h"
 
 #include "convertdialog.h"
 #include "sortabletreewidgetitem.h"
-
-const int treeColumnCount = 8;
-const int channelsTableColumnsCount = 6;
-
-
-const float scrollBarRange = 1000.0;
-
+#include "checkableheaderview.h"
+#include "plot.h"
 
 void maybeAppend(const QString &s, QStringList &list)
 {
@@ -39,10 +33,12 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 }
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), record(0), freeGraph(0)
+    : QMainWindow(parent), record(0)
 {
     setWindowTitle(tr("DeepSea Database"));
     setAcceptDrops(true);
+
+    plot = new Plot(this);
 
     addFolderAct = new QAction(qApp->style()->standardIcon(QStyle::SP_DialogOpenButton),
                                tr("Добавить папку"),this);
@@ -60,12 +56,24 @@ MainWindow::MainWindow(QWidget *parent)
     convertAct = new QAction(QString("Конвертировать в..."), this);
     connect(convertAct, SIGNAL(triggered()), SLOT(convertRecords()));
 
+    clearPlotAct  = new QAction(QString("Очистить график"), this);
+    clearPlotAct->setIcon(qApp->style()->standardIcon(QStyle::SP_TrashIcon));
+    connect(clearPlotAct, SIGNAL(triggered()), SLOT(clearPlot()));
+
+    savePlotAct = new QAction(QString("Сохранить график..."), this);
+    savePlotAct->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogSaveButton));
+    connect(savePlotAct, SIGNAL(triggered()), plot, SLOT(savePlot()));
+
     QMenu *fileMenu = menuBar()->addMenu(tr("Файл"));
     fileMenu->addAction(addFolderAct);
 
     QMenu *recordsMenu = menuBar()->addMenu(QString("Записи"));
     recordsMenu->addAction(delFilesAct);
 
+    QToolBar *toolBar = new QToolBar(this);
+    toolBar->setOrientation(Qt::Vertical);
+    toolBar->addAction(clearPlotAct);
+    toolBar->addAction(savePlotAct);
 
     tree = new QTreeWidget(this);
     tree->setRootIsDecorated(false);
@@ -83,10 +91,21 @@ MainWindow::MainWindow(QWidget *parent)
                           << QString("Размер")
                           << QString("Ось Х")
                           << QString("Шаг")
-                          << QString("Каналы"));
+                          << QString("Каналы")
+                          << QString("Описание")
+                          << QString("Легенда")
+            );
     tree->header()->setStretchLastSection(false);
-    tree->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    connect(tree, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),SLOT(currentRecordChanged(QTreeWidgetItem*,QTreeWidgetItem*)));
+    tree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    tree->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    tree->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+    tree->header()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
+    tree->header()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
+    tree->header()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
+    tree->header()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
+
+    connect(tree, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),SLOT(updateChannelsTable(QTreeWidgetItem*,QTreeWidgetItem*)));
+    connect(tree,SIGNAL(itemChanged(QTreeWidgetItem*,int)), SLOT(recordLegendChanged(QTreeWidgetItem*, int)));
     tree->sortByColumn(0, Qt::AscendingOrder);
 //    tree->setSortingEnabled(true);
 
@@ -99,76 +118,48 @@ MainWindow::MainWindow(QWidget *parent)
     SortableTreeWidgetItem::setTypeMap(typeMap);
 
     channelsTable = new QTableWidget(0,6,this);
-    channelsTable->setHorizontalHeaderLabels(QStringList()
-                                             << QString("Канал") //ChanAddress
-                                             << QString("Имя") //ChanName
-                                             << QString("Вход") //InputType
-                                             << QString("Ед.изм.") //YName
-                                             << QString("Датчик") //SensName
-                                             << QString("Описание") //ChanDscr
-                                             );
+    tableHeader = new CheckableHeaderView(Qt::Horizontal, channelsTable);
+    channelsTable->setHorizontalHeader(tableHeader);
+    tableHeader->setCheckState(0,Qt::Checked);
+    tableHeader->setCheckable(0,true);
+    tableHeader->setCheckState(0,Qt::Unchecked);
+    connect(tableHeader,SIGNAL(toggled(int,Qt::CheckState)),this,SLOT(headerToggled(int,Qt::CheckState)));
+
     channelsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     channelsTable->horizontalHeader()->setStretchLastSection(false);
-    connect(channelsTable, SIGNAL(currentCellChanged(int,int,int,int)),this,SLOT(maybePlotChannel(int,int,int,int)));
+    //connect(channelsTable, SIGNAL(currentCellChanged(int,int,int,int)),this,SLOT(maybePlotChannel(int,int,int,int)));
     connect(channelsTable, SIGNAL(itemChanged(QTableWidgetItem*)), SLOT(maybePlotChannel(QTableWidgetItem*)));
 
     filePathLabel = new QLabel(this);
     filePathLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
 
-    plot = new QCustomPlot(this);
-    plot->setMinimumWidth(400);
-    plot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom |
-                          QCP::iSelectLegend | QCP::iSelectPlottables);
-    plot->axisRect()->setupFullAxesBox(true);
-    plot->legend->setVisible(true);
-    plot->legend->setSelectableParts(QCPLegend::spItems);
 
-    hScrollBar = new QScrollBar(Qt::Horizontal, this);
-    vScrollBar = new QScrollBar(Qt::Vertical, this);
-    hScrollBar->setRange(0, scrollBarRange);
-    vScrollBar->setRange(0, scrollBarRange);
 
-//    connect(hScrollBar, &QScrollBar::valueChanged, [=](int value){
-//        const QCPRange r = plot->xAxis->range();
-//        if (qAbs(r.center()-value/scrollBarRange) > 0.01) // if user is dragging plot, we don't want to replot twice
-//        {
-//            plot->xAxis->setRange(value/scrollBarRange, r.size(), Qt::AlignCenter);
-//            plot->replot();
-//        }
-//    });
-//    connect(vScrollBar, &QScrollBar::valueChanged, [=](int value){
-//        const QCPRange r = plot->yAxis->range();
-//        if (qAbs(r.center()+value/scrollBarRange) > 0.01) // if user is dragging plot, we don't want to replot twice
-//        {
-//            plot->yAxis->setRange(-value/scrollBarRange, r.size(), Qt::AlignCenter);
-//            plot->replot();
-//        }
-//    });
-    connect(plot->xAxis, SIGNAL(rangeChanged(QCPRange)), SLOT(xRangeChanged(QCPRange)));
-    connect(plot->yAxis, SIGNAL(rangeChanged(QCPRange)), SLOT(yRangeChanged(QCPRange)));
+    QWidget *treeWidget = new QWidget(this);
+    QGridLayout *treeLayout = new QGridLayout;
+    treeLayout->addWidget(tree,0,0);
+    treeWidget->setLayout(treeLayout);
 
-    connect(plot, SIGNAL(plottableClick(QCPAbstractPlottable*,QMouseEvent*)), this, SLOT(graphClicked(QCPAbstractPlottable*)));
-    connect(plot, SIGNAL(selectionChangedByUser()), this, SLOT(plotSelectionChanged()));
+    QWidget *channelsWidget = new QWidget(this);
+    QGridLayout *channelsLayout = new QGridLayout;
+    channelsLayout->addWidget(filePathLabel,0,0);
+    channelsLayout->addWidget(channelsTable,1,0);
+    channelsWidget->setLayout(channelsLayout);
 
-    plot->xAxis->setMaxRange(QCPRange(0, 0));
-    plot->yAxis->setMaxRange(QCPRange(0, 0));
+    upperSplitter = new QSplitter(Qt::Horizontal, this);
+    upperSplitter->addWidget(treeWidget);
+    upperSplitter->addWidget(channelsWidget);
 
-    QWidget *tablesWidget = new QWidget(this);
-    QGridLayout *tablesLayout = new QGridLayout;
-    tablesLayout->addWidget(tree,0,0,2,1);
-    tablesLayout->addWidget(channelsTable,1,1);
-    tablesLayout->addWidget(filePathLabel,0,1);
-    tablesWidget->setLayout(tablesLayout);
+
 
     QWidget *plotsWidget = new QWidget(this);
     QGridLayout *plotsLayout = new QGridLayout;
-    plotsLayout->addWidget(plot,0,0);
-    plotsLayout->addWidget(vScrollBar,0,1);
-    plotsLayout->addWidget(hScrollBar,1,0);
+    plotsLayout->addWidget(toolBar,0,0);
+    plotsLayout->addWidget(plot,0,1);
     plotsWidget->setLayout(plotsLayout);
 
     splitter = new QSplitter(Qt::Vertical, this);
-    splitter->addWidget(tablesWidget);
+    splitter->addWidget(upperSplitter);
     splitter->addWidget(plotsWidget);
 
     QByteArray mainSplitterState = getSetting("mainSplitterState").toByteArray();
@@ -177,6 +168,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     setCentralWidget(splitter);
 
+    QByteArray upperSplitterState = getSetting("upperSplitterState").toByteArray();
+    if (!upperSplitterState.isEmpty())
+        upperSplitter->restoreState(upperSplitterState);
+
     alreadyAddedFiles = getSetting("alreadyAdded").toStringList();
     if (!alreadyAddedFiles.isEmpty()) addExistingFiles();
 }
@@ -184,7 +179,17 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     setSetting("mainSplitterState",splitter->saveState());
+    setSetting("upperSplitterState",upperSplitter->saveState());
     setSetting("alreadyAdded", alreadyAddedFiles);
+    QVariantMap legends;
+    for (int i=0; i<tree->topLevelItemCount(); ++i) {
+        SortableTreeWidgetItem *item =
+                dynamic_cast<SortableTreeWidgetItem *>(tree->topLevelItem(i));
+        if (item) {
+            legends.insert(item->dfd->dfdFileName, item->text(9));
+        }
+    }
+    setSetting("legends", legends);
 }
 
 void MainWindow::addFolder()
@@ -236,12 +241,28 @@ void MainWindow::deleteFiles()
     }
     if (taken) {
         channelsTable->setRowCount(0);
-        //channelsTable->clear();
-        plot->clearGraphs();
+        plot->deleteGraphs();
     }
 }
 
-void MainWindow::currentRecordChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)
+void MainWindow::updateChannelsHeaderState()
+{
+    int checked=0;
+    const int column = 0;
+    for (int i=0; i<channelsTable->rowCount(); ++i) {
+        if (channelsTable->item(i, column) && channelsTable->item(i,column)->checkState()==Qt::Checked)
+            checked++;
+    }
+
+    if (checked==0)
+        tableHeader->setCheckState(column, Qt::Unchecked);
+    else if (checked==channelsTable->rowCount())
+        tableHeader->setCheckState(column, Qt::Checked);
+    else
+        tableHeader->setCheckState(column, Qt::PartiallyChecked);
+}
+
+void MainWindow::updateChannelsTable(QTreeWidgetItem *current, QTreeWidgetItem *previous)
 {//qDebug()<<Q_FUNC_INFO;
     Q_UNUSED(previous)
     if (!current /*|| current==previous*/) return;
@@ -256,6 +277,7 @@ void MainWindow::currentRecordChanged(QTreeWidgetItem *current, QTreeWidgetItem 
 
     QStringList headers = record->channels[0]->getHeaders();
 
+    channelsTable->blockSignals(true);
     channelsTable->clear();
     channelsTable->setColumnCount(headers.size());
     channelsTable->setHorizontalHeaderLabels(headers);
@@ -277,110 +299,9 @@ void MainWindow::currentRecordChanged(QTreeWidgetItem *current, QTreeWidgetItem 
             channelsTable->setItem(i,col,ti);
         }
     }
-}
-
-QColor getColor(int index)
-{
-    //index--;
-    static uint colors[16]={
-        0x00b40000,
-        0x00000080,
-        0x00008080,
-        0x00803f00,
-        0x00ff8000,
-        0x000000ff,
-        0x00808000,
-        0x0000ffff,
-        0x00f0f0c0, //240, 240, 192
-        0x00800080,
-        0x00ff00ff,
-        0x00007800, //0, 120, 0
-        0x00000000,
-        0x00ff8080,
-        0x008080ff,
-        0x00a0a0a4
-    };
-    if (index<0 || index>15) return QColor(QRgb(0x00808080));
-    return QColor(QRgb(colors[index]));
-}
-
-void MainWindow::plotChannel(Channel *channel, const GraphIndex &idx, bool addToFixed)
-{
-    bool plotOnFirstYAxis = false;
-    bool plotOnSecondYAxis = false;
-
-
-    if (plot->graphCount()==0) {
-        plotOnFirstYAxis = true;
-    }
-    // есть один временный график
-    else if (graphs.isEmpty() && !addToFixed) {
-        plotOnFirstYAxis = true;
-    }
-    // есть постоянные графики
-    else {
-        // тип графика не совпадает
-        /** TODO: заменить на анализ типа графика */
-        if (channel->parent->XName != plot->xAxis->label()) return;
-
-        if (channel->YName == plot->yAxis->label())
-            plotOnFirstYAxis = true;
-        else
-            // trying to plot on second yaxis
-            if (plot->yAxis2->graphs().isEmpty() || channel->YName == plot->yAxis2->label()) {
-                // plotting on second yaxis
-                plotOnSecondYAxis = true;
-            }
-    }
-
-    if (!plotOnFirstYAxis && !plotOnSecondYAxis) return;
-
-
-    if (addToFixed) {
-        QCPGraph *graph = plot->addGraph(plot->xAxis, plotOnFirstYAxis ? plot->yAxis : plot->yAxis2);
-        QColor nextColor = getColor(graphs.size());
-        graph->setPen(nextColor);
-        graph->setData(channel->data, true);
-        graph->setName(channel->legendName);
-        graphs.insert(idx, graph);
-    }
-    else {
-        if (!freeGraph) {
-            freeGraph = plot->addGraph(plot->xAxis, plotOnFirstYAxis ? plot->yAxis : plot->yAxis2);
-            QColor nextColor = getColor(200);
-            freeGraph->setPen(nextColor);
-        }
-        freeGraph->setName(channel->legendName);
-        freeGraph->setData(channel->data, true);
-    }
-
-    plot->xAxis->setMaxRange(QCPRange(channel->xMin, channel->xMax));
-    double xmin = channel->xMin;
-    double xmax = channel->xMaxInitial;
-    if (plot->graphCount()>1) {
-        xmin = qMin(xmin, plot->xAxis->range().lower);
-        xmax = qMax(xmax, plot->xAxis->range().upper);
-    }
-
-    plot->xAxis->setRange(xmin, xmax);
-    plot->xAxis->setLabel(channel->parent->XName);
-
-    QCPAxis *ax = 0;
-    if (plotOnFirstYAxis) ax = plot->yAxis;
-    if (plotOnSecondYAxis) ax = plot->yAxis2;
-    if (ax) {
-        ax->setMaxRange(QCPRange(channel->yMin, channel->yMax));
-        double ymin = channel->yMinInitial;
-        double ymax = channel->yMaxInitial;
-        if (plot->graphCount()>1) {
-            ymin = qMin(ymin, ax->range().lower);
-            ymax = qMax(ymax, ax->range().upper);
-        }
-        ax->setRange(ymin, ymax);
-        ax->setLabel(channel->YName);
-    }
-
-    plot->replot();
+    updateChannelsHeaderState();
+    //channelsTable->resizeColumnsToContents();
+    channelsTable->blockSignals(false);
 }
 
 void MainWindow::maybePlotChannel(int currentRow, int currentColumn, int previousRow, int previousColumn)
@@ -389,12 +310,11 @@ void MainWindow::maybePlotChannel(int currentRow, int currentColumn, int previou
     if (currentRow<0 || currentColumn<0 || currentRow==previousRow) return;
 
     Channel *ch = record->channels.at(currentRow);
-    GraphIndex index = GraphIndex(record->dfdFileName, ch->channelIndex);
 
-    if (!ch->data)
+    if (!ch->populated)
         ch->populateData();
 
-    plotChannel(ch, index, false);
+    plot->plotChannel(record, currentRow, false);
 }
 
 bool allUnchecked(const QList<Channel *> &channels)
@@ -408,84 +328,64 @@ bool allUnchecked(const QList<Channel *> &channels)
 void MainWindow::maybePlotChannel(QTableWidgetItem *item)
 {
     if (!item) return;
-    if (item->column()!=0) return;
+    int column = item->column();
+    if (column!=0) return;
 
     Qt::CheckState state = item->checkState();
     Channel *ch = record->channels[item->row()];
-    ch->checkState = state;
 
     QFont oldFont = channelsTable->font();
     QFont boldFont = oldFont;
     boldFont.setBold(true);
 
-    if (state == Qt::Checked && !ch->data)
+    if (state == Qt::Checked && !ch->populated)
         ch->populateData();
 
-    GraphIndex idx = GraphIndex(record->dfdFileName, ch->channelIndex);
+    channelsTable->blockSignals(true);
+    bool plotted = true;
+
     if (state == Qt::Checked) {
-        if (!graphs.contains(idx)) {
-            //add graph
-            plotChannel(ch, idx, true);
+        plotted = plot->plotChannel(record, item->row(), true);
+        if (plotted) {
+            item->setFont(boldFont);
+            ch->checkState = Qt::Checked;
         }
-        item->setFont(boldFont);
+        else {
+            item->setCheckState(Qt::Unchecked);
+            ch->checkState = Qt::Unchecked;
+        }
     }
     else if (state == Qt::Unchecked) {
-        if (graphs.contains(idx)) {
-            //remove graph
-            plot->removeGraph(graphs.value(idx));
-            graphs.remove(idx);
-            plot->replot();
-            item->setFont(channelsTable->font());
-        }
+        plot->deleteGraph(record, item->row());
+        item->setFont(channelsTable->font());
     }
-    tree->currentItem()->setFont(1,allUnchecked(record->channels)?oldFont:boldFont);
-    //tree->topLevelItem(records.indexOf(record))
+    channelsTable->blockSignals(false);
+
+    tree->currentItem()->setFont(1, allUnchecked(record->channels)?oldFont:boldFont);
+
+    if (tableHeader->isSectionCheckable(column))
+        updateChannelsHeaderState();
 }
 
-void MainWindow::xRangeChanged(const QCPRange &range)
-{
-    double Min = plot->xAxis->maxRange().lower;
-    double Range = plot->xAxis->maxRange().size();
-    int pageStep = qRound(range.size()/Range*scrollBarRange);
-    int maxVal = qRound(scrollBarRange - pageStep);
-    hScrollBar->setPageStep(pageStep);
-    hScrollBar->setMaximum(maxVal);
-    double dist = qAbs(range.lower - Min);
-    int barVal = qRound(dist/Range*scrollBarRange);
-    hScrollBar->setValue(barVal);
-}
-
-void MainWindow::yRangeChanged(const QCPRange &range)
-{
-    double Min = plot->yAxis->maxRange().lower;
-    double Range = plot->yAxis->maxRange().size();
-    int pageStep = qRound(range.size()/Range*scrollBarRange);
-    vScrollBar->setPageStep(pageStep);
-    vScrollBar->setMaximum(scrollBarRange - pageStep);
-    double dist = qAbs(range.lower - Min);
-    int barVal = qRound(dist/Range*scrollBarRange);
-    vScrollBar->setValue(barVal);
-}
-
-void MainWindow::graphClicked(QCPAbstractPlottable *plottable)
-{
-    Q_UNUSED(plottable);
-    //ui->statusBar->showMessage(QString("Clicked on graph '%1'.").arg(plottable->name()), 1000);
-}
+//void MainWindow::graphClicked(QCPAbstractPlottable *plottable)
+//{
+//    Q_UNUSED(plottable);
+//    statusBar->showMessage(QString("Clicked on graph '%1'.").arg(plottable->name()), 1000);
+//}
 
 void MainWindow::plotSelectionChanged()
 {
-    // synchronize selection of graphs with selection of corresponding legend items:
-    for (int i=0; i<plot->graphCount(); ++i)
-    {
-        QCPGraph *graph = plot->graph(i);
-        QCPPlottableLegendItem *item = plot->legend->itemWithPlottable(graph);
-        if (item->selected() || graph->selected())
-        {
-            item->setSelected(true);
-            graph->setSelected(true);
-        }
-    }
+//    // synchronize selection of graphs with selection of corresponding legend items:
+//    for (int i=0; i<plot->graphCount(); ++i)
+//    {
+//        QCPGraph *graph = plot->graph(i);
+//        QCPPlottableLegendItem *item = plot->legend->itemWithPlottable(graph);
+//        if (item->selected() || graph->selected())
+//        {
+//            item->setSelected(true);
+//            graph->setSelected(true);
+//        }
+//    }
 }
 
 void MainWindow::plotAllChannels()
@@ -524,6 +424,40 @@ void MainWindow::convertRecords()
     }
 }
 
+void MainWindow::headerToggled(int column, Qt::CheckState state)
+{
+    if (column<0 || column >= channelsTable->columnCount()) return;
+
+    if (state == Qt::PartiallyChecked) return;
+    for (int i=0; i<channelsTable->rowCount(); ++i)
+        channelsTable->item(i,column)->setCheckState(state);
+}
+
+void MainWindow::clearPlot()
+{
+//    QList<QPair<QString, int> > deletedGraphs = plot->clearPlot();
+//    tree->blockSignals(true);
+//    channelsTable->blockSignals(true);
+//    for (int i=0; i<tree->topLevelItemCount(); ++i)
+//        updateRecordState(i);
+//    foreach(QPair<QString, int> &index, deletedGraphs) {
+
+//    }
+//    tree->blockSignals(false);
+    //    channelsTable->blockSignals(false);
+}
+
+void MainWindow::recordLegendChanged(QTreeWidgetItem *item, int column)
+{
+    if (!item || column!=9) return;
+
+    SortableTreeWidgetItem *i = dynamic_cast<SortableTreeWidgetItem *>(item);
+    if (i) {
+        i->dfd->legend = item->text(column);
+        plot->updateLegends();
+    }
+}
+
 QVariant MainWindow::getSetting(const QString &key, const QVariant &defValue)
 {
     QSettings se("Alex Novichkov","DeepSea Database");
@@ -541,26 +475,41 @@ void MainWindow::addFiles(const QStringList &files, bool addToDatabase)
     QList<QTreeWidgetItem *> items;
     QList<DfdFileDescriptor *> dfds;
     int pos = tree->topLevelItemCount();
+
+    QVariantMap legends = getSetting("legends").toMap();
+
     foreach (const QString &file, files) {
         DfdFileDescriptor *dfd = new DfdFileDescriptor(file);
         dfd->read();
         dfds << dfd;
+        dfd->legend = legends.value(file).toString();
+
         if (addToDatabase) alreadyAddedFiles << file;
 
         QTreeWidgetItem *item =
-                new SortableTreeWidgetItem(dfd, QStringList()
-                                   << QString::number(++pos) // QString("№") 0
-                                   << QFileInfo(dfd->dfdFileName).completeBaseName() //QString("Файл") 1
-                                   << QDateTime(dfd->Date,dfd->Time).toString(dateTimeFormat) // QString("Дата") 2
-                                   << dataTypeDescription(dfd->DataType) // QString("Тип") 3
-                                   << QString::number(dfd->NumInd * dfd->XStep) // QString("Размер") 4
-                                   << dfd->XName // QString("Ось Х") 5
-                                   << QString::number(dfd->XStep) // QString("Шаг") 6
-                                   << QString::number(dfd->NumChans));  // QString("Каналы")); 7
+                new SortableTreeWidgetItem(dfd,
+                                           QStringList()
+                                           << QString::number(++pos) // QString("№") 0
+                                           << QFileInfo(dfd->dfdFileName).completeBaseName() //QString("Файл") 1
+                                           << QDateTime(dfd->Date,dfd->Time).toString(dateTimeFormat) // QString("Дата") 2
+                                           << dataTypeDescription(dfd->DataType) // QString("Тип") 3
+                                           << QString::number(dfd->NumInd * dfd->XStep) // QString("Размер") 4
+                                           << dfd->XName // QString("Ось Х") 5
+                                           << QString::number(dfd->XStep) // QString("Шаг") 6
+                                           << QString::number(dfd->NumChans) // QString("Каналы")); 7
+                                           << dfd->description()
+                                           << dfd->legend
+                                           );
+        item->setFlags(item->flags() | Qt::ItemIsEditable);
         items << item;
     }
     tree->setSortingEnabled(false);
     tree->addTopLevelItems(items);
 //    tree->sortItems(0,Qt::AscendingOrder);
     tree->setSortingEnabled(true);
+}
+
+void MainWindow::updateRecordState(int recordIndex)
+{
+
 }
