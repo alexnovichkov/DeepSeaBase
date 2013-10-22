@@ -21,7 +21,9 @@ SOURCES += main.cpp\
     sortabletreewidgetitem.cpp \
     plot.cpp \
     curve.cpp \
-    checkableheaderview.cpp
+    checkableheaderview.cpp \
+    methods/spectremethod.cpp \
+    methods/timemethod.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -30,7 +32,10 @@ HEADERS  += mainwindow.h \
     sortabletreewidgetitem.h \
     plot.h \
     curve.h \
-    checkableheaderview.h
+    checkableheaderview.h \
+    methods/abstractmethod.h \
+    methods/spectremethod.h \
+    methods/timemethod.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\

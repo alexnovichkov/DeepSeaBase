@@ -26,9 +26,10 @@
 #include <QApplication>
 #include "mainwindow.h"
 
-QColor getColor(int index)
+static QList<QColor> usedColors;
+
+QColor getColor()
 {
-    //index--;
     static uint colors[16]={
         0x00b40000,
         0x00000080,
@@ -47,8 +48,17 @@ QColor getColor(int index)
         0x008080ff,
         0x00a0a0a4
     };
-    if (index<0 || index>15) return QColor(QRgb(0x00808080));
-    return QColor(QRgb(colors[index]));
+
+
+    for (int i=0; i<16; ++i) {
+        QColor c = QColor(QRgb(colors[i]));
+        if (!usedColors.contains(c)) {
+            usedColors.append(c);
+            return c;
+        }
+    }
+
+    return QColor(QRgb(0x00808080));
 }
 
 Plot::Plot(QWidget *parent) :
@@ -73,9 +83,13 @@ Plot::Plot(QWidget *parent) :
     grid->setMinorPen(Qt::darkGray, 0, Qt::DotLine);
     grid->attach(this);
 
+    x1.clear();
+    y1.clear();
+    y2.clear();
+
     // axis
-    setAxisScale(QwtPlot::yLeft, 0.0, 1000.0);
-    setAxisScale(QwtPlot::xBottom, 0.0, 1000.0);
+    setAxisScale(QwtPlot::yLeft, 0, 10);
+    setAxisScale(QwtPlot::xBottom, 0, 10);
 
     QwtLegend *leg = new QwtLegend();
     //leg->setDefaultItemMode(QwtLegendData::Checkable);
@@ -129,13 +143,36 @@ bool Plot::hasFreeGraph() const
 
 void Plot::deleteGraphs()
 {
-    detachItems(QwtPlotItem::Rtti_PlotItem, /*autoDelete*/ true);
-
     delete freeGraph;
     freeGraph = 0;
 
     qDeleteAll(graphs);
     graphs.clear();
+    leftGraphs.clear();
+    rightGraphs.clear();
+    x1.clear();
+    y1.clear();
+    y2.clear();
+    usedColors.clear();
+
+    for (int i=0; i<4; ++i)
+        setAxisTitle(i, "");
+
+    updateAxes();
+    updateLegend();
+    replot();
+}
+
+void Plot::deleteGraphs(const QString &dfdGuid)
+{
+    qDebug()<<dfdGuid;
+    for (int i = graphs.size()-1; i>=0; --i) {
+        Curve *graph = graphs[i];
+        qDebug()<<graph->dfd->DFDGUID;
+        if (dfdGuid == graph->dfd->DFDGUID) {qDebug()<<"is";
+            deleteGraph(graph, true);
+        }
+    }
 }
 
 void Plot::deleteGraph(DfdFileDescriptor *dfd, int channel, bool doReplot)
@@ -148,6 +185,7 @@ void Plot::deleteGraph(DfdFileDescriptor *dfd, int channel, bool doReplot)
 void Plot::deleteGraph(Curve *graph, bool doReplot)
 {
     if (graph) {
+        usedColors.removeAll(graph->pen().color());
         graphs.removeAll(graph);
         leftGraphs.removeAll(graph);
         rightGraphs.removeAll(graph);
@@ -166,6 +204,9 @@ void Plot::deleteGraph(Curve *graph, bool doReplot)
         if (!hasGraphs()) {
             xName.clear();
             setAxisTitle(QwtPlot::xBottom, xName);
+            x1.clear();
+            y1.clear();
+            y2.clear();
         }
 
         if (doReplot) {
@@ -200,9 +241,9 @@ bool Plot::plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed)
     else {
         /** TODO: заменить на анализ типа графика */
         if (ch->parent->XName == xName || xName.isEmpty()) { // тип графика совпадает
-            if (ch->YName == yLeftName)
+            if (leftGraphs.isEmpty() || yLeftName.isEmpty() || ch->YName == yLeftName)
                 plotOnFirstYAxis = true;
-            else if (yRightName.isEmpty() || ch->YName == yRightName)
+            else if (rightGraphs.isEmpty() || yRightName.isEmpty() || ch->YName == yRightName)
                 plotOnSecondYAxis = true;
         }
     }
@@ -232,8 +273,9 @@ bool Plot::plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed)
 
     if (addToFixed) {
         Curve *graph = new Curve(ch->legendName(), dfd, channel);
-        QColor nextColor = getColor(graphs.size());
+        QColor nextColor = getColor();
         graph->setPen(nextColor, 1);
+
         graphs << graph;
         g = graph;
     }
@@ -246,6 +288,7 @@ bool Plot::plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed)
         g = freeGraph;
     }
     g->legend = ch->legendName();
+    g->setLegendIconSize(QSize(16,8));
     g->setRawSamples(ch->parent->XBegin, ch->xStep, ch->yValues, ch->NumInd);
     g->attach(this);
 
@@ -260,29 +303,15 @@ bool Plot::plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed)
     }
     xName = dfd->XName;
 
-    //plot->setAxisScale(QwtPlot::xBottom, channel->xMin, channel->xMax);
+    x1.min = qMin(ch->xMin, x1.min);
+    x1.max = qMax(ch->xMaxInitial, x1.max);
+    setAxisScale(QwtPlot::xBottom, x1.min, x1.max);
 
-    double xmin = ch->xMin;
-    double xmax = ch->xMaxInitial;
-    //    if (plot->graphsCount()>1) {
-    //        xmin = qMin(xmin, plot->axisMaxMajor( xAxis->range().lower);
-    //        xmax = qMax(xmax, plot->xAxis->range().upper);
-    //    }
-
-    setAxisScale(QwtPlot::xBottom, xmin, xmax);
-
-
-
-
-
-    //        ax->setMaxRange(QCPRange(ch->yMin, ch->yMax));
-    double ymin = ch->yMinInitial;
-    double ymax = ch->yMaxInitial;
-    //        if (plot->graphsCount()>1) {
-    //            ymin = qMin(ymin, ax->range().lower);
-    //            ymax = qMax(ymax, ax->range().upper);
-    //        }
-    setAxisScale(ax, ymin, ymax);
+    Range &r = y1;
+    if (plotOnSecondYAxis) r = y2;
+    r.min = qMin(ch->yMinInitial, r.min);
+    r.max = qMax(ch->yMaxInitial, r.max);
+    setAxisScale(ax, r.min, r.max);
 
 
     updateAxes();
@@ -332,13 +361,13 @@ void Plot::savePlot()
         QPen pen = graph->pen();
         pen.setWidth(2);
         graph->setPen(pen);
-        graph->setTitle(QwtText("<font size=4>"+graph->legend+"</font>"));
+        graph->setTitle(QwtText("<font size=5>"+graph->legend+"</font>"));
     }
     foreach (Curve *graph, rightGraphs) {
         QPen pen = graph->pen();
         pen.setWidth(2);
         graph->setPen(pen);
-        graph->setTitle(QwtText("<font size=4>"+graph->legend+"</font>"));
+        graph->setTitle(QwtText("<font size=5>"+graph->legend+"</font>"));
     }
     QwtLegend *leg = new QwtLegend();
     //leg->setDefaultItemMode(QwtLegendData::Clickable);

@@ -37,13 +37,15 @@ class QwtPlotCurve;
 
 class Curve;
 
-//typedef QPair<QString, int> GraphIndex;
+typedef QStringList FileRecord;
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
     
 public:
+
+
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
@@ -97,17 +99,28 @@ private slots:
      */
     void recordLegendChanged(QTreeWidgetItem *item, int column);
 
-private:
+    /**
+     * @brief rescanBase
+     * обновляет список файлов в таблице, удаляет мертвые записи
+     */
+    void rescanBase();
 
+private:
+    void addFiles(QList<QStringList> &files, bool addToDatabase);
     void addFiles(const QStringList &files, bool addToDatabase);
+
+    void deleteFiles(const QVector<int> &indexes);
 
     void updateRecordState(int recordIndex);
     void updateChannelsHeaderState();
 
+    void rescanDeadRecords();
+    void removeDeadRecords();
+
     QTreeWidget *tree;
     QTableWidget *channelsTable;
 
-    QStringList alreadyAddedFiles;
+    QList<FileRecord> alreadyAddedFiles;
     DfdFileDescriptor *record;
 
 
@@ -117,6 +130,7 @@ private:
     QAction *convertAct;
     QAction *clearPlotAct;
     QAction *savePlotAct;
+    QAction *rescanBaseAct;
 
     Plot *plot;
 

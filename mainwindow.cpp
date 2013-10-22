@@ -7,6 +7,45 @@
 #include "checkableheaderview.h"
 #include "plot.h"
 
+class DrivesDialog : public QDialog
+{
+//    Q_OBJECT
+public:
+    DrivesDialog(QWidget * parent) : QDialog(parent)
+    {
+
+        QFileInfoList drives = QDir::drives();
+        QVBoxLayout *l = new QVBoxLayout;
+        l->addWidget(new QLabel("Выберите диски для сканирования", this));
+        foreach(const QFileInfo &fi, drives) {
+            QCheckBox *drive = new QCheckBox(fi.absoluteFilePath(), this);
+            drive->setChecked(false);
+            drivesList << drive;
+            l->addWidget(drive);
+        }
+        QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok |
+                                                           QDialogButtonBox::Cancel);
+        connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
+        connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
+
+        l->addWidget(buttonBox);
+        setLayout(l);
+    }
+    QStringList drives;
+private:
+    QList<QCheckBox *> drivesList;
+
+    // QDialog interface
+public slots:
+    virtual void accept()
+    {
+        foreach(QCheckBox *box, drivesList) {
+            if (box->isChecked()) drives << box->text();
+        }
+        QDialog::accept();
+    }
+};
+
 void maybeAppend(const QString &s, QStringList &list)
 {
     if (!list.contains(s)) list.append(s);
@@ -64,11 +103,16 @@ MainWindow::MainWindow(QWidget *parent)
     savePlotAct->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogSaveButton));
     connect(savePlotAct, SIGNAL(triggered()), plot, SLOT(savePlot()));
 
+    rescanBaseAct = new QAction(QString("Пересканировать базу"), this);
+    rescanBaseAct->setIcon(qApp->style()->standardIcon(QStyle::SP_BrowserReload));
+    connect(rescanBaseAct, SIGNAL(triggered()), this, SLOT(rescanBase()));
+
     QMenu *fileMenu = menuBar()->addMenu(tr("Файл"));
     fileMenu->addAction(addFolderAct);
 
     QMenu *recordsMenu = menuBar()->addMenu(QString("Записи"));
     recordsMenu->addAction(delFilesAct);
+    recordsMenu->addAction(rescanBaseAct);
 
     QToolBar *toolBar = new QToolBar(this);
     toolBar->setOrientation(Qt::Vertical);
@@ -97,12 +141,18 @@ MainWindow::MainWindow(QWidget *parent)
             );
     tree->header()->setStretchLastSection(false);
     tree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    tree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     tree->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
     tree->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
     tree->header()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
     tree->header()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
     tree->header()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
     tree->header()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
+
+    QByteArray treeHeaderState = getSetting("treeHeaderState").toByteArray();
+    if (!treeHeaderState.isEmpty())
+        tree->header()->restoreState(treeHeaderState);
+
 
     connect(tree, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),SLOT(updateChannelsTable(QTreeWidgetItem*,QTreeWidgetItem*)));
     connect(tree,SIGNAL(itemChanged(QTreeWidgetItem*,int)), SLOT(recordLegendChanged(QTreeWidgetItem*, int)));
@@ -172,7 +222,11 @@ MainWindow::MainWindow(QWidget *parent)
     if (!upperSplitterState.isEmpty())
         upperSplitter->restoreState(upperSplitterState);
 
-    alreadyAddedFiles = getSetting("alreadyAdded").toStringList();
+    QVariantList list = getSetting("alreadyAddedFiles").toList();
+    foreach (const QVariant &item, list) {
+        FileRecord rec = item.toStringList();
+        alreadyAddedFiles << rec;
+    }
     if (!alreadyAddedFiles.isEmpty()) addExistingFiles();
 }
 
@@ -180,16 +234,32 @@ MainWindow::~MainWindow()
 {
     setSetting("mainSplitterState",splitter->saveState());
     setSetting("upperSplitterState",upperSplitter->saveState());
-    setSetting("alreadyAdded", alreadyAddedFiles);
+
+    QVariantList list;
+    foreach(const QStringList &item, alreadyAddedFiles)
+        list << QVariant(item);
+    setSetting("alreadyAddedFiles", list);
+
     QVariantMap legends;
     for (int i=0; i<tree->topLevelItemCount(); ++i) {
         SortableTreeWidgetItem *item =
                 dynamic_cast<SortableTreeWidgetItem *>(tree->topLevelItem(i));
         if (item) {
-            legends.insert(item->dfd->dfdFileName, item->text(9));
+            legends.insert(item->dfd->DFDGUID, item->text(9));
         }
     }
     setSetting("legends", legends);
+
+    QByteArray treeHeaderState = tree->header()->saveState();
+    setSetting("treeHeaderState", treeHeaderState);
+}
+
+bool checkForContains(const QList<QStringList> &list, const QString &file)
+{
+    foreach (const QStringList &item, list) {
+        if (item.first() == file) return true;
+    }
+    return false;
 }
 
 void MainWindow::addFolder()
@@ -209,7 +279,7 @@ void MainWindow::addFolder()
 
     QStringList toAdd;
     foreach (const QString &file, filesToAdd) {
-        if (!alreadyAddedFiles.contains(file))
+        if (!checkForContains(alreadyAddedFiles, file))
             toAdd << file;
     }
 
@@ -230,19 +300,14 @@ void MainWindow::addExistingFiles()
 
 void MainWindow::deleteFiles()
 {
-    int count = tree->topLevelItemCount();
-    bool taken = false;
-    for (int i=count-1; i>=0; --i) {
+    QVector<int> list;
+    for (int i=0; i<tree->topLevelItemCount(); ++i) {
         if (tree->topLevelItem(i)->isSelected()) {
-            delete tree->takeTopLevelItem(i);
-            alreadyAddedFiles.removeAt(i);
-            taken = true;
+            list << i;
         }
     }
-    if (taken) {
-        channelsTable->setRowCount(0);
-        plot->deleteGraphs();
-    }
+    if (!list.isEmpty())
+        deleteFiles(list);
 }
 
 void MainWindow::updateChannelsHeaderState()
@@ -262,8 +327,91 @@ void MainWindow::updateChannelsHeaderState()
         tableHeader->setCheckState(column, Qt::PartiallyChecked);
 }
 
+void MainWindow::rescanDeadRecords()
+{
+    QHash<QString, DfdFileDescriptor *> allRecords;
+    QVector<int> list;
+
+    DrivesDialog dialog(this);
+    if (dialog.exec()) {
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+        QStringList drives = dialog.drives;
+        if (drives.isEmpty()) return;
+
+        QStringList filesToAdd;
+
+        foreach (const QString &drive, drives) {
+            processDir(drive, filesToAdd, true);
+        }
+
+        if (!filesToAdd.isEmpty()) {
+            QVariantMap legends = getSetting("legends").toMap();
+
+            foreach (const QString &file, filesToAdd) {
+                DfdFileDescriptor *dfd = new DfdFileDescriptor(file);
+                dfd->read();
+                dfd->legend = legends.value(dfd->DFDGUID).toString();
+                allRecords.insert(dfd->DFDGUID, dfd);
+            }
+
+            for (int i = 0; i<tree->topLevelItemCount(); ++i) {
+                SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tree->topLevelItem(i));
+                if (item) {
+                    if (!QFileInfo(item->dfd->dfdFileName).exists()) {
+                        qDebug()<<item->dfd->dfdFileName<<"not exists";
+                        // или заменяем на актуальный, или удаляем из таблицы
+                        if (allRecords.contains(item->dfd->DFDGUID)) {
+                            qDebug()<<"file"<<allRecords.value(item->dfd->DFDGUID)<<"has the same guid"<<item->dfd->DFDGUID;
+                            delete item->dfd;
+                            item->dfd = allRecords.value(item->dfd->DFDGUID);
+                            allRecords.remove(item->dfd->DFDGUID);
+                            //обновляем текст записи
+                            item->setText(1, QFileInfo(item->dfd->dfdFileName).completeBaseName());
+                            item->setText(2, QDateTime(item->dfd->Date,item->dfd->Time).toString(dateTimeFormat));
+                            item->setText(3, dataTypeDescription(item->dfd->DataType));
+                            item->setText(4, QString::number(item->dfd->NumInd * item->dfd->XStep));
+                            item->setText(5, item->dfd->XName);
+                            item->setText(6, QString::number(item->dfd->XStep));
+                            item->setText(7, QString::number(item->dfd->NumChans));
+                            item->setText(8, item->dfd->description());
+                            item->setText(9, item->dfd->legend);
+                        }
+                        else {
+                            list << i;
+                        }
+                    }
+                }
+            }
+
+        }
+        QApplication::restoreOverrideCursor();
+    }
+    if (!list.isEmpty()) {
+        deleteFiles(list);
+        QMessageBox::information(this, "База данных", QString("Удалено %1 записей").arg(list.size()));
+    }
+    qDeleteAll(allRecords.values());
+}
+
+void MainWindow::removeDeadRecords()
+{
+    QVector<int> list;
+
+    for (int i = 0; i<tree->topLevelItemCount(); ++i) {
+        SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tree->topLevelItem(i));
+        if (item) {
+            if (!QFileInfo(item->dfd->dfdFileName).exists()) {
+                list << i;
+            }
+        }
+    }
+
+    if (!list.isEmpty())
+        deleteFiles(list);
+}
+
 void MainWindow::updateChannelsTable(QTreeWidgetItem *current, QTreeWidgetItem *previous)
-{//qDebug()<<Q_FUNC_INFO;
+{
     Q_UNUSED(previous)
     if (!current /*|| current==previous*/) return;
 
@@ -358,6 +506,7 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
     else if (state == Qt::Unchecked) {
         plot->deleteGraph(record, item->row());
         item->setFont(channelsTable->font());
+        ch->checkState = Qt::Unchecked;
     }
     channelsTable->blockSignals(false);
 
@@ -417,7 +566,8 @@ void MainWindow::convertRecords()
 
         QStringList newFiles = dialog.getNewFiles();
         for (int i=newFiles.size()-1; i>=0; --i) {
-            if (alreadyAddedFiles.contains(newFiles.at(i))) newFiles.removeAt(i);
+            if (checkForContains(alreadyAddedFiles, newFiles.at(i)))
+                newFiles.removeAt(i);
         }
 
         addFiles(newFiles, true);
@@ -435,16 +585,19 @@ void MainWindow::headerToggled(int column, Qt::CheckState state)
 
 void MainWindow::clearPlot()
 {
-//    QList<QPair<QString, int> > deletedGraphs = plot->clearPlot();
-//    tree->blockSignals(true);
-//    channelsTable->blockSignals(true);
-//    for (int i=0; i<tree->topLevelItemCount(); ++i)
-//        updateRecordState(i);
-//    foreach(QPair<QString, int> &index, deletedGraphs) {
-
-//    }
-//    tree->blockSignals(false);
-    //    channelsTable->blockSignals(false);
+    plot->deleteGraphs();
+    for (int i=0; i<tree->topLevelItemCount(); ++i) {
+        DfdFileDescriptor *dfd = dynamic_cast<SortableTreeWidgetItem *>(tree->topLevelItem(i))->dfd;
+        QList<Channel *> list = dfd->channels;
+        foreach (Channel *c, list) c->checkState = Qt::Unchecked;
+        tree->topLevelItem(i)->setFont(1, tree->font());
+    }
+    channelsTable->blockSignals(true);
+    for (int i=0; i<channelsTable->rowCount(); ++i) {
+        channelsTable->item(i,0)->setCheckState(Qt::Unchecked);
+        channelsTable->item(i,0)->setFont(channelsTable->font());
+    }
+    channelsTable->blockSignals(false);
 }
 
 void MainWindow::recordLegendChanged(QTreeWidgetItem *item, int column)
@@ -456,6 +609,36 @@ void MainWindow::recordLegendChanged(QTreeWidgetItem *item, int column)
         i->dfd->legend = item->text(column);
         plot->updateLegends();
     }
+}
+
+void MainWindow::rescanBase()
+{
+    for (int i=0; i<tree->topLevelItemCount(); ++i) {
+        SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tree->topLevelItem(i));
+        if (item) {
+            if (!QFileInfo(item->dfd->dfdFileName).exists()) {
+                QMessageBox msgBox;
+                msgBox.setIcon(QMessageBox::Warning);
+                msgBox.setText("Найдены мертвые записи:\n"
+                               +item->dfd->dfdFileName);
+                msgBox.setInformativeText("Пересканировать жесткие диски?");
+                QPushButton *rescanButton = msgBox.addButton(tr("Да, пересканировать"), QMessageBox::ActionRole);
+                QPushButton *removeButton = msgBox.addButton(tr("Нет, только удалить из списка"), QMessageBox::NoRole);
+                msgBox.addButton(QMessageBox::Abort);
+
+                msgBox.exec();
+
+                if (msgBox.clickedButton() == rescanButton) {
+                    rescanDeadRecords();
+                }
+                else if (msgBox.clickedButton() == removeButton) {
+                    removeDeadRecords();
+                }
+                return;
+            }
+        }
+    }
+    QMessageBox::information(this, "База данных", "В базе данных все записи \"живые\"!");
 }
 
 QVariant MainWindow::getSetting(const QString &key, const QVariant &defValue)
@@ -472,19 +655,35 @@ void MainWindow::setSetting(const QString &key, const QVariant &value)
 
 void MainWindow::addFiles(const QStringList &files, bool addToDatabase)
 {
+    QList<QStringList> list;
+    foreach (const QString &file, files)
+        list << (QStringList()<<file<<"");
+    addFiles(list, addToDatabase);
+}
+
+void MainWindow::addFiles(QList<QStringList> &files, bool addToDatabase)
+{
     QList<QTreeWidgetItem *> items;
     QList<DfdFileDescriptor *> dfds;
     int pos = tree->topLevelItemCount();
 
     QVariantMap legends = getSetting("legends").toMap();
 
-    foreach (const QString &file, files) {
-        DfdFileDescriptor *dfd = new DfdFileDescriptor(file);
+    for (int i=0; i<files.size(); ++i) {
+        QStringList file = files[i];
+        DfdFileDescriptor *dfd = new DfdFileDescriptor(file.first());
         dfd->read();
         dfds << dfd;
-        dfd->legend = legends.value(file).toString();
+        if (dfd->DFDGUID.isEmpty()) dfd->DFDGUID = file.last();
+        if (file.last().isEmpty()) {
+            file[1] = dfd->DFDGUID;
+            files[i] = file;
+        }
 
-        if (addToDatabase) alreadyAddedFiles << file;
+        dfd->legend = legends.value(dfd->DFDGUID).toString();
+
+        if (addToDatabase)
+            alreadyAddedFiles << file;
 
         QTreeWidgetItem *item =
                 new SortableTreeWidgetItem(dfd,
@@ -497,7 +696,7 @@ void MainWindow::addFiles(const QStringList &files, bool addToDatabase)
                                            << dfd->XName // QString("Ось Х") 5
                                            << QString::number(dfd->XStep) // QString("Шаг") 6
                                            << QString::number(dfd->NumChans) // QString("Каналы")); 7
-                                           << dfd->description()
+                                           << dfd->DFDGUID//dfd->description()
                                            << dfd->legend
                                            );
         item->setFlags(item->flags() | Qt::ItemIsEditable);
@@ -507,6 +706,24 @@ void MainWindow::addFiles(const QStringList &files, bool addToDatabase)
     tree->addTopLevelItems(items);
 //    tree->sortItems(0,Qt::AscendingOrder);
     tree->setSortingEnabled(true);
+}
+
+void MainWindow::deleteFiles(const QVector<int> &indexes)
+{
+    bool taken = false;
+
+    for (int i=indexes.size()-1; i>=0; --i) {
+        SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tree->topLevelItem(indexes.at(i)));
+        if (item) {
+            plot->deleteGraphs(item->dfd->DFDGUID);
+        }
+        delete tree->takeTopLevelItem(indexes.at(i));
+        alreadyAddedFiles.removeAt(indexes.at(i));
+        taken = true;
+    }
+    if (taken) {
+        channelsTable->setRowCount(0);
+    }
 }
 
 void MainWindow::updateRecordState(int recordIndex)

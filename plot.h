@@ -3,6 +3,8 @@
 
 #include <qwt_plot.h>
 #include <qwt_plot_dict.h>
+#include <math.h>
+
 
 class QwtLegend;
 class QwtPlotGrid;
@@ -13,6 +15,12 @@ class QwtChartZoom;
 class QWheelZoomSvc;
 class QAxisZoomSvc;
 class QwtPlotZoomer;
+
+struct Range {
+    void clear() {min = INFINITY; max = -INFINITY;}
+    double min;
+    double max;
+};
 
 class Plot : public QwtPlot
 {
@@ -43,6 +51,7 @@ public:
     bool hasFreeGraph() const;
 
     void deleteGraphs();
+    void deleteGraphs(const QString &dfdGuid);
 
     /**
      * @brief deleteGraph deletes plotted graphs
@@ -79,6 +88,14 @@ private:
     QwtChartZoom *zoom;
     QWheelZoomSvc *wheelZoom;
     QAxisZoomSvc *axisZoom;
+
+    Range x1;
+    Range y1;
+    Range y2;
+//    double xMax;
+//    double xMin;
+//    double yMax;
+//    double yMin;
 };
 
 #endif // PLOT_H

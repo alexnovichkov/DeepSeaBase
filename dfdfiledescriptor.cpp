@@ -604,15 +604,6 @@ void RawChannel::populateData()
 {
     Channel::populateData();
 
-//    DebugPrint(xMax);
-//    DebugPrint(xMin);
-//    DebugPrint(yMax);
-//    DebugPrint(yMin);
-//    DebugPrint(xMaxInitial);
-//    DebugPrint(xMin);
-//    DebugPrint(yMaxInitial);
-//    DebugPrint(yMinInitial);
-
     // rescale initial min and max values with first 200 values
     xMaxInitial = parent->XBegin + xStep*200;
     yMinInitial = 0.0;
@@ -625,15 +616,6 @@ void RawChannel::populateData()
         if (val > yMaxInitial) yMaxInitial = val;
         if (val < yMinInitial) yMinInitial = val;
     }
-//    DebugPrint("after:");
-//    DebugPrint(xMax);
-//    DebugPrint(xMin);
-//    DebugPrint(yMax);
-//    DebugPrint(yMin);
-//    DebugPrint(xMaxInitial);
-//    DebugPrint(xMin);
-//    DebugPrint(yMaxInitial);
-//    DebugPrint(yMinInitial);
 }
 
 
