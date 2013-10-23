@@ -25,6 +25,7 @@
 #include <QDesktopWidget>
 #include <QApplication>
 #include "mainwindow.h"
+#include "graphpropertiesdialog.h"
 
 static QList<QColor> usedColors;
 
@@ -420,9 +421,8 @@ void Plot::editLegendItem(const QVariant &itemInfo, int index)
     if (item) {
         QwtPlotCurve *c = dynamic_cast<QwtPlotCurve *>(item);
         if (c) {
-            QPen pen = c->pen();
-            pen.setWidth(3);
-            c->setPen(pen);
+            GraphPropertiesDialog dialog(c, this);
+            dialog.exec();
         }
     }
 }
