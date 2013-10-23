@@ -15,6 +15,7 @@ class QwtChartZoom;
 class QWheelZoomSvc;
 class QAxisZoomSvc;
 class QwtPlotZoomer;
+class QwtPlotPicker;
 
 struct Range {
     void clear() {min = INFINITY; max = -INFINITY;}
@@ -72,6 +73,9 @@ public:
     void updateLegends();
 public slots:
     void savePlot();
+    void switchCursor();
+private slots:
+    void editLegendItem(const QVariant &itemInfo, int index);
 private:
     QList<Curve *> graphs;
     Curve *freeGraph;
@@ -83,6 +87,7 @@ private:
     QList<Curve *> rightGraphs;
 
     QwtPlotGrid *grid;
+    QwtPlotPicker *picker;
 
 //    QwtPlotZoomer *zoom;
     QwtChartZoom *zoom;

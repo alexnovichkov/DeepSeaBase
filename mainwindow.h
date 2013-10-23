@@ -131,6 +131,7 @@ private:
     QAction *clearPlotAct;
     QAction *savePlotAct;
     QAction *rescanBaseAct;
+    QAction *switchCursorAct;
 
     Plot *plot;
 

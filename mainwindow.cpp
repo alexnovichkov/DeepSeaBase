@@ -107,6 +107,13 @@ MainWindow::MainWindow(QWidget *parent)
     rescanBaseAct->setIcon(qApp->style()->standardIcon(QStyle::SP_BrowserReload));
     connect(rescanBaseAct, SIGNAL(triggered()), this, SLOT(rescanBase()));
 
+    switchCursorAct = new QAction(QString("Показать/скрыть курсор"), this);
+    switchCursorAct->setIcon(QIcon(":/icons/cursor.png"));
+    switchCursorAct->setCheckable(true);
+    bool pickerEnabled = MainWindow::getSetting("pickerEnabled", true).toBool();
+    switchCursorAct->setChecked(pickerEnabled);
+    connect(switchCursorAct, SIGNAL(triggered()), plot, SLOT(switchCursor()));
+
     QMenu *fileMenu = menuBar()->addMenu(tr("Файл"));
     fileMenu->addAction(addFolderAct);
 
@@ -118,6 +125,7 @@ MainWindow::MainWindow(QWidget *parent)
     toolBar->setOrientation(Qt::Vertical);
     toolBar->addAction(clearPlotAct);
     toolBar->addAction(savePlotAct);
+    toolBar->addAction(switchCursorAct);
 
     tree = new QTreeWidget(this);
     tree->setRootIsDecorated(false);
@@ -224,10 +232,15 @@ MainWindow::MainWindow(QWidget *parent)
 
     QVariantList list = getSetting("alreadyAddedFiles").toList();
     foreach (const QVariant &item, list) {
-        FileRecord rec = item.toStringList();
-        alreadyAddedFiles << rec;
+        QStringList rec = item.toStringList();
+        if (QFileInfo(rec.first()).exists())
+            alreadyAddedFiles << rec;
     }
-    if (!alreadyAddedFiles.isEmpty()) addExistingFiles();
+    showMaximized();
+    if (!alreadyAddedFiles.isEmpty())
+        addExistingFiles();
+    else
+        QMessageBox::information(this,"База данных","Добавьте файлы командой \"Файл -> Добавить папку\"");
 }
 
 MainWindow::~MainWindow()
@@ -358,10 +371,8 @@ void MainWindow::rescanDeadRecords()
                 SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tree->topLevelItem(i));
                 if (item) {
                     if (!QFileInfo(item->dfd->dfdFileName).exists()) {
-                        qDebug()<<item->dfd->dfdFileName<<"not exists";
                         // или заменяем на актуальный, или удаляем из таблицы
                         if (allRecords.contains(item->dfd->DFDGUID)) {
-                            qDebug()<<"file"<<allRecords.value(item->dfd->DFDGUID)<<"has the same guid"<<item->dfd->DFDGUID;
                             delete item->dfd;
                             item->dfd = allRecords.value(item->dfd->DFDGUID);
                             allRecords.remove(item->dfd->DFDGUID);
@@ -375,6 +386,8 @@ void MainWindow::rescanDeadRecords()
                             item->setText(7, QString::number(item->dfd->NumChans));
                             item->setText(8, item->dfd->description());
                             item->setText(9, item->dfd->legend);
+                            alreadyAddedFiles[i][0] = item->dfd->dfdFileName;
+                            alreadyAddedFiles[i][1] = item->dfd->DFDGUID;
                         }
                         else {
                             list << i;
@@ -696,7 +709,7 @@ void MainWindow::addFiles(QList<QStringList> &files, bool addToDatabase)
                                            << dfd->XName // QString("Ось Х") 5
                                            << QString::number(dfd->XStep) // QString("Шаг") 6
                                            << QString::number(dfd->NumChans) // QString("Каналы")); 7
-                                           << dfd->DFDGUID//dfd->description()
+                                           << dfd->description()
                                            << dfd->legend
                                            );
         item->setFlags(item->flags() | Qt::ItemIsEditable);

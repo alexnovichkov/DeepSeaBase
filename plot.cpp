@@ -92,7 +92,8 @@ Plot::Plot(QWidget *parent) :
     setAxisScale(QwtPlot::xBottom, 0, 10);
 
     QwtLegend *leg = new QwtLegend();
-    //leg->setDefaultItemMode(QwtLegendData::Checkable);
+    leg->setDefaultItemMode(QwtLegendData::Clickable);
+    connect(leg, SIGNAL(clicked(QVariant,int)),this,SLOT(editLegendItem(QVariant,int)));
     insertLegend(leg, QwtPlot::RightLegend);
 
 
@@ -106,12 +107,14 @@ Plot::Plot(QWidget *parent) :
     axisZoom = new QAxisZoomSvc();
     axisZoom->attach(zoom);
 
-    QwtPlotPicker *picker = new QwtPlotPicker(this->canvas());
+    picker = new QwtPlotPicker(this->canvas());
 
     picker->setStateMachine(new QwtPickerTrackerMachine);
     picker->setTrackerMode(QwtPicker::AlwaysOn);
     picker->setRubberBand(QwtPicker::CrossRubberBand );
     picker->setRubberBandPen(QPen(QColor(60,60,60), 0.5, Qt::DashLine));
+    bool pickerEnabled = MainWindow::getSetting("pickerEnabled", true).toBool();
+    picker->setEnabled(pickerEnabled);
 }
 
 Plot::~Plot()
@@ -370,7 +373,6 @@ void Plot::savePlot()
         graph->setTitle(QwtText("<font size=5>"+graph->legend+"</font>"));
     }
     QwtLegend *leg = new QwtLegend();
-    //leg->setDefaultItemMode(QwtLegendData::Clickable);
     insertLegend(leg, QwtPlot::BottomLegend);
 
 //    QwtPlotItemList list = this->itemList(/*QwtPlotItem::Rtti_PlotTextLabel*/);
@@ -398,8 +400,29 @@ void Plot::savePlot()
         graph->setTitle(QwtText(graph->legend));
     }
     leg = new QwtLegend();
-    //leg->setDefaultItemMode(QwtLegendData::Clickable);
+    leg->setDefaultItemMode(QwtLegendData::Clickable);
+    connect(leg, SIGNAL(clicked(QVariant,int)),this,SLOT(editLegendItem(QVariant,int)));
     insertLegend(leg, QwtPlot::RightLegend);
 
     MainWindow::setSetting("lastPicture", lastPicture);
+}
+
+void Plot::switchCursor()
+{
+    bool pickerEnabled = picker->isEnabled();
+    picker->setEnabled(!pickerEnabled);
+    MainWindow::setSetting("pickerEnabled", !pickerEnabled);
+}
+
+void Plot::editLegendItem(const QVariant &itemInfo, int index)
+{
+    QwtPlotItem *item = infoToItem(itemInfo);
+    if (item) {
+        QwtPlotCurve *c = dynamic_cast<QwtPlotCurve *>(item);
+        if (c) {
+            QPen pen = c->pen();
+            pen.setWidth(3);
+            c->setPen(pen);
+        }
+    }
 }

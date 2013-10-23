@@ -16,18 +16,17 @@ CONFIG += c++11
 SOURCES += main.cpp\
     mainwindow.cpp \
     dfdfiledescriptor.cpp \
-    qcustomplot.cpp \
     convertdialog.cpp \
     sortabletreewidgetitem.cpp \
     plot.cpp \
     curve.cpp \
     checkableheaderview.cpp \
     methods/spectremethod.cpp \
-    methods/timemethod.cpp
+    methods/timemethod.cpp \
+    graphpropertiesdialog.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
-    qcustomplot.h \
     convertdialog.h \
     sortabletreewidgetitem.h \
     plot.h \
@@ -35,7 +34,8 @@ HEADERS  += mainwindow.h \
     checkableheaderview.h \
     methods/abstractmethod.h \
     methods/spectremethod.h \
-    methods/timemethod.h
+    methods/timemethod.h \
+    graphpropertiesdialog.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\
@@ -44,6 +44,10 @@ SOURCES += qwtchartzoom.cpp\
 HEADERS +=qwtchartzoom.h\
   qwheelzoomsvc.h\
   qaxiszoomsvc.h
+
+RESOURCES *= DeepSeaBase.qrc
+
+RC_FILE = DeepSeaBase.rc
 
 CONFIG(release, debug|release):LIBS *= C:/Qwt-6.1.0/lib/libqwt.a
 CONFIG(debug, debug|release):  LIBS *= C:/Qwt-6.1.0/lib/libqwtd.a
