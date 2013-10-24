@@ -12,6 +12,6 @@ int main(int argc, char *argv[])
 //    QTextCodec::setCodecForLocale(utfcodec);
 
     MainWindow w;
-
+    w.showMaximized();
     return a.exec();
 }

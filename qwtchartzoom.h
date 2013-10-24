@@ -77,20 +77,14 @@ public:
         double ak,bk;       // коэффициенты, задающие линейное соотношение
                             // между основной шкалой и дополнительной
 
-        bool sync;  // признак синхронизации дополнительной шкалы с основной
-
         // фиксация исходных границ шкалы
         void fix();
         // установка заданных границ шкалы
         void set(double,double);
         // восстановление исходных границ шкалы
-        void rest();
+        void reset();
         // переустановка границ дополнительной шкалы
         void dup();
-        // определение влияет ли указанная шкала на другие
-        bool affected(QwtPlot::Axis);
-        // установка количества делений на основной шкале с образца
-        void setDiv(QwtScaleDiv *);
 
     private:
         QwtPlot *plot;          // опекаемый график
@@ -113,50 +107,26 @@ public:
     // указатель на опекаемый компонент QwtPlot
     QwtPlot *plot();
     // основная горизонтальная шкала
-    QwtPlot::Axis masterH();
+    QwtPlot::Axis masterH() const;
     // дополнительная горизонтальная шкала
-    QwtPlot::Axis slaveH();
+    QwtPlot::Axis slaveH() const;
     // основная вертикальная шкала
-    QwtPlot::Axis masterV();
+    QwtPlot::Axis masterV() const;
     // дополнительная вертикальная шкала
-    QwtPlot::Axis slaveV();
+    QwtPlot::Axis slaveV() const;
 
     // установка цвета рамки, задающей новый размер графика
     void setRubberBandColor(QColor);
-    // Включение/выключение легкого режима
-    void setLightMode(bool);
 
-    // Значения режима индикации перемещения графика
-    // imNone - нет индикации
-    // imSimple - простая индикация (только рамка канвы графика)
-    // imDetailed - подробная индикация (рамка канвы и координатная сетка)
-    enum QDragIndiStyle {disNone,disSimple,disDetailed};
-
-    // включение/выключение индикации перемещаемой области графика
-    // (имеет эффект, если включен легкий режим)
-    void indicateDragBand(QDragIndiStyle);
-
-    // установка цвета виджета индикатора перемещения
-    void setDragBandColor(QColor);
     // фиксация текущих границ графика в качестве исходных
     void fixBoundaries();
-
-    // включение/выключение синхронизации дополнительной
-    // горизонтальной шкалы графика
-    void setHorSync(bool);
-    // включение/выключение синхронизации дополнительной
-    // вертикальной шкалы графика
-    void setVerSync(bool);
-    // включение/выключение синхронизации дополнительной
-    // горизонтальной и вертикальной шкалы графика
-    void setSync(bool);
 
     void updatePlot();  // обновление графика
     // фактическая фиксация текущих границ графика
     // в качестве исходных (если флаг isbF сброшен)
     void fixBounds();
     // восстановление исходных границ графика
-    void restBounds();
+    void resetBounds();
 
 protected:
     // обработчик всех событий
@@ -164,8 +134,7 @@ protected:
 
 private:
     QObject *mwin;          // Главное окно приложения
-    QwtPlot *qwtp;          // Компонент QwtPlot, который отображает график
-    bool light;             // Легкий режим (с индикацией перемещения графика)
+    QwtPlot *qwtPlot;          // Компонент QwtPlot, который отображает график
 
     double isb_xl,isb_xr;   // Исходные границы графика по оси x
     double isb_yb,isb_yt;   // исходные границы графика по оси y
@@ -186,9 +155,9 @@ private:
     QwtPlot::Axis slaveY;   // дополнительная
 
     // Интерфейс масштабирования графика
-    QMainZoomSvc *mnzmsvc;
+    QMainZoomSvc *mainZoom;
     // Интерфейс перемещения графика
-    QDragZoomSvc *drzmsvc;
+    QDragZoomSvc *dragZoom;
 
     QConvType convType;     // Тип текущего преобразования графика
     bool isbF;              // Флаг, задающий необходимость запомнить исходные границы графика
@@ -201,14 +170,6 @@ private:
     QObject *generalParent(QObject *);
     // назначение основной и дополнительной шкалы
     void allocAxis(int,int,QwtPlot::Axis *,QwtPlot::Axis *);
-
-    // непосредственное включение/выключение синхронизации
-    // дополнительной горизонтальной шкалы графика
-    bool setHSync(bool);
-    // непосредственное включение/выключение синхронизации
-    // дополнительной вертикальной шкалы графика
-    bool setVSync(bool);
-
 };
 
 /**********************************************************/
@@ -297,30 +258,12 @@ class QDragZoomSvc : public QObject
     Q_OBJECT
 
 public:
-    // конструктор
     explicit QDragZoomSvc();
-
-    // прикрепление интерфейса к менеджеру масштабирования
     void attach(QwtChartZoom *);
-
-    // включение/выключение легкого режима
-    void setLightMode(bool);
-    // включение/выключение индикации перемещаемой области
-    // (имеет эффект, если включен легкий режим)
-    void setIndicatorStyle(QwtChartZoom::QDragIndiStyle);
-    // установка цвета виджета индикатора перемещения
-    void setDragBandColor(QColor);
-
 protected:
-    // обработчик всех событий
     bool eventFilter(QObject *,QEvent *);
-
 private:
     QwtChartZoom *zoom;     // Опекаемый менеджер масштабирования
-    bool light;             // Легкий режим (с индикацией перемещения)
-    QwtChartZoom::QDragIndiStyle indiDrB;   // Режим индикации перемещения графика
-    QWidget *zwid;          // Виджет для отображения индикатора перемещения графика
-    QColor dwClr;           // Цвет виджета, индицирующего перемещения графика
     QCursor tCursor;        // Буфер для временного хранения курсора
 
     double scb_xl,scb_xr;   // Текущие границы графика по горизонтальной оси
@@ -332,14 +275,6 @@ private:
     int scp_x,scp_y;        // Положение курсора в момент начала преобразования
                             // (в пикселах относительно канвы графика)
 
-    // добавление в маску индикатора вертикальных линий сетки
-    // для меток горизонтальной шкалы
-    QRegion addHorTicks(QRegion,QwtScaleDiv::TickType);
-    // добавление в маску индикатора горизонтальных линий сетки
-    // для меток вертикальной шкалы
-    QRegion addVerTicks(QRegion,QwtScaleDiv::TickType);
-    // прорисовка изображения индикатора перемещения
-    void showDragWidget(QPoint);
     // применение результатов перемещения графика
     void applyDrag(QPoint);
 
@@ -351,7 +286,7 @@ private:
     void startDrag(QMouseEvent *);
     // обработчик перемещения мыши
     // (выполнение перемещения или выбор нового положения графика)
-    void procDrag(QMouseEvent *);
+    void proceedDrag(QMouseEvent *);
     // обработчик отпускания кнопки мыши
     // (выключение перемещения графика)
     void endDrag(QMouseEvent *);

@@ -98,9 +98,6 @@ Plot::Plot(QWidget *parent) :
     insertLegend(leg, QwtPlot::RightLegend);
 
 
-    //zoom = new QwtPlotZoomer(this->canvas());
-//setAlignCanvasToScales( true );
-
     zoom = new QwtChartZoom(this);
     wheelZoom = new QWheelZoomSvc();
     wheelZoom->attach(zoom);
@@ -169,11 +166,9 @@ void Plot::deleteGraphs()
 
 void Plot::deleteGraphs(const QString &dfdGuid)
 {
-    qDebug()<<dfdGuid;
     for (int i = graphs.size()-1; i>=0; --i) {
         Curve *graph = graphs[i];
-        qDebug()<<graph->dfd->DFDGUID;
-        if (dfdGuid == graph->dfd->DFDGUID) {qDebug()<<"is";
+        if (dfdGuid == graph->dfd->DFDGUID) {
             deleteGraph(graph, true);
         }
     }

@@ -20,15 +20,6 @@
 QAxisZoomSvc::QAxisZoomSvc() :
     QObject()
 {
-    // по умолчанию легкий режим выключен
-    light = false;
-    // очищаем виджет, отвечающий за отображение индикатора
-    zwid = 0;
-    // и назначаем цвет виджета, индицирующего масштабирование шкалы
-    awClr = Qt::black;
-    // по умолчанию масштабирование шкалы индицируется
-    // (но только в том случае, если включен легкий режим)
-    indiAxZ = true;
 }
 
 // Прикрепление интерфейса к менеджеру масштабирования
@@ -42,34 +33,19 @@ void QAxisZoomSvc::attach(QwtChartZoom *zm)
         zoom->plot()->axisWidget(ax)->installEventFilter(this);
 }
 
-// Включение/выключение легкого режима
-void QAxisZoomSvc::setLightMode(bool lm) {
-    light = lm;
-}
-
-// Установка цвета виджета, индицирующего масштабирование шкалы
-void QAxisZoomSvc::setAxisRubberBandColor(QColor clr) {
-    awClr = clr;
-}
-
-// Включение/выключение индикации масштабирования шкалы
-// (имеет эффект, если включен легкий режим)
-void QAxisZoomSvc::indicateAxisZoom(bool indi) {
-    indiAxZ = indi;
-}
-
 // Обработчик всех событий
 bool QAxisZoomSvc::eventFilter(QObject *target,QEvent *event)
 {
-    int ax = -1;    // шкала пока не найдена
+    int ax = -1;
     // просматриваем список шкал
     for (int a=0; a < QwtPlot::axisCnt; a++)
         // если событие произошло для данной шкалы, то
         if (target == zoom->plot()->axisWidget(a))
         {
             ax = a;     // запоминаем номер шкалы
-            break;      // прекращаем поиск
+            break;
         }
+
     // если шкала была найдена, то
     if (ax >= 0)
         // если произошло одно из событий от мыши, то
@@ -121,28 +97,28 @@ QRect *QAxisZoomSvc::axisZoomRect(QPoint evpos,int ax)
         if (ct == QwtChartZoom::ctAxisHR)
         {
             // ограничение на положение курсора слева
-            int mn = floor(scb_pw/16);
+            int mn = floor(currentPixelWidth/16);
             // если курсор слишком близко к левой границе, то
             if (x < mn) x = mn;
             // ширина прямоугольника
-            ww = floor(x * scb_pw / scp_x);
+            ww = floor(x * currentPixelWidth / cursorPosX);
             // применяем ограничения
-            ww = limitSize(ww,scb_pw);
+            ww = limitSize(ww,currentPixelWidth);
             // левый отступ прямоугольника
             wl = sab_pxl;
         }
         else    // иначе (изменяется левая граница)
         {
             // ограничение на положение курсора справа
-            int mx = floor(15*scb_pw/16);
+            int mx = floor(15*currentPixelWidth/16);
             // если курсор слишком близко к правой границе, то
             if (x > mx) x = mx;
             // ширина прямоугольника
-            ww = floor((scb_pw - x) * scb_pw / (scb_pw - scp_x));
+            ww = floor((currentPixelWidth - x) * currentPixelWidth / (currentPixelWidth - cursorPosX));
             // применяем ограничения
-            ww = limitSize(ww,scb_pw);
+            ww = limitSize(ww,currentPixelWidth);
             // левый отступ прямоугольника
-            wl = sab_pxl + scb_pw - ww;
+            wl = sab_pxl + currentPixelWidth - ww;
         }
         // высота прямоугольника
         wh = 4;
@@ -159,28 +135,28 @@ QRect *QAxisZoomSvc::axisZoomRect(QPoint evpos,int ax)
         if (ct == QwtChartZoom::ctAxisVB)
         {
             // ограничение на положение курсора сверху
-            int mn = floor(scb_ph/16);
+            int mn = floor(currentPixelHeight/16);
             // если курсор слишком близко к верхней границе, то
             if (y < mn) y = mn;
             // высота прямоугольника
-            wh = floor(y * scb_ph / scp_y);
+            wh = floor(y * currentPixelHeight / cursorPosY);
             // применяем ограничения
-            wh = limitSize(wh,scb_ph);
+            wh = limitSize(wh,currentPixelHeight);
             // верхний отступ прямоугольника
             wt = sab_pyt;
         }
         else    // иначе (изменяется верхняя граница)
         {
             // ограничение на положение курсора снизу
-            int mx = floor(15*scb_ph/16);
+            int mx = floor(15*currentPixelHeight/16);
             // если курсор слишком близко к нижней границе, то
             if (y > mx) y = mx;
             // высота прямоугольника
-            wh = floor((scb_ph - y) * scb_ph / (scb_ph - scp_y));
+            wh = floor((currentPixelHeight - y) * currentPixelHeight / (currentPixelHeight - cursorPosY));
             // применяем ограничения
-            wh = limitSize(wh,scb_ph);
+            wh = limitSize(wh,currentPixelHeight);
             // верхний отступ прямоугольника = смещению курсора
-            wt = sab_pyt + scb_ph - wh;
+            wt = sab_pyt + currentPixelHeight - wh;
         }
         // ширина прямоугольника
         ww = 4;
@@ -196,69 +172,11 @@ QRect *QAxisZoomSvc::axisZoomRect(QPoint evpos,int ax)
     return new QRect(wl,wt,ww,wh);
 }
 
-// Прорисовка виджета масштабируемой шкалы
-void QAxisZoomSvc::showZoomWidget(QPoint evpos,int ax)
-{
-    // получаем геометрию индикации масштабирования шкалы
-    QRect *zr = axisZoomRect(evpos,ax);
-    // для удобства запоминаем
-    int w = zr->width();    // ширину
-    int hw = floor(w/2);    // полуширину
-    int h = zr->height();   // высоту
-    int hh = floor(h/2);    // полувысоту
-    // устанавливаем положение и размеры виджета, индицирующего
-    // масштабирование шкалы, в соответствии с найденой геометрией
-    zwid->setGeometry(*zr);
-    // удаляем геометрию индикации масштабирования шкалы
-    delete zr;
-    // читаем режим масштабирования
-    QwtChartZoom::QConvType ct = zoom->regim();
-    // формируем маску для виджета, индицирующего масштабирование шкалы
-    QRegion rw = QRegion(0,0,w,h);  // непрозрачная область
-    QRegion rs; // объявляем прозрачную область
-    // если масштабируется горизонтальная шкала
-    if (ax == QwtPlot::xBottom || ax == QwtPlot::xTop)
-    {
-        // если изменяется правая граница шкалы, то
-        if (ct == QwtChartZoom::ctAxisHR)
-            // прозрачная область будет слева
-            rs = QRegion(1,1,hw-1,h-2);
-        // иначе (изменяется левая граница шкалы)
-        // прозрачная область будет справа
-        else rs = QRegion(w-hw,1,hw-1,h-2);
-    }
-    else    // иначе (масштабируется вертикальная шкала)
-    {
-        // если изменяется нижняя граница шкалы, то
-        if (ct == QwtChartZoom::ctAxisVB)
-            // прозрачная область будет сверху
-            rs = QRegion(1,1,w-2,hh-1);
-        // иначе (изменяется верхняя граница шкалы)
-        // прозрачная область будет снизу
-        else rs = QRegion(1,h-hh,w-2,hh-1);
-    }
-    // устанавливаем маску путем вычитания из непрозрачной области прозрачной
-    zwid->setMask(rw.subtracted(rs));
-    // делаем виджет, индицирующий масштабирование шкалы, видимым
-    zwid->setVisible(true);
-    // перерисовываем виджет
-    zwid->repaint();
-}
-
 // Ограничение нового размера шкалы
 double QAxisZoomSvc::limitScale(double sz,double bs)
 {
     // максимум
     double mx = 16*bs;
-    if (light)  // если легкий режим, то
-    {
-        // легкий минимум
-        double mn = 16*bs/31;
-        // ограничение минимального размера
-        if (sz < mn) sz = mn;
-        // легкий максимум
-        mx = 31*bs/16;
-    }
     // ограничение максимального размера
     if (sz > mx) sz = mx;
     return sz;
@@ -286,15 +204,15 @@ void QAxisZoomSvc::axisApplyMove(QPoint evpos,int ax)
     case QwtChartZoom::ctAxisHL:
     {
         // ограничение на положение курсора справа
-        if (x >= scb_pw) x = scb_pw-1;
+        if (x >= currentPixelWidth) x = currentPixelWidth-1;
         // вычисляем новую ширину шкалы
-        double wx = scb_wx * (scb_pw - scp_x) / (scb_pw - x);
+        double wx = currentWidth * (currentPixelWidth - cursorPosX) / (currentPixelWidth - x);
         // применяем ограничения
-        wx = limitScale(wx,scb_wx);
+        wx = limitScale(wx,currentWidth);
         // вычисляем новую левую границу
-        double xl = scb_xr - wx;
+        double xl = currentRightBorder - wx;
         // устанавливаем ее для горизонтальной шкалы
-        zoom->isb_x->set(xl,scb_xr);
+        zoom->isb_x->set(xl,currentRightBorder);
         bndCh = true;   // изменилась граница
         break;
     }
@@ -304,13 +222,13 @@ void QAxisZoomSvc::axisApplyMove(QPoint evpos,int ax)
         // ограничение на положение курсора слева
         if (x <= 0) x = 1;
         // вычисляем новую ширину шкалы
-        double wx = scb_wx * scp_x / x;
+        double wx = currentWidth * cursorPosX / x;
         // применяем ограничения
-        wx = limitScale(wx,scb_wx);
+        wx = limitScale(wx,currentWidth);
         // вычисляем новую правую границу
-        double xr = scb_xl + wx;
+        double xr = currentLeftBorder + wx;
         // устанавливаем ее для горизонтальной шкалы
-        zoom->isb_x->set(scb_xl,xr);
+        zoom->isb_x->set(currentLeftBorder,xr);
         bndCh = true;   // изменилась граница
         break;
     }
@@ -320,13 +238,13 @@ void QAxisZoomSvc::axisApplyMove(QPoint evpos,int ax)
         // ограничение на положение курсора сверху
         if (y <= 0) y = 1;
         // вычисляем новую высоту шкалы
-        double hy = scb_hy * scp_y / y;
+        double hy = currentHeight * cursorPosY / y;
         // применяем ограничения
-        hy = limitScale(hy,scb_hy);
+        hy = limitScale(hy,currentHeight);
         // вычисляем новую нижнюю границу
-        double yb = scb_yt - hy;
+        double yb = currentTopBorder - hy;
         // устанавливаем ее для вертикальной шкалы
-        zoom->isb_y->set(yb,scb_yt);
+        zoom->isb_y->set(yb,currentTopBorder);
         bndCh = true;   // изменилась граница
         break;
     }
@@ -334,15 +252,15 @@ void QAxisZoomSvc::axisApplyMove(QPoint evpos,int ax)
     case QwtChartZoom::ctAxisVT:
     {
         // ограничение на положение курсора снизу
-        if (y >= scb_ph) y = scb_ph-1;
+        if (y >= currentPixelHeight) y = currentPixelHeight-1;
         // вычисляем новую высоту шкалы
-        double hy = scb_hy * (scb_ph - scp_y) / (scb_ph - y);
+        double hy = currentHeight * (currentPixelHeight - cursorPosY) / (currentPixelHeight - y);
         // применяем ограничения
-        hy = limitScale(hy,scb_hy);
+        hy = limitScale(hy,currentHeight);
         // вычисляем новую верхнюю границу
-        double yt = scb_yb + hy;
+        double yt = currentBottomBorder + hy;
         // устанавливаем ее для вертикальной шкалы
-        zoom->isb_y->set(scb_yb,yt);
+        zoom->isb_y->set(currentBottomBorder,yt);
         bndCh = true;   // изменилась граница
         break;
     }
@@ -354,27 +272,30 @@ void QAxisZoomSvc::axisApplyMove(QPoint evpos,int ax)
 }
 
 // Обработчик событий от мыши для шкалы
-void QAxisZoomSvc::axisMouseEvent(QEvent *event,int a)
+void QAxisZoomSvc::axisMouseEvent(QEvent *event,int axis)
 {
-    // создаем указатель на событие от мыши
     QMouseEvent *mEvent = static_cast<QMouseEvent *>(event);
-    // в зависимости от типа события вызываем соответствующий обработчик
     switch (event->type())
     {
-        // нажата кнопка мыши
-    case QEvent::MouseButtonPress: startAxisZoom(mEvent,a); break;
-        // перемещение мыши
-    case QEvent::MouseMove: procAxisZoom(mEvent,a); break;
-        // отпущена кнопка мыши
-    case QEvent::MouseButtonRelease: endAxisZoom(mEvent,a); break;
-        // для прочих событий ничего не делаем
-    default: ;
+        case QEvent::MouseButtonPress:
+            startAxisZoom(mEvent,axis);
+            break;
+
+        case QEvent::MouseMove:
+            proceedAxisZoom(mEvent,axis);
+            break;
+
+        case QEvent::MouseButtonRelease:
+            endAxisZoom(mEvent,axis);
+            break;
+
+        default: ;
     }
 }
 
 // Обработчик нажатия на кнопку мыши над шкалой
 // (включение изменения масштаба шкалы)
-void QAxisZoomSvc::startAxisZoom(QMouseEvent *mEvent,int ax)
+void QAxisZoomSvc::startAxisZoom(QMouseEvent *event, int axis)
 {
     // фиксируем исходные границы графика (если этого еще не было сделано)
     zoom->fixBounds();
@@ -383,53 +304,59 @@ void QAxisZoomSvc::startAxisZoom(QMouseEvent *mEvent,int ax)
     {
         // если нажата левая кнопка мыши, то
         // включаем один из режимов масштабирования
-        if (mEvent->button() == Qt::LeftButton)
+        if (event->button() == Qt::LeftButton)
         {
             // получаем указатели на
-            QwtPlot *plt = zoom->plot();                // график
-            QwtScaleWidget *sw = plt->axisWidget(ax);   // виджет шкалы
+            QwtPlot *plot = zoom->plot();                // график
+            QwtScaleWidget *scaleWidget = plot->axisWidget(axis);   // виджет шкалы
+
+
             // получаем карту основной горизонтальной шкалы
-            QwtScaleMap sm = plt->canvasMap(zoom->masterH());
-            // для того чтобы фиксировать начальные левую и правую границы
-            scb_xl = sm.s1(); scb_xr = sm.s2(); scb_wx = sm.sDist();
+            QwtScaleMap sm = plot->canvasMap(zoom->masterH());
+            currentLeftBorder = sm.s1();
+            currentRightBorder = sm.s2();
+            currentWidth = sm.sDist();
+
             // аналогично получаем карту основной вертикальной шкалы
-            sm = plt->canvasMap(zoom->masterV());
-            // для того чтобы фиксировать начальные нижнюю и верхнюю границы
-            scb_yb = sm.s1(); scb_yt = sm.s2(); scb_hy = sm.sDist();
+            sm = plot->canvasMap(zoom->masterV());
+            currentBottomBorder = sm.s1();
+            currentTopBorder = sm.s2();
+            currentHeight = sm.sDist();
+
             // определяем (для удобства) геометрию
-            QRect gc = plt->canvas()->geometry();   // канвы графика
-            QRect gw = sw->geometry();              // и виджета шкалы
+            QRect canvasGeometry = plot->canvas()->geometry();   // канвы графика
+            QRect scaleWidgetGeometry = scaleWidget->geometry();              // и виджета шкалы
             // текущее левое смещение графика (в пикселах относительно канвы)
-            scb_pxl = plt->transform(zoom->masterH(),scb_xl);
+            scb_pxl = plot->transform(zoom->masterH(), currentLeftBorder);
             // текущая ширина графика (в пикселах)
-            scb_pw = plt->transform(zoom->masterH(),scb_xr) - scb_pxl;
+            currentPixelWidth = plot->transform(zoom->masterH(),currentRightBorder) - scb_pxl;
             // текущее левое смещение графика
             // (в пикселах относительно виджета шкалы)
-            sab_pxl = scb_pxl + gc.x() - gw.x();
+            sab_pxl = scb_pxl + canvasGeometry.x() - scaleWidgetGeometry.x();
             // текущее верхнее смещение графика (в пикселах относительно канвы)
-            scb_pyt = plt->transform(zoom->masterV(),scb_yt);
+            scb_pyt = plot->transform(zoom->masterV(),currentTopBorder);
             // текущая высота графика (в пикселах)
-            scb_ph = plt->transform(zoom->masterV(),scb_yb) - scb_pyt;
+            currentPixelHeight = plot->transform(zoom->masterV(),currentBottomBorder) - scb_pyt;
             // текущее верхнее смещение графика
             // (в пикселах относительно виджета шкалы)
-            sab_pyt = scb_pyt + gc.y() - gw.y();
+            sab_pyt = scb_pyt + canvasGeometry.y() - scaleWidgetGeometry.y();
             // запоминаем текущее положение курсора относительно канвы
             // (за вычетом смещений графика)
-            scp_x = mEvent->pos().x() - sab_pxl;
-            scp_y = mEvent->pos().y() - sab_pyt;
+            cursorPosX = event->pos().x() - sab_pxl;
+            cursorPosY = event->pos().y() - sab_pyt;
             // если масштабируется горизонтальная шкала
-            if (ax == QwtPlot::xBottom ||
-                ax == QwtPlot::xTop)
+            if (axis == QwtPlot::xBottom ||
+                axis == QwtPlot::xTop)
             {
                 // если левая граница меньше правой,
-                if (scb_wx > 0)
+                if (currentWidth > 0)
                     // если ширина канвы больше минимума,
-                    if (scb_pw > 36)
+                    if (currentPixelWidth > 36)
                     {
                         // в зависимости от положения курсора
                         // (правее или левее середины шкалы)
                         // включаем соответствующий режим - изменение
-                        if (scp_x >= floor(scb_pw/2))
+                        if (cursorPosX >= floor(currentPixelWidth/2))
                             zoom->setRegim(QwtChartZoom::ctAxisHR);     // правой границы
                         else zoom->setRegim(QwtChartZoom::ctAxisHL);    // или левой
                     }
@@ -437,14 +364,14 @@ void QAxisZoomSvc::startAxisZoom(QMouseEvent *mEvent,int ax)
             else    // иначе (масштабируется вертикальная шкала)
             {
                 // если нижняя граница меньше верхней,
-                if (scb_hy > 0)
+                if (currentHeight > 0)
                     // если высота канвы больше минимума,
-                    if (scb_ph > 18)
+                    if (currentPixelHeight > 18)
                     {
                         // в зависимости от положения курсора
                         // (ниже или выше середины шкалы)
                         // включаем соответствующий режим - изменение
-                        if (scp_y >= floor(scb_ph/2))
+                        if (cursorPosY >= floor(currentPixelHeight/2))
                             zoom->setRegim(QwtChartZoom::ctAxisVB);     // нижней границы
                         else zoom->setRegim(QwtChartZoom::ctAxisVT);    // или верхней
                     }
@@ -453,21 +380,9 @@ void QAxisZoomSvc::startAxisZoom(QMouseEvent *mEvent,int ax)
             if (zoom->regim() != QwtChartZoom::ctNone)
             {
                 // запоминаем текущий курсор
-                tCursor = sw->cursor();
+                cursor = scaleWidget->cursor();
                 // устанавливаем курсор PointingHand
-                sw->setCursor(Qt::PointingHandCursor);
-                // если легкий режим и включена индикация, то
-                if (light && indiAxZ)
-                {
-                    // создаем виджет, индицирующий масштабирование шкалы
-                    zwid = new QWidget(plt->axisWidget(ax));
-                    // назначаем ему цвет
-                    zwid->setStyleSheet(QString(
-                        "background-color:rgb(%1,%2,%3);").arg(
-                        awClr.red()).arg(awClr.green()).arg(awClr.blue()));
-                    // и прорисовываем
-                    showZoomWidget(mEvent->pos(),ax);
-                }
+                scaleWidget->setCursor(Qt::PointingHandCursor);
             }
         }
     }
@@ -475,7 +390,7 @@ void QAxisZoomSvc::startAxisZoom(QMouseEvent *mEvent,int ax)
 
 // Обработчик перемещения мыши
 // (выделение новых границ шкалы)
-void QAxisZoomSvc::procAxisZoom(QMouseEvent *mEvent,int ax)
+void QAxisZoomSvc::proceedAxisZoom(QMouseEvent *mEvent,int ax)
 {
     // читаем режим масштабирования
     QwtChartZoom::QConvType ct = zoom->regim();
@@ -484,13 +399,8 @@ void QAxisZoomSvc::procAxisZoom(QMouseEvent *mEvent,int ax)
         ct != QwtChartZoom::ctAxisHR &&
         ct != QwtChartZoom::ctAxisVB &&
         ct != QwtChartZoom::ctAxisVT) return;
-    if (light)  // если легкий режим, то
-    {
-        // если включена индикация, то прорисовываем виджет индикатора
-        if (indiAxZ) showZoomWidget(mEvent->pos(),ax);
-    }
-    // иначе применяем результаты перемещения границы шкалы
-    else axisApplyMove(mEvent->pos(),ax);
+    // применяем результаты перемещения границы шкалы
+    axisApplyMove(mEvent->pos(),ax);
 }
 
 // Обработчик отпускания кнопки мыши
@@ -507,15 +417,8 @@ void QAxisZoomSvc::endAxisZoom(QMouseEvent *mEvent,int ax)
     // если отпущена левая кнопка мыши, то
     if (mEvent->button() == Qt::LeftButton)
     {
-        if (light)  // если легкий режим, то
-        {
-            // если включена индикация, то удаляем виджет индикатора
-            if (indiAxZ) delete zwid;
-            // применяем результаты перемещения границы шкалы
-            axisApplyMove(mEvent->pos(),ax);
-        }
         // воостанавливаем курсор
-        zoom->plot()->axisWidget(ax)->setCursor(tCursor);
+        zoom->plot()->axisWidget(ax)->setCursor(cursor);
         // выключаем режим масштабирования
         zoom->setRegim(QwtChartZoom::ctNone);
     }

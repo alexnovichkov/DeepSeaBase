@@ -19,13 +19,13 @@ class QTreeWidget;
 class QStatusBar;
 class QFileSystemModel;
 class QTreeView;
-class QSplitter;
 class QTableWidget;
 class QTreeWidgetItem;
 class QScrollBar;
 class Channel;
 class QTableWidgetItem;
 
+class TabWidget;
 class CheckableHeaderView;
 
 class Plot;
@@ -37,7 +37,20 @@ class QwtPlotCurve;
 
 class Curve;
 
-typedef QStringList FileRecord;
+#include <QSplitter>
+
+class Tab : public QSplitter
+{
+    Q_OBJECT
+public:
+    Tab(QWidget * parent) : QSplitter(parent) {}
+
+    CheckableHeaderView *tableHeader;
+    QLabel *filePathLabel;
+    QTreeWidget *tree;
+    QTableWidget *channelsTable;
+    QList<QStringList> files;
+};
 
 class MainWindow : public QMainWindow
 {
@@ -105,6 +118,13 @@ private slots:
      */
     void rescanBase();
 
+    void createNewTab();
+
+    void closeTab(int);
+    void closeOtherTabs(int);
+    void renameTab(int i);
+    void changeCurrentTab(int currentIndex);
+    void onTabTextChanged();
 private:
     void addFiles(QList<QStringList> &files, bool addToDatabase);
     void addFiles(const QStringList &files, bool addToDatabase);
@@ -117,10 +137,14 @@ private:
     void rescanDeadRecords();
     void removeDeadRecords();
 
+    void createTab(const QString &name, const QVariantList &files);
+
+    QStringList tabsNames;
+
     QTreeWidget *tree;
     QTableWidget *channelsTable;
 
-    QList<FileRecord> alreadyAddedFiles;
+    QList<QStringList> *alreadyAddedFiles;
     DfdFileDescriptor *record;
 
 
@@ -136,10 +160,10 @@ private:
     Plot *plot;
 
     QSplitter *splitter;
-    QSplitter *upperSplitter;
     CheckableHeaderView *tableHeader;
     QLabel *filePathLabel;
 
+    TabWidget *tabWidget;
 
 };
 

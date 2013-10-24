@@ -1,5 +1,7 @@
 <RCC>
     <qresource prefix="/">
         <file>icons/cursor.png</file>
+        <file>icons/newTab.png</file>
+        <file>icons/cross.png</file>
     </qresource>
 </RCC>

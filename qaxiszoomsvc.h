@@ -32,44 +32,31 @@ public:
     // прикрепление интерфейса к менеджеру масштабирования
     void attach(QwtChartZoom *);
 
-    // включение/выключение легкого режима
-    void setLightMode(bool);
-    // установка цвета виджета, индицирующего масштабирование шкалы
-    void setAxisRubberBandColor(QColor);
-    // включение/выключение индикации масштабирования шкалы
-    // (имеет эффект, если включен легкий режим)
-    void indicateAxisZoom(bool);
-
 protected:
     // обработчик всех событий
     bool eventFilter(QObject *,QEvent *);
 
 private:
     QwtChartZoom *zoom;     // Опекаемый менеджер масштабирования
-    bool light;             // Легкий режим (с индикацией масштабирования)
-    QWidget *zwid;          // Виджет для отображения индикатора масштабирование шкалы
-    QColor awClr;           // Цвет виджета, индицирующего масштабирование шкалы
-    bool indiAxZ;           // Флаг индикации масштабирования шкалы
-    QCursor tCursor;        // Буфер для временного хранения курсора
 
-    double scb_xl,scb_xr;   // Текущие границы графика по оси x в момент начала преобразования
-    double scb_yb,scb_yt;   // Текущие границы графика по оси y в момент начала преобразования
-    double scb_wx,scb_hy;   // Текущие ширина и высота графика в момент начала преобразования
-    int scb_pxl,scb_pyt;    // Текущие левое и верхнее смещение графика в момент начала преобразования
+    QCursor cursor;        // Буфер для временного хранения курсора
+
+    double currentLeftBorder, currentRightBorder;   // Текущие границы графика по оси x в момент начала преобразования
+    double currentBottomBorder, currentTopBorder;   // Текущие границы графика по оси y в момент начала преобразования
+    double currentWidth, currentHeight;   // Текущие ширина и высота графика в момент начала преобразования
+    int scb_pxl, scb_pyt;    // Текущие левое и верхнее смещение графика в момент начала преобразования
                             // (в пикселах относительно канвы)
-    int scb_pw,scb_ph;      // Текущие ширина и высота графика в момент начала преобразования
+    int currentPixelWidth, currentPixelHeight;      // Текущие ширина и высота графика в момент начала преобразования
                             // (в пикселах)
-    int scp_x,scp_y;        // Положение курсора в момент начала преобразования
+    int cursorPosX, cursorPosY;        // Положение курсора в момент начала преобразования
                             // (в пикселах относительно канвы графика за вычетом смещений графика)
-    int sab_pxl,sab_pyt;    // Текущие левое и верхнее смещение графика в момент начала преобразования
+    int sab_pxl, sab_pyt;    // Текущие левое и верхнее смещение графика в момент начала преобразования
                             // (в пикселах относительно виджета шкалы)
 
     // ограничение размера индикатора
     int limitSize(int,int);
     // получение геометрии индикации масштабирования шкалы
     QRect *axisZoomRect(QPoint,int);
-    // прорисовка изображения масштабируемой шкалы
-    void showZoomWidget(QPoint,int);
 
     // ограничение нового размера шкалы
     double limitScale(double,double);
@@ -77,14 +64,14 @@ private:
     void axisApplyMove(QPoint,int);
 
     // обработчик событий от мыши для шкалы
-    void axisMouseEvent(QEvent *,int);
+    void axisMouseEvent(QEvent *event, int axis);
 
     // обработчик нажатия на кнопку мыши над шкалой
     // (включение изменения масштаба шкалы)
-    void startAxisZoom(QMouseEvent *,int);
+    void startAxisZoom(QMouseEvent *event, int axis);
     // обработчик перемещения мыши
     // (выделение новых границ шкалы)
-    void procAxisZoom(QMouseEvent *,int);
+    void proceedAxisZoom(QMouseEvent *,int);
     // обработчик отпускания кнопки мыши
     // (выполнение изменения масштаба шкалы)
     void endAxisZoom(QMouseEvent *,int);
