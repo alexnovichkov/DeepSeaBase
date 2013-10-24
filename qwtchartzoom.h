@@ -29,6 +29,8 @@
 
 class QMainZoomSvc; // интерфейс масштабирования графика
 class QDragZoomSvc; // интерфейс перемещения графика
+class QWheelZoomSvc;
+class QAxisZoomSvc;
 
 class QwtChartZoom : public QObject
 {
@@ -80,7 +82,7 @@ public:
         // фиксация исходных границ шкалы
         void fix();
         // установка заданных границ шкалы
-        void set(double,double);
+        void set(double, double, int axis);
         // восстановление исходных границ шкалы
         void reset();
         // переустановка границ дополнительной шкалы
@@ -102,7 +104,7 @@ public:
     // текущий режим масштабирования
     QConvType regim();
     // переключение режима масштабирования
-    void setRegim(QConvType);
+    void setRegime(QConvType);
 
     // указатель на опекаемый компонент QwtPlot
     QwtPlot *plot();
@@ -159,6 +161,9 @@ private:
     // Интерфейс перемещения графика
     QDragZoomSvc *dragZoom;
 
+    QWheelZoomSvc *wheelZoom;
+    QAxisZoomSvc *axisZoom;
+
     QConvType convType;     // Тип текущего преобразования графика
     bool isbF;              // Флаг, задающий необходимость запомнить исходные границы графика
                             // Если isbF сброшен, то при первом нажатии на кнопку текущие границы
@@ -168,8 +173,6 @@ private:
 
     // определение главного родителя
     QObject *generalParent(QObject *);
-    // назначение основной и дополнительной шкалы
-    void allocAxis(int,int,QwtPlot::Axis *,QwtPlot::Axis *);
 };
 
 /**********************************************************/

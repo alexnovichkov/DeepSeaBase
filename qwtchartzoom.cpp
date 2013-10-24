@@ -13,7 +13,8 @@
 /**********************************************************/
 
 #include "qwtchartzoom.h"
-
+#include "qwheelzoomsvc.h"
+#include "qaxiszoomsvc.h"
 #include <qwt_scale_widget.h>
 
 // Конструктор
@@ -36,48 +37,13 @@ QwtChartZoom::QwtChartZoom(QwtPlot *qp) :
     // устанавливаем ему свойство, разрешающее обрабатывать события от клавиатуры
     qp->setFocusPolicy(Qt::StrongFocus);
 
-    // Координатная сетка
-    QwtPlotGrid *grid = NULL;
-    // оси, к которым она прикреплена
-    int xAx;    // горизонтальная
-    int yAx;    // вертикальная
-    // получаем список элементов графика
-    QwtPlotItemList pil = qp->itemList();
-    // перебираем список элементов
-    for (int k=0; k < pil.count(); k++)
-    {
-        // получаем указатель на элемент
-        QwtPlotItem *pi = pil.at(k);
-        // если это координатная сетка, то
-        if (pi->rtti() == QwtPlotItem::Rtti_PlotGrid)
-        {
-            // запоминаем указатель на нее
-            grid = (QwtPlotGrid *)pi;
-            // выясняем к какой оси она прикреплена
-            xAx = grid->xAxis();    // из пары горизонтальных
-            yAx = grid->yAxis();    // и пары вертикальных
-            // прекращаем просмотр списка элементов
-            break;
-        }
-    }
-    // если координатная сетка была найдена, то
-    if (grid != NULL)
-    {
-        // назначаем основную и дополнительную шкалу, отдавая предпочтение
-        // той, к которой прикреплена сетка
-            // горизонтальную
-        allocAxis(xAx,QwtPlot::xBottom + QwtPlot::xTop - xAx,&masterX,&slaveX);
-            // вертикальную
-        allocAxis(yAx,QwtPlot::yLeft + QwtPlot::yRight - yAx,&masterY,&slaveY);
-    }
-    else    // иначе (координатная сетка отсутствует)
-    {
-        // назначаем основную и дополнительную шкалу, отдавая предпочтение
-            // нижней из горизонтальных
-        allocAxis(QwtPlot::xBottom,QwtPlot::xTop,&masterX,&slaveX);
-            // и левой из вертикальных
-        allocAxis(QwtPlot::yLeft,QwtPlot::yRight,&masterY,&slaveY);
-    }
+    // назначаем основную и дополнительную шкалу
+    masterX = QwtPlot::xBottom;
+    slaveX = QwtPlot::xTop;
+
+    masterY = QwtPlot::yLeft;
+    slaveY = QwtPlot::yRight;
+
     // запоминаем количество делений на горизонтальной шкале
     mstHorDiv = qp->axisMaxMajor(masterX);
     slvHorDiv = qp->axisMaxMajor(slaveX);
@@ -97,13 +63,17 @@ QwtChartZoom::QwtChartZoom(QwtPlot *qp) :
 
     // создаем интерфейс масштабирования графика
     mainZoom = new QMainZoomSvc();
-    // и прикрепляем его к менеджеру
     mainZoom->attach(this);
 
     // создаем интерфейс перемещенния графика
     dragZoom = new QDragZoomSvc();
-    // и прикрепляем его к менеджеру
     dragZoom->attach(this);
+
+    wheelZoom = new QWheelZoomSvc();
+    wheelZoom->attach(this);
+
+    axisZoom = new QAxisZoomSvc();
+    axisZoom->attach(this);
 }
 
 // Деструктор
@@ -113,6 +83,8 @@ QwtChartZoom::~QwtChartZoom()
     delete dragZoom;
     // удаляем интерфейс масштабирования графика
     delete mainZoom;
+    delete axisZoom;
+    delete wheelZoom;
     // удаляем контейнеры границ шкалы
     delete isb_x;    // горизонтальной
     delete isb_y;    // и вертикальной
@@ -139,47 +111,13 @@ QObject *QwtChartZoom::generalParent(QObject *p)
     return gp;
 }
 
-// Назначение основной и дополнительной шкалы
-void QwtChartZoom::allocAxis(int pre,int alt,
-    QwtPlot::Axis *master,QwtPlot::Axis *slave)
-{
-    // получаем карту предпочтительной шкалы
-    QwtScaleMap smp = qwtPlot->canvasMap(pre); // предпочтительной шкалы
-    QwtScaleMap sma = qwtPlot->canvasMap(alt); // и альтернативной
-    // если предпочтительная шкала доступна или
-    // альтернативная шкала недоступна и при этом
-    // границы предпочтительной шкалы не совпадают или
-    // границы альтернативной шкалы совпадают, то
-    if ((qwtPlot->axisEnabled(pre) ||
-        !qwtPlot->axisEnabled(alt)) &&
-        (smp.s1() != smp.s2() ||
-         sma.s1() == sma.s2()))
-    {
-        // назначаем предпочтительную шкалу основной,
-        *master = (QwtPlot::Axis)pre;
-        // а альтернативную дополнительной
-        *slave = (QwtPlot::Axis)alt;
-    }
-    else    // иначе
-            // (предпочтительная шкала недоступна и
-            // альтернативная шкала доступна или
-            // границы предпочтительной шкалы совпадают и
-            // границы альтернативной шкалы не совпадают)
-    {
-        // назначаем альтернативную шкалу основной,
-        *master = (QwtPlot::Axis)alt;
-        // а предпочтительную дополнительной
-        *slave = (QwtPlot::Axis)pre;
-    }
-}
-
 // Текущий режим масштабирования
 QwtChartZoom::QConvType QwtChartZoom::regim() {
     return convType;
 }
 
 // Переключение режима масштабирования
-void QwtChartZoom::setRegim(QwtChartZoom::QConvType ct) {
+void QwtChartZoom::setRegime(QwtChartZoom::QConvType ct) {
     convType = ct;
 }
 
@@ -317,18 +255,18 @@ void QwtChartZoom::QScaleBounds::fix()
 }
 
 // Установка заданных границ шкалы
-void QwtChartZoom::QScaleBounds::set(double mn,double mx)
+void QwtChartZoom::QScaleBounds::set(double mn, double mx, int axis)
 {
     // если границы еще не фиксированы, фиксируем их
     if (!fixed) fix();
     // устанавливаем нижнюю и верхнюю границы шкалы
-    plot->setAxisScale(master,mn,mx);   // основной
+    plot->setAxisScale(axis == -1?master:axis, mn,mx);   // основной
 }
 
 // Восстановление исходных границ шкалы
 void QwtChartZoom::QScaleBounds::reset() {
     // если границы уже фиксированы, то восстанавливаем исходные
-    if (fixed) set(min,max);
+    if (fixed) set(min,max,-1);
 }
 
 // Переустановка границ дополнительной шкалы
@@ -456,7 +394,7 @@ void QMainZoomSvc::startZoom(QMouseEvent *mEvent)
             if (mEvent->button() == Qt::LeftButton)
             {
                 // прописываем соответствующий признак режима
-                zoom->setRegim(QwtChartZoom::ctZoom);
+                zoom->setRegime(QwtChartZoom::ctZoom);
                 // запоминаем текущий курсор
                 tCursor = cv->cursor();
                 // устанавливаем курсор Cross
@@ -555,7 +493,7 @@ void QMainZoomSvc::procZoom(QMouseEvent *mEvent)
                 // определяем правую границу горизонтальной шкалы по конечной точке
                 double rg = plt->invTransform(mX,xp);
                 // устанавливаем нижнюю и верхнюю границы вертикальной шкалы
-                zoom->isb_x->set(lf,rg);
+                zoom->isb_x->set(lf,rg,-1);
                 // получаем основную вертикальную шкалу
                 QwtPlot::Axis mY = zoom->masterV();
                 // определяем нижнюю границу вертикальной шкалы по конечной точке
@@ -563,12 +501,12 @@ void QMainZoomSvc::procZoom(QMouseEvent *mEvent)
                 // определяем верхнюю границу вертикальной шкалы по начальной точке
                 double tp = plt->invTransform(mY,scp_y);
                 // устанавливаем нижнюю и верхнюю границы вертикальной шкалы
-                zoom->isb_y->set(bt,tp);
+                zoom->isb_y->set(bt,tp,-1);
                 // перестраиваем график (синхронно с остальными)
                 plt->replot();
             }
             // очищаем признак режима
-            zoom->setRegim(QwtChartZoom::ctNone);
+            zoom->setRegime(QwtChartZoom::ctNone);
         }
 }
 
@@ -635,11 +573,11 @@ void QDragZoomSvc::applyDrag(QPoint evpos)
     double dx = -(evpos.x() - cg.x() - scp_x) * cs_kx;
     // устанавливаем новые левую и правую границы шкалы для горизонтальной оси
     //     новые границы = начальные границы + смещение
-    zoom->isb_x->set(scb_xl + dx,scb_xr + dx);
+    zoom->isb_x->set(scb_xl + dx,scb_xr + dx,-1);
     // аналогично определяем dy - смещение границ по вертикальной оси
     double dy = -(evpos.y() - cg.y() - scp_y) * cs_ky;
     // устанавливаем новые нижнюю и верхнюю границы вертикальной шкалы
-    zoom->isb_y->set(scb_yb + dy,scb_yt + dy);
+    zoom->isb_y->set(scb_yb + dy,scb_yt + dy,-1);
     // перестраиваем график (синхронно с остальными)
     plt->replot();
 }
@@ -687,7 +625,7 @@ void QDragZoomSvc::startDrag(QMouseEvent *mEvent)
             if (mEvent->button() == Qt::RightButton)
             {
                 // прописываем соответствующий признак режима
-                zoom->setRegim(QwtChartZoom::ctDrag);
+                zoom->setRegime(QwtChartZoom::ctDrag);
                 // запоминаем текущий курсор
                 tCursor = cv->cursor();
                 // устанавливаем курсор OpenHand
@@ -740,6 +678,6 @@ void QDragZoomSvc::endDrag(QMouseEvent *mEvent)
         {
             // восстанавливаем курсор
             zoom->plot()->canvas()->setCursor(tCursor);
-            zoom->setRegim(QwtChartZoom::ctNone);  // и очищаем признак режима
+            zoom->setRegime(QwtChartZoom::ctNone);  // и очищаем признак режима
         }
 }

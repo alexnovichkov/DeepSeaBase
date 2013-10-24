@@ -12,8 +12,6 @@ class Curve;
 class DfdFileDescriptor;
 
 class QwtChartZoom;
-class QWheelZoomSvc;
-class QAxisZoomSvc;
 class QwtPlotZoomer;
 class QwtPlotPicker;
 
@@ -89,10 +87,8 @@ private:
     QwtPlotGrid *grid;
     QwtPlotPicker *picker;
 
-//    QwtPlotZoomer *zoom;
     QwtChartZoom *zoom;
-    QWheelZoomSvc *wheelZoom;
-    QAxisZoomSvc *axisZoom;
+
 
     Range x1;
     Range y1;

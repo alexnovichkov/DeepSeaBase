@@ -89,7 +89,7 @@ void QWheelZoomSvc::applyWheel(QEvent *event, bool wheelHorizontally, bool wheel
 
             double lower = (sm.s1()-horPos)*factor + horPos;
             double upper = (sm.s2()-horPos)*factor + horPos;
-            zoom->isb_x->set(lower, upper);
+            zoom->isb_x->set(lower, upper,-1);
         }
         if (wheelVertically) // если задано масштабирование по вертикали
         {
@@ -97,7 +97,7 @@ void QWheelZoomSvc::applyWheel(QEvent *event, bool wheelHorizontally, bool wheel
             QwtScaleMap sm = plot->canvasMap(zoom->masterV());
             double lower = (sm.s1()-verPos)*factor + verPos;
             double upper = (sm.s2()-verPos)*factor + verPos;
-            zoom->isb_y->set(lower, upper);
+            zoom->isb_y->set(lower, upper,-1);
         }
         // перестраиваем график (синхронно с остальными)
         plot->replot();

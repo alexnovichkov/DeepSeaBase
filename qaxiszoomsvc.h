@@ -68,7 +68,8 @@ private:
 
     // обработчик нажатия на кнопку мыши над шкалой
     // (включение изменения масштаба шкалы)
-    void startAxisZoom(QMouseEvent *event, int axis);
+    void startVerticalAxisZoom(QMouseEvent *event, int axis);
+    void startHorizontalAxisZoom(QMouseEvent *event, int axis);
     // обработчик перемещения мыши
     // (выделение новых границ шкалы)
     void proceedAxisZoom(QMouseEvent *,int);

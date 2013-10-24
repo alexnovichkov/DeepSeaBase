@@ -10,8 +10,6 @@
 #include "curve.h"
 
 #include "qwtchartzoom.h"
-#include "qwheelzoomsvc.h"
-#include "qaxiszoomsvc.h"
 
 #include <qwt_plot_zoomer.h>
 #include <qwt_picker.h>
@@ -99,11 +97,7 @@ Plot::Plot(QWidget *parent) :
 
 
     zoom = new QwtChartZoom(this);
-    wheelZoom = new QWheelZoomSvc();
-    wheelZoom->attach(zoom);
 
-    axisZoom = new QAxisZoomSvc();
-    axisZoom->attach(zoom);
 
     picker = new QwtPlotPicker(this->canvas());
 
@@ -120,8 +114,6 @@ Plot::~Plot()
     delete freeGraph;
     qDeleteAll(graphs);
     delete grid;
-    delete axisZoom;
-    delete wheelZoom;
     delete zoom;
 }
 
@@ -158,6 +150,9 @@ void Plot::deleteGraphs()
 
     for (int i=0; i<4; ++i)
         setAxisTitle(i, "");
+
+    delete zoom;
+    zoom = new QwtChartZoom(this);
 
     updateAxes();
     updateLegend();
