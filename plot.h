@@ -10,6 +10,7 @@ class QwtLegend;
 class QwtPlotGrid;
 class Curve;
 class DfdFileDescriptor;
+class Channel;
 
 class QwtChartZoom;
 class QwtPlotZoomer;
@@ -69,12 +70,22 @@ public:
      * updates legends with the dfd legend
      */
     void updateLegends();
+
+    bool canBePlottedOnLeftAxis(Channel *ch, bool addToFixed);
+    bool canBePlottedOnRightAxis(Channel *ch, bool addToFixed);
+
+    void prepareAxis(int axis, const QString &name);
+
+    void moveGraph(Curve *curve);
 public slots:
     void savePlot();
     void switchCursor();
+    void copyToClipboard();
+    void print();
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
 private:
+    void importPlot(const QString &fileName);
     QList<Curve *> graphs;
     Curve *freeGraph;
 
@@ -93,10 +104,6 @@ private:
     Range x1;
     Range y1;
     Range y2;
-//    double xMax;
-//    double xMin;
-//    double yMax;
-//    double yMin;
 };
 
 #endif // PLOT_H

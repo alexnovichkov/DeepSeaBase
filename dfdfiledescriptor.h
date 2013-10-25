@@ -135,6 +135,7 @@ public:
     {}
     virtual ~Channel();
     virtual void read(QSettings &dfd, int chanIndex);
+    virtual void write(QTextStream &dfd, int chanIndex);
     virtual QStringList getHeaders();
     virtual QStringList getData();
     virtual void populateData();
@@ -152,6 +153,7 @@ public:
     quint8 sampleSize; //размер отсчета в байтах
     quint32 NumInd; //общее число отсчетов
     QString YName;
+    QString YNameOld;
     QString InputType;
     QString ChanDscr;
 
@@ -191,6 +193,7 @@ public:
     {}
     virtual ~RawChannel() {}
     virtual void read(QSettings &dfd, int chanIndex);
+    virtual void write(QTextStream &dfd, int chanIndex);
     virtual QStringList getHeaders();
     virtual QStringList getData();
     virtual double postprocess(double v);
@@ -211,6 +214,7 @@ public:
     /** [Source] */
     /** [Sources] */
     void read(QSettings &dfd);
+    void write(QTextStream &dfd);
     QString File; // название файла источника
     QString DFDGUID; // GUID файла источника
     QDate Date; // дата создания файла источника
@@ -220,43 +224,29 @@ public:
     QList<int> ProcChansList;
 };
 
-class AbstractProcess
+class Process
 {
 public:
     /** [Process] */
-    virtual ~AbstractProcess() {}
-    virtual void read(QSettings &dfd);
-    QString PName; //Передаточная ф-я H1
-    QList<int> ProcChansList; //1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
-};
-
-class TransFuncProcess : public AbstractProcess
-{
-public:
-    TransFuncProcess() : pTime(0.0),
-        BlockIn(0),
-        NAver(0)
-    {}
-    virtual ~TransFuncProcess() {}
-    virtual void read(QSettings &dfd);
-    double pTime; //(0000000000000000)
-    QString pBaseChan; //2,MBU00002\2,Сила,Н
-    quint32 BlockIn; //4096
-    QString Wind; //Хеннинга
-    QString TypeAver; //линейное
-    quint32 NAver; //300
-    QString Values; //измеряемые
-    QString TypeScale; //в децибелах
+    Process(DfdFileDescriptor *parent);
+    void read(QSettings &dfd);
+    void write(QTextStream &dfd);
+    QString value(const QString &key);
+private:
+    DfdFileDescriptor *parent;
+    QList<QPair<QString, QString> > data;
 };
 
 class DataDescription
 {
 public:
-    DataDescription();
+    DataDescription(DfdFileDescriptor *parent);
     void read(QSettings &dfd);
+    void write(QTextStream &dfd);
     QString toString() const;
 private:
     QList<QPair<QString, QString> > data;
+    DfdFileDescriptor *parent;
 };
 
 class DfdFileDescriptor
@@ -265,17 +255,19 @@ public:
     DfdFileDescriptor(const QString &fileName);
     ~DfdFileDescriptor();
     void read();
-    void writeDfd();
-    AbstractProcess *getProcess(DfdDataType DataType);
-    Channel *getChannel(DfdDataType DataType, int chanIndex);
-    bool operator==(const DfdFileDescriptor &dfd){
+    void write();
+    void writeRawFile();
+    QString legend() const {return _legend;}
+    void setLegend(const QString &legend);
+
+    bool operator == (const DfdFileDescriptor &dfd)
+    {
         return (this->DFDGUID == dfd.DFDGUID);
     }
     QString description() const;
 
     QString dfdFileName;
     QString rawFileName; // путь к RAW файлу
-    QDateTime dateTime;
 
     //[DataFileDescriptor]
     QString DFDGUID; //{7FD333E3-9A20-2A3E-A9443EC17B134848}
@@ -290,22 +282,27 @@ public:
     double XStep;
     QString DescriptionFormat;
     QString CreatedBy;
-    QString DataReference; // путь к RAW файлу
 
-    QString legend; // editable description
+    bool rawFileChanged;
+
+    bool changed;
 
     //[Sources], [Source]
     Source *source;
-    //[Process]
-    AbstractProcess *process;
 
-    DataDescription *dataDescription;
+    //[Process]
+    Process *process;
+
     //[DataDescription]
-    //QMap<QString, QString> userComments;
+    DataDescription *dataDescription;
+
     //[Channel#]
     QList<Channel *> channels;
+private:
+    friend class DataDescription;
+    Channel *getChannel(DfdDataType DataType, int chanIndex);
 
-
+    QString _legend; // editable description
 };
 
 #endif // DFDFILEDESCRIPTOR_H

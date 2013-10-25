@@ -18,10 +18,15 @@
 
 #include <qwt_plot_layout.h>
 
+#include <QtCore>
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDesktopWidget>
 #include <QApplication>
+#include <QClipboard>
+#include <QPrinter>
+#include <QPrintDialog>
+
 #include "mainwindow.h"
 #include "graphpropertiesdialog.h"
 
@@ -211,36 +216,64 @@ void Plot::deleteGraph(Curve *graph, bool doReplot)
     }
 }
 
+bool Plot::canBePlottedOnLeftAxis(Channel *ch, bool addToFixed)
+{
+    if (!hasGraphs()) // нет графиков - всегда на левой оси
+        return true;
+
+    if (graphsCount()==0 && !addToFixed) //строим временный график - всегда на левой оси
+        return true;
+
+    if (ch->parent->XName == xName || xName.isEmpty()) { // тип графика совпадает
+        if (leftGraphs.isEmpty() || yLeftName.isEmpty() || ch->YName == yLeftName)
+            return true;
+    }
+    return false;
+}
+
+bool Plot::canBePlottedOnRightAxis(Channel *ch, bool addToFixed)
+{
+    if (!hasGraphs()) // нет графиков - всегда на левой оси
+        return true;
+
+    if (graphsCount()==0 && !addToFixed) //строим временный график - всегда на левой оси
+        return true;
+
+    if (ch->parent->XName == xName || xName.isEmpty()) { // тип графика совпадает
+        if (rightGraphs.isEmpty() || yRightName.isEmpty() || ch->YName == yRightName)
+            return true;
+    }
+    return false;
+}
+
+void Plot::prepareAxis(int axis, const QString &name)
+{
+    if (!axisEnabled(axis))
+        enableAxis(axis);
+
+    setAxisTitle(axis, name);
+}
+
+void Plot::moveGraph(Curve *curve)
+{
+    if (leftGraphs.contains(curve)) {
+        leftGraphs.removeAll(curve);
+        rightGraphs.append(curve);
+    }
+    else if (rightGraphs.contains(curve)) {
+        rightGraphs.removeAll(curve);
+        leftGraphs.append(curve);
+    }
+}
+
 bool Plot::plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed)
 {
     if (plotted(dfd, channel)) return false;
 
-    bool plotOnFirstYAxis = false;
-    bool plotOnSecondYAxis = false;
-    bool rewriteXAxis = false;
-
     Channel *ch = dfd->channels[channel];
 
-    // нет ни одного графика
-    if (!hasGraphs()) {
-        plotOnFirstYAxis = true;
-        rewriteXAxis = true;
-    }
-    // есть один временный график
-    else if (graphsCount()==0 && !addToFixed) {//строим временный график - всегда на левой оси
-        plotOnFirstYAxis = true;
-        rewriteXAxis = true;
-    }
-    // есть постоянные графики
-    else {
-        /** TODO: заменить на анализ типа графика */
-        if (ch->parent->XName == xName || xName.isEmpty()) { // тип графика совпадает
-            if (leftGraphs.isEmpty() || yLeftName.isEmpty() || ch->YName == yLeftName)
-                plotOnFirstYAxis = true;
-            else if (rightGraphs.isEmpty() || yRightName.isEmpty() || ch->YName == yRightName)
-                plotOnSecondYAxis = true;
-        }
-    }
+    const bool plotOnFirstYAxis = canBePlottedOnLeftAxis(ch, addToFixed);
+    const bool plotOnSecondYAxis = plotOnFirstYAxis ? false : canBePlottedOnRightAxis(ch, addToFixed);
 
     static bool skipped = false;
     if (!plotOnFirstYAxis && !plotOnSecondYAxis) {
@@ -255,13 +288,11 @@ bool Plot::plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed)
     else
         skipped = false;
 
-    if (rewriteXAxis)
-        setAxisTitle(QwtPlot::xBottom, dfd->XName);
+    prepareAxis(QwtPlot::xBottom, dfd->XName);
 
-    QwtPlot::Axis ax = QwtPlot::yLeft;
-    if (plotOnSecondYAxis) ax = QwtPlot::yRight;
-    if (!axisEnabled(ax)) enableAxis(ax);
-    setAxisTitle(ax, ch->YName);
+    QwtPlot::Axis ax = plotOnFirstYAxis ? QwtPlot::yLeft : QwtPlot::yRight;
+
+    prepareAxis(ax, ch->YName);
 
     Curve *g = 0;
 
@@ -337,13 +368,69 @@ void Plot::updateLegends()
 
 void Plot::savePlot()
 {
-    QwtPlotRenderer renderer;
-    renderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);
-    renderer.setLayoutFlag(QwtPlotRenderer::FrameWithScales);
-
     QString lastPicture = MainWindow::getSetting("lastPicture", "plot.bmp").toString();
     lastPicture = QFileDialog::getSaveFileName(this, QString("Сохранение графика"), lastPicture, "Изображения (*.bmp)");
     if (lastPicture.isEmpty()) return;
+
+    importPlot(lastPicture);
+
+    MainWindow::setSetting("lastPicture", lastPicture);
+}
+
+void Plot::copyToClipboard()
+{
+    QTemporaryFile file("DeepSeaBase-XXXXXX.bmp");
+    if (file.open()) {
+        QString fileName = file.fileName();
+        file.close();
+
+        importPlot(fileName);
+        QImage img;
+        if (img.load(fileName)) {
+            qApp->clipboard()->setImage(img);
+        }
+    }
+}
+
+void Plot::print()
+{
+    QTemporaryFile file("DeepSeaBase-XXXXXX.bmp");
+    if (file.open()) {
+        QString fileName = file.fileName();
+        file.close();
+
+        importPlot(fileName);
+
+        QImage img;
+        if (img.load(fileName)) {
+            QPrinter printer;
+            printer.setOrientation(QPrinter::Landscape);
+
+            QPrintDialog printDialog(&printer, this);
+            if (printDialog.exec()) {
+                qreal left,right,top,bottom;
+                printer.getPageMargins(&left, &top, &right, &bottom, QPrinter::Millimeter);
+                left = 15.0;
+                top = 40.0;
+                printer.setPageMargins(left, top, right, bottom, QPrinter::Millimeter);
+                QPainter painter(&printer);
+                QRect rect = painter.viewport();
+                QSize size = img.size();
+                size.scale(rect.size(), Qt::KeepAspectRatio);
+                painter.setViewport(rect.x(), rect.y(),
+                                    size.width(), size.height());
+                painter.setWindow(img.rect());
+                painter.drawImage(0, 0, img);
+            }
+        }
+    }
+}
+
+void Plot::importPlot(const QString &fileName)
+{
+    QwtPlotRenderer renderer;
+    renderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);
+    renderer.setLayoutFlag(QwtPlotRenderer::FrameWithScales);
 
     QFont axisfont = axisFont(QwtPlot::yLeft);
     axisfont.setPointSize(axisfont.pointSize()+1);
@@ -366,12 +453,8 @@ void Plot::savePlot()
     QwtLegend *leg = new QwtLegend();
     insertLegend(leg, QwtPlot::BottomLegend);
 
-//    QwtPlotItemList list = this->itemList(/*QwtPlotItem::Rtti_PlotTextLabel*/);
 
-
-
-
-    renderer.renderDocument(this, lastPicture, QSizeF(400,200), qApp->desktop()->logicalDpiX());
+    renderer.renderDocument(this, fileName, QSizeF(400,200), qApp->desktop()->logicalDpiX());
 
 
     axisfont.setPointSize(axisfont.pointSize()-1);
@@ -394,8 +477,6 @@ void Plot::savePlot()
     leg->setDefaultItemMode(QwtLegendData::Clickable);
     connect(leg, SIGNAL(clicked(QVariant,int)),this,SLOT(editLegendItem(QVariant,int)));
     insertLegend(leg, QwtPlot::RightLegend);
-
-    MainWindow::setSetting("lastPicture", lastPicture);
 }
 
 void Plot::switchCursor()
@@ -407,9 +488,11 @@ void Plot::switchCursor()
 
 void Plot::editLegendItem(const QVariant &itemInfo, int index)
 {
+    Q_UNUSED(index)
+
     QwtPlotItem *item = infoToItem(itemInfo);
     if (item) {
-        QwtPlotCurve *c = dynamic_cast<QwtPlotCurve *>(item);
+        Curve *c = dynamic_cast<Curve *>(item);
         if (c) {
             GraphPropertiesDialog dialog(c, this);
             dialog.exec();

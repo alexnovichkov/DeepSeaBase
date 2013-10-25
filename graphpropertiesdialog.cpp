@@ -2,8 +2,12 @@
 
 #include <QtWidgets>
 
+#include <qwt_plot.h>
 #include <qwt_plot_curve.h>
 #include <qwt_symbol.h>
+#include "plot.h"
+#include "curve.h"
+#include "dfdfiledescriptor.h"
 
 void ClickableLabel::mouseReleaseEvent(QMouseEvent *ev)
 {
@@ -12,8 +16,8 @@ void ClickableLabel::mouseReleaseEvent(QMouseEvent *ev)
     QLabel::mouseReleaseEvent(ev);
 }
 
-GraphPropertiesDialog::GraphPropertiesDialog(QwtPlotCurve *curve, QWidget *parent) :
-    QDialog(parent), curve(curve)
+GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
+    QDialog(parent), curve(curve), plot(parent)
 {
     setWindowTitle("Настройки кривой");
 
@@ -70,6 +74,26 @@ GraphPropertiesDialog::GraphPropertiesDialog(QwtPlotCurve *curve, QWidget *paren
                 }
     );
 
+    QComboBox *axisComboBox = new QComboBox(this);
+    axisComboBox->setEditable(false);
+    axisComboBox->addItems(QStringList()<<"Левая"
+                           <<"Правая");
+    axisComboBox->setCurrentIndex(curve->yAxis());
+    connect(axisComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            [=](int axis) {
+        if (axis == QwtPlot::yLeft && plot->canBePlottedOnLeftAxis(curve->dfd->channels[curve->channel], true)) {
+            plot->prepareAxis(axis, curve->dfd->channels[curve->channel]->YName);
+            curve->setYAxis(axis);
+            plot->moveGraph(curve);
+        }
+        else if (axis == QwtPlot::yRight && plot->canBePlottedOnRightAxis(curve->dfd->channels[curve->channel], true)) {
+            plot->prepareAxis(axis, curve->dfd->channels[curve->channel]->YName);
+            curve->setYAxis(axis);
+            plot->moveGraph(curve);
+        }
+        else QMessageBox::warning(this, "Не могу поменять ось", "Эта ось уже занята графиком другого типа!");
+    });
+
 //    QComboBox *symbolCombo = new QComboBox(this);
 //    symbolCombo->setEditable(false);
 //    symbolCombo->addItems(QStringList()
@@ -119,6 +143,8 @@ GraphPropertiesDialog::GraphPropertiesDialog(QwtPlotCurve *curve, QWidget *paren
     QFrame *line = new QFrame(this);
     line->setFrameStyle(QFrame::HLine | QFrame::Sunken);
     l->addWidget(line);
+
+    l->addRow(new QLabel("Ось Y", this), axisComboBox);
 //    l->addRow(new QLabel("Маркер", this), symbolCombo);
 
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok |

@@ -156,6 +156,8 @@ private:
     QAction *savePlotAct;
     QAction *rescanBaseAct;
     QAction *switchCursorAct;
+    QAction *copyToClipboardAct;
+    QAction *printPlotAct;
 
     Plot *plot;
 

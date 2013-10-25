@@ -3,10 +3,11 @@
 
 #include <QDialog>
 
-class QwtPlotCurve;
+class Curve;
 class QLineEdit;
 class QSpinBox;
 class QComboBox;
+class Plot;
 
 #include <QPen>
 #include <QBrush>
@@ -30,13 +31,14 @@ class GraphPropertiesDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit GraphPropertiesDialog(QwtPlotCurve *curve, QWidget *parent = 0);
+    explicit GraphPropertiesDialog(Curve *curve, Plot *parent = 0);
     
 signals:
     
 public slots:
 private:
-    QwtPlotCurve *curve;
+    Curve *curve;
+    Plot *plot;
     QLineEdit *titleEdit;
     QSpinBox *widthSpinBox;
     QComboBox *styleComboBox;

@@ -1,5 +1,7 @@
 #include "dfdfiledescriptor.h"
-#include <QtGui>
+#include <QtCore>
+
+#include "converters.h"
 
 QString dataTypeDescription(int type)
 {
@@ -68,15 +70,13 @@ PlotType plotTypeByDataType(DfdDataType dataType)
 bool readDfdFile(QIODevice &device, QSettings::SettingsMap &map)
 {
     char buf[2048];
-    qint64 lineLength = device.readLine(buf, sizeof(buf));
+    qint64 lineLength;
     QString group;
     QTextCodec *codec = QTextCodec::codecForName("Windows-1251");
-    while (lineLength != -1) {
+    while ((lineLength = device.readLine(buf, sizeof(buf))) != -1) {
         // the line is available in buf
         QByteArray b = QByteArray(buf, lineLength);
         if (!b.isEmpty()) {
-            //b.replace('\\',"\\\\");
-            //b.replace("\\\\",'\\');
             QString s = codec->toUnicode(b);
             s.chop(2);
             if (s.startsWith('[')) {
@@ -93,89 +93,16 @@ bool readDfdFile(QIODevice &device, QSettings::SettingsMap &map)
                 }
             }
         }
-        lineLength = device.readLine(buf, sizeof(buf));
     }
     return true;
 }
 
-bool writeDfdFile(QIODevice &device, const QSettings::SettingsMap &map)
+bool writeDfdFile(QIODevice &/*device*/, const QSettings::SettingsMap &/*map*/)
 {
-    Q_UNUSED(device)
-    Q_UNUSED(map)
     return true;
 }
 
-QString doubletohex(const double d)
-{
-    QString s;
-    QByteArray ba;
-    QDataStream stream(&ba,QIODevice::WriteOnly);
-    stream.setFloatingPointPrecision(QDataStream::DoublePrecision);
-    stream.setByteOrder(QDataStream::LittleEndian);
-    stream << d;
-    s = "("+ba.toHex()+")";
-    return s;
-}
 
-double hextodouble(QString hex)
-{
-    if (hex.startsWith("("))
-        hex.remove(0,1);
-    if (hex.endsWith(")"))
-        hex.chop(1);
-
-    double result=0.0l;
-
-    QByteArray ba;
-    for (int i=0; i<16; i+=2) {
-        quint8 c = hex.mid(i,2).toUInt(0,16);
-        ba.append(c);
-    }
-
-    QDataStream stream(ba);
-    stream.setFloatingPointPrecision(QDataStream::DoublePrecision);
-    stream.setByteOrder(QDataStream::LittleEndian);
-    stream >> result;
-
-    return result;
-}
-
-
-
-float hextofloat(QString hex)
-{
-    if (hex.startsWith("("))
-        hex.remove(0,1);
-    if (hex.endsWith(")"))
-        hex.chop(1);
-
-    float result=0.0;
-
-    QByteArray ba;
-    for (int i=0; i<8; i+=2) {
-        quint8 c = hex.mid(i,2).toUInt(0,16);
-        ba.append(c);
-    }
-
-    QDataStream stream(ba);
-    stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-    stream.setByteOrder(QDataStream::LittleEndian);
-    stream >> result;
-
-    return result;
-}
-
-QString floattohex(const float f)
-{
-    QString s;
-    QByteArray ba;
-    QDataStream stream(&ba,QIODevice::WriteOnly);
-    stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-    stream.setByteOrder(QDataStream::LittleEndian);
-    stream << f;
-    s = "("+ba.toHex()+")";
-    return s;
-}
 
 DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
     : DataType(NotDef),
@@ -189,10 +116,17 @@ DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
       dataDescription(0)
 {
     dfdFileName = fileName;
+    rawFileChanged = false;
+    changed = false;
 }
 
 DfdFileDescriptor::~DfdFileDescriptor()
 {
+    if (changed)
+        write();
+    if (rawFileChanged)
+        writeRawFile();
+
     delete process;
     delete source;
     delete dataDescription;
@@ -212,12 +146,10 @@ void DfdFileDescriptor::read()
     rawFileName = dfd.value("DataReference").toString();
     if (rawFileName.isEmpty())
         rawFileName = dfdFileName.left(dfdFileName.length()-4)+".raw";
-    DataReference = rawFileName;
     DFDGUID =   dfd.value("DFDGUID").toString();
     DataType =  DfdDataType(dfd.value("DataType").toInt());
     Date =      QDate::fromString(dfd.value("Date").toString(),"dd.MM.yyyy");
     Time =      QTime::fromString(dfd.value("Time").toString(),"hh:mm:ss");
-    dateTime =  QDateTime(Date, Time);
     NumChans =  dfd.value("NumChans").toInt(); //DebugPrint(NumChans);
     NumInd =    dfd.value("NumInd").toUInt();      //DebugPrint(NumInd);
     BlockSize = dfd.value("BlockSize").toInt();   //DebugPrint(BlockSize);
@@ -230,7 +162,7 @@ void DfdFileDescriptor::read()
 
     // [DataDescription]
     if (childGroups.contains("DataDescription")) {
-        dataDescription = new DataDescription;
+        dataDescription = new DataDescription(this);
         dataDescription->read(dfd);
     }
 
@@ -242,7 +174,7 @@ void DfdFileDescriptor::read()
 
     // [Process]
     if (childGroups.contains("Process")) {
-        process = getProcess(DataType);
+        process = new Process(this);
         process->read(dfd);
     }
 
@@ -254,68 +186,62 @@ void DfdFileDescriptor::read()
     }
 }
 
-void DfdFileDescriptor::writeDfd()
+void DfdFileDescriptor::write()
 {
-    //    QSettings dfd(dfdFileName,QSettings::IniFormat);
-    //    dfd.setIniCodec(QTextCodec::codecForName("CP1251"));
+    QTextCodec *codec = QTextCodec::codecForName("Windows-1251");
 
+    QFile file(dfdFileName);
+    if (!file.open(QFile::WriteOnly | QFile::Text)) return;
+    QTextStream dfd(&file);
+    dfd.setCodec(codec);
 
-    //    if (rawFileName.isEmpty()) rawFileName = dfdFileName.left(dfdFileName.length()-4)+".raw";
+    /** [DataFileDescriptor]*/
+    dfd << "[DataFileDescriptor]" << endl;
+    dfd << "DFDGUID="<<DFDGUID << endl;
+    dfd << "DataType="<<DataType << endl;
+    dfd << "Date="<<Date.toString("dd.MM.yyyy") << endl;
+    dfd << "Time="<<Time.toString("hh:mm:ss") << endl;
+    dfd << "NumChans="<<NumChans << endl;
+    dfd << "NumInd="<<NumInd << endl;
+    dfd << "BlockSize="<<BlockSize << endl;
+    dfd << "XName="<<XName << endl;
+    dfd << "XBegin="<<doubletohex(XBegin).toUpper() << endl;
+    dfd << "XStep="<<doubletohex(XStep).toUpper() << endl;
+    dfd << "DescriptionFormat="<<DescriptionFormat << endl;
+    dfd << "CreatedBy="<<CreatedBy << endl;
 
-    //    /** [DataFileDescriptor]*/
-    //    dfd.beginGroup("DataFileDescriptor");
-    //    dfd.setValue("DFDGUID",QUuid::createUuid().toString().toUpper());
-    //    //dfd.setValue("DataReference",rawFileName);
-    //    dfd.setValue("DataType",dataType); //we write only raw time data
-    //    dfd.setValue("Date",date.toString("dd.MM.yyyy"));
-    //    dfd.setValue("Time",time.toString("hh:mm:ss"));
-    //    dfd.setValue("NumChans",numChans);
-    //    dfd.setValue("NumInd",numInd);
-    //    dfd.setValue("BlockSize",blockSize);
-    //    dfd.setValue("XName",xName);
+    /** [DataDescription] */
+    if (dataDescription) {
+        dataDescription->write(dfd);
+    }
 
-    //    dfd.setValue("XBegin",doubletohex(xBegin).toUpper());
-    //    dfd.setValue("XStep",doubletohex(xStep).toUpper());
-    //    dfd.setValue("DescriptionFormat","");
-    //    dfd.setValue("CreatedBy","UFF2DeepSea");
-    //    dfd.endGroup();
+    /** [Source] */
+    if (source) {
+        source->write(dfd);
+    }
 
-    //    /** [DataDescription]*/
-    //    dfd.beginGroup("[DataDescription]");
-    //    dfd.endGroup();
+    /** [Process] */
+    if (process) {
+        process->write(dfd);
+    }
 
-    //    /** Channels*/
-    //    // [Channel1]
-    //    for (int i=0; i<numChans; ++i) {
-    //        dfd.beginGroup(QString("Channel%1").arg(i+1));
-    //        const Channel &ch = channels.at(i);
-    //        dfd.setValue("ChanAddress",ch.chanAddress);
-    //        dfd.setValue("ChanName",ch.chanName);
-    //        dfd.setValue("IndType",ch.indType);
-    //        dfd.setValue("ChanBlockSize",ch.chanBlockSize);
-    //        dfd.setValue("ADC0",doubletohex(ch.adc0).toUpper());
-    //        dfd.setValue("ADCStep",doubletohex(ch.adcStep).toUpper());
-    //        dfd.setValue("AmplShift",doubletohex(ch.amplShift).toUpper());
-    //        dfd.setValue("AmplLevel",doubletohex(ch.amplLevel).toUpper());
-    //        dfd.setValue("YName",ch.yName);
-    //        dfd.setValue("Sens0Shift",doubletohex(ch.sens0Shift).toUpper());
-    //        dfd.setValue("SensSensitivity",doubletohex(ch.sensSensitivity).toUpper());
-    //        dfd.setValue("SensName",ch.sensName);
-    //        dfd.setValue("InputType",ch.inputType);
-    //        dfd.setValue("BandWidth",floattohex(ch.bandwidth).toUpper());
-    //        dfd.setValue("ChanDscr",ch.chanDescr);
-    //        dfd.endGroup();
-    //    }
+    /** Channels*/
+    for (uint i=0; i<NumChans; ++i) {
+        Channel *ch = channels[i];
+        ch->write(dfd, i+1);
+    }
 }
 
-AbstractProcess *DfdFileDescriptor::getProcess(DfdDataType DataType)
+void DfdFileDescriptor::writeRawFile()
 {
-    switch (DataType) {
-        case SourceData: return new AbstractProcess(); break;
-        case TransFunc: return new TransFuncProcess(); break;
-        default: break;
-    }
-    return new AbstractProcess();
+
+}
+
+void DfdFileDescriptor::setLegend(const QString &legend)
+{
+    if (legend == _legend) return;
+    _legend = legend;
+    changed = true;
 }
 
 Channel *DfdFileDescriptor::getChannel(DfdDataType DataType, int chanIndex)
@@ -333,29 +259,39 @@ QString DfdFileDescriptor::description() const
     return dfdFileName;
 }
 
-void TransFuncProcess::read(QSettings &dfd)
+Process::Process(DfdFileDescriptor *parent) : parent(parent)
 {
-    AbstractProcess::read(dfd);
+
+}
+
+void Process::read(QSettings &dfd)
+{
     dfd.beginGroup("Process");
-    pTime = hextodouble(dfd.value("pTime").toString()); //(0000000000000000)
-    pBaseChan = dfd.value("pBaseChan").toString(); //2,MBU00002\2,Сила,Н
-    BlockIn = dfd.value("BlockIn").toInt(); //4096
-    Wind = dfd.value("Wind").toString();  //Хеннинга
-    TypeAver = dfd.value("TypeAver").toString();  //линейное
-    NAver = dfd.value("NAver").toInt(); //300
-    Values = dfd.value("Values").toString(); //измеряемые
-    TypeScale = dfd.value("TypeScale").toString(); //в децибелах
+    QStringList keys = dfd.childKeys();
+    foreach (QString key, keys) {
+        QString v = dfd.value(key).toString();
+        data.append(QPair<QString, QString>(key, v));
+    }
+
     dfd.endGroup();
 }
 
-
-void AbstractProcess::read(QSettings &dfd)
+void Process::write(QTextStream &dfd)
 {
-    dfd.beginGroup("Process");
-    PName = dfd.value("PName").toString();
-    QStringList procChansList = dfd.value("ProcChansList").toString().split(",");
-    foreach (QString s, procChansList) ProcChansList << s.toInt();
-    dfd.endGroup();
+    dfd << "[Process]" << endl;
+    for (int i = 0; i<data.size(); ++i) {
+        QPair<QString, QString> item = data.at(i);
+        dfd << item.first << "=" << item.second << endl;
+    }
+}
+
+QString Process::value(const QString &key)
+{
+    for (int i = 0; i<data.size(); ++i) {
+        QPair<QString, QString> item = data.at(i);
+        if (item.first == key) return item.second;
+    }
+    return QString();
 }
 
 
@@ -381,6 +317,21 @@ void Source::read(QSettings &dfd)
     }
 }
 
+void Source::write(QTextStream &dfd)
+{
+    if (!sFile.isEmpty()) {
+        dfd << "[Sources]" << endl;
+        dfd << "sFile=" << sFile << endl;
+    }
+    else {
+        dfd << "[Source]" << endl;
+        dfd << "File=" << File << endl;
+        dfd << "DFDGUID=" << DFDGUID << endl;
+        dfd << "Date=" << Date.toString("dd.MM.yyyy") << endl;
+        dfd << "Time=" << Time.toString("hh:mm:ss") << endl;
+    }
+}
+
 Channel::~Channel()
 {
     delete [] yValues;
@@ -396,12 +347,27 @@ void Channel::read(QSettings &dfd, int chanIndex)
     sampleSize = IndType % 16;
     blockSizeInBytes = ChanBlockSize * sampleSize;
     YName = dfd.value("YName").toString();
+    YNameOld = dfd.value("YNameOld").toString();
     InputType = dfd.value("InputType").toString();
     ChanDscr = dfd.value("ChanDscr").toString();
     dfd.endGroup();
 
     NumInd = parent->BlockSize==0?ChanBlockSize:parent->NumInd*ChanBlockSize/parent->BlockSize;
     xStep = double(parent->XStep * NumInd/parent->NumInd);
+}
+
+void Channel::write(QTextStream &dfd, int chanIndex)
+{
+    dfd << QString("[Channel%1]").arg(chanIndex) << endl;
+    dfd << "ChanAddress=" << ChanAddress << endl;
+    dfd << "ChanName=" << ChanName << endl;
+    dfd << "IndType=" << IndType << endl;
+    dfd << "ChanBlockSize=" << ChanBlockSize << endl;
+    dfd << "YName=" << YName << endl;
+    if (!YNameOld.isEmpty())
+        dfd << "YNameOld=" << YNameOld << endl;
+    dfd << "InputType="<<InputType << endl;
+    dfd << "ChanDscr="<<ChanDscr << endl;
 }
 
 QStringList Channel::getHeaders()
@@ -484,7 +450,7 @@ void Channel::populateData()
 
 QString Channel::legendName()
 {
-    QString result = parent->legend;
+    QString result = parent->legend();
     if (!result.isEmpty()) result.prepend(" ");
 
     return (ChanName.isEmpty()?ChanAddress:ChanName) + result;
@@ -540,7 +506,6 @@ double Channel::getValue(QDataStream &readStream)
             break;
         default: break;
     }
-//    qDebug()<<realValue;
 
     return postprocess(realValue);
 }
@@ -558,6 +523,20 @@ void RawChannel::read(QSettings &dfd, int chanIndex)
     BandWidth = hextofloat(dfd.value("BandWidth").toString()); //qDebug()<< "BandWidth"<< ch.bandwidth;
     SensName = dfd.value("SensName").toString();
     dfd.endGroup();
+}
+
+void RawChannel::write(QTextStream &dfd, int chanIndex)
+{
+    Channel::write(dfd,chanIndex);
+
+    dfd << "ADC0=" <<  doubletohex(ADC0).toUpper() << endl;
+    dfd << "ADCStep=" <<  doubletohex(ADCStep).toUpper() << endl; //qDebug()<< "ADCStep"<< ch.adcStep;
+    dfd << "AmplShift=" << doubletohex(AmplShift).toUpper() << endl; //qDebug()<<"AmplShift" <<ch.amplShift ;
+    dfd << "AmplLevel=" << doubletohex(AmplLevel).toUpper() << endl; //qDebug()<< "AmplLevel"<<ch.amplLevel ;
+    dfd << "Sens0Shift=" << doubletohex(Sens0Shift).toUpper() << endl; //qDebug()<< "Sens0Shift"<<ch.sens0Shift ;
+    dfd << "SensSensitivity=" << doubletohex(SensSensitivity).toUpper() << endl; //qDebug()<< "SensSensitivity"<<ch.sensSensitivity ;
+    dfd << "BandWidth=" <<  floattohex(BandWidth).toUpper() << endl;
+    dfd << "SensName=" <<  SensName << endl;
 }
 
 QStringList RawChannel::getHeaders()
@@ -647,7 +626,7 @@ DfdDataType dataTypeForMethod(int methodType)
 }
 
 
-DataDescription::DataDescription()
+DataDescription::DataDescription(DfdFileDescriptor *parent) : parent(parent)
 {
 
 }
@@ -661,9 +640,27 @@ void DataDescription::read(QSettings &dfd)
         if (v.startsWith("\"")) v.remove(0,1);
         if (v.endsWith("\"")) v.chop(1);
         v = v.trimmed();
-        if (!v.isEmpty()) data.append(QPair<QString, QString>(key, v));
+        if (!v.isEmpty()) {
+            if (key == "Legend")
+                parent->_legend = v;
+            else
+                data.append(QPair<QString, QString>(key, v));
+        }
     }
     dfd.endGroup();
+}
+
+void DataDescription::write(QTextStream &dfd)
+{
+    if (!data.isEmpty() || !parent->legend().isEmpty()) {
+        dfd << "[DataDescription]" << endl;
+        for (int i = 0; i<data.size(); ++i) {
+            QPair<QString, QString> item = data.at(i);
+            dfd << item.first << "=\"" << item.second << "\"" << endl;
+        }
+        if (!parent->legend().isEmpty())
+            dfd << "Legend=" << "\"" << parent->legend() << "\"" << endl;
+    }
 }
 
 QString DataDescription::toString() const

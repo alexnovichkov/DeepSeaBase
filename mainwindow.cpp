@@ -117,6 +117,14 @@ MainWindow::MainWindow(QWidget *parent)
     switchCursorAct->setChecked(pickerEnabled);
     connect(switchCursorAct, SIGNAL(triggered()), plot, SLOT(switchCursor()));
 
+    copyToClipboardAct = new QAction(QString("Копировать в буфер обмена"), this);
+    copyToClipboardAct->setIcon(QIcon(":/icons/clipboard.png"));
+    connect(copyToClipboardAct, SIGNAL(triggered()), plot, SLOT(copyToClipboard()));
+
+    printPlotAct = new QAction(QString("Распечатать рисунок"), this);
+    printPlotAct->setIcon(QIcon(":/icons/print.png"));
+    connect(printPlotAct, SIGNAL(triggered()), plot, SLOT(print()));
+
     QMenu *fileMenu = menuBar()->addMenu(tr("Файл"));
     fileMenu->addAction(addFolderAct);
 
@@ -128,6 +136,8 @@ MainWindow::MainWindow(QWidget *parent)
     toolBar->setOrientation(Qt::Vertical);
     toolBar->addAction(clearPlotAct);
     toolBar->addAction(savePlotAct);
+    toolBar->addAction(copyToClipboardAct);
+    toolBar->addAction(printPlotAct);
     toolBar->addAction(switchCursorAct);
 
     tabWidget = new TabWidget(this);
@@ -497,12 +507,9 @@ void MainWindow::rescanDeadRecords()
         }
 
         if (!filesToAdd.isEmpty()) {
-            QVariantMap legends = getSetting("legends").toMap();
-
             foreach (const QString &file, filesToAdd) {
                 DfdFileDescriptor *dfd = new DfdFileDescriptor(file);
                 dfd->read();
-                dfd->legend = legends.value(dfd->DFDGUID).toString();
                 allRecords.insert(dfd->DFDGUID, dfd);
             }
 
@@ -524,7 +531,7 @@ void MainWindow::rescanDeadRecords()
                             item->setText(6, QString::number(item->dfd->XStep));
                             item->setText(7, QString::number(item->dfd->NumChans));
                             item->setText(8, item->dfd->description());
-                            item->setText(9, item->dfd->legend);
+                            item->setText(9, item->dfd->legend());
                             (*alreadyAddedFiles)[i][0] = item->dfd->dfdFileName;
                             (*alreadyAddedFiles)[i][1] = item->dfd->DFDGUID;
                         }
@@ -764,7 +771,7 @@ void MainWindow::recordLegendChanged(QTreeWidgetItem *item, int column)
 
     SortableTreeWidgetItem *i = dynamic_cast<SortableTreeWidgetItem *>(item);
     if (i) {
-        i->dfd->legend = item->text(column);
+        i->dfd->setLegend(item->text(column));
         plot->updateLegends();
     }
 }
@@ -825,8 +832,6 @@ void MainWindow::addFiles(QList<QStringList> &files, bool addToDatabase)
     QList<DfdFileDescriptor *> dfds;
     int pos = tree->topLevelItemCount();
 
-    QVariantMap legends = getSetting("legends").toMap();
-
     for (int i=0; i<files.size(); ++i) {
         QStringList file = files[i];
         DfdFileDescriptor *dfd = new DfdFileDescriptor(file.first());
@@ -837,8 +842,6 @@ void MainWindow::addFiles(QList<QStringList> &files, bool addToDatabase)
             file[1] = dfd->DFDGUID;
             files[i] = file;
         }
-
-        dfd->legend = legends.value(dfd->DFDGUID).toString();
 
         if (addToDatabase)
             alreadyAddedFiles->append(file);
@@ -855,7 +858,7 @@ void MainWindow::addFiles(QList<QStringList> &files, bool addToDatabase)
                                            << QString::number(dfd->XStep) // QString("Шаг") 6
                                            << QString::number(dfd->NumChans) // QString("Каналы")); 7
                                            << dfd->description()
-                                           << dfd->legend
+                                           << dfd->legend()
                                            );
         item->setFlags(item->flags() | Qt::ItemIsEditable);
         items << item;

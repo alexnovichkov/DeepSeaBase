@@ -24,7 +24,8 @@ SOURCES += main.cpp\
     methods/spectremethod.cpp \
     methods/timemethod.cpp \
     graphpropertiesdialog.cpp \
-    tabwidget.cpp
+    tabwidget.cpp \
+    converters.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -37,7 +38,8 @@ HEADERS  += mainwindow.h \
     methods/spectremethod.h \
     methods/timemethod.h \
     graphpropertiesdialog.h \
-    tabwidget.h
+    tabwidget.h \
+    converters.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\
