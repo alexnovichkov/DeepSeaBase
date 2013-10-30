@@ -50,6 +50,7 @@ public:
     QTreeWidget *tree;
     QTableWidget *channelsTable;
     QList<QStringList> files;
+    QStringList folders;
 };
 
 class MainWindow : public QMainWindow
@@ -66,20 +67,13 @@ public:
     static void setSetting(const QString &key, const QVariant &value);
 private slots:
     void addFolder();
-    void addExistingFiles();
+    void addFolder(const QString &directory);
     void deleteFiles();
 
     void updateChannelsTable(QTreeWidgetItem *, QTreeWidgetItem *);
-//    void updateCheckState(QTreeWidgetItem*item, int col);
 
     void maybePlotChannel(int,int,int,int);
     void maybePlotChannel(QTableWidgetItem *item);
-
-//    void xRangeChanged(const QCPRange &range);
-//    void yRangeChanged(const QCPRange &range);
-
-//    void graphClicked(QCPAbstractPlottable*);
-    void plotSelectionChanged();
 
     /**
      * @brief plotAllChannels
@@ -125,6 +119,8 @@ private slots:
     void renameTab(int i);
     void changeCurrentTab(int currentIndex);
     void onTabTextChanged();
+
+    void editColors();
 private:
     void addFiles(QList<QStringList> &files, bool addToDatabase);
     void addFiles(const QStringList &files, bool addToDatabase);
@@ -134,19 +130,13 @@ private:
     void updateRecordState(int recordIndex);
     void updateChannelsHeaderState();
 
-    void rescanDeadRecords();
-    void removeDeadRecords();
-
-    void createTab(const QString &name, const QVariantList &files);
+    void createTab(const QString &name, const QStringList &folders);
 
     QStringList tabsNames;
 
-    QTreeWidget *tree;
-    QTableWidget *channelsTable;
+    Tab *tab;
 
-    QList<QStringList> *alreadyAddedFiles;
     DfdFileDescriptor *record;
-
 
     QAction *addFolderAct;
     QAction *delFilesAct;
@@ -158,15 +148,17 @@ private:
     QAction *switchCursorAct;
     QAction *copyToClipboardAct;
     QAction *printPlotAct;
+    QAction *editColorsAct;
+
+    QAction *meanAct;
 
     Plot *plot;
 
     QSplitter *splitter;
-    CheckableHeaderView *tableHeader;
-    QLabel *filePathLabel;
+
+
 
     TabWidget *tabWidget;
-
 };
 
 #endif // MAINWINDOW_H

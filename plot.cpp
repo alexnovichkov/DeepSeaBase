@@ -30,40 +30,7 @@
 #include "mainwindow.h"
 #include "graphpropertiesdialog.h"
 
-static QList<QColor> usedColors;
-
-QColor getColor()
-{
-    static uint colors[16]={
-        0x00b40000,
-        0x00000080,
-        0x00008080,
-        0x00803f00,
-        0x00ff8000,
-        0x000000ff,
-        0x00808000,
-        0x0000ffff,
-        0x00f0f0c0, //240, 240, 192
-        0x00800080,
-        0x00ff00ff,
-        0x00007800, //0, 120, 0
-        0x00000000,
-        0x00ff8080,
-        0x008080ff,
-        0x00a0a0a4
-    };
-
-
-    for (int i=0; i<16; ++i) {
-        QColor c = QColor(QRgb(colors[i]));
-        if (!usedColors.contains(c)) {
-            usedColors.append(c);
-            return c;
-        }
-    }
-
-    return QColor(QRgb(0x00808080));
-}
+#include "colorselector.h"
 
 Plot::Plot(QWidget *parent) :
     QwtPlot(parent), freeGraph(0)
@@ -151,7 +118,7 @@ void Plot::deleteGraphs()
     x1.clear();
     y1.clear();
     y2.clear();
-    usedColors.clear();
+    ColorSelector::instance()->resetState();
 
     for (int i=0; i<4; ++i)
         setAxisTitle(i, "");
@@ -184,7 +151,7 @@ void Plot::deleteGraph(DfdFileDescriptor *dfd, int channel, bool doReplot)
 void Plot::deleteGraph(Curve *graph, bool doReplot)
 {
     if (graph) {
-        usedColors.removeAll(graph->pen().color());
+        ColorSelector::instance()->freeColor(graph->pen().color());
         graphs.removeAll(graph);
         leftGraphs.removeAll(graph);
         rightGraphs.removeAll(graph);
@@ -298,7 +265,7 @@ bool Plot::plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed)
 
     if (addToFixed) {
         Curve *graph = new Curve(ch->legendName(), dfd, channel);
-        QColor nextColor = getColor();
+        QColor nextColor = ColorSelector::instance()->getColor();
         graph->setPen(nextColor, 1);
 
         graphs << graph;
@@ -423,6 +390,86 @@ void Plot::print()
                 painter.drawImage(0, 0, img);
             }
         }
+    }
+}
+
+void Plot::calculateMean()
+{
+    bool stepsEqual = true;
+    bool namesEqual = true;
+    bool oldNamesEqual = true;
+    if (graphs.size()<2) return;
+
+    Curve *firstCurve = graphs.first();
+    Channel *firstChannel = firstCurve->dfd->channels.at(firstCurve->channel);
+    for (int i=1; i<graphs.size(); ++i) {
+        Curve *curve = graphs.at(i);
+        Channel *channel = curve->dfd->channels.at(curve->channel);
+
+        if (firstChannel->xStep != channel->xStep)
+            stepsEqual = false;
+        if (firstChannel->YName != channel->YName)
+            namesEqual = false;
+        if (firstChannel->YNameOld != channel->YNameOld)
+            oldNamesEqual = false;
+    }
+
+    if (!namesEqual) {
+        int result = QMessageBox::warning(this, "Среднее графиков",
+                                          "Графики по-видимому имеют разный тип. Продолжить?",
+                                          "Да", "Нет");
+
+        if (result == 1)
+            return;
+    }
+
+    if (firstChannel->YName == "дБ" && !oldNamesEqual) {
+        int result = QMessageBox::warning(this, "Среднее графиков",
+                                          "Графики по-видимому имеют разный тип. Продолжить?",
+                                          "Да", "Нет");
+        if (result == 1)
+            return;
+    }
+
+    if (!stepsEqual) {
+        int result = QMessageBox::warning(this, "Среднее графиков",
+                                          "Графики имеют разный шаг по оси X. Продолжить?",
+                                          "Да", "Нет");
+        if (result == 1)
+            return;
+    }
+
+    qDebug()<<"Mean requested";
+
+    // берем и копируем первый файл
+    QString meanDfdFile = firstCurve->dfd->dfdFileName;
+    meanDfdFile = meanDfdFile.left(meanDfdFile.length()-4)+"_mean.dfd";
+    if (QFile::copy(firstCurve->dfd->dfdFileName, meanDfdFile)) {
+        DfdFileDescriptor meanDfd(meanDfdFile);
+        meanDfd.read();
+
+        meanDfd.changed = true;
+        meanDfd.rawFileChanged = true;
+
+        meanDfd.Time = QTime::currentTime();
+        meanDfd.Date = QDate::currentDate();
+        meanDfd.CreatedBy = "DeepSeaBase by Novichkov & sukin sons";
+        meanDfd.NumChans = 1;
+
+        // удаляем все каналы, кроме того, который построен
+        const int chan = firstCurve->channel;
+        for (int i = meanDfd.channels.size()-1; i>chan; --i) {
+            delete meanDfd.channels[i];
+            meanDfd.channels.removeAt(i);
+        }
+        for (int i = chan-1; i>=0; --i) {
+            delete meanDfd.channels[i];
+            meanDfd.channels.removeAt(i);
+        }
+
+        Q_ASSERT(meanDfd.channels.size()==1);
+
+
     }
 }
 

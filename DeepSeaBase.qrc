@@ -5,5 +5,6 @@
         <file>icons/cross.png</file>
         <file>icons/clipboard.png</file>
         <file>icons/print.png</file>
+        <file>icons/colors.png</file>
     </qresource>
 </RCC>

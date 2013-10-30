@@ -82,6 +82,8 @@ public slots:
     void switchCursor();
     void copyToClipboard();
     void print();
+
+    void calculateMean();
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
 private:

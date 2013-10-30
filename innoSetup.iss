@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "DeepSea Database"
-#define MyAppVersion "1.0"
+#define MyAppVersion "1.1.0"
 #define MyAppPublisher "Novichkov Inc."
 #define MyAppExeName "DeepSeaBase.exe"
 
@@ -18,7 +18,7 @@ AppPublisher={#MyAppPublisher}
 DefaultDirName={pf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
-OutputBaseFilename=DeepSeaBaseInstall
+OutputBaseFilename=DeepSeaBaseInstall-{#MyAppVersion}
 Compression=lzma
 SolidCompression=yes
 

@@ -25,7 +25,9 @@ SOURCES += main.cpp\
     methods/timemethod.cpp \
     graphpropertiesdialog.cpp \
     tabwidget.cpp \
-    converters.cpp
+    converters.cpp \
+    coloreditdialog.cpp \
+    colorselector.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -39,7 +41,9 @@ HEADERS  += mainwindow.h \
     methods/timemethod.h \
     graphpropertiesdialog.h \
     tabwidget.h \
-    converters.h
+    converters.h \
+    coloreditdialog.h \
+    colorselector.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\
@@ -51,7 +55,7 @@ HEADERS +=qwtchartzoom.h\
 
 RESOURCES *= DeepSeaBase.qrc
 
-RC_FILE = DeepSeaBase.rc
+RC_FILE *= DeepSeaBase.rc
 
 CONFIG(release, debug|release):LIBS *= C:/Qwt-6.1.0/lib/libqwt.a
 CONFIG(debug, debug|release):  LIBS *= C:/Qwt-6.1.0/lib/libqwtd.a
