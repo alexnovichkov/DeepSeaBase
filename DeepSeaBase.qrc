@@ -6,5 +6,6 @@
         <file>icons/clipboard.png</file>
         <file>icons/print.png</file>
         <file>icons/colors.png</file>
+        <file>icons/mean.png</file>
     </qresource>
 </RCC>

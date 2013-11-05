@@ -233,7 +233,7 @@ void Plot::moveGraph(Curve *curve)
     }
 }
 
-bool Plot::plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed)
+bool Plot::plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed, QColor *col)
 {
     if (plotted(dfd, channel)) return false;
 
@@ -267,6 +267,7 @@ bool Plot::plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed)
         Curve *graph = new Curve(ch->legendName(), dfd, channel);
         QColor nextColor = ColorSelector::instance()->getColor();
         graph->setPen(nextColor, 1);
+        if (col) *col = nextColor;
 
         graphs << graph;
         g = graph;
@@ -395,16 +396,24 @@ void Plot::print()
 
 void Plot::calculateMean()
 {
-    bool stepsEqual = true;
-    bool namesEqual = true;
-    bool oldNamesEqual = true;
+    bool dataTypeEqual = true;
+    bool stepsEqual = true; // одинаковый шаг по оси Х
+    bool namesEqual = true; // одинаковые названия осей Y
+    bool oldNamesEqual = true; // одинаковые старые названия осей Y
+    bool oneFile = true; // каналы из одного файла
+    bool writeToSeparateFile = true;
+
     if (graphs.size()<2) return;
+
+    QList<Channel*> channels;
 
     Curve *firstCurve = graphs.first();
     Channel *firstChannel = firstCurve->dfd->channels.at(firstCurve->channel);
-    for (int i=1; i<graphs.size(); ++i) {
+    channels << firstChannel;
+    for (int i = 1; i<graphs.size(); ++i) {
         Curve *curve = graphs.at(i);
         Channel *channel = curve->dfd->channels.at(curve->channel);
+        channels << channel;
 
         if (firstChannel->xStep != channel->xStep)
             stepsEqual = false;
@@ -412,6 +421,19 @@ void Plot::calculateMean()
             namesEqual = false;
         if (firstChannel->YNameOld != channel->YNameOld)
             oldNamesEqual = false;
+        if (firstCurve->dfd->DFDGUID != curve->dfd->DFDGUID)
+            oneFile = false;
+        if (firstCurve->dfd->DataType != curve->dfd->DataType)
+            dataTypeEqual = false;
+    }
+
+    if (!dataTypeEqual) {
+        int result = QMessageBox::warning(this, "Среднее графиков",
+                                          "Графики имеют разный тип. Продолжить?",
+                                          "Да", "Нет");
+
+        if (result == 1)
+            return;
     }
 
     if (!namesEqual) {
@@ -438,39 +460,138 @@ void Plot::calculateMean()
         if (result == 1)
             return;
     }
-
-    qDebug()<<"Mean requested";
-
-    // берем и копируем первый файл
-    QString meanDfdFile = firstCurve->dfd->dfdFileName;
-    meanDfdFile = meanDfdFile.left(meanDfdFile.length()-4)+"_mean.dfd";
-    if (QFile::copy(firstCurve->dfd->dfdFileName, meanDfdFile)) {
-        DfdFileDescriptor meanDfd(meanDfdFile);
-        meanDfd.read();
-
-        meanDfd.changed = true;
-        meanDfd.rawFileChanged = true;
-
-        meanDfd.Time = QTime::currentTime();
-        meanDfd.Date = QDate::currentDate();
-        meanDfd.CreatedBy = "DeepSeaBase by Novichkov & sukin sons";
-        meanDfd.NumChans = 1;
-
-        // удаляем все каналы, кроме того, который построен
-        const int chan = firstCurve->channel;
-        for (int i = meanDfd.channels.size()-1; i>chan; --i) {
-            delete meanDfd.channels[i];
-            meanDfd.channels.removeAt(i);
-        }
-        for (int i = chan-1; i>=0; --i) {
-            delete meanDfd.channels[i];
-            meanDfd.channels.removeAt(i);
-        }
-
-        Q_ASSERT(meanDfd.channels.size()==1);
-
-
+    if (oneFile) {
+        int result = QMessageBox::information(this, "Среднее графиков",
+                                              QString("Графики взяты из одной записи %1.\n").arg(firstCurve->dfd->rawFileName)
+                                              +
+                                              QString("Сохранить среднее в эту запись дополнительным каналом?"),
+                                              "Да, записать в этот файл", "Нет, экспортировать в отдельный файл");
+        writeToSeparateFile = (result == 1);
     }
+
+    DfdFileDescriptor *meanDfd = 0;
+    Channel *ch = 0;
+    bool created = false;
+    QString meanDfdFile;
+
+    if (writeToSeparateFile) {
+        // берем и копируем первый файл
+        QString meanD = firstCurve->dfd->dfdFileName;
+        meanD = meanD.left(meanD.length()-4);
+        meanDfdFile = QFileDialog::getSaveFileName(this, "Сохранение среднего", meanD, "Файлы dfd (*.dfd)");
+        if (meanDfdFile.isEmpty()) return;
+
+
+        if (QFile::copy(firstCurve->dfd->dfdFileName, meanDfdFile)) {
+            meanDfd = new DfdFileDescriptor(meanDfdFile);
+            meanDfd->read();
+
+            // удаляем все каналы, кроме того, который построен
+            const int chan = firstCurve->channel;
+            for (int i = meanDfd->channels.size()-1; i>chan; --i) {
+                delete meanDfd->channels[i];
+                meanDfd->channels.removeAt(i);
+            }
+            for (int i = chan-1; i>=0; --i) {
+                delete meanDfd->channels[i];
+                meanDfd->channels.removeAt(i);
+            }
+
+            Q_ASSERT(meanDfd->channels.size()==1);
+
+            ch = meanDfd->channels[0];
+            ch->channelIndex = 0;
+        }
+    }
+    else {
+        meanDfd = firstCurve->dfd;
+        ch = meanDfd->getChannel(meanDfd->DataType, meanDfd->channels.size());
+        meanDfd->channels.append(ch);
+        meanDfdFile = meanDfd->dfdFileName;
+    }
+
+    if (meanDfd && ch) {
+        // считаем данные для этого канала
+        // если ось = дБ, сначала переводим значение в линейное
+        quint32 numInd = channels.first()->NumInd;
+        for (int i=1; i<channels.size(); ++i) {
+            if (channels.at(i)->NumInd < numInd)
+                numInd = channels.at(i)->NumInd;
+        }
+
+        delete [] ch->yValues;
+        ch->yValues = new double[numInd];
+
+        ch->yMin = 1.0e100;
+        ch->yMax = -1.0e100;
+
+        for (quint32 i=0; i<numInd; ++i) {
+            double sum = 0.0;
+            for (int file = 0; file < channels.size(); ++file) {
+                double temp = channels[file]->yValues[i];
+                if (channels[file]->YName == "дБ")
+                    temp = pow(10.0, (temp/10.0));
+                sum += temp;
+            }
+            sum /= channels.size();
+            if (channels[0]->YName == "дБ")
+                sum = 10.0 * log10(sum);
+            if (sum < ch->yMin) ch->yMin = sum;
+            if (sum > ch->yMax) ch->yMax = sum;
+            ch->yValues[i] = sum;
+        }
+
+        // обновляем сведения канала
+        ch->populated = true;
+        ch->ChanName = "Среднее";
+
+        QStringList list;
+        foreach(Channel *c, channels)
+            list << QString::number(c->channelIndex+1);
+        ch->ChanDscr = "Среднее каналов "+list.join(",");
+
+        ch->ChanBlockSize = numInd;
+        ch->NumInd = numInd;
+        ch->IndType = firstChannel->IndType;
+        ch->InputType = firstChannel->InputType;
+        ch->YName = firstChannel->YName;
+        ch->YNameOld = firstChannel->YNameOld;
+        ch->blockSizeInBytes = ch->ChanBlockSize * (ch->IndType % 16);
+        ch->xStep = firstChannel->xStep;
+
+        ch->xMin = ch->parent->XBegin;
+        ch->xMax = ch->xMin + ch->xStep * numInd;
+        ch->xMaxInitial = ch->xMax;
+        ch->yMinInitial = ch->yMin;
+        ch->yMaxInitial = ch->yMax;
+
+        // обновляем dfd-файл
+        meanDfd->changed = true;
+        meanDfd->rawFileChanged = true;
+
+        meanDfd->Time = QTime::currentTime();
+        meanDfd->Date = QDate::currentDate();
+        meanDfd->CreatedBy = "DeepSeaBase by Novichkov & sukin sons";
+        meanDfd->DFDGUID = DfdFileDescriptor::createGUID();
+        meanDfd->NumChans = meanDfd->channels.size();
+
+        // будем писать канал подряд, блок = размеру файла
+        meanDfd->BlockSize = 0;
+        meanDfd->NumInd = ch->NumInd;
+    }
+
+    if (writeToSeparateFile)
+        // implicit saving
+        delete meanDfd;
+    else {
+        meanDfd->write();
+        meanDfd->writeRawFile();
+    }
+
+    if (created)
+        emit fileCreated(meanDfdFile, true);
+    else
+        emit fileChanged(meanDfdFile, true);
 }
 
 void Plot::importPlot(const QString &fileName)

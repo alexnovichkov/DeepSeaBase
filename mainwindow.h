@@ -49,7 +49,6 @@ public:
     QLabel *filePathLabel;
     QTreeWidget *tree;
     QTableWidget *channelsTable;
-    QList<QStringList> files;
     QStringList folders;
 };
 
@@ -121,13 +120,15 @@ private slots:
     void onTabTextChanged();
 
     void editColors();
+
+    void addFile(const QString &fileName, bool plot);
+    void updateFile(const QString &fileName, bool plot);
 private:
-    void addFiles(QList<QStringList> &files, bool addToDatabase);
-    void addFiles(const QStringList &files, bool addToDatabase);
+    void addFiles(const QStringList &files);
 
     void deleteFiles(const QVector<int> &indexes);
 
-    void updateRecordState(int recordIndex);
+//    void updateRecordState(int recordIndex);
     void updateChannelsHeaderState();
 
     void createTab(const QString &name, const QStringList &folders);

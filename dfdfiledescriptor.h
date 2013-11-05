@@ -2,8 +2,7 @@
 #define DFDFILEDESCRIPTOR_H
 
 #include <QtCore>
-
-//#include "qcustomplot.h"
+#include <QColor>
 
 #include <qwt_series_data.h>
 
@@ -117,8 +116,8 @@ public:
     Channel(DfdFileDescriptor *parent, int channelIndex)
         : IndType(0),
           ChanBlockSize(0),
-          blockSizeInBytes(0),
           NumInd(0),
+          blockSizeInBytes(0),
           xMin(0.0),
           xMax(0.0),
           yMin(0.0),
@@ -131,13 +130,14 @@ public:
           parent(parent),
           channelIndex(channelIndex),
           checkState(Qt::Unchecked),
+          color(QColor()),
           populated(false)
     {}
     virtual ~Channel();
     virtual void read(QSettings &dfd, int chanIndex);
     virtual void write(QTextStream &dfd, int chanIndex);
-    virtual QStringList getHeaders();
-    virtual QStringList getData();
+    virtual QStringList getInfoHeaders();
+    virtual QStringList getInfoData();
     virtual void populateData();
     virtual QString legendName();
     //дополнительная обработка, напр.
@@ -145,17 +145,26 @@ public:
     //для получения реального значения
     virtual double postprocess(double v) {return v;}
     double getValue(QDataStream &readStream);
+    void setValue(double val, QDataStream &writeStream);
+
+    /**
+     * @brief preprocess - подготавливает значение к записи с помощью setValue
+     * @param v - значение
+     * @return подготовленное значение
+     */
+    virtual double preprocess(double v) {return v;}
+
     QString ChanAddress; //
     QString ChanName; //
     quint32 IndType; //характеристика отсчета
     quint32 ChanBlockSize; //размер блока в отсчетах
-    quint32 blockSizeInBytes; //размер блока в байтах
-    quint8 sampleSize; //размер отсчета в байтах
     quint32 NumInd; //общее число отсчетов
     QString YName;
     QString YNameOld;
     QString InputType;
     QString ChanDscr;
+
+    quint32 blockSizeInBytes; //размер блока в байтах
 
     double xMin;
     double xMax;
@@ -168,11 +177,10 @@ public:
 
     double *yValues;
     DfdFileDescriptor *parent;
-    quint32 channelIndex;
+    quint32 channelIndex; // нумерация с 0
 
     Qt::CheckState checkState;
-
-    PlotType plotType;
+    QColor color;
 
     bool populated;
 };
@@ -194,9 +202,10 @@ public:
     virtual ~RawChannel() {}
     virtual void read(QSettings &dfd, int chanIndex);
     virtual void write(QTextStream &dfd, int chanIndex);
-    virtual QStringList getHeaders();
-    virtual QStringList getData();
+    virtual QStringList getInfoHeaders();
+    virtual QStringList getInfoData();
     virtual double postprocess(double v);
+    virtual double preprocess(double v);
     void populateData();
     QString SensName;
     double ADC0;
@@ -266,6 +275,10 @@ public:
     }
     QString description() const;
 
+    static QString createGUID();
+
+    Channel *getChannel(DfdDataType DataType, int chanIndex);
+
     QString dfdFileName;
     QString rawFileName; // путь к RAW файлу
 
@@ -300,7 +313,7 @@ public:
     QList<Channel *> channels;
 private:
     friend class DataDescription;
-    Channel *getChannel(DfdDataType DataType, int chanIndex);
+
 
     QString _legend; // editable description
 };

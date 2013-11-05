@@ -3,6 +3,8 @@
 
 #include "converters.h"
 
+#include <QUuid>
+
 QString dataTypeDescription(int type)
 {
     switch (type) {
@@ -78,7 +80,7 @@ bool readDfdFile(QIODevice &device, QSettings::SettingsMap &map)
         QByteArray b = QByteArray(buf, lineLength);
         if (!b.isEmpty()) {
             QString s = codec->toUnicode(b);
-            s.chop(2);
+            s = s.trimmed();
             if (s.startsWith('[')) {
                 s.chop(1);
                 s.remove(0,1);
@@ -195,6 +197,9 @@ void DfdFileDescriptor::write()
     QTextStream dfd(&file);
     dfd.setCodec(codec);
 
+    // убираем перекрытие блоков
+    BlockSize = 0;
+
     /** [DataFileDescriptor]*/
     dfd << "[DataFileDescriptor]" << endl;
     dfd << "DFDGUID="<<DFDGUID << endl;
@@ -234,7 +239,35 @@ void DfdFileDescriptor::write()
 
 void DfdFileDescriptor::writeRawFile()
 {
+    //be sure all channels were read. May take too much memory
+    foreach(Channel *ch, channels) {
+        if (!ch->populated) ch->populateData();
+    }
 
+
+    QFile rawFile(rawFileName);
+    if (rawFile.open(QFile::WriteOnly)) {
+        QDataStream writeStream(&rawFile);
+        writeStream.setByteOrder(QDataStream::LittleEndian);
+
+        if (BlockSize == 0) {
+            // пишем поканально
+            for (quint32 i = 0; i<NumChans; ++i) {
+                Channel *ch = channels[i];
+
+                if (ch->IndType==0xC0000004)
+                    writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+                for (quint32 val = 0; val < ch->NumInd; ++val) {
+                    ch->setValue(ch->yValues[val], writeStream);
+                }
+            }
+        }
+        else {
+            // пишем блоками размером BlockSize
+            qDebug() << "Oops! Пытаемся писать с перекрытием?";
+        }
+    }
 }
 
 void DfdFileDescriptor::setLegend(const QString &legend)
@@ -257,6 +290,15 @@ QString DfdFileDescriptor::description() const
 {
     if (dataDescription) return dataDescription->toString();
     return dfdFileName;
+}
+
+QString DfdFileDescriptor::createGUID()
+{
+    QString result;
+    result = QUuid::createUuid().toString().toUpper();
+    if (result.at(24) == '-') result.remove(24,1);
+    else result.remove(25,1);
+    return result;
 }
 
 Process::Process(DfdFileDescriptor *parent) : parent(parent)
@@ -344,8 +386,8 @@ void Channel::read(QSettings &dfd, int chanIndex)
     ChanName = dfd.value("ChanName").toString();
     IndType = dfd.value("IndType").toUInt();
     ChanBlockSize = dfd.value("ChanBlockSize").toInt();
-    sampleSize = IndType % 16;
-    blockSizeInBytes = ChanBlockSize * sampleSize;
+
+    blockSizeInBytes = ChanBlockSize * (IndType % 16);
     YName = dfd.value("YName").toString();
     YNameOld = dfd.value("YNameOld").toString();
     InputType = dfd.value("InputType").toString();
@@ -370,7 +412,7 @@ void Channel::write(QTextStream &dfd, int chanIndex)
     dfd << "ChanDscr="<<ChanDscr << endl;
 }
 
-QStringList Channel::getHeaders()
+QStringList Channel::getInfoHeaders()
 {
     return QStringList()
             //<< QString("Канал") //ChanAddress
@@ -381,7 +423,7 @@ QStringList Channel::getHeaders()
                ;
 }
 
-QStringList Channel::getData()
+QStringList Channel::getInfoData()
 {
     return QStringList()
           //  << ChanAddress
@@ -406,6 +448,9 @@ void Channel::populateData()
         yValues = new double[NI];
 
         quint32 xCount = 0;
+
+        yMin = 1.0e100;
+        yMax = -1.0e100;
 
         while (NI>0) {
             //read NumChans chunks
@@ -510,6 +555,51 @@ double Channel::getValue(QDataStream &readStream)
     return postprocess(realValue);
 }
 
+void Channel::setValue(double val, QDataStream &writeStream)
+{
+    double realValue = preprocess(val);
+
+    switch (IndType) {
+        case 0x00000001: {
+            quint8 v = (quint8)realValue;
+            writeStream << v;
+            break;}
+        case 0x80000001: {
+            qint8 v = (qint8)realValue;
+            writeStream << v;
+            break;}
+        case 0x00000002: {
+            quint16 v = (quint16)realValue;
+            writeStream << v;
+            break;}
+        case 0x80000002: {
+            qint16 v = (qint16)realValue;
+            writeStream << v;
+            break;}
+        case 0x00000004: {
+            quint32 v = (quint32)realValue;
+            writeStream << v;
+            break;}
+        case 0x80000004: {
+            qint32 v = (qint32)realValue;
+            writeStream << v;
+            break;}
+        case 0x80000008: {
+            qint64 v = (qint64)realValue;
+            writeStream << v;
+            break;}
+        case 0xC0000004: {
+            float v = (float)realValue;
+            writeStream << v;
+            break;}
+        case 0xC0000008:
+        case 0xC000000A:
+            writeStream << realValue;
+            break;
+        default: break;
+    }
+}
+
 void RawChannel::read(QSettings &dfd, int chanIndex)
 {
     Channel::read(dfd,chanIndex);
@@ -539,9 +629,9 @@ void RawChannel::write(QTextStream &dfd, int chanIndex)
     dfd << "SensName=" <<  SensName << endl;
 }
 
-QStringList RawChannel::getHeaders()
+QStringList RawChannel::getInfoHeaders()
 {
-    QStringList result = Channel::getHeaders();
+    QStringList result = Channel::getInfoHeaders();
     result.append(QStringList()
                   << QString("Смещ.") //ADC0
                   << QString("Множ.") //ADCStep
@@ -555,12 +645,12 @@ QStringList RawChannel::getHeaders()
     return result;
 }
 
-QStringList RawChannel::getData()
+QStringList RawChannel::getInfoData()
 {
     // пересчитываем усиление из В в дБ
     double ampllevel = AmplLevel;
     if (ampllevel <= 0.0) ampllevel = 1.0;
-    QStringList result = Channel::getData();
+    QStringList result = Channel::getInfoData();
     result.append(QStringList()
                   << QString::number(ADC0)
                   << QString::number(ADCStep)
@@ -577,6 +667,11 @@ QStringList RawChannel::getData()
 double RawChannel::postprocess(double v)
 {
     return ((v*ADCStep+ADC0)/AmplLevel - AmplShift - Sens0Shift)/SensSensitivity;
+}
+
+double RawChannel::preprocess(double v)
+{
+    return ((v * SensSensitivity + Sens0Shift + AmplShift) * AmplLevel - ADC0) / ADCStep;
 }
 
 void RawChannel::populateData()

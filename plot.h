@@ -61,7 +61,7 @@ public:
     void deleteGraph(DfdFileDescriptor *dfd, int channel, bool doReplot = true);
     void deleteGraph(Curve *graph, bool doReplot = true);
 
-    bool plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed);
+    bool plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed, QColor *col);
 
     Curve *plotted(DfdFileDescriptor *dfd, int channel) const;
 
@@ -84,6 +84,9 @@ public slots:
     void print();
 
     void calculateMean();
+signals:
+    void fileCreated(const QString &fileName, bool plot);
+    void fileChanged(const QString &fileName, bool plot);
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
 private:

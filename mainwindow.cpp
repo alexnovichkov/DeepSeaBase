@@ -81,6 +81,8 @@ MainWindow::MainWindow(QWidget *parent)
     setAcceptDrops(true);
 
     plot = new Plot(this);
+    connect(plot, SIGNAL(fileCreated(QString,bool)), SLOT(addFile(QString,bool)));
+    connect(plot, SIGNAL(fileChanged(QString, bool)), SLOT(updateFile(QString,bool)));
 
     addFolderAct = new QAction(qApp->style()->standardIcon(QStyle::SP_DialogOpenButton),
                                tr("Добавить папку"),this);
@@ -126,7 +128,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(printPlotAct, SIGNAL(triggered()), plot, SLOT(print()));
 
     meanAct = new QAction(QString("Вывести среднее"), this);
-    meanAct->setIcon(QIcon(":/icons/print.png"));
+    meanAct->setIcon(QIcon(":/icons/mean.png"));
     connect(meanAct, SIGNAL(triggered()), plot, SLOT(calculateMean()));
 
     editColorsAct = new QAction(QString("Изменить цвета графиков"), this);
@@ -208,7 +210,10 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->tree = new QTreeWidget(this);
     tab->tree->setRootIsDecorated(false);
     tab->tree->setContextMenuPolicy(Qt::ActionsContextMenu);
-    tab->tree->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    tab->tree->setSelectionMode(QAbstractItemView::ContiguousSelection);
+    tab->tree->setDragEnabled(true);
+    tab->tree->setDragDropMode(QAbstractItemView::InternalMove);
+   // tab->tree->setDefaultDropAction(Qt::MoveAction);
     tab->tree->addAction(addFolderAct);
     tab->tree->addAction(delFilesAct);
     tab->tree->addAction(plotAllChannelsAct);
@@ -405,11 +410,19 @@ MainWindow::~MainWindow()
     ColorSelector::instance()->drop();
 }
 
-bool checkForContains(const QList<QStringList> &list, const QString &file)
+bool checkForContains(Tab *tab, const QString &file, int *index = 0)
 {
-    foreach (const QStringList &item, list) {
-        if (item.first() == file) return true;
+    for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
+        SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
+        if (item) {
+            if (item->dfd->dfdFileName == file) {
+                if (index) *index = i;
+                return true;
+            }
+        }
     }
+
+    if (index) *index = -1;
     return false;
 }
 
@@ -438,11 +451,11 @@ void MainWindow::addFolder(const QString &directory)
 
     QStringList toAdd;
     foreach (const QString &file, filesToAdd) {
-        if (!checkForContains(tab->files, file))
+        if (!checkForContains(tab, file))
             toAdd << file;
     }
 
-    addFiles(toAdd, true);
+    addFiles(toAdd);
     if (toAdd.size() < filesToAdd.size()) {
         QMessageBox::information(this,QString("База данных"),
                                  toAdd.isEmpty()?QString("Эти файлы уже есть в базе"):
@@ -519,7 +532,7 @@ void MainWindow::updateChannelsTable(QTreeWidgetItem *current, QTreeWidgetItem *
     int chanCount = record->channels.size();
     if (chanCount == 0) return;
 
-    QStringList headers = record->channels[0]->getHeaders();
+    QStringList headers = record->channels[0]->getInfoHeaders();
 
     tab->channelsTable->blockSignals(true);
     tab->channelsTable->clear();
@@ -532,19 +545,23 @@ void MainWindow::updateChannelsTable(QTreeWidgetItem *current, QTreeWidgetItem *
     boldFont.setBold(true);
 
     for (int i=0; i<chanCount; ++i) {
-        QStringList data = record->channels[i]->getData();
-        Qt::CheckState state = record->channels[i]->checkState;
+        Channel *ch = record->channels[i];
+        QStringList data = ch->getInfoData();
+        Qt::CheckState state = ch->checkState;
         for (int col=0; col<headers.size(); ++col) {
             QTableWidgetItem *ti = new QTableWidgetItem(data.at(col));
             if (col==0) {
                 ti->setCheckState(state);
                 if (state==Qt::Checked) ti->setFont(boldFont);
+                if (ch->color.isValid()) {
+                    ti->setTextColor(Qt::white);
+                    ti->setBackgroundColor(ch->color);
+                }
             }
             tab->channelsTable->setItem(i,col,ti);
         }
     }
     updateChannelsHeaderState();
-    //channelsTable->resizeColumnsToContents();
     tab->channelsTable->blockSignals(false);
 }
 
@@ -558,7 +575,7 @@ void MainWindow::maybePlotChannel(int currentRow, int currentColumn, int previou
     if (!ch->populated)
         ch->populateData();
 
-    plot->plotChannel(record, currentRow, false);
+    plot->plotChannel(record, currentRow, false, 0);
 }
 
 bool allUnchecked(const QList<Channel *> &channels)
@@ -590,20 +607,29 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
     bool plotted = true;
 
     if (state == Qt::Checked) {
-        plotted = plot->plotChannel(record, item->row(), true);
+        QColor col;
+        plotted = plot->plotChannel(record, item->row(), true, &col);
         if (plotted) {
             item->setFont(boldFont);
             ch->checkState = Qt::Checked;
+            ch->color = col;
+            item->setBackgroundColor(col);
+            item->setTextColor(Qt::white);
         }
         else {
             item->setCheckState(Qt::Unchecked);
             ch->checkState = Qt::Unchecked;
+            ch->color = QColor();
+            item->setTextColor(Qt::black);
         }
     }
     else if (state == Qt::Unchecked) {
         plot->deleteGraph(record, item->row());
         item->setFont(tab->channelsTable->font());
         ch->checkState = Qt::Unchecked;
+        item->setBackgroundColor(Qt::white);
+        item->setTextColor(Qt::black);
+        ch->color = QColor();
     }
     tab->channelsTable->blockSignals(false);
 
@@ -644,11 +670,11 @@ void MainWindow::convertRecords()
 
         QStringList newFiles = dialog.getNewFiles();
         for (int i=newFiles.size()-1; i>=0; --i) {
-            if (checkForContains(tab->files, newFiles.at(i)))
+            if (checkForContains(tab, newFiles.at(i)))
                 newFiles.removeAt(i);
         }
 
-        addFiles(newFiles, true);
+        addFiles(newFiles);
     }
 }
 
@@ -670,13 +696,18 @@ void MainWindow::clearPlot()
             for (int i=0; i<t->tree->topLevelItemCount(); ++i) {
                 DfdFileDescriptor *dfd = dynamic_cast<SortableTreeWidgetItem *>(t->tree->topLevelItem(i))->dfd;
                 QList<Channel *> list = dfd->channels;
-                foreach (Channel *c, list) c->checkState = Qt::Unchecked;
+                foreach (Channel *c, list) {
+                    c->checkState = Qt::Unchecked;
+                    c->color = QColor();
+                }
                 t->tree->topLevelItem(i)->setFont(1, t->tree->font());
             }
             t->channelsTable->blockSignals(true);
             for (int i=0; i<t->channelsTable->rowCount(); ++i) {
                 t->channelsTable->item(i,0)->setCheckState(Qt::Unchecked);
                 t->channelsTable->item(i,0)->setFont(t->channelsTable->font());
+                t->channelsTable->item(i,0)->setBackgroundColor(Qt::white);
+                t->channelsTable->item(i,0)->setTextColor(Qt::black);
             }
             t->channelsTable->blockSignals(false);
         }
@@ -714,7 +745,7 @@ void MainWindow::rescanBase()
     // next we clear all tab and populate it with folders anew
     tab->tree->clear();
     tab->channelsTable->setRowCount(0);
-    tab->files.clear();
+
     tab->filePathLabel->clear();
 
     QStringList folders = tab->folders;
@@ -736,34 +767,90 @@ void MainWindow::setSetting(const QString &key, const QVariant &value)
     se.setValue(key, value);
 }
 
-void MainWindow::addFiles(const QStringList &files, bool addToDatabase)
-{
-    QList<QStringList> list;
-    foreach (const QString &file, files)
-        list << (QStringList()<<file<<"");
-    addFiles(list, addToDatabase);
-}
-
-void MainWindow::addFiles(QList<QStringList> &files, bool addToDatabase)
+void MainWindow::addFile(const QString &fileName, bool plot)
 {
     if (!tab) return;
+
+    int index = -1;
+    checkForContains(tab, fileName, &index);
+    // такого файла еще не было
+    if (index < 0) {
+        int count = tab->tree->topLevelItemCount();
+        addFiles(QStringList()<<fileName);
+
+        if (tab->tree->topLevelItemCount()>count) {
+            tab->tree->setCurrentItem(tab->tree->topLevelItem(count));
+
+        }
+    }
+    else {
+        // перечитываем данные файла
+        QString pos = tab->tree->topLevelItem(index)->text(0);
+        deleteFiles(QVector<int>()<<index);
+
+        DfdFileDescriptor *dfd = new DfdFileDescriptor(fileName);
+        dfd->read();
+
+        QTreeWidgetItem *item =
+                new SortableTreeWidgetItem(dfd,
+                                           QStringList()
+                                           << pos // QString("№") 0
+                                           << QFileInfo(dfd->dfdFileName).completeBaseName() //QString("Файл") 1
+                                           << QDateTime(dfd->Date,dfd->Time).toString(dateTimeFormat) // QString("Дата") 2
+                                           << dataTypeDescription(dfd->DataType) // QString("Тип") 3
+                                           << QString::number(dfd->NumInd * dfd->XStep) // QString("Размер") 4
+                                           << dfd->XName // QString("Ось Х") 5
+                                           << QString::number(dfd->XStep) // QString("Шаг") 6
+                                           << QString::number(dfd->NumChans) // QString("Каналы")); 7
+                                           << dfd->description()
+                                           << dfd->legend()
+                                           );
+        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
+        tab->tree->insertTopLevelItem(index, item);
+
+        tab->tree->setCurrentItem(0);
+        tab->tree->setCurrentItem(tab->tree->topLevelItem(index));
+    }
+    if (plot)
+        headerToggled(0, Qt::Checked);
+}
+
+void MainWindow::updateFile(const QString &fileName, bool plot)
+{
+    if (!tab) return;
+
+    int index = -1;
+    checkForContains(tab, fileName, &index);
+    // такого файла еще не было
+    if (index >= 0) {
+        // перечитываем данные файла
+        SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(index));
+        if (!item) return;
+
+        DfdFileDescriptor *dfd = item->dfd;
+        item->setText(2, QDateTime(dfd->Date,dfd->Time).toString(dateTimeFormat));
+        item->setText(3, dataTypeDescription(dfd->DataType));
+        item->setText(7, QString::number(dfd->NumChans));
+
+        tab->tree->setCurrentItem(0);
+        tab->tree->setCurrentItem(tab->tree->topLevelItem(index));
+    }
+    if (plot)
+        tab->channelsTable->item(tab->channelsTable->rowCount()-1, 0)->setCheckState(Qt::Checked);
+}
+
+void MainWindow::addFiles(const QStringList &files)
+{
+    if (!tab) return;
+
     QList<QTreeWidgetItem *> items;
-    QList<DfdFileDescriptor *> dfds;
+
     int pos = tab->tree->topLevelItemCount();
 
     for (int i=0; i<files.size(); ++i) {
-        QStringList file = files[i];
-        DfdFileDescriptor *dfd = new DfdFileDescriptor(file.first());
+        QString file = files[i];
+        DfdFileDescriptor *dfd = new DfdFileDescriptor(file);
         dfd->read();
-        dfds << dfd;
-        if (dfd->DFDGUID.isEmpty()) dfd->DFDGUID = file.last();
-        if (file.last().isEmpty()) {
-            file[1] = dfd->DFDGUID;
-            files[i] = file;
-        }
-
-        if (addToDatabase)
-            tab->files.append(file);
 
         QTreeWidgetItem *item =
                 new SortableTreeWidgetItem(dfd,
@@ -779,7 +866,7 @@ void MainWindow::addFiles(QList<QStringList> &files, bool addToDatabase)
                                            << dfd->description()
                                            << dfd->legend()
                                            );
-        item->setFlags(item->flags() | Qt::ItemIsEditable);
+        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
         items << item;
     }
     tab->tree->setSortingEnabled(false);
@@ -799,15 +886,9 @@ void MainWindow::deleteFiles(const QVector<int> &indexes)
             plot->deleteGraphs(item->dfd->DFDGUID);
         }
         delete tab->tree->takeTopLevelItem(indexes.at(i));
-        tab->files.removeAt(indexes.at(i));
         taken = true;
     }
     if (taken) {
         tab->channelsTable->setRowCount(0);
     }
-}
-
-void MainWindow::updateRecordState(int recordIndex)
-{
-
 }
