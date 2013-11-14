@@ -36,24 +36,26 @@ void QAxisZoomSvc::attach(QwtChartZoom *zm)
 // Обработчик всех событий
 bool QAxisZoomSvc::eventFilter(QObject *target,QEvent *event)
 {
-    int ax = -1;
-    // просматриваем список шкал
-    for (int a=0; a < QwtPlot::axisCnt; a++)
-        // если событие произошло для данной шкалы, то
-        if (target == zoom->plot()->axisWidget(a))
-        {
-            ax = a;     // запоминаем номер шкалы
-            break;
-        }
+   // if (zoom->activated) {
+        int ax = -1;
+        // просматриваем список шкал
+        for (int a=0; a < QwtPlot::axisCnt; a++)
+            // если событие произошло для данной шкалы, то
+            if (target == zoom->plot()->axisWidget(a))
+            {
+                ax = a;     // запоминаем номер шкалы
+                break;
+            }
 
-    // если шкала была найдена, то
-    if (ax >= 0)
-        // если произошло одно из событий от мыши, то
-        if (event->type() == QEvent::MouseButtonPress ||
-            event->type() == QEvent::MouseMove ||
-            event->type() == QEvent::MouseButtonRelease)
-            axisMouseEvent(event,ax);   // вызываем соответствующий обработчик
-    // передаем управление стандартному обработчику событий
+        // если шкала была найдена, то
+        if (ax >= 0)
+            // если произошло одно из событий от мыши, то
+            if (event->type() == QEvent::MouseButtonPress ||
+                event->type() == QEvent::MouseMove ||
+                event->type() == QEvent::MouseButtonRelease)
+                axisMouseEvent(event,ax);   // вызываем соответствующий обработчик
+  //  }
+
     return QObject::eventFilter(target,event);
 }
 
@@ -210,7 +212,7 @@ void QAxisZoomSvc::axisApplyMove(QPoint evpos, int ax)
             // вычисляем новую левую границу
             double xl = currentRightBorder - wx;
             // устанавливаем ее для горизонтальной шкалы
-            zoom->isb_x->set(xl,currentRightBorder,ax);
+            zoom->horizontalScaleBounds->set(xl,currentRightBorder,ax);
             bndCh = true;   // изменилась граница
             break;
         }
@@ -226,7 +228,7 @@ void QAxisZoomSvc::axisApplyMove(QPoint evpos, int ax)
             // вычисляем новую правую границу
             double xr = currentLeftBorder + wx;
             // устанавливаем ее для горизонтальной шкалы
-            zoom->isb_x->set(currentLeftBorder,xr,ax);
+            zoom->horizontalScaleBounds->set(currentLeftBorder,xr,ax);
             bndCh = true;   // изменилась граница
             break;
         }
@@ -242,7 +244,7 @@ void QAxisZoomSvc::axisApplyMove(QPoint evpos, int ax)
             // вычисляем новую нижнюю границу
             double yb = currentTopBorder - hy;
             // устанавливаем ее для вертикальной шкалы
-            zoom->isb_y->set(yb,currentTopBorder, ax);
+            zoom->verticalScaleBounds->set(yb,currentTopBorder, ax);
             bndCh = true;   // изменилась граница
             break;
         }
@@ -258,7 +260,7 @@ void QAxisZoomSvc::axisApplyMove(QPoint evpos, int ax)
             // вычисляем новую верхнюю границу
             double yt = currentBottomBorder + hy;
             // устанавливаем ее для вертикальной шкалы
-            zoom->isb_y->set(currentBottomBorder,yt,ax);
+            zoom->verticalScaleBounds->set(currentBottomBorder,yt,ax);
             bndCh = true;   // изменилась граница
             break;
         }

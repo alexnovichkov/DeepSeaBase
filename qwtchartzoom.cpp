@@ -51,8 +51,8 @@ QwtChartZoom::QwtChartZoom(QwtPlot *qp) :
     mstVerDiv = qp->axisMaxMajor(masterY);
     slvVerDiv = qp->axisMaxMajor(slaveY);
     // создаем контейнеры границ шкалы
-    isb_x = new QScaleBounds(qp,masterX,slaveX);    // горизонтальной
-    isb_y = new QScaleBounds(qp,masterY,slaveY);    // и вертикальной
+    horizontalScaleBounds = new QScaleBounds(qp,masterX,slaveX);    // горизонтальной
+    verticalScaleBounds = new QScaleBounds(qp,masterY,slaveY);    // и вертикальной
 
     // устанавливаем обработчик всех событий
     qwtPlot->installEventFilter(this);
@@ -86,8 +86,8 @@ QwtChartZoom::~QwtChartZoom()
     delete axisZoom;
     delete wheelZoom;
     // удаляем контейнеры границ шкалы
-    delete isb_x;    // горизонтальной
-    delete isb_y;    // и вертикальной
+    delete horizontalScaleBounds;    // горизонтальной
+    delete verticalScaleBounds;    // и вертикальной
 }
 
 // Определение главного родителя
@@ -95,20 +95,20 @@ QObject *QwtChartZoom::generalParent(QObject *p)
 {
     // берем в качестве предыдущего родителя график
     // (возможен и другой объект в аргументе функции)
-    QObject *gp = p;
+    QObject *generalParent_ = p;
     // определяем родителя на текущем уровне
-    QObject *tp = gp->parent();
+    QObject *tp = generalParent_->parent();
     // пока родитель на текущем уровне не NULL
     while (tp != NULL)
     {
         // понижаем уровень:
         // запоминаем в качестве предыдущего родителя текущий
-        gp = tp;
+        generalParent_ = tp;
         // определяем родителя на следующем уровне
-        tp = gp->parent();
+        tp = generalParent_->parent();
     }
     // возвращаем в качестве главного родителя предыдущий
-    return gp;
+    return generalParent_;
 }
 
 // Текущий режим масштабирования
@@ -192,8 +192,8 @@ void QwtChartZoom::fixBounds()
     if (!isbF)
     {
         // фиксируем границы
-        isb_x->fix();   // горизонтальные
-        isb_y->fix();   // и вертикальные
+        horizontalScaleBounds->fix();   // горизонтальные
+        verticalScaleBounds->fix();   // и вертикальные
         // устанавливаем флажок фиксации границ графика
         isbF = true;
     }
@@ -203,8 +203,8 @@ void QwtChartZoom::fixBounds()
 void QwtChartZoom::resetBounds()
 {
     // устанавливаем запомненные ранее границы
-    isb_x->reset();  // горизонтальной шкалы
-    isb_y->reset();  // и вертикальной
+    horizontalScaleBounds->reset();  // горизонтальной шкалы
+    verticalScaleBounds->reset();  // и вертикальной
     // перестраиваем график
     qwtPlot->replot();
 }
@@ -321,13 +321,14 @@ void QMainZoomSvc::setRubberBandColor(QColor clr) {
 // Обработчик всех событий
 bool QMainZoomSvc::eventFilter(QObject *target,QEvent *event)
 {
-    // если событие произошло для графика, то
-    if (target == zoom->plot())
-        // если произошло одно из событий от мыши, то
-        if (event->type() == QEvent::MouseButtonPress ||
-            event->type() == QEvent::MouseMove ||
-            event->type() == QEvent::MouseButtonRelease)
-            procMouseEvent(event);  // вызываем соответствующий обработчик
+    if (zoom->activated)
+        // если событие произошло для графика, то
+        if (target == zoom->plot())
+            // если произошло одно из событий от мыши, то
+            if (event->type() == QEvent::MouseButtonPress ||
+                event->type() == QEvent::MouseMove ||
+                event->type() == QEvent::MouseButtonRelease)
+                procMouseEvent(event);  // вызываем соответствующий обработчик
     // передаем управление стандартному обработчику событий
     return QObject::eventFilter(target,event);
 }
@@ -493,7 +494,7 @@ void QMainZoomSvc::procZoom(QMouseEvent *mEvent)
                 // определяем правую границу горизонтальной шкалы по конечной точке
                 double rg = plt->invTransform(mX,xp);
                 // устанавливаем нижнюю и верхнюю границы вертикальной шкалы
-                zoom->isb_x->set(lf,rg,-1);
+                zoom->horizontalScaleBounds->set(lf,rg,-1);
                 // получаем основную вертикальную шкалу
                 QwtPlot::Axis mY = zoom->masterV();
                 // определяем нижнюю границу вертикальной шкалы по конечной точке
@@ -501,7 +502,7 @@ void QMainZoomSvc::procZoom(QMouseEvent *mEvent)
                 // определяем верхнюю границу вертикальной шкалы по начальной точке
                 double tp = plt->invTransform(mY,scp_y);
                 // устанавливаем нижнюю и верхнюю границы вертикальной шкалы
-                zoom->isb_y->set(bt,tp,-1);
+                zoom->verticalScaleBounds->set(bt,tp,-1);
                 // перестраиваем график (синхронно с остальными)
                 plt->replot();
             }
@@ -542,14 +543,12 @@ void QDragZoomSvc::attach(QwtChartZoom *zm)
 // Обработчик всех событий
 bool QDragZoomSvc::eventFilter(QObject *target,QEvent *event)
 {
-    // если событие произошло для графика, то
-    if (target == zoom->plot())
-        // если произошло одно из событий от мыши, то
-        if (event->type() == QEvent::MouseButtonPress ||
-            event->type() == QEvent::MouseMove ||
-            event->type() == QEvent::MouseButtonRelease)
-            dragMouseEvent(event);  // вызываем соответствующий обработчик
-    // передаем управление стандартному обработчику событий
+  //  if (zoom->activated)
+        if (target == zoom->plot())
+            if (event->type() == QEvent::MouseButtonPress ||
+                event->type() == QEvent::MouseMove ||
+                event->type() == QEvent::MouseButtonRelease)
+                dragMouseEvent(event);
     return QObject::eventFilter(target,event);
 }
 
@@ -573,11 +572,11 @@ void QDragZoomSvc::applyDrag(QPoint evpos)
     double dx = -(evpos.x() - cg.x() - scp_x) * cs_kx;
     // устанавливаем новые левую и правую границы шкалы для горизонтальной оси
     //     новые границы = начальные границы + смещение
-    zoom->isb_x->set(scb_xl + dx,scb_xr + dx,-1);
+    zoom->horizontalScaleBounds->set(scb_xl + dx,scb_xr + dx,-1);
     // аналогично определяем dy - смещение границ по вертикальной оси
     double dy = -(evpos.y() - cg.y() - scp_y) * cs_ky;
     // устанавливаем новые нижнюю и верхнюю границы вертикальной шкалы
-    zoom->isb_y->set(scb_yb + dy,scb_yt + dy,-1);
+    zoom->verticalScaleBounds->set(scb_yb + dy,scb_yt + dy,-1);
     // перестраиваем график (синхронно с остальными)
     plt->replot();
 }

@@ -43,17 +43,14 @@ void QWheelZoomSvc::setWheelFactor(double fact) {
 // Обработчик всех событий
 bool QWheelZoomSvc::eventFilter(QObject *target, QEvent *event)
 {
-    // если событие произошло для графика, то
-    if (target == zoom->plot())
-    {
-        // если событие вызвано вращением колеса мыши, то
-        if (event->type() == QEvent::Wheel)
-        {
-            procWheel(event);   // вызываем соответствующий обработчик
-            zoom->updatePlot(); // обновляем график
+    //  if (zoom->activated)
+    if (target == zoom->plot()) {
+        if (event->type() == QEvent::Wheel) {
+            procWheel(event);
+            zoom->updatePlot();
         }
     }
-    // передаем управление стандартному обработчику событий
+
     return QObject::eventFilter(target,event);
 }
 
@@ -89,7 +86,7 @@ void QWheelZoomSvc::applyWheel(QEvent *event, bool wheelHorizontally, bool wheel
 
             double lower = (sm.s1()-horPos)*factor + horPos;
             double upper = (sm.s2()-horPos)*factor + horPos;
-            zoom->isb_x->set(lower, upper,-1);
+            zoom->horizontalScaleBounds->set(lower, upper,-1);
         }
         if (wheelVertically) // если задано масштабирование по вертикали
         {
@@ -97,7 +94,7 @@ void QWheelZoomSvc::applyWheel(QEvent *event, bool wheelHorizontally, bool wheel
             QwtScaleMap sm = plot->canvasMap(zoom->masterV());
             double lower = (sm.s1()-verPos)*factor + verPos;
             double upper = (sm.s2()-verPos)*factor + verPos;
-            zoom->isb_y->set(lower, upper,-1);
+            zoom->verticalScaleBounds->set(lower, upper,-1);
         }
         // перестраиваем график (синхронно с остальными)
         plot->replot();

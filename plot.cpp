@@ -32,12 +32,15 @@
 
 #include "colorselector.h"
 
+#include "canvaspicker.h"
+#include "plotpicker.h"
+
 Plot::Plot(QWidget *parent) :
     QwtPlot(parent), freeGraph(0)
 {
-    QwtPlotCanvas *canvas = new QwtPlotCanvas();
-    canvas->setFocusIndicator( QwtPlotCanvas::CanvasFocusIndicator );
-    canvas->setFocusPolicy( Qt::StrongFocus );
+    canvas = new QwtPlotCanvas();
+    canvas->setFocusIndicator( QwtPlotCanvas::CanvasFocusIndicator);
+    canvas->setFocusPolicy( Qt::StrongFocus);
     canvas->setPalette(Qt::white);
     canvas->setFrameStyle(QFrame::StyledPanel);
     setCanvas(canvas);
@@ -46,6 +49,8 @@ Plot::Plot(QWidget *parent) :
 
     //setTitle("Legend Test");
     //setFooter("Footer");
+
+    interactionMode = ScalingInteraction;
 
     // grid
     grid = new QwtPlotGrid;
@@ -69,16 +74,25 @@ Plot::Plot(QWidget *parent) :
 
 
     zoom = new QwtChartZoom(this);
+    zoom->setEnabled(true);
 
+    picker = new PlotPicker(canvas);
 
-    picker = new QwtPlotPicker(this->canvas());
-
-    picker->setStateMachine(new QwtPickerTrackerMachine);
-    picker->setTrackerMode(QwtPicker::AlwaysOn);
-    picker->setRubberBand(QwtPicker::CrossRubberBand );
-    picker->setRubberBandPen(QPen(QColor(60,60,60), 0.5, Qt::DashLine));
     bool pickerEnabled = MainWindow::getSetting("pickerEnabled", true).toBool();
     picker->setEnabled(pickerEnabled);
+
+   // connect(picker, SIGNAL(moved(QPointF)), this, SLOT(pointSelected(QPointF)));
+  //  picker = 0;
+
+  //  canvasPicker = new CanvasPicker(this);
+
+  //  canvasPicker->setEnabled(false);
+    canvasPicker = 0;
+}
+
+void Plot::pointSelected(const QPointF &pos)
+{
+    qDebug()<<pos<<"selected";
 }
 
 Plot::~Plot()
@@ -87,6 +101,8 @@ Plot::~Plot()
     qDeleteAll(graphs);
     delete grid;
     delete zoom;
+    delete picker;
+    delete canvasPicker;
 }
 
 bool Plot::hasGraphs() const
@@ -125,6 +141,7 @@ void Plot::deleteGraphs()
 
     delete zoom;
     zoom = new QwtChartZoom(this);
+    //zoom->resetBounds();
 
     updateAxes();
     updateLegend();
@@ -594,6 +611,26 @@ void Plot::calculateMean()
         emit fileChanged(meanDfdFile, true);
 }
 
+void Plot::switchInteractionMode()
+{
+    if (interactionMode == ScalingInteraction) {
+        setInteractionMode(DataInteraction);
+    }
+    else {
+        setInteractionMode(ScalingInteraction);
+    }
+}
+
+void Plot::setInteractionMode(Plot::InteractionMode mode)
+{
+    interactionMode = mode;
+    if (picker) picker->setMode(mode);
+    if (zoom) zoom->setEnabled(mode == ScalingInteraction);
+    if (canvas) canvas->setFocusIndicator(mode == ScalingInteraction?
+                                              QwtPlotCanvas::CanvasFocusIndicator:
+                                              QwtPlotCanvas::ItemFocusIndicator);
+}
+
 void Plot::importPlot(const QString &fileName)
 {
     QwtPlotRenderer renderer;
@@ -649,6 +686,8 @@ void Plot::importPlot(const QString &fileName)
 
 void Plot::switchCursor()
 {
+    if (!picker) return;
+
     bool pickerEnabled = picker->isEnabled();
     picker->setEnabled(!pickerEnabled);
     MainWindow::setSetting("pickerEnabled", !pickerEnabled);

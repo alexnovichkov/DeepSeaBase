@@ -8,13 +8,15 @@
 
 class QwtLegend;
 class QwtPlotGrid;
+class QwtPlotCanvas;
 class Curve;
 class DfdFileDescriptor;
 class Channel;
 
 class QwtChartZoom;
 class QwtPlotZoomer;
-class QwtPlotPicker;
+class PlotPicker;
+class CanvasPicker;
 
 struct Range {
     void clear() {min = INFINITY; max = -INFINITY;}
@@ -26,6 +28,12 @@ class Plot : public QwtPlot
 {
     Q_OBJECT
 public:
+    enum InteractionMode {
+        NoInteraction,
+        ScalingInteraction,
+        DataInteraction
+    };
+
     explicit Plot(QWidget *parent = 0);
     virtual ~Plot();
 
@@ -50,12 +58,20 @@ public:
      */
     bool hasFreeGraph() const;
 
+    /**
+     * @brief deleteGraphs
+     * deletes all graphs on a plot
+     */
     void deleteGraphs();
+    /**
+     * @brief deleteGraphs deletes all graphs on a plot, which represent DFDd with dfdGuid
+     * @param dfdGuid
+     */
     void deleteGraphs(const QString &dfdGuid);
 
     /**
-     * @brief deleteGraph deletes plotted graphs
-     * @param dfd
+     * @brief deleteGraph deletes plotted graph
+     * @param dfd - DFD represented by a graph
      * @param channel
      */
     void deleteGraph(DfdFileDescriptor *dfd, int channel, bool doReplot = true);
@@ -77,6 +93,8 @@ public:
     void prepareAxis(int axis, const QString &name);
 
     void moveGraph(Curve *curve);
+
+    void setInteractionMode(InteractionMode mode);
 public slots:
     void savePlot();
     void switchCursor();
@@ -84,11 +102,13 @@ public slots:
     void print();
 
     void calculateMean();
+    void switchInteractionMode();
 signals:
     void fileCreated(const QString &fileName, bool plot);
     void fileChanged(const QString &fileName, bool plot);
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
+    void pointSelected(const QPointF &pos);
 private:
     void importPlot(const QString &fileName);
     QList<Curve *> graphs;
@@ -101,7 +121,9 @@ private:
     QList<Curve *> rightGraphs;
 
     QwtPlotGrid *grid;
-    QwtPlotPicker *picker;
+    PlotPicker *picker;
+    QwtPlotCanvas *canvas;
+    CanvasPicker *canvasPicker;
 
     QwtChartZoom *zoom;
 
@@ -109,6 +131,8 @@ private:
     Range x1;
     Range y1;
     Range y2;
+
+    InteractionMode interactionMode;
 };
 
 #endif // PLOT_H

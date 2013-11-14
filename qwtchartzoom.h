@@ -61,6 +61,13 @@ public:
     enum QConvType {ctNone,ctZoom,ctDrag,ctWheel,ctVerWheel,ctHorWheel,
                     ctAxisHL,ctAxisHR,ctAxisVB,ctAxisVT};
 
+//    enum ZoomMode {
+//        zoomBySelection = 1,
+//        moveByWheel = 2,
+//        moveByMouse = 4,
+//        moveByAxis = 8
+//    };
+
     /**************************************************/
     /*               Класс QScaleBounds               */
     /*                  Версия 1.0.1                  */
@@ -99,7 +106,7 @@ public:
 
     // Контейнеры границ шкалы
     // (вертикальной и горизонтальной)
-    QScaleBounds *isb_x,*isb_y;
+    QScaleBounds *horizontalScaleBounds,*verticalScaleBounds;
 
     // текущий режим масштабирования
     QConvType regim();
@@ -130,6 +137,9 @@ public:
     // восстановление исходных границ графика
     void resetBounds();
 
+    void setEnabled(bool enabled) {this->activated = enabled;}
+
+    bool activated;
 protected:
     // обработчик всех событий
     bool eventFilter(QObject *,QEvent *);

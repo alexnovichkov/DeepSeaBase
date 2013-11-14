@@ -152,6 +152,7 @@ private:
     QAction *editColorsAct;
 
     QAction *meanAct;
+    QAction *interactionModeAct;
 
     Plot *plot;
 

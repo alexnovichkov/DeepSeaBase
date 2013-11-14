@@ -27,7 +27,8 @@ SOURCES += main.cpp\
     tabwidget.cpp \
     converters.cpp \
     coloreditdialog.cpp \
-    colorselector.cpp
+    colorselector.cpp \
+    plotpicker.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -43,7 +44,8 @@ HEADERS  += mainwindow.h \
     tabwidget.h \
     converters.h \
     coloreditdialog.h \
-    colorselector.h
+    colorselector.h \
+    plotpicker.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\

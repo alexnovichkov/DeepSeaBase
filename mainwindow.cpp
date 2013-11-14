@@ -135,6 +135,11 @@ MainWindow::MainWindow(QWidget *parent)
     editColorsAct->setIcon(QIcon(":/icons/colors.png"));
     connect(editColorsAct, SIGNAL(triggered()), this, SLOT(editColors()));
 
+    interactionModeAct = new QAction(QString("Включить режим изменения данных"), this);
+    interactionModeAct->setIcon(QIcon(":/icons/data.png"));
+    interactionModeAct->setCheckable(true);
+    connect(interactionModeAct, SIGNAL(triggered()), plot, SLOT(switchInteractionMode()));
+
     QMenu *fileMenu = menuBar()->addMenu(tr("Файл"));
     fileMenu->addAction(addFolderAct);
 
@@ -152,7 +157,9 @@ MainWindow::MainWindow(QWidget *parent)
     toolBar->addAction(copyToClipboardAct);
     toolBar->addAction(printPlotAct);
     toolBar->addAction(switchCursorAct);
+    toolBar->addSeparator();
     toolBar->addAction(meanAct);
+    toolBar->addAction(interactionModeAct);
 
     tabWidget = new TabWidget(this);
     connect(tabWidget,SIGNAL(newTab()),this, SLOT(createNewTab()));
