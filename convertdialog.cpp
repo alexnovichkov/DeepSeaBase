@@ -5,6 +5,7 @@
 #include "dfdfiledescriptor.h"
 #include "methods/spectremethod.h"
 #include "methods/timemethod.h"
+#include "methods/xresponch1.h"
 
 ConvertDialog::ConvertDialog(QList<DfdFileDescriptor *> *dataBase, QWidget *parent) :
     QDialog(parent), dataBase(dataBase), process(0)
@@ -44,7 +45,10 @@ ConvertDialog::ConvertDialog(QList<DfdFileDescriptor *> *dataBase, QWidget *pare
     methodsStack = new QStackedWidget(this);
     for (int i=0; i<26; ++i) {
         switch (i) {
-            case 0: methodsStack->addWidget(new TimeMethod(this));
+            case 0: methodsStack->addWidget(new TimeMethod(this)); break;
+            case 1: methodsStack->addWidget(new SpectreMethod(this)); break;
+            case 9: methodsStack->addWidget(new XresponcH1Method(this)); break;
+
             default: methodsStack->addWidget(new SpectreMethod(this));
         }
     }
@@ -155,7 +159,6 @@ QStringList ConvertDialog::getSpfFile(const QVector<int> &indexes, QString dir)
 
 void ConvertDialog::methodChanged(int method)
 {
-    this->method = method;
     methodsStack->setCurrentIndex(method);
     currentMethod = dynamic_cast<AbstractMethod *>(methodsStack->currentWidget());
 }
@@ -164,6 +167,7 @@ void ConvertDialog::accept()
 {
     newFiles.clear();
 
+    // сортируем записи по директории
     QMap<QString, QVector<int> > sortedFiles;
     for (int i=0; i< dataBase->size(); ++i) {
         DfdFileDescriptor *dfd = dataBase->at(i);

@@ -1,11 +1,11 @@
-#include "spectremethod.h"
+#include "xresponch1.h"
 
 #include <QtWidgets>
 
 #include "dfdfiledescriptor.h"
 
-SpectreMethod::SpectreMethod(QWidget *parent) :
-    QWidget(parent)
+XresponcH1Method::XresponcH1Method(QWidget *parent)
+    : QWidget(parent)
 {
     resolutionCombo = new QComboBox(this);
     resolutionCombo->addItem("512");
@@ -29,7 +29,6 @@ SpectreMethod::SpectreMethod(QWidget *parent) :
     averCombo = new QComboBox(this);
     averCombo->addItem("линейное");
     averCombo->addItem("экспоненциальное");
-    averCombo->addItem("хранение максимума");
     averCombo->setCurrentIndex(0);
     averCombo->setEditable(false);
 
@@ -49,14 +48,6 @@ SpectreMethod::SpectreMethod(QWidget *parent) :
     nAverCombo->setEditable(false);
     nAverCombo->setEnabled(false);
 
-    typeCombo = new QComboBox(this);
-    typeCombo->addItem("мощности");
-    typeCombo->addItem("плотности мощн.");
-    typeCombo->addItem("спектр СКЗ");
-    typeCombo->setCurrentIndex(0);
-    typeCombo->setEnabled(false);
-    typeCombo->setEditable(false);
-
     valuesCombo = new QComboBox(this);
     valuesCombo->addItem("измеряемые");
     valuesCombo->addItem("вход АЦП");
@@ -71,39 +62,29 @@ SpectreMethod::SpectreMethod(QWidget *parent) :
     scaleCombo->setEnabled(false);
     scaleCombo->setEditable(false);
 
-    addProcCombo = new QComboBox(this);
-    addProcCombo->addItem("нет");
-    addProcCombo->addItem("интегрир.");
-    addProcCombo->addItem("дифференц.");
-    addProcCombo->addItem("дв.интергир.");
-    addProcCombo->addItem("дв.дифференц.");
-    addProcCombo->setCurrentIndex(0);
-    addProcCombo->setEnabled(false);
-    addProcCombo->setEditable(false);
 
     QFormLayout *l = new QFormLayout;
-//    l->addRow("Частотный диапазон", rangeCombo);
+    //    l->addRow("Частотный диапазон", rangeCombo);
     l->addRow("Разрешение по частоте", resolutionCombo);
     l->addRow("Окно", windowCombo);
     l->addRow("Усреднение", averCombo);
     l->addRow("Кол. усреднений", nAverCombo);
-    l->addRow("Тип спектра", typeCombo);
     l->addRow("Величины", valuesCombo);
     l->addRow("Шкала", scaleCombo);
-    l->addRow("Доп. обработка", addProcCombo);
     setLayout(l);
 }
 
-int SpectreMethod::id()
+
+int XresponcH1Method::id()
 {
-    return 1;
+    return 9;
 }
 
-QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, int activeChannel, int strip)
+QStringList XresponcH1Method::methodSettings(DfdFileDescriptor *dfd, int activeChannel, int strip)
 {
     QStringList spfFile;
     QString yName = "дБ";
-    if (typeCombo->currentText() != "в децибелах") {
+    if (scaleCombo->currentText() != "в децибелах") {
         // TODO: реализовать правильный выбор единицы измерения
     }
     spfFile << QString("YName=%1").arg(yName);
@@ -123,44 +104,28 @@ QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, int activeChan
     if (NumberOfAveraging<1) NumberOfAveraging = 2.0;
 
     spfFile << QString("NAver=%1").arg(qRound(NumberOfAveraging));
-    spfFile << "TypeProc="+typeCombo->currentText();
     spfFile << "Values="+valuesCombo->currentText();
-    spfFile << "TypeScale="+typeCombo->currentText();
-    spfFile << "AddProc="+addProcCombo->currentText();
+    spfFile << "TypeScale="+scaleCombo->currentText();
 
     return spfFile;
 }
 
-QString SpectreMethod::methodDll()
+QString XresponcH1Method::methodDll()
 {
-    return "spectr.dll";
+    return "xresponcH1.dll";
 }
 
-int SpectreMethod::panelType()
+int XresponcH1Method::panelType()
 {
     return 0;
 }
 
-QString SpectreMethod::methodName()
+QString XresponcH1Method::methodName()
 {
-    if (typeCombo->currentText()=="спектр СКЗ") return "Спектр СКЗ";
-    if (typeCombo->currentText()=="мощности") return "Спектр мощности";
-    if (typeCombo->currentText()=="плотности мощн.") return "Плотн.спектра мощности";
-    return "Спектроанализатор";
+    return "Передаточная ф-я H1";
 }
 
-int SpectreMethod::dataType()
+int XresponcH1Method::dataType()
 {
-    if (typeCombo->currentText()=="спектр СКЗ") return 130;
-    if (typeCombo->currentText()=="мощности") return 128;
-    if (typeCombo->currentText()=="плотности мощн.") return 129;
-    return 128;
-}
-
-int SpectreMethod::computeNumberOfAveraging(const QString &aver)
-{
-    if (aver=="до конца интервала") {
-
-    }
-    return aver.toInt();
+    return 147;
 }

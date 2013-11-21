@@ -32,8 +32,8 @@
 
 #include "colorselector.h"
 
-#include "canvaspicker.h"
 #include "plotpicker.h"
+#include <QAction>
 
 Plot::Plot(QWidget *parent) :
     QwtPlot(parent), freeGraph(0)
@@ -44,8 +44,11 @@ Plot::Plot(QWidget *parent) :
     canvas->setPalette(Qt::white);
     canvas->setFrameStyle(QFrame::StyledPanel);
     setCanvas(canvas);
+    //setContextMenuPolicy(Qt::ActionsContextMenu);
 
     setAutoReplot(true);
+
+
 
     //setTitle("Legend Test");
     //setFooter("Footer");
@@ -80,19 +83,6 @@ Plot::Plot(QWidget *parent) :
 
     bool pickerEnabled = MainWindow::getSetting("pickerEnabled", true).toBool();
     picker->setEnabled(pickerEnabled);
-
-   // connect(picker, SIGNAL(moved(QPointF)), this, SLOT(pointSelected(QPointF)));
-  //  picker = 0;
-
-  //  canvasPicker = new CanvasPicker(this);
-
-  //  canvasPicker->setEnabled(false);
-    canvasPicker = 0;
-}
-
-void Plot::pointSelected(const QPointF &pos)
-{
-    qDebug()<<pos<<"selected";
 }
 
 Plot::~Plot()
@@ -102,7 +92,6 @@ Plot::~Plot()
     delete grid;
     delete zoom;
     delete picker;
-    delete canvasPicker;
 }
 
 bool Plot::hasGraphs() const
@@ -300,6 +289,9 @@ bool Plot::plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed, QCo
     g->legend = ch->legendName();
     g->setLegendIconSize(QSize(16,8));
     g->setRawSamples(ch->parent->XBegin, ch->xStep, ch->yValues, ch->NumInd);
+
+    bool needFixBoundaries = !hasGraphs() && zoom;
+
     g->attach(this);
 
     g->setYAxis(ax);
@@ -323,6 +315,8 @@ bool Plot::plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed, QCo
     r.max = qMax(ch->yMaxInitial, r.max);
     setAxisScale(ax, r.min, r.max);
 
+    if (needFixBoundaries)
+        zoom->fixBoundaries();
 
     updateAxes();
     updateLegend();
@@ -611,7 +605,7 @@ void Plot::calculateMean()
         emit fileChanged(meanDfdFile, true);
 }
 
-void Plot::switchInteractionMode()
+bool Plot::switchInteractionMode()
 {
     if (interactionMode == ScalingInteraction) {
         setInteractionMode(DataInteraction);
@@ -619,6 +613,7 @@ void Plot::switchInteractionMode()
     else {
         setInteractionMode(ScalingInteraction);
     }
+    return (interactionMode == DataInteraction);
 }
 
 void Plot::setInteractionMode(Plot::InteractionMode mode)

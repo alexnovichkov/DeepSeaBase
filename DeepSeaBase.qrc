@@ -8,5 +8,6 @@
         <file>icons/colors.png</file>
         <file>icons/mean.png</file>
         <file>icons/data.png</file>
+        <file>icons/correction.png</file>
     </qresource>
 </RCC>

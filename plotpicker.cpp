@@ -96,13 +96,8 @@ void PlotPicker::pointMoved(const QPoint &pos)
 
     double diff = newY - curve->dfd->channels.at(curve->channel)->yValues[d_selectedPoint];
 
-    if (qApp->keyboardModifiers() & Qt::ControlModifier) {
-//        for (int i=0; i<curve->dfd->channels.at(curve->channel)->NumInd; ++i)
-//            curve->dfd->channels.at(curve->channel)->yValues[i] += diff;
-    }
-    else {
-        curve->dfd->channels.at(curve->channel)->yValues[d_selectedPoint] += diff;
-    }
+    curve->dfd->channels.at(curve->channel)->yValues[d_selectedPoint] += diff;
+    curve->dfd->rawFileChanged = true;
 
     highlightPoint( true );
 }
@@ -137,3 +132,13 @@ void PlotPicker::highlightPoint( bool showIt )
 }
 
 
+
+
+QwtText PlotPicker::trackerTextF(const QPointF &pos) const
+{
+    QString text;
+
+    text.sprintf( "%g, %g", pos.x(), pos.y() );
+
+    return QwtText( text );
+}

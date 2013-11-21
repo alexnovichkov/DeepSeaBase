@@ -28,7 +28,9 @@ SOURCES += main.cpp\
     converters.cpp \
     coloreditdialog.cpp \
     colorselector.cpp \
-    plotpicker.cpp
+    plotpicker.cpp \
+    correctiondialog.cpp \
+    methods/xresponch1.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -45,7 +47,9 @@ HEADERS  += mainwindow.h \
     converters.h \
     coloreditdialog.h \
     colorselector.h \
-    plotpicker.h
+    plotpicker.h \
+    correctiondialog.h \
+    methods/xresponch1.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\

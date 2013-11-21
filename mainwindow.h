@@ -153,6 +153,7 @@ private:
 
     QAction *meanAct;
     QAction *interactionModeAct;
+    QAction *addCorrectionAct;
 
     Plot *plot;
 

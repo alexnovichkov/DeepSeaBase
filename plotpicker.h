@@ -30,6 +30,11 @@ private:
     QwtPlotMarker *marker;
     int d_selectedPoint;
     Plot::InteractionMode mode;
+
+    // QwtPlotPicker interface
+protected:
+    virtual QwtText trackerTextF(const QPointF &pos) const;
+
 };
 
 #endif // PLOTPICKER_H

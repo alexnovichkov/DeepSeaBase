@@ -9,6 +9,7 @@
 #include "tabwidget.h"
 #include "colorselector.h"
 #include "coloreditdialog.h"
+#include "correctiondialog.h"
 
 class DrivesDialog : public QDialog
 {
@@ -138,7 +139,19 @@ MainWindow::MainWindow(QWidget *parent)
     interactionModeAct = new QAction(QString("Включить режим изменения данных"), this);
     interactionModeAct->setIcon(QIcon(":/icons/data.png"));
     interactionModeAct->setCheckable(true);
-    connect(interactionModeAct, SIGNAL(triggered()), plot, SLOT(switchInteractionMode()));
+    connect(interactionModeAct, &QAction::triggered, [=](){
+        bool b = plot->switchInteractionMode();
+        addCorrectionAct->setEnabled(b);
+    });
+
+    addCorrectionAct = new QAction("Добавить поправку...", this);
+    addCorrectionAct->setIcon(QIcon(":/icons/correction.png"));
+    addCorrectionAct->setEnabled(false);
+    connect(addCorrectionAct, &QAction::triggered, [=](){
+        CorrectionDialog dialog(plot);
+        dialog.exec();
+    });
+
 
     QMenu *fileMenu = menuBar()->addMenu(tr("Файл"));
     fileMenu->addAction(addFolderAct);
@@ -151,6 +164,7 @@ MainWindow::MainWindow(QWidget *parent)
     settingsMenu->addAction(editColorsAct);
 
     QToolBar *toolBar = new QToolBar(this);
+    toolBar->setIconSize(QSize(24,24));
     toolBar->setOrientation(Qt::Vertical);
     toolBar->addAction(clearPlotAct);
     toolBar->addAction(savePlotAct);
@@ -160,6 +174,7 @@ MainWindow::MainWindow(QWidget *parent)
     toolBar->addSeparator();
     toolBar->addAction(meanAct);
     toolBar->addAction(interactionModeAct);
+    toolBar->addAction(addCorrectionAct);
 
     tabWidget = new TabWidget(this);
     connect(tabWidget,SIGNAL(newTab()),this, SLOT(createNewTab()));

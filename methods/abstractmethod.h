@@ -8,6 +8,7 @@ class DfdFileDescriptor;
 class AbstractMethod
 {
 public:
+    /* индекс в methodCombo */
     virtual int id() = 0;
     virtual QStringList methodSettings(DfdFileDescriptor *dfd, int activeChannel, int strip) = 0;
     virtual QString methodDll() = 0;

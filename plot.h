@@ -16,7 +16,7 @@ class Channel;
 class QwtChartZoom;
 class QwtPlotZoomer;
 class PlotPicker;
-class CanvasPicker;
+class QAction;
 
 struct Range {
     void clear() {min = INFINITY; max = -INFINITY;}
@@ -36,6 +36,8 @@ public:
 
     explicit Plot(QWidget *parent = 0);
     virtual ~Plot();
+
+    QList<Curve *> curves() {return graphs;}
 
     /**
      * @brief hasGraphs
@@ -95,6 +97,7 @@ public:
     void moveGraph(Curve *curve);
 
     void setInteractionMode(InteractionMode mode);
+    bool switchInteractionMode();
 public slots:
     void savePlot();
     void switchCursor();
@@ -102,13 +105,12 @@ public slots:
     void print();
 
     void calculateMean();
-    void switchInteractionMode();
+
 signals:
     void fileCreated(const QString &fileName, bool plot);
     void fileChanged(const QString &fileName, bool plot);
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
-    void pointSelected(const QPointF &pos);
 private:
     void importPlot(const QString &fileName);
     QList<Curve *> graphs;
@@ -123,7 +125,6 @@ private:
     QwtPlotGrid *grid;
     PlotPicker *picker;
     QwtPlotCanvas *canvas;
-    CanvasPicker *canvasPicker;
 
     QwtChartZoom *zoom;
 
@@ -133,6 +134,8 @@ private:
     Range y2;
 
     InteractionMode interactionMode;
+
+
 };
 
 #endif // PLOT_H

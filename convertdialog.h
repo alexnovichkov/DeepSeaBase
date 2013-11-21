@@ -30,8 +30,6 @@ private:
 
     QStringList newFiles;
 
-    int method; // 0-25
-
     QVector<int> channels;
 
     AbstractMethod *currentMethod;
