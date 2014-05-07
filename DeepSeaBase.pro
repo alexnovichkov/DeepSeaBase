@@ -6,7 +6,7 @@
 
 QT       += core gui
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport axcontainer
 
 TARGET = DeepSeaBase
 TEMPLATE = app
@@ -30,7 +30,8 @@ SOURCES += main.cpp\
     colorselector.cpp \
     plotpicker.cpp \
     correctiondialog.cpp \
-    methods/xresponch1.cpp
+    methods/xresponch1.cpp \
+    pointlabel.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -49,7 +50,8 @@ HEADERS  += mainwindow.h \
     colorselector.h \
     plotpicker.h \
     correctiondialog.h \
-    methods/xresponch1.h
+    methods/xresponch1.h \
+    pointlabel.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\
@@ -63,8 +65,12 @@ RESOURCES *= DeepSeaBase.qrc
 
 RC_FILE *= DeepSeaBase.rc
 
+#include(xlsx/qtxlsx.pri)
+
 CONFIG(release, debug|release):LIBS *= C:/Qwt-6.1.0/lib/libqwt.a
 CONFIG(debug, debug|release):  LIBS *= C:/Qwt-6.1.0/lib/libqwtd.a
+
+#LIBS *= -Qt5AxBase -Qt5AxContainer
 
 INCLUDEPATH *= C:/Qwt-6.1.0/include
 

@@ -163,6 +163,53 @@ void ConvertDialog::methodChanged(int method)
     currentMethod = dynamic_cast<AbstractMethod *>(methodsStack->currentWidget());
 }
 
+bool ConvertDialog::copyFilesToTempDir(const QVector<int> &indexes, const QString &tempFolderName)
+{
+    bool result = true;
+    foreach(int index, indexes) {
+        QString dfdFileName = QFileInfo(dataBase->at(index)->dfdFileName).fileName();
+        QString rawFileName = QFileInfo(dataBase->at(index)->rawFileName).fileName();
+        result &= QFile::copy(dataBase->at(index)->dfdFileName, tempFolderName+"/"+dfdFileName);
+        result &= QFile::copy(dataBase->at(index)->rawFileName, tempFolderName+"/"+rawFileName);
+    }
+
+    return result;
+}
+
+void ConvertDialog::moveFilesFromTempDir(const QString &destDir)
+{
+    for (int i=0; i<newFiles.size(); ++i) {
+        DfdFileDescriptor dfd(newFiles.at(i));
+        dfd.read();
+        QString suffix = QString::number(dfd.NumInd * dfd.XStep);
+
+        QString baseFileName = QFileInfo(newFiles.at(i)).completeBaseName();
+        const QString oldRawFileName = QFileInfo(newFiles.at(i)).canonicalPath()+"/"+baseFileName+".raw";
+
+        baseFileName.chop(3);
+        QString dfdFileName = destDir+"/"+baseFileName+"_"+suffix+".dfd";
+        QString rawFileName = destDir+"/"+baseFileName+"_"+suffix+".raw";
+
+
+        int index = 0;
+        if (QFile::exists(dfdFileName)) {
+            index++;
+            while (QFile::exists(destDir+"/"+baseFileName+"_"+suffix+"("+QString::number(index)+").dfd")) {
+                index++;
+            }
+        }
+
+        if (index>0) {
+            dfdFileName = destDir+"/"+baseFileName+"_"+suffix+"("+QString::number(index)+").dfd";
+            rawFileName = destDir+"/"+baseFileName+"_"+suffix+"("+QString::number(index)+").raw";
+        }
+
+        QFile::rename(newFiles.at(i), dfdFileName);
+        QFile::rename(oldRawFileName, rawFileName);
+        newFiles[i] = dfdFileName;
+    }
+}
+
 void ConvertDialog::accept()
 {
     newFiles.clear();
@@ -176,49 +223,68 @@ void ConvertDialog::accept()
         indexes.append(i);
         sortedFiles.insert(dir, indexes);
     }
-    //qDebug()<<sortedFiles;
 
-    QMapIterator<QString, QVector<int> > it(sortedFiles);
-    while (it.hasNext()) {
-        it.next();
-        QStringList spfFile = getSpfFile(it.value(), it.key());
-        QTemporaryFile file("spffile_XXXXXX.spf");
-        file.setAutoRemove(false);
-        if (file.open()) {
-            QTextStream out(&file);
-            out.setCodec("Windows-1251");
-            foreach (QString s, spfFile) out << s << endl;
-            file.close();
-        }
-        else continue;
 
-        QDateTime dt=QDateTime::currentDateTime();
+    // теперь копируем все файлы из опр. папки во временную
+    QDir d;
+    if (!d.exists("C:/DeepSeaBase-temp"))
+        d.mkdir("C:/DeepSeaBase-temp");
 
-        if (!process) {
-            process = new QProcess(this);
-            process->disconnect();
-            process->setProcessChannelMode(QProcess::MergedChannels);
-            process->setReadChannel(QProcess::StandardOutput);
-        }
+    QTemporaryDir tempDir("C:\\DeepSeaBase-temp\\temp-XXXXXX");
+    //tempDir.setAutoRemove(false);
+    if (tempDir.isValid()) {
+        const QString tempFolderName = tempDir.path();
 
-        QStringList arguments = QString("%1.-E.-S")
-                                .split(".");
-        arguments[0] = file.fileName();
-        QEventLoop q;
-        connect(process,SIGNAL(finished(int)),&q,SLOT(quit()));
-        connect(process,SIGNAL(error(QProcess::ProcessError)),&q,SLOT(quit()));
+        QMapIterator<QString, QVector<int> > it(sortedFiles);
+        while (it.hasNext()) {
+            it.next();
 
-        process->start("DeepSea",arguments);
-        q.exec();
+            if (copyFilesToTempDir(it.value(), tempFolderName)) {
+                QStringList spfFile = getSpfFile(it.value(), tempFolderName);
+                QTemporaryFile file("spffile_XXXXXX.spf");
+                //file.setAutoRemove(false);
+                if (file.open()) {
+                    QTextStream out(&file);
+                    out.setCodec("Windows-1251");
+                    foreach (QString s, spfFile) out << s << endl;
+                    file.close();
+                }
+                else continue;
 
-        int code = process->exitCode();
-        if (code == 0) {
-            QFileInfoList newFilesList = QDir(it.key()).entryInfoList(QStringList()<<"*.dfd",QDir::Files);
-            Q_FOREACH(const QFileInfo &newFile, newFilesList) {
-                if (newFile.created()>dt || newFile.lastModified()>dt)
-                    newFiles << newFile.canonicalFilePath();
+                QDateTime dt=QDateTime::currentDateTime();
+
+                if (!process) {
+                    process = new QProcess(this);
+                    process->disconnect();
+                    process->setProcessChannelMode(QProcess::MergedChannels);
+                    process->setReadChannel(QProcess::StandardOutput);
+                }
+
+                QStringList arguments;
+                arguments << file.fileName() << "-E" << "-S";
+
+                QEventLoop q;
+                connect(process,SIGNAL(finished(int)),&q,SLOT(quit()));
+                connect(process,SIGNAL(error(QProcess::ProcessError)),&q,SLOT(quit()));
+
+                process->start("DeepSea",arguments);
+                q.exec();
+
+                const int code = process->exitCode();
+                if (code == 0) {
+                    QFileInfoList newFilesList = QDir(tempFolderName).entryInfoList(QStringList()<<"*.dfd",QDir::Files);
+                    Q_FOREACH(const QFileInfo &newFile, newFilesList) {
+                        if (newFile.created()>dt || newFile.lastModified()>dt)
+                            newFiles << newFile.canonicalFilePath();
+                    }
+                    moveFilesFromTempDir(it.key());
+                }
             }
         }
     }
+
+
+
     QDialog::accept();
 }
+

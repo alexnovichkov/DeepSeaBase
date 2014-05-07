@@ -82,7 +82,7 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) :
                     if (table->item(i,1)->checkState()==Qt::Checked) {
                         Curve *curve = curves.at(i);
                         Channel *ch = curve->dfd->channels.at(curve->channel);
-                        for (int j = 0; j < ch->NumInd; ++j)
+                        for (uint j = 0; j < ch->NumInd; ++j)
                             ch->yValues[j] += correctionValue;
                         curve->dfd->rawFileChanged = true;
                     }

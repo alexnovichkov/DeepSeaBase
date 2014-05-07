@@ -9,5 +9,6 @@
         <file>icons/mean.png</file>
         <file>icons/data.png</file>
         <file>icons/correction.png</file>
+        <file>icons/excel.png</file>
     </qresource>
 </RCC>

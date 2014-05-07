@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "DeepSea Database"
-#define MyAppVersion "1.2.0"
+#define MyAppVersion "1.2.1"
 #define MyAppPublisher "Novichkov Inc."
 #define MyAppExeName "DeepSeaBase.exe"
 
@@ -31,23 +31,23 @@ Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescrip
 
 [Files]
 Source: "K:\My\build\DeepSeaBase\release\DeepSeaBase.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\release\icudt51.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\release\icuin51.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\release\icuuc51.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\release\libgcc_s_dw2-1.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\release\libstdc++-6.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\release\libwinpthread-1.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\release\Qt5Core.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\release\Qt5Gui.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\release\Qt5OpenGL.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\release\Qt5PrintSupport.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\release\Qt5Svg.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\release\Qt5Widgets.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\bin\icudt51.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\bin\icuin51.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\bin\icuuc51.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\bin\libgcc_s_dw2-1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\bin\libstdc++-6.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\bin\libwinpthread-1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\bin\Qt5Core.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\bin\Qt5Gui.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\bin\Qt5OpenGL.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\bin\Qt5PrintSupport.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\bin\Qt5Svg.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\bin\Qt5Widgets.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\My\build\DeepSeaBase\release\qwt.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\release\iconengines\*"; DestDir: "{app}\iconengines"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "K:\My\build\DeepSeaBase\release\imageformats\*"; DestDir: "{app}\imageformats"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "K:\My\build\DeepSeaBase\release\platforms\*"; DestDir: "{app}\platforms"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "K:\My\build\DeepSeaBase\release\printsupport\*"; DestDir: "{app}\printsupport"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\plugins\iconengines\*"; DestDir: "{app}\iconengines"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\plugins\imageformats\*"; DestDir: "{app}\imageformats"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\plugins\platforms\*"; DestDir: "{app}\platforms"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\plugins\printsupport\*"; DestDir: "{app}\printsupport"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

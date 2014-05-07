@@ -48,6 +48,8 @@ Plot::Plot(QWidget *parent) :
 
     setAutoReplot(true);
 
+    minStep = 0.0;
+
 
 
     //setTitle("Legend Test");
@@ -124,6 +126,7 @@ void Plot::deleteGraphs()
     y1.clear();
     y2.clear();
     ColorSelector::instance()->resetState();
+    minStep = 0.0;
 
     for (int i=0; i<4; ++i)
         setAxisTitle(i, "");
@@ -145,6 +148,7 @@ void Plot::deleteGraphs(const QString &dfdGuid)
             deleteGraph(graph, true);
         }
     }
+
 }
 
 void Plot::deleteGraph(DfdFileDescriptor *dfd, int channel, bool doReplot)
@@ -308,6 +312,8 @@ bool Plot::plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed, QCo
     x1.min = qMin(ch->xMin, x1.min);
     x1.max = qMax(ch->xMaxInitial, x1.max);
     setAxisScale(QwtPlot::xBottom, x1.min, x1.max);
+    if ((minStep > 1e-10)&&(qAbs(dfd->XStep-minStep) < 1e-10))
+        minStep = dfd->XStep;
 
     Range &r = y1;
     if (plotOnSecondYAxis) r = y2;
@@ -638,15 +644,22 @@ void Plot::importPlot(const QString &fileName)
     for (int i=0; i<QwtPlot::axisCnt; ++i)
         if (axisEnabled(i)) setAxisFont(i, axisfont);
 
+    QList<QColor> oldColors;
+
+
     foreach (Curve *graph, leftGraphs) {
         QPen pen = graph->pen();
         pen.setWidth(2);
+        oldColors << pen.color();
+        pen.setColor(pen.color().lighter(120));
         graph->setPen(pen);
         graph->setTitle(QwtText("<font size=5>"+graph->legend+"</font>"));
     }
     foreach (Curve *graph, rightGraphs) {
         QPen pen = graph->pen();
         pen.setWidth(2);
+        oldColors << pen.color();
+        pen.setColor(pen.color().lighter(120));
         graph->setPen(pen);
         graph->setTitle(QwtText("<font size=5>"+graph->legend+"</font>"));
     }
@@ -661,15 +674,20 @@ void Plot::importPlot(const QString &fileName)
     for (int i=0; i<QwtPlot::axisCnt; ++i)
         if (axisEnabled(i)) setAxisFont(i, axisfont);
 
+    int i=0;
     foreach (Curve *graph, leftGraphs) {
         QPen pen = graph->pen();
         pen.setWidth(1);
+        pen.setColor(oldColors.at(i));
+        i++;
         graph->setPen(pen);
         graph->setTitle(QwtText(graph->legend));
     }
     foreach (Curve *graph, rightGraphs) {
         QPen pen = graph->pen();
         pen.setWidth(1);
+        pen.setColor(oldColors.at(i));
+        i++;
         graph->setPen(pen);
         graph->setTitle(QwtText(graph->legend));
     }
@@ -697,6 +715,7 @@ void Plot::editLegendItem(const QVariant &itemInfo, int index)
         Curve *c = dynamic_cast<Curve *>(item);
         if (c) {
             GraphPropertiesDialog dialog(c, this);
+            connect(&dialog,SIGNAL(curveChanged(Curve*)),this,SIGNAL(curveChanged(Curve*)));
             dialog.exec();
         }
     }

@@ -24,8 +24,9 @@ signals:
 public slots:
     void methodChanged(int method);
     virtual void accept();
-
 private:
+    bool copyFilesToTempDir(const QVector<int> &, const QString &tempFolderName);
+    void moveFilesFromTempDir(const QString &destDir);
     QList<DfdFileDescriptor *> *dataBase;
 
     QStringList newFiles;

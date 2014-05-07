@@ -70,6 +70,8 @@ GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
                         colorLabel->setPalette(QPalette(color));
                         pen.setColor(color);
                         this->curve->setPen(pen);
+                        this->curve->dfd->channels[this->curve->channel]->color = color;
+                        emit curveChanged(curve);
                     }
                 }
     );

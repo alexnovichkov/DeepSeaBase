@@ -39,6 +39,8 @@ public:
 
     QList<Curve *> curves() {return graphs;}
 
+    double minStep;
+
     /**
      * @brief hasGraphs
      * @return whether plot has any graphs
@@ -109,8 +111,10 @@ public slots:
 signals:
     void fileCreated(const QString &fileName, bool plot);
     void fileChanged(const QString &fileName, bool plot);
+    void curveChanged(Curve *curve);
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
+
 private:
     void importPlot(const QString &fileName);
     QList<Curve *> graphs;

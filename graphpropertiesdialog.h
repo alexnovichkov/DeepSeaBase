@@ -34,7 +34,7 @@ public:
     explicit GraphPropertiesDialog(Curve *curve, Plot *parent = 0);
     
 signals:
-    
+    void curveChanged(Curve *curve);
 public slots:
 private:
     Curve *curve;

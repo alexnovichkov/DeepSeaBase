@@ -123,6 +123,10 @@ private slots:
 
     void addFile(const QString &fileName, bool plot);
     void updateFile(const QString &fileName, bool plot);
+
+    void exportToExcel();
+
+    void onCurveColorChanged(Curve *curve);
 private:
     void addFiles(const QStringList &files);
 
@@ -131,7 +135,11 @@ private:
 //    void updateRecordState(int recordIndex);
     void updateChannelsHeaderState();
 
+    void updateChannelsTable(DfdFileDescriptor *);
+
     void createTab(const QString &name, const QStringList &folders);
+
+    QString getNewSheetName();
 
     QStringList tabsNames;
 
@@ -154,6 +162,8 @@ private:
     QAction *meanAct;
     QAction *interactionModeAct;
     QAction *addCorrectionAct;
+
+    QAction *exportToExcelAct;
 
     Plot *plot;
 
