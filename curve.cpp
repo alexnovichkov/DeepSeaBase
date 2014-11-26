@@ -1,5 +1,8 @@
 #include "curve.h"
 #include "qwt_symbol.h"
+#include "pointlabel.h"
+
+#include "filedescriptor.h"
 
 class DfdData: public QwtSeriesData<QPointF>
 {
@@ -32,22 +35,23 @@ private:
     size_t d_size;
 };
 
-Curve::Curve(const QString &title, DfdFileDescriptor *dfd, int channel):
-    QwtPlotCurve(title), dfd(dfd), channel(channel)
+Curve::Curve(const QString &title, FileDescriptor *descriptor, int channelIndex):
+    QwtPlotCurve(title), descriptor(descriptor), channelIndex(channelIndex)
 {
+    channel = descriptor->channel(channelIndex);
     setPaintAttribute(QwtPlotCurve::ClipPolygons);
     setRenderHint(QwtPlotItem::RenderAntialiased);
 }
 
 Curve::Curve(const QString &title) :
-    QwtPlotCurve(title), dfd(0), channel(-1)
+    QwtPlotCurve(title), descriptor(0), channelIndex(-1), channel(0)
 {
     setPaintAttribute(QwtPlotCurve::ClipPolygons);
     setRenderHint(QwtPlotItem::RenderAntialiased);
 }
 
 Curve::Curve(const QwtText &title) :
-    QwtPlotCurve(title), dfd(0), channel(-1)
+    QwtPlotCurve(title), descriptor(0), channelIndex(-1), channel(0)
 {
     setPaintAttribute(QwtPlotCurve::ClipPolygons);
     setRenderHint(QwtPlotItem::RenderAntialiased);
@@ -55,11 +59,8 @@ Curve::Curve(const QwtText &title) :
 
 Curve::~Curve()
 {
-    for (int i=0; i<markers.size(); ++i) {
-        markers[i]->detach();
-    }
-    qDeleteAll(markers);
-    markers.clear();
+    foreach(PointLabel *l, labels) l->detach();
+    qDeleteAll(labels);
 }
 
 void Curve::setRawSamples(double x0, double xStep, const double *yData, int size)
@@ -67,84 +68,34 @@ void Curve::setRawSamples(double x0, double xStep, const double *yData, int size
     setData(new DfdData(x0, xStep, yData, size));
 }
 
-Marker *Curve::addMarker(int index)
+void Curve::addLabel(PointLabel *label)
 {
-    foreach(Marker *m, markers) {
-        if (m->d_selectedPoint == index) return m;
-    }
-
-
-
-    Marker *m = new Marker(index);
-    //m->symbol->setLineStyle(QwtPlotMarker::NoLine);
-    m->text->setLineStyle(QwtPlotMarker::NoLine);
-    m->text->setLabelAlignment(Qt::AlignTop);
-    m->text->setSpacing(m->text->spacing()+4);
-    m->text->setSymbol(new QwtSymbol(QwtSymbol::Ellipse,
-                               Qt::gray,
-                               this->pen().color(),
-                               QSize(8, 8))
-                 );
-    QwtText text = QwtText(QString("%1").arg(sample(index).x()));
-
-    markers << m;
-    m->setValue(sample(index));
-    m->setLabel(text);
-    return m;
+    labels << label;
 }
 
-void Curve::removeMarker(int index)
+void Curve::removeLabel(PointLabel *label)
 {
-    for (int i = markers.size()-1; i >= 0; --i) {
-        Marker *m = markers[i];
-        if (m->d_selectedPoint == index) {
-            m->detach();
-            delete m;
-            markers.removeAt(i);
-        }
+    if (labels.contains(label)) {
+        labels.removeAll(label);
+        label->detach();
+        delete label;
     }
 }
 
-Marker *Curve::findMarker(int index)
+PointLabel *Curve::findLabel(const QPoint &pos, int yAxis)
 {
-    foreach(Marker *m, markers) {
-        if (m->d_selectedPoint == index) return m;
-    }
+    foreach (PointLabel *l, labels)
+        if (l->contains(pos, yAxis))
+            return l;
 
     return 0;
 }
 
-Marker::Marker(int point)
-    : /*symbol(new QwtPlotMarker()),*/ text(new QwtPlotMarker()), d_selectedPoint(point),  type(0)
+PointLabel *Curve::findLabel(const int point)
 {
+    foreach (PointLabel *l, labels)
+        if (l->point() == point)
+            return l;
 
-
-}
-
-void Marker::setValue(const QPointF &value)
-{
-    //symbol->setValue(value);
-    text->setValue(value);
-}
-
-void Marker::moveTextTo(const QPointF &value)
-{
-    text->setValue(value);
-}
-
-void Marker::detach()
-{
-    //symbol->detach();
-    text->detach();
-}
-
-void Marker::attach(QwtPlot *plot)
-{
-    //symbol->attach(plot);
-    text->attach(plot);
-}
-
-void Marker::setLabel(const QwtText &label)
-{
-    text->setLabel(label);
+    return 0;
 }

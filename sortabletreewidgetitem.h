@@ -2,7 +2,7 @@
 #define SORTABLETREEWIDGETITEM_H
 
 #include <QTreeWidgetItem>
-class DfdFileDescriptor;
+class FileDescriptor;
 
 const QString dateTimeFormat = "dd.MM.yy hh:mm:ss";
 
@@ -24,14 +24,14 @@ public:
 
     SortableTreeWidgetItem(QTreeWidget *tree);
     SortableTreeWidgetItem(QTreeWidget *parent, const QStringList &strings);
-    SortableTreeWidgetItem(DfdFileDescriptor *dfd, const QStringList &strings);
+    SortableTreeWidgetItem(FileDescriptor *fileDescriptor, const QStringList &strings);
     ~SortableTreeWidgetItem();
 
     static void setTypeMap(const QMap<int,DataType> &map);
 
     bool operator< (const QTreeWidgetItem &other) const;
 
-    DfdFileDescriptor *dfd;
+    FileDescriptor *fileDescriptor;
 private:
     static QMap<int,DataType> typeMap;
 };

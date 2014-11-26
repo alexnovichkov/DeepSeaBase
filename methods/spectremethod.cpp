@@ -111,9 +111,10 @@ QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, int activeChan
     spfFile << "Wind="+windowCombo->currentText();
     spfFile << "TypeAver="+averCombo->currentText();
 
-    quint32 numberOfInd = dfd->channels.at(activeChannel)->NumInd;
+    quint32 numberOfInd = dfd->channels.at(activeChannel)->samplesCount();
     double resolution = resolutionCombo->currentText().toDouble();
     double NumberOfAveraging = double(numberOfInd) / resolution;
+
     while (strip>0) {
         NumberOfAveraging /= 2.0;
         strip--;

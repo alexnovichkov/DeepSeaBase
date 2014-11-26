@@ -31,7 +31,12 @@ SOURCES += main.cpp\
     plotpicker.cpp \
     correctiondialog.cpp \
     methods/xresponch1.cpp \
-    pointlabel.cpp
+    pointlabel.cpp \
+    legend.cpp \
+    legendlabel.cpp \
+    logging.cpp \
+    filedescriptor.cpp \
+    ufffile.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -51,7 +56,13 @@ HEADERS  += mainwindow.h \
     plotpicker.h \
     correctiondialog.h \
     methods/xresponch1.h \
-    pointlabel.h
+    pointlabel.h \
+    legend.h \
+    legendlabel.h \
+    logging.h \
+    filedescriptor.h \
+    ufffile.h \
+    fields.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\

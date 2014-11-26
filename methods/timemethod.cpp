@@ -34,7 +34,7 @@ QStringList TimeMethod::methodSettings(DfdFileDescriptor *dfd, int activeChannel
     spfFile << "TypeProc=0";
     spfFile << "Values=измеряемые";
 
-    quint32 numberOfInd = dfd->channels.at(activeChannel)->NumInd;
+    quint32 numberOfInd = dfd->channels.at(activeChannel)->samplesCount();
     double resolution = resolutionCombo->currentText().toDouble();
     double NumberOfAveraging = double(numberOfInd) / resolution;
     while (strip>0) {

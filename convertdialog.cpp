@@ -7,9 +7,15 @@
 #include "methods/timemethod.h"
 #include "methods/xresponch1.h"
 
-ConvertDialog::ConvertDialog(QList<DfdFileDescriptor *> *dataBase, QWidget *parent) :
-    QDialog(parent), dataBase(dataBase), process(0)
+ConvertDialog::ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent) :
+    QDialog(parent), /*dataBase(dataBase),*/ process(0)
 {
+    foreach (FileDescriptor *d, *dataBase) {
+        DfdFileDescriptor *dd = static_cast<DfdFileDescriptor *>(d);
+        if (dd)
+            this->dataBase << dd;
+    }
+
     methodCombo = new QComboBox(this);
     methodCombo->setEditable(false);
     for (int i=0; i<26; ++i) {
@@ -22,16 +28,21 @@ ConvertDialog::ConvertDialog(QList<DfdFileDescriptor *> *dataBase, QWidget *pare
 
     activeStripCombo = new QComboBox(this);
     activeStripCombo->setEditable(false);
-    double bandWidth = dynamic_cast<RawChannel *>(dataBase->first()->channels.first())->BandWidth;
+
+    infoLabel = new QLabel(this);
+    infoLabel->setWordWrap(true);
+
+    bandWidth = dynamic_cast<RawChannel *>(dataBase->first()->channel(0))->BandWidth;
     for (int i=0; i<12; ++i) {
         if (bands[i] <= bandWidth) {
             bandWidth = bands[i];
             break;
         }
     }
+    double bw = bandWidth;
     for (int i=0; i<12; ++i) {
-        activeStripCombo->addItem(QString::number(bandWidth));
-        bandWidth /= 2.0;
+        activeStripCombo->addItem(QString::number(bw));
+        bw /= 2.0;
     }
     activeStripCombo->setCurrentIndex(2);
 
@@ -67,6 +78,8 @@ ConvertDialog::ConvertDialog(QList<DfdFileDescriptor *> *dataBase, QWidget *pare
     l->addWidget(baseChannelSpin, 2,1);
     l->addWidget(new QLabel("Частотный диапазон", this), 3,0);
     l->addWidget(activeStripCombo, 3,1);
+    l->addWidget(infoLabel, 4,0,1,2);
+
     l->addWidget(methodsStack,0,2,6,1);
     l->addWidget(buttonBox, 6,0,1,3);
 
@@ -113,7 +126,7 @@ QStringList ConvertDialog::getSpfFile(const QVector<int> &indexes, QString dir)
     spfFile << "TpNameDat=1"; // к имени файла добавляется дата и время создания
 
     for (int i=0; i<indexes.size(); ++i) {
-        DfdFileDescriptor *dfd = dataBase->at(indexes.at(i));
+        DfdFileDescriptor *dfd = dataBase.at(indexes.at(i));
         spfFile << QString("[Panel%1]").arg(i);
         spfFile << QString("NmPan=п.%1").arg(i);
         spfFile << QString("PanelPar=%1,%2,%3")
@@ -127,32 +140,36 @@ QStringList ConvertDialog::getSpfFile(const QVector<int> &indexes, QString dir)
         spfFile << QString("ProcMethod=%1,%2")
                    .arg(currentMethod->methodDll())
                    .arg(currentMethod->dataType());
-        spfFile << QString("FileNm=%1").arg(QDir::toNativeSeparators(dfd->dfdFileName));
+        spfFile << QString("FileNm=%1").arg(QDir::toNativeSeparators(dfd->fileName()));
 
         QStringList channelsList;
         for (int i=1; i<=dfd->channels.size(); ++i) channelsList << QString::number(i);
         //foreach(int ch, channels) channelsList << QString::number(ch);
         spfFile << "Channels="+channelsList.join(',');
 
+
+        int bandStrip = stripByBandwidth(dynamic_cast<RawChannel *>(dfd->channel(0))->BandWidth);
+
         spfFile << QString("ActChannel=%1").arg(activeChannelSpin->value());
         spfFile << QString("BaseChannel=%1").arg(baseChannelSpin->value());
         spfFile << "MinMax=*,*,*,*";
-        spfFile << QString("AStrip=%1").arg(activeStripCombo->currentIndex());
+        spfFile << QString("AStrip=%1").arg(bandStrip);
         spfFile << "StepBack=(00000000)"; // TODO: добавить возможность устанавливать перекрытие
         spfFile << "ShiftDat=0"; // TODO: добавить возможность устанавливать смещение
         // длина = число отсчетов в канале
         // TODO: добавить возможность устанавливать правую границу выборки
-        quint32 NI = dfd->NumInd *
-                     dfd->channels.at(activeChannelSpin->value())->ChanBlockSize
+        quint32 NI = dfd->channels.at(activeChannelSpin->value())->ChanBlockSize
                      / dfd->BlockSize;
+        NI *= dfd->samplesCount();
+
         spfFile << QString("Duration=%1").arg(NI);
         spfFile << "TablName=";
-        spfFile << QString("ViewPar=1,0,1,%1,1,1,0").arg(activeStripCombo->currentIndex());
+        spfFile << QString("ViewPar=1,0,1,%1,1,1,0").arg(bandStrip);
         spfFile << "FacePos=0";
         spfFile << "Strob=0";
 
         spfFile << QString("[Panel%1\\Wind1\\Method]").arg(i);
-        spfFile << currentMethod->methodSettings(dfd, activeChannelSpin->value(), activeStripCombo->currentIndex());
+        spfFile << currentMethod->methodSettings(dfd, activeChannelSpin->value(), bandStrip);
     }
     return spfFile;
 }
@@ -166,11 +183,17 @@ void ConvertDialog::methodChanged(int method)
 bool ConvertDialog::copyFilesToTempDir(const QVector<int> &indexes, const QString &tempFolderName)
 {
     bool result = true;
+    infoLabel->setText("Копирование файлов во временную папку...");
+    qApp->processEvents();
     foreach(int index, indexes) {
-        QString dfdFileName = QFileInfo(dataBase->at(index)->dfdFileName).fileName();
-        QString rawFileName = QFileInfo(dataBase->at(index)->rawFileName).fileName();
-        result &= QFile::copy(dataBase->at(index)->dfdFileName, tempFolderName+"/"+dfdFileName);
-        result &= QFile::copy(dataBase->at(index)->rawFileName, tempFolderName+"/"+rawFileName);
+        QString dfdFileName = QFileInfo(dataBase.at(index)->fileName()).fileName();
+        result &= QFile::copy(dataBase.at(index)->fileName(), tempFolderName+"/"+dfdFileName);
+
+        if (dataBase.at(index)->hasAttachedFile()) {
+            QString rawFileName = QFileInfo(dataBase.at(index)->attachedFileName()).fileName();
+            result &= QFile::copy(dataBase.at(index)->attachedFileName(), tempFolderName+"/"+rawFileName);
+        }
+        qApp->processEvents();
     }
 
     return result;
@@ -181,7 +204,7 @@ void ConvertDialog::moveFilesFromTempDir(const QString &destDir)
     for (int i=0; i<newFiles.size(); ++i) {
         DfdFileDescriptor dfd(newFiles.at(i));
         dfd.read();
-        QString suffix = QString::number(dfd.NumInd * dfd.XStep);
+        QString suffix = QString::number(dfd.samplesCount() * dfd.xStep());
 
         QString baseFileName = QFileInfo(newFiles.at(i)).completeBaseName();
         const QString oldRawFileName = QFileInfo(newFiles.at(i)).canonicalPath()+"/"+baseFileName+".raw";
@@ -210,15 +233,27 @@ void ConvertDialog::moveFilesFromTempDir(const QString &destDir)
     }
 }
 
+int ConvertDialog::stripByBandwidth(double bandwidth)
+{
+    const int current = activeStripCombo->currentIndex();
+
+    if (qAbs(bandwidth - bandWidth)<1.0e-7)
+        return current;
+
+    int val = current - int(log2(bandWidth/bandwidth));
+    int result = qBound(0, val, 11);
+    return result;
+}
+
 void ConvertDialog::accept()
 {
     newFiles.clear();
 
     // сортируем записи по директории
     QMap<QString, QVector<int> > sortedFiles;
-    for (int i=0; i< dataBase->size(); ++i) {
-        DfdFileDescriptor *dfd = dataBase->at(i);
-        QString dir = QFileInfo(dfd->dfdFileName).absolutePath();
+    for (int i=0; i< dataBase.size(); ++i) {
+        DfdFileDescriptor *dfd = dataBase.at(i);
+        QString dir = QFileInfo(dfd->fileName()).absolutePath();
         QVector<int> indexes = sortedFiles.value(dir);
         indexes.append(i);
         sortedFiles.insert(dir, indexes);
@@ -240,9 +275,10 @@ void ConvertDialog::accept()
             it.next();
 
             if (copyFilesToTempDir(it.value(), tempFolderName)) {
+                infoLabel->setText("Подождите, пока работает DeepSea...");
                 QStringList spfFile = getSpfFile(it.value(), tempFolderName);
                 QTemporaryFile file("spffile_XXXXXX.spf");
-                //file.setAutoRemove(false);
+                file.setAutoRemove(false);
                 if (file.open()) {
                     QTextStream out(&file);
                     out.setCodec("Windows-1251");

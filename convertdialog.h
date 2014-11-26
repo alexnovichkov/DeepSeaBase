@@ -9,13 +9,15 @@ class QComboBox;
 class QSpinBox;
 class QStackedWidget;
 class QProcess;
+class QLabel;
+class FileDescriptor;
 class DfdFileDescriptor;
 
 class ConvertDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit ConvertDialog(QList<DfdFileDescriptor *> *dataBase, QWidget *parent = 0);
+    explicit ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent = 0);
     ~ConvertDialog();
     QStringList getNewFiles() const {return newFiles;}
     QStringList getSpfFile(const QVector<int> &indexes, QString dir);
@@ -27,7 +29,9 @@ public slots:
 private:
     bool copyFilesToTempDir(const QVector<int> &, const QString &tempFolderName);
     void moveFilesFromTempDir(const QString &destDir);
-    QList<DfdFileDescriptor *> *dataBase;
+    int stripByBandwidth(double bandwidth);
+
+    QList<DfdFileDescriptor *> dataBase;
 
     QStringList newFiles;
 
@@ -40,8 +44,11 @@ private:
     QSpinBox *baseChannelSpin;
     QStackedWidget *methodsStack;
     QComboBox *activeStripCombo;
+    QLabel *infoLabel;
 
     QProcess *process;
+
+    double bandWidth;
 };
 
 #endif // CONVERTDIALOG_H

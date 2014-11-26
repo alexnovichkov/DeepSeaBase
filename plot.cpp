@@ -1,7 +1,7 @@
 #include "plot.h"
 
 #include <qwt_plot_canvas.h>
-#include <qwt_legend.h>
+//#include <qwt_legend.h>
 #include <qwt_plot_grid.h>
 #include <qwt_plot_curve.h>
 #include <qwt_symbol.h>
@@ -31,13 +31,16 @@
 #include "graphpropertiesdialog.h"
 
 #include "colorselector.h"
+#include "legend.h"
 
 #include "plotpicker.h"
 #include <QAction>
 
+#include "logging.h"
+
 Plot::Plot(QWidget *parent) :
-    QwtPlot(parent), freeGraph(0)
-{
+    QwtPlot(parent)/*, freeGraph(0)*/
+{DD;
     canvas = new QwtPlotCanvas();
     canvas->setFocusIndicator( QwtPlotCanvas::CanvasFocusIndicator);
     canvas->setFocusPolicy( Qt::StrongFocus);
@@ -48,8 +51,9 @@ Plot::Plot(QWidget *parent) :
 
     setAutoReplot(true);
 
-    minStep = 0.0;
+//    minStep = 0.0;
 
+    axisLabelsVisible = MainWindow::getSetting("axisLabelsVisible", true).toBool();
 
 
     //setTitle("Legend Test");
@@ -72,9 +76,10 @@ Plot::Plot(QWidget *parent) :
     setAxisScale(QwtPlot::yLeft, 0, 10);
     setAxisScale(QwtPlot::xBottom, 0, 10);
 
-    QwtLegend *leg = new QwtLegend();
-    leg->setDefaultItemMode(QwtLegendData::Clickable);
+    Legend *leg = new Legend();
+    //leg->setDefaultItemMode(QwtLegendData::Clickable);
     connect(leg, SIGNAL(clicked(QVariant,int)),this,SLOT(editLegendItem(QVariant,int)));
+    connect(leg, SIGNAL(markedForDelete(QVariant,int)),this, SLOT(deleteGraph(QVariant,int)));
     insertLegend(leg, QwtPlot::RightLegend);
 
 
@@ -88,35 +93,39 @@ Plot::Plot(QWidget *parent) :
 }
 
 Plot::~Plot()
-{
-    delete freeGraph;
+{DD;
+//    delete freeGraph;
     qDeleteAll(graphs);
     delete grid;
     delete zoom;
     delete picker;
+    MainWindow::setSetting("axisLabelsVisible", axisLabelsVisible);
+}
+
+void Plot::update()
+{
+    updateAxes();
+    updateAxesLabels();
+    updateLegend();
+    replot();
 }
 
 bool Plot::hasGraphs() const
-{
+{DD;
     QwtPlotItemList curveList = itemList(QwtPlotItem::Rtti_PlotCurve);
     return !curveList.isEmpty();
 }
 
 int Plot::totalGraphsCount() const
-{
+{DD;
     QwtPlotItemList curveList = itemList(QwtPlotItem::Rtti_PlotCurve);
     return curveList.size();
 }
 
-bool Plot::hasFreeGraph() const
-{
-    return (freeGraph != 0);
-}
-
 void Plot::deleteGraphs()
-{
-    delete freeGraph;
-    freeGraph = 0;
+{DD;
+//    delete freeGraph;
+//    freeGraph = 0;
 
     qDeleteAll(graphs);
     graphs.clear();
@@ -126,41 +135,62 @@ void Plot::deleteGraphs()
     y1.clear();
     y2.clear();
     ColorSelector::instance()->resetState();
-    minStep = 0.0;
+//    minStep = 0.0;
 
-    for (int i=0; i<4; ++i)
-        setAxisTitle(i, "");
+    yLeftName.clear();
+    yRightName.clear();
+    xName.clear();
 
     delete zoom;
     zoom = new QwtChartZoom(this);
     //zoom->resetBounds();
 
-    updateAxes();
-    updateLegend();
-    replot();
+    update();
 }
 
-void Plot::deleteGraphs(const QString &dfdGuid)
-{
+void Plot::deleteGraphs(FileDescriptor *descriptor)
+{DD;
     for (int i = graphs.size()-1; i>=0; --i) {
         Curve *graph = graphs[i];
-        if (dfdGuid == graph->dfd->DFDGUID) {
+        if (descriptor == graph->descriptor) {
             deleteGraph(graph, true);
+            emit curveDeleted(graph);
         }
     }
-
 }
 
-void Plot::deleteGraph(DfdFileDescriptor *dfd, int channel, bool doReplot)
-{
+void Plot::deleteGraph(const QVariant &info, int index)
+{DD;
+    Q_UNUSED(index)
+
+    QwtPlotItem *item = infoToItem(info);
+    if (item) {
+        Curve *c = dynamic_cast<Curve *>(item);
+        if (c) {
+            deleteGraph(c, true);
+            emit curveDeleted(c);
+        }
+    }
+}
+
+void Plot::deleteGraph(FileDescriptor *dfd, int channel, bool doReplot)
+{DD;
     if (Curve *graph = plotted(dfd, channel)) {
         deleteGraph(graph, doReplot);
     }
 }
 
+void Plot::deleteGraph(Channel *c, bool doReplot)
+{DD;
+    if (Curve *graph = plotted(c)) {
+        deleteGraph(graph, doReplot);
+    }
+}
+
 void Plot::deleteGraph(Curve *graph, bool doReplot)
-{
+{DD;
     if (graph) {
+//        emit curveDeleted(graph);
         ColorSelector::instance()->freeColor(graph->pen().color());
         graphs.removeAll(graph);
         leftGraphs.removeAll(graph);
@@ -170,69 +200,79 @@ void Plot::deleteGraph(Curve *graph, bool doReplot)
 
         if (leftGraphs.isEmpty()) {
             yLeftName.clear();
-            setAxisTitle(QwtPlot::yLeft, yLeftName);
         }
         if (rightGraphs.isEmpty()) {
             yRightName.clear();
-            setAxisTitle(QwtPlot::yRight, yRightName);
             enableAxis(QwtPlot::yRight, false);
         }
         if (!hasGraphs()) {
             xName.clear();
-            setAxisTitle(QwtPlot::xBottom, xName);
             x1.clear();
             y1.clear();
             y2.clear();
         }
 
         if (doReplot) {
-            updateAxes();
-            updateLegend();
-            replot();
+            update();
         }
     }
 }
 
-bool Plot::canBePlottedOnLeftAxis(Channel *ch, bool addToFixed)
-{
+bool Plot::canBePlottedOnLeftAxis(Channel *ch)
+{DD;
     if (!hasGraphs()) // нет графиков - всегда на левой оси
         return true;
 
-    if (graphsCount()==0 && !addToFixed) //строим временный график - всегда на левой оси
-        return true;
-
-    if (ch->parent->XName == xName || xName.isEmpty()) { // тип графика совпадает
-        if (leftGraphs.isEmpty() || yLeftName.isEmpty() || ch->YName == yLeftName)
+    if (ch->xName() == xName || xName.isEmpty()) { // тип графика совпадает
+        if (leftGraphs.isEmpty() || yLeftName.isEmpty() || ch->yName() == yLeftName)
             return true;
     }
     return false;
 }
 
-bool Plot::canBePlottedOnRightAxis(Channel *ch, bool addToFixed)
-{
+bool Plot::canBePlottedOnRightAxis(Channel *ch)
+{DD;
     if (!hasGraphs()) // нет графиков - всегда на левой оси
         return true;
 
-    if (graphsCount()==0 && !addToFixed) //строим временный график - всегда на левой оси
-        return true;
-
-    if (ch->parent->XName == xName || xName.isEmpty()) { // тип графика совпадает
-        if (rightGraphs.isEmpty() || yRightName.isEmpty() || ch->YName == yRightName)
+    if (ch->xName() == xName || xName.isEmpty()) { // тип графика совпадает
+        if (rightGraphs.isEmpty() || yRightName.isEmpty() || ch->yName() == yRightName)
             return true;
     }
     return false;
 }
 
-void Plot::prepareAxis(int axis, const QString &name)
-{
+void Plot::prepareAxis(int axis)
+{DD;
     if (!axisEnabled(axis))
         enableAxis(axis);
+}
 
-    setAxisTitle(axis, name);
+void Plot::setAxis(int axis, const QString &name)
+{
+    switch (axis) {
+        case QwtPlot::yLeft: yLeftName = name; break;
+        case QwtPlot::yRight: yRightName = name; break;
+        case QwtPlot::xBottom: xName = name; break;
+        default: break;
+    }
+}
+
+void Plot::updateAxesLabels()
+{
+    if (axisEnabled(QwtPlot::yLeft)) {
+        setAxisTitle(QwtPlot::yLeft, axisLabelsVisible ? yLeftName : "");
+    }
+    if (axisEnabled(QwtPlot::yRight)) {
+        setAxisTitle(QwtPlot::yRight, axisLabelsVisible ? yRightName : "");
+    }
+    if (axisEnabled(QwtPlot::xBottom)) {
+        setAxisTitle(QwtPlot::xBottom, axisLabelsVisible ? xName : "");
+    }
 }
 
 void Plot::moveGraph(Curve *curve)
-{
+{DD;
     if (leftGraphs.contains(curve)) {
         leftGraphs.removeAll(curve);
         rightGraphs.append(curve);
@@ -243,14 +283,14 @@ void Plot::moveGraph(Curve *curve)
     }
 }
 
-bool Plot::plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed, QColor *col)
-{
-    if (plotted(dfd, channel)) return false;
+bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col)
+{DD;
+    if (plotted(descriptor, channel)) return false;
 
-    Channel *ch = dfd->channels[channel];
+    Channel *ch = descriptor->channel(channel);
 
-    const bool plotOnFirstYAxis = canBePlottedOnLeftAxis(ch, addToFixed);
-    const bool plotOnSecondYAxis = plotOnFirstYAxis ? false : canBePlottedOnRightAxis(ch, addToFixed);
+    const bool plotOnFirstYAxis = canBePlottedOnLeftAxis(ch);
+    const bool plotOnSecondYAxis = plotOnFirstYAxis ? false : canBePlottedOnRightAxis(ch);
 
     static bool skipped = false;
     if (!plotOnFirstYAxis && !plotOnSecondYAxis) {
@@ -265,34 +305,30 @@ bool Plot::plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed, QCo
     else
         skipped = false;
 
-    prepareAxis(QwtPlot::xBottom, dfd->XName);
+    if (!ch->populated()) ch->populate();
+
+    setAxis(QwtPlot::xBottom, descriptor->xName());
+    prepareAxis(QwtPlot::xBottom);
 
     QwtPlot::Axis ax = plotOnFirstYAxis ? QwtPlot::yLeft : QwtPlot::yRight;
 
-    prepareAxis(ax, ch->YName);
+    setAxis(ax, ch->yName());
+    prepareAxis(ax);
 
-    Curve *g = 0;
+    Curve *g = new Curve(ch->legendName(), descriptor, channel);
+    QColor nextColor = ColorSelector::instance()->getColor();
+    QPen pen = g->pen();
+    pen.setColor(nextColor);
+    pen.setWidth(1);
+    g->setPen(pen);
+    g->oldPen = pen;
+    if (col) *col = nextColor;
 
-    if (addToFixed) {
-        Curve *graph = new Curve(ch->legendName(), dfd, channel);
-        QColor nextColor = ColorSelector::instance()->getColor();
-        graph->setPen(nextColor, 1);
-        if (col) *col = nextColor;
+    graphs << g;
 
-        graphs << graph;
-        g = graph;
-    }
-    else {
-        deleteGraph(freeGraph, false);
-        freeGraph = new Curve(ch->legendName(), 0, -1);
-        QColor nextColor = Qt::black;
-        freeGraph->setPen(nextColor, 2);
-
-        g = freeGraph;
-    }
     g->legend = ch->legendName();
     g->setLegendIconSize(QSize(16,8));
-    g->setRawSamples(ch->parent->XBegin, ch->xStep, ch->yValues, ch->NumInd);
+    g->setRawSamples(ch->xBegin(), ch->xStep(), ch->yValues(), ch->samplesCount());
 
     bool needFixBoundaries = !hasGraphs() && zoom;
 
@@ -301,58 +337,70 @@ bool Plot::plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed, QCo
     g->setYAxis(ax);
     if (plotOnSecondYAxis) {
         rightGraphs << g;
-        yRightName = ch->YName;
+        yRightName = ch->yName();
     }
     else {
         leftGraphs << g;
-        yLeftName = ch->YName;
+        yLeftName = ch->yName();
     }
-    xName = dfd->XName;
+    xName = descriptor->xName();
 
-    x1.min = qMin(ch->xMin, x1.min);
-    x1.max = qMax(ch->xMaxInitial, x1.max);
+    x1.min = qMin(ch->xBegin(), x1.min);
+    x1.max = qMax(ch->xMaxInitial(), x1.max);
     setAxisScale(QwtPlot::xBottom, x1.min, x1.max);
-    if ((minStep > 1e-10)&&(qAbs(dfd->XStep-minStep) < 1e-10))
-        minStep = dfd->XStep;
+//    if ((minStep > 1e-10)&&(qAbs(dfd->XStep-minStep) < 1e-10))
+//        minStep = dfd->XStep;
 
     Range &r = y1;
     if (plotOnSecondYAxis) r = y2;
-    r.min = qMin(ch->yMinInitial, r.min);
-    r.max = qMax(ch->yMaxInitial, r.max);
+    r.min = qMin(ch->yMinInitial(), r.min);
+    r.max = qMax(ch->yMaxInitial(), r.max);
     setAxisScale(ax, r.min, r.max);
 
     if (needFixBoundaries)
         zoom->fixBoundaries();
 
-    updateAxes();
-    updateLegend();
-    replot();
+    update();
     return true;
 }
 
-Curve * Plot::plotted(DfdFileDescriptor *dfd, int channel) const
-{
+Curve * Plot::plotted(FileDescriptor *dfd, int channel) const
+{DD;
     foreach (Curve *graph, graphs) {
-        if (graph->dfd == dfd && graph->channel == channel) return graph;
+        if (graph->descriptor == dfd && graph->channelIndex == channel) return graph;
     }
     return 0;
 }
 
-void Plot::updateLegends()
+Curve * Plot::plotted(Channel *channel) const
+{DD;
+    foreach (Curve *graph, graphs) {
+        if (graph->channel == channel) return graph;
+    }
+    return 0;
+}
+
+void Plot::switchLabelsVisibility()
 {
+    axisLabelsVisible = !axisLabelsVisible;
+    updateAxesLabels();
+}
+
+void Plot::updateLegends()
+{DD;
     foreach (Curve *graph, leftGraphs) {
-        graph->legend = graph->dfd->channels.at(graph->channel)->legendName();
+        graph->legend = graph->channel->legendName();
         graph->setTitle(graph->legend);
     }
     foreach (Curve *graph, rightGraphs) {
-        graph->legend = graph->dfd->channels.at(graph->channel)->legendName();
+        graph->legend = graph->channel->legendName();
         graph->setTitle(graph->legend);
     }
     updateLegend();
 }
 
 void Plot::savePlot()
-{
+{DD;
     QString lastPicture = MainWindow::getSetting("lastPicture", "plot.bmp").toString();
     lastPicture = QFileDialog::getSaveFileName(this, QString("Сохранение графика"), lastPicture, "Изображения (*.bmp)");
     if (lastPicture.isEmpty()) return;
@@ -363,7 +411,7 @@ void Plot::savePlot()
 }
 
 void Plot::copyToClipboard()
-{
+{DD;
     QTemporaryFile file("DeepSeaBase-XXXXXX.bmp");
     if (file.open()) {
         QString fileName = file.fileName();
@@ -378,7 +426,7 @@ void Plot::copyToClipboard()
 }
 
 void Plot::print()
-{
+{DD;
     QTemporaryFile file("DeepSeaBase-XXXXXX.bmp");
     if (file.open()) {
         QString fileName = file.fileName();
@@ -411,208 +459,14 @@ void Plot::print()
     }
 }
 
-void Plot::calculateMean()
-{
-    bool dataTypeEqual = true;
-    bool stepsEqual = true; // одинаковый шаг по оси Х
-    bool namesEqual = true; // одинаковые названия осей Y
-    bool oldNamesEqual = true; // одинаковые старые названия осей Y
-    bool oneFile = true; // каналы из одного файла
-    bool writeToSeparateFile = true;
+void Plot::onCurveChanged(Curve *curve)
+{DD;
+    emit curveChanged(curve);
 
-    if (graphs.size()<2) return;
-
-    QList<Channel*> channels;
-
-    Curve *firstCurve = graphs.first();
-    Channel *firstChannel = firstCurve->dfd->channels.at(firstCurve->channel);
-    channels << firstChannel;
-    for (int i = 1; i<graphs.size(); ++i) {
-        Curve *curve = graphs.at(i);
-        Channel *channel = curve->dfd->channels.at(curve->channel);
-        channels << channel;
-
-        if (firstChannel->xStep != channel->xStep)
-            stepsEqual = false;
-        if (firstChannel->YName != channel->YName)
-            namesEqual = false;
-        if (firstChannel->YNameOld != channel->YNameOld)
-            oldNamesEqual = false;
-        if (firstCurve->dfd->DFDGUID != curve->dfd->DFDGUID)
-            oneFile = false;
-        if (firstCurve->dfd->DataType != curve->dfd->DataType)
-            dataTypeEqual = false;
-    }
-
-    if (!dataTypeEqual) {
-        int result = QMessageBox::warning(this, "Среднее графиков",
-                                          "Графики имеют разный тип. Продолжить?",
-                                          "Да", "Нет");
-
-        if (result == 1)
-            return;
-    }
-
-    if (!namesEqual) {
-        int result = QMessageBox::warning(this, "Среднее графиков",
-                                          "Графики по-видимому имеют разный тип. Продолжить?",
-                                          "Да", "Нет");
-
-        if (result == 1)
-            return;
-    }
-
-    if (firstChannel->YName == "дБ" && !oldNamesEqual) {
-        int result = QMessageBox::warning(this, "Среднее графиков",
-                                          "Графики по-видимому имеют разный тип. Продолжить?",
-                                          "Да", "Нет");
-        if (result == 1)
-            return;
-    }
-
-    if (!stepsEqual) {
-        int result = QMessageBox::warning(this, "Среднее графиков",
-                                          "Графики имеют разный шаг по оси X. Продолжить?",
-                                          "Да", "Нет");
-        if (result == 1)
-            return;
-    }
-    if (oneFile) {
-        int result = QMessageBox::information(this, "Среднее графиков",
-                                              QString("Графики взяты из одной записи %1.\n").arg(firstCurve->dfd->rawFileName)
-                                              +
-                                              QString("Сохранить среднее в эту запись дополнительным каналом?"),
-                                              "Да, записать в этот файл", "Нет, экспортировать в отдельный файл");
-        writeToSeparateFile = (result == 1);
-    }
-
-    DfdFileDescriptor *meanDfd = 0;
-    Channel *ch = 0;
-    bool created = false;
-    QString meanDfdFile;
-
-    if (writeToSeparateFile) {
-        // берем и копируем первый файл
-        QString meanD = firstCurve->dfd->dfdFileName;
-        meanD = meanD.left(meanD.length()-4);
-        meanDfdFile = QFileDialog::getSaveFileName(this, "Сохранение среднего", meanD, "Файлы dfd (*.dfd)");
-        if (meanDfdFile.isEmpty()) return;
-
-
-        if (QFile::copy(firstCurve->dfd->dfdFileName, meanDfdFile)) {
-            meanDfd = new DfdFileDescriptor(meanDfdFile);
-            meanDfd->read();
-
-            // удаляем все каналы, кроме того, который построен
-            const int chan = firstCurve->channel;
-            for (int i = meanDfd->channels.size()-1; i>chan; --i) {
-                delete meanDfd->channels[i];
-                meanDfd->channels.removeAt(i);
-            }
-            for (int i = chan-1; i>=0; --i) {
-                delete meanDfd->channels[i];
-                meanDfd->channels.removeAt(i);
-            }
-
-            Q_ASSERT(meanDfd->channels.size()==1);
-
-            ch = meanDfd->channels[0];
-            ch->channelIndex = 0;
-        }
-    }
-    else {
-        meanDfd = firstCurve->dfd;
-        ch = meanDfd->getChannel(meanDfd->DataType, meanDfd->channels.size());
-        meanDfd->channels.append(ch);
-        meanDfdFile = meanDfd->dfdFileName;
-    }
-
-    if (meanDfd && ch) {
-        // считаем данные для этого канала
-        // если ось = дБ, сначала переводим значение в линейное
-        quint32 numInd = channels.first()->NumInd;
-        for (int i=1; i<channels.size(); ++i) {
-            if (channels.at(i)->NumInd < numInd)
-                numInd = channels.at(i)->NumInd;
-        }
-
-        delete [] ch->yValues;
-        ch->yValues = new double[numInd];
-
-        ch->yMin = 1.0e100;
-        ch->yMax = -1.0e100;
-
-        for (quint32 i=0; i<numInd; ++i) {
-            double sum = 0.0;
-            for (int file = 0; file < channels.size(); ++file) {
-                double temp = channels[file]->yValues[i];
-                if (channels[file]->YName == "дБ")
-                    temp = pow(10.0, (temp/10.0));
-                sum += temp;
-            }
-            sum /= channels.size();
-            if (channels[0]->YName == "дБ")
-                sum = 10.0 * log10(sum);
-            if (sum < ch->yMin) ch->yMin = sum;
-            if (sum > ch->yMax) ch->yMax = sum;
-            ch->yValues[i] = sum;
-        }
-
-        // обновляем сведения канала
-        ch->populated = true;
-        ch->ChanName = "Среднее";
-
-        QStringList list;
-        foreach(Channel *c, channels)
-            list << QString::number(c->channelIndex+1);
-        ch->ChanDscr = "Среднее каналов "+list.join(",");
-
-        ch->ChanBlockSize = numInd;
-        ch->NumInd = numInd;
-        ch->IndType = firstChannel->IndType;
-        ch->InputType = firstChannel->InputType;
-        ch->YName = firstChannel->YName;
-        ch->YNameOld = firstChannel->YNameOld;
-        ch->blockSizeInBytes = ch->ChanBlockSize * (ch->IndType % 16);
-        ch->xStep = firstChannel->xStep;
-
-        ch->xMin = ch->parent->XBegin;
-        ch->xMax = ch->xMin + ch->xStep * numInd;
-        ch->xMaxInitial = ch->xMax;
-        ch->yMinInitial = ch->yMin;
-        ch->yMaxInitial = ch->yMax;
-
-        // обновляем dfd-файл
-        meanDfd->changed = true;
-        meanDfd->rawFileChanged = true;
-
-        meanDfd->Time = QTime::currentTime();
-        meanDfd->Date = QDate::currentDate();
-        meanDfd->CreatedBy = "DeepSeaBase by Novichkov & sukin sons";
-        meanDfd->DFDGUID = DfdFileDescriptor::createGUID();
-        meanDfd->NumChans = meanDfd->channels.size();
-
-        // будем писать канал подряд, блок = размеру файла
-        meanDfd->BlockSize = 0;
-        meanDfd->NumInd = ch->NumInd;
-    }
-
-    if (writeToSeparateFile)
-        // implicit saving
-        delete meanDfd;
-    else {
-        meanDfd->write();
-        meanDfd->writeRawFile();
-    }
-
-    if (created)
-        emit fileCreated(meanDfdFile, true);
-    else
-        emit fileChanged(meanDfdFile, true);
 }
 
 bool Plot::switchInteractionMode()
-{
+{DD;
     if (interactionMode == ScalingInteraction) {
         setInteractionMode(DataInteraction);
     }
@@ -623,7 +477,7 @@ bool Plot::switchInteractionMode()
 }
 
 void Plot::setInteractionMode(Plot::InteractionMode mode)
-{
+{DD;
     interactionMode = mode;
     if (picker) picker->setMode(mode);
     if (zoom) zoom->setEnabled(mode == ScalingInteraction);
@@ -633,7 +487,7 @@ void Plot::setInteractionMode(Plot::InteractionMode mode)
 }
 
 void Plot::importPlot(const QString &fileName)
-{
+{DD;
     QwtPlotRenderer renderer;
     renderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);
     renderer.setLayoutFlag(QwtPlotRenderer::FrameWithScales);
@@ -644,25 +498,14 @@ void Plot::importPlot(const QString &fileName)
     for (int i=0; i<QwtPlot::axisCnt; ++i)
         if (axisEnabled(i)) setAxisFont(i, axisfont);
 
-    QList<QColor> oldColors;
-
-
-    foreach (Curve *graph, leftGraphs) {
+    foreach (Curve *graph, graphs) {
         QPen pen = graph->pen();
-        pen.setWidth(2);
-        oldColors << pen.color();
+        if (pen.width()<2) pen.setWidth(2);
         pen.setColor(pen.color().lighter(120));
         graph->setPen(pen);
         graph->setTitle(QwtText("<font size=5>"+graph->legend+"</font>"));
     }
-    foreach (Curve *graph, rightGraphs) {
-        QPen pen = graph->pen();
-        pen.setWidth(2);
-        oldColors << pen.color();
-        pen.setColor(pen.color().lighter(120));
-        graph->setPen(pen);
-        graph->setTitle(QwtText("<font size=5>"+graph->legend+"</font>"));
-    }
+
     QwtLegend *leg = new QwtLegend();
     insertLegend(leg, QwtPlot::BottomLegend);
 
@@ -674,31 +517,20 @@ void Plot::importPlot(const QString &fileName)
     for (int i=0; i<QwtPlot::axisCnt; ++i)
         if (axisEnabled(i)) setAxisFont(i, axisfont);
 
-    int i=0;
-    foreach (Curve *graph, leftGraphs) {
-        QPen pen = graph->pen();
-        pen.setWidth(1);
-        pen.setColor(oldColors.at(i));
-        i++;
-        graph->setPen(pen);
+    foreach (Curve *graph, graphs) {
+        graph->setPen(graph->oldPen);
         graph->setTitle(QwtText(graph->legend));
     }
-    foreach (Curve *graph, rightGraphs) {
-        QPen pen = graph->pen();
-        pen.setWidth(1);
-        pen.setColor(oldColors.at(i));
-        i++;
-        graph->setPen(pen);
-        graph->setTitle(QwtText(graph->legend));
-    }
-    leg = new QwtLegend();
-    leg->setDefaultItemMode(QwtLegendData::Clickable);
+
+    leg = new Legend();
+    //leg->setDefaultItemMode(QwtLegendData::Clickable);
     connect(leg, SIGNAL(clicked(QVariant,int)),this,SLOT(editLegendItem(QVariant,int)));
+    connect(leg, SIGNAL(markedForDelete(QVariant,int)),this, SLOT(deleteGraph(QVariant,int)));
     insertLegend(leg, QwtPlot::RightLegend);
 }
 
 void Plot::switchCursor()
-{
+{DD;
     if (!picker) return;
 
     bool pickerEnabled = picker->isEnabled();
@@ -707,7 +539,7 @@ void Plot::switchCursor()
 }
 
 void Plot::editLegendItem(const QVariant &itemInfo, int index)
-{
+{DD;
     Q_UNUSED(index)
 
     QwtPlotItem *item = infoToItem(itemInfo);
@@ -715,8 +547,10 @@ void Plot::editLegendItem(const QVariant &itemInfo, int index)
         Curve *c = dynamic_cast<Curve *>(item);
         if (c) {
             GraphPropertiesDialog dialog(c, this);
-            connect(&dialog,SIGNAL(curveChanged(Curve*)),this,SIGNAL(curveChanged(Curve*)));
+            connect(&dialog,SIGNAL(curveChanged(Curve*)),this, SLOT(onCurveChanged(Curve*)));
             dialog.exec();
         }
     }
 }
+
+

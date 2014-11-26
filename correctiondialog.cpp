@@ -12,41 +12,53 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) :
 {
     setWindowTitle("Добавление поправки к графику");
 
-    table = new QTableWidget(0,2,this);
+    table = new QTableWidget(0,3,this);
 
-//    tableHeader = new CheckableHeaderView(Qt::Horizontal, table);
+    tableHeader = new CheckableHeaderView(Qt::Horizontal, table);
 
-//    table->setHorizontalHeader(tableHeader);
-//    tableHeader->setCheckable(0,true);
+    table->setHorizontalHeader(tableHeader);
+    tableHeader->setCheckable(1,true);
+    tableHeader->setCheckable(2,true);
 
-//    connect(tableHeader, &CheckableHeaderView::toggled, [=](int column, Qt::CheckState state)
-//    {
-//        if (column<0 || column >= table->columnCount()) return;
+    connect(tableHeader, &CheckableHeaderView::toggled, [=](int column, Qt::CheckState state)
+    {
+        if (column<0 || column >= table->columnCount()) return;
 
-//        if (state == Qt::PartiallyChecked) return;
-//        for (int i=0; i<table->rowCount(); ++i)
-//            table->item(i,column)->setCheckState(state);
-//    });
+        if (state == Qt::PartiallyChecked) return;
+        for (int i=0; i<table->rowCount(); ++i)
+            table->item(i,column)->setCheckState(state);
+    });
 
-//    connect(table, &QTableWidget::itemChanged, [=](QTableWidgetItem *item)
-//    {
-//        Qt::CheckState state = item->checkState();
-//        static int checked = 0;
-//        if (state == Qt::Checked) checked++;
-//        else if (state == Qt::Unchecked) checked--;
+    connect(table, &QTableWidget::itemChanged, [=](QTableWidgetItem *item)
+    {
+        const int col = item->column();
 
-//        if (checked==0)
-//            tableHeader->setCheckState(0, Qt::Unchecked);
-//        else if (checked == table->rowCount())
-//            tableHeader->setCheckState(0, Qt::Checked);
-//        else
-//            tableHeader->setCheckState(0, Qt::PartiallyChecked);
-//    });
-//    tableHeader->setCheckState(0,Qt::Unchecked);
+        int checked = 0;
+        for (int i=0; i<table->rowCount(); ++i) {
+            if (table->item(i, col) && table->item(i, col)->checkState()==Qt::Checked) checked++;
+        }
+//        qDebug()<<"Checked"<<checked<<"of"<<table->rowCount();
+
+        if (checked==0)
+            tableHeader->setCheckState(col, Qt::Unchecked);
+        else if (checked == table->rowCount())
+            tableHeader->setCheckState(col, Qt::Checked);
+        else
+            tableHeader->setCheckState(col, Qt::PartiallyChecked);
+
+        if (col == 2) {
+            if (item->checkState()==Qt::Checked)
+                item->setText("Сохранить поправку в файл RAW");
+            else
+                item->setText("Изменить только график");
+        }
+    });
+    tableHeader->setCheckState(0,Qt::Unchecked);
+    tableHeader->setCheckState(2,Qt::Unchecked);
 
     table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     table->horizontalHeader()->setStretchLastSection(true);
-    table->setHorizontalHeaderLabels(QStringList()<<""<<"Канал");
+    table->setHorizontalHeaderLabels(QStringList()<<""<<"Канал"<<"Сохранить поправку в файл RAW");
 
     QList<Curve *> curves = plot->curves();
     table->setRowCount(curves.size());
@@ -55,6 +67,10 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) :
         QTableWidgetItem *item = new QTableWidgetItem(curve->legend);
         item->setCheckState(Qt::Unchecked);
         table->setItem(i,1,item);
+
+        item = new QTableWidgetItem();
+        item->setCheckState(Qt::Unchecked);
+        table->setItem(i,2,item);
 
         item = new QTableWidgetItem();
         item->setBackgroundColor(curve->pen().color());
@@ -81,13 +97,21 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) :
                 for (int i=0; i<table->rowCount(); ++i) {
                     if (table->item(i,1)->checkState()==Qt::Checked) {
                         Curve *curve = curves.at(i);
-                        Channel *ch = curve->dfd->channels.at(curve->channel);
-                        for (uint j = 0; j < ch->NumInd; ++j)
-                            ch->yValues[j] += correctionValue;
-                        curve->dfd->rawFileChanged = true;
+                        Channel *ch = curve->channel;
+                        for (uint j = 0; j < ch->samplesCount(); ++j)
+                            ch->yValues()[j] += correctionValue;
+
+                        curve->legend += QString(correctionValue>=0?"+":"")+QString::number(correctionValue);
+                        ch->setName(ch->name() + QString(correctionValue>=0?"+":"")
+                                           +QString::number(correctionValue));
+                        if (table->item(i,2)->checkState()==Qt::Checked) {
+                            curve->descriptor->setChanged(true);
+                            curve->descriptor->setDataChanged(true);
+                        }
                     }
                 }
                 plot->updateAxes();
+                plot->updateLegends();
                 plot->replot();
             }
             else {
@@ -115,4 +139,6 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) :
     l->addWidget(correctButton,3,1);
     l->addWidget(buttonBox,4,0,1,2);
     setLayout(l);
+
+    resize(500,500);
 }

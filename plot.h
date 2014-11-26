@@ -10,8 +10,8 @@ class QwtLegend;
 class QwtPlotGrid;
 class QwtPlotCanvas;
 class Curve;
-class DfdFileDescriptor;
 class Channel;
+class FileDescriptor;
 
 class QwtChartZoom;
 class QwtPlotZoomer;
@@ -39,7 +39,10 @@ public:
 
     QList<Curve *> curves() {return graphs;}
 
-    double minStep;
+//    double minStep;
+    QList<Curve *> graphs;
+
+    void update();
 
     /**
      * @brief hasGraphs
@@ -56,11 +59,6 @@ public:
      * @return count of graphs excluding freeGraph
      */
     int graphsCount() const {return graphs.size();}
-    /**
-     * @brief hasFreeGraph
-     * @return whether the plot has free graph plotted
-     */
-    bool hasFreeGraph() const;
 
     /**
      * @brief deleteGraphs
@@ -71,19 +69,27 @@ public:
      * @brief deleteGraphs deletes all graphs on a plot, which represent DFDd with dfdGuid
      * @param dfdGuid
      */
-    void deleteGraphs(const QString &dfdGuid);
+    void deleteGraphs(FileDescriptor *descriptor);
 
     /**
      * @brief deleteGraph deletes plotted graph
      * @param dfd - DFD represented by a graph
      * @param channel
      */
-    void deleteGraph(DfdFileDescriptor *dfd, int channel, bool doReplot = true);
+    void deleteGraph(FileDescriptor *dfd, int channel, bool doReplot = true);
     void deleteGraph(Curve *graph, bool doReplot = true);
+    void deleteGraph(Channel *c, bool doReplot = true);
 
-    bool plotChannel(DfdFileDescriptor *dfd, int channel, bool addToFixed, QColor *col);
+    bool plotChannel(FileDescriptor *descriptor, int channel, QColor *col);
 
-    Curve *plotted(DfdFileDescriptor *dfd, int channel) const;
+    Curve *plotted(FileDescriptor *dfd, int channel) const;
+    Curve *plotted(Channel *channel) const;
+
+    /**
+     * @brief switchLabelsVisibility
+     * hides / shows axis labels
+     */
+    void switchLabelsVisibility();
 
     /**
      * @brief updateLegends
@@ -91,10 +97,12 @@ public:
      */
     void updateLegends();
 
-    bool canBePlottedOnLeftAxis(Channel *ch, bool addToFixed);
-    bool canBePlottedOnRightAxis(Channel *ch, bool addToFixed);
+    bool canBePlottedOnLeftAxis(Channel *ch);
+    bool canBePlottedOnRightAxis(Channel *ch);
 
-    void prepareAxis(int axis, const QString &name);
+    void prepareAxis(int axis);
+    void setAxis(int axis, const QString &name);
+    void updateAxesLabels();
 
     void moveGraph(Curve *curve);
 
@@ -106,23 +114,27 @@ public slots:
     void copyToClipboard();
     void print();
 
-    void calculateMean();
+    void onCurveChanged(Curve*);
+
 
 signals:
-    void fileCreated(const QString &fileName, bool plot);
-    void fileChanged(const QString &fileName, bool plot);
+//    void fileCreated(const QString &fileName, bool plot);
+//    void fileChanged(const QString &fileName, bool plot);
     void curveChanged(Curve *curve);
+    void curveDeleted(Curve *curve);
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
-
+    void deleteGraph(const QVariant &info, int index);
 private:
     void importPlot(const QString &fileName);
-    QList<Curve *> graphs;
-    Curve *freeGraph;
+//    Curve *freeGraph;
 
+    // axis labels
     QString xName;
     QString yLeftName;
     QString yRightName;
+    bool axisLabelsVisible;
+
     QList<Curve *> leftGraphs;
     QList<Curve *> rightGraphs;
 
@@ -131,6 +143,7 @@ private:
     QwtPlotCanvas *canvas;
 
     QwtChartZoom *zoom;
+
 
 
     Range x1;

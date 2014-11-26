@@ -27,6 +27,11 @@ GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
     titleEdit = new QLineEdit(oldTitle, this);
     connect(titleEdit, &QLineEdit::textChanged, [=](const QString &newValue) {
         this->curve->setTitle(newValue);
+        curve->legend = newValue;
+        curve->channel->name() = newValue;
+        curve->descriptor->setChanged(true);
+
+        emit curveChanged(curve);
     }
     );
 
@@ -38,6 +43,8 @@ GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
         QPen pen = curve->pen();
         pen.setWidth(newValue);
         this->curve->setPen(pen);
+        this->curve->oldPen = pen;
+        emit curveChanged(curve);
     }
     );
 
@@ -55,6 +62,8 @@ GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
         QPen pen = curve->pen();
         pen.setStyle((Qt::PenStyle)newValue);
         this->curve->setPen(pen);
+        this->curve->oldPen = pen;
+        emit curveChanged(curve);
     });
 
     ClickableLabel *colorLabel = new ClickableLabel(this);
@@ -70,7 +79,8 @@ GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
                         colorLabel->setPalette(QPalette(color));
                         pen.setColor(color);
                         this->curve->setPen(pen);
-                        this->curve->dfd->channels[this->curve->channel]->color = color;
+                        this->curve->oldPen = pen;
+                        this->curve->channel->setColor(color);
                         emit curveChanged(curve);
                     }
                 }
@@ -83,13 +93,15 @@ GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
     axisComboBox->setCurrentIndex(curve->yAxis());
     connect(axisComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             [=](int axis) {
-        if (axis == QwtPlot::yLeft && plot->canBePlottedOnLeftAxis(curve->dfd->channels[curve->channel], true)) {
-            plot->prepareAxis(axis, curve->dfd->channels[curve->channel]->YName);
+        if (axis == QwtPlot::yLeft && plot->canBePlottedOnLeftAxis(curve->channel)) {
+            plot->prepareAxis(axis);
+            plot->setAxis(axis, curve->channel->yName());
             curve->setYAxis(axis);
             plot->moveGraph(curve);
         }
-        else if (axis == QwtPlot::yRight && plot->canBePlottedOnRightAxis(curve->dfd->channels[curve->channel], true)) {
-            plot->prepareAxis(axis, curve->dfd->channels[curve->channel]->YName);
+        else if (axis == QwtPlot::yRight && plot->canBePlottedOnRightAxis(curve->channel)) {
+            plot->prepareAxis(axis);
+            plot->setAxis(axis, curve->channel->yName());
             curve->setYAxis(axis);
             plot->moveGraph(curve);
         }
@@ -161,6 +173,7 @@ GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
 void GraphPropertiesDialog::reject()
 {
     curve->setPen(oldPen);
+    curve->oldPen = oldPen;
     curve->setTitle(oldTitle);
     QDialog::reject();
 }

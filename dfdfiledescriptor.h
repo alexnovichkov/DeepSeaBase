@@ -3,7 +3,7 @@
 
 #include <QtCore>
 #include <QColor>
-
+#include "filedescriptor.h"
 #include <qwt_series_data.h>
 
 #define DebugPrint(s) qDebug()<<#s<<s;
@@ -50,6 +50,9 @@ enum DfdDataType {
     ToSpectr   = 157,		// 1/3-октавный спектр
     NotDef     = 255		// неопределенный
 };
+
+DfdDataType dfdDataTypeFromDataType(Descriptor::DataType type);
+Descriptor::DataType dataTypefromDfdDataType(DfdDataType type);
 
 enum PlotType {
     PlotUnknown = 0,
@@ -98,54 +101,68 @@ const Method methods[26] = {
     {"traceFlt.dll", "Следящий фильтр", NotDef, 0}
 };
 
-PlotType plotTypeByDataType(DfdDataType dataType);
+//PlotType plotTypeByDataType(DfdDataType dataType);
 
 QString dataTypeDescription(int type);
-QString methodDescription(int methodType);
-QString dllForMethod(int methodType);
-int panelTypeForMethod(int methodType);
-DfdDataType dataTypeForMethod(int methodType);
+//QString methodDescription(int methodType);
+//QString dllForMethod(int methodType);
+//int panelTypeForMethod(int methodType);
+//DfdDataType dataTypeForMethod(int methodType);
 
 
 class DfdFileDescriptor;
 
-class Channel
+class DfdChannel : public Channel
 {
 public:
     /** [Channel#] */
-    Channel(DfdFileDescriptor *parent, int channelIndex)
-        : IndType(0),
-          ChanBlockSize(0),
-          NumInd(0),
-          blockSizeInBytes(0),
-          xMin(0.0),
-          xMax(0.0),
-          yMin(0.0),
-          yMax(0.0),
-          xStep(0.0),
-          xMaxInitial(0.0),
-          yMinInitial(0.0),
-          yMaxInitial(0.0),
-          yValues(0),
-          parent(parent),
-          channelIndex(channelIndex),
-          checkState(Qt::Unchecked),
-          color(QColor()),
-          populated(false)
-    {}
-    virtual ~Channel();
+    DfdChannel(DfdFileDescriptor *parent, int channelIndex);
+    DfdChannel(const DfdChannel &other);
+    DfdChannel(Channel &other);
+
+    virtual ~DfdChannel();
+
+    virtual Descriptor::DataType type() const;
+    virtual Descriptor::OrdinateFormat yFormat() const;
+
     virtual void read(QSettings &dfd, int chanIndex);
     virtual void write(QTextStream &dfd, int chanIndex);
     virtual QStringList getInfoHeaders();
     virtual QStringList getInfoData();
-    virtual void populateData();
-    virtual QString legendName();
+
+
+
+    virtual QString legendName() const;
     //дополнительная обработка, напр.
     //применение смещения и усиления,
     //для получения реального значения
     virtual double postprocess(double v) {return v;}
     double getValue(QDataStream &readStream);
     void setValue(double val, QDataStream &writeStream);
+
+
+
+    virtual QString xName() const;
+    virtual QString yName() const {return YName;}
+    virtual double xBegin() const;
+    virtual double xStep() const {return XStep;}
+    virtual quint32 samplesCount() const;
+    virtual double *yValues() {return YValues;}
+    virtual double xMaxInitial() const {return XMaxInitial;}
+    virtual double yMinInitial() const {return YMinInitial;}
+    virtual double yMaxInitial() const {return YMaxInitial;}
+
+    virtual QString description() const {return ChanDscr;}
+    virtual void setDescription(const QString &description) {ChanDscr = description;}
+
+    virtual QString name() const {return ChanName;}
+    virtual void setName(const QString &name) {ChanName = name;}
+
+    virtual bool populated() const {return _populated;}
+    virtual void setPopulated(bool populated) {_populated = populated;}
+    virtual void populate();
+
+//    virtual bool typeDiffers(Channel *other);
 
     /**
      * @brief preprocess - подготавливает значение к записи с помощью setValue
@@ -158,39 +175,40 @@ public:
     QString ChanName; //
     quint32 IndType; //характеристика отсчета
     quint32 ChanBlockSize; //размер блока в отсчетах
-    quint32 NumInd; //общее число отсчетов
     QString YName;
     QString YNameOld;
+    QString XName;
     QString InputType;
     QString ChanDscr;
 
-    quint32 blockSizeInBytes; //размер блока в байтах
+    quint32 blockSizeInBytes() const; //размер блока в байтах
 
     double xMin;
     double xMax;
     double yMin;
     double yMax;
-    double xStep;
-    double xMaxInitial; // initial xMax value to display
-    double yMinInitial; // initial yMin value to display
-    double yMaxInitial; // initial yMax value to display
+    double XStep;
+    double XMaxInitial; // initial xMax value to display
+    double YMinInitial; // initial yMin value to display
+    double YMaxInitial; // initial yMax value to display
 
-    double *yValues;
+    double *YValues;
     DfdFileDescriptor *parent;
     quint32 channelIndex; // нумерация с 0
 
-    Qt::CheckState checkState;
-    QColor color;
+    bool _populated;
+    quint32 NumInd;
+private:
+    DfdDataType dataType;
 
-    bool populated;
 };
 
-class RawChannel : public Channel
+class RawChannel : public DfdChannel
 {
 public:
     /** [Channel#] */
     RawChannel(DfdFileDescriptor *parent, int channelIndex)
-        : Channel(parent, channelIndex),
+        : DfdChannel(parent, channelIndex),
           ADC0(0.0),
           ADCStep(0.0),
           AmplShift(0.0),
@@ -206,7 +224,7 @@ public:
     virtual QStringList getInfoData();
     virtual double postprocess(double v);
     virtual double preprocess(double v);
-    void populateData();
+    void populate();
     QString SensName;
     double ADC0;
     double ADCStep;
@@ -258,7 +276,7 @@ private:
     DfdFileDescriptor *parent;
 };
 
-class DfdFileDescriptor
+class DfdFileDescriptor : public FileDescriptor
 {
 public:
     DfdFileDescriptor(const QString &fileName);
@@ -266,21 +284,55 @@ public:
     void read();
     void write();
     void writeRawFile();
-    QString legend() const {return _legend;}
-    void setLegend(const QString &legend);
+    void populate();
+    void updateDateTimeGUID();
+    virtual void fillPreliminary(Descriptor::DataType);
+    virtual void fillRest();
+
+    QStringList info() const;
+    QString dateTime() const;
+    virtual Descriptor::DataType type() const;
+
+    virtual double xStep() const {return XStep;}
+
+//    QString fileName() {return FileName;}
+
+    void setFileName(const QString &name);
+    bool fileExists();
+
+    void setDataChanged(bool changed);
+
+    bool hasAttachedFile() const {return true;}
+    QString attachedFileName() const {return rawFileName;}
+    void setAttachedFileName(const QString &name) {rawFileName = name;}
+
+    int channelsCount() const {return channels.size();}
+
+    void deleteChannels(const QVector<int> &channelsToDelete);
+    void copyChannelsFrom(const QMultiHash<FileDescriptor *, int> &channelsToCopy);
+    virtual void calculateMean(const QMultiHash<FileDescriptor *, int> &channels);
+    virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes);
+
+    QStringList getHeadersForChannel(int channel);
+    Channel *channel(int index) {return channels[index];}
+
+    bool allUnplotted() const;
+    bool isSourceFile() const;
+
+    bool dataTypeEquals(FileDescriptor *other);
+
+    QString fileFilters() const;
+
+    virtual QString xName() const {return XName;}
 
     bool operator == (const DfdFileDescriptor &dfd)
     {
         return (this->DFDGUID == dfd.DFDGUID);
     }
     QString description() const;
-
     static QString createGUID();
 
-    Channel *getChannel(DfdDataType DataType, int chanIndex);
-
-    QString dfdFileName;
-    QString rawFileName; // путь к RAW файлу
+    DfdChannel *newChannel(int index);
 
     //[DataFileDescriptor]
     QString DFDGUID; //{7FD333E3-9A20-2A3E-A9443EC17B134848}
@@ -288,33 +340,22 @@ public:
     QDate Date;
     QTime Time;
     quint32 NumChans;
-    quint32 NumInd;
+//    quint32 NumInd;
     quint32 BlockSize;
     QString XName;
-    double XBegin;
+//    double XBegin;
     double XStep;
     QString DescriptionFormat;
     QString CreatedBy;
 
-    bool rawFileChanged;
-
-    bool changed;
-
-    //[Sources], [Source]
     Source *source;
-
-    //[Process]
     Process *process;
-
-    //[DataDescription]
     DataDescription *dataDescription;
-
-    //[Channel#]
-    QList<Channel *> channels;
+    QList<DfdChannel *> channels;
 private:
     friend class DataDescription;
 
-
+    QString rawFileName; // путь к RAW файлу
     QString _legend; // editable description
 };
 

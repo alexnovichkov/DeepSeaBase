@@ -7,12 +7,15 @@
 #include "curve.h"
 
 class QwtPlotCurve;
+class PointLabel;
+class QwtPlotMarker;
 
 class PlotPicker : public QwtPlotPicker
 {
     Q_OBJECT
 public:
     explicit PlotPicker(QWidget *canvas);
+    ~PlotPicker();
     void setMode(Plot::InteractionMode mode);
 //    virtual bool eventFilter(QObject *target, QEvent *);
     virtual void widgetKeyReleaseEvent(QKeyEvent *e);
@@ -29,7 +32,9 @@ private:
     void highlightPoint(bool enable);
     void resetHighLighting();
     Curve *findClosestPoint(const QPoint &pos, int &index) const;
-    Marker * findMarker();
+
+    PointLabel *findLabel();
+    PointLabel *findLabel(int point);
 
     QwtPlot *plot;
     Curve *d_selectedCurve;
@@ -37,7 +42,10 @@ private:
     int d_selectedPoint;
     Plot::InteractionMode mode;
 
-    Marker *selectedMarker;
+//    QList<PointLabel*> labels;
+    PointLabel *selectedLabel;
+
+    QPoint d_currentPos;
 
 protected:
     virtual QwtText trackerTextF(const QPointF &pos) const;

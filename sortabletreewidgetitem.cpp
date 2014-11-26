@@ -5,20 +5,20 @@
 QMap<int, SortableTreeWidgetItem::DataType> SortableTreeWidgetItem::typeMap = QMap<int, SortableTreeWidgetItem::DataType>();
 
 SortableTreeWidgetItem::SortableTreeWidgetItem(QTreeWidget *tree) :
-    QTreeWidgetItem(tree), dfd(0)
+    QTreeWidgetItem(tree), fileDescriptor(0)
 {}
 
 SortableTreeWidgetItem::SortableTreeWidgetItem(QTreeWidget *parent, const QStringList &strings)
-    : QTreeWidgetItem (parent,strings), dfd(0)
+    : QTreeWidgetItem (parent,strings), fileDescriptor(0)
 {}
 
-SortableTreeWidgetItem::SortableTreeWidgetItem(DfdFileDescriptor *dfd, const QStringList &strings)
-    : QTreeWidgetItem (strings) , dfd(dfd)
+SortableTreeWidgetItem::SortableTreeWidgetItem(FileDescriptor *dfd, const QStringList &strings)
+    : QTreeWidgetItem (strings) , fileDescriptor(dfd)
 {}
 
 SortableTreeWidgetItem::~SortableTreeWidgetItem()
 {
-    delete dfd;
+//    delete fileDescriptor;
 }
 
 void SortableTreeWidgetItem::setTypeMap(const QMap<int, SortableTreeWidgetItem::DataType> &map)
