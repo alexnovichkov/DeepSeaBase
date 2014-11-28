@@ -1027,7 +1027,20 @@ void MainWindow::editDescriptions()
     EditDescriptionsDialog dialog(records, this);
     if (dialog.exec()) {
         QHash<FileDescriptor*,DescriptionList> descriptions = dialog.descriptions();
+        QHashIterator<FileDescriptor*,DescriptionList> it(descriptions);
+        while (it.hasNext()) {
+            it.next();
+            it.key()->setDataDescriptor(it.value());
+            it.key()->setChanged(true);
+            it.key()->write();
 
+            for (int j=0; j<tab->tree->topLevelItemCount(); ++j) {
+                SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(j));
+                if (item->fileDescriptor == it.key()) {
+                    item->setText(8, it.key()->dataDescriptorAsString());
+                }
+            }
+        }
     }
 }
 

@@ -38,6 +38,18 @@ int abscissaType(const QString &xName)
     return 0; //0 - unknown
 }
 
+double threshold(const QString &name)
+{
+    if (name=="м/с2" || name=="м/с^2" || name=="м/с*2") return 3.14e-4;
+    if (name=="Па" || name=="Pa" || name=="hPa" || name=="kPa" || name=="MPa"
+        || name=="N/m2" || name=="N/mm2") return 2.0e-5;
+    if (name=="м/с") return 5.0e-8;
+    if (name=="м") return 8.0e-14;
+
+
+    return 1.0;
+}
+
 QString abscissaTypeDescription(int type)
 {
     switch (type) {
@@ -97,15 +109,12 @@ void UffFileDescriptor::read()
         header.read(stream);
         units.read(stream);
 
-//        int index = 0;
         while (!stream.atEnd()) {
             Function *f = new Function(this);
             f->read(stream);
 
-
             if (f->type() > 1) {// skip time responses
                 channels << f;
-//                f->index = index++;
             }
             else {
                 delete f;
@@ -117,7 +126,8 @@ void UffFileDescriptor::read()
         setXBegin(channels.first()->xBegin());
         setSamplesCount(channels.first()->samplesCount());
     }
-
+    setChanged(true);
+    write();
 }
 
 void UffFileDescriptor::write()
@@ -185,6 +195,11 @@ void UffFileDescriptor::setDataDescriptor(const QList<QPair<QString, QString> > 
     }
     setChanged(true);
     write();
+}
+
+QString UffFileDescriptor::dataDescriptorAsString() const
+{
+    return header.info();
 }
 
 QString UffFileDescriptor::fileType() const
@@ -900,6 +915,9 @@ void Function::read(QTextStream &stream)
     samples = type58[26].value.toULongLong();
 
     if (type58[14].value.toInt() > 1) {//do not read time response, as it is too big
+        double thr = threshold(this->yName());
+        bool doLog = (this->type()==Descriptor::Spectrum || this->type()==Descriptor::FrequencyResponseFunction);
+        if (this->type()==Descriptor::FrequencyResponseFunction) thr=1.0;
         if (type58[25].value.toInt() < 5) {//real values
             values = new double[samples];
             for (quint32 i=0; i<samples; ++i) {
@@ -914,9 +932,16 @@ void Function::read(QTextStream &stream)
             for (quint32 i=0; i<samples; ++i) {
                 stream >> first >> second; //qDebug()<<first<<second;
                 double amplitude = sqrt(first*first + second*second);
-                values[i] = amplitude;
+                if (doLog)
+                    values[i] = 20*log10(amplitude/thr);
+                else
+                    values[i] = amplitude;
             }
             type58[25].value = type58[25].value.toInt()==5?2:4;
+            if (doLog) {
+                type58[43].value = "Уровень";
+                type58[44].value = "дБ";
+            }
         }
 
         yMin = 1.0e100;

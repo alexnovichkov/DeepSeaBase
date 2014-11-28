@@ -114,6 +114,7 @@ public:
     virtual void updateDateTimeGUID();
     virtual QList<QPair<QString, QString> > dataDescriptor() const;
     virtual void setDataDescriptor(const QList<QPair<QString, QString> > &data);
+    QString dataDescriptorAsString() const;
 
     virtual QStringList info() const;
     virtual Descriptor::DataType type() const;

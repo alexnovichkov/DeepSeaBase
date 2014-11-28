@@ -314,7 +314,7 @@ QStringList DfdFileDescriptor::info() const
          << xName() // QString("Ось Х") 5
          << QString::number(xStep()) // QString("Шаг") 6
          << QString::number(channelsCount()) // QString("Каналы")); 7
-         << description()
+         << dataDescriptorAsString()
          << legend();
     return list;
 }
@@ -578,10 +578,10 @@ DfdChannel *DfdFileDescriptor::newChannel(int chanIndex)
     return c;
 }
 
-QString DfdFileDescriptor::description() const
+QString DfdFileDescriptor::dataDescriptorAsString() const
 {DD;
     if (dataDescription) return dataDescription->toString();
-    return fileName();
+    return "";
 }
 
 QString DfdFileDescriptor::createGUID()

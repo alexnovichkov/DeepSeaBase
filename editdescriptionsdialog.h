@@ -6,6 +6,7 @@
 #include "filedescriptor.h"
 
 class QTabWidget;
+class QStackedWidget;
 
 class EditDescriptionsDialog : public QDialog
 {
@@ -18,9 +19,8 @@ signals:
 public slots:
 
 private:
-    QList<FileDescriptor *> records;
-
     QTabWidget *tab;
+    QStackedWidget *stack;
 };
 
 #endif // EDITDESCRIPTIONSDIALOG_H

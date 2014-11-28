@@ -331,7 +331,7 @@ public:
     {
         return (this->DFDGUID == dfd.DFDGUID);
     }
-    QString description() const;
+    QString dataDescriptorAsString() const;
     static QString createGUID();
 
     DfdChannel *newChannel(int index);

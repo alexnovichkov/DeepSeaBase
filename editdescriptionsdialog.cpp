@@ -5,10 +5,12 @@
 class StackWidget : public QWidget
 {
 public:
-    StackWidget(const DescriptionList &descriptions, QWidget *parent = 0) : QWidget(parent)
+    StackWidget(FileDescriptor *record, QWidget *parent = 0) : QWidget(parent),
+        record(record)
     {
         edit = new QPlainTextEdit(this);
         QStringList data;
+        DescriptionList descriptions = record->dataDescriptor();
         foreach (const DescriptionEntry &entry, descriptions) {
             QString s = entry.second;
             if (!entry.first.isEmpty()) s = entry.first+"="+s;
@@ -20,20 +22,38 @@ public:
         l->addWidget(edit);
         setLayout(l);
     }
+    DescriptionList description()
+    {
+        DescriptionList result;
+        QStringList list = edit->toPlainText().split("\n");
+        foreach(const QString &s, list) {
+            if (s.isEmpty()) continue;
+            if (s.contains("=")) {
+                result << DescriptionEntry(s.section("=",0,0),s.section("=",1));
+            }
+            else {
+                result << DescriptionEntry("",s);
+            }
+        }
+        return result;
+    }
+    FileDescriptor *record;
+
 private:
     QPlainTextEdit *edit;
+
 };
 
 EditDescriptionsDialog::EditDescriptionsDialog(QList<FileDescriptor *> &records, QWidget *parent) :
-    QDialog(parent), records(records)
+    QDialog(parent)
 {
     this->setWindowTitle("Описатели файлов");
 
     QListWidget *recordsList = new QListWidget(this);
-    QStackedWidget *stack = new QStackedWidget(this);
+    stack = new QStackedWidget(this);
     foreach (FileDescriptor *record, records) {
         new QListWidgetItem(QFileInfo(record->fileName()).fileName(), recordsList);
-        stack->addWidget(new StackWidget(record->dataDescriptor()));
+        stack->addWidget(new StackWidget(record));
     }
     connect(recordsList, &QListWidget::currentRowChanged, [=](int index){
         stack->setCurrentIndex(index);
@@ -56,5 +76,11 @@ EditDescriptionsDialog::EditDescriptionsDialog(QList<FileDescriptor *> &records,
 
 QHash<FileDescriptor *, DescriptionList> EditDescriptionsDialog::descriptions()
 {
+    QHash<FileDescriptor *, DescriptionList> result;
 
+    for (int i=0; i<stack->count(); ++i) {
+        StackWidget *sw = dynamic_cast<StackWidget*>(stack->widget(i));
+        if (sw) result.insert(sw->record, sw->description());
+    }
+    return result;
 }

@@ -72,6 +72,7 @@ public:
 //    virtual QString typeDescription() const = 0;
     virtual DescriptionList dataDescriptor() const = 0;
     virtual void setDataDescriptor(const DescriptionList &data) = 0;
+    virtual QString dataDescriptorAsString() const = 0;
 
     virtual QString dateTime() const = 0;
 
