@@ -2,8 +2,8 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "DeepSea Database"
-#define MyAppVersion "1.2.8"
-#define MyAppPublisher "Novichkov Inc."
+#define MyAppVersion "1.3.1"
+#define MyAppPublisher "Novichkov & Sukin Sons."
 #define MyAppExeName "DeepSeaBase.exe"
 
 [Setup]

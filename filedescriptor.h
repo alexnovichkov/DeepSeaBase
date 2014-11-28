@@ -48,6 +48,9 @@ enum OrdinateFormat {
 
 class Channel;
 
+typedef QPair<QString, QString> DescriptionEntry;
+typedef QList<DescriptionEntry> DescriptionList;
+
 class FileDescriptor
 {
 public:
@@ -67,6 +70,8 @@ public:
     virtual QStringList info() const = 0;
     virtual Descriptor::DataType type() const = 0;
 //    virtual QString typeDescription() const = 0;
+    virtual DescriptionList dataDescriptor() const = 0;
+    virtual void setDataDescriptor(const DescriptionList &data) = 0;
 
     virtual QString dateTime() const = 0;
 

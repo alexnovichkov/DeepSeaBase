@@ -34,7 +34,6 @@ private:
     Curve *findClosestPoint(const QPoint &pos, int &index) const;
 
     PointLabel *findLabel();
-    PointLabel *findLabel(int point);
 
     QwtPlot *plot;
     Curve *d_selectedCurve;

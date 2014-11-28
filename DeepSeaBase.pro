@@ -36,7 +36,8 @@ SOURCES += main.cpp\
     legendlabel.cpp \
     logging.cpp \
     filedescriptor.cpp \
-    ufffile.cpp
+    ufffile.cpp \
+    editdescriptionsdialog.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -62,7 +63,8 @@ HEADERS  += mainwindow.h \
     logging.h \
     filedescriptor.h \
     ufffile.h \
-    fields.h
+    fields.h \
+    editdescriptionsdialog.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\

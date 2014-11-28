@@ -85,6 +85,10 @@ public:
     Curve *plotted(FileDescriptor *dfd, int channel) const;
     Curve *plotted(Channel *channel) const;
 
+    Range xRange() const;
+    Range yLeftRange() const;
+    Range yRightRange() const;
+
     /**
      * @brief switchLabelsVisibility
      * hides / shows axis labels

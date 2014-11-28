@@ -271,8 +271,8 @@ public:
     void read(QSettings &dfd);
     void write(QTextStream &dfd);
     QString toString() const;
+    DescriptionList data;
 private:
-    QList<QPair<QString, QString> > data;
     DfdFileDescriptor *parent;
 };
 
@@ -292,6 +292,8 @@ public:
     QStringList info() const;
     QString dateTime() const;
     virtual Descriptor::DataType type() const;
+    virtual DescriptionList dataDescriptor() const;
+    virtual void setDataDescriptor(const DescriptionList &data);
 
     virtual double xStep() const {return XStep;}
 

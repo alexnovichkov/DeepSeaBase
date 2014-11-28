@@ -202,25 +202,6 @@ PointLabel *PlotPicker::findLabel()
     return 0;
 }
 
-/**
- * @brief PlotPicker::findLabel
- * @return the first PointLabel whose boundingRect contains
- * the current picker position
- */
-PointLabel *PlotPicker::findLabel(int point)
-{DD;
-    const QwtPlotItemList& itmList = plot->itemList();
-    for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
-        if (( *it )->rtti() == QwtPlotItem::Rtti_PlotCurve ) {
-            Curve *c = static_cast<Curve *>( *it );
-            PointLabel *label = c->findLabel(this->trackerPosition(), c->yAxis());
-            if (label) return label;
-        }
-    }
-
-    return 0;
-}
-
 void PlotPicker::pointAppended(const QPoint &pos)
 {DD;
     resetHighLighting();

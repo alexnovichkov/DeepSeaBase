@@ -156,6 +156,37 @@ void UffFileDescriptor::updateDateTimeGUID()
     header.type151[14].value = "DeepSeaBase by Novichkov & sukin sons";
 }
 
+QList<QPair<QString, QString> > UffFileDescriptor::dataDescriptor() const
+{
+    QList<QPair<QString, QString> > result;
+    result << QPair<QString, QString>("", header.type151[4].value.toString());
+    result << QPair<QString, QString>("", header.type151[6].value.toString());
+
+    return result;
+}
+
+QString makeStringFromPair(const QPair<QString, QString> &pair)
+{
+    QString result = pair.second;
+    if (!pair.first.isEmpty()) {
+        result = pair.first+"="+result;
+    }
+    result.truncate(80);
+    return result;
+}
+
+void UffFileDescriptor::setDataDescriptor(const QList<QPair<QString, QString> > &data)
+{
+    if (data.size()>0) {
+        header.type151[4].value = makeStringFromPair(data.first());
+    }
+    if (data.size()>1) {
+        header.type151[6].value = makeStringFromPair(data.at(1));
+    }
+    setChanged(true);
+    write();
+}
+
 QString UffFileDescriptor::fileType() const
 {
     if (channels.isEmpty()) return "Неизв.";
@@ -261,6 +292,7 @@ void UffFileDescriptor::copyChannelsFrom(const QMultiHash<FileDescriptor *, int>
     //меняем параметры файла uff
     updateDateTimeGUID();
     setChanged(true);
+    write();
 }
 
 void UffFileDescriptor::calculateMean(const QMultiHash<FileDescriptor *, int> &channels)
@@ -352,6 +384,7 @@ void UffFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
         i=up?i+1:i-1;
     }
     setChanged(true);
+    write();
 }
 
 int UffFileDescriptor::channelsCount() const

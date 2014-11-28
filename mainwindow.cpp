@@ -18,7 +18,7 @@
 
 #include "dfdfiledescriptor.h"
 #include "ufffile.h"
-
+#include "editdescriptionsdialog.h"
 
 class DrivesDialog : public QDialog
 {
@@ -139,7 +139,7 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), tab(0)
 {DD;
-    setWindowTitle(tr("DeepSea Database 1.3.0"));
+    setWindowTitle(tr("DeepSea Database 1.3.1"));
     setAcceptDrops(true);
 
     mainToolBar = new QToolBar(this);
@@ -245,6 +245,11 @@ MainWindow::MainWindow(QWidget *parent)
     exportToExcelAct = new QAction(QString("Экспортировать в Excel"), this);
     exportToExcelAct->setIcon(QIcon(":/icons/excel.png"));
     connect(exportToExcelAct, SIGNAL(triggered()), this, SLOT(exportToExcel()));
+    QMenu *excelMenu = new QMenu(this);
+    QAction *exportToExcelFullAct = new QAction("Экспортировать в Excel весь диапазон", this);
+    connect(exportToExcelFullAct, SIGNAL(triggered()), this, SLOT(exportToExcelFull()));
+    excelMenu->addAction(exportToExcelFullAct);
+    exportToExcelAct->setMenu(excelMenu);
 
     meanAct = new QAction(QString("Вывести среднее"), this);
     meanAct->setIcon(QIcon(":/icons/mean.png"));
@@ -282,22 +287,31 @@ MainWindow::MainWindow(QWidget *parent)
     moveChannelsAct = new QAction("Переместить выделенные каналы в файл...", this);
     connect(moveChannelsAct, SIGNAL(triggered()), SLOT(moveChannels()));
 
+    editDescriptionsAct = new QAction("Редактировать описание...", this);
+    editDescriptionsAct->setIcon(QIcon(":/icons/descriptor.png"));
+    connect(editDescriptionsAct, SIGNAL(triggered()), SLOT(editDescriptions()));
+
 
     mainToolBar->addWidget(new QLabel("Записи:"));
     mainToolBar->addAction(addFolderAct);
     mainToolBar->addAction(addFileAct);
     mainToolBar->addAction(convertAct);
+    mainToolBar->addAction(editDescriptionsAct);
 
     mainToolBar->addSeparator();
     mainToolBar->addWidget(new QLabel("  Каналы:"));
-    QMenu *channelsMenu = new QMenu(this);
+    QMenu *channelsMenu = new QMenu("Операции", this);
     channelsMenu->addAction(deleteChannelsAct);
     channelsMenu->addAction(copyChannelsAct);
     channelsMenu->addAction(moveChannelsAct);
-    QAction *channelsAct = new QAction("Операции", this);
-    channelsAct->setMenu(channelsMenu);
 
-    mainToolBar->addAction(channelsAct);
+    QToolButton *channelsTB = new QToolButton(this);
+    channelsTB->setMenu(channelsMenu);
+    channelsTB->setText("Операции...");
+    channelsTB->setFixedHeight(32);
+    channelsTB->setPopupMode(QToolButton::InstantPopup);
+
+    mainToolBar->addWidget(channelsTB);
     mainToolBar->addAction(meanAct);
     mainToolBar->addAction(addCorrectionAct);
 
@@ -761,8 +775,27 @@ bool MainWindow::deleteChannels(const QMultiHash<FileDescriptor*, int> &channels
 
 bool MainWindow::copyChannels(const QMultiHash<FileDescriptor *, int> &channelsToCopy)
 {
+    bool allFilesDfd = true;
+    foreach (FileDescriptor *dfd, channelsToCopy.keys()) {
+        if (!dfd->fileName().toLower().endsWith(".dfd")) {
+            allFilesDfd = false;
+            break;
+        }
+    }
+
+    bool oneFolder = true;
+    QString startFolder;
+    foreach (FileDescriptor *dfd, channelsToCopy.keys()) {
+        if (startFolder.isEmpty()) startFolder = QFileInfo(dfd->fileName()).canonicalPath();
+        else if (QFileInfo(dfd->fileName()).canonicalPath() != startFolder) {
+            oneFolder = false;
+            break;
+        }
+    }
+
     /* Сначала определяем тип файла и шаг по оси x */
     QString startFile = MainWindow::getSetting("startDir").toString();
+    if (oneFolder) startFile = startFolder;
 
     QFileDialog dialog(this, "Выбор файла для записи каналов", startFile, "Файлы dfd (*.dfd);;Файлы uff (*.uff)");
     dialog.setOption(QFileDialog::DontUseNativeDialog, true);
@@ -772,13 +805,7 @@ bool MainWindow::copyChannels(const QMultiHash<FileDescriptor *, int> &channelsT
 
     bool forceUff = false;
 
-    bool allFilesDfd = true;
-    foreach (FileDescriptor *dfd, channelsToCopy.keys()) {
-        if (!dfd->fileName().toLower().endsWith(".dfd")) {
-            allFilesDfd = false;
-            break;
-        }
-    }
+
 
     // если все файлы - dfd, то мы можем записать их только в dfd файл с таким же типом данных и шагом по x
     // поэтому если они различаются, то насильно записываем каналы в файл uff
@@ -987,6 +1014,23 @@ void MainWindow::moveChannelsDown()
     moveChannels(false);
 }
 
+void MainWindow::editDescriptions()
+{
+    QList<FileDescriptor *> records;
+    for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
+        if (tab->tree->topLevelItem(i)->isSelected()) {
+            SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
+            records << item->fileDescriptor;
+        }
+    }
+
+    EditDescriptionsDialog dialog(records, this);
+    if (dialog.exec()) {
+        QHash<FileDescriptor*,DescriptionList> descriptions = dialog.descriptions();
+
+    }
+}
+
 QVector<int> computeIndexes(QVector<int> notYetMoved, bool up, int totalSize)
 {DD;
     QVector<int> moved;
@@ -1134,12 +1178,14 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
     if (tab->channelsTable->horizontalHeaderItem(column)->text() == "Описание") {
         ch->setDescription(item->text());
         tab->record->setChanged(true);
+        tab->record->write();
     }
 
     else if (column == 0) {
         if (ch->name() != item->text()) {
             ch->setName(item->text());
             tab->record->setChanged(true);
+            tab->record->write();
             plot->updateLegends();
         }
 
@@ -1278,6 +1324,8 @@ void MainWindow::recordLegendChanged(QTreeWidgetItem *item, int column)
                 return;
             }
             i->fileDescriptor->setLegend(item->text(column));
+            i->fileDescriptor->setChanged(true);
+            i->fileDescriptor->write();
             plot->updateLegends();
         }
     }
@@ -1436,6 +1484,16 @@ void setAxis(QAxObject *xAxis, const QString &title)
 
 void MainWindow::exportToExcel()
 {DD;
+    exportToExcel(false);
+}
+
+void MainWindow::exportToExcelFull()
+{
+    exportToExcel(true);
+}
+
+void MainWindow::exportToExcel(bool fullRange)
+{
     static QAxObject *excel = 0;
 
     if (!plot->hasGraphs()) {
@@ -1483,13 +1541,10 @@ void MainWindow::exportToExcel()
 
      //проверяем, все ли каналы имеют одинаковое разрешение по х
      bool allChannelsHaveSameXStep = true;
-
-     if (!allChannelsFromOneFile) {
-         for (int i=1; i<curves.size(); ++i) {
-             if (qAbs(curves.at(i)->channel->xStep() - channel->xStep()) >= 1e-10) {
-                 allChannelsHaveSameXStep = false;
-                 break;
-             }
+     for (int i=1; i<curves.size(); ++i) {
+         if (qAbs(curves.at(i)->channel->xStep() - channel->xStep()) >= 1e-10) {
+             allChannelsHaveSameXStep = false;
+             break;
          }
      }
 
@@ -1497,15 +1552,30 @@ void MainWindow::exportToExcel()
      // и максимальный шаг
      quint32 maxInd = channel->samplesCount();
      double maxStep = channel->xStep();
+     double minX = channel->xBegin();
+     double maxX = channel->xMaxInitial();
+
+     Range range = plot->xRange();
 
      for (int i=1; i<curves.size(); ++i) {
          Channel *ch = curves.at(i)->channel;
-         if (ch->samplesCount() > maxInd) {
+         if (ch->samplesCount() > maxInd)
              maxInd = ch->samplesCount();
-         }
-         if (qAbs(ch->xStep() - maxStep) > 1e-10) {
+         if (ch->xStep() > maxStep)
              maxStep = ch->xStep();
-         }
+         if (ch->xBegin()< minX)
+             minX = ch->xBegin();
+         if (ch->xMaxInitial() > maxX)
+             maxX = ch->xMaxInitial();
+     }
+     if (minX >= range.min && maxX <= range.max) fullRange = true;
+
+     bool exportPlots = true;
+     if (maxInd > 32000 && fullRange) {
+         QMessageBox::warning(this, "Слишком много данных",
+                              "В одном или всех каналах число отсчетов превышает 32000.\n"
+                              "Будут экспортированы только данные, но не графики");
+         exportPlots = false;
      }
 
 
@@ -1534,33 +1604,35 @@ void MainWindow::exportToExcel()
          delete cells;
      }
 
+     QVector<int> selectedSamples;
+
      // если все каналы имеют одинаковый шаг по х, то в первый столбец записываем
      // данные х
      // если каналы имеют разный шаг по х, то для каждого канала отдельно записываем
      // по два столбца
      if (allChannelsHaveSameXStep) {
-         for (uint i = 0; i < maxInd; ++i) {
-             QAxObject *cells = worksheet->querySubObject("Cells(Int,Int)", 3+i, 1);
-             cells->setProperty("Value", channel->xBegin() + i*channel->xStep());
-             delete cells;
-         }
-     }
-
-     // записываем данные
-     if (allChannelsHaveSameXStep) {
-         const quint32 numRows = maxInd;
+         quint32 numRows = maxInd;
          const quint32 numCols = curves.size();
-         QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3, 2);
-         QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3 + numRows - 1, 2 + numCols - 1);
-         QAxObject* range = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", Cell1->asVariant(), Cell2->asVariant() );
+
          QList<QVariant> cellsList;
          QList<QVariant> rowsList;
-         for (uint i = 0; i < numRows; i++) {
+         for (uint i = 0; i < maxInd; ++i) {
+             double val = channel->xBegin() + i*channel->xStep();
+             if (!fullRange && (val < range.min || val > range.max) ) continue;
+
              cellsList.clear();
-             for (uint j = 0; j < numCols; j++)
+             cellsList << val;
+             for (uint j = 0; j < numCols; ++j) {
                  cellsList << ((curves.at(j)->channel->samplesCount() < maxInd) ? 0 : curves.at(j)->channel->yValues()[i]);
+             }
              rowsList << QVariant(cellsList);
          }
+         numRows = rowsList.size();
+
+         QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3, 1);
+         QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3 + numRows - 1, 1 + numCols);
+         QAxObject* range = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", Cell1->asVariant(), Cell2->asVariant() );
+
          range->setProperty("Value", QVariant(rowsList) );
 
          // выделяем диапазон, чтобы он автоматически использовался для построения диаграммы
@@ -1578,17 +1650,24 @@ void MainWindow::exportToExcel()
              Curve *curve = curves.at(i);
              Channel *ch = curve->channel;
 
-             QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3, 1+i*2);
-             QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3 + ch->samplesCount()-1, 2 + i*2);
-             QAxObject* range = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", Cell1->asVariant(), Cell2->asVariant() );
-
+             quint32 numRows = ch->samplesCount();
              QList<QVariant> cellsList;
              QList<QVariant> rowsList;
              for (uint j = 0; j < ch->samplesCount(); j++) {
+                 double val = ch->xBegin() + j*ch->xStep();
+                 if (!fullRange && (val < range.min || val > range.max) ) continue;
+
                  cellsList.clear();
                  cellsList << (ch->xBegin() + j*ch->xStep()) << ch->yValues()[j];
                  rowsList << QVariant(cellsList);
              }
+             numRows = rowsList.size();
+             selectedSamples << numRows;
+
+             QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3, 1+i*2);
+             QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3 + numRows-1, 2 + i*2);
+             QAxObject* range = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", Cell1->asVariant(), Cell2->asVariant() );
+
              range->setProperty("Value", QVariant(rowsList) );
 
              delete Cell1;
@@ -1597,113 +1676,120 @@ void MainWindow::exportToExcel()
          }
      }
 
-     QAxObject *charts = workbook->querySubObject("Charts");
-     charts->dynamicCall("Add()");
-     QAxObject *chart = workbook->querySubObject("ActiveChart");
-//     chart->dynamicCall("Select()");
-//     chart->setProperty("Name", "Диагр."+newSheetName);
-     chart->setProperty("ChartType", 75);
+     if (exportPlots) {
+         QAxObject *charts = workbook->querySubObject("Charts");
+         charts->dynamicCall("Add()");
+         QAxObject *chart = workbook->querySubObject("ActiveChart");
+         //     chart->dynamicCall("Select()");
+         //     chart->setProperty("Name", "Диагр."+newSheetName);
+         chart->setProperty("ChartType", 75);
 
-     QAxObject * series = chart->querySubObject("SeriesCollection");
+         QAxObject * series = chart->querySubObject("SeriesCollection");
 
-     // отдельно строить кривые нужно, только если у нас много пар столбцов с данными
-     if (!allChannelsHaveSameXStep) {
-         for (int i=0; i<curves.size(); ++i) {
+         // отдельно строить кривые нужно, только если у нас много пар столбцов с данными
+         if (!allChannelsHaveSameXStep) {
+             Q_ASSERT(selectedSamples.size() == curves.size());
+             for (int i=0; i<curves.size(); ++i) {
+                 Curve *curve = curves.at(i);
+                 QAxObject * serie = series->querySubObject("Item (int)", i+1);
+
+                 QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3, 1+i*2);
+                 QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3 + selectedSamples.at(i)-1, 1 + i*2);
+                 QAxObject * xvalues = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", Cell1->asVariant(), Cell2->asVariant());
+                 serie->setProperty("XValues", xvalues->asVariant());
+
+                 delete Cell1;
+                 delete Cell2;
+
+                 Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3, 2+i*2);
+                 Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3 + selectedSamples.at(i)-1, 2 + i*2);
+                 QAxObject * yvalues = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", Cell1->asVariant(), Cell2->asVariant());
+                 serie->setProperty("Values", yvalues->asVariant());
+
+                 serie->setProperty("Name", curve->channel->name());
+
+                 delete xvalues;
+                 delete yvalues;
+                 delete Cell1;
+                 delete Cell2;
+                 delete serie;
+             }
+             // удаляем лишние графики
+             while (curves.size() < series->property("Count").toInt()) {
+                 QAxObject * serie = series->querySubObject("Item (int)", curves.size()+1);
+                 serie->dynamicCall("Delete()");
+                 delete serie;
+             }
+         }
+
+         // добавляем подписи осей
+         QAxObject *xAxis = chart->querySubObject("Axes(const QVariant&)", 1);
+         setAxis(xAxis, "Частота, Гц");
+         xAxis->setProperty("MaximumScale", range.max);
+         xAxis->setProperty("MinimumScale", int(range.min/10)*10);
+
+         QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&)", 2);
+         setAxis(yAxis, "Уровень, дБ");
+         yAxis->setProperty("CrossesAt", -1000);
+
+         // рамка вокруг графика
+         QAxObject *plotArea = chart->querySubObject("PlotArea");
+         setLineColor(plotArea, 13);
+         delete plotArea;
+
+         // цвета графиков
+         for (int i = 0; i< curves.size(); ++i) {
              Curve *curve = curves.at(i);
-             QAxObject * serie = series->querySubObject("Item (int)", i+1);
+             QAxObject * serie = series->querySubObject("Item(int)", i+1);
 
-             QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3, 1+i*2);
-             QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3 + curve->channel->samplesCount()-1, 1 + i*2);
-             QAxObject * xvalues = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", Cell1->asVariant(), Cell2->asVariant());
-             serie->setProperty("XValues", xvalues->asVariant());
+             QAxObject *format = serie->querySubObject("Format");
+             QAxObject *formatLine = format->querySubObject("Line");
+             formatLine->setProperty("Weight", 1);
 
-             delete Cell1;
-             delete Cell2;
+             QAxObject *formatLineForeColor = formatLine->querySubObject("ForeColor");
+             formatLineForeColor->setProperty("RGB", curves.at(i)->pen().color().rgb());
 
-             Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3, 2+i*2);
-             Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3 + curve->channel->samplesCount()-1, 2 + i*2);
-             QAxObject * yvalues = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", Cell1->asVariant(), Cell2->asVariant());
-             serie->setProperty("Values", yvalues->asVariant());
+             foreach(PointLabel *label, curve->labels) {
+                 QAxObject* point = serie->querySubObject("Points(QVariant)", label->point()+1);
+                 QVariantList options = {0, 0, 0, 0, 0, -1, 0, 0, 0, 0};
 
-             serie->setProperty("Name", curve->channel->name());
+                 point->dynamicCall("ApplyDataLabels()", options);
+                 QAxObject* dataLabel = point->querySubObject("DataLabel");
+                 dataLabel->setProperty("ShowCategoryName", -1);
+                 dataLabel->setProperty("ShowValue", 0);
+                 dataLabel->setProperty("Position", 0);
+                 delete dataLabel;
+                 delete point;
+             }
 
-             delete xvalues;
-             delete yvalues;
-             delete Cell1;
-             delete Cell2;
+             delete formatLineForeColor;
+             delete formatLine;
+             delete format;
              delete serie;
          }
-         // удаляем лишние графики
-         while (curves.size() < series->property("Count").toInt()) {
-             QAxObject * serie = series->querySubObject("Item (int)", curves.size()+1);
-             serie->dynamicCall("Delete()");
-             delete serie;
-         }
+
+         QAxObject *chartArea = chart->querySubObject("ChartArea");
+         chartArea->querySubObject("Format")->querySubObject("Line")->setProperty("Visible", 0);
+         delete chartArea;
+         delete yAxis;
+         delete xAxis;
+
+         QAxObject *legendObject = chart->querySubObject("Legend");
+         QAxObject *legendFormat = legendObject->querySubObject("Format");
+         QAxObject *legendFormatFill = legendFormat->querySubObject("Fill");
+
+         legendFormatFill->setProperty("Visible", 1);
+         legendFormatFill->querySubObject("ForeColor")->setProperty("RGB", QColor(Qt::white).rgb());
+         legendFormat->querySubObject("Line")->setProperty("Visible", 1);
+         legendFormat->querySubObject("Line")->querySubObject("ForeColor")->setProperty("RGB", QColor(Qt::black).rgb());
+
+         delete legendFormatFill;
+         delete legendFormat;
+         delete legendObject;
+         delete series;
+         delete chart;
+         delete charts;
      }
-
-     // добавляем подписи осей
-     QAxObject *xAxis = chart->querySubObject("Axes(const QVariant&)", 1);
-     setAxis(xAxis, "Частота, Гц");
-     xAxis->setProperty("MaximumScale", maxInd * maxStep);
-
-     QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&)", 2);
-     setAxis(yAxis, "Уровень, дБ");
-
-     // рамка вокруг графика
-     QAxObject *plotArea = chart->querySubObject("PlotArea");
-     setLineColor(plotArea, 13);
-     delete plotArea;
-
-     // цвета графиков
-     for (int i = 0; i< curves.size(); ++i) {
-         Curve *curve = curves.at(i);
-         QAxObject * serie = series->querySubObject("Item(int)", i+1);
-
-         QAxObject *format = serie->querySubObject("Format");
-         QAxObject *formatLine = format->querySubObject("Line");
-         formatLine->setProperty("Weight", 1);
-
-         QAxObject *formatLineForeColor = formatLine->querySubObject("ForeColor");
-         formatLineForeColor->setProperty("RGB", curves.at(i)->pen().color().rgb());
-
-         foreach(PointLabel *label, curve->labels) {
-             QAxObject* point = serie->querySubObject("Points(QVariant)", label->point()+1);
-             QVariantList options = {0, 0, 0, 0, 0, -1, 0, 0, 0, 0};
-
-             point->dynamicCall("ApplyDataLabels()", options);
-             QAxObject* dataLabel = point->querySubObject("DataLabel");
-             dataLabel->setProperty("ShowCategoryName", -1);
-             dataLabel->setProperty("ShowValue", 0);
-             dataLabel->setProperty("Position", 0);
-             delete dataLabel;
-             delete point;
-         }
-
-         delete formatLineForeColor;
-         delete formatLine;
-         delete format;
-         delete serie;
-     }
-
-     QAxObject *chartArea = chart->querySubObject("ChartArea");
-     chartArea->querySubObject("Format")->querySubObject("Line")->setProperty("Visible", 0);
-     delete chartArea;
-     delete yAxis;
-     delete xAxis;
-
-     QAxObject *legendObject = chart->querySubObject("Legend");
-     QAxObject *legendFormat = legendObject->querySubObject("Format");
-     QAxObject *legendFormatFill = legendFormat->querySubObject("Fill");
-
-     legendFormatFill->setProperty("Visible", 1);
-     legendFormatFill->querySubObject("ForeColor")->setProperty("RGB", QColor(Qt::white).rgb());
-     legendFormat->querySubObject("Line")->setProperty("Visible", 1);
-     legendFormat->querySubObject("Line")->querySubObject("ForeColor")->setProperty("RGB", QColor(Qt::black).rgb());
-
-     delete legendFormatFill;
-     delete legendFormat;
-     delete legendObject;
-
 
 //    QFile file1("chartArea.html");
 //    file1.open(QIODevice::WriteOnly | QIODevice::Text);
@@ -1711,9 +1797,7 @@ void MainWindow::exportToExcel()
 //    out << chartArea->generateDocumentation();
 //    file1.close();
 
-     delete series;
-     delete chart;
-     delete charts;
+
      delete worksheet;
      delete worksheets;
      delete workbook;

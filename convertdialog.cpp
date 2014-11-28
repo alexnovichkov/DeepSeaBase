@@ -32,6 +32,10 @@ ConvertDialog::ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent)
     infoLabel = new QLabel(this);
     infoLabel->setWordWrap(true);
 
+    QString s = QStandardPaths::findExecutable("DeepSea");
+    if (s.isEmpty()) infoLabel->setText("Не могу найти DeepSea.exe в стандартных путях.\n"
+                                        "Добавьте путь к DeepSea.exe в переменную PATH");
+
     bandWidth = dynamic_cast<RawChannel *>(dataBase->first()->channel(0))->BandWidth;
     for (int i=0; i<12; ++i) {
         if (bands[i] <= bandWidth) {
@@ -275,10 +279,11 @@ void ConvertDialog::accept()
             it.next();
 
             if (copyFilesToTempDir(it.value(), tempFolderName)) {
-                infoLabel->setText("Подождите, пока работает DeepSea...");
+                infoLabel->setText("Подождите, пока работает DeepSea...\n"
+                                   "Не забудьте закрыть DeepSea, когда она закончит расчеты");
                 QStringList spfFile = getSpfFile(it.value(), tempFolderName);
                 QTemporaryFile file("spffile_XXXXXX.spf");
-                file.setAutoRemove(false);
+                file.setAutoRemove(true);
                 if (file.open()) {
                     QTextStream out(&file);
                     out.setCodec("Windows-1251");

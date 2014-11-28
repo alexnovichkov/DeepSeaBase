@@ -16,5 +16,5 @@ void FileDescriptor::setLegend(const QString &legend)
 {
     if (legend == _legend) return;
     _legend = legend;
-    setChanged(true);
+//    setChanged(true);
 }

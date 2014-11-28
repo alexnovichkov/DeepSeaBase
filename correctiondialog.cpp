@@ -107,6 +107,8 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) :
                         if (table->item(i,2)->checkState()==Qt::Checked) {
                             curve->descriptor->setChanged(true);
                             curve->descriptor->setDataChanged(true);
+                            curve->descriptor->write();
+                            curve->descriptor->writeRawFile();
                         }
                     }
                 }

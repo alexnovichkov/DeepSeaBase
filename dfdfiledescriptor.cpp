@@ -251,7 +251,7 @@ void DfdFileDescriptor::writeRawFile()
 
         if (BlockSize == 0) {
             // пишем поканально
-            for (quint32 i = 0; i<channels.size(); ++i) {
+            for (int i = 0; i<channels.size(); ++i) {
                 DfdChannel *ch = channels[i];
 
                 if (ch->IndType==0xC0000004)
@@ -327,6 +327,23 @@ QString DfdFileDescriptor::dateTime() const
 Descriptor::DataType DfdFileDescriptor::type() const
 {DD;
     return dataTypefromDfdDataType(DataType);
+}
+
+DescriptionList DfdFileDescriptor::dataDescriptor() const
+{
+    if (dataDescription) return dataDescription->data;
+    return DescriptionList();
+}
+
+void DfdFileDescriptor::setDataDescriptor(const DescriptionList &data)
+{
+    if (dataDescription) {
+        if (dataDescription->data == data) return;
+
+        dataDescription->data = data;
+        setChanged(true);
+        write();
+    }
 }
 
 void DfdFileDescriptor::setFileName(const QString &name)
@@ -411,6 +428,8 @@ void DfdFileDescriptor::copyChannelsFrom(const QMultiHash<FileDescriptor *, int>
     Time = QTime::currentTime();
     setChanged(true);
     setDataChanged(true);
+    write();
+    writeRawFile();
 }
 
 void DfdFileDescriptor::calculateMean(const QMultiHash<FileDescriptor *, int> &channels)
@@ -511,7 +530,11 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
     }
     for (int i=0; i<channels.size(); ++i)
         channels[i]->channelIndex = i;
+
     setChanged(true);
+
+    write();
+    writeRawFile();
 }
 
 QStringList DfdFileDescriptor::getHeadersForChannel(int channel)
@@ -1141,7 +1164,7 @@ void DataDescription::read(QSettings &dfd)
             if (key == "Legend")
                 parent->_legend = v;
             else
-                data.append(QPair<QString, QString>(key, v));
+                data.append(DescriptionEntry(key, v));
         }
     }
     dfd.endGroup();
@@ -1152,7 +1175,7 @@ void DataDescription::write(QTextStream &dfd)
     if (!data.isEmpty() || !parent->legend().isEmpty()) {
         dfd << "[DataDescription]" << endl;
         for (int i = 0; i<data.size(); ++i) {
-            QPair<QString, QString> item = data.at(i);
+            DescriptionEntry item = data.at(i);
             dfd << item.first << "=\"" << item.second << "\"" << endl;
         }
         if (!parent->legend().isEmpty())
@@ -1164,7 +1187,7 @@ QString DataDescription::toString() const
 {DD;
     QStringList result;
     for (int i=0; i<data.size(); ++i) {
-        QPair<QString, QString> item = data.at(i);
+        DescriptionEntry item = data.at(i);
         result.append(/*item.first+"="+*/item.second);
     }
     return result.join("; ");

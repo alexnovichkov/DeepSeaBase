@@ -133,6 +133,7 @@ private slots:
 
 
     void exportToExcel();
+    void exportToExcelFull();
 
     void onCurveColorChanged(Curve *curve);
     void onCurveDeleted(Curve *curve);
@@ -141,6 +142,7 @@ private slots:
 
     void moveChannelsUp();
     void moveChannelsDown();
+    void editDescriptions();
 private:
     void moveChannels(bool up);
     void updateFile(FileDescriptor *descriptor);
@@ -151,6 +153,8 @@ private:
 
     bool deleteChannels(const QMultiHash<FileDescriptor *, int> &channelsToDelete);
     bool copyChannels(const QMultiHash<FileDescriptor*, int> &channelsToCopy);
+
+    void exportToExcel(bool fullRange);
 
 //    void updateRecordState(int recordIndex);
     void updateChannelsHeaderState();
@@ -199,6 +203,8 @@ private:
     QAction *moveChannelsUpAct;
     QAction *moveChannelsDownAct;
 
+    QAction *editDescriptionsAct;
+
     QToolBar *mainToolBar;
 
     QAction *exportToExcelAct;
@@ -210,6 +216,7 @@ private:
 
 
     TabWidget *tabWidget;
+
 };
 
 #endif // MAINWINDOW_H

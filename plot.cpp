@@ -380,6 +380,24 @@ Curve * Plot::plotted(Channel *channel) const
     return 0;
 }
 
+Range Plot::xRange() const
+{
+    QwtScaleMap sm = canvasMap(QwtPlot::xBottom);
+    return {sm.s1(), sm.s2()};
+}
+
+Range Plot::yLeftRange() const
+{
+    QwtScaleMap sm = canvasMap(QwtPlot::yLeft);
+    return {sm.s1(), sm.s2()};
+}
+
+Range Plot::yRightRange() const
+{
+    QwtScaleMap sm = canvasMap(QwtPlot::yRight);
+    return {sm.s1(), sm.s2()};
+}
+
 void Plot::switchLabelsVisibility()
 {
     axisLabelsVisible = !axisLabelsVisible;

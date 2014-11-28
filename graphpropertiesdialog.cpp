@@ -30,7 +30,7 @@ GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
         curve->legend = newValue;
         curve->channel->name() = newValue;
         curve->descriptor->setChanged(true);
-
+        curve->descriptor->write();
         emit curveChanged(curve);
     }
     );

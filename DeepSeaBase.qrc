@@ -10,5 +10,6 @@
         <file>icons/data.png</file>
         <file>icons/correction.png</file>
         <file>icons/excel.png</file>
+        <file>icons/descriptor.png</file>
     </qresource>
 </RCC>
