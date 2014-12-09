@@ -51,6 +51,9 @@ class Channel;
 typedef QPair<QString, QString> DescriptionEntry;
 typedef QList<DescriptionEntry> DescriptionList;
 
+QString descriptionEntryToString(const DescriptionEntry &entry);
+
+
 class FileDescriptor
 {
 public:
@@ -77,7 +80,7 @@ public:
     virtual QString dateTime() const = 0;
 
     virtual void deleteChannels(const QVector<int> &channelsToDelete) = 0;
-    virtual void copyChannelsFrom(const QMultiHash<FileDescriptor *, int> &channelsToCopy) = 0;
+    virtual void copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy) = 0;
 
     /** Calculates mean of channels, writes to a file and returns the file name */
     virtual void calculateMean(const QMultiHash<FileDescriptor *, int> &channels) = 0;
@@ -186,6 +189,6 @@ private:
     QColor _color;
 };
 
-
+QList<int> filterIndexes(FileDescriptor *dfd, const QList<QPair<FileDescriptor *, int> > &channels);
 
 #endif // FILEDESCRIPTOR_H

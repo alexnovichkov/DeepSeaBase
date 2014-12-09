@@ -122,16 +122,13 @@ public slots:
 
 
 signals:
-//    void fileCreated(const QString &fileName, bool plot);
-//    void fileChanged(const QString &fileName, bool plot);
     void curveChanged(Curve *curve);
-    void curveDeleted(Curve *curve);
+    void curveDeleted(FileDescriptor *descriptor, int index);
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
     void deleteGraph(const QVariant &info, int index);
 private:
     void importPlot(const QString &fileName);
-//    Curve *freeGraph;
 
     // axis labels
     QString xName;
@@ -148,15 +145,11 @@ private:
 
     QwtChartZoom *zoom;
 
-
-
     Range x1;
     Range y1;
     Range y2;
 
     InteractionMode interactionMode;
-
-
 };
 
 #endif // PLOT_H

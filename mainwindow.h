@@ -136,7 +136,7 @@ private slots:
     void exportToExcelFull();
 
     void onCurveColorChanged(Curve *curve);
-    void onCurveDeleted(Curve *curve);
+    void onCurveDeleted(FileDescriptor *descriptor, int index);
 
     void calculateMean();
 
@@ -151,8 +151,8 @@ private:
 
     void deleteFiles(const QVector<int> &indexes);
 
-    bool deleteChannels(const QMultiHash<FileDescriptor *, int> &channelsToDelete);
-    bool copyChannels(const QMultiHash<FileDescriptor*, int> &channelsToCopy);
+    bool deleteChannels(const QList<QPair<FileDescriptor *, int> > &channelsToDelete);
+    bool copyChannels(const QList<QPair<FileDescriptor*, int> > &channelsToCopy);
 
     void exportToExcel(bool fullRange);
 
@@ -164,8 +164,9 @@ private:
 
     void createTab(const QString &name, const QStringList &folders);
 
-    QMultiHash<FileDescriptor *, int> selectedChannels();
+    QList<QPair<FileDescriptor*, int> > selectedChannels();
     FileDescriptor *findDescriptor(const QString &file);
+    bool findDescriptor(FileDescriptor *d);
 
     void addFile(FileDescriptor *descriptor);
     void setCurrentAndPlot(FileDescriptor *descriptor, int index);

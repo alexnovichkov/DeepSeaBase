@@ -61,7 +61,7 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
         }
     }
     else if (key == Qt::Key_Right) {
-        if (d_selectedPoint >=0 && d_selectedPoint < int(d_selectedCurve->descriptor->samplesCount()-1)) {
+        if (d_selectedPoint >=0 && d_selectedPoint < int(d_selectedCurve->channel->samplesCount()-1)) {
             highlightPoint(false);
             d_selectedPoint++;
             highlightPoint(true);

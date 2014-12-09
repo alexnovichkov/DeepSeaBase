@@ -383,7 +383,9 @@ void DfdFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
     writeRawFile();
 }
 
-void DfdFileDescriptor::copyChannelsFrom(const QMultiHash<FileDescriptor *, int> &channelsToCopy)
+
+
+void DfdFileDescriptor::copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy)
 {DD;
     //заполняем данными файл, куда будем копирвоать каналы
     //читаем все каналы, чтобы сохранить файл полностью
@@ -392,14 +394,12 @@ void DfdFileDescriptor::copyChannelsFrom(const QMultiHash<FileDescriptor *, int>
             channels[i]->populate();
     }
     QList<FileDescriptor*> records;
-    foreach (FileDescriptor* dfd, channelsToCopy.keys()) {
-        if (!records.contains(dfd)) records << dfd;
-    }
-
+    for (int i=0; i<channelsToCopy.size(); ++i)
+        if (!records.contains(channelsToCopy.at(i).first)) records << channelsToCopy.at(i).first;
 
     foreach (FileDescriptor *newDfd, records) {
         DfdFileDescriptor *dfd = static_cast<DfdFileDescriptor *>(newDfd);
-        QList<int> channelsIndexes = channelsToCopy.values(newDfd);
+        QList<int> channelsIndexes = filterIndexes(newDfd, channelsToCopy);
 
         for(int i = 0; i < newDfd->channelsCount(); ++i) {
             if (!newDfd->channel(i)->populated() && channelsIndexes.contains(i))

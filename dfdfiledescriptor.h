@@ -311,7 +311,7 @@ public:
     int channelsCount() const {return channels.size();}
 
     void deleteChannels(const QVector<int> &channelsToDelete);
-    void copyChannelsFrom(const QMultiHash<FileDescriptor *, int> &channelsToCopy);
+    void copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy);
     virtual void calculateMean(const QMultiHash<FileDescriptor *, int> &channels);
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes);
 

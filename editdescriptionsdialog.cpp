@@ -12,9 +12,7 @@ public:
         QStringList data;
         DescriptionList descriptions = record->dataDescriptor();
         foreach (const DescriptionEntry &entry, descriptions) {
-            QString s = entry.second;
-            if (!entry.first.isEmpty()) s = entry.first+"="+s;
-            data << s;
+            data << descriptionEntryToString(entry);
         }
         edit->setPlainText(data.join("\n"));
 

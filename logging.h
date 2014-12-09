@@ -14,7 +14,7 @@ private:
     QTime *time;
 };
 
-#define DD  Trace trace(Q_FUNC_INFO);
+#define DD  //Trace trace(Q_FUNC_INFO);
 #else
 #define DD
 #endif

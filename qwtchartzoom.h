@@ -135,7 +135,7 @@ public:
     // в качестве исходных (если флаг isbF сброшен)
     void fixBounds();
     // восстановление исходных границ графика
-    void resetBounds();
+    void resetBounds(Qt::Orientations);
 
     void setEnabled(bool enabled) {this->activated = enabled;}
 
@@ -236,6 +236,8 @@ private:
 
     // обработчик обычных событий от мыши
     void procMouseEvent(QEvent *);
+
+    void procKeyboardEvent(QEvent *event);
 
     // обработчик нажатия на кнопку мыши
     // (включение изменения масштаба)

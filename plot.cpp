@@ -154,7 +154,6 @@ void Plot::deleteGraphs(FileDescriptor *descriptor)
         Curve *graph = graphs[i];
         if (descriptor == graph->descriptor) {
             deleteGraph(graph, true);
-            emit curveDeleted(graph);
         }
     }
 }
@@ -167,8 +166,8 @@ void Plot::deleteGraph(const QVariant &info, int index)
     if (item) {
         Curve *c = dynamic_cast<Curve *>(item);
         if (c) {
+            emit curveDeleted(c->descriptor, c->channelIndex);
             deleteGraph(c, true);
-            emit curveDeleted(c);
         }
     }
 }
@@ -260,10 +259,15 @@ void Plot::setAxis(int axis, const QString &name)
 
 void Plot::updateAxesLabels()
 {
-    if (axisEnabled(QwtPlot::yLeft)) {
+    if (leftGraphs.isEmpty()) enableAxis(QwtPlot::yLeft, false);
+    else {
+        enableAxis(QwtPlot::yLeft, axisLabelsVisible);
         setAxisTitle(QwtPlot::yLeft, axisLabelsVisible ? yLeftName : "");
     }
-    if (axisEnabled(QwtPlot::yRight)) {
+
+    if (rightGraphs.isEmpty()) enableAxis(QwtPlot::yRight, false);
+    else {
+        enableAxis(QwtPlot::yRight, axisLabelsVisible);
         setAxisTitle(QwtPlot::yRight, axisLabelsVisible ? yRightName : "");
     }
     if (axisEnabled(QwtPlot::xBottom)) {
@@ -345,17 +349,25 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col)
     }
     xName = descriptor->xName();
 
-    x1.min = qMin(ch->xBegin(), x1.min);
-    x1.max = qMax(ch->xMaxInitial(), x1.max);
-    setAxisScale(QwtPlot::xBottom, x1.min, x1.max);
-//    if ((minStep > 1e-10)&&(qAbs(dfd->XStep-minStep) < 1e-10))
-//        minStep = dfd->XStep;
+    // если график находится в своем исходном масштабе, то есть построен один
+    // график или несколько, но еще не масштабированы, то меняем этот исходный масштаб на больший
+    // иначе сохраням масштаб по осям
+    QwtScaleMap smX = canvasMap(QwtPlot::xBottom);
+    QwtScaleMap smY = canvasMap(ax);
 
     Range &r = y1;
     if (plotOnSecondYAxis) r = y2;
-    r.min = qMin(ch->yMinInitial(), r.min);
-    r.max = qMax(ch->yMaxInitial(), r.max);
-    setAxisScale(ax, r.min, r.max);
+
+    if (graphs.size()<=1 || (smX.s1()==x1.min && smX.s2()==x1.max
+                             && smY.s1()==r.min && smY.s2()==r.max)) {
+        x1.min = qMin(ch->xBegin(), x1.min);
+        x1.max = qMax(ch->xMaxInitial(), x1.max);
+        setAxisScale(QwtPlot::xBottom, x1.min, x1.max);
+
+        r.min = qMin(ch->yMinInitial(), r.min);
+        r.max = qMax(ch->yMaxInitial(), r.max);
+        setAxisScale(ax, r.min, r.max);
+    }
 
     if (needFixBoundaries)
         zoom->fixBoundaries();

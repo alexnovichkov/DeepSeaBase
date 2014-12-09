@@ -35,7 +35,7 @@ class DelimiterField: public AbstractField
 public:
     virtual void print(const QVariant &/*v*/, QTextStream &stream) {
         stream.reset();
-        stream << qSetFieldWidth(6) << right << -1;
+        stream << "    -1";
     }
     virtual void read(QVariant &v, QTextStream &stream) {
         Q_UNUSED(v);
@@ -175,7 +175,7 @@ class String80Field: public AbstractField
 public:
     virtual void print(const QVariant &v, QTextStream &stream) {
         stream.reset();
-        stream << qSetFieldWidth(80) << left << v.toString();
+        stream << left << v.toString().leftJustified(80, ' ',true);
     }
     virtual void read(QVariant &v, QTextStream &stream) {
         QString s = stream.read(80); //qDebug()<<s;
@@ -189,7 +189,7 @@ class String10Field: public AbstractField
 public:
     virtual void print(const QVariant &v, QTextStream &stream) {
         stream.reset();
-        stream << " " << qSetFieldWidth(10) << left << v.toString();
+        stream << " " << v.toString().leftJustified(10, ' ', true);
     }
     virtual void read(QVariant &v, QTextStream &stream) {
         QString s = stream.read(11); //qDebug()<<s;
@@ -203,7 +203,7 @@ class String10aField: public AbstractField
 public:
     virtual void print(const QVariant &v, QTextStream &stream) {
         stream.reset();
-        stream << qSetFieldWidth(10) << left << v.toString();
+        stream << v.toString().leftJustified(10, ' ', true);
     }
     virtual void read(QVariant &v, QTextStream &stream) {
         QString s = stream.read(10); //qDebug()<<s;
@@ -217,7 +217,7 @@ class String20Field: public AbstractField
 public:
     virtual void print(const QVariant &v, QTextStream &stream) {
         stream.reset();
-        stream << " " << qSetFieldWidth(20) << left << v.toString();
+        stream << " " << v.toString().leftJustified(20, ' ', true);
     }
     virtual void read(QVariant &v, QTextStream &stream) {
         QString s = stream.read(21); //qDebug()<<s;
@@ -245,11 +245,12 @@ class TimeDate80Field: public AbstractField
 public:
     virtual void print(const QVariant &v, QTextStream &stream) {
         stream.reset();
-        stream << qSetFieldWidth(80) << left << v.toDateTime().toString(" dd.MM.yy hh:mm:ss");
+        stream << v.toDateTime().toString(" dd.MM.yy hh:mm:ss").leftJustified(80, ' ');
     }
     virtual void read(QVariant &v, QTextStream &stream) {
         QDateTime d;
-        d = QDateTime::fromString(stream.read(80).trimmed(), "dd.MM.yy hh:mm:ss"); //qDebug()<<d;
+        d = QDateTime::fromString(stream.read(80).trimmed(), "dd.MM.yy hh:mm:ss");
+        //qDebug()<<d;
         v = d;
     }
 };

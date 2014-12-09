@@ -17,6 +17,8 @@
 #include "qaxiszoomsvc.h"
 #include <qwt_scale_widget.h>
 
+#include <QKeyEvent>
+
 // Конструктор
 QwtChartZoom::QwtChartZoom(QwtPlot *qp) :
     QObject(qp)
@@ -200,11 +202,11 @@ void QwtChartZoom::fixBounds()
 }
 
 // Восстановление исходных границ графика
-void QwtChartZoom::resetBounds()
+void QwtChartZoom::resetBounds(Qt::Orientations orientations)
 {
     // устанавливаем запомненные ранее границы
-    horizontalScaleBounds->reset();  // горизонтальной шкалы
-    verticalScaleBounds->reset();  // и вертикальной
+    if (orientations & Qt::Horizontal) horizontalScaleBounds->reset();  // горизонтальной шкалы
+    if (orientations & Qt::Vertical) verticalScaleBounds->reset();  // и вертикальной
     // перестраиваем график
     qwtPlot->replot();
 }
@@ -323,12 +325,17 @@ bool QMainZoomSvc::eventFilter(QObject *target,QEvent *event)
 {
     if (zoom->activated)
         // если событие произошло для графика, то
-        if (target == zoom->plot())
+        if (target == zoom->plot()) {
             // если произошло одно из событий от мыши, то
             if (event->type() == QEvent::MouseButtonPress ||
                 event->type() == QEvent::MouseMove ||
-                event->type() == QEvent::MouseButtonRelease)
-                procMouseEvent(event);  // вызываем соответствующий обработчик
+                event->type() == QEvent::MouseButtonRelease ||
+                event->type() == QEvent::MouseButtonDblClick)
+                procMouseEvent(event);
+            else if (event->type() == QEvent::KeyPress) {
+                procKeyboardEvent(event);
+            }
+        }
     // передаем управление стандартному обработчику событий
     return QObject::eventFilter(target,event);
 }
@@ -366,8 +373,29 @@ void QMainZoomSvc::procMouseEvent(QEvent *event)
     case QEvent::MouseMove: selectZoomRect(mEvent); break;
         // отпущена кнопка мыши
     case QEvent::MouseButtonRelease: procZoom(mEvent); break;
+        case QEvent::MouseButtonDblClick:
+            if (mEvent->button() == Qt::LeftButton)
+                zoom->resetBounds(Qt::Horizontal | Qt::Vertical);
+            break;
         // для прочих событий ничего не делаем
     default: ;
+    }
+}
+
+void QMainZoomSvc::procKeyboardEvent(QEvent *event)
+{
+    QKeyEvent *kEvent = static_cast<QKeyEvent*>(event);
+    switch (kEvent->key()) {
+        case Qt::Key_Backspace: {
+            if (kEvent->modifiers() == Qt::NoModifier)
+                zoom->resetBounds(Qt::Horizontal | Qt::Vertical);
+            else if (kEvent->modifiers() & Qt::ControlModifier)
+                zoom->resetBounds(Qt::Horizontal);
+            else if (kEvent->modifiers() & Qt::ShiftModifier)
+                zoom->resetBounds(Qt::Vertical);
+            break;
+        }
+        default: break;
     }
 }
 
@@ -484,23 +512,25 @@ void QMainZoomSvc::procZoom(QMouseEvent *mEvent)
             int yp = mEvent->pos().y() - cg.y();
             // если выделение производилось справа налево или снизу вверх,
             // то восстанавливаем исходные границы графика (отменяем увеличение)
-            if (xp < scp_x || yp < scp_y) zoom->resetBounds();
+          //  if (xp < scp_x || yp < scp_y) zoom->resetBounds();
             // иначе если размер выделенной области достаточен, то изменяем масштаб
-            else if (xp - scp_x >= 8 && yp - scp_y >= 8)
+           /* else*/ if (qAbs(xp - scp_x) >= 8 && qAbs(yp - scp_y) >= 8)
             {
+                int leftmostX = qMin(xp, scp_x); int rightmostX = qMax(xp, scp_x);
+                int leftmostY = qMin(yp, scp_y); int rightmostY = qMax(yp, scp_y);
                 QwtPlot::Axis mX = zoom->masterH();
                 // определяем левую границу горизонтальной шкалы по начальной точке
-                double lf = plt->invTransform(mX,scp_x);
+                double lf = plt->invTransform(mX,leftmostX);
                 // определяем правую границу горизонтальной шкалы по конечной точке
-                double rg = plt->invTransform(mX,xp);
-                // устанавливаем нижнюю и верхнюю границы вертикальной шкалы
+                double rg = plt->invTransform(mX,rightmostX);
+                // устанавливаем нижнюю и верхнюю границы горизонтальной шкалы
                 zoom->horizontalScaleBounds->set(lf,rg,-1);
                 // получаем основную вертикальную шкалу
                 QwtPlot::Axis mY = zoom->masterV();
                 // определяем нижнюю границу вертикальной шкалы по конечной точке
-                double bt = plt->invTransform(mY,yp);
+                double bt = plt->invTransform(mY,rightmostY);
                 // определяем верхнюю границу вертикальной шкалы по начальной точке
-                double tp = plt->invTransform(mY,scp_y);
+                double tp = plt->invTransform(mY,leftmostY);
                 // устанавливаем нижнюю и верхнюю границы вертикальной шкалы
                 zoom->verticalScaleBounds->set(bt,tp,-1);
                 // перестраиваем график (синхронно с остальными)

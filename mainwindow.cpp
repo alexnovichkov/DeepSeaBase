@@ -103,11 +103,43 @@ private:
     double xStep;
 };
 
+class DfdUffFilterProxy : public QSortFilterProxyModel
+{
+public:
+    DfdUffFilterProxy(QObject *parent)
+        : QSortFilterProxyModel(parent)
+    {
+    }
+protected:
+    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
+    {
+        QFileSystemModel *model = qobject_cast<QFileSystemModel *>(sourceModel());
+        if (!model) return false;
+
+        QModelIndex index0 = model->index(source_row, 0, source_parent);
+
+        QFileInfo fi = model->fileInfo(index0);
+
+        if (fi.isFile()) {
+            if (fi.suffix().toLower()=="dfd" || fi.suffix().toLower()=="uff" || fi.suffix().toLower()=="unv") {
+                return true;
+            }
+            else {
+                return false;
+            }
+        }
+        else {
+            return true;
+        }
+    }
+};
+
 
 FileDescriptor *createDescriptor(const QString &fileName)
 {
     if (QFileInfo(fileName).suffix().toLower()=="dfd") return new DfdFileDescriptor(fileName);
     if (QFileInfo(fileName).suffix().toLower()=="uff") return new UffFileDescriptor(fileName);
+    if (QFileInfo(fileName).suffix().toLower()=="unv") return new UffFileDescriptor(fileName);
     return 0;
 }
 
@@ -119,7 +151,7 @@ void maybeAppend(const QString &s, QStringList &list)
 void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 {DD;
     if (QFileInfo(file).isDir()) {
-        QFileInfoList dirLst = QDir(file).entryInfoList(QStringList()<<"*.dfd"<<"*.DFD"<<"*.uff",
+        QFileInfoList dirLst = QDir(file).entryInfoList(QStringList()<<"*.dfd"<<"*.DFD"<<"*.uff"<<"*.unv",
                                                         QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot,
                                                         QDir::DirsFirst);
         for (int i=0; i<dirLst.count(); ++i) {
@@ -139,7 +171,7 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), tab(0)
 {DD;
-    setWindowTitle(tr("DeepSea Database 1.3.1"));
+    setWindowTitle(tr("DeepSea Database 1.3.4"));
     setAcceptDrops(true);
 
     mainToolBar = new QToolBar(this);
@@ -150,7 +182,7 @@ MainWindow::MainWindow(QWidget *parent)
 //    connect(plot, SIGNAL(fileCreated(QString,bool)), SLOT(addFile(QString,bool)));
 //    connect(plot, SIGNAL(fileChanged(QString, bool)), SLOT(updateFile(QString,bool)));
     connect(plot, SIGNAL(curveChanged(Curve*)), SLOT(onCurveColorChanged(Curve*)));
-    connect(plot, SIGNAL(curveDeleted(Curve*)), SLOT(onCurveDeleted(Curve*)));
+    connect(plot, SIGNAL(curveDeleted(FileDescriptor*,int)), SLOT(onCurveDeleted(FileDescriptor*,int)));
 
     addFolderAct = new QAction(qApp->style()->standardIcon(QStyle::SP_DialogOpenButton),
                                tr("Добавить папку"),this);
@@ -209,6 +241,26 @@ MainWindow::MainWindow(QWidget *parent)
 //            }
 //        }
 //    });
+
+    QAction *plotHelpAct = new QAction("Справка", this);
+    connect(plotHelpAct, &QAction::triggered, [=](){
+        QString info = "<b>Управление графиком</b><br>"
+                       "<u>Внутри графика:</u><br>"
+                       "Правая кнопка мыши: двигать график по плоскости<br>"
+                       "Колесико мыши: увеличить/уменьшить масштаб<br>"
+                       "Колесико мыши + Ctrl: увеличить/уменьшить масштаб по горизонтали<br>"
+                       "Колесико мыши + Shift: увеличить/уменьшить масштаб по вертикали<br>"
+                       "Левая кнопка мыши: масштабирование по выделению<br>"
+                       "Backspace или двойной щелчок: вернуть масштаб к исходному<br>"
+                       "Backspace + Ctrl: вернуть масштаб к исходному по горизонтали<br>"
+                       "Backspace + Shift: вернуть масштаб к исходному по вертикали<br>"
+                       "Клавиша H: показать/спрятать подписи осей<br>"
+                       "<u>На осях:</u><br>"
+                       "Левая кнопка мыши: увеличить/уменьшить масштаб на оси"
+                       ""
+                       ;
+        QMessageBox::information(this,"DeepSea Base", info);
+    });
 
     convertAct = new QAction(QString("Конвертировать в..."), this);
     //convertAct->setIcon();
@@ -327,6 +379,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     mainToolBar->addAction(interactionModeAct);
 
+    mainToolBar->addAction(plotHelpAct);
 
 
     QMenu *fileMenu = menuBar()->addMenu(tr("Файл"));
@@ -649,11 +702,24 @@ void MainWindow::addFolder()
 void MainWindow::addFile()
 {
     QString directory = getSetting("lastDirectory").toString();
-    QStringList fileNames = QFileDialog::getOpenFileNames(this, "Добавить файлы", directory, "Файлы dfd (*.dfd);;Файлы uff (*.uff)");
 
+    QFileDialog dialog(this, "Добавить файлы", directory/*, "Файлы dfd (*.dfd);;Файлы uff (*.uff)"*/);
+    dialog.setOption(QFileDialog::DontUseNativeDialog, true);
+    QString defaultSuffix = QFileInfo(directory).suffix();
+    if (defaultSuffix.isEmpty()) defaultSuffix = "dfd";
+    dialog.setDefaultSuffix(defaultSuffix);
+    QSortFilterProxyModel *proxy = new DfdUffFilterProxy(this);
+    dialog.setProxyModel(proxy);
+    dialog.setFileMode(QFileDialog::AnyFile);
+
+
+    QStringList fileNames;
+    if (dialog.exec()) {
+        fileNames = dialog.selectedFiles();
+    }
     if (fileNames.isEmpty()) return;
-    setSetting("lastDirectory", fileNames.first());
 
+    setSetting("lastDirectory", fileNames.first());
     addFiles(fileNames);
 }
 
@@ -702,12 +768,12 @@ void MainWindow::deleteFiles()
         tab->folders.clear();
 }
 
-QMultiHash<FileDescriptor *, int> MainWindow::selectedChannels()
+QList<QPair<FileDescriptor*, int> > MainWindow::selectedChannels()
 {
-    QMultiHash<FileDescriptor *, int> channels;
+    QList<QPair<FileDescriptor*, int> > channels;
 
     foreach(Curve *c, plot->graphs) {
-        channels.insert(c->descriptor, c->channelIndex);
+        channels << (QPair<FileDescriptor*, int>(c->descriptor, c->channelIndex));
     }
 
     return channels;
@@ -715,23 +781,32 @@ QMultiHash<FileDescriptor *, int> MainWindow::selectedChannels()
 
 void MainWindow::deleteChannels() /** SLOT */
 {DD;
-    QMultiHash<FileDescriptor*, int> channelsToDelete = selectedChannels();
+    QList<QPair<FileDescriptor*, int> > channelsToDelete = selectedChannels();
     if (channelsToDelete.isEmpty()) return;
 
     if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \nудалены из файлов. Продолжить?")==QMessageBox::Yes) {
         deleteChannels(channelsToDelete);
-        updateRecordsTable(channelsToDelete.keys());
+
+        QList<FileDescriptor*> list;
+        for (int i=0; i<channelsToDelete.size(); ++i)
+            if (!list.contains(channelsToDelete.at(i).first)) list << channelsToDelete.at(i).first;
+
+        updateRecordsTable(list);
         updateChannelsTable(tab->record);
     }
 }
 
 void MainWindow::copyChannels() /** SLOT */
 {DD;
-    QMultiHash<FileDescriptor*, int> channelsToCopy = selectedChannels();
+    QList<QPair<FileDescriptor*, int> > channelsToCopy = selectedChannels();
     if (channelsToCopy.isEmpty()) return;
 
     if (copyChannels(channelsToCopy)) {
-        updateRecordsTable(channelsToCopy.keys());
+        QList<FileDescriptor*> list;
+        for (int i=0; i<channelsToCopy.size(); ++i)
+            if (!list.contains(channelsToCopy.at(i).first)) list << channelsToCopy.at(i).first;
+
+        updateRecordsTable(list);
         updateChannelsTable(tab->record);
     }
 }
@@ -739,45 +814,52 @@ void MainWindow::copyChannels() /** SLOT */
 void MainWindow::moveChannels() /** SLOT */
 {DD;
     // сначала копируем каналы, затем удаляем
-    QMultiHash<FileDescriptor*, int> channelsToMove = selectedChannels();
+    QList<QPair<FileDescriptor*, int> > channelsToMove = selectedChannels();
     if (channelsToMove.isEmpty()) return;
 
     if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \nудалены из файлов. Продолжить?")==QMessageBox::Yes) {
         if (copyChannels(channelsToMove)) {
             //qDebug()<<"copy successful";
             deleteChannels(channelsToMove);
-            updateRecordsTable(channelsToMove.keys());
+            QList<FileDescriptor*> list;
+            for (int i=0; i<channelsToMove.size(); ++i)
+                if (!list.contains(channelsToMove.at(i).first)) list << channelsToMove.at(i).first;
+
+            updateRecordsTable(list);
             updateChannelsTable(tab->record);
         }
     }
 }
 
-bool MainWindow::deleteChannels(const QMultiHash<FileDescriptor*, int> &channelsToDelete)
+bool MainWindow::deleteChannels(const QList<QPair<FileDescriptor*, int> > &channelsToDelete)
 {DD;
-    QHashIterator<FileDescriptor*, int> i(channelsToDelete);
-    while(i.hasNext()) {
-        i.next();
-        plot->deleteGraph(i.key(), i.value(), true);
-    }
+    for (int i=0; i<channelsToDelete.size(); ++i)
+        plot->deleteGraph(channelsToDelete.at(i).first, channelsToDelete.at(i).second, true);
 
-    QSet<FileDescriptor*> processed;
-    foreach (FileDescriptor *dfd, channelsToDelete.keys()) {
-        if (!processed.contains(dfd)) {
-            processed.insert(dfd);
-            dfd->populate();
-            dfd->deleteChannels(channelsToDelete.values(dfd).toVector());
-//            updateFile(dfd);
+    QList<FileDescriptor*> allDescriptors;
+    for (int i=0; i<channelsToDelete.size(); ++i)
+        if (!allDescriptors.contains(channelsToDelete.at(i).first))
+            allDescriptors << channelsToDelete.at(i).first;
+
+    while (!allDescriptors.isEmpty()) {
+        FileDescriptor *dfd = allDescriptors.first();
+        dfd->populate();
+        QVector<int> indexes;
+        for (int i=0; i<channelsToDelete.size(); ++i) {
+            if (channelsToDelete.at(i).first == dfd) indexes << channelsToDelete.at(i).second;
         }
+        dfd->deleteChannels(indexes);
+        allDescriptors.removeFirst();
     }
 
     return true;
 }
 
-bool MainWindow::copyChannels(const QMultiHash<FileDescriptor *, int> &channelsToCopy)
+bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channelsToCopy)
 {
     bool allFilesDfd = true;
-    foreach (FileDescriptor *dfd, channelsToCopy.keys()) {
-        if (!dfd->fileName().toLower().endsWith(".dfd")) {
+    for (int i=0; i<channelsToCopy.size(); ++i) {
+        if (!channelsToCopy.at(i).first->fileName().toLower().endsWith(".dfd")) {
             allFilesDfd = false;
             break;
         }
@@ -785,9 +867,10 @@ bool MainWindow::copyChannels(const QMultiHash<FileDescriptor *, int> &channelsT
 
     bool oneFolder = true;
     QString startFolder;
-    foreach (FileDescriptor *dfd, channelsToCopy.keys()) {
-        if (startFolder.isEmpty()) startFolder = QFileInfo(dfd->fileName()).canonicalPath();
-        else if (QFileInfo(dfd->fileName()).canonicalPath() != startFolder) {
+
+    for (int i=0; i<channelsToCopy.size(); ++i) {
+        if (startFolder.isEmpty()) startFolder = QFileInfo(channelsToCopy.at(i).first->fileName()).canonicalPath();
+        else if (QFileInfo(channelsToCopy.at(i).first->fileName()).canonicalPath() != startFolder) {
             oneFolder = false;
             break;
         }
@@ -797,7 +880,8 @@ bool MainWindow::copyChannels(const QMultiHash<FileDescriptor *, int> &channelsT
     QString startFile = MainWindow::getSetting("startDir").toString();
     if (oneFolder) startFile = startFolder;
 
-    QFileDialog dialog(this, "Выбор файла для записи каналов", startFile, "Файлы dfd (*.dfd);;Файлы uff (*.uff)");
+    QFileDialog dialog(this, "Выбор файла для записи каналов", startFile,
+                       "Файлы dfd (*.dfd);;Файлы uff (*.uff);;Файлы unv (*.unv)");
     dialog.setOption(QFileDialog::DontUseNativeDialog, true);
     QString defaultSuffix = QFileInfo(startFile).suffix();
     if (defaultSuffix.isEmpty()) defaultSuffix = "dfd";
@@ -811,16 +895,16 @@ bool MainWindow::copyChannels(const QMultiHash<FileDescriptor *, int> &channelsT
     // поэтому если они различаются, то насильно записываем каналы в файл uff
     if (allFilesDfd) {
         //определяем тип данных и шаг по x
-        FileDescriptor *dfd = channelsToCopy.keys().first();
-        double xStep = dfd->channel(channelsToCopy.value(dfd))->xStep();
+        FileDescriptor *dfd = channelsToCopy.first().first;
+        double xStep = dfd->channel(channelsToCopy.first().second)->xStep();
 
         // мы не можем записывать каналы с разным типом/шагом в один файл,
         //поэтому добавляем фильтр
         bool filesSame = true;
-        QHashIterator<FileDescriptor *, int> it(channelsToCopy);
-        while (it.hasNext()) {
-            it.next();
-            if (!it.key()->dataTypeEquals(dfd) || it.key()->channel(it.value())->xStep()!=xStep) {
+
+        for (int i=1; i<channelsToCopy.size(); ++i) {
+            if (!channelsToCopy.at(i).first->dataTypeEquals(dfd)
+                || channelsToCopy.at(i).first->channel(channelsToCopy.at(i).second)->xStep()!=xStep) {
                 filesSame = false;
                 break;
             }
@@ -868,7 +952,7 @@ bool MainWindow::copyChannels(const QMultiHash<FileDescriptor *, int> &channelsT
             dfd->read();
         }
         else {
-            FileDescriptor *firstdfd = channelsToCopy.keys().first();
+            FileDescriptor *firstdfd = channelsToCopy.first().first;
             // такого файла не существует, создаем новый файл и записываем в него каналы
             dfd = createDescriptor(file);
             dfd->fillPreliminary(firstdfd->type());
@@ -908,10 +992,13 @@ void MainWindow::calculateMean()
     Curve *firstCurve = plot->graphs.first();
     channels.insert(firstCurve->descriptor, firstCurve->channelIndex);
 
+    bool allFilesDfd = firstCurve->descriptor->fileName().toLower().endsWith("dfd");
+
     for (int i = 1; i<graphsSize; ++i) {
         Curve *curve = plot->graphs.at(i);
         channels.insert(curve->descriptor, curve->channelIndex);
 
+        allFilesDfd &= firstCurve->descriptor->fileName().toLower().endsWith("dfd");
         if (firstCurve->channel->xStep() != curve->channel->xStep())
             stepsEqual = false;
         if (firstCurve->channel->yName() != curve->channel->yName())
@@ -922,30 +1009,39 @@ void MainWindow::calculateMean()
             dataTypeEqual = false;
     }
     if (!dataTypeEqual) {
-        int result = QMessageBox::warning(0, "Среднее графиков","Графики имеют разный тип. Продолжить?",
+        int result = QMessageBox::warning(0, "Среднее графиков",
+                                          "Графики имеют разный тип. Среднее будет записано в файл uff. Продолжить?",
                                           "Да","Нет");
         if (result == 1) return;
         else writeToUff = true;
     }
     if (!namesEqual) {
-        int result = QMessageBox::warning(0, "Среднее графиков","Графики по-видимому имеют разный тип. Продолжить?",
+        int result = QMessageBox::warning(0, "Среднее графиков",
+                                          "Графики по-видимому имеют разный тип. Среднее будет записано в файл uff. Продолжить?",
                                           "Да", "Нет");
         if (result == 1) return;
         else writeToUff = true;
     }
     if (!stepsEqual) {
-        int result = QMessageBox::warning(0, "Среднее графиков","Графики имеют разный шаг по оси X. Продолжить?",
+        int result = QMessageBox::warning(0, "Среднее графиков",
+                                          "Графики имеют разный шаг по оси X. Среднее будет записано в файл uff. Продолжить?",
                                           "Да", "Нет");
         if (result == 1) return;
         else writeToUff = true;
     }
     if (oneFile) {
-        int result = QMessageBox::information(0, "Среднее графиков",
-                                              QString("Графики взяты из одной записи %1.\n").arg(firstCurve->descriptor->fileName())
-                                              +
-                                              QString("Сохранить среднее в эту запись дополнительным каналом?"),
-                                              "Да, записать в этот файл", "Нет, экспортировать в отдельный файл");
-        writeToSeparateFile = (result == 1);
+        QMessageBox box("Среднее графиков", QString("Графики взяты из одной записи %1.\n").arg(firstCurve->descriptor->fileName())
+                        +
+                        QString("Сохранить среднее в эту запись дополнительным каналом?"),
+                        QMessageBox::Question,
+                        QMessageBox::Yes, QMessageBox::No, QMessageBox::Cancel);
+        box.setButtonText(QMessageBox::Yes, "Да, записать в этот файл");
+        box.setButtonText(QMessageBox::No, "Нет, экспортировать в отдельный файл");
+        box.setEscapeButton(QMessageBox::Cancel);
+
+        int result = box.exec();
+        if (result == QMessageBox::Cancel) return;
+        writeToSeparateFile = (result == QMessageBox::No);
     }
 
     QString meanDfdFile;
@@ -959,9 +1055,24 @@ void MainWindow::calculateMean()
 
         meanD = MainWindow::getSetting(writeToUff?"lastMeanUffFile":"lastMeanFile", meanD).toString();
 
-        QString filters = writeToUff ? "Файлы uff (*.uff)" : "Файлы dfd (*.dfd);;Файлы uff (*.uff)";
-        meanDfdFile = QFileDialog::getSaveFileName(0, "Сохранение среднего", meanD, filters);
+        QFileDialog dialog(this, "Выбор файла для записи каналов", meanD,
+                           "Поддерживаемые форматы (*.dfd *.uff *.unv)");
+        dialog.setOption(QFileDialog::DontUseNativeDialog, true);
+        dialog.setFileMode(QFileDialog::AnyFile);
+        dialog.setDefaultSuffix(writeToUff?"uff":"dfd");
 
+        if (!writeToUff && allFilesDfd) {
+            QSortFilterProxyModel *proxy = new DfdFilterProxy(firstCurve->descriptor, this);
+            dialog.setProxyModel(proxy);
+        }
+
+        QStringList selectedFiles;
+        if (dialog.exec()) {
+            selectedFiles = dialog.selectedFiles();
+        }
+        if (selectedFiles.isEmpty()) return;
+
+        meanDfdFile = selectedFiles.first();
         if (meanDfdFile.isEmpty()) return;
 
         meanDfd = findDescriptor(meanDfdFile);
@@ -1397,6 +1508,30 @@ void MainWindow::addFile(FileDescriptor *descriptor)
     tab->tree->setCurrentItem(tab->tree->topLevelItem(count));
 }
 
+bool MainWindow::findDescriptor(FileDescriptor *d)
+{
+    if (tab) {
+        for (int j=0; j<tab->tree->topLevelItemCount(); ++j) {
+            SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(j));
+            if (item->fileDescriptor == d) {
+                return true;
+            }
+        }
+    }
+    for (int i=0; i<tabWidget->count(); ++i) {
+        Tab *t = qobject_cast<Tab *>(tabWidget->widget(i));
+        if (t==tab) continue;
+
+        for (int j=0; j<t->tree->topLevelItemCount(); ++j) {
+            SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(t->tree->topLevelItem(j));
+            if (item->fileDescriptor == d) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 FileDescriptor *MainWindow::findDescriptor(const QString &file)
 {
     if (tab) {
@@ -1505,6 +1640,14 @@ void MainWindow::exportToExcelFull()
     exportToExcel(true);
 }
 
+QStringList twoStringDescription(const DescriptionList &list)
+{
+    QStringList result;
+    if (list.size()>0) result << descriptionEntryToString(list.first()); else result << "";
+    if (list.size()>1) result << descriptionEntryToString(list.at(1)); else result << "";
+    return result;
+}
+
 void MainWindow::exportToExcel(bool fullRange)
 {
     static QAxObject *excel = 0;
@@ -1608,11 +1751,48 @@ void MainWindow::exportToExcel(bool fullRange)
          }
      }
 
+     //записываем описатели
+
+     if (allChannelsFromOneFile) {
+         QStringList descriptions = twoStringDescription(descriptor->dataDescriptor());
+         QAxObject *cells = worksheet->querySubObject("Cells(Int,Int)", 1, 1);
+         if (cells) cells->setProperty("Value", descriptor->fileName());
+
+         cells = worksheet->querySubObject("Cells(Int,Int)", 2, 2);
+         if (cells) cells->setProperty("Value", descriptions.first());
+
+         cells = worksheet->querySubObject("Cells(Int,Int)", 3, 2);
+         if (cells) cells->setProperty("Value", descriptions.at(1));
+
+         delete cells;
+     }
+     else {
+         for (int i=0; i<curves.size(); ++i) {
+             Curve *curve = curves.at(i);
+
+             QStringList descriptions = twoStringDescription(curve->descriptor->dataDescriptor());
+
+             QAxObject *cells = allChannelsHaveSameXStep ? worksheet->querySubObject("Cells(Int,Int)", 1, 2+i)
+                                                         : worksheet->querySubObject("Cells(Int,Int)", 1, 2+i*2);
+             cells->setProperty("Value", curve->descriptor->fileName());
+
+             cells = allChannelsHaveSameXStep ? worksheet->querySubObject("Cells(Int,Int)", 2, 2+i)
+                                              : worksheet->querySubObject("Cells(Int,Int)", 2, 2+i*2);
+             if (cells) cells->setProperty("Value", descriptions.first());
+
+             cells = allChannelsHaveSameXStep ? worksheet->querySubObject("Cells(Int,Int)", 3, 2+i)
+                                              : worksheet->querySubObject("Cells(Int,Int)", 3, 2+i*2);
+             if (cells) cells->setProperty("Value", descriptions.at(1));
+
+             delete cells;
+         }
+     }
+
      // записываем название канала
      for (int i=0; i<curves.size(); ++i) {
          Curve *curve = curves.at(i);
-         QAxObject *cells = allChannelsHaveSameXStep ? worksheet->querySubObject("Cells(Int,Int)", 2, 2+i)
-                                                     : worksheet->querySubObject("Cells(Int,Int)", 2, 2+i*2);
+         QAxObject *cells = allChannelsHaveSameXStep ? worksheet->querySubObject("Cells(Int,Int)", 4, 2+i)
+                                                     : worksheet->querySubObject("Cells(Int,Int)", 4, 2+i*2);
          cells->setProperty("Value", curve->title().text());
          delete cells;
      }
@@ -1642,15 +1822,15 @@ void MainWindow::exportToExcel(bool fullRange)
          }
          numRows = rowsList.size();
 
-         QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3, 1);
-         QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3 + numRows - 1, 1 + numCols);
+         QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5, 1);
+         QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5 + numRows - 1, 1 + numCols);
          QAxObject* range = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", Cell1->asVariant(), Cell2->asVariant() );
 
          range->setProperty("Value", QVariant(rowsList) );
 
          // выделяем диапазон, чтобы он автоматически использовался для построения диаграммы
          Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 2, 1);
-         Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 2 + numRows, 1 + numCols);
+         Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 2 + numRows+2, 1 + numCols);
          range = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", Cell1->asVariant(), Cell2->asVariant() );
          range->dynamicCall("Select (void)");
 
@@ -1677,8 +1857,8 @@ void MainWindow::exportToExcel(bool fullRange)
              numRows = rowsList.size();
              selectedSamples << numRows;
 
-             QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3, 1+i*2);
-             QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3 + numRows-1, 2 + i*2);
+             QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5, 1+i*2);
+             QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5 + numRows-1, 2 + i*2);
              QAxObject* range = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", Cell1->asVariant(), Cell2->asVariant() );
 
              range->setProperty("Value", QVariant(rowsList) );
@@ -1706,16 +1886,16 @@ void MainWindow::exportToExcel(bool fullRange)
                  Curve *curve = curves.at(i);
                  QAxObject * serie = series->querySubObject("Item (int)", i+1);
 
-                 QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3, 1+i*2);
-                 QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3 + selectedSamples.at(i)-1, 1 + i*2);
+                 QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5, 1+i*2);
+                 QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5 + selectedSamples.at(i)-1, 1 + i*2);
                  QAxObject * xvalues = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", Cell1->asVariant(), Cell2->asVariant());
                  serie->setProperty("XValues", xvalues->asVariant());
 
                  delete Cell1;
                  delete Cell2;
 
-                 Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3, 2+i*2);
-                 Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 3 + selectedSamples.at(i)-1, 2 + i*2);
+                 Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5, 2+i*2);
+                 Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5 + selectedSamples.at(i)-1, 2 + i*2);
                  QAxObject * yvalues = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", Cell1->asVariant(), Cell2->asVariant());
                  serie->setProperty("Values", yvalues->asVariant());
 
@@ -1823,7 +2003,7 @@ void MainWindow::onCurveColorChanged(Curve *curve)
         updateChannelsTable(curve->descriptor);
 }
 
-void MainWindow::onCurveDeleted(Curve *curve)
+void MainWindow::onCurveDeleted(FileDescriptor *descriptor, int channelIndex)
 {DD;
     for (int index = 0; index < tabWidget->count(); ++index) {
         Tab *t = qobject_cast<Tab*>(tabWidget->widget(index));
@@ -1832,10 +2012,10 @@ void MainWindow::onCurveDeleted(Curve *curve)
             boldFont.setBold(true);
             for (int i=0; i<t->tree->topLevelItemCount(); ++i) {
                 FileDescriptor *dfd = dynamic_cast<SortableTreeWidgetItem *>(t->tree->topLevelItem(i))->fileDescriptor;
-                if (dfd == curve->descriptor) {
+                if (dfd == descriptor) {
                    // QList<Channel *> list = dfd->channels;
                     for (int channel=0; channel<dfd->channelsCount(); ++channel) {
-                        if (curve->channelIndex == channel) {
+                        if (channelIndex == channel) {
                             dfd->channel(channel)->setCheckState(Qt::Unchecked);
                             dfd->channel(channel)->setColor(QColor());
                         }
@@ -1855,8 +2035,8 @@ void MainWindow::onCurveDeleted(Curve *curve)
             }
         }
     }
-    if (tab->record == curve->descriptor)
-        updateChannelsTable(curve->descriptor);
+    if (tab->record == descriptor)
+        updateChannelsTable(descriptor);
 }
 
 void MainWindow::addFiles(const QList<FileDescriptor*> &files)
@@ -1909,10 +2089,11 @@ void MainWindow::deleteFiles(const QVector<int> &indexes)
 
     for (int i=indexes.size()-1; i>=0; --i) {
         SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(indexes.at(i)));
-        if (item) {
-            plot->deleteGraphs(item->fileDescriptor);
-        }
+        FileDescriptor *d = item->fileDescriptor;
+        plot->deleteGraphs(d);
+
         delete tab->tree->takeTopLevelItem(indexes.at(i));
+        if (!findDescriptor(d)) delete d;
         taken = true;
     }
     if (taken) {

@@ -98,12 +98,14 @@ GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
             plot->setAxis(axis, curve->channel->yName());
             curve->setYAxis(axis);
             plot->moveGraph(curve);
+            plot->updateAxesLabels();
         }
         else if (axis == QwtPlot::yRight && plot->canBePlottedOnRightAxis(curve->channel)) {
             plot->prepareAxis(axis);
             plot->setAxis(axis, curve->channel->yName());
             curve->setYAxis(axis);
             plot->moveGraph(curve);
+            plot->updateAxesLabels();
         }
         else QMessageBox::warning(this, "Не могу поменять ось", "Эта ось уже занята графиком другого типа!");
     });

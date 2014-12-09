@@ -40,11 +40,11 @@ int abscissaType(const QString &xName)
 
 double threshold(const QString &name)
 {
-    if (name=="м/с2" || name=="м/с^2" || name=="м/с*2") return 3.14e-4;
+    if (name=="м/с2" || name=="м/с^2" || name=="м/с*2" || name=="m/s2" || name=="m/s^2") return 3.14e-4;
     if (name=="Па" || name=="Pa" || name=="hPa" || name=="kPa" || name=="MPa"
         || name=="N/m2" || name=="N/mm2") return 2.0e-5;
-    if (name=="м/с") return 5.0e-8;
-    if (name=="м") return 8.0e-14;
+    if (name=="м/с" || name=="m/s") return 5.0e-8;
+    if (name=="м" || name=="m") return 8.0e-14;
 
 
     return 1.0;
@@ -91,7 +91,7 @@ UffFileDescriptor::~UffFileDescriptor()
 
 void UffFileDescriptor::fillPreliminary(Descriptor::DataType)
 {DD;
-
+    updateDateTimeGUID();
 }
 
 void UffFileDescriptor::fillRest()
@@ -105,7 +105,7 @@ void UffFileDescriptor::read()
     QFile uff(fileName());
     if (uff.open(QFile::ReadOnly | QFile::Text)) {
         QTextStream stream(&uff);
-
+//qDebug()<<fileName();
         header.read(stream);
         units.read(stream);
 
@@ -127,7 +127,7 @@ void UffFileDescriptor::read()
         setSamplesCount(channels.first()->samplesCount());
     }
     setChanged(true);
-    write();
+    //write();
 }
 
 void UffFileDescriptor::write()
@@ -194,7 +194,7 @@ void UffFileDescriptor::setDataDescriptor(const QList<QPair<QString, QString> > 
         header.type151[6].value = makeStringFromPair(data.at(1));
     }
     setChanged(true);
-    write();
+    //write();
 }
 
 QString UffFileDescriptor::dataDescriptorAsString() const
@@ -270,19 +270,18 @@ void UffFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
     }
 
     setChanged(true);
-    write();
+    //write();
 }
 
-void UffFileDescriptor::copyChannelsFrom(const QMultiHash<FileDescriptor *, int> &channelsToCopy)
+void UffFileDescriptor::copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy)
 {DD;
     QList<FileDescriptor*> records;
-    foreach (FileDescriptor* dfd, channelsToCopy.keys()) {
-        if (!records.contains(dfd)) records << dfd;
-    }
+    for (int i=0; i<channelsToCopy.size(); ++i)
+        if (!records.contains(channelsToCopy.at(i).first)) records << channelsToCopy.at(i).first;
 
     foreach (FileDescriptor *record, records) {
         UffFileDescriptor *uff = static_cast<UffFileDescriptor *>(record);
-        QList<int> channelsIndexes = channelsToCopy.values(record);
+        QList<int> channelsIndexes = filterIndexes(record, channelsToCopy);
 
         for(int i = 0; i < record->channelsCount(); ++i) {
             if (!record->channel(i)->populated() && channelsIndexes.contains(i))
@@ -399,7 +398,7 @@ void UffFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
         i=up?i+1:i-1;
     }
     setChanged(true);
-    write();
+    //write();
 }
 
 int UffFileDescriptor::channelsCount() const
@@ -462,7 +461,7 @@ bool UffFileDescriptor::dataTypeEquals(FileDescriptor *other)
 
 QString UffFileDescriptor::fileFilters() const
 {DD;
-    return QString("Файлы uff (*.uff)");
+    return QString("Файлы uff (*.uff);;Файлы unv (*.unv)");
 }
 
 
@@ -486,6 +485,7 @@ void UffHeader::read(QTextStream &stream)
 {DD;
     for (int i=0; i<20; ++i) {
         fields[type151[i].type]->read(type151[i].value, stream);
+//        qDebug() << i << type151[i].value;
     }
 }
 
@@ -916,14 +916,21 @@ void Function::read(QTextStream &stream)
 
     if (type58[14].value.toInt() > 1) {//do not read time response, as it is too big
         double thr = threshold(this->yName());
+
         bool doLog = (this->type()==Descriptor::Spectrum || this->type()==Descriptor::FrequencyResponseFunction);
+        if (type58[44].value.toString()=="dB" || type58[44].value.toString()=="дБ"
+            || type58[43].value.toString()=="Уровень")
+            doLog=false;
         if (this->type()==Descriptor::FrequencyResponseFunction) thr=1.0;
         if (type58[25].value.toInt() < 5) {//real values
             values = new double[samples];
             for (quint32 i=0; i<samples; ++i) {
                 double yValue;
                 stream >> yValue;
-                values[i] = yValue;
+                if (doLog)
+                    values[i] = 20*log10(yValue/thr);
+                else
+                    values[i] = yValue;
             }
         }
         else {//complex values
@@ -938,10 +945,10 @@ void Function::read(QTextStream &stream)
                     values[i] = amplitude;
             }
             type58[25].value = type58[25].value.toInt()==5?2:4;
-            if (doLog) {
-                type58[43].value = "Уровень";
-                type58[44].value = "дБ";
-            }
+        }
+        if (doLog) {
+            type58[43].value = "Уровень";
+            type58[44].value = "дБ";
         }
 
         yMin = 1.0e100;
