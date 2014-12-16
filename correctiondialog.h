@@ -7,12 +7,14 @@ class Plot;
 class QTableWidget;
 class CheckableHeaderView;
 class QPushButton;
+class QCheckBox;
+class FileDescriptor;
 
 class CorrectionDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit CorrectionDialog(Plot *plot, QWidget *parent = 0);
+    explicit CorrectionDialog(Plot *plot, QList<FileDescriptor*> &files, QWidget *parent = 0);
     
 
 private:
@@ -20,6 +22,7 @@ private:
     QTableWidget *table;
     CheckableHeaderView *tableHeader;
     QPushButton *correctButton;
+    QCheckBox *allFilesCheckBox;
 };
 
 #endif // CORRECTIONDIALOG_H

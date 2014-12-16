@@ -6,10 +6,11 @@
 #include "plot.h"
 #include "curve.h"
 #include "dfdfiledescriptor.h"
+#include "logging.h"
 
-CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) :
+CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, QWidget *parent) :
     QDialog(parent), plot(plot)
-{
+{DD;
     setWindowTitle("Добавление поправки к графику");
 
     table = new QTableWidget(0,3,this);
@@ -19,6 +20,12 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) :
     table->setHorizontalHeader(tableHeader);
     tableHeader->setCheckable(1,true);
     tableHeader->setCheckable(2,true);
+
+    if (files.size()>1)
+        allFilesCheckBox = new QCheckBox("Применить поправку ко всем\nвыделенным файлам", this);
+    else
+        allFilesCheckBox = 0;
+
 
     connect(tableHeader, &CheckableHeaderView::toggled, [=](int column, Qt::CheckState state)
     {
@@ -37,7 +44,6 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) :
         for (int i=0; i<table->rowCount(); ++i) {
             if (table->item(i, col) && table->item(i, col)->checkState()==Qt::Checked) checked++;
         }
-//        qDebug()<<"Checked"<<checked<<"of"<<table->rowCount();
 
         if (checked==0)
             tableHeader->setCheckState(col, Qt::Unchecked);
@@ -82,6 +88,7 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) :
 
     correctButton = new QPushButton("Скорректировать", this);
     connect(correctButton, &QPushButton::clicked, [=](){
+        DD;
         bool ok;
         double correctionValue = edit->text().toDouble(&ok);
         if (ok) {
@@ -98,17 +105,30 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) :
                     if (table->item(i,1)->checkState()==Qt::Checked) {
                         Curve *curve = curves.at(i);
                         Channel *ch = curve->channel;
-                        for (uint j = 0; j < ch->samplesCount(); ++j)
-                            ch->yValues()[j] += correctionValue;
 
                         curve->legend += QString(correctionValue>=0?"+":"")+QString::number(correctionValue);
-                        ch->setName(ch->name() + QString(correctionValue>=0?"+":"")
-                                           +QString::number(correctionValue));
+                        ch->addCorrection(correctionValue);
+
                         if (table->item(i,2)->checkState()==Qt::Checked) {
                             curve->descriptor->setChanged(true);
                             curve->descriptor->setDataChanged(true);
                             curve->descriptor->write();
                             curve->descriptor->writeRawFile();
+
+                            // добавление поправки к выделенным файлам
+                            if (allFilesCheckBox && allFilesCheckBox->isChecked()) {
+                                foreach(FileDescriptor *d, files) {
+                                    if (d == curve->descriptor) continue;
+                                    ch = d->channel(curve->channelIndex);
+                                    if (ch) {
+                                        ch->addCorrection(correctionValue);
+                                        d->setChanged(true);
+                                        d->setDataChanged(true);
+                                        d->write();
+                                        d->writeRawFile();
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -123,7 +143,7 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) :
         }
         else {
             QMessageBox::critical(this, "Поправка","Введенное значение поправки не является числом.\n"
-                                  "Вам дается последняя попытка, после чего компьютер взорвется");
+                                  "Вам дается последняя попытка");
 
         }
     });
@@ -138,7 +158,10 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) :
     l->addWidget(table,1,0,1,2);
     l->addWidget(new QLabel("Величина поправки",this),2,0);
     l->addWidget(edit,2,1);
+
     l->addWidget(correctButton,3,1);
+    if (allFilesCheckBox)
+        l->addWidget(allFilesCheckBox,3,0);
     l->addWidget(buttonBox,4,0,1,2);
     setLayout(l);
 

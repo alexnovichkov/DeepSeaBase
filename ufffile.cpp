@@ -423,12 +423,16 @@ void UffFileDescriptor::setAttachedFileName(const QString &name)
 
 QStringList UffFileDescriptor::getHeadersForChannel(int channel)
 {DD;
-    return channels[channel]->getInfoHeaders();
+    if (channels.size()>channel)
+        return channels[channel]->getInfoHeaders();
+    return QStringList();
 }
 
 Channel *UffFileDescriptor::channel(int index)
 {DD;
-    return channels[index];
+    if (channels.size()>index)
+        return channels[index];
+    return 0;
 }
 
 bool UffFileDescriptor::allUnplotted() const
@@ -1194,4 +1198,15 @@ double Function::yMinInitial() const
 double Function::yMaxInitial() const
 {DD;
     return yMax;
+}
+
+void Function::addCorrection(double correctionValue)
+{DD;
+    for (uint j = 0; j < samplesCount(); ++j)
+        values[j] += correctionValue;
+
+    setName(name() + QString(correctionValue>=0?"+":"")
+                +QString::number(correctionValue));
+    yMax += correctionValue;
+    yMin += correctionValue;
 }

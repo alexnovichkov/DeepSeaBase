@@ -171,7 +171,7 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), tab(0)
 {DD;
-    setWindowTitle(tr("DeepSea Database 1.3.4"));
+    setWindowTitle(tr("DeepSea Database 1.3.6.1"));
     setAcceptDrops(true);
 
     mainToolBar = new QToolBar(this);
@@ -321,17 +321,19 @@ MainWindow::MainWindow(QWidget *parent)
 
     addCorrectionAct = new QAction("Добавить поправку...", this);
     addCorrectionAct->setIcon(QIcon(":/icons/correction.png"));
-//    addCorrectionAct->setEnabled(false);
-    connect(addCorrectionAct, &QAction::triggered, [=](){
-        if (plot->hasGraphs()) {
-            CorrectionDialog dialog(plot);
-            dialog.exec();
-        }
-    });
+    connect(addCorrectionAct, SIGNAL(triggered()), SLOT(addCorrection()));
 
     deleteChannelsAct = new QAction("Удалить выделенные каналы...",this);
     deleteChannelsAct->setIcon(qApp->style()->standardIcon(QStyle::SP_TrashIcon));
     connect(deleteChannelsAct, SIGNAL(triggered()), this, SLOT(deleteChannels()));
+
+    deleteChannelsBatchAct = new QAction("Удалить каналы в нескольких файлах...",this);
+    connect(deleteChannelsBatchAct, SIGNAL(triggered()), this, SLOT(deleteChannelsBatch()));
+
+    QMenu *deleteChannelsMenu = new QMenu(this);
+    deleteChannelsMenu->addAction(deleteChannelsBatchAct);
+
+    deleteChannelsAct->setMenu(deleteChannelsMenu);
 
     copyChannelsAct = new QAction("Копировать выделенные каналы в файл...", this);
     connect(copyChannelsAct, SIGNAL(triggered()), SLOT(copyChannels()));
@@ -353,7 +355,6 @@ MainWindow::MainWindow(QWidget *parent)
     mainToolBar->addSeparator();
     mainToolBar->addWidget(new QLabel("  Каналы:"));
     QMenu *channelsMenu = new QMenu("Операции", this);
-    channelsMenu->addAction(deleteChannelsAct);
     channelsMenu->addAction(copyChannelsAct);
     channelsMenu->addAction(moveChannelsAct);
 
@@ -363,7 +364,10 @@ MainWindow::MainWindow(QWidget *parent)
     channelsTB->setFixedHeight(32);
     channelsTB->setPopupMode(QToolButton::InstantPopup);
 
+
+
     mainToolBar->addWidget(channelsTB);
+    mainToolBar->addAction(deleteChannelsAct);
     mainToolBar->addAction(meanAct);
     mainToolBar->addAction(addCorrectionAct);
 
@@ -673,7 +677,7 @@ bool checkForContains(Tab *tab, const QString &file, int *index = 0)
     for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
         SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
         if (item) {
-            qDebug()<<item->fileDescriptor->fileName();
+           // qDebug()<<item->fileDescriptor->fileName();
             if (item->fileDescriptor->fileName() == file) {
                 if (index) *index = i;
                 return true;
@@ -796,6 +800,73 @@ void MainWindow::deleteChannels() /** SLOT */
     }
 }
 
+void MainWindow::deleteChannelsBatch()
+{
+    QList<QPair<FileDescriptor*, int> > channels = selectedChannels();
+    QList<FileDescriptor*> descriptorsList;
+    for (int i=0; i<channels.size(); ++i)
+        if (!descriptorsList.contains(channels.at(i).first)) descriptorsList << channels.at(i).first;
+    bool allChannelsFromOneFile = descriptorsList.size()==1;
+
+    QList<FileDescriptor*> filesToDelete;
+    for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
+        SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
+        if (item && item->isSelected()) {
+            filesToDelete << item->fileDescriptor;
+        }
+    }
+
+    // нет построенных каналов или выделен только один файл
+    if (filesToDelete.size()<2 || channels.isEmpty()) return;
+
+    if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \n"
+                              "удалены из всех выделенных файлов. Продолжить?")!=QMessageBox::Yes)
+        return;
+
+    // проверка на выделенные каналы
+    if (!allChannelsFromOneFile) {
+        if (QMessageBox::question(this,"DeepSea Base","Выделены каналы из разных файлов.\n"
+                                  "В качестве шаблона будет использован только первый файл. Продолжить?")==QMessageBox::Yes)
+        {
+            // удаляем из списка каналов все каналы других файлов
+            for (int i=channels.size()-1; i>=0; --i) {
+                if (channels.at(i).first != descriptorsList.first()) channels.removeAt(i);
+            }
+            if (channels.isEmpty()) return;
+        }
+        else {
+            return;
+        }
+    }
+
+    QVector<int> channelsInds;
+    for (int i=0; i<channels.size(); ++i) channelsInds << channels.at(i).second;
+    qSort(channelsInds);
+
+    // проверка на количество каналов в файлах
+    foreach (FileDescriptor *d, filesToDelete) {
+        if (d->channelsCount()<=channelsInds.last()) {
+            if (QMessageBox::question(this,"DeepSea Base","В некоторых файлах меньше каналов, чем заявлено\n"
+                                      "к удалению. Продолжить?")==QMessageBox::Yes)
+                break;
+            else
+                return;
+        }
+    }
+
+    foreach (FileDescriptor *d, filesToDelete) {
+        foreach (int index, channelsInds) {
+            QPair<FileDescriptor*, int> pair = {d, index};
+            if (!channels.contains(pair)) channels << pair;
+
+        }
+    }
+    deleteChannels(channels);
+
+    updateRecordsTable(filesToDelete);
+    updateChannelsTable(tab->record);
+}
+
 void MainWindow::copyChannels() /** SLOT */
 {DD;
     QList<QPair<FileDescriptor*, int> > channelsToCopy = selectedChannels();
@@ -828,6 +899,22 @@ void MainWindow::moveChannels() /** SLOT */
             updateRecordsTable(list);
             updateChannelsTable(tab->record);
         }
+    }
+}
+
+void MainWindow::addCorrection()
+{DD;
+    if (plot->hasGraphs()) {
+        QList<FileDescriptor*> filesToDelete;
+        for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
+            SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
+            if (item && item->isSelected()) {
+                filesToDelete << item->fileDescriptor;
+            }
+        }
+
+        CorrectionDialog dialog(plot, filesToDelete);
+        dialog.exec();
     }
 }
 
@@ -1303,6 +1390,24 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
         ch->setDescription(item->text());
         tab->record->setChanged(true);
         tab->record->write();
+
+        if (tab->tree->selectedItems().size()>1) {
+            if (QMessageBox::question(this,"DeepSea Base","Выделено несколько файлов. Записать такое описание канала\n"
+                                      "во все эти файлы?")==QMessageBox::Yes)
+            {
+                for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
+                    SortableTreeWidgetItem *it = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
+                    if (it->fileDescriptor == tab->record) continue;
+                    if (it && it->isSelected()) {
+                        if (it->fileDescriptor->channel(item->row())) {
+                            it->fileDescriptor->channel(item->row())->setDescription(item->text());
+                            it->fileDescriptor->setChanged(true);
+                            it->fileDescriptor->write();
+                        }
+                    }
+                }
+            }
+        }
     }
 
     else if (column == 0) {
@@ -1310,6 +1415,25 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
             ch->setName(item->text());
             tab->record->setChanged(true);
             tab->record->write();
+
+            if (tab->tree->selectedItems().size()>1) {
+                if (QMessageBox::question(this,"DeepSea Base","Выделено несколько файлов. Записать такое название канала\n"
+                                          "во все эти файлы?")==QMessageBox::Yes)
+                {
+                    for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
+                        SortableTreeWidgetItem *it = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
+                        if (it->fileDescriptor == tab->record) continue;
+                        if (it && it->isSelected()) {
+                            if (it->fileDescriptor->channel(item->row())) {
+                                it->fileDescriptor->channel(item->row())->setName(item->text());
+                                it->fileDescriptor->setChanged(true);
+                                it->fileDescriptor->write();
+                            }
+                        }
+                    }
+                }
+            }
+
             plot->updateLegends();
         }
 

@@ -75,8 +75,11 @@ private slots:
     void addFile();
 
     void deleteChannels();
+    void deleteChannelsBatch();
     void copyChannels();
     void moveChannels();
+
+    void addCorrection();
 
     void updateChannelsTable(QTreeWidgetItem *, QTreeWidgetItem *);
 
@@ -198,6 +201,7 @@ private:
     QAction *interactionModeAct;
     QAction *addCorrectionAct;
     QAction *deleteChannelsAct;
+    QAction *deleteChannelsBatchAct;
     QAction *copyChannelsAct;
     QAction *moveChannelsAct;
 

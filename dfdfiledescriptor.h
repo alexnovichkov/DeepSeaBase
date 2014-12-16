@@ -151,6 +151,7 @@ public:
     virtual double xMaxInitial() const {return XMaxInitial;}
     virtual double yMinInitial() const {return YMinInitial;}
     virtual double yMaxInitial() const {return YMaxInitial;}
+    virtual void addCorrection(double correctionValue);
 
     virtual QString description() const {return ChanDscr;}
     virtual void setDescription(const QString &description) {ChanDscr = description;}
@@ -316,7 +317,7 @@ public:
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes);
 
     QStringList getHeadersForChannel(int channel);
-    Channel *channel(int index) {return channels[index];}
+    Channel *channel(int index);
 
     bool allUnplotted() const;
     bool isSourceFile() const;

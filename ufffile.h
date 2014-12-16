@@ -67,6 +67,7 @@ public:
     virtual double xMaxInitial() const;
     virtual double yMinInitial() const;
     virtual double yMaxInitial() const;
+    virtual void addCorrection(double correctionValue);
 };
 
 class UffHeader

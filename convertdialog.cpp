@@ -1,15 +1,17 @@
 #include "convertdialog.h"
 
 #include <QtWidgets>
-
+#include "converters.h"
 #include "dfdfiledescriptor.h"
 #include "methods/spectremethod.h"
 #include "methods/timemethod.h"
 #include "methods/xresponch1.h"
 
+#include "logging.h"
+
 ConvertDialog::ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent) :
     QDialog(parent), /*dataBase(dataBase),*/ process(0)
-{
+{DD;
     foreach (FileDescriptor *d, *dataBase) {
         DfdFileDescriptor *dd = static_cast<DfdFileDescriptor *>(d);
         if (dd)
@@ -36,9 +38,13 @@ ConvertDialog::ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent)
     if (s.isEmpty()) infoLabel->setText("Не могу найти DeepSea.exe в стандартных путях.\n"
                                         "Добавьте путь к DeepSea.exe в переменную PATH");
 
+    progress = new QProgressBar(this);
+    progress->setRange(0, this->dataBase.size()*2);
+    progress->hide();
+
     bandWidth = dynamic_cast<RawChannel *>(dataBase->first()->channel(0))->BandWidth;
     for (int i=0; i<12; ++i) {
-        if (bands[i] <= bandWidth) {
+        if (bands[i]-bandWidth <= 0.01) {
             bandWidth = bands[i];
             break;
         }
@@ -56,6 +62,10 @@ ConvertDialog::ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent)
     baseChannelSpin = new QSpinBox(this);
     baseChannelSpin->setRange(1, 256);
     baseChannelSpin->setValue(2);
+    overlap = new QSpinBox(this);
+    overlap->setRange(0,75);
+    overlap->setValue(0);
+    overlap->setSingleStep(5);
 
     methodsStack = new QStackedWidget(this);
     for (int i=0; i<26; ++i) {
@@ -82,10 +92,13 @@ ConvertDialog::ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent)
     l->addWidget(baseChannelSpin, 2,1);
     l->addWidget(new QLabel("Частотный диапазон", this), 3,0);
     l->addWidget(activeStripCombo, 3,1);
-    l->addWidget(infoLabel, 4,0,1,2);
+    l->addWidget(new QLabel("Перекрытие, %", this), 4,0);
+    l->addWidget(overlap, 4,1);
+    l->addWidget(infoLabel, 5,0,1,2);
+    l->addWidget(progress,6,0,1,2);
 
-    l->addWidget(methodsStack,0,2,6,1);
-    l->addWidget(buttonBox, 6,0,1,3);
+    l->addWidget(methodsStack,0,2,7,1);
+    l->addWidget(buttonBox, 7,0,1,3);
 
 
     setLayout(l);
@@ -93,20 +106,20 @@ ConvertDialog::ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent)
 }
 
 ConvertDialog::~ConvertDialog()
-{
+{DD;
     if (process) {
         process->kill();
         process->deleteLater();
     }
 }
 
-QStringList ConvertDialog::getSpfFile(const QVector<int> &indexes, QString dir)
-{
-    dir = QDir::toNativeSeparators(dir);
+QStringList ConvertDialog::getSpfFile(/*const QVector<int> &indexes, */QString dir)
+{DD;
+//    dir = QDir::toNativeSeparators(dir);
     QStringList spfFile;
     spfFile << "[DeepSeaProjectFile]";
     spfFile << "MainWindow=133,139,1280,572";
-    spfFile << QString("PanelsNum=%1").arg(indexes.size()); // число панелей равно числу файлов для обработки
+    spfFile << QString("PanelsNum=%1").arg(dataBase.size()); // число панелей равно числу файлов для обработки
     spfFile << "GWColors=12632256,12632256,8421504,8388736";
     spfFile << "GColor0=180";
     spfFile << "GColor1=8388608";
@@ -125,12 +138,12 @@ QStringList ConvertDialog::getSpfFile(const QVector<int> &indexes, QString dir)
     spfFile << "GColor14=16744576";
     spfFile << "GColor15=10789024";
     spfFile << "SonColor=0";
-    spfFile << QString("SoDatDir=%1").arg(dir); // файлы отсортированы по папкам
+    spfFile << QString("SoDatDir=C:\\Program Files (x86)\\DeepSea\\Data");
     spfFile << QString("DSDatDir=%1").arg(dir); // файлы сохраняются в ту же папку
-    spfFile << "TpNameDat=1"; // к имени файла добавляется дата и время создания
+    spfFile << "TpNameDat=2"; // к имени файла добавляется дата и время создания
 
-    for (int i=0; i<indexes.size(); ++i) {
-        DfdFileDescriptor *dfd = dataBase.at(indexes.at(i));
+    for (int i=0; i<dataBase.size(); ++i) {
+        DfdFileDescriptor *dfd = dataBase.at(i);
         spfFile << QString("[Panel%1]").arg(i);
         spfFile << QString("NmPan=п.%1").arg(i);
         spfFile << QString("PanelPar=%1,%2,%3")
@@ -158,7 +171,8 @@ QStringList ConvertDialog::getSpfFile(const QVector<int> &indexes, QString dir)
         spfFile << QString("BaseChannel=%1").arg(baseChannelSpin->value());
         spfFile << "MinMax=*,*,*,*";
         spfFile << QString("AStrip=%1").arg(bandStrip);
-        spfFile << "StepBack=(00000000)"; // TODO: добавить возможность устанавливать перекрытие
+        spfFile << QString("StepBack=%1").arg(floattohex(overlap->value())); // TODO: добавить возможность устанавливать перекрытие
+//qDebug()<<spfFile;
         spfFile << "ShiftDat=0"; // TODO: добавить возможность устанавливать смещение
         // длина = число отсчетов в канале
         // TODO: добавить возможность устанавливать правую границу выборки
@@ -179,13 +193,13 @@ QStringList ConvertDialog::getSpfFile(const QVector<int> &indexes, QString dir)
 }
 
 void ConvertDialog::methodChanged(int method)
-{
+{DD;
     methodsStack->setCurrentIndex(method);
     currentMethod = dynamic_cast<AbstractMethod *>(methodsStack->currentWidget());
 }
 
 bool ConvertDialog::copyFilesToTempDir(const QVector<int> &indexes, const QString &tempFolderName)
-{
+{DD;
     bool result = true;
     infoLabel->setText("Копирование файлов во временную папку...");
     qApp->processEvents();
@@ -203,42 +217,54 @@ bool ConvertDialog::copyFilesToTempDir(const QVector<int> &indexes, const QStrin
     return result;
 }
 
-void ConvertDialog::moveFilesFromTempDir(const QString &destDir)
-{
-    for (int i=0; i<newFiles.size(); ++i) {
-        DfdFileDescriptor dfd(newFiles.at(i));
-        dfd.read();
-        QString suffix = QString::number(dfd.samplesCount() * dfd.xStep());
+void ConvertDialog::moveFilesFromTempDir(const QString &tempFolderName, QString fileName)
+{DD;
 
-        QString baseFileName = QFileInfo(newFiles.at(i)).completeBaseName();
-        const QString oldRawFileName = QFileInfo(newFiles.at(i)).canonicalPath()+"/"+baseFileName+".raw";
+    QString destDir = QFileInfo(fileName).canonicalPath();
+    QString method = currentMethod->methodDll();
+    method.chop(4);
+    QString filter=QString("%1/%2_%3")
+                   .arg(tempFolderName)
+                   .arg(QFileInfo(fileName).completeBaseName())
+                   .arg(method);
+    filter.replace("\\","/");
+    QStringList filtered = newFiles_.filter(filter);
 
-        baseFileName.chop(3);
-        QString dfdFileName = destDir+"/"+baseFileName+"_"+suffix+".dfd";
-        QString rawFileName = destDir+"/"+baseFileName+"_"+suffix+".raw";
+    //Q_ASSERT(filtered.size()<2);
+    if (filtered.isEmpty()) return;
+
+    QString baseFileName = QFileInfo(filtered.first()).completeBaseName();
+
+    DfdFileDescriptor dfd(filtered.first());
+    dfd.read();
+    QString suffix = QString::number(dfd.samplesCount() * dfd.xStep());
+
+    baseFileName.chop(3);
+    QString dfdFileName = destDir+"/"+baseFileName+"_"+suffix+".dfd";
+    QString rawFileName = destDir+"/"+baseFileName+"_"+suffix+".raw";
 
 
-        int index = 0;
-        if (QFile::exists(dfdFileName)) {
+    int index = 0;
+    if (QFile::exists(dfdFileName)) {
+        index++;
+        while (QFile::exists(destDir+"/"+baseFileName+"_"+suffix+"("+QString::number(index)+").dfd")) {
             index++;
-            while (QFile::exists(destDir+"/"+baseFileName+"_"+suffix+"("+QString::number(index)+").dfd")) {
-                index++;
-            }
         }
-
-        if (index>0) {
-            dfdFileName = destDir+"/"+baseFileName+"_"+suffix+"("+QString::number(index)+").dfd";
-            rawFileName = destDir+"/"+baseFileName+"_"+suffix+"("+QString::number(index)+").raw";
-        }
-
-        QFile::rename(newFiles.at(i), dfdFileName);
-        QFile::rename(oldRawFileName, rawFileName);
-        newFiles[i] = dfdFileName;
     }
+
+    if (index>0) {
+        dfdFileName = destDir+"/"+baseFileName+"_"+suffix+"("+QString::number(index)+").dfd";
+        rawFileName = destDir+"/"+baseFileName+"_"+suffix+"("+QString::number(index)+").raw";
+    }
+
+    QFile::rename(filtered.first(), dfdFileName);
+    QFile::rename(dfd.attachedFileName(), rawFileName);
+    newFiles << dfdFileName;
+    newFiles_.removeAll(filtered.first());
 }
 
 int ConvertDialog::stripByBandwidth(double bandwidth)
-{
+{DD;
     const int current = activeStripCombo->currentIndex();
 
     if (qAbs(bandwidth - bandWidth)<1.0e-7)
@@ -250,82 +276,75 @@ int ConvertDialog::stripByBandwidth(double bandwidth)
 }
 
 void ConvertDialog::accept()
-{
+{DD;
     newFiles.clear();
 
-    // сортируем записи по директории
-    QMap<QString, QVector<int> > sortedFiles;
-    for (int i=0; i< dataBase.size(); ++i) {
-        DfdFileDescriptor *dfd = dataBase.at(i);
-        QString dir = QFileInfo(dfd->fileName()).absolutePath();
-        QVector<int> indexes = sortedFiles.value(dir);
-        indexes.append(i);
-        sortedFiles.insert(dir, indexes);
-    }
 
-
-    // теперь копируем все файлы из опр. папки во временную
     QDir d;
     if (!d.exists("C:/DeepSeaBase-temp"))
         d.mkdir("C:/DeepSeaBase-temp");
 
     QTemporaryDir tempDir("C:\\DeepSeaBase-temp\\temp-XXXXXX");
-    //tempDir.setAutoRemove(false);
-    if (tempDir.isValid()) {
-        const QString tempFolderName = tempDir.path();
+    tempDir.setAutoRemove(false);
+    const QString tempFolderName = tempDir.path();
 
-        QMapIterator<QString, QVector<int> > it(sortedFiles);
-        while (it.hasNext()) {
-            it.next();
+    infoLabel->setText("Подождите, пока работает DeepSea...\n"
+                       "Не забудьте закрыть DeepSea, когда она закончит расчеты");
+    QStringList spfFile = getSpfFile(tempFolderName/*it.value(), tempFolderName*/);
+    QTemporaryFile file("spffile_XXXXXX.spf");
+    file.setAutoRemove(false);
+    if (file.open()) {
+        QTextStream out(&file);
+        out.setCodec("Windows-1251");
+        foreach (QString s, spfFile) out << s << endl;
+        file.close();
+    }
+    else return;
 
-            if (copyFilesToTempDir(it.value(), tempFolderName)) {
-                infoLabel->setText("Подождите, пока работает DeepSea...\n"
-                                   "Не забудьте закрыть DeepSea, когда она закончит расчеты");
-                QStringList spfFile = getSpfFile(it.value(), tempFolderName);
-                QTemporaryFile file("spffile_XXXXXX.spf");
-                file.setAutoRemove(true);
-                if (file.open()) {
-                    QTextStream out(&file);
-                    out.setCodec("Windows-1251");
-                    foreach (QString s, spfFile) out << s << endl;
-                    file.close();
-                }
-                else continue;
+    QFileSystemWatcher watcher(QStringList()<<tempFolderName,this);
+    connect(&watcher, SIGNAL(directoryChanged(QString)), SLOT(updateProgressIndicator(QString)));
 
-                QDateTime dt=QDateTime::currentDateTime();
+    QDateTime dt=QDateTime::currentDateTime();
+    progress->show();
 
-                if (!process) {
-                    process = new QProcess(this);
-                    process->disconnect();
-                    process->setProcessChannelMode(QProcess::MergedChannels);
-                    process->setReadChannel(QProcess::StandardOutput);
-                }
-
-                QStringList arguments;
-                arguments << file.fileName() << "-E" << "-S";
-
-                QEventLoop q;
-                connect(process,SIGNAL(finished(int)),&q,SLOT(quit()));
-                connect(process,SIGNAL(error(QProcess::ProcessError)),&q,SLOT(quit()));
-
-                process->start("DeepSea",arguments);
-                q.exec();
-
-                const int code = process->exitCode();
-                if (code == 0) {
-                    QFileInfoList newFilesList = QDir(tempFolderName).entryInfoList(QStringList()<<"*.dfd",QDir::Files);
-                    Q_FOREACH(const QFileInfo &newFile, newFilesList) {
-                        if (newFile.created()>dt || newFile.lastModified()>dt)
-                            newFiles << newFile.canonicalFilePath();
-                    }
-                    moveFilesFromTempDir(it.key());
-                }
-            }
-        }
+    if (!process) {
+        process = new QProcess(this);
+        process->disconnect();
+        process->setProcessChannelMode(QProcess::MergedChannels);
+        process->setReadChannel(QProcess::StandardOutput);
     }
 
+    QStringList arguments;
+    arguments << file.fileName() << "-E" << "-S";
 
+    QEventLoop q;
+    connect(process,SIGNAL(finished(int)),&q,SLOT(quit()));
+    connect(process,SIGNAL(error(QProcess::ProcessError)),&q,SLOT(quit()));
+
+    process->start("DeepSea",arguments);
+    q.exec();
+
+    const int code = process->exitCode();
+    if (code != 0) {
+        QMessageBox::critical(this, "DeepSea Base - обработка", "DeepSea завершился с ошибкой!");
+        return;
+    }
+
+    QFileInfoList newFilesList = QDir(tempFolderName).entryInfoList(QStringList()<<"*.dfd",QDir::Files);
+    Q_FOREACH(const QFileInfo &newFile, newFilesList) {
+        if (newFile.created()>dt || newFile.lastModified()>dt)
+            newFiles_ << newFile.canonicalFilePath();
+    }
+
+    foreach (DfdFileDescriptor *dfd, dataBase) {
+        moveFilesFromTempDir(tempFolderName, dfd->fileName());
+    }
 
     QDialog::accept();
+}
+
+void ConvertDialog::updateProgressIndicator(const QString &path)
+{DD;
+    progress->setValue(QDir(path).count()-2);
 }
 

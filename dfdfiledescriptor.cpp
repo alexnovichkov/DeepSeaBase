@@ -195,8 +195,9 @@ void DfdFileDescriptor::write()
     QTextStream dfd(&file);
     dfd.setCodec(codec);
 
-    // убираем перекрытие блоков
-    BlockSize = 0;
+    // убираем перекрытие блоков, если пишем не сырые данные
+    if (type() != Descriptor::TimeResponse)
+        BlockSize = 0;
 
     /** [DataFileDescriptor]*/
     dfd << "[DataFileDescriptor]" << endl;
@@ -360,7 +361,7 @@ bool DfdFileDescriptor::fileExists()
 void DfdFileDescriptor::setDataChanged(bool changed)
 {DD;
     FileDescriptor::setDataChanged(changed);
-    BlockSize = 0;
+//    BlockSize = 0;
 }
 
 void DfdFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
@@ -540,6 +541,12 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
 QStringList DfdFileDescriptor::getHeadersForChannel(int channel)
 {DD;
     return channels[channel]->getInfoHeaders();
+}
+
+Channel *DfdFileDescriptor::channel(int index)
+{
+    if (channels.size()>index) return channels[index];
+    return 0;
 }
 
 bool DfdFileDescriptor::allUnplotted() const
@@ -1017,6 +1024,18 @@ double DfdChannel::xBegin() const
 quint32 DfdChannel::samplesCount() const
 {DD;
     return NumInd;
+}
+
+void DfdChannel::addCorrection(double correctionValue)
+{
+    populate();
+    for (uint j = 0; j < samplesCount(); ++j)
+        YValues[j] += correctionValue;
+
+    setName(name() + QString(correctionValue>=0?"+":"")
+                +QString::number(correctionValue));
+    YMaxInitial += correctionValue;
+    YMinInitial += correctionValue;
 }
 
 //bool DfdChannel::typeDiffers(Channel *other)

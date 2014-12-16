@@ -264,6 +264,16 @@ void Plot::updateAxesLabels()
         enableAxis(QwtPlot::yLeft, axisLabelsVisible);
         setAxisTitle(QwtPlot::yLeft, axisLabelsVisible ? yLeftName : "");
     }
+//    enableAxis(QwtPlot::yLeft, !leftGraphs.isEmpty());
+//    QwtText t = axisTitle(QwtPlot::yLeft);
+//    t.setText(yLeftName);
+//    t.setColor(axisLabelsVisible?Qt::black:Qt::white);
+//    setAxisTitle(QwtPlot::yLeft, t);
+
+//    QPalette pal=palette();
+//    QColor col=pal.color(QPalette::Button);
+//    pal.setColor(QPalette::Text, col);
+//    setPalette(pal);
 
     if (rightGraphs.isEmpty()) enableAxis(QwtPlot::yRight, false);
     else {
