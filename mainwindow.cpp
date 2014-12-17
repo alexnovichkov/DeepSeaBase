@@ -171,7 +171,7 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), tab(0)
 {DD;
-    setWindowTitle(tr("DeepSea Database 1.3.6.1"));
+    setWindowTitle(tr("DeepSea Database 1.3.6.2"));
     setAcceptDrops(true);
 
     mainToolBar = new QToolBar(this);
@@ -890,7 +890,6 @@ void MainWindow::moveChannels() /** SLOT */
 
     if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \nудалены из файлов. Продолжить?")==QMessageBox::Yes) {
         if (copyChannels(channelsToMove)) {
-            //qDebug()<<"copy successful";
             deleteChannels(channelsToMove);
             QList<FileDescriptor*> list;
             for (int i=0; i<channelsToMove.size(); ++i)
@@ -915,6 +914,8 @@ void MainWindow::addCorrection()
 
         CorrectionDialog dialog(plot, filesToDelete);
         dialog.exec();
+
+        updateChannelsTable(tab->record);
     }
 }
 

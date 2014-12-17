@@ -259,7 +259,7 @@ void DfdFileDescriptor::writeRawFile()
                     writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
                 for (quint32 val = 0; val < ch->samplesCount(); ++val) {
-                    ch->setValue(ch->YValues[val], writeStream);
+                    ch->setValue(ch->corrected?ch->YValues[val]-ch->oldCorrectionValue:ch->YValues[val], writeStream);
                 }
             }
         }
@@ -485,10 +485,15 @@ void DfdFileDescriptor::calculateMean(const QMultiHash<FileDescriptor *, int> &c
 
         // обновляем сведения канала
         ch->setPopulated(true);
-        ch->ChanName = "Среднее";
+        QStringList l;
+        foreach (Channel *c,list) {
+            l << c->name();
+        }
+
+        ch->ChanName = "Среднее "+l.join(", ");
 
         QList<int> ll;
-        QStringList l;
+        l.clear();
         it.toFront();
         while (it.hasNext()) {
             it.next();
@@ -692,6 +697,8 @@ DfdChannel::DfdChannel(DfdFileDescriptor *parent, int channelIndex)
     XName = parent->XName;
     dataType = parent->DataType;
     NumInd = 0;
+    corrected = false;
+    oldCorrectionValue = 0.0;
 }
 
 DfdChannel::DfdChannel(const DfdChannel &other)
@@ -725,6 +732,8 @@ DfdChannel::DfdChannel(const DfdChannel &other)
 
     _populated = other._populated;
     dataType = other.dataType;
+    corrected = other.corrected;
+    oldCorrectionValue = other.oldCorrectionValue;
 }
 
 DfdChannel::DfdChannel(Channel &other)
@@ -754,6 +763,8 @@ DfdChannel::DfdChannel(Channel &other)
 
     _populated = true;
     dataType = dfdDataTypeFromDataType(other.type());
+    corrected = false;
+    oldCorrectionValue = 0.0;
 }
 
 DfdChannel::~DfdChannel()
@@ -788,6 +799,9 @@ void DfdChannel::write(QTextStream &dfd, int chanIndex)
 {DD;
     dfd << QString("[Channel%1]").arg(chanIndex) << endl;
     dfd << "ChanAddress=" << ChanAddress << endl;
+    if (corrected) {
+        setName(nameBeforeCorrection);
+    }
     dfd << "ChanName=" << ChanName << endl;
     dfd << "IndType=" << IndType << endl;
     dfd << "ChanBlockSize=" << ChanBlockSize << endl;
@@ -1026,23 +1040,27 @@ quint32 DfdChannel::samplesCount() const
     return NumInd;
 }
 
-void DfdChannel::addCorrection(double correctionValue)
+void DfdChannel::addCorrection(double correctionValue, bool writeToFile)
 {
     populate();
     for (uint j = 0; j < samplesCount(); ++j)
         YValues[j] += correctionValue;
 
-    setName(name() + QString(correctionValue>=0?"+":"")
+    oldCorrectionValue = correctionValue;
+
+    if (!corrected) {
+        nameBeforeCorrection = name();
+        corrected = true;
+    }
+
+    setName(nameBeforeCorrection + QString(correctionValue>=0?"+":"")
                 +QString::number(correctionValue));
+
+    if (writeToFile) corrected = false;
+
     YMaxInitial += correctionValue;
     YMinInitial += correctionValue;
 }
-
-//bool DfdChannel::typeDiffers(Channel *other)
-//{DD;
-//    DfdChannel *c = dynamic_cast<DfdChannel*>(other);
-//    return (c->YName != this->YName || c->YNameOld != this->YNameOld)
-//}
 
 void RawChannel::read(QSettings &dfd, int chanIndex)
 {DD;

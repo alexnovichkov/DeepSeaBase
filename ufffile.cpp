@@ -1200,7 +1200,7 @@ double Function::yMaxInitial() const
     return yMax;
 }
 
-void Function::addCorrection(double correctionValue)
+void Function::addCorrection(double correctionValue, bool writeToFile)
 {DD;
     for (uint j = 0; j < samplesCount(); ++j)
         values[j] += correctionValue;
@@ -1210,3 +1210,4 @@ void Function::addCorrection(double correctionValue)
     yMax += correctionValue;
     yMin += correctionValue;
 }
+

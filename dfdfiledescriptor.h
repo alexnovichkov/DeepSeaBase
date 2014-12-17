@@ -151,7 +151,7 @@ public:
     virtual double xMaxInitial() const {return XMaxInitial;}
     virtual double yMinInitial() const {return YMinInitial;}
     virtual double yMaxInitial() const {return YMaxInitial;}
-    virtual void addCorrection(double correctionValue);
+    virtual void addCorrection(double correctionValue, bool writeToFile);
 
     virtual QString description() const {return ChanDscr;}
     virtual void setDescription(const QString &description) {ChanDscr = description;}
@@ -199,8 +199,13 @@ public:
 
     bool _populated;
     quint32 NumInd;
+
+    bool corrected;
+    QString nameBeforeCorrection;
+    double oldCorrectionValue;
 private:
     DfdDataType dataType;
+
 
 };
 

@@ -179,7 +179,7 @@ public:
     virtual double yMinInitial() const = 0;
     virtual double yMaxInitial() const = 0;
 
-    virtual void addCorrection(double covvectionValue) = 0;
+    virtual void addCorrection(double correctionValue, bool writeToFile) = 0;
 
     Qt::CheckState checkState() const {return _checkState;}
     void setCheckState(Qt::CheckState checkState) {_checkState = checkState;}

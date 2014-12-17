@@ -53,10 +53,10 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
             tableHeader->setCheckState(col, Qt::PartiallyChecked);
 
         if (col == 2) {
-            if (item->checkState()==Qt::Checked)
+//            if (item->checkState()==Qt::Checked)
                 item->setText("Сохранить поправку в файл RAW");
-            else
-                item->setText("Изменить только график");
+//            else
+//                item->setText("Изменить только график");
         }
     });
     tableHeader->setCheckState(0,Qt::Unchecked);
@@ -92,7 +92,7 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
         bool ok;
         double correctionValue = edit->text().toDouble(&ok);
         if (ok) {
-            if (correctionValue == 0.0) return;
+            //if (correctionValue == 0.0) return;
 
             int selected = 0;
             for (int i=0; i<table->rowCount(); ++i) {
@@ -106,10 +106,8 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
                         Curve *curve = curves.at(i);
                         Channel *ch = curve->channel;
 
-                        curve->legend += QString(correctionValue>=0?"+":"")+QString::number(correctionValue);
-                        ch->addCorrection(correctionValue);
-
                         if (table->item(i,2)->checkState()==Qt::Checked) {
+                            ch->addCorrection(correctionValue, true);
                             curve->descriptor->setChanged(true);
                             curve->descriptor->setDataChanged(true);
                             curve->descriptor->write();
@@ -121,7 +119,7 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
                                     if (d == curve->descriptor) continue;
                                     ch = d->channel(curve->channelIndex);
                                     if (ch) {
-                                        ch->addCorrection(correctionValue);
+                                        ch->addCorrection(correctionValue, true);
                                         d->setChanged(true);
                                         d->setDataChanged(true);
                                         d->write();
@@ -130,6 +128,8 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
                                 }
                             }
                         }
+                        else
+                            ch->addCorrection(correctionValue, false);
                     }
                 }
                 plot->updateAxes();
@@ -153,7 +153,10 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
 
     QGridLayout *l = new QGridLayout;
-    l->addWidget(new QLabel("Отметьте каналы, введите величину поправки\nи нажмите \"Скорректировать\"", this),
+    l->addWidget(new QLabel("Отметьте каналы, введите величину поправки и нажмите \"Скорректировать\"\n\n"
+                            "Если вы хотите записать эту поправку на диск, поставьте галочки во втором столбце.\n"
+                            "Если величина поправки не устроила, введите другую величину поправки.\n"
+                            "Разные поправки не будут накапливаться, если не стоит галочка во втором столбце.", this),
                  0,0,1,2);
     l->addWidget(table,1,0,1,2);
     l->addWidget(new QLabel("Величина поправки",this),2,0);
