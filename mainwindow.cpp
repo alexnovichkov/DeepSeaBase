@@ -1573,8 +1573,8 @@ void MainWindow::recordLegendChanged(QTreeWidgetItem *item, int column)
                 return;
             }
             i->fileDescriptor->setLegend(item->text(column));
-            i->fileDescriptor->setChanged(true);
-            i->fileDescriptor->write();
+            //i->fileDescriptor->setChanged(true);
+            //i->fileDescriptor->write();
             plot->updateLegends();
         }
     }

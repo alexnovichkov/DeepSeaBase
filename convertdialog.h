@@ -13,6 +13,8 @@ class QLabel;
 class FileDescriptor;
 class DfdFileDescriptor;
 class QProgressBar;
+class DfdChannel;
+class Parameters;
 
 class ConvertDialog : public QDialog
 {
@@ -33,6 +35,15 @@ private:
     bool copyFilesToTempDir(const QVector<int> &, const QString &tempFolderName);
     void moveFilesFromTempDir(const QString &tempFolderName, QString destDir);
     int stripByBandwidth(double bandwidth);
+
+    QString createUniqueFileName(const QString &tempFolderName, const QString &fileName);
+
+    void convert(DfdFileDescriptor *dfd, const QString &tempFolderName);
+//    double *resample(DfdChannel *channel, double sampleRate, double newSampleRate, quint32 &newSamplesCount);
+    QVector<double> &filter(DfdChannel *channel, const Parameters &p);
+    QVector<double> decimate(const QVector<double> &values, int band);
+    void applyWindow(QVector<double> &values, const Parameters &p);
+    QVector<double> computeSpectre(const QVector<double> &values, const Parameters &p);
 
     QList<DfdFileDescriptor *> dataBase;
 

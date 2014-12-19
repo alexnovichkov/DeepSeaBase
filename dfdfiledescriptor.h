@@ -147,7 +147,7 @@ public:
     virtual double xBegin() const;
     virtual double xStep() const {return XStep;}
     virtual quint32 samplesCount() const;
-    virtual double *yValues() {return YValues;}
+    virtual QVector<double> &yValues() {return YValues;}
     virtual double xMaxInitial() const {return XMaxInitial;}
     virtual double yMinInitial() const {return YMinInitial;}
     virtual double yMaxInitial() const {return YMaxInitial;}
@@ -162,6 +162,7 @@ public:
     virtual bool populated() const {return _populated;}
     virtual void setPopulated(bool populated) {_populated = populated;}
     virtual void populate();
+    virtual void clear();
 
 //    virtual bool typeDiffers(Channel *other);
 
@@ -193,7 +194,7 @@ public:
     double YMinInitial; // initial yMin value to display
     double YMaxInitial; // initial yMax value to display
 
-    double *YValues;
+    QVector<double> YValues;
     DfdFileDescriptor *parent;
     quint32 channelIndex; // нумерация с 0
 
@@ -261,13 +262,11 @@ class Process
 {
 public:
     /** [Process] */
-    Process(DfdFileDescriptor *parent);
+    Process();
     void read(QSettings &dfd);
     void write(QTextStream &dfd);
     QString value(const QString &key);
-private:
-    DfdFileDescriptor *parent;
-    QList<QPair<QString, QString> > data;
+    DescriptionList data;
 };
 
 class DataDescription
@@ -302,6 +301,9 @@ public:
     virtual void setDataDescriptor(const DescriptionList &data);
 
     virtual double xStep() const {return XStep;}
+
+    virtual void setLegend(const QString &legend);
+    virtual QString legend() const;
 
 //    QString fileName() {return FileName;}
 
@@ -348,10 +350,10 @@ public:
     QDate Date;
     QTime Time;
     quint32 NumChans;
-//    quint32 NumInd;
+
     quint32 BlockSize;
     QString XName;
-//    double XBegin;
+
     double XStep;
     QString DescriptionFormat;
     QString CreatedBy;

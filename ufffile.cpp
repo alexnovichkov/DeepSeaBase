@@ -38,17 +38,7 @@ int abscissaType(const QString &xName)
     return 0; //0 - unknown
 }
 
-double threshold(const QString &name)
-{
-    if (name=="м/с2" || name=="м/с^2" || name=="м/с*2" || name=="m/s2" || name=="m/s^2") return 3.14e-4;
-    if (name=="Па" || name=="Pa" || name=="hPa" || name=="kPa" || name=="MPa"
-        || name=="N/m2" || name=="N/mm2") return 2.0e-5;
-    if (name=="м/с" || name=="m/s") return 5.0e-8;
-    if (name=="м" || name=="m") return 8.0e-14;
 
-
-    return 1.0;
-}
 
 QString abscissaTypeDescription(int type)
 {
@@ -261,6 +251,18 @@ QString UffFileDescriptor::xName() const
     return xname;
 }
 
+void UffFileDescriptor::setLegend(const QString &legend)
+{
+    if (legend == header.type151[8].value.toString()) return;
+    header.type151[8].value = legend;
+    setChanged(true);
+}
+
+QString UffFileDescriptor::legend() const
+{
+    return header.type151[8].value.toString();
+}
+
 void UffFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
 {DD;
     for (int i=channels.size()-1; i>=0; --i) {
@@ -333,7 +335,7 @@ void UffFileDescriptor::calculateMean(const QMultiHash<FileDescriptor *, int> &c
             numInd = list.at(i)->samplesCount();
     }
 
-    ch->values = new double[numInd];
+    ch->values = QVector<double>(numInd, 0.0);
 
     ch->yMin = 1.0e100;
     ch->yMax = -1.0e100;
@@ -595,7 +597,7 @@ void FunctionHeader::write(QTextStream &stream)
 
 Function::Function(UffFileDescriptor *parent) : Channel(),
     xMax(0.0), yMin(0.0), yMax(0.0),
-    samples(0), values(0), parent(parent)
+    samples(0), /*values(0),*/ parent(parent)
 {DD;
     type58 = {
         {FTDelimiter,""}, {FTEmpty, ""}, //0-1
@@ -859,9 +861,10 @@ Function::Function(Channel &other)
     };
 
     samples = other.samplesCount();
-    values = new double[samplesCount()];
-    memcpy(static_cast<void *>(values), static_cast<void *>(other.yValues()),
-           samplesCount()*sizeof(double));
+    values = other.yValues();
+//    values = new double[samplesCount()];
+//    memcpy(static_cast<void *>(values), static_cast<void *>(other.yValues()),
+//           samplesCount()*sizeof(double));
 
     type58[4].value = other.name();
     type58[6].value = other.description();
@@ -894,16 +897,17 @@ Function::Function(const Function &other)
     yMin = other.yMin;
     yMax = other.yMax;
 
-    values = new double[samplesCount()];
-    memcpy(static_cast<void *>(values), static_cast<void *>(other.values),
-           samplesCount()*sizeof(double));
+    values = other.values;
+//    values = new double[samplesCount()];
+//    memcpy(static_cast<void *>(values), static_cast<void *>(other.values),
+//           samplesCount()*sizeof(double));
     parent = other.parent;
     type58 = other.type58;
 }
 
 Function::~Function()
 {DD;
-    delete [] values;
+    //delete [] values;
 }
 
 void Function::read(QTextStream &stream)
@@ -926,8 +930,8 @@ void Function::read(QTextStream &stream)
             || type58[43].value.toString()=="Уровень")
             doLog=false;
         if (this->type()==Descriptor::FrequencyResponseFunction) thr=1.0;
+        values = QVector<double>(samples, 0.0);
         if (type58[25].value.toInt() < 5) {//real values
-            values = new double[samples];
             for (quint32 i=0; i<samples; ++i) {
                 double yValue;
                 stream >> yValue;
@@ -938,7 +942,6 @@ void Function::read(QTextStream &stream)
             }
         }
         else {//complex values
-            values = new double[samples];
             double first, second;
             for (quint32 i=0; i<samples; ++i) {
                 stream >> first >> second; //qDebug()<<first<<second;
@@ -1127,6 +1130,12 @@ void Function::populate()
     // Nothing to do here
 }
 
+void Function::clear()
+{
+    values.clear();
+    setPopulated(false);
+}
+
 QString Function::name() const
 {DD;
     return type58[4].value.toString();
@@ -1180,7 +1189,7 @@ quint32 Function::samplesCount() const
     return samples;
 }
 
-double *Function::yValues()
+QVector<double> &Function::yValues()
 {DD;
     return values;
 }

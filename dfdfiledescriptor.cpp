@@ -165,6 +165,7 @@ void DfdFileDescriptor::read()
     if (childGroups.contains("DataDescription")) {
         dataDescription = new DataDescription(this);
         dataDescription->read(dfd);
+
     }
 
     // [Source]
@@ -175,7 +176,7 @@ void DfdFileDescriptor::read()
 
     // [Process]
     if (childGroups.contains("Process")) {
-        process = new Process(this);
+        process = new Process();
         process->read(dfd);
     }
 
@@ -347,6 +348,21 @@ void DfdFileDescriptor::setDataDescriptor(const DescriptionList &data)
     }
 }
 
+void DfdFileDescriptor::setLegend(const QString &legend)
+{DD;
+    if (legend == _legend) return;
+    _legend = legend;
+    setChanged(true);
+    if (!dataDescription)
+        dataDescription = new DataDescription(this);
+    write();
+}
+
+QString DfdFileDescriptor::legend() const
+{DD;
+    return _legend;
+}
+
 void DfdFileDescriptor::setFileName(const QString &name)
 {DD;
     FileDescriptor::setFileName(name);
@@ -462,7 +478,7 @@ void DfdFileDescriptor::calculateMean(const QMultiHash<FileDescriptor *, int> &c
                 numInd = list.at(i)->samplesCount();
         }
 
-        ch->YValues = new double[numInd];
+        ch->YValues = QVector<double>(numInd, 0.0);
 
         ch->yMin = 1.0e100;
         ch->yMax = -1.0e100;
@@ -518,7 +534,6 @@ void DfdFileDescriptor::calculateMean(const QMultiHash<FileDescriptor *, int> &c
         ch->YMaxInitial = ch->yMax;
 
         ch->parent = this;
-        ch->_populated = true;
 
         this->channels << ch;
         this->NumChans++;
@@ -605,7 +620,7 @@ QString DfdFileDescriptor::createGUID()
     return result;
 }
 
-Process::Process(DfdFileDescriptor *parent) : parent(parent)
+Process::Process()
 {DD;
 
 }
@@ -689,7 +704,7 @@ DfdChannel::DfdChannel(DfdFileDescriptor *parent, int channelIndex)
       XMaxInitial(0.0),
       YMinInitial(0.0),
       YMaxInitial(0.0),
-      YValues(0),
+      //YValues(0),
       parent(parent),
       channelIndex(channelIndex),
       _populated(false)
@@ -723,9 +738,10 @@ DfdChannel::DfdChannel(const DfdChannel &other)
     YMinInitial = other.YMinInitial; // initial yMin value to display
     YMaxInitial = other.YMaxInitial; // initial yMax value to display
 
-    YValues = new double[samplesCount()];
-    memcpy(static_cast<void *>(YValues), static_cast<void *>(other.YValues),
-           samplesCount()*sizeof(double));
+    YValues = other.YValues;
+//    YValues = new double[samplesCount()];
+//    memcpy(static_cast<void *>(YValues), static_cast<void *>(other.YValues),
+//           samplesCount()*sizeof(double));
 
     parent = other.parent;
     channelIndex = other.channelIndex;
@@ -757,9 +773,10 @@ DfdChannel::DfdChannel(Channel &other)
     YMinInitial = yMin;
     YMaxInitial = yMax;
 
-    YValues = new double[NumInd];
-    memcpy(static_cast<void *>(YValues), static_cast<const void *>(other.yValues()),
-           NumInd*sizeof(double));
+    YValues = other.yValues();
+//    YValues = new double[NumInd];
+//    memcpy(static_cast<void *>(YValues), static_cast<const void *>(other.yValues()),
+//           NumInd*sizeof(double));
 
     _populated = true;
     dataType = dfdDataTypeFromDataType(other.type());
@@ -769,7 +786,7 @@ DfdChannel::DfdChannel(Channel &other)
 
 DfdChannel::~DfdChannel()
 {DD;
-    delete [] YValues;
+    //delete [] YValues;
 }
 
 void DfdChannel::read(QSettings &dfd, int chanIndex)
@@ -837,15 +854,16 @@ QStringList DfdChannel::getInfoData()
 void DfdChannel::populate()
 {DD;
     // clear previous data;
-    delete [] YValues;
-    YValues = 0;
+    //delete [] YValues;
+    //YValues = 0;
+    YValues.clear();
 
     QFile rawFile(parent->attachedFileName());
     if (rawFile.open(QFile::ReadOnly)) {
 
         // число отсчетов в канале
         quint32 NI = samplesCount();
-        YValues = new double[NI];
+        YValues = QVector<double>(NI, 0.0);
 
         quint32 xCount = 0;
 
@@ -894,8 +912,14 @@ void DfdChannel::populate()
     //    qDebug()<<"end populate channel #"<<this->channelIndex;
 }
 
-quint32 DfdChannel::blockSizeInBytes() const
+void DfdChannel::clear()
 {DD;
+    YValues.clear();
+    setPopulated(false);
+}
+
+quint32 DfdChannel::blockSizeInBytes() const
+{
     return ChanBlockSize * (IndType % 16);
 }
 
@@ -1037,13 +1061,13 @@ double DfdChannel::xBegin() const
 
 quint32 DfdChannel::samplesCount() const
 {DD;
-    return NumInd;
+    return NumInd;//YValues.size();
 }
 
 void DfdChannel::addCorrection(double correctionValue, bool writeToFile)
 {
     populate();
-    for (uint j = 0; j < samplesCount(); ++j)
+    for (uint j = 0; j < YValues.size(); ++j)
         YValues[j] += correctionValue;
 
     oldCorrectionValue = correctionValue;
@@ -1145,7 +1169,7 @@ void RawChannel::populate()
     YMinInitial = 0.0;
     YMaxInitial = 0.0;
 
-    if (!YValues) return;
+    if (YValues.isEmpty()) return;
     const int steps = qMin(samplesCount(), 200u);
     for (int i=0; i<steps; ++i) {
         double val = YValues[i];
@@ -1153,34 +1177,6 @@ void RawChannel::populate()
         if (val < YMinInitial) YMinInitial = val;
     }
 }
-
-
-//QString dllForMethod(int methodType)
-//{DD;
-//    if (methodType<0 || methodType>25) return "";
-//    return methods[methodType].methodDll;
-//}
-
-
-//QString methodDescription(int methodType)
-//{DD;
-//    if (methodType<0 || methodType>25) return "";
-//    return methods[methodType].methodDescription;
-//}
-
-
-//int panelTypeForMethod(int methodType)
-//{DD;
-//    if (methodType<0 || methodType>25) return -1;
-//    return methods[methodType].panelType;
-//}
-
-
-//DfdDataType dataTypeForMethod(int methodType)
-//{DD;
-//    if (methodType<0 || methodType>25) return NotDef;
-//    return methods[methodType].dataType;
-//}
 
 
 DataDescription::DataDescription(DfdFileDescriptor *parent) : parent(parent)

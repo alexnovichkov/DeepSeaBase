@@ -342,7 +342,7 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col)
 
     g->legend = ch->legendName();
     g->setLegendIconSize(QSize(16,8));
-    g->setRawSamples(ch->xBegin(), ch->xStep(), ch->yValues(), ch->samplesCount());
+    g->setRawSamples(ch->xBegin(), ch->xStep(), ch->yValues().data(), ch->samplesCount());
 
     bool needFixBoundaries = !hasGraphs() && zoom;
 

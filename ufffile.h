@@ -39,7 +39,7 @@ public:
 
     quint32 samples;
 
-    double *values;
+    QVector<double> values;
 
     UffFileDescriptor *parent;
     QVector<FieldDescription> type58;
@@ -53,6 +53,7 @@ public:
     virtual bool populated() const;
     virtual void setPopulated(bool populated);
     virtual void populate();
+    virtual void clear();
     virtual QString name() const;
     virtual void setName(const QString &name);
     virtual QString description() const;
@@ -63,7 +64,7 @@ public:
     virtual double xBegin() const;
     virtual double xStep() const;
     virtual quint32 samplesCount() const;
-    virtual double *yValues();
+    virtual QVector<double> &yValues();
     virtual double xMaxInitial() const;
     virtual double yMinInitial() const;
     virtual double yMaxInitial() const;
@@ -122,6 +123,9 @@ public:
     virtual QString dateTime() const;
     virtual double xStep() const;
     virtual QString xName() const;
+
+    virtual void setLegend(const QString &legend);
+    virtual QString legend() const;
 
 
     virtual void deleteChannels(const QVector<int> &channelsToDelete);

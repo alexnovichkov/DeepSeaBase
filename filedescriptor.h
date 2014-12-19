@@ -53,6 +53,7 @@ typedef QList<DescriptionEntry> DescriptionList;
 
 QString descriptionEntryToString(const DescriptionEntry &entry);
 
+double threshold(const QString &name);
 
 class FileDescriptor
 {
@@ -111,8 +112,8 @@ public:
 
     virtual bool isSourceFile() const {return false;}
 
-    QString legend() const {return _legend;}
-    void setLegend(const QString &legend);
+    virtual QString legend() const =0;
+    virtual void setLegend(const QString &legend)=0;
 
     virtual double xStep() const = 0;/*{return XStep;}*/
 
@@ -138,7 +139,7 @@ private:
     QString _fileName;
     bool _changed;
     bool _dataChanged;
-    QString _legend;
+//    QString _legend;
     double XBegin;
     quint32 NumInd;
 };
@@ -159,6 +160,7 @@ public:
     virtual bool populated() const = 0;
     virtual void setPopulated(bool populated) = 0;
     virtual void populate() = 0;
+    virtual void clear() = 0;
 
     virtual QString name() const = 0;
     virtual void setName(const QString &name) = 0;
@@ -174,7 +176,7 @@ public:
     virtual double xBegin() const = 0;
     virtual double xStep() const = 0;
     virtual quint32 samplesCount() const = 0;
-    virtual double *yValues() = 0;
+    virtual QVector<double> &yValues() = 0;
     virtual double xMaxInitial() const = 0;
     virtual double yMinInitial() const = 0;
     virtual double yMaxInitial() const = 0;

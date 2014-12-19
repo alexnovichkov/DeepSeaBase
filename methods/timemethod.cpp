@@ -50,6 +50,19 @@ QStringList TimeMethod::methodSettings(DfdFileDescriptor *dfd, int activeChannel
     return spfFile;
 }
 
+QStringList TimeMethod::settings(DfdFileDescriptor *dfd, int bandStrip)
+{
+    return methodSettings(dfd,1,bandStrip);
+}
+
+Parameters TimeMethod::parameters(DfdFileDescriptor *dfd)
+{
+    Parameters p;
+    p.blockSize = resolutionCombo->currentText().toInt();
+
+    return p;
+}
+
 QString TimeMethod::methodDll()
 {
     return "TimeWv.dll";

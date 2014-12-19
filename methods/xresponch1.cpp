@@ -110,6 +110,48 @@ QStringList XresponcH1Method::methodSettings(DfdFileDescriptor *dfd, int activeC
     return spfFile;
 }
 
+QStringList XresponcH1Method::settings(DfdFileDescriptor *dfd, int bandStrip)
+{
+    QStringList spfFile;
+
+    spfFile << "PName="+methodName();
+    spfFile << "pTime=(0000000000000000)";
+
+    spfFile << QString("BlockIn=%1").arg(resolutionCombo->currentText());
+    spfFile << "Wind="+windowCombo->currentText();
+    spfFile << "TypeAver="+averCombo->currentText();
+
+
+    const quint32 samplesCount = dfd->channels.first()->samplesCount();
+    const double blockSize = resolutionCombo->currentText().toDouble();
+    double NumberOfAveraging = double(samplesCount) / blockSize;
+
+    while (bandStrip>0) {
+        NumberOfAveraging /= 2.0;
+        bandStrip--;
+    }
+
+    // at least 2 averaging
+    if (NumberOfAveraging<1.0) NumberOfAveraging = 2.0;
+
+    spfFile << QString("NAver=%1").arg(qRound(NumberOfAveraging));
+    spfFile << "Values="+valuesCombo->currentText();
+    spfFile << "TypeScale="+scaleCombo->currentText();
+
+    return spfFile;
+}
+
+Parameters XresponcH1Method::parameters(DfdFileDescriptor *dfd)
+{
+    Parameters p;
+    p.averagingType = averCombo->currentIndex();
+    p.blockSize = resolutionCombo->currentText().toInt();
+    p.windowType = windowCombo->currentIndex();
+    p.scaleType = scaleCombo->currentIndex();
+
+    return p;
+}
+
 QString XresponcH1Method::methodDll()
 {
     return "xresponcH1.dll";

@@ -37,7 +37,9 @@ SOURCES += main.cpp\
     logging.cpp \
     filedescriptor.cpp \
     ufffile.cpp \
-    editdescriptionsdialog.cpp
+    editdescriptionsdialog.cpp \
+    iirfilter.cpp \
+    windowing.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -64,7 +66,9 @@ HEADERS  += mainwindow.h \
     filedescriptor.h \
     ufffile.h \
     fields.h \
-    editdescriptionsdialog.h
+    editdescriptionsdialog.h \
+    iirfilter.h \
+    windowing.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\
@@ -78,12 +82,11 @@ RESOURCES *= DeepSeaBase.qrc
 
 RC_FILE *= DeepSeaBase.rc
 
-#include(xlsx/qtxlsx.pri)
-
 CONFIG(release, debug|release):LIBS *= C:/Qwt-6.1.0/lib/libqwt.a
 CONFIG(debug, debug|release):  LIBS *= C:/Qwt-6.1.0/lib/libqwtd.a
 
-#LIBS *= -Qt5AxBase -Qt5AxContainer
+INCLUDEPATH *= K:/My/programming/sources/libsamplerate-0.1.8/src
+LIBS *= K:/My/programming/sources/libsamplerate-0.1.8/release/libsamplerate.a
 
 INCLUDEPATH *= C:/Qwt-6.1.0/include
 

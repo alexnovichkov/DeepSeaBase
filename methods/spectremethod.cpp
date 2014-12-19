@@ -112,8 +112,8 @@ QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, int activeChan
     spfFile << "TypeAver="+averCombo->currentText();
 
     quint32 numberOfInd = dfd->channels.at(activeChannel)->samplesCount();
-    double resolution = resolutionCombo->currentText().toDouble();
-    double NumberOfAveraging = double(numberOfInd) / resolution;
+    double blockSize = resolutionCombo->currentText().toDouble();
+    double NumberOfAveraging = double(numberOfInd) / blockSize;
 
     while (strip>0) {
         NumberOfAveraging /= 2.0;
@@ -126,10 +126,53 @@ QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, int activeChan
     spfFile << QString("NAver=%1").arg(qRound(NumberOfAveraging));
     spfFile << "TypeProc="+typeCombo->currentText();
     spfFile << "Values="+valuesCombo->currentText();
-    spfFile << "TypeScale="+typeCombo->currentText();
+    spfFile << "TypeScale="+scaleCombo->currentText();
     spfFile << "AddProc="+addProcCombo->currentText();
 
     return spfFile;
+}
+
+QStringList SpectreMethod::settings(DfdFileDescriptor *dfd, int strip)
+{
+    QStringList spfFile;
+
+    spfFile << "PName="+methodName();
+    spfFile << QString("BlockIn=%1").arg(resolutionCombo->currentText());
+    spfFile << "Wind="+windowCombo->currentText();
+    spfFile << "TypeAver="+averCombo->currentText();
+    spfFile << "pTime=(0000000000000000)";
+
+    const quint32 samplesCount = dfd->channels.first()->samplesCount();
+    const double blockSize = resolutionCombo->currentText().toDouble();
+    double NumberOfAveraging = double(samplesCount) / blockSize;
+
+    while (strip>0) {
+        NumberOfAveraging /= 2.0;
+        strip--;
+    }
+
+    // at least 2 averaging
+    if (NumberOfAveraging<1.0) NumberOfAveraging = 2.0;
+
+    spfFile << QString("NAver=%1").arg(qRound(NumberOfAveraging));
+
+    spfFile << "TypeProc="+typeCombo->currentText();
+    spfFile << "Values="+valuesCombo->currentText();
+    spfFile << "TypeScale="+scaleCombo->currentText();
+    spfFile << "AddProc="+addProcCombo->currentText();
+
+    return spfFile;
+}
+
+Parameters SpectreMethod::parameters(DfdFileDescriptor *dfd)
+{
+    Parameters p;
+    p.averagingType = averCombo->currentIndex();
+    p.blockSize = resolutionCombo->currentText().toInt();
+    p.windowType = windowCombo->currentIndex();
+    p.scaleType = scaleCombo->currentIndex();
+
+    return p;
 }
 
 QString SpectreMethod::methodDll()
