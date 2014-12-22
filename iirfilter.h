@@ -3,16 +3,24 @@
 
 #include <QtCore>
 
+class Parameters;
+
 class IIRFilter
 {
 public:
-    IIRFilter(double sampleRate, double cutoffFrequency, QVector<double> &input);
-    QVector<double> &output();
+    IIRFilter(const Parameters &p);
+
+    void filter(QVector<double> &input);
 private:
+    void computeCoefficients(double sampleRate, double cutoff);
+    void reset();
     QVector<double> a;
     QVector<double> b;
     QVector<double> state;
-    QVector<double> &y;
+
+    QVector<double> y;
+    QVector<double> x;
+
 };
 
 #endif // IIRFILTER_H

@@ -33,6 +33,8 @@ struct Parameters
 
     QVector<double> window; // коэффициенты оконной функции
 
+    int fCount; // число отсчетов в частотной области
+
     //double *x; //
     //quint32 xSize;
 };

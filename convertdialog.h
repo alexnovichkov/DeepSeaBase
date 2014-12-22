@@ -15,6 +15,7 @@ class DfdFileDescriptor;
 class QProgressBar;
 class DfdChannel;
 class Parameters;
+class QCheckBox;
 
 class ConvertDialog : public QDialog
 {
@@ -32,16 +33,13 @@ public slots:
 private slots:
     void updateProgressIndicator(const QString &path);
 private:
-    bool copyFilesToTempDir(const QVector<int> &, const QString &tempFolderName);
     void moveFilesFromTempDir(const QString &tempFolderName, QString destDir);
     int stripByBandwidth(double bandwidth);
 
     QString createUniqueFileName(const QString &tempFolderName, const QString &fileName);
 
     void convert(DfdFileDescriptor *dfd, const QString &tempFolderName);
-//    double *resample(DfdChannel *channel, double sampleRate, double newSampleRate, quint32 &newSamplesCount);
-    QVector<double> &filter(DfdChannel *channel, const Parameters &p);
-    QVector<double> decimate(const QVector<double> &values, int band);
+    QVector<double> filter(const QVector<double> &input, Parameters &p);
     void applyWindow(QVector<double> &values, const Parameters &p);
     QVector<double> computeSpectre(const QVector<double> &values, const Parameters &p);
 
@@ -61,6 +59,7 @@ private:
     QComboBox *activeStripCombo;
     QLabel *infoLabel;
     QSpinBox *overlap;
+    QCheckBox *useDeepsea;
 
     QProcess *process;
     QProgressBar *progress;

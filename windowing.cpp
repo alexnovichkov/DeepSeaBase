@@ -1,15 +1,20 @@
 #include "windowing.h"
 
-Windowing::Windowing(int windowType, int block)
+#include "methods/abstractmethod.h"
+
+Windowing::Windowing(const Parameters &p)
 {
+    double block = p.blockSize;
+   // if (p.bandStrip > 0) block = block / (2 << (p.bandStrip-1));
+
     w = QVector<double>(block, 0.0);
 
-    if (windowType == 0) square();
-    else if (windowType == 1) triangular();
-    else if (windowType == 2) hann();
-    else if (windowType == 3) hamming();
-    else if (windowType == 4) natoll();
-    else if (windowType == 5) gauss();
+    if (p.windowType == 0) square();
+    else if (p.windowType == 1) triangular();
+    else if (p.windowType == 2) hann();
+    else if (p.windowType == 3) hamming();
+    else if (p.windowType == 4) natoll();
+    else if (p.windowType == 5) gauss();
 }
 
 void Windowing::square()

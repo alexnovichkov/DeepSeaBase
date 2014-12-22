@@ -3,10 +3,12 @@
 
 #include <QtCore>
 
+class Parameters;
+
 class Windowing
 {
 public:
-    Windowing(int windowType, int block);
+    Windowing(const Parameters &p);
     QVector<double> windowing() {return w;}
 private:
     void square();
