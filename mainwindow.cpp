@@ -558,8 +558,8 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tabWidget->setCurrentIndex(i);
 
     foreach (const QString &folder, folders) {
-        if (QFileInfo(folder).exists()) {
-            tab->folders.append(folder);
+        QFileInfo fi(folder);
+        if (fi.exists()) {
             addFolder(folder, true);
         }
     }
@@ -725,6 +725,8 @@ void MainWindow::addFile()
 
     setSetting("lastDirectory", fileNames.first());
     addFiles(fileNames);
+    foreach (const QString &file, fileNames)
+        if (!tab->folders.contains(file)) tab->folders << file;
 }
 
 void MainWindow::addFolder(const QString &directory, bool silent)
@@ -2195,6 +2197,8 @@ void MainWindow::addFiles(const QStringList &files)
     for (int i=0; i<files.size(); ++i) {
         QString file = files[i];
 
+        //if (!tab->folders.contains(file)) tab->folders << file;
+
         FileDescriptor *dfd = findDescriptor(file);
         if (!dfd) {
             dfd = createDescriptor(file);
@@ -2217,9 +2221,14 @@ void MainWindow::deleteFiles(const QVector<int> &indexes)
         FileDescriptor *d = item->fileDescriptor;
         plot->deleteGraphs(d);
 
+        if (tab->folders.contains(d->fileName()))
+            tab->folders.removeOne(d->fileName());
+
         delete tab->tree->takeTopLevelItem(indexes.at(i));
         if (!findDescriptor(d)) delete d;
         taken = true;
+
+
     }
     if (taken) {
         tab->channelsTable->setRowCount(0);

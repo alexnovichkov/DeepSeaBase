@@ -4,8 +4,7 @@
 
 Windowing::Windowing(const Parameters &p)
 {
-    double block = p.blockSize;
-   // if (p.bandStrip > 0) block = block / (2 << (p.bandStrip-1));
+    int block = p.blockSize;
 
     w = QVector<double>(block, 0.0);
 

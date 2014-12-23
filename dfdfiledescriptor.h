@@ -139,10 +139,8 @@ public:
     virtual double postprocess(double v) {return v;}
     virtual void postprocess(QVector<double> & v) {Q_UNUSED(v);}
    // double getValue(QDataStream &readStream);
-    QVector<double> getValue(QDataStream &readStream);
+    QVector<double> getValue(QDataStream &readStream, quint32 chunkSize, quint32 *actuallyRead=0);
     void setValue(double val, QDataStream &writeStream);
-
-
 
     virtual QString xName() const;
     virtual QString yName() const {return YName;}

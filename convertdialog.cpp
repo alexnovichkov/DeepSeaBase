@@ -324,10 +324,12 @@ void ConvertDialog::convert(DfdFileDescriptor *dfd, const QString &tempFolderNam
     p.averagesCount = int(1.0 * dfd->channels[0]->samplesCount() / p.blockSize / (1.0 - p.overlap));
     if (dfd->channels[0]->samplesCount() % p.averagesCount !=0) p.averagesCount++;
 
-    //newDfd->process->data.append({"NAver", QString::number(p.averagesCount)});
-
     for (int i=0; i<dfd->channelsCount(); ++i) {
         if (!dfd->channel(i)->populated()) dfd->channel(i)->populate();
+
+       //qDebug()<<dfd->channels[i]->YValues.size()<<UINT_MAX;
+
+
         p.threshold = threshold(dfd->channels[i]->yName());
 
         QVector<double> input = filter(dfd->channels[i]->YValues, p);
@@ -439,8 +441,9 @@ QVector<double> ConvertDialog::filter(const QVector<double> &input, Parameters &
 void ConvertDialog::applyWindow(QVector<double> &values, const Parameters &p)
 {DD;
     quint32 i=0;
-    while (i<values.size()) {
+    while (1) {
         for (int j=0; j<p.window.size(); j++) {
+            if (i >= values.size()) return;
             values[i] = values[i] * p.window[j];
             i++;
         }
@@ -607,6 +610,7 @@ void ConvertDialog::accept()
     newFiles.clear();
 
     QDateTime dt=QDateTime::currentDateTime();
+    qDebug()<<"Start converting"<<dt.time();
 
     QDir d;
     if (!d.exists("C:/DeepSeaBase-temp"))
@@ -674,6 +678,8 @@ void ConvertDialog::accept()
     foreach (DfdFileDescriptor *dfd, dataBase) {
         moveFilesFromTempDir(tempFolderName, dfd->fileName());
     }
+
+    qDebug()<<"End converting"<<QDateTime::currentDateTime().time();
 
     QDialog::accept();
 }

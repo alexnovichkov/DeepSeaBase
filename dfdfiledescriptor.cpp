@@ -851,6 +851,60 @@ QStringList DfdChannel::getInfoData()
                ;
 }
 
+//void DfdChannel::populate()
+//{DD;
+//    // clear previous data;
+//    YValues.clear();
+
+//    QFile rawFile(parent->attachedFileName());
+//    if (rawFile.open(QFile::ReadOnly)) {
+
+//        // число отсчетов в канале
+//        quint32 NI = samplesCount();
+
+//        yMin = 1.0e100;
+//        yMax = -1.0e100;
+
+//        QDataStream readStream(&rawFile);
+//        readStream.setByteOrder(QDataStream::LittleEndian);
+//        if (IndType==0xC0000004)
+//            readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+//        while (NI>0) {
+//            //read NumChans chunks
+//            //так как размеры блока разных каналов могут не совпадать, приходится учитывать все каналы
+//            for (quint32 i=0; i<parent->NumChans; ++i) {
+//                if (i==channelIndex) {
+
+//                    //QByteArray rawBlock = rawFile.read(parent->channels.at(i)->blockSizeInBytes());
+//                    QVector<double> temp = getValue(readStream);
+
+//                    for (int i=0; i<temp.size(); ++i) {
+//                        if (temp[i] < yMin) yMin = temp[i];
+//                        if (temp[i] > yMax) yMax = temp[i];
+//                    }
+
+//                    YValues << temp;
+//                    NI -= ChanBlockSize;
+//                }
+//                else {
+//                    readStream.skipRawData(parent->channels.at(i)->blockSizeInBytes());
+//                }
+//            }
+//        }
+//        xMin = parent->xBegin();
+//        xMax = xMin + XStep * YValues.size();
+//        XMaxInitial = xMax;
+//        YMinInitial = yMin;
+//        YMaxInitial = yMax;
+
+//        setPopulated(true);
+//    }
+//    else {
+//        qDebug()<<"Cannot read raw file"<<parent->attachedFileName();
+//    }
+//}
+
 void DfdChannel::populate()
 {DD;
     // clear previous data;
@@ -865,39 +919,74 @@ void DfdChannel::populate()
         yMin = 1.0e100;
         yMax = -1.0e100;
 
-        while (NI>0) {
-            //read NumChans chunks
-            //так как размеры блока разных каналов могут не совпадать, приходится учитывать все каналы
+        QDataStream readStream(&rawFile);
+        readStream.setByteOrder(QDataStream::LittleEndian);
+        if (IndType==0xC0000004)
+            readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+        if (parent->BlockSize == 0) {// без перекрытия, читаем подряд весь канал
             for (quint32 i=0; i<parent->NumChans; ++i) {
                 if (i==channelIndex) {
-                    QByteArray rawBlock = rawFile.read(parent->channels.at(i)->blockSizeInBytes());
-                    QDataStream readStream(rawBlock);
-                    readStream.setByteOrder(QDataStream::LittleEndian);
-                    if (IndType==0xC0000004)
-                        readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+                    QVector<double> temp = getValue(readStream, ChanBlockSize);
 
-                    QVector<double> temp = getValue(readStream);
+                    postprocess(temp);
 
                     for (int i=0; i<temp.size(); ++i) {
                         if (temp[i] < yMin) yMin = temp[i];
                         if (temp[i] > yMax) yMax = temp[i];
                     }
 
-                    YValues << temp;
-                    NI -= ChanBlockSize;
+                    YValues = temp;
                 }
                 else {
-                    rawFile.seek(rawFile.pos()+parent->channels.at(i)->blockSizeInBytes());
+                    readStream.skipRawData(parent->channels.at(i)->blockSizeInBytes());
+                }
+            }
+            xMin = parent->xBegin();
+            xMax = xMin + XStep * YValues.size();
+            XMaxInitial = xMax;
+            YMinInitial = yMin;
+            YMaxInitial = yMax;
+
+            setPopulated(true);
+        }
+        else {//с перекрытием, сначала читаем блок данных в 2048 отчетов для всех каналов
+            // если каналы имеют разный размер блоков, этот метод даст сбой
+            quint32 actuallyRead = 0;
+            while (1) {
+                quint32 chunkSize = parent->channelsCount() * ChanBlockSize;
+
+                QVector<double> temp = getValue(readStream, chunkSize, &actuallyRead);
+
+                //распихиваем данные по каналам
+                actuallyRead /= parent->channelsCount();
+                for (int i=0; i<parent->channelsCount();++i) {
+                    //if (!parent->channel(i)->populated()) {
+                    if (i == channelIndex) {
+                        parent->channels[i]->YValues << temp.mid(actuallyRead*i, actuallyRead);
+                    }
+                }
+                if (actuallyRead < ChanBlockSize) {
+                    qDebug()<<parent->fileName()<<"read"<<actuallyRead <<"of"<< ChanBlockSize;
+                    break;
+                }
+            }
+            for (int i=0; i<parent->channelsCount();++i) {
+                //if (!parent->channel(i)->populated()) {
+                if (i == channelIndex) {
+                    parent->channels[i]->postprocess(parent->channels[i]->YValues);
+                    parent->channels[i]->xMin = parent->xBegin();
+                    parent->channels[i]->xMax = parent->channels[i]->xMin
+                                                + parent->channels[i]->XStep
+                                                * parent->channels[i]->YValues.size();
+                    parent->channels[i]->XMaxInitial = parent->channels[i]->xMax;
+                    parent->channels[i]->YMinInitial = parent->channels[i]->yMin;
+                    parent->channels[i]->YMaxInitial = parent->channels[i]->yMax;
+
+                    parent->channels[i]->setPopulated(true);
                 }
             }
         }
-        xMin = parent->xBegin();
-        xMax = xMin + XStep * YValues.size();
-        XMaxInitial = xMax;
-        YMinInitial = yMin;
-        YMaxInitial = yMax;
-
-        setPopulated(true);
     }
     else {
         qDebug()<<"Cannot read raw file"<<parent->attachedFileName();
@@ -923,85 +1012,70 @@ QString DfdChannel::legendName() const
     return (ChanName.isEmpty()?ChanAddress:ChanName) + result;
 }
 
-QVector<double> DfdChannel::getValue(QDataStream &readStream)
+template <typename T>
+QVector<double> readChunk(QDataStream &readStream, quint32 blockSize, quint32 *actuallyRead)
 {
-    QVector<double> result(ChanBlockSize);
+    QVector<double> result(blockSize);
+    T v;
+
+    if (actuallyRead) *actuallyRead = 0;
+
+    for (quint32 i=0; i<blockSize; ++i) {
+        if (readStream.atEnd()) {
+            break;
+        }
+
+        readStream >> v;
+        result[i] = double(v);
+        if (actuallyRead) (*actuallyRead)++;
+    }
+
+    return result;
+}
+
+QVector<double> DfdChannel::getValue(QDataStream &readStream, quint32 chunkSize, quint32 *actuallyRead)
+{
+    QVector<double> result;
 
     switch (IndType) {
         case 0x00000001: {
-            quint8 v;
-            for (quint32 i=0; i<ChanBlockSize; ++i) {
-                readStream >> v;
-                result[i] = double(v);
-            }
+            result = readChunk<quint8>(readStream, chunkSize, actuallyRead);
             break;
         }
         case 0x80000001: {
-            qint8 v;
-            for (quint32 i=0; i<ChanBlockSize; ++i) {
-                readStream >> v;
-                result[i] = double(v);
-            }
+            result = readChunk<qint8>(readStream, chunkSize, actuallyRead);
             break;
         }
         case 0x00000002: {
-            quint16 v;
-            for (quint32 i=0; i<ChanBlockSize; ++i) {
-                readStream >> v;
-                result[i] = double(v);
-            }
+            result = readChunk<quint16>(readStream, chunkSize, actuallyRead);
             break;
         }
         case 0x80000002: {
-            quint16 v;
-            for (quint32 i=0; i<ChanBlockSize; ++i) {
-                readStream >> v;
-                result[i] = double(v);
-            }
+            result = readChunk<qint16>(readStream, chunkSize, actuallyRead);
             break;
         }
         case 0x00000004: {
-            quint32 v;
-            for (quint32 i=0; i<ChanBlockSize; ++i) {
-                readStream >> v;
-                result[i] = double(v);
-            }
+            result = readChunk<quint32>(readStream, chunkSize, actuallyRead);
             break;
         }
         case 0x80000004: {
-            qint32 v;
-            for (quint32 i=0; i<ChanBlockSize; ++i) {
-                readStream >> v;
-                result[i] = double(v);
-            }
+            result = readChunk<qint32>(readStream, chunkSize, actuallyRead);
             break;
         }
         case 0x80000008: {
-            qint64 v;
-            for (quint32 i=0; i<ChanBlockSize; ++i) {
-                readStream >> v;
-                result[i] = double(v);
-            }
+            result = readChunk<qint64>(readStream, chunkSize, actuallyRead);
             break;
         }
         case 0xC0000004: {
-            float v;
-            for (quint32 i=0; i<ChanBlockSize; ++i) {
-                readStream >> v;
-                result[i] = double(v);
-            }
+            result = readChunk<float>(readStream, chunkSize, actuallyRead);
             break;
         }
         case 0xC0000008:
         case 0xC000000A:
-            for (quint32 i=0; i<ChanBlockSize; ++i) {
-                readStream >> result[i];
-            }
+            result = readChunk<double>(readStream, chunkSize, actuallyRead);
             break;
         default: break;
     }
-
-    postprocess(result);
 
     return result;
 }
