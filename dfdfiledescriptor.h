@@ -137,7 +137,9 @@ public:
     //применение смещения и усиления,
     //для получения реального значения
     virtual double postprocess(double v) {return v;}
-    double getValue(QDataStream &readStream);
+    virtual void postprocess(QVector<double> & v) {Q_UNUSED(v);}
+   // double getValue(QDataStream &readStream);
+    QVector<double> getValue(QDataStream &readStream);
     void setValue(double val, QDataStream &writeStream);
 
 
@@ -230,7 +232,9 @@ public:
     virtual QStringList getInfoHeaders();
     virtual QStringList getInfoData();
     virtual double postprocess(double v);
+    virtual void postprocess(QVector<double> &v);
     virtual double preprocess(double v);
+
     void populate();
     QString SensName;
     double ADC0;
@@ -240,6 +244,8 @@ public:
     double Sens0Shift;
     double SensSensitivity;
     float BandWidth;
+private:
+    double coef1, coef2, coef3, coef4;
 };
 
 class Source

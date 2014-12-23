@@ -854,8 +854,6 @@ QStringList DfdChannel::getInfoData()
 void DfdChannel::populate()
 {DD;
     // clear previous data;
-    //delete [] YValues;
-    //YValues = 0;
     YValues.clear();
 
     QFile rawFile(parent->attachedFileName());
@@ -863,9 +861,6 @@ void DfdChannel::populate()
 
         // число отсчетов в канале
         quint32 NI = samplesCount();
-        YValues = QVector<double>(NI, 0.0);
-
-        quint32 xCount = 0;
 
         yMin = 1.0e100;
         yMax = -1.0e100;
@@ -881,16 +876,14 @@ void DfdChannel::populate()
                     if (IndType==0xC0000004)
                         readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-                    while (!readStream.atEnd()) {
-                        double yValue = getValue(readStream);
+                    QVector<double> temp = getValue(readStream);
 
-                        if (yValue < yMin) yMin = yValue;
-                        if (yValue > yMax) yMax = yValue;
-
-                        YValues[xCount] = yValue;
-
-                        xCount++;
+                    for (int i=0; i<temp.size(); ++i) {
+                        if (temp[i] < yMin) yMin = temp[i];
+                        if (temp[i] > yMax) yMax = temp[i];
                     }
+
+                    YValues << temp;
                     NI -= ChanBlockSize;
                 }
                 else {
@@ -899,7 +892,7 @@ void DfdChannel::populate()
             }
         }
         xMin = parent->xBegin();
-        xMax = xMin + XStep * xCount;
+        xMax = xMin + XStep * YValues.size();
         XMaxInitial = xMax;
         YMinInitial = yMin;
         YMaxInitial = yMax;
@@ -909,7 +902,6 @@ void DfdChannel::populate()
     else {
         qDebug()<<"Cannot read raw file"<<parent->attachedFileName();
     }
-    //    qDebug()<<"end populate channel #"<<this->channelIndex;
 }
 
 void DfdChannel::clear()
@@ -931,59 +923,142 @@ QString DfdChannel::legendName() const
     return (ChanName.isEmpty()?ChanAddress:ChanName) + result;
 }
 
-double DfdChannel::getValue(QDataStream &readStream)
+QVector<double> DfdChannel::getValue(QDataStream &readStream)
 {
-    double realValue = 0.0;
+    QVector<double> result(ChanBlockSize);
+
     switch (IndType) {
         case 0x00000001: {
             quint8 v;
-            readStream >> v;
-            realValue = (double)v;
-            break;}
+            for (quint32 i=0; i<ChanBlockSize; ++i) {
+                readStream >> v;
+                result[i] = double(v);
+            }
+            break;
+        }
         case 0x80000001: {
             qint8 v;
-            readStream >> v;
-            realValue = (double)v;
-            break;}
+            for (quint32 i=0; i<ChanBlockSize; ++i) {
+                readStream >> v;
+                result[i] = double(v);
+            }
+            break;
+        }
         case 0x00000002: {
             quint16 v;
-            readStream >> v;
-            realValue = (double)v;
-            break;}
+            for (quint32 i=0; i<ChanBlockSize; ++i) {
+                readStream >> v;
+                result[i] = double(v);
+            }
+            break;
+        }
         case 0x80000002: {
-            qint16 v;
-            readStream >> v;
-            realValue = (double)v;
-            break;}
+            quint16 v;
+            for (quint32 i=0; i<ChanBlockSize; ++i) {
+                readStream >> v;
+                result[i] = double(v);
+            }
+            break;
+        }
         case 0x00000004: {
             quint32 v;
-            readStream >> v;
-            realValue = (double)v;
-            break;}
+            for (quint32 i=0; i<ChanBlockSize; ++i) {
+                readStream >> v;
+                result[i] = double(v);
+            }
+            break;
+        }
         case 0x80000004: {
             qint32 v;
-            readStream >> v;
-            realValue = (double)v;
-            break;}
+            for (quint32 i=0; i<ChanBlockSize; ++i) {
+                readStream >> v;
+                result[i] = double(v);
+            }
+            break;
+        }
         case 0x80000008: {
             qint64 v;
-            readStream >> v;
-            realValue = (double)v;
-            break;}
+            for (quint32 i=0; i<ChanBlockSize; ++i) {
+                readStream >> v;
+                result[i] = double(v);
+            }
+            break;
+        }
         case 0xC0000004: {
             float v;
-            readStream >> v;
-            realValue = v;
-            break;}
+            for (quint32 i=0; i<ChanBlockSize; ++i) {
+                readStream >> v;
+                result[i] = double(v);
+            }
+            break;
+        }
         case 0xC0000008:
         case 0xC000000A:
-            readStream >> realValue;
+            for (quint32 i=0; i<ChanBlockSize; ++i) {
+                readStream >> result[i];
+            }
             break;
         default: break;
     }
 
-    return postprocess(realValue);
+    postprocess(result);
+
+    return result;
 }
+
+//double DfdChannel::getValue(QDataStream &readStream)
+//{
+//    double realValue = 0.0;
+//    switch (IndType) {
+//        case 0x00000001: {
+//            quint8 v;
+//            readStream >> v;
+//            realValue = (double)v;
+//            break;}
+//        case 0x80000001: {
+//            qint8 v;
+//            readStream >> v;
+//            realValue = (double)v;
+//            break;}
+//        case 0x00000002: {
+//            quint16 v;
+//            readStream >> v;
+//            realValue = (double)v;
+//            break;}
+//        case 0x80000002: {
+//            qint16 v;
+//            readStream >> v;
+//            realValue = (double)v;
+//            break;}
+//        case 0x00000004: {
+//            quint32 v;
+//            readStream >> v;
+//            realValue = (double)v;
+//            break;}
+//        case 0x80000004: {
+//            qint32 v;
+//            readStream >> v;
+//            realValue = (double)v;
+//            break;}
+//        case 0x80000008: {
+//            qint64 v;
+//            readStream >> v;
+//            realValue = (double)v;
+//            break;}
+//        case 0xC0000004: {
+//            float v;
+//            readStream >> v;
+//            realValue = v;
+//            break;}
+//        case 0xC0000008:
+//        case 0xC000000A:
+//            readStream >> realValue;
+//            break;
+//        default: break;
+//    }
+
+//    return postprocess(realValue);
+//}
 
 void DfdChannel::setValue(double val, QDataStream &writeStream)
 {
@@ -1099,6 +1174,12 @@ void RawChannel::read(QSettings &dfd, int chanIndex)
     BandWidth = hextofloat(dfd.value("BandWidth").toString()); //qDebug()<< "BandWidth"<< ch.bandwidth;
     SensName = dfd.value("SensName").toString();
     dfd.endGroup();
+
+    coef1 = ADCStep / AmplLevel / SensSensitivity;
+    coef2 = (ADC0 / AmplLevel - AmplShift - Sens0Shift) / SensSensitivity;
+
+    coef3 = SensSensitivity * AmplLevel / ADCStep;
+    coef4 = ((Sens0Shift + AmplShift) * AmplLevel - ADC0) / ADCStep;
 }
 
 void RawChannel::write(QTextStream &dfd, int chanIndex)
@@ -1150,14 +1231,21 @@ QStringList RawChannel::getInfoData()
     return result;
 }
 
+void RawChannel::postprocess(QVector<double> &v)
+{
+    for (int i=0; i<v.size(); ++i) v[i] = v[i]*coef1+coef2;
+}
+
 double RawChannel::postprocess(double v)
 {
-    return ((v*ADCStep+ADC0)/AmplLevel - AmplShift - Sens0Shift)/SensSensitivity;
+    //return ((v*ADCStep+ADC0)/AmplLevel - AmplShift - Sens0Shift)/SensSensitivity;
+    return v*coef1+coef2;
 }
 
 double RawChannel::preprocess(double v)
 {
-    return ((v * SensSensitivity + Sens0Shift + AmplShift) * AmplLevel - ADC0) / ADCStep;
+    //return ((v * SensSensitivity + Sens0Shift + AmplShift) * AmplLevel - ADC0) / ADCStep;
+    return v*coef3+coef4;
 }
 
 void RawChannel::populate()
