@@ -242,7 +242,6 @@ public:
     double Sens0Shift;
     double SensSensitivity;
     float BandWidth;
-private:
     double coef1, coef2, coef3, coef4;
 };
 

@@ -39,7 +39,7 @@ private:
     QString createUniqueFileName(const QString &tempFolderName, const QString &fileName);
 
     void convert(DfdFileDescriptor *dfd, const QString &tempFolderName);
-    QVector<double> filter(const QVector<double> &input, Parameters &p);
+    QVector<double> filter(QVector<double> &input, Parameters &p);
     void applyWindow(QVector<double> &values, const Parameters &p);
     QVector<double> computeSpectre(const QVector<double> &values, const Parameters &p);
 

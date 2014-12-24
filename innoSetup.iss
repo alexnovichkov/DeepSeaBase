@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "DeepSea Database"
-#define MyAppVersion "1.3.6.2"
+#define MyAppVersion "1.3.7"
 #define MyAppPublisher "Novichkov & Sukin Sons."
 #define MyAppExeName "DeepSeaBase.exe"
 
@@ -44,6 +44,7 @@ Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\bin\Qt5PrintSupport.dll"; DestDir: "{app
 Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\bin\Qt5Svg.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\bin\Qt5Widgets.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\My\build\DeepSeaBase\release\qwt.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\My\build\DeepSeaBase\release\samplerate.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\plugins\iconengines\*.dll"; DestDir: "{app}\iconengines"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\plugins\imageformats\*.dll"; DestDir: "{app}\imageformats"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 Source: "K:\Qt\Qt5.2.1\5.2.1\mingw48_32\plugins\platforms\*.dll"; DestDir: "{app}\platforms"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"

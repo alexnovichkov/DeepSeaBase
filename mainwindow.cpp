@@ -171,7 +171,7 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), tab(0)
 {DD;
-    setWindowTitle(tr("DeepSea Database 1.3.6.2"));
+    setWindowTitle(tr("DeepSea Database 1.3.7"));
     setAcceptDrops(true);
 
     mainToolBar = new QToolBar(this);
@@ -790,7 +790,7 @@ void MainWindow::deleteChannels() /** SLOT */
     QList<QPair<FileDescriptor*, int> > channelsToDelete = selectedChannels();
     if (channelsToDelete.isEmpty()) return;
 
-    if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \nудалены из файлов. Продолжить?")==QMessageBox::Yes) {
+    if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \nудалены из файла. Продолжить?")==QMessageBox::Yes) {
         deleteChannels(channelsToDelete);
 
         QList<FileDescriptor*> list;
@@ -890,7 +890,7 @@ void MainWindow::moveChannels() /** SLOT */
     QList<QPair<FileDescriptor*, int> > channelsToMove = selectedChannels();
     if (channelsToMove.isEmpty()) return;
 
-    if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \nудалены из файлов. Продолжить?")==QMessageBox::Yes) {
+    if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \nудалены из файла. Продолжить?")==QMessageBox::Yes) {
         if (copyChannels(channelsToMove)) {
             deleteChannels(channelsToMove);
             QList<FileDescriptor*> list;

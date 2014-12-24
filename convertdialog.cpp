@@ -228,19 +228,23 @@ QString ConvertDialog::createUniqueFileName(const QString &tempFolderName, const
     return result+suffix+".dfd";
 }
 
-QVector<double> getBlock(const QVector<double> &values, const Parameters &p, quint32 &block)
+QVector<float> getBlock(const QVector<double> &values, const Parameters &p, quint32 &block)
 {
-    QVector<double> output;
-
     const quint32 N = values.size();
 
     double leftBorder_ = -1.0 * p.blockSize * p.overlap + block;
+
+    QVector<float> output;
 
     int leftBorder = qRound(leftBorder_);
     if (leftBorder < 0) leftBorder = 0;
     if (leftBorder >= N) return output;
 
-    output = values.mid(leftBorder, p.blockSize);
+    QVector<double> out = values.mid(leftBorder, p.blockSize);
+    output.resize(out.size());
+
+    for (int i=0; i<out.size(); ++i) output[i] = float(out[i]);
+
     block = leftBorder + p.blockSize;
     return output;
 }
@@ -329,26 +333,83 @@ void ConvertDialog::convert(DfdFileDescriptor *dfd, const QString &tempFolderNam
 
        //qDebug()<<dfd->channels[i]->YValues.size()<<UINT_MAX;
 
-
         p.threshold = threshold(dfd->channels[i]->yName());
 
-        QVector<double> input = filter(dfd->channels[i]->YValues, p);
-        applyWindow(input, p);
+        QVector<double> spectrum(p.fCount);
 
-        QVector<double> output = computeSpectre(input, p);
-        changeScale(output, p);
 
+        quint32 block = 0;
+
+        SRC_STATE *src_state = 0;
+        SRC_DATA src_data;
+        src_data.src_ratio = 1.0 / (2 << (p.bandStrip-1));
+        int error;
+        if (p.bandStrip > 0) src_state = src_new(2, 1, &error);
+        src_data.end_of_input = 0;
+
+        src_data.input_frames = p.blockSize;
+
+        QVector<float> filterOut(p.blockSize+100);
+        src_data.output_frames = filterOut.size();
+        src_data.data_out = filterOut.data();
+
+
+        QVector<double> filtered;
+
+        quint32 averagesMade = 1;
+
+        bool reachedEnd = false;
+
+        while (1) {
+            while (filtered.size() < p.blockSize) {
+                QVector<float> chunk = getBlock(dfd->channels[i]->YValues, p, block);
+                const int chunkSize = chunk.size();
+                if (chunkSize < p.blockSize) {
+                    reachedEnd = true;
+                    break;
+                }
+
+                if (p.bandStrip > 0) {//do filtration
+                    src_data.data_in = chunk.data();
+
+                    if ((error = src_process (src_state, &src_data))) {
+                        qDebug()<< "Error :" << src_strerror(error);
+                        break;
+                    }
+                    QVector<double> fil(p.blockSize / (2 << (p.bandStrip-1)));
+                    for (int i=0; i<fil.size(); ++i) fil[i] = filterOut[i];
+                    filtered << fil;
+                }
+                else {
+                    filtered.resize(p.blockSize);
+                    for (int i=0; i<filtered.size(); ++i) filtered[i] = double(chunk[i]);
+                }
+            }
+            if (reachedEnd) break;
+
+            //window
+            applyWindow(filtered, p);
+            //spectre
+            QVector<double> out = computeSpectre(filtered, p);
+            //average
+            average(spectrum, out, p, averagesMade++);
+
+            filtered.clear();
+        }
+        changeScale(spectrum, p);
+
+        if (src_state) src_delete(src_state);
 
         // Создаем канал и заполняем его
         DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
-        ch->YValues = output;
+        ch->YValues = spectrum;
 
         ch->yMin = 1.0e100;
         ch->yMax = -1.0e100;
 
-        for (int i=0; i<output.size(); ++i) {
-            if (output[i] < ch->yMin) ch->yMin = output[i];
-            if (output[i] > ch->yMax) ch->yMax = output[i];
+        for (int i=0; i<spectrum.size(); ++i) {
+            if (spectrum[i] < ch->yMin) ch->yMin = spectrum[i];
+            if (spectrum[i] > ch->yMax) ch->yMax = spectrum[i];
         }
 
         ch->setPopulated(true);
@@ -356,8 +417,8 @@ void ConvertDialog::convert(DfdFileDescriptor *dfd, const QString &tempFolderNam
 
         ch->ChanDscr = dfd->channels[i]->ChanDscr;
 
-        ch->ChanBlockSize = output.size();
-        ch->NumInd = output.size();
+        ch->ChanBlockSize = spectrum.size();
+        ch->NumInd = spectrum.size();
         ch->IndType = 3221225476;
 
         ch->YName = p.scaleType==0?dfd->channels[i]->yName():"дБ";
@@ -391,51 +452,9 @@ void ConvertDialog::convert(DfdFileDescriptor *dfd, const QString &tempFolderNam
     delete newDfd;
 }
 
-QVector<double> ConvertDialog::filter(const QVector<double> &input, Parameters &p)
+QVector<double> ConvertDialog::filter(QVector<double> &input, Parameters &p)
 {DD;
-    if (p.bandStrip == 0 && p.overlap==0.0) return input;
 
-    QVector<double> r;
-    if (p.overlap==0.0) r = input;
-    else {
-        quint32 block = 0;
-        QVector<double> chunk = getBlock(input, p, block);
-        while (chunk.size() == p.blockSize) {
-            r << chunk;
-            chunk = getBlock(input, p, block);
-        }
-    }
-
-    std::vector<float> in(r.begin(), r.end());
-
-    double factor = 1.0 / (2 << (p.bandStrip-1));
-
-    SRC_DATA src;
-    src.input_frames = (long)in.size();
-    src.data_in = in.data();
-
-    // add some samples to make sure we don't crash in a stupid way...
-    src.output_frames = (long)((double)in.size()*factor + 100.0);
-    QVector<float> output(src.output_frames);
-    src.data_out = output.data();
-
-    src.src_ratio = factor;
-
-    // do the conversion
-    int error = src_simple(&src, 2, 1);
-    if (error) {
-        qDebug()<<"Resample: Error in resampling: "<< src_strerror(error);
-        return input;
-    }
-
-    QVector<double> result(src.output_frames_gen);
-
-    for (quint32 i=0; i<qMin(result.size(), int(in.size())); ++i)
-        result[i] = output[i];
-
-    result.resize(input.size() / (2 << (p.bandStrip-1)));
-
-    return result;
 }
 
 void ConvertDialog::applyWindow(QVector<double> &values, const Parameters &p)
@@ -517,26 +536,9 @@ void FFTAnalysis(const QVector<double> &AVal, QVector<double> &FTvl)
 QVector<double> ConvertDialog::computeSpectre(const QVector<double> &values,
                                               const Parameters &p)
 {DD;
-    QVector<double> output(p.fCount);
-
-    quint32 averagesMade = 1;
-
-    quint32 i = 0;
-    const quint32 N = values.size();
-
-    int block = p.blockSize;
-
-    while (i < N) {
-        QVector<double> input = values.mid(i, block);
-
-        if (input.size() == block) {
-            QVector<double> y(block);
-            FFTAnalysis(input, y);
-
-            average(output, y, p, averagesMade++);
-        }
-        i += block;
-    }
+    QVector<double> output(p.blockSize);
+    FFTAnalysis(values, output);
+    output.resize(p.fCount);
 
     return output;
 }

@@ -905,12 +905,22 @@ QStringList DfdChannel::getInfoData()
 //    }
 //}
 
+QVector<double> postprocess(quint16 *data, quint32 dataSize, quint32 dataPos, double coef1, double coef2)
+{
+    QVector<double> result(dataSize);
+    for (int i=0; i<dataSize; ++i) result[i] = coef1*data[dataPos+i]+coef2;
+
+    return result;
+}
+
 void DfdChannel::populate()
 {DD;
     // clear previous data;
     YValues.clear();
 
     QFile rawFile(parent->attachedFileName());
+
+    bool allFile = rawFile.size() < 256 * 1024 * 1024;
     if (rawFile.open(QFile::ReadOnly)) {
 
         // число отсчетов в канале
@@ -955,26 +965,50 @@ void DfdChannel::populate()
             quint32 actuallyRead = 0;
             while (1) {
                 quint32 chunkSize = parent->channelsCount() * ChanBlockSize;
+                QVector<double> temp;
 
-                QVector<double> temp = getValue(readStream, chunkSize, &actuallyRead);
+//                if (IndType == 2) { //
+//                    QByteArray tt = rawFile.read(parent->channelsCount()*blockSizeInBytes());
 
-                //распихиваем данные по каналам
-                actuallyRead /= parent->channelsCount();
-                for (int i=0; i<parent->channelsCount();++i) {
-                    //if (!parent->channel(i)->populated()) {
-                    if (i == channelIndex) {
-                        parent->channels[i]->YValues << temp.mid(actuallyRead*i, actuallyRead);
+//                    quint16 *data = reinterpret_cast<quint16 *>(tt.data());
+//                    quint32 dataSize = tt.size() / 2;
+
+//                    actuallyRead = dataSize;
+
+//                    //temp.resize(dataSize);
+
+//                    //распихиваем данные по каналам
+//                    actuallyRead /= parent->channelsCount();
+//                    for (int i=0; i<parent->channelsCount();++i) {
+//                        if (allFile && !parent->channel(i)->populated()
+//                            || !allFile && i == channelIndex) {
+//                            RawChannel *rc = dynamic_cast<RawChannel *>(parent->channels[i]);
+//                            if (rc) {
+//                                rc->YValues << ::postprocess(data, actuallyRead, actuallyRead*i, rc->coef1, rc->coef2);
+//                            }
+//                        }
+//                    }
+//                }
+//                else {
+                    temp = getValue(readStream, chunkSize, &actuallyRead);
+
+                    //распихиваем данные по каналам
+                    actuallyRead /= parent->channelsCount();
+                    for (int i=0; i<parent->channelsCount();++i) {
+                        if (allFile && !parent->channel(i)->populated()
+                            || !allFile && i == channelIndex) {
+                            parent->channels[i]->YValues << temp.mid(actuallyRead*i, actuallyRead);
+                        }
                     }
-                }
+//                }
                 if (actuallyRead < ChanBlockSize) {
-                    qDebug()<<parent->fileName()<<"read"<<actuallyRead <<"of"<< ChanBlockSize;
                     break;
                 }
             }
             for (int i=0; i<parent->channelsCount();++i) {
-                //if (!parent->channel(i)->populated()) {
-                if (i == channelIndex) {
-                    parent->channels[i]->postprocess(parent->channels[i]->YValues);
+                if (allFile && !parent->channel(i)->populated()
+                    || !allFile && i == channelIndex) {
+                    //parent->channels[i]->postprocess(parent->channels[i]->YValues);
                     parent->channels[i]->xMin = parent->xBegin();
                     parent->channels[i]->xMax = parent->channels[i]->xMin
                                                 + parent->channels[i]->XStep
