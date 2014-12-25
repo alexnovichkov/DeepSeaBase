@@ -14,7 +14,7 @@
 #include "windowing.h"
 
 ConvertDialog::ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent) :
-    QDialog(parent), /*dataBase(dataBase),*/ process(0)
+    QDialog(parent), process(0)
 {DD;
     foreach (FileDescriptor *d, *dataBase) {
         DfdFileDescriptor *dd = static_cast<DfdFileDescriptor *>(d);
@@ -227,19 +227,12 @@ QString ConvertDialog::createUniqueFileName(const QString &tempFolderName, const
     return result+suffix+".dfd";
 }
 
-QVector<float> getBlock(const QVector<double> &values, quint32 blockSize, quint32 stepBack, quint32 &block)
+QVector<float> getBlock(const QVector<float> &values, quint32 blockSize, quint32 stepBack, quint32 &block)
 {
     const quint32 N = values.size();
-
     QVector<float> output;
-
     if (block >= N) return output;
-
-    QVector<double> out = values.mid(block, blockSize);
-    output.resize(out.size());
-
-    for (int i=0; i<out.size(); ++i) output[i] = float(out[i]);
-
+    output = values.mid(block, blockSize);
     block += blockSize - stepBack;
     return output;
 }
@@ -324,7 +317,8 @@ void ConvertDialog::convert(DfdFileDescriptor *dfd, const QString &tempFolderNam
     if (dfd->channels[0]->samplesCount() % p.averagesCount !=0) p.averagesCount++;
 
     for (int i=0; i<dfd->channelsCount(); ++i) {
-        if (!dfd->channel(i)->populated()) dfd->channel(i)->populate();
+        dfd->channels[i]->populateFloat();
+
         qApp->processEvents();
 
         p.threshold = threshold(dfd->channels[i]->yName());
@@ -351,7 +345,7 @@ void ConvertDialog::convert(DfdFileDescriptor *dfd, const QString &tempFolderNam
 
         while (1) {
             // получаем блок данных размером blockSize * 2^bandStrip // 2048 4096 и т.д.
-            QVector<float> chunk = getBlock(dfd->channels[i]->YValues, newBlockSize, stepBack, block);
+            QVector<float> chunk = getBlock(dfd->channels[i]->floatValues, newBlockSize, stepBack, block);
 
             if (chunk.size() < p.blockSize) break;
 

@@ -138,8 +138,7 @@ public:
     //для получения реального значения
     virtual double postprocess(double v) {return v;}
     virtual void postprocess(QVector<double> & v) {Q_UNUSED(v);}
-   // double getValue(QDataStream &readStream);
-    QVector<double> getValue(QDataStream &readStream, quint32 chunkSize, quint32 *actuallyRead=0);
+
     void setValue(double val, QDataStream &writeStream);
 
     virtual QString xName() const;
@@ -162,6 +161,9 @@ public:
     virtual bool populated() const {return _populated;}
     virtual void setPopulated(bool populated) {_populated = populated;}
     virtual void populate();
+    void populateFloat();
+    QVector<float> floatValues;
+
     virtual void clear();
 
 //    virtual bool typeDiffers(Channel *other);
