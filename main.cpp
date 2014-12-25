@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
 //    short i=1;
 //    qDebug()<<i;
 //    i=-1;
-//    qDebug()<<i;
+//    qDebug()<<1 << (1<<0) << (1<<1) << (1 << 2);
 //    qDebug()<<sizeof(short) << sizeof(quint16);
 
     MainWindow w;

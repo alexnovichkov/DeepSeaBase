@@ -70,7 +70,9 @@ public:
     static void setSetting(const QString &key, const QVariant &value);
 private slots:
     void addFolder();
-    void addFolder(const QString &directory, bool silent = false);
+    void addFolderWithSubfolders();
+
+    void addFolder(const QString &directory, bool withAllSubfolders, bool silent = false);
     void deleteFiles();
     void addFile();
 
@@ -182,6 +184,7 @@ private:
 
 
     QAction *addFolderAct;
+    QAction *addFolderWithSubfoldersAct;
     QAction *addFileAct;
 
 

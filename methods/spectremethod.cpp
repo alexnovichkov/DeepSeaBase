@@ -46,7 +46,7 @@ SpectreMethod::SpectreMethod(QWidget *parent) :
     nAverCombo->addItem("1024");
     nAverCombo->addItem("до конца интервала");
     nAverCombo->setCurrentIndex(10);
-    nAverCombo->setEditable(false);
+   // nAverCombo->setEditable(false);
     nAverCombo->setEnabled(false);
 
     typeCombo = new QComboBox(this);
@@ -68,7 +68,7 @@ SpectreMethod::SpectreMethod(QWidget *parent) :
     scaleCombo->addItem("линейная");
     scaleCombo->addItem("в децибелах");
     scaleCombo->setCurrentIndex(1);
-    scaleCombo->setEnabled(false);
+//    scaleCombo->setEnabled(false);
     scaleCombo->setEditable(false);
 
     addProcCombo = new QComboBox(this);

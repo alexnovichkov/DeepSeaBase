@@ -212,7 +212,6 @@ QStringList ConvertDialog::getSpfFile(/*const QVector<int> &indexes, */QString d
 
 QString ConvertDialog::createUniqueFileName(const QString &tempFolderName, const QString &fileName)
 {
-
     QString method = currentMethod->methodDll();
     method.chop(4);
     QString result = tempFolderName+"\\"+QFileInfo(fileName).baseName()+"_"+method;
@@ -228,24 +227,20 @@ QString ConvertDialog::createUniqueFileName(const QString &tempFolderName, const
     return result+suffix+".dfd";
 }
 
-QVector<float> getBlock(const QVector<double> &values, const Parameters &p, quint32 &block)
+QVector<float> getBlock(const QVector<double> &values, quint32 blockSize, quint32 stepBack, quint32 &block)
 {
     const quint32 N = values.size();
 
-    double leftBorder_ = -1.0 * p.blockSize * p.overlap + block;
-
     QVector<float> output;
 
-    int leftBorder = qRound(leftBorder_);
-    if (leftBorder < 0) leftBorder = 0;
-    if (leftBorder >= N) return output;
+    if (block >= N) return output;
 
-    QVector<double> out = values.mid(leftBorder, p.blockSize);
+    QVector<double> out = values.mid(block, blockSize);
     output.resize(out.size());
 
     for (int i=0; i<out.size(); ++i) output[i] = float(out[i]);
 
-    block = leftBorder + p.blockSize;
+    block += blockSize - stepBack;
     return output;
 }
 
@@ -330,62 +325,51 @@ void ConvertDialog::convert(DfdFileDescriptor *dfd, const QString &tempFolderNam
 
     for (int i=0; i<dfd->channelsCount(); ++i) {
         if (!dfd->channel(i)->populated()) dfd->channel(i)->populate();
-
-       //qDebug()<<dfd->channels[i]->YValues.size()<<UINT_MAX;
+        qApp->processEvents();
 
         p.threshold = threshold(dfd->channels[i]->yName());
-
         QVector<double> spectrum(p.fCount);
-
-
         quint32 block = 0;
+        quint32 averagesMade = 1;
 
-        SRC_STATE *src_state = 0;
+        QVector<float> filtered;
+
         SRC_DATA src_data;
-        src_data.src_ratio = 1.0 / (2 << (p.bandStrip-1));
+        src_data.src_ratio = 1.0 / (1 << p.bandStrip);
         int error;
-        if (p.bandStrip > 0) src_state = src_new(2, 1, &error);
+
+        SRC_STATE *src_state = src_new(2, 1, &error);
         src_data.end_of_input = 0;
 
-        src_data.input_frames = p.blockSize;
+        const int newBlockSize = p.blockSize * (1<<p.bandStrip);
 
-        QVector<float> filterOut(p.blockSize+100);
+        const quint32 stepBack = quint32(1.0*newBlockSize * p.overlap); //qDebug()<<stepBack;
+
+        QVector<float> filterOut(newBlockSize+100);
         src_data.output_frames = filterOut.size();
         src_data.data_out = filterOut.data();
 
-
-        QVector<double> filtered;
-
-        quint32 averagesMade = 1;
-
-        bool reachedEnd = false;
-
         while (1) {
-            while (filtered.size() < p.blockSize) {
-                QVector<float> chunk = getBlock(dfd->channels[i]->YValues, p, block);
-                const int chunkSize = chunk.size();
-                if (chunkSize < p.blockSize) {
-                    reachedEnd = true;
+            // получаем блок данных размером blockSize * 2^bandStrip // 2048 4096 и т.д.
+            QVector<float> chunk = getBlock(dfd->channels[i]->YValues, newBlockSize, stepBack, block);
+
+            if (chunk.size() < p.blockSize) break;
+
+            if (p.bandStrip > 0) {//do filtration
+                src_data.data_in = chunk.data();
+                src_data.input_frames = chunk.size();
+
+                if ((error = src_process(src_state, &src_data))) {
+                    qDebug()<< "Error :" << src_strerror(error);
                     break;
                 }
-
-                if (p.bandStrip > 0) {//do filtration
-                    src_data.data_in = chunk.data();
-
-                    if ((error = src_process (src_state, &src_data))) {
-                        qDebug()<< "Error :" << src_strerror(error);
-                        break;
-                    }
-                    QVector<double> fil(p.blockSize / (2 << (p.bandStrip-1)));
-                    for (int i=0; i<fil.size(); ++i) fil[i] = filterOut[i];
-                    filtered << fil;
-                }
-                else {
-                    filtered.resize(p.blockSize);
-                    for (int i=0; i<filtered.size(); ++i) filtered[i] = double(chunk[i]);
-                }
+                filtered = filterOut.mid(0, p.blockSize);
             }
-            if (reachedEnd) break;
+            else {
+                filtered = chunk;
+            }
+
+            Q_ASSERT(filtered.size() == p.blockSize);
 
             //window
             applyWindow(filtered, p);
@@ -393,12 +377,12 @@ void ConvertDialog::convert(DfdFileDescriptor *dfd, const QString &tempFolderNam
             QVector<double> out = computeSpectre(filtered, p);
             //average
             average(spectrum, out, p, averagesMade++);
-
-            filtered.clear();
+            qApp->processEvents();
         }
+        if (src_state) src_delete(src_state);
+
         changeScale(spectrum, p);
 
-        if (src_state) src_delete(src_state);
 
         // Создаем канал и заполняем его
         DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
@@ -440,9 +424,6 @@ void ConvertDialog::convert(DfdFileDescriptor *dfd, const QString &tempFolderNam
         qApp->processEvents();
     }
 
-
-
-
     newDfd->NumChans = newDfd->channels.size();
     newDfd->setSamplesCount(newDfd->channel(0)->samplesCount());
     newDfd->setChanged(true);
@@ -452,12 +433,7 @@ void ConvertDialog::convert(DfdFileDescriptor *dfd, const QString &tempFolderNam
     delete newDfd;
 }
 
-QVector<double> ConvertDialog::filter(QVector<double> &input, Parameters &p)
-{DD;
-
-}
-
-void ConvertDialog::applyWindow(QVector<double> &values, const Parameters &p)
+void ConvertDialog::applyWindow(QVector<float> &values, const Parameters &p)
 {DD;
     quint32 i=0;
     while (1) {
@@ -472,7 +448,7 @@ void ConvertDialog::applyWindow(QVector<double> &values, const Parameters &p)
 const double TwoPi = 6.283185307179586;
 
 // возвращает квадрат амплитуды * 2 / размер блока^2
-void FFTAnalysis(const QVector<double> &AVal, QVector<double> &FTvl)
+void FFTAnalysis(const QVector<float> &AVal, QVector<double> &FTvl)
 {
     int Nvl = AVal.size();
     int Nft = FTvl.size();
@@ -533,7 +509,7 @@ void FFTAnalysis(const QVector<double> &AVal, QVector<double> &FTvl)
     }
 }
 
-QVector<double> ConvertDialog::computeSpectre(const QVector<double> &values,
+QVector<double> ConvertDialog::computeSpectre(const QVector<float> &values,
                                               const Parameters &p)
 {DD;
     QVector<double> output(p.blockSize);
@@ -611,7 +587,7 @@ void ConvertDialog::accept()
 {DD;
     newFiles.clear();
 
-    QDateTime dt=QDateTime::currentDateTime();
+    dt=QDateTime::currentDateTime();
     qDebug()<<"Start converting"<<dt.time();
 
     QDir d;
@@ -619,8 +595,8 @@ void ConvertDialog::accept()
         d.mkdir("C:/DeepSeaBase-temp");
 
     QTemporaryDir tempDir("C:\\DeepSeaBase-temp\\temp-XXXXXX");
-    tempDir.setAutoRemove(false);
-    const QString tempFolderName = tempDir.path();
+    tempDir.setAutoRemove(true);
+    tempFolderName = tempDir.path();
 
     progress->show();
     progress->setValue(0);
@@ -633,7 +609,7 @@ void ConvertDialog::accept()
     else {
         infoLabel->setText("Подождите, пока работает DeepSea...\n"
                            "Не забудьте закрыть DeepSea, когда она закончит расчеты");
-        QStringList spfFile = getSpfFile(tempFolderName/*it.value(), tempFolderName*/);
+        QStringList spfFile = getSpfFile(tempFolderName);
         QTemporaryFile file("spffile_XXXXXX.spf");
         file.setAutoRemove(false);
         if (file.open()) {
@@ -642,7 +618,7 @@ void ConvertDialog::accept()
             foreach (QString s, spfFile) out << s << endl;
             file.close();
         }
-        else QDialog::reject();
+        else reject();
 
         QFileSystemWatcher watcher(QStringList()<<tempFolderName,this);
         connect(&watcher, SIGNAL(directoryChanged(QString)), SLOT(updateProgressIndicator(QString)));
@@ -667,7 +643,7 @@ void ConvertDialog::accept()
         const int code = process->exitCode();
         if (code != 0) {
             QMessageBox::critical(this, "DeepSea Base - обработка", "DeepSea завершился с ошибкой!");
-            return;
+            reject();
         }
     }
 
@@ -684,6 +660,23 @@ void ConvertDialog::accept()
     qDebug()<<"End converting"<<QDateTime::currentDateTime().time();
 
     QDialog::accept();
+}
+
+void ConvertDialog::reject()
+{DD;
+    QFileInfoList newFilesList = QDir(tempFolderName).entryInfoList(QStringList()<<"*.dfd",QDir::Files);
+    Q_FOREACH(const QFileInfo &newFile, newFilesList) {
+        if (newFile.created()>dt || newFile.lastModified()>dt)
+            newFiles_ << newFile.canonicalFilePath();
+    }
+
+    foreach (DfdFileDescriptor *dfd, dataBase) {
+        moveFilesFromTempDir(tempFolderName, dfd->fileName());
+    }
+
+    qDebug()<<"End converting"<<QDateTime::currentDateTime().time();
+
+    QDialog::reject();
 }
 
 void ConvertDialog::updateProgressIndicator(const QString &path)

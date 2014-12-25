@@ -189,6 +189,9 @@ MainWindow::MainWindow(QWidget *parent)
     addFolderAct->setShortcut(tr("Ctrl+O"));
     connect(addFolderAct, SIGNAL(triggered()), SLOT(addFolder()));
 
+    addFolderWithSubfoldersAct = new QAction(tr("Добавить папку со всеми вложенными папками"),this);
+    connect(addFolderWithSubfoldersAct, SIGNAL(triggered()), SLOT(addFolderWithSubfolders()));
+
     addFileAct  = new QAction(tr("Добавить файл"),this);
     connect(addFileAct, SIGNAL(triggered()), SLOT(addFile()));
 
@@ -345,6 +348,9 @@ MainWindow::MainWindow(QWidget *parent)
     editDescriptionsAct->setIcon(QIcon(":/icons/descriptor.png"));
     connect(editDescriptionsAct, SIGNAL(triggered()), SLOT(editDescriptions()));
 
+    QMenu *addFolderMenu = new QMenu(this);
+    addFolderMenu->addAction(addFolderWithSubfoldersAct);
+    addFolderAct->setMenu(addFolderMenu);
 
     mainToolBar->addWidget(new QLabel("Записи:"));
     mainToolBar->addAction(addFolderAct);
@@ -432,7 +438,8 @@ MainWindow::MainWindow(QWidget *parent)
 
 
 
-    QVariantMap v = getSetting("folders").toMap();
+    QVariantMap v = getSetting("folders1").toMap();
+    //qDebug()<<v;
     if (v.isEmpty())
         createNewTab();
     else {
@@ -557,10 +564,13 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     int i = tabWidget->addTab(tab, name);
     tabWidget->setCurrentIndex(i);
 
-    foreach (const QString &folder, folders) {
+    foreach (QString folder, folders) {
+        bool subfolders = folder.endsWith(":1");
+        if (subfolders || folder.endsWith(":0"))
+            folder.chop(2);
         QFileInfo fi(folder);
         if (fi.exists()) {
-            addFolder(folder, true);
+            addFolder(folder, subfolders, true);
         }
     }
 }
@@ -667,7 +677,9 @@ MainWindow::~MainWindow()
                 map.insert(tabWidget->tabText(i), t->folders);
         }
     }
-    setSetting("folders", map);
+    //qDebug()<<map;
+
+    setSetting("folders1", map);
 
     ColorSelector::instance()->drop();
 }
@@ -694,13 +706,27 @@ void MainWindow::addFolder()
     QString directory = getSetting("lastDirectory").toString();
 
     directory = QFileDialog::getExistingDirectory(this,
-                                                  tr("Add folder"),
+                                                  tr("Добавление папки"),
                                                   directory,
                                                   QFileDialog::ShowDirsOnly | QFileDialog::ReadOnly);
 
     if (directory.isEmpty()) return;
     setSetting("lastDirectory", directory);
-    addFolder(directory);
+    addFolder(directory, false, false);
+}
+
+void MainWindow::addFolderWithSubfolders()
+{
+    QString directory = getSetting("lastDirectory").toString();
+
+    directory = QFileDialog::getExistingDirectory(this,
+                                                  tr("Добавление папки со всеми вложенными папками"),
+                                                  directory,
+                                                  QFileDialog::ShowDirsOnly | QFileDialog::ReadOnly);
+
+    if (directory.isEmpty()) return;
+    setSetting("lastDirectory", directory);
+    addFolder(directory, true, false);
 }
 
 void MainWindow::addFile()
@@ -714,7 +740,7 @@ void MainWindow::addFile()
     dialog.setDefaultSuffix(defaultSuffix);
     QSortFilterProxyModel *proxy = new DfdUffFilterProxy(this);
     dialog.setProxyModel(proxy);
-    dialog.setFileMode(QFileDialog::AnyFile);
+    dialog.setFileMode(QFileDialog::ExistingFiles);
 
 
     QStringList fileNames;
@@ -729,14 +755,14 @@ void MainWindow::addFile()
         if (!tab->folders.contains(file)) tab->folders << file;
 }
 
-void MainWindow::addFolder(const QString &directory, bool silent)
+void MainWindow::addFolder(const QString &directory, bool withAllSubfolders, bool silent)
 {DD;
     if (directory.isEmpty()) return;
 
     if (!tab) return;
 
     QStringList filesToAdd;
-    processDir(directory, filesToAdd, true);
+    processDir(directory, filesToAdd, withAllSubfolders);
 
     QStringList toAdd;
     foreach (const QString &file, filesToAdd) {
@@ -752,9 +778,11 @@ void MainWindow::addFolder(const QString &directory, bool silent)
                                                  .arg(toAdd.size())
                                                  .arg(filesToAdd.size()));
     }
-    if (!toAdd.isEmpty())
-        if (!tab->folders.contains(directory))
-            tab->folders.append(directory);
+    if (!toAdd.isEmpty()) {
+        QString suffix = withAllSubfolders?":1":":0";
+        if (!tab->folders.contains(directory+suffix))
+            tab->folders.append(directory+suffix);
+    }
 }
 
 void MainWindow::deleteFiles()
@@ -1519,10 +1547,11 @@ void MainWindow::convertRecords()
 
     ConvertDialog dialog(&records, this);
 
-    if (dialog.exec()) {
-        QStringList newFiles = dialog.getNewFiles();
-        addFiles(newFiles);
-    }
+    dialog.exec();
+
+    QStringList newFiles = dialog.getNewFiles();
+    addFiles(newFiles);
+
 }
 
 void MainWindow::headerToggled(int column, Qt::CheckState state)
@@ -1608,8 +1637,17 @@ void MainWindow::rescanBase()
     tab->filePathLabel->clear();
 
     QStringList folders = tab->folders;
-    foreach (const QString &folder, folders)
-        addFolder(folder, true);
+    foreach (QString folder, folders) {
+        if (folder.endsWith(":0")) {
+            folder.chop(2);
+            addFolder(folder, false, false);
+        }
+        else if (folder.endsWith(":1")) {
+            folder.chop(2);
+            addFolder(folder, true, false);
+        }
+        else addFolder(folder, true, false);
+    }
 
     QMessageBox::information(this, "База данных", "В базе данных все записи \"живые\"!");
 }

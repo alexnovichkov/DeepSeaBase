@@ -2,6 +2,7 @@
 #define CONVERTDIALOG_H
 
 #include <QDialog>
+#include <QtCore>
 
 class AbstractMethod;
 
@@ -30,6 +31,7 @@ signals:
 public slots:
     void methodChanged(int method);
     virtual void accept();
+    virtual void reject();
 private slots:
     void updateProgressIndicator(const QString &path);
 private:
@@ -39,11 +41,13 @@ private:
     QString createUniqueFileName(const QString &tempFolderName, const QString &fileName);
 
     void convert(DfdFileDescriptor *dfd, const QString &tempFolderName);
-    QVector<double> filter(QVector<double> &input, Parameters &p);
-    void applyWindow(QVector<double> &values, const Parameters &p);
-    QVector<double> computeSpectre(const QVector<double> &values, const Parameters &p);
+    void applyWindow(QVector<float> &values, const Parameters &p);
+    QVector<double> computeSpectre(const QVector<float> &values, const Parameters &p);
 
     QList<DfdFileDescriptor *> dataBase;
+
+    QString tempFolderName;
+    QDateTime dt;
 
     QStringList newFiles;
     QStringList newFiles_;
