@@ -39,7 +39,8 @@ SOURCES += main.cpp\
     ufffile.cpp \
     editdescriptionsdialog.cpp \
     iirfilter.cpp \
-    windowing.cpp
+    windowing.cpp \
+    converter.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -68,7 +69,8 @@ HEADERS  += mainwindow.h \
     fields.h \
     editdescriptionsdialog.h \
     iirfilter.h \
-    windowing.h
+    windowing.h \
+    converter.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\

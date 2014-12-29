@@ -164,13 +164,18 @@ QStringList SpectreMethod::settings(DfdFileDescriptor *dfd, int strip)
     return spfFile;
 }
 
-Parameters SpectreMethod::parameters(DfdFileDescriptor *dfd)
+Parameters SpectreMethod::parameters()
 {
     Parameters p;
     p.averagingType = averCombo->currentIndex();
     p.blockSize = resolutionCombo->currentText().toInt();
     p.windowType = windowCombo->currentIndex();
     p.scaleType = scaleCombo->currentIndex();
+
+    p.panelType = panelType();
+    p.methodName = methodName();
+    p.methodDll = methodDll();
+    p.dataType = dataType();
 
     return p;
 }

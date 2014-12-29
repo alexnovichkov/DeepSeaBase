@@ -141,7 +141,7 @@ QStringList XresponcH1Method::settings(DfdFileDescriptor *dfd, int bandStrip)
     return spfFile;
 }
 
-Parameters XresponcH1Method::parameters(DfdFileDescriptor *dfd)
+Parameters XresponcH1Method::parameters()
 {
     Parameters p;
     p.averagingType = averCombo->currentIndex();

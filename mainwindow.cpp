@@ -171,7 +171,7 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), tab(0)
 {DD;
-    setWindowTitle(tr("DeepSea Database 1.3.7"));
+    setWindowTitle(tr("DeepSea Database 1.3.8"));
     setAcceptDrops(true);
 
     mainToolBar = new QToolBar(this);
@@ -540,7 +540,6 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
             QDir dir(tab->filePathLabel->text());
             dir.cdUp();
             QProcess::startDetached("explorer.exe", QStringList(dir.toNativeSeparators(dir.absolutePath())));
-            //QDesktopServices::openUrl(dir.canonicalPath());
         }
     });
 

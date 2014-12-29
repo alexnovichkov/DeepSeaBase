@@ -17,7 +17,7 @@ public:
     virtual int id();
     virtual QStringList methodSettings(DfdFileDescriptor *dfd, int activeChannel, int strip);
     virtual QStringList settings(DfdFileDescriptor *dfd, int bandStrip);
-    virtual Parameters parameters(DfdFileDescriptor *dfd);
+    virtual Parameters parameters();
     virtual QString methodDll();
     virtual int panelType();
     virtual QString methodName();

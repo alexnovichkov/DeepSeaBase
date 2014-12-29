@@ -2,8 +2,24 @@
 #define ABSTRACTMETHOD_H
 
 #include <QStringList>
+#include <QtCore>
 
 class DfdFileDescriptor;
+class Parameters;
+
+class AbstractMethod
+{
+public:
+    /* индекс в methodCombo */
+    virtual int id() = 0;
+    virtual QStringList methodSettings(DfdFileDescriptor *dfd, int activeChannel, int strip) = 0;
+    virtual QString methodDll() = 0;
+    virtual int panelType() = 0;
+    virtual QString methodName() = 0;
+    virtual int dataType() = 0;
+    virtual QStringList settings(DfdFileDescriptor *dfd, int bandStrip) = 0;
+    virtual Parameters parameters() = 0;
+};
 
 struct Parameters
 {
@@ -18,6 +34,9 @@ struct Parameters
                     //4 - Натолл
                     //5 - Гаусс
     int blockSize; // от 512 до 8192
+
+    int bandWidth;
+    int initialBandStrip;
     int bandStrip; //полоса обработки, 0 = исх. частота дискрет.
                   //                  1 = fd/2
                   //                  n = fd/2^n
@@ -35,22 +54,15 @@ struct Parameters
 
     int fCount; // число отсчетов в частотной области
 
-    //double *x; //
-    //quint32 xSize;
-};
+    bool useDeepSea;
 
-class AbstractMethod
-{
-public:
-    /* индекс в methodCombo */
-    virtual int id() = 0;
-    virtual QStringList methodSettings(DfdFileDescriptor *dfd, int activeChannel, int strip) = 0;
-    virtual QString methodDll() = 0;
-    virtual int panelType() = 0;
-    virtual QString methodName() = 0;
-    virtual int dataType() = 0;
-    virtual QStringList settings(DfdFileDescriptor *dfd, int bandStrip) = 0;
-    virtual Parameters parameters(DfdFileDescriptor *dfd) = 0;
+    int panelType; //тип панели для обработки с помощью DeepSea
+    QString methodName;
+    QString methodDll;
+    int dataType;
+    int activeChannel;
+
+    AbstractMethod *method;
 };
 
 #endif // ABSTRACTMETHOD_H

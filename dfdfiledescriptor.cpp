@@ -1061,6 +1061,7 @@ void DfdChannel::populate()
 
 void DfdChannel::populateFloat()
 {DD;
+    qDebug()<<QThread::currentThread();
     quint32 NI = samplesCount();
 
     if (floatValues.size() == NI) return;
@@ -1078,7 +1079,13 @@ void DfdChannel::populateFloat()
         if (parent->BlockSize == 0) {// без перекрытия, читаем подряд весь канал
             for (quint32 i=0; i<parent->NumChans; ++i) {
                 if (i==channelIndex) {
+                    if (QThread::currentThread()->isInterruptionRequested()) return;
+
                     floatValues = getValue<float>(readStream, ChanBlockSize, IndType);
+                    if (RawChannel *rawc = dynamic_cast<RawChannel*>(this)) {
+                        for (int k=0; k < floatValues.size(); ++k)
+                            floatValues[k] = floatValues[k]*rawc->coef1+rawc->coef2;
+                    }
                 }
                 else {
                     readStream.skipRawData(parent->channels.at(i)->blockSizeInBytes());
@@ -1090,6 +1097,8 @@ void DfdChannel::populateFloat()
             quint32 actuallyRead = 0;
 
             while (1) {
+                if (QThread::currentThread()->isInterruptionRequested()) return;
+
                 quint32 chunkSize = parent->channelsCount() * ChanBlockSize;
                 QVector<float> temp = getValue<float>(readStream, chunkSize, IndType, &actuallyRead);
 
