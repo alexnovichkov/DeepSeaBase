@@ -100,6 +100,8 @@ ConvertDialog::ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent)
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(start()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(stop()));
 
+    connect(this,SLOT(reject()), this, SLOT(stop()));
+
     QGridLayout *l = new QGridLayout;
     l->addWidget(new QLabel("Метод обработки", this), 0,0);
     l->addWidget(methodCombo,0,1);
@@ -165,7 +167,7 @@ void ConvertDialog::start()
     converter = new Converter(dataBase, p);
     converter->moveToThread(thread);
 
-    connect(this,SIGNAL(rejected()), SLOT(stop()));
+
 
     connect(thread, SIGNAL(started()), converter, SLOT(start()));
     connect(converter, SIGNAL(finished()), thread, SLOT(quit()));
@@ -182,7 +184,9 @@ void ConvertDialog::start()
 
 void ConvertDialog::stop()
 {DD;
+    if (thread)
     thread->requestInterruption();
+    QDialog::accept();
 }
 
 void ConvertDialog::accept()
@@ -194,7 +198,7 @@ void ConvertDialog::accept()
 
 void ConvertDialog::reject()
 {DD;
-    newFiles = converter->getNewFiles();
+    stop();
     QDialog::reject();
 }
 
