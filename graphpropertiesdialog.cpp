@@ -22,18 +22,21 @@ GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
     setWindowTitle("Настройки кривой");
 
     oldPen = curve->pen();
-    oldTitle = curve->title().text();
+    oldTitle = curve->channel->name();
 
     titleEdit = new QLineEdit(oldTitle, this);
     connect(titleEdit, &QLineEdit::textChanged, [=](const QString &newValue) {
-        this->curve->setTitle(newValue);
-        curve->legend = newValue;
-        curve->channel->name() = newValue;
+        curve->channel->setName(newValue);
+        curve->setTitle(curve->channel->legendName());
+//        curve->legend = curve->channel->legendName();
+
         curve->descriptor->setChanged(true);
         curve->descriptor->write();
         emit curveChanged(curve);
     }
     );
+
+
 
     widthSpinBox = new QSpinBox(this);
     widthSpinBox->setRange(0,20);
@@ -176,6 +179,7 @@ void GraphPropertiesDialog::reject()
 {
     curve->setPen(oldPen);
     curve->oldPen = oldPen;
-    curve->setTitle(oldTitle);
+    curve->channel->setName(oldTitle);
+    curve->setTitle(curve->channel->legendName());
     QDialog::reject();
 }

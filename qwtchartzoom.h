@@ -140,6 +140,10 @@ public:
     void setEnabled(bool enabled) {this->activated = enabled;}
 
     bool activated;
+public slots:
+    void labelSelected(bool selected);
+signals:
+    void updateTrackingCursor(double);
 protected:
     // обработчик всех событий
     bool eventFilter(QObject *,QEvent *);
@@ -217,7 +221,8 @@ public:
 
     // установка цвета рамки, задающей новый размер графика
     void setRubberBandColor(QColor);
-
+signals:
+    void xAxisClicked(double xValue);
 protected:
     // обработчик всех событий
     bool eventFilter(QObject *,QEvent *);

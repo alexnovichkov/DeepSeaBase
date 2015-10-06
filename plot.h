@@ -17,11 +17,32 @@ class QwtChartZoom;
 class QwtPlotZoomer;
 class PlotPicker;
 class QAction;
+class QwtPlotMarker;
 
 struct Range {
     void clear() {min = INFINITY; max = -INFINITY;}
     double min;
     double max;
+};
+
+#include <QWidget>
+class QTreeWidget;
+class TrackingPanel:public QWidget
+{
+    Q_OBJECT
+public:
+    struct TrackInfo {
+        QString name;
+        QColor color;
+        double yval;
+        double xval;
+    };
+
+    explicit TrackingPanel(QWidget *parent=0);
+    void updateState(const QList<TrackInfo> &curves);
+    void setX(double x);
+private:
+    QTreeWidget *tree;
 };
 
 class Plot : public QwtPlot
@@ -31,7 +52,8 @@ public:
     enum InteractionMode {
         NoInteraction,
         ScalingInteraction,
-        DataInteraction
+        DataInteraction,
+        LabelInteraction
     };
 
     explicit Plot(QWidget *parent = 0);
@@ -111,22 +133,21 @@ public:
     void moveGraph(Curve *curve);
 
     void setInteractionMode(InteractionMode mode);
-    bool switchInteractionMode();
+    void switchInteractionMode();
+    void switchHarmonicsMode();
+    void switchTrackingCursor();
 public slots:
     void savePlot();
     void switchCursor();
     void copyToClipboard();
     void print();
-
-    void onCurveChanged(Curve*);
-
-
 signals:
     void curveChanged(Curve *curve);
     void curveDeleted(FileDescriptor *descriptor, int index);
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
     void deleteGraph(const QVariant &info, int index);
+    void updateTrackingCursor(double xVal);
 private:
     void importPlot(const QString &fileName);
 
@@ -144,6 +165,10 @@ private:
     QwtPlotCanvas *canvas;
 
     QwtChartZoom *zoom;
+
+    TrackingPanel *trackingPanel;
+    QwtPlotMarker *_trackingCursor;
+    bool _showTrackingCursor;
 
     Range x1;
     Range y1;

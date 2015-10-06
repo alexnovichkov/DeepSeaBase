@@ -40,6 +40,7 @@ public:
     quint32 samples;
 
     QVector<double> values;
+    QVector<double> xvalues;
 
     UffFileDescriptor *parent;
     QVector<FieldDescription> type58;
@@ -65,6 +66,7 @@ public:
     virtual double xStep() const;
     virtual quint32 samplesCount() const;
     virtual QVector<double> &yValues();
+    virtual QVector<double> &xValues();
     virtual double xMaxInitial() const;
     virtual double yMinInitial() const;
     virtual double yMaxInitial() const;
@@ -122,6 +124,7 @@ public:
     virtual Descriptor::DataType type() const;
     virtual QString dateTime() const;
     virtual double xStep() const;
+    virtual void setXStep(const double xStep);
     virtual QString xName() const;
 
     virtual void setLegend(const QString &legend);
@@ -131,7 +134,8 @@ public:
     virtual void deleteChannels(const QVector<int> &channelsToDelete);
     virtual void copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy);
     /** Calculates mean of channels and writes to a file*/
-    virtual void calculateMean(const QMultiHash<FileDescriptor *, int> &channels);
+    virtual void calculateMean(const QList<QPair<FileDescriptor *, int> > &channels);
+    virtual FileDescriptor *calculateThirdOctave();
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes);
 
     virtual int channelsCount() const;

@@ -53,6 +53,7 @@ private:
     QCheckBox *useDeepsea;
     QDialogButtonBox *buttonBox;
     QProgressBar *progress;
+    QCheckBox *shutdown;
 
     double bandWidth;
 

@@ -205,11 +205,3 @@ int SpectreMethod::dataType()
     if (typeCombo->currentText()=="плотности мощн.") return 129;
     return 128;
 }
-
-int SpectreMethod::computeNumberOfAveraging(const QString &aver)
-{
-    if (aver=="до конца интервала") {
-
-    }
-    return aver.toInt();
-}

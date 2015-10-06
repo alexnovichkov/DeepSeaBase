@@ -149,12 +149,17 @@ Parameters XresponcH1Method::parameters()
     p.windowType = windowCombo->currentIndex();
     p.scaleType = scaleCombo->currentIndex();
 
+    p.panelType = panelType();
+    p.methodName = methodName();
+    p.methodDll = methodDll();
+    p.dataType = dataType();
+
     return p;
 }
 
 QString XresponcH1Method::methodDll()
 {
-    return "xresponcH1.dll";
+    return "XresponcH1.dll";
 }
 
 int XresponcH1Method::panelType()

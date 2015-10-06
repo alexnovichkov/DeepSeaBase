@@ -24,8 +24,6 @@ public:
     virtual int dataType();
 
 private:
-    int computeNumberOfAveraging(const QString &aver);
-//    QComboBox *rangeCombo;
     QComboBox *resolutionCombo;// Разрешение 512, 1024, 2048, 4096, 8192
     QComboBox *windowCombo;//Окно "Прямоуг.", "Бартлетта", "Хеннинга", "Хемминга", "Натолл", "Гаусс"
     QComboBox *averCombo;// Усреднение линейное, экспоненциальное, хранение максимума

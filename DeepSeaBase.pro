@@ -84,11 +84,11 @@ RESOURCES *= DeepSeaBase.qrc
 
 RC_FILE *= DeepSeaBase.rc
 
-CONFIG(release, debug|release):LIBS *= C:/Qwt-6.1.0/lib/libqwt.a
-CONFIG(debug, debug|release):  LIBS *= C:/Qwt-6.1.0/lib/libqwtd.a
+CONFIG(release, debug|release):LIBS *= C:/Qwt-6.1.2/lib/libqwt.a
+CONFIG(debug, debug|release):  LIBS *= C:/Qwt-6.1.2/lib/libqwtd.a
 
 INCLUDEPATH *= K:/My/programming/sources/libsamplerate-0.1.8/src
 LIBS *= K:/My/programming/sources/libsamplerate-0.1.8/release/libsamplerate.a
 
-INCLUDEPATH *= C:/Qwt-6.1.0/include
+INCLUDEPATH *= C:/Qwt-6.1.2/include
 

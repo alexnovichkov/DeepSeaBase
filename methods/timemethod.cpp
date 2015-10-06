@@ -60,6 +60,11 @@ Parameters TimeMethod::parameters()
     Parameters p;
     p.blockSize = resolutionCombo->currentText().toInt();
 
+    p.panelType = panelType();
+    p.methodName = methodName();
+    p.methodDll = methodDll();
+    p.dataType = dataType();
+
     return p;
 }
 

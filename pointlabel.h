@@ -14,7 +14,7 @@ class QwtPlot;
 class PointLabel : public QwtPlotItem
 {
 public:
-    explicit PointLabel( const QwtText &title, QwtPlot *parent);
+    explicit PointLabel(QwtPlot *parent);
 
     virtual ~PointLabel();
 
@@ -23,6 +23,10 @@ public:
     QPointF origin() const;
 
     void setOrigin(const QPointF &origin);
+
+    void setMode(int mode);
+    void cycleMode();
+    int mode() const {return d_mode;}
 
     int point() const;
 
@@ -47,6 +51,7 @@ public:
 
     bool contains(const QPoint &pos, int yAxis);
 private:
+    int d_mode;
     int d_point;
     QPointF d_origin; // origin of Label, equivalent to value of PlotMarker
     QPoint d_displacement; // displacement relative to invTransform(d_origin)

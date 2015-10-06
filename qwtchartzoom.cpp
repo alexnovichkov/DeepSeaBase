@@ -65,6 +65,7 @@ QwtChartZoom::QwtChartZoom(QwtPlot *qp) :
 
     // создаем интерфейс масштабирования графика
     mainZoom = new QMainZoomSvc();
+    connect(mainZoom,SIGNAL(xAxisClicked(double)),SIGNAL(updateTrackingCursor(double)));
     mainZoom->attach(this);
 
     // создаем интерфейс перемещенния графика
@@ -75,6 +76,7 @@ QwtChartZoom::QwtChartZoom(QwtPlot *qp) :
     wheelZoom->attach(this);
 
     axisZoom = new QAxisZoomSvc();
+    connect(axisZoom,SIGNAL(xAxisClicked(double)),SIGNAL(updateTrackingCursor(double)));
     axisZoom->attach(this);
 }
 
@@ -209,6 +211,11 @@ void QwtChartZoom::resetBounds(Qt::Orientations orientations)
     if (orientations & Qt::Vertical) verticalScaleBounds->reset();  // и вертикальной
     // перестраиваем график
     qwtPlot->replot();
+}
+
+void QwtChartZoom::labelSelected(bool selected)
+{
+    setEnabled(!selected);
 }
 
     /**************************************************/
@@ -422,6 +429,7 @@ void QMainZoomSvc::startZoom(QMouseEvent *mEvent)
             // если нажата левая кнопка мыши, то
             if (mEvent->button() == Qt::LeftButton)
             {
+                emit xAxisClicked(plt->canvasMap(QwtPlot::xBottom).invTransform(scp_x));
                 // прописываем соответствующий признак режима
                 zoom->setRegime(QwtChartZoom::ctZoom);
                 // запоминаем текущий курсор

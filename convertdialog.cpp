@@ -9,7 +9,7 @@
 #include "methods/timemethod.h"
 #include "methods/xresponch1.h"
 #include "logging.h"
-#include "windowing.h"
+
 #include "converter.h"
 
 ConvertDialog::ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent) :
@@ -95,12 +95,14 @@ ConvertDialog::ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent)
         }
     }
 
+    shutdown = new QCheckBox("Выключить компьютер после завершения обработки", this);
+
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok |
                                                        QDialogButtonBox::Cancel);
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(start()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(stop()));
 
-    connect(this,SLOT(reject()), this, SLOT(stop()));
+    //connect(this,SLOT(reject()), this, SLOT(stop()));
 
     QGridLayout *l = new QGridLayout;
     l->addWidget(new QLabel("Метод обработки", this), 0,0);
@@ -118,7 +120,8 @@ ConvertDialog::ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent)
 
     l->addWidget(methodsStack,0,2,7,1);
     l->addWidget(useDeepsea,7,0,1,3);
-    l->addWidget(buttonBox, 8,0,1,3);
+    l->addWidget(shutdown,8,0,1,3);
+    l->addWidget(buttonBox, 9,0,1,3);
 
 
     setLayout(l);
@@ -152,16 +155,21 @@ void ConvertDialog::start()
     Parameters p = currentMethod->parameters();
     p.method = currentMethod;
     p.useDeepSea = useDeepsea->isChecked();
-    p.activeChannel = activeChannelSpin->value();
-    p.baseChannel = baseChannelSpin->value();
+
+   // p.activeChannel = -1;//activeChannelSpin->value();
+   // if (currentMethod->id() == 9 /* Добавлять сюда методы, которым требуется активный канал*/) {
+        p.activeChannel = activeChannelSpin->value();
+  //  }
+
+   // p.baseChannel = -1;
+  //  if (currentMethod->id() == 9 /* Добавлять сюда кросс методы, которым требуется опорный канал*/) {
+        p.baseChannel = baseChannelSpin->value();
+  //  }
+
     p.overlap = 1.0 * overlap->value() / 100;
 
     p.bandWidth = bandWidth;
     p.initialBandStrip = activeStripCombo->currentIndex();
-
-    Windowing w(p);
-    p.window = w.windowing();
-    p.fCount = qRound((double)p.blockSize / 2.56);
 
     if (!thread) thread = new QThread;
     converter = new Converter(dataBase, p);
@@ -193,7 +201,11 @@ void ConvertDialog::accept()
 {DD;
     newFiles = converter->getNewFiles();
 
-    QDialog::accept();
+    if (shutdown->isChecked()) {
+        QProcess::execute("shutdown",QStringList()<<"/s"<<"/f"<<"/t"<<"1");
+    }
+
+    else QDialog::accept();
 }
 
 void ConvertDialog::reject()

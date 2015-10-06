@@ -11,5 +11,9 @@
         <file>icons/correction.png</file>
         <file>icons/excel.png</file>
         <file>icons/descriptor.png</file>
+        <file>icons/third.png</file>
+        <file>icons/document-save.png</file>
+        <file>icons/harmonics.png</file>
+        <file>icons/tracking.png</file>
     </qresource>
 </RCC>

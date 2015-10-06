@@ -50,11 +50,18 @@ Plot::Plot(QWidget *parent) :
     //setContextMenuPolicy(Qt::ActionsContextMenu);
 
     setAutoReplot(true);
+    trackingPanel = new TrackingPanel(this);
+    trackingPanel->setVisible(false);
 
 //    minStep = 0.0;
 
     axisLabelsVisible = MainWindow::getSetting("axisLabelsVisible", true).toBool();
 
+    _showTrackingCursor = false;
+
+    _trackingCursor = new QwtPlotMarker();
+    _trackingCursor->setLineStyle( QwtPlotMarker::VLine );
+    _trackingCursor->setLinePen( Qt::black, 0, Qt::DashDotLine );
 
     //setTitle("Legend Test");
     //setFooter("Footer");
@@ -87,9 +94,12 @@ Plot::Plot(QWidget *parent) :
     zoom->setEnabled(true);
 
     picker = new PlotPicker(canvas);
+    connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
 
     bool pickerEnabled = MainWindow::getSetting("pickerEnabled", true).toBool();
     picker->setEnabled(pickerEnabled);
+    connect(zoom,SIGNAL(updateTrackingCursor(double)),SLOT(updateTrackingCursor(double)));
+    connect(picker,SIGNAL(updateTrackingCursor(double)),SLOT(updateTrackingCursor(double)));
 }
 
 Plot::~Plot()
@@ -99,6 +109,7 @@ Plot::~Plot()
     delete grid;
     delete zoom;
     delete picker;
+    delete _trackingCursor;
     MainWindow::setSetting("axisLabelsVisible", axisLabelsVisible);
 }
 
@@ -170,6 +181,65 @@ void Plot::deleteGraph(const QVariant &info, int index)
             deleteGraph(c, true);
         }
     }
+}
+
+void Plot::updateTrackingCursor(double xVal)
+{DD;
+    if (_showTrackingCursor) {
+        if (graphs.isEmpty()) {
+            _trackingCursor->setValue(xVal, 0.0);
+            _trackingCursor->attach(this);
+            trackingPanel->setX(xVal);
+            return;
+        }
+
+        //first we need to find the closest point to xVal;
+        //1. search the curve with the minimum xstep;
+        double xstep = graphs.first()->channel->xStep();
+        for (int i=1; i<graphs.size(); ++i) {
+            if (graphs.at(i)->channel->xStep()<xstep)
+                xstep = graphs.at(i)->channel->xStep();
+        }
+        if (xstep==0.0) xstep = graphs.first()->channel->xStep();
+        if (xstep==0.0) return;
+
+        //2. compute the actual xVal based on the xVal and xstep
+        int steps = int(xVal/xstep);
+//        qDebug()<<"xstep"<<xstep<<"xval"<<xVal<<"steps"<<steps;
+        if (steps <= 0) xVal = 0.0;
+        else {
+            if (qAbs(xstep*(steps+1)-xVal) < qAbs(xstep*steps-xVal)) steps++;
+            xVal = xstep*steps;
+        }
+
+
+        //3. get the y values from all graphs
+        QList<TrackingPanel::TrackInfo> list;
+        foreach(Curve *c,graphs) {
+            steps = int(xVal/c->channel->xStep());
+            if (steps < 0) steps=0;
+            if (qAbs(c->channel->xStep()*(steps+1)-xVal) < qAbs(c->channel->xStep()*steps-xVal)) steps++;
+            if (steps>c->channel->samplesCount()) steps=c->channel->samplesCount();
+
+            TrackingPanel::TrackInfo ti{c->channel->name(), c->channel->color(), c->sample(steps).y(),
+                        c->sample(steps).x()};
+            list << ti;
+        }
+        trackingPanel->setX(xVal);
+        trackingPanel->updateState(list);
+
+        _trackingCursor->setValue(xVal, 0.0);
+        _trackingCursor->attach(this);
+
+
+    }
+    //qDebug()<<"clicked xVal"<<xVal;
+
+//    if (graphs.size()==0) return;
+
+
+
+//
 }
 
 void Plot::deleteGraph(FileDescriptor *dfd, int channel, bool doReplot)
@@ -340,9 +410,7 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col)
 
     graphs << g;
 
-    g->legend = ch->legendName();
     g->setLegendIconSize(QSize(16,8));
-    g->setRawSamples(ch->xBegin(), ch->xStep(), ch->yValues().data(), ch->samplesCount());
 
     bool needFixBoundaries = !hasGraphs() && zoom;
 
@@ -429,12 +497,10 @@ void Plot::switchLabelsVisibility()
 void Plot::updateLegends()
 {DD;
     foreach (Curve *graph, leftGraphs) {
-        graph->legend = graph->channel->legendName();
-        graph->setTitle(graph->legend);
+        graph->setTitle(graph->channel->legendName());
     }
     foreach (Curve *graph, rightGraphs) {
-        graph->legend = graph->channel->legendName();
-        graph->setTitle(graph->legend);
+        graph->setTitle(graph->channel->legendName());
     }
     updateLegend();
 }
@@ -499,13 +565,13 @@ void Plot::print()
     }
 }
 
-void Plot::onCurveChanged(Curve *curve)
-{DD;
-    emit curveChanged(curve);
+//void Plot::onCurveChanged(Curve *curve)
+//{DD;
+//    emit curveChanged(curve);
 
-}
+//}
 
-bool Plot::switchInteractionMode()
+void Plot::switchInteractionMode()
 {DD;
     if (interactionMode == ScalingInteraction) {
         setInteractionMode(DataInteraction);
@@ -513,7 +579,19 @@ bool Plot::switchInteractionMode()
     else {
         setInteractionMode(ScalingInteraction);
     }
-    return (interactionMode == DataInteraction);
+}
+
+void Plot::switchHarmonicsMode()
+{
+    picker->showHarmonics(!picker->harmonics());
+}
+
+void Plot::switchTrackingCursor()
+{DD;
+//    qDebug()<<"Tracking cursor enabled";
+    _showTrackingCursor = !_showTrackingCursor;
+    if (!_showTrackingCursor) _trackingCursor->detach();
+    trackingPanel->setVisible(_showTrackingCursor);
 }
 
 void Plot::setInteractionMode(Plot::InteractionMode mode)
@@ -543,7 +621,7 @@ void Plot::importPlot(const QString &fileName)
         if (pen.width()<2) pen.setWidth(2);
         pen.setColor(pen.color().lighter(120));
         graph->setPen(pen);
-        graph->setTitle(QwtText("<font size=5>"+graph->legend+"</font>"));
+        graph->setTitle(QwtText("<font size=5>"+graph->channel->legendName()+"</font>"));
     }
 
     QwtLegend *leg = new QwtLegend();
@@ -559,7 +637,7 @@ void Plot::importPlot(const QString &fileName)
 
     foreach (Curve *graph, graphs) {
         graph->setPen(graph->oldPen);
-        graph->setTitle(QwtText(graph->legend));
+        graph->setTitle(QwtText(graph->channel->legendName()));
     }
 
     leg = new Legend();
@@ -587,10 +665,54 @@ void Plot::editLegendItem(const QVariant &itemInfo, int index)
         Curve *c = dynamic_cast<Curve *>(item);
         if (c) {
             GraphPropertiesDialog dialog(c, this);
-            connect(&dialog,SIGNAL(curveChanged(Curve*)),this, SLOT(onCurveChanged(Curve*)));
+            connect(&dialog,SIGNAL(curveChanged(Curve*)),this, SIGNAL(curveChanged(Curve*)));
             dialog.exec();
         }
     }
 }
 
 
+#include <QtWidgets>
+
+TrackingPanel::TrackingPanel(QWidget *parent) : QWidget(parent)
+{
+    setWindowFlags(Qt::Tool | Qt::WindowTitleHint);
+
+    tree = new QTreeWidget(this);
+    tree->setColumnCount(4);
+    tree->setAlternatingRowColors(true);
+    tree->setHeaderLabels(QStringList()<<""<<"Название"<<"X"<<"Y");
+    tree->setRootIsDecorated(false);
+    tree->setColumnWidth(0,50);
+    tree->setColumnWidth(1,150);
+
+    QHBoxLayout *l = new QHBoxLayout;
+    l->addWidget(tree);
+    setLayout(l);
+    resize(350,300);
+}
+
+void TrackingPanel::updateState(const QList<TrackingPanel::TrackInfo> &curves)
+{
+    for(int i=0; i<curves.size(); ++i) {
+        QTreeWidgetItem *item = tree->topLevelItem(i);
+        if (!item) {item = new QTreeWidgetItem();
+            item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsEditable | Qt::ItemNeverHasChildren);
+            tree->addTopLevelItem(item);
+        }
+        item->setBackgroundColor(0,curves[i].color);
+        item->setText(1,curves[i].name);
+        item->setText(2, QString::number(curves[i].xval));
+        item->setText(3, QString::number(curves[i].yval));
+    }
+    for (int i=tree->topLevelItemCount()-1; i>=curves.size(); --i)
+        delete tree->takeTopLevelItem(i);
+    tree->resizeColumnToContents(0);
+    tree->resizeColumnToContents(2);
+    tree->resizeColumnToContents(3);
+}
+
+void TrackingPanel::setX(double x)
+{
+    tree->headerItem()->setText(2, QString::number(x));
+}

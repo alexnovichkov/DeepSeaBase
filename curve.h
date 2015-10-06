@@ -39,6 +39,7 @@ public:
     ~Curve();
 
     void setRawSamples(double x0, double xStep, const double *yData, int size);
+    void setRawSamples(const double *xData, const double *yData, int size);
     void addLabel(PointLabel *label);
     void removeLabel(PointLabel *label);
     /** find label by canvas position */
@@ -49,7 +50,6 @@ public:
     FileDescriptor *descriptor;
     int channelIndex;
     Channel *channel;
-    QString legend;
     QList<PointLabel*> labels;
     QPen oldPen;
 };

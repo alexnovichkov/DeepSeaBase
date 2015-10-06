@@ -211,6 +211,8 @@ void QAxisZoomSvc::axisApplyMove(QPoint evpos, int ax)
             wx = limitScale(wx,currentWidth);
             // вычисляем новую левую границу
             double xl = currentRightBorder - wx;
+            if (xl<0.0) xl=0.0;
+
             // устанавливаем ее для горизонтальной шкалы
             zoom->horizontalScaleBounds->set(xl,currentRightBorder,ax);
             bndCh = true;   // изменилась граница
@@ -300,6 +302,7 @@ void QAxisZoomSvc::axisMouseEvent(QEvent *event,int axis)
 // (включение изменения масштаба шкалы)
 void QAxisZoomSvc::startHorizontalAxisZoom(QMouseEvent *event, int axis)
 {
+
     // фиксируем исходные границы графика (если этого еще не было сделано)
     zoom->fixBounds();
     // если в данный момент еще не включен ни один из режимов
@@ -312,11 +315,15 @@ void QAxisZoomSvc::startHorizontalAxisZoom(QMouseEvent *event, int axis)
             QwtScaleWidget *scaleWidget = plot->axisWidget(axis);   // виджет шкалы
 
 
+
+
             // получаем карту основной горизонтальной шкалы
             QwtScaleMap sm = plot->canvasMap(axis);
             currentLeftBorder = sm.s1();
             currentRightBorder = sm.s2();
             currentWidth = sm.sDist();
+
+
 
             // определяем (для удобства) геометрию
             QRect canvasGeometry = plot->canvas()->geometry();   // канвы графика
@@ -332,6 +339,8 @@ void QAxisZoomSvc::startHorizontalAxisZoom(QMouseEvent *event, int axis)
             // запоминаем текущее положение курсора относительно канвы
             // (за вычетом смещений графика)
             cursorPosX = event->pos().x() - sab_pxl;
+            double xVal = sm.invTransform(event->pos().x());
+            emit xAxisClicked(xVal);
 
             // если левая граница меньше правой,
             if (currentWidth > 0) {

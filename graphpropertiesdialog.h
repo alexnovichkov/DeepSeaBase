@@ -40,6 +40,7 @@ private:
     Curve *curve;
     Plot *plot;
     QLineEdit *titleEdit;
+    QLineEdit *legendEdit;
     QSpinBox *widthSpinBox;
     QComboBox *styleComboBox;
 

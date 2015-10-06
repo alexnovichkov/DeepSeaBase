@@ -17,11 +17,16 @@ public:
     explicit PlotPicker(QWidget *canvas);
     ~PlotPicker();
     void setMode(Plot::InteractionMode mode);
+    void showHarmonics(bool show) {_showHarmonics = show;}
+    bool harmonics() const {return _showHarmonics;}
+
 //    virtual bool eventFilter(QObject *target, QEvent *);
     virtual void widgetKeyReleaseEvent(QKeyEvent *e);
 //    virtual bool event(QEvent *);
+    int d_selectedPoint;
 signals:
-    
+    void updateTrackingCursor(double xVal);
+    void labelSelected(bool);
 public slots:
     
 private slots:
@@ -38,14 +43,17 @@ private:
     QwtPlot *plot;
     Curve *d_selectedCurve;
     QwtPlotMarker *marker;
-    int d_selectedPoint;
+
     Plot::InteractionMode mode;
 
 //    QList<PointLabel*> labels;
     PointLabel *selectedLabel;
+    bool labelAdded;
 
     QPoint d_currentPos;
 
+    bool _showHarmonics;
+    QList<QwtPlotMarker *> _harmonics;
 protected:
     virtual QwtText trackerTextF(const QPointF &pos) const;
 };

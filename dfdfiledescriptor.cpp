@@ -139,6 +139,9 @@ bool readDfdFile(QIODevice &device, QSettings::SettingsMap &map)
         // the line is available in buf
         QByteArray b = QByteArray(buf, lineLength);
         if (!b.isEmpty()) {
+//            if (b.length()>1)
+//                if (b[0]==0xff && b[1]==0xfe) {
+//                    codec = QTextCodec::codecForName("UTF16"); qDebug()<<1;}
             QString s = codec->toUnicode(b);
             s = s.trimmed();
             if (s.startsWith('[')) {
@@ -161,7 +164,7 @@ bool readDfdFile(QIODevice &device, QSettings::SettingsMap &map)
 
 bool writeDfdFile(QIODevice &/*device*/, const QSettings::SettingsMap &/*map*/)
 {DD;
-    return true;
+    return  true;
 }
 
 
@@ -173,7 +176,9 @@ DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
       BlockSize(0),
       source(0),
       process(0),
-      dataDescription(0)
+      dataDescription(0),
+      XBegin(0.0),
+      XStep(0.0)
 {DD;
 //    rawFileChanged = false;
 //    changed = false;
@@ -213,17 +218,18 @@ void DfdFileDescriptor::read()
     setSamplesCount(dfd.value("NumInd").toUInt());      //DebugPrint(NumInd);
     BlockSize = dfd.value("BlockSize").toInt();   //DebugPrint(BlockSize);
     XName = dfd.value("XName").toString();  //DebugPrint(XName);
-    setXBegin(hextodouble(dfd.value("XBegin").toString()));   //DebugPrint(XBegin);
+    XBegin = hextodouble(dfd.value("XBegin").toString());   //DebugPrint(XBegin);
     XStep = hextodouble(dfd.value("XStep").toString()); //DebugPrint(XStep);
     DescriptionFormat = dfd.value("DescriptionFormat").toString(); //DebugPrint(DescriptionFormat);
     CreatedBy = dfd.value("CreatedBy").toString(); //DebugPrint(CreatedBy);
     dfd.endGroup();
 
+    if (DataType == OSpectr || DataType == ToSpectr) XName = "Гц";
+
     // [DataDescription]
     if (childGroups.contains("DataDescription")) {
         dataDescription = new DataDescription(this);
         dataDescription->read(dfd);
-
     }
 
     // [Source]
@@ -239,7 +245,7 @@ void DfdFileDescriptor::read()
     }
 
     // [Channel#]
-    for (quint32 i=0; i<NumChans; ++i) {
+    for (quint32 i = 0; i<NumChans; ++i) {
         DfdChannel *ch = newChannel(i);
         ch->read(dfd, i+1);
     }
@@ -247,6 +253,7 @@ void DfdFileDescriptor::read()
 
 void DfdFileDescriptor::write()
 {DD;
+    if (!changed()) return;
     QTextCodec *codec = QTextCodec::codecForName("Windows-1251");
 
     QFile file(fileName());
@@ -268,7 +275,7 @@ void DfdFileDescriptor::write()
     dfd << "NumInd="<<samplesCount() << endl;
     dfd << "BlockSize="<<BlockSize << endl;
     dfd << "XName="<<xName() << endl;
-    dfd << "XBegin="<<doubletohex(xBegin()).toUpper() << endl;
+    dfd << "XBegin="<<doubletohex(XBegin).toUpper() << endl;
     dfd << "XStep="<<doubletohex(xStep()).toUpper() << endl;
     dfd << "DescriptionFormat="<<DescriptionFormat << endl;
     dfd << "CreatedBy="<<CreatedBy << endl;
@@ -298,6 +305,8 @@ void DfdFileDescriptor::write()
 
 void DfdFileDescriptor::writeRawFile()
 {DD;
+    if (!dataChanged()) return;
+
     //be sure all channels were read. May take too much memory
     for(int i = 0; i< channels.size(); ++i) {
         if (!channels[i]->populated()) channels[i]->populate();
@@ -317,8 +326,9 @@ void DfdFileDescriptor::writeRawFile()
                 if (ch->IndType==0xC0000004)
                     writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-                for (quint32 val = 0; val < ch->samplesCount(); ++val) {
-                    ch->setValue(ch->corrected?ch->YValues[val]-ch->oldCorrectionValue:ch->YValues[val], writeStream);
+                const quint32 sc = ch->samplesCount();
+                for (quint32 val = 0; val < sc; ++val) {
+                    ch->setValue(ch->temporalCorrection?ch->YValues[val]-ch->oldCorrectionValue:ch->YValues[val], writeStream);
                 }
             }
         }
@@ -360,17 +370,24 @@ void DfdFileDescriptor::fillRest()
     setSamplesCount(channels.first()->samplesCount());
     BlockSize = 0;
     XName = channels.first()->xName();  //DebugPrint(XName);
-    setXBegin(channels.first()->xBegin());   //DebugPrint(XBegin);
+    XBegin = channels.first()->xBegin();   //DebugPrint(XBegin);
     XStep = channels.first()->XStep;
 }
 
 QStringList DfdFileDescriptor::info() const
 {DD;
+    double size = samplesCount() * xStep();
+    if (size < 1e-10) {
+        if (DataType == OSpectr || DataType == ToSpectr) {
+            channels.first()->populate();
+            size = channels.first()->XValues.last();
+        }
+    }
     QStringList  list;
     list << QFileInfo(fileName()).completeBaseName() //QString("Файл") 1
          << QDateTime(Date, Time).toString("dd.MM.yy hh:mm:ss") // QString("Дата") 2
          << dataTypeDescription(DataType) // QString("Тип") 3
-         << QString::number(samplesCount() * xStep()) // QString("Размер") 4
+         << QString::number(size) // QString("Размер") 4
          << xName() // QString("Ось Х") 5
          << QString::number(xStep()) // QString("Шаг") 6
          << QString::number(channelsCount()) // QString("Каналы")); 7
@@ -404,6 +421,21 @@ void DfdFileDescriptor::setDataDescriptor(const DescriptionList &data)
         setChanged(true);
         write();
     }
+}
+
+void DfdFileDescriptor::setXStep(const double xStep)
+{
+    if (XStep == xStep) return;
+
+
+    for (int i=0; i<channels.size(); ++i) {
+        if (channels[i]->XStep != XStep) channels[i]->XStep = xStep * channels[i]->XStep / XStep;
+        else channels[i]->XStep = xStep;
+    }
+    XStep = xStep;
+
+    setChanged(true);
+    write();
 }
 
 void DfdFileDescriptor::setLegend(const QString &legend)
@@ -507,7 +539,7 @@ void DfdFileDescriptor::copyChannelsFrom(const QList<QPair<FileDescriptor *, int
     writeRawFile();
 }
 
-void DfdFileDescriptor::calculateMean(const QMultiHash<FileDescriptor *, int> &channels)
+void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> > &channels)
 {DD;
     for(int i = 0; i< this->channels.size(); ++i) {
         if (!this->channels[i]->populated()) this->channels[i]->populate();
@@ -515,16 +547,13 @@ void DfdFileDescriptor::calculateMean(const QMultiHash<FileDescriptor *, int> &c
 
     DfdChannel *ch = new DfdChannel(this, channelsCount());
 
-    FileDescriptor *firstDescriptor = channels.keys().first();
-    Channel *firstChannel = firstDescriptor->channel(channels.value(firstDescriptor));
+    FileDescriptor *firstDescriptor = channels.first().first;
+    Channel *firstChannel = firstDescriptor->channel(channels.first().second);
 
     if (ch) {
         QList<Channel*> list;
-        QHashIterator<FileDescriptor *, int> it(channels);
-        while (it.hasNext()) {
-            it.next();
-            list << it.key()->channel(it.value());
-        }
+        for (int i=0; i<channels.size(); ++i)
+            list << channels.at(i).first->channel(channels.at(i).second);
 
         // считаем данные для этого канала
         // если ось = дБ, сначала переводим значение в линейное
@@ -538,9 +567,6 @@ void DfdFileDescriptor::calculateMean(const QMultiHash<FileDescriptor *, int> &c
 
         ch->YValues = QVector<double>(numInd, 0.0);
 
-        ch->yMin = 1.0e100;
-        ch->yMax = -1.0e100;
-
         for (quint32 i=0; i<numInd; ++i) {
             double sum = 0.0;
             for (int file = 0; file < list.size(); ++file) {
@@ -552,10 +578,11 @@ void DfdFileDescriptor::calculateMean(const QMultiHash<FileDescriptor *, int> &c
             sum /= list.size();
             if (list[0]->yName() == "дБ" || list[0]->yName() == "dB")
                 sum = 10.0 * log10(sum);
-            if (sum < ch->yMin) ch->yMin = sum;
-            if (sum > ch->yMax) ch->yMax = sum;
             ch->YValues[i] = sum;
         }
+        ch->XStep = firstDescriptor->xStep();
+        ch->setYValues(ch->YValues);
+        ch->setXValues(firstChannel->xValues());
 
         // обновляем сведения канала
         ch->setPopulated(true);
@@ -563,34 +590,20 @@ void DfdFileDescriptor::calculateMean(const QMultiHash<FileDescriptor *, int> &c
         foreach (Channel *c,list) {
             l << c->name();
         }
-
         ch->ChanName = "Среднее "+l.join(", ");
 
-        QList<int> ll;
-        l.clear();
-        it.toFront();
-        while (it.hasNext()) {
-            it.next();
-            ll << it.value()+1;
-        }
-        qSort(ll);
-        foreach(int n,ll) l << QString::number(n);
-        ch->ChanDscr = "Среднее каналов "+l.join(",");
 
+        l.clear();
+        for (int i=0; i<channels.size(); ++i) {
+            l << QString::number(channels.at(i).second+1);
+        }
+
+        ch->ChanDscr = "Среднее каналов "+l.join(",");
         ch->ChanBlockSize = numInd;
         ch->NumInd = numInd;
         ch->IndType = this->channels.isEmpty()?3221225476:this->channels.first()->IndType;
-
         ch->YName = firstChannel->yName();
         ch->XName = firstChannel->xName();
-        ch->XStep = firstChannel->xStep();
-
-        ch->xMin = firstChannel->xBegin();
-        ch->xMax = ch->xMin + ch->XStep * numInd;
-        ch->XMaxInitial = ch->xMax;
-        ch->YMinInitial = ch->yMin;
-        ch->YMaxInitial = ch->yMax;
-
         ch->parent = this;
 
         this->channels << ch;
@@ -598,9 +611,170 @@ void DfdFileDescriptor::calculateMean(const QMultiHash<FileDescriptor *, int> &c
     }
 }
 
-void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
+FileDescriptor *DfdFileDescriptor::calculateThirdOctave()
 {DD;
     populate();
+
+    QString thirdOctaveFileName = this->fileName();
+    thirdOctaveFileName.chop(4);
+
+    int index = 0;
+    if (QFile::exists(thirdOctaveFileName+"_3oct.dfd")) {
+        index++;
+        while (QFile::exists(thirdOctaveFileName+"_3oct("+QString::number(index)+").dfd")) {
+            index++;
+        }
+    }
+    thirdOctaveFileName = index>0?thirdOctaveFileName+"_3oct("+QString::number(index)+").dfd":thirdOctaveFileName+"_3oct.dfd";
+
+    DfdFileDescriptor *thirdOctDfd = new DfdFileDescriptor(thirdOctaveFileName);
+    thirdOctDfd->fillPreliminary(Descriptor::Spectrum);
+    thirdOctDfd->DataType = ToSpectr;
+
+    thirdOctDfd->BlockSize = 0;
+    thirdOctDfd->XName = "Гц";
+
+    thirdOctDfd->XBegin = this->XBegin;
+    thirdOctDfd->XStep = 0;
+    thirdOctDfd->DescriptionFormat = this->DescriptionFormat;
+
+    thirdOctDfd->process = new Process();
+    thirdOctDfd->process->data.append({"pName","1/3-октавный спектр"});
+    thirdOctDfd->process->data.append({"pTime","(0000000000000000)"});
+    thirdOctDfd->process->data.append({"TypeProc","1/3-октава"});
+    thirdOctDfd->process->data.append({"Values","измеряемые"});
+    thirdOctDfd->process->data.append({"TypeScale","в децибелах"});
+
+    if (this->dataDescription) {
+        thirdOctDfd->dataDescription = new DataDescription(thirdOctDfd);
+        thirdOctDfd->dataDescription->data = this->dataDescription->data;
+    }
+
+    // определяем верхнюю границу данных
+    double F_min = this->XBegin;
+    double Step_f = xStep();
+    double F_max = F_min+Step_f*this->channels.first()->NumInd;
+
+
+   // double f_lower = 0;
+    double f_upper = 0;
+    double f_median = 0;
+    int k_max = 52;
+    for (int k = 52; k>=0; --k) {
+        f_median = pow(10.0, 0.1 * k);
+       // f_lower = f_median / pow(2.0, (1.0 / 6.0));
+        f_upper = f_median * pow(2.0, (1.0 / 6.0));
+        if (f_upper <= F_max) {
+            k_max = k;
+            break;
+        }
+    }
+    if (f_median == 1) return thirdOctDfd;
+
+    const double twothird = pow(2.0,1.0/3.0);
+    const double tenpow = pow(10.0, -1.4);
+    const double twosixth = pow(2.0,1.0/6.0);
+
+    QVector<double> xValues(k_max+1);
+    for (int k = 0; k<=k_max; ++k)
+        xValues[k] = pow(10.0, 0.1*k);
+
+    index=1;
+    foreach (DfdChannel *ch, this->channels) {
+        DfdChannel *newCh = new DfdChannel(thirdOctDfd,index++);
+
+        newCh->YName="дБ";
+        newCh->ChanAddress=ch->ChanAddress;
+        newCh->ChanName=ch->ChanName;
+        newCh->YNameOld=ch->YName;
+        newCh->ChanBlockSize=xValues.size();
+        newCh->IndType=3221225476;
+        //BandWidth=1162346496
+        newCh->InputType=ch->InputType;
+        newCh->ChanDscr=ch->ChanDscr;
+        newCh->NumInd=xValues.size();
+        newCh->XName = thirdOctDfd->XName;
+
+
+        QVector<double> values(k_max+1);
+
+        for (int k = 0; k<=k_max; ++k) {
+            // определяем диапазон в данном фильтре и число отсчетов для обработки
+            int i_min = -1;
+            int i_max = -1;
+            f_median = xValues.at(k);
+
+            for (int i = 0; i<this->channels.first()->NumInd; ++i) {
+                double f = F_min+i*Step_f;
+                if (f/f_median>0.5) {
+                    i_min = i;
+                    break;
+                }
+            }
+            for (int i = this->channels.first()->NumInd-1; i>=0; --i) {
+                double f = F_min+i*Step_f;
+                if (f/f_median<2) {
+                    i_max = i;
+                    break;
+                }
+            }
+
+            int steps = i_max - i_min + 1;
+            if (steps >= 5) {
+                double sum_i = 0;
+                for (int i = i_min; i <= i_max; ++i) {
+                    double L = ch->YValues.at(i);
+                    double ratio = (F_min+i*Step_f)/f_median;
+                    double coef = 1.0;
+                    if (ratio>0.5 && ratio<=(1.0/twothird))
+                        coef = tenpow/(1.0/twothird-0.5)*(ratio-0.5);
+                    else if (ratio>(1.0/twothird) && ratio<=(1.0/twosixth))
+                        coef = (1.0-tenpow)/(1.0/twosixth-1.0/twothird)*(ratio - 1.0/twothird)+tenpow;
+                    else if (ratio>twosixth && ratio<=twothird)
+                        coef = (tenpow-1.0)/(twothird-twosixth)*(ratio - twosixth)+1.0;
+                    else if (ratio>twothird && ratio<=2)
+                        coef = tenpow/(twothird-2.0)*(ratio-twothird)+tenpow;
+                    Q_ASSERT(coef>0);
+                    L = L*coef;
+
+                    sum_i = sum_i + pow(10.0, (L / 10.0));
+                }
+                values[k] = 10.0 * log(sum_i) / log(10.0);
+            }
+        }
+        newCh->setYValues(values);
+        newCh->setXValues(xValues);
+        newCh->setPopulated(true);
+
+        thirdOctDfd->channels.append(newCh);
+    }
+
+    DfdChannel *newCh = new DfdChannel(thirdOctDfd,0);
+
+    newCh->YName="Гц";
+    newCh->ChanName="ось X";
+    newCh->ChanBlockSize=xValues.size();
+    newCh->IndType=3221225476;
+    newCh->XName = thirdOctDfd->XName;
+    newCh->setYValues(xValues);
+    newCh->setXValues(xValues);
+    newCh->NumInd=xValues.size();
+    newCh->setPopulated(true);
+
+    thirdOctDfd->channels.prepend(newCh);
+    thirdOctDfd->NumChans = thirdOctDfd->channels.size();
+    thirdOctDfd->setSamplesCount(xValues.size());
+
+    thirdOctDfd->setChanged(true);
+    thirdOctDfd->setDataChanged(true);
+    thirdOctDfd->write();
+    thirdOctDfd->writeRawFile();
+    return thirdOctDfd;
+}
+
+void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
+{DD;
+    populate(); //нужно это сделать, чтобы потом суметь прочитать каналы в нужном порядке
     int i=up?0:indexes.size()-1;
     while (1) {
         channels.move(indexes.at(i),newIndexes.at(i));
@@ -770,7 +944,7 @@ DfdChannel::DfdChannel(DfdFileDescriptor *parent, int channelIndex)
     XName = parent->XName;
     dataType = parent->DataType;
     NumInd = 0;
-    corrected = false;
+    temporalCorrection = false;
     oldCorrectionValue = 0.0;
 }
 
@@ -797,16 +971,14 @@ DfdChannel::DfdChannel(const DfdChannel &other)
     YMaxInitial = other.YMaxInitial; // initial yMax value to display
 
     YValues = other.YValues;
-//    YValues = new double[samplesCount()];
-//    memcpy(static_cast<void *>(YValues), static_cast<void *>(other.YValues),
-//           samplesCount()*sizeof(double));
+    XValues = other.XValues;
 
     parent = other.parent;
     channelIndex = other.channelIndex;
 
     _populated = other._populated;
     dataType = other.dataType;
-    corrected = other.corrected;
+    temporalCorrection = other.temporalCorrection;
     oldCorrectionValue = other.oldCorrectionValue;
 }
 
@@ -824,7 +996,7 @@ DfdChannel::DfdChannel(Channel &other)
 
     xMin = other.xBegin();
     XStep = other.xStep();
-    xMax = xMin + XStep * NumInd;
+    xMax = XStep==0?other.xMaxInitial():xMin + XStep * NumInd;
     yMin = other.yMinInitial();
     yMax = other.yMaxInitial();
     XMaxInitial = xMax;
@@ -832,13 +1004,11 @@ DfdChannel::DfdChannel(Channel &other)
     YMaxInitial = yMax;
 
     YValues = other.yValues();
-//    YValues = new double[NumInd];
-//    memcpy(static_cast<void *>(YValues), static_cast<const void *>(other.yValues()),
-//           NumInd*sizeof(double));
+    XValues = other.xValues();
 
     _populated = true;
     dataType = dfdDataTypeFromDataType(other.type());
-    corrected = false;
+    temporalCorrection = false;
     oldCorrectionValue = 0.0;
 }
 
@@ -874,7 +1044,7 @@ void DfdChannel::write(QTextStream &dfd, int chanIndex)
 {DD;
     dfd << QString("[Channel%1]").arg(chanIndex) << endl;
     dfd << "ChanAddress=" << ChanAddress << endl;
-    if (corrected) {
+    if (temporalCorrection && !nameBeforeCorrection.isEmpty()) {
         setName(nameBeforeCorrection);
     }
     dfd << "ChanName=" << ChanName << endl;
@@ -966,7 +1136,7 @@ QStringList DfdChannel::getInfoData()
 QVector<double> postprocess(quint16 *data, quint32 dataSize, quint32 dataPos, double coef1, double coef2)
 {
     QVector<double> result(dataSize);
-    for (int i=0; i<dataSize; ++i) result[i] = coef1*data[dataPos+i]+coef2;
+    for (quint32 i=0; i<dataSize; ++i) result[i] = coef1*data[dataPos+i]+coef2;
 
     return result;
 }
@@ -975,46 +1145,34 @@ void DfdChannel::populate()
 {DD;
     // clear previous data;
     YValues.clear();
+    XValues.clear();
 
     QFile rawFile(parent->attachedFileName());
 
     bool allFile = rawFile.size() < 256 * 1024 * 1024;
     if (rawFile.open(QFile::ReadOnly)) {
-
-        // число отсчетов в канале
-        quint32 NI = samplesCount();
-
-        yMin = 1.0e100;
-        yMax = -1.0e100;
-
         QDataStream readStream(&rawFile);
         readStream.setByteOrder(QDataStream::LittleEndian);
         if (IndType==0xC0000004)
             readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
         if (parent->BlockSize == 0) {// без перекрытия, читаем подряд весь канал
-            for (quint32 i=0; i<parent->NumChans; ++i) {
+            for (int i=0; i<parent->NumChans; ++i) {
                 if (i==channelIndex) {
                     QVector<double> temp = getValue<double>(readStream, ChanBlockSize, IndType);
-
-                    postprocess(temp);
-
-                    for (int i=0; i<temp.size(); ++i) {
-                        if (temp[i] < yMin) yMin = temp[i];
-                        if (temp[i] > yMax) yMax = temp[i];
-                    }
-
-                    YValues = temp;
+                    setYValues(temp);
                 }
                 else {
                     readStream.skipRawData(parent->channels.at(i)->blockSizeInBytes());
                 }
             }
-            xMin = parent->xBegin();
-            xMax = xMin + XStep * YValues.size();
-            XMaxInitial = xMax;
-            YMinInitial = yMin;
-            YMaxInitial = yMax;
+
+            if (parent->XStep<1e-10) {//нулевой шаг, данные по оси Х хранятся первым каналом
+                rawFile.seek(0);
+                readStream.setDevice(&rawFile);
+                QVector<double> temp = getValue<double>(readStream, ChanBlockSize, IndType);
+                setXValues(temp);
+            }
 
             setPopulated(true);
         }
@@ -1028,8 +1186,8 @@ void DfdChannel::populate()
                 //распихиваем данные по каналам
                 actuallyRead /= parent->channelsCount();
                 for (int i=0; i<parent->channelsCount();++i) {
-                    if (allFile && !parent->channel(i)->populated()
-                        || !allFile && i == channelIndex) {
+                    if ((allFile && !parent->channel(i)->populated())
+                        || (!allFile && i == channelIndex)) {
                         parent->channels[i]->YValues << temp.mid(actuallyRead*i, actuallyRead);
                     }
                 }
@@ -1038,30 +1196,52 @@ void DfdChannel::populate()
                 }
             }
             for (int i=0; i<parent->channelsCount();++i) {
-                if (allFile && !parent->channel(i)->populated()
-                    || !allFile && i == channelIndex) {
-                    parent->channels[i]->postprocess(parent->channels[i]->YValues);
-                    parent->channels[i]->xMin = parent->xBegin();
-                    parent->channels[i]->xMax = parent->channels[i]->xMin
-                                                + parent->channels[i]->XStep
-                                                * parent->channels[i]->YValues.size();
-                    parent->channels[i]->XMaxInitial = parent->channels[i]->xMax;
-                    parent->channels[i]->YMinInitial = parent->channels[i]->yMin;
-                    parent->channels[i]->YMaxInitial = parent->channels[i]->yMax;
-
+                if ((allFile && !parent->channel(i)->populated())
+                    || (!allFile && i == channelIndex)) {
+                    parent->channels[i]->setYValues(parent->channels[i]->YValues);
                     parent->channels[i]->setPopulated(true);
                 }
             }
-        }
+        }//qDebug()<<YValues;
     }
     else {
         qDebug()<<"Cannot read raw file"<<parent->attachedFileName();
     }
 }
 
+void DfdChannel::setYValues(const QVector<double> &values)
+{
+    YValues = values;
+    postprocess(YValues);
+
+    yMin = 1.0e100;
+    yMax = -1.0e100;
+
+    for (quint32 i=0; i<YValues.size(); ++i) {
+        if (YValues[i] < yMin) yMin = YValues[i];
+        if (YValues[i] > yMax) yMax = YValues[i];
+    }
+
+    xMin = parent->XBegin;
+    xMax = xMin + XStep * YValues.size();
+    XMaxInitial = xMax;
+    YMinInitial = yMin;
+    YMaxInitial = yMax;
+}
+
+void DfdChannel::setXValues(const QVector<double> &xvalues)
+{
+    if (!xvalues.isEmpty()) {
+        XValues = xvalues;
+        xMin = xvalues.first();
+        xMax = xvalues.last();
+        XMaxInitial = xMax;
+    }
+
+}
+
 void DfdChannel::populateFloat()
 {DD;
-    qDebug()<<QThread::currentThread();
     quint32 NI = samplesCount();
 
     if (floatValues.size() == NI) return;
@@ -1077,7 +1257,7 @@ void DfdChannel::populateFloat()
             readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
         if (parent->BlockSize == 0) {// без перекрытия, читаем подряд весь канал
-            for (quint32 i=0; i<parent->NumChans; ++i) {
+            for (int i=0; i<parent->NumChans; ++i) {
                 if (i==channelIndex) {
                     if (QThread::currentThread()->isInterruptionRequested()) return;
 
@@ -1230,25 +1410,27 @@ quint32 DfdChannel::samplesCount() const
 }
 
 void DfdChannel::addCorrection(double correctionValue, bool writeToFile)
-{
-    populate();
+{DD;
+    if (!populated())
+        populate();
+
     for (uint j = 0; j < YValues.size(); ++j)
-        YValues[j] += correctionValue;
+        YValues[j] += correctionValue-oldCorrectionValue;
+
+    YMaxInitial += correctionValue-oldCorrectionValue;
+    YMinInitial += correctionValue-oldCorrectionValue;
 
     oldCorrectionValue = correctionValue;
 
-    if (!corrected) {
+    if (nameBeforeCorrection.isEmpty())
         nameBeforeCorrection = name();
-        corrected = true;
-    }
+
+    temporalCorrection = true;
 
     setName(nameBeforeCorrection + QString(correctionValue>=0?"+":"")
                 +QString::number(correctionValue));
 
-    if (writeToFile) corrected = false;
-
-    YMaxInitial += correctionValue;
-    YMinInitial += correctionValue;
+    if (writeToFile) temporalCorrection = false;
 }
 
 void RawChannel::read(QSettings &dfd, int chanIndex)
@@ -1343,7 +1525,7 @@ void RawChannel::populate()
     DfdChannel::populate();
 
     // rescale initial min and max values with first 200 values
-    XMaxInitial = parent->xBegin() + XStep*200;
+    XMaxInitial = parent->XBegin + XStep*200;
     YMinInitial = 0.0;
     YMaxInitial = 0.0;
 

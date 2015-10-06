@@ -49,6 +49,7 @@ struct Parameters
     int averagesCount; // число усреднений
 
     int baseChannel; // опорный канал
+    int activeChannel;
 
     QVector<double> window; // коэффициенты оконной функции
 
@@ -60,7 +61,7 @@ struct Parameters
     QString methodName;
     QString methodDll;
     int dataType;
-    int activeChannel;
+
 
     AbstractMethod *method;
 };

@@ -3,6 +3,7 @@
 
 #include <QtCore>
 #include <QColor>
+#include <QObject>
 
 namespace Descriptor {
 enum DataType
@@ -55,11 +56,22 @@ QString descriptionEntryToString(const DescriptionEntry &entry);
 
 double threshold(const QString &name);
 
+class SignalHandler : public QObject
+{
+    Q_OBJECT
+signals:
+    void changed(bool);
+public slots:
+    void setChanged(bool);
+public:
+    bool _changed;
+};
+
 class FileDescriptor
 {
 public:
     FileDescriptor(const QString &fileName);
-    virtual ~FileDescriptor() {}
+    virtual ~FileDescriptor();
 
     virtual void fillPreliminary(Descriptor::DataType) = 0;
     virtual void fillRest() = 0;
@@ -83,8 +95,9 @@ public:
     virtual void deleteChannels(const QVector<int> &channelsToDelete) = 0;
     virtual void copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy) = 0;
 
-    /** Calculates mean of channels, writes to a file and returns the file name */
-    virtual void calculateMean(const QMultiHash<FileDescriptor *, int> &channels) = 0;
+    /** Calculates mean of channels, writes to a file */
+    virtual void calculateMean(const QList<QPair<FileDescriptor *, int> > &channels) = 0;
+    virtual FileDescriptor *calculateThirdOctave() = 0;
 
     virtual QString fileName() const {return _fileName;}
     virtual void setFileName(const QString &name) { _fileName = name;}
@@ -102,11 +115,11 @@ public:
 
     virtual Channel *channel(int index) = 0;
 
-    virtual void setChanged(bool changed) {_changed = changed;}
+    virtual void setChanged(bool changed);
     bool changed() const {return _changed;}
 
     bool dataChanged() const {return _dataChanged;}
-    virtual void setDataChanged(bool changed) {_dataChanged = changed;}
+    virtual void setDataChanged(bool changed);
 
     virtual bool allUnplotted() const = 0;
 
@@ -115,16 +128,13 @@ public:
     virtual QString legend() const =0;
     virtual void setLegend(const QString &legend)=0;
 
-    virtual double xStep() const = 0;/*{return XStep;}*/
-
-    double xBegin() const {return XBegin;}
-    void setXBegin(double val) {XBegin = val;}
+    virtual double xStep() const = 0;
+    virtual void setXStep(const double xStep) = 0;
 
     quint32 samplesCount() const {return NumInd;}
     void setSamplesCount(quint32 count) {NumInd = count;}
 
     virtual QString xName() const = 0;
-//    virtual void setXName(const QString &xName) = 0;
 
     virtual bool operator == (const FileDescriptor &descriptor) {
         Q_UNUSED(descriptor);
@@ -135,12 +145,13 @@ public:
 
     virtual QString fileFilters() const = 0;
 
+    SignalHandler *signalHandler;
+
 private:
     QString _fileName;
     bool _changed;
     bool _dataChanged;
-//    QString _legend;
-    double XBegin;
+
     quint32 NumInd;
 };
 
@@ -177,6 +188,7 @@ public:
     virtual double xStep() const = 0;
     virtual quint32 samplesCount() const = 0;
     virtual QVector<double> &yValues() = 0;
+    virtual QVector<double> &xValues() = 0;
     virtual double xMaxInitial() const = 0;
     virtual double yMinInitial() const = 0;
     virtual double yMaxInitial() const = 0;

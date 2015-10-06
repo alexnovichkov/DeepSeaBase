@@ -16,14 +16,34 @@ double threshold(const QString &name)
 
 FileDescriptor::FileDescriptor(const QString &fileName) :
     _fileName(fileName), _changed(false), _dataChanged(false),
-    XBegin(0.0),
     NumInd(0)
 {
+    signalHandler = new SignalHandler;
+    signalHandler->_changed = false;
+}
+
+FileDescriptor::~FileDescriptor()
+{
+    delete signalHandler;
 }
 
 bool FileDescriptor::fileExists() const
 {
     return QFileInfo(_fileName).exists();
+}
+
+void FileDescriptor::setChanged(bool changed)
+{
+    if (_changed == changed) return;
+    _changed = changed;
+    signalHandler->setChanged(changed || _dataChanged);
+}
+
+void FileDescriptor::setDataChanged(bool changed)
+{
+    if (_dataChanged == changed) return;
+    _dataChanged = changed;
+    signalHandler->setChanged(changed || _changed);
 }
 
 QString descriptionEntryToString(const DescriptionEntry &entry)
@@ -40,4 +60,11 @@ QList<int> filterIndexes(FileDescriptor *dfd, const QList<QPair<FileDescriptor *
     for(int i=0; i<channels.size(); ++i)
         if (channels.at(i).first == dfd) result << channels.at(i).second;
     return result;
+}
+
+
+void SignalHandler::setChanged(bool ch)
+{
+    if (ch != _changed) emit changed(ch);
+    _changed = ch;
 }

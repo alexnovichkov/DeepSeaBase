@@ -4,14 +4,64 @@
 #include "logging.h"
 #include "dfdfiledescriptor.h"
 #include "converters.h"
-
+#include "windowing.h"
 #include "samplerate.h"
 
-Converter::Converter(QList<DfdFileDescriptor *> &base, const Parameters &p, QObject *parent) :
-    QObject(parent), dataBase(base), p(p), process(0)
+class Filter
+{
+public:
+    Filter(const Parameters &p) : p(p)
+    {
+        src_data.src_ratio = 1.0 / (1 << p.bandStrip);
+
+        src_state = src_new(2, 1, &_error);
+        src_data.end_of_input = 0;
+
+        const int newBlockSize = p.blockSize * (1<<p.bandStrip);
+
+        filterOut.resize(newBlockSize+100);
+        src_data.output_frames = filterOut.size();
+        src_data.data_out = filterOut.data();
+    }
+
+    virtual ~Filter()
+    {
+        if (src_state)
+            src_delete(src_state);
+    }
+
+
+    QVector<float> process(QVector<float> &chunk)
+    {
+        if (p.bandStrip > 0) {//do filtration
+            src_data.data_in = chunk.data();
+            src_data.input_frames = chunk.size();
+
+            _error = src_process(src_state, &src_data);
+            return filterOut.mid(0, p.blockSize);
+        }
+        else {
+            return chunk;
+        }
+    }
+
+    QString error() const {return src_strerror(_error);}
+private:
+    SRC_DATA src_data;
+    SRC_STATE *src_state;
+    QVector<float> filterOut;
+    int _error;
+    Parameters p;
+};
+
+Converter::Converter(QList<DfdFileDescriptor *> &base, const Parameters &p_, QObject *parent) :
+    QObject(parent), dataBase(base), p(p_), process(0)
 {DD;
     stop_ = false;
 
+    Windowing w(p);
+    p.window = w.windowing();
+    p.fCount = qRound((double)p.blockSize / 2.56);
 }
 
 Converter::~Converter()
@@ -43,6 +93,7 @@ void Converter::start()
     tempFolderName = tempDir.path();
 
     if (!p.useDeepSea) {
+        p.baseChannel--;
         foreach (DfdFileDescriptor *dfd, dataBase) {
             if (!convert(dfd, tempFolderName)) return;
         }
@@ -88,7 +139,6 @@ void Converter::start()
     }
 
     finalize();
-
 }
 
 void Converter::finalize()
@@ -112,7 +162,6 @@ void Converter::finalize()
 
 void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString fileName)
 {DD;
-
     QString destDir = QFileInfo(fileName).canonicalPath();
     QString method = p.methodDll;
     method.chop(4);
@@ -123,15 +172,25 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
     filter.replace("\\","/");
     QStringList filtered = newFiles_.filter(filter);
 
+    if (filtered.isEmpty()) {
+        filter=QString("%1/%2_%3")
+                       .arg(tempFolderName)
+                       .arg(QFileInfo(fileName).baseName())
+                       .arg(method);
+        filter.replace("\\","/");
+        filtered = newFiles_.filter(filter);
+    }
+
     if (filtered.isEmpty()) return;
 
-    QString baseFileName = QFileInfo(filtered.first()).completeBaseName();
+    //QString baseFileName = QFileInfo(filtered.first()).completeBaseName();
+    QString baseFileName = QFileInfo(fileName).completeBaseName()+"_"+method;
 
     DfdFileDescriptor dfd(filtered.first());
     dfd.read();
     QString suffix = QString::number(dfd.samplesCount() * dfd.xStep());
 
-    baseFileName.chop(3);
+    //baseFileName.chop(3);
     QString dfdFileName = destDir+"/"+baseFileName+"_"+suffix+".dfd";
     QString rawFileName = destDir+"/"+baseFileName+"_"+suffix+".raw";
 
@@ -262,7 +321,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
 
     DfdFileDescriptor *newDfd = new DfdFileDescriptor(fileName);
 
-    newDfd->fillPreliminary(Descriptor::Spectrum);
+    newDfd->fillPreliminary(dataTypefromDfdDataType(DfdDataType(p.method->dataType())));
     newDfd->BlockSize = 0;
 
     // [DataDescription]
@@ -288,12 +347,17 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
     // rest
     newDfd->XName = "Гц";
     newDfd->XStep = newSampleRate / p.blockSize;
+    newDfd->XBegin = 0.0;
 
     p.averagesCount = int(1.0 * dfd->channels[0]->samplesCount() / p.blockSize / (1.0 - p.overlap));
     if (dfd->channels[0]->samplesCount() % p.averagesCount !=0) p.averagesCount++;
 
+    // Если опорный канал с таким номером в файле отсутствует, используем последний канал в файле
+    if (p.baseChannel>=dfd->channelsCount()) p.baseChannel = dfd->channelsCount()-1;
+
     for (int i=0; i<dfd->channelsCount(); ++i) {
         dfd->channels[i]->populateFloat();
+        if (p.baseChannel>=0) dfd->channels[p.baseChannel]->populateFloat();
 
         if (QThread::currentThread()->isInterruptionRequested()) {
             delete newDfd;
@@ -302,77 +366,72 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
         }
 
         p.threshold = threshold(dfd->channels[i]->yName());
+
         QVector<double> spectrum(p.fCount);
         quint32 block = 0;
         quint32 averagesMade = 1;
 
         QVector<float> filtered;
 
-        SRC_DATA src_data;
-        src_data.src_ratio = 1.0 / (1 << p.bandStrip);
-        int error;
-
-        SRC_STATE *src_state = src_new(2, 1, &error);
-        src_data.end_of_input = 0;
+        Filter filter(p);
 
         const int newBlockSize = p.blockSize * (1<<p.bandStrip);
 
         const quint32 stepBack = quint32(1.0*newBlockSize * p.overlap); //qDebug()<<stepBack;
+        if (p.method->id()==1) {//спектр мощности
+            while (1) {
+                QVector<float> chunk = getBlock(dfd->channels[i]->floatValues, newBlockSize, stepBack, block);
+                if (chunk.size() < p.blockSize) break;
 
-        QVector<float> filterOut(newBlockSize+100);
-        src_data.output_frames = filterOut.size();
-        src_data.data_out = filterOut.data();
-
-        while (1) {
-            // получаем блок данных размером blockSize * 2^bandStrip // 2048 4096 и т.д.
-            QVector<float> chunk = getBlock(dfd->channels[i]->floatValues, newBlockSize, stepBack, block);
-
-            if (chunk.size() < p.blockSize) break;
-
-            if (p.bandStrip > 0) {//do filtration
-                src_data.data_in = chunk.data();
-                src_data.input_frames = chunk.size();
-
-                if ((error = src_process(src_state, &src_data))) {
-                    qDebug()<< "Error :" << src_strerror(error);
-                    break;
-                }
-                filtered = filterOut.mid(0, p.blockSize);
+                filtered = filter.process(chunk);
+                applyWindow(filtered, p);
+                QVector<double> out = powerSpectre(filtered, p);
+                average(spectrum, out, p, averagesMade++);
             }
-            else {
-                filtered = chunk;
-            }
-
-            Q_ASSERT(filtered.size() == p.blockSize);
-
-            //window
-            applyWindow(filtered, p);
-            //spectre
-            QVector<double> out = computeSpectre(filtered, p);
-            //average
-            average(spectrum, out, p, averagesMade++);
+            changeScale(spectrum, p);
         }
-        if (src_state) src_delete(src_state);
 
-        changeScale(spectrum, p);
+        if (p.method->id()==9) {//передаточная 1
+            if (i == p.baseChannel) continue;
 
+            quint32 baseBlock = 0;
+            QVector<float> baseFiltered;
+            Filter baseFilter(p);
+
+            QVector<double> averagedBaseSpectre(p.fCount);
+            QVector<double> averagedSpectre(p.fCount);
+
+            while (1) {
+                QVector<float> chunk1 = getBlock(dfd->channels[i]->floatValues, newBlockSize, stepBack, block);
+                QVector<float> chunk2 = getBlock(dfd->channels[p.baseChannel]->floatValues, newBlockSize, stepBack, baseBlock);
+                if (chunk1.size() < p.blockSize || chunk2.size() < p.blockSize) break;
+
+                filtered = filter.process(chunk1);
+                baseFiltered = baseFilter.process(chunk2);
+
+                applyWindow(filtered, p);
+                applyWindow(baseFiltered, p);
+                QVector<double> baseautoSpectr = autoSpectre(baseFiltered, p);
+                QVector<double> coSpectr = coSpectre(baseFiltered, filtered, p);
+
+                average(averagedBaseSpectre, baseautoSpectr, p, averagesMade);
+                average(averagedSpectre, coSpectr, p, averagesMade++);
+            }
+            spectrum = transferFunctionH1(averagedBaseSpectre, averagedSpectre, p);
+            const double t2 = threshold(dfd->channels[p.baseChannel]->yName()) / p.threshold;
+            for (int i=0; i<spectrum.size(); ++i)
+                spectrum[i] = 20 * log10(spectrum[i] * t2);
+        }
 
         // Создаем канал и заполняем его
         DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
-        ch->YValues = spectrum;
-
-        ch->yMin = 1.0e100;
-        ch->yMax = -1.0e100;
-
-        for (int i=0; i<spectrum.size(); ++i) {
-            if (spectrum[i] < ch->yMin) ch->yMin = spectrum[i];
-            if (spectrum[i] > ch->yMax) ch->yMax = spectrum[i];
-        }
-
+        ch->XStep = newDfd->XStep;
+        ch->setYValues(spectrum);
         ch->setPopulated(true);
         ch->setName(dfd->channels[i]->name());
 
         ch->ChanDscr = dfd->channels[i]->ChanDscr;
+        ch->ChanAddress = dfd->channels[i]->ChanAddress;
 
         ch->ChanBlockSize = spectrum.size();
         ch->NumInd = spectrum.size();
@@ -381,13 +440,13 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
         ch->YName = p.scaleType==0?dfd->channels[i]->yName():"дБ";
         ch->YNameOld = dfd->channels[i]->yName();
         ch->XName = "Гц";
-        ch->XStep = newDfd->XStep;
 
-        ch->xMin = 0.0;
-        ch->xMax = newSampleRate / 2.56;
-        ch->XMaxInitial = ch->xMax;
-        ch->YMinInitial = ch->yMin;
-        ch->YMaxInitial = ch->yMax;
+
+//        ch->xMin = 0.0;
+//        ch->xMax = newSampleRate / 2.56;
+//        ch->XMaxInitial = ch->xMax;
+//        ch->YMinInitial = ch->yMin;
+//        ch->YMaxInitial = ch->yMax;
 
         newDfd->channels << ch;
 
@@ -395,6 +454,8 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
 
         emit tick();
     }
+    if (p.baseChannel>=0 && p.baseChannel < dfd->channelsCount())
+        dfd->channels[p.baseChannel]->floatValues.clear();
 
     newDfd->NumChans = newDfd->channels.size();
     newDfd->setSamplesCount(newDfd->channel(0)->samplesCount());
@@ -406,12 +467,12 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
     return true;
 }
 
-void Converter::applyWindow(QVector<float> &values, const Parameters &p)
+void applyWindow(QVector<float> &values, const Parameters &p)
 {
     quint32 i=0;
     while (1) {
         for (int j=0; j<p.window.size(); j++) {
-            if (i >= values.size()) return;
+            if (i >= (quint32)values.size()) return;
             values[i] = values[i] * p.window[j];
             i++;
         }
@@ -420,11 +481,9 @@ void Converter::applyWindow(QVector<float> &values, const Parameters &p)
 
 const double TwoPi = 6.283185307179586;
 
-// возвращает квадрат амплитуды * 2 / размер блока^2
-void FFTAnalysis(const QVector<float> &AVal, QVector<double> &FTvl)
+QVector<double> FFTAnalysis(const QVector<float> &AVal)
 {
     int Nvl = AVal.size();
-    int Nft = FTvl.size();
 
     int i, j, n, m, Mmax, Istp;
     double Tmpr, Tmpi, Wtmp, Theta;
@@ -476,18 +535,78 @@ void FFTAnalysis(const QVector<float> &AVal, QVector<double> &FTvl)
 
         Mmax = Istp;
     }
-
-    for (i = 0; i < Nft; i++) {
-        j = i * 2; FTvl[Nft - i - 1] = 2* (pow(Tmvl[j],2) + pow(Tmvl[j+1],2))/Nvl/Nvl;
-    }
+    return Tmvl;
 }
 
-QVector<double> Converter::computeSpectre(const QVector<float> &values,
-                                              const Parameters &p)
+// возвращает спектр мощности 2*|complexSpectre|^2/N^2
+QVector<double> powerSpectre(const QVector<float> &values, const Parameters &p)
 {
     QVector<double> output(p.blockSize);
-    FFTAnalysis(values, output);
+    QVector<double> complexSpectre = FFTAnalysis(values);
+
+    int j=0;
+    const int Nvl = values.size();
+    for (int i = 0; i < Nvl; i++) {
+        j = i * 2; output[Nvl - i - 1] = 2* (pow(complexSpectre[j],2) + pow(complexSpectre[j+1],2))/Nvl/Nvl;
+    }
+
     output.resize(p.fCount);
+
+    return output;
+}
+
+// возвращает взаимный спектр мощности |Y* Z|
+QVector<double> coSpectre(const QVector<float> &values1, const QVector<float> &values2, const Parameters &p)
+{
+    QVector<double> output(p.blockSize);
+
+    QVector<double> complexSpectre1 = FFTAnalysis(values1);
+    QVector<double> complexSpectre2 = FFTAnalysis(values2);
+
+
+    int j=0;
+    const int Nvl = values1.size();
+    for (int i = 0; i < Nvl; i++) {
+        j = i * 2;
+        double real = complexSpectre1[j]*complexSpectre2[j] + complexSpectre1[j+1]*complexSpectre2[j+1];
+        double imag = complexSpectre1[j]*complexSpectre2[j+1] - complexSpectre1[j+1]*complexSpectre2[j];
+        output[Nvl - i - 1] = sqrt(pow(real,2) + pow(imag,2));
+    }
+
+    output.resize(p.fCount);
+
+    return output;
+}
+
+// возвращает автоспектр сигнала |Y|^2
+QVector<double> autoSpectre(const QVector<float> &values, const Parameters &p)
+{
+    QVector<double> output(p.blockSize);
+    QVector<double> complexSpectre = FFTAnalysis(values);
+
+    int j=0;
+    const int Nvl = values.size();
+    for (int i = 0; i < Nvl; i++) {
+        j = i * 2;
+        output[Nvl - i - 1] = complexSpectre[j]*complexSpectre[j] + complexSpectre[j+1]*complexSpectre[j+1];
+    }
+
+    output.resize(p.fCount);
+
+    return output;
+}
+
+// возвращает передаточную функцию H1
+QVector<double> transferFunctionH1(const QVector<double> &values1, const QVector<double> &values2, const Parameters &p)
+{
+    QVector<double> output(p.fCount);
+
+   // QVector<double> coSpectre_ = coSpectre(values1, values2, p);
+   // QVector<double> autoSpectre_ = autoSpectre(values1, p);
+
+    for (int i=0; i<values2.size(); ++i) {
+        output[i] = values2[i]/values1[i];
+    }
 
     return output;
 }
@@ -554,7 +673,7 @@ QStringList Converter::getSpfFile(QString dir)
         spfFile << "ShiftDat=0"; // TODO: добавить возможность устанавливать смещение
         // длина = число отсчетов в канале
         // TODO: добавить возможность устанавливать правую границу выборки
-        quint32 NI = dfd->channels.at(p.activeChannel)->ChanBlockSize / dfd->BlockSize;
+        quint32 NI = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->ChanBlockSize / dfd->BlockSize;
         NI *= dfd->samplesCount();
 
         spfFile << QString("Duration=%1").arg(NI);
@@ -572,7 +691,7 @@ QStringList Converter::getSpfFile(QString dir)
         spfFile << QString("Wind=%1").arg(window(p.windowType));
         spfFile << QString("TypeAver=%1").arg(p.averagingType);
 
-        quint32 numberOfInd = dfd->channels.at(p.activeChannel)->samplesCount();
+        quint32 numberOfInd = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->samplesCount();
         double blockSize = p.blockSize;
         double NumberOfAveraging = double(numberOfInd) / blockSize / (1<<p.bandStrip);
 

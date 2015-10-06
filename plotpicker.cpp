@@ -9,6 +9,8 @@
 #include <qwt_plot_curve.h>
 #include <qwt_plot_directpainter.h>
 
+#include <qwt_plot_marker.h>
+
 #include "qwt_plot_textlabel.h"
 
 #include <QtDebug>
@@ -24,10 +26,12 @@ PlotPicker::PlotPicker(QWidget *canvas) :
     d_selectedPoint( -1 )
 {DD;
     plot = qobject_cast<QwtPlotCanvas*>(canvas)->plot();
+    _showHarmonics = false;
 
     marker = 0;
     mode = Plot::ScalingInteraction;
     selectedLabel = 0;
+    labelAdded=false;
 
     setStateMachine(new QwtPickerDragPointMachine);
 
@@ -40,7 +44,9 @@ PlotPicker::PlotPicker(QWidget *canvas) :
 
 PlotPicker::~PlotPicker()
 {DD;
-
+    foreach (QwtPlotMarker *d, _harmonics) {
+        delete d;
+    }
 }
 
 void PlotPicker::setMode(Plot::InteractionMode mode)
@@ -74,7 +80,7 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
             PointLabel *label = d_selectedCurve->findLabel(d_selectedPoint);
 
             if (!label) {
-                label = new PointLabel(QString("%1").arg(val.x()), plot);
+                label = new PointLabel(plot);
                 label->setPoint(d_selectedPoint);
                 label->setOrigin(val);
                 label->setYAxis(d_selectedCurve->yAxis());
@@ -82,40 +88,25 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
 
                 label->attach(plot);
                 plot->replot();
+                selectedLabel = label;
+                labelAdded = true;
             }
             else {
                 selectedLabel = label;
                 selectedLabel->setSelected(true);
-               // d_currentPos = pos;
-//                qDebug()<<"label at"<<d_selectedPoint;
+                selectedLabel->cycleMode();
             }
+            emit labelSelected(true);
+        }
+        else if (selectedLabel) {
+            selectedLabel->cycleMode();
+        }
 
-//            Marker *m = d_selectedCurve->findMarker(d_selectedPoint);
-//            if (!m) {
-//                m = d_selectedCurve->addMarker(d_selectedPoint);
-//                m->attach(plot);
-//            }
-//            else {
-//                highlightPoint(false);
-//                switch (m->type) {
-//                    case 0: {
-//                        m->type = 1;
-//                        m->setLabel(QwtText(QString("%1\n%2").arg(val.x()).arg(val.y(),0,'f',2)));
-//                        break;
-//                    }
-//                    case 1: {
-//                        m->type = 2;
-//                        m->setLabel(QwtText(QString("%1").arg(val.y(),0,'f',2)));
-//                        break;
-//                    }
-//                    case 2: {//удаляем
-//                        d_selectedCurve->removeMarker(d_selectedPoint);
-//                        plot->replot();
-//                        break;
-//                    }
-//                    default: break;
-//                }
-//            }
+    }
+    else if (key == Qt::Key_C) {
+        if (selectedLabel) {
+            selectedLabel->cycleMode();
+            plot->replot();
         }
     }
     else if (key == Qt::Key_Delete) {
@@ -128,6 +119,8 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
                 }
             }
             selectedLabel = 0;
+            emit labelSelected(false);
+            labelAdded = false;
             plot->replot();
         }
     }
@@ -153,6 +146,8 @@ void PlotPicker::resetHighLighting()
     }
 
     selectedLabel = 0;
+    emit labelSelected(false);
+    labelAdded=false;
 }
 
 Curve * PlotPicker::findClosestPoint(const QPoint &pos, int &index) const
@@ -213,8 +208,11 @@ void PlotPicker::pointAppended(const QPoint &pos)
     if (selectedLabel) {
         selectedLabel->setSelected(true);
         d_currentPos = pos;
+        emit labelSelected(true);
+        labelAdded=true;
     }
     else {
+        emit labelSelected(false);
         if ((curve = findClosestPoint(pos, index))) {
             d_selectedCurve = curve;
             d_selectedPoint = index;
@@ -232,24 +230,26 @@ void PlotPicker::pointAppended(const QPoint &pos)
 
 void PlotPicker::pointMoved(const QPoint &pos)
 {DD;
-    if (mode != Plot::DataInteraction) return;
-
-    if (selectedLabel) {
+    if (selectedLabel) {//qDebug()<<"label moving";
         selectedLabel->moveBy(pos-d_currentPos);
         d_currentPos = pos;
     }
 
-    else if (d_selectedCurve) {
+    else
+        if (mode == Plot::DataInteraction) {
 
-        double newY = plot->invTransform(d_selectedCurve->yAxis(), pos.y());
+            if (d_selectedCurve) {
 
-//        double diff = newY - d_selectedCurve->dfd->channels.at(d_selectedCurve->channel)->yValues[d_selectedPoint];
+                double newY = plot->invTransform(d_selectedCurve->yAxis(), pos.y());
 
-        d_selectedCurve->descriptor->channel(d_selectedCurve->channelIndex)->yValues()[d_selectedPoint] = newY;
-        d_selectedCurve->descriptor->setDataChanged(true);
+                //        double diff = newY - d_selectedCurve->dfd->channels.at(d_selectedCurve->channel)->yValues[d_selectedPoint];
 
-        highlightPoint(true);
-    }
+                d_selectedCurve->descriptor->channel(d_selectedCurve->channelIndex)->yValues()[d_selectedPoint] = newY;
+                d_selectedCurve->descriptor->setDataChanged(true);
+
+                highlightPoint(true);
+            }
+        }
 }
 
 // Hightlight the selected point
@@ -259,6 +259,7 @@ void PlotPicker::highlightPoint( bool showIt )
         if (!d_selectedCurve)
             return;
         QPointF val = d_selectedCurve->sample(d_selectedPoint);
+        emit updateTrackingCursor(val.x());
         if (!marker) {
             marker = new QwtPlotMarker();
             marker->setLineStyle(QwtPlotMarker::NoLine);
@@ -274,10 +275,50 @@ void PlotPicker::highlightPoint( bool showIt )
         }
         marker->setValue(val);
         if (marker->label()==QwtText()) {
-            marker->setLabel(QwtText(QString("%1").arg(val.x())));
+            marker->setLabel(QwtText(QString::number(val.x(),'f',2)));
         }
+
+        if (_harmonics.isEmpty()) {
+            for (int i=0; i<10; ++i) {
+                QwtPlotMarker *d = new QwtPlotMarker();
+                d->setLineStyle( QwtPlotMarker::VLine );
+                d->setLinePen( Qt::black, 0, Qt::DashDotLine );
+                //d->attach(plot);
+                _harmonics.append(d);
+            }
+        }
+        if (_showHarmonics) {
+            for (int i=0; i<10; ++i) {
+                _harmonics[i]->setValue(val.x()*(i+1),0.0);
+                _harmonics[i]->attach(plot);
+            }
+        }
+
+//        d_marker1 = new QwtPlotMarker();
+//        d_marker1->setValue( 0.0, 0.0 );
+//        d_marker1->setLineStyle( QwtPlotMarker::VLine );
+//        d_marker1->setLabelAlignment( Qt::AlignRight | Qt::AlignBottom );
+//        d
+//        d_marker1->attach( this );
+
+//        QwtPlotGrid *grid = new QwtPlotGrid;
+//        grid->enableY(false);
+//        QList<double> majorTicks;
+//        for (int i=0; i<5; ++i) majorTicks << val.x()*i;
+//        QList<double> minorTicks;
+//        for (int i=0; i<20; ++i) minorTicks << val.x()*i/4;
+//        QList<double> medTicks;
+//        for (int i=0; i<10; ++i) medTicks << val.x()*i/2;
+//      //  grid->setXDiv(QwtScaleDiv(0,0));
+//        grid->attach(plot);
+//        //plot->setAxisScaleDiv(QwtPlot::xBottom, QwtScaleDiv(majorTicks.first(), majorTicks.last(), minorTicks,medTicks,majorTicks));
+//         grid->setXDiv(QwtScaleDiv(majorTicks.first(), majorTicks.last(), minorTicks,medTicks,majorTicks));
+
     }
     else {
+        foreach (QwtPlotMarker *d, _harmonics) {
+            d->detach();
+        }
         delete marker;
         marker = 0;
     }
@@ -288,8 +329,6 @@ void PlotPicker::highlightPoint( bool showIt )
     plot->replot();
     plotCanvas->setPaintAttribute( QwtPlotCanvas::ImmediatePaint, false );
 }
-
-
 
 
 QwtText PlotPicker::trackerTextF(const QPointF &pos) const

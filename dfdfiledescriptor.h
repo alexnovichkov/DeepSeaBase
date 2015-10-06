@@ -147,6 +147,9 @@ public:
     virtual double xStep() const {return XStep;}
     virtual quint32 samplesCount() const;
     virtual QVector<double> &yValues() {return YValues;}
+    virtual QVector<double> &xValues() {return XValues;}
+    void setYValues(const QVector<double> &values);
+    void setXValues(const QVector<double> &xvalues);
     virtual double xMaxInitial() const {return XMaxInitial;}
     virtual double yMinInitial() const {return YMinInitial;}
     virtual double yMaxInitial() const {return YMaxInitial;}
@@ -197,19 +200,18 @@ public:
     double YMaxInitial; // initial yMax value to display
 
     QVector<double> YValues;
+    QVector<double> XValues;
     DfdFileDescriptor *parent;
-    quint32 channelIndex; // нумерация с 0
+    int channelIndex; // нумерация с 0
 
     bool _populated;
     quint32 NumInd;
 
-    bool corrected;
+    bool temporalCorrection;
     QString nameBeforeCorrection;
     double oldCorrectionValue;
-private:
+
     DfdDataType dataType;
-
-
 };
 
 class RawChannel : public DfdChannel
@@ -307,6 +309,8 @@ public:
 
     virtual double xStep() const {return XStep;}
 
+    virtual void setXStep(const double xStep);
+
     virtual void setLegend(const QString &legend);
     virtual QString legend() const;
 
@@ -325,7 +329,8 @@ public:
 
     void deleteChannels(const QVector<int> &channelsToDelete);
     void copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy);
-    virtual void calculateMean(const QMultiHash<FileDescriptor *, int> &channels);
+    virtual void calculateMean(const QList<QPair<FileDescriptor *, int> > &channels);
+    virtual FileDescriptor *calculateThirdOctave();
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes);
 
     QStringList getHeadersForChannel(int channel);
@@ -359,6 +364,7 @@ public:
     quint32 BlockSize;
     QString XName;
 
+    double XBegin;
     double XStep;
     QString DescriptionFormat;
     QString CreatedBy;

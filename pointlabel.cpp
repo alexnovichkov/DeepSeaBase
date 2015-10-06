@@ -3,17 +3,18 @@
 #include "qwt_plot.h"
 #include "logging.h"
 
-PointLabel::PointLabel(const QwtText &title, QwtPlot *parent)
-    : QwtPlotItem(QwtText(title)),
+PointLabel::PointLabel(QwtPlot *parent)
+    : QwtPlotItem(),
       d_point(-1),
       d_origin(QPointF(0.0, 0.0)),
       d_displacement(QPoint(0, -13)),
-      d_label(title),
+     // d_label(title),
       plot(parent),
       d_selected(false)
 {DD;
     setZ(40.0);
     d_label.setBorderPen(d_selected?QPen(Qt::darkGray, 1, Qt::DashLine):QPen(Qt::NoPen));
+    d_mode=0;
 }
 
 PointLabel::~PointLabel()
@@ -35,7 +36,43 @@ void PointLabel::setOrigin(const QPointF &origin)
 {DD;
     if (d_origin == origin) return;
     d_origin = origin;
+    switch (d_mode) {
+        case 0: d_label = QwtText(QString::number(d_origin.x(),'f',2)); break;
+        case 1: d_label = QwtText(QString("%1; %2")
+                                  .arg(QString::number(d_origin.x(),'f',2))
+                                  .arg(QString::number(d_origin.y(),'f',1))); break;
+        case 2: d_label = QwtText(QString::number(d_origin.y(),'f',1)); break;
+    }
+    d_label.setBorderPen(d_selected?QPen(Qt::darkGray, 1, Qt::DashLine):QPen(Qt::NoPen));
+    setTitle(d_label);
     itemChanged();
+}
+
+void PointLabel::setMode(int mode)
+{
+    if (d_mode==mode) return;
+
+    d_mode = mode;
+    switch (d_mode) {
+        case 0: d_label = QwtText(QString::number(d_origin.x(),'f',2)); break;
+        case 1: d_label = QwtText(QString("%1; %2")
+                                  .arg(QString::number(d_origin.x(),'f',2))
+                                  .arg(QString::number(d_origin.y(),'f',1))); break;
+        case 2: d_label = QwtText(QString::number(d_origin.y(),'f',1)); break;
+    }
+    d_label.setBorderPen(d_selected?QPen(Qt::darkGray, 1, Qt::DashLine):QPen(Qt::NoPen));
+    setTitle(d_label);
+    itemChanged();
+}
+
+void PointLabel::cycleMode()
+{
+    switch (d_mode) {
+        case 0: setMode(1); break;
+        case 1: setMode(2); break;
+        case 2: setMode(0); break;
+        default: break;
+    }
 }
 
 int PointLabel::point() const

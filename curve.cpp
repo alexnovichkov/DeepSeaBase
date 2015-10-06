@@ -8,7 +8,10 @@ class DfdData: public QwtSeriesData<QPointF>
 {
 public:
     DfdData(double x0, double xStep, const double *y, size_t size) :
-        d_x0(x0), d_xStep(xStep), d_y(y), d_size(size)
+        d_x0(x0), d_xStep(xStep), d_y(y), d_x(0), d_size(size)
+    {}
+    DfdData(const double *x, const double *y, size_t size) :
+        d_x0(x[0]), d_xStep(x[1]-x[0]), d_y(y), d_x(x), d_size(size)
     {}
 
     virtual QRectF boundingRect() const
@@ -26,12 +29,14 @@ public:
 
     virtual QPointF sample( size_t i ) const
     {
+        if (d_x) return QPointF(d_x[int(i)], d_y[int(i)]);
         return QPointF( d_x0 + i * d_xStep, d_y[int( i )] );
     }
 private:
     double d_x0;
     double d_xStep;
     const double *d_y;
+    const double *d_x;
     size_t d_size;
 };
 
@@ -41,6 +46,10 @@ Curve::Curve(const QString &title, FileDescriptor *descriptor, int channelIndex)
     channel = descriptor->channel(channelIndex);
     setPaintAttribute(QwtPlotCurve::ClipPolygons);
     setRenderHint(QwtPlotItem::RenderAntialiased);
+    if (channel->xValues().isEmpty())
+        setRawSamples(channel->xBegin(), descriptor->xStep(), channel->yValues().data(), channel->samplesCount());
+    else
+        setRawSamples(channel->xValues().data(), channel->yValues().data(), channel->samplesCount());
 }
 
 Curve::Curve(const QString &title) :
@@ -66,6 +75,11 @@ Curve::~Curve()
 void Curve::setRawSamples(double x0, double xStep, const double *yData, int size)
 {
     setData(new DfdData(x0, xStep, yData, size));
+}
+
+void Curve::setRawSamples(const double *xData, const double *yData, int size)
+{
+    setData(new DfdData(xData, yData, size));
 }
 
 void Curve::addLabel(PointLabel *label)

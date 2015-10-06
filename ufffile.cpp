@@ -113,7 +113,7 @@ void UffFileDescriptor::read()
         }
     }
     if (!channels.isEmpty()) {
-        setXBegin(channels.first()->xBegin());
+        //setXBegin(channels.first()->xBegin());
         setSamplesCount(channels.first()->samplesCount());
     }
     setChanged(true);
@@ -241,6 +241,21 @@ double UffFileDescriptor::xStep() const
     return 0.0;
 }
 
+void UffFileDescriptor::setXStep(const double xStep)
+{
+    if (channels.isEmpty()) return;
+    bool changed = false;
+
+    for (int i=0; i<channels.size(); ++i) {
+        if (channels.at(i)->xStep()!=xStep) {
+            changed = true;
+            channels[i]->type58[29].value = xStep;
+        }
+    }
+    if (changed) setChanged(true);
+    write();
+}
+
 QString UffFileDescriptor::xName() const
 {
     if (channels.isEmpty()) return QString();
@@ -311,19 +326,16 @@ void UffFileDescriptor::copyChannelsFrom(const QList<QPair<FileDescriptor *, int
     write();
 }
 
-void UffFileDescriptor::calculateMean(const QMultiHash<FileDescriptor *, int> &channels)
+void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> > &channels)
 {DD;
     Function *ch = new Function(this);
 
-    FileDescriptor *firstDescriptor = channels.keys().first();
-    Channel *firstChannel = firstDescriptor->channel(channels.value(firstDescriptor));
+    FileDescriptor *firstDescriptor = channels.first().first;
+    Channel *firstChannel = firstDescriptor->channel(channels.first().second);
 
     QList<Channel*> list;
-    QHashIterator<FileDescriptor *, int> it(channels);
-    while (it.hasNext()) {
-        it.next();
-        list << it.key()->channel(it.value());
-    }
+    for (int i=0; i<channels.size(); ++i)
+        list << channels.at(i).first->channel(channels.at(i).second);
 
     // считаем данные для этого канала
     // если ось = дБ, сначала переводим значение в линейное
@@ -360,15 +372,10 @@ void UffFileDescriptor::calculateMean(const QMultiHash<FileDescriptor *, int> &c
     ch->setName("Среднее");
     ch->type58[8].value = QDateTime::currentDateTime();
 
-    QList<int> ll;
     QStringList l;
-    it.toFront();
-    while (it.hasNext()) {
-        it.next();
-        ll << it.value()+1;
+    for (int i=0; i<channels.size(); ++i) {
+        l << QString::number(channels.at(i).second);
     }
-    qSort(ll);
-    foreach(int n,ll) l << QString::number(n);
     ch->setDescription("Среднее каналов "+l.join(","));
 
     ch->samples = numInd;
@@ -389,6 +396,11 @@ void UffFileDescriptor::calculateMean(const QMultiHash<FileDescriptor *, int> &c
     ch->parent = this;
 
     this->channels << ch;
+}
+
+FileDescriptor *UffFileDescriptor::calculateThirdOctave()
+{
+    return 0;
 }
 
 void UffFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
@@ -865,6 +877,7 @@ Function::Function(Channel &other)
 //    values = new double[samplesCount()];
 //    memcpy(static_cast<void *>(values), static_cast<void *>(other.yValues()),
 //           samplesCount()*sizeof(double));
+    xvalues = other.xValues();
 
     type58[4].value = other.name();
     type58[6].value = other.description();
@@ -898,9 +911,8 @@ Function::Function(const Function &other)
     yMax = other.yMax;
 
     values = other.values;
-//    values = new double[samplesCount()];
-//    memcpy(static_cast<void *>(values), static_cast<void *>(other.values),
-//           samplesCount()*sizeof(double));
+    xvalues = other.xvalues;
+
     parent = other.parent;
     type58 = other.type58;
 }
@@ -931,25 +943,45 @@ void Function::read(QTextStream &stream)
             doLog=false;
         if (this->type()==Descriptor::FrequencyResponseFunction) thr=1.0;
         values = QVector<double>(samples, 0.0);
+        if (type58[27].value.toInt() == 0) {
+            // uneven abscissa, read data pairs
+            xvalues = QVector<double>(samples, 0.0);
+        }
         if (type58[25].value.toInt() < 5) {//real values
+            quint32 j=0;
             for (quint32 i=0; i<samples; ++i) {
-                double yValue;
-                stream >> yValue;
+                double value;
+                stream >> value;
+
+                if (type58[27].value.toInt() == 0) {
+                    xvalues[j] = value;
+                    stream >> value;
+                }
+
                 if (doLog)
-                    values[i] = 20*log10(yValue/thr);
+                    value = 20*log10(value/thr);
                 else
-                    values[i] = yValue;
+                    value = value;
+
+                values[j] = value;
+                j++;
             }
         }
         else {//complex values
             double first, second;
+            quint32 j=0;
             for (quint32 i=0; i<samples; ++i) {
+                if (type58[27].value.toInt() == 0) {
+                    stream >> first;
+                    xvalues[j] = first;
+                }
                 stream >> first >> second; //qDebug()<<first<<second;
                 double amplitude = sqrt(first*first + second*second);
                 if (doLog)
-                    values[i] = 20*log10(amplitude/thr);
+                    values[j] = 20*log10(amplitude/thr);
                 else
-                    values[i] = amplitude;
+                    values[j] = amplitude;
+                j++;
             }
             type58[25].value = type58[25].value.toInt()==5?2:4;
         }
@@ -986,11 +1018,15 @@ void Function::write(QTextStream &stream)
     for (int i=0; i<60; ++i) {
         fields[type58[i].type]->print(type58[i].value, stream);
     }
-//    AbstractField *f = 0;
+
     switch (type58[25].value.toInt()) {
         case 2: {
             int j = 0;
             for (quint32 i=0; i<samples; ++i) {
+                if (!xvalues.isEmpty()) {
+                    fields[FTFloat13_5]->print(xvalues[i], stream);
+                    j++;
+                }
                 fields[FTFloat13_5]->print(values[i], stream);
                 j++;
                 if (j==6) {
@@ -1004,6 +1040,10 @@ void Function::write(QTextStream &stream)
         case 4: {
             int j = 0;
             for (quint32 i=0; i<samples; ++i) {
+                if (!xvalues.isEmpty()) {
+                    fields[FTFloat13_5]->print(xvalues[i], stream);
+                    j++;
+                }
                 fields[FTFloat20_12]->print(values[i], stream);
                 j++;
                 if (j==4) {
@@ -1194,6 +1234,11 @@ QVector<double> &Function::yValues()
     return values;
 }
 
+QVector<double> &Function::xValues()
+{
+    return xvalues;
+}
+
 double Function::xMaxInitial() const
 {DD;
     return xMax;
@@ -1211,6 +1256,7 @@ double Function::yMaxInitial() const
 
 void Function::addCorrection(double correctionValue, bool writeToFile)
 {DD;
+    Q_UNUSED(writeToFile)
     for (uint j = 0; j < samplesCount(); ++j)
         values[j] += correctionValue;
 

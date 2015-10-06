@@ -82,6 +82,7 @@ private slots:
     void moveChannels();
 
     void addCorrection();
+    void addCorrections();
 
     void updateChannelsTable(QTreeWidgetItem *, QTreeWidgetItem *);
 
@@ -117,7 +118,7 @@ private slots:
      * @param item
      * @param column
      */
-    void recordLegendChanged(QTreeWidgetItem *item, int column);
+    void treeItemChanged(QTreeWidgetItem *item, int column);
 
     /**
      * @brief rescanBase
@@ -144,14 +145,17 @@ private slots:
     void onCurveDeleted(FileDescriptor *descriptor, int index);
 
     void calculateMean();
+    void calculateThirdOctave();
 
     void moveChannelsUp();
     void moveChannelsDown();
     void editDescriptions();
+
+    void save();
 private:
     void moveChannels(bool up);
     void updateFile(FileDescriptor *descriptor);
-    void addFiles(const QStringList &files);
+    void addFiles(QStringList &files);
     void addFiles(const QList<FileDescriptor*> &files);
 
     void deleteFiles(const QVector<int> &indexes);
@@ -186,16 +190,19 @@ private:
     QAction *addFolderAct;
     QAction *addFolderWithSubfoldersAct;
     QAction *addFileAct;
+    QAction *saveAct;
 
 
     QAction *delFilesAct;
     QAction *plotAllChannelsAct;
     QAction *removeChannelsPlotsAct;
     QAction *convertAct;
+    QAction *calculateThirdOctaveAct;
     QAction *clearPlotAct;
     QAction *savePlotAct;
     QAction *rescanBaseAct;
     QAction *switchCursorAct;
+    QAction *trackingCursorAct;
     QAction *copyToClipboardAct;
     QAction *printPlotAct;
     QAction *editColorsAct;
@@ -203,6 +210,7 @@ private:
     QAction *meanAct;
     QAction *interactionModeAct;
     QAction *addCorrectionAct;
+    QAction *addCorrectionsAct;
     QAction *deleteChannelsAct;
     QAction *deleteChannelsBatchAct;
     QAction *copyChannelsAct;
@@ -216,6 +224,7 @@ private:
     QToolBar *mainToolBar;
 
     QAction *exportToExcelAct;
+    QAction *switchHarmonicsAct;
 
     Plot *plot;
 
