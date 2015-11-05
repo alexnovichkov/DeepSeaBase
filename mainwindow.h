@@ -152,6 +152,8 @@ private slots:
     void editDescriptions();
 
     void save();
+
+    void convertMatFiles();
 private:
     void moveChannels(bool up);
     void updateFile(FileDescriptor *descriptor);
@@ -225,6 +227,8 @@ private:
 
     QAction *exportToExcelAct;
     QAction *switchHarmonicsAct;
+
+    QAction *convertMatFilesAct;
 
     Plot *plot;
 

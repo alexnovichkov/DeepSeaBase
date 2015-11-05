@@ -130,6 +130,8 @@ public:
     virtual void setLegend(const QString &legend);
     virtual QString legend() const;
 
+    void setDateTime(QDateTime dt);
+
 
     virtual void deleteChannels(const QVector<int> &channelsToDelete);
     virtual void copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy);

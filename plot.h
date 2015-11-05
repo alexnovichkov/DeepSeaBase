@@ -27,6 +27,8 @@ struct Range {
 
 #include <QWidget>
 class QTreeWidget;
+class QPushButton;
+class QCheckBox;
 class TrackingPanel:public QWidget
 {
     Q_OBJECT
@@ -43,6 +45,8 @@ public:
     void setX(double x);
 private:
     QTreeWidget *tree;
+    QPushButton *button;
+    QCheckBox *box;
 };
 
 class Plot : public QwtPlot

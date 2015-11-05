@@ -345,6 +345,8 @@ public:
 
     virtual QString xName() const {return XName;}
 
+    void setDateTime(QDateTime dt);
+
     bool operator == (const DfdFileDescriptor &dfd)
     {
         return (this->DFDGUID == dfd.DFDGUID);

@@ -826,6 +826,15 @@ QString DfdFileDescriptor::fileFilters() const
     return QString("Файлы dfd (*.dfd)");
 }
 
+void DfdFileDescriptor::setDateTime(QDateTime dt)
+{
+    this->Date = dt.date();
+    Date = Date.addYears(100);
+    this->Time = dt.time();
+    setChanged(true);
+    write();
+}
+
 DfdChannel *DfdFileDescriptor::newChannel(int chanIndex)
 {DD;
     DfdChannel *c = 0;

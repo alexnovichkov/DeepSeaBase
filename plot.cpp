@@ -105,6 +105,7 @@ Plot::Plot(QWidget *parent) :
 Plot::~Plot()
 {DD;
 //    delete freeGraph;
+    trackingPanel->hide();
     qDeleteAll(graphs);
     delete grid;
     delete zoom;
@@ -118,6 +119,8 @@ void Plot::update()
     updateAxes();
     updateAxesLabels();
     updateLegend();
+    double x = _trackingCursor->value().x();
+    updateTrackingCursor(x);
     replot();
 }
 
@@ -233,13 +236,6 @@ void Plot::updateTrackingCursor(double xVal)
 
 
     }
-    //qDebug()<<"clicked xVal"<<xVal;
-
-//    if (graphs.size()==0) return;
-
-
-
-//
 }
 
 void Plot::deleteGraph(FileDescriptor *dfd, int channel, bool doReplot)
@@ -686,8 +682,30 @@ TrackingPanel::TrackingPanel(QWidget *parent) : QWidget(parent)
     tree->setColumnWidth(0,50);
     tree->setColumnWidth(1,150);
 
-    QHBoxLayout *l = new QHBoxLayout;
+    button = new QPushButton("Копировать", this);
+    connect(button,&QPushButton::clicked,[=](){
+        QStringList list;
+        for(int i=0; i<tree->topLevelItemCount(); ++i) {
+            QString val = tree->topLevelItem(i)->text(3);
+            val.replace(".",",");
+            if (box->isChecked())
+                list << QString("%1\t%2").arg(tree->topLevelItem(i)->text(1)).arg(val);
+            else
+                list << val;
+        }
+        QClipboard *clipboard = QApplication::clipboard();
+        clipboard->setText(list.join("\n"));
+    });
+
+    box = new QCheckBox("Включая названия каналов", this);
+
+
+    QVBoxLayout *l = new QVBoxLayout;
+    QHBoxLayout *ll = new QHBoxLayout;
+    ll->addWidget(button);
+    ll->addWidget(box);
     l->addWidget(tree);
+    l->addLayout(ll);
     setLayout(l);
     resize(350,300);
 }

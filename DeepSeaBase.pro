@@ -40,7 +40,9 @@ SOURCES += main.cpp\
     editdescriptionsdialog.cpp \
     iirfilter.cpp \
     windowing.cpp \
-    converter.cpp
+    converter.cpp \
+    matlabfiledescriptor.cpp \
+    matlabconverterdialog.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -70,7 +72,9 @@ HEADERS  += mainwindow.h \
     editdescriptionsdialog.h \
     iirfilter.h \
     windowing.h \
-    converter.h
+    converter.h \
+    matlabfiledescriptor.h \
+    matlabconverterdialog.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\

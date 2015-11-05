@@ -92,6 +92,20 @@ void Converter::start()
     tempDir.setAutoRemove(true);
     tempFolderName = tempDir.path();
 
+    // Проверяем размер блока файлов и насильно конвертируем файлы с помощью DeepSea,
+    // если размер блока равен 1
+    bool blockSizeIs1 = false;
+    foreach (DfdFileDescriptor *dfd, dataBase) {
+        if (dfd->BlockSize==1) {
+            blockSizeIs1 = true;
+            break;
+        }
+    }
+    if (blockSizeIs1) {
+        p.useDeepSea = true;
+        emit message("Размер блока в одном из файлов равен 1, для расчета будет использован DeepSea.");
+    }
+
     if (!p.useDeepSea) {
         p.baseChannel--;
         foreach (DfdFileDescriptor *dfd, dataBase) {

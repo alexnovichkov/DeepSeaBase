@@ -19,6 +19,8 @@
 #include "dfdfiledescriptor.h"
 #include "ufffile.h"
 #include "editdescriptionsdialog.h"
+#include "matlabfiledescriptor.h"
+#include "matlabconverterdialog.h"
 
 class DrivesDialog : public QDialog
 {
@@ -171,7 +173,7 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), tab(0)
 {DD;
-    setWindowTitle(tr("DeepSea Database 1.5.1"));
+    setWindowTitle(tr("DeepSea Database 1.5.6"));
     setAcceptDrops(true);
 
     mainToolBar = new QToolBar(this);
@@ -387,6 +389,9 @@ MainWindow::MainWindow(QWidget *parent)
     addFolderMenu->addAction(addFolderWithSubfoldersAct);
     addFolderAct->setMenu(addFolderMenu);
 
+    convertMatFilesAct = new QAction("Конвертировать Matlab файлы...", this);
+    connect(convertMatFilesAct,SIGNAL(triggered()),SLOT(convertMatFiles()));
+
     mainToolBar->addWidget(new QLabel("Записи:"));
     mainToolBar->addAction(addFolderAct);
     mainToolBar->addAction(addFileAct);
@@ -434,6 +439,7 @@ MainWindow::MainWindow(QWidget *parent)
     QMenu *fileMenu = menuBar()->addMenu(tr("Файл"));
     fileMenu->addAction(addFolderAct);
     fileMenu->addAction(addFileAct);
+    fileMenu->addAction(convertMatFilesAct);
 
     QMenu *recordsMenu = menuBar()->addMenu(QString("Записи"));
     recordsMenu->addAction(delFilesAct);
@@ -1422,6 +1428,14 @@ void MainWindow::save()
     }
 }
 
+void MainWindow::convertMatFiles()
+{
+    MatlabConverterDialog dialog(this);
+    if (dialog.exec()) {
+
+    }
+}
+
 QVector<int> computeIndexes(QVector<int> notYetMoved, bool up, int totalSize)
 {DD;
     QVector<int> moved;
@@ -1545,6 +1559,8 @@ void MainWindow::updateChannelsTable(FileDescriptor *dfd)
                     ti->setTextColor(Qt::white);
                     ti->setBackgroundColor(ch->color());
                 }
+                if (ch->type()==Descriptor::TimeResponse && QFileInfo(tab->record->attachedFileName()).size()>10485760)
+                    ti->setFlags(Qt::ItemIsSelectable);
             }
             tab->channelsTable->setItem(i,col,ti);
         }
@@ -1803,12 +1819,15 @@ void MainWindow::treeItemChanged(QTreeWidgetItem *item, int column)
         }
     }
 
-//    if (column==8) {// описание
-//        SortableTreeWidgetItem *i = dynamic_cast<SortableTreeWidgetItem *>(item);
-//        if (i) {
-
-//        }
-//    }
+    if (column==2) {// описание
+        SortableTreeWidgetItem *i = dynamic_cast<SortableTreeWidgetItem *>(item);
+        if (i) {
+            QDateTime dt = QDateTime::fromString(i->text(2), "dd.MM.yy hh:mm:ss");
+            if (dt.isValid()) {
+                i->fileDescriptor->setDateTime(dt);
+            }
+        }
+    }
 }
 
 void MainWindow::rescanBase()
@@ -2018,10 +2037,12 @@ void MainWindow::exportToExcel(bool fullRange)
         return;
     }
 
-    if (!excel) excel = new QAxObject("Excel.Application", this);
+    if (!excel) {
+        //excel = new QAxObject("Excel.Application",this);
+        excel = new QAxObject("{00024500-0000-0000-c000-000000000046}&",this);
+    }
+    if (!excel) return;
     //qDebug()<<excel->generateDocumentation();
-    //QList<QVariant> params; params << 0;
-    //excel->dynamicCall("ActivateMicrosoftApp()", params);
 
     excel->setProperty("Visible", true);
 
