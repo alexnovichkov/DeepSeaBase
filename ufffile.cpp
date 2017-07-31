@@ -3,6 +3,7 @@
 //#include <QtGui>
 #include "logging.h"
 
+
 QList<AbstractField*> fields = {
     new DelimiterField,
     new Float13_5Field,
@@ -72,7 +73,7 @@ UffFileDescriptor::UffFileDescriptor(const QString &fileName) : FileDescriptor(f
 }
 
 UffFileDescriptor::~UffFileDescriptor()
-{DD;
+{DD; /*qDebug()<<fileName()<<changed();*/
     if (changed())
         write();
 
@@ -93,6 +94,7 @@ void UffFileDescriptor::fillRest()
 void UffFileDescriptor::read()
 {DD;
     QFile uff(fileName());
+    bool needsRewrite = false;
     if (uff.open(QFile::ReadOnly | QFile::Text)) {
         QTextStream stream(&uff);
 //qDebug()<<fileName();
@@ -103,10 +105,11 @@ void UffFileDescriptor::read()
             Function *f = new Function(this);
             f->read(stream);
 
-            if (f->type() > 1) {// skip time responses
+            if (f->type() > 1) {
                 channels << f;
             }
-            else {
+            else {// skip time responses
+                needsRewrite = true;
                 delete f;
                 continue;
             }
@@ -116,13 +119,18 @@ void UffFileDescriptor::read()
         //setXBegin(channels.first()->xBegin());
         setSamplesCount(channels.first()->samplesCount());
     }
-    setChanged(true);
+    if (needsRewrite) setChanged(true);
     //write();
 }
 
 void UffFileDescriptor::write()
 {DD;
     if (!changed()) return;
+
+    //be sure all channels were read. May take too much memory
+    for(int i = 0; i< channels.size(); ++i) {
+        if (!channels[i]->populated()) channels[i]->populate();
+    }
 
     QFile uff(fileName());
     if (uff.open(QFile::WriteOnly | QFile::Text)) {
@@ -144,7 +152,9 @@ void UffFileDescriptor::writeRawFile()
 
 void UffFileDescriptor::populate()
 {DD;
-    // Nothing to do here
+    for(int i = 0; i < channels.size(); ++i) {
+        if (!channels[i]->populated()) channels[i]->populate();
+    }
 }
 
 void UffFileDescriptor::updateDateTimeGUID()
@@ -153,7 +163,7 @@ void UffFileDescriptor::updateDateTimeGUID()
     header.type151[10].value = t;
     header.type151[12].value = t;
     header.type151[16].value = t;
-    header.type151[14].value = "DeepSeaBase by Novichkov & sukin sons";
+    header.type151[14].value = "DeepSeaBase by Novichkov";
 }
 
 QList<QPair<QString, QString> > UffFileDescriptor::dataDescriptor() const
@@ -404,6 +414,11 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     this->channels << ch;
 }
 
+void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize)
+{
+
+}
+
 FileDescriptor *UffFileDescriptor::calculateThirdOctave()
 {
     return 0;
@@ -478,7 +493,7 @@ bool UffFileDescriptor::operator ==(const FileDescriptor &descriptor)
     return this->fileName() == descriptor.fileName();
 }
 
-bool UffFileDescriptor::dataTypeEquals(FileDescriptor *other)
+bool UffFileDescriptor::dataTypeEquals(FileDescriptor *other) const
 {DD;
     return (this->type() == other->type());
 }
@@ -596,12 +611,22 @@ FunctionHeader::FunctionHeader()
         {FTString80,"NONE"}, {FTEmpty, ""},//44-45 not used
         {FTDelimiter,""}, {FTEmpty, ""} //46-47
     };
+    valid = true;
 }
 
 void FunctionHeader::read(QTextStream &stream)
 {DD;
-    for (int i=0; i<48; ++i) {
+    for (int i=0; i<4; ++i) {
         fields[type1858[i].type]->read(type1858[i].value, stream);
+    }
+    if (type1858[2].value.toInt()==1858) {
+        for (int i=4; i<48; ++i) {
+            fields[type1858[i].type]->read(type1858[i].value, stream);
+        }
+    }
+    else {
+        valid = false;
+        type1858[2].value = 1858;
     }
 }
 
@@ -615,7 +640,7 @@ void FunctionHeader::write(QTextStream &stream)
 
 Function::Function(UffFileDescriptor *parent) : Channel(),
     xMax(0.0), yMin(0.0), yMax(0.0),
-    samples(0), /*values(0),*/ parent(parent)
+    samples(0), parent(parent), _populated(false), dataPosition(-1)
 {DD;
     type58 = {
         {FTDelimiter,""}, {FTEmpty, ""}, //0-1
@@ -906,6 +931,8 @@ Function::Function(Channel &other)
     xMax = type58[28].value.toDouble() + type58[29].value.toDouble() * samples;
     yMin = other.yMinInitial();
     yMax = other.yMaxInitial();
+    _populated = !values.isEmpty();
+    dataPosition=-1;
 }
 
 Function::Function(const Function &other)
@@ -921,6 +948,8 @@ Function::Function(const Function &other)
 
     parent = other.parent;
     type58 = other.type58;
+    _populated = other._populated;
+    dataPosition = -1;
 }
 
 Function::~Function()
@@ -931,101 +960,142 @@ Function::~Function()
 void Function::read(QTextStream &stream)
 {DD;
     header.read(stream);
-
-    for (int i=0; i<60; ++i) {
-        fields[type58[i].type]->read(type58[i].value, stream);
-//        qDebug()<<type58[i].value;
+    int i=0;
+    if (!header.valid) {
+        i=4;
+        type58[2].value=58;
     }
 
-  //  streamPosition = stream.pos();
+    for (; i<60; ++i) {
+        fields[type58[i].type]->read(type58[i].value, stream);
+    }
+
     samples = type58[26].value.toULongLong();
 
-    if (type58[14].value.toInt() > 1) {//do not read time response, as it is too big
-        double thr = threshold(this->yName());
-
-        bool doLog = (this->type()==Descriptor::Spectrum || this->type()==Descriptor::FrequencyResponseFunction);
-        if (type58[44].value.toString()=="dB" || type58[44].value.toString()=="дБ"
-            || type58[43].value.toString()=="Уровень")
-            doLog=false;
-        if (this->type()==Descriptor::FrequencyResponseFunction) thr=1.0;
-        values = QVector<double>(samples, 0.0);
-        if (type58[27].value.toInt() == 0) {
-            // uneven abscissa, read data pairs
-            xvalues = QVector<double>(samples, 0.0);
-        }
-        if (type58[25].value.toInt() < 5) {//real values
-            quint32 j=0;
-            for (quint32 i=0; i<samples; ++i) {
-                double value;
-                stream >> value;
-
-                if (type58[27].value.toInt() == 0) {
-                    xvalues[j] = value;
-                    stream >> value;
-                }
-
-                if (doLog)
-                    value = 20*log10(value/thr);
-                else
-                    value = value;
-
-                values[j] = value;
-                j++;
-            }
-        }
-        else {//complex values
-            double first, second;
-            quint32 j=0;
-            for (quint32 i=0; i<samples; ++i) {
-                if (type58[27].value.toInt() == 0) {
-                    stream >> first;
-                    xvalues[j] = first;
-                }
-                stream >> first >> second; //qDebug()<<first<<second;
-                double amplitude = sqrt(first*first + second*second);
-                if (doLog)
-                    values[j] = 20*log10(amplitude/thr);
-                else
-                    values[j] = amplitude;
-                j++;
-            }
-            type58[25].value = type58[25].value.toInt()==5?2:4;
-        }
-        if (doLog) {
-            type58[43].value = "Уровень";
-            type58[44].value = "дБ";
-        }
-
-        yMin = 1.0e100;
-        yMax = -1.0e100;
-        for (quint32 i=0; i<samples; ++i) {
-            if (values[i] < yMin) yMin = values[i];
-            if (values[i] > yMax) yMax = values[i];
-        }
-
-        xMax = xBegin() + xStep() * samples;
-        QString end = stream.readLine(); //qDebug()<<"end"<<end;
-        end = stream.readLine(); //qDebug()<<"end"<<end;
-        Q_ASSERT(end == "    -1");
-    }
-    else {
+    dataPosition = stream.pos();
+    {
         QString s;
         do {
-            s = stream.readLine();
+            s = stream.readLine().trimmed();
         }
-        while (s != "    -1");
+        while (s != "-1");
     }
+
+
+//    if (type58[14].value.toInt() > 1) {//function type is not time response
+//        double thr = threshold(this->yName());
+//        if (this->type()==Descriptor::FrequencyResponseFunction) thr=1.0;
+
+//        bool doLog = (this->type()==Descriptor::Spectrum || this->type()==Descriptor::FrequencyResponseFunction
+//                      || this->type()==Descriptor::AutoSpectrum || this->type()==Descriptor::CrossSpectrum);
+//        if (yName()=="dB" || yName()=="дБ" || type58[43].value.toString()=="Уровень")
+//            doLog=false;
+
+//        values = QVector<double>(samples, 0.0);
+//        if (type58[25].value.toInt() >= 5) //complex values
+//            valuesComplex = QVector<QPair<double,double> >(samples, QPair<double,double>(0.0,0.0));
+
+//        if (type58[27].value.toInt() == 0) {
+//            // uneven abscissa, read data pairs
+//            xvalues = QVector<double>(samples, 0.0);
+//        }
+//        if (type58[25].value.toInt() < 5) {//real values
+//            quint32 j=0;
+//            for (quint32 i=0; i<samples; ++i) {
+//                double value;
+//                stream >> value;
+
+//                if (type58[27].value.toInt() == 0) {// uneven abscissa
+//                    xvalues[j] = value;
+//                    stream >> value;
+//                }
+
+//                if (doLog)
+//                    value = 20*log10(value/thr);
+//                else
+//                    value = value;
+
+//                values[j] = value;
+//                j++;
+//            }
+//            if (doLog) {
+//                type58[43].value = "Уровень";
+//                type58[44].value = "дБ";
+//            }
+//        }
+//        else {//complex values
+//            double first, second;
+//            quint32 j=0;
+//            for (quint32 i=0; i<samples; ++i) {
+//                if (type58[27].value.toInt() == 0) {// uneven abscissa
+//                    stream >> first;
+//                    xvalues[j] = first;
+//                }
+//                stream >> first >> second; //qDebug()<<first<<second;
+//                valuesComplex[j].first = first;
+//                valuesComplex[j].second = second;
+
+//                double amplitude = sqrt(first*first + second*second);
+//                if (doLog)
+//                    values[j] = 20*log10(amplitude/thr);
+//                else
+//                    values[j] = amplitude;
+//                j++;
+//            }
+//        }
+
+//        yMin = 1.0e100;
+//        yMax = -1.0e100;
+//        for (quint32 i=0; i<samples; ++i) {
+//            if (values[i] < yMin) yMin = values[i];
+//            if (values[i] > yMax) yMax = values[i];
+//        }
+
+//        if (xvalues.isEmpty())
+//            xMax = xBegin() + xStep() * samples;
+//        else
+//            xMax = xvalues.last();
+
+//        QString end = stream.readLine(); //qDebug()<<"end"<<end;
+//        end = stream.readLine().trimmed(); //qDebug()<<"end"<<end;
+//        Q_ASSERT(end == "-1");
+//    }
+//    else {//time response, skip";
+//        QString s;
+//        do {
+//            s = stream.readLine().trimmed();
+//        }
+//        while (s != "-1");
+//    }
 }
 
 void Function::write(QTextStream &stream)
-{
+{DD;
     header.write(stream);
 
     for (int i=0; i<60; ++i) {
         fields[type58[i].type]->print(type58[i].value, stream);
     }
 
-    switch (type58[25].value.toInt()) {
+    switch (type58[25].value.toInt()) {//25 Ordinate Data Type
+                                        // 2 - real, single precision
+                                        // 4 - real, double precision
+                                        // 5 - complex, single precision
+                                        // 6 - complex, double precision
+
+        //                                    Data Values
+        //                            Ordinate            Abscissa
+        //                Case     Type     Precision     Spacing       Format
+        //              -------------------------------------------------------------
+        //                  1      real      single        even         6E13.5
+        //                  2      real      single       uneven        6E13.5
+        //                  3     complex    single        even         6E13.5
+        //                  4     complex    single       uneven        6E13.5
+        //                  5      real      double        even         4E20.12
+        //                  6      real      double       uneven     2(E13.5,E20.12)
+        //                  7     complex    double        even         4E20.12
+        //                  8     complex    double       uneven      E13.5,2E20.12
+        //              --------------------------------------------------------------
         case 2: {
             int j = 0;
             for (quint32 i=0; i<samples; ++i) {
@@ -1062,10 +1132,10 @@ void Function::write(QTextStream &stream)
         }
         case 5: {
             int j = 0;
-            for (quint32 i=0; i<samples; i+=2) {
-                fields[FTFloat13_5]->print(values[i], stream);
+            for (quint32 i=0; i<valuesComplex.size(); i++) {
+                fields[FTFloat13_5]->print(valuesComplex[i].first, stream);
                 j++;
-                fields[FTFloat13_5]->print(values[i], stream);
+                fields[FTFloat13_5]->print(valuesComplex[i].second, stream);
                 j++;
                 if (j==6) {
                     fields[FTEmpty]->print(0, stream);
@@ -1077,10 +1147,10 @@ void Function::write(QTextStream &stream)
         }
         case 6: {
             int j = 0;
-            for (quint32 i=0; i<samples; i+=2) {
-                fields[FTFloat20_12]->print(values[i], stream);
+            for (quint32 i=0; i<valuesComplex.size(); i++) {
+                fields[FTFloat20_12]->print(valuesComplex[i].first, stream);
                 j++;
-                fields[FTFloat20_12]->print(values[i], stream);
+                fields[FTFloat20_12]->print(valuesComplex[i].second, stream);
                 j++;
                 if (j==4) {
                     fields[FTEmpty]->print(0, stream);
@@ -1132,6 +1202,11 @@ QString Function::functionTypeDescription() const
     return "Неизв.";
 }
 
+FileDescriptor *Function::descriptor()
+{
+     return parent;
+}
+
 QStringList Function::getInfoHeaders()
 {DD;
     return QStringList() << QString("       Имя")
@@ -1161,19 +1236,104 @@ Descriptor::OrdinateFormat Function::yFormat() const
     return (Descriptor::OrdinateFormat)type58[25].value.toUInt();
 }
 
-bool Function::populated() const
-{DD;
-    return true;
-}
-
-void Function::setPopulated(bool populated)
-{DD;
-    Q_UNUSED(populated);
-}
-
 void Function::populate()
 {DD;
-    // Nothing to do here
+    values.clear();
+    xvalues.clear();
+    valuesComplex.clear();
+    _populated = false;
+
+    QFile uff(parent->fileName());
+    if (!uff.open(QFile::ReadOnly | QFile::Text)) return;
+    QTextStream stream(&uff);
+    stream.seek(dataPosition);
+
+    if (type58[14].value.toInt() > 1) {//function type is not time response
+        double thr = threshold(this->yName());
+        if (this->type()==Descriptor::FrequencyResponseFunction) thr=1.0;
+
+        bool doLog = (this->type()==Descriptor::Spectrum || this->type()==Descriptor::FrequencyResponseFunction
+                      || this->type()==Descriptor::AutoSpectrum || this->type()==Descriptor::CrossSpectrum);
+        if (yName()=="dB" || yName()=="дБ" || type58[43].value.toString()=="Уровень")
+            doLog=false;
+
+        values = QVector<double>(samples, 0.0);
+        if (type58[25].value.toInt() >= 5) //complex values
+            valuesComplex = QVector<QPair<double,double> >(samples, QPair<double,double>(0.0,0.0));
+
+        if (type58[27].value.toInt() == 0) {
+            // uneven abscissa, read data pairs
+            xvalues = QVector<double>(samples, 0.0);
+        }
+        if (type58[25].value.toInt() < 5) {//real values
+            quint32 j=0;
+            for (quint32 i=0; i<samples; ++i) {
+                double value;
+                stream >> value;
+
+                if (type58[27].value.toInt() == 0) {// uneven abscissa
+                    xvalues[j] = value;
+                    stream >> value;
+                }
+
+                if (doLog)
+                    value = 20*log10(value/thr);
+                else
+                    value = value;
+
+                values[j] = value;
+                j++;
+            }
+            if (doLog) {
+                type58[43].value = "Уровень";
+                type58[44].value = "дБ";
+            }
+        }
+        else {//complex values
+            double first, second;
+            quint32 j=0;
+            for (quint32 i=0; i<samples; ++i) {
+                if (type58[27].value.toInt() == 0) {// uneven abscissa
+                    stream >> first;
+                    xvalues[j] = first;
+                }
+                stream >> first >> second; //qDebug()<<first<<second;
+                valuesComplex[j].first = first;
+                valuesComplex[j].second = second;
+
+                double amplitude = sqrt(first*first + second*second);
+                if (doLog)
+                    values[j] = 20*log10(amplitude/thr);
+                else
+                    values[j] = amplitude;
+                j++;
+            }
+        }
+
+        yMin = 1.0e100;
+        yMax = -1.0e100;
+        for (quint32 i=0; i<samples; ++i) {
+            if (values[i] < yMin) yMin = values[i];
+            if (values[i] > yMax) yMax = values[i];
+        }
+
+        if (xvalues.isEmpty())
+            xMax = xBegin() + xStep() * samples;
+        else
+            xMax = xvalues.last();
+
+        QString end = stream.readLine(); //qDebug()<<"end"<<end;
+        end = stream.readLine().trimmed(); //qDebug()<<"end"<<end;
+        Q_ASSERT(end == "-1");
+    }
+    _populated = !values.isEmpty() || !valuesComplex.isEmpty();
+//    else {//time response, skip";
+//        QString s;
+//        do {
+//            s = stream.readLine().trimmed();
+//        }
+//        while (s != "-1");
+//    }
 }
 
 void Function::clear()

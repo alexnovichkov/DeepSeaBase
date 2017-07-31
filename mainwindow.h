@@ -140,12 +140,14 @@ private slots:
 
     void exportToExcel();
     void exportToExcelFull();
+    void exportToExcelData();
 
     void onCurveColorChanged(Curve *curve);
     void onCurveDeleted(FileDescriptor *descriptor, int index);
 
     void calculateMean();
     void calculateThirdOctave();
+    void calculateMovingAvg();
 
     void moveChannelsUp();
     void moveChannelsDown();
@@ -154,6 +156,7 @@ private slots:
     void save();
 
     void convertMatFiles();
+    void convertEsoFiles();
 private:
     void moveChannels(bool up);
     void updateFile(FileDescriptor *descriptor);
@@ -165,7 +168,7 @@ private:
     bool deleteChannels(const QList<QPair<FileDescriptor *, int> > &channelsToDelete);
     bool copyChannels(const QList<QPair<FileDescriptor*, int> > &channelsToCopy);
 
-    void exportToExcel(bool fullRange);
+    void exportToExcel(bool fullRange, bool dataOnly=false);
 
 //    void updateRecordState(int recordIndex);
     void updateChannelsHeaderState();
@@ -210,6 +213,7 @@ private:
     QAction *editColorsAct;
 
     QAction *meanAct;
+    QAction *movingAvgAct;
     QAction *interactionModeAct;
     QAction *addCorrectionAct;
     QAction *addCorrectionsAct;
@@ -226,9 +230,10 @@ private:
     QToolBar *mainToolBar;
 
     QAction *exportToExcelAct;
-    QAction *switchHarmonicsAct;
+//    QAction *switchHarmonicsAct;
 
     QAction *convertMatFilesAct;
+    QAction *convertEsoFilesAct;
 
     Plot *plot;
 

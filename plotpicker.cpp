@@ -253,13 +253,13 @@ void PlotPicker::pointMoved(const QPoint &pos)
 }
 
 // Hightlight the selected point
-void PlotPicker::highlightPoint( bool showIt )
+void PlotPicker::highlightPoint(bool showIt)
 {DD;
     if (showIt) {
         if (!d_selectedCurve)
             return;
         QPointF val = d_selectedCurve->sample(d_selectedPoint);
-        emit updateTrackingCursor(val.x());
+        emit updateTrackingCursor(val.x(),false);
         if (!marker) {
             marker = new QwtPlotMarker();
             marker->setLineStyle(QwtPlotMarker::NoLine);
@@ -289,7 +289,7 @@ void PlotPicker::highlightPoint( bool showIt )
         }
         if (_showHarmonics) {
             for (int i=0; i<10; ++i) {
-                _harmonics[i]->setValue(val.x()*(i+1),0.0);
+                _harmonics[i]->setValue(val.x()*(i+2),0.0);
                 _harmonics[i]->attach(plot);
             }
         }

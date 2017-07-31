@@ -178,8 +178,17 @@ public:
         stream << left << v.toString().leftJustified(80, ' ',true);
     }
     virtual void read(QVariant &v, QTextStream &stream) {
-        QString s = stream.read(80); //qDebug()<<s;
-        Q_ASSERT(s.length()==80);
+        QString s;
+        for (int i=0; i<80; ++i) {
+            QString c = stream.read(1);
+            if (c!="\n") s+=c;
+            else {
+                stream.seek(stream.pos()-1);
+                break;
+            }
+        }
+        //QString s=stream.readLine(80); //qDebug()<<s;
+        //Q_ASSERT(s.length()==80);
         v = s.trimmed();
     }
 };
@@ -231,11 +240,14 @@ class TimeDateField: public AbstractField
 public:
     virtual void print(const QVariant &v, QTextStream &stream) {
         stream.reset();
+
         stream << v.toDateTime().toString(" dd.MM.yy hh:mm:ss");
     }
     virtual void read(QVariant &v, QTextStream &stream) {
         QDateTime d;
-        d = QDateTime::fromString(stream.read(18), " dd.MM.yy hh:mm:ss"); //qDebug()<<d;
+        QString s = stream.read(18);
+        d = QDateTime::fromString(s, " dd.MM.yy hh:mm:ss");
+        if (!d.isValid()) d = QDateTime::fromString(s, "dd-MMM-yy hh:mm:ss");
         v = d;
     }
 };
@@ -249,7 +261,22 @@ public:
     }
     virtual void read(QVariant &v, QTextStream &stream) {
         QDateTime d;
-        d = QDateTime::fromString(stream.read(80).trimmed(), "dd.MM.yy hh:mm:ss");
+        QString s;
+        for (int i=0; i<80; ++i) {
+            QString c = stream.read(1);
+            if (c!="\n") s+=c;
+            else {
+                stream.seek(stream.pos()-1);
+                break;
+            }
+        }
+
+        d = QDateTime::fromString(s.trimmed(), "dd.MM.yy hh:mm:ss");
+        if (!d.isValid()) d = QDateTime::fromString(s.trimmed(), "dd-MMM-yy hh:mm:ss");
+        if (!d.isValid()) {
+            QLocale l = QLocale::c();
+            d = l.toDateTime(s.trimmed(), "dd-MMM-yy hh:mm:ss");
+        }
         //qDebug()<<d;
         v = d;
     }

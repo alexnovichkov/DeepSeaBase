@@ -502,17 +502,19 @@ void DfdFileDescriptor::copyChannelsFrom(const QList<QPair<FileDescriptor *, int
     }
     QList<FileDescriptor*> records;
     for (int i=0; i<channelsToCopy.size(); ++i)
-        if (!records.contains(channelsToCopy.at(i).first)) records << channelsToCopy.at(i).first;
+        if (!records.contains(channelsToCopy.at(i).first)) {
+            records << channelsToCopy.at(i).first;
+        }
 
     foreach (FileDescriptor *newDfd, records) {
-        DfdFileDescriptor *dfd = static_cast<DfdFileDescriptor *>(newDfd);
+        DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(newDfd);
         QList<int> channelsIndexes = filterIndexes(newDfd, channelsToCopy);
+        const int co = newDfd->channelsCount();
 
-        for(int i = 0; i < newDfd->channelsCount(); ++i) {
+        for(int i = 0; i < co; ++i) {
             if (!newDfd->channel(i)->populated() && channelsIndexes.contains(i))
                 newDfd->channel(i)->populate();
         }
-
         //добавляем в файл dfd копируемые каналы из dfdRecord
         foreach (int index, channelsIndexes) {
             if (dfd) {
@@ -601,6 +603,67 @@ void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
         ch->ChanDscr = "Среднее каналов "+l.join(",");
         ch->ChanBlockSize = numInd;
         ch->NumInd = numInd;
+        ch->IndType = this->channels.isEmpty()?3221225476:this->channels.first()->IndType;
+        ch->YName = firstChannel->yName();
+        ch->XName = firstChannel->xName();
+        ch->parent = this;
+
+        this->channels << ch;
+        this->NumChans++;
+    }
+}
+
+void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize)
+{
+    for(int i = 0; i< this->channels.size(); ++i) {
+        if (!this->channels[i]->populated()) this->channels[i]->populate();
+    }
+
+    QList<Channel*> list;
+    for (int i=0; i<channels.size(); ++i) {
+        DfdChannel *ch = new DfdChannel(this, channelsCount());
+        FileDescriptor *firstDescriptor = channels.at(i).first;
+        Channel *firstChannel = firstDescriptor->channel(channels.at(i).second);
+
+        quint32 numInd = firstChannel->samplesCount();
+        ch->YValues = QVector<double>(numInd, 0.0);
+
+        quint32 span = windowSize / 2;
+        bool log = firstChannel->yName() == "дБ" || firstChannel->yName() == "dB";
+
+        for (quint32 j=span; j<numInd-span; ++j) {
+            double sum = 0.0;
+            for (int k=0; k<windowSize;++k) {
+                double temp = firstChannel->yValues()[j-span+k];
+                if (log)
+                    temp = pow(10.0, (temp/10.0));
+                sum += temp;
+            }
+            sum /= windowSize;
+            if (log)
+                sum = 10.0 * log10(sum);
+
+            ch->YValues[j] = sum;
+        }
+
+        //начало диапазона и конец диапазона
+        for (quint32 j=0; j<span; ++j)
+            ch->YValues[j] = firstChannel->yValues()[j];
+        for (quint32 j=numInd-span; j<numInd; ++j)
+            ch->YValues[j] = firstChannel->yValues()[j];
+
+        ch->XStep = firstDescriptor->xStep();
+        ch->setYValues(ch->YValues);
+        ch->setXValues(firstChannel->xValues());
+
+        // обновляем сведения канала
+        ch->setPopulated(true);
+        ch->ChanName = firstChannel->name()+" сглаж.";
+
+        ch->ChanDscr = "Скользящее среднее канала "+firstChannel->name();
+        ch->ChanBlockSize = numInd;
+        ch->NumInd = numInd;
+
         ch->IndType = this->channels.isEmpty()?3221225476:this->channels.first()->IndType;
         ch->YName = firstChannel->yName();
         ch->XName = firstChannel->xName();
@@ -814,7 +877,7 @@ bool DfdFileDescriptor::isSourceFile() const
     return (DataType>=SourceData && DataType<=15);
 }
 
-bool DfdFileDescriptor::dataTypeEquals(FileDescriptor *other)
+bool DfdFileDescriptor::dataTypeEquals(FileDescriptor *other) const
 {DD;
     DfdFileDescriptor *d = dynamic_cast<DfdFileDescriptor *>(other);
     if (!d) return false;
@@ -992,7 +1055,7 @@ DfdChannel::DfdChannel(const DfdChannel &other)
 }
 
 DfdChannel::DfdChannel(Channel &other)
-{
+{DD;
     ChanAddress = "";
     ChanName = other.name();
     ChanDscr = other.description();
@@ -1329,6 +1392,11 @@ void DfdChannel::clear()
 quint32 DfdChannel::blockSizeInBytes() const
 {
     return ChanBlockSize * (IndType % 16);
+}
+
+FileDescriptor *DfdChannel::descriptor()
+{
+     return parent;
 }
 
 QString DfdChannel::legendName() const

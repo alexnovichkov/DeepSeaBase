@@ -5,6 +5,7 @@
 #include "abstractmethod.h"
 
 class QComboBox;
+class QCheckBox;
 
 class XresponcH1Method : public QWidget, public AbstractMethod
 {
@@ -31,6 +32,7 @@ private:
     QComboBox *nAverCombo; // Кол. усреднений 1 2 4 8 16 32 64 128 256 1024 до конца интервала
     QComboBox *valuesCombo; // Величины измеряемые, вход АЦП
     QComboBox *scaleCombo; //"Шкала" "линейная", "в децибелах"
+    QCheckBox *saveAsComplexCheckBox;
 };
 
 #endif // XRESPONCH1_H

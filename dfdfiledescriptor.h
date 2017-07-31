@@ -202,6 +202,7 @@ public:
     QVector<double> YValues;
     QVector<double> XValues;
     DfdFileDescriptor *parent;
+    virtual FileDescriptor *descriptor();
     int channelIndex; // нумерация с 0
 
     bool _populated;
@@ -330,6 +331,8 @@ public:
     void deleteChannels(const QVector<int> &channelsToDelete);
     void copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy);
     virtual void calculateMean(const QList<QPair<FileDescriptor *, int> > &channels);
+    virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels,
+                                    int windowSize);
     virtual FileDescriptor *calculateThirdOctave();
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes);
 
@@ -339,7 +342,7 @@ public:
     bool allUnplotted() const;
     bool isSourceFile() const;
 
-    bool dataTypeEquals(FileDescriptor *other);
+    bool dataTypeEquals(FileDescriptor *other) const;
 
     QString fileFilters() const;
 
@@ -375,10 +378,11 @@ public:
     Process *process;
     DataDescription *dataDescription;
     QList<DfdChannel *> channels;
+    QString rawFileName; // путь к RAW файлу
 private:
     friend class DataDescription;
 
-    QString rawFileName; // путь к RAW файлу
+
     QString _legend; // editable description
 };
 

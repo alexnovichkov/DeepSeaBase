@@ -21,6 +21,8 @@
 #include "editdescriptionsdialog.h"
 #include "matlabfiledescriptor.h"
 #include "matlabconverterdialog.h"
+#include    "esoconverterdialog.h"
+#include "filedescriptor.h"
 
 class DrivesDialog : public QDialog
 {
@@ -138,10 +140,10 @@ protected:
 
 
 FileDescriptor *createDescriptor(const QString &fileName)
-{
-    if (QFileInfo(fileName).suffix().toLower()=="dfd") return new DfdFileDescriptor(fileName);
-    if (QFileInfo(fileName).suffix().toLower()=="uff") return new UffFileDescriptor(fileName);
-    if (QFileInfo(fileName).suffix().toLower()=="unv") return new UffFileDescriptor(fileName);
+{DD;
+    const QString suffix = QFileInfo(fileName).suffix().toLower();
+    if (suffix=="dfd") return new DfdFileDescriptor(fileName);
+    if (suffix=="uff" || suffix=="unv") return new UffFileDescriptor(fileName);
     return 0;
 }
 
@@ -173,7 +175,7 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), tab(0)
 {DD;
-    setWindowTitle(tr("DeepSea Database 1.5.6"));
+    setWindowTitle(tr("DeepSea Database 1.6.0"));
     setAcceptDrops(true);
 
     mainToolBar = new QToolBar(this);
@@ -254,7 +256,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     QAction *plotHelpAct = new QAction("Справка", this);
     connect(plotHelpAct, &QAction::triggered, [=](){
-        QString info = "<b>Управление графиком</b><br>"
+        QString info = "<b>Построение графиков:</b><br>"
+                       "Выбрать файл, выбрать нужный канал.<bR>"
+                       "Ctrl + выбор канала: построить графики этого канала во всех выделенных файлах<br>"
+                "<b>Управление графиком</b><br>"
                        "<u>Внутри графика:</u><br>"
                        "Правая кнопка мыши: двигать график по плоскости<br>"
                        "Колесико мыши: увеличить/уменьшить масштаб<br>"
@@ -325,11 +330,17 @@ MainWindow::MainWindow(QWidget *parent)
     QAction *exportToExcelFullAct = new QAction("Экспортировать в Excel весь диапазон", this);
     connect(exportToExcelFullAct, SIGNAL(triggered()), this, SLOT(exportToExcelFull()));
     excelMenu->addAction(exportToExcelFullAct);
+    QAction *exportToExcelOnlyDataAct = new QAction("Экспортировать в Excel только данные", this);
+    connect(exportToExcelOnlyDataAct, SIGNAL(triggered()), this, SLOT(exportToExcelData()));
+    excelMenu->addAction(exportToExcelOnlyDataAct);
     exportToExcelAct->setMenu(excelMenu);
 
-    meanAct = new QAction(QString("Вывести среднее"), this);
+    meanAct = new QAction(QString("Вывести среднее (энерг.)"), this);
     meanAct->setIcon(QIcon(":/icons/mean.png"));
     connect(meanAct, SIGNAL(triggered()), this, SLOT(calculateMean()));
+
+    movingAvgAct = new QAction(QString("Рассчитать скользящее среднее"), this);
+    connect(movingAvgAct, SIGNAL(triggered()), this, SLOT(calculateMovingAvg()));
 
     calculateThirdOctaveAct = new QAction(QString("Рассчитать третьоктаву"), this);
     calculateThirdOctaveAct->setIcon(QIcon(":/icons/third.png"));
@@ -346,12 +357,12 @@ MainWindow::MainWindow(QWidget *parent)
         plot->switchInteractionMode();
     });
 
-    switchHarmonicsAct = new QAction(QString("Включить показ гармоник"), this);
-    switchHarmonicsAct->setIcon(QIcon(":/icons/harmonics.png"));
-    switchHarmonicsAct->setCheckable(true);
-    connect(switchHarmonicsAct, &QAction::triggered, [=](){
-        plot->switchHarmonicsMode();
-    });
+//    switchHarmonicsAct = new QAction(QString("Включить показ гармоник"), this);
+//    switchHarmonicsAct->setIcon(QIcon(":/icons/harmonics.png"));
+//    switchHarmonicsAct->setCheckable(true);
+//    connect(switchHarmonicsAct, &QAction::triggered, [=](){
+//        plot->switchHarmonicsMode();
+//    });
 
     addCorrectionAct = new QAction("Добавить поправку...", this);
     addCorrectionAct->setIcon(QIcon(":/icons/correction.png"));
@@ -392,6 +403,9 @@ MainWindow::MainWindow(QWidget *parent)
     convertMatFilesAct = new QAction("Конвертировать Matlab файлы...", this);
     connect(convertMatFilesAct,SIGNAL(triggered()),SLOT(convertMatFiles()));
 
+    convertEsoFilesAct = new QAction("Конвертировать файлы ESO...", this);
+    connect(convertEsoFilesAct,SIGNAL(triggered()),SLOT(convertEsoFiles()));
+
     mainToolBar->addWidget(new QLabel("Записи:"));
     mainToolBar->addAction(addFolderAct);
     mainToolBar->addAction(addFileAct);
@@ -404,6 +418,7 @@ MainWindow::MainWindow(QWidget *parent)
     QMenu *channelsMenu = new QMenu("Операции", this);
     channelsMenu->addAction(copyChannelsAct);
     channelsMenu->addAction(moveChannelsAct);
+    channelsMenu->addAction(movingAvgAct);
 
     QToolButton *channelsTB = new QToolButton(this);
     channelsTB->setMenu(channelsMenu);
@@ -431,7 +446,7 @@ MainWindow::MainWindow(QWidget *parent)
 //    mainToolBar->addSeparator();
 
     mainToolBar->addAction(interactionModeAct);
-    mainToolBar->addAction(switchHarmonicsAct);
+//    mainToolBar->addAction(switchHarmonicsAct);
     mainToolBar->addAction(trackingCursorAct);
     mainToolBar->addAction(plotHelpAct);
 
@@ -440,6 +455,7 @@ MainWindow::MainWindow(QWidget *parent)
     fileMenu->addAction(addFolderAct);
     fileMenu->addAction(addFileAct);
     fileMenu->addAction(convertMatFilesAct);
+    fileMenu->addAction(convertEsoFilesAct);
 
     QMenu *recordsMenu = menuBar()->addMenu(QString("Записи"));
     recordsMenu->addAction(delFilesAct);
@@ -850,7 +866,7 @@ void MainWindow::deleteFiles()
 }
 
 QList<QPair<FileDescriptor*, int> > MainWindow::selectedChannels()
-{
+{DD;
     QList<QPair<FileDescriptor*, int> > channels;
 
     foreach(Curve *c, plot->graphs) {
@@ -1116,7 +1132,7 @@ bool MainWindow::deleteChannels(const QList<QPair<FileDescriptor*, int> > &chann
 }
 
 bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channelsToCopy)
-{
+{DD;
     bool allFilesDfd = true;
     for (int i=0; i<channelsToCopy.size(); ++i) {
         if (!channelsToCopy.at(i).first->fileName().toLower().endsWith(".dfd")) {
@@ -1436,6 +1452,18 @@ void MainWindow::convertMatFiles()
     }
 }
 
+void MainWindow::convertEsoFiles()
+{
+    EsoConverterDialog dialog(this);
+    if (dialog.exec()) {
+        QStringList files = dialog.getConvertedFiles();
+        if (files.isEmpty()) return;
+        this->addFiles(files);
+        foreach (const QString &file, files)
+            if (!tab->folders.contains(file)) tab->folders << file;
+    }
+}
+
 QVector<int> computeIndexes(QVector<int> notYetMoved, bool up, int totalSize)
 {DD;
     QVector<int> moved;
@@ -1664,6 +1692,25 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
                 ch->setColor(QColor());
                 item->setTextColor(Qt::black);
             }
+
+            if (tab->tree->selectedItems().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
+                for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
+                    SortableTreeWidgetItem *it = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
+                    if (it->fileDescriptor == tab->record || !it->isSelected()) continue;
+                    if (it->fileDescriptor->channelsCount()<=item->row()) continue;
+
+                    plotted = plot->plotChannel(it->fileDescriptor, item->row(), &col);
+                    if (plotted) {
+                        it->fileDescriptor->channel(item->row())->setCheckState(Qt::Checked);
+                        it->fileDescriptor->channel(item->row())->setColor(col);
+                    }
+                    else {
+                        it->fileDescriptor->channel(item->row())->setCheckState(Qt::Unchecked);
+                        it->fileDescriptor->channel(item->row())->setColor(QColor());
+                    }
+                    it->setFont(1, it->fileDescriptor->allUnplotted()?oldFont:boldFont);
+                }
+            }
         }
         else if (state == Qt::Unchecked) {
             plot->deleteGraph(tab->record, item->row());
@@ -1672,6 +1719,20 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
             item->setBackgroundColor(Qt::white);
             item->setTextColor(Qt::black);
             ch->setColor(QColor());
+
+            if (tab->tree->selectedItems().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
+                for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
+                    SortableTreeWidgetItem *it = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
+                    if (it->fileDescriptor == tab->record || !it->isSelected()) continue;
+                    if (it->fileDescriptor->channelsCount()<=item->row()) continue;
+
+                    plot->deleteGraph(it->fileDescriptor, item->row());
+                    it->fileDescriptor->channel(item->row())->setCheckState(Qt::Unchecked);
+                    it->fileDescriptor->channel(item->row())->setColor(QColor());
+
+                    it->setFont(1, it->fileDescriptor->allUnplotted()?oldFont:boldFont);
+                }
+            }
         }
         tab->channelsTable->blockSignals(false);
 
@@ -1747,6 +1808,124 @@ void MainWindow::calculateThirdOctave()
         if (findDescriptor(dfd)) updateFile(dfd);
         else addFile(dfd);
     }
+}
+
+void MainWindow::calculateMovingAvg()
+{
+    const int graphsSize = plot->graphsCount();
+    if (graphsSize<1) return;
+
+    int windowSize = MainWindow::getSetting("movingAvgSize",3).toInt();
+    bool ok;
+    windowSize = QInputDialog::getInt(this,"Скользящее среднее","Выберите величину окна усреднения",windowSize,
+                                      3,15,2,&ok);
+    if (ok)
+        MainWindow::setSetting("movingAvgSize",windowSize);
+    else
+        return;
+
+    QList<QPair<FileDescriptor *, int> > channels;
+
+    bool oneFile = true; // каналы из одного файла
+    bool writeToSeparateFile = true;
+
+    Curve *firstCurve = plot->graphs.first();
+    channels.append({firstCurve->descriptor, firstCurve->channelIndex});
+
+    bool allFilesDfd = firstCurve->descriptor->fileName().toLower().endsWith("dfd");
+
+    for (int i = 1; i<graphsSize; ++i) {
+        Curve *curve = plot->graphs.at(i);
+        channels.append({curve->descriptor, curve->channelIndex});
+
+        allFilesDfd &= firstCurve->descriptor->fileName().toLower().endsWith("dfd");
+        if (firstCurve->descriptor->fileName() != curve->descriptor->fileName())
+            oneFile = false;
+    }
+    if (oneFile) {
+        QMessageBox box("Скользящее среднее каналов", QString("Каналы взяты из одной записи %1.\n").arg(firstCurve->descriptor->fileName())
+                        +
+                        QString("Сохранить скользящее среднее в эту запись дополнительными каналами?"),
+                        QMessageBox::Question,
+                        QMessageBox::Yes, QMessageBox::No, QMessageBox::Cancel);
+        box.setButtonText(QMessageBox::Yes, "Да, записать в этот файл");
+        box.setButtonText(QMessageBox::No, "Нет, экспортировать в отдельный файл");
+        box.setEscapeButton(QMessageBox::Cancel);
+
+        int result = box.exec();
+        if (result == QMessageBox::Cancel) return;
+        writeToSeparateFile = (result == QMessageBox::No);
+    }
+
+    QString avgDfdFile;
+    FileDescriptor *avgDfd = 0;
+    bool descriptorFound = false;
+
+    if (writeToSeparateFile) {
+        QString meanD = firstCurve->descriptor->fileName();
+        meanD.chop(4);
+
+        meanD = MainWindow::getSetting("lastMovingAvgFile", meanD).toString();
+
+        QFileDialog dialog(this, "Выбор файла для записи каналов", meanD,
+                           "Поддерживаемые форматы (*.dfd *.uff *.unv)");
+        dialog.setOption(QFileDialog::DontUseNativeDialog, true);
+        dialog.setFileMode(QFileDialog::AnyFile);
+        dialog.setDefaultSuffix("uff");
+
+        if (allFilesDfd) {
+            QSortFilterProxyModel *proxy = new DfdFilterProxy(firstCurve->descriptor, this);
+            dialog.setProxyModel(proxy);
+        }
+
+        QStringList selectedFiles;
+        if (dialog.exec()) {
+            selectedFiles = dialog.selectedFiles();
+        }
+        if (selectedFiles.isEmpty()) return;
+
+        avgDfdFile = selectedFiles.first();
+        if (avgDfdFile.isEmpty()) return;
+
+        avgDfd = findDescriptor(avgDfdFile);
+        if (avgDfd)
+            descriptorFound = true;
+        else
+            avgDfd = createDescriptor(avgDfdFile);
+
+        if (!avgDfd) return;
+
+        if (QFileInfo(avgDfdFile).exists() && !descriptorFound)
+            avgDfd->read();
+        else
+            avgDfd->fillPreliminary(firstCurve->channel->type());
+
+        MainWindow::setSetting("lastMovingAvgFile", avgDfdFile);
+    }
+    else {
+        avgDfd = firstCurve->descriptor;
+        avgDfdFile = avgDfd->fileName();
+        descriptorFound = true;
+    }
+
+
+    avgDfd->calculateMovingAvg(channels,windowSize);
+
+    if (writeToSeparateFile)
+        avgDfd->fillRest();
+
+    avgDfd->setChanged(true);
+    avgDfd->setDataChanged(true);
+    avgDfd->write();
+    avgDfd->writeRawFile();
+
+    if (descriptorFound) {
+        updateFile(avgDfd);
+    }
+    else {
+        addFile(avgDfd);
+    }
+    setCurrentAndPlot(avgDfd, avgDfd->channelsCount()-1);
 }
 
 void MainWindow::headerToggled(int column, Qt::CheckState state)
@@ -1913,7 +2092,7 @@ bool MainWindow::findDescriptor(FileDescriptor *d)
 }
 
 FileDescriptor *MainWindow::findDescriptor(const QString &file)
-{
+{DD;
     if (tab) {
         for (int j=0; j<tab->tree->topLevelItemCount(); ++j) {
             SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(j));
@@ -2016,8 +2195,13 @@ void MainWindow::exportToExcel()
 }
 
 void MainWindow::exportToExcelFull()
-{
+{DD;
     exportToExcel(true);
+}
+
+void MainWindow::exportToExcelData()
+{DD;
+    exportToExcel(false, true);
 }
 
 QStringList twoStringDescription(const DescriptionList &list)
@@ -2028,7 +2212,7 @@ QStringList twoStringDescription(const DescriptionList &list)
     return result;
 }
 
-void MainWindow::exportToExcel(bool fullRange)
+void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 {
     static QAxObject *excel = 0;
 
@@ -2059,7 +2243,7 @@ void MainWindow::exportToExcel(bool fullRange)
     worksheets->dynamicCall("Add()");
 
     // переименовываем новый лист согласно выбранным записям и каналам
-    QString newSheetName = QDateTime::currentDateTime().toString();
+    //QString newSheetName = QDateTime::currentDateTime().toString();
     QAxObject * worksheet = workbook->querySubObject("ActiveSheet");
     //worksheet->setProperty("Name", newSheetName);
 
@@ -2114,12 +2298,13 @@ void MainWindow::exportToExcel(bool fullRange)
      //if (zeroStepDetected) allChannelsHaveSameXStep = false;
 
      bool exportPlots = true;
-     if (maxInd > 32000 && fullRange) {
+     if (maxInd > 32000 && fullRange && !dataOnly) {
          QMessageBox::warning(this, "Слишком много данных",
                               "В одном или всех каналах число отсчетов превышает 32000.\n"
                               "Будут экспортированы только данные, но не графики");
          exportPlots = false;
      }
+     if (dataOnly) exportPlots = false;
 
      // записываем название файла
      if (allChannelsFromOneFile) {
@@ -2335,21 +2520,45 @@ void MainWindow::exportToExcel(bool fullRange)
              }
          }
 
+         // перемещаем графики на дополнительную вертикальную ось,
+         // если они были там в программе
+         int seriesCount = series->property("Count").toInt();
+         for ( int i=0; i<seriesCount; ++i) {
+             Curve *curve = curves.at(i);
+             if (curve->yAxis()==QwtPlot::yRight) {
+                 QAxObject * serie = series->querySubObject("Item (int)", i+1);
+                 if (serie) {
+                     serie->setProperty("AxisGroup", 2);
+                     delete serie;
+                 }
+                 QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&,const QVariant&)", 2,2);
+                 if (yAxis) setAxis(yAxis, plot->axisTitle(QwtPlot::yRight).text());
+                 delete yAxis;
+             }
+         }
+
 
 
          // добавляем подписи осей
          QAxObject *xAxis = chart->querySubObject("Axes(const QVariant&)", 1);
-         setAxis(xAxis, "Частота, Гц");
-         xAxis->setProperty("MaximumScale", range.max);
-         xAxis->setProperty("MinimumScale", int(range.min/10)*10);
+         if (xAxis) {
+             setAxis(xAxis, "Частота, Гц");
+             xAxis->setProperty("MaximumScale", range.max);
+             xAxis->setProperty("MinimumScale", int(range.min/10)*10);
+         }
+         delete xAxis;
 
          QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&)", 2);
-         setAxis(yAxis, "Уровень, дБ");
-         yAxis->setProperty("CrossesAt", -1000);
+         if (yAxis) {
+             setAxis(yAxis, "Уровень, дБ");
+             yAxis->setProperty("CrossesAt", -1000);
+
+         }
+         delete yAxis;
 
          // рамка вокруг графика
          QAxObject *plotArea = chart->querySubObject("PlotArea");
-         setLineColor(plotArea, 13);
+         if (plotArea) setLineColor(plotArea, 13);
          delete plotArea;
 
          // цвета графиков
@@ -2387,8 +2596,6 @@ void MainWindow::exportToExcel(bool fullRange)
          QAxObject *chartArea = chart->querySubObject("ChartArea");
          chartArea->querySubObject("Format")->querySubObject("Line")->setProperty("Visible", 0);
          delete chartArea;
-         delete yAxis;
-         delete xAxis;
 
          QAxObject *legendObject = chart->querySubObject("Legend");
          QAxObject *legendFormat = legendObject->querySubObject("Format");
@@ -2523,6 +2730,10 @@ void MainWindow::deleteFiles(const QVector<int> &indexes)
 
         if (tab->folders.contains(d->fileName()))
             tab->folders.removeOne(d->fileName());
+        else if (tab->folders.contains(d->fileName()+":0"))
+            tab->folders.removeOne(d->fileName()+":0");
+        else if (tab->folders.contains(d->fileName()+":1"))
+            tab->folders.removeOne(d->fileName()+":1");
 
         delete tab->tree->takeTopLevelItem(indexes.at(i));
         if (!findDescriptor(d)) delete d;

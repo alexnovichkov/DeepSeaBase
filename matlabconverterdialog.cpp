@@ -92,6 +92,8 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
 
     textEdit = new QPlainTextEdit(this);
 
+
+
     QSplitter *splitter = new QSplitter(Qt::Vertical, this);
     QWidget *first = new QWidget(this);
 

@@ -53,6 +53,7 @@ Plot::Plot(QWidget *parent) :
     trackingPanel = new TrackingPanel(this);
     trackingPanel->setVisible(false);
 
+
 //    minStep = 0.0;
 
     axisLabelsVisible = MainWindow::getSetting("axisLabelsVisible", true).toBool();
@@ -61,7 +62,11 @@ Plot::Plot(QWidget *parent) :
 
     _trackingCursor = new QwtPlotMarker();
     _trackingCursor->setLineStyle( QwtPlotMarker::VLine );
-    _trackingCursor->setLinePen( Qt::black, 0, Qt::DashDotLine );
+    _trackingCursor->setLinePen( Qt::black, 1, Qt::DashDotLine );
+
+    _trackingCursor1 = new QwtPlotMarker();
+    _trackingCursor1->setLineStyle( QwtPlotMarker::VLine );
+    _trackingCursor1->setLinePen( Qt::black, 1, Qt::DashDotLine );
 
     //setTitle("Legend Test");
     //setFooter("Footer");
@@ -95,11 +100,12 @@ Plot::Plot(QWidget *parent) :
 
     picker = new PlotPicker(canvas);
     connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
+    connect(trackingPanel,SIGNAL(switchHarmonics(bool)),picker,SLOT(showHarmonics(bool)));
 
     bool pickerEnabled = MainWindow::getSetting("pickerEnabled", true).toBool();
     picker->setEnabled(pickerEnabled);
-    connect(zoom,SIGNAL(updateTrackingCursor(double)),SLOT(updateTrackingCursor(double)));
-    connect(picker,SIGNAL(updateTrackingCursor(double)),SLOT(updateTrackingCursor(double)));
+    connect(zoom,SIGNAL(updateTrackingCursor(double,bool)),SLOT(updateTrackingCursor(double,bool)));
+    connect(picker,SIGNAL(updateTrackingCursor(double,bool)),SLOT(updateTrackingCursor(double,bool)));
 }
 
 Plot::~Plot()
@@ -111,6 +117,7 @@ Plot::~Plot()
     delete zoom;
     delete picker;
     delete _trackingCursor;
+    delete _trackingCursor1;
     MainWindow::setSetting("axisLabelsVisible", axisLabelsVisible);
 }
 
@@ -120,7 +127,9 @@ void Plot::update()
     updateAxesLabels();
     updateLegend();
     double x = _trackingCursor->value().x();
-    updateTrackingCursor(x);
+    updateTrackingCursor(x, false);
+    x = _trackingCursor1->value().x();
+    updateTrackingCursor(x, true);
     replot();
 }
 
@@ -186,13 +195,19 @@ void Plot::deleteGraph(const QVariant &info, int index)
     }
 }
 
-void Plot::updateTrackingCursor(double xVal)
+void Plot::updateTrackingCursor(double xVal, bool second)
 {DD;
     if (_showTrackingCursor) {
         if (graphs.isEmpty()) {
-            _trackingCursor->setValue(xVal, 0.0);
-            _trackingCursor->attach(this);
-            trackingPanel->setX(xVal);
+            if (second) {
+                _trackingCursor1->setValue(xVal, 0.0);
+                _trackingCursor1->attach(this);
+            }
+            else {
+                _trackingCursor->setValue(xVal, 0.0);
+                _trackingCursor->attach(this);
+            }
+            trackingPanel->setX(xVal, second);
             return;
         }
 
@@ -215,8 +230,22 @@ void Plot::updateTrackingCursor(double xVal)
             xVal = xstep*steps;
         }
 
+        //3. update our cursors
+        if (second) {
+            _trackingCursor1->setValue(xVal, 0.0);
+            _trackingCursor1->attach(this);
+        }
+        else {
+            _trackingCursor->setValue(xVal, 0.0);
+            _trackingCursor->attach(this);
+        }
+        trackingPanel->setX(xVal, second);
 
-        //3. get the y values from all graphs
+        double leftBorder = _trackingCursor->xValue();
+        double rightBorder = _trackingCursor1->xValue();
+
+
+        //4. get the y values from all graphs
         QList<TrackingPanel::TrackInfo> list;
         foreach(Curve *c,graphs) {
             steps = int(xVal/c->channel->xStep());
@@ -224,17 +253,34 @@ void Plot::updateTrackingCursor(double xVal)
             if (qAbs(c->channel->xStep()*(steps+1)-xVal) < qAbs(c->channel->xStep()*steps-xVal)) steps++;
             if (steps>c->channel->samplesCount()) steps=c->channel->samplesCount();
 
-            TrackingPanel::TrackInfo ti{c->channel->name(), c->channel->color(), c->sample(steps).y(),
-                        c->sample(steps).x()};
+            int steps1 = int(leftBorder/c->channel->xStep());
+            if (steps1 < 0) steps1=0;
+            if (qAbs(c->channel->xStep()*(steps1+1)-leftBorder) < qAbs(c->channel->xStep()*steps1-leftBorder)) steps1++;
+            if (steps1>c->channel->samplesCount()) steps1=c->channel->samplesCount();
+
+            int steps2 = int(rightBorder/c->channel->xStep());
+            if (steps2 < 0) steps2=0;
+            if (qAbs(c->channel->xStep()*(steps2+1)-rightBorder) < qAbs(c->channel->xStep()*steps2-rightBorder)) steps2++;
+            if (steps2>c->channel->samplesCount()) steps2=c->channel->samplesCount();
+
+            if (steps2<steps1) qSwap(steps1, steps2);
+           // qDebug()<<steps1<<steps2;
+
+
+            double cumul = pow(10.0, c->sample(steps1).y()/5.0);
+
+            for (int i=steps1+1; i<=steps2; ++i) {
+                cumul += pow(10.0, c->sample(i).y()/5.0);
+            }
+            cumul = sqrt(cumul);
+            cumul = 10.0*log10(cumul);
+
+            TrackingPanel::TrackInfo ti{c->channel->name(), c->channel->color(), c->sample(steps).x(),
+                        c->sample(steps).y(), cumul};
             list << ti;
         }
-        trackingPanel->setX(xVal);
-        trackingPanel->updateState(list);
 
-        _trackingCursor->setValue(xVal, 0.0);
-        _trackingCursor->attach(this);
-
-
+        trackingPanel->updateState(list, second);
     }
 }
 
@@ -675,9 +721,9 @@ TrackingPanel::TrackingPanel(QWidget *parent) : QWidget(parent)
     setWindowFlags(Qt::Tool | Qt::WindowTitleHint);
 
     tree = new QTreeWidget(this);
-    tree->setColumnCount(4);
+    tree->setColumnCount(7);
     tree->setAlternatingRowColors(true);
-    tree->setHeaderLabels(QStringList()<<""<<"Название"<<"X"<<"Y");
+    tree->setHeaderLabels(QStringList()<<""<<"Название"<<"X1"<<"Y1"<<"X2"<<"Y2"<<"СКЗ");
     tree->setRootIsDecorated(false);
     tree->setColumnWidth(0,50);
     tree->setColumnWidth(1,150);
@@ -689,48 +735,74 @@ TrackingPanel::TrackingPanel(QWidget *parent) : QWidget(parent)
             QString val = tree->topLevelItem(i)->text(3);
             val.replace(".",",");
             if (box->isChecked())
-                list << QString("%1\t%2").arg(tree->topLevelItem(i)->text(1)).arg(val);
-            else
-                list << val;
+                val = QString("%1\t%2").arg(tree->topLevelItem(i)->text(1)).arg(val);
+            if (tree->columnCount()>4) {
+                QString s = tree->topLevelItem(i)->text(5);
+                s.replace("." , ",");
+                val = val+"\t"+s;
+                s = tree->topLevelItem(i)->text(6);
+                s.replace("." , ",");
+                val = val+"\t"+s;
+                s = tree->topLevelItem(i)->text(7);
+                s.replace("." , ",");
+                val = val+"\t"+s;
+            }
+            list << val;
         }
         QClipboard *clipboard = QApplication::clipboard();
         clipboard->setText(list.join("\n"));
     });
 
     box = new QCheckBox("Включая названия каналов", this);
-
+    harmonics = new QCheckBox("Включить показ гармоник", this);
+    connect(harmonics, &QCheckBox::stateChanged, [=](int state){
+        emit switchHarmonics(state==Qt::Checked);
+    });
 
     QVBoxLayout *l = new QVBoxLayout;
     QHBoxLayout *ll = new QHBoxLayout;
     ll->addWidget(button);
     ll->addWidget(box);
+    l->addWidget(new QLabel("Левая кнопка мыши - первая граница,\n"
+                            "Ctrl + левая кнопка мыши - вторая граница", this));
     l->addWidget(tree);
+    l->addWidget(harmonics);
     l->addLayout(ll);
     setLayout(l);
-    resize(350,300);
+    resize(550,300);
 }
 
-void TrackingPanel::updateState(const QList<TrackingPanel::TrackInfo> &curves)
+void TrackingPanel::updateState(const QList<TrackingPanel::TrackInfo> &curves, bool second)
 {
     for(int i=0; i<curves.size(); ++i) {
         QTreeWidgetItem *item = tree->topLevelItem(i);
-        if (!item) {item = new QTreeWidgetItem();
+        if (!item) {
+            item = new QTreeWidgetItem();
             item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsEditable | Qt::ItemNeverHasChildren);
             tree->addTopLevelItem(item);
         }
         item->setBackgroundColor(0,curves[i].color);
         item->setText(1,curves[i].name);
-        item->setText(2, QString::number(curves[i].xval));
-        item->setText(3, QString::number(curves[i].yval));
+        if (second) {
+            item->setText(4, QString::number(curves[i].xval));
+            item->setText(5, QString::number(curves[i].yval));
+        }
+        else {
+            item->setText(2, QString::number(curves[i].xval));
+            item->setText(3, QString::number(curves[i].yval));
+        }
+        item->setText(6, QString::number(curves[i].skz));
     }
     for (int i=tree->topLevelItemCount()-1; i>=curves.size(); --i)
         delete tree->takeTopLevelItem(i);
-    tree->resizeColumnToContents(0);
-    tree->resizeColumnToContents(2);
-    tree->resizeColumnToContents(3);
+    for (int i=0; i<tree->columnCount(); ++i)
+        if (i!=1) tree->resizeColumnToContents(i);
 }
 
-void TrackingPanel::setX(double x)
+void TrackingPanel::setX(double x, bool second)
 {
-    tree->headerItem()->setText(2, QString::number(x));
+    if (second)
+        tree->headerItem()->setText(4, QString::number(x));
+    else
+        tree->headerItem()->setText(2, QString::number(x));
 }

@@ -36,17 +36,21 @@ public:
     struct TrackInfo {
         QString name;
         QColor color;
-        double yval;
-        double xval;
+        double xval, yval;
+        //double xval2, yval2;
+        double skz;
     };
 
     explicit TrackingPanel(QWidget *parent=0);
-    void updateState(const QList<TrackInfo> &curves);
-    void setX(double x);
+    void updateState(const QList<TrackInfo> &curves, bool second);
+    void setX(double x, bool second);
+signals:
+    void switchHarmonics(bool on);
 private:
     QTreeWidget *tree;
     QPushButton *button;
     QCheckBox *box;
+    QCheckBox *harmonics;
 };
 
 class Plot : public QwtPlot
@@ -151,7 +155,7 @@ signals:
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
     void deleteGraph(const QVariant &info, int index);
-    void updateTrackingCursor(double xVal);
+    void updateTrackingCursor(double xVal, bool second);
 private:
     void importPlot(const QString &fileName);
 
@@ -172,6 +176,7 @@ private:
 
     TrackingPanel *trackingPanel;
     QwtPlotMarker *_trackingCursor;
+    QwtPlotMarker *_trackingCursor1;
     bool _showTrackingCursor;
 
     Range x1;

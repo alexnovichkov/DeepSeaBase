@@ -17,6 +17,7 @@ class QCheckBox;
 class QThread;
 class Converter;
 class QDialogButtonBox;
+class QPlainTextEdit;
 
 class ConvertDialog : public QDialog
 {
@@ -48,7 +49,8 @@ private:
     QSpinBox *baseChannelSpin;
     QStackedWidget *methodsStack;
     QComboBox *activeStripCombo;
-    QLabel *infoLabel;
+    //QLabel *infoLabel;
+    QPlainTextEdit *infoLabel;
     QSpinBox *overlap;
     QCheckBox *useDeepsea;
     QDialogButtonBox *buttonBox;

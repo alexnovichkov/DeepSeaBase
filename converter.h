@@ -7,15 +7,24 @@
 
 class QProcess;
 class AbstractMethod;
+class DfdFileDescriptor;
+class UffFileDescriptor;
 
 void applyWindow(QVector<float> &values, const Parameters &p);
 QVector<double> FFTAnalysis(const QVector<float> &AVal);
 QVector<double> powerSpectre(const QVector<float> &values, const Parameters &p);
 QVector<double> autoSpectre(const QVector<float> &values, const Parameters &p);
 QVector<double> coSpectre(const QVector<float> &values1, const QVector<float> &values2, const Parameters &p);
+QVector<QPair<double, double> > coSpectreComplex(const QVector<float> &values1, const QVector<float> &values2, const Parameters &p);
 QVector<double> transferFunctionH1(const QVector<double> &values1, const QVector<double> &values2, const Parameters &p);
+QVector<QPair<double, double> > transferFunctionH1Complex(const QVector<double> &values1,
+                                                          const QVector<QPair<double, double> > &values2, const Parameters &p);
 void changeScale(QVector<double> &output, const Parameters &p);
 void average(QVector<double> &result, const QVector<double> &input, const Parameters &p, int averagesMade);
+QString window(int wind);
+int windowType(int wind);
+QString averaging(int avgType);
+int uffMethodFromDfdMethod(int methodId);
 
 class Converter : public QObject
 {
@@ -25,6 +34,7 @@ public:
     virtual ~Converter();
 
     QStringList getNewFiles() const {return newFiles;}
+    //DfdChannel * addDfdChannel(DfdFileDescriptor *dfd, QVector<double> spectrum, int i, DfdFileDescriptor *newDfd);
 signals:
     void tick();
     void tick(const QString &path);
@@ -33,11 +43,18 @@ signals:
 public slots:
     void stop();
     void start();
+    void processTimer();
 private:
     bool convert(DfdFileDescriptor *dfd, const QString &tempFolderName);
     void moveFilesFromTempDir(const QString &tempFolderName, QString destDir);
     QStringList getSpfFile(QString dir);
     void finalize();
+    DfdFileDescriptor *createNewDfdFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p);
+    UffFileDescriptor *createNewUffFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p);
+    void addDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd,
+                       const QVector<double> &spectrum, Parameters &p, int i);
+    void addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd,
+                       const QVector<QPair<double, double> > &spectrum, Parameters &p, int i);
 
     QList<DfdFileDescriptor *> dataBase;
     Parameters p;

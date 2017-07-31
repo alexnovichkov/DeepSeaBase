@@ -37,14 +37,15 @@ ConvertDialog::ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent)
     activeStripCombo = new QComboBox(this);
     activeStripCombo->setEditable(false);
 
-    infoLabel = new QLabel(this);
-    infoLabel->setWordWrap(true);
+    //infoLabel = new QLabel(this);
+    //infoLabel->setWordWrap(true);
+    infoLabel = new QPlainTextEdit(this);
 
     useDeepsea = new QCheckBox("Использовать DeepSea для расчета спектров", this);
     connect(useDeepsea, &QCheckBox::clicked, [=](){
         if (useDeepsea->isChecked()) {
             QString s = QStandardPaths::findExecutable("DeepSea");
-            if (s.isEmpty()) infoLabel->setText("Не могу найти DeepSea.exe в стандартных путях.\n"
+            if (s.isEmpty()) infoLabel->appendPlainText("Не могу найти DeepSea.exe в стандартных путях.\n"
                                                 "Добавьте путь к DeepSea.exe в переменную PATH");
         }
         else infoLabel->clear();
@@ -182,7 +183,7 @@ void ConvertDialog::start()
     connect(converter, SIGNAL(finished()), this, SLOT(accept()));
     connect(converter, SIGNAL(tick()), SLOT(updateProgressIndicator()));
     connect(converter, SIGNAL(tick(QString)), SLOT(updateProgressIndicator(QString)));
-    connect(converter, SIGNAL(message(QString)), infoLabel, SLOT(setText(QString)));
+    connect(converter, SIGNAL(message(QString)), infoLabel, SLOT(appendPlainText(QString)));
 
     progress->show();
     progress->setValue(0);

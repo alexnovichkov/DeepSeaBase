@@ -98,6 +98,8 @@ public:
     /** Calculates mean of channels, writes to a file */
     virtual void calculateMean(const QList<QPair<FileDescriptor *, int> > &channels) = 0;
     virtual FileDescriptor *calculateThirdOctave() = 0;
+    virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels,
+                                    int windowSize) = 0;
 
     virtual QString fileName() const {return _fileName;}
     virtual void setFileName(const QString &name) { _fileName = name;}
@@ -143,7 +145,7 @@ public:
         return false;
     }
 
-    virtual bool dataTypeEquals(FileDescriptor *other) = 0;
+    virtual bool dataTypeEquals(FileDescriptor *other) const = 0;
 
     virtual QString fileFilters() const = 0;
 
@@ -196,6 +198,7 @@ public:
     virtual double yMaxInitial() const = 0;
 
     virtual void addCorrection(double correctionValue, bool writeToFile) = 0;
+    virtual FileDescriptor *descriptor() = 0;
 
     Qt::CheckState checkState() const {return _checkState;}
     void setCheckState(Qt::CheckState checkState) {_checkState = checkState;}
@@ -208,5 +211,31 @@ private:
 };
 
 QList<int> filterIndexes(FileDescriptor *dfd, const QList<QPair<FileDescriptor *, int> > &channels);
+
+#include <QAbstractItemModel>
+
+class Model : public QAbstractItemModel
+{
+    Q_OBJECT
+public:
+    Model(QObject *parent);
+    virtual ~Model();
+    // QAbstractItemModel interface
+public:
+    virtual QModelIndex index(int row, int column, const QModelIndex &parent) const;
+    virtual QModelIndex parent(const QModelIndex &child) const;
+    virtual QModelIndex sibling(int row, int column, const QModelIndex &idx) const;
+    virtual int rowCount(const QModelIndex &parent) const;
+    virtual int columnCount(const QModelIndex &parent) const;
+    virtual bool hasChildren(const QModelIndex &parent) const;
+    virtual QVariant data(const QModelIndex &index, int role) const;
+    virtual bool setData(const QModelIndex &index, const QVariant &value, int role);
+    virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
+    virtual bool setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role);
+    virtual Qt::ItemFlags flags(const QModelIndex &index) const;
+    virtual void sort(int column, Qt::SortOrder order);
+private:
+    QList<FileDescriptor*> d;
+};
 
 #endif // FILEDESCRIPTOR_H

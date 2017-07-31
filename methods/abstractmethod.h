@@ -61,6 +61,7 @@ struct Parameters
     QString methodName;
     QString methodDll;
     int dataType;
+    bool saveAsComplex; //формат результата: комплексные числа
 
 
     AbstractMethod *method;

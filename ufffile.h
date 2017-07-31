@@ -5,6 +5,7 @@
 
 #include "filedescriptor.h"
 #include "fields.h"
+#include <complex>
 
 class FunctionHeader
 {
@@ -14,6 +15,7 @@ public:
     void write(QTextStream &stream);
 
     QVector<FieldDescription> type1858;
+    bool valid;
 };
 
 class UffFileDescriptor;
@@ -41,8 +43,10 @@ public:
 
     QVector<double> values;
     QVector<double> xvalues;
+    QVector<QPair<double,double> > valuesComplex;
 
     UffFileDescriptor *parent;
+    virtual FileDescriptor *descriptor();
     QVector<FieldDescription> type58;
 
     // Channel interface
@@ -51,8 +55,8 @@ public:
     virtual QStringList getInfoData();
     virtual Descriptor::DataType type() const;
     virtual Descriptor::OrdinateFormat yFormat() const;
-    virtual bool populated() const;
-    virtual void setPopulated(bool populated);
+    virtual bool populated() const {return _populated;}
+    virtual void setPopulated(bool populated) {_populated = populated;}
     virtual void populate();
     virtual void clear();
     virtual QString name() const;
@@ -71,6 +75,9 @@ public:
     virtual double yMinInitial() const;
     virtual double yMaxInitial() const;
     virtual void addCorrection(double correctionValue, bool writeToFile);
+private:
+    bool _populated;
+    qint64 dataPosition;
 };
 
 class UffHeader
@@ -137,6 +144,8 @@ public:
     virtual void copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy);
     /** Calculates mean of channels and writes to a file*/
     virtual void calculateMean(const QList<QPair<FileDescriptor *, int> > &channels);
+    virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels,
+                                    int windowSize);
     virtual FileDescriptor *calculateThirdOctave();
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes);
 
@@ -149,7 +158,7 @@ public:
     virtual bool allUnplotted() const;
     virtual bool isSourceFile() const;
     virtual bool operator ==(const FileDescriptor &descriptor);
-    virtual bool dataTypeEquals(FileDescriptor *other);
+    virtual bool dataTypeEquals(FileDescriptor *other) const;
     virtual QString fileFilters() const;
 private:
     QString fileType() const;

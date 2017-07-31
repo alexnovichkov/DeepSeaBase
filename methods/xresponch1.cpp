@@ -62,6 +62,8 @@ XresponcH1Method::XresponcH1Method(QWidget *parent)
     scaleCombo->setEnabled(false);
     scaleCombo->setEditable(false);
 
+    saveAsComplexCheckBox = new QCheckBox("Сохранять комплексные значения", this);
+
 
     QFormLayout *l = new QFormLayout;
     //    l->addRow("Частотный диапазон", rangeCombo);
@@ -71,6 +73,7 @@ XresponcH1Method::XresponcH1Method(QWidget *parent)
     l->addRow("Кол. усреднений", nAverCombo);
     l->addRow("Величины", valuesCombo);
     l->addRow("Шкала", scaleCombo);
+    l->addWidget(saveAsComplexCheckBox);
     setLayout(l);
 }
 
@@ -153,6 +156,7 @@ Parameters XresponcH1Method::parameters()
     p.methodName = methodName();
     p.methodDll = methodDll();
     p.dataType = dataType();
+    p.saveAsComplex = saveAsComplexCheckBox->isChecked();
 
     return p;
 }

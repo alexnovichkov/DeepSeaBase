@@ -42,7 +42,8 @@ SOURCES += main.cpp\
     windowing.cpp \
     converter.cpp \
     matlabfiledescriptor.cpp \
-    matlabconverterdialog.cpp
+    matlabconverterdialog.cpp \
+    esoconverterdialog.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -74,7 +75,8 @@ HEADERS  += mainwindow.h \
     windowing.h \
     converter.h \
     matlabfiledescriptor.h \
-    matlabconverterdialog.h
+    matlabconverterdialog.h \
+    esoconverterdialog.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\

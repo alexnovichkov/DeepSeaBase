@@ -340,7 +340,7 @@ void QAxisZoomSvc::startHorizontalAxisZoom(QMouseEvent *event, int axis)
             // (за вычетом смещений графика)
             cursorPosX = event->pos().x() - sab_pxl;
             double xVal = sm.invTransform(event->pos().x());
-            emit xAxisClicked(xVal);
+            emit xAxisClicked(xVal, event->modifiers() & Qt::ControlModifier);
 
             // если левая граница меньше правой,
             if (currentWidth > 0) {

@@ -32,7 +32,7 @@ public:
     // прикрепление интерфейса к менеджеру масштабирования
     void attach(QwtChartZoom *);
 signals:
-    void xAxisClicked(double xValue);
+    void xAxisClicked(double xValue, bool second);
 protected:
     // обработчик всех событий
     bool eventFilter(QObject *,QEvent *);

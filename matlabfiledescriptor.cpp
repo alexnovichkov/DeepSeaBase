@@ -34,19 +34,19 @@ struct Dataset
 
 QString lms2dsunit(const QString &unit)
 {
-    if (QString("m;cm;mm;nm;km;stat.mi;in;mil;м;см;мм;нм;км").contains(unit))
+    if (QString("m;cm;mm;nm;km;stat.mi;in;mil;м;см;мм;нм;км").split(";").contains(unit))
         return "м";
 
-   if (QString("m/s;nm/s;km/h;nm/s;in/s;mph;m/s(pv);м/с;см/с;мм/с;нм/с;км/с").contains(unit))
+   if (QString("m/s;nm/s;km/h;nm/s;in/s;mph;m/s(pv);м/с;см/с;мм/с;нм/с;км/с").split(";").contains(unit))
        return "м/с";
 
-   if (QString("m/s2;g;m/s?;m/s^2;(m/s^2);м/с^2;м/с2").contains(unit))
+   if (QString("m/s2;g;m/s?;m/s^2;(m/s^2);м/с^2;м/с2").split(";").contains(unit))
           return "м/с^2";
-   if (QString("Pa;hPa;kPa;MPa;N/m2;N/mm2;psi;kg/(ms2);bar;Па;гПа;кПа;МПа;Н/м2;Н/м^2;Н/мм2;Н/мм^2").contains(unit))
+   if (QString("Pa;hPa;kPa;MPa;N/m2;N/mm2;psi;kg/(ms2);bar;Па;гПа;кПа;МПа;Н/м2;Н/м^2;Н/мм2;Н/мм^2").split(";").contains(unit))
        return "Па";
-   if (QString("N;lbf;kN;daN;Н;кН").contains(unit))
+   if (QString("N;lbf;kN;daN;Н;кН").split(";").contains(unit))
        return "Н";
-   if (QString("Nm;kNm;Нм;кНм").contains(unit))
+   if (QString("Nm;kNm;Нм;кНм").split(";").contains(unit))
        return "Нм";
    return unit;
 }
