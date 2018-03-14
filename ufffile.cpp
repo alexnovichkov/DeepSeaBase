@@ -27,10 +27,10 @@ QList<AbstractField*> fields = {
 int abscissaType(const QString &xName)
 {
     QString s = xName.toLower();
-    if (s == "hz" || s == "Гц") return 18;
-    if (s == "s" || s == "c") return 17;
-    if (s == "m/s" || s == "м/с") return 11;
-    if (s == "m/s2" || s == "m/s^2" || s == "м/с2" || s == "м/с^2") return 12;
+    if (s == "hz" || s == "гц") return 18;
+    if (s == "s" || s == "\u0441") return 17;
+    if (s == "m/s" || s == "\u043c/\u0441") return 11;
+    if (s == "m/s2" || s == "m/s^2" || s == "м/с2" || s == "\u043c/\u0441^2") return 12;
     if (s == "n" || s == "н") return 13;
     if (s == "pa" || s == "psi" || s == "па") return 15;
     if (s == "m" || s == "м") return 8;
@@ -94,6 +94,8 @@ void UffFileDescriptor::fillRest()
 void UffFileDescriptor::read()
 {DD;
     QFile uff(fileName());
+    if (!uff.exists()) return;
+
     bool needsRewrite = false;
     if (uff.open(QFile::ReadOnly | QFile::Text)) {
         QTextStream stream(&uff);
@@ -105,14 +107,14 @@ void UffFileDescriptor::read()
             Function *f = new Function(this);
             f->read(stream);
 
-            if (f->type() > 1) {
+//            if (f->type() > 1) {
                 channels << f;
-            }
-            else {// skip time responses
-                needsRewrite = true;
-                delete f;
-                continue;
-            }
+//            }
+//            else {// skip time responses
+//                needsRewrite = true;
+//                delete f;
+//                continue;
+//            }
         }
     }
     if (!channels.isEmpty()) {
@@ -910,8 +912,8 @@ Function::Function(Channel &other)
 //           samplesCount()*sizeof(double));
     xvalues = other.xValues();
 
-    type58[4].value = other.name();
-    type58[6].value = other.description();
+    type58[4].value = other.name(); if (other.name().isEmpty()) type58[4].value = "NONE";
+    type58[6].value = other.description(); if (other.description().isEmpty()) type58[6].value = "NONE";
     type58[8].value = QDateTime::currentDateTime();
     type58[14].value = other.type();
 
@@ -924,9 +926,9 @@ Function::Function(Channel &other)
 
     type58[32].value = abscissaType(other.xName());
     type58[36].value = abscissaTypeDescription(type58[32].value.toInt());
-    type58[37].value = other.xName();
+    type58[37].value = other.xName(); if (other.xName().isEmpty()) type58[37].value = "NONE";
 
-    type58[44].value = other.yName();
+    type58[44].value = other.yName(); if (other.yName().isEmpty()) type58[44].value = "NONE";
 
     xMax = type58[28].value.toDouble() + type58[29].value.toDouble() * samples;
     yMin = other.yMinInitial();
@@ -1132,7 +1134,7 @@ void Function::write(QTextStream &stream)
         }
         case 5: {
             int j = 0;
-            for (quint32 i=0; i<valuesComplex.size(); i++) {
+            for (int i=0; i<valuesComplex.size(); i++) {
                 fields[FTFloat13_5]->print(valuesComplex[i].first, stream);
                 j++;
                 fields[FTFloat13_5]->print(valuesComplex[i].second, stream);
@@ -1248,7 +1250,8 @@ void Function::populate()
     QTextStream stream(&uff);
     stream.seek(dataPosition);
 
-    if (type58[14].value.toInt() > 1) {//function type is not time response
+    /*if (type58[14].value.toInt() > 1
+        || (type58[14].value.toInt() == 1) && samples<32768)*/ {//function type is not time response
         double thr = threshold(this->yName());
         if (this->type()==Descriptor::FrequencyResponseFunction) thr=1.0;
 

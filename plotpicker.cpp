@@ -235,8 +235,7 @@ void PlotPicker::pointMoved(const QPoint &pos)
         d_currentPos = pos;
     }
 
-    else
-        if (mode == Plot::DataInteraction) {
+    else if (mode == Plot::DataInteraction) {
 
             if (d_selectedCurve) {
 
@@ -250,6 +249,17 @@ void PlotPicker::pointMoved(const QPoint &pos)
                 highlightPoint(true);
             }
         }
+//    else {
+//        const QwtPlotItemList& itmList = plot->itemList();
+//        for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
+//            if (( *it )->rtti() == QwtPlotItem::Rtti_PlotMarker ) {
+//                QwtPlotMarker *c = static_cast<QwtPlotMarker *>( *it );
+//                if (c->lineStyle()==QwtPlotMarker::VLine)
+//                    qDebug()<<c->xValue();
+
+//            }
+//        }
+//    }
 }
 
 // Hightlight the selected point

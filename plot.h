@@ -18,6 +18,7 @@ class QwtPlotZoomer;
 class PlotPicker;
 class QAction;
 class QwtPlotMarker;
+class QwtScaleEngine;
 
 struct Range {
     void clear() {min = INFINITY; max = -INFINITY;}
@@ -29,6 +30,9 @@ struct Range {
 class QTreeWidget;
 class QPushButton;
 class QCheckBox;
+class QLabel;
+class QDoubleSpinBox;
+
 class TrackingPanel:public QWidget
 {
     Q_OBJECT
@@ -39,18 +43,30 @@ public:
         double xval, yval;
         //double xval2, yval2;
         double skz;
+        double energy;
     };
 
     explicit TrackingPanel(QWidget *parent=0);
     void updateState(const QList<TrackInfo> &curves, bool second);
     void setX(double x, bool second);
+    void setStep(double step);
+protected:
+
 signals:
     void switchHarmonics(bool on);
+    void updateX(double value, bool second);
 private:
     QTreeWidget *tree;
     QPushButton *button;
     QCheckBox *box;
+    QCheckBox *box1;
     QCheckBox *harmonics;
+    QLabel *x1Label;
+    QLabel *x2Label;
+    QDoubleSpinBox *x1Spin;
+    QDoubleSpinBox *x2Spin;
+
+    double mStep;
 };
 
 class Plot : public QwtPlot
@@ -156,6 +172,7 @@ private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
     void deleteGraph(const QVariant &info, int index);
     void updateTrackingCursor(double xVal, bool second);
+    void showContextMenu(const QPoint &pos, const int axis);
 private:
     void importPlot(const QString &fileName);
 
@@ -171,6 +188,10 @@ private:
     QwtPlotGrid *grid;
     PlotPicker *picker;
     QwtPlotCanvas *canvas;
+
+    bool xScale; //false = linear, true = logarithmic
+    bool y1Scale;//false = linear, true = logarithmic
+    bool y2Scale;//false = linear, true = logarithmic
 
     QwtChartZoom *zoom;
 

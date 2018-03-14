@@ -13,7 +13,7 @@
 /**********************************************************/
 
 #include "qaxiszoomsvc.h"
-
+#include <QMenu>
 #include <qwt_scale_widget.h>
 
 // Конструктор
@@ -280,7 +280,11 @@ void QAxisZoomSvc::axisMouseEvent(QEvent *event,int axis)
     switch (event->type())
     {
         case QEvent::MouseButtonPress:
-            if (axis == QwtPlot::xBottom || axis == QwtPlot::xTop)
+            if (mEvent->button()==Qt::RightButton) {
+                emit contextMenuRequested(mEvent->globalPos(), axis);
+                //showContextMenu(mEvent,axis);
+            }
+            else if (axis == QwtPlot::xBottom || axis == QwtPlot::xTop)
                 startHorizontalAxisZoom(mEvent, axis);
             else
                 startVerticalAxisZoom(mEvent, axis);
@@ -294,7 +298,8 @@ void QAxisZoomSvc::axisMouseEvent(QEvent *event,int axis)
             endAxisZoom(mEvent,axis);
             break;
 
-        default: ;
+
+        default: break;
     }
 }
 
@@ -459,4 +464,11 @@ void QAxisZoomSvc::endAxisZoom(QMouseEvent *mEvent,int ax)
         // выключаем режим масштабирования
         zoom->setRegime(QwtChartZoom::ctNone);
     }
+}
+
+void QAxisZoomSvc::showContextMenu(QMouseEvent *event, int axis)
+{
+//    qDebug()<<"Context menu requested";
+//    QMenu *menu = new QMenu(this);
+//    menu->addAction("")
 }

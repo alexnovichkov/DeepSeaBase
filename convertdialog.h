@@ -19,12 +19,12 @@ class Converter;
 class QDialogButtonBox;
 class QPlainTextEdit;
 
-class ConvertDialog : public QDialog
+class CalculateSpectreDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent = 0);
-    ~ConvertDialog();
+    explicit CalculateSpectreDialog(QList<FileDescriptor *> *dataBase, QWidget *parent = 0);
+    ~CalculateSpectreDialog();
     QStringList getNewFiles() const {return newFiles;}
 
 public slots:

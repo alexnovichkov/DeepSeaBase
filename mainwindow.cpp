@@ -22,6 +22,7 @@
 #include "matlabfiledescriptor.h"
 #include "matlabconverterdialog.h"
 #include    "esoconverterdialog.h"
+#include    "uffconverterdialog.h"
 #include "filedescriptor.h"
 
 class DrivesDialog : public QDialog
@@ -175,7 +176,7 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), tab(0)
 {DD;
-    setWindowTitle(tr("DeepSea Database 1.6.0"));
+    setWindowTitle(tr("DeepSea Database 1.6.4"));
     setAcceptDrops(true);
 
     mainToolBar = new QToolBar(this);
@@ -280,10 +281,12 @@ MainWindow::MainWindow(QWidget *parent)
         QMessageBox::information(this,"DeepSea Base", info);
     });
 
-    convertAct = new QAction(QString("Конвертировать в..."), this);
+    calculateSpectreAct = new QAction(QString("Обработать записи..."), this);
     //convertAct->setIcon();
-    connect(convertAct, SIGNAL(triggered()), SLOT(convertRecords()));
+    connect(calculateSpectreAct, SIGNAL(triggered()), SLOT(calculateSpectreRecords()));
 
+    convertAct = new QAction("Конвертировать файлы...", this);
+    connect(convertAct, SIGNAL(triggered()), SLOT(convertFiles()));
 
     clearPlotAct  = new QAction(QString("Очистить график"), this);
     clearPlotAct->setIcon(QIcon(":/icons/cross.png"));
@@ -409,7 +412,7 @@ MainWindow::MainWindow(QWidget *parent)
     mainToolBar->addWidget(new QLabel("Записи:"));
     mainToolBar->addAction(addFolderAct);
     mainToolBar->addAction(addFileAct);
-    mainToolBar->addAction(convertAct);
+    mainToolBar->addAction(calculateSpectreAct);
     mainToolBar->addAction(calculateThirdOctaveAct);
     mainToolBar->addAction(editDescriptionsAct);
 
@@ -454,6 +457,7 @@ MainWindow::MainWindow(QWidget *parent)
     QMenu *fileMenu = menuBar()->addMenu(tr("Файл"));
     fileMenu->addAction(addFolderAct);
     fileMenu->addAction(addFileAct);
+    fileMenu->addAction(convertAct);
     fileMenu->addAction(convertMatFilesAct);
     fileMenu->addAction(convertEsoFilesAct);
 
@@ -531,7 +535,9 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->tree->addAction(delFilesAct);
     tab->tree->addAction(plotAllChannelsAct);
 //    tab->tree->addAction(removeChannelsPlotsAct);
+    tab->tree->addAction(calculateSpectreAct);
     tab->tree->addAction(convertAct);
+
     tab->tree->setHeaderLabels(QStringList()
                           << QString("№")
                           << QString("Файл")
@@ -1163,6 +1169,9 @@ bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channe
     if (defaultSuffix.isEmpty()) defaultSuffix = "dfd";
     dialog.setDefaultSuffix(defaultSuffix);
 
+    QStringList suffixes = QStringList()<<".dfd"<<".uff"<<".unv";
+    QStringList filters = QStringList()<<"Файлы dfd (*.dfd)"<<"Файлы uff (*.uff)"<<"Файлы unv (*.unv)";
+
     bool forceUff = false;
 
 
@@ -1206,16 +1215,22 @@ bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channe
 
 
     QStringList selectedFiles;
+    QString selectedFilter;
     if (dialog.exec()) {
         selectedFiles = dialog.selectedFiles();
+        selectedFilter = dialog.selectedNameFilter();
     }
     if (selectedFiles.isEmpty()) return false;
 
     QString file = selectedFiles.first();
+
+    if (!file.endsWith(suffixes.at(filters.indexOf(selectedFilter))))
+        file.append(suffixes.at(filters.indexOf(selectedFilter)));
     if (forceUff) {
         file.chop(4);
         file.append(".uff");
     }
+
     MainWindow::setSetting("startDir", file);
 
     // ИЩЕМ ЭТОТ ФАЙЛ СРЕДИ ДОБАВЛЕННЫХ В БАЗУ
@@ -1587,8 +1602,8 @@ void MainWindow::updateChannelsTable(FileDescriptor *dfd)
                     ti->setTextColor(Qt::white);
                     ti->setBackgroundColor(ch->color());
                 }
-                if (ch->type()==Descriptor::TimeResponse && QFileInfo(tab->record->attachedFileName()).size()>10485760)
-                    ti->setFlags(Qt::ItemIsSelectable);
+//                if (ch->type()==Descriptor::TimeResponse && ch->samplesCount()>32768)
+//                    ti->setFlags(Qt::ItemIsSelectable);
             }
             tab->channelsTable->setItem(i,col,ti);
         }
@@ -1751,7 +1766,7 @@ void MainWindow::plotAllChannels()
     }
 }
 
-void MainWindow::convertRecords()
+void MainWindow::calculateSpectreRecords()
 {DD;
     if (!tab) return;
     QList<FileDescriptor *> records;
@@ -1772,13 +1787,38 @@ void MainWindow::convertRecords()
         return;
     }
 
-    ConvertDialog dialog(&records, this);
+    CalculateSpectreDialog dialog(&records, this);
 
     dialog.exec();
 
     QStringList newFiles = dialog.getNewFiles();
     addFiles(newFiles);
 
+}
+
+void MainWindow::convertFiles()
+{
+    if (!tab) return;
+    QList<FileDescriptor *> records;
+    for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
+        if (tab->tree->topLevelItem(i)->isSelected()) {
+            SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
+            if (!item) continue;
+            records << item->fileDescriptor;
+        }
+    }
+//    if (records.isEmpty()) {
+//        QMessageBox::warning(this,QString("DeepSea Base"),
+//                             QString("Не выделено ни одного файла"));
+//        return;
+//    }
+
+    ConverterDialog dialog(records, this);
+
+    dialog.exec();
+
+    QStringList newFiles = dialog.getConvertedFiles();
+    addFiles(newFiles);
 }
 
 void MainWindow::calculateThirdOctave()
@@ -2445,6 +2485,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      }
 
      if (exportPlots) {
+
          QAxObject *charts = workbook->querySubObject("Charts");
          charts->dynamicCall("Add()");
          QAxObject *chart = workbook->querySubObject("ActiveChart");
@@ -2498,7 +2539,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
                          delete Cell2;
                      }
 
-                     QStringList fullName = twoStringDescription(curve->descriptor->dataDescriptor());
+                     QStringList fullName;// = twoStringDescription(curve->descriptor->dataDescriptor());
                      fullName.append(curve->channel->name());
                      serie->setProperty("Name", fullName.join(" "));
                      delete serie;
@@ -2512,7 +2553,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
                  QAxObject * serie = series->querySubObject("Item (int)", i+1);
                  Curve *curve = curves.at(i);
                  if (serie) {
-                     QStringList fullName = twoStringDescription(curve->descriptor->dataDescriptor());
+                     QStringList fullName;// = twoStringDescription(curve->descriptor->dataDescriptor());
                      fullName.append(curve->channel->name());
                      serie->setProperty("Name", fullName.join(" "));
                      delete serie;

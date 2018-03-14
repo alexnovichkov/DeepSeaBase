@@ -367,6 +367,60 @@ void Converter::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd,
     newUff->channels << ch;
 }
 
+void Converter::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
+{
+    Function *ch = new Function(newUff);
+    ch->setName(dfd->channels[i]->name()/*+"/Сила"*/);
+    ch->setPopulated(true);
+
+    //FunctionHeader header;
+    ch->header.type1858[12].value = windowType(p.windowType);
+
+
+    ch->type58[8].value = QDateTime::currentDateTime();;
+    ch->type58[14].value = uffMethodFromDfdMethod(p.method->id());
+    ch->type58[15].value = i+1;
+    //ch->type58[18].value = dfd->channels[i]->name(); //18  Response Entity Name ("NONE" if unused)
+    ch->type58[18].value = QString("p%1").arg(i+1);
+    ch->type58[20].value = 3; //20 Response Direction +Z
+    //ch->type58[21].value = dfd->channels[p.baseChannel]->name(); //18  Reference Entity Name ("NONE" if unused)
+    ch->type58[21].value = QString("p%1").arg(p.baseChannel+1);
+    ch->type58[23].value = 3; //20 Reference Direction +Z
+    ch->type58[25].value = p.saveAsComplex ? 5 : 2; //25 Ordinate Data Type
+    ch->type58[26].value = spectrum.size();
+    ch->samples = spectrum.size();
+    ch->type58[28].value = 0.0;
+
+    double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
+    double XStep = newSampleRate / p.blockSize;
+    ch->type58[29].value = XStep; //29 Abscissa increment
+    ch->type58[32].value = 18; // 18 - frequency
+    ch->type58[36].value = "Частота";
+    ch->type58[37].value = "Гц";
+    ch->type58[44].value = "(m/s2)/N";
+
+    ch->type58[53].value = 1;
+    ch->type58[57].value = "Time";
+    ch->type58[58].value = "s";
+
+    //                                    Data Values
+    //                            Ordinate            Abscissa
+    //                Case     Type     Precision     Spacing       Format
+    //              -------------------------------------------------------------
+    //                  1      real      single        even         6E13.5
+    //                  2      real      single       uneven        6E13.5
+    //                  3     complex    single        even         6E13.5
+    //                  4     complex    single       uneven        6E13.5
+    //                  5      real      double        even         4E20.12
+    //                  6      real      double       uneven     2(E13.5,E20.12)
+    //                  7     complex    double        even         4E20.12
+    //                  8     complex    double       uneven      E13.5,2E20.12
+    //              --------------------------------------------------------------
+
+    ch->values = spectrum;
+    newUff->channels << ch;
+}
+
 void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString fileName)
 {DD;
     QString destDir = QFileInfo(fileName).canonicalPath();
@@ -587,7 +641,6 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
 
     /** 1. Создаем конечный файл и копируем в него всю информацию из dfd */
     QString fileName = createUniqueFileName(tempFolderName, dfd->fileName(), p.methodDll, p.saveAsComplex);
-qDebug()<<fileName;
 
     DfdFileDescriptor *newDfd = 0;
     if (!p.saveAsComplex) newDfd = createNewDfdFile(fileName, dfd, p);
@@ -624,6 +677,7 @@ qDebug()<<fileName;
         if (p.method->id()==1) {//спектр мощности
             while (1) {
                 QVector<float> chunk = getBlock(dfd->channels[i]->floatValues, newBlockSize, stepBack, block);
+
                 if (chunk.size() < p.blockSize) break;
 
                 filtered = filter.process(chunk);
@@ -703,7 +757,10 @@ qDebug()<<fileName;
             addDfdChannel(newDfd, dfd, spectrum, p, i);
         }
         if (newUff) {
-            addUffChannel(newUff, dfd, spectrumComplex, p, i);
+            if (p.saveAsComplex)
+                addUffChannel(newUff, dfd, spectrumComplex, p, i);
+            else
+                addUffChannel(newUff, dfd, spectrum, p, i);
         }
 
         dfd->channels[i]->floatValues.clear();
@@ -725,6 +782,7 @@ qDebug()<<fileName;
     if (newUff) {
         newUff->setChanged(true);
         newUff->write();
+        delete newUff;
     }
     return true;
 }

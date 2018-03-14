@@ -144,6 +144,7 @@ public slots:
     void labelSelected(bool selected);
 signals:
     void updateTrackingCursor(double,bool);
+    void contextMenuRequested(const QPoint &pos, const int axis);
 protected:
     // обработчик всех событий
     bool eventFilter(QObject *,QEvent *);

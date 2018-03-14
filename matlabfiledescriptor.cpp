@@ -94,8 +94,8 @@ bool MatlabConvertor::convert()
     QStringList xmlFiles = folderDir.entryList(QStringList()<<"*.xml", QDir::Files | QDir::Readable);
     if (xmlFiles.isEmpty()) {
         folderDir.cdUp();
-        folderDir.cd("Settings");
-        xmlFiles = folderDir.entryList(QStringList()<<"*.xml", QDir::Files | QDir::Readable);
+        if (folderDir.cd("Settings"))
+            xmlFiles = folderDir.entryList(QStringList()<<"*.xml", QDir::Files | QDir::Readable);
     }
     if (xmlFiles.isEmpty())
         xmlFileName = QFileDialog::getOpenFileName(0, QString("Укажите файл XML с описанием каналов"), folderName, "Файлы XML (*.xml)");

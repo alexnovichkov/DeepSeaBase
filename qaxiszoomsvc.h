@@ -33,6 +33,7 @@ public:
     void attach(QwtChartZoom *);
 signals:
     void xAxisClicked(double xValue, bool second);
+    void contextMenuRequested(const QPoint &pos, const int axis);
 protected:
     // обработчик всех событий
     bool eventFilter(QObject *,QEvent *);
@@ -77,6 +78,8 @@ private:
     // обработчик отпускания кнопки мыши
     // (выполнение изменения масштаба шкалы)
     void endAxisZoom(QMouseEvent *,int);
+
+    void showContextMenu(QMouseEvent *event, int axis);
 };
 
 #endif // QAXISZOOMSVC_H

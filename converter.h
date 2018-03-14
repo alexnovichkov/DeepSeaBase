@@ -55,6 +55,8 @@ private:
                        const QVector<double> &spectrum, Parameters &p, int i);
     void addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd,
                        const QVector<QPair<double, double> > &spectrum, Parameters &p, int i);
+    void addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd,
+                       const QVector<double> &spectrum, Parameters &p, int i);
 
     QList<DfdFileDescriptor *> dataBase;
     Parameters p;

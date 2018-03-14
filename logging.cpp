@@ -4,6 +4,7 @@
 #include <QTime>
 #include <QtDebug>
 #define DO_TRACE
+
 Trace::Trace(const QString &msg) : _msg(msg)
 {
 #ifdef DO_TRACE

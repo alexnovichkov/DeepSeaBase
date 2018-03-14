@@ -96,10 +96,16 @@ private slots:
     void plotAllChannels();
 
     /**
-     * @brief convertRecords
+     * @brief calculateSpectreRecords
+     * Обработка записей - расчет спектров, взаимных характеристик и т.д.
+     */
+    void calculateSpectreRecords();
+    /**
+     * @brief convertFiles
      * Конвертирует выделенные записи в другой формат и добавляет их в базу
      */
-    void convertRecords();
+    void convertFiles();
+
     /**
      * @brief headerToggled
      * Вызывается, когда отмечена галочка в заголовке списка каналов
@@ -201,7 +207,7 @@ private:
     QAction *delFilesAct;
     QAction *plotAllChannelsAct;
     QAction *removeChannelsPlotsAct;
-    QAction *convertAct;
+    QAction *calculateSpectreAct;
     QAction *calculateThirdOctaveAct;
     QAction *clearPlotAct;
     QAction *savePlotAct;
@@ -234,6 +240,7 @@ private:
 
     QAction *convertMatFilesAct;
     QAction *convertEsoFilesAct;
+    QAction *convertAct;
 
     Plot *plot;
 

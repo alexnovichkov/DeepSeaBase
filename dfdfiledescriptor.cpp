@@ -369,8 +369,8 @@ void DfdFileDescriptor::fillRest()
 
     setSamplesCount(channels.first()->samplesCount());
     BlockSize = 0;
-    XName = channels.first()->xName();  //DebugPrint(XName);
-    XBegin = channels.first()->xBegin();   //DebugPrint(XBegin);
+    XName = channels.first()->xName();
+    XBegin = channels.first()->xBegin();
     XStep = channels.first()->XStep;
 }
 
@@ -1221,7 +1221,9 @@ void DfdChannel::populate()
 
     QFile rawFile(parent->attachedFileName());
 
-    bool allFile = rawFile.size() < 256 * 1024 * 1024;
+    //bool allFile = rawFile.size() < 256 * 1024 * 1024;
+    bool allFile = true;
+
     if (rawFile.open(QFile::ReadOnly)) {
         QDataStream readStream(&rawFile);
         readStream.setByteOrder(QDataStream::LittleEndian);
@@ -1243,7 +1245,25 @@ void DfdChannel::populate()
                 rawFile.seek(0);
                 readStream.setDevice(&rawFile);
                 QVector<double> temp = getValue<double>(readStream, ChanBlockSize, IndType);
-                setXValues(temp);
+                //checking if values are really frequency values, take four first values
+                if (temp.size()>=4) {
+                    QVector<double> xv(4);
+                    for (int k = 0; k<4; ++k)
+                        xv[k] = pow(10.0, 0.1*k);
+                    if (qAbs(temp[0]-xv[0])<1e-4
+                        && qAbs(temp[1]-xv[1])<1e-4
+                        && qAbs(temp[2]-xv[2])<1e-4
+                        && qAbs(temp[3]-xv[3])<1e-4) {
+                        setXValues(temp);
+                    }
+                    else if (parent->DataType == ToSpectr) {
+                        QVector<double> xv(YValues.size());
+                        for (int k = 0; k<YValues.size(); ++k)
+                            xv[k] = pow(10.0, 0.1*k);
+                        setXValues(xv);
+                    }
+                }
+
             }
 
             setPopulated(true);
@@ -1289,7 +1309,7 @@ void DfdChannel::setYValues(const QVector<double> &values)
     yMin = 1.0e100;
     yMax = -1.0e100;
 
-    for (quint32 i=0; i<YValues.size(); ++i) {
+    for (int i=0; i<YValues.size(); ++i) {
         if (YValues[i] < yMin) yMin = YValues[i];
         if (YValues[i] > yMax) yMax = YValues[i];
     }
@@ -1459,11 +1479,12 @@ Descriptor::DataType DfdChannel::type() const
 
 Descriptor::OrdinateFormat DfdChannel::yFormat() const
 {
-    switch (IndType) {
-        case 0xC0000004: return Descriptor::RealSingle;
-        default: break;
-    }
-    return Descriptor::RealDouble;
+//    switch (IndType) {
+//        case 0xC0000004: return Descriptor::RealSingle;
+//        default: break;
+//    }
+//    return Descriptor::RealDouble;
+    return Descriptor::RealSingle;
 }
 
 //QString DfdChannel::typeDescription() const

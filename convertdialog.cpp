@@ -12,7 +12,7 @@
 
 #include "converter.h"
 
-ConvertDialog::ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent) :
+CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> *dataBase, QWidget *parent) :
     QDialog(parent)
 {DD;
     converter = 0;
@@ -129,7 +129,7 @@ ConvertDialog::ConvertDialog(QList<FileDescriptor *> *dataBase, QWidget *parent)
     methodCombo->setCurrentIndex(1);
 }
 
-ConvertDialog::~ConvertDialog()
+CalculateSpectreDialog::~CalculateSpectreDialog()
 {DD;
     if (converter) {
         converter->deleteLater();
@@ -141,13 +141,13 @@ ConvertDialog::~ConvertDialog()
     }
 }
 
-void ConvertDialog::methodChanged(int method)
+void CalculateSpectreDialog::methodChanged(int method)
 {DD;
     methodsStack->setCurrentIndex(method);
     currentMethod = dynamic_cast<AbstractMethod *>(methodsStack->currentWidget());
 }
 
-void ConvertDialog::start()
+void CalculateSpectreDialog::start()
 {DD;
     newFiles.clear();
 
@@ -191,14 +191,14 @@ void ConvertDialog::start()
     thread->start();
 }
 
-void ConvertDialog::stop()
+void CalculateSpectreDialog::stop()
 {DD;
     if (thread)
     thread->requestInterruption();
     QDialog::accept();
 }
 
-void ConvertDialog::accept()
+void CalculateSpectreDialog::accept()
 {DD;
     newFiles = converter->getNewFiles();
 
@@ -209,18 +209,18 @@ void ConvertDialog::accept()
     else QDialog::accept();
 }
 
-void ConvertDialog::reject()
+void CalculateSpectreDialog::reject()
 {DD;
     stop();
     QDialog::reject();
 }
 
-void ConvertDialog::updateProgressIndicator(const QString &path)
+void CalculateSpectreDialog::updateProgressIndicator(const QString &path)
 {DD;
     progress->setValue(QDir(path).count()-2);
 }
 
-void ConvertDialog::updateProgressIndicator()
+void CalculateSpectreDialog::updateProgressIndicator()
 {
     progress->setValue(progress->value()+1);
 }

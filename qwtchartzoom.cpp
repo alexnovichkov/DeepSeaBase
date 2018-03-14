@@ -77,6 +77,7 @@ QwtChartZoom::QwtChartZoom(QwtPlot *qp) :
 
     axisZoom = new QAxisZoomSvc();
     connect(axisZoom,SIGNAL(xAxisClicked(double,bool)),SIGNAL(updateTrackingCursor(double,bool)));
+    connect(axisZoom,SIGNAL(contextMenuRequested(QPoint,int)),SIGNAL(contextMenuRequested(QPoint,int)));
     axisZoom->attach(this);
 }
 
@@ -375,17 +376,17 @@ void QMainZoomSvc::procMouseEvent(QEvent *event)
     switch (event->type())
     {
         // нажата кнопка мыши
-    case QEvent::MouseButtonPress: startZoom(mEvent); break;
-        // перемещение мыши
-    case QEvent::MouseMove: selectZoomRect(mEvent); break;
-        // отпущена кнопка мыши
-    case QEvent::MouseButtonRelease: procZoom(mEvent); break;
+        case QEvent::MouseButtonPress: startZoom(mEvent); break;
+            // перемещение мыши
+        case QEvent::MouseMove: selectZoomRect(mEvent); break;
+            // отпущена кнопка мыши
+        case QEvent::MouseButtonRelease: procZoom(mEvent); break;
         case QEvent::MouseButtonDblClick:
             if (mEvent->button() == Qt::LeftButton)
                 zoom->resetBounds(Qt::Horizontal | Qt::Vertical);
             break;
-        // для прочих событий ничего не делаем
-    default: ;
+            // для прочих событий ничего не делаем
+        default: ;
     }
 }
 
