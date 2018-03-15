@@ -10,6 +10,7 @@ class QwtPlotCurve;
 class PointLabel;
 class QwtPlotMarker;
 
+
 class PlotPicker : public QwtPlotPicker
 {
     Q_OBJECT
@@ -38,6 +39,7 @@ private:
     Curve *findClosestPoint(const QPoint &pos, int &index) const;
 
     PointLabel *findLabel();
+    QwtPlotMarker *findCursor(const QPoint &pos);
 
     QwtPlot *plot;
     Curve *d_selectedCurve;
@@ -53,6 +55,9 @@ private:
 
     bool _showHarmonics;
     QList<QwtPlotMarker *> _harmonics;
+
+    QList<QwtPlotMarker *> cursors;
+    QwtPlotMarker *selectedCursor;
 protected:
     virtual QwtText trackerTextF(const QPointF &pos) const;
 };

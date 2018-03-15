@@ -33,10 +33,13 @@ PlotPicker::PlotPicker(QWidget *canvas) :
     selectedLabel = 0;
     labelAdded=false;
 
+    selectedCursor = 0;
+
     setStateMachine(new QwtPickerDragPointMachine);
 
     setTrackerMode(QwtPicker::AlwaysOn);
     setRubberBandPen(QPen(QColor(60,60,60), 0.5, Qt::DashLine));
+
 
     connect(this,SIGNAL(appended(QPoint)),this,SLOT(pointAppended(QPoint)));
     connect(this,SIGNAL(moved(QPoint)),this,SLOT(pointMoved(QPoint)));
@@ -146,6 +149,7 @@ void PlotPicker::resetHighLighting()
     }
 
     selectedLabel = 0;
+    selectedCursor = 0;
     emit labelSelected(false);
     labelAdded=false;
 }
@@ -197,6 +201,24 @@ PointLabel *PlotPicker::findLabel()
     return 0;
 }
 
+QwtPlotMarker *PlotPicker::findCursor(const QPoint &pos)
+{DD;
+    const QwtPlotItemList& itmList = plot->itemList();
+    for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
+        if (( *it )->rtti() == QwtPlotItem::Rtti_PlotMarker ) {
+            TrackingCursor *c = static_cast<TrackingCursor *>( *it );
+            if (!c) return 0;
+
+            int newX = (int)(plot->transform(QwtPlot::xBottom, c->xValue()));
+            if (qAbs(newX-pos.x())<=3) {
+                return c;
+            }
+        }
+    }
+
+    return 0;
+}
+
 void PlotPicker::pointAppended(const QPoint &pos)
 {DD;
     resetHighLighting();
@@ -205,11 +227,16 @@ void PlotPicker::pointAppended(const QPoint &pos)
     int index = -1;
 
     selectedLabel = findLabel();
+    selectedCursor = findCursor(pos);
     if (selectedLabel) {
         selectedLabel->setSelected(true);
         d_currentPos = pos;
         emit labelSelected(true);
         labelAdded=true;
+    }
+    else if (selectedCursor) {
+        d_currentPos = pos;
+        emit labelSelected(true);
     }
     else {
         emit labelSelected(false);
@@ -234,32 +261,22 @@ void PlotPicker::pointMoved(const QPoint &pos)
         selectedLabel->moveBy(pos-d_currentPos);
         d_currentPos = pos;
     }
+    else if (selectedCursor) {
+        selectedCursor->setXValue(plot->invTransform(QwtPlot::xBottom, pos.x()));
+        //selectedCursor->moveBy(pos-d_currentPos);
+        d_currentPos = pos;
+    }
 
     else if (mode == Plot::DataInteraction) {
+        if (d_selectedCurve) {
+            double newY = plot->invTransform(d_selectedCurve->yAxis(), pos.y());
 
-            if (d_selectedCurve) {
+            d_selectedCurve->descriptor->channel(d_selectedCurve->channelIndex)->yValues()[d_selectedPoint] = newY;
+            d_selectedCurve->descriptor->setDataChanged(true);
 
-                double newY = plot->invTransform(d_selectedCurve->yAxis(), pos.y());
-
-                //        double diff = newY - d_selectedCurve->dfd->channels.at(d_selectedCurve->channel)->yValues[d_selectedPoint];
-
-                d_selectedCurve->descriptor->channel(d_selectedCurve->channelIndex)->yValues()[d_selectedPoint] = newY;
-                d_selectedCurve->descriptor->setDataChanged(true);
-
-                highlightPoint(true);
-            }
+            highlightPoint(true);
         }
-//    else {
-//        const QwtPlotItemList& itmList = plot->itemList();
-//        for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
-//            if (( *it )->rtti() == QwtPlotItem::Rtti_PlotMarker ) {
-//                QwtPlotMarker *c = static_cast<QwtPlotMarker *>( *it );
-//                if (c->lineStyle()==QwtPlotMarker::VLine)
-//                    qDebug()<<c->xValue();
-
-//            }
-//        }
-//    }
+    }
 }
 
 // Hightlight the selected point
@@ -303,27 +320,6 @@ void PlotPicker::highlightPoint(bool showIt)
                 _harmonics[i]->attach(plot);
             }
         }
-
-//        d_marker1 = new QwtPlotMarker();
-//        d_marker1->setValue( 0.0, 0.0 );
-//        d_marker1->setLineStyle( QwtPlotMarker::VLine );
-//        d_marker1->setLabelAlignment( Qt::AlignRight | Qt::AlignBottom );
-//        d
-//        d_marker1->attach( this );
-
-//        QwtPlotGrid *grid = new QwtPlotGrid;
-//        grid->enableY(false);
-//        QList<double> majorTicks;
-//        for (int i=0; i<5; ++i) majorTicks << val.x()*i;
-//        QList<double> minorTicks;
-//        for (int i=0; i<20; ++i) minorTicks << val.x()*i/4;
-//        QList<double> medTicks;
-//        for (int i=0; i<10; ++i) medTicks << val.x()*i/2;
-//      //  grid->setXDiv(QwtScaleDiv(0,0));
-//        grid->attach(plot);
-//        //plot->setAxisScaleDiv(QwtPlot::xBottom, QwtScaleDiv(majorTicks.first(), majorTicks.last(), minorTicks,medTicks,majorTicks));
-//         grid->setXDiv(QwtScaleDiv(majorTicks.first(), majorTicks.last(), minorTicks,medTicks,majorTicks));
-
     }
     else {
         foreach (QwtPlotMarker *d, _harmonics) {

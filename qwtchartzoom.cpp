@@ -593,7 +593,7 @@ bool QDragZoomSvc::eventFilter(QObject *target,QEvent *event)
 }
 
 // Применение результатов перемещения графика
-void QDragZoomSvc::applyDrag(QPoint evpos)
+void QDragZoomSvc::applyDrag(QPoint evpos, bool moveRightAxis)
 {
     // получаем указатель на график
     QwtPlot *plt = zoom->plot();
@@ -609,14 +609,17 @@ void QDragZoomSvc::applyDrag(QPoint evpos)
     //     но уже в единицах горизонтальной шкалы
     // dx - смещение границ по горизонтальной оси берется с обратным знаком
     //     (чтобы график относительно границ переместился вправо, сами границы следует сместить влево)
-    double dx = -(evpos.x() - cg.x() - scp_x) * cs_kx;
+    double dx = -(evpos.x() - cg.x() - horizontalCursorPosition) * horizontalFactor;
     // устанавливаем новые левую и правую границы шкалы для горизонтальной оси
     //     новые границы = начальные границы + смещение
-    zoom->horizontalScaleBounds->set(scb_xl + dx,scb_xr + dx,-1);
+    zoom->horizontalScaleBounds->set(minHorizontalBound + dx,maxHorizontalBound + dx,-1);
     // аналогично определяем dy - смещение границ по вертикальной оси
-    double dy = -(evpos.y() - cg.y() - scp_y) * cs_ky;
+    double dy = -(evpos.y() - cg.y() - verticalCursorPosition) * (moveRightAxis?verticalFactor1:verticalFactor);
     // устанавливаем новые нижнюю и верхнюю границы вертикальной шкалы
-    zoom->verticalScaleBounds->set(scb_yb + dy,scb_yt + dy,-1);
+    if (moveRightAxis)
+        zoom->verticalScaleBounds->set(minVerticalBound1 + dy,maxVerticalBound1 + dy,zoom->slaveV());
+    else
+        zoom->verticalScaleBounds->set(minVerticalBound + dy,maxVerticalBound + dy,zoom->masterV());
     // перестраиваем график (синхронно с остальными)
     plt->replot();
 }
@@ -630,13 +633,13 @@ void QDragZoomSvc::dragMouseEvent(QEvent *event)
     switch (event->type())
     {
         // нажата кнопка мыши
-    case QEvent::MouseButtonPress: startDrag(mEvent); break;
-        // перемещение мыши
-    case QEvent::MouseMove: proceedDrag(mEvent); break;
-        // отпущена кнопка мыши
-    case QEvent::MouseButtonRelease: endDrag(mEvent); break;
-        // для прочих событий ничего не делаем
-    default: ;
+        case QEvent::MouseButtonPress: startDrag(mEvent); break;
+            // перемещение мыши
+        case QEvent::MouseMove: proceedDrag(mEvent); break;
+            // отпущена кнопка мыши
+        case QEvent::MouseButtonRelease: endDrag(mEvent); break;
+            // для прочих событий ничего не делаем
+        default: ;
     }
 }
 
@@ -650,44 +653,59 @@ void QDragZoomSvc::startDrag(QMouseEvent *mEvent)
     if (zoom->regim() == QwtChartZoom::ctNone)
     {
         // получаем указатели на
-        QwtPlot *plt = zoom->plot();        // график
-        QWidget *cv = plt->canvas();  // и канву
+        QwtPlot *plot = zoom->plot();        // график
+        QWidget *canvas = plot->canvas();  // и канву
         // получаем геометрию канвы графика
-        QRect cg = cv->geometry();
+        QRect cg = canvas->geometry();
         // определяем текущее положение курсора (относительно канвы графика)
-        scp_x = mEvent->pos().x() - cg.x();
-        scp_y = mEvent->pos().y() - cg.y();
+        horizontalCursorPosition = mEvent->pos().x() - cg.x();
+        verticalCursorPosition = mEvent->pos().y() - cg.y();
         // если курсор находится над канвой графика
-        if (scp_x >= 0 && scp_x < cg.width() &&
-            scp_y >= 0 && scp_y < cg.height())
+        if (horizontalCursorPosition >= 0 && horizontalCursorPosition < cg.width() &&
+            verticalCursorPosition >= 0 && verticalCursorPosition < cg.height())
             // если нажата правая кнопка мыши, то
-            if (mEvent->button() == Qt::RightButton)
+            if (mEvent->button() == Qt::RightButton /*&& !(mEvent->modifiers() & Qt::ControlModifier)*/)
             {
                 // прописываем соответствующий признак режима
                 zoom->setRegime(QwtChartZoom::ctDrag);
                 // запоминаем текущий курсор
-                tCursor = cv->cursor();
+                tCursor = canvas->cursor();
                 // устанавливаем курсор OpenHand
-                cv->setCursor(Qt::OpenHandCursor);
+                canvas->setCursor(Qt::OpenHandCursor);
                 // определяем текущий масштабирующий множитель по горизонтальной оси
                 // (т.е. узнаем на сколько изменяется координата по шкале x
                 // при перемещении курсора вправо на один пиксел)
-                cs_kx = plt->invTransform(zoom->masterH(),scp_x + 1) -
-                    plt->invTransform(zoom->masterH(),scp_x);
-                // получаем основную вертикальную шкалу
-                QwtPlot::Axis mY = zoom->masterV();
-                // определяем текущий масштабирующий множитель по вертикальной оси
-                // (аналогично)
-                cs_ky = plt->invTransform(mY,scp_y + 1) -
-                    plt->invTransform(mY,scp_y);
+                horizontalFactor = plot->invTransform(zoom->masterH(),horizontalCursorPosition + 1) -
+                    plot->invTransform(zoom->masterH(),horizontalCursorPosition);
                 // получаем карту основной горизонтальной шкалы
-                QwtScaleMap sm = plt->canvasMap(zoom->masterH());
+                QwtScaleMap sm = plot->canvasMap(zoom->masterH());
                 // для того чтобы фиксировать начальные левую и правую границы
-                scb_xl = sm.s1(); scb_xr = sm.s2();
-                // аналогично получаем карту основной вертикальной шкалы
-                sm = plt->canvasMap(mY);
-                // для того чтобы фиксировать начальные нижнюю и верхнюю границы
-                scb_yb = sm.s1(); scb_yt = sm.s2();
+                minHorizontalBound = sm.s1(); maxHorizontalBound = sm.s2();
+
+                if (mEvent->modifiers() & Qt::ControlModifier) {
+                    // получаем вертикальную шкалу
+                    QwtPlot::Axis mY = zoom->slaveV();
+                    // определяем текущий масштабирующий множитель по вертикальной оси
+                    // (аналогично)
+                    verticalFactor1 = plot->invTransform(mY,verticalCursorPosition + 1) -
+                        plot->invTransform(mY,verticalCursorPosition);
+                    // аналогично получаем карту основной вертикальной шкалы
+                    sm = plot->canvasMap(mY);
+                    // для того чтобы фиксировать начальные нижнюю и верхнюю границы
+                    minVerticalBound1 = sm.s1(); maxVerticalBound1 = sm.s2();
+                }
+                else {
+                    // получаем основную вертикальную шкалу
+                    QwtPlot::Axis mY = zoom->masterV();
+                    // определяем текущий масштабирующий множитель по вертикальной оси
+                    // (аналогично)
+                    verticalFactor = plot->invTransform(mY,verticalCursorPosition + 1) -
+                        plot->invTransform(mY,verticalCursorPosition);
+                    // аналогично получаем карту основной вертикальной шкалы
+                    sm = plot->canvasMap(mY);
+                    // для того чтобы фиксировать начальные нижнюю и верхнюю границы
+                    minVerticalBound = sm.s1(); maxVerticalBound = sm.s2();
+                }
             }
     }
 }
@@ -702,7 +720,7 @@ void QDragZoomSvc::proceedDrag(QMouseEvent *mEvent)
         // устанавливаем курсор ClosedHand
         zoom->plot()->canvas()->setCursor(Qt::ClosedHandCursor);
         // применяем результаты перемещения графика
-        applyDrag(mEvent->pos());
+        applyDrag(mEvent->pos(), mEvent->modifiers() & Qt::ControlModifier);
     }
 }
 

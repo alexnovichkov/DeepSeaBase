@@ -287,17 +287,19 @@ private:
     QwtChartZoom *zoom;     // Опекаемый менеджер масштабирования
     QCursor tCursor;        // Буфер для временного хранения курсора
 
-    double scb_xl,scb_xr;   // Текущие границы графика по горизонтальной оси
+    double minHorizontalBound, maxHorizontalBound;   // Текущие границы графика по горизонтальной оси
                             // в момент начала преобразования
-    double scb_yb,scb_yt;   // Текущие границы графика по вертикальной оси
+    double minVerticalBound, maxVerticalBound;   // Текущие границы графика по главной вертикальной оси
                             // в момент начала преобразования
-    double cs_kx,cs_ky;     // Текущие масштабирующие множители по обеим осям
+    double minVerticalBound1, maxVerticalBound1;   // Текущие границы графика по вспомогательной вертикальной оси
+                            // в момент начала преобразования
+    double horizontalFactor, verticalFactor, verticalFactor1;     // Текущие масштабирующие множители по обеим осям
                             // (изменение координаты при перемещении на один пиксел)
-    int scp_x,scp_y;        // Положение курсора в момент начала преобразования
+    int horizontalCursorPosition,verticalCursorPosition;        // Положение курсора в момент начала преобразования
                             // (в пикселах относительно канвы графика)
 
     // применение результатов перемещения графика
-    void applyDrag(QPoint);
+    void applyDrag(QPoint, bool moveRightAxis);
 
     // обработчик событий от мыши
     void dragMouseEvent(QEvent *);

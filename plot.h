@@ -3,6 +3,7 @@
 
 #include <qwt_plot.h>
 #include <qwt_plot_dict.h>
+#include <qwt_plot_marker.h>
 #include <math.h>
 
 
@@ -17,7 +18,6 @@ class QwtChartZoom;
 class QwtPlotZoomer;
 class PlotPicker;
 class QAction;
-class QwtPlotMarker;
 class QwtScaleEngine;
 
 struct Range {
@@ -32,6 +32,11 @@ class QPushButton;
 class QCheckBox;
 class QLabel;
 class QDoubleSpinBox;
+
+class TrackingCursor : public QwtPlotMarker
+{
+
+};
 
 class TrackingPanel:public QWidget
 {
@@ -173,6 +178,7 @@ private slots:
     void deleteGraph(const QVariant &info, int index);
     void updateTrackingCursor(double xVal, bool second);
     void showContextMenu(const QPoint &pos, const int axis);
+    void trackCursors(const QPoint &pos);
 private:
     void importPlot(const QString &fileName);
 
@@ -196,8 +202,8 @@ private:
     QwtChartZoom *zoom;
 
     TrackingPanel *trackingPanel;
-    QwtPlotMarker *_trackingCursor;
-    QwtPlotMarker *_trackingCursor1;
+    TrackingCursor *_trackingCursor;
+    TrackingCursor *_trackingCursor1;
     bool _showTrackingCursor;
 
     Range x1;

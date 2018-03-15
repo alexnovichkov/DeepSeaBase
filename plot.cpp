@@ -16,8 +16,8 @@
 #include <qwt_picker_machine.h>
 #include <qwt_plot_renderer.h>
 #include <qwt_scale_engine.h>
-
 #include <qwt_plot_layout.h>
+#include <qwt_plot_panner.h>
 
 #include <QtCore>
 #include <QMessageBox>
@@ -41,7 +41,7 @@
 #include "logging.h"
 
 Plot::Plot(QWidget *parent) :
-    QwtPlot(parent)/*, freeGraph(0)*/
+    QwtPlot(parent), zoom(0)
 {DD;
     canvas = new QwtPlotCanvas();
     canvas->setFocusIndicator( QwtPlotCanvas::CanvasFocusIndicator);
@@ -62,11 +62,11 @@ Plot::Plot(QWidget *parent) :
 
     _showTrackingCursor = false;
 
-    _trackingCursor = new QwtPlotMarker();
+    _trackingCursor = new TrackingCursor();
     _trackingCursor->setLineStyle( QwtPlotMarker::VLine );
     _trackingCursor->setLinePen( Qt::black, 1, Qt::DashDotLine );
 
-    _trackingCursor1 = new QwtPlotMarker();
+    _trackingCursor1 = new TrackingCursor();
     _trackingCursor1->setLineStyle( QwtPlotMarker::VLine );
     _trackingCursor1->setLinePen( Qt::black, 1, Qt::DashDotLine );
 
@@ -96,44 +96,60 @@ Plot::Plot(QWidget *parent) :
     y2Scale = false;
 
     Legend *leg = new Legend();
-    //leg->setDefaultItemMode(QwtLegendData::Clickable);
     connect(leg, SIGNAL(clicked(QVariant,int)),this,SLOT(editLegendItem(QVariant,int)));
     connect(leg, SIGNAL(markedForDelete(QVariant,int)),this, SLOT(deleteGraph(QVariant,int)));
     insertLegend(leg, QwtPlot::RightLegend);
 
 
+//    QwtPlotPanner *panner = new QwtPlotPanner(canvas);
+//    panner->setMouseButton(Qt::RightButton);
+//    panner->setAxisEnabled(QwtPlot::xBottom, true);
+//    panner->setAxisEnabled(QwtPlot::yLeft, true);
+//    panner->setAxisEnabled(QwtPlot::yRight, false);
+
+//    QwtPlotPanner *panner1 = new QwtPlotPanner(canvas);
+//    panner1->setMouseButton(Qt::RightButton, Qt::ControlModifier);
+//    panner1->setAxisEnabled(QwtPlot::xBottom, true);
+//    panner1->setAxisEnabled(QwtPlot::yRight, true);
+//    panner1->setAxisEnabled(QwtPlot::yLeft, false);
+
+//    panner->setEnabled(true);
+//    panner1->setEnabled(true);
+
+
     zoom = new QwtChartZoom(this);
     zoom->setEnabled(true);
+    connect(zoom,SIGNAL(updateTrackingCursor(double,bool)),SLOT(updateTrackingCursor(double,bool)));
+    connect(zoom,SIGNAL(contextMenuRequested(QPoint,int)),SLOT(showContextMenu(QPoint,int)));
 
     picker = new PlotPicker(canvas);
-    connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
+    //connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
+    connect(picker,SIGNAL(updateTrackingCursor(double,bool)),SLOT(updateTrackingCursor(double,bool)));
     connect(trackingPanel,SIGNAL(switchHarmonics(bool)),picker,SLOT(showHarmonics(bool)));
     connect(trackingPanel,SIGNAL(updateX(double,bool)),this,SLOT(updateTrackingCursor(double,bool)));
 
-    bool pickerEnabled = MainWindow::getSetting("pickerEnabled", true).toBool();
-    picker->setEnabled(pickerEnabled);
-    connect(zoom,SIGNAL(updateTrackingCursor(double,bool)),SLOT(updateTrackingCursor(double,bool)));
-    connect(zoom,SIGNAL(contextMenuRequested(QPoint,int)),SLOT(showContextMenu(QPoint,int)));
-    connect(picker,SIGNAL(updateTrackingCursor(double,bool)),SLOT(updateTrackingCursor(double,bool)));
+    picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
+}
 
-//    QwtPicker *trackingCursorPicker = new QwtPicker(canvas);
-//    trackingCursorPicker->setStateMachine(new QwtPickerTrackerMachine);
-//    trackingCursorPicker->setTrackerMode(QwtPicker::AlwaysOn);
-//    trackingCursorPicker->setEnabled(true);
-//    connect(trackingCursorPicker, &QwtPicker::moved, [=](const QPoint &pos){
-//        this->
-//        const QwtPlotItemList& itmList = itemList();
-//        for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
-//            if (( *it )->rtti() == QwtPlotItem::Rtti_PlotMarker ) {
-//                QwtPlotMarker *c = static_cast<QwtPlotMarker *>( *it );
-//                if (c->lineStyle()==QwtPlotMarker::VLine)
-//                    qDebug()<<c->xValue();
+void Plot::trackCursors(const QPoint &pos)
+{
+    const QwtPlotItemList& itmList = itemList();
+    for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
+        if (( *it )->rtti() == QwtPlotItem::Rtti_PlotMarker ) {
+            QwtPlotMarker *c = static_cast<QwtPlotMarker *>( *it );
+            if (c->lineStyle()==QwtPlotMarker::VLine) {
+                double newX = transform(QwtPlot::xBottom, c->xValue());
+                if (qAbs(pos.x()-newX)<10) {
+                    //qDebug()<<c->xValue();
+                    setCursor(Qt::SplitHCursor);
+                }
+                else {
+                    setCursor(Qt::CrossCursor);
+                }
+            }
 
-//            }
-//        }
-
-//        emit switchHarmonics(state==Qt::Checked);
-//    });
+        }
+    }
 }
 
 Plot::~Plot()
@@ -192,12 +208,11 @@ void Plot::deleteGraphs()
     yRightName.clear();
     xName.clear();
 
-    delete zoom;
-    zoom = new QwtChartZoom(this);
-    connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
-    connect(zoom,SIGNAL(updateTrackingCursor(double,bool)),SLOT(updateTrackingCursor(double,bool)));
-    connect(zoom,SIGNAL(contextMenuRequested(QPoint,int)),SLOT(showContextMenu(QPoint,int)));
-    //zoom->resetBounds();
+    //delete zoom;
+    //zoom = new QwtChartZoom(this);
+    //connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
+    //connect(zoom,SIGNAL(updateTrackingCursor(double,bool)),SLOT(updateTrackingCursor(double,bool)));
+    //connect(zoom,SIGNAL(contextMenuRequested(QPoint,int)),SLOT(showContextMenu(QPoint,int)));
 
     update();
 }
@@ -438,16 +453,6 @@ void Plot::updateAxesLabels()
         enableAxis(QwtPlot::yLeft, axisLabelsVisible);
         setAxisTitle(QwtPlot::yLeft, axisLabelsVisible ? yLeftName : "");
     }
-//    enableAxis(QwtPlot::yLeft, !leftGraphs.isEmpty());
-//    QwtText t = axisTitle(QwtPlot::yLeft);
-//    t.setText(yLeftName);
-//    t.setColor(axisLabelsVisible?Qt::black:Qt::white);
-//    setAxisTitle(QwtPlot::yLeft, t);
-
-//    QPalette pal=palette();
-//    QColor col=pal.color(QPalette::Button);
-//    pal.setColor(QPalette::Text, col);
-//    setPalette(pal);
 
     if (rightGraphs.isEmpty()) enableAxis(QwtPlot::yRight, false);
     else {
@@ -496,8 +501,6 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col)
 
     setAxis(QwtPlot::xBottom, descriptor->xName());
     prepareAxis(QwtPlot::xBottom);
-    //setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine());
-    //qDebug()<<"xBottom axis "<<(axisScaleEngine(QwtPlot::xBottom)==0);
 
     QwtPlot::Axis ax = plotOnFirstYAxis ? QwtPlot::yLeft : QwtPlot::yRight;
 
@@ -669,12 +672,6 @@ void Plot::print()
         }
     }
 }
-
-//void Plot::onCurveChanged(Curve *curve)
-//{DD;
-//    emit curveChanged(curve);
-
-//}
 
 void Plot::switchInteractionMode()
 {DD;
