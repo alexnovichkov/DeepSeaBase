@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "DeepSea Database"
-#define MyAppVersion "1.6.4"
+#define MyAppVersion "1.6.5"
 #define MyAppPublisher "Novichkov & Sukin Sons."
 #define MyAppExeName "DeepSeaBase.exe"
 
@@ -34,7 +34,7 @@ Source: "K:\My\build\DeepSeaBase\release\DeepSeaBase.exe"; DestDir: "{app}"; Fla
 ;Source: "K:\Qt\Qt5.5.0\5.5\mingw492_32\bin\icudt54.dll"; DestDir: "{app}"; Flags: ignoreversion
 ;Source: "K:\Qt\Qt5.5.0\5.5\mingw492_32\bin\icuin54.dll"; DestDir: "{app}"; Flags: ignoreversion
 ;Source: "K:\Qt\Qt5.5.0\5.5\mingw492_32\bin\icuuc54.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Qt\Qt5.9.1\5.9.1\mingw53_32\bin\libgcc_s_dw2-1.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\bin\libgcc_s_dw2-1.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\bin\libstdc++-6.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\bin\libwinpthread-1.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\bin\Qt5Core.dll"; DestDir: "{app}"; Flags: ignoreversion

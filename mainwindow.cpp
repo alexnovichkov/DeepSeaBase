@@ -176,7 +176,7 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), tab(0)
 {DD;
-    setWindowTitle(tr("DeepSea Database 1.6.4"));
+    setWindowTitle(tr("DeepSea Database 1.6.5"));
     setAcceptDrops(true);
 
     mainToolBar = new QToolBar(this);
@@ -269,11 +269,12 @@ MainWindow::MainWindow(QWidget *parent)
                        "Колесико мыши + Shift: увеличить/уменьшить масштаб по вертикали<br>"
                        "Левая кнопка мыши: масштабирование по выделению<br>"
                        "Backspace или двойной щелчок: вернуть масштаб к исходному<br>"
-                       "Backspace + Ctrl: вернуть масштаб к исходному по горизонтали<br>"
-                       "Backspace + Shift: вернуть масштаб к исходному по вертикали<br>"
+                       "Ctrl + Backspace: вернуть масштаб к исходному по горизонтали<br>"
+                       "Shift + Backspace: вернуть масштаб к исходному по вертикали<br>"
                        "Клавиша H: показать/спрятать подписи осей<br>"
                        "<u>На осях:</u><br>"
                        "Левая кнопка мыши: увеличить/уменьшить масштаб на оси<br>"
+                       "контекстное меню: изменить формат оси (линейный/логарифмический)<br>"
                        "<b>Метки точек на графике:</b><br>"
                        "Щелкнуть по точке и нажать пробел<br>"
                        "Изменение формата метки: щелкнуть по метке и нажать пробел<br>"

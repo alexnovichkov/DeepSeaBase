@@ -41,6 +41,7 @@ PlotPicker::PlotPicker(QWidget *canvas) :
     setRubberBandPen(QPen(QColor(60,60,60), 0.5, Qt::DashLine));
 
 
+
     connect(this,SIGNAL(appended(QPoint)),this,SLOT(pointAppended(QPoint)));
     connect(this,SIGNAL(moved(QPoint)),this,SLOT(pointMoved(QPoint)));
 }
@@ -130,6 +131,17 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
     else if (key == Qt::Key_H) {
         static_cast<Plot*>(plot)->switchLabelsVisibility();
     }
+}
+
+void PlotPicker::widgetKeyPressEvent(QKeyEvent *e)
+{
+    const int key = e->key();
+   // if (d_selectedPoint == -1) return;
+
+    if (key == Qt::Key_Left || key == Qt::Key_Right) {
+
+    }
+    else QwtPlotPicker::widgetKeyPressEvent(e);
 }
 
 void PlotPicker::resetHighLighting()
@@ -262,8 +274,8 @@ void PlotPicker::pointMoved(const QPoint &pos)
         d_currentPos = pos;
     }
     else if (selectedCursor) {
-        selectedCursor->setXValue(plot->invTransform(QwtPlot::xBottom, pos.x()));
-        //selectedCursor->moveBy(pos-d_currentPos);
+        emit cursorMovedTo(selectedCursor->xValue(), plot->invTransform(QwtPlot::xBottom, pos.x()));
+        //selectedCursor->setXValue();
         d_currentPos = pos;
     }
 

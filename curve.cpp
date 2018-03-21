@@ -3,6 +3,7 @@
 #include "pointlabel.h"
 
 #include "filedescriptor.h"
+#include <qwt_curve_fitter.h>
 
 class DfdData: public QwtSeriesData<QPointF>
 {
@@ -47,6 +48,9 @@ Curve::Curve(const QString &title, FileDescriptor *descriptor, int channelIndex)
     setPaintAttribute(QwtPlotCurve::ClipPolygons);
     setPaintAttribute(QwtPlotCurve::FilterPoints);
     setRenderHint(QwtPlotItem::RenderAntialiased);
+
+    setCurveFitter(new QwtWeedingCurveFitter());
+
     if (channel->xValues().isEmpty())
         setRawSamples(channel->xBegin(), descriptor->xStep(), channel->yValues().data(), channel->samplesCount());
     else

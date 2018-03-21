@@ -35,7 +35,8 @@ class QDoubleSpinBox;
 
 class TrackingCursor : public QwtPlotMarker
 {
-
+public:
+    void moveTo(const double xValue);
 };
 
 class TrackingPanel:public QWidget
@@ -177,8 +178,8 @@ private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
     void deleteGraph(const QVariant &info, int index);
     void updateTrackingCursor(double xVal, bool second);
+    void updateTrackingCursor(double oldVal, double newVal);
     void showContextMenu(const QPoint &pos, const int axis);
-    void trackCursors(const QPoint &pos);
 private:
     void importPlot(const QString &fileName);
 

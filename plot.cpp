@@ -18,6 +18,7 @@
 #include <qwt_scale_engine.h>
 #include <qwt_plot_layout.h>
 #include <qwt_plot_panner.h>
+#include <qwt_plot_magnifier.h>
 
 #include <QtCore>
 #include <QMessageBox>
@@ -65,10 +66,13 @@ Plot::Plot(QWidget *parent) :
     _trackingCursor = new TrackingCursor();
     _trackingCursor->setLineStyle( QwtPlotMarker::VLine );
     _trackingCursor->setLinePen( Qt::black, 1, Qt::DashDotLine );
+    _trackingCursor->setLabelAlignment(Qt::AlignBottom | Qt::AlignRight);
 
     _trackingCursor1 = new TrackingCursor();
     _trackingCursor1->setLineStyle( QwtPlotMarker::VLine );
     _trackingCursor1->setLinePen( Qt::black, 1, Qt::DashDotLine );
+    _trackingCursor1->setLabelAlignment(Qt::AlignBottom | Qt::AlignLeft);
+
 
     //setTitle("Legend Test");
     //setFooter("Footer");
@@ -106,50 +110,34 @@ Plot::Plot(QWidget *parent) :
 //    panner->setAxisEnabled(QwtPlot::xBottom, true);
 //    panner->setAxisEnabled(QwtPlot::yLeft, true);
 //    panner->setAxisEnabled(QwtPlot::yRight, false);
+//    panner->setEnabled(true);
 
 //    QwtPlotPanner *panner1 = new QwtPlotPanner(canvas);
 //    panner1->setMouseButton(Qt::RightButton, Qt::ControlModifier);
 //    panner1->setAxisEnabled(QwtPlot::xBottom, true);
 //    panner1->setAxisEnabled(QwtPlot::yRight, true);
 //    panner1->setAxisEnabled(QwtPlot::yLeft, false);
-
-//    panner->setEnabled(true);
 //    panner1->setEnabled(true);
+
+//    QwtPlotMagnifier *magnifier = new QwtPlotMagnifier(canvas);
+//    magnifier->setMouseButton(Qt::NoButton);
+
+//    setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine());
 
 
     zoom = new QwtChartZoom(this);
-    zoom->setEnabled(true);
+    zoom->setEnabled(false);
     connect(zoom,SIGNAL(updateTrackingCursor(double,bool)),SLOT(updateTrackingCursor(double,bool)));
     connect(zoom,SIGNAL(contextMenuRequested(QPoint,int)),SLOT(showContextMenu(QPoint,int)));
 
     picker = new PlotPicker(canvas);
-    //connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
+    connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
     connect(picker,SIGNAL(updateTrackingCursor(double,bool)),SLOT(updateTrackingCursor(double,bool)));
+    connect(picker,SIGNAL(cursorMovedTo(double,double)),SLOT(updateTrackingCursor(double,double)));
     connect(trackingPanel,SIGNAL(switchHarmonics(bool)),picker,SLOT(showHarmonics(bool)));
     connect(trackingPanel,SIGNAL(updateX(double,bool)),this,SLOT(updateTrackingCursor(double,bool)));
 
     picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
-}
-
-void Plot::trackCursors(const QPoint &pos)
-{
-    const QwtPlotItemList& itmList = itemList();
-    for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
-        if (( *it )->rtti() == QwtPlotItem::Rtti_PlotMarker ) {
-            QwtPlotMarker *c = static_cast<QwtPlotMarker *>( *it );
-            if (c->lineStyle()==QwtPlotMarker::VLine) {
-                double newX = transform(QwtPlot::xBottom, c->xValue());
-                if (qAbs(pos.x()-newX)<10) {
-                    //qDebug()<<c->xValue();
-                    setCursor(Qt::SplitHCursor);
-                }
-                else {
-                    setCursor(Qt::CrossCursor);
-                }
-            }
-
-        }
-    }
 }
 
 Plot::~Plot()
@@ -191,9 +179,6 @@ int Plot::totalGraphsCount() const
 
 void Plot::deleteGraphs()
 {DD;
-//    delete freeGraph;
-//    freeGraph = 0;
-
     qDeleteAll(graphs);
     graphs.clear();
     leftGraphs.clear();
@@ -241,78 +226,106 @@ void Plot::deleteGraph(const QVariant &info, int index)
     }
 }
 
+void Plot::updateTrackingCursor(double oldVal, double newVal)
+{
+    if (qAbs(_trackingCursor->xValue()-oldVal)<1e-10)
+        updateTrackingCursor(newVal, false);
+    if (qAbs(_trackingCursor1->xValue()-oldVal)<1e-10)
+        updateTrackingCursor(newVal, true);
+}
+
 void Plot::updateTrackingCursor(double xVal, bool second)
 {DD;
     if (_showTrackingCursor) {
-        if (graphs.isEmpty()) {
-            if (second) {
-                _trackingCursor1->setValue(xVal, 0.0);
-                _trackingCursor1->attach(this);
-            }
-            else {
-                _trackingCursor->setValue(xVal, 0.0);
-                _trackingCursor->attach(this);
-            }
-            trackingPanel->setX(xVal, second);
-            return;
-        }
 
-        //first we need to find the closest point to xVal;
-        //1. search the curve with the minimum xstep;
-        double xstep = graphs.first()->channel->xStep();
-        for (int i=1; i<graphs.size(); ++i) {
-            if (graphs.at(i)->channel->xStep()<xstep)
-                xstep = graphs.at(i)->channel->xStep();
-        }
-        if (xstep==0.0) xstep = graphs.first()->channel->xStep();
-        if (xstep==0.0) return;
-        trackingPanel->setStep(xstep);
+        if (!graphs.isEmpty()) {
+            //first we need to find the closest point to xVal;
+            //1. search the curve with the minimum xstep;
+            double xstep = graphs.first()->channel->xStep();
+            for (int i=1; i<graphs.size(); ++i) {
+                if (graphs.at(i)->channel->xStep()<xstep)
+                    xstep = graphs.at(i)->channel->xStep();
+            }
+            if (xstep==0.0) xstep = graphs.first()->channel->xStep();
+            if (xstep!=0.0) {
+                trackingPanel->setStep(xstep);
 
-        //2. compute the actual xVal based on the xVal and xstep
-        int steps = int(xVal/xstep);
-//        qDebug()<<"xstep"<<xstep<<"xval"<<xVal<<"steps"<<steps;
-        if (steps <= 0) xVal = 0.0;
-        else {
-            if (qAbs(xstep*(steps+1)-xVal) < qAbs(xstep*steps-xVal)) steps++;
-            xVal = xstep*steps;
+                //2. compute the actual xVal based on the xVal and xstep
+                int steps = int(xVal/xstep);
+                //        qDebug()<<"xstep"<<xstep<<"xval"<<xVal<<"steps"<<steps;
+                if (steps <= 0) xVal = 0.0;
+                else {
+                    if (qAbs(xstep*(steps+1)-xVal) < qAbs(xstep*steps-xVal)) steps++;
+                    xVal = xstep*steps;
+                }
+            }
+            else {//xstep == 0 -> третьоктава или еще что-нибудь, проверяем тип файла
+                DfdFileDescriptor *dfd = static_cast<DfdFileDescriptor *>(graphs.first()->descriptor);
+                if (!dfd || (dfd->DataType != ToSpectr && dfd->DataType != OSpectr)) {
+                    return;
+                }
+
+                int iMin = 0;
+                double min = qAbs(xVal - dfd->channels[0]->XValues[0]);
+                for (int i=1; i<dfd->channels[0]->XValues.size(); ++i) {
+                    if (qAbs(xVal - dfd->channels[0]->XValues[i])<min) {
+                        iMin = i;
+                        min = qAbs(xVal - dfd->channels[0]->XValues[i]);
+                    }
+                }
+                xVal = dfd->channels[0]->XValues[iMin];
+            }
         }
 
         //3. update our cursors
         if (second) {
-            _trackingCursor1->setValue(xVal, 0.0);
+            _trackingCursor1->moveTo(xVal);
             _trackingCursor1->attach(this);
         }
         else {
-            _trackingCursor->setValue(xVal, 0.0);
+            _trackingCursor->moveTo(xVal);
             _trackingCursor->attach(this);
         }
         trackingPanel->setX(xVal, second);
 
         double leftBorder = _trackingCursor->xValue();
         double rightBorder = _trackingCursor1->xValue();
+        if (leftBorder>rightBorder)
+            std::swap(leftBorder,rightBorder);
 
 
         //4. get the y values from all graphs
         QList<TrackingPanel::TrackInfo> list;
         foreach(Curve *c,graphs) {
-            steps = int(xVal/c->channel->xStep());
-            if (steps < 0) steps=0;
-            if (qAbs(c->channel->xStep()*(steps+1)-xVal) < qAbs(c->channel->xStep()*steps-xVal)) steps++;
-            if (steps>c->channel->samplesCount()) steps=c->channel->samplesCount();
+            int steps, steps1, steps2;
 
-            int steps1 = int(leftBorder/c->channel->xStep());
-            if (steps1 < 0) steps1=0;
-            if (qAbs(c->channel->xStep()*(steps1+1)-leftBorder) < qAbs(c->channel->xStep()*steps1-leftBorder)) steps1++;
-            if (steps1>c->channel->samplesCount()) steps1=c->channel->samplesCount();
+            if (c->channel->xStep()==0.0) {
+                steps = c->channel->xValues().indexOf(xVal);
+                if (steps < 0) steps = c->channel->xValues().size()-1;
 
-            int steps2 = int(rightBorder/c->channel->xStep());
-            if (steps2 < 0) steps2=0;
-            if (qAbs(c->channel->xStep()*(steps2+1)-rightBorder) < qAbs(c->channel->xStep()*steps2-rightBorder)) steps2++;
-            if (steps2>c->channel->samplesCount()) steps2=c->channel->samplesCount();
+                steps1 = c->channel->xValues().indexOf(leftBorder);
+                if (steps1 < 0) steps1 = c->channel->xValues().size()-1;
 
+                steps2 = c->channel->xValues().indexOf(rightBorder);
+                if (steps2 < 0) steps2 = c->channel->xValues().size()-1;
+            } else {
+                steps = int(xVal/c->channel->xStep());
+                if (steps < 0) steps=0;
+                if (qAbs(c->channel->xStep()*(steps+1)-xVal) < qAbs(c->channel->xStep()*steps-xVal)) steps++;
+                if (steps > c->channel->samplesCount()) steps=c->channel->samplesCount();
+
+                steps1 = int(leftBorder/c->channel->xStep());
+                if (steps1 < 0) steps1=0;
+                if (qAbs(c->channel->xStep()*(steps1+1)-leftBorder) < qAbs(c->channel->xStep()*steps1-leftBorder)) steps1++;
+                if (steps1>c->channel->samplesCount()) steps1=c->channel->samplesCount();
+
+                steps2 = int(rightBorder/c->channel->xStep());
+                if (steps2 < 0) steps2=0;
+                if (qAbs(c->channel->xStep()*(steps2+1)-rightBorder) < qAbs(c->channel->xStep()*steps2-rightBorder)) steps2++;
+                if (steps2>c->channel->samplesCount()) steps2=c->channel->samplesCount();
+                // qDebug()<<steps1<<steps2;
+            }
             if (steps2<steps1) qSwap(steps1, steps2);
-           // qDebug()<<steps1<<steps2;
-
 
             double cumul = pow(10.0, c->sample(steps1).y()/5.0);
 
@@ -350,8 +363,6 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
         QwtScaleEngine *engine = 0;
         if (!(*scale)) {
             engine = new QwtLogScaleEngine();
-            //setAxisAutoScale(axis, true);
-            //grid->enableXMin(false);
         }
         else {
             engine = new QwtLinearScaleEngine();
@@ -556,7 +567,7 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col)
     }
 
     if (needFixBoundaries)
-        zoom->fixBoundaries();
+        if (zoom) zoom->fixBoundaries();
 
     update();
     return true;
@@ -921,4 +932,10 @@ void TrackingPanel::setStep(double step)
     mStep = step;
     x1Spin->setSingleStep(mStep);
     x2Spin->setSingleStep(mStep);
+}
+
+void TrackingCursor::moveTo(const double xValue)
+{
+    setValue(xValue, 0.0);
+    setLabel(QwtText(QString::number(xValue)));
 }
