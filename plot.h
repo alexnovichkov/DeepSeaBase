@@ -178,7 +178,7 @@ private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
     void deleteGraph(const QVariant &info, int index);
     void updateTrackingCursor(double xVal, bool second);
-    void updateTrackingCursor(double oldVal, double newVal);
+    void updateTrackingCursor(QwtPlotMarker*cursor, double newVal);
     void showContextMenu(const QPoint &pos, const int axis);
 private:
     void importPlot(const QString &fileName);

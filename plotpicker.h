@@ -26,7 +26,7 @@ protected:
     virtual void widgetKeyPressEvent(QKeyEvent *e);
 signals:
     void updateTrackingCursor(double xVal, bool second);
-    void cursorMovedTo(double oldValue, double newValue);
+    void cursorMovedTo(QwtPlotMarker *cursor, double newValue);
     void labelSelected(bool);
 public slots:
     void showHarmonics(bool show) {_showHarmonics = show;}

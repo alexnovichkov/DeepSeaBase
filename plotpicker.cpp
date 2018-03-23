@@ -219,11 +219,11 @@ QwtPlotMarker *PlotPicker::findCursor(const QPoint &pos)
     for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
         if (( *it )->rtti() == QwtPlotItem::Rtti_PlotMarker ) {
             TrackingCursor *c = static_cast<TrackingCursor *>( *it );
-            if (!c) return 0;
-
-            int newX = (int)(plot->transform(QwtPlot::xBottom, c->xValue()));
-            if (qAbs(newX-pos.x())<=3) {
-                return c;
+            if (c) {
+                int newX = (int)(plot->transform(QwtPlot::xBottom, c->xValue()));
+                if (qAbs(newX-pos.x())<=5) {
+                    return c;
+                }
             }
         }
     }
@@ -274,7 +274,7 @@ void PlotPicker::pointMoved(const QPoint &pos)
         d_currentPos = pos;
     }
     else if (selectedCursor) {
-        emit cursorMovedTo(selectedCursor->xValue(), plot->invTransform(QwtPlot::xBottom, pos.x()));
+        emit cursorMovedTo(selectedCursor, plot->invTransform(QwtPlot::xBottom, pos.x()));
         //selectedCursor->setXValue();
         d_currentPos = pos;
     }

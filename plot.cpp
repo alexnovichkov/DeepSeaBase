@@ -133,7 +133,7 @@ Plot::Plot(QWidget *parent) :
     picker = new PlotPicker(canvas);
     connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
     connect(picker,SIGNAL(updateTrackingCursor(double,bool)),SLOT(updateTrackingCursor(double,bool)));
-    connect(picker,SIGNAL(cursorMovedTo(double,double)),SLOT(updateTrackingCursor(double,double)));
+    connect(picker,SIGNAL(cursorMovedTo(QwtPlotMarker*,double)),SLOT(updateTrackingCursor(QwtPlotMarker*,double)));
     connect(trackingPanel,SIGNAL(switchHarmonics(bool)),picker,SLOT(showHarmonics(bool)));
     connect(trackingPanel,SIGNAL(updateX(double,bool)),this,SLOT(updateTrackingCursor(double,bool)));
 
@@ -226,11 +226,14 @@ void Plot::deleteGraph(const QVariant &info, int index)
     }
 }
 
-void Plot::updateTrackingCursor(double oldVal, double newVal)
+void Plot::updateTrackingCursor(QwtPlotMarker*cursor, double newVal)
 {
-    if (qAbs(_trackingCursor->xValue()-oldVal)<1e-10)
+    if (!cursor) return;
+
+    if (cursor == _trackingCursor)
         updateTrackingCursor(newVal, false);
-    if (qAbs(_trackingCursor1->xValue()-oldVal)<1e-10)
+    else
+    if (cursor == _trackingCursor1)
         updateTrackingCursor(newVal, true);
 }
 
