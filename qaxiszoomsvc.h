@@ -79,7 +79,6 @@ private:
     // (выполнение изменения масштаба шкалы)
     void endAxisZoom(QMouseEvent *,int);
 
-    void showContextMenu(QMouseEvent *event, int axis);
 };
 
 #endif // QAXISZOOMSVC_H

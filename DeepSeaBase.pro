@@ -44,7 +44,8 @@ SOURCES += main.cpp\
     matlabfiledescriptor.cpp \
     matlabconverterdialog.cpp \
     esoconverterdialog.cpp \
-    uffconverterdialog.cpp
+    uffconverterdialog.cpp \
+    trackingpanel.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -78,7 +79,8 @@ HEADERS  += mainwindow.h \
     matlabfiledescriptor.h \
     matlabconverterdialog.h \
     esoconverterdialog.h \
-    uffconverterdialog.h
+    uffconverterdialog.h \
+    trackingpanel.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\

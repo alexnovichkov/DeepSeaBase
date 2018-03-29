@@ -19,6 +19,7 @@
 #include "dfdfiledescriptor.h"
 #include "pointlabel.h"
 #include "logging.h"
+#include "trackingpanel.h"
 
 PlotPicker::PlotPicker(QWidget *canvas) :
     QwtPlotPicker(canvas),

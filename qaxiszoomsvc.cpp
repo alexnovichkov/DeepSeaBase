@@ -466,9 +466,3 @@ void QAxisZoomSvc::endAxisZoom(QMouseEvent *mEvent,int ax)
     }
 }
 
-void QAxisZoomSvc::showContextMenu(QMouseEvent *event, int axis)
-{
-//    qDebug()<<"Context menu requested";
-//    QMenu *menu = new QMenu(this);
-//    menu->addAction("")
-}

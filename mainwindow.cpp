@@ -224,63 +224,13 @@ MainWindow::MainWindow(QWidget *parent)
     plotAllChannelsAct = new QAction(QString("Построить все каналы"), this);
     connect(plotAllChannelsAct, SIGNAL(triggered()), SLOT(plotAllChannels()));
 
-//    removeChannelsPlotsAct = new QAction(QString("Очистить графики каналов"), this);
-//    connect(removeChannelsPlotsAct, &QAction::triggered, [=](){
-//        plot->deleteGraphs();
-//        for (int index = 0; index<tabWidget->count(); ++index) {
-//            Tab *t = qobject_cast<Tab*>(tabWidget->widget(index));
-//            if (t) {
-//                QFont boldFont = t->tree->font();
-//                boldFont.setBold(true);
-//                for (int i=0; i<t->tree->topLevelItemCount(); ++i) {
-//                    if (t->tree->topLevelItem(i)->font(1) == boldFont) {
-//                        DfdFileDescriptor *dfd = dynamic_cast<SortableTreeWidgetItem *>(t->tree->topLevelItem(i))->dfd;
-//                        QList<Channel *> list = dfd->channels;
-//                        foreach (Channel *c, list) {
-//                            c->checkState = Qt::Unchecked;
-//                            c->color = QColor();
-//                        }
-//                        t->tree->topLevelItem(i)->setFont(1, t->tree->font());
-//                    }
-//                }
-//                t->channelsTable->blockSignals(true);
-//                for (int i=0; i<t->channelsTable->rowCount(); ++i) {
-//                    t->channelsTable->item(i,0)->setCheckState(Qt::Unchecked);
-//                    t->channelsTable->item(i,0)->setFont(t->channelsTable->font());
-//                    t->channelsTable->item(i,0)->setBackgroundColor(Qt::white);
-//                    t->channelsTable->item(i,0)->setTextColor(Qt::black);
-//                }
-//                t->channelsTable->blockSignals(false);
-//            }
-//        }
-//    });
 
     QAction *plotHelpAct = new QAction("Справка", this);
     connect(plotHelpAct, &QAction::triggered, [=](){
-        QString info = "<b>Построение графиков:</b><br>"
-                       "Выбрать файл, выбрать нужный канал.<bR>"
-                       "Ctrl + выбор канала: построить графики этого канала во всех выделенных файлах<br>"
-                "<b>Управление графиком</b><br>"
-                       "<u>Внутри графика:</u><br>"
-                       "Правая кнопка мыши: двигать график по плоскости<br>"
-                       "Правая кнопка мыши + Ctrl: двигать график по плоскости относительно правой оси<br>"
-                       "Колесико мыши: увеличить/уменьшить масштаб<br>"
-                       "Колесико мыши + Ctrl: увеличить/уменьшить масштаб по горизонтали<br>"
-                       "Колесико мыши + Shift: увеличить/уменьшить масштаб по вертикали<br>"
-                       "Левая кнопка мыши: масштабирование по выделению<br>"
-                       "Backspace или двойной щелчок: вернуть масштаб к исходному<br>"
-                       "Ctrl + Backspace: вернуть масштаб к исходному по горизонтали<br>"
-                       "Shift + Backspace: вернуть масштаб к исходному по вертикали<br>"
-                       "Клавиша H: показать/спрятать подписи осей<br>"
-                       "<u>На осях:</u><br>"
-                       "Левая кнопка мыши: увеличить/уменьшить масштаб на оси<br>"
-                       "контекстное меню: изменить формат оси (линейный/логарифмический)<br>"
-                       "<b>Метки точек на графике:</b><br>"
-                       "Щелкнуть по точке и нажать пробел<br>"
-                       "Изменение формата метки: щелкнуть по метке и нажать пробел<br>"
-                       "Удаление метки: щелкнуть по метке и нажать Delete"
-                       ;
-        QMessageBox::information(this,"DeepSea Base", info);
+
+        QDesktopServices::openUrl(QUrl("help.html"));
+
+
     });
 
     calculateSpectreAct = new QAction(QString("Обработать записи..."), this);
@@ -318,6 +268,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(trackingCursorAct, &QAction::triggered, [=](){
         plot->switchTrackingCursor();
     });
+    connect(plot,SIGNAL(trackingPanelCloseRequested()),trackingCursorAct,SLOT(toggle()));
 
 
     copyToClipboardAct = new QAction(QString("Копировать в буфер обмена"), this);

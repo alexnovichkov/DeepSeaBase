@@ -3,7 +3,6 @@
 
 #include <qwt_plot.h>
 #include <qwt_plot_dict.h>
-#include <qwt_plot_marker.h>
 #include <math.h>
 
 
@@ -19,6 +18,7 @@ class QwtPlotZoomer;
 class PlotPicker;
 class QAction;
 class QwtScaleEngine;
+class QwtPlotMarker;
 
 struct Range {
     void clear() {min = INFINITY; max = -INFINITY;}
@@ -32,48 +32,8 @@ class QPushButton;
 class QCheckBox;
 class QLabel;
 class QDoubleSpinBox;
+class TrackingPanel;
 
-class TrackingCursor : public QwtPlotMarker
-{
-public:
-    void moveTo(const double xValue);
-};
-
-class TrackingPanel:public QWidget
-{
-    Q_OBJECT
-public:
-    struct TrackInfo {
-        QString name;
-        QColor color;
-        double xval, yval;
-        //double xval2, yval2;
-        double skz;
-        double energy;
-    };
-
-    explicit TrackingPanel(QWidget *parent=0);
-    void updateState(const QList<TrackInfo> &curves, bool second);
-    void setX(double x, bool second);
-    void setStep(double step);
-protected:
-
-signals:
-    void switchHarmonics(bool on);
-    void updateX(double value, bool second);
-private:
-    QTreeWidget *tree;
-    QPushButton *button;
-    QCheckBox *box;
-    QCheckBox *box1;
-    QCheckBox *harmonics;
-    QLabel *x1Label;
-    QLabel *x2Label;
-    QDoubleSpinBox *x1Spin;
-    QDoubleSpinBox *x2Spin;
-
-    double mStep;
-};
 
 class Plot : public QwtPlot
 {
@@ -174,11 +134,10 @@ public slots:
 signals:
     void curveChanged(Curve *curve);
     void curveDeleted(FileDescriptor *descriptor, int index);
+    void trackingPanelCloseRequested();
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
     void deleteGraph(const QVariant &info, int index);
-    void updateTrackingCursor(double xVal, bool second);
-    void updateTrackingCursor(QwtPlotMarker*cursor, double newVal);
     void showContextMenu(const QPoint &pos, const int axis);
 private:
     void importPlot(const QString &fileName);
@@ -203,9 +162,6 @@ private:
     QwtChartZoom *zoom;
 
     TrackingPanel *trackingPanel;
-    TrackingCursor *_trackingCursor;
-    TrackingCursor *_trackingCursor1;
-    bool _showTrackingCursor;
 
     Range x1;
     Range y1;

@@ -40,6 +40,7 @@
 #include <QAction>
 
 #include "logging.h"
+#include "trackingpanel.h"
 
 Plot::Plot(QWidget *parent) :
     QwtPlot(parent), zoom(0)
@@ -53,29 +54,16 @@ Plot::Plot(QWidget *parent) :
     //setContextMenuPolicy(Qt::ActionsContextMenu);
 
     setAutoReplot(true);
+
+
+
     trackingPanel = new TrackingPanel(this);
     trackingPanel->setVisible(false);
-
-
-//    minStep = 0.0;
+    connect(trackingPanel,SIGNAL(closeRequested()),SIGNAL(trackingPanelCloseRequested()));
 
     axisLabelsVisible = MainWindow::getSetting("axisLabelsVisible", true).toBool();
 
-    _showTrackingCursor = false;
 
-    _trackingCursor = new TrackingCursor();
-    _trackingCursor->setLineStyle( QwtPlotMarker::VLine );
-    _trackingCursor->setLinePen( Qt::black, 1, Qt::DashDotLine );
-    _trackingCursor->setLabelAlignment(Qt::AlignBottom | Qt::AlignRight);
-
-    _trackingCursor1 = new TrackingCursor();
-    _trackingCursor1->setLineStyle( QwtPlotMarker::VLine );
-    _trackingCursor1->setLinePen( Qt::black, 1, Qt::DashDotLine );
-    _trackingCursor1->setLabelAlignment(Qt::AlignBottom | Qt::AlignLeft);
-
-
-    //setTitle("Legend Test");
-    //setFooter("Footer");
 
     interactionMode = ScalingInteraction;
 
@@ -127,15 +115,14 @@ Plot::Plot(QWidget *parent) :
 
     zoom = new QwtChartZoom(this);
     zoom->setEnabled(false);
-    connect(zoom,SIGNAL(updateTrackingCursor(double,bool)),SLOT(updateTrackingCursor(double,bool)));
+    connect(zoom,SIGNAL(updateTrackingCursor(double,bool)), trackingPanel, SLOT(updateTrackingCursor(double,bool)));
     connect(zoom,SIGNAL(contextMenuRequested(QPoint,int)),SLOT(showContextMenu(QPoint,int)));
 
     picker = new PlotPicker(canvas);
     connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
-    connect(picker,SIGNAL(updateTrackingCursor(double,bool)),SLOT(updateTrackingCursor(double,bool)));
-    connect(picker,SIGNAL(cursorMovedTo(QwtPlotMarker*,double)),SLOT(updateTrackingCursor(QwtPlotMarker*,double)));
+    connect(picker,SIGNAL(updateTrackingCursor(double,bool)),trackingPanel, SLOT(updateTrackingCursor(double,bool)));
+    connect(picker,SIGNAL(cursorMovedTo(QwtPlotMarker*,double)), trackingPanel, SLOT(updateTrackingCursor(QwtPlotMarker*,double)));
     connect(trackingPanel,SIGNAL(switchHarmonics(bool)),picker,SLOT(showHarmonics(bool)));
-    connect(trackingPanel,SIGNAL(updateX(double,bool)),this,SLOT(updateTrackingCursor(double,bool)));
 
     picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
 }
@@ -143,25 +130,24 @@ Plot::Plot(QWidget *parent) :
 Plot::~Plot()
 {DD;
 //    delete freeGraph;
-    trackingPanel->hide();
+    delete trackingPanel;
     qDeleteAll(graphs);
     delete grid;
     delete zoom;
     delete picker;
-    delete _trackingCursor;
-    delete _trackingCursor1;
+
     MainWindow::setSetting("axisLabelsVisible", axisLabelsVisible);
 }
 
 void Plot::update()
-{
+{DD;
     updateAxes();
     updateAxesLabels();
     updateLegend();
-    double x = _trackingCursor->value().x();
-    updateTrackingCursor(x, false);
-    x = _trackingCursor1->value().x();
-    updateTrackingCursor(x, true);
+//    double x = _trackingCursor->value().x();
+//    updateTrackingCursor(x, false);
+//    x = _trackingCursor1->value().x();
+//    updateTrackingCursor(x, true);
     replot();
 }
 
@@ -226,135 +212,8 @@ void Plot::deleteGraph(const QVariant &info, int index)
     }
 }
 
-void Plot::updateTrackingCursor(QwtPlotMarker*cursor, double newVal)
-{
-    if (!cursor) return;
-
-    if (cursor == _trackingCursor)
-        updateTrackingCursor(newVal, false);
-    else
-    if (cursor == _trackingCursor1)
-        updateTrackingCursor(newVal, true);
-}
-
-void Plot::updateTrackingCursor(double xVal, bool second)
-{DD;
-    if (_showTrackingCursor) {
-
-        if (!graphs.isEmpty()) {
-            //first we need to find the closest point to xVal;
-            //1. search the curve with the minimum xstep;
-            double xstep = graphs.first()->channel->xStep();
-            for (int i=1; i<graphs.size(); ++i) {
-                if (graphs.at(i)->channel->xStep()<xstep)
-                    xstep = graphs.at(i)->channel->xStep();
-            }
-            if (xstep==0.0) xstep = graphs.first()->channel->xStep();
-            if (xstep!=0.0) {
-                trackingPanel->setStep(xstep);
-
-                //2. compute the actual xVal based on the xVal and xstep
-                int steps = int(xVal/xstep);
-                //        qDebug()<<"xstep"<<xstep<<"xval"<<xVal<<"steps"<<steps;
-                if (steps <= 0) xVal = 0.0;
-                else {
-                    if (qAbs(xstep*(steps+1)-xVal) < qAbs(xstep*steps-xVal)) steps++;
-                    xVal = xstep*steps;
-                }
-            }
-            else {//xstep == 0 -> третьоктава или еще что-нибудь, проверяем тип файла
-                DfdFileDescriptor *dfd = static_cast<DfdFileDescriptor *>(graphs.first()->descriptor);
-                if (!dfd || (dfd->DataType != ToSpectr && dfd->DataType != OSpectr)) {
-                    return;
-                }
-
-                int iMin = 0;
-                double min = qAbs(xVal - dfd->channels[0]->XValues[0]);
-                for (int i=1; i<dfd->channels[0]->XValues.size(); ++i) {
-                    if (qAbs(xVal - dfd->channels[0]->XValues[i])<min) {
-                        iMin = i;
-                        min = qAbs(xVal - dfd->channels[0]->XValues[i]);
-                    }
-                }
-                xVal = dfd->channels[0]->XValues[iMin];
-            }
-        }
-
-        //3. update our cursors
-        if (second) {
-            _trackingCursor1->moveTo(xVal);
-            _trackingCursor1->attach(this);
-        }
-        else {
-            _trackingCursor->moveTo(xVal);
-            _trackingCursor->attach(this);
-        }
-        trackingPanel->setX(xVal, second);
-
-        double leftBorder = _trackingCursor->xValue();
-        double rightBorder = _trackingCursor1->xValue();
-        if (leftBorder>rightBorder)
-            std::swap(leftBorder,rightBorder);
-
-
-        //4. get the y values from all graphs
-        QList<TrackingPanel::TrackInfo> list;
-        foreach(Curve *c,graphs) {
-            int steps, steps1, steps2;
-
-            if (c->channel->xStep()==0.0) {
-                steps = c->channel->xValues().indexOf(xVal);
-                if (steps < 0) steps = c->channel->xValues().size()-1;
-
-                steps1 = c->channel->xValues().indexOf(leftBorder);
-                if (steps1 < 0) steps1 = c->channel->xValues().size()-1;
-
-                steps2 = c->channel->xValues().indexOf(rightBorder);
-                if (steps2 < 0) steps2 = c->channel->xValues().size()-1;
-            } else {
-                steps = int(xVal/c->channel->xStep());
-                if (steps < 0) steps=0;
-                if (qAbs(c->channel->xStep()*(steps+1)-xVal) < qAbs(c->channel->xStep()*steps-xVal)) steps++;
-                if (steps > c->channel->samplesCount()) steps=c->channel->samplesCount();
-
-                steps1 = int(leftBorder/c->channel->xStep());
-                if (steps1 < 0) steps1=0;
-                if (qAbs(c->channel->xStep()*(steps1+1)-leftBorder) < qAbs(c->channel->xStep()*steps1-leftBorder)) steps1++;
-                if (steps1>c->channel->samplesCount()) steps1=c->channel->samplesCount();
-
-                steps2 = int(rightBorder/c->channel->xStep());
-                if (steps2 < 0) steps2=0;
-                if (qAbs(c->channel->xStep()*(steps2+1)-rightBorder) < qAbs(c->channel->xStep()*steps2-rightBorder)) steps2++;
-                if (steps2>c->channel->samplesCount()) steps2=c->channel->samplesCount();
-                // qDebug()<<steps1<<steps2;
-            }
-            if (steps2<steps1) qSwap(steps1, steps2);
-
-            double cumul = pow(10.0, c->sample(steps1).y()/5.0);
-
-            for (int i=steps1+1; i<=steps2; ++i) {
-                cumul += pow(10.0, c->sample(i).y()/5.0);
-            }
-            cumul = sqrt(cumul);
-            cumul = 10.0*log10(cumul);
-
-            double energy = pow(10.0, c->sample(steps1).y()/10.0);
-            for (int i=steps1+1; i<=steps2; ++i) {
-                energy += pow(10.0, c->sample(i).y()/10.0);
-            }
-            energy = 10.0*log10(energy);
-
-            TrackingPanel::TrackInfo ti{c->channel->name(), c->channel->color(), c->sample(steps).x(),
-                        c->sample(steps).y(), cumul, energy};
-            list << ti;
-        }
-
-        trackingPanel->updateState(list, second);
-    }
-}
-
 void Plot::showContextMenu(const QPoint &pos, const int axis)
-{
+{DD;
     QMenu *menu = new QMenu(this);
     bool *scale = 0;
 
@@ -451,7 +310,7 @@ void Plot::prepareAxis(int axis)
 }
 
 void Plot::setAxis(int axis, const QString &name)
-{
+{DD;
     switch (axis) {
         case QwtPlot::yLeft: yLeftName = name; break;
         case QwtPlot::yRight: yRightName = name; break;
@@ -461,7 +320,7 @@ void Plot::setAxis(int axis, const QString &name)
 }
 
 void Plot::updateAxesLabels()
-{
+{DD;
     if (leftGraphs.isEmpty()) enableAxis(QwtPlot::yLeft, false);
     else {
         enableAxis(QwtPlot::yLeft, axisLabelsVisible);
@@ -698,19 +557,13 @@ void Plot::switchInteractionMode()
 }
 
 void Plot::switchHarmonicsMode()
-{
+{DD;
     picker->showHarmonics(!picker->harmonics());
 }
 
 void Plot::switchTrackingCursor()
 {DD;
-//    qDebug()<<"Tracking cursor enabled";
-    _showTrackingCursor = !_showTrackingCursor;
-    if (!_showTrackingCursor) {
-        _trackingCursor->detach();
-        _trackingCursor1->detach();
-    }
-    trackingPanel->setVisible(_showTrackingCursor);
+    trackingPanel->switchVisibility();
 }
 
 void Plot::setInteractionMode(Plot::InteractionMode mode)
@@ -791,154 +644,4 @@ void Plot::editLegendItem(const QVariant &itemInfo, int index)
 }
 
 
-#include <QtWidgets>
 
-TrackingPanel::TrackingPanel(QWidget *parent) : QWidget(parent)
-{
-    setWindowFlags(Qt::Tool | Qt::WindowTitleHint);
-    setWindowTitle("Следящий курсор");
-
-    mStep = 0.0;
-
-    tree = new QTreeWidget(this);
-    tree->setColumnCount(8);
-    tree->setAlternatingRowColors(true);
-    tree->setHeaderLabels(QStringList()<<""<<"Название"<<"X1"<<"Y1"<<"X2"<<"Y2"<<"СКЗ"<<"Энергия в полосе");
-    tree->setRootIsDecorated(false);
-    tree->setColumnWidth(0,50);
-    tree->setColumnWidth(1,150);
-
-    //x1Label = new QLabel(this);
-    //x2Label = new QLabel(this);
-
-    x1Spin = new QDoubleSpinBox(this);
-    x1Spin->setMinimum(0.0);
-    x1Spin->setMaximum(60000.0);
-    x1Spin->setValue(0.0);
-    x1Spin->setDecimals(5);
-    x1Spin->setPrefix("X1  ");
-    connect(x1Spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            [=](double val){
-        emit updateX(val, false);
-    });
-    //x1Spin->setReadOnly(true);
-
-    x2Spin = new QDoubleSpinBox(this);
-    x2Spin->setMinimum(0.0);
-    x2Spin->setMaximum(60000.0);
-    x2Spin->setValue(0.0);
-    x2Spin->setDecimals(5);
-    x2Spin->setPrefix("X2  ");
-    connect(x2Spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-            [=](double val){
-        emit updateX(val, true);
-    });
-    //x2Spin->setReadOnly(true);
-
-    button = new QPushButton("Копировать", this);
-    connect(button,&QPushButton::clicked,[=](){
-        QStringList list;
-        QStringList values;
-        if (box->isChecked()) values << "Название";
-        if (box1->isChecked()) values << "X1";
-        values << "Y1";
-        if (box1->isChecked()) values << "X2";
-        values << "Y2"<<"СКЗ"<<"Энергия в полосе";
-        list << values.join('\t');
-
-        for(int i=0; i<tree->topLevelItemCount(); ++i) {
-            values.clear();
-            for (int j=1; j<tree->columnCount(); ++j) {
-                values.append(tree->topLevelItem(i)->text(j));
-            }
-            for (int j=1; j<values.size(); ++j) {
-                values[j].replace(".",",");
-            }
-            if (!box1->isChecked()) {
-                values.removeAt(3);
-                values.removeAt(1);
-            }
-            if (!box->isChecked()) {
-                values.removeFirst();
-            }
-            list << values.join('\t');
-
-        }
-        QClipboard *clipboard = QApplication::clipboard();
-        clipboard->setText(list.join("\n"));
-    });
-
-    box = new QCheckBox("Включая названия каналов", this);
-
-    box1 = new QCheckBox("Включая значения по оси x", this);
-
-    harmonics = new QCheckBox("Включить показ гармоник", this);
-    connect(harmonics, &QCheckBox::stateChanged, [=](int state){
-        emit switchHarmonics(state==Qt::Checked);
-    });
-
-    QGridLayout *lay = new QGridLayout;
-    lay->addWidget(new QLabel("Левая кнопка мыши - первая граница", this), 0, 0, 1, 1);
-    lay->addWidget(new QLabel("Ctrl + левая кнопка мыши - вторая граница", this), 0, 1, 1, 1);
-
-    lay->addWidget(x1Spin, 1,0);
-    lay->addWidget(x2Spin, 1,1);
-
-    lay->addWidget(tree, 2,0,1,2);
-    lay->addWidget(harmonics, 3,0,1,2);
-    lay->addWidget(button, 4,0,2,1);
-    lay->addWidget(box, 4,1,1,1);
-    lay->addWidget(box1, 5,1,1,1);
-
-    setLayout(lay);
-    resize(550,300);
-}
-
-void TrackingPanel::updateState(const QList<TrackingPanel::TrackInfo> &curves, bool second)
-{
-    for(int i=0; i<curves.size(); ++i) {
-        QTreeWidgetItem *item = tree->topLevelItem(i);
-        if (!item) {
-            item = new QTreeWidgetItem();
-            item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsEditable | Qt::ItemNeverHasChildren);
-            tree->addTopLevelItem(item);
-        }
-        item->setBackgroundColor(0,curves[i].color);
-        item->setText(1,curves[i].name);
-        if (second) {
-            item->setText(4, QString::number(curves[i].xval));
-            item->setText(5, QString::number(curves[i].yval, 'f', 1));
-        }
-        else {
-            item->setText(2, QString::number(curves[i].xval));
-            item->setText(3, QString::number(curves[i].yval, 'f', 1));
-        }
-        item->setText(6, QString::number(curves[i].skz, 'f', 1));
-        item->setText(7, QString::number(curves[i].energy, 'f', 1));
-    }
-    for (int i=tree->topLevelItemCount()-1; i>=curves.size(); --i)
-        delete tree->takeTopLevelItem(i);
-    for (int i=0; i<tree->columnCount(); ++i)
-        if (i!=1) tree->resizeColumnToContents(i);
-}
-
-void TrackingPanel::setX(double x, bool second)
-{
-    if (second)
-        x2Spin->setValue(x);
-    else
-        x1Spin->setValue(x);
-}
-
-void TrackingPanel::setStep(double step)
-{
-    mStep = step;
-    x1Spin->setSingleStep(mStep);
-    x2Spin->setSingleStep(mStep);
-}
-
-void TrackingCursor::moveTo(const double xValue)
-{
-    setValue(xValue, 0.0);
-    setLabel(QwtText(QString::number(xValue)));
-}

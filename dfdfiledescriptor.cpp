@@ -1512,7 +1512,7 @@ void DfdChannel::addCorrection(double correctionValue, bool writeToFile)
     if (!populated())
         populate();
 
-    for (uint j = 0; j < YValues.size(); ++j)
+    for (int j = 0; j < YValues.size(); ++j)
         YValues[j] += correctionValue-oldCorrectionValue;
 
     YMaxInitial += correctionValue-oldCorrectionValue;

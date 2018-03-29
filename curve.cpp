@@ -301,8 +301,6 @@ void QwtArrayPlotItem::draw( QPainter *painter,
 
         if(startPoint>m_size)
             startPoint = m_size;
-        else if(startPoint<0)
-            startPoint = 0;
 
         int endPoint = xMap.s2()/m_dt;
         endPoint+=2;
