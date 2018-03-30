@@ -96,7 +96,7 @@ void UffFileDescriptor::read()
     QFile uff(fileName());
     if (!uff.exists()) return;
 
-    bool needsRewrite = false;
+    //bool needsRewrite = false;
     if (uff.open(QFile::ReadOnly | QFile::Text)) {
         QTextStream stream(&uff);
 //qDebug()<<fileName();
@@ -121,7 +121,7 @@ void UffFileDescriptor::read()
         //setXBegin(channels.first()->xBegin());
         setSamplesCount(channels.first()->samplesCount());
     }
-    if (needsRewrite) setChanged(true);
+    //if (needsRewrite) setChanged(true);
     //write();
 }
 
@@ -482,11 +482,11 @@ bool UffFileDescriptor::allUnplotted() const
 
 bool UffFileDescriptor::isSourceFile() const
 {DD;
-//    for (int i=0; i<channels.size(); ++i) {
-//        if (channels.at(i)->uffType() == 1) {
-//            return true;
-//        }
-//    }
+    for (int i=0; i<channels.size(); ++i) {
+        if (channels.at(i)->type()==Descriptor::TimeResponse) {
+            return true;
+        }
+    }
     return false;
 }
 
@@ -644,6 +644,8 @@ Function::Function(UffFileDescriptor *parent) : Channel(),
     xMax(0.0), yMin(0.0), yMax(0.0),
     samples(0), parent(parent), _populated(false), dataPosition(-1)
 {DD;
+    temporalCorrection = false;
+    oldCorrectionValue = 0.0;
     type58 = {
         {FTDelimiter,""}, {FTEmpty, ""}, //0-1
         {FTInteger6, 58}, {FTEmpty, ""}, //2-3
@@ -777,6 +779,8 @@ Function::Function(UffFileDescriptor *parent) : Channel(),
 
 Function::Function(Channel &other)
 {
+    temporalCorrection = false;
+    oldCorrectionValue = 0.0;
     type58 = {
         {FTDelimiter,""}, {FTEmpty, ""}, //0-1
         {FTInteger6, 58}, {FTEmpty, ""}, //2-3
@@ -939,6 +943,9 @@ Function::Function(Channel &other)
 
 Function::Function(const Function &other)
 {
+    temporalCorrection = other.temporalCorrection;
+    oldCorrectionValue = other.oldCorrectionValue;
+
     header = other.header;
     samples = other.samples;
     xMax = other.xMax;
@@ -1073,11 +1080,26 @@ void Function::read(QTextStream &stream)
 
 void Function::write(QTextStream &stream)
 {DD;
+    // Temporal correction
+    //fixing channel name
+    if (temporalCorrection && !nameBeforeCorrection.isEmpty()) {
+        setName(nameBeforeCorrection);
+    }
+    //fixing values with correction
+    if (temporalCorrection) {
+        for (quint32 i=0; i<samples; ++i)
+            values[i] -= oldCorrectionValue;
+    }
+
+
+    //writing header
     header.write(stream);
 
     for (int i=0; i<60; ++i) {
         fields[type58[i].type]->print(type58[i].value, stream);
     }
+
+
 
     switch (type58[25].value.toInt()) {//25 Ordinate Data Type
                                         // 2 - real, single precision
@@ -1248,7 +1270,7 @@ void Function::populate()
     QFile uff(parent->fileName());
     if (!uff.open(QFile::ReadOnly | QFile::Text)) return;
     QTextStream stream(&uff);
-    stream.seek(dataPosition);
+    if (stream.seek(dataPosition))
 
     /*if (type58[14].value.toInt() > 1
         || (type58[14].value.toInt() == 1) && samples<32768)*/ {//function type is not time response
@@ -1425,13 +1447,31 @@ double Function::yMaxInitial() const
 
 void Function::addCorrection(double correctionValue, bool writeToFile)
 {DD;
-    Q_UNUSED(writeToFile)
-    for (uint j = 0; j < samplesCount(); ++j)
-        values[j] += correctionValue;
+//    for (uint j = 0; j < samplesCount(); ++j)
+//        values[j] += correctionValue;
 
-    setName(name() + QString(correctionValue>=0?"+":"")
+//    setName(name() + QString(correctionValue>=0?"+":"")
+//                +QString::number(correctionValue));
+//    yMax += correctionValue;
+//    yMin += correctionValue;
+
+    for (uint j = 0; j < samplesCount(); ++j)
+        values[j] += correctionValue - oldCorrectionValue;
+
+    yMax += correctionValue - oldCorrectionValue;
+    yMin += correctionValue - oldCorrectionValue;
+
+    oldCorrectionValue = correctionValue;
+
+    if (nameBeforeCorrection.isEmpty())
+        nameBeforeCorrection = name();
+
+    temporalCorrection = !writeToFile;
+
+    if (correctionValue == 0.0)
+        setName(nameBeforeCorrection);
+    else
+        setName(nameBeforeCorrection + QString(correctionValue>=0?"+":"")
                 +QString::number(correctionValue));
-    yMax += correctionValue;
-    yMin += correctionValue;
 }
 

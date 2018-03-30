@@ -78,6 +78,11 @@ public:
 private:
     bool _populated;
     qint64 dataPosition;
+
+    //correction variables
+    bool temporalCorrection;
+    QString nameBeforeCorrection;
+    double oldCorrectionValue;
 };
 
 class UffHeader

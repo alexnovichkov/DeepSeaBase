@@ -328,7 +328,7 @@ void DfdFileDescriptor::writeRawFile()
 
                 const quint32 sc = ch->samplesCount();
                 for (quint32 val = 0; val < sc; ++val) {
-                    ch->setValue(ch->temporalCorrection?ch->YValues[val]-ch->oldCorrectionValue:ch->YValues[val], writeStream);
+                    ch->setValue(ch->temporalCorrection ? ch->YValues[val] - ch->oldCorrectionValue : ch->YValues[val], writeStream);
                 }
             }
         }
@@ -1523,12 +1523,13 @@ void DfdChannel::addCorrection(double correctionValue, bool writeToFile)
     if (nameBeforeCorrection.isEmpty())
         nameBeforeCorrection = name();
 
-    temporalCorrection = true;
+    temporalCorrection = !writeToFile;
 
-    setName(nameBeforeCorrection + QString(correctionValue>=0?"+":"")
+    if (correctionValue == 0.0)
+        setName(nameBeforeCorrection);
+    else
+        setName(nameBeforeCorrection + QString(correctionValue>=0?"+":"")
                 +QString::number(correctionValue));
-
-    if (writeToFile) temporalCorrection = false;
 }
 
 void RawChannel::read(QSettings &dfd, int chanIndex)
