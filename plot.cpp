@@ -115,12 +115,12 @@ Plot::Plot(QWidget *parent) :
 
     zoom = new QwtChartZoom(this);
     zoom->setEnabled(false);
-    connect(zoom,SIGNAL(updateTrackingCursor(double,bool)), trackingPanel, SLOT(updateTrackingCursor(double,bool)));
+    connect(zoom,SIGNAL(updateTrackingCursor(double,bool)), trackingPanel, SLOT(setX(double,bool)));
     connect(zoom,SIGNAL(contextMenuRequested(QPoint,int)),SLOT(showContextMenu(QPoint,int)));
 
     picker = new PlotPicker(canvas);
     connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
-    connect(picker,SIGNAL(updateTrackingCursor(double,bool)),trackingPanel, SLOT(updateTrackingCursor(double,bool)));
+    connect(picker,SIGNAL(updateTrackingCursor(double,bool)),trackingPanel, SLOT(setX(double,bool)));
     connect(picker,SIGNAL(cursorMovedTo(QwtPlotMarker*,double)), trackingPanel, SLOT(updateTrackingCursor(QwtPlotMarker*,double)));
     connect(trackingPanel,SIGNAL(switchHarmonics(bool)),picker,SLOT(showHarmonics(bool)));
 

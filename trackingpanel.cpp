@@ -65,7 +65,6 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
     connect(x1Spin, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
             [=](double val){
         updateTrackingCursor(val, false);
-
     });
     //x1Spin->setReadOnly(true);
 
@@ -200,40 +199,8 @@ void TrackingPanel::updateState(const QList<TrackingPanel::TrackInfo> &curves, b
 
 void TrackingPanel::setX(double x, bool second)
 {DD;
-    if (second)
-        x2Spin->setValue(x);
-    else
-        x1Spin->setValue(x);
-}
 
-void TrackingPanel::setStep(double step)
-{DD;
-    mStep = step;
-    x1Spin->setSingleStep(mStep);
-    x2Spin->setSingleStep(mStep);
-}
-
-void TrackingPanel::switchVisibility()
-{DD;
-    if (isVisible()) {
-        setVisible(false);
-        _trackingCursor->detach();
-        _trackingCursor1->detach();
-    }
-    else {
-        setVisible(true);
-        if (showFirst->isChecked()) _trackingCursor->attach(plot);
-        if (showSecond->isChecked()) _trackingCursor1->attach(plot);
-    }
-}
-
-void TrackingPanel::updateTrackingCursor(double xVal, bool second)
-{DD;
-    if (!isVisible()) return;
-
-    if (second) showSecond->setChecked(true);
-    else showFirst->setChecked(true);
-
+    double xVal = x;
     if (!plot->curves().isEmpty()) {
         //first we need to find the closest point to xVal;
         //1. search the curve with the minimum xstep;
@@ -273,6 +240,79 @@ void TrackingPanel::updateTrackingCursor(double xVal, bool second)
         }
     }
 
+    if (second)
+        x2Spin->setValue(xVal);
+    else
+        x1Spin->setValue(xVal);
+}
+
+void TrackingPanel::setStep(double step)
+{DD;
+    mStep = step;
+    x1Spin->setSingleStep(mStep);
+    x2Spin->setSingleStep(mStep);
+}
+
+void TrackingPanel::switchVisibility()
+{DD;
+    if (isVisible()) {
+        setVisible(false);
+        _trackingCursor->detach();
+        _trackingCursor1->detach();
+    }
+    else {
+        setVisible(true);
+        if (showFirst->isChecked()) _trackingCursor->attach(plot);
+        if (showSecond->isChecked()) _trackingCursor1->attach(plot);
+    }
+}
+
+void TrackingPanel::updateTrackingCursor(double xVal, bool second)
+{DD;
+    if (!isVisible()) return;
+
+    if (second) showSecond->setChecked(true);
+    else showFirst->setChecked(true);
+
+//    if (!plot->curves().isEmpty()) {
+//        //first we need to find the closest point to xVal;
+//        //1. search the curve with the minimum xstep;
+//        double xstep = plot->curves().first()->channel->xStep();
+//        for (int i=1; i<plot->graphsCount(); ++i) {
+//            if (plot->curves().at(i)->channel->xStep()<xstep)
+//                xstep = plot->curves().at(i)->channel->xStep();
+//        }
+//        if (xstep==0.0) xstep = plot->curves().first()->channel->xStep();
+//        if (xstep!=0.0) {
+//            setStep(xstep);
+
+//            //2. compute the actual xVal based on the xVal and xstep
+//            int steps = int(xVal/xstep);
+//            //        qDebug()<<"xstep"<<xstep<<"xval"<<xVal<<"steps"<<steps;
+//            if (steps <= 0) xVal = 0.0;
+//            else {
+//                if (qAbs(xstep*(steps+1)-xVal) < qAbs(xstep*steps-xVal)) steps++;
+//                xVal = xstep*steps;
+//            }
+//        }
+//        else {//xstep == 0 -> третьоктава или еще что-нибудь, проверяем тип файла
+//            DfdFileDescriptor *dfd = static_cast<DfdFileDescriptor *>(plot->curves().first()->descriptor);
+//            if (!dfd || (dfd->DataType != ToSpectr && dfd->DataType != OSpectr)) {
+//                return;
+//            }
+
+//            int iMin = 0;
+//            double min = qAbs(xVal - dfd->channels[0]->XValues[0]);
+//            for (int i=1; i<dfd->channels[0]->XValues.size(); ++i) {
+//                if (qAbs(xVal - dfd->channels[0]->XValues[i])<min) {
+//                    iMin = i;
+//                    min = qAbs(xVal - dfd->channels[0]->XValues[i]);
+//                }
+//            }
+//            xVal = dfd->channels[0]->XValues[iMin];
+//        }
+//    }
+
     //3. update our cursors
     if (second) {
         _trackingCursor1->moveTo(xVal);
@@ -282,7 +322,7 @@ void TrackingPanel::updateTrackingCursor(double xVal, bool second)
         _trackingCursor->moveTo(xVal);
         _trackingCursor->attach(plot);
     }
-    setX(xVal, second);
+    //setX(xVal, second);
 
     double leftBorder = _trackingCursor->xValue();
     double rightBorder = _trackingCursor1->xValue();
@@ -360,10 +400,10 @@ void TrackingPanel::updateTrackingCursor(QwtPlotMarker *cursor, double newVal)
     if (!cursor) return;
 
     if (cursor == _trackingCursor)
-        updateTrackingCursor(newVal, false);
+        setX(newVal, false);
     else
         if (cursor == _trackingCursor1)
-            updateTrackingCursor(newVal, true);
+            setX(newVal, true);
 }
 
 void TrackingCursor::moveTo(const double xValue)

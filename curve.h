@@ -57,9 +57,10 @@ public:
 
 
 private:
+    quint32 m_size;
     double* m_data;
     double m_dt;
-    quint32 m_size;
+
 
     QColor m_plotColor;
     mutable QRectF m_boundingRect;

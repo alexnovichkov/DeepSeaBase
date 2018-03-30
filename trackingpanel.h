@@ -38,11 +38,12 @@ public:
     explicit TrackingPanel(Plot *parent=0);
     ~TrackingPanel();
     void updateState(const QList<TrackInfo> &curves, bool second);
-    void setX(double x, bool second);
+
     void setStep(double step);
     void switchVisibility();
 public slots:
     void updateTrackingCursor(double xVal, bool second);
+    void setX(double x, bool second);
     void updateTrackingCursor(QwtPlotMarker*cursor, double newVal);
 signals:
     void switchHarmonics(bool on);
