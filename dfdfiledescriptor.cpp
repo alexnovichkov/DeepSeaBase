@@ -619,7 +619,6 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
         if (!this->channels[i]->populated()) this->channels[i]->populate();
     }
 
-    QList<Channel*> list;
     for (int i=0; i<channels.size(); ++i) {
         DfdChannel *ch = new DfdChannel(this, channelsCount());
         FileDescriptor *firstDescriptor = channels.at(i).first;

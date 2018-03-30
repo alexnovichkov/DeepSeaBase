@@ -418,7 +418,85 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
 
 void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize)
 {
+    for(int i = 0; i< this->channels.size(); ++i) {
+        if (!this->channels[i]->populated()) this->channels[i]->populate();
+    }
 
+    for (int i=0; i<channels.size(); ++i) {
+        Function *ch = new Function(this);
+        FileDescriptor *firstDescriptor = channels.at(i).first;
+        Channel *firstChannel = firstDescriptor->channel(channels.at(i).second);
+
+        quint32 numInd = firstChannel->samplesCount();
+        ch->values = QVector<double>(numInd, 0.0);
+
+        quint32 span = windowSize / 2;
+        bool log = firstChannel->yName() == "дБ" || firstChannel->yName() == "dB";
+
+        for (quint32 j=span; j<numInd-span; ++j) {
+            double sum = 0.0;
+            for (int k=0; k<windowSize;++k) {
+                double temp = firstChannel->yValues()[j-span+k];
+                if (log)
+                    temp = pow(10.0, (temp/10.0));
+                sum += temp;
+            }
+            sum /= windowSize;
+            if (log)
+                sum = 10.0 * log10(sum);
+
+            ch->values[j] = sum;
+        }
+
+        //начало диапазона и конец диапазона
+        for (quint32 j=0; j<span; ++j)
+            ch->values[j] = firstChannel->yValues()[j];
+        for (quint32 j=numInd-span; j<numInd; ++j)
+            ch->values[j] = firstChannel->yValues()[j];
+
+        ch->type58[29].value = firstDescriptor->xStep();
+
+        ch->yMin = 1.0e100;
+        ch->yMax = -1.0e100;
+        for (quint32 i=0; i<ch->samples; ++i) {
+            if (ch->values[i] < ch->yMin) ch->yMin = ch->values[i];
+            if (ch->values[i] > ch->yMax) ch->yMax = ch->values[i];
+        }
+
+        if (ch->xvalues.isEmpty())
+            ch->xMax = ch->xBegin() + ch->xStep() * ch->samples;
+        else
+            ch->xMax = ch->xvalues.last();
+
+        if (!firstChannel->xValues().isEmpty()) {
+            ch->xvalues = firstChannel->xValues();
+            ch->xMax = firstChannel->xValues().last();
+        }
+
+        // обновляем сведения канала
+        ch->setPopulated(true);
+        ch->setName(firstChannel->name()+" сглаж.");
+        ch->setDescription("Скользящее среднее канала "+firstChannel->name());
+
+        ch->samples = numInd;
+
+        ch->type58[44].value = firstChannel->yName();
+        ch->type58[37].value = firstChannel->xName();
+        ch->parent = this;
+
+        ch->type58[8].value = QDateTime::currentDateTime();
+
+        ch->type58[26].value = ch->samples;
+        ch->type58[25].value = 4; //real, double precision
+        ch->type58[14].value = firstChannel->type();
+
+        ch->type58[32].value = abscissaType(firstChannel->xName());
+        ch->type58[36].value = abscissaTypeDescription(ch->type58[32].value.toInt());
+
+        ch->type58[28].value = firstChannel->xBegin();
+
+        this->channels << ch;
+    }
 }
 
 FileDescriptor *UffFileDescriptor::calculateThirdOctave()
@@ -482,11 +560,12 @@ bool UffFileDescriptor::allUnplotted() const
 
 bool UffFileDescriptor::isSourceFile() const
 {DD;
-    for (int i=0; i<channels.size(); ++i) {
-        if (channels.at(i)->type()==Descriptor::TimeResponse) {
-            return true;
-        }
-    }
+    //мы пока что не умеем считать спектры файлов uff
+//    for (int i=0; i<channels.size(); ++i) {
+//        if (channels.at(i)->type()==Descriptor::TimeResponse) {
+//            return true;
+//        }
+//    }
     return false;
 }
 

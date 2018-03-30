@@ -219,7 +219,6 @@ void Converter::finalize()
         if (newFile.created()>dt || newFile.lastModified()>dt)
             newFiles_ << newFile.canonicalFilePath();
     }
-    qDebug()<<newFiles_;
 
     foreach (DfdFileDescriptor *dfd, dataBase) {
         moveFilesFromTempDir(tempFolderName, dfd->fileName());
