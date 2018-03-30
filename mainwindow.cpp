@@ -2054,6 +2054,7 @@ void MainWindow::setSetting(const QString &key, const QVariant &value)
 void MainWindow::addFile(FileDescriptor *descriptor)
 {
     if (!tab) return;
+    if (!descriptor) return;
 
     int count = tab->tree->topLevelItemCount();
     addFiles(QList<FileDescriptor *>()<<descriptor);
@@ -2062,6 +2063,8 @@ void MainWindow::addFile(FileDescriptor *descriptor)
 
 bool MainWindow::findDescriptor(FileDescriptor *d)
 {
+    if (!d) return false;
+
     if (tab) {
         for (int j=0; j<tab->tree->topLevelItemCount(); ++j) {
             SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(j));
