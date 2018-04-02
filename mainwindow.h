@@ -68,8 +68,6 @@ public:
 
     static QVariant getSetting(const QString &key, const QVariant &defValue=QVariant());
     static void setSetting(const QString &key, const QVariant &value);
-    static QVector<qint64> getPositions(const QString &fileName, const QDateTime &fileTime);
-    static void setPositions(const QString &fileName, const QDateTime &fileTime, const QVector<qint64> positions);
 private slots:
     void addFolder();
     void addFolderWithSubfolders();

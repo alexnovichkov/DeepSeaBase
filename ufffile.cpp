@@ -97,21 +97,16 @@ void UffFileDescriptor::read()
     QFile uff(fileName());
     if (!uff.exists()) return;
 
-    bool updatePositions = false;
-
     if (uff.open(QFile::ReadOnly | QFile::Text)) {
         QTextStream stream(&uff);
 
         header.read(stream);
         units.read(stream);
-        functionPositions = MainWindow::getPositions(fileName(), uff.fileTime(QFileDevice::FileModificationTime));
-        updatePositions = functionPositions.isEmpty();
 
         while (!stream.atEnd()) {
             qint64 pos = stream.pos();
-            if (updatePositions) functionPositions << pos;
             Function *f = new Function(this);
-            f->read(stream, updatePositions?-1:pos);
+            f->read(stream, -1);
 
             channels << f;
 
@@ -120,8 +115,6 @@ void UffFileDescriptor::read()
     if (!channels.isEmpty()) {
         //setXBegin(channels.first()->xBegin());
         setSamplesCount(channels.first()->samplesCount());
-        if (updatePositions)
-            MainWindow::setPositions(fileName(), uff.fileTime(QFileDevice::FileModificationTime), functionPositions);
     }
 }
 

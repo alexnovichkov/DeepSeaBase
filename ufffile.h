@@ -120,7 +120,6 @@ public:
     UffHeader header;
     UffUnits units;
     QList<Function *> channels;
-    QVector<qint64> functionPositions;
 
     // FileDescriptor interface
 public:
