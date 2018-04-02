@@ -7,6 +7,8 @@
 #include "fields.h"
 #include <complex>
 
+int abscissaType(const QString &xName);
+
 class FunctionHeader
 {
 public:
@@ -28,7 +30,7 @@ public:
     Function(const Function &other);
     virtual ~Function();
 
-    void read(QTextStream &stream);
+    void read(QTextStream &stream, qint64 pos = -1);
     void write(QTextStream &stream);
 
     QString functionTypeDescription() const;
@@ -118,6 +120,7 @@ public:
     UffHeader header;
     UffUnits units;
     QList<Function *> channels;
+    QVector<qint64> functionPositions;
 
     // FileDescriptor interface
 public:

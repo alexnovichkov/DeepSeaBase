@@ -80,7 +80,8 @@ HEADERS  += mainwindow.h \
     matlabconverterdialog.h \
     esoconverterdialog.h \
     uffconverterdialog.h \
-    trackingpanel.h
+    trackingpanel.h \
+    uffheaders.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\

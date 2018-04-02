@@ -7,6 +7,7 @@
 #include <qwt_symbol.h>
 
 #include "dfdfiledescriptor.h"
+#include "ufffile.h"
 #include "curve.h"
 
 #include "qwtchartzoom.h"
@@ -285,7 +286,7 @@ bool Plot::canBePlottedOnLeftAxis(Channel *ch)
 {DD;
     if (!hasGraphs()) // нет графиков - всегда на левой оси
         return true;
-    if (ch->xName() == xName || xName.isEmpty()) { // тип графика совпадает
+    if (abscissaType(ch->xName()) == abscissaType(xName) || xName.isEmpty()) { // тип графика совпадает
         if (leftGraphs.isEmpty() || yLeftName.isEmpty() || ch->yName() == yLeftName)
             return true;
     }
@@ -296,7 +297,7 @@ bool Plot::canBePlottedOnRightAxis(Channel *ch)
 {DD;
     if (!hasGraphs()) // нет графиков - всегда на левой оси
         return true;
-    if (ch->xName() == xName || xName.isEmpty()) { // тип графика совпадает
+    if (abscissaType(ch->xName()) == abscissaType(xName) || xName.isEmpty()) { // тип графика совпадает
         if (rightGraphs.isEmpty() || yRightName.isEmpty() || ch->yName() == yRightName)
             return true;
     }

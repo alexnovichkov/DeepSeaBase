@@ -2051,6 +2051,28 @@ void MainWindow::setSetting(const QString &key, const QVariant &value)
     se.setValue(key, value);
 }
 
+
+QVector<qint64> MainWindow::getPositions(const QString &fileName, const QDateTime &fileTime)
+{
+    QSettings se("Alex Novichkov","DeepSea Database");
+    QHash<QString, QVariant > allPositions = se.value("uffPositions").toHash();
+    if (allPositions.contains(fileName)) {
+        QPair<QDateTime, QVector<qint64> > pair = allPositions.value(fileName).value<QPair<QDateTime, QVector<qint64> > >();
+        QDateTime old = pair.first;
+        if (fileTime == old) return pair.second;
+    }
+    return QVector<qint64>();
+}
+
+void MainWindow::setPositions(const QString &fileName, const QDateTime &fileTime, const QVector<qint64> positions)
+{
+    QSettings se("Alex Novichkov","DeepSea Database");
+    QHash<QString, QVariant > allPositions = se.value("uffPositions").toHash();
+    QPair<QDateTime, QVector<qint64> > pair = {fileTime, positions};
+    allPositions.insert(fileName, QVariant::fromValue(pair));
+    se.setValue("uffPositions", allPositions);
+}
+
 void MainWindow::addFile(FileDescriptor *descriptor)
 {
     if (!tab) return;
