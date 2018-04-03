@@ -403,6 +403,16 @@ void QMainZoomSvc::procKeyboardEvent(QEvent *event)
                 zoom->resetBounds(Qt::Vertical);
             break;
         }
+        case Qt::Key_Escape: {
+            if (zoom->regim() == QwtChartZoom::ctZoom) {
+                // восстанавливаем курсор
+                zoom->plot()->canvas()->setCursor(tCursor);
+                // удаляем виджет, отображающий выделенную область
+                delete zwid;
+                zoom->setRegime(QwtChartZoom::ctNone);
+                //zoom->resetBounds(Qt::Horizontal | Qt::Vertical);
+            }
+        }
         default: break;
     }
 }

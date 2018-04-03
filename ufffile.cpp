@@ -29,13 +29,13 @@ int abscissaType(const QString &xName)
 {
     QString s = xName.toLower();
     if (s == "hz" || s == "гц") return 18;
-    if (s == "s" || s == "\u0441") return 17;
-    if (s == "m/s" || s == "\u043c/\u0441") return 11;
-    if (s == "m/s2" || s == "m/s^2" || s == "м/с2" || s == "\u043c/\u0441^2") return 12;
+    if (s == "s" || s == "с") return 17;
+    if (s == "m/s" || s == "м/с") return 11;
+    if (s == "m/s2" || s == "m/s^2" || s == "м/с2" || s == "м/с^2") return 12;
     if (s == "n" || s == "н") return 13;
     if (s == "pa" || s == "psi" || s == "па") return 15;
     if (s == "m" || s == "м") return 8;
-    if (s == "kg" || s == "кг") return 18;
+    if (s == "kg" || s == "кг") return 16;
 
     return 0; //0 - unknown
 }
