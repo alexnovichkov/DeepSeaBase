@@ -83,7 +83,7 @@ int XresponcH1Method::id()
     return 9;
 }
 
-QStringList XresponcH1Method::methodSettings(DfdFileDescriptor *dfd, int activeChannel, int strip)
+QStringList XresponcH1Method::methodSettings(DfdFileDescriptor *dfd, const Parameters &p)
 {
     QStringList spfFile;
     QString yName = "дБ";
@@ -95,13 +95,8 @@ QStringList XresponcH1Method::methodSettings(DfdFileDescriptor *dfd, int activeC
     spfFile << "Wind="+windowCombo->currentText();
     spfFile << "TypeAver="+averCombo->currentText();
 
-    quint32 numberOfInd = dfd->channels.at(activeChannel)->samplesCount();
-    double resolution = resolutionCombo->currentText().toDouble();
-    double NumberOfAveraging = double(numberOfInd) / resolution;
-    while (strip>0) {
-        NumberOfAveraging /= 2.0;
-        strip--;
-    }
+    quint32 numberOfInd = dfd->channels.at(p.activeChannel)->samplesCount();
+    double NumberOfAveraging = double(numberOfInd) / p.blockSize / (1<<p.bandStrip);
 
     // at least 2 averaging
     if (NumberOfAveraging<1) NumberOfAveraging = 2.0;
@@ -113,36 +108,36 @@ QStringList XresponcH1Method::methodSettings(DfdFileDescriptor *dfd, int activeC
     return spfFile;
 }
 
-QStringList XresponcH1Method::settings(DfdFileDescriptor *dfd, int bandStrip)
-{
-    QStringList spfFile;
+//QStringList XresponcH1Method::settings(DfdFileDescriptor *dfd, int bandStrip)
+//{
+//    QStringList spfFile;
 
-    spfFile << "PName="+methodName();
-    spfFile << "pTime=(0000000000000000)";
+//    spfFile << "PName="+methodName();
+//    spfFile << "pTime=(0000000000000000)";
 
-    spfFile << QString("BlockIn=%1").arg(resolutionCombo->currentText());
-    spfFile << "Wind="+windowCombo->currentText();
-    spfFile << "TypeAver="+averCombo->currentText();
+//    spfFile << QString("BlockIn=%1").arg(resolutionCombo->currentText());
+//    spfFile << "Wind="+windowCombo->currentText();
+//    spfFile << "TypeAver="+averCombo->currentText();
 
 
-    const quint32 samplesCount = dfd->channels.first()->samplesCount();
-    const double blockSize = resolutionCombo->currentText().toDouble();
-    double NumberOfAveraging = double(samplesCount) / blockSize;
+//    const quint32 samplesCount = dfd->channels.first()->samplesCount();
+//    const double blockSize = resolutionCombo->currentText().toDouble();
+//    double NumberOfAveraging = double(samplesCount) / blockSize;
 
-    while (bandStrip>0) {
-        NumberOfAveraging /= 2.0;
-        bandStrip--;
-    }
+//    while (bandStrip>0) {
+//        NumberOfAveraging /= 2.0;
+//        bandStrip--;
+//    }
 
-    // at least 2 averaging
-    if (NumberOfAveraging<1.0) NumberOfAveraging = 2.0;
+//    // at least 2 averaging
+//    if (NumberOfAveraging<1.0) NumberOfAveraging = 2.0;
 
-    spfFile << QString("NAver=%1").arg(qRound(NumberOfAveraging));
-    spfFile << "Values="+valuesCombo->currentText();
-    spfFile << "TypeScale="+scaleCombo->currentText();
+//    spfFile << QString("NAver=%1").arg(qRound(NumberOfAveraging));
+//    spfFile << "Values="+valuesCombo->currentText();
+//    spfFile << "TypeScale="+scaleCombo->currentText();
 
-    return spfFile;
-}
+//    return spfFile;
+//}
 
 Parameters XresponcH1Method::parameters()
 {

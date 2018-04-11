@@ -99,7 +99,7 @@ int SpectreMethod::id()
     return 1;
 }
 
-QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, int activeChannel, int strip)
+QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, const Parameters &p)
 {
     QStringList spfFile;
     QString yName = "дБ";
@@ -107,21 +107,15 @@ QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, int activeChan
         // TODO: реализовать правильный выбор единицы измерения
     }
     spfFile << QString("YName=%1").arg(yName);
-    spfFile << QString("BlockIn=%1").arg(resolutionCombo->currentText());
-    spfFile << "Wind="+windowCombo->currentText();
-    spfFile << "TypeAver="+averCombo->currentText();
+    spfFile << QString("BlockIn=%1").arg(p.blockSize);
+    spfFile << QString("Wind=%1").arg(p.windowDescription(p.windowType));
+    spfFile << QString("TypeAver=%1").arg(p.averagingType);
 
-    quint32 numberOfInd = dfd->channels.at(activeChannel)->samplesCount();
-    double blockSize = resolutionCombo->currentText().toDouble();
-    double NumberOfAveraging = double(numberOfInd) / blockSize;
-
-    while (strip>0) {
-        NumberOfAveraging /= 2.0;
-        strip--;
-    }
+    quint32 numberOfInd = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->samplesCount();
+    double NumberOfAveraging = double(numberOfInd) / p.blockSize / (1<<p.bandStrip);
 
     // at least 2 averaging
-    if (NumberOfAveraging<1) NumberOfAveraging = 2.0;
+    if (NumberOfAveraging<=1) NumberOfAveraging = 2.0;
 
     spfFile << QString("NAver=%1").arg(qRound(NumberOfAveraging));
     spfFile << "TypeProc="+typeCombo->currentText();
@@ -132,37 +126,37 @@ QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, int activeChan
     return spfFile;
 }
 
-QStringList SpectreMethod::settings(DfdFileDescriptor *dfd, int strip)
-{
-    QStringList spfFile;
+//QStringList SpectreMethod::settings(DfdFileDescriptor *dfd, int strip)
+//{
+//    QStringList spfFile;
 
-    spfFile << "PName="+methodName();
-    spfFile << QString("BlockIn=%1").arg(resolutionCombo->currentText());
-    spfFile << "Wind="+windowCombo->currentText();
-    spfFile << "TypeAver="+averCombo->currentText();
-    spfFile << "pTime=(0000000000000000)";
+//    spfFile << "PName="+methodName();
+//    spfFile << QString("BlockIn=%1").arg(resolutionCombo->currentText());
+//    spfFile << "Wind="+windowCombo->currentText();
+//    spfFile << "TypeAver="+averCombo->currentText();
+//    spfFile << "pTime=(0000000000000000)";
 
-    const quint32 samplesCount = dfd->channels.first()->samplesCount();
-    const double blockSize = resolutionCombo->currentText().toDouble();
-    double NumberOfAveraging = double(samplesCount) / blockSize;
+//    const quint32 samplesCount = dfd->channels.first()->samplesCount();
+//    const double blockSize = resolutionCombo->currentText().toDouble();
+//    double NumberOfAveraging = double(samplesCount) / blockSize;
 
-    while (strip>0) {
-        NumberOfAveraging /= 2.0;
-        strip--;
-    }
+//    while (strip>0) {
+//        NumberOfAveraging /= 2.0;
+//        strip--;
+//    }
 
-    // at least 2 averaging
-    if (NumberOfAveraging<1.0) NumberOfAveraging = 2.0;
+//    // at least 2 averaging
+//    if (NumberOfAveraging<1.0) NumberOfAveraging = 2.0;
 
-    spfFile << QString("NAver=%1").arg(qRound(NumberOfAveraging));
+//    spfFile << QString("NAver=%1").arg(qRound(NumberOfAveraging));
 
-    spfFile << "TypeProc="+typeCombo->currentText();
-    spfFile << "Values="+valuesCombo->currentText();
-    spfFile << "TypeScale="+scaleCombo->currentText();
-    spfFile << "AddProc="+addProcCombo->currentText();
+//    spfFile << "TypeProc="+typeCombo->currentText();
+//    spfFile << "Values="+valuesCombo->currentText();
+//    spfFile << "TypeScale="+scaleCombo->currentText();
+//    spfFile << "AddProc="+addProcCombo->currentText();
 
-    return spfFile;
-}
+//    return spfFile;
+//}
 
 Parameters SpectreMethod::parameters()
 {

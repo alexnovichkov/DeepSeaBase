@@ -12,12 +12,12 @@ class AbstractMethod
 public:
     /* индекс в methodCombo */
     virtual int id() = 0;
-    virtual QStringList methodSettings(DfdFileDescriptor *dfd, int activeChannel, int strip) = 0;
+    virtual QStringList methodSettings(DfdFileDescriptor *dfd, const Parameters &p) = 0;
     virtual QString methodDll() = 0;
     virtual int panelType() = 0;
     virtual QString methodName() = 0;
     virtual int dataType() = 0;
-    virtual QStringList settings(DfdFileDescriptor *dfd, int bandStrip) = 0;
+    //virtual QStringList settings(DfdFileDescriptor *dfd, int bandStrip) = 0;
     virtual Parameters parameters() = 0;
 };
 
@@ -65,6 +65,19 @@ struct Parameters
 
 
     AbstractMethod *method;
+
+    QString windowDescription(int wind) const {
+        switch (wind) {
+            case 0: return "Прямоуг.";
+            case 1: return "Бартлетта";
+            case 2: return "Хеннинга";
+            case 3: return "Хемминга";
+            case 4: return "Натолл";
+            case 5: return "Гаусс";
+        }
+        return "";
+    }
 };
 
 #endif // ABSTRACTMETHOD_H
+

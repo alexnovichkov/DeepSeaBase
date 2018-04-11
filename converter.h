@@ -21,8 +21,8 @@ QVector<QPair<double, double> > transferFunctionH1Complex(const QVector<double> 
                                                           const QVector<QPair<double, double> > &values2, const Parameters &p);
 void changeScale(QVector<double> &output, const Parameters &p);
 void average(QVector<double> &result, const QVector<double> &input, const Parameters &p, int averagesMade);
-QString window(int wind);
-int windowType(int wind);
+
+int uffWindowType(int dfdWindowType);
 QString averaging(int avgType);
 int uffMethodFromDfdMethod(int methodId);
 

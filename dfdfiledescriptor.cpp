@@ -713,10 +713,13 @@ FileDescriptor *DfdFileDescriptor::calculateThirdOctave()
     }
 
     // определяем верхнюю границу данных
-    double F_min = this->XBegin;
-    double Step_f = xStep();
-    double F_max = F_min+Step_f*this->channels.first()->NumInd;
+    const double F_min = this->XBegin;
+    const double Step_f = xStep();
+    const double F_max = F_min+Step_f*this->channels.first()->NumInd;
 
+    const double twothird = pow(2.0,1.0/3.0);
+    const double tenpow = pow(10.0, -1.4);
+    const double twosixth = pow(2.0,1.0/6.0);
 
    // double f_lower = 0;
     double f_upper = 0;
@@ -724,8 +727,8 @@ FileDescriptor *DfdFileDescriptor::calculateThirdOctave()
     int k_max = 52;
     for (int k = 52; k>=0; --k) {
         f_median = pow(10.0, 0.1 * k);
-       // f_lower = f_median / pow(2.0, (1.0 / 6.0));
-        f_upper = f_median * pow(2.0, (1.0 / 6.0));
+       // f_lower = f_median / twosixth;
+        f_upper = f_median * twosixth;
         if (f_upper <= F_max) {
             k_max = k;
             break;
@@ -733,13 +736,20 @@ FileDescriptor *DfdFileDescriptor::calculateThirdOctave()
     }
     if (f_median == 1) return thirdOctDfd;
 
-    const double twothird = pow(2.0,1.0/3.0);
-    const double tenpow = pow(10.0, -1.4);
-    const double twosixth = pow(2.0,1.0/6.0);
+    k_max++;
 
-    QVector<double> xValues(k_max+1);
-    for (int k = 0; k<=k_max; ++k)
+
+
+    QVector<double> xValues(k_max);
+    for (int k = 0; k < k_max; ++k)
         xValues[k] = pow(10.0, 0.1*k);
+
+//    qDebug()<<"F_min"<<F_min;
+//    qDebug()<<"Step_f"<<Step_f;
+//    qDebug()<<"F_max"<<F_max;
+//    qDebug()<<"f_upper"<<f_upper;
+//    qDebug()<<"f_median"<<f_median;
+//    qDebug()<<"k_max"<<k_max;
 
     index=1;
     foreach (DfdChannel *ch, this->channels) {
@@ -758,32 +768,54 @@ FileDescriptor *DfdFileDescriptor::calculateThirdOctave()
         newCh->XName = thirdOctDfd->XName;
 
 
-        QVector<double> values(k_max+1);
+        QVector<double> values(k_max);
 
-        for (int k = 0; k<=k_max; ++k) {
+        for (int k = 0; k < k_max; ++k) {
             // определяем диапазон в данном фильтре и число отсчетов для обработки
             int i_min = -1;
             int i_max = -1;
             f_median = xValues.at(k);
 
+//            for (int i = 0; i<this->channels.first()->NumInd; ++i) {
+//                double f = F_min+i*Step_f;
+//                if (f/f_median>0.5) {
+//                    i_min = i;
+//                    break;
+//                }
+//            }
+//            for (int i = this->channels.first()->NumInd-1; i>=0; --i) {
+//                double f = F_min+i*Step_f;
+//                if (f/f_median<2) {
+//                    i_max = i;
+//                    break;
+//                }
+//            }
+            double f_lower = f_median / twosixth;
+            double f_upper = f_median * twosixth;
+
             for (int i = 0; i<this->channels.first()->NumInd; ++i) {
                 double f = F_min+i*Step_f;
-                if (f/f_median>0.5) {
+                if (std::abs(f-f_lower) <= Step_f) {
                     i_min = i;
                     break;
                 }
             }
             for (int i = this->channels.first()->NumInd-1; i>=0; --i) {
                 double f = F_min+i*Step_f;
-                if (f/f_median<2) {
+                if (std::abs(f-f_upper) <= Step_f) {
                     i_max = i;
                     break;
                 }
             }
 
+//            qDebug()<<"  k"<<k;
+//            qDebug()<<"i_min"<<i_min;
+//            qDebug()<<"i_max"<<i_max;
+//            qDebug()<<"f_median"<<f_median;
+
             int steps = i_max - i_min + 1;
+            double sum_i = 0.0;
             if (steps >= 5) {
-                double sum_i = 0;
                 for (int i = i_min; i <= i_max; ++i) {
                     double L = ch->YValues.at(i);
                     double ratio = (F_min+i*Step_f)/f_median;
@@ -799,16 +831,24 @@ FileDescriptor *DfdFileDescriptor::calculateThirdOctave()
                     Q_ASSERT(coef>0);
                     L = L*coef;
 
-                    sum_i = sum_i + pow(10.0, (L / 10.0));
+                    sum_i += pow(10.0, (L / 10.0));
                 }
-                values[k] = 10.0 * log(sum_i) / log(10.0);
             }
+            else {
+                for (int i = i_min; i <= i_max; ++i) {
+                    double L = ch->YValues.at(i);
+                    sum_i += pow(10.0, (L / 10.0));
+                }
+            }
+            values[k] = 10.0 * log(sum_i) / log(10.0);
         }
+        //qDebug()<<values;
         newCh->setYValues(values);
         newCh->setXValues(xValues);
         newCh->setPopulated(true);
 
         thirdOctDfd->channels.append(newCh);
+        //qDebug()<<values;
     }
 
     DfdChannel *newCh = new DfdChannel(thirdOctDfd,0);
@@ -822,6 +862,9 @@ FileDescriptor *DfdFileDescriptor::calculateThirdOctave()
     newCh->setXValues(xValues);
     newCh->NumInd=xValues.size();
     newCh->setPopulated(true);
+
+//    qDebug()<<xValues;
+//    qDebug()<<thirdOctDfd->channels.first()->YValues;
 
     thirdOctDfd->channels.prepend(newCh);
     thirdOctDfd->NumChans = thirdOctDfd->channels.size();
@@ -1305,13 +1348,9 @@ void DfdChannel::setYValues(const QVector<double> &values)
     YValues = values;
     postprocess(YValues);
 
-    yMin = 1.0e100;
-    yMax = -1.0e100;
-
-    for (int i=0; i<YValues.size(); ++i) {
-        if (YValues[i] < yMin) yMin = YValues[i];
-        if (YValues[i] > yMax) yMax = YValues[i];
-    }
+    auto minmax = std::minmax_element(YValues.begin(), YValues.end());
+    yMin = *(minmax.first);
+    yMax = *(minmax.second);
 
     xMin = parent->XBegin;
     xMax = xMin + XStep * YValues.size();

@@ -13,8 +13,8 @@ public:
     explicit TimeMethod(QWidget *parent = 0);
 
     virtual int id();
-    virtual QStringList methodSettings(DfdFileDescriptor *dfd, int activeChannel, int strip);
-    virtual QStringList settings(DfdFileDescriptor *dfd, int bandStrip);
+    virtual QStringList methodSettings(DfdFileDescriptor *dfd, const Parameters &p);
+//    virtual QStringList settings(DfdFileDescriptor *dfd, int bandStrip);
     virtual Parameters parameters();
     virtual QString methodDll();
     virtual int panelType();

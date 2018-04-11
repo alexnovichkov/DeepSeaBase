@@ -25,35 +25,30 @@ int TimeMethod::id()
     return 0;
 }
 
-QStringList TimeMethod::methodSettings(DfdFileDescriptor *dfd, int activeChannel, int strip)
+QStringList TimeMethod::methodSettings(DfdFileDescriptor *dfd, const Parameters &p)
 {
     QStringList spfFile;
 
-    spfFile << "YName="+dfd->channels.at(activeChannel)->YName;
-    spfFile << "BlockIn=1024";
+    spfFile << "YName="+dfd->channels.at(p.activeChannel)->YName;
+    spfFile << QString("BlockIn=%1").arg(p.blockSize);
     spfFile << "TypeProc=0";
     spfFile << "Values=измеряемые";
 
-    quint32 numberOfInd = dfd->channels.at(activeChannel)->samplesCount();
-    double resolution = resolutionCombo->currentText().toDouble();
-    double NumberOfAveraging = double(numberOfInd) / resolution;
-    while (strip>0) {
-        NumberOfAveraging /= 2.0;
-        strip--;
-    }
+    quint32 numberOfInd = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->samplesCount();
+    double NumberOfAveraging = double(numberOfInd) / p.blockSize / (1<<p.bandStrip);
 
     // at least 2 averaging
-    if (NumberOfAveraging<1) NumberOfAveraging = 2.0;
+    if (NumberOfAveraging<=1) NumberOfAveraging = 2.0;
 
     spfFile << QString("NAver=%1").arg(qRound(NumberOfAveraging));
 
     return spfFile;
 }
 
-QStringList TimeMethod::settings(DfdFileDescriptor *dfd, int bandStrip)
-{
-    return methodSettings(dfd,1,bandStrip);
-}
+//QStringList TimeMethod::settings(DfdFileDescriptor *dfd, int bandStrip)
+//{
+//    return methodSettings(dfd,1,bandStrip);
+//}
 
 Parameters TimeMethod::parameters()
 {

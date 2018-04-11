@@ -104,7 +104,6 @@ void UffFileDescriptor::read()
         units.read(stream);
 
         while (!stream.atEnd()) {
-            qint64 pos = stream.pos();
             Function *f = new Function(this);
             f->read(stream, -1);
 
@@ -216,7 +215,7 @@ QStringList UffFileDescriptor::info() const
      << QFileInfo(fileName()).completeBaseName() //QString("Файл") 1
          << header.type151[10].value.toDateTime().toString("dd.MM.yy hh:mm:ss") // QString("Дата") 2
          << fileType() // QString("Тип") 3
-         << QString::number(samplesCount() * xStep()) // QString("Размер") 4
+         << (xStep()==0 ? QString::number(samplesCount()) : QString::number(samplesCount() * xStep())) // QString("Размер") 4
          << xName() // QString("Ось Х") 5
          << QString::number(xStep()) // QString("Шаг") 6
          << QString::number(channelsCount()) // QString("Каналы")); 7
@@ -494,6 +493,139 @@ void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
 
 FileDescriptor *UffFileDescriptor::calculateThirdOctave()
 {
+    populate();
+
+    QString thirdOctaveFileName = this->fileName();
+    thirdOctaveFileName.chop(4);
+
+    int index = 0;
+    if (QFile::exists(thirdOctaveFileName+"_3oct.uff")) {
+        index++;
+        while (QFile::exists(thirdOctaveFileName+"_3oct("+QString::number(index)+").uff")) {
+            index++;
+        }
+    }
+    thirdOctaveFileName = index>0?thirdOctaveFileName+"_3oct("+QString::number(index)+").uff":thirdOctaveFileName+"_3oct.uff";
+
+    UffFileDescriptor *thirdOctUff = new UffFileDescriptor(thirdOctaveFileName);
+    thirdOctUff->fillPreliminary(Descriptor::Spectrum);
+
+
+    foreach (Function *ch, this->channels) {
+        Function *newCh = new Function(*ch);
+
+        // определяем верхнюю границу данных
+        const double F_min = ch->xBegin();
+        const double Step_f = xStep();
+        const double F_max = F_min + Step_f * ch->samplesCount();
+
+
+        double f_upper = 0;
+        double f_median = 0;
+        int k_max = 52;
+        for (int k = 52; k>=0; --k) {
+            f_median = pow(10.0, 0.1 * k);
+            f_upper = f_median * pow(2.0, (1.0 / 6.0));
+            if (f_upper <= F_max) {
+                k_max = k;
+                break;
+            }
+        }
+        if (f_median == 1) return thirdOctUff;
+
+        const double twothird = pow(2.0,1.0/3.0);
+        const double tenpow = pow(10.0, -1.4);
+        const double twosixth = pow(2.0,1.0/6.0);
+
+        QVector<double> xValues(k_max+1);
+        for (int k = 0; k<=k_max; ++k)
+            xValues[k] = pow(10.0, 0.1*k);
+
+        QVector<double> values(k_max+1);
+
+        for (int k = 0; k<=k_max; ++k) {
+            // определяем диапазон в данном фильтре и число отсчетов для обработки
+            int i_min = -1;
+            int i_max = -1;
+            f_median = xValues.at(k);
+
+            for (quint32 i = 0; i<ch->samples; ++i) {
+                double f = F_min+i*Step_f;
+                if (f/f_median>0.5) {
+                    i_min = i;
+                    break;
+                }
+            }
+            for (quint32 i = ch->samples-1; i>=0; --i) {
+                double f = F_min+i*Step_f;
+                if (f/f_median<2) {
+                    i_max = i;
+                    break;
+                }
+            }
+
+            int steps = i_max - i_min + 1;
+            if (steps >= 5) {
+                double sum_i = 0;
+                for (int i = i_min; i <= i_max; ++i) {
+                    double L = ch->values.at(i);
+                    double ratio = (F_min+i*Step_f)/f_median;
+                    double coef = 1.0;
+                    if (ratio>0.5 && ratio<=(1.0/twothird))
+                        coef = tenpow/(1.0/twothird-0.5)*(ratio-0.5);
+                    else if (ratio>(1.0/twothird) && ratio<=(1.0/twosixth))
+                        coef = (1.0-tenpow)/(1.0/twosixth-1.0/twothird)*(ratio - 1.0/twothird)+tenpow;
+                    else if (ratio>twosixth && ratio<=twothird)
+                        coef = (tenpow-1.0)/(twothird-twosixth)*(ratio - twosixth)+1.0;
+                    else if (ratio>twothird && ratio<=2)
+                        coef = tenpow/(twothird-2.0)*(ratio-twothird)+tenpow;
+                    Q_ASSERT(coef>0);
+                    L = L*coef;
+
+                    sum_i = sum_i + pow(10.0, (L / 10.0));
+                }
+                values[k] = 10.0 * log(sum_i) / log(10.0);
+            }
+        }
+        newCh->xvalues = xValues;
+        newCh->values = values;
+        newCh->setPopulated(true);
+
+        newCh->samples = xValues.size();
+        newCh->xMax = xValues.last();
+        newCh->yMin = *(std::min_element(values.begin(), values.end()));
+        newCh->yMax = *(std::max_element(values.begin(), values.end()));
+
+        newCh->parent = thirdOctUff;
+
+        newCh->type58[6].value = "Третьоктава";
+
+        newCh->type58[25].value = 2; //25 Ordinate Data Type
+    //                                       2 - real, single precision
+    //                                       4 - real, double precision
+    //                                       5 - complex, single precision
+    //                                       6 - complex, double precision
+        newCh->type58[26].value = xValues.size(); //26   Number of data pairs for uneven abscissa spacing,
+                                                  //  or number of data values for even abscissa spacing
+        newCh->type58[27].value = 0; //27 Abscissa Spacing (1=even, 0=uneven,
+        newCh->type58[28].value = 0.0; //28 Abscissa minimum
+        newCh->type58[29].value = 0.0; //29 Abscissa increment
+        newCh->type58[44].value = "дБ"; //Ordinate name
+
+        thirdOctUff->channels.append(newCh);
+    }
+
+
+    thirdOctUff->setSamplesCount(thirdOctUff->channels.first()->samples);
+
+    thirdOctUff->fillRest();
+
+    thirdOctUff->setChanged(true);
+    thirdOctUff->setDataChanged(true);
+    thirdOctUff->write();
+    thirdOctUff->writeRawFile();
+    return thirdOctUff;
+
     return 0;
 }
 
@@ -852,7 +984,7 @@ void Function::write(QTextStream &stream)
         }
         case 6: {
             int j = 0;
-            for (quint32 i=0; i<valuesComplex.size(); i++) {
+            for (int i=0; i<valuesComplex.size(); i++) {
                 fields[FTFloat20_12]->print(valuesComplex[i].first, stream);
                 j++;
                 fields[FTFloat20_12]->print(valuesComplex[i].second, stream);
@@ -951,10 +1083,7 @@ void Function::populate()
     QFile uff(parent->fileName());
     if (!uff.open(QFile::ReadOnly | QFile::Text)) return;
     QTextStream stream(&uff);
-    if (stream.seek(dataPosition))
-
-    /*if (type58[14].value.toInt() > 1
-        || (type58[14].value.toInt() == 1) && samples<32768)*/ {//function type is not time response
+    if (stream.seek(dataPosition)) {//function type is not time response
         double thr = threshold(this->yName());
         if (this->type()==Descriptor::FrequencyResponseFunction) thr=1.0;
 
@@ -964,9 +1093,9 @@ void Function::populate()
             doLog=false;
 
         values = QVector<double>(samples, 0.0);
-        if (type58[25].value.toInt() >= 5) //complex values
+        if (type58[25].value.toInt() >= 5) { //complex values
             valuesComplex = QVector<QPair<double,double> >(samples, QPair<double,double>(0.0,0.0));
-
+        }
         if (type58[27].value.toInt() == 0) {
             // uneven abscissa, read data pairs
             xvalues = QVector<double>(samples, 0.0);
@@ -1016,12 +1145,8 @@ void Function::populate()
             }
         }
 
-        yMin = 1.0e100;
-        yMax = -1.0e100;
-        for (quint32 i=0; i<samples; ++i) {
-            if (values[i] < yMin) yMin = values[i];
-            if (values[i] > yMax) yMax = values[i];
-        }
+        yMin = *std::min_element(values.begin(), values.end());
+        yMax = *std::max_element(values.begin(), values.end());
 
         if (xvalues.isEmpty())
             xMax = xBegin() + xStep() * samples;
@@ -1033,13 +1158,6 @@ void Function::populate()
         Q_ASSERT(end == "-1");
     }
     _populated = !values.isEmpty() || !valuesComplex.isEmpty();
-//    else {//time response, skip";
-//        QString s;
-//        do {
-//            s = stream.readLine().trimmed();
-//        }
-//        while (s != "-1");
-//    }
 }
 
 void Function::clear()

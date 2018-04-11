@@ -255,7 +255,7 @@ DfdFileDescriptor *Converter::createNewDfdFile(const QString &fileName, DfdFileD
     newDfd->process = new Process();
     newDfd->process->data.append({"PName", p.methodName});
     newDfd->process->data.append({"BlockIn", QString::number(p.blockSize)});
-    newDfd->process->data.append({"Wind", window(p.windowType)});
+    newDfd->process->data.append({"Wind", p.windowDescription(p.windowType)});
     newDfd->process->data.append({"TypeAver", averaging(p.averagingType)});
     newDfd->process->data.append({"pTime","(0000000000000000)"});
 
@@ -319,7 +319,7 @@ void Converter::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd,
     ch->setPopulated(true);
 
     //FunctionHeader header;
-    ch->header.type1858[12].value = windowType(p.windowType);
+    ch->header.type1858[12].value = uffWindowType(p.windowType);
 
 
     ch->type58[8].value = QDateTime::currentDateTime();;
@@ -373,7 +373,7 @@ void Converter::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd,
     ch->setPopulated(true);
 
     //FunctionHeader header;
-    ch->header.type1858[12].value = windowType(p.windowType);
+    ch->header.type1858[12].value = uffWindowType(p.windowType);
 
 
     ch->type58[8].value = QDateTime::currentDateTime();;
@@ -500,20 +500,6 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
 
 }
 
-QString window(int wind)
-{DD;
-    switch (wind) {
-        case 0: return "Прямоуг.";
-        case 1: return "Бартлетта";
-        case 2: return "Хеннинга";
-        case 3: return "Хемминга";
-        case 4: return "Натолл";
-        case 5: return "Гаусс";
-    }
-    return "";
-}
-
-
 QString averaging(int avgType)
 {
     switch (avgType) {
@@ -524,13 +510,13 @@ QString averaging(int avgType)
     return "";
 }
 
-QVector<float> getBlock(const QVector<float> &values, quint32 blockSize, quint32 stepBack, quint32 &block)
+QVector<float> getBlock(const QVector<float> &values, const quint32 blockSize, const quint32 stepBack, quint32 &block)
 {
-    const quint32 N = values.size();
     QVector<float> output;
-    if (block >= N) return output;
-    output = values.mid(block, blockSize);
-    block += blockSize - stepBack;
+    if (block < values.size()) {
+        output = values.mid(block, blockSize);
+        block += blockSize - stepBack;
+    }
     return output;
 }
 
@@ -648,9 +634,9 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
     if (p.saveAsComplex) newUff = createNewUffFile(fileName, dfd, p);
 
 
+    if (p.baseChannel>=0) dfd->channels[p.baseChannel]->populateFloat();
     for (int i=0; i<dfd->channelsCount(); ++i) {
         dfd->channels[i]->populateFloat();
-        if (p.baseChannel>=0) dfd->channels[p.baseChannel]->populateFloat();
 
         if (QThread::currentThread()->isInterruptionRequested()) {
             delete newDfd;
@@ -878,19 +864,22 @@ QVector<double> powerSpectre(const QVector<float> &values, const Parameters &p)
 QVector<double> coSpectre(const QVector<float> &values1, const QVector<float> &values2, const Parameters &p)
 {
     QVector<double> output(p.blockSize);
+    QVector<QPair<double, double> > compls = coSpectreComplex(values1, values2, p);
+    for (int i=0; i< compls.size(); ++i)
+        output[i] = sqrt(pow(compls[i].first,2) + pow(compls[i].second,2));
 
-    QVector<double> complexSpectre1 = FFTAnalysis(values1);
-    QVector<double> complexSpectre2 = FFTAnalysis(values2);
+//    QVector<double> complexSpectre1 = FFTAnalysis(values1);
+//    QVector<double> complexSpectre2 = FFTAnalysis(values2);
 
 
-    int j=0;
-    const int Nvl = values1.size();
-    for (int i = 0; i < Nvl; i++) {
-        j = i * 2;
-        double real = complexSpectre1[j]*complexSpectre2[j] + complexSpectre1[j+1]*complexSpectre2[j+1];
-        double imag = complexSpectre1[j]*complexSpectre2[j+1] - complexSpectre1[j+1]*complexSpectre2[j];
-        output[Nvl - i - 1] = sqrt(pow(real,2) + pow(imag,2));
-    }
+//    int j=0;
+//    const int Nvl = values1.size();
+//    for (int i = 0; i < Nvl; i++) {
+//        j = i * 2;
+//        double real = complexSpectre1[j]*complexSpectre2[j] + complexSpectre1[j+1]*complexSpectre2[j+1];
+//        double imag = complexSpectre1[j]*complexSpectre2[j+1] - complexSpectre1[j+1]*complexSpectre2[j];
+//        output[Nvl - i - 1] = sqrt(pow(real,2) + pow(imag,2));
+//    }
 
     output.resize(p.fCount);
 
@@ -1046,37 +1035,37 @@ QStringList Converter::getSpfFile(QString dir)
 
         spfFile << QString("[Panel%1\\Wind1\\Method]").arg(i);
 
-        //spfFile << method->methodSettings(dfd, p.activeChannel, p.bandStrip);
+        spfFile << method->methodSettings(dfd, p);
 
-        spfFile << QString("YName=дБ");
-        spfFile << QString("BlockIn=%1").arg(p.blockSize);
-        spfFile << QString("Wind=%1").arg(window(p.windowType));
-        spfFile << QString("TypeAver=%1").arg(p.averagingType);
+//        spfFile << QString("YName=дБ");
+//        spfFile << QString("BlockIn=%1").arg(p.blockSize);
+//        spfFile << QString("Wind=%1").arg(window(p.windowType));
+//        spfFile << QString("TypeAver=%1").arg(p.averagingType);
 
-        quint32 numberOfInd = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->samplesCount();
-        double blockSize = p.blockSize;
-        double NumberOfAveraging = double(numberOfInd) / blockSize / (1<<p.bandStrip);
+//        quint32 numberOfInd = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->samplesCount();
+//        double blockSize = p.blockSize;
+//        double NumberOfAveraging = double(numberOfInd) / blockSize / (1<<p.bandStrip);
 
-        // at least 2 averaging
-        if (NumberOfAveraging<1) NumberOfAveraging = 2.0;
+//        // at least 2 averaging
+//        if (NumberOfAveraging<1) NumberOfAveraging = 2.0;
 
-        spfFile << QString("NAver=%1").arg(qRound(NumberOfAveraging));
-        spfFile << "TypeProc=мощности";
-        spfFile << "Values=измеряемые";
+//        spfFile << QString("NAver=%1").arg(qRound(NumberOfAveraging));
+//        spfFile << "TypeProc=мощности";
+//        spfFile << "Values=измеряемые";
 
-        spfFile << (QString("TypeScale=")+(p.scaleType==0?QString("линейная"):QString("в децибелах")));
-        spfFile << "AddProc=нет";
+//        spfFile << (QString("TypeScale=")+(p.scaleType==0?QString("линейная"):QString("в децибелах")));
+//        spfFile << "AddProc=нет";
     }
     return spfFile;
 }
 
 /** Возвращает тип окна, применяемый в uff заголовке 1858
     wind - тип окна, применяемый в DeepSea*/
-int windowType(int wind)
+int uffWindowType(int dfdWindowType)
 {
     //12 window type, 0=no, 1=hanning narrow, 2=hanning broad, 3=flattop,
    //4=exponential, 5=impact, 6=impact and exponential
-    switch (wind) {
+    switch (dfdWindowType) {
         case 0: return 3;//"Прямоуг.";
         case 1: return 0;//"Бартлетта";
         case 2: return 1;//"Хеннинга";
