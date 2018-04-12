@@ -3,6 +3,7 @@
 #include <QtWidgets>
 
 #include "dfdfiledescriptor.h"
+#include "logging.h"
 
 SpectreMethod::SpectreMethod(QWidget *parent) :
     QWidget(parent)
@@ -100,7 +101,7 @@ int SpectreMethod::id()
 }
 
 QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, const Parameters &p)
-{
+{DD;
     QStringList spfFile;
     QString yName = "дБ";
     if (typeCombo->currentText() != "в децибелах") {
@@ -108,7 +109,7 @@ QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, const Paramete
     }
     spfFile << QString("YName=%1").arg(yName);
     spfFile << QString("BlockIn=%1").arg(p.blockSize);
-    spfFile << QString("Wind=%1").arg(p.windowDescription(p.windowType));
+    spfFile << QString("Wind=%1").arg(p.windowDescription());
     spfFile << QString("TypeAver=%1").arg(p.averagingType);
 
     quint32 numberOfInd = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->samplesCount();

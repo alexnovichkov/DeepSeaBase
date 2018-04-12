@@ -105,7 +105,7 @@ bool MatlabConvertor::convert()
     else xmlFileName = QFileDialog::getOpenFileName(0, QString("Укажите файл XML с описанием каналов"), folderName, "Файлы XML (*.xml)");
 
     if (xmlFileName.isEmpty()) {
-        emit message("<font color=red>Error!</font> XML file not defined.");
+        emit message("<font color=red>Error!</font> Не могу найти файл Analysis.xml.");
         emit finished();
         return false;
     }
@@ -115,7 +115,7 @@ bool MatlabConvertor::convert()
     QList<Dataset> sets;
     QFile xmlFile(xmlFileName);
     if (!xmlFile.open(QFile::ReadOnly | QFile::Text)) {
-        emit message("<font color=red>Error!</font> Cannot read XML file.");
+        emit message("<font color=red>Error!</font> Не могу прочитать файл " + xmlFileName);
         emit finished();
         return false;
     }
@@ -200,10 +200,13 @@ bool MatlabConvertor::convert()
             }
         }
         if (set.fileName.isEmpty()) {
-            emit message("<font color=red>Error!</font> Не могу найти "+xdfFileName+" в Analysis.xml. Файл mat будет пропущен!");
+            emit message("<font color=red>Error!</font> Не могу найти "+QFileInfo(xdfFileName).fileName()+" в Analysis.xml. Файл mat будет пропущен!");
             noErrors = false;
             emit tick();
             continue;
+        }
+        else {
+            emit message("Файл "+QFileInfo(xdfFileName).fileName()+" в Analysis.xml записан как канал "+set.id);
         }
 
         //reading mat file structure
@@ -333,8 +336,10 @@ bool MatlabConvertor::convert()
         emit message("Готово.");
         emit tick();
     }
-    emit message("<font color=blue>Конвертация закончена.</font>");
-    /*if (noErrors) */emit finished();
+
+    if (noErrors) emit message("<font color=blue>Конвертация закончена без ошибок.</font>");
+    else emit message("<font color=red>Конвертация закончена с ошибками.</font>");
+    emit finished();
     return true;
 }
 

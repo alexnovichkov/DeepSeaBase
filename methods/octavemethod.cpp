@@ -6,12 +6,12 @@
 OctaveMethod::OctaveMethod(QWidget *parent):
     QWidget(parent)
 {
-    resolutionSpin = new QSpinBox(this);
+    resolutionSpin = new QSpinBox(this); //kStrip=1024
     resolutionSpin->setRange(1, 500000);
     resolutionSpin->setValue(1024);
     resolutionSpin->setReadOnly(false);
 
-    placeCombo = new QComboBox(this);
+    placeCombo = new QComboBox(this); //AddProc = 0/1/2/3
     placeCombo->addItem("все отсчеты");
     placeCombo->addItem("начало интервала");
     placeCombo->addItem("конец интервала");
@@ -19,35 +19,25 @@ OctaveMethod::OctaveMethod(QWidget *parent):
     placeCombo->setCurrentIndex(0);
     placeCombo->setEditable(false);
 
-    typeCombo = new QComboBox(this);
+    typeCombo = new QComboBox(this); //TypeProc
     typeCombo->addItem("1/3-октава");
     typeCombo->addItem("октава");
     typeCombo->setCurrentIndex(0);
     typeCombo->setEditable(false);
 
-    valuesCombo = new QComboBox(this);
+    valuesCombo = new QComboBox(this); //Values
     valuesCombo->addItem("измеряемые");
     valuesCombo->addItem("вход АЦП");
     valuesCombo->setCurrentIndex(0);
     valuesCombo->setEnabled(false);
     valuesCombo->setEditable(false);
 
-    scaleCombo = new QComboBox(this);
+    scaleCombo = new QComboBox(this); //TypeScale
     scaleCombo->addItem("линейная");
     scaleCombo->addItem("в децибелах");
     scaleCombo->setCurrentIndex(1);
 //    scaleCombo->setEnabled(false);
     scaleCombo->setEditable(false);
-
-//    addProcCombo = new QComboBox(this);
-//    addProcCombo->addItem("нет");
-//    addProcCombo->addItem("интегрир.");
-//    addProcCombo->addItem("дифференц.");
-//    addProcCombo->addItem("дв.интергир.");
-//    addProcCombo->addItem("дв.дифференц.");
-//    addProcCombo->setCurrentIndex(0);
-//    addProcCombo->setEnabled(false);
-//    addProcCombo->setEditable(false);
 
     QFormLayout *l = new QFormLayout;
     l->addRow("Мин. количество отсчетов СКЗ", resolutionSpin);
@@ -55,7 +45,6 @@ OctaveMethod::OctaveMethod(QWidget *parent):
     l->addRow("Тип спектра", typeCombo);
     l->addRow("Величины", valuesCombo);
     l->addRow("Шкала", scaleCombo);
-    //l->addRow("Доп. обработка", addProcCombo);
     setLayout(l);
 }
 
@@ -66,19 +55,32 @@ int OctaveMethod::id()
 
 QStringList OctaveMethod::methodSettings(DfdFileDescriptor *dfd, const Parameters &p)
 {
+    QStringList spfFile;
+    QString yName = "дБ";
+    if (scaleCombo->currentText() != "в децибелах") {
+        yName = dfd->channels.first()->yName();
+    }
+    spfFile << QString("YName=%1").arg(yName);
+    spfFile << QString("BlockIn=32768"); //Размер буфера чтения, кажется, не меняется
+    spfFile << QString("NAver=1"); //количество усреднений, не меняется
+    spfFile << "TypeProc="+typeCombo->currentText();
+    spfFile << "Values="+valuesCombo->currentText();
+    spfFile << "TypeScale="+scaleCombo->currentText();
+    spfFile << QString("kStrip=%1").arg(resolutionSpin->value());
+    spfFile << QString("AddProc=%1").arg(placeCombo->currentIndex());
 
+    return spfFile;
 }
 
 Parameters OctaveMethod::parameters()
 {
     Parameters p;
-    p.
 
-    p.averagingType = averCombo->currentIndex();
-    p.blockSize = resolutionCombo->currentText().toInt();
-    p.windowType = windowCombo->currentIndex();
+
+//    p.averagingType = averCombo->currentIndex();
+    p.blockSize = 32768;
+//    p.windowType = windowCombo->currentIndex();
     p.scaleType = scaleCombo->currentIndex();
-
     p.panelType = panelType();
     p.methodName = methodName();
     p.methodDll = methodDll();
@@ -89,21 +91,25 @@ Parameters OctaveMethod::parameters()
 
 QString OctaveMethod::methodDll()
 {
-
+    return "octSpect8.dll";
 }
 
 int OctaveMethod::panelType()
 {
-
+    return 0;
 }
 
 QString OctaveMethod::methodName()
 {
-
+    if (typeCombo->currentText()=="1/3-октава") return "1/3-октавный спектр";
+    if (typeCombo->currentText()=="октава") return "Октавный спектр";
+    return "Октавный спектр";
 }
 
 int OctaveMethod::dataType()
 {
-
+    if (typeCombo->currentText()=="1/3-октава") return 157;
+    if (typeCombo->currentText()=="октава") return 156;
+    return 156;
 }
 

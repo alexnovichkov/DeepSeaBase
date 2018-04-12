@@ -91,7 +91,7 @@ const Method methods[26] = {
     {"xcogerent.dll", "Когерентость", NotDef, 0},
     {"gistogr.dll", "Гистограмма", NotDef, 0},
     {"cepstr.dll", "Кепстр", NotDef, 0},
-    {"octSpect8.dll", "Октавный спектр", NotDef, 0},
+    {"octSpect8.dll", "Октавный спектр", OSpectr, 0},
     {"corel.dll", "АКорреляция", NotDef, 0},
     {"corelF.dll", "АКорреляция (Фурье)", NotDef, 0},
     {"xCorel.dll", "ХКорреляция", NotDef, 0},

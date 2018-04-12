@@ -8,6 +8,7 @@
 #include "methods/spectremethod.h"
 #include "methods/timemethod.h"
 #include "methods/xresponch1.h"
+#include "methods/octavemethod.h"
 #include "logging.h"
 
 #include "converter.h"
@@ -91,6 +92,7 @@ CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> *dataBase
             case 0: methodsStack->addWidget(new TimeMethod(this)); break;
             case 1: methodsStack->addWidget(new SpectreMethod(this)); break;
             case 9: methodsStack->addWidget(new XresponcH1Method(this)); break;
+            case 18: methodsStack->addWidget(new OctaveMethod(this)); break;
 
             default: methodsStack->addWidget(new SpectreMethod(this));
         }

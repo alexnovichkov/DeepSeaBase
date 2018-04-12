@@ -215,6 +215,7 @@ void Converter::finalize()
     QFileInfoList newFilesList = QDir(tempFolderName).entryInfoList(QStringList()<<"*.dfd",QDir::Files);
     newFilesList.append(QDir(tempFolderName).entryInfoList(QStringList()<<"*.uff",QDir::Files));
 
+
     Q_FOREACH(const QFileInfo &newFile, newFilesList) {
         if (newFile.created()>dt || newFile.lastModified()>dt)
             newFiles_ << newFile.canonicalFilePath();
@@ -233,7 +234,7 @@ void Converter::finalize()
 }
 
 DfdFileDescriptor *Converter::createNewDfdFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p)
-{
+{DD;
     DfdFileDescriptor *newDfd = new DfdFileDescriptor(fileName);
 
     newDfd->fillPreliminary(dataTypefromDfdDataType(DfdDataType(p.method->dataType())));
@@ -255,7 +256,7 @@ DfdFileDescriptor *Converter::createNewDfdFile(const QString &fileName, DfdFileD
     newDfd->process = new Process();
     newDfd->process->data.append({"PName", p.methodName});
     newDfd->process->data.append({"BlockIn", QString::number(p.blockSize)});
-    newDfd->process->data.append({"Wind", p.windowDescription(p.windowType)});
+    newDfd->process->data.append({"Wind", p.windowDescription()});
     newDfd->process->data.append({"TypeAver", averaging(p.averagingType)});
     newDfd->process->data.append({"pTime","(0000000000000000)"});
 
@@ -269,7 +270,7 @@ DfdFileDescriptor *Converter::createNewDfdFile(const QString &fileName, DfdFileD
 }
 
 UffFileDescriptor *Converter::createNewUffFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p)
-{
+{DD;
     UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
 
     newUff->fillPreliminary(dataTypefromDfdDataType(DfdDataType(p.method->dataType())));
@@ -285,7 +286,7 @@ UffFileDescriptor *Converter::createNewUffFile(const QString &fileName, DfdFileD
 }
 
 void Converter::addDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
-{
+{DD;
     DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
     ch->XStep = newDfd->XStep;
     ch->setYValues(spectrum);
@@ -313,7 +314,7 @@ void Converter::addDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd,
 }
 
 void Converter::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, const QVector<QPair<double, double> > &spectrum, Parameters &p, int i)
-{
+{DD;
     Function *ch = new Function(newUff);
     ch->setName(dfd->channels[i]->name()/*+"/Сила"*/);
     ch->setPopulated(true);
@@ -367,7 +368,7 @@ void Converter::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd,
 }
 
 void Converter::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
-{
+{DD;
     Function *ch = new Function(newUff);
     ch->setName(dfd->channels[i]->name()/*+"/Сила"*/);
     ch->setPopulated(true);
@@ -446,10 +447,18 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
     //QString baseFileName = QFileInfo(filtered.first()).completeBaseName();
     QString baseFileName = QFileInfo(fileName).completeBaseName()+"_"+method;
 
-    if (filtered.first().endsWith("dfd")) {
+    if (filtered.first().toLower().endsWith("dfd")) {
         DfdFileDescriptor dfd(filtered.first());
         dfd.read();
-        QString suffix = QString::number(dfd.samplesCount() * dfd.xStep());
+        int suffixN = dfd.samplesCount() * dfd.xStep();
+        QString suffix = QString::number(suffixN);
+
+        if (suffixN==0) {//третьоктава или файл с неодинаковым шагом по абсциссе
+            dfd.populate();
+            if (dfd.channelsCount()>0)
+            suffixN = dfd.channels.first()->xMax;
+            suffix = QString::number(suffixN);
+        }
 
         //baseFileName.chop(3);
         QString dfdFileName = destDir+"/"+baseFileName+"_"+suffix+".dfd";
@@ -497,7 +506,6 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
         newFiles << uffFileName;
     }
     newFiles_.removeAll(filtered.first());
-
 }
 
 QString averaging(int avgType)
@@ -521,7 +529,7 @@ QVector<float> getBlock(const QVector<float> &values, const quint32 blockSize, c
 }
 
 void average(QVector<double> &result, const QVector<double> &input, const Parameters &p, int averagesMade)
-{
+{DD;
     //int averagingType; //0 - линейное
     //1 - экспоненциальное
     //2 - хранение максимума
@@ -543,7 +551,7 @@ void average(QVector<double> &result, const QVector<double> &input, const Parame
 
 void averageComplex(QVector<QPair<double,double> > &result,
                     const QVector<QPair<double,double> > &input, const Parameters &p, int averagesMade)
-{
+{DD;
     //int averagingType; //0 - линейное
     //1 - экспоненциальное
     //2 - хранение максимума
@@ -595,7 +603,7 @@ QString createUniqueFileName(const QString &tempFolderName, const QString &fileN
 }
 
 int stripByBandwidth(double bandwidth, Parameters &p)
-{
+{DD;
     if (qAbs(bandwidth - p.bandWidth)<1.0e-3)
         return p.initialBandStrip;
 
@@ -658,7 +666,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
 
         const int newBlockSize = p.blockSize * (1<<p.bandStrip);
 
-        const quint32 stepBack = quint32(1.0*newBlockSize * p.overlap); //qDebug()<<stepBack;
+        const quint32 stepBack = quint32(1.0*newBlockSize * p.overlap);
         if (p.method->id()==1) {//спектр мощности
             while (1) {
                 QVector<float> chunk = getBlock(dfd->channels[i]->floatValues, newBlockSize, stepBack, block);
@@ -773,7 +781,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
 }
 
 void applyWindow(QVector<float> &values, const Parameters &p)
-{
+{DD;
     quint32 i=0;
     while (1) {
         for (int j=0; j<p.window.size(); j++) {
@@ -787,7 +795,7 @@ void applyWindow(QVector<float> &values, const Parameters &p)
 const double TwoPi = 6.283185307179586;
 
 QVector<double> FFTAnalysis(const QVector<float> &AVal)
-{
+{DD;
     int Nvl = AVal.size();
 
     int i, j, n, m, Mmax, Istp;
@@ -845,7 +853,7 @@ QVector<double> FFTAnalysis(const QVector<float> &AVal)
 
 // возвращает спектр мощности 2*|complexSpectre|^2/N^2
 QVector<double> powerSpectre(const QVector<float> &values, const Parameters &p)
-{
+{DD;
     QVector<double> output(p.blockSize);
     QVector<double> complexSpectre = FFTAnalysis(values);
 
@@ -862,7 +870,7 @@ QVector<double> powerSpectre(const QVector<float> &values, const Parameters &p)
 
 // возвращает взаимный спектр мощности |Y* Z|
 QVector<double> coSpectre(const QVector<float> &values1, const QVector<float> &values2, const Parameters &p)
-{
+{DD;
     QVector<double> output(p.blockSize);
     QVector<QPair<double, double> > compls = coSpectreComplex(values1, values2, p);
     for (int i=0; i< compls.size(); ++i)
@@ -888,7 +896,7 @@ QVector<double> coSpectre(const QVector<float> &values1, const QVector<float> &v
 
 // возвращает взаимный спектр мощности Y* Z (комплексный)
 QVector<QPair<double, double> > coSpectreComplex(const QVector<float> &values1, const QVector<float> &values2, const Parameters &p)
-{
+{DD;
     QVector<QPair<double, double> > output(p.blockSize);
 
     QVector<double> complexSpectre1 = FFTAnalysis(values1);
@@ -912,7 +920,7 @@ QVector<QPair<double, double> > coSpectreComplex(const QVector<float> &values1, 
 
 // возвращает автоспектр сигнала |Y|^2
 QVector<double> autoSpectre(const QVector<float> &values, const Parameters &p)
-{
+{DD;
     QVector<double> output(p.blockSize);
     QVector<double> complexSpectre = FFTAnalysis(values);
 
@@ -931,7 +939,7 @@ QVector<double> autoSpectre(const QVector<float> &values, const Parameters &p)
 // возвращает передаточную функцию H1
 //(амплитуду)
 QVector<double> transferFunctionH1(const QVector<double> &values1, const QVector<double> &values2, const Parameters &p)
-{
+{DD;
     QVector<double> output(p.fCount);
 
    // QVector<double> coSpectre_ = coSpectre(values1, values2, p);
@@ -948,7 +956,7 @@ QVector<double> transferFunctionH1(const QVector<double> &values1, const QVector
 //(комплексные значения)
 QVector<QPair<double, double> > transferFunctionH1Complex(const QVector<double> &values1,
                                                           const QVector<QPair<double, double> > &values2, const Parameters &p)
-{
+{DD;
     QVector<QPair<double, double> > output(p.fCount);
 
    // QVector<double> coSpectre_ = coSpectre(values1, values2, p);
@@ -1035,7 +1043,9 @@ QStringList Converter::getSpfFile(QString dir)
 
         spfFile << QString("[Panel%1\\Wind1\\Method]").arg(i);
 
-        spfFile << method->methodSettings(dfd, p);
+        if (p.method)
+            spfFile << p.method->methodSettings(dfd, p);
+        else qDebug()<<"No method found";
 
 //        spfFile << QString("YName=дБ");
 //        spfFile << QString("BlockIn=%1").arg(p.blockSize);

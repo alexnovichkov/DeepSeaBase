@@ -3,7 +3,9 @@
 
 #include <QString>
 
-#ifndef QT_NO_DEBUG
+//#define DO_TRACE
+
+
 class QTime;
 class Trace {
 public:
@@ -14,7 +16,7 @@ private:
     QTime *time;
 };
 
-
+#ifdef DO_TRACE
 #define DD  Trace trace(Q_FUNC_INFO);
 #else
 #define DD

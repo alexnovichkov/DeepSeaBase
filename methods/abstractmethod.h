@@ -66,8 +66,8 @@ struct Parameters
 
     AbstractMethod *method;
 
-    QString windowDescription(int wind) const {
-        switch (wind) {
+    QString windowDescription() const {
+        switch (windowType) {
             case 0: return "Прямоуг.";
             case 1: return "Бартлетта";
             case 2: return "Хеннинга";
