@@ -181,6 +181,11 @@ bool MatlabConvertor::convert()
     if (xml.hasError()) {
         emit message(xml.errorString());
     }
+    emit message("Содержит следующие записи:");
+    foreach (const Dataset &dataset, sets) {
+        emit message(QString("%1: %2").arg(dataset.id).arg(dataset.fileName));
+    }
+
 
     //Converting
     foreach(const QFileInfo &fi, matFiles) {

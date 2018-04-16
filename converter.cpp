@@ -744,6 +744,19 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
 //            for (int i=0; i<spectrum.size(); ++i)
 //                spectrum[i] = 20 * log10(spectrum[i] * t2);
         }
+        if (p.method->id()==18) {//октавный спектр
+            while (1) {
+                QVector<float> chunk = getBlock(dfd->channels[i]->floatValues, newBlockSize, stepBack, block);
+
+                if (chunk.size() < p.blockSize) break;
+
+                filtered = filter.process(chunk);
+                applyWindow(filtered, p);
+                QVector<double> out = powerSpectre(filtered, p);
+                average(spectrum, out, p, averagesMade++);
+            }
+            changeScale(spectrum, p);
+        }
 
         // Создаем канал и заполняем его
         if (newDfd) {
