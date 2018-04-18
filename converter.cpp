@@ -1033,8 +1033,11 @@ QStringList Converter::getSpfFile(QString dir)
 
         spfFile << "Channels="+channelsList.join(',');
 
-
-        p.bandStrip = stripByBandwidth(dynamic_cast<RawChannel *>(dfd->channel(0))->BandWidth, p);
+        RawChannel *rawCh = dynamic_cast<RawChannel *>(dfd->channel(0));
+        if (rawCh)
+            p.bandStrip = stripByBandwidth(rawCh->BandWidth, p);
+        else
+            p.bandStrip = stripByBandwidth(qRound(1.0 / dfd->XStep / 2.56), p);
 
         spfFile << QString("ActChannel=%1").arg(p.activeChannel);
         spfFile << QString("BaseChannel=%1").arg(p.baseChannel);
@@ -1045,8 +1048,13 @@ QStringList Converter::getSpfFile(QString dir)
         spfFile << "ShiftDat=0"; // TODO: добавить возможность устанавливать смещение
         // длина = число отсчетов в канале
         // TODO: добавить возможность устанавливать правую границу выборки
-        quint32 NI = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->ChanBlockSize / dfd->BlockSize;
-        NI *= dfd->samplesCount();
+        quint32 NI;
+        if (dfd->BlockSize>0) {
+            NI = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->ChanBlockSize / dfd->BlockSize;
+            NI *= dfd->samplesCount();
+        }
+        else
+            NI = dfd->samplesCount();
 
         spfFile << QString("Duration=%1").arg(NI);
         spfFile << "TablName=";
@@ -1060,24 +1068,6 @@ QStringList Converter::getSpfFile(QString dir)
             spfFile << p.method->methodSettings(dfd, p);
         else qDebug()<<"No method found";
 
-//        spfFile << QString("YName=дБ");
-//        spfFile << QString("BlockIn=%1").arg(p.blockSize);
-//        spfFile << QString("Wind=%1").arg(window(p.windowType));
-//        spfFile << QString("TypeAver=%1").arg(p.averagingType);
-
-//        quint32 numberOfInd = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->samplesCount();
-//        double blockSize = p.blockSize;
-//        double NumberOfAveraging = double(numberOfInd) / blockSize / (1<<p.bandStrip);
-
-//        // at least 2 averaging
-//        if (NumberOfAveraging<1) NumberOfAveraging = 2.0;
-
-//        spfFile << QString("NAver=%1").arg(qRound(NumberOfAveraging));
-//        spfFile << "TypeProc=мощности";
-//        spfFile << "Values=измеряемые";
-
-//        spfFile << (QString("TypeScale=")+(p.scaleType==0?QString("линейная"):QString("в децибелах")));
-//        spfFile << "AddProc=нет";
     }
     return spfFile;
 }

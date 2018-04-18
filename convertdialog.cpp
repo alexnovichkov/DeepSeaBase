@@ -61,13 +61,19 @@ CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> *dataBase
     progress->setRange(0, progressMax);
     progress->hide();
 
-    bandWidth = dynamic_cast<RawChannel *>(dataBase->first()->channel(0))->BandWidth;
+    RawChannel *raw = dynamic_cast<RawChannel *>(dataBase->first()->channel(0));
+    if (raw)
+        bandWidth = raw->BandWidth;
+    else
+        bandWidth = qRound(1.0 / dataBase->first()->channel(0)->xStep() / 2.56);
+
     for (int i=0; i<12; ++i) {
         if (bands[i]-bandWidth <= 0.01) {
             bandWidth = bands[i];
             break;
         }
     }
+
     double bw = bandWidth;
     for (int i=0; i<12; ++i) {
         activeStripCombo->addItem(QString::number(bw));
@@ -129,6 +135,7 @@ CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> *dataBase
 
     setLayout(l);
     methodCombo->setCurrentIndex(1);
+
 }
 
 CalculateSpectreDialog::~CalculateSpectreDialog()

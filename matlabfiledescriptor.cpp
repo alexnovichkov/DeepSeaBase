@@ -128,50 +128,69 @@ bool MatlabConvertor::convert()
             if (name == "Datasets") inDatasets = true;
             if (name == "Dataset" && inDatasets) {
                 Dataset set;
-                set.id = xml.attributes().value("Id").toString();
+                if (xml.attributes().hasAttribute("Id"))
+                    set.id = xml.attributes().value("Id").toString();
                 sets << set;
             }
             else if (name == "File" && inDatasets) {
-                sets.last().fileName = xml.attributes().value("Name").toString();
+                if (xml.attributes().hasAttribute("Name"))
+                    sets.last().fileName = xml.attributes().value("Name").toString();
             }
             else if (name == "Titles" && inDatasets) {
-                sets.last().titles.append(xml.attributes().value("Title1").toString());
-                sets.last().titles.append(xml.attributes().value("Title2").toString());
-                sets.last().titles.append(xml.attributes().value("Title3").toString());
+                if (xml.attributes().hasAttribute("Title1")) {
+                    sets.last().titles.append(xml.attributes().value("Title1").toString());
+                    sets.last().titles.append(xml.attributes().value("Title2").toString());
+                    sets.last().titles.append(xml.attributes().value("Title3").toString());
+                }
             }
             else if (name == "Date" && inDatasets) {
-                sets.last().date = xml.attributes().value("Date").toString();
-                sets.last().time = xml.attributes().value("Time").toString();
+                if (xml.attributes().hasAttribute("Date"))
+                    sets.last().date = xml.attributes().value("Date").toString();
+                if (xml.attributes().hasAttribute("Time"))
+                    sets.last().time = xml.attributes().value("Time").toString();
             }
             else if (name == "Channel" && inDatasets) {
                 XChannel c;
-                c.units = xml.attributes().value("name").toString();
-                c.logRef = xml.attributes().value("logref").toString().toDouble();
-                c.scale = xml.attributes().value("scale").toString().toDouble();
+                if (xml.attributes().hasAttribute("name"))
+                    c.units = xml.attributes().value("name").toString();
+                if (xml.attributes().hasAttribute("logref"))
+                    c.logRef = xml.attributes().value("logref").toString().toDouble();
+                if (xml.attributes().hasAttribute("scale"))
+                    c.scale = xml.attributes().value("scale").toString().toDouble();
                 sets.last().channels.append(c);
             }
             else if (name == "General" && inDatasets) {
-                sets.last().channels.last().generalName = xml.attributes().value("Name").toString();
-                sets.last().channels.last().catLabel = xml.attributes().value("CatLabel").toString();
+                if (xml.attributes().hasAttribute("Name"))
+                    sets.last().channels.last().generalName = xml.attributes().value("Name").toString();
+                if (xml.attributes().hasAttribute("CatLabel"))
+                    sets.last().channels.last().catLabel = xml.attributes().value("CatLabel").toString();
             }
             else if (name == "Sensor" && inDatasets) {
-                sets.last().channels.last().sensorId = xml.attributes().value("id").toString();
-                sets.last().channels.last().sensorSerial = xml.attributes().value("serial").toString();
-                sets.last().channels.last().sensorName = xml.attributes().value("name").toString();
+                if (xml.attributes().hasAttribute("id"))
+                    sets.last().channels.last().sensorId = xml.attributes().value("id").toString();
+                if (xml.attributes().hasAttribute("serial"))
+                    sets.last().channels.last().sensorSerial = xml.attributes().value("serial").toString();
+                if (xml.attributes().hasAttribute("name"))
+                    sets.last().channels.last().sensorName = xml.attributes().value("name").toString();
             }
             else if (name == "Xaxis" && inDatasets) {
                 sets.last().channels.last().fd = 1.0 / xml.attributes().value("Delta").toString().toDouble();
             }
             else if (name == "Description" && inDatasets && !sets.isEmpty() && !sets.last().channels.isEmpty()) {
-                sets.last().channels.last().chanUnits = xml.attributes().value("ChannelUnit").toString();
-                sets.last().channels.last().pointId = xml.attributes().value("PointID").toString();
-                sets.last().channels.last().direction = xml.attributes().value("Direction").toString();
+                if (xml.attributes().hasAttribute("ChannelUnit"))
+                    sets.last().channels.last().chanUnits = xml.attributes().value("ChannelUnit").toString();
+                if (xml.attributes().hasAttribute("PointID"))
+                    sets.last().channels.last().pointId = xml.attributes().value("PointID").toString();
+                if (xml.attributes().hasAttribute("Direction"))
+                    sets.last().channels.last().direction = xml.attributes().value("Direction").toString();
             }
             else if (name == "Information" && inDatasets) {
-                sets.last().channels.last().info << xml.attributes().value("Info1").toString();
-                sets.last().channels.last().info << xml.attributes().value("Info2").toString();
-                sets.last().channels.last().info << xml.attributes().value("Info3").toString();
-                sets.last().channels.last().info << xml.attributes().value("Info4").toString();
+                if (xml.attributes().hasAttribute("Info1")) {
+                    sets.last().channels.last().info << xml.attributes().value("Info1").toString();
+                    sets.last().channels.last().info << xml.attributes().value("Info2").toString();
+                    sets.last().channels.last().info << xml.attributes().value("Info3").toString();
+                    sets.last().channels.last().info << xml.attributes().value("Info4").toString();
+                }
             }
         }
         else if (xml.isEndElement()) {
@@ -181,10 +200,10 @@ bool MatlabConvertor::convert()
     if (xml.hasError()) {
         emit message(xml.errorString());
     }
-    emit message("Содержит следующие записи:");
-    foreach (const Dataset &dataset, sets) {
-        emit message(QString("%1: %2").arg(dataset.id).arg(dataset.fileName));
-    }
+//    emit message("Содержит следующие записи:");
+//    foreach (const Dataset &dataset, sets) {
+//        emit message(QString("%1: %2").arg(dataset.id).arg(dataset.fileName));
+//    }
 
 
     //Converting
@@ -194,12 +213,14 @@ bool MatlabConvertor::convert()
 
         emit message("Конвертируем файл "+fi.canonicalFilePath());
         QString xdfFileName = fi.canonicalFilePath();
+        QString xdfFileName1 = fi.canonicalFilePath();
         xdfFileName.replace(".mat",".xdf");
+        xdfFileName1.replace(".mat",".XDF");
 
         Dataset set;
         //search for the particular dataset
         foreach (const Dataset &s, sets) {
-            if (s.fileName == QFileInfo(xdfFileName).fileName()) {
+            if (s.fileName == QFileInfo(xdfFileName).fileName() || s.fileName == QFileInfo(xdfFileName1).fileName()) {
                 set = s;
                 break;
             }

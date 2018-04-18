@@ -57,7 +57,7 @@ QVector<T> readBlock(QDataStream *readStream, ulong itemCount, double scale)
         }
 
         *readStream >> v;
-        result[i] = T(v) /** scale*/;
+        result[i] = T(v) /* * scale*/;
     }
 
     return result;
@@ -287,11 +287,13 @@ public:
                 i++;
             }
         }
-//        int i=0;
-//        foreach (MChannel c, channels) {
-//            qDebug()<<"Channel"<<i++<<"type"<<c.dataType<<"length"<<c.size<<"xStart"<<c.xStart<<"xStep"<<c.xStep
-//                   <<"start"<<c.startPos;
-//        }
+        int i=0;
+        foreach (MChannel c, channels) {
+            qDebug()<<"Channel"<<i++<<"type"<<c.dataType
+                   <<"label" <<c.label
+                   <<"length"<<c.size<<"xStart"<<c.xStart<<"xStep"<<c.xStep
+                   <<"start"<<c.startPos;
+        }
     }
 
     QList<MChannel> channels;

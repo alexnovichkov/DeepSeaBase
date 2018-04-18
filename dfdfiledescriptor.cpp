@@ -6,6 +6,7 @@
 #include <QUuid>
 
 #include "logging.h"
+#include "algorithms.h"
 
 QString dataTypeDescription(int type)
 {DD;
@@ -712,155 +713,42 @@ FileDescriptor *DfdFileDescriptor::calculateThirdOctave()
         thirdOctDfd->dataDescription->data = this->dataDescription->data;
     }
 
-    // определяем верхнюю границу данных
-    const double F_min = this->XBegin;
-    const double Step_f = xStep();
-    const double F_max = F_min+Step_f*this->channels.first()->NumInd;
-
-    const double twothird = pow(2.0,1.0/3.0);
-    const double tenpow = pow(10.0, -1.4);
-    const double twosixth = pow(2.0,1.0/6.0);
-
-   // double f_lower = 0;
-    double f_upper = 0;
-    double f_median = 0;
-    int k_max = 52;
-    for (int k = 52; k>=0; --k) {
-        f_median = pow(10.0, 0.1 * k);
-       // f_lower = f_median / twosixth;
-        f_upper = f_median * twosixth;
-        if (f_upper <= F_max) {
-            k_max = k;
-            break;
-        }
-    }
-    if (f_median == 1) return thirdOctDfd;
-
-    k_max++;
-
-
-
-    QVector<double> xValues(k_max);
-    for (int k = 0; k < k_max; ++k)
-        xValues[k] = pow(10.0, 0.1*k);
-
-//    qDebug()<<"F_min"<<F_min;
-//    qDebug()<<"Step_f"<<Step_f;
-//    qDebug()<<"F_max"<<F_max;
-//    qDebug()<<"f_upper"<<f_upper;
-//    qDebug()<<"f_median"<<f_median;
-//    qDebug()<<"k_max"<<k_max;
-
     index=1;
     foreach (DfdChannel *ch, this->channels) {
         DfdChannel *newCh = new DfdChannel(thirdOctDfd,index++);
+
+        auto result = thirdOctave(ch->YValues, ch->xBegin(), ch->xStep());
 
         newCh->YName="дБ";
         newCh->ChanAddress=ch->ChanAddress;
         newCh->ChanName=ch->ChanName;
         newCh->YNameOld=ch->YName;
-        newCh->ChanBlockSize=xValues.size();
+        newCh->ChanBlockSize=result.first.size();
         newCh->IndType=3221225476;
         //BandWidth=1162346496
-        newCh->InputType=ch->InputType;
-        newCh->ChanDscr=ch->ChanDscr;
-        newCh->NumInd=xValues.size();
+        newCh->InputType = ch->InputType;
+        newCh->ChanDscr = ch->ChanDscr;
+        newCh->NumInd = newCh->ChanBlockSize;
         newCh->XName = thirdOctDfd->XName;
 
 
-        QVector<double> values(k_max);
-
-        for (int k = 0; k < k_max; ++k) {
-            // определяем диапазон в данном фильтре и число отсчетов для обработки
-            int i_min = -1;
-            int i_max = -1;
-            f_median = xValues.at(k);
-
-//            for (int i = 0; i<this->channels.first()->NumInd; ++i) {
-//                double f = F_min+i*Step_f;
-//                if (f/f_median>0.5) {
-//                    i_min = i;
-//                    break;
-//                }
-//            }
-//            for (int i = this->channels.first()->NumInd-1; i>=0; --i) {
-//                double f = F_min+i*Step_f;
-//                if (f/f_median<2) {
-//                    i_max = i;
-//                    break;
-//                }
-//            }
-            double f_lower = f_median / twosixth;
-            double f_upper = f_median * twosixth;
-
-            for (int i = 0; i<this->channels.first()->NumInd; ++i) {
-                double f = F_min+i*Step_f;
-                if (std::abs(f-f_lower) <= Step_f) {
-                    i_min = i;
-                    break;
-                }
-            }
-            for (int i = this->channels.first()->NumInd-1; i>=0; --i) {
-                double f = F_min+i*Step_f;
-                if (std::abs(f-f_upper) <= Step_f) {
-                    i_max = i;
-                    break;
-                }
-            }
-
-//            qDebug()<<"  k"<<k;
-//            qDebug()<<"i_min"<<i_min;
-//            qDebug()<<"i_max"<<i_max;
-//            qDebug()<<"f_median"<<f_median;
-
-            int steps = i_max - i_min + 1;
-            double sum_i = 0.0;
-            if (steps >= 5) {
-                for (int i = i_min; i <= i_max; ++i) {
-                    double L = ch->YValues.at(i);
-                    double ratio = (F_min+i*Step_f)/f_median;
-                    double coef = 1.0;
-                    if (ratio>0.5 && ratio<=(1.0/twothird))
-                        coef = tenpow/(1.0/twothird-0.5)*(ratio-0.5);
-                    else if (ratio>(1.0/twothird) && ratio<=(1.0/twosixth))
-                        coef = (1.0-tenpow)/(1.0/twosixth-1.0/twothird)*(ratio - 1.0/twothird)+tenpow;
-                    else if (ratio>twosixth && ratio<=twothird)
-                        coef = (tenpow-1.0)/(twothird-twosixth)*(ratio - twosixth)+1.0;
-                    else if (ratio>twothird && ratio<=2)
-                        coef = tenpow/(twothird-2.0)*(ratio-twothird)+tenpow;
-                    Q_ASSERT(coef>0);
-                    L = L*coef;
-
-                    sum_i += pow(10.0, (L / 10.0));
-                }
-            }
-            else {
-                for (int i = i_min; i <= i_max; ++i) {
-                    double L = ch->YValues.at(i);
-                    sum_i += pow(10.0, (L / 10.0));
-                }
-            }
-            values[k] = 10.0 * log(sum_i) / log(10.0);
-        }
-        //qDebug()<<values;
-        newCh->setYValues(values);
-        newCh->setXValues(xValues);
+        newCh->setYValues(result.second);
+        newCh->setXValues(result.first);
         newCh->setPopulated(true);
 
         thirdOctDfd->channels.append(newCh);
-        //qDebug()<<values;
     }
 
     DfdChannel *newCh = new DfdChannel(thirdOctDfd,0);
 
     newCh->YName="Гц";
     newCh->ChanName="ось X";
-    newCh->ChanBlockSize=xValues.size();
+    newCh->ChanBlockSize=thirdOctDfd->channels.last()->XValues.size();
     newCh->IndType=3221225476;
     newCh->XName = thirdOctDfd->XName;
-    newCh->setYValues(xValues);
-    newCh->setXValues(xValues);
-    newCh->NumInd=xValues.size();
+    newCh->setYValues(thirdOctDfd->channels.last()->XValues);
+    newCh->setXValues(thirdOctDfd->channels.last()->XValues);
+    newCh->NumInd=newCh->ChanBlockSize;
     newCh->setPopulated(true);
 
 //    qDebug()<<xValues;
@@ -868,7 +756,7 @@ FileDescriptor *DfdFileDescriptor::calculateThirdOctave()
 
     thirdOctDfd->channels.prepend(newCh);
     thirdOctDfd->NumChans = thirdOctDfd->channels.size();
-    thirdOctDfd->setSamplesCount(xValues.size());
+    thirdOctDfd->setSamplesCount(thirdOctDfd->channels.last()->XValues.size());
 
     thirdOctDfd->setChanged(true);
     thirdOctDfd->setDataChanged(true);

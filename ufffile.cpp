@@ -3,7 +3,7 @@
 //#include <QtGui>
 #include "logging.h"
 #include "mainwindow.h"
-
+#include "algorithms.h"
 
 QList<AbstractField*> fields = {
     new DelimiterField,
@@ -514,87 +514,16 @@ FileDescriptor *UffFileDescriptor::calculateThirdOctave()
     foreach (Function *ch, this->channels) {
         Function *newCh = new Function(*ch);
 
-        // определяем верхнюю границу данных
-        const double F_min = ch->xBegin();
-        const double Step_f = xStep();
-        const double F_max = F_min + Step_f * ch->samplesCount();
+        auto result = thirdOctave(ch->yValues(), ch->xBegin(), ch->xStep());
 
-
-        double f_upper = 0;
-        double f_median = 0;
-        int k_max = 52;
-        for (int k = 52; k>=0; --k) {
-            f_median = pow(10.0, 0.1 * k);
-            f_upper = f_median * pow(2.0, (1.0 / 6.0));
-            if (f_upper <= F_max) {
-                k_max = k;
-                break;
-            }
-        }
-        if (f_median == 1) return thirdOctUff;
-
-        const double twothird = pow(2.0,1.0/3.0);
-        const double tenpow = pow(10.0, -1.4);
-        const double twosixth = pow(2.0,1.0/6.0);
-
-        QVector<double> xValues(k_max+1);
-        for (int k = 0; k<=k_max; ++k)
-            xValues[k] = pow(10.0, 0.1*k);
-
-        QVector<double> values(k_max+1);
-
-        for (int k = 0; k<=k_max; ++k) {
-            // определяем диапазон в данном фильтре и число отсчетов для обработки
-            int i_min = -1;
-            int i_max = -1;
-            f_median = xValues.at(k);
-
-            for (quint32 i = 0; i<ch->samples; ++i) {
-                double f = F_min+i*Step_f;
-                if (f/f_median>0.5) {
-                    i_min = i;
-                    break;
-                }
-            }
-            for (quint32 i = ch->samples-1; i>=0; --i) {
-                double f = F_min+i*Step_f;
-                if (f/f_median<2) {
-                    i_max = i;
-                    break;
-                }
-            }
-
-            int steps = i_max - i_min + 1;
-            if (steps >= 5) {
-                double sum_i = 0;
-                for (int i = i_min; i <= i_max; ++i) {
-                    double L = ch->values.at(i);
-                    double ratio = (F_min+i*Step_f)/f_median;
-                    double coef = 1.0;
-                    if (ratio>0.5 && ratio<=(1.0/twothird))
-                        coef = tenpow/(1.0/twothird-0.5)*(ratio-0.5);
-                    else if (ratio>(1.0/twothird) && ratio<=(1.0/twosixth))
-                        coef = (1.0-tenpow)/(1.0/twosixth-1.0/twothird)*(ratio - 1.0/twothird)+tenpow;
-                    else if (ratio>twosixth && ratio<=twothird)
-                        coef = (tenpow-1.0)/(twothird-twosixth)*(ratio - twosixth)+1.0;
-                    else if (ratio>twothird && ratio<=2)
-                        coef = tenpow/(twothird-2.0)*(ratio-twothird)+tenpow;
-                    Q_ASSERT(coef>0);
-                    L = L*coef;
-
-                    sum_i = sum_i + pow(10.0, (L / 10.0));
-                }
-                values[k] = 10.0 * log(sum_i) / log(10.0);
-            }
-        }
-        newCh->xvalues = xValues;
-        newCh->values = values;
+        newCh->xvalues = result.first;
+        newCh->values = result.second;
         newCh->setPopulated(true);
 
-        newCh->samples = xValues.size();
-        newCh->xMax = xValues.last();
-        newCh->yMin = *(std::min_element(values.begin(), values.end()));
-        newCh->yMax = *(std::max_element(values.begin(), values.end()));
+        newCh->samples = newCh->xvalues.size();
+        newCh->xMax = newCh->xvalues.last();
+        newCh->yMin = *(std::min_element(newCh->values.begin(), newCh->values.end()));
+        newCh->yMax = *(std::max_element(newCh->values.begin(), newCh->values.end()));
 
         newCh->parent = thirdOctUff;
 
@@ -605,8 +534,8 @@ FileDescriptor *UffFileDescriptor::calculateThirdOctave()
     //                                       4 - real, double precision
     //                                       5 - complex, single precision
     //                                       6 - complex, double precision
-        newCh->type58[26].value = xValues.size(); //26   Number of data pairs for uneven abscissa spacing,
-                                                  //  or number of data values for even abscissa spacing
+        newCh->type58[26].value = newCh->samples; //26   Number of data pairs for uneven abscissa spacing,
+                                           //  or number of data values for even abscissa spacing
         newCh->type58[27].value = 0; //27 Abscissa Spacing (1=even, 0=uneven,
         newCh->type58[28].value = 0.0; //28 Abscissa minimum
         newCh->type58[29].value = 0.0; //29 Abscissa increment

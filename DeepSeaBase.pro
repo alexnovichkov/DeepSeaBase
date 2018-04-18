@@ -46,7 +46,8 @@ SOURCES += main.cpp\
     esoconverterdialog.cpp \
     uffconverterdialog.cpp \
     trackingpanel.cpp \
-    methods/octavemethod.cpp
+    methods/octavemethod.cpp \
+    algorithms.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -83,7 +84,8 @@ HEADERS  += mainwindow.h \
     uffconverterdialog.h \
     trackingpanel.h \
     uffheaders.h \
-    methods/octavemethod.h
+    methods/octavemethod.h \
+    algorithms.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\
