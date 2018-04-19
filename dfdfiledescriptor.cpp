@@ -417,11 +417,13 @@ void DfdFileDescriptor::setDataDescriptor(const DescriptionList &data)
 {
     if (dataDescription) {
         if (dataDescription->data == data) return;
-
-        dataDescription->data = data;
-        setChanged(true);
-        write();
     }
+    else
+        dataDescription = new DataDescription(this);
+
+    dataDescription->data = data;
+    setChanged(true);
+    write();
 }
 
 void DfdFileDescriptor::setXStep(const double xStep)
