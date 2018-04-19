@@ -7,6 +7,7 @@
 
 #include "logging.h"
 #include "algorithms.h"
+#include "dfdsettings.h"
 
 QString dataTypeDescription(int type)
 {DD;
@@ -200,30 +201,32 @@ DfdFileDescriptor::~DfdFileDescriptor()
 
 void DfdFileDescriptor::read()
 {DD;
-    static const QSettings::Format dfdFormat = QSettings::registerFormat("DFD", readDfdFile, writeDfdFile);
+    //static const QSettings::Format dfdFormat = QSettings::registerFormat("DFD", readDfdFile, writeDfdFile);
 
-    QSettings dfd(fileName(),dfdFormat);
+    //QSettings dfd(fileName(),dfdFormat);
+    DfdSettings dfd(fileName());
+    dfd.read();
 
     QStringList childGroups = dfd.childGroups();
 
     //[DataFileDescriptor]
-    dfd.beginGroup("DataFileDescriptor");
-    rawFileName = dfd.value("DataReference").toString();
+    //dfd.beginGroup("DataFileDescriptor");
+    rawFileName = dfd.value("DataFileDescriptor/DataReference");
     if (rawFileName.isEmpty())
         rawFileName = fileName().left(fileName().length()-4)+".raw";
-    DFDGUID =   dfd.value("DFDGUID").toString();
-    DataType =  DfdDataType(dfd.value("DataType").toInt());
-    Date =      QDate::fromString(dfd.value("Date").toString(),"dd.MM.yyyy");
-    Time =      QTime::fromString(dfd.value("Time").toString(),"hh:mm:ss");
-    NumChans =  dfd.value("NumChans").toInt(); //DebugPrint(NumChans);
-    setSamplesCount(dfd.value("NumInd").toUInt());      //DebugPrint(NumInd);
-    BlockSize = dfd.value("BlockSize").toInt();   //DebugPrint(BlockSize);
-    XName = dfd.value("XName").toString();  //DebugPrint(XName);
-    XBegin = hextodouble(dfd.value("XBegin").toString());   //DebugPrint(XBegin);
-    XStep = hextodouble(dfd.value("XStep").toString()); //DebugPrint(XStep);
-    DescriptionFormat = dfd.value("DescriptionFormat").toString(); //DebugPrint(DescriptionFormat);
-    CreatedBy = dfd.value("CreatedBy").toString(); //DebugPrint(CreatedBy);
-    dfd.endGroup();
+    DFDGUID =   dfd.value("DataFileDescriptor/DFDGUID");
+    DataType =  DfdDataType(dfd.value("DataFileDescriptor/DataType").toInt());
+    Date =      QDate::fromString(dfd.value("DataFileDescriptor/Date"),"dd.MM.yyyy");
+    Time =      QTime::fromString(dfd.value("DataFileDescriptor/Time"),"hh:mm:ss");
+    NumChans =  dfd.value("DataFileDescriptor/NumChans").toInt(); //DebugPrint(NumChans);
+    setSamplesCount(dfd.value("DataFileDescriptor/NumInd").toUInt());      //DebugPrint(NumInd);
+    BlockSize = dfd.value("DataFileDescriptor/BlockSize").toInt();   //DebugPrint(BlockSize);
+    XName = dfd.value("DataFileDescriptor/XName");  //DebugPrint(XName);
+    XBegin = hextodouble(dfd.value("DataFileDescriptor/XBegin"));   //DebugPrint(XBegin);
+    XStep = hextodouble(dfd.value("DataFileDescriptor/XStep")); //DebugPrint(XStep);
+    DescriptionFormat = dfd.value("DataFileDescriptor/DescriptionFormat"); //DebugPrint(DescriptionFormat);
+    CreatedBy = dfd.value("DataFileDescriptor/CreatedBy"); //DebugPrint(CreatedBy);
+    //dfd.endGroup();
 
     if (DataType == OSpectr || DataType == ToSpectr) XName = "Гц";
 
@@ -861,24 +864,16 @@ Process::Process()
 
 }
 
-void Process::read(QSettings &dfd)
+void Process::read(DfdSettings &dfd)
 {DD;
-    dfd.beginGroup("Process");
-    QStringList keys = dfd.childKeys();
-    foreach (QString key, keys) {
-        QString v = dfd.value(key).toString();
-        data.append(QPair<QString, QString>(key, v));
-    }
-
-    dfd.endGroup();
+    data = dfd.values("Process");
 }
 
 void Process::write(QTextStream &dfd)
 {DD;
     dfd << "[Process]" << endl;
-    for (int i = 0; i<data.size(); ++i) {
-        QPair<QString, QString> item = data.at(i);
-        dfd << item.first << "=" << item.second << endl;
+    foreach (const DescriptionEntry &entry, data) {
+        dfd << entry.first << "=" << entry.second << endl;
     }
 }
 
@@ -892,25 +887,21 @@ QString Process::value(const QString &key)
 }
 
 
-void Source::read(QSettings &dfd)
+void Source::read(DfdSettings &dfd)
 {DD;
-    dfd.beginGroup("Sources");
-    sFile = dfd.value("sFile").toString();
+    sFile = dfd.value("Sources/sFile");
     if (!sFile.isEmpty()) {
         //K:\Лопасть_В3_бш_20кГц.DFD[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19],{7FD333E3-9A20-2A3E-A9443EC17B134848}
         File = sFile.section("[",0,0);
         QStringList procChansList = sFile.section("[",1).section("]",0,0).split(",");
         foreach (QString s, procChansList) ProcChansList << s.toInt();
         DFDGUID = "{"+sFile.section("{",1);
-        dfd.endGroup();
     }
     else {
-        dfd.beginGroup("Source");
-        File = dfd.value("File").toString();
-        DFDGUID = dfd.value("DFDGUID").toString();
-        Date=QDate::fromString(dfd.value("Date").toString(),"dd.MM.yyyy");
-        Time=QTime::fromString(dfd.value("Time").toString(),"hh:mm:ss");
-        dfd.endGroup();
+        File = dfd.value("Source/File");
+        DFDGUID = dfd.value("Source/DFDGUID");
+        Date=QDate::fromString(dfd.value("Source/Date"),"dd.MM.yyyy");
+        Time=QTime::fromString(dfd.value("Source/Time"),"hh:mm:ss");
     }
 }
 
@@ -1021,19 +1012,20 @@ DfdChannel::~DfdChannel()
     //delete [] YValues;
 }
 
-void DfdChannel::read(QSettings &dfd, int chanIndex)
+void DfdChannel::read(DfdSettings &dfd, int chanIndex)
 {DD;
-    dfd.beginGroup(QString("Channel%1").arg(chanIndex));
-    ChanAddress = dfd.value("ChanAddress").toString();
-    ChanName = dfd.value("ChanName").toString();
-    IndType = dfd.value("IndType").toUInt();
-    ChanBlockSize = dfd.value("ChanBlockSize").toInt();
+    QString group = QString("Channel%1/").arg(chanIndex);
 
-    YName = dfd.value("YName").toString();
-    YNameOld = dfd.value("YNameOld").toString();
-    InputType = dfd.value("InputType").toString();
-    ChanDscr = dfd.value("ChanDscr").toString();
-    dfd.endGroup();
+    ChanAddress = dfd.value(group+"ChanAddress");
+    ChanName = dfd.value(group+"ChanName");
+    IndType = dfd.value(group+"IndType").toUInt();
+    ChanBlockSize = dfd.value(group+"ChanBlockSize").toInt();
+
+    YName = dfd.value(group+"YName");
+    YNameOld = dfd.value(group+"YNameOld");
+    InputType = dfd.value(group+"InputType");
+    ChanDscr = dfd.value(group+"ChanDscr");
+
     if (parent->BlockSize==0)
         NumInd = ChanBlockSize;
     else {
@@ -1460,19 +1452,19 @@ void DfdChannel::addCorrection(double correctionValue, bool writeToFile)
                 +QString::number(correctionValue));
 }
 
-void RawChannel::read(QSettings &dfd, int chanIndex)
+void RawChannel::read(DfdSettings &dfd, int chanIndex)
 {DD;
     DfdChannel::read(dfd,chanIndex);
-    dfd.beginGroup(QString("Channel%1").arg(chanIndex));
-    ADC0 = hextodouble( dfd.value("ADC0").toString()); //qDebug()<<"ADC0" << ch.adc0;
-    ADCStep = hextodouble(dfd.value("ADCStep").toString()); //qDebug()<< "ADCStep"<< ch.adcStep;
-    AmplShift = hextodouble(dfd.value("AmplShift").toString()); //qDebug()<<"AmplShift" <<ch.amplShift ;
-    AmplLevel = hextodouble(dfd.value("AmplLevel").toString()); //qDebug()<< "AmplLevel"<<ch.amplLevel ;
-    Sens0Shift = hextodouble(dfd.value("Sens0Shift").toString()); //qDebug()<< "Sens0Shift"<<ch.sens0Shift ;
-    SensSensitivity = hextodouble(dfd.value("SensSensitivity").toString()); //qDebug()<< "SensSensitivity"<<ch.sensSensitivity ;
-    BandWidth = hextofloat(dfd.value("BandWidth").toString()); //qDebug()<< "BandWidth"<< ch.bandwidth;
-    SensName = dfd.value("SensName").toString();
-    dfd.endGroup();
+    QString group = QString("Channel%1/").arg(chanIndex);
+
+    ADC0 = hextodouble( dfd.value(group+"ADC0")); //qDebug()<<"ADC0" << ch.adc0;
+    ADCStep = hextodouble(dfd.value(group+"ADCStep")); //qDebug()<< "ADCStep"<< ch.adcStep;
+    AmplShift = hextodouble(dfd.value(group+"AmplShift")); //qDebug()<<"AmplShift" <<ch.amplShift ;
+    AmplLevel = hextodouble(dfd.value(group+"AmplLevel")); //qDebug()<< "AmplLevel"<<ch.amplLevel ;
+    Sens0Shift = hextodouble(dfd.value(group+"Sens0Shift")); //qDebug()<< "Sens0Shift"<<ch.sens0Shift ;
+    SensSensitivity = hextodouble(dfd.value(group+"SensSensitivity")); //qDebug()<< "SensSensitivity"<<ch.sensSensitivity ;
+    BandWidth = hextofloat(dfd.value(group+"BandWidth")); //qDebug()<< "BandWidth"<< ch.bandwidth;
+    SensName = dfd.value(group+"SensName");
 
     coef1 = ADCStep / AmplLevel / SensSensitivity;
     coef2 = (ADC0 / AmplLevel - AmplShift - Sens0Shift) / SensSensitivity;
@@ -1571,23 +1563,22 @@ DataDescription::DataDescription(DfdFileDescriptor *parent) : parent(parent)
 
 }
 
-void DataDescription::read(QSettings &dfd)
+void DataDescription::read(DfdSettings &dfd)
 {DD;
-    dfd.beginGroup("DataDescription");
-    QStringList keys = dfd.childKeys();
-    foreach (QString key, keys) {
-        QString v = dfd.value(key).toString();
+    DescriptionList list = dfd.values("DataDescription");
+
+    foreach (DescriptionEntry entry, list) {
+        QString v = entry.second;
         if (v.startsWith("\"")) v.remove(0,1);
         if (v.endsWith("\"")) v.chop(1);
         v = v.trimmed();
         if (!v.isEmpty()) {
-            if (key == "Legend")
+            if (entry.first == "Legend")
                 parent->_legend = v;
             else
-                data.append(DescriptionEntry(key, v));
+                data.append(DescriptionEntry(entry.first, v));
         }
     }
-    dfd.endGroup();
 }
 
 void DataDescription::write(QTextStream &dfd)

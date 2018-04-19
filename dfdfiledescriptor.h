@@ -111,6 +111,7 @@ QString dataTypeDescription(int type);
 
 
 class DfdFileDescriptor;
+class DfdSettings;
 
 class DfdChannel : public Channel
 {
@@ -125,7 +126,7 @@ public:
     virtual Descriptor::DataType type() const;
     virtual Descriptor::OrdinateFormat yFormat() const;
 
-    virtual void read(QSettings &dfd, int chanIndex);
+    virtual void read(DfdSettings &dfd, int chanIndex);
     virtual void write(QTextStream &dfd, int chanIndex);
     virtual QStringList getInfoHeaders();
     virtual QStringList getInfoData();
@@ -230,7 +231,7 @@ public:
           BandWidth(0.0)
     {}
     virtual ~RawChannel() {}
-    virtual void read(QSettings &dfd, int chanIndex);
+    virtual void read(DfdSettings &dfd, int chanIndex);
     virtual void write(QTextStream &dfd, int chanIndex);
     virtual QStringList getInfoHeaders();
     virtual QStringList getInfoData();
@@ -255,7 +256,7 @@ class Source
 public:
     /** [Source] */
     /** [Sources] */
-    void read(QSettings &dfd);
+    void read(DfdSettings &dfd);
     void write(QTextStream &dfd);
     QString File; // название файла источника
     QString DFDGUID; // GUID файла источника
@@ -271,7 +272,7 @@ class Process
 public:
     /** [Process] */
     Process();
-    void read(QSettings &dfd);
+    void read(DfdSettings &dfd);
     void write(QTextStream &dfd);
     QString value(const QString &key);
     DescriptionList data;
@@ -281,7 +282,7 @@ class DataDescription
 {
 public:
     DataDescription(DfdFileDescriptor *parent);
-    void read(QSettings &dfd);
+    void read(DfdSettings &dfd);
     void write(QTextStream &dfd);
     QString toString() const;
     DescriptionList data;
