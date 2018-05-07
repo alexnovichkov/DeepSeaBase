@@ -3,7 +3,7 @@
 
 double threshold(const QString &name)
 {
-    if (name=="м/с2" || name=="м/с^2" || name=="м/с*2" || name=="m/s2" || name=="m/s^2") return 3.16e-4;
+    if (name=="м/с2" || name=="м/с^2" || name=="м/с*2" || name=="m/s2" || name=="m/s^2") return 3.14e-4;
     if (name=="Па" || name=="Pa" || name=="hPa" || name=="kPa" || name=="MPa"
         || name=="N/m2" || name=="N/mm2") return 2.0e-5;
     if (name=="м/с" || name=="m/s") return 5.0e-8;

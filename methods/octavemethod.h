@@ -23,6 +23,7 @@ public:
     virtual int panelType();
     virtual QString methodName();
     virtual int dataType();
+    virtual DescriptionList processData(const Parameters &p);
 
 private:
     QSpinBox *resolutionSpin;//мин. количество отсчетов 512, 1024, 2048, 4096, 8192

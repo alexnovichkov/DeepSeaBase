@@ -23,6 +23,7 @@ public:
     virtual int panelType();
     virtual QString methodName();
     virtual int dataType();
+    virtual DescriptionList processData(const Parameters &p);
 private:
     int computeNumberOfAveraging(const QString &aver);
 //    QComboBox *rangeCombo;

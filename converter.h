@@ -9,6 +9,7 @@ class QProcess;
 class AbstractMethod;
 class DfdFileDescriptor;
 class UffFileDescriptor;
+class DfdChannel;
 
 void applyWindow(QVector<float> &values, const Parameters &p);
 QVector<double> FFTAnalysis(const QVector<float> &AVal);
@@ -21,9 +22,7 @@ QVector<QPair<double, double> > transferFunctionH1Complex(const QVector<double> 
                                                           const QVector<QPair<double, double> > &values2, const Parameters &p);
 void changeScale(QVector<double> &output, const Parameters &p);
 void average(QVector<double> &result, const QVector<double> &input, const Parameters &p, int averagesMade);
-
 int uffWindowType(int dfdWindowType);
-QString averaging(int avgType);
 int uffMethodFromDfdMethod(int methodId);
 
 class Converter : public QObject
@@ -51,7 +50,7 @@ private:
     void finalize();
     DfdFileDescriptor *createNewDfdFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p);
     UffFileDescriptor *createNewUffFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p);
-    void addDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd,
+    DfdChannel *addDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd,
                        const QVector<double> &spectrum, Parameters &p, int i);
     void addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd,
                        const QVector<QPair<double, double> > &spectrum, Parameters &p, int i);

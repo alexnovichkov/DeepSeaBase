@@ -7,6 +7,7 @@
 #include "converters.h"
 #include "windowing.h"
 #include "samplerate.h"
+#include "octavefilterbank.h"
 
 class Filter
 {
@@ -141,7 +142,8 @@ void Converter::start()
     }
     if (blockSizeIs1) {
         p.useDeepSea = true;
-        emit message("Размер блока в одном из файлов равен 1, для расчета будет использован DeepSea.");
+        emit message("Размер блока в одном из файлов равен 1. Это затрудняет"
+                     " чтение данных, поэтому для расчета будет использован DeepSea.");
     }
     if (p.saveAsComplex && p.useDeepSea) {
         emit message("DeepSea не умеет сохранять комплексные результаты. Уберите одну из галок");
@@ -239,6 +241,7 @@ DfdFileDescriptor *Converter::createNewDfdFile(const QString &fileName, DfdFileD
 
     newDfd->fillPreliminary(dataTypefromDfdDataType(DfdDataType(p.method->dataType())));
     newDfd->BlockSize = 0;
+    newDfd->DataType = DfdDataType(p.method->dataType());
 
     // [DataDescription]
     if (dfd->dataDescription) {
@@ -254,11 +257,7 @@ DfdFileDescriptor *Converter::createNewDfdFile(const QString &fileName, DfdFileD
 
     // [Process]
     newDfd->process = new Process();
-    newDfd->process->data.append({"PName", p.methodName});
-    newDfd->process->data.append({"BlockIn", QString::number(p.blockSize)});
-    newDfd->process->data.append({"Wind", p.windowDescription()});
-    newDfd->process->data.append({"TypeAver", averaging(p.averagingType)});
-    newDfd->process->data.append({"pTime","(0000000000000000)"});
+    newDfd->process->data = p.method->processData(p);
 
     // rest
     newDfd->XName = "Гц";
@@ -285,7 +284,8 @@ UffFileDescriptor *Converter::createNewUffFile(const QString &fileName, DfdFileD
     return newUff;
 }
 
-void Converter::addDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
+DfdChannel * Converter::addDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd,
+                                      const QVector<double> &spectrum, Parameters &p, int i)
 {DD;
     DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
     ch->XStep = newDfd->XStep;
@@ -310,7 +310,8 @@ void Converter::addDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd,
 //        ch->YMinInitial = ch->yMin;
 //        ch->YMaxInitial = ch->yMax;
 
-    newDfd->channels << ch;
+//    newDfd->channels << ch;
+    return ch;
 }
 
 void Converter::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, const QVector<QPair<double, double> > &spectrum, Parameters &p, int i)
@@ -508,16 +509,6 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
     newFiles_.removeAll(filtered.first());
 }
 
-QString averaging(int avgType)
-{
-    switch (avgType) {
-        case 0: return "линейное";
-        case 1: return "экспоненциальное";
-        case 2: return "хранение максимума";
-    }
-    return "";
-}
-
 QVector<float> getBlock(const QVector<float> &values, const quint32 blockSize, const quint32 stepBack, quint32 &block)
 {
     QVector<float> output;
@@ -622,6 +613,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
 
 
     p.sampleRate = 1.0 / dfd->XStep;
+//    qDebug()<<"p.sampleRate"<<p.sampleRate;
     p.bandStrip = stripByBandwidth(p.sampleRate / 2.56, p);
 
     p.averagesCount = int(1.0 * dfd->channels[0]->samplesCount() / p.blockSize / (1.0 - p.overlap));
@@ -631,6 +623,12 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
     if (p.baseChannel>=dfd->channelsCount()) p.baseChannel = dfd->channelsCount()-1;
 
 
+//    dfd->channels[0]->populateFloat();
+//    OctaveFilterBank filtBank;
+//    QVector<double> xVals;
+//    auto result = filtBank.compute(dfd->channels[0]->floatValues, p.sampleRate, xVals);
+//    qDebug()<<"result"<<result << "xVals"<<xVals;
+//    return false;
 
     /** 1. Создаем конечный файл и копируем в него всю информацию из dfd */
     QString fileName = createUniqueFileName(tempFolderName, dfd->fileName(), p.methodDll, p.saveAsComplex);
@@ -641,6 +639,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
     UffFileDescriptor *newUff = 0;
     if (p.saveAsComplex) newUff = createNewUffFile(fileName, dfd, p);
 
+    QVector<double> xVals;
 
     if (p.baseChannel>=0) dfd->channels[p.baseChannel]->populateFloat();
     for (int i=0; i<dfd->channelsCount(); ++i) {
@@ -740,27 +739,19 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
                 averageComplex(averagedSpectre, coSpectr, p, averagesMade++);
             }
             spectrumComplex = transferFunctionH1Complex(averagedBaseSpectre, averagedSpectre, p);
-//            const double t2 = threshold(dfd->channels[p.baseChannel]->yName()) / p.threshold;
+            const double t2 = threshold(dfd->channels[p.baseChannel]->yName()) / p.threshold;
 //            for (int i=0; i<spectrum.size(); ++i)
 //                spectrum[i] = 20 * log10(spectrum[i] * t2);
         }
         if (p.method->id()==18) {//октавный спектр
-            while (1) {
-                QVector<float> chunk = getBlock(dfd->channels[i]->floatValues, newBlockSize, stepBack, block);
+            OctaveFilterBank filtBank(p);
 
-                if (chunk.size() < p.blockSize) break;
-
-                filtered = filter.process(chunk);
-                applyWindow(filtered, p);
-                QVector<double> out = powerSpectre(filtered, p);
-                average(spectrum, out, p, averagesMade++);
-            }
-            changeScale(spectrum, p);
+            spectrum = filtBank.compute(dfd->channels[i]->floatValues, p.sampleRate, xVals);
         }
 
         // Создаем канал и заполняем его
         if (newDfd) {
-            addDfdChannel(newDfd, dfd, spectrum, p, i);
+            newDfd->channels << addDfdChannel(newDfd, dfd, spectrum, p, i);
         }
         if (newUff) {
             if (p.saveAsComplex)
@@ -777,6 +768,16 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
         dfd->channels[p.baseChannel]->floatValues.clear();
 
     if (newDfd) {
+        if (p.method->id()==18 && !xVals.isEmpty()) {
+            newDfd->channels.prepend(addDfdChannel(newDfd, dfd, xVals, p, 0));
+            newDfd->channels.first()->ChanName = "ось X";
+            newDfd->channels.first()->YName = "Гц";
+            for (int i=0; i<newDfd->channelsCount(); ++i) {
+                newDfd->channels[i]->channelIndex=i;
+            }
+            newDfd->XName = "№№ полос";
+            newDfd->XStep = 0.0;
+        }
         newDfd->NumChans = newDfd->channels.size();
         newDfd->setSamplesCount(newDfd->channel(0)->samplesCount());
         newDfd->setChanged(true);

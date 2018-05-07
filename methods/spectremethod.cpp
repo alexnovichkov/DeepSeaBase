@@ -200,3 +200,14 @@ int SpectreMethod::dataType()
     if (typeCombo->currentText()=="плотности мощн.") return 129;
     return 128;
 }
+
+DescriptionList SpectreMethod::processData(const Parameters &p)
+{
+    DescriptionList list;
+    list.append({"PName", p.methodName});
+    list.append({"BlockIn", QString::number(p.blockSize)});
+    list.append({"Wind", p.windowDescription()});
+    list.append({"TypeAver", p.averaging(p.averagingType)});
+    list.append({"pTime","(0000000000000000)"});
+    return list;
+}

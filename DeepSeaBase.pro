@@ -48,7 +48,8 @@ SOURCES += main.cpp\
     trackingpanel.cpp \
     methods/octavemethod.cpp \
     algorithms.cpp \
-    dfdsettings.cpp
+    dfdsettings.cpp \
+    octavefilterbank.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -87,7 +88,8 @@ HEADERS  += mainwindow.h \
     uffheaders.h \
     methods/octavemethod.h \
     algorithms.h \
-    dfdsettings.h
+    dfdsettings.h \
+    octavefilterbank.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\

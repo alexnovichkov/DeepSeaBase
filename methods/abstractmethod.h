@@ -7,6 +7,8 @@
 class DfdFileDescriptor;
 class Parameters;
 
+#include "filedescriptor.h"
+
 class AbstractMethod
 {
 public:
@@ -19,6 +21,8 @@ public:
     virtual int dataType() = 0;
     //virtual QStringList settings(DfdFileDescriptor *dfd, int bandStrip) = 0;
     virtual Parameters parameters() = 0;
+    virtual DescriptionList processData(const Parameters &p) = 0;
+
 };
 
 struct Parameters
@@ -74,6 +78,15 @@ struct Parameters
             case 3: return "Хемминга";
             case 4: return "Натолл";
             case 5: return "Гаусс";
+        }
+        return "";
+    }
+
+    QString averaging(int avgType) const {
+        switch (avgType) {
+            case 0: return "линейное";
+            case 1: return "экспоненциальное";
+            case 2: return "хранение максимума";
         }
         return "";
     }

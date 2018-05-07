@@ -1260,7 +1260,6 @@ void DfdChannel::populateFloat()
     floatValues.clear();
 
     QFile rawFile(parent->attachedFileName());
-    bool allFile = rawFile.size() < 256 * 1024 * 1024;
 
     if (rawFile.open(QFile::ReadOnly)) {
         QDataStream readStream(&rawFile);
@@ -1268,53 +1267,31 @@ void DfdChannel::populateFloat()
         if (IndType==0xC0000004)
             readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-        if (parent->BlockSize == 0) {// без перекрытия, читаем подряд весь канал
-            for (int i=0; i<parent->NumChans; ++i) {
-                if (i==channelIndex) {
-                    if (QThread::currentThread()->isInterruptionRequested()) return;
+        quint32 actuallyRead = 0;
 
-                    floatValues = getValue<float>(readStream, ChanBlockSize, IndType);
-                    if (RawChannel *rawc = dynamic_cast<RawChannel*>(this)) {
-                        for (int k=0; k < floatValues.size(); ++k)
-                            floatValues[k] = floatValues[k]*rawc->coef1+rawc->coef2;
-                    }
-                }
-                else {
-                    readStream.skipRawData(parent->channels.at(i)->blockSizeInBytes());
-                }
-            }
-        }
-        else {//с перекрытием, сначала читаем блок данных в 2048 отчетов для всех каналов
-            // если каналы имеют разный размер блоков, этот метод даст сбой
-            quint32 actuallyRead = 0;
+        quint32 chunkSize = ChanBlockSize * parent->channelsCount();
 
-            while (1) {
-                if (QThread::currentThread()->isInterruptionRequested()) return;
+        while (1) {
+            if (QThread::currentThread()->isInterruptionRequested()) return;
 
-                quint32 chunkSize = parent->channelsCount() * ChanBlockSize;
-                QVector<float> temp = getValue<float>(readStream, chunkSize, IndType, &actuallyRead);
+            QVector<float> temp = getValue<float>(readStream, chunkSize, IndType, &actuallyRead);
 
-                //распихиваем данные по каналам
-                actuallyRead /= parent->channelsCount();
-                for (int i=0; i<parent->channelsCount();++i) {
-                    if (allFile && parent->channels[i]->floatValues.size() < NI
-                        || !allFile && i == channelIndex) {
-                        parent->channels[i]->floatValues << temp.mid(actuallyRead*i, actuallyRead);
-                    }
-                }
-                if (actuallyRead < ChanBlockSize) {
+            //распихиваем данные по каналам
+            actuallyRead /= parent->channelsCount();
+            for (int i=0; i<parent->channelsCount();++i) {
+                if (i == channelIndex) {
+                    floatValues << temp.mid(actuallyRead*i, actuallyRead);
                     break;
                 }
             }
-        }
-        for (int i=0; i<parent->channelsCount();++i) {
-            if (allFile && !parent->channels[i]->floatValues.isEmpty()
-                || !allFile && i == channelIndex) {
-                if (RawChannel *rawc = dynamic_cast<RawChannel*>(parent->channels[i])) {
-                    for (int k=0; k < parent->channels[i]->floatValues.size(); ++k)
-                        parent->channels[i]->floatValues[k] = parent->channels[i]->floatValues[k]*rawc->coef1+rawc->coef2;
-                }
+            if (actuallyRead < ChanBlockSize) {
+                break;
             }
+        }
+
+        if (RawChannel *rawc = dynamic_cast<RawChannel*>(this)) {
+            for (int k=0; k < floatValues.size(); ++k)
+                floatValues[k] = floatValues[k]*rawc->coef1+rawc->coef2;
         }
 
     }
@@ -1322,6 +1299,66 @@ void DfdChannel::populateFloat()
         qDebug()<<"Cannot read raw file"<<parent->attachedFileName();
     }
 }
+
+//void DfdChannel::populateFloat()
+//{DD;
+//    quint32 NI = samplesCount();
+
+//    if (floatValues.size() == NI) return;
+//    floatValues.clear();
+
+//    QFile rawFile(parent->attachedFileName());
+
+//    if (rawFile.open(QFile::ReadOnly)) {
+//        QDataStream readStream(&rawFile);
+//        readStream.setByteOrder(QDataStream::LittleEndian);
+//        if (IndType==0xC0000004)
+//            readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+//        if (parent->BlockSize == 0) {// без перекрытия, читаем подряд весь канал
+//            for (int i=0; i<parent->NumChans; ++i) {
+//                if (i==channelIndex) {
+//                    if (QThread::currentThread()->isInterruptionRequested()) return;
+//                    floatValues = getValue<float>(readStream, ChanBlockSize, IndType);
+//                }
+//                else {
+//                    readStream.skipRawData(parent->channels.at(i)->blockSizeInBytes());
+//                }
+//            }
+//        }
+//        else {//с перекрытием, сначала читаем блок данных в 2048 отчетов для всех каналов
+//            // если каналы имеют разный размер блоков, этот метод даст сбой
+//            quint32 actuallyRead = 0;
+
+//            while (1) {
+//                if (QThread::currentThread()->isInterruptionRequested()) return;
+
+//                quint32 chunkSize = parent->channelsCount() * ChanBlockSize;
+//                QVector<float> temp = getValue<float>(readStream, chunkSize, IndType, &actuallyRead);
+
+//                //распихиваем данные по каналам
+//                actuallyRead /= parent->channelsCount();
+//                for (int i=0; i<parent->channelsCount();++i) {
+//                    if (parent->channels[i]->floatValues.size() < NI) {
+//                        parent->channels[i]->floatValues << temp.mid(actuallyRead*i, actuallyRead);
+//                    }
+//                }
+//                if (actuallyRead < ChanBlockSize) {
+//                    break;
+//                }
+//            }
+//        }
+
+//        if (RawChannel *rawc = dynamic_cast<RawChannel*>(this)) {
+//            for (int k=0; k < floatValues.size(); ++k)
+//                floatValues[k] = floatValues[k]*rawc->coef1+rawc->coef2;
+//        }
+
+//    }
+//    else {
+//        qDebug()<<"Cannot read raw file"<<parent->attachedFileName();
+//    }
+//}
 
 void DfdChannel::clear()
 {DD;

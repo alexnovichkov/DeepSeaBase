@@ -175,3 +175,14 @@ int XresponcH1Method::dataType()
 {
     return 147;
 }
+
+DescriptionList XresponcH1Method::processData(const Parameters &p)
+{
+    DescriptionList list;
+    list.append({"PName", p.methodName});
+    list.append({"BlockIn", QString::number(p.blockSize)});
+    list.append({"Wind", p.windowDescription()});
+    list.append({"TypeAver", p.averaging(p.averagingType)});
+    list.append({"pTime","(0000000000000000)"});
+    return list;
+}

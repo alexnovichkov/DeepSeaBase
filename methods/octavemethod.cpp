@@ -113,3 +113,19 @@ int OctaveMethod::dataType()
     return 156;
 }
 
+DescriptionList OctaveMethod::processData(const Parameters &p)
+{
+    DescriptionList list;
+    list.append({"PName", methodName()});
+    list.append({"pTime","(0000000000000000)"});
+    //list.append({"ProcChansList",""}); // TODO
+    list.append({"BlockIn", "32768"});
+    list.append({"TypeProc", typeCombo->currentText()});
+    list.append({"Values", valuesCombo->currentText()});
+    list.append({"TypeScale", scaleCombo->currentText()});
+    list.append({"kStrip", QString::number(resolutionSpin->value())});
+    list.append({"AddProc", QString::number(placeCombo->currentIndex())});
+
+    return list;
+}
+

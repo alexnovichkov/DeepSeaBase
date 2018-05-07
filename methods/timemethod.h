@@ -20,6 +20,7 @@ public:
     virtual int panelType();
     virtual QString methodName();
     virtual int dataType();
+    virtual DescriptionList processData(const Parameters &p);
 private:
 //    QComboBox *rangeCombo;
     QComboBox *resolutionCombo;
