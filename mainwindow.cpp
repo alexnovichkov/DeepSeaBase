@@ -2261,7 +2261,12 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 
      //проверяем, все ли каналы имеют одинаковое разрешение по х
      bool allChannelsHaveSameXStep = true;
+     if (channel->xStep()==0.0) allChannelsHaveSameXStep = false;
      for (int i=1; i<curves.size(); ++i) {
+         if (curves.at(i)->channel->xStep() == 0.0) {
+             allChannelsHaveSameXStep = false;
+             break;
+         }
          if (qAbs(curves.at(i)->channel->xStep() - channel->xStep()) >= 1e-10) {
              allChannelsHaveSameXStep = false;
              break;
@@ -2379,7 +2384,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          QList<QVariant> rowsList;
          for (uint i = 0; i < maxInd; ++i) {
              double val = channel->xBegin() + i*channel->xStep();
-             if (channel->xStep()<1e-9 && !channel->xValues().isEmpty())
+             if (/*channel->xStep()<1e-9 &&*/ !channel->xValues().isEmpty())
                  val = channel->xValues().at(i);
              if (!fullRange && (val < range.min || val > range.max) ) continue;
 
@@ -2418,12 +2423,12 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
              QList<QVariant> rowsList;
              for (uint j = 0; j < ch->samplesCount(); j++) {
                  double val = ch->xBegin() + j*ch->xStep();
-                 if (ch->xStep()<1e-9 && !ch->xValues().isEmpty())
+                 if (/*ch->xStep()<1e-9 &&*/ !ch->xValues().isEmpty())
                      val = ch->xValues().at(j);
                  if (!fullRange && (val < range.min || val > range.max) ) continue;
 
                  cellsList.clear();
-                 cellsList << (ch->xBegin() + j*ch->xStep()) << ch->yValues()[j];
+                 cellsList << val << ch->yValues()[j];
                  rowsList << QVariant(cellsList);
              }
              numRows = rowsList.size();
