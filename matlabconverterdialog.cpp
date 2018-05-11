@@ -18,6 +18,7 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
 {
     setWindowTitle("Конвертер matlab файлов");
     thread = 0;
+    m_addFiles = false;
 
     progress = new QProgressBar(this);
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -92,6 +93,10 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
 
     textEdit = new QPlainTextEdit(this);
 
+    openFolderButton = new QCheckBox("Открыть папку с файлами после конвертации", this);
+
+    addFilesButton = new QCheckBox("Добавить новые файлы в текущую вкладку", this);
+
 
 
     QSplitter *splitter = new QSplitter(Qt::Vertical, this);
@@ -108,7 +113,9 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
     QWidget *second = new QWidget(this);
     QGridLayout *grid1 = new QGridLayout;
     grid1->addWidget(textEdit,0,0);
-    grid1->addWidget(buttonBox,1,0);
+    grid1->addWidget(openFolderButton, 1,0);
+    grid1->addWidget(addFilesButton, 2, 0);
+    grid1->addWidget(buttonBox,3,0);
     second->setLayout(grid1);
     splitter->addWidget(first);
     splitter->addWidget(second);
@@ -180,6 +187,12 @@ void MatlabConverterDialog::stop()
 
 void MatlabConverterDialog::finalize()
 {
+    if (openFolderButton->isChecked()) {
+        QDir dir(folder);
+        QProcess::startDetached("explorer.exe", QStringList(dir.toNativeSeparators(dir.absolutePath())));
+    }
+    m_addFiles = addFilesButton->isChecked();
+
 //    buttonBox->buttons().first()->setDisabled(false);
 //    if (convertor) {
 //        convertor->deleteLater();

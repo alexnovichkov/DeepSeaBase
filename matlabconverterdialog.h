@@ -11,6 +11,7 @@ class QPlainTextEdit;
 class QPushButton;
 class MatlabConvertor;
 class QThread;
+class QCheckBox;
 
 class MatlabConverterDialog : public QDialog
 {
@@ -19,6 +20,7 @@ public:
     MatlabConverterDialog(QWidget *parent = 0);
     ~MatlabConverterDialog();
     QStringList getConvertedFiles() const {return convertedFiles;}
+    bool addFiles() const {return m_addFiles;}
 public slots:
     virtual void accept();
     virtual void reject();
@@ -38,6 +40,9 @@ private:
     QPushButton *button;
     MatlabConvertor *convertor;
     QThread *thread;
+    QCheckBox *openFolderButton;
+    QCheckBox *addFilesButton;
+    bool m_addFiles;
 };
 
 #endif // MATLABCONVERTERDIALOG_H

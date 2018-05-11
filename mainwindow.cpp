@@ -1416,7 +1416,12 @@ void MainWindow::convertMatFiles()
 {
     MatlabConverterDialog dialog(this);
     if (dialog.exec()) {
-
+        if (dialog.addFiles()) {
+            QStringList files = dialog.getConvertedFiles();
+            this->addFiles(files);
+//            foreach (const QString &file, files)
+//                if (!tab->folders.contains(file)) tab->folders << file;
+        }
     }
 }
 
