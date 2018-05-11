@@ -49,6 +49,9 @@ Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\plugins\iconengines\*.dll"; DestDir: "
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\plugins\imageformats\*.dll"; DestDir: "{app}\imageformats"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\plugins\platforms\*.dll"; DestDir: "{app}\platforms"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\plugins\printsupport\*.dll"; DestDir: "{app}\printsupport"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
+
+Source: "K:\My\build\DeepSeaBase\help.html"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\My\build\DeepSeaBase\graphs.htm"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

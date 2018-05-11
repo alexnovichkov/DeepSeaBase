@@ -81,7 +81,6 @@ QVector<double> OctaveFilterBank::compute(QVector<float> &signal, double sampleR
 
     int N = 3;  				  // Order of analysis filters.
 
-    int T = x.size();
     QVector<double> P(Fc.size());
 
     int i_up = 43;
@@ -103,7 +102,7 @@ QVector<double> OctaveFilterBank::compute(QVector<float> &signal, double sampleR
         }
     }
 //    qDebug()<<QString("i_low=%1, i_dec=%2, i_up=%3").arg(i_low).arg(i_dec).arg(i_up);
-//    qDebug()<<QString("i_low=%1, i_dec=%2, i_up=%3").arg(Fc[i_low]).arg(Fc[i_dec]).arg(Fc[i_up]);
+    qDebug()<<QString("i_low=%1, i_dec=%2, i_up=%3").arg(Fc[i_low]).arg(Fc[i_dec]).arg(Fc[i_up]);
 //    qDebug()<<"signal size" << x.size();
     // Design filters and compute RMS powers in 1/3-oct. bands.
     // Higher frequencies, direct implementation of filters.
@@ -121,6 +120,7 @@ QVector<double> OctaveFilterBank::compute(QVector<float> &signal, double sampleR
 
     // Lower frequencies, decimation by series of 3 bands.
     if (i_dec > 0) {
+
         QVector<double> Bu, Au;
         oct3dsgn(Bu,Au,Fc[i_dec],sampleRate/2.0,N); // Upper 1/3-oct. band in last octave.
         QVector<double> Bc, Ac;
@@ -128,9 +128,10 @@ QVector<double> OctaveFilterBank::compute(QVector<float> &signal, double sampleR
         QVector<double> Bl, Al;
         oct3dsgn(Bl,Al,Fc[i_dec-2],sampleRate/2.0,N); // Lower 1/3-oct. band in last octave.
         int i = i_dec;
+        int j = 1;
+        //QVector<double> X;
         while (i >= i_low+2) {
             x = decimate(x,2);
-            T = T/2;
             QVector<double> y = filter(Bu,Au,x, QVector<double>());
             P[i] = leq(y, m_p.threshold);
             y = filter(Bc,Ac,x, QVector<double>());
@@ -138,10 +139,10 @@ QVector<double> OctaveFilterBank::compute(QVector<float> &signal, double sampleR
             y = filter(Bl,Al,x, QVector<double>());
             P[i-2] = leq(y, m_p.threshold);
             i = i-3;
+            j++;
         }
         if (i == (i_low+1)) {
             x = decimate(x,2);
-            T = T/2;
             QVector<double> y = filter(Bu,Au,x, QVector<double>());
             P[i] = leq(y, m_p.threshold);
             y = filter(Bc,Ac,x, QVector<double>());
@@ -149,7 +150,6 @@ QVector<double> OctaveFilterBank::compute(QVector<float> &signal, double sampleR
         }
         else if (i == (i_low)) {
             x = decimate(x,2);
-            T = T/2;
             QVector<double> y = filter(Bu,Au,x, QVector<double>());
             P[i] = leq(y, m_p.threshold);
         }
