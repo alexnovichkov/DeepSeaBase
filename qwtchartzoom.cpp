@@ -214,9 +214,14 @@ void QwtChartZoom::resetBounds(Qt::Orientations orientations)
     qwtPlot->replot();
 }
 
+void QwtChartZoom::setZoomEnabled(bool enabled)
+{
+    this->activated = enabled;
+}
+
 void QwtChartZoom::labelSelected(bool selected)
 {
-    setEnabled(!selected);
+    setZoomEnabled(!selected);
 }
 
     /**************************************************/
@@ -331,7 +336,7 @@ void QMainZoomSvc::setRubberBandColor(QColor clr) {
 // Обработчик всех событий
 bool QMainZoomSvc::eventFilter(QObject *target,QEvent *event)
 {
-    if (zoom->activated)
+    if (zoom->activated) {
         // если событие произошло для графика, то
         if (target == zoom->plot()) {
             // если произошло одно из событий от мыши, то
@@ -344,6 +349,7 @@ bool QMainZoomSvc::eventFilter(QObject *target,QEvent *event)
                 procKeyboardEvent(event);
             }
         }
+    }
     // передаем управление стандартному обработчику событий
     return QObject::eventFilter(target,event);
 }

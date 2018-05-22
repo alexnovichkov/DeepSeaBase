@@ -137,7 +137,7 @@ public:
     // восстановление исходных границ графика
     void resetBounds(Qt::Orientations);
 
-    void setEnabled(bool enabled) {this->activated = enabled;}
+    void setZoomEnabled(bool enabled);
 
     bool activated;
 public slots:

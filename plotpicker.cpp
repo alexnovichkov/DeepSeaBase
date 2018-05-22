@@ -252,7 +252,7 @@ void PlotPicker::pointAppended(const QPoint &pos)
         emit labelSelected(true);
     }
     else {
-        emit labelSelected(false);
+        emit labelSelected(mode == Plot::DataInteraction);
         if ((curve = findClosestPoint(pos, index))) {
             d_selectedCurve = curve;
             d_selectedPoint = index;

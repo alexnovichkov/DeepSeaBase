@@ -115,7 +115,7 @@ Plot::Plot(QWidget *parent) :
 
 
     zoom = new QwtChartZoom(this);
-    zoom->setEnabled(false);
+    zoom->setZoomEnabled(true);
     connect(zoom,SIGNAL(updateTrackingCursor(double,bool)), trackingPanel, SLOT(setX(double,bool)));
     connect(zoom,SIGNAL(contextMenuRequested(QPoint,int)),SLOT(showContextMenu(QPoint,int)));
 
@@ -571,7 +571,8 @@ void Plot::setInteractionMode(Plot::InteractionMode mode)
 {DD;
     interactionMode = mode;
     if (picker) picker->setMode(mode);
-    if (zoom) zoom->setEnabled(mode == ScalingInteraction);
+    if (zoom)
+        zoom->setZoomEnabled(mode == ScalingInteraction);
     if (canvas) canvas->setFocusIndicator(mode == ScalingInteraction?
                                               QwtPlotCanvas::CanvasFocusIndicator:
                                               QwtPlotCanvas::ItemFocusIndicator);
