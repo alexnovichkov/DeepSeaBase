@@ -412,7 +412,7 @@ li {
   font-weight: 700;
   color: #fff;
   font-size: 2em;
-  letter-spacing: 0.1em;
+  /*letter-spacing: 0.1em;*/
 }
 
 #copyright {
