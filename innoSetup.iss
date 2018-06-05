@@ -52,6 +52,9 @@ Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\plugins\printsupport\*.dll"; DestDir: 
 
 Source: "K:\My\build\DeepSeaBase\help.html"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\My\build\DeepSeaBase\graphs.htm"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\My\build\DeepSeaBase\files.html"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\My\build\DeepSeaBase\style.css"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\My\build\DeepSeaBase\version.js"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
