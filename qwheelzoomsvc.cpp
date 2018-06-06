@@ -14,12 +14,12 @@
 
 #include "qwheelzoomsvc.h"
 #include <QApplication>
-
+#include "logging.h"
 
 // Конструктор
 QWheelZoomSvc::QWheelZoomSvc() :
     QObject()
-{
+{DD;
     // назначаем коэффициент, определяющий изменение масштаба графика
     // при вращении колеса мыши
     sfact = 1.2;
@@ -27,7 +27,7 @@ QWheelZoomSvc::QWheelZoomSvc() :
 
 // Прикрепление интерфейса к менеджеру масштабирования
 void QWheelZoomSvc::attach(QwtChartZoom *zm)
-{
+{DD;
     // запоминаем указатель на менеджер масштабирования
     zoom = zm;
     // назначаем для графика обработчик событий (фильтр событий)
@@ -36,7 +36,7 @@ void QWheelZoomSvc::attach(QwtChartZoom *zm)
 
 // Задание коэффициента масштабирования графика
 // при вращении колеса мыши (по умолчанию он равен 1.2)
-void QWheelZoomSvc::setWheelFactor(double fact) {
+void QWheelZoomSvc::setWheelFactor(double fact) {DD;
     sfact = fact;
 }
 
@@ -57,7 +57,7 @@ bool QWheelZoomSvc::eventFilter(QObject *target, QEvent *event)
 
 // Применение изменений по вращении колеса мыши
 void QWheelZoomSvc::applyWheel(QEvent *event, bool wheelHorizontally, bool wheelVertically)
-{
+{DD;
     // приводим тип QEvent к QWheelEvent
     QWheelEvent *wEvent = static_cast<QWheelEvent *>(event);
 
@@ -103,7 +103,7 @@ void QWheelZoomSvc::applyWheel(QEvent *event, bool wheelHorizontally, bool wheel
 
 // Обработчик вращения колеса мыши
 void QWheelZoomSvc::procWheel(QEvent *event)
-{
+{DD;
     // в зависимости от включенного режима вызываем
     // масштабирование с соответствующими параметрами
     QwtChartZoom::QConvType regime = QwtChartZoom::ctWheel;

@@ -17,6 +17,8 @@ private:
 };
 
 #ifdef DO_TRACE
+
+
 #define DD  Trace trace(Q_FUNC_INFO);
 #else
 #define DD

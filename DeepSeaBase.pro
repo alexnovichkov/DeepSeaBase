@@ -49,7 +49,8 @@ SOURCES += main.cpp\
     methods/octavemethod.cpp \
     algorithms.cpp \
     dfdsettings.cpp \
-    octavefilterbank.cpp
+    octavefilterbank.cpp \
+    axisboundsdialog.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -89,7 +90,8 @@ HEADERS  += mainwindow.h \
     methods/octavemethod.h \
     algorithms.h \
     dfdsettings.h \
-    octavefilterbank.h
+    octavefilterbank.h \
+    axisboundsdialog.h
 
 SOURCES += qwtchartzoom.cpp\
   qwheelzoomsvc.cpp\

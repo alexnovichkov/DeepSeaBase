@@ -16,13 +16,14 @@
 #include "qwheelzoomsvc.h"
 #include "qaxiszoomsvc.h"
 #include <qwt_scale_widget.h>
+#include "logging.h"
 
 #include <QKeyEvent>
 
 // Конструктор
 QwtChartZoom::QwtChartZoom(QwtPlot *qp) :
     QObject(qp)
-{
+{DD;
     // получаем главное окно
     mwin = generalParent(qp);
     // и назначаем обработчик событий (фильтр событий)
@@ -83,7 +84,7 @@ QwtChartZoom::QwtChartZoom(QwtPlot *qp) :
 
 // Деструктор
 QwtChartZoom::~QwtChartZoom()
-{
+{DD;
     // удаляем интерфейс перемещенния графика
     delete dragZoom;
     // удаляем интерфейс масштабирования графика
@@ -97,7 +98,7 @@ QwtChartZoom::~QwtChartZoom()
 
 // Определение главного родителя
 QObject *QwtChartZoom::generalParent(QObject *p)
-{
+{DD;
     // берем в качестве предыдущего родителя график
     // (возможен и другой объект в аргументе функции)
     QObject *generalParent_ = p;
@@ -117,12 +118,13 @@ QObject *QwtChartZoom::generalParent(QObject *p)
 }
 
 // Текущий режим масштабирования
-QwtChartZoom::QConvType QwtChartZoom::regim() {
+QwtChartZoom::QConvType QwtChartZoom::regim()
+{DD;
     return convType;
 }
 
 // Переключение режима масштабирования
-void QwtChartZoom::setRegime(QwtChartZoom::QConvType ct) {
+void QwtChartZoom::setRegime(QwtChartZoom::QConvType ct) {DD;
     convType = ct;
 }
 
@@ -132,32 +134,32 @@ QwtPlot *QwtChartZoom::plot() {
 }
 
 // Основная горизонтальная шкала
-QwtPlot::Axis QwtChartZoom::masterH() const {
+QwtPlot::Axis QwtChartZoom::masterH() const {DD;
     return masterX;
 }
 
 // Дополнительная горизонтальная шкала
-QwtPlot::Axis QwtChartZoom::slaveH() const {
+QwtPlot::Axis QwtChartZoom::slaveH() const {DD;
     return slaveX;
 }
 
 // Основная вертикальная шкала
-QwtPlot::Axis QwtChartZoom::masterV() const {
+QwtPlot::Axis QwtChartZoom::masterV() const {DD;
     return masterY;
 }
 
 // Дополнительная вертикальная шкала
-QwtPlot::Axis QwtChartZoom::slaveV() const {
+QwtPlot::Axis QwtChartZoom::slaveV() const {DD;
     return slaveY;
 }
 
 // Установка цвета рамки, задающей новый размер графика
-void QwtChartZoom::setRubberBandColor(QColor clr) {
+void QwtChartZoom::setRubberBandColor(QColor clr) {DD;
     mainZoom->setRubberBandColor(clr);
 }
 
 // Фиксация текущих границ графика в качестве исходных
-void QwtChartZoom::fixBoundaries() {
+void QwtChartZoom::fixBoundaries() {DD;
     // здесь только сбрасывается флаг и тем самым
     // указывается на необходимость фиксировать границы
     isbF = false;
@@ -167,7 +169,7 @@ void QwtChartZoom::fixBoundaries() {
 
 // Обновление графика
 void QwtChartZoom::updatePlot()
-{
+{DD;
     qwtPlot->replot();
 }
 
@@ -192,7 +194,7 @@ bool QwtChartZoom::eventFilter(QObject *target,QEvent *event)
 // Фактическая фиксация текущих границ графика
 // в качестве исходных (если флаг isbF сброшен)
 void QwtChartZoom::fixBounds()
-{
+{DD;
     // если этого еще не было сделано
     if (!isbF)
     {
@@ -206,7 +208,7 @@ void QwtChartZoom::fixBounds()
 
 // Восстановление исходных границ графика
 void QwtChartZoom::resetBounds(Qt::Orientations orientations)
-{
+{DD;
     // устанавливаем запомненные ранее границы
     if (orientations & Qt::Horizontal) horizontalScaleBounds->reset();  // горизонтальной шкалы
     if (orientations & Qt::Vertical) verticalScaleBounds->reset();  // и вертикальной
@@ -215,12 +217,12 @@ void QwtChartZoom::resetBounds(Qt::Orientations orientations)
 }
 
 void QwtChartZoom::setZoomEnabled(bool enabled)
-{
+{DD;
     this->activated = enabled;
 }
 
 void QwtChartZoom::labelSelected(bool selected)
-{
+{DD;
     setZoomEnabled(!selected);
 }
 
@@ -231,7 +233,8 @@ void QwtChartZoom::labelSelected(bool selected)
 
 // Конструктор
 QwtChartZoom::QScaleBounds::
-    QScaleBounds(QwtPlot *plt,QwtPlot::Axis mst,QwtPlot::Axis slv) {
+    QScaleBounds(QwtPlot *plt,QwtPlot::Axis mst,QwtPlot::Axis slv)
+{DD;
     // запоминаем
     plot = plt;     // опекаемый график
     master = mst;   // основную шкалу
@@ -241,7 +244,7 @@ QwtChartZoom::QScaleBounds::
 
 // Фиксация исходных границ шкалы
 void QwtChartZoom::QScaleBounds::fix()
-{
+{DD;
     // получаем карту основной шкалы
     QwtScaleMap sm = plot->canvasMap(master);
     // и запоминаем текущие левую и правую границы шкалы
@@ -271,7 +274,7 @@ void QwtChartZoom::QScaleBounds::fix()
 
 // Установка заданных границ шкалы
 void QwtChartZoom::QScaleBounds::set(double mn, double mx, int axis)
-{
+{DD;
     // если границы еще не фиксированы, фиксируем их
     if (!fixed) fix();
     // устанавливаем нижнюю и верхнюю границы шкалы
@@ -279,14 +282,15 @@ void QwtChartZoom::QScaleBounds::set(double mn, double mx, int axis)
 }
 
 // Восстановление исходных границ шкалы
-void QwtChartZoom::QScaleBounds::reset() {
+void QwtChartZoom::QScaleBounds::reset()
+{DD;
     // если границы уже фиксированы, то восстанавливаем исходные
     if (fixed) set(min,max,-1);
 }
 
 // Переустановка границ дополнительной шкалы
 void QwtChartZoom::QScaleBounds::dup()
-{
+{DD;
     // если границы еще не фиксированы, фиксируем их
     if (!fixed) fix();
     // получаем карту основной шкалы
@@ -312,7 +316,7 @@ void QwtChartZoom::QScaleBounds::dup()
 // Конструктор
 QMainZoomSvc::QMainZoomSvc() :
     QObject()
-{
+{DD;
     // очищаем виджет, отвечающий за отображение выделенной области
     zwid = 0;
     // и назначаем ему цвет (по умолчанию - черный)
@@ -321,7 +325,7 @@ QMainZoomSvc::QMainZoomSvc() :
 
 // Прикрепление интерфейса к менеджеру масштабирования
 void QMainZoomSvc::attach(QwtChartZoom *zm)
-{
+{DD;
     // запоминаем указатель на менеджер масштабирования
     zoom = zm;
     // назначаем для графика обработчик событий (фильтр событий)
@@ -329,7 +333,8 @@ void QMainZoomSvc::attach(QwtChartZoom *zm)
 }
 
 // Установка цвета рамки, задающей новый размер графика
-void QMainZoomSvc::setRubberBandColor(QColor clr) {
+void QMainZoomSvc::setRubberBandColor(QColor clr)
+{DD;
     zwClr = clr;
 }
 
@@ -356,7 +361,7 @@ bool QMainZoomSvc::eventFilter(QObject *target,QEvent *event)
 
 // Прорисовка виджета выделенной области
 void QMainZoomSvc::showZoomWidget(QRect zr)
-{
+{DD;
     // устанавливаем положение и размеры виджета, отображающего выделенную область
     zwid->setGeometry(zr);
     // запоминаем для удобства
@@ -375,7 +380,7 @@ void QMainZoomSvc::showZoomWidget(QRect zr)
 
 // Обработчик обычных событий от мыши
 void QMainZoomSvc::procMouseEvent(QEvent *event)
-{
+{DD;
     // создаем указатель на событие от мыши
     QMouseEvent *mEvent = static_cast<QMouseEvent *>(event);
     // в зависимости от типа события вызываем соответствующий обработчик
@@ -387,17 +392,17 @@ void QMainZoomSvc::procMouseEvent(QEvent *event)
         case QEvent::MouseMove: selectZoomRect(mEvent); break;
             // отпущена кнопка мыши
         case QEvent::MouseButtonRelease: procZoom(mEvent); break;
-        case QEvent::MouseButtonDblClick:
-            if (mEvent->button() == Qt::LeftButton)
-                zoom->resetBounds(Qt::Horizontal | Qt::Vertical);
-            break;
+//        case QEvent::MouseButtonDblClick:
+//            if (mEvent->button() == Qt::LeftButton)
+//                zoom->resetBounds(Qt::Horizontal | Qt::Vertical);
+//            break;
             // для прочих событий ничего не делаем
         default: ;
     }
 }
 
 void QMainZoomSvc::procKeyboardEvent(QEvent *event)
-{
+{DD;
     QKeyEvent *kEvent = static_cast<QKeyEvent*>(event);
     switch (kEvent->key()) {
         case Qt::Key_Backspace: {
@@ -426,7 +431,7 @@ void QMainZoomSvc::procKeyboardEvent(QEvent *event)
 // Обработчик нажатия на кнопку мыши
 // (включение изменения масштаба)
 void QMainZoomSvc::startZoom(QMouseEvent *mEvent)
-{
+{DD;
     // фиксируем исходные границы графика (если этого еще не было сделано)
     zoom->fixBounds();
     // если в данный момент еще не включен ни один из режимов
@@ -467,7 +472,8 @@ void QMainZoomSvc::startZoom(QMouseEvent *mEvent)
 
 // Обработчик перемещения мыши
 // (выделение новых границ графика)
-void QMainZoomSvc::selectZoomRect(QMouseEvent *mEvent) {
+void QMainZoomSvc::selectZoomRect(QMouseEvent *mEvent)
+{DD;
     // если включен режим изменения масштаба, то
     if (zoom->regim() == QwtChartZoom::ctZoom)
     {
@@ -517,7 +523,7 @@ void QMainZoomSvc::selectZoomRect(QMouseEvent *mEvent) {
 // Обработчик отпускания кнопки мыши
 // (выполнение изменения масштаба)
 void QMainZoomSvc::procZoom(QMouseEvent *mEvent)
-{
+{DD;
     // если включен режим изменения масштаба или режим перемещения графика
     if (zoom->regim() == QwtChartZoom::ctZoom)
         // если отпущена левая кнопка мыши, то
@@ -584,12 +590,12 @@ void QMainZoomSvc::procZoom(QMouseEvent *mEvent)
 // Конструктор
 QDragZoomSvc::QDragZoomSvc() :
     QObject()
-{
+{DD;
 }
 
 // Прикрепление интерфейса к менеджеру масштабирования
 void QDragZoomSvc::attach(QwtChartZoom *zm)
-{
+{DD;
     // запоминаем указатель на менеджер масштабирования
     zoom = zm;
     // назначаем для графика обработчик событий (фильтр событий)
@@ -610,7 +616,7 @@ bool QDragZoomSvc::eventFilter(QObject *target,QEvent *event)
 
 // Применение результатов перемещения графика
 void QDragZoomSvc::applyDrag(QPoint evpos, bool moveRightAxis)
-{
+{DD;
     // получаем указатель на график
     QwtPlot *plt = zoom->plot();
     // получаем геометрию канвы графика
@@ -642,7 +648,7 @@ void QDragZoomSvc::applyDrag(QPoint evpos, bool moveRightAxis)
 
 // Обработчик событий от мыши
 void QDragZoomSvc::dragMouseEvent(QEvent *event)
-{
+{DD;
     // создаем указатель на событие от мыши
     QMouseEvent *mEvent = static_cast<QMouseEvent *>(event);
     // в зависимости от типа события вызываем соответствующий обработчик
@@ -662,7 +668,7 @@ void QDragZoomSvc::dragMouseEvent(QEvent *event)
 // Обработчик нажатия на кнопку мыши
 // (включение перемещения графика)
 void QDragZoomSvc::startDrag(QMouseEvent *mEvent)
-{
+{DD;
     // фиксируем исходные границы графика (если этого еще не было сделано)
     zoom->fixBounds();
     // если в данный момент еще не включен ни один из режимов
@@ -729,7 +735,7 @@ void QDragZoomSvc::startDrag(QMouseEvent *mEvent)
 // Обработчик перемещения мыши
 // (выполнение перемещения или выбор нового положения графика)
 void QDragZoomSvc::proceedDrag(QMouseEvent *mEvent)
-{
+{DD;
     // если включен режим перемещения графика, то
     if (zoom->regim() == QwtChartZoom::ctDrag)
     {
@@ -743,7 +749,7 @@ void QDragZoomSvc::proceedDrag(QMouseEvent *mEvent)
 // Обработчик отпускания кнопки мыши
 // (выключение перемещения графика)
 void QDragZoomSvc::endDrag(QMouseEvent *mEvent)
-{
+{DD;
     // если включен режим изменения масштаба или режим перемещения графика
     if (zoom->regim() == QwtChartZoom::ctDrag)
         // если отпущена правая кнопка мыши, то
