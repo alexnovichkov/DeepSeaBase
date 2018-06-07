@@ -261,7 +261,7 @@ MainWindow::MainWindow(QWidget *parent)
     switchCursorAct->setChecked(pickerEnabled);
     connect(switchCursorAct, SIGNAL(triggered()), plot, SLOT(switchCursor()));
 
-    trackingCursorAct = new QAction(QString("Включить следящий курсор"), this);
+    trackingCursorAct = new QAction(QString("Включить курсор дискрет"), this);
     trackingCursorAct->setIcon(QIcon(":/icons/tracking.png"));
     trackingCursorAct->setCheckable(true);
     trackingCursorAct->setObjectName("trackingCursor");
