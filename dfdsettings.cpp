@@ -63,4 +63,5 @@ DescriptionList DfdSettings::values(const QString &group) const
             result.append({key.remove(0, group.length()+1), entry.second});
         }
     }
+    return result;
 }

@@ -76,11 +76,11 @@ public:
     /* соотношение между основной и дополнительной    */
     /* шкалой.                                        */
 
-    class QScaleBounds
+    class ScaleBounds
     {
     public:
         // конструктор
-        explicit QScaleBounds(QwtPlot *,QwtPlot::Axis,QwtPlot::Axis);
+        explicit ScaleBounds(QwtPlot *,QwtPlot::Axis,QwtPlot::Axis);
 
         double min,max;     // исходные границы основной шкалы
         double ak,bk;       // коэффициенты, задающие линейное соотношение
@@ -89,7 +89,7 @@ public:
         // фиксация исходных границ шкалы
         void fix();
         // установка заданных границ шкалы
-        void set(double, double, int axis);
+        void set(double min, double max, int axis);
         // восстановление исходных границ шкалы
         void reset();
         // переустановка границ дополнительной шкалы
@@ -100,13 +100,15 @@ public:
         QwtPlot::Axis master;   // основная шкала
         QwtPlot::Axis slave;    // дополнительная
         bool fixed;             // признак фиксации границ
+        bool unbound;           // масштаб не выбран (при первом запуске программы
+                                // и если не стоит флаг fixed при очистке графика
     };
 
     /**************************************************/
 
     // Контейнеры границ шкалы
     // (вертикальной и горизонтальной)
-    QScaleBounds *horizontalScaleBounds,*verticalScaleBounds;
+    ScaleBounds *horizontalScaleBounds,*verticalScaleBounds;
 
     // текущий режим масштабирования
     QConvType regim();

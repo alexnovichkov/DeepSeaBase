@@ -55,8 +55,8 @@ QwtChartZoom::QwtChartZoom(QwtPlot *qp) :
     mstVerDiv = qp->axisMaxMajor(masterY);
     slvVerDiv = qp->axisMaxMajor(slaveY);
     // создаем контейнеры границ шкалы
-    horizontalScaleBounds = new QScaleBounds(qp,masterX,slaveX);    // горизонтальной
-    verticalScaleBounds = new QScaleBounds(qp,masterY,slaveY);    // и вертикальной
+    horizontalScaleBounds = new ScaleBounds(qp,masterX,slaveX);    // горизонтальной
+    verticalScaleBounds = new ScaleBounds(qp,masterY,slaveY);    // и вертикальной
 
     // устанавливаем обработчик всех событий
     qwtPlot->installEventFilter(this);
@@ -228,8 +228,8 @@ void QwtChartZoom::labelSelected(bool selected)
     /**************************************************/
 
 // Конструктор
-QwtChartZoom::QScaleBounds::
-    QScaleBounds(QwtPlot *plt,QwtPlot::Axis mst,QwtPlot::Axis slv)
+QwtChartZoom::ScaleBounds::
+    ScaleBounds(QwtPlot *plt,QwtPlot::Axis mst,QwtPlot::Axis slv)
 {DD;
     // запоминаем
     plot = plt;     // опекаемый график
@@ -239,7 +239,7 @@ QwtChartZoom::QScaleBounds::
 }
 
 // Фиксация исходных границ шкалы
-void QwtChartZoom::QScaleBounds::fix()
+void QwtChartZoom::ScaleBounds::fix()
 {DD;
     // получаем карту основной шкалы
     QwtScaleMap sm = plot->canvasMap(master);
@@ -269,23 +269,23 @@ void QwtChartZoom::QScaleBounds::fix()
 }
 
 // Установка заданных границ шкалы
-void QwtChartZoom::QScaleBounds::set(double mn, double mx, int axis)
+void QwtChartZoom::ScaleBounds::set(double min, double max, int axis)
 {DD;
     // если границы еще не фиксированы, фиксируем их
     if (!fixed) fix();
     // устанавливаем нижнюю и верхнюю границы шкалы
-    plot->setAxisScale(axis == -1?master:axis, mn,mx);   // основной
+    plot->setAxisScale(axis == -1?master:axis, min,max);   // основной
 }
 
 // Восстановление исходных границ шкалы
-void QwtChartZoom::QScaleBounds::reset()
+void QwtChartZoom::ScaleBounds::reset()
 {DD;
     // если границы уже фиксированы, то восстанавливаем исходные
     if (fixed) set(min,max,-1);
 }
 
 // Переустановка границ дополнительной шкалы
-void QwtChartZoom::QScaleBounds::dup()
+void QwtChartZoom::ScaleBounds::dup()
 {DD;
     // если границы еще не фиксированы, фиксируем их
     if (!fixed) fix();

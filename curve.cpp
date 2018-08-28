@@ -51,6 +51,8 @@ Curve::Curve(const QString &title, FileDescriptor *descriptor, int channelIndex)
 
     setCurveFitter(new QwtWeedingCurveFitter());
 
+    setLegendIconSize(QSize(16,8));
+
     if (channel->xValues().isEmpty())
         setRawSamples(channel->xBegin(), descriptor->xStep(), channel->yValues().data(), channel->samplesCount());
     else
@@ -63,6 +65,8 @@ Curve::Curve(const QString &title) :
     setPaintAttribute(QwtPlotCurve::ClipPolygons);
     setPaintAttribute(QwtPlotCurve::FilterPoints);
     setRenderHint(QwtPlotItem::RenderAntialiased);
+
+    setLegendIconSize(QSize(16,8));
 }
 
 Curve::Curve(const QwtText &title) :
@@ -71,6 +75,8 @@ Curve::Curve(const QwtText &title) :
     setPaintAttribute(QwtPlotCurve::ClipPolygons);
     setPaintAttribute(QwtPlotCurve::FilterPoints);
     setRenderHint(QwtPlotItem::RenderAntialiased);
+
+    setLegendIconSize(QSize(16,8));
 }
 
 Curve::~Curve()

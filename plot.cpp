@@ -234,6 +234,11 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
 
         if (scale) *scale = !(*scale);
     });
+    QAction *fixScale = menu->addAction("Фиксировать шкалу", [=](){
+
+    });
+    fixScale->setCheckable(true);
+    fixScale->setChecked(true);
     menu->exec(pos);
 }
 
@@ -392,8 +397,6 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col)
 
     graphs << g;
 
-    g->setLegendIconSize(QSize(16,8));
-
     bool needFixBoundaries = !hasGraphs() && zoom;
 
     g->attach(this);
@@ -414,10 +417,8 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col)
     // иначе сохраням масштаб по осям
     QwtScaleMap smX = canvasMap(QwtPlot::xBottom);
     QwtScaleMap smY = canvasMap(ax);
-
     Range &r = y1;
     if (plotOnSecondYAxis) r = y2;
-
     if (graphs.size()<=1 || (smX.s1()==x1.min && smX.s2()==x1.max
                              && smY.s1()==r.min && smY.s2()==r.max)) {
         x1.min = qMin(ch->xBegin(), x1.min);
@@ -428,6 +429,22 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col)
         r.max = qMax(ch->yMaxInitial(), r.max);
         setAxisScale(ax, r.min, r.max);
     }
+
+//    // Если графиков по данной вертикальной оси нет, то масштабируем оси, чтобы влез весь график
+//    // Иначе ничего не трогаем
+//    QwtScaleMap smX = canvasMap(QwtPlot::xBottom);
+//    QwtScaleMap smY = canvasMap(ax);
+//    Range &r = y1;
+//    if (plotOnSecondYAxis) r = y2;
+//    if (graphs.isEmpty()) {
+//        x1.min = qMin(ch->xBegin(), x1.min);
+//        x1.max = qMax(ch->xMaxInitial(), x1.max);
+//        setAxisScale(QwtPlot::xBottom, x1.min, x1.max);
+
+//        r.min = qMin(ch->yMinInitial(), r.min);
+//        r.max = qMax(ch->yMaxInitial(), r.max);
+//        setAxisScale(ax, r.min, r.max);
+//    }
 
     if (needFixBoundaries)
         if (zoom) zoom->fixBoundaries();

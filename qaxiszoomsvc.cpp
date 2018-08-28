@@ -304,15 +304,16 @@ void QAxisZoomSvc::axisMouseEvent(QEvent *event,int axis)
         case QEvent::MouseButtonDblClick:
             if (mEvent->button()==Qt::LeftButton) {
                 zoom->fixBounds();
-                AxisBoundsDialog dialog(zoom->plot()->canvasMap(axis).s1(), zoom->plot()->canvasMap(axis).s2());
+                AxisBoundsDialog dialog(zoom->plot()->canvasMap(axis).s1(), zoom->plot()->canvasMap(axis).s2(), axis);
                 if (dialog.exec()) {
                     if (axis == QwtPlot::xBottom || axis == QwtPlot::xTop)
                         zoom->horizontalScaleBounds->set(dialog.leftBorder(), dialog.rightBorder(), axis);
                     else
                         zoom->verticalScaleBounds->set(dialog.leftBorder(), dialog.rightBorder(), axis);
+                    if (dialog.autoscale()) {
+                        emit needsAutoscale(axis);
+                    }
                     zoom->plot()->replot();
-                }
-                else {
                 }
             }
             break;
