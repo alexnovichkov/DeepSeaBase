@@ -27,7 +27,7 @@
 #include <QColor>
 #include <QCursor>
 
-class QwtChartZoom;
+class ChartZoom;
 class QMouseEvent;
 class QRubberBand;
 
@@ -40,7 +40,7 @@ public:
     explicit QMainZoomSvc();
 
     // прикрепление интерфейса к менеджеру масштабирования
-    void attach(QwtChartZoom *);
+    void attach(ChartZoom *);
     void detach();
 signals:
     void xAxisClicked(double xValue, bool second);
@@ -49,9 +49,9 @@ protected:
     bool eventFilter(QObject *,QEvent *);
 
 private:
-    QwtChartZoom *zoom;     // Опекаемый менеджер масштабирования
+    ChartZoom *zoom;     // Опекаемый менеджер масштабирования
     QRubberBand *zwid;
-    QCursor tCursor;        // Буфер для временного хранения курсора
+//    QCursor tCursor;        // Буфер для временного хранения курсора
 
     int scp_x,scp_y;        // Положение курсора в момент начала преобразования
                             // (в пикселах относительно канвы графика)

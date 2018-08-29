@@ -19,7 +19,7 @@
 #ifndef QWHEELZOOMSVC_H
 #define QWHEELZOOMSVC_H
 
-#include "qwtchartzoom.h"
+#include "chartzoom.h"
 
 class QWheelZoomSvc : public QObject
 {
@@ -30,7 +30,7 @@ public:
     explicit QWheelZoomSvc();
 
     // прикрепление интерфейса к менеджеру масштабирования
-    void attach(QwtChartZoom *);
+    void attach(ChartZoom *);
 
     // задание коэффициента масштабирования графика
     // при вращении колеса мыши
@@ -41,7 +41,7 @@ protected:
     bool eventFilter(QObject *,QEvent *);
 
 private:
-    QwtChartZoom *zoom;     // Опекаемый менеджер масштабирования
+    ChartZoom *zoom;     // Опекаемый менеджер масштабирования
     double sfact;           // Коэффициент, определяющий изменение масштаба графика
                             // при вращении колеса мыши (по умолчанию равен 1.2)
 

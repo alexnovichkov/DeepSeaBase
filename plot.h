@@ -13,7 +13,7 @@ class Curve;
 class Channel;
 class FileDescriptor;
 
-class QwtChartZoom;
+class ChartZoom;
 class QwtPlotZoomer;
 class PlotPicker;
 class QAction;
@@ -126,6 +126,7 @@ public:
     void switchInteractionMode();
     void switchHarmonicsMode();
     void switchTrackingCursor();
+    void toggleAutoscale(int axis, bool toggled);
 public slots:
     void savePlot();
     void switchCursor();
@@ -159,7 +160,7 @@ private:
     bool y1Scale;//false = linear, true = logarithmic
     bool y2Scale;//false = linear, true = logarithmic
 
-    QwtChartZoom *zoom;
+    ChartZoom *zoom;
 
     TrackingPanel *trackingPanel;
 

@@ -26,7 +26,7 @@ QWheelZoomSvc::QWheelZoomSvc() :
 }
 
 // Прикрепление интерфейса к менеджеру масштабирования
-void QWheelZoomSvc::attach(QwtChartZoom *zm)
+void QWheelZoomSvc::attach(ChartZoom *zm)
 {DD;
     // запоминаем указатель на менеджер масштабирования
     zoom = zm;
@@ -86,7 +86,7 @@ void QWheelZoomSvc::applyWheel(QEvent *event, bool wheelHorizontally, bool wheel
 
             double lower = (sm.s1()-horPos)*factor + horPos;
             double upper = (sm.s2()-horPos)*factor + horPos;
-            zoom->horizontalScaleBounds->set(lower, upper,-1);
+            zoom->horizontalScaleBounds->set(lower, upper);
         }
         if (wheelVertically) // если задано масштабирование по вертикали
         {
@@ -94,7 +94,7 @@ void QWheelZoomSvc::applyWheel(QEvent *event, bool wheelHorizontally, bool wheel
             QwtScaleMap sm = plot->canvasMap(zoom->masterV());
             double lower = (sm.s1()-verPos)*factor + verPos;
             double upper = (sm.s2()-verPos)*factor + verPos;
-            zoom->verticalScaleBounds->set(lower, upper,-1);
+            zoom->verticalScaleBounds->set(lower, upper);
         }
         // перестраиваем график (синхронно с остальными)
         plot->replot();
@@ -106,20 +106,20 @@ void QWheelZoomSvc::procWheel(QEvent *event)
 {DD;
     // в зависимости от включенного режима вызываем
     // масштабирование с соответствующими параметрами
-    QwtChartZoom::QConvType regime = QwtChartZoom::ctWheel;
+    ChartZoom::QConvType regime = ChartZoom::ctWheel;
     if (qApp->keyboardModifiers() & Qt::ControlModifier)
-        regime = QwtChartZoom::ctHorWheel;
+        regime = ChartZoom::ctHorWheel;
     if (qApp->keyboardModifiers() & Qt::ShiftModifier)
-        regime = QwtChartZoom::ctVerWheel;
+        regime = ChartZoom::ctVerWheel;
 
     switch (regime)
     {
             // масштабирование по обеим осям
-    case QwtChartZoom::ctWheel: applyWheel(event,true,true); break;
+    case ChartZoom::ctWheel: applyWheel(event,true,true); break;
             // масштабирование только по вертикальной оси
-    case QwtChartZoom::ctVerWheel: applyWheel(event,false,true); break;
+    case ChartZoom::ctVerWheel: applyWheel(event,false,true); break;
             // масштабирование только по горизонтальной оси
-    case QwtChartZoom::ctHorWheel: applyWheel(event,true,false); break;
+    case ChartZoom::ctHorWheel: applyWheel(event,true,false); break;
         // для прочих режимов ничего не делаем
     default: ;
     }

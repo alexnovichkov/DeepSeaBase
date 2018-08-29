@@ -242,6 +242,10 @@ private:
     QAction *convertEsoFilesAct;
     QAction *convertAct;
 
+    QAction *autoscaleXAct;
+    QAction *autoscaleYAct;
+    QAction *autoscaleYSlaveAct;
+
     Plot *plot;
 
     QSplitter *splitter;

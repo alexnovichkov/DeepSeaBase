@@ -32,15 +32,15 @@ class QDragZoomSvc; // интерфейс перемещения графика
 class QWheelZoomSvc;
 class QAxisZoomSvc;
 
-class QwtChartZoom : public QObject
+class ChartZoom : public QObject
 {
     Q_OBJECT
 
 public:
     // конструктор
-    explicit QwtChartZoom(QwtPlot *);
+    explicit ChartZoom(QwtPlot *);
     // деструктор
-    ~QwtChartZoom();
+    ~ChartZoom();
 
     // Значения типа текущего преобразования графика
     // ctNone - нет преобразования
@@ -80,25 +80,28 @@ public:
     {
     public:
         // конструктор
-        explicit ScaleBounds(QwtPlot *,QwtPlot::Axis,QwtPlot::Axis);
+        explicit ScaleBounds(QwtPlot *,QwtPlot::Axis);
 
         double min,max;     // исходные границы основной шкалы
-        double ak,bk;       // коэффициенты, задающие линейное соотношение
-                            // между основной шкалой и дополнительной
+        QwtPlot::Axis axis;   // основная шкала
 
+        bool isFixed() const {return fixed;}
+        void setFixed(bool fixed);
         // фиксация исходных границ шкалы
-        void fix();
+        void add(double min, double max);
         // установка заданных границ шкалы
-        void set(double min, double max, int axis);
+        void set(double min, double max);
         // восстановление исходных границ шкалы
         void reset();
-        // переустановка границ дополнительной шкалы
-        void dup();
+        void autoscale();
+        void removeAndAutoscale(double min, double max);
 
     private:
+        QSet<double> mins;
+        QSet<double> maxes;
+
         QwtPlot *plot;          // опекаемый график
-        QwtPlot::Axis master;   // основная шкала
-        QwtPlot::Axis slave;    // дополнительная
+
         bool fixed;             // признак фиксации границ
         bool unbound;           // масштаб не выбран (при первом запуске программы
                                 // и если не стоит флаг fixed при очистке графика
@@ -109,6 +112,7 @@ public:
     // Контейнеры границ шкалы
     // (вертикальной и горизонтальной)
     ScaleBounds *horizontalScaleBounds,*verticalScaleBounds;
+    ScaleBounds *verticalScaleBoundsSlave;
 
     // текущий режим масштабирования
     QConvType regim();
@@ -189,65 +193,5 @@ private:
     QObject *generalParent(QObject *);
 };
 
-
-
-/**********************************************************/
-/*                                                        */
-/*                   Класс QDragZoomSvc                   */
-/*                      Версия 1.0.1                      */
-/*                                                        */
-/* Поддерживает интерфейс синхронного перемещения графика */
-/* как одну из основных функций класса QwtChartZoom.      */
-/* Выделен в отдельный класс, начиная с версии 1.4.0.     */
-/*                                                        */
-/* Разработал Мельников Сергей Андреевич,                 */
-/* г. Каменск-Уральский Свердловской обл., 2012 г.,       */
-/* при поддержке Ю. А. Роговского, г. Новосибирск.        */
-/*                                                        */
-/* Разрешается свободное использование и распространение. */
-/* Упоминание автора обязательно.                         */
-/*                                                        */
-/**********************************************************/
-
-class QDragZoomSvc : public QObject
-{
-    Q_OBJECT
-
-public:
-    explicit QDragZoomSvc();
-    void attach(QwtChartZoom *);
-protected:
-    bool eventFilter(QObject *,QEvent *);
-private:
-    QwtChartZoom *zoom;     // Опекаемый менеджер масштабирования
-    QCursor tCursor;        // Буфер для временного хранения курсора
-
-    double minHorizontalBound, maxHorizontalBound;   // Текущие границы графика по горизонтальной оси
-                            // в момент начала преобразования
-    double minVerticalBound, maxVerticalBound;   // Текущие границы графика по главной вертикальной оси
-                            // в момент начала преобразования
-    double minVerticalBound1, maxVerticalBound1;   // Текущие границы графика по вспомогательной вертикальной оси
-                            // в момент начала преобразования
-    double horizontalFactor, verticalFactor, verticalFactor1;     // Текущие масштабирующие множители по обеим осям
-                            // (изменение координаты при перемещении на один пиксел)
-    int horizontalCursorPosition,verticalCursorPosition;        // Положение курсора в момент начала преобразования
-                            // (в пикселах относительно канвы графика)
-
-    // применение результатов перемещения графика
-    void applyDrag(QPoint, bool moveRightAxis);
-
-    // обработчик событий от мыши
-    void dragMouseEvent(QEvent *);
-
-    // обработчик нажатия на кнопку мыши
-    // (включение перемещения графика)
-    void startDrag(QMouseEvent *);
-    // обработчик перемещения мыши
-    // (выполнение перемещения или выбор нового положения графика)
-    void proceedDrag(QMouseEvent *);
-    // обработчик отпускания кнопки мыши
-    // (выключение перемещения графика)
-    void endDrag(QMouseEvent *);
-};
 
 #endif // QWTCHARTZOOM_H

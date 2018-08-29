@@ -439,9 +439,48 @@ MainWindow::MainWindow(QWidget *parent)
     SortableTreeWidgetItem::setTypeMap(typeMap);
 
 
+    autoscaleXAct = new QAction("Автомасштабирование по оси X", this);
+    autoscaleXAct->setIcon(QIcon(":/icons/autoscale-x.png"));
+    autoscaleXAct->setCheckable(true);
+    bool autoscale = getSetting("autoscale-x", true).toBool();
+    connect(autoscaleXAct, QAction::toggled, [=](bool toggled){
+        plot->toggleAutoscale(0 /* x axis */,toggled);
+        setSetting("autoscale-x", toggled);
+    });
+    autoscaleXAct->setChecked(autoscale);
+    plot->toggleAutoscale(0 /* x axis */, autoscale);
+
+    autoscaleYAct = new QAction("Автомасштабирование по оси Y", this);
+    autoscaleYAct->setIcon(QIcon(":/icons/autoscale-y-main.png"));
+    autoscaleYAct->setCheckable(true);
+    autoscale = getSetting("autoscale-y", true).toBool();
+    connect(autoscaleYAct, QAction::toggled, [=](bool toggled){
+        plot->toggleAutoscale(1 /* y axis */,toggled);
+        setSetting("autoscale-y", toggled);
+    });
+    autoscaleYAct->setChecked(autoscale);
+    plot->toggleAutoscale(1 /* x axis */, autoscale);
+
+    autoscaleYSlaveAct = new QAction("Автомасштабирование по правой оси Y", this);
+    autoscaleYSlaveAct->setIcon(QIcon(":/icons/autoscale-y-slave.png"));
+    autoscaleYSlaveAct->setCheckable(true);
+    autoscale = getSetting("autoscale-y-slave", true).toBool();
+    connect(autoscaleYSlaveAct, QAction::toggled, [=](bool toggled){
+        plot->toggleAutoscale(2 /* y slave axis */,toggled);
+        setSetting("autoscale-y-slave", toggled);
+    });
+    autoscaleYSlaveAct->setChecked(autoscale);
+    plot->toggleAutoscale(2 /* x axis */, autoscale);
+
+    QToolBar *scaleToolBar = new QToolBar(this);
+    scaleToolBar->setOrientation(Qt::Vertical);
+    scaleToolBar->addAction(autoscaleXAct);
+    scaleToolBar->addAction(autoscaleYAct);
+    scaleToolBar->addAction(autoscaleYSlaveAct);
+
     QWidget *plotsWidget = new QWidget(this);
     QGridLayout *plotsLayout = new QGridLayout;
-//    plotsLayout->addWidget(toolBar,0,0);
+    plotsLayout->addWidget(scaleToolBar,0,0);
     plotsLayout->addWidget(plot,0,1);
     plotsWidget->setLayout(plotsLayout);
 

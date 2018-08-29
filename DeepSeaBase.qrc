@@ -16,5 +16,8 @@
         <file>icons/harmonics.png</file>
         <file>icons/tracking.png</file>
         <file>icons/tick.png</file>
+        <file>icons/autoscale-x.png</file>
+        <file>icons/autoscale-y-main.png</file>
+        <file>icons/autoscale-y-slave.png</file>
     </qresource>
 </RCC>

@@ -19,7 +19,7 @@
 #ifndef QAXISZOOMSVC_H
 #define QAXISZOOMSVC_H
 
-#include "qwtchartzoom.h"
+#include "chartzoom.h"
 
 class QAxisZoomSvc : public QObject
 {
@@ -30,7 +30,7 @@ public:
     explicit QAxisZoomSvc();
 
     // прикрепление интерфейса к менеджеру масштабирования
-    void attach(QwtChartZoom *);
+    void attach(ChartZoom *);
 signals:
     void xAxisClicked(double xValue, bool second);
     void contextMenuRequested(const QPoint &pos, const int axis);
@@ -40,7 +40,7 @@ protected:
     bool eventFilter(QObject *,QEvent *);
 
 private:
-    QwtChartZoom *zoom;     // Опекаемый менеджер масштабирования
+    ChartZoom *zoom;     // Опекаемый менеджер масштабирования
 
     QCursor cursor;        // Буфер для временного хранения курсора
 

@@ -10,7 +10,7 @@
 #include "ufffile.h"
 #include "curve.h"
 
-#include "qwtchartzoom.h"
+#include "chartzoom.h"
 
 #include <qwt_plot_zoomer.h>
 #include <qwt_picker.h>
@@ -79,11 +79,6 @@ Plot::Plot(QWidget *parent) :
     y1.clear();
     y2.clear();
 
-    // axis
-    setAxisScale(QwtPlot::yLeft, 0, 10);
-    setAxisScale(QwtPlot::xBottom, 0, 10);
-
-
     xScale = false;
     y1Scale = false;
     y2Scale = false;
@@ -114,7 +109,7 @@ Plot::Plot(QWidget *parent) :
 //    setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine());
 
 
-    zoom = new QwtChartZoom(this);
+    zoom = new ChartZoom(this);
     zoom->setZoomEnabled(true);
     connect(zoom,SIGNAL(updateTrackingCursor(double,bool)), trackingPanel, SLOT(setX(double,bool)));
     connect(zoom,SIGNAL(contextMenuRequested(QPoint,int)),SLOT(showContextMenu(QPoint,int)));
@@ -138,6 +133,9 @@ Plot::~Plot()
     delete picker;
 
     MainWindow::setSetting("axisLabelsVisible", axisLabelsVisible);
+    MainWindow::setSetting("autoscale-x", !zoom->horizontalScaleBounds->isFixed());
+    MainWindow::setSetting("autoscale-y", !zoom->verticalScaleBounds->isFixed());
+    MainWindow::setSetting("autoscale-y-slave", !zoom->verticalScaleBoundsSlave->isFixed());
 }
 
 void Plot::update()
@@ -145,6 +143,20 @@ void Plot::update()
     updateAxes();
     updateAxesLabels();
     updateLegend();
+    if (leftGraphs.isEmpty())
+        zoom->verticalScaleBounds->reset();
+    if (rightGraphs.isEmpty())
+        zoom->verticalScaleBoundsSlave->reset();
+    if (!hasGraphs())
+        zoom->horizontalScaleBounds->reset();
+
+    if (!zoom->horizontalScaleBounds->isFixed())
+        zoom->horizontalScaleBounds->autoscale();
+    if (!leftGraphs.isEmpty() && !zoom->verticalScaleBounds->isFixed())
+        zoom->verticalScaleBounds->autoscale();
+    if (!rightGraphs.isEmpty() && !zoom->verticalScaleBoundsSlave->isFixed())
+        zoom->verticalScaleBoundsSlave->autoscale();
+
 //    double x = _trackingCursor->value().x();
 //    updateTrackingCursor(x, false);
 //    x = _trackingCursor1->value().x();
@@ -261,9 +273,21 @@ void Plot::deleteGraph(Curve *graph, bool doReplot)
     if (graph) {
 //        emit curveDeleted(graph);
         ColorSelector::instance()->freeColor(graph->pen().color());
-        graphs.removeAll(graph);
-        leftGraphs.removeAll(graph);
-        rightGraphs.removeAll(graph);
+
+        int removed = leftGraphs.removeAll(graph);
+        if (removed > 0 && !leftGraphs.isEmpty())
+            zoom->verticalScaleBounds->removeAndAutoscale(graph->channel->yMinInitial(),
+                                                          graph->channel->yMaxInitial());
+
+        removed = rightGraphs.removeAll(graph);
+        if (removed > 0 && !rightGraphs.isEmpty())
+            zoom->verticalScaleBoundsSlave->removeAndAutoscale(graph->channel->yMinInitial(),
+                                                               graph->channel->yMaxInitial());
+        removed = graphs.removeAll(graph);
+        if (removed > 0)
+            zoom->horizontalScaleBounds->removeAndAutoscale(graph->channel->xBegin(),
+                                                            graph->channel->xMaxInitial());
+
         delete graph;
         graph = 0;
 
@@ -397,7 +421,7 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col)
 
     graphs << g;
 
-    bool needFixBoundaries = !hasGraphs() && zoom;
+    //bool needFixBoundaries = !hasGraphs() && zoom;
 
     g->attach(this);
 
@@ -415,20 +439,60 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col)
     // если график находится в своем исходном масштабе, то есть построен один
     // график или несколько, но еще не масштабированы, то меняем этот исходный масштаб на больший
     // иначе сохраням масштаб по осям
-    QwtScaleMap smX = canvasMap(QwtPlot::xBottom);
-    QwtScaleMap smY = canvasMap(ax);
+//    QwtScaleMap smX = canvasMap(QwtPlot::xBottom);
+//    QwtScaleMap smY = canvasMap(ax);
     Range &r = y1;
     if (plotOnSecondYAxis) r = y2;
-    if (graphs.size()<=1 || (smX.s1()==x1.min && smX.s2()==x1.max
-                             && smY.s1()==r.min && smY.s2()==r.max)) {
-        x1.min = qMin(ch->xBegin(), x1.min);
-        x1.max = qMax(ch->xMaxInitial(), x1.max);
-        setAxisScale(QwtPlot::xBottom, x1.min, x1.max);
+    ChartZoom::ScaleBounds *ybounds = 0;
+    if (zoom->verticalScaleBounds->axis == ax) ybounds = zoom->verticalScaleBounds;
+    else ybounds = zoom->verticalScaleBoundsSlave;
 
-        r.min = qMin(ch->yMinInitial(), r.min);
-        r.max = qMax(ch->yMaxInitial(), r.max);
-        setAxisScale(ax, r.min, r.max);
-    }
+////     добавляем график в пустое окно
+//    if (!hasGraphs()) {
+//        x1.min = qMin(ch->xBegin(), x1.min);
+//        x1.max = qMax(ch->xMaxInitial(), x1.max);
+//        zoom->horizontalScaleBounds->add(x1.min, x1.max);
+
+//        r.min = qMin(ch->yMinInitial(), r.min);
+//        r.max = qMax(ch->yMaxInitial(), r.max);
+//        ybounds->add(r.min, r.max);
+//    }
+    x1.min = qMin(ch->xBegin(), x1.min);
+    x1.max = qMax(ch->xMaxInitial(), x1.max);
+    zoom->horizontalScaleBounds->add(x1.min, x1.max);
+
+    r.min = qMin(ch->yMinInitial(), r.min);
+    r.max = qMax(ch->yMaxInitial(), r.max);
+    ybounds->add(r.min, r.max);
+
+//    // добавляем график в окно к уже имеющимся графикам
+//    else {
+//        if (zoom->horizontalScaleBounds->isFixed()) {
+//            // масштаб фиксирован, не меняем
+//        }
+//        else {
+//            x1.min = qMin(ch->xBegin(), x1.min);
+//            x1.max = qMax(ch->xMaxInitial(), x1.max);
+//            zoom->horizontalScaleBounds->add(x1.min, x1.max);
+//        }
+//        if (ybounds->isFixed()) {
+//            // масштаб фиксирован, не меняем
+//        }
+//        else {// масштаб не фиксирован, автомасштабируем
+
+//        }
+//    }
+
+//    if (graphs.size()<=1 || (smX.s1()==x1.min && smX.s2()==x1.max
+//                             && smY.s1()==r.min && smY.s2()==r.max)) {
+//        x1.min = qMin(ch->xBegin(), x1.min);
+//        x1.max = qMax(ch->xMaxInitial(), x1.max);
+//        setAxisScale(QwtPlot::xBottom, x1.min, x1.max);
+
+//        r.min = qMin(ch->yMinInitial(), r.min);
+//        r.max = qMax(ch->yMaxInitial(), r.max);
+//        setAxisScale(ax, r.min, r.max);
+//    }
 
 //    // Если графиков по данной вертикальной оси нет, то масштабируем оси, чтобы влез весь график
 //    // Иначе ничего не трогаем
@@ -446,8 +510,8 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col)
 //        setAxisScale(ax, r.min, r.max);
 //    }
 
-    if (needFixBoundaries)
-        if (zoom) zoom->fixBoundaries();
+//    if (needFixBoundaries)
+//        if (zoom) zoom->fixBoundaries();
 
     update();
     return true;
@@ -582,6 +646,23 @@ void Plot::switchHarmonicsMode()
 void Plot::switchTrackingCursor()
 {DD;
     trackingPanel->switchVisibility();
+}
+
+void Plot::toggleAutoscale(int axis, bool toggled)
+{
+    switch (axis) {
+        case 0: // x axis
+            zoom->horizontalScaleBounds->setFixed(!toggled);
+            break;
+        case 1: // y axis
+            zoom->verticalScaleBounds->setFixed(!toggled);
+            break;
+        case 2: // y slave axis
+            zoom->verticalScaleBoundsSlave->setFixed(!toggled);
+            break;
+        default:
+            break;
+    }
 }
 
 void Plot::setInteractionMode(Plot::InteractionMode mode)

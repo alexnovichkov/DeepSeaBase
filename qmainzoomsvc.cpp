@@ -15,7 +15,7 @@
 /**********************************************************/
 
 #include "logging.h"
-#include "qwtchartzoom.h"
+#include "chartzoom.h"
 #include <QRubberBand>
 
 // Конструктор
@@ -27,7 +27,7 @@ QMainZoomSvc::QMainZoomSvc() :
 }
 
 // Прикрепление интерфейса к менеджеру масштабирования
-void QMainZoomSvc::attach(QwtChartZoom *zm)
+void QMainZoomSvc::attach(ChartZoom *zm)
 {DD;
     // запоминаем указатель на менеджер масштабирования
     zoom = zm;
@@ -104,12 +104,12 @@ void QMainZoomSvc::procKeyboardEvent(QEvent *event)
             break;
         }
         case Qt::Key_Escape: {
-            if (zoom->regim() == QwtChartZoom::ctZoom) {
+            if (zoom->regim() == ChartZoom::ctZoom) {
                 // восстанавливаем курсор
-                zoom->plot()->canvas()->setCursor(tCursor);
+//                zoom->plot()->canvas()->setCursor(tCursor);
                 // удаляем виджет, отображающий выделенную область
                 if (zwid) zwid->hide();
-                zoom->setRegime(QwtChartZoom::ctNone);
+                zoom->setRegime(ChartZoom::ctNone);
             }
         }
         default: break;
@@ -123,7 +123,7 @@ void QMainZoomSvc::startZoom(QMouseEvent *mEvent)
     // фиксируем исходные границы графика (если этого еще не было сделано)
     zoom->fixBounds();
     // если в данный момент еще не включен ни один из режимов
-    if (zoom->regim() == QwtChartZoom::ctNone)
+    if (zoom->regim() == ChartZoom::ctNone)
     {
         // получаем указатели на
         QwtPlot *plot = zoom->plot();        // график
@@ -140,7 +140,7 @@ void QMainZoomSvc::startZoom(QMouseEvent *mEvent)
             if (mEvent->button() == Qt::LeftButton)
             {
                 // прописываем соответствующий признак режима
-                zoom->setRegime(QwtChartZoom::ctZoom);
+                zoom->setRegime(ChartZoom::ctZoom);
                 // создаем виджет, который будет отображать выделенную область
                 // (он будет прорисовываться на том же виджете, что и график)
                 if (!zwid) {
@@ -156,7 +156,7 @@ void QMainZoomSvc::startZoom(QMouseEvent *mEvent)
 void QMainZoomSvc::selectZoomRect(QMouseEvent *mEvent)
 {DD;
     // если включен режим изменения масштаба, то
-    if (zoom->regim() == QwtChartZoom::ctZoom)
+    if (zoom->regim() == ChartZoom::ctZoom)
     {
         int dx = mEvent->pos().x() - scp_x;
         if (dx == 0) dx = 1;
@@ -176,7 +176,7 @@ void QMainZoomSvc::selectZoomRect(QMouseEvent *mEvent)
 void QMainZoomSvc::procZoom(QMouseEvent *mEvent)
 {DD;
     // если включен режим изменения масштаба или режим перемещения графика
-    if (zoom->regim() == QwtChartZoom::ctZoom) {
+    if (zoom->regim() == ChartZoom::ctZoom) {
         // если отпущена левая кнопка мыши, то
         if (mEvent->button() == Qt::LeftButton)
         {
@@ -203,7 +203,7 @@ void QMainZoomSvc::procZoom(QMouseEvent *mEvent)
                 // определяем правую границу горизонтальной шкалы по конечной точке
                 double rg = plt->invTransform(mX,rightmostX);
                 // устанавливаем нижнюю и верхнюю границы горизонтальной шкалы
-                zoom->horizontalScaleBounds->set(lf,rg,-1);
+                zoom->horizontalScaleBounds->set(lf,rg);
                 // получаем основную вертикальную шкалу
                 QwtPlot::Axis mY = zoom->masterV();
                 // определяем нижнюю границу вертикальной шкалы по конечной точке
@@ -211,12 +211,12 @@ void QMainZoomSvc::procZoom(QMouseEvent *mEvent)
                 // определяем верхнюю границу вертикальной шкалы по начальной точке
                 double tp = plt->invTransform(mY,leftmostY);
                 // устанавливаем нижнюю и верхнюю границы вертикальной шкалы
-                zoom->verticalScaleBounds->set(bt,tp,-1);
+                zoom->verticalScaleBounds->set(bt,tp);
                 // перестраиваем график (синхронно с остальными)
                 plt->replot();
             }
             // очищаем признак режима
-            zoom->setRegime(QwtChartZoom::ctNone);
+            zoom->setRegime(ChartZoom::ctNone);
         }
     }
 }
