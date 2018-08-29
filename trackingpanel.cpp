@@ -4,6 +4,7 @@
 #include <mainwindow.h>
 
 #include <qwt_text.h>
+#include <qwt_plot_zoneitem.h>
 #include "plot.h"
 #include "dfdfiledescriptor.h"
 #include "curve.h"
@@ -25,6 +26,10 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
     _trackingCursor1->setLinePen( Qt::black, 1, Qt::DashDotLine );
     _trackingCursor1->setLabelAlignment(Qt::AlignBottom | Qt::AlignLeft);
     _trackingCursor1->showYValues = MainWindow::getSetting("cursorShowYValues", false).toBool();
+
+    cursorSpan = new QwtPlotZoneItem();
+    cursorSpan->setOrientation(Qt::Vertical);
+
 
     mStep = 0.0;
 
@@ -167,6 +172,8 @@ TrackingPanel::~TrackingPanel()
     _trackingCursor1->detach();
     delete _trackingCursor;
     delete _trackingCursor1;
+    cursorSpan->detach();
+    delete cursorSpan;
 }
 
 void TrackingPanel::updateState(const QList<TrackingPanel::TrackInfo> &curves, bool second)
@@ -259,11 +266,13 @@ void TrackingPanel::switchVisibility()
         setVisible(false);
         _trackingCursor->detach();
         _trackingCursor1->detach();
+        cursorSpan->detach();
     }
     else {
         setVisible(true);
         if (showFirst->isChecked()) _trackingCursor->attach(plot);
         if (showSecond->isChecked()) _trackingCursor1->attach(plot);
+        cursorSpan->attach(plot);
     }
 }
 
@@ -326,9 +335,10 @@ void TrackingPanel::updateTrackingCursor(double xVal, bool second)
 
     double leftBorder = _trackingCursor->xValue();
     double rightBorder = _trackingCursor1->xValue();
+
     if (leftBorder>rightBorder)
         std::swap(leftBorder,rightBorder);
-
+    cursorSpan->setInterval(leftBorder, rightBorder);
 
     //4. get the y values from all graphs
     QList<TrackingPanel::TrackInfo> list;
@@ -448,5 +458,6 @@ void TrackingPanel::hideEvent(QHideEvent *event)
 {
     _trackingCursor->detach();
     _trackingCursor1->detach();
+    cursorSpan->detach();
     QWidget::hideEvent(event);
 }

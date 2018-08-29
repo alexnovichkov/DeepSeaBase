@@ -11,6 +11,8 @@ class QLabel;
 class QDoubleSpinBox;
 class Plot;
 
+class QwtPlotZoneItem;
+
 class TrackingCursor : public QwtPlotMarker
 {
 public:
@@ -68,6 +70,7 @@ private:
 
     TrackingCursor *_trackingCursor;
     TrackingCursor *_trackingCursor1;
+    QwtPlotZoneItem *cursorSpan;
     Plot *plot;
 
     // QWidget interface
