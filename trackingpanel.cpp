@@ -46,17 +46,21 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
     connect(showFirst, &QCheckBox::stateChanged, [=](int state){
         if (state==Qt::Checked) {
             _trackingCursor->attach(plot);
+            if (showSecond->isChecked()) cursorSpan->attach(plot);
         }
         else {
             _trackingCursor->detach();
+            cursorSpan->detach();
         }
     });
     connect(showSecond, &QCheckBox::stateChanged, [=](int state){
         if (state==Qt::Checked) {
             _trackingCursor1->attach(plot);
+            if (showFirst->isChecked()) cursorSpan->attach(plot);
         }
         else {
             _trackingCursor1->detach();
+            cursorSpan->detach();
         }
     });
 
@@ -283,45 +287,6 @@ void TrackingPanel::updateTrackingCursor(double xVal, bool second)
     if (second) showSecond->setChecked(true);
     else showFirst->setChecked(true);
 
-//    if (!plot->curves().isEmpty()) {
-//        //first we need to find the closest point to xVal;
-//        //1. search the curve with the minimum xstep;
-//        double xstep = plot->curves().first()->channel->xStep();
-//        for (int i=1; i<plot->graphsCount(); ++i) {
-//            if (plot->curves().at(i)->channel->xStep()<xstep)
-//                xstep = plot->curves().at(i)->channel->xStep();
-//        }
-//        if (xstep==0.0) xstep = plot->curves().first()->channel->xStep();
-//        if (xstep!=0.0) {
-//            setStep(xstep);
-
-//            //2. compute the actual xVal based on the xVal and xstep
-//            int steps = int(xVal/xstep);
-//            //        qDebug()<<"xstep"<<xstep<<"xval"<<xVal<<"steps"<<steps;
-//            if (steps <= 0) xVal = 0.0;
-//            else {
-//                if (qAbs(xstep*(steps+1)-xVal) < qAbs(xstep*steps-xVal)) steps++;
-//                xVal = xstep*steps;
-//            }
-//        }
-//        else {//xstep == 0 -> третьоктава или еще что-нибудь, проверяем тип файла
-//            DfdFileDescriptor *dfd = static_cast<DfdFileDescriptor *>(plot->curves().first()->descriptor);
-//            if (!dfd || (dfd->DataType != ToSpectr && dfd->DataType != OSpectr)) {
-//                return;
-//            }
-
-//            int iMin = 0;
-//            double min = qAbs(xVal - dfd->channels[0]->XValues[0]);
-//            for (int i=1; i<dfd->channels[0]->XValues.size(); ++i) {
-//                if (qAbs(xVal - dfd->channels[0]->XValues[i])<min) {
-//                    iMin = i;
-//                    min = qAbs(xVal - dfd->channels[0]->XValues[i]);
-//                }
-//            }
-//            xVal = dfd->channels[0]->XValues[iMin];
-//        }
-//    }
-
     //3. update our cursors
     if (second) {
         _trackingCursor1->moveTo(xVal);
@@ -339,6 +304,11 @@ void TrackingPanel::updateTrackingCursor(double xVal, bool second)
     if (leftBorder>rightBorder)
         std::swap(leftBorder,rightBorder);
     cursorSpan->setInterval(leftBorder, rightBorder);
+    if (!showFirst->isChecked() || !showSecond->isChecked())
+        cursorSpan->detach();
+    else
+        cursorSpan->attach(plot);
+    plot->replot();
 
     //4. get the y values from all graphs
     QList<TrackingPanel::TrackInfo> list;
