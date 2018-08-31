@@ -390,15 +390,19 @@ void Plot::moveGraph(Curve *curve)
     }
 }
 
-bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col)
+bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool plotOnRight)
 {DD;
     if (plotted(descriptor, channel)) return false;
 
     Channel *ch = descriptor->channel(channel);
     if (!ch->populated()) ch->populate();
 
-    const bool plotOnFirstYAxis = canBePlottedOnLeftAxis(ch);
-    const bool plotOnSecondYAxis = plotOnFirstYAxis ? false : canBePlottedOnRightAxis(ch);
+    bool plotOnFirstYAxis = canBePlottedOnLeftAxis(ch);
+    bool plotOnSecondYAxis = plotOnFirstYAxis ? false : canBePlottedOnRightAxis(ch);
+    if (plotOnRight) {
+        plotOnFirstYAxis = false;
+        plotOnSecondYAxis = canBePlottedOnRightAxis(ch);
+    }
 
     static bool skipped = false;
     if (!plotOnFirstYAxis && !plotOnSecondYAxis) {

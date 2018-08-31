@@ -92,7 +92,7 @@ public:
     void deleteGraph(Curve *graph, bool doReplot = true);
     void deleteGraph(Channel *c, bool doReplot = true);
 
-    bool plotChannel(FileDescriptor *descriptor, int channel, QColor *col);
+    bool plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool plotOnRight = false);
 
     Curve *plotted(FileDescriptor *dfd, int channel) const;
     Curve *plotted(Channel *channel) const;

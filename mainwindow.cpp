@@ -226,6 +226,9 @@ MainWindow::MainWindow(QWidget *parent)
     plotAllChannelsAct = new QAction(QString("Построить все каналы"), this);
     connect(plotAllChannelsAct, SIGNAL(triggered()), SLOT(plotAllChannels()));
 
+    plotAllChannelsAtRightAct = new QAction(QString("...на правой оси"), this);
+    connect(plotAllChannelsAtRightAct, SIGNAL(triggered()), SLOT(plotAllChannelsAtRight()));
+
 
     QAction *plotHelpAct = new QAction("Справка", this);
     connect(plotHelpAct, &QAction::triggered, [=](){
@@ -236,7 +239,6 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     calculateSpectreAct = new QAction(QString("Обработать записи..."), this);
-    //convertAct->setIcon();
     connect(calculateSpectreAct, SIGNAL(triggered()), SLOT(calculateSpectreRecords()));
 
     convertAct = new QAction("Конвертировать файлы...", this);
@@ -528,6 +530,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->tree->addAction(addFileAct);
     tab->tree->addAction(delFilesAct);
     tab->tree->addAction(plotAllChannelsAct);
+    tab->tree->addAction(plotAllChannelsAtRightAct);
 //    tab->tree->addAction(removeChannelsPlotsAct);
     tab->tree->addAction(calculateSpectreAct);
     tab->tree->addAction(convertAct);
@@ -1678,6 +1681,7 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
         }
 
         const Qt::CheckState state = item->checkState();
+        bool plotOnRight = item->data(Qt::UserRole+2).toBool();
 
 
         QFont oldFont = tab->channelsTable->font();
@@ -1692,7 +1696,7 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
 
         if (state == Qt::Checked) {
             QColor col;
-            plotted = plot->plotChannel(tab->record, item->row(), &col);
+            plotted = plot->plotChannel(tab->record, item->row(), &col, plotOnRight);
             if (plotted) {
                 item->setFont(boldFont);
                 ch->setCheckState(Qt::Checked);
@@ -1713,7 +1717,7 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
                     if (it->fileDescriptor == tab->record || !it->isSelected()) continue;
                     if (it->fileDescriptor->channelsCount()<=item->row()) continue;
 
-                    plotted = plot->plotChannel(it->fileDescriptor, item->row(), &col);
+                    plotted = plot->plotChannel(it->fileDescriptor, item->row(), &col, plotOnRight);
                     if (plotted) {
                         it->fileDescriptor->channel(item->row())->setCheckState(Qt::Checked);
                         it->fileDescriptor->channel(item->row())->setColor(col);
@@ -1761,6 +1765,15 @@ void MainWindow::plotAllChannels()
 {DD;
     if (!tab) return;
     for (int i=0; i<tab->channelsTable->rowCount(); ++i) {
+        tab->channelsTable->item(i,0)->setCheckState(Qt::Checked);
+    }
+}
+
+void MainWindow::plotAllChannelsAtRight()
+{
+    if (!tab) return;
+    for (int i=0; i<tab->channelsTable->rowCount(); ++i) {
+        tab->channelsTable->item(i,0)->setData(Qt::UserRole+2, true);
         tab->channelsTable->item(i,0)->setCheckState(Qt::Checked);
     }
 }

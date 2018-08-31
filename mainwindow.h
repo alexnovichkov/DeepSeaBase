@@ -94,6 +94,7 @@ private slots:
      * Строит все каналы выделенной записи
      */
     void plotAllChannels();
+    void plotAllChannelsAtRight();
 
     /**
      * @brief calculateSpectreRecords
@@ -206,6 +207,7 @@ private:
 
     QAction *delFilesAct;
     QAction *plotAllChannelsAct;
+    QAction *plotAllChannelsAtRightAct;
     QAction *removeChannelsPlotsAct;
     QAction *calculateSpectreAct;
     QAction *calculateThirdOctaveAct;
