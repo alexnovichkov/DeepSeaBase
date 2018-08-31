@@ -4,7 +4,9 @@
 LegendLabel::LegendLabel(QWidget *parent) :
     QwtLegendLabel(parent)
 {
-    setToolTip("Удалить - правый клик мыши");
+//    setToolTip("Удалить - правый клик мыши\nПереместить на правую ось Y - средняя кнопка мыши");
+    setToolTip("Настроить - левая кнопка мыши\n"
+               "Удалить - правая кнопка мыши");
 }
 
 void LegendLabel::mousePressEvent(QMouseEvent *e)
@@ -21,6 +23,14 @@ void LegendLabel::mousePressEvent(QMouseEvent *e)
         setDown( down );
         updateState(down, QwtLegendData::Checkable);
         if (down) Q_EMIT(markedForDelete());
+        return;
+    }
+    if ( e->button() == Qt::MiddleButton )
+    {
+        bool down = !isDown();
+        setDown( down );
+        updateState(down, QwtLegendData::Checkable);
+        if (down) Q_EMIT(markedToMoveToRight());
         return;
     }
     QwtTextLabel::mousePressEvent( e );

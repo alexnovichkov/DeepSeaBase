@@ -209,8 +209,11 @@ void ChartZoom::fixBounds()
 void ChartZoom::resetBounds(Qt::Orientations orientations)
 {DD;
     // устанавливаем запомненные ранее границы
-    if (orientations & Qt::Horizontal) horizontalScaleBounds->reset();  // горизонтальной шкалы
-    if (orientations & Qt::Vertical) verticalScaleBounds->reset();  // и вертикальной
+    if (orientations & Qt::Horizontal) horizontalScaleBounds->autoscale();  // горизонтальной шкалы
+    if (orientations & Qt::Vertical) {
+        verticalScaleBounds->autoscale();  // и вертикальной
+        verticalScaleBoundsSlave->autoscale();
+    }
     // перестраиваем график
     qwtPlot->replot();
 }
@@ -218,6 +221,60 @@ void ChartZoom::resetBounds(Qt::Orientations orientations)
 void ChartZoom::setZoomEnabled(bool enabled)
 {DD;
     this->activated = enabled;
+}
+
+void ChartZoom::addZoom(const ChartZoom::zoomCoordinates &coords, bool apply)
+{DD;
+    zoomStack.push(coords);
+    if (apply) {
+        zoomCoordinates coords = zoomStack.top();
+
+        if (coords.coords.contains(masterH()))
+            horizontalScaleBounds->set(coords.coords.value(masterH()).x(),
+                                       coords.coords.value(masterH()).y());
+        if (coords.coords.contains(masterV())) {
+            verticalScaleBounds->set(coords.coords.value(masterV()).x(),
+                                     coords.coords.value(masterV()).y());
+        }
+        if (coords.coords.contains(slaveV())) {
+            verticalScaleBoundsSlave->set(coords.coords.value(slaveV()).x(),
+                                          coords.coords.value(slaveV()).y());
+        }
+        plot()->replot();
+    }
+}
+
+void ChartZoom::zoomBack(Qt::Orientations orientations)
+{DD;
+    if (zoomStack.isEmpty()) return;
+    zoomStack.pop();
+    if (zoomStack.isEmpty()) {
+        // nothing to zoom back to, autoscaling to
+        if (orientations & Qt::Horizontal) horizontalScaleBounds->autoscale();
+        if (orientations & Qt::Vertical) {
+            verticalScaleBounds->autoscale();
+            verticalScaleBoundsSlave->autoscale();
+        }
+    }
+    else {
+        zoomCoordinates coords = zoomStack.top();
+
+        if ((orientations & Qt::Horizontal) && coords.coords.contains(masterH()))
+            horizontalScaleBounds->set(coords.coords.value(masterH()).x(),
+                                       coords.coords.value(masterH()).y());
+        if ((orientations & Qt::Vertical)) {
+            if (coords.coords.contains(masterV())) {
+                verticalScaleBounds->set(coords.coords.value(masterV()).x(),
+                                           coords.coords.value(masterV()).y());
+            }
+            if (coords.coords.contains(slaveV())) {
+                verticalScaleBoundsSlave->set(coords.coords.value(slaveV()).x(),
+                                           coords.coords.value(slaveV()).y());
+            }
+        }
+    }
+    // перестраиваем график
+    plot()->replot();
 }
 
 void ChartZoom::labelSelected(bool selected)
@@ -238,14 +295,13 @@ ChartZoom::ScaleBounds::
     plot = plt;     // опекаемый график
     axis = mst;   // шкалу
     fixed = false;  // границы еще не фиксированы
-    unbound = true; // исходный масштаб не выбран, по умолчанию ставим [0; 10]
-    min = 0.0;
-    max = 10.0;
-    mins << min;
-    maxes << max;
+//    min = 0.0;
+//    max = 10.0;
+    mins << 0.0;
+    maxes << 10.0;
 
     if (plot)
-        plot->setAxisScale(axis, min, max);
+        plot->setAxisScale(axis, 0, 10.0);
 }
 
 void ChartZoom::ScaleBounds::setFixed(bool fixed)
@@ -254,7 +310,6 @@ void ChartZoom::ScaleBounds::setFixed(bool fixed)
 
     if (!fixed)
         autoscale();
-
 }
 
 // Фиксация исходных границ шкалы
@@ -264,23 +319,17 @@ void ChartZoom::ScaleBounds::add(double min, double max)
     maxes << max;
 
     if (!fixed) {
-        this->min = min;
-        this->max = max;
+//        this->min = min;
+//        this->max = max;
         plot->setAxisScale(axis, min,max);
     }
-
-    unbound = false;
 }
 
 // Установка заданных границ шкалы
 void ChartZoom::ScaleBounds::set(double min, double max)
 {DD;
-//    // если границы еще не фиксированы, фиксируем их
-//    if (!fixed) fix();
-
     // устанавливаем нижнюю и верхнюю границы шкалы
     plot->setAxisScale(axis, min,max);
-    unbound = false; // шкала больше не свободна, масштаб выбран
 }
 
 // Восстановление исходных границ шкалы
@@ -288,36 +337,50 @@ void ChartZoom::ScaleBounds::reset()
 {DD;
     // если границы уже фиксированы, то восстанавливаем исходные
     if (fixed) {
-        //unbound = false;
         //set(min,max);
     }
     else {
-        min = 0;
-        max = 10;
-        unbound = true;
+//        min = 0;
+//        max = 10;
         mins.clear();
         maxes.clear();
-        set(min,max);
+        mins << 0.0;
+        maxes << 10.0;
+        set(0.0, 10.0);
     }
 }
 
 void ChartZoom::ScaleBounds::autoscale()
-{
-    min = *(std::min_element(mins.begin(), mins.end()));
-    max = *(std::max_element(maxes.begin(), maxes.end()));
+{DD;
+    double min = *(std::min_element(mins.begin(), mins.end()));
+    double max = *(std::max_element(maxes.begin(), maxes.end()));
 
     plot->setAxisScale(axis, min, max);
 }
 
-void ChartZoom::ScaleBounds::removeAndAutoscale(double min, double max)
-{
-    mins.remove(min);
+void ChartZoom::ScaleBounds::removeToAutoscale(double min, double max)
+{DD;
+    mins.removeAll(min);
     if (mins.isEmpty()) mins << min;
 
-    maxes.remove(max);
+    maxes.removeAll(max);
     if (maxes.isEmpty()) maxes << max;
+}
 
-    //autoscale();
+void ChartZoom::ScaleBounds::back()
+{DD;
+    if (mins.size()>1 && maxes.size()>1) {
+        mins.removeLast();
+        maxes.removeLast();
+        set(mins.last(), maxes.last());
+    }
+    else {
+        mins.clear();
+        maxes.clear();
+        mins << 0.0;
+        maxes << 10.0;
+        set(0.0, 10.0);
+    }
 }
 
 //// Переустановка границ дополнительной шкалы

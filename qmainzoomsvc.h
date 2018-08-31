@@ -50,11 +50,12 @@ protected:
 
 private:
     ChartZoom *zoom;     // Опекаемый менеджер масштабирования
-    QRubberBand *zwid;
-//    QCursor tCursor;        // Буфер для временного хранения курсора
+    QRubberBand *rubberBand;
 
-    int scp_x,scp_y;        // Положение курсора в момент начала преобразования
+    int startingPosX,startingPosY;        // Положение курсора в момент начала преобразования
                             // (в пикселах относительно канвы графика)
+
+
 
     // обработчик обычных событий от мыши
     void procMouseEvent(QEvent *);
@@ -69,7 +70,7 @@ private:
     void selectZoomRect(QMouseEvent *);
     // обработчик отпускания кнопки мыши
     // (выполнение изменения масштаба)
-    void procZoom(QMouseEvent *);
+    void finishZoom(QMouseEvent *);
 };
 
 #endif // QMAINZOOMSVC_H

@@ -68,19 +68,14 @@ void QWheelZoomSvc::applyWheel(QEvent *event, bool wheelHorizontally, bool wheel
     const int wheelDelta = wEvent->delta();
 
     if (wheelDelta != 0) {   // если колесо вращалось, то
-        // фиксируем исходные границы графика (если этого еще не было сделано)
-        zoom->fixBounds();
         // получаем указатель на график
         QwtPlot *plot = zoom->plot();
 
-        double factor;
         double wheelSteps = wheelDelta/120.0;
-        factor = pow(0.85, wheelSteps);
-
-        double horPos = plot->invTransform(zoom->masterH(), wEvent->pos().x());
-        double verPos = plot->invTransform(zoom->masterV(), wEvent->pos().y());
+        double factor = pow(0.85, wheelSteps);
 
         if (wheelHorizontally) {// если задано масштабирование по горизонтали
+            double horPos = plot->invTransform(zoom->masterH(), wEvent->pos().x());
             // получаем карту основной горизонтальной шкалы
             QwtScaleMap sm = plot->canvasMap(zoom->masterH());
 
@@ -90,11 +85,19 @@ void QWheelZoomSvc::applyWheel(QEvent *event, bool wheelHorizontally, bool wheel
         }
         if (wheelVertically) // если задано масштабирование по вертикали
         {
+            double verPos = plot->invTransform(zoom->masterV(), wEvent->pos().y());
             // получаем карту основной вертикальной шкалы
             QwtScaleMap sm = plot->canvasMap(zoom->masterV());
             double lower = (sm.s1()-verPos)*factor + verPos;
             double upper = (sm.s2()-verPos)*factor + verPos;
             zoom->verticalScaleBounds->set(lower, upper);
+
+            verPos = plot->invTransform(zoom->slaveV(), wEvent->pos().y());
+            // получаем карту основной вертикальной шкалы
+            sm = plot->canvasMap(zoom->slaveV());
+            lower = (sm.s1()-verPos)*factor + verPos;
+            upper = (sm.s2()-verPos)*factor + verPos;
+            zoom->verticalScaleBoundsSlave->set(lower, upper);
         }
         // перестраиваем график (синхронно с остальными)
         plot->replot();

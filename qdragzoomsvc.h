@@ -49,6 +49,7 @@ private:
                             // (изменение координаты при перемещении на один пиксел)
     int horizontalCursorPosition,verticalCursorPosition;        // Положение курсора в момент начала преобразования
                             // (в пикселах относительно канвы графика)
+    double dx, dy, dy1; //Текущее смещение графика
 
     // применение результатов перемещения графика
     void applyDrag(QPoint, bool moveRightAxis);

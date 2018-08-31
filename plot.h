@@ -118,6 +118,7 @@ public:
 
     void prepareAxis(int axis);
     void setAxis(int axis, const QString &name);
+    void updateAxisScale(int axis, double min, double max);
     void updateAxesLabels();
 
     void moveGraph(Curve *curve);
@@ -163,10 +164,6 @@ private:
     ChartZoom *zoom;
 
     TrackingPanel *trackingPanel;
-
-    Range x1;
-    Range y1;
-    Range y2;
 
     InteractionMode interactionMode;
 };

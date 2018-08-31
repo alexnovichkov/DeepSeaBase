@@ -38,9 +38,12 @@ void QAxisZoomSvc::attach(ChartZoom *zm)
 // Обработчик всех событий
 bool QAxisZoomSvc::eventFilter(QObject *target,QEvent *event)
 {
+    if (event->type() == QEvent::KeyPress) {
+                    procKeyboardEvent(event);
+                }
+
    // if (zoom->activated) {
         int ax = -1;
-        // просматриваем список шкал
         for (int a=0; a < QwtPlot::axisCnt; a++)
             // если событие произошло для данной шкалы, то
             if (target == zoom->plot()->axisWidget(a))
@@ -49,14 +52,17 @@ bool QAxisZoomSvc::eventFilter(QObject *target,QEvent *event)
                 break;
             }
 
-        // если шкала была найдена, то
-        if (ax >= 0)
+        if (ax >= 0) {
             // если произошло одно из событий от мыши, то
             if (event->type() == QEvent::MouseButtonPress ||
                 event->type() == QEvent::MouseMove ||
-                event->type() == QEvent::MouseButtonRelease
-                || event->type() == QEvent::MouseButtonDblClick)
+                event->type() == QEvent::MouseButtonRelease ||
+                event->type() == QEvent::MouseButtonDblClick)
                 axisMouseEvent(event,ax);   // вызываем соответствующий обработчик
+//            else if (event->type() == QEvent::KeyPress) {
+//                procKeyboardEvent(event);
+//            }
+        }
   //  }
 
     return QObject::eventFilter(target,event);
@@ -187,7 +193,6 @@ double QAxisZoomSvc::limitScale(double sz,double bs)
     return sz;
 }
 
-// Применение результатов перемещения границы шкалы
 void QAxisZoomSvc::axisApplyMove(QPoint evpos, int ax)
 {DD;
     // получаем указатель на график
@@ -199,11 +204,10 @@ void QAxisZoomSvc::axisApplyMove(QPoint evpos, int ax)
     // (за вычетом смещений графика)
     int x = evpos.x() + gw.x() - gc.x() - scb_pxl;
     int y = evpos.y() + gw.y() - gc.y() - scb_pyt;
-    bool bndCh = false; // пока ничего не изменилось
-    // читаем режим масштабирования
-    ChartZoom::QConvType ct = zoom->regim();
-    // в зависимости от включенного режима выполняем некоторые действия
-    switch (ct) {
+
+    bool axisChanged = false;
+
+    switch (zoom->regim()) {
         // режим изменения левой границы
         case ChartZoom::ctAxisHL: {
             // ограничение на положение курсора справа
@@ -215,10 +219,10 @@ void QAxisZoomSvc::axisApplyMove(QPoint evpos, int ax)
             // вычисляем новую левую границу
             double xl = currentRightBorder - wx;
             if (xl<0.0) xl=0.0;
-
+            currentLeftBorder = xl;
             // устанавливаем ее для горизонтальной шкалы
             zoom->horizontalScaleBounds->set(xl,currentRightBorder);
-            bndCh = true;   // изменилась граница
+            axisChanged = true;   // изменилась граница
             break;
         }
             // режим изменения правой границы
@@ -233,8 +237,9 @@ void QAxisZoomSvc::axisApplyMove(QPoint evpos, int ax)
             // вычисляем новую правую границу
             double xr = currentLeftBorder + wx;
             // устанавливаем ее для горизонтальной шкалы
+            currentRightBorder = xr;
             zoom->horizontalScaleBounds->set(currentLeftBorder,xr);
-            bndCh = true;   // изменилась граница
+            axisChanged = true;   // изменилась граница
             break;
         }
             // режим изменения нижней границы
@@ -248,12 +253,13 @@ void QAxisZoomSvc::axisApplyMove(QPoint evpos, int ax)
             hy = limitScale(hy,currentHeight);
             // вычисляем новую нижнюю границу
             double yb = currentTopBorder - hy;
-            // устанавливаем ее для вертикальной шкалы
-            if (zoom->verticalScaleBounds->axis == ax)
-                zoom->verticalScaleBounds->set(yb,currentTopBorder);
+
+            currentBottomBorder = yb;
             if (zoom->verticalScaleBoundsSlave->axis == ax)
                 zoom->verticalScaleBoundsSlave->set(yb,currentTopBorder);
-            bndCh = true;   // изменилась граница
+            else
+                zoom->verticalScaleBounds->set(yb, currentTopBorder);
+            axisChanged = true;   // изменилась граница
             break;
         }
             // режим изменения верхней границы
@@ -268,18 +274,19 @@ void QAxisZoomSvc::axisApplyMove(QPoint evpos, int ax)
             // вычисляем новую верхнюю границу
             double yt = currentBottomBorder + hy;
             // устанавливаем ее для вертикальной шкалы
-            if (zoom->verticalScaleBounds->axis == ax)
-                zoom->verticalScaleBounds->set(currentBottomBorder,yt);
+            currentTopBorder = yt;
+
             if (zoom->verticalScaleBoundsSlave->axis == ax)
                 zoom->verticalScaleBoundsSlave->set(currentBottomBorder,yt);
-            bndCh = true;   // изменилась граница
+            else
+                zoom->verticalScaleBounds->set(currentBottomBorder,yt);
+            axisChanged = true;   // изменилась граница
             break;
         }
-            // для прочих режимов ничего не делаем
-        default: ;
+        default:
+            break;
     }
-    // если какя-либо граница изменилась, то перестраиваем график
-    if (bndCh) plt->replot();
+    if (axisChanged) plt->replot();
 }
 
 // Обработчик событий от мыши для шкалы
@@ -291,7 +298,6 @@ void QAxisZoomSvc::axisMouseEvent(QEvent *event,int axis)
         case QEvent::MouseButtonPress:
             if (mEvent->button()==Qt::RightButton) {
                 emit contextMenuRequested(mEvent->globalPos(), axis);
-                //showContextMenu(mEvent,axis);
             }
             else if (axis == QwtPlot::xBottom || axis == QwtPlot::xTop)
                 startHorizontalAxisZoom(mEvent, axis);
@@ -309,15 +315,18 @@ void QAxisZoomSvc::axisMouseEvent(QEvent *event,int axis)
 
         case QEvent::MouseButtonDblClick:
             if (mEvent->button()==Qt::LeftButton) {
-                zoom->fixBounds();
                 AxisBoundsDialog dialog(zoom->plot()->canvasMap(axis).s1(), zoom->plot()->canvasMap(axis).s2(), axis);
                 if (dialog.exec()) {
+                    ChartZoom::zoomCoordinates coords;
                     if (axis == QwtPlot::xBottom || axis == QwtPlot::xTop)
-                        zoom->horizontalScaleBounds->set(dialog.leftBorder(), dialog.rightBorder());
+                        coords.coords.insert(zoom->masterH(), {dialog.leftBorder(), dialog.rightBorder()});
                     else if (zoom->verticalScaleBounds->axis == axis)
-                        zoom->verticalScaleBounds->set(dialog.leftBorder(), dialog.rightBorder());
+                        coords.coords.insert(zoom->masterV(), {dialog.leftBorder(), dialog.rightBorder()});
                     else if (zoom->verticalScaleBoundsSlave->axis == axis)
-                        zoom->verticalScaleBoundsSlave->set(dialog.leftBorder(), dialog.rightBorder());
+                        coords.coords.insert(zoom->slaveV(), {dialog.leftBorder(), dialog.rightBorder()});
+                    if (!coords.coords.isEmpty())
+                        zoom->addZoom(coords, true);
+
                     if (dialog.autoscale()) {
                         emit needsAutoscale(axis);
                     }
@@ -331,13 +340,22 @@ void QAxisZoomSvc::axisMouseEvent(QEvent *event,int axis)
     }
 }
 
+void QAxisZoomSvc::procKeyboardEvent(QEvent *event)
+{
+    qDebug()<<Q_FUNC_INFO;
+    QKeyEvent *kEvent = static_cast<QKeyEvent*>(event);
+    switch (kEvent->key()) {
+        case Qt::Key_Backspace:
+            zoom->zoomBack(Qt::Horizontal | Qt::Vertical);
+            break;
+        default: break;
+    }
+}
+
 // Обработчик нажатия на кнопку мыши над шкалой
 // (включение изменения масштаба шкалы)
 void QAxisZoomSvc::startHorizontalAxisZoom(QMouseEvent *event, int axis)
 {DD;
-
-    // фиксируем исходные границы графика (если этого еще не было сделано)
-    zoom->fixBounds();
     // если в данный момент еще не включен ни один из режимов
     if (zoom->regim() == ChartZoom::ctNone) {
         // если нажата левая кнопка мыши, то
@@ -347,16 +365,11 @@ void QAxisZoomSvc::startHorizontalAxisZoom(QMouseEvent *event, int axis)
             QwtPlot *plot = zoom->plot();                // график
             QwtScaleWidget *scaleWidget = plot->axisWidget(axis);   // виджет шкалы
 
-
-
-
             // получаем карту основной горизонтальной шкалы
             QwtScaleMap sm = plot->canvasMap(axis);
             currentLeftBorder = sm.s1();
             currentRightBorder = sm.s2();
             currentWidth = sm.sDist();
-
-
 
             // определяем (для удобства) геометрию
             QRect canvasGeometry = plot->canvas()->geometry();   // канвы графика
@@ -402,8 +415,6 @@ void QAxisZoomSvc::startHorizontalAxisZoom(QMouseEvent *event, int axis)
 // (включение изменения масштаба шкалы)
 void QAxisZoomSvc::startVerticalAxisZoom(QMouseEvent *event, int axis)
 {DD;
-    // фиксируем исходные границы графика (если этого еще не было сделано)
-    zoom->fixBounds();
     // если в данный момент еще не включен ни один из режимов
     if (zoom->regim() == ChartZoom::ctNone) {
         // если нажата левая кнопка мыши, то
@@ -491,6 +502,16 @@ void QAxisZoomSvc::endAxisZoom(QMouseEvent *mEvent,int ax)
         zoom->plot()->axisWidget(ax)->setCursor(cursor);
         // выключаем режим масштабирования
         zoom->setRegime(ChartZoom::ctNone);
+
+        // запоминаем совершенное перемещение
+        ChartZoom::zoomCoordinates coords;
+        if (ax == zoom->masterH()) {
+            coords.coords.insert(ax, {currentLeftBorder, currentRightBorder});
+        }
+        if (ax == zoom->masterV() || ax == zoom->slaveV()) {
+            coords.coords.insert(ax, {currentBottomBorder, currentTopBorder});
+        }
+        if (!coords.coords.isEmpty()) zoom->addZoom(coords);
     }
 }
 

@@ -23,7 +23,7 @@ QMainZoomSvc::QMainZoomSvc() :
     QObject()
 {DD;
     // очищаем виджет, отвечающий за отображение выделенной области
-    zwid = 0;
+    rubberBand = 0;
 }
 
 // Прикрепление интерфейса к менеджеру масштабирования
@@ -32,7 +32,7 @@ void QMainZoomSvc::attach(ChartZoom *zm)
     // запоминаем указатель на менеджер масштабирования
     zoom = zm;
     // назначаем для графика обработчик событий (фильтр событий)
-    zm->plot()->canvas()->installEventFilter(this);
+    zoom->plot()->canvas()->installEventFilter(this);
 }
 
 void QMainZoomSvc::detach()
@@ -79,12 +79,12 @@ void QMainZoomSvc::procMouseEvent(QEvent *event)
             break;
             // отпущена кнопка мыши
         case QEvent::MouseButtonRelease:
-            procZoom(mEvent);
+            finishZoom(mEvent);
             break;
-        case QEvent::MouseButtonDblClick:
-            if (mEvent->button() == Qt::LeftButton)
-                zoom->resetBounds(Qt::Horizontal | Qt::Vertical);
-            break;
+//        case QEvent::MouseButtonDblClick:
+//            if (mEvent->button() == Qt::LeftButton)
+//                zoom->resetBounds(Qt::Horizontal | Qt::Vertical);
+//            break;
             // для прочих событий ничего не делаем
         default: ;
     }
@@ -96,11 +96,11 @@ void QMainZoomSvc::procKeyboardEvent(QEvent *event)
     switch (kEvent->key()) {
         case Qt::Key_Backspace: {
             if (kEvent->modifiers() == Qt::NoModifier)
-                zoom->resetBounds(Qt::Horizontal | Qt::Vertical);
+                zoom->zoomBack(Qt::Horizontal | Qt::Vertical);
             else if (kEvent->modifiers() & Qt::ControlModifier)
-                zoom->resetBounds(Qt::Horizontal);
+                zoom->zoomBack(Qt::Horizontal);
             else if (kEvent->modifiers() & Qt::ShiftModifier)
-                zoom->resetBounds(Qt::Vertical);
+                zoom->zoomBack(Qt::Vertical);
             break;
         }
         case Qt::Key_Escape: {
@@ -108,7 +108,7 @@ void QMainZoomSvc::procKeyboardEvent(QEvent *event)
                 // восстанавливаем курсор
 //                zoom->plot()->canvas()->setCursor(tCursor);
                 // удаляем виджет, отображающий выделенную область
-                if (zwid) zwid->hide();
+                if (rubberBand) rubberBand->hide();
                 zoom->setRegime(ChartZoom::ctNone);
             }
         }
@@ -120,22 +120,17 @@ void QMainZoomSvc::procKeyboardEvent(QEvent *event)
 // (включение изменения масштаба)
 void QMainZoomSvc::startZoom(QMouseEvent *mEvent)
 {DD;
-    // фиксируем исходные границы графика (если этого еще не было сделано)
-    zoom->fixBounds();
     // если в данный момент еще не включен ни один из режимов
     if (zoom->regim() == ChartZoom::ctNone)
     {
-        // получаем указатели на
-        QwtPlot *plot = zoom->plot();        // график
-        QWidget *plotCanvas = plot->canvas();  // и канву
         // получаем геометрию канвы графика
-        QRect cg = plotCanvas->geometry();
+        QRect cg = zoom->plot()->canvas()->geometry();
         // определяем текущее положение курсора (относительно канвы графика)
-        scp_x = mEvent->pos().x();
-        scp_y = mEvent->pos().y();
+        startingPosX = mEvent->pos().x();
+        startingPosY = mEvent->pos().y();
         // если курсор находится над канвой графика
-        if (scp_x >= 0 && scp_x < cg.width() &&
-            scp_y >= 0 && scp_y < cg.height()) {
+        if (startingPosX >= 0 && startingPosX < cg.width() &&
+            startingPosY >= 0 && startingPosY < cg.height()) {
             // если нажата левая кнопка мыши, то
             if (mEvent->button() == Qt::LeftButton)
             {
@@ -143,8 +138,8 @@ void QMainZoomSvc::startZoom(QMouseEvent *mEvent)
                 zoom->setRegime(ChartZoom::ctZoom);
                 // создаем виджет, который будет отображать выделенную область
                 // (он будет прорисовываться на том же виджете, что и график)
-                if (!zwid) {
-                    zwid = new QRubberBand(QRubberBand::Rectangle, zoom->plot()->canvas());
+                if (!rubberBand) {
+                    rubberBand = new QRubberBand(QRubberBand::Rectangle, zoom->plot()->canvas());
                 }
             }
         }
@@ -158,22 +153,22 @@ void QMainZoomSvc::selectZoomRect(QMouseEvent *mEvent)
     // если включен режим изменения масштаба, то
     if (zoom->regim() == ChartZoom::ctZoom)
     {
-        int dx = mEvent->pos().x() - scp_x;
+        int dx = mEvent->pos().x() - startingPosX;
         if (dx == 0) dx = 1;
 
-        int dy = mEvent->pos().y() - scp_y;
+        int dy = mEvent->pos().y() - startingPosY;
         if (dy == 0) dy = 1;
         // отображаем выделенную область
-        if (zwid) {
-            zwid->setGeometry(QRect(scp_x, scp_y, dx,dy).normalized());
-            zwid->show();
+        if (rubberBand) {
+            rubberBand->setGeometry(QRect(startingPosX, startingPosY, dx,dy).normalized());
+            rubberBand->show();
         }
     }
 }
 
 // Обработчик отпускания кнопки мыши
 // (выполнение изменения масштаба)
-void QMainZoomSvc::procZoom(QMouseEvent *mEvent)
+void QMainZoomSvc::finishZoom(QMouseEvent *mEvent)
 {DD;
     // если включен режим изменения масштаба или режим перемещения графика
     if (zoom->regim() == ChartZoom::ctZoom) {
@@ -182,41 +177,43 @@ void QMainZoomSvc::procZoom(QMouseEvent *mEvent)
         {
             QwtPlot *plt = zoom->plot();
             // удаляем виджет, отображающий выделенную область
-            if (zwid) zwid->hide();
+            if (rubberBand) rubberBand->hide();
             // определяем положение курсора, т.е. координаты xp и yp
             // конечной точки выделенной области (в пикселах относительно канвы QwtPlot)
-            int xp = mEvent->pos().x() ;
-            int yp = mEvent->pos().y() ;
+            int xp = mEvent->pos().x();
+            int yp = mEvent->pos().y();
 
             // если был одинарный щелчок мышью, то трактуем как установку курсора
-            if (xp-scp_x==0 && yp-scp_y==0) {
-                emit xAxisClicked(zoom->plot()->canvasMap(QwtPlot::xBottom).invTransform(scp_x), mEvent->modifiers() & Qt::ControlModifier);
+            if (xp-startingPosX==0 && yp-startingPosY==0) {
+                emit xAxisClicked(zoom->plot()->canvasMap(QwtPlot::xBottom).invTransform(startingPosX),
+                                  mEvent->modifiers() & Qt::ControlModifier);
             }
 
-            if (qAbs(xp - scp_x) >= 8 && qAbs(yp - scp_y) >= 8)
+            if (qAbs(xp - startingPosX) >= 8 && qAbs(yp - startingPosY) >= 8)
             {
-                int leftmostX = qMin(xp, scp_x); int rightmostX = qMax(xp, scp_x);
-                int leftmostY = qMin(yp, scp_y); int rightmostY = qMax(yp, scp_y);
+                int leftmostX = qMin(xp, startingPosX); int rightmostX = qMax(xp, startingPosX);
+                int leftmostY = qMin(yp, startingPosY); int rightmostY = qMax(yp, startingPosY);
                 QwtPlot::Axis mX = zoom->masterH();
-                // определяем левую границу горизонтальной шкалы по начальной точке
-                double lf = plt->invTransform(mX,leftmostX);
-                // определяем правую границу горизонтальной шкалы по конечной точке
-                double rg = plt->invTransform(mX,rightmostX);
-                // устанавливаем нижнюю и верхнюю границы горизонтальной шкалы
-                zoom->horizontalScaleBounds->set(lf,rg);
-                // получаем основную вертикальную шкалу
+                const double xMin = plt->invTransform(mX,leftmostX);
+                const double xMax = plt->invTransform(mX,rightmostX);
+
                 QwtPlot::Axis mY = zoom->masterV();
-                // определяем нижнюю границу вертикальной шкалы по конечной точке
-                double bt = plt->invTransform(mY,rightmostY);
-                // определяем верхнюю границу вертикальной шкалы по начальной точке
-                double tp = plt->invTransform(mY,leftmostY);
-                // устанавливаем нижнюю и верхнюю границы вертикальной шкалы
-                zoom->verticalScaleBounds->set(bt,tp);
-                // перестраиваем график (синхронно с остальными)
-                plt->replot();
+                double yMin = plt->invTransform(mY,rightmostY);
+                double yMax = plt->invTransform(mY,leftmostY);
+
+                mY = zoom->slaveV();
+                double ySMin = plt->invTransform(mY,rightmostY);
+                double ySMax = plt->invTransform(mY,leftmostY);
+
+                ChartZoom::zoomCoordinates coords;
+                coords.coords.insert(zoom->masterH(), {xMin, xMax});
+                coords.coords.insert(zoom->masterV(), {yMin, yMax});
+                coords.coords.insert(zoom->slaveV(), {ySMin, ySMax});
+                zoom->addZoom(coords, true);
             }
             // очищаем признак режима
             zoom->setRegime(ChartZoom::ctNone);
         }
     }
 }
+

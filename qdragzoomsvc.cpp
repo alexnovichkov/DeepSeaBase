@@ -47,10 +47,8 @@ bool QDragZoomSvc::eventFilter(QObject *target,QEvent *event)
 // Применение результатов перемещения графика
 void QDragZoomSvc::applyDrag(QPoint evpos, bool moveRightAxis)
 {DD;
-    // получаем указатель на график
-    QwtPlot *plt = zoom->plot();
     // получаем геометрию канвы графика
-    QRect cg = plt->canvas()->geometry();
+    QRect cg = zoom->plot()->canvas()->geometry();
     // scp_x - координата курсора в пикселах по горизонтальной оси
     //     в начальный момент времени (когда была нажата правая кнопка мыши)
     // evpos.x() - cg.x() - координата курсора
@@ -61,19 +59,22 @@ void QDragZoomSvc::applyDrag(QPoint evpos, bool moveRightAxis)
     //     но уже в единицах горизонтальной шкалы
     // dx - смещение границ по горизонтальной оси берется с обратным знаком
     //     (чтобы график относительно границ переместился вправо, сами границы следует сместить влево)
-    double dx = -(evpos.x() - cg.x() - horizontalCursorPosition) * horizontalFactor;
+    dx = -(evpos.x() - cg.x() - horizontalCursorPosition) * horizontalFactor;
     // устанавливаем новые левую и правую границы шкалы для горизонтальной оси
     //     новые границы = начальные границы + смещение
-    zoom->horizontalScaleBounds->set(minHorizontalBound + dx,maxHorizontalBound + dx);
+    zoom->horizontalScaleBounds->set(minHorizontalBound + dx, maxHorizontalBound + dx);
     // аналогично определяем dy - смещение границ по вертикальной оси
-    double dy = -(evpos.y() - cg.y() - verticalCursorPosition) * (moveRightAxis?verticalFactor1:verticalFactor);
-    // устанавливаем новые нижнюю и верхнюю границы вертикальной шкалы
-    if (moveRightAxis)
-        zoom->verticalScaleBoundsSlave->set(minVerticalBound1 + dy,maxVerticalBound1 + dy);
-    else
-        zoom->verticalScaleBounds->set(minVerticalBound + dy,maxVerticalBound + dy);
+    if (moveRightAxis) {
+        dy1 = -(evpos.y() - cg.y() - verticalCursorPosition) * verticalFactor1;
+        zoom->verticalScaleBoundsSlave->set(minVerticalBound1 + dy1, maxVerticalBound1 + dy1);
+    }
+    else {
+        dy = -(evpos.y() - cg.y() - verticalCursorPosition) * verticalFactor;
+        zoom->verticalScaleBounds->set(minVerticalBound + dy, maxVerticalBound + dy);
+    }
+
     // перестраиваем график (синхронно с остальными)
-    plt->replot();
+    zoom->plot()->replot();
 }
 
 // Обработчик событий от мыши
@@ -99,8 +100,6 @@ void QDragZoomSvc::dragMouseEvent(QEvent *event)
 // (включение перемещения графика)
 void QDragZoomSvc::startDrag(QMouseEvent *mEvent)
 {DD;
-    // фиксируем исходные границы графика (если этого еще не было сделано)
-    zoom->fixBounds();
     // если в данный момент еще не включен ни один из режимов
     if (zoom->regim() == ChartZoom::ctNone)
     {
@@ -188,5 +187,18 @@ void QDragZoomSvc::endDrag(QMouseEvent *mEvent)
             // восстанавливаем курсор
             zoom->plot()->canvas()->setCursor(tCursor);
             zoom->setRegime(ChartZoom::ctNone);  // и очищаем признак режима
+
+            // запоминаем совершенное перемещение
+            ChartZoom::zoomCoordinates coords;
+            if (!qFuzzyIsNull(dx)) {
+                coords.coords.insert(zoom->masterH(), {minHorizontalBound + dx, maxHorizontalBound + dx});
+            }
+            if (!qFuzzyIsNull(dy)) {
+                coords.coords.insert(zoom->masterV(), {minVerticalBound + dy, maxVerticalBound + dy});
+            }
+            if (!qFuzzyIsNull(dy1)) {
+                coords.coords.insert(zoom->slaveV(), {minVerticalBound1 + dy1, maxVerticalBound1 + dy1});
+            }
+            if (!coords.coords.isEmpty()) zoom->addZoom(coords);
         }
 }

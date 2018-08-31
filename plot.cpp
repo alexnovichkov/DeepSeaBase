@@ -75,10 +75,6 @@ Plot::Plot(QWidget *parent) :
     grid->setMinorPen(Qt::darkGray, 0, Qt::DotLine);
     grid->attach(this);
 
-    x1.clear();
-    y1.clear();
-    y2.clear();
-
     xScale = false;
     y1Scale = false;
     y2Scale = false;
@@ -129,13 +125,13 @@ Plot::~Plot()
     delete trackingPanel;
     qDeleteAll(graphs);
     delete grid;
-    delete zoom;
     delete picker;
 
     MainWindow::setSetting("axisLabelsVisible", axisLabelsVisible);
     MainWindow::setSetting("autoscale-x", !zoom->horizontalScaleBounds->isFixed());
     MainWindow::setSetting("autoscale-y", !zoom->verticalScaleBounds->isFixed());
     MainWindow::setSetting("autoscale-y-slave", !zoom->verticalScaleBoundsSlave->isFixed());
+    delete zoom;
 }
 
 void Plot::update()
@@ -182,9 +178,6 @@ void Plot::deleteGraphs()
     graphs.clear();
     leftGraphs.clear();
     rightGraphs.clear();
-    x1.clear();
-    y1.clear();
-    y2.clear();
     ColorSelector::instance()->resetState();
 //    minStep = 0.0;
 
@@ -276,16 +269,16 @@ void Plot::deleteGraph(Curve *graph, bool doReplot)
 
         int removed = leftGraphs.removeAll(graph);
         if (removed > 0 && !leftGraphs.isEmpty())
-            zoom->verticalScaleBounds->removeAndAutoscale(graph->channel->yMinInitial(),
+            zoom->verticalScaleBounds->removeToAutoscale(graph->channel->yMinInitial(),
                                                           graph->channel->yMaxInitial());
 
         removed = rightGraphs.removeAll(graph);
         if (removed > 0 && !rightGraphs.isEmpty())
-            zoom->verticalScaleBoundsSlave->removeAndAutoscale(graph->channel->yMinInitial(),
+            zoom->verticalScaleBoundsSlave->removeToAutoscale(graph->channel->yMinInitial(),
                                                                graph->channel->yMaxInitial());
         removed = graphs.removeAll(graph);
         if (removed > 0)
-            zoom->horizontalScaleBounds->removeAndAutoscale(graph->channel->xBegin(),
+            zoom->horizontalScaleBounds->removeToAutoscale(graph->channel->xBegin(),
                                                             graph->channel->xMaxInitial());
 
         delete graph;
@@ -300,9 +293,6 @@ void Plot::deleteGraph(Curve *graph, bool doReplot)
         }
         if (!hasGraphs()) {
             xName.clear();
-            x1.clear();
-            y1.clear();
-            y2.clear();
         }
 
         if (doReplot) {
@@ -345,6 +335,27 @@ void Plot::setAxis(int axis, const QString &name)
         case QwtPlot::yLeft: yLeftName = name; break;
         case QwtPlot::yRight: yRightName = name; break;
         case QwtPlot::xBottom: xName = name; break;
+        default: break;
+    }
+}
+
+void Plot::updateAxisScale(int axis, double min, double max)
+{DD;
+    switch (axis) {
+        case QwtPlot::xBottom:
+            zoom->horizontalScaleBounds->add(min, max);
+            if (!zoom->horizontalScaleBounds->isFixed()) zoom->horizontalScaleBounds->autoscale();
+            break;
+        case QwtPlot::yLeft:
+            zoom->verticalScaleBoundsSlave->removeToAutoscale(min, max);
+            zoom->verticalScaleBounds->add(min, max);
+            if (!zoom->verticalScaleBounds->isFixed()) zoom->verticalScaleBounds->autoscale();
+            break;
+        case QwtPlot::yRight:
+            zoom->verticalScaleBounds->removeToAutoscale(min, max);
+            zoom->verticalScaleBoundsSlave->add(min, max);
+            if (!zoom->verticalScaleBoundsSlave->isFixed()) zoom->verticalScaleBoundsSlave->autoscale();
+            break;
         default: break;
     }
 }
@@ -436,82 +447,13 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col)
     }
     xName = descriptor->xName();
 
-    // если график находится в своем исходном масштабе, то есть построен один
-    // график или несколько, но еще не масштабированы, то меняем этот исходный масштаб на больший
-    // иначе сохраням масштаб по осям
-//    QwtScaleMap smX = canvasMap(QwtPlot::xBottom);
-//    QwtScaleMap smY = canvasMap(ax);
-    Range &r = y1;
-    if (plotOnSecondYAxis) r = y2;
+
     ChartZoom::ScaleBounds *ybounds = 0;
     if (zoom->verticalScaleBounds->axis == ax) ybounds = zoom->verticalScaleBounds;
     else ybounds = zoom->verticalScaleBoundsSlave;
 
-////     добавляем график в пустое окно
-//    if (!hasGraphs()) {
-//        x1.min = qMin(ch->xBegin(), x1.min);
-//        x1.max = qMax(ch->xMaxInitial(), x1.max);
-//        zoom->horizontalScaleBounds->add(x1.min, x1.max);
-
-//        r.min = qMin(ch->yMinInitial(), r.min);
-//        r.max = qMax(ch->yMaxInitial(), r.max);
-//        ybounds->add(r.min, r.max);
-//    }
-    x1.min = qMin(ch->xBegin(), x1.min);
-    x1.max = qMax(ch->xMaxInitial(), x1.max);
-    zoom->horizontalScaleBounds->add(x1.min, x1.max);
-
-    r.min = qMin(ch->yMinInitial(), r.min);
-    r.max = qMax(ch->yMaxInitial(), r.max);
-    ybounds->add(r.min, r.max);
-
-//    // добавляем график в окно к уже имеющимся графикам
-//    else {
-//        if (zoom->horizontalScaleBounds->isFixed()) {
-//            // масштаб фиксирован, не меняем
-//        }
-//        else {
-//            x1.min = qMin(ch->xBegin(), x1.min);
-//            x1.max = qMax(ch->xMaxInitial(), x1.max);
-//            zoom->horizontalScaleBounds->add(x1.min, x1.max);
-//        }
-//        if (ybounds->isFixed()) {
-//            // масштаб фиксирован, не меняем
-//        }
-//        else {// масштаб не фиксирован, автомасштабируем
-
-//        }
-//    }
-
-//    if (graphs.size()<=1 || (smX.s1()==x1.min && smX.s2()==x1.max
-//                             && smY.s1()==r.min && smY.s2()==r.max)) {
-//        x1.min = qMin(ch->xBegin(), x1.min);
-//        x1.max = qMax(ch->xMaxInitial(), x1.max);
-//        setAxisScale(QwtPlot::xBottom, x1.min, x1.max);
-
-//        r.min = qMin(ch->yMinInitial(), r.min);
-//        r.max = qMax(ch->yMaxInitial(), r.max);
-//        setAxisScale(ax, r.min, r.max);
-//    }
-
-//    // Если графиков по данной вертикальной оси нет, то масштабируем оси, чтобы влез весь график
-//    // Иначе ничего не трогаем
-//    QwtScaleMap smX = canvasMap(QwtPlot::xBottom);
-//    QwtScaleMap smY = canvasMap(ax);
-//    Range &r = y1;
-//    if (plotOnSecondYAxis) r = y2;
-//    if (graphs.isEmpty()) {
-//        x1.min = qMin(ch->xBegin(), x1.min);
-//        x1.max = qMax(ch->xMaxInitial(), x1.max);
-//        setAxisScale(QwtPlot::xBottom, x1.min, x1.max);
-
-//        r.min = qMin(ch->yMinInitial(), r.min);
-//        r.max = qMax(ch->yMaxInitial(), r.max);
-//        setAxisScale(ax, r.min, r.max);
-//    }
-
-//    if (needFixBoundaries)
-//        if (zoom) zoom->fixBoundaries();
+    zoom->horizontalScaleBounds->add(ch->xBegin(), ch->xMaxInitial());
+    ybounds->add(ch->yMinInitial(), ch->yMaxInitial());
 
     update();
     return true;

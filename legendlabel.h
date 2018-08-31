@@ -10,6 +10,7 @@ public:
     explicit LegendLabel(QWidget *parent = 0);
 signals:
     void markedForDelete();
+    void markedToMoveToRight();
 protected:
     //virtual void paintEvent( QPaintEvent * );
     virtual void mousePressEvent( QMouseEvent * );

@@ -22,6 +22,9 @@
 #include <QEvent>
 #include <QMouseEvent>
 #include <QTimer>
+#include <QStack>
+#include <QRectF>
+
 #include <qwt_plot.h>
 #include <qwt_plot_grid.h>
 #include <qwt_plot_canvas.h>
@@ -82,7 +85,6 @@ public:
         // конструктор
         explicit ScaleBounds(QwtPlot *,QwtPlot::Axis);
 
-        double min,max;     // исходные границы основной шкалы
         QwtPlot::Axis axis;   // основная шкала
 
         bool isFixed() const {return fixed;}
@@ -94,17 +96,22 @@ public:
         // восстановление исходных границ шкалы
         void reset();
         void autoscale();
-        void removeAndAutoscale(double min, double max);
-
+        void removeToAutoscale(double min, double max);
+        void back();
     private:
-        QSet<double> mins;
-        QSet<double> maxes;
+        QList<double> mins;
+        QList<double> maxes;
 
         QwtPlot *plot;          // опекаемый график
 
         bool fixed;             // признак фиксации границ
         bool unbound;           // масштаб не выбран (при первом запуске программы
                                 // и если не стоит флаг fixed при очистке графика
+    };
+
+    struct zoomCoordinates
+    {
+        QMap<int, QPointF> coords;
     };
 
     /**************************************************/
@@ -142,6 +149,9 @@ public:
 
     void setZoomEnabled(bool enabled);
 
+    void addZoom(const zoomCoordinates &coords, bool apply = false);
+    void zoomBack(Qt::Orientations orientations);
+
     bool activated;
 public slots:
     void labelSelected(bool selected);
@@ -153,6 +163,8 @@ protected:
     bool eventFilter(QObject *,QEvent *);
 
 private:
+
+
     QObject *mwin;          // Главное окно приложения
     QwtPlot *qwtPlot;          // Компонент QwtPlot, который отображает график
 
@@ -188,6 +200,9 @@ private:
                             // графика будут сохранены в переменных isb_xl,isb_xr,isb_yb,isb_yt,
                             // и при отмене масштабирования и перемещения график будет возвращаться
                             // именно к этим границам
+
+    // сохраняемый стэк масштабирования
+    QStack<zoomCoordinates> zoomStack;
 
     // определение главного родителя
     QObject *generalParent(QObject *);

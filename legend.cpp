@@ -38,6 +38,7 @@ QWidget *Legend::createWidget(const QwtLegendData &data) const
     connect( label, SIGNAL( checked( bool ) ), SLOT( itemChecked( bool ) ) );
     connect( label, SIGNAL(markedForDelete()), SLOT(itemMarkedForDelete()));
 
+
     return label;
 }
 

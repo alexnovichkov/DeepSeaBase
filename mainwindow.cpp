@@ -25,6 +25,8 @@
 #include    "uffconverterdialog.h"
 #include "filedescriptor.h"
 
+#define DSB_VERSION "1.6.7"
+
 class DrivesDialog : public QDialog
 {
 //
@@ -176,7 +178,7 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), tab(0)
 {DD;
-    setWindowTitle(tr("DeepSea Database 1.6.6"));
+    setWindowTitle(tr("DeepSea Database ")+DSB_VERSION);
     setAcceptDrops(true);
 
     mainToolBar = new QToolBar(this);
