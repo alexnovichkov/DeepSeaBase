@@ -65,7 +65,8 @@ void QWheelZoomSvc::applyWheel(QEvent *event, bool wheelHorizontally, bool wheel
 
     // определяем угол поворота колеса мыши
     // (значение 120 соответствует углу поворота 15°)
-    const int wheelDelta = wEvent->delta();
+    QPoint delta = wEvent->angleDelta();
+    const int wheelDelta = delta.y();
 
     if (wheelDelta != 0) {   // если колесо вращалось, то
         // получаем указатель на график
@@ -74,32 +75,30 @@ void QWheelZoomSvc::applyWheel(QEvent *event, bool wheelHorizontally, bool wheel
         double wheelSteps = wheelDelta/120.0;
         double factor = pow(0.85, wheelSteps);
 
+        ChartZoom::zoomCoordinates coords;
+
         if (wheelHorizontally) {// если задано масштабирование по горизонтали
             double horPos = plot->invTransform(zoom->masterH(), wEvent->pos().x());
-            // получаем карту основной горизонтальной шкалы
             QwtScaleMap sm = plot->canvasMap(zoom->masterH());
 
             double lower = (sm.s1()-horPos)*factor + horPos;
             double upper = (sm.s2()-horPos)*factor + horPos;
-            zoom->horizontalScaleBounds->set(lower, upper);
+            coords.coords.insert(zoom->masterH(), {lower, upper});
         }
-        if (wheelVertically) // если задано масштабирование по вертикали
-        {
+        if (wheelVertically) {// если задано масштабирование по вертикали
             double verPos = plot->invTransform(zoom->masterV(), wEvent->pos().y());
-            // получаем карту основной вертикальной шкалы
             QwtScaleMap sm = plot->canvasMap(zoom->masterV());
             double lower = (sm.s1()-verPos)*factor + verPos;
             double upper = (sm.s2()-verPos)*factor + verPos;
-            zoom->verticalScaleBounds->set(lower, upper);
+            coords.coords.insert(zoom->masterV(), {lower, upper});
 
             verPos = plot->invTransform(zoom->slaveV(), wEvent->pos().y());
-            // получаем карту основной вертикальной шкалы
             sm = plot->canvasMap(zoom->slaveV());
             lower = (sm.s1()-verPos)*factor + verPos;
             upper = (sm.s2()-verPos)*factor + verPos;
-            zoom->verticalScaleBoundsSlave->set(lower, upper);
+            coords.coords.insert(zoom->slaveV(), {lower, upper});
         }
-        // перестраиваем график (синхронно с остальными)
+        if (!coords.coords.isEmpty()) zoom->addZoom(coords, true);
         plot->replot();
     }
 }
