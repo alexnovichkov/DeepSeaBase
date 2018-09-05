@@ -68,121 +68,6 @@ bool QAxisZoomSvc::eventFilter(QObject *target,QEvent *event)
     return QObject::eventFilter(target,event);
 }
 
-// Ограничение размера индикатора
-int QAxisZoomSvc::limitSize(int sz,int bs)
-{DD;
-    // минимум
-    int mn = floor(16*bs/31);
-    // ограничение минимального размера
-    if (sz < mn) sz = mn;
-    // максимум
-    int mx = floor(31*bs/16);
-    // ограничение максимальной размера
-    if (sz > mx) sz = mx;
-    return sz;
-}
-
-// Получение геометрии индикации масштабирования шкалы
-QRect *QAxisZoomSvc::axisZoomRect(QPoint evpos,int ax)
-{DD;
-    // получаем указатель на график
-    QwtPlot *plt = zoom->plot();
-    // определяем (для удобства) геометрию
-    QRect gc = plt->canvas()->geometry();       // канвы графика
-    QRect gw = plt->axisWidget(ax)->geometry(); // и виджета шкалы
-    // определяем текущее положение курсора относительно канвы графика
-    int x = evpos.x() + gw.x() - gc.x() - scb_pxl;
-    int y = evpos.y() + gw.y() - gc.y() - scb_pyt;
-    // запоминаем (для удобства)
-    int wax = gw.width();   // ширину виджета шкалы
-    int hax = gw.height();  // и высоту
-    // читаем режим масштабирования
-    ChartZoom::QConvType ct = zoom->regim();
-    // объявляем положение левого верхнего угла,
-    int wl,wt,ww,wh;    // ширину и высоту
-    // если масштабируется горизонтальная шкала, то
-    if (ax == QwtPlot::xBottom ||
-        ax == QwtPlot::xTop)
-    {
-        // если изменяется правая граница, то
-        if (ct == ChartZoom::ctAxisHR)
-        {
-            // ограничение на положение курсора слева
-            int mn = floor(currentPixelWidth/16);
-            // если курсор слишком близко к левой границе, то
-            if (x < mn) x = mn;
-            // ширина прямоугольника
-            ww = floor(x * currentPixelWidth / cursorPosX);
-            // применяем ограничения
-            ww = limitSize(ww,currentPixelWidth);
-            // левый отступ прямоугольника
-            wl = sab_pxl;
-        }
-        else    // иначе (изменяется левая граница)
-        {
-            // ограничение на положение курсора справа
-            int mx = floor(15*currentPixelWidth/16);
-            // если курсор слишком близко к правой границе, то
-            if (x > mx) x = mx;
-            // ширина прямоугольника
-            ww = floor((currentPixelWidth - x) * currentPixelWidth / (currentPixelWidth - cursorPosX));
-            // применяем ограничения
-            ww = limitSize(ww,currentPixelWidth);
-            // левый отступ прямоугольника
-            wl = sab_pxl + currentPixelWidth - ww;
-        }
-        // высота прямоугольника
-        wh = 4;
-        // верхний отступ прямоугольника
-        wt = 10;    // для нижней шкалы
-        // если не помещается на шкале, корректируем
-        if (wt + wh > hax) wt = hax - wh;
-        // для верхней шкалы симметрично
-        if (ax == QwtPlot::xTop) wt = hax - wt - wh;
-    }
-    else    // иначе (масштабируется вертикальная шкала)
-    {
-        // если изменяется нижняя граница, то
-        if (ct == ChartZoom::ctAxisVB)
-        {
-            // ограничение на положение курсора сверху
-            int mn = floor(currentPixelHeight/16);
-            // если курсор слишком близко к верхней границе, то
-            if (y < mn) y = mn;
-            // высота прямоугольника
-            wh = floor(y * currentPixelHeight / cursorPosY);
-            // применяем ограничения
-            wh = limitSize(wh,currentPixelHeight);
-            // верхний отступ прямоугольника
-            wt = sab_pyt;
-        }
-        else    // иначе (изменяется верхняя граница)
-        {
-            // ограничение на положение курсора снизу
-            int mx = floor(15*currentPixelHeight/16);
-            // если курсор слишком близко к нижней границе, то
-            if (y > mx) y = mx;
-            // высота прямоугольника
-            wh = floor((currentPixelHeight - y) * currentPixelHeight / (currentPixelHeight - cursorPosY));
-            // применяем ограничения
-            wh = limitSize(wh,currentPixelHeight);
-            // верхний отступ прямоугольника = смещению курсора
-            wt = sab_pyt + currentPixelHeight - wh;
-        }
-        // ширина прямоугольника
-        ww = 4;
-        // верхний отступ прямоугольника
-        wl = 10;    // для правой шкалы
-        // если не помещается на шкале, корректируем
-        if (wl + ww > wax) wl = wax - ww;
-        // для левой шкалы симметрично
-        if (ax == QwtPlot::yLeft) wl = wax - wl - ww;
-    }
-    // создаем и возвращаем геометрию виджета
-    // с вычисленными размерами
-    return new QRect(wl,wt,ww,wh);
-}
-
 // Ограничение нового размера шкалы
 double QAxisZoomSvc::limitScale(double sz,double bs)
 {DD;
@@ -342,7 +227,6 @@ void QAxisZoomSvc::axisMouseEvent(QEvent *event,int axis)
 
 void QAxisZoomSvc::procKeyboardEvent(QEvent *event)
 {
-    qDebug()<<Q_FUNC_INFO;
     QKeyEvent *kEvent = static_cast<QKeyEvent*>(event);
     switch (kEvent->key()) {
         case Qt::Key_Backspace:

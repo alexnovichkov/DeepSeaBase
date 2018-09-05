@@ -43,6 +43,176 @@
 #include "logging.h"
 #include "trackingpanel.h"
 
+#define LOG_MIN_MY 1.0e-3
+
+static inline QwtInterval logInterval( double base, const QwtInterval &interval )
+{
+    return QwtInterval( log(interval.minValue()) / log( base ),
+            log(interval.maxValue()) / log( base ) );
+}
+
+class LogScaleEngine : public QwtLogScaleEngine
+{
+    // QwtScaleEngine interface
+public:
+
+    virtual void autoScale(int maxNumSteps, double &x1, double &x2, double &stepSize) const
+    {
+        if ( x1 > x2 )
+            qSwap( x1, x2 );
+
+        const double logBase = base();
+
+        QwtInterval interval( x1 / qPow( logBase, lowerMargin() ),
+                              x2 * qPow( logBase, upperMargin() ) );
+
+        if ( interval.maxValue() / interval.minValue() < logBase )
+        {
+            // scale width is less than one step -> try to build a linear scale
+
+            QwtLinearScaleEngine linearScaler;
+            linearScaler.setAttributes( attributes() );
+            linearScaler.setReference( reference() );
+            linearScaler.setMargins( lowerMargin(), upperMargin() );
+
+            linearScaler.autoScale( maxNumSteps, x1, x2, stepSize );
+
+            QwtInterval linearInterval = QwtInterval( x1, x2 ).normalized();
+            linearInterval = linearInterval.limited( LOG_MIN, LOG_MAX );
+
+            if ( linearInterval.maxValue() / linearInterval.minValue() < logBase )
+            {
+                // the aligned scale is still less than one step
+                if ( stepSize < 0.0 )
+                    stepSize = - log(qAbs( stepSize )) /log( logBase );
+                else
+                    stepSize = log(stepSize) / log( logBase );
+
+                return;
+            }
+        }
+
+        double logRef = 1.0;
+        if ( reference() > LOG_MIN_MY / 2.0 )
+            logRef = qMin( reference(), LOG_MAX / 2 );
+
+        if ( testAttribute( QwtScaleEngine::Symmetric ) )
+        {
+            const double delta = qMax( interval.maxValue() / logRef,
+                                       logRef / interval.minValue() );
+            interval.setInterval( logRef / delta, logRef * delta );
+        }
+
+        if ( testAttribute( QwtScaleEngine::IncludeReference ) )
+            interval = interval.extend( logRef );
+
+        interval = interval.limited( LOG_MIN_MY, LOG_MAX );
+
+        if ( interval.width() == 0.0 )
+            interval = buildInterval( interval.minValue() );
+
+        stepSize = divideInterval( logInterval( logBase, interval ).width(),
+                                   qMax( maxNumSteps, 1 ) );
+        if ( stepSize < 1.0 )
+            stepSize = 1.0;
+
+        if ( !testAttribute( QwtScaleEngine::Floating ) )
+            interval = align( interval, stepSize );
+
+        x1 = interval.minValue();
+        x2 = interval.maxValue();
+
+        if ( testAttribute( QwtScaleEngine::Inverted ) )
+        {
+            qSwap( x1, x2 );
+            stepSize = -stepSize;
+        }
+    }
+    virtual QwtScaleDiv divideScale(double x1, double x2, int maxMajorSteps, int maxMinorSteps, double stepSize) const
+    {
+//        qDebug()<<Q_FUNC_INFO;
+//        qDebug()<<"x1"<< x1 <<"x2"<< x2 <<"maxMajorSteps" << maxMajorSteps << "maxMinorSteps"<< maxMinorSteps<<"stepSize"<< stepSize;
+        QwtInterval interval = QwtInterval( x1, x2 ).normalized();
+//        qDebug()<<interval;
+        interval = interval.limited( LOG_MIN_MY, LOG_MAX );
+//        qDebug()<<interval;
+
+        if ( interval.width() <= 0 )
+            return QwtScaleDiv();
+
+        const double logBase = base();
+
+        if ( interval.maxValue() / interval.minValue() < logBase )
+        {
+            // scale width is less than one decade -> build linear scale
+
+            QwtLinearScaleEngine linearScaler;
+            linearScaler.setAttributes( attributes() );
+            linearScaler.setReference( reference() );
+            linearScaler.setMargins( lowerMargin(), upperMargin() );
+
+            if ( stepSize != 0.0 )
+            {
+                if ( stepSize < 0.0 )
+                    stepSize = -qPow( logBase, -stepSize );
+                else
+                    stepSize = qPow( logBase, stepSize );
+            }
+
+            return linearScaler.divideScale( x1, x2,
+                                             maxMajorSteps, maxMinorSteps, stepSize );
+        }
+
+        stepSize = qAbs( stepSize );
+        if ( stepSize == 0.0 )
+        {
+            if ( maxMajorSteps < 1 )
+                maxMajorSteps = 1;
+
+            stepSize = divideInterval(
+                           logInterval( logBase, interval ).width(), maxMajorSteps );
+            if ( stepSize < 1.0 )
+                stepSize = 1.0; // major step must be >= 1 decade
+        }
+
+        QwtScaleDiv scaleDiv;
+        if ( stepSize != 0.0 )
+        {
+            QList<double> ticks[QwtScaleDiv::NTickTypes];
+            buildTicks( interval, stepSize, maxMinorSteps, ticks );
+
+            scaleDiv = QwtScaleDiv( interval, ticks );
+        }
+
+        if ( x1 > x2 )
+            scaleDiv.invert();
+
+        return scaleDiv;
+    }
+};
+
+//class LogTransform : public QwtLogTransform {
+
+
+//    // QwtTransform interface
+//public:
+//    virtual double bounded(double value) const
+//    {
+//        if (qFuzzyIsNull(value)) return 0.0;
+//        return QwtLogTransform::bounded(value);
+//    }
+//    virtual double transform(double value) const
+//    {
+//        if (qFuzzyIsNull(value)) return 0.0;
+//        return QwtLogTransform::transform(value);
+//    }
+//    virtual double invTransform(double value) const
+//    {
+//        if (qFuzzyIsNull(value)) return 0.0;
+//        return QwtLogTransform::invTransform(value);
+//    }
+//};
+
 Plot::Plot(QWidget *parent) :
     QwtPlot(parent), zoom(0)
 {DD;
@@ -230,20 +400,18 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
     menu->addAction((*scale)?"Линейная шкала":"Логарифмическая шкала", [=](){
         QwtScaleEngine *engine = 0;
         if (!(*scale)) {
-            engine = new QwtLogScaleEngine();
+            engine = new LogScaleEngine();
+            //engine->setBase(2);
+            //engine->setTransformation(new LogTransform);
         }
         else {
             engine = new QwtLinearScaleEngine();
         }
         setAxisScaleEngine(axis, engine);
 
+
         if (scale) *scale = !(*scale);
     });
-    QAction *fixScale = menu->addAction("Фиксировать шкалу", [=](){
-
-    });
-    fixScale->setCheckable(true);
-    fixScale->setChecked(true);
     menu->exec(pos);
 }
 
