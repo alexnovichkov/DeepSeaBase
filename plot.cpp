@@ -401,7 +401,7 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
         QwtScaleEngine *engine = 0;
         if (!(*scale)) {
             engine = new LogScaleEngine();
-            //engine->setBase(2);
+            engine->setBase(2);
             //engine->setTransformation(new LogTransform);
         }
         else {
@@ -431,22 +431,24 @@ void Plot::deleteGraph(Channel *c, bool doReplot)
 void Plot::deleteGraph(Curve *graph, bool doReplot)
 {DD;
     if (graph) {
-//        emit curveDeleted(graph);
         ColorSelector::instance()->freeColor(graph->pen().color());
 
         int removed = leftGraphs.removeAll(graph);
-        if (removed > 0 && !leftGraphs.isEmpty())
+        if (removed > 0 && !leftGraphs.isEmpty()) {
             zoom->verticalScaleBounds->removeToAutoscale(graph->channel->yMinInitial(),
                                                           graph->channel->yMaxInitial());
+        }
 
         removed = rightGraphs.removeAll(graph);
-        if (removed > 0 && !rightGraphs.isEmpty())
+        if (removed > 0 && !rightGraphs.isEmpty()) {
             zoom->verticalScaleBoundsSlave->removeToAutoscale(graph->channel->yMinInitial(),
                                                                graph->channel->yMaxInitial());
+        }
         removed = graphs.removeAll(graph);
-        if (removed > 0)
+        if (removed > 0) {
             zoom->horizontalScaleBounds->removeToAutoscale(graph->channel->xBegin(),
                                                             graph->channel->xMaxInitial());
+        }
 
         delete graph;
         graph = 0;
@@ -506,7 +508,7 @@ void Plot::setAxis(int axis, const QString &name)
     }
 }
 
-void Plot::updateAxisScale(int axis, double min, double max)
+void Plot::moveToAxis(int axis, double min, double max)
 {DD;
     switch (axis) {
         case QwtPlot::xBottom:

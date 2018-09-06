@@ -522,8 +522,10 @@ FileDescriptor *UffFileDescriptor::calculateThirdOctave()
 
         newCh->samples = newCh->xvalues.size();
         newCh->xMax = newCh->xvalues.last();
-        newCh->yMin = *(std::min_element(newCh->values.begin(), newCh->values.end()));
-        newCh->yMax = *(std::max_element(newCh->values.begin(), newCh->values.end()));
+        auto iter = std::min_element(newCh->values.begin(), newCh->values.end());
+        newCh->yMin = iter == newCh->values.end() ? 0.0 : *iter;
+        iter = std::max_element(newCh->values.begin(), newCh->values.end());
+        newCh->yMax = iter == newCh->values.end() ? 0.0 : *iter;
 
         newCh->parent = thirdOctUff;
 

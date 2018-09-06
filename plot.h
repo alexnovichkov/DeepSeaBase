@@ -118,7 +118,7 @@ public:
 
     void prepareAxis(int axis);
     void setAxis(int axis, const QString &name);
-    void updateAxisScale(int axis, double min, double max);
+    void moveToAxis(int axis, double min, double max);
     void updateAxesLabels();
 
     void moveGraph(Curve *curve);

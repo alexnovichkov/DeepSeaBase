@@ -295,13 +295,13 @@ ChartZoom::ScaleBounds::
     plot = plt;     // опекаемый график
     axis = mst;   // шкалу
     fixed = false;  // границы еще не фиксированы
-//    min = 0.0;
-//    max = 10.0;
-    mins << 0.0;
-    maxes << 10.0;
+    min = 0.0;
+    max = 10.0;
+//    mins << 0.0;
+//    maxes << 10.0;
 
     if (plot)
-        plot->setAxisScale(axis, 0, 10.0);
+        plot->setAxisScale(axis, min, max);
 }
 
 void ChartZoom::ScaleBounds::setFixed(bool fixed)
@@ -340,58 +340,44 @@ void ChartZoom::ScaleBounds::reset()
         //set(min,max);
     }
     else {
-//        min = 0;
-//        max = 10;
         mins.clear();
         maxes.clear();
-        mins << 0.0;
-        maxes << 10.0;
-        set(0.0, 10.0);
+//        mins << 0.0;
+//        maxes << 10.0;
+        set(min, max);
     }
 }
 
 void ChartZoom::ScaleBounds::autoscale()
 {DD;
-    double min = *(std::min_element(mins.begin(), mins.end()));
-    double max = *(std::max_element(maxes.begin(), maxes.end()));
+    auto iter = std::min_element(mins.begin(), mins.end());
+    double minn = iter==mins.end() ? this->min : *iter;
+    iter = std::max_element(maxes.begin(), maxes.end());
+    double maxx = iter==maxes.end() ? this->max : *iter;
 
-    plot->setAxisScale(axis, min, max);
+    plot->setAxisScale(axis, minn, maxx);
 }
 
 void ChartZoom::ScaleBounds::removeToAutoscale(double min, double max)
 {DD;
-    mins.removeAll(min);
-    if (mins.isEmpty()) mins << min;
+//    qDebug()<<Q_FUNC_INFO;
+//    qDebug()<<"mins"<<mins;
+    mins.removeOne(min);
+//    if (mins.isEmpty()) mins << min;
 
-    maxes.removeAll(max);
-    if (maxes.isEmpty()) maxes << max;
+//    qDebug()<<"maxes"<<maxes;
+    maxes.removeOne(max);
+//    if (maxes.isEmpty()) maxes << max;
 }
 
 void ChartZoom::ScaleBounds::back()
 {DD;
-    if (mins.size()>1 && maxes.size()>1) {
-        mins.removeLast();
-        maxes.removeLast();
-        set(mins.last(), maxes.last());
-    }
-    else {
-        mins.clear();
-        maxes.clear();
-        mins << 0.0;
-        maxes << 10.0;
-        set(0.0, 10.0);
-    }
+    mins.removeLast();
+    maxes.removeLast();
+    double minn = mins.isEmpty() ? min : mins.last();
+    double maxx = maxes.isEmpty()? max : maxes.last();
+    set(minn, maxx);
 }
 
-//// Переустановка границ дополнительной шкалы
-//void QwtChartZoom::ScaleBounds::dup()
-//{DD;
-//    // если границы еще не фиксированы, фиксируем их
-//    if (!fixed) fix();
-//    // получаем карту основной шкалы
-//    QwtScaleMap sm = plot->canvasMap(master);
-//    // и устанавливаем границы для дополнительной
-//    plot->setAxisScale(slave,ak*sm.s1()+bk,ak*sm.s2()+bk);
-//}
 
 

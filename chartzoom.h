@@ -101,6 +101,8 @@ public:
     private:
         QList<double> mins;
         QList<double> maxes;
+        double min;
+        double max;
 
         QwtPlot *plot;          // опекаемый график
 
