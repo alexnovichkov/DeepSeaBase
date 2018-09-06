@@ -10,6 +10,15 @@
 #include "curve.h"
 #include "logging.h"
 
+template<typename InputIterator, typename ValueType>
+InputIterator closest(InputIterator first, InputIterator last, ValueType value)
+{
+    return std::min_element(first, last, [&](ValueType x, ValueType y)
+    {
+        return std::abs(x - value) < std::abs(y - value);
+    });
+}
+
 TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
 {DD;
     setWindowFlags(Qt::Tool /*| Qt::WindowTitleHint*/);
@@ -208,10 +217,8 @@ void TrackingPanel::updateState(const QList<TrackingPanel::TrackInfo> &curves, b
         if (i!=1) tree->resizeColumnToContents(i);
 }
 
-void TrackingPanel::setX(double x, bool second)
+void TrackingPanel::setX(double xVal, bool second)
 {DD;
-
-    double xVal = x;
     if (!plot->curves().isEmpty()) {
         //first we need to find the closest point to xVal;
         //1. search the curve with the minimum xstep;
@@ -220,13 +227,13 @@ void TrackingPanel::setX(double x, bool second)
             if (plot->curves().at(i)->channel->xStep()<xstep)
                 xstep = plot->curves().at(i)->channel->xStep();
         }
-        if (xstep==0.0) xstep = plot->curves().first()->channel->xStep();
+        if (xstep==0.0)
+            xstep = plot->curves().first()->channel->xStep();
         if (xstep!=0.0) {
             setStep(xstep);
 
             //2. compute the actual xVal based on the xVal and xstep
             int steps = int(xVal/xstep);
-            //        qDebug()<<"xstep"<<xstep<<"xval"<<xVal<<"steps"<<steps;
             if (steps <= 0) xVal = 0.0;
             else {
                 if (qAbs(xstep*(steps+1)-xVal) < qAbs(xstep*steps-xVal)) steps++;
@@ -235,19 +242,13 @@ void TrackingPanel::setX(double x, bool second)
         }
         else {//xstep == 0 -> третьоктава или еще что-нибудь, проверяем тип файла
             DfdFileDescriptor *dfd = static_cast<DfdFileDescriptor *>(plot->curves().first()->descriptor);
-            if (!dfd || (dfd->DataType != ToSpectr && dfd->DataType != OSpectr)) {
+            if (!dfd || (dfd->DataType != ToSpectr && dfd->DataType != OSpectr))
                 return;
-            }
 
-            int iMin = 0;
-            double min = qAbs(xVal - dfd->channels[0]->XValues[0]);
-            for (int i=1; i<dfd->channels[0]->XValues.size(); ++i) {
-                if (qAbs(xVal - dfd->channels[0]->XValues[i])<min) {
-                    iMin = i;
-                    min = qAbs(xVal - dfd->channels[0]->XValues[i]);
-                }
-            }
-            xVal = dfd->channels[0]->XValues[iMin];
+            auto iter = closest<QVector<double>::iterator, double>(dfd->channels[0]->XValues.begin(),
+                    dfd->channels[0]->XValues.end(), xVal);
+
+            xVal = *iter;
         }
     }
 
@@ -296,7 +297,6 @@ void TrackingPanel::updateTrackingCursor(double xVal, bool second)
         _trackingCursor->moveTo(xVal);
         _trackingCursor->attach(plot);
     }
-    //setX(xVal, second);
 
     double leftBorder = _trackingCursor->xValue();
     double rightBorder = _trackingCursor1->xValue();
@@ -317,14 +317,18 @@ void TrackingPanel::updateTrackingCursor(double xVal, bool second)
         int steps, steps1, steps2;
 
         if (c->channel->xStep()==0.0) {
-            steps = c->channel->xValues().indexOf(xVal);
-            if (steps < 0) steps = c->channel->xValues().size()-1;
+            auto &xVals = c->channel->xValues();
+            auto iter = closest<QVector<double>::iterator, double>(xVals.begin(), xVals.end(), xVal);
+            steps = iter - xVals.begin();
+            if (steps < 0) steps = xVals.size()-1;
 
-            steps1 = c->channel->xValues().indexOf(leftBorder);
-            if (steps1 < 0) steps1 = c->channel->xValues().size()-1;
+            iter = closest<QVector<double>::iterator, double>(xVals.begin(), xVals.end(), leftBorder);
+            steps1 = iter - xVals.begin();
+            if (steps1 < 0) steps1 = xVals.size()-1;
 
-            steps2 = c->channel->xValues().indexOf(rightBorder);
-            if (steps2 < 0) steps2 = c->channel->xValues().size()-1;
+            iter = closest<QVector<double>::iterator, double>(xVals.begin(), xVals.end(), rightBorder);
+            steps2 = iter - xVals.begin();
+            if (steps2 < 0) steps2 = xVals.size()-1;
         } else {
             steps = int(xVal/c->channel->xStep());
             if (steps < 0) steps=0;
@@ -340,7 +344,6 @@ void TrackingPanel::updateTrackingCursor(double xVal, bool second)
             if (steps2 < 0) steps2=0;
             if (qAbs(c->channel->xStep()*(steps2+1)-rightBorder) < qAbs(c->channel->xStep()*steps2-rightBorder)) steps2++;
             if (steps2>c->channel->samplesCount()) steps2=c->channel->samplesCount();
-            // qDebug()<<steps1<<steps2;
         }
         if (steps2<steps1) qSwap(steps1, steps2);
 

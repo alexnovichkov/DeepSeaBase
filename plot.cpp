@@ -409,7 +409,6 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
         }
         setAxisScaleEngine(axis, engine);
 
-
         if (scale) *scale = !(*scale);
     });
     menu->exec(pos);

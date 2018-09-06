@@ -45,7 +45,7 @@ public:
     void switchVisibility();
 public slots:
     void updateTrackingCursor(double xVal, bool second);
-    void setX(double x, bool second);
+    void setX(double xVal, bool second);
     void updateTrackingCursor(QwtPlotMarker*cursor, double newVal);
 signals:
     void switchHarmonics(bool on);

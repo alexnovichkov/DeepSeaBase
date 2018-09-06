@@ -201,9 +201,6 @@ DfdFileDescriptor::~DfdFileDescriptor()
 
 void DfdFileDescriptor::read()
 {DD;
-    //static const QSettings::Format dfdFormat = QSettings::registerFormat("DFD", readDfdFile, writeDfdFile);
-
-    //QSettings dfd(fileName(),dfdFormat);
     DfdSettings dfd(fileName());
     dfd.read();
 
@@ -381,7 +378,7 @@ void DfdFileDescriptor::fillRest()
 QStringList DfdFileDescriptor::info() const
 {DD;
     double size = samplesCount() * xStep();
-    if (size < 1e-10) {
+    if (qFuzzyIsNull(size)) {
         if (DataType == OSpectr || DataType == ToSpectr) {
             channels.first()->populate();
             size = channels.first()->XValues.last();
@@ -1165,28 +1162,29 @@ void DfdChannel::populate()
                 }
             }
 
-            if (parent->XStep<1e-10) {//нулевой шаг, данные по оси Х хранятся первым каналом
+            if (qFuzzyIsNull(parent->XStep)) {//нулевой шаг, данные по оси Х хранятся первым каналом
                 rawFile.seek(0);
                 readStream.setDevice(&rawFile);
                 QVector<double> temp = getValue<double>(readStream, ChanBlockSize, IndType);
                 //checking if values are really frequency values, take four first values
-                if (temp.size()>=4) {
-                    QVector<double> xv(4);
-                    for (int k = 0; k<4; ++k)
-                        xv[k] = pow(10.0, 0.1*k);
-                    if (qAbs(temp[0]-xv[0])<1e-4
-                        && qAbs(temp[1]-xv[1])<1e-4
-                        && qAbs(temp[2]-xv[2])<1e-4
-                        && qAbs(temp[3]-xv[3])<1e-4) {
-                        setXValues(temp);
-                    }
-                    else if (parent->DataType == ToSpectr) {
-                        QVector<double> xv(YValues.size());
-                        for (int k = 0; k<YValues.size(); ++k)
-                            xv[k] = pow(10.0, 0.1*k);
-                        setXValues(xv);
-                    }
-                }
+                setXValues(temp);
+//                if (temp.size()>=4) {
+//                    QVector<double> xv(4);
+//                    for (int k = 0; k<4; ++k)
+//                        xv[k] = pow(10.0, 0.1*k);
+//                    if (qAbs(temp[0]-xv[0])<1e-4
+//                        && qAbs(temp[1]-xv[1])<1e-4
+//                        && qAbs(temp[2]-xv[2])<1e-4
+//                        && qAbs(temp[3]-xv[3])<1e-4) {
+//                        setXValues(temp);
+//                    }
+//                    else if (parent->DataType == ToSpectr) {
+//                        QVector<double> xv(YValues.size());
+//                        for (int k = 0; k<YValues.size(); ++k)
+//                            xv[k] = pow(10.0, 0.1*k);
+//                        setXValues(xv);
+//                    }
+//                }
 
             }
 
