@@ -40,9 +40,7 @@ class ChartZoom : public QObject
     Q_OBJECT
 
 public:
-    // конструктор
     explicit ChartZoom(QwtPlot *);
-    // деструктор
     ~ChartZoom();
 
     // Значения типа текущего преобразования графика
@@ -107,8 +105,6 @@ public:
         QwtPlot *plot;          // опекаемый график
 
         bool fixed;             // признак фиксации границ
-        bool unbound;           // масштаб не выбран (при первом запуске программы
-                                // и если не стоит флаг fixed при очистке графика
     };
 
     struct zoomCoordinates
@@ -139,12 +135,7 @@ public:
     // дополнительная вертикальная шкала
     QwtPlot::Axis slaveV() const;
 
-    // фиксация текущих границ графика в качестве исходных
-    void fixBoundaries();
-
     void updatePlot();  // обновление графика
-    // восстановление исходных границ графика
-    void resetBounds(Qt::Orientations);
 
     void setZoomEnabled(bool enabled);
 
@@ -167,17 +158,6 @@ private:
     QObject *mwin;          // Главное окно приложения
     QwtPlot *qwtPlot;          // Компонент QwtPlot, который отображает график
 
-    double isb_xl,isb_xr;   // Исходные границы графика по оси x
-    double isb_yb,isb_yt;   // исходные границы графика по оси y
-
-    // Текущее значение максимального количества основных делений
-        // на горизонтальной шкале графика
-    int mstHorDiv;  // основной
-    int slvHorDiv;  // дополнительной
-        // на вертикальной шкале графика
-    int mstVerDiv;  // основной
-    int slvVerDiv;  // дополнительной
-
     // горизонтальная шкала
     QwtPlot::Axis masterX;  // основная
     QwtPlot::Axis slaveX;   // дополнительная
@@ -194,11 +174,6 @@ private:
     QAxisZoomSvc *axisZoom;
 
     QConvType convType;     // Тип текущего преобразования графика
-    bool isbF;              // Флаг, задающий необходимость запомнить исходные границы графика
-                            // Если isbF сброшен, то при первом нажатии на кнопку текущие границы
-                            // графика будут сохранены в переменных isb_xl,isb_xr,isb_yb,isb_yt,
-                            // и при отмене масштабирования и перемещения график будет возвращаться
-                            // именно к этим границам
 
     // сохраняемый стэк масштабирования
     QStack<zoomCoordinates> zoomStack;

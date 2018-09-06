@@ -81,10 +81,6 @@ void QMainZoomSvc::procMouseEvent(QEvent *event)
         case QEvent::MouseButtonRelease:
             finishZoom(mEvent);
             break;
-//        case QEvent::MouseButtonDblClick:
-//            if (mEvent->button() == Qt::LeftButton)
-//                zoom->resetBounds(Qt::Horizontal | Qt::Vertical);
-//            break;
             // для прочих событий ничего не делаем
         default: ;
     }

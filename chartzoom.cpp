@@ -25,23 +25,18 @@
 
 // Конструктор
 ChartZoom::ChartZoom(QwtPlot *qp) :
-    QObject(qp)
+    QObject(qp),  qwtPlot(qp)
 {DD;
     // получаем главное окно
     mwin = generalParent(qp);
     // и назначаем обработчик событий (фильтр событий)
     mwin->installEventFilter(this);
 
-    // сбрасываем флаг для того, чтобы перед первым изменением масштаба
-    // текущие границы графика были зафиксированы в качестве исходных
-    isbF = false;
     // сбрасываем признак режима
     convType = ctNone;
 
-    // получаем компонент QwtPlot, над которым будут производиться все преобразования
-    qwtPlot = qp;
     // устанавливаем ему свойство, разрешающее обрабатывать события от клавиатуры
-    qp->setFocusPolicy(Qt::StrongFocus);
+    qwtPlot->setFocusPolicy(Qt::StrongFocus);
 
     // назначаем основную и дополнительную шкалу
     masterX = QwtPlot::xBottom;
@@ -50,23 +45,19 @@ ChartZoom::ChartZoom(QwtPlot *qp) :
     masterY = QwtPlot::yLeft;
     slaveY = QwtPlot::yRight;
 
-    // запоминаем количество делений на горизонтальной шкале
-    mstHorDiv = qp->axisMaxMajor(masterX);
-    slvHorDiv = qp->axisMaxMajor(slaveX);
-    // запоминаем количество делений на вертикальной шкале
-    mstVerDiv = qp->axisMaxMajor(masterY);
-    slvVerDiv = qp->axisMaxMajor(slaveY);
     // создаем контейнеры границ шкалы
-    horizontalScaleBounds = new ScaleBounds(qp,masterX);    // горизонтальной
-    verticalScaleBounds = new ScaleBounds(qp,masterY);    // и вертикальной
-    verticalScaleBoundsSlave = new ScaleBounds(qp,slaveY);
+    horizontalScaleBounds = new ScaleBounds(qp, masterX);    // горизонтальной
+    verticalScaleBounds = new ScaleBounds(qp, masterY);    // и вертикальной
+    verticalScaleBoundsSlave = new ScaleBounds(qp, slaveY);
 
     // устанавливаем обработчик всех событий
     qwtPlot->installEventFilter(this);
     // для всех шкал графика
-    for (int ax=0; ax < QwtPlot::axisCnt; ax++)
+    for (int ax=0; ax < QwtPlot::axisCnt; ax++) {
         // назначаем обработчик событий (фильтр событий)
         qwtPlot->axisWidget(ax)->installEventFilter(this);
+        qwtPlot->axisWidget(ax)->setFocusPolicy(Qt::StrongFocus);
+    }
 
     // создаем интерфейс масштабирования графика
     mainZoom = new QMainZoomSvc();
@@ -98,26 +89,19 @@ ChartZoom::~ChartZoom()
     // удаляем контейнеры границ шкалы
     delete horizontalScaleBounds;    // горизонтальной
     delete verticalScaleBounds;    // и вертикальной
+    delete verticalScaleBoundsSlave;
 }
 
 // Определение главного родителя
 QObject *ChartZoom::generalParent(QObject *p)
 {DD;
-    // берем в качестве предыдущего родителя график
-    // (возможен и другой объект в аргументе функции)
     QObject *generalParent_ = p;
-    // определяем родителя на текущем уровне
     QObject *tp = generalParent_->parent();
-    // пока родитель на текущем уровне не NULL
-    while (tp != NULL)
+    while (tp != 0)
     {
-        // понижаем уровень:
-        // запоминаем в качестве предыдущего родителя текущий
         generalParent_ = tp;
-        // определяем родителя на следующем уровне
         tp = generalParent_->parent();
     }
-    // возвращаем в качестве главного родителя предыдущий
     return generalParent_;
 }
 
@@ -157,15 +141,6 @@ QwtPlot::Axis ChartZoom::slaveV() const {DD;
     return slaveY;
 }
 
-// Фиксация текущих границ графика в качестве исходных
-void ChartZoom::fixBoundaries() {DD;
-    // здесь только сбрасывается флаг и тем самым
-    // указывается на необходимость фиксировать границы
-    isbF = false;
-    // фактическая фиксация границ произойдет в момент начала
-    // какого-либо преобразования при вызове fixBounds()
-}
-
 // Обновление графика
 void ChartZoom::updatePlot()
 {DD;
@@ -190,19 +165,6 @@ bool ChartZoom::eventFilter(QObject *target,QEvent *event)
     return QObject::eventFilter(target,event);
 }
 
-// Восстановление исходных границ графика
-void ChartZoom::resetBounds(Qt::Orientations orientations)
-{DD;
-    // устанавливаем запомненные ранее границы
-    if (orientations & Qt::Horizontal) horizontalScaleBounds->autoscale();  // горизонтальной шкалы
-    if (orientations & Qt::Vertical) {
-        verticalScaleBounds->autoscale();  // и вертикальной
-        verticalScaleBoundsSlave->autoscale();
-    }
-    // перестраиваем график
-    qwtPlot->replot();
-}
-
 void ChartZoom::setZoomEnabled(bool enabled)
 {DD;
     this->activated = enabled;
@@ -212,8 +174,6 @@ void ChartZoom::addZoom(const ChartZoom::zoomCoordinates &coords, bool apply)
 {DD;
     zoomStack.push(coords);
     if (apply) {
-        zoomCoordinates coords = zoomStack.top();
-
         if (coords.coords.contains(masterH()))
             horizontalScaleBounds->set(coords.coords.value(masterH()).x(),
                                        coords.coords.value(masterH()).y());
