@@ -143,16 +143,13 @@ public:
     void fixBoundaries();
 
     void updatePlot();  // обновление графика
-    // фактическая фиксация текущих границ графика
-    // в качестве исходных (если флаг isbF сброшен)
-    void fixBounds();
     // восстановление исходных границ графика
     void resetBounds(Qt::Orientations);
 
     void setZoomEnabled(bool enabled);
 
     void addZoom(const zoomCoordinates &coords, bool apply = false);
-    void zoomBack(Qt::Orientations orientations);
+    void zoomBack();
 
     bool activated;
 public slots:

@@ -95,12 +95,7 @@ void QMainZoomSvc::procKeyboardEvent(QEvent *event)
     QKeyEvent *kEvent = static_cast<QKeyEvent*>(event);
     switch (kEvent->key()) {
         case Qt::Key_Backspace: {
-            if (kEvent->modifiers() == Qt::NoModifier)
-                zoom->zoomBack(Qt::Horizontal | Qt::Vertical);
-            else if (kEvent->modifiers() & Qt::ControlModifier)
-                zoom->zoomBack(Qt::Horizontal);
-            else if (kEvent->modifiers() & Qt::ShiftModifier)
-                zoom->zoomBack(Qt::Vertical);
+            zoom->zoomBack();
             break;
         }
         case Qt::Key_Escape: {
@@ -111,6 +106,7 @@ void QMainZoomSvc::procKeyboardEvent(QEvent *event)
                 if (rubberBand) rubberBand->hide();
                 zoom->setRegime(ChartZoom::ctNone);
             }
+            break;
         }
         default: break;
     }

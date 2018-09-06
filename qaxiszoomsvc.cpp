@@ -230,7 +230,7 @@ void QAxisZoomSvc::procKeyboardEvent(QEvent *event)
     QKeyEvent *kEvent = static_cast<QKeyEvent*>(event);
     switch (kEvent->key()) {
         case Qt::Key_Backspace:
-            zoom->zoomBack(Qt::Horizontal | Qt::Vertical);
+            zoom->zoomBack();
             break;
         default: break;
     }

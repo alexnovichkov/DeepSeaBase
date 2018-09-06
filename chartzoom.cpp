@@ -190,21 +190,6 @@ bool ChartZoom::eventFilter(QObject *target,QEvent *event)
     return QObject::eventFilter(target,event);
 }
 
-// Фактическая фиксация текущих границ графика
-// в качестве исходных (если флаг isbF сброшен)
-void ChartZoom::fixBounds()
-{DD;
-    // если этого еще не было сделано
-//    if (!isbF)
-//    {
-//        // фиксируем границы
-//        horizontalScaleBounds->fix();   // горизонтальные
-//        verticalScaleBounds->fix();   // и вертикальные
-//        // устанавливаем флажок фиксации границ графика
-//        isbF = true;
-//    }
-}
-
 // Восстановление исходных границ графика
 void ChartZoom::resetBounds(Qt::Orientations orientations)
 {DD;
@@ -244,33 +229,28 @@ void ChartZoom::addZoom(const ChartZoom::zoomCoordinates &coords, bool apply)
     }
 }
 
-void ChartZoom::zoomBack(Qt::Orientations orientations)
+void ChartZoom::zoomBack()
 {DD;
     if (zoomStack.isEmpty()) return;
     zoomStack.pop();
     if (zoomStack.isEmpty()) {
         // nothing to zoom back to, autoscaling to
-        if (orientations & Qt::Horizontal) horizontalScaleBounds->autoscale();
-        if (orientations & Qt::Vertical) {
-            verticalScaleBounds->autoscale();
-            verticalScaleBoundsSlave->autoscale();
-        }
+        horizontalScaleBounds->autoscale();
+        verticalScaleBounds->autoscale();
+        verticalScaleBoundsSlave->autoscale();
     }
     else {
         zoomCoordinates coords = zoomStack.top();
-
-        if ((orientations & Qt::Horizontal) && coords.coords.contains(masterH()))
+        if (coords.coords.contains(masterH()))
             horizontalScaleBounds->set(coords.coords.value(masterH()).x(),
                                        coords.coords.value(masterH()).y());
-        if ((orientations & Qt::Vertical)) {
-            if (coords.coords.contains(masterV())) {
-                verticalScaleBounds->set(coords.coords.value(masterV()).x(),
-                                           coords.coords.value(masterV()).y());
-            }
-            if (coords.coords.contains(slaveV())) {
-                verticalScaleBoundsSlave->set(coords.coords.value(slaveV()).x(),
-                                           coords.coords.value(slaveV()).y());
-            }
+        if (coords.coords.contains(masterV())) {
+            verticalScaleBounds->set(coords.coords.value(masterV()).x(),
+                                     coords.coords.value(masterV()).y());
+        }
+        if (coords.coords.contains(slaveV())) {
+            verticalScaleBoundsSlave->set(coords.coords.value(slaveV()).x(),
+                                          coords.coords.value(slaveV()).y());
         }
     }
     // перестраиваем график
@@ -297,8 +277,6 @@ ChartZoom::ScaleBounds::
     fixed = false;  // границы еще не фиксированы
     min = 0.0;
     max = 10.0;
-//    mins << 0.0;
-//    maxes << 10.0;
 
     if (plot)
         plot->setAxisScale(axis, min, max);
@@ -319,16 +297,12 @@ void ChartZoom::ScaleBounds::add(double min, double max)
     maxes << max;
 
     if (!fixed) {
-//        this->min = min;
-//        this->max = max;
         plot->setAxisScale(axis, min,max);
     }
 }
 
-// Установка заданных границ шкалы
 void ChartZoom::ScaleBounds::set(double min, double max)
 {DD;
-    // устанавливаем нижнюю и верхнюю границы шкалы
     plot->setAxisScale(axis, min,max);
 }
 
@@ -342,8 +316,6 @@ void ChartZoom::ScaleBounds::reset()
     else {
         mins.clear();
         maxes.clear();
-//        mins << 0.0;
-//        maxes << 10.0;
         set(min, max);
     }
 }
@@ -360,14 +332,8 @@ void ChartZoom::ScaleBounds::autoscale()
 
 void ChartZoom::ScaleBounds::removeToAutoscale(double min, double max)
 {DD;
-//    qDebug()<<Q_FUNC_INFO;
-//    qDebug()<<"mins"<<mins;
     mins.removeOne(min);
-//    if (mins.isEmpty()) mins << min;
-
-//    qDebug()<<"maxes"<<maxes;
     maxes.removeOne(max);
-//    if (maxes.isEmpty()) maxes << max;
 }
 
 void ChartZoom::ScaleBounds::back()
