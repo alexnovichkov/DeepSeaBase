@@ -447,7 +447,7 @@ MainWindow::MainWindow(QWidget *parent)
     autoscaleXAct->setIcon(QIcon(":/icons/autoscale-x.png"));
     autoscaleXAct->setCheckable(true);
     bool autoscale = getSetting("autoscale-x", true).toBool();
-    connect(autoscaleXAct, QAction::toggled, [=](bool toggled){
+    connect(autoscaleXAct, &QAction::toggled, [=](bool toggled){
         plot->toggleAutoscale(0 /* x axis */,toggled);
         setSetting("autoscale-x", toggled);
     });
@@ -458,7 +458,7 @@ MainWindow::MainWindow(QWidget *parent)
     autoscaleYAct->setIcon(QIcon(":/icons/autoscale-y-main.png"));
     autoscaleYAct->setCheckable(true);
     autoscale = getSetting("autoscale-y", true).toBool();
-    connect(autoscaleYAct, QAction::toggled, [=](bool toggled){
+    connect(autoscaleYAct, &QAction::toggled, [=](bool toggled){
         plot->toggleAutoscale(1 /* y axis */,toggled);
         setSetting("autoscale-y", toggled);
     });
@@ -469,7 +469,7 @@ MainWindow::MainWindow(QWidget *parent)
     autoscaleYSlaveAct->setIcon(QIcon(":/icons/autoscale-y-slave.png"));
     autoscaleYSlaveAct->setCheckable(true);
     autoscale = getSetting("autoscale-y-slave", true).toBool();
-    connect(autoscaleYSlaveAct, QAction::toggled, [=](bool toggled){
+    connect(autoscaleYSlaveAct, &QAction::toggled, [=](bool toggled){
         plot->toggleAutoscale(2 /* y slave axis */,toggled);
         setSetting("autoscale-y-slave", toggled);
     });
@@ -2436,7 +2436,6 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      // если каналы имеют разный шаг по х, то для каждого канала отдельно записываем
      // по два столбца
      if (allChannelsHaveSameXStep) {
-         quint32 numRows = maxInd;
          const quint32 numCols = curves.size();
 
          QList<QVariant> cellsList;
@@ -2454,7 +2453,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
              }
              rowsList << QVariant(cellsList);
          }
-         numRows = rowsList.size();
+         quint32 numRows = rowsList.size();
 
          QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5, 1);
          QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5 + numRows - 1, 1 + numCols);
@@ -2477,7 +2476,6 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
              Curve *curve = curves.at(i);
              Channel *ch = curve->channel;
 
-             quint32 numRows = ch->samplesCount();
              QList<QVariant> cellsList;
              QList<QVariant> rowsList;
              for (uint j = 0; j < ch->samplesCount(); j++) {
@@ -2490,7 +2488,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
                  cellsList << val << ch->yValues()[j];
                  rowsList << QVariant(cellsList);
              }
-             numRows = rowsList.size();
+             quint32 numRows = rowsList.size();
              selectedSamples << numRows;
 
              QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5, 1+i*2);

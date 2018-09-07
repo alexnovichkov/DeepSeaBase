@@ -4,6 +4,7 @@
 
 #include "filedescriptor.h"
 #include <qwt_curve_fitter.h>
+#include "logging.h"
 
 class DfdData: public QwtSeriesData<QPointF>
 {
@@ -43,7 +44,7 @@ private:
 
 Curve::Curve(const QString &title, FileDescriptor *descriptor, int channelIndex):
     QwtPlotCurve(title), descriptor(descriptor), channelIndex(channelIndex)
-{
+{DD;
     channel = descriptor->channel(channelIndex);
     setPaintAttribute(QwtPlotCurve::ClipPolygons);
     setPaintAttribute(QwtPlotCurve::FilterPoints);
@@ -61,7 +62,7 @@ Curve::Curve(const QString &title, FileDescriptor *descriptor, int channelIndex)
 
 Curve::Curve(const QString &title) :
     QwtPlotCurve(title), descriptor(0), channelIndex(-1), channel(0)
-{
+{DD;
     setPaintAttribute(QwtPlotCurve::ClipPolygons);
     setPaintAttribute(QwtPlotCurve::FilterPoints);
     setRenderHint(QwtPlotItem::RenderAntialiased);
@@ -71,7 +72,7 @@ Curve::Curve(const QString &title) :
 
 Curve::Curve(const QwtText &title) :
     QwtPlotCurve(title), descriptor(0), channelIndex(-1), channel(0)
-{
+{DD;
     setPaintAttribute(QwtPlotCurve::ClipPolygons);
     setPaintAttribute(QwtPlotCurve::FilterPoints);
     setRenderHint(QwtPlotItem::RenderAntialiased);
@@ -80,28 +81,28 @@ Curve::Curve(const QwtText &title) :
 }
 
 Curve::~Curve()
-{
+{DD;
     foreach(PointLabel *l, labels) l->detach();
     qDeleteAll(labels);
 }
 
 void Curve::setRawSamples(double x0, double xStep, const double *yData, int size)
-{
+{DD;
     setData(new DfdData(x0, xStep, yData, size));
 }
 
 void Curve::setRawSamples(const double *xData, const double *yData, int size)
-{
+{DD;
     setData(new DfdData(xData, yData, size));
 }
 
 void Curve::addLabel(PointLabel *label)
-{
+{DD;
     labels << label;
 }
 
 void Curve::removeLabel(PointLabel *label)
-{
+{DD;
     if (labels.contains(label)) {
         labels.removeAll(label);
         label->detach();
@@ -110,7 +111,7 @@ void Curve::removeLabel(PointLabel *label)
 }
 
 PointLabel *Curve::findLabel(const QPoint &pos, int yAxis)
-{
+{DD;
     foreach (PointLabel *l, labels)
         if (l->contains(pos, yAxis))
             return l;
@@ -119,7 +120,7 @@ PointLabel *Curve::findLabel(const QPoint &pos, int yAxis)
 }
 
 PointLabel *Curve::findLabel(const int point)
-{
+{DD;
     foreach (PointLabel *l, labels)
         if (l->point() == point)
             return l;
@@ -337,7 +338,7 @@ void QwtArrayPlotItem::draw( QPainter *painter,
     painter->drawPolyline(points, numberOfPlotPoints);
 
     //free memory
-    delete points;
+    delete[] points;
 }
 
 void QwtArrayPlotItem::setData(double* data, quint32 size, qreal dt)

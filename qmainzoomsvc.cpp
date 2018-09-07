@@ -63,7 +63,7 @@ bool QMainZoomSvc::eventFilter(QObject *target,QEvent *event)
 
 // Обработчик обычных событий от мыши
 void QMainZoomSvc::procMouseEvent(QEvent *event)
-{DD;
+{
     // создаем указатель на событие от мыши
     QMouseEvent *mEvent = static_cast<QMouseEvent *>(event);
     // в зависимости от типа события вызываем соответствующий обработчик
@@ -87,7 +87,7 @@ void QMainZoomSvc::procMouseEvent(QEvent *event)
 }
 
 void QMainZoomSvc::procKeyboardEvent(QEvent *event)
-{DD;
+{
     QKeyEvent *kEvent = static_cast<QKeyEvent*>(event);
     switch (kEvent->key()) {
         case Qt::Key_Backspace: {
@@ -111,7 +111,7 @@ void QMainZoomSvc::procKeyboardEvent(QEvent *event)
 // Обработчик нажатия на кнопку мыши
 // (включение изменения масштаба)
 void QMainZoomSvc::startZoom(QMouseEvent *mEvent)
-{DD;
+{
     // если в данный момент еще не включен ни один из режимов
     if (zoom->regim() == ChartZoom::ctNone)
     {
@@ -141,7 +141,7 @@ void QMainZoomSvc::startZoom(QMouseEvent *mEvent)
 // Обработчик перемещения мыши
 // (выделение новых границ графика)
 void QMainZoomSvc::selectZoomRect(QMouseEvent *mEvent)
-{DD;
+{
     // если включен режим изменения масштаба, то
     if (zoom->regim() == ChartZoom::ctZoom)
     {
@@ -161,7 +161,7 @@ void QMainZoomSvc::selectZoomRect(QMouseEvent *mEvent)
 // Обработчик отпускания кнопки мыши
 // (выполнение изменения масштаба)
 void QMainZoomSvc::finishZoom(QMouseEvent *mEvent)
-{DD;
+{
     // если включен режим изменения масштаба или режим перемещения графика
     if (zoom->regim() == ChartZoom::ctZoom) {
         // если отпущена левая кнопка мыши, то

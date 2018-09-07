@@ -739,7 +739,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
                 averageComplex(averagedSpectre, coSpectr, p, averagesMade++);
             }
             spectrumComplex = transferFunctionH1Complex(averagedBaseSpectre, averagedSpectre, p);
-            const double t2 = threshold(dfd->channels[p.baseChannel]->yName()) / p.threshold;
+//            const double t2 = threshold(dfd->channels[p.baseChannel]->yName()) / p.threshold;
 //            for (int i=0; i<spectrum.size(); ++i)
 //                spectrum[i] = 20 * log10(spectrum[i] * t2);
         }

@@ -107,7 +107,7 @@ QObject *ChartZoom::generalParent(QObject *p)
 
 // Текущий режим масштабирования
 ChartZoom::QConvType ChartZoom::regim()
-{DD;
+{
     return convType;
 }
 

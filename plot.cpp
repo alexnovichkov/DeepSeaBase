@@ -397,6 +397,7 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
     if (axis == QwtPlot::yLeft) scale = &y1Scale;
     if (axis == QwtPlot::yRight) scale = &y2Scale;
 
+    if (scale)
     menu->addAction((*scale)?"Линейная шкала":"Логарифмическая шкала", [=](){
         QwtScaleEngine *engine = 0;
         if (!(*scale)) {

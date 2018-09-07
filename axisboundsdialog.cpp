@@ -31,7 +31,7 @@ AxisBoundsDialog::AxisBoundsDialog(double leftBorder, double rightBorder, int ax
         text = "Подогнать масштаб по горизонтальной оси";
     QCheckBox *scaleAxis = new QCheckBox(text, this);
     scaleAxis->setChecked(false);
-    connect(scaleAxis, QCheckBox::stateChanged, [=](int state){
+    connect(scaleAxis, &QCheckBox::stateChanged, [&](int state){
         _autoscale = state==Qt::Checked;
     });
 
