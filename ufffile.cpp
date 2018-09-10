@@ -122,9 +122,7 @@ void UffFileDescriptor::write()
     if (!changed()) return;
 
     //be sure all channels were read. May take too much memory
-    for(int i = 0; i< channels.size(); ++i) {
-        if (!channels[i]->populated()) channels[i]->populate();
-    }
+    populate();
 
     QFile uff(fileName());
     if (uff.open(QFile::WriteOnly | QFile::Text)) {
@@ -410,9 +408,7 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
 
 void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize)
 {
-    for(int i = 0; i< this->channels.size(); ++i) {
-        if (!this->channels[i]->populated()) this->channels[i]->populate();
-    }
+    populate();
 
     for (int i=0; i<channels.size(); ++i) {
         Function *ch = new Function(this);

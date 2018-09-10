@@ -8,6 +8,7 @@
 #include "logging.h"
 #include "algorithms.h"
 #include "dfdsettings.h"
+#include "psimpl.h"
 
 QString dataTypeDescription(int type)
 {DD;
@@ -309,9 +310,7 @@ void DfdFileDescriptor::writeRawFile()
     if (!dataChanged()) return;
 
     //be sure all channels were read. May take too much memory
-    for(int i = 0; i< channels.size(); ++i) {
-        if (!channels[i]->populated()) channels[i]->populate();
-    }
+    populate();
 
 
     QFile rawFile(rawFileName);
@@ -499,10 +498,8 @@ void DfdFileDescriptor::copyChannelsFrom(const QList<QPair<FileDescriptor *, int
 {DD;
     //заполняем данными файл, куда будем копирвоать каналы
     //читаем все каналы, чтобы сохранить файл полностью
-    for(int i = 0; i < channels.size(); ++i) {
-        if (!channels[i]->populated())
-            channels[i]->populate();
-    }
+    populate();
+
     QList<FileDescriptor*> records;
     for (int i=0; i<channelsToCopy.size(); ++i)
         if (!records.contains(channelsToCopy.at(i).first)) {
@@ -546,9 +543,7 @@ void DfdFileDescriptor::copyChannelsFrom(const QList<QPair<FileDescriptor *, int
 
 void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> > &channels)
 {DD;
-    for(int i = 0; i< this->channels.size(); ++i) {
-        if (!this->channels[i]->populated()) this->channels[i]->populate();
-    }
+    populate();
 
     DfdChannel *ch = new DfdChannel(this, channelsCount());
 
@@ -618,9 +613,7 @@ void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
 
 void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize)
 {
-    for(int i = 0; i< this->channels.size(); ++i) {
-        if (!this->channels[i]->populated()) this->channels[i]->populate();
-    }
+    populate();
 
     for (int i=0; i<channels.size(); ++i) {
         DfdChannel *ch = new DfdChannel(this, channelsCount());
@@ -1190,32 +1183,58 @@ void DfdChannel::populate()
 
             setPopulated(true);
         }
-        else {//с перекрытием, сначала читаем блок данных в 2048 отчетов для всех каналов
+        else {//с перекрытием, сначала читаем блок данных в ChanBlockSize отчетов для всех каналов
             // если каналы имеют разный размер блоков, этот метод даст сбой
             quint32 actuallyRead = 0;
+            const quint32 chunkSize = parent->channelsCount() * ChanBlockSize;
+            YValues.reserve(NumInd);
             while (1) {
-                quint32 chunkSize = parent->channelsCount() * ChanBlockSize;
+                /*
+                 * i-й отсчет n-го канала имеет номер
+                 * n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
+                 */
                 QVector<double> temp = getValue<double>(readStream, chunkSize, IndType, &actuallyRead);
 
                 //распихиваем данные по каналам
                 actuallyRead /= parent->channelsCount();
-                for (int i=0; i<parent->channelsCount();++i) {
-                    if ((allFile && !parent->channel(i)->populated())
-                        || (!allFile && i == channelIndex)) {
-                        parent->channels[i]->YValues << temp.mid(actuallyRead*i, actuallyRead);
-                    }
-                }
+
+// переписываем цикл так, чтобы записывать только данные нужного канала, а не все подряд
+//                for (int i=0; i<parent->channelsCount();++i) {
+//                    if ((allFile && !parent->channel(i)->populated())
+//                        || (!allFile && i == channelIndex)) {
+//                        parent->channels[i]->YValues << temp.mid(actuallyRead*i, actuallyRead);
+//                    }
+//                }
+                YValues << temp.mid(actuallyRead*channelIndex, actuallyRead);
+
                 if (actuallyRead < ChanBlockSize) {
                     break;
                 }
             }
-            for (int i=0; i<parent->channelsCount();++i) {
-                if ((allFile && !parent->channel(i)->populated())
-                    || (!allFile && i == channelIndex)) {
-                    parent->channels[i]->setYValues(parent->channels[i]->YValues);
-                    parent->channels[i]->setPopulated(true);
-                }
-            }
+// переписываем цикл так, чтобы записывать только данные нужного канала, а не все подряд
+//            for (int i=0; i<parent->channelsCount();++i) {
+//                if ((allFile && !parent->channel(i)->populated())
+//                    || (!allFile && i == channelIndex)) {
+//                    parent->channels[i]->setYValues(parent->channels[i]->YValues);
+//                    parent->channels[i]->setPopulated(true);
+//                }
+//            }
+            //вставлено:
+            setYValues(YValues);
+//            if (YValues.size()>1000000) {
+//                QVector<double> coords(YValues.size()*2);
+//                for (int i=0; i<YValues.size(); ++i) {
+//                    coords[i*2] = xMin+i*XStep;
+//                    coords[i*2+1] = YValues[i];
+//                } qDebug()<<coords.mid(0,40);
+//                QVector<double> simplified(2000000);
+//                typedef QVector<double>::iterator it;
+//                psimpl::simplify_douglas_peucker_n<2, it, it>
+//                        (coords.begin(), coords.end(), 1000000, simplified.begin());
+//                qDebug()<<simplified.size()<<simplified.mid(0,40)<<simplified.last();
+//            }
+            setPopulated(true);
+
         }//qDebug()<<YValues;
     }
     else {
@@ -1228,9 +1247,11 @@ void DfdChannel::setYValues(const QVector<double> &values)
     YValues = values;
     postprocess(YValues);
 
-    auto minmax = std::minmax_element(YValues.begin(), YValues.end());
-    yMin = *(minmax.first);
-    yMax = *(minmax.second);
+    if (!YValues.isEmpty()) {
+        auto minmax = std::minmax_element(YValues.begin(), YValues.end());
+        yMin = *(minmax.first);
+        yMax = *(minmax.second);
+    }
 
     xMin = parent->XBegin;
     xMax = xMin + XStep * YValues.size();

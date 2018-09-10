@@ -97,7 +97,8 @@ HEADERS  += mainwindow.h \
     axisboundsdialog.h \
     qmainzoomsvc.h \
     chartzoom.h \
-    qdragzoomsvc.h
+    qdragzoomsvc.h \
+    psimpl.h
 
 SOURCES +=\
   qwheelzoomsvc.cpp\

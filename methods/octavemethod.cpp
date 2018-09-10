@@ -55,6 +55,7 @@ int OctaveMethod::id()
 
 QStringList OctaveMethod::methodSettings(DfdFileDescriptor *dfd, const Parameters &p)
 {
+    Q_UNUSED(p)
     QStringList spfFile;
     QString yName = "дБ";
     if (scaleCombo->currentText() != "в децибелах") {
@@ -115,6 +116,7 @@ int OctaveMethod::dataType()
 
 DescriptionList OctaveMethod::processData(const Parameters &p)
 {
+    Q_UNUSED(p)
     DescriptionList list;
     list.append({"PName", methodName()});
     list.append({"pTime","(0000000000000000)"});

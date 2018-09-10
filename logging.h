@@ -3,7 +3,7 @@
 
 #include <QString>
 
-#define DO_TRACE
+//#define DO_TRACE
 
 
 class QTime;
