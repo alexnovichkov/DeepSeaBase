@@ -3,7 +3,8 @@
 #include <QtWidgets>
 #include "dfdfiledescriptor.h"
 
-TimeMethod::TimeMethod(QWidget *parent) : QWidget(parent)
+TimeMethod::TimeMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *parent) :
+    QWidget(parent), AbstractMethod(dataBase)
 {
     resolutionCombo = new QComboBox(this);
     resolutionCombo->addItem("512");
@@ -30,12 +31,12 @@ QStringList TimeMethod::methodSettings(DfdFileDescriptor *dfd, const Parameters 
     QStringList spfFile;
 
     spfFile << "YName="+dfd->channels.at(p.activeChannel)->YName;
-    spfFile << QString("BlockIn=%1").arg(p.blockSize);
+    spfFile << QString("BlockIn=%1").arg(p.bufferSize);
     spfFile << "TypeProc=0";
     spfFile << "Values=измеряемые";
 
     quint32 numberOfInd = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->samplesCount();
-    double NumberOfAveraging = double(numberOfInd) / p.blockSize / (1<<p.bandStrip);
+    double NumberOfAveraging = double(numberOfInd) / p.bufferSize / (1<<p.bandStrip);
 
     // at least 2 averaging
     if (NumberOfAveraging<=1) NumberOfAveraging = 2.0;
@@ -53,7 +54,7 @@ QStringList TimeMethod::methodSettings(DfdFileDescriptor *dfd, const Parameters 
 Parameters TimeMethod::parameters()
 {
     Parameters p;
-    p.blockSize = resolutionCombo->currentText().toInt();
+    p.bufferSize = resolutionCombo->currentText().toInt();
 
     p.panelType = panelType();
     p.methodName = methodName();
@@ -87,7 +88,7 @@ DescriptionList TimeMethod::processData(const Parameters &p)
 {
     DescriptionList list;
     list.append({"PName", p.methodName});
-    list.append({"BlockIn", QString::number(p.blockSize)});
+    list.append({"BlockIn", QString::number(p.bufferSize)});
     list.append({"Wind", p.windowDescription()});
     list.append({"TypeAver", p.averaging(p.averagingType)});
     list.append({"pTime","(0000000000000000)"});

@@ -3,8 +3,8 @@
 
 #include "dfdfiledescriptor.h"
 
-OctaveMethod::OctaveMethod(QWidget *parent):
-    QWidget(parent)
+OctaveMethod::OctaveMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *parent) :
+    QWidget(parent), AbstractMethod(dataBase)
 {
     resolutionSpin = new QSpinBox(this); //kStrip=1024
     resolutionSpin->setRange(1, 500000);
@@ -79,7 +79,7 @@ Parameters OctaveMethod::parameters()
 
 
 //    p.averagingType = averCombo->currentIndex();
-    p.blockSize = 32768;
+    p.bufferSize = 32768;
 //    p.windowType = windowCombo->currentIndex();
     p.scaleType = scaleCombo->currentIndex();
     p.panelType = panelType();

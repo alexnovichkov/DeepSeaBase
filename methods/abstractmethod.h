@@ -2,7 +2,7 @@
 #define ABSTRACTMETHOD_H
 
 #include <QStringList>
-#include <QtCore>
+#include <QObject>
 
 class DfdFileDescriptor;
 class Parameters;
@@ -12,6 +12,9 @@ class Parameters;
 class AbstractMethod
 {
 public:
+    explicit AbstractMethod(QList<DfdFileDescriptor *> &dataBase) {
+        this->dataBase = dataBase;
+    }
     /* индекс в methodCombo */
     virtual int id() = 0;
     virtual QStringList methodSettings(DfdFileDescriptor *dfd, const Parameters &p) = 0;
@@ -22,7 +25,8 @@ public:
     //virtual QStringList settings(DfdFileDescriptor *dfd, int bandStrip) = 0;
     virtual Parameters parameters() = 0;
     virtual DescriptionList processData(const Parameters &p) = 0;
-
+private:
+    QList<DfdFileDescriptor *> dataBase;
 };
 
 struct Parameters
@@ -37,10 +41,10 @@ struct Parameters
                     //3 - Хемминга
                     //4 - Натолл
                     //5 - Гаусс
-    int blockSize; // от 512 до 8192
+    int bufferSize; // sampleRate / 2^i, где i - номер частотного диапазона от 0 до 11
 
     int bandWidth;
-    int initialBandStrip;
+    int initialBandStripNumber;
     int bandStrip; //полоса обработки, 0 = исх. частота дискрет.
                   //                  1 = fd/2
                   //                  n = fd/2^n
@@ -91,6 +95,33 @@ struct Parameters
         return "";
     }
 };
+
+static QDebug operator<<(QDebug debug, const Parameters &p)
+  {
+      QDebugStateSaver saver(debug);
+      debug << "sampleRate"<< p.sampleRate<<endl;
+      debug <<  "averagingType"<< p.averagingType<<endl;
+      debug <<  "windowType"<< p.windowType<<endl;
+      debug <<  "bufferSize"<< p.bufferSize<<endl;
+      debug <<  "bandWidth"<< p.bandWidth<<endl;
+      debug <<  "initialBandStripNumber"<< p.initialBandStripNumber<<endl;
+      debug <<  "bandStrip"<< p.bandStrip<<endl;
+      debug <<  "overlap"<< p.overlap<<endl;
+      debug <<  "scaleType"<< p.scaleType<<endl;
+      debug <<  "threshold"<< p.threshold<<endl;
+      debug << "averagesCount"<< p.averagesCount<<endl;
+      debug <<"baseChannel"<<   p.baseChannel<<endl;
+      debug <<"activeChannel"<<   p.activeChannel<<endl;
+      debug <<"window"<<   p.window<<endl;
+      debug <<"fCount"<<   p.fCount<<endl;
+      debug <<"useDeepSea"<<   p.useDeepSea<<endl;
+      debug <<"panelType"<<   p.panelType<<endl;
+      debug <<"methodName"<<   p.methodName<<endl;
+      debug <<"methodDll"<<   p.methodDll<<endl;
+      debug << "dataType"<< p.dataType<<endl;
+      debug << "saveAsComplex"<< p.saveAsComplex<<endl;
+        return debug;
+  }
 
 #endif // ABSTRACTMETHOD_H
 

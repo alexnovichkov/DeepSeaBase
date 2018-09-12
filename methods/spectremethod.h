@@ -5,12 +5,14 @@
 #include "abstractmethod.h"
 
 class QComboBox;
+class DfdFileDescriptor;
+class QSpinBox;
 
 class SpectreMethod : public QWidget, public AbstractMethod
 {
     Q_OBJECT
 public:
-    explicit SpectreMethod(QWidget *parent = 0);
+    explicit SpectreMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *parent = 0);
 
     // AbstractMethod interface
 public:
@@ -23,9 +25,17 @@ public:
     virtual QString methodName();
     virtual int dataType();
     virtual DescriptionList processData(const Parameters &p);
-
+private slots:
+    void updateResolution(int);
 private:
-    QComboBox *resolutionCombo;// Разрешение 512, 1024, 2048, 4096, 8192
+//    QSpinBox *activeChannelSpin;
+//    QSpinBox *baseChannelSpin;
+    QSpinBox *overlap;
+    QComboBox *activeStripCombo;
+    double bandWidth;
+    double sampleRate;
+
+    QComboBox *resolutionCombo;// Размер буфера  (разрешение)
     QComboBox *windowCombo;//Окно "Прямоуг.", "Бартлетта", "Хеннинга", "Хемминга", "Натолл", "Гаусс"
     QComboBox *averCombo;// Усреднение линейное, экспоненциальное, хранение максимума
     QComboBox *nAverCombo;// Кол. усреднений 1 2 4 8 16 32 64 128 256 1024 до конца интервала

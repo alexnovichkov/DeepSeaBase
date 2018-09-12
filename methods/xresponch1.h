@@ -11,7 +11,7 @@ class XresponcH1Method : public QWidget, public AbstractMethod
 {
     Q_OBJECT
 public:
-    XresponcH1Method(QWidget *parent = 0);
+    XresponcH1Method(QList<DfdFileDescriptor *> &dataBase, QWidget *parent = 0);
 
     // AbstractMethod interface
 public:

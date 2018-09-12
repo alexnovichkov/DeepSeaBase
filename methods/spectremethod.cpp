@@ -5,17 +5,43 @@
 #include "dfdfiledescriptor.h"
 #include "logging.h"
 
-SpectreMethod::SpectreMethod(QWidget *parent) :
-    QWidget(parent)
+SpectreMethod::SpectreMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *parent) :
+    QWidget(parent), AbstractMethod(dataBase)
 {
     resolutionCombo = new QComboBox(this);
-    resolutionCombo->addItem("512");
-    resolutionCombo->addItem("1024");
-    resolutionCombo->addItem("2048");
-    resolutionCombo->addItem("4096");
-    resolutionCombo->addItem("8192");
-    resolutionCombo->setCurrentIndex(2);
     resolutionCombo->setEditable(false);
+
+    activeStripCombo = new QComboBox(this);
+    activeStripCombo->setEditable(false);
+    // заполняем список частотного диапазона
+    if (RawChannel *raw = dynamic_cast<RawChannel *>(dataBase.first()->channel(0))) {
+        bandWidth = raw->BandWidth;
+        sampleRate = 1.0 / raw->XStep;
+    }
+    else {
+        bandWidth = qRound(1.0 / dataBase.first()->channel(0)->xStep() / 2.56);
+        sampleRate = 1.0 / dataBase.first()->channel(0)->xStep();
+    }
+    double bw = bandWidth;
+    for (int i=0; i<12; ++i) {
+        activeStripCombo->addItem(QString::number(bw));
+        bw /= 2.0;
+    }
+    connect(activeStripCombo, SIGNAL(currentIndexChanged(int)), this, SLOT(updateResolution(int)));
+    activeStripCombo->setCurrentIndex(0);
+    updateResolution(0);
+
+    overlap = new QSpinBox(this);
+    overlap->setRange(0,75);
+    overlap->setValue(0);
+    overlap->setSingleStep(5);
+
+//    activeChannelSpin = new QSpinBox(this);
+//    activeChannelSpin->setRange(1, 256);
+//    activeChannelSpin->setValue(1);
+//    baseChannelSpin = new QSpinBox(this);
+//    baseChannelSpin->setRange(1, 256);
+//    baseChannelSpin->setValue(2);
 
     windowCombo = new QComboBox(this);
     windowCombo->addItem("Прямоуг.");
@@ -47,7 +73,6 @@ SpectreMethod::SpectreMethod(QWidget *parent) :
     nAverCombo->addItem("1024");
     nAverCombo->addItem("до конца интервала");
     nAverCombo->setCurrentIndex(10);
-   // nAverCombo->setEditable(false);
     nAverCombo->setEnabled(false);
 
     typeCombo = new QComboBox(this);
@@ -83,8 +108,9 @@ SpectreMethod::SpectreMethod(QWidget *parent) :
     addProcCombo->setEditable(false);
 
     QFormLayout *l = new QFormLayout;
-//    l->addRow("Частотный диапазон", rangeCombo);
-    l->addRow("Разрешение по частоте", resolutionCombo);
+    l->addRow("Частотный диапазон", activeStripCombo);
+    l->addRow("Буфер (разр. по част.)", resolutionCombo);
+    l->addRow("Перекрытие, %", overlap);
     l->addRow("Окно", windowCombo);
     l->addRow("Усреднение", averCombo);
     l->addRow("Кол. усреднений", nAverCombo);
@@ -108,12 +134,12 @@ QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, const Paramete
         // TODO: реализовать правильный выбор единицы измерения
     }
     spfFile << QString("YName=%1").arg(yName);
-    spfFile << QString("BlockIn=%1").arg(p.blockSize);
+    spfFile << QString("BlockIn=%1").arg(p.bufferSize);
     spfFile << QString("Wind=%1").arg(p.windowDescription());
     spfFile << QString("TypeAver=%1").arg(p.averagingType);
 
     quint32 numberOfInd = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->samplesCount();
-    double NumberOfAveraging = double(numberOfInd) / p.blockSize / (1<<p.bandStrip);
+    double NumberOfAveraging = double(numberOfInd) / p.bufferSize / (1<<p.bandStrip);
 
     // at least 2 averaging
     if (NumberOfAveraging<=1) NumberOfAveraging = 2.0;
@@ -162,10 +188,21 @@ QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, const Paramete
 Parameters SpectreMethod::parameters()
 {
     Parameters p;
+    p.sampleRate = sampleRate;
     p.averagingType = averCombo->currentIndex();
-    p.blockSize = resolutionCombo->currentText().toInt();
+    //p.blockSize = resolutionCombo->currentText().toInt();
+
+    const double po = pow(2.0, resolutionCombo->currentIndex());
+    p.bufferSize = qRound(sampleRate / po); // размер блока
     p.windowType = windowCombo->currentIndex();
     p.scaleType = scaleCombo->currentIndex();
+
+
+    p.activeChannel = 1;
+    p.baseChannel = 1;
+    p.overlap = 1.0 * overlap->value() / 100;
+    p.bandWidth = bandWidth;
+    p.initialBandStripNumber = activeStripCombo->currentIndex();
 
     p.panelType = panelType();
     p.methodName = methodName();
@@ -205,9 +242,21 @@ DescriptionList SpectreMethod::processData(const Parameters &p)
 {
     DescriptionList list;
     list.append({"PName", p.methodName});
-    list.append({"BlockIn", QString::number(p.blockSize)});
+    list.append({"BlockIn", QString::number(p.bufferSize)});
     list.append({"Wind", p.windowDescription()});
     list.append({"TypeAver", p.averaging(p.averagingType)});
     list.append({"pTime","(0000000000000000)"});
     return list;
+}
+
+void SpectreMethod::updateResolution(int bandStrip)
+{
+    double sR = sampleRate;
+    resolutionCombo->clear();
+    for (int i=0; i<5; ++i) {
+        double p = pow(2.0, i);
+        double p1 = pow(2.0, i-bandStrip);
+        resolutionCombo->addItem(QString("%1 (%2 Гц)").arg(qRound(sR / p)).arg(p1));
+    }
+    resolutionCombo->setCurrentIndex(0);
 }

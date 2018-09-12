@@ -11,7 +11,7 @@ class OctaveMethod : public QWidget, public AbstractMethod
 {
     Q_OBJECT
 public:
-    explicit OctaveMethod(QWidget *parent = 0);
+    explicit OctaveMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *parent = 0);
 
     // AbstractMethod interface
 public:

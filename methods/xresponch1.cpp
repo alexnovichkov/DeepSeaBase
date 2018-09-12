@@ -4,8 +4,8 @@
 
 #include "dfdfiledescriptor.h"
 
-XresponcH1Method::XresponcH1Method(QWidget *parent)
-    : QWidget(parent)
+XresponcH1Method::XresponcH1Method(QList<DfdFileDescriptor *> &dataBase, QWidget *parent) :
+    QWidget(parent), AbstractMethod(dataBase)
 {
     resolutionCombo = new QComboBox(this);
     resolutionCombo->addItem("512");
@@ -96,7 +96,7 @@ QStringList XresponcH1Method::methodSettings(DfdFileDescriptor *dfd, const Param
     spfFile << "TypeAver="+averCombo->currentText();
 
     quint32 numberOfInd = dfd->channels.at(p.activeChannel)->samplesCount();
-    double NumberOfAveraging = double(numberOfInd) / p.blockSize / (1<<p.bandStrip);
+    double NumberOfAveraging = double(numberOfInd) / p.bufferSize / (1<<p.bandStrip);
 
     // at least 2 averaging
     if (NumberOfAveraging<1) NumberOfAveraging = 2.0;
@@ -143,7 +143,7 @@ Parameters XresponcH1Method::parameters()
 {
     Parameters p;
     p.averagingType = averCombo->currentIndex();
-    p.blockSize = resolutionCombo->currentText().toInt();
+    p.bufferSize = resolutionCombo->currentText().toInt();
     p.windowType = windowCombo->currentIndex();
     p.scaleType = scaleCombo->currentIndex();
 
@@ -180,7 +180,7 @@ DescriptionList XresponcH1Method::processData(const Parameters &p)
 {
     DescriptionList list;
     list.append({"PName", p.methodName});
-    list.append({"BlockIn", QString::number(p.blockSize)});
+    list.append({"BlockIn", QString::number(p.bufferSize)});
     list.append({"Wind", p.windowDescription()});
     list.append({"TypeAver", p.averaging(p.averagingType)});
     list.append({"pTime","(0000000000000000)"});

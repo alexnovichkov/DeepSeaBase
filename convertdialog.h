@@ -40,24 +40,15 @@ private:
     QList<DfdFileDescriptor *> dataBase;
 
     QStringList newFiles;
-    //QStringList newFiles_;
-
     AbstractMethod *currentMethod;
 
     QComboBox *methodCombo;
-    QSpinBox *activeChannelSpin;
-    QSpinBox *baseChannelSpin;
     QStackedWidget *methodsStack;
-    QComboBox *activeStripCombo;
-    //QLabel *infoLabel;
     QPlainTextEdit *infoLabel;
-    QSpinBox *overlap;
     QCheckBox *useDeepsea;
     QDialogButtonBox *buttonBox;
     QProgressBar *progress;
     QCheckBox *shutdown;
-
-    double bandWidth;
 
     Converter *converter;
     QThread *thread;

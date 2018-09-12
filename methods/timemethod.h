@@ -10,7 +10,7 @@ class TimeMethod : public QWidget, public AbstractMethod
 {
     Q_OBJECT
 public:
-    explicit TimeMethod(QWidget *parent = 0);
+    explicit TimeMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *parent = 0);
 
     virtual int id();
     virtual QStringList methodSettings(DfdFileDescriptor *dfd, const Parameters &p);

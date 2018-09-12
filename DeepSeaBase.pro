@@ -53,7 +53,8 @@ SOURCES += main.cpp\
     axisboundsdialog.cpp \
     qmainzoomsvc.cpp \
     chartzoom.cpp \
-    qdragzoomsvc.cpp
+    qdragzoomsvc.cpp \
+    spectre94.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -98,7 +99,8 @@ HEADERS  += mainwindow.h \
     qmainzoomsvc.h \
     chartzoom.h \
     qdragzoomsvc.h \
-    psimpl.h
+    psimpl.h \
+    spectre94.h
 
 SOURCES +=\
   qwheelzoomsvc.cpp\

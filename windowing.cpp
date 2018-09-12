@@ -4,7 +4,7 @@
 
 Windowing::Windowing(const Parameters &p)
 {
-    w = QVector<double>(p.blockSize, 0.0);
+    w = QVector<double>(p.bufferSize, 0.0);
 
     if (p.windowType == 0) square();
     else if (p.windowType == 1) triangular();
