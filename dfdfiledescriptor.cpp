@@ -919,9 +919,6 @@ DfdChannel::DfdChannel(DfdFileDescriptor *parent, int channelIndex)
       yMax(0.0),
       XStep(0.0),
       XMaxInitial(0.0),
-      YMinInitial(0.0),
-      YMaxInitial(0.0),
-      //YValues(0),
       parent(parent),
       channelIndex(channelIndex),
       _populated(false)
@@ -952,8 +949,6 @@ DfdChannel::DfdChannel(const DfdChannel &other)
     yMax = other.yMax;
     XStep = other.XStep;
     XMaxInitial = other.XMaxInitial; // initial xMax value to display
-    YMinInitial = other.YMinInitial; // initial yMin value to display
-    YMaxInitial = other.YMaxInitial; // initial yMax value to display
 
     YValues = other.YValues;
     XValues = other.XValues;
@@ -985,8 +980,6 @@ DfdChannel::DfdChannel(Channel &other)
     yMin = other.yMinInitial();
     yMax = other.yMaxInitial();
     XMaxInitial = xMax;
-    YMinInitial = yMin;
-    YMaxInitial = yMax;
 
     YValues = other.yValues();
     XValues = other.xValues();
@@ -1256,8 +1249,6 @@ void DfdChannel::setYValues(const QVector<double> &values)
     xMin = parent->XBegin;
     xMax = xMin + XStep * YValues.size();
     XMaxInitial = xMax;
-    YMinInitial = yMin;
-    YMaxInitial = yMax;
 }
 
 void DfdChannel::setXValues(const QVector<double> &xvalues)
@@ -1491,8 +1482,8 @@ void DfdChannel::addCorrection(double correctionValue, bool writeToFile)
     for (int j = 0; j < YValues.size(); ++j)
         YValues[j] += correctionValue-oldCorrectionValue;
 
-    YMaxInitial += correctionValue-oldCorrectionValue;
-    YMinInitial += correctionValue-oldCorrectionValue;
+    yMax += correctionValue-oldCorrectionValue;
+    yMin += correctionValue-oldCorrectionValue;
 
     oldCorrectionValue = correctionValue;
 
@@ -1601,16 +1592,6 @@ void RawChannel::populate()
 
     // rescale initial min and max values with first 200 values
     XMaxInitial = parent->XBegin + XStep*200;
-    YMinInitial = 0.0;
-    YMaxInitial = 0.0;
-
-    if (YValues.isEmpty()) return;
-    const int steps = qMin(samplesCount(), 200u);
-    for (int i=0; i<steps; ++i) {
-        double val = YValues[i];
-        if (val > YMaxInitial) YMaxInitial = val;
-        if (val < YMinInitial) YMinInitial = val;
-    }
 }
 
 

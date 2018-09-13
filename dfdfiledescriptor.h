@@ -152,8 +152,8 @@ public:
     void setYValues(const QVector<double> &values);
     void setXValues(const QVector<double> &xvalues);
     virtual double xMaxInitial() const {return XMaxInitial;}
-    virtual double yMinInitial() const {return YMinInitial;}
-    virtual double yMaxInitial() const {return YMaxInitial;}
+    virtual double yMinInitial() const {return yMin;}
+    virtual double yMaxInitial() const {return yMax;}
     virtual void addCorrection(double correctionValue, bool writeToFile);
 
     virtual QString description() const {return ChanDscr;}
@@ -197,8 +197,6 @@ public:
     double yMax;
     double XStep;
     double XMaxInitial; // initial xMax value to display
-    double YMinInitial; // initial yMin value to display
-    double YMaxInitial; // initial yMax value to display
 
     QVector<double> YValues;
     QVector<double> XValues;
