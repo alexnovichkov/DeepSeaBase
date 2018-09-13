@@ -16,7 +16,6 @@ CONFIG += c++11
 SOURCES += main.cpp\
     mainwindow.cpp \
     dfdfiledescriptor.cpp \
-    convertdialog.cpp \
     sortabletreewidgetitem.cpp \
     plot.cpp \
     curve.cpp \
@@ -54,11 +53,11 @@ SOURCES += main.cpp\
     qmainzoomsvc.cpp \
     chartzoom.cpp \
     qdragzoomsvc.cpp \
-    spectre94.cpp
+    spectre94.cpp \
+    calculatespectredialog.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
-    convertdialog.h \
     sortabletreewidgetitem.h \
     plot.h \
     curve.h \
@@ -100,7 +99,8 @@ HEADERS  += mainwindow.h \
     chartzoom.h \
     qdragzoomsvc.h \
     psimpl.h \
-    spectre94.h
+    spectre94.h \
+    calculatespectredialog.h
 
 SOURCES +=\
   qwheelzoomsvc.cpp\

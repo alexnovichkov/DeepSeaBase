@@ -2,7 +2,7 @@
 
 #include <QtWidgets>
 
-#include "convertdialog.h"
+#include "calculatespectredialog.h"
 #include "sortabletreewidgetitem.h"
 #include "checkableheaderview.h"
 #include "plot.h"

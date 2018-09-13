@@ -57,7 +57,7 @@ struct Parameters
     int averagesCount; // число усреднений
 
     int baseChannel; // опорный канал
-    int activeChannel;
+    int activeChannel; // активный канал
 
     QVector<double> window; // коэффициенты оконной функции
 
@@ -71,6 +71,10 @@ struct Parameters
     int dataType;
     bool saveAsComplex=false; //формат результата: комплексные числа
 
+    int spectreType; // тип спектра
+                     // 0 = мощности
+                     // 1 = плотности мощности
+                     // 2 = спектр СКЗ
 
     AbstractMethod *method;
 

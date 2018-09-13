@@ -8,6 +8,7 @@
 #include "windowing.h"
 #include "samplerate.h"
 #include "octavefilterbank.h"
+#include "algorithms.h"
 
 class Filter
 {
@@ -19,7 +20,7 @@ public:
         src_state = src_new(2, 1, &_error);
         src_data.end_of_input = 0;
 
-        const int newBlockSize = p.bufferSize; //* (1<<p.bandStrip);
+        const int newBlockSize = p.bufferSize* (1<<p.bandStrip);
 
         filterOut.resize(newBlockSize+100);
         src_data.output_frames = filterOut.size();
@@ -83,36 +84,37 @@ void Converter::stop()
 
 BOOL CALLBACK enumWindowsProc(HWND hWnd, LPARAM lParam)
 {
-  int length = ::GetWindowTextLength( hWnd );
-  if( 0 == length ) return TRUE;
+    Q_UNUSED(lParam);
+    int length = ::GetWindowTextLength( hWnd );
+    if( 0 == length ) return TRUE;
 
-  TCHAR* buffer;
-  buffer = new TCHAR[ length + 1 ];
-  memset( buffer, 0, ( length + 1 ) * sizeof( TCHAR ) );
-  GetWindowText( hWnd, buffer, length + 1 );
-  QString windowTitle = QString::fromWCharArray(buffer );
-  delete[] buffer;
+    TCHAR* buffer;
+    buffer = new TCHAR[ length + 1 ];
+    memset( buffer, 0, ( length + 1 ) * sizeof( TCHAR ) );
+    GetWindowText( hWnd, buffer, length + 1 );
+    QString windowTitle = QString::fromWCharArray(buffer );
+    delete[] buffer;
 
-  if (windowTitle=="Confirm") {
-      HWND firstChild = GetWindow(hWnd, GW_CHILD);
-      while (firstChild != 0) {
-          length = ::GetWindowTextLength( hWnd );
-          TCHAR* buffer1;
-          buffer1 = new TCHAR[ length + 1 ];
-          memset( buffer1, 0, ( length + 1 ) * sizeof( TCHAR ) );
-          GetWindowText( firstChild, buffer1, length + 1 );
-          windowTitle = QString::fromWCharArray(buffer1);
-          delete[] buffer1;
-          if (windowTitle.contains("Yes")) {
-              SendMessage(firstChild, BM_CLICK, 0, 0);
-              break;
-          }
-          else
-              firstChild = GetWindow(firstChild, GW_HWNDNEXT);
-      }
-  }
+    if (windowTitle=="Confirm") {
+        HWND firstChild = GetWindow(hWnd, GW_CHILD);
+        while (firstChild != 0) {
+            length = ::GetWindowTextLength( hWnd );
+            TCHAR* buffer1;
+            buffer1 = new TCHAR[ length + 1 ];
+            memset( buffer1, 0, ( length + 1 ) * sizeof( TCHAR ) );
+            GetWindowText( firstChild, buffer1, length + 1 );
+            windowTitle = QString::fromWCharArray(buffer1);
+            delete[] buffer1;
+            if (windowTitle.contains("Yes")) {
+                SendMessage(firstChild, BM_CLICK, 0, 0);
+                break;
+            }
+            else
+                firstChild = GetWindow(firstChild, GW_HWNDNEXT);
+        }
+    }
 
-  return TRUE;
+    return TRUE;
 }
 
 void Converter::start()
@@ -151,7 +153,10 @@ void Converter::start()
     if (!p.useDeepSea) {
         p.baseChannel--;
         foreach (DfdFileDescriptor *dfd, dataBase) {
-            if (!convert(dfd, tempFolderName)) return;
+            emit message(QString("Подождите, пока идет расчет для файла\n%1").arg(dfd->fileName()));
+            if (!convert(dfd, tempFolderName)) {
+                emit message("Не удалось сконвертировать файл " + dfd->fileName());
+            }
         }
     }
     else {
@@ -207,7 +212,7 @@ void Converter::start()
 
 void Converter::processTimer()
 {
-    EnumWindows(enumWindowsProc, NULL);
+    EnumWindows(enumWindowsProc, 0L);
 }
 
 void Converter::finalize()
@@ -517,6 +522,31 @@ QVector<float> getBlock(const QVector<float> &values, const quint32 blockSize, c
     return output;
 }
 
+QVector<float> getBlock(uchar *mapped, quint32 mappedSize,
+                        int channel, int chanBlockSize, int channelsCount,
+                        const quint32 blockSize, const quint32 stepBack, quint32 &block)
+{
+    QVector<float> output;
+    /*
+     * i-й отсчет n-го канала имеет номер
+     * n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
+     */
+
+    if (block < mappedSize/sizeof(float)) {
+        quint32 realBlockSize = qMin(blockSize, mappedSize/sizeof(float) - block);
+        output.resize(realBlockSize);
+        for (int i = 0; i<realBlockSize; ++i) {
+            int blocki = block+i;
+            qint64 sampleNumber = channel*chanBlockSize + int(blocki/chanBlockSize)*chanBlockSize*channelsCount
+                                  +(blocki % chanBlockSize);
+            output[i] = (float)(*(mapped+sampleNumber*sizeof(float)));
+        }
+        //output = values.mid(block, blockSize);
+        block += realBlockSize - stepBack;
+    }
+    return output;
+}
+
 void average(QVector<double> &result, const QVector<double> &input, const Parameters &p, int averagesMade)
 {DD;
     //int averagingType; //0 - линейное
@@ -613,7 +643,9 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
     p.bandStrip = stripNumberForBandwidth(p.sampleRate / 2.56, p);
     p.fCount = qRound((double)p.bufferSize / 2.56);
 
-    p.averagesCount = int(1.0 * dfd->channels[0]->samplesCount() / p.bufferSize / (1.0 - p.overlap));
+    int averages = int(1.0 * dfd->channels[0]->samplesCount() / p.bufferSize / (1<<p.bandStrip) / (1.0 - p.overlap));
+    if (p.averagesCount == -1) p.averagesCount = averages;
+    else p.averagesCount = qMin(averages, p.averagesCount);
     if (dfd->channels[0]->samplesCount() % p.averagesCount !=0) p.averagesCount++;
 
     // Если опорный канал с таким номером в файле отсутствует, используем последний канал в файле
@@ -660,13 +692,32 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
 
         Filter filter(p);
 
-        const int newBlockSize = p.bufferSize; //* (1<<p.bandStrip);
+        const int newBlockSize = p.bufferSize* (1<<p.bandStrip);
 
         const quint32 stepBack = quint32(1.0 * newBlockSize * p.overlap);
+        if (p.method->id()==0) {//осциллограф
+            spectrum.clear();
+            while (1) {
+                QVector<float> chunk = getBlock(dfd->channels[i]->floatValues, newBlockSize, stepBack, block);
+                if (chunk.size() < p.bufferSize) break;
+                filtered = filter.process(chunk);
+                foreach(float val, filtered)
+                spectrum << val;
+            }
+            spectrum.squeeze();
+        }
         if (p.method->id()==1) {//спектр мощности
             qDebug()<<p;
             while (1) {
                 QVector<float> chunk = getBlock(dfd->channels[i]->floatValues, newBlockSize, stepBack, block);
+//                QVector<float> chunk = getBlock(mapped, mappedSize,
+//                                                i, dfd->channels[i]->ChanBlockSize,
+//                                                dfd->channelsCount(),
+//                                                newBlockSize, stepBack, block);
+//                if (RawChannel *rawc = dynamic_cast<RawChannel*>(dfd->channels[i])) {
+//                    for (int k=0; k < chunk.size(); ++k)
+//                        chunk[k] = chunk[k]*rawc->coef1+rawc->coef2;
+//                }
 
                 if (chunk.size() < p.bufferSize) break;
 
@@ -674,6 +725,8 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
                 applyWindow(filtered, p);
                 QVector<double> out = powerSpectre(filtered, p);
                 average(spectrum, out, p, averagesMade++);
+                // контроль количества усреднений
+                if (averagesMade >= p.averagesCount) break;
             }
             changeScale(spectrum, p);
         }
@@ -741,6 +794,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
 //            for (int i=0; i<spectrum.size(); ++i)
 //                spectrum[i] = 20 * log10(spectrum[i] * t2);
         }
+
         if (p.method->id()==18) {//октавный спектр
             OctaveFilterBank filtBank(p);
 

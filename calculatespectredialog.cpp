@@ -1,4 +1,4 @@
-#include "convertdialog.h"
+#include "calculatespectredialog.h"
 
 #include <QtWidgets>
 #include <QThread>
