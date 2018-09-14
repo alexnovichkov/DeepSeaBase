@@ -366,8 +366,8 @@ void ButterworthFilter::computeCoefficients(const int order, const double cutoff
         imag[int((order+1)/2)] = 0.0;
     }
 
-    QVector<double> zero;
-    double gain = 1.0;
+//    QVector<double> zero;
+//    double gain = 1.0;
 
 //    sftrans(zero, real, imag, gain, Wl, Wh, highPass);
 //    bilinear(zero, real, imag, gain);

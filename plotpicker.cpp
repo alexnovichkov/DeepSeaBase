@@ -23,8 +23,8 @@
 
 PlotPicker::PlotPicker(QWidget *canvas) :
     QwtPlotPicker(canvas),
-    d_selectedCurve( NULL ),
-    d_selectedPoint( -1 )
+    d_selectedPoint( -1 ),
+    d_selectedCurve( NULL )
 {DD;
     plot = qobject_cast<QwtPlotCanvas*>(canvas)->plot();
     _showHarmonics = false;

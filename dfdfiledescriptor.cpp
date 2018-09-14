@@ -179,8 +179,8 @@ DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
       BlockSize(0),
       source(0),
       process(0),
-      dataDescription(0),
       XBegin(0.0),
+      dataDescription(0),
       XStep(0.0)
 {DD;
 //    rawFileChanged = false;
@@ -1129,7 +1129,7 @@ void DfdChannel::populate()
     QFile rawFile(parent->attachedFileName());
 
     //bool allFile = rawFile.size() < 256 * 1024 * 1024;
-    bool allFile = true;
+//    bool allFile = true;
 
     if (rawFile.open(QFile::ReadOnly)) {
         QDataStream readStream(&rawFile);

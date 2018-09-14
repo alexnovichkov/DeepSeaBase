@@ -71,71 +71,71 @@ void SignalHandler::setChanged(bool ch)
 }
 
 
-Model::Model(QObject *parent) : QAbstractItemModel(parent)
-{
+//Model::Model(QObject *parent) : QAbstractItemModel(parent)
+//{
 
-}
+//}
 
-Model::~Model()
-{
-    qDeleteAll(d);
-}
+//Model::~Model()
+//{
+//    qDeleteAll(d);
+//}
 
-QModelIndex Model::index(int row, int column, const QModelIndex &parent) const
-{
-    if (parent.isValid()) {
-        //channel
-        return createIndex(row, column, d[parent.row()]->channel(row));
-    }
-    else {
-        return createIndex(row,column,d[row]);
-    }
-}
+//QModelIndex Model::index(int row, int column, const QModelIndex &parent) const
+//{
+//    if (parent.isValid()) {
+//        //channel
+//        return createIndex(row, column, d[parent.row()]->channel(row));
+//    }
+//    else {
+//        return createIndex(row,column,d[row]);
+//    }
+//}
 
-QModelIndex Model::parent(const QModelIndex &child) const
-{
-    if (!child.isValid()) return QModelIndex();
-//    Channel *c = static_cast<Channel*>(child.internalPointer());
-//    if (c) return createIndex()
-//    return ->descriptor();
-}
+//QModelIndex Model::parent(const QModelIndex &child) const
+//{
+//    if (!child.isValid()) return QModelIndex();
+////    Channel *c = static_cast<Channel*>(child.internalPointer());
+////    if (c) return createIndex()
+////    return ->descriptor();
+//}
 
-QModelIndex Model::sibling(int row, int column, const QModelIndex &idx) const
-{
-}
+//QModelIndex Model::sibling(int row, int column, const QModelIndex &idx) const
+//{
+//}
 
-int Model::rowCount(const QModelIndex &parent) const
-{
-}
+//int Model::rowCount(const QModelIndex &parent) const
+//{
+//}
 
-int Model::columnCount(const QModelIndex &parent) const
-{
-}
+//int Model::columnCount(const QModelIndex &parent) const
+//{
+//}
 
-bool Model::hasChildren(const QModelIndex &parent) const
-{
-}
+//bool Model::hasChildren(const QModelIndex &parent) const
+//{
+//}
 
-QVariant Model::data(const QModelIndex &index, int role) const
-{
-}
+//QVariant Model::data(const QModelIndex &index, int role) const
+//{
+//}
 
-bool Model::setData(const QModelIndex &index, const QVariant &value, int role)
-{
-}
+//bool Model::setData(const QModelIndex &index, const QVariant &value, int role)
+//{
+//}
 
-QVariant Model::headerData(int section, Qt::Orientation orientation, int role) const
-{
-}
+//QVariant Model::headerData(int section, Qt::Orientation orientation, int role) const
+//{
+//}
 
-bool Model::setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role)
-{
-}
+//bool Model::setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role)
+//{
+//}
 
-Qt::ItemFlags Model::flags(const QModelIndex &index) const
-{
-}
+//Qt::ItemFlags Model::flags(const QModelIndex &index) const
+//{
+//}
 
-void Model::sort(int column, Qt::SortOrder order)
-{
-}
+//void Model::sort(int column, Qt::SortOrder order)
+//{
+//}

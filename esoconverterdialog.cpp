@@ -186,7 +186,7 @@ void EsoConverterDialog::finalize()
 
 
 
-EsoConvertor::EsoConvertor(QObject *parent)
+EsoConvertor::EsoConvertor(QObject *parent) : QObject(parent)
 {
     columns.resize(5);
 }
@@ -194,7 +194,7 @@ EsoConvertor::EsoConvertor(QObject *parent)
 bool EsoConvertor::convert()
 {
     if (QThread::currentThread()->isInterruptionRequested()) return false;
-    bool noErrors = true;
+//    bool noErrors = true;
 
     if (filesToConvert.isEmpty()) {
         emit message("<font color=red>Error!</font> No files to convert.");

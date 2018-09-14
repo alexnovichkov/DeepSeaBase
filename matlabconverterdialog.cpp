@@ -76,6 +76,7 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
     });
     connect(tree, &QTreeWidget::itemChanged, [=](QTreeWidgetItem *item,int col)
     {
+        Q_UNUSED(item)
         int checked = 0;
         for (int i=0; i<tree->topLevelItemCount(); ++i) {
             if (tree->topLevelItem(i)->checkState(col)==Qt::Checked) checked++;

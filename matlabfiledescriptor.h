@@ -48,6 +48,7 @@ enum MatlabDataType {
 template <typename T>
 QVector<T> readBlock(QDataStream *readStream, ulong itemCount, double scale)
 {
+    Q_UNUSED(scale)
     QVector<T> result(itemCount);
     T v;
 

@@ -32,6 +32,13 @@ private:
     QComboBox *valuesCombo;// Величины измеряемые, вход АЦП
     QComboBox *scaleCombo; //"Шкала" "линейная", "в децибелах"
     //QComboBox *addProcCombo;//Доп. обработка нет, интегрир., дифференц., дв.интергир., дв.дифференц.
+
+    // AbstractMethod interface
+public:
+    virtual DfdFileDescriptor *createNewDfdFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p);
+    virtual UffFileDescriptor *createNewUffFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p);
+    virtual DfdChannel *createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i);
+    virtual Function *addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, quint32 spectrumSize, Parameters &p, int i);
 };
 
 #endif // OCTAVEMETHOD_H

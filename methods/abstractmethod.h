@@ -6,6 +6,9 @@
 
 class DfdFileDescriptor;
 class Parameters;
+class UffFileDescriptor;
+class DfdChannel;
+class Function;
 
 #include "filedescriptor.h"
 
@@ -25,6 +28,12 @@ public:
     //virtual QStringList settings(DfdFileDescriptor *dfd, int bandStrip) = 0;
     virtual Parameters parameters() = 0;
     virtual DescriptionList processData(const Parameters &p) = 0;
+
+    virtual DfdFileDescriptor *createNewDfdFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p) = 0;
+    virtual UffFileDescriptor *createNewUffFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p) = 0;
+    virtual DfdChannel *createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd,
+                       const QVector<double> &spectrum, Parameters &p, int i) = 0;
+    virtual Function * addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, quint32 spectrumSize, Parameters &p, int i) = 0;
 private:
     QList<DfdFileDescriptor *> dataBase;
 };

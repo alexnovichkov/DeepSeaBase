@@ -28,9 +28,19 @@ private:
 //    QComboBox *averCombo;
 //    QComboBox *nAverCombo;
 //    QComboBox *typeCombo;
-//    QComboBox *valuesCombo;
+    QComboBox *valuesCombo;
 //    QComboBox *scaleCombo;
 //    QComboBox *addProcCombo;
+
+    double sampleRate;
+    double bandWidth;
+
+    // AbstractMethod interface
+public:
+    virtual DfdFileDescriptor *createNewDfdFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p);
+    virtual UffFileDescriptor *createNewUffFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p);
+    virtual DfdChannel *createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i);
+    virtual Function *addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, quint32 spectrumSize, Parameters &p, int i);
 };
 
 #endif // TIMEMETHOD_H
