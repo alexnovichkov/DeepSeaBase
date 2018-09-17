@@ -47,6 +47,7 @@ private:
     double currentLeftBorder, currentRightBorder;   // Текущие границы графика по оси x в момент начала преобразования
     double currentBottomBorder, currentTopBorder;   // Текущие границы графика по оси y в момент начала преобразования
     double currentBottomBorder1, currentTopBorder1;
+
     double currentWidth, currentHeight;   // Текущие ширина и высота графика в момент начала преобразования
     int scb_pxl, scb_pyt;    // Текущие левое и верхнее смещение графика в момент начала преобразования
                             // (в пикселах относительно канвы)

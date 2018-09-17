@@ -38,34 +38,93 @@ void QAxisZoomSvc::attach(ChartZoom *zm)
 // Обработчик всех событий
 bool QAxisZoomSvc::eventFilter(QObject *target,QEvent *event)
 {
-    if (event->type() == QEvent::KeyPress) {
-                    procKeyboardEvent(event);
-                }
+    if (event->type() == QEvent::KeyPress)
+        procKeyboardEvent(event);
 
-   // if (zoom->activated) {
-        int ax = -1;
-        for (int a=0; a < QwtPlot::axisCnt; a++)
-            // если событие произошло для данной шкалы, то
-            if (target == zoom->plot()->axisWidget(a))
-            {
-                ax = a;     // запоминаем номер шкалы
-                break;
-            }
-
-        if (ax >= 0) {
-            // если произошло одно из событий от мыши, то
-            if (event->type() == QEvent::MouseButtonPress ||
-                event->type() == QEvent::MouseMove ||
-                event->type() == QEvent::MouseButtonRelease ||
-                event->type() == QEvent::MouseButtonDblClick)
-                axisMouseEvent(event,ax);   // вызываем соответствующий обработчик
-//            else if (event->type() == QEvent::KeyPress) {
-//                procKeyboardEvent(event);
-//            }
+    int ax = -1;
+    for (int a=0; a < QwtPlot::axisCnt; a++) {
+        // если событие произошло для данной шкалы, то
+        if (target == zoom->plot()->axisWidget(a)) {
+            ax = a;     // запоминаем номер шкалы
+            break;
         }
-  //  }
+    }
+
+    if (ax >= 0) {
+        // если произошло одно из событий от мыши, то
+        if (event->type() == QEvent::MouseButtonPress ||
+            event->type() == QEvent::MouseMove ||
+            event->type() == QEvent::MouseButtonRelease ||
+            event->type() == QEvent::MouseButtonDblClick)
+            axisMouseEvent(event,ax);   // вызываем соответствующий обработчик
+        //            else if (event->type() == QEvent::KeyPress) {
+        //                procKeyboardEvent(event);
+        //            }
+    }
 
     return QObject::eventFilter(target,event);
+}
+
+// Обработчик событий от мыши для шкалы
+void QAxisZoomSvc::axisMouseEvent(QEvent *event,int axis)
+{DD;
+    QMouseEvent *mEvent = static_cast<QMouseEvent *>(event);
+    switch (event->type())
+    {
+        case QEvent::MouseButtonPress:
+            if (mEvent->button()==Qt::RightButton) {
+                emit contextMenuRequested(mEvent->globalPos(), axis);
+            }
+            else if (axis == QwtPlot::xBottom || axis == QwtPlot::xTop)
+                startHorizontalAxisZoom(mEvent, axis);
+            else
+                startVerticalAxisZoom(mEvent, axis);
+            break;
+
+        case QEvent::MouseMove:
+            proceedAxisZoom(mEvent,axis);
+            break;
+
+        case QEvent::MouseButtonRelease:
+            endAxisZoom(mEvent,axis);
+            break;
+
+        case QEvent::MouseButtonDblClick:
+            if (mEvent->button()==Qt::LeftButton) {
+                AxisBoundsDialog dialog(zoom->plot()->canvasMap(axis).s1(), zoom->plot()->canvasMap(axis).s2(), axis);
+                if (dialog.exec()) {
+                    ChartZoom::zoomCoordinates coords;
+                    if (axis == QwtPlot::xBottom || axis == QwtPlot::xTop)
+                        coords.coords.insert(zoom->masterH(), {dialog.leftBorder(), dialog.rightBorder()});
+                    else if (zoom->verticalScaleBounds->axis == axis)
+                        coords.coords.insert(zoom->masterV(), {dialog.leftBorder(), dialog.rightBorder()});
+                    else if (zoom->verticalScaleBoundsSlave->axis == axis)
+                        coords.coords.insert(zoom->slaveV(), {dialog.leftBorder(), dialog.rightBorder()});
+                    if (!coords.coords.isEmpty())
+                        zoom->addZoom(coords, true);
+
+                    if (dialog.autoscale()) {
+                        emit needsAutoscale(axis);
+                    }
+                    zoom->plot()->replot();
+                }
+            }
+            break;
+
+
+        default: break;
+    }
+}
+
+void QAxisZoomSvc::procKeyboardEvent(QEvent *event)
+{
+    QKeyEvent *kEvent = static_cast<QKeyEvent*>(event);
+    switch (kEvent->key()) {
+        case Qt::Key_Backspace:
+            zoom->zoomBack();
+            break;
+        default: break;
+    }
 }
 
 // Ограничение нового размера шкалы
@@ -174,67 +233,7 @@ void QAxisZoomSvc::axisApplyMove(QPoint evpos, int ax)
     if (axisChanged) plt->replot();
 }
 
-// Обработчик событий от мыши для шкалы
-void QAxisZoomSvc::axisMouseEvent(QEvent *event,int axis)
-{DD;
-    QMouseEvent *mEvent = static_cast<QMouseEvent *>(event);
-    switch (event->type())
-    {
-        case QEvent::MouseButtonPress:
-            if (mEvent->button()==Qt::RightButton) {
-                emit contextMenuRequested(mEvent->globalPos(), axis);
-            }
-            else if (axis == QwtPlot::xBottom || axis == QwtPlot::xTop)
-                startHorizontalAxisZoom(mEvent, axis);
-            else
-                startVerticalAxisZoom(mEvent, axis);
-            break;
 
-        case QEvent::MouseMove:
-            proceedAxisZoom(mEvent,axis);
-            break;
-
-        case QEvent::MouseButtonRelease:
-            endAxisZoom(mEvent,axis);
-            break;
-
-        case QEvent::MouseButtonDblClick:
-            if (mEvent->button()==Qt::LeftButton) {
-                AxisBoundsDialog dialog(zoom->plot()->canvasMap(axis).s1(), zoom->plot()->canvasMap(axis).s2(), axis);
-                if (dialog.exec()) {
-                    ChartZoom::zoomCoordinates coords;
-                    if (axis == QwtPlot::xBottom || axis == QwtPlot::xTop)
-                        coords.coords.insert(zoom->masterH(), {dialog.leftBorder(), dialog.rightBorder()});
-                    else if (zoom->verticalScaleBounds->axis == axis)
-                        coords.coords.insert(zoom->masterV(), {dialog.leftBorder(), dialog.rightBorder()});
-                    else if (zoom->verticalScaleBoundsSlave->axis == axis)
-                        coords.coords.insert(zoom->slaveV(), {dialog.leftBorder(), dialog.rightBorder()});
-                    if (!coords.coords.isEmpty())
-                        zoom->addZoom(coords, true);
-
-                    if (dialog.autoscale()) {
-                        emit needsAutoscale(axis);
-                    }
-                    zoom->plot()->replot();
-                }
-            }
-            break;
-
-
-        default: break;
-    }
-}
-
-void QAxisZoomSvc::procKeyboardEvent(QEvent *event)
-{
-    QKeyEvent *kEvent = static_cast<QKeyEvent*>(event);
-    switch (kEvent->key()) {
-        case Qt::Key_Backspace:
-            zoom->zoomBack();
-            break;
-        default: break;
-    }
-}
 
 // Обработчик нажатия на кнопку мыши над шкалой
 // (включение изменения масштаба шкалы)
@@ -269,8 +268,6 @@ void QAxisZoomSvc::startHorizontalAxisZoom(QMouseEvent *event, int axis)
             // запоминаем текущее положение курсора относительно канвы
             // (за вычетом смещений графика)
             cursorPosX = event->pos().x() - sab_pxl;
-            double xVal = sm.invTransform(event->pos().x());
-            emit xAxisClicked(xVal, event->modifiers() & Qt::ControlModifier);
 
             // если левая граница меньше правой,
             if (currentWidth > 0) {
@@ -386,6 +383,12 @@ void QAxisZoomSvc::endAxisZoom(QMouseEvent *mEvent,int ax)
         zoom->plot()->axisWidget(ax)->setCursor(cursor);
         // выключаем режим масштабирования
         zoom->setRegime(ChartZoom::ctNone);
+
+        // emit axisClicked signal only if it is really just a click within 3 pixels
+        if (qAbs(mEvent->pos().x() - sab_pxl - cursorPosX)<3) {
+            double xVal = zoom->plot()->canvasMap(ax).invTransform(mEvent->pos().x());
+            emit xAxisClicked(xVal, mEvent->modifiers() & Qt::ControlModifier);
+        }
 
         // запоминаем совершенное перемещение
         ChartZoom::zoomCoordinates coords;
