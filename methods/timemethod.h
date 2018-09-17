@@ -5,6 +5,8 @@
 #include "abstractmethod.h"
 
 class QComboBox;
+class QSlider;
+class QLabel;
 
 class TimeMethod : public QWidget, public AbstractMethod
 {
@@ -31,9 +33,14 @@ private:
     QComboBox *valuesCombo;
 //    QComboBox *scaleCombo;
 //    QComboBox *addProcCombo;
+    QSlider *minTimeSlider;
+    QSlider *maxTimeSlider;
+    QLabel *minTimeLabel;
+    QLabel *maxTimeLabel;
 
     double sampleRate;
     double bandWidth;
+    double xStep;
 
     // AbstractMethod interface
 public:

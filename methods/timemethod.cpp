@@ -12,14 +12,17 @@ TimeMethod::TimeMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *parent) :
     resolutionCombo = new QComboBox(this);
     resolutionCombo->setEditable(false);
 
+    xStep = dataBase.first()->channel(0)->xStep();
+
     // заполняем список частотного диапазона
     if (RawChannel *raw = dynamic_cast<RawChannel *>(dataBase.first()->channel(0))) {
         bandWidth = raw->BandWidth;
         sampleRate = 1.0 / raw->XStep;
+        xStep = raw->XStep;
     }
     else {
-        bandWidth = qRound(1.0 / dataBase.first()->channel(0)->xStep() / 2.56);
-        sampleRate = 1.0 / dataBase.first()->channel(0)->xStep();
+        bandWidth = qRound(1.0 / xStep / 2.56);
+        sampleRate = 1.0 / xStep;
     }
     double bw = bandWidth;
     for (int i=0; i<5; ++i) {
@@ -27,9 +30,41 @@ TimeMethod::TimeMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *parent) :
         bw /= 2.0;
     }
 
+
+    minTimeLabel  = new QLabel(this);
+    minTimeLabel->setText("00 s 000 ms");
+
+    maxTimeLabel = new QLabel(this);
+    maxTimeLabel->setText("00 s 000 ms");
+
+    minTimeSlider = new QSlider(Qt::Horizontal, this);
+    minTimeSlider->setRange(0, dataBase.first()->samplesCount());
+
+    maxTimeSlider = new QSlider(Qt::Horizontal, this);
+    maxTimeSlider->setRange(0, dataBase.first()->samplesCount());
+
+    connect(minTimeSlider, &QSlider::valueChanged, [=](int value){
+        minTimeLabel->setText(QString("%1 s %2 ms")
+                              .arg(int(value * xStep * 1000) / 1000)
+                              .arg(int(value * xStep * 1000) % 1000));
+    });
+    connect(maxTimeSlider, &QSlider::valueChanged, [=](int value){
+        maxTimeLabel->setText(QString("%1 s %2 ms")
+                              .arg(int(value * xStep * 1000) / 1000)
+                              .arg(int(value * xStep * 1000) % 1000));
+    });
+
     QFormLayout *l = new QFormLayout;
 //    l->addRow("Частотный диапазон", rangeCombo);
     l->addRow("Частотный диапазон", resolutionCombo);
+    QHBoxLayout *hbl1 = new QHBoxLayout;
+    hbl1->addWidget(minTimeSlider);
+    hbl1->addWidget(minTimeLabel);
+    QHBoxLayout *hbl2 = new QHBoxLayout;
+    hbl2->addWidget(maxTimeSlider);
+    hbl2->addWidget(maxTimeLabel);
+    l->addRow("От отсчета", hbl1);
+    l->addRow("До отсчета", hbl2);
     setLayout(l);
 }
 
