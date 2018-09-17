@@ -137,6 +137,11 @@ void CorrectionDialog::correct()
                         curve->descriptor->write();
                         curve->descriptor->writeRawFile();
 
+                        // обновление данных кривой, если она упрощена
+                        if (curve->isSimplified()) {
+                            curve->setRawSamples();
+                        }
+
                         // добавление поправки к выделенным файлам
                         if (allFilesCheckBox && allFilesCheckBox->isChecked()) {
                             foreach(FileDescriptor *d, files) {
@@ -152,8 +157,14 @@ void CorrectionDialog::correct()
                             }
                         }
                     }
-                    else
+                    else {
                         ch->addCorrection(correctionValue, false);
+
+                        // обновление данных кривой, если она упрощена
+                        if (curve->isSimplified()) {
+                            curve->setRawSamples();
+                        }
+                    }
                 }
             }
             plot->updateAxes();

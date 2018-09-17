@@ -70,7 +70,7 @@ public:
      * @brief graphsCount
      * @return count of graphs excluding freeGraph
      */
-    int graphsCount() const {return graphs.size();}
+    int curvesCount() const {return graphs.size();}
 
     /**
      * @brief deleteGraphs

@@ -323,10 +323,6 @@ void Plot::update()
     if (!rightGraphs.isEmpty() && !zoom->verticalScaleBoundsSlave->isFixed())
         zoom->verticalScaleBoundsSlave->autoscale();
 
-//    double x = _trackingCursor->value().x();
-//    updateTrackingCursor(x, false);
-//    x = _trackingCursor1->value().x();
-//    updateTrackingCursor(x, true);
     replot();
 }
 
@@ -349,17 +345,10 @@ void Plot::deleteGraphs()
     leftGraphs.clear();
     rightGraphs.clear();
     ColorSelector::instance()->resetState();
-//    minStep = 0.0;
 
     yLeftName.clear();
     yRightName.clear();
     xName.clear();
-
-    //delete zoom;
-    //zoom = new QwtChartZoom(this);
-    //connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
-    //connect(zoom,SIGNAL(updateTrackingCursor(double,bool)),SLOT(updateTrackingCursor(double,bool)));
-    //connect(zoom,SIGNAL(contextMenuRequested(QPoint,int)),SLOT(showContextMenu(QPoint,int)));
 
     update();
 }
@@ -436,19 +425,16 @@ void Plot::deleteGraph(Curve *graph, bool doReplot)
 
         int removed = leftGraphs.removeAll(graph);
         if (removed > 0 && !leftGraphs.isEmpty()) {
-            zoom->verticalScaleBounds->removeToAutoscale(graph->channel->yMinInitial(),
-                                                          graph->channel->yMaxInitial());
+            zoom->verticalScaleBounds->removeToAutoscale(graph->yMin, graph->yMax);
         }
 
         removed = rightGraphs.removeAll(graph);
         if (removed > 0 && !rightGraphs.isEmpty()) {
-            zoom->verticalScaleBoundsSlave->removeToAutoscale(graph->channel->yMinInitial(),
-                                                               graph->channel->yMaxInitial());
+            zoom->verticalScaleBoundsSlave->removeToAutoscale(graph->yMin, graph->yMax);
         }
         removed = graphs.removeAll(graph);
         if (removed > 0) {
-            zoom->horizontalScaleBounds->removeToAutoscale(graph->channel->xBegin(),
-                                                            graph->channel->xMaxInitial());
+            zoom->horizontalScaleBounds->removeToAutoscale(graph->xMin, graph->xMax);
         }
 
         delete graph;
@@ -626,8 +612,8 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
     if (zoom->verticalScaleBounds->axis == ax) ybounds = zoom->verticalScaleBounds;
     else ybounds = zoom->verticalScaleBoundsSlave;
 
-    zoom->horizontalScaleBounds->add(ch->xBegin(), ch->xMaxInitial());
-    ybounds->add(ch->yMinInitial(), ch->yMaxInitial());
+    zoom->horizontalScaleBounds->add(g->xMin, g->xMax);
+    ybounds->add(g->yMin, g->yMax);
 
     update();
     return true;

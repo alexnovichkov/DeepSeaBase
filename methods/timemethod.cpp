@@ -166,7 +166,7 @@ DfdFileDescriptor *TimeMethod::createNewDfdFile(const QString &fileName, DfdFile
     newDfd->rawFileName = fileName.left(fileName.length()-4)+".raw";
     newDfd->updateDateTimeGUID();
     newDfd->BlockSize = 0;
-    newDfd->DataType = DfdDataType::SourceData;
+    newDfd->DataType = DfdDataType::CuttedData;
 
     // [DataDescription]
     if (dfd->dataDescription) {

@@ -5,50 +5,52 @@
 #include "filedescriptor.h"
 #include <qwt_curve_fitter.h>
 #include "logging.h"
+#include "psimpl.h"
 
-class DfdData: public QwtSeriesData<QPointF>
-{
-public:
-    DfdData(double x0, double xStep, const double *y, size_t size) :
-        d_x0(x0), d_xStep(xStep), d_y(y), d_x(0), d_size(size)
-    {}
-    DfdData(const double *x, const double *y, size_t size) :
-        d_x0(x[0]), d_xStep(x[1]-x[0]), d_y(y), d_x(x), d_size(size)
-    {}
+//class DfdData: public QwtSeriesData<QPointF>
+//{
+//public:
+//    DfdData(double x0, double xStep, const double *y, size_t size) :
+//        d_x0(x0), d_xStep(xStep), d_y(y), d_x(0), d_size(size)
+//    {}
+//    DfdData(const double *x, const double *y, size_t size) :
+//        d_x0(x[0]), d_xStep(x[1]-x[0]), d_y(y), d_x(x), d_size(size)
+//    {}
 
-    virtual QRectF boundingRect() const
-    {
-        if ( d_boundingRect.width() < 0 )
-            d_boundingRect = qwtBoundingRect( *this );
+//    virtual QRectF boundingRect() const
+//    {
+//        if ( d_boundingRect.width() < 0 )
+//            d_boundingRect = qwtBoundingRect( *this );
 
-        return d_boundingRect;
-    }
+//        return d_boundingRect;
+//    }
 
-    virtual size_t size() const
-    {
-        return d_size;
-    }
+//    virtual size_t size() const
+//    {
+//        return d_size;
+//    }
 
-    virtual QPointF sample( size_t i ) const
-    {
-        if (d_x) return QPointF(d_x[int(i)], d_y[int(i)]);
-        return QPointF( d_x0 + i * d_xStep, d_y[int( i )] );
-    }
-private:
-    double d_x0;
-    double d_xStep;
-    const double *d_y;
-    const double *d_x;
-    size_t d_size;
-};
+//    virtual QPointF sample( size_t i ) const
+//    {
+//        if (d_x) return QPointF(d_x[int(i)], d_y[int(i)]);
+//        return QPointF( d_x0 + i * d_xStep, d_y[int( i )] );
+//    }
+//private:
+//    double d_x0;
+//    double d_xStep;
+//    const double *d_y;
+//    const double *d_x;
+//    size_t d_size;
+//};
 
-Curve::Curve(const QString &title, FileDescriptor *descriptor, int channelIndex):
-    QwtPlotCurve(title), descriptor(descriptor), channelIndex(channelIndex)
+Curve::Curve(const QwtText &title) :
+    QwtPlotCurve(title), descriptor(0), channelIndex(-1), channel(0), m_simplified(false),
+    xMin(0), xMax(0), yMin(0), yMax(0), samplesCount(0)
 {DD;
-    channel = descriptor->channel(channelIndex);
     setPaintAttribute(QwtPlotCurve::ClipPolygons);
     setPaintAttribute(QwtPlotCurve::FilterPoints);
     setRenderHint(QwtPlotItem::RenderAntialiased);
+
 
     //setCurveAttribute(Fitted, true);
     //auto fitter = new QwtWeedingCurveFitter();
@@ -56,32 +58,26 @@ Curve::Curve(const QString &title, FileDescriptor *descriptor, int channelIndex)
     //setCurveFitter(fitter);
 
     setLegendIconSize(QSize(16,8));
-
-    if (channel->xValues().isEmpty())
-        setRawSamples(channel->xBegin(), descriptor->xStep(), channel->yValues().data(), channel->samplesCount());
-    else
-        setRawSamples(channel->xValues().data(), channel->yValues().data(), channel->samplesCount());
 }
 
-Curve::Curve(const QString &title) :
-    QwtPlotCurve(title), descriptor(0), channelIndex(-1), channel(0)
+Curve::Curve(const QString &title) : Curve(QwtText(title))
 {DD;
-    setPaintAttribute(QwtPlotCurve::ClipPolygons);
-    setPaintAttribute(QwtPlotCurve::FilterPoints);
-    setRenderHint(QwtPlotItem::RenderAntialiased);
 
-    setLegendIconSize(QSize(16,8));
 }
 
-Curve::Curve(const QwtText &title) :
-    QwtPlotCurve(title), descriptor(0), channelIndex(-1), channel(0)
+Curve::Curve(const QString &title, FileDescriptor *descriptor, int channelIndex) :
+    Curve(title)
 {DD;
-    setPaintAttribute(QwtPlotCurve::ClipPolygons);
-    setPaintAttribute(QwtPlotCurve::FilterPoints);
-    setRenderHint(QwtPlotItem::RenderAntialiased);
+    this->descriptor = descriptor;
+    this->channelIndex = channelIndex;
+    channel = descriptor->channel(channelIndex);
 
-    setLegendIconSize(QSize(16,8));
+    setRawSamples();
 }
+
+
+
+
 
 Curve::~Curve()
 {DD;
@@ -89,14 +85,76 @@ Curve::~Curve()
     qDeleteAll(labels);
 }
 
+void Curve::setRawSamples()
+{
+    if (!descriptor || !channel) return;
+
+    if (channel->xValues().isEmpty())
+        setRawSamples(channel->xBegin(), descriptor->xStep(), channel->yValues().data(), channel->samplesCount());
+    else
+        setRawSamples(channel->xValues().data(), channel->yValues().data(), channel->samplesCount());
+}
+
 void Curve::setRawSamples(double x0, double xStep, const double *yData, int size)
 {DD;
-    setData(new DfdData(x0, xStep, yData, size));
+    if (size > 1048576) {
+        const int factor = 10;
+        // try to filter out original data
+
+        xDataSimplified.clear();
+        yDataSimplified.clear();
+        QVector<double> coords(size*2);
+        for (int i=0; i<size; ++i) {
+            coords[i*2] = x0+i*xStep;
+            coords[i*2+1] = yData[i];
+        } //qDebug()<<"coords"<<coords.mid(0,40);
+        QVector<double> simplified(size / factor * 2); qDebug()<<"simplified size"<<simplified.size();
+
+        typedef QVector<double>::iterator it;
+        psimpl::simplify_douglas_peucker_n<2, it, it>
+                (coords.begin(), coords.end(), size / factor, simplified.begin());
+
+        //retrieving x data and y data
+        for (int i=0; i < simplified.size()-1; i+=2) {
+            xDataSimplified << simplified[i];
+            yDataSimplified << simplified[i+1];
+        }
+
+        // freeing unused memory
+        xDataSimplified.squeeze();
+        yDataSimplified.squeeze();
+
+        setData(new DfdData(xDataSimplified.data(), yDataSimplified.data(), xDataSimplified.size()));
+        m_simplified = true;
+        xMin = xDataSimplified.first();
+        xMax = xDataSimplified.last();
+        auto minmax = std::minmax_element(yDataSimplified.begin(), yDataSimplified.end());
+        yMin = *(minmax.first);
+        yMax = *(minmax.second);
+        samplesCount = xDataSimplified.size();
+    }
+    else {
+        setData(new DfdData(x0, xStep, yData, size));
+        xMin = x0;
+        xMax = x0 + xStep*size;
+        auto minmax = std::minmax_element(yData, yData+size);
+        yMin = *(minmax.first);
+        yMax = *(minmax.second);
+        samplesCount = size;
+    }
 }
 
 void Curve::setRawSamples(const double *xData, const double *yData, int size)
 {DD;
     setData(new DfdData(xData, yData, size));
+
+    auto minmax = std::minmax_element(xData, xData+size);
+    xMin = *(minmax.first);
+    xMax = *(minmax.second);
+    minmax = std::minmax_element(yData, yData+size);
+    yMin = *(minmax.first);
+    yMax = *(minmax.second);
+    samplesCount = size;
 }
 
 void Curve::addLabel(PointLabel *label)
@@ -129,6 +187,11 @@ PointLabel *Curve::findLabel(const int point)
             return l;
 
     return 0;
+}
+
+bool Curve::isSimplified() const
+{
+    return m_simplified;
 }
 
 
@@ -429,3 +492,44 @@ PointLabel *Curve::findLabel(const int point)
 //    }
 //    return  QRectF( 1.0, 1.0, -2.0, -2.0 );
 //}
+
+DfdData::DfdData(double x0, double xStep, const double *y, size_t size)
+    : d_x0(x0), d_xStep(xStep), d_y(y), d_x(0), d_size(size)
+{
+
+}
+
+DfdData::DfdData(const double *x, const double *y, size_t size)
+    : d_x0(x[0]), d_xStep(0), d_y(y), d_x(x), d_size(size)
+{
+
+}
+
+QRectF DfdData::boundingRect() const
+{
+    if ( d_boundingRect.width() < 0 )
+        d_boundingRect = qwtBoundingRect( *this );
+
+    return d_boundingRect;
+}
+
+size_t DfdData::size() const
+{
+    return d_size;
+}
+
+QPointF DfdData::sample(size_t i) const
+{
+    if (d_x) return QPointF(d_x[int(i)], d_y[int(i)]);
+    return QPointF( d_x0 + i * d_xStep, d_y[int( i )] );
+}
+
+double DfdData::xStep() const
+{
+    return d_xStep;
+}
+
+double DfdData::xBegin() const
+{
+    return d_x0;
+}

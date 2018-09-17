@@ -72,7 +72,7 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
         }
     }
     else if (key == Qt::Key_Right) {
-        if (d_selectedPoint >=0 && d_selectedPoint < int(d_selectedCurve->channel->samplesCount()-1)) {
+        if (d_selectedPoint >=0 && d_selectedPoint < d_selectedCurve->samplesCount-1) {
             highlightPoint(false);
             d_selectedPoint++;
             highlightPoint(true);
@@ -205,9 +205,10 @@ PointLabel *PlotPicker::findLabel()
     const QwtPlotItemList& itmList = plot->itemList();
     for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
         if (( *it )->rtti() == QwtPlotItem::Rtti_PlotCurve ) {
-            Curve *c = static_cast<Curve *>( *it );
-            PointLabel *label = c->findLabel(this->trackerPosition(), c->yAxis());
-            if (label) return label;
+            if (Curve *c = static_cast<Curve *>( *it )) {
+                PointLabel *label = c->findLabel(this->trackerPosition(), c->yAxis());
+                if (label) return label;
+            }
         }
     }
 
@@ -219,8 +220,7 @@ QwtPlotMarker *PlotPicker::findCursor(const QPoint &pos)
     const QwtPlotItemList& itmList = plot->itemList();
     for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
         if (( *it )->rtti() == QwtPlotItem::Rtti_PlotMarker ) {
-            TrackingCursor *c = static_cast<TrackingCursor *>( *it );
-            if (c) {
+            if (TrackingCursor *c = static_cast<TrackingCursor *>( *it )) {
                 int newX = (int)(plot->transform(QwtPlot::xBottom, c->xValue()));
                 if (qAbs(newX-pos.x())<=5) {
                     return c;
@@ -282,12 +282,16 @@ void PlotPicker::pointMoved(const QPoint &pos)
 
     else if (mode == Plot::DataInteraction) {
         if (d_selectedCurve) {
-            double newY = plot->invTransform(d_selectedCurve->yAxis(), pos.y());
 
-            d_selectedCurve->descriptor->channel(d_selectedCurve->channelIndex)->yValues()[d_selectedPoint] = newY;
-            d_selectedCurve->descriptor->setDataChanged(true);
+            // запрещаем изменять данные упрощенной кривой
+            if (!d_selectedCurve->isSimplified()) {
+                double newY = plot->invTransform(d_selectedCurve->yAxis(), pos.y());
 
-            highlightPoint(true);
+                d_selectedCurve->descriptor->channel(d_selectedCurve->channelIndex)->yValues()[d_selectedPoint] = newY;
+                d_selectedCurve->descriptor->setDataChanged(true);
+                highlightPoint(true);
+            }
+
         }
     }
 }

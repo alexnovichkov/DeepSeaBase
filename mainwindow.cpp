@@ -1263,7 +1263,7 @@ bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channe
 
 void MainWindow::calculateMean()
 {DD;
-    const int graphsSize = plot->graphsCount();
+    const int graphsSize = plot->curvesCount();
     if (graphsSize<2) return;
 
     QList<QPair<FileDescriptor *, int> > channels;
@@ -1864,7 +1864,7 @@ void MainWindow::calculateThirdOctave()
 
 void MainWindow::calculateMovingAvg()
 {
-    const int graphsSize = plot->graphsCount();
+    const int graphsSize = plot->curvesCount();
     if (graphsSize<1) return;
 
     int windowSize = MainWindow::getSetting("movingAvgSize",3).toInt();

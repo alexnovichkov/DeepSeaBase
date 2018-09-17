@@ -219,17 +219,23 @@ void TrackingPanel::updateState(const QList<TrackingPanel::TrackInfo> &curves, b
 
 void TrackingPanel::setX(double xVal, bool second)
 {DD;
+    // здесь xVal - произвольное число, соответствующее какому-то положению на оси X
+
     if (!plot->curves().isEmpty()) {
         //first we need to find the closest point to xVal;
-        //1. search the curve with the minimum xstep;
-        double xstep = plot->curves().first()->channel->xStep();
-        for (int i=1; i<plot->graphsCount(); ++i) {
+
+        //ищем минимальный шаг по оси X
+        double xstep = plot->curves().at(0)->channel->xStep();
+
+        for (int i=1; i<plot->curvesCount(); ++i) {
             if (plot->curves().at(i)->channel->xStep()<xstep)
                 xstep = plot->curves().at(i)->channel->xStep();
         }
         if (xstep==0.0)
             xstep = plot->curves().first()->channel->xStep();
+
         if (xstep!=0.0) {
+            //среди графиков есть график с минимальным ненулевым шагом
             setStep(xstep);
 
             //2. compute the actual xVal based on the xVal and xstep
@@ -244,7 +250,6 @@ void TrackingPanel::setX(double xVal, bool second)
             DfdFileDescriptor *dfd = static_cast<DfdFileDescriptor *>(plot->curves().first()->descriptor);
             if (!dfd || (dfd->DataType != ToSpectr && dfd->DataType != OSpectr))
                 return;
-
             auto iter = closest<QVector<double>::iterator, double>(dfd->channels[0]->XValues.begin(),
                     dfd->channels[0]->XValues.end(), xVal);
 
@@ -315,8 +320,9 @@ void TrackingPanel::updateTrackingCursor(double xVal, bool second)
     QVector<double> yValues;
     foreach(Curve *c, plot->curves()) {
         int steps, steps1, steps2;
+        const double channelStep = c->channel->xStep();
 
-        if (c->channel->xStep()==0.0) {
+        if (channelStep==0.0) {
             auto &xVals = c->channel->xValues();
             auto iter = closest<QVector<double>::iterator, double>(xVals.begin(), xVals.end(), xVal);
             steps = iter - xVals.begin();
@@ -330,41 +336,50 @@ void TrackingPanel::updateTrackingCursor(double xVal, bool second)
             steps2 = iter - xVals.begin();
             if (steps2 < 0) steps2 = xVals.size()-1;
         } else {
-            steps = int(xVal/c->channel->xStep());
+            const quint32 samplesCount = c->channel->samplesCount();
+            steps = int(xVal/channelStep);
             if (steps < 0) steps=0;
-            if (qAbs(c->channel->xStep()*(steps+1)-xVal) < qAbs(c->channel->xStep()*steps-xVal)) steps++;
-            if (steps > c->channel->samplesCount()) steps=c->channel->samplesCount();
+            if (qAbs(channelStep*(steps+1)-xVal) < qAbs(channelStep*steps-xVal)) steps++;
+            if (steps > samplesCount) steps=samplesCount;
 
-            steps1 = int(leftBorder/c->channel->xStep());
+            steps1 = int(leftBorder/channelStep);
             if (steps1 < 0) steps1=0;
-            if (qAbs(c->channel->xStep()*(steps1+1)-leftBorder) < qAbs(c->channel->xStep()*steps1-leftBorder)) steps1++;
-            if (steps1>c->channel->samplesCount()) steps1=c->channel->samplesCount();
+            if (qAbs(channelStep*(steps1+1)-leftBorder) < qAbs(channelStep*steps1-leftBorder)) steps1++;
+            if (steps1>samplesCount) steps1=samplesCount;
 
-            steps2 = int(rightBorder/c->channel->xStep());
+            steps2 = int(rightBorder/channelStep);
             if (steps2 < 0) steps2=0;
-            if (qAbs(c->channel->xStep()*(steps2+1)-rightBorder) < qAbs(c->channel->xStep()*steps2-rightBorder)) steps2++;
-            if (steps2>c->channel->samplesCount()) steps2=c->channel->samplesCount();
+            if (qAbs(channelStep*(steps2+1)-rightBorder) < qAbs(channelStep*steps2-rightBorder)) steps2++;
+            if (steps2>samplesCount) steps2=samplesCount;
         }
         if (steps2<steps1) qSwap(steps1, steps2);
 
-        double cumul = pow(10.0, c->sample(steps1).y()/5.0);
+        double cumul = pow(10.0, c->channel->yValues().at(steps1)/5.0);
 
         for (int i=steps1+1; i<=steps2; ++i) {
-            cumul += pow(10.0, c->sample(i).y()/5.0);
+            cumul += pow(10.0, c->channel->yValues().at(i)/5.0);
         }
         cumul = sqrt(cumul);
         cumul = 10.0*log10(cumul);
 
-        double energy = pow(10.0, c->sample(steps1).y()/10.0);
+        double energy = pow(10.0, c->channel->yValues().at(steps1)/10.0);
         for (int i=steps1+1; i<=steps2; ++i) {
-            energy += pow(10.0, c->sample(i).y()/10.0);
+            energy += pow(10.0, c->channel->yValues().at(i)/10.0);
         }
         energy = 10.0*log10(energy);
 
-        TrackingPanel::TrackInfo ti{c->channel->name(), c->channel->color(), c->sample(steps).x(),
-                    c->sample(steps).y(), cumul, energy};
+        double xValue = 0.0;
+        if (c->channel->xValues().isEmpty())
+            xValue = c->channel->xBegin() + c->channel->xStep()*steps;
+        else
+            xValue = c->channel->xValues().at(steps);
+
+        TrackingPanel::TrackInfo ti{c->channel->name(), c->channel->color(),
+                    xValue,
+                    c->channel->yValues().at(steps),
+                    cumul, energy};
         list << ti;
-        yValues << c->sample(steps).y();
+        yValues << c->channel->yValues().at(steps);
     }
 
     if (second) {

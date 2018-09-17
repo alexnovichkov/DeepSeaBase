@@ -13,6 +13,28 @@ class Channel;
 //#include "qwt_scale_map.h"
 #include <qglobal.h>
 
+class DfdData: public QwtSeriesData<QPointF>
+{
+public:
+    DfdData(double x0, double xStep, const double *y, size_t size);
+    DfdData(const double *x, const double *y, size_t size);
+
+    virtual QRectF boundingRect() const;
+
+    virtual size_t size() const;
+
+    virtual QPointF sample( size_t i ) const;
+
+    virtual double xStep() const;
+    virtual double xBegin() const;
+private:
+    double d_x0;
+    double d_xStep;
+    const double *d_y;
+    const double *d_x;
+    size_t d_size;
+};
+
 //class QwtArrayPlotItem : public QwtPlotItem
 //{
 
@@ -49,13 +71,14 @@ class Channel;
 class Curve : public QwtPlotCurve
 {
 public:
+    Curve();
     Curve(const QString &title, FileDescriptor *descriptor, int channelIndex);
     Curve(const QString &title = QString::null);
     Curve(const QwtText &title);
     ~Curve();
 
-    void setRawSamples(double x0, double xStep, const double *yData, int size);
-    void setRawSamples(const double *xData, const double *yData, int size);
+    void setRawSamples();
+
     void addLabel(PointLabel *label);
     void removeLabel(PointLabel *label);
     /** find label by canvas position */
@@ -63,11 +86,26 @@ public:
     /** find label by point on a curve */
     PointLabel *findLabel(const int point);
 
+    bool isSimplified() const;
+
     FileDescriptor *descriptor;
     int channelIndex;
     Channel *channel;
     QList<PointLabel*> labels;
     QPen oldPen;
+    double xMin, xMax;
+    double yMin, yMax;
+    int samplesCount;
+
+private:
+    void setRawSamples(double x0, double xStep, const double *yData, int size);
+    void setRawSamples(const double *xData, const double *yData, int size);
+
+    QVector<double> xDataSimplified;
+    QVector<double> yDataSimplified;
+    bool m_simplified;
+
+
 };
 
 #endif // CURVE_H
