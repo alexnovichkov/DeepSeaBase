@@ -19,5 +19,6 @@
         <file>icons/autoscale-x.png</file>
         <file>icons/autoscale-y-main.png</file>
         <file>icons/autoscale-y-slave.png</file>
+        <file>icons/autoscale-all.png</file>
     </qresource>
 </RCC>

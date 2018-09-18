@@ -767,6 +767,23 @@ void Plot::toggleAutoscale(int axis, bool toggled)
     }
 }
 
+void Plot::autoscale(int axis)
+{
+    switch (axis) {
+        case 0: // x axis
+            zoom->horizontalScaleBounds->autoscale();
+            break;
+        case 1: // y axis
+            zoom->verticalScaleBounds->autoscale();
+            break;
+        case 2: // y slave axis
+            zoom->verticalScaleBoundsSlave->autoscale();
+            break;
+        default:
+            break;
+    }
+}
+
 void Plot::setInteractionMode(Plot::InteractionMode mode)
 {DD;
     interactionMode = mode;

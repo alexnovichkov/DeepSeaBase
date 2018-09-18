@@ -247,6 +247,7 @@ private:
     QAction *autoscaleXAct;
     QAction *autoscaleYAct;
     QAction *autoscaleYSlaveAct;
+    QAction *autoscaleAllAct;
 
     Plot *plot;
 

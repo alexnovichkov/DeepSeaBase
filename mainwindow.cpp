@@ -476,11 +476,20 @@ MainWindow::MainWindow(QWidget *parent)
     autoscaleYSlaveAct->setChecked(autoscale);
     plot->toggleAutoscale(2 /* x axis */, autoscale);
 
+    autoscaleAllAct  = new QAction("Автомасштабирование по всем осям", this);
+    autoscaleAllAct->setIcon(QIcon(":/icons/autoscale-all.png"));
+    connect(autoscaleAllAct, &QAction::triggered, [=](){
+        plot->autoscale(0 /* x axis */);
+        plot->autoscale(1 /* y axis */);
+        plot->autoscale(2 /* y slave axis */);
+    });
+
     QToolBar *scaleToolBar = new QToolBar(this);
     scaleToolBar->setOrientation(Qt::Vertical);
     scaleToolBar->addAction(autoscaleXAct);
     scaleToolBar->addAction(autoscaleYAct);
     scaleToolBar->addAction(autoscaleYSlaveAct);
+    scaleToolBar->addAction(autoscaleAllAct);
 
     QWidget *plotsWidget = new QWidget(this);
     QGridLayout *plotsLayout = new QGridLayout;

@@ -128,6 +128,7 @@ public:
     void switchHarmonicsMode();
     void switchTrackingCursor();
     void toggleAutoscale(int axis, bool toggled);
+    void autoscale(int axis);
 public slots:
     void savePlot();
     void switchCursor();
