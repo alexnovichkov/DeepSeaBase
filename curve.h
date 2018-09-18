@@ -35,38 +35,38 @@ private:
     size_t d_size;
 };
 
-//class QwtArrayPlotItem : public QwtPlotItem
-//{
+class QwtArrayPlotItem : public QwtPlotItem
+{
 
-//public:
-//    QwtArrayPlotItem(const QwtText &title = QwtText());
-//    ~QwtArrayPlotItem();
+public:
+    QwtArrayPlotItem(const QwtText &title = QwtText());
+    ~QwtArrayPlotItem();
 
-//    virtual int rtti() const
-//    {
-//        return QwtPlotItem::Rtti_PlotUserItem+1;
-//    }
+    virtual int rtti() const
+    {
+        return QwtPlotItem::Rtti_PlotUserItem+1;
+    }
 
-//    void draw( QPainter *painter,
-//        const QwtScaleMap &xMap, const QwtScaleMap &yMap,
-//        const QRectF &canvasRect ) const;
-//    QRectF boundingRect() const;
+    void draw( QPainter *painter,
+        const QwtScaleMap &xMap, const QwtScaleMap &yMap,
+        const QRectF &canvasRect ) const;
+    QRectF boundingRect() const;
 
-//    void setData(double* data, quint32 size, qreal dt = 1.0);
-//    void setColor(QColor &color){m_plotColor = color;}
-//    QColor color(){return m_plotColor;}
-
-
-//private:
-//    quint32 m_size;
-//    double* m_data;
-//    double m_dt;
+    void setData(double* data, quint32 size, qreal dt = 1.0);
+    void setColor(QColor &color){m_plotColor = color;}
+    QColor color(){return m_plotColor;}
 
 
-//    QColor m_plotColor;
-//    mutable QRectF m_boundingRect;
+private:
+    quint32 m_size;
+    double* m_data;
+    double m_dt;
 
-//};
+
+    QColor m_plotColor;
+    mutable QRectF m_boundingRect;
+
+};
 
 class Curve : public QwtPlotCurve
 {
@@ -106,6 +106,10 @@ private:
     bool m_simplified;
 
 
+
+    // QwtPlotCurve interface
+protected:
+    virtual void drawLines(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect, int from, int to) const;
 };
 
 #endif // CURVE_H
