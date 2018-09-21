@@ -33,7 +33,7 @@ public:
     virtual UffFileDescriptor *createNewUffFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p) = 0;
     virtual DfdChannel *createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd,
                        const QVector<double> &spectrum, Parameters &p, int i) = 0;
-    virtual Function * addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, quint32 spectrumSize, Parameters &p, int i) = 0;
+    virtual Function * addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, int spectrumSize, Parameters &p, int i) = 0;
 private:
     QList<DfdFileDescriptor *> dataBase;
 };

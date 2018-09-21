@@ -64,14 +64,14 @@ QString dataTypeDescription(int type)
 }
 
 template <typename T, typename D>
-QVector<D> readChunk(QDataStream &readStream, quint32 blockSize, quint32 *actuallyRead)
+QVector<D> readChunk(QDataStream &readStream, int blockSize, int *actuallyRead)
 {
     QVector<D> result(blockSize);
     T v;
 
     if (actuallyRead) *actuallyRead = 0;
 
-    for (quint32 i=0; i<blockSize; ++i) {
+    for (int i=0; i<blockSize; ++i) {
         if (readStream.atEnd()) {
             break;
         }
@@ -85,7 +85,7 @@ QVector<D> readChunk(QDataStream &readStream, quint32 blockSize, quint32 *actual
 }
 
 template <typename D>
-QVector<D> getValue(QDataStream &readStream, quint32 chunkSize, quint32 IndType, quint32 *actuallyRead=0)
+QVector<D> getValue(QDataStream &readStream, int chunkSize, uint IndType, int *actuallyRead=0)
 {
     QVector<D> result;
 
@@ -247,7 +247,7 @@ void DfdFileDescriptor::read()
     }
 
     // [Channel#]
-    for (quint32 i = 0; i<NumChans; ++i) {
+    for (int i = 0; i<NumChans; ++i) {
         DfdChannel *ch = newChannel(i);
         ch->read(dfd, i+1);
     }
@@ -326,15 +326,34 @@ void DfdFileDescriptor::writeRawFile()
                 if (ch->IndType==0xC0000004)
                     writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-                const quint32 sc = ch->samplesCount();
-                for (quint32 val = 0; val < sc; ++val) {
+                const int sc = ch->samplesCount();
+                for (int val = 0; val < sc; ++val) {
                     ch->setValue(ch->temporalCorrection ? ch->YValues[val] - ch->oldCorrectionValue : ch->YValues[val], writeStream);
                 }
             }
         }
         else {
             // пишем блоками размером BlockSize
-            qDebug() << "Oops! Пытаемся писать с перекрытием?";
+            //qDebug() << "Oops! Пытаемся писать с перекрытием?";
+            int pos = 0;
+            while (pos < samplesCount()) {
+                for (int i = 0; i<channels.size(); ++i) {
+                    DfdChannel *ch = channels[i];
+
+                    if (ch->IndType==0xC0000004)
+                        writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+                    const int sc = ch->samplesCount();
+                    for (int val = 0; val < BlockSize; ++val) {
+                        if (val+pos >= samplesCount()) continue;
+                        ch->setValue(ch->temporalCorrection
+                                     ? ch->YValues[val+pos] - ch->oldCorrectionValue
+                                     : ch->YValues[val+pos],
+                                writeStream);
+                    }
+                }
+                pos += BlockSize;
+            }
         }
     }
     else qDebug()<<"Cannot open file"<<rawFileName<<"to write";
@@ -484,7 +503,7 @@ void DfdFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
     setDataChanged(true);
     NumChans = channels.size();
 
-    for (quint32 i=0; i<NumChans; ++i) {
+    for (int i=0; i<NumChans; ++i) {
         channels[i]->channelIndex = i;
     }
 
@@ -559,7 +578,7 @@ void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
         // если ось = дБ, сначала переводим значение в линейное
 
         //ищем наименьшее число отсчетов
-        quint32 numInd = list.first()->samplesCount();
+        int numInd = list.first()->samplesCount();
         for (int i=1; i<list.size(); ++i) {
             if (list.at(i)->samplesCount() < numInd)
                 numInd = list.at(i)->samplesCount();
@@ -567,7 +586,7 @@ void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
 
         ch->YValues = QVector<double>(numInd, 0.0);
 
-        for (quint32 i=0; i<numInd; ++i) {
+        for (int i=0; i<numInd; ++i) {
             double sum = 0.0;
             for (int file = 0; file < list.size(); ++file) {
                 double temp = list[file]->yValues()[i];
@@ -620,13 +639,13 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
         FileDescriptor *firstDescriptor = channels.at(i).first;
         Channel *firstChannel = firstDescriptor->channel(channels.at(i).second);
 
-        quint32 numInd = firstChannel->samplesCount();
+        int numInd = firstChannel->samplesCount();
         ch->YValues = QVector<double>(numInd, 0.0);
 
-        quint32 span = windowSize / 2;
+        int span = windowSize / 2;
         bool log = firstChannel->yName() == "дБ" || firstChannel->yName() == "dB";
 
-        for (quint32 j=span; j<numInd-span; ++j) {
+        for (int j=span; j<numInd-span; ++j) {
             double sum = 0.0;
             for (int k=0; k<windowSize;++k) {
                 double temp = firstChannel->yValues()[j-span+k];
@@ -642,9 +661,9 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
         }
 
         //начало диапазона и конец диапазона
-        for (quint32 j=0; j<span; ++j)
+        for (int j=0; j<span; ++j)
             ch->YValues[j] = firstChannel->yValues()[j];
-        for (quint32 j=numInd-span; j<numInd; ++j)
+        for (int j=numInd-span; j<numInd; ++j)
             ch->YValues[j] = firstChannel->yValues()[j];
 
         ch->XStep = firstDescriptor->xStep();
@@ -1112,13 +1131,13 @@ QStringList DfdChannel::getInfoData()
 //    }
 //}
 
-QVector<double> postprocess(quint16 *data, quint32 dataSize, quint32 dataPos, double coef1, double coef2)
-{
-    QVector<double> result(dataSize);
-    for (quint32 i=0; i<dataSize; ++i) result[i] = coef1*data[dataPos+i]+coef2;
+//QVector<double> postprocess(quint16 *data, quint32 dataSize, quint32 dataPos, double coef1, double coef2)
+//{
+//    QVector<double> result(dataSize);
+//    for (quint32 i=0; i<dataSize; ++i) result[i] = coef1*data[dataPos+i]+coef2;
 
-    return result;
-}
+//    return result;
+//}
 
 void DfdChannel::populate()
 {DD;
@@ -1178,8 +1197,8 @@ void DfdChannel::populate()
         }
         else {//с перекрытием, сначала читаем блок данных в ChanBlockSize отчетов для всех каналов
             // если каналы имеют разный размер блоков, этот метод даст сбой
-            quint32 actuallyRead = 0;
-            const quint32 chunkSize = parent->channelsCount() * ChanBlockSize;
+            int actuallyRead = 0;
+            const int chunkSize = parent->channelsCount() * ChanBlockSize;
             YValues.reserve(NumInd);
             while (1) {
                 /*
@@ -1264,7 +1283,7 @@ void DfdChannel::setXValues(const QVector<double> &xvalues)
 
 void DfdChannel::populateFloat()
 {DD;
-    quint32 NI = samplesCount();
+    int NI = samplesCount();
 
     if (floatValues.size() == NI) return;
     floatValues.clear();
@@ -1277,9 +1296,9 @@ void DfdChannel::populateFloat()
         if (IndType==0xC0000004)
             readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-        quint32 actuallyRead = 0;
+        int actuallyRead = 0;
 
-        quint32 chunkSize = ChanBlockSize * parent->channelsCount();
+        int chunkSize = ChanBlockSize * parent->channelsCount();
 
         while (1) {
             if (QThread::currentThread()->isInterruptionRequested()) return;
@@ -1376,9 +1395,9 @@ void DfdChannel::clear()
     setPopulated(false);
 }
 
-quint32 DfdChannel::blockSizeInBytes() const
+quint64 DfdChannel::blockSizeInBytes() const
 {
-    return ChanBlockSize * (IndType % 16);
+    return quint64(ChanBlockSize * (IndType % 16));
 }
 
 FileDescriptor *DfdChannel::descriptor()
@@ -1469,9 +1488,9 @@ double DfdChannel::xBegin() const
     return xMin;
 }
 
-quint32 DfdChannel::samplesCount() const
+int DfdChannel::samplesCount() const
 {DD;
-    return NumInd;//YValues.size();
+    return NumInd;
 }
 
 void DfdChannel::addCorrection(double correctionValue, bool writeToFile)
@@ -1682,4 +1701,122 @@ Descriptor::DataType dataTypefromDfdDataType(DfdDataType type)
         default: return Descriptor::Unknown;
     }
     return Descriptor::Unknown;
+}
+
+
+QString DfdFileDescriptor::saveTimeSegment(double from, double to)
+{
+    // 0 проверяем, чтобы этот файл имел тип временных данных
+    if (DataType != SourceData &&
+        DataType != CuttedData &&
+        DataType != FilterData) return QString();
+
+//    populate();
+
+    // 1 создаем уникальное имя файла по параметрам from и to
+    QString newFileName = fileName();
+    newFileName.chop(4);
+    QString fromString, toString;
+    getUniqueFromToValues(fromString, toString, from, to);
+    QString suffix = QString("_%1s_%2s").arg(fromString).arg(toString);
+
+    int index = 0;
+    if (QFile::exists(newFileName+suffix+".dfd")) {
+        index++;
+        while (QFile::exists(newFileName+suffix+"("+QString::number(index)+").dfd")) {
+            index++;
+        }
+    }
+    newFileName = index>0?newFileName+suffix+"("+QString::number(index)+").dfd":newFileName+suffix+".dfd";
+
+    // 2 создаем новый файл
+    DfdFileDescriptor *newDfd = new DfdFileDescriptor(newFileName);
+    newDfd->fillPreliminary(Descriptor::TimeResponse);
+    newDfd->DataType = CuttedData;
+    newDfd->BlockSize = 0;
+    newDfd->XName = this->XName;
+    newDfd->XBegin = 0.0;
+    newDfd->XStep = this->XStep;
+    newDfd->_legend = this->_legend;
+    newDfd->NumChans = this->NumChans;
+    newDfd->DescriptionFormat = this->DescriptionFormat;
+
+    // [DataDescription]
+    if (this->dataDescription) {
+        newDfd->dataDescription = new DataDescription(newDfd);
+        newDfd->dataDescription->data = dataDescription->data;
+    }
+
+    // [Sources]
+    newDfd->source = new Source();
+    QStringList procChansList;
+    for (int i=1; i<=channelsCount(); ++i) procChansList << QString::number(i);
+    newDfd->source->sFile = fileName()+"["+procChansList.join(",")+"]"+DFDGUID;
+
+    // 3 ищем границы данных по параметрам from и to
+    int sampleStart = qRound((from-XBegin)/XStep);
+    if (sampleStart<0) sampleStart = 0;
+    int sampleEnd = qRound((to-XBegin)/XStep);
+    if (sampleEnd>=samplesCount()) sampleEnd = samplesCount()-1;
+    newDfd->setSamplesCount(sampleEnd - sampleStart + 1); //число отсчетов в новом файле
+
+    // и заполняем параметр Process->BlockIn
+    // [Process]
+    newDfd->process = new Process();
+    DescriptionList list;
+    list.append({"pName", "Осциллограф"});
+    list.append({"pTime","(0000000000000000)"});
+    list.append({"ProcChansList", procChansList.join(",")});
+    list.append({"BlockIn", QString::number(newDfd->samplesCount())});
+    list.append({"TypeProc", "0"});
+    list.append({"NAver", "1"});
+    list.append({"Values", "измеряемые"});
+    newDfd->process->data = list;
+
+    // 4 сохраняем файл
+    for (int i=0; i<this->channelsCount(); ++i) {
+        bool wasPopulated = channels[i]->populated();
+        if (!wasPopulated) channels[i]->populate();
+
+        DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
+        ch->XStep = newDfd->XStep;
+        ch->setYValues(this->channel(i)->yValues().mid(sampleStart, sampleEnd - sampleStart + 1));
+        ch->setPopulated(true);
+        ch->setName(channels[i]->name());
+
+        ch->ChanDscr = channels[i]->ChanDscr;
+        ch->ChanAddress = channels[i]->ChanAddress;
+
+        ch->ChanBlockSize = ch->YValues.size();
+        ch->NumInd = ch->YValues.size();
+        ch->IndType = 3221225476;
+
+        ch->YName = channels[i]->yName();
+        ch->YNameOld = channels[i]->YNameOld;
+        ch->XName = channels[i]->XName;
+
+        ch->xMin = 0.0;
+//        ch->xMax = newSampleRate / 2.56;
+//        ch->XMaxInitial = ch->xMax;
+//        ch->YMinInitial = ch->yMin;
+//        ch->YMaxInitial = ch->yMax;
+
+        ch->temporalCorrection = channels[i]->temporalCorrection;
+        ch->nameBeforeCorrection = channels[i]->nameBeforeCorrection;
+        ch->oldCorrectionValue = channels[i]->oldCorrectionValue;
+
+        newDfd->channels << ch;
+        if (!wasPopulated) channels[i]->YValues.clear();
+    }
+
+    newDfd->NumChans = newDfd->channels.size();
+    newDfd->setSamplesCount(newDfd->channel(0)->samplesCount());
+    newDfd->setChanged(true);
+    newDfd->setDataChanged(true);
+    newDfd->write();
+    newDfd->writeRawFile();
+    delete newDfd;
+
+    // 5 возвращаем имя нового файла
+    return newFileName;
 }

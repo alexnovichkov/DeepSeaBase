@@ -213,7 +213,7 @@ DfdChannel *OctaveMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDes
     return ch;
 }
 
-Function *OctaveMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, quint32 spectrumSize, Parameters &p, int i)
+Function *OctaveMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
 {
     Function *ch = new Function(newUff);
     ch->setName(dfd->channels[i]->name()/*+"/Сила"*/);

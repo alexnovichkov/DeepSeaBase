@@ -10,6 +10,7 @@ class Windowing
 public:
     Windowing(const Parameters &p);
     QVector<double> windowing() {return w;}
+    void apply(QVector<float> &values);
 private:
     void square();
     void hann();

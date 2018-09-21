@@ -130,12 +130,8 @@ public:
     }
     virtual QwtScaleDiv divideScale(double x1, double x2, int maxMajorSteps, int maxMinorSteps, double stepSize) const
     {
-//        qDebug()<<Q_FUNC_INFO;
-//        qDebug()<<"x1"<< x1 <<"x2"<< x2 <<"maxMajorSteps" << maxMajorSteps << "maxMinorSteps"<< maxMinorSteps<<"stepSize"<< stepSize;
         QwtInterval interval = QwtInterval( x1, x2 ).normalized();
-//        qDebug()<<interval;
         interval = interval.limited( LOG_MIN_MY, LOG_MAX );
-//        qDebug()<<interval;
 
         if ( interval.width() <= 0 )
             return QwtScaleDiv();
@@ -191,27 +187,6 @@ public:
     }
 };
 
-//class LogTransform : public QwtLogTransform {
-
-
-//    // QwtTransform interface
-//public:
-//    virtual double bounded(double value) const
-//    {
-//        if (qFuzzyIsNull(value)) return 0.0;
-//        return QwtLogTransform::bounded(value);
-//    }
-//    virtual double transform(double value) const
-//    {
-//        if (qFuzzyIsNull(value)) return 0.0;
-//        return QwtLogTransform::transform(value);
-//    }
-//    virtual double invTransform(double value) const
-//    {
-//        if (qFuzzyIsNull(value)) return 0.0;
-//        return QwtLogTransform::invTransform(value);
-//    }
-//};
 
 Plot::Plot(QWidget *parent) :
     QwtPlot(parent), zoom(0)
@@ -328,14 +303,7 @@ void Plot::update()
 
 bool Plot::hasGraphs() const
 {DD;
-    QwtPlotItemList curveList = itemList(QwtPlotItem::Rtti_PlotCurve);
-    return !curveList.isEmpty();
-}
-
-int Plot::totalGraphsCount() const
-{DD;
-    QwtPlotItemList curveList = itemList(QwtPlotItem::Rtti_PlotCurve);
-    return curveList.size();
+    return !graphs.isEmpty();
 }
 
 void Plot::deleteGraphs()
@@ -401,6 +369,32 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
 
         if (scale) *scale = !(*scale);
     });
+    // определяем, все ли графики представляют временные данные
+    bool time = true;
+    if (hasGraphs()) {
+        foreach (Curve *c, graphs) {
+            if (c->channel->type() != Descriptor::TimeResponse) {
+                time = false;
+                break;
+            }
+        }
+
+        if (time) {
+            menu->addAction("Сохранить временной сегмент", [=](){
+                double xStart = canvasMap(xBottom).s1();
+                double xEnd = canvasMap(xBottom).s2();
+
+                QList<FileDescriptor*> files;
+
+                foreach(Curve *c, graphs) {
+                    if (!files.contains(c->descriptor))
+                        files << c->descriptor;
+                }
+
+                emit saveTimeSegment(files, xStart, xEnd);
+            });
+        }
+    }
     menu->exec(pos);
 }
 
@@ -424,12 +418,12 @@ void Plot::deleteGraph(Curve *graph, bool doReplot)
         ColorSelector::instance()->freeColor(graph->pen().color());
 
         int removed = leftGraphs.removeAll(graph);
-        if (removed > 0 && !leftGraphs.isEmpty()) {
+        if (removed > 0) {
             zoom->verticalScaleBounds->removeToAutoscale(graph->yMin, graph->yMax);
         }
 
         removed = rightGraphs.removeAll(graph);
-        if (removed > 0 && !rightGraphs.isEmpty()) {
+        if (removed > 0) {
             zoom->verticalScaleBoundsSlave->removeToAutoscale(graph->yMin, graph->yMax);
         }
         removed = graphs.removeAll(graph);
@@ -551,7 +545,9 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
     if (plotted(descriptor, channel)) return false;
 
     Channel *ch = descriptor->channel(channel);
-    if (!ch->populated()) ch->populate();
+    if (!ch->populated()) {
+        ch->populate();
+    }
 
     bool plotOnFirstYAxis = canBePlottedOnLeftAxis(ch);
     bool plotOnSecondYAxis = plotOnFirstYAxis ? false : canBePlottedOnRightAxis(ch);

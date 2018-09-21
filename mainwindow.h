@@ -164,6 +164,8 @@ private slots:
 
     void convertMatFiles();
     void convertEsoFiles();
+
+    void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
 private:
     void moveChannels(bool up);
     void updateFile(FileDescriptor *descriptor);
@@ -256,6 +258,8 @@ private:
 
 
     TabWidget *tabWidget;
+
+    QThread *workingThread;
 
 };
 

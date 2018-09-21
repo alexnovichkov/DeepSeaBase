@@ -63,14 +63,9 @@ public:
     bool hasGraphs() const;
     /**
      * @brief graphsCount
-     * @return total count of graphs plotted
-     */
-    int totalGraphsCount() const;
-    /**
-     * @brief graphsCount
      * @return count of graphs excluding freeGraph
      */
-    int curvesCount() const {return graphs.size();}
+    int graphsCount() const {return graphs.size();}
 
     /**
      * @brief deleteGraphs
@@ -138,6 +133,7 @@ signals:
     void curveChanged(Curve *curve);
     void curveDeleted(FileDescriptor *descriptor, int index);
     void trackingPanelCloseRequested();
+    void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
     void deleteGraph(const QVariant &info, int index);

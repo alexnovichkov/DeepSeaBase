@@ -148,3 +148,19 @@ int uffMethodFromDfdMethod(int methodId)
     //                                       26 - Multiple Coherence
     //                                       27 - Order Function
 }
+
+void getUniqueFromToValues(QString &fromString, QString &toString, double from, double to)
+{
+    int factor = 0; //10, 100, 1000...
+    fromString.setNum(from, 'f', factor);
+    toString.setNum(to, 'f', factor);
+
+    if (from == to)
+        return;
+
+    while ((fromString == toString) && factor<=6) {
+        factor++;
+        fromString.setNum(from, 'f', factor);
+        toString.setNum(to, 'f', factor);
+    }
+}

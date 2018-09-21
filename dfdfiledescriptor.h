@@ -6,8 +6,6 @@
 #include "filedescriptor.h"
 #include <qwt_series_data.h>
 
-#define DebugPrint(s) qDebug()<<#s<<s;
-
 enum DfdDataType {
     // 0 - 15 - исходные данные
     SourceData =   0,		// исходные данные
@@ -146,7 +144,7 @@ public:
     virtual QString yName() const {return YName;}
     virtual double xBegin() const;
     virtual double xStep() const {return XStep;}
-    virtual quint32 samplesCount() const;
+    virtual int samplesCount() const;
     virtual QVector<double> &yValues() {return YValues;}
     virtual QVector<double> &xValues() {return XValues;}
     void setYValues(const QVector<double> &values);
@@ -181,15 +179,15 @@ public:
 
     QString ChanAddress; //
     QString ChanName; //
-    quint32 IndType; //характеристика отсчета
-    quint32 ChanBlockSize; //размер блока в отсчетах
+    uint IndType; //характеристика отсчета
+    int ChanBlockSize; //размер блока в отсчетах
     QString YName;
     QString YNameOld;
     QString XName;
     QString InputType;
     QString ChanDscr;
 
-    quint32 blockSizeInBytes() const; //размер блока в байтах
+    quint64 blockSizeInBytes() const; //размер блока в байтах
 
     double xMin;
     double xMax;
@@ -205,7 +203,7 @@ public:
     int channelIndex; // нумерация с 0
 
     bool _populated;
-    quint32 NumInd;
+    int NumInd;
 
     bool temporalCorrection;
     QString nameBeforeCorrection;
@@ -363,9 +361,9 @@ public:
     DfdDataType DataType; // см. выше
     QDate Date;
     QTime Time;
-    quint32 NumChans;
+    int NumChans;
 
-    quint32 BlockSize;
+    int BlockSize;
     QString XName;
 
     double XBegin;
@@ -383,6 +381,10 @@ private:
 
 
     QString _legend; // editable description
+
+    // FileDescriptor interface
+public:
+    virtual QString saveTimeSegment(double from, double to);
 };
 
 #endif // DFDFILEDESCRIPTOR_H

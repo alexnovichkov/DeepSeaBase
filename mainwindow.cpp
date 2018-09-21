@@ -190,6 +190,7 @@ MainWindow::MainWindow(QWidget *parent)
 //    connect(plot, SIGNAL(fileChanged(QString, bool)), SLOT(updateFile(QString,bool)));
     connect(plot, SIGNAL(curveChanged(Curve*)), SLOT(onCurveColorChanged(Curve*)));
     connect(plot, SIGNAL(curveDeleted(FileDescriptor*,int)), SLOT(onCurveDeleted(FileDescriptor*,int)));
+    connect(plot, SIGNAL(saveTimeSegment(QList<FileDescriptor*>,double,double)),this, SLOT(saveTimeSegment(QList<FileDescriptor*>,double,double)));
 
     addFolderAct = new QAction(qApp->style()->standardIcon(QStyle::SP_DialogOpenButton),
                                tr("Добавить папку"),this);
@@ -1272,7 +1273,7 @@ bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channe
 
 void MainWindow::calculateMean()
 {DD;
-    const int graphsSize = plot->curvesCount();
+    const int graphsSize = plot->graphsCount();
     if (graphsSize<2) return;
 
     QList<QPair<FileDescriptor *, int> > channels;
@@ -1488,6 +1489,25 @@ void MainWindow::convertEsoFiles()
         foreach (const QString &file, files)
             if (!tab->folders.contains(file)) tab->folders << file;
     }
+}
+
+void MainWindow::saveTimeSegment(const QList<FileDescriptor *> &files, double from, double to)
+{
+    QProgressDialog progress("Сохранение вырезки...", "Отменить сохранение", 0, files.size(), this);
+    progress.setWindowModality(Qt::WindowModal);
+
+    QStringList newFiles;
+
+    int i=0;
+    foreach(FileDescriptor *file, files) {
+        progress.setValue(i);
+        if (progress.wasCanceled())
+            break;
+        newFiles << file->saveTimeSegment(from, to);
+        i++;
+    }
+    progress.setValue(files.size());
+    addFiles(newFiles);
 }
 
 QVector<int> computeIndexes(QVector<int> notYetMoved, bool up, int totalSize)
@@ -1873,7 +1893,7 @@ void MainWindow::calculateThirdOctave()
 
 void MainWindow::calculateMovingAvg()
 {
-    const int graphsSize = plot->curvesCount();
+    const int graphsSize = plot->graphsCount();
     if (graphsSize<1) return;
 
     int windowSize = MainWindow::getSetting("movingAvgSize",3).toInt();
@@ -2343,7 +2363,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 
      // ищем максимальное количество отсчетов
      // и максимальный шаг
-     quint32 maxInd = channel->samplesCount();
+     int maxInd = channel->samplesCount();
      double maxStep = channel->xStep();
      bool zeroStepDetected = maxStep<1e-9;
      double minX = channel->xBegin();
@@ -2445,11 +2465,11 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      // если каналы имеют разный шаг по х, то для каждого канала отдельно записываем
      // по два столбца
      if (allChannelsHaveSameXStep) {
-         const quint32 numCols = curves.size();
+         const int numCols = curves.size();
 
          QList<QVariant> cellsList;
          QList<QVariant> rowsList;
-         for (uint i = 0; i < maxInd; ++i) {
+         for (int i = 0; i < maxInd; ++i) {
              double val = channel->xBegin() + i*channel->xStep();
              if (/*channel->xStep()<1e-9 &&*/ !channel->xValues().isEmpty())
                  val = channel->xValues().at(i);
@@ -2457,12 +2477,12 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 
              cellsList.clear();
              cellsList << val;
-             for (uint j = 0; j < numCols; ++j) {
+             for (int j = 0; j < numCols; ++j) {
                  cellsList << ((curves.at(j)->channel->samplesCount() < maxInd) ? 0 : curves.at(j)->channel->yValues()[i]);
              }
              rowsList << QVariant(cellsList);
          }
-         quint32 numRows = rowsList.size();
+         int numRows = rowsList.size();
 
          QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5, 1);
          QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5 + numRows - 1, 1 + numCols);
@@ -2487,7 +2507,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 
              QList<QVariant> cellsList;
              QList<QVariant> rowsList;
-             for (uint j = 0; j < ch->samplesCount(); j++) {
+             for (int j = 0; j < ch->samplesCount(); j++) {
                  double val = ch->xBegin() + j*ch->xStep();
                  if (/*ch->xStep()<1e-9 &&*/ !ch->xValues().isEmpty())
                      val = ch->xValues().at(j);
@@ -2497,7 +2517,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
                  cellsList << val << ch->yValues()[j];
                  rowsList << QVariant(cellsList);
              }
-             quint32 numRows = rowsList.size();
+             int numRows = rowsList.size();
              selectedSamples << numRows;
 
              QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5, 1+i*2);
@@ -2768,19 +2788,20 @@ void MainWindow::addFiles(QStringList &files)
     QList<FileDescriptor *> items;
 
     for (int i=files.size()-1; i>=0; --i) {
-        QString file = files[i];
+        QString fileName = files[i];
+        if (fileName.isEmpty()) continue;
 
-        if (checkForContains(tab, file)) {//этот файл уже есть во вкладке
+        if (checkForContains(tab, fileName)) {//этот файл уже есть во вкладке
             files.removeAt(i);
         }
         else {
-            FileDescriptor *dfd = findDescriptor(file);
-            if (!dfd) {
-                dfd = createDescriptor(file);
-                dfd->read();
+            FileDescriptor *file = findDescriptor(fileName);
+            if (!file) {
+                file = createDescriptor(fileName);
+                file->read();
             }
-            if (dfd) {
-                items.prepend(dfd);
+            if (file) {
+                items.prepend(file);
             }
         }
     }

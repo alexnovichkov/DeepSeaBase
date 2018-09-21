@@ -227,7 +227,7 @@ void TrackingPanel::setX(double xVal, bool second)
         //ищем минимальный шаг по оси X
         double xstep = plot->curves().at(0)->channel->xStep();
 
-        for (int i=1; i<plot->curvesCount(); ++i) {
+        for (int i=1; i<plot->graphsCount(); ++i) {
             if (plot->curves().at(i)->channel->xStep()<xstep)
                 xstep = plot->curves().at(i)->channel->xStep();
         }
@@ -336,7 +336,7 @@ void TrackingPanel::updateTrackingCursor(double xVal, bool second)
             steps2 = iter - xVals.begin();
             if (steps2 < 0) steps2 = xVals.size()-1;
         } else {
-            const quint32 samplesCount = c->channel->samplesCount();
+            const int samplesCount = c->channel->samplesCount();
             steps = int(xVal/channelStep);
             if (steps < 0) steps=0;
             if (qAbs(channelStep*(steps+1)-xVal) < qAbs(channelStep*steps-xVal)) steps++;

@@ -10,10 +10,10 @@
 #include "octavefilterbank.h"
 #include "algorithms.h"
 
-class Filter
+class Resampler
 {
 public:
-    Filter(const Parameters &p) : p(p)
+    Resampler(const Parameters &p) : p(p)
     {
         src_data.src_ratio = 1.0 / (1 << p.bandStrip);
 
@@ -27,7 +27,7 @@ public:
         src_data.data_out = filterOut.data();
     }
 
-    virtual ~Filter()
+    virtual ~Resampler()
     {
         if (src_state)
             src_delete(src_state);
@@ -325,7 +325,7 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
     newFiles_.removeAll(filtered.first());
 }
 
-QVector<float> getBlock(const QVector<float> &values, const quint32 blockSize, const quint32 stepBack, quint32 &block)
+QVector<float> getBlock(const QVector<float> &values, const int blockSize, const int stepBack, int &block)
 {
     QVector<float> output;
     if (block < values.size()) {
@@ -335,9 +335,9 @@ QVector<float> getBlock(const QVector<float> &values, const quint32 blockSize, c
     return output;
 }
 
-QVector<float> getBlock(uchar *mapped, quint32 mappedSize,
+QVector<float> getBlock(uchar *mapped, quint64 mappedSize,
                         int channel, int chanBlockSize, int channelsCount,
-                        const quint32 blockSize, const quint32 stepBack, quint32 &block)
+                        int blockSize, int stepBack, int &block)
 {
     QVector<float> output;
     /*
@@ -345,8 +345,8 @@ QVector<float> getBlock(uchar *mapped, quint32 mappedSize,
      * n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
      */
 
-    if (block < mappedSize/sizeof(float)) {
-        quint32 realBlockSize = qMin(blockSize, mappedSize/sizeof(float) - block);
+    if (block < int(mappedSize/sizeof(float))) {
+        int realBlockSize = qMin(blockSize, int(mappedSize/sizeof(float) - block));
         output.resize(realBlockSize);
         for (int i = 0; i<realBlockSize; ++i) {
             int blocki = block+i;
@@ -499,17 +499,18 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
 
         QVector<double> spectrum(p.fCount);
         QVector<QPair<double,double> > spectrumComplex(p.fCount);
-        quint32 block = 0;
+        int block = 0;
         int averagesMade = 1;
 
         QVector<float> filtered;
 
-        Filter filter(p);
+        Resampler filter(p);
+        Windowing window(p);
 
         const int newBlockSize = p.bufferSize* (1<<p.bandStrip);
 
-        const quint32 stepBack = quint32(1.0 * newBlockSize * p.overlap);
-qDebug()<<"before methods";
+        const int stepBack = int(1.0 * newBlockSize * p.overlap);
+
         // Реализация методов
         //TODO: вынести их все в отдельные классы обработки
         if (p.method->id()==0) {//осциллограф
@@ -539,7 +540,7 @@ qDebug()<<"before methods";
                 if (chunk.size() < p.bufferSize) break;
 
                 filtered = filter.process(chunk);
-                applyWindow(filtered, p);
+                window.apply(filtered);
                 QVector<double> out = powerSpectre(filtered, p);
                 average(spectrum, out, p, averagesMade++);
                 // контроль количества усреднений
@@ -551,9 +552,9 @@ qDebug()<<"before methods";
         if (p.method->id()==9 && !p.saveAsComplex) {//передаточная 1, модуль
             if (i == p.baseChannel) continue;
 
-            quint32 baseBlock = 0;
+            int baseBlock = 0;
             QVector<float> baseFiltered;
-            Filter baseFilter(p);
+            Resampler baseFilter(p);
 
             QVector<double> averagedBaseSpectre(p.fCount);
             QVector<double> averagedSpectre(p.fCount);
@@ -566,8 +567,8 @@ qDebug()<<"before methods";
                 filtered = filter.process(chunk1);
                 baseFiltered = baseFilter.process(chunk2);
 
-                applyWindow(filtered, p);
-                applyWindow(baseFiltered, p);
+                window.apply(filtered);
+                window.apply(baseFiltered);
                 QVector<double> baseautoSpectr = autoSpectre(baseFiltered, p);
                 QVector<double> coSpectr = coSpectre(baseFiltered, filtered, p);
 
@@ -587,9 +588,9 @@ qDebug()<<"before methods";
         if (p.method->id()==9 && p.saveAsComplex) {//передаточная 1, комплексные
             if (i == p.baseChannel) continue;
 
-            quint32 baseBlock = 0;
+            int baseBlock = 0;
             QVector<float> baseFiltered;
-            Filter baseFilter(p);
+            Resampler baseFilter(p);
 
             QVector<double> averagedBaseSpectre(p.fCount);
             QVector<QPair<double,double> > averagedSpectre(p.fCount);
@@ -602,8 +603,8 @@ qDebug()<<"before methods";
                 filtered = filter.process(chunk1);
                 baseFiltered = baseFilter.process(chunk2);
 
-                applyWindow(filtered, p);
-                applyWindow(baseFiltered, p);
+                window.apply(filtered);
+                window.apply(baseFiltered);
                 QVector<double> baseautoSpectr = autoSpectre(baseFiltered, p);
                 QVector<QPair<double,double> > coSpectr = coSpectreComplex(baseFiltered, filtered, p);
 
@@ -641,7 +642,6 @@ qDebug()<<"before methods";
         dfd->channels[i]->floatValues.clear();
 
         emit tick();
-        qDebug()<<"tick";
     }
     // подчищаем опорный канал
     if (p.baseChannel>=0 && p.baseChannel < dfd->channelsCount())
@@ -670,18 +670,6 @@ qDebug()<<"before methods";
         delete newUff;
     }
     return true;
-}
-
-void applyWindow(QVector<float> &values, const Parameters &p)
-{DD;
-    quint32 i=0;
-    while (1) {
-        for (int j=0; j<p.window.size(); j++) {
-            if (i >= (quint32)values.size()) return;
-            values[i] = values[i] * p.window[j];
-            i++;
-        }
-    }
 }
 
 const double TwoPi = 6.283185307179586;
@@ -927,7 +915,7 @@ QStringList Converter::getSpfFile(QString dir)
         spfFile << "ShiftDat=0"; // TODO: добавить возможность устанавливать смещение
         // длина = число отсчетов в канале
         // TODO: добавить возможность устанавливать правую границу выборки
-        quint32 NI;
+        int NI;
         if (dfd->BlockSize>0) {
             NI = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->ChanBlockSize / dfd->BlockSize;
             NI *= dfd->samplesCount();

@@ -158,15 +158,6 @@ void UffFileDescriptor::updateDateTimeGUID()
     header.type151[14].value = "DeepSeaBase by Novichkov";
 }
 
-QList<QPair<QString, QString> > UffFileDescriptor::dataDescriptor() const
-{
-    QList<QPair<QString, QString> > result;
-    result << QPair<QString, QString>("", header.type151[4].value.toString());
-    result << QPair<QString, QString>("", header.type151[6].value.toString());
-
-    return result;
-}
-
 QString makeStringFromPair(const QPair<QString, QString> &pair)
 {
     QString result = pair.second;
@@ -175,18 +166,6 @@ QString makeStringFromPair(const QPair<QString, QString> &pair)
     }
     result.truncate(80);
     return result;
-}
-
-void UffFileDescriptor::setDataDescriptor(const QList<QPair<QString, QString> > &data)
-{
-    if (data.size()>0) {
-        header.type151[4].value = makeStringFromPair(data.first());
-    }
-    if (data.size()>1) {
-        header.type151[6].value = makeStringFromPair(data.at(1));
-    }
-    setChanged(true);
-    //write();
 }
 
 QString UffFileDescriptor::dataDescriptorAsString() const
@@ -349,7 +328,7 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     // если ось = дБ, сначала переводим значение в линейное
 
     //ищем наименьшее число отсчетов
-    quint32 numInd = list.first()->samplesCount();
+    int numInd = list.first()->samplesCount();
     for (int i=1; i<list.size(); ++i) {
         if (list.at(i)->samplesCount() < numInd)
             numInd = list.at(i)->samplesCount();
@@ -360,7 +339,7 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     ch->yMin = 1.0e100;
     ch->yMax = -1.0e100;
 
-    for (quint32 i=0; i<numInd; ++i) {
+    for (int i=0; i<numInd; ++i) {
         double sum = 0.0;
         for (int file = 0; file < list.size(); ++file) {
             double temp = list[file]->yValues()[i];
@@ -415,13 +394,13 @@ void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
         FileDescriptor *firstDescriptor = channels.at(i).first;
         Channel *firstChannel = firstDescriptor->channel(channels.at(i).second);
 
-        quint32 numInd = firstChannel->samplesCount();
+        int numInd = firstChannel->samplesCount();
         ch->values = QVector<double>(numInd, 0.0);
 
-        quint32 span = windowSize / 2;
+        int span = windowSize / 2;
         bool log = firstChannel->yName() == "дБ" || firstChannel->yName() == "dB";
 
-        for (quint32 j=span; j<numInd-span; ++j) {
+        for (int j=span; j<numInd-span; ++j) {
             double sum = 0.0;
             for (int k=0; k<windowSize;++k) {
                 double temp = firstChannel->yValues()[j-span+k];
@@ -437,16 +416,16 @@ void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
         }
 
         //начало диапазона и конец диапазона
-        for (quint32 j=0; j<span; ++j)
+        for (int j=0; j<span; ++j)
             ch->values[j] = firstChannel->yValues()[j];
-        for (quint32 j=numInd-span; j<numInd; ++j)
+        for (int j=numInd-span; j<numInd; ++j)
             ch->values[j] = firstChannel->yValues()[j];
 
         ch->type58[29].value = firstDescriptor->xStep();
 
         ch->yMin = 1.0e100;
         ch->yMax = -1.0e100;
-        for (quint32 i=0; i<ch->samples; ++i) {
+        for (int i=0; i<ch->samples; ++i) {
             if (ch->values[i] < ch->yMin) ch->yMin = ch->values[i];
             if (ch->values[i] > ch->yMax) ch->yMax = ch->values[i];
         }
@@ -827,7 +806,7 @@ void Function::write(QTextStream &stream)
     }
     //fixing values with correction
     if (temporalCorrection) {
-        for (quint32 i=0; i<samples; ++i)
+        for (int i=0; i<samples; ++i)
             values[i] -= oldCorrectionValue;
     }
 
@@ -862,7 +841,7 @@ void Function::write(QTextStream &stream)
         //              --------------------------------------------------------------
         case 2: {
             int j = 0;
-            for (quint32 i=0; i<samples; ++i) {
+            for (int i=0; i<samples; ++i) {
                 if (!xvalues.isEmpty()) {
                     fields[FTFloat13_5]->print(xvalues[i], stream);
                     j++;
@@ -879,7 +858,7 @@ void Function::write(QTextStream &stream)
         }
         case 4: {
             int j = 0;
-            for (quint32 i=0; i<samples; ++i) {
+            for (int i=0; i<samples; ++i) {
                 if (!xvalues.isEmpty()) {
                     fields[FTFloat13_5]->print(xvalues[i], stream);
                     j++;
@@ -1028,8 +1007,8 @@ void Function::populate()
             xvalues = QVector<double>(samples, 0.0);
         }
         if (type58[25].value.toInt() < 5) {//real values
-            quint32 j=0;
-            for (quint32 i=0; i<samples; ++i) {
+            int j=0;
+            for (int i=0; i<samples; ++i) {
                 double value;
                 stream >> value;
 
@@ -1053,8 +1032,8 @@ void Function::populate()
         }
         else {//complex values
             double first, second;
-            quint32 j=0;
-            for (quint32 i=0; i<samples; ++i) {
+            int j=0;
+            for (int i=0; i<samples; ++i) {
                 if (type58[27].value.toInt() == 0) {// uneven abscissa
                     stream >> first;
                     xvalues[j] = first;
@@ -1141,7 +1120,7 @@ double Function::xStep() const
     return type58[29].value.toDouble();
 }
 
-quint32 Function::samplesCount() const
+int Function::samplesCount() const
 {DD;
     return samples;
 }
@@ -1181,7 +1160,7 @@ void Function::addCorrection(double correctionValue, bool writeToFile)
 //    yMax += correctionValue;
 //    yMin += correctionValue;
 
-    for (uint j = 0; j < samplesCount(); ++j)
+    for (int j = 0; j < samplesCount(); ++j)
         values[j] += correctionValue - oldCorrectionValue;
 
     yMax += correctionValue - oldCorrectionValue;
@@ -1201,3 +1180,28 @@ void Function::addCorrection(double correctionValue, bool writeToFile)
                 +QString::number(correctionValue));
 }
 
+
+
+DescriptionList UffFileDescriptor::dataDescriptor() const
+{DD;
+    DescriptionList result;
+    result << DescriptionEntry("", header.type151[4].value.toString());
+    result << DescriptionEntry("", header.type151[6].value.toString());
+
+    return result;
+}
+
+void UffFileDescriptor::setDataDescriptor(const DescriptionList &data)
+{
+    if (data.size()>0) {
+        header.type151[4].value = makeStringFromPair(data.first());
+    }
+    if (data.size()>1) {
+        header.type151[6].value = makeStringFromPair(data.at(1));
+    }
+    setChanged(true);
+}
+
+QString UffFileDescriptor::saveTimeSegment(double from, double to)
+{
+}

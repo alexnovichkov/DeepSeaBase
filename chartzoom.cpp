@@ -257,7 +257,7 @@ void ChartZoom::ScaleBounds::add(double min, double max)
     maxes << max;
 
     if (!fixed) {
-        plot->setAxisScale(axis, min,max);
+        autoscale();
     }
 }
 

@@ -140,7 +140,7 @@ QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, const Paramete
     spfFile << QString("Wind=%1").arg(p.windowDescription());
     spfFile << QString("TypeAver=%1").arg(p.averagingType);
 
-    quint32 numberOfInd = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->samplesCount();
+    int numberOfInd = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->samplesCount();
     double NumberOfAveraging = double(numberOfInd) / p.bufferSize / (1<<p.bandStrip);
 
     // at least 2 averaging
@@ -336,7 +336,7 @@ DfdChannel *SpectreMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDe
     return ch;
 }
 
-Function * SpectreMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, quint32 spectrumSize, Parameters &p, int i)
+Function * SpectreMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
 {DD;
     Function *ch = new Function(newUff);
     ch->setName(dfd->channels[i]->name()/*+"/Сила"*/);

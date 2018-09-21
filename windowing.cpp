@@ -6,7 +6,7 @@ Windowing::Windowing(const Parameters &p)
 {
     w = QVector<double>(p.bufferSize, 0.0);
 
-    if (p.windowType == 0) square();
+    if (p.windowType <= 0) square();
     else if (p.windowType == 1) triangular();
     else if (p.windowType == 2) hann();
     else if (p.windowType == 3) hamming();
@@ -70,5 +70,17 @@ void Windowing::gauss()
     for (int i=0; i<N; i++) {
         double t = (double)i/(N-1) - 0.5;
         w[i] = 2.02*exp(2.0*2.5*2.5*t*t);
+    }
+}
+
+void Windowing::apply(QVector<float> &values)
+{
+    int i=0;
+    while (1) {
+        for (int j=0; j<w.size(); j++) {
+            if (i >= values.size()) return;
+            values[i] = values[i] * w[j];
+            i++;
+        }
     }
 }

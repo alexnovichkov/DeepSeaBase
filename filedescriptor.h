@@ -100,6 +100,7 @@ public:
     virtual FileDescriptor *calculateThirdOctave() = 0;
     virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels,
                                     int windowSize) = 0;
+    virtual QString saveTimeSegment(double from, double to) = 0;
 
     virtual QString fileName() const {return _fileName;}
     virtual void setFileName(const QString &name) { _fileName = name;}
@@ -133,8 +134,8 @@ public:
     virtual double xStep() const = 0;
     virtual void setXStep(const double xStep) = 0;
 
-    quint32 samplesCount() const {return NumInd;}
-    void setSamplesCount(quint32 count) {NumInd = count;}
+    int samplesCount() const {return NumInd;}
+    void setSamplesCount(int count) {NumInd = count;}
 
     virtual QString xName() const = 0;
 
@@ -156,7 +157,7 @@ private:
     bool _changed;
     bool _dataChanged;
 
-    quint32 NumInd;
+    int NumInd;
 };
 
 class Channel
@@ -190,7 +191,7 @@ public:
 
     virtual double xBegin() const = 0;
     virtual double xStep() const = 0;
-    virtual quint32 samplesCount() const = 0;
+    virtual int samplesCount() const = 0;
     virtual QVector<double> &yValues() = 0;
     virtual QVector<double> &xValues() = 0;
     virtual double xMaxInitial() const = 0;

@@ -98,7 +98,7 @@ QStringList XresponcH1Method::methodSettings(DfdFileDescriptor *dfd, const Param
     spfFile << "Wind="+windowCombo->currentText();
     spfFile << "TypeAver="+averCombo->currentText();
 
-    quint32 numberOfInd = dfd->channels.at(p.activeChannel)->samplesCount();
+    int numberOfInd = dfd->channels.at(p.activeChannel)->samplesCount();
     double NumberOfAveraging = double(numberOfInd) / p.bufferSize / (1<<p.bandStrip);
 
     // at least 2 averaging
@@ -123,7 +123,7 @@ QStringList XresponcH1Method::methodSettings(DfdFileDescriptor *dfd, const Param
 //    spfFile << "TypeAver="+averCombo->currentText();
 
 
-//    const quint32 samplesCount = dfd->channels.first()->samplesCount();
+//    const int samplesCount = dfd->channels.first()->samplesCount();
 //    const double blockSize = resolutionCombo->currentText().toDouble();
 //    double NumberOfAveraging = double(samplesCount) / blockSize;
 
@@ -270,8 +270,10 @@ DfdChannel *XresponcH1Method::createDfdChannel(DfdFileDescriptor *newDfd, DfdFil
     return ch;
 }
 
-Function *XresponcH1Method::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, quint32 spectrumSize, Parameters &p, int i)
+Function *XresponcH1Method::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
 {DD;
+    Q_UNUSED(spectrumSize);
+
     Function *ch = new Function(newUff);
     ch->setName(dfd->channels[i]->name()+"/Сила");
     ch->setPopulated(true);

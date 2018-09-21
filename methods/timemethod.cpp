@@ -82,7 +82,7 @@ QStringList TimeMethod::methodSettings(DfdFileDescriptor *dfd, const Parameters 
     spfFile << "TypeProc=0";
     spfFile << "Values=измеряемые";
 
-    quint32 numberOfInd = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->samplesCount();
+    int numberOfInd = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->samplesCount();
     double NumberOfAveraging = double(numberOfInd) / p.bufferSize / (1<<p.bandStrip);
 
     // at least 2 averaging
@@ -238,7 +238,7 @@ DfdChannel *TimeMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescr
     return ch;
 }
 
-Function *TimeMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, quint32 spectrumSize, Parameters &p, int i)
+Function *TimeMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
 {DD;
     Function *ch = new Function(newUff);
     ch->setName(dfd->channels[i]->name());

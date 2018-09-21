@@ -41,7 +41,7 @@ public:
     double yMin;
     double yMax;
 
-    quint32 samples;
+    int samples;
 
     QVector<double> values;
     QVector<double> xvalues;
@@ -70,7 +70,7 @@ public:
     virtual QString legendName() const;
     virtual double xBegin() const;
     virtual double xStep() const;
-    virtual quint32 samplesCount() const;
+    virtual int samplesCount() const;
     virtual QVector<double> &yValues();
     virtual QVector<double> &xValues();
     virtual double xMaxInitial() const;
@@ -130,8 +130,6 @@ public:
     virtual void writeRawFile();
     virtual void populate();
     virtual void updateDateTimeGUID();
-    virtual QList<QPair<QString, QString> > dataDescriptor() const;
-    virtual void setDataDescriptor(const QList<QPair<QString, QString> > &data);
     QString dataDescriptorAsString() const;
 
     virtual QStringList info() const;
@@ -169,6 +167,12 @@ public:
     virtual QString fileFilters() const;
 private:
     QString fileType() const;
+
+    // FileDescriptor interface
+public:
+    virtual DescriptionList dataDescriptor() const;
+    virtual void setDataDescriptor(const DescriptionList &data);
+    virtual QString saveTimeSegment(double from, double to);
 };
 
 #endif // UFFFILE_H
