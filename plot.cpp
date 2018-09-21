@@ -430,9 +430,12 @@ void Plot::deleteGraph(Curve *graph, bool doReplot)
         if (removed > 0) {
             zoom->horizontalScaleBounds->removeToAutoscale(graph->xMin, graph->xMax);
         }
+        QString title = graph->title().text();
+
 
         delete graph;
         graph = 0;
+        checkDuplicates(title);
 
         if (leftGraphs.isEmpty()) {
             yLeftName.clear();
@@ -540,7 +543,30 @@ void Plot::moveGraph(Curve *curve)
     }
 }
 
-bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool plotOnRight)
+bool Plot::hasDuplicateNames(const QString name) const
+{
+    int count = 0;
+    foreach(Curve *c, graphs) {
+        if (c->title().text() == name) count++;
+    }
+    return (count > 1);
+}
+
+void Plot::checkDuplicates(const QString name)
+{
+    QList<int> l;
+    for( int i=0; i<graphs.size(); ++i) {
+        if (graphs[i]->title().text() == name) l << i;
+    }
+    if (l.size()>1) {
+        foreach(int i, l) graphs[i]->duplicate = true;
+    }
+    else {
+        foreach(int i, l) graphs[i]->duplicate = false;
+    }
+}
+
+bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool plotOnRight, int fileNumber)
 {DD;
     if (plotted(descriptor, channel)) return false;
 
@@ -587,10 +613,15 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
     if (col) *col = nextColor;
 
     graphs << g;
+    g->fileNumber = fileNumber;
+    checkDuplicates(g->title().text());
+    if (hasDuplicateNames(g->title().text())) {
+        g->duplicate = true;
+    }
 
     //bool needFixBoundaries = !hasGraphs() && zoom;
 
-    g->attach(this);
+//    g->attach(this);
 
     g->setYAxis(ax);
     if (plotOnSecondYAxis) {
@@ -611,6 +642,7 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
     zoom->horizontalScaleBounds->add(g->xMin, g->xMax);
     ybounds->add(g->yMin, g->yMax);
 
+    g->attach(this);
     update();
     return true;
 }

@@ -87,7 +87,7 @@ public:
     void deleteGraph(Curve *graph, bool doReplot = true);
     void deleteGraph(Channel *c, bool doReplot = true);
 
-    bool plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool plotOnRight = false);
+    bool plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool plotOnRight, int fileNumber);
 
     Curve *plotted(FileDescriptor *dfd, int channel) const;
     Curve *plotted(Channel *channel) const;
@@ -140,6 +140,8 @@ private slots:
     void showContextMenu(const QPoint &pos, const int axis);
 private:
     void importPlot(const QString &fileName);
+    bool hasDuplicateNames(const QString name) const;
+    void checkDuplicates(const QString name);
 
     // axis labels
     QString xName;

@@ -77,3 +77,14 @@ void LegendLabel::updateState(bool state, QwtLegendData::Mode mode)
     if ( mode == QwtLegendData::Checkable )
         Q_EMIT checked( state );
 }
+
+
+void LegendLabel::setText(const QwtText &text)
+{
+    QwtText s = text;
+
+    if (data().hasRole(QwtLegendData::UserRole+1)) {// role for file number
+        s.setText(s.text()+QString(" [%1]").arg(data().value(QwtLegendData::UserRole+1).toInt()));
+    }
+    QwtLegendLabel::setText(s);
+}

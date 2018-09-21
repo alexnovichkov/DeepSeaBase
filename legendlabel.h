@@ -19,6 +19,10 @@ protected:
 //    virtual void keyReleaseEvent( QKeyEvent * );
     void updateState(bool state, QwtLegendData::Mode mode);
 
+
+    // QwtTextLabel interface
+public slots:
+    virtual void setText(const QwtText &);
 };
 
 #endif // LEGENDLABEL_H

@@ -63,6 +63,8 @@ public:
     double xMin, xMax;
     double yMin, yMax;
     int samplesCount;
+    int fileNumber;
+    bool duplicate;
 
 private:
     void setRawSamples(double x0, double xStep, const double *yData, int size);
@@ -77,6 +79,10 @@ private:
     // QwtPlotCurve interface
 protected:
     virtual void drawLines(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect, int from, int to) const;
+
+    // QwtPlotItem interface
+public:
+    virtual QList<QwtLegendData> legendData() const;
 };
 
 #endif // CURVE_H
