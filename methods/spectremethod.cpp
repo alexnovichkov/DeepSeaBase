@@ -183,6 +183,9 @@ Parameters SpectreMethod::parameters()
     p.bufferSize = qRound(sampleRate / po); // размер блока
     p.windowType = windowCombo->currentIndex();
     p.scaleType = scaleCombo->currentIndex();
+    bool ok;
+    p.averagesCount = nAverCombo->currentText().toInt(&ok);
+    if (!ok) p.averagesCount = -1;
 
 
     p.activeChannel = 1;
