@@ -28,6 +28,7 @@ public:
 private slots:
     void updateResolution(int);
 private:
+    friend class FRFMethod;
 //    QSpinBox *activeChannelSpin;
 //    QSpinBox *baseChannelSpin;
     QSpinBox *overlap;
@@ -40,7 +41,7 @@ private:
     QComboBox *averCombo;// Усреднение линейное, экспоненциальное, хранение максимума
     QComboBox *nAverCombo;// Кол. усреднений 1 2 4 8 16 32 64 128 256 1024 до конца интервала
     QComboBox *typeCombo;// Тип спектра "мощности", "плотности мощн.", "спектр СКЗ"
-    QComboBox *valuesCombo;// Величины измеряемые, вход АЦП
+//    QComboBox *valuesCombo;// Величины измеряемые, вход АЦП
     QComboBox *scaleCombo; //"Шкала" "линейная", "в децибелах"
     QComboBox *addProcCombo;//Доп. обработка нет, интегрир., дифференц., дв.интергир., дв.дифференц.
 

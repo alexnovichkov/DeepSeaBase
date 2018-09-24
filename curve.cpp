@@ -269,8 +269,8 @@ void Curve::setRawSamples(double x0, double xStep, const double *yData, int size
         const int factor = 10;
         // try to filter out original data
 
-        xDataSimplified.clear();
-        yDataSimplified.clear();
+        xDataSimplified.clear(); xDataSimplified.squeeze();
+        yDataSimplified.clear(); yDataSimplified.squeeze();
         QVector<double> coords(size*2);
         for (int i=0; i<size; ++i) {
             coords[i*2] = x0+i*xStep;

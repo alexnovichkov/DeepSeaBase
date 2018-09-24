@@ -1725,13 +1725,7 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
 
         if (state == Qt::Checked) {
             QColor col;
-            int fileNumber = 0;
-            for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
-                if (tab->tree->topLevelItem(i) == tab->tree->currentItem()) {
-                    fileNumber = i+1;
-                    break;
-                }
-            }
+            int fileNumber = tab->tree->currentItem()->text(0).toInt();
 
             plotted = plot->plotChannel(tab->record, item->row(), &col, plotOnRight, fileNumber);
             if (plotted) {
@@ -1754,7 +1748,7 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
                     if (it->fileDescriptor == tab->record || !it->isSelected()) continue;
                     if (it->fileDescriptor->channelsCount()<=item->row()) continue;
 
-                    plotted = plot->plotChannel(it->fileDescriptor, item->row(), &col, plotOnRight, i+1);
+                    plotted = plot->plotChannel(it->fileDescriptor, item->row(), &col, plotOnRight, it->text(0).toInt());
                     if (plotted) {
                         it->fileDescriptor->channel(item->row())->setCheckState(Qt::Checked);
                         it->fileDescriptor->channel(item->row())->setColor(col);

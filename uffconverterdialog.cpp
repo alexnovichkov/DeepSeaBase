@@ -7,25 +7,7 @@
 #include "mainwindow.h"
 #include "checkableheaderview.h"
 #include "logging.h"
-
-QString uniqueFileName(const QString &fileName)
-{DD;
-    if (QFile::exists(fileName)) {
-        QFileInfo fi(fileName);
-        QString ext = fi.suffix();
-        QString result = fi.canonicalPath() + "/"+fi.completeBaseName();
-
-        int index = 1;
-        QString suffix = QString(" (%1)").arg(index);
-
-        while (QFile::exists(result+suffix+"."+ext)) {
-            index++;
-            suffix = QString(" (%1)").arg(index);
-        }
-        return result+suffix+"."+ext;
-    }
-    return fileName;
-}
+#include "algorithms.h"
 
 void ConverterDialog::addFile(const QString &fileName)
 {
@@ -251,8 +233,7 @@ bool UffConvertor::convert()
         QString sourceFileName = fi;
 
         if (fileIsDfd) {//replace *.dfd to *.uff
-            destFileName.replace("."+QFileInfo(fi).suffix(),".uff");
-            destFileName = uniqueFileName(destFileName);
+            destFileName = createUniqueFileName("", destFileName, "", "uff", false);
 
             DfdFileDescriptor dfdFile(sourceFileName);
             dfdFile.read();
@@ -287,8 +268,8 @@ bool UffConvertor::convert()
                 uffFile.channels << f;
                 //clearing
                 dfdFile.channel(i)->setPopulated(false);
-                dfdFile.channel(i)->xValues().clear();
-                dfdFile.channel(i)->yValues().clear();
+                dfdFile.channel(i)->xValues().clear(); dfdFile.channel(i)->xValues().squeeze();
+                dfdFile.channel(i)->yValues().clear(); dfdFile.channel(i)->yValues().squeeze();
             }
             //заполнение инфы об опорном канале
             if (referenceChannelNumber>=0) {
@@ -308,8 +289,7 @@ bool UffConvertor::convert()
             emit tick();
         }
         else if (fileIsUff) {//replace *.uff to *.dfd
-            destFileName.replace("."+QFileInfo(fi).suffix(),".dfd");
-            destFileName = uniqueFileName(destFileName);
+            destFileName = createUniqueFileName("", destFileName, "", "dfd", false);
 
             UffFileDescriptor uffFile(sourceFileName);
             uffFile.read();

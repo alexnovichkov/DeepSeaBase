@@ -981,9 +981,9 @@ Descriptor::OrdinateFormat Function::yFormat() const
 
 void Function::populate()
 {DD;
-    values.clear();
-    xvalues.clear();
-    valuesComplex.clear();
+    values.clear(); values.squeeze();
+    xvalues.clear(); xvalues.squeeze();
+    valuesComplex.clear(); valuesComplex.squeeze();
     _populated = false;
 
     QFile uff(parent->fileName());
@@ -1069,6 +1069,7 @@ void Function::populate()
 void Function::clear()
 {
     values.clear();
+    values.squeeze();
     setPopulated(false);
 }
 

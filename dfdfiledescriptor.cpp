@@ -343,7 +343,7 @@ void DfdFileDescriptor::writeRawFile()
                     if (ch->IndType==0xC0000004)
                         writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-                    const int sc = ch->samplesCount();
+                    //const int sc = ch->samplesCount();
                     for (int val = 0; val < BlockSize; ++val) {
                         if (val+pos >= samplesCount()) continue;
                         ch->setValue(ch->temporalCorrection
@@ -692,17 +692,7 @@ FileDescriptor *DfdFileDescriptor::calculateThirdOctave()
 {DD;
     populate();
 
-    QString thirdOctaveFileName = this->fileName();
-    thirdOctaveFileName.chop(4);
-
-    int index = 0;
-    if (QFile::exists(thirdOctaveFileName+"_3oct.dfd")) {
-        index++;
-        while (QFile::exists(thirdOctaveFileName+"_3oct("+QString::number(index)+").dfd")) {
-            index++;
-        }
-    }
-    thirdOctaveFileName = index>0?thirdOctaveFileName+"_3oct("+QString::number(index)+").dfd":thirdOctaveFileName+"_3oct.dfd";
+    QString thirdOctaveFileName = createUniqueFileName("", fileName(), "3oct", "dfd", false);
 
     DfdFileDescriptor *thirdOctDfd = new DfdFileDescriptor(thirdOctaveFileName);
     thirdOctDfd->fillPreliminary(Descriptor::Spectrum);
@@ -727,7 +717,7 @@ FileDescriptor *DfdFileDescriptor::calculateThirdOctave()
         thirdOctDfd->dataDescription->data = this->dataDescription->data;
     }
 
-    index=1;
+    int index=1;
     foreach (DfdChannel *ch, this->channels) {
         DfdChannel *newCh = new DfdChannel(thirdOctDfd,index++);
 
@@ -1142,8 +1132,8 @@ QStringList DfdChannel::getInfoData()
 void DfdChannel::populate()
 {DD;
     // clear previous data;
-    YValues.clear();
-    XValues.clear();
+    YValues.clear(); YValues.squeeze();
+    XValues.clear(); XValues.squeeze();
 
     QFile rawFile(parent->attachedFileName());
 
@@ -1392,6 +1382,8 @@ void DfdChannel::populateFloat()
 void DfdChannel::clear()
 {DD;
     YValues.clear();
+    //and release memory (since Qt 5.7)
+    YValues.squeeze();
     setPopulated(false);
 }
 
@@ -1714,20 +1706,12 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
 //    populate();
 
     // 1 создаем уникальное имя файла по параметрам from и to
-    QString newFileName = fileName();
-    newFileName.chop(4);
+
     QString fromString, toString;
     getUniqueFromToValues(fromString, toString, from, to);
     QString suffix = QString("_%1s_%2s").arg(fromString).arg(toString);
 
-    int index = 0;
-    if (QFile::exists(newFileName+suffix+".dfd")) {
-        index++;
-        while (QFile::exists(newFileName+suffix+"("+QString::number(index)+").dfd")) {
-            index++;
-        }
-    }
-    newFileName = index>0?newFileName+suffix+"("+QString::number(index)+").dfd":newFileName+suffix+".dfd";
+    QString newFileName = createUniqueFileName("", fileName(), suffix, "dfd", false);
 
     // 2 создаем новый файл
     DfdFileDescriptor *newDfd = new DfdFileDescriptor(newFileName);
@@ -1806,7 +1790,12 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
         ch->oldCorrectionValue = channels[i]->oldCorrectionValue;
 
         newDfd->channels << ch;
-        if (!wasPopulated) channels[i]->YValues.clear();
+        if (!wasPopulated) {
+            //clearing data
+            channels[i]->YValues.clear();
+            //and releasing memory (since Qt 5.7)
+            channels[i]->YValues.squeeze();
+        }
     }
 
     newDfd->NumChans = newDfd->channels.size();

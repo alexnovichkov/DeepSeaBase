@@ -38,13 +38,6 @@ SpectreMethod::SpectreMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *pare
     overlap->setValue(0);
     overlap->setSingleStep(5);
 
-//    activeChannelSpin = new QSpinBox(this);
-//    activeChannelSpin->setRange(1, 256);
-//    activeChannelSpin->setValue(1);
-//    baseChannelSpin = new QSpinBox(this);
-//    baseChannelSpin->setRange(1, 256);
-//    baseChannelSpin->setValue(2);
-
     windowCombo = new QComboBox(this);
     windowCombo->addItem("Прямоуг.");
     windowCombo->addItem("Бартлетта");
@@ -75,7 +68,7 @@ SpectreMethod::SpectreMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *pare
     nAverCombo->addItem("1024");
     nAverCombo->addItem("до конца интервала");
     nAverCombo->setCurrentIndex(10);
-    nAverCombo->setEnabled(false);
+//    nAverCombo->setEnabled(false);
 
     typeCombo = new QComboBox(this);
     typeCombo->addItem("мощности");
@@ -84,13 +77,6 @@ SpectreMethod::SpectreMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *pare
     typeCombo->setCurrentIndex(0);
     typeCombo->setEnabled(false);
     typeCombo->setEditable(false);
-
-    valuesCombo = new QComboBox(this);
-    valuesCombo->addItem("измеряемые");
-    valuesCombo->addItem("вход АЦП");
-    valuesCombo->setCurrentIndex(0);
-    valuesCombo->setEnabled(false);
-    valuesCombo->setEditable(false);
 
     scaleCombo = new QComboBox(this);
     scaleCombo->addItem("линейная");
@@ -117,7 +103,6 @@ SpectreMethod::SpectreMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *pare
     l->addRow("Усреднение", averCombo);
     l->addRow("Кол. усреднений", nAverCombo);
     l->addRow("Тип спектра", typeCombo);
-    l->addRow("Величины", valuesCombo);
     l->addRow("Шкала", scaleCombo);
     l->addRow("Доп. обработка", addProcCombo);
     setLayout(l);
@@ -148,7 +133,7 @@ QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, const Paramete
 
     spfFile << QString("NAver=%1").arg(qRound(NumberOfAveraging));
     spfFile << "TypeProc="+typeCombo->currentText();
-    spfFile << "Values="+valuesCombo->currentText();
+    spfFile << "Values=измеряемые";
     spfFile << "TypeScale="+scaleCombo->currentText();
     spfFile << "AddProc="+addProcCombo->currentText();
 
@@ -269,7 +254,8 @@ DfdFileDescriptor *SpectreMethod::createNewDfdFile(const QString &fileName, DfdF
     DD;
     DfdFileDescriptor *newDfd = new DfdFileDescriptor(fileName);
 
-    newDfd->fillPreliminary((Descriptor::DataType)0);
+    newDfd->rawFileName = fileName.left(fileName.length()-4)+".raw";
+    newDfd->updateDateTimeGUID();
     newDfd->BlockSize = 0;
     newDfd->DataType = DfdDataType(dataType());
 
@@ -339,7 +325,7 @@ DfdChannel *SpectreMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDe
 Function * SpectreMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
 {DD;
     Function *ch = new Function(newUff);
-    ch->setName(dfd->channels[i]->name()/*+"/Сила"*/);
+    ch->setName(dfd->channels[i]->name());
     ch->setPopulated(true);
 
     //FunctionHeader header;

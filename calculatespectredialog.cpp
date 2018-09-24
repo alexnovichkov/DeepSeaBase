@@ -57,7 +57,7 @@ CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> *dataBase
             case 0:
                 methodsStack->addWidget(new TimeMethod(this->dataBase, this)); break;
             case 1: methodsStack->addWidget(new SpectreMethod(this->dataBase, this)); break;
-            case 9: methodsStack->addWidget(new XresponcH1Method(this->dataBase, this)); break;
+            case 9: methodsStack->addWidget(new FRFMethod(this->dataBase, this)); break;
             case 18: methodsStack->addWidget(new OctaveMethod(this->dataBase, this)); break;
 
             default: methodsStack->addWidget(new SpectreMethod(this->dataBase, this));

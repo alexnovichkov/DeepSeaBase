@@ -1,8 +1,8 @@
 #include "algorithms.h"
-
+#include "logging.h"
 
 QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spectrum, double xBegin, double xStep)
-{
+{DD;
     QPair<QVector<double>, QVector<double> > result;
     // определяем верхнюю границу данных
     const double F_min = xBegin;
@@ -149,6 +149,41 @@ int uffMethodFromDfdMethod(int methodId)
     //                                       27 - Order Function
 }
 
+QString createUniqueFileName(const QString &folderName, const QString &fileName, QString constantPart,
+                             const QString &ext, bool justified)
+{DD;
+    QString result;
+    if (folderName.isEmpty())
+        result = QFileInfo(fileName).canonicalPath()+"/"+QFileInfo(fileName).completeBaseName();
+    else
+        result = folderName+"/"+QFileInfo(fileName).completeBaseName();
+    if (!constantPart.isEmpty()) result.append("_"+constantPart);
+
+    if (!justified && !QFile::exists(result+"."+ext))
+        return result+"."+ext;
+
+    int index = justified?0:1;
+    QString suffix = QString::number(index);
+    if (justified)
+        suffix = QString("_")+suffix.rightJustified(3,'0');
+    else
+        suffix = QString("(%1)").arg(suffix);
+
+    while (QFile::exists(result+suffix+"."+ext)) {
+        index++;
+        suffix = justified ? QString("_")+QString::number(index).rightJustified(3,'0')
+                           : QString("(%1)").arg(index);
+    }
+    return result+suffix+"."+ext;
+}
+
+QString createUniqueFileName(const QString &fileName)
+{
+    if (QFile::exists(fileName))
+        return createUniqueFileName("", fileName, "", QFileInfo(fileName).suffix(), false);
+    return fileName;
+}
+
 void getUniqueFromToValues(QString &fromString, QString &toString, double from, double to)
 {
     int factor = 0; //10, 100, 1000...
@@ -164,3 +199,17 @@ void getUniqueFromToValues(QString &fromString, QString &toString, double from, 
         toString.setNum(to, 'f', factor);
     }
 }
+
+QString changeFileExt(const QString &fileName, const QString &ext)
+{
+    QFileInfo fi(fileName);
+    if (fi.exists())
+        return fi.canonicalPath()+"/"+fi.completeBaseName()+"."+ext;
+
+    QString result = fileName;
+    result.chop(3);
+    result.append(ext);
+    return result;
+}
+
+

@@ -456,7 +456,7 @@ void Plot::deleteGraph(Curve *graph, bool doReplot)
 
 bool Plot::canBePlottedOnLeftAxis(Channel *ch)
 {DD;
-    if (!hasGraphs()) // нет графиков - всегда на левой оси
+    if (!hasGraphs()) // нет графиков - можем построить что угодно
         return true;
     if (abscissaType(ch->xName()) == abscissaType(xName) || xName.isEmpty()) { // тип графика совпадает
         if (leftGraphs.isEmpty() || yLeftName.isEmpty() || ch->yName() == yLeftName)
@@ -558,12 +558,7 @@ void Plot::checkDuplicates(const QString name)
     for( int i=0; i<graphs.size(); ++i) {
         if (graphs[i]->title().text() == name) l << i;
     }
-    if (l.size()>1) {
-        foreach(int i, l) graphs[i]->duplicate = true;
-    }
-    else {
-        foreach(int i, l) graphs[i]->duplicate = false;
-    }
+    foreach(int i, l) graphs[i]->duplicate = l.size()>1;
 }
 
 bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool plotOnRight, int fileNumber)

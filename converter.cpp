@@ -230,6 +230,8 @@ void Converter::finalize()
         moveFilesFromTempDir(tempFolderName, dfd->fileName());
         foreach (DfdChannel *c, dfd->channels) {
             c->floatValues.clear();
+            //and releasing memory (since Qt 5.7)
+            c->floatValues.squeeze();
         }
     }
 
@@ -260,7 +262,7 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
     }
 
     if (filtered.isEmpty()) return;
-
+DebugPrint(filtered);
     //QString baseFileName = QFileInfo(filtered.first()).completeBaseName();
     QString baseFileName = QFileInfo(fileName).completeBaseName()+"_"+method;
 
@@ -277,23 +279,11 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
             suffix = QString::number(suffixN);
         }
 
-        //baseFileName.chop(3);
-        QString dfdFileName = destDir+"/"+baseFileName+"_"+suffix+".dfd";
-        QString rawFileName = destDir+"/"+baseFileName+"_"+suffix+".raw";
-
-
-        int index = 0;
-        if (QFile::exists(dfdFileName)) {
-            index++;
-            while (QFile::exists(destDir+"/"+baseFileName+"_"+suffix+"("+QString::number(index)+").dfd")) {
-                index++;
-            }
-        }
-
-        if (index>0) {
-            dfdFileName = destDir+"/"+baseFileName+"_"+suffix+"("+QString::number(index)+").dfd";
-            rawFileName = destDir+"/"+baseFileName+"_"+suffix+"("+QString::number(index)+").raw";
-        }
+        DebugPrint(baseFileName);
+        QString dfdFileName = createUniqueFileName(destDir, baseFileName, suffix, "dfd");
+        QString rawFileName = changeFileExt(dfdFileName, "raw");
+        DebugPrint(dfdFileName);
+        DebugPrint(rawFileName);
 
         QFile::rename(filtered.first(), dfdFileName);
         QFile::rename(dfd.attachedFileName(), rawFileName);
@@ -304,21 +294,7 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
         dfd.read();
         QString suffix = QString::number(dfd.samplesCount() * dfd.xStep());
 
-        //baseFileName.chop(3);
-        QString uffFileName = destDir+"/"+baseFileName+"_"+suffix+".uff";
-
-        int index = 0;
-        if (QFile::exists(uffFileName)) {
-            index++;
-            while (QFile::exists(destDir+"/"+baseFileName+"_"+suffix+"("+QString::number(index)+").uff")) {
-                index++;
-            }
-        }
-
-        if (index>0) {
-            uffFileName = destDir+"/"+baseFileName+"_"+suffix+"("+QString::number(index)+").uff";
-        }
-
+        QString uffFileName = createUniqueFileName(destDir, baseFileName, suffix, "dfd");
         QFile::rename(filtered.first(), uffFileName);
         newFiles << uffFileName;
     }
@@ -416,24 +392,6 @@ void changeScale(QVector<double> &output, const Parameters &p)
             output[i] = 10 * log10(output[i] / t2);
 }
 
-QString createUniqueFileName(const QString &tempFolderName, const QString &fileName, QString method,
-                             bool saveAsUff)
-{DD;
-    method.chop(4);
-    QString result = tempFolderName+"\\"+QFileInfo(fileName).baseName()+"_"+method;
-
-    int index = 0;
-    QString suffix = QString::number(index);
-    suffix = suffix.rightJustified(3,'0');
-
-    while (QFile::exists(result+suffix+".dfd")) {
-        index++;
-        suffix = QString::number(index).rightJustified(3,'0');
-    }
-    QString ext = saveAsUff?".uff":".dfd";
-    return result+suffix+ext;
-}
-
 int stripNumberForBandwidth(double bandwidth, Parameters &p)
 {DD;
     if (qAbs(bandwidth - p.bandWidth)<1.0e-3)
@@ -474,8 +432,11 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
 //    return false;
 
     /** 1. Создаем конечный файл и копируем в него всю информацию из dfd */
-    QString fileName = createUniqueFileName(tempFolderName, dfd->fileName(), p.methodDll, p.saveAsComplex);
-
+    QString method = p.methodDll;
+    method.chop(4);
+    QString fileName = createUniqueFileName(tempFolderName, dfd->fileName(), method,
+                                            p.saveAsComplex ? "uff":"dfd", true);
+DebugPrint(fileName);
     DfdFileDescriptor *newDfd = 0;
     if (!p.saveAsComplex) newDfd = p.method->createNewDfdFile(fileName, dfd, p);
 
@@ -550,6 +511,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
         }
 
         if (p.method->id()==9 && !p.saveAsComplex) {//передаточная 1, модуль
+            qDebug()<<"---- FRF real";
             if (i == p.baseChannel) continue;
 
             int baseBlock = 0;
@@ -586,6 +548,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
         }
 
         if (p.method->id()==9 && p.saveAsComplex) {//передаточная 1, комплексные
+            qDebug()<<"---- FRF complex";
             if (i == p.baseChannel) continue;
 
             int baseBlock = 0;
@@ -640,12 +603,15 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
         }
 
         dfd->channels[i]->floatValues.clear();
-
+        //and releasing memory (since Qt 5.7)
+        dfd->channels[i]->floatValues.squeeze();
         emit tick();
     }
     // подчищаем опорный канал
-    if (p.baseChannel>=0 && p.baseChannel < dfd->channelsCount())
+    if (p.baseChannel>=0 && p.baseChannel < dfd->channelsCount()) {
         dfd->channels[p.baseChannel]->floatValues.clear();
+        dfd->channels[p.baseChannel]->floatValues.squeeze();
+    }
 
     if (newDfd) {
         if (p.method->id()==18 && !xVals.isEmpty()) {
