@@ -24,6 +24,7 @@
 #include    "esoconverterdialog.h"
 #include    "uffconverterdialog.h"
 #include "filedescriptor.h"
+#include "timeslicer.h"
 
 #define DSB_VERSION "1.6.7"
 
@@ -1493,21 +1494,27 @@ void MainWindow::convertEsoFiles()
 
 void MainWindow::saveTimeSegment(const QList<FileDescriptor *> &files, double from, double to)
 {
-    QProgressDialog progress("Сохранение вырезки...", "Отменить сохранение", 0, files.size(), this);
-    progress.setWindowModality(Qt::WindowModal);
+    QThread *thread = new QThread;
+    TimeSlicer *converter = new TimeSlicer(files, from, to);
+    converter->moveToThread(thread);
 
-    QStringList newFiles;
+    QProgressDialog *progress = new QProgressDialog("Сохранение вырезки...", "Отменить сохранение", 0, files.size(), this);
+    progress->setWindowModality(Qt::WindowModal);
 
-    int i=0;
-    foreach(FileDescriptor *file, files) {
-        progress.setValue(i);
-        if (progress.wasCanceled())
-            break;
-        newFiles << file->saveTimeSegment(from, to);
-        i++;
-    }
-    progress.setValue(files.size());
-    addFiles(newFiles);
+    connect(thread, SIGNAL(started()), converter, SLOT(start()));
+    connect(converter, SIGNAL(finished()), thread, SLOT(quit()));
+    connect(converter, SIGNAL(finished()), progress, SLOT(accept()));
+    connect(progress, SIGNAL(canceled()), thread, SLOT(quit()));
+    connect(converter, &TimeSlicer::finished, [=](){
+        QStringList newFiles = converter->getNewFiles();
+        addFiles(newFiles);
+    });
+    connect(converter, SIGNAL(tick(int)), progress, SLOT(setValue(int)));
+
+    progress->show();
+    progress->setValue(0);
+
+    thread->start();
 }
 
 QVector<int> computeIndexes(QVector<int> notYetMoved, bool up, int totalSize)

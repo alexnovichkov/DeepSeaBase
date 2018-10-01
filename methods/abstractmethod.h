@@ -58,55 +58,15 @@ struct Parameters
                   //                  1 = fd/2
                   //                  n = fd/2^n
     double overlap; // перекрытие, 0 - 0.75
-
     int scaleType; //0 - линейная
-                   //1 - экспоненциальная
+                   //1 - логарифмическая
     double threshold; // порог для спектра в дБ
-
     int averagesCount; // число усреднений
-
     int baseChannel; // опорный канал
-    int activeChannel; // активный канал
-
-    QVector<double> window; // коэффициенты оконной функции
-
     int fCount; // число отсчетов в частотной области
-
     bool useDeepSea;
-
-    int panelType; //тип панели для обработки с помощью DeepSea
-    QString methodName;
-    QString methodDll;
-    int dataType;
     bool saveAsComplex=false; //формат результата: комплексные числа
-
-    int spectreType; // тип спектра
-                     // 0 = мощности
-                     // 1 = плотности мощности
-                     // 2 = спектр СКЗ
-
     AbstractMethod *method;
-
-    QString windowDescription() const {
-        switch (windowType) {
-            case 0: return "Прямоуг.";
-            case 1: return "Бартлетта";
-            case 2: return "Хеннинга";
-            case 3: return "Хемминга";
-            case 4: return "Натолл";
-            case 5: return "Гаусс";
-        }
-        return "";
-    }
-
-    QString averaging(int avgType) const {
-        switch (avgType) {
-            case 0: return "линейное";
-            case 1: return "экспоненциальное";
-            case 2: return "хранение максимума";
-        }
-        return "";
-    }
 };
 
 static QDebug operator<<(QDebug debug, const Parameters &p)
@@ -124,14 +84,8 @@ static QDebug operator<<(QDebug debug, const Parameters &p)
       debug <<  "threshold"<< p.threshold<<endl;
       debug << "averagesCount"<< p.averagesCount<<endl;
       debug <<"baseChannel"<<   p.baseChannel<<endl;
-      debug <<"activeChannel"<<   p.activeChannel<<endl;
-      debug <<"window"<<   p.window<<endl;
       debug <<"fCount"<<   p.fCount<<endl;
       debug <<"useDeepSea"<<   p.useDeepSea<<endl;
-      debug <<"panelType"<<   p.panelType<<endl;
-      debug <<"methodName"<<   p.methodName<<endl;
-      debug <<"methodDll"<<   p.methodDll<<endl;
-      debug << "dataType"<< p.dataType<<endl;
       debug << "saveAsComplex"<< p.saveAsComplex<<endl;
         return debug;
   }

@@ -308,7 +308,7 @@ bool MatlabConvertor::convert()
                     continue;
                 }
 
-                if (raw.isEmpty() || (raw.size() != matlabFile.channels.at(i).size*4)) {
+                if (raw.isEmpty() || (raw.size() != int(matlabFile.channels.at(i).size*4))) {
                     emit message(QString("<font color=red>Error!</font> Не могу прочитать канал %1").arg(i+1));
                     noErrors = false;
                     continue;

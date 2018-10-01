@@ -20,6 +20,9 @@ public:
     bool valid;
 };
 
+QDataStream & operator>> (QDataStream& stream, FunctionHeader& header);
+QDataStream & operator<< (QDataStream& stream, const FunctionHeader& header);
+
 class UffFileDescriptor;
 
 class Function : public Channel
@@ -27,7 +30,7 @@ class Function : public Channel
 public:
     Function(UffFileDescriptor *parent);
     Function(Channel &other);
-    Function(const Function &other);
+    Function(Function &other);
     virtual ~Function();
 
     void read(QTextStream &stream, qint64 pos = -1);
@@ -50,6 +53,7 @@ public:
     UffFileDescriptor *parent;
     virtual FileDescriptor *descriptor();
     QVector<FieldDescription> type58;
+    qint64 dataPosition;
 
     // Channel interface
 public:
@@ -79,7 +83,7 @@ public:
     virtual void addCorrection(double correctionValue, bool writeToFile);
 private:
     bool _populated;
-    qint64 dataPosition;
+
 
     //correction variables
     bool temporalCorrection;
@@ -98,7 +102,11 @@ public:
     QString info() const;
 
     QVector<FieldDescription> type151;
+
 };
+
+QDataStream &operator>>(QDataStream& stream, UffHeader& header);
+QDataStream &operator<<(QDataStream& stream, const UffHeader& header);
 
 class UffUnits
 {
@@ -111,10 +119,14 @@ public:
     QVector<FieldDescription> type164;
 };
 
+QDataStream &operator>>(QDataStream& stream, UffUnits& header);
+QDataStream &operator<<(QDataStream& stream, const UffUnits& header);
+
 class UffFileDescriptor : public FileDescriptor
 {
 public:
     UffFileDescriptor(const QString &fileName);
+    UffFileDescriptor(const UffFileDescriptor &other);
     ~UffFileDescriptor();
 
     UffHeader header;
@@ -168,11 +180,16 @@ public:
 private:
     QString fileType() const;
 
+    int NumInd;
+
     // FileDescriptor interface
 public:
     virtual DescriptionList dataDescriptor() const;
     virtual void setDataDescriptor(const DescriptionList &data);
     virtual QString saveTimeSegment(double from, double to);
+    virtual int samplesCount() const;
+    virtual void setSamplesCount(int count);
+    virtual void setChanged(bool changed);
 };
 
 #endif // UFFFILE_H

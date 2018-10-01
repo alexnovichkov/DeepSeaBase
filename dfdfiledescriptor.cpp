@@ -177,14 +177,64 @@ DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
       DataType(NotDef),
       NumChans(0),
       BlockSize(0),
+      NumInd(0),
+      XBegin(0.0),
+      XStep(0.0),
       source(0),
       process(0),
-      XBegin(0.0),
-      dataDescription(0),
-      XStep(0.0)
+      dataDescription(0)
 {DD;
 //    rawFileChanged = false;
-//    changed = false;
+    //    changed = false;
+}
+
+// creates a copy of DfdDataDescriptor without copying data
+DfdFileDescriptor::DfdFileDescriptor(const DfdFileDescriptor &d) : FileDescriptor(d.fileName())
+{
+    createGUID();
+    this->DataType = d.DataType; // см. выше
+    this->Date = QDate::currentDate();
+    this->Time = QTime::currentTime();
+    this->CreatedBy = "DeepSeaBase by Novichkov & sukin sons";
+    this->NumChans = d.NumChans;
+
+    this->BlockSize = 0; // всегда меняем размер блока новых файлов на 0,
+                         // чтобы они записывались без перекрытия
+    this->NumInd = d.NumInd;
+    this->XName = d.XName;
+
+    this->XBegin = d.XBegin;
+    this->XStep = d.XStep;
+    this->DescriptionFormat = d.DescriptionFormat;
+
+    source = new Source();
+    source->Date = d.Date;
+    source->Time = d.Time;
+    source->DFDGUID = d.DFDGUID;
+    source->File = d.fileName();
+    for (int i=1; i<=d.channelsCount(); ++i)
+        source->ProcChansList << i;
+
+    if (d.process) {
+        process = new Process;
+        process->data = d.process->data;
+    }
+    else process = 0;
+
+    if (d.dataDescription) {
+        dataDescription = new DataDescription(this);
+        dataDescription->data = d.dataDescription->data;
+    }
+    else dataDescription = 0;
+
+    foreach (DfdChannel *c, d.channels)
+        this->channels << new DfdChannel(*c);
+
+
+    //QString fileName;
+    //QString rawFileName;
+
+     _legend = d._legend;
 }
 
 DfdFileDescriptor::~DfdFileDescriptor()
@@ -1706,7 +1756,6 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
 //    populate();
 
     // 1 создаем уникальное имя файла по параметрам from и to
-
     QString fromString, toString;
     getUniqueFromToValues(fromString, toString, from, to);
     QString suffix = QString("_%1s_%2s").arg(fromString).arg(toString);
@@ -1808,4 +1857,15 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
 
     // 5 возвращаем имя нового файла
     return newFileName;
+}
+
+
+int DfdFileDescriptor::samplesCount() const
+{
+    return NumInd;
+}
+
+void DfdFileDescriptor::setSamplesCount(int count)
+{
+    NumInd = count;
 }

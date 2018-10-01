@@ -13,15 +13,14 @@ class DfdChannel;
 
 void applyWindow(QVector<float> &values, const Parameters &p);
 QVector<double> FFTAnalysis(const QVector<float> &AVal);
-QVector<double> powerSpectre(const QVector<float> &values, const Parameters &p);
-QVector<double> autoSpectre(const QVector<float> &values, const Parameters &p);
-QVector<double> coSpectre(const QVector<float> &values1, const QVector<float> &values2, const Parameters &p);
-QVector<QPair<double, double> > coSpectreComplex(const QVector<float> &values1, const QVector<float> &values2, const Parameters &p);
-QVector<double> transferFunctionH1(const QVector<double> &values1, const QVector<double> &values2, const Parameters &p);
+QVector<double> powerSpectre(const QVector<float> &values, int bufferSize, int outputSize);
+QVector<double> autoSpectre(const QVector<float> &values, int bufferSize, int outputSize);
+QVector<double> coSpectre(const QVector<float> &values1, const QVector<float> &values2, int bufferSize, int outputSize);
+QVector<QPair<double, double> > coSpectreComplex(const QVector<float> &values1, const QVector<float> &values2, int bufferSize, int outputSize);
+QVector<double> transferFunctionH1(const QVector<double> &values1, const QVector<double> &values2);
 QVector<QPair<double, double> > transferFunctionH1Complex(const QVector<double> &values1,
-                                                          const QVector<QPair<double, double> > &values2, const Parameters &p);
+                                                          const QVector<QPair<double, double> > &values2);
 void changeScale(QVector<double> &output, const Parameters &p);
-void average(QVector<double> &result, const QVector<double> &input, const Parameters &p, int averagesMade);
 
 class Converter : public QObject
 {
@@ -31,7 +30,6 @@ public:
     virtual ~Converter();
 
     QStringList getNewFiles() const {return newFiles;}
-    //DfdChannel * addDfdChannel(DfdFileDescriptor *dfd, QVector<double> spectrum, int i, DfdFileDescriptor *newDfd);
 signals:
     void tick();
     void tick(const QString &path);
@@ -58,7 +56,6 @@ private:
     QStringList newFiles_;
 
     QProcess *process;
-    AbstractMethod *method;
 };
 
 #endif // CONVERTER_H

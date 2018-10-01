@@ -80,15 +80,8 @@ Parameters OctaveMethod::parameters()
 {
     Parameters p;
 
-
-//    p.averagingType = averCombo->currentIndex();
     p.bufferSize = 32768;
-//    p.windowType = windowCombo->currentIndex();
     p.scaleType = scaleCombo->currentIndex();
-    p.panelType = panelType();
-    p.methodName = methodName();
-    p.methodDll = methodDll();
-    p.dataType = dataType();
 
     return p;
 }
@@ -172,6 +165,7 @@ DfdFileDescriptor *OctaveMethod::createNewDfdFile(const QString &fileName, DfdFi
 
 UffFileDescriptor *OctaveMethod::createNewUffFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p)
 {
+    Q_UNUSED(p);
     UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
 
     newUff->updateDateTimeGUID();
@@ -187,6 +181,7 @@ UffFileDescriptor *OctaveMethod::createNewUffFile(const QString &fileName, DfdFi
 
 DfdChannel *OctaveMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
 {
+    Q_UNUSED(p);
     DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
     ch->XStep = newDfd->XStep;
     ch->setYValues(spectrum);

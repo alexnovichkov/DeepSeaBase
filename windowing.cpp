@@ -1,17 +1,19 @@
 #include "windowing.h"
 
-#include "methods/abstractmethod.h"
-
-Windowing::Windowing(const Parameters &p)
+Windowing::Windowing(int bufferSize, int windowType)
 {
-    w = QVector<double>(p.bufferSize, 0.0);
+    w = QVector<double>(bufferSize, 0.0);
 
-    if (p.windowType <= 0) square();
-    else if (p.windowType == 1) triangular();
-    else if (p.windowType == 2) hann();
-    else if (p.windowType == 3) hamming();
-    else if (p.windowType == 4) natoll();
-    else if (p.windowType == 5) gauss();
+    switch (windowType) {
+        case Unknown: break;
+        case Square: square(); break;
+        case Triangular: triangular(); break;
+        case Hann: hann(); break;
+        case Hamming: hamming(); break;
+        case Natoll: natoll(); break;
+        case Gauss: gauss(); break;
+        default: break;
+    }
 }
 
 void Windowing::square()
@@ -73,7 +75,8 @@ void Windowing::gauss()
     }
 }
 
-void Windowing::apply(QVector<float> &values)
+
+void Windowing::applyTo(QVector<float> &values)
 {
     int i=0;
     while (1) {
@@ -84,3 +87,4 @@ void Windowing::apply(QVector<float> &values)
         }
     }
 }
+

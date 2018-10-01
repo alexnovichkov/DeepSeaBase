@@ -102,11 +102,6 @@ const Method methods[26] = {
 //PlotType plotTypeByDataType(DfdDataType dataType);
 
 QString dataTypeDescription(int type);
-//QString methodDescription(int methodType);
-//QString dllForMethod(int methodType);
-//int panelTypeForMethod(int methodType);
-//DfdDataType dataTypeForMethod(int methodType);
-
 
 class DfdFileDescriptor;
 class DfdSettings;
@@ -290,6 +285,9 @@ class DfdFileDescriptor : public FileDescriptor
 {
 public:
     DfdFileDescriptor(const QString &fileName);
+
+    // creates a copy of DfdDataDescriptor without copying data
+    DfdFileDescriptor(const DfdFileDescriptor &d);
     ~DfdFileDescriptor();
     void read();
     void write();
@@ -364,6 +362,7 @@ public:
     int NumChans;
 
     int BlockSize;
+    int NumInd;
     QString XName;
 
     double XBegin;
@@ -385,6 +384,11 @@ private:
     // FileDescriptor interface
 public:
     virtual QString saveTimeSegment(double from, double to);
+
+    // FileDescriptor interface
+public:
+    virtual int samplesCount() const;
+    virtual void setSamplesCount(int count);
 };
 
 #endif // DFDFILEDESCRIPTOR_H

@@ -67,10 +67,25 @@ QString abscissaTypeDescription(int type)
 }
 
 UffFileDescriptor::UffFileDescriptor(const QString &fileName) : FileDescriptor(fileName)
+  , NumInd(0)
 {DD;
 
 
 
+}
+
+UffFileDescriptor::UffFileDescriptor(const UffFileDescriptor &other) : FileDescriptor(other.fileName())
+{
+    this->NumInd = other.NumInd;
+    this->header = other.header;
+    this->units = other.units;
+
+    foreach (Function *f, other.channels) {
+        this->channels << new Function(*f);
+    }
+    foreach (Function *f, channels) {
+        f->parent = this;
+    }
 }
 
 UffFileDescriptor::~UffFileDescriptor()
@@ -94,23 +109,60 @@ void UffFileDescriptor::fillRest()
 
 void UffFileDescriptor::read()
 {DD;
-    QFile uff(fileName());
-    if (!uff.exists()) return;
+    if (QFile::exists(fileName()+"~")) {
+        // в папке с записью есть двоичный файл с описанием записи
+        QFile uff(fileName()+"~");
+        if (uff.open(QFile::ReadOnly)) {
+            QDataStream stream(&uff);
 
-    if (uff.open(QFile::ReadOnly | QFile::Text)) {
-        QTextStream stream(&uff);
+            stream >> header;
+            stream >> units;
 
-        header.read(stream);
-        units.read(stream);
+            while (!stream.atEnd()) {
+                Function *f = new Function(this);
+                stream >> f->header;
+                stream >> f->type58;
+                stream >> f->dataPosition;
+                f->samples = f->type58[26].value.toULongLong();
 
-        while (!stream.atEnd()) {
-            Function *f = new Function(this);
-            f->read(stream, -1);
-
-            channels << f;
-
+                channels << f;
+            }
         }
     }
+    else {
+        QFile uff(fileName());
+        if (!uff.exists()) return;
+
+        if (uff.open(QFile::ReadOnly | QFile::Text)) {
+            QTextStream stream(&uff);
+
+            header.read(stream);
+            units.read(stream);
+
+            while (!stream.atEnd()) {
+                Function *f = new Function(this);
+                f->read(stream, -1);
+
+                channels << f;
+
+            }
+        }
+
+        QFile buff(fileName()+"~");
+        if (buff.open(QFile::WriteOnly)) {
+            QDataStream stream(&buff);
+
+            stream << header;
+            stream << units;
+
+            foreach(Function *f, channels) {
+                stream << f->header;
+                stream << f->type58;
+                stream << f->dataPosition;
+            }
+        }
+    }
+
     if (!channels.isEmpty()) {
         //setXBegin(channels.first()->xBegin());
         setSamplesCount(channels.first()->samplesCount());
@@ -694,6 +746,13 @@ void FunctionHeader::write(QTextStream &stream)
     }
 }
 
+QDataStream &operator>>(QDataStream &stream, FunctionHeader &header)
+{
+    stream >> header.type1858;
+    stream >> header.valid;
+    return stream;
+}
+
 
 Function::Function(UffFileDescriptor *parent) : Channel(),
     xMax(0.0), yMin(0.0), yMax(0.0),
@@ -744,7 +803,7 @@ Function::Function(Channel &other)
     dataPosition=-1;
 }
 
-Function::Function(const Function &other)
+Function::Function(Function &other)
 {
     temporalCorrection = other.temporalCorrection;
     oldCorrectionValue = other.oldCorrectionValue;
@@ -758,7 +817,6 @@ Function::Function(const Function &other)
     values = other.values;
     xvalues = other.xvalues;
 
-    parent = other.parent;
     type58 = other.type58;
     _populated = other._populated;
     dataPosition = -1;
@@ -1205,4 +1263,108 @@ void UffFileDescriptor::setDataDescriptor(const DescriptionList &data)
 
 QString UffFileDescriptor::saveTimeSegment(double from, double to)
 {
+    // 0 проверяем, чтобы этот файл имел тип временных данных
+    if (type() != Descriptor::TimeResponse) return "";
+    // и имел данные
+    if (channelsCount() == 0) return "";
+
+    // 1 создаем уникальное имя файла по параметрам from и to
+    QString fromString, toString;
+    getUniqueFromToValues(fromString, toString, from, to);
+    QString suffix = QString("_%1s_%2s").arg(fromString).arg(toString);
+
+    QString newFileName = createUniqueFileName("", fileName(), suffix, "uff", false);
+
+    // 2 создаем новый файл
+    UffFileDescriptor *newUff = new UffFileDescriptor(*this);
+
+    // 3 ищем границы данных по параметрам from и to
+    Channel *ch = channels.first();
+
+    int sampleStart = qRound((from-ch->xBegin())/ch->xStep());
+    if (sampleStart<0) sampleStart = 0;
+    int sampleEnd = qRound((to-ch->xBegin())/ch->xStep());
+    if (sampleEnd>=samplesCount()) sampleEnd = samplesCount()-1;
+    newUff->setSamplesCount(sampleEnd - sampleStart + 1); //число отсчетов в новом файле
+
+    // 4 сохраняем файл
+    for (int i=0; i<this->channelsCount(); ++i) {
+        bool wasPopulated = channels[i]->populated();
+        if (!wasPopulated) channels[i]->populate();
+
+        Function *ch = new Function(*(this->channels[i]));
+        ch->parent = newUff;
+        ch->values = this->channels[i]->yValues().mid(sampleStart, sampleEnd - sampleStart + 1);
+        ch->samples = ch->values.size();
+
+        ch->setPopulated(true);
+
+        newUff->channels << ch;
+        if (!wasPopulated) {
+            //clearing data
+            channels[i]->yValues().clear();
+            //and releasing memory (since Qt 5.7)
+            channels[i]->yValues().squeeze();
+        }
+    }
+
+    newUff->setSamplesCount(newUff->channel(0)->samplesCount());
+    newUff->setChanged(true);
+    newUff->setDataChanged(true);
+    newUff->write();
+    newUff->writeRawFile();
+    delete newUff;
+
+    // 5 возвращаем имя нового файла
+    return newFileName;
+}
+
+
+int UffFileDescriptor::samplesCount() const
+{
+    return NumInd;
+}
+
+void UffFileDescriptor::setSamplesCount(int count)
+{
+    NumInd = count;
+}
+
+void UffFileDescriptor::setChanged(bool changed)
+{
+    FileDescriptor::setChanged(changed);
+    if (changed && QFile::exists(fileName()+"~"))
+        QFile::remove(fileName()+"~");
+}
+
+
+QDataStream &operator>>(QDataStream &stream, UffHeader &header)
+{
+    stream >> header.type151;
+    return stream;
+}
+
+QDataStream &operator<<(QDataStream &stream, const UffHeader &header)
+{
+    stream << header.type151;
+    return stream;
+}
+
+QDataStream &operator>>(QDataStream &stream, UffUnits &header)
+{
+    stream >> header.type164;
+    return stream;
+}
+
+QDataStream &operator<<(QDataStream &stream, const UffUnits &header)
+{
+    stream << header.type164;
+    return stream;
+}
+
+QDataStream &operator<<(QDataStream &stream, const FunctionHeader &header)
+{
+    stream << header.type1858;
+    stream << header.valid;
+    return stream;
 }

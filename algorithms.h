@@ -3,6 +3,9 @@
 
 #include <QtCore>
 
+#include "averaging.h"
+#include "windowing.h"
+
 /**
  * @brief thirdOctave - вычисляет нечто похожее на третьоктаву
  * @param spectrum - спектральные данные
@@ -11,8 +14,6 @@
  * @return два вектора - один с центральными частотами полос, другой - с уровнями в полосах
  */
 QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spectrum, double xBegin, double xStep);
-
-
 
 int uffWindowType(int dfdWindowType);
 int uffMethodFromDfdMethod(int methodId);

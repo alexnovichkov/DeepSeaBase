@@ -16,8 +16,8 @@ double threshold(const QString &name)
 }
 
 FileDescriptor::FileDescriptor(const QString &fileName) :
-    _fileName(fileName), _changed(false), _dataChanged(false),
-    NumInd(0)
+    _fileName(fileName), _changed(false), _dataChanged(false)
+//    , NumInd(0)
 {
     signalHandler = new SignalHandler;
     signalHandler->_changed = false;

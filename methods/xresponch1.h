@@ -17,13 +17,11 @@ public:
     // AbstractMethod interface
 public:
     virtual int id();
-    virtual QStringList methodSettings(DfdFileDescriptor *dfd, const Parameters &p);
     virtual QString methodDll();
     virtual int panelType();
     virtual QString methodName();
     virtual int dataType();
     virtual Parameters parameters();
-    virtual DescriptionList processData(const Parameters &p);
     virtual Function *addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, int spectrumSize, Parameters &p, int i);
 
 private:

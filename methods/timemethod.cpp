@@ -77,12 +77,12 @@ QStringList TimeMethod::methodSettings(DfdFileDescriptor *dfd, const Parameters 
 {DD;
     QStringList spfFile;
 
-    spfFile << "YName="+dfd->channels.at(p.activeChannel)->YName;
+    spfFile << "YName="+dfd->channels.at(0)->YName;
     spfFile << QString("BlockIn=%1").arg(p.bufferSize);
     spfFile << "TypeProc=0";
     spfFile << "Values=измеряемые";
 
-    int numberOfInd = dfd->channels.at(p.activeChannel>0?p.activeChannel-1:0)->samplesCount();
+    int numberOfInd = dfd->channels.at(0)->samplesCount();
     double NumberOfAveraging = double(numberOfInd) / p.bufferSize / (1<<p.bandStrip);
 
     // at least 2 averaging
@@ -101,7 +101,6 @@ QStringList TimeMethod::methodSettings(DfdFileDescriptor *dfd, const Parameters 
 Parameters TimeMethod::parameters()
 {DD;
     Parameters p;
-    p.activeChannel = 1;
     p.averagesCount = 1;
     p.averagingType = 0;
     p.bandStrip = 0;
@@ -109,19 +108,12 @@ Parameters TimeMethod::parameters()
     p.baseChannel = -1;
     const double po = pow(2.0, resolutionCombo->currentIndex());
     p.bufferSize = qRound(sampleRate / po); // размер блока
-    p.dataType = dataType();
     p.fCount = 0;
     p.initialBandStripNumber = resolutionCombo->currentIndex();
     p.overlap = 0;
     p.saveAsComplex = false;
     p.scaleType = 0;
-    p.spectreType = 0;
     p.sampleRate = sampleRate;
-
-
-    p.panelType = panelType();
-    p.methodName = methodName();
-    p.methodDll = methodDll();
 
     return p;
 }
@@ -149,7 +141,7 @@ int TimeMethod::dataType()
 DescriptionList TimeMethod::processData(const Parameters &p)
 {DD;
     DescriptionList list;
-    list.append({"PName", p.methodName});
+    list.append({"PName", methodName()});
     list.append({"pTime","(0000000000000000)"});
     list.append({"BlockIn", QString::number(p.bufferSize)});
     list.append({"TypeProc", "0"});
@@ -211,6 +203,7 @@ UffFileDescriptor *TimeMethod::createNewUffFile(const QString &fileName, DfdFile
 
 DfdChannel *TimeMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
 {DD;
+    Q_UNUSED(p);
     DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
     ch->XStep = newDfd->XStep;
     ch->setYValues(spectrum);
@@ -299,4 +292,6 @@ Function *TimeMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor
     //              --------------------------------------------------------------
 
     newUff->channels << ch;
+
+    return ch;
 }

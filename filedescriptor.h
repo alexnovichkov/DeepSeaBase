@@ -134,8 +134,8 @@ public:
     virtual double xStep() const = 0;
     virtual void setXStep(const double xStep) = 0;
 
-    int samplesCount() const {return NumInd;}
-    void setSamplesCount(int count) {NumInd = count;}
+    virtual int samplesCount() const = 0;//{return NumInd;}
+    virtual void setSamplesCount(int count) = 0; //{NumInd = count;}
 
     virtual QString xName() const = 0;
 
@@ -157,7 +157,7 @@ private:
     bool _changed;
     bool _dataChanged;
 
-    int NumInd;
+//    int NumInd;
 };
 
 class Channel

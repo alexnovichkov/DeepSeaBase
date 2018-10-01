@@ -54,7 +54,10 @@ SOURCES += main.cpp\
     chartzoom.cpp \
     qdragzoomsvc.cpp \
     spectre94.cpp \
-    calculatespectredialog.cpp
+    calculatespectredialog.cpp \
+    averaging.cpp \
+    timeslicer.cpp \
+    fields.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -100,7 +103,9 @@ HEADERS  += mainwindow.h \
     qdragzoomsvc.h \
     psimpl.h \
     spectre94.h \
-    calculatespectredialog.h
+    calculatespectredialog.h \
+    averaging.h \
+    timeslicer.h
 
 SOURCES +=\
   qwheelzoomsvc.cpp\
