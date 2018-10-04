@@ -756,7 +756,7 @@ QDataStream &operator>>(QDataStream &stream, FunctionHeader &header)
 
 Function::Function(UffFileDescriptor *parent) : Channel(),
     xMax(0.0), yMin(0.0), yMax(0.0),
-    samples(0), parent(parent), _populated(false), dataPosition(-1)
+    samples(0), parent(parent), dataPosition(-1), _populated(false)
 {DD;
     temporalCorrection = false;
     oldCorrectionValue = 0.0;
@@ -773,9 +773,6 @@ Function::Function(Channel &other)
 
     samples = other.samplesCount();
     values = other.yValues();
-//    values = new double[samplesCount()];
-//    memcpy(static_cast<void *>(values), static_cast<void *>(other.yValues()),
-//           samplesCount()*sizeof(double));
     xvalues = other.xValues();
 
     type58[4].value = other.name(); if (other.name().isEmpty()) type58[4].value = "NONE";
@@ -934,9 +931,9 @@ void Function::write(QTextStream &stream)
         case 5: {
             int j = 0;
             for (int i=0; i<valuesComplex.size(); i++) {
-                fields[FTFloat13_5]->print(valuesComplex[i].first, stream);
+                fields[FTFloat13_5]->print(valuesComplex[i].real(), stream);
                 j++;
-                fields[FTFloat13_5]->print(valuesComplex[i].second, stream);
+                fields[FTFloat13_5]->print(valuesComplex[i].imag(), stream);
                 j++;
                 if (j==6) {
                     fields[FTEmpty]->print(0, stream);
@@ -949,9 +946,9 @@ void Function::write(QTextStream &stream)
         case 6: {
             int j = 0;
             for (int i=0; i<valuesComplex.size(); i++) {
-                fields[FTFloat20_12]->print(valuesComplex[i].first, stream);
+                fields[FTFloat20_12]->print(valuesComplex[i].real(), stream);
                 j++;
-                fields[FTFloat20_12]->print(valuesComplex[i].second, stream);
+                fields[FTFloat20_12]->print(valuesComplex[i].imag(), stream);
                 j++;
                 if (j==4) {
                     fields[FTEmpty]->print(0, stream);
@@ -1058,7 +1055,7 @@ void Function::populate()
 
         values = QVector<double>(samples, 0.0);
         if (type58[25].value.toInt() >= 5) { //complex values
-            valuesComplex = QVector<QPair<double,double> >(samples, QPair<double,double>(0.0,0.0));
+            valuesComplex = QVector<cx_double>(samples, {0.0, 0.0});
         }
         if (type58[27].value.toInt() == 0) {
             // uneven abscissa, read data pairs
@@ -1097,8 +1094,7 @@ void Function::populate()
                     xvalues[j] = first;
                 }
                 stream >> first >> second; //qDebug()<<first<<second;
-                valuesComplex[j].first = first;
-                valuesComplex[j].second = second;
+                valuesComplex[j] = {first, second};
 
                 double amplitude = sqrt(first*first + second*second);
                 if (doLog)

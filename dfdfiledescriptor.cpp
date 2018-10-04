@@ -85,7 +85,7 @@ QVector<D> readChunk(QDataStream &readStream, int blockSize, int *actuallyRead)
 }
 
 template <typename D>
-QVector<D> getValue(QDataStream &readStream, int chunkSize, uint IndType, int *actuallyRead=0)
+QVector<D> getChunkOfData(QDataStream &readStream, int chunkSize, uint IndType, int *actuallyRead=0)
 {
     QVector<D> result;
 
@@ -131,45 +131,6 @@ QVector<D> getValue(QDataStream &readStream, int chunkSize, uint IndType, int *a
 
     return result;
 }
-
-bool readDfdFile(QIODevice &device, QSettings::SettingsMap &map)
-{DD;
-    char buf[2048];
-    qint64 lineLength;
-    QString group;
-    QTextCodec *codec = QTextCodec::codecForName("Windows-1251");
-    while ((lineLength = device.readLine(buf, sizeof(buf))) != -1) {
-        // the line is available in buf
-        QByteArray b = QByteArray(buf, lineLength);
-        if (!b.isEmpty()) {
-//            if (b.length()>1)
-//                if (b[0]==0xff && b[1]==0xfe) {
-//                    codec = QTextCodec::codecForName("UTF16"); qDebug()<<1;}
-            QString s = codec->toUnicode(b);
-            s = s.trimmed();
-            if (s.startsWith('[')) {
-                s.chop(1);
-                s.remove(0,1);
-                group = s;
-            }
-            else {
-                int ind = s.indexOf('=');
-                if (ind>0) {
-                    QString key = group+"/"+s.mid(0,ind);
-                    QString val = s.mid(ind+1);
-                    map.insert(key,val);
-                }
-            }
-        }
-    }
-    return true;
-}
-
-bool writeDfdFile(QIODevice &/*device*/, const QSettings::SettingsMap &/*map*/)
-{DD;
-    return  true;
-}
-
 
 
 DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
@@ -316,6 +277,10 @@ void DfdFileDescriptor::write()
     // убираем перекрытие блоков, если пишем не сырые данные
     if (type() != Descriptor::TimeResponse)
         BlockSize = 0;
+    else {
+        // если временные данные, то убираем перекрытие, только если были изменены данные
+        if (dataChanged()) BlockSize = 0;
+    }
 
     /** [DataFileDescriptor]*/
     dfd << "[DataFileDescriptor]" << endl;
@@ -384,7 +349,6 @@ void DfdFileDescriptor::writeRawFile()
         }
         else {
             // пишем блоками размером BlockSize
-            //qDebug() << "Oops! Пытаемся писать с перекрытием?";
             int pos = 0;
             while (pos < samplesCount()) {
                 for (int i = 0; i<channels.size(); ++i) {
@@ -395,7 +359,7 @@ void DfdFileDescriptor::writeRawFile()
 
                     //const int sc = ch->samplesCount();
                     for (int val = 0; val < BlockSize; ++val) {
-                        if (val+pos >= samplesCount()) continue;
+                        if (val+pos >= samplesCount()) break;
                         ch->setValue(ch->temporalCorrection
                                      ? ch->YValues[val+pos] - ch->oldCorrectionValue
                                      : ch->YValues[val+pos],
@@ -1199,7 +1163,7 @@ void DfdChannel::populate()
         if (parent->BlockSize == 0) {// без перекрытия, читаем подряд весь канал
             for (int i=0; i<parent->NumChans; ++i) {
                 if (i==channelIndex) {
-                    QVector<double> temp = getValue<double>(readStream, ChanBlockSize, IndType);
+                    QVector<double> temp = getChunkOfData<double>(readStream, ChanBlockSize, IndType);
                     setYValues(temp);
                 }
                 else {
@@ -1210,7 +1174,7 @@ void DfdChannel::populate()
             if (qFuzzyIsNull(parent->XStep)) {//нулевой шаг, данные по оси Х хранятся первым каналом
                 rawFile.seek(0);
                 readStream.setDevice(&rawFile);
-                QVector<double> temp = getValue<double>(readStream, ChanBlockSize, IndType);
+                QVector<double> temp = getChunkOfData<double>(readStream, ChanBlockSize, IndType);
                 //checking if values are really frequency values, take four first values
                 setXValues(temp);
 //                if (temp.size()>=4) {
@@ -1245,7 +1209,7 @@ void DfdChannel::populate()
                  * i-й отсчет n-го канала имеет номер
                  * n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
                  */
-                QVector<double> temp = getValue<double>(readStream, chunkSize, IndType, &actuallyRead);
+                QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, IndType, &actuallyRead);
 
                 //распихиваем данные по каналам
                 actuallyRead /= parent->channelsCount();
@@ -1343,7 +1307,7 @@ void DfdChannel::populateFloat()
         while (1) {
             if (QThread::currentThread()->isInterruptionRequested()) return;
 
-            QVector<float> temp = getValue<float>(readStream, chunkSize, IndType, &actuallyRead);
+            QVector<float> temp = getChunkOfData<float>(readStream, chunkSize, IndType, &actuallyRead);
 
             //распихиваем данные по каналам
             actuallyRead /= parent->channelsCount();

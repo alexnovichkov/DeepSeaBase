@@ -406,7 +406,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
         p.threshold = threshold(dfd->channels[i]->yName());
 
         QVector<double> spectrum;
-        QVector<QPair<double,double> > spectrumComplex(p.fCount);
+        QVector<cx_double> spectrumComplex;
         int block = 0;
         const int newBlockSize = p.bufferSize* (1<<p.bandStrip);
 
@@ -423,7 +423,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
                 if (chunk.size() < p.bufferSize) break;
                 filtered = filter.process(chunk);
                 foreach(float val, filtered)
-                spectrum << val;
+                    spectrum << val;
             }
             spectrum.squeeze();
         }
@@ -450,7 +450,8 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
 
                 filtered = filter.process(chunk);
                 window.applyTo(filtered);
-                QVector<double> out = powerSpectre(filtered, p.bufferSize, p.fCount);
+
+                QVector<double> out = powerSpectre(filtered, p.fCount);
                 averaging.average(out);
                 // контроль количества усреднений
                 if (averaging.averagingDone()) break;
@@ -459,46 +460,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
             changeScale(spectrum, p);
         }
 
-        if (p.method->id()==9 && !p.saveAsComplex) {//передаточная 1, модуль
-            if (i == p.baseChannel) continue;
-
-            int baseBlock = 0;
-            QVector<float> filtered;
-            QVector<float> baseFiltered;
-            Resampler filter(1<<p.bandStrip, p.bufferSize);
-            Resampler baseFilter(1<<p.bandStrip, p.bufferSize);
-            Windowing window(p.bufferSize, p.windowType);
-
-            Averaging averagingBase(p.averagingType, p.averagesCount);
-            Averaging averaging(p.averagingType, p.averagesCount);
-
-            while (1) {
-                QVector<float> chunk1 = getBlock(dfd->channels[i]->floatValues, newBlockSize, stepBack, block);
-                QVector<float> chunk2 = getBlock(dfd->channels[p.baseChannel]->floatValues, newBlockSize, stepBack, baseBlock);
-                if (chunk1.size() < p.bufferSize || chunk2.size() < p.bufferSize) break;
-
-                filtered = filter.process(chunk1);
-                baseFiltered = baseFilter.process(chunk2);
-
-                window.applyTo(filtered);
-                window.applyTo(baseFiltered);
-                QVector<double> baseautoSpectr = autoSpectre(baseFiltered, p.bufferSize, p.fCount);
-                QVector<double> coSpectr = coSpectre(baseFiltered, filtered, p.bufferSize, p.fCount);
-
-                averagingBase.average(baseautoSpectr);
-                averaging.average(coSpectr);
-                // контроль количества усреднений
-                if (averaging.averagingDone()) break;
-            }
-            spectrum = transferFunctionH1(averagingBase.get(), averaging.get());
-            if (p.scaleType > 0) {
-                const double t2 = threshold(dfd->channels[p.baseChannel]->yName()) / p.threshold;
-                for (int i=0; i<spectrum.size(); ++i)
-                    spectrum[i] = 20 * log10(spectrum[i] * t2);
-            }
-        }
-
-        if (p.method->id()==9 && p.saveAsComplex) {//передаточная 1, комплексные
+        if (p.method->id()==9) {//передаточная 1
             if (i == p.baseChannel) continue;
 
             int baseBlock = 0;
@@ -521,20 +483,24 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
 
                 window.applyTo(filtered);
                 window.applyTo(baseFiltered);
-                QVector<double> baseautoSpectr = autoSpectre(baseFiltered, p.bufferSize, p.fCount);
-                QVector<QPair<double,double> > coSpectr = coSpectreComplex(baseFiltered, filtered, p.bufferSize, p.fCount);
+                QVector<double> baseautoSpectre = autoSpectre(baseFiltered, p.fCount);
+                QVector<cx_double> coSpectr = covariantSpectre(baseFiltered, filtered, p.fCount);
 
-                averagingBase.average(baseautoSpectr);
+                averagingBase.average(baseautoSpectre);
                 averaging.average(coSpectr);
                 // контроль количества усреднений
                 if (averagingBase.averagingDone()) break;
             }
-            spectrumComplex = transferFunctionH1Complex(averagingBase.get(), averaging.getComplex());
+            spectrumComplex = transferFunction(averagingBase.getComplex(), averaging.getComplex());
 
-            // нет смысла переводить в децибелы
-//            const double t2 = threshold(dfd->channels[p.baseChannel]->yName()) / p.threshold;
-//            for (int i=0; i<spectrum.size(); ++i)
-//                spectrum[i] = 20 * log10(spectrum[i] * t2);
+            if (!p.saveAsComplex) {
+                spectrum = absolutes(spectrumComplex);
+                if (p.scaleType > 0) {
+                    const double t2 = threshold(dfd->channels[p.baseChannel]->yName()) / p.threshold;
+                    for (int i=0; i<spectrum.size(); ++i)
+                        spectrum[i] = 20 * log10(spectrum[i] * t2);
+                }
+            }
         }
 
         if (p.method->id()==18) {//октавный спектр
@@ -650,72 +616,112 @@ QVector<double> FFTAnalysis(const QVector<float> &AVal)
     return Tmvl;
 }
 
-// возвращает спектр мощности 2*|complexSpectre|^2/N^2
-QVector<double> powerSpectre(const QVector<float> &values, int bufferSize, int outputSize)
+QVector<cx_double> fft(const QVector<float> &AVal)
 {DD;
-    QVector<double> output(bufferSize);
-    QVector<double> complexSpectre = FFTAnalysis(values);
+    int Nvl = AVal.size();
 
-    int j=0;
-    const int Nvl = values.size();
-    for (int i = 0; i < Nvl; i++) {
-        j = i * 2; output[Nvl - i - 1] = 2* (pow(complexSpectre[j],2) + pow(complexSpectre[j+1],2))/Nvl/Nvl;
+    int i, j, n, m, Mmax, Istp;
+    double Tmpr, Tmpi, Wtmp, Theta;
+    double Wpr, Wpi, Wr, Wi;
+    QVector<double> Tmvl;
+
+    n = Nvl * 2;
+    Tmvl = QVector<double>(n, 0.0);
+
+    for (i = 0; i < n; i+=2) {
+        Tmvl[i] = 0;
+        Tmvl[i+1] = AVal[i/2];
     }
 
+    i = 1; j = 1;
+    while (i < n) {
+        if (j > i) {
+            Tmpr = Tmvl[i]; Tmvl[i] = Tmvl[j]; Tmvl[j] = Tmpr;
+            Tmpr = Tmvl[i+1]; Tmvl[i+1] = Tmvl[j+1]; Tmvl[j+1] = Tmpr;
+        }
+        i = i + 2; m = Nvl;
+        while ((m >= 2) && (j > m)) {
+            j = j - m; m = m >> 1;
+        }
+        j = j + m;
+    }
+
+    Mmax = 2;
+    while (n > Mmax) {
+        Theta = -TwoPi / Mmax; Wpi = sin(Theta);
+        Wtmp = sin(Theta / 2); Wpr = Wtmp * Wtmp * 2;
+        Istp = Mmax * 2; Wr = 1; Wi = 0; m = 1;
+
+        while (m < Mmax) {
+            i = m; m = m + 2; Tmpr = Wr; Tmpi = Wi;
+            Wr = Wr - Tmpr * Wpr - Tmpi * Wpi;
+            Wi = Wi + Tmpr * Wpi - Tmpi * Wpr;
+
+            while (i < n) {
+                j = i + Mmax;
+                Tmpr = Wr * Tmvl[j] - Wi * Tmvl[j-1];
+                Tmpi = Wi * Tmvl[j] + Wr * Tmvl[j-1];
+
+                Tmvl[j] = Tmvl[i] - Tmpr; Tmvl[j-1] = Tmvl[i-1] - Tmpi;
+                Tmvl[i] = Tmvl[i] + Tmpr; Tmvl[i-1] = Tmvl[i-1] + Tmpi;
+                i = i + Istp;
+            }
+        }
+
+        Mmax = Istp;
+    }
+
+    QVector<cx_double> result = QVector<cx_double>(Nvl);
+    for (i = 0; i < n; i+=2) {
+        result[i] = {Tmvl[i], Tmvl[i+1]};
+    }
+    return result;
+}
+
+// возвращает спектр мощности 2*|complexSpectre|^2/N^2
+QVector<double> powerSpectre(const QVector<float> &values, int outputSize)
+{DD;
+    QVector<cx_double> complexSpectre = fft(values);
+
+    const int Nvl = complexSpectre.size();
+    const double factor = 2.0 / Nvl / Nvl;
+
+    QVector<double> output(Nvl);
+
+    for (int i = 0; i < Nvl; i++) {
+        output[Nvl - i - 1] = factor * std::norm(complexSpectre[i]);
+    }
     output.resize(outputSize);
 
     return output;
 }
 
-// возвращает взаимный спектр мощности |Y* Z|
-QVector<double> coSpectre(const QVector<float> &values1, const QVector<float> &values2, int bufferSize, int outputSize)
-{DD;
-    QVector<double> output(bufferSize);
-    QVector<QPair<double, double> > compls = coSpectreComplex(values1, values2, bufferSize, outputSize);
-    for (int i=0; i< compls.size(); ++i)
-        output[i] = sqrt(pow(compls[i].first,2) + pow(compls[i].second,2));
+// возвращает взаимный спектр мощности Y * Z (комплексный)
+QVector<cx_double> covariantSpectre(const QVector<float> &values1, const QVector<float> &values2, int outputSize)
+{
+    QVector<cx_double> output(values1.size());
 
-    output.resize(outputSize);
+    QVector<cx_double> complexSpectre1 = fft(values1);
+    QVector<cx_double> complexSpectre2 = fft(values2);
 
-    return output;
-}
-
-// возвращает взаимный спектр мощности Y* Z (комплексный)
-QVector<QPair<double, double> > coSpectreComplex(const QVector<float> &values1, const QVector<float> &values2,
-                                                 int bufferSize, int outputSize)
-{DD;
-    QVector<QPair<double, double> > output(bufferSize);
-
-    QVector<double> complexSpectre1 = FFTAnalysis(values1);
-    QVector<double> complexSpectre2 = FFTAnalysis(values2);
-
-
-    int j=0;
     const int Nvl = values1.size();
     for (int i = 0; i < Nvl; i++) {
-        j = i * 2;
-        double real = complexSpectre1[j]*complexSpectre2[j] + complexSpectre1[j+1]*complexSpectre2[j+1];
-        double imag = complexSpectre1[j]*complexSpectre2[j+1] - complexSpectre1[j+1]*complexSpectre2[j];
-        output[Nvl - i - 1].first = real;
-        output[Nvl - i - 1].second = imag;
+        output[Nvl - i - 1] = complexSpectre1[i] * complexSpectre2[i];
     }
 
     output.resize(outputSize);
-
     return output;
 }
 
 // возвращает автоспектр сигнала |Y|^2
-QVector<double> autoSpectre(const QVector<float> &values, int bufferSize, int outputSize)
+QVector<double> autoSpectre(const QVector<float> &values, int outputSize)
 {DD;
-    QVector<double> output(bufferSize);
-    QVector<double> complexSpectre = FFTAnalysis(values);
+    QVector<double> output(values.size());
+    QVector<cx_double> complexSpectre = fft(values);
 
-    int j=0;
     const int Nvl = values.size();
     for (int i = 0; i < Nvl; i++) {
-        j = i * 2;
-        output[Nvl - i - 1] = complexSpectre[j]*complexSpectre[j] + complexSpectre[j+1]*complexSpectre[j+1];
+        output[Nvl - i - 1] = std::norm(complexSpectre[i]);
     }
 
     output.resize(outputSize);
@@ -723,31 +729,15 @@ QVector<double> autoSpectre(const QVector<float> &values, int bufferSize, int ou
     return output;
 }
 
-// возвращает передаточную функцию H1
-//(амплитуду)
-QVector<double> transferFunctionH1(const QVector<double> &values1, const QVector<double> &values2)
+// возвращает передаточную функцию H1 = values2 ./ values1
+//(комплексные значения)
+QVector<cx_double> transferFunction(const QVector<cx_double> &values1, const QVector<cx_double> &values2)
 {DD;
-    int size = qMin(values1.size(), values2.size());
-    QVector<double> output(size);
+    const int size = qMin(values1.size(), values2.size());
+    QVector<cx_double> output(size);
 
     for (int i=0; i<size; ++i) {
         output[i] = values2[i]/values1[i];
-    }
-
-    return output;
-}
-
-// возвращает передаточную функцию H1
-//(комплексные значения)
-QVector<QPair<double, double> > transferFunctionH1Complex(const QVector<double> &values1,
-                                                          const QVector<QPair<double, double> > &values2)
-{DD;
-    int size = qMin(values1.size(), values2.size());
-    QVector<QPair<double, double> > output(size);
-
-    for (int i=0; i<size; ++i) {
-        output[i].first = values2[i].first/values1[i];
-        output[i].second = values2[i].second/values1[i];
     }
 
     return output;
@@ -841,4 +831,7 @@ QStringList Converter::getSpfFile(QString dir)
     }
     return spfFile;
 }
+
+
+
 

@@ -3,6 +3,11 @@
 
 #include <QtCore>
 
+#include "algorithms.h"
+
+#include <complex>
+typedef std::complex<double> cx_double;
+
 class Averaging
 {
 public:
@@ -26,24 +31,25 @@ public:
     }
 
     Averaging(int averagingType, int maximumAverages);
+
+    void average(const QVector<cx_double> &input);
     void average(const QVector<double> &input);
-    void average(const QVector<QPair<double,double> > &input);
+
     bool averagingDone() const;
     QVector<double> get();
-    QVector<QPair<double,double> > getComplex();
+    QVector<cx_double> getComplex();
 private:
-    void averageLinear(const QVector<QPair<double,double> > &input);
-    void averageExponential(const QVector<QPair<double,double> > &input);
-    void averagePeak(const QVector<QPair<double,double> > &input);
-    void averageEnergetic(const QVector<QPair<double,double> > &input);
+    void averageLinear(const QVector<cx_double> &input);
+    void averageExponential(const QVector<cx_double> &input);
+    void averagePeak(const QVector<cx_double> &input);
+    void averageEnergetic(const QVector<cx_double> &input);
 
-    void averageLinear(const QVector<double> &input);
-    void averageExponential(const QVector<double> &input);
-    void averagePeak(const QVector<double> &input);
-    void averageEnergetic(const QVector<double> &input);
+//    void averageLinear(const QVector<double> &input);
+//    void averageExponential(const QVector<double> &input);
+//    void averagePeak(const QVector<double> &input);
+//    void averageEnergetic(const QVector<double> &input);
 
-    QVector<double> averaged;
-    QVector<QPair<double,double> > averaged1;
+    QVector<cx_double> averaged2;
     int averagingType;
     int maximumAverages;
     int averagesMade;

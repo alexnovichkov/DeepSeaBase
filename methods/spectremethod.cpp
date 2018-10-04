@@ -6,6 +6,8 @@
 #include "ufffile.h"
 #include "logging.h"
 #include "algorithms.h"
+#include "windowing.h"
+#include "averaging.h"
 
 SpectreMethod::SpectreMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *parent) :
     QWidget(parent), AbstractMethod(dataBase)

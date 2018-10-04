@@ -5,7 +5,7 @@
 
 #include "filedescriptor.h"
 #include "fields.h"
-#include <complex>
+#include "algorithms.h"
 
 int abscissaType(const QString &xName);
 
@@ -48,7 +48,7 @@ public:
 
     QVector<double> values;
     QVector<double> xvalues;
-    QVector<QPair<double,double> > valuesComplex;
+    QVector<cx_double> valuesComplex;
 
     UffFileDescriptor *parent;
     virtual FileDescriptor *descriptor();

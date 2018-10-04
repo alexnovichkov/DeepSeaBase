@@ -57,7 +57,8 @@ SOURCES += main.cpp\
     calculatespectredialog.cpp \
     averaging.cpp \
     timeslicer.cpp \
-    fields.cpp
+    fields.cpp \
+    methods/abstractmethod.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \

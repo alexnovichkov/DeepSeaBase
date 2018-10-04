@@ -3,9 +3,21 @@
 
 #include <QtCore>
 
-#include "averaging.h"
-#include "windowing.h"
+#include <complex>
+typedef std::complex<double> cx_double;
 
+/**
+ * @brief absolutes возвращает вектор модулей комплексных чисел
+ * @param values вектор комплексных чисел
+ * @return  вектор модулей комплексных чисел
+ */
+QVector<double> absolutes(const QVector<cx_double> &values);
+// возвращает вектор фаз комплексных чисел
+QVector<double> phases(const QVector<cx_double> &values);
+// возвращает вектор действительных частей комплексных чисел
+QVector<double> reals(const QVector<cx_double> &values);
+// возвращает вектор комплексных чисел с действительными частями из values
+QVector<cx_double> complexes(const QVector<double> &values);
 /**
  * @brief thirdOctave - вычисляет нечто похожее на третьоктаву
  * @param spectrum - спектральные данные

@@ -213,3 +213,51 @@ QString changeFileExt(const QString &fileName, const QString &ext)
 }
 
 
+
+QVector<double> absolutes(const QVector<cx_double> &values)
+{
+    const int size = values.size();
+    QVector<double> result(size);
+
+    for (int i=0; i<size; ++i) {
+        result[i] = std::abs(values[i]);
+    }
+
+    return result;
+}
+
+QVector<double> phases(const QVector<cx_double> &values)
+{
+    const int size = values.size();
+    QVector<double> result(size);
+
+    for (int i=0; i<size; ++i) {
+        result[i] = std::arg(values[i]);
+    }
+
+    return result;
+}
+
+QVector<double> reals(const QVector<cx_double> &values)
+{
+    const int size = values.size();
+    QVector<double> result(size);
+
+    for (int i=0; i<size; ++i) {
+        result[i] = values[i].real();
+    }
+
+    return result;
+}
+
+QVector<cx_double> complexes(const QVector<double> &values)
+{
+    const int size = values.size();
+    QVector<cx_double> result(size);
+
+    for (int i=0; i<size; ++i) {
+        result[i] = {values[i], 0.0};
+    }
+
+    return result;
+}

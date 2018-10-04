@@ -5,21 +5,30 @@
 
 #include "methods/abstractmethod.h"
 
+#include "algorithms.h"
+
+
 class QProcess;
 class AbstractMethod;
 class DfdFileDescriptor;
 class UffFileDescriptor;
 class DfdChannel;
 
+
+
 void applyWindow(QVector<float> &values, const Parameters &p);
+
 QVector<double> FFTAnalysis(const QVector<float> &AVal);
-QVector<double> powerSpectre(const QVector<float> &values, int bufferSize, int outputSize);
-QVector<double> autoSpectre(const QVector<float> &values, int bufferSize, int outputSize);
-QVector<double> coSpectre(const QVector<float> &values1, const QVector<float> &values2, int bufferSize, int outputSize);
-QVector<QPair<double, double> > coSpectreComplex(const QVector<float> &values1, const QVector<float> &values2, int bufferSize, int outputSize);
-QVector<double> transferFunctionH1(const QVector<double> &values1, const QVector<double> &values2);
-QVector<QPair<double, double> > transferFunctionH1Complex(const QVector<double> &values1,
-                                                          const QVector<QPair<double, double> > &values2);
+QVector<cx_double> fft(const QVector<float> &AVal);
+
+QVector<double> powerSpectre(const QVector<float> &values, int outputSize);
+
+QVector<double> autoSpectre(const QVector<float> &values, int outputSize);
+
+QVector<cx_double> covariantSpectre(const QVector<float> &values1, const QVector<float> &values2, int outputSize);
+
+QVector<cx_double> transferFunction(const QVector<cx_double> &values1, const QVector<cx_double> &values2);
+
 void changeScale(QVector<double> &output, const Parameters &p);
 
 class Converter : public QObject
