@@ -32,7 +32,6 @@ PlotPicker::PlotPicker(QWidget *canvas) :
     marker = 0;
     mode = Plot::ScalingInteraction;
     selectedLabel = 0;
-    labelAdded=false;
 
     selectedCursor = 0;
 
@@ -93,15 +92,7 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
 
                 label->attach(plot);
                 plot->replot();
-                selectedLabel = label;
-                labelAdded = true;
             }
-            else {
-                selectedLabel = label;
-                selectedLabel->setSelected(true);
-                selectedLabel->cycleMode();
-            }
-            emit labelSelected(true);
         }
         else if (selectedLabel) {
             selectedLabel->cycleMode();
@@ -125,7 +116,6 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
             }
             selectedLabel = 0;
             emit labelSelected(false);
-            labelAdded = false;
             plot->replot();
         }
     }
@@ -164,7 +154,6 @@ void PlotPicker::resetHighLighting()
     selectedLabel = 0;
     selectedCursor = 0;
     emit labelSelected(false);
-    labelAdded=false;
 }
 
 Curve * PlotPicker::findClosestPoint(const QPoint &pos, int &index) const
@@ -245,7 +234,6 @@ void PlotPicker::pointAppended(const QPoint &pos)
         selectedLabel->setSelected(true);
         d_currentPos = pos;
         emit labelSelected(true);
-        labelAdded=true;
     }
     else if (selectedCursor) {
         d_currentPos = pos;

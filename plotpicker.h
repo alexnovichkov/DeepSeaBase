@@ -51,7 +51,6 @@ private:
 
 //    QList<PointLabel*> labels;
     PointLabel *selectedLabel;
-    bool labelAdded;
 
     QPoint d_currentPos;
 

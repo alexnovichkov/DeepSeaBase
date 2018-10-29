@@ -32,12 +32,11 @@ html {
 }
 
 body {
-  /*font-family: verdana, helvetica, arial, sans-serif;*/
+  font-family: verdana, helvetica, arial, sans-serif;
   background-color: #e8e8e8;
   -webkit-text-size-adjust:none;
   line-height: 1.75em;
   height: 100%;
-  font-family: 'Source Sans Pro', sans-serif;
   font-weight: 400;
   margin:0;
   padding:0;
@@ -102,7 +101,7 @@ h1,h2,h3,h4,h5,h6 {
 
 h1 {
   font-size: 1.2em;
-  font-family: 'Open Sans Condensed', sans-serif;
+  font-family: verdana, helvetica, arial, sans-serif;
 	font-weight: 700;
 	color: #1b252a;
 }
@@ -120,7 +119,7 @@ h1 {
 
 h2 {
   font-size: 1.1em;
-  font-family: 'Open Sans Condensed', sans-serif;
+  font-family: verdana, helvetica, arial, sans-serif;
 	font-weight: 700;
 	color: #1b252a;
 }
@@ -133,7 +132,7 @@ h2 {
 }
 
 h3 {
-  font-family: 'Open Sans Condensed', sans-serif;
+  font-family: verdana, helvetica, arial, sans-serif;
   font-weight: 700;
   color: #1b252a;
   font-size: 1.0em;
@@ -147,7 +146,7 @@ h3 {
 }
 
 h4 {
-  font-family: 'Open Sans Condensed', sans-serif;
+  font-family: verdana, helvetica, arial, sans-serif;
   font-weight: 700;
   color: #1b252a;
   font-size: 1.0em;
@@ -228,7 +227,7 @@ span {
 }
 
 .byline	{
-  font-family: 'Open Sans Condensed', sans-serif;
+  font-family: verdana, helvetica, arial, sans-serif;
   font-weight: 300;
   display: block;
   margin-top: 1em;
@@ -408,7 +407,7 @@ li {
 }
 
 #logo h1 {
-  font-family: 'Open Sans Condensed', sans-serif;
+  font-family: verdana, helvetica, arial, sans-serif;
   font-weight: 700;
   color: #fff;
   font-size: 2em;
@@ -510,7 +509,7 @@ li {
 .pages
 {
   display: inline-block;
-  font-family: 'Open Sans Condensed', sans-serif;
+  font-family: verdana, helvetica, arial, sans-serif;
   font-weight: 700;
 }
 
