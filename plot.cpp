@@ -347,6 +347,8 @@ void Plot::deleteGraph(const QVariant &info, int index)
 
 void Plot::showContextMenu(const QPoint &pos, const int axis)
 {DD;
+    if (!hasGraphs()) return;
+
     QMenu *menu = new QMenu(this);
     bool *scale = 0;
 
@@ -354,7 +356,7 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
     if (axis == QwtPlot::yLeft) scale = &y1Scale;
     if (axis == QwtPlot::yRight) scale = &y2Scale;
 
-    if (scale)
+    if (scale && axis == QwtPlot::xBottom)
     menu->addAction((*scale)?"Линейная шкала":"Логарифмическая шкала", [=](){
         QwtScaleEngine *engine = 0;
         if (!(*scale)) {
@@ -369,32 +371,55 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
 
         if (scale) *scale = !(*scale);
     });
+
     // определяем, все ли графики представляют временные данные
     bool time = true;
-    if (hasGraphs()) {
-        foreach (Curve *c, graphs) {
-            if (c->channel->type() != Descriptor::TimeResponse) {
-                time = false;
-                break;
-            }
-        }
 
-        if (time) {
-            menu->addAction("Сохранить временной сегмент", [=](){
-                double xStart = canvasMap(xBottom).s1();
-                double xEnd = canvasMap(xBottom).s2();
-
-                QList<FileDescriptor*> files;
-
-                foreach(Curve *c, graphs) {
-                    if (!files.contains(c->descriptor))
-                        files << c->descriptor;
-                }
-
-                emit saveTimeSegment(files, xStart, xEnd);
-            });
+    foreach (Curve *c, graphs) {
+        if (c->channel->type() != Descriptor::TimeResponse) {
+            time = false;
+            break;
         }
     }
+
+    if (time && axis == QwtPlot::xBottom) {
+        menu->addAction("Сохранить временной сегмент", [=](){
+            double xStart = canvasMap(xBottom).s1();
+            double xEnd = canvasMap(xBottom).s2();
+
+            QList<FileDescriptor*> files;
+
+            foreach(Curve *c, graphs) {
+                if (!files.contains(c->descriptor))
+                    files << c->descriptor;
+            }
+
+            emit saveTimeSegment(files, xStart, xEnd);
+        });
+    }
+
+    if (axis == QwtPlot::yLeft && !leftGraphs.isEmpty()) {
+        QAction *a = new QAction("Показывать как");
+        QMenu *am = new QMenu(this);
+        am->addAction("Амплитуды линейные", [=](){
+
+        });
+        am->addAction("Амплитуды в дБ", [=](){
+
+        });
+        am->addAction("Фазы", [=](){
+
+        });
+        am->addAction("Действит.", [=](){
+
+        });
+        am->addAction("Мнимые", [=](){
+
+        });
+        a->setMenu(am);
+        menu->addAction(a);
+    }
+
     menu->exec(pos);
 }
 
@@ -419,16 +444,16 @@ void Plot::deleteGraph(Curve *graph, bool doReplot)
 
         int removed = leftGraphs.removeAll(graph);
         if (removed > 0) {
-            zoom->verticalScaleBounds->removeToAutoscale(graph->yMin, graph->yMax);
+            zoom->verticalScaleBounds->removeToAutoscale(graph->yMin(), graph->yMax());
         }
 
         removed = rightGraphs.removeAll(graph);
         if (removed > 0) {
-            zoom->verticalScaleBoundsSlave->removeToAutoscale(graph->yMin, graph->yMax);
+            zoom->verticalScaleBoundsSlave->removeToAutoscale(graph->yMin(), graph->yMax());
         }
         removed = graphs.removeAll(graph);
         if (removed > 0) {
-            zoom->horizontalScaleBounds->removeToAutoscale(graph->xMin, graph->xMax);
+            zoom->horizontalScaleBounds->removeToAutoscale(graph->xMin(), graph->xMax());
         }
         QString title = graph->title().text();
 
@@ -634,8 +659,8 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
     if (zoom->verticalScaleBounds->axis == ax) ybounds = zoom->verticalScaleBounds;
     else ybounds = zoom->verticalScaleBoundsSlave;
 
-    zoom->horizontalScaleBounds->add(g->xMin, g->xMax);
-    ybounds->add(g->yMin, g->yMax);
+    zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
+    ybounds->add(g->yMin(), g->yMax());
 
     g->attach(this);
     update();

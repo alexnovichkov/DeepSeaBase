@@ -156,7 +156,7 @@ DfdFileDescriptor *OctaveMethod::createNewDfdFile(const QString &fileName, DfdFi
     newDfd->process->data = processData(p);
 
     // rest
-    newDfd->XName = "№№ полос";
+    newDfd->XName = "Гц";
     newDfd->XStep = 0;
     newDfd->XBegin = 0.0;
 
@@ -183,8 +183,8 @@ DfdChannel *OctaveMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDes
 {
     Q_UNUSED(p);
     DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
-    ch->XStep = newDfd->XStep;
-    ch->setYValues(spectrum);
+//    ch->data()->setXValues(XStep = newDfd->XStep;
+    ch->data()->setYValues(spectrum, DataHolder::YValuesAmplitudesInDB);
     ch->setPopulated(true);
     ch->setName(dfd->channels[i]->name());
 
@@ -192,19 +192,12 @@ DfdChannel *OctaveMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDes
     ch->ChanAddress = dfd->channels[i]->ChanAddress;
 
     ch->ChanBlockSize = spectrum.size();
-    ch->NumInd = spectrum.size();
     ch->IndType = 3221225476;
 
     ch->YName = "дБ";
     ch->YNameOld = dfd->channels[i]->yName();
-    ch->XName = "Гц";
 
-//        ch->xMin = 0.0;
-//        ch->xMax = newSampleRate / 2.56;
-//        ch->XMaxInitial = ch->xMax;
-//        ch->YMinInitial = ch->yMin;
-//        ch->YMaxInitial = ch->yMax;
-
+    newDfd->channels << ch;
     return ch;
 }
 
@@ -216,6 +209,7 @@ Function *OctaveMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescript
 
     //FunctionHeader header;
     ch->header.type1858[12].value = uffWindowType(p.windowType);
+    ch->header.type1858[5].value = 3; // 1/3-октава
 
 
     ch->type58[8].value = QDateTime::currentDateTime();;
@@ -228,7 +222,6 @@ Function *OctaveMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescript
 
     ch->type58[25].value = p.saveAsComplex ? 5 : 2; //25 Ordinate Data Type
     ch->type58[26].value = spectrumSize;
-    ch->samples = spectrumSize;
     ch->type58[28].value = 0.0;
     ch->type58[29].value = 0.0; //29 Abscissa increment
     ch->type58[30].value = dfd->channels[i]->samplesCount()*dfd->channels[i]->xStep(); //30 Z-axis value (length in seconds)

@@ -4,6 +4,7 @@
 #include <QtCore>
 #include <QColor>
 #include <QObject>
+#include "dataholder.h"
 
 namespace Descriptor {
 enum DataType
@@ -44,10 +45,14 @@ enum OrdinateFormat {
     ComplexSingle = 5,
     ComplexDouble = 6
 };
+
 }
 
 
+
+
 class Channel;
+class DataHolder;
 
 typedef QPair<QString, QString> DescriptionEntry;
 typedef QList<DescriptionEntry> DescriptionList;
@@ -55,17 +60,6 @@ typedef QList<DescriptionEntry> DescriptionList;
 QString descriptionEntryToString(const DescriptionEntry &entry);
 
 double threshold(const QString &name);
-
-class SignalHandler : public QObject
-{
-    Q_OBJECT
-signals:
-    void changed(bool);
-public slots:
-    void setChanged(bool);
-public:
-    bool _changed;
-};
 
 class FileDescriptor
 {
@@ -81,11 +75,8 @@ public:
     virtual void populate() = 0;
     virtual void updateDateTimeGUID() = 0;
 
-//    virtual Channel *newChannel(int index) = 0;
-
     virtual QStringList info() const = 0;
     virtual Descriptor::DataType type() const = 0;
-//    virtual QString typeDescription() const = 0;
     virtual DescriptionList dataDescriptor() const = 0;
     virtual void setDataDescriptor(const DescriptionList &data) = 0;
     virtual QString dataDescriptorAsString() const = 0;
@@ -116,7 +107,7 @@ public:
 
     virtual QStringList getHeadersForChannel(int channel)  = 0;
 
-    virtual Channel *channel(int index) = 0;
+    virtual Channel *channel(int index) const = 0;
 
     virtual void setChanged(bool changed);
     bool changed() const {return _changed;}
@@ -150,23 +141,24 @@ public:
 
     virtual QString fileFilters() const = 0;
 
-    SignalHandler *signalHandler;
-
 private:
     QString _fileName;
     bool _changed;
     bool _dataChanged;
-
-//    int NumInd;
 };
 
 class Channel
 {
 public:
-    virtual ~Channel() {}
+    virtual ~Channel() {
+        delete _data;
+    }
     Channel() : _checkState(Qt::Unchecked),
-                _color(QColor())
+                _color(QColor()),
+                _data(new DataHolder)
     {}
+    Channel(Channel *other);
+    Channel(Channel &other);
 
     virtual QStringList getInfoData() = 0;
 
@@ -189,14 +181,24 @@ public:
 
     virtual QString legendName() const = 0;
 
-    virtual double xBegin() const = 0;
-    virtual double xStep() const = 0;
-    virtual int samplesCount() const = 0;
-    virtual QVector<double> &yValues() = 0;
-    virtual QVector<double> &xValues() = 0;
-    virtual double xMaxInitial() const = 0;
-    virtual double yMinInitial() const = 0;
-    virtual double yMaxInitial() const = 0;
+    DataHolder *data() {return _data;}
+
+    virtual double xMin() const;
+    virtual double xMax() const;
+    virtual double xStep() const {return _data->xStep();}
+    virtual int samplesCount() const {return _data->samplesCount();}
+    virtual int xValuesFormat() const {return _data->xValuesFormat();}
+    virtual int yValuesFormat() const {return _data->yValuesFormat();}
+
+    virtual QVector<double> yValues() const {return _data->yValues();}
+    virtual QVector<cx_double> yValuesComplex() const {return _data->yValuesComplex();}
+    virtual QVector<double> xValues() const {return _data->xValues();}
+
+    virtual const double *yData() const {return _data->rawYValues();}
+    virtual const double *xData() const {return _data->rawXValues();}
+
+    virtual double yMin() const {return _data->yMin();}
+    virtual double yMax() const {return _data->yMax();}
 
     virtual void addCorrection(double correctionValue, bool writeToFile) = 0;
     virtual FileDescriptor *descriptor() = 0;
@@ -209,6 +211,8 @@ public:
 private:
     Qt::CheckState _checkState;
     QColor _color;
+protected:
+    DataHolder *_data;
 };
 
 QList<int> filterIndexes(FileDescriptor *dfd, const QList<QPair<FileDescriptor *, int> > &channels);

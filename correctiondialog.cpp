@@ -66,10 +66,9 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
     table->horizontalHeader()->setStretchLastSection(true);
     table->setHorizontalHeaderLabels(QStringList()<<""<<"Канал"<<"Сохранить поправку в файл RAW");
 
-    QList<Curve *> curves = plot->curves();
-    table->setRowCount(curves.size());
+    table->setRowCount(plot->graphs.size());
     int i=0;
-    foreach (Curve *curve, curves) {
+    foreach (Curve *curve, plot->graphs) {
         QTableWidgetItem *item = new QTableWidgetItem(curve->channel->legendName());
         item->setCheckState(Qt::Unchecked);
         table->setItem(i,1,item);
@@ -124,10 +123,9 @@ void CorrectionDialog::correct()
         }
 
         if (selected>0) {
-            QList<Curve *> curves = plot->curves();
             for (int i=0; i<table->rowCount(); ++i) {
                 if (table->item(i,1)->checkState()==Qt::Checked) {
-                    Curve *curve = curves.at(i);
+                    Curve *curve = plot->graphs.at(i);
                     Channel *ch = curve->channel;
 
                     if (table->item(i,2)->checkState()==Qt::Checked) {
@@ -136,11 +134,6 @@ void CorrectionDialog::correct()
                         curve->descriptor->setDataChanged(true);
                         curve->descriptor->write();
                         curve->descriptor->writeRawFile();
-
-                        // обновление данных кривой, если она упрощена
-                        if (curve->isSimplified()) {
-                            curve->setRawSamples();
-                        }
 
                         // добавление поправки к выделенным файлам
                         if (allFilesCheckBox && allFilesCheckBox->isChecked()) {
@@ -159,11 +152,6 @@ void CorrectionDialog::correct()
                     }
                     else {
                         ch->addCorrection(correctionValue, false);
-
-                        // обновление данных кривой, если она упрощена
-                        if (curve->isSimplified()) {
-                            curve->setRawSamples();
-                        }
                     }
                 }
             }

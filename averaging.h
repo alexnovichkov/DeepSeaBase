@@ -5,9 +5,6 @@
 
 #include "algorithms.h"
 
-#include <complex>
-typedef std::complex<double> cx_double;
-
 class Averaging
 {
 public:
@@ -44,12 +41,7 @@ private:
     void averagePeak(const QVector<cx_double> &input);
     void averageEnergetic(const QVector<cx_double> &input);
 
-//    void averageLinear(const QVector<double> &input);
-//    void averageExponential(const QVector<double> &input);
-//    void averagePeak(const QVector<double> &input);
-//    void averageEnergetic(const QVector<double> &input);
-
-    QVector<cx_double> averaged2;
+    QVector<cx_double> averaged;
     int averagingType;
     int maximumAverages;
     int averagesMade;

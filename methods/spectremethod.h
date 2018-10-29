@@ -7,6 +7,7 @@
 class QComboBox;
 class DfdFileDescriptor;
 class QSpinBox;
+class QCheckBox;
 
 class SpectreMethod : public QWidget, public AbstractMethod
 {
@@ -44,6 +45,7 @@ private:
 //    QComboBox *valuesCombo;// Величины измеряемые, вход АЦП
     QComboBox *scaleCombo; //"Шкала" "линейная", "в децибелах"
     QComboBox *addProcCombo;//Доп. обработка нет, интегрир., дифференц., дв.интергир., дв.дифференц.
+    QCheckBox *saveAsComplexCheckBox;
 
     // AbstractMethod interface
 public:

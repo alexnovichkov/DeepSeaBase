@@ -49,9 +49,6 @@ public:
     explicit Plot(QWidget *parent = 0);
     virtual ~Plot();
 
-    QList<Curve *> curves() {return graphs;}
-
-//    double minStep;
     QList<Curve *> graphs;
 
     void update();

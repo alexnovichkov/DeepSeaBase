@@ -9,7 +9,7 @@ Averaging::Averaging(int averagingType, int maximumAverages) :
 
 void Averaging::average(const QVector<cx_double> &input)
 {
-    averaged2.resize(input.size());
+    averaged.resize(input.size());
 
     switch (averagingType) {
         case Linear:
@@ -41,49 +41,49 @@ bool Averaging::averagingDone() const
 QVector<double> Averaging::get()
 {
     if (averagingType == Energetic) {
-        for (int i=0; i<averaged2.size(); ++i) {
-            averaged2[i] = sqrt(averaged2[i]);
+        for (int i=0; i<averaged.size(); ++i) {
+            averaged[i] = sqrt(averaged[i]);
         }
     }
-    return absolutes(averaged2);
+    return absolutes(averaged);
 }
 
 QVector<cx_double> Averaging::getComplex()
 {
     if (averagingType == Energetic) {
-        for (int i=0; i<averaged2.size(); ++i) {
-            averaged2[i] = sqrt(averaged2[i]);
+        for (int i=0; i<averaged.size(); ++i) {
+            averaged[i] = sqrt(averaged[i]);
         }
     }
-    return averaged2;
+    return averaged;
 }
 
 void Averaging::averageLinear(const QVector<cx_double> &input)
 {
     for (int i=0; i<input.size(); ++i) {
-        averaged2[i] = (std::operator *(double(averagesMade), averaged2[i])+input[i])/double(averagesMade+1);
+        averaged[i] = (std::operator *(double(averagesMade), averaged[i])+input[i])/double(averagesMade+1);
     }
 }
 
 void Averaging::averageExponential(const QVector<cx_double> &input)
 {
     for (int i=0; i<input.size(); ++i) {
-        averaged2[i] =  (1.0-rho)*averaged2[i] +rho*input[i];
+        averaged[i] =  (1.0-rho)*averaged[i] +rho*input[i];
     }
 }
 
 void Averaging::averagePeak(const QVector<cx_double> &input)
 {
     for (int i=0; i<input.size(); ++i) {
-        if (std::abs(input[i]) > std::abs(averaged2[i]))
-            averaged2[i] = input[i];
+        if (std::abs(input[i]) > std::abs(averaged[i]))
+            averaged[i] = input[i];
     }
 }
 
 void Averaging::averageEnergetic(const QVector<cx_double> &input)
 {
     for (int i=0; i<input.size(); ++i) {
-        averaged2[i] = (averaged2[i]*double(averagesMade)+pow(input[i], 2.0))/double(averagesMade+1);
+        averaged[i] = (averaged[i]*double(averagesMade)+pow(input[i], 2.0))/double(averagesMade+1);
     }
 }
 

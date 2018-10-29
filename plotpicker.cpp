@@ -72,7 +72,7 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
         }
     }
     else if (key == Qt::Key_Right) {
-        if (d_selectedPoint >=0 && d_selectedPoint < d_selectedCurve->samplesCount-1) {
+        if (d_selectedPoint >=0 && d_selectedPoint < d_selectedCurve->samplesCount()-1) {
             highlightPoint(false);
             d_selectedPoint++;
             highlightPoint(true);
@@ -282,16 +282,11 @@ void PlotPicker::pointMoved(const QPoint &pos)
 
     else if (mode == Plot::DataInteraction) {
         if (d_selectedCurve) {
+            double newY = plot->invTransform(d_selectedCurve->yAxis(), pos.y());
 
-            // запрещаем изменять данные упрощенной кривой
-            if (!d_selectedCurve->isSimplified()) {
-                double newY = plot->invTransform(d_selectedCurve->yAxis(), pos.y());
-
-                d_selectedCurve->descriptor->channel(d_selectedCurve->channelIndex)->yValues()[d_selectedPoint] = newY;
-                d_selectedCurve->descriptor->setDataChanged(true);
-                highlightPoint(true);
-            }
-
+            d_selectedCurve->descriptor->channel(d_selectedCurve->channelIndex)->yValues()[d_selectedPoint] = newY;
+            d_selectedCurve->descriptor->setDataChanged(true);
+            highlightPoint(true);
         }
     }
 }

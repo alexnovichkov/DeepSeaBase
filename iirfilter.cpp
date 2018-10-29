@@ -4,93 +4,28 @@
 
 #include <complex>
 #include <iostream>
+#include "algorithms.h"
+#include "logging.h"
 
 template<typename T>
-QVector<T> fliplr(const QVector<T> &x)
-{
-    const int n = x.size();
-    QVector<T> result(n);
-    for (int i=0; i<n; ++i)
-        result[n-1-i] = x[i];
-    return result;
+void fliplr(QVector<T> &x)
+{DD;
+    std::reverse(x.begin(), x.end());
 }
 
-template<typename T>
-QDebug operator <<(QDebug debug, const std::complex<T> &val)
-{
-    QDebugStateSaver saver(debug);
-    debug.nospace() << '(' << val.real() << ", " << val.imag() << ')';
-    return debug;
-}
-
-IIRFilter::IIRFilter(const int bandStrip, const double sampleRate)
-{
-    if (bandStrip==0) {
-        return;
-    }
-
-    double cutoff = sampleRate;
-    int band = bandStrip;
-    while (band>1) {
-        cutoff /= 2.0;
-        band--;
-    }
-    cutoff /= 2.56;
-
-    computeCoefficients(sampleRate, cutoff);
-}
-
-void updateStateLine(QVector<double>& state, int stateSize,
-                     const QVector<double>& a, const QVector<double>& b,
-                     const double& x, const double& y) {
-    for (int k=1; k<stateSize; ++k) {
-        state[k-1] = (b[k]*x - a[k]*y) + state[k];
-        if (std::fpclassify(state[k-1]) == FP_SUBNORMAL)
-            state[k-1] = 0.0;
-    }
-}
-
-void IIRFilter::filter(QVector<double> &input)
-{
-    QVector<double> x = input;
-    QVector<double> y(x.size());
-    reset();
-
-    for (int n=0; n < y.size(); ++n) {
-        y[n] = b[0]*x[n] + state[0];
-        updateStateLine(state, state.size(), a, b, x[n], y[n]);
-    }
-}
-
-void sftrans(QVector<double> &zero,
-             QVector<double> &real,
-             QVector<double> &imag, double &gain, double W)
-{
-    double C = 1.0;
-    int p = real.size();
-    int z = zero.size();
-
-    double Fc = W;
-
-    gain = gain * pow(C/Fc, z-p);
-
-    for (int i=0; i<real.size(); ++i) {
-        real[i] = real[i] *W/C;
-        imag[i] = imag[i]*W/C;
-    }
-}
-
-void sftrans(QVector<std::complex<double> > &zero,
-             QVector<std::complex<double> > &pole,
-             std::complex<double> &Sg,
-             double Fl, double Fh,
+void sftrans(QVector<cx_double > &zero,
+             QVector<cx_double > &pole,
+             cx_double &Sg,
+             const QVector<double> &W,
              bool stop)
 {
     double C = 1.0;
     const int p = pole.size();
     const int z = zero.size();
 
-    if (Fh > 0.0) {
+    if (W.size()==2) {
+        double Fl = W.first();
+        double Fh = W.last();
         if (stop) {
             // ----------------  -------------------------  ------------------------
             // Band Stop         zero: b ± sqrt(b^2-FhFl)   pole: b ± sqrt(b^2-FhFl)
@@ -99,7 +34,7 @@ void sftrans(QVector<std::complex<double> > &zero,
             //        S^2+FhFl   b=C/x (Fh-Fl)/2            b=C/x (Fh-Fl)/2
             // ----------------  -------------------------  ------------------------
 
-            std::complex<double> prod(1.0, 0.0);
+            cx_double prod(1.0, 0.0);
             if (zero.isEmpty()) {
                 for (int i=0; i<p; ++i) {
                     prod *= pole[i]*(-1.0);
@@ -119,21 +54,21 @@ void sftrans(QVector<std::complex<double> > &zero,
             Sg *= prod.real();
 
             const double coef = C*(Fh-Fl)/2.0;
-            QVector<std::complex<double> > b(p);
-            std::complex<double> one(1,0);
+            QVector<cx_double > b(p);
+            cx_double one(1,0);
             for (int i=0; i<p; ++i) {
                 b[i] = one * coef / pole[i];
             }
 
             pole.resize(p*2);
             for (int i = 0; i < p; ++i) {
-                std::complex<double> sq = pow(b[i]*b[i]-Fh*Fl, 0.5);
+                cx_double sq = pow(b[i]*b[i]-Fh*Fl, 0.5);
 
                 pole[i] = b[i] + sq;
                 pole[i+p] = b[i] - sq;
             }
 
-            QVector<std::complex<double> > extend(2);
+            QVector<cx_double > extend(2);
             extend[0] = one * std::pow(one*(-1.0)*Fh*Fl, 0.5);
             extend[1] = one * (-1.0)*std::pow(one*(-1.0)*Fh*Fl, 0.5);
 
@@ -150,20 +85,20 @@ void sftrans(QVector<std::complex<double> > &zero,
             //        S(Fh-Fl)   b=x/C (Fh-Fl)/2            b=x/C (Fh-Fl)/2
             // ----------------  -------------------------  ------------------------
             Sg *= pow(C/(Fh-Fl) , z-p);
-            QVector<std::complex<double> > b(p);
+            QVector<cx_double > b(p);
             for (int i=0; i<p; ++i) {
                 b[i] = pole[i] * ((Fh-Fl)/(2.0*C));
             }
 
             pole.resize(p*2);
             for (int i = 0; i < p; ++i) {
-                std::complex<double> sq = pow(b[i]*b[i]-Fh*Fl, 0.5);
+                cx_double sq = pow(b[i]*b[i]-Fh*Fl, 0.5);
 
                 pole[i]   = b[i] + sq;
                 pole[i+p] = b[i] - sq;
             }
             if (zero.isEmpty()) {
-                zero = QVector<std::complex<double> >(p);
+                zero = QVector<cx_double >(p);
             }
             else {
                 b.resize(z);
@@ -172,24 +107,24 @@ void sftrans(QVector<std::complex<double> > &zero,
                 }
                 zero.resize(2*z);
                 for (int i = 0; i < z; ++i) {
-                    std::complex<double> sq = pow(b[i]*b[i]-Fh*Fl, 0.5);
+                    cx_double sq = pow(b[i]*b[i]-Fh*Fl, 0.5);
 
                     zero[i]   = b[i] + sq;
                     zero[i+z] = b[i] - sq;
                 }
-                if (p>z) zero.append(QVector<std::complex<double> >(p-z));
+                if (p>z) zero.append(QVector<cx_double >(p-z));
             }
         }
     }
-    else {
-        double Fc = Fl;
+    else if (W.size()==1) {
+        double Fc = W.first();
         if (stop) {
             // ----------------  -------------------------  ------------------------
             // High Pass         zero: Fc C/x               pole: Fc C/x
             // S -> C Fc/S       pole: 0                    zero: 0
             //                   gain: -x                   gain: -1/x
             // ----------------  -------------------------  ------------------------
-            std::complex<double> prod(1.0, 0.0);
+            cx_double prod(1.0, 0.0);
             if (zero.isEmpty()) {
                 for (int i=0; i<p; ++i) {
                     prod *= pole[i]*(-1.0);
@@ -208,19 +143,19 @@ void sftrans(QVector<std::complex<double> > &zero,
             }
             Sg *= prod.real();
 
-            std::complex<double> one(1,0);
+            cx_double one(1,0);
             for(int i=0; i<p; ++i) {
                 pole[i] = one * C * Fc / pole[i];
             }
 
             if (zero.isEmpty()) {
-                zero = QVector<std::complex<double> >(p);
+                zero = QVector<cx_double >(p);
             }
             else {
                 for(int i=0; i<z; ++i) {
                     zero[i] = one * C * Fc / zero[i];
                 }
-                if (p>z) zero.append(QVector<std::complex<double> >(p-z));
+                if (p>z) zero.append(QVector<cx_double >(p-z));
             }
         }
         else {
@@ -238,33 +173,33 @@ void sftrans(QVector<std::complex<double> > &zero,
     }
 }
 
-void bilinear(QVector<std::complex<double> > &Sz,
-              QVector<std::complex<double> > &Sp,
-              std::complex<double> &Sg)
+void bilinear(QVector<cx_double > &Sz,
+              QVector<cx_double > &Sp,
+              cx_double &Sg)
 {
     int p = Sp.size();
     int z = Sz.size();
 
-    std::complex<double> one(1.0, 0.0);
+    cx_double one(1.0, 0.0);
 
-    std::complex<double> prodSz = 1.0;
-    foreach (std::complex<double> val, Sz) {
+    cx_double prodSz = 1.0;
+    foreach (cx_double val, Sz) {
         prodSz *= (one - val);
     }
 
-    std::complex<double> prod(1.0, 0.0);
+    cx_double prod(1.0, 0.0);
     for (int i=0; i<p; ++i) {
         prod *= (one - Sp[i]);
     }
     prod = one * Sg * prodSz / prod;
     Sg = prod;
 
-    QVector<std::complex<double> > Zp(Sp.size(), one);
+    QVector<cx_double > Zp(Sp.size(), one);
     for (int i=0; i<p; ++i) {
         Zp[i] = one*(one + Sp[i])/(one - Sp[i]);
     }
 
-    QVector<std::complex<double> > Zz(p,{-1.0, 0.0});
+    QVector<cx_double > Zz(p,{-1.0, 0.0});
 
     if (z>0) {
         for (int i=0; i<z; ++i) {
@@ -293,123 +228,6 @@ QVector<T> poly(const QVector<T> &x)
     return y;
 }
 
-void IIRFilter::computeCoefficients(double sampleRate, double cutoff)
-{
-    // вычисление коэффициентов
-    const int order = 20;
-
-    double W = cutoff / sampleRate * 2.0;
-
-    double T = 2;       // sampling frequency of 2 Hz
-    W = 2.0 / T * tan(M_PI*W/T);
-
-    QVector<double> real(order), imag(order);
-
-    for (int i=0; i<order; ++i) {
-        real[i] = cos(M_PI*(2.0*(i+1)+order-1.0)/2.0/order);
-        imag[i] = sin(M_PI*(2.0*(i+1)+order-1.0)/2.0/order);
-    }
-
-    QVector<double> zero;
-    double gain = 1.0;
-
-    sftrans(zero, real, imag, gain, W);
-//    bilinear(zero, real, imag, gain);
-
-//    QVector<double> p = poly(zero);
-//    for (int i=0; i<p.size(); ++i) p[i] *= gain;
-
-//    b = p;
-//    a = poly(real,imag);
-
-//    state.resize(b.size());
-//    reset();
-}
-
-void IIRFilter::reset()
-{
-    for (int i=0; i<state.size(); ++i)
-        state[i] = 0.0;
-}
-
-ButterworthFilter::ButterworthFilter(const double sampleRate) :
-    sampleRate(sampleRate)
-{
-
-}
-
-void ButterworthFilter::computeCoefficients(const int order, const double cutoffFreq, bool highPass)
-{
-    this->order = order;
-    this->cutoff = cutoffFreq;
-    this->highPass = highPass;
-    this->highCutOff = 0.0;
-
-    double Wl = cutoff / sampleRate * 2.0;
-    double Wh = highCutOff / sampleRate * 2.0;
-
-    butter(b,a,order,Wl, Wh);
-
-     // Prewarp to the band edges to s plane
-    double T = 2;       // sampling frequency of 2 Hz
-    Wl = 2.0 / T * tan(M_PI*Wl/T);
-    Wh = 2.0 / T * tan(M_PI*Wh/T);
-
-    QVector<double> real(order), imag(order);
-
-    for (int i=0; i<order; ++i) {
-        real[i] = cos(M_PI*(2.0*(i+1)+order-1.0)/2.0/order);
-        imag[i] = sin(M_PI*(2.0*(i+1)+order-1.0)/2.0/order);
-    }
-    if ((order % 2) != 0) { // pure real value at exp(i*pi)
-        real[int((order+1)/2)] = -1.0;
-        imag[int((order+1)/2)] = 0.0;
-    }
-
-//    QVector<double> zero;
-//    double gain = 1.0;
-
-//    sftrans(zero, real, imag, gain, Wl, Wh, highPass);
-//    bilinear(zero, real, imag, gain);
-
-//    QVector<double> p = poly(zero);
-//    for (int i=0; i<p.size(); ++i) p[i] *= gain;
-
-//    b = p;
-//    a = poly(real,imag);
-
-//    state.resize(b.size());
-//    reset();
-}
-
-void ButterworthFilter::computeCoefficients(const int order, const double lowCutoffFreq, double highCutoffFreq)
-{
-    this->order = order;
-    this->cutoff = lowCutoffFreq;
-    this->highPass = false;
-    this->highCutOff = highCutoffFreq;
-
-
-}
-
-void ButterworthFilter::filter(QVector<double> &input)
-{
-    QVector<double> x = input;
-    QVector<double> y(x.size());
-    reset();
-
-    for (int n=0; n < y.size(); ++n) {
-        y[n] = b[0]*x[n] + state[0];
-        updateStateLine(state, state.size(), a, b, x[n], y[n]);
-    }
-}
-
-void ButterworthFilter::reset()
-{
-    for (int i=0; i<state.size(); ++i)
-        state[i] = 0.0;
-}
-
 void butter(QVector<double> &B, QVector<double> &A, int N, double W1, double W2)
 {
     // Prewarp to the band edges to s plane
@@ -417,8 +235,8 @@ void butter(QVector<double> &B, QVector<double> &A, int N, double W1, double W2)
     W1 = tan(M_PI*W1/T);
     W2 = tan(M_PI*W2/T);
 
-    QVector<std::complex<double> > pole(N);
-    std::complex<double> _i(0,1);
+    QVector<cx_double> pole(N);
+    cx_double _i(0,1);
     double coef = 0.5/N;
     for (int i=0; i<N; ++i) {
         pole[i] = exp(_i*M_PI*(2.0*(i+1)+N-1.0)*coef);
@@ -428,20 +246,20 @@ void butter(QVector<double> &B, QVector<double> &A, int N, double W1, double W2)
         pole[int((N+1)/2)-1] = -1.0;
     }
 
-    QVector<std::complex<double> > zero;
-    std::complex<double> gain(1.0, 0);
+    QVector<cx_double > zero;
+    cx_double gain(1.0, 0);
 
-    sftrans(zero, pole, gain, W1, W2, false);
+    sftrans(zero, pole, gain, QVector<double>()<< W1 << W2, false);
     bilinear(zero, pole, gain);
 
-    QVector<std::complex<double> > p = poly<std::complex<double> >(zero);
+    QVector<cx_double > p = poly<cx_double >(zero);
     B.resize(p.size());
     for (int i=0; i<p.size(); ++i)  {
-        std::complex<double> val = p[i] * gain;
+        cx_double val = p[i] * gain;
         B[i] = val.real();
     }
 
-    QVector<std::complex<double> > AA = poly<std::complex<double> >(pole);
+    QVector<cx_double > AA = poly<cx_double >(pole);
     A.resize(AA.size());
     for (int i=0; i<AA.size(); ++i) {
         A[i] = AA[i].real();
@@ -459,19 +277,19 @@ void cheby1(QVector<double> &B, QVector<double> &A, int n, double Rp, double W)
     //double C = 1.0; // default cutoff frequency
     double epsilon = sqrt(pow(10.0,Rp/10.0) - 1);
     double v0 = asinh(1.0/epsilon)/n;
-    QVector<std::complex<double> > pole;
-    std::complex<double> I(0.0, 1.0);
+    QVector<cx_double > pole;
+    cx_double I(0.0, 1.0);
     for (int i=-n+1; i<=n-1; i+=2) {
         double coef = double(i)/n;
-        std::complex<double> val = std::exp(I*M_PI_2*coef);
-        pole.append(std::complex<double>(-1.0*sinh(v0)*val.real(), cosh(v0)*val.imag()));
+        cx_double val = std::exp(I*M_PI_2*coef);
+        pole.append(cx_double(-1.0*sinh(v0)*val.real(), cosh(v0)*val.imag()));
     }
     Q_ASSERT(pole.size()==n);
 
-    QVector<std::complex<double> > zero;
+    QVector<cx_double > zero;
 
     // compensate for amplitude at s=0
-    std::complex<double> gain(1.0, 0.0);
+    cx_double gain(1.0, 0.0);
     for (int i=0; i<pole.size(); ++i) {
         gain = gain * (-1.0)*pole[i];
     }
@@ -483,18 +301,18 @@ void cheby1(QVector<double> &B, QVector<double> &A, int n, double Rp, double W)
     }
 
 //    // splane frequency transform
-    sftrans(zero, pole, gain, W, 0.0, false);
+    sftrans(zero, pole, gain, QVector<double>()<< W, false);
     // Use bilinear transform to convert poles to the z plane
     bilinear(zero, pole, gain);
 
-    QVector<std::complex<double> > p = poly<std::complex<double> >(zero);
+    QVector<cx_double > p = poly<cx_double >(zero);
     B.resize(p.size());
     for (int i=0; i<p.size(); ++i)  {
-        std::complex<double> val = p[i] * gain;
+        cx_double val = p[i] * gain;
         B[i] = val.real();
     }
 
-    QVector<std::complex<double> > AA = poly<std::complex<double> >(pole);
+    QVector<cx_double > AA = poly<cx_double >(pole);
     A.resize(AA.size());
     for (int i=0; i<AA.size(); ++i) {
         A[i] = AA[i].real();
@@ -502,17 +320,28 @@ void cheby1(QVector<double> &B, QVector<double> &A, int n, double Rp, double W)
 }
 
 QVector<double> filter(const QVector<double> &B, const QVector<double> &A, const QVector<double> &x, const QVector<double> &si)
-{
-    QVector<double> y(x.size(), 0.0);
+{DD;
+    const int xSize = x.size();
+
+    QVector<double> y(xSize, 0.0);
     QVector<double> z=si;
-    if (z.isEmpty()) z.resize(B.size());
+    z.resize(B.size()-1);
+    const int si_len = z.size();
+    bool flag = false;
+    for (int m = 0; m < xSize; m++) {
 
-    double norm = A.first();
+        y[m] = z[0] + B[0] * x[m];
+        if (!qIsFinite(y[m])) {
+            if (!flag)
+            qDebug()<<m<<y[m];
+            flag = true;
+        }
 
-    for (int m=0; m < x.size(); ++m) {
-        y[m] = B[0]*x[m]/norm + z[0];
-        for (int i = 1; i < B.size(); ++i)
-            z[i - 1] = (B[i] * x[m] - A[i] * y[m])/norm + z[i] ;
+        for (int j = 0; j < si_len-1; j++) {
+            z[j] = z[j+1] - A[j+1] * y[m] + B[j+1] * x[m];
+        }
+
+        //z[si_len-1] = B[si_len] * x[m] - A[si_len] * y[m];
     }
 
     return y;
@@ -552,10 +381,8 @@ QVector<double> filtfilt(const QVector<double> &B, const QVector<double> &A, con
     // Likhterov & Kopeika, 2003. "Hardware-efficient technique for
     //     minimizing startup transients in Direct Form II digital filters"
 
-    double kdc = b.first();
-    for (int i=1; i<b.size(); ++i) kdc+=b[i];
-    double sum = a.first();
-    for (int i=1; i<a.size(); ++i) sum+=a[i];
+    double kdc = std::accumulate(b.begin(), b.end(), 0.0);
+    double sum = std::accumulate(a.begin(), a.end(), 0.0);
     kdc /= sum;
 
     QVector<double> si;
@@ -573,7 +400,7 @@ QVector<double> filtfilt(const QVector<double> &B, const QVector<double> &A, con
         for (int i=1; i<n; ++i) {
             si[i] = si[i-1]+sum[n-1-i]; // si = fliplr(cumsum(fliplr(b - kdc * a)));
         }
-        si = fliplr(si);
+        fliplr(si);
     }
     si.removeFirst();
 
@@ -594,13 +421,28 @@ QVector<double> filtfilt(const QVector<double> &B, const QVector<double> &A, con
     // Do forward and reverse filtering
     // forward filter
     v = filter(b,a,v,SI);
+
+//    auto mm = std::minmax_element(v.begin(), v.end());
+//    double min = *mm.first;
+//    int minpos = mm.first - v.begin();
+//    double max = *mm.second;
+//    int maxpos = mm.second - v.begin();
+
     // reverse filter
     SI = si;
     for (int i=0; i<SI.size(); ++i)
         SI[i] *= v.last();
-    v = fliplr(filter(b,a,fliplr(v),SI));
+    fliplr(v);
+    v = filter(b,a,v,SI);
+    fliplr(v);
 
-    return v.mid(lrefl, lx+lrefl);
+//    mm = std::minmax_element(v.begin(), v.end());
+//    min = *mm.first;
+//    minpos = mm.first - v.begin();
+//    max = *mm.second;
+//    maxpos = mm.second - v.begin();
+
+    return v.mid(lrefl, lx);
 }
 
 QVector<double> sinetone(double freq, double rate, double sec, double ampl)

@@ -7,6 +7,8 @@
 #include "fields.h"
 #include "algorithms.h"
 
+class DataHolder;
+
 int abscissaType(const QString &xName);
 
 class FunctionHeader
@@ -34,21 +36,12 @@ public:
     virtual ~Function();
 
     void read(QTextStream &stream, qint64 pos = -1);
+    void read(QDataStream &stream);
     void write(QTextStream &stream);
 
-    QString functionTypeDescription() const;
+    static QString functionTypeDescription(int type);
 
     FunctionHeader header;
-
-    double xMax;
-    double yMin;
-    double yMax;
-
-    int samples;
-
-    QVector<double> values;
-    QVector<double> xvalues;
-    QVector<cx_double> valuesComplex;
 
     UffFileDescriptor *parent;
     virtual FileDescriptor *descriptor();
@@ -72,23 +65,15 @@ public:
     virtual QString xName() const;
     virtual QString yName() const;
     virtual QString legendName() const;
-    virtual double xBegin() const;
-    virtual double xStep() const;
-    virtual int samplesCount() const;
-    virtual QVector<double> &yValues();
-    virtual QVector<double> &xValues();
-    virtual double xMaxInitial() const;
-    virtual double yMinInitial() const;
-    virtual double yMaxInitial() const;
     virtual void addCorrection(double correctionValue, bool writeToFile);
+    virtual int samplesCount() const;
 private:
     bool _populated;
-
 
     //correction variables
     bool temporalCorrection;
     QString nameBeforeCorrection;
-    double oldCorrectionValue;
+//    double oldCorrectionValue;
 };
 
 class UffHeader
@@ -127,6 +112,7 @@ class UffFileDescriptor : public FileDescriptor
 public:
     UffFileDescriptor(const QString &fileName);
     UffFileDescriptor(const UffFileDescriptor &other);
+    UffFileDescriptor(const FileDescriptor &other);
     ~UffFileDescriptor();
 
     UffHeader header;
@@ -171,14 +157,13 @@ public:
     virtual QString attachedFileName() const;
     virtual void setAttachedFileName(const QString &name);
     virtual QStringList getHeadersForChannel(int channel);
-    virtual Channel *channel(int index);
+    virtual Channel *channel(int index) const;
     virtual bool allUnplotted() const;
     virtual bool isSourceFile() const;
     virtual bool operator ==(const FileDescriptor &descriptor);
     virtual bool dataTypeEquals(FileDescriptor *other) const;
     virtual QString fileFilters() const;
 private:
-    QString fileType() const;
 
     int NumInd;
 

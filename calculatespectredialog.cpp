@@ -12,12 +12,14 @@
 #include "logging.h"
 
 #include "converter.h"
+#include "taskbarprogress.h"
 
 CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> *dataBase, QWidget *parent) :
-    QDialog(parent)
+    QDialog(parent), win(parent)
 {DD;
     converter = 0;
     thread = 0;
+    taskBarProgress = 0;
 
     foreach (FileDescriptor *d, *dataBase) {
         DfdFileDescriptor *dd = static_cast<DfdFileDescriptor *>(d);
@@ -125,9 +127,14 @@ void CalculateSpectreDialog::start()
     converter = new Converter(dataBase, p);
     converter->moveToThread(thread);
 
+    taskBarProgress = new TaskBarProgress(win, this);
+    taskBarProgress->setRange(progress->minimum(), progress->maximum());
+
     connect(thread, SIGNAL(started()), converter, SLOT(start()));
     connect(converter, SIGNAL(finished()), thread, SLOT(quit()));
     connect(converter, SIGNAL(finished()), this, SLOT(accept()));
+    connect(converter, SIGNAL(finished()), taskBarProgress, SLOT(finalize()));
+
     connect(converter, SIGNAL(tick()), SLOT(updateProgressIndicator()));
     connect(converter, SIGNAL(tick(QString)), SLOT(updateProgressIndicator(QString)));
     connect(converter, SIGNAL(message(QString)), infoLabel, SLOT(appendPlainText(QString)));
@@ -148,6 +155,7 @@ void CalculateSpectreDialog::stop()
 void CalculateSpectreDialog::accept()
 {DD;
     newFiles = converter->getNewFiles();
+    if (taskBarProgress) taskBarProgress->finalize();
 
     if (shutdown->isChecked()) {
         QProcess::execute("shutdown",QStringList()<<"/s"<<"/f"<<"/t"<<"1");
@@ -160,6 +168,7 @@ void CalculateSpectreDialog::reject()
 {DD;
     stop();
     QDialog::reject();
+    if (taskBarProgress) taskBarProgress->finalize();
 }
 
 void CalculateSpectreDialog::updateProgressIndicator(const QString &path)
@@ -170,5 +179,6 @@ void CalculateSpectreDialog::updateProgressIndicator(const QString &path)
 void CalculateSpectreDialog::updateProgressIndicator()
 {
     progress->setValue(progress->value()+1);
+    taskBarProgress->setValue(progress->value());
 }
 

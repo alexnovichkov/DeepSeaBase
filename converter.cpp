@@ -7,59 +7,10 @@
 #include "converters.h"
 #include "windowing.h"
 #include "averaging.h"
-#include "samplerate.h"
+#include "resampler.h"
 #include "octavefilterbank.h"
 #include "algorithms.h"
-
-class Resampler
-{
-public:
-    Resampler(int factor, int bufferSize) : factor(factor), bufferSize(bufferSize)
-    {
-        src_data.src_ratio = 1.0 / factor;
-
-        src_state = src_new(2, 1, &_error);
-        src_data.end_of_input = 0;
-
-        const int newBlockSize = bufferSize * factor;
-
-        filterOut.resize(newBlockSize+100);
-        src_data.output_frames = filterOut.size();
-        src_data.data_out = filterOut.data();
-    }
-
-    virtual ~Resampler()
-    {
-        if (src_state)
-            src_delete(src_state);
-    }
-
-
-    QVector<float> process(QVector<float> &chunk)
-    {
-        if (factor > 1) {//do filtration
-            src_data.data_in = chunk.data();
-            src_data.input_frames = chunk.size();
-
-            _error = src_process(src_state, &src_data);
-            return filterOut.mid(0, bufferSize);
-        }
-        else {
-            return chunk;
-        }
-    }
-
-    QString error() const {return src_strerror(_error);}
-private:
-    SRC_DATA src_data;
-    SRC_STATE *src_state;
-    QVector<float> filterOut;
-    int _error;
-
-    int factor; // 1, 2, 4, 8, 16 etc.
-    int bufferSize;
-    //Parameters p;
-};
+#include "fft.h"
 
 Converter::Converter(QList<DfdFileDescriptor *> &base, const Parameters &p_, QObject *parent) :
     QObject(parent), dataBase(base), p(p_), process(0)
@@ -264,7 +215,7 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
     }
 
     if (filtered.isEmpty()) return;
-DebugPrint(filtered);
+
     //QString baseFileName = QFileInfo(filtered.first()).completeBaseName();
     QString baseFileName = QFileInfo(fileName).completeBaseName()+"_"+method;
 
@@ -275,17 +226,16 @@ DebugPrint(filtered);
         QString suffix = QString::number(suffixN);
 
         if (suffixN==0) {//третьоктава или файл с неодинаковым шагом по абсциссе
-            dfd.populate();
-            if (dfd.channelsCount()>0)
-            suffixN = dfd.channels.first()->xMax;
-            suffix = QString::number(suffixN);
+            if (dfd.channelsCount()>0) {
+                dfd.channel(0)->populate();
+                suffixN = dfd.channels.first()->xMax();
+                suffix = QString::number(suffixN);
+            }
         }
 
-        DebugPrint(baseFileName);
+
         QString dfdFileName = createUniqueFileName(destDir, baseFileName, suffix, "dfd");
         QString rawFileName = changeFileExt(dfdFileName, "raw");
-        DebugPrint(dfdFileName);
-        DebugPrint(rawFileName);
 
         QFile::rename(filtered.first(), dfdFileName);
         QFile::rename(dfd.attachedFileName(), rawFileName);
@@ -294,9 +244,18 @@ DebugPrint(filtered);
     if (filtered.first().endsWith("uff")) {
         UffFileDescriptor dfd(filtered.first());
         dfd.read();
-        QString suffix = QString::number(dfd.samplesCount() * dfd.xStep());
+        int suffixN = dfd.samplesCount() * dfd.xStep();
+        QString suffix = QString::number(suffixN);
 
-        QString uffFileName = createUniqueFileName(destDir, baseFileName, suffix, "dfd");
+        if (suffixN==0) {//третьоктава или файл с неодинаковым шагом по абсциссе
+            if (dfd.channelsCount()>0) {
+                dfd.channel(0)->populate();
+                suffixN = dfd.channels.first()->xMax();
+                suffix = QString::number(suffixN);
+            }
+        }
+
+        QString uffFileName = createUniqueFileName(destDir, baseFileName, suffix, "uff");
         QFile::rename(filtered.first(), uffFileName);
         newFiles << uffFileName;
     }
@@ -342,9 +301,9 @@ QVector<float> getBlock(uchar *mapped, quint64 mappedSize,
 void changeScale(QVector<double> &output, const Parameters &p)
 {DD;
     const double t2 = p.threshold * p.threshold;
-    if (p.scaleType > 0)
+    if (p.scaleType > 0) {
         for (int i=0; i<output.size(); ++i)
-            output[i] = 10 * log10(output[i] / t2);
+            output[i] = 10 * log10(output[i] / t2);}
 }
 
 int stripNumberForBandwidth(double bandwidth, Parameters &p)
@@ -364,8 +323,9 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
         return false;
     }
 
-
     p.sampleRate = 1.0 / dfd->XStep;
+    if (p.bandWidth == 0) p.bandWidth = qRound(1.0 / dfd->XStep / 2.56);
+
     p.bandStrip = stripNumberForBandwidth(p.sampleRate / 2.56, p);
     p.fCount = qRound((double)p.bufferSize / 2.56);
 
@@ -437,27 +397,31 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
 
             while (1) {
                 QVector<float> chunk = getBlock(dfd->channels[i]->floatValues, newBlockSize, stepBack, block);
-//                QVector<float> chunk = getBlock(mapped, mappedSize,
-//                                                i, dfd->channels[i]->ChanBlockSize,
-//                                                dfd->channelsCount(),
-//                                                newBlockSize, stepBack, block);
-//                if (RawChannel *rawc = dynamic_cast<RawChannel*>(dfd->channels[i])) {
-//                    for (int k=0; k < chunk.size(); ++k)
-//                        chunk[k] = chunk[k]*rawc->coef1+rawc->coef2;
-//                }
 
                 if (chunk.size() < p.bufferSize) break;
 
                 filtered = filter.process(chunk);
                 window.applyTo(filtered);
 
-                QVector<double> out = powerSpectre(filtered, p.fCount);
-                averaging.average(out);
+                if (p.saveAsComplex) {
+                    QVector<cx_double> out = spectreFunction(filtered, p.fCount);
+                    averaging.average(out);
+                }
+                else {
+                    QVector<double> out = powerSpectre(filtered, p.fCount);
+                    averaging.average(out);
+                }
+
                 // контроль количества усреднений
                 if (averaging.averagingDone()) break;
             }
-            spectrum = averaging.get();
-            changeScale(spectrum, p);
+            if (p.saveAsComplex) {
+                spectrumComplex = averaging.getComplex();
+            }
+            else {
+                spectrum = averaging.get();
+                changeScale(spectrum, p);
+            }
         }
 
         if (p.method->id()==9) {//передаточная 1
@@ -505,21 +469,22 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
 
         if (p.method->id()==18) {//октавный спектр
             OctaveFilterBank filtBank(p);
-
-            spectrum = filtBank.compute(dfd->channels[i]->floatValues, p.sampleRate, xVals);
+            spectrum = filtBank.compute(dfd->channels[i]->floatValues, xVals);
         }
 
         // Создаем канал и заполняем его
+        Channel *ch = 0;
         if (newDfd) {
-            newDfd->channels << p.method->createDfdChannel(newDfd, dfd, spectrum, p, i);
+            ch = p.method->createDfdChannel(newDfd, dfd, spectrum, p, i);
         }
         if (newUff) {
-            Function *f = p.method->addUffChannel(newUff, dfd, p.fCount, p, i);
+            ch = p.method->addUffChannel(newUff, dfd, p.fCount, p, i);
             if (p.saveAsComplex)
-                f->valuesComplex = spectrumComplex;
+                ch->data()->setYValues(spectrumComplex);
             else
-                f->values = spectrum;
+                ch->data()->setYValues(spectrum, p.scaleType > 0 ? DataHolder::YValuesAmplitudesInDB : DataHolder::YValuesAmplitudes);
         }
+        if (!xVals.isEmpty()) ch->data()->setXValues(xVals);
 
         dfd->channels[i]->floatValues.clear();
         //and releasing memory (since Qt 5.7)
@@ -533,15 +498,6 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
     }
 
     if (newDfd) {
-        if (p.method->id()==18 && !xVals.isEmpty()) {
-            newDfd->channels.prepend(p.method->createDfdChannel(newDfd, dfd, xVals, p, 0));
-            newDfd->channels.first()->ChanName = "ось X";
-            newDfd->channels.first()->YName = "Гц";
-            for (int i=0; i<newDfd->channelsCount(); ++i) {
-                newDfd->channels[i]->channelIndex=i;
-            }
-        }
-        newDfd->NumChans = newDfd->channels.size();
         newDfd->setSamplesCount(newDfd->channel(0)->samplesCount());
         newDfd->setChanged(true);
         newDfd->setDataChanged(true);
@@ -557,141 +513,33 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
     return true;
 }
 
-const double TwoPi = 6.283185307179586;
-
-QVector<double> FFTAnalysis(const QVector<float> &AVal)
+// возвращает спектр
+QVector<cx_double> spectreFunction(const QVector<float> &values, int outputSize)
 {DD;
-    int Nvl = AVal.size();
+    QVector<cx_double> complexSpectre = Fft::compute(values);
+    const int Nvl = complexSpectre.size();
+    const double factor = 2.0 / Nvl / Nvl;
 
-    int i, j, n, m, Mmax, Istp;
-    double Tmpr, Tmpi, Wtmp, Theta;
-    double Wpr, Wpi, Wr, Wi;
-    QVector<double> Tmvl;
-
-    n = Nvl * 2;
-    Tmvl = QVector<double>(n, 0.0);
-
-    for (i = 0; i < n; i+=2) {
-        Tmvl[i] = 0;
-        Tmvl[i+1] = AVal[i/2];
+    complexSpectre.resize(outputSize);
+    for (int i = 0; i < outputSize; i++) {
+        complexSpectre[i] *= factor;
     }
-
-    i = 1; j = 1;
-    while (i < n) {
-        if (j > i) {
-            Tmpr = Tmvl[i]; Tmvl[i] = Tmvl[j]; Tmvl[j] = Tmpr;
-            Tmpr = Tmvl[i+1]; Tmvl[i+1] = Tmvl[j+1]; Tmvl[j+1] = Tmpr;
-        }
-        i = i + 2; m = Nvl;
-        while ((m >= 2) && (j > m)) {
-            j = j - m; m = m >> 1;
-        }
-        j = j + m;
-    }
-
-    Mmax = 2;
-    while (n > Mmax) {
-        Theta = -TwoPi / Mmax; Wpi = sin(Theta);
-        Wtmp = sin(Theta / 2); Wpr = Wtmp * Wtmp * 2;
-        Istp = Mmax * 2; Wr = 1; Wi = 0; m = 1;
-
-        while (m < Mmax) {
-            i = m; m = m + 2; Tmpr = Wr; Tmpi = Wi;
-            Wr = Wr - Tmpr * Wpr - Tmpi * Wpi;
-            Wi = Wi + Tmpr * Wpi - Tmpi * Wpr;
-
-            while (i < n) {
-                j = i + Mmax;
-                Tmpr = Wr * Tmvl[j] - Wi * Tmvl[j-1];
-                Tmpi = Wi * Tmvl[j] + Wr * Tmvl[j-1];
-
-                Tmvl[j] = Tmvl[i] - Tmpr; Tmvl[j-1] = Tmvl[i-1] - Tmpi;
-                Tmvl[i] = Tmvl[i] + Tmpr; Tmvl[i-1] = Tmvl[i-1] + Tmpi;
-                i = i + Istp;
-            }
-        }
-
-        Mmax = Istp;
-    }
-    return Tmvl;
-}
-
-QVector<cx_double> fft(const QVector<float> &AVal)
-{DD;
-    int Nvl = AVal.size();
-
-    int i, j, n, m, Mmax, Istp;
-    double Tmpr, Tmpi, Wtmp, Theta;
-    double Wpr, Wpi, Wr, Wi;
-    QVector<double> Tmvl;
-
-    n = Nvl * 2;
-    Tmvl = QVector<double>(n, 0.0);
-
-    for (i = 0; i < n; i+=2) {
-        Tmvl[i] = 0;
-        Tmvl[i+1] = AVal[i/2];
-    }
-
-    i = 1; j = 1;
-    while (i < n) {
-        if (j > i) {
-            Tmpr = Tmvl[i]; Tmvl[i] = Tmvl[j]; Tmvl[j] = Tmpr;
-            Tmpr = Tmvl[i+1]; Tmvl[i+1] = Tmvl[j+1]; Tmvl[j+1] = Tmpr;
-        }
-        i = i + 2; m = Nvl;
-        while ((m >= 2) && (j > m)) {
-            j = j - m; m = m >> 1;
-        }
-        j = j + m;
-    }
-
-    Mmax = 2;
-    while (n > Mmax) {
-        Theta = -TwoPi / Mmax; Wpi = sin(Theta);
-        Wtmp = sin(Theta / 2); Wpr = Wtmp * Wtmp * 2;
-        Istp = Mmax * 2; Wr = 1; Wi = 0; m = 1;
-
-        while (m < Mmax) {
-            i = m; m = m + 2; Tmpr = Wr; Tmpi = Wi;
-            Wr = Wr - Tmpr * Wpr - Tmpi * Wpi;
-            Wi = Wi + Tmpr * Wpi - Tmpi * Wpr;
-
-            while (i < n) {
-                j = i + Mmax;
-                Tmpr = Wr * Tmvl[j] - Wi * Tmvl[j-1];
-                Tmpi = Wi * Tmvl[j] + Wr * Tmvl[j-1];
-
-                Tmvl[j] = Tmvl[i] - Tmpr; Tmvl[j-1] = Tmvl[i-1] - Tmpi;
-                Tmvl[i] = Tmvl[i] + Tmpr; Tmvl[i-1] = Tmvl[i-1] + Tmpi;
-                i = i + Istp;
-            }
-        }
-
-        Mmax = Istp;
-    }
-
-    QVector<cx_double> result = QVector<cx_double>(Nvl);
-    for (i = 0; i < n; i+=2) {
-        result[i] = {Tmvl[i], Tmvl[i+1]};
-    }
-    return result;
+    return complexSpectre;
 }
 
 // возвращает спектр мощности 2*|complexSpectre|^2/N^2
-QVector<double> powerSpectre(const QVector<float> &values, int outputSize)
+QVector<double> powerSpectre(const QVector<float> &values, int N)
 {DD;
-    QVector<cx_double> complexSpectre = fft(values);
+    QVector<cx_double> complexSpectre = Fft::compute(values);
 
     const int Nvl = complexSpectre.size();
     const double factor = 2.0 / Nvl / Nvl;
 
-    QVector<double> output(Nvl);
+    QVector<double> output(N);
 
-    for (int i = 0; i < Nvl; i++) {
-        output[Nvl - i - 1] = factor * std::norm(complexSpectre[i]);
+    for (int i = 0; i < N; i++) {
+        output[i] = factor * std::norm(complexSpectre[i]);
     }
-    output.resize(outputSize);
 
     return output;
 }
@@ -699,32 +547,27 @@ QVector<double> powerSpectre(const QVector<float> &values, int outputSize)
 // возвращает взаимный спектр мощности Y * Z (комплексный)
 QVector<cx_double> covariantSpectre(const QVector<float> &values1, const QVector<float> &values2, int outputSize)
 {
-    QVector<cx_double> output(values1.size());
+    QVector<cx_double> output(outputSize);
 
-    QVector<cx_double> complexSpectre1 = fft(values1);
-    QVector<cx_double> complexSpectre2 = fft(values2);
+    QVector<cx_double> complexSpectre1 = Fft::compute(values1);
+    QVector<cx_double> complexSpectre2 = Fft::compute(values2);
 
-    const int Nvl = values1.size();
-    for (int i = 0; i < Nvl; i++) {
-        output[Nvl - i - 1] = complexSpectre1[i] * complexSpectre2[i];
+    for (int i = 0; i < outputSize; i++) {
+        output[i] = complexSpectre1[i] * complexSpectre2[i];
     }
 
-    output.resize(outputSize);
     return output;
 }
 
 // возвращает автоспектр сигнала |Y|^2
 QVector<double> autoSpectre(const QVector<float> &values, int outputSize)
 {DD;
-    QVector<double> output(values.size());
-    QVector<cx_double> complexSpectre = fft(values);
+    QVector<double> output(outputSize);
+    QVector<cx_double> complexSpectre = Fft::compute(values);
 
-    const int Nvl = values.size();
-    for (int i = 0; i < Nvl; i++) {
-        output[Nvl - i - 1] = std::norm(complexSpectre[i]);
+    for (int i = 0; i < outputSize; i++) {
+        output[i] = std::norm(complexSpectre[i]);
     }
-
-    output.resize(outputSize);
 
     return output;
 }
@@ -831,6 +674,7 @@ QStringList Converter::getSpfFile(QString dir)
     }
     return spfFile;
 }
+
 
 
 

@@ -267,7 +267,6 @@ bool MatlabConvertor::convert()
                                             << DescriptionEntry("Заголовок 3",set.titles.at(2)));
         dfdFileDescriptor.dataDescription = datade;
         dfdFileDescriptor.setSamplesCount(matlabFile.channels.first().size);
-        dfdFileDescriptor.NumChans = matlabFile.channels.size();
         dfdFileDescriptor.BlockSize = 0;
         dfdFileDescriptor.XName="с";
         dfdFileDescriptor.XBegin = matlabFile.channels.first().xStart;
@@ -356,7 +355,6 @@ bool MatlabConvertor::convert()
                 dfdFileDescriptor.channels.append(channel);
             }
         }
-        dfdFileDescriptor.NumChans = dfdFileDescriptor.channels.size();
         dfdFileDescriptor.setChanged(true);
         dfdFileDescriptor.write();
         emit message("Готово.");

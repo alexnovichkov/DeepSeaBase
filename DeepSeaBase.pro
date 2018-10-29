@@ -13,6 +13,10 @@ TEMPLATE = app
 
 CONFIG += c++11
 
+qtHaveModule(winextras) {
+    QT *= winextras
+}
+
 SOURCES += main.cpp\
     mainwindow.cpp \
     dfdfiledescriptor.cpp \
@@ -24,7 +28,6 @@ SOURCES += main.cpp\
     methods/timemethod.cpp \
     graphpropertiesdialog.cpp \
     tabwidget.cpp \
-    converters.cpp \
     coloreditdialog.cpp \
     colorselector.cpp \
     plotpicker.cpp \
@@ -58,7 +61,10 @@ SOURCES += main.cpp\
     averaging.cpp \
     timeslicer.cpp \
     fields.cpp \
-    methods/abstractmethod.cpp
+    methods/abstractmethod.cpp \
+    dataholder.cpp \
+    fft.cpp \
+    taskbarprogress.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -71,7 +77,6 @@ HEADERS  += mainwindow.h \
     methods/timemethod.h \
     graphpropertiesdialog.h \
     tabwidget.h \
-    converters.h \
     coloreditdialog.h \
     colorselector.h \
     plotpicker.h \
@@ -106,15 +111,23 @@ HEADERS  += mainwindow.h \
     spectre94.h \
     calculatespectredialog.h \
     averaging.h \
-    timeslicer.h
+    timeslicer.h \
+    dataholder.h \
+    resampler.h \
+    fft.h \
+    taskbarprogress.h
 
 SOURCES +=\
   qwheelzoomsvc.cpp\
-  qaxiszoomsvc.cpp
+  qaxiszoomsvc.cpp \
+  DSPFilters/*.cpp \
+  alglib/*.cpp
 
 HEADERS +=\
   qwheelzoomsvc.h\
-  qaxiszoomsvc.h
+  qaxiszoomsvc.h \
+  DSPFilters/DspFilters/*.h \
+  alglib/*.h
 
 RESOURCES *= DeepSeaBase.qrc
 
@@ -124,7 +137,8 @@ CONFIG(release, debug|release):LIBS *= C:/Qwt-6.1.2/lib/libqwt.a
 CONFIG(debug, debug|release):  LIBS *= C:/Qwt-6.1.2/lib/libqwtd.a
 
 INCLUDEPATH *= K:/My/programming/sources/libsamplerate-0.1.8/src
+
 LIBS *= K:/My/programming/sources/libsamplerate-0.1.8/release/libsamplerate.a
 
 INCLUDEPATH *= C:/Qwt-6.1.2/include
-
+INCLUDEPATH *= DSPFilters

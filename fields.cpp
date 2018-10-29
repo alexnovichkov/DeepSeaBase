@@ -98,6 +98,7 @@ void setType58(QVector<FieldDescription> &type58)
         {FTString80, "Record 1" }, {FTEmpty,""}, //10-11 ID line 4,
         {FTString80,"NONE" }, {FTEmpty,""},  //12-13 ID line 5
 
+        /// 1-я строка
         {FTInteger5, 0}, //14 Function Type
     //                                       0 - General or Unknown
     //                                       1 - Time Response
@@ -139,6 +140,7 @@ void setType58(QVector<FieldDescription> &type58)
         {FTInteger4, 0}, //23 Reference Direction +Z
         {FTEmpty, ""}, //24
 
+        /// 2-я строка
         {FTInteger10, 2}, //25 Ordinate Data Type
     //                                       2 - real, single precision
     //                                       4 - real, double precision
@@ -152,6 +154,7 @@ void setType58(QVector<FieldDescription> &type58)
         {FTFloat13_5, 0.0}, //30 Z-axis value
         {FTEmpty,""},  //31
 
+        /// 3-я строка
         {FTInteger10, 1}, //32 Abscissa Data Characteristics
     //                                       0 - unknown
     //                                       1 - general
@@ -177,6 +180,7 @@ void setType58(QVector<FieldDescription> &type58)
         {FTString20, "NONE"}, //37 Axis units label ("NONE" if not used)
         {FTEmpty,""},  //38
 
+        /// 4-я строка
         {FTInteger10, 1}, //39 Ordinate (or ordinate numerator) Data Characteristics
         {FTInteger5,0}, //40 Length units exponent
         {FTInteger5,0}, //41 Force units exponent

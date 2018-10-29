@@ -102,7 +102,7 @@ GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
             curve->setYAxis(axis);
             plot->moveGraph(curve);
             plot->updateAxesLabels();
-            plot->moveToAxis(axis, curve->channel->yMinInitial(), curve->channel->yMaxInitial());
+            plot->moveToAxis(axis, curve->channel->yMin(), curve->channel->yMax());
         }
         else if (axis == QwtPlot::yRight && plot->canBePlottedOnRightAxis(curve->channel)) {
             plot->prepareAxis(axis);
@@ -110,7 +110,7 @@ GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
             curve->setYAxis(axis);
             plot->moveGraph(curve);
             plot->updateAxesLabels();
-            plot->moveToAxis(axis, curve->channel->yMinInitial(), curve->channel->yMaxInitial());
+            plot->moveToAxis(axis, curve->channel->yMin(), curve->channel->yMax());
         }
         else QMessageBox::warning(this, "Не могу поменять ось", "Эта ось уже занята графиком другого типа!");
     });

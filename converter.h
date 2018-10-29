@@ -19,9 +19,12 @@ class DfdChannel;
 void applyWindow(QVector<float> &values, const Parameters &p);
 
 QVector<double> FFTAnalysis(const QVector<float> &AVal);
-QVector<cx_double> fft(const QVector<float> &AVal);
+QVector<cx_double> fftw(const QVector<float> &AVal);
 
-QVector<double> powerSpectre(const QVector<float> &values, int outputSize);
+QVector<cx_double> spectreFunction(const QVector<float> &values, int outputSize);
+
+QVector<double> powerSpectre(const QVector<float> &values, int n);
+//QVector<cx_double> powerSpectre(const QVector<cx_double> &values, int n);
 
 QVector<double> autoSpectre(const QVector<float> &values, int outputSize);
 

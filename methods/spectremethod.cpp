@@ -12,6 +12,8 @@
 SpectreMethod::SpectreMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *parent) :
     QWidget(parent), AbstractMethod(dataBase)
 {
+    saveAsComplexCheckBox = new QCheckBox("Сохранять комплексные значения", this);
+
     resolutionCombo = new QComboBox(this);
     resolutionCombo->setEditable(false);
 
@@ -20,7 +22,7 @@ SpectreMethod::SpectreMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *pare
     // заполняем список частотного диапазона
     if (RawChannel *raw = dynamic_cast<RawChannel *>(dataBase.first()->channel(0))) {
         bandWidth = raw->BandWidth;
-        sampleRate = 1.0 / raw->XStep;
+        sampleRate = 1.0 / raw->xStep();
     }
     else {
         bandWidth = qRound(1.0 / dataBase.first()->channel(0)->xStep() / 2.56);
@@ -107,6 +109,7 @@ SpectreMethod::SpectreMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *pare
     l->addRow("Тип спектра", typeCombo);
     l->addRow("Шкала", scaleCombo);
     l->addRow("Доп. обработка", addProcCombo);
+    l->addRow(saveAsComplexCheckBox);
     setLayout(l);
 }
 
@@ -159,6 +162,7 @@ Parameters SpectreMethod::parameters()
     p.overlap = 1.0 * overlap->value() / 100;
     p.bandWidth = bandWidth;
     p.initialBandStripNumber = activeStripCombo->currentIndex();
+    p.saveAsComplex = saveAsComplexCheckBox->isChecked();
 
     return p;
 }
@@ -267,8 +271,8 @@ UffFileDescriptor *SpectreMethod::createNewUffFile(const QString &fileName, DfdF
 DfdChannel *SpectreMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
 {DD;
     DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
-    ch->XStep = newDfd->XStep;
-    ch->setYValues(spectrum);
+    ch->data()->setXValues(0.0, newDfd->XStep, spectrum.size());
+    ch->data()->setYValues(spectrum, p.scaleType == 0 ? DataHolder::YValuesAmplitudes : DataHolder::YValuesAmplitudesInDB);
     ch->setPopulated(true);
     ch->setName(dfd->channels[i]->name());
 
@@ -276,13 +280,12 @@ DfdChannel *SpectreMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDe
     ch->ChanAddress = dfd->channels[i]->ChanAddress;
 
     ch->ChanBlockSize = spectrum.size();
-    ch->NumInd = spectrum.size();
     ch->IndType = 3221225476;
 
     ch->YName = p.scaleType==0?dfd->channels[i]->yName():"дБ";
     ch->YNameOld = dfd->channels[i]->yName();
-    ch->XName = "Гц";
 
+    newDfd->channels << ch;
     return ch;
 }
 
@@ -307,7 +310,6 @@ Function * SpectreMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescri
     ch->type58[23].value = 3; //20 Reference Direction +Z
     ch->type58[25].value = p.saveAsComplex ? 5 : 2; //25 Ordinate Data Type
     ch->type58[26].value = spectrumSize;
-    ch->samples = spectrumSize;
     ch->type58[28].value = 0.0; //28 Abscissa minimum
 
     double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
@@ -338,6 +340,7 @@ Function * SpectreMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescri
     //                  8     complex    double       uneven      E13.5,2E20.12
     //              --------------------------------------------------------------
 
+    ch->data()->setXValues(0, XStep, spectrumSize);
     newUff->channels << ch;
     return ch;
 }

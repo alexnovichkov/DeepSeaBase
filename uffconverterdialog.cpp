@@ -224,102 +224,53 @@ bool UffConvertor::convert()
         bool fileIsDfd = fi.endsWith(".dfd",Qt::CaseInsensitive);
         bool fileIsUff = fi.endsWith(".uff",Qt::CaseInsensitive) || fi.endsWith(".unv",Qt::CaseInsensitive);
 
-//        if (!fileIsDfd) {
-//            emit message("&nbsp;&nbsp;&nbsp;Файл имеет тип UFF. Такие файлы пока не обрабатываюся.");
-//            continue;
-//        }
+
+        QString sourceFileName = fi;
+        FileDescriptor *sourceFile = 0;
+        if (fileIsDfd) sourceFile = new DfdFileDescriptor(sourceFileName);
+        if (fileIsUff) sourceFile = new UffFileDescriptor(sourceFileName);
 
         QString destFileName = fi;
-        QString sourceFileName = fi;
+        if (fileIsDfd) destFileName = createUniqueFileName("", destFileName, "", "uff", false);
+        if (fileIsUff) destFileName = createUniqueFileName("", destFileName, "", "dfd", false);
 
-        if (fileIsDfd) {//replace *.dfd to *.uff
-            destFileName = createUniqueFileName("", destFileName, "", "uff", false);
-
-            DfdFileDescriptor dfdFile(sourceFileName);
-            dfdFile.read();
-            dfdFile.populate();
-
-            if (dfdFile.DataType > DfdDataType::FilterData) {//типы 0, 1, 2 - исходные данные
-                emit message("&nbsp;&nbsp;&nbsp;Файл не имеет временных реализаций. Такие файлы пока не обрабатываются.");
-                continue;
-            }
-
-            emit message(QString("&nbsp;&nbsp;&nbsp;В файле %1 каналов").arg(dfdFile.channelsCount()));
-
-            //reading uff file structure
-            UffFileDescriptor uffFile(destFileName);
-
-            //заполнение header
-            uffFile.header.type151[10].value = QDateTime(dfdFile.Date, dfdFile.Time);
-            uffFile.header.type151[12].value = QDateTime(dfdFile.Date, dfdFile.Time);
-            uffFile.header.type151[16].value = QDateTime::currentDateTime();
-
-            int referenceChannelNumber = -1; //номер опорного канала ("сила")
-            //заполнение каналов
-            for (int i=0; i<dfdFile.channelsCount(); ++i) {
-                Function *f = new Function(*dfdFile.channel(i));
-                f->type58[15].value = i+1;
-                f->type58[10].value = QString("Record %1").arg(i+1);
-
-                if (dfdFile.channel(i)->xName().toLower()=="сила")
-                    referenceChannelNumber = i;
-
-                f->type58[8].value = QDateTime(dfdFile.Date, dfdFile.Time);
-                uffFile.channels << f;
-                //clearing
-                dfdFile.channel(i)->setPopulated(false);
-                dfdFile.channel(i)->xValues().clear(); dfdFile.channel(i)->xValues().squeeze();
-                dfdFile.channel(i)->yValues().clear(); dfdFile.channel(i)->yValues().squeeze();
-            }
-            //заполнение инфы об опорном канале
-            if (referenceChannelNumber>=0) {
-                for (int nc=0; nc<uffFile.channels.size(); ++nc) {
-                    uffFile.channels[nc]->type58[18].value = dfdFile.channel(nc)->name();
-                    uffFile.channels[nc]->type58[19].value = referenceChannelNumber+1;
-                }
-            }
-
-            //сохранение
-            emit message("&nbsp;&nbsp;&nbsp;Сохраняю файл");
-            uffFile.setChanged(true);
-            uffFile.write();
-            newFiles.append(destFileName);
-
-            emit message("&nbsp;&nbsp;&nbsp;Готово.");
-            emit tick();
-        }
-        else if (fileIsUff) {//replace *.uff to *.dfd
-            destFileName = createUniqueFileName("", destFileName, "", "dfd", false);
-
-            UffFileDescriptor uffFile(sourceFileName);
-            uffFile.read();
-            if (uffFile.type()==Descriptor::Unknown) {
+        if (sourceFile) {
+            sourceFile->read();
+            if (sourceFile->type()==Descriptor::Unknown) {
                 emit message("&nbsp;&nbsp;&nbsp;Файл неизвестного типа, пропускаю.");
+                delete sourceFile;
+                emit tick();
                 continue;
             }
-            uffFile.populate();
 
-            DfdFileDescriptor dfdFileDescriptor(destFileName);
-            dfdFileDescriptor.fillPreliminary(uffFile.type());
-            QList<QPair<FileDescriptor *, int> > channelsToCopy;
-            for (int chn=0; chn<uffFile.channelsCount(); ++chn)
-                channelsToCopy << qMakePair<FileDescriptor *, int>(&uffFile, chn);
+            emit message(QString("&nbsp;&nbsp;&nbsp;В файле %1 каналов").arg(sourceFile->channelsCount()));
 
-            dfdFileDescriptor.copyChannelsFrom(channelsToCopy);
-            dfdFileDescriptor.fillRest();
+            FileDescriptor *destFile = 0;
+            if (fileIsDfd) destFile = new UffFileDescriptor(*sourceFile);
+            if (fileIsUff) destFile = new DfdFileDescriptor(*sourceFile);
 
-            dfdFileDescriptor.setChanged(true);
-            dfdFileDescriptor.setDataChanged(true);
-            dfdFileDescriptor.write();
-            dfdFileDescriptor.writeRawFile();
+            if (destFile) {
+                destFile->setFileName(destFileName);
 
-            emit message("Готово.");
-            emit tick();
+                //сохранение
+                emit message("&nbsp;&nbsp;&nbsp;Сохраняю файл");
+                destFile->setChanged(true);
+                destFile->setDataChanged(true);
+                destFile->write();
+                destFile->writeRawFile();
+                newFiles.append(destFileName);
+                emit message("&nbsp;&nbsp;&nbsp;Готово.");
+            }
+            delete destFile;
         }
         else {
             emit message("&nbsp;&nbsp;&nbsp;Файл неизвестного типа, пропускаю.");
+            emit tick();
             continue;
         }
+
+        delete sourceFile;
+        emit tick();
     }
     emit message("<font color=blue>Конвертация закончена.</font>");
     /*if (noErrors) */emit finished();

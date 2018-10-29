@@ -17,15 +17,13 @@ double threshold(const QString &name)
 
 FileDescriptor::FileDescriptor(const QString &fileName) :
     _fileName(fileName), _changed(false), _dataChanged(false)
-//    , NumInd(0)
 {
-    signalHandler = new SignalHandler;
-    signalHandler->_changed = false;
+
 }
 
 FileDescriptor::~FileDescriptor()
 {
-    delete signalHandler;
+
 }
 
 bool FileDescriptor::fileExists() const
@@ -35,16 +33,12 @@ bool FileDescriptor::fileExists() const
 
 void FileDescriptor::setChanged(bool changed)
 {//DD;
-    if (_changed == changed) return;
     _changed = changed;
-    signalHandler->setChanged(changed || _dataChanged);
 }
 
 void FileDescriptor::setDataChanged(bool changed)
 {
-    if (_dataChanged == changed) return;
     _dataChanged = changed;
-    signalHandler->setChanged(changed || _changed);
 }
 
 QString descriptionEntryToString(const DescriptionEntry &entry)
@@ -63,79 +57,26 @@ QList<int> filterIndexes(FileDescriptor *dfd, const QList<QPair<FileDescriptor *
     return result;
 }
 
-
-void SignalHandler::setChanged(bool ch)
+Channel::Channel(Channel *other) : _checkState(other->_checkState),
+    _color(other->_color),
+    _data(new DataHolder(*(other->_data)))
 {
-    if (ch != _changed) emit changed(ch);
-    _changed = ch;
+
 }
 
+Channel::Channel(Channel &other) : _checkState(other._checkState),
+    _color(other._color),
+    _data(new DataHolder(*(other._data)))
+{
 
-//Model::Model(QObject *parent) : QAbstractItemModel(parent)
-//{
+}
 
-//}
+double Channel::xMin() const
+{
+    return _data->xMin();
+}
 
-//Model::~Model()
-//{
-//    qDeleteAll(d);
-//}
-
-//QModelIndex Model::index(int row, int column, const QModelIndex &parent) const
-//{
-//    if (parent.isValid()) {
-//        //channel
-//        return createIndex(row, column, d[parent.row()]->channel(row));
-//    }
-//    else {
-//        return createIndex(row,column,d[row]);
-//    }
-//}
-
-//QModelIndex Model::parent(const QModelIndex &child) const
-//{
-//    if (!child.isValid()) return QModelIndex();
-////    Channel *c = static_cast<Channel*>(child.internalPointer());
-////    if (c) return createIndex()
-////    return ->descriptor();
-//}
-
-//QModelIndex Model::sibling(int row, int column, const QModelIndex &idx) const
-//{
-//}
-
-//int Model::rowCount(const QModelIndex &parent) const
-//{
-//}
-
-//int Model::columnCount(const QModelIndex &parent) const
-//{
-//}
-
-//bool Model::hasChildren(const QModelIndex &parent) const
-//{
-//}
-
-//QVariant Model::data(const QModelIndex &index, int role) const
-//{
-//}
-
-//bool Model::setData(const QModelIndex &index, const QVariant &value, int role)
-//{
-//}
-
-//QVariant Model::headerData(int section, Qt::Orientation orientation, int role) const
-//{
-//}
-
-//bool Model::setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role)
-//{
-//}
-
-//Qt::ItemFlags Model::flags(const QModelIndex &index) const
-//{
-//}
-
-//void Model::sort(int column, Qt::SortOrder order)
-//{
-//}
+double Channel::xMax() const
+{
+    return _data->xMax();
+}

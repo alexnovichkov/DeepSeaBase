@@ -8,11 +8,10 @@ class OctaveFilterBank
 {
 public:
     OctaveFilterBank(const Parameters &p);
-    QVector<float> xValues() const {return m_xValues;}
-    QVector<double> compute(QVector<float> &signal, double sampleRate, QVector<double> &xValues);
+    QVector<double> compute(QVector<float> &signal, QVector<double> &xValues);
 private:
-    QVector<float> m_xValues;
     Parameters m_p;
+    QVector<double> thirdOctaveFreqs;
 };
 
 #endif // OCTAVEFILTERBANK_H

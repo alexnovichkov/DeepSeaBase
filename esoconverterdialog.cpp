@@ -202,67 +202,35 @@ bool EsoConvertor::convert()
         return false;
     }
 
-    QString rawFileName = dfdFileName;
-    rawFileName.replace(".dfd",".raw");
-
     //writing dfd file
-    DfdFileDescriptor dfdFileDescriptor(dfdFileName);
-    dfdFileDescriptor.rawFileName = rawFileName;
-    dfdFileDescriptor.fillPreliminary(Descriptor::Unknown);
-    dfdFileDescriptor.DataType = ToSpectr;
+    DfdFileDescriptor *dfdFileDescriptor = DfdFileDescriptor::newFile(dfdFileName, ToSpectr);
 
-    dfdFileDescriptor.BlockSize = 0;
-    dfdFileDescriptor.XName="Гц";
-
-   // dfdFileDescriptor.DescriptionFormat = "lms2dfd.DF";
-    dfdFileDescriptor.CreatedBy = "Конвертер eso2dfd by Алексей Новичков";
-
-    dfdFileDescriptor.process = new Process();
-    dfdFileDescriptor.process->data.append({"pName","1/3-октавный спектр"});
-    dfdFileDescriptor.process->data.append({"pTime","(0000000000000000)"});
-    dfdFileDescriptor.process->data.append({"TypeProc","1/3-октава"});
-    dfdFileDescriptor.process->data.append({"Values","измеряемые"});
-    dfdFileDescriptor.process->data.append({"TypeScale","в децибелах"});
+    dfdFileDescriptor->CreatedBy = "Конвертер eso2dfd by Алексей Новичков";
 
     //Converting
-    QString fi = filesToConvert.first();
-    EsoFile esoFile(fi);
-    DfdChannel *newCh = new DfdChannel(&dfdFileDescriptor,0);
-    newCh->YName="Гц";
-    newCh->ChanName="ось X";
-    newCh->ChanBlockSize=esoFile.xValues.size();
-    newCh->IndType=3221225476;
-    newCh->XName = dfdFileDescriptor.XName;
-    newCh->setYValues(esoFile.xValues);
-    newCh->setXValues(esoFile.xValues);
-    newCh->NumInd=esoFile.xValues.size();
-    newCh->setPopulated(true);
-
-    dfdFileDescriptor.channels.append(newCh);
-    dfdFileDescriptor.setSamplesCount(esoFile.xValues.size());
+    EsoFile esoFile(filesToConvert.first());
+    QVector<double> xValues = esoFile.xValues;
+    dfdFileDescriptor->setSamplesCount(xValues.size());
 
     QStringList columnsNames;
     columnsNames << "ЭСОУ" << "МЗПХ" << "ЭСОТ" <<"MaxT"<<"ЭСОМ";
 
-    int index=1;
+    int index=0;
     for (int col=0; col<5; ++col) {
         if (!columns.at(col)) continue;
         if (QThread::currentThread()->isInterruptionRequested()) return false;
 
         for (int i=0; i<filesToConvert.size(); ++i) {
-            QString fi = filesToConvert.at(i);
             if (QThread::currentThread()->isInterruptionRequested()) return false;
 
-            EsoFile esoFile(fi);
-            if (esoFile.xValues != dfdFileDescriptor.channels.first()->XValues) {
+            EsoFile esoFile(filesToConvert.at(i));
+            if (esoFile.xValues != xValues) {
                 emit message("<font color=red>Error!</font> Шкала по X отличается. Пропускаем файл.");
                 continue;
             }
 
-            DfdChannel *newCh = new DfdChannel(&dfdFileDescriptor,index++);
+            DfdChannel *newCh = new DfdChannel(dfdFileDescriptor,index++);
 
-
-            //newCh->ChanAddress=ch->ChanAddress;
             newCh->ChanName=channelNames.at(i)+"-"+columnsNames.at(col);
             newCh->YNameOld=newCh->YName;
             newCh->ChanBlockSize=esoFile.xValues.size();
@@ -291,31 +259,33 @@ bool EsoConvertor::convert()
             }
 
             newCh->ChanDscr=newCh->ChanName;
-            newCh->NumInd=newCh->ChanBlockSize;
-            newCh->XName = dfdFileDescriptor.XName;
+            newCh->data()->setXValues(xValues);
 
             switch (col) {
-                case 0: newCh->setYValues(esoFile.esou); break;
-                case 1: newCh->setYValues(esoFile.mzph); break;
-                case 2: newCh->setYValues(esoFile.esot); break;
-                case 3: newCh->setYValues(esoFile.maxt); break;
-                case 4: newCh->setYValues(esoFile.esom); break;
+                case 0: newCh->data()->setYValues(esoFile.esou, DataHolder::YValuesAmplitudesInDB); break;
+                case 1: newCh->data()->setYValues(esoFile.mzph, DataHolder::YValuesAmplitudesInDB); break;
+                case 2: newCh->data()->setYValues(esoFile.esot, DataHolder::YValuesReals); break;
+                case 3: newCh->data()->setYValues(esoFile.maxt, DataHolder::YValuesReals); break;
+                case 4: newCh->data()->setYValues(esoFile.esom, DataHolder::YValuesReals); break;
                 default: break;
             }
             newCh->setPopulated(true);
-            dfdFileDescriptor.channels.append(newCh);
+            dfdFileDescriptor->channels.append(newCh);
             emit tick();
         }
     }
 
-    dfdFileDescriptor.NumChans = dfdFileDescriptor.channels.size();
-    dfdFileDescriptor.XBegin = 0.0;
-    dfdFileDescriptor.XStep = 0.0;
+    if (!xValues.isEmpty()) {
+        dfdFileDescriptor->XBegin = xValues.first();
+    }
+    else
+        dfdFileDescriptor->XBegin = 0.0;
 
-    dfdFileDescriptor.setChanged(true);
-    dfdFileDescriptor.setDataChanged(true);
-    dfdFileDescriptor.write();
-    dfdFileDescriptor.writeRawFile();
+    dfdFileDescriptor->setChanged(true);
+    dfdFileDescriptor->setDataChanged(true);
+    dfdFileDescriptor->write();
+    dfdFileDescriptor->writeRawFile();
+    delete dfdFileDescriptor;
 
 
     emit message("<font color=blue>Конвертация закончена.</font>");

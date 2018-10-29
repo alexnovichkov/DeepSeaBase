@@ -17,8 +17,8 @@ TimeMethod::TimeMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *parent) :
     // заполняем список частотного диапазона
     if (RawChannel *raw = dynamic_cast<RawChannel *>(dataBase.first()->channel(0))) {
         bandWidth = raw->BandWidth;
-        sampleRate = 1.0 / raw->XStep;
-        xStep = raw->XStep;
+        sampleRate = 1.0 / raw->xStep();
+        xStep = raw->xStep();
     }
     else {
         bandWidth = qRound(1.0 / xStep / 2.56);
@@ -205,8 +205,8 @@ DfdChannel *TimeMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescr
 {DD;
     Q_UNUSED(p);
     DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
-    ch->XStep = newDfd->XStep;
-    ch->setYValues(spectrum);
+    ch->data()->setXValues(0.0, newDfd->XStep, spectrum.size());
+    ch->data()->setYValues(spectrum, DataHolder::YValuesReals);
     ch->setPopulated(true);
     ch->setName(dfd->channels[i]->name());
 
@@ -214,20 +214,12 @@ DfdChannel *TimeMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescr
     ch->ChanAddress = dfd->channels[i]->ChanAddress;
 
     ch->ChanBlockSize = spectrum.size();
-    ch->NumInd = spectrum.size();
     ch->IndType = 3221225476;
 
     ch->YName = dfd->channels[i]->yName();
     ch->YNameOld = dfd->channels[i]->yName();
-    ch->XName = "с";
 
-//        ch->xMin = 0.0;
-//        ch->xMax = newSampleRate / 2.56;
-//        ch->XMaxInitial = ch->xMax;
-//        ch->YMinInitial = ch->yMin;
-//        ch->YMaxInitial = ch->yMax;
-
-//    newDfd->channels << ch;
+    newDfd->channels << ch;
     return ch;
 }
 
@@ -256,12 +248,13 @@ Function *TimeMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor
     // строка 2
     ch->type58[25].value = p.saveAsComplex ? 5 : 2; //25 Ordinate Data Type
     ch->type58[26].value = spectrumSize;
-    ch->samples = spectrumSize;
     ch->type58[27].value = 1; //27 Abscissa Spacing (1=even, 0=uneven,
     ch->type58[28].value = 0.0;
     double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
     double XStep = newSampleRate / p.bufferSize;
     ch->type58[29].value = XStep; //29 Abscissa increment
+
+    ch->data()->setXValues(0, XStep, spectrumSize);
 
     // строка 3
     ch->type58[32].value = 17; // 17 - Time
@@ -270,7 +263,7 @@ Function *TimeMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor
 
     // строка 4
     ch->type58[39].value = 1; //39 Ordinate (or ordinate numerator) Data Characteristics
-    ch->type58[44].value = "m/s2";
+    ch->type58[44].value = dfd->channels[i]->yName();
 
 
     ch->type58[53].value = 1;

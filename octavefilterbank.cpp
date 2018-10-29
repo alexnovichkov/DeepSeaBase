@@ -1,32 +1,18 @@
 #include "octavefilterbank.h"
 
 #include "iirfilter.h"
+#include "resampler.h"
+#include "logging.h"
+
+#include "DspFilters/Dsp.h"
 
 OctaveFilterBank::OctaveFilterBank(const Parameters &p) : m_p(p)
-{
-
-}
-
-
-
-//% OCT3DSGN  Design of a one-third-octave filter.
-//%    [B,A] = OCT3DSGN(Fc,Fs,N) designs a digital 1/3-octave filter with
-//%    center frequency Fc for sampling frequency Fs.
-//%    The filter is designed according to the Order-N specification
-//%    of the ANSI S1.1-1986 standard. Default value for N is 3.
-//%    Warning: for meaningful design results, center frequency used
-//%    should preferably be in range Fs/200 < Fc < Fs/5.
-void oct3dsgn(QVector<double> &B, QVector<double> &A, double Fc, double Fs, int N)
-{
-    double f1 = Fc/pow(2.0, 1.0/6.0);
-    double f2 = Fc*pow(2.0, 1.0/6.0);
-    double Qr = Fc/(f2-f1);
-    double Qd = (M_PI/2.0/N)/(sin(M_PI/2.0/N))*Qr;
-    double alpha = (1.0 + sqrt(1.0+4.0*Qd*Qd))/2.0/Qd;
-    double W1 = Fc/(Fs/2.0)/alpha;
-    double W2 = Fc/(Fs/2.0)*alpha;
-//    qDebug()<<QString("f1=%1, f2=%2, W1=%3, W2=%4").arg(f1).arg(f2).arg(W1).arg(W2);
-    butter(B, A, N, W1, W2);
+{DD;
+    thirdOctaveFreqs.resize(44); //точные значения частот третьоктавных фильтров, от 1 Гц до 20000 Гц,
+                                 //частота 1000 Гц имеет индекс 30
+    for (int i=0; i<44; ++i) {
+        thirdOctaveFreqs[i] = 1000.0*pow(10.0,0.1*(i-30));
+    }
 }
 
 //function p=leq(x,t,Pref)
@@ -38,122 +24,77 @@ void oct3dsgn(QVector<double> &B, QVector<double> &A, double Fc, double Fs, int 
 //%     scale. If a RMS power is equal to zero, a NaN is returned
 //%     for its dB value.
 //%
-double leq(const QVector<double> &x, /*int T,*/ double ref=1.0)
-{
-    double p = 0.0;
-    for (int i = 0; i<x.size(); ++i) {
-        p += x[i]*x[i]/x.size();
+template <typename T>
+double leq(const QVector<T> &x, /*int T,*/ double ref=1.0)
+{DD;
+    const int xSize = x.size();
+    T p = std::accumulate(x.begin(), x.end(), static_cast<T>(0.0), [xSize](T v1,T v2)->T{return v1+v2*v2/xSize;});
+
+    if (qIsFinite(p)) {
+        if (p > 0.0) return 10.0*log10(p/ref/ref);
     }
 
-    if (p > 0.0) p = 10.0*log10(p/ref/ref);
-    else p = 0.0;
-
-    return p;
+    return  0.0;
 }
 
-//decimates x by factor q using chebyshev filter
-QVector<double> decimate(const QVector<double> &x, int q)
-{
-    int n=8; //порядок фильтра
-    QVector<double> b, a;
-    cheby1(b, a, n, 0.05, 0.8/q);
-
-    QVector<double> y;
-    QVector<double> v = filtfilt(b,a,x);
-    for (int i=0; i<v.size(); i+=q)
-        y << v[i];
+//decimates x by factor q using libresample
+QVector<float> decimate(QVector<float> &x, int q)
+{DD;
+    Resampler filter(q, x.size());
+    QVector<float> y = filter.process(x);
     return y;
 }
 
-QVector<double> OctaveFilterBank::compute(QVector<float> &signal, double sampleRate, QVector<double> &xValues)
-{
-    QVector<double> x(signal.size());
-    for (int i=0; i<signal.size(); ++i)
-        x[i] = signal[i];
-//    qDebug()<<"original data"<<signal.mid(0,20);
+QVector<double> OctaveFilterBank::compute(QVector<float> &x, QVector<double> &xValues)
+{DD;
+    int N = 8;  // Order of analysis filters.
 
-    QVector<double> Fc(44); //точные значения частот фильтров, от 1 Гц до 20000 Гц,
-                            //частота 1000 Гц имеет индекс 30
-    for (int i=0; i<44; ++i) {
-        Fc[i] = 1000.0*pow(10.0,0.1*(i-30));
-    }
-//    qDebug()<<Fc;
-
-    int N = 3;  				  // Order of analysis filters.
-
-    QVector<double> P(Fc.size());
+    QVector<double> P(thirdOctaveFreqs.size());
 
     int i_up = 43;
     int i_low = 0;
 
-    for (int i=Fc.size()-1; i>=0; --i) { //i_up = max(find(Fc<=samplerate/3));
-        if (Fc[i]<=sampleRate/2.56) {
-            i_up = i;
-            break;
-        }
-    }
+    ///i_up = max(find(Fc<=samplerate/3));
+    auto idx = std::lower_bound(thirdOctaveFreqs.begin(), thirdOctaveFreqs.end(), m_p.sampleRate/2.56);
+    if (idx!=thirdOctaveFreqs.end()) i_up = idx-thirdOctaveFreqs.begin();
 
-    // All filters below Fs/20 will be implemented after a decimation.
-    int i_dec = 0;
-    for (int i=Fc.size()-1; i>=0; --i) {
-        if (Fc[i]<=sampleRate/20.0) {
-            i_dec = i;
-            break;
-        }
-    }
-//    qDebug()<<QString("i_low=%1, i_dec=%2, i_up=%3").arg(i_low).arg(i_dec).arg(i_up);
-    qDebug()<<QString("i_low=%1, i_dec=%2, i_up=%3").arg(Fc[i_low]).arg(Fc[i_dec]).arg(Fc[i_up]);
-//    qDebug()<<"signal size" << x.size();
+    // All filters below range Fc / 200 will be implemented after a decimation.
+    int i_dec = i_up;
+    idx = std::lower_bound(thirdOctaveFreqs.begin(), thirdOctaveFreqs.end(), m_p.sampleRate/200);
+    if (idx!=thirdOctaveFreqs.end()) i_dec = idx-thirdOctaveFreqs.begin();
+
     // Design filters and compute RMS powers in 1/3-oct. bands.
-    // Higher frequencies, direct implementation of filters.
-    for (int i = i_up; i>i_dec; --i) {
-        QVector<double> B, A;
-        oct3dsgn(B, A, Fc[i], sampleRate, N);
-//        qDebug()<<"i="<<i<<Fc[i];
-//        qDebug()<<"B="<<B;
-//        qDebug()<<"A="<<A;
+    // Higher octave band, direct implementation of filters.
+    double f1 = 1.0 / pow(2.0, 1.0/6.0);
+    double f2 = 1.0 * pow(2.0, 1.0/6.0);
 
-        QVector<double> y = filter(B,A,x, QVector<double>());
+    for (int i = i_up; i>i_dec; --i) {
+        Dsp::SimpleFilter <Dsp::Butterworth::Design::BandPass <8>, 1, Dsp::DirectFormII> f;
+        f.setup (N, m_p.sampleRate, thirdOctaveFreqs[i], thirdOctaveFreqs[i]*(f2-f1));
+            // order   sample rate    center frequency     band width
+
+        QVector<float> y = x;
+        float *data = y.data();
+        f.process (y.size(), &data);
         P[i] = leq(y, m_p.threshold);
     }
 
 
     // Lower frequencies, decimation by series of 3 bands.
     if (i_dec > 0) {
-
-        QVector<double> Bu, Au;
-        oct3dsgn(Bu,Au,Fc[i_dec],sampleRate/2.0,N); // Upper 1/3-oct. band in last octave.
-        QVector<double> Bc, Ac;
-        oct3dsgn(Bc,Ac,Fc[i_dec-1],sampleRate/2.0,N); // Center 1/3-oct. band in last octave.
-        QVector<double> Bl, Al;
-        oct3dsgn(Bl,Al,Fc[i_dec-2],sampleRate/2.0,N); // Lower 1/3-oct. band in last octave.
-        int i = i_dec;
-        int j = 1;
-        //QVector<double> X;
-        while (i >= i_low+2) {
-            x = decimate(x,2);
-            QVector<double> y = filter(Bu,Au,x, QVector<double>());
-            P[i] = leq(y, m_p.threshold);
-            y = filter(Bc,Ac,x, QVector<double>());
-            P[i-1] = leq(y, m_p.threshold);
-            y = filter(Bl,Al,x, QVector<double>());
-            P[i-2] = leq(y, m_p.threshold);
-            i = i-3;
-            j++;
-        }
-        if (i == (i_low+1)) {
-            x = decimate(x,2);
-            QVector<double> y = filter(Bu,Au,x, QVector<double>());
-            P[i] = leq(y, m_p.threshold);
-            y = filter(Bc,Ac,x, QVector<double>());
-            P[i-1] = leq(y, m_p.threshold);
-        }
-        else if (i == (i_low)) {
-            x = decimate(x,2);
-            QVector<double> y = filter(Bu,Au,x, QVector<double>());
-            P[i] = leq(y, m_p.threshold);
-        }
+        x = decimate(x, 2);
     }
-    xValues = Fc.mid(i_low, i_up-i_low+1);
+    for (int i=i_dec; i>=i_low; --i) {
+        Dsp::SimpleFilter <Dsp::Butterworth::Design::BandPass <8>, 1, Dsp::DirectFormII> f;
+        f.setup (N, m_p.sampleRate / 2.0, thirdOctaveFreqs[i], thirdOctaveFreqs[i]*(f2-f1));
+            // order       sample rate    center frequency     band width
+
+        QVector<float> y = x;
+        float *data = y.data();
+        f.process (y.size(), &data);
+
+        P[i] = leq(y, m_p.threshold);
+    }
+    xValues = thirdOctaveFreqs.mid(i_low, i_up-i_low+1);
     return P.mid(i_low, i_up-i_low+1);
 }

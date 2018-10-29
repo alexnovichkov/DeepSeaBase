@@ -12,7 +12,7 @@ enum DfdDataType {
     CuttedData =   1,		// вырезка из исходных данных
     FilterData =   2,		// фильтрованные данные
     // 16 - 31 - преобразованные данные
-    Envelope   =  16,		// огибающая
+    Envelope   =  16,		// огибающая по Гильберту
     PassAvrg  =   17,		// проходная - мат. ожидание
     PassDev   =   18,		// проходная - СКЗ
     PassAss   =   19,		// проходная - асимметрия
@@ -52,15 +52,15 @@ enum DfdDataType {
 DfdDataType dfdDataTypeFromDataType(Descriptor::DataType type);
 Descriptor::DataType dataTypefromDfdDataType(DfdDataType type);
 
-enum PlotType {
-    PlotUnknown = 0,
-    PlotTime = 1,
-    PlotStatistics = 2,
-    PlotSpectre = 3,
-    PlotNykvist = 4,
-    PlotCorrelation = 5,
-    PlotOctave = 6
-};
+//enum PlotType {
+//    PlotUnknown = 0,
+//    PlotTime = 1,
+//    PlotStatistics = 2,
+//    PlotSpectre = 3,
+//    PlotNykvist = 4,
+//    PlotCorrelation = 5,
+//    PlotOctave = 6
+//};
 
 struct Method
 {
@@ -111,16 +111,16 @@ class DfdChannel : public Channel
 public:
     /** [Channel#] */
     DfdChannel(DfdFileDescriptor *parent, int channelIndex);
-    DfdChannel(const DfdChannel &other);
-    DfdChannel(Channel &other);
+    DfdChannel(DfdChannel &other, DfdFileDescriptor *parent=0);
+    DfdChannel(Channel &other, DfdFileDescriptor *parent=0);
 
     virtual ~DfdChannel();
 
     virtual Descriptor::DataType type() const;
     virtual Descriptor::OrdinateFormat yFormat() const;
 
-    virtual void read(DfdSettings &dfd, int chanIndex);
-    virtual void write(QTextStream &dfd, int chanIndex);
+    virtual void read(DfdSettings &dfd, int numChans);
+    virtual void write(QTextStream &dfd, int index = -1);
     virtual QStringList getInfoHeaders();
     virtual QStringList getInfoData();
 
@@ -137,16 +137,7 @@ public:
 
     virtual QString xName() const;
     virtual QString yName() const {return YName;}
-    virtual double xBegin() const;
-    virtual double xStep() const {return XStep;}
-    virtual int samplesCount() const;
-    virtual QVector<double> &yValues() {return YValues;}
-    virtual QVector<double> &xValues() {return XValues;}
-    void setYValues(const QVector<double> &values);
-    void setXValues(const QVector<double> &xvalues);
-    virtual double xMaxInitial() const {return XMaxInitial;}
-    virtual double yMinInitial() const {return yMin;}
-    virtual double yMaxInitial() const {return yMax;}
+
     virtual void addCorrection(double correctionValue, bool writeToFile);
 
     virtual QString description() const {return ChanDscr;}
@@ -163,8 +154,6 @@ public:
 
     virtual void clear();
 
-//    virtual bool typeDiffers(Channel *other);
-
     /**
      * @brief preprocess - подготавливает значение к записи с помощью setValue
      * @param v - значение
@@ -178,33 +167,25 @@ public:
     int ChanBlockSize; //размер блока в отсчетах
     QString YName;
     QString YNameOld;
-    QString XName;
+//    QString XName;
     QString InputType;
     QString ChanDscr;
 
     quint64 blockSizeInBytes() const; //размер блока в байтах
 
-    double xMin;
-    double xMax;
-    double yMin;
-    double yMax;
-    double XStep;
-    double XMaxInitial; // initial xMax value to display
-
-    QVector<double> YValues;
-    QVector<double> XValues;
     DfdFileDescriptor *parent;
     virtual FileDescriptor *descriptor();
     int channelIndex; // нумерация с 0
 
     bool _populated;
-    int NumInd;
 
     bool temporalCorrection;
     QString nameBeforeCorrection;
-    double oldCorrectionValue;
 
     DfdDataType dataType;
+    QList<int> dataPositions;
+private:
+    int dataFormat() const;
 };
 
 class RawChannel : public DfdChannel
@@ -222,15 +203,14 @@ public:
           BandWidth(0.0)
     {}
     virtual ~RawChannel() {}
-    virtual void read(DfdSettings &dfd, int chanIndex);
-    virtual void write(QTextStream &dfd, int chanIndex);
+    virtual void read(DfdSettings &dfd, int numChans);
+    virtual void write(QTextStream &dfd);
     virtual QStringList getInfoHeaders();
     virtual QStringList getInfoData();
     virtual double postprocess(double v);
     virtual void postprocess(QVector<double> &v);
     virtual double preprocess(double v);
 
-    void populate();
     QString SensName;
     double ADC0;
     double ADCStep;
@@ -286,16 +266,19 @@ class DfdFileDescriptor : public FileDescriptor
 public:
     DfdFileDescriptor(const QString &fileName);
 
-    // creates a copy of DfdDataDescriptor without copying data
+    // creates a copy of DfdDataDescriptor with copying data
     DfdFileDescriptor(const DfdFileDescriptor &d);
+    // creates a copy of DataDescriptor with copying data
+    DfdFileDescriptor(const FileDescriptor &other);
     ~DfdFileDescriptor();
-    void read();
-    void write();
-    void writeRawFile();
-    void populate();
+    virtual void read();
+    virtual void write();
+    virtual void writeRawFile();
+    virtual void populate();
     void updateDateTimeGUID();
     virtual void fillPreliminary(Descriptor::DataType);
     virtual void fillRest();
+    static DfdFileDescriptor *newFile(const QString &fileName, DfdDataType type);
 
     QStringList info() const;
     QString dateTime() const;
@@ -321,7 +304,7 @@ public:
     QString attachedFileName() const {return rawFileName;}
     void setAttachedFileName(const QString &name) {rawFileName = name;}
 
-    int channelsCount() const {return channels.size();}
+    virtual int channelsCount() const {return channels.size();}
 
     void deleteChannels(const QVector<int> &channelsToDelete);
     void copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy);
@@ -332,7 +315,8 @@ public:
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes);
 
     QStringList getHeadersForChannel(int channel);
-    Channel *channel(int index);
+    Channel *channel(int index) const;
+    virtual DfdChannel* dfdChannel(int index) {return channels[index];}
 
     bool allUnplotted() const;
     bool isSourceFile() const;
@@ -359,7 +343,7 @@ public:
     DfdDataType DataType; // см. выше
     QDate Date;
     QTime Time;
-    int NumChans;
+
 
     int BlockSize;
     int NumInd;
@@ -373,10 +357,15 @@ public:
     Source *source;
     Process *process;
     DataDescription *dataDescription;
-    QList<DfdChannel *> channels;
+
     QString rawFileName; // путь к RAW файлу
+    QList<DfdChannel *> channels;
+
 private:
+    static DfdFileDescriptor *newThirdOctaveFile(const QString &fileName);
     friend class DataDescription;
+    friend class DfdChannel;
+    QVector<double> xValues;
 
 
     QString _legend; // editable description
@@ -384,9 +373,6 @@ private:
     // FileDescriptor interface
 public:
     virtual QString saveTimeSegment(double from, double to);
-
-    // FileDescriptor interface
-public:
     virtual int samplesCount() const;
     virtual void setSamplesCount(int count);
 };

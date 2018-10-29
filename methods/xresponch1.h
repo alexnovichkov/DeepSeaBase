@@ -25,7 +25,6 @@ public:
     virtual Function *addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, int spectrumSize, Parameters &p, int i);
 
 private:
-    QCheckBox *saveAsComplexCheckBox;
     QSpinBox *baseChannelSpin;
 };
 

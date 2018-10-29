@@ -233,12 +233,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     QAction *plotHelpAct = new QAction("Справка", this);
-    connect(plotHelpAct, &QAction::triggered, [=](){
-
-        QDesktopServices::openUrl(QUrl("help.html"));
-
-
-    });
+    connect(plotHelpAct, &QAction::triggered, [](){QDesktopServices::openUrl(QUrl("help.html"));});
 
     calculateSpectreAct = new QAction(QString("Обработать записи..."), this);
     connect(calculateSpectreAct, SIGNAL(triggered()), SLOT(calculateSpectreRecords()));
@@ -271,7 +266,7 @@ MainWindow::MainWindow(QWidget *parent)
     trackingCursorAct->setIcon(QIcon(":/icons/tracking.png"));
     trackingCursorAct->setCheckable(true);
     trackingCursorAct->setObjectName("trackingCursor");
-    connect(trackingCursorAct, &QAction::triggered, [=](){
+    connect(trackingCursorAct, &QAction::triggered, [this](){
         plot->switchTrackingCursor();
     });
     connect(plot,SIGNAL(trackingPanelCloseRequested()),trackingCursorAct,SLOT(toggle()));
@@ -315,16 +310,9 @@ MainWindow::MainWindow(QWidget *parent)
     interactionModeAct = new QAction(QString("Включить режим изменения данных"), this);
     interactionModeAct->setIcon(QIcon(":/icons/data.png"));
     interactionModeAct->setCheckable(true);
-    connect(interactionModeAct, &QAction::triggered, [=](){
+    connect(interactionModeAct, &QAction::triggered, [this](){
         plot->switchInteractionMode();
     });
-
-//    switchHarmonicsAct = new QAction(QString("Включить показ гармоник"), this);
-//    switchHarmonicsAct->setIcon(QIcon(":/icons/harmonics.png"));
-//    switchHarmonicsAct->setCheckable(true);
-//    connect(switchHarmonicsAct, &QAction::triggered, [=](){
-//        plot->switchHarmonicsMode();
-//    });
 
     addCorrectionAct = new QAction("Добавить поправку...", this);
     addCorrectionAct->setIcon(QIcon(":/icons/correction.png"));
@@ -449,7 +437,7 @@ MainWindow::MainWindow(QWidget *parent)
     autoscaleXAct->setIcon(QIcon(":/icons/autoscale-x.png"));
     autoscaleXAct->setCheckable(true);
     bool autoscale = getSetting("autoscale-x", true).toBool();
-    connect(autoscaleXAct, &QAction::toggled, [=](bool toggled){
+    connect(autoscaleXAct, &QAction::toggled, [this](bool toggled){
         plot->toggleAutoscale(0 /* x axis */,toggled);
         setSetting("autoscale-x", toggled);
     });
@@ -460,7 +448,7 @@ MainWindow::MainWindow(QWidget *parent)
     autoscaleYAct->setIcon(QIcon(":/icons/autoscale-y-main.png"));
     autoscaleYAct->setCheckable(true);
     autoscale = getSetting("autoscale-y", true).toBool();
-    connect(autoscaleYAct, &QAction::toggled, [=](bool toggled){
+    connect(autoscaleYAct, &QAction::toggled, [this](bool toggled){
         plot->toggleAutoscale(1 /* y axis */,toggled);
         setSetting("autoscale-y", toggled);
     });
@@ -471,7 +459,7 @@ MainWindow::MainWindow(QWidget *parent)
     autoscaleYSlaveAct->setIcon(QIcon(":/icons/autoscale-y-slave.png"));
     autoscaleYSlaveAct->setCheckable(true);
     autoscale = getSetting("autoscale-y-slave", true).toBool();
-    connect(autoscaleYSlaveAct, &QAction::toggled, [=](bool toggled){
+    connect(autoscaleYSlaveAct, &QAction::toggled, [this](bool toggled){
         plot->toggleAutoscale(2 /* y slave axis */,toggled);
         setSetting("autoscale-y-slave", toggled);
     });
@@ -480,7 +468,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     autoscaleAllAct  = new QAction("Автомасштабирование по всем осям", this);
     autoscaleAllAct->setIcon(QIcon(":/icons/autoscale-all.png"));
-    connect(autoscaleAllAct, &QAction::triggered, [=](){
+    connect(autoscaleAllAct, &QAction::triggered, [this](){
         plot->autoscale(0 /* x axis */);
         plot->autoscale(1 /* y axis */);
         plot->autoscale(2 /* y slave axis */);
@@ -1156,11 +1144,10 @@ bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channe
     }
 
     bool oneFolder = true;
-    QString startFolder;
+    QString startFolder = QFileInfo(channelsToCopy.first().first->fileName()).canonicalPath();
 
-    for (int i=0; i<channelsToCopy.size(); ++i) {
-        if (startFolder.isEmpty()) startFolder = QFileInfo(channelsToCopy.at(i).first->fileName()).canonicalPath();
-        else if (QFileInfo(channelsToCopy.at(i).first->fileName()).canonicalPath() != startFolder) {
+    for (int i=1; i<channelsToCopy.size(); ++i) {
+        if (QFileInfo(channelsToCopy.at(i).first->fileName()).canonicalPath() != startFolder) {
             oneFolder = false;
             break;
         }
@@ -1274,7 +1261,7 @@ bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channe
 
 void MainWindow::calculateMean()
 {DD;
-    const int graphsSize = plot->graphsCount();
+    const int graphsSize = plot->graphs.size();
     if (graphsSize<2) return;
 
     QList<QPair<FileDescriptor *, int> > channels;
@@ -1375,8 +1362,9 @@ void MainWindow::calculateMean()
         meanDfd = findDescriptor(meanDfdFile);
         if (meanDfd)
             descriptorFound = true;
-        else
+        else {
             meanDfd = createDescriptor(meanDfdFile);
+        }
 
         if (!meanDfd) return;
 
@@ -1843,7 +1831,8 @@ void MainWindow::calculateSpectreRecords()
 
     QStringList newFiles = dialog.getNewFiles();
     addFiles(newFiles);
-
+    foreach (const QString &file, newFiles)
+        if (!tab->folders.contains(file)) tab->folders << file;
 }
 
 void MainWindow::convertFiles()
@@ -1902,7 +1891,7 @@ void MainWindow::calculateThirdOctave()
 
 void MainWindow::calculateMovingAvg()
 {
-    const int graphsSize = plot->graphsCount();
+    const int graphsSize = plot->graphs.size();
     if (graphsSize<1) return;
 
     int windowSize = MainWindow::getSetting("movingAvgSize",3).toInt();
@@ -2341,15 +2330,12 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
     QAxObject * worksheet = workbook->querySubObject("ActiveSheet");
     //worksheet->setProperty("Name", newSheetName);
 
-    // экспортируем данные графиков на лист
-     QList<Curve *> curves = plot->curves();
-
      // проверяем, все ли каналы из одного файла
-     FileDescriptor *descriptor = curves.at(0)->descriptor;
-     Channel *channel = curves.at(0)->channel;
+     FileDescriptor *descriptor = plot->graphs.at(0)->descriptor;
+     Channel *channel = plot->graphs.at(0)->channel;
      bool allChannelsFromOneFile = true;
-     for (int i=1; i<curves.size(); ++i) {
-         if (curves.at(i)->descriptor->fileName() != descriptor->fileName()) {
+     for (int i=1; i<plot->graphs.size(); ++i) {
+         if (plot->graphs.at(i)->descriptor->fileName() != descriptor->fileName()) {
              allChannelsFromOneFile = false;
              break;
          }
@@ -2359,12 +2345,12 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      //проверяем, все ли каналы имеют одинаковое разрешение по х
      bool allChannelsHaveSameXStep = true;
      if (channel->xStep()==0.0) allChannelsHaveSameXStep = false;
-     for (int i=1; i<curves.size(); ++i) {
-         if (curves.at(i)->channel->xStep() == 0.0) {
+     for (int i=1; i<plot->graphs.size(); ++i) {
+         if (plot->graphs.at(i)->channel->xStep() == 0.0) {
              allChannelsHaveSameXStep = false;
              break;
          }
-         if (qAbs(curves.at(i)->channel->xStep() - channel->xStep()) >= 1e-10) {
+         if (qAbs(plot->graphs.at(i)->channel->xStep() - channel->xStep()) >= 1e-10) {
              allChannelsHaveSameXStep = false;
              break;
          }
@@ -2375,22 +2361,22 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      int maxInd = channel->samplesCount();
      double maxStep = channel->xStep();
      bool zeroStepDetected = maxStep<1e-9;
-     double minX = channel->xBegin();
-     double maxX = channel->xMaxInitial();
+     double minX = channel->xMin();
+     double maxX = channel->xMax();
 
      Range range = plot->xRange();
 
-     for (int i=1; i<curves.size(); ++i) {
-         Channel *ch = curves.at(i)->channel;
+     for (int i=1; i<plot->graphs.size(); ++i) {
+         Channel *ch = plot->graphs.at(i)->channel;
          if (ch->samplesCount() > maxInd)
              maxInd = ch->samplesCount();
          if (ch->xStep() > maxStep)
              maxStep = ch->xStep();
          zeroStepDetected |= (ch->xStep() < 1e-9);
-         if (ch->xBegin()< minX)
-             minX = ch->xBegin();
-         if (ch->xMaxInitial() > maxX)
-             maxX = ch->xMaxInitial();
+         if (ch->xMin()< minX)
+             minX = ch->xMin();
+         if (ch->xMax() > maxX)
+             maxX = ch->xMax();
      }
      if (minX >= range.min && maxX <= range.max) fullRange = true;
 
@@ -2412,8 +2398,8 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          delete cells;
      }
      else {
-         for (int i=0; i<curves.size(); ++i) {
-             Curve *curve = curves.at(i);
+         for (int i=0; i<plot->graphs.size(); ++i) {
+             Curve *curve = plot->graphs.at(i);
              QAxObject *cells = allChannelsHaveSameXStep ? worksheet->querySubObject("Cells(Int,Int)", 1, 2+i)
                                                          : worksheet->querySubObject("Cells(Int,Int)", 1, 2+i*2);
              cells->setProperty("Value", curve->descriptor->fileName());
@@ -2437,8 +2423,8 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          delete cells;
      }
      else {
-         for (int i=0; i<curves.size(); ++i) {
-             Curve *curve = curves.at(i);
+         for (int i=0; i<plot->graphs.size(); ++i) {
+             Curve *curve = plot->graphs.at(i);
 
              QStringList descriptions = twoStringDescription(curve->descriptor->dataDescriptor());
 
@@ -2459,8 +2445,8 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      }
 
      // записываем название канала
-     for (int i=0; i<curves.size(); ++i) {
-         Curve *curve = curves.at(i);
+     for (int i=0; i<plot->graphs.size(); ++i) {
+         Curve *curve = plot->graphs.at(i);
          QAxObject *cells = allChannelsHaveSameXStep ? worksheet->querySubObject("Cells(Int,Int)", 4, 2+i)
                                                      : worksheet->querySubObject("Cells(Int,Int)", 4, 2+i*2);
          cells->setProperty("Value", curve->title().text());
@@ -2474,12 +2460,12 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      // если каналы имеют разный шаг по х, то для каждого канала отдельно записываем
      // по два столбца
      if (allChannelsHaveSameXStep) {
-         const int numCols = curves.size();
+         const int numCols = plot->graphs.size();
 
          QList<QVariant> cellsList;
          QList<QVariant> rowsList;
          for (int i = 0; i < maxInd; ++i) {
-             double val = channel->xBegin() + i*channel->xStep();
+             double val = channel->xMin() + i*channel->xStep();
              if (/*channel->xStep()<1e-9 &&*/ !channel->xValues().isEmpty())
                  val = channel->xValues().at(i);
              if (!fullRange && (val < range.min || val > range.max) ) continue;
@@ -2487,7 +2473,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
              cellsList.clear();
              cellsList << val;
              for (int j = 0; j < numCols; ++j) {
-                 cellsList << ((curves.at(j)->channel->samplesCount() < maxInd) ? 0 : curves.at(j)->channel->yValues()[i]);
+                 cellsList << ((plot->graphs.at(j)->channel->samplesCount() < maxInd) ? 0 : plot->graphs.at(j)->channel->yValues()[i]);
              }
              rowsList << QVariant(cellsList);
          }
@@ -2510,14 +2496,14 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          delete Cell2;
      }
      else {
-         for (int i=0; i<curves.size(); ++i) {
-             Curve *curve = curves.at(i);
+         for (int i=0; i<plot->graphs.size(); ++i) {
+             Curve *curve = plot->graphs.at(i);
              Channel *ch = curve->channel;
 
              QList<QVariant> cellsList;
              QList<QVariant> rowsList;
              for (int j = 0; j < ch->samplesCount(); j++) {
-                 double val = ch->xBegin() + j*ch->xStep();
+                 double val = ch->xMin() + j*ch->xStep();
                  if (/*ch->xStep()<1e-9 &&*/ !ch->xValues().isEmpty())
                      val = ch->xValues().at(j);
                  if (!fullRange && (val < range.min || val > range.max) ) continue;
@@ -2568,8 +2554,8 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
                  else ok=false;
              }
 
-             for (int i=0; i<curves.size(); ++i) {
-                 Curve *curve = curves.at(i);
+             for (int i=0; i<plot->graphs.size(); ++i) {
+                 Curve *curve = plot->graphs.at(i);
                  QAxObject * serie;
 
                  serie = series->querySubObject("NewSeries()");
@@ -2608,7 +2594,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
              int seriesCount = series->property("Count").toInt();
              for ( int i=0; i<seriesCount; ++i) {
                  QAxObject * serie = series->querySubObject("Item (int)", i+1);
-                 Curve *curve = curves.at(i);
+                 Curve *curve = plot->graphs.at(i);
                  if (serie) {
                      QStringList fullName;// = twoStringDescription(curve->descriptor->dataDescriptor());
                      fullName.append(curve->channel->name());
@@ -2622,7 +2608,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          // если они были там в программе
          int seriesCount = series->property("Count").toInt();
          for ( int i=0; i<seriesCount; ++i) {
-             Curve *curve = curves.at(i);
+             Curve *curve = plot->graphs.at(i);
              if (curve->yAxis()==QwtPlot::yRight) {
                  QAxObject * serie = series->querySubObject("Item (int)", i+1);
                  if (serie) {
@@ -2660,8 +2646,8 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          delete plotArea;
 
          // цвета графиков
-         for (int i = 0; i< curves.size(); ++i) {
-             Curve *curve = curves.at(i);
+         for (int i = 0; i< plot->graphs.size(); ++i) {
+             Curve *curve = plot->graphs.at(i);
              QAxObject * serie = series->querySubObject("Item(int)", i+1);
              if (serie) {
                  QAxObject *format = serie->querySubObject("Format");
@@ -2669,7 +2655,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
                  if (formatLine) formatLine->setProperty("Weight", 1);
 
                  QAxObject *formatLineForeColor = formatLine->querySubObject("ForeColor");
-                 if (formatLineForeColor) formatLineForeColor->setProperty("RGB", curves.at(i)->pen().color().rgb());
+                 if (formatLineForeColor) formatLineForeColor->setProperty("RGB", plot->graphs.at(i)->pen().color().rgb());
 
                  foreach(PointLabel *label, curve->labels) {
                      QAxObject* point = serie->querySubObject("Points(QVariant)", label->point()+1);
@@ -2796,23 +2782,20 @@ void MainWindow::addFiles(QStringList &files)
 
     QList<FileDescriptor *> items;
 
-    for (int i=files.size()-1; i>=0; --i) {
-        QString fileName = files[i];
+    foreach (const QString fileName, files) {
         if (fileName.isEmpty()) continue;
 
         if (checkForContains(tab, fileName)) {//этот файл уже есть во вкладке
-            files.removeAt(i);
+            continue;
         }
-        else {
-            FileDescriptor *file = findDescriptor(fileName);
-            if (!file) {
-                file = createDescriptor(fileName);
-                file->read();
-            }
-            if (file) {
-                items.prepend(file);
-            }
+
+        FileDescriptor *file = findDescriptor(fileName);
+        if (!file) {
+            file = createDescriptor(fileName);
+            file->read();
         }
+        if (file)
+            items << file;
     }
     addFiles(items);
 }

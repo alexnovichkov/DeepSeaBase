@@ -18,6 +18,7 @@ class QThread;
 class Converter;
 class QDialogButtonBox;
 class QPlainTextEdit;
+class TaskBarProgress;
 
 class CalculateSpectreDialog : public QDialog
 {
@@ -52,6 +53,8 @@ private:
 
     Converter *converter;
     QThread *thread;
+    TaskBarProgress *taskBarProgress;
+    QWidget *win;
 };
 
 #endif // CONVERTDIALOG_H

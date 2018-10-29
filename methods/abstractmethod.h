@@ -41,32 +41,32 @@ private:
 struct Parameters
 {
     double sampleRate; // частота дискретизации
-    int averagingType; //0 - линейное
+    int averagingType = 0; //0 - линейное
                        //1 - экспоненциальное
                        //2 - хранение максимума
-    int windowType; //0 - прямоугольное
+    int windowType = 2; //0 - прямоугольное
                     //1 - Бартлетта / треугольное
                     //2 - Хеннинга
                     //3 - Хемминга
                     //4 - Натолл
                     //5 - Гаусс
-    int bufferSize; // sampleRate / 2^i, где i - номер частотного диапазона от 0 до 11
+    int bufferSize = 2048; // sampleRate / 2^i, где i - номер частотного диапазона от 0 до 11
 
-    int bandWidth;
-    int initialBandStripNumber;
-    int bandStrip; //полоса обработки, 0 = исх. частота дискрет.
+    int bandWidth = 0;
+    int initialBandStripNumber = 0;
+    int bandStrip = 0; //полоса обработки, 0 = исх. частота дискрет.
                   //                  1 = fd/2
                   //                  n = fd/2^n
-    double overlap; // перекрытие, 0 - 0.75
-    int scaleType; //0 - линейная
+    double overlap = 0.0; // перекрытие, 0 - 0.75
+    int scaleType = 0; //0 - линейная
                    //1 - логарифмическая
-    double threshold; // порог для спектра в дБ
-    int averagesCount; // число усреднений
-    int baseChannel; // опорный канал
-    int fCount; // число отсчетов в частотной области
-    bool useDeepSea;
-    bool saveAsComplex=false; //формат результата: комплексные числа
-    AbstractMethod *method;
+    double threshold = 1.0; // порог для спектра в дБ
+    int averagesCount = -1; // число усреднений
+    int baseChannel = 0; // опорный канал
+    int fCount = 2048; // число отсчетов в частотной области // = bufferSize
+    bool useDeepSea = false;
+    bool saveAsComplex = false; //формат результата: комплексные числа
+    AbstractMethod *method = 0;
 };
 
 QDebug operator<<(QDebug debug, const Parameters &p);

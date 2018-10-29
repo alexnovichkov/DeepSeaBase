@@ -1,6 +1,13 @@
 #include "algorithms.h"
 #include "logging.h"
 
+QDebug operator <<(QDebug debug, const std::complex<double> &val)
+{
+    QDebugStateSaver saver(debug);
+    debug.nospace() << '(' << val.real() << ", " << val.imag() << ')';
+    return debug;
+}
+
 QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spectrum, double xBegin, double xStep)
 {DD;
     QPair<QVector<double>, QVector<double> > result;
@@ -226,6 +233,18 @@ QVector<double> absolutes(const QVector<cx_double> &values)
     return result;
 }
 
+QVector<double> absolutes(const QVector<double> &values)
+{
+    const int size = values.size();
+    QVector<double> result(size);
+
+    for (int i=0; i<size; ++i) {
+        result[i] = std::abs(values[i]);
+    }
+
+    return result;
+}
+
 QVector<double> phases(const QVector<cx_double> &values)
 {
     const int size = values.size();
@@ -250,13 +269,205 @@ QVector<double> reals(const QVector<cx_double> &values)
     return result;
 }
 
-QVector<cx_double> complexes(const QVector<double> &values)
+
+
+
+QVector<double> linspace(double begin, double step, int n)
+{
+    QVector<double> result(n);
+    for (int i=0; i<n; ++i) result[i]=begin+i*step;
+    return result;
+}
+
+QVector<double> imags(const QVector<cx_double> &values)
+{
+    const int size = values.size();
+    QVector<double> result(size);
+
+    for (int i=0; i<size; ++i) {
+        result[i] = values[i].imag();
+    }
+
+    return result;
+}
+
+//template <typename T>
+//QVector<T> movingAverage(const QVector<T> &spectrum, int window)
+//{
+//    int numInd = spectrum.size();
+//    QVector<T> result(numInd, T());
+
+//    int span = window / 2;
+
+//    for (int j=span; j<numInd-span; ++j) {
+//        T sum = T();
+//        for (int k=0; k<window;++k) {
+//            sum += spectrum[j-span+k];
+//        }
+//        sum /= window;
+
+//        result[j] = sum;
+//    }
+
+//    //начало диапазона и конец диапазона
+//    for (int j=0; j<span; ++j)
+//        result[j] = spectrum[j];
+//    for (int j=numInd-span; j<numInd; ++j)
+//        result[j] = spectrum[j];
+
+//    return result;
+//}
+
+QVector<cx_double> movingAverage(const QVector<cx_double> &spectrum, int window)
+{
+    int numInd = spectrum.size();
+    QVector<cx_double> result(numInd, cx_double());
+
+    int span = window / 2;
+
+    for (int j=span; j<numInd-span; ++j) {
+        cx_double sum = 0.0;
+        for (int k=0; k<window;++k) {
+            sum += spectrum[j-span+k];
+        }
+        sum /= window;
+
+        result[j] = sum;
+    }
+
+    //начало диапазона и конец диапазона
+    for (int j=0; j<span; ++j)
+        result[j] = spectrum[j];
+    for (int j=numInd-span; j<numInd; ++j)
+        result[j] = spectrum[j];
+
+    return result;
+}
+
+QVector<double> movingAverage(const QVector<double> &spectrum, int window)
+{
+    int numInd = spectrum.size();
+    QVector<double> result(numInd, 0.0);
+
+    int span = window / 2;
+
+    for (int j=span; j<numInd-span; ++j) {
+        double sum = 0.0;
+        for (int k=0; k<window;++k) {
+            sum += spectrum[j-span+k];
+        }
+        sum /= window;
+
+        result[j] = sum;
+    }
+
+    //начало диапазона и конец диапазона
+    for (int j=0; j<span; ++j)
+        result[j] = spectrum[j];
+    for (int j=numInd-span; j<numInd; ++j)
+        result[j] = spectrum[j];
+
+    return result;
+}
+
+
+QString doubletohex(const double d)
+{
+    QString s;
+    QByteArray ba;
+    QDataStream stream(&ba,QIODevice::WriteOnly);
+    stream.setFloatingPointPrecision(QDataStream::DoublePrecision);
+    stream.setByteOrder(QDataStream::LittleEndian);
+    stream << d;
+    s = "("+ba.toHex()+")";
+    return s;
+}
+
+double hextodouble(QString hex)
+{
+    if (hex.startsWith("("))
+        hex.remove(0,1);
+    if (hex.endsWith(")"))
+        hex.chop(1);
+
+    double result=0.0l;
+
+    QByteArray ba;
+    for (int i=0; i<16; i+=2) {
+        quint8 c = hex.mid(i,2).toUInt(0,16);
+        ba.append(c);
+    }
+
+    QDataStream stream(ba);
+    stream.setFloatingPointPrecision(QDataStream::DoublePrecision);
+    stream.setByteOrder(QDataStream::LittleEndian);
+    stream >> result;
+
+    return result;
+}
+
+
+
+float hextofloat(QString hex)
+{
+    if (hex.startsWith("("))
+        hex.remove(0,1);
+    if (hex.endsWith(")"))
+        hex.chop(1);
+
+    float result=0.0;
+
+    QByteArray ba;
+    for (int i=0; i<8; i+=2) {
+        quint8 c = hex.mid(i,2).toUInt(0,16);
+        ba.append(c);
+    }
+
+    QDataStream stream(ba);
+    stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+    stream.setByteOrder(QDataStream::LittleEndian);
+    stream >> result;
+
+    return result;
+}
+
+QString floattohex(const float f)
+{
+    QString s;
+    QByteArray ba;
+    QDataStream stream(&ba,QIODevice::WriteOnly);
+    stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+    stream.setByteOrder(QDataStream::LittleEndian);
+    stream << f;
+    s = "("+ba.toHex()+")";
+    return s;
+}
+
+QVector<cx_double> complexes(const QVector<double> &values, bool valuesAreReals)
 {
     const int size = values.size();
     QVector<cx_double> result(size);
 
     for (int i=0; i<size; ++i) {
-        result[i] = {values[i], 0.0};
+        if (valuesAreReals)
+            result[i] = {values[i], 0.0};
+        else
+            result[i] = {0.0, values[i]};
+    }
+
+    return result;
+}
+
+QVector<cx_double> complexes(const QVector<float> &values, bool valuesAreReals)
+{
+    const int size = values.size();
+    QVector<cx_double> result(size);
+
+    for (int i=0; i<size; ++i) {
+        if (valuesAreReals)
+            result[i] = {values[i], 0.0};
+        else
+            result[i] = {0.0, values[i]};
     }
 
     return result;

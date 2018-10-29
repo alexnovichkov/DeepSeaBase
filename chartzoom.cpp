@@ -253,8 +253,14 @@ void ChartZoom::ScaleBounds::setFixed(bool fixed)
 // Фиксация исходных границ шкалы
 void ChartZoom::ScaleBounds::add(double min, double max)
 {DD;
-    mins << min;
-    maxes << max;
+    if (min==max) {
+        mins << (min-1.0);
+        maxes << (max+1.0);
+    }
+    else {
+        mins << min;
+        maxes << max;
+    }
 
     if (!fixed) {
         autoscale();
@@ -292,8 +298,14 @@ void ChartZoom::ScaleBounds::autoscale()
 
 void ChartZoom::ScaleBounds::removeToAutoscale(double min, double max)
 {DD;
-    mins.removeOne(min);
-    maxes.removeOne(max);
+    if (min==max) {
+        mins.removeOne(min-1.0);
+        maxes.removeOne(max+1.0);
+    }
+    else {
+        mins.removeOne(min);
+        maxes.removeOne(max);
+    }
 }
 
 void ChartZoom::ScaleBounds::back()

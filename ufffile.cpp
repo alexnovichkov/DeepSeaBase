@@ -4,6 +4,8 @@
 #include "logging.h"
 #include "mainwindow.h"
 #include "algorithms.h"
+#include "dataholder.h"
+#include "averaging.h"
 
 QList<AbstractField*> fields = {
     new DelimiterField,
@@ -75,7 +77,7 @@ UffFileDescriptor::UffFileDescriptor(const QString &fileName) : FileDescriptor(f
 }
 
 UffFileDescriptor::UffFileDescriptor(const UffFileDescriptor &other) : FileDescriptor(other.fileName())
-{
+{DD;
     this->NumInd = other.NumInd;
     this->header = other.header;
     this->units = other.units;
@@ -86,6 +88,42 @@ UffFileDescriptor::UffFileDescriptor(const UffFileDescriptor &other) : FileDescr
     foreach (Function *f, channels) {
         f->parent = this;
     }
+}
+
+UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other) : FileDescriptor(other.fileName())
+{
+    //заполнение header
+    header.type151[10].value = QDateTime::fromString(other.dateTime(), "dd.MM.yy hh:mm:ss");
+    header.type151[12].value = QDateTime::fromString(other.dateTime(), "dd.MM.yy hh:mm:ss");
+    header.type151[16].value = QDateTime::currentDateTime();
+
+    int referenceChannelNumber = -1; //номер опорного канала ("сила")
+    //заполнение каналов
+    for (int i=0; i<other.channelsCount(); ++i) {
+        Channel *ch = other.channel(i);
+        if (!ch->populated()) ch->populate();
+        Function *f = new Function(*ch);
+
+        f->type58[15].value = i+1;
+        f->type58[10].value = QString("Record %1").arg(i+1);
+
+        if (ch->xName().toLower()=="сила")
+            referenceChannelNumber = i;
+
+        f->type58[8].value = header.type151[10].value;
+        channels << f;
+        //clearing
+        ch->setPopulated(false);
+        ch->data()->clear();
+    }
+    //заполнение инфы об опорном канале
+    if (referenceChannelNumber>=0) {
+        for (int nc=0; nc<channels.size(); ++nc) {
+            channels[nc]->type58[18].value = other.channel(nc)->name();
+            channels[nc]->type58[19].value = referenceChannelNumber+1;
+        }
+    }
+    fillRest();
 }
 
 UffFileDescriptor::~UffFileDescriptor()
@@ -120,10 +158,7 @@ void UffFileDescriptor::read()
 
             while (!stream.atEnd()) {
                 Function *f = new Function(this);
-                stream >> f->header;
-                stream >> f->type58;
-                stream >> f->dataPosition;
-                f->samples = f->type58[26].value.toULongLong();
+                f->read(stream);
 
                 channels << f;
             }
@@ -163,10 +198,6 @@ void UffFileDescriptor::read()
         }
     }
 
-    if (!channels.isEmpty()) {
-        //setXBegin(channels.first()->xBegin());
-        setSamplesCount(channels.first()->samplesCount());
-    }
 }
 
 void UffFileDescriptor::write()
@@ -225,25 +256,12 @@ QString UffFileDescriptor::dataDescriptorAsString() const
     return header.info();
 }
 
-QString UffFileDescriptor::fileType() const
-{
-    if (channels.isEmpty()) return "Неизв.";
-    int type = channels.first()->type();
-   // bool equal = true;
-    for (int i=1; i<channels.size(); ++i) {
-        if (channels.at(i)->type() != type) {
-            return "Неизв.";
-        }
-    }
-    return channels.first()->functionTypeDescription();
-}
-
 QStringList UffFileDescriptor::info() const
 {DD;
     return QStringList()
      << QFileInfo(fileName()).completeBaseName() //QString("Файл") 1
          << header.type151[10].value.toDateTime().toString("dd.MM.yy hh:mm:ss") // QString("Дата") 2
-         << fileType() // QString("Тип") 3
+         << Function::functionTypeDescription(type()) // QString("Тип") 3
          << (xStep()==0 ? QString::number(samplesCount()) : QString::number(samplesCount() * xStep())) // QString("Размер") 4
          << xName() // QString("Ось Х") 5
          << QString::number(xStep()) // QString("Шаг") 6
@@ -275,7 +293,7 @@ double UffFileDescriptor::xStep() const
 }
 
 void UffFileDescriptor::setXStep(const double xStep)
-{
+{DD;
     if (channels.isEmpty()) return;
     bool changed = false;
 
@@ -283,6 +301,7 @@ void UffFileDescriptor::setXStep(const double xStep)
         if (channels.at(i)->xStep()!=xStep) {
             changed = true;
             channels[i]->type58[29].value = xStep;
+            channels[i]->data()->setXStep(xStep);
         }
     }
     if (changed) setChanged(true);
@@ -290,9 +309,11 @@ void UffFileDescriptor::setXStep(const double xStep)
 }
 
 QString UffFileDescriptor::xName() const
-{
+{DD;
     if (channels.isEmpty()) return QString();
+
     QString xname = channels.first()->xName();
+
     for (int i=1; i<channels.size(); ++i) {
         if (channels[i]->xName() != xname) return QString();
     }
@@ -300,19 +321,19 @@ QString UffFileDescriptor::xName() const
 }
 
 void UffFileDescriptor::setLegend(const QString &legend)
-{
+{DD;
     if (legend == header.type151[8].value.toString()) return;
     header.type151[8].value = legend;
     setChanged(true);
 }
 
 QString UffFileDescriptor::legend() const
-{
+{DD;
     return header.type151[8].value.toString();
 }
 
 void UffFileDescriptor::setDateTime(QDateTime dt)
-{
+{DD;
     header.type151[10].value = dt;
     setChanged(true);
 }
@@ -367,44 +388,34 @@ void UffFileDescriptor::copyChannelsFrom(const QList<QPair<FileDescriptor *, int
 
 void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> > &channels)
 {DD;
-    Function *ch = new Function(this);
+    if (channels.isEmpty()) return;
 
-    FileDescriptor *firstDescriptor = channels.first().first;
-    Channel *firstChannel = firstDescriptor->channel(channels.first().second);
+    Function *ch = new Function(this);
 
     QList<Channel*> list;
     for (int i=0; i<channels.size(); ++i)
         list << channels.at(i).first->channel(channels.at(i).second);
-
-    // считаем данные для этого канала
-    // если ось = дБ, сначала переводим значение в линейное
+    Channel *firstChannel = list.first();
 
     //ищем наименьшее число отсчетов
-    int numInd = list.first()->samplesCount();
-    for (int i=1; i<list.size(); ++i) {
-        if (list.at(i)->samplesCount() < numInd)
-            numInd = list.at(i)->samplesCount();
-    }
+    int numInd = (*std::min_element(list.begin(), list.end(), [](Channel *c1, Channel *c2){
+        return c1->samplesCount() <= c2->samplesCount();
+    }))->samplesCount();
 
-    ch->values = QVector<double>(numInd, 0.0);
+    // ищем формат данных для нового канала
+    // если форматы разные, то формат будет комплексный
 
-    ch->yMin = 1.0e100;
-    ch->yMax = -1.0e100;
+    int format = firstChannel->yValuesFormat();
+    auto f = std::find_if(list.begin()+1, list.end(), [format](Channel *ch){return ch->yValuesFormat()!=format;});
+    if (f != list.end()) format = DataHolder::YValuesComplex;
 
-    for (int i=0; i<numInd; ++i) {
-        double sum = 0.0;
-        for (int file = 0; file < list.size(); ++file) {
-            double temp = list[file]->yValues()[i];
-            if (list[file]->yName() == "дБ" || list[file]->yName() == "dB")
-                temp = pow(10.0, (temp/10.0));
-            sum += temp;
-        }
-        sum /= list.size();
-        if (list[0]->yName() == "дБ" || list[0]->yName() == "dB")
-            sum = 10.0 * log10(sum);
-        if (sum < ch->yMin) ch->yMin = sum;
-        if (sum > ch->yMax) ch->yMax = sum;
-        ch->values[i] = sum;
+    Averaging averaging(Averaging::Linear, list.size());
+
+    foreach (Channel *ch, list) {
+        if (ch->yValuesFormat() == DataHolder::YValuesComplex)
+            averaging.average(ch->data()->yValuesComplex());
+        else
+            averaging.average(ch->data()->linears());
     }
 
     // обновляем сведения канала
@@ -417,20 +428,33 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     }
     ch->setDescription("Среднее каналов "+l.join(","));
 
-    ch->samples = numInd;
-    ch->type58[26].value = ch->samples;
-    ch->type58[25].value = 4;
+    if (format == DataHolder::YValuesComplex)
+        ch->data()->setYValues(averaging.getComplex().mid(0, numInd));
+    else
+        ch->data()->setYValues(averaging.get().mid(0, numInd), DataHolder::YValuesFormat(format));
+
+    if (ch->data()->xValuesFormat()==DataHolder::XValuesUniform) {
+        ch->type58[27].value = 1;
+        ch->data()->setXValues(firstChannel->xMin(), firstChannel->xStep(), numInd);
+    }
+    else {
+        ch->type58[27].value = 0;
+        ch->data()->setXValues(firstChannel->data()->xValues().mid(0, numInd));
+    }
+
     ch->type58[14].value = firstChannel->type();
 
-    ch->type58[44].value = firstChannel->yName();
-    ch->type58[37].value = firstChannel->xName();
-    ch->type58[32].value = abscissaType(firstChannel->xName());
-    ch->type58[36].value = abscissaTypeDescription(ch->type58[32].value.toInt());
+    ch->type58[25].value = (format == DataHolder::YValuesComplex ? 6 : 4);
+    ch->type58[26].value = ch->data()->samplesCount();
 
-    ch->type58[28].value = firstChannel->xBegin();
+    ch->type58[28].value = firstChannel->xMin();
     ch->type58[29].value = firstChannel->xStep();
 
-    ch->xMax = firstChannel->xBegin() + firstChannel->xStep() * numInd;
+    ch->type58[32].value = abscissaType(firstChannel->xName());
+    ch->type58[36].value = abscissaTypeDescription(ch->type58[32].value.toInt());
+    ch->type58[37].value = firstChannel->xName();
+
+    ch->type58[44].value = firstChannel->yName();
 
     ch->parent = this;
 
@@ -438,7 +462,7 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
 }
 
 void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize)
-{
+{DD;
     populate();
 
     for (int i=0; i<channels.size(); ++i) {
@@ -447,57 +471,32 @@ void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
         Channel *firstChannel = firstDescriptor->channel(channels.at(i).second);
 
         int numInd = firstChannel->samplesCount();
-        ch->values = QVector<double>(numInd, 0.0);
 
-        int span = windowSize / 2;
-        bool log = firstChannel->yName() == "дБ" || firstChannel->yName() == "dB";
-
-        for (int j=span; j<numInd-span; ++j) {
-            double sum = 0.0;
-            for (int k=0; k<windowSize;++k) {
-                double temp = firstChannel->yValues()[j-span+k];
-                if (log)
-                    temp = pow(10.0, (temp/10.0));
-                sum += temp;
-            }
-            sum /= windowSize;
-            if (log)
-                sum = 10.0 * log10(sum);
-
-            ch->values[j] = sum;
+        if (firstChannel->data()->yValuesFormat() == DataHolder::YValuesComplex) {
+            ch->data()->setYValues(movingAverage(firstChannel->data()->yValuesComplex(), windowSize));
+        }
+        else {
+            QVector<double> values = movingAverage(firstChannel->data()->linears(), windowSize);
+            if (firstChannel->data()->yValuesFormat() == DataHolder::YValuesAmplitudesInDB)
+                values = DataHolder::toLog(values, threshold(firstChannel->yName()));
+            ch->data()->setYValues(values, DataHolder::YValuesFormat(firstChannel->data()->yValuesFormat()));
         }
 
-        //начало диапазона и конец диапазона
-        for (int j=0; j<span; ++j)
-            ch->values[j] = firstChannel->yValues()[j];
-        for (int j=numInd-span; j<numInd; ++j)
-            ch->values[j] = firstChannel->yValues()[j];
+        if (ch->data()->xValuesFormat()==DataHolder::XValuesUniform) {
+            ch->type58[27].value = 1;
+            ch->data()->setXValues(firstChannel->xMin(), firstChannel->xStep(), numInd);
+        }
+        else {
+            ch->type58[27].value = 0;
+            ch->data()->setXValues(firstChannel->data()->xValues());
+        }
 
         ch->type58[29].value = firstDescriptor->xStep();
-
-        ch->yMin = 1.0e100;
-        ch->yMax = -1.0e100;
-        for (int i=0; i<ch->samples; ++i) {
-            if (ch->values[i] < ch->yMin) ch->yMin = ch->values[i];
-            if (ch->values[i] > ch->yMax) ch->yMax = ch->values[i];
-        }
-
-        if (ch->xvalues.isEmpty())
-            ch->xMax = ch->xBegin() + ch->xStep() * ch->samples;
-        else
-            ch->xMax = ch->xvalues.last();
-
-        if (!firstChannel->xValues().isEmpty()) {
-            ch->xvalues = firstChannel->xValues();
-            ch->xMax = firstChannel->xValues().last();
-        }
 
         // обновляем сведения канала
         ch->setPopulated(true);
         ch->setName(firstChannel->name()+" сглаж.");
         ch->setDescription("Скользящее среднее канала "+firstChannel->name());
-
-        ch->samples = numInd;
 
         ch->type58[44].value = firstChannel->yName();
         ch->type58[37].value = firstChannel->xName();
@@ -505,21 +504,21 @@ void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
 
         ch->type58[8].value = QDateTime::currentDateTime();
 
-        ch->type58[26].value = ch->samples;
-        ch->type58[25].value = 4; //real, double precision
+        ch->type58[26].value = ch->data()->samplesCount();
+        ch->type58[25].value = (ch->data()->yValuesFormat() == DataHolder::YValuesComplex ? 6 : 4);
         ch->type58[14].value = firstChannel->type();
 
         ch->type58[32].value = abscissaType(firstChannel->xName());
         ch->type58[36].value = abscissaTypeDescription(ch->type58[32].value.toInt());
 
-        ch->type58[28].value = firstChannel->xBegin();
+        ch->type58[28].value = firstChannel->xMin();
 
         this->channels << ch;
     }
 }
 
 FileDescriptor *UffFileDescriptor::calculateThirdOctave()
-{
+{DD;
     populate();
 
     QString thirdOctaveFileName = this->fileName();
@@ -541,29 +540,22 @@ FileDescriptor *UffFileDescriptor::calculateThirdOctave()
     foreach (Function *ch, this->channels) {
         Function *newCh = new Function(*ch);
 
-        auto result = thirdOctave(ch->yValues(), ch->xBegin(), ch->xStep());
+        auto result = thirdOctave(ch->data()->decibels(), ch->xMin(), ch->xStep());
 
-        newCh->xvalues = result.first;
-        newCh->values = result.second;
+        newCh->data()->setXValues(result.first);
+        newCh->data()->setYValues(result.second, DataHolder::YValuesAmplitudesInDB);
         newCh->setPopulated(true);
-
-        newCh->samples = newCh->xvalues.size();
-        newCh->xMax = newCh->xvalues.last();
-        auto iter = std::min_element(newCh->values.begin(), newCh->values.end());
-        newCh->yMin = iter == newCh->values.end() ? 0.0 : *iter;
-        iter = std::max_element(newCh->values.begin(), newCh->values.end());
-        newCh->yMax = iter == newCh->values.end() ? 0.0 : *iter;
 
         newCh->parent = thirdOctUff;
 
         newCh->type58[6].value = "Третьоктава";
 
-        newCh->type58[25].value = 2; //25 Ordinate Data Type
+        newCh->type58[25].value = 4; //25 Ordinate Data Type
     //                                       2 - real, single precision
     //                                       4 - real, double precision
     //                                       5 - complex, single precision
     //                                       6 - complex, double precision
-        newCh->type58[26].value = newCh->samples; //26   Number of data pairs for uneven abscissa spacing,
+        newCh->type58[26].value = newCh->data()->samplesCount(); //26   Number of data pairs for uneven abscissa spacing,
                                            //  or number of data values for even abscissa spacing
         newCh->type58[27].value = 0; //27 Abscissa Spacing (1=even, 0=uneven,
         newCh->type58[28].value = 0.0; //28 Abscissa minimum
@@ -573,9 +565,6 @@ FileDescriptor *UffFileDescriptor::calculateThirdOctave()
         thirdOctUff->channels.append(newCh);
     }
 
-
-    thirdOctUff->setSamplesCount(thirdOctUff->channels.first()->samples);
-
     thirdOctUff->fillRest();
 
     thirdOctUff->setChanged(true);
@@ -583,8 +572,6 @@ FileDescriptor *UffFileDescriptor::calculateThirdOctave()
     thirdOctUff->write();
     thirdOctUff->writeRawFile();
     return thirdOctUff;
-
-    return 0;
 }
 
 void UffFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
@@ -626,7 +613,7 @@ QStringList UffFileDescriptor::getHeadersForChannel(int channel)
     return QStringList();
 }
 
-Channel *UffFileDescriptor::channel(int index)
+Channel *UffFileDescriptor::channel(int index) const
 {DD;
     if (channels.size()>index)
         return channels[index];
@@ -643,13 +630,15 @@ bool UffFileDescriptor::allUnplotted() const
 
 bool UffFileDescriptor::isSourceFile() const
 {DD;
-    //мы пока что не умеем считать спектры файлов uff
-//    for (int i=0; i<channels.size(); ++i) {
-//        if (channels.at(i)->type()==Descriptor::TimeResponse) {
-//            return true;
-//        }
-//    }
-    return false;
+    if (channels.isEmpty()) return false;
+    int type = channels.first()->type();
+    for (int i=1; i<channels.size(); ++i) {
+        if (channels.at(i)->type() != type) {
+            return false;
+        }
+    }
+
+    return (type == Descriptor::TimeResponse);
 }
 
 bool UffFileDescriptor::operator ==(const FileDescriptor &descriptor)
@@ -692,7 +681,7 @@ void UffHeader::write(QTextStream &stream)
 }
 
 QString UffHeader::info() const
-{
+{DD;
     return type151[4].value.toString()+" "+type151[6].value.toString();
 }
 
@@ -755,25 +744,18 @@ QDataStream &operator>>(QDataStream &stream, FunctionHeader &header)
 
 
 Function::Function(UffFileDescriptor *parent) : Channel(),
-    xMax(0.0), yMin(0.0), yMax(0.0),
-    samples(0), parent(parent), dataPosition(-1), _populated(false)
+    parent(parent), dataPosition(-1), _populated(false)
 {DD;
     temporalCorrection = false;
-    oldCorrectionValue = 0.0;
     setType58(type58);
 }
 
 
 
-Function::Function(Channel &other)
-{
+Function::Function(Channel &other) : Channel(other)
+{DD;
     temporalCorrection = false;
-    oldCorrectionValue = 0.0;
     setType58(type58);
-
-    samples = other.samplesCount();
-    values = other.yValues();
-    xvalues = other.xValues();
 
     type58[4].value = other.name(); if (other.name().isEmpty()) type58[4].value = "NONE";
     type58[6].value = other.description(); if (other.description().isEmpty()) type58[6].value = "NONE";
@@ -782,9 +764,9 @@ Function::Function(Channel &other)
 
 
     type58[25].value = (unsigned int)other.yFormat();
-    type58[26].value = samples;
+    type58[26].value = data()->samplesCount();
 
-    type58[28].value = other.xBegin();
+    type58[28].value = other.xMin();
     type58[29].value = other.xStep();
 
     type58[32].value = abscissaType(other.xName());
@@ -793,35 +775,27 @@ Function::Function(Channel &other)
 
     type58[44].value = other.yName(); if (other.yName().isEmpty()) type58[44].value = "NONE";
 
-    xMax = type58[28].value.toDouble() + type58[29].value.toDouble() * samples;
-    yMin = other.yMinInitial();
-    yMax = other.yMaxInitial();
-    _populated = !values.isEmpty();
+    _populated = true;
     dataPosition=-1;
 }
 
-Function::Function(Function &other)
-{
+Function::Function(Function &other) : Channel(other)
+{DD;
     temporalCorrection = other.temporalCorrection;
-    oldCorrectionValue = other.oldCorrectionValue;
+//    oldCorrectionValue = other.oldCorrectionValue;
 
     header = other.header;
-    samples = other.samples;
-    xMax = other.xMax;
-    yMin = other.yMin;
-    yMax = other.yMax;
-
-    values = other.values;
-    xvalues = other.xvalues;
 
     type58 = other.type58;
     _populated = other._populated;
     dataPosition = -1;
+
+//    _data = new DataHolder(*(other.data()));
 }
 
 Function::~Function()
 {DD;
-    //delete [] values;
+
 }
 
 void Function::read(QTextStream &stream, qint64 pos)
@@ -839,8 +813,6 @@ void Function::read(QTextStream &stream, qint64 pos)
         fields[type58[i].type]->read(type58[i].value, stream);
     }
 
-    samples = type58[26].value.toULongLong();
-
     dataPosition = stream.pos();
     if (pos == -1) {
         QString s;
@@ -849,11 +821,37 @@ void Function::read(QTextStream &stream, qint64 pos)
         }
         while (s != "-1");
     }
-    //else stream.seek(pos);
+
+    if (type58[27].value.toInt() == 1) {// abscissa, even spacing
+        _data->setXValues(type58[28].value.toDouble(),
+                type58[29].value.toDouble(),
+                type58[26].value.toInt());
+    }
+    else {// abscissa, uneven spacing
+        _data->setSamplesCount(type58[26].value.toInt());
+    }
+}
+
+void Function::read(QDataStream &stream)
+{
+    stream >> header;
+    stream >> type58;
+    stream >> dataPosition;
+
+    if (type58[27].value.toInt() == 1) {// abscissa, even spacing
+        _data->setXValues(type58[28].value.toDouble(),
+                type58[29].value.toDouble(),
+                type58[26].value.toInt());
+    }
+    else {// abscissa, uneven spacing
+        _data->setSamplesCount(type58[26].value.toInt());
+    }
 }
 
 void Function::write(QTextStream &stream)
 {DD;
+    int samples = data()->samplesCount();
+
     // Temporal correction
     //fixing channel name
     if (temporalCorrection && !nameBeforeCorrection.isEmpty()) {
@@ -861,8 +859,7 @@ void Function::write(QTextStream &stream)
     }
     //fixing values with correction
     if (temporalCorrection) {
-        for (int i=0; i<samples; ++i)
-            values[i] -= oldCorrectionValue;
+        data()->setCorrection(0.0);
     }
 
 
@@ -872,8 +869,6 @@ void Function::write(QTextStream &stream)
     for (int i=0; i<60; ++i) {
         fields[type58[i].type]->print(type58[i].value, stream);
     }
-
-
 
     switch (type58[25].value.toInt()) {//25 Ordinate Data Type
                                         // 2 - real, single precision
@@ -897,11 +892,11 @@ void Function::write(QTextStream &stream)
         case 2: {
             int j = 0;
             for (int i=0; i<samples; ++i) {
-                if (!xvalues.isEmpty()) {
-                    fields[FTFloat13_5]->print(xvalues[i], stream);
+                if (data()->xValuesFormat() == DataHolder::XValuesNonUniform) {
+                    fields[FTFloat13_5]->print(data()->xValue(i), stream);
                     j++;
                 }
-                fields[FTFloat13_5]->print(values[i], stream);
+                fields[FTFloat13_5]->print(data()->yValue(i), stream);
                 j++;
                 if (j==6) {
                     fields[FTEmpty]->print(0, stream);
@@ -914,11 +909,11 @@ void Function::write(QTextStream &stream)
         case 4: {
             int j = 0;
             for (int i=0; i<samples; ++i) {
-                if (!xvalues.isEmpty()) {
-                    fields[FTFloat13_5]->print(xvalues[i], stream);
+                if (data()->xValuesFormat() == DataHolder::XValuesNonUniform) {
+                    fields[FTFloat13_5]->print(data()->xValue(i), stream);
                     j++;
                 }
-                fields[FTFloat20_12]->print(values[i], stream);
+                fields[FTFloat20_12]->print(data()->yValue(i), stream);
                 j++;
                 if (j==4) {
                     fields[FTEmpty]->print(0, stream);
@@ -930,10 +925,10 @@ void Function::write(QTextStream &stream)
         }
         case 5: {
             int j = 0;
-            for (int i=0; i<valuesComplex.size(); i++) {
-                fields[FTFloat13_5]->print(valuesComplex[i].real(), stream);
+            for (int i=0; i<samples; i++) {
+                fields[FTFloat13_5]->print(data()->yValueComplex(i).real(), stream);
                 j++;
-                fields[FTFloat13_5]->print(valuesComplex[i].imag(), stream);
+                fields[FTFloat13_5]->print(data()->yValueComplex(i).imag(), stream);
                 j++;
                 if (j==6) {
                     fields[FTEmpty]->print(0, stream);
@@ -945,10 +940,10 @@ void Function::write(QTextStream &stream)
         }
         case 6: {
             int j = 0;
-            for (int i=0; i<valuesComplex.size(); i++) {
-                fields[FTFloat20_12]->print(valuesComplex[i].real(), stream);
+            for (int i=0; i<samples; i++) {
+                fields[FTFloat20_12]->print(data()->yValueComplex(i).real(), stream);
                 j++;
-                fields[FTFloat20_12]->print(valuesComplex[i].imag(), stream);
+                fields[FTFloat20_12]->print(data()->yValueComplex(i).imag(), stream);
                 j++;
                 if (j==4) {
                     fields[FTEmpty]->print(0, stream);
@@ -965,9 +960,9 @@ void Function::write(QTextStream &stream)
     fields[FTEmpty]->print(0, stream);
 }
 
-QString Function::functionTypeDescription() const
-{DD;
-    switch (type58[14].value.toInt()) {
+QString Function::functionTypeDescription(int type)
+{
+    switch (type) {
         case 1: return "Time Response";
         case  2: return "Auto Spectrum";
         case  3: return "Cross Spectrum";
@@ -1020,50 +1015,65 @@ QStringList Function::getInfoData()
     return QStringList() << name()
                          << yName()
                          << description()
-                         << functionTypeDescription()
+                         << functionTypeDescription(type())
                             ;
 }
 
 Descriptor::DataType Function::type() const
-{
+{DD;
     return (Descriptor::DataType)type58[14].value.toInt();
 }
 
 Descriptor::OrdinateFormat Function::yFormat() const
-{
+{DD;
     return (Descriptor::OrdinateFormat)type58[25].value.toUInt();
 }
 
 void Function::populate()
 {DD;
-    values.clear(); values.squeeze();
-    xvalues.clear(); xvalues.squeeze();
-    valuesComplex.clear(); valuesComplex.squeeze();
+    _data->clear();
+
     _populated = false;
 
     QFile uff(parent->fileName());
     if (!uff.open(QFile::ReadOnly | QFile::Text)) return;
+
+    int sc = samplesCount();
+
     QTextStream stream(&uff);
-    if (stream.seek(dataPosition)) {//function type is not time response
+    if (stream.seek(dataPosition)) {
+
         double thr = threshold(this->yName());
         if (this->type()==Descriptor::FrequencyResponseFunction) thr=1.0;
+        _data->setThreshold(thr);
 
-        bool doLog = (this->type()==Descriptor::Spectrum || this->type()==Descriptor::FrequencyResponseFunction
-                      || this->type()==Descriptor::AutoSpectrum || this->type()==Descriptor::CrossSpectrum);
+        int yValueFormat = type58[25].value.toInt() >= 5 ? DataHolder::YValuesComplex : DataHolder::YValuesAmplitudes;
+
         if (yName()=="dB" || yName()=="дБ" || type58[43].value.toString()=="Уровень")
-            doLog=false;
+            yValueFormat = DataHolder::YValuesAmplitudesInDB;
 
-        values = QVector<double>(samples, 0.0);
-        if (type58[25].value.toInt() >= 5) { //complex values
-            valuesComplex = QVector<cx_double>(samples, {0.0, 0.0});
+        if (type58[43].value.toString()=="Phase")
+            yValueFormat = DataHolder::YValuesPhases;
+
+        if (type58[32].value.toInt()==17 || type58[32].value.toInt()==0) // time или неизв.
+            yValueFormat = DataHolder::YValuesReals;
+
+        QVector<double> values, xvalues;
+        QVector<cx_double> valuesComplex;
+
+        if (yValueFormat == DataHolder::YValuesComplex) { //complex values
+            valuesComplex = QVector<cx_double>(sc, cx_double());
         }
+        else
+            values = QVector<double>(sc, 0.0);
+
         if (type58[27].value.toInt() == 0) {
             // uneven abscissa, read data pairs
-            xvalues = QVector<double>(samples, 0.0);
+            xvalues = QVector<double>(sc, 0.0);
         }
         if (type58[25].value.toInt() < 5) {//real values
             int j=0;
-            for (int i=0; i<samples; ++i) {
+            for (int i=0; i<sc; ++i) {
                 double value;
                 stream >> value;
 
@@ -1072,58 +1082,42 @@ void Function::populate()
                     stream >> value;
                 }
 
-                if (doLog)
-                    value = 20*log10(value/thr);
-                else
-                    value = value;
-
                 values[j] = value;
                 j++;
-            }
-            if (doLog) {
-                type58[43].value = "Уровень";
-                type58[44].value = "дБ";
             }
         }
         else {//complex values
             double first, second;
             int j=0;
-            for (int i=0; i<samples; ++i) {
+            for (int i=0; i<sc; ++i) {
                 if (type58[27].value.toInt() == 0) {// uneven abscissa
                     stream >> first;
                     xvalues[j] = first;
                 }
                 stream >> first >> second; //qDebug()<<first<<second;
                 valuesComplex[j] = {first, second};
-
-                double amplitude = sqrt(first*first + second*second);
-                if (doLog)
-                    values[j] = 20*log10(amplitude/thr);
-                else
-                    values[j] = amplitude;
                 j++;
             }
         }
-
-        yMin = *std::min_element(values.begin(), values.end());
-        yMax = *std::max_element(values.begin(), values.end());
-
-        if (xvalues.isEmpty())
-            xMax = xBegin() + xStep() * samples;
+        if (type58[27].value.toInt() == 0) {// uneven abscissa
+            _data->setXValues(xvalues);
+        }
+        if (type58[25].value.toInt() < 5) {//real values
+            _data->setYValues(values, DataHolder::YValuesFormat(yValueFormat));
+        }
         else
-            xMax = xvalues.last();
+            _data->setYValues(valuesComplex);
 
         QString end = stream.readLine(); //qDebug()<<"end"<<end;
         end = stream.readLine().trimmed(); //qDebug()<<"end"<<end;
         Q_ASSERT(end == "-1");
     }
-    _populated = !values.isEmpty() || !valuesComplex.isEmpty();
+    _populated = true;
 }
 
 void Function::clear()
-{
-    values.clear();
-    values.squeeze();
+{DD;
+    _data->clear();
     setPopulated(false);
 }
 
@@ -1165,63 +1159,9 @@ QString Function::legendName() const
     return name() + result;
 }
 
-double Function::xBegin() const
-{DD;
-    return type58[28].value.toDouble();
-}
-
-double Function::xStep() const
-{DD;
-    return type58[29].value.toDouble();
-}
-
-int Function::samplesCount() const
-{DD;
-    return samples;
-}
-
-QVector<double> &Function::yValues()
-{DD;
-    return values;
-}
-
-QVector<double> &Function::xValues()
-{
-    return xvalues;
-}
-
-double Function::xMaxInitial() const
-{DD;
-    return xMax;
-}
-
-double Function::yMinInitial() const
-{DD;
-    return yMin;
-}
-
-double Function::yMaxInitial() const
-{DD;
-    return yMax;
-}
-
 void Function::addCorrection(double correctionValue, bool writeToFile)
 {DD;
-//    for (uint j = 0; j < samplesCount(); ++j)
-//        values[j] += correctionValue;
-
-//    setName(name() + QString(correctionValue>=0?"+":"")
-//                +QString::number(correctionValue));
-//    yMax += correctionValue;
-//    yMin += correctionValue;
-
-    for (int j = 0; j < samplesCount(); ++j)
-        values[j] += correctionValue - oldCorrectionValue;
-
-    yMax += correctionValue - oldCorrectionValue;
-    yMin += correctionValue - oldCorrectionValue;
-
-    oldCorrectionValue = correctionValue;
+    _data->setCorrection(correctionValue);
 
     if (nameBeforeCorrection.isEmpty())
         nameBeforeCorrection = name();
@@ -1233,6 +1173,11 @@ void Function::addCorrection(double correctionValue, bool writeToFile)
     else
         setName(nameBeforeCorrection + QString(correctionValue>=0?"+":"")
                 +QString::number(correctionValue));
+}
+
+int Function::samplesCount() const
+{DD;
+    return type58[26].value.toULongLong();
 }
 
 
@@ -1247,7 +1192,7 @@ DescriptionList UffFileDescriptor::dataDescriptor() const
 }
 
 void UffFileDescriptor::setDataDescriptor(const DescriptionList &data)
-{
+{DD;
     if (data.size()>0) {
         header.type151[4].value = makeStringFromPair(data.first());
     }
@@ -1258,7 +1203,7 @@ void UffFileDescriptor::setDataDescriptor(const DescriptionList &data)
 }
 
 QString UffFileDescriptor::saveTimeSegment(double from, double to)
-{
+{DD;
     // 0 проверяем, чтобы этот файл имел тип временных данных
     if (type() != Descriptor::TimeResponse) return "";
     // и имел данные
@@ -1277,11 +1222,11 @@ QString UffFileDescriptor::saveTimeSegment(double from, double to)
     // 3 ищем границы данных по параметрам from и to
     Channel *ch = channels.first();
 
-    int sampleStart = qRound((from-ch->xBegin())/ch->xStep());
+    int sampleStart = qRound((from - ch->xMin())/ch->xStep());
     if (sampleStart<0) sampleStart = 0;
-    int sampleEnd = qRound((to-ch->xBegin())/ch->xStep());
-    if (sampleEnd>=samplesCount()) sampleEnd = samplesCount()-1;
-    newUff->setSamplesCount(sampleEnd - sampleStart + 1); //число отсчетов в новом файле
+    int sampleEnd = qRound((to-ch->xMin())/ch->xStep());
+    if (sampleEnd >= ch->samplesCount()) sampleEnd = ch->samplesCount() - 1;
+//    newUff->setSamplesCount(sampleEnd - sampleStart + 1); //число отсчетов в новом файле
 
     // 4 сохраняем файл
     for (int i=0; i<this->channelsCount(); ++i) {
@@ -1290,21 +1235,19 @@ QString UffFileDescriptor::saveTimeSegment(double from, double to)
 
         Function *ch = new Function(*(this->channels[i]));
         ch->parent = newUff;
-        ch->values = this->channels[i]->yValues().mid(sampleStart, sampleEnd - sampleStart + 1);
-        ch->samples = ch->values.size();
+
+
+        ch->data()->setSegment(*(channels[i]->data()), sampleStart, sampleEnd);
 
         ch->setPopulated(true);
 
         newUff->channels << ch;
         if (!wasPopulated) {
             //clearing data
-            channels[i]->yValues().clear();
-            //and releasing memory (since Qt 5.7)
-            channels[i]->yValues().squeeze();
+            channels[i]->data()->clear();
         }
     }
 
-    newUff->setSamplesCount(newUff->channel(0)->samplesCount());
     newUff->setChanged(true);
     newUff->setDataChanged(true);
     newUff->write();
@@ -1318,16 +1261,17 @@ QString UffFileDescriptor::saveTimeSegment(double from, double to)
 
 int UffFileDescriptor::samplesCount() const
 {
-    return NumInd;
+    if (channels.isEmpty()) return 0;
+    return channels.first()->samplesCount();
 }
 
 void UffFileDescriptor::setSamplesCount(int count)
 {
-    NumInd = count;
+    Q_UNUSED(count);
 }
 
 void UffFileDescriptor::setChanged(bool changed)
-{
+{DD;
     FileDescriptor::setChanged(changed);
     if (changed && QFile::exists(fileName()+"~"))
         QFile::remove(fileName()+"~");
