@@ -184,6 +184,7 @@ DfdChannel *OctaveMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDes
     Q_UNUSED(p);
     DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
 //    ch->data()->setXValues(XStep = newDfd->XStep;
+    ch->data()->setThreshold(p.threshold);
     ch->data()->setYValues(spectrum, DataHolder::YValuesAmplitudesInDB);
     ch->setPopulated(true);
     ch->setName(dfd->channels[i]->name());

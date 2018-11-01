@@ -12,6 +12,7 @@
 #include "correctiondialog.h"
 #include "curve.h"
 #include "pointlabel.h"
+#include "model.h"
 
 #include <ActiveQt/ActiveQt>
 #include "logging.h"
@@ -422,15 +423,14 @@ MainWindow::MainWindow(QWidget *parent)
     connect(tabWidget,SIGNAL(closeOtherTabs(int)), this, SLOT(closeOtherTabs(int)));
     connect(tabWidget,SIGNAL(renameTab(int)),this, SLOT(renameTab(int)));
     connect(tabWidget,SIGNAL(currentChanged(int)),SLOT(changeCurrentTab(int)));
-    connect(tabWidget,SIGNAL(tabTextChanged(QString)),SLOT(onTabTextChanged()));
 
-    QMap<int, SortableTreeWidgetItem::DataType> typeMap;
-    typeMap.insert(0, SortableTreeWidgetItem::DataTypeInteger);
-    typeMap.insert(7, SortableTreeWidgetItem::DataTypeInteger);
-    typeMap.insert(2, SortableTreeWidgetItem::DataTypeDate);
-    typeMap.insert(4, SortableTreeWidgetItem::DataTypeFloat);
-    typeMap.insert(6, SortableTreeWidgetItem::DataTypeFloat);
-    SortableTreeWidgetItem::setTypeMap(typeMap);
+//    QMap<int, SortableTreeWidgetItem::DataType> typeMap;
+//    typeMap.insert(0, SortableTreeWidgetItem::DataTypeInteger);
+//    typeMap.insert(7, SortableTreeWidgetItem::DataTypeInteger);
+//    typeMap.insert(2, SortableTreeWidgetItem::DataTypeDate);
+//    typeMap.insert(4, SortableTreeWidgetItem::DataTypeFloat);
+//    typeMap.insert(6, SortableTreeWidgetItem::DataTypeFloat);
+//    SortableTreeWidgetItem::setTypeMap(typeMap);
 
 
     autoscaleXAct = new QAction("Автомасштабирование по оси X", this);
@@ -500,7 +500,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
     QVariantMap v = getSetting("folders1").toMap();
-    //qDebug()<<v;
+
     if (v.isEmpty())
         createNewTab();
     else {
@@ -518,53 +518,43 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab = new Tab(this);
     tab->setOrientation(Qt::Horizontal);
 
-    tab->tree = new QTreeWidget(this);
-    tab->tree->setRootIsDecorated(false);
-    tab->tree->setContextMenuPolicy(Qt::ActionsContextMenu);
-    tab->tree->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    tab->tree->setDragEnabled(true);
-    tab->tree->setDragDropMode(QAbstractItemView::InternalMove);
-   // tab->tree->setDefaultDropAction(Qt::MoveAction);
-    tab->tree->addAction(addFolderAct);
-    tab->tree->addAction(addFileAct);
-    tab->tree->addAction(delFilesAct);
-    tab->tree->addAction(plotAllChannelsAct);
-    tab->tree->addAction(plotAllChannelsAtRightAct);
-//    tab->tree->addAction(removeChannelsPlotsAct);
-    tab->tree->addAction(calculateSpectreAct);
-    tab->tree->addAction(convertAct);
+    tab->model = new Model(tab);
 
-    tab->tree->setHeaderLabels(QStringList()
-                          << QString("№")
-                          << QString("Файл")
-                          << QString("Дата")
-                          << QString("Тип")
-                          << QString("Размер")
-                          << QString("Ось Х")
-                          << QString("Шаг")
-                          << QString("Каналы")
-                          << QString("Описание")
-                          << QString("Легенда")
-            );
-    tab->tree->header()->setStretchLastSection(false);
-    tab->tree->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    tab->tree->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    tab->tree->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-    tab->tree->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
-    tab->tree->header()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
-    tab->tree->header()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
-    tab->tree->header()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
-    tab->tree->header()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
+    tab->filesTable = new QTreeView(this);
+    tab->filesTable->setModel(tab->model);
+
+    tab->filesTable->setRootIsDecorated(false);
+    tab->filesTable->setContextMenuPolicy(Qt::ActionsContextMenu);
+    tab->filesTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    tab->filesTable->addAction(addFolderAct);
+    tab->filesTable->addAction(addFileAct);
+    tab->filesTable->addAction(delFilesAct);
+    tab->filesTable->addAction(plotAllChannelsAct);
+    tab->filesTable->addAction(plotAllChannelsAtRightAct);
+    tab->filesTable->addAction(calculateSpectreAct);
+    tab->filesTable->addAction(convertAct);
+
+    tab->filesTable->header()->setStretchLastSection(false);
+    tab->filesTable->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    tab->filesTable->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    tab->filesTable->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    tab->filesTable->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+    tab->filesTable->header()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
+    tab->filesTable->header()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
+    tab->filesTable->header()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
+    tab->filesTable->header()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
 
     QByteArray treeHeaderState = getSetting("treeHeaderState").toByteArray();
     if (!treeHeaderState.isEmpty())
-        tab->tree->header()->restoreState(treeHeaderState);
+        tab->filesTable->header()->restoreState(treeHeaderState);
 
+    connect(tab->filesTable->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),tab, SLOT(filesSelectionChanged()));
+    connect(tab->filesTable->selectionModel(),SIGNAL(currentRowChanged(QModelIndex,QModelIndex)),SLOT(updateChannelsTable(QModelIndex,QModelIndex)));
 
-    connect(tab->tree, SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)),SLOT(updateChannelsTable(QTreeWidgetItem*,QTreeWidgetItem*)));
-    connect(tab->tree,SIGNAL(itemChanged(QTreeWidgetItem*,int)), SLOT(treeItemChanged(QTreeWidgetItem*, int)));
-    tab->tree->sortByColumn(0, Qt::AscendingOrder);
-//    tab->tree->setSortingEnabled(true);
+    connect(tab->model, SIGNAL(legendsChanged()), plot, SLOT(updateLegends()));
+    connect(tab->model, SIGNAL(plotNeedsUpdate()), plot, SLOT(update()));
+
+    //tab->tree->sortByColumn(0, Qt::AscendingOrder);
 
     tab->channelsTable = new QTableWidget(0,6,this);
 
@@ -578,7 +568,6 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
     tab->channelsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     tab->channelsTable->horizontalHeader()->setStretchLastSection(false);
-    //connect(tab->channelsTable, SIGNAL(currentCellChanged(int,int,int,int)),this,SLOT(maybePlotChannel(int,int,int,int)));
     connect(tab->channelsTable, SIGNAL(itemChanged(QTableWidgetItem*)), SLOT(maybePlotChannel(QTableWidgetItem*)));
 
     tab->channelsTable->addAction(moveChannelsUpAct);
@@ -592,7 +581,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
     QWidget *treeWidget = new QWidget(this);
     QGridLayout *treeLayout = new QGridLayout;
-    treeLayout->addWidget(tab->tree,0,0);
+    treeLayout->addWidget(tab->filesTable,0,0);
     treeWidget->setLayout(treeLayout);
 
     QToolButton *openFolderButton = new QToolButton(this);
@@ -660,10 +649,8 @@ void MainWindow::closeTab(int i)
     tabWidget->setCurrentIndex(index);
     //tab now points to current tab
 
-    QVector<int> indexes;
-    for (int row = 0; row < tab->tree->topLevelItemCount(); ++row)
-        indexes << row;
-    deleteFiles(indexes);
+    tab->filesTable->selectAll();
+    tab->model->deleteFiles();
 
     QWidget *w = tabWidget->widget(index);
     tabWidget->removeTab(index);
@@ -700,20 +687,7 @@ void MainWindow::changeCurrentTab(int currentIndex)
 {DD;
     if (currentIndex<0) return;
 
-    Tab *sp = qobject_cast<Tab *>(tabWidget->currentWidget());
-    if (sp) {
-        tab = sp;
-//        tab->tree->setFocus();
-
-    }
-    else
-        tab = 0;
-}
-
-void MainWindow::onTabTextChanged()
-{DD;
-    QString s = tabWidget->tabText(tabWidget->currentIndex());
-    tabWidget->setTabText(tabWidget->currentIndex(),s);
+    tab = qobject_cast<Tab *>(tabWidget->currentWidget());
 }
 
 void MainWindow::editColors()
@@ -728,19 +702,17 @@ MainWindow::~MainWindow()
 
     if (tab) {
         setSetting("upperSplitterState",tab->saveState());
-        QByteArray treeHeaderState = tab->tree->header()->saveState();
+        QByteArray treeHeaderState = tab->filesTable->header()->saveState();
         setSetting("treeHeaderState", treeHeaderState);
     }
 
     QVariantMap map;
     for (int i=0; i<tabWidget->count(); ++i) {
-        Tab *t = qobject_cast<Tab *>(tabWidget->widget(i));
-        if (t) {
+        if (Tab *t = qobject_cast<Tab *>(tabWidget->widget(i))) {
             if (!t->folders.isEmpty())
                 map.insert(tabWidget->tabText(i), t->folders);
         }
     }
-    //qDebug()<<map;
 
     setSetting("folders1", map);
 
@@ -749,22 +721,6 @@ MainWindow::~MainWindow()
     }
 
     ColorSelector::instance()->drop();
-}
-
-bool checkForContains(Tab *tab, const QString &file, int *index = 0)
-{DD;
-    for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
-        SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
-        if (item) {
-            if (item->fileDescriptor->fileName() == file) {
-                if (index) *index = i;
-                return true;
-            }
-        }
-    }
-
-    if (index) *index = -1;
-    return false;
 }
 
 void MainWindow::addFolder() /*SLOT*/
@@ -778,7 +734,7 @@ void MainWindow::addFolder() /*SLOT*/
 
     if (directory.isEmpty()) return;
     setSetting("lastDirectory", directory);
-    addFolder(directory, false, false);
+    addFolder(directory, false /*with subfolders*/, false /*silent*/);
 }
 
 void MainWindow::addFolderWithSubfolders() /*SLOT*/
@@ -792,7 +748,7 @@ void MainWindow::addFolderWithSubfolders() /*SLOT*/
 
     if (directory.isEmpty()) return;
     setSetting("lastDirectory", directory);
-    addFolder(directory, true, false);
+    addFolder(directory, true /*with subfolders*/, false /*silent*/);
 }
 
 void MainWindow::addFile()
@@ -830,14 +786,15 @@ void MainWindow::addFolder(const QString &directory, bool withAllSubfolders, boo
 
     QStringList toAdd;
     foreach (const QString &file, filesToAdd) {
-        if (!checkForContains(tab, file))
+        if (!tab->model->contains(file))
+        //if (!checkForContains(tab, file))
             toAdd << file;
     }
 
     addFiles(toAdd);
     if (toAdd.size() < filesToAdd.size() && !silent) {
         QMessageBox::information(this,QString("База данных"),
-                                 toAdd.isEmpty()?QString("Эти файлы уже есть в базе"):
+                                 toAdd.isEmpty()?QString("Некоторые файлы уже есть в базе"):
                                                  QString("Только %1 файлов из %2 было добавлено")
                                                  .arg(toAdd.size())
                                                  .arg(filesToAdd.size()));
@@ -854,16 +811,22 @@ void MainWindow::deleteFiles()
 {DD;
     if (!tab) return;
 
-    QVector<int> list;
-    for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
-        if (tab->tree->topLevelItem(i)->isSelected()) {
-            list << i;
-        }
-    }
-    if (!list.isEmpty())
-        deleteFiles(list);
+    QList<FileDescriptor *> files = tab->model->selectedFiles();
+    foreach (FileDescriptor *d, files) {
+        plot->deleteGraphs(d);
 
-    if (tab->tree->topLevelItemCount() == 0)
+        if (tab->folders.contains(d->fileName()))
+            tab->folders.removeOne(d->fileName());
+        else if (tab->folders.contains(d->fileName()+":0"))
+            tab->folders.removeOne(d->fileName()+":0");
+        else if (tab->folders.contains(d->fileName()+":1"))
+            tab->folders.removeOne(d->fileName()+":1");
+    }
+    tab->channelsTable->setRowCount(0);
+
+    tab->model->deleteFiles();
+
+    if (tab->model->size() == 0)
         tab->folders.clear();
 }
 
@@ -885,12 +848,6 @@ void MainWindow::deleteChannels() /** SLOT */
 
     if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \nудалены из файла. Продолжить?")==QMessageBox::Yes) {
         deleteChannels(channelsToDelete);
-
-        QList<FileDescriptor*> list;
-        for (int i=0; i<channelsToDelete.size(); ++i)
-            if (!list.contains(channelsToDelete.at(i).first)) list << channelsToDelete.at(i).first;
-
-        updateRecordsTable(list);
         updateChannelsTable(tab->record);
     }
 }
@@ -903,13 +860,7 @@ void MainWindow::deleteChannelsBatch()
         if (!descriptorsList.contains(channels.at(i).first)) descriptorsList << channels.at(i).first;
     bool allChannelsFromOneFile = descriptorsList.size()==1;
 
-    QList<FileDescriptor*> filesToDelete;
-    for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
-        SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
-        if (item && item->isSelected()) {
-            filesToDelete << item->fileDescriptor;
-        }
-    }
+    QList<FileDescriptor*> filesToDelete = tab->model->selectedFiles();
 
     // нет построенных каналов или выделен только один файл
     if (filesToDelete.size()<2 || channels.isEmpty()) return;
@@ -958,7 +909,6 @@ void MainWindow::deleteChannelsBatch()
     }
     deleteChannels(channels);
 
-    updateRecordsTable(filesToDelete);
     updateChannelsTable(tab->record);
 }
 
@@ -968,11 +918,6 @@ void MainWindow::copyChannels() /** SLOT */
     if (channelsToCopy.isEmpty()) return;
 
     if (copyChannels(channelsToCopy)) {
-        QList<FileDescriptor*> list;
-        for (int i=0; i<channelsToCopy.size(); ++i)
-            if (!list.contains(channelsToCopy.at(i).first)) list << channelsToCopy.at(i).first;
-
-        updateRecordsTable(list);
         updateChannelsTable(tab->record);
     }
 }
@@ -986,11 +931,6 @@ void MainWindow::moveChannels() /** SLOT */
     if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \nудалены из файла. Продолжить?")==QMessageBox::Yes) {
         if (copyChannels(channelsToMove)) {
             deleteChannels(channelsToMove);
-            QList<FileDescriptor*> list;
-            for (int i=0; i<channelsToMove.size(); ++i)
-                if (!list.contains(channelsToMove.at(i).first)) list << channelsToMove.at(i).first;
-
-            updateRecordsTable(list);
             updateChannelsTable(tab->record);
         }
     }
@@ -999,15 +939,9 @@ void MainWindow::moveChannels() /** SLOT */
 void MainWindow::addCorrection()
 {DD;
     if (plot->hasGraphs()) {
-        QList<FileDescriptor*> filesToDelete;
-        for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
-            SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
-            if (item && item->isSelected()) {
-                filesToDelete << item->fileDescriptor;
-            }
-        }
+        QList<FileDescriptor*> files = tab->model->selectedFiles();
 
-        CorrectionDialog dialog(plot, filesToDelete);
+        CorrectionDialog dialog(plot, files);
         dialog.exec();
 
         updateChannelsTable(tab->record);
@@ -1254,7 +1188,7 @@ bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channe
     }
     else {
         dfd->copyChannelsFrom(channelsToCopy);
-        updateFile(dfd);
+        tab->model->updateFile(dfd);
     }
     return true;
 }
@@ -1392,7 +1326,7 @@ void MainWindow::calculateMean()
     meanDfd->writeRawFile();
 
     if (descriptorFound) {
-        updateFile(meanDfd);
+        tab->model->updateFile(meanDfd);
     }
     else {
         addFile(meanDfd);
@@ -1412,13 +1346,7 @@ void MainWindow::moveChannelsDown()
 
 void MainWindow::editDescriptions()
 {
-    QList<FileDescriptor *> records;
-    for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
-        if (tab->tree->topLevelItem(i)->isSelected()) {
-            SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
-            records << item->fileDescriptor;
-        }
-    }
+    QList<FileDescriptor *> records = tab->model->selectedFiles();
 
     EditDescriptionsDialog dialog(records, this);
     if (dialog.exec()) {
@@ -1426,16 +1354,7 @@ void MainWindow::editDescriptions()
         QHashIterator<FileDescriptor*,DescriptionList> it(descriptions);
         while (it.hasNext()) {
             it.next();
-            it.key()->setDataDescriptor(it.value());
-            it.key()->setChanged(true);
-            it.key()->write();
-
-            for (int j=0; j<tab->tree->topLevelItemCount(); ++j) {
-                SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(j));
-                if (item->fileDescriptor == it.key()) {
-                    item->setText(8, it.key()->dataDescriptorAsString());
-                }
-            }
+            tab->model->setDataDescriptor(it.key(), it.value());
         }
     }
 }
@@ -1444,14 +1363,8 @@ void MainWindow::save()
 {
     for (int i=0; i<tabWidget->count(); ++i) {
         Tab *t = qobject_cast<Tab *>(tabWidget->widget(i));
-        if (t) {
-            for (int i=0; i<t->tree->topLevelItemCount(); ++i) {
-                SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
-                FileDescriptor *d = item->fileDescriptor;
-                d->write();
-                d->writeRawFile();
-            }
-        }
+        if (t)
+            t->model->save();
     }
 }
 
@@ -1462,8 +1375,8 @@ void MainWindow::convertMatFiles()
         if (dialog.addFiles()) {
             QStringList files = dialog.getConvertedFiles();
             this->addFiles(files);
-//            foreach (const QString &file, files)
-//                if (!tab->folders.contains(file)) tab->folders << file;
+            foreach (const QString &file, files)
+                if (!tab->folders.contains(file)) tab->folders << file;
         }
     }
 }
@@ -1568,26 +1481,20 @@ void MainWindow::updateChannelsHeaderState()
         tab->tableHeader->setCheckState(column, Qt::PartiallyChecked);
 }
 
-void MainWindow::updateChannelsTable(QTreeWidgetItem *current, QTreeWidgetItem *previous)
+void MainWindow::updateChannelsTable(const QModelIndex &current, const QModelIndex &previous)
 {DD;
     Q_UNUSED(previous)
     if (!tab) return;
-    if (!current /*|| current==previous*/) return;
+    if (!current.isValid()) return;
 
-    SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(current);
-    if (!item) {
-        tab->record = 0;
-        return;
-    }
-
-    updateChannelsTable(item->fileDescriptor);
-
-
+    updateChannelsTable(tab->model->file(current.row()));
 }
 
 void MainWindow::updateChannelsTable(FileDescriptor *dfd)
 {DD;
+    tab->record = dfd;
     if (!dfd) return;
+
     tab->channelsTable->blockSignals(true);
     tab->channelsTable->setRowCount(0);
     tab->channelsTable->blockSignals(false);
@@ -1597,13 +1504,12 @@ void MainWindow::updateChannelsTable(FileDescriptor *dfd)
         return;
     }
 
-    tab->record = dfd;
-    tab->filePathLabel->setText(tab->record->fileName());
+    tab->filePathLabel->setText(dfd->fileName());
 
-    int chanCount = tab->record->channelsCount();
+    int chanCount = dfd->channelsCount();
     if (chanCount == 0) return;
 
-    QStringList headers = tab->record->getHeadersForChannel(0);
+    QStringList headers = dfd->getHeadersForChannel(0);
 
     tab->channelsTable->blockSignals(true);
     tab->channelsTable->clear();
@@ -1616,7 +1522,7 @@ void MainWindow::updateChannelsTable(FileDescriptor *dfd)
     boldFont.setBold(true);
 
     for (int i=0; i<chanCount; ++i) {
-        Channel *ch = tab->record->channel(i);
+        Channel *ch = dfd->channel(i);
         QStringList data = ch->getInfoData();
         Qt::CheckState state = ch->checkState();
         for (int col=0; col<headers.size(); ++col) {
@@ -1638,13 +1544,6 @@ void MainWindow::updateChannelsTable(FileDescriptor *dfd)
     tab->channelsTable->blockSignals(false);
 }
 
-void MainWindow::updateRecordsTable(const QList<FileDescriptor *> &records)
-{
-    foreach (FileDescriptor *dfd, records) {
-        updateFile(dfd);
-    }
-}
-
 void MainWindow::maybePlotChannel(QTableWidgetItem *item)
 {DD;
     if (!tab) return;
@@ -1655,23 +1554,13 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
     if (tab->channelsTable->horizontalHeaderItem(column)->text() == "Описание") {
         ch->setDescription(item->text());
         tab->record->setChanged(true);
-        tab->record->write();
+//        tab->record->write();
 
-        if (tab->tree->selectedItems().size()>1) {
+        if (tab->model->selected().size()>1) {
             if (QMessageBox::question(this,"DeepSea Base","Выделено несколько файлов. Записать такое описание канала\n"
                                       "во все эти файлы?")==QMessageBox::Yes)
             {
-                for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
-                    SortableTreeWidgetItem *it = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
-                    if (it->fileDescriptor == tab->record) continue;
-                    if (it && it->isSelected()) {
-                        if (it->fileDescriptor->channel(item->row())) {
-                            it->fileDescriptor->channel(item->row())->setDescription(item->text());
-                            it->fileDescriptor->setChanged(true);
-                            it->fileDescriptor->write();
-                        }
-                    }
-                }
+                tab->model->setChannelDescription(item->row(), item->text());
             }
         }
     }
@@ -1680,23 +1569,13 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
         if (ch->name() != item->text()) {
             ch->setName(item->text());
             tab->record->setChanged(true);
-            tab->record->write();
+//            tab->record->write();
 
-            if (tab->tree->selectedItems().size()>1) {
+            if (tab->model->selected().size()>1) {
                 if (QMessageBox::question(this,"DeepSea Base","Выделено несколько файлов. Записать такое название канала\n"
                                           "во все эти файлы?")==QMessageBox::Yes)
                 {
-                    for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
-                        SortableTreeWidgetItem *it = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
-                        if (it->fileDescriptor == tab->record) continue;
-                        if (it && it->isSelected()) {
-                            if (it->fileDescriptor->channel(item->row())) {
-                                it->fileDescriptor->channel(item->row())->setName(item->text());
-                                it->fileDescriptor->setChanged(true);
-                                it->fileDescriptor->write();
-                            }
-                        }
-                    }
+                    tab->model->setChannelName(item->row(), item->text());
                 }
             }
 
@@ -1712,15 +1591,12 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
         QFont boldFont = oldFont;
         boldFont.setBold(true);
 
-//        if (state == Qt::Checked && !ch->populated())
-//            ch->populate();
-
         tab->channelsTable->blockSignals(true);
         bool plotted = true;
 
         if (state == Qt::Checked) {
             QColor col;
-            int fileNumber = tab->tree->currentItem()->text(0).toInt();
+            int fileNumber = tab->model->data(tab->model->modelIndexOfFile(tab->record,0), 0).toInt();
 
             plotted = plot->plotChannel(tab->record, item->row(), &col, plotOnRight, fileNumber);
             if (plotted) {
@@ -1737,22 +1613,23 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
                 item->setTextColor(Qt::black);
             }
 
-            if (tab->tree->selectedItems().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
-                for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
-                    SortableTreeWidgetItem *it = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
-                    if (it->fileDescriptor == tab->record || !it->isSelected()) continue;
-                    if (it->fileDescriptor->channelsCount()<=item->row()) continue;
+            if (tab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
+                QList<FileDescriptor*> selectedFiles = tab->model->selectedFiles();
+                foreach (FileDescriptor *f, selectedFiles) {
+                    if (f == tab->record) continue;
+                    if (f->channelsCount()<=item->row()) continue;
 
-                    plotted = plot->plotChannel(it->fileDescriptor, item->row(), &col, plotOnRight, it->text(0).toInt());
+                    int fileNumber = tab->model->data(tab->model->modelIndexOfFile(f,0), 0).toInt();
+                    plotted = plot->plotChannel(f, item->row(), &col, plotOnRight, fileNumber);
                     if (plotted) {
-                        it->fileDescriptor->channel(item->row())->setCheckState(Qt::Checked);
-                        it->fileDescriptor->channel(item->row())->setColor(col);
+                        f->channel(item->row())->setCheckState(Qt::Checked);
+                        f->channel(item->row())->setColor(col);
                     }
                     else {
-                        it->fileDescriptor->channel(item->row())->setCheckState(Qt::Unchecked);
-                        it->fileDescriptor->channel(item->row())->setColor(QColor());
+                        f->channel(item->row())->setCheckState(Qt::Unchecked);
+                        f->channel(item->row())->setColor(QColor());
                     }
-                    it->setFont(1, it->fileDescriptor->allUnplotted()?oldFont:boldFont);
+                    tab->model->updateFile(f, 1);
                 }
             }
         }
@@ -1764,23 +1641,23 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
             item->setTextColor(Qt::black);
             ch->setColor(QColor());
 
-            if (tab->tree->selectedItems().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
-                for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
-                    SortableTreeWidgetItem *it = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
-                    if (it->fileDescriptor == tab->record || !it->isSelected()) continue;
-                    if (it->fileDescriptor->channelsCount()<=item->row()) continue;
+            if (tab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
+                QList<FileDescriptor*> selectedFiles = tab->model->selectedFiles();
+                foreach (FileDescriptor *f, selectedFiles) {
+                    if (f == tab->record) continue;
+                    if (f->channelsCount()<=item->row()) continue;
 
-                    plot->deleteGraph(it->fileDescriptor, item->row());
-                    it->fileDescriptor->channel(item->row())->setCheckState(Qt::Unchecked);
-                    it->fileDescriptor->channel(item->row())->setColor(QColor());
+                    plot->deleteGraph(f, item->row());
+                    f->channel(item->row())->setCheckState(Qt::Unchecked);
+                    f->channel(item->row())->setColor(QColor());
 
-                    it->setFont(1, it->fileDescriptor->allUnplotted()?oldFont:boldFont);
+                    tab->model->updateFile(f, 1);
                 }
             }
         }
         tab->channelsTable->blockSignals(false);
 
-        tab->tree->currentItem()->setFont(1, tab->record->allUnplotted()?oldFont:boldFont);
+        tab->model->updateFile(tab->record, 1);
 
         if (tab->tableHeader->isSectionCheckable(column))
             updateChannelsHeaderState();
@@ -1807,16 +1684,12 @@ void MainWindow::plotAllChannelsAtRight()
 void MainWindow::calculateSpectreRecords()
 {DD;
     if (!tab) return;
-    QList<FileDescriptor *> records;
-    for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
-        if (tab->tree->topLevelItem(i)->isSelected()) {
-            SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
-            if (!item) continue;
 
-            if (item->fileDescriptor->isSourceFile()) {
-                // only convert source files
-                records << item->fileDescriptor;
-            }
+    QList<FileDescriptor *> records = tab->model->selectedFiles();
+    for (int i=records.size()-1; i>=0; --i) {
+        if (!records[i]->isSourceFile()) {
+            // only convert source files
+            records.removeAt(i);
         }
     }
     if (records.isEmpty()) {
@@ -1838,22 +1711,9 @@ void MainWindow::calculateSpectreRecords()
 void MainWindow::convertFiles()
 {
     if (!tab) return;
-    QList<FileDescriptor *> records;
-    for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
-        if (tab->tree->topLevelItem(i)->isSelected()) {
-            SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
-            if (!item) continue;
-            records << item->fileDescriptor;
-        }
-    }
-//    if (records.isEmpty()) {
-//        QMessageBox::warning(this,QString("DeepSea Base"),
-//                             QString("Не выделено ни одного файла"));
-//        return;
-//    }
+    QList<FileDescriptor *> records = tab->model->selectedFiles();
 
     ConverterDialog dialog(records, this);
-
     dialog.exec();
 
     QStringList newFiles = dialog.getConvertedFiles();
@@ -1863,18 +1723,14 @@ void MainWindow::convertFiles()
 void MainWindow::calculateThirdOctave()
 {DD;
     if (!tab) return;
-    QList<FileDescriptor *> records;
-    for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
-        if (tab->tree->topLevelItem(i)->isSelected()) {
-            SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
-            if (!item) continue;
-
-            if (item->fileDescriptor->type() > Descriptor::TimeResponse) {
-                // only convert spectres
-                records << item->fileDescriptor;
-            }
+    QList<FileDescriptor *> records = tab->model->selectedFiles();
+    for (int i=records.size()-1; i>=0; --i) {
+        if (records[i]->type() <= Descriptor::TimeResponse) {
+            // only convert spectres
+            records.removeAt(i);
         }
     }
+
     if (records.isEmpty()) {
         QMessageBox::warning(this,QString("DeepSea Base"),
                              QString("Не выделено ни одного файла со спектрами"));
@@ -1884,7 +1740,7 @@ void MainWindow::calculateThirdOctave()
 
     foreach (FileDescriptor *fd, records) {
         FileDescriptor *dfd = fd->calculateThirdOctave();
-        if (findDescriptor(dfd)) updateFile(dfd);
+        if (findDescriptor(dfd)) tab->model->updateFile(dfd);
         else addFile(dfd);
     }
 }
@@ -1999,7 +1855,7 @@ void MainWindow::calculateMovingAvg()
     avgDfd->writeRawFile();
 
     if (descriptorFound) {
-        updateFile(avgDfd);
+        tab->model->updateFile(avgDfd);
     }
     else {
         addFile(avgDfd);
@@ -2022,19 +1878,8 @@ void MainWindow::clearPlot()
     for (int index = 0; index<tabWidget->count(); ++index) {
         Tab *t = qobject_cast<Tab*>(tabWidget->widget(index));
         if (t) {
-            QFont boldFont = t->tree->font();
-            boldFont.setBold(true);
-            for (int i=0; i<t->tree->topLevelItemCount(); ++i) {
-                if (t->tree->topLevelItem(i)->font(1) == boldFont) {
-                    FileDescriptor *dfd = dynamic_cast<SortableTreeWidgetItem *>(t->tree->topLevelItem(i))->fileDescriptor;
-                    for (int i=0; i<dfd->channelsCount(); ++i) {
-                        Channel *c = dfd->channel(i);
-                        c->setCheckState(Qt::Unchecked);
-                        c->setColor(QColor());
-                    }
-                    t->tree->topLevelItem(i)->setFont(1, t->tree->font());
-                }
-            }
+            t->model->invalidateGraphs();
+
             t->channelsTable->blockSignals(true);
             for (int i=0; i<t->channelsTable->rowCount(); ++i) {
                 t->channelsTable->item(i,0)->setCheckState(Qt::Unchecked);
@@ -2048,60 +1893,15 @@ void MainWindow::clearPlot()
     }
 }
 
-void MainWindow::treeItemChanged(QTreeWidgetItem *item, int column)
-{DD;
-    if (column==9) {//легенда
-        SortableTreeWidgetItem *i = dynamic_cast<SortableTreeWidgetItem *>(item);
-        if (i) {
-            if (!i->fileDescriptor->fileExists()) {
-                QMessageBox::warning(this,"Не могу изменить легенду","Такого файла уже нет");
-                return;
-            }
-            i->fileDescriptor->setLegend(item->text(column));
-            //i->fileDescriptor->setChanged(true);
-            //i->fileDescriptor->write();
-            plot->updateLegends();
-        }
-    }
-
-    if (column==6) {//шаг по оси х
-        //if (QMessageBox::question(this, "Изменение шага", "Изменение ")
-        SortableTreeWidgetItem *i = dynamic_cast<SortableTreeWidgetItem *>(item);
-        if (i) {
-            if (!i->fileDescriptor->fileExists()) {
-                QMessageBox::warning(this,"Не могу изменить шаг по оси Х","Такого файла уже нет");
-                return;
-            }
-            i->fileDescriptor->setXStep(item->text(column).toDouble());
-            plot->update();
-        }
-    }
-
-    if (column==2) {// описание
-        SortableTreeWidgetItem *i = dynamic_cast<SortableTreeWidgetItem *>(item);
-        if (i) {
-            QDateTime dt = QDateTime::fromString(i->text(2), "dd.MM.yy hh:mm:ss");
-            if (dt.isValid()) {
-                i->fileDescriptor->setDateTime(dt);
-            }
-        }
-    }
-}
-
 void MainWindow::rescanBase()
 {DD;
     if (!tab) return;
 
     // first we delete all graphs affected
-    for (int i=0; i<tab->tree->topLevelItemCount(); ++i) {
-        SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(i));
-        if (item) {
-            plot->deleteGraphs(item->fileDescriptor/*->DFDGUID*/);
-        }
-    }
+    plot->deleteGraphs();
 
     // next we clear all tab and populate it with folders anew
-    tab->tree->clear();
+    tab->model->clear();
     tab->channelsTable->setRowCount(0);
     tab->channelsTable->blockSignals(true);
     tab->tableHeader->setCheckState(0,Qt::Unchecked);
@@ -2143,9 +1943,8 @@ void MainWindow::addFile(FileDescriptor *descriptor)
     if (!tab) return;
     if (!descriptor) return;
 
-    int count = tab->tree->topLevelItemCount();
     addFiles(QList<FileDescriptor *>()<<descriptor);
-    tab->tree->setCurrentItem(tab->tree->topLevelItem(count));
+    tab->filesTable->setCurrentIndex(tab->model->modelIndexOfFile(descriptor, 1));
 }
 
 bool MainWindow::findDescriptor(FileDescriptor *d)
@@ -2153,23 +1952,13 @@ bool MainWindow::findDescriptor(FileDescriptor *d)
     if (!d) return false;
 
     if (tab) {
-        for (int j=0; j<tab->tree->topLevelItemCount(); ++j) {
-            SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(j));
-            if (item->fileDescriptor == d) {
-                return true;
-            }
-        }
+        if (tab->model->contains(d)) return true;
     }
     for (int i=0; i<tabWidget->count(); ++i) {
         Tab *t = qobject_cast<Tab *>(tabWidget->widget(i));
         if (t==tab) continue;
 
-        for (int j=0; j<t->tree->topLevelItemCount(); ++j) {
-            SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(t->tree->topLevelItem(j));
-            if (item->fileDescriptor == d) {
-                return true;
-            }
-        }
+        if (t->model->contains(d)) return true;
     }
     return false;
 }
@@ -2177,56 +1966,29 @@ bool MainWindow::findDescriptor(FileDescriptor *d)
 FileDescriptor *MainWindow::findDescriptor(const QString &file)
 {DD;
     if (tab) {
-        for (int j=0; j<tab->tree->topLevelItemCount(); ++j) {
-            SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(j));
-            if (item->fileDescriptor->fileName() == file) {
-                return item->fileDescriptor;
-            }
-        }
+        if (FileDescriptor *f = tab->model->find(file))
+            return f;
     }
     for (int i=0; i<tabWidget->count(); ++i) {
         Tab *t = qobject_cast<Tab *>(tabWidget->widget(i));
         if (t==tab) continue;
 
-        for (int j=0; j<t->tree->topLevelItemCount(); ++j) {
-            SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(t->tree->topLevelItem(j));
-            if (item->fileDescriptor->fileName() == file) {
-                return item->fileDescriptor;
-            }
-        }
+        if (FileDescriptor *f = t->model->find(file))
+            return f;
     }
     return 0;
 }
 
-void MainWindow::updateFile(FileDescriptor *descriptor)
-{DD;
-    for (int i=0; i<tabWidget->count(); ++i) {
-        Tab *t = qobject_cast<Tab *>(tabWidget->widget(i));
-        for (int j=0; j<t->tree->topLevelItemCount(); ++j) {
-            SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(t->tree->topLevelItem(j));
-            if (item->fileDescriptor->fileName() == descriptor->fileName()) {
-                item->setText(2, descriptor->dateTime());
-                item->setText(7, QString::number(descriptor->channelsCount()));
-            }
-
-        }
-    }
-}
-
-void MainWindow::setCurrentAndPlot(FileDescriptor *descriptor, int index)
+void MainWindow::setCurrentAndPlot(FileDescriptor *d, int channelIndex)
 {DD;
     if (tab) {
-        int i = -1;
-        for (int j=0; j<tab->tree->topLevelItemCount(); ++j) {
-            SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(j));
-            if (item->fileDescriptor == descriptor) {
-                i = j;
-            }
-        }
+        int i = tab->model->rowOfFile(d);
+
         if (i > -1) {
-            tab->tree->setCurrentItem(0);
-            tab->tree->setCurrentItem(tab->tree->topLevelItem(i));
-            tab->channelsTable->item(index, 0)->setCheckState(Qt::Checked);
+            updateChannelsTable(d);
+            //tab->filesTable->setCurrentIndex(tab->model->modelIndexOfFile(d, 0));
+            //tab->filesTable->selectionModel()->select(tab->model->modelIndexOfFile(d, 0), QItemSelectionModel::ClearAndSelect);
+            tab->channelsTable->item(channelIndex, 0)->setCheckState(Qt::Checked);
         }
     }
 }
@@ -2721,34 +2483,8 @@ void MainWindow::onCurveColorChanged(Curve *curve)
 void MainWindow::onCurveDeleted(FileDescriptor *descriptor, int channelIndex)
 {DD;
     for (int index = 0; index < tabWidget->count(); ++index) {
-        Tab *t = qobject_cast<Tab*>(tabWidget->widget(index));
-        if (t) {
-            QFont boldFont = t->tree->font();
-            boldFont.setBold(true);
-            for (int i=0; i<t->tree->topLevelItemCount(); ++i) {
-                FileDescriptor *dfd = dynamic_cast<SortableTreeWidgetItem *>(t->tree->topLevelItem(i))->fileDescriptor;
-                if (dfd == descriptor) {
-                   // QList<Channel *> list = dfd->channels;
-                    for (int channel=0; channel<dfd->channelsCount(); ++channel) {
-                        if (channelIndex == channel) {
-                            dfd->channel(channel)->setCheckState(Qt::Unchecked);
-                            dfd->channel(channel)->setColor(QColor());
-                        }
-                    }
-                    bool unchecked = true;
-                    for (int channel=0; channel<dfd->channelsCount(); ++channel) {
-                        if (dfd->channel(channel)->checkState() == Qt::Checked) {
-                            unchecked = false;
-                            break;
-                        }
-                    }
-
-                    if (unchecked) {
-                        t->tree->topLevelItem(i)->setFont(1, t->tree->font());
-                    }
-                }
-            }
-        }
+        if (Tab *t = qobject_cast<Tab*>(tabWidget->widget(index)))
+            t->model->invalidateGraph(descriptor, channelIndex);
     }
     if (tab->record == descriptor)
         updateChannelsTable(descriptor);
@@ -2758,22 +2494,24 @@ void MainWindow::addFiles(const QList<FileDescriptor*> &files)
 {DD;
     if (!tab) return;
 
-    QList<QTreeWidgetItem *> items;
+//    QList<QTreeWidgetItem *> items;
 
-    int pos = tab->tree->topLevelItemCount();
+//    int pos = tab->tree->topLevelItemCount();
 
-    foreach (FileDescriptor *dfd, files) {
-        QStringList info = dfd->info();
-        info.prepend(QString::number(++pos));
+//    foreach (FileDescriptor *dfd, files) {
+//        QStringList info = dfd->info();
+//        info.prepend(QString::number(++pos));
 
-        QTreeWidgetItem *item = new SortableTreeWidgetItem(dfd, info);
-        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
-        items << item;
-    }
-    tab->tree->setSortingEnabled(false);
-    tab->tree->addTopLevelItems(items);
-//    tab->tree->sortItems(0,Qt::AscendingOrder);
-    tab->tree->setSortingEnabled(true);
+//        QTreeWidgetItem *item = new SortableTreeWidgetItem(dfd, info);
+//        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
+//        items << item;
+//    }
+//    tab->tree->setSortingEnabled(false);
+//    tab->tree->addTopLevelItems(items);
+////    tab->tree->sortItems(0,Qt::AscendingOrder);
+//    tab->tree->setSortingEnabled(true);
+
+    tab->model->addFiles(files);
 }
 
 void MainWindow::addFiles(QStringList &files)
@@ -2785,9 +2523,9 @@ void MainWindow::addFiles(QStringList &files)
     foreach (const QString fileName, files) {
         if (fileName.isEmpty()) continue;
 
-        if (checkForContains(tab, fileName)) {//этот файл уже есть во вкладке
+        if (tab->model->contains(fileName))
             continue;
-        }
+
 
         FileDescriptor *file = findDescriptor(fileName);
         if (!file) {
@@ -2800,28 +2538,18 @@ void MainWindow::addFiles(QStringList &files)
     addFiles(items);
 }
 
-void MainWindow::deleteFiles(const QVector<int> &indexes)
-{DD;
-    if (!tab) return;
-    bool taken = false;
+void Tab::filesSelectionChanged()
+{
+    QVector<int> indexes;
 
-    for (int i=indexes.size()-1; i>=0; --i) {
-        SortableTreeWidgetItem *item = dynamic_cast<SortableTreeWidgetItem *>(tab->tree->topLevelItem(indexes.at(i)));
-        FileDescriptor *d = item->fileDescriptor;
-        plot->deleteGraphs(d);
+    QItemSelection selectedRows = filesTable->selectionModel()->selection();
 
-        if (tab->folders.contains(d->fileName()))
-            tab->folders.removeOne(d->fileName());
-        else if (tab->folders.contains(d->fileName()+":0"))
-            tab->folders.removeOne(d->fileName()+":0");
-        else if (tab->folders.contains(d->fileName()+":1"))
-            tab->folders.removeOne(d->fileName()+":1");
-
-        delete tab->tree->takeTopLevelItem(indexes.at(i));
-        if (!findDescriptor(d)) delete d;
-        taken = true;
+    for (auto it = selectedRows.begin(); it != selectedRows.end(); ++it) {
+        for (int i=(*it).top(); i<=(*it).bottom(); ++i)
+            indexes << i;
     }
-    if (taken) {
-        tab->channelsTable->setRowCount(0);
-    }
+    std::sort(indexes.begin(), indexes.end());
+
+    model->setSelected(indexes);
+    if (indexes.isEmpty()) channelsTable->setRowCount(0);
 }

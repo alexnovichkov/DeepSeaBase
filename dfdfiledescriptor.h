@@ -283,6 +283,8 @@ public:
     QStringList info() const;
     QString dateTime() const;
     virtual Descriptor::DataType type() const;
+    virtual QString typeDisplay() const;
+    QString sizeDisplay() const;
     virtual DescriptionList dataDescriptor() const;
     virtual void setDataDescriptor(const DescriptionList &data);
 
@@ -290,7 +292,7 @@ public:
 
     virtual void setXStep(const double xStep);
 
-    virtual void setLegend(const QString &legend);
+    virtual bool setLegend(const QString &legend);
     virtual QString legend() const;
 
 //    QString fileName() {return FileName;}

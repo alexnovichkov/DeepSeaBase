@@ -71,11 +71,11 @@ void DataHolder::setCorrection(double correctionValue)
     this->correctionValue = correctionValue;
 }
 
-void DataHolder::setYValuesPresentation(DataHolder::YValuesPresentation presentation)
+void DataHolder::setYValuesPresentation(int presentation)
 {DD;
-    if (m_yValuesPresentation == presentation) return;
+    if (m_yValuesPresentation == DataHolder::YValuesPresentation(presentation)) return;
 
-    m_yValuesPresentation = presentation;
+    m_yValuesPresentation = DataHolder::YValuesPresentation(presentation);
     recalculateYValues();
     recalculateMinMax();
 }
@@ -107,6 +107,7 @@ void DataHolder::setYValues(const QVector<cx_double> &values)
 
     m_yValues.clear(); // действительные значения не нужны, очищаем
     m_yValues.squeeze();
+//    m_yValuesTemporal.clear();
 
     recalculateYValues(); // заполняем вектор действительных значений,
                           // который будет использоваться для графиков
@@ -142,6 +143,15 @@ void DataHolder::setXStep(const double xStep)
 void DataHolder::setSamplesCount(const int samplesCount)
 {
     m_count = samplesCount;
+}
+
+QVector<double> DataHolder::yValues() const
+{
+//    if (m_yValuesTemporal.isEmpty()) {
+//        recalculateYValues();
+//        recalculateMinMax();
+//    }
+    return m_yValuesTemporal;
 }
 
 QVector<double> DataHolder::xValues() const

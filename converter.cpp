@@ -479,6 +479,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
         }
         if (newUff) {
             ch = p.method->addUffChannel(newUff, dfd, p.fCount, p, i);
+            ch->data()->setThreshold(p.threshold);
             if (p.saveAsComplex)
                 ch->data()->setYValues(spectrumComplex);
             else

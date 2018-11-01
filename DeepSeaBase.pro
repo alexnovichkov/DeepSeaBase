@@ -64,7 +64,8 @@ SOURCES += main.cpp\
     methods/abstractmethod.cpp \
     dataholder.cpp \
     fft.cpp \
-    taskbarprogress.cpp
+    taskbarprogress.cpp \
+    model.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -115,7 +116,8 @@ HEADERS  += mainwindow.h \
     dataholder.h \
     resampler.h \
     fft.h \
-    taskbarprogress.h
+    taskbarprogress.h \
+    model.h
 
 SOURCES +=\
   qwheelzoomsvc.cpp\

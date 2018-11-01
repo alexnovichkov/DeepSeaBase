@@ -77,6 +77,8 @@ public:
 
     virtual QStringList info() const = 0;
     virtual Descriptor::DataType type() const = 0;
+    virtual QString typeDisplay() const = 0;
+    virtual QString sizeDisplay() const = 0;
     virtual DescriptionList dataDescriptor() const = 0;
     virtual void setDataDescriptor(const DescriptionList &data) = 0;
     virtual QString dataDescriptorAsString() const = 0;
@@ -120,7 +122,7 @@ public:
     virtual bool isSourceFile() const {return false;}
 
     virtual QString legend() const =0;
-    virtual void setLegend(const QString &legend)=0;
+    virtual bool setLegend(const QString &legend)=0;
 
     virtual double xStep() const = 0;
     virtual void setXStep(const double xStep) = 0;
@@ -140,11 +142,13 @@ public:
     virtual bool dataTypeEquals(FileDescriptor *other) const = 0;
 
     virtual QString fileFilters() const = 0;
-
+    bool hasGraphs() const;
+//    void setHasGraphs(bool hasGraphs) {_hasGraphs = hasGraphs;}
 private:
     QString _fileName;
     bool _changed;
     bool _dataChanged;
+    bool _hasGraphs;
 };
 
 class Channel

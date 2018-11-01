@@ -565,6 +565,25 @@ Descriptor::DataType DfdFileDescriptor::type() const
     return dataTypefromDfdDataType(DataType);
 }
 
+QString DfdFileDescriptor::typeDisplay() const
+{
+    return dataTypeDescription(DataType);
+}
+
+QString DfdFileDescriptor::sizeDisplay() const
+{
+    double size = 0.0;
+    if (!channels.isEmpty()) {
+        if (channels.first()->data()->xValuesFormat() == DataHolder::XValuesUniform)
+            size = samplesCount() * xStep();
+        else {
+            channels.first()->populate();
+            size = channels.first()->data()->xValues().last();
+        }
+    }
+    return QString::number(size);
+}
+
 DescriptionList DfdFileDescriptor::dataDescriptor() const
 {
     if (dataDescription) return dataDescription->data;
@@ -602,14 +621,15 @@ void DfdFileDescriptor::setXStep(const double xStep)
     write();
 }
 
-void DfdFileDescriptor::setLegend(const QString &legend)
+bool DfdFileDescriptor::setLegend(const QString &legend)
 {DD;
-    if (legend == _legend) return;
+    if (legend == _legend) return false;
     _legend = legend;
     setChanged(true);
     if (!dataDescription)
         dataDescription = new DataDescription(this);
     write();
+    return true;
 }
 
 QString DfdFileDescriptor::legend() const
@@ -755,6 +775,7 @@ void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     }
     ch->ChanDscr = "Среднее каналов "+l.join(",");
 
+    ch->data()->setThreshold(firstChannel->data()->threshold());
     if (format == DataHolder::YValuesComplex)
         ch->data()->setYValues(averaging.getComplex().mid(0, numInd));
     else
@@ -788,6 +809,7 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
 
         int numInd = firstChannel->samplesCount();
 
+        ch->data()->setThreshold(firstChannel->data()->threshold());
         if (firstChannel->data()->yValuesFormat() == DataHolder::YValuesComplex) {
             ch->data()->setYValues(movingAverage(firstChannel->data()->yValuesComplex(), windowSize));
         }
@@ -839,6 +861,7 @@ FileDescriptor *DfdFileDescriptor::calculateThirdOctave()
 
         auto result = thirdOctave(ch->data()->decibels(), ch->xMin(), ch->xStep());
 
+        newCh->data()->setThreshold(ch->data()->threshold());
         newCh->data()->setXValues(result.first);
         newCh->data()->setYValues(result.second, DataHolder::YValuesAmplitudesInDB);
 

@@ -208,7 +208,8 @@ Plot::Plot(QWidget *parent) :
     connect(trackingPanel,SIGNAL(closeRequested()),SIGNAL(trackingPanelCloseRequested()));
 
     axisLabelsVisible = MainWindow::getSetting("axisLabelsVisible", true).toBool();
-
+    yValuesPresentationLeft = DataHolder::ShowAsDefault;
+    yValuesPresentationRight = DataHolder::ShowAsDefault;
 
 
     interactionMode = ScalingInteraction;
@@ -398,24 +399,61 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
         });
     }
 
+    QList<Curve*> list;
+    int *ax = 0;
     if (axis == QwtPlot::yLeft && !leftGraphs.isEmpty()) {
+        list = leftGraphs;
+        ax = &yValuesPresentationLeft;
+    }
+    if (axis == QwtPlot::yRight && !rightGraphs.isEmpty()) {
+        list = rightGraphs;
+        ax = &yValuesPresentationRight;
+    }
+    if (!list.isEmpty()) {
         QAction *a = new QAction("Показывать как");
         QMenu *am = new QMenu(this);
-        am->addAction("Амплитуды линейные", [=](){
+        QActionGroup *ag = new QActionGroup(am);
 
-        });
-        am->addAction("Амплитуды в дБ", [=](){
+        QAction *act3 = new QAction("Амплитуды линейные", ag);
+        act3->setCheckable(true);
+        if (*ax == DataHolder::ShowAsAmplitudes) act3->setChecked(true);
+        act3->setData(DataHolder::ShowAsAmplitudes);
+        am->addAction(act3);
 
-        });
-        am->addAction("Фазы", [=](){
+        QAction *act4 = new QAction("Амплитуды в дБ", ag);
+        act4->setCheckable(true);
+        if (*ax == DataHolder::ShowAsAmplitudesInDB) act4->setChecked(true);
+        act4->setData(DataHolder::ShowAsAmplitudesInDB);
+        am->addAction(act4);
 
-        });
-        am->addAction("Действит.", [=](){
+        QAction *act5 = new QAction("Фазы", ag);
+        act5->setCheckable(true);
+        if (*ax == DataHolder::ShowAsPhases) act5->setChecked(true);
+        act5->setData(DataHolder::ShowAsPhases);
+        am->addAction(act5);
 
-        });
-        am->addAction("Мнимые", [=](){
+        QAction *act1 = new QAction("Действит.", ag);
+        act1->setCheckable(true);
+        if (*ax == DataHolder::ShowAsReals) act1->setChecked(true);
+        act1->setData(DataHolder::ShowAsReals);
+        am->addAction(act1);
 
+        QAction *act2 = new QAction("Мнимые", ag);
+        act2->setCheckable(true);
+        if (*ax == DataHolder::ShowAsImags) act2->setChecked(true);
+        act2->setData(DataHolder::ShowAsImags);
+        am->addAction(act2);
+
+        connect(ag, &QActionGroup::triggered, [=](QAction*act){
+            int presentation = act->data().toInt();
+            foreach (Curve *c, list) {
+                c->channel->data()->setYValuesPresentation(presentation);
+            }
+            *ax = presentation;
+            this->recalculateScale(axis == QwtPlot::yLeft);
+            this->update();
         });
+
         a->setMenu(am);
         menu->addAction(a);
     }
@@ -543,13 +581,23 @@ void Plot::updateAxesLabels()
     if (leftGraphs.isEmpty()) enableAxis(QwtPlot::yLeft, false);
     else {
         enableAxis(QwtPlot::yLeft, axisLabelsVisible);
-        setAxisTitle(QwtPlot::yLeft, axisLabelsVisible ? yLeftName : "");
+        QString suffix = yValuesPresentationSuffix(yValuesPresentationLeft);
+        QwtText text(QString("%1 <small>%2</small>").arg(yLeftName).arg(suffix), QwtText::RichText);
+        if (axisLabelsVisible)
+            setAxisTitle(QwtPlot::yLeft, text);
+        else
+            setAxisTitle(QwtPlot::yLeft, "");
     }
 
     if (rightGraphs.isEmpty()) enableAxis(QwtPlot::yRight, false);
     else {
         enableAxis(QwtPlot::yRight, axisLabelsVisible);
-        setAxisTitle(QwtPlot::yRight, axisLabelsVisible ? yRightName : "");
+        QString suffix = yValuesPresentationSuffix(yValuesPresentationRight);
+        QwtText text(QString("%1 <small>%2</small>").arg(yRightName).arg(suffix), QwtText::RichText);
+        if (axisLabelsVisible)
+            setAxisTitle(QwtPlot::yRight, text);
+        else
+            setAxisTitle(QwtPlot::yRight, "");
     }
     if (axisEnabled(QwtPlot::xBottom)) {
         setAxisTitle(QwtPlot::xBottom, axisLabelsVisible ? xName : "");
@@ -560,10 +608,18 @@ void Plot::moveGraph(Curve *curve)
 {DD;
     if (leftGraphs.contains(curve)) {
         leftGraphs.removeAll(curve);
+        if (rightGraphs.isEmpty()) {
+            yValuesPresentationRight = curve->channel->data()->yValuesPresentation();
+        }
+        curve->channel->data()->setYValuesPresentation(yValuesPresentationRight);
         rightGraphs.append(curve);
     }
     else if (rightGraphs.contains(curve)) {
         rightGraphs.removeAll(curve);
+        if (leftGraphs.isEmpty()) {
+            yValuesPresentationLeft = curve->channel->data()->yValuesPresentation();
+        }
+        curve->channel->data()->setYValuesPresentation(yValuesPresentationLeft);
         leftGraphs.append(curve);
     }
 }
@@ -584,6 +640,37 @@ void Plot::checkDuplicates(const QString name)
         if (graphs[i]->title().text() == name) l << i;
     }
     foreach(int i, l) graphs[i]->duplicate = l.size()>1;
+}
+
+QString Plot::yValuesPresentationSuffix(int yValuesPresentation) const
+{
+    switch (DataHolder::YValuesPresentation(yValuesPresentation)) {
+        case DataHolder::ShowAsDefault: return QString();
+        case DataHolder::ShowAsReals: return " [Re]";
+        case DataHolder::ShowAsImags: return " [Im]";
+        case DataHolder::ShowAsAmplitudes: return " [Abs]";
+        case DataHolder::ShowAsAmplitudesInDB: return " [dB]";
+        case DataHolder::ShowAsPhases: return " [Phase]";
+        default: break;
+    }
+    return QString();
+}
+
+void Plot::recalculateScale(bool leftAxis)
+{
+    ChartZoom::ScaleBounds *ybounds = 0;
+    if (leftAxis) ybounds = zoom->verticalScaleBounds;
+    else ybounds = zoom->verticalScaleBoundsSlave;
+
+    QList<Curve*> l;
+    if (leftAxis) l = leftGraphs;
+    else l = rightGraphs;
+
+    ybounds->reset();
+    foreach (Curve *c, l) {
+        ybounds->add(c->yMin(), c->yMax());
+    }
+
 }
 
 bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool plotOnRight, int fileNumber)
@@ -618,10 +705,22 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
     setAxis(QwtPlot::xBottom, descriptor->xName());
     prepareAxis(QwtPlot::xBottom);
 
+    // если графиков нет, по умолчанию будем строить амплитуды по первому добавляемому графику
+    if (plotOnFirstYAxis && leftGraphs.isEmpty()) {
+        yValuesPresentationLeft = ch->data()->yValuesPresentation();
+    }
+    if (plotOnSecondYAxis && rightGraphs.isEmpty()) {
+        yValuesPresentationRight = ch->data()->yValuesPresentation();
+    }
+
+    if (plotOnFirstYAxis) ch->data()->setYValuesPresentation(yValuesPresentationLeft);
+    else ch->data()->setYValuesPresentation(yValuesPresentationRight);
+
     QwtPlot::Axis ax = plotOnFirstYAxis ? QwtPlot::yLeft : QwtPlot::yRight;
 
     setAxis(ax, ch->yName());
     prepareAxis(ax);
+
 
     Curve *g = new Curve(ch->legendName(), descriptor, channel);
     QColor nextColor = ColorSelector::instance()->getColor();
@@ -639,20 +738,13 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
         g->duplicate = true;
     }
 
-    //bool needFixBoundaries = !hasGraphs() && zoom;
-
-//    g->attach(this);
-
     g->setYAxis(ax);
     if (plotOnSecondYAxis) {
         rightGraphs << g;
-        yRightName = ch->yName();
     }
     else {
         leftGraphs << g;
-        yLeftName = ch->yName();
     }
-    xName = descriptor->xName();
 
 
     ChartZoom::ScaleBounds *ybounds = 0;

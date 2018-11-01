@@ -99,12 +99,6 @@ public:
      */
     void switchLabelsVisibility();
 
-    /**
-     * @brief updateLegends
-     * updates legends with the dfd legend
-     */
-    void updateLegends();
-
     bool canBePlottedOnLeftAxis(Channel *ch);
     bool canBePlottedOnRightAxis(Channel *ch);
 
@@ -126,6 +120,7 @@ public slots:
     void switchCursor();
     void copyToClipboard();
     void print();
+    void updateLegends();
 signals:
     void curveChanged(Curve *curve);
     void curveDeleted(FileDescriptor *descriptor, int index);
@@ -139,12 +134,16 @@ private:
     void importPlot(const QString &fileName);
     bool hasDuplicateNames(const QString name) const;
     void checkDuplicates(const QString name);
+    QString yValuesPresentationSuffix(int yValuesPresentation) const;
+    void recalculateScale(bool leftAxis);
 
     // axis labels
     QString xName;
     QString yLeftName;
     QString yRightName;
     bool axisLabelsVisible;
+    int yValuesPresentationLeft;
+    int yValuesPresentationRight;
 
     QList<Curve *> leftGraphs;
     QList<Curve *> rightGraphs;

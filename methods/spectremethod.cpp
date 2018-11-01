@@ -272,6 +272,7 @@ DfdChannel *SpectreMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDe
 {DD;
     DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
     ch->data()->setXValues(0.0, newDfd->XStep, spectrum.size());
+    ch->data()->setThreshold(p.threshold);
     ch->data()->setYValues(spectrum, p.scaleType == 0 ? DataHolder::YValuesAmplitudes : DataHolder::YValuesAmplitudesInDB);
     ch->setPopulated(true);
     ch->setName(dfd->channels[i]->name());

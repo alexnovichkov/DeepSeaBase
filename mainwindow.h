@@ -38,8 +38,10 @@ class QwtPlotCurve;
 
 class Curve;
 class Channel;
+class Model;
 
 #include <QSplitter>
+
 
 class Tab : public QSplitter
 {
@@ -49,11 +51,16 @@ public:
 
     CheckableHeaderView *tableHeader;
     QLabel *filePathLabel;
-    QTreeWidget *tree;
+    //QTreeWidget *tree;
+    QTreeView *filesTable;
     QTableWidget *channelsTable;
+    Model *model;
+
     QStringList folders;
 
     FileDescriptor *record;
+private slots:
+    void filesSelectionChanged();
 };
 
 class MainWindow : public QMainWindow
@@ -84,7 +91,7 @@ private slots:
     void addCorrection();
     void addCorrections();
 
-    void updateChannelsTable(QTreeWidgetItem *, QTreeWidgetItem *);
+    void updateChannelsTable(const QModelIndex &current, const QModelIndex &previous);
 
 //    void maybePlotChannel(int,int,int,int);
     void maybePlotChannel(QTableWidgetItem *item);
@@ -120,14 +127,6 @@ private slots:
     void clearPlot();
 
     /**
-     * @brief recordLegendChanged
-     * Обновляет легенду графика
-     * @param item
-     * @param column
-     */
-    void treeItemChanged(QTreeWidgetItem *item, int column);
-
-    /**
      * @brief rescanBase
      * обновляет список файлов в таблице, удаляет мертвые записи
      */
@@ -139,7 +138,6 @@ private slots:
     void closeOtherTabs(int);
     void renameTab(int i);
     void changeCurrentTab(int currentIndex);
-    void onTabTextChanged();
 
     void editColors();
 
@@ -168,11 +166,8 @@ private slots:
     void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
 private:
     void moveChannels(bool up);
-    void updateFile(FileDescriptor *descriptor);
     void addFiles(QStringList &files);
     void addFiles(const QList<FileDescriptor*> &files);
-
-    void deleteFiles(const QVector<int> &indexes);
 
     bool deleteChannels(const QList<QPair<FileDescriptor *, int> > &channelsToDelete);
     bool copyChannels(const QList<QPair<FileDescriptor*, int> > &channelsToCopy);
@@ -183,7 +178,7 @@ private:
     void updateChannelsHeaderState();
 
     void updateChannelsTable(FileDescriptor *);
-    void updateRecordsTable(const QList<FileDescriptor*> &records);
+    void updateRecordsTable(const QList<FileDescriptor *> &records);
 
     void createTab(const QString &name, const QStringList &folders);
 
@@ -192,7 +187,7 @@ private:
     bool findDescriptor(FileDescriptor *d);
 
     void addFile(FileDescriptor *descriptor);
-    void setCurrentAndPlot(FileDescriptor *descriptor, int index);
+    void setCurrentAndPlot(FileDescriptor *d, int channelIndex);
 
 
     QStringList tabsNames;

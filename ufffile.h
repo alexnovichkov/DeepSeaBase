@@ -132,12 +132,14 @@ public:
 
     virtual QStringList info() const;
     virtual Descriptor::DataType type() const;
+    virtual QString typeDisplay() const;
+    QString sizeDisplay() const;
     virtual QString dateTime() const;
     virtual double xStep() const;
     virtual void setXStep(const double xStep);
     virtual QString xName() const;
 
-    virtual void setLegend(const QString &legend);
+    virtual bool setLegend(const QString &legend);
     virtual QString legend() const;
 
     void setDateTime(QDateTime dt);
@@ -168,6 +170,8 @@ private:
     int NumInd;
 
     // FileDescriptor interface
+    void removeTempFile();
+    
 public:
     virtual DescriptionList dataDescriptor() const;
     virtual void setDataDescriptor(const DescriptionList &data);

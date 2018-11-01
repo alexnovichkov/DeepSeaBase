@@ -254,8 +254,10 @@ void ChartZoom::ScaleBounds::setFixed(bool fixed)
 void ChartZoom::ScaleBounds::add(double min, double max)
 {DD;
     if (min==max) {
-        mins << (min-1.0);
-        maxes << (max+1.0);
+        if (min!=0.0) {
+            mins << (min-1.0);
+            maxes << (max+1.0);
+        }
     }
     else {
         mins << min;

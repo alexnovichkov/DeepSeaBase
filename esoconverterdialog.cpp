@@ -252,7 +252,7 @@ bool EsoConvertor::convert()
                 case 4: //esom
                     newCh->InputType="U";
                     newCh->YName="номер";
-                    newCh->YNameOld="Па";
+                    newCh->YNameOld="";
                     break;
                 default:
                     break;
@@ -262,11 +262,21 @@ bool EsoConvertor::convert()
             newCh->data()->setXValues(xValues);
 
             switch (col) {
-                case 0: newCh->data()->setYValues(esoFile.esou, DataHolder::YValuesAmplitudesInDB); break;
-                case 1: newCh->data()->setYValues(esoFile.mzph, DataHolder::YValuesAmplitudesInDB); break;
-                case 2: newCh->data()->setYValues(esoFile.esot, DataHolder::YValuesReals); break;
-                case 3: newCh->data()->setYValues(esoFile.maxt, DataHolder::YValuesReals); break;
-                case 4: newCh->data()->setYValues(esoFile.esom, DataHolder::YValuesReals); break;
+                case 0:
+                    newCh->data()->setThreshold(threshold("pa"));
+                    newCh->data()->setYValues(esoFile.esou, DataHolder::YValuesAmplitudesInDB); break;
+                case 1:
+                    newCh->data()->setThreshold(threshold("pa"));
+                    newCh->data()->setYValues(esoFile.mzph, DataHolder::YValuesAmplitudesInDB); break;
+                case 2:
+                    newCh->data()->setThreshold(threshold("m"));
+                    newCh->data()->setYValues(esoFile.esot, DataHolder::YValuesReals); break;
+                case 3:
+                    newCh->data()->setThreshold(threshold("m"));
+                    newCh->data()->setYValues(esoFile.maxt, DataHolder::YValuesReals); break;
+                case 4:
+                    newCh->data()->setThreshold(0.0);
+                    newCh->data()->setYValues(esoFile.esom, DataHolder::YValuesReals); break;
                 default: break;
             }
             newCh->setPopulated(true);

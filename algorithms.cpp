@@ -320,26 +320,20 @@ QVector<double> imags(const QVector<cx_double> &values)
 
 QVector<cx_double> movingAverage(const QVector<cx_double> &spectrum, int window)
 {
-    int numInd = spectrum.size();
+    const int numInd = spectrum.size();
+    const int span = window / 2;
+
+    // 1. Извлекаем амплитуды и фазы из комплексного спектра
+    QVector<double> amplitudes = absolutes(spectrum);
+    QVector<double> phase = phases(spectrum);
+
+    // 2. Сглаживаем получившиеся амплитуды
+    amplitudes = movingAverage(amplitudes, window);
+
+    // 3. Слепляем вместе амплитуды и фазы в новый комплекснозначный вектор
     QVector<cx_double> result(numInd, cx_double());
-
-    int span = window / 2;
-
-    for (int j=span; j<numInd-span; ++j) {
-        cx_double sum = 0.0;
-        for (int k=0; k<window;++k) {
-            sum += spectrum[j-span+k];
-        }
-        sum /= window;
-
-        result[j] = sum;
-    }
-
-    //начало диапазона и конец диапазона
-    for (int j=0; j<span; ++j)
-        result[j] = spectrum[j];
-    for (int j=numInd-span; j<numInd; ++j)
-        result[j] = spectrum[j];
+    for(int i=0; i<numInd; ++i)
+        result[i] = std::polar(amplitudes[i], phase[i]);
 
     return result;
 }

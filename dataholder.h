@@ -55,7 +55,7 @@ public:
     int yValuesFormat() const {return m_initially;} // не меняется, так как зависит только от формата данных в файле
 
     int yValuesPresentation() const {return m_yValuesPresentation;}
-    void setYValuesPresentation(YValuesPresentation presentation);
+    void setYValuesPresentation(int presentation);
 
     void setYValues(const QVector<double> &values, YValuesFormat initially);
     void setYValues(const QVector<cx_double> &values);
@@ -65,10 +65,11 @@ public:
     void setSamplesCount(const int samplesCount);
 
     void setThreshold(double threshold) {m_threshold = threshold;}
+    double threshold() const {return m_threshold;}
 
     const double* rawXValues() const {return m_xValues.data();}
     const double *rawYValues() const {return m_yValuesTemporal.data();}
-    QVector<double> yValues() const {return m_yValuesTemporal;}
+    QVector<double> yValues() const;
     QVector<cx_double> yValuesComplex() const {return m_yValuesComplex;}
     QVector<double> xValues() const;
 

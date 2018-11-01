@@ -1,6 +1,7 @@
 #include "ufffile.h"
 
 //#include <QtGui>
+#include <QMessageBox>
 #include "logging.h"
 #include "mainwindow.h"
 #include "algorithms.h"
@@ -281,6 +282,25 @@ Descriptor::DataType UffFileDescriptor::type() const
     return t;
 }
 
+QString UffFileDescriptor::typeDisplay() const
+{
+    return Function::functionTypeDescription(type());
+}
+
+QString UffFileDescriptor::sizeDisplay() const
+{
+    double size = 0.0;
+    if (!channels.isEmpty()) {
+        if (channels.first()->data()->xValuesFormat() == DataHolder::XValuesUniform)
+            size = samplesCount() * xStep();
+        else {
+            channels.first()->populate();
+            size = channels.first()->data()->xValues().last();
+        }
+    }
+    return QString::number(size);
+}
+
 QString UffFileDescriptor::dateTime() const
 {DD;
     return header.type151[10].value.toDateTime().toString("dd.MM.yy hh:mm:ss");
@@ -320,11 +340,12 @@ QString UffFileDescriptor::xName() const
     return xname;
 }
 
-void UffFileDescriptor::setLegend(const QString &legend)
+bool UffFileDescriptor::setLegend(const QString &legend)
 {DD;
-    if (legend == header.type151[8].value.toString()) return;
+    if (legend == header.type151[8].value.toString()) return false;
     header.type151[8].value = legend;
     setChanged(true);
+    return true;
 }
 
 QString UffFileDescriptor::legend() const
@@ -347,7 +368,12 @@ void UffFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
     }
 
     setChanged(true);
-    //write();
+    removeTempFile();
+}
+
+void UffFileDescriptor::removeTempFile()
+{
+    if (QFile::exists(fileName()+"~")) QFile::remove(fileName()+"~");
 }
 
 void UffFileDescriptor::copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy)
@@ -384,11 +410,15 @@ void UffFileDescriptor::copyChannelsFrom(const QList<QPair<FileDescriptor *, int
     updateDateTimeGUID();
     setChanged(true);
     write();
+    removeTempFile();
 }
 
 void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> > &channels)
 {DD;
+
     if (channels.isEmpty()) return;
+
+    populate();
 
     Function *ch = new Function(this);
 
@@ -403,19 +433,31 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     }))->samplesCount();
 
     // ищем формат данных для нового канала
-    // если форматы разные, то формат будет комплексный
+    // если форматы разные или комплексные, то формат будет - амплитуда
 
+    bool listHasComplexValues = false;
     int format = firstChannel->yValuesFormat();
-    auto f = std::find_if(list.begin()+1, list.end(), [format](Channel *ch){return ch->yValuesFormat()!=format;});
-    if (f != list.end()) format = DataHolder::YValuesComplex;
+    for (int i=1; i<list.size(); ++i) {
+        if (list[i]->yValuesFormat() == DataHolder::YValuesComplex)
+            listHasComplexValues = true;
+        if (list[i]->yValuesFormat() != format) {
+            format = DataHolder::YValuesAmplitudes;
+            break;
+        }
+    }
+
+    if (format == DataHolder::YValuesComplex) {
+        format = DataHolder::YValuesAmplitudes;
+    }
+    if (listHasComplexValues)
+        QMessageBox::warning(0, QString("Комплексные значения"),
+                             QString("Некоторые каналы имеют комплексные значения.\n"
+                                     "Фаза будет удалена, данные будут сохранены в виде амплитуды."));
 
     Averaging averaging(Averaging::Linear, list.size());
 
     foreach (Channel *ch, list) {
-        if (ch->yValuesFormat() == DataHolder::YValuesComplex)
-            averaging.average(ch->data()->yValuesComplex());
-        else
-            averaging.average(ch->data()->linears());
+        averaging.average(ch->data()->linears());
     }
 
     // обновляем сведения канала
@@ -428,10 +470,8 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     }
     ch->setDescription("Среднее каналов "+l.join(","));
 
-    if (format == DataHolder::YValuesComplex)
-        ch->data()->setYValues(averaging.getComplex().mid(0, numInd));
-    else
-        ch->data()->setYValues(averaging.get().mid(0, numInd), DataHolder::YValuesFormat(format));
+    ch->data()->setThreshold(firstChannel->data()->threshold());
+    ch->data()->setYValues(averaging.get().mid(0, numInd), DataHolder::YValuesFormat(format));
 
     if (ch->data()->xValuesFormat()==DataHolder::XValuesUniform) {
         ch->type58[27].value = 1;
@@ -441,6 +481,7 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
         ch->type58[27].value = 0;
         ch->data()->setXValues(firstChannel->data()->xValues().mid(0, numInd));
     }
+    ch->setPopulated(true);
 
     ch->type58[14].value = firstChannel->type();
 
@@ -459,6 +500,7 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     ch->parent = this;
 
     this->channels << ch;
+    removeTempFile();
 }
 
 void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize)
@@ -472,6 +514,7 @@ void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
 
         int numInd = firstChannel->samplesCount();
 
+        ch->data()->setThreshold(firstChannel->data()->threshold());
         if (firstChannel->data()->yValuesFormat() == DataHolder::YValuesComplex) {
             ch->data()->setYValues(movingAverage(firstChannel->data()->yValuesComplex(), windowSize));
         }
@@ -482,7 +525,7 @@ void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
             ch->data()->setYValues(values, DataHolder::YValuesFormat(firstChannel->data()->yValuesFormat()));
         }
 
-        if (ch->data()->xValuesFormat()==DataHolder::XValuesUniform) {
+        if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
             ch->type58[27].value = 1;
             ch->data()->setXValues(firstChannel->xMin(), firstChannel->xStep(), numInd);
         }
@@ -515,6 +558,7 @@ void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
 
         this->channels << ch;
     }
+    removeTempFile();
 }
 
 FileDescriptor *UffFileDescriptor::calculateThirdOctave()
@@ -543,6 +587,7 @@ FileDescriptor *UffFileDescriptor::calculateThirdOctave()
         auto result = thirdOctave(ch->data()->decibels(), ch->xMin(), ch->xStep());
 
         newCh->data()->setXValues(result.first);
+        newCh->data()->setThreshold(ch->data()->threshold());
         newCh->data()->setYValues(result.second, DataHolder::YValuesAmplitudesInDB);
         newCh->setPopulated(true);
 
@@ -583,7 +628,7 @@ void UffFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
         i=up?i+1:i-1;
     }
     setChanged(true);
-    //write();
+    removeTempFile();
 }
 
 int UffFileDescriptor::channelsCount() const
@@ -1031,6 +1076,7 @@ Descriptor::OrdinateFormat Function::yFormat() const
 
 void Function::populate()
 {DD;
+    if (_populated) return;
     _data->clear();
 
     _populated = false;
@@ -1041,6 +1087,8 @@ void Function::populate()
     int sc = samplesCount();
 
     QTextStream stream(&uff);
+
+    Q_ASSERT_X(dataPosition != -1, "Function::populate", "Data positions have been invalidated");
     if (stream.seek(dataPosition)) {
 
         double thr = threshold(this->yName());
@@ -1108,8 +1156,8 @@ void Function::populate()
         else
             _data->setYValues(valuesComplex);
 
-        QString end = stream.readLine(); //qDebug()<<"end"<<end;
-        end = stream.readLine().trimmed(); //qDebug()<<"end"<<end;
+        QString end = stream.readLine(); qDebug()<<"end"<<end;
+        end = stream.readLine().trimmed(); qDebug()<<"end"<<end;
         Q_ASSERT(end == "-1");
     }
     _populated = true;

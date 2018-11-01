@@ -3,20 +3,21 @@
 
 double threshold(const QString &name)
 {
-    if (name=="м/с2" || name=="м/с^2" || name=="м/с*2" || name=="m/s2" || name=="m/s^2") return 3.16e-4;
-    if (name=="Па" || name=="Pa" || name=="hPa" || name=="kPa" || name=="MPa"
-        || name=="N/m2" || name=="N/mm2") return 2.0e-5;
-    if (name=="м/с" || name=="m/s") return 5.0e-8;
-    if (name=="м" || name=="m") return 8.0e-14;
-    if (name=="V" || name=="В" || name=="мВ" || name=="mV") return 1e-6;
-    if (name=="A" || name=="А") return 1e-9;
+    QString n = name.toLower();
+    if (n=="м/с2" || n=="м/с^2" || n=="м/с*2" || n=="m/s2" || n=="m/s^2") return 3.16e-4;
+    if (n=="па" || n=="pa" || n=="hpa" || n=="kpa" || n=="mpa"
+        || n=="n/m2" || n=="n/mm2") return 2.0e-5;
+    if (n=="м/с" || n=="m/s") return 5.0e-8;
+    if (n=="м" || n=="m") return 8.0e-14;
+    if (n=="v" || n=="в" || n=="мв" || n=="mv") return 1e-6;
+    if (n=="a" || n=="а") return 1e-9;
 
 
     return 1.0;
 }
 
 FileDescriptor::FileDescriptor(const QString &fileName) :
-    _fileName(fileName), _changed(false), _dataChanged(false)
+    _fileName(fileName), _changed(false), _dataChanged(false), _hasGraphs(false)
 {
 
 }
@@ -39,6 +40,14 @@ void FileDescriptor::setChanged(bool changed)
 void FileDescriptor::setDataChanged(bool changed)
 {
     _dataChanged = changed;
+}
+
+bool FileDescriptor::hasGraphs() const
+{
+    for (int i=0; i<channelsCount(); ++i) {
+        if (channel(i)->checkState() == Qt::Checked) return true;
+    }
+    return false;
 }
 
 QString descriptionEntryToString(const DescriptionEntry &entry)
