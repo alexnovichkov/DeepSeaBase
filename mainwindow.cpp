@@ -14,6 +14,7 @@
 #include "pointlabel.h"
 #include "model.h"
 #include "sortfiltermodel.h"
+#include "filterheaderview.h"
 
 #include <ActiveQt/ActiveQt>
 #include "logging.h"
@@ -530,15 +531,15 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->sortModel = new SortFilterModel(tab);
     tab->sortModel->setSourceModel(tab->model);
 
-    for(int i=0; i<tab->model->columnCount(); ++i) {
-        QLineEdit *e = new QLineEdit(this);
-        e->setClearButtonEnabled(true);
-        e->setPlaceholderText(tab->model->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString());
-        connect(e, &QLineEdit::textChanged, [this, i](const QString &text){
-            tab->sortModel->setFilter(text, i);
-        });
-        tab->filters << e;
-    }
+//    for(int i=0; i<tab->model->columnCount(); ++i) {
+//        QLineEdit *e = new QLineEdit(this);
+//        e->setClearButtonEnabled(true);
+//        e->setPlaceholderText(tab->model->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString());
+//        connect(e, &QLineEdit::textChanged, [this, i](const QString &text){
+//            tab->sortModel->setFilter(text, i);
+//        });
+//        tab->filters << e;
+//    }
 
 
     tab->filesTable = new QTreeView(this);
@@ -558,15 +559,20 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->filesTable->addAction(calculateSpectreAct);
     tab->filesTable->addAction(convertAct);
 
-    tab->filesTable->header()->setStretchLastSection(false);
-    tab->filesTable->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    tab->filesTable->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    tab->filesTable->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-    tab->filesTable->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
-    tab->filesTable->header()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
-    tab->filesTable->header()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
-    tab->filesTable->header()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
-    tab->filesTable->header()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
+    FilterHeaderView *filterHeader = new FilterHeaderView(Qt::Horizontal, tab->filesTable);
+    tab->filesTable->setHeader(filterHeader);
+    connect(filterHeader, SIGNAL(filterChanged(QString,int)), tab->sortModel, SLOT(setFilter(QString,int)));
+    filterHeader->setFilterBoxes(tab->model->columnCount());
+
+//    tab->filesTable->header()->setStretchLastSection(false);
+//    tab->filesTable->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+//    tab->filesTable->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+//    tab->filesTable->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+//    tab->filesTable->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+//    tab->filesTable->header()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
+//    tab->filesTable->header()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
+//    tab->filesTable->header()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
+//    tab->filesTable->header()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
 //    connect(tab->filesTable->header(), &QHeaderView::sectionResized, [this](int section, int oldSize, int newSize)
 //    {Q_UNUSED(oldSize);
 //        qDebug()<<"section"<<section<<"old"<<oldSize<<"new"<<newSize;
@@ -616,14 +622,12 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
     QWidget *treeWidget = new QWidget(this);
     QVBoxLayout *treeLayout = new QVBoxLayout;
-    QHBoxLayout *filterLayout = new QHBoxLayout;
-
-    for (int i=0; i<tab->filters.size(); ++i) {
-//        treeLayout->addWidget(tab->filters[i], 0,i);
-        filterLayout->addWidget(tab->filters[i]);
-    }
-    treeLayout->addLayout(filterLayout);
-    treeLayout->addWidget(tab->filesTable/*,1,0,1,tab->filters.size()*/);
+//    QHBoxLayout *filterLayout = new QHBoxLayout;
+//    for (int i=0; i<tab->filters.size(); ++i) {
+//        filterLayout->addWidget(tab->filters[i]);
+//    }
+//    treeLayout->addLayout(filterLayout);
+    treeLayout->addWidget(tab->filesTable);
 
     treeWidget->setLayout(treeLayout);
 

@@ -8,6 +8,7 @@ class SortFilterModel : public QSortFilterProxyModel
     Q_OBJECT
 public:
     SortFilterModel(QObject *parent = 0);
+public slots:
     void setFilter(const QString &text, int column);
 
     // QSortFilterProxyModel interface
