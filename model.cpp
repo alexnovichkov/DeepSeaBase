@@ -34,6 +34,7 @@ int Model::rowOfFile(FileDescriptor *file) const
 
 void Model::addFiles(const QList<FileDescriptor *> &files)
 {
+    if (files.isEmpty()) return;
     beginInsertRows(QModelIndex(), descriptors.size(), descriptors.size()+files.size()-1);
     descriptors.append(files);
     endInsertRows();
@@ -207,7 +208,7 @@ QVariant Model::data(const QModelIndex &index, int role) const
             case 1: return QFileInfo(d->fileName()).completeBaseName();
             case 2: return d->dateTime();
             case 3: return d->typeDisplay();
-            case 4: return d->sizeDisplay();
+            case 4: return d->size();
             case 5: return d->xName();
             case 6: return d->xStep();
             case 7: return d->channelsCount();
@@ -263,8 +264,9 @@ bool Model::setData(const QModelIndex &index, const QVariant &value, int role)
             break;
         }
         case 2: /*date*/ {
-            QDateTime dt = QDateTime::fromString(value.toString(), "dd.MM.yy hh:mm:ss");
+            QDateTime dt = value.toDateTime();
             if (dt.isValid()) {
+                if (dt.date().year()<1950) dt = dt.addYears(100);
                 d->setDateTime(dt);
                 emit dataChanged(index, index, QVector<int>()<<Qt::DisplayRole);
                 return true;

@@ -6,7 +6,7 @@
 #include "logging.h"
 #include "algorithms.h"
 
-OctaveMethod::OctaveMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *parent) :
+OctaveMethod::OctaveMethod(QList<FileDescriptor *> &dataBase, QWidget *parent) :
     QWidget(parent), AbstractMethod(dataBase)
 {
     resolutionSpin = new QSpinBox(this); //kStrip=1024
@@ -56,13 +56,13 @@ int OctaveMethod::id()
     return 18;
 }
 
-QStringList OctaveMethod::methodSettings(DfdFileDescriptor *dfd, const Parameters &p)
+QStringList OctaveMethod::methodSettings(FileDescriptor *dfd, const Parameters &p)
 {
     Q_UNUSED(p)
     QStringList spfFile;
     QString yName = "дБ";
     if (scaleCombo->currentText() != "в децибелах") {
-        yName = dfd->channels.first()->yName();
+        yName = dfd->channel(0)->yName();
     }
     spfFile << QString("YName=%1").arg(yName);
     spfFile << QString("BlockIn=32768"); //Размер буфера чтения, кажется, не меняется
@@ -129,31 +129,9 @@ DescriptionList OctaveMethod::processData(const Parameters &p)
 
 
 
-DfdFileDescriptor *OctaveMethod::createNewDfdFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p)
+DfdFileDescriptor *OctaveMethod::createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
 {DD;
-    DfdFileDescriptor *newDfd = new DfdFileDescriptor(fileName);
-
-    newDfd->rawFileName = fileName.left(fileName.length()-4)+".raw";
-    newDfd->updateDateTimeGUID();
-
-    newDfd->BlockSize = 0;
-    newDfd->DataType = DfdDataType(dataType());
-
-    // [DataDescription]
-    if (dfd->dataDescription) {
-        newDfd->dataDescription = new DataDescription(newDfd);
-        newDfd->dataDescription->data = dfd->dataDescription->data;
-    }
-    newDfd->DescriptionFormat = dfd->DescriptionFormat;
-
-    // [Sources]
-    newDfd->source = new Source();
-    QStringList l; for (int i=1; i<=dfd->channelsCount(); ++i) l << QString::number(i);
-    newDfd->source->sFile = dfd->fileName()+"["+l.join(",")+"]"+dfd->DFDGUID;
-
-    // [Process]
-    newDfd->process = new Process();
-    newDfd->process->data = processData(p);
+    DfdFileDescriptor *newDfd = AbstractMethod::createNewDfdFile(fileName, dfd, p);
 
     // rest
     newDfd->XName = "Гц";
@@ -163,15 +141,15 @@ DfdFileDescriptor *OctaveMethod::createNewDfdFile(const QString &fileName, DfdFi
     return newDfd;
 }
 
-UffFileDescriptor *OctaveMethod::createNewUffFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p)
+UffFileDescriptor *OctaveMethod::createNewUffFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
 {
     Q_UNUSED(p);
     UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
 
     newUff->updateDateTimeGUID();
 
-    if (dfd->dataDescription) {
-        newUff->setDataDescriptor(dfd->dataDescription->data);
+    if (!dfd->dataDescriptor().isEmpty()) {
+        newUff->setDataDescriptor(dfd->dataDescriptor());
     }
 
     newUff->setXStep(0.0);
@@ -179,7 +157,7 @@ UffFileDescriptor *OctaveMethod::createNewUffFile(const QString &fileName, DfdFi
     return newUff;
 }
 
-DfdChannel *OctaveMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
+DfdChannel *OctaveMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
 {
     Q_UNUSED(p);
     DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
@@ -187,25 +165,25 @@ DfdChannel *OctaveMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDes
     ch->data()->setThreshold(p.threshold);
     ch->data()->setYValues(spectrum, DataHolder::YValuesAmplitudesInDB);
     ch->setPopulated(true);
-    ch->setName(dfd->channels[i]->name());
+    ch->setName(dfd->channel(i)->name());
 
-    ch->ChanDscr = dfd->channels[i]->ChanDscr;
-    ch->ChanAddress = dfd->channels[i]->ChanAddress;
+    ch->ChanDscr = dfd->channel(i)->description();
+//    ch->ChanAddress = dfd->channels[i]->ChanAddress;
 
     ch->ChanBlockSize = spectrum.size();
     ch->IndType = 3221225476;
 
     ch->YName = "дБ";
-    ch->YNameOld = dfd->channels[i]->yName();
+    ch->YNameOld = dfd->channel(i)->yName();
 
     newDfd->channels << ch;
     return ch;
 }
 
-Function *OctaveMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
+Function *OctaveMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
 {
     Function *ch = new Function(newUff);
-    ch->setName(dfd->channels[i]->name()/*+"/Сила"*/);
+    ch->setName(dfd->channel(i)->name()/*+"/Сила"*/);
     ch->setPopulated(true);
 
     //FunctionHeader header;
@@ -225,7 +203,7 @@ Function *OctaveMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescript
     ch->type58[26].value = spectrumSize;
     ch->type58[28].value = 0.0;
     ch->type58[29].value = 0.0; //29 Abscissa increment
-    ch->type58[30].value = dfd->channels[i]->samplesCount()*dfd->channels[i]->xStep(); //30 Z-axis value (length in seconds)
+    ch->type58[30].value = dfd->channel(i)->samplesCount()*dfd->channel(i)->xStep(); //30 Z-axis value (length in seconds)
 
     ch->type58[32].value = 18; // 18 - frequency
     ch->type58[36].value = "Частота";

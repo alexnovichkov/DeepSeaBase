@@ -130,11 +130,11 @@ public:
     virtual void updateDateTimeGUID();
     QString dataDescriptorAsString() const;
 
-    virtual QStringList info() const;
+    QMap<QString, QString> info() const;
     virtual Descriptor::DataType type() const;
     virtual QString typeDisplay() const;
-    QString sizeDisplay() const;
-    virtual QString dateTime() const;
+    double size() const;
+    virtual QDateTime dateTime() const;
     virtual double xStep() const;
     virtual void setXStep(const double xStep);
     virtual QString xName() const;

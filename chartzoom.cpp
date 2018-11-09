@@ -61,6 +61,7 @@ ChartZoom::ChartZoom(QwtPlot *qp) :
 
     // создаем интерфейс масштабирования графика
     mainZoom = new QMainZoomSvc();
+    //propagating to ChartZoom
     connect(mainZoom,SIGNAL(xAxisClicked(double,bool)),SIGNAL(updateTrackingCursor(double,bool)));
     mainZoom->attach(this);
 

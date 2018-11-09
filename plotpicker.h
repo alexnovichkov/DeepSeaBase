@@ -10,7 +10,6 @@ class QwtPlotCurve;
 class PointLabel;
 class QwtPlotMarker;
 
-
 class PlotPicker : public QwtPlotPicker
 {
     Q_OBJECT
@@ -24,6 +23,7 @@ protected:
     virtual void widgetKeyReleaseEvent(QKeyEvent *e);
 //    virtual bool event(QEvent *);
     virtual void widgetKeyPressEvent(QKeyEvent *e);
+    virtual void widgetMouseMoveEvent(QMouseEvent *e);
 signals:
     void updateTrackingCursor(double xVal, bool second);
     void cursorMovedTo(QwtPlotMarker *cursor, double newValue);
@@ -46,6 +46,7 @@ private:
     QwtPlot *plot;
     Curve *d_selectedCurve;
     QwtPlotMarker *marker;
+    QCursor defaultCursor;
 
     Plot::InteractionMode mode;
 

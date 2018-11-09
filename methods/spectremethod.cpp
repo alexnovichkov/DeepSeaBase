@@ -9,7 +9,7 @@
 #include "windowing.h"
 #include "averaging.h"
 
-SpectreMethod::SpectreMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *parent) :
+SpectreMethod::SpectreMethod(QList<FileDescriptor *> &dataBase, QWidget *parent) :
     QWidget(parent), AbstractMethod(dataBase)
 {
     saveAsComplexCheckBox = new QCheckBox("Сохранять комплексные значения", this);
@@ -118,7 +118,7 @@ int SpectreMethod::id()
     return 1;
 }
 
-QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, const Parameters &p)
+QStringList SpectreMethod::methodSettings(FileDescriptor *dfd, const Parameters &p)
 {DD;
     QStringList spfFile;
     QString yName = "дБ";
@@ -130,7 +130,7 @@ QStringList SpectreMethod::methodSettings(DfdFileDescriptor *dfd, const Paramete
     spfFile << QString("Wind=%1").arg(Windowing::windowDescription(p.windowType));
     spfFile << QString("TypeAver=%1").arg(Averaging::averagingDescription(p.averagingType));
 
-    int numberOfInd = dfd->channels.at(0)->samplesCount();
+    int numberOfInd = dfd->channel(0)->samplesCount();
     double NumberOfAveraging = double(numberOfInd) / p.bufferSize / (1<<p.bandStrip);
     if (NumberOfAveraging<1) NumberOfAveraging = 1;
     int nAver = qRound(NumberOfAveraging);
@@ -217,31 +217,9 @@ void SpectreMethod::updateResolution(int bandStrip)
 }
 
 
-DfdFileDescriptor *SpectreMethod::createNewDfdFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p)
-{
-    DD;
-    DfdFileDescriptor *newDfd = new DfdFileDescriptor(fileName);
-
-    newDfd->rawFileName = fileName.left(fileName.length()-4)+".raw";
-    newDfd->updateDateTimeGUID();
-    newDfd->BlockSize = 0;
-    newDfd->DataType = DfdDataType(dataType());
-
-    // [DataDescription]
-    if (dfd->dataDescription) {
-        newDfd->dataDescription = new DataDescription(newDfd);
-        newDfd->dataDescription->data = dfd->dataDescription->data;
-    }
-    newDfd->DescriptionFormat = dfd->DescriptionFormat;
-
-    // [Sources]
-    newDfd->source = new Source();
-    QStringList l; for (int i=1; i<=dfd->channelsCount(); ++i) l << QString::number(i);
-    newDfd->source->sFile = dfd->fileName()+"["+l.join(",")+"]"+dfd->DFDGUID;
-
-    // [Process]
-    newDfd->process = new Process();
-    newDfd->process->data = processData(p);
+DfdFileDescriptor *SpectreMethod::createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
+{DD;
+    DfdFileDescriptor *newDfd = AbstractMethod::createNewDfdFile(fileName, dfd, p);
 
     // rest
     newDfd->XName = "Гц";
@@ -252,14 +230,14 @@ DfdFileDescriptor *SpectreMethod::createNewDfdFile(const QString &fileName, DfdF
     return newDfd;
 }
 
-UffFileDescriptor *SpectreMethod::createNewUffFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p)
+UffFileDescriptor *SpectreMethod::createNewUffFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
 {DD;
     UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
 
     newUff->fillPreliminary((Descriptor::DataType)0);
 
-    if (dfd->dataDescription) {
-        newUff->setDataDescriptor(dfd->dataDescription->data);
+    if (!dfd->dataDescriptor().isEmpty()) {
+        newUff->setDataDescriptor(dfd->dataDescriptor());
     }
 
     const double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
@@ -268,32 +246,32 @@ UffFileDescriptor *SpectreMethod::createNewUffFile(const QString &fileName, DfdF
     return newUff;
 }
 
-DfdChannel *SpectreMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
+DfdChannel *SpectreMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
 {DD;
     DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
     ch->data()->setXValues(0.0, newDfd->XStep, spectrum.size());
     ch->data()->setThreshold(p.threshold);
     ch->data()->setYValues(spectrum, p.scaleType == 0 ? DataHolder::YValuesAmplitudes : DataHolder::YValuesAmplitudesInDB);
     ch->setPopulated(true);
-    ch->setName(dfd->channels[i]->name());
+    ch->setName(dfd->channel(i)->name());
 
-    ch->ChanDscr = dfd->channels[i]->ChanDscr;
-    ch->ChanAddress = dfd->channels[i]->ChanAddress;
+    ch->ChanDscr = dfd->channel(i)->description();
+//    ch->ChanAddress = dfd->channel(i)->ChanAddress;
 
     ch->ChanBlockSize = spectrum.size();
     ch->IndType = 3221225476;
 
-    ch->YName = p.scaleType==0?dfd->channels[i]->yName():"дБ";
-    ch->YNameOld = dfd->channels[i]->yName();
+    ch->YName = p.scaleType==0?dfd->channel(i)->yName():"дБ";
+    ch->YNameOld = dfd->channel(i)->yName();
 
     newDfd->channels << ch;
     return ch;
 }
 
-Function * SpectreMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
+Function * SpectreMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
 {DD;
     Function *ch = new Function(newUff);
-    ch->setName(dfd->channels[i]->name());
+    ch->setName(dfd->channel(i)->name());
     ch->setPopulated(true);
 
     //FunctionHeader header;
@@ -321,7 +299,7 @@ Function * SpectreMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescri
     ch->type58[37].value = "Гц"; //37 Abscissa name
 
     ch->type58[39].value = 1; //39 Ordinate (or ordinate numerator) Data Characteristics // 1 = General
-    ch->type58[44].value = dfd->channels[i]->yName(); //44 Ordinate name
+    ch->type58[44].value = dfd->channel(i)->yName(); //44 Ordinate name
 
     ch->type58[53].value = 0; //53 Z axis data characteristics // 0 = Unknown
     ch->type58[57].value = "Time"; //57 Z-axis label

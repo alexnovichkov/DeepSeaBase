@@ -7,7 +7,7 @@
 #include "algorithms.h"
 #include "logging.h"
 
-FRFMethod::FRFMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *parent) : SpectreMethod(dataBase, parent)
+FRFMethod::FRFMethod(QList<FileDescriptor *> &dataBase, QWidget *parent) : SpectreMethod(dataBase, parent)
 {
     baseChannelSpin = new QSpinBox(this);
     baseChannelSpin->setRange(1, 1000);
@@ -55,7 +55,7 @@ Parameters FRFMethod::parameters()
     return p;
 }
 
-Function *FRFMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
+Function *FRFMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
 {
     Function *ch = SpectreMethod::addUffChannel(newUff, dfd, spectrumSize, p, i);
 

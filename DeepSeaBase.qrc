@@ -20,5 +20,6 @@
         <file>icons/autoscale-y-main.png</file>
         <file>icons/autoscale-y-slave.png</file>
         <file>icons/autoscale-all.png</file>
+        <file>icons/sergei.png</file>
     </qresource>
 </RCC>

@@ -8,49 +8,68 @@ class QTreeWidget;
 class QPushButton;
 class QCheckBox;
 class QLabel;
-class QDoubleSpinBox;
 class Plot;
 
-class QwtPlotZoneItem;
+#include <QtWidgets>
+#include <qwt_plot_zoneitem.h>
 
 class TrackingCursor : public QwtPlotMarker
 {
 public:
+    explicit TrackingCursor(const QColor &col);
     void moveTo(const double xValue);
     void setYValues(const QVector<double> &yValues);
 
     void updateLabel();
     bool showYValues;
     QVector<double> yValues;
+    bool reject = false;
 };
 
-class TrackingPanel:public QWidget
+class ZoneSpan : public QwtPlotZoneItem
+{
+public:
+    explicit ZoneSpan(const QColor &color);
+};
+
+class ClearableSpinBox: public QDoubleSpinBox
+{
+public:
+    explicit ClearableSpinBox(QWidget *parent);
+};
+
+class TrackingPanel: public QWidget
 {
     Q_OBJECT
 public:
     struct TrackInfo {
         QString name;
         QColor color;
-        double xval, yval;
-        //double xval2, yval2;
+        QList<QPair<double, double>> values;
+//        double xval, yval;
         double skz;
         double energy;
     };
 
     explicit TrackingPanel(Plot *parent=0);
     ~TrackingPanel();
-    void updateState(const QList<TrackInfo> &curves, bool second);
+    void updateState(const QList<TrackInfo> &curves);
 
     void setStep(double step);
     void switchVisibility();
 public slots:
-    void updateTrackingCursor(double xVal, bool second);
-    void setX(double xVal, bool second);
-    void updateTrackingCursor(QwtPlotMarker*cursor, double newVal);
+    // рассчитывает точное значение Х и меняет показания на счетчиках
+    void setXValue(double value, bool second);
+    void setXValue(QwtPlotMarker *cursor, double value);
+    void update();
 signals:
     void switchHarmonics(bool on);
     void closeRequested();
 private:
+    void setX(double value, int index);
+    void updateTrackingCursor(double xVal, int index);
+
+
     QTreeWidget *tree;
     QPushButton *button;
     QCheckBox *box;
@@ -58,19 +77,18 @@ private:
     QCheckBox *harmonics;
     QCheckBox *yValuesCheckBox;
 
-    QCheckBox *showFirst;
-    QCheckBox *showSecond;
-
     QLabel *x1Label;
     QLabel *x2Label;
-    QDoubleSpinBox *x1Spin;
-    QDoubleSpinBox *x2Spin;
+
 
     double mStep;
 
-    TrackingCursor *_trackingCursor;
-    TrackingCursor *_trackingCursor1;
-    QwtPlotZoneItem *cursorSpan;
+    QList<TrackingCursor *> cursors;
+    QList<ClearableSpinBox *> spins;
+    QList<QCheckBox *> cursorBoxes;
+
+    ZoneSpan *cursorSpan1;
+    ZoneSpan *cursorSpan2;
     Plot *plot;
 
     // QWidget interface

@@ -12,7 +12,7 @@ class FRFMethod : public SpectreMethod
 {
     Q_OBJECT
 public:
-    FRFMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *parent = 0);
+    FRFMethod(QList<FileDescriptor *> &dataBase, QWidget *parent = 0);
 
     // AbstractMethod interface
 public:
@@ -22,7 +22,7 @@ public:
     virtual QString methodName();
     virtual int dataType();
     virtual Parameters parameters();
-    virtual Function *addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, int spectrumSize, Parameters &p, int i);
+    virtual Function *addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i);
 
 private:
     QSpinBox *baseChannelSpin;

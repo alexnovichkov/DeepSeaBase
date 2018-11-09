@@ -94,8 +94,10 @@ UffFileDescriptor::UffFileDescriptor(const UffFileDescriptor &other) : FileDescr
 UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other) : FileDescriptor(other.fileName())
 {
     //заполнение header
-    header.type151[10].value = QDateTime::fromString(other.dateTime(), "dd.MM.yy hh:mm:ss");
-    header.type151[12].value = QDateTime::fromString(other.dateTime(), "dd.MM.yy hh:mm:ss");
+//    header.type151[10].value = QDateTime::fromString(other.dateTime(), "dd.MM.yy hh:mm:ss");
+//    header.type151[12].value = QDateTime::fromString(other.dateTime(), "dd.MM.yy hh:mm:ss");
+    header.type151[10].value = other.dateTime();
+    header.type151[12].value = other.dateTime();
     header.type151[16].value = QDateTime::currentDateTime();
 
     int referenceChannelNumber = -1; //номер опорного канала ("сила")
@@ -257,18 +259,9 @@ QString UffFileDescriptor::dataDescriptorAsString() const
     return header.info();
 }
 
-QStringList UffFileDescriptor::info() const
-{DD;
-    return QStringList()
-     << QFileInfo(fileName()).completeBaseName() //QString("Файл") 1
-         << header.type151[10].value.toDateTime().toString("dd.MM.yy hh:mm:ss") // QString("Дата") 2
-         << Function::functionTypeDescription(type()) // QString("Тип") 3
-         << (xStep()==0 ? QString::number(samplesCount()) : QString::number(samplesCount() * xStep())) // QString("Размер") 4
-         << xName() // QString("Ось Х") 5
-         << QString::number(xStep()) // QString("Шаг") 6
-         << QString::number(channelsCount()) // QString("Каналы")); 7
-         << header.info()
-         << legend();
+QMap<QString, QString> UffFileDescriptor::info() const
+{
+    return QMap<QString, QString>();
 }
 
 Descriptor::DataType UffFileDescriptor::type() const
@@ -287,7 +280,7 @@ QString UffFileDescriptor::typeDisplay() const
     return Function::functionTypeDescription(type());
 }
 
-QString UffFileDescriptor::sizeDisplay() const
+double UffFileDescriptor::size() const
 {
     double size = 0.0;
     if (!channels.isEmpty()) {
@@ -298,12 +291,12 @@ QString UffFileDescriptor::sizeDisplay() const
             size = channels.first()->data()->xValues().last();
         }
     }
-    return QString::number(size);
+    return size;
 }
 
-QString UffFileDescriptor::dateTime() const
+QDateTime UffFileDescriptor::dateTime() const
 {DD;
-    return header.type151[10].value.toDateTime().toString("dd.MM.yy hh:mm:ss");
+    return header.type151[10].value.toDateTime()/*.toString("dd.MM.yy hh:mm:ss")*/;
 }
 
 double UffFileDescriptor::xStep() const

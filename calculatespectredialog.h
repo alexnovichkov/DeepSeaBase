@@ -24,7 +24,7 @@ class CalculateSpectreDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit CalculateSpectreDialog(QList<FileDescriptor *> *dataBase, QWidget *parent = 0);
+    explicit CalculateSpectreDialog(QList<FileDescriptor *> &dataBase, QWidget *parent = 0);
     ~CalculateSpectreDialog();
     QStringList getNewFiles() const {return newFiles;}
 
@@ -38,7 +38,7 @@ private slots:
     void start();
     void stop();
 private:
-    QList<DfdFileDescriptor *> dataBase;
+    QList<FileDescriptor *> dataBase;
 
     QStringList newFiles;
     AbstractMethod *currentMethod;

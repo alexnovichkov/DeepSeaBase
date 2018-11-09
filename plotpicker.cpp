@@ -32,15 +32,12 @@ PlotPicker::PlotPicker(QWidget *canvas) :
     marker = 0;
     mode = Plot::ScalingInteraction;
     selectedLabel = 0;
+    defaultCursor = plot->canvas()->cursor();
 
     selectedCursor = 0;
 
     setStateMachine(new QwtPickerDragPointMachine);
-
     setTrackerMode(QwtPicker::AlwaysOn);
-    setRubberBandPen(QPen(QColor(60,60,60), 0.5, Qt::DashLine));
-
-
 
     connect(this,SIGNAL(appended(QPoint)),this,SLOT(pointAppended(QPoint)));
     connect(this,SIGNAL(moved(QPoint)),this,SLOT(pointMoved(QPoint)));
@@ -133,6 +130,27 @@ void PlotPicker::widgetKeyPressEvent(QKeyEvent *e)
 
     }
     else QwtPlotPicker::widgetKeyPressEvent(e);
+}
+
+void PlotPicker::widgetMouseMoveEvent(QMouseEvent *e)
+{
+    QwtPlotPicker::widgetMouseMoveEvent(e);
+//    qDebug()<<e->pos();
+
+//    const QwtPlotItemList& itmList = plot->itemList();
+//    for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
+//        if (( *it )->rtti() == QwtPlotItem::Rtti_PlotMarker ) {
+//            if (TrackingCursor *c = static_cast<TrackingCursor *>( *it )) {
+//                int newX = (int)(plot->transform(QwtPlot::xBottom, c->xValue()));
+//                if (qAbs(newX-e->pos().x())<=5)
+//                    plot->canvas()->setCursor(Qt::SplitHCursor);
+//                else
+//                    plot->canvas()->setCursor(defaultCursor);
+//            }
+//        }
+//    }
+
+//
 }
 
 void PlotPicker::resetHighLighting()
@@ -230,12 +248,12 @@ void PlotPicker::pointAppended(const QPoint &pos)
 
     selectedLabel = findLabel();
     selectedCursor = findCursor(pos);
-    if (selectedLabel) {
-        selectedLabel->setSelected(true);
+    if (selectedCursor) {
         d_currentPos = pos;
         emit labelSelected(true);
     }
-    else if (selectedCursor) {
+    else if (selectedLabel) {
+        selectedLabel->setSelected(true);
         d_currentPos = pos;
         emit labelSelected(true);
     }
@@ -272,8 +290,8 @@ void PlotPicker::pointMoved(const QPoint &pos)
         if (d_selectedCurve) {
             double newY = plot->invTransform(d_selectedCurve->yAxis(), pos.y());
 
-            d_selectedCurve->descriptor->channel(d_selectedCurve->channelIndex)->yValues()[d_selectedPoint] = newY;
-            d_selectedCurve->descriptor->setDataChanged(true);
+            if (d_selectedCurve->descriptor->channel(d_selectedCurve->channelIndex)->data()->setYValue(d_selectedPoint, newY))
+                d_selectedCurve->descriptor->setDataChanged(true);
             highlightPoint(true);
         }
     }

@@ -39,6 +39,8 @@ class QwtPlotCurve;
 class Curve;
 class Channel;
 class Model;
+class SortFilterModel;
+class QLineEdit;
 
 #include <QSplitter>
 
@@ -55,6 +57,8 @@ public:
     QTreeView *filesTable;
     QTableWidget *channelsTable;
     Model *model;
+    SortFilterModel *sortModel;
+    QList<QLineEdit *> filters;
 
     QStringList folders;
 
@@ -164,6 +168,8 @@ private slots:
     void convertEsoFiles();
 
     void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
+
+    void switchSergeiMode();
 private:
     void moveChannels(bool up);
     void addFiles(QStringList &files);
@@ -189,7 +195,7 @@ private:
     void addFile(FileDescriptor *descriptor);
     void setCurrentAndPlot(FileDescriptor *d, int channelIndex);
 
-
+    bool sergeiMode = false;
     QStringList tabsNames;
 
     Tab *tab;
@@ -229,7 +235,7 @@ private:
 
     QAction *moveChannelsUpAct;
     QAction *moveChannelsDownAct;
-
+    QAction *switchSergeiModeAct;
     QAction *editDescriptionsAct;
 
     QToolBar *mainToolBar;
@@ -254,7 +260,7 @@ private:
 
     TabWidget *tabWidget;
 
-    QThread *workingThread;
+//    QThread *workingThread;
 
 };
 

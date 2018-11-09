@@ -75,15 +75,15 @@ public:
     virtual void populate() = 0;
     virtual void updateDateTimeGUID() = 0;
 
-    virtual QStringList info() const = 0;
+    virtual QMap<QString, QString> info() const = 0;
     virtual Descriptor::DataType type() const = 0;
     virtual QString typeDisplay() const = 0;
-    virtual QString sizeDisplay() const = 0;
+    virtual double size() const = 0;
     virtual DescriptionList dataDescriptor() const = 0;
     virtual void setDataDescriptor(const DescriptionList &data) = 0;
     virtual QString dataDescriptorAsString() const = 0;
 
-    virtual QString dateTime() const = 0;
+    virtual QDateTime dateTime() const = 0;
 
     virtual void deleteChannels(const QVector<int> &channelsToDelete) = 0;
     virtual void copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy) = 0;

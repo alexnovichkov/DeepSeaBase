@@ -13,6 +13,7 @@
 #include "curve.h"
 #include "pointlabel.h"
 #include "model.h"
+#include "sortfiltermodel.h"
 
 #include <ActiveQt/ActiveQt>
 #include "logging.h"
@@ -220,6 +221,11 @@ MainWindow::MainWindow(QWidget *parent)
     saveAct->setShortcut(tr("Ctrl+S"));
     connect(saveAct, SIGNAL(triggered()), SLOT(save()));
 
+    switchSergeiModeAct = new QAction("Режим Сергея", this);
+    switchSergeiModeAct->setIcon(QIcon(":/icons/sergei.png"));
+    switchSergeiModeAct->setCheckable(true);
+    connect(switchSergeiModeAct, SIGNAL(triggered()), SLOT(switchSergeiMode()));
+
 
     delFilesAct = new QAction(QString("Удалить записи"), this);
     delFilesAct->setShortcut(Qt::Key_Delete);
@@ -399,6 +405,8 @@ MainWindow::MainWindow(QWidget *parent)
     mainToolBar->addAction(interactionModeAct);
 //    mainToolBar->addAction(switchHarmonicsAct);
     mainToolBar->addAction(trackingCursorAct);
+    mainToolBar->addAction(switchSergeiModeAct);
+    mainToolBar->addSeparator();
     mainToolBar->addAction(plotHelpAct);
 
 
@@ -519,11 +527,27 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->setOrientation(Qt::Horizontal);
 
     tab->model = new Model(tab);
+    tab->sortModel = new SortFilterModel(tab);
+    tab->sortModel->setSourceModel(tab->model);
+
+    for(int i=0; i<tab->model->columnCount(); ++i) {
+        QLineEdit *e = new QLineEdit(this);
+        e->setClearButtonEnabled(true);
+        e->setPlaceholderText(tab->model->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString());
+        connect(e, &QLineEdit::textChanged, [this, i](const QString &text){
+            tab->sortModel->setFilter(text, i);
+        });
+        tab->filters << e;
+    }
+
 
     tab->filesTable = new QTreeView(this);
-    tab->filesTable->setModel(tab->model);
+    tab->filesTable->setModel(tab->sortModel);
 
     tab->filesTable->setRootIsDecorated(false);
+    tab->filesTable->setSortingEnabled(true);
+    tab->filesTable->sortByColumn(0, Qt::AscendingOrder);
+
     tab->filesTable->setContextMenuPolicy(Qt::ActionsContextMenu);
     tab->filesTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
     tab->filesTable->addAction(addFolderAct);
@@ -543,6 +567,19 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->filesTable->header()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
     tab->filesTable->header()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
     tab->filesTable->header()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
+//    connect(tab->filesTable->header(), &QHeaderView::sectionResized, [this](int section, int oldSize, int newSize)
+//    {Q_UNUSED(oldSize);
+//        qDebug()<<"section"<<section<<"old"<<oldSize<<"new"<<newSize;
+//        for (int i=0; i<10; ++i)
+//            tab->filters[i]->resize(tab->filesTable->header()->length(), tab->filters[i]->height());
+////        if (section < tab->filters.size()) tab->filters[section]->resize(newSize, tab->filters[section]->height());
+//    });
+//    connect(tab->filesTable->header(), &QHeaderView::geometriesChanged, [this]()
+//    {
+//        for (int i=0; i<10; ++i)
+//            tab->filters[i]->resize(tab->filesTable->header()->length(), tab->filters[i]->height());
+////        if (section < tab->filters.size()) tab->filters[section]->resize(newSize, tab->filters[section]->height());
+//    });
 
     QByteArray treeHeaderState = getSetting("treeHeaderState").toByteArray();
     if (!treeHeaderState.isEmpty())
@@ -553,8 +590,6 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
     connect(tab->model, SIGNAL(legendsChanged()), plot, SLOT(updateLegends()));
     connect(tab->model, SIGNAL(plotNeedsUpdate()), plot, SLOT(update()));
-
-    //tab->tree->sortByColumn(0, Qt::AscendingOrder);
 
     tab->channelsTable = new QTableWidget(0,6,this);
 
@@ -580,8 +615,16 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
 
     QWidget *treeWidget = new QWidget(this);
-    QGridLayout *treeLayout = new QGridLayout;
-    treeLayout->addWidget(tab->filesTable,0,0);
+    QVBoxLayout *treeLayout = new QVBoxLayout;
+    QHBoxLayout *filterLayout = new QHBoxLayout;
+
+    for (int i=0; i<tab->filters.size(); ++i) {
+//        treeLayout->addWidget(tab->filters[i], 0,i);
+        filterLayout->addWidget(tab->filters[i]);
+    }
+    treeLayout->addLayout(filterLayout);
+    treeLayout->addWidget(tab->filesTable/*,1,0,1,tab->filters.size()*/);
+
     treeWidget->setLayout(treeLayout);
 
     QToolButton *openFolderButton = new QToolButton(this);
@@ -790,6 +833,7 @@ void MainWindow::addFolder(const QString &directory, bool withAllSubfolders, boo
         //if (!checkForContains(tab, file))
             toAdd << file;
     }
+    if (toAdd.isEmpty()) return;
 
     addFiles(toAdd);
     if (toAdd.size() < filesToAdd.size() && !silent) {
@@ -1418,6 +1462,11 @@ void MainWindow::saveTimeSegment(const QList<FileDescriptor *> &files, double fr
     thread->start();
 }
 
+void MainWindow::switchSergeiMode()
+{
+    sergeiMode = !sergeiMode;
+}
+
 QVector<int> computeIndexes(QVector<int> notYetMoved, bool up, int totalSize)
 {DD;
     QVector<int> moved;
@@ -1487,13 +1536,32 @@ void MainWindow::updateChannelsTable(const QModelIndex &current, const QModelInd
     if (!tab) return;
     if (!current.isValid()) return;
 
-    updateChannelsTable(tab->model->file(current.row()));
+    QModelIndex index = tab->sortModel->mapToSource(current);
+
+    updateChannelsTable(tab->model->file(index.row()));
 }
 
 void MainWindow::updateChannelsTable(FileDescriptor *dfd)
 {DD;
+    QList<int> plottedChannelsNumbers;
+    if (sergeiMode) {
+        for (int i=0; i<tab->channelsTable->rowCount(); ++i) {
+            if (tab->channelsTable->item(i,0)->checkState()==Qt::Checked)
+                plottedChannelsNumbers << i;
+        }
+
+        if (!plottedChannelsNumbers.isEmpty()) {
+            foreach (int channel, plottedChannelsNumbers) {
+                if (tab->channelsTable->rowCount()>channel) tab->channelsTable->item(channel,0)->setCheckState(Qt::Unchecked);
+            }
+            updateChannelsHeaderState();
+        }
+    }
+
     tab->record = dfd;
     if (!dfd) return;
+
+
 
     tab->channelsTable->blockSignals(true);
     tab->channelsTable->setRowCount(0);
@@ -1534,14 +1602,22 @@ void MainWindow::updateChannelsTable(FileDescriptor *dfd)
                     ti->setTextColor(Qt::white);
                     ti->setBackgroundColor(ch->color());
                 }
-//                if (ch->type()==Descriptor::TimeResponse && ch->samplesCount()>32768)
-//                    ti->setFlags(Qt::ItemIsSelectable);
             }
             tab->channelsTable->setItem(i,col,ti);
         }
     }
     updateChannelsHeaderState();
+
     tab->channelsTable->blockSignals(false);
+
+    if (sergeiMode) {
+        if (!plottedChannelsNumbers.isEmpty()) {
+            foreach (int channel, plottedChannelsNumbers) {
+                if (tab->channelsTable->rowCount()>channel) tab->channelsTable->item(channel,0)->setCheckState(Qt::Checked);
+            }
+            updateChannelsHeaderState();
+        }
+    }
 }
 
 void MainWindow::maybePlotChannel(QTableWidgetItem *item)
@@ -1698,7 +1774,7 @@ void MainWindow::calculateSpectreRecords()
         return;
     }
 
-    CalculateSpectreDialog dialog(&records, this);
+    CalculateSpectreDialog dialog(records, this);
 
     dialog.exec();
 
@@ -2540,16 +2616,14 @@ void MainWindow::addFiles(QStringList &files)
 
 void Tab::filesSelectionChanged()
 {
-    QVector<int> indexes;
+    QSet<int> indexes;
 
-    QItemSelection selectedRows = filesTable->selectionModel()->selection();
+    QModelIndexList list = filesTable->selectionModel()->selection().indexes();
+    foreach (const QModelIndex &i, list) indexes << sortModel->mapToSource(i).row();
 
-    for (auto it = selectedRows.begin(); it != selectedRows.end(); ++it) {
-        for (int i=(*it).top(); i<=(*it).bottom(); ++i)
-            indexes << i;
-    }
-    std::sort(indexes.begin(), indexes.end());
+    QList<int> l = indexes.toList();
+    std::sort(l.begin(), l.end());
 
-    model->setSelected(indexes);
+    model->setSelected(l);
     if (indexes.isEmpty()) channelsTable->setRowCount(0);
 }

@@ -5,6 +5,7 @@
 #include <QObject>
 
 class DfdFileDescriptor;
+class FileDescriptor;
 class Parameters;
 class UffFileDescriptor;
 class DfdChannel;
@@ -15,27 +16,26 @@ class Function;
 class AbstractMethod
 {
 public:
-    explicit AbstractMethod(QList<DfdFileDescriptor *> &dataBase) {
+    explicit AbstractMethod(QList<FileDescriptor *> &dataBase) {
         this->dataBase = dataBase;
     }
     /* индекс в methodCombo */
     virtual int id() = 0;
-    virtual QStringList methodSettings(DfdFileDescriptor *dfd, const Parameters &p) = 0;
+    virtual QStringList methodSettings(FileDescriptor *dfd, const Parameters &p) = 0;
     virtual QString methodDll() = 0;
     virtual int panelType() = 0;
     virtual QString methodName() = 0;
     virtual int dataType() = 0;
-    //virtual QStringList settings(DfdFileDescriptor *dfd, int bandStrip) = 0;
     virtual Parameters parameters() = 0;
     virtual DescriptionList processData(const Parameters &p) = 0;
 
-    virtual DfdFileDescriptor *createNewDfdFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p) = 0;
-    virtual UffFileDescriptor *createNewUffFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p) = 0;
-    virtual DfdChannel *createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd,
+    virtual DfdFileDescriptor *createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p);
+    virtual UffFileDescriptor *createNewUffFile(const QString &fileName, FileDescriptor *dfd, Parameters &p) = 0;
+    virtual DfdChannel *createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd,
                        const QVector<double> &spectrum, Parameters &p, int i) = 0;
-    virtual Function * addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, int spectrumSize, Parameters &p, int i) = 0;
+    virtual Function * addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i) = 0;
 private:
-    QList<DfdFileDescriptor *> dataBase;
+    QList<FileDescriptor *> dataBase;
 };
 
 struct Parameters

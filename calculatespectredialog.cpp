@@ -14,18 +14,12 @@
 #include "converter.h"
 #include "taskbarprogress.h"
 
-CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> *dataBase, QWidget *parent) :
-    QDialog(parent), win(parent)
+CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> &dataBase, QWidget *parent) :
+    QDialog(parent), dataBase(dataBase), win(parent)
 {DD;
     converter = 0;
     thread = 0;
     taskBarProgress = 0;
-
-    foreach (FileDescriptor *d, *dataBase) {
-        DfdFileDescriptor *dd = static_cast<DfdFileDescriptor *>(d);
-        if (dd)
-            this->dataBase << dd;
-    }
 
     methodCombo = new QComboBox(this);
     methodCombo->setEditable(false);
@@ -48,7 +42,7 @@ CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> *dataBase
 
     progress = new QProgressBar(this);
     int progressMax = 0;
-    foreach(DfdFileDescriptor *dfd, this->dataBase) {
+    foreach(FileDescriptor *dfd, dataBase) {
         progressMax += dfd->channelsCount();
     }
     progress->setRange(0, progressMax);
@@ -56,13 +50,12 @@ CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> *dataBase
     methodsStack = new QStackedWidget(this);
     for (int i=0; i<26; ++i) {
         switch (i) {
-            case 0:
-                methodsStack->addWidget(new TimeMethod(this->dataBase, this)); break;
-            case 1: methodsStack->addWidget(new SpectreMethod(this->dataBase, this)); break;
-            case 9: methodsStack->addWidget(new FRFMethod(this->dataBase, this)); break;
-            case 18: methodsStack->addWidget(new OctaveMethod(this->dataBase, this)); break;
+            case 0: methodsStack->addWidget(new TimeMethod(dataBase, this)); break;
+            case 1: methodsStack->addWidget(new SpectreMethod(dataBase, this)); break;
+            case 9: methodsStack->addWidget(new FRFMethod(dataBase, this)); break;
+            case 18: methodsStack->addWidget(new OctaveMethod(dataBase, this)); break;
 
-            default: methodsStack->addWidget(new SpectreMethod(this->dataBase, this));
+            default: methodsStack->addWidget(new SpectreMethod(dataBase, this));
         }
     }
 
@@ -72,8 +65,6 @@ CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> *dataBase
                                                        QDialogButtonBox::Cancel);
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(start()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(stop()));
-
-    //connect(this,SLOT(reject()), this, SLOT(stop()));
 
     QGridLayout *l = new QGridLayout;
     l->addWidget(infoLabel, 0,0,2,1);
@@ -85,14 +76,8 @@ CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> *dataBase
     l->addWidget(shutdown,4,0,1,3);
     l->addWidget(buttonBox, 5,0,1,3);
 
-//    l->addWidget(new QLabel("Активный канал", this), 1,0);
-//    l->addWidget(activeChannelSpin, 1,1);
-//    l->addWidget(new QLabel("Опорный канал", this), 2,0);
-//    l->addWidget(baseChannelSpin, 2,1);
-
     setLayout(l);
     methodCombo->setCurrentIndex(1);
-
 }
 
 CalculateSpectreDialog::~CalculateSpectreDialog()

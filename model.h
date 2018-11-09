@@ -21,8 +21,8 @@ public:
     void addFiles(const QList<FileDescriptor*> &files);
     void deleteFiles();
     int size() const {return descriptors.size();}
-    QVector<int> selected() const {return indexes;}
-    void setSelected(const QVector<int> &indexes) {this->indexes = indexes;}
+    QList<int> selected() const {return indexes;}
+    void setSelected(const QList<int> &indexes) {this->indexes = indexes;}
     QList<FileDescriptor*> selectedFiles() const;
 
     void setDataDescriptor(FileDescriptor *file, const DescriptionList &data);
@@ -39,8 +39,8 @@ public:
 
     // QAbstractItemModel interface
 public:
-    virtual int rowCount(const QModelIndex &parent) const;
-    virtual int columnCount(const QModelIndex &parent) const;
+    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const;
+    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const;
     virtual QVariant data(const QModelIndex &index, int role) const;
     virtual bool setData(const QModelIndex &index, const QVariant &value, int role);
     virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
@@ -55,7 +55,7 @@ private:
     QFont uFont;
     QFont bFont;
 
-    QVector<int> indexes;
+    QList<int> indexes;
 };
 
 #endif // MODEL_H

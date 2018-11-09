@@ -266,6 +266,7 @@ public:
         QString s = stream.read(18);
         d = QDateTime::fromString(s, " dd.MM.yy hh:mm:ss");
         if (!d.isValid()) d = QDateTime::fromString(s, "dd-MMM-yy hh:mm:ss");
+        if (d.date().year()<1950) d=d.addYears(100);
         v = d;
     }
 };

@@ -52,12 +52,13 @@ public:
     void setCorrection(double correctionValue);
 
     int xValuesFormat() const {return m_xValuesFormat;} // не меняется, так как зависит только от формата данных в файле
-    int yValuesFormat() const {return m_initially;} // не меняется, так как зависит только от формата данных в файле
+    int yValuesFormat() const {return m_yValuesFormat;} // не меняется, так как зависит только от формата данных в файле
 
     int yValuesPresentation() const {return m_yValuesPresentation;}
     void setYValuesPresentation(int presentation);
 
     void setYValues(const QVector<double> &values, YValuesFormat initially);
+    bool setYValue(int index, double value);
     void setYValues(const QVector<cx_double> &values);
     void setXValues(const QVector<double> &values);
     void setXValues(double xBegin, double xStep, int count);
@@ -89,6 +90,8 @@ public:
 
     static QVector<double> toLog(const QVector<double> &values, double threshold);
     static QVector<double> fromLog(const QVector<double> &values, double threshold);
+    static double toLog(double value, double threshold);
+    static double fromLog(double value, double threshold);
 private:
     void recalculateMinMax();
     void recalculateYValues();
@@ -105,7 +108,7 @@ private:
     double m_threshold;
 
     XValuesFormat m_xValuesFormat;
-    YValuesFormat m_initially;
+    YValuesFormat m_yValuesFormat;
 
     YValuesPresentation m_yValuesPresentation;
 

@@ -256,7 +256,7 @@ bool MatlabConvertor::convert()
         DfdFileDescriptor dfdFileDescriptor(dfdFileName);
         dfdFileDescriptor.fillPreliminary(Descriptor::TimeResponse);
         QDate d = QDate::fromString(set.date, "dd.MM.yy");
-        if (d.year()<2000) {
+        if (d.year()<1950) {
             d=d.addYears(100);
         }
         dfdFileDescriptor.Date = d;

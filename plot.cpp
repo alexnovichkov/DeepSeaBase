@@ -201,11 +201,10 @@ Plot::Plot(QWidget *parent) :
 
     setAutoReplot(true);
 
-
-
     trackingPanel = new TrackingPanel(this);
     trackingPanel->setVisible(false);
     connect(trackingPanel,SIGNAL(closeRequested()),SIGNAL(trackingPanelCloseRequested()));
+    connect(this, SIGNAL(graphsChanged()), trackingPanel, SLOT(update()));
 
     axisLabelsVisible = MainWindow::getSetting("axisLabelsVisible", true).toBool();
     yValuesPresentationLeft = DataHolder::ShowAsDefault;
@@ -231,35 +230,15 @@ Plot::Plot(QWidget *parent) :
     insertLegend(leg, QwtPlot::RightLegend);
 
 
-//    QwtPlotPanner *panner = new QwtPlotPanner(canvas);
-//    panner->setMouseButton(Qt::RightButton);
-//    panner->setAxisEnabled(QwtPlot::xBottom, true);
-//    panner->setAxisEnabled(QwtPlot::yLeft, true);
-//    panner->setAxisEnabled(QwtPlot::yRight, false);
-//    panner->setEnabled(true);
-
-//    QwtPlotPanner *panner1 = new QwtPlotPanner(canvas);
-//    panner1->setMouseButton(Qt::RightButton, Qt::ControlModifier);
-//    panner1->setAxisEnabled(QwtPlot::xBottom, true);
-//    panner1->setAxisEnabled(QwtPlot::yRight, true);
-//    panner1->setAxisEnabled(QwtPlot::yLeft, false);
-//    panner1->setEnabled(true);
-
-//    QwtPlotMagnifier *magnifier = new QwtPlotMagnifier(canvas);
-//    magnifier->setMouseButton(Qt::NoButton);
-
-//    setAxisScaleEngine(QwtPlot::xBottom, new QwtLogScaleEngine());
-
-
     zoom = new ChartZoom(this);
     zoom->setZoomEnabled(true);
-    connect(zoom,SIGNAL(updateTrackingCursor(double,bool)), trackingPanel, SLOT(setX(double,bool)));
+    connect(zoom,SIGNAL(updateTrackingCursor(double,bool)), trackingPanel, SLOT(setXValue(double,bool)));
     connect(zoom,SIGNAL(contextMenuRequested(QPoint,int)),SLOT(showContextMenu(QPoint,int)));
 
     picker = new PlotPicker(canvas);
     connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
-    connect(picker,SIGNAL(updateTrackingCursor(double,bool)),trackingPanel, SLOT(setX(double,bool)));
-    connect(picker,SIGNAL(cursorMovedTo(QwtPlotMarker*,double)), trackingPanel, SLOT(updateTrackingCursor(QwtPlotMarker*,double)));
+    connect(picker,SIGNAL(updateTrackingCursor(double,bool)),trackingPanel, SLOT(setXValue(double,bool)));
+    connect(picker,SIGNAL(cursorMovedTo(QwtPlotMarker*,double)), trackingPanel, SLOT(setXValue(QwtPlotMarker*,double)));
     connect(trackingPanel,SIGNAL(switchHarmonics(bool)),picker,SLOT(showHarmonics(bool)));
 
     picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
@@ -320,6 +299,7 @@ void Plot::deleteGraphs()
     xName.clear();
 
     update();
+    emit graphsChanged();
 }
 
 void Plot::deleteGraphs(FileDescriptor *descriptor)
@@ -514,6 +494,7 @@ void Plot::deleteGraph(Curve *graph, bool doReplot)
         if (doReplot) {
             update();
         }
+        emit graphsChanged();
     }
 }
 
@@ -622,6 +603,7 @@ void Plot::moveGraph(Curve *curve)
         curve->channel->data()->setYValuesPresentation(yValuesPresentationLeft);
         leftGraphs.append(curve);
     }
+    emit graphsChanged();
 }
 
 bool Plot::hasDuplicateNames(const QString name) const
@@ -756,6 +738,7 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
 
     g->attach(this);
     update();
+    emit graphsChanged();
     return true;
 }
 
@@ -997,6 +980,7 @@ void Plot::editLegendItem(const QVariant &itemInfo, int index)
         if (c) {
             GraphPropertiesDialog dialog(c, this);
             connect(&dialog,SIGNAL(curveChanged(Curve*)),this, SIGNAL(curveChanged(Curve*)));
+            connect(&dialog,SIGNAL(curveChanged(Curve*)),trackingPanel, SLOT(update()));
             dialog.exec();
         }
     }

@@ -126,6 +126,7 @@ signals:
     void curveDeleted(FileDescriptor *descriptor, int index);
     void trackingPanelCloseRequested();
     void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
+    void graphsChanged();
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
     void deleteGraph(const QVariant &info, int index);

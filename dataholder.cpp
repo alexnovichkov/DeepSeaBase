@@ -8,7 +8,7 @@ DataHolder::DataHolder()
     m_count = 0;
     m_threshold = 0.0;
     m_xValuesFormat = XValuesUnknown;
-    m_initially = YValuesUnknown;
+    m_yValuesFormat = YValuesUnknown;
     m_yValuesPresentation = ShowAsDefault;
 
     correctionValue = 0.0;
@@ -25,7 +25,7 @@ DataHolder::DataHolder(const DataHolder &other)
     m_yValuesTemporal = other.m_yValuesTemporal;
     m_yValuesComplex = other.m_yValuesComplex;
     m_xValuesFormat = other.m_xValuesFormat;
-    m_initially = other.m_initially;
+    m_yValuesFormat = other.m_yValuesFormat;
 
     m_yMin = other.m_yMin;
     m_yMax = other.m_yMax;
@@ -45,7 +45,7 @@ void DataHolder::setSegment(const DataHolder &other, int from, int to)
     m_yValuesTemporal = other.m_yValuesTemporal.mid(from, to - from + 1);
     m_yValuesComplex = other.m_yValuesComplex.mid(from, to - from + 1);
     m_xValuesFormat = other.m_xValuesFormat;
-    m_initially = other.m_initially;
+    m_yValuesFormat = other.m_yValuesFormat;
 
     m_yValuesPresentation = other.m_yValuesPresentation;
 
@@ -82,7 +82,7 @@ void DataHolder::setYValuesPresentation(int presentation)
 
 void DataHolder::setYValues(const QVector<double> &values, YValuesFormat initially)
 {DD;
-    m_initially = initially; // амплитуды (чаще всего), фазы, мнимые значения и т.д.
+    m_yValuesFormat = initially; // амплитуды (чаще всего), фазы, мнимые значения и т.д.
     if (m_yValuesPresentation == ShowAsDefault) { //еще не задан формат отображения данных
         m_yValuesPresentation = YValuesPresentation(initially); // используем тот же формат, что и исходные данные
     }
@@ -96,9 +96,103 @@ void DataHolder::setYValues(const QVector<double> &values, YValuesFormat initial
     recalculateMinMax();
 }
 
+bool DataHolder::setYValue(int index, double value)
+{
+    if (index <0 || index >= m_count) return false;
+    if (m_yValuesTemporal[index] == value) return false;
+
+    if (int(m_yValuesFormat) == int(m_yValuesPresentation)) {
+        m_yValues[index] = value;
+        m_yValuesTemporal = m_yValues;
+        return true;
+    }
+
+//    m_yValuesTemporal[index] = value;
+    if (m_yValuesFormat == YValuesComplex) {
+        m_yValuesTemporal[index] = value;
+        switch (m_yValuesPresentation) {
+            case ShowAsDefault:
+            case ShowAsAmplitudesInDB:
+                value = fromLog(value, m_threshold);
+                m_yValuesComplex[index] = std::polar(value, std::arg(m_yValuesComplex[index]));
+                return true;
+            case ShowAsAmplitudes:
+                m_yValuesComplex[index] = std::polar(value, std::arg(m_yValuesComplex[index]));
+                return true;
+            case ShowAsImags:
+                m_yValuesComplex[index] = {m_yValuesComplex[index].real(), value};
+                return true;
+            case ShowAsPhases:
+                m_yValuesComplex[index] = std::polar(std::abs(m_yValuesComplex[index]), value);
+                return true;
+            case ShowAsReals:
+                m_yValuesComplex[index] = {value, m_yValuesComplex[index].imag()};
+                return true;
+            default: return false;
+        };
+    }
+    else {
+        switch (m_yValuesFormat) {
+            case YValuesReals: {
+                if (m_yValuesPresentation == ShowAsAmplitudes) {
+                    if (value < 0) return false;
+                    if (m_yValues[index] >= 0) m_yValues[index] = value;
+                    else m_yValues[index] = -1.0 * value;
+                    m_yValuesTemporal[index] = value;
+                    return true;
+                }
+                else if (m_yValuesPresentation == ShowAsAmplitudesInDB) {
+                    value = fromLog(value, m_threshold);
+                    if (m_yValues[index] >= 0) m_yValues[index] = value;
+                    else m_yValues[index] = -1.0 * value;
+                    m_yValuesTemporal[index] = value;
+                    return true;
+                }
+                else return false;
+            }
+            case YValuesImags: {
+                if (m_yValuesPresentation == ShowAsAmplitudes) {
+                    if (value < 0) return false;
+                    if (m_yValues[index] >= 0) m_yValues[index] = value;
+                    else m_yValues[index] = -1.0 * value;
+                    m_yValuesTemporal[index] = value;
+                    return true;
+                }
+                else if (m_yValuesPresentation == ShowAsAmplitudesInDB) {
+                    value = fromLog(value, m_threshold);
+                    if (m_yValues[index] >= 0) m_yValues[index] = value;
+                    else m_yValues[index] = -1.0 * value;
+                    m_yValuesTemporal[index] = value;
+                    return true;
+                }
+                else return false;
+            }
+            case YValuesAmplitudes: {
+                if (m_yValuesPresentation == ShowAsAmplitudesInDB) {
+                    m_yValues[index] = fromLog(value, m_threshold);
+                    m_yValuesTemporal[index] = value;
+                    return true;
+                }
+                return false;
+            }
+            case YValuesAmplitudesInDB: {
+                if (m_yValuesPresentation == ShowAsAmplitudes) {
+                     m_yValues[index] = toLog(value, m_threshold);
+                     m_yValuesTemporal[index] = value;
+                     return true;
+                 }
+                 return false;
+            }
+            default:
+                return false;
+        }
+    }
+    return false;
+}
+
 void DataHolder::setYValues(const QVector<cx_double> &values)
 {DD;
-    m_initially = YValuesComplex;
+    m_yValuesFormat = YValuesComplex;
     if (m_yValuesPresentation == ShowAsDefault) { //еще не задан формат отображения данных
         m_yValuesPresentation = ShowAsAmplitudesInDB;
     }
@@ -216,7 +310,7 @@ int DataHolder::samplesCount() const
 
 QVector<double> DataHolder::linears() const
 {DD;
-    switch (m_initially) {
+    switch (m_yValuesFormat) {
         case YValuesComplex: return absolutes(m_yValuesComplex);
         case YValuesAmplitudesInDB: return fromLog(m_yValues, m_threshold);
         default: break;
@@ -226,7 +320,7 @@ QVector<double> DataHolder::linears() const
 
 QVector<double> DataHolder::decibels() const
 {DD;
-    switch (m_initially) {
+    switch (m_yValuesFormat) {
         case YValuesComplex: return toLog(absolutes(m_yValuesComplex), m_threshold);
         case YValuesAmplitudesInDB: return m_yValues;
         default: break;
@@ -260,6 +354,21 @@ QVector<double> DataHolder::fromLog(const QVector<double> &values, double thresh
     return a;
 }
 
+double DataHolder::toLog(double value, double threshold)
+{
+    if (threshold == 0) return value;
+
+    if (value <= 0.0) return 0.0;
+    return 20*log10(value/threshold);
+}
+
+double DataHolder::fromLog(double value, double threshold)
+{
+    if (threshold == 0) return value;
+
+    return threshold*exp(value*log(10.0)/20.0);
+}
+
 void DataHolder::recalculateMinMax()
 {DD;
     if (!m_yValuesTemporal.isEmpty()) {
@@ -273,11 +382,11 @@ void DataHolder::recalculateYValues()
 {DD;
     m_yValuesTemporal.clear();
 
-    if (int(m_initially) == int(m_yValuesPresentation)) {
+    if (int(m_yValuesFormat) == int(m_yValuesPresentation)) {
         m_yValuesTemporal = m_yValues;
     }
     else {
-        if (m_initially == YValuesComplex) {
+        if (m_yValuesFormat == YValuesComplex) {
             switch (m_yValuesPresentation) {
                 case ShowAsDefault:
                 case ShowAsAmplitudesInDB: m_yValuesTemporal = toLog(absolutes(m_yValuesComplex), m_threshold); break;
@@ -288,7 +397,7 @@ void DataHolder::recalculateYValues()
             };
         }
         else {
-            switch (m_initially) {
+            switch (m_yValuesFormat) {
                 case YValuesReals: {
                     if (m_yValuesPresentation == ShowAsAmplitudes)
                         m_yValuesTemporal = absolutes(m_yValues);

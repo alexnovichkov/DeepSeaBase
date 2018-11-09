@@ -38,16 +38,17 @@ double leq(const QVector<T> &x, /*int T,*/ double ref=1.0)
 }
 
 //decimates x by factor q using libresample
-QVector<float> decimate(QVector<float> &x, int q)
+QVector<double> decimate(const QVector<double> &x, int q)
 {DD;
     Resampler filter(q, x.size());
-    QVector<float> y = filter.process(x);
+    QVector<double> y = filter.process(x);
     return y;
 }
 
-QVector<double> OctaveFilterBank::compute(QVector<float> &x, QVector<double> &xValues)
+QVector<double> OctaveFilterBank::compute(const QVector<double> &data, QVector<double> &xValues)
 {DD;
     int N = 8;  // Order of analysis filters.
+    QVector<double> x = data;
 
     QVector<double> P(thirdOctaveFreqs.size());
 
@@ -73,8 +74,8 @@ QVector<double> OctaveFilterBank::compute(QVector<float> &x, QVector<double> &xV
         f.setup (N, m_p.sampleRate, thirdOctaveFreqs[i], thirdOctaveFreqs[i]*(f2-f1));
             // order   sample rate    center frequency     band width
 
-        QVector<float> y = x;
-        float *data = y.data();
+        QVector<double> y = x;
+        double *data = y.data();
         f.process (y.size(), &data);
         P[i] = leq(y, m_p.threshold);
     }
@@ -89,8 +90,8 @@ QVector<double> OctaveFilterBank::compute(QVector<float> &x, QVector<double> &xV
         f.setup (N, m_p.sampleRate / 2.0, thirdOctaveFreqs[i], thirdOctaveFreqs[i]*(f2-f1));
             // order       sample rate    center frequency     band width
 
-        QVector<float> y = x;
-        float *data = y.data();
+        QVector<double> y = x;
+        double *data = y.data();
         f.process (y.size(), &data);
 
         P[i] = leq(y, m_p.threshold);

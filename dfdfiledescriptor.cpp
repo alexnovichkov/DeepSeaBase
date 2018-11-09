@@ -216,9 +216,8 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other) : FileDescript
     this->DescriptionFormat = "";
 
     source = new Source();
-    QString datetime = other.dateTime();
-    source->Date=QDate::fromString(datetime.mid(0,8),"dd.MM.yy");
-    source->Time=QTime::fromString(other.dateTime().mid(9,8),"hh:mm:ss");
+    source->Date=other.dateTime().date();
+    source->Time=other.dateTime().time();
     source->DFDGUID = "Unknown";
     source->File = other.fileName();
     for (int i=1; i<=other.channelsCount(); ++i)
@@ -506,6 +505,14 @@ DfdFileDescriptor *DfdFileDescriptor::newFile(const QString &fileName, DfdDataTy
     return new DfdFileDescriptor(fileName);
 }
 
+QMap<QString, QString> DfdFileDescriptor::info() const
+{
+    QMap<QString, QString> list;
+    list.insert("guid", DFDGUID);
+    list.insert("descriptionFormap", DescriptionFormat);
+    return list;
+}
+
 DfdFileDescriptor *DfdFileDescriptor::newThirdOctaveFile(const QString &fileName)
 {
     DfdFileDescriptor *dfd = new DfdFileDescriptor(fileName);
@@ -527,37 +534,9 @@ DfdFileDescriptor *DfdFileDescriptor::newThirdOctaveFile(const QString &fileName
     return dfd;
 }
 
-QStringList DfdFileDescriptor::info() const
+QDateTime DfdFileDescriptor::dateTime() const
 {DD;
-    double size = 0.0;
-    if (!channels.isEmpty()) {
-        if (channels.first()->data()->xValuesFormat() == DataHolder::XValuesUniform)
-            size = samplesCount() * xStep();
-        else {
-            channels.first()->populate();
-            size = channels.first()->data()->xValues().last();
-        }
-    }
-    else {
-        qDebug()<<fileName();
-    }
-
-    QStringList  list;
-    list << QFileInfo(fileName()).completeBaseName() //QString("Файл") 1
-         << QDateTime(Date, Time).toString("dd.MM.yy hh:mm:ss") // QString("Дата") 2
-         << dataTypeDescription(DataType) // QString("Тип") 3
-         << QString::number(size) // QString("Размер") 4
-         << xName() // QString("Ось Х") 5
-         << QString::number(xStep()) // QString("Шаг") 6
-         << QString::number(channelsCount()) // QString("Каналы")); 7
-         << dataDescriptorAsString()
-         << legend();
-    return list;
-}
-
-QString DfdFileDescriptor::dateTime() const
-{DD;
-    return QDateTime(Date, Time).toString("dd.MM.yy hh:mm:ss");
+    return QDateTime(Date, Time)/*.toString("dd.MM.yy hh:mm:ss")*/;
 }
 
 Descriptor::DataType DfdFileDescriptor::type() const
@@ -570,7 +549,7 @@ QString DfdFileDescriptor::typeDisplay() const
     return dataTypeDescription(DataType);
 }
 
-QString DfdFileDescriptor::sizeDisplay() const
+double DfdFileDescriptor::size() const
 {
     double size = 0.0;
     if (!channels.isEmpty()) {
@@ -581,7 +560,7 @@ QString DfdFileDescriptor::sizeDisplay() const
             size = channels.first()->data()->xValues().last();
         }
     }
-    return QString::number(size);
+    return size;
 }
 
 DescriptionList DfdFileDescriptor::dataDescriptor() const
@@ -950,7 +929,7 @@ QString DfdFileDescriptor::fileFilters() const
 void DfdFileDescriptor::setDateTime(QDateTime dt)
 {
     this->Date = dt.date();
-    Date = Date.addYears(100);
+//    Date = Date.addYears(100);
     this->Time = dt.time();
     setChanged(true);
     write();

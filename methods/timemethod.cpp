@@ -6,7 +6,7 @@
 #include "logging.h"
 #include "algorithms.h"
 
-TimeMethod::TimeMethod(QList<DfdFileDescriptor *> &dataBase, QWidget *parent) :
+TimeMethod::TimeMethod(QList<FileDescriptor *> &dataBase, QWidget *parent) :
     QWidget(parent), AbstractMethod(dataBase)
 {DD;
     resolutionCombo = new QComboBox(this);
@@ -73,16 +73,16 @@ int TimeMethod::id()
     return 0;
 }
 
-QStringList TimeMethod::methodSettings(DfdFileDescriptor *dfd, const Parameters &p)
+QStringList TimeMethod::methodSettings(FileDescriptor *dfd, const Parameters &p)
 {DD;
     QStringList spfFile;
 
-    spfFile << "YName="+dfd->channels.at(0)->YName;
+    spfFile << "YName="+dfd->channel(0)->yName();
     spfFile << QString("BlockIn=%1").arg(p.bufferSize);
     spfFile << "TypeProc=0";
     spfFile << "Values=измеряемые";
 
-    int numberOfInd = dfd->channels.at(0)->samplesCount();
+    int numberOfInd = dfd->channel(0)->samplesCount();
     double NumberOfAveraging = double(numberOfInd) / p.bufferSize / (1<<p.bandStrip);
 
     // at least 2 averaging
@@ -92,11 +92,6 @@ QStringList TimeMethod::methodSettings(DfdFileDescriptor *dfd, const Parameters 
 
     return spfFile;
 }
-
-//QStringList TimeMethod::settings(DfdFileDescriptor *dfd, int bandStrip)
-//{
-//    return methodSettings(dfd,1,bandStrip);
-//}
 
 Parameters TimeMethod::parameters()
 {DD;
@@ -151,32 +146,12 @@ DescriptionList TimeMethod::processData(const Parameters &p)
 }
 
 
-DfdFileDescriptor *TimeMethod::createNewDfdFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p)
+DfdFileDescriptor *TimeMethod::createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
 {DD;
-    DfdFileDescriptor *newDfd = new DfdFileDescriptor(fileName);
-
-    newDfd->rawFileName = fileName.left(fileName.length()-4)+".raw";
-    newDfd->updateDateTimeGUID();
-    newDfd->BlockSize = 0;
-    newDfd->DataType = DfdDataType::CuttedData;
-
-    // [DataDescription]
-    if (dfd->dataDescription) {
-        newDfd->dataDescription = new DataDescription(newDfd);
-        newDfd->dataDescription->data = dfd->dataDescription->data;
-    }
-    newDfd->DescriptionFormat = dfd->DescriptionFormat;
-
-    // [Sources]
-    newDfd->source = new Source();
-    QStringList l; for (int i=1; i<=dfd->channelsCount(); ++i) l << QString::number(i);
-    newDfd->source->sFile = dfd->fileName()+"["+l.join(",")+"]"+dfd->DFDGUID;
-
-    // [Process]
-    newDfd->process = new Process();
-    newDfd->process->data = processData(p);
+    DfdFileDescriptor *newDfd = AbstractMethod::createNewDfdFile(fileName, dfd, p);
 
     // rest
+    newDfd->DataType = DfdDataType::CuttedData;
     newDfd->XName = "с";
     const double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip); DebugPrint(newSampleRate)
     newDfd->XStep = 1.0 / newSampleRate;
@@ -185,14 +160,14 @@ DfdFileDescriptor *TimeMethod::createNewDfdFile(const QString &fileName, DfdFile
     return newDfd;
 }
 
-UffFileDescriptor *TimeMethod::createNewUffFile(const QString &fileName, DfdFileDescriptor *dfd, Parameters &p)
+UffFileDescriptor *TimeMethod::createNewUffFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
 {DD;
     UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
 
     newUff->updateDateTimeGUID();
 
-    if (dfd->dataDescription) {
-        newUff->setDataDescriptor(dfd->dataDescription->data);
+    if (!dfd->dataDescriptor().isEmpty()) {
+        newUff->setDataDescriptor(dfd->dataDescriptor());
     }
 
     const double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
@@ -201,32 +176,32 @@ UffFileDescriptor *TimeMethod::createNewUffFile(const QString &fileName, DfdFile
     return newUff;
 }
 
-DfdChannel *TimeMethod::createDfdChannel(DfdFileDescriptor *newDfd, DfdFileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
+DfdChannel *TimeMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
 {DD;
     Q_UNUSED(p);
     DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
     ch->data()->setXValues(0.0, newDfd->XStep, spectrum.size());
     ch->data()->setYValues(spectrum, DataHolder::YValuesReals);
     ch->setPopulated(true);
-    ch->setName(dfd->channels[i]->name());
+    ch->setName(dfd->channel(i)->name());
 
-    ch->ChanDscr = dfd->channels[i]->ChanDscr;
-    ch->ChanAddress = dfd->channels[i]->ChanAddress;
+    ch->ChanDscr = dfd->channel(i)->description();
+//    ch->ChanAddress = dfd->channel(i)->ChanAddress;
 
     ch->ChanBlockSize = spectrum.size();
     ch->IndType = 3221225476;
 
-    ch->YName = dfd->channels[i]->yName();
-    ch->YNameOld = dfd->channels[i]->yName();
+    ch->YName = dfd->channel(i)->yName();
+    ch->YNameOld = dfd->channel(i)->yName();
 
     newDfd->channels << ch;
     return ch;
 }
 
-Function *TimeMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
+Function *TimeMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
 {DD;
     Function *ch = new Function(newUff);
-    ch->setName(dfd->channels[i]->name());
+    ch->setName(dfd->channel(i)->name());
     ch->setPopulated(true);
 
     //FunctionHeader header;
@@ -263,7 +238,7 @@ Function *TimeMethod::addUffChannel(UffFileDescriptor *newUff, DfdFileDescriptor
 
     // строка 4
     ch->type58[39].value = 1; //39 Ordinate (or ordinate numerator) Data Characteristics
-    ch->type58[44].value = dfd->channels[i]->yName();
+    ch->type58[44].value = dfd->channel(i)->yName();
 
 
     ch->type58[53].value = 1;

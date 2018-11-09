@@ -12,11 +12,10 @@
 #include "algorithms.h"
 #include "fft.h"
 
-Converter::Converter(QList<DfdFileDescriptor *> &base, const Parameters &p_, QObject *parent) :
+Converter::Converter(QList<FileDescriptor *> &base, const Parameters &p_, QObject *parent) :
     QObject(parent), dataBase(base), p(p_), process(0)
 {DD;
     stop_ = false;
-
 }
 
 Converter::~Converter()
@@ -87,11 +86,14 @@ void Converter::start()
     // Проверяем размер блока файлов и насильно конвертируем файлы с помощью DeepSea,
     // если размер блока равен 1
     bool blockSizeIs1 = false;
-    foreach (DfdFileDescriptor *dfd, dataBase) {
-        if (dfd->BlockSize==1) {
+    bool someFilesAreUff = false;
+    foreach (FileDescriptor *file, dataBase) {
+        DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(file);
+        if (dfd && dfd->BlockSize==1) {
             blockSizeIs1 = true;
-            break;
         }
+        UffFileDescriptor *uff = dynamic_cast<UffFileDescriptor *>(file);
+        if (uff) someFilesAreUff = true;
     }
     if (blockSizeIs1) {
         p.useDeepSea = true;
@@ -99,16 +101,20 @@ void Converter::start()
                      " чтение данных, поэтому для расчета будет использован DeepSea.");
     }
     if (p.saveAsComplex && p.useDeepSea) {
-        emit message("DeepSea не умеет сохранять комплексные результаты. Уберите одну из галок");
+        emit message("DeepSea не умеет сохранять комплексные результаты. Уберите одну из галок.");
         return;
+    }
+    if (someFilesAreUff) {
+        emit message("Один из файлов имеет тип Uff. Использование DeepSea для расчетов будет блокировано.");
+        p.useDeepSea = false;
     }
 
     if (!p.useDeepSea) {
         p.baseChannel--;
-        foreach (DfdFileDescriptor *dfd, dataBase) {
-            emit message(QString("Подождите, пока идет расчет для файла\n%1").arg(dfd->fileName()));
-            if (!convert(dfd, tempFolderName)) {
-                emit message("Не удалось сконвертировать файл " + dfd->fileName());
+        foreach (FileDescriptor *file, dataBase) {
+            emit message(QString("Подождите, пока идет расчет для файла\n%1").arg(file->fileName()));
+            if (!convert(file, tempFolderName)) {
+                emit message("Не удалось сконвертировать файл " + file->fileName());
             }
         }
     }
@@ -179,13 +185,13 @@ void Converter::finalize()
             newFiles_ << newFile.canonicalFilePath();
     }
 
-    foreach (DfdFileDescriptor *dfd, dataBase) {
-        moveFilesFromTempDir(tempFolderName, dfd->fileName());
-        foreach (DfdChannel *c, dfd->channels) {
-            c->floatValues.clear();
-            //and releasing memory (since Qt 5.7)
-            c->floatValues.squeeze();
-        }
+    foreach (FileDescriptor *file, dataBase) {
+        moveFilesFromTempDir(tempFolderName, file->fileName());
+//        foreach (DfdChannel *c, file->channels) {
+//            c->floatValues.clear();
+//            //and releasing memory (since Qt 5.7)
+//            c->floatValues.squeeze();
+//        }
     }
 
     qDebug()<<"End converting"<<QDateTime::currentDateTime().time();
@@ -262,16 +268,21 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
     newFiles_.removeAll(filtered.first());
 }
 
-QVector<float> getBlock(const QVector<float> &values, const int blockSize, const int stepBack, int &block)
+QVector<float> getBlock(const QVector<double> &values, const int blockSize, const int stepBack, int &block)
 {
-    QVector<float> output;
+    int realLength = blockSize;
+    if (block+blockSize > values.length()) realLength = values.length() - block;
+    QVector<float> output(realLength);
     if (block < values.size()) {
-        output = values.mid(block, blockSize);
+        std::copy(values.begin()+block, values.begin()+block+realLength, output.begin());
+//        output = values.mid(block, blockSize);
         block += blockSize - stepBack;
     }
     return output;
 }
 
+/// Эта функция не используется, но содержит полезный алгоритм для определения положения каждого отсчета
+/// файла для заданного номера канала, размера блока отсчетов, номера отсчета с нуля и величины перекрытия
 QVector<float> getBlock(uchar *mapped, quint64 mappedSize,
                         int channel, int chanBlockSize, int channelsCount,
                         int blockSize, int stepBack, int &block)
@@ -291,7 +302,6 @@ QVector<float> getBlock(uchar *mapped, quint64 mappedSize,
                                   +(blocki % chanBlockSize);
             output[i] = (float)(*(mapped+sampleNumber*sizeof(float)));
         }
-        //output = values.mid(block, blockSize);
         block += realBlockSize - stepBack;
     }
     return output;
@@ -316,45 +326,51 @@ int stripNumberForBandwidth(double bandwidth, Parameters &p)
     return result;
 }
 
-bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
+bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
 {DD;
     if (QThread::currentThread()->isInterruptionRequested()) {
         finalize();
         return false;
     }
+    if (file->channelsCount()==0) return false;
 
-    p.sampleRate = 1.0 / dfd->XStep;
-    if (p.bandWidth == 0) p.bandWidth = qRound(1.0 / dfd->XStep / 2.56);
+    p.sampleRate = 1.0 / file->xStep();
+    if (p.bandWidth == 0) p.bandWidth = qRound(1.0 / file->xStep() / 2.56);
 
     p.bandStrip = stripNumberForBandwidth(p.sampleRate / 2.56, p);
     p.fCount = qRound((double)p.bufferSize / 2.56);
 
-    int averages = int(1.0 * dfd->channels[0]->samplesCount() / p.bufferSize / (1<<p.bandStrip) / (1.0 - p.overlap));
+    int averages = int(1.0 * file->channel(0)->samplesCount() / p.bufferSize / (1<<p.bandStrip) / (1.0 - p.overlap));
     if (p.averagesCount == -1) p.averagesCount = averages;
     else p.averagesCount = qMin(averages, p.averagesCount);
-    if (dfd->channels[0]->samplesCount() % p.averagesCount !=0) p.averagesCount++;
+    if (file->channel(0)->samplesCount() % p.averagesCount !=0) p.averagesCount++;
 
     // Если опорный канал с таким номером в файле отсутствует, используем последний канал в файле
-    if (p.baseChannel>=dfd->channelsCount()) p.baseChannel = dfd->channelsCount()-1;
+    if (p.baseChannel>=file->channelsCount()) p.baseChannel = file->channelsCount()-1;
 
 //    qDebug()<<p;
 
     /** 1. Создаем конечный файл и копируем в него всю информацию из dfd */
     QString method = p.method->methodDll();
     method.chop(4);
-    QString fileName = createUniqueFileName(tempFolderName, dfd->fileName(), method,
+    QString fileName = createUniqueFileName(tempFolderName, file->fileName(), method,
                                             p.saveAsComplex ? "uff":"dfd", true);
     DfdFileDescriptor *newDfd = 0;
-    if (!p.saveAsComplex) newDfd = p.method->createNewDfdFile(fileName, dfd, p);
+    if (!p.saveAsComplex) newDfd = p.method->createNewDfdFile(fileName, file, p);
 
     UffFileDescriptor *newUff = 0;
-    if (p.saveAsComplex) newUff = p.method->createNewUffFile(fileName, dfd, p);
+    if (p.saveAsComplex) newUff = p.method->createNewUffFile(fileName, file, p);
 
     QVector<double> xVals;
 
-    if (p.baseChannel>=0) dfd->channels[p.baseChannel]->populateFloat();
-    for (int i=0; i<dfd->channelsCount(); ++i) {
-        dfd->channels[i]->populateFloat();
+    bool baseWasPopulated = true; // do nothing afterwards
+    if (p.baseChannel>=0) {
+        baseWasPopulated = file->channel(p.baseChannel)->populated();
+        file->channel(p.baseChannel)->populate();
+    }
+    for (int i=0; i<file->channelsCount(); ++i) {
+        bool wasPopulated = file->channel(i)->populated();
+        file->channel(i)->populate();
 
         if (QThread::currentThread()->isInterruptionRequested()) {
             delete newDfd;
@@ -363,7 +379,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
             return false;
         }
 
-        p.threshold = threshold(dfd->channels[i]->yName());
+        p.threshold = threshold(file->channel(i)->yName());
 
         QVector<double> spectrum;
         QVector<cx_double> spectrumComplex;
@@ -379,7 +395,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
             Resampler filter(1<<p.bandStrip, p.bufferSize);
             QVector<float> filtered;
             while (1) {
-                QVector<float> chunk = getBlock(dfd->channels[i]->floatValues, newBlockSize, stepBack, block);
+                QVector<float> chunk = getBlock(file->channel(i)->yValues(), newBlockSize, stepBack, block);
                 if (chunk.size() < p.bufferSize) break;
                 filtered = filter.process(chunk);
                 foreach(float val, filtered)
@@ -396,7 +412,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
             Averaging averaging(p.averagingType, p.averagesCount);
 
             while (1) {
-                QVector<float> chunk = getBlock(dfd->channels[i]->floatValues, newBlockSize, stepBack, block);
+                QVector<float> chunk = getBlock(file->channel(i)->yValues(), newBlockSize, stepBack, block);
 
                 if (chunk.size() < p.bufferSize) break;
 
@@ -438,8 +454,8 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
             Averaging averaging(p.averagingType, p.averagesCount);
 
             while (1) {
-                QVector<float> chunk1 = getBlock(dfd->channels[i]->floatValues, newBlockSize, stepBack, block);
-                QVector<float> chunk2 = getBlock(dfd->channels[p.baseChannel]->floatValues, newBlockSize, stepBack, baseBlock);
+                QVector<float> chunk1 = getBlock(file->channel(i)->yValues(), newBlockSize, stepBack, block);
+                QVector<float> chunk2 = getBlock(file->channel(p.baseChannel)->yValues(), newBlockSize, stepBack, baseBlock);
                 if (chunk1.size() < p.bufferSize || chunk2.size() < p.bufferSize) break;
 
                 filtered = filter.process(chunk1);
@@ -460,7 +476,7 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
             if (!p.saveAsComplex) {
                 spectrum = absolutes(spectrumComplex);
                 if (p.scaleType > 0) {
-                    const double t2 = threshold(dfd->channels[p.baseChannel]->yName()) / p.threshold;
+                    const double t2 = threshold(file->channel(p.baseChannel)->yName()) / p.threshold;
                     for (int i=0; i<spectrum.size(); ++i)
                         spectrum[i] = 20 * log10(spectrum[i] * t2);
                 }
@@ -469,16 +485,16 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
 
         if (p.method->id()==18) {//октавный спектр
             OctaveFilterBank filtBank(p);
-            spectrum = filtBank.compute(dfd->channels[i]->floatValues, xVals);
+            spectrum = filtBank.compute(file->channel(i)->yValues(), xVals);
         }
 
         // Создаем канал и заполняем его
         Channel *ch = 0;
         if (newDfd) {
-            ch = p.method->createDfdChannel(newDfd, dfd, spectrum, p, i);
+            ch = p.method->createDfdChannel(newDfd, file, spectrum, p, i);
         }
         if (newUff) {
-            ch = p.method->addUffChannel(newUff, dfd, p.fCount, p, i);
+            ch = p.method->addUffChannel(newUff, file, p.fCount, p, i);
             ch->data()->setThreshold(p.threshold);
             if (p.saveAsComplex)
                 ch->data()->setYValues(spectrumComplex);
@@ -487,15 +503,14 @@ bool Converter::convert(DfdFileDescriptor *dfd, const QString &tempFolderName)
         }
         if (!xVals.isEmpty()) ch->data()->setXValues(xVals);
 
-        dfd->channels[i]->floatValues.clear();
-        //and releasing memory (since Qt 5.7)
-        dfd->channels[i]->floatValues.squeeze();
+        if (!wasPopulated) {
+            file->channel(i)->clear();
+        }
         emit tick();
     }
     // подчищаем опорный канал
-    if (p.baseChannel>=0 && p.baseChannel < dfd->channelsCount()) {
-        dfd->channels[p.baseChannel]->floatValues.clear();
-        dfd->channels[p.baseChannel]->floatValues.squeeze();
+    if (!baseWasPopulated) {
+        file->channel(p.baseChannel)->clear();
     }
 
     if (newDfd) {
@@ -616,7 +631,7 @@ QStringList Converter::getSpfFile(QString dir)
     spfFile << "TpNameDat=2"; // к имени файла добавляется дата и время создания
 
     for (int i=0; i<dataBase.size(); ++i) {
-        DfdFileDescriptor *dfd = dataBase.at(i);
+        FileDescriptor *dfd = dataBase.at(i);
         spfFile << QString("[Panel%1]").arg(i);
         spfFile << QString("NmPan=п.%1").arg(i);
         spfFile << QString("PanelPar=%1,%2,%3")
@@ -633,7 +648,7 @@ QStringList Converter::getSpfFile(QString dir)
         spfFile << QString("FileNm=%1").arg(QDir::toNativeSeparators(dfd->fileName()));
 
         QStringList channelsList;
-        for (int i=1; i<=dfd->channels.size(); ++i) channelsList << QString::number(i);
+        for (int i=1; i<=dfd->channelsCount(); ++i) channelsList << QString::number(i);
 
         spfFile << "Channels="+channelsList.join(',');
 
@@ -641,7 +656,7 @@ QStringList Converter::getSpfFile(QString dir)
         if (rawCh)
             p.bandStrip = stripNumberForBandwidth(rawCh->BandWidth, p);
         else
-            p.bandStrip = stripNumberForBandwidth(qRound(1.0 / dfd->XStep / 2.56), p);
+            p.bandStrip = stripNumberForBandwidth(qRound(1.0 / dfd->xStep() / 2.56), p);
 
         spfFile << "ActChannel=1";
         spfFile << QString("BaseChannel=%1").arg(p.baseChannel);
@@ -652,13 +667,7 @@ QStringList Converter::getSpfFile(QString dir)
         spfFile << "ShiftDat=0"; // TODO: добавить возможность устанавливать смещение
         // длина = число отсчетов в канале
         // TODO: добавить возможность устанавливать правую границу выборки
-        int NI;
-        if (dfd->BlockSize>0) {
-            NI = dfd->channels.at(0)->ChanBlockSize / dfd->BlockSize;
-            NI *= dfd->samplesCount();
-        }
-        else
-            NI = dfd->samplesCount();
+        int NI = dfd->samplesCount();
 
         spfFile << QString("Duration=%1").arg(NI);
         spfFile << "TablName=";
