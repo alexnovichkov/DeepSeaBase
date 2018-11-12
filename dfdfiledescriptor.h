@@ -313,7 +313,7 @@ public:
     virtual void calculateMean(const QList<QPair<FileDescriptor *, int> > &channels);
     virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels,
                                     int windowSize);
-    virtual FileDescriptor *calculateThirdOctave();
+    virtual QString calculateThirdOctave();
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes);
 
     QStringList getHeadersForChannel(int channel);

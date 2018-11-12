@@ -1819,9 +1819,13 @@ void MainWindow::calculateThirdOctave()
 
 
     foreach (FileDescriptor *fd, records) {
-        FileDescriptor *dfd = fd->calculateThirdOctave();
-        if (findDescriptor(dfd)) tab->model->updateFile(dfd);
-        else addFile(dfd);
+        QString dfd = fd->calculateThirdOctave();
+        if (FileDescriptor *found = findDescriptor(dfd)) {
+            tab->model->updateFile(found);
+        }
+        else {
+            addFiles(QStringList()<<dfd);
+        }
     }
 }
 
@@ -2025,22 +2029,6 @@ void MainWindow::addFile(FileDescriptor *descriptor)
 
     addFiles(QList<FileDescriptor *>()<<descriptor);
 //    tab->filesTable->setCurrentIndex(tab->model->modelIndexOfFile(descriptor, 1));
-}
-
-bool MainWindow::findDescriptor(FileDescriptor *d)
-{
-    if (!d) return false;
-
-    if (tab) {
-        if (tab->model->contains(d)) return true;
-    }
-    for (int i=0; i<tabWidget->count(); ++i) {
-        Tab *t = qobject_cast<Tab *>(tabWidget->widget(i));
-        if (t==tab) continue;
-
-        if (t->model->contains(d)) return true;
-    }
-    return false;
 }
 
 FileDescriptor *MainWindow::findDescriptor(const QString &file)

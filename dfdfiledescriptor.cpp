@@ -821,7 +821,7 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
     }
 }
 
-FileDescriptor *DfdFileDescriptor::calculateThirdOctave()
+QString DfdFileDescriptor::calculateThirdOctave()
 {DD;
     populate();
 
@@ -870,7 +870,8 @@ FileDescriptor *DfdFileDescriptor::calculateThirdOctave()
     thirdOctDfd->setDataChanged(true);
     thirdOctDfd->write();
     thirdOctDfd->writeRawFile();
-    return thirdOctDfd;
+    delete thirdOctDfd;
+    return thirdOctaveFileName;
 }
 
 void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)

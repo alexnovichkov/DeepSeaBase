@@ -554,7 +554,7 @@ void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
     removeTempFile();
 }
 
-FileDescriptor *UffFileDescriptor::calculateThirdOctave()
+QString UffFileDescriptor::calculateThirdOctave()
 {DD;
     populate();
 
@@ -609,7 +609,8 @@ FileDescriptor *UffFileDescriptor::calculateThirdOctave()
     thirdOctUff->setDataChanged(true);
     thirdOctUff->write();
     thirdOctUff->writeRawFile();
-    return thirdOctUff;
+    delete thirdOctUff;
+    return thirdOctaveFileName;
 }
 
 void UffFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)

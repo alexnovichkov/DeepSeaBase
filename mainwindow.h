@@ -190,7 +190,6 @@ private:
 
     QList<QPair<FileDescriptor*, int> > selectedChannels();
     FileDescriptor *findDescriptor(const QString &file);
-    bool findDescriptor(FileDescriptor *d);
 
     void addFile(FileDescriptor *descriptor);
     void setCurrentAndPlot(FileDescriptor *d, int channelIndex);

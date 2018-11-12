@@ -90,7 +90,7 @@ public:
 
     /** Calculates mean of channels, writes to a file */
     virtual void calculateMean(const QList<QPair<FileDescriptor *, int> > &channels) = 0;
-    virtual FileDescriptor *calculateThirdOctave() = 0;
+    virtual QString calculateThirdOctave() = 0;
     virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels,
                                     int windowSize) = 0;
     virtual QString saveTimeSegment(double from, double to) = 0;
