@@ -80,7 +80,7 @@ Parameters OctaveMethod::parameters()
 {
     Parameters p;
 
-    p.bufferSize = 32768;
+    p.bufferSize = 0;
     p.scaleType = scaleCombo->currentIndex();
 
     return p;

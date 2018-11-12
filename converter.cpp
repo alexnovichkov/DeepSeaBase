@@ -336,14 +336,16 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
 
     p.sampleRate = 1.0 / file->xStep();
     if (p.bandWidth == 0) p.bandWidth = qRound(1.0 / file->xStep() / 2.56);
+    if (p.bufferSize == 0) p.bufferSize = p.sampleRate;
 
     p.bandStrip = stripNumberForBandwidth(p.sampleRate / 2.56, p);
     p.fCount = qRound((double)p.bufferSize / 2.56);
 
-    int averages = int(1.0 * file->channel(0)->samplesCount() / p.bufferSize / (1<<p.bandStrip) / (1.0 - p.overlap));
+    const int samplesCount = file->channel(0)->samplesCount();
+    int averages = int(1.0 * samplesCount / p.bufferSize / (1<<p.bandStrip) / (1.0 - p.overlap));
     if (p.averagesCount == -1) p.averagesCount = averages;
     else p.averagesCount = qMin(averages, p.averagesCount);
-    if (file->channel(0)->samplesCount() % p.averagesCount !=0) p.averagesCount++;
+    if (samplesCount % p.averagesCount !=0) p.averagesCount++;
 
     // Если опорный канал с таким номером в файле отсутствует, используем последний канал в файле
     if (p.baseChannel>=file->channelsCount()) p.baseChannel = file->channelsCount()-1;
