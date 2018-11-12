@@ -66,15 +66,15 @@ QList<int> filterIndexes(FileDescriptor *dfd, const QList<QPair<FileDescriptor *
     return result;
 }
 
-Channel::Channel(Channel *other) : _checkState(other->_checkState),
-    _color(other->_color),
+Channel::Channel(Channel *other) : _checkState(Qt::Unchecked),
+    _color(QColor()),
     _data(new DataHolder(*(other->_data)))
 {
 
 }
 
-Channel::Channel(Channel &other) : _checkState(other._checkState),
-    _color(other._color),
+Channel::Channel(Channel &other) : _checkState(Qt::Unchecked),
+    _color(QColor()),
     _data(new DataHolder(*(other._data)))
 {
 

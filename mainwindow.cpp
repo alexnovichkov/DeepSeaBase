@@ -1117,6 +1117,7 @@ bool MainWindow::deleteChannels(const QList<QPair<FileDescriptor*, int> > &chann
 
 bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channelsToCopy)
 {DD;
+    // определяем, все ли файлы являются файлами dfd
     bool allFilesDfd = true;
     for (int i=0; i<channelsToCopy.size(); ++i) {
         if (!channelsToCopy.at(i).first->fileName().toLower().endsWith(".dfd")) {
@@ -1125,9 +1126,9 @@ bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channe
         }
     }
 
+    // определяем, все ли файлы из одной папки
     bool oneFolder = true;
     QString startFolder = QFileInfo(channelsToCopy.first().first->fileName()).canonicalPath();
-
     for (int i=1; i<channelsToCopy.size(); ++i) {
         if (QFileInfo(channelsToCopy.at(i).first->fileName()).canonicalPath() != startFolder) {
             oneFolder = false;
@@ -1135,7 +1136,6 @@ bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channe
         }
     }
 
-    /* Сначала определяем тип файла и шаг по оси x */
     QString startFile = MainWindow::getSetting("startDir").toString();
     if (oneFolder) startFile = startFolder;
 
@@ -2024,7 +2024,7 @@ void MainWindow::addFile(FileDescriptor *descriptor)
     if (!descriptor) return;
 
     addFiles(QList<FileDescriptor *>()<<descriptor);
-    tab->filesTable->setCurrentIndex(tab->model->modelIndexOfFile(descriptor, 1));
+//    tab->filesTable->setCurrentIndex(tab->model->modelIndexOfFile(descriptor, 1));
 }
 
 bool MainWindow::findDescriptor(FileDescriptor *d)
@@ -2573,23 +2573,6 @@ void MainWindow::onCurveDeleted(FileDescriptor *descriptor, int channelIndex)
 void MainWindow::addFiles(const QList<FileDescriptor*> &files)
 {DD;
     if (!tab) return;
-
-//    QList<QTreeWidgetItem *> items;
-
-//    int pos = tab->tree->topLevelItemCount();
-
-//    foreach (FileDescriptor *dfd, files) {
-//        QStringList info = dfd->info();
-//        info.prepend(QString::number(++pos));
-
-//        QTreeWidgetItem *item = new SortableTreeWidgetItem(dfd, info);
-//        item->setFlags(Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsEditable);
-//        items << item;
-//    }
-//    tab->tree->setSortingEnabled(false);
-//    tab->tree->addTopLevelItems(items);
-////    tab->tree->sortItems(0,Qt::AscendingOrder);
-//    tab->tree->setSortingEnabled(true);
 
     tab->model->addFiles(files);
 }

@@ -494,7 +494,7 @@ void DfdFileDescriptor::fillRest()
 
     setSamplesCount(channels.first()->samplesCount());
     BlockSize = 0;
-    XName = channels.first()->xName();
+//    XName = channels.first()->xName();
     XBegin = channels.first()->xMin();
     XStep = channels.first()->xStep();
 }
@@ -662,19 +662,18 @@ void DfdFileDescriptor::copyChannelsFrom(const QList<QPair<FileDescriptor *, int
 
     // список записей, откуда копируем каналы
     QList<FileDescriptor*> records;
-    for (int i=0; i<channelsToCopy.size(); ++i)
+    for (int i=0; i<channelsToCopy.size(); ++i) {
         if (!records.contains(channelsToCopy.at(i).first)) {
             records << channelsToCopy.at(i).first;
         }
+    }
 
     foreach (FileDescriptor *record, records) {
         DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(record);
         QList<int> channelsIndexes = filterIndexes(record, channelsToCopy);
-        const int co = record->channelsCount();
-
-        for(int i = 0; i < co; ++i) {
-
-        }
+//        const int co = record->channelsCount();
+//        for(int i = 0; i < co; ++i) {
+//        }
         //добавляем в файл dfd копируемые каналы из dfdRecord
         foreach (int index, channelsIndexes) {
             bool wasPopulated = record->channel(index)->populated();
@@ -689,6 +688,7 @@ void DfdFileDescriptor::copyChannelsFrom(const QList<QPair<FileDescriptor *, int
             if (!wasPopulated) record->channel(index)->clear();
         }
     }
+    XName = records.first()->xName();
 
     for (int i=0; i<channels.size(); ++i) {
         channels[i]->channelIndex = i;
@@ -698,6 +698,7 @@ void DfdFileDescriptor::copyChannelsFrom(const QList<QPair<FileDescriptor *, int
     //меняем параметры файла dfd
     Date = QDate::currentDate();
     Time = QTime::currentTime();
+
     setChanged(true);
     setDataChanged(true);
     write();
