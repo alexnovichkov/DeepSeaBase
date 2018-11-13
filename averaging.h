@@ -41,7 +41,13 @@ private:
     void averagePeak(const QVector<cx_double> &input);
     void averageEnergetic(const QVector<cx_double> &input);
 
+    void averageLinear(const QVector<double> &input);
+    void averageExponential(const QVector<double> &input);
+    void averagePeak(const QVector<double> &input);
+    void averageEnergetic(const QVector<double> &input);
+
     QVector<cx_double> averaged;
+    QVector<double> averaged_;
     int averagingType;
     int maximumAverages;
     int averagesMade;

@@ -421,36 +421,29 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     Channel *firstChannel = list.first();
 
     //ищем наименьшее число отсчетов
-    int numInd = (*std::min_element(list.begin(), list.end(), [](Channel *c1, Channel *c2){
-        return c1->samplesCount() <= c2->samplesCount();
-    }))->samplesCount();
+    int numInd = firstChannel->samplesCount();
+    for (int i=1; i<list.size(); ++i) {
+        if (list.at(i)->samplesCount() < numInd)
+            numInd = list.at(i)->samplesCount();
+    }
 
     // ищем формат данных для нового канала
-    // если форматы разные или комплексные, то формат будет - амплитуда
-
-    bool listHasComplexValues = false;
+    // если форматы разные, то формат будет линейный (амплитуды), не логарифмированный
     int format = firstChannel->yValuesFormat();
     for (int i=1; i<list.size(); ++i) {
-        if (list[i]->yValuesFormat() == DataHolder::YValuesComplex)
-            listHasComplexValues = true;
-        if (list[i]->yValuesFormat() != format) {
+        if (list.at(i)->yValuesFormat() != format) {
             format = DataHolder::YValuesAmplitudes;
             break;
         }
     }
 
-    if (format == DataHolder::YValuesComplex) {
-        format = DataHolder::YValuesAmplitudes;
-    }
-    if (listHasComplexValues)
-        QMessageBox::warning(0, QString("Комплексные значения"),
-                             QString("Некоторые каналы имеют комплексные значения.\n"
-                                     "Фаза будет удалена, данные будут сохранены в виде амплитуды."));
-
     Averaging averaging(Averaging::Linear, list.size());
 
     foreach (Channel *ch, list) {
-        averaging.average(ch->data()->linears());
+        if (ch->yValuesFormat() == DataHolder::YValuesComplex)
+            averaging.average(ch->data()->yValuesComplex());
+        else
+            averaging.average(ch->data()->linears());
     }
 
     // обновляем сведения канала
@@ -459,14 +452,17 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
 
     QStringList l;
     for (int i=0; i<channels.size(); ++i) {
-        l << QString::number(channels.at(i).second);
+        l << QString::number(channels.at(i).second + 1);
     }
     ch->setDescription("Среднее каналов "+l.join(","));
 
     ch->data()->setThreshold(firstChannel->data()->threshold());
-    ch->data()->setYValues(averaging.get().mid(0, numInd), DataHolder::YValuesFormat(format));
+    if (format == DataHolder::YValuesComplex)
+        ch->data()->setYValues(averaging.getComplex().mid(0, numInd));
+    else
+        ch->data()->setYValues(averaging.get().mid(0, numInd), DataHolder::YValuesFormat(format));
 
-    if (ch->data()->xValuesFormat()==DataHolder::XValuesUniform) {
+    if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
         ch->type58[27].value = 1;
         ch->data()->setXValues(firstChannel->xMin(), firstChannel->xStep(), numInd);
     }

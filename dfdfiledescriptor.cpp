@@ -487,6 +487,9 @@ void DfdFileDescriptor::fillPreliminary(Descriptor::DataType type)
     rawFileName = fileName().left(fileName().length()-4)+".raw";
     updateDateTimeGUID();
     DataType = dfdDataTypeFromDataType(type);
+
+    // time data tweak, so deepseabase doesn't take the file as raw time data
+    if (DataType == SourceData) DataType = CuttedData;
 }
 
 void DfdFileDescriptor::fillRest()
@@ -762,7 +765,7 @@ void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     else
         ch->data()->setYValues(averaging.get().mid(0, numInd), DataHolder::YValuesFormat(format));
 
-    if (ch->data()->xValuesFormat()==DataHolder::XValuesUniform) {
+    if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
         ch->data()->setXValues(firstChannel->xMin(), firstChannel->xStep(), numInd);
     }
     else {
@@ -1114,7 +1117,7 @@ void DfdChannel::read(DfdSettings &dfd, int numChans)
         _data->setSamplesCount(NumInd);
     }
     else {// abscissa, even spacing
-        _data->setXValues(parent->XBegin, XStep, NumInd);
+        _data->setXValues(0.0, XStep, NumInd);
     }
 
     // читаем позиции данных этого канала
@@ -1705,9 +1708,9 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
     newDfd->source->sFile = fileName()+"["+procChansList.join(",")+"]"+DFDGUID;
 
     // 3 ищем границы данных по параметрам from и to
-    int sampleStart = qRound((from-XBegin)/XStep);
+    int sampleStart = qRound((from/*-XBegin*/)/XStep);
     if (sampleStart<0) sampleStart = 0;
-    int sampleEnd = qRound((to-XBegin)/XStep);
+    int sampleEnd = qRound((to/*-XBegin*/)/XStep);
     if (sampleEnd>=samplesCount()) sampleEnd = samplesCount()-1;
     newDfd->setSamplesCount(sampleEnd - sampleStart + 1); //число отсчетов в новом файле
 
