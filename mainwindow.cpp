@@ -1537,11 +1537,12 @@ void MainWindow::updateChannelsHeaderState()
 void MainWindow::updateChannelsTable(const QModelIndex &current, const QModelIndex &previous)
 {DD;
     Q_UNUSED(previous)
-    if (!tab) return;
-    if (!current.isValid()) return;
+
+    if (!tab || !current.isValid()) return;
+
+    if (current.model() != tab->sortModel) return;
 
     QModelIndex index = tab->sortModel->mapToSource(current);
-
     updateChannelsTable(tab->model->file(index.row()));
 }
 
