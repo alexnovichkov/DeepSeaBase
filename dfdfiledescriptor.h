@@ -352,6 +352,7 @@ public:
     QString XName;
 
     double XBegin;
+    double realXBegin;
     double XStep;
     QString DescriptionFormat;
     QString CreatedBy;

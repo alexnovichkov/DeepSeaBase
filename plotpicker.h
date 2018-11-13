@@ -19,11 +19,8 @@ public:
     void setMode(Plot::InteractionMode mode);
     bool harmonics() const {return _showHarmonics;}
 protected:
-//    virtual bool eventFilter(QObject *target, QEvent *);
     virtual void widgetKeyReleaseEvent(QKeyEvent *e);
-//    virtual bool event(QEvent *);
     virtual void widgetKeyPressEvent(QKeyEvent *e);
-    virtual void widgetMouseMoveEvent(QMouseEvent *e);
 signals:
     void updateTrackingCursor(double xVal, bool second);
     void cursorMovedTo(QwtPlotMarker *cursor, double newValue);

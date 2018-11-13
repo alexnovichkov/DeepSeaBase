@@ -140,6 +140,7 @@ DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
       BlockSize(0),
       NumInd(0),
       XBegin(0.0),
+      realXBegin(0.0),
       XStep(0.0),
       source(0),
       process(0),

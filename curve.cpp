@@ -11,6 +11,7 @@
 #include "qwt_point_mapper.h"
 #include "qwt_clipper.h"
 #include "dataholder.h"
+#include "qwt_plot.h"
 
 class FilterPointMapper : public QwtPointMapper
 {
@@ -200,22 +201,8 @@ void Curve::drawLines(QPainter *painter,
                       const QRectF &canvasRect,
                       int from, int to) const
 {
-    double startX = xMap.s1();
-    double endX = xMap.s2();
-    for (int i=0; i<to; ++i) {
-        if (data->sample(i).x() >= startX) {
-            from = i-1;
-            break;
-        }
-    }
-    for (int i=to; i>=from; --i) {
-        if (data->sample(i).x() <= endX) {
-            to = i+1;
-            break;
-        }
-    }
-    if (from < 0) from = 0;
-    if (to >= int(data->size())) to = data->size()-1;
+    //reevaluating from, to
+    evaluateScale(from, to, xMap);
 
     if ( from > to )
         return;
@@ -276,6 +263,49 @@ PointLabel *Curve::findLabel(const int point)
     return 0;
 }
 
+void Curve::resetHighlighting()
+{
+    setPen(oldPen);
+    setZ(20);
+    foreach(PointLabel *label, labels)
+        if (label) label->setSelected(false);
+}
+
+int Curve::closest(const QPoint &pos, double *dist) const
+{
+    const size_t numSamples = dataSize();
+    if ( plot() == NULL || numSamples <= 0 )
+        return -1;
+
+    const QwtScaleMap xMap = plot()->canvasMap( xAxis() );
+    const QwtScaleMap yMap = plot()->canvasMap( yAxis() );
+
+    int from = 0;
+    int to = numSamples-1;
+    evaluateScale(from, to, xMap);
+
+    int index = -1;
+    double dmin = 1.0e10;
+
+    for ( int i = from; i <= to; i++ ) {
+        const QPointF sample = data->sample( i );
+
+        const double cx = xMap.transform( sample.x() ) - pos.x();
+        const double cy = yMap.transform( sample.y() ) - pos.y();
+
+        const double f = qwtSqr( cx ) + qwtSqr( cy );
+        if ( f < dmin )
+        {
+            index = i;
+            dmin = f;
+        }
+    }
+    if ( dist )
+        *dist = qSqrt( dmin );
+
+    return index;
+}
+
 double Curve::yMin() const
 {
     return channel->data()->yMin();
@@ -299,6 +329,26 @@ double Curve::xMax() const
 int Curve::samplesCount() const
 {
     return channel->data()->samplesCount();
+}
+
+void Curve::evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const
+{
+    const double startX = xMap.s1();
+    const double endX = xMap.s2();
+    for (int i=0; i<to; ++i) {
+        if (data->sample(i).x() >= startX) {
+            from = i-1;
+            break;
+        }
+    }
+    for (int i=to; i>=from; --i) {
+        if (data->sample(i).x() <= endX) {
+            to = i+1;
+            break;
+        }
+    }
+    if (from < 0) from = 0;
+    if (to >= int(data->size())) to = data->size()-1;
 }
 
 QList<QwtLegendData> Curve::legendData() const

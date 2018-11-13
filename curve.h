@@ -46,6 +46,8 @@ public:
     PointLabel *findLabel(const QPoint &pos, int yAxis);
     /** find label by point on a curve */
     PointLabel *findLabel(const int point);
+    void resetHighlighting();
+    int closest(const QPoint &pos, double *dist = NULL) const;
 
     double yMin() const;
     double yMax() const;
@@ -63,6 +65,9 @@ public:
     int fileNumber;
     bool duplicate;
     DfdData *data;
+
+private:
+    void evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const;
 
     // QwtPlotCurve interface
 protected:

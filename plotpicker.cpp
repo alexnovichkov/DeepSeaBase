@@ -99,7 +99,7 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
     else if (key == Qt::Key_C) {
         if (selectedLabel) {
             selectedLabel->cycleMode();
-            plot->replot();
+            //plot->replot();
         }
     }
     else if (key == Qt::Key_Delete) {
@@ -132,27 +132,6 @@ void PlotPicker::widgetKeyPressEvent(QKeyEvent *e)
     else QwtPlotPicker::widgetKeyPressEvent(e);
 }
 
-void PlotPicker::widgetMouseMoveEvent(QMouseEvent *e)
-{
-    QwtPlotPicker::widgetMouseMoveEvent(e);
-//    qDebug()<<e->pos();
-
-//    const QwtPlotItemList& itmList = plot->itemList();
-//    for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
-//        if (( *it )->rtti() == QwtPlotItem::Rtti_PlotMarker ) {
-//            if (TrackingCursor *c = static_cast<TrackingCursor *>( *it )) {
-//                int newX = (int)(plot->transform(QwtPlot::xBottom, c->xValue()));
-//                if (qAbs(newX-e->pos().x())<=5)
-//                    plot->canvas()->setCursor(Qt::SplitHCursor);
-//                else
-//                    plot->canvas()->setCursor(defaultCursor);
-//            }
-//        }
-//    }
-
-//
-}
-
 void PlotPicker::resetHighLighting()
 {DD;
     highlightPoint(false);
@@ -162,10 +141,7 @@ void PlotPicker::resetHighLighting()
     Plot *p = static_cast<Plot*>(plot);
     if (p) {
         foreach(Curve *c, p->graphs) {
-            c->setPen(c->oldPen);
-            c->setZ(20);
-            foreach(PointLabel *label, c->labels)
-                if (label) label->setSelected(false);
+            c->resetHighlighting();
         }
     }
 
@@ -179,24 +155,21 @@ Curve * PlotPicker::findClosestPoint(const QPoint &pos, int &index) const
     Curve *curve = 0;
     double dist = 10e10;
 
-    const QwtPlotItemList& itmList = plot->itemList();
-
-
+    const QwtPlotItemList& itmList = plot->itemList(QwtPlotItem::Rtti_PlotCurve);
     for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
-        if (( *it )->rtti() == QwtPlotItem::Rtti_PlotCurve ) {
-            Curve *c = static_cast<Curve *>( *it );
+        Curve *c = static_cast<Curve *>( *it );
 
-            double d;
-            int idx = c->closestPoint( pos, &d );
-            if ( d < dist ) {
-                curve = c;
-                index = idx;
-                dist = d;
-            }
+        double d;
+        int idx = c->closest( pos, &d );
+//        int idx = c->closestPoint( pos, &d );
+        if ( d < dist ) {
+            curve = c;
+            index = idx;
+            dist = d;
         }
     }
 
-    if (dist < 10)
+    if (dist < 10 && index >=0)
         return curve;
 
     return 0;
