@@ -1242,7 +1242,7 @@ void DfdChannel::populate()
                     break;
             }
         }
-        YValues.squeeze();
+        YValues.resize(parent->NumInd);
         postprocess(YValues);
         _data->setYValues(YValues, DataHolder::YValuesFormat(yValueFormat));
         setPopulated(true);
