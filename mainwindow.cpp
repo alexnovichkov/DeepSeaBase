@@ -531,17 +531,6 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->sortModel = new SortFilterModel(tab);
     tab->sortModel->setSourceModel(tab->model);
 
-//    for(int i=0; i<tab->model->columnCount(); ++i) {
-//        QLineEdit *e = new QLineEdit(this);
-//        e->setClearButtonEnabled(true);
-//        e->setPlaceholderText(tab->model->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString());
-//        connect(e, &QLineEdit::textChanged, [this, i](const QString &text){
-//            tab->sortModel->setFilter(text, i);
-//        });
-//        tab->filters << e;
-//    }
-
-
     tab->filesTable = new QTreeView(this);
     tab->filesTable->setModel(tab->sortModel);
 
@@ -564,32 +553,20 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     connect(filterHeader, SIGNAL(filterChanged(QString,int)), tab->sortModel, SLOT(setFilter(QString,int)));
     filterHeader->setFilterBoxes(tab->model->columnCount());
 
-//    tab->filesTable->header()->setStretchLastSection(false);
-//    tab->filesTable->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-//    tab->filesTable->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-//    tab->filesTable->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-//    tab->filesTable->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
-//    tab->filesTable->header()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
-//    tab->filesTable->header()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
-//    tab->filesTable->header()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
-//    tab->filesTable->header()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
-//    connect(tab->filesTable->header(), &QHeaderView::sectionResized, [this](int section, int oldSize, int newSize)
-//    {Q_UNUSED(oldSize);
-//        qDebug()<<"section"<<section<<"old"<<oldSize<<"new"<<newSize;
-//        for (int i=0; i<10; ++i)
-//            tab->filters[i]->resize(tab->filesTable->header()->length(), tab->filters[i]->height());
-////        if (section < tab->filters.size()) tab->filters[section]->resize(newSize, tab->filters[section]->height());
-//    });
-//    connect(tab->filesTable->header(), &QHeaderView::geometriesChanged, [this]()
-//    {
-//        for (int i=0; i<10; ++i)
-//            tab->filters[i]->resize(tab->filesTable->header()->length(), tab->filters[i]->height());
-////        if (section < tab->filters.size()) tab->filters[section]->resize(newSize, tab->filters[section]->height());
-//    });
+    tab->filesTable->header()->setStretchLastSection(false);
+    tab->filesTable->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
+    tab->filesTable->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    tab->filesTable->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    tab->filesTable->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
+    tab->filesTable->header()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
+    tab->filesTable->header()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
+    tab->filesTable->header()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
+    tab->filesTable->header()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
 
-    QByteArray treeHeaderState = getSetting("treeHeaderState").toByteArray();
-    if (!treeHeaderState.isEmpty())
-        tab->filesTable->header()->restoreState(treeHeaderState);
+
+    //QByteArray treeHeaderState = getSetting("treeHeaderState").toByteArray();
+    //if (!treeHeaderState.isEmpty())
+    //    tab->filesTable->header()->restoreState(treeHeaderState);
 
     connect(tab->filesTable->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),tab, SLOT(filesSelectionChanged()));
     connect(tab->filesTable->selectionModel(),SIGNAL(currentRowChanged(QModelIndex,QModelIndex)),SLOT(updateChannelsTable(QModelIndex,QModelIndex)));
@@ -622,11 +599,6 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
     QWidget *treeWidget = new QWidget(this);
     QVBoxLayout *treeLayout = new QVBoxLayout;
-//    QHBoxLayout *filterLayout = new QHBoxLayout;
-//    for (int i=0; i<tab->filters.size(); ++i) {
-//        filterLayout->addWidget(tab->filters[i]);
-//    }
-//    treeLayout->addLayout(filterLayout);
     treeLayout->addWidget(tab->filesTable);
 
     treeWidget->setLayout(treeLayout);
@@ -643,11 +615,38 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
         }
     });
 
+    QToolButton *editFileButton = new QToolButton(this);
+    QAction *editFileAct = new QAction("Редактировать этот файл в текстовом редакторе", this);
+    editFileAct->setIcon(QIcon(":/icons/edit.png"));
+    editFileButton->setDefaultAction(editFileAct);
+    connect(editFileAct, &QAction::triggered, [=](){
+        QString file = QDir::toNativeSeparators(tab->filePathLabel->text());
+        if (!file.isEmpty()) {
+            QString executable = getSetting("editor").toString();
+            if (executable.isEmpty())
+                executable = QInputDialog::getText(this, "Текстовый редактор не задан",
+                                                   "Введите путь к текстовому редактору,\n"
+                                                   "название исполняемого файла или команду для выполнения");
+
+            if (!executable.isEmpty()) {
+                if (!QProcess::startDetached(executable, QStringList()<<file)) {
+                    executable = QStandardPaths::findExecutable(executable);
+                    if (!executable.isEmpty())
+                        if (QProcess::startDetached(executable, QStringList()<<file))
+                            setSetting("editor", executable);
+                }
+                else
+                    setSetting("editor", executable);
+            }
+        }
+    });
+
     QWidget *channelsWidget = new QWidget(this);
     QGridLayout *channelsLayout = new QGridLayout;
     channelsLayout->addWidget(tab->filePathLabel,0,0);
-    channelsLayout->addWidget(tab->channelsTable,1,0,1,2);
-    channelsLayout->addWidget(openFolderButton, 0,1);
+    channelsLayout->addWidget(tab->channelsTable,1,0,1,3);
+    channelsLayout->addWidget(editFileButton, 0,1);
+    channelsLayout->addWidget(openFolderButton, 0,2);
     channelsWidget->setLayout(channelsLayout);
 
 

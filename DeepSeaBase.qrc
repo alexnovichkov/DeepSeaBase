@@ -21,5 +21,6 @@
         <file>icons/autoscale-y-slave.png</file>
         <file>icons/autoscale-all.png</file>
         <file>icons/sergei.png</file>
+        <file>icons/edit.png</file>
     </qresource>
 </RCC>
