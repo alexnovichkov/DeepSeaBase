@@ -136,7 +136,7 @@ public:
     void setValue(double val, QDataStream &writeStream);
 
     virtual QString xName() const;
-    virtual QString yName() const {return YName;}
+    virtual QString yName() const;
 
     virtual void addCorrection(double correctionValue, bool writeToFile);
 

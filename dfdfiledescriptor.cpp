@@ -780,6 +780,9 @@ void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
 
     ch->IndType = this->channels.isEmpty()?3221225476:this->channels.first()->IndType;
     ch->YName = firstChannel->yName();
+    //грязный хак
+    if (DfdChannel *dfd = dynamic_cast<DfdChannel*>(firstChannel))
+        ch->YNameOld = dfd->YNameOld;
     if (XName.isEmpty()) XName = firstChannel->xName();
     ch->parent = this;
 
@@ -822,6 +825,8 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
 
         ch->IndType = this->channels.isEmpty()?3221225476:this->channels.first()->IndType;
         ch->YName = firstChannel->yName();
+        if (DfdChannel *dfd = dynamic_cast<DfdChannel*>(firstChannel))
+            ch->YNameOld = dfd->YNameOld;
         if (XName.isEmpty()) XName = firstChannel->xName();
         ch->parent = this;
 
@@ -855,9 +860,9 @@ QString DfdFileDescriptor::calculateThirdOctave()
 
 
         newCh->YName="дБ";
+        newCh->YNameOld=ch->YNameOld;
         newCh->ChanAddress=ch->ChanAddress;
         newCh->ChanName=ch->ChanName;
-        newCh->YNameOld=ch->YName;
         newCh->ChanBlockSize=result.first.size();
         newCh->IndType=3221225476;
         //BandWidth=1162346496
@@ -1173,11 +1178,9 @@ QStringList DfdChannel::getInfoHeaders()
 QStringList DfdChannel::getInfoData()
 {DD;
     return QStringList()
-          //  << ChanAddress
-            << ChanName
-          //  << InputType
-            << YName
-            << ChanDscr
+            << name()
+            << yName()
+            << description()
                ;
 }
 
@@ -1194,13 +1197,13 @@ void DfdChannel::populate()
         if (IndType==0xC0000004)
             readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-        double thr = threshold(this->yName());
-        if (this->type()==Descriptor::FrequencyResponseFunction) thr=1.0;
+        double thr = threshold(yName());
+        if (type()==Descriptor::FrequencyResponseFunction) thr=1.0;
         _data->setThreshold(thr);
 
         int yValueFormat = dataFormat();
 
-        if (yName().toLower()=="db" || yName().toLower()=="дб")
+        if (YName.toLower()=="db" || YName.toLower()=="дб")
             yValueFormat = DataHolder::YValuesAmplitudesInDB;
 
         QVector<double> YValues;
@@ -1479,6 +1482,15 @@ QString DfdChannel::xName() const
     return "";
 }
 
+QString DfdChannel::yName() const
+{
+    if (YName.isEmpty())
+        return YNameOld;
+    if ((YName.toLower() == "дб" || YName.toLower() == "db") && !YNameOld.isEmpty())
+        return YNameOld;
+    return YName;
+}
+
 void DfdChannel::addCorrection(double correctionValue, bool writeToFile)
 {DD;
     _data->setCorrection(correctionValue);
@@ -1748,7 +1760,7 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
         ch->ChanBlockSize = sampleEnd - sampleStart + 1;
         ch->IndType = 3221225476;
 
-        ch->YName = channels[i]->yName();
+        ch->YName = channels[i]->YName;
         ch->YNameOld = channels[i]->YNameOld;
 
         ch->temporalCorrection = channels[i]->temporalCorrection;

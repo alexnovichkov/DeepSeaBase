@@ -340,7 +340,7 @@ bool MatlabConvertor::convert()
                 channel->setDescription(c.info.join(" \\"));
                 channel->IndType = 2; //характеристика отсчета
                 channel->ChanBlockSize = data.size(); //размер блока в отсчетах
-                channel->YName = lms2dsunit(c.units);
+                channel->YName = c.units;
                 channel->InputType="U";
 
                 channel->BandWidth = c.fd / 2.56;
