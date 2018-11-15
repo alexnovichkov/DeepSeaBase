@@ -10,23 +10,39 @@ static QColor defaultColor = QColor(QRgb(0x00808080));
 
 static QList<QColor> usedColors;
 
-static uint colorsTable[16]={
-    0x00b40000,
-    0x00000080,
-    0x00008080,
-    0x00803f00,
-    0x00ff8000,
-    0x000000ff,
-    0x00808000,
-    0x0000ffff,
-    0x00f0f0c0, //240, 240, 192
-    0x00800080,
-    0x00ff00ff,
-    0x00007800, //0, 120, 0
+static uint colorsTable[32]={
     0x00000000,
-    0x00ff8080,
-    0x008080ff,
-    0x00a0a0a4
+    0x00ff6600,
+    0x00008000,
+    0x000000ff,
+    0x00808080,
+    0x00ff0000,
+    0x0099cc00,
+    0x00800080,
+    0x00ffcc00, //240, 240, 192
+    0x00ffff00,
+    0x0000ff00,
+    0x0000ffff, //0, 120, 0
+    0x002923be,
+    0x0084E16C,
+    0x00d6ae52,
+    0x009049f1,
+    0x00f1bbe9,
+    0x00ebb3a6,
+    0x00db3c87,
+    0x000c3e99,
+    0x00245e0d,
+    0x001c06b7,
+    0x0047deb3,
+    0x00124dc8,
+    0x0043bb8b,
+    0x00a61f03,
+    0x005a7d09,
+    0x0038251f,
+    0x005dd4cb,
+    0x00fc96f5,
+    0x00453b13,
+    0x000d890a
 };
 
 ColorSelector *ColorSelector::instance()
@@ -114,7 +130,7 @@ void ColorSelector::freeColor(const QColor &color)
 ColorSelector::ColorSelector()
 {
     QVariantList list = MainWindow::getSetting("colors").toList();
-    if (list.isEmpty()) {
+    if (list.isEmpty() || list.size() < COLORS_COUNT) {
         colors.resize(COLORS_COUNT);
         for (int i=0; i<colors.size() && i<COLORS_COUNT; ++i)
             colors[i] = QColor(QRgb(colorsTable[i]));

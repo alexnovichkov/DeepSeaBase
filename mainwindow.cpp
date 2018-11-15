@@ -2363,9 +2363,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
              }
 
              for (int i=0; i<plot->graphs.size(); ++i) {
-                 QAxObject * serie;
-
-                 serie = series->querySubObject("NewSeries()");
+                 QAxObject * serie = series->querySubObject("NewSeries()");
                  if (serie) {
                      //xvalues
                      QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5, 1+i*2);
@@ -2390,8 +2388,6 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
                      }
                      delete Cell1;
                      delete Cell2;
-
-//                     serie->setProperty("Name", curve->channel->name());
                  }
                  delete serie;
              }

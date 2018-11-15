@@ -4,7 +4,7 @@
 #include <QVector>
 #include <QColor>
 
-#define COLORS_COUNT 16
+#define COLORS_COUNT 32
 
 class ColorSelector
 {
