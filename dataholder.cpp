@@ -257,9 +257,10 @@ QVector<double> DataHolder::xValues() const
 
 double DataHolder::xValue(int i) const
 {
-    if (xValuesFormat() == XValuesUniform) return m_xBegin + m_xStep * i;
+    if (xValuesFormat() != XValuesNonUniform) return m_xBegin + m_xStep * i;
 
-    return m_xValues[i];
+    if (i<m_count) return m_xValues[i];
+    return 0.0;
 }
 
 double DataHolder::yValue(int i) const

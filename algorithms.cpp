@@ -466,3 +466,10 @@ QVector<cx_double> complexes(const QVector<float> &values, bool valuesAreReals)
 
     return result;
 }
+
+QString stripHtml(const QString &s)
+{
+    QString t = s;
+    t.remove(QRegExp("<[^>]*>"));
+    return t;
+}

@@ -2154,15 +2154,13 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
     // получаем список листов и добавляем новый лист
     QAxObject *worksheets = workbook->querySubObject("Sheets");
     worksheets->dynamicCall("Add()");
-
-    // переименовываем новый лист согласно выбранным записям и каналам
-    //QString newSheetName = QDateTime::currentDateTime().toString();
     QAxObject * worksheet = workbook->querySubObject("ActiveSheet");
-    //worksheet->setProperty("Name", newSheetName);
 
-     // проверяем, все ли каналы из одного файла
+
      FileDescriptor *descriptor = plot->graphs.at(0)->descriptor;
      Channel *channel = plot->graphs.at(0)->channel;
+
+     // проверяем, все ли каналы из одного файла
      bool allChannelsFromOneFile = true;
      for (int i=1; i<plot->graphs.size(); ++i) {
          if (plot->graphs.at(i)->descriptor->fileName() != descriptor->fileName()) {
@@ -2170,7 +2168,6 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
              break;
          }
      }
-
 
      //проверяем, все ли каналы имеют одинаковое разрешение по х
      bool allChannelsHaveSameXStep = true;
@@ -2186,11 +2183,23 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          }
      }
 
-     // ищем максимальное количество отсчетов
-     // и максимальный шаг
-     int maxInd = channel->samplesCount();
-     double maxStep = channel->xStep();
-     bool zeroStepDetected = maxStep<1e-9;
+     //проверяем, все ли каналы имеют одинаковую длину
+     bool allChannelsHaveSameLength = true;
+     for (int i=1; i<plot->graphs.size(); ++i) {
+         if (plot->graphs.at(i)->channel->samplesCount() != channel->samplesCount()) {
+             allChannelsHaveSameLength = false;
+             break;
+         }
+     }
+
+     const int samplesCount = channel->samplesCount();
+     const double step = channel->xStep();
+     const bool zeroStepDetected = step<1e-9;
+
+     const bool writeToSeparateColumns = !allChannelsHaveSameXStep ||
+                                         !allChannelsHaveSameLength ||
+                                         zeroStepDetected;
+
      double minX = channel->xMin();
      double maxX = channel->xMax();
 
@@ -2198,22 +2207,16 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 
      for (int i=1; i<plot->graphs.size(); ++i) {
          Channel *ch = plot->graphs.at(i)->channel;
-         if (ch->samplesCount() > maxInd)
-             maxInd = ch->samplesCount();
-         if (ch->xStep() > maxStep)
-             maxStep = ch->xStep();
-         zeroStepDetected |= (ch->xStep() < 1e-9);
-         if (ch->xMin()< minX)
-             minX = ch->xMin();
-         if (ch->xMax() > maxX)
-             maxX = ch->xMax();
+         if (ch->xMin() < minX) minX = ch->xMin();
+         if (ch->xMax() > maxX) maxX = ch->xMax();
      }
-     if (minX >= range.min && maxX <= range.max) fullRange = true;
+     if (minX >= range.min && maxX <= range.max)
+         fullRange = true;
 
      //if (zeroStepDetected) allChannelsHaveSameXStep = false;
 
      bool exportPlots = true;
-     if (maxInd > 32000 && fullRange && !dataOnly) {
+     if (samplesCount > 32000 && fullRange && !dataOnly) {
          QMessageBox::warning(this, "Слишком много данных",
                               "В одном или всех каналах число отсчетов превышает 32000.\n"
                               "Будут экспортированы только данные, но не графики");
@@ -2221,26 +2224,10 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      }
      if (dataOnly) exportPlots = false;
 
-     // записываем название файла
-     if (allChannelsFromOneFile) {
-         QAxObject *cells = worksheet->querySubObject("Cells(Int,Int)", 1, 1);
-         if (cells) cells->setProperty("Value", descriptor->fileName());
-         delete cells;
-     }
-     else {
-         for (int i=0; i<plot->graphs.size(); ++i) {
-             Curve *curve = plot->graphs.at(i);
-             QAxObject *cells = allChannelsHaveSameXStep ? worksheet->querySubObject("Cells(Int,Int)", 1, 2+i)
-                                                         : worksheet->querySubObject("Cells(Int,Int)", 1, 2+i*2);
-             cells->setProperty("Value", curve->descriptor->fileName());
-             delete cells;
-         }
-     }
-
-     //записываем описатели
-
+     // записываем название файла и описатели
      if (allChannelsFromOneFile) {
          QStringList descriptions = twoStringDescription(descriptor->dataDescriptor());
+
          QAxObject *cells = worksheet->querySubObject("Cells(Int,Int)", 1, 1);
          if (cells) cells->setProperty("Value", descriptor->fileName());
 
@@ -2255,19 +2242,18 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      else {
          for (int i=0; i<plot->graphs.size(); ++i) {
              Curve *curve = plot->graphs.at(i);
-
              QStringList descriptions = twoStringDescription(curve->descriptor->dataDescriptor());
 
-             QAxObject *cells = allChannelsHaveSameXStep ? worksheet->querySubObject("Cells(Int,Int)", 1, 2+i)
-                                                         : worksheet->querySubObject("Cells(Int,Int)", 1, 2+i*2);
+             QAxObject *cells = !writeToSeparateColumns ? worksheet->querySubObject("Cells(Int,Int)", 1, 2+i)
+                                                       : worksheet->querySubObject("Cells(Int,Int)", 1, 2+i*2);
              cells->setProperty("Value", curve->descriptor->fileName());
 
-             cells = allChannelsHaveSameXStep ? worksheet->querySubObject("Cells(Int,Int)", 2, 2+i)
-                                              : worksheet->querySubObject("Cells(Int,Int)", 2, 2+i*2);
+             cells = !writeToSeparateColumns ? worksheet->querySubObject("Cells(Int,Int)", 2, 2+i)
+                                            : worksheet->querySubObject("Cells(Int,Int)", 2, 2+i*2);
              if (cells) cells->setProperty("Value", descriptions.first());
 
-             cells = allChannelsHaveSameXStep ? worksheet->querySubObject("Cells(Int,Int)", 3, 2+i)
-                                              : worksheet->querySubObject("Cells(Int,Int)", 3, 2+i*2);
+             cells = !writeToSeparateColumns ? worksheet->querySubObject("Cells(Int,Int)", 3, 2+i)
+                                            : worksheet->querySubObject("Cells(Int,Int)", 3, 2+i*2);
              if (cells) cells->setProperty("Value", descriptions.at(1));
 
              delete cells;
@@ -2277,8 +2263,8 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      // записываем название канала
      for (int i=0; i<plot->graphs.size(); ++i) {
          Curve *curve = plot->graphs.at(i);
-         QAxObject *cells = allChannelsHaveSameXStep ? worksheet->querySubObject("Cells(Int,Int)", 4, 2+i)
-                                                     : worksheet->querySubObject("Cells(Int,Int)", 4, 2+i*2);
+         QAxObject *cells = !writeToSeparateColumns ? worksheet->querySubObject("Cells(Int,Int)", 4, 2+i)
+                                                   : worksheet->querySubObject("Cells(Int,Int)", 4, 2+i*2);
          cells->setProperty("Value", curve->title().text());
          delete cells;
      }
@@ -2289,21 +2275,19 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      // данные х
      // если каналы имеют разный шаг по х, то для каждого канала отдельно записываем
      // по два столбца
-     if (allChannelsHaveSameXStep) {
+     if (!writeToSeparateColumns) {
          const int numCols = plot->graphs.size();
 
          QList<QVariant> cellsList;
          QList<QVariant> rowsList;
-         for (int i = 0; i < maxInd; ++i) {
-             double val = channel->xMin() + i*channel->xStep();
-             if (/*channel->xStep()<1e-9 &&*/ !channel->xValues().isEmpty())
-                 val = channel->xValues().at(i);
+         for (int i = 0; i < samplesCount; ++i) {
+             double val = channel->data()->xValue(i);
              if (!fullRange && (val < range.min || val > range.max) ) continue;
 
              cellsList.clear();
              cellsList << val;
              for (int j = 0; j < numCols; ++j) {
-                 cellsList << ((plot->graphs.at(j)->channel->samplesCount() < maxInd) ? 0 : plot->graphs.at(j)->channel->yValues()[i]);
+                 cellsList << plot->graphs.at(j)->channel->data()->yValue(i);
              }
              rowsList << QVariant(cellsList);
          }
@@ -2333,13 +2317,11 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
              QList<QVariant> cellsList;
              QList<QVariant> rowsList;
              for (int j = 0; j < ch->samplesCount(); j++) {
-                 double val = ch->xMin() + j*ch->xStep();
-                 if (/*ch->xStep()<1e-9 &&*/ !ch->xValues().isEmpty())
-                     val = ch->xValues().at(j);
+                 double val = ch->data()->xValue(j);
                  if (!fullRange && (val < range.min || val > range.max) ) continue;
 
                  cellsList.clear();
-                 cellsList << val << ch->yValues()[j];
+                 cellsList << val << ch->data()->yValue(j);
                  rowsList << QVariant(cellsList);
              }
              int numRows = rowsList.size();
@@ -2358,20 +2340,16 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      }
 
      if (exportPlots) {
-
          QAxObject *charts = workbook->querySubObject("Charts");
          charts->dynamicCall("Add()");
          QAxObject *chart = workbook->querySubObject("ActiveChart");
-         //     chart->dynamicCall("Select()");
-//              chart->setProperty("Name", "Диагр."+newSheetName);
          chart->setProperty("ChartType", 75);
-
          QAxObject * series = chart->querySubObject("SeriesCollection");
 
-
          // отдельно строить кривые нужно, только если у нас много пар столбцов с данными
-         if (!allChannelsHaveSameXStep) {
+         if (writeToSeparateColumns) {
              int seriesCount = series->property("Count").toInt();
+
              // удаляем предыдущие графики, созданные по умолчанию
              bool ok=true;
              while ((seriesCount>0) && ok) {
@@ -2385,11 +2363,11 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
              }
 
              for (int i=0; i<plot->graphs.size(); ++i) {
-                 Curve *curve = plot->graphs.at(i);
                  QAxObject * serie;
 
                  serie = series->querySubObject("NewSeries()");
                  if (serie) {
+                     //xvalues
                      QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5, 1+i*2);
                      QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5 + selectedSamples.at(i)-1, 1 + i*2);
                      if (Cell1 && Cell2) {
@@ -2397,10 +2375,11 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
                          if (xvalues)
                              serie->setProperty("XValues", xvalues->asVariant());
                          delete xvalues;
-                         delete Cell1;
-                         delete Cell2;
                      }
+                     delete Cell1;
+                     delete Cell2;
 
+                     //yvalues
                      Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5, 2+i*2);
                      Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5 + selectedSamples.at(i)-1, 2 + i*2);
                      if (Cell1 && Cell2) {
@@ -2408,65 +2387,57 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
                          if (yvalues)
                              serie->setProperty("Values", yvalues->asVariant());
                          delete yvalues;
-                         delete Cell1;
-                         delete Cell2;
                      }
+                     delete Cell1;
+                     delete Cell2;
 
-                     QStringList fullName;// = twoStringDescription(curve->descriptor->dataDescriptor());
-                     fullName.append(curve->channel->name());
-                     serie->setProperty("Name", fullName.join(" "));
-                     delete serie;
+//                     serie->setProperty("Name", curve->channel->name());
                  }
-             }
-         }
-         else {
-             // добавляем к названиям графиков информацию
-             int seriesCount = series->property("Count").toInt();
-             for ( int i=0; i<seriesCount; ++i) {
-                 QAxObject * serie = series->querySubObject("Item (int)", i+1);
-                 Curve *curve = plot->graphs.at(i);
-                 if (serie) {
-                     QStringList fullName;// = twoStringDescription(curve->descriptor->dataDescriptor());
-                     fullName.append(curve->channel->name());
-                     serie->setProperty("Name", fullName.join(" "));
-                     delete serie;
-                 }
+                 delete serie;
              }
          }
 
          // перемещаем графики на дополнительную вертикальную ось,
          // если они были там в программе
+         // и меняем название кривой
          int seriesCount = series->property("Count").toInt();
+         bool addRightAxis = false;
          for ( int i=0; i<seriesCount; ++i) {
              Curve *curve = plot->graphs.at(i);
-             if (curve->yAxis()==QwtPlot::yRight) {
-                 QAxObject * serie = series->querySubObject("Item (int)", i+1);
-                 if (serie) {
+             QAxObject * serie = series->querySubObject("Item (int)", i+1);
+             if (serie) {
+                 if (curve->yAxis()==QwtPlot::yRight) {
                      serie->setProperty("AxisGroup", 2);
-                     delete serie;
+                     addRightAxis = true;
                  }
-                 QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&,const QVariant&)", 2,2);
-                 if (yAxis) setAxis(yAxis, plot->axisTitle(QwtPlot::yRight).text());
-                 delete yAxis;
+                 serie->setProperty("Name", curve->channel->name());
              }
+             delete serie;
          }
-
+         if (addRightAxis) {
+             QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&,const QVariant&)", 2,2);
+             if (yAxis) setAxis(yAxis, stripHtml(plot->axisTitle(QwtPlot::yRight).text()));
+             delete yAxis;
+         }
 
 
          // добавляем подписи осей
          QAxObject *xAxis = chart->querySubObject("Axes(const QVariant&)", 1);
          if (xAxis) {
-             setAxis(xAxis, "Частота, Гц");
+             setAxis(xAxis, stripHtml(plot->axisTitle(QwtPlot::xBottom).text()));
              xAxis->setProperty("MaximumScale", range.max);
              xAxis->setProperty("MinimumScale", int(range.min/10)*10);
+             if (zeroStepDetected) {
+                 xAxis->setProperty("ScaleType", "xlLogarithmic");
+                 xAxis->setProperty("LogBase", 2);
+             }
          }
          delete xAxis;
 
          QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&)", 2);
          if (yAxis) {
-             setAxis(yAxis, "Уровень, дБ");
+             setAxis(yAxis, stripHtml(plot->axisTitle(QwtPlot::yLeft).text()));
              yAxis->setProperty("CrossesAt", -1000);
-
          }
          delete yAxis;
 

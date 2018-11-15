@@ -79,6 +79,8 @@ QString changeFileExt(const QString &fileName, const QString &ext);
 // возвращает округленные значения переменных from и to, которые различаются как минимум в первой значащей цифре
 void getUniqueFromToValues(QString &fromString, QString &toString, double from, double to);
 
+QString stripHtml(const QString &s);
+
 QString doubletohex(const double d);
 
 double hextodouble(QString hex);
