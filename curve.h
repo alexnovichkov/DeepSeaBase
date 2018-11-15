@@ -47,6 +47,7 @@ public:
     /** find label by point on a curve */
     PointLabel *findLabel(const int point);
     void resetHighlighting();
+    void highlight();
     int closest(const QPoint &pos, double *dist = NULL) const;
 
     double yMin() const;
@@ -64,6 +65,7 @@ public:
 
     int fileNumber;
     bool duplicate;
+    bool highlighted;
     DfdData *data;
 
 private:

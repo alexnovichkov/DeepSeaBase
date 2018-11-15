@@ -215,7 +215,7 @@ QVariant Model::data(const QModelIndex &index, int role) const
             case 8: return d->dataDescriptorAsString();
             case 9: return d->legend();
             default: return QVariant();
-        };
+        }
     }
     else if (role == Qt::ForegroundRole) {
 

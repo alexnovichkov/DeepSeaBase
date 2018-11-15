@@ -144,6 +144,7 @@ void PlotPicker::resetHighLighting()
             c->resetHighlighting();
         }
     }
+    plot->updateLegend();
 
     selectedLabel = 0;
     selectedCursor = 0;
@@ -236,12 +237,7 @@ void PlotPicker::pointAppended(const QPoint &pos)
             d_selectedCurve = curve;
             d_selectedPoint = index;
 
-            QPen pen = curve->pen();
-            curve->oldPen = pen;
-            pen.setWidth(2);
-            curve->setPen(pen);
-            curve->setZ(1000);
-
+            d_selectedCurve->highlight();
             highlightPoint(true);
         }
     }

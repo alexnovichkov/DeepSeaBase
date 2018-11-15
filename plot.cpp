@@ -224,9 +224,9 @@ Plot::Plot(QWidget *parent) :
     y1Scale = false;
     y2Scale = false;
 
-    Legend *leg = new Legend();
-    connect(leg, SIGNAL(clicked(QVariant,int)),this,SLOT(editLegendItem(QVariant,int)));
-    connect(leg, SIGNAL(markedForDelete(QVariant,int)),this, SLOT(deleteGraph(QVariant,int)));
+    CheckableLegend *leg = new CheckableLegend();
+    connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
+    connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteGraph(QwtPlotItem*)));
     insertLegend(leg, QwtPlot::RightLegend);
 
 
@@ -312,17 +312,12 @@ void Plot::deleteGraphs(FileDescriptor *descriptor)
     }
 }
 
-void Plot::deleteGraph(const QVariant &info, int index)
+void Plot::deleteGraph(QwtPlotItem*item)
 {DD;
-    Q_UNUSED(index)
-
-    QwtPlotItem *item = infoToItem(info);
-    if (item) {
-        Curve *c = dynamic_cast<Curve *>(item);
-        if (c) {
-            emit curveDeleted(c->descriptor, c->channelIndex);
-            deleteGraph(c, true);
-        }
+    Curve *c = dynamic_cast<Curve *>(item);
+    if (c) {
+        emit curveDeleted(c->descriptor, c->channelIndex);
+        deleteGraph(c, true);
     }
 }
 
@@ -938,7 +933,7 @@ void Plot::importPlot(const QString &fileName)
         graph->setTitle(QwtText("<font size=5>"+graph->channel->legendName()+"</font>"));
     }
 
-    QwtLegend *leg = new QwtLegend();
+    QwtAbstractLegend *leg = new QwtLegend();
     insertLegend(leg, QwtPlot::BottomLegend);
 
 
@@ -954,10 +949,10 @@ void Plot::importPlot(const QString &fileName)
         graph->setTitle(QwtText(graph->channel->legendName()));
     }
 
-    leg = new Legend();
+    leg = new CheckableLegend();
     //leg->setDefaultItemMode(QwtLegendData::Clickable);
-    connect(leg, SIGNAL(clicked(QVariant,int)),this,SLOT(editLegendItem(QVariant,int)));
-    connect(leg, SIGNAL(markedForDelete(QVariant,int)),this, SLOT(deleteGraph(QVariant,int)));
+    connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
+    connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteGraph(QwtPlotItem*)));
     insertLegend(leg, QwtPlot::RightLegend);
 }
 
@@ -986,5 +981,15 @@ void Plot::editLegendItem(const QVariant &itemInfo, int index)
     }
 }
 
+void Plot::editLegendItem(QwtPlotItem *item)
+{DD;
+    Curve *c = dynamic_cast<Curve *>(item);
+    if (c) {
+        GraphPropertiesDialog dialog(c, this);
+        connect(&dialog,SIGNAL(curveChanged(Curve*)),this, SIGNAL(curveChanged(Curve*)));
+        connect(&dialog,SIGNAL(curveChanged(Curve*)),trackingPanel, SLOT(update()));
+        dialog.exec();
+    }
+}
 
 

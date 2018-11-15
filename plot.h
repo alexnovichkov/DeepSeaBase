@@ -129,7 +129,8 @@ signals:
     void graphsChanged();
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
-    void deleteGraph(const QVariant &info, int index);
+    void editLegendItem(QwtPlotItem *item);
+    void deleteGraph(QwtPlotItem *item);
     void showContextMenu(const QPoint &pos, const int axis);
 private:
     void importPlot(const QString &fileName);
