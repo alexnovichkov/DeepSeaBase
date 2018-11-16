@@ -46,9 +46,9 @@ public:
         QString name;
         QColor color;
         QList<QPair<double, double>> values;
-//        double xval, yval;
         double skz;
         double energy;
+        double reject;
     };
 
     explicit TrackingPanel(Plot *parent=0);

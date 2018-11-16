@@ -35,9 +35,9 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
     mStep = 0.0;
 
     tree = new QTreeWidget(this);
-    tree->setColumnCount(8);
+    tree->setColumnCount(9);
     tree->setAlternatingRowColors(true);
-    tree->setHeaderLabels(QStringList()<<""<<"Название"<<"X1"<<"Y1"<<"X2"<<"Y2"<<"СКЗ"<<"Энергия в полосе");
+    tree->setHeaderLabels(QStringList()<<""<<"Название"<<"X1"<<"Y1"<<"X2"<<"Y2"<<"Энергия в полосе"<<"Режекция"<<"СКЗ");
     tree->setRootIsDecorated(false);
     tree->setColumnWidth(0,50);
     tree->setColumnWidth(1,150);
@@ -75,7 +75,7 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
         if (box1->isChecked()) values << "X1";
         values << "Y1";
         if (box1->isChecked()) values << "X2";
-        values << "Y2"<<"СКЗ"<<"Энергия в полосе";
+        values << "Y2"<<"Энергия в полосе"<<"Режекция"<<"СКЗ";
         list << values.join('\t');
 
         for(int i=0; i<tree->topLevelItemCount(); ++i) {
@@ -181,16 +181,16 @@ void TrackingPanel::updateState(const QList<TrackingPanel::TrackInfo> &curves)
         }
         item->setBackgroundColor(0,curves[i].color);
         item->setText(1,curves[i].name);
-//        if (index == 1) {
-            item->setText(4, QString::number(curves[i].values.at(1).first));
-            item->setText(5, QString::number(curves[i].values.at(1).second, 'f', 1));
-//        }
-//        else if (index == 0) {
-            item->setText(2, QString::number(curves[i].values.at(0).first));
-            item->setText(3, QString::number(curves[i].values.at(0).second, 'f', 1));
-//        }
-        item->setText(6, QString::number(curves[i].skz, 'f', 1));
-        item->setText(7, QString::number(curves[i].energy, 'f', 1));
+
+        item->setText(4, QString::number(curves[i].values.at(1).first));
+        item->setText(5, QString::number(curves[i].values.at(1).second, 'f', 1));
+
+        item->setText(2, QString::number(curves[i].values.at(0).first));
+        item->setText(3, QString::number(curves[i].values.at(0).second, 'f', 1));
+
+        item->setText(6, QString::number(curves[i].energy, 'f', 1));
+        item->setText(7, QString::number(curves[i].reject, 'f', 1));
+        item->setText(8, QString::number(curves[i].skz, 'f', 1));
     }
     for (int i=tree->topLevelItemCount()-1; i>=curves.size(); --i)
         delete tree->takeTopLevelItem(i);
@@ -264,84 +264,7 @@ void TrackingPanel::updateTrackingCursor(double xVal, int index)
 //    DebugPrint(xVal);
 
     cursors[index]->moveTo(xVal);
-//    cursors[index]->attach(plot);
 
-//    for (int i=0; i<4; ++i) {
-//        if (cursorBoxes[i]->checkState()==Qt::Checked) {
-//            cursors[i]->attach(plot);
-//        }
-//        else {
-//            cursors[i]->detach();
-//        }
-//    }
-
-//    double leftBorder = cursors[0]->xValue();
-//    double rightBorder = cursors[1]->xValue();
-//    double leftExclude = cursors[2]->xValue();
-//    double rightExclude = cursors[3]->xValue();
-//    if (leftBorder > rightBorder) std::swap(leftBorder , rightBorder);
-//    if (leftExclude > rightExclude) std::swap(leftExclude , rightExclude);
-//    cursorSpan1->setInterval(leftBorder, rightBorder);
-//    cursorSpan2->setInterval(leftExclude, rightExclude);
-
-//    if (cursorBoxes[0]->isChecked() && cursorBoxes[1]->isChecked()) cursorSpan1->attach(plot);
-//    else cursorSpan1->detach();
-
-//    if (cursorBoxes[2]->isChecked() && cursorBoxes[3]->isChecked()) cursorSpan2->attach(plot);
-//    else cursorSpan2->detach();
-
-//    bool filter = cursorBoxes[2]->isChecked() && cursorBoxes[3]->isChecked();
-
-//    plot->replot();
-//    QRectF rect(leftExclude, 0, rightExclude, 1);
-
-//    //4. get the y values from all graphs
-//    QList<TrackingPanel::TrackInfo> list;
-//    QVector<double> yValues;
-//    foreach(Curve *c, plot->graphs) {
-//        int steps, steps1, steps2;
-
-//        auto xVals = c->channel->xValues();
-//        auto iter = closest<QVector<double>::iterator, double>(xVals.begin(), xVals.end(), xVal);
-//        steps = iter - xVals.begin();
-//        if (steps < 0) steps = xVals.size()-1;
-
-//        iter = closest<QVector<double>::iterator, double>(xVals.begin(), xVals.end(), leftBorder);
-//        steps1 = iter - xVals.begin();
-//        if (steps1 < 0) steps1 = xVals.size()-1;
-
-//        iter = closest<QVector<double>::iterator, double>(xVals.begin(), xVals.end(), rightBorder);
-//        steps2 = iter - xVals.begin();
-//        if (steps2 < 0) steps2 = xVals.size()-1;
-
-//        if (steps2<steps1) qSwap(steps1, steps2);
-
-//        double cumul = 0.0;
-
-//        for (int i=steps1; i<=steps2; ++i) {
-//            if (rect.contains(xVals.at(i), 0) && filter) continue;
-//            cumul += pow(10.0, c->channel->yValues().at(i)/5.0);
-//        }
-//        cumul = 10.0*log10(sqrt(cumul));
-
-//        double energy = 0.0;
-//        for (int i=steps1; i<=steps2; ++i) {
-//            if (rect.contains(xVals.at(i), 0) && filter) continue;
-//            energy += pow(10.0, c->channel->yValues().at(i)/10.0);
-//        }
-//        energy = 10.0*log10(energy);
-
-//        TrackingPanel::TrackInfo ti{c->channel->name(), c->channel->color(),
-//                    xVals.at(steps),
-//                    c->channel->yValues().at(steps),
-//                    cumul, energy};
-//        list << ti;
-//        yValues << c->channel->yValues().at(steps);
-//    }
-
-//    cursors[index]->setYValues(yValues);
-
-//    updateState(list, index);
     update();
 }
 
@@ -408,14 +331,21 @@ void TrackingPanel::update()
 
         double cumul = 0.0;
         double energy = 0.0;
+        double reject = 0.0;
+
         if (computeEnergy) {
+            QVector<double> values = c->channel->data()->linears();
             for (int i=steps[0]; i<=steps[1]; ++i) {
-                if (i>=steps[2] && i<=steps[3] && filter) continue;
-                cumul += pow(10.0, c->channel->data()->yValue(i)/5.0);
-                energy += pow(10.0, c->channel->data()->yValue(i)/10.0);
+                if (i>=steps[2] && i<=steps[3] && filter)
+                    reject += values[i]*values[i];
+                cumul += values[i]*values[i];
+                energy += values[i]*values[i];
             }
-            cumul  = 10.0*log10(sqrt(cumul));
-            energy = 10.0*log10(energy);
+            if (filter) reject = energy - reject;
+            cumul  = DataHolder::toLog(sqrt(cumul)/double(steps[1]-steps[0]+1), c->channel->data()->threshold());
+            energy = DataHolder::toLog(energy, c->channel->data()->threshold());
+            reject = DataHolder::toLog(reject, c->channel->data()->threshold());
+            if (!filter) reject = 0.0;
         }
 
         QList<QPair<double, double>> values;
@@ -423,7 +353,7 @@ void TrackingPanel::update()
 
         TrackingPanel::TrackInfo ti{c->channel->name(), c->pen().color(),
                     values,
-                    cumul, energy};
+                    cumul, energy, reject};
         list << ti;
         for (int i=0; i<4; ++i)
             yValues[i] << c->channel->data()->yValue(steps[i]);

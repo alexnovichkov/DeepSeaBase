@@ -30,6 +30,7 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
 
     edit = new QLineEdit(this);
     edit->setReadOnly(true);
+    edit->setPlaceholderText("путь/к/папке/Mat/");
 
     button = new QPushButton("Выбрать", this);
     connect(button, &QPushButton::clicked, [=](){
