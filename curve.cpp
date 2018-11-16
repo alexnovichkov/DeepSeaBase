@@ -359,15 +359,13 @@ void Curve::evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const
 
 QList<QwtLegendData> Curve::legendData() const
 {
-    QwtLegendData data;
-    data.setValue(QwtLegendData::IconRole, pen().color());
+    QList<QwtLegendData> result = QwtPlotCurve::legendData();
+    QwtLegendData &data = result[0];
+    data.setValue(QwtLegendData::UserRole+3, pen().color());
     data.setValue(QwtLegendData::TitleRole, title().text());
     if (duplicate)
         data.setValue(QwtLegendData::UserRole+1, this->fileNumber);
     data.setValue(QwtLegendData::UserRole+2, highlighted);
-
-    QList<QwtLegendData> result;
-    result << data;
 
     return result;
 }

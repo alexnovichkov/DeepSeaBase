@@ -249,7 +249,7 @@ void CheckableLegend::updateItem(QwtPlotItem *item, const QwtLegendData &data)
     if (titleValue.canConvert<QString>() )
         title = titleValue.value<QString>();
 
-    const QVariant iconValue = data.value(QwtLegendData::IconRole);
+    const QVariant iconValue = data.value(QwtLegendData::UserRole+3);
 
     QColor color;
     if ( iconValue.canConvert<QColor>() )

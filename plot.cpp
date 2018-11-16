@@ -930,10 +930,10 @@ void Plot::importPlot(const QString &fileName)
         if (pen.width()<2) pen.setWidth(2);
         pen.setColor(pen.color().lighter(120));
         graph->setPen(pen);
-        graph->setTitle(QwtText("<font size=5>"+graph->channel->legendName()+"</font>"));
+//        graph->setTitle(QwtText("<font size=5>"+graph->channel->legendName()+"</font>"));
     }
 
-    QwtAbstractLegend *leg = new QwtLegend();
+    QwtAbstractLegend *leg = new Legend();
     insertLegend(leg, QwtPlot::BottomLegend);
 
 
@@ -950,7 +950,6 @@ void Plot::importPlot(const QString &fileName)
     }
 
     leg = new CheckableLegend();
-    //leg->setDefaultItemMode(QwtLegendData::Clickable);
     connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
     connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteGraph(QwtPlotItem*)));
     insertLegend(leg, QwtPlot::RightLegend);
