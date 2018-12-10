@@ -1,0 +1,120 @@
+#include "averagingfunction.h"
+
+#include "filedescriptor.h"
+
+AveragingFunction::AveragingFunction(QList<FileDescriptor *> &dataBase, QObject *parent) :
+    AbstractFunction(dataBase, parent)
+{
+
+}
+
+
+QString AveragingFunction::name() const
+{
+    return "Averaging";
+}
+
+QString AveragingFunction::description() const
+{
+    return "Усреднение";
+}
+
+QStringList AveragingFunction::properties() const
+{
+    return QStringList()<<"type"<<"maximum";
+}
+
+QString AveragingFunction::propertyDescription(const QString &property) const
+{
+    if (property == "type") return "{"
+                                   "  \"name\"        : \"type\"   ,"
+                                   "  \"type\"        : \"enum\"   ,"
+                                   "  \"displayName\" : \"Тип\"   ,"
+                                   "  \"defaultValue\": 0         ,"
+                                   "  \"toolTip\"     : \"Тип усреднения\","
+                                   "  \"values\"      : [\"Без усреднения\",\"Линейное\",\"Экспоненциальное\","
+                                   "  \"Хранение максимума\",\"Энергетическое\"]" //для enum
+                                   "}";
+    if (property == "maximum") return "{"
+                                      "  \"name\"        : \"maximum\"   ,"
+                                      "  \"type\"        : \"int\"   ,"
+                                      "  \"displayName\" : \"Число усреднений\"   ,"
+                                      "  \"defaultValue\": 0         ,"
+                                      "  \"toolTip\"     : \"Число усреднений\","
+                                      "  \"values\"      : [],"
+                                      "  \"minimum\"     : 0"
+                                      "}";
+    return "";
+}
+
+QVariant AveragingFunction::getProperty(const QString &property) const
+{
+    if (!property.startsWith(name()+"/")) return QVariant();
+    QString p = property.section("/",1);
+
+    if (p == "type") return averaging.getAveragingType();
+    if (p == "maximum") return averaging.getMaximumAverages();
+
+    return QVariant();
+}
+
+void AveragingFunction::setProperty(const QString &property, const QVariant &val)
+{
+    if (!property.startsWith(name()+"/")) return;
+    QString p = property.section("/",1);
+
+    if (p == "type") averaging.setAveragingType(val.toInt());
+    else if (p == "maximum") averaging.setMaximumAverages(val.toInt());
+}
+
+bool AveragingFunction::propertyShowsFor(const QString &property) const
+{
+    if (!property.startsWith(name()+"/")) return false;
+    QString p = property.section("/",1);
+
+    if (p == "maximum") return (averaging.getAveragingType() != Averaging::NoAveraging);
+
+    return true;
+}
+
+
+QString AveragingFunction::displayName() const
+{
+    return "Усреднение";
+}
+
+
+QVector<double> AveragingFunction::get(FileDescriptor *file, const QVector<double> &data)
+{
+    averaging.average(data);
+    return averaging.get();
+}
+
+
+QVector<double> AveragingFunction::getData(const QString &id)
+{
+    if (id == "input") return averaging.get();
+
+    return QVector<double>();
+}
+
+bool AveragingFunction::compute()
+{
+    if (!m_input) return false;
+
+    while (1) {
+        if (!m_input->compute()) return false;
+
+        QVector<double> data = m_input->getData("input");
+        if (data.isEmpty()) return false;
+
+        averaging.average(data);
+        if (averaging.averagingDone()) return true;
+    }
+    return true;
+}
+
+void AveragingFunction::reset()
+{
+    averaging.reset();
+}
