@@ -7,7 +7,7 @@
 class ResamplingFunction : public AbstractFunction
 {
 public:
-    explicit ResamplingFunction(QList<FileDescriptor *> &dataBase, QObject *parent = nullptr);
+    explicit ResamplingFunction(QObject *parent = nullptr);
 
     // AbstractFunction interface
 public:
@@ -19,16 +19,16 @@ public:
     virtual void setProperty(const QString &property, const QVariant &val) override;
 private:
     Resampler resampler;
-    int currentFactor;
+    int exponent;
     QVector<double> output;
+    double xStep = 0.0;
 
     // AbstractFunction interface
 public:
     virtual QString displayName() const override;
-    virtual QVector<double> get(FileDescriptor *file, const QVector<double>  &data);
     virtual void reset() override;
     virtual QVector<double> getData(const QString &id) override;
-    virtual bool compute() override;
+    virtual bool compute(FileDescriptor *file) override;
 };
 
 #endif // RESAMPLINGFUNCTION_H

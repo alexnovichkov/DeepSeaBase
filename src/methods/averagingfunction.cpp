@@ -1,9 +1,10 @@
 #include "averagingfunction.h"
 
 #include "filedescriptor.h"
+#include "logging.h"
 
-AveragingFunction::AveragingFunction(QList<FileDescriptor *> &dataBase, QObject *parent) :
-    AbstractFunction(dataBase, parent)
+AveragingFunction::AveragingFunction(QObject *parent) :
+    AbstractFunction(parent)
 {
 
 }
@@ -49,6 +50,13 @@ QString AveragingFunction::propertyDescription(const QString &property) const
 
 QVariant AveragingFunction::getProperty(const QString &property) const
 {
+    if (property.startsWith("?/")) {
+        if (property == "?/averaging")
+            return Averaging::averagingDescription(averaging.getAveragingType());
+
+        if (m_input) return m_input->getProperty(property);
+    }
+
     if (!property.startsWith(name()+"/")) return QVariant();
     QString p = property.section("/",1);
 
@@ -83,14 +91,6 @@ QString AveragingFunction::displayName() const
     return "Усреднение";
 }
 
-
-QVector<double> AveragingFunction::get(FileDescriptor *file, const QVector<double> &data)
-{
-    averaging.average(data);
-    return averaging.get();
-}
-
-
 QVector<double> AveragingFunction::getData(const QString &id)
 {
     if (id == "input") return averaging.get();
@@ -98,17 +98,18 @@ QVector<double> AveragingFunction::getData(const QString &id)
     return QVector<double>();
 }
 
-bool AveragingFunction::compute()
+bool AveragingFunction::compute(FileDescriptor *file)
 {
     if (!m_input) return false;
 
     while (1) {
-        if (!m_input->compute()) return false;
+        m_input->compute(file);
 
         QVector<double> data = m_input->getData("input");
-        if (data.isEmpty()) return false;
+        if (!data.isEmpty())
+            averaging.average(data);
+        else break;
 
-        averaging.average(data);
         if (averaging.averagingDone()) return true;
     }
     return true;

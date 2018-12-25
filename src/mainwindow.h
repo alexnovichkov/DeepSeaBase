@@ -119,6 +119,12 @@ private slots:
     void convertFiles();
 
     /**
+     * @brief copyToLegend
+     * Копирует названия выделенных файлов в столбец легенды
+     */
+    void copyToLegend();
+
+    /**
      * @brief headerToggled
      * Вызывается, когда отмечена галочка в заголовке списка каналов
      */
@@ -245,6 +251,7 @@ private:
     QAction *convertMatFilesAct;
     QAction *convertEsoFilesAct;
     QAction *convertAct;
+    QAction *copyToLegendAct;
 
     QAction *autoscaleXAct;
     QAction *autoscaleYAct;

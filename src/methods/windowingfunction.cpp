@@ -2,8 +2,8 @@
 
 #include "filedescriptor.h"
 
-WindowingFunction::WindowingFunction(QList<FileDescriptor *> &dataBase, QObject *parent) :
-    AbstractFunction(dataBase, parent)
+WindowingFunction::WindowingFunction(QObject *parent) :
+    AbstractFunction(parent)
 {
 
 }
@@ -51,6 +51,7 @@ QString WindowingFunction::propertyDescription(const QString &property) const
 QVariant WindowingFunction::getProperty(const QString &property) const
 {
     if (property.startsWith("?/")) {
+        if (property == "?/window") return Windowing::windowDescription(windowing.getWindowType());
         // do not know anything about these broadcast properties
         if (m_input) return m_input->getProperty(property);
     }
@@ -96,13 +97,13 @@ QVector<double> WindowingFunction::getData(const QString &id)
     return QVector<double>();
 }
 
-bool WindowingFunction::compute()
+bool WindowingFunction::compute(FileDescriptor *file)
 {
     output.clear();
 
     if (!m_input) return false;
 
-    if (!m_input->compute()) return false;
+    if (!m_input->compute(file)) return false;
 
     output = m_input->getData("input");
     if (output.isEmpty()) return false;

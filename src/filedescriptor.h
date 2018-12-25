@@ -62,6 +62,8 @@ QString descriptionEntryToString(const DescriptionEntry &entry);
 double threshold(const QString &name);
 double convertFactor(const QString &from);
 
+QString valuesUnit(const QString &old, int unitType);
+
 class FileDescriptor
 {
 public:
@@ -194,6 +196,7 @@ public:
     virtual int samplesCount() const {return _data->samplesCount();}
     virtual int xValuesFormat() const {return _data->xValuesFormat();}
     virtual int yValuesFormat() const {return _data->yValuesFormat();}
+    virtual int units() const {return _data->yValuesUnits();}
 
     virtual QVector<double> yValues() const {return _data->yValues();}
     virtual QVector<cx_double> yValuesComplex() const {return _data->yValuesComplex();}
@@ -205,7 +208,7 @@ public:
     virtual double yMin() const {return _data->yMin();}
     virtual double yMax() const {return _data->yMax();}
 
-    virtual void addCorrection(double correctionValue, bool writeToFile) = 0;
+    virtual void addCorrection(double correctionValue, int type, bool writeToFile) = 0;
     virtual FileDescriptor *descriptor() = 0;
 
     Qt::CheckState checkState() const {return _checkState;}

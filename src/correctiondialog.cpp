@@ -88,6 +88,10 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
     correctButton = new QPushButton("Скорректировать", this);
     connect(correctButton, SIGNAL(clicked()),SLOT(correct()));
 
+    correctionType = new QComboBox(this);
+    correctionType->addItems(QStringList()<<"Слагаемое"<<"Множитель");
+    correctionType->setCurrentIndex(0);
+
 
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
@@ -102,10 +106,13 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
     l->addWidget(new QLabel("Величина поправки",this),2,0);
     l->addWidget(edit,2,1);
 
-    l->addWidget(correctButton,3,1);
+    l->addWidget(new QLabel("Тип поправки",this),3,0);
+    l->addWidget(correctionType,3,1);
+
+    l->addWidget(correctButton,4,1);
     if (allFilesCheckBox)
-        l->addWidget(allFilesCheckBox,3,0);
-    l->addWidget(buttonBox,4,0,1,2);
+        l->addWidget(allFilesCheckBox,4,0);
+    l->addWidget(buttonBox,5,0,1,2);
     setLayout(l);
 
     resize(500,500);
@@ -129,7 +136,7 @@ void CorrectionDialog::correct()
                     Channel *ch = curve->channel;
 
                     if (table->item(i,2)->checkState()==Qt::Checked) {
-                        ch->addCorrection(correctionValue, true);
+                        ch->addCorrection(correctionValue, correctionType->currentIndex(), true);
                         curve->descriptor->setChanged(true);
                         curve->descriptor->setDataChanged(true);
                         curve->descriptor->write();
@@ -141,7 +148,7 @@ void CorrectionDialog::correct()
                                 if (d == curve->descriptor) continue;
                                 ch = d->channel(curve->channelIndex);
                                 if (ch) {
-                                    ch->addCorrection(correctionValue, true);
+                                    ch->addCorrection(correctionValue, correctionType->currentIndex(), true);
                                     d->setChanged(true);
                                     d->setDataChanged(true);
                                     d->write();
@@ -151,7 +158,7 @@ void CorrectionDialog::correct()
                         }
                     }
                     else {
-                        ch->addCorrection(correctionValue, false);
+                        ch->addCorrection(correctionValue, correctionType->currentIndex(), false);
                     }
                 }
             }

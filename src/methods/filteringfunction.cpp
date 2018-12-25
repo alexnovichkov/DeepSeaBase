@@ -1,12 +1,11 @@
 #include "filteringfunction.h"
 
 #include "filedescriptor.h"
+#include "logging.h"
 
-FilteringFunction::FilteringFunction(QList<FileDescriptor *> &dataBase, QObject *parent) :
-    AbstractFunction(dataBase, parent)
-{
-    //filtering.setBlockSize(dataBase.first());
-
+FilteringFunction::FilteringFunction(QObject *parent) :
+    AbstractFunction(parent)
+{DD;
     // default values
     map.insert("type", Filtering::NoFiltering);
     map.insert("approximation", Filtering::Butterworth);
@@ -40,7 +39,8 @@ QStringList FilteringFunction::properties() const
 }
 
 QString FilteringFunction::propertyDescription(const QString &property) const
-{
+{DD;
+//    qDebug()<<"property description"<<property;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
                                    "  \"type\"        : \"enum\"   ,"
@@ -48,9 +48,7 @@ QString FilteringFunction::propertyDescription(const QString &property) const
                                    "  \"defaultValue\": 0         ,"
                                    "  \"toolTip\"     : \"Тип фильтрации\","
                                    "  \"values\"      : [\"Без фильтрации\", \"LowPass\",\"HighPass\",\"BandPass\","
-                                   "  \"BandStop\",\"LowShelf\",\"HighShelf\",\"BandShelf\"]," //для enum
-                                   "  \"minimum\"     : -2.4," //для int и double
-                                   "  \"maximum\"     : 30.5" //для int и double
+                                   "  \"BandStop\",\"LowShelf\",\"HighShelf\",\"BandShelf\"]" //для enum
                                    "}";
     if (property == "approximation") {
         QStringList values;
@@ -163,7 +161,7 @@ QString FilteringFunction::propertyDescription(const QString &property) const
 }
 
 QVariant FilteringFunction::getProperty(const QString &property) const
-{
+{DD;
     if (property.startsWith("?/")) {
         // do not know anything about these broadcast properties
         if (m_input) return m_input->getProperty(property);
@@ -189,7 +187,8 @@ QVariant FilteringFunction::getProperty(const QString &property) const
 }
 
 void FilteringFunction::setProperty(const QString &property, const QVariant &val)
-{
+{DD;
+//    qDebug()<<"set property"<<property;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -201,12 +200,13 @@ void FilteringFunction::setProperty(const QString &property, const QVariant &val
         if (map.value("type").toInt()<=Filtering::BandStop) values << "Bessel"<<"Elliptic"<<"Legendre";
         values << "RBJ";
 
-        emit updateProperty("Filtering/approximation",values,"enumNames");
+        emit attributeChanged("Filtering/approximation",values,"enumNames");
     }
 }
 
 bool FilteringFunction::propertyShowsFor(const QString &property) const
-{
+{DD;
+//    qDebug()<<"property shows for"<<(property);
     if (!property.startsWith(name()+"/")) return false;
     QString p = property.section("/",1);
 
@@ -223,6 +223,7 @@ bool FilteringFunction::propertyShowsFor(const QString &property) const
         else if (type==Filtering::BandPass || type==Filtering::BandStop) return true;
         else if (type==Filtering::BandShelf)
             return (approx == Filtering::Butterworth || approx == Filtering::ChebyshevI || approx == Filtering::ChebyshevII);
+        else return false;
     }
     else if (p == "bandwidth")
         return (approx == Filtering::RBJ &&
@@ -245,49 +246,24 @@ QString FilteringFunction::displayName() const
     return "Фильтрация";
 }
 
-QVector<double> FilteringFunction::get(FileDescriptor *file, const QVector<double> &data)
-{
-    //check for no-op
-    if (map.value("type").toInt() == 0) return data;
-
-    //create
-    filtering.setBlockSize(data.size());
-    filtering.setType(map.value("type").toInt());
-    filtering.setApproximation(map.value("approximation").toInt());
-    filtering.create();
-
-    //set params
-    filtering.setParameter(Filtering::idOrder, map.value("order", 8).toDouble());
-    filtering.setParameter(Filtering::idFrequency, map.value("frequency", 1000.0).toDouble());
-    filtering.setParameter(Filtering::idQ, map.value("Q", 1.0).toDouble());
-    filtering.setParameter(Filtering::idBandwidth, map.value("bandwidth", 1.0).toDouble());
-    filtering.setParameter(Filtering::idBandwidthHz, map.value("bandwidthHz", 0.0).toDouble());
-    filtering.setParameter(Filtering::idGain, map.value("gain", -6.0).toDouble());
-    filtering.setParameter(Filtering::idSlope, map.value("slope", 1.0).toDouble());
-    filtering.setParameter(Filtering::idRippleDb, map.value("rippleDb", 0.01).toDouble());
-    filtering.setParameter(Filtering::idStopDb, map.value("stopDb", 48.0).toDouble());
-    filtering.setParameter(Filtering::idRolloff, map.value("rolloff", 0.0).toDouble());
-    //process
-    return filtering.filter(data);
-}
-
 void FilteringFunction::reset()
 {
     filtering.reset();
+    output.clear();
 }
 
 QVector<double> FilteringFunction::getData(const QString &id)
-{
+{DD;
     if (id == "input") return output;
 
     return QVector<double>();
 }
 
-bool FilteringFunction::compute()
-{
+bool FilteringFunction::compute(FileDescriptor *file)
+{DD;
     if (!m_input) return false;
 
-    if (!m_input->compute()) return false;
+    if (!m_input->compute(file)) return false;
 
     QVector<double> data = m_input->getData("input");
     if (data.isEmpty()) return false;

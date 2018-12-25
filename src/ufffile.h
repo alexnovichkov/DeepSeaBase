@@ -65,15 +65,14 @@ public:
     virtual QString xName() const;
     virtual QString yName() const;
     virtual QString legendName() const;
-    virtual void addCorrection(double correctionValue, bool writeToFile);
+    virtual void addCorrection(double correctionValue, int type, bool writeToFile);
     virtual int samplesCount() const;
 private:
     bool _populated;
 
     //correction variables
     bool temporalCorrection;
-    QString nameBeforeCorrection;
-//    double oldCorrectionValue;
+    QString correction;
 };
 
 class UffHeader

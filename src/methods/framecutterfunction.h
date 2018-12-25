@@ -8,7 +8,7 @@
 class FrameCutterFunction : public AbstractFunction
 {
 public:
-    explicit FrameCutterFunction(QList<FileDescriptor *> &dataBase, QObject *parent = nullptr);
+    explicit FrameCutterFunction(QObject *parent = nullptr);
 
     // AbstractFunction interface
 public:
@@ -28,10 +28,13 @@ private:
     // AbstractFunction interface
 public:
     virtual QString displayName() const override;
-    virtual QVector<double> get(FileDescriptor *file, const QVector<double> &data) override;
     virtual void reset() override;
     virtual QVector<double> getData(const QString &id) override;
-    virtual bool compute() override;
+    virtual bool compute(FileDescriptor *file) override;
+
+    // AbstractFunction interface
+public slots:
+    virtual void updateProperty(const QString &property, const QVariant &val) override;
 };
 
 #endif // SAMPLINGFUNCTION_H

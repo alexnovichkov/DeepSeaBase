@@ -9,6 +9,7 @@ class QTreeWidget;
 class QListWidget;
 class QtTreePropertyBrowser;
 class AbstractFunction;
+class AbstractAlgorithm;
 
 #include <QtVariantPropertyManager>
 #include <QtVariantEditorFactory>
@@ -48,16 +49,16 @@ private:
     QTreeWidget *filesTree;
 
     QtTreePropertyBrowser *propertyTree;
-    QtVariantPropertyManager m_manager;
-    QtVariantEditorFactory m_factory;
+    QtVariantPropertyManager *m_manager;
+    QtVariantEditorFactory *m_factory;
 
     QCheckBox *shutdown;
 
     QThread *thread_;
     TaskBarProgress *taskBarProgress;
     QWidget *win;
-    QList<AbstractFunction*> functions;
-    AbstractFunction * function;
+    QList<AbstractAlgorithm*> algorithms;
+    AbstractAlgorithm * currentAlgorithm;
     QMap<QtVariantProperty*, QString> map;
 };
 

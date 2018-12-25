@@ -3,8 +3,8 @@
 #include "filedescriptor.h"
 #include "fft.h"
 
-FftFunction::FftFunction(QList<FileDescriptor *> &dataBase, QObject *parent) :
-    AbstractFunction(dataBase, parent)
+FftFunction::FftFunction(QObject *parent) :
+    AbstractFunction(parent)
 {
 
 }
@@ -34,27 +34,87 @@ QString FftFunction::propertyDescription(const QString &property) const
                                    "  \"toolTip\"     : \"Тип спектральной характеристики\","
                                    "  \"values\"      : [\"FFT\",\"Спектр мощности\",\"Спектральная плотность мощности\"]"
                                    "}";
-    if (property == "output") {
-        QStringList values;
-        if (map.value("type") == 0) values << "\"Комплексные\"" << "\"Действительные\"" << "\"Мнимые\"";
-        values << "\"Амплитуды\"";
-        if (map.value("type") == 0) values << "\"Фазы\"";
-        return QString("{"
-               "  \"name\"        : \"output\"   ,"
-               "  \"type\"        : \"enum\"   ,"
-               "  \"displayName\" : \"Значения\"   ,"
-               "  \"defaultValue\": 0         ,"
-               "  \"toolTip\"     : \"Тип результата\","
-               "  \"values\"      : [%1]"
-               "}").arg(values.join(","));
-    }
-
+    if (property == "output") return "{"
+                                     "  \"name\"        : \"output\"   ,"
+                                     "  \"type\"        : \"enum\"   ,"
+                                     "  \"displayName\" : \"Значения\"   ,"
+                                     "  \"defaultValue\": 0         ,"
+                                     "  \"toolTip\"     : \"Тип результата\","
+                                     "  \"values\"      : [\"Комплексные\",\"Действительные\",\"Мнимые\",\"Амплитуды\",\"Фазы\"]"
+                                     "}";
     return QString();
 }
 
 QVariant FftFunction::getProperty(const QString &property) const
 {
     if (property.startsWith("?/")) {
+        if (property == "?/processData") {
+            int type = map.value("type");
+            QStringList list;
+
+            switch (type) {
+                case 0: list << "PName=Спектроанализатор"; break;
+                case 1: list << "PName=Спектр мощности"; break;
+                case 2: list << "PName=Плотн.спектра мощности"; break;
+                default: break;
+            }
+
+            list << QString("BlockIn=%1").arg(getProperty("?/blockSize").toInt());
+            list << QString("Wind=%1").arg(getProperty("?/window").toString());
+            list << QString("TypeAver=%1").arg(getProperty("?/averaging").toString());
+            list << "pTime=(0000000000000000)";
+            return list;
+        }
+        if (property == "?/dataType") {
+//            if (typeCombo->currentText()=="спектр СКЗ") return 130;
+//            if (typeCombo->currentText()=="мощности") return 128;
+//            if (typeCombo->currentText()=="плотности мощн.") return 129;
+//            return 128;
+            switch (map.value("type")) {
+                case 2: return 129; break; // "плотности мощн."
+                default: return 128;
+            }
+        }
+        if (property == "?/xName") return "Гц";
+        if (property == "?/xBegin") return 0.0;
+        if (property == "?/method") {
+            switch (map.value("type")) {
+                case 0: return "FFT"; break;
+                case 1: return "PS"; break;
+                case 2: return "PSD"; break;
+                default: return "Unknown";
+            }
+        }
+        if (property == "?/dataComplex") {
+            if (map.value("type") == 0)
+                return (map.value("output")==0);
+            return false;
+        }
+        if (property == "?/yValuesFormat") {
+            if (map.value("type") != 0) return DataHolder::YValuesAmplitudes;
+            switch (map.value("output")) {
+                case 0: return DataHolder::YValuesComplex; break;
+                case 1: return DataHolder::YValuesReals; break;
+                case 2: return DataHolder::YValuesImags; break;
+                case 3: return DataHolder::YValuesAmplitudes; break;
+                case 4: return DataHolder::YValuesPhases; break;
+                default: return DataHolder::YValuesUnknown;
+            }
+        }
+        if (property == "?/yValuesUnits") {
+            switch (map.value("type")) {
+                case 0: return DataHolder::UnitsLinear; break;
+                case 1: return DataHolder::UnitsQuadratic; break;
+                case 2: return DataHolder::UnitsLinear; break;
+                default: return DataHolder::UnitsUnknown;
+            }
+        }
+        if (property == "/newYName") {
+            if (map.value("type") == 0)
+                return (map.value("output")==0);
+            //return /;
+        }
+
         // do not know anything about these broadcast properties
         if (m_input) return m_input->getProperty(property);
     }
@@ -77,13 +137,6 @@ QString FftFunction::displayName() const
     return "Спектр";
 }
 
-//returns fft of data
-QVector<double> FftFunction::get(FileDescriptor *file, const QVector<double> &data)
-{
-
-}
-
-
 bool FftFunction::propertyShowsFor(const QString &property) const
 {
     if (!property.startsWith(name()+"/")) return false;
@@ -102,13 +155,13 @@ QVector<double> FftFunction::getData(const QString &id)
     return QVector<double>();
 }
 
-bool FftFunction::compute()
+bool FftFunction::compute(FileDescriptor *file)
 {
     output.clear();
 
     if (!m_input) return false;
 
-    if (!m_input->compute()) return false;
+    if (!m_input->compute(file)) return false;
 
     QVector<double> data = m_input->getData("input");
     if (data.isEmpty()) return false;
@@ -116,9 +169,7 @@ bool FftFunction::compute()
     double sampleRate = m_input->getProperty("?/sampleRate").toDouble();
 
     QVector<cx_double> fft = Fft::compute(data);
-//    for (int i=0; i<fft.size(); ++i) {
-//        qDebug()<<fft[i].real()<<fft[i].imag();
-//    }
+
     int size = int(fft.size()/2.56);
     switch (map.value("type")) {
         case 0: //FFT
@@ -174,7 +225,7 @@ bool FftFunction::compute()
             const double factor = 2.0 / Nvl / sampleRate;
             output.resize(size);
             for (int i = 0; i < size; i++) {
-                output[i] = factor * std::arg(fft[i]);
+                output[i] = factor * std::norm(fft[i]);
             }
             break;
         }

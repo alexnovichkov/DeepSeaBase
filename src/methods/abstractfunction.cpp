@@ -2,15 +2,16 @@
 
 #include <QtCore>
 #include "filedescriptor.h"
+#include "logging.h"
 
-AbstractFunction::AbstractFunction(QList<FileDescriptor *> &dataBase, QObject *parent) : QObject(parent),
-    m_dataBase(dataBase), m_input(0)
+AbstractFunction::AbstractFunction(QObject *parent) : QObject(parent),
+    m_input(0)
 {
 
 }
 
 QString AbstractFunction::propertiesDescription() const
-{
+{DD;
     QString result="[";
     foreach (const QString &p, properties()) {
         result.append(propertyDescription(p));
@@ -28,49 +29,88 @@ bool AbstractFunction::propertyShowsFor(const QString &property) const
     return true;
 }
 
-bool AbstractFunction::compute()
-{
-    return true;
-}
-
-bool AbstractFunction::compute(FileDescriptor *file, const QString &tempFolderName)
-{
-    Q_UNUSED(file);
-    Q_UNUSED(tempFolderName);
-    return true;
-}
-
-QVector<double> AbstractFunction::get(FileDescriptor *file, const QVector<double> &data)
-{
-    Q_UNUSED(file);
-    Q_UNUSED(data);
-
-    return QVector<double>();
-}
-
 void AbstractFunction::reset()
 {
     // no-op
 }
 
-void AbstractFunction::start()
+void AbstractFunction::updateProperty(const QString &property, const QVariant &val)
+{
+    Q_UNUSED(property);
+    Q_UNUSED(val);
+    //no-op
+}
+
+
+
+
+AbstractAlgorithm::AbstractAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) : QObject(parent),
+    m_dataBase(dataBase)
+{
+
+}
+
+bool AbstractAlgorithm::propertyShowsFor(const QString &property) const
+{
+    if (property.isEmpty()) return true;
+
+    foreach (AbstractFunction *f, functions()) {
+        if (property.startsWith(f->name()+"/")) {
+            return f->propertyShowsFor(property);
+        }
+    }
+
+    return true;
+}
+
+QVariant AbstractAlgorithm::getProperty(const QString &property) const
+{
+    if (property.isEmpty()) return QVariant();
+
+    foreach (AbstractFunction *f, functions()) {
+        if (property.startsWith(f->name()+"/")) {
+            return f->getProperty(property);
+        }
+    }
+
+    return QVariant();
+}
+
+void AbstractAlgorithm::setProperty(const QString &property, const QVariant &val)
+{
+    if (property.isEmpty()) return;
+
+    foreach (AbstractFunction *f, functions()) {
+        if (property.startsWith(f->name()+"/")) {
+            f->setProperty(property, val);
+            return;
+        }
+    }
+}
+
+void AbstractAlgorithm::reset()
+{
+    // no-op
+}
+
+void AbstractAlgorithm::start()
 {
     dt = QDateTime::currentDateTime();
     qDebug()<<"Start converting"<<dt.time();
     emit message(QString("Запуск расчета: %1").arg(dt.time().toString()));
 
-    QDir d;
-    if (!d.exists("C:/DeepSeaBase-temp"))  d.mkdir("C:/DeepSeaBase-temp");
+//    QDir d;
+//    if (!d.exists("C:/DeepSeaBase-temp"))  d.mkdir("C:/DeepSeaBase-temp");
 
-    QTemporaryDir tempDir("C:\\DeepSeaBase-temp\\temp-XXXXXX");
-    tempDir.setAutoRemove(true);
-    tempFolderName = tempDir.path();
+//    QTemporaryDir tempDir("C:\\DeepSeaBase-temp\\temp-XXXXXX");
+//    tempDir.setAutoRemove(true);
+//    tempFolderName = tempDir.path();
 
 
 
     foreach (FileDescriptor *file, m_dataBase) {
         emit message(QString("Расчет для файла\n%1").arg(file->fileName()));
-        if (!compute(file, tempFolderName)) {
+        if (!compute(file)) {
             emit message("Не удалось сконвертировать файл " + file->fileName());
         }
     }
@@ -78,19 +118,9 @@ void AbstractFunction::start()
     finalize();
 }
 
-void AbstractFunction::finalize()
+void AbstractAlgorithm::finalize()
 {
-
-}
-
-bool AbstractFunction::event(QEvent *event)
-{
-//    qDebug()<<name()<<"moved to thread"<<thread();
-//    if (event->type() ==  QEvent::ThreadChange) {
-//        foreach (AbstractFunction *f, m_functions) {
-//            qDebug()<<f->name()<<"is currently in"<<f->thread();
-//            f->moveToThread(this->thread());
-//        }
-//    }
-    return QObject::event(event);
+    qDebug()<<"End converting"<<QDateTime::currentDateTime().time();
+    emit message(QString("Расчет закончен в %1").arg(QDateTime::currentDateTime().time().toString()));
+    emit finished();
 }

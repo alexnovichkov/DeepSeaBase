@@ -88,10 +88,12 @@ SOURCES += main.cpp\
     methods/filteringfunction.cpp \
     methods/averagingfunction.cpp \
     methods/windowingfunction.cpp \
-    methods/spectrefunction.cpp \
     methods/fftfunction.cpp \
     methods/framecutterfunction.cpp \
-    framecutter.cpp
+    framecutter.cpp \
+    methods/savingfunction.cpp \
+    methods/spectrealgorithm.cpp \
+    unitsconverter.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -157,10 +159,12 @@ HEADERS  += mainwindow.h \
     methods/filteringfunction.h \
     methods/averagingfunction.h \
     methods/windowingfunction.h \
-    methods/spectrefunction.h \
     methods/fftfunction.h \
     methods/framecutterfunction.h \
-    framecutter.h
+    framecutter.h \
+    methods/savingfunction.h \
+    methods/spectrealgorithm.h \
+    unitsconverter.h
 
 SOURCES +=\
   $$PWD/../3rdParty/DspFilters/*.cpp \

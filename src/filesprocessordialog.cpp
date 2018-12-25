@@ -13,25 +13,20 @@
 #include "methods/filteringfunction.h"
 #include "methods/averagingfunction.h"
 #include "methods/windowingfunction.h"
-#include "methods/spectrefunction.h"
+#include "methods/spectrealgorithm.h"
 
 FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QWidget *parent)
-    : QDialog(parent), dataBase(dataBase), win(parent), function(0)
+    : QDialog(parent), dataBase(dataBase), win(parent), currentAlgorithm(0)
 {DD;
 //    converter = 0;
     thread_ = 0;
     taskBarProgress = 0;
 
-//    functions << new ChannelFunction(dataBase, 0);
-//    functions << new ResamplingFunction(dataBase, 0);
-//    functions << new FilteringFunction(dataBase, 0);
-//    functions << new SamplingFunction(dataBase, 0);
-//    functions << new AveragingFunction(dataBase, 0);
-//    functions << new WindowingFunction(dataBase, 0);
-    functions << new SpectreFunction(dataBase, 0);
+    algorithms << new SpectreAlgorithm(dataBase, 0);
 
-    foreach (AbstractFunction *f, functions) {
-        connect(f, SIGNAL(updateProperty(QString,QVariant,QString)),SLOT(updateProperty(QString,QVariant,QString)));
+    foreach (AbstractAlgorithm *f, algorithms) {
+        connect(f, SIGNAL(attributeChanged(QString,QVariant,QString)),SLOT(updateProperty(QString,QVariant,QString)));
+//        connect(f, SIGNAL(propertyChanged(QString,QVariant)),SLOT(updateProperty(QString,QVariant,QString)));
     }
 
     filesTree = new QTreeWidget(this);
@@ -61,7 +56,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     functionsList->setSizePolicy(functionsList->sizePolicy().horizontalPolicy(),
                                  QSizePolicy::Expanding);
 
-    foreach (AbstractFunction *f, functions) {
+    foreach (AbstractAlgorithm *f, algorithms) {
         QTreeWidgetItem *item = new QTreeWidgetItem();
         item->setText(0, f->displayName());
         item->setText(1, f->description());
@@ -73,15 +68,19 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
 
     connect(functionsList,SIGNAL(currentItemChanged(QTreeWidgetItem*,QTreeWidgetItem*)), SLOT(methodChanged(QTreeWidgetItem*)));
 
+    m_manager = new QtVariantPropertyManager(this);
+    m_factory = new QtVariantEditorFactory(this);
+
     propertyTree = new QtTreePropertyBrowser(this);
     propertyTree->setAlternatingRowColors(true);
     propertyTree->setHeaderVisible(true);
     propertyTree->setSizePolicy(propertyTree->sizePolicy().horizontalPolicy(),
                                  QSizePolicy::Expanding);
-    propertyTree->setFactoryForManager(&m_manager, &m_factory);
-    connect(&m_manager, SIGNAL(valueChanged(QtProperty*, const QVariant&)),
+    propertyTree->setFactoryForManager(m_manager, m_factory);
+    connect(m_manager, SIGNAL(valueChanged(QtProperty*, const QVariant&)),
                 this, SLOT(onValueChanged(QtProperty*, const QVariant&)));
     propertyTree->setPropertiesWithoutValueMarked(true);
+    propertyTree->setResizeMode(QtTreePropertyBrowser::ResizeToContents);
 
 //    QToolBar *toolBar = new QToolBar(this);
 //    toolBar->addAction(qApp->style()->standardIcon(QStyle::SP_LineEditClearButton), "");
@@ -134,7 +133,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
 
 FilesProcessorDialog::~FilesProcessorDialog()
 {DD;
-    foreach (AbstractFunction *f, functions) {
+    foreach (AbstractAlgorithm *f, algorithms) {
         if (f) f->deleteLater();
     }
     if (thread_) {
@@ -147,60 +146,70 @@ FilesProcessorDialog::~FilesProcessorDialog()
 
 void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
 {DD;
-    //propertyTree->setUpdatesEnabled(false);
     propertyTree->clear();
-
-    //m_manager.blockSignals(true);
-    m_manager.clear();
+    m_manager->clear();
     map.clear();
 
     if (!item) return;
 
     int index = functionsList->indexOfTopLevelItem(item);
-    if (index < 0 || index >= functions.size()) return;
-    function = functions[index];
+    if (index < 0 || index >= algorithms.size()) return;
+    currentAlgorithm = algorithms[index];
 
     // Parsing properties descriptions
-    foreach (AbstractFunction *f, function->functions()) {
+    foreach (AbstractFunction *f, currentAlgorithm->functions()) {
         addProperties(f);
     }
-    addProperties(function);
 
-    updateVisibleProperties();
+    // блокируем сигналы, чтобы при каждом изменении свойства не обновлять все отображения свойств
+    // мы это сделаем в самом конце функцией updateVisibleProperties();
+    //m_manager->blockSignals(true);
+    foreach (const QString &property, map.values()) {
+        map.key(property)->setValue(currentAlgorithm->getProperty(property));
+    }
+    //m_manager->blockSignals(false);
+    //updateVisibleProperties();
 }
 
 void FilesProcessorDialog::updateVisibleProperties()
-{
-    if (!function) return;
+{DD;
+    if (!currentAlgorithm) return;
 
-    foreach (QtProperty *property, map.keys()) {
+    foreach (QtVariantProperty *property, map.keys()) {
         foreach (auto item, propertyTree->items(property)) {
-            propertyTree->setItemVisible(item, function->propertyShowsFor(map.value(dynamic_cast<QtVariantProperty*>(property))));
+            propertyTree->setItemVisible(item, currentAlgorithm->propertyShowsFor(map.value(property)));
         }
     }
 }
 
 void FilesProcessorDialog::onValueChanged(QtProperty *property, const QVariant &val)
-{
-//    qDebug()<<property->propertyName()<<val;
+{DD;
+    if (!currentAlgorithm) return;
 
-    if (function) function->setProperty(map.value(dynamic_cast<QtVariantProperty*>(property)), val);
+    QString p = map.value(dynamic_cast<QtVariantProperty*>(property));
+    if (p.isEmpty()) return;
+
+    currentAlgorithm->setProperty(p, val);
 
     updateVisibleProperties();
 }
 
 void FilesProcessorDialog::updateProperty(const QString &property, const QVariant &val, const QString &attribute)
-{
+{DD;
     if (QtVariantProperty *p = map.key(property)) {
+//        qDebug()<<"updateProperty"<<property<<val<<attribute;
         p->setAttribute(attribute, val);
 
-        p->setValue(function->getProperty(property));
-//        updateVisibleProperties();
+        p->setValue(currentAlgorithm->getProperty(property));
+        updateVisibleProperties();
     }
 }
 
 void FilesProcessorDialog::addProperties(AbstractFunction *f)
-{
+{DD;
+    if (!f) return;
+
+//    DebugPrint(f->name());
     if (f->properties().size()<1) return;
     QJsonParseError error;
     QJsonDocument doc = QJsonDocument::fromJson(f->propertiesDescription().toUtf8(), &error);
@@ -209,6 +218,8 @@ void FilesProcessorDialog::addProperties(AbstractFunction *f)
         qDebug()<<f->propertiesDescription();
         return;
     }
+
+
 
     QtVariantProperty *group = 0;
 
@@ -230,7 +241,7 @@ void FilesProcessorDialog::addProperties(AbstractFunction *f)
         else if (type=="enum") typeId = QtVariantPropertyManager::enumTypeId();
 
 
-        QtVariantProperty *p = m_manager.addProperty(typeId, displayName);
+        QtVariantProperty *p = m_manager->addProperty(typeId, displayName);
         if (i==0) {
             group = p;
             auto item = propertyTree->addProperty(group);
@@ -257,14 +268,12 @@ void FilesProcessorDialog::addProperties(AbstractFunction *f)
         map.insert(p, f->name()+"/"+name);
     }
 
-    foreach (const QString &property, map.values()) {
-        map.key(property)->setValue(f->getProperty(property));
-    }
+
 }
 
 void FilesProcessorDialog::accept()
 {DD;
-    newFiles = function->getNewFiles();
+    newFiles = currentAlgorithm->getNewFiles();
     if (taskBarProgress) taskBarProgress->finalize();
 
     /*if (shutdown->isChecked()) {
@@ -293,34 +302,26 @@ void FilesProcessorDialog::updateProgressIndicator()
 }
 
 void FilesProcessorDialog::start()
-{
-    if (!function) return;
+{DD;
+    if (!currentAlgorithm) return;
 
     newFiles.clear();
     buttonBox->buttons().first()->setDisabled(true);
 
-//    Parameters p = currentMethod->parameters();
-//    p.method = currentMethod;
-//    p.useDeepSea = useDeepsea->isChecked();
-//    p.channelFilter = channelsFilter->text();
-
     if (!thread_) thread_ = new QThread;
-    function->moveToThread(thread_);
-//    foreach (AbstractFunction *f, function->functions()) {
-//        qDebug()<<f->name()<<"is currently in"<<f->thread();
-//    }
+    currentAlgorithm->moveToThread(thread_);
 
     taskBarProgress = new TaskBarProgress(win, this);
     taskBarProgress->setRange(progress->minimum(), progress->maximum());
 
-    connect(thread_, SIGNAL(started()), function, SLOT(start()));
-    connect(function, SIGNAL(finished()), thread_, SLOT(quit()));
-    connect(function, SIGNAL(finished()), this, SLOT(accept()));
-    connect(function, SIGNAL(finished()), taskBarProgress, SLOT(finalize()));
+    connect(thread_, SIGNAL(started()), currentAlgorithm, SLOT(start()));
+    connect(currentAlgorithm, SIGNAL(finished()), thread_, SLOT(quit()));
+    connect(currentAlgorithm, SIGNAL(finished()), this, SLOT(accept()));
+    connect(currentAlgorithm, SIGNAL(finished()), taskBarProgress, SLOT(finalize()));
 
-    connect(function, SIGNAL(tick()), SLOT(updateProgressIndicator()));
-    connect(function, SIGNAL(tick(QString)), SLOT(updateProgressIndicator(QString)));
-    connect(function, SIGNAL(message(QString)), infoLabel, SLOT(appendPlainText(QString)));
+    connect(currentAlgorithm, SIGNAL(tick()), SLOT(updateProgressIndicator()));
+    connect(currentAlgorithm, SIGNAL(tick(QString)), SLOT(updateProgressIndicator(QString)));
+    connect(currentAlgorithm, SIGNAL(message(QString)), infoLabel, SLOT(appendPlainText(QString)));
 
     progress->show();
     progress->setValue(0);
@@ -329,7 +330,7 @@ void FilesProcessorDialog::start()
 }
 
 void FilesProcessorDialog::stop()
-{
+{DD;
     if (thread_)
     thread_->requestInterruption();
     QDialog::accept();

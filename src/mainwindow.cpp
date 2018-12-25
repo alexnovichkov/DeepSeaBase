@@ -250,6 +250,9 @@ MainWindow::MainWindow(QWidget *parent)
     convertAct = new QAction("Конвертировать файлы...", this);
     connect(convertAct, SIGNAL(triggered()), SLOT(convertFiles()));
 
+    copyToLegendAct = new QAction("Перенести сюда названия файлов", this);
+    connect(copyToLegendAct, SIGNAL(triggered()), SLOT(copyToLegend()));
+
     clearPlotAct  = new QAction(QString("Очистить график"), this);
     clearPlotAct->setIcon(QIcon(":/icons/cross.png"));
     connect(clearPlotAct, SIGNAL(triggered()), SLOT(clearPlot()));
@@ -539,15 +542,29 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->filesTable->setSortingEnabled(true);
     tab->filesTable->sortByColumn(0, Qt::AscendingOrder);
 
-    tab->filesTable->setContextMenuPolicy(Qt::ActionsContextMenu);
+    tab->filesTable->setContextMenuPolicy(Qt::CustomContextMenu);
     tab->filesTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    tab->filesTable->addAction(addFolderAct);
-    tab->filesTable->addAction(addFileAct);
-    tab->filesTable->addAction(delFilesAct);
-    tab->filesTable->addAction(plotAllChannelsAct);
-    tab->filesTable->addAction(plotAllChannelsAtRightAct);
-    tab->filesTable->addAction(calculateSpectreAct);
-    tab->filesTable->addAction(convertAct);
+
+    connect(tab->filesTable, &QTreeView::customContextMenuRequested, [=](){
+        QMenu menu(tab->filesTable);
+        int column = tab->filesTable->currentIndex().column();
+        if (column == 1) {
+            menu.addAction(addFolderAct);
+            menu.addAction(addFileAct);
+            menu.addAction(delFilesAct);
+            menu.addAction(plotAllChannelsAct);
+            menu.addAction(plotAllChannelsAtRightAct);
+            menu.addAction(calculateSpectreAct);
+            menu.addAction(convertAct);
+            menu.exec(QCursor::pos());
+        }
+        else if (column == 9) {
+            //legend
+            menu.addAction(copyToLegendAct);
+            menu.exec(QCursor::pos());
+        }
+    });
+
 
     FilterHeaderView *filterHeader = new FilterHeaderView(Qt::Horizontal, tab->filesTable);
     tab->filesTable->setHeader(filterHeader);
@@ -1060,7 +1077,7 @@ void MainWindow::addCorrections()
                 corrected = true;
                 double corr = value.toDouble();
                 if (corr != 0.0)
-                    dfd->channel(row-2)->addCorrection(corr, true);
+                    dfd->channel(row-2)->addCorrection(corr, 0, true);
                 row++;
             }
             if (corrected) {
@@ -1648,9 +1665,9 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
 
     else if (column == 0) {
         if (ch->name() != item->text()) {
+            qDebug()<<"maybePlotChannel invoked on 0 col";
             ch->setName(item->text());
             tab->record->setChanged(true);
-//            tab->record->write();
 
             if (tab->model->selected().size()>1) {
                 if (QMessageBox::question(this,"DeepSea Base","Выделено несколько файлов. Записать такое название канала\n"
@@ -1782,12 +1799,12 @@ void MainWindow::calculateSpectreRecords()
 //    CalculateSpectreDialog dialog(records, this);
     FilesProcessorDialog dialog(records, this);
 
-    dialog.exec();
-
-    QStringList newFiles = dialog.getNewFiles();
-    addFiles(newFiles);
-    foreach (const QString &file, newFiles)
-        if (!tab->folders.contains(file)) tab->folders << file;
+    if (dialog.exec()) {
+        QStringList newFiles = dialog.getNewFiles();
+        addFiles(newFiles);
+        foreach (const QString &file, newFiles)
+            if (!tab->folders.contains(file)) tab->folders << file;
+    }
 }
 
 void MainWindow::convertFiles()
@@ -1800,6 +1817,18 @@ void MainWindow::convertFiles()
 
     QStringList newFiles = dialog.getConvertedFiles();
     addFiles(newFiles);
+}
+
+void MainWindow::copyToLegend()
+{
+    if (!tab) return;
+    QList<FileDescriptor *> records = tab->model->selectedFiles();
+
+    foreach (FileDescriptor *f, records) {
+        f->setLegend(QFileInfo(f->fileName()).completeBaseName());
+        tab->model->updateFile(f, 9);
+        plot->updateLegends();
+    }
 }
 
 void MainWindow::calculateThirdOctave()

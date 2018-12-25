@@ -9,9 +9,11 @@ DataHolder::DataHolder()
     m_threshold = 0.0;
     m_xValuesFormat = XValuesUnknown;
     m_yValuesFormat = YValuesUnknown;
+    m_yValuesUnits = UnitsUnknown;
     m_yValuesPresentation = ShowAsDefault;
 
     correctionValue = 0.0;
+    correctionType = 0; //adding
 }
 
 DataHolder::DataHolder(const DataHolder &other)
@@ -26,12 +28,14 @@ DataHolder::DataHolder(const DataHolder &other)
     m_yValuesComplex = other.m_yValuesComplex;
     m_xValuesFormat = other.m_xValuesFormat;
     m_yValuesFormat = other.m_yValuesFormat;
+    m_yValuesUnits = other.m_yValuesUnits;
 
     m_yMin = other.m_yMin;
     m_yMax = other.m_yMax;
     m_yValuesPresentation = other.m_yValuesPresentation;
 
     correctionValue = other.correctionValue;
+    correctionType = other.correctionType;
 }
 
 void DataHolder::setSegment(const DataHolder &other, int from, int to)
@@ -46,10 +50,12 @@ void DataHolder::setSegment(const DataHolder &other, int from, int to)
     m_yValuesComplex = other.m_yValuesComplex.mid(from, to - from + 1);
     m_xValuesFormat = other.m_xValuesFormat;
     m_yValuesFormat = other.m_yValuesFormat;
+    m_yValuesUnits = other.m_yValuesUnits;
 
     m_yValuesPresentation = other.m_yValuesPresentation;
 
     correctionValue = other.correctionValue;
+    correctionType = other.correctionType;
     recalculateMinMax();
 }
 
@@ -64,11 +70,19 @@ void DataHolder::clear()
     m_yMin = 0; m_yMax = 0;
 
     correctionValue = 0.0;
+    correctionType = 0;
 }
 
-void DataHolder::setCorrection(double correctionValue)
+void DataHolder::setCorrection(double correctionValue, int type)
 {DD;
     this->correctionValue = correctionValue;
+    this->correctionType = type;
+}
+
+void DataHolder::removeCorrection()
+{
+    if (correctionType == 0) correctionValue = 0.0;
+    if (correctionType == 1) correctionValue = 1.0;
 }
 
 void DataHolder::setYValuesPresentation(int presentation)
@@ -113,7 +127,7 @@ bool DataHolder::setYValue(int index, double value)
         switch (m_yValuesPresentation) {
             case ShowAsDefault:
             case ShowAsAmplitudesInDB:
-                value = fromLog(value, m_threshold);
+                value = fromLog(value, m_threshold, m_yValuesUnits);
                 m_yValuesComplex[index] = std::polar(value, std::arg(m_yValuesComplex[index]));
                 return true;
             case ShowAsAmplitudes:
@@ -142,7 +156,7 @@ bool DataHolder::setYValue(int index, double value)
                     return true;
                 }
                 else if (m_yValuesPresentation == ShowAsAmplitudesInDB) {
-                    value = fromLog(value, m_threshold);
+                    value = fromLog(value, m_threshold, m_yValuesUnits);
                     if (m_yValues[index] >= 0) m_yValues[index] = value;
                     else m_yValues[index] = -1.0 * value;
                     m_yValuesTemporal[index] = value;
@@ -159,7 +173,7 @@ bool DataHolder::setYValue(int index, double value)
                     return true;
                 }
                 else if (m_yValuesPresentation == ShowAsAmplitudesInDB) {
-                    value = fromLog(value, m_threshold);
+                    value = fromLog(value, m_threshold, m_yValuesUnits);
                     if (m_yValues[index] >= 0) m_yValues[index] = value;
                     else m_yValues[index] = -1.0 * value;
                     m_yValuesTemporal[index] = value;
@@ -169,7 +183,7 @@ bool DataHolder::setYValue(int index, double value)
             }
             case YValuesAmplitudes: {
                 if (m_yValuesPresentation == ShowAsAmplitudesInDB) {
-                    m_yValues[index] = fromLog(value, m_threshold);
+                    m_yValues[index] = fromLog(value, m_threshold, m_yValuesUnits);
                     m_yValuesTemporal[index] = value;
                     return true;
                 }
@@ -177,7 +191,7 @@ bool DataHolder::setYValue(int index, double value)
             }
             case YValuesAmplitudesInDB: {
                 if (m_yValuesPresentation == ShowAsAmplitudes) {
-                     m_yValues[index] = toLog(value, m_threshold);
+                     m_yValues[index] = toLog(value, m_threshold, m_yValuesUnits);
                      m_yValuesTemporal[index] = value;
                      return true;
                  }
@@ -265,7 +279,7 @@ double DataHolder::xValue(int i) const
 
 double DataHolder::yValue(int i) const
 {
-    return m_yValuesTemporal[i] + correctionValue;
+    return corrected(m_yValuesTemporal[i]);
 }
 
 cx_double DataHolder::yValueComplex(int i) const
@@ -296,12 +310,12 @@ double DataHolder::xStep() const
 
 double DataHolder::yMin() const
 {DD;
-    return m_yMin + correctionValue;
+    return corrected(m_yMin);
 }
 
 double DataHolder::yMax() const
 {DD;
-    return m_yMax + correctionValue;
+    return corrected(m_yMax);
 }
 
 int DataHolder::samplesCount() const
@@ -313,7 +327,7 @@ QVector<double> DataHolder::linears() const
 {DD;
     switch (m_yValuesFormat) {
         case YValuesComplex: return absolutes(m_yValuesComplex);
-        case YValuesAmplitudesInDB: return fromLog(m_yValues, m_threshold);
+        case YValuesAmplitudesInDB: return fromLog(m_yValues, m_threshold, m_yValuesUnits);
         default: break;
     }
     return m_yValues;
@@ -322,52 +336,79 @@ QVector<double> DataHolder::linears() const
 QVector<double> DataHolder::decibels() const
 {DD;
     switch (m_yValuesFormat) {
-        case YValuesComplex: return toLog(absolutes(m_yValuesComplex), m_threshold);
+        case YValuesComplex: return toLog(absolutes(m_yValuesComplex), m_threshold, m_yValuesUnits);
         case YValuesAmplitudesInDB: return m_yValues;
         default: break;
     }
-    return toLog(m_yValues, m_threshold);
+    return toLog(m_yValues, m_threshold, m_yValuesUnits);
 }
 
-QVector<double> DataHolder::toLog(const QVector<double> &values, double threshold)
+QVector<double> DataHolder::toLog(const QVector<double> &values, double threshold, int units)
 {DD;
-    if (threshold == 0) return values;
+    if (threshold == 0 || units == UnitsDimentionless) return values;
     if (values.isEmpty()) return QVector<double>();
 
     QVector<double> a(values.size());
+    double factor = 20.0;
+    double thr = threshold;
+    if (units == UnitsQuadratic) {
+        factor = 10.0;
+        thr *= thr;
+    }
     for (int i=0; i<values.size(); ++i) {
         if (values[i] <= 0.0) a[i] = 0.0;
-        else a[i] = 20*log10(values[i]/threshold);
+        else {
+            a[i] = factor*log10(values[i]/thr);
+        }
     }
     return a;
 }
 
-QVector<double> DataHolder::fromLog(const QVector<double> &values, double threshold)
+QVector<double> DataHolder::fromLog(const QVector<double> &values, double threshold, int units)
 {DD;
-    if (threshold == 0) return values;
+    if (threshold == 0 || units == UnitsDimentionless) return values;
     if (values.isEmpty()) return QVector<double>();
 
     QVector<double> a(values.size());
-    double factor = log(10.0)/20.0;
+    double factor = log(10) / 20.0;
+    double thr = threshold;
+    if (units == UnitsQuadratic) {
+        factor = log(10) / 10.0;
+        thr *= thr;
+    }
+
     for (int i=0; i<values.size(); ++i) {
-        a[i] = threshold*exp(values[i]*factor);
+        a[i] = thr*exp(values[i]*factor);
     }
     return a;
 }
 
-double DataHolder::toLog(double value, double threshold)
+double DataHolder::toLog(double value, double threshold, int units)
 {
-    if (threshold == 0) return value;
+    if (threshold == 0 || units == UnitsDimentionless) return value;
 
     if (value <= 0.0) return 0.0;
-    return 20*log10(value/threshold);
+    double factor = 20.0;
+    double thr = threshold;
+    if (units == UnitsQuadratic) {
+        factor = 10.0;
+        thr *= thr;
+    }
+    return factor*log10(value/thr);
 }
 
-double DataHolder::fromLog(double value, double threshold)
+double DataHolder::fromLog(double value, double threshold, int units)
 {
-    if (threshold == 0) return value;
+    if (threshold == 0 || units == UnitsDimentionless) return value;
 
-    return threshold*exp(value*log(10.0)/20.0);
+    double factor = log(10) / 20.0;
+    double thr = threshold;
+    if (units == UnitsQuadratic) {
+        factor = log(10) / 10.0;
+        thr *= thr;
+    }
+
+    return thr*exp(value*factor);
 }
 
 void DataHolder::recalculateMinMax()
@@ -390,7 +431,7 @@ void DataHolder::recalculateYValues()
         if (m_yValuesFormat == YValuesComplex) {
             switch (m_yValuesPresentation) {
                 case ShowAsDefault:
-                case ShowAsAmplitudesInDB: m_yValuesTemporal = toLog(absolutes(m_yValuesComplex), m_threshold); break;
+                case ShowAsAmplitudesInDB: m_yValuesTemporal = toLog(absolutes(m_yValuesComplex), m_threshold, m_yValuesUnits); break;
                 case ShowAsAmplitudes:     m_yValuesTemporal = absolutes(m_yValuesComplex); break;
                 case ShowAsImags:          m_yValuesTemporal = ::imags(m_yValuesComplex); break;
                 case ShowAsPhases:         m_yValuesTemporal = ::phases(m_yValuesComplex); break;
@@ -403,7 +444,7 @@ void DataHolder::recalculateYValues()
                     if (m_yValuesPresentation == ShowAsAmplitudes)
                         m_yValuesTemporal = absolutes(m_yValues);
                     else if (m_yValuesPresentation == ShowAsAmplitudesInDB)
-                        m_yValuesTemporal = toLog(absolutes(m_yValues), m_threshold);
+                        m_yValuesTemporal = toLog(absolutes(m_yValues), m_threshold, m_yValuesUnits);
                     else if (m_yValuesPresentation == ShowAsPhases)
                         m_yValuesTemporal = ::phases(complexes(m_yValues));
                     break;
@@ -412,19 +453,19 @@ void DataHolder::recalculateYValues()
                     if (m_yValuesPresentation == ShowAsAmplitudes)
                         m_yValuesTemporal = absolutes(m_yValues);
                     else if (m_yValuesPresentation == ShowAsAmplitudesInDB)
-                        m_yValuesTemporal = toLog(absolutes(m_yValues), m_threshold);
+                        m_yValuesTemporal = toLog(absolutes(m_yValues), m_threshold, m_yValuesUnits);
                     else if (m_yValuesPresentation == ShowAsPhases)
                         m_yValuesTemporal = ::phases(complexes(m_yValues, false));
                     break;
                 }
                 case YValuesAmplitudes: {
                     if (m_yValuesPresentation == ShowAsAmplitudesInDB)
-                        m_yValuesTemporal = toLog(m_yValues, m_threshold);
+                        m_yValuesTemporal = toLog(m_yValues, m_threshold, m_yValuesUnits);
                     break;
                 }
                 case YValuesAmplitudesInDB: {
                     if (m_yValuesPresentation == ShowAsAmplitudes)
-                        m_yValuesTemporal = fromLog(m_yValues, m_threshold);
+                        m_yValuesTemporal = fromLog(m_yValues, m_threshold, m_yValuesUnits);
                     break;
                 }
                 default:
@@ -436,4 +477,11 @@ void DataHolder::recalculateYValues()
     if (m_count > 0 && m_yValuesTemporal.isEmpty())
         m_yValuesTemporal = QVector<double>(m_count, 0.0);
     m_yValuesTemporal.squeeze();
+}
+
+double DataHolder::corrected(double val) const
+{
+    if (correctionType == 0) return val + correctionValue;
+    if (correctionType == 1) return val * correctionValue;
+    return 0.0;
 }

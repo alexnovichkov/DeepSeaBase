@@ -321,7 +321,6 @@ QVector<double> imags(const QVector<cx_double> &values)
 QVector<cx_double> movingAverage(const QVector<cx_double> &spectrum, int window)
 {
     const int numInd = spectrum.size();
-    const int span = window / 2;
 
     // 1. Извлекаем амплитуды и фазы из комплексного спектра
     QVector<double> amplitudes = absolutes(spectrum);

@@ -2,8 +2,8 @@
 
 #include "filedescriptor.h"
 
-ResamplingFunction::ResamplingFunction(QList<FileDescriptor *> &dataBase, QObject *parent) :
-    AbstractFunction(dataBase, parent), currentFactor(0)
+ResamplingFunction::ResamplingFunction(QObject *parent) :
+    AbstractFunction(parent), exponent(0)
 {
 
 }
@@ -27,7 +27,7 @@ QStringList ResamplingFunction::properties() const
 QString ResamplingFunction::propertyDescription(const QString &property) const
 {
     if (property == "factor") {
-        int sampleRate = int (1.0/dataBase().first()->xStep());
+        int sampleRate = int (1.0/xStep);
         QStringList values;
         for (int i=0; i<10; ++i) {
             double p = pow(2.0, i);
@@ -54,19 +54,17 @@ QVariant ResamplingFunction::getProperty(const QString &property) const
 
         // we know about ?/sampleRate
         if (property == "?/sampleRate") {
-            int fileIndex = m_input->getProperty("?/fileIndex").toInt();
-            if (fileIndex < 0 || fileIndex >= dataBase().size()) return QVariant();
-
-            double sR = 1.0 / dataBase().at(fileIndex)->xStep();
-            sR = sR / pow(2.0, currentFactor);
+            double sR = 1.0 / xStep;
+            sR = sR / pow(2.0, exponent);
             return sR;
         }
-        else return m_input->getProperty(property);
+        if (property == "?/xStep") {
+            return xStep * pow(2.0, exponent);
+        }
+        return m_input->getProperty(property);
     }
-    if (!property.startsWith(name()+"/")) return QVariant();
-    QString p = property.section("/",1);
 
-    if (p == "factor") return currentFactor;
+    if (property == name()+"/factor") return exponent;
 
     return QVariant();
 }
@@ -77,25 +75,16 @@ void ResamplingFunction::setProperty(const QString &property, const QVariant &va
     QString p = property.section("/",1);
 
     if (p == "factor") {
-        currentFactor = val.toInt();
+        exponent = val.toInt();
+        emit propertyChanged("?/xStep", xStep*pow(2.0, exponent));
     }
+    else if (p == "xStep") xStep = val.toDouble();
 }
 
 
 QString ResamplingFunction::displayName() const
 {
     return "Част. диапазон";
-}
-
-QVector<double> ResamplingFunction::get(FileDescriptor *file, const QVector<double> &data)
-{
-    Q_UNUSED(file);
-    if (currentFactor == 0) return data;
-
-    resampler.setBufferSize(data.size());
-    resampler.setFactor(int(pow(2.0, currentFactor)));
-    resampler.init();
-    return resampler.process(data);
 }
 
 void ResamplingFunction::reset()
@@ -112,19 +101,19 @@ QVector<double> ResamplingFunction::getData(const QString &id)
     return QVector<double>();
 }
 
-bool ResamplingFunction::compute()
+bool ResamplingFunction::compute(FileDescriptor *file)
 {
     if (!m_input) return false;
 
-    if (!m_input->compute()) return false;
+    if (!m_input->compute(file)) return false;
 
     QVector<double> data = m_input->getData("input");
     if (data.isEmpty()) return false;
 
-    if (currentFactor == 0) output = data;
+    if (exponent == 0) output = data;
     else {
         resampler.setBufferSize(data.size());
-        resampler.setFactor(int(pow(2.0, currentFactor)));
+        resampler.setFactor(int(pow(2.0, exponent)));
         resampler.init();
         output = resampler.process(data);
     }

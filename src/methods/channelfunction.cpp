@@ -2,8 +2,8 @@
 
 #include "filedescriptor.h"
 
-ChannelFunction::ChannelFunction(QList<FileDescriptor *> &dataBase, QObject *parent) :
-    AbstractFunction(dataBase, parent)
+ChannelFunction::ChannelFunction(QObject *parent) :
+    AbstractFunction(parent)
 {
 
 }
@@ -21,11 +21,8 @@ QString ChannelFunction::description() const
 
 QVariant ChannelFunction::getProperty(const QString &property) const
 {
-    if (property.startsWith("?/")) {
-        // we know about ?/fileIndex and ?/channelIndex
-        if (property == "?/fileIndex") return file;
-        if (property == "?/channelIndex") return channel;
-    }
+    // we know about ?/channelIndex
+    if (property == "?/channelIndex") return channel;
 
     if (!property.startsWith(name()+"/")) return QVariant();
     QString p = property.section("/",1);
@@ -42,7 +39,6 @@ void ChannelFunction::setProperty(const QString &property, const QVariant &val)
 
     if (p == "filter") selector.setFilter(val.toString());
     else if (p == "channelIndex") channel = val.toInt();
-    else if (p == "fileIndex") file = val.toInt();
 }
 
 
@@ -73,22 +69,6 @@ QString ChannelFunction::displayName() const
     return "Каналы";
 }
 
-// populates filtered channel and returns its yvalues
-QVector<double> ChannelFunction::get(FileDescriptor *file, const QVector<double> &data)
-{
-    int i = int(data.first());
-
-    if (selector.includes(i)) {
-        file->channel(i)->populate();
-        return file->channel(i)->yValues();
-    }
-    return QVector<double>();
-}
-
-
-
-
-
 QVector<double> ChannelFunction::getData(const QString &id)
 {
     if (id == "input") return output;
@@ -96,17 +76,13 @@ QVector<double> ChannelFunction::getData(const QString &id)
     return QVector<double>();
 }
 
-bool ChannelFunction::compute()
+bool ChannelFunction::compute(FileDescriptor *file)
 {
     if (channel < 0) return false;
 
-    if (file < 0 || file >= dataBase().size()) return false;
-
     if (selector.includes(channel)) {
-        FileDescriptor *f = dataBase().at(file);
-        f->channel(channel)->populate();
-        output = f->channel(channel)->yValues();
-        for (int i=0; i<output.size(); ++i) output[i] /= 9.81;
+        file->channel(channel)->populate();
+        output = file->channel(channel)->yValues();
         return true;
     }
     return false;

@@ -7,7 +7,7 @@
 class ChannelFunction : public AbstractFunction
 {
 public:
-    explicit ChannelFunction(QList<FileDescriptor *> &dataBase, QObject *parent = nullptr);
+    explicit ChannelFunction(QObject *parent = nullptr);
 
     // AbstractFunction interface
 public:
@@ -17,21 +17,13 @@ public:
     virtual void setProperty(const QString &property, const QVariant &val) override;
     virtual QStringList properties() const override;
     virtual QString propertyDescription(const QString &property) const override;
+    virtual QString displayName() const override;
+    virtual QVector<double> getData(const QString &id) override;
+    virtual bool compute(FileDescriptor *file) override;
 private:
     ChannelSelector selector;
     int channel = -1;
-    int file = -1;
-    QVector<double> output;
-
-    // AbstractFunction interface
-public:
-    virtual QString displayName() const override;
-    virtual QVector<double> get(FileDescriptor *file, const QVector<double>  &data) override;
-
-    // AbstractFunction interface
-public:
-    virtual QVector<double> getData(const QString &id) override;
-    virtual bool compute() override;
+    QVector<double> output;   
 };
 
 #endif // CHANNELFUNCTION_H

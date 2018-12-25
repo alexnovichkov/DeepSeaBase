@@ -8,7 +8,7 @@
 class AveragingFunction : public AbstractFunction
 {
 public:
-    explicit AveragingFunction(QList<FileDescriptor *> &dataBase, QObject *parent = nullptr);
+    explicit AveragingFunction(QObject *parent = nullptr);
 
     // AbstractFunction interface
 public:
@@ -26,9 +26,8 @@ private:
     // AbstractFunction interface
 public:
     virtual QString displayName() const override;
-    virtual QVector<double> get(FileDescriptor *file, const QVector<double> &data) override;
     virtual QVector<double> getData(const QString &id) override;
-    virtual bool compute() override;
+    virtual bool compute(FileDescriptor *file) override;
     virtual void reset() override;
 };
 

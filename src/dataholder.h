@@ -42,6 +42,13 @@ public:
         ShowAsPhases = 5
     };
 
+    enum YValuesUnits {
+        UnitsUnknown = 0, //dB = 20lg(L/L0)
+        UnitsLinear = 1, //dB = 20lg(L/L0)
+        UnitsQuadratic = 2, //dB = 10lg(L/L0^2)
+        UnitsDimentionless = 3 //dB = L
+    };
+
     DataHolder();
     DataHolder(const DataHolder &other);
 
@@ -49,7 +56,8 @@ public:
 
     void clear();
 
-    void setCorrection(double correctionValue);
+    void setCorrection(double correctionValue, int type);
+    void removeCorrection();
 
     int xValuesFormat() const {return m_xValuesFormat;} // не меняется, так как зависит только от формата данных в файле
     int yValuesFormat() const {return m_yValuesFormat;} // не меняется, так как зависит только от формата данных в файле
@@ -67,6 +75,9 @@ public:
 
     void setThreshold(double threshold) {m_threshold = threshold;}
     double threshold() const {return m_threshold;}
+
+    void setYValuesUnits(int yValuesUnits) {m_yValuesUnits = YValuesUnits(yValuesUnits);}
+    int yValuesUnits() const {return m_yValuesUnits;}
 
     const double* rawXValues() const {return m_xValues.data();}
     const double *rawYValues() const {return m_yValuesTemporal.data();}
@@ -88,13 +99,14 @@ public:
     QVector<double> linears() const;
     QVector<double> decibels() const;
 
-    static QVector<double> toLog(const QVector<double> &values, double threshold);
-    static QVector<double> fromLog(const QVector<double> &values, double threshold);
-    static double toLog(double value, double threshold);
-    static double fromLog(double value, double threshold);
+    static QVector<double> toLog(const QVector<double> &values, double threshold, int units);
+    static QVector<double> fromLog(const QVector<double> &values, double threshold, int units);
+    static double toLog(double value, double threshold, int units);
+    static double fromLog(double value, double threshold, int units);
 private:
     void recalculateMinMax();
     void recalculateYValues();
+    double corrected(double val) const;
 
     QVector<double> m_yValues;
     QVector<cx_double> m_yValuesComplex;
@@ -109,6 +121,8 @@ private:
 
     XValuesFormat m_xValuesFormat;
     YValuesFormat m_yValuesFormat;
+    YValuesUnits m_yValuesUnits;
+
 
     YValuesPresentation m_yValuesPresentation;
 
@@ -116,6 +130,7 @@ private:
     double m_yMin, m_yMax;
 
     double correctionValue;
+    int correctionType;
 //    double oldCorrectionValue;
 };
 

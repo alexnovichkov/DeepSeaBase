@@ -10,12 +10,12 @@ class AbstractFunction : public QObject
 {
     Q_OBJECT
 public:
-    explicit AbstractFunction(QList<FileDescriptor *> &dataBase, QObject *parent = nullptr);
+    explicit AbstractFunction(QObject *parent = nullptr);
     virtual ~AbstractFunction() {}
     virtual QString name() const = 0;
     virtual QString displayName() const = 0;
     virtual QString description() const = 0;
-    virtual QString propertiesDescription() const;
+    QString propertiesDescription() const;
     virtual QStringList properties() const = 0;
     virtual QString propertyDescription(const QString &property) const = 0;
     virtual bool propertyShowsFor(const QString &property) const;
@@ -27,6 +27,43 @@ public:
 
     void setInput(AbstractFunction *input) {m_input = input;}
 
+    // по умолчанию не делает ничего
+    virtual bool compute(FileDescriptor *file) = 0;
+
+    // очищает внутреннее состояние функции, но не меняет параметры, заданные ранее
+    virtual void reset();
+signals:
+    void propertyChanged(const QString &property, const QVariant &val);
+    void attributeChanged(const QString &property, const QVariant &val, const QString &attribute);
+
+    void tick();
+    void tick(const QString &path);
+    void message(const QString &s);
+public slots:
+    virtual void updateProperty(const QString &property, const QVariant &val);
+protected:
+//    QList<FileDescriptor *> m_dataBase;
+    AbstractFunction *m_input;
+};
+
+class AbstractAlgorithm : public QObject
+{
+    Q_OBJECT
+public:
+    explicit AbstractAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent = nullptr);
+    virtual ~AbstractAlgorithm() {}
+    virtual QString name() const = 0;
+    virtual QString displayName() const = 0;
+    virtual QString description() const = 0;
+//    virtual QString propertiesDescription() const;
+//    virtual QStringList properties() const = 0;
+//    virtual QString propertyDescription(const QString &property) const = 0;
+    bool propertyShowsFor(const QString &property) const;
+
+    QVariant getProperty(const QString &property) const;
+    void setProperty(const QString &property, const QVariant &val);
+
+//    virtual QVector<double> getData(const QString &id) = 0;
 
     QList<FileDescriptor *> dataBase() const {return m_dataBase;}
 
@@ -35,17 +72,13 @@ public:
     QStringList getNewFiles() const {return newFiles;}
 
     // по умолчанию не делает ничего
-    virtual bool compute(/*FileDescriptor *file, const QString &tempFolderName*/);
-    virtual bool compute(FileDescriptor *file, const QString &tempFolderName);
-
-    // по умолчанию возвращает пустой QVector<double>
-    virtual QVector<double> get(FileDescriptor *file, const QVector<double>  &data);
+    virtual bool compute(FileDescriptor *file) = 0;
 
     // очищает внутреннее состояние функции, но не меняет параметры, заданные ранее
     virtual void reset();
 signals:
     void propertyChanged(const QString &property, const QVariant &val);
-    void updateProperty(const QString &property, const QVariant &val, const QString &attribute);
+    void attributeChanged(const QString &property, const QVariant &val, const QString &attribute);
 
     void tick();
     void tick(const QString &path);
@@ -58,15 +91,10 @@ protected:
 
     QList<FileDescriptor *> m_dataBase;
     QList<AbstractFunction *> m_functions;
-    AbstractFunction *m_input;
 
     QStringList newFiles;
     QDateTime dt;
-    QString tempFolderName;
-
-    // QObject interface
-public:
-    virtual bool event(QEvent *event) override;
+//    QString tempFolderName;
 };
 
 #endif // ABSTRACTFUNCTION_H

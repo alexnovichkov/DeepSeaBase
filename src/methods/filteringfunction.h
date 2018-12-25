@@ -8,7 +8,7 @@
 class FilteringFunction : public AbstractFunction
 {
 public:
-    explicit FilteringFunction(QList<FileDescriptor *> &dataBase, QObject *parent = nullptr);
+    explicit FilteringFunction(QObject *parent = nullptr);
 
     // AbstractFunction interface
 public:
@@ -27,10 +27,9 @@ private:
     // AbstractFunction interface
 public:
     virtual QString displayName() const override;
-    virtual QVector<double> get(FileDescriptor *file, const QVector<double>  &data) override;
     virtual void reset() override;
     virtual QVector<double> getData(const QString &id) override;
-    virtual bool compute() override;
+    virtual bool compute(FileDescriptor *file) override;
 };
 
 #endif // FILTERINGFUNCTION_H

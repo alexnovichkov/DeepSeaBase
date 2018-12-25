@@ -159,7 +159,7 @@ Parameters SpectreMethod::parameters()
     p.averagingType = averCombo->currentIndex();
 
     const double po = pow(2.0, resolutionCombo->currentIndex());
-    p.bufferSize = qRound(sampleRate / po); // размер блока
+    p.bufferSize = qRound(32768.0 / po); // размер блока
 
     p.windowType = windowCombo->currentIndex();
     QString percentString = windowParameter->text().trimmed();
@@ -218,14 +218,15 @@ DescriptionList SpectreMethod::processData(const Parameters &p)
 
 void SpectreMethod::updateResolution(int bandStrip)
 {
+    Q_UNUSED(bandStrip);
     double sR = sampleRate;
+    double bS = 32768.0;
     resolutionCombo->clear();
-    for (int i=0; i<5; ++i) {
+    for (int i=0; i<8; ++i) {
         double p = pow(2.0, i);
-        double p1 = pow(2.0, i-bandStrip);
-        resolutionCombo->addItem(QString("%1 (%2 Гц)").arg(qRound(sR / p)).arg(p1));
+        resolutionCombo->addItem(QString("%1 (%2 Гц)").arg(qRound(bS / p)).arg(sR / bS * p));
     }
-    resolutionCombo->setCurrentIndex(0);
+    resolutionCombo->setCurrentIndex(2);
 }
 
 

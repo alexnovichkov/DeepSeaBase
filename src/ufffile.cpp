@@ -437,6 +437,14 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
         }
     }
 
+    int units = firstChannel->units();
+    for (int i=1; i<list.size(); ++i) {
+        if (list.at(i)->units() != units) {
+            units = DataHolder::UnitsUnknown;
+            break;
+        }
+    }
+
     Averaging averaging(Averaging::Linear, list.size());
 
     foreach (Channel *ch, list) {
@@ -457,12 +465,13 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     ch->setDescription("Среднее каналов "+l.join(","));
 
     ch->data()->setThreshold(firstChannel->data()->threshold());
+    ch->data()->setYValuesUnits(units);
     if (format == DataHolder::YValuesComplex)
         ch->data()->setYValues(averaging.getComplex().mid(0, numInd));
-    else if (format == DataHolder::YValuesAmplitudesInDB) {
-        QVector<double> data = averaging.get().mid(0, numInd);
-        ch->data()->setYValues(DataHolder::toLog(data, firstChannel->data()->threshold()), DataHolder::YValuesFormat(format));
-    }
+//    else if (format == DataHolder::YValuesAmplitudesInDB) {
+//        QVector<double> data = averaging.get().mid(0, numInd);
+//        ch->data()->setYValues(DataHolder::toLog(data, firstChannel->data()->threshold()), DataHolder::YValuesFormat(format));
+//    }
     else
         ch->data()->setYValues(averaging.get().mid(0, numInd), DataHolder::YValuesFormat(format));
 
@@ -506,16 +515,18 @@ void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
         Channel *firstChannel = firstDescriptor->channel(channels.at(i).second);
 
         int numInd = firstChannel->samplesCount();
+        int format = firstChannel->data()->yValuesFormat();
 
         ch->data()->setThreshold(firstChannel->data()->threshold());
-        if (firstChannel->data()->yValuesFormat() == DataHolder::YValuesComplex) {
+        if (format == DataHolder::YValuesComplex) {
             ch->data()->setYValues(movingAverage(firstChannel->data()->yValuesComplex(), windowSize));
         }
         else {
             QVector<double> values = movingAverage(firstChannel->data()->linears(), windowSize);
-            if (firstChannel->data()->yValuesFormat() == DataHolder::YValuesAmplitudesInDB)
-                values = DataHolder::toLog(values, threshold(firstChannel->yName()));
-            ch->data()->setYValues(values, DataHolder::YValuesFormat(firstChannel->data()->yValuesFormat()));
+            if (format == DataHolder::YValuesAmplitudesInDB)
+                format = DataHolder::YValuesAmplitudes;
+//                values = DataHolder::toLog(values, threshold(firstChannel->yName()));
+            ch->data()->setYValues(values, DataHolder::YValuesFormat(format));
         }
 
         if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
@@ -893,12 +904,12 @@ void Function::write(QTextStream &stream)
 
     // Temporal correction
     //fixing channel name
-    if (temporalCorrection && !nameBeforeCorrection.isEmpty()) {
-        setName(nameBeforeCorrection);
+    if (!temporalCorrection) {
+        setName(type58[4].value.toString()+correction);
     }
     //fixing values with correction
-    if (temporalCorrection) {
-        data()->setCorrection(0.0);
+    else {
+        data()->removeCorrection();
     }
 
 
@@ -1195,34 +1206,36 @@ QString Function::yName() const
 
 QString Function::legendName() const
 {DD;
-    QString result = parent->legend();
-    if (!result.isEmpty()) result.prepend(" ");
+    QStringList l;
+    if (!correction.isEmpty()) l << correction;
+    if (!parent->legend().isEmpty()) l << parent->legend();
 
-    return name() + result;
+    return name() + l.join(" ");
 }
 
-void Function::addCorrection(double correctionValue, bool writeToFile)
+void Function::addCorrection(double correctionValue, int type, bool writeToFile)
 {DD;
-    _data->setCorrection(correctionValue);
-
-    if (nameBeforeCorrection.isEmpty())
-        nameBeforeCorrection = name();
+    _data->setCorrection(correctionValue, type);
 
     temporalCorrection = !writeToFile;
 
-    if (correctionValue == 0.0)
-        setName(nameBeforeCorrection);
-    else
-        setName(nameBeforeCorrection + QString(correctionValue>=0?"+":"")
-                +QString::number(correctionValue));
+    // бесит, когда нужно подавить предупреждение компилятора, хотя всё было написано по правилам
+    if ((type == 0 && correctionValue == 0.0) || (type == 1 && correctionValue == 1.0))
+        correction.clear();
+    else {
+        QString suffix;
+        if (type == 0) {
+            if (correctionValue > 0) suffix = "+";
+        }
+        else if (type == 1) suffix = "*";
+        correction = suffix + QString::number(correctionValue);
+    }
 }
 
 int Function::samplesCount() const
 {DD;
     return type58[26].value.toULongLong();
 }
-
-
 
 DescriptionList UffFileDescriptor::dataDescriptor() const
 {DD;

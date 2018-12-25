@@ -8,7 +8,7 @@
 class FftFunction : public AbstractFunction
 {
 public:
-    FftFunction(QList<FileDescriptor *> &dataBase, QObject *parent = nullptr);
+    FftFunction(QObject *parent = nullptr);
 
     // AbstractFunction interface
 public:
@@ -19,7 +19,6 @@ public:
     virtual QVariant getProperty(const QString &property) const override;
     virtual void setProperty(const QString &property, const QVariant &val) override;
     virtual QString displayName() const override;
-    virtual QVector<double> get(FileDescriptor *file, const QVector<double> &data) override;
 
 private:
     QMap<QString, int> map;
@@ -29,7 +28,7 @@ private:
 public:
     virtual bool propertyShowsFor(const QString &property) const override;
     virtual QVector<double> getData(const QString &id) override;
-    virtual bool compute() override;
+    virtual bool compute(FileDescriptor *file) override;
     virtual void reset() override;
 };
 

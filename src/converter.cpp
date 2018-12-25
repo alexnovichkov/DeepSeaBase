@@ -389,6 +389,8 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             return false;
         }
 
+        int units = DataHolder::UnitsLinear;
+
         p.threshold = threshold(file->channel(i)->yName());
 
         QVector<double> spectrum;
@@ -415,6 +417,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
         }
 
         if (p.method->id()==1) {//спектр мощности
+            units = DataHolder::UnitsQuadratic;
             FrameCutter sampling;
             sampling.setType(p.overlap==0?FrameCutter::Continuous:FrameCutter::Overlap);
             sampling.setBlockSize(newBlockSize);
@@ -536,10 +539,12 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
         Channel *ch = 0;
         if (newDfd) {
             ch = p.method->createDfdChannel(newDfd, file, spectrum, p, i);
+            ch->data()->setYValuesUnits(units);
         }
         if (newUff) {
             ch = p.method->addUffChannel(newUff, file, p.fCount, p, i);
             ch->data()->setThreshold(p.threshold);
+            ch->data()->setYValuesUnits(units);
             if (p.saveAsComplex)
                 ch->data()->setYValues(spectrumComplex);
             else

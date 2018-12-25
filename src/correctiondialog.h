@@ -10,6 +10,7 @@ class QPushButton;
 class QCheckBox;
 class FileDescriptor;
 class QLineEdit;
+class QComboBox;
 
 class CorrectionDialog : public QDialog
 {
@@ -26,6 +27,7 @@ private:
     CheckableHeaderView *tableHeader;
     QPushButton *correctButton;
     QCheckBox *allFilesCheckBox;
+    QComboBox *correctionType;
     QList<FileDescriptor*> files;
 };
 

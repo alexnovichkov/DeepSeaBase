@@ -408,7 +408,7 @@ void DfdFileDescriptor::writeRawFile()
         //fixing values with correction
         for (int i = 0; i<channels.size(); ++i) {
             if (channels[i]->temporalCorrection) {
-                channels[i]->data()->setCorrection(0.0);
+                channels[i]->data()->removeCorrection();
             }
         }
 
@@ -513,7 +513,7 @@ QMap<QString, QString> DfdFileDescriptor::info() const
 {
     QMap<QString, QString> list;
     list.insert("guid", DFDGUID);
-    list.insert("descriptionFormap", DescriptionFormat);
+    list.insert("descriptionFormat", DescriptionFormat);
     return list;
 }
 
@@ -608,10 +608,9 @@ bool DfdFileDescriptor::setLegend(const QString &legend)
 {DD;
     if (legend == _legend) return false;
     _legend = legend;
-    setChanged(true);
     if (!dataDescription)
         dataDescription = new DataDescription(this);
-    write();
+    setChanged(true);
     return true;
 }
 
@@ -737,6 +736,14 @@ void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
         }
     }
 
+    int units = firstChannel->units();
+    for (int i=1; i<list.size(); ++i) {
+        if (list.at(i)->units() != units) {
+            units = DataHolder::UnitsUnknown;
+            break;
+        }
+    }
+
     Averaging averaging(Averaging::Linear, list.size());
 
     foreach (Channel *ch, list) {
@@ -760,12 +767,14 @@ void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     ch->ChanDscr = "Среднее каналов "+l.join(",");
 
     ch->data()->setThreshold(firstChannel->data()->threshold());
+    ch->data()->setYValuesUnits(units);
     if (format == DataHolder::YValuesComplex)
         ch->data()->setYValues(averaging.getComplex().mid(0, numInd));
-    else if (format == DataHolder::YValuesAmplitudesInDB) {
-        QVector<double> data = averaging.get().mid(0, numInd);
-        ch->data()->setYValues(DataHolder::toLog(data, firstChannel->data()->threshold()), DataHolder::YValuesFormat(format));
-    }
+//    else if (format == DataHolder::YValuesAmplitudesInDB) {
+//        QVector<double> data = averaging.get().mid(0, numInd);
+//        ch->data()->setYValues(DataHolder::toLog(data, firstChannel->data()->threshold(), ),
+//                               DataHolder::YValuesFormat(format));
+//    }
     else
         ch->data()->setYValues(averaging.get().mid(0, numInd), DataHolder::YValuesFormat(format));
 
@@ -801,17 +810,20 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
         int numInd = firstChannel->samplesCount();
 
         ch->data()->setThreshold(firstChannel->data()->threshold());
-        if (firstChannel->data()->yValuesFormat() == DataHolder::YValuesComplex) {
+        ch->data()->setYValuesUnits(firstChannel->data()->yValuesUnits());
+
+        int format = firstChannel->data()->yValuesFormat();
+        if (format == DataHolder::YValuesComplex) {
             ch->data()->setYValues(movingAverage(firstChannel->data()->yValuesComplex(), windowSize));
         }
         else {
             QVector<double> values = movingAverage(firstChannel->data()->linears(), windowSize);
-            if (firstChannel->data()->yValuesFormat() == DataHolder::YValuesAmplitudesInDB)
-                values = DataHolder::toLog(values, threshold(firstChannel->yName()));
-            ch->data()->setYValues(values, DataHolder::YValuesFormat(firstChannel->data()->yValuesFormat()));
+            if (format == DataHolder::YValuesAmplitudesInDB)
+                format = DataHolder::YValuesAmplitudes;
+            ch->data()->setYValues(values, DataHolder::YValuesFormat(format));
         }
 
-        if (ch->data()->xValuesFormat()==DataHolder::XValuesUniform)
+        if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform)
             ch->data()->setXValues(firstChannel->xMin(), firstChannel->xStep(), numInd);
         else
             ch->data()->setXValues(firstChannel->data()->xValues());
@@ -855,6 +867,7 @@ QString DfdFileDescriptor::calculateThirdOctave()
         auto result = thirdOctave(ch->data()->decibels(), ch->xMin(), ch->xStep());
 
         newCh->data()->setThreshold(ch->data()->threshold());
+        newCh->data()->setYValuesUnits(ch->data()->yValuesUnits());
         newCh->data()->setXValues(result.first);
         newCh->data()->setYValues(result.second, DataHolder::YValuesAmplitudesInDB);
 
@@ -1151,10 +1164,9 @@ void DfdChannel::write(QTextStream &dfd, int index)
 {DD;
     dfd << QString("[Channel%1]").arg(index == -1 ? channelIndex+1 : index+1) << endl;
     dfd << "ChanAddress=" << ChanAddress << endl;
-    if (temporalCorrection && !nameBeforeCorrection.isEmpty()) {
-        setName(nameBeforeCorrection);
-    }
-    dfd << "ChanName=" << ChanName << endl;
+    QString correctedName = ChanName;
+    if (!temporalCorrection) correctedName.append(correction);
+    dfd << "ChanName=" << correctedName << endl;
     dfd << "IndType=" << IndType << endl;
     dfd << "ChanBlockSize=" << ChanBlockSize << endl;
     dfd << "YName=" << YName << endl;
@@ -1200,6 +1212,10 @@ void DfdChannel::populate()
         double thr = threshold(yName());
         if (type()==Descriptor::FrequencyResponseFunction) thr=1.0;
         _data->setThreshold(thr);
+
+        int units = DataHolder::UnitsUnknown;
+        if (dataType == Spectr || dataType == XSpectr) units = DataHolder::UnitsQuadratic;
+        _data->setYValuesUnits(units);
 
         int yValueFormat = dataFormat();
 
@@ -1410,10 +1426,12 @@ int DfdChannel::dataFormat() const
 
 QString DfdChannel::legendName() const
 {DD;
-    QString result = parent->legend();
-    if (!result.isEmpty()) result.prepend(" ");
+    QStringList l;
+    if (!correction.isEmpty()) l << correction;
+    if (!parent->legend().isEmpty()) l << parent->legend();
+    QString result = l.join(" ");
 
-    return (ChanName.isEmpty()?ChanAddress:ChanName) + result;
+    return (name().isEmpty()?ChanAddress:name()) + result;
 }
 
 void DfdChannel::setValue(double val, QDataStream &writeStream)
@@ -1491,20 +1509,33 @@ QString DfdChannel::yName() const
     return YName;
 }
 
-void DfdChannel::addCorrection(double correctionValue, bool writeToFile)
+void DfdChannel::addCorrection(double correctionValue, int type, bool writeToFile)
 {DD;
-    _data->setCorrection(correctionValue);
+    _data->setCorrection(correctionValue, type);
 
-    if (nameBeforeCorrection.isEmpty())
-        nameBeforeCorrection = name();
+//    if (nameBeforeCorrection.isEmpty())
+//        nameBeforeCorrection = name();
 
     temporalCorrection = !writeToFile;
 
-    if (correctionValue == 0.0)
-        setName(nameBeforeCorrection);
-    else
-        setName(nameBeforeCorrection + QString(correctionValue>=0?"+":"")
-                +QString::number(correctionValue));
+    if ((type == 0 && correctionValue == 0.0) || (type == 1 && correctionValue == 1.0))
+        correction.clear();
+//        setName(nameBeforeCorrection);
+    else {
+        QString suffix;
+        if (type == 0) {
+            if (correctionValue > 0) suffix = "+";
+        }
+        else if (type == 1) suffix = "*";
+        correction = suffix + QString::number(correctionValue);
+//        setName(nameBeforeCorrection + suffix + QString::number(correctionValue));
+    }
+}
+
+void DfdChannel::setName(const QString &name)
+{
+    if (ChanName == name) return;
+    ChanName = name;
 }
 
 void RawChannel::read(DfdSettings &dfd, int numChans)
@@ -1764,7 +1795,7 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
         ch->YNameOld = channels[i]->YNameOld;
 
         ch->temporalCorrection = channels[i]->temporalCorrection;
-        ch->nameBeforeCorrection = channels[i]->nameBeforeCorrection;
+        ch->correction = channels[i]->correction;
 
         newDfd->channels << ch;
         if (!wasPopulated) {

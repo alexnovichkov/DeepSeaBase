@@ -138,13 +138,13 @@ public:
     virtual QString xName() const;
     virtual QString yName() const;
 
-    virtual void addCorrection(double correctionValue, bool writeToFile);
+    virtual void addCorrection(double correctionValue, int type, bool writeToFile);
 
     virtual QString description() const {return ChanDscr;}
     virtual void setDescription(const QString &description) {ChanDscr = description;}
 
     virtual QString name() const {return ChanName;}
-    virtual void setName(const QString &name) {ChanName = name;}
+    virtual void setName(const QString &name);
 
     virtual bool populated() const {return _populated;}
     virtual void setPopulated(bool populated) {_populated = populated;}
@@ -180,7 +180,8 @@ public:
     bool _populated;
 
     bool temporalCorrection;
-    QString nameBeforeCorrection;
+//    QString nameBeforeCorrection;
+    QString correction;
 
     DfdDataType dataType;
     QList<int> dataPositions;

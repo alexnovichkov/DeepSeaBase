@@ -336,15 +336,17 @@ void TrackingPanel::update()
         if (computeEnergy) {
             QVector<double> values = c->channel->data()->linears();
             for (int i=steps[0]; i<=steps[1]; ++i) {
+                double v2 = values[i]*values[i];
                 if (i>=steps[2] && i<=steps[3] && filter)
-                    reject += values[i]*values[i];
-                cumul += values[i]*values[i];
-                energy += values[i]*values[i];
+                    reject += v2;
+                cumul += v2;
+                energy += v2;
             }
             if (filter) reject = energy - reject;
-            cumul  = DataHolder::toLog(sqrt(cumul)/double(steps[1]-steps[0]+1), c->channel->data()->threshold());
-            energy = DataHolder::toLog(energy, c->channel->data()->threshold());
-            reject = DataHolder::toLog(reject, c->channel->data()->threshold());
+            cumul  = DataHolder::toLog(sqrt(cumul)/double(steps[1]-steps[0]+1), c->channel->data()->threshold(),
+                    DataHolder::UnitsLinear);
+            energy = DataHolder::toLog(energy, c->channel->data()->threshold(), DataHolder::UnitsQuadratic);
+            reject = DataHolder::toLog(reject, c->channel->data()->threshold(), DataHolder::UnitsQuadratic);
             if (!filter) reject = 0.0;
         }
 
