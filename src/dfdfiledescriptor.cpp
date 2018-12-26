@@ -840,8 +840,12 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
 
         ch->IndType = this->channels.isEmpty()?3221225476:this->channels.first()->IndType;
         ch->YName = firstChannel->yName();
-        if (DfdChannel *dfd = dynamic_cast<DfdChannel*>(firstChannel))
+        //грязный хак
+        if (DfdChannel *dfd = dynamic_cast<DfdChannel*>(firstChannel)) {
             ch->YNameOld = dfd->YNameOld;
+            if (ch->YName == ch->YNameOld && format == DataHolder::YValuesAmplitudesInDB)
+                ch->YName = "дБ";
+        }
         if (XName.isEmpty()) XName = firstChannel->xName();
         ch->parent = this;
 
@@ -1145,6 +1149,12 @@ void DfdChannel::read(DfdSettings &dfd, int numChans)
         _data->setXValues(0.0, XStep, NumInd);
     }
 
+    int yValueFormat = dataFormat();
+
+    if (YName.toLower()=="db" || YName.toLower()=="дб")
+        yValueFormat = DataHolder::YValuesAmplitudesInDB;
+    _data->setYValuesFormat(yValueFormat);
+
     // читаем позиции данных этого канала
     dataPositions.clear();
     if (parent->BlockSize == 0) {//без перекрытия, один блок данных
@@ -1186,6 +1196,7 @@ QStringList DfdChannel::getInfoHeaders()
             << QString("       Имя") //ChanName
             //<< QString("Вход") //InputType
             << QString("Ед.изм.") //YName
+            << "Формат"
             << QString("Описание") //ChanDscr
                ;
 }
@@ -1195,6 +1206,7 @@ QStringList DfdChannel::getInfoData()
     return QStringList()
             << name()
             << yName()
+            << data()->yValuesFormatString()
             << description()
                ;
 }
@@ -1220,10 +1232,10 @@ void DfdChannel::populate()
         if (dataType == Spectr || dataType == XSpectr) units = DataHolder::UnitsQuadratic;
         _data->setYValuesUnits(units);
 
-        int yValueFormat = dataFormat();
+//        int yValueFormat = dataFormat();
 
-        if (YName.toLower()=="db" || YName.toLower()=="дб")
-            yValueFormat = DataHolder::YValuesAmplitudesInDB;
+//        if (YName.toLower()=="db" || YName.toLower()=="дб")
+//            yValueFormat = DataHolder::YValuesAmplitudesInDB;
 
         QVector<double> YValues;
 
@@ -1266,7 +1278,7 @@ void DfdChannel::populate()
         }
         YValues.resize(parent->NumInd);
         postprocess(YValues);
-        _data->setYValues(YValues, DataHolder::YValuesFormat(yValueFormat));
+        _data->setYValues(YValues, DataHolder::YValuesFormat(_data->yValuesFormat()));
         setPopulated(true);
 
         if (qFuzzyIsNull(parent->XStep)) {//нулевой шаг, данные по оси Х хранятся первым каналом

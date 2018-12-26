@@ -592,7 +592,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     connect(tab->model, SIGNAL(legendsChanged()), plot, SLOT(updateLegends()));
     connect(tab->model, SIGNAL(plotNeedsUpdate()), plot, SLOT(update()));
 
-    tab->channelsTable = new QTableWidget(0,6,this);
+    tab->channelsTable = new QTableWidget(0,7,this);
 
     tab->tableHeader = new CheckableHeaderView(Qt::Horizontal, tab->channelsTable);
 
@@ -1665,7 +1665,6 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
 
     else if (column == 0) {
         if (ch->name() != item->text()) {
-            qDebug()<<"maybePlotChannel invoked on 0 col";
             ch->setName(item->text());
             tab->record->setChanged(true);
 

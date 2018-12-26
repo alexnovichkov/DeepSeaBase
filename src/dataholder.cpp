@@ -85,6 +85,19 @@ void DataHolder::removeCorrection()
     if (correctionType == 1) correctionValue = 1.0;
 }
 
+QString DataHolder::yValuesFormatString() const
+{
+    switch (m_yValuesFormat) {
+        case YValuesUnknown: return "Неизв."; break;
+        case YValuesComplex: return "[Cmplx]"; break;
+        case YValuesReals: return "[Re]"; break;
+        case YValuesImags: return "[Im]"; break;
+        case YValuesAmplitudes: return "[Abs]"; break;
+        case YValuesAmplitudesInDB: return "[dB]"; break;
+        case YValuesPhases: return "[Phase]"; break;
+    }
+}
+
 void DataHolder::setYValuesPresentation(int presentation)
 {DD;
     if (m_yValuesPresentation == DataHolder::YValuesPresentation(presentation)) return;

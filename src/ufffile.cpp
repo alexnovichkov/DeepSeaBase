@@ -872,14 +872,7 @@ void Function::read(QTextStream &stream, qint64 pos)
         while (s != "-1");
     }
 
-    if (type58[27].value.toInt() == 1) {// abscissa, even spacing
-        _data->setXValues(type58[28].value.toDouble(),
-                type58[29].value.toDouble(),
-                type58[26].value.toInt());
-    }
-    else {// abscissa, uneven spacing
-        _data->setSamplesCount(type58[26].value.toInt());
-    }
+    readRest();
 }
 
 void Function::read(QDataStream &stream)
@@ -888,6 +881,11 @@ void Function::read(QDataStream &stream)
     stream >> type58;
     stream >> dataPosition;
 
+    readRest();
+}
+
+void Function::readRest()
+{
     if (type58[27].value.toInt() == 1) {// abscissa, even spacing
         _data->setXValues(type58[28].value.toDouble(),
                 type58[29].value.toDouble(),
@@ -896,6 +894,18 @@ void Function::read(QDataStream &stream)
     else {// abscissa, uneven spacing
         _data->setSamplesCount(type58[26].value.toInt());
     }
+
+    int yValueFormat = type58[25].value.toInt() >= 5 ? DataHolder::YValuesComplex : DataHolder::YValuesAmplitudes;
+
+    if (yName()=="dB" || yName()=="дБ" || type58[43].value.toString()=="Уровень")
+        yValueFormat = DataHolder::YValuesAmplitudesInDB;
+
+    if (type58[43].value.toString()=="Phase")
+        yValueFormat = DataHolder::YValuesPhases;
+
+    if (type58[32].value.toInt()==17 || type58[32].value.toInt()==0) // time или неизв.
+        yValueFormat = DataHolder::YValuesReals;
+    _data->setYValuesFormat(yValueFormat);
 }
 
 void Function::write(QTextStream &stream)
@@ -1054,6 +1064,7 @@ QStringList Function::getInfoHeaders()
 {DD;
     return QStringList() << QString("       Имя")
                          << QString("Ед.изм.")
+                         << "Формат"
                          << QString("Описание")
                          << QString("Функция")
                             ;
@@ -1064,6 +1075,7 @@ QStringList Function::getInfoData()
 {DD;
     return QStringList() << name()
                          << yName()
+                         << data()->yValuesFormatString()
                          << description()
                          << functionTypeDescription(type())
                             ;
@@ -1100,21 +1112,21 @@ void Function::populate()
         if (this->type()==Descriptor::FrequencyResponseFunction) thr=1.0;
         _data->setThreshold(thr);
 
-        int yValueFormat = type58[25].value.toInt() >= 5 ? DataHolder::YValuesComplex : DataHolder::YValuesAmplitudes;
+//        int yValueFormat = type58[25].value.toInt() >= 5 ? DataHolder::YValuesComplex : DataHolder::YValuesAmplitudes;
 
-        if (yName()=="dB" || yName()=="дБ" || type58[43].value.toString()=="Уровень")
-            yValueFormat = DataHolder::YValuesAmplitudesInDB;
+//        if (yName()=="dB" || yName()=="дБ" || type58[43].value.toString()=="Уровень")
+//            yValueFormat = DataHolder::YValuesAmplitudesInDB;
 
-        if (type58[43].value.toString()=="Phase")
-            yValueFormat = DataHolder::YValuesPhases;
+//        if (type58[43].value.toString()=="Phase")
+//            yValueFormat = DataHolder::YValuesPhases;
 
-        if (type58[32].value.toInt()==17 || type58[32].value.toInt()==0) // time или неизв.
-            yValueFormat = DataHolder::YValuesReals;
+//        if (type58[32].value.toInt()==17 || type58[32].value.toInt()==0) // time или неизв.
+//            yValueFormat = DataHolder::YValuesReals;
 
         QVector<double> values, xvalues;
         QVector<cx_double> valuesComplex;
 
-        if (yValueFormat == DataHolder::YValuesComplex) { //complex values
+        if (_data->yValuesFormat() == DataHolder::YValuesComplex) { //complex values
             valuesComplex = QVector<cx_double>(sc, cx_double());
         }
         else
@@ -1156,7 +1168,7 @@ void Function::populate()
             _data->setXValues(xvalues);
         }
         if (type58[25].value.toInt() < 5) {//real values
-            _data->setYValues(values, DataHolder::YValuesFormat(yValueFormat));
+            _data->setYValues(values, DataHolder::YValuesFormat(_data->yValuesFormat()));
         }
         else
             _data->setYValues(valuesComplex);

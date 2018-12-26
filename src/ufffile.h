@@ -68,6 +68,7 @@ public:
     virtual void addCorrection(double correctionValue, int type, bool writeToFile);
     virtual int samplesCount() const;
 private:
+    void readRest();
     bool _populated;
 
     //correction variables

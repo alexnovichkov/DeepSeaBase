@@ -61,6 +61,8 @@ public:
 
     int xValuesFormat() const {return m_xValuesFormat;} // не меняется, так как зависит только от формата данных в файле
     int yValuesFormat() const {return m_yValuesFormat;} // не меняется, так как зависит только от формата данных в файле
+    void setYValuesFormat(int format) {m_yValuesFormat = YValuesFormat(format);}
+    QString yValuesFormatString() const;
 
     int yValuesPresentation() const {return m_yValuesPresentation;}
     void setYValuesPresentation(int presentation);
