@@ -110,19 +110,19 @@ class AccelerationOverForce : public Quantity
 {
 public:
     AccelerationOverForce() : Quantity() {powers[1]=-1;}
-    virtual QString name() {return "Acceleration over force";}
+    virtual QString name() {return "Acceleration/force";}
 };
 class AccelerationOverPressure : public Quantity
 {
 public:
     AccelerationOverPressure() : Quantity() {powers[0]=2; powers[1]=-1;}
-    virtual QString name() {return "Acceleration over pressure";}
+    virtual QString name() {return "Acceleration/pressure";}
 };
 class AccelerationOverVoltage : public Quantity
 {
 public:
     AccelerationOverVoltage() : Quantity() {powers[0]=-1; powers[1]=-1; powers[2]=1; powers[5]=1;}
-    virtual QString name() {return "Acceleration over voltage";}
+    virtual QString name() {return "Acceleration/voltage";}
 };
 class AccelerationPSD : public Quantity
 {
@@ -182,13 +182,122 @@ class ChargeOverForce : public Quantity
 {
 public:
     ChargeOverForce() : Quantity() {powers[0]=-1; powers[1]=-1; powers[2]=3; powers[5]=1;}
-    virtual QString name() {return "Charge Over Force";}
+    virtual QString name() {return "Charge/Force";}
 };
 class Count : public Quantity
 {
 public:
     Count() : Quantity() {}
     virtual QString name() {return "Count";}
+};
+class ElectricCurrent : public Quantity
+{
+public:
+    ElectricCurrent() : Quantity() {powers[5]=1;}
+    virtual QString name() {return "Electric Current";}
+};
+class ElectricCurrentSquared : public Quantity
+{
+public:
+    ElectricCurrentSquared() : Quantity() {powers[5]=2;}
+    virtual QString name() {return "Electric Current^2";}
+};
+class Displacement : public Quantity
+{
+public:
+    Displacement() : Quantity() {powers[0]=1;}
+    virtual QString name() {return "Displacement";}
+};
+class DisplacementSquared : public Quantity
+{
+public:
+    DisplacementSquared() : Quantity() {powers[0]=2;}
+    virtual QString name() {return "Displacement^2";}
+};
+class DisplacementOverForce : public Quantity
+{
+public:
+    DisplacementOverForce() : Quantity() {powers[1]=-1;powers[2]=2;}
+    virtual QString name() {return "Displacement/Force";}
+};
+class DisplacementOverVoltage : public Quantity
+{
+public:
+    DisplacementOverVoltage() : Quantity() {powers[0]=-1;powers[1]=-1;powers[2]=3;powers[5]=1;}
+    virtual QString name() {return "Displacement/Voltage";}
+};
+class DisplacementPSD : public Quantity
+{
+public:
+    DisplacementPSD() : Quantity() {powers[0]=2;powers[2]=1;}
+    virtual QString name() {return "DisplacementPSD";}
+};
+class Energy : public Quantity
+{
+public:
+    Energy() : Quantity() {powers[0]=2;powers[1]=1;powers[2]=-2;}
+    virtual QString name() {return "Energy";}
+};
+class Force : public Quantity
+{
+public:
+    Force() : Quantity() {powers[0]=1;powers[1]=1;powers[2]=-2;}
+    virtual QString name() {return "Force";}
+};
+class ForceSquared : public Quantity
+{
+public:
+    ForceSquared() : Quantity() {powers[0]=2;powers[1]=2;powers[2]=-4;}
+    virtual QString name() {return "Force^2";}
+};
+class ForcePSD : public Quantity
+{
+public:
+    ForcePSD() : Quantity() {powers[0]=2;powers[1]=2;powers[2]=-3;}
+    virtual QString name() {return "ForcePSD";}
+};
+class ForceESD : public Quantity
+{
+public:
+    ForceESD() : Quantity() {powers[0]=2;powers[1]=2;powers[2]=-2;}
+    virtual QString name() {return "ForceESD";}
+};
+class ForceOverAcceleration : public Quantity
+{
+public:
+    ForceOverAcceleration() : Quantity() {powers[1]=1;}
+    virtual QString name() {return "Force/Acceleration";}
+};
+class ForceOverDisplacement : public Quantity
+{
+public:
+    ForceOverDisplacement() : Quantity() {powers[1]=1; powers[2]=-2;}
+    virtual QString name() {return "Force/Displacement";}
+};
+class ForceOverForce : public Quantity
+{
+public:
+    ForceOverForce() : Quantity() {}
+    virtual QString name() {return "Force/Force";}
+};
+class ForceOverVelocity : public Quantity
+{
+public:
+    ForceOverVelocity() : Quantity() {powers[1]=1; powers[2]=-1;}
+    virtual QString name() {return "Force/Velocity";}
+};
+class ForceOverVoltage : public Quantity
+{
+public:
+    ForceOverVoltage() : Quantity() {powers[0]=-1; powers[2]=1; powers[5]=1; }
+    virtual QString name() {return "Force/Voltage";}
+};
+
+class Frequency : public Quantity
+{
+public:
+    Frequency() : Quantity() {powers[2]=-1;}
+    virtual QString name() {return "Frequency";}
 };
 
 
@@ -204,7 +313,7 @@ public:
     virtual ~Unit() {}
 
     virtual QString name() const {return "?";}
-    virtual QString label() const {return "?";}
+    virtual QStringList labels() const {return {"?"};}
 
     virtual double scaleFactor() const {return 1.0;}
     virtual double scaleOffset() const {return 0.0;}
@@ -226,7 +335,8 @@ class Acceleration : public Unit<typename Quantities::Acceleration>
 public:
     Acceleration() : Unit() {}
     virtual QString name() const {return "Acceleration";}
-    virtual QString label() const {return "m/s^2";}
+    virtual QStringList labels() const override {return {"m/s^2", "m/s2", "м/с^2", "м/с2",
+        "m/s**2", "m/sec^2", "m/sec2", "м/с**2"};}
 
     virtual double scaleFactor() const {return 1.0;}
     virtual double scaleOffset() const {return 0.0;}
@@ -235,7 +345,28 @@ public:
     // dB = logFactor * lg (L/levelReference)
     // Если linear()==false, то величина - квадратичная, то есть
     // dB = logFactor * lg (L/levelReference^2)
-    virtual double levelReference() const {return 1.0;}
+    virtual double levelReference() const {return 0.000316;}
+    virtual bool linear() const {return true;}
+    virtual double logFactor() const {return 20.0;}
+private:
+    Quantities::Acceleration quantity;
+};
+
+class AccelerationG : public Unit<typename Quantities::Acceleration>
+{
+public:
+    AccelerationG() : Unit() {}
+    virtual QString name() const {return "AccelerationG";}
+    virtual QStringList labels() const override {return {"g"};}
+
+    virtual double scaleFactor() const {return 0.101971621297793;}
+    virtual double scaleOffset() const {return 0.0;}
+
+    // по умолчанию величина линейная, с коэффициентом 20:
+    // dB = logFactor * lg (L/levelReference)
+    // Если linear()==false, то величина - квадратичная, то есть
+    // dB = logFactor * lg (L/levelReference^2)
+    virtual double levelReference() const {return 0.000316;}
     virtual bool linear() const {return true;}
     virtual double logFactor() const {return 20.0;}
 private:
