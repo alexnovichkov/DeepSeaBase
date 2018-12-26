@@ -1559,9 +1559,9 @@ void RawChannel::read(DfdSettings &dfd, int numChans)
     coef4 = ((Sens0Shift + AmplShift) * AmplLevel - ADC0) / ADCStep;
 }
 
-void RawChannel::write(QTextStream &dfd)
+void RawChannel::write(QTextStream &dfd, int index)
 {DD;
-    DfdChannel::write(dfd);
+    DfdChannel::write(dfd, index);
 
     dfd << "ADC0=" <<  doubletohex(ADC0).toUpper() << endl;
     dfd << "ADCStep=" <<  doubletohex(ADCStep).toUpper() << endl; //qDebug()<< "ADCStep"<< ch.adcStep;

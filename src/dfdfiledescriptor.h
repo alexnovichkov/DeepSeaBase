@@ -204,13 +204,13 @@ public:
           BandWidth(0.0)
     {}
     virtual ~RawChannel() {}
-    virtual void read(DfdSettings &dfd, int numChans);
-    virtual void write(QTextStream &dfd);
-    virtual QStringList getInfoHeaders();
-    virtual QStringList getInfoData();
-    virtual double postprocess(double v);
-    virtual void postprocess(QVector<double> &v);
-    virtual double preprocess(double v);
+    virtual void read(DfdSettings &dfd, int numChans) override;
+    virtual void write(QTextStream &dfd, int index = -1) override;
+    virtual QStringList getInfoHeaders() override;
+    virtual QStringList getInfoData() override;
+    virtual double postprocess(double v) override;
+    virtual void postprocess(QVector<double> &v) override;
+    virtual double preprocess(double v) override;
 
     QString SensName;
     double ADC0;
