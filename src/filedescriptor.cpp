@@ -112,14 +112,16 @@ QList<int> filterIndexes(FileDescriptor *dfd, const QList<QPair<FileDescriptor *
 
 Channel::Channel(Channel *other) : _checkState(Qt::Unchecked),
     _color(QColor()),
-    _data(new DataHolder(*(other->_data)))
+    _data(new DataHolder(*(other->_data))),
+    temporalCorrection(other->temporalCorrection)
 {
 
 }
 
 Channel::Channel(Channel &other) : _checkState(Qt::Unchecked),
     _color(QColor()),
-    _data(new DataHolder(*(other._data)))
+    _data(new DataHolder(*(other._data))),
+    temporalCorrection(other.temporalCorrection)
 {
 
 }
@@ -132,6 +134,13 @@ double Channel::xMin() const
 double Channel::xMax() const
 {
     return _data->xMax();
+}
+
+void Channel::addCorrection(double correctionValue, int type, bool writeToFile)
+{
+    _data->setCorrection(correctionValue, type);
+
+    temporalCorrection = !writeToFile;
 }
 
 QString valuesUnit(const QString &first, const QString &second, int unitType)

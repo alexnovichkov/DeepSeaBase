@@ -782,7 +782,6 @@ QDataStream &operator>>(QDataStream &stream, FunctionHeader &header)
 Function::Function(UffFileDescriptor *parent) : Channel(),
     parent(parent), dataPosition(-1), _populated(false)
 {DD;
-    temporalCorrection = false;
     setType58(type58);
 }
 
@@ -790,7 +789,6 @@ Function::Function(UffFileDescriptor *parent) : Channel(),
 
 Function::Function(Channel &other) : Channel(other)
 {DD;
-    temporalCorrection = false;
     setType58(type58);
 
     type58[4].value = other.name(); if (other.name().isEmpty()) type58[4].value = "NONE";
@@ -817,16 +815,11 @@ Function::Function(Channel &other) : Channel(other)
 
 Function::Function(Function &other) : Channel(other)
 {DD;
-    temporalCorrection = other.temporalCorrection;
-//    oldCorrectionValue = other.oldCorrectionValue;
-
     header = other.header;
 
     type58 = other.type58;
     _populated = other._populated;
     dataPosition = -1;
-
-//    _data = new DataHolder(*(other.data()));
 }
 
 Function::~Function()
@@ -901,7 +894,7 @@ void Function::write(QTextStream &stream)
     // Temporal correction
     //fixing channel name
     if (!temporalCorrection) {
-        setName(type58[4].value.toString()+correction);
+        setName(type58[4].value.toString()+data()->correctionString());
     }
     //fixing values with correction
     else {
@@ -1205,29 +1198,10 @@ QString Function::yName() const
 QString Function::legendName() const
 {DD;
     QStringList l;
-    if (!correction.isEmpty()) l << correction;
+    if (!data()->correctionString().isEmpty()) l << data()->correctionString();
     if (!parent->legend().isEmpty()) l << parent->legend();
 
     return name() + l.join(" ");
-}
-
-void Function::addCorrection(double correctionValue, int type, bool writeToFile)
-{DD;
-    _data->setCorrection(correctionValue, type);
-
-    temporalCorrection = !writeToFile;
-
-    // бесит, когда нужно подавить предупреждение компилятора, хотя всё было написано по правилам
-    if ((type == 0 && correctionValue == 0.0) || (type == 1 && correctionValue == 1.0))
-        correction.clear();
-    else {
-        QString suffix;
-        if (type == 0) {
-            if (correctionValue > 0) suffix = "+";
-        }
-        else if (type == 1) suffix = "*";
-        correction = suffix + QString::number(correctionValue);
-    }
 }
 
 int Function::samplesCount() const

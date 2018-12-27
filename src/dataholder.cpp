@@ -85,6 +85,19 @@ void DataHolder::removeCorrection()
     if (correctionType == 1) correctionValue = 1.0;
 }
 
+QString DataHolder::correctionString() const
+{
+    if ((correctionType == 0 && correctionValue == 0.0) || (correctionType == 1 && correctionValue == 1.0))
+        return QString();
+
+    QString suffix;
+    if (correctionType == 0) {
+        if (correctionValue > 0) suffix = "+";
+    }
+    else if (correctionType == 1) suffix = "*";
+    return suffix + QString::number(correctionValue);
+}
+
 QString DataHolder::yValuesFormatString() const
 {
     switch (m_yValuesFormat) {

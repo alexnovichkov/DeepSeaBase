@@ -87,6 +87,8 @@ private:
     QList<ClearableSpinBox *> spins;
     QList<QCheckBox *> cursorBoxes;
 
+    QList<QwtPlotMarker *> _harmonics;
+
     ZoneSpan *cursorSpan1;
     ZoneSpan *cursorSpan2;
     Plot *plot;

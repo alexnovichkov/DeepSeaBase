@@ -26,7 +26,7 @@ signals:
     void cursorMovedTo(QwtPlotMarker *cursor, double newValue);
     void labelSelected(bool);
 public slots:
-    void showHarmonics(bool show) {_showHarmonics = show;}
+    void showHarmonics(bool show);
 private slots:
     void pointAppended(const QPoint &pos);
     void pointMoved(const QPoint &pos);
@@ -53,9 +53,7 @@ private:
     QPoint d_currentPos;
 
     bool _showHarmonics;
-    QList<QwtPlotMarker *> _harmonics;
 
-    QList<QwtPlotMarker *> cursors;
     QwtPlotMarker *selectedCursor;
 protected:
     virtual QwtText trackerTextF(const QPointF &pos) const;

@@ -29,6 +29,13 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
     for (int i=2; i<4; ++i)
         cursors.append(new TrackingCursor(QColor(150,40,40)));
 
+    for (int i=0; i<10; ++i) {
+        QwtPlotMarker *d = new QwtPlotMarker();
+        d->setLineStyle( QwtPlotMarker::VLine );
+        d->setLinePen( Qt::black, 0, Qt::DashDotLine );
+        _harmonics.append(d);
+    }
+
     cursorSpan1 = new ZoneSpan(QColor(0,0,255,100));
     cursorSpan2 = new ZoneSpan(QColor(255,93,93,100));
 
@@ -114,8 +121,17 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
     yValuesCheckBox->setChecked(MainWindow::getSetting("cursorShowYValues", false).toBool());
 
     harmonics = new QCheckBox("Включить показ гармоник", this);
-    connect(harmonics, &QCheckBox::stateChanged, [=](int state){
-        emit switchHarmonics(state==Qt::Checked);
+    connect(harmonics, &QCheckBox::stateChanged, [=](/*int state*/){
+        update();
+//        bool show = state==Qt::Checked;
+//        for (int i=0; i<10; ++i) {
+//            if (show) {
+//                _harmonics[i]->setValue(cursors.first()->value().x(), 0.0);
+//                _harmonics[i]->attach(plot);
+//            }
+//            else
+//                _harmonics[i]->detach();
+//        }
     });
 
     QGridLayout *lay = new QGridLayout;
@@ -163,6 +179,12 @@ TrackingPanel::~TrackingPanel()
         delete cursor;
     }
     cursors.clear();
+
+    foreach (QwtPlotMarker *d, _harmonics) {
+        d->detach();
+        delete d;
+    }
+    _harmonics.clear();
 
     cursorSpan1->detach();
     cursorSpan2->detach();
@@ -264,6 +286,8 @@ void TrackingPanel::updateTrackingCursor(double xVal, int index)
 //    DebugPrint(xVal);
 
     cursors[index]->moveTo(xVal);
+    for (int i=0; i<_harmonics.size(); ++i)
+        _harmonics[i]->setValue(xVal*(i+2), 0.0);
 
     update();
 }
@@ -278,6 +302,14 @@ void TrackingPanel::update()
         }
         else {
             cursors[i]->detach();
+        }
+    }
+    for (int i=0; i<_harmonics.size(); ++i) {
+        if (harmonics->checkState() == Qt::Checked && isVisible()) {
+            _harmonics[i]->attach(plot);
+        }
+        else {
+            _harmonics[i]->detach();
         }
     }
 
@@ -300,7 +332,7 @@ void TrackingPanel::update()
 
 
 //    plot->replot();
-    QRectF rect(leftExclude, 0, rightExclude, 1);
+//    QRectF rect(leftExclude, 0, rightExclude, 1);
 
     //4. get the y values from all graphs
     QList<TrackingPanel::TrackInfo> list;

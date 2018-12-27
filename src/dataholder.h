@@ -58,6 +58,7 @@ public:
 
     void setCorrection(double correctionValue, int type);
     void removeCorrection();
+    QString correctionString() const;
 
     int xValuesFormat() const {return m_xValuesFormat;} // не меняется, так как зависит только от формата данных в файле
     int yValuesFormat() const {return m_yValuesFormat;} // не меняется, так как зависит только от формата данных в файле

@@ -45,9 +45,7 @@ PlotPicker::PlotPicker(QWidget *canvas) :
 
 PlotPicker::~PlotPicker()
 {DD;
-    foreach (QwtPlotMarker *d, _harmonics) {
-        delete d;
-    }
+
 }
 
 void PlotPicker::setMode(Plot::InteractionMode mode)
@@ -130,6 +128,12 @@ void PlotPicker::widgetKeyPressEvent(QKeyEvent *e)
 
     }
     else QwtPlotPicker::widgetKeyPressEvent(e);
+}
+
+void PlotPicker::showHarmonics(bool show)
+{
+     _showHarmonics = show;
+     highlightPoint(true);
 }
 
 void PlotPicker::resetHighLighting()
@@ -291,27 +295,8 @@ void PlotPicker::highlightPoint(bool showIt)
         if (marker->label()==QwtText()) {
             marker->setLabel(QwtText(QString::number(val.x(),'f',2)));
         }
-
-        if (_harmonics.isEmpty()) {
-            for (int i=0; i<10; ++i) {
-                QwtPlotMarker *d = new QwtPlotMarker();
-                d->setLineStyle( QwtPlotMarker::VLine );
-                d->setLinePen( Qt::black, 0, Qt::DashDotLine );
-                //d->attach(plot);
-                _harmonics.append(d);
-            }
-        }
-        if (_showHarmonics) {
-            for (int i=0; i<10; ++i) {
-                _harmonics[i]->setValue(val.x()*(i+2),0.0);
-                _harmonics[i]->attach(plot);
-            }
-        }
     }
     else {
-        foreach (QwtPlotMarker *d, _harmonics) {
-            d->detach();
-        }
         delete marker;
         marker = 0;
     }

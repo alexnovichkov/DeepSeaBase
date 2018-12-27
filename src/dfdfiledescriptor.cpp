@@ -407,7 +407,7 @@ void DfdFileDescriptor::writeRawFile()
     if (rawFile.open(QFile::WriteOnly)) {
         //fixing values with correction
         for (int i = 0; i<channels.size(); ++i) {
-            if (channels[i]->temporalCorrection) {
+            if (!channels[i]->correct()) {
                 channels[i]->data()->removeCorrection();
             }
         }
@@ -1050,7 +1050,6 @@ DfdChannel::DfdChannel(DfdFileDescriptor *parent, int channelIndex)
       _populated(false)
 {
     dataType = parent->DataType;
-    temporalCorrection = false;
 }
 
 DfdChannel::DfdChannel(DfdChannel &other, DfdFileDescriptor *parent) : Channel(other)
@@ -1072,7 +1071,6 @@ DfdChannel::DfdChannel(DfdChannel &other, DfdFileDescriptor *parent) : Channel(o
 
     _populated = other._populated;
     dataType = other.dataType;
-    temporalCorrection = other.temporalCorrection;
 }
 
 DfdChannel::DfdChannel(Channel &other, DfdFileDescriptor *parent) : Channel(other)
@@ -1095,7 +1093,6 @@ DfdChannel::DfdChannel(Channel &other, DfdFileDescriptor *parent) : Channel(othe
 
     _populated = true;
     dataType = dfdDataTypeFromDataType(other.type());
-    temporalCorrection = false;
 }
 
 DfdChannel::~DfdChannel()
@@ -1164,7 +1161,7 @@ void DfdChannel::write(QTextStream &dfd, int index)
     dfd << QString("[Channel%1]").arg(index == -1 ? channelIndex+1 : index+1) << endl;
     dfd << "ChanAddress=" << ChanAddress << endl;
     QString correctedName = ChanName;
-    if (!temporalCorrection) correctedName.append(correction);
+    if (correct()) correctedName.append(data()->correctionString());
     dfd << "ChanName=" << correctedName << endl;
     dfd << "IndType=" << IndType << endl;
     dfd << "ChanBlockSize=" << ChanBlockSize << endl;
@@ -1428,7 +1425,7 @@ int DfdChannel::dataFormat() const
 QString DfdChannel::legendName() const
 {DD;
     QStringList l;
-    if (!correction.isEmpty()) l << correction;
+    if (!data()->correctionString().isEmpty()) l << data()->correctionString();
     if (!parent->legend().isEmpty()) l << parent->legend();
     QString result = l.join(" ");
 
@@ -1508,29 +1505,6 @@ QString DfdChannel::yName() const
     if ((YName.toLower() == "дб" || YName.toLower() == "db") && !YNameOld.isEmpty())
         return YNameOld;
     return YName;
-}
-
-void DfdChannel::addCorrection(double correctionValue, int type, bool writeToFile)
-{DD;
-    _data->setCorrection(correctionValue, type);
-
-//    if (nameBeforeCorrection.isEmpty())
-//        nameBeforeCorrection = name();
-
-    temporalCorrection = !writeToFile;
-
-    if ((type == 0 && correctionValue == 0.0) || (type == 1 && correctionValue == 1.0))
-        correction.clear();
-//        setName(nameBeforeCorrection);
-    else {
-        QString suffix;
-        if (type == 0) {
-            if (correctionValue > 0) suffix = "+";
-        }
-        else if (type == 1) suffix = "*";
-        correction = suffix + QString::number(correctionValue);
-//        setName(nameBeforeCorrection + suffix + QString::number(correctionValue));
-    }
 }
 
 void DfdChannel::setName(const QString &name)
@@ -1795,8 +1769,7 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
         ch->YName = channels[i]->YName;
         ch->YNameOld = channels[i]->YNameOld;
 
-        ch->temporalCorrection = channels[i]->temporalCorrection;
-        ch->correction = channels[i]->correction;
+        ch->setCorrect(channels[i]->correct());
 
         newDfd->channels << ch;
         if (!wasPopulated) {

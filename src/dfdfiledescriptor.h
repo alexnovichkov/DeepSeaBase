@@ -138,8 +138,6 @@ public:
     virtual QString xName() const;
     virtual QString yName() const;
 
-    virtual void addCorrection(double correctionValue, int type, bool writeToFile);
-
     virtual QString description() const {return ChanDscr;}
     virtual void setDescription(const QString &description) {ChanDscr = description;}
 
@@ -178,10 +176,6 @@ public:
     int channelIndex; // нумерация с 0
 
     bool _populated;
-
-    bool temporalCorrection;
-//    QString nameBeforeCorrection;
-    QString correction;
 
     DfdDataType dataType;
     QList<int> dataPositions;
