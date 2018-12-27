@@ -487,12 +487,20 @@ MainWindow::MainWindow(QWidget *parent)
         plot->autoscale(2 /* y slave axis */);
     });
 
+    removeLabelsAct  = new QAction("Удалить все подписи", this);
+    removeLabelsAct->setIcon(QIcon(":/icons/remove-labels.png"));
+    connect(removeLabelsAct, &QAction::triggered, [this](){
+        plot->removeLabels();
+    });
+
     QToolBar *scaleToolBar = new QToolBar(this);
     scaleToolBar->setOrientation(Qt::Vertical);
     scaleToolBar->addAction(autoscaleXAct);
     scaleToolBar->addAction(autoscaleYAct);
     scaleToolBar->addAction(autoscaleYSlaveAct);
     scaleToolBar->addAction(autoscaleAllAct);
+    scaleToolBar->addSeparator();
+    scaleToolBar->addAction(removeLabelsAct);
 
     QWidget *plotsWidget = new QWidget(this);
     QGridLayout *plotsLayout = new QGridLayout;

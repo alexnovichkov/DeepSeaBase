@@ -17,7 +17,6 @@ public:
     explicit PlotPicker(QWidget *canvas);
     ~PlotPicker();
     void setMode(Plot::InteractionMode mode);
-    bool harmonics() const {return _showHarmonics;}
 protected:
     virtual void widgetKeyReleaseEvent(QKeyEvent *e);
     virtual void widgetKeyPressEvent(QKeyEvent *e);
@@ -25,8 +24,6 @@ signals:
     void updateTrackingCursor(double xVal, bool second);
     void cursorMovedTo(QwtPlotMarker *cursor, double newValue);
     void labelSelected(bool);
-public slots:
-    void showHarmonics(bool show);
 private slots:
     void pointAppended(const QPoint &pos);
     void pointMoved(const QPoint &pos);
@@ -47,12 +44,9 @@ private:
 
     Plot::InteractionMode mode;
 
-//    QList<PointLabel*> labels;
     PointLabel *selectedLabel;
 
     QPoint d_currentPos;
-
-    bool _showHarmonics;
 
     QwtPlotMarker *selectedCursor;
 protected:

@@ -19,11 +19,6 @@ private slots:
 protected:
     virtual QWidget *createWidget( const QwtLegendData & ) const;
     virtual void updateWidget( QWidget *widget, const QwtLegendData &data );
-
-
-    // QwtAbstractLegend interface
-public slots:
-    virtual void updateLegend(const QVariant &itemInfo, const QList<QwtLegendData> &data);
 };
 
 

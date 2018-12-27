@@ -27,7 +27,6 @@ PlotPicker::PlotPicker(QWidget *canvas) :
     d_selectedCurve( NULL )
 {DD;
     plot = qobject_cast<QwtPlotCanvas*>(canvas)->plot();
-    _showHarmonics = false;
 
     marker = 0;
     mode = Plot::ScalingInteraction;
@@ -128,12 +127,6 @@ void PlotPicker::widgetKeyPressEvent(QKeyEvent *e)
 
     }
     else QwtPlotPicker::widgetKeyPressEvent(e);
-}
-
-void PlotPicker::showHarmonics(bool show)
-{
-     _showHarmonics = show;
-     highlightPoint(true);
 }
 
 void PlotPicker::resetHighLighting()

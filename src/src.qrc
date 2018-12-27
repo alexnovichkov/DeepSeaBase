@@ -22,5 +22,6 @@
         <file>icons/autoscale-all.png</file>
         <file>icons/sergei.png</file>
         <file>icons/edit.png</file>
+        <file>icons/remove-labels.png</file>
     </qresource>
 </RCC>

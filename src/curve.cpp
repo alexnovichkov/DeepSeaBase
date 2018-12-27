@@ -188,6 +188,7 @@ Curve::~Curve()
 {DD;
     foreach(PointLabel *l, labels) l->detach();
     qDeleteAll(labels);
+    labels.clear();
 }
 
 void Curve::drawLines(QPainter *painter,
@@ -237,6 +238,15 @@ void Curve::removeLabel(PointLabel *label)
         label->detach();
         delete label;
     }
+}
+
+void Curve::removeLabels()
+{
+    foreach (PointLabel *label, labels) {
+        label->detach();
+        delete label;
+    }
+    labels.clear();
 }
 
 PointLabel *Curve::findLabel(const QPoint &pos, int yAxis)
@@ -412,4 +422,13 @@ double DfdData::xStep() const
 double DfdData::xBegin() const
 {
     return data->xMin();
+}
+
+
+void Curve::setVisible(bool visible)
+{
+    QwtPlotCurve::setVisible(visible);
+    foreach (PointLabel *label, labels) {
+        label->setVisible(visible);
+    }
 }

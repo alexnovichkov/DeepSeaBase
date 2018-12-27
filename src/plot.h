@@ -108,11 +108,12 @@ public:
     void moveToAxis(int axis, double min, double max);
     void updateAxesLabels();
 
+    void removeLabels();
+
     void moveGraph(Curve *curve);
 
     void setInteractionMode(InteractionMode mode);
     void switchInteractionMode();
-    void switchHarmonicsMode();
     void switchTrackingCursor();
     void toggleAutoscale(int axis, bool toggled);
     void autoscale(int axis);

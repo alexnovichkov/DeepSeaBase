@@ -242,7 +242,6 @@ Plot::Plot(QWidget *parent) :
     connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
     connect(picker,SIGNAL(updateTrackingCursor(double,bool)),trackingPanel, SLOT(setXValue(double,bool)));
     connect(picker,SIGNAL(cursorMovedTo(QwtPlotMarker*,double)), trackingPanel, SLOT(setXValue(QwtPlotMarker*,double)));
-    connect(trackingPanel,SIGNAL(switchHarmonics(bool)),picker,SLOT(showHarmonics(bool)));
 
     picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
 
@@ -632,6 +631,14 @@ void Plot::updateAxesLabels()
     }
 }
 
+void Plot::removeLabels()
+{
+    foreach (Curve *c, graphs) {
+        c->removeLabels();
+    }
+   replot();
+}
+
 void Plot::moveGraph(Curve *curve)
 {DD;
     if (leftGraphs.contains(curve)) {
@@ -978,11 +985,6 @@ void Plot::switchInteractionMode()
     else {
         setInteractionMode(ScalingInteraction);
     }
-}
-
-void Plot::switchHarmonicsMode()
-{DD;
-    picker->showHarmonics(!picker->harmonics());
 }
 
 void Plot::switchTrackingCursor()

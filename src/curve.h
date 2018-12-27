@@ -42,6 +42,7 @@ public:
 
     void addLabel(PointLabel *label);
     void removeLabel(PointLabel *label);
+    void removeLabels();
     /** find label by canvas position */
     PointLabel *findLabel(const QPoint &pos, int yAxis);
     /** find label by point on a curve */
@@ -78,6 +79,10 @@ protected:
     // QwtPlotItem interface
 public:
     virtual QList<QwtLegendData> legendData() const;
+
+    // QwtPlotItem interface
+public:
+    virtual void setVisible(bool visible) override;
 };
 
 #endif // CURVE_H

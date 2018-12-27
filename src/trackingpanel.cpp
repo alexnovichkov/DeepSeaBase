@@ -269,7 +269,8 @@ void TrackingPanel::switchVisibility()
 {DD;
     if (isVisible()) {
         setVisible(false);
-        for (int i=0; i<4; ++i) cursors[i]->detach();
+        for (int i=0; i<cursors.size(); ++i) cursors[i]->detach();
+        for (int i=0; i<_harmonics.size(); ++i) _harmonics[i]->detach();
         cursorSpan1->detach();
         cursorSpan2->detach();
     }

@@ -258,6 +258,8 @@ private:
     QAction *autoscaleYSlaveAct;
     QAction *autoscaleAllAct;
 
+    QAction *removeLabelsAct;
+
     Plot *plot;
 
     QSplitter *splitter;
