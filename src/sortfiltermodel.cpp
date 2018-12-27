@@ -36,7 +36,18 @@ bool SortFilterModel::filterAcceptsRow(int source_row, const QModelIndex &source
     for (int i=0; i<sourceModel()->columnCount(); ++i) {
         if (filter.at(i).isEmpty()) continue;
         QModelIndex index = sourceModel()->index(source_row, i, source_parent);
-        accept &= sourceModel()->data(index).toString().contains(filter.at(i), Qt::CaseInsensitive);
+        QVariant data = sourceModel()->data(index);
+        if (data.type()==QVariant::Double)
+            accept &= qFuzzyCompare(data.toDouble(),filter.at(i).toDouble());
+        else if (data.type()==QVariant::Int)
+            accept &= (data.toInt()==filter.at(i).toInt());
+        else if (data.type()==QVariant::LongLong)
+            accept &= (data.toLongLong()==filter.at(i).toLongLong());
+        else if (data.type()==QVariant::UInt)
+            accept &= (data.toUInt()==filter.at(i).toUInt());
+        else if (data.type()==QVariant::ULongLong)
+            accept &= (data.toULongLong()==filter.at(i).toULongLong());
+        else accept &= data.toString().contains(filter.at(i), Qt::CaseInsensitive);
     }
 
     return accept;
