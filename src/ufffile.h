@@ -133,7 +133,6 @@ public:
     QMap<QString, QString> info() const;
     virtual Descriptor::DataType type() const;
     virtual QString typeDisplay() const;
-    double size() const;
     virtual QDateTime dateTime() const;
     virtual double xStep() const;
     virtual void setXStep(const double xStep);

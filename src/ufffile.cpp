@@ -280,20 +280,6 @@ QString UffFileDescriptor::typeDisplay() const
     return Function::functionTypeDescription(type());
 }
 
-double UffFileDescriptor::size() const
-{
-    double size = 0.0;
-    if (!channels.isEmpty()) {
-        if (channels.first()->data()->xValuesFormat() == DataHolder::XValuesUniform)
-            size = samplesCount() * xStep();
-        else {
-            channels.first()->populate();
-            size = channels.first()->data()->xValues().last();
-        }
-    }
-    return size;
-}
-
 QDateTime UffFileDescriptor::dateTime() const
 {DD;
     return header.type151[10].value.toDateTime()/*.toString("dd.MM.yy hh:mm:ss")*/;

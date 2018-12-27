@@ -553,20 +553,6 @@ QString DfdFileDescriptor::typeDisplay() const
     return dataTypeDescription(DataType);
 }
 
-double DfdFileDescriptor::size() const
-{
-    double size = 0.0;
-    if (!channels.isEmpty()) {
-        if (channels.first()->data()->xValuesFormat() == DataHolder::XValuesUniform)
-            size = samplesCount() * xStep();
-        else {
-            channels.first()->populate();
-            size = channels.first()->data()->xValues().last();
-        }
-    }
-    return size;
-}
-
 DescriptionList DfdFileDescriptor::dataDescriptor() const
 {
     if (dataDescription) return dataDescription->data;

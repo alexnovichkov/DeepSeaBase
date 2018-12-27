@@ -81,7 +81,7 @@ public:
     virtual QMap<QString, QString> info() const = 0;
     virtual Descriptor::DataType type() const = 0;
     virtual QString typeDisplay() const = 0;
-    virtual double size() const = 0;
+    virtual double size() const;
     virtual DescriptionList dataDescriptor() const = 0;
     virtual void setDataDescriptor(const DescriptionList &data) = 0;
     virtual QString dataDescriptorAsString() const = 0;

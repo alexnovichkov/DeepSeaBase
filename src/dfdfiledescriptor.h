@@ -285,7 +285,6 @@ public:
     QDateTime dateTime() const;
     virtual Descriptor::DataType type() const;
     virtual QString typeDisplay() const;
-    double size() const;
     virtual DescriptionList dataDescriptor() const;
     virtual void setDataDescriptor(const DescriptionList &data);
 
