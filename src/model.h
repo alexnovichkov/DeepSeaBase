@@ -34,6 +34,8 @@ public:
     void invalidateGraphs();
     void invalidateGraph(FileDescriptor *file, int channel);
 
+
+
     void save();
     QModelIndex modelIndexOfFile(FileDescriptor *f, int column);
 

@@ -4,7 +4,7 @@
 #include <qwt_plot.h>
 #include <qwt_plot_dict.h>
 #include <math.h>
-
+#include <QAudio>
 
 class QwtLegend;
 class QwtPlotGrid;
@@ -33,7 +33,8 @@ class QCheckBox;
 class QLabel;
 class QDoubleSpinBox;
 class TrackingPanel;
-
+class QAudioOutput;
+class DataIODevice;
 
 class Plot : public QwtPlot
 {
@@ -132,12 +133,17 @@ private slots:
     void editLegendItem(QwtPlotItem *item);
     void deleteGraph(QwtPlotItem *item);
     void showContextMenu(const QPoint &pos, const int axis);
+    void audioStateChanged(QAudio::State state);
 private:
     void importPlot(const QString &fileName);
     bool hasDuplicateNames(const QString name) const;
     void checkDuplicates(const QString name);
     QString yValuesPresentationSuffix(int yValuesPresentation) const;
     void recalculateScale(bool leftAxis);
+
+    void playChannel(Channel *ch);
+    QAudioOutput* audio;
+    DataIODevice *audioData;
 
     // axis labels
     QString xName;

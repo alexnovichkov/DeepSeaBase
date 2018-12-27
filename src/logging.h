@@ -25,4 +25,6 @@ private:
 #define DD
 #endif
 
+#define DDD  Trace trace(Q_FUNC_INFO);
+
 #endif // LOGGING_H

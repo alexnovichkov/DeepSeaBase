@@ -43,6 +43,9 @@
 #include "logging.h"
 #include "trackingpanel.h"
 
+#include "dataiodevice.h"
+#include <QAudioOutput>
+
 #define LOG_MIN_MY 1.0e-3
 
 static inline QwtInterval logInterval( double base, const QwtInterval &interval )
@@ -242,6 +245,9 @@ Plot::Plot(QWidget *parent) :
     connect(trackingPanel,SIGNAL(switchHarmonics(bool)),picker,SLOT(showHarmonics(bool)));
 
     picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
+
+    audio = 0;
+    audioData = 0;
 }
 
 Plot::~Plot()
@@ -696,6 +702,74 @@ void Plot::recalculateScale(bool leftAxis)
 
 }
 
+void Plot::playChannel(Channel *ch)
+{DDD;
+    if (!ch) return;
+
+    if (ch->type()!=Descriptor::TimeResponse) return;
+
+    if (audio) {
+        audio->stop();
+        delete audio;
+        audio = 0;
+    }
+
+    if (audioData) {
+        delete audioData;
+        audioData = 0;
+    }
+
+    audioData = new DataIODevice(ch, this);
+    audioData->open(QIODevice::ReadOnly);
+
+    QAudioFormat format;
+    // Set up the format, eg.
+    format.setSampleRate(qRound(1.0/ch->xStep()));
+    format.setChannelCount(1);
+    format.setSampleSize(16);
+    format.setCodec("audio/pcm");
+    format.setByteOrder(QAudioFormat::LittleEndian);
+    format.setSampleType(QAudioFormat::UnSignedInt);
+
+    QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
+    if (!info.isFormatSupported(format)) {
+        qWarning() << "Raw audio format not supported by backend, cannot play audio.";
+        return;
+    }
+
+//    audio = new QAudioOutput(format, this);
+//    audio->setBufferSize(sizeof(double) * 5*qRound(1.0/ch->xStep()));
+//    audio->setVolume(0.5);
+//    connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioStateChanged(QAudio::State)));
+//    audio->start(audioData);
+}
+
+void Plot::audioStateChanged(QAudio::State state)
+{DDD;
+    DebugPrint(state);
+
+    switch (state) {
+        case QAudio::IdleState:
+            // Finished playing (no more data)
+            audio->stop();
+            audioData->close();
+            delete audio;
+            break;
+
+        case QAudio::StoppedState:
+            // Stopped for other reasons
+            if (audio->error() != QAudio::NoError) {
+                // Error handling
+                qDebug()<<"audio stopped:"<<audio->error();
+            }
+            break;
+
+        default:
+            // ... other cases as appropriate
+            break;
+    }
+}
+
 bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool plotOnRight, int fileNumber)
 {DD;
     if (plotted(descriptor, channel)) return false;
@@ -780,6 +854,8 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
     g->attach(this);
     update();
     emit graphsChanged();
+
+    //playChannel(ch);
     return true;
 }
 

@@ -6,7 +6,7 @@
 
 QT       += core gui
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport axcontainer
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport axcontainer multimedia
 
 TARGET = DeepSeaBase
 TEMPLATE = app
@@ -93,7 +93,8 @@ SOURCES += main.cpp\
     framecutter.cpp \
     methods/savingfunction.cpp \
     methods/spectrealgorithm.cpp \
-    unitsconverter.cpp
+    unitsconverter.cpp \
+    dataiodevice.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -164,7 +165,8 @@ HEADERS  += mainwindow.h \
     framecutter.h \
     methods/savingfunction.h \
     methods/spectrealgorithm.h \
-    unitsconverter.h
+    unitsconverter.h \
+    dataiodevice.h
 
 SOURCES +=\
   $$PWD/../3rdParty/DspFilters/*.cpp \
