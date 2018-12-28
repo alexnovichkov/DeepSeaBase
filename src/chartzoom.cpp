@@ -75,6 +75,7 @@ ChartZoom::ChartZoom(QwtPlot *qp) :
     axisZoom = new QAxisZoomSvc();
     connect(axisZoom,SIGNAL(xAxisClicked(double,bool)),SIGNAL(updateTrackingCursor(double,bool)));
     connect(axisZoom,SIGNAL(contextMenuRequested(QPoint,int)),SIGNAL(contextMenuRequested(QPoint,int)));
+    connect(axisZoom,SIGNAL(moveCursor(bool)),SIGNAL(moveCursor(bool)));
     axisZoom->attach(this);
 }
 

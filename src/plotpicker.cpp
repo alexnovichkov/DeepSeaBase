@@ -57,6 +57,9 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
     const int key = e->key();
 
     if (key == Qt::Key_Left) {
+        if (d_selectedCursor) {
+            emit moveCursor(false);
+        }
         if (d_selectedPoint > 0) {
             highlightPoint(false);
             d_selectedPoint--;
@@ -64,6 +67,9 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
         }
     }
     else if (key == Qt::Key_Right) {
+        if (d_selectedCursor) {
+            emit moveCursor(true);
+        }
         if (d_selectedPoint >=0 && d_selectedPoint < d_selectedCurve->samplesCount()-1) {
             highlightPoint(false);
             d_selectedPoint++;
@@ -129,8 +135,13 @@ void PlotPicker::widgetKeyPressEvent(QKeyEvent *e)
     else QwtPlotPicker::widgetKeyPressEvent(e);
 }
 
+void PlotPicker::updateSelectedCursor(QwtPlotMarker *cursor)
+{
+    if (cursor) d_selectedCursor = cursor;
+}
+
 void PlotPicker::resetHighLighting()
-{DDD;
+{DD;
     highlightPoint(false);
     d_selectedCurve = NULL;
     d_selectedPoint = -1;
@@ -150,7 +161,7 @@ void PlotPicker::resetHighLighting()
 }
 
 Curve * PlotPicker::findClosestPoint(const QPoint &pos, int &index) const
-{DDD;
+{DD;
     Curve *curve = 0;
     double dist = 10e10;
 
@@ -180,7 +191,7 @@ Curve * PlotPicker::findClosestPoint(const QPoint &pos, int &index) const
  * the current picker position
  */
 PointLabel *PlotPicker::findLabel()
-{DDD;
+{DD;
     const QwtPlotItemList& itmList = plot->itemList();
     for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
         if (( *it )->rtti() == QwtPlotItem::Rtti_PlotCurve ) {
@@ -195,7 +206,7 @@ PointLabel *PlotPicker::findLabel()
 }
 
 QwtPlotMarker *PlotPicker::findCursor(const QPoint &pos)
-{DDD;
+{DD;
     const QwtPlotItemList& itmList = plot->itemList();
     for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
         if (( *it )->rtti() == QwtPlotItem::Rtti_PlotMarker ) {
@@ -212,7 +223,7 @@ QwtPlotMarker *PlotPicker::findCursor(const QPoint &pos)
 }
 
 void PlotPicker::pointAppended(const QPoint &pos)
-{DDD;
+{DD;
     resetHighLighting();
 
     Curve *curve = NULL;
@@ -246,7 +257,7 @@ void PlotPicker::pointAppended(const QPoint &pos)
 }
 
 void PlotPicker::pointMoved(const QPoint &pos)
-{DDD;
+{DD;
     if (d_selectedLabel) {//qDebug()<<"label moving";
         d_selectedLabel->moveBy(pos-d_currentPos);
         d_currentPos = pos;
@@ -269,7 +280,7 @@ void PlotPicker::pointMoved(const QPoint &pos)
 
 // Hightlight the selected point
 void PlotPicker::highlightPoint(bool showIt)
-{DDD;
+{DD;
     if (showIt) {
         if (!d_selectedCurve)
             return;

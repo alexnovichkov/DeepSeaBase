@@ -237,12 +237,17 @@ Plot::Plot(QWidget *parent) :
     zoom->setZoomEnabled(true);
     connect(zoom,SIGNAL(updateTrackingCursor(double,bool)), trackingPanel, SLOT(setXValue(double,bool)));
     connect(zoom,SIGNAL(contextMenuRequested(QPoint,int)),SLOT(showContextMenu(QPoint,int)));
+    connect(zoom,SIGNAL(moveCursor(bool)), trackingPanel, SLOT(moveCursor(bool)));
 
     picker = new PlotPicker(canvas);
     connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
     connect(picker,SIGNAL(updateTrackingCursor(double,bool)),trackingPanel, SLOT(setXValue(double,bool)));
     connect(picker,SIGNAL(cursorMovedTo(QwtPlotMarker*,double)), trackingPanel, SLOT(setXValue(QwtPlotMarker*,double)));
     connect(picker,SIGNAL(cursorSelected(QwtPlotMarker*)), trackingPanel, SLOT(updateSelectedCursor(QwtPlotMarker*)));
+    connect(picker,SIGNAL(moveCursor(bool)), trackingPanel, SLOT(moveCursor(bool)));
+    // передаем информацию об установленном курсоре в picker, чтобы тот смог обновить инфу о выделенном курсоре
+    connect(trackingPanel,SIGNAL(cursorSelected(QwtPlotMarker*)), picker, SLOT(updateSelectedCursor(QwtPlotMarker*)));
+
 
 
     picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());

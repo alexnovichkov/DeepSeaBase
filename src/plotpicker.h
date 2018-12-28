@@ -23,8 +23,11 @@ protected:
 signals:
     void updateTrackingCursor(double xVal, bool second);
     void cursorMovedTo(QwtPlotMarker *cursor, double newValue);
+    void moveCursor(bool right);
     void cursorSelected(QwtPlotMarker *cursor);
     void labelSelected(bool);
+public slots:
+    void updateSelectedCursor(QwtPlotMarker*cursor);
 private slots:
     void pointAppended(const QPoint &pos);
     void pointMoved(const QPoint &pos);

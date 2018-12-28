@@ -104,6 +104,10 @@ void QMainZoomSvc::procKeyboardEvent(QEvent *event)
             }
             break;
         }
+//        case Qt::Key_Left:
+//            qDebug()<<"left pressed from main zoom"; break;
+//        case Qt::Key_Right:
+//            qDebug()<<"right pressed from main zoom"; break;
         default: break;
     }
 }

@@ -147,6 +147,7 @@ public slots:
 signals:
     void updateTrackingCursor(double,bool);
     void contextMenuRequested(const QPoint &pos, const int axis);
+    void moveCursor(bool right);
 protected:
     // обработчик всех событий
     bool eventFilter(QObject *,QEvent *);

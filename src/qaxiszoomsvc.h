@@ -35,6 +35,7 @@ signals:
     void xAxisClicked(double xValue, bool second);
     void contextMenuRequested(const QPoint &pos, const int axis);
     void needsAutoscale(int axis);
+    void moveCursor(bool right);
 protected:
     // обработчик всех событий
     bool eventFilter(QObject *,QEvent *);

@@ -123,6 +123,12 @@ void QAxisZoomSvc::procKeyboardEvent(QEvent *event)
         case Qt::Key_Backspace:
             zoom->zoomBack();
             break;
+        case Qt::Key_Left:
+            emit moveCursor(false);
+            break;
+        case Qt::Key_Right:
+            emit moveCursor(true);
+            break;
         default: break;
     }
 }

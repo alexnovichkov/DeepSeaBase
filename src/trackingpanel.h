@@ -25,6 +25,7 @@ public:
     bool showYValues;
     QVector<double> yValues;
     bool reject = false;
+    bool current = false;
 };
 
 class ZoneSpan : public QwtPlotZoneItem
@@ -64,9 +65,11 @@ public slots:
     void setXValue(QwtPlotMarker *cursor, double value);
     void update();
     void updateSelectedCursor(QwtPlotMarker *cursor);
+    void moveCursor(bool right);
 signals:
     void switchHarmonics(bool on);
     void closeRequested();
+    void cursorSelected(QwtPlotMarker*);
 private:
     void setX(double value, int index);
     void updateTrackingCursor(double xVal, int index);
