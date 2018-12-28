@@ -467,13 +467,6 @@ void DfdFileDescriptor::writeRawFile()
     setDataChanged(false);
 }
 
-void DfdFileDescriptor::populate()
-{DD;
-    for(int i = 0; i < channels.size(); ++i) {
-        if (!channels[i]->populated()) channels[i]->populate();
-    }
-}
-
 void DfdFileDescriptor::updateDateTimeGUID()
 {DD;
     DFDGUID = DfdFileDescriptor::createGUID();
@@ -920,14 +913,6 @@ Channel *DfdFileDescriptor::channel(int index) const
 {
     if (channels.size()>index) return channels[index];
     return 0;
-}
-
-bool DfdFileDescriptor::allUnplotted() const
-{DD;
-    foreach (DfdChannel *c, channels) {
-        if (c->checkState() == Qt::Checked) return false;
-    }
-    return true;
 }
 
 bool DfdFileDescriptor::isSourceFile() const

@@ -40,6 +40,13 @@ FileDescriptor::~FileDescriptor()
 
 }
 
+void FileDescriptor::populate()
+{
+    for (int i=0; i<channelsCount(); ++i) {
+        if (!channel(i)->populated()) channel(i)->populate();
+    }
+}
+
 // возвращает округленную длину записи:
 // 3200,0001 -> 3200
 // 3199,9999 -> 3200
@@ -84,6 +91,14 @@ void FileDescriptor::setChanged(bool changed)
 void FileDescriptor::setDataChanged(bool changed)
 {
     _dataChanged = changed;
+}
+
+bool FileDescriptor::allUnplotted() const
+{
+    for (int i=0; i<channelsCount(); ++i) {
+        if (channel(i)->checkState() == Qt::Checked) return false;
+    }
+    return true;
 }
 
 bool FileDescriptor::hasGraphs() const

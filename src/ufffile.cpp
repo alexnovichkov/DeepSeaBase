@@ -228,13 +228,6 @@ void UffFileDescriptor::writeRawFile()
     // Nothing to do here
 }
 
-void UffFileDescriptor::populate()
-{DD;
-    for(int i = 0; i < channels.size(); ++i) {
-        if (!channels[i]->populated()) channels[i]->populate();
-    }
-}
-
 void UffFileDescriptor::updateDateTimeGUID()
 {DD;
     QDateTime t = QDateTime::currentDateTime();
@@ -654,14 +647,6 @@ Channel *UffFileDescriptor::channel(int index) const
     if (channels.size()>index)
         return channels[index];
     return 0;
-}
-
-bool UffFileDescriptor::allUnplotted() const
-{DD;
-    foreach (Function *c, channels) {
-        if (c->checkState() == Qt::Checked) return false;
-    }
-    return true;
 }
 
 bool UffFileDescriptor::isSourceFile() const

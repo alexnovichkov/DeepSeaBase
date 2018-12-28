@@ -263,11 +263,10 @@ public:
     DfdFileDescriptor(const DfdFileDescriptor &d);
     // creates a copy of DataDescriptor with copying data
     DfdFileDescriptor(const FileDescriptor &other);
-    ~DfdFileDescriptor();
+    virtual ~DfdFileDescriptor();
     virtual void read();
     virtual void write();
     virtual void writeRawFile();
-    virtual void populate();
     void updateDateTimeGUID();
     virtual void fillPreliminary(Descriptor::DataType);
     virtual void fillRest();
@@ -312,7 +311,6 @@ public:
     Channel *channel(int index) const;
     virtual DfdChannel* dfdChannel(int index) {return channels[index];}
 
-    bool allUnplotted() const;
     bool isSourceFile() const;
 
     bool dataTypeEquals(FileDescriptor *other) const;

@@ -75,7 +75,7 @@ public:
     virtual void read() = 0;
     virtual void write() = 0;
     virtual void writeRawFile() = 0;
-    virtual void populate() = 0;
+    virtual void populate();
     virtual void updateDateTimeGUID() = 0;
 
     virtual QMap<QString, QString> info() const = 0;
@@ -120,7 +120,7 @@ public:
     bool dataChanged() const {return _dataChanged;}
     virtual void setDataChanged(bool changed);
 
-    virtual bool allUnplotted() const = 0;
+    virtual bool allUnplotted() const;
 
     virtual bool isSourceFile() const {return false;}
 
@@ -233,31 +233,5 @@ protected:
 };
 
 QList<int> filterIndexes(FileDescriptor *dfd, const QList<QPair<FileDescriptor *, int> > &channels);
-
-//#include <QAbstractItemModel>
-
-//class Model : public QAbstractItemModel
-//{
-//    Q_OBJECT
-//public:
-//    Model(QObject *parent);
-//    virtual ~Model();
-//    // QAbstractItemModel interface
-//public:
-//    virtual QModelIndex index(int row, int column, const QModelIndex &parent) const;
-//    virtual QModelIndex parent(const QModelIndex &child) const;
-//    virtual QModelIndex sibling(int row, int column, const QModelIndex &idx) const;
-//    virtual int rowCount(const QModelIndex &parent) const;
-//    virtual int columnCount(const QModelIndex &parent) const;
-//    virtual bool hasChildren(const QModelIndex &parent) const;
-//    virtual QVariant data(const QModelIndex &index, int role) const;
-//    virtual bool setData(const QModelIndex &index, const QVariant &value, int role);
-//    virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
-//    virtual bool setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role);
-//    virtual Qt::ItemFlags flags(const QModelIndex &index) const;
-//    virtual void sort(int column, Qt::SortOrder order);
-//private:
-//    QList<FileDescriptor*> d;
-//};
 
 #endif // FILEDESCRIPTOR_H

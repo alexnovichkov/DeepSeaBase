@@ -120,7 +120,6 @@ public:
     virtual void read();
     virtual void write();
     virtual void writeRawFile();
-    virtual void populate();
     virtual void updateDateTimeGUID();
     QString dataDescriptorAsString() const;
 
@@ -153,7 +152,6 @@ public:
     virtual void setAttachedFileName(const QString &name);
     virtual QStringList getHeadersForChannel(int channel);
     virtual Channel *channel(int index) const;
-    virtual bool allUnplotted() const;
     virtual bool isSourceFile() const;
     virtual bool operator ==(const FileDescriptor &descriptor);
     virtual bool dataTypeEquals(FileDescriptor *other) const;
