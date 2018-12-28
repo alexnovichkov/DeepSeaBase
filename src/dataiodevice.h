@@ -15,6 +15,8 @@ public:
     virtual bool isSequential() const override;
     virtual bool open(OpenMode mode) override;
     virtual void close() override;
+    qint64 position() const {return m_pos;}
+    double positionSec() const;
 //    virtual qint64 pos() const override;
 //    virtual qint64 size() const override;
 //    virtual bool seek(qint64 pos) override;

@@ -135,6 +135,7 @@ private slots:
     void deleteGraph(QwtPlotItem *item);
     void showContextMenu(const QPoint &pos, const int axis);
     void audioStateChanged(QAudio::State state);
+    void audioPosChanged();
 private:
     void importPlot(const QString &fileName);
     bool hasDuplicateNames(const QString name) const;

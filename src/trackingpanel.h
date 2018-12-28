@@ -19,6 +19,7 @@ public:
     explicit TrackingCursor(const QColor &col);
     void moveTo(const double xValue);
     void setYValues(const QVector<double> &yValues);
+    void setCurrent(bool current);
 
     void updateLabel();
     bool showYValues;
@@ -62,6 +63,7 @@ public slots:
     void setXValue(double value, bool second);
     void setXValue(QwtPlotMarker *cursor, double value);
     void update();
+    void updateSelectedCursor(QwtPlotMarker *cursor);
 signals:
     void switchHarmonics(bool on);
     void closeRequested();

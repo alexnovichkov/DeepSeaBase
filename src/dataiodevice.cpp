@@ -27,6 +27,11 @@ void DataIODevice::close()
     QIODevice::close();
 }
 
+double DataIODevice::positionSec() const
+{
+    return double(m_pos) * m_channel->xStep();
+}
+
 //qint64 DataIODevice::pos() const
 //{DDD;
 //    return m_pos*sizeof(double);

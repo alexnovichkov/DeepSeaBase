@@ -30,10 +30,10 @@ PlotPicker::PlotPicker(QWidget *canvas) :
 
     marker = 0;
     mode = Plot::ScalingInteraction;
-    selectedLabel = 0;
+    d_selectedLabel = 0;
     defaultCursor = plot->canvas()->cursor();
 
-    selectedCursor = 0;
+    d_selectedCursor = 0;
 
     setStateMachine(new QwtPickerDragPointMachine);
     setTrackerMode(QwtPicker::AlwaysOn);
@@ -55,7 +55,6 @@ void PlotPicker::setMode(Plot::InteractionMode mode)
 void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
 {DD;
     const int key = e->key();
-   // if (d_selectedPoint == -1) return;
 
     if (key == Qt::Key_Left) {
         if (d_selectedPoint > 0) {
@@ -88,27 +87,27 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
                 plot->replot();
             }
         }
-        else if (selectedLabel) {
-            selectedLabel->cycleMode();
+        else if (d_selectedLabel) {
+            d_selectedLabel->cycleMode();
         }
 
     }
     else if (key == Qt::Key_C) {
-        if (selectedLabel) {
-            selectedLabel->cycleMode();
+        if (d_selectedLabel) {
+            d_selectedLabel->cycleMode();
             //plot->replot();
         }
     }
     else if (key == Qt::Key_Delete) {
-        if (selectedLabel) {
+        if (d_selectedLabel) {
             const QwtPlotItemList& itmList = plot->itemList();
             for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
                 if (( *it )->rtti() == QwtPlotItem::Rtti_PlotCurve ) {
                     Curve *c = static_cast<Curve *>( *it );
-                    c->removeLabel(selectedLabel);
+                    c->removeLabel(d_selectedLabel);
                 }
             }
-            selectedLabel = 0;
+            d_selectedLabel = 0;
             emit labelSelected(false);
             plot->replot();
         }
@@ -123,6 +122,7 @@ void PlotPicker::widgetKeyPressEvent(QKeyEvent *e)
     const int key = e->key();
    // if (d_selectedPoint == -1) return;
 
+    // блокируем срабатывание клавиш, чтобы не сдвигался курсор мыши
     if (key == Qt::Key_Left || key == Qt::Key_Right) {
 
     }
@@ -130,10 +130,12 @@ void PlotPicker::widgetKeyPressEvent(QKeyEvent *e)
 }
 
 void PlotPicker::resetHighLighting()
-{DD;
+{DDD;
     highlightPoint(false);
     d_selectedCurve = NULL;
     d_selectedPoint = -1;
+    d_selectedLabel = 0;
+    d_selectedCursor = 0;
 
     Plot *p = static_cast<Plot*>(plot);
     if (p) {
@@ -143,13 +145,12 @@ void PlotPicker::resetHighLighting()
     }
     plot->updateLegend();
 
-    selectedLabel = 0;
-    selectedCursor = 0;
+    emit cursorSelected(d_selectedCursor);
     emit labelSelected(false);
 }
 
 Curve * PlotPicker::findClosestPoint(const QPoint &pos, int &index) const
-{DD;
+{DDD;
     Curve *curve = 0;
     double dist = 10e10;
 
@@ -179,7 +180,7 @@ Curve * PlotPicker::findClosestPoint(const QPoint &pos, int &index) const
  * the current picker position
  */
 PointLabel *PlotPicker::findLabel()
-{DD;
+{DDD;
     const QwtPlotItemList& itmList = plot->itemList();
     for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
         if (( *it )->rtti() == QwtPlotItem::Rtti_PlotCurve ) {
@@ -194,7 +195,7 @@ PointLabel *PlotPicker::findLabel()
 }
 
 QwtPlotMarker *PlotPicker::findCursor(const QPoint &pos)
-{DD;
+{DDD;
     const QwtPlotItemList& itmList = plot->itemList();
     for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
         if (( *it )->rtti() == QwtPlotItem::Rtti_PlotMarker ) {
@@ -211,20 +212,24 @@ QwtPlotMarker *PlotPicker::findCursor(const QPoint &pos)
 }
 
 void PlotPicker::pointAppended(const QPoint &pos)
-{DD;
+{DDD;
     resetHighLighting();
 
     Curve *curve = NULL;
     int index = -1;
 
-    selectedLabel = findLabel();
-    selectedCursor = findCursor(pos);
-    if (selectedCursor) {
+    d_selectedLabel = findLabel();
+    d_selectedCursor = findCursor(pos);
+
+    //обновляем состояние курсоров дискрет. selectedCursor ==0 если ни одного курсора не выделено
+    emit cursorSelected(d_selectedCursor);
+
+    if (d_selectedCursor) {
         d_currentPos = pos;
         emit labelSelected(true);
     }
-    else if (selectedLabel) {
-        selectedLabel->setSelected(true);
+    else if (d_selectedLabel) {
+        d_selectedLabel->setSelected(true);
         d_currentPos = pos;
         emit labelSelected(true);
     }
@@ -241,14 +246,13 @@ void PlotPicker::pointAppended(const QPoint &pos)
 }
 
 void PlotPicker::pointMoved(const QPoint &pos)
-{DD;
-    if (selectedLabel) {//qDebug()<<"label moving";
-        selectedLabel->moveBy(pos-d_currentPos);
+{DDD;
+    if (d_selectedLabel) {//qDebug()<<"label moving";
+        d_selectedLabel->moveBy(pos-d_currentPos);
         d_currentPos = pos;
     }
-    else if (selectedCursor) {
-        emit cursorMovedTo(selectedCursor, plot->invTransform(QwtPlot::xBottom, pos.x()));
-        //selectedCursor->setXValue();
+    else if (d_selectedCursor) {
+        emit cursorMovedTo(d_selectedCursor, plot->invTransform(QwtPlot::xBottom, pos.x()));
         d_currentPos = pos;
     }
 
@@ -265,7 +269,7 @@ void PlotPicker::pointMoved(const QPoint &pos)
 
 // Hightlight the selected point
 void PlotPicker::highlightPoint(bool showIt)
-{DD;
+{DDD;
     if (showIt) {
         if (!d_selectedCurve)
             return;

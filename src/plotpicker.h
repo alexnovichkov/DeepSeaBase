@@ -23,6 +23,7 @@ protected:
 signals:
     void updateTrackingCursor(double xVal, bool second);
     void cursorMovedTo(QwtPlotMarker *cursor, double newValue);
+    void cursorSelected(QwtPlotMarker *cursor);
     void labelSelected(bool);
 private slots:
     void pointAppended(const QPoint &pos);
@@ -44,11 +45,11 @@ private:
 
     Plot::InteractionMode mode;
 
-    PointLabel *selectedLabel;
+    PointLabel *d_selectedLabel;
 
     QPoint d_currentPos;
 
-    QwtPlotMarker *selectedCursor;
+    QwtPlotMarker *d_selectedCursor;
 protected:
     virtual QwtText trackerTextF(const QPointF &pos) const;
 };

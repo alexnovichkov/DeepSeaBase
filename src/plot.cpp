@@ -242,6 +242,8 @@ Plot::Plot(QWidget *parent) :
     connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
     connect(picker,SIGNAL(updateTrackingCursor(double,bool)),trackingPanel, SLOT(setXValue(double,bool)));
     connect(picker,SIGNAL(cursorMovedTo(QwtPlotMarker*,double)), trackingPanel, SLOT(setXValue(QwtPlotMarker*,double)));
+    connect(picker,SIGNAL(cursorSelected(QwtPlotMarker*)), trackingPanel, SLOT(updateSelectedCursor(QwtPlotMarker*)));
+
 
     picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
 
@@ -744,11 +746,14 @@ void Plot::playChannel(Channel *ch)
         return;
     }
 
-//    audio = new QAudioOutput(format, this);
-//    audio->setBufferSize(sizeof(double) * 5*qRound(1.0/ch->xStep()));
-//    audio->setVolume(0.5);
-//    connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioStateChanged(QAudio::State)));
-//    audio->start(audioData);
+    audio = new QAudioOutput(format, this);
+    audio->setBufferSize(2 * qRound(1.0/ch->xStep()));
+    audio->setNotifyInterval(1000);
+
+    connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioStateChanged(QAudio::State)));
+    connect(audio, SIGNAL(notify()), this, SLOT(audioPosChanged()));
+    audio->start(audioData);
+    audio->setVolume(0.01);
 }
 
 void Plot::audioStateChanged(QAudio::State state)
@@ -761,6 +766,7 @@ void Plot::audioStateChanged(QAudio::State state)
             audio->stop();
             audioData->close();
             delete audio;
+            audio = 0;
             break;
 
         case QAudio::StoppedState:
@@ -775,6 +781,12 @@ void Plot::audioStateChanged(QAudio::State state)
             // ... other cases as appropriate
             break;
     }
+}
+
+void Plot::audioPosChanged()
+{
+    if (!audioData) return;
+    qDebug() << "currently at" << audioData->position()<<","<<audioData->positionSec();
 }
 
 bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool plotOnRight, int fileNumber)
@@ -862,7 +874,7 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
     update();
     emit graphsChanged();
 
-    //playChannel(ch);
+    playChannel(ch);
     return true;
 }
 

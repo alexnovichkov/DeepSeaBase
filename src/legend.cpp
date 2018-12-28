@@ -287,7 +287,7 @@ QVariant LegendModel::data(const QModelIndex &index, int role) const
         switch (column) {
             case 1: {
                 QFont f = qApp->font();
-                if (d.selected) f.setBold(true);
+                if (d.selected) f.setUnderline(true);
                 return f;
             }
             default: return QVariant();
