@@ -150,8 +150,6 @@ public:
     void populateFloat();
     QVector<float> floatValues;
 
-    virtual void clear();
-
     /**
      * @brief preprocess - подготавливает значение к записи с помощью setValue
      * @param v - значение

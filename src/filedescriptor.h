@@ -176,7 +176,8 @@ public:
     virtual bool populated() const = 0;
     virtual void setPopulated(bool populated) = 0;
     virtual void populate() = 0;
-    virtual void clear() = 0;
+    virtual void clear();
+    virtual void maybeClearData();
 
     virtual QString name() const = 0;
     virtual void setName(const QString &name) = 0;

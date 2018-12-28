@@ -788,6 +788,8 @@ MainWindow::~MainWindow()
 
     setSetting("folders1", map);
 
+    plot->deleteGraphs();
+
     for (int i= tabWidget->count()-1; i>=0; --i) {
         closeTab(i);
     }

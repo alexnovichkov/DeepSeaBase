@@ -1159,12 +1159,6 @@ void Function::populate()
     _populated = true;
 }
 
-void Function::clear()
-{DD;
-    _data->clear();
-    setPopulated(false);
-}
-
 QString Function::name() const
 {DD;
     return type58[4].value.toString();

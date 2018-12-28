@@ -879,7 +879,7 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
     update();
     emit graphsChanged();
 
-    playChannel(ch);
+    //playChannel(ch);
     return true;
 }
 

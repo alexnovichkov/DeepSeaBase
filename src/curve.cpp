@@ -189,6 +189,9 @@ Curve::~Curve()
     foreach(PointLabel *l, labels) l->detach();
     qDeleteAll(labels);
     labels.clear();
+
+    //maybe clear data that is over 1000000 samples
+    if (channel) channel->maybeClearData();
 }
 
 void Curve::drawLines(QPainter *painter,

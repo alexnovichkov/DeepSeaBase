@@ -57,7 +57,6 @@ public:
     virtual bool populated() const {return _populated;}
     virtual void setPopulated(bool populated) {_populated = populated;}
     virtual void populate();
-    virtual void clear();
     virtual QString name() const;
     virtual void setName(const QString &name);
     virtual QString description() const;

@@ -126,6 +126,17 @@ Channel::Channel(Channel &other) : _checkState(Qt::Unchecked),
 
 }
 
+void Channel::clear()
+{
+    _data->clear();
+    setPopulated(false);
+}
+
+void Channel::maybeClearData()
+{
+    if (samplesCount()>1000000) clear();
+}
+
 double Channel::xMin() const
 {
     return _data->xMin();

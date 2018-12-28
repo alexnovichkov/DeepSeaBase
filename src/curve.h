@@ -68,7 +68,6 @@ public:
     bool duplicate;
     bool highlighted;
     DfdData *data;
-
 private:
     void evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const;
 
@@ -79,9 +78,6 @@ protected:
     // QwtPlotItem interface
 public:
     virtual QList<QwtLegendData> legendData() const;
-
-    // QwtPlotItem interface
-public:
     virtual void setVisible(bool visible) override;
 };
 

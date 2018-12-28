@@ -1144,6 +1144,7 @@ void DfdChannel::read(DfdSettings &dfd, int numChans)
         dataPositions << channelIndex * blockSizeInBytes();
     }
     else {
+        if (ChanBlockSize == 1) return; //не запоминаем положения блоков, если блок равен 1
         int i = 0; // номер блока
         qint64 rawSize = QFile(parent->rawFileName).size(); //DebugPrint(rawSize);
         while (1) {
@@ -1345,12 +1346,6 @@ void DfdChannel::populateFloat()
     else {
         qDebug()<<"Cannot read raw file"<<parent->attachedFileName();
     }
-}
-
-void DfdChannel::clear()
-{DD;
-    _data->clear();
-    setPopulated(false);
 }
 
 quint64 DfdChannel::blockSizeInBytes() const
