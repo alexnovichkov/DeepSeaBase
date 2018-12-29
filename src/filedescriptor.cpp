@@ -71,7 +71,7 @@ double FileDescriptor::size() const
             }
         }
         else {
-            channel(0)->populate();
+            if (!channel(0)->populated()) channel(0)->populate();
             size = channel(0)->data()->xValues().last();
         }
     }

@@ -133,64 +133,33 @@ QVector<D> getChunkOfData(QDataStream &readStream, int chunkSize, uint IndType, 
     return result;
 }
 
-QVector<double> convert(const QByteArray &b, uint IndType)
+//QVector<double> convertFromUINT16(const QByteArray &b, uint IndType)
+//{
+//    const uchar *ptr = reinterpret_cast<const uchar*>(b.data());
+//    int length = b.size();
+//    QVector<double> temp(length / (IndType % 16), 0.0);
+
+//    int i=0;
+//    while (length) {
+//        temp[i++] = static_cast<double>(qFromLittleEndian<quint16>(ptr));
+//        length -= (IndType % 16);
+//        ptr += (IndType % 16);
+//    }
+//    return temp;
+//}
+
+QVector<double> convertFromUINT16(unsigned char *ptr, qint64 length, uint IndType)
 {
-    const uchar *ptr = reinterpret_cast<const uchar*>(b.data());
-    int length = b.size();
     QVector<double> temp(length / (IndType % 16), 0.0);
 
     int i=0;
     while (length) {
-//        switch (IndType) {
-//            case 0x00000001: {
-//                temp[i++] = static_cast<double>(quint8(*ptr));
-//                break;
-//            }
-//            case 0x80000001: {
-//                temp[i++] = static_cast<double>(qint8(*ptr));
-//                break;
-//            }
-//            case 0x00000002: {
-//                temp[i++] = static_cast<double>(qFromLittleEndian<quint16>(ptr));
-//                break;
-//            }
-//            case 0x80000002: {
-//                temp[i++] = static_cast<double>(qFromLittleEndian<qint16>(ptr));
-//                break;
-//            }
-//            case 0x00000004: {
-//                temp[i++] = static_cast<double>(qFromLittleEndian<quint32>(ptr));
-//                break;
-//            }
-//            case 0x80000004: {
-//                temp[i++] = static_cast<double>(qFromLittleEndian<qint32>(ptr));
-//                break;
-//            }
-//            case 0x80000008: {
-//                temp[i++] = static_cast<double>(qFromLittleEndian<qint64>(ptr));
-//                break;
-//            }
-//            case 0xC0000004: {
-//                temp[i++] = static_cast<double>(qFromLittleEndian<quint32>(ptr));
-//                break;
-//            }
-//            case 0xC0000008: //плавающий 64 бита
-//                temp[i++] = static_cast<double>(qFromLittleEndian<quint64>(ptr));
-//                break;
-//            case 0xC000000A: //плавающий 80 бит
-//                // этот вариант не работает
-//                temp[i++] = static_cast<double>(qFromLittleEndian<quint64>(ptr));
-//                break;
-//            default: break;
-//        }
-
         temp[i++] = static_cast<double>(qFromLittleEndian<quint16>(ptr));
         length -= (IndType % 16);
         ptr += (IndType % 16);
     }
     return temp;
 }
-
 
 DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
     : FileDescriptor(fileName),
@@ -1243,122 +1212,289 @@ void DfdChannel::populate()
     // clear previous data;
     _data->clear();
 
+    double thr = threshold(yName());
+    if (type()==Descriptor::FrequencyResponseFunction) thr=1.0;
+    _data->setThreshold(thr);
+
+    int units = DataHolder::UnitsUnknown;
+    if (dataType == Spectr || dataType == XSpectr) units = DataHolder::UnitsQuadratic;
+    _data->setYValuesUnits(units);
+
+//    int yValueFormat = dataFormat();
+
+//    if (YName.toLower()=="db" || YName.toLower()=="дб")
+//        yValueFormat = DataHolder::YValuesAmplitudesInDB;
+
     QFile rawFile(parent->attachedFileName());
 
+//    QTime time;
+//    time.start();
+
     if (rawFile.open(QFile::ReadOnly)) {
-        QDataStream readStream(&rawFile);
-        readStream.setByteOrder(QDataStream::LittleEndian);
-        if (IndType==0xC0000004)
-            readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-
-        double thr = threshold(yName());
-        if (type()==Descriptor::FrequencyResponseFunction) thr=1.0;
-        _data->setThreshold(thr);
-
-        int units = DataHolder::UnitsUnknown;
-        if (dataType == Spectr || dataType == XSpectr) units = DataHolder::UnitsQuadratic;
-        _data->setYValuesUnits(units);
-
-//        int yValueFormat = dataFormat();
-
-//        if (YName.toLower()=="db" || YName.toLower()=="дб")
-//            yValueFormat = DataHolder::YValuesAmplitudesInDB;
+        /* Сложная система оптимизаций чтения.
+         * Самый распространенный формат временных реализаций - IndType=2 (quint16)
+         * Или IndType = 3221225476 (32-bit float)
+         * Методы чтения идут в порядке убывания оптимальности
+         * - самый быстрый - когда мы знаем положение всех блоков данных
+         *   и отображаем файл в память.
+         * - медленнее - читать из файла в память и интерпретировать каждый отсчет
+         *
+         */
 
         QVector<double> YValues;
-
-        QTime time;
-        time.start();
-
         const quint64 blockSizeBytes = blockSizeInBytes();
-        if (!dataPositions.isEmpty()) {//уже знаем положения каждого блока данных канала
-            foreach (int pos, dataPositions) {
-                rawFile.seek(pos);
-                QVector<double> temp;
-                if (IndType == 2) {
+        const int channelsCount = parent->channelsCount();
+
+        if (IndType == 2) {//целое без знака, quint16. Можем читать как угодно
+            if (!dataPositions.isEmpty()) {
+                // уже знаем позиции всех данных
+                // читаем или через map, или оптимизированным способом
+
+                // trying to map file into memory
+                unsigned char *ptr = rawFile.map(0, rawFile.size());
+                if (ptr) {//достаточно памяти отобразить весь файл
+//                    qDebug()<<"IndType=2, mapped, by dataPositions";
+                    unsigned char *maxPtr = ptr + rawFile.size();
+                    unsigned char *ptrCurrent = ptr;
+
+                    foreach (int pos, dataPositions) {
+                        ptrCurrent = ptr + pos;
+                        QVector<double> temp = convertFromUINT16(ptrCurrent, qMin(maxPtr-ptrCurrent, int(blockSizeBytes)), IndType);
+                        YValues << temp;
+                    }
+                }
+                else {//оптимизированно через qToLittleEndian
+//                    qDebug()<<"IndType=2, optimised, by dataPositions";
+                    foreach (int pos, dataPositions) {
+                        rawFile.seek(pos);
+                        QVector<double> temp;
+
+                        QByteArray b = rawFile.read(blockSizeBytes);
+                        uchar *ptr = reinterpret_cast<uchar*>(b.data());
+                        int length = b.size();
+                        temp = convertFromUINT16(ptr, length, IndType);
+
+                        YValues << temp;
+                    }
+                }
+            }
+            else if (ChanBlockSize != 1) {//блоки достаточно длинные, чтобы мы могли читать в вектор
+                // Этот блок кода никогда не будет вызван,
+                // так как dataPositions заполняются всегда, если ChanBlockSize != 1
+
+                if (parent->BlockSize == 0) {// без перекрытия, читаем подряд весь канал
+//                    qDebug()<<"IndType=2, blockSize=0, skipping";
+                    // сложная схема пропуска данных на тот случай, если в каналах разное число отсчетов
+                    for (int i=0; i<channelsCount; ++i) {
+                        if (i==channelIndex) {
+                            QByteArray b = rawFile.read(blockSizeBytes);
+                            uchar *ptr = reinterpret_cast<uchar*>(b.data());
+                            int length = b.size();
+                            YValues = convertFromUINT16(ptr, length, IndType);
+                        }
+                        else {
+                            rawFile.skip(parent->dfdChannel(i)->blockSizeInBytes());
+                        }
+                    }
+                }
+                else {// с перекрытием, читаем классическим способом
+//                    qDebug()<<"IndType=2, с перекрытием, skipping";
+                    //с перекрытием, сначала читаем блок данных в ChanBlockSize отчетов для всех каналов
+                    // если каналы имеют разный размер блоков, этот метод даст сбой
+                    int actuallyRead = 0;
+                    const int chunkSize = channelsCount * ChanBlockSize;
+
+                    QDataStream readStream(&rawFile);
+                    readStream.setByteOrder(QDataStream::LittleEndian);
+
+                    while (1) {
+                        /*
+                        * i-й отсчет n-го канала имеет номер
+                        * n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
+                        */
+                        QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, IndType, &actuallyRead);
+
+                        //распихиваем данные по каналам
+                        actuallyRead /= channelsCount;
+                        YValues << temp.mid(actuallyRead*channelIndex, actuallyRead);
+
+                        if (actuallyRead < ChanBlockSize)
+                            break;
+                    }
+                }
+            }
+            else {//ChanBlockSize == 1
+                // читаем через map, по-отсчетно
+
+                // trying to map file into memory
+                unsigned char *ptr = rawFile.map(0, rawFile.size());
+                if (ptr) {//достаточно памяти отобразить весь файл
+//                    qDebug()<<"IndType=2, mapped, ChanBlockSize=1";
+                    //unsigned char *maxPtr = ptr + rawFile.size();
+                    unsigned char *ptrCurrent = ptr;
+
+                    YValues.resize(qMin(parent->NumInd, int(rawFile.size() / channelsCount / (IndType % 16))));
+                    for (int i=0; i < YValues.size(); ++i) {
+                        //
+                        // i-й отсчет n-го канала имеет номер
+                        // n + i*ChannelsCount
+                        //
+                        ptrCurrent = ptr + (channelIndex + i*channelsCount) * (IndType % 16);
+                        YValues[i] = static_cast<double>(qFromLittleEndian<quint16>(ptrCurrent));
+                    }
+                }
+                else {// не удалось прочитать никакими оптимальными методами, читаем медленным классическим
+//                    qDebug()<<"IndType=2, by chunks, ChanBlockSize=1";
+                    int actuallyRead = 0;
+                    const int chunkSize = parent->channelsCount(); //ChanBlockSize = 1
+
+                    QDataStream readStream(&rawFile);
+                    readStream.setByteOrder(QDataStream::LittleEndian);
+
+                    while (1) {
+                        /*
+                        * i-й отсчет n-го канала имеет номер
+                        * n + i*ChannelsCount
+                        */
+                        QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, IndType, &actuallyRead);
+
+                        //распихиваем данные по каналам
+                        actuallyRead /= chunkSize;
+                        YValues << temp.mid(actuallyRead*channelIndex, actuallyRead);
+
+                        if (actuallyRead < ChanBlockSize)
+                            break;
+                    }
+                }
+            }
+        }
+        else /*if (IndType == 3221225476) {//тип float, LittleEndian
+            if (!dataPositions.isEmpty()) {
+                // уже знаем позиции всех данных
+                // читаем оптимизированным способом через QByteArray и QDataStream
+                qDebug()<<"IndType=3221225476, optimised, by dataPositions";
+                foreach (int pos, dataPositions) {
+                    rawFile.seek(pos);
+                    QVector<double> temp;
+
                     QByteArray b = rawFile.read(blockSizeBytes);
-                    temp = convert(b, IndType);
-                }
-                else {
-                    readStream.setDevice(&rawFile);
-                    temp = getChunkOfData<double>(readStream, ChanBlockSize, IndType);
-                }
 
-                YValues << temp;
-            }
-        }
+                    //добавляем к вектору b число элементов
+                    QByteArray bLength(4,'0');
+                    uchar *ptr = reinterpret_cast<uchar*>(bLength.data());
+                    qToLittleEndian<quint32>(quint32(b.size() / (IndType % 16)), ptr);
 
-        else if (parent->BlockSize == 0) {// без перекрытия, читаем подряд весь канал
-            // сложная схема пропуска данных на тот случай, если в каналах разное число отсчетов
-            for (int i=0; i<parent->channelsCount(); ++i) {
-                if (i==channelIndex) {
-//                    QByteArray b = rawFile.read(blockSizeBytes);
-//                    YValues = convert(b, IndType);
-                    YValues = getChunkOfData<double>(readStream, ChanBlockSize, IndType);
-                }
-                else {
-//                    rawFile.skip(parent->dfdChannel(i)->blockSizeInBytes());
-                    readStream.skipRawData(parent->dfdChannel(i)->blockSizeInBytes());
+                    b.prepend(bLength);
+
+                    //читаем из вектора b величины float с помощью QDataStream
+                    QDataStream stream(b);
+                    stream.setByteOrder(QDataStream::LittleEndian);
+                    stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+                    stream >> temp;
+
+                    YValues << temp;
                 }
             }
+            else {
+                //читаем классическим способом через getChunk
+                qDebug()<<"IndType=3221225476, not optimised, skipping";
+
+                QDataStream readStream(&rawFile);
+                readStream.setByteOrder(QDataStream::LittleEndian);
+                if (IndType==0xC0000004)
+                    readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+                //с перекрытием, сначала читаем блок данных в ChanBlockSize отчетов для всех каналов
+                // если каналы имеют разный размер блоков, этот метод даст сбой
+                int actuallyRead = 0;
+                const int chunkSize = channelsCount * ChanBlockSize;
+                while (1) {
+                    //
+                    // i-й отсчет n-го канала имеет номер
+                    // n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
+                    //
+                    QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, IndType, &actuallyRead);
+
+                    //распихиваем данные по каналам
+                    actuallyRead /= channelsCount;
+                    YValues << temp.mid(actuallyRead*channelIndex, actuallyRead);
+
+                    if (actuallyRead < ChanBlockSize)
+                        break;
+                }
+            }
         }
-        else {//с перекрытием, сначала читаем блок данных в ChanBlockSize отчетов для всех каналов
+        else*/ {//все остальные форматы,
+            //читаем классическим способом через getChunk
+            QDataStream readStream(&rawFile);
+            readStream.setByteOrder(QDataStream::LittleEndian);
+            if (IndType==0xC0000004)
+                readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+            //с перекрытием, сначала читаем блок данных в ChanBlockSize отчетов для всех каналов
             // если каналы имеют разный размер блоков, этот метод даст сбой
             int actuallyRead = 0;
-            const int chunkSize = parent->channelsCount() * ChanBlockSize;
+            const int chunkSize = channelsCount * ChanBlockSize;
             while (1) {
                 /*
-                 * i-й отсчет n-го канала имеет номер
-                 * n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
-                 */
+                * i-й отсчет n-го канала имеет номер
+                * n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
+                */
                 QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, IndType, &actuallyRead);
 
                 //распихиваем данные по каналам
-                actuallyRead /= parent->channelsCount();
+                actuallyRead /= channelsCount;
                 YValues << temp.mid(actuallyRead*channelIndex, actuallyRead);
 
                 if (actuallyRead < ChanBlockSize)
                     break;
             }
         }
+
         YValues.resize(parent->NumInd);
         postprocess(YValues);
         _data->setYValues(YValues, DataHolder::YValuesFormat(_data->yValuesFormat()));
         setPopulated(true);
-qDebug()<<"reading finished"<<time.elapsed();
+
         if (qFuzzyIsNull(parent->XStep)) {//нулевой шаг, данные по оси Х хранятся первым каналом
             if (!parent->xValues.isEmpty()) {
                 _data->setXValues(parent->xValues);
             }
             else {
+                QDataStream readStream(&rawFile);
+                readStream.setByteOrder(QDataStream::LittleEndian);
+                if (IndType==0xC0000004)
+                    readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
                 rawFile.seek(0);
                 readStream.setDevice(&rawFile);
                 // читаем без перекрытия, предполагаем, что тип файла - третьоктава или октава
                 QVector<double> temp = getChunkOfData<double>(readStream, ChanBlockSize, IndType);
                 //checking if values are really frequency values, take four first values
                 _data->setXValues(temp);
-//                if (temp.size()>=4) {
-//                    QVector<double> xv(4);
-//                    for (int k = 0; k<4; ++k)
-//                        xv[k] = pow(10.0, 0.1*k);
-//                    if (qAbs(temp[0]-xv[0])<1e-4
-//                        && qAbs(temp[1]-xv[1])<1e-4
-//                        && qAbs(temp[2]-xv[2])<1e-4
-//                        && qAbs(temp[3]-xv[3])<1e-4) {
-//                        setXValues(temp);
-//                    }
-//                    else if (parent->DataType == ToSpectr) {
-//                        QVector<double> xv(YValues.size());
-//                        for (int k = 0; k<YValues.size(); ++k)
-//                            xv[k] = pow(10.0, 0.1*k);
-//                        setXValues(xv);
-//                    }
-//                }
+                //                if (temp.size()>=4) {
+                //                    QVector<double> xv(4);
+                //                    for (int k = 0; k<4; ++k)
+                //                        xv[k] = pow(10.0, 0.1*k);
+                //                    if (qAbs(temp[0]-xv[0])<1e-4
+                //                        && qAbs(temp[1]-xv[1])<1e-4
+                //                        && qAbs(temp[2]-xv[2])<1e-4
+                //                        && qAbs(temp[3]-xv[3])<1e-4) {
+                //                        setXValues(temp);
+                //                    }
+                //                    else if (parent->DataType == ToSpectr) {
+                //                        QVector<double> xv(YValues.size());
+                //                        for (int k = 0; k<YValues.size(); ++k)
+                //                            xv[k] = pow(10.0, 0.1*k);
+                //                        setXValues(xv);
+                //                    }
+                //                }
             }
         }
     }
     else {
         qDebug()<<"Cannot read raw file"<<parent->attachedFileName();
     }
+//    qDebug()<<"reading finished"<<time.elapsed();
 }
 
 void DfdChannel::populateFloat()
