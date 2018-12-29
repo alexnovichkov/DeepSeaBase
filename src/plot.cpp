@@ -46,6 +46,8 @@
 #include "dataiodevice.h"
 #include <QAudioOutput>
 
+#include "playpanel.h"
+
 #define LOG_MIN_MY 1.0e-3
 
 static inline QwtInterval logInterval( double base, const QwtInterval &interval )
@@ -209,6 +211,10 @@ Plot::Plot(QWidget *parent) :
     connect(trackingPanel,SIGNAL(closeRequested()),SIGNAL(trackingPanelCloseRequested()));
     connect(this, SIGNAL(graphsChanged()), trackingPanel, SLOT(update()));
 
+    playerPanel = new PlayPanel(this);
+    playerPanel->setVisible(false);
+    connect(playerPanel,SIGNAL(closeRequested()),SIGNAL(playerPanelCloseRequested()));
+
     axisLabelsVisible = MainWindow::getSetting("axisLabelsVisible", true).toBool();
     yValuesPresentationLeft = DataHolder::ShowAsDefault;
     yValuesPresentationRight = DataHolder::ShowAsDefault;
@@ -252,8 +258,8 @@ Plot::Plot(QWidget *parent) :
 
     picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
 
-    audio = 0;
-    audioData = 0;
+//    audio = 0;
+//    audioData = 0;
 }
 
 Plot::~Plot()
@@ -716,83 +722,40 @@ void Plot::recalculateScale(bool leftAxis)
 
 }
 
-void Plot::playChannel(Channel *ch)
-{DDD;
-    if (!ch) return;
 
-    if (ch->type()!=Descriptor::TimeResponse) return;
 
-    if (audio) {
-        audio->stop();
-        delete audio;
-        audio = 0;
-    }
+//void Plot::audioStateChanged(QAudio::State state)
+//{DDD;
+//    DebugPrint(state);
 
-    if (audioData) {
-        delete audioData;
-        audioData = 0;
-    }
+//    switch (state) {
+//        case QAudio::IdleState:
+//            // Finished playing (no more data)
+//            audio->stop();
+//            audioData->close();
+//            delete audio;
+//            audio = 0;
+//            break;
 
-    audioData = new DataIODevice(ch, this);
-    audioData->open(QIODevice::ReadOnly);
+//        case QAudio::StoppedState:
+//            // Stopped for other reasons
+//            if (audio->error() != QAudio::NoError) {
+//                // Error handling
+//                qDebug()<<"audio stopped:"<<audio->error();
+//            }
+//            break;
 
-    QAudioFormat format;
-    // Set up the format, eg.
-    format.setSampleRate(qRound(1.0/ch->xStep()));
-    format.setChannelCount(1);
-    format.setSampleSize(16);
-    format.setCodec("audio/pcm");
-    format.setByteOrder(QAudioFormat::LittleEndian);
-    format.setSampleType(QAudioFormat::UnSignedInt);
+//        default:
+//            // ... other cases as appropriate
+//            break;
+//    }
+//}
 
-    QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
-    if (!info.isFormatSupported(format)) {
-        qWarning() << "Raw audio format not supported by backend, cannot play audio.";
-        return;
-    }
-
-    audio = new QAudioOutput(format, this);
-    audio->setBufferSize(2 * qRound(1.0/ch->xStep()));
-    audio->setNotifyInterval(1000);
-
-    connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioStateChanged(QAudio::State)));
-    connect(audio, SIGNAL(notify()), this, SLOT(audioPosChanged()));
-    audio->start(audioData);
-    audio->setVolume(0.01);
-}
-
-void Plot::audioStateChanged(QAudio::State state)
-{DDD;
-    DebugPrint(state);
-
-    switch (state) {
-        case QAudio::IdleState:
-            // Finished playing (no more data)
-            audio->stop();
-            audioData->close();
-            delete audio;
-            audio = 0;
-            break;
-
-        case QAudio::StoppedState:
-            // Stopped for other reasons
-            if (audio->error() != QAudio::NoError) {
-                // Error handling
-                qDebug()<<"audio stopped:"<<audio->error();
-            }
-            break;
-
-        default:
-            // ... other cases as appropriate
-            break;
-    }
-}
-
-void Plot::audioPosChanged()
-{
-    if (!audioData) return;
-    qDebug() << "currently at" << audioData->position()<<","<<audioData->positionSec();
-}
+//void Plot::audioPosChanged()
+//{
+//    if (!audioData) return;
+//    qDebug() << "currently at" << audioData->position()<<","<<audioData->positionSec();
+//}
 
 bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool plotOnRight, int fileNumber)
 {DD;
@@ -1007,6 +970,11 @@ void Plot::switchInteractionMode()
 void Plot::switchTrackingCursor()
 {DD;
     trackingPanel->switchVisibility();
+}
+
+void Plot::switchPlayerVisibility()
+{DD;
+    playerPanel->switchVisibility();
 }
 
 void Plot::toggleAutoscale(int axis, bool toggled)

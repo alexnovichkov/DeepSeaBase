@@ -23,5 +23,6 @@
         <file>icons/sergei.png</file>
         <file>icons/edit.png</file>
         <file>icons/remove-labels.png</file>
+        <file>icons/play.png</file>
     </qresource>
 </RCC>

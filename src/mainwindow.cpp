@@ -281,8 +281,15 @@ MainWindow::MainWindow(QWidget *parent)
     connect(trackingCursorAct, &QAction::triggered, [this](){
         plot->switchTrackingCursor();
     });
-    connect(plot,SIGNAL(trackingPanelCloseRequested()),trackingCursorAct,SLOT(toggle()));
+    connect(plot,SIGNAL(trackingPanelCloseRequested()), trackingCursorAct, SLOT(toggle()));
 
+    playAct  = new QAction("Открыть панель плеера", this);
+    playAct->setIcon(QIcon(":/icons/play.png"));
+    playAct->setCheckable(true);
+    connect(playAct, &QAction::triggered, [this](){
+        plot->switchPlayerVisibility();
+    });
+    connect(plot,SIGNAL(playerPanelCloseRequested()),playAct,SLOT(toggle()));
 
     copyToClipboardAct = new QAction(QString("Копировать в буфер обмена"), this);
     copyToClipboardAct->setIcon(QIcon(":/icons/clipboard.png"));
@@ -411,6 +418,7 @@ MainWindow::MainWindow(QWidget *parent)
 //    mainToolBar->addAction(switchHarmonicsAct);
     mainToolBar->addAction(trackingCursorAct);
     mainToolBar->addAction(switchSergeiModeAct);
+    mainToolBar->addAction(playAct);
     mainToolBar->addSeparator();
     mainToolBar->addAction(plotHelpAct);
 
@@ -436,15 +444,6 @@ MainWindow::MainWindow(QWidget *parent)
     connect(tabWidget,SIGNAL(closeOtherTabs(int)), this, SLOT(closeOtherTabs(int)));
     connect(tabWidget,SIGNAL(renameTab(int)),this, SLOT(renameTab(int)));
     connect(tabWidget,SIGNAL(currentChanged(int)),SLOT(changeCurrentTab(int)));
-
-//    QMap<int, SortableTreeWidgetItem::DataType> typeMap;
-//    typeMap.insert(0, SortableTreeWidgetItem::DataTypeInteger);
-//    typeMap.insert(7, SortableTreeWidgetItem::DataTypeInteger);
-//    typeMap.insert(2, SortableTreeWidgetItem::DataTypeDate);
-//    typeMap.insert(4, SortableTreeWidgetItem::DataTypeFloat);
-//    typeMap.insert(6, SortableTreeWidgetItem::DataTypeFloat);
-//    SortableTreeWidgetItem::setTypeMap(typeMap);
-
 
     autoscaleXAct = new QAction("Автомасштабирование по оси X", this);
     autoscaleXAct->setIcon(QIcon(":/icons/autoscale-x.png"));

@@ -33,8 +33,8 @@ class QCheckBox;
 class QLabel;
 class QDoubleSpinBox;
 class TrackingPanel;
-class QAudioOutput;
-class DataIODevice;
+class PlayPanel;
+
 
 class Plot : public QwtPlot
 {
@@ -115,6 +115,7 @@ public:
     void setInteractionMode(InteractionMode mode);
     void switchInteractionMode();
     void switchTrackingCursor();
+    void switchPlayerVisibility();
     void toggleAutoscale(int axis, bool toggled);
     void autoscale(int axis);
 public slots:
@@ -127,6 +128,7 @@ signals:
     void curveChanged(Curve *curve);
     void curveDeleted(FileDescriptor *descriptor, int index);
     void trackingPanelCloseRequested();
+    void playerPanelCloseRequested();
     void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
     void graphsChanged();
 private slots:
@@ -134,8 +136,6 @@ private slots:
     void editLegendItem(QwtPlotItem *item);
     void deleteGraph(QwtPlotItem *item);
     void showContextMenu(const QPoint &pos, const int axis);
-    void audioStateChanged(QAudio::State state);
-    void audioPosChanged();
 private:
     void importPlot(const QString &fileName);
     bool hasDuplicateNames(const QString name) const;
@@ -143,9 +143,8 @@ private:
     QString yValuesPresentationSuffix(int yValuesPresentation) const;
     void recalculateScale(bool leftAxis);
 
-    void playChannel(Channel *ch);
-    QAudioOutput* audio;
-    DataIODevice *audioData;
+//    void playChannel(Channel *ch);
+
 
     // axis labels
     QString xName;
@@ -169,6 +168,7 @@ private:
     ChartZoom *zoom;
 
     TrackingPanel *trackingPanel;
+    PlayPanel *playerPanel;
 
     InteractionMode interactionMode;
 };

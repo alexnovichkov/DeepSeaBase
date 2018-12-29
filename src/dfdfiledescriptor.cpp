@@ -133,6 +133,64 @@ QVector<D> getChunkOfData(QDataStream &readStream, int chunkSize, uint IndType, 
     return result;
 }
 
+QVector<double> convert(const QByteArray &b, uint IndType)
+{
+    const uchar *ptr = reinterpret_cast<const uchar*>(b.data());
+    int length = b.size();
+    QVector<double> temp(length / (IndType % 16), 0.0);
+
+    int i=0;
+    while (length) {
+//        switch (IndType) {
+//            case 0x00000001: {
+//                temp[i++] = static_cast<double>(quint8(*ptr));
+//                break;
+//            }
+//            case 0x80000001: {
+//                temp[i++] = static_cast<double>(qint8(*ptr));
+//                break;
+//            }
+//            case 0x00000002: {
+//                temp[i++] = static_cast<double>(qFromLittleEndian<quint16>(ptr));
+//                break;
+//            }
+//            case 0x80000002: {
+//                temp[i++] = static_cast<double>(qFromLittleEndian<qint16>(ptr));
+//                break;
+//            }
+//            case 0x00000004: {
+//                temp[i++] = static_cast<double>(qFromLittleEndian<quint32>(ptr));
+//                break;
+//            }
+//            case 0x80000004: {
+//                temp[i++] = static_cast<double>(qFromLittleEndian<qint32>(ptr));
+//                break;
+//            }
+//            case 0x80000008: {
+//                temp[i++] = static_cast<double>(qFromLittleEndian<qint64>(ptr));
+//                break;
+//            }
+//            case 0xC0000004: {
+//                temp[i++] = static_cast<double>(qFromLittleEndian<quint32>(ptr));
+//                break;
+//            }
+//            case 0xC0000008: //плавающий 64 бита
+//                temp[i++] = static_cast<double>(qFromLittleEndian<quint64>(ptr));
+//                break;
+//            case 0xC000000A: //плавающий 80 бит
+//                // этот вариант не работает
+//                temp[i++] = static_cast<double>(qFromLittleEndian<quint64>(ptr));
+//                break;
+//            default: break;
+//        }
+
+        temp[i++] = static_cast<double>(qFromLittleEndian<quint16>(ptr));
+        length -= (IndType % 16);
+        ptr += (IndType % 16);
+    }
+    return temp;
+}
+
 
 DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
     : FileDescriptor(fileName),
@@ -1208,11 +1266,23 @@ void DfdChannel::populate()
 
         QVector<double> YValues;
 
+        QTime time;
+        time.start();
+
+        const quint64 blockSizeBytes = blockSizeInBytes();
         if (!dataPositions.isEmpty()) {//уже знаем положения каждого блока данных канала
             foreach (int pos, dataPositions) {
                 rawFile.seek(pos);
-                readStream.setDevice(&rawFile);
-                QVector<double> temp = getChunkOfData<double>(readStream, ChanBlockSize, IndType);
+                QVector<double> temp;
+                if (IndType == 2) {
+                    QByteArray b = rawFile.read(blockSizeBytes);
+                    temp = convert(b, IndType);
+                }
+                else {
+                    readStream.setDevice(&rawFile);
+                    temp = getChunkOfData<double>(readStream, ChanBlockSize, IndType);
+                }
+
                 YValues << temp;
             }
         }
@@ -1220,10 +1290,15 @@ void DfdChannel::populate()
         else if (parent->BlockSize == 0) {// без перекрытия, читаем подряд весь канал
             // сложная схема пропуска данных на тот случай, если в каналах разное число отсчетов
             for (int i=0; i<parent->channelsCount(); ++i) {
-                if (i==channelIndex)
+                if (i==channelIndex) {
+//                    QByteArray b = rawFile.read(blockSizeBytes);
+//                    YValues = convert(b, IndType);
                     YValues = getChunkOfData<double>(readStream, ChanBlockSize, IndType);
-                else
+                }
+                else {
+//                    rawFile.skip(parent->dfdChannel(i)->blockSizeInBytes());
                     readStream.skipRawData(parent->dfdChannel(i)->blockSizeInBytes());
+                }
             }
         }
         else {//с перекрытием, сначала читаем блок данных в ChanBlockSize отчетов для всех каналов
@@ -1249,7 +1324,7 @@ void DfdChannel::populate()
         postprocess(YValues);
         _data->setYValues(YValues, DataHolder::YValuesFormat(_data->yValuesFormat()));
         setPopulated(true);
-
+qDebug()<<"reading finished"<<time.elapsed();
         if (qFuzzyIsNull(parent->XStep)) {//нулевой шаг, данные по оси Х хранятся первым каналом
             if (!parent->xValues.isEmpty()) {
                 _data->setXValues(parent->xValues);

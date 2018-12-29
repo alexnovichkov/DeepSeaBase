@@ -1,7 +1,9 @@
 #ifndef TRACKINGPANEL_H
 #define TRACKINGPANEL_H
 
-#include <QWidget>
+
+#include <QtWidgets>
+#include <qwt_plot_zoneitem.h>
 #include <qwt_plot_marker.h>
 
 class QTreeWidget;
@@ -10,8 +12,7 @@ class QCheckBox;
 class QLabel;
 class Plot;
 
-#include <QtWidgets>
-#include <qwt_plot_zoneitem.h>
+
 
 class TrackingCursor : public QwtPlotMarker
 {

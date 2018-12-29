@@ -259,6 +259,7 @@ private:
     QAction *autoscaleAllAct;
 
     QAction *removeLabelsAct;
+    QAction *playAct;
 
     Plot *plot;
 
