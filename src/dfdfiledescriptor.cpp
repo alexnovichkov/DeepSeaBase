@@ -291,6 +291,10 @@ void DfdFileDescriptor::read()
     DFDGUID =   dfd.value("DataFileDescriptor/DFDGUID");
     DataType =  DfdDataType(dfd.value("DataFileDescriptor/DataType").toInt());
     Date =      QDate::fromString(dfd.value("DataFileDescriptor/Date"),"dd.MM.yyyy");
+    if (!Date.isValid()) {
+        Date = QDate::fromString(dfd.value("DataFileDescriptor/Date"),"dd.MM.yy");
+        Date = Date.addYears(100);
+    }
     Time =      QTime::fromString(dfd.value("DataFileDescriptor/Time"),"hh:mm:ss");
     int NumChans =  dfd.value("DataFileDescriptor/NumChans").toInt(); //DebugPrint(NumChans);
     setSamplesCount(dfd.value("DataFileDescriptor/NumInd").toUInt());      //DebugPrint(NumInd);
