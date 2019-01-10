@@ -93,8 +93,8 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
     correctionType->setCurrentIndex(0);
 
 
-    QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
-    connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
+    QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Close);
+    connect(buttonBox, SIGNAL(clicked(QAbstractButton *)), this, SLOT(accept()));
 
     QGridLayout *l = new QGridLayout;
     l->addWidget(new QLabel("Отметьте каналы, введите величину поправки и нажмите \"Скорректировать\"\n\n"

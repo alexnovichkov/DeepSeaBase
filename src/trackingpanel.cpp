@@ -10,6 +10,15 @@
 #include "curve.h"
 #include "logging.h"
 
+QString roundedBy(double value)
+{
+    QString s = QString::number(value, 'f', 1);
+
+    if (s == "0.0" || s == "-0.0") return QString::number(value, 'g', 1);
+
+    return s;
+}
+
 template<typename InputIterator, typename ValueType>
 InputIterator closest(InputIterator first, InputIterator last, ValueType value)
 {
@@ -195,14 +204,14 @@ void TrackingPanel::updateState(const QList<TrackingPanel::TrackInfo> &curves)
         item->setText(1,curves[i].name);
 
         item->setText(4, QString::number(curves[i].values.at(1).first));
-        item->setText(5, QString::number(curves[i].values.at(1).second, 'f', 1));
+        item->setText(5, roundedBy(curves[i].values.at(1).second));
 
-        item->setText(2, QString::number(curves[i].values.at(0).first));
-        item->setText(3, QString::number(curves[i].values.at(0).second, 'f', 1));
+        item->setText(2, roundedBy(curves[i].values.at(0).first));
+        item->setText(3, roundedBy(curves[i].values.at(0).second));
 
-        item->setText(6, QString::number(curves[i].energy, 'f', 1));
-        item->setText(7, QString::number(curves[i].reject, 'f', 1));
-        item->setText(8, QString::number(curves[i].skz, 'f', 1));
+        item->setText(6, roundedBy(curves[i].energy));
+        item->setText(7, roundedBy(curves[i].reject));
+        item->setText(8, roundedBy(curves[i].skz));
     }
     for (int i=tree->topLevelItemCount()-1; i>=curves.size(); --i)
         delete tree->takeTopLevelItem(i);
@@ -360,10 +369,13 @@ void TrackingPanel::update()
         double energy = 0.0;
         double reject = 0.0;
 
+
         if (computeEnergy) {
             QVector<double> values = c->channel->data()->linears();
             for (int i=steps[0]; i<=steps[1]; ++i) {
-                double v2 = values[i]*values[i];
+                double v2 = values[i];
+                if (c->channel->data()->yValuesUnits() != DataHolder::YValuesUnits::UnitsQuadratic)
+                    v2 *= values[i];
                 if (i>=steps[2] && i<=steps[3] && filter)
                     reject += v2;
                 cumul += v2;
@@ -372,8 +384,8 @@ void TrackingPanel::update()
             if (filter) reject = energy - reject;
             cumul  = DataHolder::toLog(sqrt(cumul)/double(steps[1]-steps[0]+1), c->channel->data()->threshold(),
                     DataHolder::UnitsLinear);
-            energy = DataHolder::toLog(energy, c->channel->data()->threshold(), DataHolder::UnitsQuadratic);
-            reject = DataHolder::toLog(reject, c->channel->data()->threshold(), DataHolder::UnitsQuadratic);
+            energy = DataHolder::toLog(energy, c->channel->data()->threshold(), DataHolder::YValuesUnits::UnitsQuadratic);
+            reject = DataHolder::toLog(reject, c->channel->data()->threshold(), DataHolder::YValuesUnits::UnitsQuadratic);
             if (!filter) reject = 0.0;
         }
 

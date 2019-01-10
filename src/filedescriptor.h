@@ -205,7 +205,7 @@ public:
     virtual QVector<cx_double> yValuesComplex() const {return _data->yValuesComplex();}
     virtual QVector<double> xValues() const {return _data->xValues();}
 
-    virtual const double *yData() const {return _data->rawYValues();}
+    virtual QVector<double> yData() const {return _data->rawYValues();}
     virtual const double *xData() const {return _data->rawXValues();}
 
     virtual double yMin() const {return _data->yMin();}

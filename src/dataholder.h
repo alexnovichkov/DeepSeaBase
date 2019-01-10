@@ -83,7 +83,7 @@ public:
     int yValuesUnits() const {return m_yValuesUnits;}
 
     const double* rawXValues() const {return m_xValues.data();}
-    const double *rawYValues() const {return m_yValuesTemporal.data();}
+    QVector<double> rawYValues() const {return m_yValues;}
     QVector<double> yValues() const;
     QVector<cx_double> yValuesComplex() const {return m_yValuesComplex;}
     QVector<double> xValues() const;
