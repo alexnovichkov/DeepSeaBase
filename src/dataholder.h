@@ -56,9 +56,13 @@ public:
 
     void clear();
 
-    void setCorrection(double correctionValue, int type);
+    void setTemporaryCorrection(double m_correctionValue, int type);
     void removeCorrection();
+    bool makeCorrectionConstant();
     QString correctionString() const;
+    static QString correctionString(double value, int type);
+    double correction() const {return m_correctionValue;}
+    bool hasCorrection() const;
 
     int xValuesFormat() const {return m_xValuesFormat;} // не меняется, так как зависит только от формата данных в файле
     int yValuesFormat() const {return m_yValuesFormat;} // не меняется, так как зависит только от формата данных в файле
@@ -111,6 +115,7 @@ private:
     void recalculateYValues();
     double corrected(double val) const;
 
+
     QVector<double> m_yValues;
     QVector<cx_double> m_yValuesComplex;
     QVector<double> m_xValues;
@@ -132,9 +137,10 @@ private:
     //some statistics
     double m_yMin, m_yMax;
 
-    double correctionValue;
-    int correctionType;
-//    double oldCorrectionValue;
+    double m_correctionValue;
+    int m_correctionType;
+    YValuesPresentation m_PresentationWhenCorrecting;
+    bool m_correction;
 };
 
 #endif // DATAHOLDER_H

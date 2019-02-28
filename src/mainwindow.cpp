@@ -713,6 +713,7 @@ void MainWindow::createNewTab()
 
 void MainWindow::closeTab(int i)
 {DD;
+    if (!tabWidget) return;
     if (tabWidget->count()==1) return;
     int index=i;
     if (i<0) index = tabWidget->currentIndex();
@@ -720,8 +721,17 @@ void MainWindow::closeTab(int i)
     tabWidget->setCurrentIndex(index);
     //tab now points to current tab
 
+    if (!tab) return;
+
     tab->filesTable->selectAll();
-    tab->model->deleteFiles();
+
+    // костыль, позволяющий иметь несколько одинаковых файлов в разных вкладках
+    QStringList duplicatedFiles;
+    foreach (FileDescriptor *f, tab->model->selectedFiles()) {
+        if (duplicated(f)) duplicatedFiles << f->fileName();
+    }
+
+    tab->model->deleteFiles(duplicatedFiles);
 
     QWidget *w = tabWidget->widget(index);
     tabWidget->removeTab(index);
@@ -756,6 +766,7 @@ void MainWindow::renameTab(int i)
 
 void MainWindow::changeCurrentTab(int currentIndex)
 {DD;
+    tab = 0;
     if (currentIndex<0) return;
 
     tab = qobject_cast<Tab *>(tabWidget->currentWidget());
@@ -860,7 +871,6 @@ void MainWindow::addFolder(const QString &directory, bool withAllSubfolders, boo
     QStringList toAdd;
     foreach (const QString &file, filesToAdd) {
         if (!tab->model->contains(file))
-        //if (!checkForContains(tab, file))
             toAdd << file;
     }
     if (toAdd.isEmpty()) return;
@@ -885,6 +895,7 @@ void MainWindow::deleteFiles()
 {DD;
     if (!tab) return;
 
+    QStringList duplicatedFiles;
     QList<FileDescriptor *> files = tab->model->selectedFiles();
     foreach (FileDescriptor *d, files) {
         plot->deleteGraphs(d);
@@ -895,10 +906,11 @@ void MainWindow::deleteFiles()
             tab->folders.removeOne(d->fileName()+":0");
         else if (tab->folders.contains(d->fileName()+":1"))
             tab->folders.removeOne(d->fileName()+":1");
+        if (duplicated(d)) duplicatedFiles << d->fileName();
     }
     tab->channelsTable->setRowCount(0);
 
-    tab->model->deleteFiles();
+    tab->model->deleteFiles(duplicatedFiles);
 
     if (tab->model->size() == 0)
         tab->folders.clear();
@@ -1039,14 +1051,6 @@ void MainWindow::addCorrections()
     QAxObject * workbooks = excel->querySubObject("WorkBooks");
     workbooks->dynamicCall("Open(QString)", pathToExcelFile);
 
-//            QFile file1("Excel.Workbooks.html");
-//            file1.open(QIODevice::WriteOnly | QIODevice::Text);
-//            QTextStream out(&file1);
-//            out << workbooks->generateDocumentation();
-//            file1.close();
-//    return;
-
-
     QAxObject * workbook = excel->querySubObject("ActiveWorkBook");
     if (!workbook) {
         return;
@@ -1062,7 +1066,7 @@ void MainWindow::addCorrections()
         QString fileName = cells->property("Value").toString();
         if (fileName.isEmpty()) break;
 
-       // qDebug()<<fileName;
+        // qDebug()<<fileName;
         if (QFile(fileName).exists()) {
             fileName.replace("\\","/");
             FileDescriptor *dfd = findDescriptor(fileName);
@@ -1083,10 +1087,14 @@ void MainWindow::addCorrections()
                 if (value.isEmpty()) break;
                 if (row-2>=dfd->channelsCount()) break;
 
-                corrected = true;
                 double corr = value.toDouble();
-                if (corr != 0.0)
-                    dfd->channel(row-2)->addCorrection(corr, 0, true);
+                if (corr != 0.0) {
+                    corrected = true;
+                    dfd->channel(row-2)->data()->setTemporaryCorrection(corr, 0);
+                    dfd->channel(row-2)->data()->makeCorrectionConstant();
+                    dfd->channel(row-2)->setCorrection(dfd->channel(row-2)->data()->correctionString());
+                    dfd->channel(row-2)->data()->removeCorrection();
+                }
                 row++;
             }
             if (corrected) {
@@ -1656,7 +1664,8 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
     if (!tab) return;
     if (!item) return;
     int column = item->column();
-    Channel *ch = tab->record->channel(item->row());
+    int row = item->row();
+    Channel *ch = tab->record->channel(row);
 
     if (tab->channelsTable->horizontalHeaderItem(column)->text() == "Описание") {
         ch->setDescription(item->text());
@@ -1667,10 +1676,20 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
             if (QMessageBox::question(this,"DeepSea Base","Выделено несколько файлов. Записать такое описание канала\n"
                                       "во все эти файлы?")==QMessageBox::Yes)
             {
-                tab->model->setChannelDescription(item->row(), item->text());
+                tab->model->setChannelDescription(row, item->text());
             }
         }
     }
+
+    else if (tab->channelsTable->horizontalHeaderItem(column)->text() == "Ед.изм.") {
+        QString oldYName = ch->yName();
+        if (item->text() != oldYName) {
+            ch->setYName(item->text());
+            tab->record->setChanged(true);
+        }
+    }
+
+
 
     else if (column == 0) {
         if (ch->name() != item->text()) {
@@ -1681,7 +1700,7 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
                 if (QMessageBox::question(this,"DeepSea Base","Выделено несколько файлов. Записать такое название канала\n"
                                           "во все эти файлы?")==QMessageBox::Yes)
                 {
-                    tab->model->setChannelName(item->row(), item->text());
+                    tab->model->setChannelName(row, item->text());
                 }
             }
 
@@ -1704,7 +1723,7 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
             QColor col;
             int fileNumber = tab->model->data(tab->model->modelIndexOfFile(tab->record,0), 0).toInt();
 
-            plotted = plot->plotChannel(tab->record, item->row(), &col, plotOnRight, fileNumber);
+            plotted = plot->plotChannel(tab->record, row, &col, plotOnRight, fileNumber);
             if (plotted) {
                 item->setFont(boldFont);
                 ch->setCheckState(Qt::Checked);
@@ -1723,24 +1742,24 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
                 QList<FileDescriptor*> selectedFiles = tab->model->selectedFiles();
                 foreach (FileDescriptor *f, selectedFiles) {
                     if (f == tab->record) continue;
-                    if (f->channelsCount()<=item->row()) continue;
+                    if (f->channelsCount()<=row) continue;
 
                     int fileNumber = tab->model->data(tab->model->modelIndexOfFile(f,0), 0).toInt();
-                    plotted = plot->plotChannel(f, item->row(), &col, plotOnRight, fileNumber);
+                    plotted = plot->plotChannel(f, row, &col, plotOnRight, fileNumber);
                     if (plotted) {
-                        f->channel(item->row())->setCheckState(Qt::Checked);
-                        f->channel(item->row())->setColor(col);
+                        f->channel(row)->setCheckState(Qt::Checked);
+                        f->channel(row)->setColor(col);
                     }
                     else {
-                        f->channel(item->row())->setCheckState(Qt::Unchecked);
-                        f->channel(item->row())->setColor(QColor());
+                        f->channel(row)->setCheckState(Qt::Unchecked);
+                        f->channel(row)->setColor(QColor());
                     }
                     tab->model->updateFile(f, 1);
                 }
             }
         }
         else if (state == Qt::Unchecked) {
-            plot->deleteGraph(tab->record, item->row());
+            plot->deleteGraph(tab->record, row);
             item->setFont(tab->channelsTable->font());
             ch->setCheckState(Qt::Unchecked);
             item->setBackgroundColor(Qt::white);
@@ -1751,11 +1770,11 @@ void MainWindow::maybePlotChannel(QTableWidgetItem *item)
                 QList<FileDescriptor*> selectedFiles = tab->model->selectedFiles();
                 foreach (FileDescriptor *f, selectedFiles) {
                     if (f == tab->record) continue;
-                    if (f->channelsCount()<=item->row()) continue;
+                    if (f->channelsCount()<=row) continue;
 
-                    plot->deleteGraph(f, item->row());
-                    f->channel(item->row())->setCheckState(Qt::Unchecked);
-                    f->channel(item->row())->setColor(QColor());
+                    plot->deleteGraph(f, row);
+                    f->channel(row)->setCheckState(Qt::Unchecked);
+                    f->channel(row)->setColor(QColor());
 
                     tab->model->updateFile(f, 1);
                 }
@@ -2066,7 +2085,7 @@ void MainWindow::addFile(FileDescriptor *descriptor)
     if (!tab) return;
     if (!descriptor) return;
 
-    addFiles(QList<FileDescriptor *>()<<descriptor);
+    addDescriptors(QList<FileDescriptor *>()<<descriptor);
 //    tab->filesTable->setCurrentIndex(tab->model->modelIndexOfFile(descriptor, 1));
 }
 
@@ -2084,6 +2103,20 @@ FileDescriptor *MainWindow::findDescriptor(const QString &file)
             return f;
     }
     return 0;
+}
+
+bool MainWindow::duplicated(FileDescriptor *file) const
+{
+    if (!file) return false;
+
+    for (int i=0; i<tabWidget->count(); ++i) {
+        Tab *t = qobject_cast<Tab *>(tabWidget->widget(i));
+        if (t==tab) continue;
+
+        if (t->model->find(file))
+            return true;
+    }
+    return false;
 }
 
 void MainWindow::setCurrentAndPlot(FileDescriptor *d, int channelIndex)
@@ -2564,7 +2597,7 @@ void MainWindow::onCurveDeleted(FileDescriptor *descriptor, int channelIndex)
         updateChannelsTable(descriptor);
 }
 
-void MainWindow::addFiles(const QList<FileDescriptor*> &files)
+void MainWindow::addDescriptors(const QList<FileDescriptor*> &files)
 {DD;
     if (!tab) return;
 
@@ -2592,7 +2625,7 @@ void MainWindow::addFiles(QStringList &files)
         if (file)
             items << file;
     }
-    addFiles(items);
+    addDescriptors(items);
 }
 
 void Tab::filesSelectionChanged()

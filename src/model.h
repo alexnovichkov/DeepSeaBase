@@ -17,9 +17,10 @@ public:
     bool contains(FileDescriptor *file, int *index = 0) const;
     FileDescriptor *file(int i);
     FileDescriptor *find(const QString &fileName);
+    bool find(FileDescriptor *file);
     int rowOfFile(FileDescriptor *file) const;
     void addFiles(const QList<FileDescriptor*> &files);
-    void deleteFiles();
+    void deleteFiles(const QStringList &duplicated);
     int size() const {return descriptors.size();}
     QList<int> selected() const {return indexes;}
     void setSelected(const QList<int> &indexes) {this->indexes = indexes;}

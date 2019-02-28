@@ -340,6 +340,7 @@ void DfdFileDescriptor::read()
             firstChannel->populate();
             xValues = firstChannel->data()->yValues();
 
+            // перенумерация каналов
             for (int i=0; i<channels.size(); ++i) {
                 channels[i]->channelIndex = i;
             }
@@ -402,6 +403,8 @@ void DfdFileDescriptor::write()
         process->write(dfd);
     }
 
+    // сохраняем каналы так, чтобы не пришлось добавлять канал абсцисс к списку каналов.
+    // Для этого создаем временный канал
     /** Channels*/
     int b = 0;
     if (XStep == 0.0) {// uneven abscissa, adding channel
@@ -420,10 +423,9 @@ void DfdFileDescriptor::write()
         }
     }
 
-    for (int i=0; i<channels.size(); ++i) {
-        DfdChannel *ch = channels[i];
-        ch->write(dfd, i+b);
-    }
+    for (int i=0; i<channels.size(); ++i)
+        channels[i]->write(dfd, i+b);
+
     setChanged(false);
 }
 
@@ -436,12 +438,12 @@ void DfdFileDescriptor::writeRawFile()
 
     QFile rawFile(rawFileName);
     if (rawFile.open(QFile::WriteOnly)) {
-        //fixing values with correction
-        for (int i = 0; i<channels.size(); ++i) {
-            if (!channels[i]->correct()) {
-                channels[i]->data()->removeCorrection();
-            }
-        }
+//        //fixing values with correction
+//        for (int i = 0; i<channels.size(); ++i) {
+//            if (!channels[i]->correct()) {
+//                channels[i]->data()->removeCorrection();
+//            }
+//        }
 
         QDataStream writeStream(&rawFile);
         writeStream.setByteOrder(QDataStream::LittleEndian);
@@ -468,8 +470,11 @@ void DfdFileDescriptor::writeRawFile()
                     writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
                 const int sc = ch->samplesCount();
+                QVector<double> yValues = ch->data()->rawYValues();
+                if (yValues.isEmpty() && !ch->data()->yValuesComplex().isEmpty())
+                    yValues = ch->data()->linears();
                 for (int val = 0; val < sc; ++val) {
-                    ch->setValue(ch->data()->yValue(val), writeStream);
+                    ch->setValue(yValues[val], writeStream);
                 }
             }
         }
@@ -483,11 +488,14 @@ void DfdFileDescriptor::writeRawFile()
                     if (ch->IndType==0xC0000004)
                         writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
+                    QVector<double> yValues = ch->data()->rawYValues();
+                    if (yValues.isEmpty() && !ch->data()->yValuesComplex().isEmpty())
+                        yValues = ch->data()->linears();
+
                     //const int sc = ch->samplesCount();
                     for (int val = 0; val < BlockSize; ++val) {
                         if (val+pos >= samplesCount()) break;
-                        ch->setValue(ch->data()->yValue(val+pos),
-                                writeStream);
+                        ch->setValue(yValues[val+pos], writeStream);
                     }
                 }
                 pos += BlockSize;
@@ -1102,8 +1110,8 @@ DfdChannel::DfdChannel(Channel &other, DfdFileDescriptor *parent) : Channel(othe
     ChanBlockSize = other.samplesCount();
 
     YName = other.yName();
+    YNameOld = other.yName();
     if (other.data()->yValuesFormat() == DataHolder::YValuesAmplitudesInDB) {
-        YNameOld = other.yName();
         YName = "дБ";
     }
 
@@ -1129,6 +1137,7 @@ void DfdChannel::read(DfdSettings &dfd, int numChans)
     YNameOld = dfd.value(group+"YNameOld");
     InputType = dfd.value(group+"InputType");
     ChanDscr = dfd.value(group+"ChanDscr");
+    setCorrection(dfd.value(group+"Correction"));
 
     int NumInd;
     if (parent->BlockSize==0)
@@ -1177,9 +1186,9 @@ void DfdChannel::write(QTextStream &dfd, int index)
 {DD;
     dfd << QString("[Channel%1]").arg(index == -1 ? channelIndex+1 : index+1) << endl;
     dfd << "ChanAddress=" << ChanAddress << endl;
-    QString correctedName = ChanName;
-    if (correct()) correctedName.append(data()->correctionString());
-    dfd << "ChanName=" << correctedName << endl;
+//    QString correctedName = ChanName;
+//    if (data()->hasCorrection()) correctedName.append(data()->correctionString());
+    dfd << "ChanName=" << ChanName << endl;
     dfd << "IndType=" << IndType << endl;
     dfd << "ChanBlockSize=" << ChanBlockSize << endl;
     dfd << "YName=" << YName << endl;
@@ -1187,6 +1196,7 @@ void DfdChannel::write(QTextStream &dfd, int index)
         dfd << "YNameOld=" << YNameOld << endl;
     dfd << "InputType="<<InputType << endl;
     dfd << "ChanDscr="<<ChanDscr << endl;
+    dfd << "Correction="<<correction() << endl;
 }
 
 QStringList DfdChannel::getInfoHeaders()
@@ -1220,7 +1230,7 @@ void DfdChannel::populate()
     if (type()==Descriptor::FrequencyResponseFunction) thr=1.0;
     _data->setThreshold(thr);
 
-    int units = DataHolder::UnitsUnknown;
+    int units = DataHolder::UnitsLinear;
     if (dataType == Spectr || dataType == XSpectr) units = DataHolder::UnitsQuadratic;
     _data->setYValuesUnits(units);
 
@@ -1620,7 +1630,7 @@ int DfdChannel::dataFormat() const
 QString DfdChannel::legendName() const
 {DD;
     QStringList l;
-    if (!data()->correctionString().isEmpty()) l << data()->correctionString();
+    if (!correction().isEmpty()) l << correction();
     if (!parent->legend().isEmpty()) l << parent->legend();
     QString result = l.join(" ");
 
@@ -1700,6 +1710,16 @@ QString DfdChannel::yName() const
     if ((YName.toLower() == "дб" || YName.toLower() == "db") && !YNameOld.isEmpty())
         return YNameOld;
     return YName;
+}
+
+void DfdChannel::setYName(const QString &yName)
+{
+    if (yName == YName) return;
+    if ((YName.toLower() == "дб" || YName.toLower() == "db") && !YNameOld.isEmpty()) {
+        YNameOld = yName;
+    }
+    else
+        YName = yName;
 }
 
 void DfdChannel::setName(const QString &name)
@@ -1964,7 +1984,7 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
         ch->YName = channels[i]->YName;
         ch->YNameOld = channels[i]->YNameOld;
 
-        ch->setCorrect(channels[i]->correct());
+        ch->setCorrection(channels[i]->correction());
 
         newDfd->channels << ch;
         if (!wasPopulated) {

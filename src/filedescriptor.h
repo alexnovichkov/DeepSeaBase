@@ -162,8 +162,7 @@ public:
     }
     Channel() : _checkState(Qt::Unchecked),
                 _color(QColor()),
-                _data(new DataHolder),
-                temporalCorrection(false)
+                _data(new DataHolder)
     {}
     Channel(Channel *other);
     Channel(Channel &other);
@@ -187,6 +186,7 @@ public:
 
     virtual QString xName() const = 0;
     virtual QString yName() const = 0;
+    virtual void setYName(const QString &yName) = 0;
 
     virtual QString legendName() const = 0;
 
@@ -211,7 +211,6 @@ public:
     virtual double yMin() const {return _data->yMin();}
     virtual double yMax() const {return _data->yMax();}
 
-    virtual void addCorrection(double correctionValue, int type, bool writeToFile);
     virtual FileDescriptor *descriptor() = 0;
 
     Qt::CheckState checkState() const {return _checkState;}
@@ -220,16 +219,13 @@ public:
     QColor color() const {return _color;}
     void setColor(QColor color) {_color = color;}
 
-    bool correct() const {return !temporalCorrection;}
-    void setCorrect(bool correct) {temporalCorrection = !correct;}
+    virtual QString correction() const = 0;
+    virtual void setCorrection(const QString &s) = 0;
 private:
     Qt::CheckState _checkState;
     QColor _color;
 protected:
     DataHolder *_data;
-
-    //correction variables
-    bool temporalCorrection;
 };
 
 QList<int> filterIndexes(FileDescriptor *dfd, const QList<QPair<FileDescriptor *, int> > &channels);

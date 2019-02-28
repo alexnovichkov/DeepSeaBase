@@ -870,21 +870,24 @@ void Function::readRest()
     if (type58[32].value.toInt()==17 || type58[32].value.toInt()==0) // time или неизв.
         yValueFormat = DataHolder::YValuesReals;
     _data->setYValuesFormat(yValueFormat);
+
+    int units = DataHolder::UnitsLinear;
+    if (type58[14].value.toInt() == 9/*PSD*/) units = DataHolder::UnitsQuadratic;
+    _data->setYValuesUnits(units);
 }
 
 void Function::write(QTextStream &stream)
 {DD;
     int samples = data()->samplesCount();
 
-    // Temporal correction
-    //fixing channel name
-    if (!temporalCorrection) {
-        setName(type58[4].value.toString()+data()->correctionString());
-    }
-    //fixing values with correction
-    else {
-        data()->removeCorrection();
-    }
+//    // Temporal correction
+//    if (!temporalCorrection) {
+//        setName(type58[4].value.toString()+data()->correctionString());
+//    }
+//    //fixing values with correction
+//    else {
+//        data()->removeCorrection();
+//    }
 
 
     //writing header
@@ -1174,10 +1177,15 @@ QString Function::yName() const
     return type58[44].value.toString();
 }
 
+void Function::setYName(const QString &yName)
+{
+    type58[44].value = yName;
+}
+
 QString Function::legendName() const
 {DD;
     QStringList l;
-    if (!data()->correctionString().isEmpty()) l << data()->correctionString();
+    if (!correction().isEmpty()) l << correction();
     if (!parent->legend().isEmpty()) l << parent->legend();
 
     return name() + l.join(" ");
@@ -1186,6 +1194,16 @@ QString Function::legendName() const
 int Function::samplesCount() const
 {DD;
     return type58[26].value.toULongLong();
+}
+
+QString Function::correction() const
+{
+    return type58[12].value.toString();
+}
+
+void Function::setCorrection(const QString &s)
+{
+    type58[12].value = s;
 }
 
 DescriptionList UffFileDescriptor::dataDescriptor() const
@@ -1314,3 +1332,5 @@ QDataStream &operator<<(QDataStream &stream, const FunctionHeader &header)
     stream << header.valid;
     return stream;
 }
+
+

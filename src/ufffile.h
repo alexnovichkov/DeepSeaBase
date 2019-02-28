@@ -63,8 +63,12 @@ public:
     virtual void setDescription(const QString &description);
     virtual QString xName() const;
     virtual QString yName() const;
+    virtual void setYName(const QString &yName) override;
     virtual QString legendName() const;
     virtual int samplesCount() const;
+
+    virtual QString correction() const;
+    virtual void setCorrection(const QString &s);
 private:
     void readRest();
     bool _populated;

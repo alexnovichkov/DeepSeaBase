@@ -179,7 +179,7 @@ private slots:
 private:
     void moveChannels(bool up);
     void addFiles(QStringList &files);
-    void addFiles(const QList<FileDescriptor*> &files);
+    void addDescriptors(const QList<FileDescriptor*> &files);
 
     bool deleteChannels(const QList<QPair<FileDescriptor *, int> > &channelsToDelete);
     bool copyChannels(const QList<QPair<FileDescriptor*, int> > &channelsToCopy);
@@ -196,6 +196,7 @@ private:
 
     QList<QPair<FileDescriptor*, int> > selectedChannels();
     FileDescriptor *findDescriptor(const QString &file);
+    bool duplicated(FileDescriptor *file) const;
 
     void addFile(FileDescriptor *descriptor);
     void setCurrentAndPlot(FileDescriptor *d, int channelIndex);

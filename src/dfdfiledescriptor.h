@@ -124,7 +124,8 @@ public:
     virtual QStringList getInfoHeaders();
     virtual QStringList getInfoData();
 
-
+    virtual QString correction() const {return m_correction;}
+    virtual void setCorrection(const QString &s) {m_correction = s;}
 
     virtual QString legendName() const;
     //дополнительная обработка, напр.
@@ -137,6 +138,7 @@ public:
 
     virtual QString xName() const;
     virtual QString yName() const;
+    virtual void setYName(const QString &yName);
 
     virtual QString description() const {return ChanDscr;}
     virtual void setDescription(const QString &description) {ChanDscr = description;}
@@ -177,6 +179,8 @@ public:
 
     DfdDataType dataType;
     QList<int> dataPositions;
+
+    QString m_correction;
 private:
     int dataFormat() const;
 };

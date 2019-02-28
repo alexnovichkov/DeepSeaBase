@@ -27,6 +27,16 @@ FileDescriptor *Model::find(const QString &fileName)
     return 0;
 }
 
+bool Model::find(FileDescriptor *file)
+{
+    for (int i=0; i<descriptors.size(); ++i) {
+        if (descriptors[i]->fileName() == file->fileName()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 int Model::rowOfFile(FileDescriptor *file) const
 {
     return descriptors.indexOf(file,0);
@@ -40,13 +50,17 @@ void Model::addFiles(const QList<FileDescriptor *> &files)
     endInsertRows();
 }
 
-void Model::deleteFiles()
+void Model::deleteFiles(const QStringList &duplicated)
 {
     beginResetModel();
 
     for (int i = indexes.size()-1; i>=0; --i) {
-        delete descriptors[indexes.at(i)];
-        descriptors.removeAt(indexes.at(i));
+        int toDelete = indexes.at(i);
+        if (toDelete >= 0 && toDelete < descriptors.size()) {
+            if (!duplicated.contains(descriptors[toDelete]->fileName()))
+                delete descriptors[toDelete];
+            descriptors.removeAt(toDelete);
+        }
     }
     indexes.clear();
 
@@ -201,6 +215,7 @@ QVariant Model::data(const QModelIndex &index, int role) const
     if (row<0 || row>=descriptors.size()) return QVariant();
 
     FileDescriptor *d = descriptors[row];
+    if (!d) return QVariant();
 
     if (role == Qt::DisplayRole || role == Qt::EditRole) {
         switch (column) {

@@ -19,11 +19,10 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
 
     table->setHorizontalHeader(tableHeader);
     tableHeader->setCheckable(1,true);
-    tableHeader->setCheckable(2,true);
 
-    if (files.size()>1)
-        allFilesCheckBox = new QCheckBox("Применить поправку ко всем\nвыделенным файлам", this);
-    else
+//    if (files.size()>1)
+//        allFilesCheckBox = new QCheckBox("Применить поправку ко всем выделенным файлам", this);
+//    else
         allFilesCheckBox = 0;
 
 
@@ -51,20 +50,12 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
             tableHeader->setCheckState(col, Qt::Checked);
         else
             tableHeader->setCheckState(col, Qt::PartiallyChecked);
-
-        if (col == 2) {
-//            if (item->checkState()==Qt::Checked)
-                item->setText("Сохранить поправку в файл RAW");
-//            else
-//                item->setText("Изменить только график");
-        }
     });
     tableHeader->setCheckState(0,Qt::Unchecked);
-    tableHeader->setCheckState(2,Qt::Unchecked);
 
     table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     table->horizontalHeader()->setStretchLastSection(true);
-    table->setHorizontalHeaderLabels(QStringList()<<""<<"Канал"<<"Сохранить поправку в файл RAW");
+    table->setHorizontalHeaderLabels(QStringList()<<""<<"Канал"<<"Поправка");
 
     table->setRowCount(plot->graphs.size());
     int i=0;
@@ -74,7 +65,6 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
         table->setItem(i,1,item);
 
         item = new QTableWidgetItem();
-        item->setCheckState(Qt::Unchecked);
         table->setItem(i,2,item);
 
         item = new QTableWidgetItem();
@@ -85,94 +75,156 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
     edit = new QLineEdit(this);
     edit->setText("0.0");
 
-    correctButton = new QPushButton("Скорректировать", this);
-    connect(correctButton, SIGNAL(clicked()),SLOT(correct()));
+    correctButton = new QToolButton(this);
+    correctButton->setText("Скорректировать");
+    connect(correctButton, SIGNAL(clicked(bool)), SLOT(correct()));
+    correctButton->setSizePolicy(correctButton->sizePolicy().horizontalPolicy(), QSizePolicy::Expanding);
 
     correctionType = new QComboBox(this);
     correctionType->addItems(QStringList()<<"Слагаемое"<<"Множитель");
     correctionType->setCurrentIndex(0);
 
 
-    QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Close);
-    connect(buttonBox, SIGNAL(clicked(QAbstractButton *)), this, SLOT(accept()));
+    QDialogButtonBox *buttonBox = new QDialogButtonBox(/*Qt::Vertical, */this);
+    auto b = buttonBox->addButton("Закрыть без сохранения", QDialogButtonBox::RejectRole);
+    b->setDefault(true);
+    b->setAutoDefault(true);
+    b = buttonBox->addButton("Закрыть и сохранить поправку в файл данных", QDialogButtonBox::AcceptRole);
+    b->setDefault(false);
+    b->setAutoDefault(false);
+    connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
+    connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
+
 
     QGridLayout *l = new QGridLayout;
     l->addWidget(new QLabel("Отметьте каналы, введите величину поправки и нажмите \"Скорректировать\"\n\n"
-                            "Если вы хотите записать эту поправку на диск, поставьте галочки во втором столбце.\n"
                             "Если величина поправки не устроила, введите другую величину поправки.\n"
-                            "Разные поправки не будут накапливаться, если не стоит галочка во втором столбце.", this),
-                 0,0,1,2);
-    l->addWidget(table,1,0,1,2);
+                            "Поправки не накапливаются.", this),
+                 0,0,1,3);
+    l->addWidget(table,1,0,1,3);
     l->addWidget(new QLabel("Величина поправки",this),2,0);
     l->addWidget(edit,2,1);
 
     l->addWidget(new QLabel("Тип поправки",this),3,0);
     l->addWidget(correctionType,3,1);
 
-    l->addWidget(correctButton,4,1);
+    l->addWidget(correctButton,2,2,2,1);
+
     if (allFilesCheckBox)
-        l->addWidget(allFilesCheckBox,4,0);
-    l->addWidget(buttonBox,5,0,1,2);
+        l->addWidget(allFilesCheckBox,4,0,1,3);
+    l->addWidget(buttonBox,5,0,1,3);
     setLayout(l);
 
-    resize(500,500);
+    //resize(500,500);
 }
 
 void CorrectionDialog::correct()
 {
     DD;
     bool ok;
-    double correctionValue = edit->text().toDouble(&ok);
-    if (ok) {
-        int selected = 0;
-        for (int i=0; i<table->rowCount(); ++i) {
-            if (table->item(i,1)->checkState()==Qt::Checked) selected++;
+    QString s = edit->text();
+    double correctionValue = s.toDouble(&ok);
+    if (!ok) {
+        s.replace(',','.');
+        correctionValue = s.toDouble(&ok);
+    }
+    if (!ok) {
+        QMessageBox::critical(this, "Поправка","Введенное значение поправки не является числом.");
+        return;
+    }
+
+    int selected = 0;
+    for (int i=0; i<table->rowCount(); ++i) {
+        if (table->item(i,1)->checkState()==Qt::Checked) selected++;
+    }
+
+    if (selected==0) {
+        QMessageBox::critical(this, "Поправка","Ни одного канала не выделено.\n"
+                                               "Куда мне вносить поправку?");
+        return;
+    }
+
+    if (correctionValue < 0.0 && correctionType->currentIndex()==1) {
+        QMessageBox::critical(this, "Поправка","Отрицательный множитель коррекции!\n"
+                                               "Лучше так не делать");
+        return;
+    }
+
+
+
+    for (int i=0; i<table->rowCount(); ++i) {
+        if (table->item(i,1)->checkState()==Qt::Checked) {
+            Curve *curve = plot->graphs.at(i);
+            Channel *ch = curve->channel;
+
+            ch->data()->setTemporaryCorrection(correctionValue, correctionType->currentIndex());
+            if (ch->data()->hasCorrection())
+                table->item(i,2)->setText(ch->data()->correctionString());
+            else
+                table->item(i,2)->setText("");
         }
+    }
+    plot->updateAxes();
+    plot->updateLegends();
+    plot->replot();
+}
 
-        if (selected>0) {
-            for (int i=0; i<table->rowCount(); ++i) {
-                if (table->item(i,1)->checkState()==Qt::Checked) {
-                    Curve *curve = plot->graphs.at(i);
-                    Channel *ch = curve->channel;
 
-                    if (table->item(i,2)->checkState()==Qt::Checked) {
-                        ch->addCorrection(correctionValue, correctionType->currentIndex(), true);
-                        curve->descriptor->setChanged(true);
-                        curve->descriptor->setDataChanged(true);
-                        curve->descriptor->write();
-                        curve->descriptor->writeRawFile();
+void CorrectionDialog::accept()
+{
+    QList<FileDescriptor*> list;
+    // сперва графики
+    for (int i=0; i<table->rowCount(); ++i) {
+        QString s = table->item(i,2)->text();
+        if (!s.isEmpty()) {
+            Channel *ch = plot->graphs.at(i)->channel;
+            ch->data()->makeCorrectionConstant();
+            //Обработка предыдущей коррекции.
+            QString previousCorrection = ch->correction();
+            if (previousCorrection.isEmpty()) {
+                // ранее коррекция не проводилась
+                ch->setCorrection(ch->data()->correctionString());
+            }
+            else {
+                // ранее коррекция проводилась, мы должны учесть старое и новое значения
+                if (previousCorrection.startsWith("[")) previousCorrection.remove(0,1);
+                if (previousCorrection.endsWith("]")) previousCorrection.chop(1);
+                int previousType = previousCorrection.startsWith("*")?1:0;
+                if (previousType == 1) previousCorrection.remove(0,1);
+                bool ok;
+                double previousCorrectionValue = previousCorrection.toDouble(&ok);
+                if (!ok) previousCorrectionValue = previousType == 0 ? 0.0 : 1.0;
 
-                        // добавление поправки к выделенным файлам
-                        if (allFilesCheckBox && allFilesCheckBox->isChecked()) {
-                            foreach(FileDescriptor *d, files) {
-                                if (d == curve->descriptor) continue;
-                                ch = d->channel(curve->channelIndex);
-                                if (ch) {
-                                    ch->addCorrection(correctionValue, correctionType->currentIndex(), true);
-                                    d->setChanged(true);
-                                    d->setDataChanged(true);
-                                    d->write();
-                                    d->writeRawFile();
-                                }
-                            }
-                        }
-                    }
-                    else {
-                        ch->addCorrection(correctionValue, correctionType->currentIndex(), false);
-                    }
+                if (previousType == correctionType->currentIndex()) {
+                    // типы коррекций совпадают, можно работать
+                    double newValue = previousType == 0?previousCorrectionValue + ch->data()->correction():
+                                                        previousCorrectionValue * ch->data()->correction();
+                    ch->setCorrection(DataHolder::correctionString(newValue, previousType));
                 }
             }
-            plot->updateAxes();
-            plot->updateLegends();
-            plot->replot();
-        }
-        else {
-            QMessageBox::critical(this, "Поправка","Ни одного канала не выделено.\n"
-                                  "Куда мне вносить поправку?");
+            ch->data()->removeCorrection();
+            if (!list.contains(plot->graphs.at(i)->descriptor)) list << plot->graphs.at(i)->descriptor;
         }
     }
-    else {
-        QMessageBox::critical(this, "Поправка","Введенное значение поправки не является числом.");
+    foreach (FileDescriptor *f, list) {
+        f->setChanged(true);
+        f->setDataChanged(true);
+        f->write();
+        f->writeRawFile();
+    }
+    plot->updateAxes();
+    plot->updateLegends();
+    plot->replot();
+    QDialog::accept();
+}
 
+void CorrectionDialog::reject()
+{
+    for (int i=0; i<table->rowCount(); ++i) {
+        plot->graphs.at(i)->channel->data()->removeCorrection();
     }
+    plot->updateAxes();
+    plot->updateLegends();
+    plot->replot();
+    QDialog::reject();
 }

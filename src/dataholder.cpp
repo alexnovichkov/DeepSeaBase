@@ -12,8 +12,10 @@ DataHolder::DataHolder()
     m_yValuesUnits = UnitsUnknown;
     m_yValuesPresentation = ShowAsDefault;
 
-    correctionValue = 0.0;
-    correctionType = 0; //adding
+    m_correctionValue = 0.0;
+    m_correctionType = 0; //adding
+    m_PresentationWhenCorrecting = ShowAsDefault;
+    m_correction = false;
 }
 
 DataHolder::DataHolder(const DataHolder &other)
@@ -34,8 +36,10 @@ DataHolder::DataHolder(const DataHolder &other)
     m_yMax = other.m_yMax;
     m_yValuesPresentation = other.m_yValuesPresentation;
 
-    correctionValue = other.correctionValue;
-    correctionType = other.correctionType;
+    m_correctionValue = other.m_correctionValue;
+    m_correctionType = other.m_correctionType;
+    m_PresentationWhenCorrecting = other.m_PresentationWhenCorrecting;
+    m_correction = other.m_correction;
 }
 
 void DataHolder::setSegment(const DataHolder &other, int from, int to)
@@ -54,8 +58,10 @@ void DataHolder::setSegment(const DataHolder &other, int from, int to)
 
     m_yValuesPresentation = other.m_yValuesPresentation;
 
-    correctionValue = other.correctionValue;
-    correctionType = other.correctionType;
+    m_correctionValue = other.m_correctionValue;
+    m_correctionType = other.m_correctionType;
+    m_PresentationWhenCorrecting = other.m_PresentationWhenCorrecting;
+    m_correction = other.m_correction;
     recalculateMinMax();
 }
 
@@ -69,33 +75,216 @@ void DataHolder::clear()
     //some statistics
     m_yMin = 0; m_yMax = 0;
 
-    correctionValue = 0.0;
-    correctionType = 0;
+    m_correctionValue = 0.0;
+    m_correctionType = 0;
+    m_PresentationWhenCorrecting = ShowAsDefault;
+    m_correction = false;
 }
 
-void DataHolder::setCorrection(double correctionValue, int type)
+void DataHolder::setTemporaryCorrection(double correctionValue, int type)
 {DD;
-    this->correctionValue = correctionValue;
-    this->correctionType = type;
+    this->m_correctionValue = correctionValue;
+    this->m_correctionType = type;
+    m_PresentationWhenCorrecting = m_yValuesPresentation;
+    m_correction = true;
 }
 
 void DataHolder::removeCorrection()
 {
-    if (correctionType == 0) correctionValue = 0.0;
-    if (correctionType == 1) correctionValue = 1.0;
+    if (m_correctionType == 0) m_correctionValue = 0.0;
+    if (m_correctionType == 1) m_correctionValue = 1.0;
+    m_PresentationWhenCorrecting = ShowAsDefault;
+    m_correction = false;
 }
+
+bool DataHolder::makeCorrectionConstant()
+{
+    if (!m_correction) return true; // есть временная коррекция
+    if (!hasCorrection()) return true; // и эта коррекция не тривиальная
+
+    if (int(m_PresentationWhenCorrecting) == int(m_yValuesFormat)) {
+        // просто применяем поправку ко всем данным
+        for (int i=0; i<samplesCount(); ++i) {
+            m_yValues[i] = corrected(m_yValues[i]);
+        }
+    }
+    else {
+        // необходима конвертация данных
+        if (m_PresentationWhenCorrecting == ShowAsAmplitudesInDB) {
+            // самый распространенный случай, поправки введены в дБ
+            switch (m_yValuesFormat) {
+                case YValuesComplex: {
+                    if (m_correctionType == 0) {// слагаемое
+                        double delta = fromLog(m_correctionValue, 1.0, m_yValuesUnits);
+                        for (int i=0; i<samplesCount(); ++i) {
+                            m_yValuesComplex[i].operator *=(delta);
+                        }
+                    }
+                    else if (m_correctionType == 1) {// множитель
+                        for (int i=0; i<samplesCount(); ++i) {
+                            double abs_ = std::abs(m_yValuesComplex[i]);
+                            if (!qFuzzyIsNull(abs_) && !qFuzzyIsNull(m_threshold)) {
+                                double delta = m_threshold * (pow(abs_/m_threshold, m_correctionValue)) / abs_;
+                                m_yValuesComplex[i].operator *=(delta);
+                            }
+                        }
+                    }
+                    break;
+                }
+                case YValuesReals:
+                case YValuesImags:
+                case YValuesAmplitudes: {
+                    if (m_correctionType == 0) {// слагаемое
+                        double delta = fromLog(m_correctionValue, 1.0, m_yValuesUnits);
+                        for (int i=0; i<samplesCount(); ++i) {
+                            m_yValues[i] *= delta;
+                        }
+                    }
+                    else if (m_correctionType == 1) {// множитель
+                        if ((1.0 - m_correctionValue) >= 0.0) {
+                            double thr = pow(m_threshold, 1.0 - m_correctionValue);
+                            for (int i=0; i<samplesCount(); ++i) {
+                                m_yValues[i] = thr * pow(m_yValues[i], m_correctionValue);
+                            }
+                        }
+                    }
+                    break;
+                }
+
+                default: break;
+            }
+        }
+        else if (m_PresentationWhenCorrecting == ShowAsAmplitudes) {
+            // поправки введены в абсолютных значениях
+            switch (m_yValuesFormat) {
+                case YValuesComplex: {
+                    if (m_correctionType == 0) {// слагаемое
+                        // если к амплитуде добавили положительное число, все в порядке.
+                        // если к амплитуде добавили отрицательное число, то проверяем, чтобы амплитуда не была меньше нуля.
+                        for (int i=0; i<samplesCount(); ++i) {
+                            double abs_ = std::abs(m_yValuesComplex[i]);
+                            if (abs_ + m_correctionValue < 0.0)
+                                m_yValuesComplex[i] = {0.0, 0.0};
+                            else if (abs_ > 0.0)
+                                m_yValuesComplex[i].operator *=(1.0 + m_correctionValue/abs_);
+                        }
+                    }
+                    else if (m_correctionType == 1) {// множитель
+                        for (int i=0; i<samplesCount(); ++i) {
+                            m_yValuesComplex[i].operator *=(m_correctionValue);
+                        }
+                    }
+                    break;
+                }
+                case YValuesReals:
+                case YValuesImags: {
+                    if (m_correctionType == 0) {// слагаемое
+                        for (int i=0; i<samplesCount(); ++i) {
+                            if (abs(m_yValues[i]) + m_correctionValue < 0.0)
+                                m_yValues[i] = 0.0;
+                            else if (m_yValues[i] >= 0.0)
+                                m_yValues[i] += m_correctionValue;
+                            else
+                                m_yValues[i] -= m_correctionValue;
+                        }
+                    }
+                    else if (m_correctionType == 1) {// множитель
+                        for (int i=0; i<samplesCount(); ++i) {
+                            m_yValues[i] *= m_correctionValue;
+                        }
+                    }
+                    break;
+                }
+                case YValuesAmplitudesInDB: {
+                    if (m_correctionType == 0) {// слагаемое
+                        for (int i=0; i<samplesCount(); ++i) {
+                            if (m_yValuesUnits == UnitsLinear)
+                                m_yValues[i] = 20.0 * log10((pow(10.0, m_yValues[i]/20.0)*m_threshold+m_correctionValue)/m_threshold);
+                            else if (m_yValuesUnits == UnitsQuadratic)
+                                m_yValues[i] = 10.0 * log10((pow(10.0, m_yValues[i]/10.0)*m_threshold*m_threshold
+                                                             +m_correctionValue)/m_threshold/m_threshold);
+                        }
+                    }
+                    else if (m_correctionType == 1) {// множитель
+                        for (int i=0; i<samplesCount(); ++i) {
+                            m_yValues[i] += toLog(m_correctionValue, 1.0, m_yValuesUnits);
+                        }
+                    }
+                    break;
+                }
+
+                default: break;
+            }
+        }
+        else if (m_PresentationWhenCorrecting == ShowAsReals) {
+            switch (m_yValuesFormat) {
+                case YValuesComplex: {
+                    if (m_correctionType == 0) {// слагаемое
+                        for (int i=0; i<samplesCount(); ++i) {
+                            m_yValuesComplex[i] = {m_yValuesComplex[i].real() + m_correctionValue,
+                                                   m_yValuesComplex[i].imag()};
+                        }
+                    }
+                    else if (m_correctionType == 1) {// множитель
+                        for (int i=0; i<samplesCount(); ++i) {
+                            m_yValuesComplex[i] = {m_yValuesComplex[i].real() * m_correctionValue,
+                                                   m_yValuesComplex[i].imag()};
+                        }
+                    }
+                    break;
+                }
+                default: break;
+            }
+        }
+        else if (m_PresentationWhenCorrecting == ShowAsImags) {
+            switch (m_yValuesFormat) {
+                case YValuesComplex: {
+                    if (m_correctionType == 0) {// слагаемое
+                        for (int i=0; i<samplesCount(); ++i) {
+                            m_yValuesComplex[i] = {m_yValuesComplex[i].real(),
+                                                   m_yValuesComplex[i].imag() + m_correctionValue};
+                        }
+                    }
+                    else if (m_correctionType == 1) {// множитель
+                        for (int i=0; i<samplesCount(); ++i) {
+                            m_yValuesComplex[i] = {m_yValuesComplex[i].real(),
+                                                   m_yValuesComplex[i].imag() * m_correctionValue};
+                        }
+                    }
+                    break;
+                }
+                default: break;
+            }
+        }
+
+        else if (m_PresentationWhenCorrecting == ShowAsPhases) {
+            // не шутите с фазой
+        }
+    }
+
+    recalculateYValues();
+    recalculateMinMax();
+    return true;
+}
+
+
 
 QString DataHolder::correctionString() const
 {
-    if ((correctionType == 0 && correctionValue == 0.0) || (correctionType == 1 && correctionValue == 1.0))
+    return correctionString(m_correctionValue, m_correctionType);
+}
+
+QString DataHolder::correctionString(double value, int type)
+{
+    if ((type == 0 && value == 0.0) || (type == 1 && value == 1.0))
         return QString();
 
     QString suffix;
-    if (correctionType == 0) {
-        if (correctionValue > 0) suffix = "+";
+    if (type == 0) {
+        if (value > 0) suffix = "+";
     }
-    else if (correctionType == 1) suffix = "*";
-    return suffix + QString::number(correctionValue);
+    else if (type == 1) suffix = "*";
+    return QString("[%1%2]").arg(suffix).arg(value);
 }
 
 QString DataHolder::yValuesFormatString() const
@@ -505,9 +694,23 @@ void DataHolder::recalculateYValues()
     m_yValuesTemporal.squeeze();
 }
 
+double correctedByType(double val, int type, double correction)
+{
+    if (type == 0) return val + correction;
+    if (type == 1) return val * correction;
+    return val;
+}
+
 double DataHolder::corrected(double val) const
 {
-    if (correctionType == 0) return val + correctionValue;
-    if (correctionType == 1) return val * correctionValue;
-    return 0.0;
+    if (m_correction)
+        return correctedByType(val, m_correctionType, m_correctionValue);
+    return val;
+}
+
+bool DataHolder::hasCorrection() const
+{
+    if (m_correctionType == 0 && !qFuzzyIsNull(m_correctionValue) ) return true;
+    if (m_correctionType == 1 && !qFuzzyIsNull(m_correctionValue - 1.0) ) return true;
+    return false;
 }

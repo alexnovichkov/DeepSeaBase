@@ -11,6 +11,7 @@ class QCheckBox;
 class FileDescriptor;
 class QLineEdit;
 class QComboBox;
+class QToolButton;
 
 class CorrectionDialog : public QDialog
 {
@@ -25,10 +26,15 @@ private:
     Plot *plot;
     QTableWidget *table;
     CheckableHeaderView *tableHeader;
-    QPushButton *correctButton;
+    QToolButton *correctButton;
     QCheckBox *allFilesCheckBox;
     QComboBox *correctionType;
     QList<FileDescriptor*> files;
+
+    // QDialog interface
+public slots:
+    virtual void accept() override;
+    virtual void reject() override;
 };
 
 #endif // CORRECTIONDIALOG_H
