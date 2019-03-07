@@ -448,6 +448,8 @@ void DfdFileDescriptor::writeRawFile()
         QDataStream writeStream(&rawFile);
         writeStream.setByteOrder(QDataStream::LittleEndian);
 
+
+
         if (BlockSize == 0) {
             if (!channels.isEmpty()) {
                 DfdChannel *ch = channels.first();

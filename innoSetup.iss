@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "DeepSea Database"
-#define MyAppVersion "1.6.7.2"
+#define MyAppVersion "1.6.8"
 #define MyAppPublisher "Novichkov & Sukin Sons."
 #define MyAppExeName "DeepSeaBase.exe"
 
@@ -45,6 +45,7 @@ Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\bin\Qt5Svg.dll"; DestDir: "{app}"; Fla
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\bin\Qt5Widgets.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\bin\Qt5WinExtras.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\bin\Qt5Multimedia.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\bin\Qt5Network.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Qwt-6.1.2\lib\qwt.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\My\build\DeepSeaBase\3rdParty\bin\samplerate.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\plugins\iconengines\*.dll"; DestDir: "{app}\iconengines"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
@@ -57,6 +58,7 @@ Source: "K:\My\build\DeepSeaBase\src\graphs.htm"; DestDir: "{app}"; Flags: ignor
 Source: "K:\My\build\DeepSeaBase\src\files.html"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\My\build\DeepSeaBase\src\style.css"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\My\build\DeepSeaBase\src\version.js"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\My\build\DeepSeaBase\src\icons\*.png"; DestDir: "{app}\icons"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
