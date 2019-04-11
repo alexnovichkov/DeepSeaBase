@@ -1334,3 +1334,9 @@ QDataStream &operator<<(QDataStream &stream, const FunctionHeader &header)
 }
 
 
+
+
+int Function::index() const
+{
+    return parent->channels.indexOf(const_cast<Function*>(this), 0);
+}

@@ -13,6 +13,11 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
 {DD;
     setWindowTitle("Добавление поправки к графику");
 
+    // удаляем из списка файлов файлы, графики которых построены на экране
+    // чтобы эти файлы не мешались
+    foreach (Curve *curve, plot->graphs)
+        this->files.removeAll(curve->channel->descriptor());
+
     table = new QTableWidget(0,3,this);
 
     tableHeader = new CheckableHeaderView(Qt::Horizontal, table);
@@ -20,10 +25,9 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
     table->setHorizontalHeader(tableHeader);
     tableHeader->setCheckable(1,true);
 
-//    if (files.size()>1)
-//        allFilesCheckBox = new QCheckBox("Применить поправку ко всем выделенным файлам", this);
-//    else
-        allFilesCheckBox = 0;
+
+    allFilesCheckBox = new QCheckBox("Применить поправку ко всем выделенным файлам", this);
+    if (files.size()<1) allFilesCheckBox->setEnabled(false);
 
 
     connect(tableHeader, &CheckableHeaderView::toggled, [this](int column, Qt::CheckState state)
@@ -110,9 +114,10 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
 
     l->addWidget(correctButton,2,2,2,1);
 
-    if (allFilesCheckBox)
-        l->addWidget(allFilesCheckBox,4,0,1,3);
+    l->addWidget(allFilesCheckBox,4,0,1,3);
+
     l->addWidget(buttonBox,5,0,1,3);
+    l->setRowStretch(5,l->rowStretch(5)+30);
     setLayout(l);
 
     //resize(500,500);
@@ -156,12 +161,21 @@ void CorrectionDialog::correct()
         if (table->item(i,1)->checkState()==Qt::Checked) {
             Curve *curve = plot->graphs.at(i);
             Channel *ch = curve->channel;
+            int channelNumber = ch->index();
 
             ch->data()->setTemporaryCorrection(correctionValue, correctionType->currentIndex());
             if (ch->data()->hasCorrection())
                 table->item(i,2)->setText(ch->data()->correctionString());
             else
                 table->item(i,2)->setText("");
+
+            if (allFilesCheckBox->isChecked())
+            foreach (FileDescriptor *file, files) {
+                if (Channel *ch1 = file->channel(channelNumber)) {
+                    if (!ch1->populated()) ch1->populate();
+                    ch1->data()->setTemporaryCorrection(correctionValue, correctionType->currentIndex());
+                }
+            }
         }
     }
     plot->updateAxes();
@@ -169,41 +183,56 @@ void CorrectionDialog::correct()
     plot->replot();
 }
 
+void CorrectionDialog::makeCorrectionConstant(Channel *channel)
+{
+    if (!channel) return;
+
+    channel->data()->makeCorrectionConstant();
+    //Обработка предыдущей коррекции.
+    QString previousCorrection = channel->correction();
+
+    if (previousCorrection.isEmpty()) {
+        // ранее коррекция не проводилась
+        channel->setCorrection(channel->data()->correctionString());
+    }
+    else {
+        // ранее коррекция проводилась, мы должны учесть старое и новое значения
+        if (previousCorrection.startsWith("[")) previousCorrection.remove(0,1);
+        if (previousCorrection.endsWith("]")) previousCorrection.chop(1);
+        int previousType = previousCorrection.startsWith("*")?1:0;
+        if (previousType == 1) previousCorrection.remove(0,1);
+        bool ok;
+        double previousCorrectionValue = previousCorrection.toDouble(&ok);
+        if (!ok) previousCorrectionValue = previousType == 0 ? 0.0 : 1.0;
+
+        if (previousType == correctionType->currentIndex()) {
+            // типы коррекций совпадают, можно работать
+            double newValue = previousType == 0?previousCorrectionValue + channel->data()->correction():
+                                                previousCorrectionValue * channel->data()->correction();
+            channel->setCorrection(DataHolder::correctionString(newValue, previousType));
+        }
+    }
+    channel->data()->removeCorrection();
+}
 
 void CorrectionDialog::accept()
 {
     QList<FileDescriptor*> list;
     // сперва графики
     for (int i=0; i<table->rowCount(); ++i) {
-        QString s = table->item(i,2)->text();
-        if (!s.isEmpty()) {
-            Channel *ch = plot->graphs.at(i)->channel;
-            ch->data()->makeCorrectionConstant();
-            //Обработка предыдущей коррекции.
-            QString previousCorrection = ch->correction();
-            if (previousCorrection.isEmpty()) {
-                // ранее коррекция не проводилась
-                ch->setCorrection(ch->data()->correctionString());
-            }
-            else {
-                // ранее коррекция проводилась, мы должны учесть старое и новое значения
-                if (previousCorrection.startsWith("[")) previousCorrection.remove(0,1);
-                if (previousCorrection.endsWith("]")) previousCorrection.chop(1);
-                int previousType = previousCorrection.startsWith("*")?1:0;
-                if (previousType == 1) previousCorrection.remove(0,1);
-                bool ok;
-                double previousCorrectionValue = previousCorrection.toDouble(&ok);
-                if (!ok) previousCorrectionValue = previousType == 0 ? 0.0 : 1.0;
+        if (table->item(i,2)->text().isEmpty()) continue;
 
-                if (previousType == correctionType->currentIndex()) {
-                    // типы коррекций совпадают, можно работать
-                    double newValue = previousType == 0?previousCorrectionValue + ch->data()->correction():
-                                                        previousCorrectionValue * ch->data()->correction();
-                    ch->setCorrection(DataHolder::correctionString(newValue, previousType));
+        Channel *ch = plot->graphs.at(i)->channel;
+        makeCorrectionConstant(ch);
+        if (!list.contains(ch->descriptor())) list << ch->descriptor();
+
+        if (allFilesCheckBox->isChecked()) {
+            foreach (FileDescriptor *file, files) {
+                if (Channel *ch1 = file->channel(ch->index())) {
+                    makeCorrectionConstant(ch1);
+                    if (!list.contains(ch1->descriptor())) list << ch1->descriptor();
                 }
             }
-            ch->data()->removeCorrection();
-            if (!list.contains(plot->graphs.at(i)->descriptor)) list << plot->graphs.at(i)->descriptor;
         }
     }
     foreach (FileDescriptor *f, list) {
@@ -222,7 +251,15 @@ void CorrectionDialog::reject()
 {
     for (int i=0; i<table->rowCount(); ++i) {
         plot->graphs.at(i)->channel->data()->removeCorrection();
+
+        if (allFilesCheckBox->isChecked())
+        foreach (FileDescriptor *file, files) {
+            if (Channel *ch1 = file->channel(plot->graphs.at(i)->channel->index())) {
+                ch1->data()->removeCorrection();
+            }
+        }
     }
+
     plot->updateAxes();
     plot->updateLegends();
     plot->replot();

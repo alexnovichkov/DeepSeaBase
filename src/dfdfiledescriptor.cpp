@@ -817,6 +817,7 @@ void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     }
     if (XName.isEmpty()) XName = firstChannel->xName();
     ch->parent = this;
+    ch->channelIndex = this->channelsCount();
 
     this->channels << ch;
 }
@@ -868,6 +869,7 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
         }
         if (XName.isEmpty()) XName = firstChannel->xName();
         ch->parent = this;
+        ch->channelIndex = this->channelsCount();
 
         this->channels << ch;
     }
@@ -2076,3 +2078,9 @@ void DfdFileDescriptor::setSamplesCount(int count)
 //void DfdOctaveFileDescriptor::populate()
 //{
 //}
+
+
+int DfdChannel::index() const
+{
+    return channelIndex;
+}

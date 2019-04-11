@@ -12,6 +12,7 @@ class FileDescriptor;
 class QLineEdit;
 class QComboBox;
 class QToolButton;
+class Channel;
 
 class CorrectionDialog : public QDialog
 {
@@ -22,6 +23,7 @@ public:
 private slots:
     void correct();
 private:
+    void makeCorrectionConstant(Channel *channel);
     QLineEdit *edit;
     Plot *plot;
     QTableWidget *table;

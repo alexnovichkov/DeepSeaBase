@@ -183,6 +183,10 @@ public:
     QString m_correction;
 private:
     int dataFormat() const;
+
+    // Channel interface
+public:
+    virtual int index() const override;
 };
 
 class RawChannel : public DfdChannel

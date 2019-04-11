@@ -50,6 +50,7 @@ public:
 
     // Channel interface
 public:
+    virtual int index() const override;
     virtual QStringList getInfoHeaders();
     virtual QStringList getInfoData();
     virtual Descriptor::DataType type() const;

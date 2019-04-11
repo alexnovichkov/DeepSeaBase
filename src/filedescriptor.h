@@ -213,6 +213,8 @@ public:
 
     virtual FileDescriptor *descriptor() = 0;
 
+    virtual int index() const = 0;
+
     Qt::CheckState checkState() const {return _checkState;}
     void setCheckState(Qt::CheckState checkState) {_checkState = checkState;}
 
