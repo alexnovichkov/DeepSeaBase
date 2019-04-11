@@ -1187,7 +1187,7 @@ bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channe
     if (defaultSuffix.isEmpty()) defaultSuffix = "dfd";
     dialog.setDefaultSuffix(defaultSuffix);
 
-    QStringList suffixes = QStringList()<<".dfd"<<".uff"<<".unv";
+    QStringList suffixes = QStringList()<<"dfd"<<"uff"<<"unv";
     QStringList filters = QStringList()<<"Файлы dfd (*.dfd)"<<"Файлы uff (*.uff)"<<"Файлы unv (*.unv)";
 
     bool forceUff = false;
@@ -1242,8 +1242,10 @@ bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channe
 
     QString file = selectedFiles.first();
 
-    if (!file.endsWith(suffixes.at(filters.indexOf(selectedFilter))))
-        file.append(suffixes.at(filters.indexOf(selectedFilter)));
+    QString currentSuffix = QFileInfo(file).suffix().toLower();
+    QString filterSuffix = suffixes.at(filters.indexOf(selectedFilter));
+    if (currentSuffix != filterSuffix)
+        file.append(filterSuffix);
     if (forceUff) {
         file.chop(4);
         file.append(".uff");
