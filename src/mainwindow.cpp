@@ -723,6 +723,13 @@ void MainWindow::closeTab(int i)
 
     if (!tab) return;
 
+    // удаление графиков тех файлов, которые были в закрываемой вкладке
+    for (int i=plot->graphsCount()-1; i>=0; --i) {
+        FileDescriptor *f = plot->graphs[i]->descriptor;
+        if (tab->model->contains(f) && !duplicated(f))
+            plot->deleteGraph(plot->graphs[i]);
+    }
+
     tab->filesTable->selectAll();
 
     // костыль, позволяющий иметь несколько одинаковых файлов в разных вкладках
