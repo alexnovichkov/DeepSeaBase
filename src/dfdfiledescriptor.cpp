@@ -336,16 +336,16 @@ void DfdFileDescriptor::read()
         // на один канал меньше
         if (!channels.isEmpty()) {
             // первым каналом записаны центральные частоты, сохраняем их как значения по X
-            DfdChannel *firstChannel = channels.takeFirst();
+            DfdChannel *firstChannel = channels.first();
             firstChannel->populate();
             xValues = firstChannel->data()->yValues();
 
-            // перенумерация каналов
-            for (int i=0; i<channels.size(); ++i) {
-                channels[i]->channelIndex = i;
-            }
+//            // перенумерация каналов
+//            for (int i=0; i<channels.size(); ++i) {
+//                channels[i]->channelIndex = i;
+//            }
 
-            delete firstChannel;
+//            delete firstChannel;
         }
     }
 }
@@ -379,7 +379,7 @@ void DfdFileDescriptor::write()
     dfd << "DataType="<<DataType << endl;
     dfd << "Date="<<Date.toString("dd.MM.yyyy") << endl;
     dfd << "Time="<<Time.toString("hh:mm:ss") << endl;
-    dfd << "NumChans="<<(XStep == 0.0 ? channels.size()+1:channels.size()) << endl;
+    dfd << "NumChans="<<channels.size() << endl;
     dfd << "NumInd="<<samplesCount() << endl;
     dfd << "BlockSize="<<BlockSize << endl;
     dfd << "XName="<<xName() << endl;
@@ -407,21 +407,21 @@ void DfdFileDescriptor::write()
     // Для этого создаем временный канал
     /** Channels*/
     int b = 0;
-    if (XStep == 0.0) {// uneven abscissa, adding channel
-        if (!channels.isEmpty()) {
-            DfdChannel ch(*(channels.first()));
-            ch.ChanAddress.clear(); //
-            ch.ChanName = "ось X"; //
-            ch.YName="Гц";
-            ch.YNameOld.clear();
-            ch.InputType.clear();
-            ch.ChanDscr.clear();
-            ch.channelIndex = 0; // нумерация с 0
+//    if (XStep == 0.0) {// uneven abscissa, adding channel
+//        if (!channels.isEmpty()) {
+//            DfdChannel ch(*(channels.first()));
+//            ch.ChanAddress.clear(); //
+//            ch.ChanName = "ось X"; //
+//            ch.YName="Гц";
+//            ch.YNameOld.clear();
+//            ch.InputType.clear();
+//            ch.ChanDscr.clear();
+//            ch.channelIndex = 0; // нумерация с 0
 
-            ch.write(dfd, 0);
-            b = 1;
-        }
-    }
+//            ch.write(dfd, 0);
+//            b = 1;
+//        }
+//    }
 
     for (int i=0; i<channels.size(); ++i)
         channels[i]->write(dfd, i+b);
@@ -451,18 +451,19 @@ void DfdFileDescriptor::writeRawFile()
 
 
         if (BlockSize == 0) {
-            if (!channels.isEmpty()) {
-                DfdChannel *ch = channels.first();
-                if (ch->xValuesFormat() == DataHolder::XValuesNonUniform) {
-                    if (xValues.isEmpty()) xValues = ch->xValues();
+//            // записываем данные нулевого канала, если это третьоктава
+//            if (!channels.isEmpty()) {
+//                DfdChannel *ch = channels.first();
+//                if (ch->xValuesFormat() == DataHolder::XValuesNonUniform) {
+//                    if (xValues.isEmpty()) xValues = ch->xValues();
 
-                    if (ch->IndType==0xC0000004)
-                        writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-                    for (int val = 0; val < xValues.size(); ++val) {
-                        ch->setValue(xValues[val], writeStream);
-                    }
-                }
-            }
+//                    if (ch->IndType==0xC0000004)
+//                        writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+//                    for (int val = 0; val < xValues.size(); ++val) {
+//                        ch->setValue(xValues[val], writeStream);
+//                    }
+//                }
+//            }
 
             // пишем поканально
             for (int i = 0; i<channels.size(); ++i) {
@@ -918,6 +919,29 @@ QString DfdFileDescriptor::calculateThirdOctave()
     }
 
     thirdOctDfd->xValues = thirdOctDfd->channels.last()->xValues();
+
+//     добавляем нулевой канал с осью Х
+    DfdChannel *ch = new DfdChannel(thirdOctDfd,index++);
+    ch->ChanAddress.clear(); //
+    ch->ChanName = "ось X"; //
+    ch->YName="Гц";
+    ch->YNameOld.clear();
+    ch->InputType.clear();
+    ch->ChanDscr.clear();
+    ch->channelIndex = 0; // нумерация с 0
+    ch->ChanBlockSize=thirdOctDfd->xValues.size();
+    ch->IndType=3221225476;
+    ch->data()->setThreshold(1.0);
+    ch->data()->setXValues(thirdOctDfd->xValues);
+    ch->data()->setYValues(thirdOctDfd->xValues, DataHolder::YValuesReals);
+    ch->setPopulated(true);
+
+    thirdOctDfd->channels.prepend(ch);
+
+    for (int i=0; i<thirdOctDfd->channels.size(); ++i)
+        thirdOctDfd->channels[i]->channelIndex = i;
+
+
     thirdOctDfd->XBegin = thirdOctDfd->xValues.first();
     thirdOctDfd->setSamplesCount(thirdOctDfd->channels.last()->data()->samplesCount());
 
