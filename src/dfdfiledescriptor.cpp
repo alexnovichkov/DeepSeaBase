@@ -966,6 +966,7 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
         channels[i]->channelIndex = i;
 
     setChanged(true);
+    setDataChanged(true);
 
     write();
     writeRawFile();
