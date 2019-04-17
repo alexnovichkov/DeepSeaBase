@@ -955,7 +955,30 @@ QString DfdFileDescriptor::calculateThirdOctave()
 
 void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
 {DD;
+    if (indexes.isEmpty() || newIndexes.isEmpty()) return;
+
+    DebugPrint(indexes);
+    DebugPrint(newIndexes);
+    DebugPrint(up);
     populate(); //нужно это сделать, чтобы потом суметь прочитать каналы в нужном порядке
+
+    // заполняем вектор индексов каналов, как они будут выглядеть после перемещения
+    QVector<int> indexesVector(this->channelsCount());
+    for (int i=0; i<this->channelsCount(); ++i)
+        indexesVector[i] = i;
+    {
+        int i=up?0:indexes.size()-1;
+        while (1) {
+            indexesVector.move(indexes.at(i),newIndexes.at(i));
+            if ((up && i==indexes.size()-1) || (!up && i==0)) break;
+            i=up?i+1:i-1;
+        }
+    }
+    DebugPrint(indexesVector);
+
+    // переписываем файл данных во временный файл, которым затем подменим исходный raw
+
+
     int i=up?0:indexes.size()-1;
     while (1) {
         channels.move(indexes.at(i),newIndexes.at(i));
@@ -1232,11 +1255,12 @@ QStringList DfdChannel::getInfoHeaders()
 {DD;
     return QStringList()
             //<< QString("Канал") //ChanAddress
-            << QString("       Имя") //ChanName
+            << QString("Имя") //ChanName
             //<< QString("Вход") //InputType
             << QString("Ед.изм.") //YName
-            << "Формат"
+            << QString("Формат")
             << QString("Описание") //ChanDscr
+            << QString("Поправка") //Correction
                ;
 }
 
@@ -1247,6 +1271,7 @@ QStringList DfdChannel::getInfoData()
             << yName()
             << data()->yValuesFormatString()
             << description()
+            << correction()
                ;
 }
 

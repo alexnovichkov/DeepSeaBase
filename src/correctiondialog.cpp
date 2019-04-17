@@ -211,6 +211,8 @@ void CorrectionDialog::makeCorrectionConstant(Channel *channel)
                                                 previousCorrectionValue * channel->data()->correction();
             channel->setCorrection(DataHolder::correctionString(newValue, previousType));
         }
+        else
+            channel->setCorrection(channel->data()->correctionString());
     }
     channel->data()->removeCorrection();
 }

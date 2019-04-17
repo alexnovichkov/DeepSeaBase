@@ -30,7 +30,7 @@
 #include "filedescriptor.h"
 #include "timeslicer.h"
 
-#define DSB_VERSION "1.6.8"
+#define DSB_VERSION "1.6.8.1"
 
 class DrivesDialog : public QDialog
 {
@@ -1643,7 +1643,7 @@ void MainWindow::updateChannelsTable(FileDescriptor *dfd)
         Qt::CheckState state = ch->checkState();
         for (int col=0; col<headers.size(); ++col) {
             QTableWidgetItem *ti = new QTableWidgetItem(data.at(col));
-            if (col==0) {
+            if (col == 0) {
                 ti->setCheckState(state);
                 if (state==Qt::Checked) ti->setFont(boldFont);
                 if (ch->color().isValid()) {
@@ -1651,6 +1651,10 @@ void MainWindow::updateChannelsTable(FileDescriptor *dfd)
                     ti->setBackgroundColor(ch->color());
                 }
             }
+            if (col != 0 &&
+                headers.at(col) != "Ед.изм." &&
+                headers.at(col) != "Описание")
+                ti->setFlags(ti->flags() ^ Qt::ItemIsEnabled);
             tab->channelsTable->setItem(i,col,ti);
         }
     }
