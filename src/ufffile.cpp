@@ -447,10 +447,10 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     ch->data()->setYValuesUnits(units);
     if (format == DataHolder::YValuesComplex)
         ch->data()->setYValues(averaging.getComplex().mid(0, numInd));
-//    else if (format == DataHolder::YValuesAmplitudesInDB) {
-//        QVector<double> data = averaging.get().mid(0, numInd);
-//        ch->data()->setYValues(DataHolder::toLog(data, firstChannel->data()->threshold()), DataHolder::YValuesFormat(format));
-//    }
+    else if (format == DataHolder::YValuesAmplitudesInDB) {
+        // записываем в файлы uff только линейные данные
+        ch->data()->setYValues(averaging.get().mid(0, numInd), DataHolder::YValuesAmplitudes);
+    }
     else
         ch->data()->setYValues(averaging.get().mid(0, numInd), DataHolder::YValuesFormat(format));
 

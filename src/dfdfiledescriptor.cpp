@@ -956,7 +956,7 @@ QString DfdFileDescriptor::calculateThirdOctave()
 void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
 {DD;
     if (indexes.isEmpty() || newIndexes.isEmpty()) return;
-
+#if 0
     DebugPrint(indexes);
     DebugPrint(newIndexes);
     DebugPrint(up);
@@ -1050,6 +1050,8 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
     }
 
     else {//классический способ - читаем весь файл, меняем порядок каналов, сохраняем оба файла
+
+#endif
         populate(); //нужно это сделать, чтобы потом суметь прочитать каналы в нужном порядке
         int i=up?0:indexes.size()-1;
         while (1) {
@@ -1065,7 +1067,9 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
 
         write();
         writeRawFile();
+#if 0
     }
+#endif
     qDebug()<<"done";
 }
 
