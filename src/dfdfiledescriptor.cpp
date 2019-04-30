@@ -956,10 +956,10 @@ QString DfdFileDescriptor::calculateThirdOctave()
 void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
 {DD;
     if (indexes.isEmpty() || newIndexes.isEmpty()) return;
-#if 0
-    DebugPrint(indexes);
-    DebugPrint(newIndexes);
-    DebugPrint(up);
+//#if 0
+    //DebugPrint(indexes);
+    //DebugPrint(newIndexes);
+    //DebugPrint(up);
 
     // заполняем вектор индексов каналов, как они будут выглядеть после перемещения
     QVector<int> indexesVector(this->channelsCount());
@@ -973,7 +973,7 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
             i=up?i+1:i-1;
         }
     }
-    DebugPrint(indexesVector);
+    //DebugPrint(indexesVector);
 
     // переписываем файл данных во временный файл, которым затем подменим исходный raw
     QTemporaryFile tempFile;
@@ -984,19 +984,21 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
         //работаем через временный файл - читаем один канал и записываем его во временный файл
         if (!channels[0]->dataPositions.isEmpty()) {
             foreach (int i, indexesVector) {
-                const quint64 blockSizeBytes = channels[i]->blockSizeInBytes();
+                DfdChannel *ch = channels[i];
                 qint64 dataPos = tempFile.pos();
                 //пишем канал целиком
-                for (int pos = 0; pos < channels[i]->dataPositions.size(); ++pos) {
-                    rawFile.seek(channels[i]->dataPositions[pos]);
+                for (int pos = 0; pos < ch->dataPositions.size(); ++pos) {
+                    rawFile.seek(ch->dataPositions[pos]);
 
-                    QByteArray b = rawFile.read(blockSizeBytes);
+                    QByteArray b = rawFile.read(ch->blockSizeInBytes());
                     tempFile.write(b);
                 }
+                tempFile.flush();
 
                 // меняем размер блока и обновляем положение данных
-                channels[i]->dataPositions.clear();
-                channels[i]->dataPositions.append(dataPos);
+                ch->dataPositions.clear();
+                ch->dataPositions.append(dataPos);
+                ch->ChanBlockSize = this->NumInd;
                 this->BlockSize = 0;
             }
         }
@@ -1051,7 +1053,7 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
 
     else {//классический способ - читаем весь файл, меняем порядок каналов, сохраняем оба файла
 
-#endif
+//#endif
         populate(); //нужно это сделать, чтобы потом суметь прочитать каналы в нужном порядке
         int i=up?0:indexes.size()-1;
         while (1) {
@@ -1067,9 +1069,9 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
 
         write();
         writeRawFile();
-#if 0
+//#if 0
     }
-#endif
+//#endif
     qDebug()<<"done";
 }
 
