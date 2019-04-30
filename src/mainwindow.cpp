@@ -146,6 +146,27 @@ protected:
     }
 };
 
+class StepItemDelegate : public QStyledItemDelegate
+{
+public:
+    StepItemDelegate(QObject *parent = Q_NULLPTR) : QStyledItemDelegate(parent)
+    {}
+
+    // QAbstractItemDelegate interface
+public:
+    virtual QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+};
+
+QWidget *StepItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    QWidget *ed = QStyledItemDelegate::createEditor(parent, option, index);
+    if (QDoubleSpinBox *spin = qobject_cast<QDoubleSpinBox*>(ed)) {
+        spin->setDecimals(10);
+    }
+
+    return ed;
+}
+
 
 FileDescriptor *createDescriptor(const QString &fileName)
 {DD;
@@ -595,6 +616,8 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
     connect(tab->filesTable->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),tab, SLOT(filesSelectionChanged()));
     connect(tab->filesTable->selectionModel(),SIGNAL(currentRowChanged(QModelIndex,QModelIndex)),SLOT(updateChannelsTable(QModelIndex,QModelIndex)));
+
+    tab->filesTable->setItemDelegateForColumn(6 /*шаг по оси х*/, new StepItemDelegate);
 
     connect(tab->model, SIGNAL(legendsChanged()), plot, SLOT(updateLegends()));
     connect(tab->model, SIGNAL(plotNeedsUpdate()), plot, SLOT(update()));
