@@ -150,13 +150,14 @@ QVector<D> getChunkOfData(QDataStream &readStream, int chunkSize, uint IndType, 
 
 QVector<double> convertFromUINT16(unsigned char *ptr, qint64 length, uint IndType)
 {
-    QVector<double> temp(length / (IndType % 16), 0.0);
+    uint step = IndType % 16;
+    QVector<double> temp(length / step, 0.0);
 
     int i=0;
     while (length) {
         temp[i++] = static_cast<double>(qFromLittleEndian<quint16>(ptr));
-        length -= (IndType % 16);
-        ptr += (IndType % 16);
+        length -= step;
+        ptr += step;
     }
     return temp;
 }

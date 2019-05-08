@@ -96,23 +96,7 @@ GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
     axisComboBox->setCurrentIndex(curve->yAxis());
     connect(axisComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             [=](int axis) {
-        if (axis == QwtPlot::yLeft && plot->canBePlottedOnLeftAxis(curve->channel)) {
-            plot->prepareAxis(axis);
-            plot->setAxis(axis, curve->channel->yName());
-            curve->setYAxis(axis);
-            plot->moveGraph(curve);
-            plot->updateAxesLabels();
-            plot->moveToAxis(axis, curve->channel->yMin(), curve->channel->yMax());
-        }
-        else if (axis == QwtPlot::yRight && plot->canBePlottedOnRightAxis(curve->channel)) {
-            plot->prepareAxis(axis);
-            plot->setAxis(axis, curve->channel->yName());
-            curve->setYAxis(axis);
-            plot->moveGraph(curve);
-            plot->updateAxesLabels();
-            plot->moveToAxis(axis, curve->channel->yMin(), curve->channel->yMax());
-        }
-        else QMessageBox::warning(this, "Не могу поменять ось", "Эта ось уже занята графиком другого типа!");
+        plot->moveGraph(curve, axis);
     });
 
 //    QComboBox *symbolCombo = new QComboBox(this);

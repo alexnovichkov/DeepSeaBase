@@ -44,6 +44,26 @@ void Legend::itemMarkedForDelete()
     }
 }
 
+void Legend::itemMarkedToMoveToRight()
+{
+    QWidget *w = qobject_cast<QWidget *>( sender() );
+    if ( w )
+    {
+        const QVariant info = itemInfo( w );
+        if ( info.isValid() )
+        {
+            const QList<QWidget *> widgetList =
+                legendWidgets( info );
+
+            const int index = widgetList.indexOf( w );
+            if ( index >= 0 ) {
+//                qDebug()<<index <<info;
+                Q_EMIT markedToMoveToRight(info, index );
+            }
+        }
+    }
+}
+
 QWidget *Legend::createWidget(const QwtLegendData &data) const
 {
     Q_UNUSED( data );
@@ -55,7 +75,7 @@ QWidget *Legend::createWidget(const QwtLegendData &data) const
     connect( label, SIGNAL( clicked() ), SLOT( itemClicked() ) );
     connect( label, SIGNAL( checked( bool ) ), SLOT( itemChecked( bool ) ) );
     connect( label, SIGNAL(markedForDelete()), SLOT(itemMarkedForDelete()));
-
+    connect( label, SIGNAL(markedToMoveToRight()), SLOT(itemMarkedForDelete()));
 
     return label;
 }
@@ -153,6 +173,11 @@ void CheckableLegend::handleClick(const QModelIndex &i)
 {
     if (QApplication::mouseButtons() & Qt::RightButton) {
         emit markedForDelete(d_model->item(i.row()));
+        return;
+    }
+
+    if (QApplication::mouseButtons() & Qt::MiddleButton) {
+        emit markedToMove(d_model->item(i.row()));
         return;
     }
 

@@ -236,6 +236,7 @@ Plot::Plot(QWidget *parent) :
     CheckableLegend *leg = new CheckableLegend();
     connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
     connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteGraph(QwtPlotItem*)));
+    connect(leg, SIGNAL(markedToMove(QwtPlotItem*)),this, SLOT(moveGraph(QwtPlotItem*)));
     insertLegend(leg, QwtPlot::RightLegend);
 
 
@@ -652,25 +653,44 @@ void Plot::removeLabels()
    replot();
 }
 
-void Plot::moveGraph(Curve *curve)
+void Plot::moveGraph(Curve *curve, int axis)
 {DD;
-    if (leftGraphs.contains(curve)) {
-        leftGraphs.removeAll(curve);
-        if (rightGraphs.isEmpty()) {
-            yValuesPresentationRight = curve->channel->data()->yValuesPresentation();
+    if ((axis == QwtPlot::yLeft && canBePlottedOnLeftAxis(curve->channel))
+        || (axis == QwtPlot::yRight && canBePlottedOnRightAxis(curve->channel))) {
+        prepareAxis(axis);
+        setAxis(axis, curve->channel->yName());
+        curve->setYAxis(axis);
+
+        if (leftGraphs.contains(curve)) {
+            leftGraphs.removeAll(curve);
+            if (rightGraphs.isEmpty()) {
+                yValuesPresentationRight = curve->channel->data()->yValuesPresentation();
+            }
+            curve->channel->data()->setYValuesPresentation(yValuesPresentationRight);
+            rightGraphs.append(curve);
         }
-        curve->channel->data()->setYValuesPresentation(yValuesPresentationRight);
-        rightGraphs.append(curve);
-    }
-    else if (rightGraphs.contains(curve)) {
-        rightGraphs.removeAll(curve);
-        if (leftGraphs.isEmpty()) {
-            yValuesPresentationLeft = curve->channel->data()->yValuesPresentation();
+        else if (rightGraphs.contains(curve)) {
+            rightGraphs.removeAll(curve);
+            if (leftGraphs.isEmpty()) {
+                yValuesPresentationLeft = curve->channel->data()->yValuesPresentation();
+            }
+            curve->channel->data()->setYValuesPresentation(yValuesPresentationLeft);
+            leftGraphs.append(curve);
         }
-        curve->channel->data()->setYValuesPresentation(yValuesPresentationLeft);
-        leftGraphs.append(curve);
+        emit graphsChanged();
+
+        updateAxesLabels();
+        moveToAxis(axis, curve->channel->yMin(), curve->channel->yMax());
     }
-    emit graphsChanged();
+    else QMessageBox::warning(this, "Не могу поменять ось", "Эта ось уже занята графиком другого типа!");
+
+
+}
+
+void Plot::moveGraph(QwtPlotItem *curve)
+{
+    if (Curve *c = dynamic_cast<Curve*>(curve))
+        moveGraph(c, c->yAxis() == QwtPlot::yLeft ? QwtPlot::yRight : QwtPlot::yLeft);
 }
 
 bool Plot::hasDuplicateNames(const QString name) const

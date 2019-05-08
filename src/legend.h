@@ -6,6 +6,7 @@
 #include <QAbstractTableModel>
 #include <QTreeView>
 
+// Этот класс используется при импорте графиков в рисунок или при печати графика
 class Legend : public QwtLegend
 {
     Q_OBJECT
@@ -13,9 +14,11 @@ public:
     explicit Legend(QWidget *parent = 0);
 signals:
     void markedForDelete( const QVariant &itemInfo, int index );
+    void markedToMoveToRight( const QVariant &itemInfo, int index );
 
 private slots:
     void itemMarkedForDelete();
+    void itemMarkedToMoveToRight();
 protected:
     virtual QWidget *createWidget( const QwtLegendData & ) const;
     virtual void updateWidget( QWidget *widget, const QwtLegendData &data );
@@ -73,6 +76,8 @@ public:
 };
 
 
+// Этот класс используется для отображения графиков на экране
+
 class CheckableLegend : public QwtAbstractLegend
 {
     Q_OBJECT
@@ -91,6 +96,7 @@ signals:
     //void checked( QwtPlotItem *plotItem, bool on, int index );
     void clicked(QwtPlotItem *);
     void markedForDelete(QwtPlotItem*);
+    void markedToMove(QwtPlotItem*);
 
 public slots:
     virtual void updateLegend(const QVariant &itemInfo, const QList<QwtLegendData> & data);

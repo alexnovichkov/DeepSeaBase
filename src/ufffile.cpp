@@ -1140,8 +1140,8 @@ void Function::populate()
         else
             _data->setYValues(valuesComplex);
 
-        QString end = stream.readLine(); qDebug()<<"end"<<end;
-        end = stream.readLine().trimmed(); qDebug()<<"end"<<end;
+        QString end = stream.readLine();
+        end = stream.readLine().trimmed();
         Q_ASSERT(end == "-1");
     }
     _populated = true;

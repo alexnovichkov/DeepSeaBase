@@ -110,7 +110,8 @@ public:
 
     void removeLabels();
 
-    void moveGraph(Curve *curve);
+
+
 
     void setInteractionMode(InteractionMode mode);
     void switchInteractionMode();
@@ -124,6 +125,8 @@ public slots:
     void copyToClipboard();
     void print();
     void updateLegends();
+
+    void moveGraph(Curve *curve, int axis);
 signals:
     void curveChanged(Curve *curve);
     void curveDeleted(FileDescriptor *descriptor, int index);
@@ -136,6 +139,7 @@ private slots:
     void editLegendItem(QwtPlotItem *item);
     void deleteGraph(QwtPlotItem *item);
     void showContextMenu(const QPoint &pos, const int axis);
+    void moveGraph(QwtPlotItem *curve);
 private:
     void importPlot(const QString &fileName);
     bool hasDuplicateNames(const QString name) const;

@@ -333,7 +333,7 @@ QVector<double> filter(const QVector<double> &B, const QVector<double> &A, const
         y[m] = z[0] + B[0] * x[m];
         if (!qIsFinite(y[m])) {
             if (!flag)
-            qDebug()<<m<<y[m];
+            //qDebug()<<m<<y[m];
             flag = true;
         }
 
