@@ -1185,10 +1185,11 @@ void Function::setYName(const QString &yName)
 QString Function::legendName() const
 {DD;
     QStringList l;
+    l << name();
     if (!correction().isEmpty()) l << correction();
     if (!parent->legend().isEmpty()) l << parent->legend();
 
-    return name() + l.join(" ");
+    return l.join(" ");
 }
 
 int Function::samplesCount() const

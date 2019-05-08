@@ -1766,11 +1766,11 @@ int DfdChannel::dataFormat() const
 QString DfdChannel::legendName() const
 {DD;
     QStringList l;
+    l << (name().isEmpty()?ChanAddress:name());
     if (!correction().isEmpty()) l << correction();
     if (!parent->legend().isEmpty()) l << parent->legend();
-    QString result = l.join(" ");
 
-    return (name().isEmpty()?ChanAddress:name()) + result;
+    return l.join(" ");
 }
 
 void DfdChannel::setValue(double val, QDataStream &writeStream)
