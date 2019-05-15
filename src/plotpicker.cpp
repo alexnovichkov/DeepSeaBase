@@ -78,7 +78,7 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
     }
     else if (key == Qt::Key_Space) {
         if (d_selectedCurve) {
-            QPointF val = d_selectedCurve->sample(d_selectedPoint);
+            QPointF val = d_selectedCurve->samplePoint(d_selectedPoint);
 
             PointLabel *label = d_selectedCurve->findLabel(d_selectedPoint);
 
@@ -108,8 +108,7 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
         if (d_selectedLabel) {
             const QwtPlotItemList& itmList = plot->itemList();
             for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
-                if (( *it )->rtti() == QwtPlotItem::Rtti_PlotCurve ) {
-                    Curve *c = static_cast<Curve *>( *it );
+                if (Curve *c = dynamic_cast<Curve *>(*it)) {
                     c->removeLabel(d_selectedLabel);
                 }
             }
@@ -165,17 +164,16 @@ Curve * PlotPicker::findClosestPoint(const QPoint &pos, int &index) const
     Curve *curve = 0;
     double dist = 10e10;
 
-    const QwtPlotItemList& itmList = plot->itemList(QwtPlotItem::Rtti_PlotCurve);
+    QwtPlotItemList itmList = plot->itemList();
     for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
-        Curve *c = static_cast<Curve *>( *it );
-
-        double d;
-        int idx = c->closest( pos, &d );
-//        int idx = c->closestPoint( pos, &d );
-        if ( d < dist ) {
-            curve = c;
-            index = idx;
-            dist = d;
+        if (Curve *c = dynamic_cast<Curve *>( *it )) {
+            double d;
+            int idx = c->closest( pos, &d );
+            if ( d < dist ) {
+                curve = c;
+                index = idx;
+                dist = d;
+            }
         }
     }
 
@@ -194,11 +192,9 @@ PointLabel *PlotPicker::findLabel()
 {DD;
     const QwtPlotItemList& itmList = plot->itemList();
     for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
-        if (( *it )->rtti() == QwtPlotItem::Rtti_PlotCurve ) {
-            if (Curve *c = static_cast<Curve *>( *it )) {
-                PointLabel *label = c->findLabel(this->trackerPosition(), c->yAxis());
-                if (label) return label;
-            }
+        if (Curve *c = dynamic_cast<Curve *>( *it )) {
+            PointLabel *label = c->findLabel(this->trackerPosition(), c->yAxis());
+            if (label) return label;
         }
     }
 
@@ -284,7 +280,7 @@ void PlotPicker::highlightPoint(bool showIt)
     if (showIt) {
         if (!d_selectedCurve)
             return;
-        QPointF val = d_selectedCurve->sample(d_selectedPoint);
+        QPointF val = d_selectedCurve->samplePoint(d_selectedPoint);
         emit updateTrackingCursor(val.x(),false);
         if (!marker) {
             marker = new QwtPlotMarker();

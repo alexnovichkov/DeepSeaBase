@@ -9,6 +9,8 @@
 #include "dfdfiledescriptor.h"
 #include "ufffile.h"
 #include "curve.h"
+#include "linecurve.h"
+#include "barcurve.h"
 
 #include "chartzoom.h"
 
@@ -191,6 +193,16 @@ public:
         return scaleDiv;
     }
 };
+
+// простой фабричный метод создания кривой нужного типа
+Curve * createCurve(const QString &legendName, FileDescriptor *descriptor, int channel)
+{
+    // считаем, что шаг по оси х 0 только у октав и третьоктав
+    if (descriptor->channel(channel)->xStep()==0.0)
+        return new BarCurve(legendName, descriptor, channel);
+
+    return new LineCurve(legendName, descriptor, channel);
+}
 
 
 Plot::Plot(QWidget *parent) :
@@ -533,7 +545,7 @@ void Plot::deleteGraph(Curve *graph, bool doReplot)
         if (removed > 0) {
             zoom->horizontalScaleBounds->removeToAutoscale(graph->xMin(), graph->xMax());
         }
-        QString title = graph->title().text();
+        QString title = graph->title();
 
 
         delete graph;
@@ -697,7 +709,7 @@ bool Plot::hasDuplicateNames(const QString name) const
 {
     int count = 0;
     foreach(Curve *c, graphs) {
-        if (c->title().text() == name) count++;
+        if (c->title() == name) count++;
     }
     return (count > 1);
 }
@@ -706,7 +718,7 @@ void Plot::checkDuplicates(const QString name)
 {
     QList<int> l;
     for( int i=0; i<graphs.size(); ++i) {
-        if (graphs[i]->title().text() == name) l << i;
+        if (graphs[i]->title() == name) l << i;
     }
     foreach(int i, l) graphs[i]->duplicate = l.size()>1;
 }
@@ -826,7 +838,7 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
     prepareAxis(ax);
 
 
-    Curve *g = new Curve(ch->legendName(), descriptor, channel);
+    Curve *g = createCurve(ch->legendName(), descriptor, channel);
     QColor nextColor = ColorSelector::instance()->getColor();
     QPen pen = g->pen();
     pen.setColor(nextColor);
@@ -837,8 +849,8 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
 
     graphs << g;
     g->fileNumber = fileNumber;
-    checkDuplicates(g->title().text());
-    if (hasDuplicateNames(g->title().text())) {
+    checkDuplicates(g->title());
+    if (hasDuplicateNames(g->title())) {
         g->duplicate = true;
     }
 
@@ -858,7 +870,7 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
     zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
     ybounds->add(g->yMin(), g->yMax());
 
-    g->attach(this);
+    g->attachTo(this);
     update();
     emit graphsChanged();
 
@@ -1075,7 +1087,7 @@ void Plot::importPlot(const QString &fileName)
 
     foreach (Curve *graph, graphs) {
         graph->setPen(graph->oldPen);
-        graph->setTitle(QwtText(graph->channel->legendName()));
+        graph->setTitle(graph->channel->legendName());
     }
 
     leg = new CheckableLegend();

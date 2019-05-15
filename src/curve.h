@@ -9,36 +9,34 @@ class PointLabel;
 
 class Channel;
 class DataHolder;
+class QPen;
+class Plot;
+class QwtScaleMap;
 
-//#include "qwt_plot_item.h"
-//#include "qwt_scale_map.h"
 #include <qglobal.h>
 
-class DfdData: public QwtSeriesData<QPointF>
+class Curve
 {
 public:
-    DfdData(DataHolder *data);
-
-    virtual QRectF boundingRect() const;
-
-    virtual size_t size() const;
-
-    virtual QPointF sample( size_t i ) const;
-
-    virtual double xStep() const;
-    virtual double xBegin() const;
-private:
-    DataHolder *data;
-};
-
-class Curve : public QwtPlotCurve
-{
-public:
-    Curve();
     Curve(const QString &title, FileDescriptor *descriptor, int channelIndex);
-    Curve(const QString &title = QString::null);
-    Curve(const QwtText &title);
-    ~Curve();
+    virtual ~Curve();
+
+    virtual void attachTo(QwtPlot *plot) = 0;
+
+    virtual QString title() const = 0;
+    virtual void setTitle(const QString &title) = 0;
+
+    virtual int yAxis() const = 0;
+    virtual void setYAxis(int axis) = 0;
+
+    virtual QPen pen() const = 0;
+    virtual void setPen(const QPen &pen) = 0;
+
+    virtual QList<QwtLegendData> legendData() const = 0;
+
+    virtual QPointF samplePoint(int point) const = 0;
+
+    void setVisible(bool visible);
 
     void addLabel(PointLabel *label);
     void removeLabel(PointLabel *label);
@@ -47,14 +45,14 @@ public:
     PointLabel *findLabel(const QPoint &pos, int yAxis);
     /** find label by point on a curve */
     PointLabel *findLabel(const int point);
-    void resetHighlighting();
-    void highlight();
-    int closest(const QPoint &pos, double *dist = NULL) const;
+    virtual void resetHighlighting();
+    virtual void highlight();
+    virtual int closest(const QPoint &pos, double *dist = NULL) const = 0;
 
     double yMin() const;
     double yMax() const;
-    double xMin() const;
-    double xMax() const;
+    virtual double xMin() const;
+    virtual double xMax() const;
     int samplesCount() const;
 
     FileDescriptor *descriptor;
@@ -67,18 +65,12 @@ public:
     int fileNumber;
     bool duplicate;
     bool highlighted;
-    DfdData *data;
-private:
-    void evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const;
-
-    // QwtPlotCurve interface
-protected:
-    virtual void drawLines(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect, int from, int to) const;
-
-    // QwtPlotItem interface
 public:
-    virtual QList<QwtLegendData> legendData() const;
-    virtual void setVisible(bool visible) override;
+    void evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const;
 };
+
+
+
+
 
 #endif // CURVE_H

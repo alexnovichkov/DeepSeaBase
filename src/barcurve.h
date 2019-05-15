@@ -1,0 +1,63 @@
+#ifndef BARCURVE_H
+#define BARCURVE_H
+
+#include "qwt_plot_histogram.h"
+#include "curve.h"
+
+class HistogramData: public QwtSeriesData<QwtIntervalSample>
+{
+public:
+    HistogramData(DataHolder *data);
+
+    virtual QRectF boundingRect() const;
+
+    virtual size_t size() const;
+
+    virtual QwtIntervalSample sample( size_t i ) const;
+    //возвращает не интервал, а точку из данных
+    QPointF samplePoint(size_t i) const;
+
+//    virtual double xStep() const;
+//    virtual double xBegin() const;
+    DataHolder *data;
+    enum OctaveType {
+        OctaveUnknown=0,
+        Octave3=3,
+        Octave1=1
+    };
+    int octaveType = -1;
+};
+
+class BarCurve : public QwtPlotHistogram, public Curve
+{
+public:
+    BarCurve(const QString &title, FileDescriptor *descriptor, int channelIndex);
+
+private:
+    HistogramData *histogramdata;
+
+    // Curve interface
+public:
+    virtual void attachTo(QwtPlot *plot) override;
+    virtual QString title() const override;
+    virtual void setTitle(const QString &title) override;
+    virtual int yAxis() const override;
+    virtual void setYAxis(int axis) override;
+    virtual QPen pen() const override;
+    virtual void setPen(const QPen &pen) override;
+    virtual QList<QwtLegendData> legendData() const override;
+    virtual void highlight() override;
+    virtual void resetHighlighting() override;
+    virtual QPointF samplePoint(int point) const override;
+
+    // Curve interface
+public:
+    virtual double xMin() const override;
+    virtual double xMax() const override;
+
+    // Curve interface
+public:
+    virtual int closest(const QPoint &pos, double *dist) const override;
+};
+
+#endif // BARCURVE_H

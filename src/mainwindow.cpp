@@ -2373,7 +2373,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          Curve *curve = plot->graphs.at(i);
          QAxObject *cells = !writeToSeparateColumns ? worksheet->querySubObject("Cells(Int,Int)", 4, 2+i)
                                                    : worksheet->querySubObject("Cells(Int,Int)", 4, 2+i*2);
-         cells->setProperty("Value", curve->title().text());
+         cells->setProperty("Value", curve->title());
          delete cells;
      }
 

@@ -95,7 +95,9 @@ SOURCES += main.cpp\
     methods/spectrealgorithm.cpp \
     unitsconverter.cpp \
     dataiodevice.cpp \
-    playpanel.cpp
+    playpanel.cpp \
+    linecurve.cpp \
+    barcurve.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -168,7 +170,9 @@ HEADERS  += mainwindow.h \
     methods/spectrealgorithm.h \
     unitsconverter.h \
     dataiodevice.h \
-    playpanel.h
+    playpanel.h \
+    linecurve.h \
+    barcurve.h
 
 SOURCES +=\
   $$PWD/../3rdParty/DspFilters/*.cpp \
