@@ -982,8 +982,10 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
 
     bool tempFileSuccessful = false;
     if (tempFile.open() && rawFile.open(QFile::ReadOnly)) {
+        qDebug()<<"работаем через временный файл";
         //работаем через временный файл - читаем один канал и записываем его во временный файл
         if (!channels[0]->dataPositions.isEmpty()) {
+            qDebug()<<"- используем dataPositions";
             foreach (int i, indexesVector) {
                 DfdChannel *ch = channels[i];
                 qint64 dataPos = tempFile.pos();
@@ -1001,29 +1003,85 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
                 ch->dataPositions.append(dataPos);
                 ch->ChanBlockSize = this->NumInd;
                 this->BlockSize = 0;
+                qDebug()<<"-- меняем BlockSize на 0";
             }
         }
         else {
-            // не удалось прочитать никакими оптимальными методами, читаем медленным классическим
-            int actuallyRead = 0;
-            const int chunkSizeBytes = channelsCount() * channels[0]->blockSizeInBytes();
+            qDebug()<<"- dataPositions отсутствуют";
+            if (BlockSize == 1) {
+                qDebug()<<"-- BlockSize == 1";
+                // trying to map file into memory
+                unsigned char *ptr = rawFile.map(0, rawFile.size());
+                if (ptr) {//достаточно памяти отобразить весь файл
+                    qDebug()<<"-- работаем через ptr";
+                    qDebug()<<"-- меняем BlockSize на 0";
+                    unsigned char *ptrCurrent = ptr;
+                    foreach (int n, indexesVector) {
+                        qint64 dataPos = tempFile.pos();
 
-            while (1) {
-                QByteArray temp = rawFile.read(chunkSizeBytes);
-                actuallyRead = temp.size();
-                if (actuallyRead == 0)
-                    break;
-                if (actuallyRead < chunkSizeBytes) {
-                    temp.resize(chunkSizeBytes);
-                    actuallyRead = 0;
+                        for (int i=0; i<this->NumInd; ++i) {
+                            ptrCurrent = ptr + (n + i*channelsCount()) * (channels[n]->IndType % 16);
+                            tempFile.write((char*)(ptrCurrent), channels[n]->IndType % 16);
+                        }
+                        tempFile.flush();
+
+                        // меняем размер блока и обновляем положение данных
+                        channels[n]->dataPositions.clear();
+                        channels[n]->dataPositions.append(dataPos);
+                        channels[n]->ChanBlockSize = this->NumInd;
+                        this->BlockSize = 0;
+                    }
+
+                    rawFile.unmap(ptr);
                 }
+                else {
+                    qDebug()<<"-- не меняем BlockSize";
+                    // не удалось прочитать никакими оптимальными методами, читаем медленным классическим
+                    int actuallyRead = 0;
+                    const int chunkSizeBytes = channelsCount() * channels[0]->blockSizeInBytes();
 
-                foreach (int i, indexesVector) {
-                    tempFile.write(temp.mid(i*channels[i]->blockSizeInBytes(), channels[i]->blockSizeInBytes()));
+                    while (1) {
+                        QByteArray temp = rawFile.read(chunkSizeBytes);
+                        actuallyRead = temp.size();
+                        if (actuallyRead == 0)
+                            break;
+                        if (actuallyRead < chunkSizeBytes) {
+                            temp.resize(chunkSizeBytes);
+                            actuallyRead = 0;
+                        }
+
+                        foreach (int i, indexesVector) {
+                            tempFile.write(temp.mid(i*channels[i]->blockSizeInBytes(), channels[i]->blockSizeInBytes()));
+                        }
+
+                        if (actuallyRead == 0)
+                            break;
+                    }
                 }
+            }
+            else {
+                qDebug()<<"-- не меняем BlockSize";
+                // не удалось прочитать никакими оптимальными методами, читаем медленным классическим
+                int actuallyRead = 0;
+                const int chunkSizeBytes = channelsCount() * channels[0]->blockSizeInBytes();
 
-                if (actuallyRead == 0)
-                    break;
+                while (1) {
+                    QByteArray temp = rawFile.read(chunkSizeBytes);
+                    actuallyRead = temp.size();
+                    if (actuallyRead == 0)
+                        break;
+                    if (actuallyRead < chunkSizeBytes) {
+                        temp.resize(chunkSizeBytes);
+                        actuallyRead = 0;
+                    }
+
+                    foreach (int i, indexesVector) {
+                        tempFile.write(temp.mid(i*channels[i]->blockSizeInBytes(), channels[i]->blockSizeInBytes()));
+                    }
+
+                    if (actuallyRead == 0)
+                        break;
+                }
             }
         }
 
@@ -1038,6 +1096,7 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
     }
 
     if (tempFileSuccessful) {
+        qDebug()<<"удачно сохранили tempFile";
         //меняем порядок каналов
         int i=up?0:indexes.size()-1;
         while (1) {
@@ -1053,7 +1112,7 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
     }
 
     else {//классический способ - читаем весь файл, меняем порядок каналов, сохраняем оба файла
-
+        qDebug()<<"не удалось сохранить tempFile";
 //#endif
         populate(); //нужно это сделать, чтобы потом суметь прочитать каналы в нужном порядке
         int i=up?0:indexes.size()-1;
