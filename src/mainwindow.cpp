@@ -30,7 +30,7 @@
 #include "filedescriptor.h"
 #include "timeslicer.h"
 
-#define DSB_VERSION "1.6.8.2"
+#define DSB_VERSION "1.6.8.3"
 
 class DrivesDialog : public QDialog
 {
