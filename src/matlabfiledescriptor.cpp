@@ -360,6 +360,8 @@ bool MatlabConvertor::convert()
                 dfdFileDescriptor.channels.append(channel);
             }
         }
+        dfdFileDescriptor.DataType = SourceData; // насильно записываем данные как Raw, потому что DeepSea
+                                        // не умеет работать с файлами DataType=1, у которых IndType=2
         dfdFileDescriptor.setChanged(true);
         dfdFileDescriptor.write();
         emit message("Готово.");
