@@ -364,6 +364,8 @@ public:
 
 private:
     static DfdFileDescriptor *newThirdOctaveFile(const QString &fileName);
+    bool rewriteRawFile(const QVector<QPair<int,int> > &indexesVector);
+
     friend class DataDescription;
     friend class DfdChannel;
     QVector<double> xValues;

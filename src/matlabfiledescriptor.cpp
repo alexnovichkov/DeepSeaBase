@@ -121,9 +121,10 @@ bool MatlabConvertor::convert()
     }
     QXmlStreamReader xml(&xmlFile);
     bool inDatasets = false;
+    bool inChannel = false;
     while (!xml.atEnd()) {
         xml.readNext();
-        if (xml.isStartElement()) {//qDebug()<<xml.name();
+        if (xml.isStartElement()) {
             QStringRef name=xml.name();
             if (name == "Datasets") inDatasets = true;
             if (name == "Dataset" && inDatasets) {
@@ -132,9 +133,11 @@ bool MatlabConvertor::convert()
                     set.id = xml.attributes().value("Id").toString();
                 sets << set;
             }
-            else if (name == "File" && inDatasets) {
-                if (xml.attributes().hasAttribute("Name"))
-                    sets.last().fileName = xml.attributes().value("Name").toString();
+            else if (name == "File" && inDatasets && !inChannel) {
+                if (xml.attributes().hasAttribute("Name")) {
+                    if (sets.last().fileName.isEmpty())
+                        sets.last().fileName = xml.attributes().value("Name").toString();
+                }
             }
             else if (name == "Titles" && inDatasets) {
                 if (xml.attributes().hasAttribute("Title1")) {
@@ -150,6 +153,7 @@ bool MatlabConvertor::convert()
                     sets.last().time = xml.attributes().value("Time").toString();
             }
             else if (name == "Channel" && inDatasets) {
+                inChannel = true;
                 XChannel c;
                 if (xml.attributes().hasAttribute("name"))
                     c.units = xml.attributes().value("name").toString();
@@ -195,15 +199,16 @@ bool MatlabConvertor::convert()
         }
         else if (xml.isEndElement()) {
             if (xml.name() == "Datasets") inDatasets = false;
+            else if (xml.name() == "Channel") inChannel = false;
         }
     }
     if (xml.hasError()) {
         emit message(xml.errorString());
     }
-//    emit message("Содержит следующие записи:");
-//    foreach (const Dataset &dataset, sets) {
-//        emit message(QString("%1: %2").arg(dataset.id).arg(dataset.fileName));
-//    }
+    emit message("Содержит следующие записи:");
+    foreach (const Dataset &dataset, sets) {
+        emit message(QString("%1: %2").arg(dataset.id).arg(dataset.fileName));
+    }
 
 
     //Converting

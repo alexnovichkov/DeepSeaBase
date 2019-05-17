@@ -1542,8 +1542,7 @@ QVector<int> computeIndexes(QVector<int> notYetMoved, bool up, int totalSize)
     QVector<int> moved;
     if (up) {
         while (notYetMoved.size()>0) {
-            int j=notYetMoved.first();
-            notYetMoved.pop_front();
+            int j=notYetMoved.takeFirst();
             if (j==0 || moved.contains(j-1)) moved << j;
             else moved << j-1;
         }
@@ -1551,8 +1550,7 @@ QVector<int> computeIndexes(QVector<int> notYetMoved, bool up, int totalSize)
     else {
         int lastIndex = totalSize-1;
         while (notYetMoved.size()>0) {
-            int j=notYetMoved.last();
-            notYetMoved.pop_back();
+            int j=notYetMoved.takeLast();
             if (j==lastIndex || moved.contains(j+1)) moved.prepend(j);
             else moved.prepend(j+1);
         }
@@ -1562,14 +1560,14 @@ QVector<int> computeIndexes(QVector<int> notYetMoved, bool up, int totalSize)
 
 void MainWindow::moveChannels(bool up)
 {DD;
-    QVector<int> indexes;
+    QVector<int> selectedIndexes;
     for (int i=0; i<tab->channelsTable->rowCount(); ++i)
         if (tab->channelsTable->item(i,0)->isSelected())
-            indexes << i;
+            selectedIndexes << i;
 
-    QVector<int> newIndexes = computeIndexes(indexes, up, tab->record->channelsCount());
+    QVector<int> newIndexes = computeIndexes(selectedIndexes, up, tab->record->channelsCount());
 
-    tab->record->move(up, indexes, newIndexes);
+    tab->record->move(up, selectedIndexes, newIndexes);
 
     updateChannelsTable(tab->record);
 
@@ -2321,8 +2319,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      if (minX >= range.min && maxX <= range.max)
          fullRange = true;
 
-     //if (zeroStepDetected) allChannelsHaveSameXStep = false;
-
+     // определяем, будут ли экспортированы графики;
      bool exportPlots = true;
      if (samplesCount > 32000 && fullRange && !dataOnly) {
          QMessageBox::warning(this, "Слишком много данных",
@@ -2531,10 +2528,10 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
              setAxis(xAxis, stripHtml(plot->axisTitle(QwtPlot::xBottom).text()));
              xAxis->setProperty("MaximumScale", range.max);
              xAxis->setProperty("MinimumScale", int(range.min/10)*10);
-             if (zeroStepDetected) {
-                 xAxis->setProperty("ScaleType", "xlLogarithmic");
-                 xAxis->setProperty("LogBase", 2);
-             }
+//             if (zeroStepDetected) {
+//                 xAxis->setProperty("ScaleType", "xlLogarithmic");
+//                 xAxis->setProperty("LogBase", 2);
+//             }
          }
          delete xAxis;
 

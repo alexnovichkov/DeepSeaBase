@@ -12,7 +12,7 @@ BarCurve::BarCurve(const QString &title, FileDescriptor *descriptor, int channel
 
     histogramdata = new HistogramData(this->channel->data());
     setData(histogramdata);
-    //setStyle(QwtPlotHistogram::Lines);
+    setStyle(QwtPlotHistogram::Outline);
 }
 
 QPointF BarCurve::samplePoint(int point) const
