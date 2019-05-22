@@ -72,7 +72,7 @@ QString abscissaTypeDescription(int type)
 UffFileDescriptor::UffFileDescriptor(const QString &fileName) : FileDescriptor(fileName)
   , NumInd(0)
 {DD;
-
+qDebug()<<fileName;
 
 
 }
@@ -185,7 +185,7 @@ void UffFileDescriptor::read()
 
             }
         }
-
+qDebug()<<1;
         QFile buff(fileName()+"~");
         if (buff.open(QFile::WriteOnly)) {
             QDataStream stream(&buff);
@@ -333,6 +333,8 @@ void UffFileDescriptor::setDateTime(QDateTime dt)
 
 void UffFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
 {DD;
+    populate();
+
     for (int i=channels.size()-1; i>=0; --i) {
         if (channelsToDelete.contains(i)) {
             delete channels.takeAt(i);
@@ -832,6 +834,7 @@ void Function::read(QTextStream &stream, qint64 pos)
         QString s;
         do {
             s = stream.readLine().trimmed();
+            if (stream.atEnd()) s= "-1";
         }
         while (s != "-1");
     }
