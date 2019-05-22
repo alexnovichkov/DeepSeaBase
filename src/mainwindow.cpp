@@ -1167,7 +1167,7 @@ bool MainWindow::deleteChannels(const QList<QPair<FileDescriptor*, int> > &chann
 
     while (!allDescriptors.isEmpty()) {
         FileDescriptor *dfd = allDescriptors.first();
-        dfd->populate();
+
         QVector<int> indexes;
         for (int i=0; i<channelsToDelete.size(); ++i) {
             if (channelsToDelete.at(i).first == dfd) indexes << channelsToDelete.at(i).second;
