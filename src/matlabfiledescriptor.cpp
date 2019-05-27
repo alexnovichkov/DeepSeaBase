@@ -59,57 +59,10 @@ MatlabConvertor::MatlabConvertor(QObject *parent) : QObject(parent)
 
 }
 
-void MatlabConvertor::setFolder(const QString &folder)
-{
-     folderName = folder;
-     QDir folderDir(folderName);
-     matFiles = folderDir.entryInfoList(QStringList()<<"*.mat", QDir::Files | QDir::Readable);
-}
-
 bool MatlabConvertor::convert()
 {
     if (QThread::currentThread()->isInterruptionRequested()) return false;
     bool noErrors = true;
-
-    QDir folderDir(folderName);
-    if (!folderDir.exists()) {
-        emit message("<font color=red>Error!</font> "+folderName+" не существует.");
-        emit finished();
-        return false;
-    }
-
-    if (matFiles.isEmpty()) {
-        emit message("<font color=red>Error!</font> No files to convert.");
-        emit finished();
-        return false;
-    }
-
-    if (filesToConvert.isEmpty()) {
-        emit message("<font color=red>Error!</font> No files to convert.");
-        emit finished();
-        return false;
-    }
-
-    QString xmlFileName;
-    QStringList xmlFiles = folderDir.entryList(QStringList()<<"*.xml", QDir::Files | QDir::Readable);
-    if (xmlFiles.isEmpty()) {
-        folderDir.cdUp();
-        if (folderDir.cd("Settings"))
-            xmlFiles = folderDir.entryList(QStringList()<<"*.xml", QDir::Files | QDir::Readable);
-    }
-    if (xmlFiles.isEmpty())
-        xmlFileName = QFileDialog::getOpenFileName(0, QString("Укажите файл XML с описанием каналов"), folderName, "Файлы XML (*.xml)");
-
-    else if (xmlFiles.contains("Analysis.xml",Qt::CaseInsensitive))
-        xmlFileName = folderDir.canonicalPath()+"/"+"Analysis.xml";
-    else xmlFileName = QFileDialog::getOpenFileName(0, QString("Укажите файл XML с описанием каналов"), folderName, "Файлы XML (*.xml)");
-
-    if (xmlFileName.isEmpty()) {
-        emit message("<font color=red>Error!</font> Не могу найти файл Analysis.xml.");
-        emit finished();
-        return false;
-    }
-    emit message("Файл XML: "+xmlFileName);
 
     // Reading XML file
     QList<Dataset> sets;
@@ -212,20 +165,17 @@ bool MatlabConvertor::convert()
 
 
     //Converting
-    foreach(const QFileInfo &fi, matFiles) {
+    foreach(const QString &fi, filesToConvert) {
         if (QThread::currentThread()->isInterruptionRequested()) return false;
-        if (!filesToConvert.contains(fi.canonicalFilePath())) continue;
 
-        emit message("Конвертируем файл "+fi.canonicalFilePath());
-        QString xdfFileName = fi.canonicalFilePath();
-        QString xdfFileName1 = fi.canonicalFilePath();
+        emit message("Конвертируем файл " + fi);
+        QString xdfFileName = fi;
         xdfFileName.replace(".mat",".xdf");
-        xdfFileName1.replace(".mat",".XDF");
 
         Dataset set;
         //search for the particular dataset
         foreach (const Dataset &s, sets) {
-            if (s.fileName == QFileInfo(xdfFileName).fileName() || s.fileName == QFileInfo(xdfFileName1).fileName()) {
+            if (s.fileName.toLower() == QFileInfo(xdfFileName).fileName().toLower()) {
                 set = s;
                 break;
             }
@@ -241,7 +191,7 @@ bool MatlabConvertor::convert()
         }
 
         //reading mat file structure
-        MatlabFile matlabFile(fi.canonicalFilePath());
+        MatlabFile matlabFile(fi);
         matlabFile.read();
         if (matlabFile.writtenAsMatrix) {
             emit message(QString("-- Файл mat записан матрицей. Он будет пропущен. Экспортируйте файл без галочки \"Group similar blocks in a matrix\""));
@@ -251,10 +201,10 @@ bool MatlabConvertor::convert()
         }
         emit message(QString("-- Файл mat содержит %1 каналов").arg(matlabFile.channels.size()));
 
-        QString rawFileName = fi.canonicalFilePath();
+        QString rawFileName = fi;
         rawFileName.replace(".mat",".raw");
 
-        QString dfdFileName = fi.canonicalFilePath();
+        QString dfdFileName = fi;
         dfdFileName.replace(".mat",".dfd");
 
         //writing dfd file
@@ -300,11 +250,13 @@ bool MatlabConvertor::convert()
                 }
 
                 //2. read source data
-                QByteArray raw;
-                QFile matFile(fi.canonicalFilePath());
+                QByteArray rawFromMatfile;
+                QFile matFile(fi);
+                int itemSize = 4;
+                if (matlabFile.channels.at(i).dataType == miDOUBLE) itemSize = 8;
                 if (matFile.open(QFile::ReadOnly)) {
                     matFile.seek(matlabFile.channels.at(i).startPos);
-                    raw = matFile.read(matlabFile.channels.at(i).size*4);
+                    rawFromMatfile = matFile.read(matlabFile.channels.at(i).size * itemSize);
                 }
                 else {
                     emit message(QString("<font color=red>Error!</font> Не могу прочитать канал %1").arg(i+1));
@@ -312,55 +264,65 @@ bool MatlabConvertor::convert()
                     continue;
                 }
 
-                if (raw.isEmpty() || (raw.size() != int(matlabFile.channels.at(i).size*4))) {
+                if (rawFromMatfile.isEmpty() || (rawFromMatfile.size() != int(matlabFile.channels.at(i).size * itemSize))) {
                     emit message(QString("<font color=red>Error!</font> Не могу прочитать канал %1").arg(i+1));
                     noErrors = false;
                     continue;
                 }
 
-                QDataStream stream(raw);
-                stream.setByteOrder(QDataStream::LittleEndian);
-                stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-                QVector<float> data = readBlock<float>(&stream, matlabFile.channels.at(i).size, c.scale);
+                // в зависимости от типа данных в массиве жизнь или сильно упрощается, либо совсем наоборот
+                switch (matlabFile.channels.at(i).dataType) {
+                    case miSINGLE: {//ничего не меняем, записываем сырые данные.
+                        rawFile.write(rawFromMatfile);
+                        break;
+                    }
+                    case miDOUBLE: {//ради экономии места записываем в формате single
+                        QDataStream stream(rawFromMatfile);
+                        stream.setByteOrder(QDataStream::LittleEndian);
+                        stream.setFloatingPointPrecision(QDataStream::DoublePrecision);
 
-                float max = qAbs(data[0]);
-                for (int k=1; k<data.size();++k)
-                    if (qAbs(data[k]) > max) max = qAbs(data[k]);
+                        QVector<float> data = readBlock<double>(&stream, matlabFile.channels.at(i).size, c.scale);
 
-                for (int k=0; k<data.size();++k)
-                    data[k] = data[k]/max*32768.0;
-
-                stream.setDevice(&rawFile);
-                stream.setByteOrder(QDataStream::LittleEndian);
-                stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-                for (int k=0; k<data.size();++k) {
-                    int v = qMin(65535,int(data[k])+32768);
-                    stream << (quint16)v;
+                        stream.setDevice(&rawFile);
+                        stream.setByteOrder(QDataStream::LittleEndian);
+                        stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+                        for (int k=0; k<data.size();++k) {
+                            stream << data[k];
+                        }
+                        break;
+                    }
+                    default: {
+                        emit message(QString("<font color=red>Error!</font> Неизвестный формат данных в канале %1").arg(i+1));
+                        noErrors = false;
+                        break;
+                    }
                 }
 
-                RawChannel *channel = new RawChannel(&dfdFileDescriptor, ++channelIndex);
+
+
+                DfdChannel *channel = new DfdChannel(&dfdFileDescriptor, ++channelIndex);
                 channel->setName(c.generalName+" -"+c.pointId+"-"+c.direction);
                 channel->ChanAddress = QString("SCADAS\\")+c.catLabel;
                 c.info.append(channel->ChanAddress);
                 channel->setDescription(c.info.join(" \\"));
-                channel->IndType = 2; //характеристика отсчета
-                channel->ChanBlockSize = data.size(); //размер блока в отсчетах
+                channel->IndType = 0xC0000004; //характеристика отсчета
+                channel->ChanBlockSize = matlabFile.channels.at(i).size; //размер блока в отсчетах
                 channel->YName = c.units;
                 channel->InputType="U";
 
-                channel->BandWidth = c.fd / 2.56;
-                channel->AmplShift = 0.0;
-                channel->AmplLevel = 5.12 / max;
-                channel->Sens0Shift = 0.0;
-                channel->ADC0 = hextodouble("FEF2C98AE17A14C0");
-                channel->ADCStep = hextodouble("BEF8BF05F67A243F");
-                channel->SensSensitivity = hextodouble("000000000000F03F");
-                channel->SensName = c.sensorName+"\\ sn-"+c.sensorSerial;
+//                channel->BandWidth = c.fd / 2.56;
+//                channel->AmplShift = 0.0;
+//                channel->AmplLevel = 5.12 / max;
+//                channel->Sens0Shift = 0.0;
+//                channel->ADC0 = hextodouble("FEF2C98AE17A14C0");
+//                channel->ADCStep = hextodouble("BEF8BF05F67A243F");
+//                channel->SensSensitivity = hextodouble("000000000000F03F");
+//                channel->SensName = c.sensorName+"\\ sn-"+c.sensorSerial;
 
                 dfdFileDescriptor.channels.append(channel);
             }
         }
-        dfdFileDescriptor.DataType = SourceData; // насильно записываем данные как Raw, потому что DeepSea
+        dfdFileDescriptor.DataType = CuttedData; // насильно записываем данные как Raw, потому что DeepSea
                                         // не умеет работать с файлами DataType=1, у которых IndType=2
         dfdFileDescriptor.setChanged(true);
         dfdFileDescriptor.write();
@@ -374,11 +336,3 @@ bool MatlabConvertor::convert()
     return true;
 }
 
-QStringList MatlabConvertor::getMatFiles() const
-{
-    QStringList result;
-    foreach (const QFileInfo &fi, matFiles)
-        result << fi.canonicalFilePath();
-
-    return result;
-}

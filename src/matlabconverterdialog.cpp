@@ -3,6 +3,7 @@
 #include "matlabfiledescriptor.h"
 #include "mainwindow.h"
 #include "checkableheaderview.h"
+#include "logging.h"
 
 bool fileExists(const QString &s)
 {
@@ -33,30 +34,7 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
     edit->setPlaceholderText("путь/к/папке/Mat/");
 
     button = new QPushButton("Выбрать", this);
-    connect(button, &QPushButton::clicked, [=](){
-        folder = MainWindow::getSetting("matlabFolder").toString();
-        folder = QFileDialog::getExistingDirectory(this, "Выберите папку с файлами *.mat",folder);
-        edit->setText(folder);
-        convertor->setFolder(folder);
-        MainWindow::setSetting("matlabFolder", folder);
-        QStringList matFiles = convertor->getMatFiles();
-        tree->clear();
-        int i=1;
-        foreach (const QString &f, matFiles) {
-            QTreeWidgetItem *item = new QTreeWidgetItem(tree);
-            item->setText(0, QString::number(i++));
-            item->setText(1, f);
-            if (fileExists(f)) {
-                item->setIcon(2,QIcon(":/icons/tick.png"));
-                item->setCheckState(1, Qt::Unchecked);
-            }
-            else item->setCheckState(1, Qt::Checked);
-        }
-        tree->resizeColumnToContents(0);
-        tree->resizeColumnToContents(1);
-        progress->setRange(0, i-1);
-        buttonBox->buttons().first()->setDisabled(matFiles.isEmpty());
-    });
+    connect(button, SIGNAL(pressed()), this, SLOT(chooseMatFiles()));
 
     tree = new QTreeWidget(this);
     tree->setAlternatingRowColors(true);
@@ -142,6 +120,35 @@ MatlabConverterDialog::~MatlabConverterDialog()
     }
 }
 
+void MatlabConverterDialog::chooseMatFiles()
+{
+    folder = MainWindow::getSetting("matlabFolder").toString();
+    folder = QFileDialog::getExistingDirectory(this, "Выберите папку с файлами *.mat", folder);
+
+    edit->setText(folder);
+    MainWindow::setSetting("matlabFolder", folder);
+
+    QDir folderDir(folder);
+    QFileInfoList matFiles = folderDir.entryInfoList(QStringList()<<"*.mat", QDir::Files | QDir::Readable);
+
+    tree->clear();
+    int i=1;
+    foreach (const QFileInfo &f, matFiles) {
+        QTreeWidgetItem *item = new QTreeWidgetItem(tree);
+        item->setText(0, QString::number(i++));
+        item->setText(1, f.canonicalFilePath());
+        if (fileExists(f.canonicalFilePath())) {
+            item->setIcon(2,QIcon(":/icons/tick.png"));
+            item->setCheckState(1, Qt::Unchecked);
+        }
+        else item->setCheckState(1, Qt::Checked);
+    }
+    tree->resizeColumnToContents(0);
+    tree->resizeColumnToContents(1);
+
+    buttonBox->buttons().first()->setDisabled(matFiles.isEmpty());
+}
+
 void MatlabConverterDialog::accept()
 {
     convertedFiles = convertor->getNewFiles();
@@ -162,12 +169,48 @@ void MatlabConverterDialog::updateProgressIndicator()
 void MatlabConverterDialog::start()
 {
     buttonBox->buttons().first()->setDisabled(true);
-    if (!thread) thread = new QThread;
-    convertor->moveToThread(thread);
+
     QStringList toConvert;
     for (int i=0; i<tree->topLevelItemCount(); ++i)
         if (tree->topLevelItem(i)->checkState(1)==Qt::Checked) toConvert << tree->topLevelItem(i)->text(1);
     convertor->setFilesToConvert(toConvert);
+
+    if (toConvert.isEmpty()) {
+        textEdit->appendHtml("<font color=red>Error!</font> Отсутствуют файлы для конвертации.");
+        return;
+    }
+
+    progress->setRange(0, toConvert.size()-1);
+
+    QDir folderDir(toConvert.first()); // сейчас указывает на файл
+    folderDir.cdUp(); // теперь указывает на папку
+    QString xmlFileName;
+    // ищем в текущей папке с файлами mat
+    QStringList xmlFiles = folderDir.entryList(QStringList()<<"*.xml", QDir::Files | QDir::Readable);
+    // ищем в папке Settings
+    if (xmlFiles.isEmpty()) {
+        folderDir.cdUp();
+        if (folderDir.cd("Settings"))
+            xmlFiles = folderDir.entryList(QStringList()<<"*.xml", QDir::Files | QDir::Readable);
+    }
+
+    if (xmlFiles.contains("Analysis.xml",Qt::CaseInsensitive))
+        xmlFileName = folderDir.canonicalPath()+"/"+"Analysis.xml";
+    // последняя попытка - вручную
+    else
+        xmlFileName = QFileDialog::getOpenFileName(0, QString("Укажите файл XML с описанием каналов"), toConvert.first(), "Файлы XML (*.xml)");
+
+    if (xmlFileName.isEmpty()) {
+        textEdit->appendHtml("<font color=red>Error!</font> Не могу найти файл Analysis.xml.");
+        return;
+    }
+    textEdit->appendHtml("Файл XML: "+xmlFileName);
+
+    convertor->xmlFileName = xmlFileName;
+
+
+    if (!thread) thread = new QThread;
+    convertor->moveToThread(thread);
     connect(thread, SIGNAL(started()), convertor, SLOT(convert()));
     connect(convertor, SIGNAL(finished()), thread, SLOT(quit()));
     connect(convertor, SIGNAL(finished()), this, SLOT(finalize()));

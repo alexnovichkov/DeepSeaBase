@@ -46,10 +46,10 @@ enum MatlabDataType {
 //};
 
 template <typename T>
-QVector<T> readBlock(QDataStream *readStream, quint64 itemCount, double scale)
+QVector<float> readBlock(QDataStream *readStream, quint64 itemCount, double scale)
 {
     Q_UNUSED(scale)
-    QVector<T> result(itemCount);
+    QVector<float> result(itemCount);
     T v;
 
     for (quint64 i=0; i<itemCount; ++i) {
@@ -58,7 +58,7 @@ QVector<T> readBlock(QDataStream *readStream, quint64 itemCount, double scale)
         }
 
         *readStream >> v;
-        result[i] = T(v) /* * scale*/;
+        result[i] = float(v) /* * scale*/;
     }
 
     return result;
@@ -221,14 +221,17 @@ public:
             while (!f.atEnd()) {//qDebug()<<"Now at"<<stream.device()->pos();
                 MChannel c; //qDebug()<<"Channel"<<i<<stream.device()->pos();
 
-                stream.skipRawData(4);
+                stream.skipRawData(4); // пропускаем тип переменной
 
-                quint32 recSize;
+                quint32 recSize; // размер переменной в байтах
                 stream >> recSize; //qDebug()<<"  rec size"<<recSize;
                 qint64 recPos = stream.device()->pos(); //qDebug() << "  rec pos"<<recPos;
 
 
-                stream.skipRawData(0x20);
+                stream.skipRawData(0x20);  // пропускаем 32 байта, описывающие:
+                                           // тип массива - 16 байт
+                                           // размерности массива - 16 байт
+
                 quint32 nameFormat; stream >> nameFormat;
                 if (nameFormat > 0xffff) {//short name
                     c.label=QString(stream.device()->read(4)); //qDebug()<<c.label;
@@ -277,10 +280,13 @@ public:
                     return;
                 }
 
-                stream.skipRawData(0x8);
-                quint32 dataType; stream >> dataType; //qDebug()<<"  type"<<dataType;
+                stream.skipRawData(0x8); // пропускаем пустое имя массива
+
+                // data type,  7 == single, 9 == double
+                quint32 dataType; stream >> dataType; qDebug()<<"  type"<<dataType;
                 c.dataType = (MatlabDataType)dataType;
-                quint32 totalSize; stream >> totalSize; //qDebug()<<"  totalSize"<<totalSize;
+
+                quint32 totalSize; stream >> totalSize; qDebug()<<"  totalSize in bytes" << totalSize;
                 c.startPos = stream.device()->pos(); //qDebug()<<"  startPos"<<c.startPos;
 
                 channels.append(c);
@@ -312,11 +318,11 @@ class MatlabConvertor : public QObject
     Q_OBJECT
 public:
     MatlabConvertor(QObject *parent = 0);
-    void setFolder(const QString &folder);
     void setFilesToConvert(const QStringList &toConvert) {filesToConvert = toConvert;}
 
-    QStringList getMatFiles() const;
     QStringList getNewFiles() const {return newFiles;}
+
+    QString xmlFileName;
 public slots:
     bool convert();
 signals:
@@ -325,7 +331,6 @@ signals:
     void message(const QString &s);
 private:
     QString folderName;
-    QFileInfoList matFiles;
     QStringList newFiles;
     QStringList filesToConvert;
 };

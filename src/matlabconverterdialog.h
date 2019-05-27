@@ -29,6 +29,7 @@ private slots:
     void start();
     void stop();
     void finalize();
+    void chooseMatFiles();
 private:
     QStringList convertedFiles;
     QString folder;
