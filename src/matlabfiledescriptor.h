@@ -5,194 +5,35 @@
 #include <QtGlobal>
 #include <QtDebug>
 
-enum MatlabDataType {
-    miUndefined = 0,
-    miINT8 = 1,// 8 bit, signed
-    miUINT8 = 2,// 8 bit, unsigned
-    miINT16 = 3,// 16-bit, signed
-    miUINT16 = 4,// 16-bit, unsigned
-    miINT32 = 5,// 32-bit, signed
-    miUINT32 = 6,// 32-bit, unsigned
-    miSINGLE = 7,// IEEE® 754 single format
-    miDOUBLE = 9,// IEEE 754 double format
-    miINT64 = 0x0C,// 64-bit, signed
-    miUINT64 = 0x0D,// 64-bit, unsigned
-    miMATRIX = 0x0E,//MATLAB array
-    miCOMPRESSED = 0x0F,//Compressed Data
-    miUTF8 = 0x10,// Unicode UTF-8 Encoded Character Data
-    miUTF16 = 0x11,// Unicode UTF-16 Encoded Character Data
-    miUTF32 = 0x12// Unicode UTF-32 Encoded Character Data
+#include "matfile.h"
+
+struct XChannel
+{
+    QString name;
+    QString units;
+    double logRef;
+    double scale;
+    QString generalName;
+    QString catLabel;
+    QString sensorId;
+    QString sensorSerial;
+    QString sensorName;
+    double fd;
+    QString chanUnits;
+    QString pointId;
+    QString direction;
+    QStringList info;
 };
 
-//class MatlabData {
-//public:
-//    MatlabData() {}
-//    virtual ~MatlabData() {}
-//    virtual void readHeader(QDataStream *f) {
-//        *f >> dataType;
-//        *f >> size;
-//        dataBegin = f->device()->pos();
-//        actualSize = size;
-//        if (size % 8 != 0) actualSize += 8-(size%8);
-//        //qDebug()<<"Block size:"<<size << "actually"<<actualSize<<"starts with:"<<dataBegin;
-//    }
-//    virtual void readData(QDataStream *f) = 0;
-
-//    quint32 dataType; //MatlabDataType
-//    quint32 size; // if dataType==miMATRIX, then size includes padding, otherwise size does not include padding,
-//                  // but data is always padded to 64-bit boundary
-//    quint32 dataBegin;
-//    quint32 actualSize; //including padding
-//};
-
-template <typename T>
-QVector<float> readBlock(QDataStream *readStream, quint64 itemCount, double scale)
+struct Dataset
 {
-    Q_UNUSED(scale)
-    QVector<float> result(itemCount);
-    T v;
-
-    for (quint64 i=0; i<itemCount; ++i) {
-        if (readStream->atEnd()) {
-            break;
-        }
-
-        *readStream >> v;
-        result[i] = float(v) /* * scale*/;
-    }
-
-    return result;
-}
-
-//class MatlabMatrixData;
-
-//class MatlabArray {
-//public:
-//    MatlabArray(MatlabMatrixData *parent) : parent(parent) {}
-//    virtual ~MatlabArray() {}
-//    virtual void read(QDataStream *f) = 0;
-//    void setComplex(bool complex) {m_complex = complex;}
-//MatlabMatrixData *parent;
-//private:
-//    bool m_complex;
-
-//};
-
-//class MatlabPlainArray : public MatlabArray
-//{
-//public:
-//    MatlabPlainArray(MatlabMatrixData *parent) : MatlabArray(parent) {qDebug()<<"  plain array";}
-//    virtual void read(QDataStream *f);
-//private:
-//    QVector<double> data;
-//};
-
-//class MatlabCharArray : public MatlabArray
-//{
-//public:
-//    MatlabCharArray(MatlabMatrixData *parent) : MatlabArray(parent) {qDebug()<<"  character array";}
-//    virtual void read(QDataStream *f);
-//private:
-//    QString data;
-//};
-
-
-//class MatlabStructArray : public MatlabArray
-//{
-//public:
-//    MatlabStructArray(MatlabMatrixData *parent) : MatlabArray(parent) {/*qDebug()<<"  struct array";*/}
-//    ~MatlabStructArray() {
-//        qDeleteAll(fields);
-//    }
-//    virtual void read(QDataStream *f);
-//private:
-//    QList<MatlabMatrixData*> fields;
-//    QStringList fieldNames;
-//};
-
-//class MatlabMatrixData : public MatlabData {
-//public:
-//    enum MatrixFlags {
-//        FlagLogical = 2,
-//        FlagGlobal = 4,
-//        FlagComplex = 8
-//    };
-//    enum MatlabArrayType {
-//        mxCELL_CLASS   = 1,//Cell array
-//        mxSTRUCT_CLASS = 2,//Structure
-//        mxOBJECT_CLASS = 3,//Object
-//        mxCHAR_CLASS   = 4,//Character array
-//        mxSPARSE_CLASS = 5,//Sparse array
-//        mxDOUBLE_CLASS = 6,//Double precision array
-//        mxSINGLE_CLASS = 7,//Single precision array
-//        mxINT8_CLASS   = 8,//8-bit, signed integer
-//        mxUINT8_CLASS  = 9,//8-bit, unsigned integer
-//        mxINT16_CLASS  = 10,//16-bit, signed integer
-//        mxUINT16_CLASS = 11,//16-bit, unsigned integer
-//        mxINT32_CLASS  = 12,//32-bit, signed integer
-//        mxUINT32_CLASS = 13,//32-bit, unsigned integer
-//        mxINT64_CLASS  = 14,//64-bit, signed integer
-//        mxUINT64_CLASS = 15//64-bit, unsigned integer
-//    };
-//    MatlabMatrixData() : MatlabData() {
-//        //qDebug()<<"Matrix";
-//    }
-
-//    ~MatlabMatrixData() {
-//        qDeleteAll(dataArray);
-//    }
-
-//    virtual void readData(QDataStream *f) {
-//        quint64 curPos = f->device()->pos();
-//        f->skipRawData(8); //skipping flagsDataType and flagsSize
-//        *f >> arrayType; //qDebug()<<"  array type:"<<arrayType;
-//        *f >> flags; //qDebug()<<"  flags:"<<flags;
-//        f->skipRawData(10); //skipping flags padding
-
-//        quint32 dimensionsSize;
-//        *f >> dimensionsSize;
-//        f->skipRawData(dimensionsSize+8); //skipping dimensions
-
-//        f->skipRawData(4); //skipping nameDataType
-//        quint32 nameSize;
-//        *f >> nameSize;
-//        f->skipRawData(nameSize);
-//        if (nameSize % 8 != 0) f->skipRawData(8-(nameSize%8)); //name padding
-
-//        MatlabArray *data = 0;
-//        switch (arrayType) {
-//            case mxDOUBLE_CLASS:
-//            case mxSINGLE_CLASS:
-//            case mxINT8_CLASS:
-//            case mxUINT8_CLASS:
-//            case mxINT16_CLASS:
-//            case mxUINT16_CLASS:
-//            case mxINT32_CLASS:
-//            case mxUINT32_CLASS:
-//            case mxINT64_CLASS:
-//            case mxUINT64_CLASS: data = new MatlabPlainArray(this); break;
-//            case mxSTRUCT_CLASS: data = new MatlabStructArray(this); break;
-//            case mxCHAR_CLASS: data = new MatlabCharArray(this); break;
-//            default: break;
-//        }
-//        if (data) {
-//            data->read(f);
-//            dataArray << data;
-//        }
-
-//        f->device()->seek(curPos);
-//        f->skipRawData(actualSize); return;
-//    }
-//private:
-//    friend class MatlabPlainArray;
-//    quint8 flags;
-//    quint8 arrayType; // MatlabArrayType
-
-//    QString name;
-//    QList<MatlabArray *> dataArray;
-//};
-
-
+    QString id;
+    QString fileName;
+    QStringList titles;
+    QString date;
+    QString time;
+    QList<XChannel> channels;
+};
 
 class MChannel {
 public:
@@ -202,7 +43,7 @@ public:
     ulong size;
 
     qint64 startPos;
-    MatlabDataType dataType;
+    MatlabRecord::MatlabDataType dataType;
 };
 
 class MatlabFile {
@@ -235,14 +76,13 @@ public:
                 quint32 nameFormat; stream >> nameFormat;
                 if (nameFormat > 0xffff) {//short name
                     c.label=QString(stream.device()->read(4)); //qDebug()<<c.label;
-                    c.label = c.label.section("_",0,0);
                 }
                 else {
                     quint32 nameSize; stream >> nameSize;
                     c.label=QString(stream.device()->read(nameSize)); //qDebug()<<c.label;
-                    c.label = c.label.section("_",0,0);
                     if (nameSize%8!=0) stream.skipRawData(8-(nameSize%8));
                 }
+                c.label = c.label.section("_",0,0);
 
                 stream.skipRawData(0x44);
                 quint32 xValuesSize; stream >> xValuesSize;
@@ -284,7 +124,7 @@ public:
 
                 // data type,  7 == single, 9 == double
                 quint32 dataType; stream >> dataType; qDebug()<<"  type"<<dataType;
-                c.dataType = (MatlabDataType)dataType;
+                c.dataType = (MatlabRecord::MatlabDataType)dataType;
 
                 quint32 totalSize; stream >> totalSize; qDebug()<<"  totalSize in bytes" << totalSize;
                 c.startPos = stream.device()->pos(); //qDebug()<<"  startPos"<<c.startPos;
@@ -319,6 +159,7 @@ class MatlabConvertor : public QObject
 public:
     MatlabConvertor(QObject *parent = 0);
     void setFilesToConvert(const QStringList &toConvert) {filesToConvert = toConvert;}
+    void setRawFileFormat(int format) {rawFileFormat = format;} // 0 = float, 1 = quint16
 
     QStringList getNewFiles() const {return newFiles;}
 
@@ -330,9 +171,11 @@ signals:
     void finished();
     void message(const QString &s);
 private:
+    QList<Dataset> readXml(bool &success);
     QString folderName;
     QStringList newFiles;
     QStringList filesToConvert;
+    int rawFileFormat;
 };
 
 #endif // MATLABFILEDESCRIPTOR_H

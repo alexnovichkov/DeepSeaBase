@@ -72,7 +72,7 @@ QString abscissaTypeDescription(int type)
 UffFileDescriptor::UffFileDescriptor(const QString &fileName) : FileDescriptor(fileName)
   , NumInd(0)
 {DD;
-qDebug()<<fileName;
+//qDebug()<<fileName;
 
 
 }

@@ -97,7 +97,8 @@ SOURCES += main.cpp\
     dataiodevice.cpp \
     playpanel.cpp \
     linecurve.cpp \
-    barcurve.cpp
+    barcurve.cpp \
+    matfile.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -172,7 +173,8 @@ HEADERS  += mainwindow.h \
     dataiodevice.h \
     playpanel.h \
     linecurve.h \
-    barcurve.h
+    barcurve.h \
+    matfile.h
 
 SOURCES +=\
   $$PWD/../3rdParty/DspFilters/*.cpp \

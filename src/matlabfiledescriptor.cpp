@@ -4,33 +4,7 @@
 #include "dfdfiledescriptor.h"
 #include "converters.h"
 
-struct XChannel
-{
-    QString name;
-    QString units;
-    double logRef;
-    double scale;
-    QString generalName;
-    QString catLabel;
-    QString sensorId;
-    QString sensorSerial;
-    QString sensorName;
-    double fd;
-    QString chanUnits;
-    QString pointId;
-    QString direction;
-    QStringList info;
-};
 
-struct Dataset
-{
-    QString id;
-    QString fileName;
-    QStringList titles;
-    QString date;
-    QString time;
-    QList<XChannel> channels;
-};
 
 QString lms2dsunit(const QString &unit)
 {
@@ -53,6 +27,14 @@ QString lms2dsunit(const QString &unit)
 
 #include <QXmlStreamReader>
 
+template <typename T>
+T findSubrecord(const QString &name, MatlabStructArray *rec)
+{
+    T result;
+    int index = rec->fieldNames.indexOf(name);
+    if (index >=0) result = dynamic_cast<T>(rec->subRecords[index]);
+    return result;
+}
 
 MatlabConvertor::MatlabConvertor(QObject *parent) : QObject(parent)
 {
@@ -65,12 +47,276 @@ bool MatlabConvertor::convert()
     bool noErrors = true;
 
     // Reading XML file
+    QList<Dataset> sets = readXml(noErrors);
+    if (!noErrors) {
+        emit message("<font color=red>Error!</font> Не удалось прочитать файл " + xmlFileName);
+        emit finished();
+        return false;
+    }
+
+    emit message("Содержит следующие записи:");
+    foreach (const Dataset &dataset, sets) {
+        emit message(QString("%1: %2").arg(dataset.id).arg(dataset.fileName));
+    }
+
+
+    //Converting
+    foreach(const QString &fi, filesToConvert) {
+        if (QThread::currentThread()->isInterruptionRequested()) return false;
+
+        emit message("Конвертируем файл " + fi);
+        QString xdfFileName = fi;
+        xdfFileName.replace(".mat",".xdf");
+
+        Dataset set;
+        //search for the particular dataset
+        foreach (const Dataset &s, sets) {
+            if (s.fileName.toLower() == QFileInfo(xdfFileName).fileName().toLower()) {
+                set = s;
+                break;
+            }
+        }
+        if (set.fileName.isEmpty()) {
+            emit message("<font color=red>Error!</font> Не могу найти "+QFileInfo(xdfFileName).fileName()+" в Analysis.xml. Файл mat будет пропущен!");
+            noErrors = false;
+            emit tick();
+            continue;
+        }
+        else {
+            emit message("Файл "+QFileInfo(xdfFileName).fileName()+" в Analysis.xml записан как канал "+set.id);
+        }
+
+        //reading mat file structure
+//        MatlabFile matlabFile(fi);
+//        matlabFile.read();
+//        if (matlabFile.writtenAsMatrix) {
+//            emit message(QString("-- Файл mat записан матрицей. Он будет пропущен. Экспортируйте файл без галочки \"Group similar blocks in a matrix\""));
+//            emit tick();
+//            noErrors = false;
+//            continue;
+//        }
+//        emit message(QString("-- Файл mat содержит %1 каналов").arg(matlabFile.channels.size()));
+        MatFile matlabFile(fi);
+        emit message(QString("-- Файл mat содержит %1 переменных").arg(matlabFile.records.size()));
+
+        QString rawFileName = fi;
+        rawFileName.replace(".mat",".raw");
+
+        QString dfdFileName = fi;
+        dfdFileName.replace(".mat",".dfd");
+
+        //writing dfd file
+        DfdFileDescriptor dfdFileDescriptor(dfdFileName);
+        dfdFileDescriptor.fillPreliminary(Descriptor::TimeResponse);
+        QDate d = QDate::fromString(set.date, "dd.MM.yy");
+        if (d.year()<1950) {
+            d=d.addYears(100);
+        }
+        dfdFileDescriptor.Date = d;
+        dfdFileDescriptor.Time = QTime::fromString(set.time, "hh:mm:ss");
+        DataDescription *datade = new DataDescription(&dfdFileDescriptor);
+        datade->data=(DescriptionList()<<DescriptionEntry("Заголовок 1",set.titles.at(0))
+                                            << DescriptionEntry("Заголовок 2",set.titles.at(1))
+                                            << DescriptionEntry("Заголовок 3",set.titles.at(2)));
+
+        // эти переменные заполняем по первой записи в файле mat
+        bool isSet = false;
+        int samplescount = 0;
+        double xBegin = 0;
+        double xStep = 0;
+
+        //writing raw file channel by channel (blockSize=0)
+        QFile rawFile(rawFileName);
+        if (rawFile.open(QFile::WriteOnly)) {
+            int channelIndex=-1;
+
+            for (int i=0; i<matlabFile.records.size(); ++i) {
+                if (QThread::currentThread()->isInterruptionRequested()) return false;
+
+                MatlabStructArray *rec = dynamic_cast<MatlabStructArray *>(matlabFile.records[i]);
+                if (!rec) {
+                    emit message("<font color=red>Error!</font> Странный тип переменной в файле "+matlabFile.fileName);
+                    noErrors = false;
+                    continue;
+                }
+                // определяем нужные переменные оси Х
+                MatlabStructArray *x_values = findSubrecord<MatlabStructArray *>("x_values", rec);
+                if (!x_values) {
+                    emit message("<font color=red>Error!</font> Не могу прочитать параметры оси X в записи "+rec->name);
+                    noErrors = false;
+                    continue;
+                }
+                //MatlabStructArray *x_values = dynamic_cast<MatlabStructArray *>(rec->subRecords[0]);
+//                MatlabNumericArray *startValue = dynamic_cast<MatlabNumericArray*>(x_values->subRecords[0]);
+                MatlabNumericArray *startValue = findSubrecord<MatlabNumericArray*>("start_value", x_values);
+                MatlabNumericArray *increment = findSubrecord<MatlabNumericArray*>("increment", x_values);
+                MatlabNumericArray *numberOfValues = findSubrecord<MatlabNumericArray*>("number_of_values", x_values);
+
+
+                if (!isSet) {
+                    if (startValue) xBegin = startValue->getNumericAsDouble().first();
+                    if (increment) xStep = increment->getNumericAsDouble().first();
+                    if (numberOfValues) samplescount = numberOfValues->getNumericAsInt().first();
+                    isSet = true;
+                }
+
+                // теперь данные по оси Y
+                MatlabStructArray *y_values = findSubrecord<MatlabStructArray *>("y_values", rec);
+                if (!y_values) {
+                    emit message("<font color=red>Error!</font> Не могу прочитать данные в записи "+rec->name);
+                    noErrors = false;
+                    continue;
+                }
+                MatlabNumericArray *values = findSubrecord<MatlabNumericArray *>("values", y_values);
+                if (!values) {
+                    emit message("<font color=red>Error!</font> Не могу прочитать данные в записи "+rec->name);
+                    noErrors = false;
+                    continue;
+                }
+                MatlabNumericRecord *real_values = dynamic_cast<MatlabNumericRecord *>(values->realValues);
+                if (!real_values) {
+                    emit message("<font color=red>Error!</font> Не могу прочитать данные в записи "+rec->name);
+                    noErrors = false;
+                    continue;
+                }
+                MatlabStructArray *function_record = findSubrecord<MatlabStructArray *>("function_record", rec);
+                if (!function_record) {
+                    emit message("<font color=red>Error!</font> Не могу прочитать параметры записи "+rec->name);
+                    noErrors = false;
+                    continue;
+                }
+
+
+// получаем данные из файла mat
+                QByteArray rawFromMatfile = real_values->getRaw();
+                if (rawFromMatfile.isEmpty()) {
+                    emit message(QString("<font color=red>Error!</font> Не могу прочитать канал %1").arg(i+1));
+                    noErrors = false;
+                    continue;
+                }
+// ищем нужные каналы
+                QStringList channelIDs;
+
+                int typeIndex = function_record->fieldNames.indexOf("type");
+//                qDebug()<<"field names"<<function_record->fieldNames;
+//                qDebug()<<"type"<<function_record->subRecords[typeIndex]->getString();
+//                qDebug()<<"rec name"<<rec->name;
+
+                if (typeIndex >=0 &&
+                    function_record->subRecords[typeIndex]->getString() == "Signal" &&
+                    rec->name != "Signal") {// type = signal, несгруппированные временные данные
+                    channelIDs << rec->name.section("_", 0, 0);
+                }
+                else if (rec->name == "Signal") {// сгруппированные временные данные
+                    MatlabCellArray *name = dynamic_cast<MatlabCellArray *>(function_record->subRecords[0]);
+                    if (!name || function_record->fieldNames.at(0) != "name") {
+                        emit message("<font color=red>Error!</font> Не могу прочитать названия каналов в записи "+rec->name);
+                        noErrors = false;
+                        continue;
+                    }
+                    for (int cell = 0; cell < name->subRecords.size(); ++cell)
+                        channelIDs << name->subRecords[cell]->getString().section(" ", 0, 0);
+                }
+                else {
+                    emit message("<font color=red>Error!</font> Пропускаю математические каналы ");
+                    noErrors = false;
+                    continue;
+                }
+
+// перебираем каждый канал и записываем, если нашли
+                for (int channelID = 0; channelID < channelIDs.size(); ++channelID) {
+                    if (channelIDs.at(channelID).isEmpty()) continue;
+                    XChannel c;
+                    for (int j=0; j<set.channels.size(); ++j) {
+                        if (set.channels.at(j).catLabel == channelIDs.at(channelID)) {
+                            c = set.channels.at(j);
+                            break;
+                        }
+                    }
+                    if (c.catLabel.isEmpty()) {
+                        emit message("<font color=red>Error!</font> Не могу найти канал " + channelIDs.at(channelID));
+                        noErrors = false;
+                        continue;
+                    }
+
+                    if (rawFileFormat == 0) {// данные в формате single
+                        DfdChannel *channel = new DfdChannel(&dfdFileDescriptor, ++channelIndex);
+                        channel->setName(c.generalName+" -"+c.pointId+"-"+c.direction);
+                        channel->ChanAddress = QString("SCADAS\\")+c.catLabel;
+                        c.info.append(channel->ChanAddress);
+                        channel->setDescription(c.info.join(" \\"));
+                        channel->IndType = 0xC0000004; //характеристика отсчета
+                        channel->ChanBlockSize = samplescount; //размер блока в отсчетах
+                        channel->YName = c.units;
+                        channel->InputType="U";
+
+                        dfdFileDescriptor.channels.append(channel);
+                    }
+                    else {
+                        RawChannel
+                    }
+
+
+                    // теперь данные
+
+                    // в зависимости от типа данных в массиве жизнь или сильно упрощается, либо совсем наоборот
+                    if (real_values->header->type == MatlabRecord::miSINGLE) {
+                        //ничего не меняем, записываем сырые данные.
+                        int idx = rawFromMatfile.size() / channelIDs.size();
+                        rawFile.write(rawFromMatfile.mid(idx*channelID, idx));
+                    }
+                    else {
+                        QVector<float> data = getNumeric(real_values);
+                        if (data.isEmpty()) {
+                            emit message(QString("<font color=red>Error!</font> Неизвестный формат данных в канале %1").arg(i+1));
+                            noErrors = false;
+                            break;
+                        }
+                        QDataStream stream(&rawFile);
+                        stream.setByteOrder(QDataStream::LittleEndian);
+                        stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+                        int idx = data.size() / channelIDs.size();
+                        for (int k = idx*channelID; k < idx*(channelID+1); ++k) {
+                            stream << data[k];
+                        }
+                    }
+                }
+            }
+        }
+        dfdFileDescriptor.dataDescription = datade;
+        dfdFileDescriptor.setSamplesCount(samplescount);
+        dfdFileDescriptor.BlockSize = 0;
+        dfdFileDescriptor.XName="с";
+        dfdFileDescriptor.XBegin = xBegin;
+        dfdFileDescriptor.XStep = xStep;
+        dfdFileDescriptor.DescriptionFormat = "lms2dfd.DF";
+        dfdFileDescriptor.CreatedBy = "Конвертер lms2raw by Алексей Новичков";
+        if (rawFileFormat == 0)
+            dfdFileDescriptor.DataType = CuttedData; // насильно записываем данные как Raw, потому что DeepSea
+                                                     // не умеет работать с файлами DataType=1, у которых IndType=2
+        else
+            dfdFileDescriptor.DataType = SourceData;
+        dfdFileDescriptor.setChanged(true);
+        dfdFileDescriptor.write();
+        emit message("Готово.");
+        emit tick();
+    }
+
+    if (noErrors) emit message("<font color=blue>Конвертация закончена без ошибок.</font>");
+    else emit message("<font color=red>Конвертация закончена с ошибками.</font>");
+    emit finished();
+    return true;
+}
+
+QList<Dataset> MatlabConvertor::readXml(bool &success)
+{
     QList<Dataset> sets;
     QFile xmlFile(xmlFileName);
     if (!xmlFile.open(QFile::ReadOnly | QFile::Text)) {
         emit message("<font color=red>Error!</font> Не могу прочитать файл " + xmlFileName);
         emit finished();
-        return false;
+        success = false;
+        return sets;
     }
     QXmlStreamReader xml(&xmlFile);
     bool inDatasets = false;
@@ -158,181 +404,7 @@ bool MatlabConvertor::convert()
     if (xml.hasError()) {
         emit message(xml.errorString());
     }
-    emit message("Содержит следующие записи:");
-    foreach (const Dataset &dataset, sets) {
-        emit message(QString("%1: %2").arg(dataset.id).arg(dataset.fileName));
-    }
-
-
-    //Converting
-    foreach(const QString &fi, filesToConvert) {
-        if (QThread::currentThread()->isInterruptionRequested()) return false;
-
-        emit message("Конвертируем файл " + fi);
-        QString xdfFileName = fi;
-        xdfFileName.replace(".mat",".xdf");
-
-        Dataset set;
-        //search for the particular dataset
-        foreach (const Dataset &s, sets) {
-            if (s.fileName.toLower() == QFileInfo(xdfFileName).fileName().toLower()) {
-                set = s;
-                break;
-            }
-        }
-        if (set.fileName.isEmpty()) {
-            emit message("<font color=red>Error!</font> Не могу найти "+QFileInfo(xdfFileName).fileName()+" в Analysis.xml. Файл mat будет пропущен!");
-            noErrors = false;
-            emit tick();
-            continue;
-        }
-        else {
-            emit message("Файл "+QFileInfo(xdfFileName).fileName()+" в Analysis.xml записан как канал "+set.id);
-        }
-
-        //reading mat file structure
-        MatlabFile matlabFile(fi);
-        matlabFile.read();
-        if (matlabFile.writtenAsMatrix) {
-            emit message(QString("-- Файл mat записан матрицей. Он будет пропущен. Экспортируйте файл без галочки \"Group similar blocks in a matrix\""));
-            emit tick();
-            noErrors = false;
-            continue;
-        }
-        emit message(QString("-- Файл mat содержит %1 каналов").arg(matlabFile.channels.size()));
-
-        QString rawFileName = fi;
-        rawFileName.replace(".mat",".raw");
-
-        QString dfdFileName = fi;
-        dfdFileName.replace(".mat",".dfd");
-
-        //writing dfd file
-        DfdFileDescriptor dfdFileDescriptor(dfdFileName);
-        dfdFileDescriptor.fillPreliminary(Descriptor::TimeResponse);
-        QDate d = QDate::fromString(set.date, "dd.MM.yy");
-        if (d.year()<1950) {
-            d=d.addYears(100);
-        }
-        dfdFileDescriptor.Date = d;
-        dfdFileDescriptor.Time = QTime::fromString(set.time, "hh:mm:ss");
-        DataDescription *datade = new DataDescription(&dfdFileDescriptor);
-        datade->data=(DescriptionList()<<DescriptionEntry("Заголовок 1",set.titles.at(0))
-                                            << DescriptionEntry("Заголовок 2",set.titles.at(1))
-                                            << DescriptionEntry("Заголовок 3",set.titles.at(2)));
-        dfdFileDescriptor.dataDescription = datade;
-        dfdFileDescriptor.setSamplesCount(matlabFile.channels.first().size);
-        dfdFileDescriptor.BlockSize = 0;
-        dfdFileDescriptor.XName="с";
-        dfdFileDescriptor.XBegin = matlabFile.channels.first().xStart;
-        dfdFileDescriptor.XStep = matlabFile.channels.first().xStep;
-        dfdFileDescriptor.DescriptionFormat = "lms2dfd.DF";
-        dfdFileDescriptor.CreatedBy = "Конвертер lms2raw by Алексей Новичков";
-
-        //writing raw file channel by channel (blockSize=0)
-        QFile rawFile(rawFileName);
-        if (rawFile.open(QFile::WriteOnly)) {
-            int channelIndex=-1;
-            for (int i=0; i<matlabFile.channels.size(); ++i) {
-                if (QThread::currentThread()->isInterruptionRequested()) return false;
-                //1. search dataset for channel label
-                XChannel c;
-                for (int j=0; j<set.channels.size(); ++j) {
-                    if (set.channels.at(j).catLabel == matlabFile.channels.at(i).label) {
-                        c = set.channels.at(j);
-                        break;
-                    }
-                }
-                if (c.catLabel.isEmpty()) {
-                    emit message("<font color=red>Error!</font> Не могу найти канал "+matlabFile.channels.at(i).label);
-                    noErrors = false;
-                    continue;
-                }
-
-                //2. read source data
-                QByteArray rawFromMatfile;
-                QFile matFile(fi);
-                int itemSize = 4;
-                if (matlabFile.channels.at(i).dataType == miDOUBLE) itemSize = 8;
-                if (matFile.open(QFile::ReadOnly)) {
-                    matFile.seek(matlabFile.channels.at(i).startPos);
-                    rawFromMatfile = matFile.read(matlabFile.channels.at(i).size * itemSize);
-                }
-                else {
-                    emit message(QString("<font color=red>Error!</font> Не могу прочитать канал %1").arg(i+1));
-                    noErrors = false;
-                    continue;
-                }
-
-                if (rawFromMatfile.isEmpty() || (rawFromMatfile.size() != int(matlabFile.channels.at(i).size * itemSize))) {
-                    emit message(QString("<font color=red>Error!</font> Не могу прочитать канал %1").arg(i+1));
-                    noErrors = false;
-                    continue;
-                }
-
-                // в зависимости от типа данных в массиве жизнь или сильно упрощается, либо совсем наоборот
-                switch (matlabFile.channels.at(i).dataType) {
-                    case miSINGLE: {//ничего не меняем, записываем сырые данные.
-                        rawFile.write(rawFromMatfile);
-                        break;
-                    }
-                    case miDOUBLE: {//ради экономии места записываем в формате single
-                        QDataStream stream(rawFromMatfile);
-                        stream.setByteOrder(QDataStream::LittleEndian);
-                        stream.setFloatingPointPrecision(QDataStream::DoublePrecision);
-
-                        QVector<float> data = readBlock<double>(&stream, matlabFile.channels.at(i).size, c.scale);
-
-                        stream.setDevice(&rawFile);
-                        stream.setByteOrder(QDataStream::LittleEndian);
-                        stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-                        for (int k=0; k<data.size();++k) {
-                            stream << data[k];
-                        }
-                        break;
-                    }
-                    default: {
-                        emit message(QString("<font color=red>Error!</font> Неизвестный формат данных в канале %1").arg(i+1));
-                        noErrors = false;
-                        break;
-                    }
-                }
-
-
-
-                DfdChannel *channel = new DfdChannel(&dfdFileDescriptor, ++channelIndex);
-                channel->setName(c.generalName+" -"+c.pointId+"-"+c.direction);
-                channel->ChanAddress = QString("SCADAS\\")+c.catLabel;
-                c.info.append(channel->ChanAddress);
-                channel->setDescription(c.info.join(" \\"));
-                channel->IndType = 0xC0000004; //характеристика отсчета
-                channel->ChanBlockSize = matlabFile.channels.at(i).size; //размер блока в отсчетах
-                channel->YName = c.units;
-                channel->InputType="U";
-
-//                channel->BandWidth = c.fd / 2.56;
-//                channel->AmplShift = 0.0;
-//                channel->AmplLevel = 5.12 / max;
-//                channel->Sens0Shift = 0.0;
-//                channel->ADC0 = hextodouble("FEF2C98AE17A14C0");
-//                channel->ADCStep = hextodouble("BEF8BF05F67A243F");
-//                channel->SensSensitivity = hextodouble("000000000000F03F");
-//                channel->SensName = c.sensorName+"\\ sn-"+c.sensorSerial;
-
-                dfdFileDescriptor.channels.append(channel);
-            }
-        }
-        dfdFileDescriptor.DataType = CuttedData; // насильно записываем данные как Raw, потому что DeepSea
-                                        // не умеет работать с файлами DataType=1, у которых IndType=2
-        dfdFileDescriptor.setChanged(true);
-        dfdFileDescriptor.write();
-        emit message("Готово.");
-        emit tick();
-    }
-
-    if (noErrors) emit message("<font color=blue>Конвертация закончена без ошибок.</font>");
-    else emit message("<font color=red>Конвертация закончена с ошибками.</font>");
-    emit finished();
-    return true;
+    return sets;
 }
+
 

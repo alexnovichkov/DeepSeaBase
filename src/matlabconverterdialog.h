@@ -12,6 +12,7 @@ class QPushButton;
 class MatlabConvertor;
 class QThread;
 class QCheckBox;
+class QComboBox;
 
 class MatlabConverterDialog : public QDialog
 {
@@ -43,6 +44,7 @@ private:
     QThread *thread;
     QCheckBox *openFolderButton;
     QCheckBox *addFilesButton;
+    QComboBox *rawFileFormat;
     bool m_addFiles;
 };
 
