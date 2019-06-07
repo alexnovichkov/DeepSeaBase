@@ -436,6 +436,36 @@ QString floattohex(const float f)
     return s;
 }
 
+template <typename TFloat, typename TInt, QDataStream::ByteOrder ENDIAN>
+TFloat toFloat(const QByteArray &v, size_t offset)
+{
+    if(offset > v.size() - sizeof(TInt)) {
+        qDebug()<<"toFloat() - offset is out of range. Returning 0.";
+        return 0.0;
+    }
+
+    union {
+        TInt   i;
+        TFloat f;
+    } tmp;
+    ::memcpy(&tmp, v.data() + offset, sizeof(TInt));
+
+    if(ENDIAN != QSysInfo::ByteOrder)
+        tmp.i = qToLittleEndian(tmp.i);
+
+    return tmp.f;
+}
+
+double toFloat64LE(const QByteArray &v, size_t offset)
+{
+  return toFloat<double, quint64, QDataStream::LittleEndian>(v, offset);
+}
+
+float toFloat32LE(const QByteArray &v, size_t offset)
+{
+    return toFloat<float, quint32, QDataStream::LittleEndian>(v, offset);
+}
+
 QVector<cx_double> complexes(const QVector<double> &values, bool valuesAreReals)
 {
     const int size = values.size();

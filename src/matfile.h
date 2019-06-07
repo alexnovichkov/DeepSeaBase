@@ -22,6 +22,29 @@ QVector<D> readBlock(QDataStream *readStream, quint64 itemCount)
     return result;
 }
 
+template <typename T>
+QVector<T> readNumeric(QDataStream *stream, quint64 itemCount, int type)
+{
+    QVector<T> data;
+
+    switch(type) {
+        case 1: data = readBlock<qint8, T>(stream, itemCount); break;
+        case 2: data = readBlock<quint8, T>(stream, itemCount); break;
+        case 3: data = readBlock<qint16, T>(stream, itemCount); break;
+        case 4: data = readBlock<quint16, T>(stream, itemCount); break;
+        case 5: data = readBlock<qint32, T>(stream, itemCount); break;
+        case 6: data = readBlock<quint32, T>(stream, itemCount); break;
+        case 7: stream->setFloatingPointPrecision(QDataStream::SinglePrecision);
+            data = readBlock<float, T>(stream, itemCount); break;
+        case 9: stream->setFloatingPointPrecision(QDataStream::DoublePrecision);
+            data = readBlock<double, T>(stream, itemCount); break;
+        case 12: data = readBlock<qint64, T>(stream, itemCount); break;
+        case 13: data = readBlock<quint64, T>(stream, itemCount); break;
+        default: break;
+    }
+    return data;
+}
+
 class MatlabHeader {
 public:
     MatlabHeader() {}

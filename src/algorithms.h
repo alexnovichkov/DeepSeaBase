@@ -90,4 +90,7 @@ float hextofloat(QString hex);
 
 QString floattohex(const float f);
 
+float toFloat32LE(const QByteArray &v, size_t offset);
+double toFloat64LE(const QByteArray &v, size_t offset);
+
 #endif // ALGORITHMS_H

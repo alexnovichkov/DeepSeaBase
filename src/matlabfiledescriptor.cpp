@@ -3,7 +3,7 @@
 
 #include "dfdfiledescriptor.h"
 #include "converters.h"
-
+#include "algorithms.h"
 
 
 QString lms2dsunit(const QString &unit)
@@ -187,13 +187,6 @@ bool MatlabConvertor::convert()
                 }
 
 
-// получаем данные из файла mat
-                QByteArray rawFromMatfile = real_values->getRaw();
-                if (rawFromMatfile.isEmpty()) {
-                    emit message(QString("<font color=red>Error!</font> Не могу прочитать канал %1").arg(i+1));
-                    noErrors = false;
-                    continue;
-                }
 // ищем нужные каналы
                 QStringList channelIDs;
 
@@ -223,6 +216,14 @@ bool MatlabConvertor::convert()
                     continue;
                 }
 
+                // один раз прочитали данные этой переменной, далее обращаемся только к ним
+                QByteArray rawFromMatfile = real_values->getRaw();
+                if (rawFromMatfile.isEmpty()) {
+                    emit message(QString("<font color=red>Error!</font> Не могу прочитать канал %1").arg(i+1));
+                    noErrors = false;
+                    continue;
+                }
+
 // перебираем каждый канал и записываем, если нашли
                 for (int channelID = 0; channelID < channelIDs.size(); ++channelID) {
                     if (channelIDs.at(channelID).isEmpty()) continue;
@@ -239,6 +240,74 @@ bool MatlabConvertor::convert()
                         continue;
                     }
 
+                    // теперь данные
+                    QVector<float> data;
+                    float max = 1.0;
+
+                    if (rawFileFormat == 1) {// целые числа
+                        int idx = rawFromMatfile.size() / channelIDs.size();
+                        QByteArray raw = rawFromMatfile.mid(idx * channelID, idx);
+                        QDataStream stream(&raw, QIODevice::ReadOnly);
+                        stream.setByteOrder(QDataStream::LittleEndian);
+                        stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+                        data = readNumeric<float>(&stream, real_values->actualDataSize / channelIDs.size(), real_values->header->type);
+
+                        if (data.isEmpty()) {
+                            emit message(QString("<font color=red>Error!</font> Неизвестный формат данных в канале %1").arg(i+1));
+                            noErrors = false;
+                            break;
+                        }
+
+                        max = qAbs(data[0]);
+                        for (int k=1; k<data.size();++k)
+                            if (qAbs(data[k]) > max) max = qAbs(data[k]);
+
+                        for (int k=0; k<data.size();++k)
+                            data[k] = data[k]/max*32768.0;
+
+                        stream.setDevice(&rawFile);
+                        stream.setByteOrder(QDataStream::LittleEndian);
+                        stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+                        for (int k = 0; k < data.size(); ++k) {
+                            int v = qMin(65535,int(data[k])+32768);
+                            stream << (quint16)v;
+                        }
+                    }
+                    else {// вещественные числа
+                        // в зависимости от типа данных в массиве жизнь или сильно упрощается, либо совсем наоборот
+                        int idx = rawFromMatfile.size() / channelIDs.size();
+                        QByteArray raw = rawFromMatfile.mid(idx * channelID, idx);
+
+                        if (real_values->header->type == MatlabRecord::miSINGLE) {
+                            //ничего не меняем, записываем сырые данные.
+                            rawFile.write(raw);
+                        }
+                        else {
+                            QDataStream stream(&raw, QIODevice::ReadOnly);
+                            stream.setByteOrder(QDataStream::LittleEndian);
+                            stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+                            data = readNumeric<float>(&stream, real_values->actualDataSize / channelIDs.size(), real_values->header->type);
+
+                            if (data.isEmpty()) {
+                                emit message(QString("<font color=red>Error!</font> Неизвестный формат данных в канале %1").arg(i+1));
+                                noErrors = false;
+                                break;
+                            }
+
+                            stream.setDevice(&rawFile);
+                            stream.setByteOrder(QDataStream::LittleEndian);
+                            stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+                            int idx = data.size();
+                            for (int k = 0; k < idx; ++k) {
+                                stream << data[k];
+                            }
+                        }
+                    }
+
+
                     if (rawFileFormat == 0) {// данные в формате single
                         DfdChannel *channel = new DfdChannel(&dfdFileDescriptor, ++channelIndex);
                         channel->setName(c.generalName+" -"+c.pointId+"-"+c.direction);
@@ -253,32 +322,26 @@ bool MatlabConvertor::convert()
                         dfdFileDescriptor.channels.append(channel);
                     }
                     else {
-                        RawChannel
-                    }
+                        RawChannel *channel = new RawChannel(&dfdFileDescriptor, ++channelIndex);
+                        channel->setName(c.generalName+" -"+c.pointId+"-"+c.direction);
+                        channel->ChanAddress = QString("SCADAS\\")+c.catLabel;
+                        c.info.append(channel->ChanAddress);
+                        channel->setDescription(c.info.join(" \\"));
+                        channel->IndType = 2; //характеристика отсчета
+                        channel->ChanBlockSize = samplescount; //размер блока в отсчетах
+                        channel->YName = c.units;
+                        channel->InputType="U";
 
+                        channel->BandWidth = c.fd / 2.56;
+                        channel->AmplShift = 0.0;
+                        channel->AmplLevel = 5.12 / max;
+                        channel->Sens0Shift = 0.0;
+                        channel->ADC0 = hextodouble("FEF2C98AE17A14C0");
+                        channel->ADCStep = hextodouble("BEF8BF05F67A243F");
+                        channel->SensSensitivity = hextodouble("000000000000F03F");
+                        channel->SensName = c.sensorName+"\\ sn-"+c.sensorSerial;
 
-                    // теперь данные
-
-                    // в зависимости от типа данных в массиве жизнь или сильно упрощается, либо совсем наоборот
-                    if (real_values->header->type == MatlabRecord::miSINGLE) {
-                        //ничего не меняем, записываем сырые данные.
-                        int idx = rawFromMatfile.size() / channelIDs.size();
-                        rawFile.write(rawFromMatfile.mid(idx*channelID, idx));
-                    }
-                    else {
-                        QVector<float> data = getNumeric(real_values);
-                        if (data.isEmpty()) {
-                            emit message(QString("<font color=red>Error!</font> Неизвестный формат данных в канале %1").arg(i+1));
-                            noErrors = false;
-                            break;
-                        }
-                        QDataStream stream(&rawFile);
-                        stream.setByteOrder(QDataStream::LittleEndian);
-                        stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-                        int idx = data.size() / channelIDs.size();
-                        for (int k = idx*channelID; k < idx*(channelID+1); ++k) {
-                            stream << data[k];
-                        }
+                        dfdFileDescriptor.channels.append(channel);
                     }
                 }
             }

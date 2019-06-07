@@ -94,12 +94,12 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
 
     QWidget *second = new QWidget(this);
     QGridLayout *grid1 = new QGridLayout;
-    grid1->addWidget(textEdit,0,0,1,2);
+    grid1->addWidget(textEdit,0,0,1,3);
     grid1->addWidget(new QLabel("Записывать данные в файл RAW как", this), 1,0,1,1);
     grid1->addWidget(rawFileFormat, 1,1,1,1);
-    grid1->addWidget(openFolderButton, 2,0,1,2);
-    grid1->addWidget(addFilesButton, 3, 0,1,2);
-    grid1->addWidget(buttonBox,4,0,1,2);
+    grid1->addWidget(openFolderButton, 2,0,1,3);
+    grid1->addWidget(addFilesButton, 3, 0,1,3);
+    grid1->addWidget(buttonBox,4,0,1,3);
     second->setLayout(grid1);
     splitter->addWidget(first);
     splitter->addWidget(second);
@@ -181,6 +181,7 @@ void MatlabConverterDialog::start()
 
     if (toConvert.isEmpty()) {
         textEdit->appendHtml("<font color=red>Error!</font> Отсутствуют файлы для конвертации.");
+        buttonBox->buttons().first()->setDisabled(false);
         return;
     }
 
