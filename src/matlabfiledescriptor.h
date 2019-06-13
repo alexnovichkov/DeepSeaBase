@@ -11,11 +11,11 @@ struct XChannel
 {
     QString name;
     QString units;
-    double logRef;
-    double scale;
+//    double logRef;
+//    double scale;
     QString generalName;
     QString catLabel;
-    QString sensorId;
+//    QString sensorId;
     QString sensorSerial;
     QString sensorName;
     double fd;

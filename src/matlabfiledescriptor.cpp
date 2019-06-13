@@ -419,10 +419,10 @@ QList<Dataset> MatlabConvertor::readXml(bool &success)
                 XChannel c;
                 if (xml.attributes().hasAttribute("name"))
                     c.units = xml.attributes().value("name").toString();
-                if (xml.attributes().hasAttribute("logref"))
-                    c.logRef = xml.attributes().value("logref").toString().toDouble();
-                if (xml.attributes().hasAttribute("scale"))
-                    c.scale = xml.attributes().value("scale").toString().toDouble();
+//                if (xml.attributes().hasAttribute("logref"))
+//                    c.logRef = xml.attributes().value("logref").toString().toDouble();
+//                if (xml.attributes().hasAttribute("scale"))
+//                    c.scale = xml.attributes().value("scale").toString().toDouble();
                 sets.last().channels.append(c);
             }
             else if (name == "General" && inDatasets) {
@@ -432,8 +432,8 @@ QList<Dataset> MatlabConvertor::readXml(bool &success)
                     sets.last().channels.last().catLabel = xml.attributes().value("CatLabel").toString();
             }
             else if (name == "Sensor" && inDatasets) {
-                if (xml.attributes().hasAttribute("id"))
-                    sets.last().channels.last().sensorId = xml.attributes().value("id").toString();
+//                if (xml.attributes().hasAttribute("id"))
+//                    sets.last().channels.last().sensorId = xml.attributes().value("id").toString();
                 if (xml.attributes().hasAttribute("serial"))
                     sets.last().channels.last().sensorSerial = xml.attributes().value("serial").toString();
                 if (xml.attributes().hasAttribute("name"))

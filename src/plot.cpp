@@ -932,7 +932,8 @@ void Plot::updateLegends()
 void Plot::savePlot()
 {DD;
     QString lastPicture = MainWindow::getSetting("lastPicture", "plot.bmp").toString();
-    lastPicture = QFileDialog::getSaveFileName(this, QString("Сохранение графика"), lastPicture, "Изображения (*.bmp)");
+    lastPicture = QFileDialog::getSaveFileName(this, QString("Сохранение графика"), lastPicture,
+                                               "Растровые изображения (*.bmp);;Файлы pdf (*.pdf);;Файлы svg (*.svg)");
     if (lastPicture.isEmpty()) return;
 
     importPlot(lastPicture);
@@ -1078,7 +1079,8 @@ void Plot::importPlot(const QString &fileName)
     insertLegend(leg, QwtPlot::BottomLegend);
 
 
-    renderer.renderDocument(this, fileName, QSizeF(400,200), qApp->desktop()->logicalDpiX());
+    renderer.renderDocument(this, fileName, fileName.section(".", -1,-1),
+                            QSizeF(400,200), qApp->desktop()->logicalDpiX());
 
 
     axisfont.setPointSize(axisfont.pointSize()-1);

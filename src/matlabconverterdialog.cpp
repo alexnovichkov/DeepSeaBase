@@ -85,11 +85,15 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
     QWidget *first = new QWidget(this);
 
     QGridLayout *grid = new QGridLayout;
-    grid->addWidget(new QLabel("Папка:", this),0,0);
-    grid->addWidget(edit,0,1);
-    grid->addWidget(button,0,2);
-    grid->addWidget(tree, 1,0,1,3);
-    grid->addWidget(progress,2,0,1,3);
+    grid->addWidget(new QLabel("Конвертор читает файлы MAT, сохраненные с любыми выставленными флагами:\n"
+                               "- он понимает данные, сохраненные как double\n"
+                               "- он умеет читать сгруппированные каналы\n"
+                               "- он понимает, когда файл сохранен не в единицах СИ", this),0,0,1,3);
+    grid->addWidget(new QLabel("Папка:", this),1,0);
+    grid->addWidget(edit,1,1);
+    grid->addWidget(button,1,2);
+    grid->addWidget(tree, 2,0,1,3);
+    grid->addWidget(progress,3,0,1,3);
     first->setLayout(grid);
 
     QWidget *second = new QWidget(this);
