@@ -162,8 +162,10 @@ public:
     void setRawFileFormat(int format) {rawFileFormat = format;} // 0 = float, 1 = quint16
 
     QStringList getNewFiles() const {return newFiles;}
+    void readXml(bool &success);
 
     QString xmlFileName;
+    QList<Dataset> xml;
 public slots:
     bool convert();
 signals:
@@ -171,7 +173,7 @@ signals:
     void finished();
     void message(const QString &s);
 private:
-    QList<Dataset> readXml(bool &success);
+
     QString folderName;
     QStringList newFiles;
     QStringList filesToConvert;

@@ -614,7 +614,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     //if (!treeHeaderState.isEmpty())
     //    tab->filesTable->header()->restoreState(treeHeaderState);
 
-    connect(tab->filesTable->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),tab, SLOT(filesSelectionChanged()));
+    connect(tab->filesTable->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),tab, SLOT(filesSelectionChanged(QItemSelection,QItemSelection)));
     connect(tab->filesTable->selectionModel(),SIGNAL(currentRowChanged(QModelIndex,QModelIndex)),SLOT(updateChannelsTable(QModelIndex,QModelIndex)));
 
     tab->filesTable->setItemDelegateForColumn(6 /*шаг по оси х*/, new StepItemDelegate);
@@ -1600,7 +1600,7 @@ void MainWindow::updateChannelsHeaderState()
 
 void MainWindow::updateChannelsTable(const QModelIndex &current, const QModelIndex &previous)
 {DD;
-    Q_UNUSED(previous)
+    Q_UNUSED(previous);
 
     if (!tab || !current.isValid()) return;
 
@@ -2661,8 +2661,11 @@ void MainWindow::addFiles(QStringList &files)
     addDescriptors(items);
 }
 
-void Tab::filesSelectionChanged()
+void Tab::filesSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection)
 {
+    Q_UNUSED(oldSelection);
+    if (newSelection.isEmpty()) filesTable->selectionModel()->setCurrentIndex(QModelIndex(), QItemSelectionModel::NoUpdate);
+
     QSet<int> indexes;
 
     QModelIndexList list = filesTable->selectionModel()->selection().indexes();

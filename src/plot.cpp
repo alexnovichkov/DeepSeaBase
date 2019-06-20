@@ -1079,7 +1079,8 @@ void Plot::importPlot(const QString &fileName)
     insertLegend(leg, QwtPlot::BottomLegend);
 
 
-    renderer.renderDocument(this, fileName, fileName.section(".", -1,-1),
+    QString format = fileName.section(".", -1,-1);
+    renderer.renderDocument(this, fileName, format,
                             QSizeF(400,200), qApp->desktop()->logicalDpiX());
 
 

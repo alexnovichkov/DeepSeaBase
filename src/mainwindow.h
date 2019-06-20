@@ -25,6 +25,7 @@ class QScrollBar;
 class DfdChannel;
 class QTableWidgetItem;
 class QToolBar;
+class QItemSelection;
 
 class TabWidget;
 class CheckableHeaderView;
@@ -64,7 +65,7 @@ public:
 
     FileDescriptor *record;
 private slots:
-    void filesSelectionChanged();
+    void filesSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);
 };
 
 class MainWindow : public QMainWindow

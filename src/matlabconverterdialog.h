@@ -32,6 +32,7 @@ private slots:
     void finalize();
     void chooseMatFiles();
 private:
+    QString findXmlFile() const;
     QStringList convertedFiles;
     QString folder;
     QProgressBar *progress;
