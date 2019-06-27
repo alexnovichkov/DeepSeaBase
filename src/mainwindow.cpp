@@ -761,6 +761,7 @@ void MainWindow::closeTab(int i)
         if (duplicated(f)) duplicatedFiles << f->fileName();
     }
 
+
     tab->model->deleteFiles(duplicatedFiles);
 
     QWidget *w = tabWidget->widget(index);
@@ -810,31 +811,31 @@ void MainWindow::editColors()
 
 MainWindow::~MainWindow()
 {DD;
-    setSetting("mainSplitterState",splitter->saveState());
+//    setSetting("mainSplitterState",splitter->saveState());
 
-    if (tab) {
-        setSetting("upperSplitterState",tab->saveState());
-        QByteArray treeHeaderState = tab->filesTable->header()->saveState();
-        setSetting("treeHeaderState", treeHeaderState);
-    }
+//    if (tab) {
+//        setSetting("upperSplitterState",tab->saveState());
+//        QByteArray treeHeaderState = tab->filesTable->header()->saveState();
+//        setSetting("treeHeaderState", treeHeaderState);
+//    }
 
-    QVariantMap map;
-    for (int i=0; i<tabWidget->count(); ++i) {
-        if (Tab *t = qobject_cast<Tab *>(tabWidget->widget(i))) {
-            if (!t->folders.isEmpty())
-                map.insert(tabWidget->tabText(i), t->folders);
-        }
-    }
+//    QVariantMap map;
+//    for (int i=0; i<tabWidget->count(); ++i) {
+//        if (Tab *t = qobject_cast<Tab *>(tabWidget->widget(i))) {
+//            if (!t->folders.isEmpty())
+//                map.insert(tabWidget->tabText(i), t->folders);
+//        }
+//    }
 
-    setSetting("folders1", map);
+//    setSetting("folders1", map);
 
-    plot->deleteGraphs();
+//    plot->deleteGraphs();
 
-    for (int i= tabWidget->count()-1; i>=0; --i) {
-        closeTab(i);
-    }
+//    for (int i= tabWidget->count()-1; i>=0; --i) {
+//        closeTab(i);
+//    }
 
-    ColorSelector::instance()->drop();
+//    ColorSelector::instance()->drop();
 }
 
 void MainWindow::addFolder() /*SLOT*/
@@ -2676,4 +2677,55 @@ void Tab::filesSelectionChanged(const QItemSelection &newSelection, const QItemS
 
     model->setSelected(l);
     if (indexes.isEmpty()) channelsTable->setRowCount(0);
+}
+
+
+void MainWindow::closeEvent(QCloseEvent *event)
+{
+//    if (closeRequested()) {
+//        event->accept();
+//    }
+//    else {
+//        event->ignore();
+//    }
+//    QEventLoop q;
+//    connect(this, SIGNAL(allClosed()), &q, SLOT(quit()));
+    closeRequested();
+//    q.exec();
+
+    event->accept();
+}
+
+bool MainWindow::closeRequested()
+{
+
+    // сохранение состояния, сохранение файлов
+    setSetting("mainSplitterState",splitter->saveState());
+
+    if (tab) {
+        setSetting("upperSplitterState",tab->saveState());
+        QByteArray treeHeaderState = tab->filesTable->header()->saveState();
+        setSetting("treeHeaderState", treeHeaderState);
+    }
+
+    QVariantMap map;
+    for (int i=0; i<tabWidget->count(); ++i) {
+        if (Tab *t = qobject_cast<Tab *>(tabWidget->widget(i))) {
+            if (!t->folders.isEmpty())
+                map.insert(tabWidget->tabText(i), t->folders);
+        }
+    }
+
+    setSetting("folders1", map);
+
+    plot->deleteGraphs();
+
+    for (int i= tabWidget->count()-1; i>=0; --i) {
+        closeTab(i);
+    }
+
+    ColorSelector::instance()->drop();
+
+    emit allClosed();
+    return true;
 }
