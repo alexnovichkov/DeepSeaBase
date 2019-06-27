@@ -178,9 +178,12 @@ void CorrectionDialog::correct()
             }
         }
     }
-    plot->updateAxes();
-    plot->updateLegends();
-    plot->replot();
+//    plot->updateAxes();
+//    plot->updateLegends();
+//    plot->replot();
+    plot->recalculateScale(true);
+    plot->recalculateScale(false);
+    plot->update();
 }
 
 void CorrectionDialog::makeCorrectionConstant(Channel *channel)
@@ -243,9 +246,12 @@ void CorrectionDialog::accept()
         f->write();
         f->writeRawFile();
     }
-    plot->updateAxes();
-    plot->updateLegends();
-    plot->replot();
+//    plot->updateAxes();
+//    plot->updateLegends();
+//    plot->replot();
+    plot->recalculateScale(true);
+    plot->recalculateScale(false);
+    plot->update();
     QDialog::accept();
 }
 
@@ -262,8 +268,11 @@ void CorrectionDialog::reject()
         }
     }
 
-    plot->updateAxes();
-    plot->updateLegends();
-    plot->replot();
+//    plot->updateAxes();
+//    plot->updateLegends();
+//    plot->replot();
+    plot->recalculateScale(true);
+    plot->recalculateScale(false);
+    plot->update();
     QDialog::reject();
 }

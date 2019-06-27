@@ -2,6 +2,7 @@
 #define MATLABCONVERTERDIALOG_H
 
 #include <QDialog>
+#include <QStyledItemDelegate>
 
 class QProgressBar;
 class QDialogButtonBox;
@@ -13,6 +14,24 @@ class MatlabConvertor;
 class QThread;
 class QCheckBox;
 class QComboBox;
+class QTreeWidgetItem;
+
+//class ComboBoxItemDelegate : public QStyledItemDelegate
+//{
+//    Q_OBJECT
+//public:
+//    explicit ComboBoxItemDelegate(MatlabConvertor *convertor, QObject *parent = 0)
+//        : QStyledItemDelegate(parent), convertor(convertor) {}
+
+//    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
+//                          const QModelIndex &index) const;
+
+//    void setEditorData(QWidget *editor, const QModelIndex &index) const;
+//    void setModelData(QWidget *editor, QAbstractItemModel *model,
+//                      const QModelIndex &index) const;
+//private:
+//    MatlabConvertor *convertor;
+//};
 
 class MatlabConverterDialog : public QDialog
 {
@@ -31,6 +50,7 @@ private slots:
     void stop();
     void finalize();
     void chooseMatFiles();
+//    void editItem(QTreeWidgetItem*item, int column);
 private:
     QString findXmlFile() const;
     QStringList convertedFiles;
@@ -41,12 +61,14 @@ private:
     QTreeWidget *tree;
     QPlainTextEdit *textEdit;
     QPushButton *button;
-    MatlabConvertor *convertor;
+
     QThread *thread;
     QCheckBox *openFolderButton;
     QCheckBox *addFilesButton;
     QComboBox *rawFileFormat;
     bool m_addFiles;
+public:
+    MatlabConvertor *convertor;
 };
 
 #endif // MATLABCONVERTERDIALOG_H

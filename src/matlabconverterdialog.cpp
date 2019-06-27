@@ -40,6 +40,8 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
     tree->setAlternatingRowColors(true);
     tree->setColumnCount(4);
     tree->setHeaderLabels(QStringList()<<"№"<<"Файл"<<"Конвертирован"<<"Запись");
+    //tree->setItemDelegateForColumn(4, new ComboBoxItemDelegate(convertor, this));
+    //connect(tree, SIGNAL(itemClicked(QTreeWidgetItem*,int)), SLOT(editItem(QTreeWidgetItem*,int)));
 
     CheckableHeaderView *tableHeader = new CheckableHeaderView(Qt::Horizontal, tree);
 
@@ -143,6 +145,7 @@ void MatlabConverterDialog::chooseMatFiles()
     int i=1;
     foreach (const QFileInfo &f, matFiles) {
         QTreeWidgetItem *item = new QTreeWidgetItem(tree);
+        //item->setFlags(Qt::ItemIsSelectable & Qt::ItemIsEditable & Qt::ItemIsEnabled);
         item->setText(0, QString::number(i++));
         item->setText(1, f.canonicalFilePath());
         if (fileExists(f.canonicalFilePath())) {
@@ -169,14 +172,22 @@ void MatlabConverterDialog::chooseMatFiles()
     for (int i=0; i<tree->topLevelItemCount(); ++i) {
         QString xdfFileName = tree->topLevelItem(i)->text(1);
         xdfFileName.replace(".mat",".xdf");
-        foreach (const Dataset &s, convertor->xml) {
+        for (int j = 0; j< convertor->xml.size(); ++j) {
+            const Dataset &s = convertor->xml.at(j);
             if (s.fileName.toLower() == QFileInfo(xdfFileName).fileName().toLower()) {
+                //tree->topLevelItem(i)->setData(3, Qt::UserRole, j);
                 tree->topLevelItem(i)->setText(3, s.id);
                 break;
             }
         }
     }
 }
+
+//void MatlabConverterDialog::editItem(QTreeWidgetItem *item, int column)
+//{
+//    if (column != 3) return;
+//    tree->editItem(item, column);
+//}
 
 void MatlabConverterDialog::accept()
 {
@@ -293,3 +304,33 @@ void MatlabConverterDialog::finalize()
 }
 
 
+//QWidget *ComboBoxItemDelegate::createEditor(QWidget *parent,
+//                                            const QStyleOptionViewItem &/* option */,
+//                                            const QModelIndex &/* index */) const
+//{DD;
+//    QComboBox *editor = new QComboBox(parent);
+//    if (editor) {
+//        for (int i=0; i<convertor->xml.size(); ++i)
+//            editor->addItem(convertor->xml.at(i).id);
+//    }
+//    return editor;
+//}
+
+//void ComboBoxItemDelegate::setEditorData(QWidget *editor,
+//                                         const QModelIndex &index) const
+//{DD;
+//    int row = index.model()->data(index, Qt::UserRole).toInt();
+
+//    QComboBox *box = qobject_cast<QComboBox*>(editor);
+//    if (box) box->setCurrentIndex(row);
+//}
+
+//void ComboBoxItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
+//                                        const QModelIndex &index) const
+//{DD;
+//    QComboBox *box = qobject_cast<QComboBox*>(editor);
+//    if (box) {
+//        model->setData(index, box->currentIndex(), Qt::UserRole);
+//        model->setData(index, box->currentText(), Qt::DisplayRole);
+//    }
+//}

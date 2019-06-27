@@ -119,6 +119,12 @@ public:
     void switchPlayerVisibility();
     void toggleAutoscale(int axis, bool toggled);
     void autoscale(int axis);
+    /**
+     * @brief recalculateScale пересчитывает границы графиков,
+     * отдельно для левой или правой вертикальной оси
+     * @param leftAxis
+     */
+    void recalculateScale(bool leftAxis);
 public slots:
     void savePlot();
     void switchCursor();
@@ -145,7 +151,7 @@ private:
     bool hasDuplicateNames(const QString name) const;
     void checkDuplicates(const QString name);
     QString yValuesPresentationSuffix(int yValuesPresentation) const;
-    void recalculateScale(bool leftAxis);
+
 
 //    void playChannel(Channel *ch);
 
