@@ -78,6 +78,7 @@ QString SavingFunction::propertyDescription(const QString &property) const
 
 bool SavingFunction::propertyShowsFor(const QString &property) const
 {
+    Q_UNUSED(property);
     return true;
 }
 
@@ -109,6 +110,7 @@ void SavingFunction::setProperty(const QString &property, const QVariant &val)
 
 QVector<double> SavingFunction::getData(const QString &id)
 {
+    Q_UNUSED(id);
     return QVector<double>();
 }
 
@@ -249,7 +251,7 @@ FileDescriptor *SavingFunction::createDfdFile(FileDescriptor *file)
 
 FileDescriptor *SavingFunction::createUffFile(FileDescriptor *file)
 {
-
+    return 0;
 }
 
 Channel *SavingFunction::createChannel(FileDescriptor *file, int dataSize)

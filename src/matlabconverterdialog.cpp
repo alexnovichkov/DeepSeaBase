@@ -159,35 +159,26 @@ void MatlabConverterDialog::chooseMatFiles()
 
     buttonBox->buttons().first()->setDisabled(matFiles.isEmpty());
 
-    QString xmlFileName = findXmlFile();
-    if (xmlFileName.isEmpty()) {
-        textEdit->appendHtml("<font color=red>Error!</font> Не могу найти файл Analysis.xml.");
-        return;
-    }
-
+    QString xmlFileName = findXmlFile(true);
     convertor->xmlFileName = xmlFileName;
-    bool noErrors = true;
-    convertor->readXml(noErrors);
+    if (!xmlFileName.isEmpty()) {
+        bool noErrors = true;
+        convertor->readXml(noErrors);
 
-    for (int i=0; i<tree->topLevelItemCount(); ++i) {
-        QString xdfFileName = tree->topLevelItem(i)->text(1);
-        xdfFileName.replace(".mat",".xdf");
-        for (int j = 0; j< convertor->xml.size(); ++j) {
-            const Dataset &s = convertor->xml.at(j);
-            if (s.fileName.toLower() == QFileInfo(xdfFileName).fileName().toLower()) {
-                //tree->topLevelItem(i)->setData(3, Qt::UserRole, j);
-                tree->topLevelItem(i)->setText(3, s.id);
-                break;
+        for (int i=0; i<tree->topLevelItemCount(); ++i) {
+            QString xdfFileName = tree->topLevelItem(i)->text(1);
+            xdfFileName.replace(".mat",".xdf");
+            for (int j = 0; j< convertor->xml.size(); ++j) {
+                const Dataset &s = convertor->xml.at(j);
+                if (s.fileName.toLower() == QFileInfo(xdfFileName).fileName().toLower()) {
+                    //tree->topLevelItem(i)->setData(3, Qt::UserRole, j);
+                    tree->topLevelItem(i)->setText(3, s.id);
+                    break;
+                }
             }
         }
     }
 }
-
-//void MatlabConverterDialog::editItem(QTreeWidgetItem *item, int column)
-//{
-//    if (column != 3) return;
-//    tree->editItem(item, column);
-//}
 
 void MatlabConverterDialog::accept()
 {
@@ -206,7 +197,7 @@ void MatlabConverterDialog::updateProgressIndicator()
     progress->setValue(progress->value()+1);
 }
 
-QString MatlabConverterDialog::findXmlFile() const
+QString MatlabConverterDialog::findXmlFile(bool silent) const
 {
     if (tree->topLevelItemCount()==0) return QString();
 
@@ -226,9 +217,9 @@ QString MatlabConverterDialog::findXmlFile() const
 
     if (xmlFiles.contains("Analysis.xml",Qt::CaseInsensitive))
         xmlFileName = folderDir.canonicalPath()+"/"+"Analysis.xml";
+    if (!silent && xmlFileName.isEmpty())
     // последняя попытка - вручную
-//    else
-//        xmlFileName = QFileDialog::getOpenFileName(0, QString("Укажите файл XML с описанием каналов"), toConvert.first(), "Файлы XML (*.xml)");
+        xmlFileName = QFileDialog::getOpenFileName(0, QString("Укажите файл XML с описанием каналов"), file, "Файлы XML (*.xml)");
     return xmlFileName;
 }
 
@@ -249,15 +240,17 @@ void MatlabConverterDialog::start()
 
     progress->setRange(0, toConvert.size()-1);
 
-    QString xmlFileName = findXmlFile();
+    if (convertor->xmlFileName.isEmpty())
+        convertor->xmlFileName = findXmlFile(false);
 
-    if (xmlFileName.isEmpty()) {
+    if (convertor->xmlFileName.isEmpty()) {
         textEdit->appendHtml("<font color=red>Error!</font> Не могу найти файл Analysis.xml.");
         return;
     }
-    textEdit->appendHtml("Файл XML: "+xmlFileName);
+    textEdit->appendHtml("Файл XML: "+convertor->xmlFileName);
+    bool noErrors = true;
+    convertor->readXml(noErrors);
 
-    convertor->xmlFileName = xmlFileName;
     convertor->setRawFileFormat(rawFileFormat->currentIndex());
 
 

@@ -298,6 +298,7 @@ QString DataHolder::yValuesFormatString() const
         case YValuesAmplitudesInDB: return "[dB]"; break;
         case YValuesPhases: return "[Phase]"; break;
     }
+    return "Неизв.";
 }
 
 void DataHolder::setYValuesPresentation(int presentation)

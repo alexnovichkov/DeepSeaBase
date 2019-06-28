@@ -450,7 +450,7 @@ TFloat toFloat(const QByteArray &v, size_t offset)
     } tmp;
     ::memcpy(&tmp, v.data() + offset, sizeof(TInt));
 
-    if(ENDIAN != QSysInfo::ByteOrder)
+    if(ENDIAN != QDataStream::ByteOrder(QSysInfo::ByteOrder))
         tmp.i = qToLittleEndian(tmp.i);
 
     return tmp.f;

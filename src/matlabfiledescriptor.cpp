@@ -30,7 +30,7 @@ QString lms2dsunit(const QString &unit)
 template <typename T>
 T findSubrecord(const QString &name, MatlabStructArray *rec)
 {
-    T result;
+    T result = T(0);
     int index = rec->fieldNames.indexOf(name);
     if (index >=0) result = dynamic_cast<T>(rec->subRecords[index]);
     return result;
@@ -373,12 +373,19 @@ bool MatlabConvertor::convert()
 
 void MatlabConvertor::readXml(bool &success)
 {
+    if (xmlFileName.isEmpty()) {
+        success = false;
+        emit message("<font color=red>Error!</font> Не могу прочитать файл " + xmlFileName);
+        emit finished();
+        return;
+    }
     xml.clear();
     QFile xmlFile(xmlFileName);
     if (!xmlFile.open(QFile::ReadOnly | QFile::Text)) {
+        success = false;
         emit message("<font color=red>Error!</font> Не могу прочитать файл " + xmlFileName);
         emit finished();
-        success = false;
+        return;
     }
     QXmlStreamReader xmlReader(&xmlFile);
     bool inDatasets = false;

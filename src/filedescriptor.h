@@ -62,7 +62,7 @@ QString descriptionEntryToString(const DescriptionEntry &entry);
 double threshold(const QString &name);
 double convertFactor(const QString &from);
 
-QString valuesUnit(const QString &old, int unitType);
+//QString valuesUnit(const QString &old, int unitType);
 
 class FileDescriptor
 {
