@@ -350,31 +350,25 @@ void UffFileDescriptor::removeTempFile()
     if (QFile::exists(fileName()+"~")) QFile::remove(fileName()+"~");
 }
 
-void UffFileDescriptor::copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy)
+void UffFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int> &indexes)
 {DD;
-    QList<FileDescriptor*> records;
-    for (int i=0; i<channelsToCopy.size(); ++i)
-        if (!records.contains(channelsToCopy.at(i).first)) records << channelsToCopy.at(i).first;
+    UffFileDescriptor *uff = static_cast<UffFileDescriptor *>(file);
 
-    foreach (FileDescriptor *record, records) {
-        UffFileDescriptor *uff = static_cast<UffFileDescriptor *>(record);
-        QList<int> channelsIndexes = filterIndexes(record, channelsToCopy);
+    for(int i = 0; i < file->channelsCount(); ++i) {
+        if (!file->channel(i)->populated() && indexes.contains(i))
+            file->channel(i)->populate();
+    }
 
-        for(int i = 0; i < record->channelsCount(); ++i) {
-            if (!record->channel(i)->populated() && channelsIndexes.contains(i))
-                record->channel(i)->populate();
+    //добавляем в файл dfd копируемые каналы из dfdRecord
+    foreach (int index, indexes) {
+        if (uff) {
+            channels.append(new Function(*uff->channels[index]));
         }
-
-        //добавляем в файл dfd копируемые каналы из dfdRecord
-        foreach (int index, channelsIndexes) {
-            if (uff) {
-                channels.append(new Function(*uff->channels[index]));
-            }
-            else {
-                channels.append(new Function(*record->channel(index)));
-            }
+        else {
+            channels.append(new Function(*file->channel(index)));
         }
     }
+
 
     for (int i=0; i<channels.size(); ++i) {
         channels[i]->parent = this;

@@ -691,41 +691,27 @@ void DfdFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
 
 
 
-void DfdFileDescriptor::copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy)
+void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int> &indexes)
 {DD;
     //заполняем данными файл, куда будем копировать каналы
     //читаем все каналы, чтобы сохранить файл полностью
     populate();
 
-    // список записей, откуда копируем каналы
-    QList<FileDescriptor*> records;
-    for (int i=0; i<channelsToCopy.size(); ++i) {
-        if (!records.contains(channelsToCopy.at(i).first)) {
-            records << channelsToCopy.at(i).first;
+    DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(file);
+    foreach (int index, indexes) {
+        bool wasPopulated = file->channel(index)->populated();
+        if (!wasPopulated)
+            file->channel(index)->populate();
+        if (dfd) {
+            channels.append(new DfdChannel(*dfd->channels[index], this));
         }
+        else {
+            channels.append(new DfdChannel(*file->channel(index), this));
+        }
+        if (!wasPopulated) file->channel(index)->clear();
     }
 
-    foreach (FileDescriptor *record, records) {
-        DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(record);
-        QList<int> channelsIndexes = filterIndexes(record, channelsToCopy);
-//        const int co = record->channelsCount();
-//        for(int i = 0; i < co; ++i) {
-//        }
-        //добавляем в файл dfd копируемые каналы из dfdRecord
-        foreach (int index, channelsIndexes) {
-            bool wasPopulated = record->channel(index)->populated();
-            if (!wasPopulated)
-                record->channel(index)->populate();
-            if (dfd) {
-                channels.append(new DfdChannel(*dfd->channels[index], this));
-            }
-            else {
-                channels.append(new DfdChannel(*record->channel(index), this));
-            }
-            if (!wasPopulated) record->channel(index)->clear();
-        }
-    }
-    XName = records.first()->xName();
+    XName = file->xName();
 
     for (int i=0; i<channels.size(); ++i) {
         channels[i]->channelIndex = i;

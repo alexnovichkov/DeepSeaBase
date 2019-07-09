@@ -89,7 +89,7 @@ public:
     virtual QDateTime dateTime() const = 0;
 
     virtual void deleteChannels(const QVector<int> &channelsToDelete) = 0;
-    virtual void copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy) = 0;
+    virtual void copyChannelsFrom(FileDescriptor *, const QVector<int> &) = 0;
 
     /** Calculates mean of channels, writes to a file */
     virtual void calculateMean(const QList<QPair<FileDescriptor *, int> > &channels) = 0;

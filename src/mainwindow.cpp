@@ -77,9 +77,11 @@ public:
     DfdFilterProxy(FileDescriptor *dfd, QObject *parent)
         : QSortFilterProxyModel(parent)
     {
-        DfdFileDescriptor *d = dynamic_cast<DfdFileDescriptor *>(dfd);
-        this->dataType = d->DataType;
-        this->xStep = d->xStep();
+        this->xStep = dfd->xStep();
+        if (DfdFileDescriptor *d = dynamic_cast<DfdFileDescriptor *>(dfd))
+            this->dataType = d->DataType;
+        else
+            this->dataType = dfdDataTypeFromDataType(dfd->type());
     }
 protected:
     bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
@@ -102,9 +104,10 @@ protected:
                     return false;
                 }
             }
-            else {
-                return false;
+            else if (fi.suffix().toLower()=="uff" || fi.suffix().toLower()=="unv") {
+                return true;
             }
+            else return false;
         }
         else {
             return true;
@@ -947,69 +950,61 @@ void MainWindow::deleteFiles()
         tab->folders.clear();
 }
 
-QList<QPair<FileDescriptor*, int> > MainWindow::selectedChannels()
-{DD;
-    QList<QPair<FileDescriptor*, int> > channels;
+QVector<int> MainWindow::selectedChannels() const
+{
+    QVector<int>  selectedIndexes;
+    for (int i=0; i<tab->channelsTable->rowCount(); ++i)
+        if (tab->channelsTable->item(i,0)->isSelected())
+            selectedIndexes << i;
+    return selectedIndexes;
+}
 
-    foreach(Curve *c, plot->graphs) {
-        channels << (QPair<FileDescriptor*, int>(c->descriptor, c->channelIndex));
-    }
-
-    return channels;
+QVector<int> MainWindow::plottedChannels() const
+{
+    QVector<int>  indexes;
+    for (int i=0; i<tab->channelsTable->rowCount(); ++i)
+        if (tab->channelsTable->item(i,0)->checkState()==Qt::Checked)
+            indexes << i;
+    return indexes;
 }
 
 void MainWindow::deleteChannels() /** SLOT */
 {DD;
-    QList<QPair<FileDescriptor*, int> > channelsToDelete = selectedChannels();
+    QVector<int> channelsToDelete = selectedChannels();
     if (channelsToDelete.isEmpty()) return;
 
-    if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \nудалены из файла. Продолжить?")==QMessageBox::Yes) {
-        deleteChannels(channelsToDelete);
+    if (QMessageBox::question(this,"DeepSea Base",
+                              QString("Выделенные %1 каналов будут \nудалены из записи. Продолжить?").arg(channelsToDelete.size())
+                              )==QMessageBox::Yes) {
+        deleteChannels(tab->record, channelsToDelete);
         updateChannelsTable(tab->record);
     }
 }
 
 void MainWindow::deleteChannelsBatch()
 {
-    QList<QPair<FileDescriptor*, int> > channels = selectedChannels();
-    QList<FileDescriptor*> descriptorsList;
-    for (int i=0; i<channels.size(); ++i)
-        if (!descriptorsList.contains(channels.at(i).first)) descriptorsList << channels.at(i).first;
-    bool allChannelsFromOneFile = descriptorsList.size()==1;
+    QVector<int> channels = selectedChannels();
+    if (channels.isEmpty()) return;
 
     QList<FileDescriptor*> filesToDelete = tab->model->selectedFiles();
+    if (filesToDelete.isEmpty()) return;
 
-    // нет построенных каналов или выделен только один файл
-    if (filesToDelete.size()<2 || channels.isEmpty()) return;
-
-    if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \n"
-                              "удалены из всех выделенных файлов. Продолжить?")!=QMessageBox::Yes)
+    // выделен только один файл
+    if (filesToDelete.size()<2) {
+        deleteChannels();
         return;
-
-    // проверка на выделенные каналы
-    if (!allChannelsFromOneFile) {
-        if (QMessageBox::question(this,"DeepSea Base","Выделены каналы из разных файлов.\n"
-                                  "В качестве шаблона будет использован только первый файл. Продолжить?")==QMessageBox::Yes)
-        {
-            // удаляем из списка каналов все каналы других файлов
-            for (int i=channels.size()-1; i>=0; --i) {
-                if (channels.at(i).first != descriptorsList.first()) channels.removeAt(i);
-            }
-            if (channels.isEmpty()) return;
-        }
-        else {
-            return;
-        }
     }
 
-    QVector<int> channelsInds;
-    for (int i=0; i<channels.size(); ++i) channelsInds << channels.at(i).second;
-    qSort(channelsInds);
+    if (QMessageBox::question(this,"DeepSea Base",
+                              QString("Выделенные %1 каналов будут \n"
+                              "удалены из всех выделенных записей. Продолжить?").arg(channels.size()))
+        !=QMessageBox::Yes)
+        return;
 
     // проверка на количество каналов в файлах
     foreach (FileDescriptor *d, filesToDelete) {
-        if (d->channelsCount()<=channelsInds.last()) {
-            if (QMessageBox::question(this,"DeepSea Base","В некоторых файлах меньше каналов, чем заявлено\n"
+        if (d->channelsCount()<=channels.last()) {
+            if (QMessageBox::question(this,"DeepSea Base","В некоторых записях меньше каналов, чем заявлено\n"
                                       "к удалению. Продолжить?")==QMessageBox::Yes)
                 break;
             else
@@ -1017,24 +1012,18 @@ void MainWindow::deleteChannelsBatch()
         }
     }
 
-    foreach (FileDescriptor *d, filesToDelete) {
-        foreach (int index, channelsInds) {
-            QPair<FileDescriptor*, int> pair = {d, index};
-            if (!channels.contains(pair)) channels << pair;
-
-        }
-    }
-    deleteChannels(channels);
+    foreach (FileDescriptor *d, filesToDelete)
+        deleteChannels(d, channels);
 
     updateChannelsTable(tab->record);
 }
 
 void MainWindow::copyChannels() /** SLOT */
 {DD;
-    QList<QPair<FileDescriptor*, int> > channelsToCopy = selectedChannels();
+    QVector<int> channelsToCopy = selectedChannels();
     if (channelsToCopy.isEmpty()) return;
 
-    if (copyChannels(channelsToCopy)) {
+    if (copyChannels(tab->record, channelsToCopy)) {
         updateChannelsTable(tab->record);
     }
 }
@@ -1042,12 +1031,12 @@ void MainWindow::copyChannels() /** SLOT */
 void MainWindow::moveChannels() /** SLOT */
 {DD;
     // сначала копируем каналы, затем удаляем
-    QList<QPair<FileDescriptor*, int> > channelsToMove = selectedChannels();
+    QVector<int> channelsToMove = selectedChannels();
     if (channelsToMove.isEmpty()) return;
 
     if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \nудалены из файла. Продолжить?")==QMessageBox::Yes) {
-        if (copyChannels(channelsToMove)) {
-            deleteChannels(channelsToMove);
+        if (copyChannels(tab->record, channelsToMove)) {
+            deleteChannels(tab->record, channelsToMove);
             updateChannelsTable(tab->record);
         }
     }
@@ -1156,53 +1145,20 @@ void MainWindow::addCorrections()
     QMessageBox::information(this,"","Готово!");
 }
 
-bool MainWindow::deleteChannels(const QList<QPair<FileDescriptor*, int> > &channelsToDelete)
+bool MainWindow::deleteChannels(FileDescriptor *file, const QVector<int> &channelsToDelete)
 {DD;
-    for (int i=0; i<channelsToDelete.size(); ++i)
-        plot->deleteGraph(channelsToDelete.at(i).first, channelsToDelete.at(i).second, true);
+    for (int i=0; i<channelsToDelete.size() - 1; ++i)
+        plot->deleteGraph(file, channelsToDelete.at(i), false);
+    plot->deleteGraph(file, channelsToDelete.last(), true);
 
-    QList<FileDescriptor*> allDescriptors;
-    for (int i=0; i<channelsToDelete.size(); ++i)
-        if (!allDescriptors.contains(channelsToDelete.at(i).first))
-            allDescriptors << channelsToDelete.at(i).first;
-
-    while (!allDescriptors.isEmpty()) {
-        FileDescriptor *dfd = allDescriptors.first();
-
-        QVector<int> indexes;
-        for (int i=0; i<channelsToDelete.size(); ++i) {
-            if (channelsToDelete.at(i).first == dfd) indexes << channelsToDelete.at(i).second;
-        }
-        dfd->deleteChannels(indexes);
-        allDescriptors.removeFirst();
-    }
+    file->deleteChannels(channelsToDelete);
 
     return true;
 }
 
-bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channelsToCopy)
+bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &channelsToCopy)
 {DD;
-    // определяем, все ли файлы являются файлами dfd
-    bool allFilesDfd = true;
-    for (int i=0; i<channelsToCopy.size(); ++i) {
-        if (!channelsToCopy.at(i).first->fileName().toLower().endsWith(".dfd")) {
-            allFilesDfd = false;
-            break;
-        }
-    }
-
-    // определяем, все ли файлы из одной папки
-    bool oneFolder = true;
-    QString startFolder = QFileInfo(channelsToCopy.first().first->fileName()).canonicalPath();
-    for (int i=1; i<channelsToCopy.size(); ++i) {
-        if (QFileInfo(channelsToCopy.at(i).first->fileName()).canonicalPath() != startFolder) {
-            oneFolder = false;
-            break;
-        }
-    }
-
     QString startFile = MainWindow::getSetting("startDir").toString();
-    if (oneFolder) startFile = startFolder;
 
     QFileDialog dialog(this, "Выбор файла для записи каналов", startFile,
                        "Файлы dfd (*.dfd);;Файлы uff (*.uff);;Файлы unv (*.unv)");
@@ -1214,45 +1170,14 @@ bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channe
     QStringList suffixes = QStringList()<<"dfd"<<"uff"<<"unv";
     QStringList filters = QStringList()<<"Файлы dfd (*.dfd)"<<"Файлы uff (*.uff)"<<"Файлы unv (*.unv)";
 
-    bool forceUff = false;
-
-
-
-    // если все файлы - dfd, то мы можем записать их только в dfd файл с таким же типом данных и шагом по x
+    // если файл - dfd, то мы можем записать его только в dfd файл с таким же типом данных и шагом по x
     // поэтому если они различаются, то насильно записываем каналы в файл uff
-    if (allFilesDfd) {
-        //определяем тип данных и шаг по x
-        FileDescriptor *dfd = channelsToCopy.first().first;
-        double xStep = dfd->channel(channelsToCopy.first().second)->xStep();
 
-        // мы не можем записывать каналы с разным типом/шагом в один файл,
-        //поэтому добавляем фильтр
-        bool filesSame = true;
+    // мы не можем записывать каналы с разным типом/шагом в один файл,
+    //поэтому добавляем фильтр
+    QSortFilterProxyModel *proxy = new DfdFilterProxy(descriptor, this);
+    dialog.setProxyModel(proxy);
 
-        for (int i=1; i<channelsToCopy.size(); ++i) {
-            if (!channelsToCopy.at(i).first->dataTypeEquals(dfd)
-                || channelsToCopy.at(i).first->channel(channelsToCopy.at(i).second)->xStep()!=xStep) {
-                filesSame = false;
-                break;
-            }
-        }
-        if (filesSame) {
-            QSortFilterProxyModel *proxy = new DfdFilterProxy(dfd, this);
-            dialog.setProxyModel(proxy);
-        }
-        else {
-            if (QMessageBox::question(this,"DeepSea Base",
-                                      "Выделенные каналы имеют разный тип данных и/или разрешение по частоте.\n"
-                                      "Изменить тип файла на uff?","Да, записать каналы в файл uff с тем же именем",
-                                      "Нет, прервать операцию")
-                ==1) {
-                return false;
-            }
-            else {
-                forceUff = true;
-            }
-        }
-    }
     dialog.setFileMode(QFileDialog::AnyFile);
 
 
@@ -1270,10 +1195,6 @@ bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channe
     QString filterSuffix = suffixes.at(filters.indexOf(selectedFilter));
     if (currentSuffix != filterSuffix)
         file.append(filterSuffix);
-    if (forceUff) {
-        file.chop(4);
-        file.append(".uff");
-    }
 
     MainWindow::setSetting("startDir", file);
 
@@ -1287,12 +1208,11 @@ bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channe
             dfd->read();
         }
         else {
-            FileDescriptor *firstdfd = channelsToCopy.first().first;
             // такого файла не существует, создаем новый файл и записываем в него каналы
             dfd = createDescriptor(file);
-            dfd->fillPreliminary(firstdfd->type());
+            dfd->fillPreliminary(descriptor->type());
         }
-        dfd->copyChannelsFrom(channelsToCopy);
+        dfd->copyChannelsFrom(descriptor, channelsToCopy);
         dfd->fillRest();
 
         dfd->setChanged(true);
@@ -1302,7 +1222,7 @@ bool MainWindow::copyChannels(const QList<QPair<FileDescriptor *, int> > &channe
         addFile(dfd);
     }
     else {
-        dfd->copyChannelsFrom(channelsToCopy);
+        dfd->copyChannelsFrom(descriptor, channelsToCopy);
         tab->model->updateFile(dfd);
     }
     return true;
@@ -1561,10 +1481,7 @@ QVector<int> computeIndexes(QVector<int> notYetMoved, bool up, int totalSize)
 
 void MainWindow::moveChannels(bool up)
 {DD;
-    QVector<int> selectedIndexes;
-    for (int i=0; i<tab->channelsTable->rowCount(); ++i)
-        if (tab->channelsTable->item(i,0)->isSelected())
-            selectedIndexes << i;
+    QVector<int> selectedIndexes = selectedChannels();
 
     QVector<int> newIndexes = computeIndexes(selectedIndexes, up, tab->record->channelsCount());
 
@@ -1613,16 +1530,14 @@ void MainWindow::updateChannelsTable(const QModelIndex &current, const QModelInd
 
 void MainWindow::updateChannelsTable(FileDescriptor *dfd)
 {DD;
-    QList<int> plottedChannelsNumbers;
+    QVector<int> plottedChannelsNumbers;
     if (sergeiMode) {
-        for (int i=0; i<tab->channelsTable->rowCount(); ++i) {
-            if (tab->channelsTable->item(i,0)->checkState()==Qt::Checked)
-                plottedChannelsNumbers << i;
-        }
+        plottedChannelsNumbers = plottedChannels();
 
         if (!plottedChannelsNumbers.isEmpty()) {
             foreach (int channel, plottedChannelsNumbers) {
-                if (tab->channelsTable->rowCount()>channel) tab->channelsTable->item(channel,0)->setCheckState(Qt::Unchecked);
+                if (tab->channelsTable->rowCount()>channel)
+                    tab->channelsTable->item(channel,0)->setCheckState(Qt::Unchecked);
             }
             updateChannelsHeaderState();
         }
@@ -2053,21 +1968,22 @@ void MainWindow::clearPlot()
 {DD;
     plot->deleteGraphs();
     for (int index = 0; index<tabWidget->count(); ++index) {
-        Tab *t = qobject_cast<Tab*>(tabWidget->widget(index));
-        if (t) {
+        if (Tab *t = qobject_cast<Tab*>(tabWidget->widget(index))) {
             t->model->invalidateGraphs();
-
-            t->channelsTable->blockSignals(true);
-            for (int i=0; i<t->channelsTable->rowCount(); ++i) {
-                t->channelsTable->item(i,0)->setCheckState(Qt::Unchecked);
-                t->channelsTable->item(i,0)->setFont(t->channelsTable->font());
-                t->channelsTable->item(i,0)->setBackgroundColor(Qt::white);
-                t->channelsTable->item(i,0)->setTextColor(Qt::black);
-            }
-            t->tableHeader->setCheckState(0,Qt::Unchecked);
-            t->channelsTable->blockSignals(false);
         }
     }
+
+    QVector<int> plotted = plottedChannels();
+
+    tab->channelsTable->blockSignals(true);
+    foreach (int i, plotted) {
+        tab->channelsTable->item(i,0)->setCheckState(Qt::Unchecked);
+        tab->channelsTable->item(i,0)->setFont(tab->channelsTable->font());
+        tab->channelsTable->item(i,0)->setBackgroundColor(Qt::white);
+        tab->channelsTable->item(i,0)->setTextColor(Qt::black);
+    }
+    tab->tableHeader->setCheckState(0,Qt::Unchecked);
+    tab->channelsTable->blockSignals(false);
 }
 
 void MainWindow::rescanBase()

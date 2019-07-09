@@ -182,8 +182,8 @@ private:
     void addFiles(QStringList &files);
     void addDescriptors(const QList<FileDescriptor*> &files);
 
-    bool deleteChannels(const QList<QPair<FileDescriptor *, int> > &channelsToDelete);
-    bool copyChannels(const QList<QPair<FileDescriptor*, int> > &channelsToCopy);
+    bool deleteChannels(FileDescriptor *file, const QVector<int> &channelsToDelete);
+    bool copyChannels(FileDescriptor *descriptor, const QVector<int> &channelsToCopy);
 
     void exportToExcel(bool fullRange, bool dataOnly=false);
 
@@ -195,7 +195,8 @@ private:
 
     void createTab(const QString &name, const QStringList &folders);
 
-    QList<QPair<FileDescriptor*, int> > selectedChannels();
+    QVector<int> selectedChannels() const;
+    QVector<int> plottedChannels() const;
     FileDescriptor *findDescriptor(const QString &file);
     bool duplicated(FileDescriptor *file) const;
 

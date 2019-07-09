@@ -143,7 +143,7 @@ public:
 
 
     virtual void deleteChannels(const QVector<int> &channelsToDelete);
-    virtual void copyChannelsFrom(const QList<QPair<FileDescriptor *, int> > &channelsToCopy);
+    virtual void copyChannelsFrom(FileDescriptor *file, const QVector<int> &indexes);
     /** Calculates mean of channels and writes to a file*/
     virtual void calculateMean(const QList<QPair<FileDescriptor *, int> > &channels);
     virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels,
