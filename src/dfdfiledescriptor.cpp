@@ -722,10 +722,10 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int
     Date = QDate::currentDate();
     Time = QTime::currentTime();
 
-    setChanged(true);
-    setDataChanged(true);
-    write();
-    writeRawFile();
+//    setChanged(true);
+//    setDataChanged(true);
+//    write();
+//    writeRawFile();
 }
 
 void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> > &channels)

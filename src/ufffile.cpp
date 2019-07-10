@@ -376,8 +376,8 @@ void UffFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int
 
     //меняем параметры файла uff
     updateDateTimeGUID();
-    setChanged(true);
-    write();
+//    setChanged(true);
+//    write();
     removeTempFile();
 }
 

@@ -1202,18 +1202,17 @@ bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &ch
     FileDescriptor *dfd = findDescriptor(file);
 
     if (!dfd) {//не нашли файл в базе, нужно создать новый объект
-        if (QFileInfo(file).exists()) {
-            // добавляем каналы в существующий файл
-            dfd = createDescriptor(file);
+        dfd = createDescriptor(file);
+        if (QFileInfo(file).exists()) {// добавляем каналы в существующий файл
             dfd->read();
         }
-        else {
-            // такого файла не существует, создаем новый файл и записываем в него каналы
-            dfd = createDescriptor(file);
+        else {// такого файла не существует, создаем новый файл и записываем в него каналы
             dfd->fillPreliminary(descriptor->type());
         }
         dfd->copyChannelsFrom(descriptor, channelsToCopy);
         dfd->fillRest();
+        if (dfd->legend().isEmpty())
+            dfd->setLegend(descriptor->legend());
 
         dfd->setChanged(true);
         dfd->setDataChanged(true);
@@ -1223,6 +1222,13 @@ bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &ch
     }
     else {
         dfd->copyChannelsFrom(descriptor, channelsToCopy);
+        if (dfd->legend().isEmpty())
+            dfd->setLegend(descriptor->legend());
+
+        dfd->setChanged(true);
+        dfd->setDataChanged(true);
+        dfd->write();
+        dfd->writeRawFile();
         tab->model->updateFile(dfd);
     }
     return true;
