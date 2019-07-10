@@ -177,6 +177,8 @@ private slots:
     void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
 
     void switchSergeiMode();
+
+    void editYName();
 private:
     void moveChannels(bool up);
     void addFiles(QStringList &files);
@@ -263,6 +265,7 @@ private:
 
     QAction *removeLabelsAct;
     QAction *playAct;
+    QAction *editYNameAct;
 
     Plot *plot;
 

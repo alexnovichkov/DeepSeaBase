@@ -399,6 +399,9 @@ MainWindow::MainWindow(QWidget *parent)
     convertEsoFilesAct = new QAction("Конвертировать файлы ESO...", this);
     connect(convertEsoFilesAct,SIGNAL(triggered()),SLOT(convertEsoFiles()));
 
+    editYNameAct = new QAction("Изменить ед. измерения", this);
+    connect(editYNameAct,SIGNAL(triggered()), SLOT(editYName()));
+
     mainToolBar->addWidget(new QLabel("Записи:"));
     mainToolBar->addAction(addFolderAct);
     mainToolBar->addAction(addFileAct);
@@ -641,6 +644,21 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
     tab->channelsTable->addAction(moveChannelsUpAct);
     tab->channelsTable->addAction(moveChannelsDownAct);
+
+    tab->channelsTable->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(tab->channelsTable, &QTableWidget::customContextMenuRequested, [=](){
+        QMenu menu(tab->channelsTable);
+        int column = tab->channelsTable->currentIndex().column();
+        if (column == 1) {
+            menu.addAction(editYNameAct);
+            menu.exec(QCursor::pos());
+        }
+//        else if (column == 9) {
+//            //legend
+//            menu.addAction(copyToLegendAct);
+//            menu.exec(QCursor::pos());
+//        }
+    });
 
     tab->filePathLabel = new QLabel(this);
     tab->filePathLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
@@ -1462,6 +1480,24 @@ void MainWindow::saveTimeSegment(const QList<FileDescriptor *> &files, double fr
 void MainWindow::switchSergeiMode()
 {
     sergeiMode = !sergeiMode;
+}
+
+void MainWindow::editYName()
+{
+    if (!tab) return;
+
+    QVector<int>  selectedIndexes;
+    for (int i=0; i<tab->channelsTable->rowCount(); ++i)
+        if (tab->channelsTable->item(i,1)->isSelected())
+            selectedIndexes << i;
+    if (selectedIndexes.isEmpty()) return;
+
+    QString newYName = QInputDialog::getText(this, "Новая единица измерения", "Введите новую единицу");
+    if (newYName.isEmpty()) return;
+
+    foreach (int i, selectedIndexes) {
+        tab->channelsTable->item(i,1)->setText(newYName);
+    }
 }
 
 QVector<int> computeIndexes(QVector<int> notYetMoved, bool up, int totalSize)

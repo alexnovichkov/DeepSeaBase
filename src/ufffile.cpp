@@ -185,7 +185,7 @@ void UffFileDescriptor::read()
 
             }
         }
-qDebug()<<1;
+
         QFile buff(fileName()+"~");
         if (buff.open(QFile::WriteOnly)) {
             QDataStream stream(&buff);
@@ -220,6 +220,10 @@ void UffFileDescriptor::write()
             c->write(stream);
         }
     }
+    else {
+        qDebug()<<"Couldn't open file"<<fileName()<<"to write";
+    }
+    removeTempFile();
     setChanged(false);
 }
 
