@@ -30,7 +30,7 @@
 #include "filedescriptor.h"
 #include "timeslicer.h"
 
-#define DSB_VERSION "1.6.9"
+#define DSB_VERSION "1.6.9.1"
 
 class DrivesDialog : public QDialog
 {
@@ -1227,16 +1227,19 @@ bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &ch
         else {// такого файла не существует, создаем новый файл и записываем в него каналы
             dfd->fillPreliminary(descriptor->type());
         }
-        dfd->copyChannelsFrom(descriptor, channelsToCopy);
-        dfd->fillRest();
         if (dfd->legend().isEmpty())
             dfd->setLegend(descriptor->legend());
+        dfd->copyChannelsFrom(descriptor, channelsToCopy);
+
+        dfd->fillRest();
+
 
         dfd->setChanged(true);
-        dfd->setDataChanged(true);
+        //dfd->setDataChanged(true);
         dfd->write();
-        dfd->writeRawFile();
+        //dfd->writeRawFile();
         addFile(dfd);
+        if (!tab->folders.contains(file)) tab->folders << file;
     }
     else {
         dfd->copyChannelsFrom(descriptor, channelsToCopy);

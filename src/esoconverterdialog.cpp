@@ -15,7 +15,7 @@ public:
                 QString s = in.readLine();
                 if (s.isEmpty()) break;
                 QTextStream st(&s);
-                st >> x >> y1 >> y2 >> y3 >> y4 >> y5 >> y6;
+                    st >> x >> y1 >> y2 >> y3 >> y4 >> y5;
                 xValues.append(x);
                 esou.append(y1);
                 mzph.append(y2);
@@ -203,14 +203,24 @@ bool EsoConvertor::convert()
     }
 
     //writing dfd file
-    DfdFileDescriptor *dfdFileDescriptor = DfdFileDescriptor::newFile(dfdFileName, ToSpectr);
-
-    dfdFileDescriptor->CreatedBy = "Конвертер eso2dfd by Алексей Новичков";
+    DfdDataType type = ToSpectr;
+    bool octave = true;
 
     //Converting
     EsoFile esoFile(filesToConvert.first());
     QVector<double> xValues = esoFile.xValues;
+
+
+    if (esoFile.xValues.size()>=3) {
+        if (esoFile.xValues[0]-esoFile.xValues[1] == esoFile.xValues[1]-esoFile.xValues[2]) {
+            type = Spectr;
+            octave = false;
+        }
+    }
+    DfdFileDescriptor *dfdFileDescriptor = DfdFileDescriptor::newFile(dfdFileName, type);
     dfdFileDescriptor->setSamplesCount(xValues.size());
+
+    dfdFileDescriptor->CreatedBy = "Конвертер eso2dfd by Алексей Новичков";
 
     QStringList columnsNames;
     columnsNames << "ЭСОУ" << "МЗПХ" << "ЭСОТ" <<"MaxT"<<"ЭСОМ";
@@ -235,7 +245,7 @@ bool EsoConvertor::convert()
             newCh->YNameOld=newCh->YName;
             newCh->ChanBlockSize=esoFile.xValues.size();
             newCh->IndType=3221225476;
-            //BandWidth=1162346496
+
             switch (col) {
                 case 0: //esou
                 case 1: //mzph
@@ -259,7 +269,10 @@ bool EsoConvertor::convert()
             }
 
             newCh->ChanDscr=newCh->ChanName;
-            newCh->data()->setXValues(xValues);
+            if (octave)
+                newCh->data()->setXValues(xValues);
+            else
+                newCh->data()->setXValues(xValues.first(), xValues[1]-xValues[0], xValues.size());
 
             switch (col) {
                 case 0:
@@ -285,11 +298,35 @@ bool EsoConvertor::convert()
         }
     }
 
-    if (!xValues.isEmpty()) {
+    if (octave) {
+        //     добавляем нулевой канал с осью Х
+            DfdChannel *ch = new DfdChannel(dfdFileDescriptor,index++);
+            ch->ChanAddress.clear(); //
+            ch->ChanName = "ось X"; //
+            ch->YName="Гц";
+            ch->YNameOld.clear();
+            ch->InputType.clear();
+            ch->ChanDscr.clear();
+            ch->channelIndex = 0; // нумерация с 0
+            ch->ChanBlockSize=xValues.size();
+            ch->IndType=3221225476;
+            ch->data()->setThreshold(1.0);
+            ch->data()->setXValues(xValues);
+            ch->data()->setYValues(xValues, DataHolder::YValuesReals);
+            ch->setPopulated(true);
+
+            dfdFileDescriptor->channels.prepend(ch);
+
+            for (int i=0; i<dfdFileDescriptor->channels.size(); ++i)
+                dfdFileDescriptor->channels[i]->channelIndex = i;
+
         dfdFileDescriptor->XBegin = xValues.first();
     }
-    else
+    else {
         dfdFileDescriptor->XBegin = 0.0;
+        dfdFileDescriptor->XStep = xValues[1] - xValues[0];
+    }
+    dfdFileDescriptor->XName = "Гц";
 
     dfdFileDescriptor->setChanged(true);
     dfdFileDescriptor->setDataChanged(true);

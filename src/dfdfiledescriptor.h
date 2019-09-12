@@ -203,6 +203,8 @@ public:
           SensSensitivity(0.0),
           BandWidth(0.0)
     {}
+    RawChannel(RawChannel &other, DfdFileDescriptor *parent=0);
+
     virtual ~RawChannel() {}
     virtual void read(DfdSettings &dfd, int numChans) override;
     virtual void write(QTextStream &dfd, int index = -1) override;
@@ -365,6 +367,7 @@ public:
 private:
     static DfdFileDescriptor *newThirdOctaveFile(const QString &fileName);
     bool rewriteRawFile(const QVector<QPair<int,int> > &indexesVector);
+    void copyChannelsFrom_plain(FileDescriptor *file, const QVector<int> &indexes);
 
     friend class DataDescription;
     friend class DfdChannel;

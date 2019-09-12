@@ -524,7 +524,7 @@ void DfdFileDescriptor::fillPreliminary(Descriptor::DataType type)
     updateDateTimeGUID();
     DataType = dfdDataTypeFromDataType(type);
 
-    // time data tweak, so deepseabase doesn't take the file as raw time data
+     // time data tweak, so deepseabase doesn't take the file as raw time data
     if (DataType == SourceData) DataType = CuttedData;
 }
 
@@ -542,7 +542,11 @@ void DfdFileDescriptor::fillRest()
 DfdFileDescriptor *DfdFileDescriptor::newFile(const QString &fileName, DfdDataType type)
 {
     if (type == ToSpectr) return newThirdOctaveFile(fileName);
-    return new DfdFileDescriptor(fileName);
+    DfdFileDescriptor *dfd = new DfdFileDescriptor(fileName);
+    dfd->DataType = type;
+    dfd->rawFileName = fileName.left(fileName.length()-4)+".raw";
+    dfd->updateDateTimeGUID();
+    return dfd;
 }
 
 QMap<QString, QString> DfdFileDescriptor::info() const
@@ -691,7 +695,7 @@ void DfdFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
 
 
 
-void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int> &indexes)
+void DfdFileDescriptor::copyChannelsFrom_plain(FileDescriptor *file, const QVector<int> &indexes)
 {DD;
     //заполняем данными файл, куда будем копировать каналы
     //читаем все каналы, чтобы сохранить файл полностью
@@ -722,10 +726,97 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int
     Date = QDate::currentDate();
     Time = QTime::currentTime();
 
-//    setChanged(true);
-//    setDataChanged(true);
-//    write();
-//    writeRawFile();
+    setChanged(true);
+    setDataChanged(true);
+    write();
+    writeRawFile();
+}
+
+void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int> &indexes)
+{DD;
+    copyChannelsFrom_plain(file, indexes);
+    return;
+
+    /* TODO: переписать весь алгоритм */
+
+    bool rewrited = false;
+
+//     //изначально не знаем формат данных
+//    DataHolder::YValuesFormat format = DataHolder::YValuesUnknown;
+//    if (channelsCount() > 0) format = channels.first()->yValuesFormat();
+
+//    //перезаписываем файл данных, чтобы не мучаться с блоками отсчетов
+//    if (BlockSize > 0) {
+//        QVector<QPair<int, int> > inds;
+//        for (int i=0; i<channelsCount(); ++i) inds.append(qMakePair<int,int>(i,0)); // 0 = keep, 1 = delete
+//        rewrited = rewriteRawFile(inds);
+//    }
+
+//    if (BlockSize > 0) {
+//        // не удалось переписать файл. Добавляем каналы стандартным способом
+//        copyChannelsFrom_plain(file, indexes);
+//        return;
+//    }
+
+
+    DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(file);
+    if (dfd) {// работаем с файлом raw
+        if (channelsCount() == 0) {// если каналов нет, то просто копируем файл raw целиком, а затем
+                                   // удаляем ненужные каналы. Это долго, но просто
+            if (QFile::exists(this->rawFileName)) QFile::remove(this->rawFileName);
+            QFile::copy(dfd->rawFileName, this->rawFileName);
+
+            // заполняем информацию о каналах
+            for (int index=0; index<dfd->channelsCount(); ++index) {
+                if (dfd->DataType == SourceData) {
+                    RawChannel *raw = dynamic_cast<RawChannel*>(dfd->channels[index]);
+                    if (raw)
+                        channels.append(new RawChannel(*raw, this));
+                    else
+                        channels.append(new DfdChannel(*dfd->channels[index], this));
+                }
+                else
+                    channels.append(new DfdChannel(*dfd->channels[index], this));
+            }
+            BlockSize = dfd->BlockSize;
+
+            QVector<QPair<int, int> > inds;
+            for (int i=0; i<dfd->channelsCount(); ++i)
+                if (indexes.contains(i))
+                    inds.append(qMakePair<int,int>(i,0)); // 0 = keep, 1 = delete
+                else
+                    inds.append(qMakePair<int,int>(i,1)); // 0 = keep, 1 = delete
+            rewrited = rewriteRawFile(inds);
+
+
+
+            XName = file->xName();
+
+            for (int i=0; i<channels.size(); ++i) {
+                channels[i]->channelIndex = i;
+                channels[i]->parent = this;
+            }
+
+            //меняем параметры файла dfd
+            Date = QDate::currentDate();
+            Time = QTime::currentTime();
+
+            setChanged(true);
+            write();
+        }
+        else {// каналы уже были, копируем обычным образом
+            copyChannelsFrom_plain(file, indexes);
+            return;
+        }
+    }
+    else {//заглушка: переписать
+        copyChannelsFrom_plain(file, indexes);
+        return;
+        // берем данные из файла uff
+
+        // данные могут быть комплексные, мы должны их изменить
+    }
+
 }
 
 void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> > &channels)
@@ -954,6 +1045,8 @@ QString DfdFileDescriptor::calculateThirdOctave()
 
 bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVector)
 {
+    if (indexesVector.isEmpty()) return false;
+
     // переписываем файл данных во временный файл, которым затем подменим исходный raw
     QTemporaryFile tempFile;
     QFile rawFile(rawFileName);
@@ -1918,6 +2011,22 @@ void DfdChannel::setName(const QString &name)
 {
     if (ChanName == name) return;
     ChanName = name;
+}
+
+RawChannel::RawChannel(RawChannel &other, DfdFileDescriptor *parent) : DfdChannel(other, parent)
+{
+    SensName = other.SensName;
+    ADC0 = other.ADC0;
+    ADCStep = other.ADCStep;
+    AmplShift = other.AmplShift;
+    AmplLevel = other.AmplLevel;
+    Sens0Shift = other.Sens0Shift;
+    SensSensitivity = other.SensSensitivity;
+    BandWidth = other.BandWidth;
+    coef1 = other.coef1;
+    coef2 = other.coef2;
+    coef3 = other.coef3;
+    coef4 = other.coef4;
 }
 
 void RawChannel::read(DfdSettings &dfd, int numChans)

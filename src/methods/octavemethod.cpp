@@ -116,7 +116,7 @@ DescriptionList OctaveMethod::processData(const Parameters &p)
     DescriptionList list;
     list.append({"PName", methodName()});
     list.append({"pTime","(0000000000000000)"});
-    //list.append({"ProcChansList",""}); // TODO
+    //list.append({"ProcChansList",""});
     list.append({"BlockIn", "32768"});
     list.append({"TypeProc", typeCombo->currentText()});
     list.append({"Values", valuesCombo->currentText()});
