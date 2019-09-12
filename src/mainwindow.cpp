@@ -578,6 +578,8 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
     tab->filesTable->setContextMenuPolicy(Qt::CustomContextMenu);
     tab->filesTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
+    tab->filesTable->addAction(delFilesAct);
+    tab->filesTable->addAction(saveAct);
 
     connect(tab->filesTable, &QTreeView::customContextMenuRequested, [=](){
         QMenu menu(tab->filesTable);
