@@ -6,24 +6,24 @@
 
 DataIODevice::DataIODevice(Channel *channel, QObject *parent)
     : QIODevice(parent), m_channel(channel)
-{DDD;
+{DD;
 
 }
 
 
 bool DataIODevice::isSequential() const
-{DDD;
+{DD;
     return false;
 }
 
 bool DataIODevice::open(QIODevice::OpenMode mode)
-{DDD;
+{DD;
     qDebug()<<mode;
     return QIODevice::open(mode);
 }
 
 void DataIODevice::close()
-{DDD;
+{DD;
     QIODevice::close();
 }
 
@@ -33,17 +33,17 @@ double DataIODevice::positionSec() const
 }
 
 qint64 DataIODevice::pos() const
-{DDD;
+{DD;
     return m_pos * sizeof(double);
 }
 
 qint64 DataIODevice::size() const
-{DDD;
+{DD;
     return m_channel->samplesCount() * sizeof(double);
 }
 
 bool DataIODevice::seek(qint64 pos)
-{DDD;
+{DD;
     QIODevice::seek(pos);
     m_pos = pos / sizeof(double);
     return (m_pos <= m_channel->samplesCount());

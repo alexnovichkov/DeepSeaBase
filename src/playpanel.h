@@ -40,6 +40,7 @@ protected:
     virtual void closeEvent(QCloseEvent *event);
     virtual void hideEvent(QHideEvent *event);
 private:
+    void moveCursor(const double xVal);
     Channel *ch;
     Plot *plot;
     TrackingCursor *cursor;

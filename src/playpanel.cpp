@@ -15,7 +15,7 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
     setWindowTitle("Проигрыватель");
 
     cursor = new TrackingCursor(Qt::green);
-    cursor->showYValues = false;
+    cursor->showYValues = true;
     cursor->attach(plot);
     cursor->setAxes(QwtPlot::xBottom, QwtPlot::yLeft);
     cursor->setVisible(false);
@@ -166,7 +166,8 @@ void PlayPanel::setXValue(QwtPlotMarker *c, double xVal)
     if (!ch) return;
 
     // здесь xVal - произвольное число, соответствующее какому-то положению на оси X
-    cursor->moveTo(xVal);
+    moveCursor(xVal);
+
     if (audioData) {
         audioData->reset();
         audioData->seek(/*количество байт с начала*/xVal/ch->xStep()*sizeof(double));
@@ -189,7 +190,8 @@ void PlayPanel::audioStateChanged(QAudio::State state)
 
 void PlayPanel::audioPosChanged()
 {
-    cursor->setXValue(audioData->positionSec());
+    const double xVal = audioData->positionSec();
+    moveCursor(xVal);
 }
 
 void PlayPanel::start()
@@ -247,7 +249,7 @@ void PlayPanel::start()
 void PlayPanel::stop()
 {
     if (audio) audio->stop();
-    cursor->setXValue(0.0);
+    moveCursor(0);
 }
 
 void PlayPanel::pause()
@@ -267,4 +269,12 @@ void PlayPanel::hideEvent(QHideEvent *event)
 {
     cursor->setVisible(false);
     QWidget::hideEvent(event);
+}
+
+void PlayPanel::moveCursor(const double xVal)
+{
+    cursor->moveTo(xVal);
+    //if (cursor->yValues.isEmpty()) cursor->yValues << xVal;
+    //else cursor->yValues[0] = xVal;
+    cursor->updateLabel();
 }
