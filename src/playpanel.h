@@ -11,6 +11,7 @@ class QSlider;
 class QAudioOutput;
 class DataIODevice;
 class Channel;
+class TrackingCursor;
 
 class PlayPanel : public QWidget
 {
@@ -31,7 +32,9 @@ private slots:
     void pause();
 
 public slots:
-
+    void update();
+    void updateSelectedCursor(QwtPlotMarker *cursor);
+    void setXValue(QwtPlotMarker *c, double xVal);
     // QWidget interface
 protected:
     virtual void closeEvent(QCloseEvent *event);
@@ -39,7 +42,7 @@ protected:
 private:
     Channel *ch;
     Plot *plot;
-    QwtPlotMarker *cursor;
+    TrackingCursor *cursor;
     QToolButton *playButton;
     QToolButton *stopButton;
     QToolButton *pauseButton;
@@ -48,6 +51,7 @@ private:
 
     QAudioOutput* audio;
     DataIODevice *audioData;
+    double initialPos; // начальная позиция проигрывания
 };
 
 #endif // PLAYPANEL_H

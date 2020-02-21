@@ -83,6 +83,8 @@ Function *FRFMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *df
 {
     Function *ch = SpectreMethod::addUffChannel(newUff, dfd, spectrumSize, p, i);
 
-    ch->setName(ch->name()+"/Сила");
+    QString name = ch->name();
+    if (name.endsWith("/")) name.chop(1);
+    ch->setName(name+"/Сила");
     return ch;
 }

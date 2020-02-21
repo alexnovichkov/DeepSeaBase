@@ -31,7 +31,6 @@ PlotPicker::PlotPicker(QWidget *canvas) :
     marker = 0;
     mode = Plot::ScalingInteraction;
     d_selectedLabel = 0;
-    defaultCursor = plot->canvas()->cursor();
 
     d_selectedCursor = 0;
 

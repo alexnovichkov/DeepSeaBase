@@ -44,7 +44,6 @@ private:
     QwtPlot *plot;
     Curve *d_selectedCurve;
     QwtPlotMarker *marker;
-    QCursor defaultCursor;
 
     Plot::InteractionMode mode;
 

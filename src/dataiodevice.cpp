@@ -32,27 +32,27 @@ double DataIODevice::positionSec() const
     return double(m_pos) * m_channel->xStep();
 }
 
-//qint64 DataIODevice::pos() const
-//{DDD;
-//    return m_pos*sizeof(double);
-//}
+qint64 DataIODevice::pos() const
+{DDD;
+    return m_pos * sizeof(double);
+}
 
-//qint64 DataIODevice::size() const
-//{DDD;
-//    return m_data->samplesCount()*sizeof(double);
-//}
+qint64 DataIODevice::size() const
+{DDD;
+    return m_channel->samplesCount() * sizeof(double);
+}
 
-//bool DataIODevice::seek(qint64 pos)
-//{DDD;
-//    QIODevice::seek(pos);
-//    m_pos = pos / sizeof(double);
-//    return (m_pos <= m_data->samplesCount());
-//}
+bool DataIODevice::seek(qint64 pos)
+{DDD;
+    QIODevice::seek(pos);
+    m_pos = pos / sizeof(double);
+    return (m_pos <= m_channel->samplesCount());
+}
 
-//bool DataIODevice::atEnd() const
-//{DDD;
-//    return (m_pos >= m_data->samplesCount());
-//}
+bool DataIODevice::atEnd() const
+{DD;
+    return (m_pos >= m_channel->samplesCount());
+}
 
 //bool DataIODevice::reset()
 //{DDD;
@@ -70,10 +70,10 @@ double DataIODevice::positionSec() const
 //    return QIODevice::bytesToWrite();
 //}
 
-//bool DataIODevice::canReadLine() const
-//{DDD;
-//    return false;
-//}
+bool DataIODevice::canReadLine() const
+{DD;
+    return false;
+}
 
 qint64 DataIODevice::readData(char *data, qint64 maxlen)
 {DD;
@@ -87,7 +87,10 @@ qint64 DataIODevice::readData(char *data, qint64 maxlen)
         buff.setByteOrder(QDataStream::LittleEndian);
         for (int i = 0; i < mid.length(); ++i) {
             double v = raw->preprocess(mid[i]);
-            buff << (quint16)v;
+            quint16 vv = (quint16)v;
+            if (vv > 32768) vv -= 32768;
+            else vv += 32768;
+            buff << vv;
         }
         memcpy(data, b.data(), b.length());
         m_pos += mid.length();

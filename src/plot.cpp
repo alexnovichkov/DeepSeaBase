@@ -223,9 +223,11 @@ Plot::Plot(QWidget *parent) :
     connect(trackingPanel,SIGNAL(closeRequested()),SIGNAL(trackingPanelCloseRequested()));
     connect(this, SIGNAL(graphsChanged()), trackingPanel, SLOT(update()));
 
+
     playerPanel = new PlayPanel(this);
     playerPanel->setVisible(false);
     connect(playerPanel,SIGNAL(closeRequested()),SIGNAL(playerPanelCloseRequested()));
+    connect(this, SIGNAL(graphsChanged()), playerPanel, SLOT(update()));
 
     axisLabelsVisible = MainWindow::getSetting("axisLabelsVisible", true).toBool();
     yValuesPresentationLeft = DataHolder::ShowAsDefault;
@@ -267,6 +269,8 @@ Plot::Plot(QWidget *parent) :
     // передаем информацию об установленном курсоре в picker, чтобы тот смог обновить инфу о выделенном курсоре
     connect(trackingPanel,SIGNAL(cursorSelected(QwtPlotMarker*)), picker, SLOT(updateSelectedCursor(QwtPlotMarker*)));
 
+    connect(picker,SIGNAL(cursorSelected(QwtPlotMarker*)), playerPanel, SLOT(updateSelectedCursor(QwtPlotMarker*)));
+    connect(picker,SIGNAL(cursorMovedTo(QwtPlotMarker*,double)), playerPanel, SLOT(setXValue(QwtPlotMarker*,double)));
 
 
     picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
@@ -279,6 +283,7 @@ Plot::~Plot()
 {DD;
 //    delete freeGraph;
     delete trackingPanel;
+    delete playerPanel;
     qDeleteAll(graphs);
     delete grid;
     delete picker;
@@ -324,6 +329,7 @@ void Plot::deleteGraphs()
     leftGraphs.clear();
     rightGraphs.clear();
     ColorSelector::instance()->resetState();
+    playerPanel->reset();
 
     yLeftName.clear();
     yRightName.clear();

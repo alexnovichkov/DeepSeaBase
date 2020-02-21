@@ -97,8 +97,15 @@ protected:
             if (fi.suffix().toLower()=="dfd") {
                 DfdFileDescriptor dfd(fi.canonicalFilePath());
                 dfd.read();
-                if (dfd.DataType == dataType && dfd.xStep() == xStep) {
-                    return true;
+                //частный случай: мы можем записать данные из SourceData в CuttedData, преобразовав их в floats,
+                //но не наоборот
+                if (dfd.xStep() == xStep) {
+                    if (dfd.DataType == CuttedData && (dataType == FilterData ||
+                                                       dataType == SourceData))
+                        return true;
+                    else if (dfd.DataType == dataType) {
+                        return true;
+                    }
                 }
                 else {
                     return false;
@@ -1223,6 +1230,8 @@ bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &ch
 
     if (!dfd) {//не нашли файл в базе, нужно создать новый объект
         dfd = createDescriptor(file);
+        if (!dfd) return false; // неизвестный тип файла
+
         if (QFileInfo(file).exists()) {// добавляем каналы в существующий файл
             dfd->read();
         }

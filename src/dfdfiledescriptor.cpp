@@ -761,10 +761,14 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int
 
     DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(file);
     if (dfd) {// работаем с файлом raw
-        if (channelsCount() == 0) {// если каналов нет, то просто копируем файл raw целиком, а затем
-                                   // удаляем ненужные каналы. Это долго, но просто
+        if (channelsCount() == 0) {// если каналов нет, то просто копируем данные из файла raw
             if (QFile::exists(this->rawFileName)) QFile::remove(this->rawFileName);
-            QFile::copy(dfd->rawFileName, this->rawFileName);
+
+
+
+
+
+
 
             // заполняем информацию о каналах
             for (int index=0; index<dfd->channelsCount(); ++index) {

@@ -17,14 +17,14 @@ public:
     virtual void close() override;
     qint64 position() const {return m_pos;}
     double positionSec() const;
-//    virtual qint64 pos() const override;
-//    virtual qint64 size() const override;
-//    virtual bool seek(qint64 pos) override;
-//    virtual bool atEnd() const override;
+    virtual qint64 pos() const override;
+    virtual qint64 size() const override;
+    virtual bool seek(qint64 pos) override;
+    virtual bool atEnd() const override;
 //    virtual bool reset() override;
 //    virtual qint64 bytesAvailable() const override;
 //    virtual qint64 bytesToWrite() const override;
-//    virtual bool canReadLine() const override;
+    virtual bool canReadLine() const override;
 
 protected:
     virtual qint64 readData(char *data, qint64 maxlen) override;

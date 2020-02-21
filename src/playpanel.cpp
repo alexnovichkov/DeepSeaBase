@@ -6,15 +6,19 @@
 #include <QtWidgets>
 #include <QAudioOutput>
 #include "dataiodevice.h"
+#include "curve.h"
+#include "trackingpanel.h"
 
 PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
 {
     setWindowFlags(Qt::Tool /*| Qt::WindowTitleHint*/);
     setWindowTitle("Проигрыватель");
 
-    cursor = new QwtPlotMarker();
-    cursor->setLineStyle( QwtPlotMarker::VLine );
-    cursor->setLinePen( Qt::green, 0, Qt::SolidLine );
+    cursor = new TrackingCursor(Qt::green);
+    cursor->showYValues = false;
+    cursor->attach(plot);
+    cursor->setAxes(QwtPlot::xBottom, QwtPlot::yLeft);
+    cursor->setVisible(false);
 
     playButton = new QToolButton(this);
     playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
@@ -24,6 +28,10 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
     pauseButton->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
     muteButton = new QToolButton(this);
     muteButton->setIcon(style()->standardIcon(QStyle::SP_MediaVolume));
+
+    connect(playButton,SIGNAL(pressed()),SLOT(start()));
+    connect(stopButton,SIGNAL(pressed()),SLOT(stop()));
+    connect(pauseButton,SIGNAL(pressed()),SLOT(pause()));
 
     volumeSlider = new QSlider(Qt::Horizontal, this);
     volumeSlider->setRange(0, 100);
@@ -35,6 +43,12 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
     l->addWidget(muteButton);
     l->addWidget(volumeSlider);
     setLayout(l);
+
+    ch = 0;
+    audio = 0;
+    audioData = 0;
+    initialPos = 0.0;
+    update();
 }
 
 PlayPanel::~PlayPanel()
@@ -56,20 +70,126 @@ void PlayPanel::switchVisibility()
     }
 }
 
+void PlayPanel::update()
+{
+    // ищем канал, который сможем проиграть
+    //ситуации: 1. график удалился - очищаем
+    //          2. график поменялся - очищаем и меняем
+    //          3. график не поменялся
+
+    if (!ch) { // графика не было, ищем первый выделенный канал с временными данными
+               // или просто первый временной
+        Channel *firstTimeResponce = 0;
+        foreach (Curve *c, plot->graphs) {
+            if (c->channel->type() == Descriptor::TimeResponse) {
+                firstTimeResponce = c->channel;
+                if (c->highlighted) {
+                    ch = c->channel;
+                    break;
+                }
+            }
+        }
+
+        if (firstTimeResponce && !ch) { // не нашли выделенный канал, берем просто первый временной
+            ch = firstTimeResponce;
+        }
+    }
+
+    else {
+        // график есть
+        bool present = false;
+        Channel *highlightedChannel = 0;
+        foreach (Curve *c, plot->graphs) {
+            if (c->highlighted) highlightedChannel = c->channel;
+
+            if (c->channel == ch) {
+                present = true;
+            }
+        }
+
+        if (!present) {// график удалился - останавливаем
+            reset();
+            ch = 0;
+
+            // ищем другой канал, который мы можем проиграть
+            Channel *firstTimeResponce = 0;
+            foreach (Curve *c, plot->graphs) {
+                if (c->channel->type() == Descriptor::TimeResponse) {
+                    firstTimeResponce = c->channel;
+                    if (c->highlighted) {
+                        ch = c->channel;
+                        break;
+                    }
+                }
+            }
+
+            if (firstTimeResponce) { // не нашли выделенный канал, берем просто первый временной
+                ch = firstTimeResponce;
+            }
+        }
+
+        else { // график есть, но возможно уже не текущий
+            if (highlightedChannel && (ch != highlightedChannel)) {
+                reset();
+                ch = highlightedChannel;
+            }
+        }
+    }
+
+    if (!ch) {
+        playButton->setEnabled(false);
+        stopButton->setEnabled(false);
+        pauseButton->setEnabled(false);
+        muteButton->setEnabled(false);
+    }
+    else {
+        playButton->setEnabled(true);
+        stopButton->setEnabled(true);
+        pauseButton->setEnabled(true);
+        muteButton->setEnabled(true);
+    }
+}
+
+void PlayPanel::updateSelectedCursor(QwtPlotMarker *c)
+{
+    if (cursor == c) {
+        cursor->setCurrent(true);
+    }
+    else {
+        cursor->setCurrent(false);
+    }
+}
+
+void PlayPanel::setXValue(QwtPlotMarker *c, double xVal)
+{
+    if (cursor != c) return;
+    if (!ch) return;
+
+    // здесь xVal - произвольное число, соответствующее какому-то положению на оси X
+    cursor->moveTo(xVal);
+    if (audioData) {
+        audioData->reset();
+        audioData->seek(/*количество байт с начала*/xVal/ch->xStep()*sizeof(double));
+    }
+}
+
 void PlayPanel::reset()
 {
-    ch = 0;
-
+    if (audio) {
+        audio->stop();
+        delete audio;
+        audio = 0;
+    }
 }
 
 void PlayPanel::audioStateChanged(QAudio::State state)
 {
-
+    //qDebug()<<state;
 }
 
 void PlayPanel::audioPosChanged()
 {
-
+    cursor->setXValue(audioData->positionSec());
 }
 
 void PlayPanel::start()
@@ -79,6 +199,13 @@ void PlayPanel::start()
     if (ch->type()!=Descriptor::TimeResponse) return;
 
     if (audio) {
+        if (audio->state() == QAudio::ActiveState) // already playing
+            return;
+
+        if (audio->state() == QAudio::SuspendedState) {
+            audio->resume();
+            return;
+        }
         audio->stop();
         delete audio;
         audio = 0;
@@ -109,23 +236,26 @@ void PlayPanel::start()
 
     audio = new QAudioOutput(format, this);
     audio->setBufferSize(2 * qRound(1.0/ch->xStep()));
-    audio->setNotifyInterval(1000);
+
+    audio->setNotifyInterval(50);
 
     connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioStateChanged(QAudio::State)));
     connect(audio, SIGNAL(notify()), this, SLOT(audioPosChanged()));
     audio->start(audioData);
-    audio->setVolume(0.01);
 }
 
 void PlayPanel::stop()
 {
-
+    if (audio) audio->stop();
+    cursor->setXValue(0.0);
 }
 
 void PlayPanel::pause()
 {
-
+    if (audio) audio->suspend();
 }
+
+
 
 void PlayPanel::closeEvent(QCloseEvent *event)
 {
