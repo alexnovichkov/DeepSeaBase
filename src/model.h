@@ -32,7 +32,7 @@ public:
     void updateFile(FileDescriptor *file, int column);
     void updateFile(FileDescriptor *file);
     void clear();
-    void invalidateGraphs();
+//    void invalidateGraphs();
     void invalidateGraph(FileDescriptor *file, int channel);
 
 

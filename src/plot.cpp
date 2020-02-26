@@ -324,6 +324,10 @@ bool Plot::hasGraphs() const
 
 void Plot::deleteGraphs()
 {DD;
+    foreach (Curve *c, graphs) {
+        emit curveDeleted(c->descriptor, c->channelIndex);
+    }
+
     qDeleteAll(graphs);
     graphs.clear();
     leftGraphs.clear();

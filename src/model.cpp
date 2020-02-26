@@ -131,16 +131,16 @@ void Model::clear()
     endResetModel();
 }
 
-void Model::invalidateGraphs()
-{
-    foreach (FileDescriptor *f, descriptors) {
-        for(int i=0; i<f->channelsCount(); ++i) {
-            f->channel(i)->setCheckState(Qt::Unchecked);
-            f->channel(i)->setColor(QColor());
-        }
-    }
-    emit dataChanged(index(0, 1), index(size()-1, 1), QVector<int>()<<Qt::FontRole);
-}
+//void Model::invalidateGraphs()
+//{
+//    foreach (FileDescriptor *f, descriptors) {
+//        for(int i=0; i<f->channelsCount(); ++i) {
+//            f->channel(i)->setCheckState(Qt::Unchecked);
+//            f->channel(i)->setColor(QColor());
+//        }
+//    }
+//    emit dataChanged(index(0, 1), index(size()-1, 1), QVector<int>()<<Qt::FontRole);
+//}
 
 void Model::invalidateGraph(FileDescriptor *file, int channel)
 {

@@ -29,6 +29,7 @@
 #include    "uffconverterdialog.h"
 #include "filedescriptor.h"
 #include "timeslicer.h"
+#include <QTime>
 
 #define DSB_VERSION "1.6.9.1"
 
@@ -2023,11 +2024,6 @@ void MainWindow::headerToggled(int column, Qt::CheckState state)
 void MainWindow::clearPlot()
 {DD;
     plot->deleteGraphs();
-    for (int index = 0; index<tabWidget->count(); ++index) {
-        if (Tab *t = qobject_cast<Tab*>(tabWidget->widget(index))) {
-            t->model->invalidateGraphs();
-        }
-    }
 
     QVector<int> plotted = plottedChannels();
 

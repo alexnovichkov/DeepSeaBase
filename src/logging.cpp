@@ -1,6 +1,6 @@
 #include "logging.h"
 
-//#ifdef DO_TRACE
+#ifdef DO_TRACE
 
 #include <QTime>
 #include <QtDebug>
@@ -17,4 +17,4 @@ Trace::~Trace()
     qDebug()<<"Leaving  "<<_msg << "time" << time->elapsed();
     delete time;
 }
-//#endif
+#endif
