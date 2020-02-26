@@ -210,7 +210,6 @@ Plot::Plot(QWidget *parent) :
 {DD;
     canvas = new QwtPlotCanvas();
     canvas->setFocusIndicator( QwtPlotCanvas::CanvasFocusIndicator);
-    canvas->setFocusPolicy( Qt::StrongFocus);
     canvas->setPalette(Qt::white);
     canvas->setFrameStyle(QFrame::StyledPanel);
     setCanvas(canvas);
@@ -274,14 +273,10 @@ Plot::Plot(QWidget *parent) :
 
 
     picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
-
-//    audio = 0;
-//    audioData = 0;
 }
 
 Plot::~Plot()
 {DD;
-//    delete freeGraph;
     delete trackingPanel;
     delete playerPanel;
     qDeleteAll(graphs);
@@ -487,7 +482,7 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
             double delta = leftMap.invTransform((p1+p2)/2.0);
 
             ChartZoom::zoomCoordinates coords;
-            coords.coords.insert(zoom->masterV(), {s1-delta, s2-delta});
+            coords.coords.insert(QwtPlot::yLeft, {s1-delta, s2-delta});
 
             // 2. Центруем нуль правой оси
             QwtScaleMap rightMap = canvasMap(yRight);
@@ -498,7 +493,7 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
             p2 = rightMap.p2();
             delta = rightMap.invTransform((p1+p2)/2.0);
 
-            coords.coords.insert(zoom->slaveV(), {s1-delta, s2-delta});
+            coords.coords.insert(QwtPlot::yRight, {s1-delta, s2-delta});
             zoom->addZoom(coords, true);
         });
         menu->addAction("Совместить диапазоны левой и правой осей", [=](){
@@ -513,8 +508,8 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
             double ss = std::min(s2,s4);
 
             ChartZoom::zoomCoordinates coords;
-            coords.coords.insert(zoom->masterV(), {s, ss});
-            coords.coords.insert(zoom->slaveV(), {s, ss});
+            coords.coords.insert(QwtPlot::yLeft, {s, ss});
+            coords.coords.insert(QwtPlot::yRight, {s, ss});
 
             zoom->addZoom(coords, true);
         });

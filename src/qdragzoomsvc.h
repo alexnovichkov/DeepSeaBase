@@ -51,20 +51,12 @@ private:
                             // (в пикселах относительно канвы графика)
     double dx, dy, dy1; //Текущее смещение графика
 
-    // применение результатов перемещения графика
-    void applyDrag(QPoint, bool moveRightAxis);
+    void applyDrag(QPoint mousePos, bool moveRightAxis);
 
-    // обработчик событий от мыши
     void dragMouseEvent(QEvent *);
 
-    // обработчик нажатия на кнопку мыши
-    // (включение перемещения графика)
     void startDrag(QMouseEvent *);
-    // обработчик перемещения мыши
-    // (выполнение перемещения или выбор нового положения графика)
     void proceedDrag(QMouseEvent *);
-    // обработчик отпускания кнопки мыши
-    // (выключение перемещения графика)
     void endDrag(QMouseEvent *);
 };
 

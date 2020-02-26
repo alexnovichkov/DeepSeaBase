@@ -26,10 +26,7 @@ class QAxisZoomSvc : public QObject
     Q_OBJECT
 
 public:
-    // конструктор
     explicit QAxisZoomSvc();
-
-    // прикрепление интерфейса к менеджеру масштабирования
     void attach(ChartZoom *);
 signals:
     void xAxisClicked(double xValue, bool second);
@@ -37,7 +34,6 @@ signals:
     void needsAutoscale(int axis);
     void moveCursor(bool right);
 protected:
-    // обработчик всех событий
     bool eventFilter(QObject *,QEvent *);
 
 private:
@@ -47,7 +43,6 @@ private:
 
     double currentLeftBorder, currentRightBorder;   // Текущие границы графика по оси x в момент начала преобразования
     double currentBottomBorder, currentTopBorder;   // Текущие границы графика по оси y в момент начала преобразования
-    double currentBottomBorder1, currentTopBorder1;
 
     double currentWidth, currentHeight;   // Текущие ширина и высота графика в момент начала преобразования
     int scb_pxl, scb_pyt;    // Текущие левое и верхнее смещение графика в момент начала преобразования
@@ -61,23 +56,14 @@ private:
 
     // ограничение нового размера шкалы
     double limitScale(double,double);
-    // применение результатов перемещения границы шкалы
     void axisApplyMove(QPoint,int);
 
-    // обработчик событий от мыши для шкалы
     void axisMouseEvent(QEvent *event, int axis);
-
     void procKeyboardEvent(QEvent *event);
 
-    // обработчик нажатия на кнопку мыши над шкалой
-    // (включение изменения масштаба шкалы)
     void startVerticalAxisZoom(QMouseEvent *event, int axis);
     void startHorizontalAxisZoom(QMouseEvent *event, int axis);
-    // обработчик перемещения мыши
-    // (выделение новых границ шкалы)
     void proceedAxisZoom(QMouseEvent *,int);
-    // обработчик отпускания кнопки мыши
-    // (выполнение изменения масштаба шкалы)
     void endAxisZoom(QMouseEvent *,int);
 
 };

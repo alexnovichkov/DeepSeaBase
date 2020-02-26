@@ -40,34 +40,19 @@ class ChartZoom : public QObject
     Q_OBJECT
 
 public:
-    explicit ChartZoom(QwtPlot *);
+    explicit ChartZoom(QwtPlot *plot);
     ~ChartZoom();
 
     // Значения типа текущего преобразования графика
     // ctNone - нет преобразования
     // ctZoom - изменение масштаба
     // ctDrag - перемещение графика
-    // ctWheel - режим Wheel (изменение масштаба по обеим осям
-        // вращением колеса мыши при нажатой клавише Ctrl)
-    // ctVerWheel - режим VerWheel (изменение масштаба по вертикальной оси
-        // вращением колеса мыши при нажатой левой клавише Shift)
-    // ctHorWheel - режим HorWheel (изменение масштаба по горизонтальной оси
-        // вращением колеса мыши при нажатой правой клавише Shift)
-    // ctAxisHL - режим изменения левой границы
-    // ctAxisHR - режим изменения правой границы
-    // ctAxisVB - режим изменения нижней границы
-    // ctAxisVT - режим изменения верхней границы
-    // (значение, отличающееся от ctNone действует только пока
-    // нажата левая или правая кнопка мыши, клавиша Ctrl или Shift)
-    enum QConvType {ctNone,ctZoom,ctDrag,ctWheel,ctVerWheel,ctHorWheel,
-                    ctAxisHL,ctAxisHR,ctAxisVB,ctAxisVT};
-
-//    enum ZoomMode {
-//        zoomBySelection = 1,
-//        moveByWheel = 2,
-//        moveByMouse = 4,
-//        moveByAxis = 8
-//    };
+    // ctLeft - режим изменения левой границы
+    // ctRight - режим изменения правой границы
+    // ctBottom - режим изменения нижней границы
+    // ctTop - режим изменения верхней границы
+    enum ConvType {ctNone,ctZoom,ctDrag,
+                    ctLeft, ctRight, ctBottom, ctTop};
 
     /**************************************************/
     /*               Класс QScaleBounds               */
@@ -119,22 +104,12 @@ public:
     ScaleBounds *verticalScaleBoundsSlave;
 
     // текущий режим масштабирования
-    QConvType regim();
+    ConvType regime();
     // переключение режима масштабирования
-    void setRegime(QConvType);
+    void setRegime(ConvType);
 
     // указатель на опекаемый компонент QwtPlot
     QwtPlot *plot();
-    // основная горизонтальная шкала
-    QwtPlot::Axis masterH() const;
-    // дополнительная горизонтальная шкала
-    QwtPlot::Axis slaveH() const;
-    // основная вертикальная шкала
-    QwtPlot::Axis masterV() const;
-    // дополнительная вертикальная шкала
-    QwtPlot::Axis slaveV() const;
-
-    void updatePlot();  // обновление графика
 
     void setZoomEnabled(bool enabled);
 
@@ -158,13 +133,6 @@ private:
     QObject *mwin;          // Главное окно приложения
     QwtPlot *qwtPlot;          // Компонент QwtPlot, который отображает график
 
-    // горизонтальная шкала
-    QwtPlot::Axis masterX;  // основная
-    QwtPlot::Axis slaveX;   // дополнительная
-    // вертикальная шкала
-    QwtPlot::Axis masterY;  // основная
-    QwtPlot::Axis slaveY;   // дополнительная
-
     // Интерфейс масштабирования графика
     QMainZoomSvc *mainZoom;
     // Интерфейс перемещения графика
@@ -173,7 +141,7 @@ private:
     QWheelZoomSvc *wheelZoom;
     QAxisZoomSvc *axisZoom;
 
-    QConvType convType;     // Тип текущего преобразования графика
+    ConvType convType;     // Тип текущего преобразования графика
 
     // сохраняемый стэк масштабирования
     QStack<zoomCoordinates> zoomStack;

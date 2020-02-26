@@ -17,26 +17,20 @@
 #include <QApplication>
 #include "logging.h"
 
-QWheelZoomSvc::QWheelZoomSvc() :
-    QObject()
+QWheelZoomSvc::QWheelZoomSvc() : QObject()
 {DD;
 
 }
 
-// Прикрепление интерфейса к менеджеру масштабирования
 void QWheelZoomSvc::attach(ChartZoom *zm)
 {DD;
     zoom = zm;
 
-    // для канвы графика
     zoom->plot()->canvas()->installEventFilter(this);
-
-    // и для каждой оси отдельно
     for (int axis=0; axis < QwtPlot::axisCnt; ++axis)
         zoom->plot()->axisWidget(axis)->installEventFilter(this);
 }
 
-// Обработчик всех событий
 bool QWheelZoomSvc::eventFilter(QObject *target, QEvent *event)
 {
     if (event->type() != QEvent::Wheel)
@@ -79,31 +73,29 @@ void QWheelZoomSvc::applyWheel(QEvent *event, int axis)
 
         ChartZoom::zoomCoordinates coords;
 
-
         if (axis == -1 || axis == QwtPlot::xBottom) {
-            double horPos = plot->invTransform(zoom->masterH(), wEvent->pos().x());
-            QwtScaleMap sm = plot->canvasMap(zoom->masterH());
+            double horPos = plot->invTransform(QwtPlot::xBottom, wEvent->pos().x());
+            QwtScaleMap sm = plot->canvasMap(QwtPlot::xBottom);
 
             double lower = (sm.s1()-horPos)*factor + horPos;
             double upper = (sm.s2()-horPos)*factor + horPos;
-            coords.coords.insert(zoom->masterH(), {lower, upper});
+            coords.coords.insert(QwtPlot::xBottom, {lower, upper});
         }
         if (axis == -1 || axis == QwtPlot::yLeft) {
-            double verPos = plot->invTransform(zoom->masterV(), wEvent->pos().y());
-            QwtScaleMap sm = plot->canvasMap(zoom->masterV());
+            double verPos = plot->invTransform(QwtPlot::yLeft, wEvent->pos().y());
+            QwtScaleMap sm = plot->canvasMap(QwtPlot::yLeft);
             double lower = (sm.s1()-verPos)*factor + verPos;
             double upper = (sm.s2()-verPos)*factor + verPos;
-            coords.coords.insert(zoom->masterV(), {lower, upper});
+            coords.coords.insert(QwtPlot::yLeft, {lower, upper});
         }
         if (axis == -1 || axis == QwtPlot::yRight) {
-            double verPos = plot->invTransform(zoom->slaveV(), wEvent->pos().y());
-            QwtScaleMap sm = plot->canvasMap(zoom->slaveV());
+            double verPos = plot->invTransform(QwtPlot::yRight, wEvent->pos().y());
+            QwtScaleMap sm = plot->canvasMap(QwtPlot::yRight);
             double lower = (sm.s1()-verPos)*factor + verPos;
             double upper = (sm.s2()-verPos)*factor + verPos;
-            coords.coords.insert(zoom->slaveV(), {lower, upper});
+            coords.coords.insert(QwtPlot::yRight, {lower, upper});
         }
         if (!coords.coords.isEmpty()) zoom->addZoom(coords, true);
-        plot->replot();
     }
 }
 
