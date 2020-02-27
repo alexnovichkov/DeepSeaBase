@@ -97,7 +97,8 @@ SOURCES += main.cpp\
     playpanel.cpp \
     linecurve.cpp \
     barcurve.cpp \
-    matfile.cpp
+    matfile.cpp \
+    channeltablemodel.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -172,7 +173,8 @@ HEADERS  += mainwindow.h \
     playpanel.h \
     linecurve.h \
     barcurve.h \
-    matfile.h
+    matfile.h \
+    channeltablemodel.h
 
 SOURCES +=\
   $$PWD/../3rdParty/DspFilters/*.cpp \

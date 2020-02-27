@@ -121,8 +121,12 @@ public:
 
     virtual void read(DfdSettings &dfd, int numChans);
     virtual void write(QTextStream &dfd, int index = -1);
+
     virtual QStringList getInfoHeaders();
     virtual QStringList getInfoData();
+    virtual QVariant info(int column) const;
+    virtual int columnsCount() const;
+    virtual QVariant channelHeader(int column) const;
 
     virtual QString correction() const {return m_correction;}
     virtual void setCorrection(const QString &s) {m_correction = s;}
@@ -210,6 +214,7 @@ public:
     virtual void write(QTextStream &dfd, int index = -1) override;
     virtual QStringList getInfoHeaders() override;
     virtual QStringList getInfoData() override;
+    virtual int columnsCount() const override;
     virtual double postprocess(double v) override;
     virtual void postprocess(QVector<double> &v) override;
     virtual double preprocess(double v) override;
@@ -223,6 +228,10 @@ public:
     double SensSensitivity;
     float BandWidth;
     double coef1, coef2, coef3, coef4;
+
+    // Channel interface
+public:
+    virtual QVariant channelHeader(int column) const override;
 };
 
 class Source
@@ -318,6 +327,8 @@ public:
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes);
 
     QStringList getHeadersForChannel(int channel);
+    virtual QVariant channelHeader(int column) const;
+    virtual int columnsCount() const;
     Channel *channel(int index) const;
     virtual DfdChannel* dfdChannel(int index) {return channels[index];}
 

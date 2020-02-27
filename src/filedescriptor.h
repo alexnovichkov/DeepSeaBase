@@ -111,6 +111,8 @@ public:
     virtual void setAttachedFileName(const QString &name) = 0;
 
     virtual QStringList getHeadersForChannel(int channel)  = 0;
+    virtual QVariant channelHeader(int column) const = 0;
+    virtual int columnsCount() const = 0;
 
     virtual Channel *channel(int index) const = 0;
 
@@ -120,7 +122,8 @@ public:
     bool dataChanged() const {return _dataChanged;}
     virtual void setDataChanged(bool changed);
 
-    virtual bool allUnplotted() const;
+//    virtual bool allUnplotted() const;
+    int plottedCount() const;
 
     virtual bool isSourceFile() const {return false;}
 
@@ -168,6 +171,9 @@ public:
     Channel(Channel &other);
 
     virtual QStringList getInfoData() = 0;
+    virtual QVariant info(int column) const = 0;
+    virtual int columnsCount() const = 0;
+    virtual QVariant channelHeader(int column) const = 0;
 
     virtual Descriptor::DataType type() const = 0;
     virtual Descriptor::OrdinateFormat yFormat() const = 0;

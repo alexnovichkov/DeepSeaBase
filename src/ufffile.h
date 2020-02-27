@@ -53,6 +53,10 @@ public:
     virtual int index() const override;
     virtual QStringList getInfoHeaders();
     virtual QStringList getInfoData();
+    virtual QVariant info(int column) const;
+    virtual int columnsCount() const;
+    virtual QVariant channelHeader(int column) const;
+
     virtual Descriptor::DataType type() const;
     virtual Descriptor::OrdinateFormat yFormat() const;
     virtual bool populated() const {return _populated;}
@@ -155,7 +159,11 @@ public:
     virtual bool hasAttachedFile() const;
     virtual QString attachedFileName() const;
     virtual void setAttachedFileName(const QString &name);
+
     virtual QStringList getHeadersForChannel(int channel);
+    virtual QVariant channelHeader(int column) const;
+    virtual int columnsCount() const;
+
     virtual Channel *channel(int index) const;
     virtual bool isSourceFile() const;
     virtual bool operator ==(const FileDescriptor &descriptor);

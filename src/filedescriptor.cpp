@@ -93,12 +93,21 @@ void FileDescriptor::setDataChanged(bool changed)
     _dataChanged = changed;
 }
 
-bool FileDescriptor::allUnplotted() const
+//bool FileDescriptor::allUnplotted() const
+//{
+//    for (int i=0; i<channelsCount(); ++i) {
+//        if (channel(i)->checkState() == Qt::Checked) return false;
+//    }
+//    return true;
+//}
+
+int FileDescriptor::plottedCount() const
 {
+    int plotted = 0;
     for (int i=0; i<channelsCount(); ++i) {
-        if (channel(i)->checkState() == Qt::Checked) return false;
+        if (channel(i)->checkState() == Qt::Checked) plotted++;
     }
-    return true;
+    return plotted;
 }
 
 bool FileDescriptor::hasGraphs() const

@@ -1234,6 +1234,18 @@ QStringList DfdFileDescriptor::getHeadersForChannel(int channel)
     return channels[channel]->getInfoHeaders();
 }
 
+QVariant DfdFileDescriptor::channelHeader(int column) const
+{
+    if (channels.isEmpty()) return QVariant();
+    return channels[0]->channelHeader(column);
+}
+
+int DfdFileDescriptor::columnsCount() const
+{
+    if (channels.isEmpty()) return 7;
+    return channels[0]->columnsCount();
+}
+
 Channel *DfdFileDescriptor::channel(int index) const
 {
     if (channels.size()>index) return channels[index];
@@ -1488,9 +1500,7 @@ void DfdChannel::write(QTextStream &dfd, int index)
 QStringList DfdChannel::getInfoHeaders()
 {DD;
     return QStringList()
-            //<< QString("Канал") //ChanAddress
             << QString("Имя") //ChanName
-            //<< QString("Вход") //InputType
             << QString("Ед.изм.") //YName
             << QString("Формат")
             << QString("Описание") //ChanDscr
@@ -1507,6 +1517,37 @@ QStringList DfdChannel::getInfoData()
             << description()
             << correction()
                ;
+}
+
+QVariant DfdChannel::info(int column) const
+{
+    switch (column) {
+        case 0: return ChanName; //name(); //avoiding conversion variant->string->variant
+        case 1: return yName();
+        case 2: return data()->yValuesFormatString();
+        case 3: return ChanDscr;
+        case 4: return m_correction; //correction();
+        default: ;
+    }
+    return QVariant();
+}
+
+int DfdChannel::columnsCount() const
+{
+    return 5;
+}
+
+QVariant DfdChannel::channelHeader(int column) const
+{
+    switch (column) {
+        case 0: return QString("Имя");
+        case 1: return QString("Ед.изм.");
+        case 2: return QString("Формат");
+        case 3: return QString("Описание");
+        case 4: return QString("Коррекция");
+        default: return QVariant();
+    }
+    return QVariant();
 }
 
 void DfdChannel::populate()
@@ -2084,6 +2125,23 @@ QStringList RawChannel::getInfoHeaders()
     return result;
 }
 
+QVariant RawChannel::channelHeader(int column) const
+{
+    if (column >=0 && column <= DfdChannel::columnsCount())
+        return DfdChannel::channelHeader(column);
+    switch (column) {
+        case 5: return QString("Смещ."); //ADC0
+        case 6: return QString("Множ."); //ADCStep
+        case 7: return QString("Смещ.ус.(В)"); //AmplShift
+        case 8: return QString("Ус.(дБ)"); //AmplLevel
+        case 9: return QString("Смещ.датч.(мВ)"); //Sens0Shift
+        case 10: return QString("Чувств."); //SensSensitivity
+        case 11: return QString("Полоса"); //BandWidth
+        case 12: return QString("Датчик"); //SensName
+    }
+    return QVariant();
+}
+
 QStringList RawChannel::getInfoData()
 {DD;
     // пересчитываем усиление из В в дБ
@@ -2101,6 +2159,11 @@ QStringList RawChannel::getInfoData()
                   << SensName
                   );
     return result;
+}
+
+int RawChannel::columnsCount() const
+{
+    return 13;
 }
 
 void RawChannel::postprocess(QVector<double> &v)
@@ -2385,3 +2448,5 @@ int DfdChannel::index() const
 {
     return channelIndex;
 }
+
+

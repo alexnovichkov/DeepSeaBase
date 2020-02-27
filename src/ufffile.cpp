@@ -642,6 +642,18 @@ QStringList UffFileDescriptor::getHeadersForChannel(int channel)
     return QStringList();
 }
 
+QVariant UffFileDescriptor::channelHeader(int column) const
+{
+    if (channels.isEmpty()) return QVariant();
+    return channels[0]->channelHeader(column);
+}
+
+int UffFileDescriptor::columnsCount() const
+{
+    if (channels.isEmpty()) return 7;
+    return channels[0]->columnsCount();
+}
+
 Channel *UffFileDescriptor::channel(int index) const
 {DD;
     if (channels.size()>index)
@@ -1035,6 +1047,7 @@ QStringList Function::getInfoHeaders()
                          << "Формат"
                          << QString("Описание")
                          << QString("Функция")
+                         << "Коррекция"
                             ;
 }
 
@@ -1046,7 +1059,41 @@ QStringList Function::getInfoData()
                          << data()->yValuesFormatString()
                          << description()
                          << functionTypeDescription(type())
+                         << correction()
                             ;
+}
+
+QVariant Function::info(int column) const
+{
+    switch (column) {
+        case 0: return type58[4].value; //name(); //avoiding conversion variant->string->variant
+        case 1: return type58[44].value; //yName();
+        case 2: return data()->yValuesFormatString();
+        case 3: return type58[6].value; //description();
+        case 4: return functionTypeDescription(type());
+        case 5: return type58[12].value; //correction();
+        default: ;
+    }
+    return QVariant();
+}
+
+int Function::columnsCount() const
+{
+    return 6;
+}
+
+QVariant Function::channelHeader(int column) const
+{
+    switch (column) {
+        case 0: return QString("Имя");
+        case 1: return QString("Ед.изм.");
+        case 2: return QString("Формат");
+        case 3: return QString("Описание");
+        case 4: return QString("Функция");
+        case 5: return QString("Коррекция");
+        default: return QVariant();
+    }
+    return QVariant();
 }
 
 Descriptor::DataType Function::type() const
