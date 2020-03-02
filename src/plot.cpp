@@ -794,7 +794,7 @@ void Plot::recalculateScale(bool leftAxis)
 //    qDebug() << "currently at" << audioData->position()<<","<<audioData->positionSec();
 //}
 
-bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool plotOnRight, int fileNumber)
+bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool &plotOnRight, int fileNumber)
 {DD;
     if (plotted(descriptor, channel)) return false;
 
@@ -804,40 +804,49 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
     }
 
     bool plotOnFirstYAxis = canBePlottedOnLeftAxis(ch);
-    bool plotOnSecondYAxis = plotOnFirstYAxis ? false : canBePlottedOnRightAxis(ch);
-    if (plotOnRight) {
-        plotOnFirstYAxis = false;
-        plotOnSecondYAxis = canBePlottedOnRightAxis(ch);
+    bool plotOnSecondYAxis = canBePlottedOnRightAxis(ch);
+    bool skipped = false;
+
+    if (!plotOnRight) {//trying to plot on left
+        if (!plotOnFirstYAxis) {//cannot plot on left
+            if (!plotOnSecondYAxis) {//cannot plot on right either
+                skipped = true;
+            }
+            else plotOnRight = true; //confirm plotting on right
+        }
+    }
+    else /*if (plotOnRight)*/ {//trying to plot on right
+        if (!plotOnSecondYAxis) {//cannot plot on right
+            if (!plotOnFirstYAxis) {//cannot plot on left either
+                skipped = true;
+            }
+            else plotOnRight = false; //confirm plotting on left
+        }
     }
 
-    static bool skipped = false;
-    if (!plotOnFirstYAxis && !plotOnSecondYAxis) {
-        if (!skipped) {
-            QMessageBox::warning(this, QString("Не могу построить канал"),
-                                 QString("Тип графика не подходит.\n"
-                                         "Сначала очистите график."));
-            skipped = true;
-        }
+    if (skipped) {
+        QMessageBox::warning(this, QString("Не могу построить канал"),
+                             QString("Тип графика не подходит.\n"
+                                     "Сначала очистите график."));
         return false;
     }
-    else
-        skipped = false;
+
 
     setAxis(QwtPlot::xBottom, descriptor->xName());
     prepareAxis(QwtPlot::xBottom);
 
     // если графиков нет, по умолчанию будем строить амплитуды по первому добавляемому графику
-    if (plotOnFirstYAxis && leftGraphs.isEmpty()) {
+    if (!plotOnRight && leftGraphs.isEmpty()) {
         yValuesPresentationLeft = ch->data()->yValuesPresentation();
     }
-    if (plotOnSecondYAxis && rightGraphs.isEmpty()) {
+    if (plotOnRight && rightGraphs.isEmpty()) {
         yValuesPresentationRight = ch->data()->yValuesPresentation();
     }
 
-    if (plotOnFirstYAxis) ch->data()->setYValuesPresentation(yValuesPresentationLeft);
+    if (!plotOnRight) ch->data()->setYValuesPresentation(yValuesPresentationLeft);
     else ch->data()->setYValuesPresentation(yValuesPresentationRight);
 
-    QwtPlot::Axis ax = plotOnFirstYAxis ? QwtPlot::yLeft : QwtPlot::yRight;
+    QwtPlot::Axis ax = plotOnRight ? QwtPlot::yRight : QwtPlot::yLeft;
 
     setAxis(ax, ch->yName());
     prepareAxis(ax);
@@ -860,7 +869,7 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
     }
 
     g->setYAxis(ax);
-    if (plotOnSecondYAxis) {
+    if (plotOnRight) {
         rightGraphs << g;
     }
     else {
@@ -879,7 +888,6 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
     update();
     emit graphsChanged();
 
-    //playChannel(ch);
     return true;
 }
 

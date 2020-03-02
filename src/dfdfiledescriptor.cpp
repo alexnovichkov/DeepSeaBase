@@ -2035,20 +2035,20 @@ QString DfdChannel::xName() const
 
 QString DfdChannel::yName() const
 {
-    if (YName.isEmpty())
-        return YNameOld;
-    if ((YName.toLower() == "дб" || YName.toLower() == "db") && !YNameOld.isEmpty())
-        return YNameOld;
+//    if (YName.isEmpty())
+//        return YNameOld;
+//    if ((YName.toLower() == "дб" || YName.toLower() == "db") && !YNameOld.isEmpty())
+//        return YNameOld;
     return YName;
 }
 
 void DfdChannel::setYName(const QString &yName)
 {
     if (yName == YName) return;
-    if ((YName.toLower() == "дб" || YName.toLower() == "db") && !YNameOld.isEmpty()) {
-        YNameOld = yName;
-    }
-    else
+//    if ((YName.toLower() == "дб" || YName.toLower() == "db") && !YNameOld.isEmpty()) {
+//        YNameOld = yName;
+//    }
+//    else
         YName = yName;
 }
 

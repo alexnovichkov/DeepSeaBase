@@ -26,9 +26,10 @@ class DfdChannel;
 class QTableWidgetItem;
 class QToolBar;
 class QItemSelection;
+class QTableView;
 
 class TabWidget;
-class CheckableHeaderView;
+class HeaderView;
 
 class Plot;
 
@@ -40,6 +41,7 @@ class QwtPlotCurve;
 class Curve;
 class Channel;
 class Model;
+class ChannelTableModel;
 class SortFilterModel;
 class QLineEdit;
 
@@ -52,13 +54,13 @@ class Tab : public QSplitter
 public:
     Tab(QWidget * parent) : QSplitter(parent), record(0) {}
 
-    CheckableHeaderView *tableHeader;
+    HeaderView *tableHeader;
     QLabel *filePathLabel;
-    //QTreeWidget *tree;
     QTreeView *filesTable;
-    QTableWidget *channelsTable;
+    QTableView *channelsTable;
     Model *model;
     SortFilterModel *sortModel;
+    ChannelTableModel *channelModel;
     QList<QLineEdit *> filters;
 
     QStringList folders;
@@ -66,6 +68,7 @@ public:
     FileDescriptor *record;
 private slots:
     void filesSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);
+    void channelsSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);
 };
 
 class MainWindow : public QMainWindow
@@ -98,15 +101,23 @@ private slots:
 
     void updateChannelsTable(const QModelIndex &current, const QModelIndex &previous);
 
-//    void maybePlotChannel(int,int,int,int);
-    void maybePlotChannel(QTableWidgetItem *item);
-
     /**
      * @brief plotAllChannels
      * Строит все каналы выделенной записи
      */
     void plotAllChannels();
     void plotAllChannelsAtRight();
+
+    /**
+     * @brief plotChannel строит канал текущей записи
+     * @param index номер канала
+     */
+    void plotChannel(int index);
+
+    /**
+     * @brief plotSelectedChannels строит выделенные каналы
+     */
+    void plotSelectedChannels();
 
     /**
      * @brief calculateSpectreRecords
@@ -126,16 +137,10 @@ private slots:
     void copyToLegend();
 
     /**
-     * @brief headerToggled
-     * Вызывается, когда отмечена галочка в заголовке списка каналов
+     * @brief deletePlot удаляет график
+     * @param index номер канала
      */
-    void headerToggled(int column,Qt::CheckState state);
-
-    /**
-     * @brief clearPlot
-     * Удаляет все графики с графика
-     */
-    void clearPlot();
+    void deletePlot(int index);
 
     /**
      * @brief rescanBase
@@ -179,6 +184,8 @@ private slots:
     void switchSergeiMode();
 
     void editYName();
+    void onChannelDescriptionChanged(int index, const QString& value);
+    void onChannelNameChanged(int index, const QString& value);
 private:
     void moveChannels(bool up);
     void addFiles(QStringList &files);
@@ -189,16 +196,11 @@ private:
 
     void exportToExcel(bool fullRange, bool dataOnly=false);
 
-//    void updateRecordState(int recordIndex);
-    void updateChannelsHeaderState();
-
     void updateChannelsTable(FileDescriptor *);
     void updateRecordsTable(const QList<FileDescriptor *> &records);
 
     void createTab(const QString &name, const QStringList &folders);
 
-    QVector<int> selectedChannels() const;
-    QVector<int> plottedChannels() const;
     FileDescriptor *findDescriptor(const QString &file);
     bool duplicated(FileDescriptor *file) const;
 
@@ -221,6 +223,7 @@ private:
     QAction *delFilesAct;
     QAction *plotAllChannelsAct;
     QAction *plotAllChannelsAtRightAct;
+    QAction *plotSelectedChannelsAct;
     QAction *removeChannelsPlotsAct;
     QAction *calculateSpectreAct;
     QAction *calculateThirdOctaveAct;

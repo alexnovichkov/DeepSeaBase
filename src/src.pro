@@ -98,7 +98,8 @@ SOURCES += main.cpp\
     linecurve.cpp \
     barcurve.cpp \
     matfile.cpp \
-    channeltablemodel.cpp
+    channeltablemodel.cpp \
+    headerview.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -174,7 +175,8 @@ HEADERS  += mainwindow.h \
     linecurve.h \
     barcurve.h \
     matfile.h \
-    channeltablemodel.h
+    channeltablemodel.h \
+    headerview.h
 
 SOURCES +=\
   $$PWD/../3rdParty/DspFilters/*.cpp \

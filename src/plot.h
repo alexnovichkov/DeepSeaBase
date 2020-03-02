@@ -66,11 +66,6 @@ public:
     int graphsCount() const {return graphs.size();}
 
     /**
-     * @brief deleteGraphs
-     * deletes all graphs on a plot
-     */
-    void deleteGraphs();
-    /**
      * @brief deleteGraphs deletes all graphs on a plot, which represent DFDd with dfdGuid
      * @param dfdGuid
      */
@@ -85,7 +80,7 @@ public:
     void deleteGraph(Curve *graph, bool doReplot = true);
     void deleteGraph(Channel *c, bool doReplot = true);
 
-    bool plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool plotOnRight, int fileNumber);
+    bool plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool &plotOnRight, int fileNumber);
 
     Curve *plotted(FileDescriptor *dfd, int channel) const;
     Curve *plotted(Channel *channel) const;
@@ -133,6 +128,12 @@ public slots:
     void updateLegends();
 
     void moveGraph(Curve *curve, int axis);
+
+    /**
+     * @brief deleteGraphs
+     * deletes all graphs on a plot
+     */
+    void deleteGraphs();
 signals:
     void curveChanged(Curve *curve);
     void curveDeleted(FileDescriptor *descriptor, int index);

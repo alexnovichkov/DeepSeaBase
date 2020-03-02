@@ -163,8 +163,8 @@ public:
     virtual ~Channel() {
         delete _data;
     }
-    Channel() : _checkState(Qt::Unchecked),
-                _color(QColor()),
+    Channel() : _color(QColor()),
+                _plotted(0),
                 _data(new DataHolder)
     {}
     Channel(Channel *other);
@@ -221,17 +221,17 @@ public:
 
     virtual int index() const = 0;
 
-    Qt::CheckState checkState() const {return _checkState;}
-    void setCheckState(Qt::CheckState checkState) {_checkState = checkState;}
-
     QColor color() const {return _color;}
     void setColor(QColor color) {_color = color;}
 
     virtual QString correction() const = 0;
     virtual void setCorrection(const QString &s) = 0;
+
+    int plotted() const {return _plotted;}
+    void setPlotted(int plotted) {_plotted = plotted;}
 private:
-    Qt::CheckState _checkState;
     QColor _color;
+    int _plotted; //0=not plotted, 1=plotted on left, 2=plotted on right
 protected:
     DataHolder *_data;
 };

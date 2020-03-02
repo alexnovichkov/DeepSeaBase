@@ -105,7 +105,7 @@ int FileDescriptor::plottedCount() const
 {
     int plotted = 0;
     for (int i=0; i<channelsCount(); ++i) {
-        if (channel(i)->checkState() == Qt::Checked) plotted++;
+        if (channel(i)->plotted()) plotted++;
     }
     return plotted;
 }
@@ -113,7 +113,7 @@ int FileDescriptor::plottedCount() const
 bool FileDescriptor::hasGraphs() const
 {
     for (int i=0; i<channelsCount(); ++i) {
-        if (channel(i)->checkState() == Qt::Checked) return true;
+        if (channel(i)->plotted()) return true;
     }
     return false;
 }
@@ -134,15 +134,15 @@ QList<int> filterIndexes(FileDescriptor *dfd, const QList<QPair<FileDescriptor *
     return result;
 }
 
-Channel::Channel(Channel *other) : _checkState(Qt::Unchecked),
-    _color(QColor()),
+Channel::Channel(Channel *other) :
+    _color(QColor()), _plotted(0),
     _data(new DataHolder(*(other->_data)))
 {
 
 }
 
-Channel::Channel(Channel &other) : _checkState(Qt::Unchecked),
-    _color(QColor()),
+Channel::Channel(Channel &other) :
+    _color(QColor()), _plotted(0),
     _data(new DataHolder(*(other._data)))
 {
 

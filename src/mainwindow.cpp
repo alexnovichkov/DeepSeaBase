@@ -5,7 +5,7 @@
 #include "calculatespectredialog.h"
 #include "filesprocessordialog.h"
 #include "sortabletreewidgetitem.h"
-#include "checkableheaderview.h"
+#include "headerview.h"
 #include "plot.h"
 #include "tabwidget.h"
 #include "colorselector.h"
@@ -30,6 +30,7 @@
 #include "filedescriptor.h"
 #include "timeslicer.h"
 #include <QTime>
+#include "channeltablemodel.h"
 
 #define DSB_VERSION "1.6.9.1"
 
@@ -271,6 +272,9 @@ MainWindow::MainWindow(QWidget *parent)
     plotAllChannelsAtRightAct = new QAction(QString("...на правой оси"), this);
     connect(plotAllChannelsAtRightAct, SIGNAL(triggered()), SLOT(plotAllChannelsAtRight()));
 
+    plotSelectedChannelsAct = new QAction(QString("Построить выделенные каналы"), this);
+    connect(plotSelectedChannelsAct, SIGNAL(triggered()), SLOT(plotSelectedChannels()));
+
 
     QAction *plotHelpAct = new QAction("Справка", this);
     connect(plotHelpAct, &QAction::triggered, [](){QDesktopServices::openUrl(QUrl("help.html"));});
@@ -286,7 +290,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     clearPlotAct  = new QAction(QString("Очистить график"), this);
     clearPlotAct->setIcon(QIcon(":/icons/cross.png"));
-    connect(clearPlotAct, SIGNAL(triggered()), SLOT(clearPlot()));
+    connect(clearPlotAct, SIGNAL(triggered()), plot, SLOT(deleteGraphs()));
 
     savePlotAct = new QAction(QString("Сохранить график..."), this);
     savePlotAct->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogSaveButton));
@@ -576,6 +580,14 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->sortModel = new SortFilterModel(tab);
     tab->sortModel->setSourceModel(tab->model);
 
+    tab->channelModel = new ChannelTableModel(tab);
+    connect(tab->channelModel,SIGNAL(maybeUpdateChannelDescription(int,QString)),
+            SLOT(onChannelDescriptionChanged(int,QString)));
+    connect(tab->channelModel,SIGNAL(maybeUpdateChannelName(int,QString)),
+            SLOT(onChannelNameChanged(int,QString)));
+    connect(tab->channelModel,SIGNAL(maybePlot(int)),SLOT(plotChannel(int)));
+    connect(tab->channelModel,SIGNAL(deletePlot(int)),SLOT(deletePlot(int)));
+
     tab->filesTable = new QTreeView(this);
     tab->filesTable->setModel(tab->sortModel);
 
@@ -637,19 +649,18 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     connect(tab->model, SIGNAL(legendsChanged()), plot, SLOT(updateLegends()));
     connect(tab->model, SIGNAL(plotNeedsUpdate()), plot, SLOT(update()));
 
-    tab->channelsTable = new QTableWidget(0,7,this);
+    tab->channelsTable = new QTableView(this);
+    tab->channelsTable->setModel(tab->channelModel);
+    connect(tab->channelsTable->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),tab, SLOT(channelsSelectionChanged(QItemSelection,QItemSelection)));
 
-    tab->tableHeader = new CheckableHeaderView(Qt::Horizontal, tab->channelsTable);
 
+
+    tab->tableHeader = new HeaderView(Qt::Horizontal, tab->channelsTable);
     tab->channelsTable->setHorizontalHeader(tab->tableHeader);
-    tab->tableHeader->setCheckState(0,Qt::Checked);
     tab->tableHeader->setCheckable(0,true);
-    tab->tableHeader->setCheckState(0,Qt::Unchecked);
-    connect(tab->tableHeader,SIGNAL(toggled(int,Qt::CheckState)),this,SLOT(headerToggled(int,Qt::CheckState)));
 
     tab->channelsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     tab->channelsTable->horizontalHeader()->setStretchLastSection(false);
-    connect(tab->channelsTable, SIGNAL(itemChanged(QTableWidgetItem*)), SLOT(maybePlotChannel(QTableWidgetItem*)));
 
     tab->channelsTable->addAction(moveChannelsUpAct);
     tab->channelsTable->addAction(moveChannelsDownAct);
@@ -660,6 +671,10 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
         int column = tab->channelsTable->currentIndex().column();
         if (column == 1) {
             menu.addAction(editYNameAct);
+            menu.exec(QCursor::pos());
+        }
+        else if (column == 0) {
+            menu.addAction(plotSelectedChannelsAct);
             menu.exec(QCursor::pos());
         }
 //        else if (column == 9) {
@@ -782,6 +797,8 @@ void MainWindow::closeTab(int i)
         if (tab->model->contains(f) && !duplicated(f))
             plot->deleteGraph(plot->graphs[i]);
     }
+
+    tab->channelModel->clear();
 
     tab->filesTable->selectAll();
 
@@ -969,7 +986,7 @@ void MainWindow::deleteFiles()
             tab->folders.removeOne(d->fileName()+":1");
         if (duplicated(d)) duplicatedFiles << d->fileName();
     }
-    tab->channelsTable->setRowCount(0);
+    tab->channelModel->clear();
 
     tab->model->deleteFiles(duplicatedFiles);
 
@@ -977,27 +994,9 @@ void MainWindow::deleteFiles()
         tab->folders.clear();
 }
 
-QVector<int> MainWindow::selectedChannels() const
-{
-    QVector<int>  selectedIndexes;
-    for (int i=0; i<tab->channelsTable->rowCount(); ++i)
-        if (tab->channelsTable->item(i,0)->isSelected())
-            selectedIndexes << i;
-    return selectedIndexes;
-}
-
-QVector<int> MainWindow::plottedChannels() const
-{
-    QVector<int>  indexes;
-    for (int i=0; i<tab->channelsTable->rowCount(); ++i)
-        if (tab->channelsTable->item(i,0)->checkState()==Qt::Checked)
-            indexes << i;
-    return indexes;
-}
-
 void MainWindow::deleteChannels() /** SLOT */
 {DD;
-    QVector<int> channelsToDelete = selectedChannels();
+    QVector<int> channelsToDelete = tab->channelModel->selected();
     if (channelsToDelete.isEmpty()) return;
 
     if (QMessageBox::question(this,"DeepSea Base",
@@ -1010,7 +1009,7 @@ void MainWindow::deleteChannels() /** SLOT */
 
 void MainWindow::deleteChannelsBatch()
 {
-    QVector<int> channels = selectedChannels();
+    QVector<int> channels = tab->channelModel->selected();
     if (channels.isEmpty()) return;
 
     QList<FileDescriptor*> filesToDelete = tab->model->selectedFiles();
@@ -1047,7 +1046,7 @@ void MainWindow::deleteChannelsBatch()
 
 void MainWindow::copyChannels() /** SLOT */
 {DD;
-    QVector<int> channelsToCopy = selectedChannels();
+    QVector<int> channelsToCopy = tab->channelModel->selected();
     if (channelsToCopy.isEmpty()) return;
 
     if (copyChannels(tab->record, channelsToCopy)) {
@@ -1058,7 +1057,7 @@ void MainWindow::copyChannels() /** SLOT */
 void MainWindow::moveChannels() /** SLOT */
 {DD;
     // сначала копируем каналы, затем удаляем
-    QVector<int> channelsToMove = selectedChannels();
+    QVector<int> channelsToMove = tab->channelModel->selected();
     if (channelsToMove.isEmpty()) return;
 
     if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \nудалены из файла. Продолжить?")==QMessageBox::Yes) {
@@ -1500,17 +1499,36 @@ void MainWindow::editYName()
 {
     if (!tab) return;
 
-    QVector<int>  selectedIndexes;
-    for (int i=0; i<tab->channelsTable->rowCount(); ++i)
-        if (tab->channelsTable->item(i,1)->isSelected())
-            selectedIndexes << i;
+    QVector<int>  selectedIndexes = tab->channelModel->selected();
     if (selectedIndexes.isEmpty()) return;
 
     QString newYName = QInputDialog::getText(this, "Новая единица измерения", "Введите новую единицу");
     if (newYName.isEmpty()) return;
 
-    foreach (int i, selectedIndexes) {
-        tab->channelsTable->item(i,1)->setText(newYName);
+    tab->channelModel->setYName(newYName);
+}
+
+void MainWindow::onChannelDescriptionChanged(int index, const QString &value)
+{
+    if (!tab) return;
+    if (tab->model->selected().size()>1) {
+        if (QMessageBox::question(this,"DeepSea Base","Выделено несколько файлов. Записать такое описание канала\n"
+                                  "во все эти файлы?")==QMessageBox::Yes)
+        {
+            tab->model->setChannelDescription(index, value);
+        }
+    }
+}
+
+void MainWindow::onChannelNameChanged(int index, const QString &value)
+{
+    if (!tab) return;
+    if (tab->model->selected().size()>1) {
+        if (QMessageBox::question(this,"DeepSea Base","Выделено несколько файлов. Записать такое название канала\n"
+                                  "во все эти файлы?")==QMessageBox::Yes)
+        {
+            tab->model->setChannelName(index, value);
+        }
     }
 }
 
@@ -1537,7 +1555,7 @@ QVector<int> computeIndexes(QVector<int> notYetMoved, bool up, int totalSize)
 
 void MainWindow::moveChannels(bool up)
 {DD;
-    QVector<int> selectedIndexes = selectedChannels();
+    QVector<int> selectedIndexes = tab->channelModel->selected();
 
     QVector<int> newIndexes = computeIndexes(selectedIndexes, up, tab->record->channelsCount());
 
@@ -1545,31 +1563,9 @@ void MainWindow::moveChannels(bool up)
 
     updateChannelsTable(tab->record);
 
-    tab->channelsTable->blockSignals(true);
-
     tab->channelsTable->clearSelection();
     Q_FOREACH (const int &i, newIndexes)
-        tab->channelsTable->item(i,0)->setSelected(true);
-    tab->channelsTable->blockSignals(false);
-}
-
-void MainWindow::updateChannelsHeaderState()
-{DD;
-    if (!tab) return;
-    int checked=0;
-    const int column = 0;
-    for (int i=0; i<tab->channelsTable->rowCount(); ++i) {
-        if (tab->channelsTable->item(i, column)
-            && tab->channelsTable->item(i,column)->checkState()==Qt::Checked)
-            checked++;
-    }
-
-    if (checked==0)
-        tab->tableHeader->setCheckState(column, Qt::Unchecked);
-    else if (checked==tab->channelsTable->rowCount())
-        tab->tableHeader->setCheckState(column, Qt::Checked);
-    else
-        tab->tableHeader->setCheckState(column, Qt::PartiallyChecked);
+        tab->channelsTable->selectionModel()->select(tab->channelModel->index(i,0),QItemSelectionModel::Select);
 }
 
 void MainWindow::updateChannelsTable(const QModelIndex &current, const QModelIndex &previous)
@@ -1588,25 +1584,13 @@ void MainWindow::updateChannelsTable(FileDescriptor *dfd)
 {DD;
     QVector<int> plottedChannelsNumbers;
     if (sergeiMode) {
-        plottedChannelsNumbers = plottedChannels();
-
-        if (!plottedChannelsNumbers.isEmpty()) {
-            foreach (int channel, plottedChannelsNumbers) {
-                if (tab->channelsTable->rowCount()>channel)
-                    tab->channelsTable->item(channel,0)->setCheckState(Qt::Unchecked);
-            }
-            updateChannelsHeaderState();
-        }
+        plottedChannelsNumbers = tab->channelModel->plotted();
+        tab->channelModel->deletePlots();
     }
 
     tab->record = dfd;
+    tab->channelModel->setDescriptor(dfd);
     if (!dfd) return;
-
-
-
-    tab->channelsTable->blockSignals(true);
-    tab->channelsTable->setRowCount(0);
-    tab->channelsTable->blockSignals(false);
 
     if (!dfd->fileExists()) {
         QMessageBox::warning(this,"Не могу получить список каналов","Такого файла уже нет");
@@ -1618,198 +1602,68 @@ void MainWindow::updateChannelsTable(FileDescriptor *dfd)
     int chanCount = dfd->channelsCount();
     if (chanCount == 0) return;
 
-    QStringList headers = dfd->getHeadersForChannel(0);
-
-    tab->channelsTable->blockSignals(true);
-    tab->channelsTable->clear();
-    tab->channelsTable->setColumnCount(headers.size());
-    tab->channelsTable->setHorizontalHeaderLabels(headers);
-    tab->channelsTable->setRowCount(0);
-    tab->channelsTable->setRowCount(chanCount);
-
-    QFont boldFont = tab->channelsTable->font();
-    boldFont.setBold(true);
-
-    for (int i=0; i<chanCount; ++i) {
-        Channel *ch = dfd->channel(i);
-        QStringList data = ch->getInfoData();
-        Qt::CheckState state = ch->checkState();
-        for (int col=0; col<headers.size(); ++col) {
-            QTableWidgetItem *ti = new QTableWidgetItem(data.at(col));
-            if (col == 0) {
-                ti->setCheckState(state);
-                if (state==Qt::Checked) ti->setFont(boldFont);
-                if (ch->color().isValid()) {
-                    ti->setTextColor(Qt::white);
-                    ti->setBackgroundColor(ch->color());
-                }
-            }
-            if (col != 0 &&
-                headers.at(col) != "Ед.изм." &&
-                headers.at(col) != "Описание")
-                ti->setFlags(ti->flags() ^ Qt::ItemIsEnabled);
-            tab->channelsTable->setItem(i,col,ti);
-        }
-    }
-    updateChannelsHeaderState();
-
-    tab->channelsTable->blockSignals(false);
-
     if (sergeiMode) {
         if (!plottedChannelsNumbers.isEmpty()) {
-            foreach (int channel, plottedChannelsNumbers) {
-                if (tab->channelsTable->rowCount()>channel) tab->channelsTable->item(channel,0)->setCheckState(Qt::Checked);
-            }
-            updateChannelsHeaderState();
+            tab->channelModel->plotChannels(plottedChannelsNumbers);
         }
-    }
-}
-
-void MainWindow::maybePlotChannel(QTableWidgetItem *item)
-{DD;
-    if (!tab) return;
-    if (!item) return;
-    int column = item->column();
-    int row = item->row();
-    Channel *ch = tab->record->channel(row);
-
-    if (tab->channelsTable->horizontalHeaderItem(column)->text() == "Описание") {
-        ch->setDescription(item->text());
-        tab->record->setChanged(true);
-//        tab->record->write();
-
-        if (tab->model->selected().size()>1) {
-            if (QMessageBox::question(this,"DeepSea Base","Выделено несколько файлов. Записать такое описание канала\n"
-                                      "во все эти файлы?")==QMessageBox::Yes)
-            {
-                tab->model->setChannelDescription(row, item->text());
-            }
-        }
-    }
-
-    else if (tab->channelsTable->horizontalHeaderItem(column)->text() == "Ед.изм.") {
-        QString oldYName = ch->yName();
-        if (item->text() != oldYName) {
-            ch->setYName(item->text());
-            tab->record->setChanged(true);
-        }
-    }
-
-
-
-    else if (column == 0) {
-        if (ch->name() != item->text()) {
-            ch->setName(item->text());
-            tab->record->setChanged(true);
-
-            if (tab->model->selected().size()>1) {
-                if (QMessageBox::question(this,"DeepSea Base","Выделено несколько файлов. Записать такое название канала\n"
-                                          "во все эти файлы?")==QMessageBox::Yes)
-                {
-                    tab->model->setChannelName(row, item->text());
-                }
-            }
-
-            plot->updateLegends();
-            return;
-        }
-
-        const Qt::CheckState state = item->checkState();
-        bool plotOnRight = item->data(Qt::UserRole+2).toBool();
-
-
-        QFont oldFont = tab->channelsTable->font();
-        QFont boldFont = oldFont;
-        boldFont.setBold(true);
-
-        tab->channelsTable->blockSignals(true);
-        bool plotted = true;
-
-        if (state == Qt::Checked) {
-            QColor col;
-            int fileNumber = tab->model->data(tab->model->modelIndexOfFile(tab->record,0), 0).toInt();
-
-            plotted = plot->plotChannel(tab->record, row, &col, plotOnRight, fileNumber);
-            if (plotted) {
-                item->setFont(boldFont);
-                ch->setCheckState(Qt::Checked);
-                ch->setColor(col);
-                item->setBackgroundColor(col);
-                item->setTextColor(Qt::white);
-            }
-            else {
-                item->setCheckState(Qt::Unchecked);
-                ch->setCheckState(Qt::Unchecked);
-                ch->setColor(QColor());
-                item->setTextColor(Qt::black);
-            }
-
-            if (tab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
-                QList<FileDescriptor*> selectedFiles = tab->model->selectedFiles();
-                foreach (FileDescriptor *f, selectedFiles) {
-                    if (f == tab->record) continue;
-                    if (f->channelsCount()<=row) continue;
-
-                    int fileNumber = tab->model->data(tab->model->modelIndexOfFile(f,0), 0).toInt();
-                    plotted = plot->plotChannel(f, row, &col, plotOnRight, fileNumber);
-                    if (plotted) {
-                        f->channel(row)->setCheckState(Qt::Checked);
-                        f->channel(row)->setColor(col);
-                    }
-                    else {
-                        f->channel(row)->setCheckState(Qt::Unchecked);
-                        f->channel(row)->setColor(QColor());
-                    }
-                    tab->model->updateFile(f, 1);
-                }
-            }
-        }
-        else if (state == Qt::Unchecked) {
-            plot->deleteGraph(tab->record, row);
-            item->setFont(tab->channelsTable->font());
-            ch->setCheckState(Qt::Unchecked);
-            item->setBackgroundColor(Qt::white);
-            item->setTextColor(Qt::black);
-            ch->setColor(QColor());
-
-            if (tab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
-                QList<FileDescriptor*> selectedFiles = tab->model->selectedFiles();
-                foreach (FileDescriptor *f, selectedFiles) {
-                    if (f == tab->record) continue;
-                    if (f->channelsCount()<=row) continue;
-
-                    plot->deleteGraph(f, row);
-                    f->channel(row)->setCheckState(Qt::Unchecked);
-                    f->channel(row)->setColor(QColor());
-
-                    tab->model->updateFile(f, 1);
-                }
-            }
-        }
-        tab->channelsTable->blockSignals(false);
-
-        tab->model->updateFile(tab->record, 1);
-
-        if (tab->tableHeader->isSectionCheckable(column))
-            updateChannelsHeaderState();
     }
 }
 
 void MainWindow::plotAllChannels()
 {DD;
     if (!tab) return;
-    for (int i=0; i<tab->channelsTable->rowCount(); ++i) {
-        tab->channelsTable->item(i,0)->setCheckState(Qt::Checked);
-    }
+    tab->channelModel->plotChannels(QVector<int>(), false);
 }
 
 void MainWindow::plotAllChannelsAtRight()
-{
+{DD;
     if (!tab) return;
-    for (int i=0; i<tab->channelsTable->rowCount(); ++i) {
-        tab->channelsTable->item(i,0)->setData(Qt::UserRole+2, true);
-        tab->channelsTable->item(i,0)->setCheckState(Qt::Checked);
+    tab->channelModel->plotChannels(QVector<int>(), true);
+}
+
+void MainWindow::plotChannel(int index)
+{DD;
+    QColor col;
+    int fileNumber = tab->model->data(tab->model->modelIndexOfFile(tab->record,0), 0).toInt();
+
+    bool plotOnRight = tab->record->channel(index)->plotted()==2;
+    bool plotted = plot->plotChannel(tab->record, index, &col, plotOnRight, fileNumber);
+
+    if (plotted) {
+        tab->record->channel(index)->setColor(col);
+        tab->record->channel(index)->setPlotted(plotOnRight?2:1);
     }
+    else {
+        tab->record->channel(index)->setColor(QColor());
+        tab->record->channel(index)->setPlotted(0);
+    }
+    tab->channelModel->onCurveColorChanged(index);
+    tab->model->updateFile(tab->record, 1);
+
+    if (tab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
+        QList<FileDescriptor*> selectedFiles = tab->model->selectedFiles();
+        foreach (FileDescriptor *f, selectedFiles) {
+            if (f == tab->record) continue;
+            if (f->channelsCount()<=index) continue;
+
+            int fileNumber = tab->model->data(tab->model->modelIndexOfFile(f,0), 0).toInt();
+            plotted = plot->plotChannel(f, index, &col, plotOnRight, fileNumber);
+            if (plotted) {
+                f->channel(index)->setColor(col);
+                tab->record->channel(index)->setPlotted(plotOnRight?2:1);
+            }
+            else {
+                f->channel(index)->setPlotted(0);
+                f->channel(index)->setColor(QColor());
+            }
+            tab->model->updateFile(f, 1);
+        }
+    }
+}
+
+void MainWindow::plotSelectedChannels()
+{
+    tab->channelModel->plotChannels(tab->channelModel->selected());
 }
 
 void MainWindow::calculateSpectreRecords()
@@ -2011,30 +1865,27 @@ void MainWindow::calculateMovingAvg()
     setCurrentAndPlot(avgDfd, avgDfd->channelsCount()-1);
 }
 
-void MainWindow::headerToggled(int column, Qt::CheckState state)
+void MainWindow::deletePlot(int index)
 {DD;
-    if (!tab || column<0 || column >= tab->channelsTable->columnCount()) return;
+    plot->deleteGraph(tab->record, index);
+    tab->record->channel(index)->setPlotted(0);
+    tab->record->channel(index)->setColor(QColor());
+    tab->channelModel->onCurveDeleted(index);
+    tab->model->updateFile(tab->record, 1);
 
-    if (state == Qt::PartiallyChecked) return;
-    for (int i=0; i<tab->channelsTable->rowCount(); ++i)
-        tab->channelsTable->item(i,column)->setCheckState(state);
-}
+    if (tab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
+        QList<FileDescriptor*> selectedFiles = tab->model->selectedFiles();
+        foreach (FileDescriptor *f, selectedFiles) {
+            if (f == tab->record) continue;
+            if (f->channelsCount()<=index) continue;
 
-void MainWindow::clearPlot()
-{DD;
-    plot->deleteGraphs();
+            plot->deleteGraph(f, index);
+            f->channel(index)->setPlotted(0);
+            f->channel(index)->setColor(QColor());
 
-    QVector<int> plotted = plottedChannels();
-
-    tab->channelsTable->blockSignals(true);
-    foreach (int i, plotted) {
-        tab->channelsTable->item(i,0)->setCheckState(Qt::Unchecked);
-        tab->channelsTable->item(i,0)->setFont(tab->channelsTable->font());
-        tab->channelsTable->item(i,0)->setBackgroundColor(Qt::white);
-        tab->channelsTable->item(i,0)->setTextColor(Qt::black);
+            tab->model->updateFile(f, 1);
+        }
     }
-    tab->tableHeader->setCheckState(0,Qt::Unchecked);
-    tab->channelsTable->blockSignals(false);
 }
 
 void MainWindow::rescanBase()
@@ -2046,10 +1897,7 @@ void MainWindow::rescanBase()
 
     // next we clear all tab and populate it with folders anew
     tab->model->clear();
-    tab->channelsTable->setRowCount(0);
-    tab->channelsTable->blockSignals(true);
-    tab->tableHeader->setCheckState(0,Qt::Unchecked);
-    tab->channelsTable->blockSignals(false);
+    tab->channelModel->clear();
 
     tab->filePathLabel->clear();
 
@@ -2128,9 +1976,8 @@ void MainWindow::setCurrentAndPlot(FileDescriptor *d, int channelIndex)
 
         if (i > -1) {
             updateChannelsTable(d);
-            //tab->filesTable->setCurrentIndex(tab->model->modelIndexOfFile(d, 0));
-            //tab->filesTable->selectionModel()->select(tab->model->modelIndexOfFile(d, 0), QItemSelectionModel::ClearAndSelect);
-            tab->channelsTable->item(channelIndex, 0)->setCheckState(Qt::Checked);
+
+            tab->channelModel->plotChannels(QVector<int>()<<channelIndex);
         }
     }
 }
@@ -2584,7 +2431,8 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 void MainWindow::onCurveColorChanged(Curve *curve)
 {DD;
     if (tab->record == curve->descriptor) {
-        updateChannelsTable(curve->descriptor);
+        tab->channelModel->onCurveColorChanged(curve->channelIndex);
+//        updateChannelsTable(curve->descriptor);
     }
 }
 
@@ -2595,7 +2443,7 @@ void MainWindow::onCurveDeleted(FileDescriptor *descriptor, int channelIndex)
             t->model->invalidateGraph(descriptor, channelIndex);
     }
     if (tab->record == descriptor)
-        updateChannelsTable(descriptor);
+        tab->channelModel->onCurveDeleted(channelIndex);
 }
 
 void MainWindow::addDescriptors(const QList<FileDescriptor*> &files)
@@ -2643,9 +2491,27 @@ void Tab::filesSelectionChanged(const QItemSelection &newSelection, const QItemS
     std::sort(l.begin(), l.end());
 
     model->setSelected(l);
-    if (indexes.isEmpty()) channelsTable->setRowCount(0);
+    if (indexes.isEmpty()) {
+        channelModel->clear();
+        this->filePathLabel->clear();
+    }
 }
 
+void Tab::channelsSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection)
+{
+    Q_UNUSED(oldSelection);
+    if (newSelection.isEmpty()) channelsTable->selectionModel()->setCurrentIndex(QModelIndex(), QItemSelectionModel::NoUpdate);
+
+    QSet<int> indexes;
+
+    QModelIndexList list = channelsTable->selectionModel()->selection().indexes();
+    foreach (const QModelIndex &i, list) indexes << i.row();
+
+    QList<int> l = indexes.toList();
+    std::sort(l.begin(), l.end());
+
+    channelModel->setSelected(l.toVector());
+}
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {

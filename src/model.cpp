@@ -144,7 +144,7 @@ void Model::clear()
 
 void Model::invalidateGraph(FileDescriptor *file, int channel)
 {
-    file->channel(channel)->setCheckState(Qt::Unchecked);
+    file->channel(channel)->setPlotted(0);
     file->channel(channel)->setColor(QColor());
     QModelIndex idx = modelIndexOfFile(file, 1);
     emit dataChanged(idx, idx, QVector<int>()<<Qt::FontRole);
