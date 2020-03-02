@@ -6,26 +6,6 @@
 #include <QAbstractTableModel>
 #include <QTreeView>
 
-// Этот класс используется при импорте графиков в рисунок или при печати графика
-class Legend : public QwtLegend
-{
-    Q_OBJECT
-public:
-    explicit Legend(QWidget *parent = 0);
-signals:
-    void markedForDelete( const QVariant &itemInfo, int index );
-    void markedToMoveToRight( const QVariant &itemInfo, int index );
-
-private slots:
-    void itemMarkedForDelete();
-    void itemMarkedToMoveToRight();
-protected:
-    virtual QWidget *createWidget( const QwtLegendData & ) const;
-    virtual void updateWidget( QWidget *widget, const QwtLegendData &data );
-};
-
-
-
 class QStandardItem;
 class QModelIndex;
 class QwtPlotItem;

@@ -1528,7 +1528,11 @@ void DfdChannel::populate()
     // clear previous data;
     _data->clear();
 
-    double thr = threshold(yName());
+    double thr = 1.0;
+    if (YName.isEmpty() || YName.toLower() == "дб" || YName.toLower() == "db")
+        thr = threshold(YNameOld);
+    else
+        thr = threshold(YName);
     if (type()==Descriptor::FrequencyResponseFunction) thr=1.0;
     _data->setThreshold(thr);
 

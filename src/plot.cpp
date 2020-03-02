@@ -50,7 +50,8 @@
 
 #include "playpanel.h"
 
-#define LOG_MIN_MY 1.0e-3
+//#define LOG_MIN_MY 1.0e-3
+#define LOG_MIN_MY 1.0
 
 static inline QwtInterval logInterval( double base, const QwtInterval &interval )
 {
@@ -1088,7 +1089,7 @@ void Plot::importPlot(const QString &fileName)
 //        graph->setTitle(QwtText("<font size=5>"+graph->channel->legendName()+"</font>"));
     }
 
-    QwtAbstractLegend *leg = new Legend();
+    QwtAbstractLegend *leg = new QwtLegend();
     insertLegend(leg, QwtPlot::BottomLegend);
 
 

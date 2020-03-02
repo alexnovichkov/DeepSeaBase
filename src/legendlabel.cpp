@@ -11,27 +11,29 @@ LegendLabel::LegendLabel(QWidget *parent) :
 
 void LegendLabel::mousePressEvent(QMouseEvent *e)
 {
-    if ( e->button() == Qt::LeftButton )
-    {
-        setDown( true );
-        updateState(true, QwtLegendData::Clickable);
-        return;
-    }
-    if ( e->button() == Qt::RightButton )
-    {
-        bool down = !isDown();
-        setDown( down );
-        updateState(down, QwtLegendData::Checkable);
-        if (down) Q_EMIT(markedForDelete());
-        return;
-    }
-    if ( e->button() == Qt::MiddleButton )
-    {
-        bool down = !isDown();
-        setDown( down );
-        updateState(down, QwtLegendData::Checkable);
-        if (down) Q_EMIT(markedToMoveToRight());
-        return;
+    switch (e->button()) {
+        case Qt::LeftButton: {
+            bool down = true;
+            setDown( down );
+            updateState(down, QwtLegendData::Clickable);
+            break;
+        }
+        case Qt::RightButton: {
+            bool down = !isDown();
+            setDown( down );
+            updateState(down, QwtLegendData::Checkable);
+            if (down) Q_EMIT(markedForDelete());
+            break;
+        }
+        case Qt::MiddleButton: {
+            bool down = !isDown();
+            setDown( down );
+            updateState(down, QwtLegendData::Checkable);
+            if (down) Q_EMIT(markedToMoveToRight());
+            break;
+        }
+        default:
+            break;
     }
     QwtTextLabel::mousePressEvent( e );
 }
