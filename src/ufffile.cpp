@@ -635,13 +635,6 @@ void UffFileDescriptor::setAttachedFileName(const QString &name)
     Q_UNUSED(name);
 }
 
-QStringList UffFileDescriptor::getHeadersForChannel(int channel)
-{DD;
-    if (channels.size()>channel)
-        return channels[channel]->getInfoHeaders();
-    return QStringList();
-}
-
 QVariant UffFileDescriptor::channelHeader(int column) const
 {
     if (channels.isEmpty()) return QVariant();
@@ -1006,13 +999,13 @@ QString Function::functionTypeDescription(int type)
         case 1: return "Time Response";
         case  2: return "Auto Spectrum";
         case  3: return "Cross Spectrum";
-        case  4: return "Frequency Response Function";
+        case  4: return "FRF";
         case  5: return "Transmissibility";
         case  6: return "Coherence";
         case  7: return "Auto Correlation";
         case  8: return "Cross Correlation";
-        case  9: return "Power Spectral Density (PSD)";
-        case  10: return "Energy Spectral Density (ESD)";
+        case  9: return "PSD";
+        case  10: return "ESD";
         case  11: return "Probability Density Function";
         case  12: return "Spectrum";
         case  13: return "Cumulative Frequency Distribution";
@@ -1038,29 +1031,6 @@ QString Function::functionTypeDescription(int type)
 FileDescriptor *Function::descriptor()
 {
      return parent;
-}
-
-QStringList Function::getInfoHeaders()
-{DD;
-    return QStringList() << QString("       Имя")
-                         << QString("Ед.изм.")
-                         << "Формат"
-                         << QString("Описание")
-                         << QString("Функция")
-                         << "Коррекция"
-                            ;
-}
-
-
-QStringList Function::getInfoData()
-{DD;
-    return QStringList() << name()
-                         << yName()
-                         << data()->yValuesFormatString()
-                         << description()
-                         << functionTypeDescription(type())
-                         << correction()
-                            ;
 }
 
 QVariant Function::info(int column) const

@@ -51,8 +51,6 @@ public:
     // Channel interface
 public:
     virtual int index() const override;
-    virtual QStringList getInfoHeaders();
-    virtual QStringList getInfoData();
     virtual QVariant info(int column) const;
     virtual int columnsCount() const;
     virtual QVariant channelHeader(int column) const;
@@ -160,7 +158,6 @@ public:
     virtual QString attachedFileName() const;
     virtual void setAttachedFileName(const QString &name);
 
-    virtual QStringList getHeadersForChannel(int channel);
     virtual QVariant channelHeader(int column) const;
     virtual int columnsCount() const;
 

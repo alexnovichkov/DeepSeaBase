@@ -110,7 +110,6 @@ public:
     virtual QString attachedFileName() const = 0;
     virtual void setAttachedFileName(const QString &name) = 0;
 
-    virtual QStringList getHeadersForChannel(int channel)  = 0;
     virtual QVariant channelHeader(int column) const = 0;
     virtual int columnsCount() const = 0;
 
@@ -170,7 +169,6 @@ public:
     Channel(Channel *other);
     Channel(Channel &other);
 
-    virtual QStringList getInfoData() = 0;
     virtual QVariant info(int column) const = 0;
     virtual int columnsCount() const = 0;
     virtual QVariant channelHeader(int column) const = 0;

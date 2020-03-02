@@ -5,7 +5,8 @@
 double threshold(const QString &name)
 {
     QString n = name.toLower();
-    if (n=="м/с2" || n=="м/с^2" || n=="м/с*2" || n=="m/s2" || n=="m/s^2" /*|| n=="g"*/) return 3.16e-4; //ускорение
+    if (n=="м/с2" || n=="м/с^2" || n=="м/с*2" || n=="m/s2" || n=="m/s^2" /*|| n=="g"*/)
+        return 3.16e-4; //ускорение
     if (n=="па" || n=="pa" || n=="hpa" || n=="kpa" || n=="mpa"
         || n=="n/m2" || n=="n/mm2") return 2.0e-5; //давление
     if (n=="м/с" || n=="m/s") return 5.0e-8; //скорость

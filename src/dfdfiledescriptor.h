@@ -122,8 +122,6 @@ public:
     virtual void read(DfdSettings &dfd, int numChans);
     virtual void write(QTextStream &dfd, int index = -1);
 
-    virtual QStringList getInfoHeaders();
-    virtual QStringList getInfoData();
     virtual QVariant info(int column) const;
     virtual int columnsCount() const;
     virtual QVariant channelHeader(int column) const;
@@ -212,8 +210,6 @@ public:
     virtual ~RawChannel() {}
     virtual void read(DfdSettings &dfd, int numChans) override;
     virtual void write(QTextStream &dfd, int index = -1) override;
-    virtual QStringList getInfoHeaders() override;
-    virtual QStringList getInfoData() override;
     virtual int columnsCount() const override;
     virtual double postprocess(double v) override;
     virtual void postprocess(QVector<double> &v) override;
@@ -326,7 +322,6 @@ public:
     virtual QString calculateThirdOctave();
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes);
 
-    QStringList getHeadersForChannel(int channel);
     virtual QVariant channelHeader(int column) const;
     virtual int columnsCount() const;
     Channel *channel(int index) const;
