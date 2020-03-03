@@ -21,21 +21,31 @@ public:
             src_delete(src_state);
     }
 
+    /**
+     * @brief setLastChunk устанавливает флаг,
+     * что сейчас будет последняя порция данных
+     */
+    void setLastChunk() {
+        src_data.end_of_input = 1;
+    }
+
     void reset() {
         if (src_state)
             src_delete(src_state);
     }
 
     void init() {
-        src_state = src_new(2, 1, &_error);
+        src_state = src_new(0, 1, &_error);
         src_data.src_ratio = 1.0 / m_factor;
         src_data.end_of_input = 0;
 
-        const int newBlockSize = m_bufferSize * m_factor;
+        const int newBlockSize = m_bufferSize; //* m_factor;
 
         filterOut.resize(newBlockSize+100);
         src_data.output_frames = filterOut.size();
         src_data.data_out = filterOut.data();
+
+        src_data.input_frames = 0;
     }
 
     void setFactor(int factor) {
@@ -58,7 +68,7 @@ public:
             src_data.input_frames = chunk.size();
 
             _error = src_process(src_state, &src_data);
-            return filterOut.mid(0, m_bufferSize/m_factor);
+            return filterOut.mid(0, src_data.output_frames_gen);
         }
         else {
             return chunk;
@@ -87,3 +97,4 @@ private:
 };
 
 #endif // RESAMPLER_H
+

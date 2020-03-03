@@ -71,7 +71,10 @@ bool MatlabConvertor::convert()
         Dataset set;
         //search for the particular dataset
         foreach (const Dataset &s, xml) {
-            if (s.fileName.toLower() == QFileInfo(xdfFileName).fileName().toLower()) {
+            qDebug()<<QFileInfo(xdfFileName).fileName().toLower();
+            qDebug()<<s.fileName.toLower();
+            if (QFileInfo(xdfFileName).completeBaseName().toLower().startsWith(s.fileName.toLower()+"_")) {
+            //if (s.fileName.toLower() == QFileInfo(xdfFileName).fileName().toLower()) {
                 set = s;
                 break;
             }
@@ -403,8 +406,11 @@ void MatlabConvertor::readXml(bool &success)
             }
             else if (name == "File" && inDatasets && !inChannel) {
                 if (xmlReader.attributes().hasAttribute("Name")) {
-                    if (xml.last().fileName.isEmpty())
+                    if (xml.last().fileName.isEmpty()) {
                         xml.last().fileName = xmlReader.attributes().value("Name").toString();
+                        if (xml.last().fileName.toLower().endsWith(".xdf"))
+                            xml.last().fileName.chop(4);
+                    }
                 }
             }
             else if (name == "Titles" && inDatasets) {

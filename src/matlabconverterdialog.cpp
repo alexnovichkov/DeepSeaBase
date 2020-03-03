@@ -145,7 +145,7 @@ void MatlabConverterDialog::chooseMatFiles()
     int i=1;
     foreach (const QFileInfo &f, matFiles) {
         QTreeWidgetItem *item = new QTreeWidgetItem(tree);
-        //item->setFlags(Qt::ItemIsSelectable & Qt::ItemIsEditable & Qt::ItemIsEnabled);
+        item->setFlags(item->flags() | Qt::ItemIsEditable);
         item->setText(0, QString::number(i++));
         item->setText(1, f.canonicalFilePath());
         if (fileExists(f.canonicalFilePath())) {
@@ -170,7 +170,7 @@ void MatlabConverterDialog::chooseMatFiles()
             xdfFileName.replace(".mat",".xdf");
             for (int j = 0; j< convertor->xml.size(); ++j) {
                 const Dataset &s = convertor->xml.at(j);
-                if (s.fileName.toLower() == QFileInfo(xdfFileName).fileName().toLower()) {
+                if (QFileInfo(xdfFileName).completeBaseName().toLower().startsWith(s.fileName.toLower()+"_")) {
                     //tree->topLevelItem(i)->setData(3, Qt::UserRole, j);
                     tree->topLevelItem(i)->setText(3, s.id);
                     break;

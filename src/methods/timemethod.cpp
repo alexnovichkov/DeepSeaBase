@@ -152,7 +152,7 @@ DfdFileDescriptor *TimeMethod::createNewDfdFile(const QString &fileName, FileDes
     // rest
     newDfd->DataType = DfdDataType::CuttedData;
     newDfd->XName = "с";
-    const double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip); DebugPrint(newSampleRate)
+    const double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
     newDfd->XStep = 1.0 / newSampleRate;
     newDfd->XBegin = 0.0;
 

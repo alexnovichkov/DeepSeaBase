@@ -273,7 +273,9 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
 QVector<float> getBlock(const QVector<double> &values, const int blockSize, const int stepBack, int &block)
 {
     int realLength = blockSize;
-    if (block+blockSize > values.length()) realLength = values.length() - block;
+    if (block+blockSize > values.length())
+        realLength = values.length() - block;
+    if (realLength <=0) return QVector<float>();
     QVector<float> output(realLength);
     if (block < values.size()) {
         std::copy(values.begin()+block, values.begin()+block+realLength, output.begin());
@@ -343,8 +345,10 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
     p.bandStrip = stripNumberForBandwidth(p.sampleRate / 2.56, p);
     p.fCount = qRound((double)p.bufferSize / 2.56);
 
+    int factor = 1<<p.bandStrip;
+
     const int samplesCount = file->channel(0)->samplesCount();
-    int averages = int(1.0 * samplesCount / p.bufferSize / (1<<p.bandStrip) / (1.0 - p.overlap));
+    int averages = int(1.0 * samplesCount / p.bufferSize / factor / (1.0 - p.overlap));
     if (p.averagesCount == -1) p.averagesCount = averages;
     else p.averagesCount = qMin(averages, p.averagesCount);
     if (samplesCount % p.averagesCount !=0) p.averagesCount++;
@@ -396,7 +400,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
         QVector<double> spectrum;
         QVector<cx_double> spectrumComplex;
         int block = 0;
-        const int newBlockSize = p.bufferSize* (1<<p.bandStrip);
+        const int newBlockSize = p.bufferSize * factor;
 
         const int stepBack = int(1.0 * newBlockSize * p.overlap);
 
@@ -404,15 +408,21 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
         //TODO: вынести их все в отдельные классы обработки
         if (p.method->id()==0) {//осциллограф
             spectrum.clear();
-            Resampler filter(1<<p.bandStrip, p.bufferSize);
+            int buffer = 1024;
+            Resampler filter(factor, buffer);
             QVector<float> filtered;
             while (1) {
-                QVector<float> chunk = getBlock(file->channel(i)->yValues(), newBlockSize, stepBack, block);
-                if (chunk.size() < p.bufferSize) break;
+                QVector<float> chunk = getBlock(file->channel(i)->yValues(), buffer, stepBack, block);
+                if (chunk.size() < buffer)
+                    filter.setLastChunk();
                 filtered = filter.process(chunk);
+                if (filtered.isEmpty()) break;
                 foreach(float val, filtered)
                     spectrum << val;
             }
+            // дополняем нулями вектор, чтобы длина в точности равнялась
+            // длине исходной записи, деленной на factor
+            spectrum.append(QVector<double>(file->channel(i)->yValues().size()/factor - spectrum.size()) );
             spectrum.squeeze();
         }
 
@@ -424,7 +434,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             sampling.setDelta(1.0 * newBlockSize * p.overlap);
             sampling.setSource(file->channel(i)->yValues());
 
-            Resampler filter(1<<p.bandStrip, p.bufferSize);
+            Resampler filter(factor, p.bufferSize);
             QVector<double> filtered;
 
             Windowing window(p.bufferSize, p.windowType, p.windowPercent);
@@ -435,7 +445,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
                 QVector<double> chunk = sampling.get(&ok);
                 if (!ok) break;
 
-                if (chunk.size() < p.bufferSize) break;
+                if (chunk.size() < p.bufferSize) filter.setLastChunk();
 
                 filtered = filter.process(chunk);
                 window.applyTo(filtered);
@@ -478,8 +488,8 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             sampling2.setDelta(1.0 * newBlockSize * p.overlap);
             sampling2.setSource(file->channel(p.baseChannel)->yValues());
 
-            Resampler filter(1<<p.bandStrip, p.bufferSize);
-            Resampler baseFilter(1<<p.bandStrip, p.bufferSize);
+            Resampler filter(factor, p.bufferSize);
+            Resampler baseFilter(factor, p.bufferSize);
             Windowing window(p.bufferSize, p.windowType, p.windowPercent);
             Windowing windowBase(p.bufferSize, p.forceWindowType, p.forceWindowPercent);
             Averaging averagingBase(p.averagingType+1, p.averagesCount);
