@@ -60,7 +60,7 @@ QVariant FftFunction::getProperty(const QString &property) const
             }
 
             list << QString("BlockIn=%1").arg(getProperty("?/blockSize").toInt());
-            list << QString("Wind=%1").arg(getProperty("?/window").toString());
+            list << QString("Wind=%1").arg(getProperty("?/windowDescription").toString());
             list << QString("TypeAver=%1").arg(getProperty("?/averaging").toString());
             list << "pTime=(0000000000000000)";
             return list;
@@ -76,13 +76,22 @@ QVariant FftFunction::getProperty(const QString &property) const
             }
         }
         if (property == "?/xName") return "Гц";
+        if (property == "?/xType") return 18; //frequency
         if (property == "?/xBegin") return 0.0;
-        if (property == "?/method") {
+        if (property == "?/functionDescription") {
             switch (map.value("type")) {
                 case 0: return "FFT"; break;
                 case 1: return "PS"; break;
                 case 2: return "PSD"; break;
                 default: return "Unknown";
+            }
+        }
+        if (property == "?/functionType") {
+            switch (map.value("type")) {
+                case 0: return 12;//"FFT";
+                case 1: return 12;//"PS";
+                case 2: return 9;//"PSD";
+                default: return 0;//"Unknown";
             }
         }
         if (property == "?/dataComplex") {
@@ -109,7 +118,7 @@ QVariant FftFunction::getProperty(const QString &property) const
                 default: return DataHolder::UnitsUnknown;
             }
         }
-        if (property == "/newYName") {
+        if (property == "?/newYName") {
             if (map.value("type") == 0)
                 return (map.value("output")==0);
             //return /;

@@ -8,9 +8,9 @@
 class Resampler
 {
 public:
-    explicit Resampler() : src_state(0), m_factor(1), m_bufferSize(0) {
+    explicit Resampler() : src_state(0), m_factor(1.0), m_bufferSize(0) {
     }
-    explicit Resampler(int factor, int bufferSize) : m_factor(factor), m_bufferSize(bufferSize)
+    explicit Resampler(double factor, int bufferSize) : m_factor(factor), m_bufferSize(bufferSize)
     {
         init();
     }
@@ -48,12 +48,12 @@ public:
         src_data.input_frames = 0;
     }
 
-    void setFactor(int factor) {
-        if (factor < 1 || factor == m_factor) return;
+    void setFactor(double factor) {
+        if (factor < 1.0 || qFuzzyCompare(factor, m_factor)) return;
         m_factor = factor;
     }
 
-    int factor() const {return m_factor;}
+    double factor() const {return m_factor;}
 
     void setBufferSize(int bufferSize) {
         if (bufferSize <1 || bufferSize == m_bufferSize) return;
@@ -63,7 +63,7 @@ public:
 
     QVector<float> process(QVector<float> &chunk)
     {
-        if (m_factor > 1) {//do filtration
+        if (m_factor > 1.0) {//do filtration
             src_data.data_in = chunk.data();
             src_data.input_frames = chunk.size();
 
@@ -92,7 +92,7 @@ private:
     QVector<float> filterOut;
     int _error;
 
-    int m_factor; // 1, 2, 4, 8, 16 etc.
+    double m_factor; // 1, 2, 4, 8, 16 etc.
     int m_bufferSize;
 };
 

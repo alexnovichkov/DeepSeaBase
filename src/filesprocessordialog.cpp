@@ -13,7 +13,9 @@
 #include "methods/filteringfunction.h"
 #include "methods/averagingfunction.h"
 #include "methods/windowingfunction.h"
+
 #include "methods/spectrealgorithm.h"
+#include "methods/timealgorithm.h"
 
 FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QWidget *parent)
     : QDialog(parent), dataBase(dataBase), win(parent), currentAlgorithm(0)
@@ -22,7 +24,8 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     thread_ = 0;
     taskBarProgress = 0;
 
-    algorithms << new SpectreAlgorithm(dataBase, 0);
+    //algorithms << new SpectreAlgorithm(dataBase, 0);
+    algorithms << new TimeAlgorithm(dataBase, 0);
 
     foreach (AbstractAlgorithm *f, algorithms) {
         connect(f, SIGNAL(attributeChanged(QString,QVariant,QString)),SLOT(updateProperty(QString,QVariant,QString)));
@@ -163,12 +166,12 @@ void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
 
     // блокируем сигналы, чтобы при каждом изменении свойства не обновлять все отображения свойств
     // мы это сделаем в самом конце функцией updateVisibleProperties();
-    //m_manager->blockSignals(true);
+//    m_manager->blockSignals(true);
     foreach (const QString &property, map.values()) {
         map.key(property)->setValue(currentAlgorithm->getProperty(property));
     }
-    //m_manager->blockSignals(false);
-    //updateVisibleProperties();
+//    m_manager->blockSignals(false);
+    updateVisibleProperties();
 }
 
 void FilesProcessorDialog::updateVisibleProperties()
@@ -198,7 +201,8 @@ void FilesProcessorDialog::updateProperty(const QString &property, const QVarian
 {DD;
     if (QtVariantProperty *p = map.key(property)) {
 //        qDebug()<<"updateProperty"<<property<<val<<attribute;
-        p->setAttribute(attribute, val);
+        if (val.isValid() && !attribute.isEmpty())
+            p->setAttribute(attribute, val);
 
         p->setValue(currentAlgorithm->getProperty(property));
         updateVisibleProperties();
@@ -296,7 +300,7 @@ void FilesProcessorDialog::updateProgressIndicator(const QString &path)
 }
 
 void FilesProcessorDialog::updateProgressIndicator()
-{
+{DD;
     progress->setValue(progress->value()+1);
     taskBarProgress->setValue(progress->value());
 }

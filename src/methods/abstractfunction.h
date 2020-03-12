@@ -6,6 +6,26 @@
 
 class FileDescriptor;
 
+/***
+ * Описание глобальных параметров
+ * ?/windowDescription - оконная функция, строка, отдает WindowingFunction
+ * ?/windowType        - оконная функция, число, отдает WindowingFunction
+ * ?/functionDescription - функция, строка, отдает та функция, которая позже всех в цепи
+ * ?/functionType - функция, число, отдает та функция, которая позже всех в цепи
+ * ?/averaging - описание усреднения, отдает AveragingFunction
+ * ?/averagingType - тип усреднения, отдает AveragingFunction
+ * ?/processData - dfd- Process
+ * ?/dataType - dfd - DataType
+ * ?/dataComplex - true/false
+ * ?/abscissaEven - true/false
+ * ?/abscissaData - вектор, отдается пустой вектор, если шаг по абсциссе постоянный
+ *                  только функция OctaveFunction будет отдавать непустой вектор
+ * ?/xType - тип данных по оси X
+ * ?/xName - единица измерения по оси Х
+ * ?/yType - тип данных по оси Y
+ * ?/yName - единица измерения по оси Y
+*/
+
 class AbstractFunction : public QObject
 {
     Q_OBJECT

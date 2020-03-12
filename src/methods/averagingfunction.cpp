@@ -53,6 +53,8 @@ QVariant AveragingFunction::getProperty(const QString &property) const
     if (property.startsWith("?/")) {
         if (property == "?/averaging")
             return Averaging::averagingDescription(averaging.getAveragingType());
+        if (property == "?/averagingType")
+            return averaging.getAveragingType();
 
         if (m_input) return m_input->getProperty(property);
     }

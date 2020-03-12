@@ -99,7 +99,8 @@ SOURCES += main.cpp\
     barcurve.cpp \
     matfile.cpp \
     channeltablemodel.cpp \
-    headerview.cpp
+    headerview.cpp \
+    methods/timealgorithm.cpp
 
 HEADERS  += mainwindow.h \
     dfdfiledescriptor.h \
@@ -176,7 +177,8 @@ HEADERS  += mainwindow.h \
     barcurve.h \
     matfile.h \
     channeltablemodel.h \
-    headerview.h
+    headerview.h \
+    methods/timealgorithm.h
 
 SOURCES +=\
   $$PWD/../3rdParty/DspFilters/*.cpp \

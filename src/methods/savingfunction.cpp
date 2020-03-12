@@ -6,7 +6,7 @@
 
 //returns "uff" by default
 QString getSuffixByType(int type)
-{
+{DD;
     switch (type) {
         case SavingFunction::DfdFile: return "dfd";
             break;
@@ -17,7 +17,7 @@ QString getSuffixByType(int type)
 }
 
 DescriptionList processData(const QStringList &data)
-{
+{DD;
     DescriptionList result;
     foreach (const QString &s, data) {
         QString h = s.section("=",0,0);
@@ -29,33 +29,33 @@ DescriptionList processData(const QStringList &data)
 
 SavingFunction::SavingFunction(QObject *parent) :
     AbstractFunction(parent), m_file(0)
-{
+{DD;
 
 }
 
 
 QString SavingFunction::name() const
-{
+{DD;
     return "Saver";
 }
 
 QString SavingFunction::displayName() const
-{
+{DD;
     return "Тип файла";
 }
 
 QString SavingFunction::description() const
-{
+{DD;
     return "Сохранение файлов";
 }
 
 QStringList SavingFunction::properties() const
-{
+{DD;
     return QStringList()<<"type"<<"destination";
 }
 
 QString SavingFunction::propertyDescription(const QString &property) const
-{
+{DD;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
                                    "  \"type\"        : \"enum\"   ,"
@@ -77,13 +77,13 @@ QString SavingFunction::propertyDescription(const QString &property) const
 }
 
 bool SavingFunction::propertyShowsFor(const QString &property) const
-{
+{DD;
     Q_UNUSED(property);
     return true;
 }
 
 QVariant SavingFunction::getProperty(const QString &property) const
-{
+{DD;
     if (property.startsWith("?/")) {
         // do not know anything about these broadcast properties
         if (m_input) return m_input->getProperty(property);
@@ -100,7 +100,7 @@ QVariant SavingFunction::getProperty(const QString &property) const
 }
 
 void SavingFunction::setProperty(const QString &property, const QVariant &val)
-{
+{DD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -109,13 +109,13 @@ void SavingFunction::setProperty(const QString &property, const QVariant &val)
 }
 
 QVector<double> SavingFunction::getData(const QString &id)
-{
+{DD;
     Q_UNUSED(id);
     return QVector<double>();
 }
 
 bool SavingFunction::compute(FileDescriptor *file)
-{
+{DD;
     /* что нужно для сохранения:
      * 1. тип файла
      * 2. папка, куда сохранять файл - конструируется из имени исходного файла
@@ -129,7 +129,7 @@ bool SavingFunction::compute(FileDescriptor *file)
 
     if (!m_file) {
         QString fileName = file->fileName();
-        QString method = m_input->getProperty("?/method").toString();
+        QString method = m_input->getProperty("?/functionDescription").toString();
         newFileName = createUniqueFileName(destination, fileName, method,
                                                 getSuffixByType(type), true);
 
@@ -151,7 +151,15 @@ bool SavingFunction::compute(FileDescriptor *file)
     if (!ch) return false;
 
     const int channelIndex = getProperty("?/channelIndex").toInt();
-    ch->data()->setXValues(0.0, m_file->xStep(), dataSize);
+    bool abscissaEven = getProperty("?/abscissaEven").toBool();
+    if (abscissaEven)
+        ch->data()->setXValues(0.0, m_file->xStep(), dataSize);
+    else {
+        QList<QVariant> abscissaData = getProperty("?/abscissaData").toList();
+        QVector<double> aData;
+        foreach (QVariant v,abscissaData) aData << v.toDouble();
+        ch->data()->setXValues(aData);
+    }
     double thr = threshold(file->channel(channelIndex)->yName());
 
     ch->data()->setThreshold(thr);
@@ -174,7 +182,7 @@ bool SavingFunction::compute(FileDescriptor *file)
 }
 
 void SavingFunction::reset()
-{
+{DD;
     // вызывается для каждого файла в базе
     //1. настраивает выходное название файла
     //2. подготавливает данные для выходного файла
@@ -197,7 +205,7 @@ void SavingFunction::reset()
 }
 
 FileDescriptor *SavingFunction::createFile(FileDescriptor *file)
-{
+{DD;
     FileDescriptor *f = 0;
 
     if (type == DfdFile) f = createDfdFile(file);
@@ -207,7 +215,7 @@ FileDescriptor *SavingFunction::createFile(FileDescriptor *file)
 }
 
 FileDescriptor *SavingFunction::createDfdFile(FileDescriptor *file)
-{
+{DD;
     //DfdFileDescriptor *newDfd = AbstractMethod::createNewDfdFile(fileName, dfd, p);
 
     int dataType = getProperty("?/dataType").toInt();
@@ -250,12 +258,21 @@ FileDescriptor *SavingFunction::createDfdFile(FileDescriptor *file)
 }
 
 FileDescriptor *SavingFunction::createUffFile(FileDescriptor *file)
-{
-    return 0;
+{DD;
+    UffFileDescriptor *newUff = new UffFileDescriptor(newFileName);
+
+    newUff->updateDateTimeGUID();
+
+    if (!file->dataDescriptor().isEmpty()) {
+        newUff->setDataDescriptor(file->dataDescriptor());
+    }
+    newUff->setLegend(file->legend());
+
+    return newUff;
 }
 
 Channel *SavingFunction::createChannel(FileDescriptor *file, int dataSize)
-{
+{DD;
     Channel *c = 0;
     if (type == DfdFile) c = createDfdChannel(file, dataSize);
     if (type == UffFile) c = createUffChannel(file, dataSize);
@@ -264,8 +281,11 @@ Channel *SavingFunction::createChannel(FileDescriptor *file, int dataSize)
 }
 
 Channel *SavingFunction::createDfdChannel(FileDescriptor *file, int dataSize)
-{
+{DD;
     DfdChannel *ch = 0;
+
+    //Преобразуем для удобства работы
+    //подразумеваем, что работаем с файлом dfd
     if (DfdFileDescriptor *newDfd = dynamic_cast<DfdFileDescriptor *>(m_file)) {
         //    ch = p.method->createDfdChannel(newDfd, file, spectrum, p, i);
         ch = new DfdChannel(newDfd, newDfd->channelsCount());
@@ -284,10 +304,142 @@ Channel *SavingFunction::createDfdChannel(FileDescriptor *file, int dataSize)
 
         newDfd->channels << ch;
     }
+
     return ch;
 }
 
 Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize)
-{
+{DD;
+    Function *ch = 0;
+    if (UffFileDescriptor *newUff = dynamic_cast<UffFileDescriptor *>(m_file)) {
+        UffFileDescriptor *uffFile = dynamic_cast<UffFileDescriptor *>(file);
 
+        ch = new Function(newUff);
+        int i = getProperty("?/channelIndex").toInt();
+
+        //тип оконной функции
+        int windowType = getProperty("?/windowType").toInt();
+        ch->header.type1858[12].value = uffWindowType(windowType);
+
+//        {FTString80,"NONE" }, {FTEmpty,""},  //12-13 ID line 5
+        //ch->type58[0].value = //FTDelimiter
+        //ch->type58[1].value = //FTEmpty
+        //ch->type58[2].value = 58;//
+        //ch->type58[3].value = //FTEmpty
+
+        //название канала
+        ch->type58[4].value = file->channel(i)->name();
+        //ch->type58[5].value = //FTEmpty
+
+        //описание
+        ch->type58[6].value = file->channel(i)->description();
+        //ch->type58[7].value = //FTEmpty
+
+        //время создания канала
+        ch->type58[8].value = QDateTime::currentDateTime();
+        //ch->type58[9].value = //FTEmpty
+
+        //ID line 4
+        ch->type58[10].value = QString("Record %1").arg(newUff->channelsCount()+1);
+        //ch->type58[11].value = //FTEmpty
+
+        //ID line 5
+        if (uffFile)
+            ch->type58[12].value = uffFile->channels[i]->type58[12].value;
+        else
+            ch->type58[12].value = "NONE";
+        //ch->type58[13].value = //FTEmpty
+
+        //тип функции
+        int functionType = getProperty("?/functionType").toInt();
+        ch->type58[14].value = functionType;
+
+        //номер канала
+        ch->type58[15].value = newUff->channelsCount()+1;
+
+        //Version Number, or sequence number
+        //ch->type58[16].value =
+        //Load Case Identification Number
+        //ch->type58[17].value =
+
+        //RESPONSE
+        //точка измерения
+        if (uffFile)
+            ch->type58[18].value = uffFile->channels[i]->type58[18].value;
+        else
+            ch->type58[18].value = QString("p%1").arg(newUff->channelsCount()+1);
+        //Response Node
+        //ch->type58[19].value = 0;
+        //направление отклика
+        if (uffFile)
+            ch->type58[20].value = uffFile->channels[i]->type58[20].value;
+        else
+            ch->type58[20].value = 3; //20 Response Direction +Z
+
+        //REFERENCE
+        //Reference Entity Name ("NONE" if unused)
+        if (uffFile)
+            ch->type58[21].value = uffFile->channels[i]->type58[21].value;
+        else
+            ch->type58[21].value = "NONE";
+        //Reference Node
+        //ch->type58[22].value = 0;
+        //направление возбуждения
+        if (uffFile)
+            ch->type58[23].value = uffFile->channels[i]->type58[23].value;
+        else
+            ch->type58[23].value = 3; //20 Reference Direction +Z
+        //ch->type58[24].value = //FTEmpty
+
+        ch->type58[25].value = getProperty("?/dataComplex").toBool() ? 5 : 2; //25 Ordinate Data Type
+        ch->type58[26].value = dataSize; //number of data values for abscissa
+        ch->type58[27].value = getProperty("?/abscissaEven").toBool() ? 1 : 0;//27 Abscissa Spacing (1=even, 0=uneven,
+        //28 Abscissa minimum
+        QList<QVariant> abscissaData = getProperty("?/abscissaData").toList();
+        if (!abscissaData.isEmpty())
+            ch->type58[28].value = abscissaData.first().toDouble();
+        else
+            ch->type58[28].value = 0.0;
+        ch->type58[29].value = getProperty("?/xStep").toDouble(); //29 Abscissa increment
+        if (uffFile)
+            ch->type58[30].value = uffFile->channels[i]->type58[30].value; //30 Z-axis value
+        else
+            ch->type58[30].value = 0.0; //30 Z-axis value
+        //ch->type58[31].value = //FTEmpty
+
+        ch->type58[32].value = getProperty("?/xType").toInt(); // Abscissa Data Characteristics
+//        ch->type58[33].value = 0;//33 Length units exponent
+//        ch->type58[34].value = 0;//34 Force units exponent
+//        ch->type58[35].value = 0;//35 Temperature units exponent
+        ch->type58[36].value = abscissaTypeDescription(ch->type58[32].value.toInt()); //32 Abscissa type description
+        ch->type58[37].value = getProperty("?/xName").toString(); //37 Abscissa name
+        //ch->type58[38].value = //FTEmpty
+
+        ch->type58[39].value = getProperty("?/yType").toInt(); //39 Ordinate (or ordinate numerator) Data Characteristics // 1 = General
+//        ch->type58[40].value = 0;// Length units exponent
+//        ch->type58[41].value = 0;// Force units exponent
+//        ch->type58[42].value = 0;// Temperature units exponent
+        ch->type58[43].value = abscissaTypeDescription(ch->type58[39].value.toInt());
+        ch->type58[44].value = getProperty("?/yName").toString(); //44 Ordinate name
+        //ch->type58[45].value = //FTEmpty
+
+        ch->type58[46].value = 0; //39 Ordinate (or ordinate denominator) Data Characteristics // 1 = General
+//        ch->type58[47].value = 0;// Length units exponent
+//        ch->type58[48].value = 0;// Force units exponent
+//        ch->type58[49].value = 0;// Temperature units exponent
+        ch->type58[50].value = "NONE";
+        ch->type58[51].value = "NONE"; // Ordinate name
+        //ch->type58[52].value = //FTEmpty
+
+        ch->type58[53].value = 0; //39 Z axis Data Characteristics // 1 = General
+//        ch->type58[54].value = 0;// Length units exponent
+//        ch->type58[55].value = 0;// Force units exponent
+//        ch->type58[56].value = 0;// Temperature units exponent
+        ch->type58[57].value = "NONE";
+        ch->type58[58].value = "NONE"; // Ordinate name
+        //ch->type58[59].value = //FTEmpty
+
+        newUff->channels << ch;
+    }
+    return ch;
 }

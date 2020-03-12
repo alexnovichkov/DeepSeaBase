@@ -10,6 +10,7 @@
 class DataHolder;
 
 int abscissaType(const QString &xName);
+QString abscissaTypeDescription(int type);
 
 class FunctionHeader
 {

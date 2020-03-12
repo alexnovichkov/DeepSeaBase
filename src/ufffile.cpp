@@ -996,7 +996,7 @@ void Function::write(QTextStream &stream)
 QString Function::functionTypeDescription(int type)
 {
     switch (type) {
-        case 1: return "Time Response";
+        case  1: return "Time Response";
         case  2: return "Auto Spectrum";
         case  3: return "Cross Spectrum";
         case  4: return "FRF";

@@ -51,7 +51,8 @@ QString WindowingFunction::propertyDescription(const QString &property) const
 QVariant WindowingFunction::getProperty(const QString &property) const
 {
     if (property.startsWith("?/")) {
-        if (property == "?/window") return Windowing::windowDescription(windowing.getWindowType());
+        if (property == "?/windowDescription") return Windowing::windowDescription(windowing.getWindowType());
+        if (property == "?/windowType") return windowing.getWindowType();
         // do not know anything about these broadcast properties
         if (m_input) return m_input->getProperty(property);
     }

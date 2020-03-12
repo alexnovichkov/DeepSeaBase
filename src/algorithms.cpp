@@ -114,6 +114,10 @@ int uffWindowType(int dfdWindowType)
         case 3: return 0;//"Хемминга";
         case 4: return 0;//"Натолл";
         case 5: return 0;//"Гаусс";
+        case 6: return 5;//"Сила";
+        case 7: return 4;//"Экспонента";
+        case 8: return 0;//"Тьюки";
+        default: return 0;
     }
     return 0;
 }

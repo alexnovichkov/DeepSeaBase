@@ -1,4 +1,4 @@
-#include "spectrealgorithm.h"
+#include "timealgorithm.h"
 
 #include "filedescriptor.h"
 #include "channelfunction.h"
@@ -9,35 +9,21 @@
 #include "averagingfunction.h"
 #include "fftfunction.h"
 #include "savingfunction.h"
+#include "logging.h"
 
 
-SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
+TimeAlgorithm::TimeAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{
+{DD;
     channelF = new ChannelFunction(parent);
-    filteringF = new FilteringFunction(parent);
     resamplingF = new ResamplingFunction(parent);
-    samplingF = new FrameCutterFunction(parent);
-    windowingF = new WindowingFunction(parent);
-    averagingF = new AveragingFunction(parent);
-    fftF = new FftFunction(parent);
     saver = new SavingFunction(parent);
 
-    filteringF->setInput(channelF);
-    resamplingF->setInput(filteringF);
-    samplingF->setInput(resamplingF);
-    windowingF->setInput(samplingF);
-    fftF->setInput(windowingF);
-    averagingF->setInput(fftF);
-    saver->setInput(averagingF);
+    resamplingF->setInput(channelF);
+    saver->setInput(resamplingF);
 
     m_functions << channelF;
-    m_functions << filteringF;
     m_functions << resamplingF;
-    m_functions << samplingF;
-    m_functions << windowingF;
-    m_functions << fftF;
-    m_functions << averagingF;
     m_functions << saver;
 
     //выясняем общее значение xStep или значение первого файла
@@ -53,11 +39,10 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
 
     //начальные значения, которые будут использоваться в показе функций
     resamplingF->setProperty(resamplingF->name()+"/xStep", xStep);
-    samplingF->setProperty(samplingF->name()+"/xStep", xStep);
 
     //resamplingF отправляет сигнал об изменении "?/xStep"
-    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
-            samplingF, SLOT(updateProperty(QString,QVariant)));
+//    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
+//            samplingF, SLOT(updateProperty(QString,QVariant)));
 
     //перенаправляем сигналы от функций в интерфейс пользователя
     foreach (AbstractFunction *f, m_functions) {
@@ -67,47 +52,42 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
 }
 
 
-QString SpectreAlgorithm::name() const
-{
-    return "Spectrum";
+QString TimeAlgorithm::name() const
+{DD;
+    return "Time data";
 }
 
-QString SpectreAlgorithm::description() const
-{
-    return "Спектр";
+QString TimeAlgorithm::description() const
+{DD;
+    return "Передискретизация временных данных";
 }
 
 
-QString SpectreAlgorithm::displayName() const
-{
-    return "Спектр";
+QString TimeAlgorithm::displayName() const
+{DD;
+    return "Resample";
 }
 
-bool SpectreAlgorithm::compute(FileDescriptor *file)
-{
+bool TimeAlgorithm::compute(FileDescriptor *file)
+{DD;
     if (QThread::currentThread()->isInterruptionRequested()) {
         finalize();
         return false;
     }
     if (file->channelsCount()==0) return false;
+    //TODO: проверить, не заменяет ли это установленный destination
     saver->setProperty(saver->name()+"/destination", QFileInfo(file->fileName()).canonicalPath());
-    saver->reset();
+    saver->reset(); //сохраняем предыдущий обработанный файл.
 
     resamplingF->setProperty(resamplingF->name()+"/xStep", file->xStep());
-    samplingF->setProperty(samplingF->name()+"/xStep", file->xStep());
 
     for (int i=0; i<file->channelsCount(); ++i) {
         const bool wasPopulated = file->channel(i)->populated();
 
-        filteringF->reset();
         resamplingF->reset();
-        samplingF->reset();
-        windowingF->reset();
-        fftF->reset();
-        averagingF->reset();
 
         //beginning of the chain
-        channelF->setProperty("Channel/channelIndex", i);
+        channelF->setProperty(channelF->name()+"/channelIndex", i);
 
         //so far end of the chain
         // for each channel
@@ -116,7 +96,7 @@ bool SpectreAlgorithm::compute(FileDescriptor *file)
         if (!wasPopulated) file->channel(i)->clear();
         emit tick();
     }
-    saver->reset();
+    saver->reset(); //сохраняем последний обработанный файл
     QString fileName = saver->getProperty(saver->name()+"/name").toString();
     qDebug()<<fileName;
 
