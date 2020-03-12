@@ -131,7 +131,6 @@ public:
     virtual void updateDateTimeGUID();
     QString dataDescriptorAsString() const;
 
-    QMap<QString, QString> info() const;
     virtual Descriptor::DataType type() const;
     virtual QString typeDisplay() const;
     virtual QDateTime dateTime() const;

@@ -256,11 +256,6 @@ QString UffFileDescriptor::dataDescriptorAsString() const
     return header.info();
 }
 
-QMap<QString, QString> UffFileDescriptor::info() const
-{
-    return QMap<QString, QString>();
-}
-
 Descriptor::DataType UffFileDescriptor::type() const
 {
     if (channels.isEmpty()) return Descriptor::Unknown;

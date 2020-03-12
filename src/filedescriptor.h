@@ -78,7 +78,6 @@ public:
     virtual void populate();
     virtual void updateDateTimeGUID() = 0;
 
-    virtual QMap<QString, QString> info() const = 0;
     virtual Descriptor::DataType type() const = 0;
     virtual QString typeDisplay() const = 0;
     virtual double size() const;

@@ -153,7 +153,7 @@ bool SavingFunction::compute(FileDescriptor *file)
     const int channelIndex = getProperty("?/channelIndex").toInt();
     bool abscissaEven = getProperty("?/abscissaEven").toBool();
     if (abscissaEven)
-        ch->data()->setXValues(0.0, m_file->xStep(), dataSize);
+        ch->data()->setXValues(0.0, getProperty("?/xStep").toDouble(), dataSize);
     else {
         QList<QVariant> abscissaData = getProperty("?/abscissaData").toList();
         QVector<double> aData;
@@ -233,13 +233,14 @@ FileDescriptor *SavingFunction::createDfdFile(FileDescriptor *file)
             newDfd->dataDescription = new DataDescription(newDfd);
             newDfd->dataDescription->data = dfd->dataDescriptor();
         }
-        QMap<QString, QString> info = dfd->info();
-        newDfd->DescriptionFormat = info.value("descriptionFormat");
+        newDfd->DescriptionFormat = dfd->DescriptionFormat;
 
+        //TODO: не все каналы обрабатываются, а только те, что проходят фильтр
+        //      переделать
         // [Sources]
         newDfd->source = new Source();
         QStringList l; for (int i=1; i<=file->channelsCount(); ++i) l << QString::number(i);
-        newDfd->source->sFile = file->fileName()+"["+l.join(",")+"]"+info.value("guid");
+        newDfd->source->sFile = file->fileName()+"["+l.join(",")+"]"+dfd->DFDGUID;
     }
 
     // [Process]
@@ -251,7 +252,7 @@ FileDescriptor *SavingFunction::createDfdFile(FileDescriptor *file)
 
     // rest
     newDfd->XName = getProperty("?/xName").toString();
-    newDfd->XStep = getProperty("?/xDelta").toDouble();
+    newDfd->XStep = getProperty("?/xStep").toDouble();
     newDfd->XBegin = getProperty("?/xBegin").toDouble();
 
     return newDfd;
@@ -284,6 +285,8 @@ Channel *SavingFunction::createDfdChannel(FileDescriptor *file, int dataSize)
 {DD;
     DfdChannel *ch = 0;
 
+    DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor*>(file);
+
     //Преобразуем для удобства работы
     //подразумеваем, что работаем с файлом dfd
     if (DfdFileDescriptor *newDfd = dynamic_cast<DfdFileDescriptor *>(m_file)) {
@@ -291,16 +294,19 @@ Channel *SavingFunction::createDfdChannel(FileDescriptor *file, int dataSize)
         ch = new DfdChannel(newDfd, newDfd->channelsCount());
         int i = getProperty("?/channelIndex").toInt();
 
-        ch->setName(file->channel(i)->name());
+        ch->ChanName = file->channel(i)->name();
         ch->ChanDscr = file->channel(i)->description();
-        //skip this
-//        ch->ChanAddress = file->channel(i)->ChanAddress;
+        if (dfd)
+            ch->ChanAddress = dfd->channels[i]->ChanAddress;
 
         ch->ChanBlockSize = dataSize;
         ch->IndType = 3221225476;
 
         ch->YName = /*getProperty("/newYName").toString();*/file->channel(i)->yName();
-        ch->YNameOld = file->channel(i)->yName();
+        if (dfd)
+            ch->YNameOld = dfd->channels[i]->YNameOld;
+        else
+            ch->YNameOld = ch->YName;
 
         newDfd->channels << ch;
     }

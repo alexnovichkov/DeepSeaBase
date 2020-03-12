@@ -22,6 +22,8 @@ class FileDescriptor;
  *                  только функция OctaveFunction будет отдавать непустой вектор
  * ?/xType - тип данных по оси X
  * ?/xName - единица измерения по оси Х
+ * ?/xStep
+ * ?/xBegin
  * ?/yType - тип данных по оси Y
  * ?/yName - единица измерения по оси Y
 */

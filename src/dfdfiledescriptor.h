@@ -287,7 +287,6 @@ public:
     virtual void fillRest();
     static DfdFileDescriptor *newFile(const QString &fileName, DfdDataType type);
 
-    virtual QMap<QString, QString> info() const;
     QDateTime dateTime() const;
     virtual Descriptor::DataType type() const;
     virtual QString typeDisplay() const;

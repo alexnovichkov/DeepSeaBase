@@ -39,7 +39,7 @@ DfdFileDescriptor *AbstractMethod::createNewDfdFile(const QString &fileName, Fil
         newDfd->dataDescription = new DataDescription(newDfd);
         newDfd->dataDescription->data = dfd->dataDescriptor();
     }
-    QMap<QString, QString> info = dfd->info();
+    QMap<QString, QString> info; //= dfd->info();
     newDfd->DescriptionFormat = info.value("descriptionFormat");
 
     // [Sources]

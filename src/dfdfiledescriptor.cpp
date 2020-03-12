@@ -549,14 +549,6 @@ DfdFileDescriptor *DfdFileDescriptor::newFile(const QString &fileName, DfdDataTy
     return dfd;
 }
 
-QMap<QString, QString> DfdFileDescriptor::info() const
-{
-    QMap<QString, QString> list;
-    list.insert("guid", DFDGUID);
-    list.insert("descriptionFormat", DescriptionFormat);
-    return list;
-}
-
 DfdFileDescriptor *DfdFileDescriptor::newThirdOctaveFile(const QString &fileName)
 {
     DfdFileDescriptor *dfd = new DfdFileDescriptor(fileName);
