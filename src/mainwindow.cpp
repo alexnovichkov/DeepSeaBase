@@ -2092,13 +2092,13 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 
      //проверяем, все ли каналы имеют одинаковое разрешение по х
      bool allChannelsHaveSameXStep = true;
-     if (channel->xStep()==0.0) allChannelsHaveSameXStep = false;
+//     if (channel->xStep()==0.0) allChannelsHaveSameXStep = false;
      for (int i=1; i<plot->graphs.size(); ++i) {
-         if (plot->graphs.at(i)->channel->xStep() == 0.0) {
-             allChannelsHaveSameXStep = false;
-             break;
-         }
-         if (qAbs(plot->graphs.at(i)->channel->xStep() - channel->xStep()) >= 1e-10) {
+//         if (plot->graphs.at(i)->channel->xStep() == 0.0) {
+//             allChannelsHaveSameXStep = false;
+//             break;
+//         }
+         if (!qFuzzyCompare(plot->graphs.at(i)->channel->xStep(), channel->xStep())) {
              allChannelsHaveSameXStep = false;
              break;
          }
@@ -2114,12 +2114,10 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      }
 
      const int samplesCount = channel->samplesCount();
-     const double step = channel->xStep();
-     const bool zeroStepDetected = step<1e-9;
+//     const double step = channel->xStep();
+//     const bool zeroStepDetected = step<1e-9;
 
-     const bool writeToSeparateColumns = !allChannelsHaveSameXStep ||
-                                         !allChannelsHaveSameLength ||
-                                         zeroStepDetected;
+     const bool writeToSeparateColumns = !allChannelsHaveSameXStep || !allChannelsHaveSameLength;
 
      double minX = channel->xMin();
      double maxX = channel->xMax();
@@ -2195,8 +2193,10 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      // данные х
      // если каналы имеют разный шаг по х, то для каждого канала отдельно записываем
      // по два столбца
+     // если шаг по х нулевой, то предполагаем октаву, размножаем данные для графика
      if (!writeToSeparateColumns) {
          const int numCols = plot->graphs.size();
+         const bool zeroStep = qFuzzyIsNull(channel->xStep());
 
          QList<QVariant> cellsList;
          QList<QVariant> rowsList;
@@ -2205,11 +2205,32 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
              if (!fullRange && (val < range.min || val > range.max) ) continue;
 
              cellsList.clear();
-             cellsList << val;
-             for (int j = 0; j < numCols; ++j) {
-                 cellsList << plot->graphs.at(j)->channel->data()->yValue(i);
+
+             if (zeroStep) {//размножаем каждое значение на 2
+                 double f1 = i==0 ? val/pow(10.0,0.05):sqrt(val*channel->data()->xValue(i-1));
+                 double f2 = i==samplesCount-1?val*pow(10.0,0.05):sqrt(val*channel->data()->xValue(i+1));
+                 //первый ряд: (f1, Li)
+                 cellsList << f1;
+                 for (int j = 0; j < numCols; ++j) {
+                     cellsList << plot->graphs.at(j)->channel->data()->yValue(i);
+                 }
+                 rowsList << QVariant(cellsList);
+                 cellsList.clear();
+                 //второй ряд: (f2, Li)
+                 cellsList << f2;
+                 for (int j = 0; j < numCols; ++j) {
+                     cellsList << plot->graphs.at(j)->channel->data()->yValue(i);
+                 }
+                 rowsList << QVariant(cellsList);
+                 cellsList.clear();
              }
-             rowsList << QVariant(cellsList);
+             else {
+                 cellsList << val;
+                 for (int j = 0; j < numCols; ++j) {
+                     cellsList << plot->graphs.at(j)->channel->data()->yValue(i);
+                 }
+                 rowsList << QVariant(cellsList);
+             }
          }
          int numRows = rowsList.size();
 
@@ -2233,6 +2254,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          for (int i=0; i<plot->graphs.size(); ++i) {
              Curve *curve = plot->graphs.at(i);
              Channel *ch = curve->channel;
+             bool zeroStep = qFuzzyIsNull(ch->xStep());
 
              QList<QVariant> cellsList;
              QList<QVariant> rowsList;
@@ -2241,8 +2263,22 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
                  if (!fullRange && (val < range.min || val > range.max) ) continue;
 
                  cellsList.clear();
-                 cellsList << val << ch->data()->yValue(j);
-                 rowsList << QVariant(cellsList);
+                 if (zeroStep) {//размножаем каждое значение на 2
+                     double f1 = j==0 ? val/pow(10.0,0.05):sqrt(val*ch->data()->xValue(j-1));
+                     double f2 = j==ch->samplesCount()-1?val*pow(10.0,0.05):sqrt(val*ch->data()->xValue(j+1));
+                     //первый ряд: (f1, Li)
+                     cellsList << f1 << ch->data()->yValue(j);
+                     rowsList << QVariant(cellsList);
+                     cellsList.clear();
+                     //второй ряд: (f2, Li)
+                     cellsList << f2 << ch->data()->yValue(j);
+                     rowsList << QVariant(cellsList);
+                     cellsList.clear();
+                 }
+                 else {
+                     cellsList << val << ch->data()->yValue(j);
+                     rowsList << QVariant(cellsList);
+                 }
              }
              int numRows = rowsList.size();
              selectedSamples << numRows;
@@ -2369,10 +2405,30 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
              if (serie) {
                  QAxObject *format = serie->querySubObject("Format");
                  QAxObject *formatLine = format->querySubObject("Line");
-                 if (formatLine) formatLine->setProperty("Weight", 1);
+                 if (formatLine) {
+                     formatLine->setProperty("Weight", plot->graphs.at(i)->pen().width());
+                     Qt::PenStyle lineStyle = plot->graphs.at(i)->pen().style();
+                     int msoLineStyle = 1;
+                     switch (lineStyle) {
+                         case Qt::NoPen:
+                         case Qt::SolidLine: msoLineStyle = 1; break;
+                         case Qt::DashLine: msoLineStyle = 4; break;
+                         case Qt::DotLine: msoLineStyle = 3; break;
+                         case Qt::DashDotLine: msoLineStyle = 5; break;
+                         case Qt::DashDotDotLine: msoLineStyle = 6; break;
+                         default: break;
+                     }
+                     formatLine->setProperty("DashStyle", msoLineStyle);
+                 }
 
                  QAxObject *formatLineForeColor = formatLine->querySubObject("ForeColor");
-                 if (formatLineForeColor) formatLineForeColor->setProperty("RGB", plot->graphs.at(i)->pen().color().rgb());
+                 QColor color = plot->graphs.at(i)->channel->color();
+                 //меняем местами красный и синий, потому что Excel неправильно понимает порядок
+                 int red = color.red();
+                 color.setRed(color.blue());
+                 color.setBlue(red);
+                 if (formatLineForeColor) formatLineForeColor->setProperty("RGB", color.rgb());
+
 
                  foreach(PointLabel *label, curve->labels) {
                      QAxObject* point = serie->querySubObject("Points(QVariant)", label->point()+1);
