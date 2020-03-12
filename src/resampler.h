@@ -29,12 +29,14 @@ public:
         src_data.end_of_input = 1;
     }
 
-    void reset() {
-        if (src_state)
-            src_delete(src_state);
-    }
+//    void reset() {
+//        if (src_state)
+//            src_delete(src_state);
+//        src_state = 0;
+//    }
 
     void init() {
+        src_delete(src_state);
         src_state = src_new(0, 1, &_error);
         src_data.src_ratio = 1.0 / m_factor;
         src_data.end_of_input = 0;

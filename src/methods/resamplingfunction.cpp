@@ -88,7 +88,7 @@ QVariant ResamplingFunction::getProperty(const QString &property) const
             return xStep * factor;
         }
         if (property == "?/functionDescription") {
-            return "Time Response";
+            return "RSMPL";
         }
         if (property == "?/functionType") {
             return 1; //"Time Response";
@@ -181,7 +181,7 @@ QString ResamplingFunction::displayName() const
 
 void ResamplingFunction::reset()
 {DD;
-    resampler.reset();
+    //resampler.reset();
     output.clear();
 }
 

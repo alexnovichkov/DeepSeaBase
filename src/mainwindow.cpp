@@ -1683,8 +1683,8 @@ void MainWindow::calculateSpectreRecords()
         return;
     }
 
-    CalculateSpectreDialog dialog(records, this);
-//    FilesProcessorDialog dialog(records, this);
+//    CalculateSpectreDialog dialog(records, this);
+    FilesProcessorDialog dialog(records, this);
 
     if (dialog.exec()) {
         QStringList newFiles = dialog.getNewFiles();
