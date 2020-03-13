@@ -228,6 +228,7 @@ public:
     // Channel interface
 public:
     virtual QVariant channelHeader(int column) const override;
+    virtual QVariant info(int column) const override;
 };
 
 class Source

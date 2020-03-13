@@ -262,6 +262,7 @@ void PlayPanel::pause()
 void PlayPanel::closeEvent(QCloseEvent *event)
 {
     cursor->setVisible(false);
+    pause();
     emit closeRequested();
     QWidget::closeEvent(event);
 }
@@ -269,6 +270,7 @@ void PlayPanel::closeEvent(QCloseEvent *event)
 void PlayPanel::hideEvent(QHideEvent *event)
 {
     cursor->setVisible(false);
+    pause();
     QWidget::hideEvent(event);
 }
 

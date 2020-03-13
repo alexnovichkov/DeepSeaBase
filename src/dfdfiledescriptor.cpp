@@ -2080,7 +2080,7 @@ void RawChannel::write(QTextStream &dfd, int index)
 
 QVariant RawChannel::channelHeader(int column) const
 {
-    if (column >=0 && column <= DfdChannel::columnsCount())
+    if (column >=0 && column < DfdChannel::columnsCount())
         return DfdChannel::channelHeader(column);
     switch (column) {
         case 5: return QString("Смещ."); //ADC0
@@ -2091,6 +2091,23 @@ QVariant RawChannel::channelHeader(int column) const
         case 10: return QString("Чувств."); //SensSensitivity
         case 11: return QString("Полоса"); //BandWidth
         case 12: return QString("Датчик"); //SensName
+    }
+    return QVariant();
+}
+
+QVariant RawChannel::info(int column) const
+{
+    if (column >= 0 && column < DfdChannel::columnsCount())
+        return DfdChannel::info(column);
+    switch (column) {
+        case 5: return ADC0; //ADC0
+        case 6: return ADCStep; //ADCStep
+        case 7: return AmplShift; //AmplShift
+        case 8: return AmplLevel; //AmplLevel
+        case 9: return Sens0Shift; //Sens0Shift
+        case 10: return SensSensitivity; //SensSensitivity
+        case 11: return BandWidth; //BandWidth
+        case 12: return SensName; //SensName
     }
     return QVariant();
 }
