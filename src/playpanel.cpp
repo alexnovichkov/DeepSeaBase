@@ -32,11 +32,18 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
     connect(playButton,SIGNAL(pressed()),SLOT(start()));
     connect(stopButton,SIGNAL(pressed()),SLOT(stop()));
     connect(pauseButton,SIGNAL(pressed()),SLOT(pause()));
+    connect(muteButton,SIGNAL(pressed()),SLOT(mute()));
+
+    channelsBox = new QComboBox(this);
+    connect(channelsBox,SIGNAL(currentIndexChanged(int)),SLOT(setSource(int)));
 
     volumeSlider = new QSlider(Qt::Horizontal, this);
     volumeSlider->setRange(0, 100);
+    volumeSlider->setValue(100);
+    connect(volumeSlider,SIGNAL(valueChanged(int)),SLOT(setVolume(int)));
 
     QHBoxLayout *l = new QHBoxLayout(this);
+    l->addWidget(channelsBox);
     l->addWidget(playButton);
     l->addWidget(stopButton);
     l->addWidget(pauseButton);
@@ -73,81 +80,77 @@ void PlayPanel::switchVisibility()
 void PlayPanel::update()
 {
     // ищем канал, который сможем проиграть
-    //ситуации: 1. график удалился - очищаем
-    //          2. график поменялся - очищаем и меняем
-    //          3. график не поменялся
 
-    if (!ch) { // графика не было, ищем первый выделенный канал с временными данными
-               // или просто первый временной
-        Channel *firstTimeResponce = 0;
-        foreach (Curve *c, plot->graphs) {
-            if (c->channel->type() == Descriptor::TimeResponse) {
-                firstTimeResponce = c->channel;
-                if (c->highlighted) {
-                    ch = c->channel;
-                    break;
-                }
-            }
-        }
+    //ищем номер предыдущего канала. Если он удален, то насильно вызваем setSource,
+    //так как channelsBox нормально не обновится
 
-        if (firstTimeResponce && !ch) { // не нашли выделенный канал, берем просто первый временной
-            ch = firstTimeResponce;
+    int oldIndex = -1;
+    if (channels.values().contains(ch)) oldIndex = channels.key(ch);
+
+    channels.clear();
+    channelsBox->clear();
+
+    for (int i=0; i<plot->graphs.size(); ++i) {
+        Channel *c = plot->graphs[i]->channel;
+        if (c->type() == Descriptor::TimeResponse) {
+            channels.insert(i,c);
+            channelsBox->addItem(c->name());
         }
     }
 
-    else {
-        // график есть
-        bool present = false;
-        Channel *highlightedChannel = 0;
-        foreach (Curve *c, plot->graphs) {
-            if (c->highlighted) highlightedChannel = c->channel;
-
-            if (c->channel == ch) {
-                present = true;
-            }
-        }
-
-        if (!present) {// график удалился - останавливаем
-            reset();
-            ch = 0;
-
-            // ищем другой канал, который мы можем проиграть
-            Channel *firstTimeResponce = 0;
-            foreach (Curve *c, plot->graphs) {
-                if (c->channel->type() == Descriptor::TimeResponse) {
-                    firstTimeResponce = c->channel;
-                    if (c->highlighted) {
-                        ch = c->channel;
-                        break;
-                    }
-                }
-            }
-
-            if (firstTimeResponce) { // не нашли выделенный канал, берем просто первый временной
-                ch = firstTimeResponce;
-            }
-        }
-
-        else { // график есть, но возможно уже не текущий
-            if (highlightedChannel && (ch != highlightedChannel)) {
-                reset();
-                ch = highlightedChannel;
-            }
-        }
+    if (channels.values().contains(ch)) {
+        //такой канал уже есть
+    }
+    else if (ch) {
+        //такой канал был, но удалился
+        reset();
+        ch = 0;
+        if (!channels.keys().contains(oldIndex))
+            setSource(oldIndex);
+        else
+            setSource(0);
     }
 
-    if (!ch) {
-        playButton->setEnabled(false);
-        stopButton->setEnabled(false);
-        pauseButton->setEnabled(false);
-        muteButton->setEnabled(false);
+    playButton->setEnabled(!channels.isEmpty());
+    stopButton->setEnabled(!channels.isEmpty());
+    pauseButton->setEnabled(!channels.isEmpty());
+    muteButton->setEnabled(!channels.isEmpty());
+}
+
+void PlayPanel::setSource(int n)
+{
+    if (!channels.keys().contains(n)) return;
+
+    if (ch && channels.key(ch)==n) return;
+
+    ch = channels.value(n);
+    if (audio) audio->stop();
+    moveCursor(0);
+}
+
+void PlayPanel::mute()
+{
+    if (!muted()) {
+        muteVolume(true);
+        muteButton->setIcon(style()->standardIcon(QStyle::SP_MediaVolumeMuted));
     }
     else {
-        playButton->setEnabled(true);
-        stopButton->setEnabled(true);
-        pauseButton->setEnabled(true);
-        muteButton->setEnabled(true);
+        muteVolume(false);
+        muteButton->setIcon(style()->standardIcon(QStyle::SP_MediaVolume));
     }
+}
+
+void PlayPanel::setVolume(int vol)
+{
+    qreal linearVolume = QAudio::convertVolume(vol / qreal(100.0),
+                                               QAudio::LogarithmicVolumeScale,
+                                               QAudio::LinearVolumeScale);
+    if (audio)
+        audio->setVolume(qRound(linearVolume * 100));
+    if (vol == 0)
+        muteButton->setIcon(style()->standardIcon(QStyle::SP_MediaVolumeMuted));
+    else
+        muteButton->setIcon(style()->standardIcon(QStyle::SP_MediaVolume));
 }
 
 void PlayPanel::updateSelectedCursor(QwtPlotMarker *c)
@@ -243,6 +246,7 @@ void PlayPanel::start()
 
     connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioStateChanged(QAudio::State)));
     connect(audio, SIGNAL(notify()), this, SLOT(audioPosChanged()));
+    setVolume(volumeSlider->value());
     audio->start(audioData);
 }
 
@@ -256,8 +260,6 @@ void PlayPanel::pause()
 {
     if (audio) audio->suspend();
 }
-
-
 
 void PlayPanel::closeEvent(QCloseEvent *event)
 {
@@ -280,4 +282,17 @@ void PlayPanel::moveCursor(const double xVal)
     //if (cursor->yValues.isEmpty()) cursor->yValues << xVal;
     //else cursor->yValues[0] = xVal;
     cursor->updateLabel();
+}
+
+void PlayPanel::muteVolume(bool mute)
+{
+    if (audio) {
+        audio->setVolume(mute?0:1);
+    }
+}
+
+bool PlayPanel::muted() const
+{
+    if (audio) return qFuzzyIsNull(audio->volume());
+    return true;
 }

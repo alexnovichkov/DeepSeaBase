@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QAudio>
+#include <QMap>
 
 class Plot;
 class QwtPlotMarker;
@@ -12,6 +13,8 @@ class QAudioOutput;
 class DataIODevice;
 class Channel;
 class TrackingCursor;
+class QComboBox;
+
 
 class PlayPanel : public QWidget
 {
@@ -30,6 +33,9 @@ private slots:
     void start();
     void stop();
     void pause();
+    void setSource(int n);
+    void mute();
+    void setVolume(int vol);
 
 public slots:
     void update();
@@ -41,6 +47,8 @@ protected:
     virtual void hideEvent(QHideEvent *event);
 private:
     void moveCursor(const double xVal);
+    void muteVolume(bool mute);
+    bool muted() const;
     Channel *ch;
     Plot *plot;
     TrackingCursor *cursor;
@@ -48,6 +56,8 @@ private:
     QToolButton *stopButton;
     QToolButton *pauseButton;
     QToolButton *muteButton;
+    QComboBox *channelsBox;
+    QMap<int, Channel*> channels;
     QSlider *volumeSlider;
 
     QAudioOutput* audio;
