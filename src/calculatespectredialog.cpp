@@ -4,7 +4,7 @@
 #include <QThread>
 
 #include "converters.h"
-#include "dfdfiledescriptor.h"
+#include "fileformats/dfdfiledescriptor.h"
 #include "methods/spectremethod.h"
 #include "methods/timemethod.h"
 #include "methods/xresponch1.h"

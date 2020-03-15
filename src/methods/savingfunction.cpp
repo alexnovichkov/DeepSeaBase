@@ -1,7 +1,7 @@
 #include "savingfunction.h"
-#include "filedescriptor.h"
-#include "dfdfiledescriptor.h"
-#include "ufffile.h"
+//#include "filedescriptor.h"
+#include "fileformats/dfdfiledescriptor.h"
+#include "fileformats/ufffile.h"
 #include "logging.h"
 
 //returns "uff" by default

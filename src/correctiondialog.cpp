@@ -5,7 +5,7 @@
 #include "checkableheaderview.h"
 #include "plot.h"
 #include "curve.h"
-#include "dfdfiledescriptor.h"
+#include "fileformats/dfdfiledescriptor.h"
 #include "logging.h"
 
 CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, QWidget *parent) :

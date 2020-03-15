@@ -1,5 +1,5 @@
 #include "abstractmethod.h"
-#include "dfdfiledescriptor.h"
+#include "fileformats/dfdfiledescriptor.h"
 
 QDebug operator<<(QDebug debug, const Parameters &p)
 {

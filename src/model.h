@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QAbstractTableModel>
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 #include <QFont>
 
 class Model : public QAbstractTableModel

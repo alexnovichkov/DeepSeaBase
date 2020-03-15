@@ -1,6 +1,7 @@
 #include "channeltablemodel.h"
 #include <QApplication>
 #include "logging.h"
+#include "fileformats/filedescriptor.h"
 
 ChannelTableModel::ChannelTableModel(QObject *parent) : QAbstractTableModel(parent),
     descriptor(0)

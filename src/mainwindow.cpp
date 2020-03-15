@@ -20,14 +20,14 @@
 #include <ActiveQt/ActiveQt>
 #include "logging.h"
 
-#include "dfdfiledescriptor.h"
-#include "ufffile.h"
+#include "fileformats/dfdfiledescriptor.h"
+#include "fileformats/ufffile.h"
 #include "editdescriptionsdialog.h"
-#include "matlabfiledescriptor.h"
+#include "fileformats/matlabfiledescriptor.h"
 #include "matlabconverterdialog.h"
-#include    "esoconverterdialog.h"
-#include    "uffconverterdialog.h"
-#include "filedescriptor.h"
+#include "esoconverterdialog.h"
+#include "uffconverterdialog.h"
+#include "fileformats/filedescriptor.h"
 #include "timeslicer.h"
 #include <QTime>
 #include "channeltablemodel.h"

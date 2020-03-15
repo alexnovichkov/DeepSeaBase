@@ -1,8 +1,8 @@
 #include "dataiodevice.h"
 
-#include "filedescriptor.h"
+//#include "filedescriptor.h"
 #include "logging.h"
-#include "dfdfiledescriptor.h"
+#include "fileformats/dfdfiledescriptor.h"
 
 DataIODevice::DataIODevice(Channel *channel, QObject *parent)
     : QIODevice(parent), m_channel(channel)

@@ -2,8 +2,8 @@
 
 #include <QtCore>
 #include "logging.h"
-#include "dfdfiledescriptor.h"
-#include "ufffile.h"
+#include "fileformats/dfdfiledescriptor.h"
+#include "fileformats/ufffile.h"
 #include "converters.h"
 #include "methods/windowing.h"
 #include "averaging.h"

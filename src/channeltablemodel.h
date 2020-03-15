@@ -3,8 +3,10 @@
 
 #include <QObject>
 #include <QAbstractTableModel>
-#include "filedescriptor.h"
 #include <QFont>
+
+class Channel;
+class FileDescriptor;
 
 class ChannelTableModel : public QAbstractTableModel
 {

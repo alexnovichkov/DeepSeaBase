@@ -3,7 +3,7 @@
 
 #include <QDialog>
 
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 
 class QTabWidget;
 class QStackedWidget;

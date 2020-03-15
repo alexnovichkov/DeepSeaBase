@@ -6,7 +6,7 @@
 #include <qwt_text.h>
 #include <qwt_plot_zoneitem.h>
 #include "plot.h"
-#include "dfdfiledescriptor.h"
+#include "fileformats/dfdfiledescriptor.h"
 #include "curve.h"
 #include "logging.h"
 

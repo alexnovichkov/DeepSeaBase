@@ -5,13 +5,11 @@
 #include <QObject>
 
 class DfdFileDescriptor;
-class FileDescriptor;
 class Parameters;
 class UffFileDescriptor;
 class DfdChannel;
 class Function;
-
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 
 class AbstractMethod
 {

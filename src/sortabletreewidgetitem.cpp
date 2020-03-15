@@ -1,6 +1,6 @@
 #include "sortabletreewidgetitem.h"
 
-#include "dfdfiledescriptor.h"
+#include "fileformats/dfdfiledescriptor.h"
 
 QMap<int, SortableTreeWidgetItem::DataType> SortableTreeWidgetItem::typeMap = QMap<int, SortableTreeWidgetItem::DataType>();
 

@@ -1,7 +1,7 @@
 #include "playpanel.h"
 #include "plot.h"
 #include "qwt_plot_marker.h"
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 
 #include <QtWidgets>
 #include <QAudioOutput>

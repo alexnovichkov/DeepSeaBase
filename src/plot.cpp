@@ -6,8 +6,8 @@
 #include <qwt_plot_curve.h>
 #include <qwt_symbol.h>
 
-#include "dfdfiledescriptor.h"
-#include "ufffile.h"
+#include "fileformats/dfdfiledescriptor.h"
+#include "fileformats/ufffile.h"
 #include "curve.h"
 #include "linecurve.h"
 #include "barcurve.h"

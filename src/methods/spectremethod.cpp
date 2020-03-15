@@ -2,8 +2,8 @@
 
 #include <QtWidgets>
 
-#include "dfdfiledescriptor.h"
-#include "ufffile.h"
+#include "fileformats/dfdfiledescriptor.h"
+#include "fileformats/ufffile.h"
 #include "logging.h"
 #include "algorithms.h"
 #include "windowing.h"

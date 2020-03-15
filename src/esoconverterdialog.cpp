@@ -1,6 +1,6 @@
 #include "esoconverterdialog.h"
 #include "mainwindow.h"
-#include "dfdfiledescriptor.h"
+#include "fileformats/dfdfiledescriptor.h"
 #include <QtWidgets>
 
 class EsoFile

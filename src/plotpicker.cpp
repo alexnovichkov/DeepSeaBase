@@ -16,7 +16,7 @@
 #include <QtDebug>
 #include <QtWidgets>
 #include "curve.h"
-#include "dfdfiledescriptor.h"
+#include "fileformats/dfdfiledescriptor.h"
 #include "pointlabel.h"
 #include "logging.h"
 #include "trackingpanel.h"

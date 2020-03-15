@@ -28,7 +28,7 @@ qtHaveModule(winextras) {
 
 SOURCES += main.cpp\
     mainwindow.cpp \
-    dfdfiledescriptor.cpp \
+    fileformats/dfdfiledescriptor.cpp \
     sortabletreewidgetitem.cpp \
     plot.cpp \
     curve.cpp \
@@ -46,20 +46,20 @@ SOURCES += main.cpp\
     legend.cpp \
     legendlabel.cpp \
     logging.cpp \
-    filedescriptor.cpp \
-    ufffile.cpp \
+    fileformats/filedescriptor.cpp \
+    fileformats/ufffile.cpp \
     editdescriptionsdialog.cpp \
     iirfilter.cpp \
     methods/windowing.cpp \
     converter.cpp \
-    matlabfiledescriptor.cpp \
+    fileformats/matlabfiledescriptor.cpp \
     matlabconverterdialog.cpp \
     esoconverterdialog.cpp \
     uffconverterdialog.cpp \
     trackingpanel.cpp \
     methods/octavemethod.cpp \
     algorithms.cpp \
-    dfdsettings.cpp \
+    fileformats/dfdsettings.cpp \
     methods/octavefilterbank.cpp \
     axisboundsdialog.cpp \
     qmainzoomsvc.cpp \
@@ -68,7 +68,7 @@ SOURCES += main.cpp\
     calculatespectredialog.cpp \
     averaging.cpp \
     timeslicer.cpp \
-    fields.cpp \
+    fileformats/fields.cpp \
     methods/abstractmethod.cpp \
     dataholder.cpp \
     fft.cpp \
@@ -97,13 +97,13 @@ SOURCES += main.cpp\
     playpanel.cpp \
     linecurve.cpp \
     barcurve.cpp \
-    matfile.cpp \
+    fileformats/matfile.cpp \
     channeltablemodel.cpp \
     headerview.cpp \
     methods/timealgorithm.cpp
 
 HEADERS  += mainwindow.h \
-    dfdfiledescriptor.h \
+    fileformats/dfdfiledescriptor.h \
     sortabletreewidgetitem.h \
     plot.h \
     curve.h \
@@ -122,22 +122,22 @@ HEADERS  += mainwindow.h \
     legend.h \
     legendlabel.h \
     logging.h \
-    filedescriptor.h \
-    ufffile.h \
-    fields.h \
+    fileformats/filedescriptor.h \
+    fileformats/ufffile.h \
+    fileformats/fields.h \
     editdescriptionsdialog.h \
     iirfilter.h \
     methods/windowing.h \
     converter.h \
-    matlabfiledescriptor.h \
+    fileformats/matlabfiledescriptor.h \
     matlabconverterdialog.h \
     esoconverterdialog.h \
     uffconverterdialog.h \
     trackingpanel.h \
-    uffheaders.h \
+    fileformats/uffheaders.h \
     methods/octavemethod.h \
     algorithms.h \
-    dfdsettings.h \
+    fileformats/dfdsettings.h \
     methods/octavefilterbank.h \
     axisboundsdialog.h \
     qmainzoomsvc.h \
@@ -175,7 +175,7 @@ HEADERS  += mainwindow.h \
     playpanel.h \
     linecurve.h \
     barcurve.h \
-    matfile.h \
+    fileformats/matfile.h \
     channeltablemodel.h \
     headerview.h \
     methods/timealgorithm.h

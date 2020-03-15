@@ -1,13 +1,11 @@
 #include "uffconverterdialog.h"
 #include <QtWidgets>
-#include "ufffile.h"
-//#include "uffconvertor.h"
-#include "dfdfiledescriptor.h"
-#include "ufffile.h"
-#include "mainwindow.h"
+#include "fileformats/ufffile.h"
+#include "fileformats/dfdfiledescriptor.h"
 #include "checkableheaderview.h"
 #include "logging.h"
 #include "algorithms.h"
+#include "mainwindow.h"
 
 void ConverterDialog::addFile(const QString &fileName)
 {
