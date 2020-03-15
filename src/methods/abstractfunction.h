@@ -8,8 +8,16 @@ class FileDescriptor;
 
 /***
  * Описание глобальных параметров
+ * ?/blockSize - число отсчетов в порции данных для канала
+ *               равно числу отсчетов в канале, если канал не разбит на блоки
+ *               меньше числа отсчетов, если канал разбит на блоки (при отсутствии усреднения, например)
+ * ?/octaveFormat - октавный формат. 0 - не октавный, n - n-октавный, отдает только октавная функция
  * ?/windowDescription - оконная функция, строка, отдает WindowingFunction
  * ?/windowType        - оконная функция, число, отдает WindowingFunction
+ * ?/weightingType - тип взвешивания, 0=no, 1=A wei, 2=B wei, 3=C wei, 4=D wei
+ * ?/amplitudeScaling - 0=unknown, 1=half-peak, 2=peak, 3=RMS
+ * ?/normalization - тип нормализации, 0=unknown, 1=units squared, 2=Units squared per Hz (PSD)
+                               //3=Units squared seconds per Hz (ESD)
  * ?/functionDescription - функция, строка, отдает та функция, которая позже всех в цепи
  * ?/functionType - функция, число, отдает та функция, которая позже всех в цепи
  * ?/averaging - описание усреднения, отдает AveragingFunction

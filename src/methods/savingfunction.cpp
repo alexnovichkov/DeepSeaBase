@@ -323,9 +323,43 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize)
         ch = new Function(newUff);
         int i = getProperty("?/channelIndex").toInt();
 
-        //тип оконной функции
+        /*Заполнение заголовка функции*/
+        ch->header.type1858[4].value = 1; //4 set record number
+        //5 octave format, 0=not in octave format(default), 1=octave, n=1/n oct
+        ch->header.type1858[5].value = getProperty("?/octaveFormat");
+        //6 measurement run number
+        ch->header.type1858[6].value = 0;
+        //11 weighting type, 0=no, 1=A wei, 2=B wei, 3=C wei, 4=D wei
+        ch->header.type1858[11].value = getProperty("?/weightingType");
+        //тип оконной функции  0=no, 1=hanning narrow, 2=hanning broad, 3=flattop,
+        //                     4=exponential, 5=impact, 6=impact and exponential
         int windowType = getProperty("?/windowType").toInt();
         ch->header.type1858[12].value = uffWindowType(windowType);
+        //13 amplitude units, 0=unknown, 1=half-peak, 2=peak, 3=RMS
+        ch->header.type1858[13].value = getProperty("?/amplitudeScaling");
+        //14 normalization method, 0=unknown, 1=units squared, 2=Units squared per Hz (PSD)
+                               //3=Units squared seconds per Hz (ESD)
+        ch->header.type1858[14].value = getProperty("?/normalization");
+//        {FTInteger6, 0}, //15  Abscissa Data Type Qualifier,
+//                          //0=translation, 1=rotation, 2=translation squared, 3=rotation squared
+//        {FTInteger6, 0}, //16 Ordinate Numerator Data Type Qualifier, see 15
+//        {FTInteger6, 0}, //17 Ordinate Denominator Data Type Qualifier, see 15
+//        {FTInteger6, 0}, //18 Z-axis Data Type Qualifier, see 15
+//        {FTInteger6, 0}, //19 sampling type, 0=dynamic, 1=static, 2=RPM from tacho, 3=freq from tach
+//        {FTInteger6, 0}, {FTInteger6, 0}, {FTInteger6, 0}, {FTEmpty, ""}, //20-23 not used
+
+//        {FTFloat15_7, 0.0}, //24 Z RPM value
+//        {FTFloat15_7, 0.0}, //25 Z time value
+//        {FTFloat15_7, 0.0}, //26 Z order value
+//        {FTFloat15_7, 0.0}, //27 number of samples
+//        {FTFloat15_7, 0.0}, {FTEmpty, ""}, //28-29 not used
+
+//        {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, //30-33 user values
+//        {FTFloat15_7, 0.0}, {FTEmpty, ""}, //34-35 Exponential window damping factor
+//        {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTEmpty, ""}, //36-41 not used
+//        {FTString10a,"NONE  NONE"}, //42 response direction, reference direction
+
+
 
 //        {FTString80,"NONE" }, {FTEmpty,""},  //12-13 ID line 5
         //ch->type58[0].value = //FTDelimiter
@@ -360,13 +394,17 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize)
         int functionType = getProperty("?/functionType").toInt();
         ch->type58[14].value = functionType;
 
-        //номер канала
+        // Нумерация каналов и порций данных для каналов.
+        // 1. Каждая порция данных записывается отдельным каналом.
+        // 2. Все порции данных имеют одно название канала type58[4]
+        // 3. Каждая порция имеет свой номер
+        //номер канала, сквозная нумерация по всему файлу
         ch->type58[15].value = newUff->channelsCount()+1;
 
-        //Version Number, or sequence number
-        //ch->type58[16].value =
+        //Version Number, or sequence number,  начинается заново для каждого нового канала
+        ch->type58[16].value = newUff->channelsCount()+1;
         //Load Case Identification Number
-        //ch->type58[17].value =
+        ch->type58[17].value = 0;
 
         //RESPONSE
         //точка измерения

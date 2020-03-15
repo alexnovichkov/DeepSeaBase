@@ -51,12 +51,12 @@ void setType1858(QVector<FieldDescription> &type1858)
     type1858  = {
         {FTDelimiter, ""}, {FTEmpty, ""}, //0-1
         {FTInteger6, 1858}, {FTEmpty, ""}, //2-3
-
+//1-я строчка
         {FTInteger12, 1}, //4 set record number
         {FTInteger12, 0}, //5 octave format, 0=not in octave format(default), 1=octave, n=1/n oct
         {FTInteger12, 0}, //6 measurement run number
         {FTInteger12, 0}, {FTInteger12, 0}, {FTInteger12, 0}, {FTEmpty, ""}, //7-10, not used
-
+//2-я строчка
         {FTInteger6, 0}, //11 weighting type, 0=no, 1=A wei, 2=B wei, 3=C wei, 4=D wei
         {FTInteger6, 0}, //12 window type, 0=no, 1=hanning narrow, 2=hanning broad, 3=flattop,
                          //4=exponential, 5=impact, 6=impact and exponential
@@ -70,13 +70,13 @@ void setType1858(QVector<FieldDescription> &type1858)
         {FTInteger6, 0}, //18 Z-axis Data Type Qualifier, see 15
         {FTInteger6, 0}, //19 sampling type, 0=dynamic, 1=static, 2=RPM from tacho, 3=freq from tach
         {FTInteger6, 0}, {FTInteger6, 0}, {FTInteger6, 0}, {FTEmpty, ""}, //20-23 not used
-
+//3-я строчка
         {FTFloat15_7, 0.0}, //24 Z RPM value
         {FTFloat15_7, 0.0}, //25 Z time value
         {FTFloat15_7, 0.0}, //26 Z order value
         {FTFloat15_7, 0.0}, //27 number of samples
         {FTFloat15_7, 0.0}, {FTEmpty, ""}, //28-29 not used
-
+//4-я строчка
         {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, //30-33 user values
         {FTFloat15_7, 0.0}, {FTEmpty, ""}, //34-35 Exponential window damping factor
         {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTEmpty, ""}, //36-41 not used

@@ -50,7 +50,7 @@ SOURCES += main.cpp\
     ufffile.cpp \
     editdescriptionsdialog.cpp \
     iirfilter.cpp \
-    windowing.cpp \
+    methods/windowing.cpp \
     converter.cpp \
     matlabfiledescriptor.cpp \
     matlabconverterdialog.cpp \
@@ -60,7 +60,7 @@ SOURCES += main.cpp\
     methods/octavemethod.cpp \
     algorithms.cpp \
     dfdsettings.cpp \
-    octavefilterbank.cpp \
+    methods/octavefilterbank.cpp \
     axisboundsdialog.cpp \
     qmainzoomsvc.cpp \
     chartzoom.cpp \
@@ -127,7 +127,7 @@ HEADERS  += mainwindow.h \
     fields.h \
     editdescriptionsdialog.h \
     iirfilter.h \
-    windowing.h \
+    methods/windowing.h \
     converter.h \
     matlabfiledescriptor.h \
     matlabconverterdialog.h \
@@ -138,7 +138,7 @@ HEADERS  += mainwindow.h \
     methods/octavemethod.h \
     algorithms.h \
     dfdsettings.h \
-    octavefilterbank.h \
+    methods/octavefilterbank.h \
     axisboundsdialog.h \
     qmainzoomsvc.h \
     chartzoom.h \
