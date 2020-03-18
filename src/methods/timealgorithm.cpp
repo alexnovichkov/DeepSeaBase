@@ -1,6 +1,6 @@
 #include "timealgorithm.h"
 
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 #include "channelfunction.h"
 #include "filteringfunction.h"
 #include "resamplingfunction.h"

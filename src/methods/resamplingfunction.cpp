@@ -1,6 +1,6 @@
 #include "resamplingfunction.h"
 
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 #include "logging.h"
 
 ResamplingFunction::ResamplingFunction(QObject *parent) :

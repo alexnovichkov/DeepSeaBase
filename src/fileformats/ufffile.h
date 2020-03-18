@@ -3,7 +3,7 @@
 
 #include <QtCore>
 
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 #include "fields.h"
 #include "algorithms.h"
 

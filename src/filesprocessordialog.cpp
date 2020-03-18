@@ -1,5 +1,5 @@
 #include "filesprocessordialog.h"
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 #include "logging.h"
 #include "taskbarprogress.h"
 #include <QtTreePropertyBrowser>

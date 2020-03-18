@@ -4,7 +4,7 @@
 #include <QStringList>
 #include <QVariant>
 
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 
 class DfdSettings
 {

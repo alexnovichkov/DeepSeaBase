@@ -3,7 +3,7 @@
 
 #include <QtCore>
 #include <QColor>
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 #include <qwt_series_data.h>
 
 enum DfdDataType {

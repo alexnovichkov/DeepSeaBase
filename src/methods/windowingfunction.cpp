@@ -1,6 +1,6 @@
 #include "windowingfunction.h"
 
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 
 WindowingFunction::WindowingFunction(QObject *parent) :
     AbstractFunction(parent)

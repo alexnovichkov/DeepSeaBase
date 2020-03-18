@@ -2,7 +2,7 @@
 #include "qwt_symbol.h"
 #include "pointlabel.h"
 
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 #include <qwt_curve_fitter.h>
 #include "logging.h"
 #include "psimpl.h"

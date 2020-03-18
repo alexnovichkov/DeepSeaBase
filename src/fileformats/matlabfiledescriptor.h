@@ -1,7 +1,7 @@
 #ifndef MATLABFILEDESCRIPTOR_H
 #define MATLABFILEDESCRIPTOR_H
 
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 #include <QtGlobal>
 #include <QtDebug>
 

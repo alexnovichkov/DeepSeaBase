@@ -1,6 +1,6 @@
 #include "fftfunction.h"
 
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 #include "fft.h"
 
 FftFunction::FftFunction(QObject *parent) :

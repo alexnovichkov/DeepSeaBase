@@ -1,7 +1,7 @@
 #include "barcurve.h"
 
 #include "logging.h"
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 #include "qwt_plot.h"
 
 BarCurve::BarCurve(const QString &title, FileDescriptor *descriptor, int channelIndex) :  QwtPlotHistogram(title),

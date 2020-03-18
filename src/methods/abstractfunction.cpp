@@ -1,7 +1,7 @@
 #include "abstractfunction.h"
 
 #include <QtCore>
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 #include "logging.h"
 
 AbstractFunction::AbstractFunction(QObject *parent) : QObject(parent),

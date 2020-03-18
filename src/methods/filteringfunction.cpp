@@ -1,6 +1,6 @@
 #include "filteringfunction.h"
 
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 #include "logging.h"
 
 FilteringFunction::FilteringFunction(QObject *parent) :

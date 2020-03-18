@@ -1,6 +1,6 @@
 #include "timeslicer.h"
 #include "logging.h"
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 
 #include <QProgressDialog>
 

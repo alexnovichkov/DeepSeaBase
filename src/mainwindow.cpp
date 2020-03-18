@@ -32,7 +32,7 @@
 #include <QTime>
 #include "channeltablemodel.h"
 
-#define DSB_VERSION "1.6.9.1"
+#define DSB_VERSION "1.6.9.2"
 
 class DrivesDialog : public QDialog
 {
@@ -1683,8 +1683,8 @@ void MainWindow::calculateSpectreRecords()
         return;
     }
 
-//    CalculateSpectreDialog dialog(records, this);
-    FilesProcessorDialog dialog(records, this);
+    CalculateSpectreDialog dialog(records, this);
+//    FilesProcessorDialog dialog(records, this);
 
     if (dialog.exec()) {
         QStringList newFiles = dialog.getNewFiles();

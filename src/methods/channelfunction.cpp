@@ -1,6 +1,6 @@
 #include "channelfunction.h"
 
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 
 ChannelFunction::ChannelFunction(QObject *parent) :
     AbstractFunction(parent)

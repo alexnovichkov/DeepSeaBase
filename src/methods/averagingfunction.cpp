@@ -1,6 +1,6 @@
 #include "averagingfunction.h"
 
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 #include "logging.h"
 
 AveragingFunction::AveragingFunction(QObject *parent) :

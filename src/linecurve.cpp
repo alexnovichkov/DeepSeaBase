@@ -5,7 +5,7 @@
 #include "qwt_painter.h"
 #include "qwt_clipper.h"
 #include "logging.h"
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 #include "qwt_plot.h"
 
 class FilterPointMapper : public QwtPointMapper

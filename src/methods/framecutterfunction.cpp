@@ -1,6 +1,6 @@
 #include "framecutterfunction.h"
 #include "logging.h"
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 
 QStringList getBlocks(double xStep, const QString &fix)
 {

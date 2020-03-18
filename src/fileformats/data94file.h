@@ -1,7 +1,7 @@
 #ifndef DATA94FILE_H
 #define DATA94FILE_H
 
-#include "filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 #include <QJsonArray>
 
 /**
