@@ -100,7 +100,8 @@ SOURCES += main.cpp\
     fileformats/matfile.cpp \
     channeltablemodel.cpp \
     headerview.cpp \
-    methods/timealgorithm.cpp
+    methods/timealgorithm.cpp \
+    fileformats/data94file.cpp
 
 HEADERS  += mainwindow.h \
     fileformats/dfdfiledescriptor.h \
@@ -178,7 +179,8 @@ HEADERS  += mainwindow.h \
     fileformats/matfile.h \
     channeltablemodel.h \
     headerview.h \
-    methods/timealgorithm.h
+    methods/timealgorithm.h \
+    fileformats/data94file.h
 
 SOURCES +=\
   $$PWD/../3rdParty/DspFilters/*.cpp \
