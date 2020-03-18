@@ -525,6 +525,8 @@ void DfdFileDescriptor::fillPreliminary(Descriptor::DataType type)
     DataType = dfdDataTypeFromDataType(type);
 
      // time data tweak, so deepseabase doesn't take the file as raw time data
+    //так как мы вызываем эту функцию только из новых файлов,
+    //все сведения из файлов rawChannel нам не нужны
     if (DataType == SourceData) DataType = CuttedData;
 }
 
@@ -1394,10 +1396,16 @@ DfdChannel::DfdChannel(Channel &other, DfdFileDescriptor *parent) : Channel(othe
     IndType = 3221225476;
     ChanBlockSize = other.samplesCount();
 
-    YName = other.yName();
-    YNameOld = other.yName();
-    if (other.data()->yValuesFormat() == DataHolder::YValuesAmplitudesInDB) {
-        YName = "дБ";
+    if (DfdChannel *o=dynamic_cast<DfdChannel*>(&other)) {
+        YName = o->YName;
+        YNameOld = o->YNameOld;
+    }
+    else {
+        YName = other.yName();
+        YNameOld = other.yName();
+        if (other.data()->yValuesFormat() == DataHolder::YValuesAmplitudesInDB) {
+            YName = "дБ";
+        }
     }
 
     _populated = true;
@@ -1446,6 +1454,11 @@ void DfdChannel::read(DfdSettings &dfd, int numChans)
 
     if (YName.toLower()=="db" || YName.toLower()=="дб")
         yValueFormat = DataHolder::YValuesAmplitudesInDB;
+    //настройка для отдельных файлов
+    if ((parent->DataType == OSpectr || parent->DataType == ToSpectr)
+        && YName.toLower() != "db" && YName.toLower() != "дб")
+        yValueFormat = DataHolder::YValuesReals;
+
     _data->setYValuesFormat(yValueFormat);
 
     // читаем позиции данных этого канала
@@ -1488,7 +1501,11 @@ QVariant DfdChannel::info(int column) const
 {
     switch (column) {
         case 0: return ChanName; //name(); //avoiding conversion variant->string->variant
-        case 1: return yName();
+        case 1: {
+            QString result = YName;
+            if (!YNameOld.isEmpty()) result.append(QString(" (%1)").arg(YNameOld));
+            return result;
+        }
         case 2: return data()->yValuesFormatString();
         case 3: return ChanDscr;
         case 4: return m_correction; //correction();

@@ -147,7 +147,6 @@ public:
 
     virtual QString fileFilters() const = 0;
     bool hasGraphs() const;
-//    void setHasGraphs(bool hasGraphs) {_hasGraphs = hasGraphs;}
 private:
     QString _fileName;
     bool _changed;
@@ -232,7 +231,5 @@ private:
 protected:
     DataHolder *_data;
 };
-
-QList<int> filterIndexes(FileDescriptor *dfd, const QList<QPair<FileDescriptor *, int> > &channels);
 
 #endif // FILEDESCRIPTOR_H
