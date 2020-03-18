@@ -278,6 +278,34 @@ DfdFileDescriptor::~DfdFileDescriptor()
     qDeleteAll(channels);
 }
 
+bool looksLikeOctave(QVector<double> &xvalues, DfdDataType DataType)
+{
+    if (xvalues.isEmpty() || xvalues.size()==1) return false;
+
+    switch (DataType) {
+        case ToSpectr: {
+            double m = 0;
+            for (int i=1; i<qMin(xvalues.size(),6); ++i) {
+                m = std::max(xvalues[i]/xvalues[i-1],m);
+                if (xvalues[i]/xvalues[i-1]<1.0) return false;
+            }
+            if (m<1.3 && m>0) return true;
+            break;
+        }
+        case OSpectr: {
+            double m = 0;
+            for (int i=1; i<qMin(xvalues.size(),6); ++i) {
+                if (xvalues[i]/xvalues[i-1]<1.0) return false;
+                m = std::max(xvalues[i]/xvalues[i-1],m);
+            }
+            if (m<2.1 && m>0) return true;
+            break;
+        }
+        default: break;
+    }
+    return false;
+}
+
 void DfdFileDescriptor::read()
 {DD;
     DfdSettings dfd(fileName());
@@ -298,7 +326,7 @@ void DfdFileDescriptor::read()
     }
     Time =      QTime::fromString(dfd.value("DataFileDescriptor/Time"),"hh:mm:ss");
     int NumChans =  dfd.value("DataFileDescriptor/NumChans").toInt(); //DebugPrint(NumChans);
-    setSamplesCount(dfd.value("DataFileDescriptor/NumInd").toUInt());      //DebugPrint(NumInd);
+    NumInd = dfd.value("DataFileDescriptor/NumInd").toUInt();      //DebugPrint(NumInd);
     BlockSize = dfd.value("DataFileDescriptor/BlockSize").toInt();   //DebugPrint(BlockSize);
     XName = dfd.value("DataFileDescriptor/XName");  //DebugPrint(XName);
     XBegin = hextodouble(dfd.value("DataFileDescriptor/XBegin"));   //DebugPrint(XBegin);
@@ -330,24 +358,40 @@ void DfdFileDescriptor::read()
         ch->read(dfd, NumChans);
     }
 
-    if (XStep == 0.0) {//uneven abscissa
-        // изменили название оси х с "№№ полос"
-        if (DataType == OSpectr || DataType == ToSpectr) XName = "Гц";
+    //    if (XStep == 0.0) {//uneven abscissa
+    // изменили название оси х с "№№ полос"
+    if (DataType == OSpectr || DataType == ToSpectr) {
+        XName = "Гц";
 
         // на один канал меньше
         if (!channels.isEmpty()) {
             // первым каналом записаны центральные частоты, сохраняем их как значения по X
             DfdChannel *firstChannel = channels.first();
             firstChannel->populate();
-            xValues = firstChannel->data()->yValues();
+            QVector<double> xvalues = firstChannel->data()->yValues();
+            //определяем, действительно ли это значения фильтров
+            if (looksLikeOctave(xvalues, DataType)) {
+                xValues = xvalues;
+            }
+            else {
+                xValues.clear();
+                if (DataType == ToSpectr) {
+                    for (int i=0; i<NumInd; ++i) xValues << pow(10.0, 0.1*(i+1));
+                }
+                else if (DataType == OSpectr) {
+                    for (int i=0; i<NumInd; ++i) xValues << pow(2.0, i+1);
+                }
+                //xValues изменились, пихаем их в канал
+                firstChannel->data()->setXValues(xValues);
+            }
+            //            // перенумерация каналов
+            //            for (int i=0; i<channels.size(); ++i) {
+            //                channels[i]->channelIndex = i;
+            //            }
 
-//            // перенумерация каналов
-//            for (int i=0; i<channels.size(); ++i) {
-//                channels[i]->channelIndex = i;
-//            }
-
-//            delete firstChannel;
+            //            delete firstChannel;
         }
+        //    }
     }
 }
 
@@ -1785,7 +1829,7 @@ void DfdChannel::populate()
         _data->setYValues(YValues, DataHolder::YValuesFormat(_data->yValuesFormat()));
         setPopulated(true);
 
-        if (qFuzzyIsNull(parent->XStep)) {//нулевой шаг, данные по оси Х хранятся первым каналом
+        if (parent->DataType == ToSpectr || parent->DataType == OSpectr) {//данные по оси Х хранятся первым каналом
             if (!parent->xValues.isEmpty()) {
                 _data->setXValues(parent->xValues);
             }

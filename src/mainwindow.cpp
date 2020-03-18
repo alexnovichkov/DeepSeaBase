@@ -2206,7 +2206,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 
              cellsList.clear();
 
-             if (zeroStep) {//размножаем каждое значение на 2
+             if (zeroStep && exportPlots) {//размножаем каждое значение на 2
                  double f1 = i==0 ? val/pow(10.0,0.05):sqrt(val*channel->data()->xValue(i-1));
                  double f2 = i==samplesCount-1?val*pow(10.0,0.05):sqrt(val*channel->data()->xValue(i+1));
                  //первый ряд: (f1, Li)
@@ -2263,7 +2263,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
                  if (!fullRange && (val < range.min || val > range.max) ) continue;
 
                  cellsList.clear();
-                 if (zeroStep) {//размножаем каждое значение на 2
+                 if (zeroStep && exportPlots) {//размножаем каждое значение на 2
                      double f1 = j==0 ? val/pow(10.0,0.05):sqrt(val*ch->data()->xValue(j-1));
                      double f2 = j==ch->samplesCount()-1?val*pow(10.0,0.05):sqrt(val*ch->data()->xValue(j+1));
                      //первый ряд: (f1, Li)
