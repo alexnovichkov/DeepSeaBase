@@ -90,8 +90,8 @@ void PlayPanel::update()
     channels.clear();
     channelsBox->clear();
 
-    for (int i=0; i<plot->graphs.size(); ++i) {
-        Channel *c = plot->graphs[i]->channel;
+    for (int i=0; i<plot->curves.size(); ++i) {
+        Channel *c = plot->curves[i]->channel;
         if (c->type() == Descriptor::TimeResponse) {
             channels.insert(i,c);
             channelsBox->addItem(c->name());

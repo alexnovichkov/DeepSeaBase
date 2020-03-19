@@ -148,7 +148,7 @@ void PlotPicker::resetHighLighting()
 
     Plot *p = static_cast<Plot*>(plot);
     if (p) {
-        foreach(Curve *c, p->graphs) {
+        foreach(Curve *c, p->curves) {
             c->resetHighlighting();
         }
     }
@@ -165,7 +165,7 @@ Curve * PlotPicker::findClosestPoint(const QPoint &pos, int &index) const
 
     QwtPlotItemList itmList = plot->itemList();
     for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
-        if (Curve *c = dynamic_cast<Curve *>( *it )) {
+        if (Curve *c = dynamic_cast<Curve *>(*it )) {
             double d;
             int idx = c->closest( pos, &d );
             if ( d < dist ) {
@@ -191,7 +191,7 @@ PointLabel *PlotPicker::findLabel()
 {DD;
     const QwtPlotItemList& itmList = plot->itemList();
     for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
-        if (Curve *c = dynamic_cast<Curve *>( *it )) {
+        if (Curve *c = dynamic_cast<Curve *>(*it )) {
             PointLabel *label = c->findLabel(this->trackerPosition(), c->yAxis());
             if (label) return label;
         }
@@ -204,8 +204,8 @@ QwtPlotMarker *PlotPicker::findCursor(const QPoint &pos)
 {DD;
     const QwtPlotItemList& itmList = plot->itemList();
     for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
-        if (( *it )->rtti() == QwtPlotItem::Rtti_PlotMarker ) {
-            if (TrackingCursor *c = static_cast<TrackingCursor *>( *it )) {
+        if ((*it )->rtti() == QwtPlotItem::Rtti_PlotMarker ) {
+            if (TrackingCursor *c = static_cast<TrackingCursor *>(*it )) {
                 int newX = (int)(plot->transform(QwtPlot::xBottom, c->xValue()));
                 if (qAbs(newX-pos.x())<=5) {
                     return c;

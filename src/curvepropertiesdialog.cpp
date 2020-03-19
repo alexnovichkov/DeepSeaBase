@@ -1,4 +1,4 @@
-#include "graphpropertiesdialog.h"
+#include "curvepropertiesdialog.h"
 
 #include <QtWidgets>
 
@@ -16,7 +16,7 @@ void ClickableLabel::mouseReleaseEvent(QMouseEvent *ev)
     QLabel::mouseReleaseEvent(ev);
 }
 
-GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
+CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
     QDialog(parent), curve(curve), plot(parent)
 {
     setWindowTitle("Настройки кривой");
@@ -96,7 +96,7 @@ GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
     axisComboBox->setCurrentIndex(curve->yAxis());
     connect(axisComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             [=](int axis) {
-        plot->moveGraph(curve, axis);
+        plot->moveCurve(curve, axis);
     });
 
 //    QComboBox *symbolCombo = new QComboBox(this);
@@ -161,7 +161,7 @@ GraphPropertiesDialog::GraphPropertiesDialog(Curve *curve, Plot *parent) :
     setLayout(l);
 }
 
-void GraphPropertiesDialog::reject()
+void CurvePropertiesDialog::reject()
 {
     curve->setPen(oldPen);
     curve->oldPen = oldPen;

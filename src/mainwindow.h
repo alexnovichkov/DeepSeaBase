@@ -137,10 +137,10 @@ private slots:
     void copyToLegend();
 
     /**
-     * @brief deletePlot удаляет график
+     * @brief deleteCurve удаляет график
      * @param index номер канала
      */
-    void deletePlot(int index);
+    void deleteCurve(int index);
 
     /**
      * @brief rescanBase
@@ -186,6 +186,7 @@ private slots:
     void editYName();
     void onChannelDescriptionChanged(int index, const QString& value);
     void onChannelNameChanged(int index, const QString& value);
+    void updatePlottedChannelsNumbers();
 private:
     void moveChannels(bool up);
     void addFiles(QStringList &files);
@@ -196,7 +197,7 @@ private:
 
     void exportToExcel(bool fullRange, bool dataOnly=false);
 
-    void updateChannelsTable(FileDescriptor *);
+    void updateChannelsTable(FileDescriptor *descriptor);
     void updateRecordsTable(const QList<FileDescriptor *> &records);
 
     void createTab(const QString &name, const QStringList &folders);
@@ -207,7 +208,10 @@ private:
     void addFile(FileDescriptor *descriptor);
     void setCurrentAndPlot(FileDescriptor *d, int channelIndex);
 
+
     bool sergeiMode = false;
+    QVector<int> plottedChannelsNumbers;
+
     QStringList tabsNames;
 
     Tab *tab;

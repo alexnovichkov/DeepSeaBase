@@ -223,11 +223,10 @@ MainWindow::MainWindow(QWidget *parent)
     mainToolBar->setIconSize(QSize(24,24));
 
     plot = new Plot(this);
-//    connect(plot, SIGNAL(fileCreated(QString,bool)), SLOT(addFile(QString,bool)));
-//    connect(plot, SIGNAL(fileChanged(QString, bool)), SLOT(updateFile(QString,bool)));
     connect(plot, SIGNAL(curveChanged(Curve*)), SLOT(onCurveColorChanged(Curve*)));
     connect(plot, SIGNAL(curveDeleted(FileDescriptor*,int)), SLOT(onCurveDeleted(FileDescriptor*,int)));
-    connect(plot, SIGNAL(saveTimeSegment(QList<FileDescriptor*>,double,double)),this, SLOT(saveTimeSegment(QList<FileDescriptor*>,double,double)));
+    connect(plot, SIGNAL(saveTimeSegment(QList<FileDescriptor*>,double,double)), SLOT(saveTimeSegment(QList<FileDescriptor*>,double,double)));
+    connect(plot, SIGNAL(curvesChanged()), SLOT(updatePlottedChannelsNumbers()));
 
     addFolderAct = new QAction(qApp->style()->standardIcon(QStyle::SP_DialogOpenButton),
                                tr("Добавить папку"),this);
@@ -237,7 +236,7 @@ MainWindow::MainWindow(QWidget *parent)
     addFolderWithSubfoldersAct = new QAction(tr("Добавить папку со всеми вложенными папками"),this);
     connect(addFolderWithSubfoldersAct, SIGNAL(triggered()), SLOT(addFolderWithSubfolders()));
 
-    addFileAct  = new QAction(tr("Добавить файл"),this);
+    addFileAct = new QAction(tr("Добавить файл"),this);
     connect(addFileAct, SIGNAL(triggered()), SLOT(addFile()));
 
     moveChannelsUpAct = new QAction("Сдвинуть каналы вверх", this);
@@ -290,7 +289,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     clearPlotAct  = new QAction(QString("Очистить график"), this);
     clearPlotAct->setIcon(QIcon(":/icons/cross.png"));
-    connect(clearPlotAct, SIGNAL(triggered()), plot, SLOT(deleteGraphs()));
+    connect(clearPlotAct, SIGNAL(triggered()), plot, SLOT(deleteCurves()));
 
     savePlotAct = new QAction(QString("Сохранить график..."), this);
     savePlotAct->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogSaveButton));
@@ -586,7 +585,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     connect(tab->channelModel,SIGNAL(maybeUpdateChannelName(int,QString)),
             SLOT(onChannelNameChanged(int,QString)));
     connect(tab->channelModel,SIGNAL(maybePlot(int)),SLOT(plotChannel(int)));
-    connect(tab->channelModel,SIGNAL(deletePlot(int)),SLOT(deletePlot(int)));
+    connect(tab->channelModel,SIGNAL(deleteCurve(int)),SLOT(deleteCurve(int)));
 
     tab->filesTable = new QTreeView(this);
     tab->filesTable->setModel(tab->sortModel);
@@ -792,10 +791,10 @@ void MainWindow::closeTab(int i)
     if (!tab) return;
 
     // удаление графиков тех файлов, которые были в закрываемой вкладке
-    for (int i=plot->graphsCount()-1; i>=0; --i) {
-        FileDescriptor *f = plot->graphs[i]->descriptor;
+    for (int i=plot->curvesCount()-1; i>=0; --i) {
+        FileDescriptor *f = plot->curves[i]->descriptor;
         if (tab->model->contains(f) && !duplicated(f))
-            plot->deleteGraph(plot->graphs[i]);
+            plot->deleteCurve(plot->curves[i]);
     }
 
     tab->channelModel->clear();
@@ -876,7 +875,7 @@ MainWindow::~MainWindow()
 
 //    setSetting("folders1", map);
 
-//    plot->deleteGraphs();
+//    plot->deleteCurves();
 
 //    for (int i= tabWidget->count()-1; i>=0; --i) {
 //        closeTab(i);
@@ -976,7 +975,7 @@ void MainWindow::deleteFiles()
     QStringList duplicatedFiles;
     QList<FileDescriptor *> files = tab->model->selectedFiles();
     foreach (FileDescriptor *d, files) {
-        plot->deleteGraphs(d);
+        plot->deleteCurves(d);
 
         if (tab->folders.contains(d->fileName()))
             tab->folders.removeOne(d->fileName());
@@ -1070,7 +1069,7 @@ void MainWindow::moveChannels() /** SLOT */
 
 void MainWindow::addCorrection()
 {DD;
-    if (plot->hasGraphs()) {
+    if (plot->hasCurves()) {
         QList<FileDescriptor*> files = tab->model->selectedFiles();
 
         CorrectionDialog dialog(plot, files);
@@ -1174,8 +1173,8 @@ void MainWindow::addCorrections()
 bool MainWindow::deleteChannels(FileDescriptor *file, const QVector<int> &channelsToDelete)
 {DD;
     for (int i=0; i<channelsToDelete.size() - 1; ++i)
-        plot->deleteGraph(file, channelsToDelete.at(i), false);
-    plot->deleteGraph(file, channelsToDelete.last(), true);
+        plot->deleteCurve(file, channelsToDelete.at(i), false);
+    plot->deleteCurve(file, channelsToDelete.last(), true);
 
     file->deleteChannels(channelsToDelete);
 
@@ -1267,8 +1266,7 @@ bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &ch
 
 void MainWindow::calculateMean()
 {DD;
-    const int graphsSize = plot->graphs.size();
-    if (graphsSize<2) return;
+    if (plot->curves.size()<2) return;
 
     QList<QPair<FileDescriptor *, int> > channels;
 
@@ -1279,13 +1277,13 @@ void MainWindow::calculateMean()
     bool writeToSeparateFile = true;
     bool writeToUff = false;
 
-    Curve *firstCurve = plot->graphs.first();
+    Curve *firstCurve = plot->curves.first();
     channels.append({firstCurve->descriptor, firstCurve->channelIndex});
 
     bool allFilesDfd = firstCurve->descriptor->fileName().toLower().endsWith("dfd");
 
-    for (int i = 1; i<graphsSize; ++i) {
-        Curve *curve = plot->graphs.at(i);
+    for (int i = 1; i<plot->curves.size(); ++i) {
+        Curve *curve = plot->curves.at(i);
         channels.append({curve->descriptor, curve->channelIndex});
 
         allFilesDfd &= firstCurve->descriptor->fileName().toLower().endsWith("dfd");
@@ -1493,6 +1491,7 @@ void MainWindow::saveTimeSegment(const QList<FileDescriptor *> &files, double fr
 void MainWindow::switchSergeiMode()
 {
     sergeiMode = !sergeiMode;
+    updatePlottedChannelsNumbers();
 }
 
 void MainWindow::editYName()
@@ -1580,33 +1579,36 @@ void MainWindow::updateChannelsTable(const QModelIndex &current, const QModelInd
     updateChannelsTable(tab->model->file(index.row()));
 }
 
-void MainWindow::updateChannelsTable(FileDescriptor *dfd)
+void MainWindow::updateChannelsTable(FileDescriptor *descriptor)
 {DD;
-    QVector<int> plottedChannelsNumbers;
+    QVector<int> plottedChannels = plottedChannelsNumbers;
     if (sergeiMode) {
-        plottedChannelsNumbers = tab->channelModel->plotted();
-        tab->channelModel->deletePlots();
+    //    plottedChannelsNumbers = tab->channelModel->plotted();
+        tab->channelModel->deleteCurves();
     }
+    //возвращаем после удаления
+    plottedChannelsNumbers = plottedChannels;
 
-    tab->record = dfd;
-    tab->channelModel->setDescriptor(dfd);
-    if (!dfd) return;
+    tab->record = descriptor;
+    tab->channelModel->setDescriptor(descriptor);
+    if (!descriptor) return;
 
-    if (!dfd->fileExists()) {
+    if (!descriptor->fileExists()) {
         QMessageBox::warning(this,"Не могу получить список каналов","Такого файла уже нет");
         return;
     }
 
-    tab->filePathLabel->setText(dfd->fileName());
+    tab->filePathLabel->setText(descriptor->fileName());
 
-    int chanCount = dfd->channelsCount();
-    if (chanCount == 0) return;
+    if (descriptor->channelsCount() == 0) return;
 
     if (sergeiMode) {
         if (!plottedChannelsNumbers.isEmpty()) {
             tab->channelModel->plotChannels(plottedChannelsNumbers);
         }
     }
+    //возвращаем после возможного неполного рисования
+    plottedChannelsNumbers = plottedChannels;
 }
 
 void MainWindow::plotAllChannels()
@@ -1627,7 +1629,7 @@ void MainWindow::plotChannel(int index)
     int fileNumber = tab->model->data(tab->model->modelIndexOfFile(tab->record,0), 0).toInt();
 
     bool plotOnRight = tab->record->channel(index)->plotted()==2;
-    bool plotted = plot->plotChannel(tab->record, index, &col, plotOnRight, fileNumber);
+    bool plotted = plot->plotCurve(tab->record, index, &col, plotOnRight, fileNumber);
 
     if (plotted) {
         tab->record->channel(index)->setColor(col);
@@ -1647,7 +1649,7 @@ void MainWindow::plotChannel(int index)
             if (f->channelsCount()<=index) continue;
 
             int fileNumber = tab->model->data(tab->model->modelIndexOfFile(f,0), 0).toInt();
-            plotted = plot->plotChannel(f, index, &col, plotOnRight, fileNumber);
+            plotted = plot->plotCurve(f, index, &col, plotOnRight, fileNumber);
             if (plotted) {
                 f->channel(index)->setColor(col);
                 tab->record->channel(index)->setPlotted(plotOnRight?2:1);
@@ -1749,8 +1751,7 @@ void MainWindow::calculateThirdOctave()
 
 void MainWindow::calculateMovingAvg()
 {
-    const int graphsSize = plot->graphs.size();
-    if (graphsSize<1) return;
+    if (plot->curves.size()<1) return;
 
     int windowSize = MainWindow::getSetting("movingAvgSize",3).toInt();
     bool ok;
@@ -1766,13 +1767,13 @@ void MainWindow::calculateMovingAvg()
     bool oneFile = true; // каналы из одного файла
     bool writeToSeparateFile = true;
 
-    Curve *firstCurve = plot->graphs.first();
+    Curve *firstCurve = plot->curves.first();
     channels.append({firstCurve->descriptor, firstCurve->channelIndex});
 
     bool allFilesDfd = firstCurve->descriptor->fileName().toLower().endsWith("dfd");
 
-    for (int i = 1; i<graphsSize; ++i) {
-        Curve *curve = plot->graphs.at(i);
+    for (int i = 1; i<plot->curves.size(); ++i) {
+        Curve *curve = plot->curves.at(i);
         channels.append({curve->descriptor, curve->channelIndex});
 
         allFilesDfd &= firstCurve->descriptor->fileName().toLower().endsWith("dfd");
@@ -1865,12 +1866,16 @@ void MainWindow::calculateMovingAvg()
     setCurrentAndPlot(avgDfd, avgDfd->channelsCount()-1);
 }
 
-void MainWindow::deletePlot(int index)
+void MainWindow::deleteCurve(int index)
 {DD;
-    plot->deleteGraph(tab->record, index);
+    //удаляем кривую с графика
+    plot->deleteCurve(tab->record, index);
+    //обновляем инфу для канала
     tab->record->channel(index)->setPlotted(0);
     tab->record->channel(index)->setColor(QColor());
+    //обновляем модель для канала
     tab->channelModel->onCurveDeleted(index);
+    //обновляем модель для файла
     tab->model->updateFile(tab->record, 1);
 
     if (tab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
@@ -1879,21 +1884,22 @@ void MainWindow::deletePlot(int index)
             if (f == tab->record) continue;
             if (f->channelsCount()<=index) continue;
 
-            plot->deleteGraph(f, index);
+            plot->deleteCurve(f, index);
             f->channel(index)->setPlotted(0);
             f->channel(index)->setColor(QColor());
 
             tab->model->updateFile(f, 1);
         }
     }
+    updatePlottedChannelsNumbers();
 }
 
 void MainWindow::rescanBase()
 {DD;
     if (!tab) return;
 
-    // first we delete all graphs affected
-    plot->deleteGraphs();
+    // first we delete all curves affected
+    plot->deleteCurves();
 
     // next we clear all tab and populate it with folders anew
     tab->model->clear();
@@ -1982,6 +1988,15 @@ void MainWindow::setCurrentAndPlot(FileDescriptor *d, int channelIndex)
     }
 }
 
+void MainWindow::updatePlottedChannelsNumbers()
+{
+    if (sergeiMode)
+        plottedChannelsNumbers = tab->channelModel->plotted();
+    else
+        plottedChannelsNumbers.clear();
+//    qDebug()<<plottedChannelsNumbers.size();
+}
+
 void setLineColor(QAxObject *obj, int color)
 {DD;
     QAxObject *format = obj->querySubObject("Format");
@@ -2050,7 +2065,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 {
     static QAxObject *excel = 0;
 
-    if (!plot->hasGraphs()) {
+    if (!plot->hasCurves()) {
         QMessageBox::warning(this, "Графиков нет", "Постройте хотя бы один график!");
         return;
     }
@@ -2078,13 +2093,13 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
     QAxObject * worksheet = workbook->querySubObject("ActiveSheet");
 
 
-     FileDescriptor *descriptor = plot->graphs.at(0)->descriptor;
-     Channel *channel = plot->graphs.at(0)->channel;
+     FileDescriptor *descriptor = plot->curves.at(0)->descriptor;
+     Channel *channel = plot->curves.at(0)->channel;
 
      // проверяем, все ли каналы из одного файла
      bool allChannelsFromOneFile = true;
-     for (int i=1; i<plot->graphs.size(); ++i) {
-         if (plot->graphs.at(i)->descriptor->fileName() != descriptor->fileName()) {
+     for (int i=1; i<plot->curves.size(); ++i) {
+         if (plot->curves.at(i)->descriptor->fileName() != descriptor->fileName()) {
              allChannelsFromOneFile = false;
              break;
          }
@@ -2093,12 +2108,12 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      //проверяем, все ли каналы имеют одинаковое разрешение по х
      bool allChannelsHaveSameXStep = true;
 //     if (channel->xStep()==0.0) allChannelsHaveSameXStep = false;
-     for (int i=1; i<plot->graphs.size(); ++i) {
-//         if (plot->graphs.at(i)->channel->xStep() == 0.0) {
+     for (int i=1; i<plot->curves.size(); ++i) {
+//         if (plot->curves.at(i)->channel->xStep() == 0.0) {
 //             allChannelsHaveSameXStep = false;
 //             break;
 //         }
-         if (!qFuzzyCompare(plot->graphs.at(i)->channel->xStep(), channel->xStep())) {
+         if (!qFuzzyCompare(plot->curves.at(i)->channel->xStep(), channel->xStep())) {
              allChannelsHaveSameXStep = false;
              break;
          }
@@ -2106,8 +2121,8 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 
      //проверяем, все ли каналы имеют одинаковую длину
      bool allChannelsHaveSameLength = true;
-     for (int i=1; i<plot->graphs.size(); ++i) {
-         if (plot->graphs.at(i)->channel->samplesCount() != channel->samplesCount()) {
+     for (int i=1; i<plot->curves.size(); ++i) {
+         if (plot->curves.at(i)->channel->samplesCount() != channel->samplesCount()) {
              allChannelsHaveSameLength = false;
              break;
          }
@@ -2124,8 +2139,8 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 
      Range range = plot->xRange();
 
-     for (int i=1; i<plot->graphs.size(); ++i) {
-         Channel *ch = plot->graphs.at(i)->channel;
+     for (int i=1; i<plot->curves.size(); ++i) {
+         Channel *ch = plot->curves.at(i)->channel;
          if (ch->xMin() < minX) minX = ch->xMin();
          if (ch->xMax() > maxX) maxX = ch->xMax();
      }
@@ -2158,8 +2173,8 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          delete cells;
      }
      else {
-         for (int i=0; i<plot->graphs.size(); ++i) {
-             Curve *curve = plot->graphs.at(i);
+         for (int i=0; i<plot->curves.size(); ++i) {
+             Curve *curve = plot->curves.at(i);
              QStringList descriptions = twoStringDescription(curve->descriptor->dataDescriptor());
 
              QAxObject *cells = !writeToSeparateColumns ? worksheet->querySubObject("Cells(Int,Int)", 1, 2+i)
@@ -2179,8 +2194,8 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      }
 
      // записываем название канала
-     for (int i=0; i<plot->graphs.size(); ++i) {
-         Curve *curve = plot->graphs.at(i);
+     for (int i=0; i<plot->curves.size(); ++i) {
+         Curve *curve = plot->curves.at(i);
          QAxObject *cells = !writeToSeparateColumns ? worksheet->querySubObject("Cells(Int,Int)", 4, 2+i)
                                                    : worksheet->querySubObject("Cells(Int,Int)", 4, 2+i*2);
          cells->setProperty("Value", curve->title());
@@ -2195,7 +2210,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      // по два столбца
      // если шаг по х нулевой, то предполагаем октаву, размножаем данные для графика
      if (!writeToSeparateColumns) {
-         const int numCols = plot->graphs.size();
+         const int numCols = plot->curves.size();
          const bool zeroStep = qFuzzyIsNull(channel->xStep());
 
          QList<QVariant> cellsList;
@@ -2212,14 +2227,14 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
                  //первый ряд: (f1, Li)
                  cellsList << f1;
                  for (int j = 0; j < numCols; ++j) {
-                     cellsList << plot->graphs.at(j)->channel->data()->yValue(i);
+                     cellsList << plot->curves.at(j)->channel->data()->yValue(i);
                  }
                  rowsList << QVariant(cellsList);
                  cellsList.clear();
                  //второй ряд: (f2, Li)
                  cellsList << f2;
                  for (int j = 0; j < numCols; ++j) {
-                     cellsList << plot->graphs.at(j)->channel->data()->yValue(i);
+                     cellsList << plot->curves.at(j)->channel->data()->yValue(i);
                  }
                  rowsList << QVariant(cellsList);
                  cellsList.clear();
@@ -2227,7 +2242,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
              else {
                  cellsList << val;
                  for (int j = 0; j < numCols; ++j) {
-                     cellsList << plot->graphs.at(j)->channel->data()->yValue(i);
+                     cellsList << plot->curves.at(j)->channel->data()->yValue(i);
                  }
                  rowsList << QVariant(cellsList);
              }
@@ -2251,8 +2266,8 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          delete Cell2;
      }
      else {
-         for (int i=0; i<plot->graphs.size(); ++i) {
-             Curve *curve = plot->graphs.at(i);
+         for (int i=0; i<plot->curves.size(); ++i) {
+             Curve *curve = plot->curves.at(i);
              Channel *ch = curve->channel;
              bool zeroStep = qFuzzyIsNull(ch->xStep());
 
@@ -2318,7 +2333,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
                  else ok=false;
              }
 
-             for (int i=0; i<plot->graphs.size(); ++i) {
+             for (int i=0; i<plot->curves.size(); ++i) {
                  QAxObject * serie = series->querySubObject("NewSeries()");
                  if (serie) {
                      //xvalues
@@ -2355,7 +2370,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          int seriesCount = series->property("Count").toInt();
          bool addRightAxis = false;
          for ( int i=0; i<seriesCount; ++i) {
-             Curve *curve = plot->graphs.at(i);
+             Curve *curve = plot->curves.at(i);
              QAxObject * serie = series->querySubObject("Item (int)", i+1);
              if (serie) {
                  if (curve->yAxis()==QwtPlot::yRight) {
@@ -2399,15 +2414,15 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          delete plotArea;
 
          // цвета графиков
-         for (int i = 0; i< plot->graphs.size(); ++i) {
-             Curve *curve = plot->graphs.at(i);
+         for (int i = 0; i< plot->curves.size(); ++i) {
+             Curve *curve = plot->curves.at(i);
              QAxObject * serie = series->querySubObject("Item(int)", i+1);
              if (serie) {
                  QAxObject *format = serie->querySubObject("Format");
                  QAxObject *formatLine = format->querySubObject("Line");
                  if (formatLine) {
-                     formatLine->setProperty("Weight", plot->graphs.at(i)->pen().width());
-                     Qt::PenStyle lineStyle = plot->graphs.at(i)->pen().style();
+                     formatLine->setProperty("Weight", plot->curves.at(i)->pen().width());
+                     Qt::PenStyle lineStyle = plot->curves.at(i)->pen().style();
                      int msoLineStyle = 1;
                      switch (lineStyle) {
                          case Qt::NoPen:
@@ -2422,7 +2437,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
                  }
 
                  QAxObject *formatLineForeColor = formatLine->querySubObject("ForeColor");
-                 QColor color = plot->graphs.at(i)->channel->color();
+                 QColor color = plot->curves.at(i)->channel->color();
                  //меняем местами красный и синий, потому что Excel неправильно понимает порядок
                  int red = color.red();
                  color.setRed(color.blue());
@@ -2496,7 +2511,7 @@ void MainWindow::onCurveDeleted(FileDescriptor *descriptor, int channelIndex)
 {DD;
     for (int index = 0; index < tabWidget->count(); ++index) {
         if (Tab *t = qobject_cast<Tab*>(tabWidget->widget(index)))
-            t->model->invalidateGraph(descriptor, channelIndex);
+            t->model->invalidateCurve(descriptor, channelIndex);
     }
     if (tab->record == descriptor)
         tab->channelModel->onCurveDeleted(channelIndex);
@@ -2607,7 +2622,7 @@ bool MainWindow::closeRequested()
 
     setSetting("folders1", map);
 
-    plot->deleteGraphs();
+    plot->deleteCurves();
 
     for (int i= tabWidget->count()-1; i>=0; --i) {
         closeTab(i);

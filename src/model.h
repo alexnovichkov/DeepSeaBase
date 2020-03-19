@@ -32,8 +32,8 @@ public:
     void updateFile(FileDescriptor *file, int column);
     void updateFile(FileDescriptor *file);
     void clear();
-//    void invalidateGraphs();
-    void invalidateGraph(FileDescriptor *file, int channel);
+//    void invalidateCurves();
+    void invalidateCurve(FileDescriptor *file, int channel);
 
 
 

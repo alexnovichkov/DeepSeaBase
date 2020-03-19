@@ -53,7 +53,7 @@ void ChannelTableModel::clear()
     endResetModel();
 }
 
-void ChannelTableModel::deletePlots()
+void ChannelTableModel::deleteCurves()
 {DD;
     if (!descriptor) return;
     for (int i=0; i<descriptor->channelsCount(); ++i) {
@@ -210,7 +210,7 @@ bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value,
                     emit maybePlot(row);
                 }
                 else if (state == Qt::Unchecked) {
-                    emit deletePlot(row);
+                    emit deleteCurve(row);
                 }
                 success = true;
             }
@@ -252,7 +252,7 @@ bool ChannelTableModel::setHeaderData(int section, Qt::Orientation orientation, 
             case Qt::Checked: plotChannels(QVector<int>(), false);
                 return true;
                 break;
-            case Qt::Unchecked: deletePlots();
+            case Qt::Unchecked: deleteCurves();
                 return true;
                 break;
             default: break;

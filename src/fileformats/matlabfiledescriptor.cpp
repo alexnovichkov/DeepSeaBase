@@ -90,15 +90,6 @@ bool MatlabConvertor::convert()
         }
 
         //reading mat file structure
-//        MatlabFile matlabFile(fi);
-//        matlabFile.read();
-//        if (matlabFile.writtenAsMatrix) {
-//            emit message(QString("-- Файл mat записан матрицей. Он будет пропущен. Экспортируйте файл без галочки \"Group similar blocks in a matrix\""));
-//            emit tick();
-//            noErrors = false;
-//            continue;
-//        }
-//        emit message(QString("-- Файл mat содержит %1 каналов").arg(matlabFile.channels.size()));
         MatFile matlabFile(fi);
         emit message(QString("-- Файл mat содержит %1 переменных").arg(matlabFile.records.size()));
 

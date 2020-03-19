@@ -7794,13 +7794,13 @@ The subroutine generates elementary complex reflection H of  order  N,  so
 that, for a given X, the following equality holds true:
 
      ( X(1) )   ( Beta )
-H' * (  ..  ) = (  0   ),   H'*H = I,   Beta is a real number
-     ( X(n) )   (  0   )
+H' * (..  ) = ( 0   ),   H'*H = I,   Beta is a real number
+     ( X(n) )   ( 0   )
 
 where
 
               ( V(1) )
-H = 1 - Tau * (  ..  ) * ( conj(V(1)), ..., conj(V(n)) )
+H = 1 - Tau * (..  ) * ( conj(V(1)), ..., conj(V(n)) )
               ( V(n) )
 
 where the first component of vector V equals 1.

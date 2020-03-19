@@ -146,12 +146,11 @@ public:
     virtual bool dataTypeEquals(FileDescriptor *other) const = 0;
 
     virtual QString fileFilters() const = 0;
-    bool hasGraphs() const;
+    bool hasCurves() const;
 private:
     QString _fileName;
     bool _changed;
     bool _dataChanged;
-    bool _hasGraphs;
 };
 
 class Channel

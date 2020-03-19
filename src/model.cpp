@@ -131,7 +131,7 @@ void Model::clear()
     endResetModel();
 }
 
-//void Model::invalidateGraphs()
+//void Model::invalidateCurves()
 //{
 //    foreach (FileDescriptor *f, descriptors) {
 //        for(int i=0; i<f->channelsCount(); ++i) {
@@ -142,7 +142,7 @@ void Model::clear()
 //    emit dataChanged(index(0, 1), index(size()-1, 1), QVector<int>()<<Qt::FontRole);
 //}
 
-void Model::invalidateGraph(FileDescriptor *file, int channel)
+void Model::invalidateCurve(FileDescriptor *file, int channel)
 {
     file->channel(channel)->setPlotted(0);
     file->channel(channel)->setColor(QColor());
@@ -237,7 +237,7 @@ QVariant Model::data(const QModelIndex &index, int role) const
     }
     else if (role == Qt::FontRole) {
         if (column == 1)
-            return (d->hasGraphs() ? bFont : uFont);
+            return (d->hasCurves() ? bFont : uFont);
     }
     return QVariant();
 }

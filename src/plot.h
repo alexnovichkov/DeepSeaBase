@@ -50,37 +50,37 @@ public:
     explicit Plot(QWidget *parent = 0);
     virtual ~Plot();
 
-    QList<Curve *> graphs;
+    QList<Curve *> curves;
 
     void update();
 
     /**
-     * @brief hasGraphs
-     * @return whether plot has any graphs
+     * @brief hasCurves
+     * @return whether plot has any curves
      */
-    bool hasGraphs() const;
+    bool hasCurves() const;
     /**
-     * @brief graphsCount
-     * @return count of graphs excluding freeGraph
+     * @brief curvesCount
+     * @return count of curves excluding freeCurve
      */
-    int graphsCount() const {return graphs.size();}
+    int curvesCount() const {return curves.size();}
 
     /**
-     * @brief deleteGraphs deletes all graphs on a plot, which represent DFDd with dfdGuid
+     * @brief deleteCurves deletes all curves on a plot, which represent DFDd with dfdGuid
      * @param dfdGuid
      */
-    void deleteGraphs(FileDescriptor *descriptor);
+    void deleteCurves(FileDescriptor *descriptor);
 
     /**
-     * @brief deleteGraph deletes plotted graph
-     * @param dfd - DFD represented by a graph
+     * @brief deleteCurve deletes plotted curve
+     * @param dfd - DFD represented by a curve
      * @param channel
      */
-    void deleteGraph(FileDescriptor *dfd, int channel, bool doReplot = true);
-    void deleteGraph(Curve *graph, bool doReplot = true);
-    void deleteGraph(Channel *c, bool doReplot = true);
+    void deleteCurve(FileDescriptor *dfd, int channel, bool doReplot = true);
+    void deleteCurve(Curve *curve, bool doReplot = true);
+    void deleteCurve(Channel *c, bool doReplot = true);
 
-    bool plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool &plotOnRight, int fileNumber);
+    bool plotCurve(FileDescriptor *descriptor, int channel, QColor *col, bool &plotOnRight, int fileNumber);
 
     Curve *plotted(FileDescriptor *dfd, int channel) const;
     Curve *plotted(Channel *channel) const;
@@ -127,26 +127,27 @@ public slots:
     void print();
     void updateLegends();
 
-    void moveGraph(Curve *curve, int axis);
+    void moveCurve(Curve *curve, int axis);
 
     /**
-     * @brief deleteGraphs
-     * deletes all graphs on a plot
+     * @brief deleteCurves
+     * deletes all curves on a plot
      */
-    void deleteGraphs();
+    void deleteCurves();
 signals:
     void curveChanged(Curve *curve);
     void curveDeleted(FileDescriptor *descriptor, int index);
     void trackingPanelCloseRequested();
     void playerPanelCloseRequested();
     void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
-    void graphsChanged();
+    void curvesChanged();
+    void updatePlotted();
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
     void editLegendItem(QwtPlotItem *item);
-    void deleteGraph(QwtPlotItem *item);
+    void deleteCurve(QwtPlotItem *item);
     void showContextMenu(const QPoint &pos, const int axis);
-    void moveGraph(QwtPlotItem *curve);
+    void moveCurve(QwtPlotItem *curve);
 private:
     void importPlot(const QString &fileName);
     bool hasDuplicateNames(const QString name) const;
@@ -165,8 +166,8 @@ private:
     int yValuesPresentationLeft;
     int yValuesPresentationRight;
 
-    QList<Curve *> leftGraphs;
-    QList<Curve *> rightGraphs;
+    QList<Curve *> leftCurves;
+    QList<Curve *> rightCurves;
 
     QwtPlotGrid *grid;
     PlotPicker *picker;

@@ -35,7 +35,7 @@ SOURCES += main.cpp\
     checkableheaderview.cpp \
     methods/spectremethod.cpp \
     methods/timemethod.cpp \
-    graphpropertiesdialog.cpp \
+    curvepropertiesdialog.cpp \
     tabwidget.cpp \
     coloreditdialog.cpp \
     colorselector.cpp \
@@ -101,7 +101,8 @@ SOURCES += main.cpp\
     channeltablemodel.cpp \
     headerview.cpp \
     methods/timealgorithm.cpp \
-    fileformats/data94file.cpp
+    fileformats/data94file.cpp \
+    logscaleengine.cpp
 
 HEADERS  += mainwindow.h \
     fileformats/dfdfiledescriptor.h \
@@ -112,7 +113,7 @@ HEADERS  += mainwindow.h \
     methods/abstractmethod.h \
     methods/spectremethod.h \
     methods/timemethod.h \
-    graphpropertiesdialog.h \
+    curvepropertiesdialog.h \
     tabwidget.h \
     coloreditdialog.h \
     colorselector.h \
@@ -180,7 +181,8 @@ HEADERS  += mainwindow.h \
     channeltablemodel.h \
     headerview.h \
     methods/timealgorithm.h \
-    fileformats/data94file.h
+    fileformats/data94file.h \
+    logscaleengine.h
 
 SOURCES +=\
   $$PWD/../3rdParty/DspFilters/*.cpp \

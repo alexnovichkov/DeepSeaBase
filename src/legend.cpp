@@ -60,7 +60,7 @@ void CheckableLegend::renderLegend(QPainter *painter, const QRectF &rect, bool f
     for ( int row = 0; row < d_model->rowCount(); row++ ) {
         for (int col = 0; col < d_model->columnCount(); col++) {
             styleOption.rect = d_treeView->visualRect( d_model->index(row, col) );
-            if ( !styleOption.rect.isEmpty() )
+            if (!styleOption.rect.isEmpty() )
                 delegate->paint( painter, styleOption, d_model->index(row, col) );
         }
     }

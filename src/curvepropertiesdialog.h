@@ -1,5 +1,5 @@
-#ifndef GRAPHPROPERTIESDIALOG_H
-#define GRAPHPROPERTIESDIALOG_H
+#ifndef CURVEPROPERTIESDIALOG_H
+#define CURVEPROPERTIESDIALOG_H
 
 #include <QDialog>
 
@@ -27,11 +27,11 @@ private:
     QPixmap cursor;
 };
 
-class GraphPropertiesDialog : public QDialog
+class CurvePropertiesDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit GraphPropertiesDialog(Curve *curve, Plot *parent = 0);
+    explicit CurvePropertiesDialog(Curve *curve, Plot *parent = 0);
     
 signals:
     void curveChanged(Curve *curve);
@@ -52,4 +52,4 @@ public slots:
     virtual void reject();
 };
 
-#endif // GRAPHPROPERTIESDIALOG_H
+#endif

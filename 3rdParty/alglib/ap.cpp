@@ -3219,7 +3219,7 @@ dst     pointer to three bytes
 ************************************************************************/
 void ae_foursixbits2threebytes(const ae_int_t *src, unsigned char *dst)
 {
-    dst[0] = (unsigned char)(     src[0] | ((src[1]&0x03)<<6));
+    dst[0] = (unsigned char)(   src[0] | ((src[1]&0x03)<<6));
     dst[1] = (unsigned char)((src[1]>>2) | ((src[2]&0x0F)<<4));
     dst[2] = (unsigned char)((src[2]>>4) | (src[3]<<2));
 }

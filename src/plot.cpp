@@ -18,7 +18,6 @@
 #include <qwt_picker.h>
 #include <qwt_picker_machine.h>
 #include <qwt_plot_renderer.h>
-#include <qwt_scale_engine.h>
 #include <qwt_plot_layout.h>
 #include <qwt_plot_panner.h>
 #include <qwt_plot_magnifier.h>
@@ -32,168 +31,25 @@
 #include <QPrinter>
 #include <QPrintDialog>
 #include <QMenu>
+#include <QAction>
+#include <QAudioOutput>
 
 #include "mainwindow.h"
-#include "graphpropertiesdialog.h"
+#include "curvepropertiesdialog.h"
 
 #include "colorselector.h"
 #include "legend.h"
 
 #include "plotpicker.h"
-#include <QAction>
+#include "logscaleengine.h"
 
 #include "logging.h"
 #include "trackingpanel.h"
 
 #include "dataiodevice.h"
-#include <QAudioOutput>
+
 
 #include "playpanel.h"
-
-//#define LOG_MIN_MY 1.0e-3
-#define LOG_MIN_MY 1.0
-
-static inline QwtInterval logInterval( double base, const QwtInterval &interval )
-{
-    return QwtInterval( log(interval.minValue()) / log( base ),
-            log(interval.maxValue()) / log( base ) );
-}
-
-class LogScaleEngine : public QwtLogScaleEngine
-{
-    // QwtScaleEngine interface
-public:
-
-    virtual void autoScale(int maxNumSteps, double &x1, double &x2, double &stepSize) const
-    {
-        if ( x1 > x2 )
-            qSwap( x1, x2 );
-
-        const double logBase = base();
-
-        QwtInterval interval( x1 / qPow( logBase, lowerMargin() ),
-                              x2 * qPow( logBase, upperMargin() ) );
-
-        if ( interval.maxValue() / interval.minValue() < logBase )
-        {
-            // scale width is less than one step -> try to build a linear scale
-
-            QwtLinearScaleEngine linearScaler;
-            linearScaler.setAttributes( attributes() );
-            linearScaler.setReference( reference() );
-            linearScaler.setMargins( lowerMargin(), upperMargin() );
-
-            linearScaler.autoScale( maxNumSteps, x1, x2, stepSize );
-
-            QwtInterval linearInterval = QwtInterval( x1, x2 ).normalized();
-            linearInterval = linearInterval.limited( LOG_MIN, LOG_MAX );
-
-            if ( linearInterval.maxValue() / linearInterval.minValue() < logBase )
-            {
-                // the aligned scale is still less than one step
-                if ( stepSize < 0.0 )
-                    stepSize = - log(qAbs( stepSize )) /log( logBase );
-                else
-                    stepSize = log(stepSize) / log( logBase );
-
-                return;
-            }
-        }
-
-        double logRef = 1.0;
-        if ( reference() > LOG_MIN_MY / 2.0 )
-            logRef = qMin( reference(), LOG_MAX / 2 );
-
-        if ( testAttribute( QwtScaleEngine::Symmetric ) )
-        {
-            const double delta = qMax( interval.maxValue() / logRef,
-                                       logRef / interval.minValue() );
-            interval.setInterval( logRef / delta, logRef * delta );
-        }
-
-        if ( testAttribute( QwtScaleEngine::IncludeReference ) )
-            interval = interval.extend( logRef );
-
-        interval = interval.limited( LOG_MIN_MY, LOG_MAX );
-
-        if ( interval.width() == 0.0 )
-            interval = buildInterval( interval.minValue() );
-
-        stepSize = divideInterval( logInterval( logBase, interval ).width(),
-                                   qMax( maxNumSteps, 1 ) );
-        if ( stepSize < 1.0 )
-            stepSize = 1.0;
-
-        if ( !testAttribute( QwtScaleEngine::Floating ) )
-            interval = align( interval, stepSize );
-
-        x1 = interval.minValue();
-        x2 = interval.maxValue();
-
-        if ( testAttribute( QwtScaleEngine::Inverted ) )
-        {
-            qSwap( x1, x2 );
-            stepSize = -stepSize;
-        }
-    }
-    virtual QwtScaleDiv divideScale(double x1, double x2, int maxMajorSteps, int maxMinorSteps, double stepSize) const
-    {
-        QwtInterval interval = QwtInterval( x1, x2 ).normalized();
-        interval = interval.limited( LOG_MIN_MY, LOG_MAX );
-
-        if ( interval.width() <= 0 )
-            return QwtScaleDiv();
-
-        const double logBase = base();
-
-        if ( interval.maxValue() / interval.minValue() < logBase )
-        {
-            // scale width is less than one decade -> build linear scale
-
-            QwtLinearScaleEngine linearScaler;
-            linearScaler.setAttributes( attributes() );
-            linearScaler.setReference( reference() );
-            linearScaler.setMargins( lowerMargin(), upperMargin() );
-
-            if ( stepSize != 0.0 )
-            {
-                if ( stepSize < 0.0 )
-                    stepSize = -qPow( logBase, -stepSize );
-                else
-                    stepSize = qPow( logBase, stepSize );
-            }
-
-            return linearScaler.divideScale( x1, x2,
-                                             maxMajorSteps, maxMinorSteps, stepSize );
-        }
-
-        stepSize = qAbs( stepSize );
-        if ( stepSize == 0.0 )
-        {
-            if ( maxMajorSteps < 1 )
-                maxMajorSteps = 1;
-
-            stepSize = divideInterval(
-                           logInterval( logBase, interval ).width(), maxMajorSteps );
-            if ( stepSize < 1.0 )
-                stepSize = 1.0; // major step must be >= 1 decade
-        }
-
-        QwtScaleDiv scaleDiv;
-        if ( stepSize != 0.0 )
-        {
-            QList<double> ticks[QwtScaleDiv::NTickTypes];
-            buildTicks( interval, stepSize, maxMinorSteps, ticks );
-
-            scaleDiv = QwtScaleDiv( interval, ticks );
-        }
-
-        if ( x1 > x2 )
-            scaleDiv.invert();
-
-        return scaleDiv;
-    }
-};
 
 // простой фабричный метод создания кривой нужного типа
 Curve * createCurve(const QString &legendName, FileDescriptor *descriptor, int channel)
@@ -210,7 +66,7 @@ Plot::Plot(QWidget *parent) :
     QwtPlot(parent), zoom(0)
 {DD;
     canvas = new QwtPlotCanvas();
-    canvas->setFocusIndicator( QwtPlotCanvas::CanvasFocusIndicator);
+    canvas->setFocusIndicator(QwtPlotCanvas::CanvasFocusIndicator);
     canvas->setPalette(Qt::white);
     canvas->setFrameStyle(QFrame::StyledPanel);
     setCanvas(canvas);
@@ -221,13 +77,13 @@ Plot::Plot(QWidget *parent) :
     trackingPanel = new TrackingPanel(this);
     trackingPanel->setVisible(false);
     connect(trackingPanel,SIGNAL(closeRequested()),SIGNAL(trackingPanelCloseRequested()));
-    connect(this, SIGNAL(graphsChanged()), trackingPanel, SLOT(update()));
+    connect(this, SIGNAL(curvesChanged()), trackingPanel, SLOT(update()));
 
 
     playerPanel = new PlayPanel(this);
     playerPanel->setVisible(false);
     connect(playerPanel,SIGNAL(closeRequested()),SIGNAL(playerPanelCloseRequested()));
-    connect(this, SIGNAL(graphsChanged()), playerPanel, SLOT(update()));
+    connect(this, SIGNAL(curvesChanged()), playerPanel, SLOT(update()));
 
     axisLabelsVisible = MainWindow::getSetting("axisLabelsVisible", true).toBool();
     yValuesPresentationLeft = DataHolder::ShowAsDefault;
@@ -249,8 +105,8 @@ Plot::Plot(QWidget *parent) :
 
     CheckableLegend *leg = new CheckableLegend();
     connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
-    connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteGraph(QwtPlotItem*)));
-    connect(leg, SIGNAL(markedToMove(QwtPlotItem*)),this, SLOT(moveGraph(QwtPlotItem*)));
+    connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurve(QwtPlotItem*)));
+    connect(leg, SIGNAL(markedToMove(QwtPlotItem*)),this, SLOT(moveCurve(QwtPlotItem*)));
     insertLegend(leg, QwtPlot::RightLegend);
 
 
@@ -280,7 +136,7 @@ Plot::~Plot()
 {DD;
     delete trackingPanel;
     delete playerPanel;
-    qDeleteAll(graphs);
+    qDeleteAll(curves);
     delete grid;
     delete picker;
 
@@ -296,38 +152,38 @@ void Plot::update()
     updateAxes();
     updateAxesLabels();
     updateLegend();
-    if (leftGraphs.isEmpty())
+    if (leftCurves.isEmpty())
         zoom->verticalScaleBounds->reset();
-    if (rightGraphs.isEmpty())
+    if (rightCurves.isEmpty())
         zoom->verticalScaleBoundsSlave->reset();
-    if (!hasGraphs())
+    if (!hasCurves())
         zoom->horizontalScaleBounds->reset();
 
     if (!zoom->horizontalScaleBounds->isFixed())
         zoom->horizontalScaleBounds->autoscale();
-    if (!leftGraphs.isEmpty() && !zoom->verticalScaleBounds->isFixed())
+    if (!leftCurves.isEmpty() && !zoom->verticalScaleBounds->isFixed())
         zoom->verticalScaleBounds->autoscale();
-    if (!rightGraphs.isEmpty() && !zoom->verticalScaleBoundsSlave->isFixed())
+    if (!rightCurves.isEmpty() && !zoom->verticalScaleBoundsSlave->isFixed())
         zoom->verticalScaleBoundsSlave->autoscale();
 
     replot();
 }
 
-bool Plot::hasGraphs() const
+bool Plot::hasCurves() const
 {DD;
-    return !graphs.isEmpty();
+    return !curves.isEmpty();
 }
 
-void Plot::deleteGraphs()
+void Plot::deleteCurves()
 {DD;
-    foreach (Curve *c, graphs) {
+    foreach (Curve *c, curves) {
         emit curveDeleted(c->descriptor, c->channelIndex);
     }
 
-    qDeleteAll(graphs);
-    graphs.clear();
-    leftGraphs.clear();
-    rightGraphs.clear();
+    qDeleteAll(curves);
+    curves.clear();
+    leftCurves.clear();
+    rightCurves.clear();
     ColorSelector::instance()->resetState();
     playerPanel->reset();
 
@@ -336,31 +192,30 @@ void Plot::deleteGraphs()
     xName.clear();
 
     update();
-    emit graphsChanged();
+    emit curvesChanged();
 }
 
-void Plot::deleteGraphs(FileDescriptor *descriptor)
+void Plot::deleteCurves(FileDescriptor *descriptor)
 {DD;
-    for (int i = graphs.size()-1; i>=0; --i) {
-        Curve *graph = graphs[i];
-        if (descriptor == graph->descriptor) {
-            deleteGraph(graph, true);
+    for (int i = curves.size()-1; i>=0; --i) {
+        Curve *curve = curves[i];
+        if (descriptor == curve->descriptor) {
+            deleteCurve(curve, true);
         }
     }
 }
 
-void Plot::deleteGraph(QwtPlotItem*item)
+void Plot::deleteCurve(QwtPlotItem*item)
 {DD;
-    Curve *c = dynamic_cast<Curve *>(item);
-    if (c) {
+    if (Curve *c = dynamic_cast<Curve *>(item)) {
         emit curveDeleted(c->descriptor, c->channelIndex);
-        deleteGraph(c, true);
+        deleteCurve(c, true);
     }
 }
 
 void Plot::showContextMenu(const QPoint &pos, const int axis)
 {DD;
-    if (!hasGraphs()) return;
+    if (!hasCurves()) return;
 
     QMenu *menu = new QMenu(this);
     bool *scale = 0;
@@ -388,7 +243,7 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
     // определяем, все ли графики представляют временные данные
     bool time = true;
 
-    foreach (Curve *c, graphs) {
+    foreach (Curve *c, curves) {
         if (c->channel->type() != Descriptor::TimeResponse) {
             time = false;
             break;
@@ -402,7 +257,7 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
 
             QList<FileDescriptor*> files;
 
-            foreach(Curve *c, graphs) {
+            foreach(Curve *c, curves) {
                 if (!files.contains(c->descriptor))
                     files << c->descriptor;
             }
@@ -413,12 +268,12 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
 
     QList<Curve*> list;
     int *ax = 0;
-    if (axis == QwtPlot::yLeft && !leftGraphs.isEmpty()) {
-        list = leftGraphs;
+    if (axis == QwtPlot::yLeft && !leftCurves.isEmpty()) {
+        list = leftCurves;
         ax = &yValuesPresentationLeft;
     }
-    if (axis == QwtPlot::yRight && !rightGraphs.isEmpty()) {
-        list = rightGraphs;
+    if (axis == QwtPlot::yRight && !rightCurves.isEmpty()) {
+        list = rightCurves;
         ax = &yValuesPresentationRight;
     }
     if (!list.isEmpty()) {
@@ -470,7 +325,7 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
         menu->addAction(a);
     }
 
-    if (!leftGraphs.isEmpty() && !rightGraphs.isEmpty()) {
+    if (!leftCurves.isEmpty() && !rightCurves.isEmpty()) {
         menu->addSection("Левая и правая оси");
         menu->addAction("Совместить нули левой и правой осей", [=](){
             // 1. Центруем нуль левой оси
@@ -519,69 +374,69 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
     menu->exec(pos);
 }
 
-void Plot::deleteGraph(FileDescriptor *dfd, int channel, bool doReplot)
+void Plot::deleteCurve(FileDescriptor *dfd, int channel, bool doReplot)
 {DD;
-    if (Curve *graph = plotted(dfd, channel)) {
-        deleteGraph(graph, doReplot);
+    if (Curve *curve = plotted(dfd, channel)) {
+        deleteCurve(curve, doReplot);
     }
 }
 
-void Plot::deleteGraph(Channel *c, bool doReplot)
+void Plot::deleteCurve(Channel *c, bool doReplot)
 {DD;
-    if (Curve *graph = plotted(c)) {
-        deleteGraph(graph, doReplot);
+    if (Curve *curve = plotted(c)) {
+        deleteCurve(curve, doReplot);
     }
 }
 
-void Plot::deleteGraph(Curve *graph, bool doReplot)
+void Plot::deleteCurve(Curve *curve, bool doReplot)
 {DD;
-    if (graph) {
-        ColorSelector::instance()->freeColor(graph->pen().color());
+    if (curve) {
+        ColorSelector::instance()->freeColor(curve->pen().color());
 
-        int removed = leftGraphs.removeAll(graph);
+        int removed = leftCurves.removeAll(curve);
         if (removed > 0) {
-            zoom->verticalScaleBounds->removeToAutoscale(graph->yMin(), graph->yMax());
+            zoom->verticalScaleBounds->removeToAutoscale(curve->yMin(), curve->yMax());
         }
 
-        removed = rightGraphs.removeAll(graph);
+        removed = rightCurves.removeAll(curve);
         if (removed > 0) {
-            zoom->verticalScaleBoundsSlave->removeToAutoscale(graph->yMin(), graph->yMax());
+            zoom->verticalScaleBoundsSlave->removeToAutoscale(curve->yMin(), curve->yMax());
         }
-        removed = graphs.removeAll(graph);
+        removed = curves.removeAll(curve);
         if (removed > 0) {
-            zoom->horizontalScaleBounds->removeToAutoscale(graph->xMin(), graph->xMax());
+            zoom->horizontalScaleBounds->removeToAutoscale(curve->xMin(), curve->xMax());
         }
-        QString title = graph->title();
+        QString title = curve->title();
 
 
-        delete graph;
-        graph = 0;
+        delete curve;
+        curve = 0;
         checkDuplicates(title);
 
-        if (leftGraphs.isEmpty()) {
+        if (leftCurves.isEmpty()) {
             yLeftName.clear();
         }
-        if (rightGraphs.isEmpty()) {
+        if (rightCurves.isEmpty()) {
             yRightName.clear();
             enableAxis(QwtPlot::yRight, false);
         }
-        if (!hasGraphs()) {
+        if (!hasCurves()) {
             xName.clear();
         }
 
         if (doReplot) {
             update();
         }
-        emit graphsChanged();
+        emit curvesChanged();
     }
 }
 
 bool Plot::canBePlottedOnLeftAxis(Channel *ch)
 {DD;
-    if (!hasGraphs()) // нет графиков - можем построить что угодно
+    if (!hasCurves()) // нет графиков - можем построить что угодно
         return true;
     if (abscissaType(ch->xName()) == abscissaType(xName) || xName.isEmpty()) { // тип графика совпадает
-        if (leftGraphs.isEmpty() || yLeftName.isEmpty() || ch->yName() == yLeftName)
+        if (leftCurves.isEmpty() || yLeftName.isEmpty() || ch->yName() == yLeftName)
             return true;
     }
     return false;
@@ -589,10 +444,10 @@ bool Plot::canBePlottedOnLeftAxis(Channel *ch)
 
 bool Plot::canBePlottedOnRightAxis(Channel *ch)
 {DD;
-    if (!hasGraphs()) // нет графиков - всегда на левой оси
+    if (!hasCurves()) // нет графиков - всегда на левой оси
         return true;
     if (abscissaType(ch->xName()) == abscissaType(xName) || xName.isEmpty()) { // тип графика совпадает
-        if (rightGraphs.isEmpty() || yRightName.isEmpty() || ch->yName() == yRightName)
+        if (rightCurves.isEmpty() || yRightName.isEmpty() || ch->yName() == yRightName)
             return true;
     }
     return false;
@@ -637,7 +492,7 @@ void Plot::moveToAxis(int axis, double min, double max)
 
 void Plot::updateAxesLabels()
 {DD;
-    if (leftGraphs.isEmpty()) enableAxis(QwtPlot::yLeft, false);
+    if (leftCurves.isEmpty()) enableAxis(QwtPlot::yLeft, false);
     else {
         enableAxis(QwtPlot::yLeft, axisLabelsVisible);
         QString suffix = yValuesPresentationSuffix(yValuesPresentationLeft);
@@ -648,7 +503,7 @@ void Plot::updateAxesLabels()
             setAxisTitle(QwtPlot::yLeft, "");
     }
 
-    if (rightGraphs.isEmpty()) enableAxis(QwtPlot::yRight, false);
+    if (rightCurves.isEmpty()) enableAxis(QwtPlot::yRight, false);
     else {
         enableAxis(QwtPlot::yRight, axisLabelsVisible);
         QString suffix = yValuesPresentationSuffix(yValuesPresentationRight);
@@ -665,13 +520,13 @@ void Plot::updateAxesLabels()
 
 void Plot::removeLabels()
 {
-    foreach (Curve *c, graphs) {
+    foreach (Curve *c, curves) {
         c->removeLabels();
     }
    replot();
 }
 
-void Plot::moveGraph(Curve *curve, int axis)
+void Plot::moveCurve(Curve *curve, int axis)
 {DD;
     if ((axis == QwtPlot::yLeft && canBePlottedOnLeftAxis(curve->channel))
         || (axis == QwtPlot::yRight && canBePlottedOnRightAxis(curve->channel))) {
@@ -679,23 +534,23 @@ void Plot::moveGraph(Curve *curve, int axis)
         setAxis(axis, curve->channel->yName());
         curve->setYAxis(axis);
 
-        if (leftGraphs.contains(curve)) {
-            leftGraphs.removeAll(curve);
-            if (rightGraphs.isEmpty()) {
+        if (leftCurves.contains(curve)) {
+            leftCurves.removeAll(curve);
+            if (rightCurves.isEmpty()) {
                 yValuesPresentationRight = curve->channel->data()->yValuesPresentation();
             }
             curve->channel->data()->setYValuesPresentation(yValuesPresentationRight);
-            rightGraphs.append(curve);
+            rightCurves.append(curve);
         }
-        else if (rightGraphs.contains(curve)) {
-            rightGraphs.removeAll(curve);
-            if (leftGraphs.isEmpty()) {
+        else if (rightCurves.contains(curve)) {
+            rightCurves.removeAll(curve);
+            if (leftCurves.isEmpty()) {
                 yValuesPresentationLeft = curve->channel->data()->yValuesPresentation();
             }
             curve->channel->data()->setYValuesPresentation(yValuesPresentationLeft);
-            leftGraphs.append(curve);
+            leftCurves.append(curve);
         }
-        emit graphsChanged();
+        emit curvesChanged();
 
         updateAxesLabels();
         moveToAxis(axis, curve->channel->yMin(), curve->channel->yMax());
@@ -705,16 +560,16 @@ void Plot::moveGraph(Curve *curve, int axis)
 
 }
 
-void Plot::moveGraph(QwtPlotItem *curve)
+void Plot::moveCurve(QwtPlotItem *curve)
 {
     if (Curve *c = dynamic_cast<Curve*>(curve))
-        moveGraph(c, c->yAxis() == QwtPlot::yLeft ? QwtPlot::yRight : QwtPlot::yLeft);
+        moveCurve(c, c->yAxis() == QwtPlot::yLeft ? QwtPlot::yRight : QwtPlot::yLeft);
 }
 
 bool Plot::hasDuplicateNames(const QString name) const
 {
     int count = 0;
-    foreach(Curve *c, graphs) {
+    foreach(Curve *c, curves) {
         if (c->title() == name) count++;
     }
     return (count > 1);
@@ -723,10 +578,10 @@ bool Plot::hasDuplicateNames(const QString name) const
 void Plot::checkDuplicates(const QString name)
 {
     QList<int> l;
-    for( int i=0; i<graphs.size(); ++i) {
-        if (graphs[i]->title() == name) l << i;
+    for(int i=0; i<curves.size(); ++i) {
+        if (curves[i]->title() == name) l << i;
     }
-    foreach(int i, l) graphs[i]->duplicate = l.size()>1;
+    foreach(int i, l) curves[i]->duplicate = l.size()>1;
 }
 
 QString Plot::yValuesPresentationSuffix(int yValuesPresentation) const
@@ -750,8 +605,8 @@ void Plot::recalculateScale(bool leftAxis)
     else ybounds = zoom->verticalScaleBoundsSlave;
 
     QList<Curve*> l;
-    if (leftAxis) l = leftGraphs;
-    else l = rightGraphs;
+    if (leftAxis) l = leftCurves;
+    else l = rightCurves;
 
     ybounds->reset();
     foreach (Curve *c, l) {
@@ -760,42 +615,7 @@ void Plot::recalculateScale(bool leftAxis)
 
 }
 
-
-
-//void Plot::audioStateChanged(QAudio::State state)
-//{DDD;
-//    DebugPrint(state);
-
-//    switch (state) {
-//        case QAudio::IdleState:
-//            // Finished playing (no more data)
-//            audio->stop();
-//            audioData->close();
-//            delete audio;
-//            audio = 0;
-//            break;
-
-//        case QAudio::StoppedState:
-//            // Stopped for other reasons
-//            if (audio->error() != QAudio::NoError) {
-//                // Error handling
-//                qDebug()<<"audio stopped:"<<audio->error();
-//            }
-//            break;
-
-//        default:
-//            // ... other cases as appropriate
-//            break;
-//    }
-//}
-
-//void Plot::audioPosChanged()
-//{
-//    if (!audioData) return;
-//    qDebug() << "currently at" << audioData->position()<<","<<audioData->positionSec();
-//}
-
-bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, bool &plotOnRight, int fileNumber)
+bool Plot::plotCurve(FileDescriptor *descriptor, int channel, QColor *col, bool &plotOnRight, int fileNumber)
 {DD;
     if (plotted(descriptor, channel)) return false;
 
@@ -837,10 +657,10 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
     prepareAxis(QwtPlot::xBottom);
 
     // если графиков нет, по умолчанию будем строить амплитуды по первому добавляемому графику
-    if (!plotOnRight && leftGraphs.isEmpty()) {
+    if (!plotOnRight && leftCurves.isEmpty()) {
         yValuesPresentationLeft = ch->data()->yValuesPresentation();
     }
-    if (plotOnRight && rightGraphs.isEmpty()) {
+    if (plotOnRight && rightCurves.isEmpty()) {
         yValuesPresentationRight = ch->data()->yValuesPresentation();
     }
 
@@ -862,7 +682,7 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
     g->oldPen = pen;
     if (col) *col = nextColor;
 
-    graphs << g;
+    curves << g;
     g->fileNumber = fileNumber;
     checkDuplicates(g->title());
     if (hasDuplicateNames(g->title())) {
@@ -871,10 +691,10 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
 
     g->setYAxis(ax);
     if (plotOnRight) {
-        rightGraphs << g;
+        rightCurves << g;
     }
     else {
-        leftGraphs << g;
+        leftCurves << g;
     }
 
 
@@ -887,23 +707,23 @@ bool Plot::plotChannel(FileDescriptor *descriptor, int channel, QColor *col, boo
 
     g->attachTo(this);
     update();
-    emit graphsChanged();
+    emit curvesChanged();
 
     return true;
 }
 
 Curve * Plot::plotted(FileDescriptor *dfd, int channel) const
 {DD;
-    foreach (Curve *graph, graphs) {
-        if (graph->descriptor == dfd && graph->channelIndex == channel) return graph;
+    foreach (Curve *curve, curves) {
+        if (curve->descriptor == dfd && curve->channelIndex == channel) return curve;
     }
     return 0;
 }
 
 Curve * Plot::plotted(Channel *channel) const
 {DD;
-    foreach (Curve *graph, graphs) {
-        if (graph->channel == channel) return graph;
+    foreach (Curve *curve, curves) {
+        if (curve->channel == channel) return curve;
     }
     return 0;
 }
@@ -934,11 +754,11 @@ void Plot::switchLabelsVisibility()
 
 void Plot::updateLegends()
 {DD;
-    foreach (Curve *graph, leftGraphs) {
-        graph->setTitle(graph->channel->legendName());
+    foreach (Curve *curve, leftCurves) {
+        curve->setTitle(curve->channel->legendName());
     }
-    foreach (Curve *graph, rightGraphs) {
-        graph->setTitle(graph->channel->legendName());
+    foreach (Curve *curve, rightCurves) {
+        curve->setTitle(curve->channel->legendName());
     }
     updateLegend();
 }
@@ -1081,12 +901,12 @@ void Plot::importPlot(const QString &fileName)
     for (int i=0; i<QwtPlot::axisCnt; ++i)
         if (axisEnabled(i)) setAxisFont(i, axisfont);
 
-    foreach (Curve *graph, graphs) {
-        QPen pen = graph->pen();
+    foreach (Curve *curve, curves) {
+        QPen pen = curve->pen();
         if (pen.width()<2) pen.setWidth(2);
         pen.setColor(pen.color().lighter(120));
-        graph->setPen(pen);
-//        graph->setTitle(QwtText("<font size=5>"+graph->channel->legendName()+"</font>"));
+        curve->setPen(pen);
+//        curve->setTitle(QwtText("<font size=5>"+curve->channel->legendName()+"</font>"));
     }
 
     QwtAbstractLegend *leg = new QwtLegend();
@@ -1102,14 +922,14 @@ void Plot::importPlot(const QString &fileName)
     for (int i=0; i<QwtPlot::axisCnt; ++i)
         if (axisEnabled(i)) setAxisFont(i, axisfont);
 
-    foreach (Curve *graph, graphs) {
-        graph->setPen(graph->oldPen);
-        graph->setTitle(graph->channel->legendName());
+    foreach (Curve *curve, curves) {
+        curve->setPen(curve->oldPen);
+        curve->setTitle(curve->channel->legendName());
     }
 
     leg = new CheckableLegend();
     connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
-    connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteGraph(QwtPlotItem*)));
+    connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurve(QwtPlotItem*)));
     insertLegend(leg, QwtPlot::RightLegend);
 }
 
@@ -1130,7 +950,7 @@ void Plot::editLegendItem(const QVariant &itemInfo, int index)
     if (item) {
         Curve *c = dynamic_cast<Curve *>(item);
         if (c) {
-            GraphPropertiesDialog dialog(c, this);
+            CurvePropertiesDialog dialog(c, this);
             connect(&dialog,SIGNAL(curveChanged(Curve*)),this, SIGNAL(curveChanged(Curve*)));
             connect(&dialog,SIGNAL(curveChanged(Curve*)),trackingPanel, SLOT(update()));
             dialog.exec();
@@ -1142,11 +962,9 @@ void Plot::editLegendItem(QwtPlotItem *item)
 {DD;
     Curve *c = dynamic_cast<Curve *>(item);
     if (c) {
-        GraphPropertiesDialog dialog(c, this);
+        CurvePropertiesDialog dialog(c, this);
         connect(&dialog,SIGNAL(curveChanged(Curve*)),this, SIGNAL(curveChanged(Curve*)));
         connect(&dialog,SIGNAL(curveChanged(Curve*)),trackingPanel, SLOT(update()));
         dialog.exec();
     }
 }
-
-

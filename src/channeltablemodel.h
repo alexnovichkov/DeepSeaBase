@@ -20,7 +20,7 @@ public:
     void setYName(const QString &yName);
 
     void clear();
-    void deletePlots();
+    void deleteCurves();
     void plotChannels(const QVector<int> &toPlot, bool plotOnRight = false);
 
     void setDescriptor(FileDescriptor *dfd);
@@ -34,7 +34,7 @@ signals:
     void maybeUpdateChannelDescription(int row, const QString &value);
     void maybeUpdateChannelName(int row, const QString &value);
     void maybePlot(int row);
-    void deletePlot(int row);
+    void deleteCurve(int row);
     void updateLegends();
     // QAbstractItemModel interface
 public:

@@ -31,7 +31,7 @@ double convertFactor(const QString &from)
 }
 
 FileDescriptor::FileDescriptor(const QString &fileName) :
-    _fileName(fileName), _changed(false), _dataChanged(false), _hasGraphs(false)
+    _fileName(fileName), _changed(false), _dataChanged(false)
 {
 
 }
@@ -94,14 +94,6 @@ void FileDescriptor::setDataChanged(bool changed)
     _dataChanged = changed;
 }
 
-//bool FileDescriptor::allUnplotted() const
-//{
-//    for (int i=0; i<channelsCount(); ++i) {
-//        if (channel(i)->checkState() == Qt::Checked) return false;
-//    }
-//    return true;
-//}
-
 int FileDescriptor::plottedCount() const
 {
     int plotted = 0;
@@ -111,7 +103,7 @@ int FileDescriptor::plottedCount() const
     return plotted;
 }
 
-bool FileDescriptor::hasGraphs() const
+bool FileDescriptor::hasCurves() const
 {
     for (int i=0; i<channelsCount(); ++i) {
         if (channel(i)->plotted()) return true;

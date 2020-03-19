@@ -224,14 +224,14 @@ void TrackingPanel::setX(double xVal, int index)
 {DD;
     // здесь xVal - произвольное число, соответствующее какому-то положению на оси X
 
-    if (plot->hasGraphs()) {
+    if (plot->hasCurves()) {
         //ищем минимальный шаг по оси X
-        double xstep = (*std::min_element(plot->graphs.begin(), plot->graphs.end(),
+        double xstep = (*std::min_element(plot->curves.begin(), plot->curves.end(),
                                   [](Curve *c1, Curve *c2){
             return c1->channel->xStep() <= c2->channel->xStep();
         }))->channel->xStep();
 
-        if (xstep==0.0) xstep = plot->graphs.first()->channel->xStep();
+        if (xstep==0.0) xstep = plot->curves.first()->channel->xStep();
 
         if (xstep!=0.0) {
             //среди графиков есть график с минимальным ненулевым шагом
@@ -245,9 +245,9 @@ void TrackingPanel::setX(double xVal, int index)
                 xVal = xstep*steps;
             }
         }
-        else if (plot->graphs.first()->channel->data()->xValuesFormat() == DataHolder::XValuesNonUniform) {
+        else if (plot->curves.first()->channel->data()->xValuesFormat() == DataHolder::XValuesNonUniform) {
             //xstep == 0 -> третьоктава или еще что-нибудь, проверяем тип файла
-            QVector<double> x = plot->graphs.first()->channel->data()->xValues();
+            QVector<double> x = plot->curves.first()->channel->data()->xValues();
             if (!x.isEmpty()) {
                 auto iter = closest<QVector<double>::iterator, double>(x.begin(), x.end(), xVal);
                 xVal = *iter;
@@ -338,12 +338,12 @@ void TrackingPanel::update()
 //    plot->replot();
 //    QRectF rect(leftExclude, 0, rightExclude, 1);
 
-    //4. get the y values from all graphs
+    //4. get the y values from all curves
     QList<TrackingPanel::TrackInfo> list;
     QVector<QVector<double> > yValues(4);
 //    qDebug()<<leftBorder<<rightBorder<<leftExclude<<rightExclude;
 
-    foreach(Curve *c, plot->graphs) {
+    foreach(Curve *c, plot->curves) {
         QVector<int> steps(4);
 
         auto xVals = c->channel->xValues();

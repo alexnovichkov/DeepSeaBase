@@ -15,7 +15,7 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
 
     // удаляем из списка файлов файлы, графики которых построены на экране
     // чтобы эти файлы не мешались
-    foreach (Curve *curve, plot->graphs)
+    foreach (Curve *curve, plot->curves)
         this->files.removeAll(curve->channel->descriptor());
 
     table = new QTableWidget(0,3,this);
@@ -61,9 +61,9 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
     table->horizontalHeader()->setStretchLastSection(true);
     table->setHorizontalHeaderLabels(QStringList()<<""<<"Канал"<<"Поправка");
 
-    table->setRowCount(plot->graphs.size());
+    table->setRowCount(plot->curves.size());
     int i=0;
-    foreach (Curve *curve, plot->graphs) {
+    foreach (Curve *curve, plot->curves) {
         QTableWidgetItem *item = new QTableWidgetItem(curve->channel->legendName());
         item->setCheckState(Qt::Unchecked);
         table->setItem(i,1,item);
@@ -159,7 +159,7 @@ void CorrectionDialog::correct()
 
     for (int i=0; i<table->rowCount(); ++i) {
         if (table->item(i,1)->checkState()==Qt::Checked) {
-            Curve *curve = plot->graphs.at(i);
+            Curve *curve = plot->curves.at(i);
             Channel *ch = curve->channel;
             int channelNumber = ch->index();
 
@@ -227,7 +227,7 @@ void CorrectionDialog::accept()
     for (int i=0; i<table->rowCount(); ++i) {
         if (table->item(i,2)->text().isEmpty()) continue;
 
-        Channel *ch = plot->graphs.at(i)->channel;
+        Channel *ch = plot->curves.at(i)->channel;
         makeCorrectionConstant(ch);
         if (!list.contains(ch->descriptor())) list << ch->descriptor();
 
@@ -258,11 +258,11 @@ void CorrectionDialog::accept()
 void CorrectionDialog::reject()
 {
     for (int i=0; i<table->rowCount(); ++i) {
-        plot->graphs.at(i)->channel->data()->removeCorrection();
+        plot->curves.at(i)->channel->data()->removeCorrection();
 
         if (allFilesCheckBox->isChecked())
         foreach (FileDescriptor *file, files) {
-            if (Channel *ch1 = file->channel(plot->graphs.at(i)->channel->index())) {
+            if (Channel *ch1 = file->channel(plot->curves.at(i)->channel->index())) {
                 ch1->data()->removeCorrection();
             }
         }
