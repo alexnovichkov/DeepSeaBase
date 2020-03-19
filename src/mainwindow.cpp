@@ -2012,12 +2012,15 @@ void MainWindow::previousDescriptor()
     sergeiMode = true;
     updatePlottedChannelsNumbers();
 
-    int row = tab->model->rowOfFile(tab->record);
+    QModelIndex current = tab->filesTable->selectionModel()->currentIndex();
+    int row = current.row();
+    QModelIndex index;
     if (row == 0)
-        row = tab->model->size()-1; //последний файл вместо нулевого
-    else row--;
-
-    updateChannelsTable(tab->model->file(row));
+        index = tab->filesTable->model()->index(tab->filesTable->model()->rowCount()-1,current.column());
+    else
+        index = tab->filesTable->model()->index(row-1,current.column());
+    if (index.isValid())
+        tab->filesTable->selectionModel()->setCurrentIndex(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Current);
     sergeiMode = mode;
 }
 
@@ -2032,12 +2035,15 @@ void MainWindow::nextDescriptor()
     sergeiMode = true;
     updatePlottedChannelsNumbers();
 
-    int row = tab->model->rowOfFile(tab->record);
-    if (row == tab->model->size()-1)
-        row = 0; //первый файл вместо последнего
-    else row++;
-
-    updateChannelsTable(tab->model->file(row));
+    QModelIndex current = tab->filesTable->selectionModel()->currentIndex();
+    int row = current.row();
+    QModelIndex index;
+    if (row == tab->filesTable->model()->rowCount()-1)
+        index = tab->filesTable->model()->index(0,current.column());
+    else
+        index = tab->filesTable->model()->index(row+1,current.column());
+    if (index.isValid())
+        tab->filesTable->selectionModel()->setCurrentIndex(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Current);
     sergeiMode = mode;
 }
 
