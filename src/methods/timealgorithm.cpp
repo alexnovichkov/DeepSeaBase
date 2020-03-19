@@ -81,7 +81,8 @@ bool TimeAlgorithm::compute(FileDescriptor *file)
 
     resamplingF->setProperty(resamplingF->name()+"/xStep", file->xStep());
 
-    for (int i=0; i<file->channelsCount(); ++i) {
+    const int count = file->channelsCount();
+    for (int i=0; i<count; ++i) {
         const bool wasPopulated = file->channel(i)->populated();
 
         resamplingF->reset();

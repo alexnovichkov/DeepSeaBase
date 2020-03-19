@@ -35,6 +35,11 @@ void FilterHeaderView::setFilterBoxes(int count)
     adjustPositions();
 }
 
+void FilterHeaderView::clear()
+{
+    foreach (QLineEdit *edit, _editors) edit->clear();
+}
+
 void FilterHeaderView::adjustPositions()
 {
     for (int index = 0; index < _editors.size(); ++index) {

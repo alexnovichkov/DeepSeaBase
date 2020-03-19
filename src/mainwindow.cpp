@@ -630,10 +630,10 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     });
 
 
-    FilterHeaderView *filterHeader = new FilterHeaderView(Qt::Horizontal, tab->filesTable);
-    tab->filesTable->setHeader(filterHeader);
-    connect(filterHeader, SIGNAL(filterChanged(QString,int)), tab->sortModel, SLOT(setFilter(QString,int)));
-    filterHeader->setFilterBoxes(tab->model->columnCount());
+    tab->filterHeader = new FilterHeaderView(Qt::Horizontal, tab->filesTable);
+    tab->filesTable->setHeader(tab->filterHeader);
+    connect(tab->filterHeader, SIGNAL(filterChanged(QString,int)), tab->sortModel, SLOT(setFilter(QString,int)));
+    tab->filterHeader->setFilterBoxes(tab->model->columnCount());
 
     tab->filesTable->header()->setStretchLastSection(false);
     tab->filesTable->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
@@ -791,7 +791,7 @@ void MainWindow::createNewTab()
 void MainWindow::closeTab(int i)
 {DD;
     if (!tabWidget) return;
-    if (tabWidget->count()==1) return;
+    //if (tabWidget->count()==1) return;
     int index=i;
     if (i<0) index = tabWidget->currentIndex();
 
@@ -808,8 +808,12 @@ void MainWindow::closeTab(int i)
     }
 
     tab->channelModel->clear();
+//    tab->model->clear();
 
     tab->filesTable->selectAll();
+
+//    tab->sortModel->setFilter("",0);
+    //tab->filesTable->setModel(0);
 
     // костыль, позволяющий иметь несколько одинаковых файлов в разных вкладках
     QStringList duplicatedFiles;
@@ -2609,6 +2613,11 @@ void MainWindow::addFiles(QStringList &files)
     addDescriptors(items);
 }
 
+Tab::~Tab()
+{
+
+}
+
 void Tab::filesSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection)
 {
     Q_UNUSED(oldSelection);
@@ -2663,7 +2672,6 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 bool MainWindow::closeRequested()
 {
-
     // сохранение состояния, сохранение файлов
     setSetting("mainSplitterState",splitter->saveState());
 
@@ -2678,6 +2686,7 @@ bool MainWindow::closeRequested()
         if (Tab *t = qobject_cast<Tab *>(tabWidget->widget(i))) {
             if (!t->folders.isEmpty())
                 map.insert(tabWidget->tabText(i), t->folders);
+            tab->filterHeader->clear();
         }
     }
 

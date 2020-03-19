@@ -239,7 +239,10 @@ FileDescriptor *SavingFunction::createDfdFile(FileDescriptor *file)
         //      переделать
         // [Sources]
         newDfd->source = new Source();
-        QStringList l; for (int i=1; i<=file->channelsCount(); ++i) l << QString::number(i);
+        QStringList l;
+        const int count = file->channelsCount();
+        for (int i=1; i<=count; ++i)
+            l << QString::number(i);
         newDfd->source->sFile = file->fileName()+"["+l.join(",")+"]"+dfd->DFDGUID;
     }
 

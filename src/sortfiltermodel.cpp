@@ -1,13 +1,14 @@
 #include "sortfiltermodel.h"
 #include <QtCore>
+#include "logging.h"
 
 SortFilterModel::SortFilterModel(QObject *parent) : QSortFilterProxyModel(parent)
-{
+{DD;
     filter.resize(10);
 }
 
 void SortFilterModel::setFilter(const QString &text, int column)
-{
+{DD;
     if (filter.at(column) == text) return;
     filter[column] = text;
     invalidateFilter();
@@ -31,7 +32,7 @@ bool SortFilterModel::lessThan(const QModelIndex &source_left, const QModelIndex
 
 
 bool SortFilterModel::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
-{
+{DD;
     bool accept = true;
     for (int i=0; i<sourceModel()->columnCount(); ++i) {
         if (filter.at(i).isEmpty()) continue;

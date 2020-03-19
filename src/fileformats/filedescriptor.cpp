@@ -38,12 +38,13 @@ FileDescriptor::FileDescriptor(const QString &fileName) :
 
 FileDescriptor::~FileDescriptor()
 {
-
+   qDebug()<<"deleting"<<fileName();
 }
 
 void FileDescriptor::populate()
 {
-    for (int i=0; i<channelsCount(); ++i) {
+    const int count = channelsCount();
+    for (int i=0; i<count; ++i) {
         if (!channel(i)->populated()) channel(i)->populate();
     }
 }
@@ -97,7 +98,8 @@ void FileDescriptor::setDataChanged(bool changed)
 int FileDescriptor::plottedCount() const
 {
     int plotted = 0;
-    for (int i=0; i<channelsCount(); ++i) {
+    const int count = channelsCount();
+    for (int i=0; i<count; ++i) {
         if (channel(i)->plotted()) plotted++;
     }
     return plotted;
@@ -105,7 +107,8 @@ int FileDescriptor::plottedCount() const
 
 bool FileDescriptor::hasCurves() const
 {
-    for (int i=0; i<channelsCount(); ++i) {
+    const int count = channelsCount();
+    for (int i=0; i<count; ++i) {
         if (channel(i)->plotted()) return true;
     }
     return false;

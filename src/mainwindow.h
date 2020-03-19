@@ -44,6 +44,7 @@ class Model;
 class ChannelTableModel;
 class SortFilterModel;
 class QLineEdit;
+class FilterHeaderView;
 
 #include <QSplitter>
 
@@ -53,6 +54,7 @@ class Tab : public QSplitter
     Q_OBJECT
 public:
     Tab(QWidget * parent) : QSplitter(parent), record(0) {}
+    ~Tab();
 
     HeaderView *tableHeader;
     QLabel *filePathLabel;
@@ -60,6 +62,7 @@ public:
     QTableView *channelsTable;
     Model *model;
     SortFilterModel *sortModel;
+    FilterHeaderView *filterHeader;
     ChannelTableModel *channelModel;
     QList<QLineEdit *> filters;
 

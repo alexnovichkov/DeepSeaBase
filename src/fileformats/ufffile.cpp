@@ -102,7 +102,8 @@ UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other) : FileDescript
 
     int referenceChannelNumber = -1; //номер опорного канала ("сила")
     //заполнение каналов
-    for (int i=0; i<other.channelsCount(); ++i) {
+    const int count = other.channelsCount();
+    for (int i=0; i<count; ++i) {
         Channel *ch = other.channel(i);
         if (!ch->populated()) ch->populate();
         Function *f = new Function(*ch);
@@ -300,7 +301,7 @@ void UffFileDescriptor::setXStep(const double xStep)
 }
 
 QString UffFileDescriptor::xName() const
-{DD;
+{
     if (channels.isEmpty()) return QString();
 
     QString xname = channels.first()->xName();
@@ -353,7 +354,8 @@ void UffFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int
 {DD;
     UffFileDescriptor *uff = static_cast<UffFileDescriptor *>(file);
 
-    for(int i = 0; i < file->channelsCount(); ++i) {
+    const int count = file->channelsCount();
+    for(int i = 0; i < count; ++i) {
         if (!file->channel(i)->populated() && indexes.contains(i))
             file->channel(i)->populate();
     }
@@ -643,7 +645,7 @@ int UffFileDescriptor::columnsCount() const
 }
 
 Channel *UffFileDescriptor::channel(int index) const
-{DD;
+{
     if (channels.size()>index)
         return channels[index];
     return 0;
@@ -808,7 +810,7 @@ Function::Function(Function &other) : Channel(other)
 }
 
 Function::~Function()
-{DD;
+{
 
 }
 
@@ -1062,7 +1064,7 @@ QVariant Function::channelHeader(int column) const
 }
 
 Descriptor::DataType Function::type() const
-{DD;
+{
     return (Descriptor::DataType)type58[14].value.toInt();
 }
 
@@ -1181,7 +1183,7 @@ void Function::setDescription(const QString &description)
 }
 
 QString Function::xName() const
-{DD;
+{
     return type58[37].value.toString();
 }
 
@@ -1245,7 +1247,7 @@ QString UffFileDescriptor::saveTimeSegment(double from, double to)
     // 0 проверяем, чтобы этот файл имел тип временных данных
     if (type() != Descriptor::TimeResponse) return "";
     // и имел данные
-    if (channelsCount() == 0) return "";
+    if (channels.size() == 0) return "";
 
     // 1 создаем уникальное имя файла по параметрам from и to
     QString fromString, toString;
@@ -1267,7 +1269,8 @@ QString UffFileDescriptor::saveTimeSegment(double from, double to)
 //    newUff->setSamplesCount(sampleEnd - sampleStart + 1); //число отсчетов в новом файле
 
     // 4 сохраняем файл
-    for (int i=0; i<this->channelsCount(); ++i) {
+
+    for (int i=0; i<channels.size(); ++i) {
         bool wasPopulated = channels[i]->populated();
         if (!wasPopulated) channels[i]->populate();
 

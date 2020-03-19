@@ -96,7 +96,8 @@ bool SpectreAlgorithm::compute(FileDescriptor *file)
     resamplingF->setProperty(resamplingF->name()+"/xStep", file->xStep());
     samplingF->setProperty(samplingF->name()+"/xStep", file->xStep());
 
-    for (int i=0; i<file->channelsCount(); ++i) {
+    const int count = file->channelsCount();
+    for (int i=0; i<count; ++i) {
         const bool wasPopulated = file->channel(i)->populated();
 
         filteringF->reset();

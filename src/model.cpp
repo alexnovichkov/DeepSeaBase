@@ -3,22 +3,23 @@
 #include <QtCore>
 #include <QMessageBox>
 #include <QApplication>
+#include "logging.h"
 
 Model::Model(QObject *parent) : QAbstractTableModel(parent)
-{
+{DD;
     uFont = qobject_cast<QApplication*>(qApp)->font();
     bFont = uFont;
     bFont.setBold(true);
 }
 
 FileDescriptor *Model::file(int i)
-{
+{DD;
     if (i<0 || i>=descriptors.size()) return 0;
     return descriptors[i];
 }
 
 FileDescriptor *Model::find(const QString &fileName)
-{
+{DD;
     for (int i=0; i<descriptors.size(); ++i) {
         if (descriptors[i]->fileName() == fileName) {
             return descriptors[i];
@@ -28,7 +29,7 @@ FileDescriptor *Model::find(const QString &fileName)
 }
 
 bool Model::find(FileDescriptor *file)
-{
+{DD;
     for (int i=0; i<descriptors.size(); ++i) {
         if (descriptors[i]->fileName() == file->fileName()) {
             return true;
@@ -38,12 +39,12 @@ bool Model::find(FileDescriptor *file)
 }
 
 int Model::rowOfFile(FileDescriptor *file) const
-{
+{DD;
     return descriptors.indexOf(file,0);
 }
 
 void Model::addFiles(const QList<FileDescriptor *> &files)
-{
+{DD;
     if (files.isEmpty()) return;
     beginInsertRows(QModelIndex(), descriptors.size(), descriptors.size()+files.size()-1);
     descriptors.append(files);
@@ -51,7 +52,7 @@ void Model::addFiles(const QList<FileDescriptor *> &files)
 }
 
 void Model::deleteFiles(const QStringList &duplicated)
-{
+{DD;
     beginResetModel();
 
     for (int i = indexes.size()-1; i>=0; --i) {
@@ -68,7 +69,7 @@ void Model::deleteFiles(const QStringList &duplicated)
 }
 
 QList<FileDescriptor *> Model::selectedFiles() const
-{
+{DD;
     QList<FileDescriptor *> files;
     foreach (int i, indexes)
         files << descriptors.at(i);
@@ -76,7 +77,7 @@ QList<FileDescriptor *> Model::selectedFiles() const
 }
 
 void Model::setDataDescriptor(FileDescriptor *file, const DescriptionList &data)
-{
+{DD;
     int row = descriptors.indexOf(file);
     if (row<0) return;
 
@@ -86,7 +87,7 @@ void Model::setDataDescriptor(FileDescriptor *file, const DescriptionList &data)
 }
 
 void Model::setChannelDescription(int channel, const QString &description)
-{
+{DD;
     foreach (int i, indexes) {
         if (Channel *ch = descriptors[i]->channel(channel)) {
             if (ch->description() != description) {
@@ -98,7 +99,7 @@ void Model::setChannelDescription(int channel, const QString &description)
 }
 
 void Model::setChannelName(int channel, const QString &name)
-{
+{DD;
     foreach (int i, indexes) {
         if (Channel *ch = descriptors[i]->channel(channel)) {
             if (ch->name() != name) {
@@ -110,20 +111,20 @@ void Model::setChannelName(int channel, const QString &name)
 }
 
 void Model::updateFile(FileDescriptor *file, int column)
-{
+{DD;
     QModelIndex id = modelIndexOfFile(file, column);
     if (id.isValid()) emit dataChanged(id, id);
 }
 
 void Model::updateFile(FileDescriptor *file)
-{
+{DD;
     QModelIndex id1 = modelIndexOfFile(file, 0);
     QModelIndex id2 = modelIndexOfFile(file, 9);
     if (id1.isValid() && id2.isValid()) emit dataChanged(id1,id2);
 }
 
 void Model::clear()
-{
+{DD;
     beginResetModel();
     qDeleteAll(descriptors);
     descriptors.clear();
@@ -143,7 +144,7 @@ void Model::clear()
 //}
 
 void Model::invalidateCurve(FileDescriptor *file, int channel)
-{
+{DD;
     file->channel(channel)->setPlotted(0);
     file->channel(channel)->setColor(QColor());
     QModelIndex idx = modelIndexOfFile(file, 1);
@@ -151,7 +152,7 @@ void Model::invalidateCurve(FileDescriptor *file, int channel)
 }
 
 void Model::save()
-{
+{DD;
     foreach (FileDescriptor *f, descriptors) {
         f->write();
         f->writeRawFile();
@@ -159,19 +160,20 @@ void Model::save()
 }
 
 QModelIndex Model::modelIndexOfFile(FileDescriptor *f, int column)
-{
+{DD;
     int row = rowOfFile(f);
     if (row<0) return QModelIndex();
     return index(row, column);
 }
 
 Model::~Model()
-{
-    qDeleteAll(descriptors);
+{DD;
+    clear();
+
 }
 
 bool Model::contains(const QString &fileName, int *index) const
-{
+{DD;
     for (int i=0; i<descriptors.size(); ++i) {
         if (descriptors[i]->fileName() == fileName) {
             if (index) *index = i;
@@ -183,7 +185,7 @@ bool Model::contains(const QString &fileName, int *index) const
 }
 
 bool Model::contains(FileDescriptor *file, int *index) const
-{
+{DD;
     if (int ind = descriptors.indexOf(file) >= 0) {
         if (index) *index = ind;
         return true;

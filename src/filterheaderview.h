@@ -11,6 +11,7 @@ class FilterHeaderView : public QHeaderView
 public:
     FilterHeaderView(Qt::Orientation orientation, QWidget *parent = Q_NULLPTR);
     void setFilterBoxes(int count);
+    void clear();
 signals:
     void filterActivated();
     void filterChanged(const QString &text, int column);

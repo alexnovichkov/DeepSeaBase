@@ -244,18 +244,20 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other) : FileDescript
     //this->XStep = other.xStep(); // will be filled in fillRest()
     this->DescriptionFormat = "";
 
+    const int count = other.channelsCount();
+
     source = new Source();
     source->Date=other.dateTime().date();
     source->Time=other.dateTime().time();
     source->DFDGUID = "Unknown";
     source->File = other.fileName();
-    for (int i=1; i<=other.channelsCount(); ++i)
+    for (int i=1; i<=count; ++i)
         source->ProcChansList << i;
 
     dataDescription = 0;
     process = 0;
 
-    for (int i=0; i< other.channelsCount(); ++i) {
+    for (int i=0; i<count; ++i) {
         Channel *c= other.channel(i);
         if (!c->populated()) c->populate();
         this->channels << new DfdChannel(*c, this);
@@ -703,8 +705,9 @@ void DfdFileDescriptor::setDataChanged(bool changed)
 void DfdFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
 {DD;
     // заполняем вектор индексов каналов, как они будут выглядеть после удаления
-    QVector<QPair<int,int> > indexesVector(this->channelsCount());
-    for (int i=0; i<this->channelsCount(); ++i)
+    const int count = channelsCount();
+    QVector<QPair<int,int> > indexesVector(count);
+    for (int i=0; i<count; ++i)
         indexesVector[i] = qMakePair(i, channelsToDelete.contains(i)?1:0); // 0 = keep, 1 = delete
 
     bool tempFileSuccessful = rewriteRawFile(indexesVector);
@@ -1232,8 +1235,9 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
     if (indexes.isEmpty() || newIndexes.isEmpty()) return;
 
     // заполняем вектор индексов каналов, как они будут выглядеть после перемещения
-    QVector<QPair<int,int> > indexesVector(this->channelsCount());
-    for (int i=0; i<this->channelsCount(); ++i)
+    const int count = channelsCount();
+    QVector<QPair<int,int> > indexesVector(count);
+    for (int i=0; i<count; ++i)
         indexesVector[i] = qMakePair(i, 0); // 0 = keep, 1 = delete
 
     {int i=up?0:indexes.size()-1;
@@ -1457,7 +1461,7 @@ DfdChannel::DfdChannel(Channel &other, DfdFileDescriptor *parent) : Channel(othe
 }
 
 DfdChannel::~DfdChannel()
-{DD;
+{
     //delete [] YValues;
 }
 
@@ -1719,7 +1723,7 @@ void DfdChannel::populate()
                 else {// не удалось прочитать никакими оптимальными методами, читаем медленным классическим
 //                    qDebug()<<"IndType=2, by chunks, ChanBlockSize=1";
                     int actuallyRead = 0;
-                    const int chunkSize = parent->channelsCount(); //ChanBlockSize = 1
+                    const int chunkSize = channelsCount; //ChanBlockSize = 1
 
                     QDataStream readStream(&rawFile);
                     readStream.setByteOrder(QDataStream::LittleEndian);
@@ -1878,6 +1882,8 @@ void DfdChannel::populateFloat()
     if (floatValues.size() == NI) return;
     floatValues.clear();
 
+    const int count = parent->channelsCount();
+
     QFile rawFile(parent->attachedFileName());
 
     if (rawFile.open(QFile::ReadOnly)) {
@@ -1888,7 +1894,7 @@ void DfdChannel::populateFloat()
 
         int actuallyRead = 0;
 
-        int chunkSize = ChanBlockSize * parent->channelsCount();
+        int chunkSize = ChanBlockSize * count;
 
         while (1) {
             if (QThread::currentThread()->isInterruptionRequested()) return;
@@ -1896,8 +1902,8 @@ void DfdChannel::populateFloat()
             QVector<float> temp = getChunkOfData<float>(readStream, chunkSize, IndType, &actuallyRead);
 
             //распихиваем данные по каналам
-            actuallyRead /= parent->channelsCount();
-            for (int i=0; i<parent->channelsCount();++i) {
+            actuallyRead /= count;
+            for (int i=0; i<count;++i) {
                 if (i == channelIndex) {
                     floatValues << temp.mid(actuallyRead*i, actuallyRead);
                     break;
@@ -2293,6 +2299,7 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
         DataType != FilterData) return QString();
 
 //    populate();
+    const int count = channelsCount();
 
     // 1 создаем уникальное имя файла по параметрам from и to
     QString fromString, toString;
@@ -2321,7 +2328,7 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
     // [Sources]
     newDfd->source = new Source();
     QStringList procChansList;
-    for (int i=1; i<=channelsCount(); ++i) procChansList << QString::number(i);
+    for (int i=1; i<=count; ++i) procChansList << QString::number(i);
     newDfd->source->sFile = fileName()+"["+procChansList.join(",")+"]"+DFDGUID;
 
     // 3 ищем границы данных по параметрам from и to
@@ -2345,7 +2352,8 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
     newDfd->process->data = list;
 
     // 4 сохраняем файл
-    for (int i=0; i<this->channelsCount(); ++i) {
+
+    for (int i=0; i<count; ++i) {
         bool wasPopulated = channels[i]->populated();
         if (!wasPopulated) channels[i]->populate();
 
