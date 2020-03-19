@@ -254,12 +254,6 @@ MainWindow::MainWindow(QWidget *parent)
     saveAct->setShortcut(tr("Ctrl+S"));
     connect(saveAct, SIGNAL(triggered()), SLOT(save()));
 
-    switchSergeiModeAct = new QAction("Режим Сергея", this);
-    switchSergeiModeAct->setIcon(QIcon(":/icons/sergei.png"));
-    switchSergeiModeAct->setCheckable(true);
-    connect(switchSergeiModeAct, SIGNAL(triggered()), SLOT(switchSergeiMode()));
-
-
     delFilesAct = new QAction(QString("Удалить записи"), this);
     delFilesAct->setShortcut(Qt::Key_Delete);
     delFilesAct->setShortcutContext(Qt::WidgetShortcut);
@@ -452,9 +446,7 @@ MainWindow::MainWindow(QWidget *parent)
 //    mainToolBar->addSeparator();
 
     mainToolBar->addAction(interactionModeAct);
-//    mainToolBar->addAction(switchHarmonicsAct);
     mainToolBar->addAction(trackingCursorAct);
-    mainToolBar->addAction(switchSergeiModeAct);
     mainToolBar->addAction(playAct);
     mainToolBar->addSeparator();
     mainToolBar->addAction(plotHelpAct);
@@ -529,6 +521,20 @@ MainWindow::MainWindow(QWidget *parent)
         plot->removeLabels();
     });
 
+    previousDescriptorAct = new QAction("Предыдущая запись", this);
+    previousDescriptorAct->setIcon(QIcon(":/icons/rminus.png"));
+    connect(previousDescriptorAct, SIGNAL(triggered(bool)), SLOT(previousDescriptor()));
+
+    nextDescriptorAct = new QAction("Следущая запись", this);
+    nextDescriptorAct->setIcon(QIcon(":/icons/rplus.png"));
+    connect(nextDescriptorAct, SIGNAL(triggered(bool)), SLOT(nextDescriptor()));
+
+    arbitraryDescriptorAct = new QAction("Произвольная запись", this);
+    arbitraryDescriptorAct->setIcon(QIcon(":/icons/rany.png"));
+    arbitraryDescriptorAct->setCheckable(true);
+    connect(arbitraryDescriptorAct, SIGNAL(triggered()), SLOT(arbitraryDescriptor()));
+
+
     QToolBar *scaleToolBar = new QToolBar(this);
     scaleToolBar->setOrientation(Qt::Vertical);
     scaleToolBar->addAction(autoscaleXAct);
@@ -537,6 +543,10 @@ MainWindow::MainWindow(QWidget *parent)
     scaleToolBar->addAction(autoscaleAllAct);
     scaleToolBar->addSeparator();
     scaleToolBar->addAction(removeLabelsAct);
+    scaleToolBar->addSeparator();
+    scaleToolBar->addAction(previousDescriptorAct);
+    scaleToolBar->addAction(nextDescriptorAct);
+    scaleToolBar->addAction(arbitraryDescriptorAct);
 
     QWidget *plotsWidget = new QWidget(this);
     QGridLayout *plotsLayout = new QGridLayout;
@@ -1488,12 +1498,6 @@ void MainWindow::saveTimeSegment(const QList<FileDescriptor *> &files, double fr
     thread->start();
 }
 
-void MainWindow::switchSergeiMode()
-{
-    sergeiMode = !sergeiMode;
-    updatePlottedChannelsNumbers();
-}
-
 void MainWindow::editYName()
 {
     if (!tab) return;
@@ -1994,7 +1998,58 @@ void MainWindow::updatePlottedChannelsNumbers()
         plottedChannelsNumbers = tab->channelModel->plotted();
     else
         plottedChannelsNumbers.clear();
-//    qDebug()<<plottedChannelsNumbers.size();
+    //    qDebug()<<plottedChannelsNumbers.size();
+}
+
+void MainWindow::previousDescriptor()
+{
+    if (!tab || !tab->record) return;
+
+    //проверяем, есть ли в табе другие записи
+    if (tab->model->size() < 2) return;
+
+    bool mode = sergeiMode;
+    sergeiMode = true;
+    updatePlottedChannelsNumbers();
+
+    int row = tab->model->rowOfFile(tab->record);
+    if (row == 0)
+        row = tab->model->size()-1; //последний файл вместо нулевого
+    else row--;
+
+    updateChannelsTable(tab->model->file(row));
+    sergeiMode = mode;
+}
+
+void MainWindow::nextDescriptor()
+{
+    if (!tab || !tab->record) return;
+
+    //проверяем, есть ли в табе другие записи
+    if (tab->model->size() < 2) return;
+
+    bool mode = sergeiMode;
+    sergeiMode = true;
+    updatePlottedChannelsNumbers();
+
+    int row = tab->model->rowOfFile(tab->record);
+    if (row == tab->model->size()-1)
+        row = 0; //первый файл вместо последнего
+    else row++;
+
+    updateChannelsTable(tab->model->file(row));
+    sergeiMode = mode;
+}
+
+void MainWindow::arbitraryDescriptor()
+{
+    if (!tab || !tab->record) return;
+
+    //проверяем, есть ли в табе другие записи
+    if (tab->model->size() < 2) return;
+
+    sergeiMode = !sergeiMode;
+    updatePlottedChannelsNumbers();
 }
 
 void setLineColor(QAxObject *obj, int color)

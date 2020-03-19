@@ -181,12 +181,14 @@ private slots:
 
     void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
 
-    void switchSergeiMode();
-
     void editYName();
     void onChannelDescriptionChanged(int index, const QString& value);
     void onChannelNameChanged(int index, const QString& value);
     void updatePlottedChannelsNumbers();
+
+    void previousDescriptor();
+    void nextDescriptor();
+    void arbitraryDescriptor();
 private:
     void moveChannels(bool up);
     void addFiles(QStringList &files);
@@ -252,7 +254,6 @@ private:
 
     QAction *moveChannelsUpAct;
     QAction *moveChannelsDownAct;
-    QAction *switchSergeiModeAct;
     QAction *editDescriptionsAct;
 
     QToolBar *mainToolBar;
@@ -273,6 +274,10 @@ private:
     QAction *removeLabelsAct;
     QAction *playAct;
     QAction *editYNameAct;
+
+    QAction *previousDescriptorAct;
+    QAction *nextDescriptorAct;
+    QAction *arbitraryDescriptorAct;
 
     Plot *plot;
 
