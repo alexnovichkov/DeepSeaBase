@@ -29,5 +29,6 @@
         <file>icons/rminus.png</file>
         <file>icons/rplus.png</file>
         <file>icons/rany.png</file>
+        <file>icons/funnel.png</file>
     </qresource>
 </RCC>

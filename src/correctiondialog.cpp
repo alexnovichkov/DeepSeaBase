@@ -48,13 +48,17 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
             if (table->item(i, col) && table->item(i, col)->checkState()==Qt::Checked) checked++;
         }
 
+        Qt::CheckState state = Qt::PartiallyChecked;
         if (checked==0)
-            tableHeader->setCheckState(col, Qt::Unchecked);
+            state = Qt::Unchecked;
         else if (checked == table->rowCount())
-            tableHeader->setCheckState(col, Qt::Checked);
+            state = Qt::Checked;
         else
-            tableHeader->setCheckState(col, Qt::PartiallyChecked);
+            state = Qt::PartiallyChecked;
+
+        tableHeader->setCheckState(col, state);
     });
+
     tableHeader->setCheckState(0,Qt::Unchecked);
 
     table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);

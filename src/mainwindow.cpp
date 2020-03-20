@@ -630,10 +630,10 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     });
 
 
-    tab->filterHeader = new FilterHeaderView(Qt::Horizontal, tab->filesTable);
+    tab->filterHeader = new FilteredHeaderView(Qt::Horizontal, tab->filesTable);
     tab->filesTable->setHeader(tab->filterHeader);
     connect(tab->filterHeader, SIGNAL(filterChanged(QString,int)), tab->sortModel, SLOT(setFilter(QString,int)));
-    tab->filterHeader->setFilterBoxes(tab->model->columnCount());
+//    tab->filterHeader->setFilterBoxes(tab->model->columnCount());
 
     tab->filesTable->header()->setStretchLastSection(false);
     tab->filesTable->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);

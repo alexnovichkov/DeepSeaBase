@@ -45,6 +45,7 @@ class ChannelTableModel;
 class SortFilterModel;
 class QLineEdit;
 class FilterHeaderView;
+class FilteredHeaderView;
 
 #include <QSplitter>
 
@@ -62,7 +63,8 @@ public:
     QTableView *channelsTable;
     Model *model;
     SortFilterModel *sortModel;
-    FilterHeaderView *filterHeader;
+//    FilterHeaderView *filterHeader;
+    FilteredHeaderView *filterHeader;
     ChannelTableModel *channelModel;
     QList<QLineEdit *> filters;
 

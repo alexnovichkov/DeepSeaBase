@@ -38,7 +38,7 @@ FileDescriptor::FileDescriptor(const QString &fileName) :
 
 FileDescriptor::~FileDescriptor()
 {
-   qDebug()<<"deleting"<<fileName();
+//   qDebug()<<"deleting"<<fileName();
 }
 
 void FileDescriptor::populate()
