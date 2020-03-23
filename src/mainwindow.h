@@ -194,6 +194,9 @@ private slots:
     void previousDescriptor();
     void nextDescriptor();
     void arbitraryDescriptor();
+
+    void cycleChannelsUp();
+    void cycleChannelsDown();
 private:
     void moveChannels(bool up);
     void addFiles(QStringList &files);
@@ -283,6 +286,8 @@ private:
     QAction *previousDescriptorAct;
     QAction *nextDescriptorAct;
     QAction *arbitraryDescriptorAct;
+    QAction *cycleChannelsUpAct;
+    QAction *cycleChannelsDownAct;
 
     Plot *plot;
 

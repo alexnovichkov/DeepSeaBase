@@ -534,6 +534,14 @@ MainWindow::MainWindow(QWidget *parent)
     arbitraryDescriptorAct->setCheckable(true);
     connect(arbitraryDescriptorAct, SIGNAL(triggered()), SLOT(arbitraryDescriptor()));
 
+    cycleChannelsUpAct = new QAction("Предыдущий канал", this);
+    cycleChannelsUpAct->setIcon(QIcon(":/icons/cminus.png"));
+    connect(cycleChannelsUpAct, SIGNAL(triggered(bool)), SLOT(cycleChannelsUp()));
+
+    cycleChannelsDownAct = new QAction("Следующий канал", this);
+    cycleChannelsDownAct->setIcon(QIcon(":/icons/cplus.png"));
+    connect(cycleChannelsDownAct, SIGNAL(triggered(bool)), SLOT(cycleChannelsDown()));
+
 
     QToolBar *scaleToolBar = new QToolBar(this);
     scaleToolBar->setOrientation(Qt::Vertical);
@@ -547,6 +555,8 @@ MainWindow::MainWindow(QWidget *parent)
     scaleToolBar->addAction(previousDescriptorAct);
     scaleToolBar->addAction(nextDescriptorAct);
     scaleToolBar->addAction(arbitraryDescriptorAct);
+    scaleToolBar->addAction(cycleChannelsUpAct);
+    scaleToolBar->addAction(cycleChannelsDownAct);
 
     QWidget *plotsWidget = new QWidget(this);
     QGridLayout *plotsLayout = new QGridLayout;
@@ -2060,6 +2070,68 @@ void MainWindow::arbitraryDescriptor()
 
     sergeiMode = !sergeiMode;
     updatePlottedChannelsNumbers();
+}
+
+void MainWindow::cycleChannelsUp()
+{
+    if (!tab || !tab->record) return;
+
+    bool mode = sergeiMode;
+    sergeiMode = true;
+    updatePlottedChannelsNumbers();
+
+    QVector<int> plotted = plottedChannelsNumbers;
+
+    tab->channelModel->deleteCurves();
+    for (int i=0; i<plotted.size(); ++i) {
+        if (plotted[i] == 0) plotted[i] = tab->record->channelsCount()-1;
+        else plotted[i]=plotted[i]-1;
+    }
+    tab->channelModel->plotChannels(plotted);
+
+//    QModelIndex current = tab->filesTable->selectionModel()->currentIndex();
+//    int row = current.row();
+//    QModelIndex index;
+//    if (row == tab->filesTable->model()->rowCount()-1)
+//        index = tab->filesTable->model()->index(0,current.column());
+//    else
+//        index = tab->filesTable->model()->index(row+1,current.column());
+//    if (index.isValid())
+//        tab->filesTable->selectionModel()->setCurrentIndex(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Current);
+
+
+    sergeiMode = mode;
+}
+
+void MainWindow::cycleChannelsDown()
+{
+    if (!tab || !tab->record) return;
+
+    bool mode = sergeiMode;
+    sergeiMode = true;
+    updatePlottedChannelsNumbers();
+
+    QVector<int> plotted = plottedChannelsNumbers;
+
+    tab->channelModel->deleteCurves();
+    for (int i=0; i<plotted.size(); ++i) {
+        if (plotted[i] == tab->record->channelsCount()-1) plotted[i]=0;
+        else plotted[i]=plotted[i]+1;
+    }
+    tab->channelModel->plotChannels(plotted);
+
+//    QModelIndex current = tab->filesTable->selectionModel()->currentIndex();
+//    int row = current.row();
+//    QModelIndex index;
+//    if (row == tab->filesTable->model()->rowCount()-1)
+//        index = tab->filesTable->model()->index(0,current.column());
+//    else
+//        index = tab->filesTable->model()->index(row+1,current.column());
+//    if (index.isValid())
+//        tab->filesTable->selectionModel()->setCurrentIndex(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Current);
+
+
+    sergeiMode = mode;
 }
 
 void setLineColor(QAxObject *obj, int color)
