@@ -149,3 +149,8 @@ void Curve::evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const
     if (to >= int(channel->samplesCount())) to = channel->samplesCount()-1;
 }
 
+void Curve::switchFixed()
+{
+    fixed = !fixed;
+}
+

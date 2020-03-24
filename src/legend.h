@@ -17,6 +17,7 @@ struct LegendItem
     QColor color;
     bool checked = true;
     bool selected = false;
+    bool fixed = false;
     QwtPlotItem *item;
 };
 
@@ -32,7 +33,7 @@ public:
 public slots:
     void addItem(QwtPlotItem *it);
     void removeItem(QwtPlotItem *plotItem);
-    void update(QwtPlotItem *it, const QString &text, const QColor& color, bool checked, bool selected);
+    void update(QwtPlotItem *it, const QString &text, const QColor& color, bool checked, bool selected, bool fixed);
 
     // QAbstractItemModel interface
 public:
@@ -44,7 +45,6 @@ public:
 
 private:
     QVector<LegendItem> items;
-
 };
 
 class LegendTreeView : public QTreeView
@@ -77,6 +77,7 @@ signals:
     void clicked(QwtPlotItem *);
     void markedForDelete(QwtPlotItem*);
     void markedToMove(QwtPlotItem*);
+    void fixedChanged(QwtPlotItem*);
 
 public slots:
     virtual void updateLegend(const QVariant &itemInfo, const QList<QwtLegendData> & data);

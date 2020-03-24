@@ -66,19 +66,18 @@ public:
     int curvesCount() const {return curves.size();}
 
     /**
-     * @brief deleteCurves deletes all curves on a plot, which represent DFDd with dfdGuid
-     * @param dfdGuid
+     * @brief deleteCurves deletes all curves on a plot from a descriptor
+     * @param descriptor
      */
-    void deleteCurves(FileDescriptor *descriptor);
+    void deleteCurvesForDescriptor(FileDescriptor *descriptor);
 
     /**
      * @brief deleteCurve deletes plotted curve
      * @param dfd - DFD represented by a curve
      * @param channel
      */
-    void deleteCurve(FileDescriptor *dfd, int channel, bool doReplot = true);
+    void deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot = true);
     void deleteCurve(Curve *curve, bool doReplot = true);
-    void deleteCurve(Channel *c, bool doReplot = true);
 
     bool plotCurve(FileDescriptor *descriptor, int channel, QColor *col, bool &plotOnRight, int fileNumber);
 
@@ -130,10 +129,10 @@ public slots:
     void moveCurve(Curve *curve, int axis);
 
     /**
-     * @brief deleteCurves
+     * @brief deleteAllCurves
      * deletes all curves on a plot
      */
-    void deleteCurves();
+    void deleteAllCurves(bool forceDeleteFixed = false);
 signals:
     void curveChanged(Curve *curve);
     void curveDeleted(FileDescriptor *descriptor, int index);
@@ -145,9 +144,10 @@ signals:
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
     void editLegendItem(QwtPlotItem *item);
-    void deleteCurve(QwtPlotItem *item);
+    void deleteCurveFromLegend(QwtPlotItem *item);
     void showContextMenu(const QPoint &pos, const int axis);
     void moveCurve(QwtPlotItem *curve);
+    void fixCurve(QwtPlotItem* curve);
 private:
     void importPlot(const QString &fileName);
     bool hasDuplicateNames(const QString name) const;

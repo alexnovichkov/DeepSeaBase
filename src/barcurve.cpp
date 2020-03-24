@@ -64,6 +64,7 @@ QList<QwtLegendData> BarCurve::legendData() const
     if (duplicate)
         data.setValue(QwtLegendData::UserRole+1, fileNumber);
     data.setValue(QwtLegendData::UserRole+2, highlighted);
+    data.setValue(QwtLegendData::UserRole+4, fixed);
 
     return result;
 }
@@ -162,7 +163,7 @@ QwtIntervalSample HistogramData::sample(size_t i) const
 
     // правая граница
     double right = data->xValue(i);
-    if (i< data->samplesCount()-1) right = sqrt(data->xValue(i) * data->xValue(i+1));
+    if (i< (uint)(data->samplesCount()-1)) right = sqrt(data->xValue(i) * data->xValue(i+1));
     else {
         if (octaveType == Octave3) {
             right = data->xValue(i) * pow(10.0, 0.05);

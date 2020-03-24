@@ -105,8 +105,9 @@ Plot::Plot(QWidget *parent) :
 
     CheckableLegend *leg = new CheckableLegend();
     connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
-    connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurve(QwtPlotItem*)));
+    connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurveFromLegend(QwtPlotItem*)));
     connect(leg, SIGNAL(markedToMove(QwtPlotItem*)),this, SLOT(moveCurve(QwtPlotItem*)));
+    connect(leg, SIGNAL(fixedChanged(QwtPlotItem*)),this, SLOT(fixCurve(QwtPlotItem*)));
     insertLegend(leg, QwtPlot::RightLegend);
 
 
@@ -174,28 +175,35 @@ bool Plot::hasCurves() const
     return !curves.isEmpty();
 }
 
-void Plot::deleteCurves()
+void Plot::deleteAllCurves(bool forceDeleteFixed)
 {DD;
-    foreach (Curve *c, curves) {
-        emit curveDeleted(c->descriptor, c->channelIndex);
+    int leftUndeleted = curves.size();
+
+    for (int i=curves.size()-1; i>=0; --i) {
+        Curve *c = curves[i];
+        if (!c->fixed || forceDeleteFixed) {
+            emit curveDeleted(c->descriptor, c->channelIndex);
+            deleteCurve(c, true);
+            leftUndeleted--;
+        }
     }
 
-    qDeleteAll(curves);
-    curves.clear();
-    leftCurves.clear();
-    rightCurves.clear();
-    ColorSelector::instance()->resetState();
+//    qDeleteAll(curves);
+//    curves.clear();
+//    leftCurves.clear();
+//    rightCurves.clear();
+//    ColorSelector::instance()->resetState();
     playerPanel->reset();
 
-    yLeftName.clear();
-    yRightName.clear();
-    xName.clear();
+//    yLeftName.clear();
+//    yRightName.clear();
+//    xName.clear();
 
-    update();
-    emit curvesChanged();
+//    update();
+//    emit curvesChanged();
 }
 
-void Plot::deleteCurves(FileDescriptor *descriptor)
+void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
 {DD;
     for (int i = curves.size()-1; i>=0; --i) {
         Curve *curve = curves[i];
@@ -205,11 +213,66 @@ void Plot::deleteCurves(FileDescriptor *descriptor)
     }
 }
 
-void Plot::deleteCurve(QwtPlotItem*item)
+//не удаляем, если фиксирована
+void Plot::deleteCurveFromLegend(QwtPlotItem*item)
 {DD;
     if (Curve *c = dynamic_cast<Curve *>(item)) {
-        emit curveDeleted(c->descriptor, c->channelIndex);
-        deleteCurve(c, true);
+        if (!c->fixed) {
+            emit curveDeleted(c->descriptor, c->channelIndex);
+            deleteCurve(c, true);
+        }
+    }
+}
+
+void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot)
+{DD;
+    if (Curve *curve = plotted(dfd, channel)) {
+        deleteCurve(curve, doReplot);
+    }
+}
+
+//удаляет кривую, была ли она фиксирована или нет.
+//Все проверки проводятся выше
+void Plot::deleteCurve(Curve *curve, bool doReplot)
+{DD;
+    if (curve) {
+        ColorSelector::instance()->freeColor(curve->pen().color());
+
+        int removed = leftCurves.removeAll(curve);
+        if (removed > 0) {
+            zoom->verticalScaleBounds->removeToAutoscale(curve->yMin(), curve->yMax());
+        }
+
+        removed = rightCurves.removeAll(curve);
+        if (removed > 0) {
+            zoom->verticalScaleBoundsSlave->removeToAutoscale(curve->yMin(), curve->yMax());
+        }
+        removed = curves.removeAll(curve);
+        if (removed > 0) {
+            zoom->horizontalScaleBounds->removeToAutoscale(curve->xMin(), curve->xMax());
+        }
+        QString title = curve->title();
+
+
+        delete curve;
+        curve = 0;
+        checkDuplicates(title);
+
+        if (leftCurves.isEmpty()) {
+            yLeftName.clear();
+        }
+        if (rightCurves.isEmpty()) {
+            yRightName.clear();
+            enableAxis(QwtPlot::yRight, false);
+        }
+        if (!hasCurves()) {
+            xName.clear();
+        }
+
+        if (doReplot) {
+            update();
+        }
+        emit curvesChanged();
     }
 }
 
@@ -374,63 +437,6 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
     menu->exec(pos);
 }
 
-void Plot::deleteCurve(FileDescriptor *dfd, int channel, bool doReplot)
-{DD;
-    if (Curve *curve = plotted(dfd, channel)) {
-        deleteCurve(curve, doReplot);
-    }
-}
-
-void Plot::deleteCurve(Channel *c, bool doReplot)
-{DD;
-    if (Curve *curve = plotted(c)) {
-        deleteCurve(curve, doReplot);
-    }
-}
-
-void Plot::deleteCurve(Curve *curve, bool doReplot)
-{DD;
-    if (curve) {
-        ColorSelector::instance()->freeColor(curve->pen().color());
-
-        int removed = leftCurves.removeAll(curve);
-        if (removed > 0) {
-            zoom->verticalScaleBounds->removeToAutoscale(curve->yMin(), curve->yMax());
-        }
-
-        removed = rightCurves.removeAll(curve);
-        if (removed > 0) {
-            zoom->verticalScaleBoundsSlave->removeToAutoscale(curve->yMin(), curve->yMax());
-        }
-        removed = curves.removeAll(curve);
-        if (removed > 0) {
-            zoom->horizontalScaleBounds->removeToAutoscale(curve->xMin(), curve->xMax());
-        }
-        QString title = curve->title();
-
-
-        delete curve;
-        curve = 0;
-        checkDuplicates(title);
-
-        if (leftCurves.isEmpty()) {
-            yLeftName.clear();
-        }
-        if (rightCurves.isEmpty()) {
-            yRightName.clear();
-            enableAxis(QwtPlot::yRight, false);
-        }
-        if (!hasCurves()) {
-            xName.clear();
-        }
-
-        if (doReplot) {
-            update();
-        }
-        emit curvesChanged();
-    }
-}
-
 bool Plot::canBePlottedOnLeftAxis(Channel *ch)
 {DD;
     if (!hasCurves()) // нет графиков - можем построить что угодно
@@ -564,6 +570,15 @@ void Plot::moveCurve(QwtPlotItem *curve)
 {
     if (Curve *c = dynamic_cast<Curve*>(curve))
         moveCurve(c, c->yAxis() == QwtPlot::yLeft ? QwtPlot::yRight : QwtPlot::yLeft);
+}
+
+void Plot::fixCurve(QwtPlotItem *curve)
+{
+    if (Curve *c = dynamic_cast<Curve*>(curve)) {
+        c->switchFixed();
+        updateLegend();
+    }
+
 }
 
 bool Plot::hasDuplicateNames(const QString name) const
@@ -930,6 +945,8 @@ void Plot::importPlot(const QString &fileName)
     leg = new CheckableLegend();
     connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
     connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurve(QwtPlotItem*)));
+    connect(leg, SIGNAL(markedToMove(QwtPlotItem*)),this, SLOT(moveCurve(QwtPlotItem*)));
+    connect(leg, SIGNAL(fixedChanged(QwtPlotItem*)),this, SLOT(fixCurve(QwtPlotItem*)));
     insertLegend(leg, QwtPlot::RightLegend);
 }
 

@@ -30,5 +30,7 @@
         <file>icons/rplus.png</file>
         <file>icons/rany.png</file>
         <file>icons/funnel.png</file>
+        <file>icons/pinned.png</file>
+        <file>icons/pin.png</file>
     </qresource>
 </RCC>

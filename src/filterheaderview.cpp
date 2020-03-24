@@ -142,7 +142,7 @@ void FilteredHeaderView::paintEvent(QPaintEvent *event)
 //        option.state |= QStyle::State_Enabled;
 //    option.state |= QStyle::State_Sunken;
     option.rect = QRect(rect.width()-w-padding, rect.y(), w, rect.height());
-    option.features = QStyleOptionButton::Flat | QStyleOptionButton::HasMenu;
+    option.features = QStyleOptionButton::Flat /*| QStyleOptionButton::HasMenu*/;
     option.iconSize = QSize(16,16);
     option.icon = QIcon(":/icons/funnel.png");
 

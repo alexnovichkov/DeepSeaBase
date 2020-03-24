@@ -114,7 +114,7 @@ QColor ColorSelector::getColor()
         }
     }
 
-    return QColor(QRgb(0x00808080));
+    return defaultColor;
 }
 
 void ColorSelector::resetState()

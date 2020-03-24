@@ -237,6 +237,7 @@ QList<QwtLegendData> LineCurve::legendData() const
     if (duplicate)
         data.setValue(QwtLegendData::UserRole+1, fileNumber);
     data.setValue(QwtLegendData::UserRole+2, highlighted);
+    data.setValue(QwtLegendData::UserRole+4, fixed);
 
     return result;
 }

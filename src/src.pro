@@ -44,7 +44,6 @@ SOURCES += main.cpp\
     methods/xresponch1.cpp \
     pointlabel.cpp \
     legend.cpp \
-    legendlabel.cpp \
     logging.cpp \
     fileformats/filedescriptor.cpp \
     fileformats/ufffile.cpp \
@@ -122,7 +121,6 @@ HEADERS  += mainwindow.h \
     methods/xresponch1.h \
     pointlabel.h \
     legend.h \
-    legendlabel.h \
     logging.h \
     fileformats/filedescriptor.h \
     fileformats/ufffile.h \
@@ -208,6 +206,5 @@ INCLUDEPATH *= $$PWD $$PWD/.. $$PWD/../3rdParty/qtpropertybrowser $$PWD/../3rdPa
 INCLUDEPATH *= C:/Qwt-6.1.2/include
 
 LIBS *= K:/My/programming/sources/libsamplerate-0.1.8/release/libsamplerate.a
-
 
 

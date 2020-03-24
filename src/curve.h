@@ -65,8 +65,10 @@ public:
     int fileNumber;
     bool duplicate;
     bool highlighted;
+    bool fixed = false;
 public:
     void evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const;
+    void switchFixed();
 };
 
 

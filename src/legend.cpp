@@ -1,8 +1,8 @@
 #include "legend.h"
 #include <QtDebug>
-#include "legendlabel.h"
 #include "qwt_plot_item.h"
 #include <QtWidgets>
+#include "logging.h"
 
 static void qwtRenderBackground( QPainter *painter, const QRectF &rect, const QWidget *widget )
 {
@@ -26,12 +26,12 @@ CheckableLegend::CheckableLegend(QWidget *parent) : QwtAbstractLegend(parent)
     d_treeView->setModel(d_model);
     d_treeView->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     d_treeView->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
+    d_treeView->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
 
     QVBoxLayout *layout = new QVBoxLayout( this );
     layout->setContentsMargins( 0, 0, 0, 0 );
     layout->addWidget( d_treeView );
 
-    connect(d_treeView, SIGNAL(clicked(QModelIndex)), this, SLOT(handleClick(QModelIndex)));
     connect(d_treeView, SIGNAL(pressed(QModelIndex)), this, SLOT(handleClick(QModelIndex)));
 }
 
@@ -95,7 +95,7 @@ void CheckableLegend::updateLegend(const QVariant &itemInfo, const QList<QwtLege
 }
 
 void CheckableLegend::handleClick(const QModelIndex &i)
-{
+{DD;
     if (QApplication::mouseButtons() & Qt::RightButton) {
         emit markedForDelete(d_model->item(i.row()));
         return;
@@ -109,10 +109,19 @@ void CheckableLegend::handleClick(const QModelIndex &i)
     if (i.column() == 1) {
         emit clicked(d_model->item(i.row()));
     }
+    else if (i.column() == 2) {
+        emit fixedChanged(d_model->item(i.row()));
+//        d_model->setData(i, )
+    }
 }
 
 void CheckableLegend::updateItem(QwtPlotItem *item, const QwtLegendData &data)
 {
+    //QwtLegendData::UserRole+1 - дополнительный идентификатор канала
+    //QwtLegendData::UserRole+2 - индикатор того, что кривая выбрана
+    //QwtLegendData::UserRole+3 - цвет кривой
+    //QwtLegendData::UserRole+4 - индикатор того, что кривая фиксирована
+
     const QVariant titleValue = data.value( QwtLegendData::TitleRole );
 
     QString title;
@@ -131,7 +140,9 @@ void CheckableLegend::updateItem(QwtPlotItem *item, const QwtLegendData &data)
 
     bool selected = data.value(QwtLegendData::UserRole+2).toBool();
 
-    d_model->update(item, title, color, item->isVisible(), selected);
+    bool fixed = data.value(QwtLegendData::UserRole+4).toBool();
+
+    d_model->update(item, title, color, item->isVisible(), selected, fixed);
 }
 
 
@@ -187,7 +198,8 @@ void LegendModel::removeItem(QwtPlotItem *plotItem)
     endRemoveRows();
 }
 
-void LegendModel::update(QwtPlotItem *it, const QString &text, const QColor &color, bool checked, bool selected)
+void LegendModel::update(QwtPlotItem *it, const QString &text, const QColor &color,
+                         bool checked, bool selected, bool fixed)
 {
     int ind = -1;
     for (int index = 0; index < items.size(); ++index) {
@@ -201,7 +213,8 @@ void LegendModel::update(QwtPlotItem *it, const QString &text, const QColor &col
     items[ind].color = color;
     items[ind].checked = checked;
     items[ind].selected = selected;
-    emit dataChanged(index(ind,0), index(ind, 1));
+    items[ind].fixed = fixed;
+    emit dataChanged(index(ind,0), index(ind, 2));
 }
 
 int LegendModel::rowCount(const QModelIndex &parent) const
@@ -213,7 +226,7 @@ int LegendModel::rowCount(const QModelIndex &parent) const
 int LegendModel::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return 2;
+    return 3;
 }
 
 QVariant LegendModel::data(const QModelIndex &index, int role) const
@@ -246,18 +259,10 @@ QVariant LegendModel::data(const QModelIndex &index, int role) const
     else if (role == Qt::DecorationRole) {
         switch (column) {
             case 0: {
-//                QPixmap p(16, 16);
-//                QPainter painter(&p);
-//                painter.fillRect(0,0,16,16,d.color);
-//                if (d.selected) {
-//                    QPen pen;
-//                    pen.setColor(d.color == QColor(Qt::black) ? Qt::white : Qt::black);
-//                    pen.setWidth(2);
-//                    painter.setPen(pen);
-//                    //painter.setPen();
-//                    painter.drawRect(1,1,14,14);
-//                }
                 return d.color;
+            }
+            case 2: {
+                return d.fixed?QIcon(":/icons/pinned.png"):QIcon(":/icons/pin.png");
             }
             default: return QVariant();
 
@@ -281,12 +286,20 @@ bool LegendModel::setData(const QModelIndex &index, const QVariant &value, int r
     const int column = index.column();
 
     if (row<0 || row>=items.size()) return false;
-    if (column != 0) return false;
-
-    items[row].checked = value.toInt() == int(Qt::Checked);
-    items[row].item->setVisible(items[row].checked);
-    emit dataChanged(index, index, QVector<int>()<<Qt::CheckStateRole);
-    return true;
+    if (column == 0) {
+        items[row].checked = value.toInt() == int(Qt::Checked);
+        items[row].item->setVisible(items[row].checked);
+        emit dataChanged(index, index, QVector<int>()<<Qt::CheckStateRole);
+        return true;
+    }
+    else if (column == 1) {
+        if (items[row].fixed != value.toBool()) {
+            items[row].fixed = value.toBool();
+            emit dataChanged(index,index, QVector<int>()<<Qt::DecorationRole);
+            return true;
+        }
+    }
+    return false;
 }
 
 Qt::ItemFlags LegendModel::flags(const QModelIndex &index) const
@@ -308,6 +321,8 @@ LegendTreeView::LegendTreeView(QWidget *parent) : QTreeView(parent)
 
     setRootIsDecorated( false );
     setHeaderHidden( true );
+    setContentsMargins(0,0,0,0);
+    setUniformRowHeights(true);
     header()->setStretchLastSection(false);
 }
 
@@ -318,37 +333,18 @@ QSize LegendTreeView::minimumSizeHint() const
 
 QSize LegendTreeView::sizeHint() const
 {
-    QStyleOptionViewItem styleOption;
-    styleOption.initFrom( this );
-
-    //const QAbstractItemDelegate *delegate = itemDelegate();
-
     int w = 0;
     int h = 0;
 
-    for (int row = 0; row < model()->rowCount(); row++ ) {
-        int wRow = 0;
-        int hRow = 0;
-        for ( int i = 0; i < model()->columnCount(); i++ )
-        {
-            const QSize hint = itemDelegate(model()->index(row, i))->sizeHint( styleOption,
-                model()->index(row, i));
-
-            wRow += hint.width();
-            hRow = std::max(hint.height(), hRow);
-        }
-        w = std::max(w, wRow);
-
-        h += hRow;
+    for (int i=0; i<model()->columnCount(); ++i)
+        w += sizeHintForColumn(i);
+    if (model()->rowCount()>0) {
+        int h1 = sizeHintForRow(0);
+        h = h1 * model()->rowCount();
     }
 
-    int left, right, top, bottom;
-    getContentsMargins( &left, &top, &right, &bottom );
-
-    w += left + right + 30;
-    h += top + bottom;
-
-    //if (verticalScrollBar()->isVisible()) w+=verticalScrollBar()->sizeHint().width();
-
+    w += 10;
     return QSize( w, h );
 }
+
+

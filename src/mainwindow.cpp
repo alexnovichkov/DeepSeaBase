@@ -283,7 +283,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     clearPlotAct  = new QAction(QString("Очистить график"), this);
     clearPlotAct->setIcon(QIcon(":/icons/cross.png"));
-    connect(clearPlotAct, SIGNAL(triggered()), plot, SLOT(deleteCurves()));
+    connect(clearPlotAct, SIGNAL(triggered()), plot, SLOT(deleteAllCurves()));
 
     savePlotAct = new QAction(QString("Сохранить график..."), this);
     savePlotAct->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogSaveButton));
@@ -899,7 +899,7 @@ MainWindow::~MainWindow()
 
 //    setSetting("folders1", map);
 
-//    plot->deleteCurves();
+//    plot->deleteAllCurves();
 
 //    for (int i= tabWidget->count()-1; i>=0; --i) {
 //        closeTab(i);
@@ -999,7 +999,7 @@ void MainWindow::deleteFiles()
     QStringList duplicatedFiles;
     QList<FileDescriptor *> files = tab->model->selectedFiles();
     foreach (FileDescriptor *d, files) {
-        plot->deleteCurves(d);
+        plot->deleteCurvesForDescriptor(d);
 
         if (tab->folders.contains(d->fileName()))
             tab->folders.removeOne(d->fileName());
@@ -1197,8 +1197,8 @@ void MainWindow::addCorrections()
 bool MainWindow::deleteChannels(FileDescriptor *file, const QVector<int> &channelsToDelete)
 {DD;
     for (int i=0; i<channelsToDelete.size() - 1; ++i)
-        plot->deleteCurve(file, channelsToDelete.at(i), false);
-    plot->deleteCurve(file, channelsToDelete.last(), true);
+        plot->deleteCurveForChannelIndex(file, channelsToDelete.at(i), false);
+    plot->deleteCurveForChannelIndex(file, channelsToDelete.last(), true);
 
     file->deleteChannels(channelsToDelete);
 
@@ -1886,8 +1886,13 @@ void MainWindow::calculateMovingAvg()
 
 void MainWindow::deleteCurve(int index)
 {DD;
+    //не удаляем, если фиксирована
+    if (Curve *c = plot->plotted(tab->record, index)) {
+        if (c->fixed) return;
+    }
+
     //удаляем кривую с графика
-    plot->deleteCurve(tab->record, index);
+    plot->deleteCurveForChannelIndex(tab->record, index);
     //обновляем инфу для канала
     tab->record->channel(index)->setPlotted(0);
     tab->record->channel(index)->setColor(QColor());
@@ -1902,7 +1907,12 @@ void MainWindow::deleteCurve(int index)
             if (f == tab->record) continue;
             if (f->channelsCount()<=index) continue;
 
-            plot->deleteCurve(f, index);
+            //не удаляем, если фиксирована
+            if (Curve *c = plot->plotted(f, index)) {
+                if (c->fixed) continue;
+            }
+
+            plot->deleteCurveForChannelIndex(f, index);
             f->channel(index)->setPlotted(0);
             f->channel(index)->setColor(QColor());
 
@@ -1917,7 +1927,7 @@ void MainWindow::rescanBase()
     if (!tab) return;
 
     // first we delete all curves affected
-    plot->deleteCurves();
+    plot->deleteAllCurves();
 
     // next we clear all tab and populate it with folders anew
     tab->model->clear();
@@ -2083,22 +2093,17 @@ void MainWindow::cycleChannelsUp()
     QVector<int> plotted = plottedChannelsNumbers;
 
     tab->channelModel->deleteCurves();
+
     for (int i=0; i<plotted.size(); ++i) {
+        //пропускаем фиксированную кривую, остальные сдвигаем
+        if (Curve *curve = plot->plotted(tab->record, plotted[i])) {
+            if (curve->fixed) continue;
+        }
+
         if (plotted[i] == 0) plotted[i] = tab->record->channelsCount()-1;
         else plotted[i]=plotted[i]-1;
     }
     tab->channelModel->plotChannels(plotted);
-
-//    QModelIndex current = tab->filesTable->selectionModel()->currentIndex();
-//    int row = current.row();
-//    QModelIndex index;
-//    if (row == tab->filesTable->model()->rowCount()-1)
-//        index = tab->filesTable->model()->index(0,current.column());
-//    else
-//        index = tab->filesTable->model()->index(row+1,current.column());
-//    if (index.isValid())
-//        tab->filesTable->selectionModel()->setCurrentIndex(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Current);
-
 
     sergeiMode = mode;
 }
@@ -2115,21 +2120,15 @@ void MainWindow::cycleChannelsDown()
 
     tab->channelModel->deleteCurves();
     for (int i=0; i<plotted.size(); ++i) {
+        //пропускаем фиксированную кривую, остальные сдвигаем
+//        if (Curve *curve = plot->plotted(tab->record, plotted[i])) {
+//            if (curve->fixed) continue;
+//        }
+
         if (plotted[i] == tab->record->channelsCount()-1) plotted[i]=0;
         else plotted[i]=plotted[i]+1;
     }
     tab->channelModel->plotChannels(plotted);
-
-//    QModelIndex current = tab->filesTable->selectionModel()->currentIndex();
-//    int row = current.row();
-//    QModelIndex index;
-//    if (row == tab->filesTable->model()->rowCount()-1)
-//        index = tab->filesTable->model()->index(0,current.column());
-//    else
-//        index = tab->filesTable->model()->index(row+1,current.column());
-//    if (index.isValid())
-//        tab->filesTable->selectionModel()->setCurrentIndex(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Current);
-
 
     sergeiMode = mode;
 }
@@ -2764,7 +2763,8 @@ bool MainWindow::closeRequested()
 
     setSetting("folders1", map);
 
-    plot->deleteCurves();
+    //насильственно удаляем все графики
+    plot->deleteAllCurves(true);
 
     for (int i= tabWidget->count()-1; i>=0; --i) {
         closeTab(i);
