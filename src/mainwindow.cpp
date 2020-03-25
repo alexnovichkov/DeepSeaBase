@@ -2119,13 +2119,14 @@ void MainWindow::cycleChannelsDown()
     QVector<int> plotted = plottedChannelsNumbers;
 
     tab->channelModel->deleteCurves();
+
     for (int i=0; i<plotted.size(); ++i) {
         //пропускаем фиксированную кривую, остальные сдвигаем
-//        if (Curve *curve = plot->plotted(tab->record, plotted[i])) {
-//            if (curve->fixed) continue;
-//        }
+        if (Curve *curve = plot->plotted(tab->record, plotted[i])) {
+            if (curve->fixed) continue;
+        }
 
-        if (plotted[i] == tab->record->channelsCount()-1) plotted[i]=0;
+        if (plotted[i] == tab->record->channelsCount()-1) plotted[i] = 0;
         else plotted[i]=plotted[i]+1;
     }
     tab->channelModel->plotChannels(plotted);
@@ -2570,16 +2571,16 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
                          default: break;
                      }
                      formatLine->setProperty("DashStyle", msoLineStyle);
+
+                     QAxObject *formatLineForeColor = formatLine->querySubObject("ForeColor");
+                     QColor color = plot->curves.at(i)->channel->color();
+                     //меняем местами красный и синий, потому что Excel неправильно понимает порядок
+                     int red = color.red();
+                     color.setRed(color.blue());
+                     color.setBlue(red);
+                     if (formatLineForeColor) formatLineForeColor->setProperty("RGB", color.rgb());
+                     delete formatLineForeColor;
                  }
-
-                 QAxObject *formatLineForeColor = formatLine->querySubObject("ForeColor");
-                 QColor color = plot->curves.at(i)->channel->color();
-                 //меняем местами красный и синий, потому что Excel неправильно понимает порядок
-                 int red = color.red();
-                 color.setRed(color.blue());
-                 color.setBlue(red);
-                 if (formatLineForeColor) formatLineForeColor->setProperty("RGB", color.rgb());
-
 
                  foreach(PointLabel *label, curve->labels) {
                      QAxObject* point = serie->querySubObject("Points(QVariant)", label->point()+1);
@@ -2594,7 +2595,6 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
                      delete point;
                  }
 
-                 delete formatLineForeColor;
                  delete formatLine;
                  delete format;
              }

@@ -560,7 +560,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             else
                 ch->data()->setYValues(spectrum, p.scaleType > 0 ? DataHolder::YValuesAmplitudesInDB : DataHolder::YValuesAmplitudes);
         }
-        if (!xVals.isEmpty()) ch->data()->setXValues(xVals);
+        if (!xVals.isEmpty() && ch) ch->data()->setXValues(xVals);
 
         if (!wasPopulated) {
             file->channel(i)->clear();

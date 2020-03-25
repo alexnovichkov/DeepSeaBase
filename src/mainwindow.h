@@ -221,7 +221,7 @@ private:
 
     bool sergeiMode = false;
     QVector<int> plottedChannelsNumbers;
-    QVector<int> cycled;
+    bool cycled = false;
 
     QStringList tabsNames;
 
