@@ -1534,6 +1534,9 @@ void MainWindow::onChannelDescriptionChanged(int index, const QString &value)
         {
             tab->model->setChannelDescription(index, value);
         }
+        else {
+            tab->model->updateFile(tab->record);
+        }
     }
 }
 
@@ -1644,10 +1647,11 @@ void MainWindow::plotAllChannelsAtRight()
 void MainWindow::plotChannel(int index)
 {DD;
     QColor col;
-    int fileNumber = tab->model->data(tab->model->modelIndexOfFile(tab->record,0), 0).toInt();
+    int idx;
+    tab->model->contains(tab->record, &idx);
 
     bool plotOnRight = tab->record->channel(index)->plotted()==2;
-    bool plotted = plot->plotCurve(tab->record, index, &col, plotOnRight, fileNumber);
+    bool plotted = plot->plotCurve(tab->record, index, &col, plotOnRight, idx+1);
 
     if (plotted) {
         tab->record->channel(index)->setColor(col);
@@ -1666,8 +1670,8 @@ void MainWindow::plotChannel(int index)
             if (f == tab->record) continue;
             if (f->channelsCount()<=index) continue;
 
-            int fileNumber = tab->model->data(tab->model->modelIndexOfFile(f,0), 0).toInt();
-            plotted = plot->plotCurve(f, index, &col, plotOnRight, fileNumber);
+            tab->model->contains(f, &idx);
+            plotted = plot->plotCurve(f, index, &col, plotOnRight, idx+1);
             if (plotted) {
                 f->channel(index)->setColor(col);
                 tab->record->channel(index)->setPlotted(plotOnRight?2:1);
@@ -1997,7 +2001,7 @@ bool MainWindow::duplicated(FileDescriptor *file) const
         Tab *t = qobject_cast<Tab *>(tabWidget->widget(i));
         if (t==tab) continue;
 
-        if (t->model->find(file))
+        if (t->model->contains(file))
             return true;
     }
     return false;
@@ -2006,9 +2010,7 @@ bool MainWindow::duplicated(FileDescriptor *file) const
 void MainWindow::setCurrentAndPlot(FileDescriptor *d, int channelIndex)
 {DD;
     if (tab) {
-        int i = tab->model->rowOfFile(d);
-
-        if (i > -1) {
+        if (tab->model->contains(d)) {
             updateChannelsTable(d);
 
             tab->channelModel->plotChannels(QVector<int>()<<channelIndex);

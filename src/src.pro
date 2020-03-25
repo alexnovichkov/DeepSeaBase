@@ -207,4 +207,6 @@ INCLUDEPATH *= C:/Qwt-6.1.2/include
 
 LIBS *= K:/My/programming/sources/libsamplerate-0.1.8/release/libsamplerate.a
 
-
+##matio
+#INCLUDEPATH *= K:/My/programming/sources/Matlab/matio-1.5.17/src
+#LIBS *= K:/My/programming/sources/Matlab/matio-1.5.17/visual_studio/Release/libmatio.lib

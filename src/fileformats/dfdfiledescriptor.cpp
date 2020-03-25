@@ -649,7 +649,7 @@ void DfdFileDescriptor::setDataDescriptor(const DescriptionList &data)
 
     dataDescription->data = data;
     setChanged(true);
-    write();
+//    write();
 }
 
 void DfdFileDescriptor::setXStep(const double xStep)

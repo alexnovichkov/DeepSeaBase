@@ -4,7 +4,7 @@
 #include <QtDebug>
 #include <QtCore>
 
-//#include "matlabfiledescriptor.h"
+#include "fileformats/matlabfiledescriptor.h"
 
 int main(int argc, char *argv[])
 {
@@ -13,10 +13,10 @@ int main(int argc, char *argv[])
 //    MatFile f("K:\\Shared\\Rec_001_single.prec_not.group_MKS_bigger.mat");
 
     //MatFile f("K:\\Shared\\Rec_001_single.prec_group_MKS_not.bigger.mat");
-    //MatFile f("K:\\Shared\\rec001_with_rus.mat");
+//    MatFile f("K:\\Shared\\Record_8_580_1200s.mat");
 //    MatFile f("K:\\Shared\\rec_001_M_group.mat");
 
-    //return 0;
+//    return 0;
 
 
 //    qDebug()<<( 0x020004 >> 16);

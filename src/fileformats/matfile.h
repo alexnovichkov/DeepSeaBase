@@ -57,7 +57,7 @@ public:
     quint64 headerBegin = 0;
     quint64 dataBegin = 0;
     quint32 actualSize = 0; //including padding
-    bool compressed = false;
+    bool smallData = false;
 
     quint8 flags = 0;
     quint8 arrayClass = 0;

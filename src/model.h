@@ -6,6 +6,8 @@
 #include "fileformats/filedescriptor.h"
 #include <QFont>
 
+#define MODEL_COLUMNS_COUNT 9
+
 class Model : public QAbstractTableModel
 {
     Q_OBJECT
@@ -15,13 +17,13 @@ public:
 
     bool contains(const QString &fileName, int *index = 0) const;
     bool contains(FileDescriptor *file, int *index = 0) const;
-    FileDescriptor *file(int i);
-    FileDescriptor *find(const QString &fileName);
-    bool find(FileDescriptor *file);
-    int rowOfFile(FileDescriptor *file) const;
+    FileDescriptor *file(int i) const;
+    FileDescriptor *find(const QString &fileName) const;
+
     void addFiles(const QList<FileDescriptor*> &files);
     void deleteFiles(const QStringList &duplicated);
     int size() const {return descriptors.size();}
+
     QList<int> selected() const {return indexes;}
     void setSelected(const QList<int> &indexes) {this->indexes = indexes;}
     QList<FileDescriptor*> selectedFiles() const;
@@ -29,16 +31,12 @@ public:
     void setDataDescriptor(FileDescriptor *file, const DescriptionList &data);
     void setChannelDescription(int channel, const QString &description);
     void setChannelName(int channel, const QString &name);
-    void updateFile(FileDescriptor *file, int column);
-    void updateFile(FileDescriptor *file);
+    void updateFile(FileDescriptor *file, int column = -1);
     void clear();
-//    void invalidateCurves();
+
     void invalidateCurve(FileDescriptor *file, int channel);
-
-
-
     void save();
-    QModelIndex modelIndexOfFile(FileDescriptor *f, int column);
+    QModelIndex modelIndexOfFile(FileDescriptor *f, int column) const;
 
     // QAbstractItemModel interface
 public:

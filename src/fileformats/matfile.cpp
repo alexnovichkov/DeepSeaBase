@@ -46,20 +46,20 @@ MatlabRecord *matlabRecordFactory(MatlabHeader *header, const QString &fileName)
 {
     MatlabRecord *rec = 0;
     switch (header->type) {
-        case 0: return 0; break;
+        case 0: return rec; break;
         case 1:
         case 2:
         case 3:
         case 4:
         case 5:
         case 6:
-        case 0xC:
-        case 0xD:
+        case 0xC://12 miINT64
+        case 0xD://13 miUINT64
         case 7:
         case 9: rec = new MatlabNumericRecord(header); break;
-        case 0x10: rec = new MatlabUtf8Record(header); break;
-        case 0x11: rec = new MatlabUtf16Record(header); break;
-        case 0xE: {
+        case 0x10: rec = new MatlabUtf8Record(header); break;//16
+        case 0x11: rec = new MatlabUtf16Record(header); break;//17
+        case 0xE: {//14 miMATRIX
             switch (header->arrayClass) {
                 case 1: rec = new MatlabCellArray(header); break;
                 case 2: rec = new MatlabStructArray(header); break;
@@ -78,6 +78,11 @@ MatlabRecord *matlabRecordFactory(MatlabHeader *header, const QString &fileName)
                 case 15: rec = new MatlabNumericArray(header); break;
                 default: return 0;
             }
+            break;
+        }
+        case 0xF: {//15 miCOMPRESSED
+            qDebug()<<"zlib data";
+            return rec;
             break;
         }
         default: return 0;
@@ -233,7 +238,7 @@ void MatlabHeader::read(QDataStream *f)
         sizeInBytesWithoutPadding = (type >> 16);
         type = (type % 65536);
         actualSize = 4;
-        compressed = true;
+        smallData = true;
     }
     else {
         *f >> sizeInBytesWithoutPadding;
@@ -261,7 +266,7 @@ void MatlabHeader::read(QDataStream *f)
                << "actually"<<actualSize
                <<"header starts with:" <<hex<<headerBegin<<dec
                <<"data starts with:" <<hex<<dataBegin<<dec
-              << "compressed:"<<compressed;
+              << "compressed:"<<smallData;
     }
     else
         qDebug()<<"Matlab Data Type=" <<type
@@ -269,7 +274,7 @@ void MatlabHeader::read(QDataStream *f)
                << "actually"<<actualSize
                <<"header starts with:" <<hex<<headerBegin<<dec
                <<"data starts with:" <<hex<<dataBegin<<dec
-              << "compressed:"<<compressed;
+              << "compressed:"<<smallData;
 }
 
 void MatlabCellArray::readData(QDataStream *f)
@@ -523,7 +528,7 @@ void MatlabNumericArray::readData(QDataStream *f)
 
 void MatlabUtf8Record::readData(QDataStream *f)
 {
-    if (header->compressed) {
+    if (header->smallData) {
         data = QString::fromUtf8(f->device()->read(4));
     }
     else {
@@ -535,7 +540,7 @@ void MatlabUtf8Record::readData(QDataStream *f)
 void MatlabUtf16Record::readData(QDataStream *f)
 {
     qDebug()<<hex<<f->device()->pos()<<dec;
-    if (header->compressed) {
+    if (header->smallData) {
         data = QString::fromUtf16((ushort*)(f->device()->read(4).data()));
     }
     else {

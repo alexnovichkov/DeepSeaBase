@@ -32,5 +32,6 @@
         <file>icons/funnel.png</file>
         <file>icons/pinned.png</file>
         <file>icons/pin.png</file>
+        <file>icons/disk.png</file>
     </qresource>
 </RCC>

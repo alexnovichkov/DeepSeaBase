@@ -13,7 +13,7 @@
  * char[8]  'data94  '
  *
  * quint64 descriptionSize - длина текстового описания в байтах
- * char[descriptionSize] description - текстовое описание данных
+ * char[descriptionSize] description - текстовое описание данных в формате utf8
  *
  *
  * //Блок описания оси Х

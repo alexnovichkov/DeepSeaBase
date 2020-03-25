@@ -4,6 +4,7 @@
 #include <QMessageBox>
 #include <QApplication>
 #include "logging.h"
+#include <QIcon>
 
 Model::Model(QObject *parent) : QAbstractTableModel(parent)
 {DD;
@@ -12,13 +13,13 @@ Model::Model(QObject *parent) : QAbstractTableModel(parent)
     bFont.setBold(true);
 }
 
-FileDescriptor *Model::file(int i)
+FileDescriptor *Model::file(int i) const
 {DD;
     if (i<0 || i>=descriptors.size()) return 0;
     return descriptors[i];
 }
 
-FileDescriptor *Model::find(const QString &fileName)
+FileDescriptor *Model::find(const QString &fileName) const
 {DD;
     for (int i=0; i<descriptors.size(); ++i) {
         if (descriptors[i]->fileName() == fileName) {
@@ -26,21 +27,6 @@ FileDescriptor *Model::find(const QString &fileName)
         }
     }
     return 0;
-}
-
-bool Model::find(FileDescriptor *file)
-{DD;
-    for (int i=0; i<descriptors.size(); ++i) {
-        if (descriptors[i]->fileName() == file->fileName()) {
-            return true;
-        }
-    }
-    return false;
-}
-
-int Model::rowOfFile(FileDescriptor *file) const
-{DD;
-    return descriptors.indexOf(file,0);
 }
 
 void Model::addFiles(const QList<FileDescriptor *> &files)
@@ -84,6 +70,8 @@ void Model::setDataDescriptor(FileDescriptor *file, const DescriptionList &data)
     file->setDataDescriptor(data);
     auto i = index(row, 8);
     emit dataChanged(i, i, QVector<int>()<<Qt::DisplayRole);
+    i = index(row, 1);
+    emit dataChanged(i, i, QVector<int>()<<Qt::DecorationRole);
 }
 
 void Model::setChannelDescription(int channel, const QString &description)
@@ -93,6 +81,7 @@ void Model::setChannelDescription(int channel, const QString &description)
             if (ch->description() != description) {
                 ch->setDescription(description);
                 descriptors[i]->setChanged(true);
+                emit dataChanged(index(i, 1), index(i, 1), QVector<int>()<<Qt::DecorationRole);
             }
         }
     }
@@ -105,6 +94,7 @@ void Model::setChannelName(int channel, const QString &name)
             if (ch->name() != name) {
                 ch->setName(name);
                 descriptors[i]->setChanged(true);
+                emit dataChanged(index(i, 1), index(i, 1), QVector<int>()<<Qt::DecorationRole);
             }
         }
     }
@@ -112,15 +102,18 @@ void Model::setChannelName(int channel, const QString &name)
 
 void Model::updateFile(FileDescriptor *file, int column)
 {DD;
-    QModelIndex id = modelIndexOfFile(file, column);
-    if (id.isValid()) emit dataChanged(id, id);
-}
-
-void Model::updateFile(FileDescriptor *file)
-{DD;
-    QModelIndex id1 = modelIndexOfFile(file, 0);
-    QModelIndex id2 = modelIndexOfFile(file, 9);
-    if (id1.isValid() && id2.isValid()) emit dataChanged(id1,id2);
+    int idx;
+    if (contains(file, &idx)) {
+        if (column == -1) {
+            QModelIndex id1 = index(idx, 0);
+            QModelIndex id2 = index(idx, MODEL_COLUMNS_COUNT);
+            if (id1.isValid() && id2.isValid()) emit dataChanged(id1,id2);
+        }
+        else {
+            QModelIndex id = index(idx, column);
+            if (id.isValid()) emit dataChanged(id, id);
+        }
+    }
 }
 
 void Model::clear()
@@ -153,17 +146,21 @@ void Model::invalidateCurve(FileDescriptor *file, int channel)
 
 void Model::save()
 {DD;
-    foreach (FileDescriptor *f, descriptors) {
+    for (int i=0; i<descriptors.size(); ++i) {
+        FileDescriptor *f = descriptors[i];
         f->write();
         f->writeRawFile();
+        emit dataChanged(index(i,0), index(i,MODEL_COLUMNS_COUNT));
     }
 }
 
-QModelIndex Model::modelIndexOfFile(FileDescriptor *f, int column)
+QModelIndex Model::modelIndexOfFile(FileDescriptor *f, int column) const
 {DD;
-    int row = rowOfFile(f);
-    if (row<0) return QModelIndex();
-    return index(row, column);
+    int row;
+    if (contains(f, &row)) {
+        return index(row, column);
+    }
+    return QModelIndex();
 }
 
 Model::~Model()
@@ -186,7 +183,8 @@ bool Model::contains(const QString &fileName, int *index) const
 
 bool Model::contains(FileDescriptor *file, int *index) const
 {DD;
-    if (int ind = descriptors.indexOf(file) >= 0) {
+    int ind = descriptors.indexOf(file);
+    if (ind >= 0) {
         if (index) *index = ind;
         return true;
     }
@@ -240,6 +238,11 @@ QVariant Model::data(const QModelIndex &index, int role) const
     else if (role == Qt::FontRole) {
         if (column == 1)
             return (d->hasCurves() ? bFont : uFont);
+    }
+    else if (role == Qt::DecorationRole) {
+        if (column == 1) {
+            return (d->changed() || d->dataChanged())? QIcon(":/icons/disk.png") : QVariant();
+        }
     }
     return QVariant();
 }
