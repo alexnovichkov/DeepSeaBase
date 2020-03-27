@@ -6,7 +6,19 @@
 #include "fileformats/filedescriptor.h"
 #include <QFont>
 
-#define MODEL_COLUMNS_COUNT 9
+#define MODEL_COLUMNS_COUNT 11
+#define MODEL_COLUMN_SAVE 0
+#define MODEL_COLUMN_INDEX 1
+#define MODEL_COLUMN_FILENAME 2
+#define MODEL_COLUMN_DATETIME 3
+#define MODEL_COLUMN_TYPE 4
+#define MODEL_COLUMN_SIZE 5
+#define MODEL_COLUMN_XNAME 6
+#define MODEL_COLUMN_XSTEP 7
+#define MODEL_COLUMN_CHANNELSCOUNT 8
+#define MODEL_COLUMN_DESCRIPTION 9
+#define MODEL_COLUMN_LEGEND 10
+
 
 class Model : public QAbstractTableModel
 {

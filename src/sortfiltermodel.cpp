@@ -1,10 +1,11 @@
 #include "sortfiltermodel.h"
 #include <QtCore>
 #include "logging.h"
+#include "model.h"
 
 SortFilterModel::SortFilterModel(QObject *parent) : QSortFilterProxyModel(parent)
 {DD;
-    filters.resize(10);
+    filters.resize(MODEL_COLUMNS_COUNT);
 }
 
 void SortFilterModel::setFilter(const QString &text, int column)

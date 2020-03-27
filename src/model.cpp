@@ -68,9 +68,9 @@ void Model::setDataDescriptor(FileDescriptor *file, const DescriptionList &data)
     if (row<0) return;
 
     file->setDataDescriptor(data);
-    auto i = index(row, 8);
+    auto i = index(row, MODEL_COLUMN_DESCRIPTION);
     emit dataChanged(i, i, QVector<int>()<<Qt::DisplayRole);
-    i = index(row, 1);
+    i = index(row, MODEL_COLUMN_FILENAME);
     emit dataChanged(i, i, QVector<int>()<<Qt::DecorationRole);
 }
 
@@ -81,7 +81,9 @@ void Model::setChannelDescription(int channel, const QString &description)
             if (ch->description() != description) {
                 ch->setDescription(description);
                 descriptors[i]->setChanged(true);
-                emit dataChanged(index(i, 1), index(i, 1), QVector<int>()<<Qt::DecorationRole);
+                emit dataChanged(index(i, MODEL_COLUMN_SAVE),
+                                 index(i, MODEL_COLUMN_SAVE),
+                                 QVector<int>()<<Qt::DecorationRole);
             }
         }
     }
@@ -94,7 +96,9 @@ void Model::setChannelName(int channel, const QString &name)
             if (ch->name() != name) {
                 ch->setName(name);
                 descriptors[i]->setChanged(true);
-                emit dataChanged(index(i, 1), index(i, 1), QVector<int>()<<Qt::DecorationRole);
+                emit dataChanged(index(i, MODEL_COLUMN_SAVE),
+                                 index(i, MODEL_COLUMN_SAVE),
+                                 QVector<int>()<<Qt::DecorationRole);
             }
         }
     }
@@ -106,7 +110,7 @@ void Model::updateFile(FileDescriptor *file, int column)
     if (contains(file, &idx)) {
         if (column == -1) {
             QModelIndex id1 = index(idx, 0);
-            QModelIndex id2 = index(idx, MODEL_COLUMNS_COUNT);
+            QModelIndex id2 = index(idx, MODEL_COLUMNS_COUNT-1);
             if (id1.isValid() && id2.isValid()) emit dataChanged(id1,id2);
         }
         else {
@@ -125,23 +129,13 @@ void Model::clear()
     endResetModel();
 }
 
-//void Model::invalidateCurves()
-//{
-//    foreach (FileDescriptor *f, descriptors) {
-//        for(int i=0; i<f->channelsCount(); ++i) {
-//            f->channel(i)->setCheckState(Qt::Unchecked);
-//            f->channel(i)->setColor(QColor());
-//        }
-//    }
-//    emit dataChanged(index(0, 1), index(size()-1, 1), QVector<int>()<<Qt::FontRole);
-//}
-
 void Model::invalidateCurve(FileDescriptor *file, int channel)
 {DD;
     file->channel(channel)->setPlotted(0);
     file->channel(channel)->setColor(QColor());
-    QModelIndex idx = modelIndexOfFile(file, 1);
-    emit dataChanged(idx, idx, QVector<int>()<<Qt::FontRole);
+    QModelIndex idx = modelIndexOfFile(file, MODEL_COLUMN_FILENAME);
+    if (idx.isValid())
+        emit dataChanged(idx, idx, QVector<int>()<<Qt::FontRole);
 }
 
 void Model::save()
@@ -150,7 +144,7 @@ void Model::save()
         FileDescriptor *f = descriptors[i];
         f->write();
         f->writeRawFile();
-        emit dataChanged(index(i,0), index(i,MODEL_COLUMNS_COUNT));
+        emit dataChanged(index(i,0), index(i,MODEL_COLUMNS_COUNT-1));
     }
 }
 
@@ -202,7 +196,7 @@ int Model::rowCount(const QModelIndex &parent) const
 int Model::columnCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent);
-    return 10;
+    return MODEL_COLUMNS_COUNT;
 }
 
 QVariant Model::data(const QModelIndex &index, int role) const
@@ -219,16 +213,16 @@ QVariant Model::data(const QModelIndex &index, int role) const
 
     if (role == Qt::DisplayRole || role == Qt::EditRole) {
         switch (column) {
-            case 0: return row+1;
-            case 1: return QFileInfo(d->fileName()).completeBaseName();
-            case 2: return d->dateTime();
-            case 3: return d->typeDisplay();
-            case 4: return d->size();
-            case 5: return d->xName();
-            case 6: return d->xStep();
-            case 7: return d->channelsCount();
-            case 8: return d->dataDescriptorAsString();
-            case 9: return d->legend();
+            case MODEL_COLUMN_INDEX: return row+1;
+            case MODEL_COLUMN_FILENAME: return QFileInfo(d->fileName()).completeBaseName();
+            case MODEL_COLUMN_DATETIME: return d->dateTime();
+            case MODEL_COLUMN_TYPE: return d->typeDisplay();
+            case MODEL_COLUMN_SIZE: return d->size();
+            case MODEL_COLUMN_XNAME: return d->xName();
+            case MODEL_COLUMN_XSTEP: return d->xStep();
+            case MODEL_COLUMN_CHANNELSCOUNT: return d->channelsCount();
+            case MODEL_COLUMN_DESCRIPTION: return d->dataDescriptorAsString();
+            case MODEL_COLUMN_LEGEND: return d->legend();
             default: return QVariant();
         }
     }
@@ -236,11 +230,11 @@ QVariant Model::data(const QModelIndex &index, int role) const
 
     }
     else if (role == Qt::FontRole) {
-        if (column == 1)
+        if (column == MODEL_COLUMN_FILENAME)
             return (d->hasCurves() ? bFont : uFont);
     }
     else if (role == Qt::DecorationRole) {
-        if (column == 1) {
+        if (column == MODEL_COLUMN_SAVE) {
             return (d->changed() || d->dataChanged())? QIcon(":/icons/disk.png") : QVariant();
         }
     }
@@ -265,7 +259,7 @@ bool Model::setData(const QModelIndex &index, const QVariant &value, int role)
     }
 
     switch (column) {
-        case 9: /*legend*/ {
+        case MODEL_COLUMN_LEGEND: /*legend*/ {
             if (d->setLegend(value.toString())) {
                 emit legendsChanged();
                 emit dataChanged(index, index, QVector<int>()<<Qt::DisplayRole);
@@ -273,7 +267,7 @@ bool Model::setData(const QModelIndex &index, const QVariant &value, int role)
             }
             break;
         }
-        case 6: /*шаг по оси х*/ {
+        case MODEL_COLUMN_XSTEP: /*шаг по оси х*/ {
             if (d->xStep() != value.toDouble()) {
                 d->setXStep(value.toDouble());
                 emit dataChanged(index, index, QVector<int>()<<Qt::DisplayRole);
@@ -283,7 +277,7 @@ bool Model::setData(const QModelIndex &index, const QVariant &value, int role)
             }
             break;
         }
-        case 2: /*date*/ {
+        case MODEL_COLUMN_DATETIME: /*date*/ {
             QDateTime dt = value.toDateTime();
             if (dt.isValid()) {
                 if (dt.date().year()<1950) dt = dt.addYears(100);
@@ -305,16 +299,16 @@ QVariant Model::headerData(int section, Qt::Orientation orientation, int role) c
 
     if (role == Qt::DisplayRole) {
         switch (section) {
-            case 0: return "№";
-            case 1: return "Файл";
-            case 2: return "Дата";
-            case 3: return "Тип";
-            case 4: return "Размер";
-            case 5: return "Ось X";
-            case 6: return "Шаг";
-            case 7: return "Каналы";
-            case 8: return "Описание";
-            case 9: return "Легенда";
+            case MODEL_COLUMN_INDEX: return "№";
+            case MODEL_COLUMN_FILENAME: return "Файл";
+            case MODEL_COLUMN_DATETIME: return "Дата";
+            case MODEL_COLUMN_TYPE: return "Тип";
+            case MODEL_COLUMN_SIZE: return "Размер";
+            case MODEL_COLUMN_XNAME: return "Ось X";
+            case MODEL_COLUMN_XSTEP: return "Шаг";
+            case MODEL_COLUMN_CHANNELSCOUNT: return "Каналы";
+            case MODEL_COLUMN_DESCRIPTION: return "Описание";
+            case MODEL_COLUMN_LEGEND: return "Легенда";
             default: break;
         }
     }
@@ -324,7 +318,10 @@ QVariant Model::headerData(int section, Qt::Orientation orientation, int role) c
 Qt::ItemFlags Model::flags(const QModelIndex &index) const
 {
     const int col = index.column();
-    if (col==2 || col==6 || col==9) return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
+    if (col==MODEL_COLUMN_DATETIME
+        || col==MODEL_COLUMN_XSTEP
+        || col==MODEL_COLUMN_LEGEND)
+        return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
 
     return QAbstractTableModel::flags(index);
 }
