@@ -2111,20 +2111,20 @@ void MainWindow::cycleChannelsUp()
     updatePlottedChannelsNumbers();
 
     QVector<int> plotted = plottedChannelsNumbers;
+    if (!plotted.isEmpty()) {
+        tab->channelModel->deleteCurves();
 
-    tab->channelModel->deleteCurves();
+        for (int i=0; i<plotted.size(); ++i) {
+            //пропускаем фиксированную кривую, остальные сдвигаем
+            if (Curve *curve = plot->plotted(tab->record, plotted[i])) {
+                if (curve->fixed) continue;
+            }
 
-    for (int i=0; i<plotted.size(); ++i) {
-        //пропускаем фиксированную кривую, остальные сдвигаем
-        if (Curve *curve = plot->plotted(tab->record, plotted[i])) {
-            if (curve->fixed) continue;
+            if (plotted[i] == 0) plotted[i] = tab->record->channelsCount()-1;
+            else plotted[i]=plotted[i]-1;
         }
-
-        if (plotted[i] == 0) plotted[i] = tab->record->channelsCount()-1;
-        else plotted[i]=plotted[i]-1;
+        tab->channelModel->plotChannels(plotted);
     }
-    tab->channelModel->plotChannels(plotted);
-
     sergeiMode = mode;
 }
 
@@ -2137,20 +2137,21 @@ void MainWindow::cycleChannelsDown()
     updatePlottedChannelsNumbers();
 
     QVector<int> plotted = plottedChannelsNumbers;
+    if (!plotted.isEmpty()) {
 
-    tab->channelModel->deleteCurves();
+        tab->channelModel->deleteCurves();
 
-    for (int i=0; i<plotted.size(); ++i) {
-        //пропускаем фиксированную кривую, остальные сдвигаем
-        if (Curve *curve = plot->plotted(tab->record, plotted[i])) {
-            if (curve->fixed) continue;
+        for (int i=0; i<plotted.size(); ++i) {
+            //пропускаем фиксированную кривую, остальные сдвигаем
+            if (Curve *curve = plot->plotted(tab->record, plotted[i])) {
+                if (curve->fixed) continue;
+            }
+
+            if (plotted[i] == tab->record->channelsCount()-1) plotted[i] = 0;
+            else plotted[i]=plotted[i]+1;
         }
-
-        if (plotted[i] == tab->record->channelsCount()-1) plotted[i] = 0;
-        else plotted[i]=plotted[i]+1;
+        tab->channelModel->plotChannels(plotted);
     }
-    tab->channelModel->plotChannels(plotted);
-
     sergeiMode = mode;
 }
 
