@@ -182,6 +182,7 @@ private slots:
     void save();
 
     void convertMatFiles();
+    void convertTDMSFiles();
     void convertEsoFiles();
 
     void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
@@ -271,6 +272,7 @@ private:
 //    QAction *switchHarmonicsAct;
 
     QAction *convertMatFilesAct;
+    QAction *convertTDMSFilesAct;
     QAction *convertEsoFilesAct;
     QAction *convertAct;
     QAction *copyToLegendAct;

@@ -101,7 +101,9 @@ SOURCES += main.cpp\
     headerview.cpp \
     methods/timealgorithm.cpp \
     fileformats/data94file.cpp \
-    logscaleengine.cpp
+    logscaleengine.cpp \
+    fileformats/tdmsfile.cpp \
+    tdmsconverterdialog.cpp
 
 HEADERS  += mainwindow.h \
     fileformats/dfdfiledescriptor.h \
@@ -180,7 +182,9 @@ HEADERS  += mainwindow.h \
     headerview.h \
     methods/timealgorithm.h \
     fileformats/data94file.h \
-    logscaleengine.h
+    logscaleengine.h \
+    fileformats/tdmsfile.h \
+    tdmsconverterdialog.h
 
 SOURCES +=\
   $$PWD/../3rdParty/DspFilters/*.cpp \
@@ -206,6 +210,10 @@ INCLUDEPATH *= $$PWD $$PWD/.. $$PWD/../3rdParty/qtpropertybrowser $$PWD/../3rdPa
 INCLUDEPATH *= C:/Qwt-6.1.2/include
 
 LIBS *= K:/My/programming/sources/libsamplerate-0.1.8/release/libsamplerate.a
+
+#tdm
+INCLUDEPATH *= K:/My/programming/sources/TDMS/tdm_dev/dev/include
+LIBS *= K:/My/programming/sources/TDMS/tdm_dev/dev/lib/32-bit/msvc/nilibddc.lib
 
 ##matio
 #INCLUDEPATH *= K:/My/programming/sources/Matlab/matio-1.5.17/src

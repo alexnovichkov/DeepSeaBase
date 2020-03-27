@@ -31,6 +31,7 @@
 #include "timeslicer.h"
 #include <QTime>
 #include "channeltablemodel.h"
+#include "tdmsconverterdialog.h"
 
 #define DSB_VERSION "1.6.9.2"
 
@@ -400,6 +401,9 @@ MainWindow::MainWindow(QWidget *parent)
     convertMatFilesAct = new QAction("Конвертировать Matlab файлы...", this);
     connect(convertMatFilesAct,SIGNAL(triggered()),SLOT(convertMatFiles()));
 
+    convertTDMSFilesAct = new QAction("Конвертировать TDMS файлы...", this);
+    connect(convertTDMSFilesAct,SIGNAL(triggered()),SLOT(convertTDMSFiles()));
+
     convertEsoFilesAct = new QAction("Конвертировать файлы ESO...", this);
     connect(convertEsoFilesAct,SIGNAL(triggered()),SLOT(convertEsoFiles()));
 
@@ -457,6 +461,7 @@ MainWindow::MainWindow(QWidget *parent)
     fileMenu->addAction(addFileAct);
     fileMenu->addAction(convertAct);
     fileMenu->addAction(convertMatFilesAct);
+    fileMenu->addAction(convertTDMSFilesAct);
     fileMenu->addAction(convertEsoFilesAct);
 
     QMenu *recordsMenu = menuBar()->addMenu(QString("Записи"));
@@ -1475,6 +1480,19 @@ void MainWindow::convertMatFiles()
     }
 }
 
+void MainWindow::convertTDMSFiles()
+{
+    TDMSConverterDialog dialog(this);
+    if (dialog.exec()) {
+        if (dialog.addFiles()) {
+            QStringList files = dialog.getConvertedFiles();
+            this->addFiles(files);
+            foreach (const QString &file, files)
+                if (!tab->folders.contains(file)) tab->folders << file;
+        }
+    }
+}
+
 void MainWindow::convertEsoFiles()
 {
     EsoConverterDialog dialog(this);
@@ -1662,7 +1680,7 @@ void MainWindow::plotChannel(int index)
         tab->record->channel(index)->setPlotted(0);
     }
     tab->channelModel->onCurveColorChanged(index);
-    tab->model->updateFile(tab->record, 1);
+    tab->model->updateFile(tab->record, MODEL_COLUMN_FILENAME);
 
     if (tab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
         QList<FileDescriptor*> selectedFiles = tab->model->selectedFiles();
@@ -1680,7 +1698,7 @@ void MainWindow::plotChannel(int index)
                 f->channel(index)->setPlotted(0);
                 f->channel(index)->setColor(QColor());
             }
-            tab->model->updateFile(f, 1);
+            tab->model->updateFile(f, MODEL_COLUMN_FILENAME);
         }
     }
 }
@@ -1737,7 +1755,7 @@ void MainWindow::copyToLegend()
 
     foreach (FileDescriptor *f, records) {
         f->setLegend(QFileInfo(f->fileName()).completeBaseName());
-        tab->model->updateFile(f, 9);
+        tab->model->updateFile(f, MODEL_COLUMN_LEGEND);
         plot->updateLegends();
     }
 }
@@ -1903,7 +1921,7 @@ void MainWindow::deleteCurve(int index)
     //обновляем модель для канала
     tab->channelModel->onCurveDeleted(index);
     //обновляем модель для файла
-    tab->model->updateFile(tab->record, 1);
+    tab->model->updateFile(tab->record, MODEL_COLUMN_FILENAME);
 
     if (tab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
         QList<FileDescriptor*> selectedFiles = tab->model->selectedFiles();
@@ -1920,7 +1938,7 @@ void MainWindow::deleteCurve(int index)
             f->channel(index)->setPlotted(0);
             f->channel(index)->setColor(QColor());
 
-            tab->model->updateFile(f, 1);
+            tab->model->updateFile(f, MODEL_COLUMN_FILENAME);
         }
     }
     updatePlottedChannelsNumbers();

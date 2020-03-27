@@ -6,6 +6,8 @@
 
 #include "fileformats/matlabfiledescriptor.h"
 
+#include "fileformats/tdmsfile.h"
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -16,12 +18,22 @@ int main(int argc, char *argv[])
 //    MatFile f("K:\\Shared\\Record_8_580_1200s.mat");
 //    MatFile f("K:\\Shared\\rec_001_M_group.mat");
 
+//    TDMSFile f("K:\\NI\\R2_36_ob_16_11_2019_180937\\Acceleration.tdms");
+
+//    QFile f("K:\\NI\\R2_36_ob_16_11_2019_180937\\1.txt");
+//    f.open(QFile::ReadOnly);
+//    //QString s("Р2 36 об");
+//    QByteArray b = f.read(30);
+//    QString s = QString::fromUtf8(b.data(), b.size());
+//    qDebug()<<s;
+////    f.write(s.toUtf8());
+//    f.close();
 //    return 0;
 
 
-//    qDebug()<<( 0x020004 >> 16);
-//    qDebug()<<( 0x020004 % 65536);
-//    qDebug()<<(pow(1.1, 1.0));
+//    qDebug()<<( 1L << 1);
+//    qDebug()<<( 1L << 2);
+//    qDebug()<<(1L<<3);
 //    qDebug()<<(pow(-1.1, 0.0));
 //    qDebug()<<(pow(-1.1, -1.0));
 
