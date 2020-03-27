@@ -131,24 +131,26 @@ QVariant ChannelTableModel::data(const QModelIndex &index, int role) const
 
     switch (role) {
         case Qt::DisplayRole:
+            return descriptor->channel(row)->info(column, false);
+            break;
         case Qt::EditRole:
-            return descriptor->channel(row)->info(column);
+            return descriptor->channel(row)->info(column, true);
+            break;
         case Qt::ForegroundRole:
-            if (descriptor->channel(row)->plotted()
-                && column==0) return QColor(Qt::white);
+            if (descriptor->channel(row)->plotted() && column==0)
+                return QColor(Qt::white);
             break;
         case Qt::BackgroundRole:
-            if (descriptor->channel(row)->plotted()
-                && column == 0)
+            if (descriptor->channel(row)->plotted() && column == 0)
                 return descriptor->channel(row)->color();
             break;
         case Qt::FontRole:
-            if (descriptor->channel(row)->plotted()
-                && column == 0)
+            if (descriptor->channel(row)->plotted() && column == 0)
                 return bFont;
             break;
         case Qt::CheckStateRole:
-            if (column == 0) return descriptor->channel(row)->plotted()?Qt::Checked:Qt::Unchecked;
+            if (column == 0)
+                return descriptor->channel(row)->plotted()?Qt::Checked:Qt::Unchecked;
             break;
         default: break;
     }
@@ -181,8 +183,7 @@ bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value,
                 emit maybeUpdateChannelDescription(row, value.toString());
             }
             else if (column == 1) {//ед.изм.
-                QString oldYName = ch->yName();
-                if (value.toString() != oldYName) {
+                if (value.toString() != ch->yName()) {
                     ch->setYName(value.toString());
                     descriptor->setChanged(true);
                     emit dataChanged(index, index, QVector<int>()<<Qt::DisplayRole);

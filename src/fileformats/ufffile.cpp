@@ -1033,8 +1033,9 @@ FileDescriptor *Function::descriptor()
      return parent;
 }
 
-QVariant Function::info(int column) const
+QVariant Function::info(int column, bool edit) const
 {
+    Q_UNUSED(edit)
     switch (column) {
         case 0: return type58[4].value; //name(); //avoiding conversion variant->string->variant
         case 1: return type58[44].value; //yName();

@@ -122,7 +122,7 @@ public:
     virtual void read(DfdSettings &dfd, int numChans);
     virtual void write(QTextStream &dfd, int index = -1);
 
-    virtual QVariant info(int column) const;
+    virtual QVariant info(int column, bool edit) const;
     virtual int columnsCount() const;
     virtual QVariant channelHeader(int column) const;
 
@@ -228,7 +228,7 @@ public:
     // Channel interface
 public:
     virtual QVariant channelHeader(int column) const override;
-    virtual QVariant info(int column) const override;
+    virtual QVariant info(int column, bool edit) const override;
 };
 
 class Source

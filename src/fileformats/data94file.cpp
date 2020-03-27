@@ -165,7 +165,7 @@ QString Data94File::fileFilters() const
 }
 
 
-QVariant Data94Channel::info(int column) const
+QVariant Data94Channel::info(int column, bool edit) const
 {
 }
 

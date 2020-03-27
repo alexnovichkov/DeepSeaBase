@@ -52,7 +52,7 @@ public:
     // Channel interface
 public:
     virtual int index() const override;
-    virtual QVariant info(int column) const;
+    virtual QVariant info(int column, bool edit) const;
     virtual int columnsCount() const;
     virtual QVariant channelHeader(int column) const;
 

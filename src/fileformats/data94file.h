@@ -113,7 +113,7 @@ class Data94Channel : public Channel
 
     // Channel interface
 public:
-    virtual QVariant info(int column) const override;
+    virtual QVariant info(int column, bool edit) const override;
     virtual int columnsCount() const override;
     virtual QVariant channelHeader(int column) const override;
     virtual Descriptor::DataType type() const override;

@@ -1547,12 +1547,13 @@ void DfdChannel::write(QTextStream &dfd, int index)
     dfd << "Correction="<<correction() << endl;
 }
 
-QVariant DfdChannel::info(int column) const
+QVariant DfdChannel::info(int column, bool edit) const
 {
     switch (column) {
         case 0: return ChanName; //name(); //avoiding conversion variant->string->variant
         case 1: {
             QString result = YName;
+            if (edit) return result;
             if (!YNameOld.isEmpty()) result.append(QString(" (%1)").arg(YNameOld));
             return result;
         }
@@ -2164,10 +2165,10 @@ QVariant RawChannel::channelHeader(int column) const
     return QVariant();
 }
 
-QVariant RawChannel::info(int column) const
+QVariant RawChannel::info(int column, bool edit) const
 {
     if (column >= 0 && column < DfdChannel::columnsCount())
-        return DfdChannel::info(column);
+        return DfdChannel::info(column, edit);
     switch (column) {
         case 5: return ADC0; //ADC0
         case 6: return ADCStep; //ADCStep

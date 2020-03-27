@@ -166,7 +166,7 @@ public:
     Channel(Channel *other);
     Channel(Channel &other);
 
-    virtual QVariant info(int column) const = 0;
+    virtual QVariant info(int column, bool edit) const = 0;
     virtual int columnsCount() const = 0;
     virtual QVariant channelHeader(int column) const = 0;
 
