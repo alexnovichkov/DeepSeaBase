@@ -1306,13 +1306,15 @@ QString DfdFileDescriptor::fileFilters() const
     return QString("Файлы dfd (*.dfd)");
 }
 
-void DfdFileDescriptor::setDateTime(QDateTime dt)
+bool DfdFileDescriptor::setDateTime(QDateTime dt)
 {
-    this->Date = dt.date();
-//    Date = Date.addYears(100);
-    this->Time = dt.time();
+    if (Date == dt.date() && Time == dt.time()) return false;
+
+    Date = dt.date();
+    Time = dt.time();
     setChanged(true);
-    write();
+    return true;
+//    write();
 }
 
 DfdChannel *DfdFileDescriptor::newChannel(int chanIndex)

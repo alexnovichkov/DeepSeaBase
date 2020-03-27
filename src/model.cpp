@@ -281,9 +281,10 @@ bool Model::setData(const QModelIndex &index, const QVariant &value, int role)
             QDateTime dt = value.toDateTime();
             if (dt.isValid()) {
                 if (dt.date().year()<1950) dt = dt.addYears(100);
-                d->setDateTime(dt);
-                emit dataChanged(index, index, QVector<int>()<<Qt::DisplayRole);
-                return true;
+                if (d->setDateTime(dt)) {
+                    emit dataChanged(index, index, QVector<int>()<<Qt::DisplayRole);
+                    return true;
+                }
             }
             break;
         }

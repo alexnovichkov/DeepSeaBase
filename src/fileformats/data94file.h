@@ -99,7 +99,7 @@ public:
     virtual int samplesCount() const override;
     virtual void setSamplesCount(int count) override;
     virtual QString xName() const override;
-    virtual void setDateTime(QDateTime dt) override;
+    virtual bool setDateTime(QDateTime dt) override;
     virtual bool dataTypeEquals(FileDescriptor *other) const override;
     virtual QString fileFilters() const override;
 private:

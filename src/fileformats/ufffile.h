@@ -141,7 +141,7 @@ public:
     virtual bool setLegend(const QString &legend);
     virtual QString legend() const;
 
-    void setDateTime(QDateTime dt);
+    virtual bool setDateTime(QDateTime dt) override;
 
 
     virtual void deleteChannels(const QVector<int> &channelsToDelete);

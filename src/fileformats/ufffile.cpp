@@ -325,10 +325,13 @@ QString UffFileDescriptor::legend() const
     return header.type151[8].value.toString();
 }
 
-void UffFileDescriptor::setDateTime(QDateTime dt)
+bool UffFileDescriptor::setDateTime(QDateTime dt)
 {DD;
+    if (header.type151[10].value.toDateTime() == dt) return false;
+
     header.type151[10].value = dt;
     setChanged(true);
+    return true;
 }
 
 void UffFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)

@@ -136,7 +136,7 @@ public:
 
     virtual QString xName() const = 0;
 
-    virtual void setDateTime(QDateTime dt) = 0;
+    virtual bool setDateTime(QDateTime dt) = 0;
 
     virtual bool operator == (const FileDescriptor &descriptor) {
         Q_UNUSED(descriptor);

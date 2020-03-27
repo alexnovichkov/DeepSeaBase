@@ -617,7 +617,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
     tab->filesTable->setRootIsDecorated(false);
     tab->filesTable->setSortingEnabled(true);
-    tab->filesTable->sortByColumn(0, Qt::AscendingOrder);
+    tab->filesTable->sortByColumn(MODEL_COLUMN_INDEX, Qt::AscendingOrder);
 
     tab->filesTable->setContextMenuPolicy(Qt::CustomContextMenu);
     tab->filesTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -627,7 +627,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     connect(tab->filesTable, &QTreeView::customContextMenuRequested, [=](){
         QMenu menu(tab->filesTable);
         int column = tab->filesTable->currentIndex().column();
-        if (column == 1) {
+        if (column == MODEL_COLUMN_FILENAME) {
             menu.addAction(addFolderAct);
             menu.addAction(addFileAct);
             menu.addAction(delFilesAct);
@@ -637,7 +637,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
             menu.addAction(convertAct);
             menu.exec(QCursor::pos());
         }
-        else if (column == 9) {
+        else if (column == MODEL_COLUMN_LEGEND) {
             //legend
             menu.addAction(copyToLegendAct);
             menu.exec(QCursor::pos());
@@ -661,14 +661,10 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->filesTable->header()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
 
 
-    //QByteArray treeHeaderState = getSetting("treeHeaderState").toByteArray();
-    //if (!treeHeaderState.isEmpty())
-    //    tab->filesTable->header()->restoreState(treeHeaderState);
-
     connect(tab->filesTable->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),tab, SLOT(filesSelectionChanged(QItemSelection,QItemSelection)));
     connect(tab->filesTable->selectionModel(),SIGNAL(currentRowChanged(QModelIndex,QModelIndex)),SLOT(updateChannelsTable(QModelIndex,QModelIndex)));
 
-    tab->filesTable->setItemDelegateForColumn(6 /*шаг по оси х*/, new StepItemDelegate);
+    tab->filesTable->setItemDelegateForColumn(MODEL_COLUMN_XSTEP, new StepItemDelegate);
 
     connect(tab->model, SIGNAL(legendsChanged()), plot, SLOT(updateLegends()));
     connect(tab->model, SIGNAL(plotNeedsUpdate()), plot, SLOT(update()));
@@ -826,9 +822,6 @@ void MainWindow::closeTab(int i)
 //    tab->model->clear();
 
     tab->filesTable->selectAll();
-
-//    tab->sortModel->setFilter("",0);
-    //tab->filesTable->setModel(0);
 
     // костыль, позволяющий иметь несколько одинаковых файлов в разных вкладках
     QStringList duplicatedFiles;

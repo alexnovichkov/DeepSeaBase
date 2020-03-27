@@ -335,7 +335,7 @@ public:
 
     virtual QString xName() const {return XName;}
 
-    void setDateTime(QDateTime dt);
+    virtual bool setDateTime(QDateTime dt) override;
 
     bool operator == (const DfdFileDescriptor &dfd)
     {

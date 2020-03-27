@@ -151,7 +151,7 @@ QString Data94File::xName() const
 {
 }
 
-void Data94File::setDateTime(QDateTime dt)
+bool Data94File::setDateTime(QDateTime dt)
 {
 }
 
