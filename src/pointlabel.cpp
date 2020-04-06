@@ -1,7 +1,10 @@
 #include "pointlabel.h"
 
 #include "qwt_plot.h"
+#include "qwt_scale_map.h"
 #include "logging.h"
+#include <QPen>
+#include <QPainter>
 
 PointLabel::PointLabel(QwtPlot *parent)
     : QwtPlotItem(),
@@ -157,9 +160,9 @@ void PointLabel::moveBy(const QPoint &pos)
     itemChanged();
 }
 
-bool PointLabel::contains(const QPoint &pos, int yAxis)
+bool PointLabel::contains(const QPoint &pos, QwtAxisId yAxis)
 {DD;
-    QPointF point(plot->transform(QwtPlot::xBottom, d_origin.x()),
+    QPointF point(plot->transform(QwtAxisId(QwtPlot::xBottom,0), d_origin.x()),
                 plot->transform(/*QwtPlot::yLeft*/yAxis, d_origin.y()));
 
     const QSizeF textSize = d_label.textSize();

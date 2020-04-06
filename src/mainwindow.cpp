@@ -2534,7 +2534,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          }
          if (addRightAxis) {
              QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&,const QVariant&)", 2,2);
-             if (yAxis) setAxis(yAxis, stripHtml(plot->axisTitle(QwtPlot::yRight).text()));
+             if (yAxis) setAxis(yAxis, stripHtml(plot->axisTitle(plot->yRightAxis).text()));
              delete yAxis;
          }
 

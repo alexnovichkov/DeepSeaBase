@@ -57,7 +57,7 @@ void Curve::removeLabels()
     labels.clear();
 }
 
-PointLabel *Curve::findLabel(const QPoint &pos, int yAxis)
+PointLabel *Curve::findLabel(const QPoint &pos, QwtAxisId yAxis)
 {DD;
     foreach (PointLabel *l, labels)
         if (l->contains(pos, yAxis))

@@ -3,17 +3,18 @@
 
 #include <qwt_plot_curve.h>
 #include <qwt_plot_marker.h>
+#include <QPen>
 
 class FileDescriptor;
 class PointLabel;
 
 class Channel;
 class DataHolder;
-class QPen;
 class Plot;
 class QwtScaleMap;
 
 #include <qglobal.h>
+#include "qwt_axis_id.h"
 
 class Curve
 {
@@ -26,8 +27,8 @@ public:
     virtual QString title() const = 0;
     virtual void setTitle(const QString &title) = 0;
 
-    virtual int yAxis() const = 0;
-    virtual void setYAxis(int axis) = 0;
+    virtual QwtAxisId yAxis() const = 0;
+    virtual void setYAxis(QwtAxisId axis) = 0;
 
     virtual QPen pen() const = 0;
     virtual void setPen(const QPen &pen) = 0;
@@ -42,7 +43,7 @@ public:
     void removeLabel(PointLabel *label);
     void removeLabels();
     /** find label by canvas position */
-    PointLabel *findLabel(const QPoint &pos, int yAxis);
+    PointLabel *findLabel(const QPoint &pos, QwtAxisId yAxis);
     /** find label by point on a curve */
     PointLabel *findLabel(const int point);
     virtual void resetHighlighting();

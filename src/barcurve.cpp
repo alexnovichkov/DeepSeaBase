@@ -3,6 +3,9 @@
 #include "logging.h"
 #include "fileformats/filedescriptor.h"
 #include "qwt_plot.h"
+#include "qwt_text.h"
+#include "qwt_legend_data.h"
+#include "qwt_scale_map.h"
 
 BarCurve::BarCurve(const QString &title, FileDescriptor *descriptor, int channelIndex) :  QwtPlotHistogram(title),
     Curve(title, descriptor, channelIndex)
@@ -35,12 +38,12 @@ void BarCurve::setTitle(const QString &title)
     QwtPlotHistogram::setTitle(title);
 }
 
-int BarCurve::yAxis() const
+QwtAxisId BarCurve::yAxis() const
 {
     return QwtPlotHistogram::yAxis();
 }
 
-void BarCurve::setYAxis(int axis)
+void BarCurve::setYAxis(QwtAxisId axis)
 {
     QwtPlotHistogram::setYAxis(axis);
 }
@@ -242,7 +245,7 @@ int BarCurve::closest(const QPoint &pos, double *dist) const
         const double cx = xMap.transform( sample.x() ) - pos.x();
         const double cy = yMap.transform( sample.y() ) - pos.y();
 
-        const double f = qwtSqr( cx ) + qwtSqr( cy );
+        const double f = cx*cx + cy*cy;
         if ( f < dmin ) {
             index = i;
             dmin = f;

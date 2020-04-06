@@ -17,6 +17,7 @@
 #include "logging.h"
 #include "chartzoom.h"
 #include <QRubberBand>
+#include "qwt_scale_map.h"
 
 QMainZoomSvc::QMainZoomSvc() : QObject()
 {DD;

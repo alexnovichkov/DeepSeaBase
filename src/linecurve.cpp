@@ -4,9 +4,12 @@
 #include "qwt_scale_map.h"
 #include "qwt_painter.h"
 #include "qwt_clipper.h"
+#include "qwt_text.h"
+#include "qwt_legend_data.h"
 #include "logging.h"
 #include "fileformats/filedescriptor.h"
 #include "qwt_plot.h"
+#include <QPainter>
 
 class FilterPointMapper : public QwtPointMapper
 {
@@ -16,17 +19,21 @@ public:
             const QwtSeriesData<QPointF> *series, int from, int to ) const
     {
         //number of visible points for current zoom
-        int realpoints = to - from + 1;
+        int pointCount = to - from + 1;
+        if (pointCount <= 0)
+            return QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
 
         //number of pixels
         int pixels = xMap.pDist();
-        if (pixels == 0) return QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
+        if (pixels == 0)
+            return QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
 
         //we have less than twice more points than screen pixels - no need to use resample
-        if (realpoints <= 2 * pixels) {
+        if (pointCount <= 2 * pixels) {
             return QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
         }
 
+        //for each pixel two points - line begin and line end
         int numberOfPlotPoints = pixels*2;
 
         //array that will be used to store calculated plot points in screen coordinates
@@ -37,14 +44,12 @@ public:
             iterate through pixels - need to draw vertical line
             corresponding to value range change for current pixel
         */
-        int pointCount = to - from + 1;
-        if ( pointCount <= 0.0 )
-            return QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
+
 
         //iterate over pixels
         int start = from;
 
-        int startPixel = qRound( xMap.transform( series->sample(start).x() ) );
+        int startPixel = qRound(xMap.transform(series->sample(start).x()));
 
         for(int pixel=0;pixel<pixels;++pixel) {
             //now find range [min;max] for current pixel
@@ -124,15 +129,17 @@ public:
             }
 
             //add points to array
-            points[pixel*2+0].setX(qRound(p1x));
-            points[pixel*2+0].setY(qRound(p1y));
+            points[pixel*2+0].setX(p1x);
+            points[pixel*2+0].setY(p1y);
 
-            points[pixel*2+1].setX(qRound(p2x));
-            points[pixel*2+1].setY(qRound(p2y));
+            points[pixel*2+1].setX(p2x);
+            points[pixel*2+1].setY(p2y);
         }
 
         return polyline;
     }
+private:
+    QPolygonF oldPolyline;
 };
 
 LineCurve::LineCurve(const QString &title, FileDescriptor *descriptor, int channelIndex) :  QwtPlotCurve(title),
@@ -146,12 +153,18 @@ LineCurve::LineCurve(const QString &title, FileDescriptor *descriptor, int chann
 
     dfddata = new DfdData(this->channel->data());
     setData(dfddata);
+
+    mapper = new FilterPointMapper();
+    // set filter points to true
+    const bool noDuplicates = true;
+    mapper->setFlag( QwtPointMapper::WeedOutPoints, noDuplicates );
+
 }
 
-//LineCurve::~LineCurve()
-//{
-
-//}
+LineCurve::~LineCurve()
+{
+    delete mapper;
+}
 
 void LineCurve::drawLines(QPainter *painter,
                       const QwtScaleMap &xMap, const QwtScaleMap &yMap,
@@ -172,18 +185,15 @@ void LineCurve::drawLines(QPainter *painter,
     qreal pw = qMax( qreal( 1.0 ), painter->pen().widthF());
     clipRect = canvasRect.adjusted(-pw, -pw, pw, pw);
 
-    // set filter points to true
-    const bool noDuplicates = true;
 
-    FilterPointMapper mapper;
-    mapper.setFlag( QwtPointMapper::RoundPoints, doAlign );
-    mapper.setFlag( QwtPointMapper::WeedOutPoints, noDuplicates );
-    mapper.setBoundingRect( canvasRect );
 
-    QPolygonF polyline = mapper.getPolygonF(xMap, yMap, dfddata, from, to);
+    mapper->setFlag( QwtPointMapper::RoundPoints, doAlign );
+    mapper->setBoundingRect( canvasRect );
+
+    QPolygonF polyline = mapper->getPolygonF(xMap, yMap, dfddata, from, to);
 
     // clip polygons
-    polyline = QwtClipper::clipPolygonF(clipRect, polyline, false );
+    QwtClipper::clipPolygonF(clipRect, polyline, false );
 
     QwtPainter::drawPolyline( painter, polyline );
 }
@@ -208,12 +218,12 @@ void LineCurve::setTitle(const QString &title)
     QwtPlotCurve::setTitle(title);
 }
 
-int LineCurve::yAxis() const
+QwtAxisId LineCurve::yAxis() const
 {
     return QwtPlotCurve::yAxis();
 }
 
-void LineCurve::setYAxis(int axis)
+void LineCurve::setYAxis(QwtAxisId axis)
 {
     QwtPlotCurve::setYAxis(axis);
 }
@@ -320,7 +330,7 @@ int LineCurve::closest(const QPoint &pos, double *dist) const
         const double cx = xMap.transform( sample.x() ) - pos.x();
         const double cy = yMap.transform( sample.y() ) - pos.y();
 
-        const double f = qwtSqr( cx ) + qwtSqr( cy );
+        const double f = cx*cx + cy*cy;
         if ( f < dmin ) {
             index = i;
             dmin = f;

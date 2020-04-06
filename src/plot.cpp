@@ -21,6 +21,7 @@
 #include <qwt_plot_layout.h>
 #include <qwt_plot_panner.h>
 #include <qwt_plot_magnifier.h>
+#include <qwt_text.h>
 
 #include <QtCore>
 #include <QMessageBox>
@@ -292,13 +293,14 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
         QwtScaleEngine *engine = 0;
         if (!(*scale)) {
             engine = new LogScaleEngine();
+//            engine = new QwtLogScaleEngine();
             engine->setBase(2);
             //engine->setTransformation(new LogTransform);
         }
         else {
             engine = new QwtLinearScaleEngine();
         }
-        setAxisScaleEngine(axis, engine);
+        setAxisScaleEngine(xBottomAxis, engine);
 
         if (scale) *scale = !(*scale);
     });
@@ -944,7 +946,7 @@ void Plot::importPlot(const QString &fileName)
 
     leg = new CheckableLegend();
     connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
-    connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurve(QwtPlotItem*)));
+    connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurveFromLegend(QwtPlotItem*)));
     connect(leg, SIGNAL(markedToMove(QwtPlotItem*)),this, SLOT(moveCurve(QwtPlotItem*)));
     connect(leg, SIGNAL(fixedChanged(QwtPlotItem*)),this, SLOT(fixCurve(QwtPlotItem*)));
     insertLegend(leg, QwtPlot::RightLegend);

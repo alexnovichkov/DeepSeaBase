@@ -3,8 +3,9 @@
 
 #include "qwt_plot_item.h"
 
-class QwtText;
+#include "qwt_text.h"
 class QwtPlot;
+#include <QtCore>
 
 /**
  * @brief The PointLabel class
@@ -49,7 +50,7 @@ public:
 
     void moveBy(const QPoint &pos);
 
-    bool contains(const QPoint &pos, int yAxis);
+    bool contains(const QPoint &pos, QwtAxisId yAxis);
 private:
     int d_mode;
     int d_point;

@@ -1,8 +1,20 @@
 #include "logscaleengine.h"
 #include "qwt_math.h"
+#include "qwt_interval.h"
+#include "QtMath"
 
 //#define LOG_MIN_MY 1.0e-3
 #define LOG_MIN_MY 1.0
+
+#ifndef LOG_MIN
+//! Minimum value for logarithmic scales
+#define LOG_MIN 1.0e-100
+#endif
+
+#ifndef LOG_MAX
+//! Maximum value for logarithmic scales
+#define LOG_MAX 1.0e100
+#endif
 
 static inline QwtInterval logInterval(double base, const QwtInterval &interval)
 {

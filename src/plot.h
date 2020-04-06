@@ -51,6 +51,9 @@ public:
     virtual ~Plot();
 
     QList<Curve *> curves;
+    QwtAxisId xBottomAxis{QwtPlot::xBottom,0};
+    QwtAxisId yLeftAxis{QwtPlot::yLeft,0};
+    QwtAxisId yRightAxis{QwtPlot::yRight,0};
 
     void update();
 
@@ -172,6 +175,8 @@ private:
     QwtPlotGrid *grid;
     PlotPicker *picker;
     QwtPlotCanvas *canvas;
+
+
 
     bool xScale; //false = linear, true = logarithmic
     bool y1Scale;//false = linear, true = logarithmic

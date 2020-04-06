@@ -41,8 +41,8 @@ public:
     virtual void attachTo(QwtPlot *plot) override;
     virtual QString title() const override;
     virtual void setTitle(const QString &title) override;
-    virtual int yAxis() const override;
-    virtual void setYAxis(int axis) override;
+    virtual QwtAxisId yAxis() const override;
+    virtual void setYAxis(QwtAxisId axis) override;
     virtual QPen pen() const override;
     virtual void setPen(const QPen &pen) override;
     virtual QList<QwtLegendData> legendData() const override;

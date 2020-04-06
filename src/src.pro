@@ -200,14 +200,14 @@ RESOURCES *= src.qrc
 
 RC_FILE *= src.rc
 
-CONFIG(release, debug|release):LIBS *= C:/Qwt-6.1.2/lib/libqwt.a
-CONFIG(debug, debug|release):  LIBS *= C:/Qwt-6.1.2/lib/libqwtd.a
+CONFIG(release, debug|release):LIBS *= C:/Qwt-6.4.0-svn/lib/libqwt.a
+CONFIG(debug, debug|release):  LIBS *= C:/Qwt-6.4.0-svn/lib/libqwtd.a
 
 INCLUDEPATH *= K:/My/programming/sources/libsamplerate-0.1.8/src
 
 # includes & libs
 INCLUDEPATH *= $$PWD $$PWD/.. $$PWD/../3rdParty/qtpropertybrowser $$PWD/../3rdParty/alglib $$PWD/../3rdParty/DspFilters
-INCLUDEPATH *= C:/Qwt-6.1.2/include
+INCLUDEPATH *= C:/Qwt-6.4.0-svn/include
 
 LIBS *= K:/My/programming/sources/libsamplerate-0.1.8/release/libsamplerate.a
 
