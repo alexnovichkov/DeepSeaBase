@@ -10,7 +10,7 @@ class Resampler
 public:
     explicit Resampler() : src_state(0), m_factor(1.0), m_bufferSize(0) {
     }
-    explicit Resampler(double factor, int bufferSize) : m_factor(factor), m_bufferSize(bufferSize)
+    explicit Resampler(double factor, int bufferSize) : src_state(0), m_factor(factor), m_bufferSize(bufferSize)
     {
         init();
     }
@@ -36,7 +36,8 @@ public:
 //    }
 
     void init() {
-        src_delete(src_state);
+        if (src_state)
+            src_delete(src_state);
         src_state = src_new(0, 1, &_error);
         src_data.src_ratio = 1.0 / m_factor;
         src_data.end_of_input = 0;

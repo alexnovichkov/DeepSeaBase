@@ -48,6 +48,7 @@ Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\bin\Qt5Multimedia.dll"; DestDir: "{app
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\bin\Qt5Network.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Qwt-6.4.0-svn\lib\qwt.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\My\build\DeepSeaBase\3rdParty\bin\samplerate.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "K:\My\programming\sources\fftw-3.3.5-dll32\libfftw3-3.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\plugins\iconengines\*.dll"; DestDir: "{app}\iconengines"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\plugins\imageformats\*.dll"; DestDir: "{app}\imageformats"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\plugins\platforms\*.dll"; DestDir: "{app}\platforms"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"

@@ -215,6 +215,10 @@ LIBS *= K:/My/programming/sources/libsamplerate-0.1.8/release/libsamplerate.a
 INCLUDEPATH *= K:/My/programming/sources/TDMS/tdm_dev/dev/include
 LIBS *= K:/My/programming/sources/TDMS/tdm_dev/dev/lib/32-bit/msvc/nilibddc.lib
 
+#FFTW
+INCLUDEPATH *= K:/My/programming/sources/fftw-3.3.5-dll32
+LIBS *= K:/My/programming/sources/fftw-3.3.5-dll32/libfftw3-3.lib
+
 ##matio
 #INCLUDEPATH *= K:/My/programming/sources/Matlab/matio-1.5.17/src
 #LIBS *= K:/My/programming/sources/Matlab/matio-1.5.17/visual_studio/Release/libmatio.lib

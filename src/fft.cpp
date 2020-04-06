@@ -1,7 +1,36 @@
 #include "fft.h"
 #include "../3rdParty/alglib/fasttransforms.h"
+#include "fftw3.h"
 
 QVector<cx_double> Fft::compute(const QVector<double> &input)
+{
+//    QVector<cx_double> a = computeWithAlgLib(input);
+//    QVector<cx_double> b = computeWithFftw(input);
+
+    return computeWithFftw(input);
+//    return computeWithAlgLib(input);
+//    return compute1(input);
+}
+
+QVector<cx_double> Fft::computeWithFftw(const QVector<double> &input)
+{
+    double *in;
+    fftw_complex *out;
+    fftw_plan p;
+    const int N = input.size();
+
+    in = const_cast<double*>(input.data());
+    QVector<cx_double> output(N);
+    out = reinterpret_cast<fftw_complex*>(output.data());
+    p = fftw_plan_dft_r2c_1d(N, in, out, FFTW_ESTIMATE | FFTW_UNALIGNED);
+
+    fftw_execute(p);
+
+    fftw_destroy_plan(p);
+    return output;
+}
+
+QVector<cx_double> Fft::computeWithAlgLib(const QVector<double> &input)
 {
     const int n = input.size();
     QVector<double> y = input;

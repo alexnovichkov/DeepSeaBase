@@ -91,6 +91,7 @@ Plot::Plot(QWidget *parent) :
     yValuesPresentationRight = DataHolder::ShowAsDefault;
 
 
+//    setAxesCount(QwtPlot::xBottom,2);
     interactionMode = ScalingInteraction;
 
     // grid

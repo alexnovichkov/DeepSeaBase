@@ -12,6 +12,13 @@ public:
      * All input and output arrays are of size n.
      */
     static QVector<cx_double> compute(const QVector<double> &input);
+
+    static QVector<cx_double> computeWithFftw(const QVector<double> &input);
+
+    //реализация, использующая AlgLib
+    static QVector<cx_double> computeWithAlgLib(const QVector<double> &input);
+
+    //прямая реализация FFT
     static QVector<cx_double> compute1(const QVector<double> &input);
 
     // returns a vector of length n*2 that contains both re and im parts
