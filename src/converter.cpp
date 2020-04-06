@@ -331,7 +331,7 @@ int stripNumberForBandwidth(double bandwidth, Parameters &p)
 }
 
 bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
-{DDD;
+{DD;
     if (QThread::currentThread()->isInterruptionRequested()) {
         finalize();
         return false;
@@ -379,7 +379,10 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
 
     ChannelSelector selector(p.channelFilter);
 
+
     for (int i=0; i<file->channelsCount(); ++i) {
+//        QTime time;
+//        time.start();
         if (!selector.includes(i)) continue;
         if (i == p.baseChannel) continue;
 
@@ -566,6 +569,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             file->channel(i)->clear();
         }
         emit tick();
+//        qDebug()<<time.elapsed();
     }
     // подчищаем опорный канал
     if (!baseWasPopulated) {
@@ -604,7 +608,7 @@ QVector<cx_double> spectreFunction(const QVector<double> &values, int outputSize
 
 // возвращает спектр мощности 2*|complexSpectre|^2/N^2
 QVector<double> powerSpectre(const QVector<double> &values, int N)
-{DDD;
+{DD;
     QVector<cx_double> complexSpectre = Fft::compute(values);
 
     const int Nvl = complexSpectre.size();

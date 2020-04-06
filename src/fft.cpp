@@ -1,5 +1,5 @@
 #include "fft.h"
-#include "../3rdParty/alglib/fasttransforms.h"
+//#include "../3rdParty/alglib/fasttransforms.h"
 #include "fftw3.h"
 
 QVector<cx_double> Fft::compute(const QVector<double> &input)
@@ -16,35 +16,40 @@ QVector<cx_double> Fft::computeWithFftw(const QVector<double> &input)
 {
     double *in;
     fftw_complex *out;
-    fftw_plan p;
+    static fftw_plan p;
+    static int oldN = 0;
+
     const int N = input.size();
 
     in = const_cast<double*>(input.data());
     QVector<cx_double> output(N);
     out = reinterpret_cast<fftw_complex*>(output.data());
-    p = fftw_plan_dft_r2c_1d(N, in, out, FFTW_ESTIMATE | FFTW_UNALIGNED);
+    if (oldN != N)  {
+        p = fftw_plan_dft_r2c_1d(N, in, out, FFTW_ESTIMATE | FFTW_UNALIGNED);
+        oldN = N;
+    }
 
-    fftw_execute(p);
+    fftw_execute_dft_r2c(p, in, out);
 
-    fftw_destroy_plan(p);
+//    fftw_destroy_plan(p);
     return output;
 }
 
-QVector<cx_double> Fft::computeWithAlgLib(const QVector<double> &input)
-{
-    const int n = input.size();
-    QVector<double> y = input;
+//QVector<cx_double> Fft::computeWithAlgLib(const QVector<double> &input)
+//{
+//    const int n = input.size();
+//    QVector<double> y = input;
 
-    alglib::real_1d_array x;
-    x.attach_to_ptr(n, y.data()); // no data copying
+//    alglib::real_1d_array x;
+//    x.attach_to_ptr(n, y.data()); // no data copying
 
-    alglib::complex_1d_array f;
-    alglib::fftr1d(x, f);
+//    alglib::complex_1d_array f;
+//    alglib::fftr1d(x, f);
 
-    QVector<cx_double> output(n);
-    for (int i=0; i<n; ++i) output[i] = {f[i].x, f[i].y};
-    return output;
-}
+//    QVector<cx_double> output(n);
+//    for (int i=0; i<n; ++i) output[i] = {f[i].x, f[i].y};
+//    return output;
+//}
 
 QVector<cx_double> Fft::compute1(const QVector<double> &input)
 {
@@ -108,51 +113,92 @@ QVector<cx_double> Fft::compute1(const QVector<double> &input)
     return result;
 }
 
-QVector<double> Fft::computeReal(const QVector<double> &input)
+//QVector<double> Fft::computeReal(const QVector<double> &input)
+//{
+//    const int n = input.size();
+//    QVector<double> y = input;
+
+//    alglib::real_1d_array x;
+//    x.attach_to_ptr(n, y.data()); // no data copying
+
+//    alglib::complex_1d_array f;
+//    alglib::fftr1d(x, f);
+
+//    QVector<double> output(n*2);
+//    for (int i=0; i<n; ++i) {
+//        output[i*2] = f[i].x;
+//        output[i*2+1] = f[i].y;
+//    }
+//    return output;
+//}
+
+QVector<cx_double> Fft::computeComplex(const QVector<cx_double> &input)
 {
-    const int n = input.size();
-    QVector<double> y = input;
+//    const int n = input.size();
+//    // copying data
+//    alglib::complex_1d_array x;
+//    x.setlength(n);
+//    for (int i=0; i<n; ++i) x[i] = alglib::complex(input[i].real(), input[i].imag());
 
-    alglib::real_1d_array x;
-    x.attach_to_ptr(n, y.data()); // no data copying
+//    alglib::fftc1d(x);
 
-    alglib::complex_1d_array f;
-    alglib::fftr1d(x, f);
+//    QVector<cx_double> output(n);
+//    for (int i=0; i<n; ++i) output[i] = {x[i].x, x[i].y};
+//    return output;
 
-    QVector<double> output(n*2);
-    for (int i=0; i<n; ++i) {
-        output[i*2] = f[i].x;
-        output[i*2+1] = f[i].y;
+
+    fftw_complex *in;
+    fftw_complex *out;
+    static fftw_plan p;
+    static int oldN = 0;
+
+    const int N = input.size();
+
+    in = reinterpret_cast<fftw_complex*>(const_cast<cx_double*>(input.data()));
+    QVector<cx_double> output(N);
+    out = reinterpret_cast<fftw_complex*>(output.data());
+    if (oldN != N)  {
+        p = fftw_plan_dft_1d(N, in, out, FFTW_FORWARD, FFTW_ESTIMATE | FFTW_UNALIGNED);
+        oldN = N;
     }
-    return output;
-}
 
-QVector<cx_double> Fft::compute(const QVector<cx_double> &input)
-{
-    const int n = input.size();
-    // copying data
-    alglib::complex_1d_array x;
-    x.setlength(n);
-    for (int i=0; i<n; ++i) x[i] = alglib::complex(input[i].real(), input[i].imag());
+    fftw_execute_dft(p, in, out);
 
-    alglib::fftc1d(x);
-
-    QVector<cx_double> output(n);
-    for (int i=0; i<n; ++i) output[i] = {x[i].x, x[i].y};
+//    fftw_destroy_plan(p);
     return output;
 }
 
 QVector<cx_double> Fft::computeInverse(const QVector<cx_double> &input)
 {
-    const int n = input.size();
-    // copying data
-    alglib::complex_1d_array x;
-    x.setlength(n);
-    for (int i=0; i<n; ++i) x[i] = alglib::complex(input[i].real(), input[i].imag());
+//    const int n = input.size();
+//    // copying data
+//    alglib::complex_1d_array x;
+//    x.setlength(n);
+//    for (int i=0; i<n; ++i) x[i] = alglib::complex(input[i].real(), input[i].imag());
 
-    alglib::fftc1dinv(x);
+//    alglib::fftc1dinv(x);
 
-    QVector<cx_double> output(n);
-    for (int i=0; i<n; ++i) output[i] = {x[i].x, x[i].y};
+//    QVector<cx_double> output(n);
+//    for (int i=0; i<n; ++i) output[i] = {x[i].x, x[i].y};
+//    return output;
+
+    fftw_complex *in;
+    fftw_complex *out;
+    static fftw_plan p;
+    static int oldN = 0;
+
+    const int N = input.size();
+
+    in = reinterpret_cast<fftw_complex*>(const_cast<cx_double*>(input.data()));
+    QVector<cx_double> output(N);
+    out = reinterpret_cast<fftw_complex*>(output.data());
+    if (oldN != N)  {
+        p = fftw_plan_dft_1d(N, in, out, FFTW_BACKWARD, FFTW_ESTIMATE | FFTW_UNALIGNED);
+        oldN = N;
+    }
+
+    fftw_execute_dft(p, in, out);
+
+//    fftw_destroy_plan(p);
     return output;
 }
