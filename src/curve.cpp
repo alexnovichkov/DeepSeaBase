@@ -133,20 +133,27 @@ void Curve::evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const
 {
     const double startX = xMap.s1();
     const double endX = xMap.s2();
-    for (int i=0; i<to; ++i) {
-        if (samplePoint(i).x() >= startX) {
-            from = i-1;
-            break;
-        }
+
+    if (channel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
+        from = qRound((startX - channel->xMin())/channel->xStep())-1;
+        to = qRound((endX - channel->xMin())/channel->xStep())+1;
     }
-    for (int i=to; i>=from; --i) {
-        if (samplePoint(i).x() <= endX) {
-            to = i+1;
-            break;
+    else {
+        for (int i=0; i<to; ++i) {
+            if (samplePoint(i).x() >= startX) {
+                from = i-1;
+                break;
+            }
+        }
+        for (int i=to; i>=from; --i) {
+            if (samplePoint(i).x() <= endX) {
+                to = i+1;
+                break;
+            }
         }
     }
     if (from < 0) from = 0;
-    if (to >= int(channel->samplesCount())) to = channel->samplesCount()-1;
+    if (to >= channel->samplesCount()) to = channel->samplesCount()-1;
 }
 
 void Curve::switchFixed()

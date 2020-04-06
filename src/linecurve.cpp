@@ -16,7 +16,7 @@ class FilterPointMapper : public QwtPointMapper
 public:
     FilterPointMapper() : QwtPointMapper()  { }
     QPolygonF getPolygonF( const QwtScaleMap &xMap, const QwtScaleMap &yMap,
-            const QwtSeriesData<QPointF> *series, int from, int to ) const
+            const QwtSeriesData<QPointF> *series, int from, int to )
     {
         //number of visible points for current zoom
         int pointCount = to - from + 1;
@@ -49,9 +49,11 @@ public:
         //iterate over pixels
         int start = from;
 
-        int startPixel = qRound(xMap.transform(series->sample(start).x()));
 
+//        const int startPixel = qRound(xMap.transform(series->sample(start).x()));
         for(int pixel=0;pixel<pixels;++pixel) {
+
+
             //now find range [min;max] for current pixel
             //using search algorithm for comparison optimization (3n/2 instead of 2n)
             double minY = 0.0;
@@ -76,12 +78,12 @@ public:
             if(end>to) end = to;
 
             // finding end
-            for(int k=start+1; ; ++k) {
-                if (k > to) break;
-                int endPixel = qRound( xMap.transform( series->sample(k).x() ) );
-                if (endPixel != startPixel) break;
-                else end = k;
-            }
+//            for(int k=start+1; ; ++k) {
+//                if (k > to) break;
+//                int endPixel = qRound( xMap.transform( series->sample(k).x() ) );
+//                if (endPixel != startPixel) break;
+//                else end = k;
+//            }
 
             //compare pairs
             for(int k=start+2; k<end; k+=2) {
@@ -136,10 +138,14 @@ public:
             points[pixel*2+1].setY(p2y);
         }
 
+//        oldPolyline = polyline;
+//        oldFrom = from;
+//        oldTo = to;
         return polyline;
     }
 private:
-    QPolygonF oldPolyline;
+//    QPolygonF oldPolyline;
+//    int oldFrom, oldTo;
 };
 
 LineCurve::LineCurve(const QString &title, FileDescriptor *descriptor, int channelIndex) :  QwtPlotCurve(title),
@@ -170,7 +176,7 @@ void LineCurve::drawLines(QPainter *painter,
                       const QwtScaleMap &xMap, const QwtScaleMap &yMap,
                       const QRectF &canvasRect,
                       int from, int to) const
-{
+{DDD;
     //reevaluating from, to
     evaluateScale(from, to, xMap);
 
@@ -186,11 +192,16 @@ void LineCurve::drawLines(QPainter *painter,
     clipRect = canvasRect.adjusted(-pw, -pw, pw, pw);
 
 
-
     mapper->setFlag( QwtPointMapper::RoundPoints, doAlign );
     mapper->setBoundingRect( canvasRect );
 
     QPolygonF polyline = mapper->getPolygonF(xMap, yMap, dfddata, from, to);
+
+//    QwtPointMapper m;
+//    m.setFlag(QwtPointMapper::RoundPoints, true);
+//    m.setFlag(QwtPointMapper::WeedOutIntermediatePoints, true);
+//    m.setBoundingRect(canvasRect);
+//    QPolygonF polyline = m.toPolygonF(xMap, yMap, dfddata, from, to);
 
     // clip polygons
     QwtClipper::clipPolygonF(clipRect, polyline, false );
