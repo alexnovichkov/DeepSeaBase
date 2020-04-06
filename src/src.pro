@@ -103,7 +103,8 @@ SOURCES += main.cpp\
     fileformats/data94file.cpp \
     logscaleengine.cpp \
     fileformats/tdmsfile.cpp \
-    tdmsconverterdialog.cpp
+    tdmsconverterdialog.cpp \
+    htmldelegate.cpp
 
 HEADERS  += mainwindow.h \
     fileformats/dfdfiledescriptor.h \
@@ -184,7 +185,8 @@ HEADERS  += mainwindow.h \
     fileformats/data94file.h \
     logscaleengine.h \
     fileformats/tdmsfile.h \
-    tdmsconverterdialog.h
+    tdmsconverterdialog.h \
+    htmldelegate.h
 
 SOURCES +=\
   $$PWD/../3rdParty/DspFilters/*.cpp \

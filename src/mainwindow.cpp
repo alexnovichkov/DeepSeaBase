@@ -32,6 +32,7 @@
 #include <QTime>
 #include "channeltablemodel.h"
 #include "tdmsconverterdialog.h"
+#include "htmldelegate.h"
 
 #define DSB_VERSION "1.6.9.2"
 
@@ -671,6 +672,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
     tab->channelsTable = new QTableView(this);
     tab->channelsTable->setModel(tab->channelModel);
+//    tab->channelsTable->setItemDelegateForColumn(1, new HtmlDelegate);
     connect(tab->channelsTable->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),tab, SLOT(channelsSelectionChanged(QItemSelection,QItemSelection)));
 
 
