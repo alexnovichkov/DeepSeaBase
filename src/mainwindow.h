@@ -308,8 +308,6 @@ protected:
     virtual void closeEvent(QCloseEvent *event) override;
 private:
     bool closeRequested();
-signals:
-    void allClosed();
 };
 
 #endif // MAINWINDOW_H

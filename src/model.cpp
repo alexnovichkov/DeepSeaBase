@@ -148,6 +148,23 @@ void Model::save()
     }
 }
 
+void Model::discardChanges()
+{
+    for (int i=0; i<descriptors.size(); ++i) {
+        FileDescriptor *f = descriptors[i];
+        f->setChanged(false);
+        f->setDataChanged(false);
+    }
+}
+
+bool Model::changed() const
+{
+    foreach (FileDescriptor *d, descriptors) {
+        if (d->changed() || d->dataChanged()) return true;
+    }
+    return false;
+}
+
 QModelIndex Model::modelIndexOfFile(FileDescriptor *f, int column) const
 {DD;
     int row;

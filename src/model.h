@@ -48,7 +48,9 @@ public:
 
     void invalidateCurve(FileDescriptor *file, int channel);
     void save();
-    QModelIndex modelIndexOfFile(FileDescriptor *f, int column) const;
+    void discardChanges();
+
+    bool changed() const;
 
     // QAbstractItemModel interface
 public:
@@ -64,6 +66,7 @@ signals:
     void legendsChanged();
     void plotNeedsUpdate();
 private:
+    QModelIndex modelIndexOfFile(FileDescriptor *f, int column) const;
     QList<FileDescriptor *> descriptors;
     QFont uFont;
     QFont bFont;

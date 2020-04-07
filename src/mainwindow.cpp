@@ -2743,22 +2743,55 @@ void Tab::channelsSelectionChanged(const QItemSelection &newSelection, const QIt
 
 void MainWindow::closeEvent(QCloseEvent *event)
 {
-//    if (closeRequested()) {
-//        event->accept();
-//    }
-//    else {
-//        event->ignore();
-//    }
-//    QEventLoop q;
-//    connect(this, SIGNAL(allClosed()), &q, SLOT(quit()));
-    closeRequested();
-//    q.exec();
-
-    event->accept();
+    if (closeRequested())
+        event->accept();
+    else
+        event->ignore();
 }
 
 bool MainWindow::closeRequested()
 {
+    //определяем, были ли изменения
+    bool changed = false;
+    for (int i=0; i<tabWidget->count(); ++i) {
+        if (Tab *t = qobject_cast<Tab *>(tabWidget->widget(i))) {
+            if (t->model->changed()) {
+                changed = true;
+                break;
+            }
+        }
+    }
+    if (changed) {
+        //спрашиваем, сохранять ли файлы
+        QMessageBox msgBox(QMessageBox::Question,
+                           tr("Deepsea Base"),
+                           tr("Были изменены некоторые файлы."),
+                           QMessageBox::NoButton,
+                           this);
+        msgBox.setInformativeText(tr("Сохранить изменения?"));
+        QPushButton *saveB=msgBox.addButton(tr("Да, сохранить"),QMessageBox::YesRole);
+        saveB->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogSaveButton));
+        QPushButton *discB=msgBox.addButton(tr("Нет, выйти без сохранения"),QMessageBox::NoRole);
+        discB->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogDiscardButton));
+        QPushButton *cancB=msgBox.addButton(QMessageBox::Cancel);
+        cancB->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogCancelButton));
+        msgBox.setDefaultButton(saveB);
+        msgBox.setEscapeButton(cancB);
+        msgBox.setWindowModality(Qt::WindowModal);
+        msgBox.exec();
+
+        if (msgBox.clickedButton() == cancB) return false;
+        else {
+            if (msgBox.clickedButton() == discB) {
+                for (int i=0; i<tabWidget->count(); ++i) {
+                    if (Tab *t = qobject_cast<Tab *>(tabWidget->widget(i))) {
+                        t->model->discardChanges();
+                    }
+                }
+            }
+        }
+    }
+
     // сохранение состояния, сохранение файлов
     setSetting("mainSplitterState",splitter->saveState());
 
@@ -2788,6 +2821,5 @@ bool MainWindow::closeRequested()
 
     ColorSelector::instance()->drop();
 
-    emit allClosed();
     return true;
 }
