@@ -11,6 +11,18 @@
 #include "qwt_plot.h"
 #include <QPainter>
 
+struct PointBlock
+{
+    double minX = 0;
+    double maxX = 0;
+    double minY = 0;
+    double maxY = 0;
+    int from = 0;
+    int to = 0;
+};
+
+typedef QList<PointBlock> PointBlocks;
+
 class FilterPointMapper : public QwtPointMapper
 {
 public:
@@ -19,115 +31,113 @@ public:
             const QwtSeriesData<QPointF> *series, int from, int to )
     {
         //number of visible points for current zoom
-        int pointCount = to - from + 1;
+        const int pointCount = to - from + 1;
         if (pointCount <= 0)
             return QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
 
         //number of pixels
-        int pixels = xMap.pDist();
+        //const int pixels = xMap.pDist();
+        const int pixels = int(xMap.transform(series->sample(to).x()) - xMap.transform(series->sample(from).x()));
         if (pixels == 0)
             return QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
 
-        //we have less than twice more points than screen pixels - no need to use resample
-        if (pointCount <= 2 * pixels) {
+        //for each pixel two points - line begin and line end
+        const int numberOfPlotPoints = pixels*2;
+
+        //we have less than 5* more points than screen pixels - no need to use resample
+        if (pointCount <= pixels*5) {
             return QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
         }
+        const int width = pointCount/pixels;
+//        qDebug()<<"pointCount"<<pointCount<<"pixels"<<pixels<<"width"<<width;
 
-        //for each pixel two points - line begin and line end
-        int numberOfPlotPoints = pixels*2;
+
 
         //array that will be used to store calculated plot points in screen coordinates
         QPolygonF polyline(numberOfPlotPoints);
         QPointF *points = polyline.data();
 
-        /*
-            iterate through pixels - need to draw vertical line
-            corresponding to value range change for current pixel
-        */
-
 
         //iterate over pixels
         int start = from;
+        PointBlock block;
+        int end;
 
+        for (int pixel=0; pixel<pixels; ++pixel) {
+            if (end==to) {
+//                qDebug()<<"pixel"<<pixel;
+                break;
+            }
+            end = qRound(width * ((double)pixel + 1.0) + (double)from);
+            if (end > to) end = to;
 
-//        const int startPixel = qRound(xMap.transform(series->sample(start).x()));
-        for(int pixel=0;pixel<pixels;++pixel) {
-
+            QPointF sample1 = series->sample(start);
+            QPointF sample2 = series->sample(start+1);
 
             //now find range [min;max] for current pixel
             //using search algorithm for comparison optimization (3n/2 instead of 2n)
-            double minY = 0.0;
-            double maxY = 0.0;
-            double minX = 0.0;
-            double maxX = 0.0;
 
-            if(series->sample(start).y() < series->sample(start + 1).y()) {
-                minY = series->sample(start).y();
-                maxY = series->sample(start+1).y();
-                minX = series->sample(start).x();
-                maxX = series->sample(start+1).x();
+            //first two points
+            if(sample1.y() < sample2.y()) {
+                block.minY = sample1.y();
+                block.maxY = sample2.y();
+                block.minX = sample1.x();
+                block.maxX = sample2.x();
             }
             else {
-                minY = series->sample(start+1).y();
-                maxY = series->sample(start).y();
-                minX = series->sample(start+1).x();
-                maxX = series->sample(start).x();
+                block.minY = sample2.y();
+                block.maxY = sample1.y();
+                block.minX = sample2.x();
+                block.maxX = sample1.x();
             }
 
-            int end = (((double)pixel+1.0)/pixels)*pointCount + from;
-            if(end>to) end = to;
-
-            // finding end
-//            for(int k=start+1; ; ++k) {
-//                if (k > to) break;
-//                int endPixel = qRound( xMap.transform( series->sample(k).x() ) );
-//                if (endPixel != startPixel) break;
-//                else end = k;
-//            }
-
-            //compare pairs
+            //rest of points
             for(int k=start+2; k<end; k+=2) {
-                if(series->sample(k).y() > series->sample(k+1).y()) {
-                    if(series->sample(k).y() > maxY) {
-                        maxY = series->sample(k).y();
-                        maxX = series->sample(k).x();
+                sample1 = series->sample(k);
+                sample2 = series->sample(k+1);
+                if(sample1.y() > sample2.y()) {
+                    if(sample1.y() > block.maxY) {
+                        block.maxY = sample1.y();
+                        block.maxX = sample1.x();
                     }
 
-                    if(series->sample(k+1).y()<minY) {
-                        minY = series->sample(k+1).y();
-                        minX = series->sample(k+1).x();
+                    if(sample2.y()<block.minY) {
+                        block.minY = sample2.y();
+                        block.minX = sample2.x();
                     }
                 }
                 else {
-                    if(series->sample(k+1).y()>maxY) {
-                        maxY = series->sample(k+1).y();
-                        maxX = series->sample(k+1).x();
+                    if(sample2.y()>block.maxY) {
+                        block.maxY = sample2.y();
+                        block.maxX = sample2.x();
                     }
 
-                    if(series->sample(k).y()<minY) {
-                        minY = series->sample(k).y();
-                        minX = series->sample(k).x();
+                    if(sample1.y()<block.minY) {
+                        block.minY = sample1.y();
+                        block.minX = sample1.x();
                     }
                 }
+                block.from = start;
+                block.to = end;
             }
 
             //new start for next iteration
             start = end;
             double p1x = 0.0, p2x = 0.0, p1y = 0.0, p2y = 0.0;
 
-            if(minX<maxX) {
+            if(block.minX < block.maxX) {
                 //rising function, push points in direct order
-                p1x = xMap.transform(minX);
-                p2x = xMap.transform(maxX);
-                p1y = yMap.transform(minY);
-                p2y = yMap.transform(maxY);
+                p1x = xMap.transform(block.minX);
+                p2x = xMap.transform(block.maxX);
+                p1y = yMap.transform(block.minY);
+                p2y = yMap.transform(block.maxY);
             }
             else {
                 //falling function, push points in reverse order
-                p2x = xMap.transform(minX);
-                p1x = xMap.transform(maxX);
-                p2y = yMap.transform(minY);
-                p1y = yMap.transform(maxY);
+                p2x = xMap.transform(block.minX);
+                p1x = xMap.transform(block.maxX);
+                p2y = yMap.transform(block.minY);
+                p1y = yMap.transform(block.maxY);
             }
 
             //add points to array
@@ -138,14 +148,8 @@ public:
             points[pixel*2+1].setY(p2y);
         }
 
-//        oldPolyline = polyline;
-//        oldFrom = from;
-//        oldTo = to;
         return polyline;
     }
-private:
-//    QPolygonF oldPolyline;
-//    int oldFrom, oldTo;
 };
 
 LineCurve::LineCurve(const QString &title, FileDescriptor *descriptor, int channelIndex) :  QwtPlotCurve(title),
@@ -196,12 +200,6 @@ void LineCurve::drawLines(QPainter *painter,
     mapper->setBoundingRect( canvasRect );
 
     QPolygonF polyline = mapper->getPolygonF(xMap, yMap, dfddata, from, to);
-
-//    QwtPointMapper m;
-//    m.setFlag(QwtPointMapper::RoundPoints, true);
-//    m.setFlag(QwtPointMapper::WeedOutIntermediatePoints, true);
-//    m.setBoundingRect(canvasRect);
-//    QPolygonF polyline = m.toPolygonF(xMap, yMap, dfddata, from, to);
 
     // clip polygons
     QwtClipper::clipPolygonF(clipRect, polyline, false );
