@@ -1161,7 +1161,11 @@ void Function::populate()
 
         QString end = stream.readLine();
         end = stream.readLine().trimmed();
-        Q_ASSERT(end == "-1");
+        if (end != "-1") {
+            qDebug()<<"ERROR:"<<parent->fileName()<<"channel"<<this->index()
+                   <<"ends abruptly. Check the file!";
+        }
+//        Q_ASSERT(end == "-1");
     }
     _populated = true;
 }
