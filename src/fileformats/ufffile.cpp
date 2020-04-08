@@ -70,16 +70,12 @@ QString abscissaTypeDescription(int type)
 }
 
 UffFileDescriptor::UffFileDescriptor(const QString &fileName) : FileDescriptor(fileName)
-  , NumInd(0)
 {DD;
 //qDebug()<<fileName;
-
-
 }
 
 UffFileDescriptor::UffFileDescriptor(const UffFileDescriptor &other) : FileDescriptor(other.fileName())
 {DD;
-    this->NumInd = other.NumInd;
     this->header = other.header;
     this->units = other.units;
 
@@ -561,7 +557,7 @@ QString UffFileDescriptor::calculateThirdOctave()
     thirdOctaveFileName = index>0?thirdOctaveFileName+"_3oct("+QString::number(index)+").uff":thirdOctaveFileName+"_3oct.uff";
 
     UffFileDescriptor *thirdOctUff = new UffFileDescriptor(thirdOctaveFileName);
-    thirdOctUff->fillPreliminary(Descriptor::Spectrum);
+    thirdOctUff->updateDateTimeGUID();
 
 
     foreach (Function *ch, this->channels) {
@@ -618,21 +614,6 @@ void UffFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
 int UffFileDescriptor::channelsCount() const
 {DD;
     return channels.size();
-}
-
-bool UffFileDescriptor::hasAttachedFile() const
-{DD;
-    return false;
-}
-
-QString UffFileDescriptor::attachedFileName() const
-{DD;
-    return QString();
-}
-
-void UffFileDescriptor::setAttachedFileName(const QString &name)
-{DD;
-    Q_UNUSED(name);
 }
 
 QVariant UffFileDescriptor::channelHeader(int column) const
@@ -770,7 +751,7 @@ QDataStream &operator>>(QDataStream &stream, FunctionHeader &header)
 
 
 Function::Function(UffFileDescriptor *parent) : Channel(),
-    parent(parent), dataPosition(-1), _populated(false)
+    parent(parent), dataPosition(-1)
 {DD;
     setType58(type58);
 }
@@ -787,7 +768,6 @@ Function::Function(Channel &other) : Channel(other)
     type58[14].value = other.type();
 
 
-    type58[25].value = (unsigned int)other.yFormat();
     type58[26].value = data()->samplesCount();
 
     type58[28].value = other.xMin();
@@ -799,7 +779,6 @@ Function::Function(Channel &other) : Channel(other)
 
     type58[44].value = other.yName(); if (other.yName().isEmpty()) type58[44].value = "NONE";
 
-    _populated = true;
     dataPosition=-1;
 }
 
@@ -808,7 +787,6 @@ Function::Function(Function &other) : Channel(other)
     header = other.header;
 
     type58 = other.type58;
-    _populated = other._populated;
     dataPosition = -1;
 }
 
@@ -1072,17 +1050,12 @@ Descriptor::DataType Function::type() const
     return (Descriptor::DataType)type58[14].value.toInt();
 }
 
-Descriptor::OrdinateFormat Function::yFormat() const
-{DD;
-    return (Descriptor::OrdinateFormat)type58[25].value.toUInt();
-}
-
 void Function::populate()
 {DD;
-    if (_populated) return;
+    if (populated()) return;
     _data->clear();
 
-    _populated = false;
+    setPopulated(false);
 
     QFile uff(parent->fileName());
     if (!uff.open(QFile::ReadOnly | QFile::Text)) return;
@@ -1167,7 +1140,7 @@ void Function::populate()
         }
 //        Q_ASSERT(end == "-1");
     }
-    _populated = true;
+    setPopulated(true);
 }
 
 QString Function::name() const

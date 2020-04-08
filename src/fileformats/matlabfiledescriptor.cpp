@@ -101,13 +101,17 @@ bool MatlabConvertor::convert()
 
         //writing dfd file
         DfdFileDescriptor dfdFileDescriptor(dfdFileName);
-        dfdFileDescriptor.fillPreliminary(Descriptor::TimeResponse);
+        dfdFileDescriptor.rawFileName = dfdFileName.left(dfdFileName.length()-4)+".raw";
+        dfdFileDescriptor.updateDateTimeGUID();
+        dfdFileDescriptor.DataType = CuttedData;
+
         QDate d = QDate::fromString(set.date, "dd.MM.yy");
         if (d.year()<1950) {
             d=d.addYears(100);
         }
         dfdFileDescriptor.Date = d;
         dfdFileDescriptor.Time = QTime::fromString(set.time, "hh:mm:ss");
+
         DataDescription *datade = new DataDescription(&dfdFileDescriptor);
         datade->data=(DescriptionList()<<DescriptionEntry("Заголовок 1",set.titles.at(0))
                                             << DescriptionEntry("Заголовок 2",set.titles.at(1))

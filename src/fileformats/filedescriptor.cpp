@@ -53,7 +53,7 @@ void FileDescriptor::populate()
 // 3200,0001 -> 3200
 // 3199,9999 -> 3200
 // 0,49999 -> 0,5
-double FileDescriptor::size() const
+double FileDescriptor::roundedSize() const
 {
     double size = 0.0;
     if (channelsCount()>0) {
@@ -84,6 +84,7 @@ bool FileDescriptor::fileExists() const
 {
     return QFileInfo(_fileName).exists();
 }
+
 
 void FileDescriptor::setChanged(bool changed)
 {//DD;
@@ -124,6 +125,7 @@ QString descriptionEntryToString(const DescriptionEntry &entry)
 
 Channel::Channel(Channel *other) :
     _color(QColor()), _plotted(0),
+    _populated(other->_populated),
     _data(new DataHolder(*(other->_data)))
 {
 
@@ -131,6 +133,7 @@ Channel::Channel(Channel *other) :
 
 Channel::Channel(Channel &other) :
     _color(QColor()), _plotted(0),
+    _populated(other._populated),
     _data(new DataHolder(*(other._data)))
 {
 

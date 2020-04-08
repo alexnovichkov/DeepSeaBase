@@ -29,6 +29,9 @@
  *     quint64 sampleCount - количество отсчетов всего, включая разбиение по третьей оси;
  *                     если данные в комплексной форме, то реальная длина записи = sampleCount*2
  *     quint64 blockCount - количество блоков.
+ *             blockCount == 1 - обычный файл
+ *             blockCount > 1 - файл время-частотных характеристик, каждый блок соответствует
+ *                              одному отсчету по времени, в блоке записываются АЧХ
  *
  *     //Далее идут данные для каждого блока, от 1 до blockCount
  *  ┌-------------------------------------------------------------------------------------
@@ -86,9 +89,6 @@ public:
     virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize) override;
     virtual QString saveTimeSegment(double from, double to) override;
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
-    virtual bool hasAttachedFile() const override;
-    virtual QString attachedFileName() const override;
-    virtual void setAttachedFileName(const QString &name) override;
     virtual QVariant channelHeader(int column) const override;
     virtual int columnsCount() const override;
     virtual Channel *channel(int index) const override;
@@ -117,7 +117,6 @@ public:
     virtual int columnsCount() const override;
     virtual QVariant channelHeader(int column) const override;
     virtual Descriptor::DataType type() const override;
-    virtual Descriptor::OrdinateFormat yFormat() const override;
     virtual bool populated() const override;
     virtual void setPopulated(bool populated) override;
     virtual void populate() override;

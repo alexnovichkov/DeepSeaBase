@@ -98,18 +98,6 @@ void Data94File::move(bool up, const QVector<int> &indexes, const QVector<int> &
 {
 }
 
-bool Data94File::hasAttachedFile() const
-{
-}
-
-QString Data94File::attachedFileName() const
-{
-}
-
-void Data94File::setAttachedFileName(const QString &name)
-{
-}
-
 QVariant Data94File::channelHeader(int column) const
 {
 }
@@ -178,10 +166,6 @@ QVariant Data94Channel::channelHeader(int column) const
 }
 
 Descriptor::DataType Data94Channel::type() const
-{
-}
-
-Descriptor::OrdinateFormat Data94Channel::yFormat() const
 {
 }
 

@@ -504,14 +504,13 @@ bool TDMSFileConvertor::convert()
 
         //writing dfd file
         DfdFileDescriptor dfdFileDescriptor(dfdFileName);
-        dfdFileDescriptor.fillPreliminary(Descriptor::TimeResponse);
+        dfdFileDescriptor.rawFileName = rawFileName;
+        dfdFileDescriptor.updateDateTimeGUID();
+        dfdFileDescriptor.DataType = CuttedData;
+
         if (tdmsFile.properties.contains("datetime")) {
             dfdFileDescriptor.Date = tdmsFile.properties.value("datetime").toDateTime().date();
             dfdFileDescriptor.Time = tdmsFile.properties.value("datetime").toDateTime().time();
-        }
-        else {
-            dfdFileDescriptor.Date = QDate::currentDate();
-            dfdFileDescriptor.Time = QTime::currentTime();
         }
 
         //ищем группу каналов, которая содержит все данные

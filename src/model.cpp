@@ -234,7 +234,7 @@ QVariant Model::data(const QModelIndex &index, int role) const
             case MODEL_COLUMN_FILENAME: return QFileInfo(d->fileName()).completeBaseName();
             case MODEL_COLUMN_DATETIME: return d->dateTime();
             case MODEL_COLUMN_TYPE: return d->typeDisplay();
-            case MODEL_COLUMN_SIZE: return d->size();
+            case MODEL_COLUMN_SIZE: return d->roundedSize();
             case MODEL_COLUMN_XNAME: return d->xName();
             case MODEL_COLUMN_XSTEP: return d->xStep();
             case MODEL_COLUMN_CHANNELSCOUNT: return d->channelsCount();

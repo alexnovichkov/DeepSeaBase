@@ -57,9 +57,6 @@ public:
     virtual QVariant channelHeader(int column) const;
 
     virtual Descriptor::DataType type() const;
-    virtual Descriptor::OrdinateFormat yFormat() const;
-    virtual bool populated() const {return _populated;}
-    virtual void setPopulated(bool populated) {_populated = populated;}
     virtual void populate();
     virtual QString name() const;
     virtual void setName(const QString &name);
@@ -75,7 +72,6 @@ public:
     virtual void setCorrection(const QString &s);
 private:
     void readRest();
-    bool _populated;
 };
 
 class UffHeader
@@ -89,7 +85,6 @@ public:
     QString info() const;
 
     QVector<FieldDescription> type151;
-
 };
 
 QDataStream &operator>>(QDataStream& stream, UffHeader& header);
@@ -154,9 +149,6 @@ public:
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes);
 
     virtual int channelsCount() const;
-    virtual bool hasAttachedFile() const;
-    virtual QString attachedFileName() const;
-    virtual void setAttachedFileName(const QString &name);
 
     virtual QVariant channelHeader(int column) const;
     virtual int columnsCount() const;
@@ -167,9 +159,6 @@ public:
     virtual bool dataTypeEquals(FileDescriptor *other) const;
     virtual QString fileFilters() const;
 private:
-
-    int NumInd;
-
     // FileDescriptor interface
     void removeTempFile();
     

@@ -224,7 +224,6 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
 
     if (filtered.isEmpty()) return;
 
-    //QString baseFileName = QFileInfo(filtered.first()).completeBaseName();
     QString baseFileName = QFileInfo(fileName).completeBaseName()+"_"+method;
 
     if (filtered.first().toLower().endsWith("dfd")) {
@@ -246,7 +245,7 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
         QString rawFileName = changeFileExt(dfdFileName, "raw");
 
         QFile::rename(filtered.first(), dfdFileName);
-        QFile::rename(dfd.attachedFileName(), rawFileName);
+        QFile::rename(dfd.rawFileName, rawFileName);
         newFiles << dfdFileName;
     }
     if (filtered.first().endsWith("uff")) {

@@ -27,12 +27,8 @@ QDebug operator<<(QDebug debug, const Parameters &p)
 
 DfdFileDescriptor *AbstractMethod::createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
 {
-    DfdFileDescriptor *newDfd = new DfdFileDescriptor(fileName);
-
-    newDfd->rawFileName = fileName.left(fileName.length()-4)+".raw";
-    newDfd->updateDateTimeGUID();
+    DfdFileDescriptor *newDfd = DfdFileDescriptor::newFile(fileName, DfdDataType(dataType()));
     newDfd->BlockSize = 0;
-    newDfd->DataType = DfdDataType(dataType());
 
     // [DataDescription]
     if (!dfd->dataDescriptor().isEmpty()) {

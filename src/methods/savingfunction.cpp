@@ -85,7 +85,7 @@ bool SavingFunction::propertyShowsFor(const QString &property) const
 QVariant SavingFunction::getProperty(const QString &property) const
 {DD;
     if (property.startsWith("?/")) {
-        // do not know anything about these broadcast properties
+        // do not know anything about these broadcast properties, propagating
         if (m_input) return m_input->getProperty(property);
     }
 
@@ -216,16 +216,10 @@ FileDescriptor *SavingFunction::createFile(FileDescriptor *file)
 
 FileDescriptor *SavingFunction::createDfdFile(FileDescriptor *file)
 {DD;
-    //DfdFileDescriptor *newDfd = AbstractMethod::createNewDfdFile(fileName, dfd, p);
-
     int dataType = getProperty("?/dataType").toInt();
 
-    DfdFileDescriptor *newDfd = new DfdFileDescriptor(newFileName);
-
-    newDfd->rawFileName = newFileName.left(newFileName.length()-4)+".raw";
-    newDfd->updateDateTimeGUID();
+    DfdFileDescriptor *newDfd = DfdFileDescriptor::newFile(newFileName, DfdDataType(dataType));
     newDfd->BlockSize = 0;
-    newDfd->DataType = DfdDataType(dataType);
 
     if (DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(file)) {
         // [DataDescription]

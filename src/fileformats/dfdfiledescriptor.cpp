@@ -520,11 +520,21 @@ void DfdFileDescriptor::writeRawFile()
                     writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
                 const int sc = ch->samplesCount();
-                QVector<double> yValues = ch->data()->rawYValues();
-                if (yValues.isEmpty() && !ch->data()->yValuesComplex().isEmpty())
-                    yValues = ch->data()->linears();
-                for (int val = 0; val < sc; ++val) {
-                    ch->setValue(yValues[val], writeStream);
+                if (!ch->data()->yValuesComplex().isEmpty()) {
+                    //записываем данные попеременно Re -> Im
+                    for (int val = 0; val < sc; ++val) {
+                        ch->setValue(ch->data()->yValuesComplex()[val].real(), writeStream);
+                        ch->setValue(ch->data()->yValuesComplex()[val].imag(), writeStream);
+                    }
+                }
+                else {
+                    QVector<double> yValues = ch->data()->rawYValues();
+                    if (yValues.isEmpty() && !ch->data()->yValuesComplex().isEmpty())
+                        yValues = ch->data()->linears();
+                    int scc = qMin(sc, yValues.size());
+                    for (int val = 0; val < scc; ++val) {
+                        ch->setValue(yValues[val], writeStream);
+                    }
                 }
             }
         }
@@ -537,6 +547,8 @@ void DfdFileDescriptor::writeRawFile()
 
                     if (ch->IndType==0xC0000004)
                         writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+                    else if (ch->IndType==0xC0000008)
+                        writeStream.setFloatingPointPrecision(QDataStream::DoublePrecision);
 
                     QVector<double> yValues = ch->data()->rawYValues();
                     if (yValues.isEmpty() && !ch->data()->yValuesComplex().isEmpty())
@@ -601,7 +613,8 @@ DfdFileDescriptor *DfdFileDescriptor::newThirdOctaveFile(const QString &fileName
 {
     DfdFileDescriptor *dfd = new DfdFileDescriptor(fileName);
 
-    dfd->fillPreliminary(Descriptor::Unknown);
+    dfd->rawFileName = fileName.left(fileName.length()-4)+".raw";
+    dfd->updateDateTimeGUID();
     dfd->DataType = ToSpectr;
 
     dfd->BlockSize = 0;
@@ -691,8 +704,8 @@ void DfdFileDescriptor::setFileName(const QString &name)
     rawFileName = name.left(name.length()-3)+"raw";
 }
 
-bool DfdFileDescriptor::fileExists()
-{DD;
+bool DfdFileDescriptor::fileExists() const
+{
     return (FileDescriptor::fileExists() && QFileInfo(rawFileName).exists());
 }
 
@@ -1407,8 +1420,7 @@ DfdChannel::DfdChannel(DfdFileDescriptor *parent, int channelIndex)
     : Channel(), IndType(0),
       ChanBlockSize(0),
       parent(parent),
-      channelIndex(channelIndex),
-      _populated(false)
+      channelIndex(channelIndex)
 {
     dataType = parent->DataType;
 }
@@ -1429,8 +1441,6 @@ DfdChannel::DfdChannel(DfdChannel &other, DfdFileDescriptor *parent) : Channel(o
     ChanDscr = other.ChanDscr;
 
     channelIndex = other.channelIndex;
-
-    _populated = other._populated;
     dataType = other.dataType;
 }
 
@@ -1458,7 +1468,6 @@ DfdChannel::DfdChannel(Channel &other, DfdFileDescriptor *parent) : Channel(othe
         }
     }
 
-    _populated = true;
     dataType = dfdDataTypeFromDataType(other.type());
 }
 
@@ -1605,7 +1614,7 @@ void DfdChannel::populate()
 //    if (YName.toLower()=="db" || YName.toLower()=="дб")
 //        yValueFormat = DataHolder::YValuesAmplitudesInDB;
 
-    QFile rawFile(parent->attachedFileName());
+    QFile rawFile(parent->rawFileName);
 
 //    QTime time;
 //    time.start();
@@ -1873,58 +1882,9 @@ void DfdChannel::populate()
         }
     }
     else {
-        qDebug()<<"Cannot read raw file"<<parent->attachedFileName();
+        qDebug()<<"Cannot read raw file"<<parent->rawFileName;
     }
 //    qDebug()<<"reading finished"<<time.elapsed();
-}
-
-void DfdChannel::populateFloat()
-{DD;
-    int NI = samplesCount();
-
-    if (floatValues.size() == NI) return;
-    floatValues.clear();
-
-    const int count = parent->channelsCount();
-
-    QFile rawFile(parent->attachedFileName());
-
-    if (rawFile.open(QFile::ReadOnly)) {
-        QDataStream readStream(&rawFile);
-        readStream.setByteOrder(QDataStream::LittleEndian);
-        if (IndType==0xC0000004)
-            readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-
-        int actuallyRead = 0;
-
-        int chunkSize = ChanBlockSize * count;
-
-        while (1) {
-            if (QThread::currentThread()->isInterruptionRequested()) return;
-
-            QVector<float> temp = getChunkOfData<float>(readStream, chunkSize, IndType, &actuallyRead);
-
-            //распихиваем данные по каналам
-            actuallyRead /= count;
-            for (int i=0; i<count;++i) {
-                if (i == channelIndex) {
-                    floatValues << temp.mid(actuallyRead*i, actuallyRead);
-                    break;
-                }
-            }
-            if (actuallyRead < ChanBlockSize) {
-                break;
-            }
-        }
-
-        if (RawChannel *rawc = dynamic_cast<RawChannel*>(this)) {
-            for (int k=0; k < floatValues.size(); ++k)
-                floatValues[k] = floatValues[k]*rawc->coef1+rawc->coef2;
-        }
-    }
-    else {
-        qDebug()<<"Cannot read raw file"<<parent->attachedFileName();
-    }
 }
 
 quint64 DfdChannel::blockSizeInBytes() const
@@ -2054,16 +2014,6 @@ void DfdChannel::setValue(double val, QDataStream &writeStream)
 Descriptor::DataType DfdChannel::type() const
 {DD;
     return dataTypefromDfdDataType(dataType);
-}
-
-Descriptor::OrdinateFormat DfdChannel::yFormat() const
-{
-//    switch (IndType) {
-//        case 0xC0000004: return Descriptor::RealSingle;
-//        default: break;
-//    }
-//    return Descriptor::RealDouble;
-    return Descriptor::RealSingle;
 }
 
 QString DfdChannel::xName() const
@@ -2312,9 +2262,7 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
     QString newFileName = createUniqueFileName("", fileName(), suffix, "dfd", false);
 
     // 2 создаем новый файл
-    DfdFileDescriptor *newDfd = new DfdFileDescriptor(newFileName);
-    newDfd->fillPreliminary(Descriptor::TimeResponse);
-    newDfd->DataType = CuttedData;
+    DfdFileDescriptor *newDfd = DfdFileDescriptor::newFile(newFileName, CuttedData);
     newDfd->BlockSize = 0;
     newDfd->XName = this->XName;
     newDfd->XBegin = 0.0;

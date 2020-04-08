@@ -80,7 +80,7 @@ public:
 
     virtual Descriptor::DataType type() const = 0;
     virtual QString typeDisplay() const = 0;
-    virtual double size() const;
+    virtual double roundedSize() const;
     virtual DescriptionList dataDescriptor() const = 0;
     virtual void setDataDescriptor(const DescriptionList &data) = 0;
     virtual QString dataDescriptorAsString() const = 0;
@@ -105,10 +105,6 @@ public:
 
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) = 0;
 
-    virtual bool hasAttachedFile() const = 0;
-    virtual QString attachedFileName() const = 0;
-    virtual void setAttachedFileName(const QString &name) = 0;
-
     virtual QVariant channelHeader(int column) const = 0;
     virtual int columnsCount() const = 0;
 
@@ -120,7 +116,6 @@ public:
     bool dataChanged() const {return _dataChanged;}
     virtual void setDataChanged(bool changed);
 
-//    virtual bool allUnplotted() const;
     int plottedCount() const;
 
     virtual bool isSourceFile() const {return false;}
@@ -161,6 +156,7 @@ public:
     }
     Channel() : _color(QColor()),
                 _plotted(0),
+                _populated(false),
                 _data(new DataHolder)
     {}
     Channel(Channel *other);
@@ -171,10 +167,9 @@ public:
     virtual QVariant channelHeader(int column) const = 0;
 
     virtual Descriptor::DataType type() const = 0;
-    virtual Descriptor::OrdinateFormat yFormat() const = 0;
 
-    virtual bool populated() const = 0;
-    virtual void setPopulated(bool populated) = 0;
+    virtual bool populated() const {return _populated;}
+    virtual void setPopulated(bool populated) {_populated = populated;}
     virtual void populate() = 0;
     virtual void clear();
     virtual void maybeClearData();
@@ -227,6 +222,7 @@ public:
 private:
     QColor _color;
     int _plotted; //0=not plotted, 1=plotted on left, 2=plotted on right
+    bool _populated;
 protected:
     DataHolder *_data;
 };

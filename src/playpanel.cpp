@@ -188,6 +188,7 @@ void PlayPanel::reset()
 
 void PlayPanel::audioStateChanged(QAudio::State state)
 {
+    Q_UNUSED(state)
     //qDebug()<<state;
 }
 

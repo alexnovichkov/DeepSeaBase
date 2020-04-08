@@ -247,7 +247,7 @@ UffFileDescriptor *SpectreMethod::createNewUffFile(const QString &fileName, File
 {DD;
     UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
 
-    newUff->fillPreliminary((Descriptor::DataType)0);
+    newUff->updateDateTimeGUID();
 
     if (!dfd->dataDescriptor().isEmpty()) {
         newUff->setDataDescriptor(dfd->dataDescriptor());

@@ -117,7 +117,6 @@ public:
     virtual ~DfdChannel();
 
     virtual Descriptor::DataType type() const;
-    virtual Descriptor::OrdinateFormat yFormat() const;
 
     virtual void read(DfdSettings &dfd, int numChans);
     virtual void write(QTextStream &dfd, int index = -1);
@@ -148,8 +147,6 @@ public:
     virtual QString name() const {return ChanName;}
     virtual void setName(const QString &name);
 
-    virtual bool populated() const {return _populated;}
-    virtual void setPopulated(bool populated) {_populated = populated;}
     virtual void populate();
     void populateFloat();
     QVector<float> floatValues;
@@ -177,7 +174,7 @@ public:
     virtual FileDescriptor *descriptor();
     int channelIndex; // нумерация с 0
 
-    bool _populated;
+
 
     DfdDataType dataType;
     QList<int> dataPositions;
@@ -304,13 +301,9 @@ public:
 //    QString fileName() {return FileName;}
 
     void setFileName(const QString &name);
-    bool fileExists();
+    virtual bool fileExists() const override;
 
     void setDataChanged(bool changed);
-
-    bool hasAttachedFile() const {return true;}
-    QString attachedFileName() const {return rawFileName;}
-    void setAttachedFileName(const QString &name) {rawFileName = name;}
 
     virtual int channelsCount() const {return channels.size();}
 
