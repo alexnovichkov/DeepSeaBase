@@ -32,22 +32,30 @@ public:
     {
         //number of visible points for current zoom
         const int pointCount = to - from + 1;
-        if (pointCount <= 0)
+        if (pointCount < 5) {
+            simplified = false;
             return QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
+        }
 
         //number of pixels
         //const int pixels = xMap.pDist();
         const int pixels = int(xMap.transform(series->sample(to).x()) - xMap.transform(series->sample(from).x()));
-        if (pixels == 0)
+        if (pixels == 0) {
+            simplified = false;
             return QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
+        }
 
         //for each pixel two points - line begin and line end
         const int numberOfPlotPoints = pixels*2;
 
         //we have less than 5* more points than screen pixels - no need to use resample
         if (pointCount <= pixels*5) {
+            simplified = false;
             return QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
         }
+
+        simplified = true;
+
         const int width = pointCount/pixels;
 //        qDebug()<<"pointCount"<<pointCount<<"pixels"<<pixels<<"width"<<width;
 
@@ -68,14 +76,32 @@ public:
 //                qDebug()<<"pixel"<<pixel;
                 break;
             }
+
+            QPointF &minValue = points[pixel];
+            QPointF &maxValue = points[2 * pixels - 1 - pixel];
+
             end = qRound(width * ((double)pixel + 1.0) + (double)from);
             if (end > to) end = to;
 
             QPointF sample1 = series->sample(start);
             QPointF sample2 = series->sample(start+1);
 
+#if 1
+            // finding end if xStep is variable
+//            if (start+2 < series->size()) {
+//                if (series->sample(start+2).x() - sample2.x() != sample2.x() - sample1.x()) {
+                    //uneven abscissa, finding end sample by hand
+                    int startPixel = qRound(xMap.transform(sample1.x()));
+                    for (int k=start+1; ; ++k) {
+                        if (k > to) break;
+                        int endPixel = qRound(xMap.transform(series->sample(k).x()));
+                        if (endPixel != startPixel) break;
+                        else end = k;
+                    }
+//                }
+//            }
+#endif
             //now find range [min;max] for current pixel
-            //using search algorithm for comparison optimization (3n/2 instead of 2n)
 
             //first two points
             if(sample1.y() < sample2.y()) {
@@ -140,16 +166,22 @@ public:
                 p1y = yMap.transform(block.maxY);
             }
 
-            //add points to array
             points[pixel*2+0].setX(p1x);
             points[pixel*2+0].setY(p1y);
 
             points[pixel*2+1].setX(p2x);
             points[pixel*2+1].setY(p2y);
+
+//            minValue.rx() = (p1x+p2x)/2.0;
+//            minValue.ry() = yMap.transform(block.minY);
+//            maxValue.rx() = minValue.x();
+//            maxValue.ry() = yMap.transform(block.maxY);
         }
 
         return polyline;
     }
+
+    bool simplified = false;
 };
 
 LineCurve::LineCurve(const QString &title, FileDescriptor *descriptor, int channelIndex) :  QwtPlotCurve(title),
@@ -167,8 +199,7 @@ LineCurve::LineCurve(const QString &title, FileDescriptor *descriptor, int chann
     mapper = new FilterPointMapper();
     // set filter points to true
     const bool noDuplicates = true;
-    mapper->setFlag( QwtPointMapper::WeedOutPoints, noDuplicates );
-
+    mapper->setFlag(QwtPointMapper::WeedOutIntermediatePoints, noDuplicates);
 }
 
 LineCurve::~LineCurve()
@@ -184,27 +215,35 @@ void LineCurve::drawLines(QPainter *painter,
     //reevaluating from, to
     evaluateScale(from, to, xMap);
 
-    if ( from > to )
-        return;
+    if (from > to) return;
 
     const bool doAlign = QwtPainter::roundingAlignment( painter );
 
     QRectF clipRect;
+    painter->save();
 
     //clip polygons
-    qreal pw = qMax( qreal( 1.0 ), painter->pen().widthF());
+    qreal pw = qMax(qreal(1.0), painter->pen().widthF());
     clipRect = canvasRect.adjusted(-pw, -pw, pw, pw);
 
-
-    mapper->setFlag( QwtPointMapper::RoundPoints, doAlign );
-    mapper->setBoundingRect( canvasRect );
+    mapper->setFlag(QwtPointMapper::RoundPoints, doAlign);
+    mapper->setBoundingRect(canvasRect);
 
     QPolygonF polyline = mapper->getPolygonF(xMap, yMap, dfddata, from, to);
 
-    // clip polygons
-    QwtClipper::clipPolygonF(clipRect, polyline, false );
+//    if (mapper->simplified) painter->setBrush(QBrush(pen().color()));
 
-    QwtPainter::drawPolyline( painter, polyline );
+
+    // clip polygons
+    QwtClipper::clipPolygonF(clipRect, polyline, mapper->simplified);
+
+
+//    if (mapper->simplified)
+//        QwtPainter::drawPolygon(painter, polyline);
+//    else
+        QwtPainter::drawPolyline(painter, polyline);
+
+    painter->restore();
 }
 
 QPointF LineCurve::samplePoint(int point) const
