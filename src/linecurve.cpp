@@ -26,8 +26,9 @@ typedef QList<PointBlock> PointBlocks;
 class FilterPointMapper : public QwtPointMapper
 {
 public:
-    FilterPointMapper() : QwtPointMapper()  { }
-    QPolygonF getPolygonF( const QwtScaleMap &xMap, const QwtScaleMap &yMap,
+    FilterPointMapper(bool createPolygon) : QwtPointMapper(), polygon(createPolygon)
+    { }
+    QPolygonF getPolygon( const QwtScaleMap &xMap, const QwtScaleMap &yMap,
             const QwtSeriesData<QPointF> *series, int from, int to )
     {
         //number of visible points for current zoom
@@ -38,15 +39,12 @@ public:
         }
 
         //number of pixels
-        //const int pixels = xMap.pDist();
+//        const int pixels = xMap.pDist();
         const int pixels = int(xMap.transform(series->sample(to).x()) - xMap.transform(series->sample(from).x()));
         if (pixels == 0) {
             simplified = false;
             return QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
         }
-
-        //for each pixel two points - line begin and line end
-        const int numberOfPlotPoints = pixels*2;
 
         //we have less than 5* more points than screen pixels - no need to use resample
         if (pointCount <= pixels*5) {
@@ -56,50 +54,34 @@ public:
 
         simplified = true;
 
-        const int width = pointCount/pixels;
-//        qDebug()<<"pointCount"<<pointCount<<"pixels"<<pixels<<"width"<<width;
-
-
-
         //array that will be used to store calculated plot points in screen coordinates
-        QPolygonF polyline(numberOfPlotPoints);
+        QPolygonF polyline(pixels*2);
         QPointF *points = polyline.data();
-
 
         //iterate over pixels
         int start = from;
         PointBlock block;
-        int end;
+//        int startPixel = qRound(xMap.transform(series->sample(start).x()));
 
         for (int pixel=0; pixel<pixels; ++pixel) {
-            if (end==to) {
-//                qDebug()<<"pixel"<<pixel;
+            if (start == to) {
+                qDebug()<<"reached end";
                 break;
             }
 
-            QPointF &minValue = points[pixel];
-            QPointF &maxValue = points[2 * pixels - 1 - pixel];
-
-            end = qRound(width * ((double)pixel + 1.0) + (double)from);
+            int end = (((double)pixel+1.0)/pixels)*pointCount + from;
             if (end > to) end = to;
 
             QPointF sample1 = series->sample(start);
             QPointF sample2 = series->sample(start+1);
 
-#if 1
-            // finding end if xStep is variable
-//            if (start+2 < series->size()) {
-//                if (series->sample(start+2).x() - sample2.x() != sample2.x() - sample1.x()) {
-                    //uneven abscissa, finding end sample by hand
-                    int startPixel = qRound(xMap.transform(sample1.x()));
-                    for (int k=start+1; ; ++k) {
-                        if (k > to) break;
-                        int endPixel = qRound(xMap.transform(series->sample(k).x()));
-                        if (endPixel != startPixel) break;
-                        else end = k;
-                    }
-//                }
-//            }
+#if 0
+            for (int k=start+1; ; ++k) {
+                if (k > to) break;
+                int endPixel = qRound(xMap.transform(series->sample(k).x()));
+                if (endPixel != startPixel) break;
+                else end = k;
+            }
 #endif
             //now find range [min;max] for current pixel
 
@@ -149,39 +131,43 @@ public:
 
             //new start for next iteration
             start = end;
-            double p1x = 0.0, p2x = 0.0, p1y = 0.0, p2y = 0.0;
-
-            if(block.minX < block.maxX) {
-                //rising function, push points in direct order
-                p1x = xMap.transform(block.minX);
-                p2x = xMap.transform(block.maxX);
-                p1y = yMap.transform(block.minY);
-                p2y = yMap.transform(block.maxY);
+            if (polygon) {
+                QPointF &minValue = points[pixel];
+                QPointF &maxValue = points[2 * pixels - 1 - pixel];
+                minValue.rx() = (xMap.transform(block.minX)+xMap.transform(block.maxX))/2.0;
+                minValue.ry() = yMap.transform(block.minY);
+                maxValue.rx() = minValue.x();
+                maxValue.ry() = yMap.transform(block.maxY);
             }
             else {
-                //falling function, push points in reverse order
-                p2x = xMap.transform(block.minX);
-                p1x = xMap.transform(block.maxX);
-                p2y = yMap.transform(block.minY);
-                p1y = yMap.transform(block.maxY);
+                double p1x = 0.0, p2x = 0.0, p1y = 0.0, p2y = 0.0;
+
+                if(block.minX < block.maxX) {
+                    //rising function, push points in direct order
+                    p1x = xMap.transform(block.minX);
+                    p2x = xMap.transform(block.maxX);
+                    p1y = yMap.transform(block.minY);
+                    p2y = yMap.transform(block.maxY);
+                }
+                else {
+                    //falling function, push points in reverse order
+                    p2x = xMap.transform(block.minX);
+                    p1x = xMap.transform(block.maxX);
+                    p2y = yMap.transform(block.minY);
+                    p1y = yMap.transform(block.maxY);
+                }
+                points[pixel*2+0].setX(p1x);
+                points[pixel*2+0].setY(p1y);
+                points[pixel*2+1].setX(p2x);
+                points[pixel*2+1].setY(p2y);
             }
-
-            points[pixel*2+0].setX(p1x);
-            points[pixel*2+0].setY(p1y);
-
-            points[pixel*2+1].setX(p2x);
-            points[pixel*2+1].setY(p2y);
-
-//            minValue.rx() = (p1x+p2x)/2.0;
-//            minValue.ry() = yMap.transform(block.minY);
-//            maxValue.rx() = minValue.x();
-//            maxValue.ry() = yMap.transform(block.maxY);
         }
 
         return polyline;
     }
 
     bool simplified = false;
+    bool polygon = false;
 };
 
 LineCurve::LineCurve(const QString &title, FileDescriptor *descriptor, int channelIndex) :  QwtPlotCurve(title),
@@ -196,7 +182,7 @@ LineCurve::LineCurve(const QString &title, FileDescriptor *descriptor, int chann
     dfddata = new DfdData(this->channel->data());
     setData(dfddata);
 
-    mapper = new FilterPointMapper();
+    mapper = new FilterPointMapper(channel->type()==Descriptor::TimeResponse);
     // set filter points to true
     const bool noDuplicates = true;
     mapper->setFlag(QwtPointMapper::WeedOutIntermediatePoints, noDuplicates);
@@ -229,18 +215,20 @@ void LineCurve::drawLines(QPainter *painter,
     mapper->setFlag(QwtPointMapper::RoundPoints, doAlign);
     mapper->setBoundingRect(canvasRect);
 
-    QPolygonF polyline = mapper->getPolygonF(xMap, yMap, dfddata, from, to);
 
-//    if (mapper->simplified) painter->setBrush(QBrush(pen().color()));
+    QPolygonF polyline = mapper->getPolygon(xMap, yMap, dfddata, from, to);
+    QwtClipper::clipPolygonF(clipRect, polyline, mapper->simplified && channel->type()==Descriptor::TimeResponse);
 
+    if (mapper->simplified && channel->type()==Descriptor::TimeResponse) {
+        QColor c = pen().color();
+        c.setAlpha(200);
+        painter->setBrush(QBrush(c));
+        painter->setPen(c);
+    }
 
-    // clip polygons
-    QwtClipper::clipPolygonF(clipRect, polyline, mapper->simplified);
-
-
-//    if (mapper->simplified)
-//        QwtPainter::drawPolygon(painter, polyline);
-//    else
+    if (mapper->simplified && channel->type()==Descriptor::TimeResponse)
+        QwtPainter::drawPolygon(painter, polyline);
+    else
         QwtPainter::drawPolyline(painter, polyline);
 
     painter->restore();
