@@ -19,12 +19,13 @@ class TrackingCursor : public QwtPlotMarker
 public:
     explicit TrackingCursor(const QColor &col);
     void moveTo(const double xValue);
-    void setYValues(const QVector<double> &yValues);
+    void setYValues(const QVector<double> &yValues, const QVector<QColor> &colors);
     void setCurrent(bool current);
 
     void updateLabel();
     bool showYValues;
     QVector<double> yValues;
+    QVector<QColor> colors;
     bool reject = false;
     bool current = false;
 };

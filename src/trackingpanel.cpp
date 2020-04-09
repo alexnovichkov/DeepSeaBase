@@ -298,8 +298,6 @@ void TrackingPanel::updateTrackingCursor(double xVal, int index)
 
 void TrackingPanel::update()
 {DD;
-//    if (!isVisible()) return;
-
     for (int i=0; i<4; ++i) {
         if (cursorBoxes[i]->checkState()==Qt::Checked && isVisible()) {
             cursors[i]->attach(plot);
@@ -321,8 +319,22 @@ void TrackingPanel::update()
     double rightBorder = cursors[1]->xValue();
     double leftExclude = cursors[2]->xValue();
     double rightExclude = cursors[3]->xValue();
-    if (leftBorder > rightBorder) std::swap(leftBorder , rightBorder);
-    if (leftExclude > rightExclude) std::swap(leftExclude , rightExclude);
+
+    int minBorder = 0;
+    int maxBorder = 1;
+    int minExclude = 2;
+    int maxExclude = 3;
+
+    if (leftBorder  > rightBorder)  {
+        std::swap(leftBorder , rightBorder);
+        minBorder = 1;
+        maxBorder = 0;
+    }
+    if (leftExclude > rightExclude) {
+        std::swap(leftExclude , rightExclude);
+        minExclude = 3;
+        maxExclude = 2;
+    }
     cursorSpan1->setInterval(leftBorder, rightBorder);
     cursorSpan2->setInterval(leftExclude, rightExclude);
 
@@ -334,34 +346,30 @@ void TrackingPanel::update()
     if (filter && isVisible()) cursorSpan2->attach(plot);
     else cursorSpan2->detach();
 
-
-//    plot->replot();
-//    QRectF rect(leftExclude, 0, rightExclude, 1);
-
-    //4. get the y values from all curves
+    //get the y values from all curves
     QList<TrackingPanel::TrackInfo> list;
     QVector<QVector<double> > yValues(4);
-//    qDebug()<<leftBorder<<rightBorder<<leftExclude<<rightExclude;
+    QVector<QVector<QColor> > colors(4);
 
     foreach(Curve *c, plot->curves) {
         QVector<int> steps(4);
 
         auto xVals = c->channel->xValues();
         auto iter = closest<QVector<double>::iterator, double>(xVals.begin(), xVals.end(), leftBorder);
-        steps[0] = iter - xVals.begin();
-        if (steps[0] < 0) steps[0] = xVals.size()-1;
+        steps[minBorder] = iter - xVals.begin();
 
         iter = closest<QVector<double>::iterator, double>(xVals.begin(), xVals.end(), rightBorder);
-        steps[1] = iter - xVals.begin();
-        if (steps[1] < 0) steps[1] = xVals.size()-1;
+        steps[maxBorder] = iter - xVals.begin();
 
         iter = closest<QVector<double>::iterator, double>(xVals.begin(), xVals.end(), leftExclude);
-        steps[2] = iter - xVals.begin();
-        if (steps[2] < 0) steps[2] = xVals.size()-1;
+        steps[minExclude] = iter - xVals.begin();
 
         iter = closest<QVector<double>::iterator, double>(xVals.begin(), xVals.end(), rightExclude);
-        steps[3] = iter - xVals.begin();
-        if (steps[3] < 0) steps[3] = xVals.size()-1;
+        steps[maxExclude] = iter - xVals.begin();
+
+        for (int i=0; i<4; ++i) {
+            if (steps[i] < 0) steps[i] = xVals.size()-1;
+        }
 
 //        qDebug()<<steps;
 
@@ -372,17 +380,18 @@ void TrackingPanel::update()
 
         if (computeEnergy) {
             QVector<double> values = c->channel->data()->linears();
-            for (int i=steps[0]; i<=steps[1]; ++i) {
+            for (int i=steps[minBorder]; i<=steps[maxBorder]; ++i) {
                 double v2 = values[i];
                 if (c->channel->data()->yValuesUnits() != DataHolder::YValuesUnits::UnitsQuadratic)
                     v2 *= values[i];
-                if (i>=steps[2] && i<=steps[3] && filter)
+                if (i>=steps[minExclude] && i<=steps[maxExclude] && filter)
                     reject += v2;
                 cumul += v2;
                 energy += v2;
             }
             if (filter) reject = energy - reject;
-            cumul  = DataHolder::toLog(sqrt(cumul)/double(steps[1]-steps[0]+1), c->channel->data()->threshold(),
+            cumul  = DataHolder::toLog(sqrt(cumul)/double(steps[maxBorder]-steps[minBorder]+1),
+                                       c->channel->data()->threshold(),
                     DataHolder::UnitsLinear);
             energy = DataHolder::toLog(energy, c->channel->data()->threshold(), DataHolder::YValuesUnits::UnitsQuadratic);
             reject = DataHolder::toLog(reject, c->channel->data()->threshold(), DataHolder::YValuesUnits::UnitsQuadratic);
@@ -396,11 +405,13 @@ void TrackingPanel::update()
                     values,
                     cumul, energy, reject};
         list << ti;
-        for (int i=0; i<4; ++i)
+        for (int i=0; i<4; ++i) {
             yValues[i] << c->channel->data()->yValue(steps[i]);
+            colors[i] << c->pen().color();
+        }
     }
     for (int i=0; i<4; ++i)
-        cursors[i]->setYValues(yValues.at(i));
+        cursors[i]->setYValues(yValues.at(i), colors.at(i));
 
     updateState(list);
 }
@@ -458,9 +469,10 @@ void TrackingCursor::moveTo(const double xValue)
     setValue(xValue, 0.0);
 }
 
-void TrackingCursor::setYValues(const QVector<double> &yValues)
+void TrackingCursor::setYValues(const QVector<double> &yValues, const QVector<QColor>&colors)
 {DD;
     this->yValues = yValues;
+    this->colors = colors;
     updateLabel();
 }
 
@@ -483,8 +495,10 @@ void TrackingCursor::updateLabel()
 
     QStringList label;
     if (!yValues.isEmpty() && showYValues) {
-        foreach (double v, yValues) {
-            label << QString::number(v, 'f', 1);
+        for (int i = 0; i < yValues.size(); ++i) {
+            QString l = QString::number(yValues[i], 'f', 1);
+
+            label << QString("<font color=%1>%2</font>").arg(colors[i].name()).arg(l);
         }
     }
     label << QString("<b>%1</b>").arg(QString::number(this->xValue(), 'f', 1));
