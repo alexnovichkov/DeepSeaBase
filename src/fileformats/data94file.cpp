@@ -1,4 +1,6 @@
 #include "data94file.h"
+#include <QtDebug>
+#include <QJsonDocument>
 
 Data94File::Data94File(const QString &fileName) : FileDescriptor(fileName)
 {
@@ -18,7 +20,7 @@ Data94File::Data94File(const Data94File &d) : FileDescriptor(d.fileName())
 
 Data94File::Data94File(const FileDescriptor &other) : FileDescriptor(other.fileName())
 {
-    //TODO: доделать создание файла
+    //TODO: Data94File доделать создание файла
 }
 
 
@@ -32,6 +34,43 @@ void Data94File::fillRest()
 
 void Data94File::read()
 {
+    QFile f(fileName());
+
+    if (!f.open(QFile::ReadOnly)) return;
+
+    QDataStream r(&rawFile);
+    r.setByteOrder(QDataStream::LittleEndian);
+    r.setFloatingPointPrecision(QDataStream::SinglePrecision);
+    QString label = QString::fromLocal8Bit(r.device()->read(8));
+
+    if (label != "data94  ") {
+        qDebug()<<"файл неправильного типа";
+        return;
+    }
+
+    quint32 descriptionSize;
+    r >> descriptionSize;
+
+    //reading file description
+    QJsonParseError error;
+    QByteArray descriptionBuffer = r.device()->read(descriptionSize);
+    if ((quint32)descriptionBuffer.size() != descriptionSize) {
+        qDebug()<<"не удалось прочитать описание файла";
+        return;
+    }
+    QJsonDocument doc = QJsonDocument::fromJson(descriptionBuffer, &error);
+    if (error.error != QJsonParseError::NoError) {
+        qDebug()<<error.errorString() << error.offset;
+        return;
+    }
+    description = doc.array();
+
+    //reading padding
+    quint32 paddingSize;
+    r >> paddingSize;
+    r.device()->skip(paddingSize);
+
+
 }
 
 void Data94File::write()

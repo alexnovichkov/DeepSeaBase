@@ -4,6 +4,8 @@
 #include "fileformats/filedescriptor.h"
 #include <QJsonArray>
 
+#define PADDING_SIZE 1024
+
 /**
  * Универсальный формат данных, созданный под нужды бюро 94.41
  *
@@ -12,8 +14,13 @@
  * //Метка файла
  * char[8]  'data94  '
  *
- * quint64 descriptionSize - длина текстового описания в байтах
+ * quint32 descriptionSize - длина текстового описания в байтах
  * char[descriptionSize] description - текстовое описание данных в формате utf8
+ * quint32 paddingSize - размер паддинга. При создании файла паддинг по умолчанию равен
+ *     PADDING_SIZE, он может уменьшаться, если мы увеличиваем размер описания.
+ *     Если при сохранении файла descriptionSize > oldDescriptionSize+paddingSize, то:
+ *     1. снова добавляем паддинг PADDING_SIZE
+ *     2. перезаписываем весь файл с учетом новых размеров
  *
  *
  * //Блок описания оси Х
