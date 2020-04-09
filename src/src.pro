@@ -190,28 +190,22 @@ HEADERS  += mainwindow.h \
 
 SOURCES +=\
   $$PWD/../3rdParty/DspFilters/*.cpp \
-#  $$PWD/../3rdParty/alglib/*.cpp \
   $$PWD/../3rdParty/qtpropertybrowser/*.cpp \
 
 HEADERS +=\
   $$PWD/../3rdParty/DspFilters/*.h \
-#  $$PWD/../3rdParty/alglib/*.h \
   $$PWD/../3rdParty/qtpropertybrowser/*.h \
 
 RESOURCES *= src.qrc
 
 RC_FILE *= src.rc
 
-CONFIG(release, debug|release):LIBS *= C:/Qwt-6.4.0-svn/lib/libqwt.a
-CONFIG(debug, debug|release):  LIBS *= C:/Qwt-6.4.0-svn/lib/libqwtd.a
+
 
 INCLUDEPATH *= K:/My/programming/sources/libsamplerate-0.1.8/src
 
 # includes & libs
 INCLUDEPATH *= $$PWD $$PWD/.. $$PWD/../3rdParty/qtpropertybrowser $$PWD/../3rdParty/DspFilters
-INCLUDEPATH *= C:/Qwt-6.4.0-svn/include
-#INCLUDEPATH *= $$PWD/../3rdParty/alglib
-
 LIBS *= K:/My/programming/sources/libsamplerate-0.1.8/release/libsamplerate.a
 
 #tdm
@@ -221,6 +215,11 @@ LIBS *= K:/My/programming/sources/TDMS/tdm_dev/dev/lib/32-bit/msvc/nilibddc.lib
 #FFTW
 INCLUDEPATH *= K:/My/programming/sources/fftw-3.3.5-dll32
 LIBS *= K:/My/programming/sources/fftw-3.3.5-dll32/libfftw3-3.lib
+
+#qwt
+CONFIG(release, debug|release):LIBS *= C:/Qwt-6.4.0-svn/lib/libqwt.a
+CONFIG(debug, debug|release):  LIBS *= C:/Qwt-6.4.0-svn/lib/libqwtd.a
+INCLUDEPATH *= C:/Qwt-6.4.0-svn/include
 
 ##matio
 #INCLUDEPATH *= K:/My/programming/sources/Matlab/matio-1.5.17/src

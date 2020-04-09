@@ -64,74 +64,9 @@ QString dataTypeDescription(int type)
     return QString("Неопр.");
 }
 
-template <typename T, typename D>
-QVector<D> readChunk(QDataStream &readStream, int blockSize, int *actuallyRead)
-{
-    QVector<D> result(blockSize);
-    T v;
 
-    if (actuallyRead) *actuallyRead = 0;
 
-    for (int i=0; i<blockSize; ++i) {
-        if (readStream.atEnd()) {
-            break;
-        }
 
-        readStream >> v;
-        result[i] = D(v);
-        if (actuallyRead) (*actuallyRead)++;
-    }
-
-    return result;
-}
-
-template <typename D>
-QVector<D> getChunkOfData(QDataStream &readStream, int chunkSize, uint IndType, int *actuallyRead=0)
-{
-    QVector<D> result;
-
-    switch (IndType) {
-        case 0x00000001: {
-            result = readChunk<quint8,D>(readStream, chunkSize, actuallyRead);
-            break;
-        }
-        case 0x80000001: {
-            result = readChunk<qint8,D>(readStream, chunkSize, actuallyRead);
-            break;
-        }
-        case 0x00000002: {
-            result = readChunk<quint16,D>(readStream, chunkSize, actuallyRead);
-            break;
-        }
-        case 0x80000002: {
-            result = readChunk<qint16,D>(readStream, chunkSize, actuallyRead);
-            break;
-        }
-        case 0x00000004: {
-            result = readChunk<quint32,D>(readStream, chunkSize, actuallyRead);
-            break;
-        }
-        case 0x80000004: {
-            result = readChunk<qint32,D>(readStream, chunkSize, actuallyRead);
-            break;
-        }
-        case 0x80000008: {
-            result = readChunk<qint64,D>(readStream, chunkSize, actuallyRead);
-            break;
-        }
-        case 0xC0000004: {
-            result = readChunk<float,D>(readStream, chunkSize, actuallyRead);
-            break;
-        }
-        case 0xC0000008: //плавающий 64 бита
-        case 0xC000000A: //плавающий 80 бит
-            result = readChunk<double,D>(readStream, chunkSize, actuallyRead);
-            break;
-        default: break;
-    }
-
-    return result;
-}
 
 //QVector<double> convertFromUINT16(const QByteArray &b, uint IndType)
 //{
@@ -1310,8 +1245,9 @@ bool DfdFileDescriptor::isSourceFile() const
 bool DfdFileDescriptor::dataTypeEquals(FileDescriptor *other) const
 {DD;
     DfdFileDescriptor *d = dynamic_cast<DfdFileDescriptor *>(other);
-    if (!d) return false;
-    return (this->DataType == d->DataType);
+    if (d)
+        return (this->DataType == d->DataType);
+    return (dataTypefromDfdDataType(DataType) == other->type());
 }
 
 QString DfdFileDescriptor::fileFilters() const

@@ -8,6 +8,10 @@ QDebug operator <<(QDebug debug, const std::complex<double> &val)
     return debug;
 }
 
+
+
+
+
 QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spectrum, double xBegin, double xStep)
 {DD;
     QPair<QVector<double>, QVector<double> > result;

@@ -46,6 +46,8 @@ enum OrdinateFormat {
     ComplexDouble = 6
 };
 
+QString functionTypeDescription(int type);
+
 }
 
 

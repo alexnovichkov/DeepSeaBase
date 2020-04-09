@@ -504,6 +504,10 @@ void TrackingPanel::hideEvent(QHideEvent *event)
 {
     foreach(TrackingCursor *c, cursors)
         c->detach();
+    foreach (QwtPlotMarker *d, _harmonics) {
+        d->detach();
+    }
+
     cursorSpan1->detach();
     cursorSpan2->detach();
     QWidget::hideEvent(event);

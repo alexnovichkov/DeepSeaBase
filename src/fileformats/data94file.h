@@ -2,7 +2,8 @@
 #define DATA94FILE_H
 
 #include "fileformats/filedescriptor.h"
-#include <QJsonArray>
+#include <QJsonObject>
+#include <QDataStream>
 
 #define PADDING_SIZE 1024
 
@@ -12,29 +13,59 @@
  * Описание структуры:
  *
  * //Метка файла
- * char[8]  'data94  '
+ * |data|94  |ui32| *  |  'data94 -> 'quint32 descriptionSize - длина текстового описания в байтах
+ * | *  | *  | *  | *  |  -> char[descriptionSize] description - текстовое описание данных в формате utf8
+ * |ui32|0000|0000|0000|  -> quint32 paddingSize - размер паддинга (1).
+ * |0000|0000|0000|0000|  -> byte[paddingSize] - паддинг
+ * |ui32|XBlk          |  -> quint32 xBlockPresent: 0 = absent, 1 = present
+ * |                   |  -> xBlock если xBlockPresent==1
  *
- * quint32 descriptionSize - длина текстового описания в байтах
- * char[descriptionSize] description - текстовое описание данных в формате utf8
- * quint32 paddingSize - размер паддинга. При создании файла паддинг по умолчанию равен
+ *
+ * //Блок описания оси Х
+ * //все блоки имеют одинаковый формат
+ * quint32 labelSize
+ * char[labelSize]     метка оси Х в кодировке utf8
+ * quint32 uniform     0 - шкала неравномерная, 1 - шкала равномерная
+ * quint64 samplesCount
+ * double xBegin - если шкала равномерная
+ * double xStep - если шкала равномерная
+ * double[samplesCount] - если шкала неравномерная
+ *
+ *
+ * //Далее идут записи каналов
+ * quint64 descriptionSize - длина текстового описания в байтах
+ * char[descriptionSize] description - текстовое описание данных
+ * //Блок данных для оси Y
+ *
+ * Текстовое описание - формат Json
+ * --------------------------------
+ * Описание файла:
+ * {
+ *   "dateTime" : "dd.MM.yyyy hh:mm",
+ *   "sourceFile" : "",
+ *   "legend" : "",
+ *   "dataDescription": {
+ *       "свойства конкретного файла" //аналогично DFD DataDescription
+ *   }
+ * }
+ * Описание канала:
+ *
+ * (1) При создании файла паддинг по умолчанию равен
  *     PADDING_SIZE, он может уменьшаться, если мы увеличиваем размер описания.
  *     Если при сохранении файла descriptionSize > oldDescriptionSize+paddingSize, то:
  *     1. снова добавляем паддинг PADDING_SIZE
  *     2. перезаписываем весь файл с учетом новых размеров
- *
- *
- * //Блок описания оси Х
- * //все блоки имеют одинаковый формат, см. ниже
- *
- * //Блок данных
- * Data {
+ */
+
+/**
+ * @brief The Data94Block class
+ * Блок данных
  *     quint64 sizeInBytes - размер в байтах
- *     quint64 descriptionSize - длина текстового описания в байтах
- *     char[descriptionSize] description - текстовое описание данных
- *     quint8 dataFormat - 0 или 1, 0 = данные распределены равномерно
+ *     quint32 dataFormat - 0 или 1, 0 = данные распределены равномерно
  *                                   1 = данные распределены неравномерно
  *     quint64 sampleCount - количество отсчетов всего, включая разбиение по третьей оси;
  *                     если данные в комплексной форме, то реальная длина записи = sampleCount*2
+ *     quint32 valueFormat - действительное (1) или комплексное (2)
  *     quint64 blockCount - количество блоков.
  *             blockCount == 1 - обычный файл
  *             blockCount > 1 - файл время-частотных характеристик, каждый блок соответствует
@@ -48,22 +79,51 @@
  *  |   double step - шаг по оси
  *  |   double initial - начальное значение
  *  |   //длинный формат, dataFormat=1
- *  |   quint8 valueFormat - действительное (1) или комплексное (2)
+ *  |
  *  |   double[samples * valueFormat] data - вектор значений
  *  └---------------------------------------------------------------------------------
- * }
- *
- * //Далее идут записи каналов
- * quint64 descriptionSize - длина текстового описания в байтах
- * char[descriptionSize] description - текстовое описание данных
- * //Блок данных для оси Y
- *
- * Текстовое описание - формат Json
- * --------------------------------
- *
- *
- *
  */
+
+class XAxisBlock
+{
+public:
+    void read(QDataStream &r);
+    void write(QDataStream &r);
+//    quint64 position = 0;
+//    quint64 dataPosition = 0;
+    // quint32 labelSize
+    // char[labelSize]     метка оси Х в кодировке utf8
+    QString label;
+    quint32 uniform = 1;//     0 - шкала неравномерная, 1 - шкала равномерная
+    quint64 samplesCount = 0;
+    double xBegin = 0.0;// - если шкала равномерная
+    double xStep = 0.0;// - если шкала равномерная
+    QVector<double> values;// - если шкала неравномерная
+
+    bool isValid = false;
+};
+
+class Data94Block
+{
+public:
+    void read(QDataStream &r);
+    void write(QDataStream &r);
+    QVector<double> getValues(quint64 block);
+
+    quint64 position;
+    quint64 dataPosition;
+    bool complex;
+    quint64 sampleCount;
+    quint64 blockCount;
+    //если данные рапределены равномерно
+    QVector<int> count;
+    QVector<double> startValue;
+    QVector<double> step;
+private:
+    //если данные рапределены неравномерно
+    QVector<double> values; //читаются только через getValues, так как заполняются
+};
+
 class Data94Channel;
 
 class Data94File : public FileDescriptor
@@ -110,13 +170,17 @@ public:
     virtual bool dataTypeEquals(FileDescriptor *other) const override;
     virtual QString fileFilters() const override;
 private:
-    QJsonArray description;
+    QJsonObject description;
     QList<Data94Channel*> channels;
+
+    XAxisBlock xAxisBlock;
 };
 
 class Data94Channel : public Channel
 {
+public:
 
+    void setXStep(double xStep);
 
     // Channel interface
 public:

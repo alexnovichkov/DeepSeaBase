@@ -52,6 +52,7 @@
 
 #include "playpanel.h"
 
+
 // простой фабричный метод создания кривой нужного типа
 Curve * createCurve(const QString &legendName, FileDescriptor *descriptor, int channel)
 {

@@ -266,7 +266,7 @@ Descriptor::DataType UffFileDescriptor::type() const
 
 QString UffFileDescriptor::typeDisplay() const
 {
-    return Function::functionTypeDescription(type());
+    return Descriptor::functionTypeDescription(type());
 }
 
 QDateTime UffFileDescriptor::dateTime() const
@@ -969,41 +969,6 @@ void Function::write(QTextStream &stream)
 //    fields[FTEmpty]->print(0, stream);
     fields[FTDelimiter]->print("", stream);
     fields[FTEmpty]->print(0, stream);
-}
-
-QString Function::functionTypeDescription(int type)
-{
-    switch (type) {
-        case  1: return "Time Response";
-        case  2: return "Auto Spectrum";
-        case  3: return "Cross Spectrum";
-        case  4: return "FRF";
-        case  5: return "Transmissibility";
-        case  6: return "Coherence";
-        case  7: return "Auto Correlation";
-        case  8: return "Cross Correlation";
-        case  9: return "PSD";
-        case  10: return "ESD";
-        case  11: return "Probability Density Function";
-        case  12: return "Spectrum";
-        case  13: return "Cumulative Frequency Distribution";
-        case  14: return "Peaks Valley";
-        case  15: return "Stress/Cycles";
-        case  16: return "Strain/Cycles";
-        case  17: return "Orbit";
-        case  18: return "Mode Indicator Function";
-        case  19: return "Force Pattern";
-        case  20: return "Partial Power";
-        case  21: return "Partial Coherence";
-        case  22: return "Eigenvalue";
-        case  23: return "Eigenvector";
-        case  24: return "Shock Response Spectrum";
-        case  25: return "Finite Impulse Response Filter";
-        case  26: return "Multiple Coherence";
-        case  27: return "Order Function";
-        default: return "Неизв.";
-    }
-    return "Неизв.";
 }
 
 FileDescriptor *Function::descriptor()

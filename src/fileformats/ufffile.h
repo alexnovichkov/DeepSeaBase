@@ -40,8 +40,6 @@ public:
     void read(QDataStream &stream);
     void write(QTextStream &stream);
 
-    static QString functionTypeDescription(int type);
-
     FunctionHeader header;
 
     UffFileDescriptor *parent;
