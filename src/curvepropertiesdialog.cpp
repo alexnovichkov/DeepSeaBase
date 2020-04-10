@@ -5,8 +5,8 @@
 #include <qwt_plot.h>
 #include <qwt_plot_curve.h>
 #include <qwt_symbol.h>
-#include "plot.h"
-#include "curve.h"
+#include "plot/plot.h"
+#include "plot/curve.h"
 #include "fileformats/dfdfiledescriptor.h"
 
 void ClickableLabel::mouseReleaseEvent(QMouseEvent *ev)

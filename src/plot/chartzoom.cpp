@@ -13,10 +13,10 @@
 /**********************************************************/
 
 #include "chartzoom.h"
-#include "qmainzoomsvc.h"
-#include "qwheelzoomsvc.h"
-#include "qaxiszoomsvc.h"
-#include "qdragzoomsvc.h"
+#include "plotzoom.h"
+#include "wheelzoom.h"
+#include "axiszoom.h"
+#include "dragzoom.h"
 
 #include <qwt_scale_widget.h>
 #include "logging.h"
@@ -40,9 +40,9 @@ ChartZoom::ChartZoom(QwtPlot *plot) :
     qwtPlot->setFocusPolicy(Qt::StrongFocus);
 
     // создаем контейнеры границ шкалы
-    horizontalScaleBounds = new ScaleBounds(plot, QwtPlot::xBottom);    // горизонтальной
-    verticalScaleBounds = new ScaleBounds(plot, QwtPlot::yLeft);    // и вертикальной
-    verticalScaleBoundsSlave = new ScaleBounds(plot, QwtPlot::yRight);
+    horizontalScaleBounds = new ScaleBounds(plot, QwtAxisId(QwtAxis::xBottom, 0));    // горизонтальной
+    verticalScaleBounds = new ScaleBounds(plot, QwtAxisId(QwtAxis::yLeft, 0));    // и вертикальной
+    verticalScaleBoundsSlave = new ScaleBounds(plot, QwtAxisId(QwtAxis::yRight, 0));
 
     // устанавливаем обработчик всех событий
     qwtPlot->installEventFilter(this);
@@ -53,21 +53,21 @@ ChartZoom::ChartZoom(QwtPlot *plot) :
         qwtPlot->axisWidget(ax)->setFocusPolicy(Qt::StrongFocus);
     }
 
-    mainZoom = new QMainZoomSvc();
+    mainZoom = new PlotZoom();
     //propagating to ChartZoom
     connect(mainZoom,SIGNAL(xAxisClicked(double,bool)),SIGNAL(updateTrackingCursor(double,bool)));
     mainZoom->attach(this);
 
     // создаем интерфейс перемещенния графика
-    dragZoom = new QDragZoomSvc();
+    dragZoom = new DragZoom();
     dragZoom->attach(this);
 
-    wheelZoom = new QWheelZoomSvc();
+    wheelZoom = new WheelZoom();
     wheelZoom->attach(this);
 
-    axisZoom = new QAxisZoomSvc();
+    axisZoom = new AxisZoom();
     connect(axisZoom,SIGNAL(xAxisClicked(double,bool)),SIGNAL(updateTrackingCursor(double,bool)));
-    connect(axisZoom,SIGNAL(contextMenuRequested(QPoint,int)),SIGNAL(contextMenuRequested(QPoint,int)));
+    connect(axisZoom,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)),SIGNAL(contextMenuRequested(QPoint,QwtAxisId)));
     connect(axisZoom,SIGNAL(moveCursor(bool)),SIGNAL(moveCursor(bool)));
     axisZoom->attach(this);
 }
@@ -137,16 +137,16 @@ void ChartZoom::addZoom(const ChartZoom::zoomCoordinates &coords, bool apply)
 {DD;
     zoomStack.push(coords);
     if (apply) {
-        if (coords.coords.contains(QwtPlot::xBottom))
-            horizontalScaleBounds->set(coords.coords.value(QwtPlot::xBottom).x(),
-                                       coords.coords.value(QwtPlot::xBottom).y());
-        if (coords.coords.contains(QwtPlot::yLeft)) {
-            verticalScaleBounds->set(coords.coords.value(QwtPlot::yLeft).x(),
-                                     coords.coords.value(QwtPlot::yLeft).y());
+        if (coords.coords.contains(QwtAxis::xBottom))
+            horizontalScaleBounds->set(coords.coords.value(QwtAxis::xBottom).x(),
+                                       coords.coords.value(QwtAxis::xBottom).y());
+        if (coords.coords.contains(QwtAxis::yLeft)) {
+            verticalScaleBounds->set(coords.coords.value(QwtAxis::yLeft).x(),
+                                     coords.coords.value(QwtAxis::yLeft).y());
         }
-        if (coords.coords.contains(QwtPlot::yRight)) {
-            verticalScaleBoundsSlave->set(coords.coords.value(QwtPlot::yRight).x(),
-                                          coords.coords.value(QwtPlot::yRight).y());
+        if (coords.coords.contains(QwtAxis::yRight)) {
+            verticalScaleBoundsSlave->set(coords.coords.value(QwtAxis::yRight).x(),
+                                          coords.coords.value(QwtAxis::yRight).y());
         }
         plot()->replot();
     }
@@ -164,25 +164,20 @@ void ChartZoom::zoomBack()
     }
     else {
         zoomCoordinates coords = zoomStack.top();
-        if (coords.coords.contains(QwtPlot::xBottom))
-            horizontalScaleBounds->set(coords.coords.value(QwtPlot::xBottom).x(),
-                                       coords.coords.value(QwtPlot::xBottom).y());
-        if (coords.coords.contains(QwtPlot::yLeft)) {
-            verticalScaleBounds->set(coords.coords.value(QwtPlot::yLeft).x(),
-                                     coords.coords.value(QwtPlot::yLeft).y());
+        if (coords.coords.contains(QwtAxis::xBottom))
+            horizontalScaleBounds->set(coords.coords.value(QwtAxis::xBottom).x(),
+                                       coords.coords.value(QwtAxis::xBottom).y());
+        if (coords.coords.contains(QwtAxis::yLeft)) {
+            verticalScaleBounds->set(coords.coords.value(QwtAxis::yLeft).x(),
+                                     coords.coords.value(QwtAxis::yLeft).y());
         }
-        if (coords.coords.contains(QwtPlot::yRight)) {
-            verticalScaleBoundsSlave->set(coords.coords.value(QwtPlot::yRight).x(),
-                                          coords.coords.value(QwtPlot::yRight).y());
+        if (coords.coords.contains(QwtAxis::yRight)) {
+            verticalScaleBoundsSlave->set(coords.coords.value(QwtAxis::yRight).x(),
+                                          coords.coords.value(QwtAxis::yRight).y());
         }
     }
     // перестраиваем график
     plot()->replot();
-}
-
-void ChartZoom::labelSelected(bool selected)
-{DD;
-    setZoomEnabled(!selected);
 }
 
     /**************************************************/
@@ -191,12 +186,8 @@ void ChartZoom::labelSelected(bool selected)
     /**************************************************/
 
 // Конструктор
-ChartZoom::ScaleBounds::
-    ScaleBounds(QwtPlot *plt,QwtPlot::Axis mst)
+ChartZoom::ScaleBounds::ScaleBounds(QwtPlot *plot, QwtAxisId axis) : axis(axis), plot(plot)
 {DD;
-    // запоминаем
-    plot = plt;     // опекаемый график
-    axis = mst;   // шкалу
     fixed = false;  // границы еще не фиксированы
     min = 0.0;
     max = 10.0;

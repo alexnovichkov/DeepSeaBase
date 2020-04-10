@@ -10,7 +10,7 @@ public:
         QFile file(fileName);
         if (file.open(QFile::ReadOnly | QFile::Text)) {
             QTextStream in(&file);
-            double x,y1,y2,y3,y4,y5,y6;
+            double x,y1,y2,y3,y4,y5/*,y6*/;
             while (!in.atEnd()) {
                 QString s = in.readLine();
                 if (s.isEmpty()) break;

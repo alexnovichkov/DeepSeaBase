@@ -51,9 +51,9 @@ public:
     virtual ~Plot();
 
     QList<Curve *> curves;
-    QwtAxisId xBottomAxis{QwtPlot::xBottom,0};
-    QwtAxisId yLeftAxis{QwtPlot::yLeft,0};
-    QwtAxisId yRightAxis{QwtPlot::yRight,0};
+    QwtAxisId xBottomAxis{QwtAxis::xBottom,0};
+    QwtAxisId yLeftAxis{QwtAxis::yLeft,0};
+    QwtAxisId yRightAxis{QwtAxis::yRight,0};
 
     void update();
 
@@ -100,8 +100,8 @@ public:
     bool canBePlottedOnLeftAxis(Channel *ch);
     bool canBePlottedOnRightAxis(Channel *ch);
 
-    void prepareAxis(int axis);
-    void setAxis(int axis, const QString &name);
+    void prepareAxis(QwtAxisId axis);
+    void setAxis(QwtAxisId axis, const QString &name);
     void moveToAxis(int axis, double min, double max);
     void updateAxesLabels();
 
@@ -148,7 +148,7 @@ private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
     void editLegendItem(QwtPlotItem *item);
     void deleteCurveFromLegend(QwtPlotItem *item);
-    void showContextMenu(const QPoint &pos, const int axis);
+    void showContextMenu(const QPoint &pos, QwtAxisId axis);
     void moveCurve(QwtPlotItem *curve);
     void fixCurve(QwtPlotItem* curve);
 private:
@@ -178,9 +178,7 @@ private:
 
 
 
-    bool xScale; //false = linear, true = logarithmic
-    bool y1Scale;//false = linear, true = logarithmic
-    bool y2Scale;//false = linear, true = logarithmic
+    bool xScaleIsLogarithmic; //false = linear, true = logarithmic
 
     ChartZoom *zoom;
 

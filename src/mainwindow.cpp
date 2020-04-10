@@ -6,13 +6,13 @@
 #include "filesprocessordialog.h"
 #include "sortabletreewidgetitem.h"
 #include "headerview.h"
-#include "plot.h"
+#include "plot/plot.h"
 #include "tabwidget.h"
 #include "colorselector.h"
 #include "coloreditdialog.h"
 #include "correctiondialog.h"
-#include "curve.h"
-#include "pointlabel.h"
+#include "plot/curve.h"
+#include "plot/pointlabel.h"
 #include "model.h"
 #include "sortfiltermodel.h"
 #include "filterheaderview.h"
@@ -2526,7 +2526,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
              Curve *curve = plot->curves.at(i);
              QAxObject * serie = series->querySubObject("Item (int)", i+1);
              if (serie) {
-                 if (curve->yAxis()==QwtPlot::yRight) {
+                 if (curve->yAxis()==QwtAxis::yRight) {
                      serie->setProperty("AxisGroup", 2);
                      addRightAxis = true;
                  }
@@ -2544,7 +2544,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          // добавляем подписи осей
          QAxObject *xAxis = chart->querySubObject("Axes(const QVariant&)", 1);
          if (xAxis) {
-             setAxis(xAxis, stripHtml(plot->axisTitle(QwtPlot::xBottom).text()));
+             setAxis(xAxis, stripHtml(plot->axisTitle(QwtAxis::xBottom).text()));
              xAxis->setProperty("MaximumScale", range.max);
              xAxis->setProperty("MinimumScale", int(range.min/10)*10);
 //             if (zeroStepDetected) {
@@ -2556,7 +2556,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 
          QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&)", 2);
          if (yAxis) {
-             setAxis(yAxis, stripHtml(plot->axisTitle(QwtPlot::yLeft).text()));
+             setAxis(yAxis, stripHtml(plot->axisTitle(QwtAxis::yLeft).text()));
              yAxis->setProperty("CrossesAt", -1000);
          }
          delete yAxis;

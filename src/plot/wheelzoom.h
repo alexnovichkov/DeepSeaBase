@@ -21,17 +21,18 @@
 
 #include "chartzoom.h"
 
-class QWheelZoomSvc : public QObject
+class WheelZoom : public QObject
 {
     Q_OBJECT
 public:
-    explicit QWheelZoomSvc();
+    explicit WheelZoom();
     void attach(ChartZoom *);
 protected:
     bool eventFilter(QObject *,QEvent *);
 private:
     ChartZoom *zoom;
-    void applyWheel(QEvent *, int axis = -1);
+    void applyWheel(QEvent *, QwtAxisId axis);
+    QPointF getCoords(QwtAxisId axis, int pos, double factor);
 };
 
 #endif // QWHEELZOOMSVC_H

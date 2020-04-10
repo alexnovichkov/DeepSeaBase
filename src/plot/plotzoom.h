@@ -31,18 +31,18 @@ class ChartZoom;
 class QMouseEvent;
 class QRubberBand;
 
-class QMainZoomSvc : public QObject
+class PlotZoom : public QObject
 {
     Q_OBJECT
 
 public:
     // конструктор
-    explicit QMainZoomSvc();
+    explicit PlotZoom();
 
     // прикрепление интерфейса к менеджеру масштабирования
     void attach(ChartZoom *);
 signals:
-    void xAxisClicked(double xValue, bool second);
+    void xAxisClicked(double xValue, bool secondCursor);
 protected:
     bool eventFilter(QObject *,QEvent *);
 

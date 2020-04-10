@@ -12,42 +12,45 @@
 /*                                                        */
 /**********************************************************/
 
-#include "qwheelzoomsvc.h"
+#include "wheelzoom.h"
 #include "qwt_scale_widget.h"
 #include <QApplication>
 #include "logging.h"
 
-QWheelZoomSvc::QWheelZoomSvc() : QObject()
+WheelZoom::WheelZoom() : QObject()
 {DD;
 
 }
 
-void QWheelZoomSvc::attach(ChartZoom *zm)
+void WheelZoom::attach(ChartZoom *zm)
 {DD;
     zoom = zm;
 
     zoom->plot()->canvas()->installEventFilter(this);
-    for (int axis=0; axis < QwtPlot::axisCnt; ++axis)
-        zoom->plot()->axisWidget(axis)->installEventFilter(this);
+    for (int ax = 0; ax < QwtAxis::PosCount; ax++) {
+        for (int j = 0; j < zoom->plot()->axesCount(ax); ++j)
+            zoom->plot()->axisWidget(QwtAxisId(ax,j))->installEventFilter(this);
+    }
 }
 
-bool QWheelZoomSvc::eventFilter(QObject *target, QEvent *event)
+bool WheelZoom::eventFilter(QObject *target, QEvent *event)
 {
     if (event->type() != QEvent::Wheel)
         return QObject::eventFilter(target,event);
 
+    QwtAxisId axis(-1,0);
     if (target == zoom->plot()->canvas()) {
-        applyWheel(event);
+        applyWheel(event, axis);
     }
     else {
-        int axis = -1;
-        for (int a=0; a < QwtPlot::axisCnt; ++a) {
-            if (target == zoom->plot()->axisWidget(a)) {
-                axis = a;
+        for (int a=0; a < QwtAxis::PosCount; ++a) {
+            for (int j=0; j<zoom->plot()->axesCount(a); ++j)
+            if (target == zoom->plot()->axisWidget(QwtAxisId(a,j))) {
+                axis = QwtAxisId(a,j);
                 break;
             }
         }
-        if (axis != -1) {
+        if (axis.pos != -1) {
             applyWheel(event, axis);
         }
     }
@@ -55,7 +58,7 @@ bool QWheelZoomSvc::eventFilter(QObject *target, QEvent *event)
     return true;
 }
 
-void QWheelZoomSvc::applyWheel(QEvent *event, int axis)
+void WheelZoom::applyWheel(QEvent *event, QwtAxisId axis)
 {DD;
     QWheelEvent *wEvent = static_cast<QWheelEvent *>(event);
     if (wEvent->orientation() != Qt::Vertical) return;
@@ -66,36 +69,37 @@ void QWheelZoomSvc::applyWheel(QEvent *event, int axis)
     const int wheelDelta = delta.y();
 
     if (wheelDelta != 0) {   // если колесо вращалось
-        QwtPlot *plot = zoom->plot();
-
         double wheelSteps = wheelDelta/120.0;
         double factor = pow(0.85, wheelSteps);
 
         ChartZoom::zoomCoordinates coords;
 
-        if (axis == -1 || axis == QwtPlot::xBottom) {
-            double horPos = plot->invTransform(QwtPlot::xBottom, wEvent->pos().x());
-            QwtScaleMap sm = plot->canvasMap(QwtPlot::xBottom);
+        if (QwtAxis::isValid(axis.pos)) {
+            int pos = axis.isXAxis() ? wEvent->pos().x() : wEvent->pos().y();
+            coords.coords.insert(axis.pos, getCoords(axis, pos, factor));
+        }
+        else {
+            int pos = wEvent->pos().x();
+            //: wEvent->pos().y();
+            axis = QwtAxisId(QwtAxis::xBottom, 0);
+            coords.coords.insert(axis.pos, getCoords(axis, pos, factor));
+            pos = wEvent->pos().y();
+            axis = QwtAxisId(QwtAxis::yLeft, 0);
+            coords.coords.insert(axis.pos, getCoords(axis, pos, factor));
+            axis = QwtAxisId(QwtAxis::yRight, 0);
+            coords.coords.insert(axis.pos, getCoords(axis, pos, factor));
+        }
 
-            double lower = (sm.s1()-horPos)*factor + horPos;
-            double upper = (sm.s2()-horPos)*factor + horPos;
-            coords.coords.insert(QwtPlot::xBottom, {lower, upper});
-        }
-        if (axis == -1 || axis == QwtPlot::yLeft) {
-            double verPos = plot->invTransform(QwtPlot::yLeft, wEvent->pos().y());
-            QwtScaleMap sm = plot->canvasMap(QwtPlot::yLeft);
-            double lower = (sm.s1()-verPos)*factor + verPos;
-            double upper = (sm.s2()-verPos)*factor + verPos;
-            coords.coords.insert(QwtPlot::yLeft, {lower, upper});
-        }
-        if (axis == -1 || axis == QwtPlot::yRight) {
-            double verPos = plot->invTransform(QwtPlot::yRight, wEvent->pos().y());
-            QwtScaleMap sm = plot->canvasMap(QwtPlot::yRight);
-            double lower = (sm.s1()-verPos)*factor + verPos;
-            double upper = (sm.s2()-verPos)*factor + verPos;
-            coords.coords.insert(QwtPlot::yRight, {lower, upper});
-        }
         if (!coords.coords.isEmpty()) zoom->addZoom(coords, true);
     }
+}
+
+QPointF WheelZoom::getCoords(QwtAxisId axis, int pos, double factor)
+{
+    double dPos = zoom->plot()->invTransform(axis, pos);
+    QwtScaleMap sm = zoom->plot()->canvasMap(axis);
+    double lower = (sm.s1()-dPos)*factor + dPos;
+    double upper = (sm.s2()-dPos)*factor + dPos;
+    return QPointF(lower, upper);
 }
 

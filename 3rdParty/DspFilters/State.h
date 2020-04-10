@@ -262,7 +262,7 @@ public:
   {
   }
 
-  const int getNumChannels() const
+  int getNumChannels() const
   {
     return Channels;
   }
@@ -297,7 +297,7 @@ template <class StateType>
 class ChannelsState <0, StateType>
 {
 public:
-  const int getNumChannels() const
+  int getNumChannels() const
   {
     return 0;
   }
@@ -312,6 +312,9 @@ public:
                 Sample* const* arrayOfChannels,
                 FilterDesign& filter)
   {
+      (void)numSamples;
+      (void)arrayOfChannels;
+      (void)filter;
     throw std::logic_error ("attempt to process empty ChannelState");
   }
 };

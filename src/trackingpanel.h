@@ -64,14 +64,13 @@ public:
 public slots:
     // рассчитывает точное значение Х и меняет показания на счетчиках
     void setXValue(double value, bool second);
-    void setXValue(QwtPlotMarker *cursor, double value);
+    void setXValue(double value);
     void update();
-    void updateSelectedCursor(QwtPlotMarker *cursor);
+    void changeSelectedCursor(QwtPlotMarker *cursor);
     void moveCursor(bool right);
 signals:
     void switchHarmonics(bool on);
     void closeRequested();
-    void cursorSelected(QwtPlotMarker*);
 private:
     void setX(double value, int index);
     void updateTrackingCursor(double xVal, int index);

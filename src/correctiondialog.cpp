@@ -3,8 +3,8 @@
 #include <QtWidgets>
 
 #include "checkableheaderview.h"
-#include "plot.h"
-#include "curve.h"
+#include "plot/plot.h"
+#include "plot/curve.h"
 #include "fileformats/dfdfiledescriptor.h"
 #include "logging.h"
 

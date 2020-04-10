@@ -20,7 +20,7 @@ else{
         LIBS += -L$$OUT_PWD/../lib
 }
 
-CONFIG += c++17
+CONFIG += c++17 c++1z
 
 qtHaveModule(winextras) {
     QT *= winextras
@@ -30,8 +30,6 @@ SOURCES += main.cpp\
     mainwindow.cpp \
     fileformats/dfdfiledescriptor.cpp \
     sortabletreewidgetitem.cpp \
-    plot.cpp \
-    curve.cpp \
     checkableheaderview.cpp \
     methods/spectremethod.cpp \
     methods/timemethod.cpp \
@@ -39,11 +37,8 @@ SOURCES += main.cpp\
     tabwidget.cpp \
     coloreditdialog.cpp \
     colorselector.cpp \
-    plotpicker.cpp \
     correctiondialog.cpp \
     methods/xresponch1.cpp \
-    pointlabel.cpp \
-    legend.cpp \
     logging.cpp \
     fileformats/filedescriptor.cpp \
     fileformats/ufffile.cpp \
@@ -61,9 +56,6 @@ SOURCES += main.cpp\
     fileformats/dfdsettings.cpp \
     methods/octavefilterbank.cpp \
     axisboundsdialog.cpp \
-    qmainzoomsvc.cpp \
-    chartzoom.cpp \
-    qdragzoomsvc.cpp \
     calculatespectredialog.cpp \
     averaging.cpp \
     timeslicer.cpp \
@@ -78,8 +70,6 @@ SOURCES += main.cpp\
     channelselector.cpp \
     filtering.cpp \
     filesprocessordialog.cpp \
-    qwheelzoomsvc.cpp \
-    qaxiszoomsvc.cpp \
     methods/abstractfunction.cpp \
     methods/channelfunction.cpp \
     methods/resamplingfunction.cpp \
@@ -94,23 +84,31 @@ SOURCES += main.cpp\
     unitsconverter.cpp \
     dataiodevice.cpp \
     playpanel.cpp \
-    linecurve.cpp \
-    barcurve.cpp \
     fileformats/matfile.cpp \
     channeltablemodel.cpp \
     headerview.cpp \
     methods/timealgorithm.cpp \
     fileformats/data94file.cpp \
-    logscaleengine.cpp \
     fileformats/tdmsfile.cpp \
     tdmsconverterdialog.cpp \
-    htmldelegate.cpp
+    htmldelegate.cpp \
+    plot/curve.cpp \
+    plot/linecurve.cpp \
+    plot/barcurve.cpp \
+    plot/plot.cpp \
+    plot/legend.cpp \
+    plot/plotpicker.cpp \
+    plot/logscaleengine.cpp \
+    plot/pointlabel.cpp \
+    plot/chartzoom.cpp \
+    plot/plotzoom.cpp \
+    plot/axiszoom.cpp \
+    plot/dragzoom.cpp \
+    plot/wheelzoom.cpp
 
 HEADERS  += mainwindow.h \
     fileformats/dfdfiledescriptor.h \
     sortabletreewidgetitem.h \
-    plot.h \
-    curve.h \
     checkableheaderview.h \
     methods/abstractmethod.h \
     methods/spectremethod.h \
@@ -119,11 +117,8 @@ HEADERS  += mainwindow.h \
     tabwidget.h \
     coloreditdialog.h \
     colorselector.h \
-    plotpicker.h \
     correctiondialog.h \
     methods/xresponch1.h \
-    pointlabel.h \
-    legend.h \
     logging.h \
     fileformats/filedescriptor.h \
     fileformats/ufffile.h \
@@ -143,9 +138,6 @@ HEADERS  += mainwindow.h \
     fileformats/dfdsettings.h \
     methods/octavefilterbank.h \
     axisboundsdialog.h \
-    qmainzoomsvc.h \
-    chartzoom.h \
-    qdragzoomsvc.h \
     psimpl.h \
     calculatespectredialog.h \
     averaging.h \
@@ -160,8 +152,6 @@ HEADERS  += mainwindow.h \
     channelselector.h \
     filtering.h \
     filesprocessordialog.h \
-    qwheelzoomsvc.h \
-    qaxiszoomsvc.h \
     methods/abstractfunction.h \
     methods/channelfunction.h \
     methods/resamplingfunction.h \
@@ -176,17 +166,27 @@ HEADERS  += mainwindow.h \
     unitsconverter.h \
     dataiodevice.h \
     playpanel.h \
-    linecurve.h \
-    barcurve.h \
     fileformats/matfile.h \
     channeltablemodel.h \
     headerview.h \
     methods/timealgorithm.h \
     fileformats/data94file.h \
-    logscaleengine.h \
     fileformats/tdmsfile.h \
     tdmsconverterdialog.h \
-    htmldelegate.h
+    htmldelegate.h \
+    plot/plot.h \
+    plot/legend.h \
+    plot/curve.h \
+    plot/linecurve.h \
+    plot/barcurve.h \
+    plot/plotpicker.h \
+    plot/logscaleengine.h \
+    plot/pointlabel.h \
+    plot/chartzoom.h \
+    plot/plotzoom.h \
+    plot/axiszoom.h \
+    plot/dragzoom.h \
+    plot/wheelzoom.h
 
 SOURCES +=\
   $$PWD/../3rdParty/DspFilters/*.cpp \
@@ -200,7 +200,8 @@ RESOURCES *= src.qrc
 
 RC_FILE *= src.rc
 
-
+CONFIG(release, debug|release):QMAKE_CFLAGS  += -O3 -msse2 -msse3 -mssse3 -msse4.1 -mavx -mavx2
+message($$QMAKE_CFLAGS)
 
 INCLUDEPATH *= K:/My/programming/sources/libsamplerate-0.1.8/src
 

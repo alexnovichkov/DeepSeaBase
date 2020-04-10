@@ -26,12 +26,12 @@ class ChartZoom;
 class QMouseEvent;
 #include <QCursor>
 
-class QDragZoomSvc : public QObject
+class DragZoom : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit QDragZoomSvc();
+    explicit DragZoom();
     void attach(ChartZoom *);
 protected:
     bool eventFilter(QObject *,QEvent *);

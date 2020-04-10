@@ -21,13 +21,10 @@ protected:
     virtual void widgetKeyReleaseEvent(QKeyEvent *e);
     virtual void widgetKeyPressEvent(QKeyEvent *e);
 signals:
-    void updateTrackingCursor(double xVal, bool second);
-    void cursorMovedTo(QwtPlotMarker *cursor, double newValue);
-    void moveCursor(bool right);
+    void cursorMovedTo(double newValue);
+    void moveCursor(bool moveToRight);
     void cursorSelected(QwtPlotMarker *cursor);
-    void labelSelected(bool);
-public slots:
-    void updateSelectedCursor(QwtPlotMarker*cursor);
+    void setZoomEnabled(bool);
 private slots:
     void pointAppended(const QPoint &pos);
     void pointMoved(const QPoint &pos);

@@ -54,7 +54,7 @@ public:
     Array (int max, complex_t* values)
      // : m_max (max)
      // , m_values (values)
-    {
+    {(void)max; (void)values;
     }
 
     //complex_t& operator[] (int index)

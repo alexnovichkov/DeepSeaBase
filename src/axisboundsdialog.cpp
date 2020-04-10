@@ -3,7 +3,7 @@
 #include <QtWidgets>
 #include <qwt_plot.h>
 
-AxisBoundsDialog::AxisBoundsDialog(double leftBorder, double rightBorder, int axis, QWidget *parent) : QDialog(parent),
+AxisBoundsDialog::AxisBoundsDialog(double leftBorder, double rightBorder, QwtAxisId axis, QWidget *parent) : QDialog(parent),
     _leftBorder(leftBorder), _rightBorder(rightBorder), _axis(axis), _autoscale(false)
 {
     setWindowTitle("Установка шкалы");
@@ -27,7 +27,7 @@ AxisBoundsDialog::AxisBoundsDialog(double leftBorder, double rightBorder, int ax
     });
 
     QString text = "Подогнать масштаб по вертикальным осям";
-    if (axis == QwtPlot::yLeft || axis == QwtPlot::yRight)
+    if (axis.isYAxis())
         text = "Подогнать масштаб по горизонтальной оси";
     QCheckBox *scaleAxis = new QCheckBox(text, this);
     scaleAxis->setChecked(false);
@@ -43,14 +43,4 @@ AxisBoundsDialog::AxisBoundsDialog(double leftBorder, double rightBorder, int ax
     l->addWidget(scaleAxis, 1,0,1,4,Qt::AlignLeft);
     l->addWidget(buttonBox, 2,0,1,4, Qt::AlignRight);
     setLayout(l);
-}
-
-double AxisBoundsDialog::leftBorder() const
-{
-    return _leftBorder;
-}
-
-double AxisBoundsDialog::rightBorder() const
-{
-    return _rightBorder;
 }

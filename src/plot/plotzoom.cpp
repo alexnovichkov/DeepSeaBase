@@ -1,4 +1,4 @@
-#include "qmainzoomsvc.h"
+#include "plotzoom.h"
 
 /**********************************************************/
 /*                                                        */
@@ -18,21 +18,20 @@
 #include "chartzoom.h"
 #include <QRubberBand>
 #include "qwt_scale_map.h"
+#include <QtDebug>
 
-QMainZoomSvc::QMainZoomSvc() : QObject()
+PlotZoom::PlotZoom() : QObject()
 {DD;
     rubberBand = 0;
 }
 
-// Прикрепление интерфейса к менеджеру масштабирования
-void QMainZoomSvc::attach(ChartZoom *zm)
+void PlotZoom::attach(ChartZoom *zm)
 {DD;
     zoom = zm;
     zoom->plot()->canvas()->installEventFilter(this);
 }
 
-// Обработчик всех событий
-bool QMainZoomSvc::eventFilter(QObject *target,QEvent *event)
+bool PlotZoom::eventFilter(QObject *target,QEvent *event)
 {
     if (zoom->activated) {
         if (target == zoom->plot()->canvas()) {
@@ -49,9 +48,10 @@ bool QMainZoomSvc::eventFilter(QObject *target,QEvent *event)
     return QObject::eventFilter(target,event);
 }
 
-void QMainZoomSvc::procMouseEvent(QEvent *event)
+void PlotZoom::procMouseEvent(QEvent *event)
 {
     QMouseEvent *mEvent = static_cast<QMouseEvent *>(event);
+
     switch (event->type())  {
         case QEvent::MouseButtonPress:
             startZoom(mEvent);
@@ -66,7 +66,7 @@ void QMainZoomSvc::procMouseEvent(QEvent *event)
     }
 }
 
-void QMainZoomSvc::procKeyboardEvent(QEvent *event)
+void PlotZoom::procKeyboardEvent(QEvent *event)
 {
     QKeyEvent *kEvent = static_cast<QKeyEvent*>(event);
     switch (kEvent->key()) {
@@ -85,7 +85,7 @@ void QMainZoomSvc::procKeyboardEvent(QEvent *event)
     }
 }
 
-void QMainZoomSvc::startZoom(QMouseEvent *mEvent)
+void PlotZoom::startZoom(QMouseEvent *mEvent)
 {
     if (zoom->regime() == ChartZoom::ctNone) {
         QRect cg = zoom->plot()->canvas()->geometry();
@@ -104,7 +104,7 @@ void QMainZoomSvc::startZoom(QMouseEvent *mEvent)
     }
 }
 
-void QMainZoomSvc::proceedZoom(QMouseEvent *mEvent)
+void PlotZoom::proceedZoom(QMouseEvent *mEvent)
 {
     if (zoom->regime() != ChartZoom::ctZoom) return;
 
@@ -120,7 +120,7 @@ void QMainZoomSvc::proceedZoom(QMouseEvent *mEvent)
     }
 }
 
-void QMainZoomSvc::endZoom(QMouseEvent *mEvent)
+void PlotZoom::endZoom(QMouseEvent *mEvent)
 {
     if (zoom->regime() != ChartZoom::ctZoom) return;
 
@@ -135,29 +135,29 @@ void QMainZoomSvc::endZoom(QMouseEvent *mEvent)
 
         // если был одинарный щелчок мышью, то трактуем как установку курсора
         if (xp-startingPosX==0 && yp-startingPosY==0) {
-            emit xAxisClicked(plt->canvasMap(QwtPlot::xBottom).invTransform(startingPosX),
+            emit xAxisClicked(plt->canvasMap(QwtAxis::xBottom).invTransform(startingPosX),
                               mEvent->modifiers() & Qt::ControlModifier);
         }
 
         if (qAbs(xp - startingPosX) >= 8 && qAbs(yp - startingPosY) >= 8) {
             int leftmostX = qMin(xp, startingPosX); int rightmostX = qMax(xp, startingPosX);
             int leftmostY = qMin(yp, startingPosY); int rightmostY = qMax(yp, startingPosY);
-            QwtPlot::Axis mX = QwtPlot::xBottom;
-            const double xMin = plt->invTransform(mX,leftmostX);
-            const double xMax = plt->invTransform(mX,rightmostX);
+            QwtAxis::Position pos = QwtAxis::xBottom;
+            const double xMin = plt->invTransform(pos,leftmostX);
+            const double xMax = plt->invTransform(pos,rightmostX);
 
-            QwtPlot::Axis mY = QwtPlot::yLeft;
-            double yMin = plt->invTransform(mY,rightmostY);
-            double yMax = plt->invTransform(mY,leftmostY);
+            pos = QwtAxis::yLeft;
+            double yMin = plt->invTransform(pos,rightmostY);
+            double yMax = plt->invTransform(pos,leftmostY);
 
-            mY = QwtPlot::yRight;
-            double ySMin = plt->invTransform(mY,rightmostY);
-            double ySMax = plt->invTransform(mY,leftmostY);
+            pos = QwtAxis::yRight;
+            double ySMin = plt->invTransform(pos,rightmostY);
+            double ySMax = plt->invTransform(pos,leftmostY);
 
             ChartZoom::zoomCoordinates coords;
-            coords.coords.insert(QwtPlot::xBottom, {xMin, xMax});
-            coords.coords.insert(QwtPlot::yLeft, {yMin, yMax});
-            coords.coords.insert(QwtPlot::yRight, {ySMin, ySMax});
+            coords.coords.insert(QwtAxis::xBottom, {xMin, xMax});
+            coords.coords.insert(QwtAxis::yLeft, {yMin, yMax});
+            coords.coords.insert(QwtAxis::yRight, {ySMin, ySMax});
             zoom->addZoom(coords, true);
         }
         // закончили масштабирование

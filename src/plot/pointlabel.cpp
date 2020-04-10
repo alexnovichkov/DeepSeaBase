@@ -162,8 +162,8 @@ void PointLabel::moveBy(const QPoint &pos)
 
 bool PointLabel::contains(const QPoint &pos, QwtAxisId yAxis)
 {DD;
-    QPointF point(plot->transform(QwtAxisId(QwtPlot::xBottom,0), d_origin.x()),
-                plot->transform(/*QwtPlot::yLeft*/yAxis, d_origin.y()));
+    QPointF point(plot->transform(QwtAxisId(QwtAxis::xBottom,0), d_origin.x()),
+                plot->transform(/*QwtAxis::yLeft*/yAxis, d_origin.y()));
 
     const QSizeF textSize = d_label.textSize();
 

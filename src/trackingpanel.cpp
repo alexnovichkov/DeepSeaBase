@@ -5,9 +5,9 @@
 
 #include <qwt_text.h>
 #include <qwt_plot_zoneitem.h>
-#include "plot.h"
+#include "plot/plot.h"
 #include "fileformats/dfdfiledescriptor.h"
-#include "curve.h"
+#include "plot/curve.h"
 #include "logging.h"
 
 QString roundedBy(double value)
@@ -75,6 +75,7 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
 //        c->lineEdit()->setClearButtonEnabled(true);
         connect(c, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
                 [=](double val){
+            DD;
             updateTrackingCursor(val, i);
             cursorBoxes[i]->setChecked(true);
         });
@@ -283,13 +284,10 @@ void TrackingPanel::updateTrackingCursor(double xVal, int index)
 {DD;
     if (!isVisible()) return;
 
-//    DebugPrint(xVal);
-
     cursors[index]->moveTo(xVal);
-    for (int i=0; i<cursors.size(); ++i) {
+    for (int i=0; i<cursors.size(); ++i)
         cursors[i]->setCurrent(i == index);
-        if (i==index) emit cursorSelected(cursors[i]);
-    }
+
     for (int i=0; i<_harmonics.size(); ++i)
         _harmonics[i]->setValue(xVal*(i+2), 0.0);
 
@@ -416,7 +414,7 @@ void TrackingPanel::update()
     updateState(list);
 }
 
-void TrackingPanel::updateSelectedCursor(QwtPlotMarker *cursor)
+void TrackingPanel::changeSelectedCursor(QwtPlotMarker *cursor)
 {DD;
     for (int i=0; i<cursors.size(); ++i) {
         if (cursors[i] == cursor) {
@@ -429,7 +427,7 @@ void TrackingPanel::updateSelectedCursor(QwtPlotMarker *cursor)
 }
 
 void TrackingPanel::moveCursor(bool right)
-{
+{DD;
     for (int i=0; i<cursors.size(); ++i) {
         if (cursors[i]->current) {
             if (right) spins[i]->setValue(spins[i]->value()+mStep);
@@ -438,18 +436,20 @@ void TrackingPanel::moveCursor(bool right)
     }
 }
 
-//done
-void TrackingPanel::setXValue(QwtPlotMarker *cursor, double value)
+//установка любого курсора передвижением мышью
+//вызывается: PlotPicker->cursorMovedTo
+void TrackingPanel::setXValue(double value)
 {DD;
-    if (!cursor) return;
-
-    int index = cursors.indexOf(dynamic_cast<TrackingCursor*>(cursor));
-    if (index < 0 || index > 3) return;
-
-    setX(value, index);
+    for (int i=0; i<cursors.size(); ++i) {
+        if (cursors[i]->current) {
+            setX(value, i);
+        }
+    }
 }
 
 // установка первых двух курсоров
+//вызывается: 1. щелчком мыши по канве графика - сигнал PlotZoom->updateTrackingCursor
+//            2. щелчком мыши по шкале Х - сигнал AxisZoom->updateTrackingCursor
 void TrackingPanel::setXValue(double value, bool second)
 {DD;
     if (second) setX(value, 1);

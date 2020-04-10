@@ -31,10 +31,10 @@
 #include <qwt_scale_draw.h>
 #include <qwt_scale_map.h>
 
-class QMainZoomSvc; // интерфейс масштабирования графика
-class QDragZoomSvc; // интерфейс перемещения графика
-class QWheelZoomSvc;
-class QAxisZoomSvc;
+class PlotZoom; // интерфейс масштабирования графика
+class DragZoom; // интерфейс перемещения графика
+class WheelZoom;
+class AxisZoom;
 
 class ChartZoom : public QObject
 {
@@ -67,9 +67,9 @@ public:
     {
     public:
         // конструктор
-        explicit ScaleBounds(QwtPlot *,QwtPlot::Axis);
+        explicit ScaleBounds(QwtPlot *plot, QwtAxisId axis);
 
-        QwtPlot::Axis axis;   // основная шкала
+        QwtAxisId axis;   // основная шкала
 
         bool isFixed() const {return fixed;}
         void setFixed(bool fixed);
@@ -112,17 +112,15 @@ public:
     // указатель на опекаемый компонент QwtPlot
     QwtPlot *plot();
 
-    void setZoomEnabled(bool enabled);
-
     void addZoom(const zoomCoordinates &coords, bool apply = false);
     void zoomBack();
 
     bool activated;
 public slots:
-    void labelSelected(bool selected);
+    void setZoomEnabled(bool enabled);
 signals:
     void updateTrackingCursor(double,bool);
-    void contextMenuRequested(const QPoint &pos, const int axis);
+    void contextMenuRequested(const QPoint &pos, QwtAxisId axis);
     void moveCursor(bool right);
 protected:
     // обработчик всех событий
@@ -135,12 +133,12 @@ private:
     QwtPlot *qwtPlot;          // Компонент QwtPlot, который отображает график
 
     // Интерфейс масштабирования графика
-    QMainZoomSvc *mainZoom;
+    PlotZoom *mainZoom;
     // Интерфейс перемещения графика
-    QDragZoomSvc *dragZoom;
+    DragZoom *dragZoom;
 
-    QWheelZoomSvc *wheelZoom;
-    QAxisZoomSvc *axisZoom;
+    WheelZoom *wheelZoom;
+    AxisZoom *axisZoom;
 
     ConvType convType;     // Тип текущего преобразования графика
 

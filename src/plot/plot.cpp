@@ -92,7 +92,7 @@ Plot::Plot(QWidget *parent) :
     yValuesPresentationRight = DataHolder::ShowAsDefault;
 
 
-//    setAxesCount(QwtPlot::xBottom,2);
+//    setAxesCount(QwtAxis::xBottom,2);
     interactionMode = ScalingInteraction;
 
     // grid
@@ -102,9 +102,7 @@ Plot::Plot(QWidget *parent) :
     grid->setMinorPen(Qt::darkGray, 0, Qt::DotLine);
     grid->attach(this);
 
-    xScale = false;
-    y1Scale = false;
-    y2Scale = false;
+    xScaleIsLogarithmic = false;
 
     CheckableLegend *leg = new CheckableLegend();
     connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
@@ -117,20 +115,18 @@ Plot::Plot(QWidget *parent) :
     zoom = new ChartZoom(this);
     zoom->setZoomEnabled(true);
     connect(zoom,SIGNAL(updateTrackingCursor(double,bool)), trackingPanel, SLOT(setXValue(double,bool)));
-    connect(zoom,SIGNAL(contextMenuRequested(QPoint,int)),SLOT(showContextMenu(QPoint,int)));
+    connect(zoom,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)),SLOT(showContextMenu(QPoint,QwtAxisId)));
     connect(zoom,SIGNAL(moveCursor(bool)), trackingPanel, SLOT(moveCursor(bool)));
 
     picker = new PlotPicker(canvas);
-    connect(picker,SIGNAL(labelSelected(bool)),zoom,SLOT(labelSelected(bool)));
-    connect(picker,SIGNAL(updateTrackingCursor(double,bool)),trackingPanel, SLOT(setXValue(double,bool)));
-    connect(picker,SIGNAL(cursorMovedTo(QwtPlotMarker*,double)), trackingPanel, SLOT(setXValue(QwtPlotMarker*,double)));
-    connect(picker,SIGNAL(cursorSelected(QwtPlotMarker*)), trackingPanel, SLOT(updateSelectedCursor(QwtPlotMarker*)));
-    connect(picker,SIGNAL(moveCursor(bool)), trackingPanel, SLOT(moveCursor(bool)));
+    connect(picker,SIGNAL(setZoomEnabled(bool)), zoom,SLOT(setZoomEnabled(bool)));
+    connect(picker,SIGNAL(cursorMovedTo(double)),            trackingPanel, SLOT(setXValue(double)));
+    connect(picker,SIGNAL(cursorSelected(QwtPlotMarker*)),   trackingPanel, SLOT(changeSelectedCursor(QwtPlotMarker*)));
+    connect(picker,SIGNAL(moveCursor(bool)),                 trackingPanel, SLOT(moveCursor(bool)));
     // передаем информацию об установленном курсоре в picker, чтобы тот смог обновить инфу о выделенном курсоре
-    connect(trackingPanel,SIGNAL(cursorSelected(QwtPlotMarker*)), picker, SLOT(updateSelectedCursor(QwtPlotMarker*)));
 
     connect(picker,SIGNAL(cursorSelected(QwtPlotMarker*)), playerPanel, SLOT(updateSelectedCursor(QwtPlotMarker*)));
-    connect(picker,SIGNAL(cursorMovedTo(QwtPlotMarker*,double)), playerPanel, SLOT(setXValue(QwtPlotMarker*,double)));
+    connect(picker,SIGNAL(cursorMovedTo(double)), playerPanel, SLOT(setXValue(double)));
 
 
     picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
@@ -266,7 +262,7 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
         }
         if (rightCurves.isEmpty()) {
             yRightName.clear();
-            enableAxis(QwtPlot::yRight, false);
+            enableAxis(QwtAxis::yRight, false);
         }
         if (!hasCurves()) {
             xName.clear();
@@ -279,21 +275,16 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
     }
 }
 
-void Plot::showContextMenu(const QPoint &pos, const int axis)
+void Plot::showContextMenu(const QPoint &pos, QwtAxisId axis)
 {DD;
     if (!hasCurves()) return;
 
     QMenu *menu = new QMenu(this);
-    bool *scale = 0;
 
-    if (axis == QwtPlot::xBottom) scale = &xScale;
-    if (axis == QwtPlot::yLeft) scale = &y1Scale;
-    if (axis == QwtPlot::yRight) scale = &y2Scale;
-
-    if (scale && axis == QwtPlot::xBottom)
-    menu->addAction((*scale)?"Линейная шкала":"Логарифмическая шкала", [=](){
+    if (axis.pos == QwtAxis::xBottom)
+    menu->addAction(xScaleIsLogarithmic?"Линейная шкала":"Логарифмическая шкала", [=](){
         QwtScaleEngine *engine = 0;
-        if (!(*scale)) {
+        if (!xScaleIsLogarithmic) {
             engine = new LogScaleEngine();
 //            engine = new QwtLogScaleEngine();
             engine->setBase(2);
@@ -302,9 +293,10 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
         else {
             engine = new QwtLinearScaleEngine();
         }
-        setAxisScaleEngine(xBottomAxis, engine);
+        if (engine)
+            setAxisScaleEngine(xBottomAxis, engine);
 
-        if (scale) *scale = !(*scale);
+        xScaleIsLogarithmic = !xScaleIsLogarithmic;
     });
 
     // определяем, все ли графики представляют временные данные
@@ -317,10 +309,10 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
         }
     }
 
-    if (time && axis == QwtPlot::xBottom) {
+    if (time && axis.pos == QwtAxis::xBottom) {
         menu->addAction("Сохранить временной сегмент", [=](){
-            double xStart = canvasMap(xBottom).s1();
-            double xEnd = canvasMap(xBottom).s2();
+            double xStart = canvasMap(axis).s1();
+            double xEnd = canvasMap(axis).s2();
 
             QList<FileDescriptor*> files;
 
@@ -335,11 +327,11 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
 
     QList<Curve*> list;
     int *ax = 0;
-    if (axis == QwtPlot::yLeft && !leftCurves.isEmpty()) {
+    if (axis.pos == QwtAxis::yLeft && !leftCurves.isEmpty()) {
         list = leftCurves;
         ax = &yValuesPresentationLeft;
     }
-    if (axis == QwtPlot::yRight && !rightCurves.isEmpty()) {
+    if (axis.pos == QwtAxis::yRight && !rightCurves.isEmpty()) {
         list = rightCurves;
         ax = &yValuesPresentationRight;
     }
@@ -384,7 +376,7 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
                 c->channel->data()->setYValuesPresentation(presentation);
             }
             *ax = presentation;
-            this->recalculateScale(axis == QwtPlot::yLeft);
+            this->recalculateScale(axis.pos == QwtAxis::yLeft);
             this->update();
         });
 
@@ -405,7 +397,7 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
             double delta = leftMap.invTransform((p1+p2)/2.0);
 
             ChartZoom::zoomCoordinates coords;
-            coords.coords.insert(QwtPlot::yLeft, {s1-delta, s2-delta});
+            coords.coords.insert(QwtAxis::yLeft, {s1-delta, s2-delta});
 
             // 2. Центруем нуль правой оси
             QwtScaleMap rightMap = canvasMap(yRight);
@@ -416,23 +408,23 @@ void Plot::showContextMenu(const QPoint &pos, const int axis)
             p2 = rightMap.p2();
             delta = rightMap.invTransform((p1+p2)/2.0);
 
-            coords.coords.insert(QwtPlot::yRight, {s1-delta, s2-delta});
+            coords.coords.insert(QwtAxis::yRight, {s1-delta, s2-delta});
             zoom->addZoom(coords, true);
         });
         menu->addAction("Совместить диапазоны левой и правой осей", [=](){
-            QwtScaleMap leftMap = canvasMap(yLeft);
+            QwtScaleMap leftMap = canvasMap(QwtAxis::yLeft);
             double s1 = leftMap.s1();
             double s2 = leftMap.s2();
 
-            QwtScaleMap rightMap = canvasMap(yRight);
+            QwtScaleMap rightMap = canvasMap(QwtAxis::yRight);
             double s3 = rightMap.s1();
             double s4 = rightMap.s2();
             double s = std::min(s1,s3);
             double ss = std::min(s2,s4);
 
             ChartZoom::zoomCoordinates coords;
-            coords.coords.insert(QwtPlot::yLeft, {s, ss});
-            coords.coords.insert(QwtPlot::yRight, {s, ss});
+            coords.coords.insert(QwtAxis::yLeft, {s, ss});
+            coords.coords.insert(QwtAxis::yRight, {s, ss});
 
             zoom->addZoom(coords, true);
         });
@@ -463,18 +455,17 @@ bool Plot::canBePlottedOnRightAxis(Channel *ch)
     return false;
 }
 
-void Plot::prepareAxis(int axis)
+void Plot::prepareAxis(QwtAxisId axis)
 {DD;
-    if (!axisEnabled(axis))
-        enableAxis(axis);
+    if (!isAxisVisible(axis)) setAxisVisible(axis);
 }
 
-void Plot::setAxis(int axis, const QString &name)
+void Plot::setAxis(QwtAxisId axis, const QString &name)
 {DD;
-    switch (axis) {
-        case QwtPlot::yLeft: yLeftName = name; break;
-        case QwtPlot::yRight: yRightName = name; break;
-        case QwtPlot::xBottom: xName = name; break;
+    switch (axis.pos) {
+        case QwtAxis::yLeft: yLeftName = name; break;
+        case QwtAxis::yRight: yRightName = name; break;
+        case QwtAxis::xBottom: xName = name; break;
         default: break;
     }
 }
@@ -482,16 +473,16 @@ void Plot::setAxis(int axis, const QString &name)
 void Plot::moveToAxis(int axis, double min, double max)
 {DD;
     switch (axis) {
-        case QwtPlot::xBottom:
+        case QwtAxis::xBottom:
             zoom->horizontalScaleBounds->add(min, max);
             if (!zoom->horizontalScaleBounds->isFixed()) zoom->horizontalScaleBounds->autoscale();
             break;
-        case QwtPlot::yLeft:
+        case QwtAxis::yLeft:
             zoom->verticalScaleBoundsSlave->removeToAutoscale(min, max);
             zoom->verticalScaleBounds->add(min, max);
             if (!zoom->verticalScaleBounds->isFixed()) zoom->verticalScaleBounds->autoscale();
             break;
-        case QwtPlot::yRight:
+        case QwtAxis::yRight:
             zoom->verticalScaleBounds->removeToAutoscale(min, max);
             zoom->verticalScaleBoundsSlave->add(min, max);
             if (!zoom->verticalScaleBoundsSlave->isFixed()) zoom->verticalScaleBoundsSlave->autoscale();
@@ -502,29 +493,29 @@ void Plot::moveToAxis(int axis, double min, double max)
 
 void Plot::updateAxesLabels()
 {DD;
-    if (leftCurves.isEmpty()) enableAxis(QwtPlot::yLeft, false);
+    if (leftCurves.isEmpty()) enableAxis(QwtAxis::yLeft, false);
     else {
-        enableAxis(QwtPlot::yLeft, axisLabelsVisible);
+        enableAxis(QwtAxis::yLeft, axisLabelsVisible);
         QString suffix = yValuesPresentationSuffix(yValuesPresentationLeft);
         QwtText text(QString("%1 <small>%2</small>").arg(yLeftName).arg(suffix), QwtText::RichText);
         if (axisLabelsVisible)
-            setAxisTitle(QwtPlot::yLeft, text);
+            setAxisTitle(QwtAxis::yLeft, text);
         else
-            setAxisTitle(QwtPlot::yLeft, "");
+            setAxisTitle(QwtAxis::yLeft, "");
     }
 
-    if (rightCurves.isEmpty()) enableAxis(QwtPlot::yRight, false);
+    if (rightCurves.isEmpty()) enableAxis(QwtAxis::yRight, false);
     else {
-        enableAxis(QwtPlot::yRight, axisLabelsVisible);
+        enableAxis(QwtAxis::yRight, axisLabelsVisible);
         QString suffix = yValuesPresentationSuffix(yValuesPresentationRight);
         QwtText text(QString("%1 <small>%2</small>").arg(yRightName).arg(suffix), QwtText::RichText);
         if (axisLabelsVisible)
-            setAxisTitle(QwtPlot::yRight, text);
+            setAxisTitle(QwtAxis::yRight, text);
         else
-            setAxisTitle(QwtPlot::yRight, "");
+            setAxisTitle(QwtAxis::yRight, "");
     }
-    if (axisEnabled(QwtPlot::xBottom)) {
-        setAxisTitle(QwtPlot::xBottom, axisLabelsVisible ? xName : "");
+    if (axisEnabled(QwtAxis::xBottom)) {
+        setAxisTitle(QwtAxis::xBottom, axisLabelsVisible ? xName : "");
     }
 }
 
@@ -538,8 +529,8 @@ void Plot::removeLabels()
 
 void Plot::moveCurve(Curve *curve, int axis)
 {DD;
-    if ((axis == QwtPlot::yLeft && canBePlottedOnLeftAxis(curve->channel))
-        || (axis == QwtPlot::yRight && canBePlottedOnRightAxis(curve->channel))) {
+    if ((axis == QwtAxis::yLeft && canBePlottedOnLeftAxis(curve->channel))
+        || (axis == QwtAxis::yRight && canBePlottedOnRightAxis(curve->channel))) {
         prepareAxis(axis);
         setAxis(axis, curve->channel->yName());
         curve->setYAxis(axis);
@@ -573,7 +564,7 @@ void Plot::moveCurve(Curve *curve, int axis)
 void Plot::moveCurve(QwtPlotItem *curve)
 {
     if (Curve *c = dynamic_cast<Curve*>(curve))
-        moveCurve(c, c->yAxis() == QwtPlot::yLeft ? QwtPlot::yRight : QwtPlot::yLeft);
+        moveCurve(c, c->yAxis() == QwtAxis::yLeft ? QwtAxis::yRight : QwtAxis::yLeft);
 }
 
 void Plot::fixCurve(QwtPlotItem *curve)
@@ -672,8 +663,8 @@ bool Plot::plotCurve(FileDescriptor *descriptor, int channel, QColor *col, bool 
     }
 
 
-    setAxis(QwtPlot::xBottom, descriptor->xName());
-    prepareAxis(QwtPlot::xBottom);
+    setAxis(xBottomAxis, descriptor->xName());
+    prepareAxis(xBottomAxis);
 
     // если графиков нет, по умолчанию будем строить амплитуды по первому добавляемому графику
     if (!plotOnRight && leftCurves.isEmpty()) {
@@ -686,7 +677,7 @@ bool Plot::plotCurve(FileDescriptor *descriptor, int channel, QColor *col, bool 
     if (!plotOnRight) ch->data()->setYValuesPresentation(yValuesPresentationLeft);
     else ch->data()->setYValuesPresentation(yValuesPresentationRight);
 
-    QwtPlot::Axis ax = plotOnRight ? QwtPlot::yRight : QwtPlot::yLeft;
+    QwtAxisId ax = plotOnRight ? yRightAxis : yLeftAxis;
 
     setAxis(ax, ch->yName());
     prepareAxis(ax);
@@ -718,7 +709,7 @@ bool Plot::plotCurve(FileDescriptor *descriptor, int channel, QColor *col, bool 
 
 
     ChartZoom::ScaleBounds *ybounds = 0;
-    if (zoom->verticalScaleBounds->axis == ax) ybounds = zoom->verticalScaleBounds;
+    if (zoom->verticalScaleBounds->axis == ax.pos) ybounds = zoom->verticalScaleBounds;
     else ybounds = zoom->verticalScaleBoundsSlave;
 
     zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
@@ -749,19 +740,19 @@ Curve * Plot::plotted(Channel *channel) const
 
 Range Plot::xRange() const
 {
-    QwtScaleMap sm = canvasMap(QwtPlot::xBottom);
+    QwtScaleMap sm = canvasMap(QwtAxis::xBottom);
     return {sm.s1(), sm.s2()};
 }
 
 Range Plot::yLeftRange() const
 {
-    QwtScaleMap sm = canvasMap(QwtPlot::yLeft);
+    QwtScaleMap sm = canvasMap(QwtAxis::yLeft);
     return {sm.s1(), sm.s2()};
 }
 
 Range Plot::yRightRange() const
 {
-    QwtScaleMap sm = canvasMap(QwtPlot::yRight);
+    QwtScaleMap sm = canvasMap(QwtAxis::yRight);
     return {sm.s1(), sm.s2()};
 }
 
@@ -914,7 +905,7 @@ void Plot::importPlot(const QString &fileName)
     renderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);
     renderer.setLayoutFlag(QwtPlotRenderer::FrameWithScales);
 
-    QFont axisfont = axisFont(QwtPlot::yLeft);
+    QFont axisfont = axisFont(QwtAxis::yLeft);
     axisfont.setPointSize(axisfont.pointSize()+1);
 
     for (int i=0; i<QwtPlot::axisCnt; ++i)

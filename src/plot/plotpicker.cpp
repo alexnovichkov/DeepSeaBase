@@ -56,9 +56,8 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
     const int key = e->key();
 
     if (key == Qt::Key_Left) {
-        if (d_selectedCursor) {
+//        if (d_selectedCursor)
             emit moveCursor(false);
-        }
         if (d_selectedPoint > 0) {
             highlightPoint(false);
             d_selectedPoint--;
@@ -66,9 +65,8 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
         }
     }
     else if (key == Qt::Key_Right) {
-        if (d_selectedCursor) {
+//        if (d_selectedCursor)
             emit moveCursor(true);
-        }
         if (d_selectedPoint >=0 && d_selectedPoint < d_selectedCurve->samplesCount()-1) {
             highlightPoint(false);
             d_selectedPoint++;
@@ -112,7 +110,7 @@ void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
                 }
             }
             d_selectedLabel = 0;
-            emit labelSelected(false);
+            emit setZoomEnabled(true);
             plot->replot();
         }
     }
@@ -133,11 +131,6 @@ void PlotPicker::widgetKeyPressEvent(QKeyEvent *e)
     else QwtPlotPicker::widgetKeyPressEvent(e);
 }
 
-void PlotPicker::updateSelectedCursor(QwtPlotMarker *cursor)
-{
-    if (cursor) d_selectedCursor = cursor;
-}
-
 void PlotPicker::resetHighLighting()
 {DD;
     highlightPoint(false);
@@ -155,7 +148,7 @@ void PlotPicker::resetHighLighting()
     plot->updateLegend();
 
     emit cursorSelected(d_selectedCursor);
-    emit labelSelected(false);
+    emit setZoomEnabled(true);
 }
 
 Curve * PlotPicker::findClosestPoint(const QPoint &pos, int &index) const
@@ -206,7 +199,7 @@ QwtPlotMarker *PlotPicker::findCursor(const QPoint &pos)
     for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
         if ((*it )->rtti() == QwtPlotItem::Rtti_PlotMarker ) {
             if (TrackingCursor *c = static_cast<TrackingCursor *>(*it )) {
-                int newX = (int)(plot->transform(QwtPlot::xBottom, c->xValue()));
+                int newX = (int)(plot->transform(QwtAxis::xBottom, c->xValue()));
                 if (qAbs(newX-pos.x())<=5) {
                     return c;
                 }
@@ -231,16 +224,16 @@ void PlotPicker::pointAppended(const QPoint &pos)
     emit cursorSelected(d_selectedCursor);
 
     if (d_selectedCursor) {
-        d_currentPos = pos;
-        emit labelSelected(true);
+      //  d_currentPos = pos;
+        emit setZoomEnabled(false);
     }
     else if (d_selectedLabel) {
         d_selectedLabel->setSelected(true);
         d_currentPos = pos;
-        emit labelSelected(true);
+        emit setZoomEnabled(false);
     }
     else {
-        emit labelSelected(mode == Plot::DataInteraction);
+        emit setZoomEnabled(mode == Plot::ScalingInteraction);
         if ((curve = findClosestPoint(pos, index))) {
             d_selectedCurve = curve;
             d_selectedPoint = index;
@@ -257,10 +250,6 @@ void PlotPicker::pointMoved(const QPoint &pos)
         d_selectedLabel->moveBy(pos-d_currentPos);
         d_currentPos = pos;
     }
-    else if (d_selectedCursor) {
-        emit cursorMovedTo(d_selectedCursor, plot->invTransform(QwtPlot::xBottom, pos.x()));
-        d_currentPos = pos;
-    }
 
     else if (mode == Plot::DataInteraction) {
         if (d_selectedCurve) {
@@ -271,6 +260,8 @@ void PlotPicker::pointMoved(const QPoint &pos)
             highlightPoint(true);
         }
     }
+    else
+        emit cursorMovedTo(plot->invTransform(QwtAxis::xBottom, pos.x()));
 }
 
 // Hightlight the selected point
@@ -280,7 +271,6 @@ void PlotPicker::highlightPoint(bool showIt)
         if (!d_selectedCurve)
             return;
         QPointF val = d_selectedCurve->samplePoint(d_selectedPoint);
-        emit updateTrackingCursor(val.x(),false);
         if (!marker) {
             marker = new QwtPlotMarker();
             marker->setLineStyle(QwtPlotMarker::NoLine);
@@ -294,14 +284,17 @@ void PlotPicker::highlightPoint(bool showIt)
             marker->attach(plot);
 
         }
+
         marker->setValue(val);
         if (marker->label()==QwtText()) {
             marker->setLabel(QwtText(QString::number(val.x(),'f',2)));
         }
+        marker->show();
     }
     else {
-        delete marker;
-        marker = 0;
+        if (marker) marker->hide();
+//        delete marker;
+//        marker = 0;
     }
 
 

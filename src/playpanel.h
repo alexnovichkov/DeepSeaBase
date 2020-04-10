@@ -40,7 +40,7 @@ private slots:
 public slots:
     void update();
     void updateSelectedCursor(QwtPlotMarker *cursor);
-    void setXValue(QwtPlotMarker *c, double xVal);
+    void setXValue(double xVal);
     // QWidget interface
 protected:
     virtual void closeEvent(QCloseEvent *event);

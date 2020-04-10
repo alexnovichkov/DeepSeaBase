@@ -1,4 +1,4 @@
-#include "qdragzoomsvc.h"
+#include "dragzoom.h"
 
 #include "logging.h"
 #include "chartzoom.h"
@@ -17,17 +17,17 @@
 /*                                                        */
 /**********************************************************/
 
-QDragZoomSvc::QDragZoomSvc() : QObject()
+DragZoom::DragZoom() : QObject()
 {DD;
 }
 
-void QDragZoomSvc::attach(ChartZoom *zm)
+void DragZoom::attach(ChartZoom *zm)
 {DD;
     zoom = zm;
     zm->plot()->installEventFilter(this);
 }
 
-bool QDragZoomSvc::eventFilter(QObject *target,QEvent *event)
+bool DragZoom::eventFilter(QObject *target,QEvent *event)
 {
     if (target == zoom->plot()) {
         if (event->type() == QEvent::MouseButtonPress ||
@@ -38,7 +38,7 @@ bool QDragZoomSvc::eventFilter(QObject *target,QEvent *event)
     return QObject::eventFilter(target,event);
 }
 
-void QDragZoomSvc::applyDrag(QPoint mousePos, bool moveRightAxis)
+void DragZoom::applyDrag(QPoint mousePos, bool moveRightAxis)
 {DD;
     QRect cg = zoom->plot()->canvas()->geometry();
     // scp_x - координата курсора в пикселах по горизонтальной оси
@@ -66,7 +66,7 @@ void QDragZoomSvc::applyDrag(QPoint mousePos, bool moveRightAxis)
     }
 }
 
-void QDragZoomSvc::dragMouseEvent(QEvent *event)
+void DragZoom::dragMouseEvent(QEvent *event)
 {DD;
     QMouseEvent *mEvent = static_cast<QMouseEvent *>(event);
 
@@ -81,7 +81,7 @@ void QDragZoomSvc::dragMouseEvent(QEvent *event)
     }
 }
 
-void QDragZoomSvc::startDrag(QMouseEvent *mEvent)
+void DragZoom::startDrag(QMouseEvent *mEvent)
 {DD;
     if (zoom->regime() == ChartZoom::ctNone) {
         QwtPlot *plot = zoom->plot();
@@ -100,15 +100,15 @@ void QDragZoomSvc::startDrag(QMouseEvent *mEvent)
             // определяем текущий масштабирующий множитель по горизонтальной оси
             // (т.е. узнаем на сколько изменяется координата по шкале x
             // при перемещении курсора вправо на один пиксел)
-            horizontalFactor = plot->invTransform(QwtPlot::xBottom, horizontalCursorPosition + 1) -
-                               plot->invTransform(QwtPlot::xBottom,horizontalCursorPosition);
+            horizontalFactor = plot->invTransform(QwtAxis::xBottom, horizontalCursorPosition + 1) -
+                               plot->invTransform(QwtAxis::xBottom,horizontalCursorPosition);
 
-            QwtScaleMap sm = plot->canvasMap(QwtPlot::xBottom);
+            QwtScaleMap sm = plot->canvasMap(QwtAxis::xBottom);
             minHorizontalBound = sm.s1();
             maxHorizontalBound = sm.s2();
 
             if (mEvent->modifiers() & Qt::ControlModifier) {
-                QwtPlot::Axis mY = QwtPlot::yRight;
+                QwtAxisId mY(QwtAxis::yRight);
                 verticalFactor1 = plot->invTransform(mY,verticalCursorPosition + 1) -
                                   plot->invTransform(mY,verticalCursorPosition);
                 sm = plot->canvasMap(mY);
@@ -116,7 +116,7 @@ void QDragZoomSvc::startDrag(QMouseEvent *mEvent)
                 maxVerticalBound1 = sm.s2();
             }
             else {
-                QwtPlot::Axis mY = QwtPlot::yLeft;
+                QwtAxisId mY(QwtAxis::yLeft);
                 verticalFactor = plot->invTransform(mY,verticalCursorPosition + 1) -
                                  plot->invTransform(mY,verticalCursorPosition);
                 sm = plot->canvasMap(mY);
@@ -128,7 +128,7 @@ void QDragZoomSvc::startDrag(QMouseEvent *mEvent)
 }
 
 
-void QDragZoomSvc::proceedDrag(QMouseEvent *mEvent)
+void DragZoom::proceedDrag(QMouseEvent *mEvent)
 {DD;
     if (zoom->regime() == ChartZoom::ctDrag) {
         zoom->plot()->canvas()->setCursor(Qt::ClosedHandCursor);
@@ -136,24 +136,24 @@ void QDragZoomSvc::proceedDrag(QMouseEvent *mEvent)
     }
 }
 
-void QDragZoomSvc::endDrag(QMouseEvent *mEvent)
+void DragZoom::endDrag(QMouseEvent *mEvent)
 {DD;
     Q_UNUSED(mEvent);
 
     if (zoom->regime() == ChartZoom::ctDrag) {
-            zoom->plot()->canvas()->setCursor(tCursor);
-            zoom->setRegime(ChartZoom::ctNone);
+        zoom->plot()->canvas()->setCursor(tCursor);
+        zoom->setRegime(ChartZoom::ctNone);
 
-            ChartZoom::zoomCoordinates coords;
-            if (!qFuzzyIsNull(dx)) {
-                coords.coords.insert(QwtPlot::xBottom, {minHorizontalBound + dx, maxHorizontalBound + dx});
-            }
-            if (!qFuzzyIsNull(dy)) {
-                coords.coords.insert(QwtPlot::yLeft, {minVerticalBound + dy, maxVerticalBound + dy});
-            }
-            if (!qFuzzyIsNull(dy1)) {
-                coords.coords.insert(QwtPlot::yRight, {minVerticalBound1 + dy1, maxVerticalBound1 + dy1});
-            }
-            if (!coords.coords.isEmpty()) zoom->addZoom(coords);
+        ChartZoom::zoomCoordinates coords;
+        if (!qFuzzyIsNull(dx)) {
+            coords.coords.insert(QwtAxis::xBottom, {minHorizontalBound + dx, maxHorizontalBound + dx});
         }
+        if (!qFuzzyIsNull(dy)) {
+            coords.coords.insert(QwtAxis::yLeft, {minVerticalBound + dy, maxVerticalBound + dy});
+        }
+        if (!qFuzzyIsNull(dy1)) {
+            coords.coords.insert(QwtAxis::yRight, {minVerticalBound1 + dy1, maxVerticalBound1 + dy1});
+        }
+        if (!coords.coords.isEmpty()) zoom->addZoom(coords);
+    }
 }

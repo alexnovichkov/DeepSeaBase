@@ -1,12 +1,12 @@
 #include "playpanel.h"
-#include "plot.h"
+#include "plot/plot.h"
 #include "qwt_plot_marker.h"
 #include "fileformats/filedescriptor.h"
 
 #include <QtWidgets>
 #include <QAudioOutput>
 #include "dataiodevice.h"
-#include "curve.h"
+#include "plot/curve.h"
 #include "trackingpanel.h"
 
 PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
@@ -17,7 +17,7 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
     cursor = new TrackingCursor(Qt::green);
     cursor->showYValues = true;
     cursor->attach(plot);
-    cursor->setAxes(QwtPlot::xBottom, QwtPlot::yLeft);
+    cursor->setAxes(QwtAxis::xBottom, QwtAxis::yLeft);
     cursor->setVisible(false);
 
     playButton = new QToolButton(this);
@@ -163,9 +163,9 @@ void PlayPanel::updateSelectedCursor(QwtPlotMarker *c)
     }
 }
 
-void PlayPanel::setXValue(QwtPlotMarker *c, double xVal)
+void PlayPanel::setXValue(/*QwtPlotMarker *c, */double xVal)
 {
-    if (cursor != c) return;
+    if (!cursor->current) return;
     if (!ch) return;
 
     // здесь xVal - произвольное число, соответствующее какому-то положению на оси X

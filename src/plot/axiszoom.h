@@ -21,17 +21,17 @@
 
 #include "chartzoom.h"
 
-class QAxisZoomSvc : public QObject
+class AxisZoom : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit QAxisZoomSvc();
+    explicit AxisZoom();
     void attach(ChartZoom *);
 signals:
     void xAxisClicked(double xValue, bool second);
-    void contextMenuRequested(const QPoint &pos, const int axis);
-    void needsAutoscale(int axis);
+    void contextMenuRequested(const QPoint &pos, QwtAxisId axis);
+    void needsAutoscale(QwtAxisId axis);
     void moveCursor(bool right);
 protected:
     bool eventFilter(QObject *,QEvent *);
@@ -56,15 +56,15 @@ private:
 
     // ограничение нового размера шкалы
     double limitScale(double,double);
-    void axisApplyMove(QPoint,int);
+    void axisApplyMove(QPoint, QwtAxisId);
 
-    void axisMouseEvent(QEvent *event, int axis);
+    void axisMouseEvent(QEvent *event, QwtAxisId axis);
     void procKeyboardEvent(QEvent *event);
 
-    void startVerticalAxisZoom(QMouseEvent *event, int axis);
-    void startHorizontalAxisZoom(QMouseEvent *event, int axis);
-    void proceedAxisZoom(QMouseEvent *,int);
-    void endAxisZoom(QMouseEvent *,int);
+    void startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis);
+    void startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis);
+    void proceedAxisZoom(QMouseEvent *, QwtAxisId axis);
+    void endAxisZoom(QMouseEvent *, QwtAxisId axis);
 
 };
 
