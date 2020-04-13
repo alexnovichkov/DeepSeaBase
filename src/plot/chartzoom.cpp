@@ -27,11 +27,7 @@
 ChartZoom::ChartZoom(QwtPlot *plot) :
     QObject(plot),  qwtPlot(plot)
 {DD;
-    // получаем главное окно
-    mwin = generalParent(plot);
-
-    // и назначаем обработчик событий (фильтр событий)
-    mwin->installEventFilter(this);
+    plot->installEventFilter(this);
 
     // сбрасываем признак режима
     convType = ctNone;
@@ -87,18 +83,6 @@ ChartZoom::~ChartZoom()
     delete verticalScaleBoundsSlave;
 }
 
-// Определение главного родителя
-QObject *ChartZoom::generalParent(QObject *p)
-{DD;
-    QObject *generalParent_ = p;
-    QObject *tp = generalParent_->parent();
-    while (tp != 0) {
-        generalParent_ = tp;
-        tp = generalParent_->parent();
-    }
-    return generalParent_;
-}
-
 // Текущий режим масштабирования
 ChartZoom::ConvType ChartZoom::regime()
 {
@@ -110,22 +94,8 @@ void ChartZoom::setRegime(ChartZoom::ConvType ct) {DD;
     convType = ct;
 }
 
-// указатель на опекаемый компонент QwtPlot
 QwtPlot *ChartZoom::plot() {
     return qwtPlot;
-}
-
-// Обработчик всех событий
-bool ChartZoom::eventFilter(QObject *target,QEvent *event)
-{
-    if (target == mwin)
-        if (event->type() == QEvent::Show || event->type() == QEvent::Resize)
-            qwtPlot->replot();
-    if (target == qwtPlot)
-        if (event->type() == QEvent::Resize)
-            qwtPlot->replot();
-
-    return QObject::eventFilter(target,event);
 }
 
 void ChartZoom::setZoomEnabled(bool enabled)

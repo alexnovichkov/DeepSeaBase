@@ -122,21 +122,11 @@ signals:
     void updateTrackingCursor(double,bool);
     void contextMenuRequested(const QPoint &pos, QwtAxisId axis);
     void moveCursor(bool right);
-protected:
-    // обработчик всех событий
-    bool eventFilter(QObject *,QEvent *);
-
 private:
+    QwtPlot *qwtPlot;
 
-
-    QObject *mwin;          // Главное окно приложения
-    QwtPlot *qwtPlot;          // Компонент QwtPlot, который отображает график
-
-    // Интерфейс масштабирования графика
     PlotZoom *mainZoom;
-    // Интерфейс перемещения графика
     DragZoom *dragZoom;
-
     WheelZoom *wheelZoom;
     AxisZoom *axisZoom;
 
@@ -144,9 +134,6 @@ private:
 
     // сохраняемый стэк масштабирования
     QStack<zoomCoordinates> zoomStack;
-
-    // определение главного родителя
-    QObject *generalParent(QObject *);
 };
 
 

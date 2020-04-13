@@ -22,16 +22,15 @@
 #include "trackingpanel.h"
 
 PlotPicker::PlotPicker(QWidget *canvas) :
-    QwtPlotPicker(canvas),
-    d_selectedPoint( -1 ),
-    d_selectedCurve( NULL )
+    QwtPlotPicker(canvas)
 {DD;
     plot = qobject_cast<QwtPlotCanvas*>(canvas)->plot();
 
     marker = 0;
     mode = Plot::ScalingInteraction;
     d_selectedLabel = 0;
-
+    d_selectedPoint = -1;
+    d_selectedCurve = 0;
     d_selectedCursor = 0;
 
     setStateMachine(new QwtPickerDragPointMachine);
@@ -49,6 +48,7 @@ PlotPicker::~PlotPicker()
 void PlotPicker::setMode(Plot::InteractionMode mode)
 {DD;
     this->mode = mode;
+    qDebug()<<mode;
 }
 
 void PlotPicker::widgetKeyReleaseEvent(QKeyEvent *e)
@@ -241,6 +241,12 @@ void PlotPicker::pointAppended(const QPoint &pos)
             d_selectedCurve->highlight();
             highlightPoint(true);
         }
+        else {
+            d_selectedCurve = 0;
+            d_selectedPoint = -1;
+
+            highlightPoint(false);
+        }
     }
 }
 
@@ -286,15 +292,11 @@ void PlotPicker::highlightPoint(bool showIt)
         }
 
         marker->setValue(val);
-        if (marker->label()==QwtText()) {
-            marker->setLabel(QwtText(QString::number(val.x(),'f',2)));
-        }
+        marker->setLabel(QwtText(QString::number(val.x(),'f',2)));
         marker->show();
     }
     else {
         if (marker) marker->hide();
-//        delete marker;
-//        marker = 0;
     }
 
 
