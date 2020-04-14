@@ -6,6 +6,7 @@
 #include "qwt_text.h"
 #include "qwt_legend_data.h"
 #include "qwt_scale_map.h"
+#include "pointlabel.h"
 
 BarCurve::BarCurve(const QString &title, FileDescriptor *descriptor, int channelIndex) :  QwtPlotHistogram(title),
     Curve(title, descriptor, channelIndex)
@@ -46,6 +47,20 @@ QwtAxisId BarCurve::yAxis() const
 void BarCurve::setYAxis(QwtAxisId axis)
 {
     QwtPlotHistogram::setYAxis(axis);
+    foreach (PointLabel *l, labels)
+        l->setYAxis(axis);
+}
+
+QwtAxisId BarCurve::xAxis() const
+{
+    return QwtPlotHistogram::xAxis();
+}
+
+void BarCurve::setXAxis(QwtAxisId axis)
+{
+    QwtPlotHistogram::setXAxis(axis);
+    foreach (PointLabel *l, labels)
+        l->setXAxis(axis);
 }
 
 QPen BarCurve::pen() const

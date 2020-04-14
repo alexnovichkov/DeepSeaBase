@@ -10,6 +10,7 @@
 #include "fileformats/filedescriptor.h"
 #include "qwt_plot.h"
 #include <QPainter>
+#include "pointlabel.h"
 
 struct PointBlock
 {
@@ -262,6 +263,20 @@ QwtAxisId LineCurve::yAxis() const
 void LineCurve::setYAxis(QwtAxisId axis)
 {
     QwtPlotCurve::setYAxis(axis);
+    foreach (PointLabel *l, labels)
+        l->setYAxis(axis);
+}
+
+QwtAxisId LineCurve::xAxis() const
+{
+    return QwtPlotCurve::xAxis();
+}
+
+void LineCurve::setXAxis(QwtAxisId axis)
+{
+    QwtPlotCurve::setXAxis(axis);
+    foreach (PointLabel *l, labels)
+        l->setXAxis(axis);
 }
 
 QPen LineCurve::pen() const

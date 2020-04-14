@@ -5,19 +5,23 @@
 #include "logging.h"
 #include <QPen>
 #include <QPainter>
+#include "curve.h"
 
-PointLabel::PointLabel(QwtPlot *parent)
+PointLabel::PointLabel(QwtPlot *parent, Curve *curve)
     : QwtPlotItem(),
       d_point(-1),
       d_origin(QPointF(0.0, 0.0)),
       d_displacement(QPoint(0, -13)),
      // d_label(title),
       plot(parent),
-      d_selected(false)
+      d_selected(false),
+      curve(curve)
 {DD;
     setZ(40.0);
     d_label.setBorderPen(d_selected?QPen(Qt::darkGray, 1, Qt::DashLine):QPen(Qt::NoPen));
     d_mode=0;
+    setXAxis(curve->xAxis());
+    setYAxis(curve->yAxis());
 }
 
 PointLabel::~PointLabel()
@@ -160,10 +164,10 @@ void PointLabel::moveBy(const QPoint &pos)
     itemChanged();
 }
 
-bool PointLabel::contains(const QPoint &pos, QwtAxisId yAxis)
+bool PointLabel::contains(const QPoint &pos)
 {DD;
-    QPointF point(plot->transform(QwtAxisId(QwtAxis::xBottom,0), d_origin.x()),
-                plot->transform(/*QwtAxis::yLeft*/yAxis, d_origin.y()));
+    QPointF point(plot->transform(curve->xAxis(), d_origin.x()),
+                plot->transform(curve->yAxis(), d_origin.y()));
 
     const QSizeF textSize = d_label.textSize();
 

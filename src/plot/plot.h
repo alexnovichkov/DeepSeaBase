@@ -15,10 +15,11 @@ class FileDescriptor;
 
 class ChartZoom;
 class QwtPlotZoomer;
-class PlotPicker;
+class PlotTracker;
 class QAction;
 class QwtScaleEngine;
 class QwtPlotMarker;
+class Picker;
 
 struct Range {
     void clear() {min = INFINITY; max = -INFINITY;}
@@ -173,8 +174,9 @@ private:
     QList<Curve *> rightCurves;
 
     QwtPlotGrid *grid;
-    PlotPicker *picker;
-    QwtPlotCanvas *canvas;
+    PlotTracker *tracker;
+    Picker *_picker;
+    QwtPlotCanvas *_canvas;
 
 
 

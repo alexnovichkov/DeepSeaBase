@@ -452,8 +452,14 @@ void TrackingPanel::setXValue(double value)
 //            2. щелчком мыши по шкале Х - сигнал AxisZoom->updateTrackingCursor
 void TrackingPanel::setXValue(double value, bool second)
 {DD;
-    if (second) setX(value, 1);
-    else setX(value, 0);
+    if (second /*&& cursors[1]->current*/) {
+        changeSelectedCursor(cursors[1]);
+        setX(value, 1);
+    }
+    else /*if (cursors[0]->current)*/ {
+        changeSelectedCursor(cursors[0]);
+        setX(value, 0);
+    }
 }
 
 TrackingCursor::TrackingCursor(const QColor &col)

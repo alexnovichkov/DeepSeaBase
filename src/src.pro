@@ -97,14 +97,16 @@ SOURCES += main.cpp\
     plot/barcurve.cpp \
     plot/plot.cpp \
     plot/legend.cpp \
-    plot/plotpicker.cpp \
     plot/logscaleengine.cpp \
     plot/pointlabel.cpp \
     plot/chartzoom.cpp \
     plot/plotzoom.cpp \
     plot/axiszoom.cpp \
     plot/dragzoom.cpp \
-    plot/wheelzoom.cpp
+    plot/wheelzoom.cpp \
+    plot/picker.cpp \
+    plot/pointmarker.cpp \
+    plot/plottracker.cpp
 
 HEADERS  += mainwindow.h \
     fileformats/dfdfiledescriptor.h \
@@ -179,14 +181,16 @@ HEADERS  += mainwindow.h \
     plot/curve.h \
     plot/linecurve.h \
     plot/barcurve.h \
-    plot/plotpicker.h \
     plot/logscaleengine.h \
     plot/pointlabel.h \
     plot/chartzoom.h \
     plot/plotzoom.h \
     plot/axiszoom.h \
     plot/dragzoom.h \
-    plot/wheelzoom.h
+    plot/wheelzoom.h \
+    plot/picker.h \
+    plot/pointmarker.h \
+    plot/plottracker.h
 
 SOURCES +=\
   $$PWD/../3rdParty/DspFilters/*.cpp \

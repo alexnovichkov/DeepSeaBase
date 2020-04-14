@@ -41,14 +41,14 @@
 #include "colorselector.h"
 #include "legend.h"
 
-#include "plotpicker.h"
+#include "plottracker.h"
 #include "logscaleengine.h"
 
 #include "logging.h"
 #include "trackingpanel.h"
 
 #include "dataiodevice.h"
-
+#include "picker.h"
 
 #include "playpanel.h"
 
@@ -67,11 +67,11 @@ Curve * createCurve(const QString &legendName, FileDescriptor *descriptor, int c
 Plot::Plot(QWidget *parent) :
     QwtPlot(parent), zoom(0)
 {DD;
-    canvas = new QwtPlotCanvas();
-    canvas->setFocusIndicator(QwtPlotCanvas::CanvasFocusIndicator);
-    canvas->setPalette(Qt::white);
-    canvas->setFrameStyle(QFrame::StyledPanel);
-    setCanvas(canvas);
+    _canvas = new QwtPlotCanvas();
+    _canvas->setFocusIndicator(QwtPlotCanvas::CanvasFocusIndicator);
+    _canvas->setPalette(Qt::white);
+    _canvas->setFrameStyle(QFrame::StyledPanel);
+    setCanvas(_canvas);
     //setContextMenuPolicy(Qt::ActionsContextMenu);
 
     setAutoReplot(true);
@@ -118,18 +118,16 @@ Plot::Plot(QWidget *parent) :
     connect(zoom,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)),SLOT(showContextMenu(QPoint,QwtAxisId)));
     connect(zoom,SIGNAL(moveCursor(bool)), trackingPanel, SLOT(moveCursor(bool)));
 
-    picker = new PlotPicker(canvas);
-    connect(picker,SIGNAL(setZoomEnabled(bool)), zoom,SLOT(setZoomEnabled(bool)));
-    connect(picker,SIGNAL(cursorMovedTo(double)),            trackingPanel, SLOT(setXValue(double)));
-    connect(picker,SIGNAL(cursorSelected(QwtPlotMarker*)),   trackingPanel, SLOT(changeSelectedCursor(QwtPlotMarker*)));
-    connect(picker,SIGNAL(moveCursor(bool)),                 trackingPanel, SLOT(moveCursor(bool)));
-    // передаем информацию об установленном курсоре в picker, чтобы тот смог обновить инфу о выделенном курсоре
+    tracker = new PlotTracker(_canvas);
+    tracker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
 
-    connect(picker,SIGNAL(cursorSelected(QwtPlotMarker*)), playerPanel, SLOT(updateSelectedCursor(QwtPlotMarker*)));
-    connect(picker,SIGNAL(cursorMovedTo(double)), playerPanel, SLOT(setXValue(double)));
-
-
-    picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
+    _picker = new Picker(this);
+    _picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
+    connect(_picker,SIGNAL(setZoomEnabled(bool)), zoom, SLOT(setZoomEnabled(bool)));
+    connect(_picker,SIGNAL(cursorSelected(QwtPlotMarker*)), trackingPanel, SLOT(changeSelectedCursor(QwtPlotMarker*)));
+    connect(_picker,SIGNAL(xAxisClicked(double,bool)),      trackingPanel, SLOT(setXValue(double,bool)));
+    connect(_picker,SIGNAL(cursorMovedTo(double)),          trackingPanel, SLOT(setXValue(double)));
+    connect(_picker,SIGNAL(moveCursor(bool)),               trackingPanel, SLOT(moveCursor(bool)));
 }
 
 Plot::~Plot()
@@ -138,7 +136,8 @@ Plot::~Plot()
     delete playerPanel;
     qDeleteAll(curves);
     delete grid;
-    delete picker;
+    delete tracker;
+    delete _picker;
 
     MainWindow::setSetting("axisLabelsVisible", axisLabelsVisible);
     MainWindow::setSetting("autoscale-x", !zoom->horizontalScaleBounds->isFixed());
@@ -891,10 +890,10 @@ void Plot::autoscale(int axis)
 void Plot::setInteractionMode(Plot::InteractionMode mode)
 {DD;
     interactionMode = mode;
-    if (picker) picker->setMode(mode);
+    if (_picker) _picker->setMode(mode);
     if (zoom)
         zoom->setZoomEnabled(mode == ScalingInteraction);
-    if (canvas) canvas->setFocusIndicator(mode == ScalingInteraction?
+    if (_canvas) _canvas->setFocusIndicator(mode == ScalingInteraction?
                                               QwtPlotCanvas::CanvasFocusIndicator:
                                               QwtPlotCanvas::ItemFocusIndicator);
 }
@@ -947,10 +946,11 @@ void Plot::importPlot(const QString &fileName)
 
 void Plot::switchCursor()
 {DD;
-    if (!picker) return;
+    if (!_picker) return;
 
-    bool pickerEnabled = picker->isEnabled();
-    picker->setEnabled(!pickerEnabled);
+    bool pickerEnabled = _picker->isEnabled();
+    _picker->setEnabled(!pickerEnabled);
+    tracker->setEnabled(!pickerEnabled);
     MainWindow::setSetting("pickerEnabled", !pickerEnabled);
 }
 

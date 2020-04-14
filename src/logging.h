@@ -2,6 +2,7 @@
 #define LOGGING_H
 
 #include <QString>
+#include <QtDebug>
 
 //#define DO_TRACE
 

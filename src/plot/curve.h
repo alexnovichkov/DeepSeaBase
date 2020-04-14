@@ -30,6 +30,9 @@ public:
     virtual QwtAxisId yAxis() const = 0;
     virtual void setYAxis(QwtAxisId axis) = 0;
 
+    virtual QwtAxisId xAxis() const = 0;
+    virtual void setXAxis(QwtAxisId axis) = 0;
+
     virtual QPen pen() const = 0;
     virtual void setPen(const QPen &pen) = 0;
 
@@ -43,7 +46,7 @@ public:
     void removeLabel(PointLabel *label);
     void removeLabels();
     /** find label by canvas position */
-    PointLabel *findLabel(const QPoint &pos, QwtAxisId yAxis);
+    PointLabel *findLabel(const QPoint &pos/*, QwtAxisId yAxis*/);
     /** find label by point on a curve */
     PointLabel *findLabel(const int point);
     virtual void resetHighlighting();

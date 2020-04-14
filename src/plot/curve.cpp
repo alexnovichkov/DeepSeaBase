@@ -42,7 +42,7 @@ void Curve::addLabel(PointLabel *label)
 void Curve::removeLabel(PointLabel *label)
 {DD;
     if (labels.contains(label)) {
-        labels.removeAll(label);
+        labels.removeOne(label);
         label->detach();
         delete label;
     }
@@ -57,10 +57,10 @@ void Curve::removeLabels()
     labels.clear();
 }
 
-PointLabel *Curve::findLabel(const QPoint &pos, QwtAxisId yAxis)
+PointLabel *Curve::findLabel(const QPoint &pos/*, QwtAxisId yAxis*/)
 {DD;
     foreach (PointLabel *l, labels)
-        if (l->contains(pos, yAxis))
+        if (l->contains(pos/*, yAxis*/))
             return l;
 
     return 0;
@@ -78,8 +78,8 @@ PointLabel *Curve::findLabel(const int point)
 void Curve::resetHighlighting()
 {
     setPen(oldPen);
-    foreach(PointLabel *label, labels)
-        if (label) label->setSelected(false);
+//    foreach(PointLabel *label, labels)
+//        if (label) label->setSelected(false);
     highlighted = false;
 }
 

@@ -5,6 +5,7 @@
 
 #include "qwt_text.h"
 class QwtPlot;
+class Curve;
 #include <QtCore>
 
 /**
@@ -15,7 +16,7 @@ class QwtPlot;
 class PointLabel : public QwtPlotItem
 {
 public:
-    explicit PointLabel(QwtPlot *parent);
+    explicit PointLabel(QwtPlot *parent, Curve *curve);
 
     virtual ~PointLabel();
 
@@ -50,7 +51,7 @@ public:
 
     void moveBy(const QPoint &pos);
 
-    bool contains(const QPoint &pos, QwtAxisId yAxis);
+    bool contains(const QPoint &pos);
 private:
     int d_mode;
     int d_point;
@@ -59,6 +60,8 @@ private:
     QwtText d_label;
     QwtPlot *plot;
     bool d_selected;
+public:
+    Curve *curve;
 };
 
 #endif // POINTLABEL_H

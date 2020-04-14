@@ -328,10 +328,11 @@ void DataHolder::setYValues(const QVector<double> &values, YValuesFormat initial
 
 bool DataHolder::setYValue(int index, double value)
 {
-    if (index < 0 || index >= m_count
-        || index >= m_yValuesTemporal.size()
-        || index >= m_yValues.size()
-        || index >= m_yValuesComplex.size()) return false;
+    if (index < 0 || index >= m_count) return false;
+    if (!m_yValuesTemporal.isEmpty() && index >= m_yValuesTemporal.size()) return false;
+    if (!m_yValues.isEmpty() && index >= m_yValues.size()) return false;
+    if (!m_yValuesComplex.isEmpty() && index >= m_yValuesComplex.size()) return false;
+
     if (m_yValuesTemporal[index] == value) return false;
 
     if (int(m_yValuesFormat) == int(m_yValuesPresentation)) {

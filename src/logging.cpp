@@ -3,8 +3,6 @@
 //#ifdef DO_TRACE
 
 #include <QTime>
-#include <QtDebug>
-
 
 Trace::Trace(const QString &msg) : _msg(msg)
 {
