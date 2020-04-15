@@ -1,7 +1,8 @@
 #include "data94file.h"
-#include <QtDebug>
+
 #include <QJsonDocument>
 #include "algorithms.h"
+#include "logging.h"
 
 Data94File::Data94File(const QString &fileName) : FileDescriptor(fileName)
 {
@@ -23,7 +24,6 @@ Data94File::Data94File(const FileDescriptor &other) : FileDescriptor(other.fileN
 {
     //TODO: Data94File доделать создание файла
 }
-
 
 void Data94File::fillPreliminary(Descriptor::DataType)
 {
@@ -49,10 +49,9 @@ void Data94File::read()
         return;
     }
 
+    //reading file description
     quint32 descriptionSize;
     r >> descriptionSize;
-
-    //reading file description
     QByteArray descriptionBuffer = r.device()->read(descriptionSize);
     if ((quint32)descriptionBuffer.size() != descriptionSize) {
         qDebug()<<"не удалось прочитать описание файла";
@@ -80,7 +79,13 @@ void Data94File::read()
     }
 
     //дальше - каналы
-
+    quint32 channelsCount;
+    r >> channelsCount;
+    for (quint32 i = 0; i < channelsCount; ++i) {
+        Data94Channel *c = new Data94Channel(this);
+        c->read(r);
+        channels << c;
+    }
 }
 
 void Data94File::write()
@@ -281,6 +286,17 @@ QString Data94File::fileFilters() const
 
 /*Data94Channel implementation*/
 
+Data94Channel::Data94Channel(Data94File *parent) : Channel(),
+    parent(parent)
+{
+
+}
+
+void Data94Channel::read(QDataStream &r)
+{
+
+}
+
 void Data94Channel::setXStep(double xStep)
 {
 
@@ -386,7 +402,7 @@ void Data94Block::write(QDataStream &r)
 }
 
 void XAxisBlock::read(QDataStream &r)
-{
+{DD;
     if (r.status() != QDataStream::Ok) return;
 
     r.setFloatingPointPrecision(QDataStream::DoublePrecision);
@@ -409,7 +425,7 @@ void XAxisBlock::read(QDataStream &r)
 }
 
 void XAxisBlock::write(QDataStream &r)
-{
+{DD;
     if (r.status() != QDataStream::Ok) return;
 
     r.setFloatingPointPrecision(QDataStream::DoublePrecision);

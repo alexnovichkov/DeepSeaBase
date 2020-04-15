@@ -33,6 +33,8 @@
  *
  *
  * //Далее идут записи каналов
+ * quint32 channelsCount - количество каналов
+ *
  * quint64 descriptionSize - длина текстового описания в байтах
  * char[descriptionSize] description - текстовое описание данных
  * //Блок данных для оси Y
@@ -179,7 +181,10 @@ private:
 class Data94Channel : public Channel
 {
 public:
-
+    Data94Channel(Data94File *parent);
+    Data94Channel(Data94Channel *other);
+    Data94Channel(Channel *other);
+    void read(QDataStream &r);
     void setXStep(double xStep);
 
     // Channel interface
@@ -203,6 +208,10 @@ public:
     virtual int index() const override;
     virtual QString correction() const override;
     virtual void setCorrection(const QString &s) override;
+private:
+    friend class Data94File;
+    Data94File *parent;
+
 };
 
 #endif // DATA94FILE_H
