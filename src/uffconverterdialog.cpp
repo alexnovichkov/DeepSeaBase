@@ -220,7 +220,7 @@ bool UffConvertor::convert()
         emit message("<font color=green>Конвертируем файл "+fi+"</font>");
 
         bool fileIsDfd = fi.endsWith(".dfd",Qt::CaseInsensitive);
-        bool fileIsUff = fi.endsWith(".uff",Qt::CaseInsensitive) || fi.endsWith(".unv",Qt::CaseInsensitive);
+        bool fileIsUff = fi.endsWith(".uff",Qt::CaseInsensitive);
 
 
         QString sourceFileName = fi;

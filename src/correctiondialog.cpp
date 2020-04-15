@@ -250,9 +250,7 @@ void CorrectionDialog::accept()
         f->write();
         f->writeRawFile();
     }
-//    plot->updateAxes();
-//    plot->updateLegends();
-//    plot->replot();
+
     plot->recalculateScale(true);
     plot->recalculateScale(false);
     plot->update();

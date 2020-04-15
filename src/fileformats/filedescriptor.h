@@ -79,6 +79,7 @@ public:
     virtual void writeRawFile() = 0;
     virtual void populate();
     virtual void updateDateTimeGUID() = 0;
+    virtual bool copyTo(const QString &name);
 
     virtual Descriptor::DataType type() const = 0;
     virtual QString typeDisplay() const = 0;

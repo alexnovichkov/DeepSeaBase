@@ -284,6 +284,7 @@ public:
     virtual void fillPreliminary(Descriptor::DataType);
     virtual void fillRest();
     static DfdFileDescriptor *newFile(const QString &fileName, DfdDataType type);
+    virtual bool copyTo(const QString &name) override;
 
     QDateTime dateTime() const;
     virtual Descriptor::DataType type() const;
@@ -365,7 +366,7 @@ public:
 
 private:
     static DfdFileDescriptor *newThirdOctaveFile(const QString &fileName);
-    bool rewriteRawFile(const QVector<QPair<int,int> > &indexesVector);
+    bool rewriteRawFile(const QVector<QPair<int,int> > &indexesVector, DfdFileDescriptor *fileToRewrite = 0);
     void copyChannelsFrom_plain(FileDescriptor *file, const QVector<int> &indexes);
 
     friend class DataDescription;

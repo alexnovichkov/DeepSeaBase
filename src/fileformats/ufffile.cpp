@@ -660,7 +660,7 @@ bool UffFileDescriptor::dataTypeEquals(FileDescriptor *other) const
 
 QString UffFileDescriptor::fileFilters() const
 {DD;
-    return QString("Файлы uff (*.uff);;Файлы unv (*.unv)");
+    return QString("Файлы uff (*.uff)");
 }
 
 

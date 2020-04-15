@@ -49,6 +49,11 @@ void FileDescriptor::populate()
     }
 }
 
+bool FileDescriptor::copyTo(const QString &name)
+{
+    return QFile::copy(fileName(), name);
+}
+
 // возвращает округленную длину записи:
 // 3200,0001 -> 3200
 // 3199,9999 -> 3200

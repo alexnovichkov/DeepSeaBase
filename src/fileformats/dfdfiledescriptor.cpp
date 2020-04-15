@@ -350,17 +350,10 @@ void DfdFileDescriptor::read()
                 else if (DataType == OSpectr) {
                     for (int i=0; i<NumInd; ++i) xValues << pow(2.0, i+1);
                 }
-                //xValues изменились, пихаем их в канал
+                //xValues изменились, пихаем их обратно в канал
                 firstChannel->data()->setXValues(xValues);
             }
-            //            // перенумерация каналов
-            //            for (int i=0; i<channels.size(); ++i) {
-            //                channels[i]->channelIndex = i;
-            //            }
-
-            //            delete firstChannel;
         }
-        //    }
     }
 }
 
@@ -373,19 +366,6 @@ void DfdFileDescriptor::write()
     if (!file.open(QFile::WriteOnly | QFile::Text)) return;
     QTextStream dfd(&file);
     dfd.setCodec(codec);
-
-//    if (XStep == 0.0) {
-//        // возвращаем старое название оси х
-//        XName = "№№ полос";
-//    }
-
-    // убираем перекрытие блоков, если пишем не сырые данные
-    if (type() != Descriptor::TimeResponse)
-        BlockSize = 0;
-    else {
-        // если временные данные, то убираем перекрытие, только если были изменены данные
-        if (dataChanged()) BlockSize = 0;
-    }
 
     /** [DataFileDescriptor]*/
     dfd << "[DataFileDescriptor]" << endl;
@@ -417,25 +397,8 @@ void DfdFileDescriptor::write()
         process->write(dfd);
     }
 
-    // сохраняем каналы так, чтобы не пришлось добавлять канал абсцисс к списку каналов.
-    // Для этого создаем временный канал
     /** Channels*/
     int b = 0;
-//    if (XStep == 0.0) {// uneven abscissa, adding channel
-//        if (!channels.isEmpty()) {
-//            DfdChannel ch(*(channels.first()));
-//            ch.ChanAddress.clear(); //
-//            ch.ChanName = "ось X"; //
-//            ch.YName="Гц";
-//            ch.YNameOld.clear();
-//            ch.InputType.clear();
-//            ch.ChanDscr.clear();
-//            ch.channelIndex = 0; // нумерация с 0
-
-//            ch.write(dfd, 0);
-//            b = 1;
-//        }
-//    }
 
     for (int i=0; i<channels.size(); ++i)
         channels[i]->write(dfd, i+b);
@@ -576,6 +539,15 @@ DfdFileDescriptor *DfdFileDescriptor::newFile(const QString &fileName, DfdDataTy
     return dfd;
 }
 
+bool DfdFileDescriptor::copyTo(const QString &name)
+{
+    QString rawFile = name;
+    QString suffix = QFileInfo(name).suffix();
+    rawFile.replace(rawFile.length() - suffix.length(), suffix.length(), "raw");
+
+    return FileDescriptor::copyTo(name) && QFile::copy(rawFileName, rawFile);
+}
+
 DfdFileDescriptor *DfdFileDescriptor::newThirdOctaveFile(const QString &fileName)
 {
     DfdFileDescriptor *dfd = new DfdFileDescriptor(fileName);
@@ -692,6 +664,7 @@ void DfdFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
 
     bool tempFileSuccessful = rewriteRawFile(indexesVector);
 
+    // не удалось переписать файл raw, читаем весь файл и перезаписываем стандартным интерфейсом
     if (!tempFileSuccessful)
         populate();
 
@@ -701,6 +674,7 @@ void DfdFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
         }
     }
 
+    //перенумеровываем каналы
     for (int i=0; i<channels.size(); ++i) {
         channels[i]->channelIndex = i;
     }
@@ -755,8 +729,24 @@ void DfdFileDescriptor::copyChannelsFrom_plain(FileDescriptor *file, const QVect
 
 void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int> &indexes)
 {DD;
-    copyChannelsFrom_plain(file, indexes);
-    return;
+    //Этот метод никогда не вызывается в только что созданном, пустом файле
+    //Поэтому всегда можно предполагать, что в нем есть каналы
+
+    if (channelsCount() == 0) {
+        qDebug()<<"Попытка скопировать каналы в пустой файл";
+        return;
+    }
+
+    //мы должны добавить каналы из file
+    //и дописать к файлу данных новые данные
+
+    //особое внимание нужно уделить тем файлам, у которых BlockSize != 0,
+    //так как они записаны с перекрытием, и придется сначала прочитать канал, а потом переписать его заново
+
+
+
+//    copyChannelsFrom_plain(file, indexes);
+//    return;
 
     /* TODO: переписать весь алгоритм */
 
@@ -782,44 +772,40 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int
 
     DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(file);
     if (dfd) {// работаем с файлом raw
-        if (channelsCount() == 0) {// если каналов нет, то просто копируем данные из файла raw
-            if (QFile::exists(this->rawFileName)) QFile::remove(this->rawFileName);
+        if (channelsCount() == 0) {
+            // если каналов нет, то просто копируем данные из файла raw
+            // все форматы данных будут скопированы из dfd
 
+            if (QFile::exists(this->rawFileName))
+                QFile::remove(this->rawFileName);
 
-
-
-
-
+            BlockSize = 0;
+            DataType = dfd->DataType;
 
             // заполняем информацию о каналах
+            // данные копируются тоже, но это нам не надо
+            QVector<QPair<int, int> > inds;
             for (int index=0; index<dfd->channelsCount(); ++index) {
-                if (dfd->DataType == SourceData) {
+                if (indexes.contains(index)) {
                     RawChannel *raw = dynamic_cast<RawChannel*>(dfd->channels[index]);
                     if (raw)
                         channels.append(new RawChannel(*raw, this));
                     else
                         channels.append(new DfdChannel(*dfd->channels[index], this));
+                    inds.append(qMakePair<int,int>(index,0)); // 0 = keep, 1 = delete
                 }
                 else
-                    channels.append(new DfdChannel(*dfd->channels[index], this));
+                    inds.append(qMakePair<int,int>(index,1)); // 0 = keep, 1 = delete
             }
-            BlockSize = dfd->BlockSize;
 
-            QVector<QPair<int, int> > inds;
-            for (int i=0; i<dfd->channelsCount(); ++i)
-                if (indexes.contains(i))
-                    inds.append(qMakePair<int,int>(i,0)); // 0 = keep, 1 = delete
-                else
-                    inds.append(qMakePair<int,int>(i,1)); // 0 = keep, 1 = delete
-            rewrited = rewriteRawFile(inds);
-
-
+            rewrited = rewriteRawFile(inds, dfd);
 
             XName = file->xName();
 
             for (int i=0; i<channels.size(); ++i) {
                 channels[i]->channelIndex = i;
                 channels[i]->parent = this;
+                channels[i]->ChanBlockSize = NumInd;
             }
 
             //меняем параметры файла dfd
@@ -829,7 +815,7 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int
             setChanged(true);
             write();
         }
-        else {// каналы уже были, копируем обычным образом
+        else {// каналы уже были, добавляем данные к имеющемуся файлу raw
             copyChannelsFrom_plain(file, indexes);
             return;
         }
@@ -1068,25 +1054,178 @@ QString DfdFileDescriptor::calculateThirdOctave()
     return thirdOctaveFileName;
 }
 
-bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVector)
+//bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVector)
+//{
+//    if (indexesVector.isEmpty()) return false;
+
+//    // переписываем файл данных во временный файл, которым затем подменим исходный raw
+//    QTemporaryFile tempFile;
+//    QFile rawFile(rawFileName);
+
+//    if (tempFile.open() && rawFile.open(QFile::ReadOnly)) {
+//        qDebug()<<"работаем через временный файл";
+//        //работаем через временный файл - читаем один канал и записываем его во временный файл
+//        if (!channels[0]->dataPositions.isEmpty()) {
+//            qDebug()<<"- используем dataPositions";
+//            for (int ind = 0; ind < indexesVector.size(); ++ind) {
+
+//                // пропускаем канал, предназначенный для удаления
+//                if (indexesVector.at(ind).second == 1) continue; // 0 = keep, 1 = delete
+
+//                DfdChannel *ch = channels[indexesVector.at(ind).first];
+//                qint64 dataPos = tempFile.pos();
+//                //пишем канал целиком
+//                foreach (int pos, ch->dataPositions) {
+//                    rawFile.seek(pos);
+//                    QByteArray b = rawFile.read(ch->blockSizeInBytes());
+//                    tempFile.write(b);
+//                }
+//                tempFile.flush();
+
+//                // меняем размер блока и обновляем положение данных
+//                ch->dataPositions.clear();
+//                ch->dataPositions.append(dataPos);
+//                ch->ChanBlockSize = this->NumInd;
+//                this->BlockSize = 0;
+//                qDebug()<<"-- меняем BlockSize на 0";
+//            }
+//        }
+//        else {
+//            qDebug()<<"- dataPositions отсутствуют";
+//            if (BlockSize == 1) {
+//                qDebug()<<"-- BlockSize == 1";
+//                // trying to map file into memory
+//                unsigned char *ptr = rawFile.map(0, rawFile.size());
+//                if (ptr) {//достаточно памяти отобразить весь файл
+//                    qDebug()<<"-- работаем через ptr";
+//                    qDebug()<<"-- меняем BlockSize на 0";
+//                    unsigned char *ptrCurrent = ptr;
+
+//                    for (int ind = 0; ind < indexesVector.size(); ++ind) {
+//                        // пропускаем канал, предназначенный для удаления
+//                        if (indexesVector.at(ind).second == 1) continue; // 0 = keep, 1 = delete
+
+//                        DfdChannel *ch = channels[indexesVector.at(ind).first];
+//                        qint64 dataPos = tempFile.pos();
+//                        const int bytes = ch->IndType % 16;
+//                        for (int i=0; i<this->NumInd; ++i) {
+//                            ptrCurrent = ptr + (indexesVector.at(ind).first + i*channelsCount()) * bytes;
+//                            tempFile.write((char*)(ptrCurrent), bytes);
+//                        }
+//                        tempFile.flush();
+
+//                        // меняем размер блока и обновляем положение данных
+//                        ch->dataPositions.clear();
+//                        ch->dataPositions.append(dataPos);
+//                        ch->ChanBlockSize = this->NumInd;
+//                        this->BlockSize = 0;
+//                    }
+
+//                    rawFile.unmap(ptr);
+//                }
+//                else {
+//                    qDebug()<<"-- не меняем BlockSize";
+//                    // не удалось прочитать никакими оптимальными методами, читаем медленным классическим
+//                    int actuallyRead = 0;
+//                    const int chunkSizeBytes = channelsCount() * channels[0]->blockSizeInBytes();
+
+//                    while (1) {
+//                        QByteArray temp = rawFile.read(chunkSizeBytes);
+//                        actuallyRead = temp.size();
+//                        if (actuallyRead == 0)
+//                            break;
+//                        if (actuallyRead < chunkSizeBytes) {
+//                            temp.resize(chunkSizeBytes);
+//                            actuallyRead = 0;
+//                        }
+
+//                        for (int ind = 0; ind < indexesVector.size(); ++ind) {
+//                            // пропускаем канал, предназначенный для удаления
+//                            if (indexesVector.at(ind).second == 1) continue; // 0 = keep, 1 = delete
+
+//                            tempFile.write(temp.mid(indexesVector.at(ind).first * channels[indexesVector.at(ind).first]->blockSizeInBytes(),
+//                                           channels[indexesVector.at(ind).first]->blockSizeInBytes()));
+//                        }
+
+//                        if (actuallyRead == 0)
+//                            break;
+//                    }
+//                }
+//            }
+//            else {
+//                qDebug()<<"-- не меняем BlockSize";
+//                // не удалось прочитать никакими оптимальными методами, читаем медленным классическим
+//                int actuallyRead = 0;
+//                const int chunkSizeBytes = channelsCount() * channels[0]->blockSizeInBytes();
+
+//                while (1) {
+//                    QByteArray temp = rawFile.read(chunkSizeBytes);
+//                    actuallyRead = temp.size();
+//                    if (actuallyRead == 0)
+//                        break;
+//                    if (actuallyRead < chunkSizeBytes) {
+//                        temp.resize(chunkSizeBytes);
+//                        actuallyRead = 0;
+//                    }
+
+//                    for (int ind = 0; ind < indexesVector.size(); ++ind) {
+//                        // пропускаем канал, предназначенный для удаления
+//                        if (indexesVector.at(ind).second == 1) continue; // 0 = keep, 1 = delete
+
+//                        tempFile.write(temp.mid(indexesVector.at(ind).first * channels[indexesVector.at(ind).first]->blockSizeInBytes(),
+//                                       channels[indexesVector.at(ind).first]->blockSizeInBytes()));
+//                    }
+
+//                    if (actuallyRead == 0)
+//                        break;
+//                }
+//            }
+//        }
+
+//        //подменяем исходный файл raw временным
+//        rawFile.close();
+//        tempFile.close();
+//        if (rawFile.remove()) {
+//            tempFile.copy(rawFileName);
+//            return true;
+//        }
+//        else {
+//            qDebug()<<" Couldn't replace raw file with temp file.";
+//            return false;
+//        }
+//    }
+//    return false;
+//}
+
+bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVector,
+                                       DfdFileDescriptor *fileToRewrite)
 {
     if (indexesVector.isEmpty()) return false;
+    QString rfn;
+    DfdFileDescriptor *dfd = fileToRewrite;
+    if (dfd) {
+        rfn = fileToRewrite->rawFileName;
+    }
+    else {
+        dfd = this;
+        rfn = rawFileName;
+    }
 
     // переписываем файл данных во временный файл, которым затем подменим исходный raw
     QTemporaryFile tempFile;
-    QFile rawFile(rawFileName);
+    QFile rawFile(rfn);
 
     if (tempFile.open() && rawFile.open(QFile::ReadOnly)) {
         qDebug()<<"работаем через временный файл";
         //работаем через временный файл - читаем один канал и записываем его во временный файл
-        if (!channels[0]->dataPositions.isEmpty()) {
+        if (!dfd->channels[0]->dataPositions.isEmpty()) {
             qDebug()<<"- используем dataPositions";
             for (int ind = 0; ind < indexesVector.size(); ++ind) {
 
                 // пропускаем канал, предназначенный для удаления
                 if (indexesVector.at(ind).second == 1) continue; // 0 = keep, 1 = delete
 
-                DfdChannel *ch = channels[indexesVector.at(ind).first];
+                DfdChannel *ch = dfd->channels[indexesVector.at(ind).first];
                 qint64 dataPos = tempFile.pos();
                 //пишем канал целиком
                 foreach (int pos, ch->dataPositions) {
@@ -1097,79 +1236,65 @@ bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVe
                 tempFile.flush();
 
                 // меняем размер блока и обновляем положение данных
-                ch->dataPositions.clear();
-                ch->dataPositions.append(dataPos);
-                ch->ChanBlockSize = this->NumInd;
+                if (fileToRewrite == this) {
+                    ch->dataPositions.clear();
+                    ch->dataPositions.append(dataPos);
+                    ch->ChanBlockSize = dfd->NumInd;
+                }
                 this->BlockSize = 0;
                 qDebug()<<"-- меняем BlockSize на 0";
             }
         }
         else {
             qDebug()<<"- dataPositions отсутствуют";
-            if (BlockSize == 1) {
-                qDebug()<<"-- BlockSize == 1";
-                // trying to map file into memory
-                unsigned char *ptr = rawFile.map(0, rawFile.size());
-                if (ptr) {//достаточно памяти отобразить весь файл
-                    qDebug()<<"-- работаем через ptr";
-                    qDebug()<<"-- меняем BlockSize на 0";
-                    unsigned char *ptrCurrent = ptr;
-                    for (int ind = 0; ind < indexesVector.size(); ++ind) {
-                        // пропускаем канал, предназначенный для удаления
-                        if (indexesVector.at(ind).second == 1) continue; // 0 = keep, 1 = delete
 
-                        DfdChannel *ch = channels[indexesVector.at(ind).first];
-                        qint64 dataPos = tempFile.pos();
-                        int bytes = ch->IndType % 16;
-                        for (int i=0; i<this->NumInd; ++i) {
+            // trying to map file into memory
+            unsigned char *ptr = rawFile.map(0, rawFile.size());
+            if (ptr) {//достаточно памяти отобразить весь файл
+                qDebug()<<"-- работаем через ptr";
+                qDebug()<<"-- меняем BlockSize на 0";
+                unsigned char *ptrCurrent = ptr;
+
+                for (int ind = 0; ind < indexesVector.size(); ++ind) {
+                    // пропускаем канал, предназначенный для удаления
+                    if (indexesVector.at(ind).second == 1) continue; // 0 = keep, 1 = delete
+
+                    DfdChannel *ch = dfd->channels[indexesVector.at(ind).first];
+                    qint64 dataPos = tempFile.pos();
+                    const int bytes = ch->IndType % 16;
+                    for (int i=0; i < dfd->NumInd; ++i) {
+                        /*
+                        * i-й отсчет n-го канала имеет номер
+                        * n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
+                        *
+                        * если BlockSize=1 или ChanBlockSize=1, то
+                        * n + i*ChannelsCount
+                        */
+                        if (ch->ChanBlockSize == 1)
                             ptrCurrent = ptr + (indexesVector.at(ind).first + i*channelsCount()) * bytes;
-                            tempFile.write((char*)(ptrCurrent), bytes);
-                        }
-                        tempFile.flush();
+                        else
+                            ptrCurrent = ptr + (indexesVector.at(ind).first * ch->ChanBlockSize
+                                                + (i/ch->ChanBlockSize) * ch->ChanBlockSize * channelsCount()
+                                                + (i % ch->ChanBlockSize)) * bytes;
+                        tempFile.write((char*)(ptrCurrent), bytes);
+                    }
+                    tempFile.flush();
 
-                        // меняем размер блока и обновляем положение данных
+                    // меняем размер блока и обновляем положение данных
+                    if (fileToRewrite == this) {
                         ch->dataPositions.clear();
                         ch->dataPositions.append(dataPos);
-                        ch->ChanBlockSize = this->NumInd;
-                        this->BlockSize = 0;
+                        ch->ChanBlockSize = dfd->NumInd;
                     }
-
-                    rawFile.unmap(ptr);
+                    this->BlockSize = 0;
                 }
-                else {
-                    qDebug()<<"-- не меняем BlockSize";
-                    // не удалось прочитать никакими оптимальными методами, читаем медленным классическим
-                    int actuallyRead = 0;
-                    const int chunkSizeBytes = channelsCount() * channels[0]->blockSizeInBytes();
-
-                    while (1) {
-                        QByteArray temp = rawFile.read(chunkSizeBytes);
-                        actuallyRead = temp.size();
-                        if (actuallyRead == 0)
-                            break;
-                        if (actuallyRead < chunkSizeBytes) {
-                            temp.resize(chunkSizeBytes);
-                            actuallyRead = 0;
-                        }
-
-                        for (int ind = 0; ind < indexesVector.size(); ++ind) {
-                            // пропускаем канал, предназначенный для удаления
-                            if (indexesVector.at(ind).second == 1) continue; // 0 = keep, 1 = delete
-
-                            tempFile.write(temp.mid(indexesVector.at(ind).first * channels[indexesVector.at(ind).first]->blockSizeInBytes(),
-                                           channels[indexesVector.at(ind).first]->blockSizeInBytes()));
-                        }
-
-                        if (actuallyRead == 0)
-                            break;
-                    }
-                }
+                rawFile.unmap(ptr);
             }
             else {
                 qDebug()<<"-- не меняем BlockSize";
                 // не удалось прочитать никакими оптимальными методами, читаем медленным классическим
                 int actuallyRead = 0;
-                const int chunkSizeBytes = channelsCount() * channels[0]->blockSizeInBytes();
+                const int chunkSizeBytes = dfd->channelsCount() * dfd->channels[0]->blockSizeInBytes();
 
                 while (1) {
                     QByteArray temp = rawFile.read(chunkSizeBytes);
@@ -1184,9 +1309,8 @@ bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVe
                     for (int ind = 0; ind < indexesVector.size(); ++ind) {
                         // пропускаем канал, предназначенный для удаления
                         if (indexesVector.at(ind).second == 1) continue; // 0 = keep, 1 = delete
-
-                        tempFile.write(temp.mid(indexesVector.at(ind).first * channels[indexesVector.at(ind).first]->blockSizeInBytes(),
-                                       channels[indexesVector.at(ind).first]->blockSizeInBytes()));
+                        quint64 size = dfd->channels[indexesVector.at(ind).first]->blockSizeInBytes();
+                        tempFile.write(temp.mid(indexesVector.at(ind).first * size, size));
                     }
 
                     if (actuallyRead == 0)
@@ -1198,8 +1322,13 @@ bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVe
         //подменяем исходный файл raw временным
         rawFile.close();
         tempFile.close();
-        if (rawFile.remove()) {
-            tempFile.copy(rawFileName);
+
+        // удаляем файл данных, если мы перезаписывали его
+        // не удаляем, если мы брали данные из другого файла
+        if (fileToRewrite == this)
+            rawFile.remove();
+
+        if (tempFile.copy(rawFileName)) {
             return true;
         }
         else {
@@ -1247,8 +1376,6 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
         setDataChanged(true);
         writeRawFile();
     }
-
-    qDebug()<<"done";
 }
 
 QVariant DfdFileDescriptor::channelHeader(int column) const

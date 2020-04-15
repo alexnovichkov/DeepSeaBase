@@ -110,12 +110,13 @@ protected:
                     else if (dfd.DataType == dataType) {
                         return true;
                     }
+                    else return false;
                 }
                 else {
                     return false;
                 }
             }
-            else if (fi.suffix().toLower()=="uff" || fi.suffix().toLower()=="unv") {
+            else if (fi.suffix().toLower()=="uff") {
                 return true;
             }
             else return false;
@@ -146,7 +147,7 @@ protected:
         QFileInfo fi = model->fileInfo(index0);
 
         if (fi.isFile()) {
-            if (fi.suffix().toLower()=="dfd" || fi.suffix().toLower()=="uff" || fi.suffix().toLower()=="unv") {
+            if (fi.suffix().toLower()=="dfd" || fi.suffix().toLower()=="uff") {
                 return true;
             }
             else {
@@ -185,7 +186,7 @@ FileDescriptor *createDescriptor(const QString &fileName)
 {DD;
     const QString suffix = QFileInfo(fileName).suffix().toLower();
     if (suffix=="dfd") return new DfdFileDescriptor(fileName);
-    if (suffix=="uff" || suffix=="unv") return new UffFileDescriptor(fileName);
+    if (suffix=="uff") return new UffFileDescriptor(fileName);
     return 0;
 }
 
@@ -197,7 +198,7 @@ void maybeAppend(const QString &s, QStringList &list)
 void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 {DD;
     if (QFileInfo(file).isDir()) {
-        QFileInfoList dirLst = QDir(file).entryInfoList(QStringList()<<"*.dfd"<<"*.DFD"<<"*.uff"<<"*.unv",
+        QFileInfoList dirLst = QDir(file).entryInfoList(QStringList()<<"*.dfd"<<"*.DFD"<<"*.uff",
                                                         QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot,
                                                         QDir::DirsFirst);
         for (int i=0; i<dirLst.count(); ++i) {
@@ -1210,14 +1211,14 @@ bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &ch
     QString startFile = MainWindow::getSetting("startDir").toString();
 
     QFileDialog dialog(this, "Выбор файла для записи каналов", startFile,
-                       "Файлы dfd (*.dfd);;Файлы uff (*.uff);;Файлы unv (*.unv)");
+                       "Файлы dfd (*.dfd);;Файлы uff (*.uff)");
     dialog.setOption(QFileDialog::DontUseNativeDialog, true);
     QString defaultSuffix = QFileInfo(startFile).suffix();
     if (defaultSuffix.isEmpty()) defaultSuffix = "dfd";
     dialog.setDefaultSuffix(defaultSuffix);
 
-    QStringList suffixes = QStringList()<<"dfd"<<"uff"<<"unv";
-    QStringList filters = QStringList()<<"Файлы dfd (*.dfd)"<<"Файлы uff (*.uff)"<<"Файлы unv (*.unv)";
+    QStringList suffixes = QStringList()<<"dfd"<<"uff";
+    QStringList filters = QStringList()<<"Файлы dfd (*.dfd)"<<"Файлы uff (*.uff)";
 
     // если файл - dfd, то мы можем записать его только в dfd файл с таким же типом данных и шагом по x
     // поэтому если они различаются, то насильно записываем каналы в файл uff
@@ -1249,42 +1250,52 @@ bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &ch
 
     // ИЩЕМ ЭТОТ ФАЙЛ СРЕДИ ДОБАВЛЕННЫХ В БАЗУ
     FileDescriptor *dfd = findDescriptor(file);
+    bool found = dfd!=0;
 
     if (!dfd) {//не нашли файл в базе, нужно создать новый объект
+        if (!QFileInfo(file).exists()) {
+            // такого файла не существует, копируем исходный файл и удаляем ненужные каналы
+            if (descriptor->copyTo(file)) {
+                dfd = createDescriptor(file);
+                dfd->read();
+                QVector<int> channelsToDelete;
+                for (int i=0; i<dfd->channelsCount(); ++i) {
+                    if (!channelsToCopy.contains(i))
+                        channelsToDelete << i;
+                }
+                dfd->deleteChannels(channelsToDelete);
+                addFile(dfd);
+                if (!tab->folders.contains(file)) tab->folders << file;
+                return true;
+            }
+            return false;
+        }
+
+        // добавляем каналы в существующий файл
         dfd = createDescriptor(file);
-        if (!dfd) return false; // неизвестный тип файла
+        if (dfd) dfd->read();
+    }
 
-        if (QFileInfo(file).exists()) {// добавляем каналы в существующий файл
-            dfd->read();
-        }
-        else {// такого файла не существует, создаем новый файл и записываем в него каналы
-            dfd->fillPreliminary(descriptor->type());
-        }
-        if (dfd->legend().isEmpty())
-            dfd->setLegend(descriptor->legend());
-        dfd->copyChannelsFrom(descriptor, channelsToCopy);
+    if (!dfd) return false; // неизвестный тип файла
 
-        dfd->fillRest();
+    if (dfd->legend().isEmpty())
+        dfd->setLegend(descriptor->legend());
+    dfd->copyChannelsFrom(descriptor, channelsToCopy);
+    dfd->fillRest();
 
+    dfd->setChanged(true);
+    dfd->write();
+    dfd->setDataChanged(true);
+    dfd->writeRawFile();
 
-        dfd->setChanged(true);
-        //dfd->setDataChanged(true);
-        dfd->write();
-        //dfd->writeRawFile();
+    if (found) {
+        tab->model->updateFile(dfd);
+    }
+    else {
         addFile(dfd);
         if (!tab->folders.contains(file)) tab->folders << file;
     }
-    else {
-        dfd->copyChannelsFrom(descriptor, channelsToCopy);
-        if (dfd->legend().isEmpty())
-            dfd->setLegend(descriptor->legend());
 
-        dfd->setChanged(true);
-        dfd->setDataChanged(true);
-        dfd->write();
-        dfd->writeRawFile();
-        tab->model->updateFile(dfd);
-    }
     return true;
 }
 
@@ -1368,7 +1379,7 @@ void MainWindow::calculateMean()
         meanD = MainWindow::getSetting(writeToUff?"lastMeanUffFile":"lastMeanFile", meanD).toString();
 
         QFileDialog dialog(this, "Выбор файла для записи каналов", meanD,
-                           "Поддерживаемые форматы (*.dfd *.uff *.unv)");
+                           "Поддерживаемые форматы (*.dfd *.uff)");
         dialog.setOption(QFileDialog::DontUseNativeDialog, true);
         dialog.setFileMode(QFileDialog::AnyFile);
         dialog.setDefaultSuffix(writeToUff?"uff":"dfd");
@@ -1841,7 +1852,7 @@ void MainWindow::calculateMovingAvg()
         meanD = MainWindow::getSetting("lastMovingAvgFile", meanD).toString();
 
         QFileDialog dialog(this, "Выбор файла для записи каналов", meanD,
-                           "Поддерживаемые форматы (*.dfd *.uff *.unv)");
+                           "Поддерживаемые форматы (*.dfd *.uff)");
         dialog.setOption(QFileDialog::DontUseNativeDialog, true);
         dialog.setFileMode(QFileDialog::AnyFile);
         dialog.setDefaultSuffix("uff");

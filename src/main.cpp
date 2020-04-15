@@ -33,27 +33,28 @@ int main(int argc, char *argv[])
 
 
 
-//    QFile f("blockSize=1 IndType=c0000008.raw");
+//    QFile f("IndType=c0000008.raw");
 //    f.open(QFile::WriteOnly);
 //    QDataStream s(&f);
 //    s.setByteOrder(QDataStream::LittleEndian);
 ////    s.setFloatingPointPrecision(QDataStream::SinglePrecision);
-//    for(int i=0; i<1000000; ++i) {
+
 //        for (int ch=0; ch<4;++ch) {
+//            for(int i=0; i<10000000; ++i) {
 //            double val = double(i);
 //            s << val;
 //        }
 //    }
-//    DfdFileDescriptor dfd("blockSize=1 IndType=c0000008.dfd");
+//    DfdFileDescriptor dfd("IndType=c0000008.dfd");
 //    dfd.fillPreliminary(Descriptor::TimeResponse);
-//    dfd.BlockSize = 1;
-//    dfd.NumInd = 1000000;
+//    dfd.BlockSize = 0;
+//    dfd.NumInd = 10000000;
 //    dfd.XBegin = 0.0;
 //    dfd.XName = "с";
 //    dfd.XStep = 1.0;
 //    for (int ch=0; ch<4; ++ch) {
 //        DfdChannel *c = new DfdChannel(&dfd, ch);
-//        c->ChanBlockSize = 1;
+//        c->ChanBlockSize = 10000000;
 //        c->ChanName = QString("Channel %1").arg(ch+1);
 //        c->IndType = 0xc0000008;
 //        c->YName = "m/s2";
