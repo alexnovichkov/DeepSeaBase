@@ -189,11 +189,6 @@ void Converter::finalize()
 
     foreach (FileDescriptor *file, dataBase) {
         moveFilesFromTempDir(tempFolderName, file->fileName());
-//        foreach (DfdChannel *c, file->channels) {
-//            c->floatValues.clear();
-//            //and releasing memory (since Qt 5.7)
-//            c->floatValues.squeeze();
-//        }
     }
 
     qDebug()<<"End converting"<<QDateTime::currentDateTime().time();

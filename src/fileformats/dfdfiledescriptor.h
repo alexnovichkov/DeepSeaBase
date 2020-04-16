@@ -148,8 +148,6 @@ public:
     virtual void setName(const QString &name);
 
     virtual void populate();
-    void populateFloat();
-    QVector<float> floatValues;
 
     /**
      * @brief preprocess - подготавливает значение к записи с помощью setValue

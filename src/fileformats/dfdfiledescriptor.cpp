@@ -737,88 +737,88 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int
         return;
     }
 
+    //кроме того шаг по оси Х тоже должен быть одинаковый
+    if (XStep != file->xStep()) {
+        qDebug()<<"Попытка скопировать каналы в файл с другим шагом по оси Х";
+        return;
+    }
+
+    //еще мы должны убедиться, что типы файлов совпадают
+    DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(file);
+    if (dfd) {
+        //частный случай: мы можем записать данные из SourceData в CuttedData, преобразовав их в floats,
+        //но не наоборот
+        if ((dfd->DataType == SourceData) && ((int)DataType > 15)) {
+            qDebug()<<"Попытка скопировать каналы в файл с другим типом";
+            return;
+        }
+        else if (dfd->DataType != DataType) {
+            qDebug()<<"Попытка скопировать каналы в файл с другим типом";
+            return;
+        }
+    }
+    else if (dataTypefromDfdDataType(DataType) != file->type()) {
+        qDebug()<<"Попытка скопировать каналы в файл с другим типом";
+        return;
+    }
+
+    bool rewrited = false;
+
     //мы должны добавить каналы из file
     //и дописать к файлу данных новые данные
 
     //особое внимание нужно уделить тем файлам, у которых BlockSize != 0,
-    //так как они записаны с перекрытием, и придется сначала прочитать канал, а потом переписать его заново
+    //перезаписываем файл данных, чтобы не мучаться с блоками отсчетов
+    if (BlockSize > 0) {
+        QVector<QPair<int, int> > inds;
+        for (int i=0; i<channelsCount(); ++i) inds.append(qMakePair<int,int>(i,0)); // 0 = keep, 1 = delete
+        rewrited = rewriteRawFile(inds);
+    }
+
+    if (BlockSize > 0) {
+        // не удалось переписать файл. Добавляем каналы стандартным способом
+        copyChannelsFrom_plain(file, indexes);
+        return;
+    }
+
+     //изначально не знаем формат данных
+    //DataHolder::YValuesFormat format = channels.first()->yValuesFormat();
 
 
 
-//    copyChannelsFrom_plain(file, indexes);
-//    return;
-
-    /* TODO: переписать весь алгоритм */
-
-    bool rewrited = false;
-
-//     //изначально не знаем формат данных
-//    DataHolder::YValuesFormat format = DataHolder::YValuesUnknown;
-//    if (channelsCount() > 0) format = channels.first()->yValuesFormat();
-
-//    //перезаписываем файл данных, чтобы не мучаться с блоками отсчетов
-//    if (BlockSize > 0) {
-//        QVector<QPair<int, int> > inds;
-//        for (int i=0; i<channelsCount(); ++i) inds.append(qMakePair<int,int>(i,0)); // 0 = keep, 1 = delete
-//        rewrited = rewriteRawFile(inds);
-//    }
-
-//    if (BlockSize > 0) {
-//        // не удалось переписать файл. Добавляем каналы стандартным способом
-//        copyChannelsFrom_plain(file, indexes);
-//        return;
-//    }
 
 
-    DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(file);
+
+
     if (dfd) {// работаем с файлом raw
-        if (channelsCount() == 0) {
-            // если каналов нет, то просто копируем данные из файла raw
-            // все форматы данных будут скопированы из dfd
+        //1. копируем каналы из file в this
+        for (int i=0; i<indexes.size(); ++i) {
+            DfdChannel *ch = dfd->channels[i];
+            DfdChannel *newCh = 0;
+            if (RawChannel *rawCh = dynamic_cast<RawChannel *>(rawCh))
+                newCh = new RawChannel(*rawCh, this);
+            else
+                newCh = new DfdChannel(*ch, this);
 
-            if (QFile::exists(this->rawFileName))
-                QFile::remove(this->rawFileName);
+            //меняем параметры канала
+            newCh->IndType = channels[0]->IndType; //характеристика отсчета
+            newCh->ChanBlockSize = this->NumInd; //размер блока в отсчетах
 
-            BlockSize = 0;
-            DataType = dfd->DataType;
+            newCh->dataType = DataType; //меняем, если копировали из Source в Cutted
 
-            // заполняем информацию о каналах
-            // данные копируются тоже, но это нам не надо
-            QVector<QPair<int, int> > inds;
-            for (int index=0; index<dfd->channelsCount(); ++index) {
-                if (indexes.contains(index)) {
-                    RawChannel *raw = dynamic_cast<RawChannel*>(dfd->channels[index]);
-                    if (raw)
-                        channels.append(new RawChannel(*raw, this));
-                    else
-                        channels.append(new DfdChannel(*dfd->channels[index], this));
-                    inds.append(qMakePair<int,int>(index,0)); // 0 = keep, 1 = delete
-                }
-                else
-                    inds.append(qMakePair<int,int>(index,1)); // 0 = keep, 1 = delete
-            }
+            QList<int> dataPositions;
 
-            rewrited = rewriteRawFile(inds, dfd);
-
-            XName = file->xName();
-
-            for (int i=0; i<channels.size(); ++i) {
-                channels[i]->channelIndex = i;
-                channels[i]->parent = this;
-                channels[i]->ChanBlockSize = NumInd;
-            }
-
-            //меняем параметры файла dfd
-            Date = QDate::currentDate();
-            Time = QTime::currentTime();
-
-            setChanged(true);
-            write();
+            channels << newCh;
         }
-        else {// каналы уже были, добавляем данные к имеющемуся файлу raw
-            copyChannelsFrom_plain(file, indexes);
-            return;
-        }
+
+        //2. перенумеровываем каналы
+        for (int i=0; i<channels.size(); ++i)
+            channels[i]->channelIndex = i;
+
+//        else {// каналы уже были, добавляем данные к имеющемуся файлу raw
+//            copyChannelsFrom_plain(file, indexes);
+//            return;
+//        }
     }
     else {//заглушка: переписать
         copyChannelsFrom_plain(file, indexes);
@@ -1241,8 +1241,6 @@ bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVe
                     ch->dataPositions.append(dataPos);
                     ch->ChanBlockSize = dfd->NumInd;
                 }
-                this->BlockSize = 0;
-                qDebug()<<"-- меняем BlockSize на 0";
             }
         }
         else {
@@ -1252,7 +1250,6 @@ bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVe
             unsigned char *ptr = rawFile.map(0, rawFile.size());
             if (ptr) {//достаточно памяти отобразить весь файл
                 qDebug()<<"-- работаем через ptr";
-                qDebug()<<"-- меняем BlockSize на 0";
                 unsigned char *ptrCurrent = ptr;
 
                 for (int ind = 0; ind < indexesVector.size(); ++ind) {
@@ -1286,12 +1283,10 @@ bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVe
                         ch->dataPositions.append(dataPos);
                         ch->ChanBlockSize = dfd->NumInd;
                     }
-                    this->BlockSize = 0;
                 }
                 rawFile.unmap(ptr);
             }
             else {
-                qDebug()<<"-- не меняем BlockSize";
                 // не удалось прочитать никакими оптимальными методами, читаем медленным классическим
                 int actuallyRead = 0;
                 const int chunkSizeBytes = dfd->channelsCount() * dfd->channels[0]->blockSizeInBytes();
@@ -1319,7 +1314,6 @@ bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVe
             }
         }
 
-        //подменяем исходный файл raw временным
         rawFile.close();
         tempFile.close();
 
@@ -1329,6 +1323,7 @@ bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVe
             rawFile.remove();
 
         if (tempFile.copy(rawFileName)) {
+            BlockSize = 0;
             return true;
         }
         else {

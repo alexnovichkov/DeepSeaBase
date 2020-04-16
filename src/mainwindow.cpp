@@ -1223,7 +1223,7 @@ bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &ch
     // если файл - dfd, то мы можем записать его только в dfd файл с таким же типом данных и шагом по x
     // поэтому если они различаются, то насильно записываем каналы в файл uff
 
-    // мы не можем записывать каналы с разным типом/шагом в один файл,
+    // мы не можем записывать каналы с разным типом/шагом в один файл dfd,
     //поэтому добавляем фильтр
     QSortFilterProxyModel *proxy = new DfdFilterProxy(descriptor, this);
     dialog.setProxyModel(proxy);

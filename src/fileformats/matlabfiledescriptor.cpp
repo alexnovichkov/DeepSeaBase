@@ -73,8 +73,8 @@ bool MatlabConvertor::convert()
         foreach (const Dataset &s, xml) {
             qDebug()<<QFileInfo(xdfFileName).fileName().toLower();
             qDebug()<<s.fileName.toLower();
-            if (QFileInfo(xdfFileName).completeBaseName().toLower().startsWith(s.fileName.toLower()+"_")) {
-            //if (s.fileName.toLower() == QFileInfo(xdfFileName).fileName().toLower()) {
+//            if (QFileInfo(xdfFileName).completeBaseName().toLower().startsWith(s.fileName.toLower()+"_")) {
+            if (s.fileName.toLower() == QFileInfo(xdfFileName).fileName().toLower()) {
                 set = s;
                 break;
             }
@@ -199,8 +199,8 @@ bool MatlabConvertor::convert()
                     channelIDs << rec->name.section("_", 0, 0);
                 }
                 else if (rec->name == "Signal") {// сгруппированные временные данные
-                    MatlabCellArray *name = dynamic_cast<MatlabCellArray *>(function_record->subRecords[0]);
-                    if (!name || function_record->fieldNames.at(0) != "name") {
+                    MatlabCellArray *name = findSubrecord<MatlabCellArray*>("name", function_record);
+                    if (!name) {
                         emit message("<font color=red>Error!</font> Не могу прочитать названия каналов в записи "+rec->name);
                         noErrors = false;
                         continue;
@@ -403,8 +403,6 @@ void MatlabConvertor::readXml(bool &success)
                 if (xmlReader.attributes().hasAttribute("Name")) {
                     if (xml.last().fileName.isEmpty()) {
                         xml.last().fileName = xmlReader.attributes().value("Name").toString();
-                        if (xml.last().fileName.toLower().endsWith(".xdf"))
-                            xml.last().fileName.chop(4);
                     }
                 }
             }
