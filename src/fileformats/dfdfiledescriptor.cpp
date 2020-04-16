@@ -732,6 +732,10 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int
     //Этот метод никогда не вызывается в только что созданном, пустом файле
     //Поэтому всегда можно предполагать, что в нем есть каналы
 
+    //заглушка для релиза
+    copyChannelsFrom_plain(file, indexes);
+    return;
+
     if (channelsCount() == 0) {
         qDebug()<<"Попытка скопировать каналы в пустой файл";
         return;

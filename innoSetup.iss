@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "DeepSea Database"
-#define MyAppVersion "1.6.9.2"
+#define MyAppVersion "1.6.9.3"
 #define MyAppPublisher "Novichkov & Sukin Sons."
 #define MyAppExeName "DeepSeaBase.exe"
 
@@ -53,6 +53,10 @@ Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\plugins\iconengines\*.dll"; DestDir: "
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\plugins\imageformats\*.dll"; DestDir: "{app}\imageformats"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\plugins\platforms\*.dll"; DestDir: "{app}\platforms"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 Source: "K:\Qt\Qt5.10.1\5.10.1\mingw53_32\plugins\printsupport\*.dll"; DestDir: "{app}\printsupport"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
+
+Source: "K:\My\programming\sources\TDMS\nilib-master\dll\*.dll"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "K:\My\programming\sources\TDMS\nilib-master\dll\DataModels\USI\1_0\usi_1_0.xsd"; DestDir: "{app}\DataModels\USI\1_0"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "K:\My\programming\sources\TDMS\nilib-master\dll\DataModels\USI\TDM\1_0\USI_TDM_1_0.xml"; DestDir: "{app}\DataModels\USI\TDM\1_0"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 Source: "K:\My\build\DeepSeaBase\src\help.html"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\My\build\DeepSeaBase\src\graphs.htm"; DestDir: "{app}"; Flags: ignoreversion

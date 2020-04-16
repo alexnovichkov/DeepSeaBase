@@ -34,46 +34,7 @@
 #include "tdmsconverterdialog.h"
 #include "htmldelegate.h"
 
-#define DSB_VERSION "1.6.9.2"
-
-class DrivesDialog : public QDialog
-{
-//
-public:
-    DrivesDialog(QWidget * parent) : QDialog(parent)
-    {
-
-        QFileInfoList drives = QDir::drives();
-        QVBoxLayout *l = new QVBoxLayout;
-        l->addWidget(new QLabel("Выберите диски для сканирования", this));
-        foreach(const QFileInfo &fi, drives) {
-            QCheckBox *drive = new QCheckBox(fi.absoluteFilePath(), this);
-            drive->setChecked(false);
-            drivesList << drive;
-            l->addWidget(drive);
-        }
-        QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok |
-                                                           QDialogButtonBox::Cancel);
-        connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
-        connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
-
-        l->addWidget(buttonBox);
-        setLayout(l);
-    }
-    QStringList drives;
-private:
-    QList<QCheckBox *> drivesList;
-
-    // QDialog interface
-public slots:
-    virtual void accept()
-    {
-        foreach(QCheckBox *box, drivesList) {
-            if (box->isChecked()) drives << box->text();
-        }
-        QDialog::accept();
-    }
-};
+#define DSB_VERSION "1.6.9.3"
 
 class DfdFilterProxy : public QSortFilterProxyModel
 {
@@ -81,11 +42,14 @@ public:
     DfdFilterProxy(FileDescriptor *dfd, QObject *parent)
         : QSortFilterProxyModel(parent)
     {
-        this->xStep = dfd->xStep();
-        if (DfdFileDescriptor *d = dynamic_cast<DfdFileDescriptor *>(dfd))
-            this->dataType = d->DataType;
-        else
-            this->dataType = dfdDataTypeFromDataType(dfd->type());
+        if (dfd) {
+            this->xStep = dfd->xStep();
+            if (DfdFileDescriptor *d = dynamic_cast<DfdFileDescriptor *>(dfd))
+                this->dataType = d->DataType;
+            else
+                this->dataType = dfdDataTypeFromDataType(dfd->type());
+            filterByContent = true;
+        }
     }
 protected:
     bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
@@ -99,6 +63,10 @@ protected:
 
         if (fi.isFile()) {
             if (fi.suffix().toLower()=="dfd") {
+                //принимаем все файлы dfd, если не сравниваем с конкретным
+                if (!filterByContent)
+                    return true;
+
                 DfdFileDescriptor dfd(fi.canonicalFilePath());
                 dfd.read();
                 //частный случай: мы можем записать данные из SourceData в CuttedData, преобразовав их в floats,
@@ -119,45 +87,16 @@ protected:
             else if (fi.suffix().toLower()=="uff") {
                 return true;
             }
-            else return false;
+            else
+                return false;
         }
-
-        return true;
+        else
+            return true;
     }
 private:
     DfdDataType dataType;
     double xStep;
-};
-
-class DfdUffFilterProxy : public QSortFilterProxyModel
-{
-public:
-    DfdUffFilterProxy(QObject *parent)
-        : QSortFilterProxyModel(parent)
-    {
-    }
-protected:
-    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
-    {
-        QFileSystemModel *model = qobject_cast<QFileSystemModel *>(sourceModel());
-        if (!model) return false;
-
-        QModelIndex index0 = model->index(source_row, 0, source_parent);
-
-        QFileInfo fi = model->fileInfo(index0);
-
-        if (fi.isFile()) {
-            if (fi.suffix().toLower()=="dfd" || fi.suffix().toLower()=="uff") {
-                return true;
-            }
-            else {
-                return false;
-            }
-        }
-        else {
-            return true;
-        }
-    }
+    bool filterByContent = false;
 };
 
 class StepItemDelegate : public QStyledItemDelegate
@@ -166,21 +105,16 @@ public:
     StepItemDelegate(QObject *parent = Q_NULLPTR) : QStyledItemDelegate(parent)
     {}
 
-    // QAbstractItemDelegate interface
-public:
-    virtual QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
-};
+    virtual QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        QWidget *ed = QStyledItemDelegate::createEditor(parent, option, index);
+        if (QDoubleSpinBox *spin = qobject_cast<QDoubleSpinBox*>(ed)) {
+            spin->setDecimals(10);
+        }
 
-QWidget *StepItemDelegate::createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const
-{
-    QWidget *ed = QStyledItemDelegate::createEditor(parent, option, index);
-    if (QDoubleSpinBox *spin = qobject_cast<QDoubleSpinBox*>(ed)) {
-        spin->setDecimals(10);
+        return ed;
     }
-
-    return ed;
-}
-
+};
 
 FileDescriptor *createDescriptor(const QString &fileName)
 {DD;
@@ -946,7 +880,7 @@ void MainWindow::addFile()
     QString defaultSuffix = QFileInfo(directory).suffix();
     if (defaultSuffix.isEmpty()) defaultSuffix = "dfd";
     dialog.setDefaultSuffix(defaultSuffix);
-    QSortFilterProxyModel *proxy = new DfdUffFilterProxy(this);
+    QSortFilterProxyModel *proxy = new DfdFilterProxy(0, this);
     dialog.setProxyModel(proxy);
     dialog.setFileMode(QFileDialog::ExistingFiles);
 
