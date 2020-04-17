@@ -341,7 +341,7 @@ void Plot::showContextMenu(const QPoint &pos, QwtAxisId axis)
 
         QAction *act3 = new QAction("Амплитуды линейные", ag);
         act3->setCheckable(true);
-        if (*ax == DataHolder::ShowAsAmplitudes) act3->setChecked(true);
+        if (ax && *ax == DataHolder::ShowAsAmplitudes) act3->setChecked(true);
         act3->setData(DataHolder::ShowAsAmplitudes);
         am->addAction(act3);
 

@@ -182,9 +182,7 @@ void CorrectionDialog::correct()
             }
         }
     }
-//    plot->updateAxes();
-//    plot->updateLegends();
-//    plot->replot();
+
     plot->recalculateScale(true);
     plot->recalculateScale(false);
     plot->update();
@@ -221,6 +219,7 @@ void CorrectionDialog::makeCorrectionConstant(Channel *channel)
         else
             channel->setCorrection(channel->data()->correctionString());
     }
+    //подчищаем за собой
     channel->data()->removeCorrection();
 }
 

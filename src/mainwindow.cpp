@@ -1057,10 +1057,14 @@ void MainWindow::addCorrections()
 
     QAxObject * workbook = excel->querySubObject("ActiveWorkBook");
     if (!workbook) {
+        QMessageBox::critical(this, "DeepSea Database",
+                              "Не удалось открыть текущую рабочую книгу Excel");
         return;
     }
     QAxObject * worksheet = workbook->querySubObject("ActiveSheet");
     if (!worksheet) {
+        QMessageBox::critical(this, "DeepSea Database",
+                              "Не удалось открыть текущий рабочий лист Excel");
         return;
     }
 

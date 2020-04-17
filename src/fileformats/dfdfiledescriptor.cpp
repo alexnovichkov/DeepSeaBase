@@ -2432,9 +2432,7 @@ Descriptor::DataType dataTypefromDfdDataType(DfdDataType type)
 QString DfdFileDescriptor::saveTimeSegment(double from, double to)
 {
     // 0 проверяем, чтобы этот файл имел тип временных данных
-    if (DataType != SourceData &&
-        DataType != CuttedData &&
-        DataType != FilterData) return QString();
+    if (DataType >= Envelope) return QString();
 
 //    populate();
     const int count = channelsCount();
@@ -2509,6 +2507,7 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
         ch->YNameOld = channels[i]->YNameOld;
 
         ch->setCorrection(channels[i]->correction());
+        ch->appendDataTo(newDfd->rawFileName);
 
         newDfd->channels << ch;
         if (!wasPopulated) {
@@ -2519,9 +2518,7 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
 
     newDfd->setSamplesCount(newDfd->channel(0)->samplesCount());
     newDfd->setChanged(true);
-    newDfd->setDataChanged(true);
     newDfd->write();
-    newDfd->writeRawFile();
     delete newDfd;
 
     // 5 возвращаем имя нового файла

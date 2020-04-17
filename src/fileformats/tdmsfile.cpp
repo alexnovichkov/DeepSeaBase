@@ -532,6 +532,7 @@ bool TDMSFileConvertor::convert()
         if (!s.isEmpty()) datade->data.append(DescriptionEntry("name",s));
         s = tdmsFile.properties.value("description").toString();
         if (!s.isEmpty()) datade->data.append(DescriptionEntry("description",s));
+        dfdFileDescriptor.dataDescription = datade;
 
         // эти переменные заполняем по первой записи в файле
         bool isSet = false;
@@ -625,7 +626,6 @@ bool TDMSFileConvertor::convert()
             }
         }
 
-        dfdFileDescriptor.dataDescription = datade;
         dfdFileDescriptor.setSamplesCount(samplescount);
         dfdFileDescriptor.BlockSize = 0;
         dfdFileDescriptor.XName="с";
