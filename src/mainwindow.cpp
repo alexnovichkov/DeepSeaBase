@@ -1210,17 +1210,20 @@ bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &ch
         if (dfd) dfd->read();
     }
 
-    if (!dfd) return false; // неизвестный тип файла
+    if (!dfd) {
+        qDebug()<<"Неизвестный тип файла"<<dfd->fileName();
+        return false;
+    }
 
-    if (dfd->legend().isEmpty())
-        dfd->setLegend(descriptor->legend());
-    dfd->copyChannelsFrom(descriptor, channelsToCopy);
-    dfd->fillRest();
-
-    dfd->setChanged(true);
+    //записываем все изменения данных
     dfd->write();
-    dfd->setDataChanged(true);
     dfd->writeRawFile();
+
+//    if (dfd->legend().isEmpty())
+//        dfd->setLegend(descriptor->legend());
+
+    //копирует каналы из descriptor, сохраняет файл и данные
+    dfd->copyChannelsFrom(descriptor, channelsToCopy);
 
     if (found) {
         tab->model->updateFile(dfd);

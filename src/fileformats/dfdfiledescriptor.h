@@ -156,6 +156,8 @@ public:
      */
     virtual double preprocess(double v) {return v;}
 
+    void appendDataTo(const QString &rawFileName);
+
     QString ChanAddress; //
     QString ChanName; //
     uint IndType; //характеристика отсчета
@@ -364,8 +366,9 @@ public:
 
 private:
     static DfdFileDescriptor *newThirdOctaveFile(const QString &fileName);
-    bool rewriteRawFile(const QVector<QPair<int,int> > &indexesVector, DfdFileDescriptor *fileToRewrite = 0);
+    bool rewriteRawFile(const QVector<QPair<int,int> > &indexesVector);
     void copyChannelsFrom_plain(FileDescriptor *file, const QVector<int> &indexes);
+    bool appendRawFile(const QVector<int> &channelsToKeep, DfdFileDescriptor *sourceFile);
 
     friend class DataDescription;
     friend class DfdChannel;
