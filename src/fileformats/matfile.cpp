@@ -224,7 +224,7 @@ void MatlabArrayRecord::readData(QDataStream *f)
     } // matrixNameSize bytes + padding
 
     QStringList dimsL; foreach(int i, dimensions) dimsL << QString::number(i);
-    qDebug()<<"Array name:"<<name<<"Array dimensions:"<<dimsL.join("x");
+//    qDebug()<<"Array name:"<<name<<"Array dimensions:"<<dimsL.join("x");
 
 }
 
@@ -262,19 +262,20 @@ void MatlabHeader::read(QDataStream *f)
 
         f->skipRawData(6);
 
-        qDebug()<<"Array class ="<<arrayClass<<"flags="<<flags<< "Block size:"<<sizeInBytesWithoutPadding
-               << "actually"<<actualSize
-               <<"header starts with:" <<hex<<headerBegin<<dec
-               <<"data starts with:" <<hex<<dataBegin<<dec
-              << "compressed:"<<smallData;
+//        qDebug()<<"Array class ="<<arrayClass<<"flags="<<flags<< "Block size:"<<sizeInBytesWithoutPadding
+//               << "actually"<<actualSize
+//               <<"header starts with:" <<hex<<headerBegin<<dec
+//               <<"data starts with:" <<hex<<dataBegin<<dec
+//              << "compressed:"<<smallData;
     }
-    else
-        qDebug()<<"Matlab Data Type=" <<type
-               << "Block size:"<<sizeInBytesWithoutPadding
-               << "actually"<<actualSize
-               <<"header starts with:" <<hex<<headerBegin<<dec
-               <<"data starts with:" <<hex<<dataBegin<<dec
-              << "compressed:"<<smallData;
+    else {
+//        qDebug()<<"Matlab Data Type=" <<type
+//               << "Block size:"<<sizeInBytesWithoutPadding
+//               << "actually"<<actualSize
+//               <<"header starts with:" <<hex<<headerBegin<<dec
+//               <<"data starts with:" <<hex<<dataBegin<<dec
+//              << "compressed:"<<smallData;
+    }
 }
 
 void MatlabCellArray::readData(QDataStream *f)
@@ -287,7 +288,7 @@ void MatlabCellArray::readData(QDataStream *f)
     foreach (int dim, dimensions) totalSize *= dim;
 
     for (int cellNumber = 0; cellNumber < totalSize; ++cellNumber) {
-        qDebug()<<"reading cell"<<cellNumber+1<<"of"<<totalSize;
+//        qDebug()<<"reading cell"<<cellNumber+1<<"of"<<totalSize;
         MatlabHeader *header = new MatlabHeader();
         header->read(f);
 
@@ -299,7 +300,7 @@ void MatlabCellArray::readData(QDataStream *f)
         rec->readData(f);
 
         subRecords << rec;
-        qDebug()<<"after reading cell" <<cellNumber+1<< "pos at"<<hex<<f->device()->pos()<<dec;
+//        qDebug()<<"after reading cell" <<cellNumber+1<< "pos at"<<hex<<f->device()->pos()<<dec;
     }
 }
 
@@ -331,16 +332,16 @@ void MatlabStructArray::readData(QDataStream *f)
     int padding = fieldNamesLength % 8;
     if (padding > 0)
         f->skipRawData(8 - padding);
-    qDebug()<<"  fields names"<<fieldNames;
+//    qDebug()<<"  fields names"<<fieldNames;
 
     // читаем поля структуры - это могут быть любые типы
     // это может быть также массив структур, поэтому вектор будет длиной dims1*dims2*dims3
     int totalSize = 1;
     foreach (int dim, dimensions) totalSize *= dim;
     for (int structNumber = 0; structNumber < totalSize; ++structNumber) {
-        qDebug()<<"reading struct"<<structNumber+1<<"of"<<totalSize;
+//        qDebug()<<"reading struct"<<structNumber+1<<"of"<<totalSize;
         for (int fieldNumber = 0; fieldNumber < fieldNames.size(); ++fieldNumber) {
-            qDebug()<<"reading field"<<fieldNames.at(fieldNumber)<<"of"<<fieldNames.size();
+//            qDebug()<<"reading field"<<fieldNames.at(fieldNumber)<<"of"<<fieldNames.size();
 
             MatlabHeader *header = new MatlabHeader();
             header->read(f);
@@ -353,7 +354,7 @@ void MatlabStructArray::readData(QDataStream *f)
             rec->readData(f);
 
             subRecords << rec;
-            qDebug()<<"end reading struct"<<fieldNames.at(fieldNumber)<<structNumber+1<<"of"<<totalSize <<"at"<<hex<<f->device()->pos()<<dec;
+//            qDebug()<<"end reading struct"<<fieldNames.at(fieldNumber)<<structNumber+1<<"of"<<totalSize <<"at"<<hex<<f->device()->pos()<<dec;
         }
     }
 }
@@ -402,16 +403,16 @@ void MatlabObjectArray::readData(QDataStream *f)
     int padding = fieldNamesLength % 8;
     if (padding > 0)
         f->skipRawData(8 - padding);
-    qDebug()<<"  object fields names"<<fieldNames;
+//    qDebug()<<"  object fields names"<<fieldNames;
 
 
     //readnig fields
     int totalSize = 1;
     foreach (int dim, dimensions) totalSize *= dim;
     for (int fieldNumber = 0; fieldNumber < fieldNames.size(); ++fieldNumber) {
-        qDebug()<<"reading field"<<fieldNames.at(fieldNumber)<<"of"<<fieldNames.size();
+//        qDebug()<<"reading field"<<fieldNames.at(fieldNumber)<<"of"<<fieldNames.size();
         for (int cellNumber = 0; cellNumber < totalSize; ++cellNumber) {
-        qDebug()<<"reading cell"<<cellNumber+1<<"of"<<totalSize;
+//        qDebug()<<"reading cell"<<cellNumber+1<<"of"<<totalSize;
             MatlabHeader *header = new MatlabHeader();
             header->read(f);
 
@@ -423,7 +424,7 @@ void MatlabObjectArray::readData(QDataStream *f)
             rec->readData(f);
 
             subRecords << rec;
-            qDebug()<<"after reading pos at"<<hex<<f->device()->pos()<<dec;
+//            qDebug()<<"after reading pos at"<<hex<<f->device()->pos()<<dec;
         }
     }
 }
@@ -441,7 +442,7 @@ void MatlabCharacterArray::readData(QDataStream *f)
         delete rec;
     }
 
-    qDebug()<<"values"<<values;
+//    qDebug()<<"values"<<values;
 }
 
 QString MatlabCharacterArray::getString() const
@@ -539,7 +540,7 @@ void MatlabUtf8Record::readData(QDataStream *f)
 
 void MatlabUtf16Record::readData(QDataStream *f)
 {
-    qDebug()<<hex<<f->device()->pos()<<dec;
+//    qDebug()<<hex<<f->device()->pos()<<dec;
     if (header->smallData) {
         data = QString::fromUtf16((ushort*)(f->device()->read(4).data()));
     }

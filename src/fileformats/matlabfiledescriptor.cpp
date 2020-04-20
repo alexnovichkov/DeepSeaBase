@@ -46,19 +46,13 @@ bool MatlabConvertor::convert()
     if (QThread::currentThread()->isInterruptionRequested()) return false;
     bool noErrors = true;
 
-    // Reading XML file
-    readXml(noErrors);
-    if (!noErrors) {
+    if (xmlFileName.isEmpty() || xml.isEmpty()) {
         emit message("<font color=red>Error!</font> Не удалось прочитать файл " + xmlFileName);
         emit finished();
         return false;
     }
 
-    emit message("Содержит следующие записи:");
-    foreach (const Dataset &dataset, xml) {
-        emit message(QString("%1: %2").arg(dataset.id).arg(dataset.fileName));
-    }
-
+//    qDebug()<<datasets;
 
     //Converting
     foreach(const QString &fi, filesToConvert) {
@@ -69,25 +63,28 @@ bool MatlabConvertor::convert()
         xdfFileName.replace(".mat",".xdf");
 
         Dataset set;
-        //search for the particular dataset
-        foreach (const Dataset &s, xml) {
-            qDebug()<<QFileInfo(xdfFileName).fileName().toLower();
-            qDebug()<<s.fileName.toLower();
-//            if (QFileInfo(xdfFileName).completeBaseName().toLower().startsWith(s.fileName.toLower()+"_")) {
-            if (s.fileName.toLower() == QFileInfo(xdfFileName).fileName().toLower()) {
-                set = s;
-                break;
-            }
-        }
-        if (set.fileName.isEmpty()) {
-            emit message("<font color=red>Error!</font> Не могу найти "+QFileInfo(xdfFileName).fileName()+" в Analysis.xml. Файл mat будет пропущен!");
+        QString fileToSearch = QFileInfo(xdfFileName).fileName();
+        if (datasets.value(fi, -1) == -1) {
+            emit message("<font color=red>Error!</font> Не могу найти "
+                         +fileToSearch+" в Analysis.xml. Файл mat будет пропущен!");
             noErrors = false;
             emit tick();
             continue;
         }
         else {
-            emit message("Файл "+QFileInfo(xdfFileName).fileName()+" в Analysis.xml записан как канал "+set.id);
+            set = xml.at(datasets.value(fi));
+            emit message("Файл "+QFileInfo(fileToSearch).fileName()+" в Analysis.xml записан как запись "+set.id);
         }
+        //search for the particular dataset
+//        foreach (const Dataset &s, xml) {
+//            qDebug()<<QFileInfo(xdfFileName).fileName().toLower();
+//            qDebug()<<s.fileName.toLower();
+//            if (QFileInfo(xdfFileName).completeBaseName().toLower().startsWith(s.fileName.toLower()+"_")) {
+//            if (s.fileName.toLower() == QFileInfo(xdfFileName).fileName().toLower()) {
+//                set = s;
+//                break;
+//            }
+//        }
 
         //reading mat file structure
         MatFile matlabFile(fi);
@@ -378,6 +375,7 @@ void MatlabConvertor::readXml(bool &success)
         return;
     }
     xml.clear();
+    datasets.clear();
     QFile xmlFile(xmlFileName);
     if (!xmlFile.open(QFile::ReadOnly | QFile::Text)) {
         success = false;

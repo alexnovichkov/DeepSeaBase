@@ -5,7 +5,7 @@
 #include "checkableheaderview.h"
 #include "logging.h"
 
-bool fileExists(const QString &s)
+bool dfdFileExists(const QString &s)
 {
     QString f = s;
     f.replace(".mat",".dfd");
@@ -40,8 +40,8 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
     tree->setAlternatingRowColors(true);
     tree->setColumnCount(4);
     tree->setHeaderLabels(QStringList()<<"№"<<"Файл"<<"Конвертирован"<<"Запись");
-    //tree->setItemDelegateForColumn(4, new ComboBoxItemDelegate(convertor, this));
-    //connect(tree, SIGNAL(itemClicked(QTreeWidgetItem*,int)), SLOT(editItem(QTreeWidgetItem*,int)));
+    tree->setItemDelegateForColumn(3, new ComboBoxItemDelegate(convertor, this));
+//    connect(tree, SIGNAL(itemClicked(QTreeWidgetItem*,int)), SLOT(editItem(QTreeWidgetItem*,int)));
 
     CheckableHeaderView *tableHeader = new CheckableHeaderView(Qt::Horizontal, tree);
 
@@ -148,7 +148,7 @@ void MatlabConverterDialog::chooseMatFiles()
         item->setFlags(item->flags() | Qt::ItemIsEditable);
         item->setText(0, QString::number(i++));
         item->setText(1, f.canonicalFilePath());
-        if (fileExists(f.canonicalFilePath())) {
+        if (dfdFileExists(f.canonicalFilePath())) {
             item->setIcon(2,QIcon(":/icons/tick.png"));
             item->setCheckState(1, Qt::Unchecked);
         }
@@ -159,23 +159,52 @@ void MatlabConverterDialog::chooseMatFiles()
 
     buttonBox->buttons().first()->setDisabled(matFiles.isEmpty());
 
-    QString xmlFileName = findXmlFile(true);
-    convertor->xmlFileName = xmlFileName;
-    if (!xmlFileName.isEmpty()) {
-        bool noErrors = true;
-        convertor->readXml(noErrors);
+    QString xmlFileName = findXmlFile(false);
 
-        for (int i=0; i<tree->topLevelItemCount(); ++i) {
-            QString xdfFileName = tree->topLevelItem(i)->text(1);
-            xdfFileName.replace(".mat",".xdf");
-            for (int j = 0; j< convertor->xml.size(); ++j) {
-                const Dataset &s = convertor->xml.at(j);
-                if (QFileInfo(xdfFileName).completeBaseName().toLower().startsWith(s.fileName.toLower()+"_")) {
-                    //tree->topLevelItem(i)->setData(3, Qt::UserRole, j);
-                    tree->topLevelItem(i)->setText(3, s.id);
-                    break;
-                }
+    convertor->xmlFileName = xmlFileName;
+    if (xmlFileName.isEmpty()) {
+        textEdit->appendHtml("<font color=red>Error!</font> Не могу найти файл Analysis.xml.");
+        return;
+    }
+
+    //Читаем файл xml и определяем, какие в нем записи
+    bool noErrors = true;
+    convertor->readXml(noErrors);
+    if (!noErrors) {
+        textEdit->appendHtml("<font color=red>Error!</font> Не удалось прочитать файл " + xmlFileName);
+        return;
+    }
+
+    textEdit->appendHtml("Файл Analysis.xml содержит следующие записи:");
+    foreach (const Dataset &dataset, convertor->xml) {
+        textEdit->appendHtml(QString("%1: %2").arg(dataset.id).arg(dataset.fileName));
+    }
+
+    for (int i=0; i<tree->topLevelItemCount(); ++i) {
+        QString xdfFileName = tree->topLevelItem(i)->text(1);
+        xdfFileName.replace(".mat",".xdf");
+
+        //сопоставляем наши файлы mat с записями в файле xml
+        for (int j = 0; j< convertor->xml.size(); ++j) {
+            const Dataset &s = convertor->xml.at(j);
+            QString xdfName = QFileInfo(xdfFileName).fileName().toLower();
+            QString datasetName = s.fileName.toLower();
+            if (xdfName == datasetName) {
+                tree->topLevelItem(i)->setData(3, Qt::UserRole, j);
+                tree->topLevelItem(i)->setText(3, s.id+": "+s.fileName);
+                convertor->setDatasetForFile(tree->topLevelItem(i)->text(1), j);
+                break;
             }
+        }
+
+        //проверяем, все ли записи нашли
+        if (tree->topLevelItem(i)->text(3).isEmpty()) {
+            textEdit->appendHtml(QString("<font color=red>ОШИБКА!</font> Не удалось найти запись для файла %1")
+                                 .arg(tree->topLevelItem(i)->text(1)));
+            textEdit->appendHtml(QString("Выберите нужную запись в выпадающем списке для этой записи."));
+            tree->topLevelItem(i)->setData(3, Qt::UserRole, -1);
+            tree->topLevelItem(i)->setText(3, "Ошибка!");
+            convertor->setDatasetForFile(tree->topLevelItem(i)->text(1), -1);
         }
     }
 }
@@ -201,10 +230,12 @@ QString MatlabConverterDialog::findXmlFile(bool silent) const
 {
     if (tree->topLevelItemCount()==0) return QString();
 
+    //определяем файл Analysis.xml по первому файлу mat, так как они всё равно в одной папке
     QString file = tree->topLevelItem(0)->text(1);
 
     QDir folderDir(file); // сейчас указывает на файл
     folderDir.cdUp(); // теперь указывает на папку
+
     QString xmlFileName;
     // ищем в текущей папке с файлами mat
     QStringList xmlFiles = folderDir.entryList(QStringList()<<"*.xml", QDir::Files | QDir::Readable);
@@ -240,16 +271,16 @@ void MatlabConverterDialog::start()
 
     progress->setRange(0, toConvert.size()-1);
 
-    if (convertor->xmlFileName.isEmpty())
-        convertor->xmlFileName = findXmlFile(false);
+//    if (convertor->xmlFileName.isEmpty())
+//        convertor->xmlFileName = findXmlFile(false);
 
-    if (convertor->xmlFileName.isEmpty()) {
-        textEdit->appendHtml("<font color=red>Error!</font> Не могу найти файл Analysis.xml.");
-        return;
-    }
-    textEdit->appendHtml("Файл XML: "+convertor->xmlFileName);
-    bool noErrors = true;
-    convertor->readXml(noErrors);
+//    if (convertor->xmlFileName.isEmpty()) {
+//        textEdit->appendHtml("<font color=red>Error!</font> Не могу найти файл Analysis.xml.");
+//        return;
+//    }
+//    textEdit->appendHtml("Файл XML: "+convertor->xmlFileName);
+//    bool noErrors = true;
+//    convertor->readXml(noErrors);
 
     convertor->setRawFileFormat(rawFileFormat->currentIndex());
 
@@ -297,33 +328,51 @@ void MatlabConverterDialog::finalize()
 }
 
 
-//QWidget *ComboBoxItemDelegate::createEditor(QWidget *parent,
-//                                            const QStyleOptionViewItem &/* option */,
-//                                            const QModelIndex &/* index */) const
-//{DD;
-//    QComboBox *editor = new QComboBox(parent);
-//    if (editor) {
-//        for (int i=0; i<convertor->xml.size(); ++i)
-//            editor->addItem(convertor->xml.at(i).id);
-//    }
-//    return editor;
-//}
+QWidget *ComboBoxItemDelegate::createEditor(QWidget *parent,
+                                            const QStyleOptionViewItem &/* option */,
+                                            const QModelIndex &/* index */) const
+{DD;
+    QComboBox *editor = new QComboBox(parent);
+    if (editor) {
+        for (int i=0; i<convertor->xml.size(); ++i)
+            editor->addItem(convertor->xml.at(i).id + ": "+convertor->xml.at(i).fileName);
+    }
+    return editor;
+}
 
-//void ComboBoxItemDelegate::setEditorData(QWidget *editor,
-//                                         const QModelIndex &index) const
-//{DD;
-//    int row = index.model()->data(index, Qt::UserRole).toInt();
+void ComboBoxItemDelegate::setEditorData(QWidget *editor,
+                                         const QModelIndex &index) const
+{DD;
+    if (!index.isValid()) return;
+    int row = index.model()->data(index, Qt::UserRole).toInt();
 
-//    QComboBox *box = qobject_cast<QComboBox*>(editor);
-//    if (box) box->setCurrentIndex(row);
-//}
+    QComboBox *box = qobject_cast<QComboBox*>(editor);
+    if (box) box->setCurrentIndex(row);
+}
 
-//void ComboBoxItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
-//                                        const QModelIndex &index) const
-//{DD;
-//    QComboBox *box = qobject_cast<QComboBox*>(editor);
-//    if (box) {
-//        model->setData(index, box->currentIndex(), Qt::UserRole);
-//        model->setData(index, box->currentText(), Qt::DisplayRole);
-//    }
-//}
+void ComboBoxItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
+                                        const QModelIndex &index) const
+{DD;
+    if (!index.isValid()) return;
+
+    QComboBox *box = qobject_cast<QComboBox*>(editor);
+    if (box) {
+        model->setData(index, box->currentIndex(), Qt::UserRole);
+        model->setData(index, box->currentText(), Qt::DisplayRole);
+        convertor->setDatasetForFile(model->data(model->index(index.row(), 1)).toString(), box->currentIndex());
+    }
+}
+
+void ComboBoxItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const
+{
+    if (!editor || !index.isValid()) return;
+
+    if (QComboBox* e = qobject_cast<QComboBox*>(editor)) {
+        QRect r = option.rect;
+        int max = 0;
+        for(int i=0; i<e->count(); ++i)
+            max = qMax(max, e->fontMetrics().width(e->itemText(i)));
+        r.setWidth(max);
+        e->setGeometry(r.adjusted(0,0,10,0));
+    }
+}

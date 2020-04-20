@@ -4,6 +4,7 @@
 #include "fileformats/filedescriptor.h"
 #include <QtGlobal>
 #include <QtDebug>
+#include <QMap>
 
 #include "matfile.h"
 
@@ -45,6 +46,7 @@ public:
     MatlabConvertor(QObject *parent = 0);
     void setFilesToConvert(const QStringList &toConvert) {filesToConvert = toConvert;}
     void setRawFileFormat(int format) {rawFileFormat = format;} // 0 = float, 1 = quint16
+    void setDatasetForFile(const QString &file, int dataset) {datasets.insert(file, dataset);}
 
     QStringList getNewFiles() const {return newFiles;}
     void readXml(bool &success);
@@ -58,7 +60,7 @@ signals:
     void finished();
     void message(const QString &s);
 private:
-
+    QMap<QString, int> datasets;
     QString folderName;
     QStringList newFiles;
     QStringList filesToConvert;

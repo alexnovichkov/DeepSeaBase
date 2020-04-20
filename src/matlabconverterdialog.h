@@ -16,22 +16,25 @@ class QCheckBox;
 class QComboBox;
 class QTreeWidgetItem;
 
-//class ComboBoxItemDelegate : public QStyledItemDelegate
-//{
-//    Q_OBJECT
-//public:
-//    explicit ComboBoxItemDelegate(MatlabConvertor *convertor, QObject *parent = 0)
-//        : QStyledItemDelegate(parent), convertor(convertor) {}
+class ComboBoxItemDelegate : public QStyledItemDelegate
+{
+    Q_OBJECT
+public:
+    explicit ComboBoxItemDelegate(MatlabConvertor *convertor, QObject *parent = 0)
+        : QStyledItemDelegate(parent), convertor(convertor) {}
 
-//    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
-//                          const QModelIndex &index) const;
+    QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option,
+                          const QModelIndex &index) const;
 
-//    void setEditorData(QWidget *editor, const QModelIndex &index) const;
-//    void setModelData(QWidget *editor, QAbstractItemModel *model,
-//                      const QModelIndex &index) const;
-//private:
-//    MatlabConvertor *convertor;
-//};
+    void setEditorData(QWidget *editor, const QModelIndex &index) const;
+    void setModelData(QWidget *editor, QAbstractItemModel *model,
+                      const QModelIndex &index) const;
+    virtual void updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+private:
+    MatlabConvertor *convertor;
+};
+
+
 
 class MatlabConverterDialog : public QDialog
 {
