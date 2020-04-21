@@ -1645,7 +1645,8 @@ QVariant DfdChannel::info(int column, bool edit) const
         case 1: {
             QString result = YName;
             if (edit) return result;
-            if (!YNameOld.isEmpty()) result.append(QString(" (%1)").arg(YNameOld));
+            if (!YNameOld.isEmpty() && YNameOld != YName)
+                result.append(QString(" (%1)").arg(YNameOld));
             return result;
         }
         case 2: return data()->yValuesFormatString();
