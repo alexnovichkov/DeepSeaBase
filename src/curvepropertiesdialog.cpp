@@ -26,13 +26,15 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
 
     titleEdit = new QLineEdit(oldTitle, this);
     connect(titleEdit, &QLineEdit::textChanged, [=](const QString &newValue) {
-        curve->channel->setName(newValue);
-        curve->setTitle(curve->channel->legendName());
-//        curve->legend = curve->channel->legendName();
+        if (curve->channel->name() != newValue) {
+            curve->channel->setName(newValue);
+            curve->setTitle(curve->channel->legendName());
+    //        curve->legend = curve->channel->legendName();
 
-        curve->descriptor->setChanged(true);
-        curve->descriptor->write();
-        emit curveChanged(curve);
+            curve->descriptor->setChanged(true);
+    //        curve->descriptor->write();
+            emit curveChanged(curve);
+        }
     }
     );
 

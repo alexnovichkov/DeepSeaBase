@@ -1138,6 +1138,11 @@ QString Function::yName() const
     return type58[44].value.toString();
 }
 
+QString Function::zName() const
+{
+    return type58[58].value.toString();
+}
+
 void Function::setYName(const QString &yName)
 {
     type58[44].value = yName;

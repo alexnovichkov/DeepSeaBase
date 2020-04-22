@@ -390,7 +390,7 @@ void TrackingPanel::update()
             if (filter) reject = energy - reject;
             cumul  = DataHolder::toLog(sqrt(cumul)/double(steps[maxBorder]-steps[minBorder]+1),
                                        c->channel->data()->threshold(),
-                    DataHolder::UnitsLinear);
+                                       DataHolder::UnitsLinear);
             energy = DataHolder::toLog(energy, c->channel->data()->threshold(), DataHolder::YValuesUnits::UnitsQuadratic);
             reject = DataHolder::toLog(reject, c->channel->data()->threshold(), DataHolder::YValuesUnits::UnitsQuadratic);
             if (!filter) reject = 0.0;

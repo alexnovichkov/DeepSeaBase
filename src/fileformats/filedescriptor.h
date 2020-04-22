@@ -185,6 +185,7 @@ public:
 
     virtual QString xName() const = 0;
     virtual QString yName() const = 0;
+    virtual QString zName() const = 0;
     virtual void setYName(const QString &yName) = 0;
 
     virtual QString legendName() const = 0;

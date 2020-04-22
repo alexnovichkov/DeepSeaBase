@@ -15,9 +15,10 @@ Data94File::Data94File(const Data94File &d) : FileDescriptor(d.fileName())
     foreach (Data94Channel *f, d.channels) {
         this->channels << new Data94Channel(*f);
     }
-//    foreach (Data94Channel *f, channels) {
-//        f->parent = this;
-    //    }
+
+    foreach (Data94Channel *f, channels) {
+        f->parent = this;
+    }
 }
 
 Data94File::Data94File(const FileDescriptor &other) : FileDescriptor(other.fileName())
@@ -71,18 +72,19 @@ void Data94File::read()
     r.device()->skip(paddingSize);
 
     //reading xAxisBlock
-    quint32 xAxisBlockPresent;
-    r >> xAxisBlockPresent;
-    if (xAxisBlockPresent > 0) {
-        //данные по оси Х одинаковые для всех каналов
-        xAxisBlock.read(r);
-    }
+    //данные по оси Х одинаковые для всех каналов
+    xAxisBlock.read(r);
+
+    //reading zAxisBlock
+    //данные по оси Z одинаковые для всех каналов
+    zAxisBlock.read(r);
 
     //дальше - каналы
     quint32 channelsCount;
     r >> channelsCount;
     for (quint32 i = 0; i < channelsCount; ++i) {
         Data94Channel *c = new Data94Channel(this);
+        c->_description = description.value("channels").toArray().takeAt(i).toObject();
         c->read(r);
         channels << c;
     }
@@ -94,6 +96,7 @@ void Data94File::write()
 
 void Data94File::writeRawFile()
 {
+    //no-op
 }
 
 void Data94File::updateDateTimeGUID()
@@ -203,7 +206,7 @@ QVariant Data94File::channelHeader(int column) const
 
 int Data94File::columnsCount() const
 {
-    if (channels.isEmpty()) return 7;
+    if (channels.isEmpty()) return 6;
     return channels[0]->columnsCount();
 }
 
@@ -292,155 +295,334 @@ Data94Channel::Data94Channel(Data94File *parent) : Channel(),
 
 }
 
+Data94Channel::Data94Channel(Data94Channel *other) : Channel(other)
+{
+    _description = other->_description;
+    isComplex = other->isComplex;
+}
+
+Data94Channel::Data94Channel(Channel *other) : Channel(other)
+{
+    isComplex = other->data()->yValuesFormat() == DataHolder::YValuesComplex;
+    _description.insert("id", 1);
+    _description.insert("name", other->name());
+    _description.insert("description", other->description());
+    _description.insert("correction", other->correction());
+    _description.insert("yname", other->yName());
+    _description.insert("xname", other->xName());
+    _description.insert("zname", other->zName());
+    _description.insert("samples", other->data()->samplesCount());
+    _description.insert("blocks", other->data()->blocksCount());
+    if (other->data()->xValuesFormat() == DataHolder::XValuesUniform)
+        _description.insert("samplerate", int(1.0 / other->data()->xStep()));
+
+    QJsonObject function;
+    function.insert("name", Descriptor::functionTypeDescription(other->type()));
+    function.insert("type", other->type());
+    QString format;
+    switch (other->data()->yValuesFormat()) {
+        case DataHolder::YValuesComplex: format = "complex"; break;
+        case DataHolder::YValuesReals: format = "real"; break;
+        case DataHolder::YValuesAmplitudes: format = "amplitude"; break;
+        case DataHolder::YValuesAmplitudesInDB: format = "amplitudeDb"; break;
+        case DataHolder::YValuesImags: format = "imaginary"; break;
+        case DataHolder::YValuesPhases: format = "phase"; break;
+        default: format = "real";
+    }
+    function.insert("format", format);
+    function.insert("logref", other->data()->threshold());
+    QString units;
+    switch (other->data()->yValuesUnits()) {
+        case DataHolder::UnitsUnknown:
+        case DataHolder::UnitsLinear: units = "quadratic"; break;
+        case DataHolder::UnitsQuadratic: units = "linear"; break;
+        case DataHolder::UnitsDimensionless: units = "dimensionless"; break;
+        default: break;
+    }
+    function.insert("logscale", units);
+    _description.insert("function", function);
+
+
+//    *           "responseName": "lop1:1",
+//    *           "responseDirection": "+z",
+//    *           "referenceName": "lop1:1",
+//    *           "referenceDirection": "",
+//    *           "sensorID" : "", //ChanAddress
+//    *           "sensorName": "", //ChanName
+
+//    *           "bandwidth": 3200, //обычно samplerate/2.56, но может и отличаться при полосной фильтрации
+//    *           "function": {
+//    *               //далее идут все параметры обработки
+//    *           }
+    dataPosition = -1;
+}
+
 void Data94Channel::read(QDataStream &r)
 {
+    if (r.status() != QDataStream::Ok) return;
+    quint32 valueFormat;
+    r >> valueFormat;
 
+    isComplex = valueFormat == 1;
+
+    dataPosition = r.device()->pos();
+
+    double thr = _description.value("function").toObject().value("logref").toDouble();
+    if (thr == 0.0)
+        thr = threshold(yName());
+    _data->setThreshold(thr);
+
+    int units = DataHolder::UnitsLinear;
+    QString unitsS = _description.value("function").toObject().value("logref").toString();
+    if (unitsS == "quadratic") units = DataHolder::UnitsQuadratic;
+    else if (unitsS == "dimensionless") units = DataHolder::UnitsDimensionless;
+    _data->setYValuesUnits(units);
+
+    DataHolder::YValuesFormat yValueFormat = DataHolder::YValuesUnknown;
+    QString format = _description.value("function").toObject().value("format").toString();
+    if (format == "complex") yValueFormat = DataHolder::YValuesComplex;
+    else if (format == "real") yValueFormat = DataHolder::YValuesReals;
+    else if (format == "imaginary") yValueFormat = DataHolder::YValuesImags;
+    else if (format == "amplitude") yValueFormat = DataHolder::YValuesAmplitudes;
+    else if (format == "amplitudeDb") yValueFormat = DataHolder::YValuesAmplitudesInDB;
+    else if (format == "phase") yValueFormat = DataHolder::YValuesPhases;
+    _data->setYValuesFormat(yValueFormat);
+
+    if (parent->xAxisBlock.uniform == 1)
+        _data->setXValues(parent->xAxisBlock.begin, parent->xAxisBlock.step, parent->xAxisBlock.count);
+
+    _data->setBlocksCount(parent->zAxisBlock.count);
+
+    r.device()->skip(parent->zAxisBlock.count * parent->xAxisBlock.count * (isComplex?2:1) * sizeof(float));
+    // соответствия:         blockCount                 sampleCount         factor
 }
 
 void Data94Channel::setXStep(double xStep)
 {
-
+    _data->setXStep(xStep);
 }
 
 QVariant Data94Channel::info(int column, bool edit) const
 {
+    Q_UNUSED(edit)
+    switch (column) {
+        case 0: return _description.value("name"); //avoiding conversion variant->string->variant
+        case 1: return _description.value("yname");
+        case 2: return data()->yValuesFormatString();
+        case 3: return _description.value("description");
+        case 4: return _description.value("function").toObject().value("name");
+        case 5: return _description.value("correction");
+        default: ;
+    }
+    return QVariant();
 }
 
 int Data94Channel::columnsCount() const
 {
+    int minimumCount = 6;
+    ///TODO: предусмотреть возможность показывать расширенный список свойств
+
+    return minimumCount;
 }
 
 QVariant Data94Channel::channelHeader(int column) const
 {
+    switch (column) {
+        case 0: return QString("Имя");
+        case 1: return QString("Ед.изм.");
+        case 2: return QString("Формат");
+        case 3: return QString("Описание");
+        case 4: return QString("Функция");
+        case 5: return QString("Коррекция");
+        default: return QVariant();
+    }
+    return QVariant();
 }
 
 Descriptor::DataType Data94Channel::type() const
 {
-}
-
-bool Data94Channel::populated() const
-{
-}
-
-void Data94Channel::setPopulated(bool populated)
-{
+    return Descriptor::DataType(_description.value("function").toObject().value("type").toInt());
 }
 
 void Data94Channel::populate()
 {
+    ///Сейчас программа не поддерживает чтение нескольких блоков данных,
+    /// поэтому читаем только первый блок
+
+    // clear previous data;
+    if (populated()) return;
+    _data->clear();
+
+    setPopulated(false);
+
+
+    QFile rawFile(parent->fileName());
+
+//    QTime time;
+//    time.start();
+
+    if (rawFile.open(QFile::ReadOnly)) {
+        QVector<double> YValues;
+        const quint64 blockSize = parent->xAxisBlock.count * (isComplex ? 2 : 1);
+
+        if (dataPosition < 0) {
+            qDebug()<<"Поврежденный файл: не удалось найти положение данных в файле";
+        }
+        else {
+            // map file into memory
+            unsigned char *ptr = rawFile.map(0, rawFile.size());
+            if (ptr) {//достаточно памяти отобразить весь файл
+                unsigned char *maxPtr = ptr + rawFile.size();
+                unsigned char *ptrCurrent = ptr;
+                if (dataPosition >= 0) {
+                    ptrCurrent = ptr + dataPosition;
+
+                    YValues = convertFrom<double>(ptrCurrent,
+                                                  qMin(maxPtr-ptrCurrent, int(blockSize * sizeof(float))),
+                                                  0xc0000004);
+                }
+            }
+            else {
+                //читаем классическим способом
+                QDataStream readStream(&rawFile);
+                readStream.setByteOrder(QDataStream::LittleEndian);
+                readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+                readStream.device()->seek(dataPosition);
+                YValues = getChunkOfData<double>(readStream, blockSize, 0xc0000004, 0);
+            }
+        }
+
+        //меняем размер, если не удалось прочитать весь блок данных
+        YValues.resize(blockSize);
+        if (isComplex) {
+            QVector<cx_double> co(parent->xAxisBlock.count);
+            for (uint i=0; i<parent->xAxisBlock.count; ++i) {
+                co[i] = {YValues[i*2], YValues[i*2+1]};
+            }
+            _data->setYValues(co);
+        }
+        else
+            _data->setYValues(YValues, DataHolder::YValuesFormat(_data->yValuesFormat()));
+
+        setPopulated(true);
+        rawFile.close();
+
+        if (!parent->xAxisBlock.values.isEmpty()) {//данные по оси Х
+            _data->setXValues(parent->xAxisBlock.values);
+        }
+    }
+    else {
+        qDebug()<<"Не удалось открыть файл"<<parent->fileName();
+    }
 }
 
 QString Data94Channel::name() const
 {
+    return _description.value("name").toString();
 }
 
 void Data94Channel::setName(const QString &name)
 {
+    _description.insert("name", name);
 }
 
 QString Data94Channel::description() const
 {
+    return _description.value("description").toString();
 }
 
 void Data94Channel::setDescription(const QString &description)
 {
+    _description.insert("description", description);
 }
 
 QString Data94Channel::xName() const
 {
+    return _description.value("xname").toString();
 }
 
 QString Data94Channel::yName() const
 {
+    return _description.value("yname").toString();
+}
+
+QString Data94Channel::zName() const
+{
+    return _description.value("zname").toString();
 }
 
 void Data94Channel::setYName(const QString &yName)
 {
+    _description.insert("yname", yName);
 }
 
 QString Data94Channel::legendName() const
 {
+    QStringList l;
+    l << name();
+    if (!correction().isEmpty()) l << correction();
+    if (!parent->legend().isEmpty()) l << parent->legend();
+
+    return l.join(" ");
 }
 
 FileDescriptor *Data94Channel::descriptor()
 {
+    return parent;
 }
 
 int Data94Channel::index() const
 {
+    if (parent) return parent->channels.indexOf(const_cast<Data94Channel*>(this), 0);
+    return 0;
 }
 
 QString Data94Channel::correction() const
 {
+    return _description.value("correction").toString();
 }
 
 void Data94Channel::setCorrection(const QString &s)
 {
+    _description.insert("correction", s);
 }
 
-void Data94Block::read(QDataStream &r)
-{
-    quint64 sizeInBytes;
-    r >> sizeInBytes;
-
-    quint32 dataFormat;
-    r >> dataFormat;
-
-    r >> sampleCount; //общее количество отсчетов для всего блока
-
-    quint32 valueFormat;
-    r >> valueFormat;
-    complex = valueFormat>0;
-
-    r >> blockCount;
-
-}
-
-void Data94Block::write(QDataStream &r)
-{
-
-}
-
-void XAxisBlock::read(QDataStream &r)
+void AxisBlock::read(QDataStream &r)
 {DD;
     if (r.status() != QDataStream::Ok) return;
 
-    r.setFloatingPointPrecision(QDataStream::DoublePrecision);
-    quint32 labelSize;
-    r >> labelSize;
-    QByteArray labelData = r.device()->read(labelSize);
-    label = QString::fromUtf8(labelData);
+    r.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
     r >> uniform;//     0 - шкала неравномерная, 1 - шкала равномерная
-    r >> samplesCount;
+    r >> count;
 
     if (uniform > 0) {
-        r >> xBegin;
-        r >> xStep;
+        r >> begin;
+        r >> step;
+        isValid = true;
     }
     else {
-        values = getChunkOfData<double>(r, samplesCount, 0xC0000008, 0);
+        int actuallyRead = 0;
+        values = getChunkOfData<double>(r, count, 0xC0000004, &actuallyRead);
+        if (uint(actuallyRead) == count) isValid = true;
     }
-    isValid = true;
 }
 
-void XAxisBlock::write(QDataStream &r)
+void AxisBlock::write(QDataStream &r)
 {DD;
     if (r.status() != QDataStream::Ok) return;
 
-    r.setFloatingPointPrecision(QDataStream::DoublePrecision);
-    QByteArray labelData = label.toUtf8();
-    r << labelData.size();
-    r.device()->write(labelData);
+    r.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
     r << uniform;//     0 - шкала неравномерная, 1 - шкала равномерная
-    r << samplesCount;
+    r << count;
 
     if (uniform > 0) {
-        r << xBegin;
-        r << xStep;
+        r << begin;
+        r << step;
     }
     else {
-        foreach (double x, values) r << x;
+        foreach (double x, values) r << float(x);
     }
 }

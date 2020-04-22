@@ -13,30 +13,26 @@
  * Описание структуры:
  *
  * //Метка файла
- * |data|94  |ui32| *  |  'data94 -> 'quint32 descriptionSize - длина текстового описания в байтах
+ * |data|94  |ui32| *  |  'data94  '
+ *                        quint32 descriptionSize - длина текстового описания в байтах
  * | *  | *  | *  | *  |  -> char[descriptionSize] description - текстовое описание данных в формате utf8
  * |ui32|0000|0000|0000|  -> quint32 paddingSize - размер паддинга (1).
  * |0000|0000|0000|0000|  -> byte[paddingSize] - паддинг
- * |ui32|XBlk          |  -> quint32 xBlockPresent: 0 = absent, 1 = present
- * |                   |  -> xBlock если xBlockPresent==1
+ * |     XBlk          |  -> xBlock
+ * |     ZBlk          |  -> zBlock
  *
  *
- * //Блок описания оси Х
- * //все блоки имеют одинаковый формат
- * quint32 labelSize
- * char[labelSize]     метка оси Х в кодировке utf8
+ * //Блок описания оси Х и Z
  * quint32 uniform     0 - шкала неравномерная, 1 - шкала равномерная
- * quint64 samplesCount
- * double xBegin - если шкала равномерная
- * double xStep - если шкала равномерная
- * double[samplesCount] - если шкала неравномерная
+ * quint32 count
+ * float begin - если шкала равномерная
+ * float step - если шкала равномерная
+ * float[count] - если шкала неравномерная
  *
  *
  * //Далее идут записи каналов
  * quint32 channelsCount - количество каналов
  *
- * quint64 descriptionSize - длина текстового описания в байтах
- * char[descriptionSize] description - текстовое описание данных
  * //Блок данных для оси Y
  *
  * Текстовое описание - формат Json
@@ -49,6 +45,40 @@
  *   "dataDescription": {
  *       "свойства конкретного файла" //аналогично DFD DataDescription
  *   }
+ *   "channels" : [
+ *       {
+ *           "id" : "1",
+ *           "name" : "",
+ *           "description": "",
+ *           "correction": "",
+ *           "yname" : "m/s^2",
+ *           "xname" : "Hz",
+ *           "zname" : "s",
+ *           "responseName": "lop1:1",
+ *           "responseDirection": "+z",
+ *           "referenceName": "lop1:1",
+ *           "referenceDirection": "",
+ *           "samples": 3200, //количество отсчетов на один блок
+ *           "blocks": 1, //количество блоков, соответствующих отдельным значениям по Z
+ *                        //не читаем это значение, так как оно дублируется в zAxisBlock
+ *           "sensorID" : "", //ChanAddress
+ *           "sensorName": "", //ChanName
+ *           "samplerate": 8192,
+ *           "bandwidth": 3200, //обычно samplerate/2.56, но может и отличаться при полосной фильтрации
+ *           "function": {
+ *               "name": "FRF", //или "time" - для тонкой настройки типа функции
+ *               "type": 5, //тип функции согласно UFF - обобщенный тип
+ *               "logref": 0.000314,
+ *               "logscale": "linear" / "quadratic" / "dimensionless",
+ *               "format": "real", "imaginary", "complex", "amplitude", "phase", "amplitudeDb"
+ *               //далее идут все параметры обработки
+ *           }
+ *       }
+ *       {
+ *           "id" : "2",
+ *           "name" : "",
+ *       }
+ *   ]
  * }
  * Описание канала:
  *
@@ -60,70 +90,32 @@
  */
 
 /**
- * @brief The Data94Block class
+ * @brief The Data94Channel class
  * Блок данных
- *     quint64 sizeInBytes - размер в байтах
- *     quint32 dataFormat - 0 или 1, 0 = данные распределены равномерно
- *                                   1 = данные распределены неравномерно
- *     quint64 sampleCount - количество отсчетов всего, включая разбиение по третьей оси;
- *                     если данные в комплексной форме, то реальная длина записи = sampleCount*2
- *     quint32 valueFormat - действительное (1) или комплексное (2)
- *     quint64 blockCount - количество блоков.
- *             blockCount == 1 - обычный файл
- *             blockCount > 1 - файл время-частотных характеристик, каждый блок соответствует
- *                              одному отсчету по времени, в блоке записываются АЧХ
+ *     quint32 valueFormat - действительное (0) или комплексное (1)
  *
- *     //Далее идут данные для каждого блока, от 1 до blockCount
  *  ┌-------------------------------------------------------------------------------------
- *  |   quint64 samples - количество отсчетов в блоке
- *  |   double zValue - значение по оси аппликат (по другой оси), характеризующее этот блок
- *  |   //далее - краткий формат, dataFormat=0
- *  |   double step - шаг по оси
- *  |   double initial - начальное значение
- *  |   //длинный формат, dataFormat=1
  *  |
- *  |   double[samples * valueFormat] data - вектор значений
+ *  |   float[samples * blockCount * valueFormat] data - вектор значений
+ *  |   отформатирован следующим образом:
+ *  |   Block 0 - sample0_re sample0_im sample1_re sample1_im .....
+ *  |   Block 1 - sample0_re sample0_im sample1_re sample1_im .....
  *  └---------------------------------------------------------------------------------
  */
 
-class XAxisBlock
+class AxisBlock
 {
 public:
     void read(QDataStream &r);
     void write(QDataStream &r);
-//    quint64 position = 0;
-//    quint64 dataPosition = 0;
-    // quint32 labelSize
-    // char[labelSize]     метка оси Х в кодировке utf8
-    QString label;
+
     quint32 uniform = 1;//     0 - шкала неравномерная, 1 - шкала равномерная
-    quint64 samplesCount = 0;
-    double xBegin = 0.0;// - если шкала равномерная
-    double xStep = 0.0;// - если шкала равномерная
+    quint32 count = 0;
+    float begin = 0.0;// - если шкала равномерная
+    float step = 0.0;// - если шкала равномерная
     QVector<double> values;// - если шкала неравномерная
 
     bool isValid = false;
-};
-
-class Data94Block
-{
-public:
-    void read(QDataStream &r);
-    void write(QDataStream &r);
-    QVector<double> getValues(quint64 block);
-
-    quint64 position;
-    quint64 dataPosition;
-    bool complex;
-    quint64 sampleCount;
-    quint64 blockCount;
-    //если данные рапределены равномерно
-    QVector<int> count;
-    QVector<double> startValue;
-    QVector<double> step;
-private:
-    //если данные рапределены неравномерно
-    QVector<double> values; //читаются только через getValues, так как заполняются
 };
 
 class Data94Channel;
@@ -172,10 +164,12 @@ public:
     virtual bool dataTypeEquals(FileDescriptor *other) const override;
     virtual QString fileFilters() const override;
 private:
+    friend class Data94Channel;
     QJsonObject description;
     QList<Data94Channel*> channels;
 
-    XAxisBlock xAxisBlock;
+    AxisBlock xAxisBlock;
+    AxisBlock zAxisBlock;
 };
 
 class Data94Channel : public Channel
@@ -193,8 +187,6 @@ public:
     virtual int columnsCount() const override;
     virtual QVariant channelHeader(int column) const override;
     virtual Descriptor::DataType type() const override;
-    virtual bool populated() const override;
-    virtual void setPopulated(bool populated) override;
     virtual void populate() override;
     virtual QString name() const override;
     virtual void setName(const QString &name) override;
@@ -202,6 +194,7 @@ public:
     virtual void setDescription(const QString &description) override;
     virtual QString xName() const override;
     virtual QString yName() const override;
+    virtual QString zName() const override;
     virtual void setYName(const QString &yName) override;
     virtual QString legendName() const override;
     virtual FileDescriptor *descriptor() override;
@@ -210,8 +203,11 @@ public:
     virtual void setCorrection(const QString &s) override;
 private:
     friend class Data94File;
-    Data94File *parent;
+    Data94File *parent = 0;
 
+    bool isComplex = false;
+    qint64 dataPosition = -1;
+    QJsonObject _description;
 };
 
 #endif // DATA94FILE_H

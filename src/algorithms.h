@@ -79,6 +79,53 @@ QVector<D> getChunkOfData(QDataStream &readStream, int chunkSize, uint IndType, 
     return result;
 }
 
+template <typename T>
+inline T convertFrom(unsigned char *ptr, uint IndType)
+{
+    switch (IndType) {
+        case 1:          return static_cast<T>(qFromLittleEndian<quint8>(ptr)); break;
+        case 0x80000001: return static_cast<T>(qFromLittleEndian<qint8>(ptr)); break;
+        case 2:          return static_cast<T>(qFromLittleEndian<quint16>(ptr)); break;
+        case 0x80000002: return static_cast<T>(qFromLittleEndian<qint16>(ptr)); break;
+        case 4:          return static_cast<T>(qFromLittleEndian<quint32>(ptr)); break;
+        case 0x80000004: return static_cast<T>(qFromLittleEndian<qint32>(ptr)); break;
+        case 0x80000008: return static_cast<T>(qFromLittleEndian<qint64>(ptr)); break;
+        case 0xc0000004: return static_cast<T>(qFromLittleEndian<float>(ptr)); break;
+        case 0xc0000008: return static_cast<T>(qFromLittleEndian<double>(ptr)); break;
+        case 0xc000000a: return static_cast<T>(qFromLittleEndian<long double>(ptr)); break;
+        default: break;
+    }
+    return T();
+}
+
+template <typename T>
+inline QVector<T> convertFrom(unsigned char *ptr, qint64 length, uint IndType)
+{
+    uint step = IndType % 16;
+    QVector<T> temp(length / step, 0.0);
+
+    int i=0;
+    while (length) {
+        switch (IndType) {
+            case 1: temp[i++] = static_cast<T>(qFromLittleEndian<quint8>(ptr)); break;
+            case 0x80000001: temp[i++] = static_cast<T>(qFromLittleEndian<qint8>(ptr)); break;
+            case 2: temp[i++] = static_cast<T>(qFromLittleEndian<quint16>(ptr)); break;
+            case 0x80000002: temp[i++] = static_cast<T>(qFromLittleEndian<qint16>(ptr)); break;
+            case 4: temp[i++] = static_cast<T>(qFromLittleEndian<quint32>(ptr)); break;
+            case 0x80000004: temp[i++] = static_cast<T>(qFromLittleEndian<qint32>(ptr)); break;
+            case 0x80000008: temp[i++] = static_cast<T>(qFromLittleEndian<qint64>(ptr)); break;
+            case 0xc0000004: temp[i++] = static_cast<T>(qFromLittleEndian<float>(ptr)); break;
+            case 0xc0000008: temp[i++] = static_cast<T>(qFromLittleEndian<double>(ptr)); break;
+            case 0xc000000a: temp[i++] = static_cast<T>(qFromLittleEndian<long double>(ptr)); break;
+            default: break;
+        }
+
+        length -= step;
+        ptr += step;
+    }
+    return temp;
+}
+
 /* возвращает значение функции-члена function первого элемента последовательности,
  * если все элементы последовательности равны
  * или значение по умолчанию, если в последовательности есть разные элементы

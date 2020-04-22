@@ -568,7 +568,7 @@ QVector<double> DataHolder::decibels() const
 
 QVector<double> DataHolder::toLog(const QVector<double> &values, double threshold, int units)
 {DD;
-    if (threshold == 0 || units == UnitsDimentionless) return values;
+    if (threshold == 0 || units == UnitsDimensionless) return values;
     if (values.isEmpty()) return QVector<double>();
 
     QVector<double> a(values.size());
@@ -589,7 +589,7 @@ QVector<double> DataHolder::toLog(const QVector<double> &values, double threshol
 
 QVector<double> DataHolder::fromLog(const QVector<double> &values, double threshold, int units)
 {DD;
-    if (threshold == 0 || units == UnitsDimentionless) return values;
+    if (threshold == 0 || units == UnitsDimensionless) return values;
     if (values.isEmpty()) return QVector<double>();
 
     QVector<double> a(values.size());
@@ -608,7 +608,7 @@ QVector<double> DataHolder::fromLog(const QVector<double> &values, double thresh
 
 double DataHolder::toLog(double value, double threshold, int units)
 {
-    if (threshold == 0 || units == UnitsDimentionless) return value;
+    if (threshold == 0 || units == UnitsDimensionless) return value;
 
     if (value <= 0.0) return 0.0;
     double factor = 20.0;
@@ -622,7 +622,7 @@ double DataHolder::toLog(double value, double threshold, int units)
 
 double DataHolder::fromLog(double value, double threshold, int units)
 {
-    if (threshold == 0 || units == UnitsDimentionless) return value;
+    if (threshold == 0 || units == UnitsDimensionless) return value;
 
     double factor = log(10) / 20.0;
     double thr = threshold;

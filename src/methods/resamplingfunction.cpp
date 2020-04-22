@@ -100,8 +100,8 @@ QVariant ResamplingFunction::getProperty(const QString &property) const
             QStringList list;
             list << "pName=Осциллограф";
             list << "pTime=(0000000000000000)";
-            //TODO: не все каналы, а только обрабатываемые
-            list << "ProcChansList=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19";
+            QString chanIndexes = m_input->getProperty("?/channels").toString();
+            list << "ProcChansList="+chanIndexes;
             //TODO: размер блока должен быть равен числу отсчетов в канале
             list << "BlockIn=1024";
             list << "TypeProc=0";

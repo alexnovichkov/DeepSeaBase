@@ -62,6 +62,7 @@ public:
     virtual void setDescription(const QString &description);
     virtual QString xName() const;
     virtual QString yName() const;
+    virtual QString zName() const;
     virtual void setYName(const QString &yName) override;
     virtual QString legendName() const;
     virtual int samplesCount() const;

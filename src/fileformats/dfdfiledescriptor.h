@@ -139,6 +139,7 @@ public:
 
     virtual QString xName() const;
     virtual QString yName() const;
+    virtual QString zName() const;
     virtual void setYName(const QString &yName);
 
     virtual QString description() const {return ChanDscr;}

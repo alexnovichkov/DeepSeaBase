@@ -181,20 +181,36 @@ TDMSGroup::TDMSGroup(DDCChannelGroupHandle group) : group(group)
     // reading channel group properties
     uint numberOfProperties = 0;
     int error = DDC_GetNumChannelGroupProperties(group, &numberOfProperties);
+    if (error < 0) {
+        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        return;
+    }
 //    qDebug()<<"Channel group"<<"contains"<<numberOfProperties<<"properties";
 
     for (size_t j=0; j<numberOfProperties; ++j) {
         //property name length
         size_t length;
         error = DDC_GetChannelGroupPropertyNameLengthFromIndex(group, j, &length);
+        if (error < 0) {
+            qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+            continue;
+        }
         //property name
         char *nameBuf;
         nameBuf = (char*)malloc(length+1);
         error = DDC_GetChannelGroupPropertyNameFromIndex(group, j, nameBuf, length+1);
+        if (error < 0) {
+            qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+            continue;
+        }
         QString name = QString::fromLocal8Bit(nameBuf);
         //property type
         DDCDataType dataType;
         error = DDC_GetChannelGroupPropertyType(group, nameBuf, &dataType);
+        if (error < 0) {
+            qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+            continue;
+        }
         //property data
         QVariant value;
         switch (dataType) {
@@ -250,6 +266,10 @@ TDMSGroup::TDMSGroup(DDCChannelGroupHandle group) : group(group)
             }
             default: break;
         }
+        if (error < 0) {
+            qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+            continue;
+        }
 //        qDebug()<<"Channel group property"<<j+1<<name<<value.toString();
         properties.insert(name, value);
 
@@ -259,11 +279,19 @@ TDMSGroup::TDMSGroup(DDCChannelGroupHandle group) : group(group)
     // number of channels
     size_t numberOfChannels = 0;
     error = DDC_GetNumChannels(group, &numberOfChannels);
+    if (error < 0) {
+        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        return;
+    }
 //    qDebug()<<"Channel group"<<"contains"<<numberOfChannels<<"channels";
 
     // reading channels
     _channels = (DDCChannelHandle *)calloc(numberOfChannels, sizeof(DDCChannelHandle));
     error = DDC_GetChannels(group, _channels, numberOfChannels);
+    if (error < 0) {
+        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        return;
+    }
 
     for (size_t i=0; i<numberOfChannels; ++i) {
         TDMSChannel *channel = new TDMSChannel(_channels[i]);
@@ -283,20 +311,36 @@ TDMSChannel::TDMSChannel(DDCChannelHandle channel) :channel(channel)
     // reading channel properties
     uint numberOfProperties = 0;
     int error = DDC_GetNumChannelProperties(channel, &numberOfProperties);
+    if (error < 0) {
+        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        return;
+    }
 //    qDebug()<<"Channel"<<"contains"<<numberOfProperties<<"properties";
 
     for (size_t k=0; k<numberOfProperties; ++k) {
         //property name length
         size_t length;
         error = DDC_GetChannelPropertyNameLengthFromIndex(channel, k, &length);
+        if (error < 0) {
+            qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+            continue;
+        }
         //property name
         char *nameBuf;
         nameBuf = (char*)malloc(length+1);
         error = DDC_GetChannelPropertyNameFromIndex(channel, k, nameBuf, length+1);
+        if (error < 0) {
+            qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+            continue;
+        }
         QString name = QString::fromLocal8Bit(nameBuf);
         //property type
         DDCDataType dataType;
         error = DDC_GetChannelPropertyType(channel, nameBuf, &dataType);
+        if (error < 0) {
+            qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+            continue;
+        }
         //property data
         QVariant value;
         switch (dataType) {
@@ -352,6 +396,10 @@ TDMSChannel::TDMSChannel(DDCChannelHandle channel) :channel(channel)
             }
             default: break;
         }
+        if (error < 0) {
+            qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+            continue;
+        }
 //        qDebug()<<"Channel property"<<k+1<<name<<value.toString();
         properties.insert(name, value);
 
@@ -360,7 +408,15 @@ TDMSChannel::TDMSChannel(DDCChannelHandle channel) :channel(channel)
 
     // reading data
     error = DDC_GetNumDataValues(channel, &numberOfValues);
+    if (error < 0) {
+        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        return;
+    }
     error = DDC_GetDataType(channel, &dataType);
+    if (error < 0) {
+        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        return;
+    }
 //    qDebug()<<"Channel"<<"contains"<<numberOfValues<<"values of type"<<dataType;
 }
 
@@ -416,6 +472,9 @@ QVector<double> TDMSChannel::getDouble()
             break;
         default: break;
     }
+    if (error < 0) {
+        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+    }
     return data;
 }
 
@@ -465,6 +524,9 @@ QVector<float> TDMSChannel::getFloat()
             data.clear();
             break;
         default: break;
+    }
+    if (error < 0) {
+        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
     }
     return data;
 }

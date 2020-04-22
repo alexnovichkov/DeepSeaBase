@@ -13,6 +13,7 @@ public:
     QString filter() const {return m_filter;}
     void setFilter(const QString &filter);
     void addIndex(int index);
+    QString indexesAsString() const;
 
 private:
     void recalculateIndexes();

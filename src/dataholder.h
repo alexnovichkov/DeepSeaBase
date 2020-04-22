@@ -46,7 +46,7 @@ public:
         UnitsUnknown = 0, //dB = 20lg(L/L0)
         UnitsLinear = 1, //dB = 20lg(L/L0)
         UnitsQuadratic = 2, //dB = 10lg(L/L0^2)
-        UnitsDimentionless = 3 //dB = L
+        UnitsDimensionless = 3 //dB = L
     };
 
     DataHolder();
@@ -56,6 +56,7 @@ public:
 
     void clear();
 
+
     void setTemporaryCorrection(double m_correctionValue, int type);
     void removeCorrection();
     bool makeCorrectionConstant();
@@ -63,6 +64,7 @@ public:
     static QString correctionString(double value, int type);
     double correction() const {return m_correctionValue;}
     bool hasCorrection() const;
+
 
     int xValuesFormat() const {return m_xValuesFormat;} // не меняется, так как зависит только от формата данных в файле
     int yValuesFormat() const {return m_yValuesFormat;} // не меняется, так как зависит только от формата данных в файле
@@ -101,7 +103,10 @@ public:
     double xStep() const;
     double yMin() const;
     double yMax() const;
+
     int samplesCount() const;
+    int blocksCount() const {return m_blockCount;}
+    void setBlocksCount(int count) {m_blockCount = count;}
 
     QVector<double> linears() const;
     QVector<double> decibels() const;
@@ -124,6 +129,7 @@ private:
     double m_xBegin;
     double m_xStep;
     int m_count;
+    int m_blockCount = 1;
 
     double m_threshold;
 

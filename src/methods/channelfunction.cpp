@@ -23,6 +23,7 @@ QVariant ChannelFunction::getProperty(const QString &property) const
 {
     // we know about ?/channelIndex
     if (property == "?/channelIndex") return channel;
+    if (property == "?/channels") return selector.indexesAsString();
 
     if (!property.startsWith(name()+"/")) return QVariant();
     QString p = property.section("/",1);
