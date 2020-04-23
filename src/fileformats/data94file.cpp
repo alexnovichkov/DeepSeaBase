@@ -12,6 +12,8 @@ Data94File::Data94File(const QString &fileName) : FileDescriptor(fileName)
 Data94File::Data94File(const Data94File &d) : FileDescriptor(d.fileName())
 {
     this->description = d.description;
+    updateDateTimeGUID();
+
     foreach (Data94Channel *f, d.channels) {
         this->channels << new Data94Channel(*f);
     }
@@ -23,7 +25,29 @@ Data94File::Data94File(const Data94File &d) : FileDescriptor(d.fileName())
 
 Data94File::Data94File(const FileDescriptor &other) : FileDescriptor(other.fileName())
 {
-    //TODO: Data94File доделать создание файла
+    updateDateTimeGUID();
+    description.insert("sourceFile", other.fileName());
+    description.insert("legend", other.legend());
+    setDataDescriptor(other.dataDescriptor());
+
+    if (other.channelsCount()>0) {
+        xAxisBlock.uniform = other.channel(0)->data()->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
+        xAxisBlock.begin = other.channel(0)->xMin();
+        xAxisBlock.values = other.channel(0)->xValues();
+    }
+    xAxisBlock.count = other.samplesCount();
+    xAxisBlock.step = other.xStep();
+    xAxisBlock.isValid = true;
+
+    //zAxisBlock
+
+    //channels
+    for (int i=0; i<other.channelsCount(); +i) {
+        Data94Channel *ch = new Data94Channel(other.channel(i));
+        ch->parent = this;
+        channels << ch;
+    }
+
 }
 
 void Data94File::fillPreliminary(Descriptor::DataType)
@@ -51,7 +75,6 @@ void Data94File::read()
     }
 
     //reading file description
-    quint32 descriptionSize;
     r >> descriptionSize;
     QByteArray descriptionBuffer = r.device()->read(descriptionSize);
     if ((quint32)descriptionBuffer.size() != descriptionSize) {
@@ -67,7 +90,6 @@ void Data94File::read()
     description = doc.object();
 
     //reading padding
-    quint32 paddingSize;
     r >> paddingSize;
     r.device()->skip(paddingSize);
 
@@ -92,6 +114,105 @@ void Data94File::read()
 
 void Data94File::write()
 {
+    if (!changed() && !dataChanged()) return;
+
+    QFile f(fileName());
+    if (!f.open(QFile::ReadWrite)) {
+        qDebug()<<"Не удалось открыть файл для записи";
+        return;
+    }
+
+    QDataStream r(&f);
+    r.setByteOrder(QDataStream::LittleEndian);
+    r.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+    //переписываем описательную часть
+    if (changed()) {
+        QJsonArray array;
+        foreach (Data94Channel *c, channels) {
+            array.append(c->_description);
+        }
+        QJsonObject d = description;
+        d.insert("channels", array);
+
+        QJsonDocument doc(d);
+        QByteArray json = doc.toJson();
+
+
+        //общая длина записанного с учетом паддинга равна descriptionSize + paddingSize + 4
+        quint32 newDescriptionSize = json.size();
+        quint32 replace = descriptionSize + paddingSize;
+        //сначала записываем размер данных
+        r.device()->seek(8);
+        r << newDescriptionSize;
+        descriptionSize = newDescriptionSize;
+
+        //определяем, хватает ли нам паддинга
+        if (newDescriptionSize < replace) {
+            //можем записывать прямо поверх, обновляя паддинг
+            paddingSize = replace - newDescriptionSize;
+
+            r.writeRawData(json.data(), newDescriptionSize);
+            r << paddingSize;
+            r << QByteArray(paddingSize);
+        }
+        else {
+            //мы должны перезаписать весь файл, и только затем продолжать
+            //даже если новый паддинг получается нулевым, все равно перезаписываем
+            //паддинг не обновляем, так как он остается прежним
+
+            ulong bufferLength = PADDING_SIZE;
+
+            while (newDescriptionSize - replace > bufferLength)
+                bufferLength += PADDING_SIZE;
+
+            long readPosition = 12 + replace;
+            long writePosition = 12;
+
+            QByteArray buffer = json;
+            QByteArray aboutToOverwrite(bufferLength);
+
+            while (true) {
+                // Seek to the current read position and read the data that we're about
+                // to overwrite.  Appropriately increment the readPosition.
+
+                r.device()->seek(readPosition);
+                const size_t bytesRead;
+
+                aboutToOverwrite = r.device()->read(bufferLength);
+                bytesRead = aboutToOverwrite.length();
+
+                readPosition += bufferLength;
+
+                // Seek to the write position and write our buffer.  Increment the
+                // writePosition.
+
+                r.device()->seek(writePosition);
+                r.writeRawData(buffer.data(), buffer.length());
+
+                // We hit the end of the file.
+                if (bytesRead == 0) break;
+
+                writePosition += buffer.size();
+
+                // Make the current buffer the data that we read in the beginning.
+                buffer = aboutToOverwrite;
+            }
+        }
+
+        //записываем блоки осей
+        r.device()->seek(12+descriptionSize+4+paddingSize);
+        xAxisBlock.write(r);
+        zAxisBlock.write(r);
+        r << quint32(channels.count());
+    }
+
+    if (dataChanged()) {
+        r.device()->seek(12+descriptionSize+4+paddingSize
+                         + xAxisBlock.size()+zAxisBlock.size()+4);
+    }
+
+
 }
 
 void Data94File::writeRawFile()
@@ -101,6 +222,7 @@ void Data94File::writeRawFile()
 
 void Data94File::updateDateTimeGUID()
 {
+    description.insert("dateTime", QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm"));
 }
 
 Descriptor::DataType Data94File::type() const
@@ -240,8 +362,11 @@ double Data94File::xStep() const
 
 void Data94File::setXStep(const double xStep)
 {
-    if (channels.isEmpty()) return;
     bool changed = false;
+    changed = xAxisBlock.step != xStep;
+    xAxisBlock.step = xStep;
+
+    if (channels.isEmpty()) return;
 
     for (int i=0; i<channels.size(); ++i) {
         if (channels.at(i)->xStep()!=xStep) {
@@ -255,13 +380,16 @@ void Data94File::setXStep(const double xStep)
 
 int Data94File::samplesCount() const
 {
-    if (channels.isEmpty()) return 0;
-    return channels.first()->samplesCount();
+    return xAxisBlock.count;
 }
 
 void Data94File::setSamplesCount(int count)
 {
-    Q_UNUSED(count);
+    xAxisBlock.count = count;
+    //дублируем
+    foreach (Data94Channel *c, channels) {
+        c->_description.insert("samples", count);
+    }
 }
 
 QString Data94File::xName() const
@@ -625,4 +753,13 @@ void AxisBlock::write(QDataStream &r)
     else {
         foreach (double x, values) r << float(x);
     }
+}
+
+quint32 AxisBlock::size() const
+{
+    if (!isValid) return 0;
+
+    if (uniform) return 16;
+
+    return 8 + values.size() * 4;
 }

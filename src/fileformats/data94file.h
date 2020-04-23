@@ -44,10 +44,9 @@
  *   "legend" : "",
  *   "dataDescription": {
  *       "свойства конкретного файла" //аналогично DFD DataDescription
- *   }
+ *   },
  *   "channels" : [
  *       {
- *           "id" : "1",
  *           "name" : "",
  *           "description": "",
  *           "correction": "",
@@ -73,9 +72,8 @@
  *               "format": "real", "imaginary", "complex", "amplitude", "phase", "amplitudeDb"
  *               //далее идут все параметры обработки
  *           }
- *       }
+ *       },
  *       {
- *           "id" : "2",
  *           "name" : "",
  *       }
  *   ]
@@ -108,6 +106,8 @@ class AxisBlock
 public:
     void read(QDataStream &r);
     void write(QDataStream &r);
+    //размер в байтах
+    quint32 size() const;
 
     quint32 uniform = 1;//     0 - шкала неравномерная, 1 - шкала равномерная
     quint32 count = 0;
@@ -170,6 +170,9 @@ private:
 
     AxisBlock xAxisBlock;
     AxisBlock zAxisBlock;
+
+    quint32 descriptionSize = 0;
+    quint32 paddingSize = PADDING_SIZE;
 };
 
 class Data94Channel : public Channel

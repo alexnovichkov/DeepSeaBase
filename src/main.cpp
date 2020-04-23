@@ -34,10 +34,12 @@ int main(int argc, char *argv[])
 
 
 //    QFile f("IndType=c0000008.raw");
-//    f.open(QFile::WriteOnly);
+//    f.open(QFile::ReadWrite);
 //    QDataStream s(&f);
 //    s.setByteOrder(QDataStream::LittleEndian);
 ////    s.setFloatingPointPrecision(QDataStream::SinglePrecision);
+//    s.device()->seek(8);
+//    s.writeRawData("aaaa",4);
 
 //        for (int ch=0; ch<4;++ch) {
 //            for(int i=0; i<10000000; ++i) {

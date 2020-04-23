@@ -735,7 +735,7 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int
         rewrited = rewriteRawFile(inds);
     }
 
-    if (BlockSize > 0) {
+    if (BlockSize > 0 || !rewrited) {
         // не удалось переписать файл. Добавляем каналы стандартным способом
         copyChannelsFrom_plain(file, indexes);
         return;
