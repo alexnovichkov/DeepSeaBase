@@ -349,7 +349,7 @@ void Data94File::deleteChannels(const QVector<int> &channelsToDelete)
     QByteArray buffer = rawStream.device()->read(8+4+descriptionSize+4+paddingSize
                                                  + xAxisBlock.size()+zAxisBlock.size());
     tempStream.device()->write(buffer);
-    //записываем количество каналов
+    //записываем новое количество каналов
     tempStream << channels.size() - channelsToDelete.size();
 
     for (int i = 0; i < channels.size(); ++i) {
@@ -363,6 +363,7 @@ void Data94File::deleteChannels(const QVector<int> &channelsToDelete)
 
         //читаем данные
         buffer = rawStream.device()->read(xAxisBlock.count * zAxisBlock.count * format * 4);
+        //                                  samples            blocks           complex
 
         //пишем данные
         tempStream << format;
@@ -388,6 +389,7 @@ void Data94File::deleteChannels(const QVector<int> &channelsToDelete)
 
 void Data94File::copyChannelsFrom(FileDescriptor *, const QVector<int> &)
 {
+
 }
 
 void Data94File::calculateMean(const QList<QPair<FileDescriptor *, int> > &channels)
@@ -581,7 +583,7 @@ void Data94Channel::read(QDataStream &r)
     quint32 valueFormat;
     r >> valueFormat;
 
-    isComplex = valueFormat == 1;
+    isComplex = valueFormat == 2;
 
     dataPosition = r.device()->pos();
 
@@ -611,7 +613,7 @@ void Data94Channel::read(QDataStream &r)
 
     _data->setBlocksCount(parent->zAxisBlock.count);
 
-    r.device()->skip(parent->zAxisBlock.count * parent->xAxisBlock.count * (isComplex?2:1) * sizeof(float));
+    r.device()->skip(parent->zAxisBlock.count * parent->xAxisBlock.count * valueFormat * sizeof(float));
     // соответствия:         blockCount                 sampleCount         factor
 }
 
@@ -681,6 +683,8 @@ void Data94Channel::populate()
 
     if (rawFile.open(QFile::ReadOnly)) {
         QVector<double> YValues;
+
+        //количество отсчетов в одном блоке - удваивается, если данные комплексные
         const quint64 blockSize = parent->xAxisBlock.count * (isComplex ? 2 : 1);
 
         if (dataPosition < 0) {
