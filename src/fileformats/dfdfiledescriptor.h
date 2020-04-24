@@ -326,7 +326,7 @@ public:
 
     bool dataTypeEquals(FileDescriptor *other) const;
 
-    QString fileFilters() const;
+    static QStringList fileFilters();
 
     virtual QString xName() const {return XName;}
 
@@ -338,6 +338,8 @@ public:
     }
     QString dataDescriptorAsString() const;
     static QString createGUID();
+
+    static QStringList suffixes();
 
     DfdChannel *newChannel(int index);
 

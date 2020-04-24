@@ -22,7 +22,6 @@ class QTreeView;
 class QTableWidget;
 class QTreeWidgetItem;
 class QScrollBar;
-class DfdChannel;
 class QTableWidgetItem;
 class QToolBar;
 class QItemSelection;
@@ -48,6 +47,10 @@ class FilterHeaderView;
 class FilteredHeaderView;
 
 #include <QSplitter>
+
+
+
+
 
 
 class Tab : public QSplitter

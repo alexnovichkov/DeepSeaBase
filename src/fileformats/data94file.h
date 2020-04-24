@@ -162,7 +162,8 @@ public:
     virtual QString xName() const override;
     virtual bool setDateTime(QDateTime dt) override;
     virtual bool dataTypeEquals(FileDescriptor *other) const override;
-    virtual QString fileFilters() const override;
+    static QStringList fileFilters();
+    static QStringList suffixes();
 private:
     friend class Data94Channel;
     QJsonObject description;

@@ -501,9 +501,14 @@ bool Data94File::dataTypeEquals(FileDescriptor *other) const
     return (this->type() == other->type());
 }
 
-QString Data94File::fileFilters() const
+QStringList Data94File::fileFilters()
 {
-    return "Файлы Data94 (*.d94)";
+    return QStringList()<<"Файлы Data94 (*.d94)";
+}
+
+QStringList Data94File::suffixes()
+{
+    return QStringList()<<"*.d94";
 }
 
 

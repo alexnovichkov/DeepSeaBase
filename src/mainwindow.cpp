@@ -22,6 +22,7 @@
 
 #include "fileformats/dfdfiledescriptor.h"
 #include "fileformats/ufffile.h"
+#include "fileformats/data94file.h"
 #include "editdescriptionsdialog.h"
 #include "fileformats/matlabfiledescriptor.h"
 #include "matlabconverterdialog.h"
@@ -39,15 +40,15 @@
 class DfdFilterProxy : public QSortFilterProxyModel
 {
 public:
-    DfdFilterProxy(FileDescriptor *dfd, QObject *parent)
+    DfdFilterProxy(FileDescriptor *filter, QObject *parent)
         : QSortFilterProxyModel(parent)
     {
-        if (dfd) {
-            this->xStep = dfd->xStep();
-            if (DfdFileDescriptor *d = dynamic_cast<DfdFileDescriptor *>(dfd))
+        if (filter) {
+            this->xStep = filter->xStep();
+            if (DfdFileDescriptor *d = dynamic_cast<DfdFileDescriptor *>(filter))
                 this->dataType = d->DataType;
             else
-                this->dataType = dfdDataTypeFromDataType(dfd->type());
+                this->dataType = dfdDataTypeFromDataType(filter->type());
             filterByContent = true;
         }
     }
@@ -121,8 +122,42 @@ FileDescriptor *createDescriptor(const QString &fileName)
     const QString suffix = QFileInfo(fileName).suffix().toLower();
     if (suffix=="dfd") return new DfdFileDescriptor(fileName);
     if (suffix=="uff") return new UffFileDescriptor(fileName);
+    if (suffix=="d94") return new Data94File(fileName);
     return 0;
 }
+
+template<typename T>
+QStringList suffixes()
+{
+    return T::suffixes();
+}
+
+QStringList allSuffixes(bool strip = false)
+{
+    QStringList result;
+    result << suffixes<DfdFileDescriptor>();
+    result << suffixes<UffFileDescriptor>();
+    result << suffixes<Data94File>();
+
+    if (strip) result.replaceInStrings("*.","");
+    return result;
+}
+
+template<typename T>
+QStringList filters()
+{
+    return T::fileFilters();
+}
+
+QStringList allFilters()
+{
+    QStringList result;
+    result << filters<DfdFileDescriptor>();
+    result << filters<UffFileDescriptor>();
+    result << filters<Data94File>();
+    return result;
+}
+
 
 void maybeAppend(const QString &s, QStringList &list)
 {DD;
@@ -132,7 +167,7 @@ void maybeAppend(const QString &s, QStringList &list)
 void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 {DD;
     if (QFileInfo(file).isDir()) {
-        QFileInfoList dirLst = QDir(file).entryInfoList(QStringList()<<"*.dfd"<<"*.DFD"<<"*.uff",
+        QFileInfoList dirLst = QDir(file).entryInfoList(allSuffixes(),
                                                         QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot,
                                                         QDir::DirsFirst);
         for (int i=0; i<dirLst.count(); ++i) {
@@ -875,7 +910,7 @@ void MainWindow::addFile()
 {
     QString directory = getSetting("lastDirectory").toString();
 
-    QFileDialog dialog(this, "Добавить файлы", directory/*, "Файлы dfd (*.dfd);;Файлы uff (*.uff)"*/);
+    QFileDialog dialog(this, "Добавить файлы", directory);
     dialog.setOption(QFileDialog::DontUseNativeDialog, true);
     QString defaultSuffix = QFileInfo(directory).suffix();
     if (defaultSuffix.isEmpty()) defaultSuffix = "dfd";
@@ -1149,16 +1184,17 @@ bool MainWindow::deleteChannels(FileDescriptor *file, const QVector<int> &channe
 bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &channelsToCopy)
 {DD;
     QString startFile = MainWindow::getSetting("startDir").toString();
+    QStringList filters = allFilters();
 
     QFileDialog dialog(this, "Выбор файла для записи каналов", startFile,
-                       "Файлы dfd (*.dfd);;Файлы uff (*.uff)");
+                       filters.join(";;"));
     dialog.setOption(QFileDialog::DontUseNativeDialog, true);
-    QString defaultSuffix = QFileInfo(startFile).suffix();
-    if (defaultSuffix.isEmpty()) defaultSuffix = "dfd";
-    dialog.setDefaultSuffix(defaultSuffix);
+//    QString defaultSuffix = QFileInfo(startFile).suffix();
+//    if (defaultSuffix.isEmpty()) defaultSuffix = "dfd";
+//    dialog.setDefaultSuffix(defaultSuffix);
 
-    QStringList suffixes = QStringList()<<"dfd"<<"uff";
-    QStringList filters = QStringList()<<"Файлы dfd (*.dfd)"<<"Файлы uff (*.uff)";
+    QStringList suffixes = allSuffixes(true);
+
 
     // если файл - dfd, то мы можем записать его только в dfd файл с таким же типом данных и шагом по x
     // поэтому если они различаются, то насильно записываем каналы в файл uff
@@ -1183,8 +1219,14 @@ bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &ch
 
     QString currentSuffix = QFileInfo(file).suffix().toLower();
     QString filterSuffix = suffixes.at(filters.indexOf(selectedFilter));
-    if (currentSuffix != filterSuffix)
-        file.append(filterSuffix);
+
+    if (currentSuffix != filterSuffix) {
+        //удаляем суффикс, если это суффикс известного нам типа файлов
+        if (suffixes.contains(currentSuffix))
+            file.chop(currentSuffix.length()+1);
+
+        file.append(QString(".%1").arg(filterSuffix));
+    }
 
     MainWindow::setSetting("startDir", file);
 
@@ -1321,11 +1363,14 @@ void MainWindow::calculateMean()
 
         meanD = MainWindow::getSetting(writeToUff?"lastMeanUffFile":"lastMeanFile", meanD).toString();
 
+        QStringList  filters = allFilters();
+        QStringList suffixes = allSuffixes(true);
+
         QFileDialog dialog(this, "Выбор файла для записи каналов", meanD,
-                           "Поддерживаемые форматы (*.dfd *.uff)");
+                           filters.join(";;"));
         dialog.setOption(QFileDialog::DontUseNativeDialog, true);
         dialog.setFileMode(QFileDialog::AnyFile);
-        dialog.setDefaultSuffix(writeToUff?"uff":"dfd");
+//        dialog.setDefaultSuffix(writeToUff?"uff":"dfd");
 
         if (!writeToUff && allFilesDfd) {
             QSortFilterProxyModel *proxy = new DfdFilterProxy(firstCurve->descriptor, this);
@@ -1333,13 +1378,26 @@ void MainWindow::calculateMean()
         }
 
         QStringList selectedFiles;
+        QString selectedFilter;
         if (dialog.exec()) {
             selectedFiles = dialog.selectedFiles();
+            selectedFilter = dialog.selectedNameFilter();
         }
         if (selectedFiles.isEmpty()) return;
 
         meanDfdFile = selectedFiles.first();
         if (meanDfdFile.isEmpty()) return;
+
+        QString currentSuffix = QFileInfo(meanDfdFile).suffix().toLower();
+        QString filterSuffix = suffixes.at(filters.indexOf(selectedFilter));
+
+        if (currentSuffix != filterSuffix) {
+            //удаляем суффикс, если это суффикс известного нам типа файлов
+            if (suffixes.contains(currentSuffix))
+                meanDfdFile.chop(currentSuffix.length()+1);
+
+            meanDfdFile.append(QString(".%1").arg(filterSuffix));
+        }
 
         meanDfd = findDescriptor(meanDfdFile);
         if (meanDfd)
@@ -1794,25 +1852,41 @@ void MainWindow::calculateMovingAvg()
 
         meanD = MainWindow::getSetting("lastMovingAvgFile", meanD).toString();
 
+        QStringList filters = allFilters();
+        QStringList suffixes = allSuffixes(true);
+
         QFileDialog dialog(this, "Выбор файла для записи каналов", meanD,
-                           "Поддерживаемые форматы (*.dfd *.uff)");
+                           filters.join(";;"));
         dialog.setOption(QFileDialog::DontUseNativeDialog, true);
         dialog.setFileMode(QFileDialog::AnyFile);
-        dialog.setDefaultSuffix("uff");
 
         if (allFilesDfd) {
             QSortFilterProxyModel *proxy = new DfdFilterProxy(firstCurve->descriptor, this);
             dialog.setProxyModel(proxy);
         }
 
+        QString selectedFilter;
         QStringList selectedFiles;
         if (dialog.exec()) {
             selectedFiles = dialog.selectedFiles();
+            selectedFilter = dialog.selectedNameFilter();
         }
         if (selectedFiles.isEmpty()) return;
 
         avgDfdFile = selectedFiles.first();
         if (avgDfdFile.isEmpty()) return;
+        MainWindow::setSetting("lastMovingAvgFile", avgDfdFile);
+
+        //добавляем суффикс
+        QString currentSuffix = QFileInfo(avgDfdFile).suffix().toLower();
+        QString filterSuffix = suffixes.at(filters.indexOf(selectedFilter));
+        if (currentSuffix != filterSuffix) {
+            //удаляем суффикс, если это суффикс известного нам типа файлов
+            if (suffixes.contains(currentSuffix))
+                avgDfdFile.chop(currentSuffix.length()+1);
+
+            avgDfdFile.append(QString(".%1").arg(filterSuffix));
+        }
 
         avgDfd = findDescriptor(avgDfdFile);
         if (avgDfd)
@@ -1820,14 +1894,17 @@ void MainWindow::calculateMovingAvg()
         else
             avgDfd = createDescriptor(avgDfdFile);
 
-        if (!avgDfd) return;
+        if (!avgDfd) {
+            qDebug()<<"Не удалось создать файл"<<avgDfdFile;
+            return;
+        }
 
         if (QFileInfo(avgDfdFile).exists() && !descriptorFound)
             avgDfd->read();
         else
             avgDfd->fillPreliminary(firstCurve->channel->type());
 
-        MainWindow::setSetting("lastMovingAvgFile", avgDfdFile);
+
     }
     else {
         avgDfd = firstCurve->descriptor;

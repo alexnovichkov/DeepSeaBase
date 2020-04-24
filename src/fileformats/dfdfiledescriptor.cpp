@@ -1351,9 +1351,9 @@ bool DfdFileDescriptor::dataTypeEquals(FileDescriptor *other) const
     return (dataTypefromDfdDataType(DataType) == other->type());
 }
 
-QString DfdFileDescriptor::fileFilters() const
+QStringList DfdFileDescriptor::fileFilters()
 {DD;
-    return QString("Файлы dfd (*.dfd)");
+    return QStringList()<< "Файлы dfd (*.dfd)" << "Файлы dfd (*.DFD)";
 }
 
 bool DfdFileDescriptor::setDateTime(QDateTime dt)
@@ -1390,6 +1390,11 @@ QString DfdFileDescriptor::createGUID()
     if (result.at(24) == '-') result.remove(24,1);
     else result.remove(25,1);
     return result;
+}
+
+QStringList DfdFileDescriptor::suffixes()
+{
+    return QStringList()<<"*.dfd"<<"*.DFD";
 }
 
 Process::Process()

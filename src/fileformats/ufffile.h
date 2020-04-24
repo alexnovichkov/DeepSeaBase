@@ -156,7 +156,8 @@ public:
     virtual bool isSourceFile() const;
     virtual bool operator ==(const FileDescriptor &descriptor);
     virtual bool dataTypeEquals(FileDescriptor *other) const;
-    virtual QString fileFilters() const;
+    static QStringList fileFilters();
+    static QStringList suffixes();
 private:
     // FileDescriptor interface
     void removeTempFile();
