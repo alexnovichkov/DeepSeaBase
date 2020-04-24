@@ -42,7 +42,7 @@ Data94File::Data94File(const FileDescriptor &other) : FileDescriptor(other.fileN
     //zAxisBlock
 
     //channels
-    for (int i=0; i<other.channelsCount(); +i) {
+    for (int i=0; i<other.channelsCount(); ++i) {
         Data94Channel *ch = new Data94Channel(other.channel(i));
         ch->parent = this;
         channels << ch;
@@ -154,7 +154,8 @@ void Data94File::write()
 
             r.writeRawData(json.data(), newDescriptionSize);
             r << paddingSize;
-            r << QByteArray(paddingSize);
+            QByteArray padding; padding.resize(paddingSize);
+            r.writeRawData(padding.data(), paddingSize);
         }
         else {
             //мы должны перезаписать весь файл, и только затем продолжать
@@ -170,14 +171,14 @@ void Data94File::write()
             long writePosition = 12;
 
             QByteArray buffer = json;
-            QByteArray aboutToOverwrite(bufferLength);
+            QByteArray aboutToOverwrite; aboutToOverwrite.resize(bufferLength);
 
             while (true) {
                 // Seek to the current read position and read the data that we're about
                 // to overwrite.  Appropriately increment the readPosition.
 
                 r.device()->seek(readPosition);
-                const size_t bytesRead;
+                size_t bytesRead;
 
                 aboutToOverwrite = r.device()->read(bufferLength);
                 bytesRead = aboutToOverwrite.length();
@@ -205,13 +206,47 @@ void Data94File::write()
         xAxisBlock.write(r);
         zAxisBlock.write(r);
         r << quint32(channels.count());
+
+        setChanged(false);
+        foreach (auto *c, channels) {
+            c->setChanged(false);
+        }
     }
 
     if (dataChanged()) {
-        r.device()->seek(12+descriptionSize+4+paddingSize
-                         + xAxisBlock.size()+zAxisBlock.size()+4);
-    }
+        foreach (Data94Channel *c, channels) {
+            if (!c->dataChanged()) continue;
 
+            c->setDataChanged(false);
+
+            r.device()->seek(c->dataPosition - 4);
+            quint32 format = c->isComplex ? 1 : 0;
+            r << format;
+
+            if (!c->isComplex) {
+                QVector<double> yValues = c->data()->rawYValues();
+                if (yValues.isEmpty()) {
+                    qDebug()<<"Отсутствуют данные для записи в канале"<<c->name();
+                    continue;
+                }
+
+                foreach (double v, yValues) {
+                    r << (float)v;
+                }
+            }
+            else {
+                auto yValues = c->data()->yValuesComplex();
+                if (yValues.isEmpty()) {
+                    qDebug()<<"Отсутствуют данные для записи в канале"<<c->name();
+                    continue;
+                }
+                foreach (cx_double v, yValues) {
+                    r << (float)v.real();
+                    r << (float)v.imag();
+                }
+            }
+        }
+    }
 
 }
 
@@ -294,6 +329,61 @@ bool Data94File::setDateTime(QDateTime dt)
 
 void Data94File::deleteChannels(const QVector<int> &channelsToDelete)
 {
+    QTemporaryFile tempFile;
+    QFile rawFile(fileName());
+
+    if (!tempFile.open() || !rawFile.open(QFile::ReadOnly)) {
+        qDebug()<<" Couldn't replace raw file with temp file.";
+        return;
+    }
+
+    QDataStream tempStream(&tempFile);
+    tempStream.setByteOrder(QDataStream::LittleEndian);
+    tempStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+    QDataStream rawStream(&rawFile);
+    rawStream.setByteOrder(QDataStream::LittleEndian);
+    rawStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+    //работаем через временный файл - читаем один канал и записываем его во временный файл
+    QByteArray buffer = rawStream.device()->read(8+4+descriptionSize+4+paddingSize
+                                                 + xAxisBlock.size()+zAxisBlock.size());
+    tempStream.device()->write(buffer);
+    //записываем количество каналов
+    tempStream << channels.size() - channelsToDelete.size();
+
+    for (int i = 0; i < channels.size(); ++i) {
+        // пропускаем канал, предназначенный для удаления
+        if (channelsToDelete.contains(i)) continue; // 0 = keep, 1 = delete
+        rawStream.device()->seek(channels[i]->dataPosition-4);
+
+        //читаем формат
+        quint32 format;
+        rawStream >> format;
+
+        //читаем данные
+        buffer = rawStream.device()->read(xAxisBlock.count * zAxisBlock.count * format * 4);
+
+        //пишем данные
+        tempStream << format;
+        channels[i]->dataPosition = tempStream.device()->pos();
+        tempStream.device()->write(buffer);
+        tempFile.flush();
+    }
+
+    rawFile.close();
+    tempFile.close();
+
+    // удаляем файл данных, если мы перезаписывали его
+    if (rawFile.remove()) {
+        tempFile.copy(fileName());
+    }
+
+    for (int i=channels.size()-1; i>=0; --i) {
+        if (channelsToDelete.contains(i)) {
+            delete channels.takeAt(i);
+        }
+    }
 }
 
 void Data94File::copyChannelsFrom(FileDescriptor *, const QVector<int> &)

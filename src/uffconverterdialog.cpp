@@ -211,6 +211,7 @@ QStringList UffConvertor::getUffFiles() const
 
 bool UffConvertor::convert()
 {
+    //TODO: проверить конвертацию файлов uff
     if (QThread::currentThread()->isInterruptionRequested()) return false;
 
     //Converting
@@ -254,6 +255,10 @@ bool UffConvertor::convert()
                 emit message("&nbsp;&nbsp;&nbsp;Сохраняю файл");
                 destFile->setChanged(true);
                 destFile->setDataChanged(true);
+                for (int i=0; i<destFile->channelsCount(); ++i) {
+                    destFile->channel(i)->setChanged(true);
+                    destFile->channel(i)->setDataChanged(true);
+                }
                 destFile->write();
                 destFile->writeRawFile();
                 newFiles.append(destFileName);

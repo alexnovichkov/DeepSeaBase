@@ -223,10 +223,17 @@ public:
 
     int plotted() const {return _plotted;}
     void setPlotted(int plotted) {_plotted = plotted;}
+
+    bool changed() const {return _changed;}
+    void setChanged(bool changed) {_changed = changed;}
+    bool dataChanged() const {return _dataChanged;}
+    void setDataChanged(bool changed) {_dataChanged = changed;}
 private:
     QColor _color;
     int _plotted; //0=not plotted, 1=plotted on left, 2=plotted on right
     bool _populated;
+    bool _changed;
+    bool _dataChanged;
 protected:
     DataHolder *_data;
 };

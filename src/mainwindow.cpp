@@ -1102,6 +1102,8 @@ void MainWindow::addCorrections()
                     dfd->channel(row-2)->data()->makeCorrectionConstant();
                     dfd->channel(row-2)->setCorrection(dfd->channel(row-2)->data()->correctionString());
                     dfd->channel(row-2)->data()->removeCorrection();
+                    dfd->channel(row-2)->setChanged(true);
+                    dfd->channel(row-2)->setDataChanged(true);
                 }
                 row++;
             }

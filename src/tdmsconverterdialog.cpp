@@ -18,7 +18,7 @@ bool fileExists(const QString &s, const QString &ext)
 
 TDMSConverterDialog::TDMSConverterDialog(QWidget *parent) : QDialog(parent)
 {
-    setWindowTitle("Конвертер tdms файлов");
+    setWindowTitle("Конвертер tdm/tdms файлов");
     thread = 0;
     m_addFiles = false;
 
@@ -32,7 +32,7 @@ TDMSConverterDialog::TDMSConverterDialog(QWidget *parent) : QDialog(parent)
 
     edit = new QLineEdit(this);
     edit->setReadOnly(true);
-    edit->setPlaceholderText("путь/к/папке/TDMS/");
+    edit->setPlaceholderText("путь/к/папке/TDM/");
 
     button = new QPushButton("Выбрать", this);
     connect(button, SIGNAL(pressed()), this, SLOT(chooseFiles()));
@@ -134,7 +134,7 @@ TDMSConverterDialog::~TDMSConverterDialog()
 void TDMSConverterDialog::chooseFiles()
 {
     folder = MainWindow::getSetting("tdmsFolder").toString();
-    folder = QFileDialog::getExistingDirectory(this, "Выберите папку с файлами *.tdms", folder);
+    folder = QFileDialog::getExistingDirectory(this, "Выберите папку с файлами *.tdm/*.tdms", folder);
 
     edit->setText(folder);
     MainWindow::setSetting("tdmsFolder", folder);

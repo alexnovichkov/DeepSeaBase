@@ -173,6 +173,7 @@ void Picker::proceedPick(QMouseEvent *e)
             if (d_selectedCurve && d_selectedPoint > -1) {
                 double newY = plot->invTransform(d_selectedCurve->yAxis(), currentPos.y());
                 if (d_selectedCurve->descriptor->channel(d_selectedCurve->channelIndex)->data()->setYValue(d_selectedPoint, newY)) {
+                    d_selectedCurve->channel->setDataChanged(true);
                     d_selectedCurve->descriptor->setDataChanged(true);
                 }
                 highlightPoint(true);

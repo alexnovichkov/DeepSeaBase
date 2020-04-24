@@ -154,6 +154,10 @@ void Model::discardChanges()
         FileDescriptor *f = descriptors[i];
         f->setChanged(false);
         f->setDataChanged(false);
+        for (int j=0; j<f->channelsCount(); ++j) {
+            f->channel(j)->setChanged(false);
+            f->channel(j)->setDataChanged(false);
+        }
     }
 }
 

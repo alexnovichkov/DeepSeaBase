@@ -193,6 +193,10 @@ void SavingFunction::reset()
             m_file->setSamplesCount(m_file->channel(0)->samplesCount());
         m_file->setChanged(true);
         m_file->setDataChanged(true);
+        for (int i=0; i<m_file->channelsCount(); ++i) {
+            m_file->channel(i)->setChanged(true);
+            m_file->channel(i)->setDataChanged(true);
+        }
         m_file->write();
         m_file->writeRawFile();
         newFiles << m_file->fileName();
