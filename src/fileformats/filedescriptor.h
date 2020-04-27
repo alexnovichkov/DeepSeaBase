@@ -143,6 +143,8 @@ public:
 
     virtual bool dataTypeEquals(FileDescriptor *other) const = 0;
 
+    virtual bool canTakeChannelsFrom(FileDescriptor *other) const;
+
     bool hasCurves() const;
 private:
     QString _fileName;

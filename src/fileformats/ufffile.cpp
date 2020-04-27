@@ -658,6 +658,12 @@ bool UffFileDescriptor::dataTypeEquals(FileDescriptor *other) const
     return (this->type() == other->type());
 }
 
+//bool UffFileDescriptor::hasSameParameters(FileDescriptor *other) const
+//{
+//    return (dataTypeEquals(other)
+//            && this->xStep() == other->xStep());
+//}
+
 QStringList UffFileDescriptor::fileFilters()
 {DD;
     return QStringList()<< "Файлы uff (*.uff)";

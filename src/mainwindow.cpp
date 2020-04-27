@@ -37,95 +37,6 @@
 
 #define DSB_VERSION "1.6.9.3"
 
-class DfdFilterProxy : public QSortFilterProxyModel
-{
-public:
-    DfdFilterProxy(FileDescriptor *filter, QObject *parent)
-        : QSortFilterProxyModel(parent)
-    {
-        if (filter) {
-            this->xStep = filter->xStep();
-            if (DfdFileDescriptor *d = dynamic_cast<DfdFileDescriptor *>(filter))
-                this->dataType = d->DataType;
-            else
-                this->dataType = dfdDataTypeFromDataType(filter->type());
-            filterByContent = true;
-        }
-    }
-protected:
-    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
-    {
-        QFileSystemModel *model = qobject_cast<QFileSystemModel *>(sourceModel());
-        if (!model) return false;
-
-        QModelIndex index0 = model->index(source_row, 0, source_parent);
-
-        QFileInfo fi = model->fileInfo(index0);
-
-        if (fi.isFile()) {
-            if (fi.suffix().toLower()=="dfd") {
-                //принимаем все файлы dfd, если не сравниваем с конкретным
-                if (!filterByContent)
-                    return true;
-
-                DfdFileDescriptor dfd(fi.canonicalFilePath());
-                dfd.read();
-                //частный случай: мы можем записать данные из SourceData в CuttedData, преобразовав их в floats,
-                //но не наоборот
-                if (dfd.xStep() == xStep) {
-                    if (dfd.DataType == CuttedData && (dataType == FilterData ||
-                                                       dataType == SourceData))
-                        return true;
-                    else if (dfd.DataType == dataType) {
-                        return true;
-                    }
-                    else return false;
-                }
-                else {
-                    return false;
-                }
-            }
-            else if (fi.suffix().toLower()=="uff") {
-                return true;
-            }
-            else
-                return false;
-        }
-        else
-            return true;
-    }
-private:
-    DfdDataType dataType;
-    double xStep;
-    bool filterByContent = false;
-};
-
-class StepItemDelegate : public QStyledItemDelegate
-{
-public:
-    StepItemDelegate(QObject *parent = Q_NULLPTR) : QStyledItemDelegate(parent)
-    {}
-
-    virtual QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override
-    {
-        QWidget *ed = QStyledItemDelegate::createEditor(parent, option, index);
-        if (QDoubleSpinBox *spin = qobject_cast<QDoubleSpinBox*>(ed)) {
-            spin->setDecimals(10);
-        }
-
-        return ed;
-    }
-};
-
-FileDescriptor *createDescriptor(const QString &fileName)
-{DD;
-    const QString suffix = QFileInfo(fileName).suffix().toLower();
-    if (suffix=="dfd") return new DfdFileDescriptor(fileName);
-    if (suffix=="uff") return new UffFileDescriptor(fileName);
-    if (suffix=="d94") return new Data94File(fileName);
-    return 0;
-}
-
 template<typename T>
 QStringList suffixes()
 {
@@ -157,6 +68,86 @@ QStringList allFilters()
     result << filters<Data94File>();
     return result;
 }
+
+FileDescriptor *createDescriptor(const QString &fileName)
+{DD;
+    const QString suffix = QFileInfo(fileName).suffix().toLower();
+    if (suffix=="dfd") return new DfdFileDescriptor(fileName);
+    if (suffix=="uff") return new UffFileDescriptor(fileName);
+    if (suffix=="d94") return new Data94File(fileName);
+    return 0;
+}
+
+class DfdFilterProxy : public QSortFilterProxyModel
+{
+public:
+    DfdFilterProxy(FileDescriptor *filter, QObject *parent)
+        : QSortFilterProxyModel(parent), filter(filter)
+    {
+        if (filter) {
+            filterByContent = true;
+        }
+    }
+protected:
+    bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
+    {
+        QFileSystemModel *model = qobject_cast<QFileSystemModel *>(sourceModel());
+        if (!model) return false;
+
+        QModelIndex index0 = model->index(source_row, 0, source_parent);
+
+        QFileInfo fi = model->fileInfo(index0);
+
+        if (fi.isFile()) {
+            if (suffixes.contains(fi.suffix().toLower())) {
+                //принимаем все файлы dfd, если не сравниваем с конкретным
+                if (!filterByContent)
+                    return true;
+
+                FileDescriptor * descriptor = createDescriptor(fi.canonicalFilePath());
+                descriptor->read();
+                //частный случай: мы можем записать данные из SourceData в CuttedData, преобразовав их в floats,
+                //но не наоборот
+                if (descriptor->canTakeChannelsFrom(filter))
+                    return true;
+                else {
+                    return false;
+                }
+            }
+            else //не файлы dfd, uff, d94
+                return false;
+        }
+        else //папки
+            return true;
+    }
+private:
+    DfdDataType dataType;
+    double xStep;
+    FileDescriptor *filter;
+    bool filterByContent = false;
+    QStringList suffixes = allSuffixes(true);
+};
+
+class StepItemDelegate : public QStyledItemDelegate
+{
+public:
+    StepItemDelegate(QObject *parent = Q_NULLPTR) : QStyledItemDelegate(parent)
+    {}
+
+    virtual QWidget *createEditor(QWidget *parent, const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        QWidget *ed = QStyledItemDelegate::createEditor(parent, option, index);
+        if (QDoubleSpinBox *spin = qobject_cast<QDoubleSpinBox*>(ed)) {
+            spin->setDecimals(10);
+        }
+
+        return ed;
+    }
+};
+
+
+
+
 
 
 void maybeAppend(const QString &s, QStringList &list)

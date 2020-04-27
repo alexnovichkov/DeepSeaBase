@@ -156,6 +156,7 @@ public:
     virtual bool isSourceFile() const;
     virtual bool operator ==(const FileDescriptor &descriptor);
     virtual bool dataTypeEquals(FileDescriptor *other) const;
+//    virtual bool hasSameParameters(FileDescriptor *other) const override;
     static QStringList fileFilters();
     static QStringList suffixes();
 private:

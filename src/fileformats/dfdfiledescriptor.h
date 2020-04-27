@@ -325,6 +325,7 @@ public:
     bool isSourceFile() const;
 
     bool dataTypeEquals(FileDescriptor *other) const;
+    virtual bool canTakeChannelsFrom(FileDescriptor *other) const override;
 
     static QStringList fileFilters();
 

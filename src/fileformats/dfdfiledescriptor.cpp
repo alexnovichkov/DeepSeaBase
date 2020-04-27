@@ -1351,6 +1351,24 @@ bool DfdFileDescriptor::dataTypeEquals(FileDescriptor *other) const
     return (dataTypefromDfdDataType(DataType) == other->type());
 }
 
+bool DfdFileDescriptor::canTakeChannelsFrom(FileDescriptor *other) const
+{
+    //типы совпадают строго -> принимаем
+    const bool canTake = FileDescriptor::canTakeChannelsFrom(other);
+    if (canTake) return true;
+
+    DfdFileDescriptor *d = dynamic_cast<DfdFileDescriptor *>(other);
+    if (!d) return canTake;
+
+    if (xStep() != other->xStep()) return false;
+
+    if (d->DataType == SourceData && DataType > 0 && DataType < 16) {
+        return true;
+    }
+
+    return false;
+}
+
 QStringList DfdFileDescriptor::fileFilters()
 {DD;
     return QStringList()<< "Файлы dfd (*.dfd)" << "Файлы dfd (*.DFD)";

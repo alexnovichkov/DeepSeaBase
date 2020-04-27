@@ -111,6 +111,12 @@ int FileDescriptor::plottedCount() const
     return plotted;
 }
 
+bool FileDescriptor::canTakeChannelsFrom(FileDescriptor *other) const
+{
+    return (dataTypeEquals(other)
+            && this->xStep() == other->xStep());
+}
+
 bool FileDescriptor::hasCurves() const
 {
     const int count = channelsCount();
