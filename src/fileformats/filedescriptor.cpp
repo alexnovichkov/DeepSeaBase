@@ -171,6 +171,28 @@ double Channel::xMax() const
     return _data->xMax();
 }
 
+QByteArray Channel::wavData(qint64 pos, qint64 samples)
+{
+    QByteArray b;
+    //assume that channel is time response
+//    if (type() != Descriptor::TimeResponse) return b;
+
+    //assume that channel is populated
+//    populate();
+
+    QDataStream s(&b, QIODevice::WriteOnly);
+    s.setByteOrder(QDataStream::LittleEndian);
+    QVector<double> values = data()->rawYValues().mid(pos,samples);
+
+    double max = qMax(qAbs(data()->yMax()), qAbs(data()->yMin()));
+    double coef = 32768.0 / max;
+    for (qint64 i=0; i<values.size(); ++i) {
+        qint16 v = qint16(coef * values[i]);
+        s << v;
+    }
+    return b;
+}
+
 //QString valuesUnit(const QString &first, const QString &second, int unitType)
 //{
 //    if (unitType == DataHolder::UnitsLinear)

@@ -69,6 +69,8 @@ public:
 
     virtual QString correction() const;
     virtual void setCorrection(const QString &s);
+
+//    virtual QByteArray wavData(qint64 pos, qint64 samples) override;
 private:
     void readRest();
 };

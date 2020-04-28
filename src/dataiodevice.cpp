@@ -1,8 +1,8 @@
 #include "dataiodevice.h"
 
-//#include "fileformats/filedescriptor.h"
+#include "fileformats/filedescriptor.h"
 #include "logging.h"
-#include "fileformats/dfdfiledescriptor.h"
+//#include "fileformats/dfdfiledescriptor.h"
 
 DataIODevice::DataIODevice(Channel *channel, QObject *parent)
     : QIODevice(parent), m_channel(channel)
@@ -18,7 +18,7 @@ bool DataIODevice::isSequential() const
 
 bool DataIODevice::open(QIODevice::OpenMode mode)
 {DD;
-    qDebug()<<mode;
+//    qDebug()<<mode;
     return QIODevice::open(mode);
 }
 
@@ -77,24 +77,33 @@ bool DataIODevice::canReadLine() const
 
 qint64 DataIODevice::readData(char *data, qint64 maxlen)
 {DD;
+    //заполняем нулями
     memset(data, 0, maxlen);
 
-    QByteArray b;
-    if (DfdChannel *raw = dynamic_cast<DfdChannel*>(m_channel)) {
-        QVector<double> mid = raw->yValues().mid(m_pos, qint64(maxlen/sizeof(double)));
+    //получаем сырые данные, количество отсчетов равно буферу / sizeof(int16)
+    QByteArray b = m_channel->wavData(m_pos, maxlen / 2);
 
-        QDataStream buff(&b, QIODevice::WriteOnly);
-        buff.setByteOrder(QDataStream::LittleEndian);
-        for (int i = 0; i < mid.length(); ++i) {
-            double v = raw->preprocess(mid[i]);
-            quint16 vv = (quint16)v;
-            if (vv > 32768) vv -= 32768;
-            else vv += 32768;
-            buff << vv;
-        }
-        memcpy(data, b.data(), b.length());
-        m_pos += mid.length();
-    }
+    if (b.isEmpty()) return 0;
+
+    memcpy(data, b.data(), b.length());
+    m_pos += (b.length() / 2);
+
+
+//    if (DfdChannel *raw = dynamic_cast<DfdChannel*>(m_channel)) {
+//        QVector<double> mid = m_channel->yValues().mid(m_pos, qint64(maxlen/sizeof(double)));
+
+//        QDataStream buff(&b, QIODevice::WriteOnly);
+//        buff.setByteOrder(QDataStream::LittleEndian);
+//        for (int i = 0; i < mid.length(); ++i) {
+//            double v = raw->preprocess(mid[i]);
+//            quint16 vv = (quint16)v;
+//            if (vv > 32768) vv -= 32768;
+//            else vv += 32768;
+//            buff << vv;
+//        }
+//        memcpy(data, b.data(), b.length());
+//        m_pos += mid.length();
+//    }
     return b.length();
 }
 

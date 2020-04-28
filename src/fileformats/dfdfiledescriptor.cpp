@@ -2013,8 +2013,16 @@ void DfdChannel::populate()
     else {
         qDebug()<<"Cannot read raw file"<<parent->rawFileName;
     }
-//    qDebug()<<"reading finished"<<time.elapsed();
+    //    qDebug()<<"reading finished"<<time.elapsed();
 }
+
+//QByteArray DfdChannel::wavData(qint64 pos, qint64 samples)
+//{
+//    /// общий алгоритм
+//    /// - если данные записаны в формате int16, то читаем блок, вычитаем 32768, возвращаем блок
+//    /// - если данные записаны в формате uint16, то просто возвращаем прочитанный блок
+//    /// - если данные записаны в формате single или любом другом, то
+//}
 
 quint64 DfdChannel::blockSizeInBytes() const
 {
@@ -2236,13 +2244,13 @@ void RawChannel::read(DfdSettings &dfd, int numChans)
 {DD;
     DfdChannel::read(dfd, numChans);
     QString group = QString("Channel%1/").arg(channelIndex+1);
-
-    ADC0 = hextodouble( dfd.value(group+"ADC0")); //qDebug()<<"ADC0" << ch.adc0;
-    ADCStep = hextodouble(dfd.value(group+"ADCStep")); //qDebug()<< "ADCStep"<< ch.adcStep;
-    AmplShift = hextodouble(dfd.value(group+"AmplShift")); //qDebug()<<"AmplShift" <<ch.amplShift ;
-    AmplLevel = hextodouble(dfd.value(group+"AmplLevel")); //qDebug()<< "AmplLevel"<<ch.amplLevel ;
-    Sens0Shift = hextodouble(dfd.value(group+"Sens0Shift")); //qDebug()<< "Sens0Shift"<<ch.sens0Shift ;
-    SensSensitivity = hextodouble(dfd.value(group+"SensSensitivity")); //qDebug()<< "SensSensitivity"<<ch.sensSensitivity ;
+//qDebug()<<parent->fileName();
+    ADC0 = hextodouble( dfd.value(group+"ADC0")); //qDebug()<<"ADC0" << ADC0;
+    ADCStep = hextodouble(dfd.value(group+"ADCStep")); //qDebug()<< "ADCStep"<< ADCStep;
+    AmplShift = hextodouble(dfd.value(group+"AmplShift")); //qDebug()<<"AmplShift" <<AmplShift ;
+    AmplLevel = hextodouble(dfd.value(group+"AmplLevel")); //qDebug()<< "AmplLevel"<<AmplLevel ;
+    Sens0Shift = hextodouble(dfd.value(group+"Sens0Shift")); //qDebug()<< "Sens0Shift"<<Sens0Shift ;
+    SensSensitivity = hextodouble(dfd.value(group+"SensSensitivity")); //qDebug()<< "SensSensitivity"<<SensSensitivity;
     BandWidth = hextofloat(dfd.value(group+"BandWidth")); //qDebug()<< "BandWidth"<< ch.bandwidth;
     SensName = dfd.value(group+"SensName");
 

@@ -1184,6 +1184,26 @@ void Function::setCorrection(const QString &s)
     type58[12].value = s;
 }
 
+//QByteArray Function::wavData(qint64 pos, qint64 samples)
+//{
+//    QByteArray b;
+//    if (type() != Descriptor::TimeResponse) return b;
+
+//    //возвращаем только прочитанные данные -> нет оптимизации
+//    populate();
+
+//    QDataStream s(&b);
+//    s.setByteOrder(QDataStream::LittleEndian);
+//    qint64 maxSamples = qMin(samples, samplesCount());
+//    double max = qMax(qAbs(data()->yMax()), qAbs(data()->yMin()));
+//    double coef = 32768.0 / max;
+//    for (qint64 i=pos; i<maxSamples; ++i) {
+//        qint16 v = qint16(coef * data()->yValue(i));
+//        s << v;
+//    }
+//    return b;
+//}
+
 DescriptionList UffFileDescriptor::dataDescriptor() const
 {DD;
     DescriptionList result;

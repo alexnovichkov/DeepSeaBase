@@ -157,6 +157,9 @@ public:
      */
     virtual double preprocess(double v) {return v;}
 
+    //обычный канал использует обобщенный алгоритм
+//    virtual QByteArray wavData(qint64 pos, qint64 samples) override;
+
     void appendDataTo(const QString &rawFileName);
 
     QString ChanAddress; //

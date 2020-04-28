@@ -33,35 +33,37 @@ int main(int argc, char *argv[])
 
 
 
-//    QFile f("IndType=c0000008.raw");
-//    f.open(QFile::ReadWrite);
-//    QDataStream s(&f);
-//    s.setByteOrder(QDataStream::LittleEndian);
+//    QFile wav("R4G3.wav");
+//    wav.open(QFile::ReadOnly);
+//    QDataStream sWav(&wav);
+//    sWav.setByteOrder(QDataStream::LittleEndian);
 ////    s.setFloatingPointPrecision(QDataStream::SinglePrecision);
-//    s.device()->seek(8);
-//    s.writeRawData("aaaa",4);
 
-//        for (int ch=0; ch<4;++ch) {
-//            for(int i=0; i<10000000; ++i) {
-//            double val = double(i);
-//            s << val;
-//        }
-//    }
-//    DfdFileDescriptor dfd("IndType=c0000008.dfd");
+//    QFile raw("R4G3.raw");
+//    raw.open(QFile::WriteOnly);
+//    QDataStream sRaw(&raw);
+//    sRaw.setByteOrder(QDataStream::LittleEndian);
+
+//    sWav.device()->seek(16*16);
+//    QByteArray b= sWav.device()->read(1000*2);
+
+//    sRaw.device()->write(b);
+
+//    DfdFileDescriptor dfd("R4G3.dfd");
 //    dfd.fillPreliminary(Descriptor::TimeResponse);
 //    dfd.BlockSize = 0;
-//    dfd.NumInd = 10000000;
+//    dfd.NumInd = 1000;
 //    dfd.XBegin = 0.0;
 //    dfd.XName = "с";
-//    dfd.XStep = 1.0;
-//    for (int ch=0; ch<4; ++ch) {
-//        DfdChannel *c = new DfdChannel(&dfd, ch);
-//        c->ChanBlockSize = 10000000;
-//        c->ChanName = QString("Channel %1").arg(ch+1);
-//        c->IndType = 0xc0000008;
+//    dfd.XStep = 1.0 / 8192.0;
+////    for (int ch=0; ch<4; ++ch) {
+//        DfdChannel *c = new DfdChannel(&dfd, 0);
+//        c->ChanBlockSize = 1000;
+//        c->ChanName = QString("Channel 1");
+//        c->IndType = 0x80000002;
 //        c->YName = "m/s2";
 //        dfd.channels << c;
-//    }
+////    }
 //    dfd.setChanged(true);
 //    dfd.write();
 
