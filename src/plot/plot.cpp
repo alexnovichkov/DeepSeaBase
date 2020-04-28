@@ -128,6 +128,11 @@ Plot::Plot(QWidget *parent) :
     connect(_picker,SIGNAL(xAxisClicked(double,bool)),      trackingPanel, SLOT(setXValue(double,bool)));
     connect(_picker,SIGNAL(cursorMovedTo(double)),          trackingPanel, SLOT(setXValue(double)));
     connect(_picker,SIGNAL(moveCursor(bool)),               trackingPanel, SLOT(moveCursor(bool)));
+
+    connect(_picker,SIGNAL(cursorSelected(QwtPlotMarker*)), playerPanel, SLOT(updateSelectedCursor(QwtPlotMarker*)));
+    connect(_picker,SIGNAL(xAxisClicked(double,bool)),      playerPanel, SLOT(setXValue(double)));
+    connect(_picker,SIGNAL(cursorMovedTo(double)),          playerPanel, SLOT(setXValue(double)));
+//    connect(_picker,SIGNAL(moveCursor(bool)),               trackingPanel, SLOT(moveCursor(bool)));
 }
 
 Plot::~Plot()
@@ -550,7 +555,7 @@ void Plot::moveCurve(Curve *curve, int axis)
             curve->channel->data()->setYValuesPresentation(yValuesPresentationLeft);
             leftCurves.append(curve);
         }
-        emit curvesChanged();
+//        emit curvesChanged();
 
         updateAxesLabels();
         moveToAxis(axis, curve->channel->yMin(), curve->channel->yMax());

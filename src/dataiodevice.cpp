@@ -2,7 +2,6 @@
 
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
-//#include "fileformats/dfdfiledescriptor.h"
 
 DataIODevice::DataIODevice(Channel *channel, QObject *parent)
     : QIODevice(parent), m_channel(channel)
@@ -16,63 +15,40 @@ bool DataIODevice::isSequential() const
     return false;
 }
 
-bool DataIODevice::open(QIODevice::OpenMode mode)
-{DD;
-//    qDebug()<<mode;
-    return QIODevice::open(mode);
-}
-
-void DataIODevice::close()
-{DD;
-    QIODevice::close();
-}
-
 double DataIODevice::positionSec() const
 {
     return double(m_pos) * m_channel->xStep();
 }
 
-qint64 DataIODevice::pos() const
-{DD;
-    return m_pos * sizeof(double);
-}
-
-qint64 DataIODevice::size() const
-{DD;
-    return m_channel->samplesCount() * sizeof(double);
-}
-
 bool DataIODevice::seek(qint64 pos)
 {DD;
     QIODevice::seek(pos);
-    m_pos = pos / sizeof(double);
+    if (pos < 0) return false;
+
+    m_pos = pos / sizeof(qint16);
+
     return (m_pos <= m_channel->samplesCount());
 }
 
 bool DataIODevice::atEnd() const
 {DD;
-    return (m_pos >= m_channel->samplesCount());
+    return (m_pos >= m_channel->samplesCount()-1);
 }
 
-//bool DataIODevice::reset()
-//{DDD;
-//    m_pos = 0;
-//    return true;
-//}
-
-//qint64 DataIODevice::bytesAvailable() const
-//{DDD;
-//    return (m_data->samplesCount() - m_pos)*sizeof(double) + QIODevice::bytesAvailable();
-//}
-
-//qint64 DataIODevice::bytesToWrite() const
-//{DDD;
-//    return QIODevice::bytesToWrite();
-//}
+bool DataIODevice::reset()
+{DDD;
+    m_pos = 0;
+    return true;
+}
 
 bool DataIODevice::canReadLine() const
 {DD;
-    return false;
+    return false || QIODevice::canReadLine();
+}
+
+qint64 DataIODevice::size() const
+{
+    return m_channel->samplesCount() * sizeof(qint16);
 }
 
 qint64 DataIODevice::readData(char *data, qint64 maxlen)
@@ -80,30 +56,22 @@ qint64 DataIODevice::readData(char *data, qint64 maxlen)
     //заполняем нулями
     memset(data, 0, maxlen);
 
+    //что-то пошло не так в seek
+    if (m_pos < 0) {
+        return 0;
+    }
+
     //получаем сырые данные, количество отсчетов равно буферу / sizeof(int16)
-    QByteArray b = m_channel->wavData(m_pos, maxlen / 2);
+    QByteArray b = m_channel->wavData(m_pos, maxlen / sizeof(qint16), m_muted ? 0.0 : m_volume);
 
     if (b.isEmpty()) return 0;
 
     memcpy(data, b.data(), b.length());
-    m_pos += (b.length() / 2);
+    m_pos += (b.length() / sizeof(qint16));
 
+    // no more data available
+    if (m_pos >= m_channel->samplesCount()-1) return -1;
 
-//    if (DfdChannel *raw = dynamic_cast<DfdChannel*>(m_channel)) {
-//        QVector<double> mid = m_channel->yValues().mid(m_pos, qint64(maxlen/sizeof(double)));
-
-//        QDataStream buff(&b, QIODevice::WriteOnly);
-//        buff.setByteOrder(QDataStream::LittleEndian);
-//        for (int i = 0; i < mid.length(); ++i) {
-//            double v = raw->preprocess(mid[i]);
-//            quint16 vv = (quint16)v;
-//            if (vv > 32768) vv -= 32768;
-//            else vv += 32768;
-//            buff << vv;
-//        }
-//        memcpy(data, b.data(), b.length());
-//        m_pos += mid.length();
-//    }
     return b.length();
 }
 

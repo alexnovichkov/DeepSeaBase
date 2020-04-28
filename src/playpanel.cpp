@@ -36,6 +36,7 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
 
     channelsBox = new QComboBox(this);
     connect(channelsBox,SIGNAL(currentIndexChanged(int)),SLOT(setSource(int)));
+    channelsBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
     volumeSlider = new QSlider(Qt::Horizontal, this);
     volumeSlider->setRange(0, 100);
@@ -94,7 +95,9 @@ void PlayPanel::update()
         Channel *c = plot->curves[i]->channel;
         if (c->type() == Descriptor::TimeResponse) {
             channels.insert(i,c);
-            channelsBox->addItem(c->name());
+            QPixmap pix(10,10);
+            pix.fill(plot->curves[i]->pen().color());
+            channelsBox->addItem(QIcon(pix), c->name());
         }
     }
 
@@ -115,6 +118,7 @@ void PlayPanel::update()
     stopButton->setEnabled(!channels.isEmpty());
     pauseButton->setEnabled(!channels.isEmpty());
     muteButton->setEnabled(!channels.isEmpty());
+    volumeSlider->setEnabled(!channels.isEmpty());
 }
 
 void PlayPanel::setSource(int n)
@@ -130,27 +134,34 @@ void PlayPanel::setSource(int n)
 
 void PlayPanel::mute()
 {
-    if (!muted()) {
-        muteVolume(true);
+    if (!audioData->muted()) {
+        audioData->setMuted(true);
         muteButton->setIcon(style()->standardIcon(QStyle::SP_MediaVolumeMuted));
     }
     else {
-        muteVolume(false);
+        audioData->setMuted(false);
         muteButton->setIcon(style()->standardIcon(QStyle::SP_MediaVolume));
     }
 }
 
 void PlayPanel::setVolume(int vol)
 {
-    qreal linearVolume = QAudio::convertVolume(vol / qreal(100.0),
-                                               QAudio::LogarithmicVolumeScale,
-                                               QAudio::LinearVolumeScale);
-    if (audio)
-        audio->setVolume(qRound(linearVolume * 100));
-    if (vol == 0)
+    if (!audioData) return;
+
+    qreal linearVolume;
+    if (vol == 0) {
+        linearVolume = 0.0;
+        audioData->setMuted(true);
         muteButton->setIcon(style()->standardIcon(QStyle::SP_MediaVolumeMuted));
-    else
+    }
+    else {
+        linearVolume = QAudio::convertVolume(vol / qreal(100.0),
+                                             QAudio::LogarithmicVolumeScale,
+                                             QAudio::LinearVolumeScale);
         muteButton->setIcon(style()->standardIcon(QStyle::SP_MediaVolume));
+        audioData->setMuted(false);
+    }
+    audioData->setVolume(linearVolume);
 }
 
 void PlayPanel::updateSelectedCursor(QwtPlotMarker *c)
@@ -165,15 +176,15 @@ void PlayPanel::updateSelectedCursor(QwtPlotMarker *c)
 
 void PlayPanel::setXValue(/*QwtPlotMarker *c, */double xVal)
 {
-    if (!cursor->current) return;
+    if (!cursor->current) cursor->setCurrent(true);
     if (!ch) return;
 
     // здесь xVal - произвольное число, соответствующее какому-то положению на оси X
     moveCursor(xVal);
 
     if (audioData) {
-        audioData->reset();
-        audioData->seek(/*количество байт с начала*/xVal/ch->xStep()*sizeof(double));
+        //audioData->reset();
+        audioData->seek(/*количество байт с начала*/ xVal / ch->xStep() * sizeof(qint16));
     }
 }
 
@@ -194,7 +205,8 @@ void PlayPanel::audioStateChanged(QAudio::State state)
 
 void PlayPanel::audioPosChanged()
 {
-    const double xVal = audioData->positionSec();
+    if (!ch || !audioData) return;
+    const double xVal = 0.5 * audioData->pos() * ch->xStep();
     moveCursor(xVal);
 }
 
@@ -241,7 +253,7 @@ void PlayPanel::start()
     }
 
     audio = new QAudioOutput(format, this);
-    audio->setBufferSize(2 * qRound(1.0/ch->xStep()));
+    audio->setBufferSize(1 * qRound(1.0/ch->xStep())); // 10 sec
 
     audio->setNotifyInterval(50);
 
