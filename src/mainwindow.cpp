@@ -191,15 +191,14 @@ MainWindow::MainWindow(QWidget *parent)
     connect(plot, SIGNAL(saveTimeSegment(QList<FileDescriptor*>,double,double)), SLOT(saveTimeSegment(QList<FileDescriptor*>,double,double)));
     connect(plot, SIGNAL(curvesChanged()), SLOT(updatePlottedChannelsNumbers()));
 
-    addFolderAct = new QAction(qApp->style()->standardIcon(QStyle::SP_DialogOpenButton),
-                               tr("Добавить папку"),this);
+    addFolderAct = new QAction(QIcon(":/icons/open24.png"), tr("Добавить папку"),this);
     addFolderAct->setShortcut(tr("Ctrl+O"));
     connect(addFolderAct, SIGNAL(triggered()), SLOT(addFolder()));
 
     addFolderWithSubfoldersAct = new QAction(tr("Добавить папку со всеми вложенными папками"),this);
     connect(addFolderWithSubfoldersAct, SIGNAL(triggered()), SLOT(addFolderWithSubfolders()));
 
-    addFileAct = new QAction(tr("Добавить файл"),this);
+    addFileAct = new QAction(QIcon(":/icons/open_file.png"), tr("Добавить файл"),this);
     connect(addFileAct, SIGNAL(triggered()), SLOT(addFile()));
 
     moveChannelsUpAct = new QAction("Сдвинуть каналы вверх", this);
@@ -213,7 +212,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(moveChannelsDownAct, SIGNAL(triggered()), SLOT(moveChannelsDown()));
 
     saveAct = new QAction("Сохранить файлы", this);
-    saveAct->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogSaveButton));
+    saveAct->setIcon(QIcon(":/icons/disk.png"));
     saveAct->setShortcut(tr("Ctrl+S"));
     connect(saveAct, SIGNAL(triggered()), SLOT(save()));
 
@@ -232,7 +231,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(plotSelectedChannelsAct, SIGNAL(triggered()), SLOT(plotSelectedChannels()));
 
 
-    QAction *plotHelpAct = new QAction("Справка", this);
+    QAction *plotHelpAct = new QAction(QIcon(":/icons/help.png"), "Справка", this);
     connect(plotHelpAct, &QAction::triggered, [](){QDesktopServices::openUrl(QUrl("help.html"));});
 
     calculateSpectreAct = new QAction(QString("Обработать записи..."), this);
@@ -249,11 +248,11 @@ MainWindow::MainWindow(QWidget *parent)
     connect(clearPlotAct, SIGNAL(triggered()), plot, SLOT(deleteAllCurves()));
 
     savePlotAct = new QAction(QString("Сохранить график..."), this);
-    savePlotAct->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogSaveButton));
+    savePlotAct->setIcon(QIcon(":/icons/picture.png"));
     connect(savePlotAct, SIGNAL(triggered()), plot, SLOT(savePlot()));
 
     rescanBaseAct = new QAction(QString("Пересканировать базу"), this);
-    rescanBaseAct->setIcon(qApp->style()->standardIcon(QStyle::SP_BrowserReload));
+    rescanBaseAct->setIcon(QIcon(":/icons/revert.png"));
     rescanBaseAct->setShortcut(QKeySequence::Refresh);
     connect(rescanBaseAct, SIGNAL(triggered()), this, SLOT(rescanBase()));
 
@@ -335,7 +334,7 @@ MainWindow::MainWindow(QWidget *parent)
     addCorrectionAct->setMenu(addCorrectionMenu);
 
     deleteChannelsAct = new QAction("Удалить выделенные каналы...",this);
-    deleteChannelsAct->setIcon(qApp->style()->standardIcon(QStyle::SP_TrashIcon));
+    deleteChannelsAct->setIcon(QIcon(":/icons/remove.png"));
     connect(deleteChannelsAct, SIGNAL(triggered()), this, SLOT(deleteChannels()));
 
     deleteChannelsBatchAct = new QAction("Удалить каналы в нескольких файлах...",this);
@@ -414,7 +413,11 @@ MainWindow::MainWindow(QWidget *parent)
     mainToolBar->addAction(interactionModeAct);
     mainToolBar->addAction(trackingCursorAct);
     mainToolBar->addAction(playAct);
-    mainToolBar->addSeparator();
+    //mainToolBar->addSeparator();
+    QWidget *fillerWidget = new QWidget(this);
+    fillerWidget->setContentsMargins(0,0,0,0);
+    fillerWidget->setSizePolicy(QSizePolicy::Expanding, fillerWidget->sizePolicy().verticalPolicy());
+    mainToolBar->addWidget(fillerWidget);
     mainToolBar->addAction(plotHelpAct);
 
 
@@ -669,6 +672,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
     tab->filePathLabel = new QLabel(this);
     tab->filePathLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
+    tab->filePathLabel->setSizePolicy(QSizePolicy::Expanding, tab->filePathLabel->sizePolicy().verticalPolicy());
 
 
 
@@ -679,10 +683,8 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
     treeWidget->setLayout(treeLayout);
 
-    QToolButton *openFolderButton = new QToolButton(this);
     QAction *openFolderAct = new QAction("Открыть папку с этой записью", this);
-    openFolderAct->setIcon(qApp->style()->standardIcon(QStyle::SP_DirOpenIcon));
-    openFolderButton->setDefaultAction(openFolderAct);
+    openFolderAct->setIcon(QIcon(":/icons/open.png"));
     connect(openFolderAct, &QAction::triggered, [=](){
         if (!tab->filePathLabel->text().isEmpty()) {
             QDir dir(tab->filePathLabel->text());
@@ -691,10 +693,8 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
         }
     });
 
-    QToolButton *editFileButton = new QToolButton(this);
     QAction *editFileAct = new QAction("Редактировать этот файл в текстовом редакторе", this);
     editFileAct->setIcon(QIcon(":/icons/edit.png"));
-    editFileButton->setDefaultAction(editFileAct);
     connect(editFileAct, &QAction::triggered, [=](){
         QString file = QDir::toNativeSeparators(tab->filePathLabel->text());
         if (!file.isEmpty()) {
@@ -717,12 +717,20 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
         }
     });
 
+    QToolBar *channelsToolBar = new QToolBar(this);
+    channelsToolBar->setFloatable(false);
+    channelsToolBar->setMovable(false);
+    channelsToolBar->setIconSize(QSize(16,16));
+    channelsToolBar->setContentsMargins(0,0,0,0);
+    channelsToolBar->addWidget(tab->filePathLabel);
+    channelsToolBar->addAction(editFileAct);
+    channelsToolBar->addAction(openFolderAct);
+
     QWidget *channelsWidget = new QWidget(this);
+    channelsWidget->setContentsMargins(0,0,0,0);
     QGridLayout *channelsLayout = new QGridLayout;
-    channelsLayout->addWidget(tab->filePathLabel,0,0);
+    channelsLayout->addWidget(channelsToolBar,0,0,1,3);
     channelsLayout->addWidget(tab->channelsTable,1,0,1,3);
-    channelsLayout->addWidget(editFileButton, 0,1);
-    channelsLayout->addWidget(openFolderButton, 0,2);
     channelsWidget->setLayout(channelsLayout);
 
 
