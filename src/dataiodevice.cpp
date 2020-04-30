@@ -17,7 +17,7 @@ bool DataIODevice::isSequential() const
 
 double DataIODevice::positionSec() const
 {
-    return double(m_pos) * m_channel->xStep();
+    return pos()/sizeof(qint16) * m_channel->xStep();
 }
 
 bool DataIODevice::seek(qint64 pos)
@@ -37,6 +37,7 @@ bool DataIODevice::atEnd() const
 
 bool DataIODevice::reset()
 {DDD;
+    QIODevice::reset();
     m_pos = 0;
     return true;
 }
@@ -58,8 +59,13 @@ qint64 DataIODevice::readData(char *data, qint64 maxlen)
 
     //что-то пошло не так в seek
     if (m_pos < 0) {
+//        qDebug()<<"why m_pos < 0?";
         return 0;
     }
+
+//    if (m_pos *2 != pos()) {
+//        qDebug()<<"position mismatch: m_pos"<<m_pos<<"pos"<<pos();
+//    }
 
     //получаем сырые данные, количество отсчетов равно буферу / sizeof(int16)
     QByteArray b = m_channel->wavData(m_pos, maxlen / sizeof(qint16), m_muted ? 0.0 : m_volume);

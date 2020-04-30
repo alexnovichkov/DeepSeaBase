@@ -253,7 +253,7 @@ void PlayPanel::start()
     }
 
     audio = new QAudioOutput(format, this);
-    audio->setBufferSize(1 * qRound(1.0/ch->xStep())); // 10 sec
+    audio->setBufferSize(2 * qRound(1.0/ch->xStep())); // 0.5 sec
 
     audio->setNotifyInterval(50);
 
