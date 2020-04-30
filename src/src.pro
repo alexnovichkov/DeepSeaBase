@@ -106,7 +106,8 @@ SOURCES += main.cpp\
     plot/wheelzoom.cpp \
     plot/picker.cpp \
     plot/pointmarker.cpp \
-    plot/plottracker.cpp
+    plot/plottracker.cpp \
+    wavexporter.cpp
 
 HEADERS  += mainwindow.h \
     fileformats/dfdfiledescriptor.h \
@@ -190,7 +191,8 @@ HEADERS  += mainwindow.h \
     plot/wheelzoom.h \
     plot/picker.h \
     plot/pointmarker.h \
-    plot/plottracker.h
+    plot/plottracker.h \
+    wavexporter.h
 
 SOURCES +=\
   $$PWD/../3rdParty/DspFilters/*.cpp \

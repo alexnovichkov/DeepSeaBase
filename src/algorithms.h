@@ -176,6 +176,7 @@ int uffMethodFromDfdMethod(int methodId);
  * @brief createUniqueFileName возвращает уникальное имя файла в виде
  *                             folderName/fileName_constantPart_000.ext
  * @param folderName - имя папки, в которой будет содержаться файл
+ *        Если folderName пустой, то файл будет находиться в той же папке, что и fileName
  * @param fileName - имя файла, на основе которого нужно создать новое имя
  * @param constantPart - суффикс, который добавляется к fileName ("fileName_constantPart")
  * @param ext - расширение файла

@@ -201,6 +201,8 @@ private slots:
 
     void cycleChannelsUp();
     void cycleChannelsDown();
+
+    void exportChannelsToWav();
 private:
     void moveChannels(bool up);
     void addFiles(QStringList &files);
@@ -243,6 +245,7 @@ private:
     QAction *plotAllChannelsAct;
     QAction *plotAllChannelsAtRightAct;
     QAction *plotSelectedChannelsAct;
+    QAction *exportChannelsToWavAct;
     QAction *removeChannelsPlotsAct;
     QAction *calculateSpectreAct;
     QAction *calculateThirdOctaveAct;

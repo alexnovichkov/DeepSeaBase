@@ -16,6 +16,7 @@
 #include "model.h"
 #include "sortfiltermodel.h"
 #include "filterheaderview.h"
+#include "wavexporter.h"
 
 #include <ActiveQt/ActiveQt>
 #include "logging.h"
@@ -229,6 +230,9 @@ MainWindow::MainWindow(QWidget *parent)
 
     plotSelectedChannelsAct = new QAction(QString("Построить выделенные каналы"), this);
     connect(plotSelectedChannelsAct, SIGNAL(triggered()), SLOT(plotSelectedChannels()));
+
+    exportChannelsToWavAct = new QAction(QString("Экспортировать в WAV"), this);
+    connect(exportChannelsToWavAct, SIGNAL(triggered(bool)), SLOT(exportChannelsToWav()));
 
 
     QAction *plotHelpAct = new QAction(QIcon(":/icons/help.png"), "Справка", this);
@@ -661,6 +665,8 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
         }
         else if (column == 0) {
             menu.addAction(plotSelectedChannelsAct);
+            if (tab->record && tab->record->isSourceFile())
+                menu.addAction(exportChannelsToWavAct);
             menu.exec(QCursor::pos());
         }
 //        else if (column == 9) {
@@ -1527,6 +1533,7 @@ void MainWindow::saveTimeSegment(const QList<FileDescriptor *> &files, double fr
     connect(converter, &TimeSlicer::finished, [=](){
         QStringList newFiles = converter->getNewFiles();
         addFiles(newFiles);
+        converter->deleteLater();
     });
     connect(converter, SIGNAL(tick(int)), progress, SLOT(setValue(int)));
 
@@ -2178,6 +2185,37 @@ void MainWindow::cycleChannelsDown()
         tab->channelModel->plotChannels(plotted);
     }
     sergeiMode = mode;
+}
+
+void MainWindow::exportChannelsToWav()
+{
+    if (!tab || !tab->record) return;
+    //проверяем тип файла
+    if (!tab->record->isSourceFile()) return;
+
+    QVector<int> toExport = tab->channelModel->selected();
+    if (toExport.isEmpty()) return;
+
+    QThread *thread = new QThread;
+    WavExporter *exporter = new WavExporter(tab->record, toExport);
+    exporter->moveToThread(thread);
+
+    QProgressDialog *progress = new QProgressDialog("Сохранение в WAV...", "Отменить сохранение", 0, exporter->chunksCount(), this);
+    progress->setWindowModality(Qt::WindowModal);
+
+    connect(thread, SIGNAL(started()), exporter, SLOT(start()));
+    connect(exporter, SIGNAL(finished()), thread, SLOT(quit()));
+    connect(exporter, SIGNAL(finished()), progress, SLOT(accept()));
+    connect(progress, SIGNAL(canceled()), thread, SLOT(quit()));
+    connect(exporter, &WavExporter::finished, [=](){
+        exporter->deleteLater();
+    });
+    connect(exporter, SIGNAL(tick(int)), progress, SLOT(setValue(int)));
+
+    progress->show();
+    progress->setValue(0);
+
+    thread->start();
 }
 
 void setLineColor(QAxObject *obj, int color)
