@@ -117,7 +117,7 @@ void WavExporter::writeWithStreams(const QString &wavFileName)
         //4. очищаем данные канала
 
         QVector<QByteArray> chunkData;
-        QTime reading; reading.start();
+        QElapsedTimer reading; reading.start();
         for (int c = 0; c < indexes.size(); ++c) {
             if (QThread::currentThread()->isInterruptionRequested()) {
                 wavFile.close();
@@ -136,7 +136,7 @@ void WavExporter::writeWithStreams(const QString &wavFileName)
 
         //теперь перетасовываем chunkData - берем из него по одному отсчету каждого канала
         //и записываем в wav
-        QTime writing; writing.start();
+        QElapsedTimer writing; writing.start();
         for (int i = 0; i < chunkData.first().size()/2; ++i) {
             if (QThread::currentThread()->isInterruptionRequested()) {
                 wavFile.close();
@@ -225,7 +225,7 @@ bool WavExporter::writeWithMap(const QString &wavFileName)
 
 void WavExporter::start()
 {
-    QTime time;
+    QElapsedTimer time;
     time.start();
 
     if (QThread::currentThread()->isInterruptionRequested()) {

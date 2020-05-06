@@ -195,12 +195,70 @@ HEADERS  += mainwindow.h \
     wavexporter.h
 
 SOURCES +=\
-  $$PWD/../3rdParty/DspFilters/*.cpp \
-  $$PWD/../3rdParty/qtpropertybrowser/*.cpp \
+  ../3rdParty/DspFilters/State.cpp \
+  ../3rdParty/DspFilters/Bessel.cpp \
+  ../3rdParty/DspFilters/Biquad.cpp \
+  ../3rdParty/DspFilters/Butterworth.cpp \
+  ../3rdParty/DspFilters/Cascade.cpp \
+  ../3rdParty/DspFilters/ChebyshevI.cpp \
+  ../3rdParty/DspFilters/ChebyshevII.cpp \
+  ../3rdParty/DspFilters/Custom.cpp \
+  ../3rdParty/DspFilters/Design.cpp \
+  ../3rdParty/DspFilters/Elliptic.cpp \
+  ../3rdParty/DspFilters/Filter.cpp \
+  ../3rdParty/DspFilters/Legendre.cpp \
+  ../3rdParty/DspFilters/Param.cpp \
+  ../3rdParty/DspFilters/PoleFilter.cpp \
+  ../3rdParty/DspFilters/RBJ.cpp \
+  ../3rdParty/DspFilters/RootFinder.cpp
+
+
+SOURCES +=\
+  ../3rdParty/qtpropertybrowser/qtbuttonpropertybrowser.cpp \
+  ../3rdParty/qtpropertybrowser/qteditorfactory.cpp \
+  ../3rdParty/qtpropertybrowser/qtgroupboxpropertybrowser.cpp \
+  ../3rdParty/qtpropertybrowser/qtpropertybrowser.cpp \
+  ../3rdParty/qtpropertybrowser/qtpropertymanager.cpp \
+  ../3rdParty/qtpropertybrowser/qtpropertybrowserutils.cpp \
+  ../3rdParty/qtpropertybrowser/qttreepropertybrowser.cpp \
+  ../3rdParty/qtpropertybrowser/qtvariantproperty.cpp
+
 
 HEADERS +=\
-  $$PWD/../3rdParty/DspFilters/*.h \
-  $$PWD/../3rdParty/qtpropertybrowser/*.h \
+  $$PWD/../3rdParty/DspFilters/Bessel.h\
+  $$PWD/../3rdParty/DspFilters/Biquad.h\
+  $$PWD/../3rdParty/DspFilters/Butterworth.h\
+  $$PWD/../3rdParty/DspFilters/Cascade.h\
+  $$PWD/../3rdParty/DspFilters/ChebyshevI.h\
+  $$PWD/../3rdParty/DspFilters/ChebyshevII.h\
+  $$PWD/../3rdParty/DspFilters/Common.h\
+  $$PWD/../3rdParty/DspFilters/Custom.h\
+  $$PWD/../3rdParty/DspFilters/Design.h\
+  $$PWD/../3rdParty/DspFilters/Dsp.h\
+  $$PWD/../3rdParty/DspFilters/Elliptic.h\
+  $$PWD/../3rdParty/DspFilters/Filter.h\
+  $$PWD/../3rdParty/DspFilters/Layout.h\
+  $$PWD/../3rdParty/DspFilters/Legendre.h\
+  $$PWD/../3rdParty/DspFilters/MathSupplement.h\
+  $$PWD/../3rdParty/DspFilters/Params.h\
+  $$PWD/../3rdParty/DspFilters/PoleFilter.h\
+  $$PWD/../3rdParty/DspFilters/RBJ.h\
+  $$PWD/../3rdParty/DspFilters/RootFinder.h\
+  $$PWD/../3rdParty/DspFilters/SmoothedFilter.h\
+  $$PWD/../3rdParty/DspFilters/State.h\
+  $$PWD/../3rdParty/DspFilters/Types.h\
+  $$PWD/../3rdParty/DspFilters/Utilities.h
+
+HEADERS +=\
+  $$PWD/../3rdParty/qtpropertybrowser/qtbuttonpropertybrowser.h\
+  $$PWD/../3rdParty/qtpropertybrowser/qteditorfactory.h\
+  $$PWD/../3rdParty/qtpropertybrowser/qtgroupboxpropertybrowser.h\
+  $$PWD/../3rdParty/qtpropertybrowser/qtpropertybrowser.h\
+  $$PWD/../3rdParty/qtpropertybrowser/qtpropertybrowserutils_p.h\
+  $$PWD/../3rdParty/qtpropertybrowser/qtpropertymanager.h\
+  $$PWD/../3rdParty/qtpropertybrowser/qttreepropertybrowser.h\
+  $$PWD/../3rdParty/qtpropertybrowser/qtvariantproperty.h
+
 
 RESOURCES *= src.qrc
 

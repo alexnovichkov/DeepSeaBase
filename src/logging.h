@@ -8,14 +8,14 @@
 
 #define DebugPrint(s) qDebug()<<#s<<s;
 
-class QTime;
+class QElapsedTimer;
 class Trace {
 public:
     Trace(const QString &msg);
     ~Trace();
 private:
     QString _msg;
-    QTime *time;
+    QElapsedTimer *time;
 };
 
 #ifdef DO_TRACE

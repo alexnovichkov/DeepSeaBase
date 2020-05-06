@@ -114,15 +114,15 @@ DescriptionList OctaveMethod::processData(const Parameters &p)
 {
     Q_UNUSED(p)
     DescriptionList list;
-    list.append({"PName", methodName()});
-    list.append({"pTime","(0000000000000000)"});
+    list.append({QStringLiteral("PName"), methodName()});
+    list.append({QStringLiteral("pTime"),QStringLiteral("(0000000000000000)")});
     //list.append({"ProcChansList",""});
-    list.append({"BlockIn", "32768"});
-    list.append({"TypeProc", typeCombo->currentText()});
-    list.append({"Values", valuesCombo->currentText()});
-    list.append({"TypeScale", scaleCombo->currentText()});
-    list.append({"kStrip", QString::number(resolutionSpin->value())});
-    list.append({"AddProc", QString::number(placeCombo->currentIndex())});
+    list.append({QStringLiteral("BlockIn"), QStringLiteral("32768")});
+    list.append({QStringLiteral("TypeProc"), typeCombo->currentText()});
+    list.append({QStringLiteral("Values"), valuesCombo->currentText()});
+    list.append({QStringLiteral("TypeScale"), scaleCombo->currentText()});
+    list.append({QStringLiteral("kStrip"), QString::number(resolutionSpin->value())});
+    list.append({QStringLiteral("AddProc"), QString::number(placeCombo->currentIndex())});
 
     return list;
 }

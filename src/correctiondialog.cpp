@@ -76,7 +76,7 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
         table->setItem(i,2,item);
 
         item = new QTableWidgetItem();
-        item->setBackgroundColor(curve->pen().color());
+        item->setBackground(curve->pen().color());
         table->setItem(i++,0,item);
     }
 
@@ -173,11 +173,12 @@ void CorrectionDialog::correct()
             else
                 table->item(i,2)->setText("");
 
-            if (allFilesCheckBox->isChecked())
-            foreach (FileDescriptor *file, files) {
-                if (Channel *ch1 = file->channel(channelNumber)) {
-                    if (!ch1->populated()) ch1->populate();
-                    ch1->data()->setTemporaryCorrection(correctionValue, correctionType->currentIndex());
+            if (allFilesCheckBox->isChecked()) {
+                foreach (FileDescriptor *file, files) {
+                    if (Channel *ch1 = file->channel(channelNumber)) {
+                        if (!ch1->populated()) ch1->populate();
+                        ch1->data()->setTemporaryCorrection(correctionValue, correctionType->currentIndex());
+                    }
                 }
             }
         }
@@ -261,10 +262,11 @@ void CorrectionDialog::reject()
     for (int i=0; i<table->rowCount(); ++i) {
         plot->curves.at(i)->channel->data()->removeCorrection();
 
-        if (allFilesCheckBox->isChecked())
-        foreach (FileDescriptor *file, files) {
-            if (Channel *ch1 = file->channel(plot->curves.at(i)->channel->index())) {
-                ch1->data()->removeCorrection();
+        if (allFilesCheckBox->isChecked()) {
+            foreach (FileDescriptor *file, files) {
+                if (Channel *ch1 = file->channel(plot->curves.at(i)->channel->index())) {
+                    ch1->data()->removeCorrection();
+                }
             }
         }
     }

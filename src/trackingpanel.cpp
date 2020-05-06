@@ -201,7 +201,7 @@ void TrackingPanel::updateState(const QList<TrackingPanel::TrackInfo> &curves)
             item->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsEditable | Qt::ItemNeverHasChildren);
             tree->addTopLevelItem(item);
         }
-        item->setBackgroundColor(0,curves[i].color);
+        item->setBackground(0,curves[i].color);
         item->setText(1,curves[i].name);
 
         item->setText(4, QString::number(curves[i].values.at(1).first));

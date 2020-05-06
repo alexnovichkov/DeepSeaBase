@@ -21,15 +21,15 @@ ColorEditDialog::ColorEditDialog(QWidget *parent) :
 
     for (int i =0; i<colors.size(); ++i) {
         QTableWidgetItem *item = new QTableWidgetItem();
-        item->setBackgroundColor(colors.at(i));
+        item->setBackground(colors.at(i));
         table->setItem(i,0,item);
     }
     connect(table,&QTableWidget::cellClicked, [=](int row, int col) {
-        QColor color = table->item(row, col)->backgroundColor();
+        QColor color = table->item(row, col)->background().color();
         color = QColorDialog::getColor(color, this);
 
         if (color.isValid()) {
-            table->item(row, col)->setBackgroundColor(color);
+            table->item(row, col)->setBackground(color);
             selector->setColor(color, row);
         }
     }

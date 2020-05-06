@@ -518,11 +518,11 @@ DfdFileDescriptor *DfdFileDescriptor::newThirdOctaveFile(const QString &fileName
     dfd->XStep = 0.0;
 
     dfd->process = new Process();
-    dfd->process->data.append({"pName","1/3-октавный спектр"});
-    dfd->process->data.append({"pTime","(0000000000000000)"});
-    dfd->process->data.append({"TypeProc","1/3-октава"});
-    dfd->process->data.append({"Values","измеряемые"});
-    dfd->process->data.append({"TypeScale","в децибелах"});
+    dfd->process->data.append(qMakePair(QStringLiteral("pName"),QStringLiteral("1/3-октавный спектр")));
+    dfd->process->data.append(qMakePair(QStringLiteral("pTime"),QStringLiteral("(0000000000000000)")));
+    dfd->process->data.append(qMakePair(QStringLiteral("TypeProc"),QStringLiteral("1/3-октава")));
+    dfd->process->data.append(qMakePair(QStringLiteral("Values"),QStringLiteral("измеряемые")));
+    dfd->process->data.append(qMakePair(QStringLiteral("TypeScale"),QStringLiteral("в децибелах")));
 
     return dfd;
 }
@@ -2468,13 +2468,13 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
     // [Process]
     newDfd->process = new Process();
     DescriptionList list;
-    list.append({"pName", "Осциллограф"});
-    list.append({"pTime","(0000000000000000)"});
-    list.append({"ProcChansList", procChansList.join(",")});
-    list.append({"BlockIn", QString::number(newDfd->samplesCount())});
-    list.append({"TypeProc", "0"});
-    list.append({"NAver", "1"});
-    list.append({"Values", "измеряемые"});
+    list.append(qMakePair(QStringLiteral("pName"), QStringLiteral("Осциллограф")));
+    list.append(qMakePair(QStringLiteral("pTime"),QStringLiteral("(0000000000000000)")));
+    list.append(qMakePair(QStringLiteral("ProcChansList"), procChansList.join(",")));
+    list.append(qMakePair(QStringLiteral("BlockIn"), QString::number(newDfd->samplesCount())));
+    list.append(qMakePair(QStringLiteral("TypeProc"), QStringLiteral("0")));
+    list.append(qMakePair(QStringLiteral("NAver"), QStringLiteral("1")));
+    list.append(qMakePair(QStringLiteral("Values"), QStringLiteral("измеряемые")));
     newDfd->process->data = list;
 
     // 4 сохраняем файл

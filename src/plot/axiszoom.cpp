@@ -17,6 +17,7 @@
 #include <qwt_scale_widget.h>
 #include "axisboundsdialog.h"
 #include "logging.h"
+#include <QtMath>
 
 AxisZoom::AxisZoom() :  QObject()
 {
@@ -259,7 +260,7 @@ void AxisZoom::startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis)
                 // в зависимости от положения курсора
                 // (правее или левее середины шкалы)
                 // включаем соответствующий режим - изменение
-                if (cursorPosX >= floor(currentPixelWidth/2))
+                if (cursorPosX >= qFloor(currentPixelWidth/2))
                     zoom->setRegime(ChartZoom::ctRight);     // правой границы
                 else zoom->setRegime(ChartZoom::ctLeft);    // или левой
             }

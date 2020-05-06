@@ -2783,7 +2783,7 @@ void Tab::filesSelectionChanged(const QItemSelection &newSelection, const QItemS
     QModelIndexList list = filesTable->selectionModel()->selection().indexes();
     foreach (const QModelIndex &i, list) indexes << sortModel->mapToSource(i).row();
 
-    QList<int> l = indexes.toList();
+    QList<int> l = indexes.values();
     std::sort(l.begin(), l.end());
 
     model->setSelected(l);
@@ -2803,7 +2803,7 @@ void Tab::channelsSelectionChanged(const QItemSelection &newSelection, const QIt
     QModelIndexList list = channelsTable->selectionModel()->selection().indexes();
     foreach (const QModelIndex &i, list) indexes << i.row();
 
-    QList<int> l = indexes.toList();
+    QList<int> l = indexes.values();
     std::sort(l.begin(), l.end());
 
     channelModel->setSelected(l.toVector());

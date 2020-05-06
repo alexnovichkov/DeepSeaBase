@@ -31,7 +31,7 @@ void PlotTracker::widgetKeyPressEvent(QKeyEvent *e)
 QwtText PlotTracker::trackerTextF(const QPointF &pos) const
 {//DD;
     QString text;
-    text.sprintf( "%.2f, %.2f", pos.x(), pos.y());
+    text.asprintf( "%.2f, %.2f", pos.x(), pos.y());
 
     return QwtText( text );
 }

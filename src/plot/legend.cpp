@@ -316,7 +316,7 @@ LegendTreeView::LegendTreeView(QWidget *parent) : QTreeView(parent)
     setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setFrameStyle( NoFrame );
-    viewport()->setBackgroundRole(QPalette::Background);
+    viewport()->setBackgroundRole(QPalette::Window);
     viewport()->setAutoFillBackground( false );
 
     setRootIsDecorated( false );

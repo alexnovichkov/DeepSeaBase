@@ -183,7 +183,7 @@ void Converter::finalize()
 
 
     Q_FOREACH(const QFileInfo &newFile, newFilesList) {
-        if (newFile.created()>dt || newFile.lastModified()>dt)
+        if (newFile.birthTime()>dt || newFile.lastModified()>dt)
             newFiles_ << newFile.canonicalFilePath();
     }
 

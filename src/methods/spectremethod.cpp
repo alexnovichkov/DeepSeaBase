@@ -208,11 +208,11 @@ int SpectreMethod::dataType()
 DescriptionList SpectreMethod::processData(const Parameters &p)
 {
     DescriptionList list;
-    list.append({"PName", methodName()});
-    list.append({"BlockIn", QString::number(p.bufferSize)});
-    list.append({"Wind", Windowing::windowDescription(p.windowType)});
-    list.append({"TypeAver", Averaging::averagingDescription(p.averagingType+1)});
-    list.append({"pTime","(0000000000000000)"});
+    list.append(qMakePair(QStringLiteral("PName"), methodName()));
+    list.append(qMakePair(QStringLiteral("BlockIn"), QString::number(p.bufferSize)));
+    list.append(qMakePair(QStringLiteral("Wind"), Windowing::windowDescription(p.windowType)));
+    list.append(qMakePair(QStringLiteral("TypeAver"), Averaging::averagingDescription(p.averagingType+1)));
+    list.append(qMakePair(QStringLiteral("pTime"),QStringLiteral("(0000000000000000)")));
     return list;
 }
 

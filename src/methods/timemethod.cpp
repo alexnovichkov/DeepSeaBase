@@ -135,12 +135,12 @@ int TimeMethod::dataType()
 DescriptionList TimeMethod::processData(const Parameters &p)
 {DD;
     DescriptionList list;
-    list.append({"PName", methodName()});
-    list.append({"pTime","(0000000000000000)"});
-    list.append({"BlockIn", QString::number(p.bufferSize)});
-    list.append({"TypeProc", "0"});
-    list.append({"NAver", "1"});
-    list.append({"Values", "измеряемые"});
+    list.append(qMakePair(QStringLiteral("PName"),    methodName()));
+    list.append(qMakePair(QStringLiteral("pTime"),    QStringLiteral("(0000000000000000)")));
+    list.append(qMakePair(QStringLiteral("BlockIn"),  QString::number(p.bufferSize)));
+    list.append(qMakePair(QStringLiteral("TypeProc"), QStringLiteral("0")));
+    list.append(qMakePair(QStringLiteral("NAver"),    QStringLiteral("1")));
+    list.append(qMakePair(QStringLiteral("Values"),   QStringLiteral("измеряемые")));
     return list;
 }
 

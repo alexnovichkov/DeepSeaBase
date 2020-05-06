@@ -16,6 +16,7 @@
 #include "qwt_scale_widget.h"
 #include <QApplication>
 #include "logging.h"
+#include <QtMath>
 
 WheelZoom::WheelZoom() : QObject()
 {DD;
@@ -70,7 +71,7 @@ void WheelZoom::applyWheel(QEvent *event, QwtAxisId axis)
 
     if (wheelDelta != 0) {   // если колесо вращалось
         double wheelSteps = wheelDelta/120.0;
-        double factor = pow(0.85, wheelSteps);
+        double factor = qPow(0.85, wheelSteps);
 
         ChartZoom::zoomCoordinates coords;
 
