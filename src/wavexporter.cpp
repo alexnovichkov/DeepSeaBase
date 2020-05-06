@@ -13,6 +13,13 @@ WavExporter::WavExporter(FileDescriptor * file, const QVector<int> &indexes, QOb
 
 }
 
+WavExporter::WavExporter(Channel *channel, QObject *parent):
+    QObject(parent), channel(channel)
+{
+    file = channel->descriptor();
+    indexes << channel->index();
+}
+
 WavExporter::~WavExporter()
 {
 
@@ -148,14 +155,14 @@ void WavExporter::writeWithStreams(const QString &wavFileName)
     wavFile.close();
 }
 
-void WavExporter::writeWithMap(const QString &wavFileName)
+bool WavExporter::writeWithMap(const QString &wavFileName)
 {
     //2. Записываем заголовок файла wav
     QFile wavFile(wavFileName);
     if (!wavFile.open(QFile::WriteOnly)) {
         qCritical()<<"Не удалось открыть файл"<<wavFileName;
-        finalize();
-        return;
+        //finalize();
+        return false;
     }
 
     //полный размер файла равен 24 +
@@ -170,7 +177,7 @@ void WavExporter::writeWithMap(const QString &wavFileName)
     if (!mapped) {
         qDebug()<<"Не удалось создать файл нужного размера";
         wavFile.close();
-        return;
+        return false;
     }
 
     WavHeader header;
@@ -189,7 +196,7 @@ void WavExporter::writeWithMap(const QString &wavFileName)
             wavFile.close();
             qDebug()<<"Сохранение файла wav прервано";
             finalize();
-            return;
+            return true;
         }
 
         Channel *channel = file->channel(indexes.at(ch));
@@ -202,7 +209,7 @@ void WavExporter::writeWithMap(const QString &wavFileName)
             // i-й отсчет ch-го канала имеет номер
             //       [n + i*ChannelsCount]
             //то есть целевой указатель будет иметь адрес
-            //       sizeof(WavHeader) + (n+i*ChannelsCount*2)
+            //       sizeof(WavHeader) + (n+i*ChannelsCount)*2
             int offset = sizeof(WavHeader) + (ch + sample*channelsCount)*2;
             memcpy(mapped + offset, reinterpret_cast<void*>(channelData.data() + sample*2), 2);
 
@@ -212,8 +219,8 @@ void WavExporter::writeWithMap(const QString &wavFileName)
         emit tick(ch+1);
     }
 
-
     wavFile.close();
+    return true;
 }
 
 void WavExporter::start()
@@ -227,10 +234,11 @@ void WavExporter::start()
     }
 
     //1. Определяем имя файла wav
-    QString wavFileName = createUniqueFileName("", file->fileName(), "", "wav", true);
+    if (_wavFile.isEmpty())
+    _wavFile = createUniqueFileName("", file->fileName(), "", "wav", true);
 
-    //writeWithStreams(wavFileName);
-    writeWithMap(wavFileName);
+    if (!writeWithMap(_wavFile))
+        writeWithStreams(_wavFile);
 
     qDebug()<<"total"<<time.elapsed();
     finalize();

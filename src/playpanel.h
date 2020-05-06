@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QAudio>
 #include <QMap>
+#include <QMediaPlayer>
 
 class Plot;
 class QwtPlotMarker;
@@ -14,6 +15,48 @@ class DataIODevice;
 class Channel;
 class TrackingCursor;
 class QComboBox;
+class QBuffer;
+class QFile;
+
+class QAbstractButton;
+class QAbstractSlider;
+
+class PlayerControls : public QWidget
+{
+    Q_OBJECT
+
+public:
+    explicit PlayerControls(QWidget *parent = nullptr);
+
+    QMediaPlayer::State state() const;
+    int volume() const;
+    bool isMuted() const;
+
+public slots:
+    void setState(QMediaPlayer::State state);
+    void setVolume(int volume);
+    void setMuted(bool muted);
+
+signals:
+    void play();
+    void pause();
+    void stop();
+    void changeVolume(int volume);
+    void changeMuting(bool muting);
+
+private slots:
+    void playClicked();
+    void muteClicked();
+    void onVolumeSliderValueChanged();
+
+private:
+    QMediaPlayer::State m_playerState = QMediaPlayer::StoppedState;
+    bool m_playerMuted = false;
+    QAbstractButton *m_playButton = nullptr;
+    QAbstractButton *m_stopButton = nullptr;
+    QAbstractButton *m_muteButton = nullptr;
+    QAbstractSlider *m_volumeSlider = nullptr;
+};
 
 
 class PlayPanel : public QWidget
@@ -28,6 +71,15 @@ signals:
     void closeRequested();
 
 private slots:
+    void durationChanged(qint64 duration);
+    void positionChanged(qint64 progress);
+    void metaDataChanged();
+    void statusChanged(QMediaPlayer::MediaStatus status);
+    void stateChanged(QMediaPlayer::State state);
+    void bufferingProgress(int progress);
+    void audioAvailableChanged(bool available);
+    void displayErrorMessage();
+
     void audioStateChanged(QAudio::State state);
     void audioPosChanged();
     void start();
@@ -52,16 +104,13 @@ private:
     Channel *ch;
     Plot *plot;
     TrackingCursor *cursor;
-    QToolButton *playButton;
-    QToolButton *stopButton;
-    QToolButton *pauseButton;
-    QToolButton *muteButton;
     QComboBox *channelsBox;
     QMap<int, Channel*> channels;
-    QSlider *volumeSlider;
 
-    QAudioOutput* audio;
-    DataIODevice *audioData;
+    QMediaPlayer *player;
+
+    QString oldTempFile;
+
     double initialPos; // начальная позиция проигрывания
 };
 

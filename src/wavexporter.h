@@ -5,6 +5,7 @@
 #include <QVector>
 
 class FileDescriptor;
+class Channel;
 class QProcess;
 
 class WavExporter : public QObject
@@ -12,8 +13,11 @@ class WavExporter : public QObject
     Q_OBJECT
 public:
     explicit WavExporter(FileDescriptor * file, const QVector<int> &indexes, QObject *parent = nullptr);
+    explicit WavExporter(Channel *channel, QObject *parent = nullptr);
     virtual ~WavExporter();
+    void setTempFile(const QString &tempFile) {_wavFile = tempFile;}
     int chunksCount() const;
+    QString wavFileName() const {return _wavFile;}
 signals:
     void tick(int);
     void finished();
@@ -24,10 +28,13 @@ public slots:
 private:
     void finalize();
     void writeWithStreams(const QString &wavFileName);
-    void writeWithMap(const QString &wavFileName);
+    bool writeWithMap(const QString &wavFileName);
 
-    FileDescriptor * file;
+    FileDescriptor * file = 0;
+    Channel *channel = 0;
     QVector<int> indexes;
+    QString _wavFile;
+    bool useTemp = false;
 };
 
 #endif // WAVEXPORTER_H
