@@ -4,9 +4,8 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
-
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport axcontainer multimedia
+QT += core gui
+QT += widgets printsupport axcontainer multimedia
 
 TARGET = DeepSeaBase
 TEMPLATE = app
@@ -264,7 +263,7 @@ RESOURCES *= src.qrc
 
 RC_FILE *= src.rc
 
-CONFIG(release, debug|release):QMAKE_CFLAGS  += -O3 -msse2 -msse3 -mssse3 -msse4.1 -mavx -mavx2
+CONFIG(release, debug|release):QMAKE_CFLAGS  += -O2
 message($$QMAKE_CFLAGS)
 
 INCLUDEPATH *= K:/My/programming/sources/libsamplerate-0.1.8/src

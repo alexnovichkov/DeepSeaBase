@@ -371,7 +371,7 @@ void ComboBoxItemDelegate::updateEditorGeometry(QWidget *editor, const QStyleOpt
         QRect r = option.rect;
         int max = 0;
         for(int i=0; i<e->count(); ++i)
-            max = qMax(max, e->fontMetrics().horizontalAdvance(e->itemText(i)));
+            max = qMax(max, e->fontMetrics().width(e->itemText(i)));
         r.setWidth(max);
         e->setGeometry(r.adjusted(0,0,10,0));
     }
