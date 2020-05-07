@@ -10,6 +10,7 @@
 #include "plot/curve.h"
 #include "trackingpanel.h"
 #include "wavexporter.h"
+#include "logging.h"
 
 PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
 {
@@ -19,15 +20,8 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
     player = new QMediaPlayer(this);
     player->setAudioRole(QAudio::MusicRole);
     player->setNotifyInterval(50);
-    connect(player, &QMediaPlayer::durationChanged, this, &PlayPanel::durationChanged);
     connect(player, &QMediaPlayer::positionChanged, this, &PlayPanel::positionChanged);
-    connect(player, QOverload<>::of(&QMediaPlayer::metaDataChanged), this, &PlayPanel::metaDataChanged);
-//    connect(playlist, &QMediaPlaylist::currentIndexChanged, this, &Player::playlistPositionChanged);
     connect(player, &QMediaPlayer::mediaStatusChanged, this, &PlayPanel::statusChanged);
-    connect(player, &QMediaPlayer::stateChanged, this, &PlayPanel::stateChanged);
-
-    connect(player, &QMediaPlayer::bufferStatusChanged, this, &PlayPanel::bufferingProgress);
-    connect(player, &QMediaPlayer::audioAvailableChanged, this, &PlayPanel::audioAvailableChanged);
     connect(player, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error), this, &PlayPanel::displayErrorMessage);
 
     cursor = new TrackingCursor(Qt::green);
@@ -36,12 +30,13 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
     cursor->setAxes(QwtAxis::xBottom, QwtAxis::yLeft);
     cursor->setVisible(false);
 
-    PlayerControls *controls = new PlayerControls(this);
+    controls = new PlayerControls(this);
     controls->setState(player->state());
     controls->setVolume(player->volume());
     controls->setMuted(controls->isMuted());
+    controls->enable(false);
 
-    connect(controls, &PlayerControls::play, player, &QMediaPlayer::play);
+    connect(controls, &PlayerControls::play, this, &PlayPanel::prepareDataToPlay);
     connect(controls, &PlayerControls::pause, player, &QMediaPlayer::pause);
     connect(controls, &PlayerControls::stop, player, &QMediaPlayer::stop);
     connect(controls, &PlayerControls::changeVolume, player, &QMediaPlayer::setVolume);
@@ -55,17 +50,11 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
     connect(channelsBox,SIGNAL(currentIndexChanged(int)),SLOT(setSource(int)));
     channelsBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
-
-
     QHBoxLayout *l = new QHBoxLayout(this);
     l->addWidget(channelsBox);
     l->addWidget(controls);
     setLayout(l);
 
-
-
-    ch = 0;
-    initialPos = 0.0;
     update();
 }
 
@@ -73,6 +62,7 @@ PlayPanel::~PlayPanel()
 {
     cursor->detach();
     delete cursor;
+    //подчищаем старый временный файл, если он был
     QFile::remove(oldTempFile);
 }
 
@@ -85,7 +75,6 @@ void PlayPanel::switchVisibility()
     else {
         setVisible(true);
         cursor->setVisible(true);
-//        update();
     }
 }
 
@@ -93,96 +82,80 @@ void PlayPanel::update()
 {
     // ищем канал, который сможем проиграть
 
-    //ищем номер предыдущего канала. Если он удален, то насильно вызваем setSource,
-    //так как channelsBox нормально не обновится
-
-    int oldIndex = -1;
-    if (channels.values().contains(ch)) oldIndex = channels.key(ch);
-
-    channels.clear();
+    channelsBox->blockSignals(true);
     channelsBox->clear();
 
+    int chIndex = -1;
+
+    int count = 0;
     for (int i=0; i<plot->curves.size(); ++i) {
         Channel *c = plot->curves[i]->channel;
         if (c->type() == Descriptor::TimeResponse) {
-            channels.insert(i,c);
             QPixmap pix(10,10);
             pix.fill(plot->curves[i]->pen().color());
-            channelsBox->addItem(QIcon(pix), c->name());
+            channelsBox->addItem(QIcon(pix), c->name(), QVariant((uint)c));
+            if (c == ch) {
+                //раньше этот канал уже играл, поэтому мы должны восстановить положение channelsBox
+                chIndex = count;
+            }
+            count++;
         }
     }
 
-    if (channels.values().contains(ch)) {
-        //такой канал уже был в списке, ничего не делаем
+    controls->enable(channelsBox->count() > 0);
+
+    channelsBox->blockSignals(false);
+    if (channelsBox->count() == 0) return;
+
+    if (chIndex >= 0) {
+        //такой канал есть, но, может быть, поменял номер
+        channelsBox->setCurrentIndex(chIndex);
+        setSource(chIndex);
     }
-    else if (ch) {
-        //такой канал был, но удалился
 
-
+    else {
+        //такой канал был, но удалился, или такого канала никогда не было
         ch = 0;
-        if (!channels.keys().contains(oldIndex))
-            setSource(oldIndex);
-        else
-            setSource(0);
+        channelsBox->setCurrentIndex(0);
+        setSource(0);
     }
 }
 
 void PlayPanel::setSource(int n)
 {
-    if (!channels.keys().contains(n)) return;
+    if (n < 0) return;
+    if (channelsBox->count() == 0) return;
 
-    if (ch && channels.key(ch)==n) return;
+    //индекс поменялся, а канал остался прежним
+    if (ch && channelsBox->itemData(n).toUInt() == (uint)ch) return;
+
+    ch = (Channel*)channelsBox->itemData(n).toUInt();
 
     reset();
+    //реальная загрузка данных произойдет только при первом проигрывании
     player->setMedia(QMediaContent());
 
-    ch = channels.value(n);
-//    data = ch->wavData(0, ch->samplesCount(), 1.0);
-
-    QFile::remove(oldTempFile);
-
-    WavExporter expo(ch, this);
-    QTemporaryFile temp;
-    temp.setAutoRemove(false);
-    temp.open();
-    oldTempFile = temp.fileName();
-    expo.setTempFile(oldTempFile);
-    expo.start();
-
-    player->setMedia(QMediaContent(QUrl::fromLocalFile(oldTempFile)));
     moveCursor(0);
 }
 
-void PlayPanel::mute()
+void PlayPanel::prepareDataToPlay()
 {
-//    if (!audioData->muted()) {
-//        audioData->setMuted(true);
-//        muteButton->setIcon(style()->standardIcon(QStyle::SP_MediaVolumeMuted));
-//    }
-//    else {
-//        audioData->setMuted(false);
-//        muteButton->setIcon(style()->standardIcon(QStyle::SP_MediaVolume));
-//    }
-}
+    //загружаем данные
+    if (player->media().isNull()) {
+        if (!wavFiles.contains(ch)) {
+            WavExporter expo(ch, this);
+            QTemporaryFile temp;
+            temp.setAutoRemove(false);
+            temp.open();
+            oldTempFile = temp.fileName();
+            expo.setTempFile(oldTempFile);
+            expo.start();
+            wavFiles.insert(ch, oldTempFile);
+        }
 
-void PlayPanel::setVolume(int vol)
-{
-//    if (!audioData) return;
-
-//    qreal linearVolume;
-//    if (vol == 0) {
-//        linearVolume = 0.0;
-//        audioData->setMuted(true);
-//        muteButton->setIcon(style()->standardIcon(QStyle::SP_MediaVolumeMuted));
-//    }
-//    else {
-//        linearVolume = QAudio::convertVolume(vol / qreal(100.0),
-//                                             QAudio::LogarithmicVolumeScale,
-//                                             QAudio::LinearVolumeScale);
-//        muteButton->setIcon(style()->standardIcon(QStyle::SP_MediaVolume));
-//        audioData->setMuted(false);
-//    }
-//    audioData->setVolume(linearVolume);
+        player->setMedia(QMediaContent(QUrl::fromLocalFile(wavFiles.value(ch))));
+    }
+    player->play();
 }
 
 void PlayPanel::updateSelectedCursor(QwtPlotMarker *c)
@@ -203,7 +176,7 @@ void PlayPanel::setXValue(double xVal)
     // здесь xVal - произвольное число, соответствующее какому-то положению на оси X
     moveCursor(xVal);
 
-    player->setPosition(qint64(xVal * 1000));
+    player->setPosition(qint64(xVal * 1000.0));
 }
 
 void PlayPanel::reset()
@@ -211,84 +184,36 @@ void PlayPanel::reset()
     player->stop();
 }
 
-void PlayPanel::durationChanged(qint64 duration)
-{
-    qDebug()<<"new duration"<<duration;
-}
-
 void PlayPanel::positionChanged(qint64 progress)
 {
-    //progress in milliseconds
-    const double xVal = progress / 1000;
+    //progress in milliseconds, convert to seconds
+    const double xVal = double(progress) / 1000.0;
     moveCursor(xVal);
-}
-
-void PlayPanel::metaDataChanged()
-{
-    if (player->isMetaDataAvailable()) {
-        qDebug()<<"metadata available";
-//        player->metaData()
-//        setTrackInfo(QString("%1 - %2")
-//                .arg(m_player->metaData(QMediaMetaData::AlbumArtist).toString())
-//                .arg(m_player->metaData(QMediaMetaData::Title).toString()));
-
-//        if (m_coverLabel) {
-//            QUrl url = m_player->metaData(QMediaMetaData::CoverArtUrlLarge).value<QUrl>();
-
-//            m_coverLabel->setPixmap(!url.isEmpty()
-//                    ? QPixmap(url.toString())
-//                    : QPixmap());
-//        }
-    }
 }
 
 void PlayPanel::statusChanged(QMediaPlayer::MediaStatus status)
 {
-    if (status == QMediaPlayer::LoadingMedia ||
-        status == QMediaPlayer::BufferingMedia ||
-        status == QMediaPlayer::StalledMedia)
-        setCursor(QCursor(Qt::BusyCursor));
-    else
-        unsetCursor();
-
-    // handle status message
     switch (status) {
-    case QMediaPlayer::UnknownMediaStatus:
-    case QMediaPlayer::NoMedia:
-    case QMediaPlayer::LoadedMedia:
-    case QMediaPlayer::BufferingMedia:
-    case QMediaPlayer::BufferedMedia:
-        //setStatusInfo(QString());
-            qDebug()<<status;
-        break;
-    case QMediaPlayer::LoadingMedia:
-        qDebug()<<"Loading...";
-        break;
-    case QMediaPlayer::StalledMedia:
-        qDebug()<<"Media Stalled";
-        break;
-    case QMediaPlayer::EndOfMedia:
-        QApplication::alert(this);
-        break;
-    case QMediaPlayer::InvalidMedia:
-        qDebug() << player->errorString();
-        break;
+        case QMediaPlayer::UnknownMediaStatus:
+        case QMediaPlayer::NoMedia:
+        case QMediaPlayer::LoadedMedia:
+        case QMediaPlayer::BufferedMedia:
+            unsetCursor();
+            break;
+        case QMediaPlayer::BufferingMedia:
+        case QMediaPlayer::LoadingMedia:
+        case QMediaPlayer::StalledMedia:
+            setCursor(QCursor(Qt::BusyCursor));
+            break;
+        case QMediaPlayer::EndOfMedia:
+            unsetCursor();
+            QApplication::alert(this);
+            break;
+        case QMediaPlayer::InvalidMedia:
+            unsetCursor();
+            displayErrorMessage();
+            break;
     }
-}
-
-void PlayPanel::stateChanged(QMediaPlayer::State state)
-{
-    qDebug()<<state;
-}
-
-void PlayPanel::bufferingProgress(int progress)
-{
-    qDebug()<<"Buffering" << progress;
-}
-
-void PlayPanel::audioAvailableChanged(bool available)
-{
-    qDebug()<<"audio available:"<<available;
 }
 
 void PlayPanel::displayErrorMessage()
@@ -296,90 +221,10 @@ void PlayPanel::displayErrorMessage()
     qDebug()<<player->errorString();
 }
 
-void PlayPanel::audioStateChanged(QAudio::State state)
-{
-    Q_UNUSED(state)
-    //
-}
-
-void PlayPanel::audioPosChanged()
-{
-//    if (!ch || !audioData) return;
-
-//    QAudio::Error e = audio->error();
-//    if (e != QAudio::NoError) qDebug()<<"error"<<e;
-//    const double xVal = 0.5 * audioData->pos() * ch->xStep();
-//    moveCursor(xVal);
-}
-
-void PlayPanel::start()
-{
-//    if (!ch) return;
-
-//    if (ch->type()!=Descriptor::TimeResponse) return;
-
-//    if (audio) {
-//        if (audio->state() == QAudio::ActiveState) // already playing
-//            return;
-
-//        if (audio->state() == QAudio::SuspendedState) {
-//            audio->resume();
-//            return;
-//        }
-//        audio->stop();
-//        delete audio;
-//        audio = 0;
-//    }
-
-////    if (audioData) {
-////        delete audioData;
-////        audioData = 0;
-////    }
-
-////    audioData = new DataIODevice(ch, this);
-////    audioData->open(QIODevice::ReadOnly);
-
-//    QAudioFormat format;
-//    // Set up the format, eg.
-//    format.setSampleRate(qRound(1.0/ch->xStep()));
-//    format.setChannelCount(1);
-//    format.setSampleSize(16);
-//    format.setCodec("audio/pcm");
-//    format.setByteOrder(QAudioFormat::LittleEndian);
-//    format.setSampleType(QAudioFormat::UnSignedInt);
-
-//    QAudioDeviceInfo info(QAudioDeviceInfo::defaultOutputDevice());
-//    if (!info.isFormatSupported(format)) {
-//        qWarning() << "Raw audio format not supported by backend, cannot play audio.";
-//        return;
-//    }
-
-//    audio = new QAudioOutput(format, this);
-//    audio->setBufferSize(qRound(0.5/ch->xStep())); // 0.5 sec
-
-//    audio->setNotifyInterval(50);
-
-//    connect(audio, SIGNAL(stateChanged(QAudio::State)), this, SLOT(audioStateChanged(QAudio::State)));
-//    connect(audio, SIGNAL(notify()), this, SLOT(audioPosChanged()));
-//    setVolume(volumeSlider->value());
-//    audio->start(audioData);
-}
-
-void PlayPanel::stop()
-{
-    player->stop();
-    moveCursor(0);
-}
-
-void PlayPanel::pause()
-{
-    player->pause();
-}
-
 void PlayPanel::closeEvent(QCloseEvent *event)
 {
     cursor->setVisible(false);
-    pause();
+    player->stop();
     emit closeRequested();
     QWidget::closeEvent(event);
 }
@@ -387,29 +232,14 @@ void PlayPanel::closeEvent(QCloseEvent *event)
 void PlayPanel::hideEvent(QHideEvent *event)
 {
     cursor->setVisible(false);
-    pause();
+    player->pause();
     QWidget::hideEvent(event);
 }
 
 void PlayPanel::moveCursor(const double xVal)
 {
     cursor->moveTo(xVal);
-    //if (cursor->yValues.isEmpty()) cursor->yValues << xVal;
-    //else cursor->yValues[0] = xVal;
     cursor->updateLabel();
-}
-
-void PlayPanel::muteVolume(bool mute)
-{
-//    if (audio) {
-//        audio->setVolume(mute?0:1);
-//    }
-}
-
-bool PlayPanel::muted() const
-{
-//    if (audio) return qFuzzyIsNull(audio->volume());
-    return true;
 }
 
 /*******************************************************************/
@@ -496,6 +326,14 @@ void PlayerControls::setVolume(int volume)
 bool PlayerControls::isMuted() const
 {
     return m_playerMuted;
+}
+
+void PlayerControls::enable(bool enabled)
+{
+    m_playButton->setEnabled(enabled);
+    m_stopButton->setEnabled(enabled);
+    m_muteButton->setEnabled(enabled);
+    m_volumeSlider->setEnabled(enabled);
 }
 
 void PlayerControls::setMuted(bool muted)

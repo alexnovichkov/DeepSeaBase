@@ -31,6 +31,7 @@ public:
     QMediaPlayer::State state() const;
     int volume() const;
     bool isMuted() const;
+    void enable(bool enabled);
 
 public slots:
     void setState(QMediaPlayer::State state);
@@ -71,47 +72,34 @@ signals:
     void closeRequested();
 
 private slots:
-    void durationChanged(qint64 duration);
     void positionChanged(qint64 progress);
-    void metaDataChanged();
     void statusChanged(QMediaPlayer::MediaStatus status);
-    void stateChanged(QMediaPlayer::State state);
-    void bufferingProgress(int progress);
-    void audioAvailableChanged(bool available);
     void displayErrorMessage();
 
-    void audioStateChanged(QAudio::State state);
-    void audioPosChanged();
-    void start();
-    void stop();
-    void pause();
     void setSource(int n);
-    void mute();
-    void setVolume(int vol);
 
 public slots:
     void update();
     void updateSelectedCursor(QwtPlotMarker *cursor);
     void setXValue(double xVal);
-    // QWidget interface
+
 protected:
     virtual void closeEvent(QCloseEvent *event);
     virtual void hideEvent(QHideEvent *event);
 private:
     void moveCursor(const double xVal);
-    void muteVolume(bool mute);
-    bool muted() const;
-    Channel *ch;
+    void prepareDataToPlay();
+
+    Channel *ch = 0;
+    QMap<Channel*,QString> wavFiles;
     Plot *plot;
     TrackingCursor *cursor;
     QComboBox *channelsBox;
-    QMap<int, Channel*> channels;
 
     QMediaPlayer *player;
+    PlayerControls *controls;
 
     QString oldTempFile;
-
-    double initialPos; // начальная позиция проигрывания
 };
 
 #endif // PLAYPANEL_H

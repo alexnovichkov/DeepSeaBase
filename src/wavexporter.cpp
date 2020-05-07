@@ -201,7 +201,7 @@ bool WavExporter::writeWithMap(const QString &wavFileName)
 
         Channel *channel = file->channel(indexes.at(ch));
         bool populated = channel->populated();
-        channel->populate();
+        if (!populated) channel->populate();
         QByteArray channelData = channel->wavData(0, channel->samplesCount(), 1.0);
 
         //записываем каждый сэмпл на свое место
