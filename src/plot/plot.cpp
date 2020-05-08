@@ -118,7 +118,7 @@ Plot::Plot(QWidget *parent) :
     connect(zoom,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)),SLOT(showContextMenu(QPoint,QwtAxisId)));
     connect(zoom,SIGNAL(moveCursor(bool)), trackingPanel, SLOT(moveCursor(bool)));
 
-    tracker = new PlotTracker(_canvas);
+    tracker = new PlotTracker(this);
     tracker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
 
     _picker = new Picker(this);

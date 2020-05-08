@@ -4,6 +4,7 @@
 #include <qwt_plot_picker.h>
 
 class QKeyEvent;
+class Plot;
 
 /**
  * @brief The PlotPicker class
@@ -11,12 +12,17 @@ class QKeyEvent;
  */
 class PlotTracker : public QwtPlotPicker
 {
+    Q_OBJECT
 public:
-    explicit PlotTracker(QWidget *canvas);
+    explicit PlotTracker(Plot *plot);
     ~PlotTracker();
 protected:
     virtual void widgetKeyPressEvent(QKeyEvent *e);
     virtual QwtText trackerTextF(const QPointF &pos) const;
+private slots:
+    void maybeHover(const QPointF &pos);
+private:
+    Plot *plot;
 };
 
 #endif // PLOTPICKER_H

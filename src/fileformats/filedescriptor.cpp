@@ -171,11 +171,9 @@ double Channel::xMax() const
     return _data->xMax();
 }
 
-QByteArray Channel::wavData(qint64 pos, qint64 samples, double volume)
+QByteArray Channel::wavData(qint64 pos, qint64 samples)
 {
     QByteArray b;
-
-    if (qIsNull(volume)) return QByteArray(samples, 0);
 
     //assume that channel is time response
 //    if (type() != Descriptor::TimeResponse) return b;
@@ -187,10 +185,10 @@ QByteArray Channel::wavData(qint64 pos, qint64 samples, double volume)
     s.setByteOrder(QDataStream::LittleEndian);
     QVector<double> values = data()->rawYValues().mid(pos,samples);
 
-    double max = qMax(qAbs(data()->yMax()), qAbs(data()->yMin()));
-    double coef = 32768.0 / max;
+    const double max = qMax(qAbs(data()->yMax()), qAbs(data()->yMin()));
+    const double coef = 32768.0 / max;
     for (qint64 i=0; i<values.size(); ++i) {
-        qint16 v = qint16(coef * values[i] * volume);
+        qint16 v = qint16(coef * values[i]);
         s << v;
     }
     return b;
