@@ -428,7 +428,7 @@ TDMSChannel::~TDMSChannel()
 QVector<double> TDMSChannel::getDouble()
 {
     QVector<double> data(numberOfValues);
-    int error;
+    int error = 0;
     switch (dataType) {
         case DDC_UInt8: {// unsigned char
             unsigned char *dataUint8 = new uchar[numberOfValues];
@@ -481,7 +481,7 @@ QVector<double> TDMSChannel::getDouble()
 QVector<float> TDMSChannel::getFloat()
 {
     QVector<float> data(numberOfValues);
-    int error;
+    int error = 0;
     switch (dataType) {
         case DDC_UInt8: {// unsigned char
             unsigned char *dataUint8 = new uchar[numberOfValues];

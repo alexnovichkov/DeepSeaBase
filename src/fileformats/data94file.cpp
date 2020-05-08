@@ -12,14 +12,19 @@ Data94File::Data94File(const QString &fileName) : FileDescriptor(fileName)
 Data94File::Data94File(const Data94File &d) : FileDescriptor(d.fileName())
 {
     this->description = d.description;
+    this->xAxisBlock = d.xAxisBlock;
+    this->zAxisBlock = d.zAxisBlock;
+    this->descriptionSize = d.descriptionSize;
+    this->paddingSize = d.paddingSize;
+
     updateDateTimeGUID();
 
-    foreach (Data94Channel *f, d.channels) {
-        this->channels << new Data94Channel(*f);
+    foreach (Data94Channel *c, d.channels) {
+        this->channels << new Data94Channel(*c);
     }
 
-    foreach (Data94Channel *f, channels) {
-        f->parent = this;
+    foreach (Data94Channel *c, channels) {
+        c->parent = this;
     }
 }
 

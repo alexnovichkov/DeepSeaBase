@@ -1195,7 +1195,6 @@ bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVe
             unsigned char *ptr = rawFile.map(0, rawFile.size());
             if (ptr) {//достаточно памяти отобразить весь файл
                 qDebug()<<"-- работаем через ptr";
-                unsigned char *ptrCurrent = ptr;
 
                 for (int ind = 0; ind < indexesVector.size(); ++ind) {
                     // пропускаем канал, предназначенный для удаления
@@ -1212,6 +1211,7 @@ bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVe
                         * если BlockSize=1 или ChanBlockSize=1, то
                         * n + i*ChannelsCount
                         */
+                        unsigned char *ptrCurrent = ptr;
                         if (ch->ChanBlockSize == 1)
                             ptrCurrent = ptr + (indexesVector.at(ind).first + i*channelsCount()) * bytes;
                         else
@@ -1891,6 +1891,7 @@ QVariant DfdChannel::channelHeader(int column) const
 
 void DfdChannel::populate()
 {DD;
+//    QElapsedTimer timer;  timer.start();
     // clear previous data;
     _data->clear();
 
@@ -1912,9 +1913,6 @@ void DfdChannel::populate()
 //        yValueFormat = DataHolder::YValuesAmplitudesInDB;
 
     QFile rawFile(parent->rawFileName);
-
-//    QTime time;
-//    time.start();
 
     if (rawFile.open(QFile::ReadOnly)) {
         QVector<double> YValues;
@@ -2013,7 +2011,7 @@ void DfdChannel::populate()
     else {
         qDebug()<<"Cannot read raw file"<<parent->rawFileName;
     }
-    //    qDebug()<<"reading finished"<<time.elapsed();
+//    qDebug()<<"reading finished"<<timer.elapsed();
 }
 
 //QByteArray DfdChannel::wavData(qint64 pos, qint64 samples)

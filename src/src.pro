@@ -140,7 +140,6 @@ HEADERS  += mainwindow.h \
     fileformats/dfdsettings.h \
     methods/octavefilterbank.h \
     axisboundsdialog.h \
-    psimpl.h \
     calculatespectredialog.h \
     averaging.h \
     timeslicer.h \
