@@ -190,7 +190,8 @@ HEADERS  += mainwindow.h \
     plot/picker.h \
     plot/pointmarker.h \
     plot/plottracker.h \
-    wavexporter.h
+    wavexporter.h \
+    fileformats/formatfactory.h
 
 SOURCES +=\
   ../3rdParty/DspFilters/State.cpp \

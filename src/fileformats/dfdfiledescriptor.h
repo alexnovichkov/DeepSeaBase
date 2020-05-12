@@ -277,9 +277,9 @@ public:
     DfdFileDescriptor(const QString &fileName);
 
     // creates a copy of DfdDataDescriptor with copying data
-    DfdFileDescriptor(const DfdFileDescriptor &d);
+    DfdFileDescriptor(const DfdFileDescriptor &d, const QString &fileName);
     // creates a copy of DataDescriptor with copying data
-    DfdFileDescriptor(const FileDescriptor &other);
+    DfdFileDescriptor(const FileDescriptor &other, const QString &fileName);
     virtual ~DfdFileDescriptor();
     virtual void read();
     virtual void write();

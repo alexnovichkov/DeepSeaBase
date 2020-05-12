@@ -128,7 +128,7 @@ void WavExporter::writeWithStreams(const QString &wavFileName)
 
             Channel *channel = file->channel(indexes.at(c));
             bool populated = channel->populated();
-            channel->populate();
+            if (!populated) channel->populate();
             chunkData.append(channel->wavData(chunk * BLOCK_SIZE, BLOCK_SIZE));
             if (!populated) channel->clear();
         }

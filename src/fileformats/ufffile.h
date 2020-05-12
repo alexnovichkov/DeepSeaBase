@@ -109,8 +109,8 @@ class UffFileDescriptor : public FileDescriptor
 {
 public:
     UffFileDescriptor(const QString &fileName);
-    UffFileDescriptor(const UffFileDescriptor &other);
-    UffFileDescriptor(const FileDescriptor &other);
+    UffFileDescriptor(const UffFileDescriptor &other, const QString &fileName);
+    UffFileDescriptor(const FileDescriptor &other, const QString &fileName);
     ~UffFileDescriptor();
 
     UffHeader header;

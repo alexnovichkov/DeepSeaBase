@@ -82,7 +82,8 @@ bool ChannelFunction::compute(FileDescriptor *file)
     if (channel < 0) return false;
 
     if (selector.includes(channel)) {
-        file->channel(channel)->populate();
+        if (!file->channel(channel)->populated())
+            file->channel(channel)->populate();
         output = file->channel(channel)->yValues();
         return true;
     }

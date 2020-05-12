@@ -1,11 +1,12 @@
 #include "uffconverterdialog.h"
 #include <QtWidgets>
-#include "fileformats/ufffile.h"
-#include "fileformats/dfdfiledescriptor.h"
+//#include "fileformats/ufffile.h"
+//#include "fileformats/dfdfiledescriptor.h"
 #include "checkableheaderview.h"
 #include "logging.h"
 #include "algorithms.h"
 #include "mainwindow.h"
+#include "fileformats/formatfactory.h"
 
 void ConverterDialog::addFile(const QString &fileName)
 {
@@ -25,13 +26,14 @@ ConverterDialog::ConverterDialog(QList<FileDescriptor *> dataBase, QWidget *pare
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(stop()));
 //    buttonBox->buttons().first()->setDisabled(true);
 
-    convertor = new UffConvertor();
+    convertor = new FileConvertor();
 
     button = new QPushButton("Добавить файлы", this);
     connect(button, &QPushButton::clicked, [=](){
         folder = MainWindow::getSetting("uffFolder").toString();
+        QStringList filters = FormatFactory::allFilters();
         QStringList files = QFileDialog::getOpenFileNames(this, "Выберите файлы",folder,
-                                                          "Файлы dfd (*.dfd);;Файлы uff (*.uff);;Все файлы (*.dfd, *.uff)");
+                                                          filters.join(";;"));
 
         if (!files.isEmpty())
             MainWindow::setSetting("uffFolder", QFileInfo(files.first()).canonicalPath());
@@ -81,11 +83,15 @@ ConverterDialog::ConverterDialog(QList<FileDescriptor *> dataBase, QWidget *pare
     textEdit = new QPlainTextEdit(this);
 
 
+    formatBox = new QComboBox(this);
+    formatBox->addItems(FormatFactory::allFilters());
 
     QSplitter *splitter = new QSplitter(Qt::Vertical, this);
     QWidget *first = new QWidget(this);
 
     QGridLayout *grid = new QGridLayout;
+    grid->addWidget(new QLabel("Сохранять как", this),0,0);
+    grid->addWidget(formatBox,0,1);
     grid->addWidget(button,0,2);
     grid->addWidget(tree, 1,0,1,3);
     grid->addWidget(progress,2,0,1,3);
@@ -106,7 +112,7 @@ ConverterDialog::ConverterDialog(QList<FileDescriptor *> dataBase, QWidget *pare
 
     resize(500,400);
 
-    foreach(FileDescriptor *fd,dataBase)
+    foreach(FileDescriptor *fd, dataBase)
         addFile(fd->fileName());
     tree->resizeColumnToContents(0);
 }
@@ -149,6 +155,8 @@ void ConverterDialog::start()
     for (int i=0; i<tree->topLevelItemCount(); ++i)
         if (tree->topLevelItem(i)->checkState(0)==Qt::Checked) toConvert << tree->topLevelItem(i)->text(0);
     convertor->setFilesToConvert(toConvert);
+
+    convertor->setDestinationFormat(formatBox->currentText());
 
     if (toConvert.isEmpty()) {
         textEdit->appendHtml("Ни одного файла не выделено.");
@@ -195,12 +203,12 @@ void ConverterDialog::finalize()
 
 
 
-UffConvertor::UffConvertor(QObject *parent) : QObject(parent)
+FileConvertor::FileConvertor(QObject *parent) : QObject(parent)
 {
 
 }
 
-QStringList UffConvertor::getUffFiles() const
+QStringList FileConvertor::getUffFiles() const
 {
     QStringList result;
     foreach (const QFileInfo &fi, uffFiles)
@@ -209,58 +217,47 @@ QStringList UffConvertor::getUffFiles() const
     return result;
 }
 
-bool UffConvertor::convert()
+bool FileConvertor::convert()
 {
     //TODO: проверить конвертацию файлов uff
     if (QThread::currentThread()->isInterruptionRequested()) return false;
 
     //Converting
-    foreach(const QString &fi, filesToConvert) {
+    foreach(const QString &fileToConvert, filesToConvert) {
         if (QThread::currentThread()->isInterruptionRequested()) return false;
 
-        emit message("<font color=green>Конвертируем файл "+fi+"</font>");
+        emit message("<font color=green>Конвертируем файл "+fileToConvert+"</font>");
 
-        bool fileIsDfd = fi.endsWith(".dfd",Qt::CaseInsensitive);
-        bool fileIsUff = fi.endsWith(".uff",Qt::CaseInsensitive);
+        //проверяем тип файла source and dest
+        QFileInfo fi(fileToConvert);
+        QString destSuffix = destinationFormat.right(4).toLower();
+        destSuffix.chop(1);
+        if (fi.suffix().toLower() == destSuffix) {
+            emit message("<font color=blue>Пропускаем файл - типы совпадают.</font>");
+            emit tick();
+            continue;
+        }
 
+        QString sourceFileName = fileToConvert;
+        QString destFileName = createUniqueFileName("", fileToConvert, "", destSuffix, false);
 
-        QString sourceFileName = fi;
-        FileDescriptor *sourceFile = 0;
-        if (fileIsDfd) sourceFile = new DfdFileDescriptor(sourceFileName);
-        if (fileIsUff) sourceFile = new UffFileDescriptor(sourceFileName);
-
-        QString destFileName = fi;
-        if (fileIsDfd) destFileName = createUniqueFileName("", destFileName, "", "uff", false);
-        if (fileIsUff) destFileName = createUniqueFileName("", destFileName, "", "dfd", false);
+        FileDescriptor *sourceFile = FormatFactory::createDescriptor(sourceFileName);
 
         if (sourceFile) {
             sourceFile->read();
-            if (sourceFile->type()==Descriptor::Unknown) {
-                emit message("&nbsp;&nbsp;&nbsp;Файл неизвестного типа, пропускаю.");
-                delete sourceFile;
-                emit tick();
-                continue;
-            }
+//            if (sourceFile->type()==Descriptor::Unknown) {
+//                emit message("&nbsp;&nbsp;&nbsp;Файл неизвестного типа, пропускаю.");
+//                delete sourceFile;
+//                emit tick();
+//                continue;
+//            }
 
             emit message(QString("&nbsp;&nbsp;&nbsp;В файле %1 каналов").arg(sourceFile->channelsCount()));
 
-            FileDescriptor *destFile = 0;
-            if (fileIsDfd) destFile = new UffFileDescriptor(*sourceFile);
-            if (fileIsUff) destFile = new DfdFileDescriptor(*sourceFile);
+            emit message("&nbsp;&nbsp;&nbsp;Сохраняю файл");
+            FileDescriptor *destFile = FormatFactory::createDescriptor(*sourceFile, destFileName);
 
             if (destFile) {
-                destFile->setFileName(destFileName);
-
-                //сохранение
-                emit message("&nbsp;&nbsp;&nbsp;Сохраняю файл");
-                destFile->setChanged(true);
-                destFile->setDataChanged(true);
-                for (int i=0; i<destFile->channelsCount(); ++i) {
-                    destFile->channel(i)->setChanged(true);
-                    destFile->channel(i)->setDataChanged(true);
-                }
-                destFile->write();
-                destFile->writeRawFile();
                 newFiles.append(destFileName);
                 emit message("&nbsp;&nbsp;&nbsp;Готово.");
             }

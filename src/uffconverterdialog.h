@@ -12,13 +12,15 @@ class QPlainTextEdit;
 class QPushButton;
 class QThread;
 class FileDescriptor;
+class QComboBox;
 
-class UffConvertor : public QObject
+class FileConvertor : public QObject
 {
     Q_OBJECT
 public:
-    UffConvertor(QObject *parent = 0);
+    FileConvertor(QObject *parent = 0);
     void setFilesToConvert(const QStringList &toConvert) {filesToConvert = toConvert;}
+    void setDestinationFormat(const QString &format) {destinationFormat = format;}
 
     QStringList getUffFiles() const;
     QStringList getNewFiles() const {return newFiles;}
@@ -32,6 +34,7 @@ private:
     QFileInfoList uffFiles;
     QStringList newFiles;
     QStringList filesToConvert;
+    QString destinationFormat;
 };
 
 class ConverterDialog : public QDialog
@@ -58,7 +61,8 @@ private:
     QTreeWidget *tree;
     QPlainTextEdit *textEdit;
     QPushButton *button;
-    UffConvertor *convertor;
+    FileConvertor *convertor;
+    QComboBox *formatBox;
     QThread *thread;
 };
 

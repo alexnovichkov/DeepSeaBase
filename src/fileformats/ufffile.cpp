@@ -74,56 +74,105 @@ UffFileDescriptor::UffFileDescriptor(const QString &fileName) : FileDescriptor(f
 //qDebug()<<fileName;
 }
 
-UffFileDescriptor::UffFileDescriptor(const UffFileDescriptor &other) : FileDescriptor(other.fileName())
+UffFileDescriptor::UffFileDescriptor(const UffFileDescriptor &other, const QString &fileName)
+    : FileDescriptor(fileName)
 {DD;
     this->header = other.header;
     this->units = other.units;
 
-    foreach (Function *f, other.channels) {
-        this->channels << new Function(*f);
+    QFile uff(fileName);
+    if (!uff.open(QFile::WriteOnly | QFile::Text)) {
+        qDebug()<<"Couldn't open file"<<fileName<<"to write";
+        return;
     }
-    foreach (Function *f, channels) {
-        f->parent = this;
+
+    QTextStream stream(&uff);
+    header.write(stream);
+    units.write(stream);
+
+    foreach (Function *f, other.channels) {
+        bool populated = f->populated();
+        if (!populated) f->populate();
+
+        Function *ch = new Function(*f);
+        ch->parent = this;
+        this->channels << ch;
+        ch->write(stream);
+
+        //clearing
+        if (!populated) {
+            f->clear();
+            ch->clear();
+        }
     }
 }
 
-UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other) : FileDescriptor(other.fileName())
+UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString &fileName)
+    : FileDescriptor(fileName)
 {
     //заполнение header
-//    header.type151[10].value = QDateTime::fromString(other.dateTime(), "dd.MM.yy hh:mm:ss");
-//    header.type151[12].value = QDateTime::fromString(other.dateTime(), "dd.MM.yy hh:mm:ss");
     header.type151[10].value = other.dateTime();
     header.type151[12].value = other.dateTime();
     header.type151[16].value = QDateTime::currentDateTime();
 
-    int referenceChannelNumber = -1; //номер опорного канала ("сила")
-    //заполнение каналов
+    //TODO: добавить заполнение units
+
+
+    setLegend(other.legend());
+
     const int count = other.channelsCount();
+
+    int referenceChannelNumber = -1; //номер опорного канала ("сила")
+    QString referenceChannelName;
+
     for (int i=0; i<count; ++i) {
         Channel *ch = other.channel(i);
-        if (!ch->populated()) ch->populate();
+        if (ch->xName().toLower()=="сила") {
+            referenceChannelNumber = i;
+            referenceChannelName = ch->name();
+            break;
+        }
+    }
+
+    //сохраняем файл, попутно подсасывая данные из other
+    QFile uff(fileName);
+    if (!uff.open(QFile::WriteOnly | QFile::Text)) {
+        qDebug()<<"Couldn't open file"<<fileName<<"to write";
+        return;
+    }
+
+    QTextStream stream(&uff);
+    header.write(stream);
+    units.write(stream);
+
+    //заполнение каналов
+
+    for (int i=0; i<count; ++i) {
+        Channel *ch = other.channel(i);
+        bool populated = ch->populated();
+        if (!populated) ch->populate();
         Function *f = new Function(*ch);
 
         f->type58[15].value = i+1;
         f->type58[10].value = QString("Record %1").arg(i+1);
 
-        if (ch->xName().toLower()=="сила")
-            referenceChannelNumber = i;
+        //заполнение инфы об опорном канале
+        if (referenceChannelNumber>=0) {
+            f->type58[18].value = referenceChannelName;
+            f->type58[19].value = referenceChannelNumber+1;
+        }
 
         f->type58[8].value = header.type151[10].value;
         channels << f;
+
+        f->write(stream);
+
         //clearing
-        ch->setPopulated(false);
-        ch->data()->clear();
-    }
-    //заполнение инфы об опорном канале
-    if (referenceChannelNumber>=0) {
-        for (int nc=0; nc<channels.size(); ++nc) {
-            channels[nc]->type58[18].value = other.channel(nc)->name();
-            channels[nc]->type58[19].value = referenceChannelNumber+1;
+        if (!populated) {
+            ch->clear();
+            f->clear();
         }
     }
-    fillRest();
 }
 
 UffFileDescriptor::~UffFileDescriptor()
@@ -1028,7 +1077,6 @@ Descriptor::DataType Function::type() const
 
 void Function::populate()
 {DD;
-    if (populated()) return;
     _data->clear();
 
     setPopulated(false);

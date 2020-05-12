@@ -104,7 +104,7 @@ public:
     virtual void setFileName(const QString &name) { _fileName = name;}
     virtual bool fileExists() const;
 
-    virtual int channelsCount() const {return 0;}
+    virtual int channelsCount() const = 0;
 
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) = 0;
 

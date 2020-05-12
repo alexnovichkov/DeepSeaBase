@@ -21,63 +21,26 @@
 #include <ActiveQt/ActiveQt>
 #include "logging.h"
 
-#include "fileformats/dfdfiledescriptor.h"
-#include "fileformats/ufffile.h"
-#include "fileformats/data94file.h"
+//#include "fileformats/dfdfiledescriptor.h"
+//#include "fileformats/ufffile.h"
+//#include "fileformats/data94file.h"
 #include "editdescriptionsdialog.h"
 #include "fileformats/matlabfiledescriptor.h"
 #include "matlabconverterdialog.h"
 #include "esoconverterdialog.h"
 #include "uffconverterdialog.h"
-#include "fileformats/filedescriptor.h"
+//#include "fileformats/filedescriptor.h"
 #include "timeslicer.h"
 #include <QTime>
 #include "channeltablemodel.h"
 #include "tdmsconverterdialog.h"
 #include "htmldelegate.h"
 
+#include "fileformats/formatfactory.h"
+
 #define DSB_VERSION "1.6.9.3"
 
-template<typename T>
-QStringList suffixes()
-{
-    return T::suffixes();
-}
 
-QStringList allSuffixes(bool strip = false)
-{
-    QStringList result;
-    result << suffixes<DfdFileDescriptor>();
-    result << suffixes<UffFileDescriptor>();
-    result << suffixes<Data94File>();
-
-    if (strip) result.replaceInStrings("*.","");
-    return result;
-}
-
-template<typename T>
-QStringList filters()
-{
-    return T::fileFilters();
-}
-
-QStringList allFilters()
-{
-    QStringList result;
-    result << filters<DfdFileDescriptor>();
-    result << filters<UffFileDescriptor>();
-    result << filters<Data94File>();
-    return result;
-}
-
-FileDescriptor *createDescriptor(const QString &fileName)
-{DD;
-    const QString suffix = QFileInfo(fileName).suffix().toLower();
-    if (suffix=="dfd") return new DfdFileDescriptor(fileName);
-    if (suffix=="uff") return new UffFileDescriptor(fileName);
-    if (suffix=="d94") return new Data94File(fileName);
-    return 0;
-}
 
 class DfdFilterProxy : public QSortFilterProxyModel
 {
@@ -105,7 +68,7 @@ protected:
                 if (!filterByContent)
                     return true;
 
-                FileDescriptor * descriptor = createDescriptor(fi.canonicalFilePath());
+                FileDescriptor * descriptor = FormatFactory::createDescriptor(fi.canonicalFilePath());
                 descriptor->read();
                 //частный случай: мы можем записать данные из SourceData в CuttedData, преобразовав их в floats,
                 //но не наоборот
@@ -126,7 +89,7 @@ private:
     double xStep;
     FileDescriptor *filter;
     bool filterByContent = false;
-    QStringList suffixes = allSuffixes(true);
+    QStringList suffixes = FormatFactory::allSuffixes(true);
 };
 
 class StepItemDelegate : public QStyledItemDelegate
@@ -159,7 +122,7 @@ void maybeAppend(const QString &s, QStringList &list)
 void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 {DD;
     if (QFileInfo(file).isDir()) {
-        QFileInfoList dirLst = QDir(file).entryInfoList(allSuffixes(),
+        QFileInfoList dirLst = QDir(file).entryInfoList(FormatFactory::allSuffixes(),
                                                         QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot,
                                                         QDir::DirsFirst);
         for (int i=0; i<dirLst.count(); ++i) {
@@ -1120,7 +1083,7 @@ void MainWindow::addCorrections()
             FileDescriptor *dfd = findDescriptor(fileName);
             bool deleteAfter=false;
             if (!dfd) {
-                dfd = createDescriptor(fileName);
+                dfd = FormatFactory::createDescriptor(fileName);
                 dfd->read();
                 deleteAfter = true;
             }
@@ -1186,10 +1149,10 @@ bool MainWindow::deleteChannels(FileDescriptor *file, const QVector<int> &channe
     return true;
 }
 
-bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &channelsToCopy)
+bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channelsToCopy)
 {DD;
     QString startFile = MainWindow::getSetting("startDir").toString();
-    QStringList filters = allFilters();
+    QStringList filters = FormatFactory::allFilters();
 
     QFileDialog dialog(this, "Выбор файла для записи каналов", startFile,
                        filters.join(";;"));
@@ -1198,7 +1161,7 @@ bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &ch
 //    if (defaultSuffix.isEmpty()) defaultSuffix = "dfd";
 //    dialog.setDefaultSuffix(defaultSuffix);
 
-    QStringList suffixes = allSuffixes(true);
+    QStringList suffixes = FormatFactory::allSuffixes(true);
 
 
     // если файл - dfd, то мы можем записать его только в dfd файл с таким же типом данных и шагом по x
@@ -1206,7 +1169,7 @@ bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &ch
 
     // мы не можем записывать каналы с разным типом/шагом в один файл dfd,
     //поэтому добавляем фильтр
-    QSortFilterProxyModel *proxy = new DfdFilterProxy(descriptor, this);
+    QSortFilterProxyModel *proxy = new DfdFilterProxy(source, this);
     dialog.setProxyModel(proxy);
 
     dialog.setFileMode(QFileDialog::AnyFile);
@@ -1236,22 +1199,22 @@ bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &ch
     MainWindow::setSetting("startDir", file);
 
     // ИЩЕМ ЭТОТ ФАЙЛ СРЕДИ ДОБАВЛЕННЫХ В БАЗУ
-    FileDescriptor *dfd = findDescriptor(file);
-    bool found = dfd!=0;
+    FileDescriptor *destination = findDescriptor(file);
+    bool found = destination!=0;
 
-    if (!dfd) {//не нашли файл в базе, нужно создать новый объект
+    if (!destination) {//не нашли файл в базе, нужно создать новый объект
         if (!QFileInfo(file).exists()) {
             // такого файла не существует, копируем исходный файл и удаляем ненужные каналы
-            if (descriptor->copyTo(file)) {
-                dfd = createDescriptor(file);
-                dfd->read();
+            if (source->copyTo(file)) {
+                destination = FormatFactory::createDescriptor(file);
+                destination->read();
                 QVector<int> channelsToDelete;
-                for (int i=0; i<dfd->channelsCount(); ++i) {
+                for (int i=0; i<destination->channelsCount(); ++i) {
                     if (!channelsToCopy.contains(i))
                         channelsToDelete << i;
                 }
-                dfd->deleteChannels(channelsToDelete);
-                addFile(dfd);
+                destination->deleteChannels(channelsToDelete);
+                addFile(destination);
                 if (!tab->folders.contains(file)) tab->folders << file;
                 return true;
             }
@@ -1259,30 +1222,30 @@ bool MainWindow::copyChannels(FileDescriptor *descriptor, const QVector<int> &ch
         }
 
         // добавляем каналы в существующий файл
-        dfd = createDescriptor(file);
-        if (dfd) dfd->read();
+        destination = FormatFactory::createDescriptor(file);
+        if (destination) destination->read();
     }
 
-    if (!dfd) {
-        qDebug()<<"Неизвестный тип файла"<<dfd->fileName();
+    if (!destination) {
+        qDebug()<<"Неизвестный тип файла"<<destination->fileName();
         return false;
     }
 
     //записываем все изменения данных
-    dfd->write();
-    dfd->writeRawFile();
+    destination->write();
+    destination->writeRawFile();
 
 //    if (dfd->legend().isEmpty())
-//        dfd->setLegend(descriptor->legend());
+//        dfd->setLegend(source->legend());
 
-    //копирует каналы из descriptor, сохраняет файл и данные
-    dfd->copyChannelsFrom(descriptor, channelsToCopy);
+    //копирует каналы из source, сохраняет файл и данные
+    destination->copyChannelsFrom(source, channelsToCopy);
 
     if (found) {
-        tab->model->updateFile(dfd);
+        tab->model->updateFile(destination);
     }
     else {
-        addFile(dfd);
+        addFile(destination);
         if (!tab->folders.contains(file)) tab->folders << file;
     }
 
@@ -1368,8 +1331,8 @@ void MainWindow::calculateMean()
 
         meanD = MainWindow::getSetting(writeToUff?"lastMeanUffFile":"lastMeanFile", meanD).toString();
 
-        QStringList  filters = allFilters();
-        QStringList suffixes = allSuffixes(true);
+        QStringList  filters = FormatFactory::allFilters();
+        QStringList suffixes = FormatFactory::allSuffixes(true);
 
         QFileDialog dialog(this, "Выбор файла для записи каналов", meanD,
                            filters.join(";;"));
@@ -1408,7 +1371,7 @@ void MainWindow::calculateMean()
         if (meanDfd)
             descriptorFound = true;
         else {
-            meanDfd = createDescriptor(meanDfdFile);
+            meanDfd = FormatFactory::createDescriptor(meanDfdFile);
         }
 
         if (!meanDfd) return;
@@ -1858,8 +1821,8 @@ void MainWindow::calculateMovingAvg()
 
         meanD = MainWindow::getSetting("lastMovingAvgFile", meanD).toString();
 
-        QStringList filters = allFilters();
-        QStringList suffixes = allSuffixes(true);
+        QStringList filters = FormatFactory::allFilters();
+        QStringList suffixes = FormatFactory::allSuffixes(true);
 
         QFileDialog dialog(this, "Выбор файла для записи каналов", meanD,
                            filters.join(";;"));
@@ -1898,7 +1861,7 @@ void MainWindow::calculateMovingAvg()
         if (avgDfd)
             descriptorFound = true;
         else
-            avgDfd = createDescriptor(avgDfdFile);
+            avgDfd = FormatFactory::createDescriptor(avgDfdFile);
 
         if (!avgDfd) {
             qDebug()<<"Не удалось создать файл"<<avgDfdFile;
@@ -2759,7 +2722,7 @@ void MainWindow::addFiles(QStringList &files)
 
         FileDescriptor *file = findDescriptor(fileName);
         if (!file) {
-            file = createDescriptor(fileName);
+            file = FormatFactory::createDescriptor(fileName);
             file->read();
         }
         if (file)

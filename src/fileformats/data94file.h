@@ -125,9 +125,9 @@ class Data94File : public FileDescriptor
 public:
     Data94File(const QString &fileName);
     // creates a copy of Data94File with copying data
-    Data94File(const Data94File &d);
+    Data94File(const Data94File &d, const QString &fileName);
     // creates a copy of FileDescriptor with copying data
-    Data94File(const FileDescriptor &other);
+    Data94File(const FileDescriptor &other, const QString &fileName);
 
     // FileDescriptor interface
 public:
@@ -137,6 +137,7 @@ public:
     virtual void write() override;
     virtual void writeRawFile() override;
     virtual void updateDateTimeGUID() override;
+    virtual int channelsCount() const override;
     virtual Descriptor::DataType type() const override;
     virtual QString typeDisplay() const override;
     virtual DescriptionList dataDescriptor() const override;

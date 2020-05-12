@@ -368,7 +368,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
     bool baseWasPopulated = true; // do nothing afterwards
     if (p.baseChannel>=0) {
         baseWasPopulated = file->channel(p.baseChannel)->populated();
-        file->channel(p.baseChannel)->populate();
+        if (!baseWasPopulated) file->channel(p.baseChannel)->populate();
     }
 
     ChannelSelector selector(p.channelFilter);
@@ -381,7 +381,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
         if (i == p.baseChannel) continue;
 
         bool wasPopulated = file->channel(i)->populated();
-        file->channel(i)->populate();
+        if (!wasPopulated) file->channel(i)->populate();
 
         if (QThread::currentThread()->isInterruptionRequested()) {
             delete newDfd;
