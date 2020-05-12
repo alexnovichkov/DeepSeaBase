@@ -731,6 +731,7 @@ Data94Channel::Data94Channel(Channel *other) : Channel(other)
         default: break;
     }
     function.insert("logscale", units);
+    function.insert("octaveFormat", other->octaveType());
     _description.insert("function", function);
 
 
@@ -832,6 +833,11 @@ QVariant Data94Channel::channelHeader(int column) const
 Descriptor::DataType Data94Channel::type() const
 {
     return Descriptor::DataType(_description.value("function").toObject().value("type").toInt());
+}
+
+int Data94Channel::octaveType() const
+{
+    return _description.value("function").toObject().value("octaveFormat").toInt(0);
 }
 
 void Data94Channel::populate()

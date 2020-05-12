@@ -171,6 +171,8 @@ public:
     virtual QVariant channelHeader(int column) const = 0;
 
     virtual Descriptor::DataType type() const = 0;
+    //octave format, 0 = no octave, 1 = 1-octave, 3 = 1/3-octave etc.
+    virtual int octaveType() const = 0;
 
     virtual bool populated() const {return _populated;}
     virtual void setPopulated(bool populated) {_populated = populated;}

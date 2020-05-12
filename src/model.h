@@ -33,7 +33,7 @@ public:
     FileDescriptor *find(const QString &fileName) const;
 
     void addFiles(const QList<FileDescriptor*> &files);
-    void deleteFiles(const QStringList &duplicated);
+    void deleteFiles(const QStringList &filesToSkip);
     int size() const {return descriptors.size();}
 
     QList<int> selected() const {return indexes;}
@@ -44,7 +44,7 @@ public:
     void setChannelDescription(int channel, const QString &description);
     void setChannelName(int channel, const QString &name);
     void updateFile(FileDescriptor *file, int column = -1);
-    void clear();
+    void clear(const QStringList &filesToSkip);
 
     void invalidateCurve(FileDescriptor *file, int channel);
     void save();

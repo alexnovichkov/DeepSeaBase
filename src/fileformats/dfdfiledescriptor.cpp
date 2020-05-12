@@ -2269,6 +2269,13 @@ Descriptor::DataType DfdChannel::type() const
     return dataTypefromDfdDataType(dataType);
 }
 
+int DfdChannel::octaveType() const
+{
+    if (dataType == ToSpectr) return 3;
+    if (dataType == OSpectr) return 1;
+    return 0;
+}
+
 QString DfdChannel::xName() const
 {DD;
     if (parent) return parent->xName();
@@ -2492,12 +2499,19 @@ Descriptor::DataType dataTypefromDfdDataType(DfdDataType type)
         case Spectr: return Descriptor::Spectrum;
         case SpcDens: return Descriptor::PowerSpectralDensity;
         case SpcDev: return Descriptor::EnergySpectralDensity;
-        case XSpectr: return Descriptor::CrossSpectrum;
+        case XSpectr:
+        case XSpectrRe:
+        case XSpectrIm:
+        case XPhase:
+            return Descriptor::CrossSpectrum;
         case Coherence: return Descriptor::Coherence;
-        case TransFunc: return Descriptor::FrequencyResponseFunction;
+        case TransFunc:
+        case TrFuncIm:
+            return Descriptor::FrequencyResponseFunction;
         case TrFuncRe: return Descriptor::Transmissibility;
         default: return Descriptor::Unknown;
     }
+
     return Descriptor::Unknown;
 }
 

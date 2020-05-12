@@ -55,6 +55,7 @@ public:
     virtual QVariant channelHeader(int column) const;
 
     virtual Descriptor::DataType type() const;
+    int octaveType() const override;
     virtual void populate();
     virtual QString name() const;
     virtual void setName(const QString &name);

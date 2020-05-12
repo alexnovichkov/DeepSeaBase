@@ -70,6 +70,7 @@
  *               "logref": 0.000314,
  *               "logscale": "linear" / "quadratic" / "dimensionless",
  *               "format": "real", "imaginary", "complex", "amplitude", "phase", "amplitudeDb"
+ *               "octaveFormat" : 0 (default) / 1 / 3,
  *               //далее идут все параметры обработки
  *           }
  *       },
@@ -192,6 +193,7 @@ public:
     virtual int columnsCount() const override;
     virtual QVariant channelHeader(int column) const override;
     virtual Descriptor::DataType type() const override;
+    int octaveType() const override;
     virtual void populate() override;
     virtual QString name() const override;
     virtual void setName(const QString &name) override;

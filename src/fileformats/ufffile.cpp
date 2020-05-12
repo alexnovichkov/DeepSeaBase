@@ -251,25 +251,34 @@ void UffFileDescriptor::read()
 
 void UffFileDescriptor::write()
 {DD;
-    if (!changed()) return;
+    if (!changed() && !dataChanged()) return;
 
     //be sure all channels were read. May take too much memory
-    populate();
+    //populate();
 
-    QFile uff(fileName());
-    if (uff.open(QFile::WriteOnly | QFile::Text)) {
-        QTextStream stream(&uff);
+    QTemporaryFile tempFile;
+
+
+//    QFile uff(fileName());
+    if (tempFile.open()) {
+        QTextStream stream(&tempFile);
         header.write(stream);
         units.write(stream);
 
         foreach (Function *c, channels) {
+            bool populated = c->populated();
+            if (!populated) c->populate();
             c->write(stream);
+            if (!populated) c->clear();
         }
     }
     else {
         qDebug()<<"Couldn't open file"<<fileName()<<"to write";
     }
+    tempFile.close();
     removeTempFile();
+    QFile::copy(tempFile.fileName(), fileName());
+
     setChanged(false);
 }
 
@@ -820,6 +829,9 @@ Function::Function(UffFileDescriptor *parent) : Channel(),
 
 Function::Function(Channel &other) : Channel(other)
 {DD;
+    header.type1858[5].value = other.octaveType();
+    ///TODO: заполнение поля 1858 данными обработки: окно, взвешивание и т.д.
+
     setType58(type58);
 
     type58[4].value = other.name(); if (other.name().isEmpty()) type58[4].value = "NONE";
@@ -1073,6 +1085,11 @@ QVariant Function::channelHeader(int column) const
 Descriptor::DataType Function::type() const
 {
     return (Descriptor::DataType)type58[14].value.toInt();
+}
+
+int Function::octaveType() const
+{
+    return header.type1858[5].value.toInt();
 }
 
 void Function::populate()

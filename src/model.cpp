@@ -22,7 +22,7 @@ FileDescriptor *Model::file(int i) const
 FileDescriptor *Model::find(const QString &fileName) const
 {DD;
     for (int i=0; i<descriptors.size(); ++i) {
-        if (descriptors[i]->fileName() == fileName) {
+        if (descriptors[i] && descriptors[i]->fileName() == fileName) {
             return descriptors[i];
         }
     }
@@ -37,14 +37,14 @@ void Model::addFiles(const QList<FileDescriptor *> &files)
     endInsertRows();
 }
 
-void Model::deleteFiles(const QStringList &duplicated)
+void Model::deleteFiles(const QStringList &filesToSkip)
 {DD;
     beginResetModel();
 
     for (int i = indexes.size()-1; i>=0; --i) {
         int toDelete = indexes.at(i);
         if (toDelete >= 0 && toDelete < descriptors.size()) {
-            if (!duplicated.contains(descriptors[toDelete]->fileName()))
+            if (!filesToSkip.contains(descriptors[toDelete]->fileName()))
                 delete descriptors[toDelete];
             descriptors.removeAt(toDelete);
         }
@@ -120,10 +120,20 @@ void Model::updateFile(FileDescriptor *file, int column)
     }
 }
 
-void Model::clear()
+void Model::clear(const QStringList &filesToSkip)
 {DD;
     beginResetModel();
-    qDeleteAll(descriptors);
+    //qDeleteAll(descriptors);
+
+    for (int i = indexes.size()-1; i>=0; --i) {
+        int toDelete = indexes.at(i);
+        if (toDelete >= 0 && toDelete < descriptors.size()) {
+            if (!filesToSkip.contains(descriptors[toDelete]->fileName()))
+                delete descriptors[toDelete];
+            descriptors.removeAt(toDelete);
+        }
+    }
+
     descriptors.clear();
     indexes.clear();
     endResetModel();
@@ -180,8 +190,7 @@ QModelIndex Model::modelIndexOfFile(FileDescriptor *f, int column) const
 
 Model::~Model()
 {DD;
-    clear();
-
+    clear(QStringList());
 }
 
 bool Model::contains(const QString &fileName, int *index) const

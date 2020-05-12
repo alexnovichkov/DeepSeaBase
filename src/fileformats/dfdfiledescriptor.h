@@ -117,6 +117,7 @@ public:
     virtual ~DfdChannel();
 
     virtual Descriptor::DataType type() const;
+    int octaveType() const override;
 
     virtual void read(DfdSettings &dfd, int numChans);
     virtual void write(QTextStream &dfd, int index = -1);

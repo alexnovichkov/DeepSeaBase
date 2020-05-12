@@ -1947,8 +1947,19 @@ void MainWindow::rescanBase()
     plot->deleteAllCurves();
 
     // next we clear all tab and populate it with folders anew
-    tab->model->clear();
+
+    //tab->model->clear();
     tab->channelModel->clear();
+
+    tab->filesTable->selectAll();
+
+    // костыль, позволяющий иметь несколько одинаковых файлов в разных вкладках
+    QStringList duplicatedFiles;
+    foreach (FileDescriptor *f, tab->model->selectedFiles()) {
+        if (duplicated(f)) duplicatedFiles << f->fileName();
+    }
+    qDebug()<<"duplicated"<<duplicatedFiles;
+    tab->model->clear(duplicatedFiles);
 
     tab->filePathLabel->clear();
 
@@ -1992,6 +2003,7 @@ void MainWindow::addFile(FileDescriptor *descriptor)
 
 FileDescriptor *MainWindow::findDescriptor(const QString &file)
 {DD;
+    qDebug()<<"searching for"<<file;
     if (tab) {
         if (FileDescriptor *f = tab->model->find(file))
             return f;
@@ -2710,7 +2722,7 @@ void MainWindow::addDescriptors(const QList<FileDescriptor*> &files)
 void MainWindow::addFiles(QStringList &files)
 {DD;
     if (!tab) return;
-
+qDebug()<<"adding"<<files;
     QList<FileDescriptor *> items;
 
     foreach (const QString fileName, files) {
@@ -2725,8 +2737,10 @@ void MainWindow::addFiles(QStringList &files)
             file = FormatFactory::createDescriptor(fileName);
             file->read();
         }
-        if (file)
+        if (file) {
+            qDebug()<<"created"<<fileName;
             items << file;
+        }
     }
     addDescriptors(items);
 }
