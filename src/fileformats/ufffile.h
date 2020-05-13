@@ -110,8 +110,10 @@ class UffFileDescriptor : public FileDescriptor
 {
 public:
     UffFileDescriptor(const QString &fileName);
-    UffFileDescriptor(const UffFileDescriptor &other, const QString &fileName);
-    UffFileDescriptor(const FileDescriptor &other, const QString &fileName);
+    UffFileDescriptor(const UffFileDescriptor &other, const QString &fileName,
+                      QVector<int> indexes = QVector<int>());
+    UffFileDescriptor(const FileDescriptor &other, const QString &fileName,
+                      QVector<int> indexes = QVector<int>());
     ~UffFileDescriptor();
 
     UffHeader header;
@@ -133,6 +135,8 @@ public:
     virtual QDateTime dateTime() const;
     virtual double xStep() const;
     virtual void setXStep(const double xStep);
+    virtual double xBegin() const override;
+
     virtual QString xName() const;
 
     virtual bool setLegend(const QString &legend);

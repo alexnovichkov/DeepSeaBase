@@ -64,7 +64,7 @@ protected:
 
         if (fi.isFile()) {
             if (suffixes.contains(fi.suffix().toLower())) {
-                //принимаем все файлы dfd, если не сравниваем с конкретным
+                //принимаем все файлы, если не сравниваем с конкретным
                 if (!filterByContent)
                     return true;
 
@@ -1192,25 +1192,33 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
         //удаляем суффикс, если это суффикс известного нам типа файлов
         if (suffixes.contains(currentSuffix))
             file.chop(currentSuffix.length()+1);
+        //сохраняем параметр - имя файла без суффикса
+        MainWindow::setSetting("startDir", file);
 
         file.append(QString(".%1").arg(filterSuffix));
     }
 
-    MainWindow::setSetting("startDir", file);
+
 
     QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
 
     // ИЩЕМ ЭТОТ ФАЙЛ СРЕДИ ДОБАВЛЕННЫХ В БАЗУ
     FileDescriptor *destination = findDescriptor(file);
-    bool found = destination!=0;
+    const bool found = destination!=0;
+    const bool exists = QFile::exists(file);
 
     if (!found) {//не нашли файл в базе, нужно создать новый объект
-        destination = FormatFactory::createDescriptor(file);
-        if (destination) destination->read();
+        if (exists) {
+            destination = FormatFactory::createDescriptor(file);
+            if (destination) destination->read();
+        }
+        else {
+            destination = FormatFactory::createDescriptor(*source, file, channelsToCopy);
+        }
     }
 
     if (!destination) {
-        qDebug()<<"Неизвестный тип файла"<<destination->fileName();
+        qDebug()<<"Неизвестный тип файла"<< file;
         return false;
     }
 
@@ -1220,11 +1228,8 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
         destination->writeRawFile();
     }
 
-//    if (dfd->legend().isEmpty())
-//        dfd->setLegend(source->legend());
-
-    //копирует каналы из source, сохраняет файл и данные
-    destination->copyChannelsFrom(source, channelsToCopy);
+    if (found || exists)
+        destination->copyChannelsFrom(source, channelsToCopy);
 
     if (found) {
         tab->model->updateFile(destination);
@@ -1990,7 +1995,6 @@ void MainWindow::addFile(FileDescriptor *descriptor)
 
 FileDescriptor *MainWindow::findDescriptor(const QString &file)
 {DD;
-    qDebug()<<"searching for"<<file;
     if (tab) {
         if (FileDescriptor *f = tab->model->find(file))
             return f;
@@ -2709,7 +2713,7 @@ void MainWindow::addDescriptors(const QList<FileDescriptor*> &files)
 void MainWindow::addFiles(QStringList &files)
 {DD;
     if (!tab) return;
-qDebug()<<"adding"<<files;
+
     QList<FileDescriptor *> items;
 
     foreach (const QString fileName, files) {
@@ -2725,7 +2729,6 @@ qDebug()<<"adding"<<files;
             file->read();
         }
         if (file) {
-            qDebug()<<"created"<<fileName;
             items << file;
         }
     }

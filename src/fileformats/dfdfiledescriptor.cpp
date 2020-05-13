@@ -90,7 +90,6 @@ DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
       BlockSize(0),
       NumInd(0),
       XBegin(0.0),
-      realXBegin(0.0),
       XStep(0.0),
       source(0),
       process(0),
@@ -101,10 +100,14 @@ DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
 }
 
 // creates a copy of DfdDataDescriptor without copying data
-DfdFileDescriptor::DfdFileDescriptor(const DfdFileDescriptor &d, const QString &fileName)
+DfdFileDescriptor::DfdFileDescriptor(const DfdFileDescriptor &d, const QString &fileName, QVector<int> indexes)
     : FileDescriptor(fileName)
 {
-    createGUID();
+    //если индексы пустые - копируем все каналы
+    if (indexes.isEmpty())
+        for (int i=0; i<d.channelsCount(); ++i) indexes << i;
+
+    DFDGUID = createGUID();
     rawFileName = fileName.left(fileName.length()-3)+"raw";
     this->DataType = d.DataType; // см. выше
     this->Date = QDate::currentDate();
@@ -125,7 +128,7 @@ DfdFileDescriptor::DfdFileDescriptor(const DfdFileDescriptor &d, const QString &
     source->Time = d.Time;
     source->DFDGUID = d.DFDGUID;
     source->File = d.fileName();
-    for (int i=1; i<=d.channelsCount(); ++i)
+    for (int i: indexes)
         source->ProcChansList << i;
 
     if (d.process) {
@@ -140,8 +143,18 @@ DfdFileDescriptor::DfdFileDescriptor(const DfdFileDescriptor &d, const QString &
     }
     else dataDescription = 0;
 
-    foreach (DfdChannel *c, d.channels)
-        this->channels << new DfdChannel(*c, this);
+    for (int i: indexes) {
+        DfdChannel *c = d.channels.at(i);
+        if (RawChannel *rc = dynamic_cast<RawChannel*>(c))
+            this->channels << new RawChannel(*rc, this);
+        else
+            this->channels << new DfdChannel(*c, this);
+    }
+
+    //перенумеровываем
+    for (int i=0; i<channels.count(); ++i) {
+        channels[i]->channelIndex = i;
+    }
 
     _legend = d._legend;
 
@@ -157,40 +170,50 @@ DfdFileDescriptor::DfdFileDescriptor(const DfdFileDescriptor &d, const QString &
     QDataStream writeStream(&rawFile);
     writeStream.setByteOrder(QDataStream::LittleEndian);
 
-    for (int i=0; i<channels.count(); ++i) {
-        Channel *c = d.channel(i);
-        bool populated = c->populated();
-        if (!populated) c->populate();
+    int destIndex = 0;
+    for (int i=0; i<d.channels.count(); ++i) {
+        if (!indexes.contains(i)) continue;
+
+        Channel *sourceChannel = d.channel(i);
+        bool populated = sourceChannel->populated();
+        if (!populated) sourceChannel->populate();
 
         //кусок кода из writeRawFile
-        DfdChannel *ch = channels[i];
+        DfdChannel *destChannel = channels[destIndex];
 
-        if (ch->IndType==0xC0000004)
+        if (destChannel->IndType==0xC0000004)
             writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-        const int sc = c->samplesCount();
+        const int sc = sourceChannel->samplesCount();
 
 
-        QVector<double> yValues = c->data()->rawYValues();
-        if (yValues.isEmpty() && !c->data()->yValuesComplex().isEmpty())
-            yValues = c->data()->linears();
+        QVector<double> yValues = sourceChannel->data()->rawYValues();
+        if (yValues.isEmpty() && !sourceChannel->data()->yValuesComplex().isEmpty()) {
+            yValues = sourceChannel->data()->linears();
+            destChannel->data()->setYValuesFormat(DataHolder::YValuesAmplitudes);
+        }
         int scc = qMin(sc, yValues.size());
         for (int val = 0; val < scc; ++val) {
-            ch->setValue(yValues[val], writeStream);
+            destChannel->setValue(yValues[val], writeStream);
         }
 
         if (!populated) {
-            c->clear();
-            ch->clear();
+            sourceChannel->clear();
+            destChannel->clear();
         }
+        destIndex++;
     }
 }
 
-DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString &fileName)
+DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString &fileName, QVector<int> indexes)
     : FileDescriptor(fileName)
 
 {
-    createGUID();
+    //если индексы пустые - копируем все каналы
+    if (indexes.isEmpty())
+        for (int i=0; i<other.channelsCount(); ++i) indexes << i;
+
+    DFDGUID = createGUID();
     rawFileName = fileName.left(fileName.length()-3)+"raw";
     this->DataType = dfdDataTypeFromDataType(other.type());
 
@@ -206,33 +229,31 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
     this->NumInd = other.samplesCount();
     this->XName = other.xName();
 
-    //this->XBegin = // will be filled in fillRest()
-    //this->XStep = other.xStep(); // will be filled in fillRest()
+    this->XBegin = other.xBegin();
+    this->XStep = other.xStep();
     this->DescriptionFormat = "";
-
-    const int count = other.channelsCount();
 
     source = new Source();
     source->Date=other.dateTime().date();
     source->Time=other.dateTime().time();
     source->DFDGUID = "Unknown";
     source->File = other.fileName();
-    for (int i=1; i<=count; ++i)
+    for (int i: indexes)
         source->ProcChansList << i;
 
     dataDescription = 0;
     process = 0;
     _legend = other.legend();
 
-    if (other.channelsCount() > 0) {
-        XBegin = other.channel(0)->xMin();
-        XStep = other.channel(0)->xStep();
-    }
-
     //только описание каналов
-    for (int i=0; i<count; ++i) {
+    for (int i: indexes) {
         Channel *c = other.channel(i);
         this->channels << new DfdChannel(*c, this);
+    }
+
+    //перенумеровываем
+    for (int i=0; i<channels.count(); ++i) {
+        channels[i]->channelIndex = i;
     }
 
     //сохраняем файл без данных
@@ -248,34 +269,39 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
     QDataStream writeStream(&rawFile);
     writeStream.setByteOrder(QDataStream::LittleEndian);
 
-    for (int i=0; i<count; ++i) {
-        Channel *c = other.channel(i);
-        bool populated = c->populated();
-        if (!populated) c->populate();
+    int destIndex = 0;
+    for (int i=0; i<other.channelsCount(); ++i) {
+        if (!indexes.contains(i)) continue;
+
+        Channel *sourceChannel = other.channel(i);
+        bool populated = sourceChannel->populated();
+        if (!populated) sourceChannel->populate();
 
         //кусок кода из writeRawFile
-        DfdChannel *ch = channels[i];
+        DfdChannel *destChannel = channels[destIndex];
 
-        if (ch->IndType==0xC0000004)
+        if (destChannel->IndType==0xC0000004)
             writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-        const int sc = c->samplesCount();
+        const int sc = sourceChannel->samplesCount();
 
 
-        QVector<double> yValues = c->data()->rawYValues();
-        if (yValues.isEmpty() && !c->data()->yValuesComplex().isEmpty())
-            yValues = c->data()->linears();
+        QVector<double> yValues = sourceChannel->data()->rawYValues();
+        if (yValues.isEmpty() && !sourceChannel->data()->yValuesComplex().isEmpty()) {
+            yValues = sourceChannel->data()->linears();
+            destChannel->data()->setYValuesFormat(DataHolder::YValuesAmplitudes);
+        }
         int scc = qMin(sc, yValues.size());
         for (int val = 0; val < scc; ++val) {
-            ch->setValue(yValues[val], writeStream);
+            destChannel->setValue(yValues[val], writeStream);
         }
 
         if (!populated) {
-            c->clear();
-            ch->clear();
+            sourceChannel->clear();
+            destChannel->clear();
         }
+        destIndex++;
     }
-
 }
 
 DfdFileDescriptor::~DfdFileDescriptor()
@@ -767,42 +793,32 @@ void DfdFileDescriptor::copyChannelsFrom_plain(FileDescriptor *file, const QVect
     writeRawFile();
 }
 
-void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int> &indexes)
+void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes)
 {DD;
-    //Этот метод никогда не вызывается в только что созданном, пустом файле
-    //Поэтому всегда можно предполагать, что в нем есть каналы
-
 //    //заглушка для релиза
 //    copyChannelsFrom_plain(file, indexes);
 //    return;
 
-    if (channelsCount() == 0) {
-        qDebug()<<"Попытка скопировать каналы в пустой файл";
-        return;
-    }
+    const int count = channelsCount();
+    DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(sourceFile);
 
-    //кроме того шаг по оси Х тоже должен быть одинаковый
-    if (XStep != file->xStep()) {
-        qDebug()<<"Попытка скопировать каналы в файл с другим шагом по оси Х";
-        return;
-    }
-
-    //еще мы должны убедиться, что типы файлов совпадают
-    DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(file);
-    if (dfd) {
-        //частный случай: мы можем записать данные из SourceData в CuttedData, преобразовав их в floats,
-        //но не наоборот
-        if ((dfd->DataType != DataType) &&
-            (dfd->DataType > 15 ||
-             DataType > 15 ||
-             (dfd->DataType != SourceData && DataType == SourceData))) {
+    //еще мы должны убедиться, что типы файлов совпадают, если текущий файл не пустой
+    if (count > 0) {
+        if (dfd) {
+            //частный случай: мы можем записать данные из SourceData в CuttedData, преобразовав их в floats,
+            //но не наоборот
+            if ((dfd->DataType != DataType) &&
+                (dfd->DataType > 15 ||
+                 DataType > 15 ||
+                 (dfd->DataType != SourceData && DataType == SourceData))) {
+                qDebug()<<"Попытка скопировать каналы в файл с другим типом";
+                return;
+            }
+        }
+        else if (dataTypefromDfdDataType(DataType) != sourceFile->type()) {
             qDebug()<<"Попытка скопировать каналы в файл с другим типом";
             return;
         }
-    }
-    else if (dataTypefromDfdDataType(DataType) != file->type()) {
-        qDebug()<<"Попытка скопировать каналы в файл с другим типом";
-        return;
     }
 
     bool rewrited = false;
@@ -810,41 +826,50 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int
     //мы должны добавить каналы из file
     //и дописать к файлу данных новые данные
 
-    //особое внимание нужно уделить тем файлам, у которых BlockSize != 0,
-    //перезаписываем файл данных, чтобы не мучаться с блоками отсчетов
-    if (BlockSize > 0) {
-        QVector<QPair<int, int> > inds;
-        for (int i=0; i<channelsCount(); ++i) inds.append(qMakePair<int,int>(i,0)); // 0 = keep, 1 = delete
-        rewrited = rewriteRawFile(inds);
+    if (count > 0) {
+        //особое внимание нужно уделить тем файлам, у которых BlockSize != 0,
+        //перезаписываем файл данных, чтобы не мучаться с блоками отсчетов
+        if (BlockSize > 0) {
+            QVector<QPair<int, int> > inds;
+            for (int i=0; i<count; ++i) inds.append(qMakePair<int,int>(i,0)); // 0 = keep, 1 = delete
+            rewrited = rewriteRawFile(inds);
+        }
+
+        if (BlockSize > 0 || !rewrited) {
+            // не удалось переписать файл. Добавляем каналы стандартным способом
+            copyChannelsFrom_plain(sourceFile, indexes);
+            return;
+        }
     }
 
-    if (BlockSize > 0 || !rewrited) {
-        // не удалось переписать файл. Добавляем каналы стандартным способом
-        copyChannelsFrom_plain(file, indexes);
-        return;
-    }
+    BlockSize = 0;
 
-    // работаем с файлом raw
     //1. копируем каналы из file в this
-    foreach (int i, indexes) {
-        Channel *ch = file->channel(i);
+    for (int i: indexes) {
+        Channel *sourceChannel = sourceFile->channel(i);
 
         //заполняем канал данными
-        bool wasPopulated = ch->populated();
-        if (!wasPopulated) ch->populate();
+        bool wasPopulated = sourceChannel->populated();
+        if (!wasPopulated) sourceChannel->populate();
 
-        DfdChannel *newCh;
+        DfdChannel *newCh = 0;
 
         //особый случай - из RawChannel в RawChannel
-        RawChannel *rawSource = dynamic_cast<RawChannel *>(ch);
-        RawChannel *rawDest = dynamic_cast<RawChannel *>(channels[0]);
-        if (rawDest && rawSource)
+        RawChannel *rawSource = dynamic_cast<RawChannel *>(sourceChannel);
+        RawChannel *rawDest = 0;
+        if (count > 0) {
+            rawDest = dynamic_cast<RawChannel *>(channels[0]);
+        }
+
+        if (rawSource && rawDest)
             newCh = new RawChannel(*rawSource, this);
         else
-            newCh = new DfdChannel(*ch, this);
+            newCh = new DfdChannel(*sourceChannel, this);
+
+        if (newCh->data()->xValuesFormat() == DataHolder::XValuesNonUniform)
+            xValues = newCh->data()->xValues();
 
         //меняем параметры канала
-        newCh->parent = this;
         newCh->IndType = channels[0]->IndType; //характеристика отсчета
         newCh->ChanBlockSize = this->NumInd; //размер блока в отсчетах
 
@@ -853,19 +878,22 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int
 
         //добавляем данные в файл raw напрямую, обходя функцию writeRawFile
         //функция ничего не делает, если BlockSize != 0
+        newCh->setPopulated(true);
         newCh->appendDataTo(rawFileName);
 
         channels << newCh;
-        if (!wasPopulated) ch->clear();
+        if (!wasPopulated) {
+            sourceChannel->clear();
+            newCh->clear();
+        }
     }
 
-    //2. перенумеровываем каналы
+    //перенумеровываем каналы
     for (int i=0; i<channels.size(); ++i) {
         channels[i]->channelIndex = i;
     }
 
-
-    //сохраняем
+    //сохраняем описатель
     setChanged(true);
     write();
 }
@@ -2196,8 +2224,11 @@ void DfdChannel::appendDataTo(const QString &rawFileName)
         const int sc = parent->NumInd;
 
         QVector<double> yValues = data()->rawYValues();
-        if (yValues.isEmpty() && !data()->yValuesComplex().isEmpty())
+        if (yValues.isEmpty() && !data()->yValuesComplex().isEmpty()) {
+            //комплексные данные, dfd не умеет их переваривать, конвертируем в линейные
             yValues = data()->linears();
+            data()->setYValuesFormat(DataHolder::YValuesAmplitudes);
+        }
         yValues.resize(sc);
         for (int val = 0; val < sc; ++val) {
             setValue(yValues[val], writeStream);

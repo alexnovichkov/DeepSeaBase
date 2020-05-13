@@ -49,12 +49,14 @@ inline FileDescriptor *createDescriptor(const QString &fileName)
     return 0;
 }
 
-inline FileDescriptor *createDescriptor(const FileDescriptor &source, const QString &fileName)
+inline FileDescriptor *createDescriptor(const FileDescriptor &source,
+                                        const QString &fileName,
+                                        const QVector<int> &indexes = QVector<int>())
 {
     QString suffix = QFileInfo(fileName).suffix();
-    if (suffix=="dfd") return new DfdFileDescriptor(source, fileName);
-    if (suffix=="uff") return new UffFileDescriptor(source, fileName);
-    if (suffix=="d94") return new Data94File(source, fileName);
+    if (suffix=="dfd") return new DfdFileDescriptor(source, fileName, indexes);
+    if (suffix=="uff") return new UffFileDescriptor(source, fileName, indexes);
+    if (suffix=="d94") return new Data94File(source, fileName, indexes);
     return 0;
 }
 

@@ -278,9 +278,9 @@ public:
     DfdFileDescriptor(const QString &fileName);
 
     // creates a copy of DfdDataDescriptor with copying data
-    DfdFileDescriptor(const DfdFileDescriptor &d, const QString &fileName);
+    DfdFileDescriptor(const DfdFileDescriptor &d, const QString &fileName, QVector<int> indexes = QVector<int>());
     // creates a copy of DataDescriptor with copying data
-    DfdFileDescriptor(const FileDescriptor &other, const QString &fileName);
+    DfdFileDescriptor(const FileDescriptor &other, const QString &fileName, QVector<int> indexes = QVector<int>());
     virtual ~DfdFileDescriptor();
     virtual void read();
     virtual void write();
@@ -298,7 +298,7 @@ public:
     virtual void setDataDescriptor(const DescriptionList &data);
 
     virtual double xStep() const {return XStep;}
-
+    virtual double xBegin() const override {return XBegin;}
     virtual void setXStep(const double xStep);
 
     virtual bool setLegend(const QString &legend);
@@ -360,7 +360,6 @@ public:
     QString XName;
 
     double XBegin;
-    double realXBegin;
     double XStep;
     QString DescriptionFormat;
     QString CreatedBy;

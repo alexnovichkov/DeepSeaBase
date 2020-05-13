@@ -129,8 +129,10 @@ public:
     virtual double xStep() const = 0;
     virtual void setXStep(const double xStep) = 0;
 
-    virtual int samplesCount() const = 0;//{return NumInd;}
-    virtual void setSamplesCount(int count) = 0; //{NumInd = count;}
+    virtual double xBegin() const = 0;
+
+    virtual int samplesCount() const = 0;
+    virtual void setSamplesCount(int count) = 0;
 
     virtual QString xName() const = 0;
 

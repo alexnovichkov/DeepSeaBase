@@ -74,9 +74,14 @@ UffFileDescriptor::UffFileDescriptor(const QString &fileName) : FileDescriptor(f
 //qDebug()<<fileName;
 }
 
-UffFileDescriptor::UffFileDescriptor(const UffFileDescriptor &other, const QString &fileName)
+UffFileDescriptor::UffFileDescriptor(const UffFileDescriptor &other, const QString &fileName,
+                                     QVector<int> indexes)
     : FileDescriptor(fileName)
 {DD;
+    //если индексы пустые - копируем все каналы
+    if (indexes.isEmpty())
+        for (int i=0; i<other.channelsCount(); ++i) indexes << i;
+
     this->header = other.header;
     this->units = other.units;
 
@@ -90,7 +95,10 @@ UffFileDescriptor::UffFileDescriptor(const UffFileDescriptor &other, const QStri
     header.write(stream);
     units.write(stream);
 
-    foreach (Function *f, other.channels) {
+    for (int i=0; i<other.channels.count(); ++i) {
+        if (!indexes.contains(i)) continue;
+
+        Function *f = other.channels.at(i);
         bool populated = f->populated();
         if (!populated) f->populate();
 
@@ -107,9 +115,14 @@ UffFileDescriptor::UffFileDescriptor(const UffFileDescriptor &other, const QStri
     }
 }
 
-UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString &fileName)
+UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString &fileName,
+                                     QVector<int> indexes)
     : FileDescriptor(fileName)
 {
+    //если индексы пустые - копируем все каналы
+    if (indexes.isEmpty())
+        for (int i=0; i<other.channelsCount(); ++i) indexes << i;
+
     //заполнение header
     header.type151[10].value = other.dateTime();
     header.type151[12].value = other.dateTime();
@@ -118,7 +131,7 @@ UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString 
     //TODO: добавить заполнение units
 
 
-    setLegend(other.legend());
+    header.type151[8].value = other.legend();
 
     const int count = other.channelsCount();
 
@@ -148,13 +161,16 @@ UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString 
     //заполнение каналов
 
     for (int i=0; i<count; ++i) {
+        if (!indexes.contains(i)) continue;
+
         Channel *ch = other.channel(i);
         bool populated = ch->populated();
         if (!populated) ch->populate();
-        Function *f = new Function(*ch);
 
-        f->type58[15].value = i+1;
-        f->type58[10].value = QString("Record %1").arg(i+1);
+        Function *f = new Function(*ch);
+        f->parent = this;
+//        f->type58[15].value = i+1;
+//        f->type58[10].value = QString("Record %1").arg(i+1);
 
         //заполнение инфы об опорном канале
         if (referenceChannelNumber>=0) {
@@ -354,6 +370,12 @@ void UffFileDescriptor::setXStep(const double xStep)
     write();
 }
 
+double UffFileDescriptor::xBegin() const
+{
+    if (!channels.isEmpty()) return channels.first()->xMin();
+    return 0.0;
+}
+
 QString UffFileDescriptor::xName() const
 {
     if (channels.isEmpty()) return QString();
@@ -409,66 +431,19 @@ void UffFileDescriptor::removeTempFile()
 
 void UffFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes)
 {DD;
-    UffFileDescriptor *sourceUff = dynamic_cast<UffFileDescriptor *>(sourceFile);
-
     const int count = channels.count();
     int referenceChannelNumber = -1; //номер опорного канала ("сила")
     QString referenceChannelName;
 
-    //1. Если список каналов пуст, то поступаем, как при создании файла, только копируем не все каналы
-    if (count == 0) {
-        if (sourceUff) {
-            this->header = sourceUff->header;
-            this->units = sourceUff->units;
-        }
-        else {
-            //заполнение header
-            header.type151[10].value = sourceFile->dateTime();
-            header.type151[12].value = sourceFile->dateTime();
-            header.type151[16].value = QDateTime::currentDateTime();
-
-            header.type151[8].value = sourceFile->legend();
-        }
-
-        // ищем опорный канал
-        for (int i=0; i<count; ++i) {
-            Channel *ch = sourceFile->channel(i);
-            if (ch->xName().toLower()=="сила") {
-                referenceChannelNumber = i;
-                referenceChannelName = ch->name();
-                break;
-            }
-        }
-
-        updateDateTimeGUID();
-    }
-
-    QTemporaryFile uff;
-    if (!uff.open()) {
+    QFile uff(fileName());
+    if (!uff.open(QFile::Append | QFile::Text)) {
         qDebug()<<"Couldn't open file to write";
         return;
     }
 
     QTextStream stream(&uff);
-    header.write(stream);
-    units.write(stream);
 
-    //переписываем имевшиеся каналы
-    for (int i=0; i<count; ++i) {
-        Function *ch = channels[i];
-        bool populated = ch->populated();
-        if (!populated) ch->populate();
-
-        ch->type58[15].value = i+1;
-        ch->type58[10].value = QString("Record %1").arg(i+1);
-
-        ch->write(stream);
-
-        //clearing
-        if (!populated) {
-            ch->clear();
-        }
-    }
+    int destIndex = count+1;
 
     //добавляем каналы
     for (int i=0; i<sourceFile->channelsCount(); ++i) {
@@ -481,8 +456,8 @@ void UffFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
         Function *ch = new Function(*f);
         ch->parent = this;
 
-        ch->type58[15].value = count+i+1;
-        ch->type58[10].value = QString("Record %1").arg(count+i+1);
+        ch->type58[15].value = destIndex;
+        ch->type58[10].value = QString("Record %1").arg(destIndex++);
 
         //заполнение инфы об опорном канале
         if (referenceChannelNumber>=0) {
@@ -501,7 +476,6 @@ void UffFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
             ch->clear();
         }
     }
-    QFile::copy(uff.fileName(), fileName());
 
     removeTempFile();
 }

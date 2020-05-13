@@ -9,7 +9,7 @@ Data94File::Data94File(const QString &fileName) : FileDescriptor(fileName)
 
 }
 
-Data94File::Data94File(const Data94File &d, const QString &fileName)
+Data94File::Data94File(const Data94File &d, const QString &fileName, QVector<int> indexes)
     : FileDescriptor(fileName)
 {
     this->description = d.description;
@@ -20,8 +20,13 @@ Data94File::Data94File(const Data94File &d, const QString &fileName)
 
     updateDateTimeGUID();
 
-    foreach (Data94Channel *c, d.channels) {
-        this->channels << new Data94Channel(*c);
+    //если индексы пустые - копируем все каналы
+    if (indexes.isEmpty())
+        for (int i=0; i<d.channelsCount(); ++i) indexes << i;
+
+    for (int i: indexes) {
+        Data94Channel *c = d.channels.at(i);
+        this->channels << new Data94Channel(c);
     }
 
     foreach (Data94Channel *c, channels) {
@@ -47,29 +52,32 @@ Data94File::Data94File(const Data94File &d, const QString &fileName)
     const qint64 fileHeader = 8+4+descriptionSize+4+paddingSize
                               +xAxisBlock.size()+zAxisBlock.size()+4;
 
-    for (int i=0; i<channels.count(); ++i) {
-        Data94Channel *c = channels.at(i);
-        Data94Channel *ch = d.channels.at(i);
+    int destIndex = 0;
+    for (int i=0; i<d.channels.count(); ++i) {
+        if (!indexes.contains(i)) continue;
 
-        bool populated = ch->populated();
-        if (!populated) ch->populate();
+        Data94Channel *destChannel = channels.at(destIndex);
+        Data94Channel *sourceChannel = d.channels.at(i);
+
+        bool populated = sourceChannel->populated();
+        if (!populated) sourceChannel->populate();
 
         //пишем данные напрямую
-        quint32 format = c->isComplex ? 2 : 1;
+        quint32 format = destChannel->isComplex ? 2 : 1;
 
-        if (c->dataPosition < 0) {
+        if (destChannel->dataPosition < 0) {
             //каждый канал начинается с позиции
-            c->dataPosition = fileHeader + 4 +
-                              i*(4+xAxisBlock.count*zAxisBlock.count*format*sizeof(float));
+            destChannel->dataPosition = fileHeader + 4 +
+                              destIndex*(4+xAxisBlock.count*zAxisBlock.count*format*sizeof(float));
         }
 
-        r.device()->seek(c->dataPosition - 4);
+        r.device()->seek(destChannel->dataPosition - 4);
         r << format;
 
-        if (!c->isComplex) {
-            QVector<double> yValues = ch->data()->rawYValues();
+        if (!destChannel->isComplex) {
+            QVector<double> yValues = sourceChannel->data()->rawYValues();
             if (yValues.isEmpty()) {
-                qDebug()<<"Отсутствуют данные для записи в канале"<<c->name();
+                qDebug()<<"Отсутствуют данные для записи в канале"<<destChannel->name();
                 continue;
             }
 
@@ -78,9 +86,9 @@ Data94File::Data94File(const Data94File &d, const QString &fileName)
             }
         }
         else {
-            auto yValues = ch->data()->yValuesComplex();
+            auto yValues = sourceChannel->data()->yValuesComplex();
             if (yValues.isEmpty()) {
-                qDebug()<<"Отсутствуют данные для записи в канале"<<c->name();
+                qDebug()<<"Отсутствуют данные для записи в канале"<<destChannel->name();
                 continue;
             }
             foreach (cx_double v, yValues) {
@@ -90,14 +98,15 @@ Data94File::Data94File(const Data94File &d, const QString &fileName)
         }
 
         if (!populated) {
-            ch->clear();
-            c->clear();
+            sourceChannel->clear();
+            destChannel->clear();
         }
+        destIndex++;
     }
 }
 
 //сразу записываем данные, взятые из файла other
-Data94File::Data94File(const FileDescriptor &other, const QString &fileName)
+Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVector<int> indexes)
     : FileDescriptor(fileName)
 {
     updateDateTimeGUID();
@@ -105,11 +114,15 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName)
     description.insert("legend", other.legend());
     setDataDescriptor(other.dataDescriptor());
 
+    //если индексы пустые - копируем все каналы
+    if (indexes.isEmpty())
+        for (int i=0; i<other.channelsCount(); ++i) indexes << i;
+
     if (other.channelsCount()>0) {
-        xAxisBlock.uniform = other.channel(0)->data()->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
-        xAxisBlock.begin = other.channel(0)->xMin();
+        xAxisBlock.uniform = other.channel(indexes.first())->data()->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
+        xAxisBlock.begin = other.channel(indexes.first())->xMin();
         if (xAxisBlock.uniform == 0) // not uniform
-            xAxisBlock.values = other.channel(0)->xValues();
+            xAxisBlock.values = other.channel(indexes.first())->xValues();
     }
     xAxisBlock.count = other.samplesCount();
     xAxisBlock.step = other.xStep();
@@ -121,7 +134,7 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName)
 
     //channels - сначала только описание каналов
     //если каналы были populated, то данные игнорируются
-    for (int i=0; i<other.channelsCount(); ++i) {
+    for (int i: indexes) {
         Channel *ch = other.channel(i);
         Data94Channel *c = new Data94Channel(ch);
         c->parent = this;
@@ -147,29 +160,32 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName)
     const qint64 fileHeader = 8+4+descriptionSize+4+paddingSize
                               +xAxisBlock.size()+zAxisBlock.size()+4;
 
-    for (int i=0; i<channels.count(); ++i) {
-        Data94Channel *c = channels.at(i);
-        Channel *ch = other.channel(i);
+    int destIndex = 0;
+    for (int i=0; i<other.channelsCount(); ++i) {
+        if (!indexes.contains(i)) continue;
 
-        bool populated = ch->populated();
-        if (!populated) ch->populate();
+        Data94Channel *destChannel = channels.at(destIndex);
+        Channel *sourceChannel = other.channel(i);
+
+        bool populated = sourceChannel->populated();
+        if (!populated) sourceChannel->populate();
 
         //пишем данные напрямую
-        quint32 format = c->isComplex ? 2 : 1;
+        quint32 format = destChannel->isComplex ? 2 : 1;
 
-        if (c->dataPosition < 0) {
+        if (destChannel->dataPosition < 0) {
             //каждый канал начинается с позиции
-            c->dataPosition = fileHeader +4
-                              + i*(4+xAxisBlock.count*zAxisBlock.count*format*sizeof(float));
+            destChannel->dataPosition = fileHeader +4
+                              + destIndex*(4+xAxisBlock.count*zAxisBlock.count*format*sizeof(float));
         }
 
-        r.device()->seek(c->dataPosition - 4);
+        r.device()->seek(destChannel->dataPosition - 4);
         r << format;
 
-        if (!c->isComplex) {
-            QVector<double> yValues = ch->data()->rawYValues();
+        if (!destChannel->isComplex) {
+            QVector<double> yValues = sourceChannel->data()->rawYValues();
             if (yValues.isEmpty()) {
-                qDebug()<<"Отсутствуют данные для записи в канале"<<c->name();
+                qDebug()<<"Отсутствуют данные для записи в канале"<<destChannel->name();
                 continue;
             }
 
@@ -178,9 +194,9 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName)
             }
         }
         else {
-            auto yValues = ch->data()->yValuesComplex();
+            auto yValues = sourceChannel->data()->yValuesComplex();
             if (yValues.isEmpty()) {
-                qDebug()<<"Отсутствуют данные для записи в канале"<<c->name();
+                qDebug()<<"Отсутствуют данные для записи в канале"<<destChannel->name();
                 continue;
             }
             foreach (cx_double v, yValues) {
@@ -189,7 +205,11 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName)
             }
         }
 
-        if (!populated) ch->clear();
+        if (!populated) {
+            sourceChannel->clear();
+            destChannel->clear();
+        }
+        destIndex++;
     }
 }
 
@@ -553,9 +573,91 @@ void Data94File::deleteChannels(const QVector<int> &channelsToDelete)
     }
 }
 
-void Data94File::copyChannelsFrom(FileDescriptor *, const QVector<int> &)
+void Data94File::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes)
 {
+    const int count = channelsCount();
 
+    updateDateTimeGUID();
+
+    for (int i: indexes) {
+        Channel *c = sourceFile->channel(i);
+        this->channels << new Data94Channel(c);
+    }
+
+    foreach (Data94Channel *c, channels) {
+        c->parent = this;
+    }
+
+    //сразу сохраняем файл
+    setChanged(true);
+    write();
+
+    //теперь записываем данные - это позволит не копить данные в оперативной
+    //памяти, и работать с файлами с любым количеством каналов
+    QFile f(fileName());
+    if (!f.open(QFile::ReadWrite)) {
+        qDebug()<<"Не удалось открыть файл для записи";
+        return;
+    }
+
+    QDataStream r(&f);
+    r.setByteOrder(QDataStream::LittleEndian);
+    r.setFloatingPointPrecision(QDataStream::SinglePrecision);
+    // шапка файла имеет размер
+    const qint64 fileHeader = 8+4+descriptionSize+4+paddingSize
+                              +xAxisBlock.size()+zAxisBlock.size()+4;
+
+    int destIndex = count;
+    for (int i=0; i<sourceFile->channelsCount(); ++i) {
+        if (!indexes.contains(i)) continue;
+
+        Data94Channel *destChannel = channels.at(destIndex);
+        Channel *sourceChannel = sourceFile->channel(i);
+
+        bool populated = sourceChannel->populated();
+        if (!populated) sourceChannel->populate();
+
+        //пишем данные напрямую
+        quint32 format = destChannel->isComplex ? 2 : 1;
+
+        if (destChannel->dataPosition < 0) {
+            //каждый канал начинается с позиции
+            destChannel->dataPosition = fileHeader + 4
+                              + destIndex*(4+xAxisBlock.count*zAxisBlock.count*format*sizeof(float));
+        }
+
+        r.device()->seek(destChannel->dataPosition - 4);
+        r << format;
+
+        if (!destChannel->isComplex) {
+            QVector<double> yValues = sourceChannel->data()->rawYValues();
+            if (yValues.isEmpty()) {
+                qDebug()<<"Отсутствуют данные для записи в канале"<<destChannel->name();
+                continue;
+            }
+
+            foreach (double v, yValues) {
+                r << (float)v;
+            }
+        }
+        else {
+            auto yValues = sourceChannel->data()->yValuesComplex();
+            if (yValues.isEmpty()) {
+                qDebug()<<"Отсутствуют данные для записи в канале"<<destChannel->name();
+                continue;
+            }
+            foreach (cx_double v, yValues) {
+                r << (float)v.real();
+                r << (float)v.imag();
+            }
+        }
+
+        if (!populated) {
+            sourceChannel->clear();
+            destChannel->clear();
+        }
+        destIndex++;
+    }
 }
 
 void Data94File::calculateMean(const QList<QPair<FileDescriptor *, int> > &channels)
@@ -612,14 +714,20 @@ bool Data94File::setLegend(const QString &legend)
     return false;
 }
 
+double Data94File::xBegin() const
+{
+    return xAxisBlock.uniform ? xAxisBlock.begin : xAxisBlock.values.value(0);
+}
+
 double Data94File::xStep() const
 {
-    if (!channels.isEmpty()) return channels.first()->xStep();
-    return 0.0;
+    return xAxisBlock.uniform ? xAxisBlock.step : 0.0;
 }
 
 void Data94File::setXStep(const double xStep)
 {
+    if (!xAxisBlock.uniform) return;
+
     bool changed = false;
     changed = xAxisBlock.step != xStep;
     xAxisBlock.step = xStep;

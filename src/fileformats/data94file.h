@@ -126,9 +126,9 @@ class Data94File : public FileDescriptor
 public:
     Data94File(const QString &fileName);
     // creates a copy of Data94File with copying data
-    Data94File(const Data94File &d, const QString &fileName);
+    Data94File(const Data94File &d, const QString &fileName, QVector<int> indexes = QVector<int>());
     // creates a copy of FileDescriptor with copying data
-    Data94File(const FileDescriptor &other, const QString &fileName);
+    Data94File(const FileDescriptor &other, const QString &fileName, QVector<int> indexes = QVector<int>());
 
     // FileDescriptor interface
 public:
@@ -146,7 +146,7 @@ public:
     virtual QString dataDescriptorAsString() const override;
     virtual QDateTime dateTime() const override;
     virtual void deleteChannels(const QVector<int> &channelsToDelete) override;
-    virtual void copyChannelsFrom(FileDescriptor *, const QVector<int> &) override;
+    virtual void copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes) override;
     virtual void calculateMean(const QList<QPair<FileDescriptor *, int> > &channels) override;
     virtual QString calculateThirdOctave() override;
     virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize) override;
@@ -157,6 +157,7 @@ public:
     virtual Channel *channel(int index) const override;
     virtual QString legend() const override;
     virtual bool setLegend(const QString &legend) override;
+    virtual double xBegin() const override;
     virtual double xStep() const override;
     virtual void setXStep(const double xStep) override;
     virtual int samplesCount() const override;
