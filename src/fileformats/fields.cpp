@@ -146,8 +146,8 @@ void setType58(QVector<FieldDescription> &type58)
     //                                       4 - real, double precision
     //                                       5 - complex, single precision
     //                                       6 - complex, double precision
-        {FTInteger10, 0}, //26   Number of data pairs for uneven abscissa
-                             //     spacing, or number of data values for even abscissa spacing
+        {FTInteger10, 0}, //26   Number of data pairs for uneven abscissa spacing,
+                             //  or number of data values for even abscissa spacing
         {FTInteger10, 1}, //27 Abscissa Spacing (1=even, 0=uneven,
         {FTFloat13_5, 0.0},//28 Abscissa minimum
         {FTFloat13_5, 0.0}, //29 Abscissa increment

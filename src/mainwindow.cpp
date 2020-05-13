@@ -1198,30 +1198,13 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
 
     MainWindow::setSetting("startDir", file);
 
+    QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+
     // ИЩЕМ ЭТОТ ФАЙЛ СРЕДИ ДОБАВЛЕННЫХ В БАЗУ
     FileDescriptor *destination = findDescriptor(file);
     bool found = destination!=0;
 
-    if (!destination) {//не нашли файл в базе, нужно создать новый объект
-        if (!QFileInfo(file).exists()) {
-            // такого файла не существует, копируем исходный файл и удаляем ненужные каналы
-            if (source->copyTo(file)) {
-                destination = FormatFactory::createDescriptor(file);
-                destination->read();
-                QVector<int> channelsToDelete;
-                for (int i=0; i<destination->channelsCount(); ++i) {
-                    if (!channelsToCopy.contains(i))
-                        channelsToDelete << i;
-                }
-                destination->deleteChannels(channelsToDelete);
-                addFile(destination);
-                if (!tab->folders.contains(file)) tab->folders << file;
-                return true;
-            }
-            return false;
-        }
-
-        // добавляем каналы в существующий файл
+    if (!found) {//не нашли файл в базе, нужно создать новый объект
         destination = FormatFactory::createDescriptor(file);
         if (destination) destination->read();
     }
@@ -1231,9 +1214,11 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
         return false;
     }
 
-    //записываем все изменения данных
-    destination->write();
-    destination->writeRawFile();
+    //записываем все изменения данных, если они были
+    if (found) {
+        destination->write();
+        destination->writeRawFile();
+    }
 
 //    if (dfd->legend().isEmpty())
 //        dfd->setLegend(source->legend());
@@ -1248,6 +1233,8 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
         addFile(destination);
         if (!tab->folders.contains(file)) tab->folders << file;
     }
+
+    QApplication::restoreOverrideCursor();
 
     return true;
 }

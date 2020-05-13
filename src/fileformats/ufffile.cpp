@@ -407,35 +407,102 @@ void UffFileDescriptor::removeTempFile()
     if (QFile::exists(fileName()+"~")) QFile::remove(fileName()+"~");
 }
 
-void UffFileDescriptor::copyChannelsFrom(FileDescriptor *file, const QVector<int> &indexes)
+void UffFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes)
 {DD;
-    UffFileDescriptor *uff = static_cast<UffFileDescriptor *>(file);
+    UffFileDescriptor *sourceUff = dynamic_cast<UffFileDescriptor *>(sourceFile);
 
-    const int count = file->channelsCount();
-    for(int i = 0; i < count; ++i) {
-        if (!file->channel(i)->populated() && indexes.contains(i))
-            file->channel(i)->populate();
-    }
+    const int count = channels.count();
+    int referenceChannelNumber = -1; //номер опорного канала ("сила")
+    QString referenceChannelName;
 
-    //добавляем в файл dfd копируемые каналы из dfdRecord
-    foreach (int index, indexes) {
-        if (uff) {
-            channels.append(new Function(*uff->channels[index]));
+    //1. Если список каналов пуст, то поступаем, как при создании файла, только копируем не все каналы
+    if (count == 0) {
+        if (sourceUff) {
+            this->header = sourceUff->header;
+            this->units = sourceUff->units;
         }
         else {
-            channels.append(new Function(*file->channel(index)));
+            //заполнение header
+            header.type151[10].value = sourceFile->dateTime();
+            header.type151[12].value = sourceFile->dateTime();
+            header.type151[16].value = QDateTime::currentDateTime();
+
+            header.type151[8].value = sourceFile->legend();
+        }
+
+        // ищем опорный канал
+        for (int i=0; i<count; ++i) {
+            Channel *ch = sourceFile->channel(i);
+            if (ch->xName().toLower()=="сила") {
+                referenceChannelNumber = i;
+                referenceChannelName = ch->name();
+                break;
+            }
+        }
+
+        updateDateTimeGUID();
+    }
+
+    QTemporaryFile uff;
+    if (!uff.open()) {
+        qDebug()<<"Couldn't open file to write";
+        return;
+    }
+
+    QTextStream stream(&uff);
+    header.write(stream);
+    units.write(stream);
+
+    //переписываем имевшиеся каналы
+    for (int i=0; i<count; ++i) {
+        Function *ch = channels[i];
+        bool populated = ch->populated();
+        if (!populated) ch->populate();
+
+        ch->type58[15].value = i+1;
+        ch->type58[10].value = QString("Record %1").arg(i+1);
+
+        ch->write(stream);
+
+        //clearing
+        if (!populated) {
+            ch->clear();
         }
     }
 
+    //добавляем каналы
+    for (int i=0; i<sourceFile->channelsCount(); ++i) {
+        if (!indexes.contains(i)) continue;
 
-    for (int i=0; i<channels.size(); ++i) {
-        channels[i]->parent = this;
+        Channel *f = sourceFile->channel(i);
+        bool populated = f->populated();
+        if (!populated) f->populate();
+
+        Function *ch = new Function(*f);
+        ch->parent = this;
+
+        ch->type58[15].value = count+i+1;
+        ch->type58[10].value = QString("Record %1").arg(count+i+1);
+
+        //заполнение инфы об опорном канале
+        if (referenceChannelNumber>=0) {
+            ch->type58[18].value = referenceChannelName;
+            ch->type58[19].value = referenceChannelNumber+1;
+        }
+
+        ch->type58[8].value = header.type151[10].value;
+
+        this->channels << ch;
+        ch->write(stream);
+
+        //clearing
+        if (!populated) {
+            f->clear();
+            ch->clear();
+        }
     }
+    QFile::copy(uff.fileName(), fileName());
 
-    //меняем параметры файла uff
-    updateDateTimeGUID();
-//    setChanged(true);
-//    write();
     removeTempFile();
 }
 
@@ -932,19 +999,10 @@ void Function::readRest()
     _data->setYValuesUnits(units);
 }
 
+
 void Function::write(QTextStream &stream)
 {DD;
     int samples = data()->samplesCount();
-
-//    // Temporal correction
-//    if (!temporalCorrection) {
-//        setName(type58[4].value.toString()+data()->correctionString());
-//    }
-//    //fixing values with correction
-//    else {
-//        data()->removeCorrection();
-//    }
-
 
     //writing header
     header.write(stream);
@@ -952,6 +1010,8 @@ void Function::write(QTextStream &stream)
     for (int i=0; i<60; ++i) {
         fields[type58[i].type]->print(type58[i].value, stream);
     }
+
+    dataPosition = stream.pos();
 
     switch (type58[25].value.toInt()) {//25 Ordinate Data Type
                                         // 2 - real, single precision
@@ -1361,8 +1421,7 @@ void UffFileDescriptor::setSamplesCount(int count)
 void UffFileDescriptor::setChanged(bool changed)
 {DD;
     FileDescriptor::setChanged(changed);
-    if (changed && QFile::exists(fileName()+"~"))
-        QFile::remove(fileName()+"~");
+    if (changed) removeTempFile();
 }
 
 
