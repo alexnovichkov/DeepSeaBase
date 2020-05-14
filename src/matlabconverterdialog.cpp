@@ -1,19 +1,12 @@
 #include "matlabconverterdialog.h"
 #include <QtWidgets>
-#include "fileformats/matlabfiledescriptor.h"
+#include "fileformats/matlabconvertor.h"
 #include "mainwindow.h"
 #include "checkableheaderview.h"
 #include "logging.h"
+#include "fileformats/formatfactory.h"
+#include "algorithms.h"
 
-bool dfdFileExists(const QString &s)
-{
-    QString f = s;
-    f.replace(".mat",".dfd");
-    QString f1 = s;
-    f1.replace(".mat", ".raw");
-    if (QFile::exists(f) && QFile::exists(f1)) return true;
-    return false;
-}
 
 MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
 {
@@ -22,6 +15,8 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
     m_addFiles = false;
 
     progress = new QProgressBar(this);
+    progress->setTextVisible(false);
+    progress->setFixedHeight(10);
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(start()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(stop()));
@@ -36,12 +31,15 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
     button = new QPushButton("Выбрать", this);
     connect(button, SIGNAL(pressed()), this, SLOT(chooseMatFiles()));
 
+    formatBox = new QComboBox(this);
+    formatBox->addItems(FormatFactory::allFilters());
+    connect(formatBox, SIGNAL(currentTextChanged(QString)), SLOT(updateFormat()));
+
     tree = new QTreeWidget(this);
     tree->setAlternatingRowColors(true);
     tree->setColumnCount(4);
     tree->setHeaderLabels(QStringList()<<"№"<<"Файл"<<"Конвертирован"<<"Запись");
     tree->setItemDelegateForColumn(3, new ComboBoxItemDelegate(convertor, this));
-//    connect(tree, SIGNAL(itemClicked(QTreeWidgetItem*,int)), SLOT(editItem(QTreeWidgetItem*,int)));
 
     CheckableHeaderView *tableHeader = new CheckableHeaderView(Qt::Horizontal, tree);
 
@@ -100,12 +98,14 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
 
     QWidget *second = new QWidget(this);
     QGridLayout *grid1 = new QGridLayout;
-    grid1->addWidget(textEdit,0,0,1,3);
-    grid1->addWidget(new QLabel("Записывать данные в файл RAW как", this), 1,0,1,1);
-    grid1->addWidget(rawFileFormat, 1,1,1,1);
-    grid1->addWidget(openFolderButton, 2,0,1,3);
-    grid1->addWidget(addFilesButton, 3, 0,1,3);
-    grid1->addWidget(buttonBox,4,0,1,3);
+    grid1->addWidget(textEdit,0,0,1,4);
+    grid1->addWidget(new QLabel("Сохранять файлы как", this), 1,0,1,1);
+    grid1->addWidget(formatBox, 1,1,1,1);
+    grid1->addWidget(new QLabel("Записывать данные в файл RAW как", this), 1,2,1,1);
+    grid1->addWidget(rawFileFormat, 1,3,1,1);
+    grid1->addWidget(openFolderButton, 2,0,1,4);
+    grid1->addWidget(addFilesButton, 3,0,1,4);
+    grid1->addWidget(buttonBox,4,0,1,4);
     second->setLayout(grid1);
     splitter->addWidget(first);
     splitter->addWidget(second);
@@ -148,14 +148,10 @@ void MatlabConverterDialog::chooseMatFiles()
         item->setFlags(item->flags() | Qt::ItemIsEditable);
         item->setText(0, QString::number(i++));
         item->setText(1, f.canonicalFilePath());
-        if (dfdFileExists(f.canonicalFilePath())) {
-            item->setIcon(2,QIcon(":/icons/tick.png"));
-            item->setCheckState(1, Qt::Unchecked);
-        }
-        else item->setCheckState(1, Qt::Checked);
     }
     tree->resizeColumnToContents(0);
     tree->resizeColumnToContents(1);
+    updateFormat();
 
     buttonBox->buttons().first()->setDisabled(matFiles.isEmpty());
 
@@ -207,6 +203,27 @@ void MatlabConverterDialog::chooseMatFiles()
             convertor->setDatasetForFile(tree->topLevelItem(i)->text(1), -1);
         }
     }
+}
+
+void MatlabConverterDialog::updateFormat()
+{
+    QString formatString = formatBox->currentText();
+    QString suffix = formatString.right(4);
+    suffix.chop(1);
+    for (int i=0; i<tree->topLevelItemCount(); ++i) {
+        QTreeWidgetItem *item = tree->topLevelItem(i);
+        if (fileExists(item->text(1), suffix)) {
+            item->setIcon(2,QIcon(":/icons/tick.png"));
+            item->setCheckState(1, Qt::Unchecked);
+        }
+        else {
+            item->setCheckState(1, Qt::Checked);
+            item->setIcon(2,QIcon());
+        }
+    }
+    rawFileFormat->setEnabled(suffix.toLower() == "dfd");
+
+    convertor->setDestinationFormat(suffix.toLower());
 }
 
 void MatlabConverterDialog::accept()
@@ -270,18 +287,6 @@ void MatlabConverterDialog::start()
     }
 
     progress->setRange(0, toConvert.size()-1);
-
-//    if (convertor->xmlFileName.isEmpty())
-//        convertor->xmlFileName = findXmlFile(false);
-
-//    if (convertor->xmlFileName.isEmpty()) {
-//        textEdit->appendHtml("<font color=red>Error!</font> Не могу найти файл Analysis.xml.");
-//        return;
-//    }
-//    textEdit->appendHtml("Файл XML: "+convertor->xmlFileName);
-//    bool noErrors = true;
-//    convertor->readXml(noErrors);
-
     convertor->setRawFileFormat(rawFileFormat->currentIndex());
 
 
@@ -291,7 +296,6 @@ void MatlabConverterDialog::start()
     connect(convertor, SIGNAL(finished()), thread, SLOT(quit()));
     connect(convertor, SIGNAL(finished()), this, SLOT(finalize()));
     connect(convertor, SIGNAL(tick()), SLOT(updateProgressIndicator()));
-    //connect(convertor, SIGNAL(tick(QString)), SLOT(updateProgressIndicator(QString)));
     connect(convertor, SIGNAL(message(QString)), textEdit, SLOT(appendHtml(QString)));
 
     progress->setValue(0);
@@ -313,18 +317,6 @@ void MatlabConverterDialog::finalize()
         QProcess::startDetached("explorer.exe", QStringList(dir.toNativeSeparators(dir.absolutePath())));
     }
     m_addFiles = addFilesButton->isChecked();
-
-//    buttonBox->buttons().first()->setDisabled(false);
-//    if (convertor) {
-//        convertor->deleteLater();
-//        //convertor=0;
-//    }
-//    if (thread) {
-//        thread->quit();
-//        thread->wait();
-//        thread->deleteLater();
-//       // thread = 0;
-//    }
 }
 
 

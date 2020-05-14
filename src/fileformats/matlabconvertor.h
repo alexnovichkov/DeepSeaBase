@@ -1,5 +1,5 @@
-#ifndef MATLABFILEDESCRIPTOR_H
-#define MATLABFILEDESCRIPTOR_H
+#ifndef MATLABCONVERTOR_H
+#define MATLABCONVERTOR_H
 
 #include "fileformats/filedescriptor.h"
 #include <QtGlobal>
@@ -8,33 +8,7 @@
 
 #include "matfile.h"
 
-struct XChannel
-{
-    QString name;
-    QString units;
-//    double logRef;
-//    double scale;
-    QString generalName;
-    QString catLabel;
-//    QString sensorId;
-    QString sensorSerial;
-    QString sensorName;
-    double fd;
-    QString chanUnits;
-    QString pointId;
-    QString direction;
-    QStringList info;
-};
 
-struct Dataset
-{
-    QString id;
-    QString fileName;
-    QStringList titles;
-    QString date;
-    QString time;
-    QList<XChannel> channels;
-};
 
 #include <QObject>
 #include <QFileInfoList>
@@ -47,6 +21,7 @@ public:
     void setFilesToConvert(const QStringList &toConvert) {filesToConvert = toConvert;}
     void setRawFileFormat(int format) {rawFileFormat = format;} // 0 = float, 1 = quint16
     void setDatasetForFile(const QString &file, int dataset) {datasets.insert(file, dataset);}
+    void setDestinationFormat(const QString &format) {destinationFormat = format;} //dfd, uff, d94
 
     QStringList getNewFiles() const {return newFiles;}
     void readXml(bool &success);
@@ -65,6 +40,7 @@ private:
     QStringList newFiles;
     QStringList filesToConvert;
     int rawFileFormat;
+    QString destinationFormat;
 };
 
-#endif // MATLABFILEDESCRIPTOR_H
+#endif // MATLABCONVERTOR_H

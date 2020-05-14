@@ -5,16 +5,7 @@
 #include "mainwindow.h"
 #include "checkableheaderview.h"
 #include "logging.h"
-
-bool fileExists(const QString &s, const QString &ext)
-{
-    QString f = s;
-    f.replace(ext,".dfd");
-    QString f1 = s;
-    f1.replace(ext, ".raw");
-    if (QFile::exists(f) && QFile::exists(f1)) return true;
-    return false;
-}
+#include "algorithms.h"
 
 TDMSConverterDialog::TDMSConverterDialog(QWidget *parent) : QDialog(parent)
 {
@@ -150,8 +141,7 @@ void TDMSConverterDialog::chooseFiles()
         item->setFlags(item->flags() | Qt::ItemIsEditable);
         item->setText(0, QString::number(i++));
         item->setText(1, f.canonicalFilePath());
-        if (fileExists(f.canonicalFilePath(), ".tdms") ||
-            fileExists(f.canonicalFilePath(), ".tdm")) {
+        if (fileExists(f.canonicalFilePath(), "dfd")) {
             item->setIcon(2,QIcon(":/icons/tick.png"));
             item->setCheckState(1, Qt::Unchecked);
         }

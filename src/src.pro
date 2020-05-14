@@ -45,7 +45,6 @@ SOURCES += main.cpp\
     iirfilter.cpp \
     methods/windowing.cpp \
     converter.cpp \
-    fileformats/matlabfiledescriptor.cpp \
     matlabconverterdialog.cpp \
     esoconverterdialog.cpp \
     trackingpanel.cpp \
@@ -106,7 +105,8 @@ SOURCES += main.cpp\
     plot/pointmarker.cpp \
     plot/plottracker.cpp \
     wavexporter.cpp \
-    converterdialog.cpp
+    converterdialog.cpp \
+    fileformats/matlabconvertor.cpp
 
 HEADERS  += mainwindow.h \
     fileformats/dfdfiledescriptor.h \
@@ -129,7 +129,6 @@ HEADERS  += mainwindow.h \
     iirfilter.h \
     methods/windowing.h \
     converter.h \
-    fileformats/matlabfiledescriptor.h \
     matlabconverterdialog.h \
     esoconverterdialog.h \
     trackingpanel.h \
@@ -191,7 +190,8 @@ HEADERS  += mainwindow.h \
     plot/plottracker.h \
     wavexporter.h \
     fileformats/formatfactory.h \
-    converterdialog.h
+    converterdialog.h \
+    fileformats/matlabconvertor.h
 
 SOURCES +=\
   ../3rdParty/DspFilters/State.cpp \

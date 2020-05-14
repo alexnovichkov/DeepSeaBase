@@ -195,6 +195,8 @@ QString createUniqueFileName(const QString &fileName);
  */
 QString changeFileExt(const QString &fileName, const QString &ext);
 
+bool fileExists(const QString &s, const QString &suffix);
+
 // возвращает округленные значения переменных from и to, которые различаются как минимум в первой значащей цифре
 void getUniqueFromToValues(QString &fromString, QString &toString, double from, double to);
 

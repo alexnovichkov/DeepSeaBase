@@ -22,7 +22,7 @@
 #include "logging.h"
 
 #include "editdescriptionsdialog.h"
-#include "fileformats/matlabfiledescriptor.h"
+#include "fileformats/matlabconvertor.h"
 #include "matlabconverterdialog.h"
 #include "esoconverterdialog.h"
 #include "converterdialog.h"
@@ -1711,6 +1711,8 @@ void MainWindow::convertFiles()
     if (dialog.addFiles()) {
         QStringList newFiles = dialog.getConvertedFiles();
         addFiles(newFiles);
+        foreach (const QString &file, newFiles)
+            if (!tab->folders.contains(file)) tab->folders << file;
     }
 }
 

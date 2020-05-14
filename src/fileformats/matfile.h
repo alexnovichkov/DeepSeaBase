@@ -5,6 +5,87 @@
 #include <QtDebug>
 #include <QDataStream>
 
+#include "filedescriptor.h"
+
+struct XChannel
+{
+    QString name;
+    QString units;
+    double logRef;
+    double scale;
+    QString generalName;
+    QString catLabel;
+    QString sensorId;
+    QString sensorSerial;
+    QString sensorName;
+    double fd;
+    QString chanUnits;
+    QString pointId;
+    QString direction;
+    QStringList info;
+};
+
+struct Dataset
+{
+    QString id;
+    QString fileName;
+    QStringList titles;
+    QString date;
+    QString time;
+    QList<XChannel> channels;
+};
+
+class MatlabRecord;
+
+class MatFile : public FileDescriptor {
+public:
+    MatFile(const QString &fileName);
+    virtual ~MatFile();
+    int getChannelsCount() const;
+
+    void setXml(Dataset xml) {this->xml = xml;}
+    void read();
+
+    QList<MatlabRecord *> records;
+private:
+    Dataset xml;
+
+    // FileDescriptor interface
+public:
+    virtual void fillPreliminary(Descriptor::DataType) override;
+    virtual void fillRest() override;
+    virtual void write() override;
+    virtual void writeRawFile() override;
+    virtual void updateDateTimeGUID() override;
+    virtual Descriptor::DataType type() const override;
+    virtual QString typeDisplay() const override;
+    virtual DescriptionList dataDescriptor() const override;
+    virtual void setDataDescriptor(const DescriptionList &data) override;
+    virtual QString dataDescriptorAsString() const override;
+    virtual QDateTime dateTime() const override;
+    virtual void deleteChannels(const QVector<int> &channelsToDelete) override;
+    virtual void copyChannelsFrom(FileDescriptor *, const QVector<int> &) override;
+    virtual void calculateMean(const QList<QPair<FileDescriptor *, int> > &channels) override;
+    virtual QString calculateThirdOctave() override;
+    virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize) override;
+    virtual QString saveTimeSegment(double from, double to) override;
+    virtual int channelsCount() const override;
+    virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
+    virtual QVariant channelHeader(int column) const override;
+    virtual int columnsCount() const override;
+    virtual Channel *channel(int index) const override;
+    virtual QString legend() const override;
+    virtual bool setLegend(const QString &legend) override;
+    virtual double xStep() const override;
+    virtual void setXStep(const double xStep) override;
+    virtual double xBegin() const override;
+    virtual int samplesCount() const override;
+    virtual void setSamplesCount(int count) override;
+    virtual QString xName() const override;
+    virtual bool setDateTime(QDateTime dt) override;
+    virtual bool dataTypeEquals(FileDescriptor *other) const override;
+};
+
 template <typename T, typename D>
 QVector<D> readBlock(QDataStream *readStream, quint64 itemCount)
 {
@@ -240,19 +321,6 @@ public:
 
 
 MatlabRecord *matlabRecordFactory(MatlabHeader *header, const QString &fileName);
-
-class MatFile {
-public:
-    MatFile(const QString &fileName);
-    ~MatFile() {
-        qDeleteAll(records);
-    }
-    int getChannelsCount() const;
-    QString fileName;
-    QList<MatlabRecord *> records;
-};
-
-
 
 
 

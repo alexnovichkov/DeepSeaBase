@@ -53,6 +53,7 @@ private slots:
     void stop();
     void finalize();
     void chooseMatFiles();
+    void updateFormat();
 //    void editItem(QTreeWidgetItem*item, int column);
 private:
     QString findXmlFile(bool silent) const; // silent means it won't ask for a file via dialog
@@ -64,6 +65,8 @@ private:
     QTreeWidget *tree;
     QPlainTextEdit *textEdit;
     QPushButton *button;
+
+    QComboBox *formatBox;
 
     QThread *thread;
     QCheckBox *openFolderButton;

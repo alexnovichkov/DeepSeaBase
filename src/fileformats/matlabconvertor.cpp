@@ -1,4 +1,4 @@
-#include "matlabfiledescriptor.h"
+#include "matlabconvertor.h"
 #include <QtWidgets>
 
 #include "dfdfiledescriptor.h"
@@ -6,24 +6,24 @@
 #include "algorithms.h"
 
 
-QString lms2dsunit(const QString &unit)
-{
-    if (QString("m;cm;mm;nm;km;stat.mi;in;mil;м;см;мм;нм;км").split(";").contains(unit))
-        return "м";
+//QString lms2dsunit(const QString &unit)
+//{
+//    if (QString("m;cm;mm;nm;km;stat.mi;in;mil;м;см;мм;нм;км").split(";").contains(unit))
+//        return "м";
 
-   if (QString("m/s;nm/s;km/h;nm/s;in/s;mph;m/s(pv);м/с;см/с;мм/с;нм/с;км/с").split(";").contains(unit))
-       return "м/с";
+//   if (QString("m/s;nm/s;km/h;nm/s;in/s;mph;m/s(pv);м/с;см/с;мм/с;нм/с;км/с").split(";").contains(unit))
+//       return "м/с";
 
-   if (QString("m/s2;g;m/s?;m/s^2;(m/s^2);м/с^2;м/с2").split(";").contains(unit))
-          return "м/с^2";
-   if (QString("Pa;hPa;kPa;MPa;N/m2;N/mm2;psi;kg/(ms2);bar;Па;гПа;кПа;МПа;Н/м2;Н/м^2;Н/мм2;Н/мм^2").split(";").contains(unit))
-       return "Па";
-   if (QString("N;lbf;kN;daN;Н;кН").split(";").contains(unit))
-       return "Н";
-   if (QString("Nm;kNm;Нм;кНм").split(";").contains(unit))
-       return "Нм";
-   return unit;
-}
+//   if (QString("m/s2;g;m/s?;m/s^2;(m/s^2);м/с^2;м/с2").split(";").contains(unit))
+//          return "м/с^2";
+//   if (QString("Pa;hPa;kPa;MPa;N/m2;N/mm2;psi;kg/(ms2);bar;Па;гПа;кПа;МПа;Н/м2;Н/м^2;Н/мм2;Н/мм^2").split(";").contains(unit))
+//       return "Па";
+//   if (QString("N;lbf;kN;daN;Н;кН").split(";").contains(unit))
+//       return "Н";
+//   if (QString("Nm;kNm;Нм;кНм").split(";").contains(unit))
+//       return "Нм";
+//   return unit;
+//}
 
 #include <QXmlStreamReader>
 
@@ -52,15 +52,12 @@ bool MatlabConvertor::convert()
         return false;
     }
 
-//    qDebug()<<datasets;
-
     //Converting
     foreach(const QString &fi, filesToConvert) {
         if (QThread::currentThread()->isInterruptionRequested()) return false;
 
         emit message("Конвертируем файл " + fi);
-        QString xdfFileName = fi;
-        xdfFileName.replace(".mat",".xdf");
+        QString xdfFileName = changeFileExt(fi, "xdf");
 
         Dataset set;
         QString fileToSearch = QFileInfo(xdfFileName).fileName();
@@ -75,26 +72,19 @@ bool MatlabConvertor::convert()
             set = xml.at(datasets.value(fi));
             emit message("Файл "+QFileInfo(fileToSearch).fileName()+" в Analysis.xml записан как запись "+set.id);
         }
-        //search for the particular dataset
-//        foreach (const Dataset &s, xml) {
-//            qDebug()<<QFileInfo(xdfFileName).fileName().toLower();
-//            qDebug()<<s.fileName.toLower();
-//            if (QFileInfo(xdfFileName).completeBaseName().toLower().startsWith(s.fileName.toLower()+"_")) {
-//            if (s.fileName.toLower() == QFileInfo(xdfFileName).fileName().toLower()) {
-//                set = s;
-//                break;
-//            }
-//        }
 
         //reading mat file structure
         MatFile matlabFile(fi);
+        matlabFile.setXml(set);
+
+        matlabFile.read();
         emit message(QString("-- Файл mat содержит %1 переменных").arg(matlabFile.records.size()));
 
         QString rawFileName = fi;
         rawFileName.replace(".mat",".raw");
-
         QString dfdFileName = fi;
         dfdFileName.replace(".mat",".dfd");
+        QString destinationFileName = changeFileExt(fi, destinationFormat);
 
         //writing dfd file
         DfdFileDescriptor dfdFileDescriptor(dfdFileName);
@@ -130,7 +120,7 @@ bool MatlabConvertor::convert()
 
                 MatlabStructArray *rec = dynamic_cast<MatlabStructArray *>(matlabFile.records[i]);
                 if (!rec) {
-                    emit message("<font color=red>Error!</font> Странный тип переменной в файле "+matlabFile.fileName);
+                    emit message("<font color=red>Error!</font> Странный тип переменной в файле "+matlabFile.fileName());
                     noErrors = false;
                     continue;
                 }
@@ -141,8 +131,6 @@ bool MatlabConvertor::convert()
                     noErrors = false;
                     continue;
                 }
-                //MatlabStructArray *x_values = dynamic_cast<MatlabStructArray *>(rec->subRecords[0]);
-//                MatlabNumericArray *startValue = dynamic_cast<MatlabNumericArray*>(x_values->subRecords[0]);
                 MatlabNumericArray *startValue = findSubrecord<MatlabNumericArray*>("start_value", x_values);
                 MatlabNumericArray *increment = findSubrecord<MatlabNumericArray*>("increment", x_values);
                 MatlabNumericArray *numberOfValues = findSubrecord<MatlabNumericArray*>("number_of_values", x_values);

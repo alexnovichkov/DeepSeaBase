@@ -8,7 +8,14 @@ QDebug operator <<(QDebug debug, const std::complex<double> &val)
     return debug;
 }
 
+bool fileExists(const QString &s, const QString &suffix)
+{
+    QString f = changeFileExt(s, suffix);
+    if (suffix != "dfd") return QFile::exists(f);
 
+    QString f1 = changeFileExt(s, "raw");
+    return (QFile::exists(f) && QFile::exists(f1));
+}
 
 
 

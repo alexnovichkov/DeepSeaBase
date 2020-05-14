@@ -2,10 +2,28 @@
 
 #include <QFile>
 
-MatFile::MatFile(const QString &fileName) {
-    this->fileName = fileName;
+MatFile::MatFile(const QString &fileName) : FileDescriptor(fileName)
+{
 
-    QFile f(fileName);
+}
+
+MatFile::~MatFile()
+{
+    qDeleteAll(records);
+}
+
+int MatFile::getChannelsCount() const
+{
+    int count = 0;
+    foreach (MatlabRecord *rec, records) {
+        if (rec) count += rec->getChannelsCount();
+    }
+    return count;
+}
+
+void MatFile::read()
+{
+    QFile f(fileName());
     if (f.open(QFile::ReadOnly)) {
         QDataStream stream(&f);
         stream.setByteOrder(QDataStream::LittleEndian);
@@ -15,7 +33,7 @@ MatFile::MatFile(const QString &fileName) {
             MatlabHeader *header = new MatlabHeader();
             header->read(&stream);
 
-            MatlabRecord *rec = matlabRecordFactory(header, fileName); // <- сейчас указывает на начало данных
+            MatlabRecord *rec = matlabRecordFactory(header, fileName()); // <- сейчас указывает на начало данных
             if (!rec) {
                 qDebug()<<"Unknown matlab data type:" << header->type;
                 return;
@@ -28,15 +46,6 @@ MatFile::MatFile(const QString &fileName) {
             //stream.skipRawData(header->actualSize);
         }
     }
-}
-
-int MatFile::getChannelsCount() const
-{
-    int count = 0;
-    foreach (MatlabRecord *rec, records) {
-        if (rec) count += rec->getChannelsCount();
-    }
-    return count;
 }
 
 
@@ -644,4 +653,133 @@ QVector<float> getNumeric(const MatlabNumericRecord *rec)
     }
 
     return data;
+}
+
+
+void MatFile::fillPreliminary(Descriptor::DataType)
+{
+}
+
+void MatFile::fillRest()
+{
+}
+
+void MatFile::write()
+{
+}
+
+void MatFile::writeRawFile()
+{
+}
+
+void MatFile::updateDateTimeGUID()
+{
+}
+
+Descriptor::DataType MatFile::type() const
+{
+}
+
+QString MatFile::typeDisplay() const
+{
+}
+
+DescriptionList MatFile::dataDescriptor() const
+{
+}
+
+void MatFile::setDataDescriptor(const DescriptionList &data)
+{
+}
+
+QString MatFile::dataDescriptorAsString() const
+{
+}
+
+QDateTime MatFile::dateTime() const
+{
+}
+
+void MatFile::deleteChannels(const QVector<int> &channelsToDelete)
+{
+}
+
+void MatFile::copyChannelsFrom(FileDescriptor *, const QVector<int> &)
+{
+}
+
+void MatFile::calculateMean(const QList<QPair<FileDescriptor *, int> > &channels)
+{
+}
+
+QString MatFile::calculateThirdOctave()
+{
+}
+
+void MatFile::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize)
+{
+}
+
+QString MatFile::saveTimeSegment(double from, double to)
+{
+}
+
+int MatFile::channelsCount() const
+{
+}
+
+void MatFile::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
+{
+}
+
+QVariant MatFile::channelHeader(int column) const
+{
+}
+
+int MatFile::columnsCount() const
+{
+}
+
+Channel *MatFile::channel(int index) const
+{
+}
+
+QString MatFile::legend() const
+{
+}
+
+bool MatFile::setLegend(const QString &legend)
+{
+}
+
+double MatFile::xStep() const
+{
+}
+
+void MatFile::setXStep(const double xStep)
+{
+}
+
+double MatFile::xBegin() const
+{
+}
+
+int MatFile::samplesCount() const
+{
+}
+
+void MatFile::setSamplesCount(int count)
+{
+}
+
+QString MatFile::xName() const
+{
+}
+
+bool MatFile::setDateTime(QDateTime dt)
+{
+}
+
+bool MatFile::dataTypeEquals(FileDescriptor *other) const
+{
 }
