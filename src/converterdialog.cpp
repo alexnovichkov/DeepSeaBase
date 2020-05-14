@@ -1,7 +1,5 @@
-#include "uffconverterdialog.h"
+#include "converterdialog.h"
 #include <QtWidgets>
-//#include "fileformats/ufffile.h"
-//#include "fileformats/dfdfiledescriptor.h"
 #include "checkableheaderview.h"
 #include "logging.h"
 #include "algorithms.h"
@@ -27,6 +25,8 @@ ConverterDialog::ConverterDialog(QList<FileDescriptor *> dataBase, QWidget *pare
 //    buttonBox->buttons().first()->setDisabled(true);
 
     convertor = new FileConvertor();
+
+    addFilesButton = new QCheckBox("Добавить новые файлы в текущую вкладку", this);
 
     button = new QPushButton("Добавить файлы", this);
     connect(button, &QPushButton::clicked, [=](){
@@ -101,6 +101,7 @@ ConverterDialog::ConverterDialog(QList<FileDescriptor *> dataBase, QWidget *pare
     QGridLayout *grid1 = new QGridLayout;
     grid1->addWidget(textEdit,0,0);
     grid1->addWidget(buttonBox,1,0);
+    grid1->addWidget(addFilesButton, 3,0);
     second->setLayout(grid1);
     splitter->addWidget(first);
     splitter->addWidget(second);
@@ -170,7 +171,6 @@ void ConverterDialog::start()
     connect(convertor, SIGNAL(finished()), thread, SLOT(quit()));
     connect(convertor, SIGNAL(finished()), this, SLOT(finalize()));
     connect(convertor, SIGNAL(tick()), SLOT(updateProgressIndicator()));
-    //connect(convertor, SIGNAL(tick(QString)), SLOT(updateProgressIndicator(QString)));
     connect(convertor, SIGNAL(message(QString)), textEdit, SLOT(appendHtml(QString)));
 
     thread->start();
@@ -178,24 +178,16 @@ void ConverterDialog::start()
 
 void ConverterDialog::stop()
 {
+    qDebug()<<"stopped";
     if (thread)
         thread->requestInterruption();
-    QDialog::accept();
+
+    accept();
 }
 
 void ConverterDialog::finalize()
 {
-//    buttonBox->buttons().first()->setDisabled(false);
-//    if (convertor) {
-//        convertor->deleteLater();
-//        //convertor=0;
-//    }
-//    if (thread) {
-//        thread->quit();
-//        thread->wait();
-//        thread->deleteLater();
-//       // thread = 0;
-    //    }
+    m_addFiles = addFilesButton->isChecked();
 }
 
 
@@ -272,6 +264,7 @@ bool FileConvertor::convert()
         delete sourceFile;
         emit tick();
     }
+    emit tick();
     emit message("<font color=blue>Конвертация закончена.</font>");
     /*if (noErrors) */emit finished();
     return true;

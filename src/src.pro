@@ -48,7 +48,6 @@ SOURCES += main.cpp\
     fileformats/matlabfiledescriptor.cpp \
     matlabconverterdialog.cpp \
     esoconverterdialog.cpp \
-    uffconverterdialog.cpp \
     trackingpanel.cpp \
     methods/octavemethod.cpp \
     algorithms.cpp \
@@ -106,7 +105,8 @@ SOURCES += main.cpp\
     plot/picker.cpp \
     plot/pointmarker.cpp \
     plot/plottracker.cpp \
-    wavexporter.cpp
+    wavexporter.cpp \
+    converterdialog.cpp
 
 HEADERS  += mainwindow.h \
     fileformats/dfdfiledescriptor.h \
@@ -132,7 +132,6 @@ HEADERS  += mainwindow.h \
     fileformats/matlabfiledescriptor.h \
     matlabconverterdialog.h \
     esoconverterdialog.h \
-    uffconverterdialog.h \
     trackingpanel.h \
     fileformats/uffheaders.h \
     methods/octavemethod.h \
@@ -191,7 +190,8 @@ HEADERS  += mainwindow.h \
     plot/pointmarker.h \
     plot/plottracker.h \
     wavexporter.h \
-    fileformats/formatfactory.h
+    fileformats/formatfactory.h \
+    converterdialog.h
 
 SOURCES +=\
   ../3rdParty/DspFilters/State.cpp \

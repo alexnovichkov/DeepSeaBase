@@ -144,6 +144,7 @@ public:
 
     virtual bool setDateTime(QDateTime dt) override;
 
+    bool canTakeChannelsFrom(FileDescriptor *other) const override;
 
     virtual void deleteChannels(const QVector<int> &channelsToDelete);
     virtual void copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes);

@@ -13,6 +13,7 @@ class QPushButton;
 class QThread;
 class FileDescriptor;
 class QComboBox;
+class QCheckBox;
 
 class FileConvertor : public QObject
 {
@@ -44,6 +45,7 @@ public:
     ConverterDialog(QList<FileDescriptor *> dataBase, QWidget *parent = 0);
     ~ConverterDialog();
     QStringList getConvertedFiles() const {return convertedFiles;}
+    bool addFiles() const {return m_addFiles;}
 public slots:
     virtual void accept();
     virtual void reject();
@@ -56,6 +58,7 @@ private:
     void addFile(const QString &fileName);
     QStringList convertedFiles;
     QString folder;
+    bool m_addFiles = false;
     QProgressBar *progress;
     QDialogButtonBox *buttonBox;
     QTreeWidget *tree;
@@ -64,6 +67,7 @@ private:
     FileConvertor *convertor;
     QComboBox *formatBox;
     QThread *thread;
+    QCheckBox *addFilesButton;
 };
 
 #endif // UFFCONVERTERDIALOG_H

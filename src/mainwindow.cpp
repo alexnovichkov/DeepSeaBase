@@ -21,15 +21,11 @@
 #include <ActiveQt/ActiveQt>
 #include "logging.h"
 
-//#include "fileformats/dfdfiledescriptor.h"
-//#include "fileformats/ufffile.h"
-//#include "fileformats/data94file.h"
 #include "editdescriptionsdialog.h"
 #include "fileformats/matlabfiledescriptor.h"
 #include "matlabconverterdialog.h"
 #include "esoconverterdialog.h"
-#include "uffconverterdialog.h"
-//#include "fileformats/filedescriptor.h"
+#include "converterdialog.h"
 #include "timeslicer.h"
 #include <QTime>
 #include "channeltablemodel.h"
@@ -1712,8 +1708,10 @@ void MainWindow::convertFiles()
     ConverterDialog dialog(records, this);
     dialog.exec();
 
-    QStringList newFiles = dialog.getConvertedFiles();
-    addFiles(newFiles);
+    if (dialog.addFiles()) {
+        QStringList newFiles = dialog.getConvertedFiles();
+        addFiles(newFiles);
+    }
 }
 
 void MainWindow::copyToLegend()

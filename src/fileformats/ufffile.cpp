@@ -410,6 +410,12 @@ bool UffFileDescriptor::setDateTime(QDateTime dt)
     return true;
 }
 
+bool UffFileDescriptor::canTakeChannelsFrom(FileDescriptor *other) const
+{
+    Q_UNUSED(other);
+    return true;
+}
+
 void UffFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
 {DD;
     populate();
