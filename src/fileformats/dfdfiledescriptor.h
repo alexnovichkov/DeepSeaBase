@@ -186,7 +186,7 @@ public:
 
     QString m_correction;
 private:
-    int dataFormat() const;
+    DataHolder::YValuesFormat dataFormat() const;
 
     // Channel interface
 public:

@@ -203,7 +203,6 @@ public:
     virtual double xStep() const {return _data->xStep();}
     virtual int samplesCount() const {return _data->samplesCount();}
     virtual int xValuesFormat() const {return _data->xValuesFormat();}
-    virtual int yValuesFormat() const {return _data->yValuesFormat();}
     virtual int units() const {return _data->yValuesUnits();}
 
     virtual QVector<double> yValues() const {return _data->yValues();}

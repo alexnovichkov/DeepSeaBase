@@ -36,6 +36,9 @@ struct Dataset
 };
 
 class MatlabRecord;
+class MatlabNumericRecord;
+class MatlabChannel;
+class MatlabStructArray;
 
 class MatFile : public FileDescriptor {
 public:
@@ -47,6 +50,7 @@ public:
     void read();
 
     QList<MatlabRecord *> records;
+    QList<MatlabChannel*> channels;
 private:
     Dataset xml;
 
@@ -85,6 +89,50 @@ public:
     virtual bool setDateTime(QDateTime dt) override;
     virtual bool dataTypeEquals(FileDescriptor *other) const override;
 };
+
+class MatlabChannel : public Channel
+{
+public:
+    explicit MatlabChannel(MatFile *parent);
+
+    MatFile *parent;
+    MatlabNumericRecord *real_values;
+    MatlabNumericRecord *imag_values;
+    XChannel xml;
+    QString _name;
+    QString _primaryChannel;
+    QString _type;
+    QString _xName;
+    bool grouped = false;
+    int indexInGroup = 0;
+    int groupSize = 1;
+    bool complex = false;
+
+    // Channel interface
+public:
+    virtual QVariant info(int column, bool edit) const override;
+    virtual int columnsCount() const override;
+    virtual QVariant channelHeader(int column) const override;
+    virtual Descriptor::DataType type() const override;
+    virtual int octaveType() const override;
+    virtual void populate() override;
+    virtual QString name() const override;
+    virtual void setName(const QString &name) override;
+    virtual QString description() const override;
+    virtual void setDescription(const QString &description) override;
+    virtual QString xName() const override;
+    virtual QString yName() const override;
+    virtual QString zName() const override;
+    virtual void setYName(const QString &yName) override;
+    virtual QString legendName() const override;
+    virtual FileDescriptor *descriptor() override;
+    virtual int index() const override;
+    virtual QString correction() const override;
+    virtual void setCorrection(const QString &s) override;
+};
+
+template <typename T>
+T findSubrecord(const QString &name, MatlabStructArray *rec);
 
 template <typename T, typename D>
 QVector<D> readBlock(QDataStream *readStream, quint64 itemCount)

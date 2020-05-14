@@ -16,7 +16,7 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
 
     progress = new QProgressBar(this);
     progress->setTextVisible(false);
-    progress->setFixedHeight(10);
+    progress->setFixedHeight(15);
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(start()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(stop()));
@@ -286,7 +286,8 @@ void MatlabConverterDialog::start()
         return;
     }
 
-    progress->setRange(0, toConvert.size()-1);
+    progress->setRange(0, toConvert.size());
+    progress->setValue(0);
     convertor->setRawFileFormat(rawFileFormat->currentIndex());
 
 
@@ -297,8 +298,6 @@ void MatlabConverterDialog::start()
     connect(convertor, SIGNAL(finished()), this, SLOT(finalize()));
     connect(convertor, SIGNAL(tick()), SLOT(updateProgressIndicator()));
     connect(convertor, SIGNAL(message(QString)), textEdit, SLOT(appendHtml(QString)));
-
-    progress->setValue(0);
 
     thread->start();
 }

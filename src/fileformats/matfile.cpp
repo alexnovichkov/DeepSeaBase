@@ -41,10 +41,128 @@ void MatFile::read()
 
             records << rec;
             rec->readData(&stream);
-
-            //stream.device()->seek(header->dataBegin);
-            //stream.skipRawData(header->actualSize);
         }
+    }
+
+    if (records.isEmpty()) return;
+
+    ///теперь реорганизуем данные - если каналы в файле сгруппированы,
+    /// то мы уже не имеем прямого соответствия record -> channel
+
+    for (MatlabRecord *r: records) {
+        MatlabStructArray *rec = dynamic_cast<MatlabStructArray *>(r);
+        if (!rec) continue;
+
+        //проверяем, сгруппирован ли канал
+        //запись function_record.name будет иметь размерность > 1
+        if (MatlabStructArray *function_record = findSubrecord<MatlabStructArray *>("function_record", rec)) {
+            MatlabCellArray *name = findSubrecord<MatlabCellArray*>("name", function_record);
+            if (name) {//сгруппированные данные
+                int count = name->dimensions.value(1);
+                for (int i=0; i<count; ++i) {
+                    MatlabChannel *channel = new MatlabChannel(this);
+                    channel->grouped = true;
+                    channel->indexInGroup = i;
+
+                    //x_values
+                    double xbegin = 0.0;
+                    double xstep = 0.0;
+                    int samplescount = 0;
+
+                    if (MatlabStructArray *x_values = findSubrecord<MatlabStructArray *>("x_values", rec)) {
+                        if (MatlabNumericArray *startValue = findSubrecord<MatlabNumericArray*>("start_value", x_values))
+                            xbegin = startValue->getNumericAsDouble().first();
+                        if (MatlabNumericArray *increment = findSubrecord<MatlabNumericArray*>("increment", x_values))
+                            xstep = increment->getNumericAsDouble().first();
+                        if (MatlabNumericArray *numberOfValues = findSubrecord<MatlabNumericArray*>("number_of_values", x_values))
+                            samplescount = numberOfValues->getNumericAsInt().first();
+                        if (MatlabStructArray *quantity = findSubrecord<MatlabStructArray*>("quantity", x_values))
+                            channel->_xName = quantity->subRecords[quantity->fieldNames.indexOf("label")]->getString();
+                    }
+                    channel->data()->setXValues(xbegin, xstep, samplescount);
+
+                    //TODO: добавить возможность сохранять данные с неравномерной шкалой
+
+                    //y_values
+                    if (MatlabStructArray *y_values = findSubrecord<MatlabStructArray *>("y_values", rec)) {
+                        if (MatlabNumericArray *values = findSubrecord<MatlabNumericArray *>("values", y_values)) {
+                            channel->real_values = dynamic_cast<MatlabNumericRecord *>(values->realValues);
+                            channel->imag_values = dynamic_cast<MatlabNumericRecord *>(values->imagValues);
+                            channel->complex = values->complex;
+                        }
+                    }
+
+                    //function_record
+                    channel->_name = name->subRecords[i]->getString().section(" ", 0, 0);
+                    //channel->_primaryChannel =
+                    channel->_type = rec->name;
+                    XChannel c;
+                    for (int j=0; j<xml.channels.size(); ++j) {
+                        if (xml.channels.at(j).catLabel == channel->_name) {
+                            c = xml.channels.at(j);
+                            break;
+                        }
+                    }
+                    channel->xml = c;
+                    channel->data()->setYValuesFormat(channel->complex ?
+                                                          DataHolder::YValuesComplex :
+                                                          DataHolder::YValuesReals);
+
+                    channels << channel;
+                }
+
+            }
+            else {//несгруппированные данные, record -> channel
+                MatlabChannel *channel = new MatlabChannel(this);
+
+                //x_values
+                double xbegin = 0.0;
+                double xstep = 0.0;
+                int samplescount = 0;
+
+                if (MatlabStructArray *x_values = findSubrecord<MatlabStructArray *>("x_values", rec)) {
+                    if (MatlabNumericArray *startValue = findSubrecord<MatlabNumericArray*>("start_value", x_values))
+                        xbegin = startValue->getNumericAsDouble().first();
+                    if (MatlabNumericArray *increment = findSubrecord<MatlabNumericArray*>("increment", x_values))
+                        xstep = increment->getNumericAsDouble().first();
+                    if (MatlabNumericArray *numberOfValues = findSubrecord<MatlabNumericArray*>("number_of_values", x_values))
+                        samplescount = numberOfValues->getNumericAsInt().first();
+                    if (MatlabStructArray *quantity = findSubrecord<MatlabStructArray*>("quantity", x_values))
+                        channel->_xName = quantity->subRecords[quantity->fieldNames.indexOf("label")]->getString();
+                }
+                channel->data()->setXValues(xbegin, xstep, samplescount);
+
+                //TODO: добавить возможность сохранять данные с неравномерной шкалой
+
+                //y_values
+                if (MatlabStructArray *y_values = findSubrecord<MatlabStructArray *>("y_values", rec)) {
+                    if (MatlabNumericArray *values = findSubrecord<MatlabNumericArray *>("values", y_values)) {
+                        channel->real_values = dynamic_cast<MatlabNumericRecord *>(values->realValues);
+                        channel->imag_values = dynamic_cast<MatlabNumericRecord *>(values->imagValues);
+                        channel->complex = values->complex;
+                    }
+                }
+
+                //function_record
+                channel->_name = rec->name.section("_", 0, 0);
+                //channel->_primaryChannel =
+                channel->_type = function_record->subRecords[function_record->fieldNames.indexOf("type")]->getString();
+                XChannel c;
+                for (int j=0; j<xml.channels.size(); ++j) {
+                    if (xml.channels.at(j).catLabel == channel->_name) {
+                        c = xml.channels.at(j);
+                        break;
+                    }
+                }
+                channel->xml = c;
+                channel->data()->setYValuesFormat(channel->complex ?
+                                                      DataHolder::YValuesComplex :
+                                                      DataHolder::YValuesReals);
+
+                channels << channel;
+            }
+        }
+
     }
 }
 
@@ -366,6 +484,42 @@ void MatlabStructArray::readData(QDataStream *f)
 //            qDebug()<<"end reading struct"<<fieldNames.at(fieldNumber)<<structNumber+1<<"of"<<totalSize <<"at"<<hex<<f->device()->pos()<<dec;
         }
     }
+
+
+//    //теперь заполняем нужные поля data()
+//    double xbegin = 0.0;
+//    double xstep = 0.0;
+//    int samplescount = 0;
+
+//    if (MatlabStructArray *x_values = findSubrecord<MatlabStructArray *>("x_values", this)) {
+//        if (MatlabNumericArray *startValue = findSubrecord<MatlabNumericArray*>("start_value", x_values))
+//            xbegin = startValue->getNumericAsDouble().first();
+//        if (MatlabNumericArray *increment = findSubrecord<MatlabNumericArray*>("increment", x_values))
+//            xStep = increment->getNumericAsDouble().first();
+//        if (MatlabNumericArray *numberOfValues = findSubrecord<MatlabNumericArray*>("number_of_values", x_values))
+//            samplescount = numberOfValues->getNumericAsInt().first();
+//    }
+//    data()->setXValues(xbegin, xstep, samplescount);
+
+
+//    if (MatlabStructArray *y_values = findSubrecord<MatlabStructArray *>("y_values", rec)) {
+//        if (MatlabNumericArray *values = findSubrecord<MatlabNumericArray *>("values", y_values)) {
+//            MatlabNumericRecord *real_values = dynamic_cast<MatlabNumericRecord *>(values->realValues);
+
+
+
+//        }
+//    }
+
+//    QStringList channelIDs;
+
+//    if (MatlabStructArray *function_record = findSubrecord<MatlabStructArray *>("function_record", this)) {
+//        int typeIndex = function_record->fieldNames.indexOf("type");
+
+
+//    }
+
+
 }
 
 void MatlabObjectArray::readData(QDataStream *f)
@@ -678,18 +832,25 @@ void MatFile::updateDateTimeGUID()
 
 Descriptor::DataType MatFile::type() const
 {
+    if (channels.isEmpty()) return Descriptor::Unknown;
+    return channels.first()->type();
 }
 
 QString MatFile::typeDisplay() const
 {
+    return QString();
 }
 
 DescriptionList MatFile::dataDescriptor() const
 {
+    return DescriptionList()<<DescriptionEntry("Заголовок 1", xml.titles.at(0))
+                           << DescriptionEntry("Заголовок 2", xml.titles.at(1))
+                           << DescriptionEntry("Заголовок 3", xml.titles.at(2));
 }
 
 void MatFile::setDataDescriptor(const DescriptionList &data)
 {
+    Q_UNUSED(data);
 }
 
 QString MatFile::dataDescriptorAsString() const
@@ -698,6 +859,13 @@ QString MatFile::dataDescriptorAsString() const
 
 QDateTime MatFile::dateTime() const
 {
+    QDate d = QDate::fromString(xml.date, "dd.MM.yy");
+    if (d.year()<1950) {
+        d=d.addYears(100);
+    }
+    QTime t = QTime::fromString(xml.time, "hh:mm:ss");
+
+    return QDateTime(d,t);
 }
 
 void MatFile::deleteChannels(const QVector<int> &channelsToDelete)
@@ -726,6 +894,7 @@ QString MatFile::saveTimeSegment(double from, double to)
 
 int MatFile::channelsCount() const
 {
+    return channels.size();
 }
 
 void MatFile::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
@@ -734,52 +903,233 @@ void MatFile::move(bool up, const QVector<int> &indexes, const QVector<int> &new
 
 QVariant MatFile::channelHeader(int column) const
 {
+    Q_UNUSED(column);
+    return QVariant();
 }
 
 int MatFile::columnsCount() const
 {
+    return 1;
 }
 
 Channel *MatFile::channel(int index) const
 {
+    if (index < 0 || index >= channels.size()) return 0;
+    return channels[index];
 }
 
 QString MatFile::legend() const
 {
+    return QString();
 }
 
 bool MatFile::setLegend(const QString &legend)
 {
+    Q_UNUSED(legend);
+    return true;
 }
 
 double MatFile::xStep() const
 {
+    if (channels.isEmpty()) return 0.0;
+    return channels.first()->xStep();
 }
 
 void MatFile::setXStep(const double xStep)
 {
+    Q_UNUSED(xStep);
 }
 
 double MatFile::xBegin() const
 {
+    if (channels.isEmpty()) return 0.0;
+    return channels.first()->data()->xMin();
 }
 
 int MatFile::samplesCount() const
 {
+    if (channels.isEmpty()) return 0;
+    return channels.first()->samplesCount();
 }
 
 void MatFile::setSamplesCount(int count)
 {
+    Q_UNUSED(count);
 }
 
 QString MatFile::xName() const
 {
+    if (channels.isEmpty()) return "";
+    return channels.first()->xName();
 }
 
 bool MatFile::setDateTime(QDateTime dt)
 {
+    Q_UNUSED(dt);
 }
 
 bool MatFile::dataTypeEquals(FileDescriptor *other) const
 {
+    return false;
+}
+
+
+
+MatlabChannel::MatlabChannel(MatFile *parent) : Channel(), parent(parent)
+{
+
+}
+
+
+QVariant MatlabChannel::info(int column, bool edit) const
+{
+    return QVariant();
+}
+
+int MatlabChannel::columnsCount() const
+{
+    return 5;
+}
+
+QVariant MatlabChannel::channelHeader(int column) const
+{
+    return QVariant();
+}
+
+Descriptor::DataType MatlabChannel::type() const
+{
+    if (_type == "Signal") return Descriptor::TimeResponse;
+    if (_type == "FRF") return Descriptor::FrequencyResponseFunction;
+    //TODO: добавить типов функций
+
+    return Descriptor::Unknown;
+}
+
+int MatlabChannel::octaveType() const
+{
+    return 0;
+}
+
+void MatlabChannel::populate()
+{
+    _data->clear();
+
+    setPopulated(false);
+
+    QByteArray rawFromMatfile = real_values->getRaw();
+    int idx = rawFromMatfile.size() / groupSize;
+    QByteArray raw = rawFromMatfile.mid(idx * indexInGroup, idx);
+
+    QDataStream stream(&raw, QIODevice::ReadOnly);
+    stream.setByteOrder(QDataStream::LittleEndian);
+    //stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+    QVector<double> data = readNumeric<double>(&stream, real_values->actualDataSize / groupSize,
+                                              real_values->header->type);
+
+
+    double thr = threshold(yName());
+    if (this->type()==Descriptor::FrequencyResponseFunction) thr=1.0;
+    _data->setThreshold(thr);
+
+    int units = DataHolder::UnitsLinear;
+    if (_type == "Spectre" || _type == "CrossSpectre") units = DataHolder::UnitsQuadratic;
+    _data->setYValuesUnits(units);
+
+    if (!complex) {
+        _data->setYValues(data, _data->yValuesFormat());
+    }
+    else {
+        QVector<cx_double> valuesComplex = QVector<cx_double>(samplesCount(), cx_double());
+
+        QByteArray imgFromMatfile = imag_values->getRaw();
+        int idx = imgFromMatfile.size() / groupSize;
+        QByteArray img = imgFromMatfile.mid(idx * indexInGroup, idx);
+
+        QDataStream stream(&img, QIODevice::ReadOnly);
+        stream.setByteOrder(QDataStream::LittleEndian);
+        //stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+        QVector<double> imgData = readNumeric<double>(&stream, imag_values->actualDataSize / groupSize,
+                                                  imag_values->header->type);
+        for(int i=0; i<data.size(); ++i) {
+            valuesComplex[i] = cx_double(data[i], imgData[i]);
+        }
+        _data->setYValues(valuesComplex);
+    }
+
+    setPopulated(true);
+}
+
+QString MatlabChannel::name() const
+{
+    QStringList l;
+    l<<xml.generalName<<xml.pointId<<xml.direction;
+    return l.join("-");
+}
+
+void MatlabChannel::setName(const QString &name)
+{
+}
+
+QString MatlabChannel::description() const
+{
+    QString ChanAddress = QString("SCADAS\\")+xml.catLabel;
+    QStringList info = xml.info;
+    info.append(ChanAddress);
+    return info.join(" \\");
+}
+
+void MatlabChannel::setDescription(const QString &description)
+{
+}
+
+QString MatlabChannel::xName() const
+{
+    return _xName;
+}
+
+QString MatlabChannel::yName() const
+{
+    return xml.units;
+}
+
+QString MatlabChannel::zName() const
+{
+    return QString();
+}
+
+void MatlabChannel::setYName(const QString &yName)
+{
+}
+
+QString MatlabChannel::legendName() const
+{
+    return QString();
+}
+
+FileDescriptor *MatlabChannel::descriptor()
+{
+    return parent;
+}
+
+int MatlabChannel::index() const
+{
+    return parent->channels.indexOf(const_cast<MatlabChannel*>(this), 0);
+}
+
+QString MatlabChannel::correction() const
+{
+    return QString();
+}
+
+void MatlabChannel::setCorrection(const QString &s)
+{
+}
+
+template<typename T>
+T findSubrecord(const QString &name, MatlabStructArray *rec)
+{
+    T result = T(0);
+    int index = rec->fieldNames.indexOf(name);
+    if (index >=0) result = dynamic_cast<T>(rec->subRecords[index]);
+    return result;
 }

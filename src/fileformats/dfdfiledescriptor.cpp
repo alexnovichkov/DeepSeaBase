@@ -241,7 +241,12 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
     for (int i: indexes)
         source->ProcChansList << i;
 
+    DescriptionList dd = other.dataDescriptor();
     dataDescription = 0;
+    if (!dd.isEmpty()) {
+        dataDescription = new DataDescription(this);
+        dataDescription->data = dd;
+    }
     process = 0;
     _legend = other.legend();
 
@@ -918,9 +923,9 @@ void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
 
     // ищем формат данных для нового канала
     // если форматы разные, то формат будет линейный (амплитуды), не логарифмированный
-    int format = firstChannel->yValuesFormat();
+    auto format = firstChannel->data()->yValuesFormat();
     for (int i=1; i<list.size(); ++i) {
-        if (list.at(i)->yValuesFormat() != format) {
+        if (list.at(i)->data()->yValuesFormat() != format) {
             format = DataHolder::YValuesAmplitudes;
             break;
         }
@@ -937,7 +942,7 @@ void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     Averaging averaging(Averaging::Linear, list.size());
 
     foreach (Channel *ch, list) {
-        if (ch->yValuesFormat() == DataHolder::YValuesComplex)
+        if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
             averaging.average(ch->data()->yValuesComplex());
         else
             averaging.average(ch->data()->linears());
@@ -1006,7 +1011,7 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
         ch->data()->setThreshold(firstChannel->data()->threshold());
         ch->data()->setYValuesUnits(firstChannel->data()->yValuesUnits());
 
-        int format = firstChannel->data()->yValuesFormat();
+        auto format = firstChannel->data()->yValuesFormat();
         if (format == DataHolder::YValuesComplex) {
             ch->data()->setYValues(movingAverage(firstChannel->data()->yValuesComplex(), windowSize));
         }
@@ -1014,7 +1019,7 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
             QVector<double> values = movingAverage(firstChannel->data()->linears(), windowSize);
             if (format == DataHolder::YValuesAmplitudesInDB)
                 format = DataHolder::YValuesAmplitudes;
-            ch->data()->setYValues(values, DataHolder::YValuesFormat(format));
+            ch->data()->setYValues(values, format);
         }
 
         if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform)
@@ -1680,7 +1685,7 @@ void DfdChannel::read(DfdSettings &dfd, int numChans)
         _data->setXValues(0.0, XStep, NumInd);
     }
 
-    int yValueFormat = dataFormat();
+    auto yValueFormat = dataFormat();
 
     if (YName.toLower()=="db" || YName.toLower()=="дб")
         yValueFormat = DataHolder::YValuesAmplitudesInDB;
@@ -2090,7 +2095,7 @@ void DfdChannel::populate()
 
         YValues.resize(parent->NumInd);
         postprocess(YValues);
-        _data->setYValues(YValues, DataHolder::YValuesFormat(_data->yValuesFormat()));
+        _data->setYValues(YValues, _data->yValuesFormat());
         setPopulated(true);
         rawFile.close();
 
@@ -2143,7 +2148,7 @@ FileDescriptor *DfdChannel::descriptor()
     return parent;
 }
 
-int DfdChannel::dataFormat() const
+DataHolder::YValuesFormat DfdChannel::dataFormat() const
 {
     switch (parent->DataType) {
         case SourceData:		// исходные данные

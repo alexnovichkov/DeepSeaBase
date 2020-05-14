@@ -509,9 +509,9 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
 
     // ищем формат данных для нового канала
     // если форматы разные, то формат будет линейный (амплитуды), не логарифмированный
-    int format = firstChannel->yValuesFormat();
+    auto format = firstChannel->data()->yValuesFormat();
     for (int i=1; i<list.size(); ++i) {
-        if (list.at(i)->yValuesFormat() != format) {
+        if (list.at(i)->data()->yValuesFormat() != format) {
             format = DataHolder::YValuesAmplitudes;
             break;
         }
@@ -528,7 +528,7 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     Averaging averaging(Averaging::Linear, list.size());
 
     foreach (Channel *ch, list) {
-        if (ch->yValuesFormat() == DataHolder::YValuesComplex)
+        if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
             averaging.average(ch->data()->yValuesComplex());
         else
             averaging.average(ch->data()->linears());
@@ -595,7 +595,7 @@ void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
         Channel *firstChannel = firstDescriptor->channel(channels.at(i).second);
 
         int numInd = firstChannel->samplesCount();
-        int format = firstChannel->data()->yValuesFormat();
+        auto format = firstChannel->data()->yValuesFormat();
 
         ch->data()->setThreshold(firstChannel->data()->threshold());
         if (format == DataHolder::YValuesComplex) {
@@ -606,7 +606,7 @@ void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
             if (format == DataHolder::YValuesAmplitudesInDB)
                 format = DataHolder::YValuesAmplitudes;
 //                values = DataHolder::toLog(values, threshold(firstChannel->yName()));
-            ch->data()->setYValues(values, DataHolder::YValuesFormat(format));
+            ch->data()->setYValues(values, format);
         }
 
         if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
@@ -962,7 +962,7 @@ void Function::readRest()
         _data->setSamplesCount(type58[26].value.toInt());
     }
 
-    int yValueFormat = type58[25].value.toInt() >= 5 ? DataHolder::YValuesComplex : DataHolder::YValuesAmplitudes;
+    DataHolder::YValuesFormat yValueFormat = type58[25].value.toInt() >= 5 ? DataHolder::YValuesComplex : DataHolder::YValuesAmplitudes;
 
     if (yName()=="dB" || yName()=="дБ" || type58[43].value.toString()=="Уровень")
         yValueFormat = DataHolder::YValuesAmplitudesInDB;
@@ -1208,7 +1208,7 @@ void Function::populate()
             _data->setXValues(xvalues);
         }
         if (type58[25].value.toInt() < 5) {//real values
-            _data->setYValues(values, DataHolder::YValuesFormat(_data->yValuesFormat()));
+            _data->setYValues(values, _data->yValuesFormat());
         }
         else
             _data->setYValues(valuesComplex);
