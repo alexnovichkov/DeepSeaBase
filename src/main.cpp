@@ -8,12 +8,20 @@
 
 #include "fileformats/tdmsfile.h"
 #include "fileformats/dfdfiledescriptor.h"
+#include "fileformats/matfile.h"
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-//    MatFile f("K:\\Shared\\Rec_001_single.prec_not.group_MKS_bigger.mat");
+//    MatFile f("K:\\Shared\\R4G3-time-double-grouped.mat");
+//    f.read();
+
+//    QFile ff("K:\\Shared\\R4G3-time-double-grouped.json");
+//    ff.open(QFile::WriteOnly);
+//    ff.write(f.toJson());
+
+//    return 0;
 
     //MatFile f("K:\\Shared\\Rec_001_single.prec_group_MKS_not.bigger.mat");
 //    MatFile f("K:\\Shared\\Record_8_580_1200s.mat");
@@ -30,7 +38,6 @@ int main(int argc, char *argv[])
 ////    f.write(s.toUtf8());
 //    f.close();
 //    return 0;
-
 
 
 //    QFile wav("R4G3.wav");

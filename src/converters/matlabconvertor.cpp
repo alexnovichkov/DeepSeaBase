@@ -3,6 +3,7 @@
 
 #include "algorithms.h"
 #include "fileformats/formatfactory.h"
+#include "logging.h"
 
 //QString lms2dsunit(const QString &unit)
 //{
@@ -31,7 +32,7 @@ MatlabConvertor::MatlabConvertor(QObject *parent) : QObject(parent)
 }
 
 bool MatlabConvertor::convert()
-{
+{DD;
     if (QThread::currentThread()->isInterruptionRequested()) return false;
     bool noErrors = true;
 
@@ -45,7 +46,7 @@ bool MatlabConvertor::convert()
     foreach(const QString &fi, filesToConvert) {
         if (QThread::currentThread()->isInterruptionRequested()) return false;
 
-        emit message("Конвертируем файл " + fi);
+        emit message("<font color=green>Конвертируем файл " + fi+"</font");
         QString xdfFileName = changeFileExt(fi, "xdf");
 
         Dataset set;
@@ -59,7 +60,7 @@ bool MatlabConvertor::convert()
         }
         else {
             set = xml.at(datasets.value(fi));
-            emit message("Файл "+QFileInfo(fileToSearch).fileName()+" в Analysis.xml записан как запись "+set.id);
+            emit message("-- Файл "+QFileInfo(fileToSearch).fileName()+" в Analysis.xml записан как запись "+set.id);
         }
 
         //reading mat file structure
@@ -77,6 +78,7 @@ bool MatlabConvertor::convert()
         if (!destinationFile) noErrors = false;
         newFiles << destinationFileName;
         delete destinationFile;
+        emit converted(fi);
 
         emit message("Готово.");
         emit tick();

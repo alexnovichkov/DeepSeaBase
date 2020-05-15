@@ -161,7 +161,8 @@ HEADERS  += mainwindow.h \
     plot/picker.h \
     plot/pointmarker.h \
     plot/plottracker.h \
-    wavexporter.h
+    wavexporter.h \
+    longoperation.h
 
 
 SOURCES +=\

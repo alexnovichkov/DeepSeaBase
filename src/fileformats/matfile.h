@@ -49,6 +49,11 @@ public:
     void setXml(Dataset xml) {this->xml = xml;}
     void read();
 
+    static QStringList fileFilters();
+    static QStringList suffixes();
+
+    QByteArray toJson() const;
+
     QList<MatlabRecord *> records;
     QList<MatlabChannel*> channels;
 private:
@@ -222,9 +227,11 @@ public:
     virtual QString getString() const {return QString();}
     virtual QVector<double> getNumericAsDouble() const {return QVector<double>();}
     virtual QVector<qint64> getNumericAsInt() const {return QVector<qint64>();}
-    virtual QByteArray getRaw() const;
+    virtual QByteArray getRaw(qint64 position, qint64 length) const;
 
     virtual int getChannelsCount() const {return 0;}
+
+    virtual QJsonValue toJson() const;
 
     int actualDataType; // будет отличаться, если числовые данные записаны со сжатием.
     quint64 actualDataSize; // количество единиц данных
@@ -239,6 +246,7 @@ public:
     virtual void readData(QDataStream *f) override;
     virtual QVector<double> getNumericAsDouble() const override;
     virtual QVector<qint64> getNumericAsInt() const override;
+    virtual QJsonValue toJson() const override;
 
     template <typename T>
     QVector<T> getNumeric() const;
@@ -256,6 +264,7 @@ public:
     virtual void readData(QDataStream *f) override;
     QString data;
     virtual QString getString() const {return data;}
+    virtual QJsonValue toJson() const override;
 };
 
 class MatlabUtf16Record : public MatlabRecord
@@ -264,6 +273,7 @@ public:
     MatlabUtf16Record(MatlabHeader *header) : MatlabRecord(header) {}
     virtual void readData(QDataStream *f) override;
     QString data;
+    virtual QJsonValue toJson() const override;
     virtual QString getString() const {return data;}
 };
 
@@ -290,6 +300,8 @@ public:
     MatlabArrayRecord(MatlabHeader *header) : MatlabRecord(header) {}
     virtual ~MatlabArrayRecord();
 
+    virtual QJsonValue toJson() const override;
+
     int arrayClass = 0;
     bool complex = false;
     bool global = false;
@@ -309,12 +321,14 @@ class MatlabCellArray : public MatlabArrayRecord
 public:
     MatlabCellArray(MatlabHeader *header) : MatlabArrayRecord(header) {}
     virtual void readData(QDataStream *f) override;
+    QJsonValue toJson() const override;
 };
 class MatlabStructArray : public MatlabArrayRecord
 {
 public:
     MatlabStructArray(MatlabHeader *header) : MatlabArrayRecord(header) {}
     virtual void readData(QDataStream *f) override;
+    QJsonValue toJson() const override;
 
     QStringList fieldNames;
 };
@@ -323,6 +337,7 @@ class MatlabObjectArray : public MatlabArrayRecord
 public:
     MatlabObjectArray(MatlabHeader *header) : MatlabArrayRecord(header) {}
     virtual void readData(QDataStream *f) override;
+    QJsonValue toJson() const override;
     QString className;
     QStringList fieldNames;
 };
@@ -331,6 +346,7 @@ class MatlabCharacterArray : public MatlabArrayRecord
 public:
     MatlabCharacterArray(MatlabHeader *header) : MatlabArrayRecord(header) {}
     virtual void readData(QDataStream *f) override;
+    QJsonValue toJson() const override;
 
     QStringList values;
 
@@ -343,6 +359,7 @@ class MatlabSparseArray : public MatlabArrayRecord
 public:
     MatlabSparseArray(MatlabHeader *header) : MatlabArrayRecord(header) {}
     virtual void readData(QDataStream *f) override;
+    QJsonValue toJson() const override;
 };
 
 class MatlabNumericArray : public MatlabArrayRecord
@@ -350,7 +367,7 @@ class MatlabNumericArray : public MatlabArrayRecord
 public:
     MatlabNumericArray(MatlabHeader *header) : MatlabArrayRecord(header) {}
     virtual ~MatlabNumericArray() {delete realValues; delete imagValues;}
-
+    QJsonValue toJson() const override;
     virtual void readData(QDataStream *f) override;
 
 

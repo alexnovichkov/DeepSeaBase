@@ -699,7 +699,7 @@ void DataHolder::recalculateYValues()
 
     if (m_count > 0 && m_yValuesTemporal.isEmpty())
         m_yValuesTemporal = QVector<double>(m_count, 0.0);
-    m_yValuesTemporal.squeeze();
+//    m_yValuesTemporal.squeeze();
 }
 
 double correctedByType(double val, int type, double correction)

@@ -34,12 +34,13 @@ signals:
     void tick();
     void finished();
     void message(const QString &s);
+    void converted(const QString &file);
 private:
     QMap<QString, int> datasets;
     QString folderName;
     QStringList newFiles;
     QStringList filesToConvert;
-    int rawFileFormat;
+    int rawFileFormat = 0;
     QString destinationFormat;
 };
 

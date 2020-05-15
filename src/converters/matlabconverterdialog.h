@@ -54,6 +54,7 @@ private slots:
     void finalize();
     void chooseMatFiles();
     void updateFormat();
+    void converted(const QString &file);
 //    void editItem(QTreeWidgetItem*item, int column);
 private:
     QString findXmlFile(bool silent) const; // silent means it won't ask for a file via dialog
@@ -71,7 +72,7 @@ private:
     QThread *thread;
     QCheckBox *openFolderButton;
     QCheckBox *addFilesButton;
-    QComboBox *rawFileFormat;
+//    QComboBox *rawFileFormat;
     bool m_addFiles;
 public:
     MatlabConvertor *convertor;

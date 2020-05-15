@@ -5,6 +5,7 @@
 #include "dfdfiledescriptor.h"
 #include "ufffile.h"
 #include "data94file.h"
+#include "matfile.h"
 
 namespace FormatFactory {
 
@@ -20,6 +21,7 @@ inline QStringList allSuffixes(bool strip = false)
     result << suffixes<DfdFileDescriptor>();
     result << suffixes<UffFileDescriptor>();
     result << suffixes<Data94File>();
+    //result << suffixes<MatFile>();
 
     if (strip) result.replaceInStrings("*.","");
     return result;
@@ -37,6 +39,7 @@ inline QStringList allFilters()
     result << filters<DfdFileDescriptor>();
     result << filters<UffFileDescriptor>();
     result << filters<Data94File>();
+    //result << filters<MatFile>();
     return result;
 }
 
@@ -46,6 +49,7 @@ inline FileDescriptor *createDescriptor(const QString &fileName)
     if (suffix=="dfd") return new DfdFileDescriptor(fileName);
     if (suffix=="uff") return new UffFileDescriptor(fileName);
     if (suffix=="d94") return new Data94File(fileName);
+   // if (suffix=="mat") return new MatFile(fileName);
     return 0;
 }
 

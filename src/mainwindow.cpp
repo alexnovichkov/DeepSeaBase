@@ -31,6 +31,7 @@
 #include "channeltablemodel.h"
 #include "converters/tdmsconverterdialog.h"
 #include "htmldelegate.h"
+#include "longoperation.h"
 
 #include "fileformats/formatfactory.h"
 
@@ -2713,6 +2714,7 @@ void MainWindow::addDescriptors(const QList<FileDescriptor*> &files)
 void MainWindow::addFiles(QStringList &files)
 {DD;
     if (!tab) return;
+    LongOperation op;
 
     QList<FileDescriptor *> items;
 

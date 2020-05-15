@@ -332,6 +332,7 @@ public:
     virtual bool canTakeChannelsFrom(FileDescriptor *other) const override;
 
     static QStringList fileFilters();
+    static QStringList suffixes();
 
     virtual QString xName() const {return XName;}
 
@@ -344,7 +345,7 @@ public:
     QString dataDescriptorAsString() const;
     static QString createGUID();
 
-    static QStringList suffixes();
+
 
     DfdChannel *newChannel(int index);
 

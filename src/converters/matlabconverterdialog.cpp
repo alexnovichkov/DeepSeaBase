@@ -9,7 +9,7 @@
 
 
 MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
-{
+{DD;
     setWindowTitle("Конвертер matlab файлов");
     thread = 0;
     m_addFiles = false;
@@ -23,6 +23,8 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
     buttonBox->buttons().first()->setDisabled(true);
 
     convertor = new MatlabConvertor();
+
+
 
     edit = new QLineEdit(this);
     edit->setReadOnly(true);
@@ -77,9 +79,9 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
 
     addFilesButton = new QCheckBox("Добавить новые файлы в текущую вкладку", this);
 
-    rawFileFormat = new QComboBox(this);
-    rawFileFormat->addItem("действительные числа в формате single");
-    rawFileFormat->addItem("целые 16-битные числа");
+//    rawFileFormat = new QComboBox(this);
+//    rawFileFormat->addItem("действительные числа в формате single");
+//    rawFileFormat->addItem("целые 16-битные числа");
 
     QSplitter *splitter = new QSplitter(Qt::Vertical, this);
     QWidget *first = new QWidget(this);
@@ -101,8 +103,8 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
     grid1->addWidget(textEdit,0,0,1,4);
     grid1->addWidget(new QLabel("Сохранять файлы как", this), 1,0,1,1);
     grid1->addWidget(formatBox, 1,1,1,1);
-    grid1->addWidget(new QLabel("Записывать данные в файл RAW как", this), 1,2,1,1);
-    grid1->addWidget(rawFileFormat, 1,3,1,1);
+//    grid1->addWidget(new QLabel("Записывать данные в файл RAW как", this), 1,2,1,1);
+//    grid1->addWidget(rawFileFormat, 1,3,1,1);
     grid1->addWidget(openFolderButton, 2,0,1,4);
     grid1->addWidget(addFilesButton, 3,0,1,4);
     grid1->addWidget(buttonBox,4,0,1,4);
@@ -115,11 +117,14 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
     l->setMargin(0);
     setLayout(l);
 
-    resize(700,500);
+    QSize wsize = MainWindow::getSetting("matlabConverterDialogSize", QVariant::fromValue(QSize(700,500))).toSize();
+    resize(wsize);
 }
 
 MatlabConverterDialog::~MatlabConverterDialog()
-{
+{DD;
+    QSize wsize = this->size();
+    MainWindow::setSetting("matlabConverterDialogSize", wsize);
     if (convertor) {
         convertor->deleteLater();
     }
@@ -131,7 +136,7 @@ MatlabConverterDialog::~MatlabConverterDialog()
 }
 
 void MatlabConverterDialog::chooseMatFiles()
-{
+{DD;
     folder = MainWindow::getSetting("matlabFolder").toString();
     folder = QFileDialog::getExistingDirectory(this, "Выберите папку с файлами *.mat", folder);
 
@@ -206,7 +211,7 @@ void MatlabConverterDialog::chooseMatFiles()
 }
 
 void MatlabConverterDialog::updateFormat()
-{
+{DD;
     QString formatString = formatBox->currentText();
     QString suffix = formatString.right(4);
     suffix.chop(1);
@@ -221,19 +226,29 @@ void MatlabConverterDialog::updateFormat()
             item->setIcon(2,QIcon());
         }
     }
-    rawFileFormat->setEnabled(suffix.toLower() == "dfd");
+//    rawFileFormat->setEnabled(suffix.toLower() == "dfd");
 
     convertor->setDestinationFormat(suffix.toLower());
 }
 
-void MatlabConverterDialog::accept()
+void MatlabConverterDialog::converted(const QString &file)
 {
+    if (file.isEmpty()) return;
+    for (int i=0; i<tree->topLevelItemCount(); ++i) {
+        if (tree->topLevelItem(i)->checkState(1) == Qt::Checked &&
+            tree->topLevelItem(i)->text(1) == file)
+            tree->topLevelItem(i)->setCheckState(1, Qt::Unchecked);
+    }
+}
+
+void MatlabConverterDialog::accept()
+{DD;
     convertedFiles = convertor->getNewFiles();
     QDialog::accept();
 }
 
 void MatlabConverterDialog::reject()
-{
+{DD;
     stop();
     QDialog::reject();
 }
@@ -244,7 +259,7 @@ void MatlabConverterDialog::updateProgressIndicator()
 }
 
 QString MatlabConverterDialog::findXmlFile(bool silent) const
-{
+{DD;
     if (tree->topLevelItemCount()==0) return QString();
 
     //определяем файл Analysis.xml по первому файлу mat, так как они всё равно в одной папке
@@ -272,7 +287,7 @@ QString MatlabConverterDialog::findXmlFile(bool silent) const
 }
 
 void MatlabConverterDialog::start()
-{
+{DD;
     buttonBox->buttons().first()->setDisabled(true);
 
     QStringList toConvert;
@@ -288,29 +303,32 @@ void MatlabConverterDialog::start()
 
     progress->setRange(0, toConvert.size());
     progress->setValue(0);
-    convertor->setRawFileFormat(rawFileFormat->currentIndex());
+//    convertor->setRawFileFormat(rawFileFormat->currentIndex());
 
-
-    if (!thread) thread = new QThread;
+    if (!thread) {
+        thread = new QThread;
+    }
     convertor->moveToThread(thread);
-    connect(thread, SIGNAL(started()), convertor, SLOT(convert()));
-    connect(convertor, SIGNAL(finished()), thread, SLOT(quit()));
-    connect(convertor, SIGNAL(finished()), this, SLOT(finalize()));
-    connect(convertor, SIGNAL(tick()), SLOT(updateProgressIndicator()));
-    connect(convertor, SIGNAL(message(QString)), textEdit, SLOT(appendHtml(QString)));
+    connect(thread, SIGNAL(started()), convertor, SLOT(convert()), Qt::UniqueConnection);
+    connect(convertor, SIGNAL(finished()), thread, SLOT(quit()), Qt::UniqueConnection);
+    connect(convertor, SIGNAL(finished()), this, SLOT(finalize()), Qt::UniqueConnection);
+    connect(convertor, SIGNAL(tick()), SLOT(updateProgressIndicator()), Qt::UniqueConnection);
+    connect(convertor, SIGNAL(message(QString)), textEdit, SLOT(appendHtml(QString)), Qt::UniqueConnection);
+    connect(convertor, SIGNAL(converted(QString)), SLOT(converted(QString)), Qt::UniqueConnection);
 
     thread->start();
 }
 
 void MatlabConverterDialog::stop()
-{
+{DD;
     if (thread)
         thread->requestInterruption();
     QDialog::accept();
 }
 
 void MatlabConverterDialog::finalize()
-{
+{DD;
+    buttonBox->buttons().first()->setDisabled(false);
     if (openFolderButton->isChecked()) {
         QDir dir(folder);
         QProcess::startDetached("explorer.exe", QStringList(dir.toNativeSeparators(dir.absolutePath())));
