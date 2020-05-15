@@ -6,7 +6,7 @@
 #include <QtDebug>
 #include <QMap>
 
-#include "matfile.h"
+#include "fileformats/matfile.h"
 
 
 

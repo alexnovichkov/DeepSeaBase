@@ -27,7 +27,6 @@ qtHaveModule(winextras) {
 
 SOURCES += main.cpp\
     mainwindow.cpp \
-    fileformats/dfdfiledescriptor.cpp \
     sortabletreewidgetitem.cpp \
     checkableheaderview.cpp \
     methods/spectremethod.cpp \
@@ -39,24 +38,17 @@ SOURCES += main.cpp\
     correctiondialog.cpp \
     methods/xresponch1.cpp \
     logging.cpp \
-    fileformats/filedescriptor.cpp \
-    fileformats/ufffile.cpp \
     editdescriptionsdialog.cpp \
     iirfilter.cpp \
     methods/windowing.cpp \
-    converter.cpp \
-    matlabconverterdialog.cpp \
-    esoconverterdialog.cpp \
     trackingpanel.cpp \
     methods/octavemethod.cpp \
     algorithms.cpp \
-    fileformats/dfdsettings.cpp \
     methods/octavefilterbank.cpp \
     axisboundsdialog.cpp \
     calculatespectredialog.cpp \
     averaging.cpp \
     timeslicer.cpp \
-    fileformats/fields.cpp \
     methods/abstractmethod.cpp \
     dataholder.cpp \
     fft.cpp \
@@ -81,13 +73,9 @@ SOURCES += main.cpp\
     unitsconverter.cpp \
     dataiodevice.cpp \
     playpanel.cpp \
-    fileformats/matfile.cpp \
     channeltablemodel.cpp \
     headerview.cpp \
     methods/timealgorithm.cpp \
-    fileformats/data94file.cpp \
-    fileformats/tdmsfile.cpp \
-    tdmsconverterdialog.cpp \
     htmldelegate.cpp \
     plot/curve.cpp \
     plot/linecurve.cpp \
@@ -104,12 +92,9 @@ SOURCES += main.cpp\
     plot/picker.cpp \
     plot/pointmarker.cpp \
     plot/plottracker.cpp \
-    wavexporter.cpp \
-    converterdialog.cpp \
-    fileformats/matlabconvertor.cpp
+    wavexporter.cpp
 
 HEADERS  += mainwindow.h \
-    fileformats/dfdfiledescriptor.h \
     sortabletreewidgetitem.h \
     checkableheaderview.h \
     methods/abstractmethod.h \
@@ -122,20 +107,12 @@ HEADERS  += mainwindow.h \
     correctiondialog.h \
     methods/xresponch1.h \
     logging.h \
-    fileformats/filedescriptor.h \
-    fileformats/ufffile.h \
-    fileformats/fields.h \
     editdescriptionsdialog.h \
     iirfilter.h \
     methods/windowing.h \
-    converter.h \
-    matlabconverterdialog.h \
-    esoconverterdialog.h \
     trackingpanel.h \
-    fileformats/uffheaders.h \
     methods/octavemethod.h \
     algorithms.h \
-    fileformats/dfdsettings.h \
     methods/octavefilterbank.h \
     axisboundsdialog.h \
     calculatespectredialog.h \
@@ -165,13 +142,9 @@ HEADERS  += mainwindow.h \
     unitsconverter.h \
     dataiodevice.h \
     playpanel.h \
-    fileformats/matfile.h \
     channeltablemodel.h \
     headerview.h \
     methods/timealgorithm.h \
-    fileformats/data94file.h \
-    fileformats/tdmsfile.h \
-    tdmsconverterdialog.h \
     htmldelegate.h \
     plot/plot.h \
     plot/legend.h \
@@ -188,10 +161,46 @@ HEADERS  += mainwindow.h \
     plot/picker.h \
     plot/pointmarker.h \
     plot/plottracker.h \
-    wavexporter.h \
+    wavexporter.h
+
+
+SOURCES +=\
+    fileformats/dfdfiledescriptor.cpp \
+    fileformats/filedescriptor.cpp \
+    fileformats/ufffile.cpp \
+    fileformats/dfdsettings.cpp \
+    fileformats/fields.cpp \
+    fileformats/data94file.cpp \
+    fileformats/tdmsfile.cpp \
+    fileformats/matfile.cpp
+
+HEADERS +=\
     fileformats/formatfactory.h \
-    converterdialog.h \
-    fileformats/matlabconvertor.h
+    fileformats/data94file.h \
+    fileformats/tdmsfile.h \
+    fileformats/matfile.h \
+    fileformats/filedescriptor.h \
+    fileformats/ufffile.h \
+    fileformats/fields.h \
+    fileformats/dfdfiledescriptor.h \
+    fileformats/uffheaders.h \
+    fileformats/dfdsettings.h
+
+SOURCES +=\
+    converters/matlabconvertor.cpp \
+    converters/converter.cpp \
+    converters/matlabconverterdialog.cpp \
+    converters/esoconverterdialog.cpp \
+    converters/tdmsconverterdialog.cpp \
+    converters/converterdialog.cpp
+
+HEADERS +=\
+    converters/matlabconvertor.h \
+    converters/converterdialog.h \
+    converters/converter.h \
+    converters/matlabconverterdialog.h \
+    converters/esoconverterdialog.h \
+    converters/tdmsconverterdialog.h
 
 SOURCES +=\
   ../3rdParty/DspFilters/State.cpp \

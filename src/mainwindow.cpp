@@ -22,14 +22,14 @@
 #include "logging.h"
 
 #include "editdescriptionsdialog.h"
-#include "fileformats/matlabconvertor.h"
-#include "matlabconverterdialog.h"
-#include "esoconverterdialog.h"
-#include "converterdialog.h"
+#include "converters/matlabconvertor.h"
+#include "converters/matlabconverterdialog.h"
+#include "converters/esoconverterdialog.h"
+#include "converters/converterdialog.h"
 #include "timeslicer.h"
 #include <QTime>
 #include "channeltablemodel.h"
-#include "tdmsconverterdialog.h"
+#include "converters/tdmsconverterdialog.h"
 #include "htmldelegate.h"
 
 #include "fileformats/formatfactory.h"

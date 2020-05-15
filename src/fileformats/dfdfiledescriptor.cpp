@@ -1,7 +1,6 @@
 #include "dfdfiledescriptor.h"
 #include <QtCore>
 
-#include "converters.h"
 #include <QtWidgets>
 #include <QUuid>
 

@@ -1,9 +1,8 @@
 #include "matlabconvertor.h"
 #include <QtWidgets>
 
-#include "converters.h"
 #include "algorithms.h"
-#include "formatfactory.h"
+#include "fileformats/formatfactory.h"
 
 //QString lms2dsunit(const QString &unit)
 //{

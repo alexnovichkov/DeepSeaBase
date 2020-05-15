@@ -1,6 +1,6 @@
 #include "matlabconverterdialog.h"
 #include <QtWidgets>
-#include "fileformats/matlabconvertor.h"
+#include "converters/matlabconvertor.h"
 #include "mainwindow.h"
 #include "checkableheaderview.h"
 #include "logging.h"

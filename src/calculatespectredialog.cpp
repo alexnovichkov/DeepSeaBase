@@ -3,7 +3,6 @@
 #include <QtWidgets>
 #include <QThread>
 
-#include "converters.h"
 #include "fileformats/dfdfiledescriptor.h"
 #include "methods/spectremethod.h"
 #include "methods/timemethod.h"
@@ -11,7 +10,7 @@
 #include "methods/octavemethod.h"
 #include "logging.h"
 
-#include "converter.h"
+#include "converters/converter.h"
 #include "taskbarprogress.h"
 
 CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> &dataBase, QWidget *parent) :

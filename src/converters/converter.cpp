@@ -4,7 +4,6 @@
 #include "logging.h"
 #include "fileformats/dfdfiledescriptor.h"
 #include "fileformats/ufffile.h"
-#include "converters.h"
 #include "methods/windowing.h"
 #include "averaging.h"
 #include "resampler.h"

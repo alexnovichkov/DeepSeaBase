@@ -4,7 +4,7 @@
 #include <QtDebug>
 #include <QtCore>
 
-#include "fileformats/matlabconvertor.h"
+#include "converters/matlabconvertor.h"
 
 #include "fileformats/tdmsfile.h"
 #include "fileformats/dfdfiledescriptor.h"
