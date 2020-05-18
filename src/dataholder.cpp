@@ -69,7 +69,7 @@ void DataHolder::clear()
 {DD;
     m_yValues.clear();         m_yValues.squeeze();
     m_yValuesComplex.clear();  m_yValuesComplex.squeeze();
-    m_xValues.clear();         m_xValues.squeeze();
+    //m_xValues.clear();         m_xValues.squeeze();
     m_yValuesTemporal.clear(); m_yValuesTemporal.squeeze();
 
     //some statistics

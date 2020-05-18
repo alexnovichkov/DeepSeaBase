@@ -70,7 +70,7 @@
  *               "logref": 0.000314,
  *               "logscale": "linear" / "quadratic" / "dimensionless",
  *               "format": "real", "imaginary", "complex", "amplitude", "phase", "amplitudeDb"
- *               "octaveFormat" : 0 (default) / 1 / 3,
+ *               "octaveFormat" : 0 (default) / 1 / 3 / 2 / 6 / 12 / 24,
  *               //далее идут все параметры обработки
  *           }
  *       },

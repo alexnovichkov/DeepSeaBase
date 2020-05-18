@@ -56,14 +56,15 @@ QString dataTypeDescription(int type)
         case 154: return QString("ДН ПФ"); break;
         case 155: return QString("Спектр огиб."); break;
         case 156: return QString("Окт.спектр"); break;
-        case 157: return QString("Тр.окт.спектр"); break;
+        case 157: return QString("1/3-окт.спектр"); break;
+        case 158: return QString("1/2-окт.спектр"); break;
+        case 159: return QString("1/6-окт.спектр"); break;
+        case 160: return QString("1/12-окт.спектр"); break;
+        case 161: return QString("1/24-окт.спектр"); break;
         default: return QString("Неопр.");
     }
     return QString("Неопр.");
 }
-
-
-
 
 
 template <typename T>
@@ -214,10 +215,8 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
 
     DFDGUID = createGUID();
     rawFileName = fileName.left(fileName.length()-3)+"raw";
-    this->DataType = dfdDataTypeFromDataType(other.type());
 
-    // меняем тип данных временной реализации на вырезку, чтобы DeepSea не пытался прочитать файл как сырые данные
-    if (this->DataType == SourceData) this->DataType = CuttedData;
+    bool unevenX = false;
 
     this->Date = QDate::currentDate();
     this->Time = QTime::currentTime();
@@ -225,11 +224,31 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
 
     this->BlockSize = 0; // всегда меняем размер блока новых файлов на 0,
                          // чтобы они записывались без перекрытия
-    this->NumInd = other.samplesCount();
-    this->XName = other.xName();
 
-    this->XBegin = other.xBegin();
-    this->XStep = other.xStep();
+    //Поскольку other может содержать каналы с разным типом, размером и шагом,
+    //данные берем из первого канала, который будем сохранять
+    //предполагается, что все каналы из indexes имеют одинаковые параметры
+
+    Channel *firstChannel = other.channel(indexes.first());
+    Q_ASSERT_X(firstChannel, "Dfd constructor", "channel to copy is null");
+    this->DataType = dfdDataTypeFromDataType(firstChannel->type());
+    switch (firstChannel->octaveType()) {
+        case 1: DataType = OSpectr; break;
+        case 2: DataType = TwoOSpectr; break;
+        case 3: DataType = ToSpectr; break;
+        case 6: DataType = SixOSpectr; break;
+        case 12: DataType = TwlOSpectr; break;
+        case 24: DataType = TFOSpectr; break;
+        default: break;
+    }
+
+    // меняем тип данных временной реализации на вырезку, чтобы DeepSea не пытался прочитать файл как сырые данные
+    if (this->DataType == SourceData) this->DataType = CuttedData;
+    this->NumInd = firstChannel->samplesCount();
+    this->XName = firstChannel->xName();
+
+    this->XBegin = firstChannel->data()->xMin();
+    this->XStep = firstChannel->xStep();
     this->DescriptionFormat = "";
 
     source = new Source();
@@ -255,12 +274,30 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
         this->channels << new DfdChannel(*c, this);
     }
 
+    unevenX = !channels.isEmpty() && channels.first()->data()->xValuesFormat()==DataHolder::XValuesNonUniform;
+
+    if (unevenX) {
+        //добавляем нулевой канал с осью Х
+        DfdChannel *ch = new DfdChannel(this, 0);
+        ch->ChanAddress.clear(); //
+        ch->ChanName = "ось X"; //
+        ch->YName="Гц";
+        ch->YNameOld.clear();
+        ch->InputType.clear();
+        ch->ChanDscr.clear();
+        ch->ChanBlockSize = channels.first()->samplesCount();
+        ch->IndType = 3221225476;
+        ch->data()->setThreshold(1.0);
+        ch->data()->setXValues(channels.first()->xValues());
+
+        channels.prepend(ch);
+    }
+
+    //сохраняем файл без данных
     //перенумеровываем
     for (int i=0; i<channels.count(); ++i) {
         channels[i]->channelIndex = i;
     }
-
-    //сохраняем файл без данных
     setChanged(true);
     write();
 
@@ -273,7 +310,18 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
     QDataStream writeStream(&rawFile);
     writeStream.setByteOrder(QDataStream::LittleEndian);
 
-    int destIndex = 0;
+    //записываем данные канала Х, если шаг неравномерный
+    if (unevenX) {
+        DfdChannel *destChannel = channels.first();
+        if (destChannel->IndType==0xC0000004)
+            writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+        QVector<double> yValues = destChannel->data()->xValues();
+        for (int val = 0; val < yValues.size(); ++val) {
+            destChannel->setValue(yValues[val], writeStream);
+        }
+    }
+
+    int destIndex = unevenX ? 1 : 0; //начинаем со второго канала, если добавляли канал Х
     for (int i=0; i<other.channelsCount(); ++i) {
         if (!indexes.contains(i)) continue;
 
@@ -401,30 +449,32 @@ void DfdFileDescriptor::read()
         ch->read(dfd, NumChans);
     }
 
-    //    if (XStep == 0.0) {//uneven abscissa
-    // изменили название оси х с "№№ полос"
-    if (DataType == OSpectr || DataType == ToSpectr) {
-        XName = "Гц";
-
-        // на один канал меньше
-        if (!channels.isEmpty()) {
-            // первым каналом записаны центральные частоты, сохраняем их как значения по X
-            DfdChannel *firstChannel = channels.first();
+    // проверяем неравномерность шкалы
+    if (!channels.isEmpty()) {
+        DfdChannel *firstChannel = channels.first();
+        if (firstChannel->data()->xValuesFormat() == DataHolder::XValuesNonUniform) {
             firstChannel->populate();
             QVector<double> xvalues = firstChannel->data()->yValues();
-            //определяем, действительно ли это значения фильтров
-            if (looksLikeOctave(xvalues, DataType)) {
-                xValues = xvalues;
+
+            //для октавного и третьоктавного спектра значения полос могут
+            //отсутствовать в файле. Проверяем и создаем, если надо
+            if (DataType == OSpectr || DataType == ToSpectr) {
+                XName = "Гц";
+                // первым каналом записаны центральные частоты, сохраняем их как значения по X
+
+                //определяем, действительно ли это значения фильтров
+                if (!looksLikeOctave(xvalues, DataType)) {
+                    xValues.clear();
+                    if (DataType == ToSpectr) {
+                        for (int i=0; i<NumInd; ++i) xValues << pow(10.0, 0.1*(i+1));
+                    }
+                    else if (DataType == OSpectr) {
+                        for (int i=0; i<NumInd; ++i) xValues << pow(2.0, i+1);
+                    }
+                }
             }
             else {
-                xValues.clear();
-                if (DataType == ToSpectr) {
-                    for (int i=0; i<NumInd; ++i) xValues << pow(10.0, 0.1*(i+1));
-                }
-                else if (DataType == OSpectr) {
-                    for (int i=0; i<NumInd; ++i) xValues << pow(2.0, i+1);
-                }
-                //xValues изменились, пихаем их обратно в канал
+                xValues = xvalues;
                 firstChannel->data()->setXValues(xValues);
             }
         }
@@ -1280,7 +1330,7 @@ bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVe
     if (tempFile.open() && rawFile.open(QFile::ReadOnly)) {
         //работаем через временный файл - читаем один канал и записываем его во временный файл
         if (!channels[0]->dataPositions.isEmpty()) {
-            qDebug()<<"- используем dataPositions";
+//            qDebug()<<"- используем dataPositions";
             for (int ind = 0; ind < indexesVector.size(); ++ind) {
 
                 // пропускаем канал, предназначенный для удаления
@@ -1304,12 +1354,12 @@ bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVe
             }
         }
         else {
-            qDebug()<<"- dataPositions отсутствуют";
+//            qDebug()<<"- dataPositions отсутствуют";
 
             // trying to map file into memory
             unsigned char *ptr = rawFile.map(0, rawFile.size());
             if (ptr) {//достаточно памяти отобразить весь файл
-                qDebug()<<"-- работаем через ptr";
+//                qDebug()<<"-- работаем через ptr";
 
                 for (int ind = 0; ind < indexesVector.size(); ++ind) {
                     // пропускаем канал, предназначенный для удаления
@@ -1681,19 +1731,45 @@ void DfdChannel::read(DfdSettings &dfd, int numChans)
         _data->setSamplesCount(NumInd);
     }
     else {// abscissa, even spacing
-        _data->setXValues(0.0, XStep, NumInd);
+        _data->setXValues(parent->XBegin, XStep, NumInd);
     }
 
     auto yValueFormat = dataFormat();
 
     if (YName.toLower()=="db" || YName.toLower()=="дб")
         yValueFormat = DataHolder::YValuesAmplitudesInDB;
-    //настройка для отдельных файлов
-    if ((parent->DataType == OSpectr || parent->DataType == ToSpectr)
-        && YName.toLower() != "db" && YName.toLower() != "дб")
-        yValueFormat = DataHolder::YValuesReals;
+    //настройка для октавных спектров - если единица измерения не дБ, то считаем как амплитуды
+    if ((parent->DataType >= OSpectr) && YName.toLower() != "db" && YName.toLower() != "дб")
+        yValueFormat = DataHolder::YValuesAmplitudes;
 
     _data->setYValuesFormat(yValueFormat);
+
+    double thr = 1.0;
+    QString thrString = dfd.value(group+"threshold");
+    if (thrString.isEmpty()) {
+        if (YName.isEmpty() || YName.toLower() == "дб" || YName.toLower() == "db")
+            thr = threshold(YNameOld);
+        else
+            thr = threshold(YName);
+        if (type()==Descriptor::FrequencyResponseFunction) thr=1.0;
+    }
+    else {
+        thr = thrString.toDouble();
+    }
+    _data->setThreshold(thr);
+
+    int units = DataHolder::UnitsLinear;
+    QString unitsStr = dfd.value(group+"units");
+    if (unitsStr.isEmpty()) {
+        if (dataType == Spectr || dataType == XSpectr) units = DataHolder::UnitsQuadratic;
+    }
+    else {
+        if (unitsStr == "linear") units = DataHolder::UnitsLinear;
+        else if (unitsStr == "quadratic") units = DataHolder::UnitsQuadratic;
+        else if (unitsStr == "dimensionless") units = DataHolder::UnitsDimensionless;
+        else if (unitsStr == "unknown") units = DataHolder::UnitsUnknown;
+    }
+    _data->setYValuesUnits(units);
 
     // читаем позиции данных этого канала
     dataPositions.clear();
@@ -1729,6 +1805,15 @@ void DfdChannel::write(QTextStream &dfd, int index)
     dfd << "InputType="<<InputType << endl;
     dfd << "ChanDscr="<<ChanDscr << endl;
     dfd << "Correction="<<correction() << endl;
+
+    dfd << "threshold=" << QString::number(data()->threshold()) << endl;
+    switch (data()->yValuesUnits()) {
+        case DataHolder::UnitsLinear: dfd << "units=" << "linear" << endl; break;
+        case DataHolder::UnitsQuadratic: dfd << "units=" << "quadratic" << endl; break;
+        case DataHolder::UnitsDimensionless: dfd << "units=" << "dimensionless" << endl; break;
+        case DataHolder::UnitsUnknown: dfd << "units=" << "unknown" << endl; break;
+    }
+
 }
 
 QVariant DfdChannel::info(int column, bool edit) const
@@ -2010,23 +2095,6 @@ void DfdChannel::populate()
     // clear previous data;
     _data->clear();
 
-    double thr = 1.0;
-    if (YName.isEmpty() || YName.toLower() == "дб" || YName.toLower() == "db")
-        thr = threshold(YNameOld);
-    else
-        thr = threshold(YName);
-    if (type()==Descriptor::FrequencyResponseFunction) thr=1.0;
-    _data->setThreshold(thr);
-
-    int units = DataHolder::UnitsLinear;
-    if (dataType == Spectr || dataType == XSpectr) units = DataHolder::UnitsQuadratic;
-    _data->setYValuesUnits(units);
-
-//    int yValueFormat = dataFormat();
-
-//    if (YName.toLower()=="db" || YName.toLower()=="дб")
-//        yValueFormat = DataHolder::YValuesAmplitudesInDB;
-
     QFile rawFile(parent->rawFileName);
 
     if (rawFile.open(QFile::ReadOnly)) {
@@ -2098,17 +2166,17 @@ void DfdChannel::populate()
         setPopulated(true);
         rawFile.close();
 
-        if (parent->DataType == ToSpectr || parent->DataType == OSpectr) {//данные по оси Х хранятся первым каналом
-            if (!parent->xValues.isEmpty()) {
-                _data->setXValues(parent->xValues);
-            }
-            else {
+        if (!parent->xValues.isEmpty()) {
+            _data->setXValues(parent->xValues);
+        }
+        else {
+            if (_data->xValuesFormat() == DataHolder::XValuesNonUniform) {
                 if (channelIndex == 0) {
                     //это канал со значениями X, мы только что его прочитали
                     parent->xValues = YValues;
                     _data->setXValues(YValues);
                 }
-                else {
+                else {//unlikely to run
                     QDataStream readStream(&rawFile);
                     readStream.setByteOrder(QDataStream::LittleEndian);
                     if (IndType==0xC0000004)
@@ -2128,14 +2196,6 @@ void DfdChannel::populate()
     }
 //    qDebug()<<"reading finished"<<timer.elapsed();
 }
-
-//QByteArray DfdChannel::wavData(qint64 pos, qint64 samples)
-//{
-//    /// общий алгоритм
-//    /// - если данные записаны в формате int16, то читаем блок, вычитаем 32768, возвращаем блок
-//    /// - если данные записаны в формате uint16, то просто возвращаем прочитанный блок
-//    /// - если данные записаны в формате single или любом другом, то
-//}
 
 quint64 DfdChannel::blockSizeInBytes() const
 {
@@ -2182,6 +2242,7 @@ DataHolder::YValuesFormat DfdChannel::dataFormat() const
         case XPhase:		// взаимная фаза
             return DataHolder::YValuesPhases;
         case Coherence:	// когерентность
+            return DataHolder::YValuesReals;
         case TransFunc:	// передаточная функция
             return DataHolder::YValuesAmplitudes;
         case XSpectrRe:	// действ. часть взаимного спектра
@@ -2199,6 +2260,10 @@ DataHolder::YValuesFormat DfdChannel::dataFormat() const
         //GSpectr    = 155,		// спектр Гильберта
         case OSpectr:		// октавный спектр
         case ToSpectr:		// 1/3-октавный спектр
+        case TwoOSpectr:
+        case SixOSpectr:
+        case TwlOSpectr:
+        case TFOSpectr:
             return DataHolder::YValuesAmplitudesInDB;
         default:
             break;
@@ -2306,8 +2371,15 @@ Descriptor::DataType DfdChannel::type() const
 
 int DfdChannel::octaveType() const
 {
-    if (dataType == ToSpectr) return 3;
-    if (dataType == OSpectr) return 1;
+    switch (dataType) {
+        case ToSpectr: return 3;
+        case OSpectr: return 1;
+        case TwoOSpectr: return 2;
+        case SixOSpectr: return 6;
+        case TwlOSpectr: return 12;
+        case TFOSpectr: return 24;
+        default: return 0;
+    }
     return 0;
 }
 
@@ -2544,6 +2616,12 @@ Descriptor::DataType dataTypefromDfdDataType(DfdDataType type)
         case TrFuncIm:
             return Descriptor::FrequencyResponseFunction;
         case TrFuncRe: return Descriptor::Transmissibility;
+        case ToSpectr:
+        case OSpectr:
+        case TwoOSpectr:
+        case SixOSpectr:
+        case TwlOSpectr:
+        case TFOSpectr: return Descriptor::Spectrum;
         default: return Descriptor::Unknown;
     }
 
@@ -2657,67 +2735,6 @@ void DfdFileDescriptor::setSamplesCount(int count)
 {
     NumInd = count;
 }
-
-
-
-//DfdOctaveFileDescriptor::DfdOctaveFileDescriptor(const QString &fileName)
-//    : DfdFileDescriptor(fileName)
-//{DD;
-//    firstChannel = 0;
-//}
-
-//DfdOctaveFileDescriptor::DfdOctaveFileDescriptor(const DfdFileDescriptor &d)
-//    : DfdFileDescriptor(d)
-//{DD;
-//    firstChannel = 0;
-//}
-
-//DfdOctaveFileDescriptor::DfdOctaveFileDescriptor(const DfdOctaveFileDescriptor &d)
-//    : DfdFileDescriptor(d)
-//{DD;
-//    firstChannel = 0;
-//}
-
-
-//void DfdOctaveFileDescriptor::read()
-//{DD;
-//    // прочитали каналы как есть
-//    DfdFileDescriptor::read();
-
-
-//}
-
-//void DfdOctaveFileDescriptor::write()
-//{
-//    if (!changed()) return;
-
-//    if (firstChannel) {
-//        if (!channels.isEmpty() && channels.first() != firstChannel) {
-//            channels.prepend(firstChannel);
-//            NumChans = channels.size();
-//            for (int i=0; i<channels.size(); ++i)
-//                channels[i]->channelIndex = i;
-//        }
-//    }
-//    // возвращаем старое название оси х
-//    XName = "№№ полос";
-//    DfdFileDescriptor::write();
-//    //обратная еботнина
-//    channels.removeFirst();
-//    for (int i=0; i<channels.size(); ++i)
-//        channels[i]->channelIndex = i;
-//    NumChans = channels.size();
-//}
-
-//void DfdOctaveFileDescriptor::writeRawFile()
-//{
-
-//}
-
-//void DfdOctaveFileDescriptor::populate()
-//{
-//}
-
 
 int DfdChannel::index() const
 {

@@ -23,6 +23,8 @@ struct XChannel
     QString pointId;
     QString direction;
     QStringList info;
+    QString expression;
+    int fftDataType = 1; //из Analysis.xml: 0 = complex, 1 = real, 2 = phase
 };
 
 struct Dataset
@@ -51,6 +53,8 @@ public:
 
     static QStringList fileFilters();
     static QStringList suffixes();
+
+    QList<QVector<int>> groupChannels() const;
 
     QByteArray toJson() const;
 
@@ -108,6 +112,7 @@ public:
     QString _primaryChannel;
     QString _type;
     QString _xName;
+    int _octaveType = 0;
     bool grouped = false;
     int indexInGroup = 0;
     int groupSize = 1;

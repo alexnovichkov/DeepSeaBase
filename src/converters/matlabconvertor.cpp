@@ -73,11 +73,29 @@ bool MatlabConvertor::convert()
         QString destinationFileName = changeFileExt(fi, destinationFormat);
 
         //writing file
-        FileDescriptor *destinationFile = FormatFactory::createDescriptor(matlabFile, destinationFileName);
+        QList<QVector<int>> groupedChannelsIndexes = matlabFile.groupChannels();
+        if (groupedChannelsIndexes.size() == 1) {
+            FileDescriptor *destinationFile = FormatFactory::createDescriptor(matlabFile,
+                                                                              destinationFileName);
+            if (!destinationFile) noErrors = false;
+            newFiles << destinationFile->fileName();
+            delete destinationFile;
+        }
+        else for (int i=0; i<groupedChannelsIndexes.size(); ++i) {
+            QString fname = createUniqueFileName("",
+                                                 destinationFileName,
+                                                 QString::number(i+1),
+                                                 QFileInfo(destinationFileName).suffix(), false);
+            FileDescriptor *destinationFile = FormatFactory::createDescriptor(matlabFile,
+                                                                              fname,
+                                                                              groupedChannelsIndexes.at(i));
+            if (!destinationFile) noErrors = false;
+            newFiles << destinationFile->fileName();
+            delete destinationFile;
+        }
 
-        if (!destinationFile) noErrors = false;
-        newFiles << destinationFileName;
-        delete destinationFile;
+
+
         emit converted(fi);
 
         emit message("Готово.");
@@ -111,6 +129,7 @@ void MatlabConvertor::readXml(bool &success)
     QXmlStreamReader xmlReader(&xmlFile);
     bool inDatasets = false;
     bool inChannel = false;
+    int catLabel = 0;
     while (!xmlReader.atEnd()) {
         xmlReader.readNext();
         if (xmlReader.isStartElement()) {
@@ -149,15 +168,32 @@ void MatlabConvertor::readXml(bool &success)
                     c.units = xmlReader.attributes().value("name").toString();
                 if (xmlReader.attributes().hasAttribute("logref"))
                     c.logRef = xmlReader.attributes().value("logref").toString().toDouble();
-                if (xmlReader.attributes().hasAttribute("scale"))
-                    c.scale = xmlReader.attributes().value("scale").toString().toDouble();
+                if (xmlReader.attributes().hasAttribute("logscale"))
+                    c.scale = xmlReader.attributes().value("logscale").toString().toDouble();
                 xml.last().channels.append(c);
             }
             else if (name == "General" && inDatasets) {
                 if (xmlReader.attributes().hasAttribute("Name"))
                     xml.last().channels.last().generalName = xmlReader.attributes().value("Name").toString();
-                if (xmlReader.attributes().hasAttribute("CatLabel"))
-                    xml.last().channels.last().catLabel = xmlReader.attributes().value("CatLabel").toString();
+                QString cat = xmlReader.attributes().value("Cat").toString();
+                if (xmlReader.attributes().hasAttribute("CatLabel")) {
+                    if (cat=="C") {
+                        //исходные данные, могут быть разрывы в нумерации,
+                        //поэтому запоминаем максимальный номер в переменной catLabel
+                        QString calLabelStr = xmlReader.attributes().value("CatLabel").toString();
+                        xml.last().channels.last().catLabel = calLabelStr;
+                        calLabelStr.remove(0,1);
+                        catLabel = calLabelStr.toInt();
+                    }
+                    else if (cat=="M") {
+                        //математические каналы, идут подряд, поэтому меняем catLabel
+                        QString calLabelStr = xmlReader.attributes().value("CatLabel").toString();
+                        calLabelStr.remove(0,1);
+                        int index = calLabelStr.toInt(); //M45 => 45
+                        index = index + catLabel; //M45 => C(40+45)=C85
+                        xml.last().channels.last().catLabel = QString("C%1").arg(index);
+                    }
+                }
             }
             else if (name == "Sensor" && inDatasets) {
 //                if (xml.attributes().hasAttribute("id"))
@@ -185,6 +221,14 @@ void MatlabConvertor::readXml(bool &success)
                     xml.last().channels.last().info << xmlReader.attributes().value("Info3").toString();
                     xml.last().channels.last().info << xmlReader.attributes().value("Info4").toString();
                 }
+            }
+            else if (name == "Expression" && inDatasets) {
+                if (xmlReader.attributes().hasAttribute("Expression"))
+                   xml.last().channels.last().expression = xmlReader.attributes().value("Expression").toString();
+            }
+            else if (name == "FFT" && inDatasets) {
+                if (xmlReader.attributes().hasAttribute("DataType"))
+                   xml.last().channels.last().fftDataType = xmlReader.attributes().value("DataType").toInt();
             }
         }
         else if (xmlReader.isEndElement()) {

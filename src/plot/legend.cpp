@@ -159,7 +159,7 @@ LegendModel::~LegendModel()
 
 bool LegendModel::contains(QwtPlotItem *item)
 {
-    foreach (const LegendItem &i, items) {
+    for (const LegendItem &i: qAsConst(items)) {
         if (i.item == item) return true;
     }
     return false;

@@ -155,9 +155,9 @@ bool SavingFunction::compute(FileDescriptor *file)
     if (abscissaEven)
         ch->data()->setXValues(0.0, getProperty("?/xStep").toDouble(), dataSize);
     else {
-        QList<QVariant> abscissaData = getProperty("?/abscissaData").toList();
+        const QList<QVariant> abscissaData = getProperty("?/abscissaData").toList();
         QVector<double> aData;
-        foreach (QVariant v,abscissaData) aData << v.toDouble();
+        for (QVariant v: abscissaData) aData << v.toDouble();
         ch->data()->setXValues(aData);
     }
     double thr = threshold(file->channel(channelIndex)->yName());

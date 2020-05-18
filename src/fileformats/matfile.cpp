@@ -62,85 +62,92 @@ void MatFile::read()
         //проверяем, сгруппирован ли канал
         //запись function_record.name будет иметь размерность > 1
         if (MatlabStructArray *function_record = findSubrecord<MatlabStructArray *>("function_record", rec)) {
+
+            QList<MatlabChannel *> toAppend;
+
             MatlabCellArray *name = findSubrecord<MatlabCellArray*>("name", function_record);
             if (name) {//сгруппированные данные
-
                 int count = name->dimensions.value(1);
                 for (int i=0; i<count; ++i) {
                     MatlabChannel *channel = new MatlabChannel(this);
                     channel->grouped = true;
                     channel->indexInGroup = i;
                     channel->groupSize = count;
-
-                    //x_values
-                    double xbegin = 0.0;
-                    double xstep = 0.0;
-                    int samplescount = 0;
-
-                    if (MatlabStructArray *x_values = findSubrecord<MatlabStructArray *>("x_values", rec)) {
-                        if (MatlabNumericArray *startValue = findSubrecord<MatlabNumericArray*>("start_value", x_values))
-                            xbegin = startValue->getNumericAsDouble().first();
-                        if (MatlabNumericArray *increment = findSubrecord<MatlabNumericArray*>("increment", x_values))
-                            xstep = increment->getNumericAsDouble().first();
-                        if (MatlabNumericArray *numberOfValues = findSubrecord<MatlabNumericArray*>("number_of_values", x_values))
-                            samplescount = numberOfValues->getNumericAsInt().first();
-                        if (MatlabStructArray *quantity = findSubrecord<MatlabStructArray*>("quantity", x_values))
-                            channel->_xName = quantity->subRecords[quantity->fieldNames.indexOf("label")]->getString();
-                    }
-                    channel->data()->setXValues(xbegin, xstep, samplescount);
-
-                    //TODO: добавить возможность сохранять данные с неравномерной шкалой
-
-                    //y_values
-                    if (MatlabStructArray *y_values = findSubrecord<MatlabStructArray *>("y_values", rec)) {
-                        if (MatlabNumericArray *values = findSubrecord<MatlabNumericArray *>("values", y_values)) {
-                            channel->real_values = dynamic_cast<MatlabNumericRecord *>(values->realValues);
-                            channel->imag_values = dynamic_cast<MatlabNumericRecord *>(values->imagValues);
-                            channel->complex = values->complex;
-                        }
-                    }
-
-                    //function_record
                     channel->_name = name->subRecords[i]->getString().section(" ", 0, 0);
-                    //channel->_primaryChannel =
-                    channel->_type = rec->name;
-                    XChannel c;
-                    for (int j=0; j<xml.channels.size(); ++j) {
-                        if (xml.channels.at(j).catLabel == channel->_name) {
-                            c = xml.channels.at(j);
-                            break;
-                        }
-                    }
-                    channel->xml = c;
-                    channel->data()->setYValuesFormat(channel->complex ?
-                                                          DataHolder::YValuesComplex :
-                                                          DataHolder::YValuesReals);
 
-                    channels << channel;
+                    toAppend << channel;
                 }
-
             }
             else {//несгруппированные данные, record -> channel
                 MatlabChannel *channel = new MatlabChannel(this);
+                channel->_name = rec->name.section("_", 0, 0);
+                toAppend << channel;
+            }
+
+            for (int i=0; i<toAppend.size(); ++i) {
+                MatlabChannel *channel = toAppend.at(i);
+
+                channel->_type = function_record->subRecords[function_record->fieldNames.indexOf("type")]->getString();
+                XChannel c;
+                for (int j=0; j<xml.channels.size(); ++j) {
+                    if (xml.channels.at(j).catLabel == channel->_name) {
+                        c = xml.channels.at(j);
+                        break;
+                    }
+                }
+                channel->xml = c;
 
                 //x_values
                 double xbegin = 0.0;
                 double xstep = 0.0;
                 int samplescount = 0;
+                QString bandtype;
+                QVector<double> xvalues;
+                double startfrequency = 0.0;
 
                 if (MatlabStructArray *x_values = findSubrecord<MatlabStructArray *>("x_values", rec)) {
-                    if (MatlabNumericArray *startValue = findSubrecord<MatlabNumericArray*>("start_value", x_values))
+                    if (auto *startValue = findSubrecord<MatlabNumericArray*>("start_value", x_values))
                         xbegin = startValue->getNumericAsDouble().first();
-                    if (MatlabNumericArray *increment = findSubrecord<MatlabNumericArray*>("increment", x_values))
+                    if (auto *increment = findSubrecord<MatlabNumericArray*>("increment", x_values))
                         xstep = increment->getNumericAsDouble().first();
-                    if (MatlabNumericArray *numberOfValues = findSubrecord<MatlabNumericArray*>("number_of_values", x_values))
+                    if (auto *numberOfValues = findSubrecord<MatlabNumericArray*>("number_of_values", x_values))
                         samplescount = numberOfValues->getNumericAsInt().first();
-                    if (MatlabStructArray *quantity = findSubrecord<MatlabStructArray*>("quantity", x_values))
+                    if (auto *bandType = findSubrecord<MatlabCharacterArray*>("band_type",x_values))
+                        bandtype = bandType->getString();
+                    if (auto *startFr = findSubrecord<MatlabNumericArray*>("start_frequency", x_values))
+                        startfrequency = startFr->getNumericAsDouble().first();
+                    if (auto *quantity = findSubrecord<MatlabStructArray*>("quantity", x_values))
                         channel->_xName = quantity->subRecords[quantity->fieldNames.indexOf("label")]->getString();
+                    if (MatlabNumericArray* values = findSubrecord<MatlabNumericArray*>("values", x_values))
+                        xvalues = values->getNumericAsDouble();
                 }
-                channel->data()->setXValues(xbegin, xstep, samplescount);
+                if (!bandtype.isEmpty() && xvalues.isEmpty()) {
+                    //значения октавных полос не хранились в файле, собираем сами
+                    if (bandtype == "BandOctave1_3") {
+                        int startBand= qRound(10.0*log10(startfrequency));
+                        for (int band=startBand; band<startBand+samplescount; ++band)
+                            xvalues << std::pow(10.0, double(band)/10.0);
+                    }
+                    else if (bandtype == "BandOctave1_1") {
+                        int startBand= qRound(10.0*log10(startfrequency));
+                        for (int band=startBand; ; band+=3) {
+                            xvalues << std::pow(10.0, double(band)/10.0);
+                            if (xvalues.size() == samplescount) break;
+                        }
+                    }
+                }
+                if (c.expression.startsWith("OCTF1(")) channel->_octaveType = 1;
+                else if (c.expression.startsWith("OCTF3(")) channel->_octaveType = 3;
+                else if (c.expression.startsWith("OCTF6(")) channel->_octaveType = 6;
+                else if (c.expression.startsWith("OCTF2(")) channel->_octaveType = 2;
+                else if (c.expression.startsWith("OCTF12(")) channel->_octaveType = 12;
+                else if (c.expression.startsWith("OCTF24(")) channel->_octaveType = 24;
 
-                //TODO: добавить возможность сохранять данные с неравномерной шкалой
+                if (xvalues.isEmpty())
+                    channel->data()->setXValues(xbegin, xstep, samplescount);
+                else {
+                    channel->data()->setXValues(xvalues);
+                }
 
                 //y_values
                 if (MatlabStructArray *y_values = findSubrecord<MatlabStructArray *>("y_values", rec)) {
@@ -151,26 +158,31 @@ void MatFile::read()
                     }
                 }
 
-                //function_record
-                channel->_name = rec->name.section("_", 0, 0);
-                //channel->_primaryChannel =
-                channel->_type = function_record->subRecords[function_record->fieldNames.indexOf("type")]->getString();
-                XChannel c;
-                for (int j=0; j<xml.channels.size(); ++j) {
-                    if (xml.channels.at(j).catLabel == channel->_name) {
-                        c = xml.channels.at(j);
-                        break;
-                    }
+                DataHolder::YValuesFormat yformat = DataHolder::YValuesReals;
+                if (channel->complex) yformat = DataHolder::YValuesComplex;
+                else if (c.expression.startsWith("FFT(") ||
+                         c.expression.startsWith("GXY(") ||
+                         c.expression.startsWith("GXYN(")||
+                         c.expression.startsWith("FRF(")) {
+                    if (c.fftDataType == 1) yformat = DataHolder::YValuesAmplitudes;
+                    else if (c.fftDataType == 2) yformat = DataHolder::YValuesPhases;
                 }
-                channel->xml = c;
-                channel->data()->setYValuesFormat(channel->complex ?
-                                                      DataHolder::YValuesComplex :
-                                                      DataHolder::YValuesReals);
+                else if (c.expression.startsWith("PSD(") ||
+                         c.expression.startsWith("ESD(") ||
+                         c.expression.startsWith("APS(") ||
+                         c.expression.startsWith("OCT"))
+                    yformat = DataHolder::YValuesAmplitudes;
+                channel->data()->setYValuesFormat(yformat);
 
-                channels << channel;
+                channel->data()->setThreshold(c.logRef);
+
+                int units = DataHolder::UnitsUnknown;
+                if (c.scale == 10) units = DataHolder::UnitsQuadratic;
+                else if (c.scale == 20) units = DataHolder::UnitsLinear;
+                channel->data()->setYValuesUnits(units);
             }
+            channels << toAppend;
         }
-
     }
 }
 
@@ -182,6 +194,36 @@ QStringList MatFile::fileFilters()
 QStringList MatFile::suffixes()
 {
     return QStringList()<<"*.mat";
+}
+
+QList<QVector<int> > MatFile::groupChannels() const
+{
+    QList<QVector<int>> groupedChannelsIndexes;
+    //сортируем каналы по типу и по размеру
+
+    QMap<QPair<int, Descriptor::DataType>, int> map;
+
+    for (int i=0; i<channelsCount(); ++i) {
+        int size = channels.at(i)->samplesCount();
+        Descriptor::DataType type = channels.at(i)->type();
+        QPair<int, Descriptor::DataType> pair = qMakePair(size, type);
+        if (!map.contains(pair)) {
+            //встретили первый раз
+            QVector<int> indexes;
+            indexes << i;
+            groupedChannelsIndexes << indexes;
+            map.insert(pair, groupedChannelsIndexes.size()-1);
+        }
+        else {
+            //уже был
+            int pos = map.value(pair);
+            QVector<int> indexes = groupedChannelsIndexes.at(pos);
+            indexes.append(i);
+            groupedChannelsIndexes.replace(pos, indexes);
+        }
+    }
+
+    return groupedChannelsIndexes;
 }
 
 QByteArray MatFile::toJson() const
@@ -1052,6 +1094,8 @@ Descriptor::DataType MatFile::type() const
 
 QString MatFile::typeDisplay() const
 {
+    if (!channels.isEmpty())
+        return channels.first()->_type;
     return QString();
 }
 
@@ -1214,6 +1258,15 @@ Descriptor::DataType MatlabChannel::type() const
 {
     if (_type == "Signal") return Descriptor::TimeResponse;
     if (_type == "FRF") return Descriptor::FrequencyResponseFunction;
+    if (_type == "FrequencySpectrum") return Descriptor::Spectrum;
+    if (_type == "PSD") {
+        if (xml.expression.startsWith("ESD")) return Descriptor::EnergySpectralDensity;
+        return Descriptor::PowerSpectralDensity;
+    }
+    if (_type == "ESD") return Descriptor::EnergySpectralDensity; //никак не отличить
+    if (_type == "AutoPowerSpectrum") return Descriptor::AutoSpectrum;
+    if (_type == "CrossPowerSpectrum") return Descriptor::CrossSpectrum;
+    if (_type == "Coherence") return Descriptor::Coherence;
     //TODO: добавить типов функций
 
     return Descriptor::Unknown;
@@ -1221,7 +1274,7 @@ Descriptor::DataType MatlabChannel::type() const
 
 int MatlabChannel::octaveType() const
 {
-    return 0;
+    return _octaveType;
 }
 
 void MatlabChannel::populate()
@@ -1238,15 +1291,6 @@ void MatlabChannel::populate()
     //stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
     QVector<double> data = readNumeric<double>(&stream, real_values->actualDataSize / groupSize,
                                               real_values->header->type);
-
-
-    double thr = threshold(yName());
-    if (this->type()==Descriptor::FrequencyResponseFunction) thr=1.0;
-    _data->setThreshold(thr);
-
-    int units = DataHolder::UnitsLinear;
-    if (_type == "Spectre" || _type == "CrossSpectre") units = DataHolder::UnitsQuadratic;
-    _data->setYValuesUnits(units);
 
     if (!complex) {
         _data->setYValues(data, _data->yValuesFormat());
@@ -1301,6 +1345,7 @@ QString MatlabChannel::xName() const
 
 QString MatlabChannel::yName() const
 {
+    if (xml.units.isEmpty()) return "/";
     return xml.units;
 }
 

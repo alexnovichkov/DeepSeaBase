@@ -14,18 +14,14 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-//    MatFile f("K:\\Shared\\R4G3-time-double-grouped.mat");
+//    MatFile f("K:\\Shared\\R3G1-oct.mat");
 //    f.read();
 
-//    QFile ff("K:\\Shared\\R4G3-time-double-grouped.json");
+//    QFile ff("K:\\Shared\\R3G1-oct.json");
 //    ff.open(QFile::WriteOnly);
 //    ff.write(f.toJson());
-
 //    return 0;
 
-    //MatFile f("K:\\Shared\\Rec_001_single.prec_group_MKS_not.bigger.mat");
-//    MatFile f("K:\\Shared\\Record_8_580_1200s.mat");
-//    MatFile f("K:\\Shared\\rec_001_M_group.mat");
 
 //    TDMSFile f("K:\\NI\\R2_36_ob_16_11_2019_180937\\Acceleration.tdms");
 

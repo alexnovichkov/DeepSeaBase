@@ -118,14 +118,21 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVe
     if (indexes.isEmpty())
         for (int i=0; i<other.channelsCount(); ++i) indexes << i;
 
-    if (other.channelsCount()>0) {
-        xAxisBlock.uniform = other.channel(indexes.first())->data()->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
-        xAxisBlock.begin = other.channel(indexes.first())->xMin();
-        if (xAxisBlock.uniform == 0) // not uniform
-            xAxisBlock.values = other.channel(indexes.first())->xValues();
-    }
-    xAxisBlock.count = other.samplesCount();
-    xAxisBlock.step = other.xStep();
+    //Поскольку other может содержать каналы с разным размером и шагом,
+    //данные берем из первого канала, который будем сохранять
+    //предполагается, что все каналы из indexes имеют одинаковые параметры
+
+    Channel *firstChannel = other.channel(indexes.first());
+    Q_ASSERT_X(firstChannel, "Data94 constructor", "channel to copy is null");
+
+
+    xAxisBlock.uniform = firstChannel->data()->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
+    xAxisBlock.begin = firstChannel->xMin();
+    if (xAxisBlock.uniform == 0) // not uniform
+        xAxisBlock.values = firstChannel->xValues();
+
+    xAxisBlock.count = firstChannel->samplesCount();
+    xAxisBlock.step = firstChannel->xStep();
     xAxisBlock.isValid = true;
 
     //zAxisBlock
@@ -161,6 +168,8 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVe
                               +xAxisBlock.size()+zAxisBlock.size()+4;
 
     int destIndex = 0;
+    qint64 dataPosition = fileHeader + 4;
+
     for (int i=0; i<other.channelsCount(); ++i) {
         if (!indexes.contains(i)) continue;
 
@@ -172,12 +181,11 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVe
 
         //пишем данные напрямую
         quint32 format = destChannel->isComplex ? 2 : 1;
+        const qint64 csize = xAxisBlock.count * zAxisBlock.count * format * sizeof(float);
 
-        if (destChannel->dataPosition < 0) {
-            //каждый канал начинается с позиции
-            destChannel->dataPosition = fileHeader +4
-                              + destIndex*(4+xAxisBlock.count*zAxisBlock.count*format*sizeof(float));
-        }
+        destChannel->dataPosition = dataPosition;
+        dataPosition += csize //channel size in bytes
+                        + 4; //channel format
 
         r.device()->seek(destChannel->dataPosition - 4);
         r << format;
@@ -223,6 +231,7 @@ void Data94File::fillRest()
 
 void Data94File::read()
 {
+    qDebug()<<fileName();
     QFile f(fileName());
 
     if (!f.open(QFile::ReadOnly)) return;
@@ -392,7 +401,7 @@ void Data94File::write()
         for (int i=0; i<channels.size(); ++i) {
             Data94Channel *c = channels.at(i);
             if (!c->dataChanged()) continue;
-            quint32 format = c->isComplex ? 2 : 1;
+            const quint32 format = c->isComplex ? 2 : 1;
 
             if (c->dataPosition < 0) {
                 //каждый канал начинается с позиции
@@ -404,23 +413,23 @@ void Data94File::write()
             r << format;
 
             if (!c->isComplex) {
-                QVector<double> yValues = c->data()->rawYValues();
+                const QVector<double> yValues = c->data()->rawYValues();
                 if (yValues.isEmpty()) {
                     qDebug()<<"Отсутствуют данные для записи в канале"<<c->name();
                     continue;
                 }
 
-                foreach (double v, yValues) {
+                for (double v: yValues) {
                     r << (float)v;
                 }
             }
             else {
-                auto yValues = c->data()->yValuesComplex();
+                const auto yValues = c->data()->yValuesComplex();
                 if (yValues.isEmpty()) {
                     qDebug()<<"Отсутствуют данные для записи в канале"<<c->name();
                     continue;
                 }
-                foreach (cx_double v, yValues) {
+                for (cx_double v: yValues) {
                     r << (float)v.real();
                     r << (float)v.imag();
                 }
@@ -450,7 +459,7 @@ Descriptor::DataType Data94File::type() const
 {
     if (channels.isEmpty()) return Descriptor::Unknown;
 
-    Descriptor::DataType t = channels.first()->type();
+    Descriptor::DataType t = channels.constFirst()->type();
     for (int i=1; i<channels.size(); ++i) {
         if (channels.at(i)->type() != t) return Descriptor::Unknown;
     }
@@ -477,7 +486,7 @@ void Data94File::setDataDescriptor(const DescriptionList &data)
 {
     QJsonObject result;
     for (int i=0; i<data.size(); ++i) {
-        result.insert(data[i].first, data[i].second);
+        result.insert(data.at(i).first, data.at(i).second);
     }
     if (description.value("dataDescription").toObject() != result) {
         description.insert("dataDescription", result);
@@ -755,6 +764,7 @@ void Data94File::setSamplesCount(int count)
     //дублируем
     foreach (Data94Channel *c, channels) {
         c->_description.insert("samples", count);
+        c->data()->setSamplesCount(count);
     }
 }
 
@@ -832,13 +842,13 @@ Data94Channel::Data94Channel(Channel *other) : Channel(other)
     function.insert("logref", other->data()->threshold());
     QString units;
     switch (other->data()->yValuesUnits()) {
-        case DataHolder::UnitsUnknown:
-        case DataHolder::UnitsLinear: units = "quadratic"; break;
-        case DataHolder::UnitsQuadratic: units = "linear"; break;
+        case DataHolder::UnitsUnknown: units = "unknown"; break;
+        case DataHolder::UnitsLinear: units = "linear"; break;
+        case DataHolder::UnitsQuadratic: units = "quadratic"; break;
         case DataHolder::UnitsDimensionless: units = "dimensionless"; break;
         default: break;
     }
-    function.insert("logscale", units);
+    function.insert("units", units);
     function.insert("octaveFormat", other->octaveType());
     _description.insert("function", function);
 
@@ -867,13 +877,13 @@ void Data94Channel::read(QDataStream &r)
     dataPosition = r.device()->pos();
 
     double thr = _description.value("function").toObject().value("logref").toDouble();
-    if (thr == 0.0)
-        thr = threshold(yName());
+    if (thr == 0.0) thr = threshold(yName());
     _data->setThreshold(thr);
 
-    int units = DataHolder::UnitsLinear;
-    QString unitsS = _description.value("function").toObject().value("logref").toString();
+    int units = DataHolder::UnitsUnknown;
+    QString unitsS = _description.value("function").toObject().value("units").toString();
     if (unitsS == "quadratic") units = DataHolder::UnitsQuadratic;
+    else if (unitsS == "linear") units = DataHolder::UnitsLinear;
     else if (unitsS == "dimensionless") units = DataHolder::UnitsDimensionless;
     _data->setYValuesUnits(units);
 
@@ -1008,7 +1018,7 @@ void Data94Channel::populate()
             _data->setYValues(co);
         }
         else
-            _data->setYValues(YValues, DataHolder::YValuesFormat(_data->yValuesFormat()));
+            _data->setYValues(YValues, _data->yValuesFormat());
 
         setPopulated(true);
         rawFile.close();

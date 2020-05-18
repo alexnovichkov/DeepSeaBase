@@ -175,10 +175,12 @@ QString createUniqueFileName(const QString &folderName, const QString &fileName,
                              const QString &ext, bool justified)
 {DD;
     QString result;
+    QFileInfo fn = QFileInfo(fileName);
+
     if (folderName.isEmpty())
-        result = QFileInfo(fileName).canonicalPath()+"/"+QFileInfo(fileName).completeBaseName();
+        result = fn.absolutePath()+"/"+fn.completeBaseName();
     else
-        result = folderName+"/"+QFileInfo(fileName).completeBaseName();
+        result = folderName+"/"+fn.completeBaseName();
     if (!constantPart.isEmpty()) result.append("_"+constantPart);
 
     if (!justified && !QFile::exists(result+"."+ext))

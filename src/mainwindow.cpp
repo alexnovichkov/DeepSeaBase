@@ -960,6 +960,7 @@ void MainWindow::deleteChannels() /** SLOT */
     if (QMessageBox::question(this,"DeepSea Base",
                               QString("Выделенные %1 каналов будут \nудалены из записи. Продолжить?").arg(channelsToDelete.size())
                               )==QMessageBox::Yes) {
+        LongOperation op;
         deleteChannels(tab->record, channelsToDelete);
         updateChannelsTable(tab->record);
     }
@@ -996,6 +997,7 @@ void MainWindow::deleteChannelsBatch()
         }
     }
 
+    LongOperation op;
     foreach (FileDescriptor *d, filesToDelete)
         deleteChannels(d, channels);
 
@@ -1197,7 +1199,7 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
 
 
 
-    QApplication::setOverrideCursor(QCursor(Qt::WaitCursor));
+    LongOperation op;
 
     // ИЩЕМ ЭТОТ ФАЙЛ СРЕДИ ДОБАВЛЕННЫХ В БАЗУ
     FileDescriptor *destination = findDescriptor(file);
@@ -1235,8 +1237,6 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
         addFile(destination);
         if (!tab->folders.contains(file)) tab->folders << file;
     }
-
-    QApplication::restoreOverrideCursor();
 
     return true;
 }
@@ -1968,6 +1968,8 @@ void MainWindow::rescanBase()
         }
         else addFolder(folder, true, false);
     }
+
+    QApplication::alert(this,200);
 
     //QMessageBox::information(this, "База данных", "В базе данных все записи \"живые\"!");
 }

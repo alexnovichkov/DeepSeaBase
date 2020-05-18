@@ -13,7 +13,8 @@ AbstractFunction::AbstractFunction(QObject *parent) : QObject(parent),
 QString AbstractFunction::propertiesDescription() const
 {DD;
     QString result="[";
-    foreach (const QString &p, properties()) {
+    const QStringList props = properties();
+    for (const QString &p: props) {
         result.append(propertyDescription(p));
         result.append(",");
     }

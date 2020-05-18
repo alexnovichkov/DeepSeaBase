@@ -23,9 +23,8 @@ double threshold(const QString &name)
 
 double convertFactor(const QString &from)
 {
-    QString n = from.toLower();
-    if (n=="g") return 9.81;
-    if (n=="n") return 1.0;
+    if (from.compare("g", Qt::CaseInsensitive)) return 9.81;
+    if (from.compare("n", Qt::CaseInsensitive)) return 1.0;
 
     return 1.0;
 }
@@ -33,7 +32,7 @@ double convertFactor(const QString &from)
 FileDescriptor::FileDescriptor(const QString &fileName) :
     _fileName(fileName), _changed(false), _dataChanged(false)
 {
-
+    qDebug()<<fileName;
 }
 
 FileDescriptor::~FileDescriptor()
@@ -79,7 +78,9 @@ double FileDescriptor::roundedSize() const
         }
         else {
             if (!channel(0)->populated()) channel(0)->populate();
-            size = channel(0)->data()->xValues().last();
+            QVector<double> vals = channel(0)->data()->xValues();
+            if (!vals.isEmpty())
+            size = vals.last();
         }
     }
     return size;
@@ -235,8 +236,8 @@ QString Descriptor::functionTypeDescription(int type)
         case  21: return "Partial Coherence";
         case  22: return "Eigenvalue";
         case  23: return "Eigenvector";
-        case  24: return "Shock Response Spectrum";
-        case  25: return "Finite Impulse Response Filter";
+        case  24: return "SRS";
+        case  25: return "FIR Filter";
         case  26: return "Multiple Coherence";
         case  27: return "Order Function";
         default: return "Неизв.";

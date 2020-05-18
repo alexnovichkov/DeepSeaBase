@@ -881,22 +881,33 @@ Function::Function(Channel &other) : Channel(other)
 
     setType58(type58);
 
-    type58[4].value = other.name(); if (other.name().isEmpty()) type58[4].value = "NONE";
-    type58[6].value = other.description(); if (other.description().isEmpty()) type58[6].value = "NONE";
+    if (!other.name().isEmpty()) type58[4].value = other.name();
+    if (!other.description().isEmpty()) type58[6].value = other.description();
     type58[8].value = QDateTime::currentDateTime();
     type58[14].value = other.type();
 
+    if (other.data()->yValuesFormat()== DataHolder::YValuesComplex)
+        type58[25].value = 6; // 5 - complex, single precision
+    else
+        type58[25].value = 4; // 2 - real, single precision
 
-    type58[26].value = data()->samplesCount();
-
+    type58[26].value = other.data()->samplesCount();
+    type58[27].value = other.data()->xValuesFormat() == DataHolder::XValuesNonUniform ? 0 : 1;
     type58[28].value = other.xMin();
     type58[29].value = other.xStep();
+    //type58[30].value = other.zValue();
 
     type58[32].value = abscissaType(other.xName());
     type58[36].value = abscissaTypeDescription(type58[32].value.toInt());
-    type58[37].value = other.xName(); if (other.xName().isEmpty()) type58[37].value = "NONE";
+    if (!other.xName().isEmpty()) type58[37].value = other.xName();
 
-    type58[44].value = other.yName(); if (other.yName().isEmpty()) type58[44].value = "NONE";
+    type58[39].value = abscissaType(other.yName());
+    type58[43].value = abscissaTypeDescription(type58[39].value.toInt());
+    if (!other.yName().isEmpty()) type58[44].value = other.yName();
+
+    type58[53].value = abscissaType(other.zName());
+    type58[57].value = abscissaTypeDescription(type58[53].value.toInt());
+    if (!other.zName().isEmpty()) type58[58].value = other.zName();
 
     dataPosition=-1;
 }
@@ -962,7 +973,41 @@ void Function::readRest()
         _data->setSamplesCount(type58[26].value.toInt());
     }
 
-    DataHolder::YValuesFormat yValueFormat = type58[25].value.toInt() >= 5 ? DataHolder::YValuesComplex : DataHolder::YValuesAmplitudes;
+    DataHolder::YValuesFormat yValueFormat = DataHolder::YValuesReals;
+
+    int ftype = type58[14].value.toInt();
+    switch (ftype) {
+        case 0: yValueFormat = DataHolder::YValuesReals; break; // 0 - General or Unknown
+        case 1: yValueFormat = DataHolder::YValuesReals; break; // 1 - Time Response
+        case 2: yValueFormat = DataHolder::YValuesAmplitudes; break; // 2 - Auto Spectrum
+        case 3: yValueFormat = DataHolder::YValuesAmplitudes; break; // 3 - Cross Spectrum
+        case 4: yValueFormat = DataHolder::YValuesAmplitudes; break; // 4 - Frequency Response Function
+        case 5: yValueFormat = DataHolder::YValuesReals; break; // 5 - Transmissibility
+        case 6: yValueFormat = DataHolder::YValuesReals; break; // 6 - Coherence
+        case 7: yValueFormat = DataHolder::YValuesReals; break; // 7 - Auto Correlation
+        case 8: yValueFormat = DataHolder::YValuesReals; break; // 8 - Cross Correlation
+        case 9: yValueFormat = DataHolder::YValuesAmplitudes; break; // 9 - Power Spectral Density (PSD)
+        case 10: yValueFormat = DataHolder::YValuesAmplitudes; break; // 10 - Energy Spectral Density (ESD)
+        case 11: yValueFormat = DataHolder::YValuesAmplitudes; break; // 11 - Probability Density Function
+        case 12: yValueFormat = DataHolder::YValuesAmplitudes; break; // 12 - Spectrum
+        case 13: yValueFormat = DataHolder::YValuesAmplitudes; break; // 13 - Cumulative Frequency Distribution
+        case 14: yValueFormat = DataHolder::YValuesReals; break; // 14 - Peaks Valley
+        case 15: yValueFormat = DataHolder::YValuesReals; break; // 15 - Stress/Cycles
+        case 16: yValueFormat = DataHolder::YValuesReals; break; // 16 - Strain/Cycles
+        case 17: yValueFormat = DataHolder::YValuesReals; break; // 17 - Orbit
+        case 18: yValueFormat = DataHolder::YValuesReals; break; // 18 - Mode Indicator Function
+        case 19: yValueFormat = DataHolder::YValuesReals; break; // 19 - Force Pattern
+        case 20: yValueFormat = DataHolder::YValuesReals; break; // 20 - Partial Power
+        case 21: yValueFormat = DataHolder::YValuesReals; break; // 21 - Partial Coherence
+        case 22: yValueFormat = DataHolder::YValuesReals; break; // 22 - Eigenvalue
+        case 23: yValueFormat = DataHolder::YValuesReals; break; // 23 - Eigenvector
+        case 24: yValueFormat = DataHolder::YValuesAmplitudes; break; // 24 - Shock Response Spectrum
+        case 25: yValueFormat = DataHolder::YValuesReals; break; // 25 - Finite Impulse Response Filter
+        case 26: yValueFormat = DataHolder::YValuesReals; break; // 26 - Multiple Coherence
+        case 27: yValueFormat = DataHolder::YValuesReals; break; // 27 - Order Function
+        default: break;
+    }
+    if (type58[25].value.toInt() >= 5) yValueFormat = DataHolder::YValuesComplex;
 
     if (yName()=="dB" || yName()=="дБ" || type58[43].value.toString()=="Уровень")
         yValueFormat = DataHolder::YValuesAmplitudesInDB;
@@ -970,12 +1015,18 @@ void Function::readRest()
     if (type58[43].value.toString()=="Phase")
         yValueFormat = DataHolder::YValuesPhases;
 
-    if (type58[32].value.toInt()==17 || type58[32].value.toInt()==0) // time или неизв.
-        yValueFormat = DataHolder::YValuesReals;
     _data->setYValuesFormat(yValueFormat);
 
     int units = DataHolder::UnitsLinear;
-    if (type58[14].value.toInt() == 9/*PSD*/) units = DataHolder::UnitsQuadratic;
+    if (ftype == 9/*PSD*/ ||
+        ftype == 10/*ESD*/ ||
+        ftype == 2 /*auto power spectrum*/ ||
+        ftype == 3 /*cross spectrum*/) units = DataHolder::UnitsQuadratic;
+//    else if (ftype == 3 /*cross spectrum*/) {
+//        //14 normalization method, 0=unknown, 1=units squared, 2=Units squared per Hz (PSD)
+//        //                         3=Units squared seconds per Hz (ESD)
+//        if (header.type1858[14].value.toInt() > 0) units = DataHolder::UnitsQuadratic;
+//    }
     _data->setYValuesUnits(units);
 }
 
