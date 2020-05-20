@@ -637,10 +637,15 @@ void Data94File::calculateMean(const QList<Channel*> &toMean)
     Averaging averaging(Averaging::Linear, toMean.size());
 
     foreach (Channel *ch, toMean) {
+        const bool populated = ch->populated();
+        if (!populated) ch->populate();
+
         if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
             averaging.average(ch->data()->yValuesComplex());
         else
             averaging.average(ch->data()->linears());
+
+        if (!populated) ch->clear();
     }
 
     Data94Channel *ch = new Data94Channel(this);
@@ -746,6 +751,8 @@ void Data94File::calculateMean(const QList<Channel*> &toMean)
     ch->_description.insert("function", function);
 
     this->channels << ch;
+
+    if (!firstChannelPopulated) firstChannel->clear();
 
     setChanged(true);
     setDataChanged(true);

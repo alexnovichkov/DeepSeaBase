@@ -269,13 +269,8 @@ void UffFileDescriptor::write()
 {DD;
     if (!changed() && !dataChanged()) return;
 
-    //be sure all channels were read. May take too much memory
-    //populate();
-
     QTemporaryFile tempFile;
 
-
-//    QFile uff(fileName());
     if (tempFile.open()) {
         QTextStream stream(&tempFile);
         header.write(stream);
@@ -286,6 +281,8 @@ void UffFileDescriptor::write()
             if (!populated) c->populate();
             c->write(stream);
             if (!populated) c->clear();
+            c->setChanged(false);
+            c->setDataChanged(false);
         }
     }
     else {
@@ -296,6 +293,7 @@ void UffFileDescriptor::write()
     QFile::copy(tempFile.fileName(), fileName());
 
     setChanged(false);
+    setDataChanged(false);
 }
 
 void UffFileDescriptor::writeRawFile()
@@ -491,10 +489,6 @@ void UffFileDescriptor::calculateMean(const QList<Channel*> &toMean)
 
     if (toMean.isEmpty()) return;
 
-    populate();
-
-    Function *ch = new Function(this);
-
     Channel *firstChannel = toMean.constFirst();
 
     //ищем наименьшее число отсчетов
@@ -532,6 +526,11 @@ void UffFileDescriptor::calculateMean(const QList<Channel*> &toMean)
     }
 
     // обновляем сведения канала
+    Function *ch = new Function(this);
+    ch->setChanged(true);
+    ch->setDataChanged(true);
+    ch->setPopulated(true);
+
     ch->setName("Среднее");
     ch->type58[8].value = QDateTime::currentDateTime();
 
@@ -560,7 +559,6 @@ void UffFileDescriptor::calculateMean(const QList<Channel*> &toMean)
         ch->type58[27].value = 0;
         ch->data()->setXValues(firstChannel->data()->xValues().mid(0, numInd));
     }
-    ch->setPopulated(true);
 
     ch->type58[14].value = firstChannel->type();
 
@@ -579,7 +577,10 @@ void UffFileDescriptor::calculateMean(const QList<Channel*> &toMean)
     ch->parent = this;
 
     channels << ch;
-    removeTempFile();
+
+    setChanged(true);
+    setDataChanged(true);
+    write();
 }
 
 void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &toAvg, int windowSize)
