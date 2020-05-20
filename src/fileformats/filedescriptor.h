@@ -94,7 +94,7 @@ public:
     virtual void copyChannelsFrom(FileDescriptor *, const QVector<int> &) = 0;
 
     /** Calculates mean of channels, writes to a file */
-    virtual void calculateMean(const QList<QPair<FileDescriptor *, int> > &channels) = 0;
+    virtual void calculateMean(const QList<Channel*> &channels) = 0;
     virtual QString calculateThirdOctave() = 0;
     virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels,
                                     int windowSize) = 0;

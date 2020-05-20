@@ -486,48 +486,45 @@ void UffFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
     removeTempFile();
 }
 
-void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> > &channels)
+void UffFileDescriptor::calculateMean(const QList<Channel*> &toMean)
 {DD;
 
-    if (channels.isEmpty()) return;
+    if (toMean.isEmpty()) return;
 
     populate();
 
     Function *ch = new Function(this);
 
-    QList<Channel*> list;
-    for (int i=0; i<channels.size(); ++i)
-        list << channels.at(i).first->channel(channels.at(i).second);
-    Channel *firstChannel = list.constFirst();
+    Channel *firstChannel = toMean.constFirst();
 
     //ищем наименьшее число отсчетов
     int numInd = firstChannel->samplesCount();
-    for (int i=1; i<list.size(); ++i) {
-        if (list.at(i)->samplesCount() < numInd)
-            numInd = list.at(i)->samplesCount();
+    for (int i=1; i<toMean.size(); ++i) {
+        if (toMean.at(i)->samplesCount() < numInd)
+            numInd = toMean.at(i)->samplesCount();
     }
 
     // ищем формат данных для нового канала
     // если форматы разные, то формат будет линейный (амплитуды), не логарифмированный
     auto format = firstChannel->data()->yValuesFormat();
-    for (int i=1; i<list.size(); ++i) {
-        if (list.at(i)->data()->yValuesFormat() != format) {
+    for (int i=1; i<toMean.size(); ++i) {
+        if (toMean.at(i)->data()->yValuesFormat() != format) {
             format = DataHolder::YValuesAmplitudes;
             break;
         }
     }
 
     int units = firstChannel->units();
-    for (int i=1; i<list.size(); ++i) {
-        if (list.at(i)->units() != units) {
+    for (int i=1; i<toMean.size(); ++i) {
+        if (toMean.at(i)->units() != units) {
             units = DataHolder::UnitsUnknown;
             break;
         }
     }
 
-    Averaging averaging(Averaging::Linear, list.size());
+    Averaging averaging(Averaging::Linear, toMean.size());
 
-    foreach (Channel *ch, list) {
+    foreach (Channel *ch, toMean) {
         if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
             averaging.average(ch->data()->yValuesComplex());
         else
@@ -539,8 +536,8 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     ch->type58[8].value = QDateTime::currentDateTime();
 
     QStringList l;
-    for (int i=0; i<channels.size(); ++i) {
-        l << QString::number(channels.at(i).second + 1);
+    for (int i=0; i<toMean.size(); ++i) {
+        l << QString::number(toMean.at(i)->index() + 1);
     }
     ch->setDescription("Среднее каналов "+l.join(","));
 
@@ -581,18 +578,18 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
 
     ch->parent = this;
 
-    this->channels << ch;
+    channels << ch;
     removeTempFile();
 }
 
-void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize)
+void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &toAvg, int windowSize)
 {DD;
     populate();
 
-    for (int i=0; i<channels.size(); ++i) {
+    for (int i=0; i<toAvg.size(); ++i) {
         Function *ch = new Function(this);
-        FileDescriptor *firstDescriptor = channels.at(i).first;
-        Channel *firstChannel = firstDescriptor->channel(channels.at(i).second);
+        FileDescriptor *firstDescriptor = toAvg.at(i).first;
+        Channel *firstChannel = firstDescriptor->channel(toAvg.at(i).second);
 
         int numInd = firstChannel->samplesCount();
         auto format = firstChannel->data()->yValuesFormat();
@@ -640,7 +637,7 @@ void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
 
         ch->type58[28].value = firstChannel->xMin();
 
-        this->channels << ch;
+        channels << ch;
     }
     removeTempFile();
 }

@@ -1,5 +1,7 @@
 #include "averaging.h"
 
+#include "fileformats/filedescriptor.h"
+
 Averaging::Averaging() :
     averagingType(Linear), maximumAverages(0)
 {
@@ -176,4 +178,48 @@ int Averaging::getAveragingType() const
 void Averaging::setAveragingType(int value)
 {
     averagingType = value;
+}
+
+Averaging *averageChannels(const QList<QPair<FileDescriptor *, int> > &toMean)
+{
+    QList<Channel*> list;
+    for (int i=0; i<toMean.size(); ++i)
+        list << toMean.at(i).first->channel(toMean.at(i).second);
+    Channel *firstChannel = list.constFirst();
+
+    //ищем наименьшее число отсчетов
+    int numInd = firstChannel->samplesCount();
+    for (int i=1; i<list.size(); ++i) {
+        if (list.at(i)->samplesCount() < numInd)
+            numInd = list.at(i)->samplesCount();
+    }
+
+    // ищем формат данных для нового канала
+    // если форматы разные, то формат будет линейный (амплитуды), не логарифмированный
+    auto format = firstChannel->data()->yValuesFormat();
+    for (int i=1; i<list.size(); ++i) {
+        if (list.at(i)->data()->yValuesFormat() != format) {
+            format = DataHolder::YValuesAmplitudes;
+            break;
+        }
+    }
+
+    int units = firstChannel->units();
+    for (int i=1; i<list.size(); ++i) {
+        if (list.at(i)->units() != units) {
+            units = DataHolder::UnitsUnknown;
+            break;
+        }
+    }
+
+    Averaging *averaging = new Averaging(Averaging::Linear, list.size());
+
+    foreach (Channel *ch, list) {
+        if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
+            averaging->average(ch->data()->yValuesComplex());
+        else
+            averaging->average(ch->data()->linears());
+    }
+
+    return averaging;
 }

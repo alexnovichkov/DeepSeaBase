@@ -1245,7 +1245,7 @@ void MainWindow::calculateMean()
 {DD;
     if (plot->curves.size()<2) return;
 
-    QList<QPair<FileDescriptor *, int> > channels;
+    QList<Channel*> channels;
 
     bool dataTypeEqual = true;
     bool stepsEqual = true; // одинаковый шаг по оси Х
@@ -1255,13 +1255,13 @@ void MainWindow::calculateMean()
     bool writeToUff = false;
 
     Curve *firstCurve = plot->curves.constFirst();
-    channels.append({firstCurve->descriptor, firstCurve->channelIndex});
+    channels.append(firstCurve->channel);
 
     bool allFilesDfd = firstCurve->descriptor->fileName().toLower().endsWith("dfd");
 
     for (int i = 1; i<plot->curves.size(); ++i) {
         Curve *curve = plot->curves.at(i);
-        channels.append({curve->descriptor, curve->channelIndex});
+        channels.append(curve->channel);
 
         allFilesDfd &= firstCurve->descriptor->fileName().toLower().endsWith("dfd");
         if (firstCurve->channel->xStep() != curve->channel->xStep())
@@ -1309,8 +1309,8 @@ void MainWindow::calculateMean()
         writeToSeparateFile = (result == QMessageBox::No);
     }
 
-    QString meanDfdFile;
-    FileDescriptor *meanDfd = 0;
+    QString meanFileName;
+    FileDescriptor *meanFile = 0;
     bool descriptorFound = false;
 
     if (writeToSeparateFile) {
@@ -1329,7 +1329,7 @@ void MainWindow::calculateMean()
         dialog.setFileMode(QFileDialog::AnyFile);
 //        dialog.setDefaultSuffix(writeToUff?"uff":"dfd");
 
-        if (!writeToUff && allFilesDfd) {
+        if (!writeToUff) {
             QSortFilterProxyModel *proxy = new DfdFilterProxy(firstCurve->descriptor, this);
             dialog.setProxyModel(proxy);
         }
@@ -1342,59 +1342,59 @@ void MainWindow::calculateMean()
         }
         if (selectedFiles.isEmpty()) return;
 
-        meanDfdFile = selectedFiles.constFirst();
-        if (meanDfdFile.isEmpty()) return;
+        meanFileName = selectedFiles.constFirst();
+        if (meanFileName.isEmpty()) return;
 
-        QString currentSuffix = QFileInfo(meanDfdFile).suffix().toLower();
+        QString currentSuffix = QFileInfo(meanFileName).suffix().toLower();
         QString filterSuffix = suffixes.at(filters.indexOf(selectedFilter));
 
         if (currentSuffix != filterSuffix) {
             //удаляем суффикс, если это суффикс известного нам типа файлов
             if (suffixes.contains(currentSuffix))
-                meanDfdFile.chop(currentSuffix.length()+1);
+                meanFileName.chop(currentSuffix.length()+1);
 
-            meanDfdFile.append(QString(".%1").arg(filterSuffix));
+            meanFileName.append(QString(".%1").arg(filterSuffix));
         }
 
-        meanDfd = findDescriptor(meanDfdFile);
-        if (meanDfd)
+        meanFile = findDescriptor(meanFileName);
+        if (meanFile)
             descriptorFound = true;
         else {
-            meanDfd = FormatFactory::createDescriptor(meanDfdFile);
+            meanFile = FormatFactory::createDescriptor(meanFileName);
         }
 
-        if (!meanDfd) return;
+        if (!meanFile) return;
 
-        if (QFileInfo(meanDfdFile).exists() && !descriptorFound)
-            meanDfd->read();
+        if (QFileInfo(meanFileName).exists() && !descriptorFound)
+            meanFile->read();
         else
-            meanDfd->fillPreliminary(firstCurve->channel->type());
+            meanFile->fillPreliminary(firstCurve->channel->type());
 
-        MainWindow::setSetting(writeToUff?"lastMeanUffFile":"lastMeanFile", meanDfdFile);
+        MainWindow::setSetting(writeToUff?"lastMeanUffFile":"lastMeanFile", meanFileName);
     }
     else {
-        meanDfd = firstCurve->descriptor;
-        meanDfdFile = meanDfd->fileName();
+        meanFile = firstCurve->descriptor;
+        meanFileName = meanFile->fileName();
         descriptorFound = true;
     }
 
-    meanDfd->calculateMean(channels);
+    meanFile->calculateMean(channels);
 
     if (writeToSeparateFile)
-        meanDfd->fillRest();
+        meanFile->fillRest();
 
-    meanDfd->setChanged(true);
-    meanDfd->setDataChanged(true);
-    meanDfd->write();
-    meanDfd->writeRawFile();
+//    meanFile->setChanged(true);
+//    meanFile->setDataChanged(true);
+//    meanFile->write();
+//    meanFile->writeRawFile();
 
     if (descriptorFound) {
-        tab->model->updateFile(meanDfd);
+        tab->model->updateFile(meanFile);
     }
     else {
-        addFile(meanDfd);
+        addFile(meanFile);
     }
-    setCurrentAndPlot(meanDfd, meanDfd->channelsCount()-1);
+    setCurrentAndPlot(meanFile, meanFile->channelsCount()-1);
 }
 
 void MainWindow::moveChannelsUp()

@@ -76,14 +76,14 @@ public:
     virtual void setDataDescriptor(const DescriptionList &data) override;
     virtual QString dataDescriptorAsString() const override;
     virtual QDateTime dateTime() const override;
-    virtual void deleteChannels(const QVector<int> &channelsToDelete) override;
+    virtual void deleteChannels(const QVector<int> &) override;
     virtual void copyChannelsFrom(FileDescriptor *, const QVector<int> &) override;
-    virtual void calculateMean(const QList<QPair<FileDescriptor *, int> > &channels) override;
+    virtual void calculateMean(const QList<Channel *> &) override;
     virtual QString calculateThirdOctave() override;
-    virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize) override;
-    virtual QString saveTimeSegment(double from, double to) override;
+    virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &, int) override;
+    virtual QString saveTimeSegment(double, double) override;
     virtual int channelsCount() const override;
-    virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
+    virtual void move(bool, const QVector<int> &, const QVector<int> &) override;
     virtual QVariant channelHeader(int column) const override;
     virtual int columnsCount() const override;
     virtual Channel *channel(int index) const override;
@@ -95,8 +95,8 @@ public:
     virtual int samplesCount() const override;
     virtual void setSamplesCount(int count) override;
     virtual QString xName() const override;
-    virtual bool setDateTime(QDateTime dt) override;
-    virtual bool dataTypeEquals(FileDescriptor *other) const override;
+    virtual bool setDateTime(QDateTime) override;
+    virtual bool dataTypeEquals(FileDescriptor *) const override;
 };
 
 class MatlabChannel : public Channel
@@ -120,25 +120,25 @@ public:
 
     // Channel interface
 public:
-    virtual QVariant info(int column, bool edit) const override;
+    virtual QVariant info(int, bool) const override;
     virtual int columnsCount() const override;
-    virtual QVariant channelHeader(int column) const override;
+    virtual QVariant channelHeader(int) const override;
     virtual Descriptor::DataType type() const override;
     virtual int octaveType() const override;
     virtual void populate() override;
     virtual QString name() const override;
-    virtual void setName(const QString &name) override;
+    virtual void setName(const QString &) override;
     virtual QString description() const override;
-    virtual void setDescription(const QString &description) override;
+    virtual void setDescription(const QString &) override;
     virtual QString xName() const override;
     virtual QString yName() const override;
     virtual QString zName() const override;
-    virtual void setYName(const QString &yName) override;
+    virtual void setYName(const QString &) override;
     virtual QString legendName() const override;
     virtual FileDescriptor *descriptor() override;
     virtual int index() const override;
     virtual QString correction() const override;
-    virtual void setCorrection(const QString &s) override;
+    virtual void setCorrection(const QString &) override;
 };
 
 template <typename T>

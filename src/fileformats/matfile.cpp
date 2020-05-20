@@ -1127,7 +1127,7 @@ QDateTime MatFile::dateTime() const
     return QDateTime(d,t);
 }
 
-void MatFile::deleteChannels(const QVector<int> &channelsToDelete)
+void MatFile::deleteChannels(const QVector<int> &)
 {
 }
 
@@ -1135,20 +1135,23 @@ void MatFile::copyChannelsFrom(FileDescriptor *, const QVector<int> &)
 {
 }
 
-void MatFile::calculateMean(const QList<QPair<FileDescriptor *, int> > &channels)
+void MatFile::calculateMean(const QList<Channel*> &)
 {
+
 }
 
 QString MatFile::calculateThirdOctave()
 {
+    return QString();
 }
 
-void MatFile::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize)
+void MatFile::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &, int)
 {
 }
 
-QString MatFile::saveTimeSegment(double from, double to)
+QString MatFile::saveTimeSegment(double, double)
 {
+    return QString();
 }
 
 int MatFile::channelsCount() const
@@ -1156,7 +1159,7 @@ int MatFile::channelsCount() const
     return channels.size();
 }
 
-void MatFile::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
+void MatFile::move(bool, const QVector<int> &, const QVector<int> &)
 {
 }
 
@@ -1222,12 +1225,12 @@ QString MatFile::xName() const
     return channels.constFirst()->xName();
 }
 
-bool MatFile::setDateTime(QDateTime dt)
+bool MatFile::setDateTime(QDateTime)
 {
-    Q_UNUSED(dt);
+    return true;
 }
 
-bool MatFile::dataTypeEquals(FileDescriptor *other) const
+bool MatFile::dataTypeEquals(FileDescriptor *) const
 {
     return false;
 }
@@ -1240,7 +1243,7 @@ MatlabChannel::MatlabChannel(MatFile *parent) : Channel(), parent(parent)
 }
 
 
-QVariant MatlabChannel::info(int column, bool edit) const
+QVariant MatlabChannel::info(int , bool ) const
 {
     return QVariant();
 }
@@ -1250,7 +1253,7 @@ int MatlabChannel::columnsCount() const
     return 5;
 }
 
-QVariant MatlabChannel::channelHeader(int column) const
+QVariant MatlabChannel::channelHeader(int) const
 {
     return QVariant();
 }
@@ -1323,7 +1326,7 @@ QString MatlabChannel::name() const
     return l.join("-");
 }
 
-void MatlabChannel::setName(const QString &name)
+void MatlabChannel::setName(const QString &)
 {
 }
 
@@ -1335,7 +1338,7 @@ QString MatlabChannel::description() const
     return info.join(" \\");
 }
 
-void MatlabChannel::setDescription(const QString &description)
+void MatlabChannel::setDescription(const QString &)
 {
 }
 
@@ -1355,7 +1358,7 @@ QString MatlabChannel::zName() const
     return QString();
 }
 
-void MatlabChannel::setYName(const QString &yName)
+void MatlabChannel::setYName(const QString &)
 {
 }
 
@@ -1379,7 +1382,7 @@ QString MatlabChannel::correction() const
     return QString();
 }
 
-void MatlabChannel::setCorrection(const QString &s)
+void MatlabChannel::setCorrection(const QString &)
 {
 }
 

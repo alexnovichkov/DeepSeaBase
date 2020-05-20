@@ -952,45 +952,42 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
     write();
 }
 
-void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> > &channels)
+void DfdFileDescriptor::calculateMean(const QList<Channel*> &channels)
 {DD;
     populate();
 
     DfdChannel *ch = new DfdChannel(this, channelsCount());
 
-    QList<Channel*> list;
-    for (int i=0; i<channels.size(); ++i)
-        list << channels.at(i).first->channel(channels.at(i).second);
-    Channel *firstChannel = list.constFirst();
+    Channel *firstChannel = channels.constFirst();
 
     //ищем наименьшее число отсчетов
     int numInd = firstChannel->samplesCount();
-    for (int i=1; i<list.size(); ++i) {
-        if (list.at(i)->samplesCount() < numInd)
-            numInd = list.at(i)->samplesCount();
+    for (int i=1; i<channels.size(); ++i) {
+        if (channels.at(i)->samplesCount() < numInd)
+            numInd = channels.at(i)->samplesCount();
     }
 
     // ищем формат данных для нового канала
     // если форматы разные, то формат будет линейный (амплитуды), не логарифмированный
     auto format = firstChannel->data()->yValuesFormat();
-    for (int i=1; i<list.size(); ++i) {
-        if (list.at(i)->data()->yValuesFormat() != format) {
+    for (int i=1; i<channels.size(); ++i) {
+        if (channels.at(i)->data()->yValuesFormat() != format) {
             format = DataHolder::YValuesAmplitudes;
             break;
         }
     }
 
     int units = firstChannel->units();
-    for (int i=1; i<list.size(); ++i) {
-        if (list.at(i)->units() != units) {
+    for (int i=1; i<channels.size(); ++i) {
+        if (channels.at(i)->units() != units) {
             units = DataHolder::UnitsUnknown;
             break;
         }
     }
 
-    Averaging averaging(Averaging::Linear, list.size());
+    Averaging averaging(Averaging::Linear, channels.size());
 
-    foreach (Channel *ch, list) {
+    foreach (Channel *ch, channels) {
         if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
             averaging.average(ch->data()->yValuesComplex());
         else
@@ -1000,13 +997,13 @@ void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     // обновляем сведения канала
     ch->setPopulated(true);
     QStringList l;
-    foreach (Channel *c,list) {
+    foreach (Channel *c,channels) {
         l << c->name();
     }
     ch->ChanName = "Среднее "+l.join(", ");
     l.clear();
     for (int i=0; i<channels.size(); ++i) {
-        l << QString::number(channels.at(i).second+1);
+        l << QString::number(channels.at(i)->index()+1);
     }
     ch->ChanDscr = "Среднее каналов "+l.join(",");
 

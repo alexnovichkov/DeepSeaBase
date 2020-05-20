@@ -147,7 +147,7 @@ public:
     virtual QDateTime dateTime() const override;
     virtual void deleteChannels(const QVector<int> &channelsToDelete) override;
     virtual void copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes) override;
-    virtual void calculateMean(const QList<QPair<FileDescriptor *, int> > &channels) override;
+    virtual void calculateMean(const QList<Channel *> &toMean) override;
     virtual QString calculateThirdOctave() override;
     virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize) override;
     virtual QString saveTimeSegment(double from, double to) override;
@@ -169,6 +169,7 @@ public:
     static QStringList suffixes();
 private:
     void writeData(const FileDescriptor &d, const QVector<int> &indexes);
+    void updatePositions();
     friend class Data94Channel;
     QJsonObject description;
     QList<Data94Channel*> channels;
@@ -210,13 +211,13 @@ public:
     virtual int index() const override;
     virtual QString correction() const override;
     virtual void setCorrection(const QString &s) override;
+    bool isComplex = false;
+    QJsonObject _description;
 private:
     friend class Data94File;
     Data94File *parent = 0;
 
-    bool isComplex = false;
     qint64 dataPosition = -1;
-    QJsonObject _description;
 };
 
 #endif // DATA94FILE_H
