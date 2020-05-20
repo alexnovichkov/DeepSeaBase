@@ -704,13 +704,49 @@ QString UffFileDescriptor::calculateThirdOctave()
 
 void UffFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
 {DD;
+    // заполняем вектор индексов каналов, как они будут выглядеть после перемещения
+    const int count = channelsCount();
+    QVector<int> indexesVector(count);
+    for (int i=0; i<count; ++i) indexesVector[i] = i;
+
+    {int i=up?0:indexes.size()-1;
+    while (1) {
+        indexesVector.move(indexes.at(i),newIndexes.at(i));
+        if ((up && i==indexes.size()-1) || (!up && i==0)) break;
+        i=up?i+1:i-1;
+    }}
+
+    QTemporaryFile uff;
+    if (!uff.open()) {
+        qDebug()<<"Couldn't open file to write";
+        return;
+    }
+
+    QTextStream stream(&uff);
+    header.write(stream);
+    units.write(stream);
+
+    for (int i=0; i<indexesVector.count(); ++i) {
+        Function *f = channels.at(indexesVector.at(i));
+        bool populated = f->populated();
+        if (!populated) f->populate();
+
+        f->write(stream);
+
+        //clearing
+        if (!populated) f->clear();
+    }
+    uff.close();
+
     int i=up?0:indexes.size()-1;
     while (1) {
         channels.move(indexes.at(i),newIndexes.at(i));
         if ((up && i==indexes.size()-1) || (!up && i==0)) break;
         i=up?i+1:i-1;
     }
-    setChanged(true);
+
+    QFile::remove(fileName());
+    uff.copy(fileName());
     removeTempFile();
 }
 

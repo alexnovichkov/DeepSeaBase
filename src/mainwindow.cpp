@@ -1560,14 +1560,14 @@ void MainWindow::moveChannels(bool up)
 {DD;
     QVector<int> selectedIndexes = tab->channelModel->selected();
 
-    QVector<int> newIndexes = computeIndexes(selectedIndexes, up, tab->record->channelsCount());
+    const QVector<int> newIndexes = computeIndexes(selectedIndexes, up, tab->record->channelsCount());
 
     tab->record->move(up, selectedIndexes, newIndexes);
 
     updateChannelsTable(tab->record);
 
     tab->channelsTable->clearSelection();
-    Q_FOREACH (const int &i, newIndexes)
+    for (int i: newIndexes)
         tab->channelsTable->selectionModel()->select(tab->channelModel->index(i,0),QItemSelectionModel::Select);
 }
 

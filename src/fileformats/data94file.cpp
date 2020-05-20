@@ -868,6 +868,103 @@ QString Data94File::saveTimeSegment(double from, double to)
 
 void Data94File::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
 {
+    // заполняем вектор индексов каналов, как они будут выглядеть после перемещения
+    const int count = channelsCount();
+    QVector<int> indexesVector(count);
+    for (int i=0; i<count; ++i) indexesVector[i] = i;
+
+    {int i=up?0:indexes.size()-1;
+    while (1) {
+        indexesVector.move(indexes.at(i),newIndexes.at(i));
+        if ((up && i==indexes.size()-1) || (!up && i==0)) break;
+        i=up?i+1:i-1;
+    }}
+
+    QTemporaryFile temp;
+    if (!temp.open()) {
+        qDebug()<<"Couldn't open file to write";
+        return;
+    }
+
+    QDataStream r(&temp);
+    r.setByteOrder(QDataStream::LittleEndian);
+    r.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+    //переписываем описательную часть
+    QJsonArray array;
+    for (int i: qAsConst(indexesVector)) {
+        array.append(channels.at(i)->_description);
+    }
+    QJsonObject d = description;
+    d.insert("channels", array);
+
+    QJsonDocument doc(d);
+    QByteArray json = doc.toJson();
+
+    //общая длина записанного с учетом паддинга равна descriptionSize + paddingSize + 4
+    const quint32 newDescriptionSize = json.size();
+
+    r.device()->write("data94  ");
+    //записываем размер данных
+    r << newDescriptionSize;
+    descriptionSize = newDescriptionSize;
+
+    r.writeRawData(json.data(), newDescriptionSize);
+    r << paddingSize;
+    QByteArray padding; padding.resize(paddingSize);
+    r.writeRawData(padding.data(), paddingSize);
+
+    xAxisBlock.write(r);
+    zAxisBlock.write(r);
+    r << quint32(channels.count());
+
+    for (int i: qAsConst(indexesVector)) {
+        Data94Channel *f = channels.at(i);
+        bool populated = f->populated();
+        if (!populated) f->populate();
+
+        const quint32 format = f->isComplex ? 2 : 1;
+        r << format;
+
+        if (!f->isComplex) {
+            const QVector<double> yValues = f->data()->rawYValues();
+            if (yValues.isEmpty()) {
+                qDebug()<<"Отсутствуют данные для записи в канале"<<f->name();
+                continue;
+            }
+
+            for (double v: yValues) {
+                r << (float)v;
+            }
+        }
+        else {
+            const auto yValues = f->data()->yValuesComplex();
+            if (yValues.isEmpty()) {
+                qDebug()<<"Отсутствуют данные для записи в канале"<<f->name();
+                continue;
+            }
+            for (cx_double v: yValues) {
+                r << (float)v.real();
+                r << (float)v.imag();
+            }
+        }
+
+        //clearing
+        if (!populated) f->clear();
+    }
+
+    temp.close();
+
+    int i=up?0:indexes.size()-1;
+    while (1) {
+        channels.move(indexes.at(i),newIndexes.at(i));
+        if ((up && i==indexes.size()-1) || (!up && i==0)) break;
+        i=up?i+1:i-1;
+    }
+    updatePositions();
+
+    QFile::remove(fileName());
+    temp.copy(fileName());
 }
 
 QVariant Data94File::channelHeader(int column) const
