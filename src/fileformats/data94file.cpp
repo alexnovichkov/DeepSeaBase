@@ -18,6 +18,7 @@ Data94File::Data94File(const Data94File &other, const QString &fileName, QVector
     this->zAxisBlock = other.zAxisBlock;
     this->descriptionSize = other.descriptionSize;
     this->paddingSize = other.paddingSize;
+    description.insert("sourceFile", other.fileName());
 
     updateDateTimeGUID();
 
@@ -603,8 +604,6 @@ void Data94File::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int>
 
 void Data94File::calculateMean(const QList<Channel*> &toMean)
 {
-    //populate();
-
     Channel *firstChannel = toMean.constFirst();
     const bool firstChannelPopulated = firstChannel->populated();
     if (!firstChannelPopulated) firstChannel->populate();
@@ -769,6 +768,102 @@ void Data94File::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &
 
 QString Data94File::saveTimeSegment(double from, double to)
 {
+    // 0 проверяем, чтобы этот файл имел тип временных данных
+    if (type() != Descriptor::TimeResponse) return QString();
+
+    const int count = channelsCount();
+
+    // 1 создаем уникальное имя файла по параметрам from и to
+    QString fromString, toString;
+    getUniqueFromToValues(fromString, toString, from, to);
+    QString suffix = QString("_%1s_%2s").arg(fromString).arg(toString);
+
+    QString newFileName = createUniqueFileName("", fileName(), suffix, "d94", false);
+
+    // 2 создаем новый файл
+    Data94File *newFile = new Data94File(newFileName);
+
+    newFile->description = this->description;
+    newFile->xAxisBlock = this->xAxisBlock;
+    newFile->zAxisBlock = this->zAxisBlock;
+    newFile->descriptionSize = this->descriptionSize;
+    newFile->paddingSize = this->paddingSize;
+    newFile->description.insert("sourceFile", fileName());
+    newFile->updateDateTimeGUID();
+
+    // 3 ищем границы данных по параметрам from и to
+    int sampleStart = qRound((from/*-XBegin*/)/xAxisBlock.step);
+    if (sampleStart<0) sampleStart = 0;
+    int sampleEnd = qRound((to/*-XBegin*/)/xAxisBlock.step);
+    if (sampleEnd>=samplesCount()) sampleEnd = samplesCount()-1;
+
+    newFile->xAxisBlock.count = sampleEnd - sampleStart + 1; //число отсчетов в новом файле
+
+    // 4 сохраняем файл
+    for (int i=0; i<count; ++i) {
+        Data94Channel *ch = new Data94Channel(channels.at(i));
+        ch->parent = newFile;
+        newFile->channels << ch;
+    }
+    newFile->setChanged(true);
+    newFile->write();
+
+    newFile->updatePositions();
+
+    QFile f(newFile->fileName());
+    if (!f.open(QFile::ReadWrite)) {
+        qDebug()<<"Не удалось открыть файл для записи";
+        return newFileName;
+    }
+
+    QDataStream r(&f);
+    r.setByteOrder(QDataStream::LittleEndian);
+    r.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+    for (int i=0; i<count; ++i) {
+        bool wasPopulated = channels.at(i)->populated();
+        if (!wasPopulated) channels.at(i)->populate();
+
+        Data94Channel *ch = newFile->channels.at(i);
+
+        ch->data()->setSegment(*(channels.at(i)->data()), sampleStart, sampleEnd);
+
+        const quint32 format = ch->isComplex ? 2 : 1;
+
+        r.device()->seek(ch->dataPosition - 4);
+        r << format;
+
+        if (!ch->isComplex) {
+            const QVector<double> yValues = ch->data()->rawYValues();
+            if (yValues.isEmpty()) {
+                qDebug()<<"Отсутствуют данные для записи в канале"<<ch->name();
+                continue;
+            }
+
+            for (double v: yValues) {
+                r << (float)v;
+            }
+        }
+        else {
+            const auto yValues = ch->data()->yValuesComplex();
+            if (yValues.isEmpty()) {
+                qDebug()<<"Отсутствуют данные для записи в канале"<<ch->name();
+                continue;
+            }
+            for (cx_double v: yValues) {
+                r << (float)v.real();
+                r << (float)v.imag();
+            }
+        }
+        ch->setDataChanged(false);
+
+        if (!wasPopulated) channels[i]->data()->clear();
+    }
+
+    delete newFile;
+
+    // 5 возвращаем имя нового файла
+    return newFileName;
 }
 
 void Data94File::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
