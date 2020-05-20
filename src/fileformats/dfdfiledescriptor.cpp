@@ -539,33 +539,10 @@ void DfdFileDescriptor::writeRawFile()
 
     QFile rawFile(rawFileName);
     if (rawFile.open(QFile::WriteOnly)) {
-//        //fixing values with correction
-//        for (int i = 0; i<channels.size(); ++i) {
-//            if (!channels[i]->correct()) {
-//                channels[i]->data()->removeCorrection();
-//            }
-//        }
-
         QDataStream writeStream(&rawFile);
         writeStream.setByteOrder(QDataStream::LittleEndian);
 
-
-
         if (BlockSize == 0) {
-//            // записываем данные нулевого канала, если это третьоктава
-//            if (!channels.isEmpty()) {
-//                DfdChannel *ch = channels.constFirst();
-//                if (ch->xValuesFormat() == DataHolder::XValuesNonUniform) {
-//                    if (xValues.isEmpty()) xValues = ch->xValues();
-
-//                    if (ch->IndType==0xC0000004)
-//                        writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-//                    for (int val = 0; val < xValues.size(); ++val) {
-//                        ch->setValue(xValues[val], writeStream);
-//                    }
-//                }
-//            }
-
             // пишем поканально
             for (int i = 0; i<channels.size(); ++i) {
                 DfdChannel *ch = channels[i];
@@ -575,22 +552,12 @@ void DfdFileDescriptor::writeRawFile()
 
                 const int sc = ch->samplesCount();
 
-                //TODO: доделать комплексный формат dfd
-/*                if (!ch->data()->yValuesComplex().isEmpty()) {
-                    //записываем данные попеременно Re -> Im
-                    for (int val = 0; val < sc; ++val) {
-                        ch->setValue(ch->data()->yValuesComplex()[val].real(), writeStream);
-                        ch->setValue(ch->data()->yValuesComplex()[val].imag(), writeStream);
-                    }
-                }
-                else*/ {
-                    QVector<double> yValues = ch->data()->rawYValues();
-                    if (yValues.isEmpty() && !ch->data()->yValuesComplex().isEmpty())
-                        yValues = ch->data()->linears();
-                    int scc = qMin(sc, yValues.size());
-                    for (int val = 0; val < scc; ++val) {
-                        ch->setValue(yValues[val], writeStream);
-                    }
+                QVector<double> yValues = ch->data()->rawYValues();
+                if (yValues.isEmpty() && !ch->data()->yValuesComplex().isEmpty())
+                    yValues = ch->data()->linears();
+                int scc = qMin(sc, yValues.size());
+                for (int val = 0; val < scc; ++val) {
+                    ch->setValue(yValues[val], writeStream);
                 }
             }
         }
@@ -954,10 +921,6 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
 
 void DfdFileDescriptor::calculateMean(const QList<Channel*> &channels)
 {DD;
-    populate();
-
-    DfdChannel *ch = new DfdChannel(this, channelsCount());
-
     Channel *firstChannel = channels.constFirst();
 
     //ищем наименьшее число отсчетов
@@ -995,7 +958,11 @@ void DfdFileDescriptor::calculateMean(const QList<Channel*> &channels)
     }
 
     // обновляем сведения канала
+    DfdChannel *ch = new DfdChannel(this, channelsCount());
     ch->setPopulated(true);
+    ch->setChanged(true);
+    ch->setDataChanged(true);
+
     QStringList l;
     foreach (Channel *c,channels) {
         l << c->name();
@@ -1037,10 +1004,13 @@ void DfdFileDescriptor::calculateMean(const QList<Channel*> &channels)
             ch->YName = "дБ";
     }
     if (XName.isEmpty()) XName = firstChannel->xName();
-    ch->parent = this;
-    ch->channelIndex = this->channelsCount();
 
     this->channels << ch;
+
+    setChanged(true);
+    setDataChanged(true);
+    write();
+    writeRawFile();
 }
 
 void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize)
