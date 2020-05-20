@@ -107,15 +107,15 @@ void MatFile::read()
 
                 if (MatlabStructArray *x_values = findSubrecord<MatlabStructArray *>("x_values", rec)) {
                     if (auto *startValue = findSubrecord<MatlabNumericArray*>("start_value", x_values))
-                        xbegin = startValue->getNumericAsDouble().first();
+                        xbegin = startValue->getNumericAsDouble().constFirst();
                     if (auto *increment = findSubrecord<MatlabNumericArray*>("increment", x_values))
-                        xstep = increment->getNumericAsDouble().first();
+                        xstep = increment->getNumericAsDouble().constFirst();
                     if (auto *numberOfValues = findSubrecord<MatlabNumericArray*>("number_of_values", x_values))
-                        samplescount = numberOfValues->getNumericAsInt().first();
+                        samplescount = numberOfValues->getNumericAsInt().constFirst();
                     if (auto *bandType = findSubrecord<MatlabCharacterArray*>("band_type",x_values))
                         bandtype = bandType->getString();
                     if (auto *startFr = findSubrecord<MatlabNumericArray*>("start_frequency", x_values))
-                        startfrequency = startFr->getNumericAsDouble().first();
+                        startfrequency = startFr->getNumericAsDouble().constFirst();
                     if (auto *quantity = findSubrecord<MatlabStructArray*>("quantity", x_values))
                         channel->_xName = quantity->subRecords[quantity->fieldNames.indexOf("label")]->getString();
                     if (MatlabNumericArray* values = findSubrecord<MatlabNumericArray*>("values", x_values))
@@ -216,7 +216,7 @@ QList<QVector<int> > MatFile::groupChannels() const
         }
         else {
             //уже был
-            int pos = map.value(pair);
+            const int pos = map.value(pair);
             QVector<int> indexes = groupedChannelsIndexes.at(pos);
             indexes.append(i);
             groupedChannelsIndexes.replace(pos, indexes);
@@ -336,7 +336,7 @@ QJsonValue MatlabNumericRecord::toJson() const
 {
     QJsonObject o = MatlabRecord::toJson().toObject();
     o.insert("samples", qint64(actualDataSize));
-    if (actualDataSize==1) o.insert("value", getNumericAsDouble().first());
+    if (actualDataSize==1) o.insert("value", getNumericAsDouble().constFirst());
     return o;
 }
 
@@ -385,7 +385,7 @@ QJsonValue MatlabArrayRecord::toJson() const
         o.insert("name", name);
     QStringList l;
     for(int i: dimensions) l << QString::number(i);
-    if (dimensions.first() > 1 || dimensions.at(1) > 1)
+    if (dimensions.constFirst() > 1 || dimensions.at(1) > 1)
         o.insert("dimensions", l.join(" x "));
 
     QJsonArray array;
@@ -780,9 +780,9 @@ QJsonValue MatlabSparseArray::toJson() const
 
 QJsonValue MatlabNumericArray::toJson() const
 {
-    if (dimensions.first()==1 && dimensions.at(1) == 1) {
+    if (dimensions.constFirst()==1 && dimensions.at(1) == 1) {
         //единственное число
-        return getNumericAsDouble().first();
+        return getNumericAsDouble().constFirst();
     }
     QJsonObject o = MatlabArrayRecord::toJson().toObject();
 
@@ -805,7 +805,7 @@ void MatlabNumericArray::readData(QDataStream *f)
         if (imagValues) imagValues->readData(f);
     }
 #ifdef PRINT_CONTENT
-//    if (realValues->header->==1) qDebug()<<"Value:"<<realValues.first();
+//    if (realValues->header->==1) qDebug()<<"Value:"<<realValues.constFirst();
 //    else
 //        qDebug()<<"    values size"<<realValues.size()<<"imags size"<<valuesImag.size();
 #endif
@@ -1089,13 +1089,13 @@ void MatFile::updateDateTimeGUID()
 Descriptor::DataType MatFile::type() const
 {
     if (channels.isEmpty()) return Descriptor::Unknown;
-    return channels.first()->type();
+    return channels.constFirst()->type();
 }
 
 QString MatFile::typeDisplay() const
 {
     if (!channels.isEmpty())
-        return channels.first()->_type;
+        return channels.constFirst()->_type;
     return QString();
 }
 
@@ -1113,6 +1113,7 @@ void MatFile::setDataDescriptor(const DescriptionList &data)
 
 QString MatFile::dataDescriptorAsString() const
 {
+    return QString();
 }
 
 QDateTime MatFile::dateTime() const
@@ -1190,7 +1191,7 @@ bool MatFile::setLegend(const QString &legend)
 double MatFile::xStep() const
 {
     if (channels.isEmpty()) return 0.0;
-    return channels.first()->xStep();
+    return channels.constFirst()->xStep();
 }
 
 void MatFile::setXStep(const double xStep)
@@ -1201,13 +1202,13 @@ void MatFile::setXStep(const double xStep)
 double MatFile::xBegin() const
 {
     if (channels.isEmpty()) return 0.0;
-    return channels.first()->data()->xMin();
+    return channels.constFirst()->data()->xMin();
 }
 
 int MatFile::samplesCount() const
 {
     if (channels.isEmpty()) return 0;
-    return channels.first()->samplesCount();
+    return channels.constFirst()->samplesCount();
 }
 
 void MatFile::setSamplesCount(int count)
@@ -1218,7 +1219,7 @@ void MatFile::setSamplesCount(int count)
 QString MatFile::xName() const
 {
     if (channels.isEmpty()) return "";
-    return channels.first()->xName();
+    return channels.constFirst()->xName();
 }
 
 bool MatFile::setDateTime(QDateTime dt)

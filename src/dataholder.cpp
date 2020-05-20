@@ -446,7 +446,7 @@ void DataHolder::setXValues(const QVector<double> &values)
 {DD;
     m_xValues = values;
     m_count = values.size();
-    m_xBegin = values.isEmpty() ? 0.0 : values.first();
+    m_xBegin = values.isEmpty() ? 0.0 : values.constFirst();
     m_xStep = 0.0;
     m_xValuesFormat = XValuesNonUniform;
 }
@@ -513,7 +513,7 @@ cx_double DataHolder::yValueComplex(int i) const
 double DataHolder::xMin() const
 {DD;
     if (xValuesFormat() == XValuesUniform) return m_xBegin;
-    if (xValuesFormat() == XValuesNonUniform && !m_xValues.isEmpty()) return m_xValues.first();
+    if (xValuesFormat() == XValuesNonUniform && !m_xValues.isEmpty()) return m_xValues.constFirst();
     return 0;
 }
 
@@ -637,7 +637,7 @@ double DataHolder::fromLog(double value, double threshold, int units)
 void DataHolder::recalculateMinMax()
 {DD;
     if (!m_yValuesTemporal.isEmpty()) {
-        auto minmax = std::minmax_element(m_yValuesTemporal.begin(), m_yValuesTemporal.end());
+        auto minmax = std::minmax_element(m_yValuesTemporal.cbegin(), m_yValuesTemporal.cend());
         m_yMin = *(minmax.first);
         m_yMax = *(minmax.second);
     }

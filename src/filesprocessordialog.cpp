@@ -310,7 +310,7 @@ void FilesProcessorDialog::start()
     if (!currentAlgorithm) return;
 
     newFiles.clear();
-    buttonBox->buttons().first()->setDisabled(true);
+    buttonBox->buttons().constFirst()->setDisabled(true);
 
     if (!thread_) thread_ = new QThread;
     currentAlgorithm->moveToThread(thread_);

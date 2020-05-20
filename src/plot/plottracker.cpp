@@ -45,7 +45,7 @@ void PlotTracker::maybeHover(const QPointF &pos)
 
     bool found = false;
     const QwtPlotItemList& itmList = plot->itemList(QwtPlotItem::Rtti_PlotMarker);
-    for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
+    for (QwtPlotItemIterator it = itmList.constBegin(); it != itmList.constEnd(); ++it) {
         if (TrackingCursor *c = dynamic_cast<TrackingCursor *>(*it )) {
 //            qDebug()<<"found tracking cursor";
             if (!c->isVisible()) {

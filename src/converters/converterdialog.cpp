@@ -25,7 +25,7 @@ ConverterDialog::ConverterDialog(QList<FileDescriptor *> dataBase, QWidget *pare
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(start()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(stop()));
-//    buttonBox->buttons().first()->setDisabled(true);
+//    buttonBox->buttons().constFirst()->setDisabled(true);
 
     convertor = new FileConvertor();
 
@@ -39,13 +39,13 @@ ConverterDialog::ConverterDialog(QList<FileDescriptor *> dataBase, QWidget *pare
                                                           filters.join(";;"));
 
         if (!files.isEmpty())
-            MainWindow::setSetting("uffFolder", QFileInfo(files.first()).canonicalPath());
+            MainWindow::setSetting("uffFolder", QFileInfo(files.constFirst()).canonicalPath());
 
         foreach (const QString &f, files) {
             addFile(f);
         }
         tree->resizeColumnToContents(0);
-        buttonBox->buttons().first()->setDisabled(files.isEmpty());
+        buttonBox->buttons().constFirst()->setDisabled(files.isEmpty());
     });
 
     tree = new QTreeWidget(this);
@@ -152,7 +152,7 @@ void ConverterDialog::updateProgressIndicator()
 
 void ConverterDialog::start()
 {
-    buttonBox->buttons().first()->setDisabled(true);
+    buttonBox->buttons().constFirst()->setDisabled(true);
     if (!thread) thread = new QThread;
     convertor->moveToThread(thread);
     QStringList toConvert;

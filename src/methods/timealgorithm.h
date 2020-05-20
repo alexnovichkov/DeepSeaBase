@@ -2,7 +2,6 @@
 #define TIMEALGORITHM_H
 
 #include "abstractfunction.h"
-#include <QMap>
 
 class Saver;
 

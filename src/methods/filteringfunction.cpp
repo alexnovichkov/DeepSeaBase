@@ -53,8 +53,8 @@ QString FilteringFunction::propertyDescription(const QString &property) const
     if (property == "approximation") {
         QStringList values;
         values << "\"Butterworth\""<<"\"ChebyshevI\""<<"\"ChebyshevII\"";
-        if (map.value("type", Filtering::LowPass).toInt()<=Filtering::BandStop &&
-            map.value("type", Filtering::LowPass).toInt()>=Filtering::LowPass)
+        const int type = map.value("type", Filtering::LowPass).toInt();
+        if (type<=Filtering::BandStop && type>=Filtering::LowPass)
             values << "\"Bessel\""<<"\"Elliptic\""<<"\"Legendre\"";
         values << "\"RBJ\"";
         return QString("{"
@@ -268,14 +268,15 @@ bool FilteringFunction::compute(FileDescriptor *file)
     QVector<double> data = m_input->getData("input");
     if (data.isEmpty()) return false;
 
-    if (map.value("type").toInt() == 0) {
+    const int type = map.value("type").toInt();
+    if (type == 0) {
         output = data;
         return true;
     }
 
     //create
     filtering.setBlockSize(data.size());
-    filtering.setType(map.value("type").toInt());
+    filtering.setType(type);
     filtering.setApproximation(map.value("approximation").toInt());
     filtering.create();
 

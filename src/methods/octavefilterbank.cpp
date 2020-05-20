@@ -28,7 +28,7 @@ template <typename T>
 double leq(const QVector<T> &x, /*int T,*/ double ref=1.0)
 {DD;
     const int xSize = x.size();
-    T p = std::accumulate(x.begin(), x.end(), static_cast<T>(0.0), [xSize](T v1,T v2)->T{return v1+v2*v2/xSize;});
+    T p = std::accumulate(x.constBegin(), x.constEnd(), static_cast<T>(0.0), [xSize](T v1,T v2)->T{return v1+v2*v2/xSize;});
 
     if (qIsFinite(p)) {
         if (p > 0.0) return 10.0*log10(p/ref/ref);
@@ -56,13 +56,13 @@ QVector<double> OctaveFilterBank::compute(const QVector<double> &data, QVector<d
     int i_low = 0;
 
     ///i_up = max(find(Fc<=samplerate/3));
-    auto idx = std::lower_bound(thirdOctaveFreqs.begin(), thirdOctaveFreqs.end(), m_p.sampleRate/2.56);
-    if (idx!=thirdOctaveFreqs.end()) i_up = idx-thirdOctaveFreqs.begin();
+    auto idx = std::lower_bound(thirdOctaveFreqs.constBegin(), thirdOctaveFreqs.constEnd(), m_p.sampleRate/2.56);
+    if (idx!=thirdOctaveFreqs.constEnd()) i_up = idx-thirdOctaveFreqs.constBegin();
 
     // All filters below range Fc / 200 will be implemented after a decimation.
     int i_dec = i_up;
-    idx = std::lower_bound(thirdOctaveFreqs.begin(), thirdOctaveFreqs.end(), m_p.sampleRate/200);
-    if (idx!=thirdOctaveFreqs.end()) i_dec = idx-thirdOctaveFreqs.begin();
+    idx = std::lower_bound(thirdOctaveFreqs.constBegin(), thirdOctaveFreqs.cend(), m_p.sampleRate/200);
+    if (idx!=thirdOctaveFreqs.cend()) i_dec = idx-thirdOctaveFreqs.cbegin();
 
     // Design filters and compute RMS powers in 1/3-oct. bands.
     // Higher octave band, direct implementation of filters.

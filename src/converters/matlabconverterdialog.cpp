@@ -20,7 +20,7 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(start()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(stop()));
-    buttonBox->buttons().first()->setDisabled(true);
+    buttonBox->buttons().constFirst()->setDisabled(true);
 
     convertor = new MatlabConvertor();
 
@@ -158,7 +158,7 @@ void MatlabConverterDialog::chooseMatFiles()
     tree->resizeColumnToContents(1);
     updateFormat();
 
-    buttonBox->buttons().first()->setDisabled(matFiles.isEmpty());
+    buttonBox->buttons().constFirst()->setDisabled(matFiles.isEmpty());
 
     QString xmlFileName = findXmlFile(false);
 
@@ -288,7 +288,7 @@ QString MatlabConverterDialog::findXmlFile(bool silent) const
 
 void MatlabConverterDialog::start()
 {DD;
-    buttonBox->buttons().first()->setDisabled(true);
+    buttonBox->buttons().constFirst()->setDisabled(true);
 
     QStringList toConvert;
     for (int i=0; i<tree->topLevelItemCount(); ++i)
@@ -297,7 +297,7 @@ void MatlabConverterDialog::start()
 
     if (toConvert.isEmpty()) {
         textEdit->appendHtml("<font color=red>Error!</font> Отсутствуют файлы для конвертации.");
-        buttonBox->buttons().first()->setDisabled(false);
+        buttonBox->buttons().constFirst()->setDisabled(false);
         return;
     }
 
@@ -328,7 +328,7 @@ void MatlabConverterDialog::stop()
 
 void MatlabConverterDialog::finalize()
 {DD;
-    buttonBox->buttons().first()->setDisabled(false);
+    buttonBox->buttons().constFirst()->setDisabled(false);
     if (openFolderButton->isChecked()) {
         QDir dir(folder);
         QProcess::startDetached("explorer.exe", QStringList(dir.toNativeSeparators(dir.absolutePath())));

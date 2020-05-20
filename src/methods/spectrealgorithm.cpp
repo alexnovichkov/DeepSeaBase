@@ -41,7 +41,7 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
     m_functions << saver;
 
     //выясняем общее значение xStep или значение первого файла
-    double xStep = dataBase.first()->xStep();
+    double xStep = dataBase.constFirst()->xStep();
     bool xStepsDiffer = false;
     for (int i=1; i<dataBase.size(); ++i) {
         if (xStep != dataBase.at(i)->xStep()) {

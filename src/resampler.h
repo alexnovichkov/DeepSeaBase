@@ -81,10 +81,10 @@ public:
     QVector<double> process(const QVector<double> &chunk)
     {
         QVector<float> chunk1(chunk.size());
-        std::copy(chunk.begin(), chunk.end(), chunk1.begin());
+        std::copy(chunk.constBegin(), chunk.constEnd(), chunk1.begin());
         QVector<float> result1 = process(chunk1);
         QVector<double> result(result1.size());
-        std::copy(result1.begin(), result1.end(), result.begin());
+        std::copy(result1.constBegin(), result1.constEnd(), result.begin());
         return result;
     }
 

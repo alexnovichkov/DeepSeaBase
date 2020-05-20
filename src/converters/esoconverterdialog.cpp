@@ -44,7 +44,7 @@ EsoConverterDialog::EsoConverterDialog(QWidget *parent) : QDialog(parent)
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(start()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(stop()));
-    buttonBox->buttons().first()->setDisabled(true);
+    buttonBox->buttons().constFirst()->setDisabled(true);
 
     convertor = new EsoConvertor();
 
@@ -57,7 +57,7 @@ EsoConverterDialog::EsoConverterDialog(QWidget *parent) : QDialog(parent)
         QStringList files = QFileDialog::getOpenFileNames(this, "Выберите файлы *.eso",folder,"*.eso");
         if (!files.isEmpty()) {
             convertor->setFilesToConvert(files);
-            MainWindow::setSetting("esoFolder", QFileInfo(files.first()).canonicalFilePath());
+            MainWindow::setSetting("esoFolder", QFileInfo(files.constFirst()).canonicalFilePath());
             //QStringList matFiles = convertor->getMatFiles();
             tree->clear();
             int i=1;
@@ -71,7 +71,7 @@ EsoConverterDialog::EsoConverterDialog(QWidget *parent) : QDialog(parent)
             tree->resizeColumnToContents(0);
             tree->resizeColumnToContents(1);
             progress->setRange(0, i-1);
-            buttonBox->buttons().first()->setDisabled(files.isEmpty());
+            buttonBox->buttons().constFirst()->setDisabled(files.isEmpty());
         }
     });
 
@@ -149,7 +149,7 @@ void EsoConverterDialog::start()
     if (resultFile.isEmpty()) return;
     convertor->setResultFile(resultFile);
 
-    buttonBox->buttons().first()->setDisabled(true);
+    buttonBox->buttons().constFirst()->setDisabled(true);
     if (!thread) thread = new QThread;
     convertor->moveToThread(thread);
     QStringList channelNames;
@@ -207,7 +207,7 @@ bool EsoConvertor::convert()
     bool octave = true;
 
     //Converting
-    EsoFile esoFile(filesToConvert.first());
+    EsoFile esoFile(filesToConvert.constFirst());
     QVector<double> xValues = esoFile.xValues;
 
 
@@ -272,7 +272,7 @@ bool EsoConvertor::convert()
             if (octave)
                 newCh->data()->setXValues(xValues);
             else
-                newCh->data()->setXValues(xValues.first(), xValues[1]-xValues[0], xValues.size());
+                newCh->data()->setXValues(xValues.constFirst(), xValues[1]-xValues[0], xValues.size());
 
             switch (col) {
                 case 0:
@@ -320,7 +320,7 @@ bool EsoConvertor::convert()
             for (int i=0; i<dfdFileDescriptor->channels.size(); ++i)
                 dfdFileDescriptor->channels[i]->channelIndex = i;
 
-        dfdFileDescriptor->XBegin = xValues.first();
+        dfdFileDescriptor->XBegin = xValues.constFirst();
     }
     else {
         dfdFileDescriptor->XBegin = 0.0;

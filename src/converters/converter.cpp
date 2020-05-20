@@ -220,8 +220,8 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
 
     QString baseFileName = QFileInfo(fileName).completeBaseName()+"_"+method;
 
-    if (filtered.first().toLower().endsWith("dfd")) {
-        DfdFileDescriptor dfd(filtered.first());
+    if (filtered.constFirst().toLower().endsWith("dfd")) {
+        DfdFileDescriptor dfd(filtered.constFirst());
         dfd.read();
         int suffixN = dfd.samplesCount() * dfd.xStep();
         QString suffix = QString::number(suffixN);
@@ -229,7 +229,7 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
         if (suffixN==0) {//третьоктава или файл с неодинаковым шагом по абсциссе
             if (dfd.channelsCount()>0) {
                 dfd.channel(0)->populate();
-                suffixN = dfd.channels.first()->xMax();
+                suffixN = dfd.channels.constFirst()->xMax();
                 suffix = QString::number(suffixN);
             }
         }
@@ -238,12 +238,12 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
         QString dfdFileName = createUniqueFileName(destDir, baseFileName, suffix, "dfd");
         QString rawFileName = changeFileExt(dfdFileName, "raw");
 
-        QFile::rename(filtered.first(), dfdFileName);
+        QFile::rename(filtered.constFirst(), dfdFileName);
         QFile::rename(dfd.rawFileName, rawFileName);
         newFiles << dfdFileName;
     }
-    if (filtered.first().endsWith("uff")) {
-        UffFileDescriptor dfd(filtered.first());
+    if (filtered.constFirst().endsWith("uff")) {
+        UffFileDescriptor dfd(filtered.constFirst());
         dfd.read();
         int suffixN = dfd.samplesCount() * dfd.xStep();
         QString suffix = QString::number(suffixN);
@@ -251,16 +251,16 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
         if (suffixN==0) {//третьоктава или файл с неодинаковым шагом по абсциссе
             if (dfd.channelsCount()>0) {
                 dfd.channel(0)->populate();
-                suffixN = dfd.channels.first()->xMax();
+                suffixN = dfd.channels.constFirst()->xMax();
                 suffix = QString::number(suffixN);
             }
         }
 
         QString uffFileName = createUniqueFileName(destDir, baseFileName, suffix, "uff");
-        QFile::rename(filtered.first(), uffFileName);
+        QFile::rename(filtered.constFirst(), uffFileName);
         newFiles << uffFileName;
     }
-    newFiles_.removeAll(filtered.first());
+    newFiles_.removeAll(filtered.constFirst());
 }
 
 QVector<float> getBlock(const QVector<double> &values, const int blockSize, const int stepBack, int &block)
@@ -271,7 +271,7 @@ QVector<float> getBlock(const QVector<double> &values, const int blockSize, cons
     if (realLength <=0) return QVector<float>();
     QVector<float> output(realLength);
     if (block < values.size()) {
-        std::copy(values.begin()+block, values.begin()+block+realLength, output.begin());
+        std::copy(values.cbegin()+block, values.cbegin()+block+realLength, output.begin());
 //        output = values.mid(block, blockSize);
         block += blockSize - stepBack;
     }

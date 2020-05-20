@@ -109,7 +109,7 @@ void CalculateSpectreDialog::start()
 {DD;
     newFiles.clear();
 
-    buttonBox->buttons().first()->setDisabled(true);
+    buttonBox->buttons().constFirst()->setDisabled(true);
 
     Parameters p = currentMethod->parameters();
     p.method = currentMethod;

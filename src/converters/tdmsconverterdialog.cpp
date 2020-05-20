@@ -17,7 +17,7 @@ TDMSConverterDialog::TDMSConverterDialog(QWidget *parent) : QDialog(parent)
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(start()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(stop()));
-    buttonBox->buttons().first()->setDisabled(true);
+    buttonBox->buttons().constFirst()->setDisabled(true);
 
     convertor = new TDMSFileConvertor();
 
@@ -150,7 +150,7 @@ void TDMSConverterDialog::chooseFiles()
     tree->resizeColumnToContents(0);
     tree->resizeColumnToContents(1);
 
-    buttonBox->buttons().first()->setDisabled(tdmsFiles.isEmpty());
+    buttonBox->buttons().constFirst()->setDisabled(tdmsFiles.isEmpty());
 }
 
 void TDMSConverterDialog::accept()
@@ -172,7 +172,7 @@ void TDMSConverterDialog::updateProgressIndicator()
 
 void TDMSConverterDialog::start()
 {
-    buttonBox->buttons().first()->setDisabled(true);
+    buttonBox->buttons().constFirst()->setDisabled(true);
 
     QStringList toConvert;
     for (int i=0; i<tree->topLevelItemCount(); ++i)
@@ -181,7 +181,7 @@ void TDMSConverterDialog::start()
 
     if (toConvert.isEmpty()) {
         textEdit->appendHtml("<font color=red>Error!</font> Отсутствуют файлы для конвертации.");
-        buttonBox->buttons().first()->setDisabled(false);
+        buttonBox->buttons().constFirst()->setDisabled(false);
         return;
     }
 
@@ -217,7 +217,7 @@ void TDMSConverterDialog::finalize()
     }
     m_addFiles = addFilesButton->isChecked();
 
-//    buttonBox->buttons().first()->setDisabled(false);
+//    buttonBox->buttons().constFirst()->setDisabled(false);
 //    if (convertor) {
 //        convertor->deleteLater();
 //        //convertor=0;

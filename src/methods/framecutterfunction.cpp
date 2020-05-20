@@ -68,9 +68,8 @@ QVariant FrameCutterFunction::getProperty(const QString &property) const
     }
 
     if (!property.startsWith(name()+"/")) return QVariant();
-    QString p = property.section("/",1);
 
-    return parameters.value(p);
+    return parameters.value(property.section("/",1));
 }
 
 void FrameCutterFunction::setProperty(const QString &property, const QVariant &val)

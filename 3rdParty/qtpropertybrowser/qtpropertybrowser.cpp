@@ -441,7 +441,7 @@ void QtProperty::insertSubProperty(QtProperty *property,
     QList<QtProperty *> pendingList = property->subProperties();
     QMap<QtProperty *, bool> visited;
     while (!pendingList.isEmpty()) {
-        QtProperty *i = pendingList.first();
+        QtProperty *i = pendingList.constFirst();
         if (i == this)
             return;
         pendingList.removeFirst();

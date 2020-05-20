@@ -12,10 +12,10 @@ TimeMethod::TimeMethod(QList<FileDescriptor *> &dataBase, QWidget *parent) :
     resolutionCombo = new QComboBox(this);
     resolutionCombo->setEditable(false);
 
-    xStep = dataBase.first()->channel(0)->xStep();
+    xStep = dataBase.constFirst()->channel(0)->xStep();
 
     // заполняем список частотного диапазона
-    if (RawChannel *raw = dynamic_cast<RawChannel *>(dataBase.first()->channel(0))) {
+    if (RawChannel *raw = dynamic_cast<RawChannel *>(dataBase.constFirst()->channel(0))) {
         bandWidth = raw->BandWidth;
         sampleRate = 1.0 / raw->xStep();
         xStep = raw->xStep();
@@ -38,10 +38,10 @@ TimeMethod::TimeMethod(QList<FileDescriptor *> &dataBase, QWidget *parent) :
     maxTimeLabel->setText("00 s 000 ms");
 
     minTimeSlider = new QSlider(Qt::Horizontal, this);
-    minTimeSlider->setRange(0, dataBase.first()->samplesCount());
+    minTimeSlider->setRange(0, dataBase.constFirst()->samplesCount());
 
     maxTimeSlider = new QSlider(Qt::Horizontal, this);
-    maxTimeSlider->setRange(0, dataBase.first()->samplesCount());
+    maxTimeSlider->setRange(0, dataBase.constFirst()->samplesCount());
 
     connect(minTimeSlider, &QSlider::valueChanged, [=](int value){
         minTimeLabel->setText(QString("%1 s %2 ms")

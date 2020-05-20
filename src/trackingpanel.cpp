@@ -227,12 +227,12 @@ void TrackingPanel::setX(double xVal, int index)
 
     if (plot->hasCurves()) {
         //ищем минимальный шаг по оси X
-        double xstep = (*std::min_element(plot->curves.begin(), plot->curves.end(),
+        double xstep = (*std::min_element(plot->curves.constBegin(), plot->curves.constEnd(),
                                   [](Curve *c1, Curve *c2){
             return c1->channel->xStep() <= c2->channel->xStep();
         }))->channel->xStep();
 
-        if (xstep==0.0) xstep = plot->curves.first()->channel->xStep();
+        if (xstep==0.0) xstep = plot->curves.constFirst()->channel->xStep();
 
         if (xstep!=0.0) {
             //среди графиков есть график с минимальным ненулевым шагом
@@ -246,11 +246,11 @@ void TrackingPanel::setX(double xVal, int index)
                 xVal = xstep*steps;
             }
         }
-        else if (plot->curves.first()->channel->data()->xValuesFormat() == DataHolder::XValuesNonUniform) {
+        else if (plot->curves.constFirst()->channel->data()->xValuesFormat() == DataHolder::XValuesNonUniform) {
             //xstep == 0 -> третьоктава или еще что-нибудь, проверяем тип файла
-            QVector<double> x = plot->curves.first()->channel->data()->xValues();
+            QVector<double> x = plot->curves.constFirst()->channel->data()->xValues();
             if (!x.isEmpty()) {
-                auto iter = closest<QVector<double>::iterator, double>(x.begin(), x.end(), xVal);
+                auto iter = closest<QVector<double>::const_iterator, double>(x.constBegin(), x.constEnd(), xVal);
                 xVal = *iter;
             }
         }
@@ -353,17 +353,17 @@ void TrackingPanel::update()
         QVector<int> steps(4);
 
         auto xVals = c->channel->xValues();
-        auto iter = closest<QVector<double>::iterator, double>(xVals.begin(), xVals.end(), leftBorder);
-        steps[minBorder] = iter - xVals.begin();
+        auto iter = closest<QVector<double>::const_iterator, double>(xVals.constBegin(), xVals.constEnd(), leftBorder);
+        steps[minBorder] = iter - xVals.constBegin();
 
-        iter = closest<QVector<double>::iterator, double>(xVals.begin(), xVals.end(), rightBorder);
-        steps[maxBorder] = iter - xVals.begin();
+        iter = closest<QVector<double>::const_iterator, double>(xVals.constBegin(), xVals.constEnd(), rightBorder);
+        steps[maxBorder] = iter - xVals.constBegin();
 
-        iter = closest<QVector<double>::iterator, double>(xVals.begin(), xVals.end(), leftExclude);
-        steps[minExclude] = iter - xVals.begin();
+        iter = closest<QVector<double>::const_iterator, double>(xVals.constBegin(), xVals.constEnd(), leftExclude);
+        steps[minExclude] = iter - xVals.constBegin();
 
-        iter = closest<QVector<double>::iterator, double>(xVals.begin(), xVals.end(), rightExclude);
-        steps[maxExclude] = iter - xVals.begin();
+        iter = closest<QVector<double>::const_iterator, double>(xVals.constBegin(), xVals.constEnd(), rightExclude);
+        steps[maxExclude] = iter - xVals.constBegin();
 
         for (int i=0; i<4; ++i) {
             if (steps[i] < 0) steps[i] = xVals.size()-1;

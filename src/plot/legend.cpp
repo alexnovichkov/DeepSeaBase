@@ -88,7 +88,7 @@ void CheckableLegend::updateLegend(const QVariant &itemInfo, const QList<QwtLege
         if (!d_model->contains(plotItem))
             d_model->addItem(plotItem);
 
-        updateItem(plotItem, data.first());
+        updateItem(plotItem, data.constFirst());
     }
 
     d_treeView->updateGeometry();

@@ -229,7 +229,7 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
     //данные берем из первого канала, который будем сохранять
     //предполагается, что все каналы из indexes имеют одинаковые параметры
 
-    Channel *firstChannel = other.channel(indexes.first());
+    Channel *firstChannel = other.channel(indexes.constFirst());
     Q_ASSERT_X(firstChannel, "Dfd constructor", "channel to copy is null");
     this->DataType = dfdDataTypeFromDataType(firstChannel->type());
     switch (firstChannel->octaveType()) {
@@ -274,7 +274,7 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
         this->channels << new DfdChannel(*c, this);
     }
 
-    unevenX = !channels.isEmpty() && channels.first()->data()->xValuesFormat()==DataHolder::XValuesNonUniform;
+    unevenX = !channels.isEmpty() && channels.constFirst()->data()->xValuesFormat()==DataHolder::XValuesNonUniform;
 
     if (unevenX) {
         //добавляем нулевой канал с осью Х
@@ -285,10 +285,10 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
         ch->YNameOld.clear();
         ch->InputType.clear();
         ch->ChanDscr.clear();
-        ch->ChanBlockSize = channels.first()->samplesCount();
+        ch->ChanBlockSize = channels.constFirst()->samplesCount();
         ch->IndType = 3221225476;
         ch->data()->setThreshold(1.0);
-        ch->data()->setXValues(channels.first()->xValues());
+        ch->data()->setXValues(channels.constFirst()->xValues());
 
         channels.prepend(ch);
     }
@@ -312,7 +312,7 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
 
     //записываем данные канала Х, если шаг неравномерный
     if (unevenX) {
-        DfdChannel *destChannel = channels.first();
+        DfdChannel *destChannel = channels.constFirst();
         if (destChannel->IndType==0xC0000004)
             writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
         QVector<double> yValues = destChannel->data()->xValues();
@@ -451,7 +451,7 @@ void DfdFileDescriptor::read()
 
     // проверяем неравномерность шкалы
     if (!channels.isEmpty()) {
-        DfdChannel *firstChannel = channels.first();
+        DfdChannel *firstChannel = channels.constFirst();
         if (firstChannel->data()->xValuesFormat() == DataHolder::XValuesNonUniform) {
             firstChannel->populate();
             QVector<double> xvalues = firstChannel->data()->yValues();
@@ -554,7 +554,7 @@ void DfdFileDescriptor::writeRawFile()
         if (BlockSize == 0) {
 //            // записываем данные нулевого канала, если это третьоктава
 //            if (!channels.isEmpty()) {
-//                DfdChannel *ch = channels.first();
+//                DfdChannel *ch = channels.constFirst();
 //                if (ch->xValuesFormat() == DataHolder::XValuesNonUniform) {
 //                    if (xValues.isEmpty()) xValues = ch->xValues();
 
@@ -648,11 +648,11 @@ void DfdFileDescriptor::fillRest()
 {DD;
     if (channels.isEmpty()) return;
 
-    setSamplesCount(channels.first()->samplesCount());
+    setSamplesCount(channels.constFirst()->samplesCount());
     BlockSize = 0;
-//    XName = channels.first()->xName();
-    XBegin = channels.first()->xMin();
-    XStep = channels.first()->xStep();
+//    XName = channels.constFirst()->xName();
+    XBegin = channels.constFirst()->xMin();
+    XStep = channels.constFirst()->xStep();
 }
 
 DfdFileDescriptor *DfdFileDescriptor::newFile(const QString &fileName, DfdDataType type)
@@ -961,7 +961,7 @@ void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     QList<Channel*> list;
     for (int i=0; i<channels.size(); ++i)
         list << channels.at(i).first->channel(channels.at(i).second);
-    Channel *firstChannel = list.first();
+    Channel *firstChannel = list.constFirst();
 
     //ищем наименьшее число отсчетов
     int numInd = firstChannel->samplesCount();
@@ -1031,7 +1031,7 @@ void DfdFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
 
     ch->ChanBlockSize = numInd;
 
-    ch->IndType = this->channels.isEmpty()?3221225476:this->channels.first()->IndType;
+    ch->IndType = this->channels.isEmpty()?3221225476:this->channels.constFirst()->IndType;
     ch->YName = firstChannel->yName();
     //грязный хак
     if (DfdChannel *dfd = dynamic_cast<DfdChannel*>(firstChannel)) {
@@ -1083,7 +1083,7 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
         ch->ChanDscr = "Скользящее среднее канала "+firstChannel->name();
         ch->ChanBlockSize = numInd;
 
-        ch->IndType = this->channels.isEmpty()?3221225476:this->channels.first()->IndType;
+        ch->IndType = this->channels.isEmpty()?3221225476:this->channels.constFirst()->IndType;
         ch->YName = firstChannel->yName();
         //грязный хак
         if (DfdChannel *dfd = dynamic_cast<DfdChannel*>(firstChannel)) {
@@ -1165,7 +1165,7 @@ QString DfdFileDescriptor::calculateThirdOctave()
         thirdOctDfd->channels[i]->channelIndex = i;
 
 
-    thirdOctDfd->XBegin = thirdOctDfd->xValues.first();
+    thirdOctDfd->XBegin = thirdOctDfd->xValues.constFirst();
     thirdOctDfd->setSamplesCount(thirdOctDfd->channels.last()->data()->samplesCount());
 
     thirdOctDfd->setChanged(true);

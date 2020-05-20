@@ -131,7 +131,7 @@ inline QVector<T> convertFrom(unsigned char *ptr, qint64 length, uint IndType)
  * или значение по умолчанию, если в последовательности есть разные элементы
  *
  * QList<Class* c> list; T Class::function();
- * T t = find_first_unique(list.begin(), list.end(), Class::function, T defVal);
+ * T t = find_first_unique(list.cbegin(), list.cend(), Class::function, T defVal);
  * */
 
 /**

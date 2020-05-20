@@ -442,7 +442,7 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize)
         //28 Abscissa minimum
         QList<QVariant> abscissaData = getProperty("?/abscissaData").toList();
         if (!abscissaData.isEmpty())
-            ch->type58[28].value = abscissaData.first().toDouble();
+            ch->type58[28].value = abscissaData.constFirst().toDouble();
         else
             ch->type58[28].value = 0.0;
         ch->type58[29].value = getProperty("?/xStep").toDouble(); //29 Abscissa increment

@@ -126,7 +126,7 @@ class Data94File : public FileDescriptor
 public:
     Data94File(const QString &fileName);
     // creates a copy of Data94File with copying data
-    Data94File(const Data94File &d, const QString &fileName, QVector<int> indexes = QVector<int>());
+    Data94File(const Data94File &other, const QString &fileName, QVector<int> indexes = QVector<int>());
     // creates a copy of FileDescriptor with copying data
     Data94File(const FileDescriptor &other, const QString &fileName, QVector<int> indexes = QVector<int>());
 
@@ -168,6 +168,7 @@ public:
     static QStringList fileFilters();
     static QStringList suffixes();
 private:
+    void writeData(const FileDescriptor &d, const QVector<int> &indexes);
     friend class Data94Channel;
     QJsonObject description;
     QList<Data94Channel*> channels;

@@ -891,7 +891,7 @@ void MainWindow::addFile()
     }
     if (fileNames.isEmpty()) return;
 
-    setSetting("lastDirectory", fileNames.first());
+    setSetting("lastDirectory", fileNames.constFirst());
     addFiles(fileNames);
     foreach (const QString &file, fileNames)
         if (!tab->folders.contains(file)) tab->folders << file;
@@ -1182,7 +1182,7 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
     }
     if (selectedFiles.isEmpty()) return false;
 
-    QString file = selectedFiles.first();
+    QString file = selectedFiles.constFirst();
 
     QString currentSuffix = QFileInfo(file).suffix().toLower();
     QString filterSuffix = suffixes.at(filters.indexOf(selectedFilter));
@@ -1254,7 +1254,7 @@ void MainWindow::calculateMean()
     bool writeToSeparateFile = true;
     bool writeToUff = false;
 
-    Curve *firstCurve = plot->curves.first();
+    Curve *firstCurve = plot->curves.constFirst();
     channels.append({firstCurve->descriptor, firstCurve->channelIndex});
 
     bool allFilesDfd = firstCurve->descriptor->fileName().toLower().endsWith("dfd");
@@ -1342,7 +1342,7 @@ void MainWindow::calculateMean()
         }
         if (selectedFiles.isEmpty()) return;
 
-        meanDfdFile = selectedFiles.first();
+        meanDfdFile = selectedFiles.constFirst();
         if (meanDfdFile.isEmpty()) return;
 
         QString currentSuffix = QFileInfo(meanDfdFile).suffix().toLower();
@@ -1776,7 +1776,7 @@ void MainWindow::calculateMovingAvg()
     bool oneFile = true; // каналы из одного файла
     bool writeToSeparateFile = true;
 
-    Curve *firstCurve = plot->curves.first();
+    Curve *firstCurve = plot->curves.constFirst();
     channels.append({firstCurve->descriptor, firstCurve->channelIndex});
 
     bool allFilesDfd = firstCurve->descriptor->fileName().toLower().endsWith("dfd");
@@ -1835,7 +1835,7 @@ void MainWindow::calculateMovingAvg()
         }
         if (selectedFiles.isEmpty()) return;
 
-        avgDfdFile = selectedFiles.first();
+        avgDfdFile = selectedFiles.constFirst();
         if (avgDfdFile.isEmpty()) return;
         MainWindow::setSetting("lastMovingAvgFile", avgDfdFile);
 
@@ -2246,7 +2246,7 @@ void MainWindow::exportToExcelData()
 QStringList twoStringDescription(const DescriptionList &list)
 {
     QStringList result;
-    if (list.size()>0) result << descriptionEntryToString(list.first()); else result << "";
+    if (list.size()>0) result << descriptionEntryToString(list.constFirst()); else result << "";
     if (list.size()>1) result << descriptionEntryToString(list.at(1)); else result << "";
     return result;
 }
@@ -2355,7 +2355,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          if (cells) cells->setProperty("Value", descriptor->fileName());
 
          cells = worksheet->querySubObject("Cells(Int,Int)", 2, 2);
-         if (cells) cells->setProperty("Value", descriptions.first());
+         if (cells) cells->setProperty("Value", descriptions.constFirst());
 
          cells = worksheet->querySubObject("Cells(Int,Int)", 3, 2);
          if (cells) cells->setProperty("Value", descriptions.at(1));
@@ -2373,7 +2373,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 
              cells = !writeToSeparateColumns ? worksheet->querySubObject("Cells(Int,Int)", 2, 2+i)
                                             : worksheet->querySubObject("Cells(Int,Int)", 2, 2+i*2);
-             if (cells) cells->setProperty("Value", descriptions.first());
+             if (cells) cells->setProperty("Value", descriptions.constFirst());
 
              cells = !writeToSeparateColumns ? worksheet->querySubObject("Cells(Int,Int)", 3, 2+i)
                                             : worksheet->querySubObject("Cells(Int,Int)", 3, 2+i*2);

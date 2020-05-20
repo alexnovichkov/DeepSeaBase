@@ -331,7 +331,7 @@ Descriptor::DataType UffFileDescriptor::type() const
 {
     if (channels.isEmpty()) return Descriptor::Unknown;
 
-    Descriptor::DataType t = channels.first()->type();
+    Descriptor::DataType t = channels.constFirst()->type();
     for (int i=1; i<channels.size(); ++i) {
         if (channels.at(i)->type() != t) return Descriptor::Unknown;
     }
@@ -350,7 +350,7 @@ QDateTime UffFileDescriptor::dateTime() const
 
 double UffFileDescriptor::xStep() const
 {
-    if (!channels.isEmpty()) return channels.first()->xStep();
+    if (!channels.isEmpty()) return channels.constFirst()->xStep();
     return 0.0;
 }
 
@@ -372,7 +372,7 @@ void UffFileDescriptor::setXStep(const double xStep)
 
 double UffFileDescriptor::xBegin() const
 {
-    if (!channels.isEmpty()) return channels.first()->xMin();
+    if (!channels.isEmpty()) return channels.constFirst()->xMin();
     return 0.0;
 }
 
@@ -380,7 +380,7 @@ QString UffFileDescriptor::xName() const
 {
     if (channels.isEmpty()) return QString();
 
-    QString xname = channels.first()->xName();
+    QString xname = channels.constFirst()->xName();
 
     for (int i=1; i<channels.size(); ++i) {
         if (channels[i]->xName() != xname) return QString();
@@ -498,7 +498,7 @@ void UffFileDescriptor::calculateMean(const QList<QPair<FileDescriptor *, int> >
     QList<Channel*> list;
     for (int i=0; i<channels.size(); ++i)
         list << channels.at(i).first->channel(channels.at(i).second);
-    Channel *firstChannel = list.first();
+    Channel *firstChannel = list.constFirst();
 
     //ищем наименьшее число отсчетов
     int numInd = firstChannel->samplesCount();
@@ -743,7 +743,7 @@ Channel *UffFileDescriptor::channel(int index) const
 bool UffFileDescriptor::isSourceFile() const
 {DD;
     if (channels.isEmpty()) return false;
-    int type = channels.first()->type();
+    int type = channels.constFirst()->type();
     for (int i=1; i<channels.size(); ++i) {
         if (channels.at(i)->type() != type) {
             return false;
@@ -1372,7 +1372,7 @@ DescriptionList UffFileDescriptor::dataDescriptor() const
 void UffFileDescriptor::setDataDescriptor(const DescriptionList &data)
 {DD;
     if (data.size()>0) {
-        header.type151[4].value = makeStringFromPair(data.first());
+        header.type151[4].value = makeStringFromPair(data.constFirst());
     }
     if (data.size()>1) {
         header.type151[6].value = makeStringFromPair(data.at(1));
@@ -1398,7 +1398,7 @@ QString UffFileDescriptor::saveTimeSegment(double from, double to)
     UffFileDescriptor *newUff = new UffFileDescriptor(*this);
 
     // 3 ищем границы данных по параметрам from и to
-    Channel *ch = channels.first();
+    Channel *ch = channels.constFirst();
 
     int sampleStart = qRound((from - ch->xMin())/ch->xStep());
     if (sampleStart<0) sampleStart = 0;
@@ -1441,7 +1441,7 @@ QString UffFileDescriptor::saveTimeSegment(double from, double to)
 int UffFileDescriptor::samplesCount() const
 {
     if (channels.isEmpty()) return 0;
-    return channels.first()->samplesCount();
+    return channels.constFirst()->samplesCount();
 }
 
 void UffFileDescriptor::setSamplesCount(int count)

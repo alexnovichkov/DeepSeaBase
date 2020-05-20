@@ -137,7 +137,7 @@ void WavExporter::writeWithStreams(const QString &wavFileName)
         //теперь перетасовываем chunkData - берем из него по одному отсчету каждого канала
         //и записываем в wav
 //        QElapsedTimer writing; writing.start();
-        for (int i = 0; i < chunkData.first().size()/2; ++i) {
+        for (int i = 0; i < chunkData.constFirst().size()/2; ++i) {
             if (QThread::currentThread()->isInterruptionRequested()) {
                 wavFile.close();
                 qDebug()<<"Сохранение файла wav прервано";

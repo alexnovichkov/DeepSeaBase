@@ -228,7 +228,7 @@ void Picker::endPick(QMouseEvent *e)
 QwtPlotMarker *Picker::findCursor(const QPoint &pos)
 {
     const QwtPlotItemList& itmList = plot->itemList();
-    for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
+    for (QwtPlotItemIterator it = itmList.constBegin(); it != itmList.constEnd(); ++it) {
         if (TrackingCursor *c = dynamic_cast<TrackingCursor *>(*it )) {
             int newX = (int)(plot->transform(QwtAxis::xBottom, c->xValue()));
             if (qAbs(newX-pos.x())<=5) {
@@ -247,7 +247,7 @@ Curve *Picker::findClosestPoint(const QPoint &pos, int &index) const
     index = -1;
 
     const QwtPlotItemList &itmList = plot->itemList();
-    for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
+    for (QwtPlotItemIterator it = itmList.constBegin(); it != itmList.constEnd(); ++it) {
         if (Curve *c = dynamic_cast<Curve *>(*it )) {
             double d;
             int idx = c->closest( pos, &d );
@@ -268,7 +268,7 @@ Curve *Picker::findClosestPoint(const QPoint &pos, int &index) const
 PointLabel *Picker::findLabel(const QPoint &pos)
 {
     const QwtPlotItemList& itmList = plot->itemList();
-    for (QwtPlotItemIterator it = itmList.begin(); it != itmList.end(); ++it) {
+    for (QwtPlotItemIterator it = itmList.constBegin(); it != itmList.constEnd(); ++it) {
         if (Curve *c = dynamic_cast<Curve *>(*it )) {
             PointLabel *label = c->findLabel(pos);
             if (label) return label;

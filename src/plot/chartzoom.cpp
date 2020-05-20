@@ -214,10 +214,10 @@ void ChartZoom::ScaleBounds::reset()
 
 void ChartZoom::ScaleBounds::autoscale()
 {DD;
-    auto iter = std::min_element(mins.begin(), mins.end());
-    double minn = iter==mins.end() ? this->min : *iter;
-    iter = std::max_element(maxes.begin(), maxes.end());
-    double maxx = iter==maxes.end() ? this->max : *iter;
+    auto iter = std::min_element(mins.constBegin(), mins.constEnd());
+    double minn = iter==mins.constEnd() ? this->min : *iter;
+    iter = std::max_element(maxes.constBegin(), maxes.constEnd());
+    double maxx = iter==maxes.constEnd() ? this->max : *iter;
 
     plot->setAxisScale(axis, minn, maxx);
 }

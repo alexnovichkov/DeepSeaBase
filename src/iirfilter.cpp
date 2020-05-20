@@ -24,8 +24,8 @@ void sftrans(QVector<cx_double > &zero,
     const int z = zero.size();
 
     if (W.size()==2) {
-        double Fl = W.first();
-        double Fh = W.last();
+        double Fl = W.constFirst();
+        double Fh = W.constLast();
         if (stop) {
             // ----------------  -------------------------  ------------------------
             // Band Stop         zero: b ± sqrt(b^2-FhFl)   pole: b ± sqrt(b^2-FhFl)
@@ -117,7 +117,7 @@ void sftrans(QVector<cx_double > &zero,
         }
     }
     else if (W.size()==1) {
-        double Fc = W.first();
+        double Fc = W.constFirst();
         if (stop) {
             // ----------------  -------------------------  ------------------------
             // High Pass         zero: Fc C/x               pole: Fc C/x
@@ -381,8 +381,8 @@ QVector<double> filtfilt(const QVector<double> &B, const QVector<double> &A, con
     // Likhterov & Kopeika, 2003. "Hardware-efficient technique for
     //     minimizing startup transients in Direct Form II digital filters"
 
-    double kdc = std::accumulate(b.begin(), b.end(), 0.0);
-    double sum = std::accumulate(a.begin(), a.end(), 0.0);
+    double kdc = std::accumulate(b.cbegin(), b.cend(), 0.0);
+    double sum = std::accumulate(a.cbegin(), a.cend(), 0.0);
     kdc /= sum;
 
     QVector<double> si;
@@ -416,7 +416,7 @@ QVector<double> filtfilt(const QVector<double> &B, const QVector<double> &A, con
 
     QVector<double> SI = si;
     for (int i=0; i<SI.size(); ++i)
-        SI[i] *= v.first();
+        SI[i] *= v.constFirst();
 
     // Do forward and reverse filtering
     // forward filter

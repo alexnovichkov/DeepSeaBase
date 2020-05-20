@@ -9,23 +9,23 @@ Data94File::Data94File(const QString &fileName) : FileDescriptor(fileName)
 
 }
 
-Data94File::Data94File(const Data94File &d, const QString &fileName, QVector<int> indexes)
+Data94File::Data94File(const Data94File &other, const QString &fileName, QVector<int> indexes)
     : FileDescriptor(fileName)
 {
-    this->description = d.description;
-    this->xAxisBlock = d.xAxisBlock;
-    this->zAxisBlock = d.zAxisBlock;
-    this->descriptionSize = d.descriptionSize;
-    this->paddingSize = d.paddingSize;
+    this->description = other.description;
+    this->xAxisBlock = other.xAxisBlock;
+    this->zAxisBlock = other.zAxisBlock;
+    this->descriptionSize = other.descriptionSize;
+    this->paddingSize = other.paddingSize;
 
     updateDateTimeGUID();
 
     //если индексы пустые - копируем все каналы
     if (indexes.isEmpty())
-        for (int i=0; i<d.channelsCount(); ++i) indexes << i;
+        for (int i=0; i<other.channelsCount(); ++i) indexes << i;
 
     for (int i: indexes) {
-        Data94Channel *c = d.channels.at(i);
+        Data94Channel *c = other.channels.at(i);
         this->channels << new Data94Channel(c);
     }
 
@@ -37,72 +37,7 @@ Data94File::Data94File(const Data94File &d, const QString &fileName, QVector<int
     setChanged(true);
     write();
 
-    //теперь записываем данные - это позволит не копить данные в оперативной
-    //памяти, и работать с файлами с любым количеством каналов
-    QFile f(fileName);
-    if (!f.open(QFile::ReadWrite)) {
-        qDebug()<<"Не удалось открыть файл для записи";
-        return;
-    }
-
-    QDataStream r(&f);
-    r.setByteOrder(QDataStream::LittleEndian);
-    r.setFloatingPointPrecision(QDataStream::SinglePrecision);
-    // шапка файла имеет размер
-    const qint64 fileHeader = 8+4+descriptionSize+4+paddingSize
-                              +xAxisBlock.size()+zAxisBlock.size()+4;
-
-    int destIndex = 0;
-    for (int i=0; i<d.channels.count(); ++i) {
-        if (!indexes.contains(i)) continue;
-
-        Data94Channel *destChannel = channels.at(destIndex);
-        Data94Channel *sourceChannel = d.channels.at(i);
-
-        bool populated = sourceChannel->populated();
-        if (!populated) sourceChannel->populate();
-
-        //пишем данные напрямую
-        quint32 format = destChannel->isComplex ? 2 : 1;
-
-        if (destChannel->dataPosition < 0) {
-            //каждый канал начинается с позиции
-            destChannel->dataPosition = fileHeader + 4 +
-                              destIndex*(4+xAxisBlock.count*zAxisBlock.count*format*sizeof(float));
-        }
-
-        r.device()->seek(destChannel->dataPosition - 4);
-        r << format;
-
-        if (!destChannel->isComplex) {
-            QVector<double> yValues = sourceChannel->data()->rawYValues();
-            if (yValues.isEmpty()) {
-                qDebug()<<"Отсутствуют данные для записи в канале"<<destChannel->name();
-                continue;
-            }
-
-            foreach (double v, yValues) {
-                r << (float)v;
-            }
-        }
-        else {
-            auto yValues = sourceChannel->data()->yValuesComplex();
-            if (yValues.isEmpty()) {
-                qDebug()<<"Отсутствуют данные для записи в канале"<<destChannel->name();
-                continue;
-            }
-            foreach (cx_double v, yValues) {
-                r << (float)v.real();
-                r << (float)v.imag();
-            }
-        }
-
-        if (!populated) {
-            sourceChannel->clear();
-            destChannel->clear();
-        }
-        destIndex++;
-    }
+    writeData(other, indexes);
 }
 
 //сразу записываем данные, взятые из файла other
@@ -122,7 +57,7 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVe
     //данные берем из первого канала, который будем сохранять
     //предполагается, что все каналы из indexes имеют одинаковые параметры
 
-    Channel *firstChannel = other.channel(indexes.first());
+    Channel *firstChannel = other.channel(indexes.constFirst());
     Q_ASSERT_X(firstChannel, "Data94 constructor", "channel to copy is null");
 
 
@@ -152,9 +87,14 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVe
     setChanged(true);
     write();
 
+    writeData(other, indexes);
+}
+
+void Data94File::writeData(const FileDescriptor &d, const QVector<int> &indexes)
+{
     //теперь записываем данные - это позволит не копить данные в оперативной
     //памяти, и работать с файлами с любым количеством каналов
-    QFile f(fileName);
+    QFile f(fileName());
     if (!f.open(QFile::ReadWrite)) {
         qDebug()<<"Не удалось открыть файл для записи";
         return;
@@ -167,14 +107,14 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVe
     const qint64 fileHeader = 8+4+descriptionSize+4+paddingSize
                               +xAxisBlock.size()+zAxisBlock.size()+4;
 
-    int destIndex = 0;
     qint64 dataPosition = fileHeader + 4;
+    int destIndex = 0;
 
-    for (int i=0; i<other.channelsCount(); ++i) {
+    for (int i=0; i<d.channelsCount(); ++i) {
         if (!indexes.contains(i)) continue;
 
         Data94Channel *destChannel = channels.at(destIndex);
-        Channel *sourceChannel = other.channel(i);
+        Channel *sourceChannel = d.channel(i);
 
         bool populated = sourceChannel->populated();
         if (!populated) sourceChannel->populate();
@@ -231,7 +171,6 @@ void Data94File::fillRest()
 
 void Data94File::read()
 {
-    qDebug()<<fileName();
     QFile f(fileName());
 
     if (!f.open(QFile::ReadOnly)) return;
@@ -580,6 +519,9 @@ void Data94File::deleteChannels(const QVector<int> &channelsToDelete)
             delete channels.takeAt(i);
         }
     }
+    // перезаписываем описатель файла
+    setChanged(true);
+    write();
 }
 
 void Data94File::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes)
@@ -772,7 +714,7 @@ QString Data94File::xName() const
 {
     if (channels.isEmpty()) return QString();
 
-    QString xname = channels.first()->xName();
+    QString xname = channels.constFirst()->xName();
 
     for (int i=1; i<channels.size(); ++i) {
         if (channels[i]->xName() != xname) return QString();
