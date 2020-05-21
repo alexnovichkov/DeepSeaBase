@@ -27,9 +27,11 @@ QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spec
     const double Step_f = xStep;
     const double F_max = F_min + Step_f * spectrum.size();
 
-    const double twothird = pow(2.0,1.0/3.0);
+//    const double twothird = pow(2.0, 1.0/3.0);
+//    const double twosixth = pow(2.0, 1.0/6.0);
     const double tenpow = pow(10.0, -1.4);
-    const double twosixth = pow(2.0,1.0/6.0);
+    const double twothird = pow(10.0, 0.1);
+    const double twosixth = pow(10.0, 0.05);
 
    // double f_lower = 0;
     double f_upper = 0;
@@ -37,7 +39,6 @@ QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spec
     int k_max = 52;
     for (int k = 52; k>=0; --k) {
         f_median = pow(10.0, 0.1 * k);
-       // f_lower = f_median / twosixth;
         f_upper = f_median * twosixth;
         if (f_upper <= F_max) {
             k_max = k;

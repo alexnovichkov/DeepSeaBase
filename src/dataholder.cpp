@@ -276,7 +276,7 @@ QString DataHolder::correctionString() const
 
 QString DataHolder::correctionString(double value, int type)
 {
-    if ((type == 0 && value == 0.0) || (type == 1 && value == 1.0))
+    if ((type == 0 && qFuzzyIsNull(value)) || (type == 1 && qFuzzyIsNull(value - 1.0)))
         return QString();
 
     QString suffix;
@@ -333,7 +333,7 @@ bool DataHolder::setYValue(int index, double value)
     if (!m_yValues.isEmpty() && index >= m_yValues.size()) return false;
     if (!m_yValuesComplex.isEmpty() && index >= m_yValuesComplex.size()) return false;
 
-    if (m_yValuesTemporal[index] == value) return false;
+    if (qFuzzyIsNull(m_yValuesTemporal[index] - value)) return false;
 
     if (int(m_yValuesFormat) == int(m_yValuesPresentation)) {
         m_yValues[index] = value;
@@ -568,7 +568,7 @@ QVector<double> DataHolder::decibels() const
 
 QVector<double> DataHolder::toLog(const QVector<double> &values, double threshold, int units)
 {DD;
-    if (threshold == 0 || units == UnitsDimensionless) return values;
+    if (qFuzzyIsNull(threshold) || units == UnitsDimensionless) return values;
     if (values.isEmpty()) return QVector<double>();
 
     QVector<double> a(values.size());

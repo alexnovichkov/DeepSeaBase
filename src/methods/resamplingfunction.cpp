@@ -218,7 +218,7 @@ bool ResamplingFunction::compute(FileDescriptor *file)
     QVector<double> data = m_input->getData("input");
     if (data.isEmpty()) return false;
 
-    if (qFuzzyCompare(factor, 1.0)) output = data;
+    if (qFuzzyCompare(factor+1.0, 2.0)) output = data;
     else {
         int bufferSize = 1024;
         resampler.setBufferSize(bufferSize);

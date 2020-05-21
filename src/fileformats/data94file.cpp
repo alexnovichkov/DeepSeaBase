@@ -1155,7 +1155,7 @@ void Data94Channel::read(QDataStream &r)
     dataPosition = r.device()->pos();
 
     double thr = _description.value("function").toObject().value("logref").toDouble();
-    if (thr == 0.0) thr = threshold(yName());
+    if (qFuzzyIsNull(thr)) thr = threshold(yName());
     _data->setThreshold(thr);
 
     int units = DataHolder::UnitsUnknown;

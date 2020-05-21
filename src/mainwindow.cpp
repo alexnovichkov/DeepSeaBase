@@ -1657,7 +1657,7 @@ void MainWindow::plotChannel(int index)
             plotted = plot->plotCurve(f, index, &col, plotOnRight, idx+1);
             if (plotted) {
                 f->channel(index)->setColor(col);
-                tab->record->channel(index)->setPlotted(plotOnRight?2:1);
+                f->channel(index)->setPlotted(plotOnRight?2:1);
             }
             else {
                 f->channel(index)->setPlotted(0);
@@ -2297,13 +2297,8 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 
      //проверяем, все ли каналы имеют одинаковое разрешение по х
      bool allChannelsHaveSameXStep = true;
-//     if (channel->xStep()==0.0) allChannelsHaveSameXStep = false;
      for (int i=1; i<plot->curves.size(); ++i) {
-//         if (plot->curves.at(i)->channel->xStep() == 0.0) {
-//             allChannelsHaveSameXStep = false;
-//             break;
-//         }
-         if (!qFuzzyCompare(plot->curves.at(i)->channel->xStep(), channel->xStep())) {
+         if (!qFuzzyCompare(plot->curves.at(i)->channel->xStep()+1.0, channel->xStep()+1.0)) {
              allChannelsHaveSameXStep = false;
              break;
          }

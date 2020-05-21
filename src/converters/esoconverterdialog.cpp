@@ -212,7 +212,7 @@ bool EsoConvertor::convert()
 
 
     if (esoFile.xValues.size()>=3) {
-        if (esoFile.xValues[0]-esoFile.xValues[1] == esoFile.xValues[1]-esoFile.xValues[2]) {
+        if (qFuzzyIsNull(esoFile.xValues[0]-2.0*esoFile.xValues[1] + esoFile.xValues[2])) {
             type = Spectr;
             octave = false;
         }

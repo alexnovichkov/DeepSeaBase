@@ -190,7 +190,7 @@ void Windowing::normalize() {
     sum += std::abs(w[i]);
   }
 
-  if (sum == 0.0) {
+  if (qFuzzyIsNull(sum)) {
     return;
   }
 

@@ -52,7 +52,7 @@ public:
     }
 
     void setFactor(double factor) {
-        if (factor < 1.0 || qFuzzyCompare(factor, m_factor)) return;
+        if (factor < 1.0 || qFuzzyCompare(factor+1.0, m_factor+1.0)) return;
         m_factor = factor;
     }
 

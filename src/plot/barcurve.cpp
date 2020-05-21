@@ -110,17 +110,35 @@ HistogramData::HistogramData(DataHolder *data) : data(data)
 
     // если это третьоктава, то хслед/хпред = [1.23..1.3]
     int i=0;
-    while (data->xValue(i) == 0.0) i++;
+    while (data->xValue(i) < 1.0 || qFuzzyCompare(data->xValue(i),1.0)) i++;
 
     if (data->samplesCount() < i+3) return;
 
     double step1 = data->xValue(i+1)/data->xValue(i);
     double step2 = data->xValue(i+2)/data->xValue(i+1);
 
-    if (step1 >= 1.23 && step1 <= 1.3 &&
-        step2 >= 1.23 && step2 <= 1.3) octaveType = Octave3;
     if (step1 >= 1.9 && step1 <= 2.1 &&
         step2 >= 1.9 && step2 <= 2.1) octaveType = Octave1;
+    if (step1 >= 1.39 && step1 <= 1.43 &&
+        step2 >= 1.39 && step2 <= 1.43) octaveType = Octave2;
+    if (step1 >= 1.23 && step1 <= 1.3 &&
+        step2 >= 1.23 && step2 <= 1.3) octaveType = Octave3;
+    if (step1 >= 1.11 && step1 <= 1.14 &&
+        step2 >= 1.11 && step2 <= 1.14) octaveType = Octave6;
+    if (step1 >= 1.05 && step1 <= 1.07 &&
+        step2 >= 1.05 && step2 <= 1.07) octaveType = Octave12;
+    if (step1 >= 1.02 && step1 <= 1.04 &&
+        step2 >= 1.02 && step2 <= 1.04) octaveType = Octave24;
+
+    switch (octaveType) {
+        case Octave1: factor = pow(10.0, 0.15); break;
+        case Octave2: factor = pow(10.0, 0.075); break;
+        case Octave3: factor = pow(10.0, 0.05); break;
+        case Octave6: factor = pow(10.0, 0.025); break;
+        case Octave12: factor = pow(10.0, 0.0125); break;
+        case Octave24: factor = pow(10.0, 0.00625); break;
+        default: break;
+    }
 }
 
 QRectF HistogramData::boundingRect() const
@@ -131,18 +149,8 @@ QRectF HistogramData::boundingRect() const
             d_boundingRect.setRight( data->xMax() + data->xStep()/2.0 );
         }
         else {
-            if (octaveType == Octave3) {
-                d_boundingRect.setLeft( data->xMin() / pow(10.0, 0.05) );
-                d_boundingRect.setRight( data->xMax() * pow(10.0, 0.05) );
-            }
-            else if (octaveType == Octave1) {
-                d_boundingRect.setLeft( data->xMin() / pow(2.0, 0.5) );
-                d_boundingRect.setRight( data->xMax() * pow(2.0, 0.5) );
-            }
-            else {
-                d_boundingRect.setLeft( data->xMin() );
-                d_boundingRect.setRight( data->xMax() );
-            }
+            d_boundingRect.setLeft( data->xMin() / factor );
+            d_boundingRect.setRight( data->xMax() * factor );
         }
         d_boundingRect.setTop( qMin(data->yMin(), 0.0) );
         d_boundingRect.setBottom( qMax(data->yMax(), 0.0) );
@@ -169,27 +177,16 @@ QwtIntervalSample HistogramData::sample(size_t i) const
 
     // левая граница
     double left = data->xValue(i);
-    if (i>0) left = sqrt(data->xValue(i) * data->xValue(i-1));
-    else {
-        if (octaveType == Octave3) {
-            left = data->xValue(i) / pow(10.0, 0.05);
-        }
-        else if (octaveType == Octave1) {
-            left = data->xValue(i) / pow(2.0, 0.5);
-        }
-    }
+    if (i>0)
+        left = sqrt(data->xValue(i) * data->xValue(i-1));
+    else
+        left = data->xValue(i) / factor;
 
     // правая граница
     double right = data->xValue(i);
     if (i< (uint)(data->samplesCount()-1)) right = sqrt(data->xValue(i) * data->xValue(i+1));
-    else {
-        if (octaveType == Octave3) {
-            right = data->xValue(i) * pow(10.0, 0.05);
-        }
-        else if (octaveType == Octave1) {
-            right = data->xValue(i) * pow(2.0, 0.5);
-        }
-    }
+    else
+        right = data->xValue(i) * factor;
 
     return QwtIntervalSample(data->yValue(i), left, right);
 }
@@ -207,14 +204,10 @@ double BarCurve::xMin() const
 
     // шаг по оси х не постоянный -> вероятнее всего октава или третьоктава.
     // xmin и xmax будут зависеть от значения х
-    if (histogramdata->octaveType == HistogramData::Octave3) {
-        return histogramdata->data->xMin() / pow(10.0, 0.05);
-    }
-    else if (histogramdata->octaveType == HistogramData::Octave1) {
-        return histogramdata->data->xMin() / pow(2.0, 0.5);
-    }
+    if (histogramdata->octaveType == HistogramData::OctaveUnknown)
+        return histogramdata->data->xMin();
 
-    return histogramdata->data->xMin();
+    return histogramdata->data->xMin() / histogramdata->factor;
 }
 
 double BarCurve::xMax() const
@@ -225,14 +218,10 @@ double BarCurve::xMax() const
 
     // шаг по оси х не постоянный -> вероятнее всего октава или третьоктава.
     // xmin и xmax будут зависеть от значения х
-    if (histogramdata->octaveType == HistogramData::Octave3) {
-        return histogramdata->data->xMax() * pow(10.0, 0.05);
-    }
-    else if (histogramdata->octaveType == HistogramData::Octave1) {
-        return histogramdata->data->xMax() * pow(2.0, 0.5);
-    }
+    if (histogramdata->octaveType == HistogramData::OctaveUnknown)
+        return histogramdata->data->xMax();
 
-    return histogramdata->data->xMax();
+    return histogramdata->data->xMax() * histogramdata->factor;
 }
 
 

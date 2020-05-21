@@ -67,7 +67,7 @@ void LogScaleEngine::autoScale(int maxNumSteps, double &x1, double &x2, double &
 
     interval = interval.limited(LOG_MIN_MY, LOG_MAX);
 
-    if (interval.width() == 0.0)
+    if (qFuzzyIsNull(interval.width()))
         interval = buildInterval(interval.minValue());
 
     stepSize = divideInterval(logInterval(logBase, interval).width(),
@@ -117,7 +117,7 @@ QwtScaleDiv LogScaleEngine::divideScale(double x1, double x2, int maxMajorSteps,
     }
 
     stepSize = qAbs(stepSize);
-    if (stepSize == 0.0) {
+    if (qFuzzyIsNull(stepSize)) {
         if (maxMajorSteps < 1)
             maxMajorSteps = 1;
 

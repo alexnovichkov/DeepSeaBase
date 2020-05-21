@@ -45,7 +45,7 @@ bool SortFilterModel::filterAcceptsRow(int source_row, const QModelIndex &source
         QModelIndex index = sourceModel()->index(source_row, i, source_parent);
         QVariant data = sourceModel()->data(index);
         if (data.type()==QVariant::Double)
-            accept &= qFuzzyCompare(data.toDouble(),filters.at(i).toDouble());
+            accept &= qFuzzyCompare(data.toDouble()+1.0,filters.at(i).toDouble()+1.0);
         else if (data.type()==QVariant::Int)
             accept &= (data.toInt()==filters.at(i).toInt());
         else if (data.type()==QVariant::LongLong)

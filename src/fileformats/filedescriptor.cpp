@@ -115,7 +115,7 @@ int FileDescriptor::plottedCount() const
 bool FileDescriptor::canTakeChannelsFrom(FileDescriptor *other) const
 {
     return (dataTypeEquals(other)
-            && this->xStep() == other->xStep());
+            && qFuzzyIsNull(this->xStep() - other->xStep()));
 }
 
 bool FileDescriptor::hasCurves() const

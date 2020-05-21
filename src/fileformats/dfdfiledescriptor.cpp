@@ -699,12 +699,12 @@ void DfdFileDescriptor::setDataDescriptor(const DescriptionList &data)
 
 void DfdFileDescriptor::setXStep(const double xStep)
 {
-    if (XStep == xStep) return;
+    if (qFuzzyIsNull(XStep - xStep)) return;
 
 
     for (int i=0; i<channels.size(); ++i) {
         // если шаг для отдельного канала не равен шагу всего файла
-        if (channels[i]->xStep() != XStep)
+        if (!qFuzzyIsNull(channels[i]->xStep() - XStep))
             channels[i]->data()->setXStep(xStep * channels[i]->xStep() / XStep);
         else
             channels[i]->data()->setXStep(xStep);
@@ -1693,7 +1693,7 @@ void DfdChannel::read(DfdSettings &dfd, int numChans)
     double XStep = double(NumInd) / double(parent->samplesCount());
     XStep *= parent->xStep();
 
-    if (XStep == 0) {// abscissa, uneven spacing
+    if (qFuzzyIsNull(XStep)) {// abscissa, uneven spacing
         _data->setXValues(QVector<double>());
         _data->setSamplesCount(NumInd);
     }

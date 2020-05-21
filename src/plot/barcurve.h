@@ -23,9 +23,14 @@ public:
     enum OctaveType {
         OctaveUnknown=0,
         Octave3=3,
-        Octave1=1
+        Octave1=1,
+        Octave2=2,
+        Octave6=6,
+        Octave12=12,
+        Octave24=24
     };
-    int octaveType = -1;
+    int octaveType = 0;
+    double factor = 1.0;
 };
 
 class BarCurve : public QwtPlotHistogram, public Curve
