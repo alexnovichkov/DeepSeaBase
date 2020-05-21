@@ -760,6 +760,68 @@ void Data94File::calculateMean(const QList<Channel*> &toMean)
 
 QString Data94File::calculateThirdOctave()
 {
+    QString thirdOctaveFileName = createUniqueFileName("", fileName(), "3oct", "d94", false);
+
+    Data94File *thirdOctFile = new Data94File(thirdOctaveFileName);
+
+    thirdOctFile->description = this->description;
+    thirdOctFile->zAxisBlock = this->zAxisBlock;
+    thirdOctFile->descriptionSize = this->descriptionSize;
+
+    thirdOctFile->description.insert("sourceFile", fileName());
+    thirdOctFile->updateDateTimeGUID();
+
+    for (Data94Channel *ch: qAsConst(channels)) {
+        const bool populated = ch->populated();
+        if (!populated) ch->populate();
+
+        Data94Channel *newCh = new Data94Channel(ch);
+        newCh->parent = thirdOctFile;
+
+        auto result = thirdOctave(ch->data()->decibels(), ch->xMin(), ch->xStep());
+
+        newCh->data()->setThreshold(ch->data()->threshold());
+        newCh->data()->setYValuesUnits(ch->data()->yValuesUnits());
+        newCh->data()->setXValues(result.first);
+        newCh->data()->setYValues(result.second, DataHolder::YValuesAmplitudesInDB);
+        newCh->_description.insert("samples", newCh->samplesCount());
+
+        QJsonObject function;
+        function.insert("name", "OCTF3");
+        function.insert("format", "amplitudeDb");
+        function.insert("logref", ch->data()->threshold());
+        QString units;
+        switch (ch->data()->yValuesUnits()) {
+            case DataHolder::UnitsUnknown: units = "unknown"; break;
+            case DataHolder::UnitsLinear: units = "linear"; break;
+            case DataHolder::UnitsQuadratic: units = "quadratic"; break;
+            case DataHolder::UnitsDimensionless: units = "dimensionless"; break;
+            default: break;
+        }
+        function.insert("units", units);
+        function.insert("octaveFormat", 3);
+        newCh->_description.insert("function", function);
+
+        newCh->setYName(ch->yName());
+        newCh->setPopulated(true);
+        newCh->setChanged(true);
+        newCh->setDataChanged(true);
+
+        thirdOctFile->channels.append(newCh);
+        if (!populated) ch->clear();
+    }
+    thirdOctFile->xAxisBlock.isValid = true;
+    thirdOctFile->xAxisBlock.uniform = 0;
+    thirdOctFile->xAxisBlock.values = thirdOctFile->channels.at(0)->xValues();
+    thirdOctFile->xAxisBlock.begin = thirdOctFile->xAxisBlock.values.first();
+    thirdOctFile->xAxisBlock.count = thirdOctFile->xAxisBlock.values.size();
+
+    thirdOctFile->setChanged(true);
+    thirdOctFile->setDataChanged(true);
+    thirdOctFile->write();
+
+    delete thirdOctFile;
+    return thirdOctaveFileName;
 }
 
 void Data94File::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize)
