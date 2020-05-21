@@ -486,7 +486,6 @@ void UffFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
 
 void UffFileDescriptor::calculateMean(const QList<Channel*> &toMean)
 {DD;
-
     if (toMean.isEmpty()) return;
 
     Channel *firstChannel = toMean.constFirst();
@@ -583,64 +582,76 @@ void UffFileDescriptor::calculateMean(const QList<Channel*> &toMean)
     write();
 }
 
-void UffFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &toAvg, int windowSize)
+void UffFileDescriptor::calculateMovingAvg(const QList<Channel*> &toAvg, int windowSize)
 {DD;
-    populate();
+    if (toAvg.isEmpty()) return;
 
-    for (int i=0; i<toAvg.size(); ++i) {
-        Function *ch = new Function(this);
-        FileDescriptor *firstDescriptor = toAvg.at(i).first;
-        Channel *firstChannel = firstDescriptor->channel(toAvg.at(i).second);
+    QTemporaryFile temp;
+    if (!temp.open()) {
+        qDebug()<<"Не удалось создать временный файл для"<<fileName();
+        return;
+    }
+    QTextStream stream(&temp);
+    header.write(stream);
+    units.write(stream);
 
-        int numInd = firstChannel->samplesCount();
-        auto format = firstChannel->data()->yValuesFormat();
+    for (Function *f: qAsConst(channels)) {
+        const bool populated = f->populated();
+        if (!populated) f->populate();
+        f->write(stream);
+        if (!populated) f->clear();
+    }
 
-        ch->data()->setThreshold(firstChannel->data()->threshold());
+    for (Channel *ch: toAvg) {
+        Function *newCh = new Function(*ch);
+        newCh->parent = this;
+
+        const int numInd = ch->samplesCount();
+        auto format = ch->data()->yValuesFormat();
+
+        newCh->data()->setThreshold(ch->data()->threshold());
         if (format == DataHolder::YValuesComplex) {
-            ch->data()->setYValues(movingAverage(firstChannel->data()->yValuesComplex(), windowSize));
+            newCh->data()->setYValues(movingAverage(ch->data()->yValuesComplex(), windowSize));
         }
         else {
-            QVector<double> values = movingAverage(firstChannel->data()->linears(), windowSize);
+            QVector<double> values = movingAverage(ch->data()->linears(), windowSize);
             if (format == DataHolder::YValuesAmplitudesInDB)
                 format = DataHolder::YValuesAmplitudes;
-//                values = DataHolder::toLog(values, threshold(firstChannel->yName()));
-            ch->data()->setYValues(values, format);
+            newCh->data()->setYValues(values, format);
         }
 
-        if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
-            ch->type58[27].value = 1;
-            ch->data()->setXValues(firstChannel->xMin(), firstChannel->xStep(), numInd);
+        if (ch->data()->xValuesFormat()==DataHolder::XValuesUniform) {
+            newCh->type58[27].value = 1;
+            newCh->data()->setXValues(ch->xMin(), ch->xStep(), numInd);
         }
         else {
-            ch->type58[27].value = 0;
-            ch->data()->setXValues(firstChannel->data()->xValues());
+            newCh->type58[27].value = 0;
+            newCh->data()->setXValues(ch->data()->xValues());
         }
 
-        ch->type58[29].value = firstDescriptor->xStep();
+        newCh->type58[29].value = ch->xStep();
 
         // обновляем сведения канала
-        ch->setPopulated(true);
-        ch->setName(firstChannel->name()+" сглаж.");
-        ch->setDescription("Скользящее среднее канала "+firstChannel->name());
+        newCh->setPopulated(true);
+        newCh->setName(ch->name()+" сглаж.");
+        newCh->setDescription("Скользящее среднее канала "+ch->name());
 
-        ch->type58[44].value = firstChannel->yName();
-        ch->type58[37].value = firstChannel->xName();
-        ch->parent = this;
+        newCh->type58[8].value = QDateTime::currentDateTime();
 
-        ch->type58[8].value = QDateTime::currentDateTime();
+        newCh->type58[26].value = newCh->data()->samplesCount();
+        newCh->type58[25].value = (newCh->data()->yValuesFormat() == DataHolder::YValuesComplex ? 6 : 4);
 
-        ch->type58[26].value = ch->data()->samplesCount();
-        ch->type58[25].value = (ch->data()->yValuesFormat() == DataHolder::YValuesComplex ? 6 : 4);
-        ch->type58[14].value = firstChannel->type();
+        newCh->type58[32].value = abscissaType(ch->xName());
+        newCh->type58[36].value = abscissaTypeDescription(newCh->type58[32].value.toInt());
 
-        ch->type58[32].value = abscissaType(firstChannel->xName());
-        ch->type58[36].value = abscissaTypeDescription(ch->type58[32].value.toInt());
-
-        ch->type58[28].value = firstChannel->xMin();
-
-        channels << ch;
+        channels << newCh;
+        newCh->write(stream);
     }
     removeTempFile();
+
+    temp.close();
+    QFile::remove(fileName());
+    QFile::copy(temp.fileName(), fileName());
 }
 
 QString UffFileDescriptor::calculateThirdOctave()

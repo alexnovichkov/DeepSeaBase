@@ -379,6 +379,7 @@ void Data94File::write()
             }
             c->setDataChanged(false);
         }
+        setDataChanged(false);
     }
 }
 
@@ -824,8 +825,84 @@ QString Data94File::calculateThirdOctave()
     return thirdOctaveFileName;
 }
 
-void Data94File::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize)
+void Data94File::calculateMovingAvg(const QList<Channel*> &list, int windowSize)
 {
+    if (list.isEmpty()) return;
+
+    populate();
+    const Channel *firstChannel = list.first();
+    //определяем количество отсчетов
+    int numInd = firstChannel->samplesCount();
+    if (xAxisBlock.count > 0) numInd = qMin(numInd, int(xAxisBlock.count));
+
+    //xAxisBlock
+    if (channels.isEmpty()) {
+        xAxisBlock.uniform = firstChannel->data()->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
+        xAxisBlock.begin = firstChannel->xMin();
+        if (xAxisBlock.uniform == 0) {// not uniform
+            xAxisBlock.values = firstChannel->xValues();
+            xAxisBlock.values.resize(numInd);
+        }
+
+        xAxisBlock.count = numInd;
+        xAxisBlock.step = firstChannel->xStep();
+        xAxisBlock.isValid = true;
+    }
+
+    //zAxisBlock
+    if (channels.isEmpty()) {
+        zAxisBlock.count = 1;
+        zAxisBlock.isValid = true;
+    }
+
+    for (Channel *ch: list) {
+        const bool populated = ch->populated();
+        if (!populated) ch->populate();
+
+        Data94Channel *newCh = new Data94Channel(ch);
+        newCh->parent = this;
+        newCh->setPopulated(true);
+        newCh->setChanged(true);
+        newCh->setDataChanged(true);
+
+        auto format = ch->data()->yValuesFormat();
+
+        if (format == DataHolder::YValuesComplex) {
+            auto values = movingAverage(ch->data()->yValuesComplex(), windowSize);
+            values.resize(numInd);
+            newCh->data()->setYValues(values);
+        }
+        else {
+            QVector<double> values = movingAverage(ch->data()->linears(), windowSize);
+            values.resize(numInd);
+            if (format == DataHolder::YValuesAmplitudesInDB)
+                format = DataHolder::YValuesAmplitudes;
+            newCh->data()->setYValues(values, format);
+        }
+
+        if (ch->data()->xValuesFormat()==DataHolder::XValuesUniform) {
+            newCh->data()->setXValues(ch->xMin(), ch->xStep(), numInd);
+        }
+        else {
+            QVector<double> values = ch->data()->xValues();
+            values.resize(numInd);
+            newCh->data()->setXValues(values);
+        }
+
+        newCh->setName(ch->name()+" сглаж.");
+        newCh->setDescription("Скользящее среднее канала "+ch->name());
+
+        newCh->_description.insert("samples", qint64(xAxisBlock.count));
+        if (xAxisBlock.uniform == 1 && !qFuzzyIsNull(xAxisBlock.step))
+            newCh->_description.insert("samplerate", int(1.0 / xAxisBlock.step));
+
+        if (!populated) ch->clear();
+        channels << newCh;
+    }
+
+    setChanged(true);
+    setDataChanged(true);
+    write();
 }
 
 QString Data94File::saveTimeSegment(double from, double to)

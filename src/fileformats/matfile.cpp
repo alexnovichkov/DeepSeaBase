@@ -1145,7 +1145,7 @@ QString MatFile::calculateThirdOctave()
     return QString();
 }
 
-void MatFile::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &, int)
+void MatFile::calculateMovingAvg(const QList<Channel *> &, int)
 {
 }
 

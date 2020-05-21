@@ -149,7 +149,7 @@ public:
     virtual void copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes) override;
     virtual void calculateMean(const QList<Channel *> &toMean) override;
     virtual QString calculateThirdOctave() override;
-    virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize) override;
+    virtual void calculateMovingAvg(const QList<Channel *> &list, int windowSize) override;
     virtual QString saveTimeSegment(double from, double to) override;
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
     virtual QVariant channelHeader(int column) const override;

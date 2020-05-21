@@ -1359,11 +1359,13 @@ void MainWindow::calculateMean()
         meanFile = findDescriptor(meanFileName);
         if (meanFile)
             descriptorFound = true;
-        else {
+        else
             meanFile = FormatFactory::createDescriptor(meanFileName);
-        }
 
-        if (!meanFile) return;
+        if (!meanFile) {
+            qDebug()<<"Не удалось создать файл"<<meanFileName;
+            return;
+        }
 
         if (QFileInfo(meanFileName).exists() && !descriptorFound)
             meanFile->read();
@@ -1771,26 +1773,30 @@ void MainWindow::calculateMovingAvg()
     else
         return;
 
-    QList<QPair<FileDescriptor *, int> > channels;
+    QList<Channel*> channels;
 
     bool oneFile = true; // каналы из одного файла
     bool writeToSeparateFile = true;
 
     Curve *firstCurve = plot->curves.constFirst();
-    channels.append({firstCurve->descriptor, firstCurve->channelIndex});
+    channels.append(firstCurve->channel);
+    const QString firstName = firstCurve->descriptor->fileName();
 
-    bool allFilesDfd = firstCurve->descriptor->fileName().toLower().endsWith("dfd");
+    bool allFilesDfd = firstName.toLower().endsWith("dfd") ||
+                       firstName.toLower().endsWith("d94");
 
     for (int i = 1; i<plot->curves.size(); ++i) {
         Curve *curve = plot->curves.at(i);
-        channels.append({curve->descriptor, curve->channelIndex});
+        channels.append(curve->channel);
+        const QString curveName = curve->descriptor->fileName();
 
-        allFilesDfd &= firstCurve->descriptor->fileName().toLower().endsWith("dfd");
-        if (firstCurve->descriptor->fileName() != curve->descriptor->fileName())
+        allFilesDfd &= (curveName.toLower().endsWith("dfd") ||
+                        curveName.toLower().endsWith("d94"));
+        if (firstName != curveName)
             oneFile = false;
     }
     if (oneFile) {
-        QMessageBox box("Скользящее среднее каналов", QString("Каналы взяты из одной записи %1.\n").arg(firstCurve->descriptor->fileName())
+        QMessageBox box("Скользящее среднее каналов", QString("Каналы взяты из одной записи %1.\n").arg(firstName)
                         +
                         QString("Сохранить скользящее среднее в эту запись дополнительными каналами?"),
                         QMessageBox::Question,
@@ -1804,20 +1810,20 @@ void MainWindow::calculateMovingAvg()
         writeToSeparateFile = (result == QMessageBox::No);
     }
 
-    QString avgDfdFile;
-    FileDescriptor *avgDfd = 0;
+    QString avgFileName;
+    FileDescriptor *avgFile = 0;
     bool descriptorFound = false;
 
     if (writeToSeparateFile) {
-        QString meanD = firstCurve->descriptor->fileName();
-        meanD.chop(4);
+        QString avgD = firstName;
+        avgD.chop(4);
 
-        meanD = MainWindow::getSetting("lastMovingAvgFile", meanD).toString();
+        avgD = MainWindow::getSetting("lastMovingAvgFile", avgD).toString();
 
         QStringList filters = FormatFactory::allFilters();
         QStringList suffixes = FormatFactory::allSuffixes(true);
 
-        QFileDialog dialog(this, "Выбор файла для записи каналов", meanD,
+        QFileDialog dialog(this, "Выбор файла для записи каналов", avgD,
                            filters.join(";;"));
         dialog.setOption(QFileDialog::DontUseNativeDialog, true);
         dialog.setFileMode(QFileDialog::AnyFile);
@@ -1835,63 +1841,61 @@ void MainWindow::calculateMovingAvg()
         }
         if (selectedFiles.isEmpty()) return;
 
-        avgDfdFile = selectedFiles.constFirst();
-        if (avgDfdFile.isEmpty()) return;
-        MainWindow::setSetting("lastMovingAvgFile", avgDfdFile);
+        avgFileName = selectedFiles.constFirst();
+        if (avgFileName.isEmpty()) return;
+        MainWindow::setSetting("lastMovingAvgFile", avgFileName);
 
         //добавляем суффикс
-        QString currentSuffix = QFileInfo(avgDfdFile).suffix().toLower();
+        QString currentSuffix = QFileInfo(avgFileName).suffix().toLower();
         QString filterSuffix = suffixes.at(filters.indexOf(selectedFilter));
         if (currentSuffix != filterSuffix) {
             //удаляем суффикс, если это суффикс известного нам типа файлов
             if (suffixes.contains(currentSuffix))
-                avgDfdFile.chop(currentSuffix.length()+1);
+                avgFileName.chop(currentSuffix.length()+1);
 
-            avgDfdFile.append(QString(".%1").arg(filterSuffix));
+            avgFileName.append(QString(".%1").arg(filterSuffix));
         }
 
-        avgDfd = findDescriptor(avgDfdFile);
-        if (avgDfd)
+        avgFile = findDescriptor(avgFileName);
+        if (avgFile)
             descriptorFound = true;
         else
-            avgDfd = FormatFactory::createDescriptor(avgDfdFile);
+            avgFile = FormatFactory::createDescriptor(avgFileName);
 
-        if (!avgDfd) {
-            qDebug()<<"Не удалось создать файл"<<avgDfdFile;
+        if (!avgFile) {
+            qDebug()<<"Не удалось создать файл"<<avgFileName;
             return;
         }
 
-        if (QFileInfo(avgDfdFile).exists() && !descriptorFound)
-            avgDfd->read();
+        if (QFileInfo(avgFileName).exists() && !descriptorFound)
+            avgFile->read();
         else
-            avgDfd->fillPreliminary(firstCurve->channel->type());
-
-
+            avgFile->fillPreliminary(firstCurve->channel->type());
     }
     else {
-        avgDfd = firstCurve->descriptor;
-        avgDfdFile = avgDfd->fileName();
+        avgFile = firstCurve->descriptor;
+        avgFileName = avgFile->fileName();
         descriptorFound = true;
     }
 
 
-    avgDfd->calculateMovingAvg(channels,windowSize);
+    avgFile->calculateMovingAvg(channels,windowSize);
 
     if (writeToSeparateFile)
-        avgDfd->fillRest();
+        avgFile->fillRest();
 
-    avgDfd->setChanged(true);
-    avgDfd->setDataChanged(true);
-    avgDfd->write();
-    avgDfd->writeRawFile();
+//    avgFile->setChanged(true);
+//    avgFile->setDataChanged(true);
+//    avgFile->write();
+//    avgFile->writeRawFile();
 
     if (descriptorFound) {
-        tab->model->updateFile(avgDfd);
+        tab->model->updateFile(avgFile);
     }
     else {
-        addFile(avgDfd);
+        addFile(avgFile);
     }
-    setCurrentAndPlot(avgDfd, avgDfd->channelsCount()-1);
+    setCurrentAndPlot(avgFile, avgFile->channelsCount()-1);
 }
 
 void MainWindow::deleteCurve(int index)

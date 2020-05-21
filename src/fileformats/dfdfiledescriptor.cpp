@@ -1013,14 +1013,13 @@ void DfdFileDescriptor::calculateMean(const QList<Channel*> &channels)
     writeRawFile();
 }
 
-void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels, int windowSize)
+void DfdFileDescriptor::calculateMovingAvg(const QList<Channel *> &list, int windowSize)
 {
     populate();
 
-    for (int i=0; i<channels.size(); ++i) {
+    for (int i=0; i<list.size(); ++i) {
         DfdChannel *ch = new DfdChannel(this, channelsCount());
-        FileDescriptor *firstDescriptor = channels.at(i).first;
-        Channel *firstChannel = firstDescriptor->channel(channels.at(i).second);
+        Channel *firstChannel = list.at(i);
 
         int numInd = firstChannel->samplesCount();
 
@@ -1050,7 +1049,7 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
         ch->ChanDscr = "Скользящее среднее канала "+firstChannel->name();
         ch->ChanBlockSize = numInd;
 
-        ch->IndType = this->channels.isEmpty()?3221225476:this->channels.constFirst()->IndType;
+        ch->IndType = channels.isEmpty()?3221225476:channels.constFirst()->IndType;
         ch->YName = firstChannel->yName();
         //грязный хак
         if (DfdChannel *dfd = dynamic_cast<DfdChannel*>(firstChannel)) {
@@ -1062,8 +1061,13 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<QPair<FileDescriptor *, i
         ch->parent = this;
         ch->channelIndex = this->channelsCount();
 
-        this->channels << ch;
+        channels << ch;
     }
+
+    setChanged(true);
+    setDataChanged(true);
+    write();
+    writeRawFile();
 }
 
 QString DfdFileDescriptor::calculateThirdOctave()

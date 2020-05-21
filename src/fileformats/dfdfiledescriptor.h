@@ -310,8 +310,7 @@ public:
     void deleteChannels(const QVector<int> &channelsToDelete);
     void copyChannelsFrom(FileDescriptor *file, const QVector<int> &indexes);
     virtual void calculateMean(const QList<Channel *> &channels);
-    virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &channels,
-                                    int windowSize);
+    virtual void calculateMovingAvg(const QList<Channel *> &channels, int windowSize);
     virtual QString calculateThirdOctave();
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes);
 

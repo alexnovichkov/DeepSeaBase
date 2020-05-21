@@ -80,7 +80,7 @@ public:
     virtual void copyChannelsFrom(FileDescriptor *, const QVector<int> &) override;
     virtual void calculateMean(const QList<Channel *> &) override;
     virtual QString calculateThirdOctave() override;
-    virtual void calculateMovingAvg(const QList<QPair<FileDescriptor *, int> > &, int) override;
+    virtual void calculateMovingAvg(const QList<Channel *> &, int) override;
     virtual QString saveTimeSegment(double, double) override;
     virtual int channelsCount() const override;
     virtual void move(bool, const QVector<int> &, const QVector<int> &) override;
