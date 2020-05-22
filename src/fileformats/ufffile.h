@@ -74,6 +74,7 @@ public:
 
 //    virtual QByteArray wavData(qint64 pos, qint64 samples) override;
 private:
+    friend class UffFileDescriptor;
     void readRest();
 };
 

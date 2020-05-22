@@ -245,9 +245,7 @@ void UffFileDescriptor::read()
             while (!stream.atEnd()) {
                 Function *f = new Function(this);
                 f->read(stream, -1);
-
                 channels << f;
-
             }
 
             //теперь уплощаем файл - группируем многоблочные каналы
@@ -262,36 +260,8 @@ void UffFileDescriptor::read()
                 }
             }
 
-            //теперь в векторе f->zValues значения по оси Z
             for (Function *f: qAsConst(channels)) {
-                double zBegin = 0.0;
-                double zStep = 0.0;
-                int zCount = f->zValues.size();
-
-                if (zCount == 0) continue; //такого быть не должно
-                zBegin = f->zValues.at(0);
-
-                if (zCount == 1) {
-                    //одиночный канал
-                    f->data()->setZValues(zBegin, zStep, zCount);
-                }
-                else {
-                    //определяем, равномерная ли шкала
-                    if (zCount >= 2) zStep = f->zValues.at(1) - f->zValues.at(0);
-
-                    bool uniform = true;
-                    for (int i=2; i<zCount; ++i) {
-                        if (!qFuzzyIsNull(f->zValues.at(i) - f->zValues.at(i-1) - zStep)) {
-                            uniform = false;
-                            break;
-                        }
-                    }
-                    if (uniform)
-                        f->data()->setZValues(zBegin, zStep, zCount);
-                    else
-                        f->data()->setZValues(f->zValues);
-                }
-                //f->zValues.clear();
+                f->readRest();
             }
         }
 
@@ -1078,7 +1048,7 @@ void Function::read(QTextStream &stream, qint64 pos)
         while (s != "-1");
     }
 
-    readRest();
+    //readRest();
 }
 
 void Function::read(QDataStream &stream)
@@ -1161,6 +1131,34 @@ void Function::readRest()
 //        if (header.type1858[14].value.toInt() > 0) units = DataHolder::UnitsQuadratic;
 //    }
     _data->setYValuesUnits(units);
+
+
+    double zBegin = 0.0;
+    double zStep = 0.0;
+    int zCount = zValues.size();
+
+    zBegin = zValues.at(0);
+
+    if (zCount == 1) {
+        //одиночный канал
+        _data->setZValues(zBegin, zStep, zCount);
+    }
+    else {
+        //определяем, равномерная ли шкала
+        if (zCount >= 2) zStep = zValues.at(1) - zValues.at(0);
+
+        bool uniform = true;
+        for (int i=2; i<zCount; ++i) {
+            if (!qFuzzyIsNull(zValues.at(i) - zValues.at(i-1) - zStep)) {
+                uniform = false;
+                break;
+            }
+        }
+        if (uniform)
+            _data->setZValues(zBegin, zStep, zCount);
+        else
+            _data->setZValues(zValues);
+    }
 }
 
 
