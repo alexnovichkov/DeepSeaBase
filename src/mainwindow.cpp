@@ -2726,6 +2726,7 @@ void MainWindow::addFiles(QStringList &files)
         if (tab->model->contains(fileName))
             continue;
 
+        emit loading(fileName);
 
         FileDescriptor *file = findDescriptor(fileName);
         if (!file) {

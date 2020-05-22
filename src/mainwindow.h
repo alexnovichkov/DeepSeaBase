@@ -312,6 +312,8 @@ private:
     // QWidget interface
 protected:
     virtual void closeEvent(QCloseEvent *event) override;
+signals:
+    void loading(const QString &file);
 private:
     bool closeRequested();
 };
