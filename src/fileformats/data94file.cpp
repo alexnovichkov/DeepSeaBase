@@ -652,9 +652,9 @@ void Data94File::calculateMean(const QList<Channel*> &toMean)
         if (!populated) ch->populate();
 
         if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
-            averaging.average(ch->data()->yValuesComplex());
+            averaging.average(ch->data()->yValuesComplex(0));
         else
-            averaging.average(ch->data()->linears());
+            averaging.average(ch->data()->linears(0));
 
         if (!populated) ch->clear();
     }
@@ -888,12 +888,12 @@ void Data94File::calculateMovingAvg(const QList<Channel*> &list, int windowSize)
         auto format = ch->data()->yValuesFormat();
 
         if (format == DataHolder::YValuesComplex) {
-            auto values = movingAverage(ch->data()->yValuesComplex(), windowSize);
+            auto values = movingAverage(ch->data()->yValuesComplex(0), windowSize);
             values.resize(numInd);
             newCh->data()->setYValues(values);
         }
         else {
-            QVector<double> values = movingAverage(ch->data()->linears(), windowSize);
+            QVector<double> values = movingAverage(ch->data()->linears(0), windowSize);
             values.resize(numInd);
             if (format == DataHolder::YValuesAmplitudesInDB)
                 format = DataHolder::YValuesAmplitudes;
@@ -993,7 +993,7 @@ QString Data94File::saveTimeSegment(double from, double to)
         r << format;
 
         if (!ch->isComplex) {
-            const QVector<double> yValues = ch->data()->rawYValues();
+            const QVector<double> yValues = ch->data()->rawYValues(0);
             if (yValues.isEmpty()) {
                 qDebug()<<"Отсутствуют данные для записи в канале"<<ch->name();
                 continue;
@@ -1004,7 +1004,7 @@ QString Data94File::saveTimeSegment(double from, double to)
             }
         }
         else {
-            const auto yValues = ch->data()->yValuesComplex();
+            const QVector<cx_double> yValues = ch->data()->yValuesComplex(0);
             if (yValues.isEmpty()) {
                 qDebug()<<"Отсутствуют данные для записи в канале"<<ch->name();
                 continue;
@@ -1096,7 +1096,7 @@ void Data94File::move(bool up, const QVector<int> &indexes, const QVector<int> &
             out << format;
 
             if (!f->isComplex) {
-                const QVector<double> yValues = f->data()->rawYValues();
+                const QVector<double> yValues = f->data()->rawYValues(-1); //все блоки сразу
                 if (yValues.isEmpty()) {
                     qDebug()<<"Отсутствуют данные для записи в канале"<<f->name();
                     continue;
@@ -1107,7 +1107,7 @@ void Data94File::move(bool up, const QVector<int> &indexes, const QVector<int> &
                 }
             }
             else {
-                const auto yValues = f->data()->yValuesComplex();
+                const auto yValues = f->data()->yValuesComplex(-1); //все блоки сразу
                 if (yValues.isEmpty()) {
                     qDebug()<<"Отсутствуют данные для записи в канале"<<f->name();
                     continue;
@@ -1357,8 +1357,13 @@ void Data94Channel::read(QDataStream &r)
 
     if (parent->xAxisBlock.uniform == 1)
         _data->setXValues(parent->xAxisBlock.begin, parent->xAxisBlock.step, parent->xAxisBlock.count);
+    else
+        _data->setXValues(parent->xAxisBlock.values);
 
-    _data->setBlocksCount(parent->zAxisBlock.count);
+    if (parent->zAxisBlock.uniform == 1)
+        _data->setZValues(parent->zAxisBlock.begin, parent->zAxisBlock.step, parent->zAxisBlock.count);
+    else
+        _data->setZValues(parent->zAxisBlock.values);
 
     r.device()->skip(parent->zAxisBlock.count * parent->xAxisBlock.count * valueFormat * sizeof(float));
     // соответствия:         blockCount                 sampleCount         factor

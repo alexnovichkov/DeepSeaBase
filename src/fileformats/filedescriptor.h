@@ -204,13 +204,8 @@ public:
     virtual int xValuesFormat() const {return _data->xValuesFormat();}
     virtual int units() const {return _data->yValuesUnits();}
 
-    virtual QVector<double> yValues() const {return _data->yValues();}
-    virtual QVector<cx_double> yValuesComplex() const {return _data->yValuesComplex();}
     virtual QVector<double> xValues() const {return _data->xValues();}
     virtual QByteArray wavData(qint64 pos, qint64 samples);
-
-    virtual QVector<double> yData() const {return _data->rawYValues();}
-    virtual const double *xData() const {return _data->rawXValues();}
 
     virtual double yMin() const {return _data->yMin();}
     virtual double yMax() const {return _data->yMax();}

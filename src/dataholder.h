@@ -94,10 +94,9 @@ public:
     void setYValuesUnits(int yValuesUnits) {m_yValuesUnits = YValuesUnits(yValuesUnits);}
     int yValuesUnits() const {return m_yValuesUnits;}
 
-    const double* rawXValues() const {return m_xValues.data();}
-    QVector<double> rawYValues(int block = 0) const {return m_yValues;}
-    QVector<double> yValues(int block=0) const;
-    QVector<cx_double> yValuesComplex(int block=0) const {return m_yValuesComplex;}
+    QVector<double> rawYValues(int block);
+    QVector<double> yValues(int block) const;
+    QVector<cx_double> yValuesComplex(int block);
     QVector<double> xValues() const;
     QVector<double> zValues() const;
 
@@ -160,7 +159,7 @@ private:
     YValuesPresentation m_yValuesPresentation;
 
     //some statistics
-    double m_yMin, m_yMax;
+    QVector<double> m_yMin, m_yMax;
 
     double m_correctionValue;
     int m_correctionType;

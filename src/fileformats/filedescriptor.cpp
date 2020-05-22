@@ -184,7 +184,7 @@ QByteArray Channel::wavData(qint64 pos, qint64 samples)
 
     QDataStream s(&b, QIODevice::WriteOnly);
     s.setByteOrder(QDataStream::LittleEndian);
-    QVector<double> values = data()->rawYValues().mid(pos,samples);
+    QVector<double> values = data()->rawYValues(0).mid(pos,samples);
 
     const double max = qMax(qAbs(data()->yMax()), qAbs(data()->yMin()));
     const double coef = 32768.0 / max;

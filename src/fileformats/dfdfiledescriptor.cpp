@@ -186,10 +186,10 @@ DfdFileDescriptor::DfdFileDescriptor(const DfdFileDescriptor &d, const QString &
 
         const int sc = sourceChannel->samplesCount();
 
-
-        QVector<double> yValues = sourceChannel->data()->rawYValues();
-        if (yValues.isEmpty() && !sourceChannel->data()->yValuesComplex().isEmpty()) {
-            yValues = sourceChannel->data()->linears();
+        //dfd не понимает многоблочные файлы
+        QVector<double> yValues = sourceChannel->data()->rawYValues(0);
+        if (yValues.isEmpty() && !sourceChannel->data()->yValuesComplex(0).isEmpty()) {
+            yValues = sourceChannel->data()->linears(0);
             destChannel->data()->setYValuesFormat(DataHolder::YValuesAmplitudes);
         }
         int scc = qMin(sc, yValues.size());
@@ -337,10 +337,10 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
 
         const int sc = sourceChannel->samplesCount();
 
-
-        QVector<double> yValues = sourceChannel->data()->rawYValues();
-        if (yValues.isEmpty() && !sourceChannel->data()->yValuesComplex().isEmpty()) {
-            yValues = sourceChannel->data()->linears();
+        //dfd не понимает многоблочные файлы
+        QVector<double> yValues = sourceChannel->data()->rawYValues(0);
+        if (yValues.isEmpty() && !sourceChannel->data()->yValuesComplex(0).isEmpty()) {
+            yValues = sourceChannel->data()->linears(0);
             destChannel->data()->setYValuesFormat(DataHolder::YValuesAmplitudes);
         }
         int scc = qMin(sc, yValues.size());
@@ -454,7 +454,7 @@ void DfdFileDescriptor::read()
         DfdChannel *firstChannel = channels.constFirst();
         if (firstChannel->data()->xValuesFormat() == DataHolder::XValuesNonUniform) {
             firstChannel->populate();
-            QVector<double> xvalues = firstChannel->data()->yValues();
+            QVector<double> xvalues = firstChannel->data()->yValues(0);
 
             //для октавного и третьоктавного спектра значения полос могут
             //отсутствовать в файле. Проверяем и создаем, если надо
@@ -552,9 +552,10 @@ void DfdFileDescriptor::writeRawFile()
 
                 const int sc = ch->samplesCount();
 
-                QVector<double> yValues = ch->data()->rawYValues();
-                if (yValues.isEmpty() && !ch->data()->yValuesComplex().isEmpty())
-                    yValues = ch->data()->linears();
+                //dfd не понимает многоблочные файлы
+                QVector<double> yValues = ch->data()->rawYValues(0);
+                if (yValues.isEmpty() && !ch->data()->yValuesComplex(0).isEmpty())
+                    yValues = ch->data()->linears(0);
                 int scc = qMin(sc, yValues.size());
                 for (int val = 0; val < scc; ++val) {
                     ch->setValue(yValues[val], writeStream);
@@ -573,9 +574,10 @@ void DfdFileDescriptor::writeRawFile()
                     else if (ch->IndType==0xC0000008)
                         writeStream.setFloatingPointPrecision(QDataStream::DoublePrecision);
 
-                    QVector<double> yValues = ch->data()->rawYValues();
-                    if (yValues.isEmpty() && !ch->data()->yValuesComplex().isEmpty())
-                        yValues = ch->data()->linears();
+                    //dfd не понимает многоблочные файлы
+                    QVector<double> yValues = ch->data()->rawYValues(0);
+                    if (yValues.isEmpty() && !ch->data()->yValuesComplex(0).isEmpty())
+                        yValues = ch->data()->linears(0);
 
                     //const int sc = ch->samplesCount();
                     for (int val = 0; val < BlockSize; ++val) {
@@ -952,9 +954,9 @@ void DfdFileDescriptor::calculateMean(const QList<Channel*> &channels)
 
     foreach (Channel *ch, channels) {
         if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
-            averaging.average(ch->data()->yValuesComplex());
+            averaging.average(ch->data()->yValuesComplex(0));
         else
-            averaging.average(ch->data()->linears());
+            averaging.average(ch->data()->linears(0));
     }
 
     // обновляем сведения канала
@@ -1026,15 +1028,16 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<Channel *> &list, int win
         ch->data()->setThreshold(firstChannel->data()->threshold());
         ch->data()->setYValuesUnits(firstChannel->data()->yValuesUnits());
 
+        //dfd не понимает многоблочные файлы
         auto format = firstChannel->data()->yValuesFormat();
         if (format == DataHolder::YValuesComplex) {
-            ch->data()->setYValues(movingAverage(firstChannel->data()->yValuesComplex(), windowSize));
+            ch->data()->setYValues(movingAverage(firstChannel->data()->yValuesComplex(0), windowSize));
         }
         else {
-            QVector<double> values = movingAverage(firstChannel->data()->linears(), windowSize);
+            QVector<double> values = movingAverage(firstChannel->data()->linears(0), windowSize);
             if (format == DataHolder::YValuesAmplitudesInDB)
                 format = DataHolder::YValuesAmplitudes;
-            ch->data()->setYValues(values, format);
+            ch->data()->setYValues(values, format, 0);
         }
 
         if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform)
@@ -1705,6 +1708,9 @@ void DfdChannel::read(DfdSettings &dfd, int numChans)
         _data->setXValues(parent->XBegin, XStep, NumInd);
     }
 
+    //dfd не понимает многоблочные данные
+    _data->setZValues(0.0, 0.0, 1);
+
     auto yValueFormat = dataFormat();
 
     if (YName.toLower()=="db" || YName.toLower()=="дб")
@@ -2263,10 +2269,11 @@ void DfdChannel::appendDataTo(const QString &rawFileName)
 
         const int sc = parent->NumInd;
 
-        QVector<double> yValues = data()->rawYValues();
-        if (yValues.isEmpty() && !data()->yValuesComplex().isEmpty()) {
+        //dfd не понимает многоблочные файлы
+        QVector<double> yValues = data()->rawYValues(0);
+        if (yValues.isEmpty() && !data()->yValuesComplex(0).isEmpty()) {
             //комплексные данные, dfd не умеет их переваривать, конвертируем в линейные
-            yValues = data()->linears();
+            yValues = data()->linears(0);
             data()->setYValuesFormat(DataHolder::YValuesAmplitudes);
         }
         yValues.resize(sc);

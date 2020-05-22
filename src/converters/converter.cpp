@@ -408,7 +408,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             Resampler filter(factor, buffer);
             QVector<float> filtered;
             while (1) {
-                QVector<float> chunk = getBlock(file->channel(i)->yValues(), buffer, stepBack, block);
+                QVector<float> chunk = getBlock(file->channel(i)->data()->yValues(0), buffer, stepBack, block);
                 if (chunk.size() < buffer)
                     filter.setLastChunk();
                 filtered = filter.process(chunk);
@@ -418,7 +418,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             }
             // дополняем нулями вектор, чтобы длина в точности равнялась
             // длине исходной записи, деленной на factor
-            spectrum.append(QVector<double>(file->channel(i)->yValues().size()/factor - spectrum.size()) );
+            spectrum.append(QVector<double>(file->channel(i)->data()->yValues(0).size()/factor - spectrum.size()) );
             spectrum.squeeze();
         }
 
@@ -428,7 +428,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             sampling.setType(p.overlap==0?FrameCutter::Continuous:FrameCutter::Overlap);
             sampling.setBlockSize(newBlockSize);
             sampling.setDelta(1.0 * newBlockSize * p.overlap);
-            sampling.setSource(file->channel(i)->yValues());
+            sampling.setSource(file->channel(i)->data()->yValues(0));
 
             Resampler filter(factor, p.bufferSize);
             QVector<double> filtered;
@@ -475,14 +475,14 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             sampling1.setType(p.overlap==0?FrameCutter::Continuous:FrameCutter::Overlap);
             sampling1.setBlockSize(newBlockSize);
             sampling1.setDelta(1.0 * newBlockSize * p.overlap);
-            sampling1.setSource(file->channel(i)->yValues());
+            sampling1.setSource(file->channel(i)->data()->yValues(0));
 
 
             FrameCutter sampling2;
             sampling2.setType(p.overlap==0?FrameCutter::Continuous:FrameCutter::Overlap);
             sampling2.setBlockSize(newBlockSize);
             sampling2.setDelta(1.0 * newBlockSize * p.overlap);
-            sampling2.setSource(file->channel(p.baseChannel)->yValues());
+            sampling2.setSource(file->channel(p.baseChannel)->data()->yValues(0));
 
             Resampler filter(factor, p.bufferSize);
             Resampler baseFilter(factor, p.bufferSize);
@@ -538,7 +538,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
 
         if (p.method->id()==18) {//октавный спектр
             OctaveFilterBank filtBank(p);
-            spectrum = filtBank.compute(file->channel(i)->yValues(), xVals);
+            spectrum = filtBank.compute(file->channel(i)->data()->yValues(0), xVals);
         }
 
         // Создаем канал и заполняем его

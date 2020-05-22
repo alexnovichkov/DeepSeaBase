@@ -57,7 +57,7 @@
 Curve * createCurve(const QString &legendName, FileDescriptor *descriptor, int channel)
 {
     // считаем, что шаг по оси х 0 только у октав и третьоктав
-    if (descriptor->channel(channel)->xStep()==0.0)
+    if (descriptor->channel(channel)->xValuesFormat() == DataHolder::XValuesNonUniform)
         return new BarCurve(legendName, descriptor, channel);
 
     return new LineCurve(legendName, descriptor, channel);

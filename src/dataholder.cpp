@@ -45,6 +45,18 @@ DataHolder::DataHolder(const DataHolder &other)
     m_correction = other.m_correction;
 }
 
+template<typename T>
+QVector<T> segment(const QVector<T> &values, int from, int to, int blockSize, int blocks)
+{
+    QVector<T> result;
+    result.reserve((to - from + 1)*blocks);
+
+    for (int i=0; i<blocks; ++i) {
+        result.append(values.mid(i*blockSize + from, to - from + 1));
+    }
+    return result;
+}
+
 void DataHolder::setSegment(const DataHolder &other, int from, int to)
 {DD;
     m_xBegin = other.m_xBegin + other.m_xStep * from;
@@ -54,11 +66,11 @@ void DataHolder::setSegment(const DataHolder &other, int from, int to)
     m_xCount = to - from + 1;
     m_zCount = other.m_zCount;
     m_threshold = other.m_threshold;
-    m_xValues = other.m_xValues.mid(from, to - from + 1);
-    m_yValues = other.m_yValues.mid(from, to - from + 1);
+    m_xValues = segment(other.m_xValues, from, to, m_xCount, m_zCount);
+    m_yValues = segment(other.m_yValues, from, to, m_xCount, m_zCount);
     m_zValues = other.m_zValues;
-    m_yValuesTemporal = other.m_yValuesTemporal.mid(from, to - from + 1);
-    m_yValuesComplex = other.m_yValuesComplex.mid(from, to - from + 1);
+    m_yValuesTemporal = segment(other.m_yValuesTemporal, from, to, m_xCount, m_zCount);
+    m_yValuesComplex  = segment(other.m_yValuesComplex, from, to, m_xCount, m_zCount);
     m_xValuesFormat = other.m_xValuesFormat;
     m_zValuesFormat = other.m_zValuesFormat;
     m_yValuesFormat = other.m_yValuesFormat;
@@ -81,7 +93,7 @@ void DataHolder::clear()
     m_yValuesTemporal.clear(); m_yValuesTemporal.squeeze();
 
     //some statistics
-    m_yMin = 0; m_yMax = 0;
+    m_yMin.clear(); m_yMax.clear();
 
     m_correctionValue = 0.0;
     m_correctionType = 0;
@@ -112,9 +124,8 @@ bool DataHolder::makeCorrectionConstant()
 
     if (int(m_PresentationWhenCorrecting) == int(m_yValuesFormat)) {
         // просто применяем поправку ко всем данным
-        for (int i=0; i<m_yValues.size(); ++i) {
-            m_yValues[i] = corrected(m_yValues[i]);
-        }
+        for (int i=0; i<m_yValues.size(); ++i)
+            m_yValues[i] = corrected(m_yValues.at(i));
     }
     else {
         // необходима конвертация данных
@@ -124,9 +135,8 @@ bool DataHolder::makeCorrectionConstant()
                 case YValuesComplex: {
                     if (m_correctionType == 0) {// слагаемое
                         double delta = fromLog(m_correctionValue, 1.0, m_yValuesUnits);
-                        for (int i=0; i<m_yValuesComplex.size(); ++i) {
+                        for (int i=0; i<m_yValuesComplex.size(); ++i)
                             m_yValuesComplex[i].operator *=(delta);
-                        }
                     }
                     else if (m_correctionType == 1) {// множитель
                         for (int i=0; i<m_yValuesComplex.size(); ++i) {
@@ -144,16 +154,14 @@ bool DataHolder::makeCorrectionConstant()
                 case YValuesAmplitudes: {
                     if (m_correctionType == 0) {// слагаемое
                         double delta = fromLog(m_correctionValue, 1.0, m_yValuesUnits);
-                        for (int i=0; i<m_yValues.size(); ++i) {
+                        for (int i=0; i<m_yValues.size(); ++i)
                             m_yValues[i] *= delta;
-                        }
                     }
                     else if (m_correctionType == 1) {// множитель
                         if ((1.0 - m_correctionValue) >= 0.0) {
                             double thr = pow(m_threshold, 1.0 - m_correctionValue);
-                            for (int i=0; i<m_yValues.size(); ++i) {
+                            for (int i=0; i<m_yValues.size(); ++i)
                                 m_yValues[i] = thr * pow(m_yValues[i], m_correctionValue);
-                            }
                         }
                     }
                     break;
@@ -178,9 +186,8 @@ bool DataHolder::makeCorrectionConstant()
                         }
                     }
                     else if (m_correctionType == 1) {// множитель
-                        for (int i=0; i<m_yValuesComplex.size(); ++i) {
+                        for (int i=0; i<m_yValuesComplex.size(); ++i)
                             m_yValuesComplex[i].operator *=(m_correctionValue);
-                        }
                     }
                     break;
                 }
@@ -214,9 +221,8 @@ bool DataHolder::makeCorrectionConstant()
                         }
                     }
                     else if (m_correctionType == 1) {// множитель
-                        for (int i=0; i<m_yValues.size(); ++i) {
+                        for (int i=0; i<m_yValues.size(); ++i)
                             m_yValues[i] += toLog(m_correctionValue, 1.0, m_yValuesUnits);
-                        }
                     }
                     break;
                 }
@@ -320,14 +326,14 @@ void DataHolder::setYValuesPresentation(int presentation)
 
 void DataHolder::setYValues(const QVector<double> &values, YValuesFormat initially, int block)
 {DD;
-    Q_UNUSED(block);
-
     m_yValuesFormat = initially; // амплитуды (чаще всего), фазы, мнимые значения и т.д.
     if (m_yValuesPresentation == ShowAsDefault) { //еще не задан формат отображения данных
         m_yValuesPresentation = YValuesPresentation(initially); // используем тот же формат, что и исходные данные
     }
 
-    m_yValues = values;
+    if (m_yValues.size() < (block+1)*m_xCount) m_yValues.resize((block+1)*m_xCount);
+    for (int i=0; i<values.size(); ++i)
+        m_yValues[block*m_xCount + i] = values.at(i);
 
     m_yValuesComplex.clear(); // комплексные значения не нужны, очищаем
     m_yValuesComplex.squeeze();
@@ -340,12 +346,14 @@ bool DataHolder::setYValue(int index, double value, int block)
 {
     Q_UNUSED(block);
 
-    if (index < 0 || index >= m_xCount) return false;
+    index += block * m_xCount;
+    if (index < 0 || index >= m_xCount * m_zCount) return false;
+
     if (!m_yValuesTemporal.isEmpty() && index >= m_yValuesTemporal.size()) return false;
     if (!m_yValues.isEmpty() && index >= m_yValues.size()) return false;
     if (!m_yValuesComplex.isEmpty() && index >= m_yValuesComplex.size()) return false;
 
-    if (qFuzzyIsNull(m_yValuesTemporal[index] - value)) return false;
+    if (qFuzzyIsNull(m_yValuesTemporal.at(index) - value)) return false;
 
     if (int(m_yValuesFormat) == int(m_yValuesPresentation)) {
         m_yValues[index] = value;
@@ -353,7 +361,6 @@ bool DataHolder::setYValue(int index, double value, int block)
         return true;
     }
 
-//    m_yValuesTemporal[index] = value;
     if (m_yValuesFormat == YValuesComplex) {
         m_yValuesTemporal[index] = value;
         switch (m_yValuesPresentation) {
@@ -438,14 +445,14 @@ bool DataHolder::setYValue(int index, double value, int block)
 
 void DataHolder::setYValues(const QVector<cx_double> &values, int block)
 {DD;
-    Q_UNUSED(block);
-
     m_yValuesFormat = YValuesComplex;
     if (m_yValuesPresentation == ShowAsDefault) { //еще не задан формат отображения данных
         m_yValuesPresentation = ShowAsAmplitudesInDB;
     }
 
-    m_yValuesComplex = values;
+    if (m_yValuesComplex.size() < (block+1)*m_xCount) m_yValuesComplex.resize((block+1)*m_xCount);
+    for (int i=0; i<values.size(); ++i)
+        m_yValuesComplex[block*m_xCount + i] = values.at(i);
 
     m_yValues.clear(); // действительные значения не нужны, очищаем
     m_yValues.squeeze();
@@ -506,11 +513,22 @@ void DataHolder::setSamplesCount(const int samplesCount)
     m_xCount = samplesCount;
 }
 
+QVector<double> DataHolder::rawYValues(int block)
+{
+    if (block == -1) return m_yValues;
+    return m_yValues.mid(block*m_xCount, m_xCount);
+}
+
 QVector<double> DataHolder::yValues(int block) const
 {
-    Q_UNUSED(block);
+    if (block == -1) return m_yValuesTemporal;
+    return m_yValuesTemporal.mid(block*m_xCount, m_xCount);
+}
 
-    return m_yValuesTemporal;
+QVector<cx_double> DataHolder::yValuesComplex(int block)
+{
+    if (block == -1) return m_yValuesComplex;
+    return m_yValuesComplex.mid(block*m_xCount, m_xCount);
 }
 
 QVector<double> DataHolder::xValues() const
@@ -537,18 +555,18 @@ double DataHolder::xValue(int i) const
 
 double DataHolder::yValue(int i, int block) const
 {
-    Q_UNUSED(block);
+    i += block*m_xCount;
 
-    if (i<m_yValuesTemporal.size())
-        return corrected(m_yValuesTemporal[i]);
+    if (i < m_yValuesTemporal.size())
+        return corrected(m_yValuesTemporal.at(i));
     return 0.0;
 }
 
 cx_double DataHolder::yValueComplex(int i, int block) const
 {
-    Q_UNUSED(block);
+    i += block*m_xCount;
 
-    if (i<m_yValuesComplex.size())  return m_yValuesComplex[i];
+    if (i<m_yValuesComplex.size())  return m_yValuesComplex.at(i);
     return {0.0,0.0};
 }
 
@@ -603,16 +621,12 @@ double DataHolder::zStep() const
 
 double DataHolder::yMin(int block) const
 {DD;
-    Q_UNUSED(block);
-
-    return corrected(m_yMin);
+    return corrected(m_yMin.value(block, 0.0));
 }
 
 double DataHolder::yMax(int block) const
 {DD;
-    Q_UNUSED(block);
-
-    return corrected(m_yMax);
+    return corrected(m_yMax.value(block, 0.0));
 }
 
 int DataHolder::samplesCount() const
@@ -622,26 +636,24 @@ int DataHolder::samplesCount() const
 
 QVector<double> DataHolder::linears(int block) const
 {DD;
-    Q_UNUSED(block);
-
     switch (m_yValuesFormat) {
-        case YValuesComplex: return absolutes(m_yValuesComplex);
-        case YValuesAmplitudesInDB: return fromLog(m_yValues, m_threshold, m_yValuesUnits);
+        case YValuesComplex: return absolutes(m_yValuesComplex.mid(block*m_xCount, m_xCount));
+        case YValuesAmplitudesInDB: return fromLog(m_yValues.mid(block*m_xCount, m_xCount),
+                                                   m_threshold, m_yValuesUnits);
         default: break;
     }
-    return m_yValues;
+    return m_yValues.mid(block*m_xCount, m_xCount);
 }
 
 QVector<double> DataHolder::decibels(int block) const
 {DD;
-    Q_UNUSED(block);
-
     switch (m_yValuesFormat) {
-        case YValuesComplex: return toLog(absolutes(m_yValuesComplex), m_threshold, m_yValuesUnits);
-        case YValuesAmplitudesInDB: return m_yValues;
+        case YValuesComplex: return toLog(absolutes(m_yValuesComplex.mid(block*m_xCount, m_xCount)),
+                                          m_threshold, m_yValuesUnits);
+        case YValuesAmplitudesInDB: return m_yValues.mid(block*m_xCount, m_xCount);
         default: break;
     }
-    return toLog(m_yValues, m_threshold, m_yValuesUnits);
+    return toLog(m_yValues.mid(block*m_xCount, m_xCount), m_threshold, m_yValuesUnits);
 }
 
 QVector<double> DataHolder::toLog(const QVector<double> &values, double threshold, int units)
@@ -714,10 +726,36 @@ double DataHolder::fromLog(double value, double threshold, int units)
 
 void DataHolder::recalculateMinMax()
 {DD;
+    m_yMin.clear();
+    m_yMax.clear();
+
+//    if (!m_yValuesTemporal.isEmpty()) {
+//        auto begin = m_yValuesTemporal.cbegin();
+//        auto end = m_yValuesTemporal.cbegin() + m_xCount;
+//        for (int block = 0; block < m_zCount; ++block) {
+//            auto minmax = std::minmax_element(begin, end);
+//            m_yMin << *(minmax.first);
+//            m_yMax << *(minmax.second);
+//            begin += m_xCount;
+//            end += m_xCount;
+//        }
+//    }
+
     if (!m_yValuesTemporal.isEmpty()) {
-        auto minmax = std::minmax_element(m_yValuesTemporal.cbegin(), m_yValuesTemporal.cend());
-        m_yMin = *(minmax.first);
-        m_yMax = *(minmax.second);
+
+        for (int block = 0; block < m_zCount; ++block) {
+            double min = 0.0; double max = 0.0;
+            for (int i=0; i<m_xCount; ++i) {
+                int index = i+block*m_xCount;
+                if (index >= m_yValuesTemporal.size()) break;
+
+                if (m_yValuesTemporal.at(index) < min) min = m_yValuesTemporal.at(index);
+                if (m_yValuesTemporal.at(index) > max) max = m_yValuesTemporal.at(index);
+            }
+
+            m_yMin << min;
+            m_yMax << max;
+        }
     }
 }
 
@@ -776,7 +814,7 @@ void DataHolder::recalculateYValues()
     }
 
     if (m_xCount > 0 && m_yValuesTemporal.isEmpty())
-        m_yValuesTemporal = QVector<double>(m_xCount, 0.0);
+        m_yValuesTemporal = QVector<double>(m_xCount*m_zCount, 0.0);
 //    m_yValuesTemporal.squeeze();
 }
 

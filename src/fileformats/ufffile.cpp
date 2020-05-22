@@ -567,9 +567,9 @@ void UffFileDescriptor::calculateMean(const QList<Channel*> &toMean)
 
     foreach (Channel *ch, toMean) {
         if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
-            averaging.average(ch->data()->yValuesComplex());
+            averaging.average(ch->data()->yValuesComplex(0));
         else
-            averaging.average(ch->data()->linears());
+            averaging.average(ch->data()->linears(0));
     }
 
     // обновляем сведения канала
@@ -660,10 +660,10 @@ void UffFileDescriptor::calculateMovingAvg(const QList<Channel*> &toAvg, int win
 
         newCh->data()->setThreshold(ch->data()->threshold());
         if (format == DataHolder::YValuesComplex) {
-            newCh->data()->setYValues(movingAverage(ch->data()->yValuesComplex(), windowSize));
+            newCh->data()->setYValues(movingAverage(ch->data()->yValuesComplex(0), windowSize));
         }
         else {
-            QVector<double> values = movingAverage(ch->data()->linears(), windowSize);
+            QVector<double> values = movingAverage(ch->data()->linears(0), windowSize);
             if (format == DataHolder::YValuesAmplitudesInDB)
                 format = DataHolder::YValuesAmplitudes;
             newCh->data()->setYValues(values, format);
