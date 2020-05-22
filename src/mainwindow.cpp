@@ -1143,6 +1143,7 @@ bool MainWindow::deleteChannels(FileDescriptor *file, const QVector<int> &channe
         plot->deleteCurveForChannelIndex(file, channelsToDelete.at(i), false);
     plot->deleteCurveForChannelIndex(file, channelsToDelete.last(), true);
 
+    LongOperation op;
     file->deleteChannels(channelsToDelete);
 
     return true;
