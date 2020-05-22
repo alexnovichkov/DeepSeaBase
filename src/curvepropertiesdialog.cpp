@@ -78,7 +78,7 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
     connect(colorLabel, &ClickableLabel::clicked,
             [=]() {
                     QPen pen = curve->pen();
-                    const QColor color = QColorDialog::getColor(pen.color(), this);
+                    const QColor color = QColorDialog::getColor(pen.color(), this, "", QColorDialog::ShowAlphaChannel);
 
                     if (color.isValid()) {
                         colorLabel->setPalette(QPalette(color));

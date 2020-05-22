@@ -38,14 +38,15 @@ public:
 
     void read(QTextStream &stream, qint64 pos = -1);
     void read(QDataStream &stream);
-    void write(QTextStream &stream);
+    void write(QTextStream &stream, int &id);
 
     FunctionHeader header;
 
     UffFileDescriptor *parent;
     virtual FileDescriptor *descriptor();
     QVector<FieldDescription> type58;
-    qint64 dataPosition;
+    QVector<qint64> dataPositions;
+    QVector<double> zValues;
 
     // Channel interface
 public:

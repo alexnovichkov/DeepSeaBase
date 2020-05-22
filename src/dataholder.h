@@ -67,6 +67,7 @@ public:
 
 
     int xValuesFormat() const {return m_xValuesFormat;} // не меняется, так как зависит только от формата данных в файле
+    int zValuesFormat() const {return m_zValuesFormat;}
     YValuesFormat yValuesFormat() const {return m_yValuesFormat;} // не меняется, так как зависит только от формата данных в файле
     void setYValuesFormat(YValuesFormat format) {m_yValuesFormat = format;}
     QString yValuesFormatString() const;
@@ -74,11 +75,16 @@ public:
     int yValuesPresentation() const {return m_yValuesPresentation;}
     void setYValuesPresentation(int presentation);
 
-    void setYValues(const QVector<double> &values, YValuesFormat initially);
-    bool setYValue(int index, double value);
-    void setYValues(const QVector<cx_double> &values);
+    void setYValues(const QVector<double> &values, YValuesFormat initially, int block = 0);
+    bool setYValue(int index, double value, int block = 0);
+    void setYValues(const QVector<cx_double> &values, int block = 0);
+
     void setXValues(const QVector<double> &values);
     void setXValues(double xBegin, double xStep, int count);
+
+    void setZValues(const QVector<double> &values);
+    void setZValues(double zBegin, double zStep, int count);
+
     void setXStep(const double xStep);
     void setSamplesCount(const int samplesCount);
 
@@ -89,27 +95,36 @@ public:
     int yValuesUnits() const {return m_yValuesUnits;}
 
     const double* rawXValues() const {return m_xValues.data();}
-    QVector<double> rawYValues() const {return m_yValues;}
-    QVector<double> yValues() const;
-    QVector<cx_double> yValuesComplex() const {return m_yValuesComplex;}
+    QVector<double> rawYValues(int block = 0) const {return m_yValues;}
+    QVector<double> yValues(int block=0) const;
+    QVector<cx_double> yValuesComplex(int block=0) const {return m_yValuesComplex;}
     QVector<double> xValues() const;
+    QVector<double> zValues() const;
 
     double xValue(int i) const;
-    double yValue(int i) const;
-    cx_double yValueComplex(int i) const;
+    double yValue(int i, int block = 0) const;
+    cx_double yValueComplex(int i, int block = 0) const;
+    double zValue(int i) const;
+
+
 
     double xMin() const;
     double xMax() const;
     double xStep() const;
-    double yMin() const;
-    double yMax() const;
+
+    double zMin() const;
+    double zMax() const;
+    double zStep() const;
+
+    double yMin(int block = 0) const;
+    double yMax(int block = 0) const;
 
     int samplesCount() const;
-    int blocksCount() const {return m_blockCount;}
-    void setBlocksCount(int count) {m_blockCount = count;}
+    int blocksCount() const {return m_zCount;}
+    void setBlocksCount(int count) {m_zCount = count;}
 
-    QVector<double> linears() const;
-    QVector<double> decibels() const;
+    QVector<double> linears(int block = 0) const;
+    QVector<double> decibels(int block = 0) const;
 
     static QVector<double> toLog(const QVector<double> &values, double threshold, int units);
     static QVector<double> fromLog(const QVector<double> &values, double threshold, int units);
@@ -125,15 +140,19 @@ private:
     QVector<cx_double> m_yValuesComplex;
     QVector<double> m_xValues;
     QVector<double> m_yValuesTemporal;
+    QVector<double> m_zValues;
 
-    double m_xBegin;
-    double m_xStep;
-    int m_count;
-    int m_blockCount = 1;
+    double m_xBegin = 0.0;
+    double m_xStep = 0.0;
+    double m_zBegin = 0.0;
+    double m_zStep = 0.0;
+    int m_xCount = 0.0;
+    int m_zCount = 1;
 
     double m_threshold;
 
     XValuesFormat m_xValuesFormat;
+    XValuesFormat m_zValuesFormat;
     YValuesFormat m_yValuesFormat;
     YValuesUnits m_yValuesUnits;
 

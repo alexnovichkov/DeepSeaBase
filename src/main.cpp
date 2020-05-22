@@ -3,6 +3,7 @@
 
 #include <QtDebug>
 #include <QtCore>
+#include <QSplashScreen>
 
 #include "converters/matlabconvertor.h"
 
@@ -13,6 +14,11 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    QPixmap pixmap(":/icons/splash.png");
+    QSplashScreen splash(pixmap);
+    splash.show();
+    a.processEvents();
 
 //    MatFile f("K:\\Shared\\R3G1-oct.mat");
 //    f.read();
@@ -72,5 +78,6 @@ int main(int argc, char *argv[])
 
     MainWindow w;
     w.showMaximized();
+    splash.finish(&w);
     return a.exec();
 }
