@@ -331,9 +331,15 @@ void DataHolder::setYValues(const QVector<double> &values, YValuesFormat initial
         m_yValuesPresentation = YValuesPresentation(initially); // используем тот же формат, что и исходные данные
     }
 
-    if (m_yValues.size() < (block+1)*m_xCount) m_yValues.resize((block+1)*m_xCount);
-    for (int i=0; i<values.size(); ++i)
-        m_yValues[block*m_xCount + i] = values.at(i);
+    if (block == -1) {
+        //весь канал
+        m_yValues = values;
+    }
+    else {
+        if (m_yValues.size() < (block+1)*m_xCount) m_yValues.resize((block+1)*m_xCount);
+        for (int i=0; i<values.size(); ++i)
+            m_yValues[block*m_xCount + i] = values.at(i);
+    }
 
     m_yValuesComplex.clear(); // комплексные значения не нужны, очищаем
     m_yValuesComplex.squeeze();
@@ -450,13 +456,18 @@ void DataHolder::setYValues(const QVector<cx_double> &values, int block)
         m_yValuesPresentation = ShowAsAmplitudesInDB;
     }
 
-    if (m_yValuesComplex.size() < (block+1)*m_xCount) m_yValuesComplex.resize((block+1)*m_xCount);
-    for (int i=0; i<values.size(); ++i)
-        m_yValuesComplex[block*m_xCount + i] = values.at(i);
-
+    if (block == -1) {
+        //весь канал
+        m_yValuesComplex = values;
+    }
+    else {
+        if (m_yValuesComplex.size() < (block+1)*m_xCount) m_yValuesComplex.resize((block+1)*m_xCount);
+        for (int i=0; i<values.size(); ++i)
+            m_yValuesComplex[block*m_xCount + i] = values.at(i);
+    }
     m_yValues.clear(); // действительные значения не нужны, очищаем
     m_yValues.squeeze();
-//    m_yValuesTemporal.clear();
+
 
     recalculateYValues(); // заполняем вектор действительных значений,
                           // который будет использоваться для графиков
@@ -589,14 +600,14 @@ double DataHolder::xMax() const
 {DD;
     if (xValuesFormat() == XValuesUniform) return m_xBegin + m_xStep*(m_xCount-1);
     if (xValuesFormat() == XValuesNonUniform && !m_xValues.isEmpty()) return m_xValues.last();
-    return 0;
+    return 0.0;
 }
 
 double DataHolder::xStep() const
 {DD;
     if (xValuesFormat() == XValuesUniform) return m_xStep;
 
-    return 0;
+    return 0.0;
 }
 
 double DataHolder::zMin() const

@@ -232,7 +232,8 @@ void UffFileDescriptor::read()
             }
         }
     }
-    else {
+    else
+    {
         QFile uff(fileName());
         if (!uff.exists()) return;
 

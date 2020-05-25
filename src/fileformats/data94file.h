@@ -80,12 +80,6 @@
  *   ]
  * }
  * Описание канала:
- *
- * (1) При создании файла паддинг по умолчанию равен
- *     PADDING_SIZE, он может уменьшаться, если мы увеличиваем размер описания.
- *     Если при сохранении файла descriptionSize > oldDescriptionSize+paddingSize, то:
- *     1. снова добавляем паддинг PADDING_SIZE
- *     2. перезаписываем весь файл с учетом новых размеров
  */
 
 /**
@@ -115,8 +109,6 @@ public:
     float begin = 0.0;// - если шкала равномерная
     float step = 0.0;// - если шкала равномерная
     QVector<double> values;// - если шкала неравномерная
-
-    bool isValid = false;
 };
 
 class Data94Channel;
@@ -168,17 +160,11 @@ public:
     static QStringList fileFilters();
     static QStringList suffixes();
 private:
-    void writeData(const FileDescriptor &d, const QVector<int> &indexes);
     void updatePositions();
     friend class Data94Channel;
     QJsonObject description;
     QList<Data94Channel*> channels;
-
-    AxisBlock xAxisBlock;
-    AxisBlock zAxisBlock;
-
     quint32 descriptionSize = 0;
-    quint32 paddingSize = PADDING_SIZE;
 };
 
 class Data94Channel : public Channel
@@ -211,13 +197,20 @@ public:
     virtual int index() const override;
     virtual QString correction() const override;
     virtual void setCorrection(const QString &s) override;
-    bool isComplex = false;
+
+    bool isComplex = false; //по умолчанию real
+    quint32 sampleWidth = 4; //по умолчанию float
     QJsonObject _description;
 private:
     friend class Data94File;
     Data94File *parent = 0;
+    AxisBlock xAxisBlock;
+    AxisBlock zAxisBlock;
 
     qint64 dataPosition = -1;
+    qint64 position = -1;
+    quint32 descriptionSize = 0;
+    quint32 size = 0;
 };
 
 #endif // DATA94FILE_H
