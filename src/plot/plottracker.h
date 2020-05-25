@@ -2,6 +2,7 @@
 #define PLOTPICKER_H
 
 #include <qwt_plot_picker.h>
+#include <QCursor>
 
 class QKeyEvent;
 class Plot;
@@ -23,6 +24,7 @@ private slots:
     void maybeHover(const QPointF &pos);
 private:
     Plot *plot;
+    QCursor cursor;
 };
 
 #endif // PLOTPICKER_H

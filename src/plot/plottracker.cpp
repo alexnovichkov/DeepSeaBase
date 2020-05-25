@@ -31,37 +31,42 @@ void PlotTracker::widgetKeyPressEvent(QKeyEvent *e)
     else QwtPlotPicker::widgetKeyPressEvent(e);
 }
 
+QString smartDouble(double v)
+{
+    double v1=qAbs(v);
+    if (v1>=0.1 && v1 <= 10000) return QString::number(v,'f',2);
+    if (v1>=0.01 && v1 <= 0.1) return QString::number(v,'f',3);
+    if (v1>=0.001 && v1 <= 0.01) return QString::number(v,'f',4);
+    if (v1>=0.0001 && v1 <= 0.001) return QString::number(v,'f',5);
+
+    return QString::number(v,'g');
+}
+
 QwtText PlotTracker::trackerTextF(const QPointF &pos) const
 {//DD;
-    QString text;
-    text.asprintf( "%.2f, %.2f", pos.x(), pos.y());
+    QString text = QString("%1, %2").arg(pos.x()).arg(pos.y(),0,'g',2);
 
-    return QwtText( text );
+    return QwtText( smartDouble(pos.x())+", "+smartDouble(pos.y()) );
 }
 
 void PlotTracker::maybeHover(const QPointF &pos)
 {
-   // qDebug()<<"pos"<<pos;
-
     bool found = false;
     const QwtPlotItemList& itmList = plot->itemList(QwtPlotItem::Rtti_PlotMarker);
     for (QwtPlotItemIterator it = itmList.constBegin(); it != itmList.constEnd(); ++it) {
         if (TrackingCursor *c = dynamic_cast<TrackingCursor *>(*it )) {
-//            qDebug()<<"found tracking cursor";
             if (!c->isVisible()) {
-//                qDebug()<<"cursor not visible";
                 continue;
             }
-//            qDebug()<<"pos"<<pos;
             int newX = (int)(plot->transform(QwtAxis::xBottom, c->xValue()));
             int posX = (int)(plot->transform(QwtAxis::xBottom, pos.x()));
             if (qAbs(newX-posX)<=4) {
-//                qDebug()<<"hovering";
+                cursor = plot->canvas()->cursor();
                 plot->canvas()->setCursor(QCursor(Qt::SizeHorCursor));
                 found = true;
                 break;
             }
         }
     }
-    if (!found) plot->canvas()->unsetCursor();
+    if (!found) plot->canvas()->setCursor(QCursor(Qt::CrossCursor));
 }
