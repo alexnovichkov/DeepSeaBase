@@ -11,6 +11,7 @@
 #include "curve.h"
 #include "linecurve.h"
 #include "barcurve.h"
+#include "spectrocurve.h"
 
 #include "chartzoom.h"
 
@@ -56,6 +57,9 @@
 // простой фабричный метод создания кривой нужного типа
 Curve * createCurve(const QString &legendName, FileDescriptor *descriptor, int channel)
 {
+    if (descriptor->channel(channel)->data()->blocksCount() > 1)
+        return new SpectroCurve(legendName, descriptor, channel);
+
     // считаем, что шаг по оси х 0 только у октав и третьоктав
     if (descriptor->channel(channel)->xValuesFormat() == DataHolder::XValuesNonUniform)
         return new BarCurve(legendName, descriptor, channel);
@@ -119,7 +123,8 @@ Plot::Plot(QWidget *parent) :
     connect(zoom,SIGNAL(moveCursor(bool)), trackingPanel, SLOT(moveCursor(bool)));
 
     tracker = new PlotTracker(this);
-    tracker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
+    //tracker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
+    tracker->setEnabled(true);
 
     _picker = new Picker(this);
     _picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());

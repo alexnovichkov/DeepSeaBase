@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
     QSplashScreen splash(pixmap);
     splash.show();
     a.processEvents();
+
 //    splash.showMessage("Загружаю файл");
 
 //    MatFile f("K:\\Shared\\R3G1-oct.mat");
