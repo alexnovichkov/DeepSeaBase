@@ -21,18 +21,41 @@ public:
     }
 };
 
-class HueColorMap: public QwtHueColorMap
+class RGBColorMap: public QwtLinearColorMap
 {
 public:
-    HueColorMap() : QwtHueColorMap(QwtColorMap::Indexed)
+    RGBColorMap():
+        QwtLinearColorMap( QColor(2,0,174), QColor(217,53,43) )
     {
         setFormat(QwtColorMap::RGB);
 
+        addColorStop( 0.0625, QColor(0,30,255));
+        addColorStop( 0.125,  QColor(12,126,251));
+        addColorStop( 0.1875, QColor(2,165,242));
+        addColorStop( 0.25,   QColor(0,239,247));
+        addColorStop( 0.3125, QColor(128,226,250));
+        addColorStop( 0.375,  QColor(0,187,126));
+        addColorStop( 0.4375, QColor(0,187,0));
+        addColorStop( 0.5,    QColor(26,246,36));
+        addColorStop( 0.5625, QColor(183,255,0));
+        addColorStop( 0.625,  QColor(254,255,0));
+        addColorStop( 0.6875, QColor(254,213,86));
+        addColorStop( 0.75,   QColor(222,145,27));
+        addColorStop( 0.8125, QColor(252,165,0));
+        addColorStop( 0.875,  QColor(254,110,0));
+    }
+};
+
+class HueColorMap: public QwtHueColorMap
+{
+public:
+    HueColorMap() : QwtHueColorMap(QwtColorMap::RGB)
+    {
         //setHueInterval( 240, 60 );
         //setHueInterval( 240, 420 );
         setHueInterval(0, 300);
-        setSaturation(150);
-        setValue(200);
+        setSaturation(255);
+        setValue(255);
     }
 };
 

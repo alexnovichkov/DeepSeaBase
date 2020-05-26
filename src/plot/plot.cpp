@@ -589,7 +589,7 @@ void Plot::setScale(QwtAxisId id, double min, double max, double step)
         if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(curves.first())) {
             if (id == yRightAxis) {
                 c->setColorInterval(min, max);
-                axisWidget(id)->setColorMap(QwtInterval(min, max), new HueColorMap());
+                axisWidget(id)->setColorMap(QwtInterval(min, max), new RGBColorMap());
                 replot();
             }
         }
@@ -810,9 +810,9 @@ bool Plot::plotCurve(FileDescriptor *descriptor, int channel, QColor *col, bool 
 
     if (spectrogram) {
         axisWidget(yRightAxis)->setColorMap(QwtInterval(ch->data()->yMin(-1), ch->data()->yMax(-1)),
-                                             new HueColorMap());
+                                             new RGBColorMap());
         if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(g)) {
-            c->setColorMap(new HueColorMap());
+            c->setColorMap(new RGBColorMap());
         }
 
         zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
