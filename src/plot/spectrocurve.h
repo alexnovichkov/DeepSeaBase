@@ -7,6 +7,20 @@
 #include "dataholder.h"
 #include <qwt_color_map.h>
 
+class LinearColorMap: public QwtLinearColorMap
+{
+public:
+    LinearColorMap():
+        QwtLinearColorMap( Qt::black, Qt::white )
+    {
+        setFormat(QwtColorMap::RGB);
+
+//        addColorStop( 0.1, Qt::cyan );
+//        addColorStop( 0.6, Qt::green );
+//        addColorStop( 0.95, Qt::yellow );
+    }
+};
+
 class HueColorMap: public QwtHueColorMap
 {
 public:

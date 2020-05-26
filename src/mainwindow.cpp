@@ -444,9 +444,7 @@ MainWindow::MainWindow(QWidget *parent)
     autoscaleAllAct  = new QAction("Автомасштабирование по всем осям", this);
     autoscaleAllAct->setIcon(QIcon(":/icons/autoscale-all.png"));
     connect(autoscaleAllAct, &QAction::triggered, [this](){
-        plot->autoscale(0 /* x axis */);
-        plot->autoscale(1 /* y axis */);
-        plot->autoscale(2 /* y slave axis */);
+        plot->autoscale();
     });
 
     removeLabelsAct  = new QAction("Удалить все подписи", this);

@@ -1000,6 +1000,11 @@ void Plot::autoscale(int axis)
         case 2: // y slave axis
             zoom->verticalScaleBoundsSlave->autoscale();
             break;
+        case -1:
+            zoom->horizontalScaleBounds->autoscale();
+            zoom->verticalScaleBounds->autoscale();
+            if (!spectrogram) zoom->verticalScaleBoundsSlave->autoscale();
+            break;
         default:
             break;
     }

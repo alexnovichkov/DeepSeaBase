@@ -56,6 +56,8 @@ public:
     QwtAxisId yLeftAxis{QwtAxis::yLeft,0};
     QwtAxisId yRightAxis{QwtAxis::yRight,0};
 
+    bool spectrogram = false;
+
     void update();
 
     /**
@@ -118,7 +120,7 @@ public:
     void switchTrackingCursor();
     void switchPlayerVisibility();
     void toggleAutoscale(int axis, bool toggled);
-    void autoscale(int axis);
+    void autoscale(int axis = -1);
     /**
      * @brief recalculateScale пересчитывает границы графиков,
      * отдельно для левой или правой вертикальной оси
@@ -190,7 +192,7 @@ private:
     PlayPanel *playerPanel;
 
     InteractionMode interactionMode = ScalingInteraction;
-    bool spectrogram = false;
+
 };
 
 #endif // PLOT_H

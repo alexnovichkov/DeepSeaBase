@@ -113,7 +113,7 @@ public:
     // указатель на опекаемый компонент QwtPlot
     QwtPlot *plot();
 
-    void addZoom(const zoomCoordinates &coords, bool apply = false);
+    void addZoom(zoomCoordinates coords, bool apply = false);
     void zoomBack();
 
     bool activated;

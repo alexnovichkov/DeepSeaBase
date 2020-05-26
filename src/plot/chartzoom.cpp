@@ -104,8 +104,10 @@ void ChartZoom::setZoomEnabled(bool enabled)
     this->activated = enabled;
 }
 
-void ChartZoom::addZoom(const ChartZoom::zoomCoordinates &coords, bool apply)
+void ChartZoom::addZoom(ChartZoom::zoomCoordinates coords, bool apply)
 {DD;
+    if (qwtPlot->spectrogram)
+        coords.coords.remove(QwtAxis::yRight);
     zoomStack.push(coords);
     if (apply) {
         if (coords.coords.contains(QwtAxis::xBottom))
@@ -115,7 +117,7 @@ void ChartZoom::addZoom(const ChartZoom::zoomCoordinates &coords, bool apply)
             verticalScaleBounds->set(coords.coords.value(QwtAxis::yLeft).x(),
                                      coords.coords.value(QwtAxis::yLeft).y());
         }
-        if (coords.coords.contains(QwtAxis::yRight)) {
+        if (coords.coords.contains(QwtAxis::yRight) && !qwtPlot->spectrogram) {
             verticalScaleBoundsSlave->set(coords.coords.value(QwtAxis::yRight).x(),
                                           coords.coords.value(QwtAxis::yRight).y());
         }
@@ -163,8 +165,7 @@ ChartZoom::ScaleBounds::ScaleBounds(Plot *plot, QwtAxisId axis) : axis(axis), pl
     min = 0.0;
     max = 10.0;
 
-    if (plot)
-        plot->setScale(axis, min, max);
+    set(min, max);
 }
 
 void ChartZoom::ScaleBounds::setFixed(bool fixed)
@@ -220,7 +221,7 @@ void ChartZoom::ScaleBounds::autoscale()
     iter = std::max_element(maxes.constBegin(), maxes.constEnd());
     double maxx = iter==maxes.constEnd() ? this->max : *iter;
 
-    plot->setScale(axis, minn, maxx);
+    set(minn, maxx);
 }
 
 void ChartZoom::ScaleBounds::removeToAutoscale(double min, double max)
