@@ -171,7 +171,7 @@ public:
 private:
     // FileDescriptor interface
     void removeTempFile();
-    
+
 public:
     virtual DescriptionList dataDescriptor() const;
     virtual void setDataDescriptor(const DescriptionList &data);

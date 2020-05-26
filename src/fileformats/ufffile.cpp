@@ -1309,7 +1309,8 @@ QVariant Function::info(int column, bool edit) const
         case 2: return data()->yValuesFormatString();
         case 3: return type58[6].value; //description();
         case 4: return functionTypeDescription(type());
-        case 5: return type58[12].value; //correction();
+        case 5: return data()->blocksCount();
+        case 6: return type58[12].value; //correction();
         default: ;
     }
     return QVariant();
@@ -1317,7 +1318,7 @@ QVariant Function::info(int column, bool edit) const
 
 int Function::columnsCount() const
 {
-    return 6;
+    return 7;
 }
 
 QVariant Function::channelHeader(int column) const
@@ -1328,7 +1329,8 @@ QVariant Function::channelHeader(int column) const
         case 2: return QString("Формат");
         case 3: return QString("Описание");
         case 4: return QString("Функция");
-        case 5: return QString("Коррекция");
+        case 5: return QString("Кол-во блоков");
+        case 6: return QString("Коррекция");
         default: return QVariant();
     }
     return QVariant();

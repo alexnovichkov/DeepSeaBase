@@ -1460,7 +1460,8 @@ QVariant Data94Channel::info(int column, bool edit) const
         case 2: return data()->yValuesFormatString();
         case 3: return _description.value("description");
         case 4: return _description.value("function").toObject().value("name");
-        case 5: return _description.value("correction");
+        case 5: return data()->blocksCount();
+        case 6: return _description.value("correction");
         default: ;
     }
     return QVariant();
@@ -1468,7 +1469,7 @@ QVariant Data94Channel::info(int column, bool edit) const
 
 int Data94Channel::columnsCount() const
 {
-    int minimumCount = 6;
+    int minimumCount = 7;
     ///TODO: предусмотреть возможность показывать расширенный список свойств
 
     return minimumCount;
@@ -1482,7 +1483,8 @@ QVariant Data94Channel::channelHeader(int column) const
         case 2: return QString("Формат");
         case 3: return QString("Описание");
         case 4: return QString("Функция");
-        case 5: return QString("Коррекция");
+        case 5: return QString("Кол-во блоков");
+        case 6: return QString("Коррекция");
         default: return QVariant();
     }
     return QVariant();
