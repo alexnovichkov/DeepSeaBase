@@ -227,6 +227,14 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVe
     }
 }
 
+Data94File::~Data94File()
+{
+    if (changed() || dataChanged())
+        write();
+
+    qDeleteAll(channels);
+}
+
 void Data94File::updatePositions()
 {
     // шапка файла имеет размер

@@ -177,6 +177,7 @@ bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value,
                 if (ch->description() != value.toString()) {
                     ch->setDescription(value.toString());
                     descriptor->setChanged(true);
+                    ch->setChanged(true);
                     emit dataChanged(index, index, QVector<int>()<<Qt::DisplayRole);
                     success = true;
                 }
@@ -186,6 +187,7 @@ bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value,
                 if (value.toString() != ch->yName()) {
                     ch->setYName(value.toString());
                     descriptor->setChanged(true);
+                    ch->setChanged(true);
                     emit dataChanged(index, index, QVector<int>()<<Qt::DisplayRole);
                     success = true;
                 }
@@ -194,6 +196,7 @@ bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value,
                 if (ch->name() != value.toString()) {
                     ch->setName(value.toString());
                     descriptor->setChanged(true);
+                    ch->setChanged(true);
                     emit dataChanged(index, index, QVector<int>()<<Qt::DisplayRole);
                     emit updateLegends();
                     success = true;

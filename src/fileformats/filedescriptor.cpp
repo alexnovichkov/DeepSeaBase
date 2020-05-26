@@ -30,7 +30,7 @@ double convertFactor(const QString &from)
 }
 
 FileDescriptor::FileDescriptor(const QString &fileName) :
-    _fileName(fileName), _changed(false), _dataChanged(false)
+    _fileName(fileName)
 {
     qDebug()<<fileName;
 }
@@ -183,6 +183,11 @@ QByteArray Channel::wavData(qint64 pos, qint64 samples)
         s << v;
     }
     return b;
+}
+
+void Channel::setDataChanged(bool changed)
+{
+    _dataChanged = changed;
 }
 
 //QString valuesUnit(const QString &first, const QString &second, int unitType)

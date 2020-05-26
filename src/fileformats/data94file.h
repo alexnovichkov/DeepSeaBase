@@ -5,8 +5,6 @@
 #include <QJsonObject>
 #include <QDataStream>
 
-#define PADDING_SIZE 1024
-
 /**
  * Универсальный формат данных, созданный под нужды бюро 94.41
  *
@@ -121,6 +119,7 @@ public:
     Data94File(const Data94File &other, const QString &fileName, QVector<int> indexes = QVector<int>());
     // creates a copy of FileDescriptor with copying data
     Data94File(const FileDescriptor &other, const QString &fileName, QVector<int> indexes = QVector<int>());
+    ~Data94File();
 
     // FileDescriptor interface
 public:

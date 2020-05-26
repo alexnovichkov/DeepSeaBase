@@ -149,8 +149,8 @@ public:
     bool hasCurves() const;
 private:
     QString _fileName;
-    bool _changed;
-    bool _dataChanged;
+    bool _changed = false;
+    bool _dataChanged = false;
 };
 
 class Channel
@@ -160,8 +160,6 @@ public:
         delete _data;
     }
     Channel() : _color(QColor()),
-                _plotted(0),
-                _populated(false),
                 _data(new DataHolder)
     {}
     Channel(Channel *other);
@@ -220,13 +218,13 @@ public:
     bool changed() const {return _changed;}
     void setChanged(bool changed) {_changed = changed;}
     bool dataChanged() const {return _dataChanged;}
-    void setDataChanged(bool changed) {_dataChanged = changed;}
+    void setDataChanged(bool changed);
 private:
     QColor _color;
-    int _plotted; //0=not plotted, 1=plotted on left, 2=plotted on right
-    bool _populated;
-    bool _changed;
-    bool _dataChanged;
+    int _plotted = 0; //0=not plotted, 1=plotted on left, 2=plotted on right
+    bool _populated = false;
+    bool _changed = false;
+    bool _dataChanged = false;
 protected:
     DataHolder *_data;
 };
