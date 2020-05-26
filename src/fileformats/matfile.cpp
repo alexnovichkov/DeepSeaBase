@@ -1194,7 +1194,7 @@ bool MatFile::setLegend(const QString &legend)
 double MatFile::xStep() const
 {
     if (channels.isEmpty()) return 0.0;
-    return channels.constFirst()->xStep();
+    return channels.constFirst()->data()->xStep();
 }
 
 void MatFile::setXStep(const double xStep)

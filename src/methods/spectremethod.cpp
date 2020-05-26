@@ -22,11 +22,11 @@ SpectreMethod::SpectreMethod(QList<FileDescriptor *> &dataBase, QWidget *parent)
     // заполняем список частотного диапазона
     if (RawChannel *raw = dynamic_cast<RawChannel *>(dataBase.constFirst()->channel(0))) {
         bandWidth = raw->BandWidth;
-        sampleRate = 1.0 / raw->xStep();
+        sampleRate = 1.0 / raw->data()->xStep();
     }
     else {
-        bandWidth = qRound(1.0 / dataBase.constFirst()->channel(0)->xStep() / 2.56);
-        sampleRate = 1.0 / dataBase.constFirst()->channel(0)->xStep();
+        bandWidth = qRound(1.0 / dataBase.constFirst()->channel(0)->data()->xStep() / 2.56);
+        sampleRate = 1.0 / dataBase.constFirst()->channel(0)->data()->xStep();
     }
     double bw = bandWidth;
     for (int i=0; i<12; ++i) {

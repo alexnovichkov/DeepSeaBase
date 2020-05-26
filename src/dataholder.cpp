@@ -632,11 +632,19 @@ double DataHolder::zStep() const
 
 double DataHolder::yMin(int block) const
 {DD;
+    if (block == -1) {
+        double min = *std::min_element(m_yMin.constBegin(), m_yMin.constEnd());
+        return corrected(min);
+    }
     return corrected(m_yMin.value(block, 0.0));
 }
 
 double DataHolder::yMax(int block) const
 {DD;
+    if (block == -1) {
+        double max = *std::max_element(m_yMax.constBegin(), m_yMax.constEnd());
+        return corrected(max);
+    }
     return corrected(m_yMax.value(block, 0.0));
 }
 

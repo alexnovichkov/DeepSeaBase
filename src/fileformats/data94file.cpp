@@ -745,14 +745,14 @@ void Data94File::calculateMean(const QList<Channel*> &toMean)
 
     //xAxisBlock
     ch->xAxisBlock.uniform = firstChannel->data()->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
-    ch->xAxisBlock.begin = firstChannel->xMin();
+    ch->xAxisBlock.begin = firstChannel->data()->xMin();
     if (ch->xAxisBlock.uniform == 0) {// not uniform
         ch->xAxisBlock.values = firstChannel->xValues();
         ch->xAxisBlock.values.resize(numInd);
     }
 
     ch->xAxisBlock.count = numInd;
-    ch->xAxisBlock.step = firstChannel->xStep();
+    ch->xAxisBlock.step = firstChannel->data()->xStep();
 
 
     //zAxisBlock
@@ -856,7 +856,7 @@ QString Data94File::calculateThirdOctave()
         //третьоктава рассчитывается только для первого блока
         newCh->zAxisBlock.count = 1;
 
-        auto result = thirdOctave(ch->data()->decibels(0), ch->xMin(), ch->xStep());
+        auto result = thirdOctave(ch->data()->decibels(0), ch->data()->xMin(), ch->data()->xStep());
 
         newCh->data()->setThreshold(ch->data()->threshold());
         newCh->data()->setYValuesUnits(ch->data()->yValuesUnits());
@@ -923,14 +923,14 @@ void Data94File::calculateMovingAvg(const QList<Channel*> &list, int windowSize)
 
         //xAxisBlock
         newCh->xAxisBlock.uniform = firstChannel->data()->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
-        newCh->xAxisBlock.begin = firstChannel->xMin();
+        newCh->xAxisBlock.begin = firstChannel->data()->xMin();
         if (newCh->xAxisBlock.uniform == 0) {// not uniform
             newCh->xAxisBlock.values = firstChannel->xValues();
             newCh->xAxisBlock.values.resize(numInd);
         }
 
         newCh->xAxisBlock.count = numInd;
-        newCh->xAxisBlock.step = firstChannel->xStep();
+        newCh->xAxisBlock.step = firstChannel->data()->xStep();
 
         //zAxisBlock
         newCh->zAxisBlock.count = 1;
@@ -951,7 +951,7 @@ void Data94File::calculateMovingAvg(const QList<Channel*> &list, int windowSize)
         }
 
         if (ch->data()->xValuesFormat()==DataHolder::XValuesUniform) {
-            newCh->data()->setXValues(ch->xMin(), ch->xStep(), numInd);
+            newCh->data()->setXValues(ch->data()->xMin(), ch->data()->xStep(), numInd);
         }
         else {
             QVector<double> values = ch->data()->xValues();
@@ -1218,7 +1218,7 @@ void Data94File::setXStep(const double xStep)
 
     for (Data94Channel *ch: qAsConst(channels)) {
         if (ch->data()->xValuesFormat() == DataHolder::XValuesNonUniform) continue;
-        if (ch->xStep()!=xStep) {
+        if (ch->data()->xStep()!=xStep) {
             changed = true;
             ch->setXStep(xStep);
         }
@@ -1305,11 +1305,11 @@ Data94Channel::Data94Channel(Channel *other) : Channel(other)
 
     //xAxisBlock
     xAxisBlock.uniform = other->data()->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
-    xAxisBlock.begin = other->xMin();
+    xAxisBlock.begin = other->data()->xMin();
     if (xAxisBlock.uniform == 0) // not uniform
         xAxisBlock.values = other->xValues();
     xAxisBlock.count = other->samplesCount();
-    xAxisBlock.step = other->xStep();
+    xAxisBlock.step = other->data()->xStep();
 
     //zAxisBlock
     zAxisBlock.uniform = other->data()->zValuesFormat() == DataHolder::XValuesUniform ? 1:0;

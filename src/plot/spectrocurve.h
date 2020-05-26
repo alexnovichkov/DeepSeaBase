@@ -5,6 +5,22 @@
 #include <qwt_plot_spectrogram.h>
 #include "curve.h"
 #include "dataholder.h"
+#include <qwt_color_map.h>
+
+class HueColorMap: public QwtHueColorMap
+{
+public:
+    HueColorMap() : QwtHueColorMap(QwtColorMap::Indexed)
+    {
+        setFormat(QwtColorMap::RGB);
+
+        //setHueInterval( 240, 60 );
+        //setHueInterval( 240, 420 );
+        setHueInterval(0, 300);
+        setSaturation(150);
+        setValue(200);
+    }
+};
 
 class SpectrogramData: public QwtRasterData
 {
@@ -29,6 +45,12 @@ public:
         return QwtInterval();
     }
 
+    void setInterval(Qt::Axis axis, const QwtInterval &interval)
+    {
+        if ( axis >= 0 && axis <= 2 )
+            m_intervals[ axis ] = interval;
+    }
+
     virtual double value( double x, double y ) const QWT_OVERRIDE
     {
         // рисуем блоками - ищем ближайшее значение по Х и по Z
@@ -37,7 +59,6 @@ public:
 
         if (m_data->xValuesFormat() == DataHolder::XValuesUniform) {
             i = qRound((x-m_data->xMin())/m_data->xStep());
-            //int j = qRound((x-m_data->xMin())/m_data->xStep())
         }
 
         if (m_data->zValuesFormat() == DataHolder::XValuesUniform) {
@@ -79,6 +100,8 @@ public:
     virtual QList<QwtLegendData> legendData() const override;
     virtual QPointF samplePoint(int point) const override;
     virtual int closest(const QPoint &pos, double *dist) const override;
+
+    void setColorInterval(double min, double max);
 };
 
 #endif // SPECTROCURVE_H

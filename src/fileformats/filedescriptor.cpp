@@ -162,16 +162,6 @@ void Channel::maybeClearData()
     if (samplesCount()>1000000) clear();
 }
 
-double Channel::xMin() const
-{
-    return _data->xMin();
-}
-
-double Channel::xMax() const
-{
-    return _data->xMax();
-}
-
 QByteArray Channel::wavData(qint64 pos, qint64 samples)
 {
     QByteArray b;

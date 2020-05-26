@@ -17,6 +17,7 @@
 #include "wheelzoom.h"
 #include "axiszoom.h"
 #include "dragzoom.h"
+#include "plot.h"
 
 #include <qwt_scale_widget.h>
 #include "logging.h"
@@ -24,7 +25,7 @@
 #include <QKeyEvent>
 
 // Конструктор
-ChartZoom::ChartZoom(QwtPlot *plot) :
+ChartZoom::ChartZoom(Plot *plot) :
     QObject(plot),  qwtPlot(plot)
 {DD;
     plot->installEventFilter(this);
@@ -156,14 +157,14 @@ void ChartZoom::zoomBack()
     /**************************************************/
 
 // Конструктор
-ChartZoom::ScaleBounds::ScaleBounds(QwtPlot *plot, QwtAxisId axis) : axis(axis), plot(plot)
+ChartZoom::ScaleBounds::ScaleBounds(Plot *plot, QwtAxisId axis) : axis(axis), plot(plot)
 {DD;
     fixed = false;  // границы еще не фиксированы
     min = 0.0;
     max = 10.0;
 
     if (plot)
-        plot->setAxisScale(axis, min, max);
+        plot->setScale(axis, min, max);
 }
 
 void ChartZoom::ScaleBounds::setFixed(bool fixed)
@@ -195,7 +196,7 @@ void ChartZoom::ScaleBounds::add(double min, double max)
 
 void ChartZoom::ScaleBounds::set(double min, double max)
 {DD;
-    plot->setAxisScale(axis, min,max);
+    plot->setScale(axis, min,max);
 }
 
 // Восстановление исходных границ шкалы
@@ -219,7 +220,7 @@ void ChartZoom::ScaleBounds::autoscale()
     iter = std::max_element(maxes.constBegin(), maxes.constEnd());
     double maxx = iter==maxes.constEnd() ? this->max : *iter;
 
-    plot->setAxisScale(axis, minn, maxx);
+    plot->setScale(axis, minn, maxx);
 }
 
 void ChartZoom::ScaleBounds::removeToAutoscale(double min, double max)

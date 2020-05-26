@@ -6,7 +6,6 @@
 #include "qwt_plot.h"
 #include "qwt_scale_map.h"
 #include "fileformats/filedescriptor.h"
-#include "qwt_color_map.h"
 
 SpectroCurve::SpectroCurve(const QString &title, FileDescriptor *descriptor, int channelIndex)
     :  QwtPlotSpectrogram(title), Curve(title, descriptor, channelIndex)
@@ -20,14 +19,12 @@ SpectroCurve::SpectroCurve(const QString &title, FileDescriptor *descriptor, int
     spectroData = new SpectrogramData(this->channel->data());
     setData(spectroData);
 
-    auto color = new QwtLinearColorMap(/*Qt::darkCyan, Qt::red*/);
-    color->addColorStop( 0.1, Qt::cyan );
-    color->addColorStop( 0.6, Qt::green );
-    color->addColorStop( 0.95, Qt::yellow );
+//    auto color = new QwtLinearColorMap(/*Qt::darkCyan, Qt::red*/);
+//    color->addColorStop( 0.1, Qt::cyan );
+//    color->addColorStop( 0.6, Qt::green );
+//    color->addColorStop( 0.95, Qt::yellow );
 
-    setColorMap(color);
-
-
+//    setColorMap(color);
 }
 
 void SpectroCurve::attachTo(QwtPlot *plot)
@@ -134,3 +131,18 @@ int SpectroCurve::closest(const QPoint &pos, double *dist) const
 
     return index;
 }
+
+void SpectroCurve::setColorInterval(double min, double max)
+{
+    spectroData->setInterval(Qt::ZAxis, QwtInterval(min, max));
+}
+
+//double SpectroCurve::yMin() const
+//{
+//    return channel->data()->zMin();
+//}
+
+//double SpectroCurve::yMax() const
+//{
+//    return channel->data()->zMax();
+//}

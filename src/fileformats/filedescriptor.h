@@ -197,18 +197,12 @@ public:
     DataHolder *data() {return _data;}
     const DataHolder *data() const {return _data;}
 
-    virtual double xMin() const;
-    virtual double xMax() const;
-    virtual double xStep() const {return _data->xStep();}
     virtual int samplesCount() const {return _data->samplesCount();}
     virtual int xValuesFormat() const {return _data->xValuesFormat();}
     virtual int units() const {return _data->yValuesUnits();}
 
     virtual QVector<double> xValues() const {return _data->xValues();}
     virtual QByteArray wavData(qint64 pos, qint64 samples);
-
-    virtual double yMin() const {return _data->yMin();}
-    virtual double yMax() const {return _data->yMax();}
 
     virtual FileDescriptor *descriptor() = 0;
 

@@ -106,6 +106,8 @@ public:
     void moveToAxis(int axis, double min, double max);
     void updateAxesLabels();
 
+    void setScale(QwtAxisId id, double min, double max, double step = 0);
+
     void removeLabels();
 
 
@@ -180,14 +182,15 @@ private:
 
 
 
-    bool xScaleIsLogarithmic; //false = linear, true = logarithmic
+    bool xScaleIsLogarithmic = false; //false = linear, true = logarithmic
 
     ChartZoom *zoom;
 
     TrackingPanel *trackingPanel;
     PlayPanel *playerPanel;
 
-    InteractionMode interactionMode;
+    InteractionMode interactionMode = ScalingInteraction;
+    bool spectrogram = false;
 };
 
 #endif // PLOT_H

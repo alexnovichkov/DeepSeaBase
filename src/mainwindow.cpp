@@ -1265,7 +1265,7 @@ void MainWindow::calculateMean()
         channels.append(curve->channel);
 
         allFilesDfd &= firstCurve->descriptor->fileName().toLower().endsWith("dfd");
-        if (firstCurve->channel->xStep() != curve->channel->xStep())
+        if (firstCurve->channel->data()->xStep() != curve->channel->data()->xStep())
             stepsEqual = false;
         if (firstCurve->channel->yName() != curve->channel->yName())
             namesEqual = false;
@@ -2303,7 +2303,8 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      //проверяем, все ли каналы имеют одинаковое разрешение по х
      bool allChannelsHaveSameXStep = true;
      for (int i=1; i<plot->curves.size(); ++i) {
-         if (!qFuzzyCompare(plot->curves.at(i)->channel->xStep()+1.0, channel->xStep()+1.0)) {
+         if (!qFuzzyCompare(plot->curves.at(i)->channel->data()->xStep()+1.0,
+                            channel->data()->xStep()+1.0)) {
              allChannelsHaveSameXStep = false;
              break;
          }
@@ -2324,15 +2325,15 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 
      const bool writeToSeparateColumns = !allChannelsHaveSameXStep || !allChannelsHaveSameLength;
 
-     double minX = channel->xMin();
-     double maxX = channel->xMax();
+     double minX = channel->data()->xMin();
+     double maxX = channel->data()->xMax();
 
      Range range = plot->xRange();
 
      for (int i=1; i<plot->curves.size(); ++i) {
          Channel *ch = plot->curves.at(i)->channel;
-         if (ch->xMin() < minX) minX = ch->xMin();
-         if (ch->xMax() > maxX) maxX = ch->xMax();
+         if (ch->data()->xMin() < minX) minX = ch->data()->xMin();
+         if (ch->data()->xMax() > maxX) maxX = ch->data()->xMax();
      }
      if (minX >= range.min && maxX <= range.max)
          fullRange = true;
@@ -2401,7 +2402,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      // если шаг по х нулевой, то предполагаем октаву, размножаем данные для графика
      if (!writeToSeparateColumns) {
          const int numCols = plot->curves.size();
-         const bool zeroStep = qFuzzyIsNull(channel->xStep());
+         const bool zeroStep = qFuzzyIsNull(channel->data()->xStep());
 
          QList<QVariant> cellsList;
          QList<QVariant> rowsList;
@@ -2459,7 +2460,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          for (int i=0; i<plot->curves.size(); ++i) {
              Curve *curve = plot->curves.at(i);
              Channel *ch = curve->channel;
-             bool zeroStep = qFuzzyIsNull(ch->xStep());
+             bool zeroStep = qFuzzyIsNull(ch->data()->xStep());
 
              QList<QVariant> cellsList;
              QList<QVariant> rowsList;

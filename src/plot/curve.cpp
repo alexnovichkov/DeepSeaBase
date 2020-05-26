@@ -134,8 +134,8 @@ void Curve::evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const
     const double endX = xMap.s2();
 
     if (channel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
-        from = qRound((startX - channel->xMin())/channel->xStep())-1;
-        to = qRound((endX - channel->xMin())/channel->xStep())+1;
+        from = qRound((startX - channel->data()->xMin())/channel->data()->xStep())-1;
+        to = qRound((endX - channel->data()->xMin())/channel->data()->xStep())+1;
     }
     else {
         for (int i=0; i<to; ++i) {

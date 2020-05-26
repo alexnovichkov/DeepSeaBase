@@ -229,10 +229,10 @@ void TrackingPanel::setX(double xVal, int index)
         //ищем минимальный шаг по оси X
         double xstep = (*std::min_element(plot->curves.constBegin(), plot->curves.constEnd(),
                                   [](Curve *c1, Curve *c2){
-            return c1->channel->xStep() <= c2->channel->xStep();
-        }))->channel->xStep();
+            return c1->channel->data()->xStep() <= c2->channel->data()->xStep();
+        }))->channel->data()->xStep();
 
-        if (xstep==0.0) xstep = plot->curves.constFirst()->channel->xStep();
+        if (xstep==0.0) xstep = plot->curves.constFirst()->channel->data()->xStep();
 
         if (xstep!=0.0) {
             //среди графиков есть график с минимальным ненулевым шагом

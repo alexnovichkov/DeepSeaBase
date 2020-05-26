@@ -53,8 +53,8 @@ public:
     virtual void highlight();
     virtual int closest(const QPoint &pos, double *dist = NULL) const = 0;
 
-    double yMin() const;
-    double yMax() const;
+    virtual double yMin() const;
+    virtual double yMax() const;
     virtual double xMin() const;
     virtual double xMax() const;
     int samplesCount() const;

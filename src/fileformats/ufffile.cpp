@@ -370,7 +370,7 @@ QDateTime UffFileDescriptor::dateTime() const
 
 double UffFileDescriptor::xStep() const
 {
-    if (!channels.isEmpty()) return channels.constFirst()->xStep();
+    if (!channels.isEmpty()) return channels.constFirst()->data()->xStep();
     return 0.0;
 }
 
@@ -380,7 +380,7 @@ void UffFileDescriptor::setXStep(const double xStep)
     bool changed = false;
 
     for (int i=0; i<channels.size(); ++i) {
-        if (channels.at(i)->xStep()!=xStep) {
+        if (channels.at(i)->data()->xStep()!=xStep) {
             changed = true;
             channels[i]->type58[29].value = xStep;
             channels[i]->data()->setXStep(xStep);
@@ -392,7 +392,7 @@ void UffFileDescriptor::setXStep(const double xStep)
 
 double UffFileDescriptor::xBegin() const
 {
-    if (!channels.isEmpty()) return channels.constFirst()->xMin();
+    if (!channels.isEmpty()) return channels.constFirst()->data()->xMin();
     return 0.0;
 }
 
@@ -601,7 +601,7 @@ void UffFileDescriptor::calculateMean(const QList<Channel*> &toMean)
 
     if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
         ch->type58[27].value = 1;
-        ch->data()->setXValues(firstChannel->xMin(), firstChannel->xStep(), numInd);
+        ch->data()->setXValues(firstChannel->data()->xMin(), firstChannel->data()->xStep(), numInd);
     }
     else {
         ch->type58[27].value = 0;
@@ -613,8 +613,8 @@ void UffFileDescriptor::calculateMean(const QList<Channel*> &toMean)
     ch->type58[25].value = (format == DataHolder::YValuesComplex ? 6 : 4);
     ch->type58[26].value = ch->data()->samplesCount();
 
-    ch->type58[28].value = firstChannel->xMin();
-    ch->type58[29].value = firstChannel->xStep();
+    ch->type58[28].value = firstChannel->data()->xMin();
+    ch->type58[29].value = firstChannel->data()->xStep();
 
     ch->type58[32].value = abscissaType(firstChannel->xName());
     ch->type58[36].value = abscissaTypeDescription(ch->type58[32].value.toInt());
@@ -672,14 +672,14 @@ void UffFileDescriptor::calculateMovingAvg(const QList<Channel*> &toAvg, int win
 
         if (ch->data()->xValuesFormat()==DataHolder::XValuesUniform) {
             newCh->type58[27].value = 1;
-            newCh->data()->setXValues(ch->xMin(), ch->xStep(), numInd);
+            newCh->data()->setXValues(ch->data()->xMin(), ch->data()->xStep(), numInd);
         }
         else {
             newCh->type58[27].value = 0;
             newCh->data()->setXValues(ch->data()->xValues());
         }
 
-        newCh->type58[29].value = ch->xStep();
+        newCh->type58[29].value = ch->data()->xStep();
 
         // обновляем сведения канала
         newCh->setPopulated(true);
@@ -729,7 +729,7 @@ QString UffFileDescriptor::calculateThirdOctave()
         if (!populated) ch->populate();
         Function *newCh = new Function(*ch);
 
-        auto result = thirdOctave(ch->data()->decibels(), ch->xMin(), ch->xStep());
+        auto result = thirdOctave(ch->data()->decibels(), ch->data()->xMin(), ch->data()->xStep());
 
         newCh->data()->setXValues(result.first);
         newCh->data()->setThreshold(ch->data()->threshold());
@@ -987,8 +987,8 @@ Function::Function(Channel &other) : Channel(other)
 
     type58[26].value = other.data()->samplesCount();
     type58[27].value = other.data()->xValuesFormat() == DataHolder::XValuesNonUniform ? 0 : 1;
-    type58[28].value = other.xMin();
-    type58[29].value = other.xStep();
+    type58[28].value = other.data()->xMin();
+    type58[29].value = other.data()->xStep();
 //    type58[30].value = other.datzValue();
 
     type58[32].value = abscissaType(other.xName());
@@ -1531,9 +1531,9 @@ QString UffFileDescriptor::saveTimeSegment(double from, double to)
     // 3 ищем границы данных по параметрам from и to
     Channel *ch = channels.constFirst();
 
-    int sampleStart = qRound((from - ch->xMin())/ch->xStep());
+    int sampleStart = qRound((from - ch->data()->xMin())/ch->data()->xStep());
     if (sampleStart<0) sampleStart = 0;
-    int sampleEnd = qRound((to-ch->xMin())/ch->xStep());
+    int sampleEnd = qRound((to - ch->data()->xMin())/ch->data()->xStep());
     if (sampleEnd >= ch->samplesCount()) sampleEnd = ch->samplesCount() - 1;
 //    newUff->setSamplesCount(sampleEnd - sampleStart + 1); //число отсчетов в новом файле
 

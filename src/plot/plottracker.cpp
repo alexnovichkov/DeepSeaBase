@@ -2,6 +2,7 @@
 
 #include <qwt_picker_machine.h>
 #include <qwt_text.h>
+#include <qwt_plot_zoomer.h>
 #include "logging.h"
 #include <QKeyEvent>
 #include "plot.h"
@@ -43,10 +44,13 @@ QString smartDouble(double v)
 }
 
 QwtText PlotTracker::trackerTextF(const QPointF &pos) const
-{//DD;
-    QString text = QString("%1, %2").arg(pos.x()).arg(pos.y(),0,'g',2);
+{
+    QColor bg(Qt::white);
+    bg.setAlpha(200);
 
-    return QwtText( smartDouble(pos.x())+", "+smartDouble(pos.y()) );
+    QwtText text = QwtText(smartDouble(pos.x())+", "+smartDouble(pos.y()));
+    text.setBackgroundBrush(QBrush(bg));
+    return text;
 }
 
 void PlotTracker::maybeHover(const QPointF &pos)

@@ -229,7 +229,7 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
         if (suffixN==0) {//третьоктава или файл с неодинаковым шагом по абсциссе
             if (dfd.channelsCount()>0) {
                 dfd.channel(0)->populate();
-                suffixN = dfd.channels.constFirst()->xMax();
+                suffixN = dfd.channels.constFirst()->data()->xMax();
                 suffix = QString::number(suffixN);
             }
         }
@@ -251,7 +251,7 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
         if (suffixN==0) {//третьоктава или файл с неодинаковым шагом по абсциссе
             if (dfd.channelsCount()>0) {
                 dfd.channel(0)->populate();
-                suffixN = dfd.channels.constFirst()->xMax();
+                suffixN = dfd.channels.constFirst()->data()->xMax();
                 suffix = QString::number(suffixN);
             }
         }

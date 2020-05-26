@@ -12,13 +12,13 @@ TimeMethod::TimeMethod(QList<FileDescriptor *> &dataBase, QWidget *parent) :
     resolutionCombo = new QComboBox(this);
     resolutionCombo->setEditable(false);
 
-    xStep = dataBase.constFirst()->channel(0)->xStep();
+    xStep = dataBase.constFirst()->channel(0)->data()->xStep();
 
     // заполняем список частотного диапазона
     if (RawChannel *raw = dynamic_cast<RawChannel *>(dataBase.constFirst()->channel(0))) {
         bandWidth = raw->BandWidth;
-        sampleRate = 1.0 / raw->xStep();
-        xStep = raw->xStep();
+        sampleRate = 1.0 / raw->data()->xStep();
+        xStep = raw->data()->xStep();
     }
     else {
         bandWidth = qRound(1.0 / xStep / 2.56);

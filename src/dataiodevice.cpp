@@ -17,7 +17,7 @@ bool DataIODevice::isSequential() const
 
 double DataIODevice::positionSec() const
 {
-    return pos()/sizeof(qint16) * m_channel->xStep();
+    return pos()/sizeof(qint16) * m_channel->data()->xStep();
 }
 
 bool DataIODevice::seek(qint64 pos)

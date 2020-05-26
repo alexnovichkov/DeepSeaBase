@@ -248,7 +248,7 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
     this->XName = firstChannel->xName();
 
     this->XBegin = firstChannel->data()->xMin();
-    this->XStep = firstChannel->xStep();
+    this->XStep = firstChannel->data()->xStep();
     this->DescriptionFormat = "";
 
     source = new Source();
@@ -620,8 +620,8 @@ void DfdFileDescriptor::fillRest()
     setSamplesCount(channels.constFirst()->samplesCount());
     BlockSize = 0;
 //    XName = channels.constFirst()->xName();
-    XBegin = channels.constFirst()->xMin();
-    XStep = channels.constFirst()->xStep();
+    XBegin = channels.constFirst()->data()->xMin();
+    XStep = channels.constFirst()->data()->xStep();
 }
 
 DfdFileDescriptor *DfdFileDescriptor::newFile(const QString &fileName, DfdDataType type)
@@ -706,8 +706,8 @@ void DfdFileDescriptor::setXStep(const double xStep)
 
     for (int i=0; i<channels.size(); ++i) {
         // если шаг для отдельного канала не равен шагу всего файла
-        if (!qFuzzyIsNull(channels[i]->xStep() - XStep))
-            channels[i]->data()->setXStep(xStep * channels[i]->xStep() / XStep);
+        if (!qFuzzyIsNull(channels[i]->data()->xStep() - XStep))
+            channels[i]->data()->setXStep(xStep * channels[i]->data()->xStep() / XStep);
         else
             channels[i]->data()->setXStep(xStep);
     }
@@ -989,7 +989,7 @@ void DfdFileDescriptor::calculateMean(const QList<Channel*> &channels)
         ch->data()->setYValues(averaging.get().mid(0, numInd), DataHolder::YValuesFormat(format));
 
     if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
-        ch->data()->setXValues(firstChannel->xMin(), firstChannel->xStep(), numInd);
+        ch->data()->setXValues(firstChannel->data()->xMin(), firstChannel->data()->xStep(), numInd);
     }
     else {
         ch->data()->setXValues(firstChannel->data()->xValues().mid(0, numInd));
@@ -1041,7 +1041,7 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<Channel *> &list, int win
         }
 
         if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform)
-            ch->data()->setXValues(firstChannel->xMin(), firstChannel->xStep(), numInd);
+            ch->data()->setXValues(firstChannel->data()->xMin(), firstChannel->data()->xStep(), numInd);
         else
             ch->data()->setXValues(firstChannel->data()->xValues());
 
@@ -1091,7 +1091,7 @@ QString DfdFileDescriptor::calculateThirdOctave()
     foreach (DfdChannel *ch, this->channels) {
         DfdChannel *newCh = new DfdChannel(thirdOctDfd,index++);
 
-        auto result = thirdOctave(ch->data()->decibels(), ch->xMin(), ch->xStep());
+        auto result = thirdOctave(ch->data()->decibels(), ch->data()->xMin(), ch->data()->xStep());
 
         newCh->data()->setThreshold(ch->data()->threshold());
         newCh->data()->setYValuesUnits(ch->data()->yValuesUnits());

@@ -203,7 +203,8 @@ Function *OctaveMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor 
     ch->type58[26].value = spectrumSize;
     ch->type58[28].value = 0.0;
     ch->type58[29].value = 0.0; //29 Abscissa increment
-    ch->type58[30].value = dfd->channel(i)->samplesCount()*dfd->channel(i)->xStep(); //30 Z-axis value (length in seconds)
+    ch->type58[30].value = dfd->channel(i)->samplesCount()
+                           * dfd->channel(i)->data()->xStep(); //30 Z-axis value (length in seconds)
 
     ch->type58[32].value = 18; // 18 - frequency
     ch->type58[36].value = "Частота";

@@ -35,13 +35,14 @@ class PlotZoom; // интерфейс масштабирования графи�
 class DragZoom; // интерфейс перемещения графика
 class WheelZoom;
 class AxisZoom;
+class Plot;
 
 class ChartZoom : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit ChartZoom(QwtPlot *plot);
+    explicit ChartZoom(Plot *plot);
     ~ChartZoom();
 
     // Значения типа текущего преобразования графика
@@ -67,7 +68,7 @@ public:
     {
     public:
         // конструктор
-        explicit ScaleBounds(QwtPlot *plot, QwtAxisId axis);
+        explicit ScaleBounds(Plot *plot, QwtAxisId axis);
 
         QwtAxisId axis;   // основная шкала
 
@@ -87,7 +88,7 @@ public:
         double min;
         double max;
 
-        QwtPlot *plot;          // опекаемый график
+        Plot *plot;          // опекаемый график
 
         bool fixed;             // признак фиксации границ
     };
@@ -123,7 +124,7 @@ signals:
     void contextMenuRequested(const QPoint &pos, QwtAxisId axis);
     void moveCursor(bool right);
 private:
-    QwtPlot *qwtPlot;
+    Plot *qwtPlot;
 
     PlotZoom *mainZoom;
     DragZoom *dragZoom;
