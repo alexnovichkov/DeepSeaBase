@@ -12,19 +12,13 @@ SpectroCurve::SpectroCurve(const QString &title, FileDescriptor *descriptor, int
 {
     setLegendIconSize(QSize(16,8));
 
-    setRenderThreadCount( 0 ); // use system specific thread count
-    setCachePolicy( QwtPlotRasterItem::PaintCache );
-    setDisplayMode( QwtPlotSpectrogram::ImageMode, true );
+    setRenderThreadCount(0); // use system specific thread count
+    setCachePolicy(QwtPlotRasterItem::PaintCache);
+    setDisplayMode(QwtPlotSpectrogram::ImageMode, true);
+    setDisplayMode(QwtPlotSpectrogram::ContourMode, true);
 
     spectroData = new SpectrogramData(this->channel->data());
     setData(spectroData);
-
-//    auto color = new QwtLinearColorMap(/*Qt::darkCyan, Qt::red*/);
-//    color->addColorStop( 0.1, Qt::cyan );
-//    color->addColorStop( 0.6, Qt::green );
-//    color->addColorStop( 0.95, Qt::yellow );
-
-//    setColorMap(color);
 }
 
 void SpectroCurve::attachTo(QwtPlot *plot)
@@ -135,6 +129,11 @@ int SpectroCurve::closest(const QPoint &pos, double *dist) const
 void SpectroCurve::setColorInterval(double min, double max)
 {
     spectroData->setInterval(Qt::ZAxis, QwtInterval(min, max));
+}
+
+QwtInterval SpectroCurve::colorInterval() const
+{
+    return spectroData->interval(Qt::ZAxis);
 }
 
 //double SpectroCurve::yMin() const

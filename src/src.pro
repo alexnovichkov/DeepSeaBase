@@ -93,7 +93,8 @@ SOURCES += main.cpp\
     plot/pointmarker.cpp \
     plot/plottracker.cpp \
     wavexporter.cpp \
-    plot/spectrocurve.cpp
+    plot/spectrocurve.cpp \
+    plot/colormapfactory.cpp
 
 HEADERS  += mainwindow.h \
     sortabletreewidgetitem.h \
@@ -164,7 +165,8 @@ HEADERS  += mainwindow.h \
     plot/plottracker.h \
     wavexporter.h \
     longoperation.h \
-    plot/spectrocurve.h
+    plot/spectrocurve.h \
+    plot/colormapfactory.h
 
 
 SOURCES +=\

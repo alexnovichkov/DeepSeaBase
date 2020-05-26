@@ -16,6 +16,7 @@
 #include "spectrocurve.h"
 
 #include "chartzoom.h"
+#include "colormapfactory.h"
 
 #include <qwt_plot_zoomer.h>
 #include <qwt_picker.h>
@@ -412,6 +413,36 @@ void Plot::showContextMenu(const QPoint &pos, QwtAxisId axis)
         menu->addAction(a);
     }
 
+    if (spectrogram && axis.pos == QwtAxis::yRight && !leftCurves.isEmpty()) {
+        if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(leftCurves.first())) {
+            QAction *a = new QAction("Цветовая шкала");
+            QMenu *am = new QMenu(this);
+            QActionGroup *ag = new QActionGroup(am);
+
+            const QStringList l = ColorMapFactory::names();
+            for (int i=0; i<l.size(); ++i) {
+                QAction *act1 = new QAction(l.at(i), ag);
+                act1->setCheckable(true);
+                if (i == colorMap) act1->setChecked(true);
+                act1->setData(i);
+                am->addAction(act1);
+            }
+
+            connect(ag, &QActionGroup::triggered, [=](QAction*act){
+                int map = act->data().toInt();
+                if (map != colorMap) {
+                    colorMap = map;
+                    axisWidget(yRightAxis)->setColorMap(c->colorInterval(), ColorMapFactory::map(map));
+                    c->setColorMap(ColorMapFactory::map(map));
+                    replot();
+                }
+            });
+
+            a->setMenu(am);
+            menu->addAction(a);
+        }
+    }
+
     if (!leftCurves.isEmpty() && !rightCurves.isEmpty()) {
         menu->addSection("Левая и правая оси");
         menu->addAction("Совместить нули левой и правой осей", [=](){
@@ -589,7 +620,7 @@ void Plot::setScale(QwtAxisId id, double min, double max, double step)
         if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(curves.first())) {
             if (id == yRightAxis) {
                 c->setColorInterval(min, max);
-                axisWidget(id)->setColorMap(QwtInterval(min, max), new RGBColorMap());
+                axisWidget(id)->setColorMap(QwtInterval(min, max), ColorMapFactory::map(colorMap));
                 replot();
             }
         }
@@ -810,9 +841,9 @@ bool Plot::plotCurve(FileDescriptor *descriptor, int channel, QColor *col, bool 
 
     if (spectrogram) {
         axisWidget(yRightAxis)->setColorMap(QwtInterval(ch->data()->yMin(-1), ch->data()->yMax(-1)),
-                                             new RGBColorMap());
+                                             ColorMapFactory::map(colorMap));
         if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(g)) {
-            c->setColorMap(new RGBColorMap());
+            c->setColorMap(ColorMapFactory::map(colorMap));
         }
 
         zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());

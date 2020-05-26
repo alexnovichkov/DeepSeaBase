@@ -174,6 +174,8 @@ private:
     int yValuesPresentationLeft;
     int yValuesPresentationRight;
 
+    int colorMap = 0;
+
     QList<Curve *> leftCurves;
     QList<Curve *> rightCurves;
 

@@ -5,59 +5,6 @@
 #include <qwt_plot_spectrogram.h>
 #include "curve.h"
 #include "dataholder.h"
-#include <qwt_color_map.h>
-
-class LinearColorMap: public QwtLinearColorMap
-{
-public:
-    LinearColorMap():
-        QwtLinearColorMap( Qt::black, Qt::white )
-    {
-        setFormat(QwtColorMap::RGB);
-
-//        addColorStop( 0.1, Qt::cyan );
-//        addColorStop( 0.6, Qt::green );
-//        addColorStop( 0.95, Qt::yellow );
-    }
-};
-
-class RGBColorMap: public QwtLinearColorMap
-{
-public:
-    RGBColorMap():
-        QwtLinearColorMap( QColor(2,0,174), QColor(217,53,43) )
-    {
-        setFormat(QwtColorMap::RGB);
-
-        addColorStop( 0.0625, QColor(0,30,255));
-        addColorStop( 0.125,  QColor(12,126,251));
-        addColorStop( 0.1875, QColor(2,165,242));
-        addColorStop( 0.25,   QColor(0,239,247));
-        addColorStop( 0.3125, QColor(128,226,250));
-        addColorStop( 0.375,  QColor(0,187,126));
-        addColorStop( 0.4375, QColor(0,187,0));
-        addColorStop( 0.5,    QColor(26,246,36));
-        addColorStop( 0.5625, QColor(183,255,0));
-        addColorStop( 0.625,  QColor(254,255,0));
-        addColorStop( 0.6875, QColor(254,213,86));
-        addColorStop( 0.75,   QColor(222,145,27));
-        addColorStop( 0.8125, QColor(252,165,0));
-        addColorStop( 0.875,  QColor(254,110,0));
-    }
-};
-
-class HueColorMap: public QwtHueColorMap
-{
-public:
-    HueColorMap() : QwtHueColorMap(QwtColorMap::RGB)
-    {
-        //setHueInterval( 240, 60 );
-        //setHueInterval( 240, 420 );
-        setHueInterval(0, 300);
-        setSaturation(255);
-        setValue(255);
-    }
-};
 
 class SpectrogramData: public QwtRasterData
 {
@@ -139,6 +86,7 @@ public:
     virtual int closest(const QPoint &pos, double *dist) const override;
 
     void setColorInterval(double min, double max);
+    QwtInterval colorInterval() const;
 };
 
 #endif // SPECTROCURVE_H
