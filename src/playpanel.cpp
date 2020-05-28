@@ -93,7 +93,7 @@ void PlayPanel::update()
         if (c->type() == Descriptor::TimeResponse) {
             QPixmap pix(10,10);
             pix.fill(plot->curves[i]->pen().color());
-            channelsBox->addItem(QIcon(pix), c->name(), QVariant((uint)c));
+            channelsBox->addItem(QIcon(pix), c->name(), QVariant((qulonglong)c));
             if (c == ch) {
                 //раньше этот канал уже играл, поэтому мы должны восстановить положение channelsBox
                 chIndex = count;
@@ -127,9 +127,9 @@ void PlayPanel::setSource(int n)
     if (channelsBox->count() == 0) return;
 
     //индекс поменялся, а канал остался прежним
-    if (ch && channelsBox->itemData(n).toUInt() == (uint)ch) return;
+    if (ch && channelsBox->itemData(n).toULongLong() == (qulonglong)ch) return;
 
-    ch = (Channel*)channelsBox->itemData(n).toUInt();
+    ch = (Channel*)channelsBox->itemData(n).toULongLong();
 
     reset();
     //реальная загрузка данных произойдет только при первом проигрывании

@@ -19,13 +19,14 @@ else{
         LIBS += -L$$OUT_PWD/../lib
 }
 
-CONFIG += c++17 c++1z
+CONFIG += c++14 c++17
 
 qtHaveModule(winextras) {
     QT *= winextras
 }
 
 SOURCES += main.cpp\
+    fileformats/uffdescriptor.cpp \
     mainwindow.cpp \
     sortabletreewidgetitem.cpp \
     checkableheaderview.cpp \
@@ -97,6 +98,7 @@ SOURCES += main.cpp\
     plot/colormapfactory.cpp
 
 HEADERS  += mainwindow.h \
+    fileformats/uffdescriptor.h \
     sortabletreewidgetitem.h \
     checkableheaderview.h \
     methods/abstractmethod.h \
@@ -278,25 +280,35 @@ RESOURCES *= src.qrc
 RC_FILE *= src.rc
 
 CONFIG(release, debug|release):QMAKE_CFLAGS  += -O2
-message($$QMAKE_CFLAGS)
-
-INCLUDEPATH *= K:/My/programming/sources/libsamplerate-0.1.8/src
 
 # includes & libs
 INCLUDEPATH *= $$PWD $$PWD/.. $$PWD/../3rdParty/qtpropertybrowser $$PWD/../3rdParty/DspFilters
-LIBS *= K:/My/programming/sources/libsamplerate-0.1.8/release/libsamplerate.a
+INCLUDEPATH *= K:/My/programming/sources/strtk
+
+#libsamplerate
+INCLUDEPATH *= K:/My/programming/sources/libsamplerate-0.1.8/src
+LIBS *= K:/My/programming/sources/build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_32_bit-Release/release/libsamplerate.a
+LIBS *= K:/My/programming/sources/build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_64_bit-Release/release/libsamplerate.a
 
 #tdm
 INCLUDEPATH *= K:/My/programming/sources/TDMS/tdm_dev/dev/include
+LIBS *= K:/My/programming/sources/TDMS/tdm_dev/dev/lib/64-bit/msvc64/nilibddc.lib
 LIBS *= K:/My/programming/sources/TDMS/tdm_dev/dev/lib/32-bit/msvc/nilibddc.lib
 
 #FFTW
 INCLUDEPATH *= K:/My/programming/sources/fftw-3.3.5-dll32
 LIBS *= K:/My/programming/sources/fftw-3.3.5-dll32/libfftw3-3.lib
+LIBS *= K:/My/programming/sources/fftw-3.3.5-dll64/libfftw3-3.lib
 
 #qwt
-CONFIG(release, debug|release):LIBS *= C:/Qwt-6.4.0-svn/lib/libqwt.a
-CONFIG(debug, debug|release):  LIBS *= C:/Qwt-6.4.0-svn/lib/libqwtd.a
+CONFIG(release, debug|release):{
+    LIBS *= C:/Qwt-6.4.0-svn/lib/libqwt.a
+    LIBS *= C:/Qwt-6.4.0-svn/lib64/libqwt.a
+}
+CONFIG(debug, debug|release):{
+    LIBS *= C:/Qwt-6.4.0-svn/lib/libqwtd.a
+    LIBS *= C:/Qwt-6.4.0-svn/lib64/libqwtd.a
+}
 INCLUDEPATH *= C:/Qwt-6.4.0-svn/include
 
 ##matio

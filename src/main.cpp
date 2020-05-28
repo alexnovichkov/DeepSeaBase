@@ -8,7 +8,7 @@
 #include "converters/matlabconvertor.h"
 
 #include "fileformats/tdmsfile.h"
-#include "fileformats/dfdfiledescriptor.h"
+#include "fileformats/ufffile.h"
 #include "fileformats/matfile.h"
 
 int main(int argc, char *argv[])
@@ -20,8 +20,6 @@ int main(int argc, char *argv[])
     splash.show();
     a.processEvents();
 
-//    splash.showMessage("Загружаю файл");
-
 //    MatFile f("K:\\Shared\\R3G1-oct.mat");
 //    f.read();
 
@@ -29,6 +27,12 @@ int main(int argc, char *argv[])
 //    ff.open(QFile::WriteOnly);
 //    ff.write(f.toJson());
 //    return 0;
+
+
+//    UffFileDescriptor uff("K:\\MyDeepSeaData\\Винт 160\\02_Вода_Лопасть_В2_бш_2кГц_RSMPL_000.uff");
+//    uff.read();
+//    return 0;
+
 
 
 //    TDMSFile f("K:\\NI\\R2_36_ob_16_11_2019_180937\\Acceleration.tdms");

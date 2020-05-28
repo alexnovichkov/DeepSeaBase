@@ -17,6 +17,7 @@ class FunctionHeader
 public:
     FunctionHeader();
     void read(QTextStream &stream);
+    void read(char *data, qint64 &offset);
     void write(QTextStream &stream);
 
     QVector<FieldDescription> type1858;
@@ -37,45 +38,49 @@ public:
     virtual ~Function();
 
     void read(QTextStream &stream, qint64 pos = -1);
+    void read(char *data, qint64 &offset, int size);
     void read(QDataStream &stream);
     void write(QTextStream &stream, int &id);
 
     FunctionHeader header;
 
     UffFileDescriptor *parent;
-    virtual FileDescriptor *descriptor();
+    virtual FileDescriptor *descriptor() override;
     QVector<FieldDescription> type58;
     QVector<qint64> dataPositions;
+    QVector<qint64> dataEnds;
     QVector<double> zValues;
 
     // Channel interface
 public:
     virtual int index() const override;
-    virtual QVariant info(int column, bool edit) const;
-    virtual int columnsCount() const;
-    virtual QVariant channelHeader(int column) const;
+    virtual QVariant info(int column, bool edit) const override;
+    virtual int columnsCount() const override;
+    virtual QVariant channelHeader(int column) const override;
 
-    virtual Descriptor::DataType type() const;
+    virtual Descriptor::DataType type() const override;
     int octaveType() const override;
-    virtual void populate();
-    virtual QString name() const;
-    virtual void setName(const QString &name);
-    virtual QString description() const;
-    virtual void setDescription(const QString &description);
-    virtual QString xName() const;
-    virtual QString yName() const;
-    virtual QString zName() const;
+    virtual void populate() override;
+    virtual QString name() const override;
+    virtual void setName(const QString &name) override;
+    virtual QString description() const override;
+    virtual void setDescription(const QString &description) override;
+    virtual QString xName() const override;
+    virtual QString yName() const override;
+    virtual QString zName() const override;
     virtual void setYName(const QString &yName) override;
-    virtual QString legendName() const;
-    virtual int samplesCount() const;
+    virtual QString legendName() const override;
+    virtual int samplesCount() const override;
 
-    virtual QString correction() const;
-    virtual void setCorrection(const QString &s);
+    virtual QString correction() const override;
+    virtual void setCorrection(const QString &s) override;
 
 //    virtual QByteArray wavData(qint64 pos, qint64 samples) override;
 private:
     friend class UffFileDescriptor;
     void readRest();
+    bool populateWithMmap();
+    bool populateWithStream();
 };
 
 class UffHeader
@@ -85,6 +90,7 @@ public:
     UffHeader();
 
     void read(QTextStream &stream);
+    void read(char *pos, qint64 &offset);
     void write(QTextStream &stream);
     QString info() const;
 
@@ -100,6 +106,7 @@ public:
     UffUnits();
 
     void read(QTextStream &stream);
+    void read(char *pos, qint64 &offset);
     void write(QTextStream &stream);
 
     QVector<FieldDescription> type164;
@@ -124,61 +131,62 @@ public:
 
     // FileDescriptor interface
 public:
-    virtual void fillPreliminary(Descriptor::DataType);
-    virtual void fillRest();
-    virtual void read();
-    virtual void write();
-    virtual void writeRawFile();
-    virtual void updateDateTimeGUID();
-    QString dataDescriptorAsString() const;
+    virtual void fillPreliminary(Descriptor::DataType) override;
+    virtual void fillRest() override;
+    virtual void read() override;
+    virtual void write() override;
+    virtual void writeRawFile() override;
+    virtual void updateDateTimeGUID() override;
+    QString dataDescriptorAsString() const override;
 
-    virtual Descriptor::DataType type() const;
-    virtual QString typeDisplay() const;
-    virtual QDateTime dateTime() const;
-    virtual double xStep() const;
-    virtual void setXStep(const double xStep);
+    virtual Descriptor::DataType type() const override;
+    virtual QString typeDisplay() const override;
+    virtual QDateTime dateTime() const override;
+    virtual double xStep() const override;
+    virtual void setXStep(const double xStep) override;
     virtual double xBegin() const override;
 
-    virtual QString xName() const;
+    virtual QString xName() const override;
 
-    virtual bool setLegend(const QString &legend);
-    virtual QString legend() const;
+    virtual bool setLegend(const QString &legend) override;
+    virtual QString legend() const override;
 
     virtual bool setDateTime(QDateTime dt) override;
 
     bool canTakeChannelsFrom(FileDescriptor *other) const override;
 
-    virtual void deleteChannels(const QVector<int> &channelsToDelete);
-    virtual void copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes);
+    virtual void deleteChannels(const QVector<int> &channelsToDelete) override;
+    virtual void copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes) override;
     /** Calculates mean of channels and writes to a file*/
-    virtual void calculateMean(const QList<Channel *> &toMean);
-    virtual void calculateMovingAvg(const QList<Channel *> &toAvg, int windowSize);
-    virtual QString calculateThirdOctave();
-    virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes);
+    virtual void calculateMean(const QList<Channel *> &toMean) override;
+    virtual void calculateMovingAvg(const QList<Channel *> &toAvg, int windowSize) override;
+    virtual QString calculateThirdOctave() override;
+    virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
 
-    virtual int channelsCount() const;
+    virtual int channelsCount() const override;
 
-    virtual QVariant channelHeader(int column) const;
-    virtual int columnsCount() const;
+    virtual QVariant channelHeader(int column) const override;
+    virtual int columnsCount() const override;
 
-    virtual Channel *channel(int index) const;
-    virtual bool isSourceFile() const;
-    virtual bool operator ==(const FileDescriptor &descriptor);
-    virtual bool dataTypeEquals(FileDescriptor *other) const;
+    virtual Channel *channel(int index) const override;
+    virtual bool isSourceFile() const override;
+    virtual bool operator ==(const FileDescriptor &descriptor) override;
+    virtual bool dataTypeEquals(FileDescriptor *other) const override;
 //    virtual bool hasSameParameters(FileDescriptor *other) const override;
     static QStringList fileFilters();
     static QStringList suffixes();
 private:
-    // FileDescriptor interface
     void removeTempFile();
+    void readWithStreams();
+    bool readWithMmap();
 
 public:
-    virtual DescriptionList dataDescriptor() const;
-    virtual void setDataDescriptor(const DescriptionList &data);
-    virtual QString saveTimeSegment(double from, double to);
-    virtual int samplesCount() const;
-    virtual void setSamplesCount(int count);
-    virtual void setChanged(bool changed);
+    virtual DescriptionList dataDescriptor() const override;
+    virtual void setDataDescriptor(const DescriptionList &data) override;
+    virtual QString saveTimeSegment(double from, double to) override;
+    virtual int samplesCount() const override;
+    virtual void setSamplesCount(int count) override;
+    virtual void setChanged(bool changed) override;
 };
 
 #endif // UFFFILE_H

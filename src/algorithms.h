@@ -99,7 +99,7 @@ inline T convertFrom(unsigned char *ptr, uint IndType)
 }
 
 template <typename T>
-inline QVector<T> convertFrom(unsigned char *ptr, qint64 length, uint IndType)
+inline QVector<T> convertFrom(unsigned char *ptr, quint64 length, uint IndType)
 {
     uint step = IndType % 16;
     QVector<T> temp(length / step, 0.0);

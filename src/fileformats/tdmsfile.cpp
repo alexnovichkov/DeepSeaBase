@@ -246,7 +246,7 @@ TDMSGroup::TDMSGroup(DDCChannelGroupHandle group) : group(group)
             }
             case DDC_String: {
                 char *buffer;
-                size_t propLength;
+                uint propLength;
                 error = DDC_GetChannelGroupStringPropertyLength(group, nameBuf, &propLength);
                 if (propLength > 0) {
                     buffer = (char*)malloc(propLength+1);
@@ -277,7 +277,7 @@ TDMSGroup::TDMSGroup(DDCChannelGroupHandle group) : group(group)
     }
 
     // number of channels
-    size_t numberOfChannels = 0;
+    uint numberOfChannels = 0;
     error = DDC_GetNumChannels(group, &numberOfChannels);
     if (error < 0) {
         qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
@@ -293,7 +293,7 @@ TDMSGroup::TDMSGroup(DDCChannelGroupHandle group) : group(group)
         return;
     }
 
-    for (size_t i=0; i<numberOfChannels; ++i) {
+    for (uint i=0; i<numberOfChannels; ++i) {
         TDMSChannel *channel = new TDMSChannel(_channels[i]);
         channels << channel;
     }
@@ -376,7 +376,7 @@ TDMSChannel::TDMSChannel(DDCChannelHandle channel) :channel(channel)
             }
             case DDC_String: {
                 char *buffer;
-                size_t propLength;
+                uint propLength;
                 error = DDC_GetChannelStringPropertyLength(channel, nameBuf, &propLength);
                 if (propLength > 0) {
                     buffer = (char*)malloc(propLength+1);

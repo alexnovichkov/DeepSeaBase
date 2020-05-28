@@ -2088,7 +2088,7 @@ void DfdChannel::populate()
                 //qDebug()<<"IndType="<<IndType<<", mapped, by dataPositions";
                 foreach (int pos, dataPositions) {
                     ptrCurrent = ptr + pos;
-                    QVector<double> temp = convertFrom<double>(ptrCurrent, qMin(maxPtr-ptrCurrent, int(blockSizeBytes)), IndType);
+                    QVector<double> temp = convertFrom<double>(ptrCurrent, qMin(quint64(maxPtr-ptrCurrent), blockSizeBytes), IndType);
                     YValues << temp;
                 }
             } ///!dataPositions.isEmpty()

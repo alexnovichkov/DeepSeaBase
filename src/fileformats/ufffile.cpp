@@ -71,7 +71,7 @@ QString abscissaTypeDescription(int type)
 
 UffFileDescriptor::UffFileDescriptor(const QString &fileName) : FileDescriptor(fileName)
 {DD;
-//qDebug()<<fileName;
+
 }
 
 UffFileDescriptor::UffFileDescriptor(const UffFileDescriptor &other, const QString &fileName,
@@ -195,7 +195,7 @@ UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString 
 }
 
 UffFileDescriptor::~UffFileDescriptor()
-{DD; /*qDebug()<<fileName()<<changed();*/
+{DD;
     if (changed())
         write();
 
@@ -212,58 +212,105 @@ void UffFileDescriptor::fillRest()
 
 }
 
+void UffFileDescriptor::readWithStreams()
+{
+    qDebug()<<"Reading"<<fileName()<<"with streams";
+    QFile uff(fileName());
+    if (!uff.exists()) {
+        qDebug()<<"Такого файла не существует";
+        return;
+    }
+
+    if (uff.open(QFile::ReadOnly | QFile::Text)) {
+        QTextStream stream(&uff);
+
+        header.read(stream);
+        units.read(stream);
+
+        while (!stream.atEnd()) {
+            Function *f = new Function(this);
+            f->read(stream, -1);
+            channels << f;
+        }
+    }
+    else {
+        qDebug()<<"Не удалось открыть файл"<<fileName();
+    }
+}
+
+bool UffFileDescriptor::readWithMmap()
+{
+    qDebug()<<"Reading"<<fileName()<<"with mmap";
+    QFile uff(fileName());
+    if (!uff.exists()) return false;
+
+    if (uff.open(QFile::ReadOnly)) {
+        unsigned char *mapped = uff.map(0, uff.size());
+        if (!mapped) return false;
+
+        char *pos = reinterpret_cast<char*>(mapped);
+        //char *beginning = pos;
+        //char *end = pos+uff.size()-1;
+
+        const qint64 size = uff.size();
+
+        qint64 offset = 0;
+
+        header.read(pos, offset);
+        units.read(pos, offset);
+
+        while (offset < uff.size()) {
+            Function *f = new Function(this);
+            f->read(pos, offset, size);
+            channels << f;
+        }
+    }
+    return true;
+}
 
 void UffFileDescriptor::read()
 {DD;
-    if (QFile::exists(fileName()+"~")) {
-        // в папке с записью есть двоичный файл с описанием записи
-        QFile uff(fileName()+"~");
-        if (uff.open(QFile::ReadOnly)) {
-            QDataStream stream(&uff);
+    QElapsedTimer timer;
+    timer.start();
 
-            stream >> header;
-            stream >> units;
 
-            while (!stream.atEnd()) {
-                Function *f = new Function(this);
-                f->read(stream);
+//    if (QFile::exists(fileName()+"~")) {
+//        // в папке с записью есть двоичный файл с описанием записи
+//        QFile uff(fileName()+"~");
+//        if (uff.open(QFile::ReadOnly)) {
+//            QDataStream stream(&uff);
 
-                channels << f;
+//            stream >> header;
+//            stream >> units;
+
+//            while (!stream.atEnd()) {
+//                Function *f = new Function(this);
+//                f->read(stream);
+
+//                channels << f;
+//            }
+//        }
+//    }
+//    else
+    {
+        if (!readWithMmap())
+            readWithStreams();
+
+        //теперь уплощаем файл - группируем многоблочные каналы
+        for (int i=channels.size()-1; i>=0; --i) {
+            if (channels.at(i)->type58[16].value.toInt() > 1) {
+                //это часть канала, а не целый канал
+                if (i>0) {//TODO: оптимизировать
+                    channels.at(i-1)->dataPositions.append(channels.at(i)->dataPositions);
+                    channels.at(i-1)->dataEnds.append(channels.at(i)->dataEnds);
+                    channels.at(i-1)->zValues.append(channels.at(i)->zValues);
+                }
+                delete channels.takeAt(i);
             }
         }
-    }
-    else
-    {
-        QFile uff(fileName());
-        if (!uff.exists()) return;
 
-        if (uff.open(QFile::ReadOnly | QFile::Text)) {
-            QTextStream stream(&uff);
-
-            header.read(stream);
-            units.read(stream);
-
-            while (!stream.atEnd()) {
-                Function *f = new Function(this);
-                f->read(stream, -1);
-                channels << f;
-            }
-
-            //теперь уплощаем файл - группируем многоблочные каналы
-            for (int i=channels.size()-1; i>=0; --i) {
-                if (channels.at(i)->type58[16].value.toInt() > 1) {
-                    //это часть канала, а не целый канал
-                    if (i>0) {//TODO: оптимизировать
-                        channels.at(i-1)->dataPositions.append(channels.at(i)->dataPositions);
-                        channels.at(i-1)->zValues.append(channels.at(i)->zValues);
-                    }
-                    delete channels.takeAt(i);
-                }
-            }
-
-            for (Function *f: qAsConst(channels)) {
-                f->readRest();
-            }
+        for (Function *f: qAsConst(channels)) {
+            f->readRest();
         }
 
         QFile buff(fileName()+"~");
@@ -277,11 +324,12 @@ void UffFileDescriptor::read()
                 stream << f->header;
                 stream << f->type58;
                 stream << f->dataPositions;
+                stream << f->dataEnds;
                 stream << f->zValues;
             }
         }
     }
-
+    qDebug()<<"elapsed"<<timer.elapsed();
 }
 
 void UffFileDescriptor::write()
@@ -888,6 +936,15 @@ void UffHeader::read(QTextStream &stream)
 
 }
 
+void UffHeader::read(char *pos, qint64 &offset)
+{
+    for (int i=0; i<20; ++i) {
+        //qDebug()<<"pos at"<<offset;
+        offset += fields[type151[i].type]->read(type151[i].value, pos, offset);
+//        qDebug() << i << type151[i].value;
+    }
+}
+
 void UffHeader::write(QTextStream &stream)
 {DD;
     type151[16].value = QDateTime::currentDateTime();
@@ -915,6 +972,14 @@ void UffUnits::read(QTextStream &stream)
     }
 }
 
+void UffUnits::read(char *pos, qint64 &offset)
+{
+    for (int i=0; i<14; ++i) {
+        //qDebug()<<"pos at"<<offset;
+        offset += fields[type164[i].type]->read(type164[i].value, pos, offset);
+    }
+}
+
 void UffUnits::write(QTextStream &stream)
 {DD;
     for (int i=0; i<14; ++i) {
@@ -930,13 +995,29 @@ FunctionHeader::FunctionHeader()
 }
 
 void FunctionHeader::read(QTextStream &stream)
-{DD;
+{
     for (int i=0; i<4; ++i) {
         fields[type1858[i].type]->read(type1858[i].value, stream);
     }
     if (type1858[2].value.toInt()==1858) {
         for (int i=4; i<48; ++i) {
             fields[type1858[i].type]->read(type1858[i].value, stream);
+        }
+    }
+    else {
+        valid = false;
+        type1858[2].value = 1858;
+    }
+}
+
+void FunctionHeader::read(char *data, qint64 &offset)
+{DD;
+    for (int i=0; i<4; ++i) {
+        offset += fields[type1858[i].type]->read(type1858[i].value, data, offset);
+    }
+    if (type1858[2].value.toInt()==1858) {
+        for (int i=4; i<48; ++i) {
+            offset += fields[type1858[i].type]->read(type1858[i].value, data, offset);
         }
     }
     else {
@@ -1003,7 +1084,7 @@ Function::Function(Channel &other) : Channel(other)
     type58[57].value = abscissaTypeDescription(type58[53].value.toInt());
     if (!other.zName().isEmpty()) type58[58].value = other.zName();
 
-    dataPositions.clear();
+    dataPositions.clear(); dataEnds.clear();
 }
 
 Function::Function(Function &other) : Channel(other)
@@ -1011,7 +1092,7 @@ Function::Function(Function &other) : Channel(other)
     header = other.header;
 
     type58 = other.type58;
-    dataPositions.clear();
+    dataPositions.clear(); dataEnds.clear();
 }
 
 Function::~Function()
@@ -1023,7 +1104,7 @@ void Function::read(QTextStream &stream, qint64 pos)
 {DD;
     if (pos != -1) stream.seek(pos);
 
-    dataPositions.clear();
+    dataPositions.clear(); dataEnds.clear();
     zValues.clear();
 
     header.read(stream);
@@ -1048,8 +1129,49 @@ void Function::read(QTextStream &stream, qint64 pos)
         }
         while (s != "-1");
     }
+    dataEnds << stream.pos() - 6-2-2;
 
     //readRest();
+}
+
+void Function::read(char *data, qint64 &offset, int size)
+{DD;
+    dataPositions.clear();  dataEnds.clear();
+    zValues.clear();
+
+    header.read(data, offset);
+    int i=0;
+    if (!header.valid) {
+        i=4;
+        type58[2].value=58;
+    }
+
+    for (; i<60; ++i) {
+        offset += fields[type58[i].type]->read(type58[i].value, data, offset);
+    }
+    //первое положение данных
+    dataPositions << qint64(offset);
+    zValues << type58[30].value.toDouble();
+
+    for (; offset <= size-6; ++offset) {
+        if (*(data+offset  ) == ' ' &&
+            *(data+offset+1) == ' ' &&
+            *(data+offset+2) == ' ' &&
+            *(data+offset+3) == ' ' &&
+            *(data+offset+4) == '-' &&
+            *(data+offset+5) == '1') break;
+    }
+    dataEnds << qint64(offset);
+    //qDebug()<<"found data delimiter at"<<offset;
+    if (offset == size-6) {
+        qDebug()<<"Reached end of file, no trailing \"    -1\" found";
+    }
+    offset+=6;
+
+    while (*(data+offset) == '\n' || *(data+offset) == '\r') {
+        offset++;
+    }
+    //qDebug()<<"data end at"<<offset;
 }
 
 void Function::read(QDataStream &stream)
@@ -1057,6 +1179,7 @@ void Function::read(QDataStream &stream)
     stream >> header;
     stream >> type58;
     stream >> dataPositions;
+    stream >> dataEnds;
     stream >> zValues;
 
     readRest();
@@ -1167,7 +1290,7 @@ void Function::write(QTextStream &stream, int &id)
 {DD;
     int samples = data()->samplesCount();
     int blocks = data()->blocksCount();
-    dataPositions.clear();
+    dataPositions.clear();  dataEnds.clear();
 
     for (int block = 0; block < blocks; ++block) {
         //writing header
@@ -1289,6 +1412,7 @@ void Function::write(QTextStream &stream, int &id)
             }
             default: break;
         }
+        dataEnds << stream.pos();
         fields[FTDelimiter]->print("", stream);
         fields[FTEmpty]->print(0, stream);
     }
@@ -1346,25 +1470,102 @@ int Function::octaveType() const
     return header.type1858[5].value.toInt();
 }
 
-void Function::populate()
-{DD;
-    _data->clear();
-
-    setPopulated(false);
-
+bool Function::populateWithMmap()
+{
     QFile uff(parent->fileName());
-    if (!uff.open(QFile::ReadOnly | QFile::Text)) return;
+    if (!uff.open(QFile::ReadOnly)) {
+        qDebug()<<"Не удалось открыть файл"<<parent->fileName();
+        return false;
+    }
 
-    int sc = samplesCount();
-
-    QTextStream stream(&uff);
+    uchar *mmap = uff.map(0, uff.size());
+    if (!mmap) {
+        qDebug()<<"Ошибка чтения данных";
+        return false;
+    }
+    char *data = reinterpret_cast<char*>(mmap);
 
     Q_ASSERT_X (dataPositions.first() != -1, "Function::populate", "Data positions have been invalidated");
     Q_ASSERT_X (_data->blocksCount() == dataPositions.size(), "Function::populate",
                 "Data positions не соответствуют количеству блоков");
 
     for (int block = 0; block < _data->blocksCount(); ++block) {
+//        qDebug()<<"reading block"<<block+1;
+        qint64 pos = dataPositions.at(block);
+        qint64 len = dataEnds.at(block) - pos;
+//        qDebug()<<"reding pos"<<pos<<"of length"<<len;
+
+        std::vector<double> vals;
+
+        std::string str = std::string(data+pos, data+pos+len);
+        strtk::parse(str, " \r\n", vals);
+//        qDebug()<<vals.size()<<"vals parsed";
+
+        QVector<double> values;
+        QVector<double> xvalues;
+        QVector<cx_double> valuesComplex;
+
+        if (type58[25].value.toInt() < 5) {//real values
+            if (type58[27].value.toInt() == 0) {// uneven abscissa
+                for (uint i=0; i<vals.size(); ++i) {
+                    if (i%2==0) xvalues << vals[i];
+                    else values << vals[i];
+                }
+            }
+            else {
+                values = QVector<double>::fromStdVector(vals);
+            }
+        }
+        else {//complex values
+            if (type58[27].value.toInt() == 0) {// uneven abscissa
+                for (uint i=0; i<vals.size()-2; i+=3) {
+                    xvalues << vals[i];
+                    valuesComplex << cx_double(vals[i+1], vals[i+2]);
+                }
+            }
+            else {
+                for (uint i=0; i<vals.size()-1; i+=2) {
+                    valuesComplex << cx_double(vals[i], vals[i+1]);
+                }
+            }
+        }
+//        qDebug()<<"values size"<<values.size();
+//        qDebug()<<"xvalues size"<<xvalues.size();
+//        qDebug()<<"complex values size"<<valuesComplex.size();
+
+        if (type58[27].value.toInt() == 0) {// uneven abscissa
+            _data->setXValues(xvalues);
+        }
+        if (type58[25].value.toInt() < 5) {//real values
+            _data->setYValues(values, _data->yValuesFormat(), block);
+        }
+        else
+            _data->setYValues(valuesComplex, block);
+    }
+    uff.unmap(mmap);
+    return true;
+}
+
+bool Function::populateWithStream()
+{
+    QFile uff(parent->fileName());
+    if (!uff.open(QFile::ReadOnly | QFile::Text)) {
+        qDebug()<<"Не удалось открыть файл"<<parent->fileName();
+        return false;
+    }
+
+    int sc = samplesCount();
+
+
+    Q_ASSERT_X (dataPositions.first() != -1, "Function::populate", "Data positions have been invalidated");
+    Q_ASSERT_X (_data->blocksCount() == dataPositions.size(), "Function::populate",
+                "Data positions не соответствуют количеству блоков");
+
+    QTextStream stream(&uff);
+    for (int block = 0; block < _data->blocksCount(); ++block) {
+//        qDebug()<<"reading block"<<block+1;
         if (stream.seek(dataPositions.at(block))) {
+//            qDebug()<<"reding pos"<<dataPositions.at(block);
 
             QVector<double> values, xvalues;
             QVector<cx_double> valuesComplex;
@@ -1416,16 +1617,37 @@ void Function::populate()
             else
                 _data->setYValues(valuesComplex, block);
 
+//            qDebug()<<"values size"<<values.size();
+//            qDebug()<<"xvalues size"<<xvalues.size();
+//            qDebug()<<"complex values size"<<valuesComplex.size();
+
             QString end = stream.readLine();
             end = stream.readLine().trimmed();
             if (end != "-1") {
                 qDebug()<<"ERROR:"<<parent->fileName()<<"channel"<<this->index()
                        <<"ends abruptly. Check the file!";
             }
-            //Q_ASSERT(end == "-1");
         }
     }
-    setPopulated(true);
+    return true;
+}
+
+void Function::populate()
+{DD;
+    _data->clear();
+
+    QElapsedTimer t;
+    t.start();
+
+    setPopulated(false);
+    if (!populateWithMmap()) {
+        if (populateWithStream())
+            setPopulated(true);
+    }
+    else
+        setPopulated(true);
+
+        qDebug()<<"populated at"<<t.elapsed();
 }
 
 QString Function::name() const

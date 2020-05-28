@@ -1534,7 +1534,7 @@ void Data94Channel::populate()
                 unsigned char *ptrCurrent = ptr;
                 if (dataPosition >= 0) {
                     YValues = convertFrom<double>(ptrCurrent,
-                                                  qMin(quint64(maxPtr-ptrCurrent), fullDataSize * sampleWidth),
+                                                  qMin(quint64(maxPtr-ptrCurrent), quint64(fullDataSize * sampleWidth)),
                                                   0xc0000000+sampleWidth);
                 }
             }
