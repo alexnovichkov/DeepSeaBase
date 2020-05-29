@@ -139,11 +139,11 @@ void Model::clear(const QStringList &filesToSkip)
     endResetModel();
 }
 
-void Model::invalidateCurve(FileDescriptor *file, int channel)
+void Model::invalidateCurve(Channel* channel)
 {DD;
-    file->channel(channel)->setPlotted(0);
-    file->channel(channel)->setColor(QColor());
-    QModelIndex idx = modelIndexOfFile(file, MODEL_COLUMN_FILENAME);
+    channel->setPlotted(0);
+    channel->setColor(QColor());
+    QModelIndex idx = modelIndexOfFile(channel->descriptor(), MODEL_COLUMN_FILENAME);
     if (idx.isValid())
         emit dataChanged(idx, idx, QVector<int>()<<Qt::FontRole);
 }

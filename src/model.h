@@ -46,7 +46,7 @@ public:
     void updateFile(FileDescriptor *file, int column = -1);
     void clear(const QStringList &filesToSkip);
 
-    void invalidateCurve(FileDescriptor *file, int channel);
+    void invalidateCurve(Channel* channel);
     void save();
     void discardChanges();
 

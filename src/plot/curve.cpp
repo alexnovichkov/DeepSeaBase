@@ -11,12 +11,11 @@
 #include "dataholder.h"
 #include "qwt_plot.h"
 
-Curve::Curve(const QString &title, FileDescriptor *descriptor, int channelIndex)
+Curve::Curve(const QString &title, Channel *channel)
 {DD;
     Q_UNUSED(title)
-    this->descriptor = descriptor;
-    this->channelIndex = channelIndex;
-    this->channel = descriptor->channel(channelIndex);
+
+    this->channel = channel;
     this->duplicate = false;
     this->highlighted = false;
 }

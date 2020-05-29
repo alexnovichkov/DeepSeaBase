@@ -58,16 +58,16 @@
 
 
 // простой фабричный метод создания кривой нужного типа
-Curve * createCurve(const QString &legendName, FileDescriptor *descriptor, int channel)
+Curve * createCurve(const QString &legendName, Channel *channel)
 {
-    if (descriptor->channel(channel)->data()->blocksCount() > 1)
-        return new SpectroCurve(legendName, descriptor, channel);
+    if (channel->data()->blocksCount() > 1)
+        return new SpectroCurve(legendName, channel);
 
     // считаем, что шаг по оси х 0 только у октав и третьоктав
-    if (descriptor->channel(channel)->xValuesFormat() == DataHolder::XValuesNonUniform)
-        return new BarCurve(legendName, descriptor, channel);
+    if (channel->xValuesFormat() == DataHolder::XValuesNonUniform)
+        return new BarCurve(legendName, channel);
 
-    return new LineCurve(legendName, descriptor, channel);
+    return new LineCurve(legendName, channel);
 }
 
 
@@ -192,7 +192,7 @@ void Plot::deleteAllCurves(bool forceDeleteFixed)
     for (int i=curves.size()-1; i>=0; --i) {
         Curve *c = curves[i];
         if (!c->fixed || forceDeleteFixed) {
-            emit curveDeleted(c->descriptor, c->channelIndex);
+            emit curveDeleted(c->channel);
             deleteCurve(c, true);
             leftUndeleted--;
         }
@@ -217,18 +217,18 @@ void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
 {DD;
     for (int i = curves.size()-1; i>=0; --i) {
         Curve *curve = curves[i];
-        if (descriptor == curve->descriptor) {
+        if (descriptor == curve->channel->descriptor()) {
             deleteCurve(curve, true);
         }
     }
 }
 
 //не удаляем, если фиксирована
-void Plot::deleteCurveFromLegend(QwtPlotItem*item)
+void Plot::deleteCurveFromLegend(QwtPlotItem *item)
 {DD;
     if (Curve *c = dynamic_cast<Curve *>(item)) {
         if (!c->fixed) {
-            emit curveDeleted(c->descriptor, c->channelIndex);
+            emit curveDeleted(c->channel);
             deleteCurve(c, true);
         }
     }
@@ -236,7 +236,7 @@ void Plot::deleteCurveFromLegend(QwtPlotItem*item)
 
 void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot)
 {DD;
-    if (Curve *curve = plotted(dfd, channel)) {
+    if (Curve *curve = plotted(dfd->channel(channel))) {
         deleteCurve(curve, doReplot);
     }
 }
@@ -337,8 +337,8 @@ void Plot::showContextMenu(const QPoint &pos, QwtAxisId axis)
             QList<FileDescriptor*> files;
 
             foreach(Curve *c, curves) {
-                if (!files.contains(c->descriptor))
-                    files << c->descriptor;
+                if (!files.contains(c->channel->descriptor()))
+                    files << c->channel->descriptor();
             }
 
             emit saveTimeSegment(files, xStart, xEnd);
@@ -734,11 +734,10 @@ void Plot::recalculateScale(bool leftAxis)
     }
 }
 
-bool Plot::plotCurve(FileDescriptor *descriptor, int channel, QColor *col, bool &plotOnRight, int fileNumber)
+bool Plot::plotCurve(Channel * ch, QColor *col, bool &plotOnRight, int fileNumber)
 {DD;
-    if (plotted(descriptor, channel)) return false;
+    if (plotted(ch)) return false;
 
-    Channel *ch = descriptor->channel(channel);
     if (!ch->populated()) {
         ch->populate();
     }
@@ -774,7 +773,7 @@ bool Plot::plotCurve(FileDescriptor *descriptor, int channel, QColor *col, bool 
     }
     spectrogram = spectrogr;
 
-    setAxis(xBottomAxis, descriptor->xName());
+    setAxis(xBottomAxis, ch->descriptor()->xName());
     prepareAxis(xBottomAxis);
 
     QwtAxisId ax = yLeftAxis;
@@ -814,7 +813,7 @@ bool Plot::plotCurve(FileDescriptor *descriptor, int channel, QColor *col, bool 
     }
 
 
-    Curve *g = createCurve(ch->legendName(), descriptor, channel);
+    Curve *g = createCurve(ch->legendName(), ch);
     QColor nextColor = ColorSelector::instance()->getColor();
     QPen pen = g->pen();
     pen.setColor(nextColor);
@@ -848,7 +847,7 @@ bool Plot::plotCurve(FileDescriptor *descriptor, int channel, QColor *col, bool 
 
         zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
         zoom->verticalScaleBoundsSlave->add(g->yMin(), g->yMax());
-        zoom->verticalScaleBounds->add(g->channel->data()->zMin(), g->channel->data()->zMax());
+        zoom->verticalScaleBounds->add(ch->data()->zMin(), ch->data()->zMax());
     }
     else {
         ChartZoom::ScaleBounds *ybounds = 0;
@@ -870,17 +869,17 @@ bool Plot::plotCurve(FileDescriptor *descriptor, int channel, QColor *col, bool 
     return true;
 }
 
-Curve * Plot::plotted(FileDescriptor *dfd, int channel) const
-{DD;
-    foreach (Curve *curve, curves) {
-        if (curve->descriptor == dfd && curve->channelIndex == channel) return curve;
-    }
-    return 0;
-}
+//Curve * Plot::plotted(FileDescriptor *dfd, int channel) const
+//{DD;
+//    foreach (Curve *curve, curves) {
+//        if (curve->descriptor == dfd && curve->channelIndex == channel) return curve;
+//    }
+//    return 0;
+//}
 
 Curve * Plot::plotted(Channel *channel) const
 {DD;
-    foreach (Curve *curve, curves) {
+    for (Curve *curve: qAsConst(curves)) {
         if (curve->channel == channel) return curve;
     }
     return 0;

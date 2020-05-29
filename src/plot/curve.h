@@ -19,7 +19,7 @@ class QwtScaleMap;
 class Curve
 {
 public:
-    Curve(const QString &title, FileDescriptor *descriptor, int channelIndex);
+    Curve(const QString &title, Channel *channel);
     virtual ~Curve();
 
     virtual void attachTo(QwtPlot *plot) = 0;
@@ -59,8 +59,6 @@ public:
     virtual double xMax() const;
     int samplesCount() const;
 
-    FileDescriptor *descriptor;
-    int channelIndex;
     Channel *channel;
     QList<PointLabel*> labels;
     QPen oldPen;

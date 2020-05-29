@@ -66,7 +66,7 @@ private:
 class SpectroCurve : public QwtPlotSpectrogram, public Curve
 {
 public:
-    SpectroCurve(const QString &title, FileDescriptor *descriptor, int channelIndex);
+    SpectroCurve(const QString &title, Channel *channel);
 private:
     SpectrogramData *spectroData;
 

@@ -93,16 +93,13 @@ void ChannelTableModel::setDescriptor(FileDescriptor *dfd)
     endResetModel();
 }
 
-void ChannelTableModel::onCurveDeleted(int i)
+void ChannelTableModel::onCurveChanged(Channel *ch)
 {
-    emit dataChanged(index(i,0),index(i,0));
-    emit headerDataChanged(Qt::Horizontal,0,0);
-}
-
-void ChannelTableModel::onCurveColorChanged(int i)
-{
-    emit dataChanged(index(i,0),index(i,0));
-    emit headerDataChanged(Qt::Horizontal,0,0);
+    int i = ch->index();
+    if (i != -1) {
+        emit dataChanged(index(i,0),index(i,0));
+        emit headerDataChanged(Qt::Horizontal,0,0);
+    }
 }
 
 int ChannelTableModel::rowCount(const QModelIndex &parent) const

@@ -17,7 +17,8 @@ WavExporter::WavExporter(Channel *channel, QObject *parent):
     QObject(parent), channel(channel)
 {
     file = channel->descriptor();
-    indexes << channel->index();
+    const int index = channel->index();
+    if (index >= 0) indexes << index;
 }
 
 WavExporter::~WavExporter()
@@ -66,6 +67,8 @@ void WavExporter::stop()
 
 void WavExporter::writeWithStreams(const QString &wavFileName)
 {
+    if (indexes.isEmpty()) return;
+
     //2. Записываем заголовок файла wav
     QFile wavFile(wavFileName);
     if (!wavFile.open(QFile::WriteOnly)) {
@@ -157,6 +160,8 @@ void WavExporter::writeWithStreams(const QString &wavFileName)
 
 bool WavExporter::writeWithMap(const QString &wavFileName)
 {
+    if (indexes.isEmpty()) return false;
+
     //2. Записываем заголовок файла wav
     QFile wavFile(wavFileName);
     if (!wavFile.open(QFile::WriteOnly)) {

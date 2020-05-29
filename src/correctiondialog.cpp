@@ -166,6 +166,7 @@ void CorrectionDialog::correct()
             Curve *curve = plot->curves.at(i);
             Channel *ch = curve->channel;
             int channelNumber = ch->index();
+            if (channelNumber == -1) continue;
 
             ch->data()->setTemporaryCorrection(correctionValue, correctionType->currentIndex());
             if (ch->data()->hasCorrection())
@@ -237,7 +238,9 @@ void CorrectionDialog::accept()
 
         if (allFilesCheckBox->isChecked()) {
             foreach (FileDescriptor *file, files) {
-                if (Channel *ch1 = file->channel(ch->index())) {
+                const int index = ch->index();
+                if (index == -1) continue;
+                if (Channel *ch1 = file->channel(index)) {
                     makeCorrectionConstant(ch1);
                     if (!list.contains(ch1->descriptor())) list << ch1->descriptor();
                 }
@@ -264,7 +267,9 @@ void CorrectionDialog::reject()
 
         if (allFilesCheckBox->isChecked()) {
             foreach (FileDescriptor *file, files) {
-                if (Channel *ch1 = file->channel(plot->curves.at(i)->channel->index())) {
+                const int index = plot->curves.at(i)->channel->index();
+                if (index == -1) continue;
+                if (Channel *ch1 = file->channel(index)) {
                     ch1->data()->removeCorrection();
                 }
             }

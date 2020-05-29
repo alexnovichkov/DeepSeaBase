@@ -172,7 +172,7 @@ private slots:
     void exportToExcelData();
 
     void onCurveColorChanged(Curve *curve);
-    void onCurveDeleted(FileDescriptor *descriptor, int index);
+    void onCurveDeleted(Channel *channel);
 
     void calculateMean();
     void calculateThirdOctave();

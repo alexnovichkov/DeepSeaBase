@@ -548,13 +548,20 @@ void Data94File::deleteChannels(const QVector<int> &channelsToDelete)
     quint32 ccount = channels.size() - channelsToDelete.size();
     tempStream << ccount;
 
+    qint64 pos = tempStream.device()->pos();
     for (int i = 0; i < channels.size(); ++i) {
         // пропускаем канал, предназначенный для удаления
         if (channelsToDelete.contains(i)) continue;
+        qint64 len = channels.at(i)->dataPosition - channels.at(i)->position;
 
         rawStream.device()->seek(channels.at(i)->position);
         buffer = rawStream.device()->read(channels.at(i)->size);
         tempStream.device()->write(buffer);
+
+        //обновляем положение каналов в файле
+        channels.at(i)->position = pos;
+        channels.at(i)->dataPosition = pos+len;
+        pos += buffer.size();
     }
 
     rawFile.close();
@@ -1632,8 +1639,8 @@ FileDescriptor *Data94Channel::descriptor()
 
 int Data94Channel::index() const
 {
-    if (parent) return parent->channels.indexOf(const_cast<Data94Channel*>(this), 0);
-    return 0;
+    if (parent) return parent->channels.indexOf(const_cast<Data94Channel*>(this));
+    return -1;
 }
 
 QString Data94Channel::correction() const

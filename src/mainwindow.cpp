@@ -149,7 +149,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     plot = new Plot(this);
     connect(plot, SIGNAL(curveChanged(Curve*)), SLOT(onCurveColorChanged(Curve*)));
-    connect(plot, SIGNAL(curveDeleted(FileDescriptor*,int)), SLOT(onCurveDeleted(FileDescriptor*,int)));
+    connect(plot, SIGNAL(curveDeleted(Channel*)), SLOT(onCurveDeleted(Channel*)));
     connect(plot, SIGNAL(saveTimeSegment(QList<FileDescriptor*>,double,double)), SLOT(saveTimeSegment(QList<FileDescriptor*>,double,double)));
     connect(plot, SIGNAL(curvesChanged()), SLOT(updatePlottedChannelsNumbers()));
 
@@ -749,7 +749,7 @@ void MainWindow::closeTab(int i)
 
     // удаление графиков тех файлов, которые были в закрываемой вкладке
     for (int i=plot->curvesCount()-1; i>=0; --i) {
-        FileDescriptor *f = plot->curves[i]->descriptor;
+        FileDescriptor *f = plot->curves[i]->channel->descriptor();
         if (tab->model->contains(f) && !duplicated(f))
             plot->deleteCurve(plot->curves[i]);
     }
@@ -1257,18 +1257,18 @@ void MainWindow::calculateMean()
     Curve *firstCurve = plot->curves.constFirst();
     channels.append(firstCurve->channel);
 
-    bool allFilesDfd = firstCurve->descriptor->fileName().toLower().endsWith("dfd");
+    bool allFilesDfd = firstCurve->channel->descriptor()->fileName().toLower().endsWith("dfd");
 
     for (int i = 1; i<plot->curves.size(); ++i) {
         Curve *curve = plot->curves.at(i);
         channels.append(curve->channel);
 
-        allFilesDfd &= firstCurve->descriptor->fileName().toLower().endsWith("dfd");
+        allFilesDfd &= firstCurve->channel->descriptor()->fileName().toLower().endsWith("dfd");
         if (firstCurve->channel->data()->xStep() != curve->channel->data()->xStep())
             stepsEqual = false;
         if (firstCurve->channel->yName() != curve->channel->yName())
             namesEqual = false;
-        if (firstCurve->descriptor->fileName() != curve->descriptor->fileName())
+        if (firstCurve->channel->descriptor()->fileName() != curve->channel->descriptor()->fileName())
             oneFile = false;
         if (firstCurve->channel->type() != curve->channel->type())
             dataTypeEqual = false;
@@ -1295,7 +1295,8 @@ void MainWindow::calculateMean()
         else writeToUff = true;
     }
     if (oneFile) {
-        QMessageBox box("Среднее графиков", QString("Графики взяты из одной записи %1.\n").arg(firstCurve->descriptor->fileName())
+        QMessageBox box("Среднее графиков",
+                        QString("Графики взяты из одной записи %1.\n").arg(firstCurve->channel->descriptor()->fileName())
                         +
                         QString("Сохранить среднее в эту запись дополнительным каналом?"),
                         QMessageBox::Question,
@@ -1314,7 +1315,7 @@ void MainWindow::calculateMean()
     bool descriptorFound = false;
 
     if (writeToSeparateFile) {
-        QString meanD = firstCurve->descriptor->fileName();
+        QString meanD = firstCurve->channel->descriptor()->fileName();
         meanD.chop(4);
         if (writeToUff) meanD.append(".uff");
 
@@ -1330,7 +1331,7 @@ void MainWindow::calculateMean()
 //        dialog.setDefaultSuffix(writeToUff?"uff":"dfd");
 
         if (!writeToUff) {
-            QSortFilterProxyModel *proxy = new DfdFilterProxy(firstCurve->descriptor, this);
+            QSortFilterProxyModel *proxy = new DfdFilterProxy(firstCurve->channel->descriptor(), this);
             dialog.setProxyModel(proxy);
         }
 
@@ -1375,7 +1376,7 @@ void MainWindow::calculateMean()
         MainWindow::setSetting(writeToUff?"lastMeanUffFile":"lastMeanFile", meanFileName);
     }
     else {
-        meanFile = firstCurve->descriptor;
+        meanFile = firstCurve->channel->descriptor();
         meanFileName = meanFile->fileName();
         descriptorFound = true;
     }
@@ -1645,7 +1646,7 @@ void MainWindow::plotChannel(int index)
     tab->model->contains(tab->record, &idx);
 
     bool plotOnRight = tab->record->channel(index)->plotted()==2;
-    bool plotted = plot->plotCurve(tab->record, index, &col, plotOnRight, idx+1);
+    bool plotted = plot->plotCurve(tab->record->channel(index), &col, plotOnRight, idx+1);
 
     if (plotted) {
         tab->record->channel(index)->setColor(col);
@@ -1655,7 +1656,7 @@ void MainWindow::plotChannel(int index)
         tab->record->channel(index)->setColor(QColor());
         tab->record->channel(index)->setPlotted(0);
     }
-    tab->channelModel->onCurveColorChanged(index);
+    tab->channelModel->onCurveChanged(tab->record->channel(index));
     tab->model->updateFile(tab->record, MODEL_COLUMN_FILENAME);
 
     if (tab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
@@ -1665,7 +1666,7 @@ void MainWindow::plotChannel(int index)
             if (f->channelsCount()<=index) continue;
 
             tab->model->contains(f, &idx);
-            plotted = plot->plotCurve(f, index, &col, plotOnRight, idx+1);
+            plotted = plot->plotCurve(f->channel(index), &col, plotOnRight, idx+1);
             if (plotted) {
                 f->channel(index)->setColor(col);
                 f->channel(index)->setPlotted(plotOnRight?2:1);
@@ -1789,7 +1790,7 @@ void MainWindow::calculateMovingAvg()
 
     Curve *firstCurve = plot->curves.constFirst();
     channels.append(firstCurve->channel);
-    const QString firstName = firstCurve->descriptor->fileName();
+    const QString firstName = firstCurve->channel->descriptor()->fileName();
 
     bool allFilesDfd = firstName.toLower().endsWith("dfd") ||
                        firstName.toLower().endsWith("d94");
@@ -1797,7 +1798,7 @@ void MainWindow::calculateMovingAvg()
     for (int i = 1; i<plot->curves.size(); ++i) {
         Curve *curve = plot->curves.at(i);
         channels.append(curve->channel);
-        const QString curveName = curve->descriptor->fileName();
+        const QString curveName = curve->channel->descriptor()->fileName();
 
         allFilesDfd &= (curveName.toLower().endsWith("dfd") ||
                         curveName.toLower().endsWith("d94"));
@@ -1838,7 +1839,7 @@ void MainWindow::calculateMovingAvg()
         dialog.setFileMode(QFileDialog::AnyFile);
 
         if (allFilesDfd) {
-            QSortFilterProxyModel *proxy = new DfdFilterProxy(firstCurve->descriptor, this);
+            QSortFilterProxyModel *proxy = new DfdFilterProxy(firstCurve->channel->descriptor(), this);
             dialog.setProxyModel(proxy);
         }
 
@@ -1882,7 +1883,7 @@ void MainWindow::calculateMovingAvg()
             avgFile->fillPreliminary(firstCurve->channel->type());
     }
     else {
-        avgFile = firstCurve->descriptor;
+        avgFile = firstCurve->channel->descriptor();
         avgFileName = avgFile->fileName();
         descriptorFound = true;
     }
@@ -1910,7 +1911,7 @@ void MainWindow::calculateMovingAvg()
 void MainWindow::deleteCurve(int index)
 {DD;
     //не удаляем, если фиксирована
-    if (Curve *c = plot->plotted(tab->record, index)) {
+    if (Curve *c = plot->plotted(tab->record->channel(index))) {
         if (c->fixed) return;
     }
 
@@ -1920,18 +1921,18 @@ void MainWindow::deleteCurve(int index)
     tab->record->channel(index)->setPlotted(0);
     tab->record->channel(index)->setColor(QColor());
     //обновляем модель для канала
-    tab->channelModel->onCurveDeleted(index);
+    tab->channelModel->onCurveChanged(tab->record->channel(index));
     //обновляем модель для файла
     tab->model->updateFile(tab->record, MODEL_COLUMN_FILENAME);
 
     if (tab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
         QList<FileDescriptor*> selectedFiles = tab->model->selectedFiles();
-        foreach (FileDescriptor *f, selectedFiles) {
+        for (FileDescriptor *f: qAsConst(selectedFiles)) {
             if (f == tab->record) continue;
             if (f->channelsCount()<=index) continue;
 
             //не удаляем, если фиксирована
-            if (Curve *c = plot->plotted(f, index)) {
+            if (Curve *c = plot->plotted(f->channel(index))) {
                 if (c->fixed) continue;
             }
 
@@ -2130,7 +2131,7 @@ void MainWindow::cycleChannelsUp()
 
         for (int i=0; i<plotted.size(); ++i) {
             //пропускаем фиксированную кривую, остальные сдвигаем
-            if (Curve *curve = plot->plotted(tab->record, plotted[i])) {
+            if (Curve *curve = plot->plotted(tab->record->channel(plotted[i]))) {
                 if (curve->fixed) continue;
             }
 
@@ -2157,7 +2158,7 @@ void MainWindow::cycleChannelsDown()
 
         for (int i=0; i<plotted.size(); ++i) {
             //пропускаем фиксированную кривую, остальные сдвигаем
-            if (Curve *curve = plot->plotted(tab->record, plotted[i])) {
+            if (Curve *curve = plot->plotted(tab->record->channel(plotted[i]))) {
                 if (curve->fixed) continue;
             }
 
@@ -2296,13 +2297,13 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
     QAxObject * worksheet = workbook->querySubObject("ActiveSheet");
 
 
-     FileDescriptor *descriptor = plot->curves.at(0)->descriptor;
      Channel *channel = plot->curves.at(0)->channel;
+     FileDescriptor *descriptor = channel->descriptor();
 
      // проверяем, все ли каналы из одного файла
      bool allChannelsFromOneFile = true;
      for (int i=1; i<plot->curves.size(); ++i) {
-         if (plot->curves.at(i)->descriptor->fileName() != descriptor->fileName()) {
+         if (plot->curves.at(i)->channel->descriptor()->fileName() != descriptor->fileName()) {
              allChannelsFromOneFile = false;
              break;
          }
@@ -2374,11 +2375,11 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      else {
          for (int i=0; i<plot->curves.size(); ++i) {
              Curve *curve = plot->curves.at(i);
-             QStringList descriptions = twoStringDescription(curve->descriptor->dataDescriptor());
+             QStringList descriptions = twoStringDescription(curve->channel->descriptor()->dataDescriptor());
 
              QAxObject *cells = !writeToSeparateColumns ? worksheet->querySubObject("Cells(Int,Int)", 1, 2+i)
                                                        : worksheet->querySubObject("Cells(Int,Int)", 1, 2+i*2);
-             cells->setProperty("Value", curve->descriptor->fileName());
+             cells->setProperty("Value", curve->channel->descriptor()->fileName());
 
              cells = !writeToSeparateColumns ? worksheet->querySubObject("Cells(Int,Int)", 2, 2+i)
                                             : worksheet->querySubObject("Cells(Int,Int)", 2, 2+i*2);
@@ -2699,20 +2700,20 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 
 void MainWindow::onCurveColorChanged(Curve *curve)
 {DD;
-    if (tab->record == curve->descriptor) {
-        tab->channelModel->onCurveColorChanged(curve->channelIndex);
-//        updateChannelsTable(curve->descriptor);
+    if (tab->record == curve->channel->descriptor()) {
+        tab->channelModel->onCurveChanged(curve->channel);
+//        updateChannelsTable(curve->channel->descriptor());
     }
 }
 
-void MainWindow::onCurveDeleted(FileDescriptor *descriptor, int channelIndex)
+void MainWindow::onCurveDeleted(Channel *channel)
 {DD;
     for (int index = 0; index < tabWidget->count(); ++index) {
         if (Tab *t = qobject_cast<Tab*>(tabWidget->widget(index)))
-            t->model->invalidateCurve(descriptor, channelIndex);
+            t->model->invalidateCurve(channel);
     }
-    if (tab->record == descriptor)
-        tab->channelModel->onCurveDeleted(channelIndex);
+    if (tab->record == channel->descriptor())
+        tab->channelModel->onCurveChanged(channel);
 }
 
 void MainWindow::addDescriptors(const QList<FileDescriptor*> &files)

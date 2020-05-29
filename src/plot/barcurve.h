@@ -36,7 +36,7 @@ public:
 class BarCurve : public QwtPlotHistogram, public Curve
 {
 public:
-    BarCurve(const QString &title, FileDescriptor *descriptor, int channelIndex);
+    BarCurve(const QString &title, Channel *channel);
 
 private:
     HistogramData *histogramdata;

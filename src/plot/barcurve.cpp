@@ -8,8 +8,8 @@
 #include "qwt_scale_map.h"
 #include "pointlabel.h"
 
-BarCurve::BarCurve(const QString &title, FileDescriptor *descriptor, int channelIndex) :  QwtPlotHistogram(title),
-    Curve(title, descriptor, channelIndex)
+BarCurve::BarCurve(const QString &title, Channel *channel) :  QwtPlotHistogram(title),
+    Curve(title, channel)
 {DD;
 
     setLegendIconSize(QSize(16,8));

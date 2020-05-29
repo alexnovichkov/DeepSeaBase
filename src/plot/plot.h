@@ -85,9 +85,9 @@ public:
     void deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot = true);
     void deleteCurve(Curve *curve, bool doReplot = true);
 
-    bool plotCurve(FileDescriptor *descriptor, int channel, QColor *col, bool &plotOnRight, int fileNumber);
+    bool plotCurve(Channel * ch, QColor *col, bool &plotOnRight, int fileNumber);
 
-    Curve *plotted(FileDescriptor *dfd, int channel) const;
+//    Curve *plotted(FileDescriptor *dfd, int channel) const;
     Curve *plotted(Channel *channel) const;
 
     Range xRange() const;
@@ -143,7 +143,7 @@ public slots:
     void deleteAllCurves(bool forceDeleteFixed = false);
 signals:
     void curveChanged(Curve *curve);
-    void curveDeleted(FileDescriptor *descriptor, int index);
+    void curveDeleted(Channel *);
     void trackingPanelCloseRequested();
     void playerPanelCloseRequested();
     void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);

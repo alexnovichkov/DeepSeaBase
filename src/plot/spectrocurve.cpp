@@ -7,8 +7,8 @@
 #include "qwt_scale_map.h"
 #include "fileformats/filedescriptor.h"
 
-SpectroCurve::SpectroCurve(const QString &title, FileDescriptor *descriptor, int channelIndex)
-    :  QwtPlotSpectrogram(title), Curve(title, descriptor, channelIndex)
+SpectroCurve::SpectroCurve(const QString &title, Channel *channel)
+    :  QwtPlotSpectrogram(title), Curve(title, channel)
 {
     setLegendIconSize(QSize(16,8));
 

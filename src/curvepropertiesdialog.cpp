@@ -31,8 +31,8 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
             curve->setTitle(curve->channel->legendName());
     //        curve->legend = curve->channel->legendName();
 
-            curve->descriptor->setChanged(true);
-    //        curve->descriptor->write();
+            curve->channel->descriptor()->setChanged(true);
+    //        curve->channel->descriptor()->write();
             emit curveChanged(curve);
         }
     }

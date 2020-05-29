@@ -26,7 +26,7 @@ private:
 class LineCurve : public QwtPlotCurve, public Curve
 {
 public:
-    LineCurve(const QString &title, FileDescriptor *descriptor, int channelIndex);
+    LineCurve(const QString &title, Channel *channel);
     virtual ~LineCurve();
 
     // QwtPlotCurve interface

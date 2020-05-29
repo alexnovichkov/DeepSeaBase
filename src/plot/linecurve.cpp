@@ -171,8 +171,8 @@ public:
     bool polygon = false;
 };
 
-LineCurve::LineCurve(const QString &title, FileDescriptor *descriptor, int channelIndex) :  QwtPlotCurve(title),
-    Curve(title, descriptor, channelIndex)
+LineCurve::LineCurve(const QString &title, Channel *channel) :  QwtPlotCurve(title),
+    Curve(title, channel)
 {DD;
     setPaintAttribute(QwtPlotCurve::ClipPolygons);
     setPaintAttribute(QwtPlotCurve::FilterPoints);

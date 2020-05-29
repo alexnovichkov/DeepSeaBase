@@ -26,8 +26,7 @@ public:
     void setDescriptor(FileDescriptor *dfd);
     void setSelected(const QVector<int> &indexes) {this->indexes = indexes;}
 
-    void onCurveDeleted(int i);
-    void onCurveColorChanged(int i);
+    void onCurveChanged(Channel *ch);
 
     int channelsCount;
 signals:
