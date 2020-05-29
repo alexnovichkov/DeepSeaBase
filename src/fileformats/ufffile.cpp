@@ -274,24 +274,25 @@ void UffFileDescriptor::read()
     timer.start();
 
 
-//    if (QFile::exists(fileName()+"~")) {
-//        // в папке с записью есть двоичный файл с описанием записи
-//        QFile uff(fileName()+"~");
-//        if (uff.open(QFile::ReadOnly)) {
-//            QDataStream stream(&uff);
+    if (QFile::exists(fileName()+"~")) {
+        // в папке с записью есть двоичный файл с описанием записи
+        QFile uff(fileName()+"~");
+        if (uff.open(QFile::ReadOnly)) {
+            QDataStream stream(&uff);
 
-//            stream >> header;
-//            stream >> units;
 
-//            while (!stream.atEnd()) {
-//                Function *f = new Function(this);
-//                f->read(stream);
+            stream >> header;
+            stream >> units;
 
-//                channels << f;
-//            }
-//        }
-//    }
-//    else
+            while (!stream.atEnd()) {
+                Function *f = new Function(this);
+                f->read(stream);
+
+                channels << f;
+            }
+        }
+    }
+    else
     {
         if (!readWithMmap())
             readWithStreams();
@@ -320,7 +321,7 @@ void UffFileDescriptor::read()
             stream << header;
             stream << units;
 
-            foreach(Function *f, channels) {
+            for (Function *f: channels) {
                 stream << f->header;
                 stream << f->type58;
                 stream << f->dataPositions;
@@ -1636,9 +1637,6 @@ void Function::populate()
 {DD;
     _data->clear();
 
-    QElapsedTimer t;
-    t.start();
-
     setPopulated(false);
     if (!populateWithMmap()) {
         if (populateWithStream())
@@ -1646,8 +1644,6 @@ void Function::populate()
     }
     else
         setPopulated(true);
-
-        qDebug()<<"populated at"<<t.elapsed();
 }
 
 QString Function::name() const

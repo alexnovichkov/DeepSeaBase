@@ -65,15 +65,18 @@ protected:
                 if (!filterByContent)
                     return true;
 
-                FileDescriptor * descriptor = FormatFactory::createDescriptor(fi.canonicalFilePath());
+                QScopedPointer<FileDescriptor> descriptor(FormatFactory::createDescriptor(fi.canonicalFilePath()));
+
+                if (descriptor->canTakeAnyChannels())
+                    return true;
+
                 descriptor->read();
                 //частный случай: мы можем записать данные из SourceData в CuttedData, преобразовав их в floats,
                 //но не наоборот
                 if (descriptor->canTakeChannelsFrom(filter))
                     return true;
-                else {
+                else
                     return false;
-                }
             }
             else //не файлы dfd, uff, d94
                 return false;
@@ -82,8 +85,6 @@ protected:
             return true;
     }
 private:
-    DfdDataType dataType;
-    double xStep;
     FileDescriptor *filter;
     bool filterByContent = false;
     QStringList suffixes = FormatFactory::allSuffixes(true);
@@ -589,7 +590,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
 
     connect(tab->filesTable->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),tab, SLOT(filesSelectionChanged(QItemSelection,QItemSelection)));
-    connect(tab->filesTable->selectionModel(),SIGNAL(currentRowChanged(QModelIndex,QModelIndex)),SLOT(updateChannelsTable(QModelIndex,QModelIndex)));
+    connect(tab->filesTable->selectionModel(),SIGNAL(currentChanged(QModelIndex,QModelIndex)),SLOT(updateChannelsTable(QModelIndex,QModelIndex)));
 
     tab->filesTable->setItemDelegateForColumn(MODEL_COLUMN_XSTEP, new StepItemDelegate);
 
@@ -1574,14 +1575,23 @@ void MainWindow::moveChannels(bool up)
 
 void MainWindow::updateChannelsTable(const QModelIndex &current, const QModelIndex &previous)
 {DD;
-    Q_UNUSED(previous);
-
     if (!tab || !current.isValid()) return;
-
     if (current.model() != tab->sortModel) return;
 
-    QModelIndex index = tab->sortModel->mapToSource(current);
-    updateChannelsTable(tab->model->file(index.row()));
+    if (previous.isValid()) {
+        if ((previous.row()==0 && previous.column() != current.column()) ||
+            (previous.row() != current.row())) {
+            QModelIndex index = tab->sortModel->mapToSource(current);
+            updateChannelsTable(tab->model->file(index.row()));
+        }
+    }
+    else {
+        QModelIndex index = tab->sortModel->mapToSource(current);
+        updateChannelsTable(tab->model->file(index.row()));
+    }
+
+
+
 }
 
 void MainWindow::updateChannelsTable(FileDescriptor *descriptor)

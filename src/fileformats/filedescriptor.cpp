@@ -118,6 +118,11 @@ bool FileDescriptor::canTakeChannelsFrom(FileDescriptor *other) const
             && qFuzzyIsNull(this->xStep() - other->xStep()));
 }
 
+bool FileDescriptor::canTakeAnyChannels() const
+{
+    return true;
+}
+
 bool FileDescriptor::hasCurves() const
 {
     const int count = channelsCount();

@@ -26,7 +26,6 @@ qtHaveModule(winextras) {
 }
 
 SOURCES += main.cpp\
-    fileformats/uffdescriptor.cpp \
     mainwindow.cpp \
     sortabletreewidgetitem.cpp \
     checkableheaderview.cpp \
@@ -98,7 +97,6 @@ SOURCES += main.cpp\
     plot/colormapfactory.cpp
 
 HEADERS  += mainwindow.h \
-    fileformats/uffdescriptor.h \
     sortabletreewidgetitem.h \
     checkableheaderview.h \
     methods/abstractmethod.h \

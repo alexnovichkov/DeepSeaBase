@@ -276,58 +276,59 @@ public:
     // creates a copy of DataDescriptor with copying data
     DfdFileDescriptor(const FileDescriptor &other, const QString &fileName, QVector<int> indexes = QVector<int>());
     virtual ~DfdFileDescriptor();
-    virtual void read();
-    virtual void write();
-    virtual void writeRawFile();
-    void updateDateTimeGUID();
-    virtual void fillPreliminary(Descriptor::DataType);
-    virtual void fillRest();
+    virtual void read() override;
+    virtual void write() override;
+    virtual void writeRawFile() override;
+    void updateDateTimeGUID() override;
+    virtual void fillPreliminary(Descriptor::DataType) override;
+    virtual void fillRest() override;
     static DfdFileDescriptor *newFile(const QString &fileName, DfdDataType type);
     virtual bool copyTo(const QString &name) override;
 
-    QDateTime dateTime() const;
-    virtual Descriptor::DataType type() const;
-    virtual QString typeDisplay() const;
-    virtual DescriptionList dataDescriptor() const;
-    virtual void setDataDescriptor(const DescriptionList &data);
+    QDateTime dateTime() const override;
+    virtual Descriptor::DataType type() const override;
+    virtual QString typeDisplay() const override;
+    virtual DescriptionList dataDescriptor() const override;
+    virtual void setDataDescriptor(const DescriptionList &data) override;
 
-    virtual double xStep() const {return XStep;}
+    virtual double xStep() const override {return XStep;}
     virtual double xBegin() const override {return XBegin;}
-    virtual void setXStep(const double xStep);
+    virtual void setXStep(const double xStep) override;
 
-    virtual bool setLegend(const QString &legend);
-    virtual QString legend() const;
+    virtual bool setLegend(const QString &legend) override;
+    virtual QString legend() const override;
 
 //    QString fileName() {return FileName;}
 
-    void setFileName(const QString &name);
+    void setFileName(const QString &name) override;
     virtual bool fileExists() const override;
 
-    void setDataChanged(bool changed);
+    void setDataChanged(bool changed) override;
 
-    virtual int channelsCount() const {return channels.size();}
+    virtual int channelsCount() const override {return channels.size();}
 
-    void deleteChannels(const QVector<int> &channelsToDelete);
-    void copyChannelsFrom(FileDescriptor *file, const QVector<int> &indexes);
-    virtual void calculateMean(const QList<Channel *> &channels);
-    virtual void calculateMovingAvg(const QList<Channel *> &channels, int windowSize);
-    virtual QString calculateThirdOctave();
-    virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes);
+    void deleteChannels(const QVector<int> &channelsToDelete) override;
+    void copyChannelsFrom(FileDescriptor *file, const QVector<int> &indexes) override;
+    virtual void calculateMean(const QList<Channel *> &channels) override;
+    virtual void calculateMovingAvg(const QList<Channel *> &channels, int windowSize) override;
+    virtual QString calculateThirdOctave() override;
+    virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
 
-    virtual QVariant channelHeader(int column) const;
-    virtual int columnsCount() const;
-    Channel *channel(int index) const;
+    virtual QVariant channelHeader(int column) const override;
+    virtual int columnsCount() const override;
+    Channel *channel(int index) const override;
     virtual DfdChannel* dfdChannel(int index) {return channels[index];}
 
-    bool isSourceFile() const;
+    bool isSourceFile() const override;
 
-    bool dataTypeEquals(FileDescriptor *other) const;
+    bool dataTypeEquals(FileDescriptor *other) const override;
     virtual bool canTakeChannelsFrom(FileDescriptor *other) const override;
+    bool canTakeAnyChannels() const override;
 
     static QStringList fileFilters();
     static QStringList suffixes();
 
-    virtual QString xName() const {return XName;}
+    virtual QString xName() const override {return XName;}
 
     virtual bool setDateTime(QDateTime dt) override;
 
@@ -335,7 +336,7 @@ public:
     {
         return (this->DFDGUID == dfd.DFDGUID);
     }
-    QString dataDescriptorAsString() const;
+    QString dataDescriptorAsString() const override;
     static QString createGUID();
 
 

@@ -1508,6 +1508,11 @@ bool DfdFileDescriptor::canTakeChannelsFrom(FileDescriptor *other) const
     return false;
 }
 
+bool DfdFileDescriptor::canTakeAnyChannels() const
+{
+    return false;
+}
+
 QStringList DfdFileDescriptor::fileFilters()
 {DD;
     return QStringList()<< "Файлы dfd (*.dfd)" << "Файлы dfd (*.DFD)";
