@@ -2,9 +2,11 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "DeepSea Database"
-#define MyAppVersion "1.6.9.3"
 #define MyAppPublisher "Novichkov & Sukin Sons."
 #define MyAppExeName "DeepSeaBase.exe"
+#define FileHandle  FileOpen("src/version.js")
+#define FileLine StringChange(FileRead(FileHandle), "var _version=""","")
+#define MyAppVersion  StringChange(FileLine, """;","")
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
