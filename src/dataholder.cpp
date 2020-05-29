@@ -336,7 +336,7 @@ void DataHolder::setYValues(const QVector<double> &values, YValuesFormat initial
         m_yValues = values;
     }
     else {
-        if (m_yValues.size() < (block+1)*m_xCount) m_yValues.resize((block+1)*m_xCount);
+        if (m_yValues.size() < m_zCount*m_xCount) m_yValues.resize(m_zCount*m_xCount);
         for (int i=0; i<values.size(); ++i)
             m_yValues[block*m_xCount + i] = values.at(i);
     }
@@ -461,7 +461,7 @@ void DataHolder::setYValues(const QVector<cx_double> &values, int block)
         m_yValuesComplex = values;
     }
     else {
-        if (m_yValuesComplex.size() < (block+1)*m_xCount) m_yValuesComplex.resize((block+1)*m_xCount);
+        if (m_yValuesComplex.size() < m_zCount*m_xCount) m_yValuesComplex.resize(m_zCount*m_xCount);
         for (int i=0; i<values.size(); ++i)
             m_yValuesComplex[block*m_xCount + i] = values.at(i);
     }
