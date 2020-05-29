@@ -273,8 +273,12 @@ void UffFileDescriptor::read()
     QElapsedTimer timer;
     timer.start();
 
+    //проверяем формат файлов uff:
+    //если false - старый формат, удаляем файл и создаем заново
+    int newUffFormat = MainWindow::getSetting("newUffFormat", 0).toInt();
 
-    if (QFile::exists(fileName()+"~")) {
+
+    if (QFile::exists(fileName()+"~") && newUffFormat == 1) {
         // в папке с записью есть двоичный файл с описанием записи
         QFile uff(fileName()+"~");
         if (uff.open(QFile::ReadOnly)) {
@@ -314,6 +318,7 @@ void UffFileDescriptor::read()
             f->readRest();
         }
 
+        removeTempFile();
         QFile buff(fileName()+"~");
         if (buff.open(QFile::WriteOnly)) {
             QDataStream stream(&buff);
@@ -329,6 +334,7 @@ void UffFileDescriptor::read()
                 stream << f->zValues;
             }
         }
+        MainWindow::setSetting("newUffFormat", 1);
     }
     qDebug()<<"elapsed"<<timer.elapsed();
 }
@@ -452,7 +458,7 @@ QString UffFileDescriptor::xName() const
     QString xname = channels.constFirst()->xName();
 
     for (int i=1; i<channels.size(); ++i) {
-        if (channels[i]->xName() != xname) return QString();
+        if (channels[i]->xName() != xname) return "разные";
     }
     return xname;
 }

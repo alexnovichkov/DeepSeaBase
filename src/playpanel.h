@@ -11,7 +11,10 @@ class QwtPlotMarker;
 class QToolButton;
 class QSlider;
 class QAudioOutput;
+
+//убрать из проекта
 class DataIODevice;
+
 class Channel;
 class TrackingCursor;
 class QComboBox;
