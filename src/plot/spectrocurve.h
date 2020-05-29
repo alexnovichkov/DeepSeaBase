@@ -82,8 +82,8 @@ public:
     virtual QPen pen() const override;
     virtual void setPen(const QPen &pen) override;
     virtual QList<QwtLegendData> legendData() const override;
-    virtual QPointF samplePoint(int point) const override;
-    virtual int closest(const QPoint &pos, double *dist) const override;
+    virtual QPointF samplePoint(int) const override;
+    virtual int closest(const QPoint &, double *) const override;
 
     void setColorInterval(double min, double max);
     QwtInterval colorInterval() const;

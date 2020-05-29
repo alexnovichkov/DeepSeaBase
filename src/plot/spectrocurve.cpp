@@ -84,13 +84,13 @@ QList<QwtLegendData> SpectroCurve::legendData() const
     return result;
 }
 
-QPointF SpectroCurve::samplePoint(int point) const
+QPointF SpectroCurve::samplePoint(int) const
 {
     return QPointF();
     //return spectroData->samplePoint(point);
 }
 
-int SpectroCurve::closest(const QPoint &pos, double *dist) const
+int SpectroCurve::closest(const QPoint &, double *) const
 {
     int index = -1;
 

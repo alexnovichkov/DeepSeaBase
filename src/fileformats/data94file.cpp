@@ -1032,7 +1032,7 @@ QString Data94File::saveTimeSegment(double from, double to)
     r << count;
 
     // 4 сохраняем файл
-    for (int i=0; i<count; ++i) {
+    for (quint32 i=0; i<count; ++i) {
         bool wasPopulated = channels.at(i)->populated();
         if (!wasPopulated) channels.at(i)->populate();
 

@@ -35,10 +35,6 @@
 
 #include "fileformats/formatfactory.h"
 
-#define DSB_VERSION "1.6.9.3"
-
-
-
 class DfdFilterProxy : public QSortFilterProxyModel
 {
 public:
@@ -140,7 +136,7 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), tab(0)
 {DD;
-    setWindowTitle(tr("DeepSea Database ")+DSB_VERSION);
+    setWindowTitle(tr("DeepSea Database ")+DEEPSEABASE_VERSION);
     setAcceptDrops(true);
 
     mainToolBar = new QToolBar(this);

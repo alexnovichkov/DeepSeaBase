@@ -10,6 +10,17 @@ QT += widgets printsupport axcontainer multimedia
 TARGET = DeepSeaBase
 TEMPLATE = app
 
+VERSIONJS = $$cat(version.js, lines)
+VERSIONJS = $$first(VERSIONJS)
+VERSION = $$section(VERSIONJS, \",1,1)
+RC_ICONS = icon.ico
+#RC_CODEPAGE =
+QMAKE_TARGET_COMPANY=Novichkov &
+QMAKE_TARGET_COPYRIGHT=Все права принадлежат мне
+QMAKE_TARGET_PRODUCT=DeepSeaBase
+
+DEFINES *= DEEPSEABASE_VERSION=\\\"$$VERSION\\\"
+
 CONFIG(debug, debug|release){
         DESTDIR = $$OUT_PWD/../bin.debug
         LIBS += -L$$OUT_PWD/../lib.debug
@@ -275,7 +286,7 @@ HEADERS +=\
 
 RESOURCES *= src.qrc
 
-RC_FILE *= src.rc
+#RC_FILE *= src.rc
 
 CONFIG(release, debug|release):QMAKE_CFLAGS  += -O2
 
