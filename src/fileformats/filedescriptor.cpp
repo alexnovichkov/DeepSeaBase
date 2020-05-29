@@ -77,7 +77,7 @@ double FileDescriptor::roundedSize() const
             }
         }
         else {
-            if (!channel(0)->populated()) channel(0)->populate();
+            //if (!channel(0)->populated()) channel(0)->populate();
             QVector<double> vals = channel(0)->data()->xValues();
             if (!vals.isEmpty())
             size = vals.last();

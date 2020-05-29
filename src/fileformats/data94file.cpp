@@ -1520,7 +1520,6 @@ void Data94Channel::populate()
     _data->clear();
     setPopulated(false);
 
-
     QFile rawFile(parent->fileName());
 
     if (rawFile.open(QFile::ReadOnly)) {
