@@ -456,12 +456,13 @@ void DfdFileDescriptor::read()
             firstChannel->populate();
             QVector<double> xvalues = firstChannel->data()->yValues(0);
 
+            if (DataType >= OSpectr) {
+                XName = "Гц";
+            }
+
             //для октавного и третьоктавного спектра значения полос могут
             //отсутствовать в файле. Проверяем и создаем, если надо
             if (DataType == OSpectr || DataType == ToSpectr) {
-                XName = "Гц";
-                // первым каналом записаны центральные частоты, сохраняем их как значения по X
-
                 //определяем, действительно ли это значения фильтров
                 if (!looksLikeOctave(xvalues, DataType)) {
                     xValues.clear();
@@ -473,10 +474,9 @@ void DfdFileDescriptor::read()
                     }
                 }
             }
-            else {
-                xValues = xvalues;
-                firstChannel->data()->setXValues(xValues);
-            }
+            xValues = xvalues;
+            for (DfdChannel *ch: qAsConst(channels))
+                ch->data()->setXValues(xValues);
         }
     }
 }
@@ -2148,30 +2148,30 @@ void DfdChannel::populate()
         setPopulated(true);
         rawFile.close();
 
-        if (!parent->xValues.isEmpty()) {
-            _data->setXValues(parent->xValues);
-        }
-        else {
-            if (_data->xValuesFormat() == DataHolder::XValuesNonUniform) {
-                if (channelIndex == 0) {
-                    //это канал со значениями X, мы только что его прочитали
-                    parent->xValues = YValues;
-                    _data->setXValues(YValues);
-                }
-                else {//unlikely to run
-                    QDataStream readStream(&rawFile);
-                    readStream.setByteOrder(QDataStream::LittleEndian);
-                    if (IndType==0xC0000004)
-                        readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-                    rawFile.seek(0);
-                    readStream.setDevice(&rawFile);
-                    // читаем без перекрытия, предполагаем, что тип файла - третьоктава или октава
-                    QVector<double> temp = getChunkOfData<double>(readStream, ChanBlockSize, IndType);
-                    parent->xValues = temp;
-                    _data->setXValues(temp);
-                }
-            }
-        }
+//        if (!parent->xValues.isEmpty()) {
+//            _data->setXValues(parent->xValues);
+//        }
+//        else {
+//            if (_data->xValuesFormat() == DataHolder::XValuesNonUniform) {
+//                if (channelIndex == 0) {
+//                    //это канал со значениями X, мы только что его прочитали
+//                    parent->xValues = YValues;
+//                    _data->setXValues(YValues);
+//                }
+//                else {//unlikely to run
+//                    QDataStream readStream(&rawFile);
+//                    readStream.setByteOrder(QDataStream::LittleEndian);
+//                    if (IndType==0xC0000004)
+//                        readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+//                    rawFile.seek(0);
+//                    readStream.setDevice(&rawFile);
+//                    // читаем без перекрытия, предполагаем, что тип файла - третьоктава или октава
+//                    QVector<double> temp = getChunkOfData<double>(readStream, ChanBlockSize, IndType);
+//                    parent->xValues = temp;
+//                    _data->setXValues(temp);
+//                }
+//            }
+//        }
     }
     else {
         qDebug()<<"Cannot read raw file"<<parent->rawFileName;

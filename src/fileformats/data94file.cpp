@@ -1447,10 +1447,10 @@ void Data94Channel::read(QDataStream &r)
     // соответствия:    blockCount        sampleCount         factor        4 или 8
 
     size = r.device()->pos() - position;
-    Q_ASSERT_X(size == 8 + 4 + descriptionSize + xAxisBlock.size() + zAxisBlock.size() +
-               4 + 4 + zAxisBlock.count * xAxisBlock.count * valueFormat * sampleWidth,
-               "Data94Channel::read", "strange channel sizeBytes");
 
+    if (size != 8 + 4 + descriptionSize + xAxisBlock.size() + zAxisBlock.size() +
+               4 + 4 + zAxisBlock.count * xAxisBlock.count * valueFormat * sampleWidth)
+        qDebug()<<"Strange channel sizeBytes";
 }
 
 void Data94Channel::setXStep(double xStep)
