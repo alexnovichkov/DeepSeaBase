@@ -15,7 +15,7 @@ SpectroCurve::SpectroCurve(const QString &title, Channel *channel)
     setRenderThreadCount(0); // use system specific thread count
     setCachePolicy(QwtPlotRasterItem::PaintCache);
     setDisplayMode(QwtPlotSpectrogram::ImageMode, true);
-    setDisplayMode(QwtPlotSpectrogram::ContourMode, true);
+//    setDisplayMode(QwtPlotSpectrogram::ContourMode, true);
 
     spectroData = new SpectrogramData(this->channel->data());
     setData(spectroData);

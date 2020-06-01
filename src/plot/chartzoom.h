@@ -111,7 +111,7 @@ public:
     void setRegime(ConvType);
 
     // указатель на опекаемый компонент QwtPlot
-    QwtPlot *plot();
+    Plot *plot();
 
     void addZoom(zoomCoordinates coords, bool apply = false);
     void zoomBack();

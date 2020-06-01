@@ -2,6 +2,7 @@
 
 #include "logging.h"
 #include "chartzoom.h"
+#include "plot.h"
 
 /**********************************************************/
 /*                                                        */
@@ -64,6 +65,7 @@ void DragZoom::applyDrag(QPoint mousePos, bool moveRightAxis)
         dy = -(mousePos.y() - cg.y() - verticalCursorPosition) * verticalFactor;
         zoom->verticalScaleBounds->set(minVerticalBound + dy, maxVerticalBound + dy);
     }
+    zoom->plot()->replot();
 }
 
 void DragZoom::dragMouseEvent(QEvent *event)
@@ -154,6 +156,6 @@ void DragZoom::endDrag(QMouseEvent *mEvent)
         if (!qFuzzyIsNull(dy1)) {
             coords.coords.insert(QwtAxis::yRight, {minVerticalBound1 + dy1, maxVerticalBound1 + dy1});
         }
-        if (!coords.coords.isEmpty()) zoom->addZoom(coords);
+        if (!coords.coords.isEmpty()) zoom->addZoom(coords, true);
     }
 }

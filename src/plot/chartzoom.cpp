@@ -95,7 +95,7 @@ void ChartZoom::setRegime(ChartZoom::ConvType ct) {DD;
     convType = ct;
 }
 
-QwtPlot *ChartZoom::plot() {
+Plot *ChartZoom::plot() {
     return qwtPlot;
 }
 
@@ -106,8 +106,9 @@ void ChartZoom::setZoomEnabled(bool enabled)
 
 void ChartZoom::addZoom(ChartZoom::zoomCoordinates coords, bool apply)
 {DD;
-    if (qwtPlot->spectrogram)
-        coords.coords.remove(QwtAxis::yRight);
+    if (coords.coords.isEmpty()) {
+        return;
+    }
     zoomStack.push(coords);
     if (apply) {
         if (coords.coords.contains(QwtAxis::xBottom))
@@ -117,7 +118,7 @@ void ChartZoom::addZoom(ChartZoom::zoomCoordinates coords, bool apply)
             verticalScaleBounds->set(coords.coords.value(QwtAxis::yLeft).x(),
                                      coords.coords.value(QwtAxis::yLeft).y());
         }
-        if (coords.coords.contains(QwtAxis::yRight) && !qwtPlot->spectrogram) {
+        if (coords.coords.contains(QwtAxis::yRight)/* && !qwtPlot->spectrogram*/) {
             verticalScaleBoundsSlave->set(coords.coords.value(QwtAxis::yRight).x(),
                                           coords.coords.value(QwtAxis::yRight).y());
         }

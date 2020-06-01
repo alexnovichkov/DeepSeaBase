@@ -19,6 +19,7 @@
 #include <QRubberBand>
 #include "qwt_scale_map.h"
 #include <QtDebug>
+#include "plot.h"
 
 PlotZoom::PlotZoom() : QObject()
 {DD;
@@ -157,7 +158,8 @@ void PlotZoom::endZoom(QMouseEvent *mEvent)
             ChartZoom::zoomCoordinates coords;
             coords.coords.insert(QwtAxis::xBottom, {xMin, xMax});
             coords.coords.insert(QwtAxis::yLeft, {yMin, yMax});
-            coords.coords.insert(QwtAxis::yRight, {ySMin, ySMax});
+            if (!zoom->plot()->spectrogram)
+                coords.coords.insert(QwtAxis::yRight, {ySMin, ySMax});
             zoom->addZoom(coords, true);
         }
         // закончили масштабирование

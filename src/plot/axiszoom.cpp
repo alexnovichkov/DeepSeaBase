@@ -18,6 +18,7 @@
 #include "axisboundsdialog.h"
 #include "logging.h"
 #include <QtMath>
+#include "plot.h"
 
 AxisZoom::AxisZoom() :  QObject()
 {
@@ -164,6 +165,7 @@ void AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             currentLeftBorder = xl;
             // устанавливаем ее для горизонтальной шкалы
             zoom->horizontalScaleBounds->set(xl,currentRightBorder);
+            zoom->plot()->replot();
             break;
         }
             // режим изменения правой границы
@@ -180,6 +182,7 @@ void AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             // устанавливаем ее для горизонтальной шкалы
             currentRightBorder = xr;
             zoom->horizontalScaleBounds->set(currentLeftBorder,xr);
+            zoom->plot()->replot();
             break;
         }
             // режим изменения нижней границы
@@ -199,6 +202,7 @@ void AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
                 zoom->verticalScaleBoundsSlave->set(yb,currentTopBorder);
             else
                 zoom->verticalScaleBounds->set(yb, currentTopBorder);
+            zoom->plot()->replot();
             break;
         }
             // режим изменения верхней границы
@@ -219,6 +223,7 @@ void AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
                 zoom->verticalScaleBoundsSlave->set(currentBottomBorder,yt);
             else
                 zoom->verticalScaleBounds->set(currentBottomBorder,yt);
+            zoom->plot()->replot();
             break;
         }
         default:
@@ -357,7 +362,7 @@ void AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
         if (axis.isYAxis()) {
             coords.coords.insert(axis.pos, {currentBottomBorder, currentTopBorder});
         }
-        if (!coords.coords.isEmpty()) zoom->addZoom(coords);
+        if (!coords.coords.isEmpty()) zoom->addZoom(coords, true);
     }
 }
 

@@ -17,6 +17,7 @@
 #include <QApplication>
 #include "logging.h"
 #include <QtMath>
+#include "plot.h"
 
 WheelZoom::WheelZoom() : QObject()
 {DD;
@@ -87,8 +88,10 @@ void WheelZoom::applyWheel(QEvent *event, QwtAxisId axis)
             pos = wEvent->pos().y();
             axis = QwtAxisId(QwtAxis::yLeft, 0);
             coords.coords.insert(axis.pos, getCoords(axis, pos, factor));
-            axis = QwtAxisId(QwtAxis::yRight, 0);
-            coords.coords.insert(axis.pos, getCoords(axis, pos, factor));
+            if (!zoom->plot()->spectrogram) {
+                axis = QwtAxisId(QwtAxis::yRight, 0);
+                coords.coords.insert(axis.pos, getCoords(axis, pos, factor));
+            }
         }
 
         if (!coords.coords.isEmpty()) zoom->addZoom(coords, true);

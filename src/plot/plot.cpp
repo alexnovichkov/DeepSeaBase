@@ -615,16 +615,13 @@ void Plot::updateAxesLabels()
 
 void Plot::setScale(QwtAxisId id, double min, double max, double step)
 {
-    setAxisScale(id, min, max, step);
-    if (!curves.isEmpty()) {
+    if (!curves.isEmpty() && id == yRightAxis) {
         if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(curves.first())) {
-            if (id == yRightAxis) {
-                c->setColorInterval(min, max);
-                axisWidget(id)->setColorMap(QwtInterval(min, max), ColorMapFactory::map(colorMap));
-                replot();
-            }
+            c->setColorInterval(min, max);
+            axisWidget(id)->setColorMap(QwtInterval(min, max), ColorMapFactory::map(colorMap));
         }
     }
+    setAxisScale(id, min, max, step);
 }
 
 void Plot::removeLabels()
