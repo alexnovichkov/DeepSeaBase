@@ -112,6 +112,7 @@ bool SpectreAlgorithm::compute(FileDescriptor *file)
 
         //so far end of the chain
         // for each channel
+        saver->setFile(file);
         saver->compute(file); //and collect the result
 
         if (!wasPopulated) file->channel(i)->clear();

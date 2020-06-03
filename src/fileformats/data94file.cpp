@@ -47,9 +47,7 @@ Data94File::Data94File(const Data94File &other, const QString &fileName, QVector
 
     for (int i: indexes) {
         Data94Channel *sourceChannel = other.channels.at(i);
-        Data94Channel *c = new Data94Channel(sourceChannel);
-        c->parent = this;
-        this->channels << c;
+        Data94Channel *c = new Data94Channel(sourceChannel, this);
 
         bool populated = sourceChannel->populated();
         if (!populated) sourceChannel->populate();
@@ -155,9 +153,7 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVe
 
     for (int i: indexes) {
         Channel *sourceChannel = other.channel(i);
-        Data94Channel *c = new Data94Channel(sourceChannel);
-        c->parent = this;
-        this->channels << c;
+        Data94Channel *c = new Data94Channel(sourceChannel, this);
 
         bool populated = sourceChannel->populated();
         if (!populated) sourceChannel->populate();
@@ -299,13 +295,20 @@ void Data94File::read()
     for (quint32 i = 0; i < channelsCount; ++i) {
         Data94Channel *c = new Data94Channel(this);
         c->read(r);
-        channels << c;
     }
 }
 
 void Data94File::write()
 {
     if (!changed() && !dataChanged()) return;
+
+    QFile f(fileName());
+    bool newFile = !f.exists();
+
+    if (!f.open(QFile::ReadOnly) && !newFile) {
+        qDebug()<<"Не удалось открыть файл для чтения";
+        return;
+    }
 
     QTemporaryFile temp;
     if (!temp.open()) {
@@ -317,11 +320,6 @@ void Data94File::write()
     r.setByteOrder(QDataStream::LittleEndian);
     r.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-    QFile f(fileName());
-    if (!f.open(QFile::ReadOnly)) {
-        qDebug()<<"Не удалось открыть файл для чтения";
-        return;
-    }
     QDataStream in(&f);
     in.setByteOrder(QDataStream::LittleEndian);
     in.setFloatingPointPrecision(QDataStream::SinglePrecision);
@@ -431,7 +429,7 @@ void Data94File::write()
     f.close();
     temp.close();
 
-    if (QFile::remove(fileName())) {
+    if (QFile::remove(fileName()) || newFile) {
         if (!QFile::copy(temp.fileName(), fileName()))
             qDebug()<<"Не удалось сохранить файл"<<fileName();
     }
@@ -590,10 +588,7 @@ void Data94File::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int>
     const int count = channelsCount();
 
     for (int i: indexes) {
-        Channel *c = sourceFile->channel(i);
-        Data94Channel *newCh = new Data94Channel(c);
-        newCh->parent = this;
-        this->channels << newCh;
+        new Data94Channel(sourceFile->channel(i), this);
     }
 
     //теперь записываем новые каналы - это позволит не копить данные в оперативной
@@ -841,8 +836,6 @@ void Data94File::calculateMean(const QList<Channel*> &toMean)
         function.insert("octaveFormat", octave);
     ch->_description.insert("function", function);
 
-    this->channels << ch;
-
     if (!firstChannelPopulated) firstChannel->clear();
 
     setChanged(true);
@@ -865,8 +858,7 @@ QString Data94File::calculateThirdOctave()
         const bool populated = ch->populated();
         if (!populated) ch->populate();
 
-        Data94Channel *newCh = new Data94Channel(ch);
-        newCh->parent = thirdOctFile;
+        Data94Channel *newCh = new Data94Channel(ch, thirdOctFile);
 
         //третьоктава рассчитывается только для первого блока
         newCh->zAxisBlock.count = 1;
@@ -905,7 +897,6 @@ QString Data94File::calculateThirdOctave()
         newCh->setChanged(true);
         newCh->setDataChanged(true);
 
-        thirdOctFile->channels.append(newCh);
         if (!populated) ch->clear();
     }
 
@@ -930,8 +921,7 @@ void Data94File::calculateMovingAvg(const QList<Channel*> &list, int windowSize)
         const bool populated = ch->populated();
         if (!populated) ch->populate();
 
-        Data94Channel *newCh = new Data94Channel(ch);
-        newCh->parent = this;
+        Data94Channel *newCh = new Data94Channel(ch, this);
         newCh->setPopulated(true);
         newCh->setChanged(true);
         newCh->setDataChanged(true);
@@ -982,7 +972,6 @@ void Data94File::calculateMovingAvg(const QList<Channel*> &list, int windowSize)
             newCh->_description.insert("samplerate", int(1.0 / newCh->xAxisBlock.step));
 
         if (!populated) ch->clear();
-        channels << newCh;
     }
 
     setChanged(true);
@@ -1036,9 +1025,7 @@ QString Data94File::saveTimeSegment(double from, double to)
         bool wasPopulated = channels.at(i)->populated();
         if (!wasPopulated) channels.at(i)->populate();
 
-        Data94Channel *ch = new Data94Channel(channels.at(i));
-        ch->parent = newFile;
-        newFile->channels << ch;
+        Data94Channel *ch = new Data94Channel(channels.at(i), newFile);
 
         // ищем границы данных по параметрам from и to
         int sampleStart = qRound((from/*-XBegin*/)/ch->xAxisBlock.step);
@@ -1290,10 +1277,11 @@ QStringList Data94File::suffixes()
 Data94Channel::Data94Channel(Data94File *parent) : Channel(),
     parent(parent)
 {
-
+    parent->channels << this;
 }
 
-Data94Channel::Data94Channel(Data94Channel *other) : Channel(other)
+Data94Channel::Data94Channel(Data94Channel *other, Data94File *parent)
+    : Channel(other), parent(parent)
 {
     _description = other->_description;
     isComplex = other->isComplex;
@@ -1301,10 +1289,13 @@ Data94Channel::Data94Channel(Data94Channel *other) : Channel(other)
     xAxisBlock = other->xAxisBlock;
     zAxisBlock = other->zAxisBlock;
     descriptionSize = other->descriptionSize;
+    parent->channels << this;
 }
 
-Data94Channel::Data94Channel(Channel *other) : Channel(other)
+Data94Channel::Data94Channel(Channel *other, Data94File *parent)
+    : Channel(other), parent(parent)
 {
+    parent->channels << this;
     isComplex = other->data()->yValuesFormat() == DataHolder::YValuesComplex;
 
     _description.insert("name", other->name());
@@ -1621,6 +1612,16 @@ void Data94Channel::setYName(const QString &yName)
     _description.insert("yname", yName);
 }
 
+void Data94Channel::setXName(const QString &xName)
+{
+    _description.insert("xname", xName);
+}
+
+void Data94Channel::setZName(const QString &zName)
+{
+    _description.insert("zname", zName);
+}
+
 QString Data94Channel::legendName() const
 {
     QStringList l;
@@ -1686,7 +1687,7 @@ void AxisBlock::write(QDataStream &r)
         r << step;
     }
     else {
-        foreach (double x, values) r << float(x);
+        for (double x: values) r << float(x);
     }
 }
 

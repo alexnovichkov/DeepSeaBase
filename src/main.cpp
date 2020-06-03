@@ -77,7 +77,6 @@ int main(int argc, char *argv[])
 //        c->ChanName = QString("Channel 1");
 //        c->IndType = 0x80000002;
 //        c->YName = "m/s2";
-//        dfd.channels << c;
 ////    }
 //    dfd.setChanged(true);
 //    dfd.write();

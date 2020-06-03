@@ -293,7 +293,6 @@ bool EsoConvertor::convert()
                 default: break;
             }
             newCh->setPopulated(true);
-            dfdFileDescriptor->channels.append(newCh);
             emit tick();
         }
     }
@@ -316,6 +315,7 @@ bool EsoConvertor::convert()
             ch->setPopulated(true);
 
             dfdFileDescriptor->channels.prepend(ch);
+            dfdFileDescriptor->channels.takeLast();
 
             for (int i=0; i<dfdFileDescriptor->channels.size(); ++i)
                 dfdFileDescriptor->channels[i]->channelIndex = i;

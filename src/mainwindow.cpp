@@ -1698,13 +1698,13 @@ void MainWindow::calculateSpectreRecords()
         return;
     }
 
-    CalculateSpectreDialog dialog(records, this);
-//    FilesProcessorDialog dialog(records, this);
+//    CalculateSpectreDialog dialog(records, this);
+    FilesProcessorDialog dialog(records, this);
 
     if (dialog.exec()) {
-        QStringList newFiles = dialog.getNewFiles();
+        const QStringList newFiles = dialog.getNewFiles();
         addFiles(newFiles);
-        foreach (const QString &file, newFiles)
+        for (const QString &file: newFiles)
             if (!tab->folders.contains(file)) tab->folders << file;
     }
 }
@@ -1728,9 +1728,9 @@ void MainWindow::convertFiles()
 void MainWindow::copyToLegend()
 {
     if (!tab) return;
-    QList<FileDescriptor *> records = tab->model->selectedFiles();
+    const QList<FileDescriptor *> records = tab->model->selectedFiles();
 
-    foreach (FileDescriptor *f, records) {
+    for (FileDescriptor *f: records) {
         f->setLegend(QFileInfo(f->fileName()).completeBaseName());
         tab->model->updateFile(f, MODEL_COLUMN_LEGEND);
         plot->updateLegends();
@@ -2719,7 +2719,7 @@ void MainWindow::addDescriptors(const QList<FileDescriptor*> &files)
     tab->model->addFiles(files);
 }
 
-void MainWindow::addFiles(QStringList &files)
+void MainWindow::addFiles(const QStringList &files)
 {DD;
     if (!tab) return;
     LongOperation op;

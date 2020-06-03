@@ -205,7 +205,7 @@ private slots:
     void exportChannelsToWav();
 private:
     void moveChannels(bool up);
-    void addFiles(QStringList &files);
+    void addFiles(const QStringList &files);
     void addDescriptors(const QList<FileDescriptor*> &files);
 
     bool deleteChannels(FileDescriptor *file, const QVector<int> &channelsToDelete);

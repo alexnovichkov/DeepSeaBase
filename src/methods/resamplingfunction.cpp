@@ -84,9 +84,6 @@ QVariant ResamplingFunction::getProperty(const QString &property) const
             sR = sR / factor ;
             return sR;
         }
-        if (property == "?/xStep") {
-            return xStep * factor;
-        }
         if (property == "?/functionDescription") {
             return "RSMPL";
         }
@@ -109,14 +106,18 @@ QVariant ResamplingFunction::getProperty(const QString &property) const
             list << "Values=измеряемые";
             return list;
         }
-        if (property == "?/xName") {
-            return "с";
-        }
-        if (property == "?/xType") {
-            return 17; //Time
-        }
-        if (property == "?/abscissaEven")
-            return true;
+        if (property == "?/xStep") return xStep * factor;
+        if (property == "?/xBegin") return 0.0;
+        if (property == "?/xName") return "с";
+        if (property == "?/xType") return 17; //Time
+        if (property == "?/abscissaEven") return true;
+
+
+        if (property == "?/dataFormat") return "real";
+        if (property == "?/yType")
+            return abscissaType(m_file->channel(getProperty("?/channelIndex").toInt())->yName());
+        if (property == "?/yName")
+            m_file->channel(getProperty("?/channelIndex").toInt())->yName();
 
         return m_input->getProperty(property);
     }

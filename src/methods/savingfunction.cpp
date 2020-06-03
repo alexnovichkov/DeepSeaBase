@@ -2,6 +2,7 @@
 //#include "fileformats/filedescriptor.h"
 #include "fileformats/dfdfiledescriptor.h"
 #include "fileformats/ufffile.h"
+#include "fileformats/data94file.h"
 #include "logging.h"
 
 //returns "uff" by default
@@ -9,17 +10,16 @@ QString getSuffixByType(int type)
 {DD;
     switch (type) {
         case SavingFunction::DfdFile: return "dfd";
-            break;
         case SavingFunction::UffFile: return "uff";
-            break;
+        case SavingFunction::D94File: return "d94";
     }
-    return "uff";
+    return "d94";
 }
 
 DescriptionList processData(const QStringList &data)
 {DD;
     DescriptionList result;
-    foreach (const QString &s, data) {
+    for (const QString &s: data) {
         QString h = s.section("=",0,0);
         QString v = s.section("=",1);
         result.append({h,v});
@@ -61,8 +61,8 @@ QString SavingFunction::propertyDescription(const QString &property) const
                                    "  \"type\"        : \"enum\"   ,"
                                    "  \"displayName\" : \"Тип файла\"   ,"
                                    "  \"defaultValue\": 0         ,"
-                                   "  \"toolTip\"     : \"DFD | UFF\","
-                                   "  \"values\"      : [\"DFD\", \"UFF\"],"
+                                   "  \"toolTip\"     : \"DFD | UFF | D94\","
+                                   "  \"values\"      : [\"DFD\", \"UFF\", \"D94\"],"
                                    "  \"minimum\"     : 0,"
                                    "  \"maximum\"     : 0"
                                    "}";
@@ -144,9 +144,10 @@ bool SavingFunction::compute(FileDescriptor *file)
     QVector<double> data = m_input->getData("input");
     if (data.isEmpty()) return false;
     int dataSize = data.size();
-    bool dataIsComplex = getProperty("?/dataComplex").toBool();
+    bool dataIsComplex = getProperty("?/dataFormat").toString() == "complex";
     if (dataIsComplex) dataSize /= 2;
 
+    //здесь заполняются все свойства канала, не связанные с данными
     Channel *ch = createChannel(file, dataSize);
     if (!ch) return false;
 
@@ -173,7 +174,17 @@ bool SavingFunction::compute(FileDescriptor *file)
         }
         ch->data()->setYValues(complexData);
     }
-    else ch->data()->setYValues(data, DataHolder::YValuesFormat(getProperty("?/yValuesFormat").toInt()));
+    else {
+        QString format = getProperty("?/dataFormat").toString();
+        int f = -1;
+        if (format == "complex") f = 0;
+        else if (format == "real") f = 1;
+        else if (format == "imaginary") f = 2;
+        else if (format == "amplitude") f = 3;
+        else if (format == "phase") f = 5;
+        else if (format == "amplitudeDb") f = 4;
+        ch->data()->setYValues(data, DataHolder::YValuesFormat(f));
+    }
 
     ch->setPopulated(true);
     ch->setName(file->channel(channelIndex)->name());
@@ -210,12 +221,14 @@ void SavingFunction::reset()
 
 FileDescriptor *SavingFunction::createFile(FileDescriptor *file)
 {DD;
-    FileDescriptor *f = 0;
+    switch (type) {
+        case DfdFile: return createDfdFile(file);
+        case UffFile: return createUffFile(file);
+        case D94File: return createD94File(file);
+        default: break;
+    }
 
-    if (type == DfdFile) f = createDfdFile(file);
-    if (type == UffFile) f = createUffFile(file);
-
-    return f;
+    return 0;
 }
 
 FileDescriptor *SavingFunction::createDfdFile(FileDescriptor *file)
@@ -273,13 +286,29 @@ FileDescriptor *SavingFunction::createUffFile(FileDescriptor *file)
     return newUff;
 }
 
+FileDescriptor *SavingFunction::createD94File(FileDescriptor *file)
+{
+    Data94File *newFile = new Data94File(newFileName);
+    newFile->updateDateTimeGUID();
+
+    if (!file->dataDescriptor().isEmpty()) {
+        newFile->setDataDescriptor(file->dataDescriptor());
+    }
+    newFile->setLegend(file->legend());
+
+    return newFile;
+}
+
 Channel *SavingFunction::createChannel(FileDescriptor *file, int dataSize)
 {DD;
-    Channel *c = 0;
-    if (type == DfdFile) c = createDfdChannel(file, dataSize);
-    if (type == UffFile) c = createUffChannel(file, dataSize);
+    switch (type) {
+        case DfdFile: return createDfdChannel(file, dataSize);
+        case UffFile: return createUffChannel(file, dataSize);
+        case D94File: return createD94Channel(file, dataSize);
+        default: break;
+    }
 
-    return c;
+    return 0;
 }
 
 Channel *SavingFunction::createDfdChannel(FileDescriptor *file, int dataSize)
@@ -303,13 +332,11 @@ Channel *SavingFunction::createDfdChannel(FileDescriptor *file, int dataSize)
         ch->ChanBlockSize = dataSize;
         ch->IndType = 3221225476;
 
-        ch->YName = /*getProperty("/newYName").toString();*/file->channel(i)->yName();
+        ch->YName = file->channel(i)->yName();
         if (dfd)
             ch->YNameOld = dfd->channels[i]->YNameOld;
         else
             ch->YNameOld = ch->YName;
-
-        newDfd->channels << ch;
     }
 
     return ch;
@@ -322,7 +349,7 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize)
         UffFileDescriptor *uffFile = dynamic_cast<UffFileDescriptor *>(file);
 
         ch = new Function(newUff);
-        int i = getProperty("?/channelIndex").toInt();
+        const int i = getProperty("?/channelIndex").toInt();
 
         /*Заполнение заголовка функции*/
         ch->header.type1858[4].value = 1; //4 set record number
@@ -436,7 +463,7 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize)
             ch->type58[23].value = 3; //20 Reference Direction +Z
         //ch->type58[24].value = //FTEmpty
 
-        ch->type58[25].value = getProperty("?/dataComplex").toBool() ? 5 : 2; //25 Ordinate Data Type
+        ch->type58[25].value = getProperty("?/dataFormat").toString() == "complex" ? 5 : 2; //25 Ordinate Data Type
         ch->type58[26].value = dataSize; //number of data values for abscissa
         ch->type58[27].value = getProperty("?/abscissaEven").toBool() ? 1 : 0;//27 Abscissa Spacing (1=even, 0=uneven,
         //28 Abscissa minimum
@@ -483,8 +510,81 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize)
         ch->type58[57].value = "NONE";
         ch->type58[58].value = "NONE"; // Ordinate name
         //ch->type58[59].value = //FTEmpty
+    }
+    return ch;
+}
 
-        newUff->channels << ch;
+Channel *SavingFunction::createD94Channel(FileDescriptor *file, int dataSize)
+{
+    Data94Channel *ch = 0;
+    if (Data94File *newD94 = dynamic_cast<Data94File *>(m_file)) {
+//        Data94File *d94File = dynamic_cast<Data94File *>(file);
+
+        ch = new Data94Channel(newD94);
+        const int i = getProperty("?/channelIndex").toInt();
+        Channel *channel = file->channel(i);
+
+        ch->isComplex = (getProperty("?/dataFormat").toString() == "complex");
+        ch->setName(channel->name());
+        ch->setDescription(channel->description());
+        ch->setYName(getProperty("?/yName").toString());
+        ch->setXName(getProperty("?/xName").toString());
+        ch->setZName(getProperty("?/zName").toString());
+        ch->_description.insert("samples", dataSize);
+
+
+        // x values
+        const bool xEven = getProperty("?/abscissaEven").toBool();
+        const QList<QVariant> abscissaData = getProperty("?/abscissaData").toList();
+        const double xStep = getProperty("?/xStep").toDouble(); //29 Abscissa increment
+        if (!abscissaData.isEmpty())
+            ch->xAxisBlock.begin = abscissaData.constFirst().toDouble();
+        else
+            ch->xAxisBlock.begin = 0.0;
+        if (xEven)
+            ch->_description.insert("samplerate", int(1.0 / xStep));
+        ch->xAxisBlock.uniform = xEven ? 1:0;
+        if (!xEven) {
+            QVector<double> vals;
+            for (const QVariant &val: abscissaData)
+                vals << val.toDouble();
+            ch->xAxisBlock.values = vals;
+        }
+        ch->xAxisBlock.count = dataSize;
+        ch->xAxisBlock.step = xStep;
+
+        // z values
+        const int zCount = getProperty("?/zCount").toInt();
+        const double zStep = getProperty("?/zStep").toDouble();//29 Abscissa increment
+        const double zBegin = getProperty("?/zBegin").toDouble();
+        ch->_description.insert("blocks", zCount);
+        ch->zAxisBlock.step = zStep;
+        ch->zAxisBlock.uniform = !qFuzzyIsNull(zStep);
+        ch->zAxisBlock.count = zCount;
+        const QList<QVariant> zData = getProperty("?/zData").toList();
+        ch->zAxisBlock.begin = zBegin;
+        if (ch->zAxisBlock.uniform == 0) {
+            QVector<double> vals;
+            for (const QVariant &val: zData)
+                vals << val.toDouble();
+            ch->zAxisBlock.values = vals;
+        }
+
+        QJsonObject function;
+        function.insert("name", getProperty("?/functionDescription").toString());
+        function.insert("type", getProperty("?/functionType").toInt());
+        function.insert("format", getProperty("?/dataFormat").toString());
+        function.insert("logref", getProperty("?/threshold").toDouble());
+        int units = getProperty("?/normalization").toInt();
+        switch (units) {
+            case 0: function.insert("units", "linear"); break;
+            case 1:
+            case 2:
+            case 3: function.insert("units", "quadratic"); break;
+            default: break;
+        }
+        function.insert("octaveFormat", getProperty("?/octaveFormat").toInt());
+        ch->_description.insert("function", function);
     }
     return ch;
 }

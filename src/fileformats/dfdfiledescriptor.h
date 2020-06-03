@@ -105,25 +105,25 @@ class DfdChannel : public Channel
 public:
     /** [Channel#] */
     DfdChannel(DfdFileDescriptor *parent, int channelIndex);
-    DfdChannel(DfdChannel &other, DfdFileDescriptor *parent=0);
-    DfdChannel(Channel &other, DfdFileDescriptor *parent=0);
+    DfdChannel(DfdChannel &other, DfdFileDescriptor *parent);
+    DfdChannel(Channel &other, DfdFileDescriptor *parent);
 
     virtual ~DfdChannel();
 
-    virtual Descriptor::DataType type() const;
+    virtual Descriptor::DataType type() const override;
     int octaveType() const override;
 
     virtual void read(DfdSettings &dfd, int numChans);
     virtual void write(QTextStream &dfd, int index = -1);
 
-    virtual QVariant info(int column, bool edit) const;
-    virtual int columnsCount() const;
-    virtual QVariant channelHeader(int column) const;
+    virtual QVariant info(int column, bool edit) const override;
+    virtual int columnsCount() const override;
+    virtual QVariant channelHeader(int column) const override;
 
-    virtual QString correction() const {return m_correction;}
-    virtual void setCorrection(const QString &s) {m_correction = s;}
+    virtual QString correction() const override {return m_correction;}
+    virtual void setCorrection(const QString &s) override {m_correction = s;}
 
-    virtual QString legendName() const;
+    virtual QString legendName() const override;
     //дополнительная обработка, напр.
     //применение смещения и усиления,
     //для получения реального значения
@@ -132,18 +132,20 @@ public:
 
     void setValue(double val, QDataStream &writeStream);
 
-    virtual QString xName() const;
-    virtual QString yName() const;
-    virtual QString zName() const;
-    virtual void setYName(const QString &yName);
+    virtual QString xName() const override;
+    virtual QString yName() const override;
+    virtual QString zName() const override;
+    virtual void setYName(const QString &yName) override;
+    virtual void setXName(const QString &xName) override;
+    virtual void setZName(const QString &zName) override;
 
-    virtual QString description() const {return ChanDscr;}
-    virtual void setDescription(const QString &description) {ChanDscr = description;}
+    virtual QString description() const  override {return ChanDscr;}
+    virtual void setDescription(const QString &description) override {ChanDscr = description;}
 
-    virtual QString name() const {return ChanName;}
-    virtual void setName(const QString &name);
+    virtual QString name() const override {return ChanName;}
+    virtual void setName(const QString &name) override;
 
-    virtual void populate();
+    virtual void populate() override;
 
     /**
      * @brief preprocess - подготавливает значение к записи с помощью setValue
@@ -170,7 +172,7 @@ public:
     quint64 blockSizeInBytes() const; //размер блока в байтах
 
     DfdFileDescriptor *parent;
-    virtual FileDescriptor *descriptor();
+    virtual FileDescriptor *descriptor() override;
     int channelIndex; // нумерация с 0
 
 
@@ -381,9 +383,9 @@ private:
 
     // FileDescriptor interface
 public:
-    virtual QString saveTimeSegment(double from, double to);
-    virtual int samplesCount() const;
-    virtual void setSamplesCount(int count);
+    virtual QString saveTimeSegment(double from, double to) override;
+    virtual int samplesCount() const override;
+    virtual void setSamplesCount(int count) override;
 };
 
 #endif // DFDFILEDESCRIPTOR_H

@@ -30,6 +30,12 @@ bool AbstractFunction::propertyShowsFor(const QString &property) const
     return true;
 }
 
+void AbstractFunction::setFile(FileDescriptor *file)
+{
+    m_file = file;
+    if (m_input) m_input->setFile(file);
+}
+
 void AbstractFunction::reset()
 {
     // no-op

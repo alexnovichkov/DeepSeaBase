@@ -33,8 +33,8 @@ class Function : public Channel
 {
 public:
     Function(UffFileDescriptor *parent);
-    Function(Channel &other);
-    Function(Function &other);
+    Function(Channel &other, UffFileDescriptor *parent);
+    Function(Function &other, UffFileDescriptor *parent);
     virtual ~Function();
 
     void read(QTextStream &stream, qint64 pos = -1);
@@ -69,6 +69,8 @@ public:
     virtual QString yName() const override;
     virtual QString zName() const override;
     virtual void setYName(const QString &yName) override;
+    virtual void setXName(const QString &xName) override;
+    virtual void setZName(const QString &zName) override;
     virtual QString legendName() const override;
     virtual int samplesCount() const override;
 

@@ -139,6 +139,11 @@ public:
     virtual int index() const override;
     virtual QString correction() const override;
     virtual void setCorrection(const QString &) override;
+
+    // Channel interface
+public:
+    virtual void setXName(const QString &) override;
+    virtual void setZName(const QString &) override;
 };
 
 template <typename T>

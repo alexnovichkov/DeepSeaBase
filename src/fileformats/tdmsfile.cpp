@@ -661,8 +661,6 @@ bool TDMSFileConvertor::convert()
                     channel->ChanBlockSize = samplescount; //размер блока в отсчетах
                     channel->YName = group->channels[i]->properties.value("unit_string").toString();
                     channel->InputType="U";
-
-                    dfdFileDescriptor.channels.append(channel);
                 }
                 else {
                     RawChannel *channel = new RawChannel(&dfdFileDescriptor, i);
@@ -682,8 +680,6 @@ bool TDMSFileConvertor::convert()
                     channel->ADCStep = hextodouble("BEF8BF05F67A243F");
                     channel->SensSensitivity = hextodouble("000000000000F03F");
                     //channel->SensName = c.sensorName+"\\ sn-"+c.sensorSerial;
-
-                    dfdFileDescriptor.channels.append(channel);
                 }
             }
         }

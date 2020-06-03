@@ -28,47 +28,6 @@ QList<AbstractField*> fields = {
     new EmptyField
 };
 
-int abscissaType(const QString &xName)
-{
-    QString s = xName.toLower();
-    if (s == "hz" || s == "гц") return 18;
-    if (s == "s" || s == "с") return 17;
-    if (s == "m/s" || s == "м/с") return 11;
-    if (s == "m/s2" || s == "m/s^2" || s == "м/с2" || s == "м/с^2" || s == "g") return 12;
-    if (s == "n" || s == "н") return 13;
-    if (s == "pa" || s == "psi" || s == "па") return 15;
-    if (s == "m" || s == "м") return 8;
-    if (s == "kg" || s == "кг") return 16;
-
-    return 0; //0 - unknown
-}
-
-
-
-QString abscissaTypeDescription(int type)
-{
-    switch (type) {
-        case 0: return "Unknown";
-        case 1: return "General";
-        case 2: return "Stress";
-        case 3: return "Strain";
-        case 5: return "Temperature";
-        case 6: return "Heat flux";
-        case 8: return "Displacement";
-        case 9: return "Reaction force";
-        case 11: return "Velocity";
-        case 12: return "Acceleration";
-        case 13: return "Excitation force";
-        case 15: return "Pressure";
-        case 16: return "Mass";
-        case 17: return "Time";
-        case 18: return "Frequency";
-        case 19: return "RPM";
-        case 20: return "Order";
-    }
-    return "Unknown";
-}
-
 UffFileDescriptor::UffFileDescriptor(const QString &fileName) : FileDescriptor(fileName)
 {DD;
 
@@ -103,9 +62,7 @@ UffFileDescriptor::UffFileDescriptor(const UffFileDescriptor &other, const QStri
         bool populated = f->populated();
         if (!populated) f->populate();
 
-        Function *ch = new Function(*f);
-        ch->parent = this;
-        this->channels << ch;
+        Function *ch = new Function(*f, this);
         ch->write(stream, id);
 
         //clearing
@@ -170,8 +127,7 @@ UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString 
         bool populated = ch->populated();
         if (!populated) ch->populate();
 
-        Function *f = new Function(*ch);
-        f->parent = this;
+        Function *f = new Function(*ch, this);
 //        f->type58[15].value = i+1;
 //        f->type58[10].value = QString("Record %1").arg(i+1);
 
@@ -182,7 +138,6 @@ UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString 
         }
 
         f->type58[8].value = header.type151[10].value;
-        channels << f;
 
         f->write(stream, id);
 
@@ -230,7 +185,6 @@ void UffFileDescriptor::readWithStreams()
         while (!stream.atEnd()) {
             Function *f = new Function(this);
             f->read(stream, -1);
-            channels << f;
         }
     }
     else {
@@ -262,7 +216,6 @@ bool UffFileDescriptor::readWithMmap()
         while (offset < uff.size()) {
             Function *f = new Function(this);
             f->read(pos, offset, size);
-            channels << f;
         }
     }
     return true;
@@ -291,8 +244,6 @@ void UffFileDescriptor::read()
             while (!stream.atEnd()) {
                 Function *f = new Function(this);
                 f->read(stream);
-
-                channels << f;
             }
         }
     }
@@ -564,8 +515,7 @@ void UffFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
         bool populated = f->populated();
         if (!populated) f->populate();
 
-        Function *ch = new Function(*f);
-        ch->parent = this;
+        Function *ch = new Function(*f, this);
 
         //заполнение инфы об опорном канале
         if (referenceChannelNumber>=0) {
@@ -575,7 +525,6 @@ void UffFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
 
         ch->type58[8].value = header.type151[10].value;
 
-        this->channels << ch;
         ch->write(stream, id);
 
         //clearing
@@ -677,10 +626,6 @@ void UffFileDescriptor::calculateMean(const QList<Channel*> &toMean)
 
     ch->type58[44].value = firstChannel->yName();
 
-    ch->parent = this;
-
-    channels << ch;
-
     setChanged(true);
     setDataChanged(true);
     write();
@@ -708,8 +653,7 @@ void UffFileDescriptor::calculateMovingAvg(const QList<Channel*> &toAvg, int win
     }
 
     for (Channel *ch: toAvg) {
-        Function *newCh = new Function(*ch);
-        newCh->parent = this;
+        Function *newCh = new Function(*ch, this);
 
         const int numInd = ch->samplesCount();
         auto format = ch->data()->yValuesFormat();
@@ -749,7 +693,6 @@ void UffFileDescriptor::calculateMovingAvg(const QList<Channel*> &toAvg, int win
         newCh->type58[32].value = abscissaType(ch->xName());
         newCh->type58[36].value = abscissaTypeDescription(newCh->type58[32].value.toInt());
 
-        channels << newCh;
         newCh->write(stream, id);
     }
     removeTempFile();
@@ -782,7 +725,7 @@ QString UffFileDescriptor::calculateThirdOctave()
     foreach (Function *ch, this->channels) {
         const bool populated = ch->populated();
         if (!populated) ch->populate();
-        Function *newCh = new Function(*ch);
+        Function *newCh = new Function(*ch, thirdOctUff);
 
         auto result = thirdOctave(ch->data()->decibels(), ch->data()->xMin(), ch->data()->xStep());
 
@@ -790,8 +733,6 @@ QString UffFileDescriptor::calculateThirdOctave()
         newCh->data()->setThreshold(ch->data()->threshold());
         newCh->data()->setYValues(result.second, DataHolder::YValuesAmplitudesInDB);
         newCh->setPopulated(true);
-
-        newCh->parent = thirdOctUff;
 
         newCh->type58[6].value = "Третьоктава";
 
@@ -806,8 +747,6 @@ QString UffFileDescriptor::calculateThirdOctave()
         newCh->type58[28].value = 0.0; //28 Abscissa minimum
         newCh->type58[29].value = 0.0; //29 Abscissa increment
         newCh->type58[44].value = "дБ"; //Ordinate name
-
-        thirdOctUff->channels.append(newCh);
 
         if (!populated) ch->clear();
     }
@@ -1052,12 +991,14 @@ Function::Function(UffFileDescriptor *parent) : Channel(),
     parent(parent)
 {DD;
     setType58(type58);
+    parent->channels << this;
 }
 
 
 
-Function::Function(Channel &other) : Channel(other)
+Function::Function(Channel &other, UffFileDescriptor *parent) : Channel(other), parent(parent)
 {DD;
+    parent->channels << this;
     header.type1858[5].value = other.octaveType();
     ///TODO: заполнение поля 1858 данными обработки: окно, взвешивание и т.д.
 
@@ -1094,8 +1035,9 @@ Function::Function(Channel &other) : Channel(other)
     dataPositions.clear(); dataEnds.clear();
 }
 
-Function::Function(Function &other) : Channel(other)
+Function::Function(Function &other, UffFileDescriptor *parent) : Channel(other), parent(parent)
 {DD;
+    parent->channels << this;
     header = other.header;
 
     type58 = other.type58;
@@ -1654,42 +1596,62 @@ void Function::populate()
 
 QString Function::name() const
 {DD;
-    return type58[4].value.toString();
+    QString s = type58[4].value.toString();
+    if (s == "NONE") return "";
+    return s;
 }
 
 void Function::setName(const QString &name)
 {DD;
-    type58[4].value = name;
+    type58[4].value = name.isEmpty()?"NONE":name;
 }
 
 QString Function::description() const
 {DD;
-    return type58[6].value.toString();
+    QString s = type58[6].value.toString();
+    if (s == "NONE") return "";
+    return s;
 }
 
 void Function::setDescription(const QString &description)
 {DD;
-    type58[6].value = description;
+    type58[6].value = description.isEmpty()?"NONE":description;
 }
 
 QString Function::xName() const
 {
-    return type58[37].value.toString();
+    QString s = type58[37].value.toString();
+    if (s == "NONE") return "";
+    return s;
 }
 
 QString Function::yName() const
 {DD;
-    return type58[44].value.toString();
+    QString s = type58[44].value.toString();
+    if (s == "NONE") return "";
+    return s;
 }
 
 QString Function::zName() const
 {
-    return type58[58].value.toString();
+    QString s = type58[58].value.toString();
+    if (s == "NONE") return "";
+    return s;
 }
 
 void Function::setYName(const QString &yName)
 {
-    type58[44].value = yName;
+    type58[44].value = yName.isEmpty()?"NONE":yName;
+}
+
+void Function::setXName(const QString &xName)
+{
+    type58[37].value = xName.isEmpty()?"NONE":xName;
+}
+
+void Function::setZName(const QString &zName)
+{
+    type58[58].value = zName.isEmpty()?"NONE":zName;
 }
 
 QString Function::legendName() const
@@ -1769,15 +1731,9 @@ QString UffFileDescriptor::saveTimeSegment(double from, double to)
         bool wasPopulated = channels[i]->populated();
         if (!wasPopulated) channels[i]->populate();
 
-        Function *ch = new Function(*(this->channels[i]));
-        ch->parent = newUff;
-
-
+        Function *ch = new Function(*(this->channels[i]), newUff);
         ch->data()->setSegment(*(channels[i]->data()), sampleStart, sampleEnd);
-
         ch->setPopulated(true);
-
-        newUff->channels << ch;
         if (!wasPopulated) {
             //clearing data
             channels[i]->data()->clear();

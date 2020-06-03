@@ -176,7 +176,6 @@ DfdChannel *OctaveMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescri
     ch->YName = "дБ";
     ch->YNameOld = dfd->channel(i)->yName();
 
-    newDfd->channels << ch;
     return ch;
 }
 
@@ -231,6 +230,5 @@ Function *OctaveMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor 
     //                  8     complex    double       uneven      E13.5,2E20.12
     //              --------------------------------------------------------------
 
-    newUff->channels << ch;
     return ch;
 }

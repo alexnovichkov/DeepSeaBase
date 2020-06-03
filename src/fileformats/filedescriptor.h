@@ -10,19 +10,19 @@ namespace Descriptor {
 enum DataType
 {
     Unknown = 0,
-    TimeResponse,
-    AutoSpectrum,
-    CrossSpectrum,
-    FrequencyResponseFunction,
-    Transmissibility,
-    Coherence,
-    AutoCorrelation,
-    CrossCorrelation,
-    PowerSpectralDensity,
-    EnergySpectralDensity,
-    ProbabilityDensityFunction,
-    Spectrum,
-    CumulativeFrequencyDistribution,
+    TimeResponse = 1,
+    AutoSpectrum = 2,
+    CrossSpectrum = 3,
+    FrequencyResponseFunction = 4,
+    Transmissibility = 5,
+    Coherence = 6,
+    AutoCorrelation = 7,
+    CrossCorrelation = 8,
+    PowerSpectralDensity = 9,
+    EnergySpectralDensity = 10,
+    ProbabilityDensityFunction = 11,
+    Spectrum = 12,
+    CumulativeFrequencyDistribution = 13,
     PeaksValley,
     StressCycles,
     StrainCycles,
@@ -34,7 +34,7 @@ enum DataType
     Eigenvalue,
     Eigenvector,
     ShockResponseSpectrum,
-    FiniteImpulseResponseFilter,
+    FiniteImpulseResponseFilter = 25,
     MultipleCoherence,
     OrderFunction
 };
@@ -190,6 +190,8 @@ public:
     virtual QString yName() const = 0;
     virtual QString zName() const = 0;
     virtual void setYName(const QString &yName) = 0;
+    virtual void setXName(const QString &xName) = 0;
+    virtual void setZName(const QString &zName) = 0;
 
     virtual QString legendName() const = 0;
 

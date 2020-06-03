@@ -1394,3 +1394,12 @@ T findSubrecord(const QString &name, MatlabStructArray *rec)
     if (index >=0) result = dynamic_cast<T>(rec->subRecords[index]);
     return result;
 }
+
+
+void MatlabChannel::setXName(const QString &)
+{
+}
+
+void MatlabChannel::setZName(const QString &)
+{
+}

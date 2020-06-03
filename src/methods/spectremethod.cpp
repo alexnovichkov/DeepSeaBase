@@ -277,7 +277,6 @@ DfdChannel *SpectreMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescr
     ch->YName = p.scaleType==0?dfd->channel(i)->yName():"дБ";
     ch->YNameOld = dfd->channel(i)->yName();
 
-    newDfd->channels << ch;
     return ch;
 }
 
@@ -333,6 +332,5 @@ Function * SpectreMethod::addUffChannel(UffFileDescriptor *newUff, FileDescripto
     //              --------------------------------------------------------------
 
     ch->data()->setXValues(0, XStep, spectrumSize);
-    newUff->channels << ch;
     return ch;
 }

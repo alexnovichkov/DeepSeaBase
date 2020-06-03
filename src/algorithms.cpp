@@ -17,6 +17,47 @@ bool fileExists(const QString &s, const QString &suffix)
     return (QFile::exists(f) && QFile::exists(f1));
 }
 
+int abscissaType(const QString &xName)
+{
+    QString s = xName.toLower();
+    if (s == "hz" || s == "гц") return 18;
+    if (s == "s" || s == "с") return 17;
+    if (s == "m/s" || s == "м/с") return 11;
+    if (s == "m/s2" || s == "m/s^2" || s == "м/с2" || s == "м/с^2" || s == "g") return 12;
+    if (s == "n" || s == "н") return 13;
+    if (s == "pa" || s == "psi" || s == "па") return 15;
+    if (s == "m" || s == "м") return 8;
+    if (s == "kg" || s == "кг") return 16;
+
+    return 0; //0 - unknown
+}
+
+
+
+QString abscissaTypeDescription(int type)
+{
+    switch (type) {
+        case 0: return "Unknown";
+        case 1: return "General";
+        case 2: return "Stress";
+        case 3: return "Strain";
+        case 5: return "Temperature";
+        case 6: return "Heat flux";
+        case 8: return "Displacement";
+        case 9: return "Reaction force";
+        case 11: return "Velocity";
+        case 12: return "Acceleration";
+        case 13: return "Excitation force";
+        case 15: return "Pressure";
+        case 16: return "Mass";
+        case 17: return "Time";
+        case 18: return "Frequency";
+        case 19: return "RPM";
+        case 20: return "Order";
+    }
+    return "Unknown";
+}
+
 
 
 QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spectrum, double xBegin, double xStep)

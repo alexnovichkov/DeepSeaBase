@@ -193,7 +193,6 @@ DfdChannel *TimeMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescript
     ch->YName = dfd->channel(i)->yName();
     ch->YNameOld = dfd->channel(i)->yName();
 
-    newDfd->channels << ch;
     return ch;
 }
 
@@ -257,8 +256,6 @@ Function *TimeMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *d
     //                  7     complex    double        even         4E20.12
     //                  8     complex    double       uneven      E13.5,2E20.12
     //              --------------------------------------------------------------
-
-    newUff->channels << ch;
 
     return ch;
 }

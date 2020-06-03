@@ -78,6 +78,9 @@ QVariant FftFunction::getProperty(const QString &property) const
         if (property == "?/xName") return "Гц";
         if (property == "?/xType") return 18; //frequency
         if (property == "?/xBegin") return 0.0;
+        if (property == "?/xStep") {
+            return getProperty("?/sampleRate").toDouble() / getProperty("?/blockSize").toDouble();
+        }
         if (property == "?/functionDescription") {
             switch (map.value("type")) {
                 case 0: return "FFT"; break;
@@ -94,20 +97,15 @@ QVariant FftFunction::getProperty(const QString &property) const
                 default: return 0;//"Unknown";
             }
         }
-        if (property == "?/dataComplex") {
-            if (map.value("type") == 0)
-                return (map.value("output")==0);
-            return false;
-        }
-        if (property == "?/yValuesFormat") {
-            if (map.value("type") != 0) return DataHolder::YValuesAmplitudes;
+        if (property == "?/dataFormat") {
+            if (map.value("type") != 0) return "amplitude";
             switch (map.value("output")) {
-                case 0: return DataHolder::YValuesComplex; break;
-                case 1: return DataHolder::YValuesReals; break;
-                case 2: return DataHolder::YValuesImags; break;
-                case 3: return DataHolder::YValuesAmplitudes; break;
-                case 4: return DataHolder::YValuesPhases; break;
-                default: return DataHolder::YValuesUnknown;
+                case 0: return "complex"; break;
+                case 1: return "real"; break;
+                case 2: return "imaginary"; break;
+                case 3: return "amplitude"; break;
+                case 4: return "phase"; break;
+                default: return "unknown";
             }
         }
         if (property == "?/yValuesUnits") {
@@ -118,10 +116,18 @@ QVariant FftFunction::getProperty(const QString &property) const
                 default: return DataHolder::UnitsUnknown;
             }
         }
-        if (property == "?/newYName") {
-            if (map.value("type") == 0)
-                return (map.value("output")==0);
-            //return /;
+        if (property == "?/yName") {
+            QString s = getProperty("?/yName").toString();
+            switch (map.value("type")) {
+                case 0: return s;
+                case 1: return QString("(%1)^2").arg(s);
+                case 2: {
+                    if (s.toLower() == "m/s^2")
+                        return QString("(%1)^2/Hz").arg(s);
+                    return QString("(%1)^2/Гц").arg(s);
+                }
+                default: return s;
+            }
         }
 
         // do not know anything about these broadcast properties

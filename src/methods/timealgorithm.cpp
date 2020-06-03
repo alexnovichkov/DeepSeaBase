@@ -45,7 +45,7 @@ TimeAlgorithm::TimeAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent)
 //            samplingF, SLOT(updateProperty(QString,QVariant)));
 
     //перенаправляем сигналы от функций в интерфейс пользователя
-    foreach (AbstractFunction *f, m_functions) {
+    for (AbstractFunction *f: qAsConst(m_functions)) {
         connect(f, SIGNAL(attributeChanged(QString,QVariant,QString)),SIGNAL(attributeChanged(QString,QVariant,QString)));
         connect(f, SIGNAL(tick()), this, SIGNAL(tick()));
     }
@@ -92,6 +92,7 @@ bool TimeAlgorithm::compute(FileDescriptor *file)
 
         //so far end of the chain
         // for each channel
+        saver->setFile(file);
         saver->compute(file); //and collect the result
 
         if (!wasPopulated) file->channel(i)->clear();

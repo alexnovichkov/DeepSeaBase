@@ -20,13 +20,14 @@ class FileDescriptor;
  * ?/amplitudeScaling - 0=unknown, 1=half-peak, 2=peak, 3=RMS
  * ?/normalization - тип нормализации, 0=unknown, 1=units squared, 2=Units squared per Hz (PSD)
                                //3=Units squared seconds per Hz (ESD)
+ * ?/threshold - logref
  * ?/functionDescription - функция, строка, отдает та функция, которая позже всех в цепи
  * ?/functionType - функция, число, отдает та функция, которая позже всех в цепи
  * ?/averaging - описание усреднения, отдает AveragingFunction
  * ?/averagingType - тип усреднения, отдает AveragingFunction
  * ?/processData - dfd- Process
  * ?/dataType - dfd - DataType
- * ?/dataComplex - true/false
+ * ?/dataFormat - complex / real / amplitude / amplitudeDb / imaginary / phase
  * ?/abscissaEven - true/false
  * ?/abscissaData - вектор, отдается пустой вектор, если шаг по абсциссе постоянный
  *                  только функция OctaveFunction будет отдавать непустой вектор
@@ -36,6 +37,12 @@ class FileDescriptor;
  * ?/xBegin
  * ?/yType - тип данных по оси Y
  * ?/yName - единица измерения по оси Y
+ * ?/zType - тип данных по оси Z
+ * ?/zName - единица измерения по оси Z
+ * ?/zStep
+ * ?/zBegin
+ * ?/zData - вектор, отдается пустой вектор, если шаг по оси z постоянный
+ * ?/zCount - количество блоков
 */
 
 class AbstractFunction : public QObject
@@ -58,6 +65,7 @@ public:
     virtual QVector<double> getData(const QString &id) = 0;
 
     void setInput(AbstractFunction *input) {m_input = input;}
+    void setFile(FileDescriptor *file);
 
     // по умолчанию не делает ничего
     virtual bool compute(FileDescriptor *file) = 0;
@@ -76,6 +84,7 @@ public slots:
 protected:
 //    QList<FileDescriptor *> m_dataBase;
     AbstractFunction *m_input;
+    FileDescriptor *m_file = 0;
 };
 
 class AbstractAlgorithm : public QObject

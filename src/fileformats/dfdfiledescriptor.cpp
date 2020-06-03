@@ -146,9 +146,9 @@ DfdFileDescriptor::DfdFileDescriptor(const DfdFileDescriptor &d, const QString &
     for (int i: indexes) {
         DfdChannel *c = d.channels.at(i);
         if (RawChannel *rc = dynamic_cast<RawChannel*>(c))
-            this->channels << new RawChannel(*rc, this);
+            new RawChannel(*rc, this);
         else
-            this->channels << new DfdChannel(*c, this);
+            new DfdChannel(*c, this);
     }
 
     //перенумеровываем
@@ -271,7 +271,7 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
     //только описание каналов
     for (int i: indexes) {
         Channel *c = other.channel(i);
-        this->channels << new DfdChannel(*c, this);
+        new DfdChannel(*c, this);
     }
 
     unevenX = !channels.isEmpty() && channels.constFirst()->data()->xValuesFormat()==DataHolder::XValuesNonUniform;
@@ -291,6 +291,7 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
         ch->data()->setXValues(channels.constFirst()->xValues());
 
         channels.prepend(ch);
+        channels.takeLast();
     }
 
     //сохраняем файл без данных
@@ -795,7 +796,7 @@ void DfdFileDescriptor::copyChannelsFrom_plain(FileDescriptor *file, const QVect
     foreach (int index, indexes) {
         bool wasPopulated = file->channel(index)->populated();
         if (!wasPopulated) file->channel(index)->populate();
-        channels.append(new DfdChannel(*file->channel(index), this));
+        new DfdChannel(*file->channel(index), this);
         if (!wasPopulated) file->channel(index)->clear();
     }
 
@@ -803,7 +804,6 @@ void DfdFileDescriptor::copyChannelsFrom_plain(FileDescriptor *file, const QVect
 
     for (int i=0; i<channels.size(); ++i) {
         channels[i]->channelIndex = i;
-        channels[i]->parent = this;
     }
 
     //меняем параметры файла dfd
@@ -904,7 +904,6 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
         newCh->setPopulated(true);
         newCh->appendDataTo(rawFileName);
 
-        channels << newCh;
         if (!wasPopulated) {
             sourceChannel->clear();
             newCh->clear();
@@ -1007,8 +1006,6 @@ void DfdFileDescriptor::calculateMean(const QList<Channel*> &channels)
     }
     if (XName.isEmpty()) XName = firstChannel->xName();
 
-    this->channels << ch;
-
     setChanged(true);
     setDataChanged(true);
     write();
@@ -1061,10 +1058,6 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<Channel *> &list, int win
                 ch->YName = "дБ";
         }
         if (XName.isEmpty()) XName = firstChannel->xName();
-        ch->parent = this;
-        ch->channelIndex = this->channelsCount();
-
-        channels << ch;
     }
 
     setChanged(true);
@@ -1110,9 +1103,6 @@ QString DfdFileDescriptor::calculateThirdOctave()
         newCh->ChanDscr = ch->ChanDscr;
 
         newCh->setPopulated(true);
-
-        thirdOctDfd->channels.append(newCh);
-
     }
 
     thirdOctDfd->xValues = thirdOctDfd->channels.last()->xValues();
@@ -1134,6 +1124,7 @@ QString DfdFileDescriptor::calculateThirdOctave()
     ch->setPopulated(true);
 
     thirdOctDfd->channels.prepend(ch);
+    thirdOctDfd->channels.takeLast();
 
     for (int i=0; i<thirdOctDfd->channels.size(); ++i)
         thirdOctDfd->channels[i]->channelIndex = i;
@@ -1536,7 +1527,6 @@ DfdChannel *DfdFileDescriptor::newChannel(int chanIndex)
         case SourceData: c = new RawChannel(this, chanIndex); break;
         default: c = new DfdChannel(this, chanIndex); break;
     }
-    channels << c;
     return c;
 }
 
@@ -1627,14 +1617,16 @@ DfdChannel::DfdChannel(DfdFileDescriptor *parent, int channelIndex)
       channelIndex(channelIndex)
 {
     dataType = parent->DataType;
+    parent->channels << this;
 }
 
 DfdChannel::DfdChannel(DfdChannel &other, DfdFileDescriptor *parent) : Channel(other)
 {DD;
     // data is copied in the Channel construction
 
-    if (parent)
-        this->parent = parent;
+    this->parent = parent;
+    parent->channels << this;
+
     ChanAddress = other.ChanAddress; //
     ChanName = other.ChanName;
     IndType = other.IndType;
@@ -1652,8 +1644,9 @@ DfdChannel::DfdChannel(Channel &other, DfdFileDescriptor *parent) : Channel(othe
 {DD;
     // data is copied in the Channel construction
 
-    if (parent)
-        this->parent = parent;
+    this->parent = parent;
+    parent->channels << this;
+
     ChanAddress = "";
     ChanName = other.name();
     ChanDscr = other.description();
@@ -2393,7 +2386,18 @@ void DfdChannel::setYName(const QString &yName)
 //        YNameOld = yName;
 //    }
 //    else
-        YName = yName;
+    YName = yName;
+}
+
+void DfdChannel::setXName(const QString &xName)
+{
+    if (parent->XName == xName) return;
+    parent->XName = xName;
+}
+
+void DfdChannel::setZName(const QString &zName)
+{
+    Q_UNUSED(zName);
 }
 
 void DfdChannel::setName(const QString &name)
@@ -2692,7 +2696,6 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
         ch->setCorrection(channels[i]->correction());
         ch->appendDataTo(newDfd->rawFileName);
 
-        newDfd->channels << ch;
         if (!wasPopulated) {
             //clearing data
             channels[i]->data()->clear();

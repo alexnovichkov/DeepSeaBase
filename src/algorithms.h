@@ -8,6 +8,9 @@ typedef std::complex<double> cx_double;
 
 QDebug operator <<(QDebug debug, const std::complex<double> &val);
 
+int abscissaType(const QString &xName);
+QString abscissaTypeDescription(int type);
+
 template <typename T, typename D>
 QVector<D> readChunk(QDataStream &readStream, int blockSize, int *actuallyRead)
 {

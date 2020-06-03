@@ -170,8 +170,8 @@ class Data94Channel : public Channel
 {
 public:
     Data94Channel(Data94File *parent);
-    Data94Channel(Data94Channel *other);
-    Data94Channel(Channel *other);
+    Data94Channel(Data94Channel *other, Data94File *parent);
+    Data94Channel(Channel *other, Data94File *parent);
     void read(QDataStream &r);
     void setXStep(double xStep);
 
@@ -187,10 +187,14 @@ public:
     virtual void setName(const QString &name) override;
     virtual QString description() const override;
     virtual void setDescription(const QString &description) override;
+
     virtual QString xName() const override;
     virtual QString yName() const override;
     virtual QString zName() const override;
     virtual void setYName(const QString &yName) override;
+    virtual void setXName(const QString &xName) override;
+    virtual void setZName(const QString &zName) override;
+
     virtual QString legendName() const override;
     virtual FileDescriptor *descriptor() override;
     virtual int index() const override;
@@ -200,11 +204,11 @@ public:
     bool isComplex = false; //по умолчанию real
     quint32 sampleWidth = 4; //по умолчанию float
     QJsonObject _description;
+    AxisBlock xAxisBlock;
+    AxisBlock zAxisBlock;
 private:
     friend class Data94File;
     Data94File *parent = 0;
-    AxisBlock xAxisBlock;
-    AxisBlock zAxisBlock;
 
     qint64 dataPosition = -1;
     qint64 position = -1;

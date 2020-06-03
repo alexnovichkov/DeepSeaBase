@@ -318,8 +318,6 @@ public:
                 break;
             }
         }
-        //QString s=stream.readLine(80); //qDebug()<<s;
-        //Q_ASSERT(s.length()==80);
         if (s.trimmed() == "NONE") s = "";
         v = s.trimmed();
     }
