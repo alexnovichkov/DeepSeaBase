@@ -908,12 +908,9 @@ void Plot::switchLabelsVisibility()
 
 void Plot::updateLegends()
 {DD;
-    foreach (Curve *curve, leftCurves) {
+    for (Curve *curve: qAsConst(curves))
         curve->setTitle(curve->channel->legendName());
-    }
-    foreach (Curve *curve, rightCurves) {
-        curve->setTitle(curve->channel->legendName());
-    }
+
     updateLegend();
 }
 

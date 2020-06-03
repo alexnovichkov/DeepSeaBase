@@ -314,6 +314,7 @@ void LineCurve::resetHighlighting()
 {
     Curve::resetHighlighting();
     setZ(20);
+    plot()->updateLegend(this);
 }
 
 
