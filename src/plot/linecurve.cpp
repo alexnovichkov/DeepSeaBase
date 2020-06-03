@@ -32,11 +32,14 @@ public:
     QPolygonF getPolygon( const QwtScaleMap &xMap, const QwtScaleMap &yMap,
             const QwtSeriesData<QPointF> *series, int from, int to )
     {
+        if (from == oldFrom && to == oldTo) return cashedPolyline;
+
         //number of visible points for current zoom
         const int pointCount = to - from + 1;
         if (pointCount < 5) {
             simplified = false;
-            return QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
+            cashedPolyline = QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
+            return cashedPolyline;
         }
 
         //number of pixels
@@ -44,13 +47,15 @@ public:
         const int pixels = int(xMap.transform(series->sample(to).x()) - xMap.transform(series->sample(from).x()));
         if (pixels == 0) {
             simplified = false;
-            return QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
+            cashedPolyline = QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
+            return cashedPolyline;
         }
 
         //we have less than 5* more points than screen pixels - no need to use resample
         if (pointCount <= pixels*5) {
             simplified = false;
-            return QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
+            cashedPolyline = QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
+            return cashedPolyline;
         }
 
         simplified = true;
@@ -163,12 +168,17 @@ public:
                 points[pixel*2+1].setY(p2y);
             }
         }
-
-        return polyline;
+        oldFrom = from;
+        oldTo = to;
+        cashedPolyline = polyline;
+        return cashedPolyline;
     }
 
     bool simplified = false;
     bool polygon = false;
+    QPolygonF cashedPolyline;
+    int oldFrom = 0;
+    int oldTo = 0;
 };
 
 LineCurve::LineCurve(const QString &title, Channel *channel) :  QwtPlotCurve(title),
@@ -216,18 +226,18 @@ void LineCurve::drawLines(QPainter *painter,
     mapper->setFlag(QwtPointMapper::RoundPoints, doAlign);
     mapper->setBoundingRect(canvasRect);
 
-
+    const bool close = mapper->simplified && channel->type()==Descriptor::TimeResponse;
     QPolygonF polyline = mapper->getPolygon(xMap, yMap, dfddata, from, to);
-    QwtClipper::clipPolygonF(clipRect, polyline, mapper->simplified && channel->type()==Descriptor::TimeResponse);
+    QwtClipper::clipPolygonF(clipRect, polyline, close);
 
-    if (mapper->simplified && channel->type()==Descriptor::TimeResponse) {
+    if (close) {
         QColor c = pen().color();
         c.setAlpha(200);
         painter->setBrush(QBrush(c));
         painter->setPen(c);
     }
 
-    if (mapper->simplified && channel->type()==Descriptor::TimeResponse)
+    if (close)
         QwtPainter::drawPolygon(painter, polyline);
     else
         QwtPainter::drawPolyline(painter, polyline);

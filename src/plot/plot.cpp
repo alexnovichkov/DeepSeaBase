@@ -78,8 +78,8 @@ Plot::Plot(QWidget *parent) :
     _canvas->setFocusIndicator(QwtPlotCanvas::CanvasFocusIndicator);
     _canvas->setPalette(Qt::white);
     _canvas->setFrameStyle(QFrame::StyledPanel);
+//    _canvas->setPaintAttribute(QwtPlotCanvas::BackingStore, true);
     setCanvas(_canvas);
-    //setContextMenuPolicy(Qt::ActionsContextMenu);
 
     setAutoReplot(true);
 
@@ -622,6 +622,7 @@ void Plot::setScale(QwtAxisId id, double min, double max, double step)
         }
     }
     setAxisScale(id, min, max, step);
+    replot();
 }
 
 void Plot::removeLabels()

@@ -3,6 +3,7 @@
 
 #include "curve.h"
 #include "qwt_axis_id.h"
+#include <QPolygonF>
 
 class FilterPointMapper;
 
@@ -31,7 +32,9 @@ public:
 
     // QwtPlotCurve interface
 protected:
-    virtual void drawLines(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect, int from, int to) const;
+    virtual void drawLines(QPainter *painter, const QwtScaleMap &xMap,
+                           const QwtScaleMap &yMap, const QRectF &canvasRect,
+                           int from, int to) const override;
 private:
     DfdData *dfddata;
     FilterPointMapper *mapper;
