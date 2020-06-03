@@ -77,6 +77,8 @@ QVariant ResamplingFunction::getProperty(const QString &property) const
     double sR = 1.0 / xStep;
     if (property.startsWith("?/")) {
         if (!m_input) return QVariant();
+        int channelIndex = m_input->getProperty("?/channelIndex").toInt();
+        Channel *ch = m_file->channel(channelIndex);
 
         // we know about ?/sampleRate
         // recalculate sample rate to new val
@@ -113,11 +115,17 @@ QVariant ResamplingFunction::getProperty(const QString &property) const
         if (property == "?/abscissaEven") return true;
 
 
-        if (property == "?/dataFormat") return "real";
-        if (property == "?/yType")
-            return abscissaType(m_file->channel(getProperty("?/channelIndex").toInt())->yName());
-        if (property == "?/yName")
-            m_file->channel(getProperty("?/channelIndex").toInt())->yName();
+        if (property == "?/dataFormat") return "real"; //<- временные данные всегда имеют такой формат
+        if (property == "?/yType") return abscissaType(ch->yName());
+        if (property == "?/yName") return ch->yName();
+        if (property == "?/yValuesUnits") return ch->data()->yValuesUnits();
+        if (property == "?/threshold") return ch->data()->threshold();
+
+        if (property == "?/zName") return ch->zName();
+        if (property == "?/zCount") return ch->data()->blocksCount();
+        if (property == "?/zStep") return ch->data()->zStep();
+        if (property == "?/zBegin") return ch->data()->zMin();
+        if (property == "?/zAxisUniform") return true; //всегда равномерная шкала для временных данных
 
         return m_input->getProperty(property);
     }

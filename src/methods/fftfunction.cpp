@@ -32,7 +32,7 @@ QString FftFunction::propertyDescription(const QString &property) const
                                    "  \"displayName\" : \"Тип\"   ,"
                                    "  \"defaultValue\": 0         ,"
                                    "  \"toolTip\"     : \"Тип спектральной характеристики\","
-                                   "  \"values\"      : [\"FFT\",\"Спектр мощности\",\"Спектральная плотность мощности\"]"
+                                   "  \"values\"      : [\"FFT\",\"Power spectrum\",\"Power spectrum density\"]"
                                    "}";
     if (property == "output") return "{"
                                      "  \"name\"        : \"output\"   ,"
@@ -97,6 +97,18 @@ QVariant FftFunction::getProperty(const QString &property) const
                 default: return 0;//"Unknown";
             }
         }
+        if (property == "?/normalization") {
+            switch (map.value("type")) {
+                case 0: if (map.value("output") == 3) //amplitude
+                        return 1; //units quadratic
+                    else
+                        return 0; //no normalization
+                    break;
+                case 1: return 1; break; //units squared
+                case 2: return 2; break; //Units squared per Hz
+                default: return 0;
+            }
+        }
         if (property == "?/dataFormat") {
             if (map.value("type") != 0) return "amplitude";
             switch (map.value("output")) {
@@ -110,9 +122,15 @@ QVariant FftFunction::getProperty(const QString &property) const
         }
         if (property == "?/yValuesUnits") {
             switch (map.value("type")) {
-                case 0: return DataHolder::UnitsLinear; break;
+                case 0: if (map.value("output") == 0) //complex
+                        return DataHolder::UnitsLinear;
+                    else if (map.value("output") == 4) //phase
+                        return DataHolder::UnitsDimensionless;
+                    else
+                        return DataHolder::UnitsQuadratic;
+                    break;
                 case 1: return DataHolder::UnitsQuadratic; break;
-                case 2: return DataHolder::UnitsLinear; break;
+                case 2: return DataHolder::UnitsQuadratic; break;
                 default: return DataHolder::UnitsUnknown;
             }
         }
@@ -129,6 +147,11 @@ QVariant FftFunction::getProperty(const QString &property) const
                 default: return s;
             }
         }
+        if (property == "?/zStep") {
+            //zStep = blockSize/sampleRate
+            return getProperty("?/blockSize").toDouble() / getProperty("?/sampleRate").toDouble();
+        }
+
 
         // do not know anything about these broadcast properties
         if (m_input) return m_input->getProperty(property);

@@ -144,27 +144,27 @@ bool SavingFunction::compute(FileDescriptor *file)
     QVector<double> data = m_input->getData("input");
     if (data.isEmpty()) return false;
     int dataSize = data.size();
-    bool dataIsComplex = getProperty("?/dataFormat").toString() == "complex";
+    bool dataIsComplex = m_input->getProperty("?/dataFormat").toString() == "complex";
     if (dataIsComplex) dataSize /= 2;
 
     //здесь заполняются все свойства канала, не связанные с данными
     Channel *ch = createChannel(file, dataSize);
     if (!ch) return false;
 
-    const int channelIndex = getProperty("?/channelIndex").toInt();
-    bool abscissaEven = getProperty("?/abscissaEven").toBool();
+    const int channelIndex = m_input->getProperty("?/channelIndex").toInt();
+    bool abscissaEven = m_input->getProperty("?/abscissaEven").toBool();
     if (abscissaEven)
-        ch->data()->setXValues(0.0, getProperty("?/xStep").toDouble(), dataSize);
+        ch->data()->setXValues(0.0, m_input->getProperty("?/xStep").toDouble(), dataSize);
     else {
-        const QList<QVariant> abscissaData = getProperty("?/abscissaData").toList();
+        const QList<QVariant> abscissaData = m_input->getProperty("?/abscissaData").toList();
         QVector<double> aData;
         for (QVariant v: abscissaData) aData << v.toDouble();
         ch->data()->setXValues(aData);
     }
-    double thr = threshold(file->channel(channelIndex)->yName());
+    double thr = m_input->getProperty("?/threshold").toDouble();
 
     ch->data()->setThreshold(thr);
-    ch->data()->setYValuesUnits(getProperty("?/yValuesUnits").toInt());
+    ch->data()->setYValuesUnits(m_input->getProperty("?/yValuesUnits").toInt());
 
     if (dataIsComplex) {
         // мы должны разбить поступившие данные на два массива
@@ -175,7 +175,7 @@ bool SavingFunction::compute(FileDescriptor *file)
         ch->data()->setYValues(complexData);
     }
     else {
-        QString format = getProperty("?/dataFormat").toString();
+        QString format = m_input->getProperty("?/dataFormat").toString();
         int f = -1;
         if (format == "complex") f = 0;
         else if (format == "real") f = 1;
@@ -233,7 +233,7 @@ FileDescriptor *SavingFunction::createFile(FileDescriptor *file)
 
 FileDescriptor *SavingFunction::createDfdFile(FileDescriptor *file)
 {DD;
-    int dataType = getProperty("?/dataType").toInt();
+    int dataType = m_input->getProperty("?/dataType").toInt();
 
     DfdFileDescriptor *newDfd = DfdFileDescriptor::newFile(newFileName, DfdDataType(dataType));
     newDfd->BlockSize = 0;
@@ -258,16 +258,16 @@ FileDescriptor *SavingFunction::createDfdFile(FileDescriptor *file)
     }
 
     // [Process]
-    QStringList data = getProperty("?/processData").toStringList();
+    QStringList data = m_input->getProperty("?/processData").toStringList();
     if (!data.isEmpty()) {
         newDfd->process = new Process();
         newDfd->process->data = processData(data);
     }
 
     // rest
-    newDfd->XName = getProperty("?/xName").toString();
-    newDfd->XStep = getProperty("?/xStep").toDouble();
-    newDfd->XBegin = getProperty("?/xBegin").toDouble();
+    newDfd->XName = m_input->getProperty("?/xName").toString();
+    newDfd->XStep = m_input->getProperty("?/xStep").toDouble();
+    newDfd->XBegin = m_input->getProperty("?/xBegin").toDouble();
 
     return newDfd;
 }
@@ -322,7 +322,7 @@ Channel *SavingFunction::createDfdChannel(FileDescriptor *file, int dataSize)
     if (DfdFileDescriptor *newDfd = dynamic_cast<DfdFileDescriptor *>(m_file)) {
         //    ch = p.method->createDfdChannel(newDfd, file, spectrum, p, i);
         ch = new DfdChannel(newDfd, newDfd->channelsCount());
-        int i = getProperty("?/channelIndex").toInt();
+        int i = m_input->getProperty("?/channelIndex").toInt();
 
         ch->ChanName = file->channel(i)->name();
         ch->ChanDscr = file->channel(i)->description();
@@ -349,25 +349,25 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize)
         UffFileDescriptor *uffFile = dynamic_cast<UffFileDescriptor *>(file);
 
         ch = new Function(newUff);
-        const int i = getProperty("?/channelIndex").toInt();
+        const int i = m_input->getProperty("?/channelIndex").toInt();
 
         /*Заполнение заголовка функции*/
         ch->header.type1858[4].value = 1; //4 set record number
         //5 octave format, 0=not in octave format(default), 1=octave, n=1/n oct
-        ch->header.type1858[5].value = getProperty("?/octaveFormat");
+        ch->header.type1858[5].value = m_input->getProperty("?/octaveFormat");
         //6 measurement run number
         ch->header.type1858[6].value = 0;
         //11 weighting type, 0=no, 1=A wei, 2=B wei, 3=C wei, 4=D wei
-        ch->header.type1858[11].value = getProperty("?/weightingType");
+        ch->header.type1858[11].value = m_input->getProperty("?/weightingType");
         //тип оконной функции  0=no, 1=hanning narrow, 2=hanning broad, 3=flattop,
         //                     4=exponential, 5=impact, 6=impact and exponential
-        int windowType = getProperty("?/windowType").toInt();
+        int windowType = m_input->getProperty("?/windowType").toInt();
         ch->header.type1858[12].value = uffWindowType(windowType);
         //13 amplitude units, 0=unknown, 1=half-peak, 2=peak, 3=RMS
-        ch->header.type1858[13].value = getProperty("?/amplitudeScaling");
+        ch->header.type1858[13].value = m_input->getProperty("?/amplitudeScaling");
         //14 normalization method, 0=unknown, 1=units squared, 2=Units squared per Hz (PSD)
                                //3=Units squared seconds per Hz (ESD)
-        ch->header.type1858[14].value = getProperty("?/normalization");
+        ch->header.type1858[14].value = m_input->getProperty("?/normalization");
 //        {FTInteger6, 0}, //15  Abscissa Data Type Qualifier,
 //                          //0=translation, 1=rotation, 2=translation squared, 3=rotation squared
 //        {FTInteger6, 0}, //16 Ordinate Numerator Data Type Qualifier, see 15
@@ -419,7 +419,7 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize)
         //ch->type58[13].value = //FTEmpty
 
         //тип функции
-        int functionType = getProperty("?/functionType").toInt();
+        int functionType = m_input->getProperty("?/functionType").toInt();
         ch->type58[14].value = functionType;
 
         // Нумерация каналов и порций данных для каналов.
@@ -463,36 +463,36 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize)
             ch->type58[23].value = 3; //20 Reference Direction +Z
         //ch->type58[24].value = //FTEmpty
 
-        ch->type58[25].value = getProperty("?/dataFormat").toString() == "complex" ? 5 : 2; //25 Ordinate Data Type
+        ch->type58[25].value = m_input->getProperty("?/dataFormat").toString() == "complex" ? 5 : 2; //25 Ordinate Data Type
         ch->type58[26].value = dataSize; //number of data values for abscissa
-        ch->type58[27].value = getProperty("?/abscissaEven").toBool() ? 1 : 0;//27 Abscissa Spacing (1=even, 0=uneven,
+        ch->type58[27].value = m_input->getProperty("?/abscissaEven").toBool() ? 1 : 0;//27 Abscissa Spacing (1=even, 0=uneven,
         //28 Abscissa minimum
-        QList<QVariant> abscissaData = getProperty("?/abscissaData").toList();
+        QList<QVariant> abscissaData = m_input->getProperty("?/abscissaData").toList();
         if (!abscissaData.isEmpty())
             ch->type58[28].value = abscissaData.constFirst().toDouble();
         else
             ch->type58[28].value = 0.0;
-        ch->type58[29].value = getProperty("?/xStep").toDouble(); //29 Abscissa increment
+        ch->type58[29].value = m_input->getProperty("?/xStep").toDouble(); //29 Abscissa increment
         if (uffFile)
             ch->type58[30].value = uffFile->channels[i]->type58[30].value; //30 Z-axis value
         else
             ch->type58[30].value = 0.0; //30 Z-axis value
         //ch->type58[31].value = //FTEmpty
 
-        ch->type58[32].value = getProperty("?/xType").toInt(); // Abscissa Data Characteristics
+        ch->type58[32].value = m_input->getProperty("?/xType").toInt(); // Abscissa Data Characteristics
 //        ch->type58[33].value = 0;//33 Length units exponent
 //        ch->type58[34].value = 0;//34 Force units exponent
 //        ch->type58[35].value = 0;//35 Temperature units exponent
         ch->type58[36].value = abscissaTypeDescription(ch->type58[32].value.toInt()); //32 Abscissa type description
-        ch->type58[37].value = getProperty("?/xName").toString(); //37 Abscissa name
+        ch->type58[37].value = m_input->getProperty("?/xName").toString(); //37 Abscissa name
         //ch->type58[38].value = //FTEmpty
 
-        ch->type58[39].value = getProperty("?/yType").toInt(); //39 Ordinate (or ordinate numerator) Data Characteristics // 1 = General
+        ch->type58[39].value = m_input->getProperty("?/yType").toInt(); //39 Ordinate (or ordinate numerator) Data Characteristics // 1 = General
 //        ch->type58[40].value = 0;// Length units exponent
 //        ch->type58[41].value = 0;// Force units exponent
 //        ch->type58[42].value = 0;// Temperature units exponent
         ch->type58[43].value = abscissaTypeDescription(ch->type58[39].value.toInt());
-        ch->type58[44].value = getProperty("?/yName").toString(); //44 Ordinate name
+        ch->type58[44].value = m_input->getProperty("?/yName").toString(); //44 Ordinate name
         //ch->type58[45].value = //FTEmpty
 
         ch->type58[46].value = 0; //39 Ordinate (or ordinate denominator) Data Characteristics // 1 = General
@@ -521,22 +521,22 @@ Channel *SavingFunction::createD94Channel(FileDescriptor *file, int dataSize)
 //        Data94File *d94File = dynamic_cast<Data94File *>(file);
 
         ch = new Data94Channel(newD94);
-        const int i = getProperty("?/channelIndex").toInt();
+        const int i = m_input->getProperty("?/channelIndex").toInt();
         Channel *channel = file->channel(i);
 
-        ch->isComplex = (getProperty("?/dataFormat").toString() == "complex");
+        ch->isComplex = (m_input->getProperty("?/dataFormat").toString() == "complex");
         ch->setName(channel->name());
         ch->setDescription(channel->description());
-        ch->setYName(getProperty("?/yName").toString());
-        ch->setXName(getProperty("?/xName").toString());
-        ch->setZName(getProperty("?/zName").toString());
+        ch->setYName(m_input->getProperty("?/yName").toString());
+        ch->setXName(m_input->getProperty("?/xName").toString());
+        ch->setZName(m_input->getProperty("?/zName").toString());
         ch->_description.insert("samples", dataSize);
 
 
         // x values
-        const bool xEven = getProperty("?/abscissaEven").toBool();
-        const QList<QVariant> abscissaData = getProperty("?/abscissaData").toList();
-        const double xStep = getProperty("?/xStep").toDouble(); //29 Abscissa increment
+        const bool xEven = m_input->getProperty("?/abscissaEven").toBool();
+        const QList<QVariant> abscissaData = m_input->getProperty("?/abscissaData").toList();
+        const double xStep = m_input->getProperty("?/xStep").toDouble(); //29 Abscissa increment
         if (!abscissaData.isEmpty())
             ch->xAxisBlock.begin = abscissaData.constFirst().toDouble();
         else
@@ -554,14 +554,14 @@ Channel *SavingFunction::createD94Channel(FileDescriptor *file, int dataSize)
         ch->xAxisBlock.step = xStep;
 
         // z values
-        const int zCount = getProperty("?/zCount").toInt();
-        const double zStep = getProperty("?/zStep").toDouble();//29 Abscissa increment
-        const double zBegin = getProperty("?/zBegin").toDouble();
+        const int zCount = m_input->getProperty("?/zCount").toInt();
+        const double zStep = m_input->getProperty("?/zStep").toDouble();//29 Abscissa increment
+        const double zBegin = m_input->getProperty("?/zBegin").toDouble();
         ch->_description.insert("blocks", zCount);
         ch->zAxisBlock.step = zStep;
-        ch->zAxisBlock.uniform = !qFuzzyIsNull(zStep);
+        ch->zAxisBlock.uniform = m_input->getProperty("?/zAxisUniform").toBool() ? 1 : 0;
         ch->zAxisBlock.count = zCount;
-        const QList<QVariant> zData = getProperty("?/zData").toList();
+        const QList<QVariant> zData = m_input->getProperty("?/zData").toList();
         ch->zAxisBlock.begin = zBegin;
         if (ch->zAxisBlock.uniform == 0) {
             QVector<double> vals;
@@ -571,11 +571,11 @@ Channel *SavingFunction::createD94Channel(FileDescriptor *file, int dataSize)
         }
 
         QJsonObject function;
-        function.insert("name", getProperty("?/functionDescription").toString());
-        function.insert("type", getProperty("?/functionType").toInt());
-        function.insert("format", getProperty("?/dataFormat").toString());
-        function.insert("logref", getProperty("?/threshold").toDouble());
-        int units = getProperty("?/normalization").toInt();
+        function.insert("name", m_input->getProperty("?/functionDescription").toString());
+        function.insert("type", m_input->getProperty("?/functionType").toInt());
+        function.insert("format", m_input->getProperty("?/dataFormat").toString());
+        function.insert("logref", m_input->getProperty("?/threshold").toDouble());
+        int units = m_input->getProperty("?/normalization").toInt();
         switch (units) {
             case 0: function.insert("units", "linear"); break;
             case 1:
@@ -583,7 +583,7 @@ Channel *SavingFunction::createD94Channel(FileDescriptor *file, int dataSize)
             case 3: function.insert("units", "quadratic"); break;
             default: break;
         }
-        function.insert("octaveFormat", getProperty("?/octaveFormat").toInt());
+        function.insert("octaveFormat", m_input->getProperty("?/octaveFormat").toInt());
         ch->_description.insert("function", function);
     }
     return ch;

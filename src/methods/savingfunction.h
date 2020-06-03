@@ -7,12 +7,14 @@ class FileDescriptor;
 class Channel;
 
 /* Свойства
+ * --------
  * ?/ - ничего не знает
  * Saver/type - [int] file type (FileType)
  * Saver/destination - [string] destination folder
  * Saver/name - [string] file name
  *
  * Спрашивает:
+ * ----------
  * ?/dataType <- ResamplingFunction, FftFunction
  * ?/functionType <- ResamplingFunction, FftFunction
  * ?/functionDescription <- ResamplingFunction, FftFunction
@@ -27,22 +29,22 @@ class Channel;
  * ?/abscissaData <- OctaveFunction
  *
  * ?/yType <- ResamplingFunction
- * ?/yName
- * ?/yValuesUnits
- * ?/threshold
+ * ?/yName <- ResamplingFunction, FftFunction
+ * ?/yValuesUnits <- ResamplingFunction, FftFunction
+ * ?/threshold <- ResamplingFunction
  *
- * ?/zName
- * ?/zCount
- * ?/zStep
- * ?/zBegin
+ * ?/zName <- ResamplingFunction
+ * ?/zCount <- ResamplingFunction, AveragingFunction
+ * ?/zStep <- ResamplingFunction, FftFunction
+ * ?/zBegin <- ResamplingFunction
  * ?/zData
  *
- * ?/processData
- * ?/octaveFormat
+ * ?/processData <- ResamplingFunction, FftFunction
+ * ?/octaveFormat <- OctaveFunction
  * ?/weightingType
- * ?/windowType
+ * ?/windowType <- WindowingFunction
  * ?/amplitudeScaling
- * ?/normalization
+ * ?/normalization <- FftFunction
  *
  */
 

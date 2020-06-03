@@ -55,6 +55,9 @@ QVariant AveragingFunction::getProperty(const QString &property) const
             return Averaging::averagingDescription(averaging.getAveragingType());
         if (property == "?/averagingType")
             return averaging.getAveragingType();
+        if (property == "?/zCount") {
+            //TODO: придумать, как подсчитать количество еще не выполненных усреднений
+        }
 
         if (m_input) return m_input->getProperty(property);
     }
