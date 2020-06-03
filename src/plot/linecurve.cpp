@@ -22,6 +22,12 @@ struct PointBlock
     int to = 0;
 };
 
+bool scaleMapEquals(const QwtScaleMap &map1, const QwtScaleMap &map2)
+{
+    return (qFuzzyCompare(map1.s1()+1.0, map2.s1()+1.0) &&
+            qFuzzyCompare(map1.s2()+1.0, map2.s2()+1.0));
+}
+
 typedef QList<PointBlock> PointBlocks;
 
 class FilterPointMapper : public QwtPointMapper
@@ -32,7 +38,9 @@ public:
     QPolygonF getPolygon( const QwtScaleMap &xMap, const QwtScaleMap &yMap,
             const QwtSeriesData<QPointF> *series, int from, int to )
     {
-        if (from == oldFrom && to == oldTo) return cashedPolyline;
+        if (from == oldFrom && to == oldTo &&
+            scaleMapEquals(oldXMap, xMap) &&
+            scaleMapEquals(oldYMap, yMap)) return cashedPolyline;
 
         //number of visible points for current zoom
         const int pointCount = to - from + 1;
@@ -43,7 +51,6 @@ public:
         }
 
         //number of pixels
-//        const int pixels = xMap.pDist();
         const int pixels = int(xMap.transform(series->sample(to).x()) - xMap.transform(series->sample(from).x()));
         if (pixels == 0) {
             simplified = false;
@@ -67,11 +74,10 @@ public:
         //iterate over pixels
         int start = from;
         PointBlock block;
-//        int startPixel = qRound(xMap.transform(series->sample(start).x()));
 
         for (int pixel=0; pixel<pixels; ++pixel) {
             if (start == to) {
-                qDebug()<<"reached end";
+                //qDebug()<<"reached end";
                 break;
             }
 
@@ -170,6 +176,8 @@ public:
         }
         oldFrom = from;
         oldTo = to;
+        oldXMap = xMap;
+        oldYMap = yMap;
         cashedPolyline = polyline;
         return cashedPolyline;
     }
@@ -179,6 +187,8 @@ public:
     QPolygonF cashedPolyline;
     int oldFrom = 0;
     int oldTo = 0;
+    QwtScaleMap oldXMap;
+    QwtScaleMap oldYMap;
 };
 
 LineCurve::LineCurve(const QString &title, Channel *channel) :  QwtPlotCurve(title),
@@ -209,6 +219,7 @@ void LineCurve::drawLines(QPainter *painter,
                       const QRectF &canvasRect,
                       int from, int to) const
 {DD;
+//    qDebug()<<"draw";
     //reevaluating from, to
     evaluateScale(from, to, xMap);
 
@@ -226,8 +237,8 @@ void LineCurve::drawLines(QPainter *painter,
     mapper->setFlag(QwtPointMapper::RoundPoints, doAlign);
     mapper->setBoundingRect(canvasRect);
 
-    const bool close = mapper->simplified && channel->type()==Descriptor::TimeResponse;
     QPolygonF polyline = mapper->getPolygon(xMap, yMap, dfddata, from, to);
+    const bool close = mapper->simplified && channel->type()==Descriptor::TimeResponse;
     QwtClipper::clipPolygonF(clipRect, polyline, close);
 
     if (close) {
