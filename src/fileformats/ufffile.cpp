@@ -1,6 +1,5 @@
 #include "ufffile.h"
 
-//#include <QtGui>
 #include <QMessageBox>
 #include "logging.h"
 #include "mainwindow.h"
@@ -223,13 +222,9 @@ bool UffFileDescriptor::readWithMmap()
 
 void UffFileDescriptor::read()
 {DD;
-    QElapsedTimer timer;
-    timer.start();
-
     //проверяем формат файлов uff:
     //если false - старый формат, удаляем файл и создаем заново
     int newUffFormat = MainWindow::getSetting("newUffFormat", 0).toInt();
-
 
     if (QFile::exists(fileName()+"~") && newUffFormat == 1) {
         // в папке с записью есть двоичный файл с описанием записи
@@ -287,7 +282,6 @@ void UffFileDescriptor::read()
         }
         MainWindow::setSetting("newUffFormat", 1);
     }
-    qDebug()<<"elapsed"<<timer.elapsed();
 }
 
 void UffFileDescriptor::write()
@@ -1143,6 +1137,7 @@ void Function::readRest()
     }
     else {// abscissa, uneven spacing
         _data->setSamplesCount(type58[26].value.toInt());
+        populate();
     }
 
     double thr = threshold(yName());
