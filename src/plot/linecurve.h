@@ -60,6 +60,10 @@ public:
     // Curve interface
 public:
     virtual int closest(const QPoint &pos, double *dist) const override;
+
+    // QwtPlotItem interface
+public:
+    virtual void setVisible(bool visible) override;
 };
 
 #endif // LINECURVE_H

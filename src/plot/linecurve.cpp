@@ -414,3 +414,12 @@ int LineCurve::closest(const QPoint &pos, double *dist) const
 
     return index;
 }
+
+
+void LineCurve::setVisible(bool visible)
+{
+    QwtPlotItem::setVisible(visible);
+    for (PointLabel *label: labels) {
+        label->setVisible(visible);
+    }
+}
