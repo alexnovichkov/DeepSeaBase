@@ -18,25 +18,25 @@ class Channel;
  * ?/dataType <- ResamplingFunction, FftFunction
  * ?/functionType <- ResamplingFunction, FftFunction
  * ?/functionDescription <- ResamplingFunction, FftFunction
- * ?/dataFormat <- ResamplingFunction, FftFunction
+ * ?/dataFormat <- ChannelFunction, FftFunction
  * ?/channelIndex <- ChannelFunction
  *
- * ?/abscissaEven <- убрать <- ResamplingFunction
+ * ?/abscissaEven <- убрать <- ChannelFunction
  * ?/xStep <- ResamplingFunction, FftFunction
- * ?/xName <- ResamplingFunction, FftFunction
- * ?/xBegin <- ResamplingFunction (всегда 0)
- * ?/xType <- ResamplingFunction, FftFunction
+ * ?/xName <- ChannelFunction, FftFunction
+ * ?/xBegin <- ChannelFunction (всегда 0)
+ * ?/xType <- ChannelFunction, FftFunction
  * ?/abscissaData <- OctaveFunction
  *
- * ?/yType <- ResamplingFunction
- * ?/yName <- ResamplingFunction, FftFunction
- * ?/yValuesUnits <- ResamplingFunction, FftFunction
- * ?/threshold <- ResamplingFunction
+ * ?/yType <- ChannelFunction
+ * ?/yName <- ChannelFunction, FftFunction
+ * ?/yValuesUnits <- ChannelFunction, FftFunction
+ * ?/threshold <- ChannelFunction
  *
- * ?/zName <- ResamplingFunction
- * ?/zCount <- ResamplingFunction, AveragingFunction
- * ?/zStep <- ResamplingFunction, FftFunction
- * ?/zBegin <- ResamplingFunction
+ * ?/zName <- ChannelFunction
+ * ?/zCount <- ChannelFunction, FrameCutterFunction
+ * ?/zStep <- ChannelFunction, FftFunction
+ * ?/zBegin <- ChannelFunction
  * ?/zData
  *
  * ?/processData <- ResamplingFunction, FftFunction

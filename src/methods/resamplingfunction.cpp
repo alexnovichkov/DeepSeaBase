@@ -76,15 +76,9 @@ QVariant ResamplingFunction::getProperty(const QString &property) const
 {DD;
     double sR = 1.0 / xStep;
     if (property.startsWith("?/")) {
-        if (!m_input) return QVariant();
-        int channelIndex = m_input->getProperty("?/channelIndex").toInt();
-        Channel *ch = m_file->channel(channelIndex);
-
-        // we know about ?/sampleRate
         // recalculate sample rate to new val
         if (property == "?/sampleRate") {
-            sR = sR / factor ;
-            return sR;
+            return sR / factor;
         }
         if (property == "?/functionDescription") {
             return "RSMPL";
@@ -108,26 +102,11 @@ QVariant ResamplingFunction::getProperty(const QString &property) const
             list << "Values=измеряемые";
             return list;
         }
-        if (property == "?/xStep") return xStep * factor;
-        if (property == "?/xBegin") return 0.0;
-        if (property == "?/xName") return "с";
-        if (property == "?/xType") return 17; //Time
-        if (property == "?/abscissaEven") return true;
+        if (property == "?/xStep")
+            return xStep * factor;
 
-
-        if (property == "?/dataFormat") return "real"; //<- временные данные всегда имеют такой формат
-        if (property == "?/yType") return abscissaType(ch->yName());
-        if (property == "?/yName") return ch->yName();
-        if (property == "?/yValuesUnits") return ch->data()->yValuesUnits();
-        if (property == "?/threshold") return ch->data()->threshold();
-
-        if (property == "?/zName") return ch->zName();
-        if (property == "?/zCount") return ch->data()->blocksCount();
-        if (property == "?/zStep") return ch->data()->zStep();
-        if (property == "?/zBegin") return ch->data()->zMin();
-        if (property == "?/zAxisUniform") return true; //всегда равномерная шкала для временных данных
-
-        return m_input->getProperty(property);
+        if (m_input)
+            return m_input->getProperty(property);
     }
 
     if (property == name()+"/resampleType")

@@ -4,6 +4,17 @@
 #include "abstractfunction.h"
 #include "windowing.h"
 
+/* Windowing/type - Прямоугольное / Треугольное / Хеннинга / Хемминга /
+ *                  Наттолла / Гаусса / Сила / Экспоненциальное / Тьюки
+ * Windowing/parameter
+ *
+ * Отдает:
+ * ?/windowDescription -
+ * ?/windowType
+ *
+ * Спрашивает:
+ *
+ */
 class WindowingFunction : public AbstractFunction
 {
 

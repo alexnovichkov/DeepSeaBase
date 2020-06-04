@@ -58,11 +58,14 @@ QVariant FrameCutterFunction::getProperty(const QString &property) const
         if (property == "?/blockSize") {
             return frameCutter.blockSize();
         }
-        if (property == "?/xDelta") {
-            int sampleRate = qRound(1.0 / frameCutter.getXStep());
-            double delta = double(sampleRate) / double(frameCutter.blockSize());
-            return delta;
+        if (property == "?/zCount") {
+            //количество блоков, которые могут потом усредняться
+            return frameCutter.getBlocksCount();
         }
+        if (property == "?/zStep") {
+            return frameCutter.blockSize() * frameCutter.getXStep();
+        }
+
         // do not know anything about these broadcast properties
         if (m_input) return m_input->getProperty(property);
     }
@@ -82,7 +85,7 @@ void FrameCutterFunction::setProperty(const QString &property, const QVariant &v
     if (p == "type")
         frameCutter.setType(val.toInt());
     else if (p == "blockSize") {
-        qDebug()<<"setting FrameCutter/blocksize as"<<(65536 >> val.toInt());
+        //qDebug()<<"setting FrameCutter/blocksize as"<<(65536 >> val.toInt());
         //double p = pow(2.0, val.toInt()); DebugPrint(p);
         //int sampleRate = int (1.0/frameCutter.getXStep()); DebugPrint(sampleRate);
         frameCutter.setBlockSize(65536 >> val.toInt());
@@ -248,6 +251,7 @@ bool FrameCutterFunction::compute(FileDescriptor *file)
         QVector<double> data = m_input->getData("input");
         if (data.isEmpty()) return false;
         frameCutter.setSource(data);
+
         if (frameCutter.type()==FrameCutter::Trigger) {
             // TODO: как установить данные для триггера?
             m_input->setProperty("", 0);

@@ -5,6 +5,17 @@
 
 #include "averaging.h"
 
+/* Averaging/type - Без усреднения / Линейное / Экспоненциальное /
+ *                  Хранение максимума / Энергетическое
+ * Averaging/maximum - Число усреднений
+ *
+ * Отдает:
+ * ?/averaging - [string]
+ * ?/averagingType
+ *
+ * Спрашивает:
+ *
+ */
 class AveragingFunction : public AbstractFunction
 {
 public:

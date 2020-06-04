@@ -57,6 +57,19 @@ void FrameCutter::reset()
     currentSample = 0;
 }
 
+int FrameCutter::getBlocksCount() const
+{
+    switch (param.type) {
+        case Continuous: return getBlocksCountSimple();
+        case Overlap: return getBlocksCountWithOverlap();
+        case Delta: return getBlocksCountWithDelta();
+        case Trigger: return getBlocksCountWithTrigger();
+        default:
+            return 1;
+    }
+    return 1;
+}
+
 QVector<double> FrameCutter::getSimple(bool *ok)
 {
     Q_ASSERT(currentSample >= 0);
@@ -72,6 +85,11 @@ QVector<double> FrameCutter::getSimple(bool *ok)
     return output;
 }
 
+int FrameCutter::getBlocksCountSimple() const
+{
+    return qCeil(double(data.size()) / param.blockSize);
+}
+
 QVector<double> FrameCutter::getWithOverlap(bool *ok)
 {
     Q_ASSERT(currentSample >= 0);
@@ -85,6 +103,16 @@ QVector<double> FrameCutter::getWithOverlap(bool *ok)
     }
     else if (ok) *ok=false;
     return output;
+}
+
+int FrameCutter::getBlocksCountWithOverlap() const
+{
+    int count = 0;
+    for (int i=0; i<data.size(); ) {
+        i += (param.blockSize - param.delta);
+        count++;
+    }
+    return count;
 }
 
 QVector<double> FrameCutter::getWithDelta(bool *ok)
@@ -104,8 +132,18 @@ QVector<double> FrameCutter::getWithDelta(bool *ok)
         currentSample += param.blockSize + param.delta;
         if (ok) *ok = true;
     }
-    else if (ok) *ok=false;
+    else if (ok) *ok = false;
     return output;
+}
+
+int FrameCutter::getBlocksCountWithDelta() const
+{
+    int count = 0;
+    for (int i=0; i<data.size(); ) {
+        i += (param.blockSize + param.delta);
+        count++;
+    }
+    return count;
 }
 
 QVector<double> FrameCutter::getWithTrigger(bool *ok)
@@ -124,6 +162,12 @@ QVector<double> FrameCutter::getWithTrigger(bool *ok)
     }
     else if (ok) *ok=false;
     return output;
+}
+
+int FrameCutter::getBlocksCountWithTrigger() const
+{
+    //TODO: сделать подсчет блоков для триггера - сейчас стоит заглушка
+    return getBlocksCountSimple();
 }
 
 int FrameCutter::searchTrigger(const int pos)

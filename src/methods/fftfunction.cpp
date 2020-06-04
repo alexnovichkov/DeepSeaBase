@@ -147,11 +147,6 @@ QVariant FftFunction::getProperty(const QString &property) const
                 default: return s;
             }
         }
-        if (property == "?/zStep") {
-            //zStep = blockSize/sampleRate
-            return getProperty("?/blockSize").toDouble() / getProperty("?/sampleRate").toDouble();
-        }
-
 
         // do not know anything about these broadcast properties
         if (m_input) return m_input->getProperty(property);

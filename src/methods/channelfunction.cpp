@@ -21,8 +21,28 @@ QString ChannelFunction::description() const
 
 QVariant ChannelFunction::getProperty(const QString &property) const
 {
+    Channel *ch = 0;
+    if (m_file && channel >=0) ch = m_file->channel(channel);
+
     if (property == "?/channelIndex") return channel;
     if (property == "?/channels") return selector.indexesAsString();
+
+    //это - свойства исходного файла
+    if (property == "?/xBegin") return 0.0;
+    if (property == "?/xName") return "с";
+    if (property == "?/xType") return 17; //Time
+    if (property == "?/abscissaEven") return true;
+    if (property == "?/dataFormat") return "real"; //<- временные данные всегда имеют такой формат
+    if (property == "?/zAxisUniform") return true; //всегда равномерная шкала для временных данных
+    if (property == "?/yType" && ch) return abscissaType(ch->yName());
+    if (property == "?/yName" && ch) return ch->yName();
+    if (property == "?/yValuesUnits" && ch) return ch->data()->yValuesUnits();
+    if (property == "?/threshold" && ch) return ch->data()->threshold();
+    if (property == "?/zName" && ch) return ch->zName();
+    if (property == "?/zCount" && ch) return ch->data()->blocksCount();
+    if (property == "?/zStep" && ch) return ch->data()->zStep();
+    if (property == "?/zBegin" && ch) return ch->data()->zMin();
+
 
     if (!property.startsWith(name()+"/")) return QVariant();
     QString p = property.section("/",1);

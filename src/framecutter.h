@@ -52,6 +52,8 @@ public:
 
     QVector<double> get(bool *ok=0);
     void reset();
+
+    int getBlocksCount() const;
 private:
     struct Parameters {
         int blockSize = 1024;
@@ -72,6 +74,14 @@ private:
     QVector<double> getWithDelta(bool *ok);
     //возвращает блок с отступом по триггеру
     QVector<double> getWithTrigger(bool *ok);
+
+    int getBlocksCountSimple() const;
+    //возвращает блок с перекрытием, то есть с отступом назад
+    int getBlocksCountWithOverlap() const;
+    //возвращает блок с отступом вперед
+    int getBlocksCountWithDelta() const;
+    //возвращает блок с отступом по триггеру
+    int getBlocksCountWithTrigger() const;
 
     int searchTrigger(const int pos);
 

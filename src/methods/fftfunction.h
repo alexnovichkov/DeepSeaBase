@@ -5,6 +5,27 @@
 #include <QMap>
 #include <QVector>
 
+/* Spectrum/type - FFT / Power spectrum / Power spectrum density
+ * Spectrum/output - Комплексные / Действительные / Мнимые / Амплитуды / Фазы
+ *
+ * Отдает:
+ * ?/processData
+ * ?/dataType
+ * ?/xName
+ * ?/xType
+ * ?/xBegin
+ * ?/xStep
+ * ?/functionType
+ * ?/functionDescription
+ * ?/normalization
+ * ?/dataFormat
+ * ?/yValuesUnits
+ * ?/yName
+ *
+ * Спрашивает:
+ * ?/sampleRate
+ *
+ */
 class FftFunction : public AbstractFunction
 {
 public:

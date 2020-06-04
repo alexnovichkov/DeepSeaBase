@@ -4,6 +4,29 @@
 #include "abstractfunction.h"
 #include "channelselector.h"
 
+/* Channel/filter - [string] строка фильтра каналов
+ * Channel/channelIndex
+ *
+ * Отдает:
+ * ?/channelIndex - номер канала исходного файла
+ * ?/channels - [string] список каналов
+ * ?/xBegin
+ * ?/xName
+ * ?/xType
+ * ?/abscissaEven
+ * ?/dataFormat
+ * ?/yType
+ * ?/yName
+ * ?/yValuesUnits
+ * ?/threshold
+ * ?/zName
+ * ?/zCount
+ * ?/zStep
+ * ?/zBegin
+ * ?/zAxisUniform
+ *
+ * Спрашивает:
+ */
 class ChannelFunction : public AbstractFunction
 {
 public:

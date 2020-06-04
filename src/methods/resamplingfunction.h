@@ -8,6 +8,24 @@
  * @brief The ResamplingFunction class
  * Осуществляет передискретизацию временных реализаций
  */
+
+/* Resampling/resampleType - Коэффициент / Частотный диапазон / Частота дискретизации
+ * Resampling/factor - Коэффициент
+ * Resampling/frequencyRange - Частотный диапазон
+ * Resampling/sampleRate - Частота дискретизации
+ *
+ * Отдает:
+ * ?/sampleRate
+ * ?/functionDescription = RSMPL
+ * ?/functionType = 1 (Time response)
+ * ?/dataType = 1 (Cutted data)
+ * ?/processData - для dfd
+ * ?/xStep - пересчитывает
+ *
+ * Спрашивает:
+ *
+ */
+
 class ResamplingFunction : public AbstractFunction
 {
 public:

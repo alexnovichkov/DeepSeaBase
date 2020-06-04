@@ -5,6 +5,22 @@
 #include "filtering.h"
 #include <QMap>
 
+/* Filtering/type
+ * Filtering/approximation
+ * Filtering/order
+ * Filtering/frequency
+ * Filtering/Q
+ * Filtering/bandwidth
+ * Filtering/bandwidthHz
+ * Filtering/gain
+ * Filtering/slope
+ * Filtering/rippleDb
+ * Filtering/stopDb
+ * Filtering/rolloff
+ *
+ * Спрашивает:
+ *
+ */
 class FilteringFunction : public AbstractFunction
 {
 public:

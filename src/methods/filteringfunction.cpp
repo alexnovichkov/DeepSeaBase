@@ -188,7 +188,6 @@ QVariant FilteringFunction::getProperty(const QString &property) const
 
 void FilteringFunction::setProperty(const QString &property, const QVariant &val)
 {DD;
-//    qDebug()<<"set property"<<property;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -206,7 +205,6 @@ void FilteringFunction::setProperty(const QString &property, const QVariant &val
 
 bool FilteringFunction::propertyShowsFor(const QString &property) const
 {DD;
-//    qDebug()<<"property shows for"<<(property);
     if (!property.startsWith(name()+"/")) return false;
     QString p = property.section("/",1);
 

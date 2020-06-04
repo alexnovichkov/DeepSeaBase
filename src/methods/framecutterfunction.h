@@ -5,6 +5,23 @@
 
 #include "framecutter.h"
 
+/* FrameCutter/type - Подряд / Перекрытие / Смещение / Триггер
+ * FrameCutter/blockSize [string]
+ * FrameCutter/percent - Перекрытие
+ * FrameCutter/deltaTime - Время между блоками
+ * FrameCutter/triggerMode - Больше чем | Меньше чем
+ * FrameCutter/level - Уровень срабатывания триггера
+ * FrameCutter/channel - Канал триггера
+ * FrameCutter/pretrigger - Время до триггера, включаемое в блок
+ *
+ * Отдает:
+ * ?/blockSize
+ * ?/zCount
+ * ?/zStep
+ *
+ * Спрашивает:
+ *
+ */
 class FrameCutterFunction : public AbstractFunction
 {
 public:
