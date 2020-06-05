@@ -56,6 +56,9 @@ bool AxisZoom::eventFilter(QObject *target,QEvent *event)
             event->type() == QEvent::MouseButtonRelease ||
             event->type() == QEvent::MouseButtonDblClick)
             axisMouseEvent(event, QwtAxisId(ax,jx));
+
+        else if (event->type() == QEvent::Leave)
+            emit hover(QwtAxisId(ax,jx), 0);
     }
 
     return QObject::eventFilter(target,event);
@@ -335,7 +338,23 @@ void AxisZoom::proceedAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
     ChartZoom::ConvType ct = zoom->regime();
     if (ct == ChartZoom::ctLeft || ct == ChartZoom::ctRight
         || ct == ChartZoom::ctBottom || ct == ChartZoom::ctTop)
-    axisApplyMove(mEvent->pos(), axis);
+        axisApplyMove(mEvent->pos(), axis);
+    else {
+        QwtScaleMap sm = zoom->plot()->canvasMap(axis);
+
+        if (axis.isXAxis()) {
+            if (mEvent->pos().x() - sm.p1() >= sm.pDist()/2)
+                emit hover(axis, 2);
+            else
+                emit hover(axis, 1);
+        }
+        else {
+            if (sm.p1() - mEvent->pos().y() <= sm.pDist()/2)
+                emit hover(axis, 2);
+            else
+                emit hover(axis, 1);
+        }
+    }
 }
 
 void AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)

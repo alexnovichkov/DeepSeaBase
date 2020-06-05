@@ -156,6 +156,7 @@ private slots:
     void showContextMenu(const QPoint &pos, QwtAxisId axis);
     void moveCurve(QwtPlotItem *curve);
     void fixCurve(QwtPlotItem* curve);
+    void hoverAxis(QwtAxisId axis, int hover);
 private:
     void importPlot(const QString &fileName);
     bool hasDuplicateNames(const QString name) const;

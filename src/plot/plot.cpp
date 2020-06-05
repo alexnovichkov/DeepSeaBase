@@ -70,6 +70,78 @@ Curve * createCurve(const QString &legendName, Channel *channel)
     return new LineCurve(legendName, channel);
 }
 
+#include <qwt_painter.h>
+class ScaleDraw : public QwtScaleDraw
+{
+public:
+    ScaleDraw()
+    {
+
+    }
+    int hover = 0; //0=none, 1=first, 2=second
+
+protected:
+    virtual void drawBackbone(QPainter *painter) const override
+    {
+        const int pw = qMax(qRound(penWidthF()),1);
+
+        const qreal len = length();
+        const QPointF _pos = pos();
+
+        switch (alignment()) {
+            case QwtScaleDraw::LeftScale:
+            {
+                const qreal x = qRound( _pos.x() - ( pw - 1 ) / 2 );
+                QwtPainter::drawLine( painter, x, _pos.y(), x, _pos.y() + len );
+                if (hover==1) {
+                    QwtPainter::drawLine( painter, x-1, _pos.y(), x-1, _pos.y() + len/2.0 );
+                }
+                else if (hover==2) {
+                    QwtPainter::drawLine( painter, x-1, _pos.y() + len/2.0, x-1, _pos.y() + len );
+                }
+
+                break;
+            }
+            case QwtScaleDraw::RightScale:
+            {
+                const qreal x = qRound( _pos.x() + pw / 2 );
+                QwtPainter::drawLine( painter, x, _pos.y(), x, _pos.y() + len );
+                if (hover==1) {
+                    QwtPainter::drawLine( painter, x+1, _pos.y(), x+1, _pos.y() + len/2.0 );
+                }
+                else if (hover==2) {
+                    QwtPainter::drawLine( painter, x+1, _pos.y() + len/2.0, x+1, _pos.y() + len );
+                }
+                break;
+            }
+            case QwtScaleDraw::TopScale:
+            {
+                const qreal y = qRound( _pos.y() - ( pw - 1 ) / 2 );
+                QwtPainter::drawLine( painter, _pos.x(), y, _pos.x() + len, y );
+                if (hover==1) {
+                    QwtPainter::drawLine( painter, _pos.x(), y-1, _pos.x() + len/2, y-1 );
+                }
+                else if (hover==2) {
+                    QwtPainter::drawLine( painter, _pos.x()+len/2, y-1, _pos.x() + len, y-1 );
+                }
+                break;
+            }
+            case QwtScaleDraw::BottomScale:
+            {
+                const qreal y = qRound( _pos.y() + pw / 2 );
+                QwtPainter::drawLine( painter, _pos.x(), y, _pos.x() + len, y );
+                if (hover==1) {
+                    QwtPainter::drawLine( painter, _pos.x(), y+1, _pos.x() + len/2, y+1 );
+                }
+                else if (hover==2) {
+                    QwtPainter::drawLine( painter, _pos.x()+len/2, y+1, _pos.x() + len, y+1 );
+                }
+                break;
+            }
+        }
+    }
+};
+
 
 Plot::Plot(QWidget *parent) :
     QwtPlot(parent), zoom(0)
@@ -82,6 +154,16 @@ Plot::Plot(QWidget *parent) :
     setCanvas(_canvas);
 
     setAutoReplot(true);
+
+    setAxisScaleDraw(xBottomAxis, new ScaleDraw());
+    setAxisScaleDraw(yLeftAxis, new ScaleDraw());
+    setAxisScaleDraw(yRightAxis, new ScaleDraw());
+
+    this->axisWidget(xBottomAxis)->setMouseTracking(true);
+    this->axisWidget(yLeftAxis)->setMouseTracking(true);
+    this->axisWidget(yRightAxis)->setMouseTracking(true);
+
+//    connect(this->axisWidget(xBottomAxis))
 
     trackingPanel = new TrackingPanel(this);
     trackingPanel->setVisible(false);
@@ -121,6 +203,7 @@ Plot::Plot(QWidget *parent) :
     connect(zoom,SIGNAL(updateTrackingCursor(double,bool)), trackingPanel, SLOT(setXValue(double,bool)));
     connect(zoom,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)),SLOT(showContextMenu(QPoint,QwtAxisId)));
     connect(zoom,SIGNAL(moveCursor(bool)), trackingPanel, SLOT(moveCursor(bool)));
+    connect(zoom,SIGNAL(hover(QwtAxisId,int)),SLOT(hoverAxis(QwtAxisId,int)));
 
     tracker = new PlotTracker(this);
     tracker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
@@ -682,6 +765,26 @@ void Plot::fixCurve(QwtPlotItem *curve)
         updateLegend();
     }
 
+}
+
+void Plot::hoverAxis(QwtAxisId axis, int hover)
+{
+//    QString s;
+//    if (axis == xBottomAxis) s.append("X axis, ");
+//    if (axis == yLeftAxis) s.append("Y left axis, ");
+//    if (axis == yRightAxis) s.append("Y right axis, ");
+
+//    if (hover==0) s.append("hover none");
+//    if (hover==1) s.append("first half");
+//    if (hover==2) s.append("second half");
+//    qDebug()<<s;
+
+    if (ScaleDraw * scale = dynamic_cast<ScaleDraw*>(axisScaleDraw(axis))) {
+        if (scale->hover != hover) {
+            scale->hover = hover;
+            axisWidget(axis)->update();
+        }
+    }
 }
 
 bool Plot::hasDuplicateNames(const QString name) const

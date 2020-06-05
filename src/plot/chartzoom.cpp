@@ -66,6 +66,7 @@ ChartZoom::ChartZoom(Plot *plot) :
     connect(axisZoom,SIGNAL(xAxisClicked(double,bool)),SIGNAL(updateTrackingCursor(double,bool)));
     connect(axisZoom,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)),SIGNAL(contextMenuRequested(QPoint,QwtAxisId)));
     connect(axisZoom,SIGNAL(moveCursor(bool)),SIGNAL(moveCursor(bool)));
+    connect(axisZoom,SIGNAL(hover(QwtAxisId,int)),SIGNAL(hover(QwtAxisId,int)));
     axisZoom->attach(this);
 }
 

@@ -123,6 +123,7 @@ signals:
     void updateTrackingCursor(double,bool);
     void contextMenuRequested(const QPoint &pos, QwtAxisId axis);
     void moveCursor(bool right);
+    void hover(QwtAxisId axis, int hover);
 private:
     Plot *qwtPlot;
 

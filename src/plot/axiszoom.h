@@ -33,6 +33,7 @@ signals:
     void contextMenuRequested(const QPoint &pos, QwtAxisId axis);
     void needsAutoscale(QwtAxisId axis);
     void moveCursor(bool right);
+    void hover(QwtAxisId axis, int hover); //0=none, 1=first half, 2 = second half
 protected:
     bool eventFilter(QObject *,QEvent *);
 
