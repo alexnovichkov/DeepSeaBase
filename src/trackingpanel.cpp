@@ -45,8 +45,8 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
         _harmonics.append(d);
     }
 
-    cursorSpan1 = new ZoneSpan(QColor(0,0,255,100));
-    cursorSpan2 = new ZoneSpan(QColor(255,93,93,100));
+    cursorSpan1 = new ZoneSpan(QColor(64,131,182,50));
+    cursorSpan2 = new ZoneSpan(QColor(182,131,64,50));
 
     mStep = 0.0;
 

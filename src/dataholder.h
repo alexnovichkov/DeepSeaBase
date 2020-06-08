@@ -104,6 +104,7 @@ public:
     double yValue(int i, int block = 0) const;
     cx_double yValueComplex(int i, int block = 0) const;
     double zValue(int i) const;
+    double YforXandZ(double x, double z, bool &success) const;
 
 
 

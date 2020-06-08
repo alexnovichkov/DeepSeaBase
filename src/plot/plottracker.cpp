@@ -7,6 +7,8 @@
 #include <QKeyEvent>
 #include "plot.h"
 #include "trackingpanel.h"
+#include "curve.h"
+#include "fileformats/filedescriptor.h"
 
 PlotTracker::PlotTracker(Plot *plot) :
     QwtPlotPicker(plot->canvas()), plot(plot)
@@ -48,7 +50,18 @@ QwtText PlotTracker::trackerTextF(const QPointF &pos) const
     QColor bg(Qt::white);
     bg.setAlpha(200);
 
-    QwtText text = QwtText(smartDouble(pos.x())+", "+smartDouble(pos.y()));
+    QwtText text;
+
+    if (plot->spectrogram) {
+        bool success = false;
+        double y = plot->curves.first()->channel->data()->YforXandZ(pos.x(), pos.y(), success);
+        if (success)
+            text = QwtText(smartDouble(pos.x())+", "+smartDouble(pos.y()) + ", "+smartDouble(y));
+        else
+            text = QwtText(smartDouble(pos.x())+", "+smartDouble(pos.y()));
+    }
+    else
+        text = QwtText(smartDouble(pos.x())+", "+smartDouble(pos.y()));
     text.setBackgroundBrush(QBrush(bg));
     return text;
 }
