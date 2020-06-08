@@ -38,5 +38,9 @@
         <file>icons/help.png</file>
         <file>icons/revert.png</file>
         <file>icons/splash.png</file>
+        <file>icons/function.png</file>
+        <file>icons/channel-copy.png</file>
+        <file>icons/channel-cut.png</file>
+        <file>icons/average.png</file>
     </qresource>
 </RCC>

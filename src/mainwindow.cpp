@@ -195,7 +195,7 @@ MainWindow::MainWindow(QWidget *parent)
     QAction *plotHelpAct = new QAction(QIcon(":/icons/help.png"), "Справка", this);
     connect(plotHelpAct, &QAction::triggered, [](){QDesktopServices::openUrl(QUrl("help.html"));});
 
-    calculateSpectreAct = new QAction(QString("Обработать записи..."), this);
+    calculateSpectreAct = new QAction(QIcon(":/icons/function.png"), QString("Обработать записи..."), this);
     connect(calculateSpectreAct, SIGNAL(triggered()), SLOT(calculateSpectreRecords()));
 
     convertAct = new QAction("Конвертировать файлы...", this);
@@ -266,7 +266,7 @@ MainWindow::MainWindow(QWidget *parent)
     meanAct->setIcon(QIcon(":/icons/mean.png"));
     connect(meanAct, SIGNAL(triggered()), this, SLOT(calculateMean()));
 
-    movingAvgAct = new QAction(QString("Рассчитать скользящее среднее"), this);
+    movingAvgAct = new QAction(QIcon(":/icons/average.png"), QString("Рассчитать скользящее среднее"), this);
     connect(movingAvgAct, SIGNAL(triggered()), this, SLOT(calculateMovingAvg()));
 
     calculateThirdOctaveAct = new QAction(QString("Рассчитать третьоктаву"), this);
@@ -306,10 +306,10 @@ MainWindow::MainWindow(QWidget *parent)
 
     deleteChannelsAct->setMenu(deleteChannelsMenu);
 
-    copyChannelsAct = new QAction("Копировать выделенные каналы в файл...", this);
+    copyChannelsAct = new QAction(QIcon(":/icons/channel-copy.png"), "Копировать выделенные каналы в файл...", this);
     connect(copyChannelsAct, SIGNAL(triggered()), SLOT(copyChannels()));
 
-    moveChannelsAct = new QAction("Переместить выделенные каналы в файл...", this);
+    moveChannelsAct = new QAction(QIcon(":/icons/channel-cut.png"), "Переместить выделенные каналы в файл...", this);
     connect(moveChannelsAct, SIGNAL(triggered()), SLOT(moveChannels()));
 
     editDescriptionsAct = new QAction("Редактировать описание...", this);
@@ -341,22 +341,13 @@ MainWindow::MainWindow(QWidget *parent)
 
     mainToolBar->addSeparator();
     mainToolBar->addWidget(new QLabel("  Каналы:"));
-    QMenu *channelsMenu = new QMenu("Операции", this);
-    channelsMenu->addAction(copyChannelsAct);
-    channelsMenu->addAction(moveChannelsAct);
-    channelsMenu->addAction(movingAvgAct);
-
-    QToolButton *channelsTB = new QToolButton(this);
-    channelsTB->setMenu(channelsMenu);
-    channelsTB->setText("Операции...");
-    channelsTB->setFixedHeight(32);
-    channelsTB->setPopupMode(QToolButton::InstantPopup);
 
 
-
-    mainToolBar->addWidget(channelsTB);
+    mainToolBar->addAction(copyChannelsAct);
+    mainToolBar->addAction(moveChannelsAct);
     mainToolBar->addAction(deleteChannelsAct);
     mainToolBar->addAction(meanAct);
+    mainToolBar->addAction(movingAvgAct);
     mainToolBar->addAction(addCorrectionAct);
 
     mainToolBar->addSeparator();

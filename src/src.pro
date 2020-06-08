@@ -323,3 +323,5 @@ INCLUDEPATH *= C:/Qwt-6.4.0-svn/include
 ##matio
 #INCLUDEPATH *= K:/My/programming/sources/Matlab/matio-1.5.17/src
 #LIBS *= K:/My/programming/sources/Matlab/matio-1.5.17/visual_studio/Release/libmatio.lib
+
+DISTFILES +=
