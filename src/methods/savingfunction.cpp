@@ -542,7 +542,7 @@ Channel *SavingFunction::createD94Channel(FileDescriptor *file, int dataSize)
         else
             ch->xAxisBlock.begin = 0.0;
         if (xEven)
-            ch->_description.insert("samplerate", int(1.0 / xStep));
+            ch->_description.insert("samplerate", int(m_input->getProperty("?/sampleRate").toDouble()));
         ch->xAxisBlock.uniform = xEven ? 1:0;
         if (!xEven) {
             QVector<double> vals;

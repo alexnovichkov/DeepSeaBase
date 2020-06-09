@@ -55,6 +55,12 @@ QVariant AveragingFunction::getProperty(const QString &property) const
             return Averaging::averagingDescription(averaging.getAveragingType());
         if (property == "?/averagingType")
             return averaging.getAveragingType();
+        if (property == "?/zCount") {
+            //усреднения нет - возвращаем полное число блоков
+            if (averaging.getAveragingType() == 0) return m_input->getProperty("?/zCount");
+            //усреднение есть - возвращаем один блок
+            return 1;
+        }
 
         if (m_input) return m_input->getProperty(property);
     }

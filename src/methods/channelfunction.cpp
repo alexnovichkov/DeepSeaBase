@@ -38,7 +38,7 @@ QVariant ChannelFunction::getProperty(const QString &property) const
     if (property == "?/yName" && ch) return ch->yName();
     if (property == "?/yValuesUnits" && ch) return ch->data()->yValuesUnits();
     if (property == "?/threshold" && ch) return ch->data()->threshold();
-    if (property == "?/zName" && ch) return ch->zName();
+    if (property == "?/zName" && ch) return ch->xName();
     if (property == "?/zCount" && ch) return ch->data()->blocksCount();
     if (property == "?/zStep" && ch) return ch->data()->zStep();
     if (property == "?/zBegin" && ch) return ch->data()->zMin();

@@ -24,10 +24,11 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     thread_ = 0;
     taskBarProgress = 0;
 
-    //algorithms << new SpectreAlgorithm(dataBase, 0);
+    //
     algorithms << new TimeAlgorithm(dataBase, 0);
+    algorithms << new SpectreAlgorithm(dataBase, 0);
 
-    foreach (AbstractAlgorithm *f, algorithms) {
+    for (AbstractAlgorithm *f: algorithms) {
         connect(f, SIGNAL(attributeChanged(QString,QVariant,QString)),SLOT(updateProperty(QString,QVariant,QString)));
 //        connect(f, SIGNAL(propertyChanged(QString,QVariant)),SLOT(updateProperty(QString,QVariant,QString)));
     }
@@ -38,7 +39,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     filesTree->setAlternatingRowColors(true);
     filesTree->setHeaderLabels(QStringList()<<"№"<<"Файл"<<"Тип"<<"Каналы");
     int i=1;
-    foreach (FileDescriptor *f, dataBase) {
+    for (FileDescriptor *f: dataBase) {
         QStringList list;
         list << QString::number(i++) << f->fileName() << f->typeDisplay()<<QString::number(f->channelsCount());
         QTreeWidgetItem *item = new QTreeWidgetItem(list);

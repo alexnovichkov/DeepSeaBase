@@ -356,7 +356,7 @@ MainWindow::MainWindow(QWidget *parent)
     mainToolBar->addAction(savePlotAct);
     mainToolBar->addAction(copyToClipboardAct);
     mainToolBar->addAction(printPlotAct);
-    mainToolBar->addWidget(new QLabel("         ",this));
+    //mainToolBar->addWidget(new QLabel("         ",this));
 
     mainToolBar->addAction(exportToExcelAct);
     mainToolBar->addAction(switchCursorAct);
