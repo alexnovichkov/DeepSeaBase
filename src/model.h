@@ -37,8 +37,10 @@ public:
     int size() const {return descriptors.size();}
 
     QList<int> selected() const {return indexes;}
-    void setSelected(const QList<int> &indexes) {this->indexes = indexes;}
+    void setSelected(const QList<int> &indexes);
+    QList<FileDescriptor*> selectedFiles(Descriptor::DataType type) const;
     QList<FileDescriptor*> selectedFiles() const;
+    QList<FileDescriptor*> selectedFiles(const QVector<Descriptor::DataType> &types) const;
 
     void setDataDescriptor(FileDescriptor *file, const DescriptionList &data);
     void setChannelDescription(int channel, const QString &description);
@@ -65,6 +67,7 @@ public:
 signals:
     void legendsChanged();
     void plotNeedsUpdate();
+    void modelChanged();
 private:
     QModelIndex modelIndexOfFile(FileDescriptor *f, int column) const;
     QList<FileDescriptor *> descriptors;

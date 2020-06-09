@@ -35,6 +35,7 @@ void Model::addFiles(const QList<FileDescriptor *> &files)
     beginInsertRows(QModelIndex(), descriptors.size(), descriptors.size()+files.size()-1);
     descriptors.append(files);
     endInsertRows();
+    emit modelChanged();
 }
 
 void Model::deleteFiles(const QStringList &filesToSkip)
@@ -52,13 +53,41 @@ void Model::deleteFiles(const QStringList &filesToSkip)
     indexes.clear();
 
     endResetModel();
+    emit modelChanged();
+}
+
+void Model::setSelected(const QList<int> &indexes)
+{
+    this->indexes = indexes;
+    emit modelChanged();
+}
+
+QList<FileDescriptor *> Model::selectedFiles(Descriptor::DataType type) const
+{DD;
+    QList<FileDescriptor *> files;
+    for (int i: indexes) {
+        if (descriptors.at(i)->type() == type)
+            files << descriptors.at(i);
+    }
+    return files;
 }
 
 QList<FileDescriptor *> Model::selectedFiles() const
 {DD;
     QList<FileDescriptor *> files;
-    foreach (int i, indexes)
+    for (int i: indexes) {
         files << descriptors.at(i);
+    }
+    return files;
+}
+
+QList<FileDescriptor *> Model::selectedFiles(const QVector<Descriptor::DataType> &types) const
+{
+    QList<FileDescriptor *> files;
+    for (int i: indexes) {
+        if (types.contains(descriptors.at(i)->type()))
+            files << descriptors.at(i);
+    }
     return files;
 }
 
@@ -137,6 +166,7 @@ void Model::clear(const QStringList &filesToSkip)
     descriptors.clear();
     indexes.clear();
     endResetModel();
+    emit modelChanged();
 }
 
 void Model::invalidateCurve(Channel* channel)

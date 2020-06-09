@@ -120,7 +120,7 @@ public:
 
     int plottedCount() const;
 
-    virtual bool isSourceFile() const {return false;}
+    virtual bool isSourceFile() const;
 
     virtual QString legend() const =0;
     virtual bool setLegend(const QString &legend)=0;

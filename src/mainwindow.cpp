@@ -148,6 +148,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(plot, SIGNAL(curveDeleted(Channel*)), SLOT(onCurveDeleted(Channel*)));
     connect(plot, SIGNAL(saveTimeSegment(QList<FileDescriptor*>,double,double)), SLOT(saveTimeSegment(QList<FileDescriptor*>,double,double)));
     connect(plot, SIGNAL(curvesChanged()), SLOT(updatePlottedChannelsNumbers()));
+    connect(plot, &Plot::curvesCountChanged, this, &MainWindow::updateActions);
 
     addFolderAct = new QAction(QIcon(":/icons/open24.png"), tr("Добавить папку"),this);
     addFolderAct->setShortcut(tr("Ctrl+O"));
@@ -262,8 +263,7 @@ MainWindow::MainWindow(QWidget *parent)
     excelMenu->addAction(exportToExcelOnlyDataAct);
     exportToExcelAct->setMenu(excelMenu);
 
-    meanAct = new QAction(QString("Вывести среднее (энерг.)"), this);
-    meanAct->setIcon(QIcon(":/icons/mean.png"));
+    meanAct = new QAction(QIcon(":/icons/mean.png"), QString("Вывести среднее (энерг.)"), this);
     connect(meanAct, SIGNAL(triggered()), this, SLOT(calculateMean()));
 
     movingAvgAct = new QAction(QIcon(":/icons/average.png"), QString("Рассчитать скользящее среднее"), this);
@@ -508,6 +508,8 @@ MainWindow::MainWindow(QWidget *parent)
             tabsNames << it.key();
         }
     }
+
+    updateActions();
 }
 
 void MainWindow::createTab(const QString &name, const QStringList &folders)
@@ -520,6 +522,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->sortModel->setSourceModel(tab->model);
 
     tab->channelModel = new ChannelTableModel(tab);
+    connect(tab->channelModel, SIGNAL(modelChanged()), SLOT(updateActions()));
     connect(tab->channelModel,SIGNAL(maybeUpdateChannelDescription(int,QString)),
             SLOT(onChannelDescriptionChanged(int,QString)));
     connect(tab->channelModel,SIGNAL(maybeUpdateChannelName(int,QString)),
@@ -583,6 +586,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
     connect(tab->model, SIGNAL(legendsChanged()), plot, SLOT(updateLegends()));
     connect(tab->model, SIGNAL(plotNeedsUpdate()), plot, SLOT(update()));
+    connect(tab->model, SIGNAL(modelChanged()), SLOT(updateActions()));
 
     tab->channelsTable = new QTableView(this);
     tab->channelsTable->setModel(tab->channelModel);
@@ -698,7 +702,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     int i = tabWidget->addTab(tab, name);
     tabWidget->setCurrentIndex(i);
 
-    foreach (QString folder, folders) {
+    for (QString folder: folders) {
         bool subfolders = folder.endsWith(":1");
         if (subfolders || folder.endsWith(":0"))
             folder.chop(2);
@@ -792,6 +796,7 @@ void MainWindow::changeCurrentTab(int currentIndex)
     if (currentIndex<0) return;
 
     tab = qobject_cast<Tab *>(tabWidget->currentWidget());
+    updateActions();
 }
 
 void MainWindow::editColors()
@@ -879,7 +884,7 @@ void MainWindow::addFile()
 
     setSetting("lastDirectory", fileNames.constFirst());
     addFiles(fileNames);
-    foreach (const QString &file, fileNames)
+    for (const QString &file: fileNames)
         if (!tab->folders.contains(file)) tab->folders << file;
 }
 
@@ -891,7 +896,7 @@ void MainWindow::addFolder(const QString &directory, bool withAllSubfolders, boo
     processDir(directory, filesToAdd, withAllSubfolders);
 
     QStringList toAdd;
-    foreach (const QString &file, filesToAdd) {
+    for (const QString &file: filesToAdd) {
         if (!tab->model->contains(file))
             toAdd << file;
     }
@@ -1676,13 +1681,8 @@ void MainWindow::calculateSpectreRecords()
 {DD;
     if (!tab) return;
 
-    QList<FileDescriptor *> records = tab->model->selectedFiles();
-    for (int i=records.size()-1; i>=0; --i) {
-        if (!records[i]->isSourceFile()) {
-            // only convert source files
-            records.removeAt(i);
-        }
-    }
+    QList<FileDescriptor *> records = tab->model->selectedFiles(Descriptor::TimeResponse);
+
     if (records.isEmpty()) {
         QMessageBox::warning(this,QString("DeepSea Base"),
                              QString("Не выделено ни одного файла с исходными временными данными"));
@@ -2186,6 +2186,77 @@ void MainWindow::exportChannelsToWav()
     progress->setValue(0);
 
     thread->start();
+}
+
+void MainWindow::updateActions()
+{
+    if (!tab || !tab->model ||!tab->channelModel) return;
+
+    saveAct->setEnabled(tab->model->changed());
+
+
+    delFilesAct->setDisabled(tab->model->selected().isEmpty());
+    plotAllChannelsAct->setDisabled(tab->model->selected().isEmpty());
+    plotAllChannelsAtRightAct->setDisabled(tab->model->selected().isEmpty());
+    plotSelectedChannelsAct->setDisabled(tab->channelModel->selected().isEmpty());
+    //exportChannelsToWavAct;
+    calculateSpectreAct->setDisabled(tab->model->selectedFiles(Descriptor::TimeResponse).isEmpty());
+    const QVector<Descriptor::DataType> types {Descriptor::AutoSpectrum,
+                Descriptor::CrossSpectrum,
+                Descriptor::AutoCorrelation,
+                Descriptor::CrossCorrelation,
+                Descriptor::FrequencyResponseFunction,
+                Descriptor::PowerSpectralDensity,
+                Descriptor::EnergySpectralDensity,
+                Descriptor::Spectrum,
+                Descriptor::ShockResponseSpectrum};
+    calculateThirdOctaveAct->setDisabled(
+                tab->model->selectedFiles(types).isEmpty());
+    clearPlotAct->setEnabled(plot->hasCurves());
+    savePlotAct->setEnabled(plot->hasCurves());
+    rescanBaseAct->setEnabled(tab->model->size()>0);
+    //QAction *switchCursorAct;
+    trackingCursorAct->setEnabled(!plot->spectrogram);
+    copyToClipboardAct->setEnabled(plot->hasCurves());
+    printPlotAct->setEnabled(plot->hasCurves());
+    //QAction *editColorsAct;
+
+    meanAct->setDisabled(plot->curves.size()<2);
+    movingAvgAct->setEnabled(plot->hasCurves() && !plot->spectrogram);
+    //QAction *interactionModeAct;
+    addCorrectionAct->setEnabled(plot->hasCurves() && !plot->spectrogram);
+    addCorrectionsAct->setEnabled(plot->hasCurves() && !plot->spectrogram);
+    deleteChannelsAct->setDisabled(tab->channelModel->selected().isEmpty());
+    deleteChannelsBatchAct->setDisabled(tab->channelModel->selected().isEmpty());
+    copyChannelsAct->setDisabled(tab->channelModel->selected().isEmpty());
+    moveChannelsAct->setDisabled(tab->channelModel->selected().isEmpty());
+
+    moveChannelsUpAct->setDisabled(tab->channelModel->selected().isEmpty());
+    moveChannelsDownAct->setDisabled(tab->channelModel->selected().isEmpty());
+    editDescriptionsAct->setDisabled(tab->model->selected().isEmpty());
+
+    exportToExcelAct->setEnabled(plot->hasCurves() && !plot->spectrogram);
+
+    //convertMatFilesAct;
+    //QAction *convertTDMSFilesAct;
+    //QAction *convertEsoFilesAct;
+    //convertAct;
+    copyToLegendAct->setDisabled(tab->model->selectedFiles().isEmpty());
+
+    //QAction *autoscaleXAct;
+    //QAction *autoscaleYAct;
+    //QAction *autoscaleYSlaveAct;
+    //QAction *autoscaleAllAct;
+
+    //QAction *removeLabelsAct;
+    playAct->setEnabled(plot->curvesCount(Descriptor::TimeResponse)>0);
+    editYNameAct->setDisabled(tab->channelModel->selected().isEmpty());
+
+    previousDescriptorAct->setEnabled(tab->model->size()>1 && plot->hasCurves());
+    nextDescriptorAct->setEnabled(tab->model->size()>1 && plot->hasCurves());
+    arbitraryDescriptorAct->setEnabled(tab->model->size()>1 && plot->hasCurves());
+    cycleChannelsUpAct->setEnabled(tab->channelModel->channelsCount>1 && plot->hasCurves());
+    cycleChannelsDownAct->setEnabled(tab->channelModel->channelsCount>1 && plot->hasCurves());
 }
 
 void setLineColor(QAxObject *obj, int color)
@@ -2701,6 +2772,8 @@ void MainWindow::onCurveDeleted(Channel *channel)
     }
     if (tab->record == channel->descriptor())
         tab->channelModel->onCurveChanged(channel);
+
+    updateActions();
 }
 
 void MainWindow::addDescriptors(const QList<FileDescriptor*> &files)
@@ -2760,6 +2833,7 @@ void Tab::filesSelectionChanged(const QItemSelection &newSelection, const QItemS
         channelModel->clear();
         this->filePathLabel->clear();
     }
+
 }
 
 void Tab::channelsSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection)

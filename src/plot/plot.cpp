@@ -268,6 +268,15 @@ bool Plot::hasCurves() const
     return !curves.isEmpty();
 }
 
+int Plot::curvesCount(int type) const
+{
+    int count = 0;
+    for (Curve *c: qAsConst(curves)) {
+        if (int(c->channel->type()) == type) count++;
+    }
+    return count;
+}
+
 void Plot::deleteAllCurves(bool forceDeleteFixed)
 {DD;
     int leftUndeleted = curves.size();
@@ -293,7 +302,7 @@ void Plot::deleteAllCurves(bool forceDeleteFixed)
 //    xName.clear();
 
 //    update();
-//    emit curvesChanged();
+    emit curvesCountChanged();
 }
 
 void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
@@ -304,6 +313,7 @@ void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
             deleteCurve(curve, true);
         }
     }
+    emit curvesCountChanged();
 }
 
 //не удаляем, если фиксирована
@@ -313,6 +323,7 @@ void Plot::deleteCurveFromLegend(QwtPlotItem *item)
         if (!c->fixed) {
             emit curveDeleted(c->channel);
             deleteCurve(c, true);
+            emit curvesCountChanged();
         }
     }
 }
@@ -321,6 +332,7 @@ void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doR
 {DD;
     if (Curve *curve = plotted(dfd->channel(channel))) {
         deleteCurve(curve, doReplot);
+        emit curvesCountChanged();
     }
 }
 
@@ -966,6 +978,7 @@ bool Plot::plotCurve(Channel * ch, QColor *col, bool &plotOnRight, int fileNumbe
 
     update();
     emit curvesChanged();
+    emit curvesCountChanged();
 
     return true;
 }

@@ -112,6 +112,19 @@ int FileDescriptor::plottedCount() const
     return plotted;
 }
 
+bool FileDescriptor::isSourceFile() const
+{
+    if (channelsCount() == 0) return false;
+    int type = channel(0)->type();
+    for (int i=1; i<channelsCount(); ++i) {
+        if (channel(i)->type() != type) {
+            return false;
+        }
+    }
+
+    return (type == Descriptor::TimeResponse);
+}
+
 bool FileDescriptor::canTakeChannelsFrom(FileDescriptor *other) const
 {
     return (dataTypeEquals(other)

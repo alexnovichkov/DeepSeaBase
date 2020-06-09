@@ -51,6 +51,7 @@ void ChannelTableModel::clear()
     channelsCount = 0;
     indexes.clear();
     endResetModel();
+    emit modelChanged();
 }
 
 void ChannelTableModel::deleteCurves()
@@ -91,6 +92,13 @@ void ChannelTableModel::setDescriptor(FileDescriptor *dfd)
     indexes.clear();
     channelsCount = descriptor->channelsCount();
     endResetModel();
+    emit modelChanged();
+}
+
+void ChannelTableModel::setSelected(const QVector<int> &indexes)
+{
+    this->indexes = indexes;
+    emit modelChanged();
 }
 
 void ChannelTableModel::onCurveChanged(Channel *ch)

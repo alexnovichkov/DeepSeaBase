@@ -203,6 +203,7 @@ private slots:
     void cycleChannelsDown();
 
     void exportChannelsToWav();
+    void updateActions();
 private:
     void moveChannels(bool up);
     void addFiles(const QStringList &files);
@@ -246,7 +247,6 @@ private:
     QAction *plotAllChannelsAtRightAct;
     QAction *plotSelectedChannelsAct;
     QAction *exportChannelsToWavAct;
-    QAction *removeChannelsPlotsAct;
     QAction *calculateSpectreAct;
     QAction *calculateThirdOctaveAct;
     QAction *clearPlotAct;

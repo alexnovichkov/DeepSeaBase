@@ -70,6 +70,7 @@ public:
      * @return count of curves excluding freeCurve
      */
     int curvesCount() const {return curves.size();}
+    int curvesCount(int type) const;
 
     /**
      * @brief deleteCurves deletes all curves on a plot from a descriptor
@@ -148,6 +149,7 @@ signals:
     void playerPanelCloseRequested();
     void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
     void curvesChanged();
+    void curvesCountChanged();
     void updatePlotted();
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);

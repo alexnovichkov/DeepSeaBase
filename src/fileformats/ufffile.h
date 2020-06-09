@@ -171,7 +171,6 @@ public:
     virtual int columnsCount() const override;
 
     virtual Channel *channel(int index) const override;
-    virtual bool isSourceFile() const override;
     virtual bool operator ==(const FileDescriptor &descriptor) override;
     virtual bool dataTypeEquals(FileDescriptor *other) const override;
 //    virtual bool hasSameParameters(FileDescriptor *other) const override;

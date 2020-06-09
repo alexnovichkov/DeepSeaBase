@@ -828,19 +828,6 @@ Channel *UffFileDescriptor::channel(int index) const
     return 0;
 }
 
-bool UffFileDescriptor::isSourceFile() const
-{DD;
-    if (channels.isEmpty()) return false;
-    int type = channels.constFirst()->type();
-    for (int i=1; i<channels.size(); ++i) {
-        if (channels.at(i)->type() != type) {
-            return false;
-        }
-    }
-
-    return (type == Descriptor::TimeResponse);
-}
-
 bool UffFileDescriptor::operator ==(const FileDescriptor &descriptor)
 {DD;
     return this->fileName() == descriptor.fileName();

@@ -24,7 +24,7 @@ public:
     void plotChannels(const QVector<int> &toPlot, bool plotOnRight = false);
 
     void setDescriptor(FileDescriptor *dfd);
-    void setSelected(const QVector<int> &indexes) {this->indexes = indexes;}
+    void setSelected(const QVector<int> &indexes);
 
     void onCurveChanged(Channel *ch);
 
@@ -35,6 +35,7 @@ signals:
     void maybePlot(int row);
     void deleteCurve(int row);
     void updateLegends();
+    void modelChanged();
     // QAbstractItemModel interface
 public:
     virtual int rowCount(const QModelIndex &parent) const override;
