@@ -60,7 +60,7 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
             samplingF, SLOT(updateProperty(QString,QVariant)));
 
     //перенаправляем сигналы от функций в интерфейс пользователя
-    foreach (AbstractFunction *f, m_functions) {
+    for (AbstractFunction *f: m_functions) {
         connect(f, SIGNAL(attributeChanged(QString,QVariant,QString)),SIGNAL(attributeChanged(QString,QVariant,QString)));
         connect(f, SIGNAL(tick()), this, SIGNAL(tick()));
     }
@@ -120,7 +120,7 @@ bool SpectreAlgorithm::compute(FileDescriptor *file)
     }
     saver->reset();
     QString fileName = saver->getProperty(saver->name()+"/name").toString();
-    qDebug()<<fileName;
+//    qDebug()<<fileName;
 
     if (fileName.isEmpty()) return false;
     newFiles << fileName;

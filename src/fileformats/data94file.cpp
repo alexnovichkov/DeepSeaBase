@@ -377,39 +377,40 @@ void Data94File::write()
                 r.setFloatingPointPrecision(QDataStream::DoublePrecision);
 
             c->dataPosition = r.device()->pos();
-            for (int block = 0; block < c->data()->blocksCount(); ++block) {
-                if (!c->isComplex) {
-                    const QVector<double> yValues = c->data()->rawYValues(block);
-                    if (yValues.isEmpty()) {
-                        qDebug()<<"Отсутствуют данные для записи в канале"<<c->name();
-                        continue;
-                    }
+            if (!c->isComplex) {
+                const QVector<double> yValues = c->data()->rawYValues(-1);
+                if (yValues.isEmpty()) {
+                    qDebug()<<"Отсутствуют данные для записи в канале"<<c->name();
+                    continue;
+                }
 
-                    for (double v: yValues) {
-                        if (c->sampleWidth == 4)
-                            r << (float)v;
-                        else
-                            r << v;
+                for (double v: yValues) {
+                    if (c->sampleWidth == 4)
+                        r << (float)v;
+                    else
+                        r << v;
+                }
+            } // !c->isComplex
+            else {
+                const auto yValues = c->data()->yValuesComplex(-1);
+                Q_ASSERT_X(uint(yValues.size()) == c->xAxisBlock.count*c->zAxisBlock.count,
+                           "Data94File.write","The data size is wrong!");
+                if (yValues.isEmpty()) {
+                    qDebug()<<"Отсутствуют данные для записи в канале"<<c->name();
+                    continue;
+                }
+                for (cx_double v: yValues) {
+                    if (c->sampleWidth == 4) {
+                        r << (float)v.real();
+                        r << (float)v.imag();
                     }
-                } // !c->isComplex
-                else {
-                    const auto yValues = c->data()->yValuesComplex(block);
-                    if (yValues.isEmpty()) {
-                        qDebug()<<"Отсутствуют данные для записи в канале"<<c->name();
-                        continue;
+                    else {
+                        r << v.real();
+                        r << v.imag();
                     }
-                    for (cx_double v: yValues) {
-                        if (c->sampleWidth == 4) {
-                            r << (float)v.real();
-                            r << (float)v.imag();
-                        }
-                        else {
-                            r << v.real();
-                            r << v.imag();
-                        }
-                    }
-                } // c->isComplex
-            }
+                }
+            } // c->isComplex
+
         } // c->dataChanged()
         else {
             //просто копируем описатель из исходного файла

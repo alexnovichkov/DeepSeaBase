@@ -143,18 +143,22 @@ bool SavingFunction::compute(FileDescriptor *file)
 
     QVector<double> data = m_input->getData("input");
     if (data.isEmpty()) return false;
+
+    //определяем число отсчетов в одном блоке
     int dataSize = data.size();
-    bool dataIsComplex = m_input->getProperty("?/dataFormat").toString() == "complex";
+    const int blocksCount = m_input->getProperty("?/zCount").toInt();
+
+    const bool dataIsComplex = m_input->getProperty("?/dataFormat").toString() == "complex";
     if (dataIsComplex) dataSize /= 2;
 
     //здесь заполняются все свойства канала, не связанные с данными
-    Channel *ch = createChannel(file, dataSize);
+    Channel *ch = createChannel(file, dataSize / blocksCount);
     if (!ch) return false;
 
     const int channelIndex = m_input->getProperty("?/channelIndex").toInt();
     bool abscissaEven = m_input->getProperty("?/abscissaEven").toBool();
     if (abscissaEven)
-        ch->data()->setXValues(0.0, m_input->getProperty("?/xStep").toDouble(), dataSize);
+        ch->data()->setXValues(0.0, m_input->getProperty("?/xStep").toDouble(), dataSize / blocksCount);
     else {
         const QList<QVariant> abscissaData = m_input->getProperty("?/abscissaData").toList();
         QVector<double> aData;
@@ -172,7 +176,8 @@ bool SavingFunction::compute(FileDescriptor *file)
         for (int i=0; i<dataSize; i++) {
             complexData[i]={data[i*2], data[i*2+1]};
         }
-        ch->data()->setYValues(complexData);
+        //данные сразу всех блоков
+        ch->data()->setYValues(complexData, -1);
     }
     else {
         QString format = m_input->getProperty("?/dataFormat").toString();
@@ -183,7 +188,8 @@ bool SavingFunction::compute(FileDescriptor *file)
         else if (format == "amplitude") f = 3;
         else if (format == "phase") f = 5;
         else if (format == "amplitudeDb") f = 4;
-        ch->data()->setYValues(data, DataHolder::YValuesFormat(f));
+        //данные сразу всех блоков
+        ch->data()->setYValues(data, DataHolder::YValuesFormat(f), -1);
     }
 
     ch->setPopulated(true);

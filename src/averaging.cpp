@@ -18,33 +18,38 @@ Averaging::Averaging(int averagingType, int maximumAverages) :
 
 void Averaging::average(const QVector<cx_double> &input)
 {
-    averaged.resize(input.size());
+    if (averagingType != NoAveraging)
+        averaged.resize(input.size());
 
     switch (averagingType) {
+        case NoAveraging:
+            averaged.append(input);
+            break;
         case Linear:
             averageLinear(input);
-            averagesMade++;
             break;
         case Exponential:
             averageExponential(input);
-            averagesMade++;
             break;
         case PeakHold:
             averagePeak(input);
-            averagesMade++;
             break;
         case Energetic:
             averageEnergetic(input);
-            averagesMade++;
         default: break;
     }
+    averagesMade++;
 }
 
 void Averaging::average(const QVector<double> &input)
 {
-    averaged_.resize(input.size());
+    if (averagingType != NoAveraging)
+        averaged_.resize(input.size());
 
     switch (averagingType) {
+        case NoAveraging:
+            averaged_.append(input);
+            break;
         case Linear:
             averageLinear(input);
             break;
