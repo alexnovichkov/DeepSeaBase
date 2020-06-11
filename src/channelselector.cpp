@@ -1,9 +1,7 @@
 #include "channelselector.h"
 
-ChannelSelector::ChannelSelector()
-{
+ChannelSelector::ChannelSelector() = default;
 
-}
 
 ChannelSelector::ChannelSelector(const QString &filter) : m_filter(filter)
 {

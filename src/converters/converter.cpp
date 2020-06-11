@@ -62,8 +62,7 @@ BOOL CALLBACK enumWindowsProc(HWND hWnd, LPARAM lParam)
                 SendMessage(firstChild, BM_CLICK, 0, 0);
                 break;
             }
-            else
-                firstChild = GetWindow(firstChild, GW_HWNDNEXT);
+            firstChild = GetWindow(firstChild, GW_HWNDNEXT);
         }
     }
 
@@ -201,17 +200,13 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
     QString method = p.method->methodDll();
     method.chop(4);
     QString filter=QString("%1/%2_%3")
-                   .arg(tempFolderName)
-                   .arg(QFileInfo(fileName).completeBaseName())
-                   .arg(method);
+                   .arg(tempFolderName, QFileInfo(fileName).completeBaseName(), method);
     filter.replace("\\","/");
     QStringList filtered = newFiles_.filter(filter);
 
     if (filtered.isEmpty()) {
         filter=QString("%1/%2_%3")
-                       .arg(tempFolderName)
-                       .arg(QFileInfo(fileName).baseName())
-                       .arg(method);
+                       .arg(tempFolderName, QFileInfo(fileName).baseName(), method);
         filter.replace("\\","/");
         filtered = newFiles_.filter(filter);
     }
@@ -307,10 +302,11 @@ QVector<float> getBlock(uchar *mapped, quint64 mappedSize,
 
 void changeScale(QVector<double> &output, const Parameters &p)
 {DD;
-    const double t2 = p.threshold * p.threshold;
     if (p.scaleType > 0) {
-        for (int i=0; i<output.size(); ++i)
-            output[i] = 10 * log10(output[i] / t2);}
+        const double t2 = p.threshold * p.threshold;
+        for (double & i: output)
+            i = 10 * log10(i / t2);
+    }
 }
 
 int stripNumberForBandwidth(double bandwidth, Parameters &p)
@@ -407,7 +403,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             int buffer = 1024;
             Resampler filter(factor, buffer);
             QVector<float> filtered;
-            while (1) {
+            while (true) {
                 QVector<float> chunk = getBlock(file->channel(i)->data()->yValues(0), buffer, stepBack, block);
                 if (chunk.size() < buffer)
                     filter.setLastChunk();
@@ -427,7 +423,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             FrameCutter sampling;
             sampling.setType(p.overlap==0?FrameCutter::Continuous:FrameCutter::Overlap);
             sampling.setBlockSize(newBlockSize);
-            sampling.setDelta(1.0 * newBlockSize * p.overlap);
+            sampling.setDelta(int(1.0 * newBlockSize * p.overlap));
             sampling.setSource(file->channel(i)->data()->yValues(0));
 
             Resampler filter(factor, p.bufferSize);
@@ -437,7 +433,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             Averaging averaging(p.averagingType+1, p.averagesCount);
 
             bool ok;
-            while (1) {
+            while (true) {
                 QVector<double> chunk = sampling.get(&ok);
                 if (!ok) break;
 
@@ -474,14 +470,14 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             FrameCutter sampling1;
             sampling1.setType(p.overlap==0?FrameCutter::Continuous:FrameCutter::Overlap);
             sampling1.setBlockSize(newBlockSize);
-            sampling1.setDelta(1.0 * newBlockSize * p.overlap);
+            sampling1.setDelta(int(1.0 * newBlockSize * p.overlap));
             sampling1.setSource(file->channel(i)->data()->yValues(0));
 
 
             FrameCutter sampling2;
             sampling2.setType(p.overlap==0?FrameCutter::Continuous:FrameCutter::Overlap);
             sampling2.setBlockSize(newBlockSize);
-            sampling2.setDelta(1.0 * newBlockSize * p.overlap);
+            sampling2.setDelta(int(1.0 * newBlockSize * p.overlap));
             sampling2.setSource(file->channel(p.baseChannel)->data()->yValues(0));
 
             Resampler filter(factor, p.bufferSize);
@@ -493,7 +489,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
 
 
 
-            while (1) {
+            while (true) {
                 bool ok;
                 QVector<double> chunk1 = sampling1.get(&ok);
                 if (!ok) break;
@@ -519,10 +515,10 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             spectrumComplex = transferFunction(averagingBase.get(), averaging.getComplex());
 
             //fixing units of measurement
-            double convertF = convertFactor(file->channel(i)->yName()) /
+            const double convertF = convertFactor(file->channel(i)->yName()) /
                               convertFactor(file->channel(p.baseChannel)->yName());
-            for (int sample = 0; sample < spectrumComplex.size(); ++sample)
-                spectrumComplex[sample] *= convertF;
+            for (auto &sample: spectrumComplex)
+                sample *= convertF;
 
             if (!p.saveAsComplex) {
                 spectrum = absolutes(spectrumComplex);
@@ -530,8 +526,8 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
                     //в DeepSea ошибочно используется пороговое значение для виброускорения. Убираем порог полностью,
                     //чтобы результаты совпадали с Test.Xpress
                     const double t2 = 1.0;//threshold(file->channel(p.baseChannel)->yName()) / p.threshold;
-                    for (int i=0; i<spectrum.size(); ++i)
-                        spectrum[i] = 20 * log10(spectrum[i] * t2);
+                    for (double &i: spectrum)
+                        i = 20 * log10(i * t2);
                 }
             }
         }
@@ -670,7 +666,7 @@ QVector<cx_double> transferFunction(const QVector<double> &values1, const QVecto
     return output;
 }
 
-QStringList Converter::getSpfFile(QString dir)
+QStringList Converter::getSpfFile(const QString &dir)
 {DD;
     QStringList spfFile;
     spfFile << "[DeepSeaProjectFile]";
@@ -694,7 +690,7 @@ QStringList Converter::getSpfFile(QString dir)
     spfFile << "GColor14=16744576";
     spfFile << "GColor15=10789024";
     spfFile << "SonColor=0";
-    spfFile << QString("SoDatDir=C:\\Program Files (x86)\\DeepSea\\Data");
+    spfFile << "SoDatDir=C:\\Program Files (x86)\\DeepSea\\Data";
     spfFile << QString("DSDatDir=%1").arg(dir); // файлы сохраняются в ту же папку
     spfFile << "TpNameDat=2"; // к имени файла добавляется дата и время создания
 
@@ -730,7 +726,7 @@ QStringList Converter::getSpfFile(QString dir)
         spfFile << QString("BaseChannel=%1").arg(p.baseChannel);
         spfFile << "MinMax=*,*,*,*";
         spfFile << QString("AStrip=%1").arg(p.bandStrip);
-        spfFile << QString("StepBack=%1").arg(floattohex(p.overlap));
+        spfFile << QString("StepBack=%1").arg(floattohex(float(p.overlap)));
 
         spfFile << "ShiftDat=0"; // TODO: добавить возможность устанавливать смещение
         // длина = число отсчетов в канале

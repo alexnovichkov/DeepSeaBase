@@ -55,7 +55,7 @@ public slots:
 private:
     bool convert(FileDescriptor *file, const QString &tempFolderName);
     void moveFilesFromTempDir(const QString &tempFolderName, QString destDir);
-    QStringList getSpfFile(QString dir);
+    QStringList getSpfFile(const QString &dir);
     void finalize();
 
     QList<FileDescriptor *> dataBase;

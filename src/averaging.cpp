@@ -78,9 +78,8 @@ bool Averaging::averagingDone() const
 QVector<double> Averaging::get()
 {
     if (averagingType == Energetic) {
-        for (int i=0; i<averaged_.size(); ++i) {
-            averaged_[i] = sqrt(std::abs(averaged_[i]));
-        }
+        for (double &i: averaged_)
+            i = sqrt(std::abs(i));
     }
     return averaged_;
 }
@@ -88,8 +87,8 @@ QVector<double> Averaging::get()
 QVector<cx_double> Averaging::getComplex()
 {
     if (averagingType == Energetic) {
-        for (int i=0; i<averaged.size(); ++i) {
-            averaged[i] = sqrt(averaged[i]);
+        for (cx_double &i : averaged) {
+            i = sqrt(i);
         }
     }
     return averaged;
@@ -188,8 +187,8 @@ void Averaging::setAveragingType(int value)
 Averaging *averageChannels(const QList<QPair<FileDescriptor *, int> > &toMean)
 {
     QList<Channel*> list;
-    for (int i=0; i<toMean.size(); ++i)
-        list << toMean.at(i).first->channel(toMean.at(i).second);
+    for (auto i : toMean)
+        list << i.first->channel(i.second);
     Channel *firstChannel = list.constFirst();
 
     //ищем наименьшее число отсчетов
@@ -217,9 +216,9 @@ Averaging *averageChannels(const QList<QPair<FileDescriptor *, int> > &toMean)
         }
     }
 
-    Averaging *averaging = new Averaging(Averaging::Linear, list.size());
+    auto *averaging = new Averaging(Averaging::Linear, list.size());
 
-    foreach (Channel *ch, list) {
+    for (Channel *ch: list) {
         if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
             averaging->average(ch->data()->yValuesComplex(0));
         else

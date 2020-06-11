@@ -106,8 +106,7 @@ void ColorSelector::removeColor(int index)
 
 QColor ColorSelector::getColor()
 {
-    for (int i=0; i<colors.size(); ++i) {
-        QColor c = colors.at(i);
+    for (const QColor &c: colors) {
         if (!usedColors.contains(c)) {
             usedColors.append(c);
             return c;

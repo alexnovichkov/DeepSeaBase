@@ -42,7 +42,7 @@ private:
     QList<FileDescriptor *> dataBase;
 
     QStringList newFiles;
-    AbstractMethod *currentMethod;
+    AbstractMethod *currentMethod = 0;
 
     QComboBox *methodCombo;
     QStackedWidget *methodsStack;

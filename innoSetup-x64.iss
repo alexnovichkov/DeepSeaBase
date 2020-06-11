@@ -30,8 +30,10 @@ ArchitecturesInstallIn64BitMode=x64 ia64
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 
 [Tasks]
+Name: installmode; Description: "Режим установки"; GroupDescription: "Режим установки"; 
+Name: installmode/normal; Description: "Обычная установка"; GroupDescription: "Режим установки"; Flags: exclusive
+Name: installmode/portable; Description: "Portable установка"; GroupDescription: "Режим установки"; Flags: unchecked exclusive
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 0,6.1
 
 [Files]
 Source: "K:\My\build\build-DeepSeaBase-Desktop_Qt_5_12_8_MinGW_64_bit-Release\bin\DeepSeaBase.exe"; DestDir: "{app}"; Flags: ignoreversion
@@ -73,10 +75,9 @@ Source: "K:\My\build\DeepSeaBase\src\icons\*.png"; DestDir: "{app}\icons"; Flags
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
-Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: quicklaunchicon
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: installmode/normal
+Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"; Tasks: installmode/normal
+Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon installmode/normal
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent

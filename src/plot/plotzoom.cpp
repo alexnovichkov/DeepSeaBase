@@ -51,7 +51,7 @@ bool PlotZoom::eventFilter(QObject *target,QEvent *event)
 
 void PlotZoom::procMouseEvent(QEvent *event)
 {
-    QMouseEvent *mEvent = static_cast<QMouseEvent *>(event);
+    auto mEvent = dynamic_cast<QMouseEvent *>(event);
 
     switch (event->type())  {
         case QEvent::MouseButtonPress:

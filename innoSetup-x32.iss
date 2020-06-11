@@ -26,19 +26,20 @@ AllowNoIcons=yes
 OutputBaseFilename=DeepSeaBaseInstall-{#MyAppVersion}-x32
 Compression=lzma
 SolidCompression=yes
+Uninstallable=IsTaskSelected('installmode/normal')
+
 
 [Languages]
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 
 [Tasks]
+Name: installmode; Description: "Режим установки"; GroupDescription: "Режим установки"; 
+Name: installmode/normal; Description: "Обычная установка"; GroupDescription: "Режим установки"; Flags: exclusive
+Name: installmode/portable; Description: "Portable установка"; GroupDescription: "Режим установки"; Flags: unchecked exclusive
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
-Name: "quicklaunchicon"; Description: "{cm:CreateQuickLaunchIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked; OnlyBelowVersion: 0,6.1
 
 [Files]
 Source: "K:\My\build\build-DeepSeaBase-Desktop_Qt_5_12_8_MinGW_32_bit-Release\bin\DeepSeaBase.exe"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "K:\Qt\Qt5.5.0\5.5\mingw492_32\bin\icudt54.dll"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "K:\Qt\Qt5.5.0\5.5\mingw492_32\bin\icuin54.dll"; DestDir: "{app}"; Flags: ignoreversion
-;Source: "K:\Qt\Qt5.5.0\5.5\mingw492_32\bin\icuuc54.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Qt\Qt5.12.8\5.12.8\mingw73_32\bin\libgcc_s_dw2-1.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Qt\Qt5.12.8\5.12.8\mingw73_32\bin\libstdc++-6.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\Qt\Qt5.12.8\5.12.8\mingw73_32\bin\libwinpthread-1.dll"; DestDir: "{app}"; Flags: ignoreversion
@@ -72,12 +73,12 @@ Source: "K:\My\build\DeepSeaBase\src\style.css"; DestDir: "{app}"; Flags: ignore
 Source: "K:\My\build\DeepSeaBase\src\version.js"; DestDir: "{app}"; Flags: ignoreversion
 Source: "K:\My\build\DeepSeaBase\src\icons\*.png"; DestDir: "{app}\icons"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
+Source: "K:\My\build\DeepSeaBase\portable"; DestDir: "{app}"; Tasks: installmode/portable
 
 [Icons]
-Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
-Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"
-Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
-Name: "{userappdata}\Microsoft\Internet Explorer\Quick Launch\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: quicklaunchicon
+Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: installmode/normal
+Name: "{group}\{cm:UninstallProgram,{#MyAppName}}"; Filename: "{uninstallexe}"; Tasks: installmode/normal
+Name: "{commondesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon  installmode/normal
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent

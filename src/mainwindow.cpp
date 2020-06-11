@@ -1689,8 +1689,8 @@ void MainWindow::calculateSpectreRecords()
         return;
     }
 
-//    CalculateSpectreDialog dialog(records, this);
-    FilesProcessorDialog dialog(records, this);
+    CalculateSpectreDialog dialog(records, this);
+    //FilesProcessorDialog dialog(records, this);
 
     if (dialog.exec()) {
         const QStringList newFiles = dialog.getNewFiles();
@@ -1977,14 +1977,26 @@ void MainWindow::rescanBase()
 
 QVariant MainWindow::getSetting(const QString &key, const QVariant &defValue)
 {DD;
-    QSettings se("Alex Novichkov","DeepSea Database");
-    return se.value(key, defValue);
+    if (QFile::exists("portable")) {
+        QSettings se("deepseabase.ini",QSettings::IniFormat);
+        return se.value(key, defValue);
+    }
+    else {
+        QSettings se("Alex Novichkov","DeepSea Database");
+        return se.value(key, defValue);
+    }
 }
 
 void MainWindow::setSetting(const QString &key, const QVariant &value)
 {DD;
-    QSettings se("Alex Novichkov","DeepSea Database");
-    se.setValue(key, value);
+    if (QFile::exists("portable")) {
+        QSettings se("deepseabase.ini",QSettings::IniFormat);
+        se.setValue(key, value);
+    }
+    else {
+        QSettings se("Alex Novichkov","DeepSea Database");
+        se.setValue(key, value);
+    }
 }
 
 

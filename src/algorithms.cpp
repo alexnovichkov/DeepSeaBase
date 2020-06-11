@@ -506,7 +506,7 @@ TFloat toFloat(const QByteArray &v, size_t offset)
     union {
         TInt   i;
         TFloat f;
-    } tmp;
+    } tmp{};
     ::memcpy(&tmp, v.data() + offset, sizeof(TInt));
 
     if(ENDIAN != QDataStream::ByteOrder(QSysInfo::ByteOrder))

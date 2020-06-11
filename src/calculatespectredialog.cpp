@@ -22,9 +22,9 @@ CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> &dataBase
 
     methodCombo = new QComboBox(this);
     methodCombo->setEditable(false);
-    for (int i=0; i<26; ++i) {
-        methodCombo->addItem(QString(methods[i].methodDescription));
-    }
+    for (const auto &method: methods)
+        methodCombo->addItem(QString(method.methodDescription));
+
     connect(methodCombo,SIGNAL(currentIndexChanged(int)), SLOT(methodChanged(int)));
 
     infoLabel = new QPlainTextEdit(this);
@@ -141,7 +141,7 @@ void CalculateSpectreDialog::start()
 void CalculateSpectreDialog::stop()
 {DD;
     if (thread)
-    thread->requestInterruption();
+        thread->requestInterruption();
     QDialog::accept();
 }
 
@@ -166,7 +166,7 @@ void CalculateSpectreDialog::reject()
 
 void CalculateSpectreDialog::updateProgressIndicator(const QString &path)
 {DD;
-    progress->setValue(QDir(path).count()-2);
+    progress->setValue(int(QDir(path).count()-2));
 }
 
 void CalculateSpectreDialog::updateProgressIndicator()
