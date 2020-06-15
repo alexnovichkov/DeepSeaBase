@@ -301,8 +301,8 @@ LIBS *= K:/My/programming/sources/build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_Mi
 
 #tdm
 INCLUDEPATH *= K:/My/programming/sources/TDMS/tdm_dev/dev/include
-LIBS *= K:/My/programming/sources/TDMS/tdm_dev/dev/lib/64-bit/msvc64/nilibddc.lib
-LIBS *= K:/My/programming/sources/TDMS/tdm_dev/dev/lib/32-bit/msvc/nilibddc.lib
+#LIBS *= K:/My/programming/sources/TDMS/tdm_dev/dev/lib/64-bit/msvc64/nilibddc.lib
+#LIBS *= K:/My/programming/sources/TDMS/tdm_dev/dev/lib/32-bit/msvc/nilibddc.lib
 
 #FFTW
 INCLUDEPATH *= K:/My/programming/sources/fftw-3.3.5-dll32
