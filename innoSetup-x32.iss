@@ -8,9 +8,6 @@
 #define FileLine StringChange(FileRead(FileHandle), "var _version=""","")
 #define MyAppVersion  StringChange(FileLine, """;","")
 
-
-;#define MyAppVersion GetFileVersion(AddBackslash(SourcePath) + "DeepSeaBase.exe")
-
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
 ; Do not use the same AppId value in installers for other applications.
@@ -26,6 +23,7 @@ AllowNoIcons=yes
 OutputBaseFilename=DeepSeaBaseInstall-{#MyAppVersion}-x32
 Compression=lzma
 SolidCompression=yes
+PrivilegesRequired=none
 Uninstallable=IsTaskSelected('installmode/normal')
 
 

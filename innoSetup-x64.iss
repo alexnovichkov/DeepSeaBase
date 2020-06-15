@@ -25,6 +25,8 @@ Compression=lzma
 SolidCompression=yes
 ArchitecturesAllowed=x64 ia64
 ArchitecturesInstallIn64BitMode=x64 ia64
+PrivilegesRequired=none
+Uninstallable=IsTaskSelected('installmode/normal')
 
 [Languages]
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
