@@ -241,6 +241,7 @@ public:
     TDMSFileConvertor(QObject *parent = 0);
     void setFilesToConvert(const QStringList &toConvert) {filesToConvert = toConvert;}
     void setRawFileFormat(int format) {rawFileFormat = format;} // 0 = float, 1 = quint16
+    void setDestinationFormat(const QString &format)  {destinationFormat = format;} //dfd, uff, d94
 
     QStringList getNewFiles() const {return newFiles;}
 public slots:
@@ -250,7 +251,7 @@ signals:
     void finished();
     void message(const QString &s);
 private:
-
+    QString destinationFormat;
     QString folderName;
     QStringList newFiles;
     QStringList filesToConvert;

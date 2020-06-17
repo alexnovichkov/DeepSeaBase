@@ -294,6 +294,8 @@ CONFIG(release, debug|release):QMAKE_CFLAGS  += -O2
 INCLUDEPATH *= $$PWD $$PWD/.. $$PWD/../3rdParty/qtpropertybrowser $$PWD/../3rdParty/DspFilters
 INCLUDEPATH *= K:/My/programming/sources/strtk
 
+#PRECOMPILED_HEADER = strtk_.hpp
+
 #libsamplerate
 INCLUDEPATH *= K:/My/programming/sources/libsamplerate-0.1.8/src
 LIBS *= K:/My/programming/sources/build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_32_bit-Release/release/libsamplerate.a

@@ -17,7 +17,7 @@ public:
 
 private:
     void recalculateIndexes();
-    QString m_filter;
+    QString m_filter = QString("все");
     QSet<int> m_indexes;
     int max_index = -1;
 };

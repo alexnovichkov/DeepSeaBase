@@ -161,14 +161,14 @@ void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
     currentAlgorithm = algorithms[index];
 
     // Parsing properties descriptions
-    foreach (AbstractFunction *f, currentAlgorithm->functions()) {
+    for (AbstractFunction *f: currentAlgorithm->functions()) {
         addProperties(f);
     }
 
     // блокируем сигналы, чтобы при каждом изменении свойства не обновлять все отображения свойств
     // мы это сделаем в самом конце функцией updateVisibleProperties();
 //    m_manager->blockSignals(true);
-    foreach (const QString &property, map.values()) {
+    for (const QString &property: map.values()) {
         map.key(property)->setValue(currentAlgorithm->getProperty(property));
     }
 //    m_manager->blockSignals(false);

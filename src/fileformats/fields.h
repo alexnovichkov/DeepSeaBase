@@ -3,7 +3,7 @@
 
 #include <QtCore>
 
-#include <strtk.hpp>
+#include <strtk_.hpp>
 
 enum FieldType {
     FTDelimiter,

@@ -61,7 +61,7 @@ bool AbstractAlgorithm::propertyShowsFor(const QString &property) const
 {
     if (property.isEmpty()) return true;
 
-    foreach (AbstractFunction *f, functions()) {
+    for (AbstractFunction *f: functions()) {
         if (property.startsWith(f->name()+"/")) {
             return f->propertyShowsFor(property);
         }
@@ -74,7 +74,7 @@ QVariant AbstractAlgorithm::getProperty(const QString &property) const
 {
     if (property.isEmpty()) return QVariant();
 
-    foreach (AbstractFunction *f, functions()) {
+    for (AbstractFunction *f: functions()) {
         if (property.startsWith(f->name()+"/")) {
             return f->getProperty(property);
         }
@@ -87,7 +87,7 @@ void AbstractAlgorithm::setProperty(const QString &property, const QVariant &val
 {
     if (property.isEmpty()) return;
 
-    foreach (AbstractFunction *f, functions()) {
+    for (AbstractFunction *f: functions()) {
         if (property.startsWith(f->name()+"/")) {
             f->setProperty(property, val);
             return;
@@ -115,7 +115,7 @@ void AbstractAlgorithm::start()
 
 
 
-    foreach (FileDescriptor *file, m_dataBase) {
+    for (FileDescriptor *file: m_dataBase) {
         emit message(QString("Расчет для файла\n%1").arg(file->fileName()));
         if (!compute(file)) {
             emit message("Не удалось сконвертировать файл " + file->fileName());

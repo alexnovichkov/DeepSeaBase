@@ -6,6 +6,7 @@
 #include "checkableheaderview.h"
 #include "logging.h"
 #include "algorithms.h"
+#include "fileformats/formatfactory.h"
 
 TDMSConverterDialog::TDMSConverterDialog(QWidget *parent) : QDialog(parent)
 {
@@ -18,6 +19,10 @@ TDMSConverterDialog::TDMSConverterDialog(QWidget *parent) : QDialog(parent)
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(start()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(stop()));
     buttonBox->buttons().constFirst()->setDisabled(true);
+
+    fileFormat = new QComboBox(this);
+    fileFormat->addItems(FormatFactory::allFilters());
+    connect(fileFormat, SIGNAL(currentTextChanged(QString)), SLOT(updateFormat()));
 
     convertor = new TDMSFileConvertor();
 
@@ -92,12 +97,14 @@ TDMSConverterDialog::TDMSConverterDialog(QWidget *parent) : QDialog(parent)
 
     QWidget *second = new QWidget(this);
     QGridLayout *grid1 = new QGridLayout;
-    grid1->addWidget(textEdit,0,0,1,3);
-    grid1->addWidget(new QLabel("Записывать данные в файл RAW как", this), 1,0,1,1);
-    grid1->addWidget(rawFileFormat, 1,1,1,1);
-    grid1->addWidget(openFolderButton, 2,0,1,3);
-    grid1->addWidget(addFilesButton, 3, 0,1,3);
-    grid1->addWidget(buttonBox,4,0,1,3);
+    grid1->addWidget(textEdit,0,0,1,4);
+    grid1->addWidget(new QLabel("Сохранять как", this), 1,0,1,1);
+    grid1->addWidget(fileFormat, 1,1,1,1);
+    grid1->addWidget(new QLabel("Записывать данные в файл RAW как", this), 1,2,1,1);
+    grid1->addWidget(rawFileFormat, 1,3,1,1);
+    grid1->addWidget(openFolderButton, 2,0,1,4);
+    grid1->addWidget(addFilesButton, 3, 0,1,4);
+    grid1->addWidget(buttonBox,4,0,1,4);
     second->setLayout(grid1);
     splitter->addWidget(first);
     splitter->addWidget(second);
@@ -136,21 +143,37 @@ void TDMSConverterDialog::chooseFiles()
 
     tree->clear();
     int i=1;
-    foreach (const QFileInfo &f, tdmsFiles) {
+    for (const QFileInfo &f: tdmsFiles) {
         QTreeWidgetItem *item = new QTreeWidgetItem(tree);
         item->setFlags(item->flags() | Qt::ItemIsEditable);
         item->setText(0, QString::number(i++));
         item->setText(1, f.canonicalFilePath());
-        if (fileExists(f.canonicalFilePath(), "dfd")) {
-            item->setIcon(2,QIcon(":/icons/tick.png"));
-            item->setCheckState(1, Qt::Unchecked);
-        }
-        else item->setCheckState(1, Qt::Checked);
     }
     tree->resizeColumnToContents(0);
     tree->resizeColumnToContents(1);
+    updateFormat();
 
     buttonBox->buttons().constFirst()->setDisabled(tdmsFiles.isEmpty());
+}
+
+void TDMSConverterDialog::updateFormat()
+{
+    QString formatString = fileFormat->currentText();
+    QString suffix = formatString.right(4);
+    suffix.chop(1);
+    for (int i=0; i<tree->topLevelItemCount(); ++i) {
+        QTreeWidgetItem *item = tree->topLevelItem(i);
+        if (fileExists(item->text(1), suffix)) {
+            item->setIcon(2,QIcon(":/icons/tick.png"));
+            item->setCheckState(1, Qt::Unchecked);
+        }
+        else {
+            item->setCheckState(1, Qt::Checked);
+            item->setIcon(2,QIcon());
+        }
+    }
+//    rawFileFormat->setEnabled(suffix.toLower() == "dfd");
+    convertor->setDestinationFormat(suffix.toLower());
 }
 
 void TDMSConverterDialog::accept()

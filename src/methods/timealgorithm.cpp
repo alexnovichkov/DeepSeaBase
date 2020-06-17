@@ -39,6 +39,7 @@ TimeAlgorithm::TimeAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent)
 
     //начальные значения, которые будут использоваться в показе функций
     resamplingF->setProperty(resamplingF->name()+"/xStep", xStep);
+    channelF->setFile(dataBase.constFirst());
 
     //resamplingF отправляет сигнал об изменении "?/xStep"
 //    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),

@@ -32,6 +32,7 @@ private slots:
     void stop();
     void finalize();
     void chooseFiles();
+    void updateFormat();
 private:
     QStringList convertedFiles;
     QString folder;
@@ -46,6 +47,7 @@ private:
     QCheckBox *openFolderButton;
     QCheckBox *addFilesButton;
     QComboBox *rawFileFormat;
+    QComboBox *fileFormat;
     bool m_addFiles;
 public:
     TDMSFileConvertor *convertor;

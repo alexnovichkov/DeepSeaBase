@@ -10,7 +10,7 @@ ChannelSelector::ChannelSelector(const QString &filter) : m_filter(filter)
 
 bool ChannelSelector::includes(int index) const
 {
-    if (m_filter.isEmpty()) return true; // пустой фильтр - все каналы
+    if (m_filter.isEmpty() || m_filter == "все") return true; // пустой фильтр - все каналы
     return (m_indexes.contains(index));
 }
 
@@ -31,7 +31,7 @@ void ChannelSelector::addIndex(int index)
 QString ChannelSelector::indexesAsString() const
 {
     QStringList result;
-    foreach(int index, m_indexes) result << QString::number(index+1);
+    for (int index: m_indexes) result << QString::number(index+1);
     return result.join(",");
 }
 
@@ -39,11 +39,11 @@ void ChannelSelector::recalculateIndexes()
 {
     m_indexes.clear();
     max_index = -1;
-    if (m_filter.isEmpty()) return;
+    if (m_filter.isEmpty() || m_filter == "все") return;
 
     bool ok;
-    QStringList filters = m_filter.split(",",QString::SkipEmptyParts);
-    foreach (const QString &filter, filters) {
+    const QStringList filters = m_filter.split(",",QString::SkipEmptyParts);
+    for (const QString &filter: filters) {
         if (filter.contains("-")) {
             QStringList range = filter.split("-");
             int min=-1, max=-1;

@@ -45,7 +45,9 @@ public:
     virtual bool compute(FileDescriptor *file) override;
 private:
     ChannelSelector selector;
-    int channel = -1;
+    int channel = 0;
+    double minSec = 0;
+    double maxSec = 10;
     QVector<double> output;   
 };
 

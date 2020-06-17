@@ -54,6 +54,7 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
     //начальные значения, которые будут использоваться в показе функций
     resamplingF->setProperty(resamplingF->name()+"/xStep", xStep);
     samplingF->setProperty(samplingF->name()+"/xStep", xStep);
+    channelF->setFile(dataBase.constFirst());
 
     //resamplingF отправляет сигнал об изменении "?/xStep"
     connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
