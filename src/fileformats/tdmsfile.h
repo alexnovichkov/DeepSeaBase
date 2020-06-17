@@ -187,6 +187,7 @@ struct DDCMethods
     QLibrary l;
 };
 
+class TDMSGroup;
 class TDMSChannel
 {
 public:
@@ -197,11 +198,13 @@ public:
     QVariantMap properties;
     quint64 numberOfValues = 0;
     DDCDataType dataType;
+    TDMSGroup *parent;
 private:
     DDCChannelHandle channel;
     DDCMethods *m;
 };
 
+class TDMSFile;
 class TDMSGroup
 {
 public:
@@ -209,6 +212,7 @@ public:
     ~TDMSGroup();
     QList<TDMSChannel*> channels;
     QVariantMap properties;
+    TDMSFile *parent;
 private:
     DDCChannelHandle *_channels;
     DDCChannelGroupHandle group;
@@ -233,6 +237,7 @@ private:
 
 #include <QObject>
 #include <QFileInfoList>
+class FileDescriptor;
 
 class TDMSFileConvertor : public QObject
 {
@@ -251,6 +256,10 @@ signals:
     void finished();
     void message(const QString &s);
 private:
+    FileDescriptor * saveAs(const QString &name, TDMSGroup *g);
+    FileDescriptor * saveAsDfd(const QString &name, TDMSGroup *g);
+    FileDescriptor * saveAsD94(const QString &name, TDMSGroup *g);
+    FileDescriptor * saveAsUff(const QString &name, TDMSGroup *g);
     QString destinationFormat;
     QString folderName;
     QStringList newFiles;
