@@ -91,8 +91,6 @@ public:
     virtual void writeRawFile() override;
     virtual void updateDateTimeGUID() override;
     virtual int channelsCount() const override;
-    virtual Descriptor::DataType type() const override;
-    virtual QString typeDisplay() const override;
     virtual DescriptionList dataDescriptor() const override;
     virtual void setDataDescriptor(const DescriptionList &data) override;
     virtual QString dataDescriptorAsString() const override;

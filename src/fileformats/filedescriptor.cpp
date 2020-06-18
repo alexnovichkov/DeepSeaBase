@@ -69,6 +69,22 @@ bool FileDescriptor::copyTo(const QString &name)
     return QFile::copy(fileName(), name);
 }
 
+Descriptor::DataType FileDescriptor::type() const
+{
+    if (channelsCount() == 0) return Descriptor::Unknown;
+
+    Descriptor::DataType t = channel(0)->type();
+    for (int i=1; i<channelsCount(); ++i) {
+        if (channel(i)->type() != t) return Descriptor::Unknown;
+    }
+    return t;
+}
+
+QString FileDescriptor::typeDisplay() const
+{
+    return Descriptor::functionTypeDescription(type());
+}
+
 // возвращает округленную длину записи:
 // 3200,0001 -> 3200
 // 3199,9999 -> 3200

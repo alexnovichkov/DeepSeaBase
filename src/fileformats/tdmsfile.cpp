@@ -635,17 +635,6 @@ void TDMSGroup::updateDateTimeGUID()
 {
 }
 
-Descriptor::DataType TDMSGroup::type() const
-{
-    if (channels.isEmpty()) return Descriptor::Unknown;
-    return channels.constFirst()->type();
-}
-
-QString TDMSGroup::typeDisplay() const
-{
-    return Descriptor::functionTypeDescription(type());
-}
-
 DescriptionList TDMSGroup::dataDescriptor() const
 {
     return DescriptionList();

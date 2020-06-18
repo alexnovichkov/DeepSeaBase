@@ -49,7 +49,7 @@ public:
     int getChannelsCount() const;
 
     void setXml(Dataset xml) {this->xml = xml;}
-    void read();
+    void read() override;
 
     static QStringList fileFilters();
     static QStringList suffixes();
@@ -70,8 +70,6 @@ public:
     virtual void write() override;
     virtual void writeRawFile() override;
     virtual void updateDateTimeGUID() override;
-    virtual Descriptor::DataType type() const override;
-    virtual QString typeDisplay() const override;
     virtual DescriptionList dataDescriptor() const override;
     virtual void setDataDescriptor(const DescriptionList &data) override;
     virtual QString dataDescriptorAsString() const override;
@@ -273,7 +271,7 @@ public:
     MatlabUtf8Record(MatlabHeader *header) : MatlabRecord(header) {}
     virtual void readData(QDataStream *f) override;
     QString data;
-    virtual QString getString() const {return data;}
+    virtual QString getString() const override {return data;}
     virtual QJsonValue toJson() const override;
 };
 
@@ -284,7 +282,7 @@ public:
     virtual void readData(QDataStream *f) override;
     QString data;
     virtual QJsonValue toJson() const override;
-    virtual QString getString() const {return data;}
+    virtual QString getString() const override {return data;}
 };
 
 class MatlabArrayRecord : public MatlabRecord

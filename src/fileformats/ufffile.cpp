@@ -296,7 +296,7 @@ void UffFileDescriptor::write()
         units.write(stream);
 
         int id=1;
-        foreach (Function *c, channels) {
+        for (Function *c: channels) {
             bool populated = c->populated();
             if (!populated) c->populate();
             c->write(stream, id);
@@ -345,22 +345,6 @@ QString makeStringFromPair(const QPair<QString, QString> &pair)
 QString UffFileDescriptor::dataDescriptorAsString() const
 {
     return header.info();
-}
-
-Descriptor::DataType UffFileDescriptor::type() const
-{
-    if (channels.isEmpty()) return Descriptor::Unknown;
-
-    Descriptor::DataType t = channels.constFirst()->type();
-    for (int i=1; i<channels.size(); ++i) {
-        if (channels.at(i)->type() != t) return Descriptor::Unknown;
-    }
-    return t;
-}
-
-QString UffFileDescriptor::typeDisplay() const
-{
-    return Descriptor::functionTypeDescription(type());
 }
 
 QDateTime UffFileDescriptor::dateTime() const

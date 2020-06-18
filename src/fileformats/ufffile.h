@@ -141,8 +141,6 @@ public:
     virtual void updateDateTimeGUID() override;
     QString dataDescriptorAsString() const override;
 
-    virtual Descriptor::DataType type() const override;
-    virtual QString typeDisplay() const override;
     virtual QDateTime dateTime() const override;
     virtual double xStep() const override;
     virtual void setXStep(const double xStep) override;

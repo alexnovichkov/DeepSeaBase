@@ -83,8 +83,8 @@ public:
     virtual void updateDateTimeGUID() = 0;
     virtual bool copyTo(const QString &name);
 
-    virtual Descriptor::DataType type() const = 0;
-    virtual QString typeDisplay() const = 0;
+    virtual Descriptor::DataType type() const;
+    virtual QString typeDisplay() const;
     virtual double roundedSize() const;
     virtual DescriptionList dataDescriptor() const = 0;
     virtual void setDataDescriptor(const DescriptionList &data) = 0;

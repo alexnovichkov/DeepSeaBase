@@ -1086,19 +1086,6 @@ void MatFile::updateDateTimeGUID()
 {
 }
 
-Descriptor::DataType MatFile::type() const
-{
-    if (channels.isEmpty()) return Descriptor::Unknown;
-    return channels.constFirst()->type();
-}
-
-QString MatFile::typeDisplay() const
-{
-    if (!channels.isEmpty())
-        return channels.constFirst()->_type;
-    return QString();
-}
-
 DescriptionList MatFile::dataDescriptor() const
 {
     return DescriptionList()<<DescriptionEntry("Заголовок 1", xml.titles.at(0))

@@ -454,22 +454,6 @@ int Data94File::channelsCount() const
     return channels.size();
 }
 
-Descriptor::DataType Data94File::type() const
-{
-    if (channels.isEmpty()) return Descriptor::Unknown;
-
-    Descriptor::DataType t = channels.constFirst()->type();
-    for (int i=1; i<channels.size(); ++i) {
-        if (channels.at(i)->type() != t) return Descriptor::Unknown;
-    }
-    return t;
-}
-
-QString Data94File::typeDisplay() const
-{
-    return Descriptor::functionTypeDescription(type());
-}
-
 DescriptionList Data94File::dataDescriptor() const
 {
     DescriptionList result;
