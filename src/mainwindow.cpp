@@ -175,6 +175,9 @@ MainWindow::MainWindow(QWidget *parent)
     saveAct->setShortcut(tr("Ctrl+S"));
     connect(saveAct, SIGNAL(triggered()), SLOT(save()));
 
+    renameAct = new QAction("Переименовать файл", this);
+    connect(renameAct, &QAction::triggered, this, &MainWindow::renameDescriptor);
+
     delFilesAct = new QAction(QString("Удалить записи"), this);
     delFilesAct->setShortcut(Qt::Key_Delete);
     delFilesAct->setShortcutContext(Qt::WidgetShortcut);
@@ -553,6 +556,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
             menu.addAction(plotAllChannelsAtRightAct);
             menu.addAction(calculateSpectreAct);
             menu.addAction(convertAct);
+            menu.addAction(renameAct);
             menu.exec(QCursor::pos());
         }
         else if (column == MODEL_COLUMN_LEGEND) {
@@ -1949,16 +1953,15 @@ void MainWindow::rescanBase()
 
     // костыль, позволяющий иметь несколько одинаковых файлов в разных вкладках
     QStringList duplicatedFiles;
-    foreach (FileDescriptor *f, tab->model->selectedFiles()) {
+    for (FileDescriptor *f: tab->model->selectedFiles()) {
         if (duplicated(f)) duplicatedFiles << f->fileName();
     }
-    qDebug()<<"duplicated"<<duplicatedFiles;
+    if (!duplicatedFiles.isEmpty()) qDebug()<<"duplicated"<<duplicatedFiles;
     tab->model->clear(duplicatedFiles);
 
     tab->filePathLabel->clear();
 
-    QStringList folders = tab->folders;
-    foreach (QString folder, folders) {
+    for (QString folder: tab->folders) {
         if (folder.endsWith(":0")) {
             folder.chop(2);
             addFolder(folder, false, false);
@@ -1969,8 +1972,6 @@ void MainWindow::rescanBase()
         }
         else addFolder(folder, true, false);
     }
-
-    QApplication::alert(this,200);
 
     //QMessageBox::information(this, "База данных", "В базе данных все записи \"живые\"!");
 }
@@ -2206,7 +2207,7 @@ void MainWindow::updateActions()
 
     saveAct->setEnabled(tab->model->changed());
 
-
+    renameAct->setDisabled(tab->model->selected().isEmpty());
     delFilesAct->setDisabled(tab->model->selected().isEmpty());
     plotAllChannelsAct->setDisabled(tab->model->selected().isEmpty());
     plotAllChannelsAtRightAct->setDisabled(tab->model->selected().isEmpty());
@@ -2269,6 +2270,23 @@ void MainWindow::updateActions()
     arbitraryDescriptorAct->setEnabled(tab->model->size()>1 && plot->hasCurves());
     cycleChannelsUpAct->setEnabled(tab->channelModel->channelsCount>1 && plot->hasCurves());
     cycleChannelsDownAct->setEnabled(tab->channelModel->channelsCount>1 && plot->hasCurves());
+}
+
+void MainWindow::renameDescriptor()
+{
+    if (!tab) return;
+    QList<FileDescriptor *> records = tab->model->selectedFiles();
+    if (records.isEmpty()) return;
+
+    FileDescriptor *file = records.constFirst();
+    QFileInfo fi(file->fileName());
+    QString newName = QInputDialog::getText(this, "Переименование файла",
+                                            "Введите новое имя файла",
+                                            QLineEdit::Normal,
+                                            fi.fileName());
+    if (newName.isEmpty() || newName == fi.fileName()) return;
+
+    if (!file->rename(newName)) QMessageBox::warning(this,"DeepSea Base", "Не удалось переименовать файл");
 }
 
 void setLineColor(QAxObject *obj, int color)

@@ -20,6 +20,15 @@ int main(int argc, char *argv[])
     splash.show();
     a.processEvents();
 
+//    QFile f("K:/as.txt");
+//    f.open(QFile::WriteOnly | QFile::Text);
+//    f.write("text");
+//    f.close();
+//    qDebug()<<QDir().mkpath("K:/as");
+
+//    qDebug()<<f.rename("as1.txt");
+
+
 //    MatFile f("K:\\Shared\\R3G1-oct.mat");
 //    f.read();
 

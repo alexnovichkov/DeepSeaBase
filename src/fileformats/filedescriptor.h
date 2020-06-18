@@ -72,6 +72,8 @@ public:
     FileDescriptor(const QString &fileName);
     virtual ~FileDescriptor();
 
+    virtual bool rename(const QString &newName, const QString &newPath = QString());
+
     virtual void fillPreliminary(Descriptor::DataType) = 0;
     virtual void fillRest() = 0;
     virtual void read() = 0;

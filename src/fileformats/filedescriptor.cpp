@@ -37,7 +37,23 @@ FileDescriptor::FileDescriptor(const QString &fileName) :
 
 FileDescriptor::~FileDescriptor()
 {
-//   qDebug()<<"deleting"<<fileName();
+    //   qDebug()<<"deleting"<<fileName();
+}
+
+bool FileDescriptor::rename(const QString &newName, const QString &newPath)
+{
+    //newName приходит с суффиксом
+
+    if (!newPath.isEmpty()) QDir().mkpath(newPath);
+    QString name = newName;
+    if (!newPath.isEmpty()) name.prepend(newPath + "/");
+    else name.prepend(QFileInfo(fileName()).absolutePath()+"/");
+
+    name.replace("//", "/");
+    bool result = QFile::rename(fileName(), name);
+    if (result) setFileName(name);
+
+    return result;
 }
 
 void FileDescriptor::populate()

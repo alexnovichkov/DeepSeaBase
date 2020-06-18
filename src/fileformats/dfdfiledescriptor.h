@@ -300,9 +300,6 @@ public:
     virtual bool setLegend(const QString &legend) override;
     virtual QString legend() const override;
 
-//    QString fileName() {return FileName;}
-
-    void setFileName(const QString &name) override;
     virtual bool fileExists() const override;
 
     void setDataChanged(bool changed) override;
@@ -386,6 +383,7 @@ public:
     virtual QString saveTimeSegment(double from, double to) override;
     virtual int samplesCount() const override;
     virtual void setSamplesCount(int count) override;
+    virtual bool rename(const QString &newName, const QString &newPath) override;
 };
 
 #endif // DFDFILEDESCRIPTOR_H

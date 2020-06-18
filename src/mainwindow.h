@@ -204,6 +204,7 @@ private slots:
 
     void exportChannelsToWav();
     void updateActions();
+    void renameDescriptor();
 private:
     void moveChannels(bool up);
     void addFiles(const QStringList &files);
@@ -240,6 +241,7 @@ private:
     QAction *addFolderWithSubfoldersAct;
     QAction *addFileAct;
     QAction *saveAct;
+    QAction *renameAct;
 
 
     QAction *delFilesAct;

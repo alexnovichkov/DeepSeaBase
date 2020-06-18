@@ -733,12 +733,6 @@ QString DfdFileDescriptor::legend() const
     return _legend;
 }
 
-void DfdFileDescriptor::setFileName(const QString &name)
-{DD;
-    FileDescriptor::setFileName(name);
-    rawFileName = name.left(name.length()-3)+"raw";
-}
-
 bool DfdFileDescriptor::fileExists() const
 {
     return (FileDescriptor::fileExists() && QFileInfo(rawFileName).exists());
@@ -2728,3 +2722,16 @@ int DfdChannel::index() const
 }
 
 
+
+
+bool DfdFileDescriptor::rename(const QString &newName, const QString &newPath)
+{
+    bool result = FileDescriptor::rename(newName, newPath);
+    if (!result) return false;
+
+    QString newRawName = changeFileExt(fileName(), "raw");
+
+    result &= QFile::rename(rawFileName, newRawName);
+    if (result) rawFileName = newRawName;
+    return result;
+}
