@@ -37,6 +37,7 @@ qtHaveModule(winextras) {
 }
 
 SOURCES += main.cpp\
+    converters/tdmsconverter.cpp \
     mainwindow.cpp \
     sortabletreewidgetitem.cpp \
     checkableheaderview.cpp \
@@ -108,6 +109,7 @@ SOURCES += main.cpp\
     plot/colormapfactory.cpp
 
 HEADERS  += mainwindow.h \
+    converters/tdmsconverter.h \
     sortabletreewidgetitem.h \
     checkableheaderview.h \
     methods/abstractmethod.h \

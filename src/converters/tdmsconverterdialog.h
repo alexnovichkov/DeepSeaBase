@@ -9,7 +9,7 @@ class QLineEdit;
 class QTreeWidget;
 class QPlainTextEdit;
 class QPushButton;
-class TDMSFileConvertor;
+class TDMSFileConverter;
 class QThread;
 class QCheckBox;
 class QComboBox;
@@ -46,11 +46,10 @@ private:
     QThread *thread;
     QCheckBox *openFolderButton;
     QCheckBox *addFilesButton;
-    QComboBox *rawFileFormat;
     QComboBox *fileFormat;
     bool m_addFiles;
 public:
-    TDMSFileConvertor *convertor;
+    TDMSFileConverter *converter;
 };
 
 

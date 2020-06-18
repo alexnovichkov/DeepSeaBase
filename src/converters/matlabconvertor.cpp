@@ -43,7 +43,7 @@ bool MatlabConvertor::convert()
     }
 
     //Converting
-    foreach(const QString &fi, filesToConvert) {
+    for(const QString &fi: filesToConvert) {
         if (QThread::currentThread()->isInterruptionRequested()) return false;
 
         emit message("<font color=green>Конвертируем файл " + fi+"</font");
@@ -77,8 +77,10 @@ bool MatlabConvertor::convert()
         if (groupedChannelsIndexes.size() == 1) {
             FileDescriptor *destinationFile = FormatFactory::createDescriptor(matlabFile,
                                                                               destinationFileName);
-            if (!destinationFile) noErrors = false;
-            newFiles << destinationFile->fileName();
+            if (destinationFile)
+                newFiles << destinationFile->fileName();
+            else
+                noErrors = false;
             delete destinationFile;
         }
         else for (int i=0; i<groupedChannelsIndexes.size(); ++i) {
@@ -93,8 +95,6 @@ bool MatlabConvertor::convert()
             newFiles << destinationFile->fileName();
             delete destinationFile;
         }
-
-
 
         emit converted(fi);
 

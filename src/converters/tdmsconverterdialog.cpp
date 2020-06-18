@@ -1,11 +1,10 @@
 #include "tdmsconverterdialog.h"
 
 #include <QtWidgets>
-#include "fileformats/tdmsfile.h"
 #include "mainwindow.h"
 #include "checkableheaderview.h"
 #include "logging.h"
-#include "algorithms.h"
+#include "tdmsconverter.h"
 #include "fileformats/formatfactory.h"
 
 TDMSConverterDialog::TDMSConverterDialog(QWidget *parent) : QDialog(parent)
@@ -24,7 +23,7 @@ TDMSConverterDialog::TDMSConverterDialog(QWidget *parent) : QDialog(parent)
     fileFormat->addItems(FormatFactory::allFilters());
     connect(fileFormat, SIGNAL(currentTextChanged(QString)), SLOT(updateFormat()));
 
-    convertor = new TDMSFileConvertor();
+    converter = new TDMSFileConverter();
 
     edit = new QLineEdit(this);
     edit->setReadOnly(true);
@@ -76,18 +75,10 @@ TDMSConverterDialog::TDMSConverterDialog(QWidget *parent) : QDialog(parent)
 
     addFilesButton = new QCheckBox("Добавить новые файлы в текущую вкладку", this);
 
-    rawFileFormat = new QComboBox(this);
-    rawFileFormat->addItem("действительные числа в формате single");
-    rawFileFormat->addItem("целые 16-битные числа");
-
     QSplitter *splitter = new QSplitter(Qt::Vertical, this);
     QWidget *first = new QWidget(this);
 
     QGridLayout *grid = new QGridLayout;
-//    grid->addWidget(new QLabel("Конвертор читает файлы MAT, сохраненные с любыми выставленными флагами:\n"
-//                               "- он понимает данные, сохраненные как double\n"
-//                               "- он умеет читать сгруппированные каналы\n"
-//                               "- он понимает, когда файл сохранен не в единицах СИ", this),0,0,1,3);
     grid->addWidget(new QLabel("Папка:", this),1,0);
     grid->addWidget(edit,1,1);
     grid->addWidget(button,1,2);
@@ -100,8 +91,6 @@ TDMSConverterDialog::TDMSConverterDialog(QWidget *parent) : QDialog(parent)
     grid1->addWidget(textEdit,0,0,1,4);
     grid1->addWidget(new QLabel("Сохранять как", this), 1,0,1,1);
     grid1->addWidget(fileFormat, 1,1,1,1);
-    grid1->addWidget(new QLabel("Записывать данные в файл RAW как", this), 1,2,1,1);
-    grid1->addWidget(rawFileFormat, 1,3,1,1);
     grid1->addWidget(openFolderButton, 2,0,1,4);
     grid1->addWidget(addFilesButton, 3, 0,1,4);
     grid1->addWidget(buttonBox,4,0,1,4);
@@ -119,8 +108,8 @@ TDMSConverterDialog::TDMSConverterDialog(QWidget *parent) : QDialog(parent)
 
 TDMSConverterDialog::~TDMSConverterDialog()
 {
-    if (convertor) {
-        convertor->deleteLater();
+    if (converter) {
+        converter->deleteLater();
     }
     if (thread) {
         thread->quit();
@@ -172,13 +161,12 @@ void TDMSConverterDialog::updateFormat()
             item->setIcon(2,QIcon());
         }
     }
-//    rawFileFormat->setEnabled(suffix.toLower() == "dfd");
-    convertor->setDestinationFormat(suffix.toLower());
+    converter->setDestinationFormat(suffix.toLower());
 }
 
 void TDMSConverterDialog::accept()
 {
-    convertedFiles = convertor->getNewFiles();
+    convertedFiles = converter->getNewFiles();
     QDialog::accept();
 }
 
@@ -200,7 +188,7 @@ void TDMSConverterDialog::start()
     QStringList toConvert;
     for (int i=0; i<tree->topLevelItemCount(); ++i)
         if (tree->topLevelItem(i)->checkState(1)==Qt::Checked) toConvert << tree->topLevelItem(i)->text(1);
-    convertor->setFilesToConvert(toConvert);
+    converter->setFilesToConvert(toConvert);
 
     if (toConvert.isEmpty()) {
         textEdit->appendHtml("<font color=red>Error!</font> Отсутствуют файлы для конвертации.");
@@ -209,16 +197,15 @@ void TDMSConverterDialog::start()
     }
 
     progress->setRange(0, toConvert.size()-1);
-    convertor->setRawFileFormat(rawFileFormat->currentIndex());
 
     if (!thread) thread = new QThread;
-    convertor->moveToThread(thread);
-    connect(thread, SIGNAL(started()), convertor, SLOT(convert()));
-    connect(convertor, SIGNAL(finished()), thread, SLOT(quit()));
-    connect(convertor, SIGNAL(finished()), this, SLOT(finalize()));
-    connect(convertor, SIGNAL(tick()), SLOT(updateProgressIndicator()));
+    converter->moveToThread(thread);
+    connect(thread, SIGNAL(started()), converter, SLOT(convert()));
+    connect(converter, SIGNAL(finished()), thread, SLOT(quit()));
+    connect(converter, SIGNAL(finished()), this, SLOT(finalize()));
+    connect(converter, SIGNAL(tick()), SLOT(updateProgressIndicator()));
     //connect(convertor, SIGNAL(tick(QString)), SLOT(updateProgressIndicator(QString)));
-    connect(convertor, SIGNAL(message(QString)), textEdit, SLOT(appendHtml(QString)));
+    connect(converter, SIGNAL(message(QString)), textEdit, SLOT(appendHtml(QString)));
 
     progress->setValue(0);
 

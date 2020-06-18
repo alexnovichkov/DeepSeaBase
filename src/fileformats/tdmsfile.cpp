@@ -1,29 +1,19 @@
 #include "tdmsfile.h"
 
 
-#include <QtDebug>
 #include <QDateTime>
 #include "logging.h"
-#include "fileformats/dfdfiledescriptor.h"
-#include <QLibrary>
+#include "fileformats/filedescriptor.h"
 #include "algorithms.h"
 
 TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
-{DDD;
+{DD;
     int error;
-
-//    m.load();
-//    if (!m.loaded) {
-//        qDebug() << "Error: Не удалось загрузить библиотеку nilibddc";
-//        _isValid = false;
-//        return;
-//    }
 
     QString fn = fileName;
     fn.replace("/","\\");
 
     error = DDC_OpenFileEx(fn.toUtf8().data(), 0, 1, &file);
-//    error = DDC_OpenFileEx(fn.toUtf8().data(), 0, 1, &file);
     if (error < 0) {
         qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
         _isValid = false;
@@ -48,6 +38,7 @@ TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
             qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
             return;
         }
+
         //property name
         char *nameBuf;
         nameBuf = (char*)malloc(length+1);
@@ -65,6 +56,7 @@ TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
             qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
             return;
         }
+
         //property data
         QVariant value;
         switch (dataType) {
@@ -153,12 +145,12 @@ TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
             }
             default: break;
         }
+
 //        qDebug()<<"Property"<<i+1<<name<<value.toString();
         properties.insert(name, value);
 
         free(nameBuf);
     }
-
 
     // Reading Channel groups
     uint numberOfChannelGroups=0;
@@ -175,22 +167,24 @@ TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
         qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
         return;
     }
+
     for (size_t i=0; i<numberOfChannelGroups; ++i) {
-        TDMSGroup *group = new TDMSGroup(_groups[i], &m);
+        TDMSGroup *group = new TDMSGroup(_groups[i], fileName);
         group->parent = this;
         groups << group;
     }
 }
 
 TDMSFile::~TDMSFile()
-{DDD;
+{DD;
     free(_groups);
     qDeleteAll(groups);
-    if (file) m.closeFile(file);
+    if (file) DDC_CloseFile(file);
 }
 
-TDMSGroup::TDMSGroup(DDCChannelGroupHandle group, DDCMethods *m) : group(group), m(m)
-{
+TDMSGroup::TDMSGroup(DDCChannelGroupHandle group, const QString &name) : FileDescriptor(name),
+    group(group)
+{DD;
     // reading channel group properties
     uint numberOfProperties = 0;
     int error = DDC_GetNumChannelGroupProperties(group, &numberOfProperties);
@@ -307,21 +301,20 @@ TDMSGroup::TDMSGroup(DDCChannelGroupHandle group, DDCMethods *m) : group(group),
     }
 
     for (uint i=0; i<numberOfChannels; ++i) {
-        TDMSChannel *channel = new TDMSChannel(_channels[i], m);
-        channel->parent = this;
+        TDMSChannel *channel = new TDMSChannel(_channels[i], this);
         channels << channel;
     }
 }
 
 TDMSGroup::~TDMSGroup()
-{
+{DD;
     free(_channels);
     qDeleteAll(channels);
     DDC_CloseChannelGroup(group);
 }
 
-TDMSChannel::TDMSChannel(DDCChannelHandle channel, DDCMethods *m) :channel(channel), m(m)
-{
+TDMSChannel::TDMSChannel(DDCChannelHandle channel, TDMSGroup *parent) : channel(channel), parent(parent)
+{DD;
     // reading channel properties
     uint numberOfProperties = 0;
     int error = DDC_GetNumChannelProperties(channel, &numberOfProperties);
@@ -432,15 +425,25 @@ TDMSChannel::TDMSChannel(DDCChannelHandle channel, DDCMethods *m) :channel(chann
         return;
     }
 //    qDebug()<<"Channel"<<"contains"<<numberOfValues<<"values of type"<<dataType;
+
+    double xBegin = properties.value("wf_start_offset").toDouble();
+    double xStep = properties.value("wf_increment").toDouble();
+    data()->setXValues(xBegin, xStep, numberOfValues);
+
+    data()->setZValues(0.0, 1.0, 1);
+
+    data()->setThreshold(properties.value("NI_dbReference").toDouble());
+    data()->setYValuesFormat(DataHolder::YValuesReals);
+    data()->setYValuesUnits(DataHolder::UnitsLinear);
 }
 
 TDMSChannel::~TDMSChannel()
-{
+{DD;
     DDC_CloseChannel(channel);
 }
 
 QVector<double> TDMSChannel::getDouble()
-{
+{DD;
     QVector<double> data(numberOfValues);
     int error = 0;
     switch (dataType) {
@@ -492,262 +495,276 @@ QVector<double> TDMSChannel::getDouble()
     return data;
 }
 
-QVector<float> TDMSChannel::getFloat()
+QVariant TDMSChannel::info(int, bool) const
 {
-    QVector<float> data(numberOfValues);
-    int error = 0;
-    switch (dataType) {
-        case DDC_UInt8: {// unsigned char
-            unsigned char *dataUint8 = new uchar[numberOfValues];
-            error = DDC_GetDataValuesUInt8(channel, 0, numberOfValues, dataUint8);
-            for (quint64 i=0; i<numberOfValues; ++i)
-                data[i] = float(dataUint8[i]);
-            delete [] dataUint8;
-            break;
-        }
-        case DDC_Int16: {
-            short *dataInt16 = new short[numberOfValues];
-            error = DDC_GetDataValuesInt16(channel, 0, numberOfValues, dataInt16);
-            for (quint64 i=0; i<numberOfValues; ++i)
-                data[i] = float(dataInt16[i]);
-            delete [] dataInt16;
-            break;
-        }
-        case DDC_Int32: {
-            long *dataInt32 = new long[numberOfValues];
-            error = DDC_GetDataValuesInt32(channel, 0, numberOfValues, dataInt32);
-            for (quint64 i=0; i<numberOfValues; ++i)
-                data[i] = float(dataInt32[i]);
-            delete [] dataInt32;
-            break;
-        }
-        case DDC_Float: {
-            error = DDC_GetDataValuesFloat(channel, 0, numberOfValues, data.data());
-            break;
-        }
-        case DDC_Double: {
-            double *dataDouble = new double[numberOfValues];
-            error = DDC_GetDataValuesDouble(channel, 0, numberOfValues, dataDouble);
-            for (quint64 i=0; i<numberOfValues; ++i)
-                data[i] = float(dataDouble[i]);
-            delete [] dataDouble;
-            break;
-        }
-        case DDC_String:
-        case DDC_Timestamp:
-            data.clear();
-            break;
-        default: break;
-    }
-    if (error < 0) {
-        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
-    }
-    return data;
+    return QVariant();
 }
 
-TDMSFileConvertor::TDMSFileConvertor(QObject *parent) : QObject(parent)
+int TDMSChannel::columnsCount() const
 {
-
+    return 5;
 }
 
-bool TDMSFileConvertor::convert()
+QVariant TDMSChannel::channelHeader(int) const
 {
-    if (QThread::currentThread()->isInterruptionRequested()) return false;
-    bool noErrors = true;
-
-    //Converting
-    for(const QString &tdmsFileName: filesToConvert) {
-        if (QThread::currentThread()->isInterruptionRequested()) return false;
-
-        emit message("Конвертируем файл " + tdmsFileName);
-
-        //reading tdms file structure
-        TDMSFile tdmsFile(tdmsFileName);
-        if (!tdmsFile.isValid()) {
-            emit message("Ошибка: Файл поврежден и будет пропущен!");
-            emit tick();
-            noErrors = false;
-            continue;
-        }
-        emit message(QString("-- Файл TDMS содержит %1 переменных").arg(tdmsFile.groups.size()));
-
-        //ищем группу каналов, которая содержит все данные
-        TDMSGroup *group = 0;
-        for (TDMSGroup *g: tdmsFile.groups) {
-            if (g->properties.value("name").toString().endsWith("All Data")) {
-                group = g;
-                break;
-            }
-        }
-        if (!group) {
-            emit message("В файле отсутствует нужная группа каналов");
-            emit tick();
-            continue;
-        }
-
-        QString destinationFileName = changeFileExt(tdmsFileName, destinationFormat);
-        destinationFileName = createUniqueFileName(destinationFileName);
-
-        FileDescriptor *d = saveAs(destinationFileName, group);
-        if (d) newFiles << d->fileName();
-
-        delete d;
-        emit message("Готово.");
-        emit tick();
-    }
-
-    if (noErrors) emit message("<font color=blue>Конвертация закончена без ошибок.</font>");
-    else emit message("<font color=red>Конвертация закончена с ошибками.</font>");
-    emit finished();
-    return true;
+    return QVariant();
 }
 
-FileDescriptor *TDMSFileConvertor::saveAs(const QString &name, TDMSGroup *g)
+Descriptor::DataType TDMSChannel::type() const
 {
-    QString suffix = QFileInfo(name).suffix().toLower();
-    if (suffix == "dfd") return saveAsDfd(name, g);
-    if (suffix == "d94") return saveAsD94(name, g);
-    if (suffix == "uff") return saveAsUff(name, g);
+    //TODO: добавить поддержку разных сигналов в TDMS
+    return Descriptor::TimeResponse;
+}
+
+int TDMSChannel::octaveType() const
+{
     return 0;
 }
 
-FileDescriptor *TDMSFileConvertor::saveAsDfd(const QString &name, TDMSGroup *g)
+void TDMSChannel::populate()
 {
-    QString rawFileName = changeFileExt(name, "raw");
+    _data->clear();
+    setPopulated(false);
 
-    //writing dfd file
-    auto dfdFileDescriptor = new DfdFileDescriptor(name);
-    dfdFileDescriptor->rawFileName = rawFileName;
-    dfdFileDescriptor->updateDateTimeGUID();
-    dfdFileDescriptor->DataType = CuttedData;
-
-    if (g->parent->properties.contains("datetime")) {
-        dfdFileDescriptor->Date = g->parent->properties.value("datetime").toDateTime().date();
-        dfdFileDescriptor->Time = g->parent->properties.value("datetime").toDateTime().time();
+    QVector<double> vec = getDouble();
+    if (!vec.isEmpty()) {
+        this->data()->setYValues(vec, DataHolder::YValuesReals, 0);
+        setPopulated(true);
     }
-    else {
-        dfdFileDescriptor->Date = QDate::currentDate();
-        dfdFileDescriptor->Time = QTime::currentTime();
-    }
-
-
-
-    DataDescription *datade = new DataDescription(dfdFileDescriptor);
-    QString s = g->parent->properties.value("name").toString();
-    if (!s.isEmpty()) datade->data.append(DescriptionEntry("name",s));
-    s = g->parent->properties.value("description").toString();
-    if (!s.isEmpty()) datade->data.append(DescriptionEntry("description",s));
-    dfdFileDescriptor->dataDescription = datade;
-
-    // эти переменные заполняем по первой записи в файле
-    bool isSet = false;
-    quint64 samplescount = 0;
-    double xBegin = 0;
-    double xStep = 0;
-
-    //writing raw file channel by channel (blockSize=0)
-    QFile rawFile(rawFileName);
-    if (rawFile.open(QFile::WriteOnly)) {
-
-        for (int i=0; i<g->channels.size(); ++i) {
-            // определяем нужные переменные оси Х
-            if (!isSet) {
-                xBegin = g->channels[i]->properties.value("wf_start_offset").toDouble();
-                xStep = g->channels[i]->properties.value("wf_increment").toDouble();
-                samplescount = g->channels[i]->numberOfValues;
-                isSet = true;
-            }
-
-            // теперь данные по оси Y
-
-            QVector<float> data = g->channels[i]->getFloat();
-            if (data.isEmpty()) {
-                emit message(QString("<font color=red>Error!</font> Не могу прочитать канал %1").arg(i+1));
-                continue;
-            }
-
-
-            // теперь данные
-            float max = 1.0;
-            QDataStream stream(&rawFile);
-            stream.setByteOrder(QDataStream::LittleEndian);
-            stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-
-            if (rawFileFormat == 1) {// целые числа
-                max = qAbs(data[0]);
-                for (int k=1; k<data.size();++k)
-                    if (qAbs(data[k]) > max) max = qAbs(data[k]);
-
-                for (int k = 0; k < data.size(); ++k) {
-                    data[k] = data[k]/max*32768.0;
-                    int v = qMin(65535,int(data[k])+32768);
-                    stream << (quint16)v;
-                }
-            }
-            else {// вещественные числа
-                int idx = data.size();
-                for (int k = 0; k < idx; ++k) {
-                    stream << data[k];
-                }
-            }
-
-
-
-            if (rawFileFormat == 0) {// данные в формате float
-                DfdChannel *channel = new DfdChannel(dfdFileDescriptor, i);
-                channel->setName(g->channels[i]->properties.value("name").toString());
-                channel->ChanAddress = g->channels[i]->properties.value("NI_ChannelName").toString();
-                channel->setDescription(g->channels[i]->properties.value("description").toString());
-                channel->IndType = 0xC0000004; //характеристика отсчета
-                channel->ChanBlockSize = samplescount; //размер блока в отсчетах
-                channel->YName = g->channels[i]->properties.value("unit_string").toString();
-                channel->InputType="U";
-            }
-            else {
-                RawChannel *channel = new RawChannel(dfdFileDescriptor, i);
-                channel->setName(g->channels[i]->properties.value("name").toString());
-                channel->ChanAddress = g->channels[i]->properties.value("NI_ChannelName").toString();
-                channel->setDescription(g->channels[i]->properties.value("description").toString());
-                channel->IndType = 2; //характеристика отсчета
-                channel->ChanBlockSize = samplescount; //размер блока в отсчетах
-                channel->YName = g->channels[i]->properties.value("unit_string").toString();
-                channel->InputType="U";
-
-                channel->BandWidth = float(1.0/xStep/ 2.56);
-                channel->AmplShift = 0.0;
-                channel->AmplLevel = 5.12 / max;
-                channel->Sens0Shift = 0.0;
-                channel->ADC0 = hextodouble("FEF2C98AE17A14C0");
-                channel->ADCStep = hextodouble("BEF8BF05F67A243F");
-                channel->SensSensitivity = hextodouble("000000000000F03F");
-                //channel->SensName = c.sensorName+"\\ sn-"+c.sensorSerial;
-            }
-        }
-    }
-
-    dfdFileDescriptor->setSamplesCount(samplescount);
-    dfdFileDescriptor->BlockSize = 0;
-    dfdFileDescriptor->XName="с";
-    dfdFileDescriptor->XBegin = xBegin;
-    dfdFileDescriptor->XStep = xStep;
-    dfdFileDescriptor->DescriptionFormat = "lms2dfd.DF";
-    dfdFileDescriptor->CreatedBy = "Конвертер tdms2raw by Алексей Новичков";
-    if (rawFileFormat == 0)
-        dfdFileDescriptor->DataType = CuttedData; // насильно записываем данные как Raw, потому что DeepSea
-                                                 // не умеет работать с файлами DataType=1, у которых IndType=2
-    else
-        dfdFileDescriptor->DataType = SourceData;
-    dfdFileDescriptor->setChanged(true);
-    dfdFileDescriptor->write();
-    return dfdFileDescriptor;
 }
 
-FileDescriptor *TDMSFileConvertor::saveAsD94(const QString &name, TDMSGroup *g)
+QString TDMSChannel::name() const
+{
+    return properties.value("name").toString();
+}
+
+void TDMSChannel::setName(const QString &name)
+{
+    properties.insert("name", name);
+}
+
+QString TDMSChannel::description() const
+{
+    return properties.value("description").toString();
+}
+
+void TDMSChannel::setDescription(const QString &description)
+{
+    properties.insert("description", description);
+}
+
+QString TDMSChannel::xName() const
+{
+    return properties.value("wf_xunit_string").toString();
+}
+
+QString TDMSChannel::yName() const
+{
+    return properties.value("unit_string").toString();
+}
+
+QString TDMSChannel::zName() const
+{
+    return "";
+}
+
+void TDMSChannel::setYName(const QString &yName)
+{
+    properties.insert("unit_string", yName);
+}
+
+void TDMSChannel::setXName(const QString &)
 {
 
 }
 
-FileDescriptor *TDMSFileConvertor::saveAsUff(const QString &name, TDMSGroup *g)
+void TDMSChannel::setZName(const QString &)
 {
 
+}
+
+QString TDMSChannel::legendName() const
+{
+    return QString();
+}
+
+FileDescriptor *TDMSChannel::descriptor()
+{
+    return parent;
+}
+
+int TDMSChannel::index() const
+{
+    return parent->channels.indexOf(const_cast<TDMSChannel*>(this), 0);
+}
+
+QString TDMSChannel::correction() const
+{
+    return QString();
+}
+
+void TDMSChannel::setCorrection(const QString &)
+{
+
+}
+
+
+/*****************************************************/
+
+void TDMSGroup::fillPreliminary(Descriptor::DataType)
+{
+}
+
+void TDMSGroup::fillRest()
+{
+}
+
+void TDMSGroup::read()
+{
+}
+
+void TDMSGroup::write()
+{
+}
+
+void TDMSGroup::writeRawFile()
+{
+}
+
+void TDMSGroup::updateDateTimeGUID()
+{
+}
+
+Descriptor::DataType TDMSGroup::type() const
+{
+    if (channels.isEmpty()) return Descriptor::Unknown;
+    return channels.constFirst()->type();
+}
+
+QString TDMSGroup::typeDisplay() const
+{
+    return Descriptor::functionTypeDescription(type());
+}
+
+DescriptionList TDMSGroup::dataDescriptor() const
+{
+    return DescriptionList();
+}
+
+void TDMSGroup::setDataDescriptor(const DescriptionList &)
+{
+}
+
+QString TDMSGroup::dataDescriptorAsString() const
+{
+    return "";
+}
+
+QDateTime TDMSGroup::dateTime() const
+{
+    return parent->properties.value("datetime").toDateTime();
+}
+
+void TDMSGroup::deleteChannels(const QVector<int> &)
+{
+}
+
+void TDMSGroup::copyChannelsFrom(FileDescriptor *, const QVector<int> &)
+{
+}
+
+void TDMSGroup::calculateMean(const QList<Channel *> &)
+{
+}
+
+QString TDMSGroup::calculateThirdOctave()
+{
+    return "";
+}
+
+void TDMSGroup::calculateMovingAvg(const QList<Channel *> &, int )
+{
+}
+
+QString TDMSGroup::saveTimeSegment(double , double )
+{
+    return "";
+}
+
+int TDMSGroup::channelsCount() const
+{
+    return channels.count();
+}
+
+void TDMSGroup::move(bool , const QVector<int> &, const QVector<int> &)
+{
+}
+
+QVariant TDMSGroup::channelHeader(int) const
+{
+    return QVariant();
+}
+
+int TDMSGroup::columnsCount() const
+{
+    return 1;
+}
+
+Channel *TDMSGroup::channel(int index) const
+{
+    if (index >=0 && index < channels.size()) return channels.at(index);
+    return 0;
+}
+
+QString TDMSGroup::legend() const
+{
+    return QString();
+}
+
+bool TDMSGroup::setLegend(const QString &)
+{
+    return true;
+}
+
+double TDMSGroup::xStep() const
+{
+    if (channels.isEmpty()) return 0.0;
+    return channels.constFirst()->data()->xStep();
+}
+
+void TDMSGroup::setXStep(const double)
+{
+
+}
+
+double TDMSGroup::xBegin() const
+{
+    if (channels.isEmpty()) return 0.0;
+    return channels.constFirst()->data()->xMin();
+}
+
+int TDMSGroup::samplesCount() const
+{
+    if (channels.isEmpty()) return 0;
+    return channels.constFirst()->samplesCount();
+}
+
+void TDMSGroup::setSamplesCount(int)
+{
+}
+
+QString TDMSGroup::xName() const
+{
+    if (channels.isEmpty()) return "";
+    return channels.constFirst()->xName();
+}
+
+bool TDMSGroup::setDateTime(QDateTime)
+{
+    return true;
+}
+
+bool TDMSGroup::dataTypeEquals(FileDescriptor *) const
+{
+    return false;
 }
