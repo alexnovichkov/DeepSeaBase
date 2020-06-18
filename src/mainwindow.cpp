@@ -2820,7 +2820,7 @@ void MainWindow::addFiles(const QStringList &files)
 
     QList<FileDescriptor *> items;
 
-    foreach (const QString fileName, files) {
+    for (const QString &fileName: files) {
         if (fileName.isEmpty()) continue;
 
         if (tab->model->contains(fileName))
@@ -2963,4 +2963,27 @@ bool MainWindow::closeRequested()
     ColorSelector::instance()->drop();
 
     return true;
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *event)
+{
+    if (event->mimeData()->hasUrls())
+        event->acceptProposedAction();
+}
+
+void MainWindow::dropEvent(QDropEvent* event)
+{DD
+    if (event->mimeData()->hasUrls()) {
+        QStringList filters = FormatFactory::allSuffixes(true);
+        QList<QUrl> urlList = event->mimeData()->urls();
+        QStringList filesToAdd;
+        Q_FOREACH (const QUrl &url, urlList) {
+            QString s=url.toLocalFile();
+            QFileInfo f(s);
+            if (f.isDir() || filters.contains(f.suffix().toLower()))
+                processDir(s, filesToAdd, true);
+        }
+        addFiles(filesToAdd);
+        event->acceptProposedAction();
+    }
 }

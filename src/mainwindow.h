@@ -313,7 +313,9 @@ private:
 
     // QWidget interface
 protected:
-    virtual void closeEvent(QCloseEvent *event) override;
+    void closeEvent(QCloseEvent *event) override;
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *) override;
 signals:
     void loading(const QString &file);
 private:
