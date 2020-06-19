@@ -553,7 +553,12 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     connect(tab->filesTable, &QTreeView::customContextMenuRequested, [=](){
         QMenu menu(tab->filesTable);
         int column = tab->filesTable->currentIndex().column();
-        if (column == MODEL_COLUMN_FILENAME) {
+        if (!tab->filesTable->selectionModel()->hasSelection()) {
+            menu.addAction(addFolderAct);
+            menu.addAction(addFileAct);
+            menu.exec(QCursor::pos());
+        }
+        else if (column == MODEL_COLUMN_FILENAME) {
             menu.addAction(addFolderAct);
             menu.addAction(addFileAct);
             menu.addAction(delFilesAct);
