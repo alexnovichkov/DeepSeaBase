@@ -190,11 +190,18 @@ MainWindow::MainWindow(QWidget *parent)
     plotAllChannelsAct = new QAction(QString("Построить все каналы"), this);
     connect(plotAllChannelsAct, SIGNAL(triggered()), SLOT(plotAllChannels()));
 
-    plotAllChannelsAtRightAct = new QAction(QString("...на правой оси"), this);
-    connect(plotAllChannelsAtRightAct, SIGNAL(triggered()), SLOT(plotAllChannelsAtRight()));
+    plotAllChannelsOnRightAct = new QAction(QString("...на правой оси"), this);
+    connect(plotAllChannelsOnRightAct, SIGNAL(triggered()), SLOT(plotAllChannelsAtRight()));
 
     plotSelectedChannelsAct = new QAction(QString("Построить выделенные каналы"), this);
-    connect(plotSelectedChannelsAct, SIGNAL(triggered()), SLOT(plotSelectedChannels()));
+    connect(plotSelectedChannelsAct, &QAction::triggered, [=](){
+        tab->channelModel->plotChannels(tab->channelModel->selected(), false);
+    });
+
+    plotSelectedChannelsOnRightAct = new QAction(QString("...на правой оси"), this);
+    connect(plotSelectedChannelsOnRightAct, &QAction::triggered, [=](){
+        tab->channelModel->plotChannels(tab->channelModel->selected(), true);
+    });
 
     exportChannelsToWavAct = new QAction(QString("Экспортировать в WAV"), this);
     connect(exportChannelsToWavAct, SIGNAL(triggered(bool)), SLOT(exportChannelsToWav()));
@@ -203,7 +210,9 @@ MainWindow::MainWindow(QWidget *parent)
     QAction *plotHelpAct = new QAction(QIcon(":/icons/help.png"), "Справка", this);
     connect(plotHelpAct, &QAction::triggered, [](){QDesktopServices::openUrl(QUrl("help.html"));});
 
-    calculateSpectreAct = new QAction(QIcon(":/icons/function.png"), QString("Обработать записи..."), this);
+    QIcon calculateSpectreIcon(":/icons/function.png");
+    calculateSpectreIcon.addFile(":/icons/function16.png");
+    calculateSpectreAct = new QAction(calculateSpectreIcon, QString("Обработать записи..."), this);
     connect(calculateSpectreAct, SIGNAL(triggered()), SLOT(calculateSpectreRecords()));
 
     convertAct = new QAction("Конвертировать файлы...", this);
@@ -563,7 +572,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
             menu.addAction(addFileAct);
             menu.addAction(delFilesAct);
             menu.addAction(plotAllChannelsAct);
-            menu.addAction(plotAllChannelsAtRightAct);
+            menu.addAction(plotAllChannelsOnRightAct);
             menu.addAction(calculateSpectreAct);
             menu.addAction(convertAct);
             menu.addAction(renameAct);
@@ -629,6 +638,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
         }
         else if (column == 0) {
             menu.addAction(plotSelectedChannelsAct);
+            menu.addAction(plotSelectedChannelsOnRightAct);
             if (tab->record && tab->record->isSourceFile())
                 menu.addAction(exportChannelsToWavAct);
             menu.exec(QCursor::pos());
@@ -1686,11 +1696,6 @@ void MainWindow::plotChannel(int index)
     }
 }
 
-void MainWindow::plotSelectedChannels()
-{
-    tab->channelModel->plotChannels(tab->channelModel->selected());
-}
-
 void MainWindow::calculateSpectreRecords()
 {DD;
     if (!tab) return;
@@ -2220,7 +2225,7 @@ void MainWindow::updateActions()
     renameAct->setDisabled(tab->model->selected().isEmpty());
     delFilesAct->setDisabled(tab->model->selected().isEmpty());
     plotAllChannelsAct->setDisabled(tab->model->selected().isEmpty());
-    plotAllChannelsAtRightAct->setDisabled(tab->model->selected().isEmpty());
+    plotAllChannelsOnRightAct->setDisabled(tab->model->selected().isEmpty());
     plotSelectedChannelsAct->setDisabled(tab->channelModel->selected().isEmpty());
     //exportChannelsToWavAct;
     calculateSpectreAct->setDisabled(tab->model->selectedFiles(Descriptor::TimeResponse).isEmpty());

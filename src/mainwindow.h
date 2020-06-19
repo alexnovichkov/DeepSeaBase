@@ -123,11 +123,6 @@ private slots:
     void plotChannel(int index);
 
     /**
-     * @brief plotSelectedChannels строит выделенные каналы
-     */
-    void plotSelectedChannels();
-
-    /**
      * @brief calculateSpectreRecords
      * Обработка записей - расчет спектров, взаимных характеристик и т.д.
      */
@@ -246,8 +241,9 @@ private:
 
     QAction *delFilesAct;
     QAction *plotAllChannelsAct;
-    QAction *plotAllChannelsAtRightAct;
+    QAction *plotAllChannelsOnRightAct;
     QAction *plotSelectedChannelsAct;
+    QAction *plotSelectedChannelsOnRightAct;
     QAction *exportChannelsToWavAct;
     QAction *calculateSpectreAct;
     QAction *calculateThirdOctaveAct;
