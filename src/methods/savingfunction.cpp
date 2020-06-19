@@ -152,7 +152,7 @@ bool SavingFunction::compute(FileDescriptor *file)
     if (dataIsComplex) dataSize /= 2;
 
     //здесь заполняются все свойства канала, не связанные с данными
-    Channel *ch = createChannel(file, dataSize / blocksCount);
+    Channel *ch = createChannel(file, dataSize / blocksCount, blocksCount);
     if (!ch) return false;
 
     const int channelIndex = m_input->getProperty("?/channelIndex").toInt();
@@ -165,9 +165,25 @@ bool SavingFunction::compute(FileDescriptor *file)
         for (QVariant v: abscissaData) aData << v.toDouble();
         ch->data()->setXValues(aData);
     }
-    double thr = m_input->getProperty("?/threshold").toDouble();
 
-    ch->data()->setThreshold(thr);
+    // z values
+
+    bool zUniform = m_input->getProperty("?/zAxisUniform").toBool();
+    if (!zUniform) {
+        const QList<QVariant> zData = m_input->getProperty("?/zData").toList();
+        QVector<double> vals;
+        for (const QVariant &val: zData)
+            vals << val.toDouble();
+        ch->data()->setZValues(vals);
+    }
+    else {
+        const double zStep = m_input->getProperty("?/zStep").toDouble();//29 Abscissa increment
+        const double zBegin = m_input->getProperty("?/zBegin").toDouble();
+        ch->data()->setZValues(zBegin, zStep, blocksCount);
+    }
+
+
+    ch->data()->setThreshold(m_input->getProperty("?/threshold").toDouble());
     ch->data()->setYValuesUnits(m_input->getProperty("?/yValuesUnits").toInt());
 
     if (dataIsComplex) {
@@ -305,19 +321,19 @@ FileDescriptor *SavingFunction::createD94File(FileDescriptor *file)
     return newFile;
 }
 
-Channel *SavingFunction::createChannel(FileDescriptor *file, int dataSize)
+Channel *SavingFunction::createChannel(FileDescriptor *file, int dataSize, int blocksCount)
 {DD;
     switch (type) {
-        case DfdFile: return createDfdChannel(file, dataSize);
-        case UffFile: return createUffChannel(file, dataSize);
-        case D94File: return createD94Channel(file, dataSize);
+        case DfdFile: return createDfdChannel(file, dataSize, blocksCount);
+        case UffFile: return createUffChannel(file, dataSize, blocksCount);
+        case D94File: return createD94Channel(file, dataSize, blocksCount);
         default: break;
     }
 
     return 0;
 }
 
-Channel *SavingFunction::createDfdChannel(FileDescriptor *file, int dataSize)
+Channel *SavingFunction::createDfdChannel(FileDescriptor *file, int dataSize, int blocksCount)
 {DD;
     DfdChannel *ch = 0;
 
@@ -348,7 +364,7 @@ Channel *SavingFunction::createDfdChannel(FileDescriptor *file, int dataSize)
     return ch;
 }
 
-Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize)
+Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize, int blocksCount)
 {DD;
     Function *ch = 0;
     if (UffFileDescriptor *newUff = dynamic_cast<UffFileDescriptor *>(m_file)) {
@@ -447,7 +463,8 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize)
         else
             ch->type58[18].value = QString("p%1").arg(newUff->channelsCount()+1);
         //Response Node
-        //ch->type58[19].value = 0;
+        if (uffFile)
+            ch->type58[19].value = uffFile->channels[i]->type58[19].value;
         //направление отклика
         if (uffFile)
             ch->type58[20].value = uffFile->channels[i]->type58[20].value;
@@ -461,7 +478,8 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize)
         else
             ch->type58[21].value = "NONE";
         //Reference Node
-        //ch->type58[22].value = 0;
+        if (uffFile)
+            ch->type58[22].value = uffFile->channels[i]->type58[22].value;
         //направление возбуждения
         if (uffFile)
             ch->type58[23].value = uffFile->channels[i]->type58[23].value;
@@ -501,6 +519,7 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize)
         ch->type58[44].value = m_input->getProperty("?/yName").toString(); //44 Ordinate name
         //ch->type58[45].value = //FTEmpty
 
+        //Заполняем при передаточной для силы
         ch->type58[46].value = 0; //39 Ordinate (or ordinate denominator) Data Characteristics // 1 = General
 //        ch->type58[47].value = 0;// Length units exponent
 //        ch->type58[48].value = 0;// Force units exponent
@@ -509,18 +528,22 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize)
         ch->type58[51].value = "NONE"; // Ordinate name
         //ch->type58[52].value = //FTEmpty
 
-        ch->type58[53].value = 0; //39 Z axis Data Characteristics // 1 = General
+        QString zName = m_input->getProperty("?/zName").toString().toLower();
+        if (zName == "s" || zName == "с")
+            ch->type58[53].value = 17; //39 Z axis Data Characteristics // 17 = Time
+        else
+            ch->type58[53].value = 1; //39 Z axis Data Characteristics // 1 = General
 //        ch->type58[54].value = 0;// Length units exponent
 //        ch->type58[55].value = 0;// Force units exponent
 //        ch->type58[56].value = 0;// Temperature units exponent
-        ch->type58[57].value = "NONE";
-        ch->type58[58].value = "NONE"; // Ordinate name
+        ch->type58[57].value = abscissaTypeDescription(ch->type58[53].value.toInt());
+        ch->type58[58].value = m_input->getProperty("?/zName").toString(); // Applicate name
         //ch->type58[59].value = //FTEmpty
     }
     return ch;
 }
 
-Channel *SavingFunction::createD94Channel(FileDescriptor *file, int dataSize)
+Channel *SavingFunction::createD94Channel(FileDescriptor *file, int dataSize, int blocksCount)
 {
     Data94Channel *ch = 0;
     if (Data94File *newD94 = dynamic_cast<Data94File *>(m_file)) {
@@ -560,13 +583,12 @@ Channel *SavingFunction::createD94Channel(FileDescriptor *file, int dataSize)
         ch->xAxisBlock.step = xStep;
 
         // z values
-        const int zCount = m_input->getProperty("?/zCount").toInt();
         const double zStep = m_input->getProperty("?/zStep").toDouble();//29 Abscissa increment
         const double zBegin = m_input->getProperty("?/zBegin").toDouble();
-        ch->_description.insert("blocks", zCount);
+        ch->_description.insert("blocks", blocksCount);
         ch->zAxisBlock.step = zStep;
         ch->zAxisBlock.uniform = m_input->getProperty("?/zAxisUniform").toBool() ? 1 : 0;
-        ch->zAxisBlock.count = zCount;
+        ch->zAxisBlock.count = blocksCount;
         const QList<QVariant> zData = m_input->getProperty("?/zData").toList();
         ch->zAxisBlock.begin = zBegin;
         if (ch->zAxisBlock.uniform == 0) {

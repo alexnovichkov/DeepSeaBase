@@ -76,10 +76,10 @@ private:
     FileDescriptor *createDfdFile(FileDescriptor *file);
     FileDescriptor *createUffFile(FileDescriptor *file);
     FileDescriptor *createD94File(FileDescriptor *file);
-    Channel *createChannel(FileDescriptor *file, int dataSize);
-    Channel *createDfdChannel(FileDescriptor *file, int dataSize);
-    Channel *createUffChannel(FileDescriptor *file, int dataSize);
-    Channel *createD94Channel(FileDescriptor *file, int dataSize);
+    Channel *createChannel(FileDescriptor *file, int dataSize, int blocksCount);
+    Channel *createDfdChannel(FileDescriptor *file, int dataSize, int blocksCount);
+    Channel *createUffChannel(FileDescriptor *file, int dataSize, int blocksCount);
+    Channel *createD94Channel(FileDescriptor *file, int dataSize, int blocksCount);
     FileDescriptor *m_file;
     QString newFileName;
     QStringList newFiles;
