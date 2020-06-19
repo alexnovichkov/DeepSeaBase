@@ -150,14 +150,18 @@ MainWindow::MainWindow(QWidget *parent)
     connect(plot, SIGNAL(curvesChanged()), SLOT(updatePlottedChannelsNumbers()));
     connect(plot, &Plot::curvesCountChanged, this, &MainWindow::updateActions);
 
-    addFolderAct = new QAction(QIcon(":/icons/open24.png"), tr("Добавить папку"),this);
+    QIcon addFolderIcon(":/icons/open24.png");
+    addFolderIcon.addFile(":/icons/open.png");
+    addFolderAct = new QAction(addFolderIcon, tr("Добавить папку"),this);
     addFolderAct->setShortcut(tr("Ctrl+O"));
     connect(addFolderAct, SIGNAL(triggered()), SLOT(addFolder()));
 
     addFolderWithSubfoldersAct = new QAction(tr("Добавить папку со всеми вложенными папками"),this);
     connect(addFolderWithSubfoldersAct, SIGNAL(triggered()), SLOT(addFolderWithSubfolders()));
 
-    addFileAct = new QAction(QIcon(":/icons/open_file.png"), tr("Добавить файл"),this);
+    QIcon addFileIcon(":/icons/open_file_24.png");
+    addFileIcon.addFile(":/icons/open_file_16.png");
+    addFileAct = new QAction(addFileIcon, tr("Добавить файл"),this);
     connect(addFileAct, SIGNAL(triggered()), SLOT(addFile()));
 
     moveChannelsUpAct = new QAction("Сдвинуть каналы вверх", this);
@@ -175,7 +179,7 @@ MainWindow::MainWindow(QWidget *parent)
     saveAct->setShortcut(tr("Ctrl+S"));
     connect(saveAct, SIGNAL(triggered()), SLOT(save()));
 
-    renameAct = new QAction("Переименовать файл", this);
+    renameAct = new QAction(QIcon(":/icons/rename.png"),"Переименовать файл", this);
     connect(renameAct, &QAction::triggered, this, &MainWindow::renameDescriptor);
 
     delFilesAct = new QAction(QString("Удалить записи"), this);
@@ -388,6 +392,7 @@ MainWindow::MainWindow(QWidget *parent)
     recordsMenu->addAction(delFilesAct);
     recordsMenu->addAction(rescanBaseAct);
     recordsMenu->addAction(saveAct);
+    recordsMenu->addAction(renameAct);
 
     QMenu *settingsMenu = menuBar()->addMenu(QString("Настройки"));
     settingsMenu->addAction(editColorsAct);

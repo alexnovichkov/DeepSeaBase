@@ -33,7 +33,7 @@
         <file>icons/open.png</file>
         <file>icons/picture.png</file>
         <file>icons/open24.png</file>
-        <file>icons/open_file.png</file>
+        <file>icons/open_file_24.png</file>
         <file>icons/remove.png</file>
         <file>icons/help.png</file>
         <file>icons/revert.png</file>
@@ -42,5 +42,7 @@
         <file>icons/channel-copy.png</file>
         <file>icons/channel-cut.png</file>
         <file>icons/average.png</file>
+        <file>icons/rename.png</file>
+        <file>icons/open_file_16.png</file>
     </qresource>
 </RCC>
