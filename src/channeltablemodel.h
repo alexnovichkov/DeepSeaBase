@@ -51,6 +51,11 @@ private:
 
     QFont uFont;
     QFont bFont;
+
+    // QAbstractItemModel interface
+public:
+    virtual QStringList mimeTypes() const override;
+    virtual QMimeData *mimeData(const QModelIndexList &indexes) const override;
 };
 
 #endif // CHANNELTABLEMODEL_H

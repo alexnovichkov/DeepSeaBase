@@ -37,8 +37,12 @@ qtHaveModule(winextras) {
 }
 
 SOURCES += main.cpp\
+    channelsmimedata.cpp \
     converters/tdmsconverter.cpp \
     mainwindow.cpp \
+    methods/frfalgorithm.cpp \
+    methods/frffunction.cpp \
+    methods/windowingalgorithm.cpp \
     sortabletreewidgetitem.cpp \
     checkableheaderview.cpp \
     methods/spectremethod.cpp \
@@ -109,7 +113,11 @@ SOURCES += main.cpp\
     plot/colormapfactory.cpp
 
 HEADERS  += mainwindow.h \
+    channelsmimedata.h \
     converters/tdmsconverter.h \
+    methods/frfalgorithm.h \
+    methods/frffunction.h \
+    methods/windowingalgorithm.h \
     sortabletreewidgetitem.h \
     checkableheaderview.h \
     methods/abstractmethod.h \

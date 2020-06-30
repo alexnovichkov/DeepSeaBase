@@ -151,6 +151,7 @@ signals:
     void curvesChanged();
     void curvesCountChanged();
     void updatePlotted();
+    void needPlotChannels(const QVector<int> &channels, bool plotOnRight);
 private slots:
     void editLegendItem(const QVariant &itemInfo, int index);
     void editLegendItem(QwtPlotItem *item);
@@ -198,6 +199,11 @@ private:
 
     InteractionMode interactionMode = ScalingInteraction;
 
+
+    // QWidget interface
+protected:
+    void dropEvent(QDropEvent *event) override;
+    void dragEnterEvent(QDragEnterEvent *event) override;
 };
 
 #endif // PLOT_H

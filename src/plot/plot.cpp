@@ -55,6 +55,7 @@
 #include "picker.h"
 
 #include "playpanel.h"
+#include "channelsmimedata.h"
 
 
 // простой фабричный метод создания кривой нужного типа
@@ -154,6 +155,7 @@ Plot::Plot(QWidget *parent) :
     setCanvas(_canvas);
 
     setAutoReplot(true);
+    setAcceptDrops(true);
 
     setAxisScaleDraw(xBottomAxis, new ScaleDraw());
     setAxisScaleDraw(yLeftAxis, new ScaleDraw());
@@ -1242,5 +1244,25 @@ void Plot::editLegendItem(QwtPlotItem *item)
         connect(&dialog,SIGNAL(curveChanged(Curve*)),this, SIGNAL(curveChanged(Curve*)));
         connect(&dialog,SIGNAL(curveChanged(Curve*)),trackingPanel, SLOT(update()));
         dialog.exec();
+    }
+}
+
+
+void Plot::dropEvent(QDropEvent *event)
+{
+    const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
+    if (myData) {
+//        qDebug()<<myData->channels;
+        emit needPlotChannels(myData->channels, false);
+        event->acceptProposedAction();
+    }
+}
+
+void Plot::dragEnterEvent(QDragEnterEvent *event)
+{
+    const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
+    if (myData) {
+//        qDebug()<<myData->channels;
+        event->acceptProposedAction();
     }
 }

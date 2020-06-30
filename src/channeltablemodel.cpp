@@ -2,6 +2,7 @@
 #include <QApplication>
 #include "logging.h"
 #include "fileformats/filedescriptor.h"
+#include "channelsmimedata.h"
 
 ChannelTableModel::ChannelTableModel(QObject *parent) : QAbstractTableModel(parent),
     descriptor(0)
@@ -74,7 +75,7 @@ void ChannelTableModel::plotChannels(const QVector<int> &toPlot, bool plotOnRigh
             to << i;
         }
     }
-    foreach (int i,to) {
+    for (int i: to) {
         if (i<channelsCount) {
             if (descriptor->channel(i)->plotted()==0) {
                 descriptor->channel(i)->setPlotted(plotOnRight?2:1);
@@ -278,9 +279,35 @@ Qt::ItemFlags ChannelTableModel::flags(const QModelIndex &index) const
     const int col = index.column();
     if (col == 0) {
         return Qt::ItemIsSelectable | Qt::ItemIsEditable
-                | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren;
+                | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren |
+                Qt::ItemIsDragEnabled;
     }
     if (col == 1 || col == 3) return Qt::ItemIsSelectable | Qt::ItemIsEditable
             | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren;
     return Qt::ItemIsSelectable | Qt::ItemNeverHasChildren;
+}
+
+
+QStringList ChannelTableModel::mimeTypes() const
+{
+    return QStringList()<<"application/listofchannels";
+}
+
+QMimeData *ChannelTableModel::mimeData(const QModelIndexList &indexes) const
+{
+    if (indexes.isEmpty()) return 0;
+
+    ChannelsMimeData *mimeData = new ChannelsMimeData(selected());
+//    QByteArray encodedData;
+
+//    QDataStream stream(&encodedData, QIODevice::WriteOnly);
+
+//    for (const QModelIndex &index: indexes) {
+//        if (index.isValid()) {
+//            stream << index.row();
+//        }
+//    }
+
+//    mimeData->setData("application/listofchannels", encodedData);
+    return mimeData;
 }
