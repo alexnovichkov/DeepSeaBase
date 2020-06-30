@@ -13,6 +13,7 @@
  * ?/xBegin
  * ?/xName
  * ?/xType
+ * ?/xStep
  * ?/abscissaEven
  * ?/dataFormat
  * ?/yType

@@ -1,24 +1,24 @@
-#ifndef PSDFUNCTION_H
-#define PSDFUNCTION_H
+#ifndef WINDOWINGALGORITHM_H
+#define WINDOWINGALGORITHM_H
 
 #include "abstractfunction.h"
 
-class SpectreAlgorithm : public AbstractAlgorithm
+class WindowingAlgorithm : public AbstractAlgorithm
 {
 public:
-    SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent = nullptr);
+    WindowingAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent = nullptr);
 
 public:
     virtual QString name() const override;
     virtual QString description() const override;
 private:
     AbstractFunction * channelF; //фильтрует обрабатываемые каналы
-    AbstractFunction * filteringF; //применяет фильтр к временным данным
-    AbstractFunction * resamplingF; //изменяет частоту дискретизации
+   // AbstractFunction * filteringF; //применяет фильтр к временным данным
+    //AbstractFunction * resamplingF; //изменяет частоту дискретизации
     AbstractFunction * samplingF; //осуществляет нарезку блоков
     AbstractFunction * windowingF; //применяет оконную функцию
-    AbstractFunction * averagingF; //применяет усреднение
-    AbstractFunction * fftF; //вычисляет БПФ
+  //  AbstractFunction * averagingF; //применяет усреднение
+  //  AbstractFunction * fftF; //вычисляет БПФ
     AbstractFunction * saver; //сохраняет результат
 
 public:
@@ -26,4 +26,4 @@ public:
     virtual bool compute(FileDescriptor *file) override;
 };
 
-#endif // PSDFUNCTION_H
+#endif // WINDOWINGALGORITHM_H

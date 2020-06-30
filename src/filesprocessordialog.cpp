@@ -6,16 +6,11 @@
 #include <QJsonDocument>
 #include <QtVariantPropertyManager>
 
-#include "methods/abstractfunction.h"
-#include "methods/channelfunction.h"
-#include "methods/framecutterfunction.h"
-#include "methods/resamplingfunction.h"
-#include "methods/filteringfunction.h"
-#include "methods/averagingfunction.h"
-#include "methods/windowingfunction.h"
+//#include "methods/abstractfunction.h"
 
 #include "methods/spectrealgorithm.h"
 #include "methods/timealgorithm.h"
+#include "methods/windowingalgorithm.h"
 
 FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QWidget *parent)
     : QDialog(parent), dataBase(dataBase), win(parent), currentAlgorithm(0)
@@ -26,6 +21,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
 
     //
     algorithms << new TimeAlgorithm(dataBase, 0);
+    algorithms << new WindowingAlgorithm(dataBase, 0);
     algorithms << new SpectreAlgorithm(dataBase, 0);
 
     for (AbstractAlgorithm *f: algorithms) {
@@ -60,7 +56,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     functionsList->setSizePolicy(functionsList->sizePolicy().horizontalPolicy(),
                                  QSizePolicy::Expanding);
 
-    foreach (AbstractAlgorithm *f, algorithms) {
+    for (AbstractAlgorithm *f: algorithms) {
         QTreeWidgetItem *item = new QTreeWidgetItem();
         item->setText(0, f->displayName());
         item->setText(1, f->description());
@@ -94,7 +90,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
 
     progress = new QProgressBar(this);
     int progressMax = 0;
-    foreach(FileDescriptor *dfd, dataBase) {
+    for (FileDescriptor *dfd: dataBase) {
         progressMax += dfd->channelsCount();
     }
     progress->setRange(0, progressMax);

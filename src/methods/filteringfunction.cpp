@@ -163,7 +163,10 @@ QString FilteringFunction::propertyDescription(const QString &property) const
 QVariant FilteringFunction::getProperty(const QString &property) const
 {DD;
     if (property.startsWith("?/")) {
-        // do not know anything about these broadcast properties
+        if (property == "?/dataType") return 2;//Фильтр. данные
+        if (property == "?/functionType") return 1;//Time response
+        if (property == "?/functionDescription") return "FILT";
+
         if (m_input) return m_input->getProperty(property);
     }
 

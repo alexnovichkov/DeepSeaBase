@@ -30,9 +30,14 @@ QVariant ChannelFunction::getProperty(const QString &property) const
         if (property == "?/channels") return selector.indexesAsString();
 
         //это - свойства исходного файла
+        if (property == "?/sampleRate" && ch) {
+            if (qFuzzyIsNull(ch->data()->xStep())) return 0.0;
+            return 1.0 / ch->data()->xStep();
+        }
         if (property == "?/xBegin") return 0.0;
         if (property == "?/xName") return "с";
         if (property == "?/xType") return 17; //Time
+        if (property == "?/xStep" && ch) return ch->data()->xStep();
         if (property == "?/abscissaEven") return true;
         if (property == "?/dataFormat") return "real"; //<- временные данные всегда имеют такой формат
         if (property == "?/zAxisUniform") return true; //всегда равномерная шкала для временных данных
@@ -44,6 +49,10 @@ QVariant ChannelFunction::getProperty(const QString &property) const
         if (property == "?/zCount" && ch) return ch->data()->blocksCount();
         if (property == "?/zStep" && ch) return ch->data()->zStep();
         if (property == "?/zBegin" && ch) return ch->data()->zMin();
+
+        if (property == "?/dataType") return 1;//Данные
+        if (property == "?/functionType") return 1;//Time response
+        if (property == "?/functionDescription") return "Time Response";
     }
     else {
         if (!property.startsWith(name()+"/")) return QVariant();

@@ -139,9 +139,17 @@ bool SavingFunction::compute(FileDescriptor *file)
     if (!m_file) return false;
 
     // создаем канал
-    if (!m_input->compute(file)) return false;
+    QVector<double> data;
+    int i=1;
+    while (1) {
+        m_input->compute(file);
+        QVector<double> data1 = m_input->getData("input");
+        if (data1.isEmpty()) break;
+        data.append(data1);
+        qDebug()<<i++;
+    }
 
-    QVector<double> data = m_input->getData("input");
+
     if (data.isEmpty()) return false;
 
     //определяем число отсчетов в одном блоке
