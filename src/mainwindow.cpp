@@ -33,6 +33,7 @@
 #include "htmldelegate.h"
 #include "longoperation.h"
 #include "filestable.h"
+#include "channelstable.h"
 
 #include "fileformats/formatfactory.h"
 
@@ -593,11 +594,11 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     connect(tab->model, SIGNAL(plotNeedsUpdate()), plot, SLOT(update()));
     connect(tab->model, SIGNAL(modelChanged()), SLOT(updateActions()));
 
-    tab->channelsTable = new QTableView(this);
+    tab->channelsTable = new ChannelsTable(this);
     tab->channelsTable->setModel(tab->channelModel);
     tab->channelsTable->setDragEnabled(true);
     tab->channelsTable->setDragDropMode(QAbstractItemView::DragOnly);
-    tab->channelsTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
+   // tab->channelsTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
 //    tab->channelsTable->setItemDelegateForColumn(1, new HtmlDelegate);
     connect(tab->channelsTable->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),tab, SLOT(channelsSelectionChanged(QItemSelection,QItemSelection)));
 

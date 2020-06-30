@@ -298,16 +298,5 @@ QMimeData *ChannelTableModel::mimeData(const QModelIndexList &indexes) const
     if (indexes.isEmpty()) return 0;
 
     ChannelsMimeData *mimeData = new ChannelsMimeData(selected());
-//    QByteArray encodedData;
-
-//    QDataStream stream(&encodedData, QIODevice::WriteOnly);
-
-//    for (const QModelIndex &index: indexes) {
-//        if (index.isValid()) {
-//            stream << index.row();
-//        }
-//    }
-
-//    mimeData->setData("application/listofchannels", encodedData);
     return mimeData;
 }

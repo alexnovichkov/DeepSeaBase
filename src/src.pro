@@ -38,6 +38,7 @@ qtHaveModule(winextras) {
 
 SOURCES += main.cpp\
     channelsmimedata.cpp \
+    channelstable.cpp \
     converters/tdmsconverter.cpp \
     filestable.cpp \
     mainwindow.cpp \
@@ -115,6 +116,7 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h \
     channelsmimedata.h \
+    channelstable.h \
     converters/tdmsconverter.h \
     filestable.h \
     methods/frfalgorithm.h \
