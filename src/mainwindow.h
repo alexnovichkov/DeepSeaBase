@@ -45,6 +45,7 @@ class SortFilterModel;
 class QLineEdit;
 class FilterHeaderView;
 class FilteredHeaderView;
+class FilesTable;
 
 #include <QSplitter>
 
@@ -62,7 +63,7 @@ public:
 
     HeaderView *tableHeader;
     QLabel *filePathLabel;
-    QTreeView *filesTable;
+    FilesTable *filesTable;
     QTableView *channelsTable;
     Model *model;
     SortFilterModel *sortModel;
@@ -310,8 +311,6 @@ private:
     // QWidget interface
 protected:
     void closeEvent(QCloseEvent *event) override;
-    void dragEnterEvent(QDragEnterEvent *event) override;
-    void dropEvent(QDropEvent *) override;
 signals:
     void loading(const QString &file);
 private:

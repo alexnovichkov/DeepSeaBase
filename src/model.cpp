@@ -5,6 +5,7 @@
 #include <QApplication>
 #include "logging.h"
 #include <QIcon>
+#include "fileformats/formatfactory.h"
 
 Model::Model(QObject *parent) : QAbstractTableModel(parent)
 {DD;
@@ -378,6 +379,8 @@ QVariant Model::headerData(int section, Qt::Orientation orientation, int role) c
 
 Qt::ItemFlags Model::flags(const QModelIndex &index) const
 {
+    if (!index.isValid()) return QAbstractTableModel::flags(index) | Qt::ItemIsDropEnabled;
+
     const int col = index.column();
     if (col==MODEL_COLUMN_DATETIME
         || col==MODEL_COLUMN_XSTEP
@@ -385,4 +388,48 @@ Qt::ItemFlags Model::flags(const QModelIndex &index) const
         return QAbstractTableModel::flags(index) | Qt::ItemIsEditable;
 
     return QAbstractTableModel::flags(index);
+}
+
+
+Qt::DropActions Model::supportedDropActions() const
+{
+    return Qt::CopyAction;
+}
+
+
+bool Model::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const
+{
+    Q_UNUSED(action);
+    Q_UNUSED(row);
+    Q_UNUSED(column);
+    Q_UNUSED(parent);
+
+    if (data->hasUrls()) return true;
+    return false;
+}
+
+bool Model::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
+{
+    if (!canDropMimeData(data, action, row, column, parent))
+        return false;
+
+    if (action == Qt::IgnoreAction)
+        return true;
+
+    if (row != -1) return false;
+
+
+    QStringList filters = FormatFactory::allSuffixes(true);
+    QList<QUrl> urlList = data->urls();
+    QStringList filesToAdd;
+    Q_FOREACH (const QUrl &url, urlList) {
+        QString s=url.toLocalFile();
+        QFileInfo f(s);
+        if (f.isDir() || filters.contains(f.suffix().toLower()))
+            processDir(s, filesToAdd, true);
+    }
+    if (filesToAdd.isEmpty()) return false;
+
+    emit needAddFiles(filesToAdd);
+    return true;
 }

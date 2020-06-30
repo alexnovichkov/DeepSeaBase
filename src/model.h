@@ -56,18 +56,22 @@ public:
 
     // QAbstractItemModel interface
 public:
-    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const;
-    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const;
-    virtual QVariant data(const QModelIndex &index, int role) const;
-    virtual bool setData(const QModelIndex &index, const QVariant &value, int role);
-    virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const;
-    virtual Qt::ItemFlags flags(const QModelIndex &index) const;
+    virtual int rowCount(const QModelIndex &parent = QModelIndex()) const override;
+    virtual int columnCount(const QModelIndex &parent = QModelIndex()) const override;
+    virtual QVariant data(const QModelIndex &index, int role) const override;
+    virtual bool setData(const QModelIndex &index, const QVariant &value, int role) override;
+    virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+    virtual Qt::ItemFlags flags(const QModelIndex &index) const override;
+    virtual Qt::DropActions supportedDropActions() const override;
+    virtual bool canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const override;
+    virtual bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) override;
 
 
 signals:
     void legendsChanged();
     void plotNeedsUpdate();
     void modelChanged();
+    void needAddFiles(const QStringList &files);
 private:
     QModelIndex modelIndexOfFile(FileDescriptor *f, int column) const;
     QList<FileDescriptor *> descriptors;
@@ -75,6 +79,7 @@ private:
     QFont bFont;
 
     QList<int> indexes;
+
 };
 
 #endif // MODEL_H

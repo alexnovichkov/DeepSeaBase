@@ -217,4 +217,6 @@ QString floattohex(const float f);
 float toFloat32LE(const QByteArray &v, size_t offset);
 double toFloat64LE(const QByteArray &v, size_t offset);
 
+void processDir(const QString &file, QStringList &files, bool includeSubfolders);
+
 #endif // ALGORITHMS_H

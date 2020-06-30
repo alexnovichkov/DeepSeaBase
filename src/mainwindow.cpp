@@ -32,6 +32,7 @@
 #include "converters/tdmsconverterdialog.h"
 #include "htmldelegate.h"
 #include "longoperation.h"
+#include "filestable.h"
 
 #include "fileformats/formatfactory.h"
 
@@ -104,40 +105,10 @@ public:
 };
 
 
-
-
-
-
-void maybeAppend(const QString &s, QStringList &list)
-{DD;
-    if (!list.contains(s)) list.append(s);
-}
-
-void processDir(const QString &file, QStringList &files, bool includeSubfolders)
-{DD;
-    if (QFileInfo(file).isDir()) {
-        QFileInfoList dirLst = QDir(file).entryInfoList(FormatFactory::allSuffixes(),
-                                                        QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot,
-                                                        QDir::DirsFirst);
-        for (int i=0; i<dirLst.count(); ++i) {
-            if (dirLst.at(i).isDir()) {
-                if (includeSubfolders)
-                    processDir(dirLst.at(i).absoluteFilePath(),files,includeSubfolders);
-            }
-            else
-                maybeAppend(dirLst.at(i).absoluteFilePath(), files);
-        }
-    }
-    else {
-        maybeAppend(file, files);
-    }
-}
-
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), tab(0)
 {DD;
     setWindowTitle(tr("DeepSea Database ")+DEEPSEABASE_VERSION);
-    setAcceptDrops(true);
 
     mainToolBar = new QToolBar(this);
     addToolBar(mainToolBar);
@@ -544,6 +515,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->setOrientation(Qt::Horizontal);
 
     tab->model = new Model(tab);
+    connect(tab->model, &Model::needAddFiles, this, &MainWindow::addFiles);
     tab->sortModel = new SortFilterModel(tab);
     tab->sortModel->setSourceModel(tab->model);
 
@@ -556,7 +528,8 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     connect(tab->channelModel,SIGNAL(maybePlot(int)),SLOT(plotChannel(int)));
     connect(tab->channelModel,SIGNAL(deleteCurve(int)),SLOT(deleteCurve(int)));
 
-    tab->filesTable = new QTreeView(this);
+    tab->filesTable = new FilesTable(this);
+    //connect(tab->filesTable, &FilesTable::addFiles, this, &MainWindow::addFiles);
     tab->filesTable->setModel(tab->sortModel);
 
     tab->filesTable->setRootIsDecorated(false);
@@ -2995,27 +2968,4 @@ bool MainWindow::closeRequested()
     ColorSelector::instance()->drop();
 
     return true;
-}
-
-void MainWindow::dragEnterEvent(QDragEnterEvent *event)
-{
-    if (event->mimeData()->hasUrls())
-        event->acceptProposedAction();
-}
-
-void MainWindow::dropEvent(QDropEvent* event)
-{DD
-    if (event->mimeData()->hasUrls()) {
-        QStringList filters = FormatFactory::allSuffixes(true);
-        QList<QUrl> urlList = event->mimeData()->urls();
-        QStringList filesToAdd;
-        Q_FOREACH (const QUrl &url, urlList) {
-            QString s=url.toLocalFile();
-            QFileInfo f(s);
-            if (f.isDir() || filters.contains(f.suffix().toLower()))
-                processDir(s, filesToAdd, true);
-        }
-        addFiles(filesToAdd);
-        event->acceptProposedAction();
-    }
 }

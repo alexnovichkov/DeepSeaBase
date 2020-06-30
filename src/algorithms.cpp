@@ -1,5 +1,7 @@
 #include "algorithms.h"
 #include "logging.h"
+#include <QDir>
+#include "fileformats/formatfactory.h"
 
 QDebug operator <<(QDebug debug, const std::complex<double> &val)
 {
@@ -560,4 +562,29 @@ QString stripHtml(const QString &s)
     QString t = s;
     t.remove(QRegExp("<[^>]*>"));
     return t;
+}
+
+void maybeAppend(const QString &s, QStringList &list)
+{DD;
+    if (!list.contains(s)) list.append(s);
+}
+
+void processDir(const QString &file, QStringList &files, bool includeSubfolders)
+{DD;
+    if (QFileInfo(file).isDir()) {
+        QFileInfoList dirLst = QDir(file).entryInfoList(FormatFactory::allSuffixes(),
+                                                        QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot,
+                                                        QDir::DirsFirst);
+        for (int i=0; i<dirLst.count(); ++i) {
+            if (dirLst.at(i).isDir()) {
+                if (includeSubfolders)
+                    processDir(dirLst.at(i).absoluteFilePath(),files,includeSubfolders);
+            }
+            else
+                maybeAppend(dirLst.at(i).absoluteFilePath(), files);
+        }
+    }
+    else {
+        maybeAppend(file, files);
+    }
 }
