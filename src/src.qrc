@@ -45,5 +45,9 @@
         <file>icons/rename.png</file>
         <file>icons/open_file_16.png</file>
         <file>icons/function16.png</file>
+        <file>icons/move_down.png</file>
+        <file>icons/move_up.png</file>
+        <file>icons/move_down_24.png</file>
+        <file>icons/move_up_24.png</file>
     </qresource>
 </RCC>

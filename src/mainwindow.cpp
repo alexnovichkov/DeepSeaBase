@@ -149,6 +149,9 @@ MainWindow::MainWindow(QWidget *parent)
     connect(plot, SIGNAL(saveTimeSegment(QList<FileDescriptor*>,double,double)), SLOT(saveTimeSegment(QList<FileDescriptor*>,double,double)));
     connect(plot, SIGNAL(curvesChanged()), SLOT(updatePlottedChannelsNumbers()));
     connect(plot, &Plot::curvesCountChanged, this, &MainWindow::updateActions);
+    connect(plot, &Plot::needPlotChannels, [=](const QVector<int> &channels, bool plotOnRight){
+        if (tab) tab->channelModel->plotChannels(channels, plotOnRight);
+    });
 
     QIcon addFolderIcon(":/icons/open24.png");
     addFolderIcon.addFile(":/icons/open.png");
@@ -164,12 +167,16 @@ MainWindow::MainWindow(QWidget *parent)
     addFileAct = new QAction(addFileIcon, tr("Добавить файл"),this);
     connect(addFileAct, SIGNAL(triggered()), SLOT(addFile()));
 
-    moveChannelsUpAct = new QAction("Сдвинуть каналы вверх", this);
+    QIcon moveChannelsUpIcon(":/icons/move_up.png");
+    moveChannelsUpIcon.addFile(":/icons/move_up_24.png");
+    moveChannelsUpAct = new QAction(moveChannelsUpIcon, "Сдвинуть каналы вверх", this);
     moveChannelsUpAct->setShortcutContext(Qt::WidgetShortcut);
     moveChannelsUpAct->setShortcut(tr("Ctrl+Up"));
     connect(moveChannelsUpAct, SIGNAL(triggered()), SLOT(moveChannelsUp()));
 
-    moveChannelsDownAct = new QAction("Сдвинуть каналы вниз", this);
+    QIcon moveChannelsDownIcon(":/icons/move_down.png");
+    moveChannelsDownIcon.addFile(":/icons/move_down_24.png");
+    moveChannelsDownAct = new QAction(moveChannelsDownIcon, "Сдвинуть каналы вниз", this);
     moveChannelsDownAct->setShortcutContext(Qt::WidgetShortcut);
     moveChannelsDownAct->setShortcut(tr("Ctrl+Down"));
     connect(moveChannelsDownAct, SIGNAL(triggered()), SLOT(moveChannelsDown()));
@@ -365,6 +372,8 @@ MainWindow::MainWindow(QWidget *parent)
     mainToolBar->addAction(meanAct);
     mainToolBar->addAction(movingAvgAct);
     mainToolBar->addAction(addCorrectionAct);
+    mainToolBar->addAction(moveChannelsUpAct);
+    mainToolBar->addAction(moveChannelsDownAct);
 
     mainToolBar->addSeparator();
     mainToolBar->addWidget(new QLabel("  График:"));
@@ -613,6 +622,9 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
     tab->channelsTable = new QTableView(this);
     tab->channelsTable->setModel(tab->channelModel);
+    tab->channelsTable->setDragEnabled(true);
+    tab->channelsTable->setDragDropMode(QAbstractItemView::DragOnly);
+    tab->channelsTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
 //    tab->channelsTable->setItemDelegateForColumn(1, new HtmlDelegate);
     connect(tab->channelsTable->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),tab, SLOT(channelsSelectionChanged(QItemSelection,QItemSelection)));
 
@@ -641,6 +653,8 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
             menu.addAction(plotSelectedChannelsOnRightAct);
             if (tab->record && tab->record->isSourceFile())
                 menu.addAction(exportChannelsToWavAct);
+            menu.addAction(moveChannelsUpAct);
+            menu.addAction(moveChannelsDownAct);
             menu.exec(QCursor::pos());
         }
 //        else if (column == 9) {
@@ -2220,13 +2234,16 @@ void MainWindow::updateActions()
 {
     if (!tab || !tab->model ||!tab->channelModel) return;
 
+    const int selectedChannelsCount = tab->channelModel->selected().size();
+    const int selectedFilesCount = tab->model->selected().size();
+
     saveAct->setEnabled(tab->model->changed());
 
-    renameAct->setDisabled(tab->model->selected().isEmpty());
-    delFilesAct->setDisabled(tab->model->selected().isEmpty());
-    plotAllChannelsAct->setDisabled(tab->model->selected().isEmpty());
-    plotAllChannelsOnRightAct->setDisabled(tab->model->selected().isEmpty());
-    plotSelectedChannelsAct->setDisabled(tab->channelModel->selected().isEmpty());
+    renameAct->setDisabled(selectedFilesCount==0);
+    delFilesAct->setDisabled(selectedFilesCount==0);
+    plotAllChannelsAct->setDisabled(selectedFilesCount==0);
+    plotAllChannelsOnRightAct->setDisabled(selectedFilesCount==0);
+    plotSelectedChannelsAct->setDisabled(selectedChannelsCount==0);
     //exportChannelsToWavAct;
     calculateSpectreAct->setDisabled(tab->model->selectedFiles(Descriptor::TimeResponse).isEmpty());
     const QVector<Descriptor::DataType> types {Descriptor::AutoSpectrum,
@@ -2254,14 +2271,14 @@ void MainWindow::updateActions()
     //QAction *interactionModeAct;
     addCorrectionAct->setEnabled(plot->hasCurves() && !plot->spectrogram);
     addCorrectionsAct->setEnabled(plot->hasCurves() && !plot->spectrogram);
-    deleteChannelsAct->setDisabled(tab->channelModel->selected().isEmpty());
-    deleteChannelsBatchAct->setDisabled(tab->channelModel->selected().isEmpty());
-    copyChannelsAct->setDisabled(tab->channelModel->selected().isEmpty());
-    moveChannelsAct->setDisabled(tab->channelModel->selected().isEmpty());
+    deleteChannelsAct->setDisabled(selectedChannelsCount==0);
+    deleteChannelsBatchAct->setDisabled(selectedChannelsCount==0);
+    copyChannelsAct->setDisabled(selectedChannelsCount==0);
+    moveChannelsAct->setDisabled(selectedChannelsCount==0);
 
-    moveChannelsUpAct->setDisabled(tab->channelModel->selected().isEmpty());
-    moveChannelsDownAct->setDisabled(tab->channelModel->selected().isEmpty());
-    editDescriptionsAct->setDisabled(tab->model->selected().isEmpty());
+    moveChannelsDownAct->setEnabled(selectedChannelsCount > 0 && selectedChannelsCount < tab->channelModel->channelsCount);
+    moveChannelsUpAct->setEnabled(selectedChannelsCount > 0 && selectedChannelsCount < tab->channelModel->channelsCount);
+    editDescriptionsAct->setDisabled(selectedFilesCount==0);
 
     exportToExcelAct->setEnabled(plot->hasCurves() && !plot->spectrogram);
 
@@ -2269,7 +2286,7 @@ void MainWindow::updateActions()
     //QAction *convertTDMSFilesAct;
     //QAction *convertEsoFilesAct;
     //convertAct;
-    copyToLegendAct->setDisabled(tab->model->selectedFiles().isEmpty());
+    copyToLegendAct->setDisabled(selectedFilesCount==0);
 
     //QAction *autoscaleXAct;
     //QAction *autoscaleYAct;
@@ -2278,7 +2295,7 @@ void MainWindow::updateActions()
 
     //QAction *removeLabelsAct;
     playAct->setEnabled(plot->curvesCount(Descriptor::TimeResponse)>0);
-    editYNameAct->setDisabled(tab->channelModel->selected().isEmpty());
+    editYNameAct->setDisabled(selectedChannelsCount==0);
 
     previousDescriptorAct->setEnabled(tab->model->size()>1 && plot->hasCurves());
     nextDescriptorAct->setEnabled(tab->model->size()>1 && plot->hasCurves());
