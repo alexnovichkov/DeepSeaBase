@@ -1019,6 +1019,11 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<Channel *> &list, int win
         ch->data()->setThreshold(firstChannel->data()->threshold());
         ch->data()->setYValuesUnits(firstChannel->data()->yValuesUnits());
 
+        if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform)
+            ch->data()->setXValues(firstChannel->data()->xMin(), firstChannel->data()->xStep(), numInd);
+        else
+            ch->data()->setXValues(firstChannel->data()->xValues());
+
         //dfd не понимает многоблочные файлы
         auto format = firstChannel->data()->yValuesFormat();
         if (format == DataHolder::YValuesComplex) {
@@ -1031,10 +1036,7 @@ void DfdFileDescriptor::calculateMovingAvg(const QList<Channel *> &list, int win
             ch->data()->setYValues(values, format, 0);
         }
 
-        if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform)
-            ch->data()->setXValues(firstChannel->data()->xMin(), firstChannel->data()->xStep(), numInd);
-        else
-            ch->data()->setXValues(firstChannel->data()->xValues());
+
 
         // обновляем сведения канала
         ch->setPopulated(true);
