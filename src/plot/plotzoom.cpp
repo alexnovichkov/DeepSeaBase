@@ -21,7 +21,9 @@
 #include <QtDebug>
 #include "plot.h"
 
-PlotZoom::PlotZoom() : QObject()
+constexpr int MinimumZoom = 8;
+
+PlotZoom::PlotZoom()
 {DD;
     rubberBand = 0;
 }
@@ -69,7 +71,7 @@ void PlotZoom::procMouseEvent(QEvent *event)
 
 void PlotZoom::procKeyboardEvent(QEvent *event)
 {
-    QKeyEvent *kEvent = static_cast<QKeyEvent*>(event);
+    QKeyEvent *kEvent = dynamic_cast<QKeyEvent*>(event);
     switch (kEvent->key()) {
         case Qt::Key_Backspace: {
             zoom->zoomBack();
@@ -140,7 +142,7 @@ void PlotZoom::endZoom(QMouseEvent *mEvent)
 //                              mEvent->modifiers() & Qt::ControlModifier);
 //        }
 
-        if (qAbs(xp - startingPosX) >= 8 && qAbs(yp - startingPosY) >= 8) {
+        if (qAbs(xp - startingPosX) >= MinimumZoom && qAbs(yp - startingPosY) >= MinimumZoom) {
             int leftmostX = qMin(xp, startingPosX); int rightmostX = qMax(xp, startingPosX);
             int leftmostY = qMin(yp, startingPosY); int rightmostY = qMax(yp, startingPosY);
             QwtAxis::Position pos = QwtAxis::xBottom;

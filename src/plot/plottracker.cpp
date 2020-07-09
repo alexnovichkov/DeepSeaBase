@@ -71,9 +71,9 @@ QwtText PlotTracker::trackerTextF(const QPointF &pos) const
 void PlotTracker::maybeHover(const QPointF &pos)
 {
     bool found = false;
-    const QwtPlotItemList& itmList = plot->itemList(QwtPlotItem::Rtti_PlotMarker);
-    for (QwtPlotItemIterator it = itmList.constBegin(); it != itmList.constEnd(); ++it) {
-        if (TrackingCursor *c = dynamic_cast<TrackingCursor *>(*it )) {
+
+    for (auto it: plot->itemList(QwtPlotItem::Rtti_PlotMarker)) {
+        if (TrackingCursor *c = dynamic_cast<TrackingCursor *>(it)) {
             if (!c->isVisible()) {
                 continue;
             }

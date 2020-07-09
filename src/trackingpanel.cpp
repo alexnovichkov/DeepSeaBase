@@ -269,8 +269,8 @@ void TrackingPanel::switchVisibility()
 {DD;
     if (isVisible()) {
         setVisible(false);
-        for (int i=0; i<cursors.size(); ++i) cursors[i]->detach();
-        for (int i=0; i<_harmonics.size(); ++i) _harmonics[i]->detach();
+        for (auto cursor: cursors) cursor->detach();
+        for (auto h: _harmonics) h->detach();
         cursorSpan1->detach();
         cursorSpan2->detach();
     }
@@ -304,12 +304,12 @@ void TrackingPanel::update()
             cursors[i]->detach();
         }
     }
-    for (int i=0; i<_harmonics.size(); ++i) {
+    for (auto h: _harmonics) {
         if (harmonics->checkState() == Qt::Checked && isVisible()) {
-            _harmonics[i]->attach(plot);
+            h->attach(plot);
         }
         else {
-            _harmonics[i]->detach();
+            h->detach();
         }
     }
 
@@ -349,7 +349,7 @@ void TrackingPanel::update()
     QVector<QVector<double> > yValues(4);
     QVector<QVector<QColor> > colors(4);
 
-    foreach(Curve *c, plot->curves) {
+    for (Curve *c: plot->curves) {
         QVector<int> steps(4);
 
         auto xVals = c->channel->xValues();
@@ -452,14 +452,8 @@ void TrackingPanel::setXValue(double value)
 //            2. щелчком мыши по шкале Х - сигнал AxisZoom->updateTrackingCursor
 void TrackingPanel::setXValue(double value, bool second)
 {DD;
-    if (second /*&& cursors[1]->current*/) {
-        changeSelectedCursor(cursors[1]);
-        setX(value, 1);
-    }
-    else /*if (cursors[0]->current)*/ {
-        changeSelectedCursor(cursors[0]);
-        setX(value, 0);
-    }
+    changeSelectedCursor(cursors[second?1:0]);
+    setX(value, second?1:0);
 }
 
 TrackingCursor::TrackingCursor(const QColor &col)
@@ -502,12 +496,10 @@ void TrackingCursor::updateLabel()
     QStringList label;
     if (!yValues.isEmpty() && showYValues) {
         for (int i = 0; i < yValues.size(); ++i) {
-            QString l = QString::number(yValues[i], 'f', 1);
-
-            label << QString("<font color=%1>%2</font>").arg(colors[i].name()).arg(l);
+            label << QString("<font color=%1>%2</font>").arg(colors[i].name()).arg(yValues[i], 0, 'f', 1);
         }
     }
-    label << QString("<b>%1</b>").arg(QString::number(this->xValue(), 'f', 1));
+    label << QString("<b>%1</b>").arg(this->xValue(), 0, 'f', 1);
     text.setText(label.join("<br>"),QwtText::RichText);
 
     setLabel(text);
@@ -522,9 +514,9 @@ void TrackingPanel::closeEvent(QCloseEvent *event)
 
 void TrackingPanel::hideEvent(QHideEvent *event)
 {
-    foreach(TrackingCursor *c, cursors)
+    for (TrackingCursor *c: cursors)
         c->detach();
-    foreach (QwtPlotMarker *d, _harmonics) {
+    for (QwtPlotMarker *d: _harmonics) {
         d->detach();
     }
 

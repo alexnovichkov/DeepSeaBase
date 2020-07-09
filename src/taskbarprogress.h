@@ -25,7 +25,7 @@ private:
     QWidget *window;
     QWinTaskbarProgress *winProgress;
     QPair<int, int> range;
-    int value;
+    int value = 0;
 };
 
 #endif // TASKBARPROGRESS_H

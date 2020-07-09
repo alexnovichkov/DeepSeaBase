@@ -34,18 +34,18 @@ static constexpr quint32 fourCC(const char (&ch)[5])
 struct WavHeader
 {
     quint32 id = fourCC("RIFF"); //"RIFF"
-    quint32 totalSize; //4 + 24 + (8 + M*Nc*Ns)
+    quint32 totalSize = 0; //4 + 24 + (8 + M*Nc*Ns)
     quint32 waveId = fourCC("WAVE"); //"WAVE"
     quint32 fmtId = fourCC("fmt ");	//"fmt "
     quint32 fmtSize = 16;
     quint16 format = 1; //PCM, M=2
-    quint16 channelsCount; //Nc
-    quint32 samplesPerSec; //F
-    quint32 bytesPerSec; //F*M*Nc
-    quint16 blockAlign; //M*Nc
-    quint16 bitsPerSample; //rounds up to 8*M
+    quint16 channelsCount = 0; //Nc
+    quint32 samplesPerSec = 0; //F
+    quint32 bytesPerSec = 0; //F*M*Nc
+    quint16 blockAlign = 0; //M*Nc
+    quint16 bitsPerSample = 0; //rounds up to 8*M
     quint32 dataId = fourCC("data"); //"data"
-    quint32 dataSize; //M*Nc*Ns
+    quint32 dataSize = 0; //M*Nc*Ns
 } __attribute__((packed));
 
 //int WavExporter::chunksCount() const
@@ -102,9 +102,7 @@ void WavExporter::writeWithStreams(const QString &wavFileName)
     s << quint32(2 * indexes.size() * file->samplesCount());
 
     //пишем блоками по BLOCK_SIZE отсчетов
-//    qDebug()<<"chunks" << chunksCount();
     for (int chunk = 0; chunk < chunksCount(); ++chunk) {
-//        qDebug()<<"chunk"<<chunk+1;
         if (QThread::currentThread()->isInterruptionRequested()) {
             wavFile.close();
             qDebug()<<"Сохранение файла wav прервано";
@@ -120,8 +118,7 @@ void WavExporter::writeWithStreams(const QString &wavFileName)
         //4. очищаем данные канала
 
         QVector<QByteArray> chunkData;
-//        QElapsedTimer reading; reading.start();
-        for (int c = 0; c < indexes.size(); ++c) {
+        for (int c: indexes) {
             if (QThread::currentThread()->isInterruptionRequested()) {
                 wavFile.close();
                 qDebug()<<"Сохранение файла wav прервано";
@@ -129,17 +126,15 @@ void WavExporter::writeWithStreams(const QString &wavFileName)
                 return;
             }
 
-            Channel *channel = file->channel(indexes.at(c));
+            Channel *channel = file->channel(c);
             bool populated = channel->populated();
             if (!populated) channel->populate();
             chunkData.append(channel->wavData(chunk * BLOCK_SIZE, BLOCK_SIZE));
             if (!populated) channel->clear();
         }
-//        qDebug()<<"reading"<<reading.elapsed();
 
         //теперь перетасовываем chunkData - берем из него по одному отсчету каждого канала
         //и записываем в wav
-//        QElapsedTimer writing; writing.start();
         for (int i = 0; i < chunkData.constFirst().size()/2; ++i) {
             if (QThread::currentThread()->isInterruptionRequested()) {
                 wavFile.close();
@@ -148,11 +143,10 @@ void WavExporter::writeWithStreams(const QString &wavFileName)
                 return;
             }
 
-            for (int c = 0; c < chunkData.size(); ++c) {
-                s.device()->write(chunkData.at(c).mid(i*2, 2));
+            for (const QByteArray &c: chunkData) {
+                s.device()->write(c.mid(i*2, 2));
             }
         }
-//        qDebug()<<"writing"<<writing.elapsed();
         emit tick(chunk+1);
     }
     wavFile.close();
@@ -245,7 +239,6 @@ void WavExporter::start()
     if (!writeWithMap(_wavFile))
         writeWithStreams(_wavFile);
 
-    qDebug()<<"total"<<time.elapsed();
     finalize();
 }
 

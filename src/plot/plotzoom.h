@@ -47,10 +47,11 @@ protected:
     bool eventFilter(QObject *,QEvent *);
 
 private:
-    ChartZoom *zoom;
+    ChartZoom *zoom = 0;
     QRubberBand *rubberBand;
 
-    int startingPosX,startingPosY;        // Положение курсора в момент начала преобразования
+    int startingPosX = 0;
+    int startingPosY = 0;        // Положение курсора в момент начала преобразования
                             // (в пикселах относительно канвы графика)
 
     void procMouseEvent(QEvent *);

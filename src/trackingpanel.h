@@ -83,10 +83,6 @@ private:
     QCheckBox *harmonics;
     QCheckBox *yValuesCheckBox;
 
-    QLabel *x1Label;
-    QLabel *x2Label;
-
-
     double mStep;
 
     QList<TrackingCursor *> cursors;
