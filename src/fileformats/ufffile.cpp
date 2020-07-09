@@ -637,15 +637,6 @@ void UffFileDescriptor::calculateMovingAvg(const QList<Channel*> &toAvg, int win
         auto format = ch->data()->yValuesFormat();
 
         newCh->data()->setThreshold(ch->data()->threshold());
-        if (format == DataHolder::YValuesComplex) {
-            newCh->data()->setYValues(movingAverage(ch->data()->yValuesComplex(0), windowSize));
-        }
-        else {
-            QVector<double> values = movingAverage(ch->data()->linears(0), windowSize);
-            if (format == DataHolder::YValuesAmplitudesInDB)
-                format = DataHolder::YValuesAmplitudes;
-            newCh->data()->setYValues(values, format);
-        }
 
         if (ch->data()->xValuesFormat()==DataHolder::XValuesUniform) {
             newCh->type58[27].value = 1;
@@ -657,6 +648,18 @@ void UffFileDescriptor::calculateMovingAvg(const QList<Channel*> &toAvg, int win
         }
 
         newCh->type58[29].value = ch->data()->xStep();
+
+        if (format == DataHolder::YValuesComplex) {
+            newCh->data()->setYValues(movingAverage(ch->data()->yValuesComplex(0), windowSize));
+        }
+        else {
+            QVector<double> values = movingAverage(ch->data()->linears(0), windowSize);
+            if (format == DataHolder::YValuesAmplitudesInDB)
+                format = DataHolder::YValuesAmplitudes;
+            newCh->data()->setYValues(values, format);
+        }
+
+
 
         // обновляем сведения канала
         newCh->setPopulated(true);

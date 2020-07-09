@@ -925,6 +925,15 @@ void Data94File::calculateMovingAvg(const QList<Channel*> &list, int windowSize)
         //zAxisBlock
         newCh->zAxisBlock.count = 1;
 
+        if (ch->data()->xValuesFormat()==DataHolder::XValuesUniform) {
+            newCh->data()->setXValues(ch->data()->xMin(), ch->data()->xStep(), numInd);
+        }
+        else {
+            QVector<double> values = ch->data()->xValues();
+            values.resize(numInd);
+            newCh->data()->setXValues(values);
+        }
+
         auto format = ch->data()->yValuesFormat();
 
         if (format == DataHolder::YValuesComplex) {
@@ -940,14 +949,7 @@ void Data94File::calculateMovingAvg(const QList<Channel*> &list, int windowSize)
             newCh->data()->setYValues(values, format);
         }
 
-        if (ch->data()->xValuesFormat()==DataHolder::XValuesUniform) {
-            newCh->data()->setXValues(ch->data()->xMin(), ch->data()->xStep(), numInd);
-        }
-        else {
-            QVector<double> values = ch->data()->xValues();
-            values.resize(numInd);
-            newCh->data()->setXValues(values);
-        }
+
 
         newCh->setName(ch->name()+" сглаж.");
         newCh->setDescription("Скользящее среднее канала "+ch->name());
