@@ -302,39 +302,41 @@ RESOURCES *= src.qrc
 
 #RC_FILE *= src.rc
 
-CONFIG(release, debug|release):QMAKE_CFLAGS  += -O2
+CONFIG(release, debug|release):{
+  QMAKE_CFLAGS  += -O2
+}
 
 # includes & libs
 INCLUDEPATH *= $$PWD $$PWD/.. $$PWD/../3rdParty/qtpropertybrowser $$PWD/../3rdParty/DspFilters
-INCLUDEPATH *= K:/My/programming/sources/strtk
+INCLUDEPATH *= E:/My/programming/sources/strtk
 
 #PRECOMPILED_HEADER = strtk_.hpp
 
 #libsamplerate
-INCLUDEPATH *= K:/My/programming/sources/libsamplerate-0.1.8/src
-LIBS *= K:/My/programming/sources/build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_32_bit-Release/release/libsamplerate.a
-LIBS *= K:/My/programming/sources/build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_64_bit-Release/release/libsamplerate.a
+INCLUDEPATH *= E:/My/programming/sources/libsamplerate-0.1.8/src
+LIBS *= E:/My/programming/sources/build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_32_bit-Release/release/libsamplerate.a
+LIBS *= E:/My/programming/sources/build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_64_bit-Release/release/libsamplerate.a
 
 #tdm
-INCLUDEPATH *= K:/My/programming/sources/TDMS/tdm_dev/dev/include
-LIBS *= K:/My/programming/sources/TDMS/tdm_dev/dev/lib/64-bit/msvc64/nilibddc.lib
-LIBS *= K:/My/programming/sources/TDMS/tdm_dev/dev/lib/32-bit/msvc/nilibddc.lib
+INCLUDEPATH *= E:/My/programming/sources/TDMS/tdm_dev/dev/include
+LIBS *= E:/My/programming/sources/TDMS/tdm_dev/dev/lib/64-bit/msvc64/nilibddc.lib
+LIBS *= E:/My/programming/sources/TDMS/tdm_dev/dev/lib/32-bit/msvc/nilibddc.lib
 
 #FFTW
-INCLUDEPATH *= K:/My/programming/sources/fftw-3.3.5-dll32
-LIBS *= K:/My/programming/sources/fftw-3.3.5-dll32/libfftw3-3.lib
-LIBS *= K:/My/programming/sources/fftw-3.3.5-dll64/libfftw3-3.lib
+INCLUDEPATH *= E:/My/programming/sources/fftw-3.3.5-dll32
+LIBS *= E:/My/programming/sources/fftw-3.3.5-dll32/libfftw3-3.lib
+LIBS *= E:/My/programming/sources/fftw-3.3.5-dll64/libfftw3-3.lib
 
 #qwt
 CONFIG(release, debug|release):{
-    LIBS *= C:/Qwt-6.4.0-svn/lib/libqwt.a
-    LIBS *= C:/Qwt-6.4.0-svn/lib64/libqwt.a
+    LIBS *= E:/My/programming/sources/Qwt-6.4.0-svn/lib/libqwt.a
+    LIBS *= E:/My/programming/sources/Qwt-6.4.0-svn/lib64/libqwt.a
 }
 CONFIG(debug, debug|release):{
-    LIBS *= C:/Qwt-6.4.0-svn/lib/libqwtd.a
-    LIBS *= C:/Qwt-6.4.0-svn/lib64/libqwtd.a
+    LIBS *= E:/My/programming/sources/Qwt-6.4.0-svn/lib/libqwtd.a
+    LIBS *= E:/My/programming/sources/Qwt-6.4.0-svn/lib64/libqwtd.a
 }
-INCLUDEPATH *= C:/Qwt-6.4.0-svn/include
+INCLUDEPATH *= E:/My/programming/sources/Qwt-6.4.0-svn/include
 
 ##matio
 #INCLUDEPATH *= K:/My/programming/sources/Matlab/matio-1.5.17/src

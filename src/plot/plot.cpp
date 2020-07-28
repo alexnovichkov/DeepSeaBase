@@ -281,29 +281,20 @@ int Plot::curvesCount(int type) const
 
 void Plot::deleteAllCurves(bool forceDeleteFixed)
 {DD;
+    //ZoneScoped;
     int leftUndeleted = curves.size();
 
     for (int i=curves.size()-1; i>=0; --i) {
         Curve *c = curves[i];
         if (!c->fixed || forceDeleteFixed) {
             emit curveDeleted(c->channel);
-            deleteCurve(c, true);
+            deleteCurve(c, i==0);
             leftUndeleted--;
         }
     }
 
-//    qDeleteAll(curves);
-//    curves.clear();
-//    leftCurves.clear();
-//    rightCurves.clear();
-//    ColorSelector::instance()->resetState();
     playerPanel->reset();
 
-//    yLeftName.clear();
-//    yRightName.clear();
-//    xName.clear();
-
-//    update();
     emit curvesCountChanged();
 }
 

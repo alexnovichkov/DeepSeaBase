@@ -6,6 +6,7 @@
 #include "logging.h"
 #include <QIcon>
 #include "fileformats/formatfactory.h"
+#include "mainwindow.h"
 
 Model::Model(QObject *parent) : QAbstractTableModel(parent)
 {DD;
@@ -291,8 +292,14 @@ QVariant Model::data(const QModelIndex &index, int role) const
 
     }
     else if (role == Qt::FontRole) {
-        if (column == MODEL_COLUMN_FILENAME)
-            return (d->hasCurves() ? bFont : uFont);
+        if (column == MODEL_COLUMN_FILENAME) {
+            if (d->hasCurves()) {
+                QFont font;// = qApp->font(); //qDebug()<<font;
+                font.setBold(true);//qDebug()<<font;
+                return font;
+            }
+        }
+        QVariant();
     }
     else if (role == Qt::DecorationRole) {
         if (column == MODEL_COLUMN_SAVE) {

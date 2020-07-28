@@ -151,8 +151,11 @@ QVariant ChannelTableModel::data(const QModelIndex &index, int role) const
                 return descriptor->channel(row)->color();
             break;
         case Qt::FontRole:
-            if (descriptor->channel(row)->plotted() && column == 0)
-                return bFont;
+            if (descriptor->channel(row)->plotted() && column == 0) {
+                QFont font;
+                font.setBold(true);
+                return font;
+            }
             break;
         case Qt::CheckStateRole:
             if (column == 0)
