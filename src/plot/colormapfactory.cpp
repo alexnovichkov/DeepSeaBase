@@ -1,9 +1,20 @@
 #include "colormapfactory.h"
+#include <qwt_interval.h>
+#include "logging.h"
 
 class LinearColorMap: public QwtLinearColorMap
 {
 public:
     LinearColorMap(): QwtLinearColorMap(Qt::black, Qt::white)
+    {
+        setFormat(QwtColorMap::RGB);
+    }
+};
+
+class LinearInverseColorMap: public QwtLinearColorMap
+{
+public:
+    LinearInverseColorMap(): QwtLinearColorMap(Qt::white, Qt::black)
     {
         setFormat(QwtColorMap::RGB);
     }
@@ -51,24 +62,65 @@ public:
     }
 };
 
+class SteppingColorMap: public QwtColorMap
+{
+public:
+    SteppingColorMap() : QwtColorMap(QwtColorMap::RGB)
+    {
+    }
+    QRgb rgb(const QwtInterval &interval, double value) const override
+    {
+        const double width = interval.width();
+        if (width <= 0.0)
+            return 0u;
+
+        if (value < interval.minValue()) return 0xffffffff;
+        if (value > interval.maxValue()) return 0xffff29ff;
+
+        const int ratio = int(( value - interval.minValue() ) / width * 13.0);
+        //qDebug()<<interval<<value<<ratio<<colors[ratio];
+        return colors[ratio];
+    }
+private:
+    QRgb colors[13] = {
+        0xffffffff,
+        0xffaaC6C3,
+        0xff84A2FF,
+        0xff4265FF,
+        0xff00FFFF,
+        0xff29FF52,
+        0xff00AA00,
+        0xff005500,
+        0xffFFFF00,
+        0xffFF7D00,
+        0xffFF2829,
+        0xffAD0000,
+        0xffff29ff
+    };
+};
+
 QStringList ColorMapFactory::names()
 {
     QStringList l;
     l << "RGB";
     l << "Серая";
+    l << "Серая обратная";
     l << "Симметричная";
     l << "Hue";
+    l << "Ступенчатая";
     return l;
 }
 
 QwtColorMap *ColorMapFactory::map(int index)
 {
     switch (index) {
-        case RGBMap: return new RGBColorMap();
-        case GreyMap : return new LinearColorMap();
-        case SymmetricMap : return new SymmetricColorMap();
-        case HueMap : return new HueColorMap();
-        default: ;
+    case RGBMap: return new RGBColorMap();
+    case GreyMap : return new LinearColorMap();
+    case GreyInverseMap : return new LinearInverseColorMap();
+    case SymmetricMap : return new SymmetricColorMap();
+    case HueMap : return new HueColorMap();
+    case SteppingMap : return new SteppingColorMap();
+    default: ;
     }
     return new RGBColorMap();
 }
