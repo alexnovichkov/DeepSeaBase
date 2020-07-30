@@ -56,6 +56,7 @@
 
 #include "playpanel.h"
 #include "channelsmimedata.h"
+#include "imagerenderdialog.h"
 
 
 // простой фабричный метод создания кривой нужного типа
@@ -1026,14 +1027,20 @@ void Plot::updateLegends()
 
 void Plot::savePlot()
 {DD;
-    QString lastPicture = MainWindow::getSetting("lastPicture", "plot.bmp").toString();
-    lastPicture = QFileDialog::getSaveFileName(this, QString("Сохранение графика"), lastPicture,
-                                               "Растровые изображения (*.bmp);;Файлы pdf (*.pdf);;Файлы svg (*.svg)");
-    if (lastPicture.isEmpty()) return;
+    ImageRenderDialog dialog(this);
+    if (dialog.exec()) {
+        importPlot(dialog.getPath(), dialog.getSize(), dialog.getResolution());
+        MainWindow::setSetting("lastPicture", dialog.getPath());
+    }
 
-    importPlot(lastPicture);
+//    QString lastPicture = MainWindow::getSetting("lastPicture", "plot.bmp").toString();
+//    lastPicture = QFileDialog::getSaveFileName(this, QString("Сохранение графика"), lastPicture,
+//                                               "Растровые изображения (*.bmp);;Файлы JPEG (*.jpg);;Файлы pdf (*.pdf);;Файлы svg (*.svg)");
+//    if (lastPicture.isEmpty()) return;
 
-    MainWindow::setSetting("lastPicture", lastPicture);
+//    importPlot(lastPicture);
+
+
 }
 
 void Plot::copyToClipboard()
@@ -1043,7 +1050,7 @@ void Plot::copyToClipboard()
         QString fileName = file.fileName();
         file.close();
 
-        importPlot(fileName);
+        importPlot(fileName, ImageRenderDialog::defaultSize(), ImageRenderDialog::defaultResolution());
         QImage img;
         if (img.load(fileName)) {
             qApp->clipboard()->setImage(img);
@@ -1058,7 +1065,7 @@ void Plot::print()
         QString fileName = file.fileName();
         file.close();
 
-        importPlot(fileName);
+        importPlot(fileName, ImageRenderDialog::defaultSize(), ImageRenderDialog::defaultResolution());
 
         QImage img;
         if (img.load(fileName)) {
@@ -1155,7 +1162,7 @@ void Plot::setInteractionMode(Plot::InteractionMode mode)
                                               QwtPlotCanvas::ItemFocusIndicator);
 }
 
-void Plot::importPlot(const QString &fileName)
+void Plot::importPlot(const QString &fileName, const QSize &size, int resolution)
 {DD;
     QwtPlotRenderer renderer;
     renderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);
@@ -1167,7 +1174,7 @@ void Plot::importPlot(const QString &fileName)
     for (int i=0; i<QwtPlot::axisCnt; ++i)
         if (axisEnabled(i)) setAxisFont(i, axisfont);
 
-    foreach (Curve *curve, curves) {
+    for (Curve *curve: curves) {
         QPen pen = curve->pen();
         if (pen.width()<2) pen.setWidth(2);
         pen.setColor(pen.color().lighter(120));
@@ -1180,15 +1187,14 @@ void Plot::importPlot(const QString &fileName)
 
 
     QString format = fileName.section(".", -1,-1);
-    renderer.renderDocument(this, fileName, format,
-                            QSizeF(400,200), qApp->desktop()->logicalDpiX());
+    renderer.renderDocument(this, fileName, format, size, resolution);
 
 
     axisfont.setPointSize(axisfont.pointSize()-1);
     for (int i=0; i<QwtPlot::axisCnt; ++i)
         if (axisEnabled(i)) setAxisFont(i, axisfont);
 
-    foreach (Curve *curve, curves) {
+    for (Curve *curve: curves) {
         curve->setPen(curve->oldPen);
         curve->setTitle(curve->channel->legendName());
     }

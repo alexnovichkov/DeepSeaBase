@@ -161,7 +161,7 @@ private slots:
     void fixCurve(QwtPlotItem* curve);
     void hoverAxis(QwtAxisId axis, int hover);
 private:
-    void importPlot(const QString &fileName);
+    void importPlot(const QString &fileName, const QSize &size, int resolution);
     bool hasDuplicateNames(const QString name) const;
     void checkDuplicates(const QString name);
     QString yValuesPresentationSuffix(int yValuesPresentation) const;

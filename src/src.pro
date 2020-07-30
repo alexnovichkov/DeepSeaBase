@@ -45,6 +45,7 @@ SOURCES += main.cpp\
     methods/frfalgorithm.cpp \
     methods/frffunction.cpp \
     methods/windowingalgorithm.cpp \
+    plot/imagerenderdialog.cpp \
     sortabletreewidgetitem.cpp \
     checkableheaderview.cpp \
     methods/spectremethod.cpp \
@@ -112,7 +113,8 @@ SOURCES += main.cpp\
     plot/plottracker.cpp \
     wavexporter.cpp \
     plot/spectrocurve.cpp \
-    plot/colormapfactory.cpp
+    plot/colormapfactory.cpp \
+    fancylineedit.cpp
 
 HEADERS  += mainwindow.h \
     channelsmimedata.h \
@@ -122,6 +124,7 @@ HEADERS  += mainwindow.h \
     methods/frfalgorithm.h \
     methods/frffunction.h \
     methods/windowingalgorithm.h \
+    plot/imagerenderdialog.h \
     sortabletreewidgetitem.h \
     checkableheaderview.h \
     methods/abstractmethod.h \
@@ -191,7 +194,8 @@ HEADERS  += mainwindow.h \
     wavexporter.h \
     longoperation.h \
     plot/spectrocurve.h \
-    plot/colormapfactory.h
+    plot/colormapfactory.h \
+    fancylineedit.h
 
 
 SOURCES +=\
