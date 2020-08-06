@@ -41,8 +41,6 @@ public:
 
     // прикрепление интерфейса к менеджеру масштабирования
     void attach(ChartZoom *);
-signals:
-    void xAxisClicked(double xValue, bool secondCursor);
 protected:
     bool eventFilter(QObject *,QEvent *);
 

@@ -9,6 +9,7 @@
 #include "fileformats/dfdfiledescriptor.h"
 #include "plot/curve.h"
 #include "logging.h"
+#include "plot/trackingcursor.h"
 
 QString roundedBy(double value)
 {
@@ -34,9 +35,9 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
     setWindowTitle("Курсор");
 
     for (int i=0; i<2; ++i)
-        cursors.append(new TrackingCursor(QColor(40,40,150)));
+        cursors.append(new TrackingCursor(QColor(40,40,150), TrackingCursor::Cross));
     for (int i=2; i<4; ++i)
-        cursors.append(new TrackingCursor(QColor(150,40,40)));
+        cursors.append(new TrackingCursor(QColor(150,40,40), TrackingCursor::Cross));
 
     for (int i=0; i<10; ++i) {
         QwtPlotMarker *d = new QwtPlotMarker();
@@ -66,7 +67,7 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
     }
 
     for (int i=0; i<4; ++i) {
-        ClearableSpinBox *c = new ClearableSpinBox(this);
+        auto *c = new ClearableSpinBox(this);
         c->setMinimum(0.0);
         c->setMaximum(60000.0);
         c->setValue(0.0);
@@ -76,7 +77,7 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
         connect(c, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
                 [=](double val){
             DD;
-            updateTrackingCursor(val, i);
+            updateTrackingCursor({val, c->yVal}, i);
             cursorBoxes[i]->setChecked(true);
         });
         spins << c;
@@ -122,7 +123,7 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
 
     yValuesCheckBox = new QCheckBox("Показывать уровни дискрет", this);
     connect(yValuesCheckBox, &QCheckBox::stateChanged, [=](int state){
-        foreach(TrackingCursor *c, cursors) {
+        for (TrackingCursor *c: cursors) {
             c->showYValues = state==Qt::Checked;
             c->updateLabel();
         }
@@ -174,13 +175,13 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
 TrackingPanel::~TrackingPanel()
 {DD;
     MainWindow::setSetting("cursorShowYValues", yValuesCheckBox->checkState()==Qt::Checked);
-    foreach(TrackingCursor *cursor, cursors) {
+    for (auto *cursor: cursors) {
         cursor->detach();
         delete cursor;
     }
     cursors.clear();
 
-    foreach (QwtPlotMarker *d, _harmonics) {
+    for (auto *d: _harmonics) {
         d->detach();
         delete d;
     }
@@ -221,10 +222,11 @@ void TrackingPanel::updateState(const QList<TrackingPanel::TrackInfo> &curves)
 }
 
 // пересчитываем значение xVal и обновляем показания счетчиков
-void TrackingPanel::setX(double xVal, int index)
+void TrackingPanel::setXY(QPointF value, int index)
 {DD;
-    // здесь xVal - произвольное число, соответствующее какому-то положению на оси X
-
+    // здесь value - произвольное число, соответствующее какому-то положению на оси X
+    double xVal = value.x();
+    double yVal = value.y();
     if (plot->hasCurves()) {
         //ищем минимальный шаг по оси X
         double xstep = (*std::min_element(plot->curves.constBegin(), plot->curves.constEnd(),
@@ -255,7 +257,13 @@ void TrackingPanel::setX(double xVal, int index)
             }
         }
     }
+    if (!qFuzzyCompare(spins.at(index)->yVal+1.0, yVal+1.0)) {
+        spins[index]->yVal = yVal;
+        updateTrackingCursor({xVal, yVal}, index);
+        cursorBoxes[index]->setChecked(true);
+    }
 
+    spins[index]->yVal = yVal;
     spins[index]->setValue(xVal);
 }
 
@@ -280,16 +288,16 @@ void TrackingPanel::switchVisibility()
     }
 }
 
-void TrackingPanel::updateTrackingCursor(double xVal, int index)
+void TrackingPanel::updateTrackingCursor(QPointF val, int index)
 {DD;
     if (!isVisible()) return;
 
-    cursors[index]->moveTo(xVal);
+    cursors[index]->moveTo(val);
     for (int i=0; i<cursors.size(); ++i)
         cursors[i]->setCurrent(i == index);
 
     for (int i=0; i<_harmonics.size(); ++i)
-        _harmonics[i]->setValue(xVal*(i+2), 0.0);
+        _harmonics[i]->setValue(val.x()*(i+2), 0.0);
 
     update();
 }
@@ -369,8 +377,6 @@ void TrackingPanel::update()
             if (steps[i] < 0) steps[i] = xVals.size()-1;
         }
 
-//        qDebug()<<steps;
-
         double cumul = 0.0;
         double energy = 0.0;
         double reject = 0.0;
@@ -414,7 +420,7 @@ void TrackingPanel::update()
     updateState(list);
 }
 
-void TrackingPanel::changeSelectedCursor(QwtPlotMarker *cursor)
+void TrackingPanel::changeSelectedCursor(TrackingCursor *cursor)
 {DD;
     for (int i=0; i<cursors.size(); ++i) {
         if (cursors[i] == cursor) {
@@ -426,23 +432,20 @@ void TrackingPanel::changeSelectedCursor(QwtPlotMarker *cursor)
     }
 }
 
-void TrackingPanel::moveCursor(bool right)
+void TrackingPanel::moveCursor(Enums::Direction direction)
 {DD;
     for (int i=0; i<cursors.size(); ++i) {
         if (cursors[i]->current) {
-            if (right) spins[i]->setValue(spins[i]->value()+mStep);
-            else spins[i]->setValue(spins[i]->value()-mStep);
-        }
-    }
-}
-
-//установка любого курсора передвижением мышью
-//вызывается: PlotPicker->cursorMovedTo
-void TrackingPanel::setXValue(double value)
-{DD;
-    for (int i=0; i<cursors.size(); ++i) {
-        if (cursors[i]->current) {
-            setX(value, i);
+            switch (direction) {
+                case Enums::Right:
+                    spins[i]->setValue(spins[i]->value()+mStep);
+                    break;
+                case Enums::Left:
+                    spins[i]->setValue(spins[i]->value()-mStep);
+                    break;
+                default:
+                    break;
+            }
         }
     }
 }
@@ -450,61 +453,34 @@ void TrackingPanel::setXValue(double value)
 // установка первых двух курсоров
 //вызывается: 1. щелчком мыши по канве графика - сигнал PlotZoom->updateTrackingCursor
 //            2. щелчком мыши по шкале Х - сигнал AxisZoom->updateTrackingCursor
-void TrackingPanel::setXValue(double value, bool second)
-{DD;
+void TrackingPanel::setValue(QPointF value, bool second)
+{
     changeSelectedCursor(cursors[second?1:0]);
-    setX(value, second?1:0);
+    setXY(value, second?1:0);
 }
 
-TrackingCursor::TrackingCursor(const QColor &col)
-{DD;
-    setLineStyle( QwtPlotMarker::VLine );
-    setLinePen( col, 1, /*Qt::DashDotLine*/Qt::SolidLine );
-    setLabelAlignment(Qt::AlignBottom | Qt::AlignRight);
-    showYValues = MainWindow::getSetting("cursorShowYValues", false).toBool();
+void TrackingPanel::setXValue(double value, bool second)
+{
+    changeSelectedCursor(cursors[second?1:0]);
+    setXY({value,0}, second?1:0);
 }
 
-void TrackingCursor::moveTo(const double xValue)
-{DD;
-    setValue(xValue, 0.0);
+void TrackingPanel::setYValue(double value, bool second)
+{
+    changeSelectedCursor(cursors[second?1:0]);
+    setXY({0, value}, second?1:0);
 }
 
-void TrackingCursor::setYValues(const QVector<double> &yValues, const QVector<QColor>&colors)
-{DD;
-    this->yValues = yValues;
-    this->colors = colors;
-    updateLabel();
-}
-
-void TrackingCursor::setCurrent(bool current)
-{DD;
-    this->current = current;
-    if (current)
-        setLinePen( this->linePen().color(), 2, /*Qt::DashDotLine*/Qt::SolidLine );
-    else
-        setLinePen( this->linePen().color(), 1, /*Qt::DashDotLine*/Qt::SolidLine );
-}
-
-void TrackingCursor::updateLabel()
-{DD;
-    QwtText text;
-    text.setBackgroundBrush(Qt::white);
-    text.setBorderRadius(1.0);
-
-    //text.setBorderPen(QPen(Qt::black));
-
-    QStringList label;
-    if (!yValues.isEmpty() && showYValues) {
-        for (int i = 0; i < yValues.size(); ++i) {
-            label << QString("<font color=%1>%2</font>").arg(colors[i].name()).arg(yValues[i], 0, 'f', 1);
+//установка любого курсора передвижением мышью
+//вызывается: PlotPicker->cursorMovedTo
+void TrackingPanel::setValue(QPointF value)
+{
+    for (int i=0; i<cursors.size(); ++i) {
+        if (cursors[i]->current) {
+            setXY(value, i);
         }
     }
-    label << QString("<b>%1</b>").arg(this->xValue(), 0, 'f', 1);
-    text.setText(label.join("<br>"),QwtText::RichText);
-
-    setLabel(text);
 }
-
 
 void TrackingPanel::closeEvent(QCloseEvent *event)
 {
@@ -514,11 +490,10 @@ void TrackingPanel::closeEvent(QCloseEvent *event)
 
 void TrackingPanel::hideEvent(QHideEvent *event)
 {
-    for (TrackingCursor *c: cursors)
+    for (auto *c: cursors)
         c->detach();
-    for (QwtPlotMarker *d: _harmonics) {
+    for (auto *d: _harmonics)
         d->detach();
-    }
 
     cursorSpan1->detach();
     cursorSpan2->detach();

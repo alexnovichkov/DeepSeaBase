@@ -20,6 +20,7 @@
 #define QAXISZOOMSVC_H
 
 #include "chartzoom.h"
+#include "enums.h"
 
 class AxisZoom : public QObject
 {
@@ -30,9 +31,10 @@ public:
     void attach(ChartZoom *);
 signals:
     void xAxisClicked(double xValue, bool second);
+    void yAxisClicked(double xValue, bool second);
     void contextMenuRequested(const QPoint &pos, QwtAxisId axis);
     void needsAutoscale(QwtAxisId axis);
-    void moveCursor(bool right);
+    void moveCursor(Enums::Direction direction);
     void hover(QwtAxisId axis, int hover); //0=none, 1=first half, 2 = second half
 protected:
     bool eventFilter(QObject *,QEvent *);
@@ -46,7 +48,7 @@ private:
     double currentBottomBorder, currentTopBorder;   // Текущие границы графика по оси y в момент начала преобразования
 
     double currentWidth, currentHeight;   // Текущие ширина и высота графика в момент начала преобразования
-    int scb_pxl, scb_pyt;    // Текущие левое и верхнее смещение графика в момент начала преобразования
+    int currentLeftBorderInPixels, currentTopBorderInPixels;    // Текущие левое и верхнее смещение графика в момент начала преобразования
                             // (в пикселах относительно канвы)
     int currentPixelWidth, currentPixelHeight;      // Текущие ширина и высота графика в момент начала преобразования
                             // (в пикселах)

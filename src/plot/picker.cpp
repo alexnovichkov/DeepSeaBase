@@ -5,7 +5,8 @@
 #include <QKeyEvent>
 #include "qwt_scale_map.h"
 #include "curve.h"
-#include "trackingpanel.h"
+//#include "trackingpanel.h"
+#include "trackingcursor.h"
 #include "pointmarker.h"
 #include "pointlabel.h"
 #include "fileformats/filedescriptor.h"
@@ -67,7 +68,7 @@ void Picker::procKeyboardEvent(QEvent *e)
 
     if (key == Qt::Key_Left) {
         if (d_selectedCursor)
-            emit moveCursor(false);
+            emit moveCursor(Enums::Left);
 
         if (d_selectedPoint > 0) {
             d_selectedPoint--;
@@ -76,12 +77,20 @@ void Picker::procKeyboardEvent(QEvent *e)
     }
     else if (key == Qt::Key_Right) {
         if (d_selectedCursor)
-            emit moveCursor(true);
+            emit moveCursor(Enums::Right);
 
         if (d_selectedCurve && d_selectedPoint >=0 && d_selectedPoint < d_selectedCurve->samplesCount()-1) {
             d_selectedPoint++;
             highlightPoint(true);
         }
+    }
+    else if (key == Qt::Key_Up) {
+        if (d_selectedCursor)
+            emit moveCursor(Enums::Up);
+    }
+    else if (key == Qt::Key_Down) {
+        if (d_selectedCursor)
+            emit moveCursor(Enums::Down);
     }
     else if (key == Qt::Key_Space) {
         if (d_selectedCurve && d_selectedPoint >=0 && d_selectedPoint < d_selectedCurve->samplesCount()) {
@@ -162,7 +171,8 @@ void Picker::proceedPick(QMouseEvent *e)
         QPoint currentPos = e->pos();
 
         if (d_selectedCursor) {
-            emit cursorMovedTo(plot->invTransform(QwtAxis::xBottom, currentPos.x()));
+            emit cursorMovedTo({plot->invTransform(d_selectedCursor->xAxis(), currentPos.x()),
+                                plot->invTransform(d_selectedCursor->yAxis(), currentPos.y())});
             d_currentPos = currentPos;
         }
         else if (d_selectedLabel) {
@@ -192,16 +202,22 @@ void Picker::endPick(QMouseEvent *e)
 
             if (endPos == pos) {
                 highlightPoint(false);
-                foreach(Curve *c, plot->curves) {
+                for(Curve *c: plot->curves) {
                     c->resetHighlighting();
                 }
 
 
                 //одинарный клик мышью
                 if (!d_selectedCursor) {
-                    emit xAxisClicked(plot->canvasMap(QwtAxis::xBottom).invTransform(endPos.x()),
-                                      e->modifiers() & Qt::ControlModifier);
                     d_selectedCursor = findCursor(endPos);
+                    if (d_selectedCursor)
+                        emit axisClicked({plot->canvasMap(d_selectedCursor->xAxis()).invTransform(endPos.x()),
+                                          plot->canvasMap(d_selectedCursor->yAxis()).invTransform(endPos.y())},
+                                         e->modifiers() & Qt::ControlModifier);
+                    else emit axisClicked({plot->canvasMap(QwtAxis::xBottom).invTransform(endPos.x()),
+                                           plot->canvasMap(QwtAxis::yLeft).invTransform(endPos.y())},
+                                          e->modifiers() & Qt::ControlModifier);
+
                 }
 
                 if (d_selectedCurve && d_selectedPoint > -1) {
@@ -225,13 +241,17 @@ void Picker::endPick(QMouseEvent *e)
     }
 }
 
-QwtPlotMarker *Picker::findCursor(const QPoint &pos)
+TrackingCursor *Picker::findCursor(const QPoint &pos)
 {
     const QwtPlotItemList& itmList = plot->itemList();
     for (QwtPlotItemIterator it = itmList.constBegin(); it != itmList.constEnd(); ++it) {
-        if (TrackingCursor *c = dynamic_cast<TrackingCursor *>(*it )) {
-            int newX = (int)(plot->transform(QwtAxis::xBottom, c->xValue()));
-            if (qAbs(newX-pos.x())<=5) {
+        if (auto *c = dynamic_cast<TrackingCursor *>(*it )) {
+            int newX = (int)(plot->transform(c->xAxis(), c->xValue()));
+            int newY = (int)(plot->transform(c->yAxis(), c->yValue()));
+            if (qAbs(newX-pos.x())<=5 && (c->type == TrackingCursor::Vertical || c->type == TrackingCursor::Cross)) {
+                return c;
+            }
+            if (qAbs(newY-pos.y())<=5 && (c->type == TrackingCursor::Horizontal || c->type == TrackingCursor::Cross)) {
                 return c;
             }
         }

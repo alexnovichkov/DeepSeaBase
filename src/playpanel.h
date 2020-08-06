@@ -83,14 +83,14 @@ private slots:
 
 public slots:
     void update();
-    void updateSelectedCursor(QwtPlotMarker *cursor);
-    void setXValue(double xVal);
+    void updateSelectedCursor(TrackingCursor *cursor);
+    void setValue(QPointF val);
 
 protected:
     virtual void closeEvent(QCloseEvent *event);
     virtual void hideEvent(QHideEvent *event);
 private:
-    void moveCursor(const double xVal);
+    void moveCursor(QPointF val);
     void prepareDataToPlay();
 
     Channel *ch = 0;

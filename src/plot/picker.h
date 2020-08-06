@@ -4,9 +4,11 @@
 #include <QObject>
 
 #include "plot.h"
+#include "enums.h"
 
 class PointLabel;
 class PointMarker;
+class TrackingCursor;
 class Curve;
 
 class Picker: public QObject
@@ -23,11 +25,11 @@ public:
     inline bool isEnabled() const {return enabled;}
     inline void setEnabled(bool enabled) {this->enabled = enabled;}
 signals:
-    void cursorMovedTo(double newValue);
-    void moveCursor(bool moveToRight);
-    void cursorSelected(QwtPlotMarker *cursor);
+    void cursorMovedTo(QPointF newValue);
+    void moveCursor(Enums::Direction direction);
+    void cursorSelected(TrackingCursor *cursor);
     void setZoomEnabled(bool);
-    void xAxisClicked(double xValue, bool secondCursor);
+    void axisClicked(QPointF value, bool secondCursor);
     void selectCursor(int index);
 private:
     void procMouseEvent(QEvent *e);
@@ -37,7 +39,7 @@ private:
     void proceedPick(QMouseEvent *e);
     void endPick(QMouseEvent *e);
 
-    QwtPlotMarker *findCursor(const QPoint &pos);
+    TrackingCursor *findCursor(const QPoint &pos);
     Curve *findClosestPoint(const QPoint &pos, int &index) const;
     PointLabel *findLabel(const QPoint &pos);
 
@@ -51,7 +53,7 @@ private:
     int d_selectedPoint;
     Curve *d_selectedCurve;
     PointLabel *d_selectedLabel;
-    QwtPlotMarker *d_selectedCursor;
+    TrackingCursor *d_selectedCursor;
 
     QPoint d_currentPos;
     PointMarker *marker;

@@ -46,6 +46,7 @@ SOURCES += main.cpp\
     methods/frffunction.cpp \
     methods/windowingalgorithm.cpp \
     plot/imagerenderdialog.cpp \
+    plot/trackingcursor.cpp \
     sortabletreewidgetitem.cpp \
     checkableheaderview.cpp \
     methods/spectremethod.cpp \
@@ -120,11 +121,13 @@ HEADERS  += mainwindow.h \
     channelsmimedata.h \
     channelstable.h \
     converters/tdmsconverter.h \
+    enums.h \
     filestable.h \
     methods/frfalgorithm.h \
     methods/frffunction.h \
     methods/windowingalgorithm.h \
     plot/imagerenderdialog.h \
+    plot/trackingcursor.h \
     sortabletreewidgetitem.h \
     checkableheaderview.h \
     methods/abstractmethod.h \

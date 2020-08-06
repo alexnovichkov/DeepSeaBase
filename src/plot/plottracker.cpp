@@ -6,7 +6,8 @@
 #include "logging.h"
 #include <QKeyEvent>
 #include "plot.h"
-#include "trackingpanel.h"
+//#include "trackingpanel.h"
+#include "trackingcursor.h"
 #include "curve.h"
 #include "fileformats/filedescriptor.h"
 
@@ -73,18 +74,31 @@ void PlotTracker::maybeHover(const QPointF &pos)
     bool found = false;
 
     for (auto it: plot->itemList(QwtPlotItem::Rtti_PlotMarker)) {
-        if (TrackingCursor *c = dynamic_cast<TrackingCursor *>(it)) {
+        if (auto *c = dynamic_cast<TrackingCursor *>(it)) {
             if (!c->isVisible()) {
                 continue;
             }
-            int newX = (int)(plot->transform(QwtAxis::xBottom, c->xValue()));
-            int posX = (int)(plot->transform(QwtAxis::xBottom, pos.x()));
-            if (qAbs(newX-posX)<=4) {
-                cursor = plot->canvas()->cursor();
-                plot->canvas()->setCursor(QCursor(Qt::SizeHorCursor));
-                found = true;
-                break;
+            int newX = (int)(plot->transform(c->xAxis(), c->xValue()));
+            int posX = (int)(plot->transform(c->xAxis(), pos.x()));
+            int newY = (int)(plot->transform(c->yAxis(), c->yValue()));
+            int posY = (int)(plot->transform(c->yAxis(), pos.y()));
+            if (c->type == TrackingCursor::Horizontal || c->type == TrackingCursor::Cross) {
+                if (qAbs(newY-posY)<=4) {
+                    cursor = plot->canvas()->cursor();
+                    plot->canvas()->setCursor(QCursor(Qt::SizeVerCursor));
+                    found = true;
+                    break;
+                }
             }
+            if (c->type == TrackingCursor::Vertical || c->type == TrackingCursor::Cross) {
+                if (qAbs(newX-posX)<=4) {
+                    cursor = plot->canvas()->cursor();
+                    plot->canvas()->setCursor(QCursor(Qt::SizeHorCursor));
+                    found = true;
+                    break;
+                }
+            }
+
         }
     }
     if (!found) plot->canvas()->setCursor(QCursor(Qt::CrossCursor));

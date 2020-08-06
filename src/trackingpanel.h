@@ -5,30 +5,14 @@
 #include <QtWidgets>
 #include <qwt_plot_zoneitem.h>
 #include <qwt_plot_marker.h>
+#include "enums.h"
 
 class QTreeWidget;
 class QPushButton;
 class QCheckBox;
 class QLabel;
 class Plot;
-
-
-
-class TrackingCursor : public QwtPlotMarker
-{
-public:
-    explicit TrackingCursor(const QColor &col);
-    void moveTo(const double xValue);
-    void setYValues(const QVector<double> &yValues, const QVector<QColor> &colors);
-    void setCurrent(bool current);
-
-    void updateLabel();
-    bool showYValues;
-    QVector<double> yValues;
-    QVector<QColor> colors;
-    bool reject = false;
-    bool current = false;
-};
+class TrackingCursor;
 
 class ZoneSpan : public QwtPlotZoneItem
 {
@@ -40,6 +24,7 @@ class ClearableSpinBox: public QDoubleSpinBox
 {
 public:
     explicit ClearableSpinBox(QWidget *parent);
+    double yVal = 0.0;
 };
 
 class TrackingPanel: public QWidget
@@ -62,18 +47,20 @@ public:
     void setStep(double step);
     void switchVisibility();
 public slots:
-    // рассчитывает точное значение Х и меняет показания на счетчиках
+    // рассчитывает точное значение Х и Y и меняет показания на счетчиках
     void setXValue(double value, bool second);
-    void setXValue(double value);
+    void setYValue(double value, bool second);
+    void setValue(QPointF value, bool second);
+    void setValue(QPointF value);
     void update();
-    void changeSelectedCursor(QwtPlotMarker *cursor);
-    void moveCursor(bool right);
+    void changeSelectedCursor(TrackingCursor *cursor);
+    void moveCursor(Enums::Direction direction);
 signals:
     void switchHarmonics(bool on);
     void closeRequested();
 private:
-    void setX(double value, int index);
-    void updateTrackingCursor(double xVal, int index);
+    void setXY(QPointF value, int index);
+    void updateTrackingCursor(QPointF val, int index);
 
 
     QTreeWidget *tree;

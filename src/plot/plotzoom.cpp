@@ -136,12 +136,6 @@ void PlotZoom::endZoom(QMouseEvent *mEvent)
         int xp = mEvent->pos().x();
         int yp = mEvent->pos().y();
 
-        // если был одинарный щелчок мышью, то трактуем как установку курсора
-//        if (xp-startingPosX==0 && yp-startingPosY==0) {
-//            emit xAxisClicked(plt->canvasMap(QwtAxis::xBottom).invTransform(startingPosX),
-//                              mEvent->modifiers() & Qt::ControlModifier);
-//        }
-
         if (qAbs(xp - startingPosX) >= MinimumZoom && qAbs(yp - startingPosY) >= MinimumZoom) {
             int leftmostX = qMin(xp, startingPosX); int rightmostX = qMax(xp, startingPosX);
             int leftmostY = qMin(yp, startingPosY); int rightmostY = qMax(yp, startingPosY);

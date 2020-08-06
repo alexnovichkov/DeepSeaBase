@@ -50,6 +50,7 @@
 
 #include "logging.h"
 #include "trackingpanel.h"
+#include "trackingcursor.h"
 
 #include "dataiodevice.h"
 #include "picker.h"
@@ -57,6 +58,7 @@
 #include "playpanel.h"
 #include "channelsmimedata.h"
 #include "imagerenderdialog.h"
+#include "enums.h"
 
 
 // простой фабричный метод создания кривой нужного типа
@@ -203,9 +205,10 @@ Plot::Plot(QWidget *parent) :
 
     zoom = new ChartZoom(this);
     zoom->setZoomEnabled(true);
-    connect(zoom,SIGNAL(updateTrackingCursor(double,bool)), trackingPanel, SLOT(setXValue(double,bool)));
+    connect(zoom,SIGNAL(updateTrackingCursorX(double,bool)), trackingPanel, SLOT(setXValue(double,bool)));
+    connect(zoom,SIGNAL(updateTrackingCursorY(double,bool)), trackingPanel, SLOT(setYValue(double,bool)));
     connect(zoom,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)),SLOT(showContextMenu(QPoint,QwtAxisId)));
-    connect(zoom,SIGNAL(moveCursor(bool)), trackingPanel, SLOT(moveCursor(bool)));
+    connect(zoom,SIGNAL(moveCursor(Enums::Direction)), trackingPanel, SLOT(moveCursor(Enums::Direction)));
     connect(zoom,SIGNAL(hover(QwtAxisId,int)),SLOT(hoverAxis(QwtAxisId,int)));
 
     tracker = new PlotTracker(this);
@@ -213,15 +216,15 @@ Plot::Plot(QWidget *parent) :
 
     _picker = new Picker(this);
     _picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
-    connect(_picker,SIGNAL(setZoomEnabled(bool)), zoom, SLOT(setZoomEnabled(bool)));
-    connect(_picker,SIGNAL(cursorSelected(QwtPlotMarker*)), trackingPanel, SLOT(changeSelectedCursor(QwtPlotMarker*)));
-    connect(_picker,SIGNAL(xAxisClicked(double,bool)),      trackingPanel, SLOT(setXValue(double,bool)));
-    connect(_picker,SIGNAL(cursorMovedTo(double)),          trackingPanel, SLOT(setXValue(double)));
-    connect(_picker,SIGNAL(moveCursor(bool)),               trackingPanel, SLOT(moveCursor(bool)));
+    connect(_picker,SIGNAL(setZoomEnabled(bool)),            zoom, SLOT(setZoomEnabled(bool)));
+    connect(_picker,SIGNAL(cursorSelected(TrackingCursor*)), trackingPanel, SLOT(changeSelectedCursor(TrackingCursor*)));
+    connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       trackingPanel, SLOT(setValue(QPointF,bool)));
+    connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          trackingPanel, SLOT(setValue(QPointF)));
+    connect(_picker,SIGNAL(moveCursor(Enums::Direction)),    trackingPanel, SLOT(moveCursor(Enums::Direction)));
 
-    connect(_picker,SIGNAL(cursorSelected(QwtPlotMarker*)), playerPanel, SLOT(updateSelectedCursor(QwtPlotMarker*)));
-    connect(_picker,SIGNAL(xAxisClicked(double,bool)),      playerPanel, SLOT(setXValue(double)));
-    connect(_picker,SIGNAL(cursorMovedTo(double)),          playerPanel, SLOT(setXValue(double)));
+    connect(_picker,SIGNAL(cursorSelected(TrackingCursor*)), playerPanel, SLOT(updateSelectedCursor(TrackingCursor*)));
+    connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       playerPanel, SLOT(setValue(QPointF)));
+    connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          playerPanel, SLOT(setValue(QPointF)));
 }
 
 Plot::~Plot()
@@ -425,7 +428,7 @@ void Plot::showContextMenu(const QPoint &pos, QwtAxisId axis)
 
             QList<FileDescriptor*> files;
 
-            foreach(Curve *c, curves) {
+            for(Curve *c: curves) {
                 if (!files.contains(c->channel->descriptor()))
                     files << c->channel->descriptor();
             }

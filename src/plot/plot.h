@@ -27,6 +27,8 @@ struct Range {
     double max;
 };
 
+
+
 #include <QWidget>
 class QTreeWidget;
 class QPushButton;

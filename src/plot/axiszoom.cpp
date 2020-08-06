@@ -123,10 +123,16 @@ void AxisZoom::procKeyboardEvent(QEvent *event)
             zoom->zoomBack();
             break;
         case Qt::Key_Left:
-            emit moveCursor(false);
+            emit moveCursor(Enums::Left);
             break;
         case Qt::Key_Right:
-            emit moveCursor(true);
+            emit moveCursor(Enums::Right);
+            break;
+        case Qt::Key_Up:
+            emit moveCursor(Enums::Up);
+            break;
+        case Qt::Key_Down:
+            emit moveCursor(Enums::Down);
             break;
         default: break;
     }
@@ -144,14 +150,13 @@ double AxisZoom::limitScale(double sz,double bs)
 
 void AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
 {DD;
-    QwtPlot *plt = zoom->plot();
     // определяем (для удобства) геометрию
-    QRect gc = plt->canvas()->geometry();       // канвы графика
-    QRect gw = plt->axisWidget(axis)->geometry(); // и виджета шкалы
+    QRect canvasGeometry = zoom->plot()->canvas()->geometry();       // канвы графика
+    QRect axisGeometry = zoom->plot()->axisWidget(axis)->geometry(); // и виджета шкалы
     // определяем текущее положение курсора относительно канвы
     // (за вычетом смещений графика)
-    int x = evpos.x() + gw.x() - gc.x() - scb_pxl;
-    int y = evpos.y() + gw.y() - gc.y() - scb_pyt;
+    int x = evpos.x() + axisGeometry.x() - canvasGeometry.x() - currentLeftBorderInPixels;
+    int y = evpos.y() + axisGeometry.y() - canvasGeometry.y() - currentTopBorderInPixels;
 
     switch (zoom->regime()) {
         // режим изменения левой границы
@@ -241,22 +246,22 @@ void AxisZoom::startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis)
         QwtPlot *plot = zoom->plot();
         QwtScaleWidget *scaleWidget = plot->axisWidget(axis);
 
-        QwtScaleMap sm = plot->canvasMap(axis);
-        currentLeftBorder = sm.s1();
-        currentRightBorder = sm.s2();
-        currentWidth = sm.sDist();
+        QwtScaleMap canvasMap = plot->canvasMap(axis);
+        currentLeftBorder = canvasMap.s1();
+        currentRightBorder = canvasMap.s2();
+        currentWidth = canvasMap.sDist();
 
         // определяем геометрию
         QRect canvasGeometry = plot->canvas()->geometry();
         QRect scaleWidgetGeometry = scaleWidget->geometry();
 
         // текущее левое смещение графика (в пикселах относительно канвы)
-        scb_pxl = plot->transform(axis, currentLeftBorder);
+        currentLeftBorderInPixels = plot->transform(axis, currentLeftBorder);
         // текущая ширина графика (в пикселах)
-        currentPixelWidth = plot->transform(axis, currentRightBorder) - scb_pxl;
+        currentPixelWidth = plot->transform(axis, currentRightBorder) - currentLeftBorderInPixels;
         // текущее левое смещение графика
         // (в пикселах относительно виджета шкалы)
-        sab_pxl = scb_pxl + canvasGeometry.x() - scaleWidgetGeometry.x();
+        sab_pxl = currentLeftBorderInPixels + canvasGeometry.x() - scaleWidgetGeometry.x();
         // запоминаем текущее положение курсора относительно канвы
         // (за вычетом смещений графика)
         cursorPosX = event->pos().x() - sab_pxl;
@@ -270,7 +275,8 @@ void AxisZoom::startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis)
                 // включаем соответствующий режим - изменение
                 if (cursorPosX >= qFloor(currentPixelWidth/2))
                     zoom->setRegime(ChartZoom::ctRight);     // правой границы
-                else zoom->setRegime(ChartZoom::ctLeft);    // или левой
+                else
+                    zoom->setRegime(ChartZoom::ctLeft);    // или левой
             }
         }
 
@@ -301,12 +307,12 @@ void AxisZoom::startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis)
         QRect scaleWidgetGeometry = scaleWidget->geometry();
 
         // текущее верхнее смещение графика (в пикселах относительно канвы)
-        scb_pyt = plot->transform(axis, currentTopBorder);
+        currentTopBorderInPixels = plot->transform(axis, currentTopBorder);
         // текущая высота графика (в пикселах)
-        currentPixelHeight = plot->transform(axis,currentBottomBorder) - scb_pyt;
+        currentPixelHeight = plot->transform(axis,currentBottomBorder) - currentTopBorderInPixels;
         // текущее верхнее смещение графика
         // (в пикселах относительно виджета шкалы)
-        sab_pyt = scb_pyt + canvasGeometry.y() - scaleWidgetGeometry.y();
+        sab_pyt = currentTopBorderInPixels + canvasGeometry.y() - scaleWidgetGeometry.y();
         // запоминаем текущее положение курсора относительно канвы
         // (за вычетом смещений графика)
         cursorPosY = event->pos().y() - sab_pyt;
@@ -367,21 +373,32 @@ void AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
         zoom->plot()->axisWidget(axis)->setCursor(cursor);
         zoom->setRegime(ChartZoom::ctNone);
 
-        // emit axisClicked signal only if it is really just a click within 3 pixels
-        if (qAbs(mEvent->pos().x() - sab_pxl - cursorPosX)<3) {
-            double xVal = zoom->plot()->canvasMap(axis).invTransform(mEvent->pos().x());
-            emit xAxisClicked(xVal, mEvent->modifiers() & Qt::ControlModifier);
+        if (ct == ChartZoom::ctLeft || ct == ChartZoom::ctRight) {
+            // emit axisClicked signal only if it is really just a click within 3 pixels
+            if (qAbs(mEvent->pos().x() - sab_pxl - cursorPosX)<3) {
+                double xVal = zoom->plot()->canvasMap(axis).invTransform(mEvent->pos().x());
+                emit xAxisClicked(xVal, mEvent->modifiers() & Qt::ControlModifier);
+            }
+            else if (axis.isXAxis()) {
+                // запоминаем совершенное перемещение
+                ChartZoom::zoomCoordinates coords;
+                coords.coords.insert(axis.pos, {currentLeftBorder, currentRightBorder});
+                zoom->addZoom(coords, true);
+            }
         }
-
-        // запоминаем совершенное перемещение
-        ChartZoom::zoomCoordinates coords;
-        if (axis.isXAxis()) {
-            coords.coords.insert(axis.pos, {currentLeftBorder, currentRightBorder});
+        if (ct == ChartZoom::ctBottom ||ct == ChartZoom::ctTop) {
+            // emit axisClicked signal only if it is really just a click within 3 pixels
+            if (qAbs(mEvent->pos().y() - sab_pyt - cursorPosY)<3) {
+                double yVal = zoom->plot()->canvasMap(axis).invTransform(mEvent->pos().y());
+                emit yAxisClicked(yVal, mEvent->modifiers() & Qt::ControlModifier);
+            }
+            else if (axis.isYAxis()) {
+                // запоминаем совершенное перемещение
+                ChartZoom::zoomCoordinates coords;
+                coords.coords.insert(axis.pos, {currentBottomBorder, currentTopBorder});
+                zoom->addZoom(coords, true);
+            }
         }
-        if (axis.isYAxis()) {
-            coords.coords.insert(axis.pos, {currentBottomBorder, currentTopBorder});
-        }
-        if (!coords.coords.isEmpty()) zoom->addZoom(coords, true);
     }
 }
 

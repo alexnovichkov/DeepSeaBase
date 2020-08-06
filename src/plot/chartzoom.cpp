@@ -51,8 +51,6 @@ ChartZoom::ChartZoom(Plot *plot) :
     }
 
     mainZoom = new PlotZoom();
-    //propagating to ChartZoom
-    connect(mainZoom,SIGNAL(xAxisClicked(double,bool)),SIGNAL(updateTrackingCursor(double,bool)));
     mainZoom->attach(this);
 
     // создаем интерфейс перемещенния графика
@@ -63,9 +61,10 @@ ChartZoom::ChartZoom(Plot *plot) :
     wheelZoom->attach(this);
 
     axisZoom = new AxisZoom();
-    connect(axisZoom,SIGNAL(xAxisClicked(double,bool)),SIGNAL(updateTrackingCursor(double,bool)));
+    connect(axisZoom,SIGNAL(xAxisClicked(double,bool)),SIGNAL(updateTrackingCursorX(double, bool)));
+    connect(axisZoom,SIGNAL(yAxisClicked(double,bool)),SIGNAL(updateTrackingCursorY(double, bool)));
     connect(axisZoom,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)),SIGNAL(contextMenuRequested(QPoint,QwtAxisId)));
-    connect(axisZoom,SIGNAL(moveCursor(bool)),SIGNAL(moveCursor(bool)));
+    connect(axisZoom,SIGNAL(moveCursor(Enums::Direction)),SIGNAL(moveCursor(Enums::Direction)));
     connect(axisZoom,SIGNAL(hover(QwtAxisId,int)),SIGNAL(hover(QwtAxisId,int)));
     axisZoom->attach(this);
 }
@@ -92,7 +91,8 @@ ChartZoom::ConvType ChartZoom::regime()
 }
 
 // Переключение режима масштабирования
-void ChartZoom::setRegime(ChartZoom::ConvType ct) {DD;
+void ChartZoom::setRegime(ChartZoom::ConvType ct)
+{DD;
     convType = ct;
 }
 

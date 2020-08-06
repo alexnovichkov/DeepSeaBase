@@ -8,7 +8,7 @@
 #include <QMediaPlayer>
 #include "dataiodevice.h"
 #include "plot/curve.h"
-#include "trackingpanel.h"
+#include "plot/trackingcursor.h"
 #include "wavexporter.h"
 #include "logging.h"
 
@@ -24,7 +24,7 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
     connect(player, &QMediaPlayer::mediaStatusChanged, this, &PlayPanel::statusChanged);
     connect(player, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error), this, &PlayPanel::displayErrorMessage);
 
-    cursor = new TrackingCursor(Qt::green);
+    cursor = new TrackingCursor(Qt::green, TrackingCursor::Vertical);
     cursor->showYValues = true;
     cursor->attach(plot);
     cursor->setAxes(QwtAxis::xBottom, QwtAxis::yLeft);
@@ -135,7 +135,7 @@ void PlayPanel::setSource(int n)
     //реальная загрузка данных произойдет только при первом проигрывании
     player->setMedia(QMediaContent());
 
-    moveCursor(0);
+    moveCursor({0,0});
 }
 
 void PlayPanel::prepareDataToPlay()
@@ -158,7 +158,7 @@ void PlayPanel::prepareDataToPlay()
     player->play();
 }
 
-void PlayPanel::updateSelectedCursor(QwtPlotMarker *c)
+void PlayPanel::updateSelectedCursor(TrackingCursor *c)
 {
     if (cursor == c) {
         cursor->setCurrent(true);
@@ -168,15 +168,15 @@ void PlayPanel::updateSelectedCursor(QwtPlotMarker *c)
     }
 }
 
-void PlayPanel::setXValue(double xVal)
+void PlayPanel::setValue(QPointF val)
 {
     if (!cursor->current) cursor->setCurrent(true);
     if (!ch) return;
 
     // здесь xVal - произвольное число, соответствующее какому-то положению на оси X
-    moveCursor(xVal);
+    moveCursor(val);
 
-    player->setPosition(qint64(xVal * 1000.0));
+    player->setPosition(qint64(val.x() * 1000.0));
 }
 
 void PlayPanel::reset()
@@ -188,7 +188,7 @@ void PlayPanel::positionChanged(qint64 progress)
 {
     //progress in milliseconds, convert to seconds
     const double xVal = double(progress) / 1000.0;
-    moveCursor(xVal);
+    moveCursor({xVal, cursor->yValue()});
 }
 
 void PlayPanel::statusChanged(QMediaPlayer::MediaStatus status)
@@ -236,9 +236,9 @@ void PlayPanel::hideEvent(QHideEvent *event)
     QWidget::hideEvent(event);
 }
 
-void PlayPanel::moveCursor(const double xVal)
+void PlayPanel::moveCursor(QPointF val)
 {
-    cursor->moveTo(xVal);
+    cursor->moveTo(val);
     cursor->updateLabel();
 }
 

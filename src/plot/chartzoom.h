@@ -30,6 +30,7 @@
 #include <qwt_plot_canvas.h>
 #include <qwt_scale_draw.h>
 #include <qwt_scale_map.h>
+#include "enums.h"
 
 class PlotZoom; // интерфейс масштабирования графика
 class DragZoom; // интерфейс перемещения графика
@@ -120,9 +121,10 @@ public:
 public slots:
     void setZoomEnabled(bool enabled);
 signals:
-    void updateTrackingCursor(double,bool);
+    void updateTrackingCursorX(double,bool);
+    void updateTrackingCursorY(double,bool);
     void contextMenuRequested(const QPoint &pos, QwtAxisId axis);
-    void moveCursor(bool right);
+    void moveCursor(Enums::Direction direction);
     void hover(QwtAxisId axis, int hover);
 private:
     Plot *qwtPlot;
