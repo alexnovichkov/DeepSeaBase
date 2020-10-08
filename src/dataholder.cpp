@@ -795,9 +795,13 @@ void DataHolder::recalculateMinMax()
     if (!m_yValuesTemporal.isEmpty()) {
 
         for (int block = 0; block < m_zCount; ++block) {
-            double min = 0.0; double max = 0.0;
-            for (int i=0; i<m_xCount; ++i) {
-                int index = i+block*m_xCount;
+            int index = block*m_xCount;
+            if (index >= m_yValuesTemporal.size()) break;
+
+            double min = m_yValuesTemporal.at(index);
+            double max = m_yValuesTemporal.at(index);;
+            for (int i=1; i<m_xCount; ++i) {
+                index = i+block*m_xCount;
                 if (index >= m_yValuesTemporal.size()) break;
 
                 if (m_yValuesTemporal.at(index) < min) min = m_yValuesTemporal.at(index);
