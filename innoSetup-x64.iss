@@ -7,6 +7,8 @@
 #define FileHandle  FileOpen("src/version.js")
 #define FileLine StringChange(FileRead(FileHandle), "var _version=""","")
 #define MyAppVersion  StringChange(FileLine, """;","")
+#define PathToExe "E:\My\build\build-DeepSeaBase-Desktop_Qt_5_12_8_MinGW_64_bit-Release\bin"
+#define PathToQt "C:\Qt\Qt5.12.8\5.12.8\mingw73_64"
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -28,6 +30,10 @@ ArchitecturesInstallIn64BitMode=x64 ia64
 PrivilegesRequired=none
 Uninstallable=IsTaskSelected('installmode/normal')
 
+[Run]
+Filename: "{app}\vc_redist.x86.exe"
+Filename: "{app}\vc_redist.x64.exe"
+
 [Languages]
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 
@@ -38,8 +44,6 @@ Name: installmode/portable; Description: "Portable установка"; GroupDescription:
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-#define PathToExe "K:\My\build\build-DeepSeaBase-Desktop_Qt_5_12_8_MinGW_64_bit-Release\bin"
-#define PathToQt "C:\Qt\Qt5.12.8\5.12.8\mingw73_64"
 Source: {#PathToExe}\DeepSeaBase.exe; DestDir: "{app}"; Flags: ignoreversion
 Source: {#PathToQt}\bin\libgcc_s_seh-1.dll; DestDir: "{app}"; Flags: ignoreversion
 Source: {#PathToQt}\bin\libstdc++-6.dll; DestDir: "{app}"; Flags: ignoreversion
@@ -53,9 +57,9 @@ Source: {#PathToQt}\bin\Qt5Widgets.dll; DestDir: "{app}"; Flags: ignoreversion
 Source: {#PathToQt}\bin\Qt5WinExtras.dll; DestDir: "{app}"; Flags: ignoreversion
 Source: {#PathToQt}\bin\Qt5Multimedia.dll; DestDir: "{app}"; Flags: ignoreversion
 Source: {#PathToQt}\bin\Qt5Network.dll; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Qwt-6.4.0-svn\lib64\qwt.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\programming\sources\build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_64_bit-Release\release\samplerate.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\programming\sources\fftw-3.3.5-dll64\libfftw3-3.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\My\programming\sources\Qwt-6.4.0-svn\lib64\qwt.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\My\programming\sources\build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_64_bit-Release\release\samplerate.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\My\programming\sources\fftw-3.3.5-dll64\libfftw3-3.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: {#PathToQt}\plugins\iconengines\*.dll; DestDir: "{app}\iconengines"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 Source: {#PathToQt}\plugins\imageformats\*.dll; DestDir: "{app}\imageformats"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 Source: {#PathToQt}\plugins\platforms\*.dll; DestDir: "{app}\platforms"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
@@ -63,16 +67,18 @@ Source: {#PathToQt}\plugins\printsupport\*.dll; DestDir: "{app}\printsupport"; F
 Source: {#PathToQt}\plugins\audio\*.dll; DestDir: "{app}\audio"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 Source: {#PathToQt}\plugins\mediaservice\*.dll; DestDir: "{app}\mediaservice"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 
-Source: "K:\My\programming\sources\TDMS\tdm_dev\dev\bin\64-bit\*.dll"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "K:\My\programming\sources\TDMS\tdm_dev\dev\bin\64-bit\DataModels\USI\1_0\usi_1_0.xsd"; DestDir: "{app}\DataModels\USI\1_0"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "K:\My\programming\sources\TDMS\tdm_dev\dev\bin\64-bit\DataModels\USI\TDM\1_0\USI_TDM_1_0.xml"; DestDir: "{app}\DataModels\USI\TDM\1_0"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "E:\My\programming\sources\TDMS\tdm_dev\dev\bin\64-bit\*.dll"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "E:\My\programming\sources\TDMS\tdm_dev\dev\bin\64-bit\DataModels\USI\1_0\usi_1_0.xsd"; DestDir: "{app}\DataModels\USI\1_0"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "E:\My\programming\sources\TDMS\tdm_dev\dev\bin\64-bit\DataModels\USI\TDM\1_0\USI_TDM_1_0.xml"; DestDir: "{app}\DataModels\USI\TDM\1_0"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-Source: "K:\My\build\DeepSeaBase\src\help.html"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\src\graphs.htm"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\src\files.html"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\src\style.css"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\src\version.js"; DestDir: "{app}"; Flags: ignoreversion
-Source: "K:\My\build\DeepSeaBase\src\icons\*.png"; DestDir: "{app}\icons"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "E:\My\build\DeepSeaBase\src\help.html"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\My\build\DeepSeaBase\src\graphs.htm"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\My\build\DeepSeaBase\src\files.html"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\My\build\DeepSeaBase\src\style.css"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\My\build\DeepSeaBase\src\version.js"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\My\build\DeepSeaBase\src\icons\*.png"; DestDir: "{app}\icons"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "E:\My\build\DeepSeaBase\vc_redist.x86.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\My\build\DeepSeaBase\vc_redist.x64.exe"; DestDir: "{app}"; Flags: ignoreversion
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
