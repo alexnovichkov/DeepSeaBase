@@ -296,6 +296,7 @@ private:
     QAction *arbitraryDescriptorAct;
     QAction *cycleChannelsUpAct;
     QAction *cycleChannelsDownAct;
+    QAction *aboutAct;
 
     Plot *plot;
 

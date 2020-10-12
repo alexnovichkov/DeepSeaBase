@@ -189,6 +189,12 @@ MainWindow::MainWindow(QWidget *parent)
     QAction *plotHelpAct = new QAction(QIcon(":/icons/help.png"), "Справка", this);
     connect(plotHelpAct, &QAction::triggered, [](){QDesktopServices::openUrl(QUrl("help.html"));});
 
+    aboutAct = new QAction("О програме", this);
+    connect(aboutAct, &QAction::triggered, [=](){
+        QString version = QString("DeepSea Database - версия %1").arg(qApp->applicationVersion());
+        QMessageBox::about(this, tr("О программе"), version);
+    });
+
     QIcon calculateSpectreIcon(":/icons/function.png");
     calculateSpectreIcon.addFile(":/icons/function16.png");
     calculateSpectreAct = new QAction(calculateSpectreIcon, QString("Обработать записи..."), this);
@@ -386,6 +392,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     QMenu *settingsMenu = menuBar()->addMenu(QString("Настройки"));
     settingsMenu->addAction(editColorsAct);
+    settingsMenu->addAction(aboutAct);
 
     tabWidget = new TabWidget(this);
     connect(tabWidget,SIGNAL(newTab()),this, SLOT(createNewTab()));

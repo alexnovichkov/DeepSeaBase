@@ -224,9 +224,6 @@ bool WavExporter::writeWithMap(const QString &wavFileName)
 
 void WavExporter::start()
 {
-    QElapsedTimer time;
-    time.start();
-
     if (QThread::currentThread()->isInterruptionRequested()) {
         finalize();
         return;
