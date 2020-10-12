@@ -971,6 +971,14 @@ void DfdFileDescriptor::calculateMean(const QList<Channel*> &channels)
 
     ch->data()->setThreshold(firstChannel->data()->threshold());
     ch->data()->setYValuesUnits(units);
+
+    if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
+        ch->data()->setXValues(firstChannel->data()->xMin(), firstChannel->data()->xStep(), numInd);
+    }
+    else {
+        ch->data()->setXValues(firstChannel->data()->xValues().mid(0, numInd));
+    }
+
     if (format == DataHolder::YValuesComplex)
         ch->data()->setYValues(averaging.getComplex().mid(0, numInd));
     else if (format == DataHolder::YValuesAmplitudesInDB) {
@@ -981,12 +989,7 @@ void DfdFileDescriptor::calculateMean(const QList<Channel*> &channels)
     else
         ch->data()->setYValues(averaging.get().mid(0, numInd), DataHolder::YValuesFormat(format));
 
-    if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
-        ch->data()->setXValues(firstChannel->data()->xMin(), firstChannel->data()->xStep(), numInd);
-    }
-    else {
-        ch->data()->setXValues(firstChannel->data()->xValues().mid(0, numInd));
-    }
+
 
     ch->ChanBlockSize = numInd;
 
