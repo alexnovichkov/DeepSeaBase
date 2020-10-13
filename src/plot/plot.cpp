@@ -1167,6 +1167,7 @@ void Plot::setInteractionMode(Plot::InteractionMode mode)
 
 void Plot::importPlot(const QString &fileName, const QSize &size, int resolution)
 {DD;
+    setAutoReplot(false);
     QwtPlotRenderer renderer;
     renderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);
     renderer.setLayoutFlag(QwtPlotRenderer::FrameWithScales);
@@ -1208,6 +1209,7 @@ void Plot::importPlot(const QString &fileName, const QSize &size, int resolution
     connect(leg, SIGNAL(markedToMove(QwtPlotItem*)),this, SLOT(moveCurve(QwtPlotItem*)));
     connect(leg, SIGNAL(fixedChanged(QwtPlotItem*)),this, SLOT(fixCurve(QwtPlotItem*)));
     insertLegend(leg, QwtPlot::RightLegend);
+    setAutoReplot(true);
 }
 
 void Plot::switchCursor()

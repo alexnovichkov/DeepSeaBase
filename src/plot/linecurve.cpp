@@ -25,7 +25,9 @@ struct PointBlock
 bool scaleMapEquals(const QwtScaleMap &map1, const QwtScaleMap &map2)
 {
     return (qFuzzyCompare(map1.s1()+1.0, map2.s1()+1.0) &&
-            qFuzzyCompare(map1.s2()+1.0, map2.s2()+1.0));
+            qFuzzyCompare(map1.s2()+1.0, map2.s2()+1.0) &&
+            qFuzzyCompare(map1.p1()+1.0, map2.p1()+1.0) &&
+            qFuzzyCompare(map1.p2()+1.0, map2.p2()+1.0));
 }
 
 typedef QList<PointBlock> PointBlocks;
@@ -36,7 +38,7 @@ public:
     FilterPointMapper(bool createPolygon) : QwtPointMapper(), polygon(createPolygon)
     { }
     QPolygonF getPolygon( const QwtScaleMap &xMap, const QwtScaleMap &yMap,
-            const QwtSeriesData<QPointF> *series, int from, int to )
+            const QwtSeriesData<QPointF> *series, int from, int to)
     {
         if (from == oldFrom && to == oldTo &&
             scaleMapEquals(oldXMap, xMap) &&
@@ -219,7 +221,6 @@ void LineCurve::drawLines(QPainter *painter,
                       const QRectF &canvasRect,
                       int from, int to) const
 {DD;
-//    qDebug()<<"draw";
     //reevaluating from, to
     evaluateScale(from, to, xMap);
 
