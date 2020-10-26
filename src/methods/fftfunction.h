@@ -44,6 +44,7 @@ public:
 private:
     QMap<QString, int> map;
     QVector<double> output;
+    QVector<double> refOutput;
 
     // AbstractFunction interface
 public:

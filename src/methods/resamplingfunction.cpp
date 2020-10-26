@@ -193,6 +193,7 @@ void ResamplingFunction::reset()
 QVector<double> ResamplingFunction::getData(const QString &id)
 {DD;
     if (id == "input") return output;
+    if (id == "referenceInput") return refOutput;
 
     return QVector<double>();
 }
@@ -224,6 +225,31 @@ bool ResamplingFunction::compute(FileDescriptor *file)
             pos += bufferSize;
         }
     }
+
+    //reference channel
+    QVector<double> refdata = m_input->getData("referenceInput");
+    if (!refdata.isEmpty() && refOutput.isEmpty()) {
+
+        if (qFuzzyCompare(factor+1.0, 2.0)) refOutput = data;
+        else {
+            int bufferSize = 1024;
+            refResampler.setBufferSize(bufferSize);
+            refResampler.setFactor(factor);
+            refResampler.init();
+
+            int pos = 0;
+            while (1) {
+                QVector<double> chunk = refdata.mid(pos, bufferSize);
+                if (chunk.size() < bufferSize)
+                    refResampler.setLastChunk();
+                QVector<double> filtered = refResampler.process(chunk);
+                if (filtered.isEmpty()) break;
+                refOutput.append(filtered);
+                pos += bufferSize;
+            }
+        }
+    }
+
     return true;
 }
 

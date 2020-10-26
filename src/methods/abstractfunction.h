@@ -72,6 +72,7 @@ public:
 
     // очищает внутреннее состояние функции, но не меняет параметры, заданные ранее
     virtual void reset();
+    bool showOnScreen = true;
 signals:
     void propertyChanged(const QString &property, const QVariant &val);
     void attributeChanged(const QString &property, const QVariant &val, const QString &attribute);

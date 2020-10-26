@@ -39,8 +39,10 @@ public:
     virtual QString propertyDescription(const QString &property) const override;
 private:
     FrameCutter frameCutter;
+    FrameCutter refFrameCutter;
     QMap<QString, QVariant> parameters;
     QVector<double> output;
+    QVector<double> refOutput;
 
     // AbstractFunction interface
 public:

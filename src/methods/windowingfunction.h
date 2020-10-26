@@ -11,6 +11,8 @@
  * Отдает:
  * ?/windowDescription -
  * ?/windowType
+ * ?/referenceWindowDescription
+ * ?/referenceWindowType
  *
  * Спрашивает:
  *
@@ -34,6 +36,8 @@ public:
 private:
     Windowing windowing;
     QVector<double> output;
+    Windowing refWindowing;
+    QVector<double> refOutput;
 
     // AbstractFunction interface
 public:

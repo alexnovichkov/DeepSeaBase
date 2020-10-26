@@ -6,9 +6,12 @@
 
 /* Channel/filter - [string] строка фильтра каналов
  * Channel/channelIndex
+ * Channel/referenceChannel - номер опорного канала
+ * Channel/useReferenceChannel - отображение выбора опорного канала
  *
  * Отдает:
  * ?/channelIndex - номер канала исходного файла
+ * ?/refChannelIndex - номер опорного канала исходного файла
  * ?/channels - [string] список каналов
  * ?/xBegin
  * ?/xName
@@ -47,9 +50,16 @@ public:
 private:
     ChannelSelector selector;
     int channel = 0;
+    int refChannel = -1; // if < 0 -> no reference channel used
+    bool useRefChannel = false;
     double minSec = 0;
     double maxSec = 10;
-    QVector<double> output;   
+    QVector<double> output;
+    QVector<double> refOutput;
+
+    // AbstractFunction interface
+public:
+    virtual bool propertyShowsFor(const QString &property) const override;
 };
 
 #endif // CHANNELFUNCTION_H

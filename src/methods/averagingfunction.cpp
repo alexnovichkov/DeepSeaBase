@@ -78,9 +78,16 @@ void AveragingFunction::setProperty(const QString &property, const QVariant &val
 {
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
+    int valInt = val.toInt();
 
-    if (p == "type") averaging.setAveragingType(val.toInt());
-    else if (p == "maximum") averaging.setMaximumAverages(val.toInt());
+    if (p == "type") {
+        averaging.setAveragingType(valInt);
+        refAveraging.setAveragingType(valInt);
+    }
+    else if (p == "maximum") {
+        averaging.setMaximumAverages(valInt);
+        refAveraging.setMaximumAverages(valInt);
+    }
 }
 
 bool AveragingFunction::propertyShowsFor(const QString &property) const
@@ -102,6 +109,7 @@ QString AveragingFunction::displayName() const
 QVector<double> AveragingFunction::getData(const QString &id)
 {
     if (id == "input") return averaging.get();
+    if (id == "referenceInput") return refAveraging.get();
 
     return QVector<double>();
 }
@@ -114,8 +122,12 @@ bool AveragingFunction::compute(FileDescriptor *file)
         m_input->compute(file);
 
         QVector<double> data = m_input->getData("input");
-        if (!data.isEmpty())
+        QVector<double> refData = m_input->getData("input");
+
+        if (!data.isEmpty()) {
             averaging.average(data);
+            if (!refData.isEmpty()) refAveraging.average(refData);
+        }
         else break;
 
         if (averaging.averagingDone()) return true;
@@ -126,4 +138,5 @@ bool AveragingFunction::compute(FileDescriptor *file)
 void AveragingFunction::reset()
 {
     averaging.reset();
+    refAveraging.reset();
 }

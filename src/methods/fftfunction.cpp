@@ -174,6 +174,9 @@ bool FftFunction::propertyShowsFor(const QString &property) const
 {
     if (!property.startsWith(name()+"/")) return false;
 
+    bool useReference = m_input->getProperty("?/useReferenceChannel").toBool();
+    if (useReference) return false;
+
     QString p = property.section("/",1);
     if (p == "output") return (map.value("type") == 0);
 
@@ -182,15 +185,15 @@ bool FftFunction::propertyShowsFor(const QString &property) const
 
 QVector<double> FftFunction::getData(const QString &id)
 {
-    if (id == "input")
-        return output;
+    if (id == "input") return output;
+    if (id == "referenceInput") return refOutput;
 
     return QVector<double>();
 }
 
 bool FftFunction::compute(FileDescriptor *file)
 {
-    output.clear();
+    reset();
 
     if (!m_input) return false;
 
@@ -265,10 +268,24 @@ bool FftFunction::compute(FileDescriptor *file)
         default:
             break;
     }
+
+    data = m_input->getData("referenceInput");
+    if (!data.isEmpty()) {
+        fft = Fft::compute(data);
+
+        //reference fft is always complex
+        refOutput.resize(size*2);
+        for (int i=0; i<size; ++i) {
+            refOutput[i*2] = fft[i].real();
+            refOutput[i*2+1] = fft[i].imag();
+        }
+    }
+
     return true;
 }
 
 void FftFunction::reset()
 {
     output.clear();
+    refOutput.clear();
 }

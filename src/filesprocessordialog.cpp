@@ -11,6 +11,7 @@
 #include "methods/spectrealgorithm.h"
 #include "methods/timealgorithm.h"
 #include "methods/windowingalgorithm.h"
+#include "methods/frfalgorithm.h"
 
 FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QWidget *parent)
     : QDialog(parent), dataBase(dataBase), win(parent), currentAlgorithm(0)
@@ -23,6 +24,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     algorithms << new TimeAlgorithm(dataBase, 0);
     algorithms << new WindowingAlgorithm(dataBase, 0);
     algorithms << new SpectreAlgorithm(dataBase, 0);
+    algorithms << new FRFAlgorithm(dataBase, 0);
 
     for (AbstractAlgorithm *f: algorithms) {
         connect(f, SIGNAL(attributeChanged(QString,QVariant,QString)),SLOT(updateProperty(QString,QVariant,QString)));
@@ -158,7 +160,7 @@ void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
 
     // Parsing properties descriptions
     for (AbstractFunction *f: currentAlgorithm->functions()) {
-        addProperties(f);
+        if (f->showOnScreen) addProperties(f);
     }
 
     // блокируем сигналы, чтобы при каждом изменении свойства не обновлять все отображения свойств

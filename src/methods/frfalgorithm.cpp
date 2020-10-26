@@ -7,6 +7,7 @@
 #include "windowingfunction.h"
 #include "averagingfunction.h"
 #include "frffunction.h"
+#include "fftfunction.h"
 #include "savingfunction.h"
 
 
@@ -19,20 +20,28 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     windowingF = new WindowingFunction(parent);
     averagingF = new AveragingFunction(parent);
     frfF = new FrfFunction(parent);
+    fftF = new FftFunction(parent);
     saver = new SavingFunction(parent);
 
     resamplingF->setInput(channelF);
     samplingF->setInput(resamplingF);
     windowingF->setInput(samplingF);
-    frfF->setInput(windowingF);
-    averagingF->setInput(frfF);
-    saver->setInput(averagingF);
+
+//    frfF->setInput(windowingF);
+//    averagingF->setInput(frfF);
+//    saver->setInput(averagingF);
+
+    fftF->setInput(windowingF);
+    averagingF->setInput(fftF);
+    frfF->setInput(averagingF);
+    saver->setInput(frfF);
 
     m_functions << channelF;
     m_functions << resamplingF;
     m_functions << samplingF;
     m_functions << windowingF;
     m_functions << frfF;
+    m_functions << fftF;
     m_functions << averagingF;
     m_functions << saver;
 
@@ -51,6 +60,7 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     resamplingF->setProperty(resamplingF->name()+"/xStep", xStep);
     samplingF->setProperty(samplingF->name()+"/xStep", xStep);
     channelF->setFile(dataBase.constFirst());
+    channelF->setProperty(channelF->name()+"/useReferenceChannel", true);
 
     //resamplingF отправляет сигнал об изменении "?/xStep"
     connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),

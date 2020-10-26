@@ -42,6 +42,7 @@ SOURCES += main.cpp\
     converters/tdmsconverter.cpp \
     filestable.cpp \
     mainwindow.cpp \
+    methods/apsfunction.cpp \
     methods/frfalgorithm.cpp \
     methods/frffunction.cpp \
     methods/windowingalgorithm.cpp \
@@ -123,6 +124,7 @@ HEADERS  += mainwindow.h \
     converters/tdmsconverter.h \
     enums.h \
     filestable.h \
+    methods/apsfunction.h \
     methods/frfalgorithm.h \
     methods/frffunction.h \
     methods/windowingalgorithm.h \

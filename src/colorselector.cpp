@@ -1,6 +1,8 @@
 #include "colorselector.h"
 
 #include <QtCore>
+#include <ios>
+#include <tuple>
 
 #include "mainwindow.h"
 
@@ -64,14 +66,14 @@ void ColorSelector::drop()
 {
     static QMutex mutex;
     mutex.lock();
-    QVariantList list;
-    QVector<QColor> vec = colors;
-    foreach(const QColor &color, vec) {
+
+    QVector<QVariant> vec(colors.size());
+    std::transform(colors.cbegin(), colors.cend(), vec.begin(), [](const QColor &color){
         QVariant v;
         v.setValue<QColor>(color);
-        list << v;
-    }
-    MainWindow::setSetting("colors", list);
+        return v;
+    });
+    MainWindow::setSetting("colors", vec.toList());
 
     delete m_Instance;
     m_Instance = 0;

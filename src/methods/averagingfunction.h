@@ -33,6 +33,7 @@ public:
 
 private:
     Averaging averaging;
+    Averaging refAveraging;
 
     // AbstractFunction interface
 public:

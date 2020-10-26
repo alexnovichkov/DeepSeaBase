@@ -82,33 +82,49 @@ void FrameCutterFunction::setProperty(const QString &property, const QVariant &v
 
     parameters.insert(p, val);
 
-    if (p == "type")
+    if (p == "type") {
         frameCutter.setType(val.toInt());
+        refFrameCutter.setType(val.toInt());
+    }
     else if (p == "blockSize") {
         //qDebug()<<"setting FrameCutter/blocksize as"<<(65536 >> val.toInt());
         //double p = pow(2.0, val.toInt()); DebugPrint(p);
         //int sampleRate = int (1.0/frameCutter.getXStep()); DebugPrint(sampleRate);
         frameCutter.setBlockSize(65536 >> val.toInt());
+        refFrameCutter.setBlockSize(65536 >> val.toInt());
     }
     else if (p == "xStep") {
         frameCutter.setXStep(val.toDouble());
+        refFrameCutter.setXStep(val.toDouble());
         // мы должны обновить список blockSize
         emit attributeChanged(name()+"/blockSize", getBlocks(frameCutter.getXStep(), ""), "enumNames");
     }
-    else if (p == "percent")
+    else if (p == "percent") {
         frameCutter.setDelta(int(1.0 * frameCutter.blockSize() * val.toDouble()));
-    else if (p == "deltaTime") {
-        if (frameCutter.getXStep()!=0.0)
-            frameCutter.setDelta(int(val.toDouble()/frameCutter.getXStep()));
+        refFrameCutter.setDelta(int(1.0 * refFrameCutter.blockSize() * val.toDouble()));
     }
-    else if (p == "triggerMode")
+    else if (p == "deltaTime") {
+        if (frameCutter.getXStep()!=0.0) {
+            frameCutter.setDelta(int(val.toDouble()/frameCutter.getXStep()));
+            refFrameCutter.setDelta(int(val.toDouble()/refFrameCutter.getXStep()));
+        }
+    }
+    else if (p == "triggerMode") {
         frameCutter.setMode(val.toInt());
-    else if (p == "level")
+        refFrameCutter.setMode(val.toInt());
+    }
+    else if (p == "level") {
         frameCutter.setLevel(val.toDouble());
-    else if (p == "channel")
+        refFrameCutter.setLevel(val.toDouble());
+    }
+    else if (p == "channel") {
         frameCutter.setChannel(val.toInt()-1);
-    else if (p == "pretrigger")
+        refFrameCutter.setChannel(val.toInt()-1);
+    }
+    else if (p == "pretrigger") {
         frameCutter.setPretrigger(int(val.toDouble()/frameCutter.getXStep()));
+        refFrameCutter.setPretrigger(int(val.toDouble()/frameCutter.getXStep()));
+    }
 }
 
 bool FrameCutterFunction::propertyShowsFor(const QString &property) const
@@ -227,14 +243,16 @@ QString FrameCutterFunction::propertyDescription(const QString &property) const
 void FrameCutterFunction::reset()
 {
     frameCutter.reset();
+    refFrameCutter.reset();
     output.clear();
+    refOutput.clear();
 }
 
 
 QVector<double> FrameCutterFunction::getData(const QString &id)
 {
-    if (id == "input")
-        return output;
+    if (id == "input") return output;
+    if (id == "referenceInput") return refOutput;
 
     return QVector<double>();
 }
@@ -263,6 +281,28 @@ bool FrameCutterFunction::compute(FileDescriptor *file)
     bool ok;
     output = frameCutter.get(&ok);
     if (!ok || output.isEmpty()) return false;
+
+    if (m_input->getProperty("?/useReferenceChannel").toBool()) {
+        refOutput.clear();
+
+        bool isEmpty = refFrameCutter.isEmpty();
+        if (isEmpty) {
+            QVector<double> data = m_input->getData("referenceInput");
+            if (!data.isEmpty()) {
+                refFrameCutter.setSource(data);
+
+                if (refFrameCutter.type()==FrameCutter::Trigger) {
+                    // TODO: как установить данные для триггера?
+                    m_input->setProperty("", 0);
+
+                    refFrameCutter.setTriggerSource(m_input->getData("triggerInput"));
+                }
+            }
+        }
+
+        bool ok;
+        refOutput = refFrameCutter.get(&ok);
+    }
 
     return true;
 }

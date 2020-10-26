@@ -140,13 +140,13 @@ bool SavingFunction::compute(FileDescriptor *file)
 
     // создаем канал
     QVector<double> data;
-    int i=1;
+//    int i=1;
     while (1) {
         m_input->compute(file);
         QVector<double> data1 = m_input->getData("input");
         if (data1.isEmpty()) break;
         data.append(data1);
-        qDebug()<<i++;
+//        qDebug()<<i++;
     }
 
 

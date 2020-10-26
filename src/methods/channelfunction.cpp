@@ -27,6 +27,9 @@ QVariant ChannelFunction::getProperty(const QString &property) const
 
     if (property.startsWith("?/")) {
         if (property == "?/channelIndex") return channel;
+        if (property == "?/refChannelIndex") return refChannel;
+        if (property == "?/useReferenceChannel") return useRefChannel;
+
         if (property == "?/channels") return selector.indexesAsString();
 
         //это - свойства исходного файла
@@ -59,6 +62,9 @@ QVariant ChannelFunction::getProperty(const QString &property) const
         QString p = property.section("/",1);
 
         if (p == "filter") return selector.filter();
+        if (p == "refChannelIndex") return refChannel;
+        if (p == "useReferenceChannel") return useRefChannel;
+
 //        if (p == "minSec") {
 //            double min = ch->data()->xMin();
 //            if (ch) return min;
@@ -80,6 +86,8 @@ void ChannelFunction::setProperty(const QString &property, const QVariant &val)
 
     if (p == "filter") selector.setFilter(val.toString());
     else if (p == "channelIndex") channel = val.toInt();
+    else if (p == "refChannelIndex") refChannel = val.toInt();
+    else if (p == "useReferenceChannel") useRefChannel = val.toBool();
 //    else if (p == "minSec") minSec = val.toDouble();
 //    else if (p == "maxSec") maxSec = val.toDouble();
 }
@@ -88,7 +96,7 @@ void ChannelFunction::setProperty(const QString &property, const QVariant &val)
 
 QStringList ChannelFunction::properties() const
 {
-    return QStringList()<<"filter"/*<<"minSec"<<"maxSec"*/;
+    return QStringList()<<"filter"<<"referenceChannel"/*<<"minSec"<<"maxSec"*/;
 }
 
 QString ChannelFunction::propertyDescription(const QString &property) const
@@ -103,6 +111,16 @@ QString ChannelFunction::propertyDescription(const QString &property) const
                                      "  \"minimum\"     : -2.4," //для int и double
                                      "  \"maximum\"     : 30.5" //для int и double
                                      "}";
+    if (property == "referenceChannel") return "{"
+                                               "  \"name\"        : \"referenceChannel\"   ,"
+                                               "  \"type\"        : \"int\"   ,"
+                                               "  \"displayName\" : \"Опорный канал\"   ,"
+                                               "  \"defaultValue\": -1         ,"
+                                               "  \"toolTip\"     : \"Номер опорного канала или -1\","
+                                               "  \"values\"      : []," //для enum
+                                               "  \"minimum\"     : -1," //для int и double
+                                               "  \"maximum\"     : 1000000" //для int и double
+                                               "}";
 //    if (property == "minSec") return "{"
 //                                     "  \"name\"        : \"minSec\"   ,"
 //                                     "  \"type\"        : \"double\"   ,"
@@ -135,6 +153,7 @@ QString ChannelFunction::displayName() const
 QVector<double> ChannelFunction::getData(const QString &id)
 {
     if (id == "input") return output;
+    if (id == "referenceInput") return refOutput;
 
     return QVector<double>();
 }
@@ -149,7 +168,24 @@ bool ChannelFunction::compute(FileDescriptor *file)
         //всегда первый блок, так как предполагаем, что временные данные
         //содержат только один блок
         output = file->channel(channel)->data()->yValues(0);
+
+        if (refChannel > -1 && refChannel < file->channelsCount()
+            && refOutput.isEmpty() && useRefChannel) {
+            if (!file->channel(refChannel)->populated())
+                file->channel(refChannel)->populate();
+            //всегда первый блок, так как предполагаем, что временные данные
+            //содержат только один блок
+            refOutput = file->channel(refChannel)->data()->yValues(0);
+        }
         return true;
     }
+
     return false;
+}
+
+
+bool ChannelFunction::propertyShowsFor(const QString &property) const
+{
+    if (property == (name()+"/referenceChannel")) return useRefChannel;
+    return true;
 }
