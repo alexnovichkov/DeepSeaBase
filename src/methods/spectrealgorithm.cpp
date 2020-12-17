@@ -9,11 +9,11 @@
 #include "averagingfunction.h"
 #include "fftfunction.h"
 #include "savingfunction.h"
-
+#include "logging.h"
 
 SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{
+{DD;
     channelF = new ChannelFunction(parent);
     filteringF = new FilteringFunction(parent);
     resamplingF = new ResamplingFunction(parent);
@@ -69,23 +69,23 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
 
 
 QString SpectreAlgorithm::name() const
-{
+{DD;
     return "Spectrum";
 }
 
 QString SpectreAlgorithm::description() const
-{
+{DD;
     return "Спектр";
 }
 
 
 QString SpectreAlgorithm::displayName() const
-{
+{DD;
     return "Спектр";
 }
 
 bool SpectreAlgorithm::compute(FileDescriptor *file)
-{
+{DD;
     if (QThread::currentThread()->isInterruptionRequested()) {
         finalize();
         return false;

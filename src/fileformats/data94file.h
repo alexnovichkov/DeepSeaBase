@@ -70,6 +70,7 @@ public:
     QVector<double> values;// - если шкала неравномерная
 };
 
+
 class Data94Channel;
 
 class Data94File : public FileDescriptor

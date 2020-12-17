@@ -5,23 +5,24 @@
 
 ChannelFunction::ChannelFunction(QObject *parent) :
     AbstractFunction(parent)
-{
+{DD;
 
 }
 
 
 QString ChannelFunction::name() const
-{
+{DD;
     return "Channel";
 }
 
 QString ChannelFunction::description() const
-{
+{DD;
     return "Выбор каналов для обработки";
 }
 
-QVariant ChannelFunction::getProperty(const QString &property) const
+QVariant ChannelFunction::m_getProperty(const QString &property) const
 {DD;
+    qDebug()<<"ChannelFunction::m_getProperty"<<property;
     Channel *ch = 0;
     if (m_file && channel >=0) ch = m_file->channel(channel);
 
@@ -59,6 +60,7 @@ QVariant ChannelFunction::getProperty(const QString &property) const
         QString p = property.section("/",1);
 
         if (p == "filter") return selector.filter();
+
 //        if (p == "minSec") {
 //            double min = ch->data()->xMin();
 //            if (ch) return min;
@@ -73,13 +75,15 @@ QVariant ChannelFunction::getProperty(const QString &property) const
     return QVariant();
 }
 
-void ChannelFunction::setProperty(const QString &property, const QVariant &val)
+void ChannelFunction::m_setProperty(const QString &property, const QVariant &val)
 {DD;
+    qDebug()<<"ChannelFunction::m_setProperty"<<property<<val;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
     if (p == "filter") selector.setFilter(val.toString());
     else if (p == "channelIndex") channel = val.toInt();
+
 //    else if (p == "minSec") minSec = val.toDouble();
 //    else if (p == "maxSec") maxSec = val.toDouble();
 }
@@ -87,12 +91,12 @@ void ChannelFunction::setProperty(const QString &property, const QVariant &val)
 
 
 QStringList ChannelFunction::properties() const
-{
-    return QStringList()<<"filter"/*<<"minSec"<<"maxSec"*/;
+{DD;
+    return QStringList()<<"filter" /*<<"minSec"<<"maxSec"*/;
 }
 
 QString ChannelFunction::propertyDescription(const QString &property) const
-{
+{DD;
     if (property == "filter") return "{"
                                      "  \"name\"        : \"filter\"   ,"
                                      "  \"type\"        : \"string\"   ,"
@@ -103,6 +107,7 @@ QString ChannelFunction::propertyDescription(const QString &property) const
                                      "  \"minimum\"     : -2.4," //для int и double
                                      "  \"maximum\"     : 30.5" //для int и double
                                      "}";
+
 //    if (property == "minSec") return "{"
 //                                     "  \"name\"        : \"minSec\"   ,"
 //                                     "  \"type\"        : \"double\"   ,"
@@ -128,20 +133,20 @@ QString ChannelFunction::propertyDescription(const QString &property) const
 
 
 QString ChannelFunction::displayName() const
-{
+{DD;
     return "Каналы";
 }
 
 QVector<double> ChannelFunction::getData(const QString &id)
-{
+{DD;
     if (id == "input") return output;
 
     return QVector<double>();
 }
 
 bool ChannelFunction::compute(FileDescriptor *file)
-{
-    if (channel < 0) return false;
+{DD;
+    if (channel < 0 || file->channelsCount() <= channel) return false;
 
     if (selector.includes(channel)) {
         if (!file->channel(channel)->populated())
@@ -149,7 +154,71 @@ bool ChannelFunction::compute(FileDescriptor *file)
         //всегда первый блок, так как предполагаем, что временные данные
         //содержат только один блок
         output = file->channel(channel)->data()->yValues(0);
-        return true;
+
+        return !output.isEmpty();
     }
+
     return false;
+}
+
+QString RefChannelFunction::name() const
+{
+    return "RefChannel";
+}
+
+RefChannelFunction::RefChannelFunction(QObject *parent) : ChannelFunction(parent)
+{
+
+}
+
+QStringList RefChannelFunction::properties() const
+{
+    return QStringList()<<"referenceChannelIndex";
+}
+
+QString RefChannelFunction::propertyDescription(const QString &property) const
+{
+    if (property == "referenceChannelIndex") return "{"
+                                               "  \"name\"        : \"referenceChannelIndex\"   ,"
+                                               "  \"type\"        : \"int\"   ,"
+                                               "  \"displayName\" : \"Опорный канал\"   ,"
+                                               "  \"defaultValue\": -1         ,"
+                                               "  \"toolTip\"     : \"Номер опорного канала или -1\","
+                                               "  \"values\"      : []," //для enum
+                                               "  \"minimum\"     : -1," //для int и double
+                                               "  \"maximum\"     : 1000000" //для int и double
+                                               "}";
+    return QString();
+}
+
+bool RefChannelFunction::compute(FileDescriptor *file)
+{
+    if (channel < 0 || file->channelsCount() <= channel) return false;
+
+    if (!file->channel(channel)->populated())
+        file->channel(channel)->populate();
+    //всегда первый блок, так как предполагаем, что временные данные
+    //содержат только один блок
+    output = file->channel(channel)->data()->yValues(0);
+
+    return !output.isEmpty();
+}
+
+QString RefChannelFunction::displayName() const
+{
+    return "Опорный канал";
+}
+
+QVariant RefChannelFunction::m_getProperty(const QString &property) const
+{
+    if (property == name()+"/referenceChannelIndex") return channel+1;
+    else if (property == "?/referenceChannelIndex") return channel+1;
+
+    return ChannelFunction::m_getProperty(property);
+}
+
+void RefChannelFunction::m_setProperty(const QString &property, const QVariant &val)
+{
+    if (property == name()+"/referenceChannelIndex") channel = val.toInt()-1;
+    else ChannelFunction::m_setProperty(property, val);
 }

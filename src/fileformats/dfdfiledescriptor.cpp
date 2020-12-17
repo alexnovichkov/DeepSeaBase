@@ -1303,7 +1303,7 @@ bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVe
                 DfdChannel *ch = channels[indexesVector.at(ind).first];
                 qint64 dataPos = tempFile.pos();
                 //пишем канал целиком
-                foreach (int pos, ch->dataPositions) {
+                for (qint64 pos: ch->dataPositions) {
                     rawFile.seek(pos);
                     QByteArray b = rawFile.read(ch->blockSizeInBytes());
                     tempFile.write(b);
@@ -2082,15 +2082,15 @@ void DfdChannel::populate()
             unsigned char *maxPtr = ptr + rawFile.size();
             unsigned char *ptrCurrent = ptr;
             if (!dataPositions.isEmpty()) {
-                //qDebug()<<"IndType="<<IndType<<", mapped, by dataPositions";
-                foreach (int pos, dataPositions) {
+                qDebug()<<"IndType="<<IndType<<", mapped, by dataPositions";
+                for (qint64 pos: dataPositions) {
                     ptrCurrent = ptr + pos;
                     QVector<double> temp = convertFrom<double>(ptrCurrent, qMin(quint64(maxPtr-ptrCurrent), blockSizeBytes), IndType);
                     YValues << temp;
                 }
             } ///!dataPositions.isEmpty()
             else {
-                //qDebug()<<"IndType="<<IndType<<"blocksize"<<parent->BlockSize<<", mapped, skipping";
+                qDebug()<<"IndType="<<IndType<<"blocksize"<<parent->BlockSize<<", mapped, skipping";
                 /*
                 * i-й отсчет n-го канала имеет номер
                 * n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
@@ -2112,25 +2112,39 @@ void DfdChannel::populate()
         } /// mapped
         else {
             //читаем классическим способом через getChunk
-            //qDebug()<<"IndType="<<IndType<<"BlockSize="<<parent->BlockSize<<"not mapped";
+
             QDataStream readStream(&rawFile);
             readStream.setByteOrder(QDataStream::LittleEndian);
             if (IndType==0xC0000004)
                 readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-            //с перекрытием, сначала читаем блок данных в ChanBlockSize отчетов для всех каналов
-            // если каналы имеют разный размер блоков, этот метод даст сбой
-            int actuallyRead = 0;
-            const int chunkSize = channelsCount * ChanBlockSize;
-            while (1) {
+            qint64 actuallyRead = 0;
+
+            if (parent->BlockSize > 0)  {
+                //с перекрытием, сначала читаем блок данных в ChanBlockSize отчетов для всех каналов
+                // если каналы имеют разный размер блоков, этот метод даст сбой
+                qDebug()<<"IndType="<<IndType<<"BlockSize="<<parent->BlockSize<<"not mapped, ovlap";
+                const quint64 chunkSize = channelsCount * ChanBlockSize;
+                while (1) {
+                    QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, IndType, &actuallyRead);
+
+                    //распихиваем данные по каналам
+                    actuallyRead /= channelsCount;
+                    YValues << temp.mid(actuallyRead*channelIndex, actuallyRead);
+
+                    if (actuallyRead < ChanBlockSize)
+                        break;
+                }
+            }
+            else {
+                //без перекрытия, читаем данные всего канала (blockSize = 0, chanBlockSize != 0)
+                qDebug()<<"IndType="<<IndType<<"BlockSize="<<parent->BlockSize<<"not mapped, without ovlap";
+                readStream.device()->seek(channelIndex * blockSizeBytes);
+                const quint64 chunkSize = ChanBlockSize;
                 QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, IndType, &actuallyRead);
 
                 //распихиваем данные по каналам
-                actuallyRead /= channelsCount;
-                YValues << temp.mid(actuallyRead*channelIndex, actuallyRead);
-
-                if (actuallyRead < ChanBlockSize)
-                    break;
+                YValues = temp;
             }
         }
 
@@ -2173,7 +2187,8 @@ void DfdChannel::populate()
 
 quint64 DfdChannel::blockSizeInBytes() const
 {
-    return quint64(ChanBlockSize * (IndType % 16));
+    quint64 res = ChanBlockSize;
+    return res * (IndType % 16);
 }
 
 FileDescriptor *DfdChannel::descriptor()

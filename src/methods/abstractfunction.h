@@ -59,12 +59,16 @@ public:
     virtual QString propertyDescription(const QString &property) const = 0;
     virtual bool propertyShowsFor(const QString &property) const;
 
-    virtual QVariant getProperty(const QString &property) const = 0;
-    virtual void setProperty(const QString &property, const QVariant &val) = 0;
+    QVariant getProperty(const QString &property) const;
+    void setProperty(const QString &property, const QVariant &val);
+
+    virtual void pairWith(AbstractFunction *pair);
+    bool paired() const {return m_pair != nullptr;}
 
     virtual QVector<double> getData(const QString &id) = 0;
 
-    void setInput(AbstractFunction *input) {m_input = input;}
+    void setInput(AbstractFunction *input);
+    void setInput2(AbstractFunction *input);
     void setFile(FileDescriptor *file);
 
     // по умолчанию не делает ничего
@@ -82,8 +86,15 @@ signals:
 public slots:
     virtual void updateProperty(const QString &property, const QVariant &val);
 protected:
+    virtual QVariant m_getProperty(const QString &property) const = 0;
+    virtual void m_setProperty(const QString &property, const QVariant &val) = 0;
+
 //    QList<FileDescriptor *> m_dataBase;
-    AbstractFunction *m_input;
+    AbstractFunction *m_input = nullptr;
+    AbstractFunction *m_input2 = nullptr;
+
+    AbstractFunction *m_pair = nullptr;
+    bool suppressed = false;
     FileDescriptor *m_file = 0;
 };
 
@@ -92,7 +103,7 @@ class AbstractAlgorithm : public QObject
     Q_OBJECT
 public:
     explicit AbstractAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent = nullptr);
-    virtual ~AbstractAlgorithm() {}
+    virtual ~AbstractAlgorithm();
     virtual QString name() const = 0;
     virtual QString displayName() const = 0;
     virtual QString description() const = 0;

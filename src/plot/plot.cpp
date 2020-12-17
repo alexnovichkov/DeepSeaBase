@@ -31,7 +31,7 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDesktopWidget>
-#include <QApplication>
+#include "app.h"
 #include <QClipboard>
 #include <QPrinter>
 #include <QPrintDialog>
@@ -181,7 +181,7 @@ Plot::Plot(QWidget *parent) :
     connect(playerPanel,SIGNAL(closeRequested()),SIGNAL(playerPanelCloseRequested()));
     connect(this, SIGNAL(curvesChanged()), playerPanel, SLOT(update()));
 
-    axisLabelsVisible = MainWindow::getSetting("axisLabelsVisible", true).toBool();
+    axisLabelsVisible = App->getSetting("axisLabelsVisible", true).toBool();
     yValuesPresentationLeft = DataHolder::ShowAsDefault;
     yValuesPresentationRight = DataHolder::ShowAsDefault;
 
@@ -212,10 +212,10 @@ Plot::Plot(QWidget *parent) :
     connect(zoom,SIGNAL(hover(QwtAxisId,int)),SLOT(hoverAxis(QwtAxisId,int)));
 
     tracker = new PlotTracker(this);
-    tracker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
+    tracker->setEnabled(App->getSetting("pickerEnabled", true).toBool());
 
     _picker = new Picker(this);
-    _picker->setEnabled(MainWindow::getSetting("pickerEnabled", true).toBool());
+    _picker->setEnabled(App->getSetting("pickerEnabled", true).toBool());
     connect(_picker,SIGNAL(setZoomEnabled(bool)),            zoom, SLOT(setZoomEnabled(bool)));
     connect(_picker,SIGNAL(cursorSelected(TrackingCursor*)), trackingPanel, SLOT(changeSelectedCursor(TrackingCursor*)));
     connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       trackingPanel, SLOT(setValue(QPointF,bool)));
@@ -236,10 +236,10 @@ Plot::~Plot()
     delete tracker;
     delete _picker;
 
-    MainWindow::setSetting("axisLabelsVisible", axisLabelsVisible);
-    MainWindow::setSetting("autoscale-x", !zoom->horizontalScaleBounds->isFixed());
-    MainWindow::setSetting("autoscale-y", !zoom->verticalScaleBounds->isFixed());
-    MainWindow::setSetting("autoscale-y-slave", !zoom->verticalScaleBoundsSlave->isFixed());
+    App->setSetting("axisLabelsVisible", axisLabelsVisible);
+    App->setSetting("autoscale-x", !zoom->horizontalScaleBounds->isFixed());
+    App->setSetting("autoscale-y", !zoom->verticalScaleBounds->isFixed());
+    App->setSetting("autoscale-y-slave", !zoom->verticalScaleBoundsSlave->isFixed());
     delete zoom;
 }
 
@@ -338,7 +338,7 @@ void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doR
 void Plot::deleteCurve(Curve *curve, bool doReplot)
 {DD;
     if (curve) {
-        ColorSelector::instance()->freeColor(curve->pen().color());
+        App->colors()->freeColor(curve->pen().color());
 
         int removed = leftCurves.removeAll(curve);
         if (removed > 0) {
@@ -924,7 +924,7 @@ bool Plot::plotCurve(Channel * ch, QColor *col, bool &plotOnRight, int fileNumbe
 
 
     Curve *g = createCurve(ch->legendName(), ch);
-    QColor nextColor = ColorSelector::instance()->getColor();
+    QColor nextColor = App->colors()->getColor();
     QPen pen = g->pen();
     pen.setColor(nextColor);
     pen.setWidth(1);
@@ -1033,10 +1033,10 @@ void Plot::savePlot()
     ImageRenderDialog dialog(this);
     if (dialog.exec()) {
         importPlot(dialog.getPath(), dialog.getSize(), dialog.getResolution());
-        MainWindow::setSetting("lastPicture", dialog.getPath());
+        App->setSetting("lastPicture", dialog.getPath());
     }
 
-//    QString lastPicture = MainWindow::getSetting("lastPicture", "plot.bmp").toString();
+//    QString lastPicture = App->getSetting("lastPicture", "plot.bmp").toString();
 //    lastPicture = QFileDialog::getSaveFileName(this, QString("Сохранение графика"), lastPicture,
 //                                               "Растровые изображения (*.bmp);;Файлы JPEG (*.jpg);;Файлы pdf (*.pdf);;Файлы svg (*.svg)");
 //    if (lastPicture.isEmpty()) return;
@@ -1049,14 +1049,23 @@ void Plot::savePlot()
 void Plot::copyToClipboard()
 {DD;
     QTemporaryFile file("DeepSeaBase-XXXXXX.bmp");
+    file.setAutoRemove(false);
     if (file.open()) {
         QString fileName = file.fileName();
         file.close();
 
-        importPlot(fileName, ImageRenderDialog::defaultSize(), ImageRenderDialog::defaultResolution());
-        QImage img;
-        if (img.load(fileName)) {
-            qApp->clipboard()->setImage(img);
+        ImageRenderDialog dialog(false, this);
+
+        if (dialog.exec()) {
+            importPlot(fileName, dialog.getSize(), dialog.getResolution());
+            QImage img;
+            if (img.load(fileName)) {
+                qDebug()<<fileName;
+                qApp->clipboard()->setImage(img);
+            }
+            else {
+                qDebug()<<"Could not load image from"<<fileName;
+            }
         }
     }
 }
@@ -1219,7 +1228,7 @@ void Plot::switchCursor()
     bool pickerEnabled = _picker->isEnabled();
     _picker->setEnabled(!pickerEnabled);
     tracker->setEnabled(!pickerEnabled);
-    MainWindow::setSetting("pickerEnabled", !pickerEnabled);
+    App->setSetting("pickerEnabled", !pickerEnabled);
 }
 
 void Plot::editLegendItem(const QVariant &itemInfo, int index)

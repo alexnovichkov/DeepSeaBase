@@ -2,6 +2,7 @@
 
 #include <QtWidgets>
 
+
 #include "calculatespectredialog.h"
 #include "filesprocessordialog.h"
 #include "sortabletreewidgetitem.h"
@@ -223,7 +224,7 @@ MainWindow::MainWindow(QWidget *parent)
     switchCursorAct->setIcon(QIcon(":/icons/cursor.png"));
     switchCursorAct->setCheckable(true);
     switchCursorAct->setObjectName("simpleCursor");
-    bool pickerEnabled = MainWindow::getSetting("pickerEnabled", true).toBool();
+    bool pickerEnabled = App->getSetting("pickerEnabled", true).toBool();
     switchCursorAct->setChecked(pickerEnabled);
     connect(switchCursorAct, SIGNAL(triggered()), plot, SLOT(switchCursor()));
 
@@ -404,10 +405,10 @@ MainWindow::MainWindow(QWidget *parent)
     autoscaleXAct = new QAction("Автомасштабирование по оси X", this);
     autoscaleXAct->setIcon(QIcon(":/icons/autoscale-x.png"));
     autoscaleXAct->setCheckable(true);
-    bool autoscale = getSetting("autoscale-x", true).toBool();
+    bool autoscale = App->getSetting("autoscale-x", true).toBool();
     connect(autoscaleXAct, &QAction::toggled, [this](bool toggled){
         plot->toggleAutoscale(0 /* x axis */,toggled);
-        setSetting("autoscale-x", toggled);
+        App->setSetting("autoscale-x", toggled);
     });
     autoscaleXAct->setChecked(autoscale);
     plot->toggleAutoscale(0 /* x axis */, autoscale);
@@ -415,10 +416,10 @@ MainWindow::MainWindow(QWidget *parent)
     autoscaleYAct = new QAction("Автомасштабирование по оси Y", this);
     autoscaleYAct->setIcon(QIcon(":/icons/autoscale-y-main.png"));
     autoscaleYAct->setCheckable(true);
-    autoscale = getSetting("autoscale-y", true).toBool();
+    autoscale = App->getSetting("autoscale-y", true).toBool();
     connect(autoscaleYAct, &QAction::toggled, [this](bool toggled){
         plot->toggleAutoscale(1 /* y axis */,toggled);
-        setSetting("autoscale-y", toggled);
+        App->setSetting("autoscale-y", toggled);
     });
     autoscaleYAct->setChecked(autoscale);
     plot->toggleAutoscale(1 /* x axis */, autoscale);
@@ -426,10 +427,10 @@ MainWindow::MainWindow(QWidget *parent)
     autoscaleYSlaveAct = new QAction("Автомасштабирование по правой оси Y", this);
     autoscaleYSlaveAct->setIcon(QIcon(":/icons/autoscale-y-slave.png"));
     autoscaleYSlaveAct->setCheckable(true);
-    autoscale = getSetting("autoscale-y-slave", true).toBool();
+    autoscale = App->getSetting("autoscale-y-slave", true).toBool();
     connect(autoscaleYSlaveAct, &QAction::toggled, [this](bool toggled){
         plot->toggleAutoscale(2 /* y slave axis */,toggled);
-        setSetting("autoscale-y-slave", toggled);
+        App->setSetting("autoscale-y-slave", toggled);
     });
     autoscaleYSlaveAct->setChecked(autoscale);
     plot->toggleAutoscale(2 /* x axis */, autoscale);
@@ -493,7 +494,7 @@ MainWindow::MainWindow(QWidget *parent)
     splitter->addWidget(tabWidget);
     splitter->addWidget(plotsWidget);
 
-    QByteArray mainSplitterState = getSetting("mainSplitterState").toByteArray();
+    QByteArray mainSplitterState = App->getSetting("mainSplitterState").toByteArray();
     if (!mainSplitterState.isEmpty())
         splitter->restoreState(mainSplitterState);
 
@@ -501,7 +502,7 @@ MainWindow::MainWindow(QWidget *parent)
 
 
 
-    QVariantMap v = getSetting("folders1").toMap();
+    QVariantMap v = App->getSetting("folders1").toMap();
 
     if (v.isEmpty())
         createNewTab();
@@ -673,7 +674,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     connect(editFileAct, &QAction::triggered, [=](){
         QString file = QDir::toNativeSeparators(tab->filePathLabel->text());
         if (!file.isEmpty()) {
-            QString executable = getSetting("editor").toString();
+            QString executable = App->getSetting("editor").toString();
             if (executable.isEmpty())
                 executable = QInputDialog::getText(this, "Текстовый редактор не задан",
                                                    "Введите путь к текстовому редактору,\n"
@@ -684,10 +685,10 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
                     executable = QStandardPaths::findExecutable(executable);
                     if (!executable.isEmpty())
                         if (QProcess::startDetached(executable, QStringList()<<file))
-                            setSetting("editor", executable);
+                            App->setSetting("editor", executable);
                 }
                 else
-                    setSetting("editor", executable);
+                    App->setSetting("editor", executable);
             }
         }
     });
@@ -714,7 +715,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
 
 
-    QByteArray upperSplitterState = getSetting("upperSplitterState").toByteArray();
+    QByteArray upperSplitterState = App->getSetting("upperSplitterState").toByteArray();
     if (!upperSplitterState.isEmpty())
         tab->restoreState(upperSplitterState);
 
@@ -758,25 +759,21 @@ void MainWindow::closeTab(int i)
     if (!tab) return;
 
     // удаление графиков тех файлов, которые были в закрываемой вкладке
+    for (int i=0; i<tab->model->size(); ++i) {
+        auto f = tab->model->file(i);
+    }
+
+
     for (int i=plot->curvesCount()-1; i>=0; --i) {
         FileDescriptor *f = plot->curves[i]->channel->descriptor();
+        F sm = App->find(f->fileName());
+        if (sm.use_count()<=2)
         if (tab->model->contains(f) && !duplicated(f))
             plot->deleteCurve(plot->curves[i]);
     }
 
     tab->channelModel->clear();
-//    tab->model->clear();
-
-    tab->filesTable->selectAll();
-
-    // костыль, позволяющий иметь несколько одинаковых файлов в разных вкладках
-    QStringList duplicatedFiles;
-    foreach (FileDescriptor *f, tab->model->selectedFiles()) {
-        if (duplicated(f)) duplicatedFiles << f->fileName();
-    }
-
-
-    tab->model->deleteFiles(duplicatedFiles);
+    tab->model->clear();
 
     QWidget *w = tabWidget->widget(index);
     tabWidget->removeTab(index);
@@ -855,7 +852,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::addFolder() /*SLOT*/
 {DD;
-    QString directory = getSetting("lastDirectory").toString();
+    QString directory = App->getSetting("lastDirectory").toString();
 
     directory = QFileDialog::getExistingDirectory(this,
                                                   tr("Добавление папки"),
@@ -863,13 +860,13 @@ void MainWindow::addFolder() /*SLOT*/
                                                   QFileDialog::ShowDirsOnly | QFileDialog::ReadOnly);
 
     if (directory.isEmpty()) return;
-    setSetting("lastDirectory", directory);
+    App->setSetting("lastDirectory", directory);
     addFolder(directory, false /*with subfolders*/, false /*silent*/);
 }
 
 void MainWindow::addFolderWithSubfolders() /*SLOT*/
 {
-    QString directory = getSetting("lastDirectory").toString();
+    QString directory = App->getSetting("lastDirectory").toString();
 
     directory = QFileDialog::getExistingDirectory(this,
                                                   tr("Добавление папки со всеми вложенными папками"),
@@ -877,13 +874,13 @@ void MainWindow::addFolderWithSubfolders() /*SLOT*/
                                                   QFileDialog::ShowDirsOnly | QFileDialog::ReadOnly);
 
     if (directory.isEmpty()) return;
-    setSetting("lastDirectory", directory);
+    App->setSetting("lastDirectory", directory);
     addFolder(directory, true /*with subfolders*/, false /*silent*/);
 }
 
 void MainWindow::addFile()
 {
-    QString directory = getSetting("lastDirectory").toString();
+    QString directory = App->getSetting("lastDirectory").toString();
 
     QFileDialog dialog(this, "Добавить файлы", directory);
     dialog.setOption(QFileDialog::DontUseNativeDialog, true);
@@ -901,7 +898,7 @@ void MainWindow::addFile()
     }
     if (fileNames.isEmpty()) return;
 
-    setSetting("lastDirectory", fileNames.constFirst());
+    App->setSetting("lastDirectory", fileNames.constFirst());
     addFiles(fileNames);
     for (const QString &file: fileNames)
         if (!tab->folders.contains(file)) tab->folders << file;
@@ -941,10 +938,11 @@ void MainWindow::deleteFiles()
 {DD;
     if (!tab) return;
 
-    QStringList duplicatedFiles;
     QList<FileDescriptor *> files = tab->model->selectedFiles();
-    foreach (FileDescriptor *d, files) {
-        plot->deleteCurvesForDescriptor(d);
+    for (FileDescriptor *d: files) {
+        // удаление графиков удаляемых файлов, если они только в одной вкладке
+        if (!duplicated(d))
+            plot->deleteCurvesForDescriptor(d);
 
         if (tab->folders.contains(d->fileName()))
             tab->folders.removeOne(d->fileName());
@@ -952,11 +950,10 @@ void MainWindow::deleteFiles()
             tab->folders.removeOne(d->fileName()+":0");
         else if (tab->folders.contains(d->fileName()+":1"))
             tab->folders.removeOne(d->fileName()+":1");
-        if (duplicated(d)) duplicatedFiles << d->fileName();
     }
     tab->channelModel->clear();
 
-    tab->model->deleteFiles(duplicatedFiles);
+    tab->model->deleteFiles();
 
     if (tab->model->size() == 0)
         tab->folders.clear();
@@ -997,7 +994,7 @@ void MainWindow::deleteChannelsBatch()
         return;
 
     // проверка на количество каналов в файлах
-    foreach (FileDescriptor *d, filesToDelete) {
+    for (FileDescriptor *d: filesToDelete) {
         if (d->channelsCount()<=channels.last()) {
             if (QMessageBox::question(this,"DeepSea Base","В некоторых записях меньше каналов, чем заявлено\n"
                                       "к удалению. Продолжить?")==QMessageBox::Yes)
@@ -1008,7 +1005,7 @@ void MainWindow::deleteChannelsBatch()
     }
 
     LongOperation op;
-    foreach (FileDescriptor *d, filesToDelete)
+    for (FileDescriptor *d: filesToDelete)
         deleteChannels(d, channels);
 
     updateChannelsTable(tab->record);
@@ -1089,7 +1086,7 @@ void MainWindow::addCorrections()
         // qDebug()<<fileName;
         if (QFile(fileName).exists()) {
             fileName.replace("\\","/");
-            FileDescriptor *dfd = findDescriptor(fileName);
+            FileDescriptor * dfd = App->find(fileName).get();
             bool deleteAfter=false;
             if (!dfd) {
                 dfd = FormatFactory::createDescriptor(fileName);
@@ -1161,7 +1158,7 @@ bool MainWindow::deleteChannels(FileDescriptor *file, const QVector<int> &channe
 
 bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channelsToCopy)
 {DD;
-    QString startFile = MainWindow::getSetting("startDir").toString();
+    QString startFile = App->getSetting("startDir").toString();
     QStringList filters = FormatFactory::allFilters();
 
     QFileDialog dialog(this, "Выбор файла для записи каналов", startFile,
@@ -1203,7 +1200,7 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
         if (suffixes.contains(currentSuffix))
             file.chop(currentSuffix.length()+1);
         //сохраняем параметр - имя файла без суффикса
-        MainWindow::setSetting("startDir", file);
+        App->setSetting("startDir", file);
 
         file.append(QString(".%1").arg(filterSuffix));
     }
@@ -1213,17 +1210,18 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
     LongOperation op;
 
     // ИЩЕМ ЭТОТ ФАЙЛ СРЕДИ ДОБАВЛЕННЫХ В БАЗУ
-    FileDescriptor *destination = findDescriptor(file);
-    const bool found = destination!=0;
+
+    F destination = App->find(file);
+    const bool found = destination != nullptr;
     const bool exists = QFile::exists(file);
 
     if (!found) {//не нашли файл в базе, нужно создать новый объект
         if (exists) {
-            destination = FormatFactory::createDescriptor(file);
+            destination = App->addFile(file);
             if (destination) destination->read();
         }
         else {
-            destination = FormatFactory::createDescriptor(*source, file, channelsToCopy);
+            destination = App->addFile(*source, file, channelsToCopy);
         }
     }
 
@@ -1242,7 +1240,7 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
         destination->copyChannelsFrom(source, channelsToCopy);
 
     if (found) {
-        tab->model->updateFile(destination);
+        tab->model->updateFile(destination.get());
     }
     else {
         addFile(destination);
@@ -1322,15 +1320,14 @@ void MainWindow::calculateMean()
     }
 
     QString meanFileName;
-    FileDescriptor *meanFile = 0;
-    bool descriptorFound = false;
+    F meanFile;
 
     if (writeToSeparateFile) {
         QString meanD = firstCurve->channel->descriptor()->fileName();
         meanD.chop(4);
         if (writeToUff) meanD.append(".uff");
 
-        meanD = MainWindow::getSetting(writeToUff?"lastMeanUffFile":"lastMeanFile", meanD).toString();
+        meanD = App->getSetting(writeToUff?"lastMeanUffFile":"lastMeanFile", meanD).toString();
 
         QStringList  filters = FormatFactory::allFilters();
         QStringList suffixes = FormatFactory::allSuffixes(true);
@@ -1368,28 +1365,24 @@ void MainWindow::calculateMean()
             meanFileName.append(QString(".%1").arg(filterSuffix));
         }
 
-        meanFile = findDescriptor(meanFileName);
-        if (meanFile)
-            descriptorFound = true;
-        else
-            meanFile = FormatFactory::createDescriptor(meanFileName);
-
+        bool isNew = false;
+        meanFile = App->addFile(meanFileName, &isNew);
         if (!meanFile) {
             qDebug()<<"Не удалось создать файл"<<meanFileName;
             return;
         }
 
-        if (QFileInfo(meanFileName).exists() && !descriptorFound)
-            meanFile->read();
+        if (QFileInfo(meanFileName).exists()) {
+            if (isNew) meanFile->read();
+        }
         else
             meanFile->fillPreliminary(firstCurve->channel->type());
 
-        MainWindow::setSetting(writeToUff?"lastMeanUffFile":"lastMeanFile", meanFileName);
+        App->setSetting(writeToUff?"lastMeanUffFile":"lastMeanFile", meanFileName);
     }
     else {
-        meanFile = firstCurve->channel->descriptor();
-        meanFileName = meanFile->fileName();
-        descriptorFound = true;
+        meanFileName = firstCurve->channel->descriptor()->fileName();
+        meanFile = App->find(meanFileName);
     }
 
     meanFile->calculateMean(channels);
@@ -1402,13 +1395,14 @@ void MainWindow::calculateMean()
 //    meanFile->write();
 //    meanFile->writeRawFile();
 
-    if (descriptorFound) {
-        tab->model->updateFile(meanFile);
+    int idx;
+    if (tab->model->contains(meanFile, &idx)) {
+        tab->model->updateFile(idx);
     }
     else {
         addFile(meanFile);
     }
-    setCurrentAndPlot(meanFile, meanFile->channelsCount()-1);
+    setCurrentAndPlot(meanFile.get(), meanFile->channelsCount()-1);
 }
 
 void MainWindow::moveChannelsUp()
@@ -1535,6 +1529,7 @@ void MainWindow::onChannelDescriptionChanged(int index, const QString &value)
             tab->model->updateFile(tab->record);
         }
     }
+
 }
 
 void MainWindow::onChannelNameChanged(int index, const QString &value)
@@ -1759,28 +1754,27 @@ void MainWindow::calculateThirdOctave()
         return;
     }
 
-
-    foreach (FileDescriptor *fd, records) {
+    QStringList toAdd;
+    for (FileDescriptor *fd: records) {
         QString dfd = fd->calculateThirdOctave();
-        if (FileDescriptor *found = findDescriptor(dfd)) {
-            tab->model->updateFile(found);
-        }
-        else {
-            addFiles(QStringList()<<dfd);
-        }
+        if (auto f = App->find(dfd))
+            tab->model->updateFile(f.get());
+        else
+           toAdd << dfd;
     }
+    addFiles(toAdd);
 }
 
 void MainWindow::calculateMovingAvg()
 {
     if (plot->curves.size()<1) return;
 
-    int windowSize = MainWindow::getSetting("movingAvgSize",3).toInt();
+    int windowSize = App->getSetting("movingAvgSize",3).toInt();
     bool ok;
     windowSize = QInputDialog::getInt(this,"Скользящее среднее","Выберите величину окна усреднения",windowSize,
                                       3,15,2,&ok);
     if (ok)
-        MainWindow::setSetting("movingAvgSize",windowSize);
+        App->setSetting("movingAvgSize",windowSize);
     else
         return;
 
@@ -1822,14 +1816,13 @@ void MainWindow::calculateMovingAvg()
     }
 
     QString avgFileName;
-    FileDescriptor *avgFile = 0;
-    bool descriptorFound = false;
+    F avg;
 
     if (writeToSeparateFile) {
         QString avgD = firstName;
         avgD.chop(4);
 
-        avgD = MainWindow::getSetting("lastMovingAvgFile", avgD).toString();
+        avgD = App->getSetting("lastMovingAvgFile", avgD).toString();
 
         QStringList filters = FormatFactory::allFilters();
         QStringList suffixes = FormatFactory::allSuffixes(true);
@@ -1854,7 +1847,7 @@ void MainWindow::calculateMovingAvg()
 
         avgFileName = selectedFiles.constFirst();
         if (avgFileName.isEmpty()) return;
-        MainWindow::setSetting("lastMovingAvgFile", avgFileName);
+        App->setSetting("lastMovingAvgFile", avgFileName);
 
         //добавляем суффикс
         QString currentSuffix = QFileInfo(avgFileName).suffix().toLower();
@@ -1867,46 +1860,43 @@ void MainWindow::calculateMovingAvg()
             avgFileName.append(QString(".%1").arg(filterSuffix));
         }
 
-        avgFile = findDescriptor(avgFileName);
-        if (avgFile)
-            descriptorFound = true;
-        else
-            avgFile = FormatFactory::createDescriptor(avgFileName);
+        bool isNew = false;
+        avg = App->addFile(avgFileName, &isNew);
 
-        if (!avgFile) {
-            qDebug()<<"Не удалось создать файл"<<avgFileName;
+        if (!avg) {
+            qDebug() << "Не удалось создать файл" << avgFileName;
             return;
         }
 
-        if (QFileInfo(avgFileName).exists() && !descriptorFound)
-            avgFile->read();
+        if (QFileInfo(avgFileName).exists()) {
+            if (isNew) avg->read();
+        }
         else
-            avgFile->fillPreliminary(firstCurve->channel->type());
+            avg->fillPreliminary(firstCurve->channel->type());
     }
     else {
-        avgFile = firstCurve->channel->descriptor();
-        avgFileName = avgFile->fileName();
-        descriptorFound = true;
+        avgFileName = firstCurve->channel->descriptor()->fileName();
+        avg = App->find(avgFileName);
     }
 
-
-    avgFile->calculateMovingAvg(channels,windowSize);
+    avg->calculateMovingAvg(channels,windowSize);
 
     if (writeToSeparateFile)
-        avgFile->fillRest();
+        avg->fillRest();
 
 //    avgFile->setChanged(true);
 //    avgFile->setDataChanged(true);
 //    avgFile->write();
 //    avgFile->writeRawFile();
 
-    if (descriptorFound) {
-        tab->model->updateFile(avgFile);
+    int idx;
+    if (tab->model->contains(avgFileName, &idx)) {
+        tab->model->updateFile(idx);
     }
     else {
-        addFile(avgFile);
+        addFile(avg);
     }
-    setCurrentAndPlot(avgFile, avgFile->channelsCount()-1);
+    setCurrentAndPlot(avg.get(), avg->channelsCount()-1);
 }
 
 void MainWindow::deleteCurve(int index)
@@ -1955,20 +1945,8 @@ void MainWindow::rescanBase()
     plot->deleteAllCurves();
 
     // next we clear all tab and populate it with folders anew
-
-    //tab->model->clear();
     tab->channelModel->clear();
-
-    tab->filesTable->selectAll();
-
-    // костыль, позволяющий иметь несколько одинаковых файлов в разных вкладках
-    QStringList duplicatedFiles;
-    for (FileDescriptor *f: tab->model->selectedFiles()) {
-        if (duplicated(f)) duplicatedFiles << f->fileName();
-    }
-    if (!duplicatedFiles.isEmpty()) qDebug()<<"duplicated"<<duplicatedFiles;
-    tab->model->clear(duplicatedFiles);
-
+    tab->model->clear();
     tab->filePathLabel->clear();
 
     for (QString folder: tab->folders) {
@@ -1986,54 +1964,38 @@ void MainWindow::rescanBase()
     //QMessageBox::information(this, "База данных", "В базе данных все записи \"живые\"!");
 }
 
-QVariant MainWindow::getSetting(const QString &key, const QVariant &defValue)
-{DD;
-    if (QFile::exists("portable")) {
-        QSettings se("deepseabase.ini",QSettings::IniFormat);
-        return se.value(key, defValue);
-    }
-    else {
-        QSettings se("Alex Novichkov","DeepSea Database");
-        return se.value(key, defValue);
-    }
-}
+//QVariant App->getSetting(const QString &key, const QVariant &defValue)
+//{DD;
+//    if (QFile::exists("portable")) {
+//        QSettings se("deepseabase.ini",QSettings::IniFormat);
+//        return se.value(key, defValue);
+//    }
+//    else {
+//        QSettings se("Alex Novichkov","DeepSea Database");
+//        return se.value(key, defValue);
+//    }
+//}
 
-void MainWindow::setSetting(const QString &key, const QVariant &value)
-{DD;
-    if (QFile::exists("portable")) {
-        QSettings se("deepseabase.ini",QSettings::IniFormat);
-        se.setValue(key, value);
-    }
-    else {
-        QSettings se("Alex Novichkov","DeepSea Database");
-        se.setValue(key, value);
-    }
-}
+//void App->setSetting(const QString &key, const QVariant &value)
+//{DD;
+//    if (QFile::exists("portable")) {
+//        QSettings se("deepseabase.ini",QSettings::IniFormat);
+//        se.setValue(key, value);
+//    }
+//    else {
+//        QSettings se("Alex Novichkov","DeepSea Database");
+//        se.setValue(key, value);
+//    }
+//}
 
 
-void MainWindow::addFile(FileDescriptor *descriptor)
+void MainWindow::addFile(F descriptor)
 {
     if (!tab) return;
     if (!descriptor) return;
 
-    addDescriptors(QList<FileDescriptor *>()<<descriptor);
+    addDescriptors(QList<F>()<<descriptor);
 //    tab->filesTable->setCurrentIndex(tab->model->modelIndexOfFile(descriptor, 1));
-}
-
-FileDescriptor *MainWindow::findDescriptor(const QString &file)
-{DD;
-    if (tab) {
-        if (FileDescriptor *f = tab->model->find(file))
-            return f;
-    }
-    for (int i=0; i<tabWidget->count(); ++i) {
-        Tab *t = qobject_cast<Tab *>(tabWidget->widget(i));
-        if (t==tab) continue;
-
-        if (FileDescriptor *f = t->model->find(file))
-            return f;
-    }
-    return 0;
 }
 
 bool MainWindow::duplicated(FileDescriptor *file) const
@@ -2819,7 +2781,7 @@ void MainWindow::onCurveDeleted(Channel *channel)
     updateActions();
 }
 
-void MainWindow::addDescriptors(const QList<FileDescriptor*> &files)
+void MainWindow::addDescriptors(const QList<F> &files)
 {DD;
     if (!tab) return;
 
@@ -2828,10 +2790,11 @@ void MainWindow::addDescriptors(const QList<FileDescriptor*> &files)
 
 void MainWindow::addFiles(const QStringList &files)
 {DD;
+    if (files.isEmpty()) return;
     if (!tab) return;
     LongOperation op;
 
-    QList<FileDescriptor *> items;
+    QList<F> items;
 
     for (const QString &fileName: files) {
         if (fileName.isEmpty()) continue;
@@ -2841,12 +2804,9 @@ void MainWindow::addFiles(const QStringList &files)
 
         emit loading(fileName);
 
-        FileDescriptor *file = findDescriptor(fileName);
-        if (!file) {
-            file = FormatFactory::createDescriptor(fileName);
-            file->read();
-        }
+        F file = App->addFile(fileName);
         if (file) {
+            file->read();
             items << file;
         }
     }
@@ -2947,12 +2907,12 @@ bool MainWindow::closeRequested()
     }
 
     // сохранение состояния, сохранение файлов
-    setSetting("mainSplitterState",splitter->saveState());
+    App->setSetting("mainSplitterState",splitter->saveState());
 
     if (tab) {
-        setSetting("upperSplitterState",tab->saveState());
+        App->setSetting("upperSplitterState",tab->saveState());
         QByteArray treeHeaderState = tab->filesTable->header()->saveState();
-        setSetting("treeHeaderState", treeHeaderState);
+        App->setSetting("treeHeaderState", treeHeaderState);
     }
 
     QVariantMap map;
@@ -2964,7 +2924,7 @@ bool MainWindow::closeRequested()
         }
     }
 
-    setSetting("folders1", map);
+    App->setSetting("folders1", map);
 
     //насильственно удаляем все графики
     plot->deleteAllCurves(true);
@@ -2972,8 +2932,6 @@ bool MainWindow::closeRequested()
     for (int i= tabWidget->count()-1; i>=0; --i) {
         closeTab(i);
     }
-
-    ColorSelector::instance()->drop();
 
     return true;
 }

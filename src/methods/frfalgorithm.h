@@ -12,13 +12,33 @@ public:
     virtual QString name() const override;
     virtual QString description() const override;
 private:
-    AbstractFunction * channelF; //фильтрует обрабатываемые каналы
+    AbstractFunction * channelF; //отдает данные для обрабатываемого канала
+    AbstractFunction * refChannelF; //отдает данные для опорного канала
+
     AbstractFunction * resamplingF; //изменяет частоту дискретизации
+    AbstractFunction * refResamplingF; //изменяет частоту дискретизации
+
     AbstractFunction * samplingF; //осуществляет нарезку блоков
+    AbstractFunction * refSamplingF; //осуществляет нарезку блоков
+
     AbstractFunction * windowingF; //применяет оконную функцию
+    AbstractFunction * refWindowingF; //применяет оконную функцию
+
     AbstractFunction * averagingF; //применяет усреднение
+    AbstractFunction * refAveragingF; //применяет усреднение
+
+    AbstractFunction * fftF; //вычисляет FFT
+    AbstractFunction * refFftF; //вычисляет FFT
+
+    AbstractFunction *apsF; //вычисляет S_AA или S_BB
+    AbstractFunction *gxyF; //вычисляет S_AB или S_BA
+    AbstractFunction *refGxyF; //вычисляет S_AB или S_BA
+
     AbstractFunction * frfF; //вычисляет FRF
     AbstractFunction * saver; //сохраняет результат
+
+    //channelF    -> resamplingF    -> samplingF    -> windowingF    ->
+    //refChannelF -> refResamplingF -> refSamplingF -> refWindowingF
 
 public:
     virtual QString displayName() const override;

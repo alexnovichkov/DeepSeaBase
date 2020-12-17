@@ -1,10 +1,11 @@
 #include "imagerenderdialog.h"
-#include "mainwindow.h"
+#include "app.h"
 
 #include <QtWidgets>
 #include "fancylineedit.h"
 
-ImageRenderDialog::ImageRenderDialog(QWidget *parent) : QDialog(parent)
+ImageRenderDialog::ImageRenderDialog(bool askForPath, QWidget *parent) : QDialog(parent),
+    askForPath(askForPath)
 {
     setWindowTitle("Установка параметров рисунка");
 
@@ -12,32 +13,34 @@ ImageRenderDialog::ImageRenderDialog(QWidget *parent) : QDialog(parent)
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
 
-    _path = MainWindow::getSetting("lastPicture", "plot.bmp").toString();
 
-    pathEdit = new FancyLineEdit(this);
-    pathEdit->setText(_path);
+    _path = App->getSetting("lastPicture", "plot.bmp").toString();
 
-    QPixmap pixmap(16, 16);
-    pixmap.fill(Qt::transparent);
-    QPainter painter(&pixmap);
-    painter.drawText(0,14,"...");
+    if (askForPath) {
+        pathEdit = new FancyLineEdit(this);
+        pathEdit->setText(_path);
 
-    pathEdit->setButtonPixmap(FancyLineEdit::Right, pixmap);
-    pathEdit->setButtonVisible(FancyLineEdit::Right, true);
-    pathEdit->setButtonToolTip(FancyLineEdit::Right, tr("Выбрать файл"));
-    pathEdit->setAutoHideButton(FancyLineEdit::Right, true);
-    connect(pathEdit, &FancyLineEdit::rightButtonClicked, [=](){
-        QString last = QFileDialog::getSaveFileName(this, QString("Сохранение графика"), _path,
-                                                   "Растровые изображения (*.bmp);;Файлы JPEG (*.jpg);;Файлы pdf (*.pdf);;Файлы svg (*.svg)");
-        if (!last.isEmpty()) {
-            pathEdit->setText(last);
-            _path = last;
-        }
-    });
-    connect(pathEdit, &QLineEdit::textChanged, [=](const QString &text){
-        _path = text;
-    });
+        QPixmap pixmap(16, 16);
+        pixmap.fill(Qt::transparent);
+        QPainter painter(&pixmap);
+        painter.drawText(0,14,"...");
 
+        pathEdit->setButtonPixmap(FancyLineEdit::Right, pixmap);
+        pathEdit->setButtonVisible(FancyLineEdit::Right, true);
+        pathEdit->setButtonToolTip(FancyLineEdit::Right, tr("Выбрать файл"));
+        pathEdit->setAutoHideButton(FancyLineEdit::Right, true);
+        connect(pathEdit, &FancyLineEdit::rightButtonClicked, [=](){
+            QString last = QFileDialog::getSaveFileName(this, QString("Сохранение графика"), _path,
+                                                        "Растровые изображения (*.bmp);;Файлы JPEG (*.jpg);;Файлы pdf (*.pdf);;Файлы svg (*.svg)");
+            if (!last.isEmpty()) {
+                pathEdit->setText(last);
+                _path = last;
+            }
+        });
+        connect(pathEdit, &QLineEdit::textChanged, [=](const QString &text){
+            _path = text;
+        });
+    }
 
     widthEdit = new QLineEdit(QString::number(_width), this);
     connect(widthEdit, &QLineEdit::textChanged, [=](const QString &text){
@@ -58,7 +61,8 @@ ImageRenderDialog::ImageRenderDialog(QWidget *parent) : QDialog(parent)
     resolutionCombo->setCurrentIndex(2);
 
     auto *mainLayout = new QFormLayout;
-    mainLayout->addRow(new QLabel("Куда сохраняем", this), pathEdit);
+    if (askForPath)
+        mainLayout->addRow(new QLabel("Куда сохраняем", this), pathEdit);
     mainLayout->addRow(new QLabel("Ширина рисунка, мм", this), widthEdit);
     mainLayout->addRow(new QLabel("Высота рисунка, мм", this), heightEdit);
     mainLayout->addRow(new QLabel("Разрешение", this), resolutionCombo);

@@ -1,22 +1,23 @@
 #include "mainwindow.h"
-#include <QApplication>
+#include "app.h"
 
 #include <QtDebug>
 #include <QtCore>
 #include <QSplashScreen>
 
-#include "converters/matlabconvertor.h"
+//#include "converters/matlabconvertor.h"
 
-#include "fileformats/tdmsfile.h"
-#include "fileformats/ufffile.h"
-#include "fileformats/matfile.h"
+//#include "fileformats/tdmsfile.h"
+//#include "fileformats/ufffile.h"
+//#include "fileformats/matfile.h"
 
 int main(int argc, char *argv[])
 {
     qputenv("QT_AUTO_SCREEN_SCALE_FACTOR","1");
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
-    QApplication a(argc, argv);
+
+    Application a(argc, argv);
 
     QPixmap pixmap(":/icons/splash.png");
     QSplashScreen splash(pixmap);

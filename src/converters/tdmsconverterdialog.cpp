@@ -1,7 +1,7 @@
 #include "tdmsconverterdialog.h"
 
 #include <QtWidgets>
-#include "mainwindow.h"
+#include "app.h"
 #include "checkableheaderview.h"
 #include "logging.h"
 #include "tdmsconverter.h"
@@ -120,11 +120,11 @@ TDMSConverterDialog::~TDMSConverterDialog()
 
 void TDMSConverterDialog::chooseFiles()
 {
-    folder = MainWindow::getSetting("tdmsFolder").toString();
+    folder = App->getSetting("tdmsFolder").toString();
     folder = QFileDialog::getExistingDirectory(this, "Выберите папку с файлами *.tdm/*.tdms", folder);
 
     edit->setText(folder);
-    MainWindow::setSetting("tdmsFolder", folder);
+    App->setSetting("tdmsFolder", folder);
 
     QDir folderDir(folder);
     QFileInfoList tdmsFiles = folderDir.entryInfoList(QStringList()<<"*.tdms", QDir::Files | QDir::Readable);

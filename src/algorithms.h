@@ -2,7 +2,7 @@
 #define ALGORITHMS_H
 
 #include <QtCore>
-
+#include <vector>
 #include <complex>
 typedef std::complex<double> cx_double;
 
@@ -12,28 +12,37 @@ int abscissaType(const QString &xName);
 QString abscissaTypeDescription(int type);
 
 template <typename T, typename D>
-QVector<D> readChunk(QDataStream &readStream, int blockSize, int *actuallyRead)
+QVector<D> readChunk(QDataStream &readStream, quint64 blockSize, qint64 *actuallyRead)
 {
-    QVector<D> result(blockSize);
-    T v;
+    qDebug()<<"trying to allocate"<<blockSize<<"elements";
+    QVector<D> result;
+    try {
+        result.resize(blockSize);
+        qDebug()<<"allocated";
 
-    if (actuallyRead) *actuallyRead = 0;
+        T v;
 
-    for (int i=0; i<blockSize; ++i) {
-        if (readStream.atEnd()) {
-            break;
+        if (actuallyRead) *actuallyRead = 0;
+
+        for (quint64 i=0; i<blockSize; ++i) {
+            if (readStream.atEnd()) {
+                break;
+            }
+
+            readStream >> v;
+            result[i] = D(v);
+            if (actuallyRead) (*actuallyRead)++;
         }
-
-        readStream >> v;
-        result[i] = D(v);
-        if (actuallyRead) (*actuallyRead)++;
+    } catch (const std::bad_alloc &bad) {
+        qDebug()<<"could not allocate"<<blockSize<<"elements";
+        if (actuallyRead) *actuallyRead = 0;
     }
 
     return result;
 }
 
 template <typename D>
-QVector<D> getChunkOfData(QDataStream &readStream, int chunkSize, uint IndType, int *actuallyRead=0)
+QVector<D> getChunkOfData(QDataStream &readStream, quint64 chunkSize, uint IndType, qint64 *actuallyRead=0)
 {
     QVector<D> result;
 

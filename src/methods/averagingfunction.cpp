@@ -5,28 +5,28 @@
 
 AveragingFunction::AveragingFunction(QObject *parent) :
     AbstractFunction(parent)
-{
+{DD;
 
 }
 
 
 QString AveragingFunction::name() const
-{
+{DD;
     return "Averaging";
 }
 
 QString AveragingFunction::description() const
-{
+{DD;
     return "Усреднение";
 }
 
 QStringList AveragingFunction::properties() const
-{
+{DD;
     return QStringList()<<"type"<<"maximum";
 }
 
 QString AveragingFunction::propertyDescription(const QString &property) const
-{
+{DD;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
                                    "  \"type\"        : \"enum\"   ,"
@@ -48,8 +48,8 @@ QString AveragingFunction::propertyDescription(const QString &property) const
     return "";
 }
 
-QVariant AveragingFunction::getProperty(const QString &property) const
-{
+QVariant AveragingFunction::m_getProperty(const QString &property) const
+{DD;
     if (property.startsWith("?/")) {
         if (property == "?/averaging")
             return Averaging::averagingDescription(averaging.getAveragingType());
@@ -74,17 +74,22 @@ QVariant AveragingFunction::getProperty(const QString &property) const
     return QVariant();
 }
 
-void AveragingFunction::setProperty(const QString &property, const QVariant &val)
-{
+void AveragingFunction::m_setProperty(const QString &property, const QVariant &val)
+{DD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
+    int valInt = val.toInt();
 
-    if (p == "type") averaging.setAveragingType(val.toInt());
-    else if (p == "maximum") averaging.setMaximumAverages(val.toInt());
+    if (p == "type") {
+        averaging.setAveragingType(valInt);
+    }
+    else if (p == "maximum") {
+        averaging.setMaximumAverages(valInt);
+    }
 }
 
 bool AveragingFunction::propertyShowsFor(const QString &property) const
-{
+{DD;
     if (!property.startsWith(name()+"/")) return false;
     QString p = property.section("/",1);
 
@@ -95,27 +100,29 @@ bool AveragingFunction::propertyShowsFor(const QString &property) const
 
 
 QString AveragingFunction::displayName() const
-{
+{DD;
     return "Усреднение";
 }
 
 QVector<double> AveragingFunction::getData(const QString &id)
-{
+{DD;
     if (id == "input") return averaging.get();
 
     return QVector<double>();
 }
 
 bool AveragingFunction::compute(FileDescriptor *file)
-{
+{DD;
     if (!m_input) return false;
 
     while (1) {
         m_input->compute(file);
 
         QVector<double> data = m_input->getData("input");
-        if (!data.isEmpty())
+
+        if (!data.isEmpty()) {
             averaging.average(data);
+        }
         else break;
 
         if (averaging.averagingDone()) return true;
@@ -124,6 +131,6 @@ bool AveragingFunction::compute(FileDescriptor *file)
 }
 
 void AveragingFunction::reset()
-{
+{DD;
     averaging.reset();
 }

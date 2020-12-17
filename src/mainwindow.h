@@ -49,7 +49,7 @@ class FilesTable;
 
 #include <QSplitter>
 
-
+#include "app.h"
 
 
 
@@ -90,8 +90,8 @@ public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    static QVariant getSetting(const QString &key, const QVariant &defValue=QVariant());
-    static void setSetting(const QString &key, const QVariant &value);
+//    static QVariant getSetting(const QString &key, const QVariant &defValue=QVariant());
+//    static void setSetting(const QString &key, const QVariant &value);
 private slots:
     void addFolder();
     void addFolderWithSubfolders();
@@ -204,7 +204,7 @@ private slots:
 private:
     void moveChannels(bool up);
     void addFiles(const QStringList &files);
-    void addDescriptors(const QList<FileDescriptor*> &files);
+    void addDescriptors(const QList<F> &files);
 
     bool deleteChannels(FileDescriptor *file, const QVector<int> &channelsToDelete);
     bool copyChannels(FileDescriptor *descriptor, const QVector<int> &channelsToCopy);
@@ -216,10 +216,10 @@ private:
 
     void createTab(const QString &name, const QStringList &folders);
 
-    FileDescriptor *findDescriptor(const QString &file);
+//    FileDescriptor *findDescriptor(const QString &file);
     bool duplicated(FileDescriptor *file) const;
 
-    void addFile(FileDescriptor *descriptor);
+    void addFile(F descriptor);
     void setCurrentAndPlot(FileDescriptor *d, int channelIndex);
 
 
@@ -310,6 +310,7 @@ private:
 
 
     // QWidget interface
+
 protected:
     void closeEvent(QCloseEvent *event) override;
 signals:

@@ -1,6 +1,6 @@
 #include "trackingcursor.h"
 #include "logging.h"
-#include "mainwindow.h"
+#include "app.h"
 #include <QPen>
 #include <qwt_text.h>
 #include <qwt_scale_map.h>
@@ -20,7 +20,7 @@ TrackingCursor::TrackingCursor(const QColor &col, Type type): type(type)
     setLineStyle(lineStyle);
     setLinePen(col, 1, /*Qt::DashDotLine*/Qt::SolidLine);
     setLabelAlignment(Qt::AlignBottom | Qt::AlignRight);
-    showYValues = MainWindow::getSetting("cursorShowYValues", false).toBool();
+    showYValues = App->getSetting("cursorShowYValues", false).toBool();
 
     xLabel.setBackgroundBrush(Qt::white);
     xLabel.setBorderRadius(1.0);

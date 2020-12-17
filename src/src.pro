@@ -37,13 +37,16 @@ qtHaveModule(winextras) {
 }
 
 SOURCES += main.cpp\
+    app.cpp \
     channelsmimedata.cpp \
     channelstable.cpp \
     converters/tdmsconverter.cpp \
     filestable.cpp \
     mainwindow.cpp \
+    methods/apsfunction.cpp \
     methods/frfalgorithm.cpp \
     methods/frffunction.cpp \
+    methods/gxyfunction.cpp \
     methods/windowingalgorithm.cpp \
     plot/imagerenderdialog.cpp \
     plot/trackingcursor.cpp \
@@ -118,13 +121,16 @@ SOURCES += main.cpp\
     fancylineedit.cpp
 
 HEADERS  += mainwindow.h \
+    app.h \
     channelsmimedata.h \
     channelstable.h \
     converters/tdmsconverter.h \
     enums.h \
     filestable.h \
+    methods/apsfunction.h \
     methods/frfalgorithm.h \
     methods/frffunction.h \
+    methods/gxyfunction.h \
     methods/windowingalgorithm.h \
     plot/imagerenderdialog.h \
     plot/trackingcursor.h \

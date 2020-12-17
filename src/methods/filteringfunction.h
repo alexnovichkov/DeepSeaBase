@@ -32,8 +32,8 @@ public:
     virtual QString description() const override;
     virtual QStringList properties() const override;
     virtual QString propertyDescription(const QString &property) const override;
-    virtual QVariant getProperty(const QString &property) const override;
-    virtual void setProperty(const QString &property, const QVariant &val) override;
+    virtual QVariant m_getProperty(const QString &property) const override;
+    virtual void m_setProperty(const QString &property, const QVariant &val) override;
     virtual bool propertyShowsFor(const QString &property) const override;
 private:
     Filtering filtering;

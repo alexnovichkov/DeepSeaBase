@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QAbstractTableModel>
+#include "app.h"
 #include "fileformats/filedescriptor.h"
 #include <QFont>
 
@@ -28,12 +29,14 @@ public:
     ~Model();
 
     bool contains(const QString &fileName, int *index = 0) const;
-    bool contains(FileDescriptor *file, int *index = 0) const;
-    FileDescriptor *file(int i) const;
-    FileDescriptor *find(const QString &fileName) const;
+    bool contains(const F &file, int *index = 0) const;
+    bool contains(FileDescriptor* file, int *index = 0) const;
+    const F &file(int i) const;
+    F &file(int i);
+//    FileDescriptor *find(const QString &fileName) const;
 
-    void addFiles(const QList<FileDescriptor*> &files);
-    void deleteFiles(const QStringList &filesToSkip);
+    void addFiles(const QList<F> &files);
+    void deleteFiles(); //удаление выделенных файлов
     int size() const {return descriptors.size();}
 
     QList<int> selected() const {return indexes;}
@@ -46,7 +49,9 @@ public:
     void setChannelDescription(int channel, const QString &description);
     void setChannelName(int channel, const QString &name);
     void updateFile(FileDescriptor *file, int column = -1);
-    void clear(const QStringList &filesToSkip);
+    void updateFile(int idx, int column = -1);
+//    void clear(const QStringList &filesToSkip);
+    void clear(); //удаление всех файлов
 
     void invalidateCurve(Channel* channel);
     void save();
@@ -73,8 +78,8 @@ signals:
     void modelChanged();
     void needAddFiles(const QStringList &files);
 private:
-    QModelIndex modelIndexOfFile(FileDescriptor *f, int column) const;
-    QList<FileDescriptor *> descriptors;
+    QModelIndex modelIndexOfFile(FileDescriptor* f, int column) const;
+    QList<F> descriptors;
     QFont uFont;
     QFont bFont;
 

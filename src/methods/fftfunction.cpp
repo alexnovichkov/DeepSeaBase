@@ -2,30 +2,31 @@
 
 #include "fileformats/filedescriptor.h"
 #include "fft.h"
+#include "logging.h"
 
 FftFunction::FftFunction(QObject *parent) :
     AbstractFunction(parent)
-{
+{DD;
 
 }
 
 QString FftFunction::name() const
-{
+{DD;
     return "Spectrum";
 }
 
 QString FftFunction::description() const
-{
+{DD;
     return "Спектр";
 }
 
 QStringList FftFunction::properties() const
-{
+{DD;
     return QStringList()<<"type"<<"output";
 }
 
 QString FftFunction::propertyDescription(const QString &property) const
-{
+{DD;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
                                    "  \"type\"        : \"enum\"   ,"
@@ -45,8 +46,8 @@ QString FftFunction::propertyDescription(const QString &property) const
     return QString();
 }
 
-QVariant FftFunction::getProperty(const QString &property) const
-{
+QVariant FftFunction::m_getProperty(const QString &property) const
+{DD;
     if (property.startsWith("?/")) {
         if (property == "?/processData") {
             int type = map.value("type");
@@ -157,8 +158,8 @@ QVariant FftFunction::getProperty(const QString &property) const
     return map.value(p);
 }
 
-void FftFunction::setProperty(const QString &property, const QVariant &val)
-{
+void FftFunction::m_setProperty(const QString &property, const QVariant &val)
+{DD;
     if (!property.startsWith(name()+"/")) return;
 
     QString p = property.section("/",1);
@@ -166,12 +167,12 @@ void FftFunction::setProperty(const QString &property, const QVariant &val)
 }
 
 QString FftFunction::displayName() const
-{
+{DD;
     return "Спектр";
 }
 
 bool FftFunction::propertyShowsFor(const QString &property) const
-{
+{DD;
     if (!property.startsWith(name()+"/")) return false;
 
     QString p = property.section("/",1);
@@ -181,16 +182,15 @@ bool FftFunction::propertyShowsFor(const QString &property) const
 }
 
 QVector<double> FftFunction::getData(const QString &id)
-{
-    if (id == "input")
-        return output;
+{DD;
+    if (id == "input") return output;
 
     return QVector<double>();
 }
 
 bool FftFunction::compute(FileDescriptor *file)
-{
-    output.clear();
+{DD;
+    reset();
 
     if (!m_input) return false;
 
@@ -265,10 +265,11 @@ bool FftFunction::compute(FileDescriptor *file)
         default:
             break;
     }
+
     return true;
 }
 
 void FftFunction::reset()
-{
+{DD;
     output.clear();
 }

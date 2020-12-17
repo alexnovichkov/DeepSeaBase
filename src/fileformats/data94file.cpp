@@ -5,6 +5,20 @@
 #include "logging.h"
 #include "averaging.h"
 
+QDebug operator<<(QDebug dbg, const AxisBlock &b)
+  {
+      QDebugStateSaver saver(dbg);
+      dbg << "(uniform=" << b.uniform << ", count=" << b.count;
+      if (b.uniform==1) {
+          dbg <<", begin="<<b.begin<<", step="<<b.step;
+      }
+      else
+          dbg << b.values;
+      dbg << ")";
+
+      return dbg;
+  }
+
 Data94File::Data94File(const QString &fileName) : FileDescriptor(fileName)
 {
 
@@ -756,6 +770,14 @@ void Data94File::calculateMean(const QList<Channel*> &toMean)
     ch->data()->setThreshold(firstChannel->data()->threshold());
     ch->data()->setYValuesUnits(units);
 
+    if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
+        ch->data()->setXValues(ch->xAxisBlock.begin, ch->xAxisBlock.step, ch->xAxisBlock.count);
+    }
+    else {
+        ch->data()->setXValues(ch->xAxisBlock.values);
+    }
+    ch->data()->setZValues(ch->zAxisBlock.begin, ch->zAxisBlock.step, ch->zAxisBlock.count);
+
     if (format == DataHolder::YValuesComplex) {
         auto data = averaging.getComplex().mid(0, numInd);
         data.resize(ch->xAxisBlock.count);
@@ -771,14 +793,6 @@ void Data94File::calculateMean(const QList<Channel*> &toMean)
         else
             ch->data()->setYValues(data, DataHolder::YValuesFormat(format));
     }
-
-    if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
-        ch->data()->setXValues(ch->xAxisBlock.begin, ch->xAxisBlock.step, ch->xAxisBlock.count);
-    }
-    else {
-        ch->data()->setXValues(ch->xAxisBlock.values);
-    }
-    ch->data()->setZValues(ch->zAxisBlock.begin, ch->zAxisBlock.step, ch->zAxisBlock.count);
 
 
     ch->setYName(firstChannel->yName());
@@ -1311,6 +1325,10 @@ Data94Channel::Data94Channel(Channel *other, Data94File *parent)
     zAxisBlock.step = other->data()->zStep();
     if (zAxisBlock.uniform == 0) // not uniform
         zAxisBlock.values = other->data()->zValues();
+    if (zAxisBlock.values.isEmpty() && !zAxisBlock.uniform) {
+        for (uint i=0; i<zAxisBlock.count; ++i) zAxisBlock.values << i;
+    }
+//    qDebug()<<zAxisBlock;
 
     //по умолчанию точность float
     sampleWidth = 4;
@@ -1360,6 +1378,7 @@ void Data94Channel::read(QDataStream &r)
 {
     if (r.status() != QDataStream::Ok) return;
     position = r.device()->pos();
+//    qDebug()<<"Reading at"<<position;
     QString label = QString::fromLocal8Bit(r.device()->read(8));
 
     if (label != "d94chan ") {
@@ -1384,9 +1403,11 @@ void Data94Channel::read(QDataStream &r)
 
     //reading xAxisBlock
     xAxisBlock.read(r);
+//    qDebug()<<"xAxisBlock"<<xAxisBlock;
 
     //reading zAxisBlock
     zAxisBlock.read(r);
+//    qDebug()<<"zAxisBlock"<<zAxisBlock;
 
     quint32 valueFormat;
     r >> valueFormat;
@@ -1394,6 +1415,7 @@ void Data94Channel::read(QDataStream &r)
     isComplex = valueFormat == 2;
 
     r >> sampleWidth; // 4 или 8
+//    qDebug()<<"valueFormat"<<valueFormat<<"samplewidth"<<sampleWidth;
 
     dataPosition = r.device()->pos();
 
@@ -1428,14 +1450,21 @@ void Data94Channel::read(QDataStream &r)
     else
         _data->setZValues(zAxisBlock.values);
 
-    r.device()->skip(zAxisBlock.count * xAxisBlock.count * valueFormat * sampleWidth);
-    // соответствия:    blockCount        sampleCount         factor        4 или 8
+    const qint64 dataToSkip = zAxisBlock.count * xAxisBlock.count * valueFormat * sampleWidth;
+    // соответствия:             blockCount        sampleCount         factor        4 или 8
+    r.device()->skip(dataToSkip);
+
 
     size = r.device()->pos() - position;
+//    qDebug()<<"actual size"<<size;
 
-    if (size != 8 + 4 + descriptionSize + xAxisBlock.size() + zAxisBlock.size() +
-               4 + 4 + zAxisBlock.count * xAxisBlock.count * valueFormat * sampleWidth)
-        qDebug()<<"Strange channel sizeBytes";
+    const qint64 requiredSize = 8 + 4 + descriptionSize + xAxisBlock.size() + zAxisBlock.size() +
+                          4 + 4 + dataToSkip;
+//    qDebug()<<"required size"<<requiredSize;
+//    qDebug()<<"pos"<<hex<<r.device()->pos();
+
+    if (size != requiredSize)
+        qDebug()<<"Strange channel sizeBytes: should be"<<requiredSize<<"got"<<size;
 }
 
 void Data94Channel::setXStep(double xStep)
@@ -1654,7 +1683,7 @@ void AxisBlock::read(QDataStream &r)
         r >> step;
     }
     else {
-        int actuallyRead = 0;
+        qint64 actuallyRead = 0;
         values = getChunkOfData<double>(r, count, 0xC0000004, &actuallyRead);
         if (uint(actuallyRead) != count) values.resize(count);
     }

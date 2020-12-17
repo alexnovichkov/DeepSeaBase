@@ -11,6 +11,8 @@
  * Отдает:
  * ?/windowDescription -
  * ?/windowType
+ * ?/referenceWindowDescription
+ * ?/referenceWindowType
  *
  * Спрашивает:
  *
@@ -27,13 +29,14 @@ public:
     virtual QString description() const override;
     virtual QStringList properties() const override;
     virtual QString propertyDescription(const QString &property) const override;
-    virtual QVariant getProperty(const QString &property) const override;
-    virtual void setProperty(const QString &property, const QVariant &val) override;
+    virtual QVariant m_getProperty(const QString &property) const override;
+    virtual void m_setProperty(const QString &property, const QVariant &val) override;
     virtual bool propertyShowsFor(const QString &property) const override;
 
 private:
     Windowing windowing;
     QVector<double> output;
+    friend class RefWindowingFunction;
 
     // AbstractFunction interface
 public:
@@ -41,6 +44,14 @@ public:
     virtual QVector<double> getData(const QString &id) override;
     virtual bool compute(FileDescriptor *file) override;
     virtual void reset() override;
+};
+
+class RefWindowingFunction : public WindowingFunction
+{
+
+public:
+    RefWindowingFunction(QObject *parent = nullptr);
+    virtual QString displayName() const override;
 };
 
 #endif // WINDOWINGFUNCTION_H

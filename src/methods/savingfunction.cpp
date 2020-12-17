@@ -82,7 +82,7 @@ bool SavingFunction::propertyShowsFor(const QString &property) const
     return true;
 }
 
-QVariant SavingFunction::getProperty(const QString &property) const
+QVariant SavingFunction::m_getProperty(const QString &property) const
 {DD;
     if (property.startsWith("?/")) {
         // do not know anything about these broadcast properties, propagating
@@ -99,7 +99,7 @@ QVariant SavingFunction::getProperty(const QString &property) const
     return QVariant();
 }
 
-void SavingFunction::setProperty(const QString &property, const QVariant &val)
+void SavingFunction::m_setProperty(const QString &property, const QVariant &val)
 {DD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
@@ -140,13 +140,13 @@ bool SavingFunction::compute(FileDescriptor *file)
 
     // создаем канал
     QVector<double> data;
-    int i=1;
+//    int i=1;
     while (1) {
         m_input->compute(file);
         QVector<double> data1 = m_input->getData("input");
         if (data1.isEmpty()) break;
         data.append(data1);
-        qDebug()<<i++;
+//        qDebug()<<i++;
     }
 
 
@@ -552,7 +552,7 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize, in
 }
 
 Channel *SavingFunction::createD94Channel(FileDescriptor *file, int dataSize, int blocksCount)
-{
+{DD;
     Data94Channel *ch = 0;
     if (Data94File *newD94 = dynamic_cast<Data94File *>(m_file)) {
 //        Data94File *d94File = dynamic_cast<Data94File *>(file);

@@ -3,14 +3,15 @@
 
 #include <QVector>
 #include <QColor>
+#include <QVariantList>
 
 #define COLORS_COUNT 32
 
 class ColorSelector
 {
 public:
-    static ColorSelector* instance();
-    void drop();
+    ColorSelector(const QVariantList &list);
+
     int colorsCount() const {return colors.size();}
     void addColor(const QColor &color);
 
@@ -19,20 +20,15 @@ public:
     void removeColor(int index);
 
     QColor getColor();
+    QColor color(int index) const;
 
-    QVector<QColor> getColors() const {return colors;}
+    QVariantList getColors() const;
 
     void resetState();
 
     void freeColor(const QColor &color);
 
 private:
-    ColorSelector();
-    ColorSelector(const ColorSelector &);
-    ColorSelector& operator=(const ColorSelector &);
-
-    static ColorSelector* m_Instance;
-
     QVector<QColor> colors;
 };
 

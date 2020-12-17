@@ -1,7 +1,7 @@
 #include "trackingpanel.h"
 
 #include <QtWidgets>
-#include <mainwindow.h>
+#include <app.h>
 
 #include <qwt_text.h>
 #include <qwt_plot_zoneitem.h>
@@ -128,7 +128,7 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
             c->updateLabel();
         }
     });
-    yValuesCheckBox->setChecked(MainWindow::getSetting("cursorShowYValues", false).toBool());
+    yValuesCheckBox->setChecked(App->getSetting("cursorShowYValues", false).toBool());
 
     harmonics = new QCheckBox("Включить показ гармоник", this);
     connect(harmonics, &QCheckBox::stateChanged, [=](/*int state*/){
@@ -174,7 +174,7 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
 
 TrackingPanel::~TrackingPanel()
 {DD;
-    MainWindow::setSetting("cursorShowYValues", yValuesCheckBox->checkState()==Qt::Checked);
+    App->setSetting("cursorShowYValues", yValuesCheckBox->checkState()==Qt::Checked);
     for (auto *cursor: cursors) {
         cursor->detach();
         delete cursor;

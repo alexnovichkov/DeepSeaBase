@@ -15,23 +15,19 @@ Model::Model(QObject *parent) : QAbstractTableModel(parent)
     bFont.setBold(true);
 }
 
-FileDescriptor *Model::file(int i) const
+const F & Model::file(int i) const
 {DD;
+    if (i<0 || i>=descriptors.size()) return F();
+    return descriptors[i];
+}
+
+F &Model::file(int i)
+{
     if (i<0 || i>=descriptors.size()) return 0;
     return descriptors[i];
 }
 
-FileDescriptor *Model::find(const QString &fileName) const
-{DD;
-    for (int i=0; i<descriptors.size(); ++i) {
-        if (descriptors[i] && descriptors[i]->fileName() == fileName) {
-            return descriptors[i];
-        }
-    }
-    return 0;
-}
-
-void Model::addFiles(const QList<FileDescriptor *> &files)
+void Model::addFiles(const QList<F> &files)
 {DD;
     if (files.isEmpty()) return;
     beginInsertRows(QModelIndex(), descriptors.size(), descriptors.size()+files.size()-1);
@@ -40,15 +36,13 @@ void Model::addFiles(const QList<FileDescriptor *> &files)
     emit modelChanged();
 }
 
-void Model::deleteFiles(const QStringList &filesToSkip)
+void Model::deleteFiles()
 {DD;
     beginResetModel();
 
     for (int i = indexes.size()-1; i>=0; --i) {
         int toDelete = indexes.at(i);
         if (toDelete >= 0 && toDelete < descriptors.size()) {
-            if (!filesToSkip.contains(descriptors[toDelete]->fileName()))
-                delete descriptors[toDelete];
             descriptors.removeAt(toDelete);
         }
     }
@@ -59,7 +53,7 @@ void Model::deleteFiles(const QStringList &filesToSkip)
 }
 
 void Model::setSelected(const QList<int> &indexes)
-{
+{DD;
     this->indexes = indexes;
     emit modelChanged();
 }
@@ -69,7 +63,7 @@ QList<FileDescriptor *> Model::selectedFiles(Descriptor::DataType type) const
     QList<FileDescriptor *> files;
     for (int i: indexes) {
         if (descriptors.at(i)->type() == type)
-            files << descriptors.at(i);
+            files << descriptors.at(i).get();
     }
     return files;
 }
@@ -78,25 +72,25 @@ QList<FileDescriptor *> Model::selectedFiles() const
 {DD;
     QList<FileDescriptor *> files;
     for (int i: indexes) {
-        files << descriptors.at(i);
+        files << descriptors.at(i).get();
     }
     return files;
 }
 
 QList<FileDescriptor *> Model::selectedFiles(const QVector<Descriptor::DataType> &types) const
-{
+{DD;
     QList<FileDescriptor *> files;
     for (int i: indexes) {
         if (types.contains(descriptors.at(i)->type()))
-            files << descriptors.at(i);
+            files << descriptors.at(i).get();
     }
     return files;
 }
 
 void Model::setDataDescriptor(FileDescriptor *file, const DescriptionList &data)
 {DD;
-    int row = descriptors.indexOf(file);
-    if (row<0) return;
+    int row;
+    if (!contains(file, &row)) return;
 
     file->setDataDescriptor(data);
     auto i = index(row, MODEL_COLUMN_DESCRIPTION);
@@ -107,7 +101,7 @@ void Model::setDataDescriptor(FileDescriptor *file, const DescriptionList &data)
 
 void Model::setChannelDescription(int channel, const QString &description)
 {DD;
-    foreach (int i, indexes) {
+    for (int i: indexes) {
         if (Channel *ch = descriptors[i]->channel(channel)) {
             if (ch->description() != description) {
                 ch->setDescription(description);
@@ -122,7 +116,7 @@ void Model::setChannelDescription(int channel, const QString &description)
 
 void Model::setChannelName(int channel, const QString &name)
 {DD;
-    foreach (int i, indexes) {
+    for (int i: indexes) {
         if (Channel *ch = descriptors[i]->channel(channel)) {
             if (ch->name() != name) {
                 ch->setName(name);
@@ -138,33 +132,27 @@ void Model::setChannelName(int channel, const QString &name)
 void Model::updateFile(FileDescriptor *file, int column)
 {DD;
     int idx;
-    if (contains(file, &idx)) {
-        if (column == -1) {
-            QModelIndex id1 = index(idx, 0);
-            QModelIndex id2 = index(idx, MODEL_COLUMNS_COUNT-1);
-            if (id1.isValid() && id2.isValid()) emit dataChanged(id1,id2);
-        }
-        else {
-            QModelIndex id = index(idx, column);
-            if (id.isValid()) emit dataChanged(id, id);
-        }
+    if (contains(file, &idx))
+        updateFile(idx, column);
+}
+
+void Model::updateFile(int idx, int column)
+{DD;
+    if (column == -1) {
+        QModelIndex id1 = index(idx, 0);
+        QModelIndex id2 = index(idx, MODEL_COLUMNS_COUNT-1);
+        if (id1.isValid() && id2.isValid()) emit dataChanged(id1,id2);
+    }
+    else {
+        QModelIndex id = index(idx, column);
+        if (id.isValid()) emit dataChanged(id, id);
     }
 }
 
-void Model::clear(const QStringList &filesToSkip)
+void Model::clear()
 {DD;
     beginResetModel();
-    //qDeleteAll(descriptors);
-
-    for (int i = indexes.size()-1; i>=0; --i) {
-        int toDelete = indexes.at(i);
-        if (toDelete >= 0 && toDelete < descriptors.size()) {
-            if (!filesToSkip.contains(descriptors[toDelete]->fileName()))
-                delete descriptors[toDelete];
-            descriptors.removeAt(toDelete);
-        }
-    }
-
+    //for (const auto &f: descriptors) qDebug()<<f.use_count()<<f->fileName();
     descriptors.clear();
     indexes.clear();
     endResetModel();
@@ -183,7 +171,7 @@ void Model::invalidateCurve(Channel* channel)
 void Model::save()
 {DD;
     for (int i=0; i<descriptors.size(); ++i) {
-        FileDescriptor *f = descriptors[i];
+        auto f = descriptors[i];
         f->write();
         f->writeRawFile();
         emit dataChanged(index(i,0), index(i,MODEL_COLUMNS_COUNT-1));
@@ -191,9 +179,8 @@ void Model::save()
 }
 
 void Model::discardChanges()
-{
-    for (int i=0; i<descriptors.size(); ++i) {
-        FileDescriptor *f = descriptors[i];
+{DD;
+    for (auto f: descriptors) {
         f->setChanged(false);
         f->setDataChanged(false);
         for (int j=0; j<f->channelsCount(); ++j) {
@@ -204,8 +191,8 @@ void Model::discardChanges()
 }
 
 bool Model::changed() const
-{
-    foreach (FileDescriptor *d, descriptors) {
+{DD;
+    for (auto & d: descriptors) {
         if (d->changed() || d->dataChanged()) return true;
     }
     return false;
@@ -222,7 +209,7 @@ QModelIndex Model::modelIndexOfFile(FileDescriptor *f, int column) const
 
 Model::~Model()
 {DD;
-    clear(QStringList());
+    clear();
 }
 
 bool Model::contains(const QString &fileName, int *index) const
@@ -237,12 +224,21 @@ bool Model::contains(const QString &fileName, int *index) const
     return false;
 }
 
-bool Model::contains(FileDescriptor *file, int *index) const
+bool Model::contains(const F& file, int *index) const
 {DD;
     int ind = descriptors.indexOf(file);
-    if (ind >= 0) {
-        if (index) *index = ind;
-        return true;
+    if (index) *index = ind;
+
+    return ind != -1;
+}
+
+bool Model::contains(FileDescriptor *file, int *index) const
+{DD;
+    for (int i=0; i<descriptors.size(); ++i) {
+        if (descriptors[i].get() == file) {
+            if (index) *index = i;
+            return true;
+        }
     }
     if (index) *index = -1;
     return false;
@@ -270,7 +266,7 @@ QVariant Model::data(const QModelIndex &index, int role) const
 
     if (row<0 || row>=descriptors.size()) return QVariant();
 
-    FileDescriptor *d = descriptors[row];
+    const F &d = descriptors[row];
     if (!d) return QVariant();
 
     if (role == Qt::DisplayRole || role == Qt::EditRole) {
@@ -320,7 +316,7 @@ bool Model::setData(const QModelIndex &index, const QVariant &value, int role)
 
     if (row<0 || row>=descriptors.size()) return false;
 
-    FileDescriptor *d = descriptors[row];
+    const F &d = descriptors[row];
     if (!d->fileExists()) {
 //        QMessageBox::warning(this,"Не могу изменить данные","Такого файла уже нет");
         return false;

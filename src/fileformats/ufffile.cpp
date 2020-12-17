@@ -2,7 +2,7 @@
 
 #include <QMessageBox>
 #include "logging.h"
-#include "mainwindow.h"
+#include "app.h"
 #include "algorithms.h"
 #include "dataholder.h"
 #include "averaging.h"
@@ -224,7 +224,7 @@ void UffFileDescriptor::read()
 {DD;
     //проверяем формат файлов uff:
     //если false - старый формат, удаляем файл и создаем заново
-    int newUffFormat = MainWindow::getSetting("newUffFormat", 0).toInt();
+    int newUffFormat = App->getSetting("newUffFormat", 0).toInt();
 
     if (QFile::exists(fileName()+"~") && newUffFormat == 1) {
         // в папке с записью есть двоичный файл с описанием записи
@@ -280,7 +280,7 @@ void UffFileDescriptor::read()
                 stream << f->zValues;
             }
         }
-        MainWindow::setSetting("newUffFormat", 1);
+        App->setSetting("newUffFormat", 1);
     }
 }
 
@@ -570,6 +570,15 @@ void UffFileDescriptor::calculateMean(const QList<Channel*> &toMean)
     }
     ch->setDescription("Среднее каналов "+l.join(","));
 
+    if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
+        ch->type58[27].value = 1;
+        ch->data()->setXValues(firstChannel->data()->xMin(), firstChannel->data()->xStep(), numInd);
+    }
+    else {
+        ch->type58[27].value = 0;
+        ch->data()->setXValues(firstChannel->data()->xValues().mid(0, numInd));
+    }
+
     ch->data()->setThreshold(firstChannel->data()->threshold());
     ch->data()->setYValuesUnits(units);
     if (format == DataHolder::YValuesComplex)
@@ -581,14 +590,7 @@ void UffFileDescriptor::calculateMean(const QList<Channel*> &toMean)
     else
         ch->data()->setYValues(averaging.get().mid(0, numInd), DataHolder::YValuesFormat(format));
 
-    if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
-        ch->type58[27].value = 1;
-        ch->data()->setXValues(firstChannel->data()->xMin(), firstChannel->data()->xStep(), numInd);
-    }
-    else {
-        ch->type58[27].value = 0;
-        ch->data()->setXValues(firstChannel->data()->xValues().mid(0, numInd));
-    }
+
 
     ch->type58[14].value = firstChannel->type();
 

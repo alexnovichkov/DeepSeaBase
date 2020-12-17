@@ -37,8 +37,8 @@ public:
     virtual QString description() const override;
     virtual QStringList properties() const override;
     virtual QString propertyDescription(const QString &property) const override;
-    virtual QVariant getProperty(const QString &property) const override;
-    virtual void setProperty(const QString &property, const QVariant &val) override;
+    virtual QVariant m_getProperty(const QString &property) const override;
+    virtual void m_setProperty(const QString &property, const QVariant &val) override;
     virtual bool propertyShowsFor(const QString &property) const override;
     virtual void updateProperty(const QString &property, const QVariant &val) override;
 private:
@@ -47,6 +47,7 @@ private:
     double factor = 1.0; //коэффициент new sample rate = sample rate / factor
     int currentResamplingType = 0; //тип передискретизации (0=factor, 1=range, 2=sampleRate)
     QVector<double> output;
+    QVector<double> refOutput;
     double xStep = 0.0;
 
     // AbstractFunction interface

@@ -23,17 +23,17 @@ FilteringFunction::FilteringFunction(QObject *parent) :
 
 
 QString FilteringFunction::name() const
-{
+{DD;
     return "Filtering";
 }
 
 QString FilteringFunction::description() const
-{
+{DD;
     return "Фильтрация временных данных";
 }
 
 QStringList FilteringFunction::properties() const
-{
+{DD;
     return QStringList()<<"type"<<"approximation"<<"order"<<"frequency"<<"Q"<<"bandwidth"<<"bandwidthHz"<<"gain"<<"slope"
                        <<"rippleDb"<<"stopDb"<<"rolloff";
 }
@@ -160,7 +160,7 @@ QString FilteringFunction::propertyDescription(const QString &property) const
     return "";
 }
 
-QVariant FilteringFunction::getProperty(const QString &property) const
+QVariant FilteringFunction::m_getProperty(const QString &property) const
 {DD;
     if (property.startsWith("?/")) {
         if (property == "?/dataType") return 2;//Фильтр. данные
@@ -189,7 +189,7 @@ QVariant FilteringFunction::getProperty(const QString &property) const
     return QVariant();
 }
 
-void FilteringFunction::setProperty(const QString &property, const QVariant &val)
+void FilteringFunction::m_setProperty(const QString &property, const QVariant &val)
 {DD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
@@ -243,12 +243,12 @@ bool FilteringFunction::propertyShowsFor(const QString &property) const
 
 
 QString FilteringFunction::displayName() const
-{
+{DD;
     return "Фильтрация";
 }
 
 void FilteringFunction::reset()
-{
+{DD;
     filtering.reset();
     output.clear();
 }

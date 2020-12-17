@@ -5,7 +5,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 
-//#define PRINT_CONTENT
+#define PRINT_CONTENT
 
 MatFile::MatFile(const QString &fileName) : FileDescriptor(fileName)
 {DD;
@@ -180,6 +180,9 @@ void MatFile::read()
                 if (c.scale == 10) units = DataHolder::UnitsQuadratic;
                 else if (c.scale == 20) units = DataHolder::UnitsLinear;
                 channel->data()->setYValuesUnits(units);
+
+                //ЗАГЛУШКА
+                channel->data()->setZValues(0.0, 0.0, 1);
             }
             channels << toAppend;
         }
@@ -1269,19 +1272,22 @@ int MatlabChannel::octaveType() const
 }
 
 void MatlabChannel::populate()
-{DD;
+{DDD;
     _data->clear();
 
     setPopulated(false);
 
-    int idx = real_values->header->sizeInBytesWithoutPadding / groupSize;
-    QByteArray raw = real_values->getRaw(qint64(idx * indexInGroup), idx);
+    qint64 idx = real_values->header->sizeInBytesWithoutPadding;
+    idx /= groupSize;
+    QByteArray raw = real_values->getRaw(idx * indexInGroup, idx);
+    qDebug()<<"Read"<<raw.length()<<"bytes in channel";
 
     QDataStream stream(&raw, QIODevice::ReadOnly);
     stream.setByteOrder(QDataStream::LittleEndian);
     //stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
     QVector<double> data = readNumeric<double>(&stream, real_values->actualDataSize / groupSize,
                                               real_values->header->type);
+    qDebug()<<"Converted to"<<data.size()<<"double values";
 
     if (!complex) {
         _data->setYValues(data, _data->yValuesFormat());

@@ -1,7 +1,7 @@
 #include "coloreditdialog.h"
 
+#include "app.h"
 #include "colorselector.h"
-
 #include <QtWidgets>
 
 ColorEditDialog::ColorEditDialog(QWidget *parent) :
@@ -12,16 +12,14 @@ ColorEditDialog::ColorEditDialog(QWidget *parent) :
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
 
-    ColorSelector *selector = ColorSelector::instance();
+    ColorSelector *selector = App->colors();
 
     QTableWidget *table = new QTableWidget(selector->colorsCount(),1, this);
     table->setHorizontalHeaderLabels(QStringList("Цвет"));
 
-    QVector<QColor> colors = selector->getColors();
-
-    for (int i =0; i<colors.size(); ++i) {
+    for (int i =0; i<selector->colorsCount(); ++i) {
         QTableWidgetItem *item = new QTableWidgetItem();
-        item->setBackground(colors.at(i));
+        item->setBackground(selector->color(i));
         table->setItem(i,0,item);
     }
     connect(table,&QTableWidget::cellClicked, [=](int row, int col) {

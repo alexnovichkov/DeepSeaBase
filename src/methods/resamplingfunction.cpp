@@ -72,7 +72,7 @@ QString ResamplingFunction::propertyDescription(const QString &property) const
     return "";
 }
 
-QVariant ResamplingFunction::getProperty(const QString &property) const
+QVariant ResamplingFunction::m_getProperty(const QString &property) const
 {DD;
     double sR = 1.0 / xStep;
     if (property.startsWith("?/")) {
@@ -121,7 +121,7 @@ QVariant ResamplingFunction::getProperty(const QString &property) const
     return QVariant();
 }
 
-void ResamplingFunction::setProperty(const QString &property, const QVariant &val)
+void ResamplingFunction::m_setProperty(const QString &property, const QVariant &val)
 {DD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
@@ -224,6 +224,7 @@ bool ResamplingFunction::compute(FileDescriptor *file)
             pos += bufferSize;
         }
     }
+
     return true;
 }
 

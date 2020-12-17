@@ -178,7 +178,7 @@ public:
 
 
     DfdDataType dataType;
-    QList<int> dataPositions;
+    QList<qint64> dataPositions;
 
     QString m_correction;
 private:
