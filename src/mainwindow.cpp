@@ -1212,17 +1212,18 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
     // ИЩЕМ ЭТОТ ФАЙЛ СРЕДИ ДОБАВЛЕННЫХ В БАЗУ
 
     F destination = App->find(file);
-    const bool found = destination != nullptr;
+    const bool found = destination.get() != nullptr;
     const bool exists = QFile::exists(file);
 
     if (!found) {//не нашли файл в базе, нужно создать новый объект
+        bool isNew;
         if (exists) {
-            destination = App->addFile(file);
-            if (destination) destination->read();
+            destination = App->addFile(file, &isNew);
         }
         else {
-            destination = App->addFile(*source, file, channelsToCopy);
+            destination = App->addFile(*source, file, channelsToCopy, &isNew);
         }
+        if (destination && isNew) destination->read();
     }
 
     if (!destination) {
@@ -1263,23 +1264,25 @@ void MainWindow::calculateMean()
     bool writeToSeparateFile = true;
     bool writeToUff = false;
 
-    Curve *firstCurve = plot->curves.constFirst();
-    channels.append(firstCurve->channel);
+    Channel *firstChannel = plot->curves.first()->channel;
+    channels.append(firstChannel);
+    FileDescriptor *firstDescriptor = firstChannel->descriptor();
 
-    bool allFilesDfd = firstCurve->channel->descriptor()->fileName().toLower().endsWith("dfd");
+    bool allFilesDfd = firstDescriptor->fileName().toLower().endsWith("dfd");
+    auto firstChannelFileName = firstDescriptor->fileName();
 
     for (int i = 1; i<plot->curves.size(); ++i) {
         Curve *curve = plot->curves.at(i);
         channels.append(curve->channel);
 
-        allFilesDfd &= firstCurve->channel->descriptor()->fileName().toLower().endsWith("dfd");
-        if (firstCurve->channel->data()->xStep() != curve->channel->data()->xStep())
+        allFilesDfd &= firstChannelFileName.toLower().endsWith("dfd");
+        if (firstChannel->data()->xStep() != curve->channel->data()->xStep())
             stepsEqual = false;
-        if (firstCurve->channel->yName() != curve->channel->yName())
+        if (firstChannel->yName() != curve->channel->yName())
             namesEqual = false;
-        if (firstCurve->channel->descriptor()->fileName() != curve->channel->descriptor()->fileName())
+        if (firstChannelFileName != curve->channel->descriptor()->fileName())
             oneFile = false;
-        if (firstCurve->channel->type() != curve->channel->type())
+        if (!firstDescriptor->dataTypeEquals(curve->channel->descriptor()))
             dataTypeEqual = false;
     }
     if (!dataTypeEqual) {
@@ -1305,7 +1308,7 @@ void MainWindow::calculateMean()
     }
     if (oneFile) {
         QMessageBox box("Среднее графиков",
-                        QString("Графики взяты из одной записи %1.\n").arg(firstCurve->channel->descriptor()->fileName())
+                        QString("Графики взяты из одной записи %1.\n").arg(firstChannelFileName)
                         +
                         QString("Сохранить среднее в эту запись дополнительным каналом?"),
                         QMessageBox::Question,
@@ -1323,7 +1326,7 @@ void MainWindow::calculateMean()
     F meanFile;
 
     if (writeToSeparateFile) {
-        QString meanD = firstCurve->channel->descriptor()->fileName();
+        QString meanD = firstChannelFileName;
         meanD.chop(4);
         if (writeToUff) meanD.append(".uff");
 
@@ -1339,7 +1342,7 @@ void MainWindow::calculateMean()
 //        dialog.setDefaultSuffix(writeToUff?"uff":"dfd");
 
         if (!writeToUff) {
-            QSortFilterProxyModel *proxy = new DfdFilterProxy(firstCurve->channel->descriptor(), this);
+            QSortFilterProxyModel *proxy = new DfdFilterProxy(firstDescriptor, this);
             dialog.setProxyModel(proxy);
         }
 
@@ -1366,34 +1369,29 @@ void MainWindow::calculateMean()
         }
 
         bool isNew = false;
+        const bool fileExists = QFile::exists(meanFileName);
         meanFile = App->addFile(meanFileName, &isNew);
         if (!meanFile) {
+            QMessageBox::critical(this, "Расчет среднего", "Не удалось создать файл неизвестного типа:"
+                                  + meanFileName);
             qDebug()<<"Не удалось создать файл"<<meanFileName;
             return;
         }
 
-        if (QFileInfo(meanFileName).exists()) {
+        if (fileExists) {
             if (isNew) meanFile->read();
         }
         else
-            meanFile->fillPreliminary(firstCurve->channel->type());
+            meanFile->fillPreliminary(firstDescriptor);
 
         App->setSetting(writeToUff?"lastMeanUffFile":"lastMeanFile", meanFileName);
     }
     else {
-        meanFileName = firstCurve->channel->descriptor()->fileName();
+        meanFileName = firstChannelFileName;
         meanFile = App->find(meanFileName);
     }
 
     meanFile->calculateMean(channels);
-
-    if (writeToSeparateFile)
-        meanFile->fillRest();
-
-//    meanFile->setChanged(true);
-//    meanFile->setDataChanged(true);
-//    meanFile->write();
-//    meanFile->writeRawFile();
 
     int idx;
     if (tab->model->contains(meanFile, &idx)) {
@@ -1589,12 +1587,12 @@ void MainWindow::updateChannelsTable(const QModelIndex &current, const QModelInd
         if ((previous.row()==0 && previous.column() != current.column()) ||
             (previous.row() != current.row())) {
             QModelIndex index = tab->sortModel->mapToSource(current);
-            updateChannelsTable(tab->model->file(index.row()));
+            updateChannelsTable(tab->model->file(index.row()).get());
         }
     }
     else {
         QModelIndex index = tab->sortModel->mapToSource(current);
-        updateChannelsTable(tab->model->file(index.row()));
+        updateChannelsTable(tab->model->file(index.row()).get());
     }
 
 
@@ -1872,7 +1870,7 @@ void MainWindow::calculateMovingAvg()
             if (isNew) avg->read();
         }
         else
-            avg->fillPreliminary(firstCurve->channel->type());
+            avg->fillPreliminary(firstCurve->channel->descriptor());
     }
     else {
         avgFileName = firstCurve->channel->descriptor()->fileName();
@@ -1880,9 +1878,6 @@ void MainWindow::calculateMovingAvg()
     }
 
     avg->calculateMovingAvg(channels,windowSize);
-
-    if (writeToSeparateFile)
-        avg->fillRest();
 
 //    avgFile->setChanged(true);
 //    avgFile->setDataChanged(true);
@@ -2804,9 +2799,10 @@ void MainWindow::addFiles(const QStringList &files)
 
         emit loading(fileName);
 
-        F file = App->addFile(fileName);
+        bool isNew = false;
+        F file = App->addFile(fileName, &isNew);
         if (file) {
-            file->read();
+            if (isNew) file->read();
             items << file;
         }
     }

@@ -282,8 +282,7 @@ public:
     virtual void write() override;
     virtual void writeRawFile() override;
     void updateDateTimeGUID() override;
-    virtual void fillPreliminary(Descriptor::DataType) override;
-    virtual void fillRest() override;
+    virtual void fillPreliminary(FileDescriptor *file) override;
     static DfdFileDescriptor *newFile(const QString &fileName, DfdDataType type);
     virtual bool copyTo(const QString &name) override;
 

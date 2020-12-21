@@ -602,27 +602,23 @@ void DfdFileDescriptor::updateDateTimeGUID()
     CreatedBy = "DeepSeaBase by Novichkov & sukin sons";
 }
 
-void DfdFileDescriptor::fillPreliminary(Descriptor::DataType type)
+void DfdFileDescriptor::fillPreliminary(FileDescriptor *file)
 {DD;
+    DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor*>(file);
+    if (dfd) {
+        DataType = dfd->DataType;
+    }
+    else
+        DataType = dfdDataTypeFromDataType(file->type());
+
     rawFileName = fileName().left(fileName().length()-4)+".raw";
     updateDateTimeGUID();
-    DataType = dfdDataTypeFromDataType(type);
+
 
      // time data tweak, so deepseabase doesn't take the file as raw time data
     //так как мы вызываем эту функцию только из новых файлов,
     //все сведения из файлов rawChannel нам не нужны
     if (DataType == SourceData) DataType = CuttedData;
-}
-
-void DfdFileDescriptor::fillRest()
-{DD;
-    if (channels.isEmpty()) return;
-
-    setSamplesCount(channels.constFirst()->samplesCount());
-    BlockSize = 0;
-//    XName = channels.constFirst()->xName();
-    XBegin = channels.constFirst()->data()->xMin();
-    XStep = channels.constFirst()->data()->xStep();
 }
 
 DfdFileDescriptor *DfdFileDescriptor::newFile(const QString &fileName, DfdDataType type)
@@ -945,7 +941,7 @@ void DfdFileDescriptor::calculateMean(const QList<Channel*> &channels)
 
     Averaging averaging(Averaging::Linear, channels.size());
 
-    foreach (Channel *ch, channels) {
+    for (Channel *ch: channels) {
         if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
             averaging.average(ch->data()->yValuesComplex(0));
         else
@@ -959,13 +955,13 @@ void DfdFileDescriptor::calculateMean(const QList<Channel*> &channels)
     ch->setDataChanged(true);
 
     QStringList l;
-    foreach (Channel *c,channels) {
+    for (Channel *c: channels) {
         l << c->name();
     }
     ch->ChanName = "Среднее "+l.join(", ");
     l.clear();
-    for (int i=0; i<channels.size(); ++i) {
-        l << QString::number(channels.at(i)->index()+1);
+    for (Channel *c: channels) {
+        l << QString::number(c->index()+1);
     }
     ch->ChanDscr = "Среднее каналов "+l.join(",");
 
@@ -993,7 +989,7 @@ void DfdFileDescriptor::calculateMean(const QList<Channel*> &channels)
 
     ch->ChanBlockSize = numInd;
 
-    ch->IndType = this->channels.isEmpty()?3221225476:this->channels.constFirst()->IndType;
+    ch->IndType = channelsCount()==1 ? 3221225476 : this->channels.constFirst()->IndType;
     ch->YName = firstChannel->yName();
     //грязный хак
     if (DfdChannel *dfd = dynamic_cast<DfdChannel*>(firstChannel)) {
@@ -1002,6 +998,41 @@ void DfdFileDescriptor::calculateMean(const QList<Channel*> &channels)
             ch->YName = "дБ";
     }
     if (XName.isEmpty()) XName = firstChannel->xName();
+
+    //третьоктава или октава: канал только один и данные по x неравномерны
+    if (channelsCount()==1 && ch->data()->xValuesFormat()==DataHolder::XValuesNonUniform) {
+        xValues = ch->data()->xValues();
+        //     добавляем нулевой канал с осью Х
+        DfdChannel *ch0 = new DfdChannel(this, channelsCount());
+        ch0->ChanAddress.clear(); //
+        ch0->ChanName = "ось X"; //
+        ch0->YName="Гц";
+        ch0->YNameOld.clear();
+        ch0->InputType.clear();
+        ch0->ChanDscr.clear();
+        ch0->channelIndex = 0; // нумерация с 0
+        ch0->ChanBlockSize = xValues.size();
+        ch0->IndType = channelsCount()==2 ? 3221225476 : this->channels.constFirst()->IndType;
+        ch0->data()->setThreshold(1.0);
+        ch0->data()->setXValues(xValues);
+        ch0->data()->setYValues(xValues, DataHolder::YValuesReals);
+        ch0->setPopulated(true);
+
+        this->channels.prepend(ch0);
+        this->channels.takeLast(); //нулевой канал автоматически был добавлен в конец. Убираем его в начало
+
+        for (int i=0; i<channelsCount(); ++i)
+            this->channels[i]->channelIndex = i;
+    }
+
+    if ((channelsCount()==2 && ch->data()->xValuesFormat()==DataHolder::XValuesNonUniform)
+        || channelsCount()==1) {
+        //заполняем всю остальную информацию
+        NumInd = numInd;
+        BlockSize = 0;
+        XBegin = channels.constFirst()->data()->xMin();
+        XStep = channels.constFirst()->data()->xStep();
+    }
 
     setChanged(true);
     setDataChanged(true);
@@ -1123,7 +1154,7 @@ QString DfdFileDescriptor::calculateThirdOctave()
     ch->setPopulated(true);
 
     thirdOctDfd->channels.prepend(ch);
-    thirdOctDfd->channels.takeLast();
+    thirdOctDfd->channels.takeLast(); //TODO: сомнительная строчка
 
     for (int i=0; i<thirdOctDfd->channels.size(); ++i)
         thirdOctDfd->channels[i]->channelIndex = i;

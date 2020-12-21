@@ -74,8 +74,8 @@ public:
 
     virtual bool rename(const QString &newName, const QString &newPath = QString());
 
-    virtual void fillPreliminary(Descriptor::DataType) = 0;
-    virtual void fillRest() = 0;
+    //virtual void fillPreliminary(Descriptor::DataType) = 0;
+    virtual void fillPreliminary(FileDescriptor *) = 0;
     virtual void read() = 0;
     virtual void write() = 0;
     virtual void writeRawFile() = 0;

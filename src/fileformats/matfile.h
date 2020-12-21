@@ -65,8 +65,7 @@ private:
 
     // FileDescriptor interface
 public:
-    virtual void fillPreliminary(Descriptor::DataType) override;
-    virtual void fillRest() override;
+    virtual void fillPreliminary(FileDescriptor *file) override;
     virtual void write() override;
     virtual void writeRawFile() override;
     virtual void updateDateTimeGUID() override;

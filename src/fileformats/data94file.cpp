@@ -263,13 +263,9 @@ void Data94File::updatePositions()
 //    }
 }
 
-void Data94File::fillPreliminary(Descriptor::DataType)
+void Data94File::fillPreliminary(FileDescriptor *file)
 {
     updateDateTimeGUID();
-}
-
-void Data94File::fillRest()
-{
 }
 
 void Data94File::read()

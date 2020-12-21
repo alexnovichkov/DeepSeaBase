@@ -611,11 +611,7 @@ void TDMSChannel::setCorrection(const QString &)
 
 /*****************************************************/
 
-void TDMSGroup::fillPreliminary(Descriptor::DataType)
-{
-}
-
-void TDMSGroup::fillRest()
+void TDMSGroup::fillPreliminary(FileDescriptor *file)
 {
 }
 

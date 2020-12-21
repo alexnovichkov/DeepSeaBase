@@ -1069,11 +1069,7 @@ QVector<float> getNumeric(const MatlabNumericRecord *rec)
 }
 
 
-void MatFile::fillPreliminary(Descriptor::DataType)
-{
-}
-
-void MatFile::fillRest()
+void MatFile::fillPreliminary(FileDescriptor *file)
 {
 }
 

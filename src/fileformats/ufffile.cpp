@@ -156,14 +156,9 @@ UffFileDescriptor::~UffFileDescriptor()
     qDeleteAll(channels);
 }
 
-void UffFileDescriptor::fillPreliminary(Descriptor::DataType)
+void UffFileDescriptor::fillPreliminary(FileDescriptor *file)
 {DD;
     updateDateTimeGUID();
-}
-
-void UffFileDescriptor::fillRest()
-{DD;
-
 }
 
 void UffFileDescriptor::readWithStreams()
@@ -734,7 +729,6 @@ QString UffFileDescriptor::calculateThirdOctave()
         if (!populated) ch->clear();
     }
 
-    thirdOctUff->fillRest();
 
     thirdOctUff->setChanged(true);
     thirdOctUff->setDataChanged(true);

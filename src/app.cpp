@@ -49,6 +49,7 @@ F Application::addFile(const QString &name, bool *isNew)
     if (f)
         files.insert(name, f);
     if (isNew) *isNew = true;
+    //for (auto &f: files) qDebug()<<f.use_count()<<f->fileName();
 
     return f;
 }

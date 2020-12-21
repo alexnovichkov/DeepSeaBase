@@ -15,15 +15,15 @@ Model::Model(QObject *parent) : QAbstractTableModel(parent)
     bFont.setBold(true);
 }
 
-const F & Model::file(int i) const
-{DD;
-    if (i<0 || i>=descriptors.size()) return F();
-    return descriptors[i];
-}
+//const F & Model::file(int i) const
+//{DD;
+//    if (i<0 || i>=descriptors.size()) return F();
+//    return descriptors[i];
+//}
 
-F &Model::file(int i)
+F Model::file(int i)
 {
-    if (i<0 || i>=descriptors.size()) return 0;
+    if (i<0 || i>=descriptors.size()) return F();
     return descriptors[i];
 }
 

@@ -31,8 +31,8 @@ public:
     bool contains(const QString &fileName, int *index = 0) const;
     bool contains(const F &file, int *index = 0) const;
     bool contains(FileDescriptor* file, int *index = 0) const;
-    const F &file(int i) const;
-    F &file(int i);
+    //const F &file(int i) const;
+    F file(int i);
 //    FileDescriptor *find(const QString &fileName) const;
 
     void addFiles(const QList<F> &files);
