@@ -156,7 +156,6 @@ public:
     virtual QString legendName() const override;
     virtual FileDescriptor *descriptor() override;
     virtual int index() const override;
-    virtual QString correction() const override;
     virtual void setCorrection(const QString &s) override;
 
     bool isComplex = false; //по умолчанию real

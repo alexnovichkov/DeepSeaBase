@@ -74,7 +74,6 @@ public:
     virtual QString legendName() const override;
     virtual int samplesCount() const override;
 
-    virtual QString correction() const override;
     virtual void setCorrection(const QString &s) override;
 
 //    virtual QByteArray wavData(qint64 pos, qint64 samples) override;

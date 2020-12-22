@@ -131,8 +131,6 @@ public:
     virtual QString legendName() const override;
     virtual FileDescriptor *descriptor() override;
     virtual int index() const override;
-    virtual QString correction() const override;
-    virtual void setCorrection(const QString &) override;
 
     // Channel interface
 public:

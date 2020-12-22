@@ -598,15 +598,6 @@ int TDMSChannel::index() const
     return parent->channels.indexOf(const_cast<TDMSChannel*>(this), 0);
 }
 
-QString TDMSChannel::correction() const
-{
-    return QString();
-}
-
-void TDMSChannel::setCorrection(const QString &)
-{
-
-}
 
 
 /*****************************************************/

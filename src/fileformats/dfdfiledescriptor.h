@@ -120,9 +120,6 @@ public:
     virtual int columnsCount() const override;
     virtual QVariant channelHeader(int column) const override;
 
-    virtual QString correction() const override {return m_correction;}
-    virtual void setCorrection(const QString &s) override {m_correction = s;}
-
     virtual QString legendName() const override;
     //дополнительная обработка, напр.
     //применение смещения и усиления,
@@ -181,7 +178,6 @@ public:
     DfdDataType dataType;
     QList<qint64> dataPositions;
 
-    QString m_correction;
 private:
     DataHolder::YValuesFormat dataFormat() const;
 

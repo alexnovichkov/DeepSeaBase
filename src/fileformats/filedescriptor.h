@@ -222,8 +222,8 @@ public:
     QColor color() const {return _color;}
     void setColor(QColor color) {_color = color;}
 
-    virtual QString correction() const = 0;
-    virtual void setCorrection(const QString &s) = 0;
+    QString correction() const {return _correction;}
+    virtual void setCorrection(const QString &s) {_correction = s;} //виртуальна, т.к. перекрывается в uff и d94
 
     int plotted() const {return _plotted;}
     void setPlotted(int plotted) {_plotted = plotted;}

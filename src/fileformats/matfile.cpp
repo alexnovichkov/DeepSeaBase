@@ -1352,15 +1352,6 @@ int MatlabChannel::index() const
     return parent->channels.indexOf(const_cast<MatlabChannel*>(this), 0);
 }
 
-QString MatlabChannel::correction() const
-{
-    return QString();
-}
-
-void MatlabChannel::setCorrection(const QString &)
-{
-}
-
 template<typename T>
 T findSubrecord(const QString &name, MatlabStructArray *rec)
 {DD;

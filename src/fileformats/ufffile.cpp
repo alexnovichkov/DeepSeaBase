@@ -1158,7 +1158,7 @@ QVariant Function::info(int column, bool edit) const
         case 3: return type58[6].value; //description();
         case 4: return functionTypeDescription(type());
         case 5: return data()->blocksCount();
-        case 6: return type58[12].value; //correction();
+        case 6: return correction();
         default: ;
     }
     return QVariant();
@@ -1444,13 +1444,9 @@ int Function::samplesCount() const
     return type58[26].value.toULongLong();
 }
 
-QString Function::correction() const
-{
-    return type58[12].value.toString();
-}
-
 void Function::setCorrection(const QString &s)
 {
+    Channel::setCorrection(s);
     type58[12].value = s;
 }
 

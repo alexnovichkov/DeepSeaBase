@@ -1397,13 +1397,9 @@ int Data94Channel::index() const
     return -1;
 }
 
-QString Data94Channel::correction() const
-{
-    return _description.value("correction").toString();
-}
-
 void Data94Channel::setCorrection(const QString &s)
 {
+    Channel::setCorrection(s);
     _description.insert("correction", s);
 }
 

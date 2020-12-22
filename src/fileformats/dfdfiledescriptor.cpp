@@ -1634,7 +1634,7 @@ QVariant DfdChannel::info(int column, bool edit) const
         }
         case 2: return data()->yValuesFormatString();
         case 3: return ChanDscr;
-        case 4: return m_correction; //correction();
+        case 4: return correction();
         default: ;
     }
     return QVariant();
