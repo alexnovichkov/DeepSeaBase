@@ -1561,7 +1561,13 @@ void MainWindow::moveChannels(bool up)
 
     const QVector<int> newIndexes = computeIndexes(selectedIndexes, up, tab->record->channelsCount());
 
-    tab->record->move(up, selectedIndexes, newIndexes);
+    if (newIndexes == selectedIndexes) return;
+
+    for (auto &file: tab->model->selectedFiles()) {
+        file->move(up, selectedIndexes, newIndexes);
+    }
+
+    //tab->record->move(up, selectedIndexes, newIndexes);
 
     updateChannelsTable(tab->record);
 
