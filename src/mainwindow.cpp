@@ -1164,9 +1164,6 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
     QFileDialog dialog(this, "Выбор файла для записи каналов", startFile,
                        filters.join(";;"));
     dialog.setOption(QFileDialog::DontUseNativeDialog, true);
-//    QString defaultSuffix = QFileInfo(startFile).suffix();
-//    if (defaultSuffix.isEmpty()) defaultSuffix = "dfd";
-//    dialog.setDefaultSuffix(defaultSuffix);
 
     QStringList suffixes = FormatFactory::allSuffixes(true);
 
@@ -1199,12 +1196,9 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
         //удаляем суффикс, если это суффикс известного нам типа файлов
         if (suffixes.contains(currentSuffix))
             file.chop(currentSuffix.length()+1);
-        //сохраняем параметр - имя файла без суффикса
-        App->setSetting("startDir", file);
-
         file.append(QString(".%1").arg(filterSuffix));
     }
-
+    App->setSetting("startDir", file);
 
 
     LongOperation op;
@@ -1215,30 +1209,28 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
     const bool found = destination.get() != nullptr;
     const bool exists = QFile::exists(file);
 
-    if (!found) {//не нашли файл в базе, нужно создать новый объект
-        bool isNew;
-        if (exists) {
+    bool isNew = false;
+    if (!exists) {//такого файла не существует
+        destination = App->addFile(*source, file, channelsToCopy, &isNew);
+    }
+    else {
+        //файл существует, два варианта:
+        if (found) {//уже добавлен в базу
+            //записываем все изменения данных, если они были
+            destination->write();
+            destination->writeRawFile();
+        }
+        else {//еще не добавлен в базу
             destination = App->addFile(file, &isNew);
+            destination->read();
         }
-        else {
-            destination = App->addFile(*source, file, channelsToCopy, &isNew);
-        }
-        if (destination && isNew) destination->read();
+        destination->copyChannelsFrom(source, channelsToCopy);
     }
 
     if (!destination) {
         qDebug()<<"Неизвестный тип файла"<< file;
         return false;
     }
-
-    //записываем все изменения данных, если они были
-    if (found) {
-        destination->write();
-        destination->writeRawFile();
-    }
-
-    if (found || exists)
-        destination->copyChannelsFrom(source, channelsToCopy);
 
     if (found) {
         tab->model->updateFile(destination.get());
