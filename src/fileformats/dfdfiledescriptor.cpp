@@ -904,7 +904,7 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
     write();
 }
 
-void DfdFileDescriptor::addChannelWithData(DataHolder *data, const QList<Channel*> &source)
+void DfdFileDescriptor::addChannelWithData(DataHolder *data, const QJsonObject &description)
 {
     // обновляем сведения канала
     DfdChannel *ch = new DfdChannel(this, channelsCount());
@@ -913,28 +913,26 @@ void DfdFileDescriptor::addChannelWithData(DataHolder *data, const QList<Channel
     ch->setDataChanged(true);
     ch->setData(data);
 
-    QStringList l;
-    for (Channel *c: source) {
-        l << c->name();
-    }
-    ch->ChanName = "Среднее "+l.join(", ");
-    l.clear();
-    for (Channel *c: source) {
-        l << QString::number(c->index()+1);
-    }
-    ch->ChanDscr = "Среднее каналов "+l.join(",");
-
+    ch->ChanName = description.value("name").toString();
+    ch->ChanDscr = description.value("description").toString();
     ch->ChanBlockSize = data->samplesCount();
-
     ch->IndType = channelsCount()==1 ? 3221225476 : channels.constFirst()->IndType;
-    ch->YName = source.first()->yName();
-    //грязный хак
-    if (DfdChannel *dfd = dynamic_cast<DfdChannel*>(source.first())) {
-        ch->YNameOld = dfd->YNameOld;
-        if (ch->YName == ch->YNameOld && data->yValuesFormat() == DataHolder::YValuesAmplitudesInDB)
-            ch->YName = "дБ";
+    ch->YName = description.value("yname").toString();
+    ch->YNameOld = description.value("ynameold").toString();
+    if (ch->YName == ch->YNameOld && data->yValuesFormat() == DataHolder::YValuesAmplitudesInDB)
+        ch->YName = "дБ";
+    if (XName.isEmpty()) XName = description.value("xname").toString();
+
+    int octave = description.value("function").toObject().value("octaveFormat").toInt();
+    switch (octave) {
+        case 1: DataType = OSpectr; break;
+        case 3: DataType = ToSpectr; break;	// 1/3-октавный спектр
+        case 2: DataType = TwoOSpectr; break;     // 1/2-октавный спектр
+        case 6: DataType = SixOSpectr; break;    // 1/6-октавный спектр
+        case 12: DataType = TwlOSpectr; break;     // 1/12-октавный спектр
+        case 24: DataType = TFOSpectr; break;      // 1/24-октавный спектр
+        default: break;
     }
-    if (XName.isEmpty()) XName = source.first()->xName();
 
     //третьоктава или октава: канал только один и данные по x неравномерны
     if (channelsCount()==1 && ch->data()->xValuesFormat()==DataHolder::XValuesNonUniform) {
@@ -972,136 +970,6 @@ void DfdFileDescriptor::addChannelWithData(DataHolder *data, const QList<Channel
     }
 }
 
-void DfdFileDescriptor::calculateMovingAvg(const QList<Channel *> &list, int windowSize)
-{
-    populate();
-
-    for (int i=0; i<list.size(); ++i) {
-        DfdChannel *ch = new DfdChannel(this, channelsCount());
-        Channel *firstChannel = list.at(i);
-
-        int numInd = firstChannel->samplesCount();
-
-        ch->data()->setThreshold(firstChannel->data()->threshold());
-        ch->data()->setYValuesUnits(firstChannel->data()->yValuesUnits());
-
-        if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform)
-            ch->data()->setXValues(firstChannel->data()->xMin(), firstChannel->data()->xStep(), numInd);
-        else
-            ch->data()->setXValues(firstChannel->data()->xValues());
-
-        //dfd не понимает многоблочные файлы
-        auto format = firstChannel->data()->yValuesFormat();
-        if (format == DataHolder::YValuesComplex) {
-            ch->data()->setYValues(movingAverage(firstChannel->data()->yValuesComplex(0), windowSize));
-        }
-        else {
-            QVector<double> values = movingAverage(firstChannel->data()->linears(0), windowSize);
-            if (format == DataHolder::YValuesAmplitudesInDB)
-                format = DataHolder::YValuesAmplitudes;
-            ch->data()->setYValues(values, format, 0);
-        }
-
-
-
-        // обновляем сведения канала
-        ch->setPopulated(true);
-        ch->ChanName = firstChannel->name()+" сглаж.";
-
-        ch->ChanDscr = "Скользящее среднее канала "+firstChannel->name();
-        ch->ChanBlockSize = numInd;
-
-        ch->IndType = channels.isEmpty()?3221225476:channels.constFirst()->IndType;
-        ch->YName = firstChannel->yName();
-        //грязный хак
-        if (DfdChannel *dfd = dynamic_cast<DfdChannel*>(firstChannel)) {
-            ch->YNameOld = dfd->YNameOld;
-            if (ch->YName == ch->YNameOld && format == DataHolder::YValuesAmplitudesInDB)
-                ch->YName = "дБ";
-        }
-        if (XName.isEmpty()) XName = firstChannel->xName();
-    }
-
-    setChanged(true);
-    setDataChanged(true);
-    write();
-    writeRawFile();
-}
-
-QString DfdFileDescriptor::calculateThirdOctave()
-{DD;
-    populate();
-
-    QString thirdOctaveFileName = createUniqueFileName("", fileName(), "3oct", "dfd", false);
-
-    DfdFileDescriptor *thirdOctDfd = DfdFileDescriptor::newThirdOctaveFile(thirdOctaveFileName);
-    thirdOctDfd->DescriptionFormat = this->DescriptionFormat;
-
-    if (this->dataDescription) {
-        thirdOctDfd->dataDescription = new DataDescription(thirdOctDfd);
-        thirdOctDfd->dataDescription->data = this->dataDescription->data;
-    }
-
-    int index=0;
-    foreach (DfdChannel *ch, this->channels) {
-        DfdChannel *newCh = new DfdChannel(thirdOctDfd,index++);
-
-        auto result = thirdOctave(ch->data()->decibels(), ch->data()->xMin(), ch->data()->xStep());
-
-        newCh->data()->setThreshold(ch->data()->threshold());
-        newCh->data()->setYValuesUnits(ch->data()->yValuesUnits());
-        newCh->data()->setXValues(result.first);
-        newCh->data()->setYValues(result.second, DataHolder::YValuesAmplitudesInDB);
-
-
-        newCh->YName="дБ";
-        newCh->YNameOld=ch->YNameOld;
-        newCh->ChanAddress=ch->ChanAddress;
-        newCh->ChanName=ch->ChanName;
-        newCh->ChanBlockSize=result.first.size();
-        newCh->IndType=3221225476;
-        //BandWidth=1162346496
-        newCh->InputType = ch->InputType;
-        newCh->ChanDscr = ch->ChanDscr;
-
-        newCh->setPopulated(true);
-    }
-
-    thirdOctDfd->xValues = thirdOctDfd->channels.last()->xValues();
-
-//     добавляем нулевой канал с осью Х
-    DfdChannel *ch = new DfdChannel(thirdOctDfd,index++);
-    ch->ChanAddress.clear(); //
-    ch->ChanName = "ось X"; //
-    ch->YName="Гц";
-    ch->YNameOld.clear();
-    ch->InputType.clear();
-    ch->ChanDscr.clear();
-    ch->channelIndex = 0; // нумерация с 0
-    ch->ChanBlockSize=thirdOctDfd->xValues.size();
-    ch->IndType=3221225476;
-    ch->data()->setThreshold(1.0);
-    ch->data()->setXValues(thirdOctDfd->xValues);
-    ch->data()->setYValues(thirdOctDfd->xValues, DataHolder::YValuesReals);
-    ch->setPopulated(true);
-
-    thirdOctDfd->channels.prepend(ch);
-    thirdOctDfd->channels.takeLast(); //TODO: сомнительная строчка
-
-    for (int i=0; i<thirdOctDfd->channels.size(); ++i)
-        thirdOctDfd->channels[i]->channelIndex = i;
-
-
-    thirdOctDfd->XBegin = thirdOctDfd->xValues.constFirst();
-    thirdOctDfd->setSamplesCount(thirdOctDfd->channels.last()->data()->samplesCount());
-
-    thirdOctDfd->setChanged(true);
-    thirdOctDfd->setDataChanged(true);
-    thirdOctDfd->write();
-    thirdOctDfd->writeRawFile();
-    delete thirdOctDfd;
-    return thirdOctaveFileName;
-}
 
 //bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVector)
 //{
@@ -2349,6 +2217,11 @@ QString DfdChannel::yName() const
 //    if ((YName.toLower() == "дб" || YName.toLower() == "db") && !YNameOld.isEmpty())
 //        return YNameOld;
     return YName;
+}
+
+QString DfdChannel::yNameOld() const
+{
+    return YNameOld;
 }
 
 QString DfdChannel::zName() const

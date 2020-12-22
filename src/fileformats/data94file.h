@@ -23,6 +23,7 @@
  *           "description": "",
  *           "correction": "",
  *           "yname" : "m/s^2",
+ *           "ynameold": "V", //при пересчете единиц
  *           "xname" : "Hz",
  *           "zname" : "s",
  *           "responseName": "lop1:1",
@@ -97,9 +98,7 @@ public:
     virtual QDateTime dateTime() const override;
     virtual void deleteChannels(const QVector<int> &channelsToDelete) override;
     virtual void copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes) override;
-    void addChannelWithData(DataHolder *data, const QList<Channel *> &source) override;
-    virtual QString calculateThirdOctave() override;
-    virtual void calculateMovingAvg(const QList<Channel *> &list, int windowSize) override;
+    void addChannelWithData(DataHolder *data, const QJsonObject &description) override;
     virtual QString saveTimeSegment(double from, double to) override;
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
     virtual QVariant channelHeader(int column) const override;

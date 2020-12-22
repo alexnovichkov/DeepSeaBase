@@ -156,10 +156,9 @@ public:
 
     virtual void deleteChannels(const QVector<int> &channelsToDelete) override;
     virtual void copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes) override;
-    /** Calculates mean of channels and writes to a file*/
-    void addChannelWithData(DataHolder *data, const QList<Channel *> &source) override;
-    virtual void calculateMovingAvg(const QList<Channel *> &toAvg, int windowSize) override;
-    virtual QString calculateThirdOctave() override;
+
+    void addChannelWithData(DataHolder *data, const QJsonObject &description) override;
+
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
 
     virtual int channelsCount() const override;

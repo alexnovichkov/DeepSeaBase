@@ -97,9 +97,9 @@ public:
 
     /** Calculates mean of channels, writes to a file */
     void calculateMean(const QList<Channel*> &channels);
+    void calculateMovingAvg(const QList<Channel *> &channels, int windowSize);
+    void calculateThirdOctave(FileDescriptor *source);
 
-    virtual QString calculateThirdOctave() = 0;
-    virtual void calculateMovingAvg(const QList<Channel *> &channels, int windowSize) = 0;
     virtual QString saveTimeSegment(double from, double to) = 0;
 
     virtual QString fileName() const {return _fileName;}
@@ -152,7 +152,10 @@ public:
 
     bool hasCurves() const;
 
-    virtual void addChannelWithData(DataHolder *data, const QList<Channel *> &source) {};
+    virtual void addChannelWithData(DataHolder *data, const QJsonObject & description) {
+        Q_UNUSED(data);
+        Q_UNUSED(description);
+    };
 private:
     QString _fileName;
     bool _changed = false;
@@ -193,6 +196,7 @@ public:
 
     virtual QString xName() const = 0;
     virtual QString yName() const = 0;
+    virtual QString yNameOld() const;
     virtual QString zName() const = 0;
     virtual void setYName(const QString &yName) = 0;
     virtual void setXName(const QString &xName) = 0;
@@ -227,13 +231,14 @@ public:
     bool changed() const {return _changed;}
     void setChanged(bool changed) {_changed = changed;}
     bool dataChanged() const {return _dataChanged;}
-    void setDataChanged(bool changed);
+    void setDataChanged(bool changed) {_dataChanged = changed;}
 private:
     QColor _color;
     int _plotted = 0; //0=not plotted, 1=plotted on left, 2=plotted on right
     bool _populated = false;
     bool _changed = false;
     bool _dataChanged = false;
+    QString _correction;
 protected:
     DataHolder *_data;
 };

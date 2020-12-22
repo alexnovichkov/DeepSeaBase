@@ -134,6 +134,7 @@ public:
 
     virtual QString xName() const override;
     virtual QString yName() const override;
+    virtual QString yNameOld() const override;
     virtual QString zName() const override;
     virtual void setYName(const QString &yName) override;
     virtual void setXName(const QString &xName) override;
@@ -305,9 +306,7 @@ public:
 
     void deleteChannels(const QVector<int> &channelsToDelete) override;
     void copyChannelsFrom(FileDescriptor *file, const QVector<int> &indexes) override;
-    void addChannelWithData(DataHolder *data, const QList<Channel *> &source) override;
-    virtual void calculateMovingAvg(const QList<Channel *> &channels, int windowSize) override;
-    virtual QString calculateThirdOctave() override;
+    void addChannelWithData(DataHolder *data, const QJsonObject &description) override;
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
 
     virtual QVariant channelHeader(int column) const override;

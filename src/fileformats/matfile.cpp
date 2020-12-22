@@ -1121,15 +1121,6 @@ void MatFile::copyChannelsFrom(FileDescriptor *, const QVector<int> &)
 {
 }
 
-QString MatFile::calculateThirdOctave()
-{
-    return QString();
-}
-
-void MatFile::calculateMovingAvg(const QList<Channel *> &, int)
-{
-}
-
 QString MatFile::saveTimeSegment(double, double)
 {
     return QString();

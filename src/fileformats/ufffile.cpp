@@ -510,7 +510,7 @@ void UffFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
     removeTempFile();
 }
 
-void UffFileDescriptor::addChannelWithData(DataHolder *data, const QList<Channel *> &source)
+void UffFileDescriptor::addChannelWithData(DataHolder *data, const QJsonObject &description)
 {
     // обновляем сведения канала
     Function *ch = new Function(this);
@@ -519,17 +519,13 @@ void UffFileDescriptor::addChannelWithData(DataHolder *data, const QList<Channel
     ch->setPopulated(true);
     ch->setData(data);
 
-    ch->setName("Среднее");
+    int octave = description.value("function").toObject().value("octaveFormat").toInt();
+    ch->header.type1858[5].value = octave;
+
+    ch->setName(description.value("name").toString());
     ch->type58[8].value = QDateTime::currentDateTime();
+    ch->setDescription(description.value("description").toString());
 
-    QStringList l;
-    for (int i=0; i<source.size(); ++i) {
-        l << QString::number(source.at(i)->index() + 1);
-    }
-    ch->setDescription("Среднее каналов "+l.join(","));
-
-    //Заполнение данными
-    ch->type58[27].value = data->xValuesFormat()==DataHolder::XValuesUniform ? 1 : 0;
 
     if (data->yValuesFormat() == DataHolder::YValuesAmplitudesInDB) {
         // записываем в файлы uff только линейные данные
@@ -537,151 +533,19 @@ void UffFileDescriptor::addChannelWithData(DataHolder *data, const QList<Channel
         ch->data()->setYValues(d, DataHolder::YValuesAmplitudes);
     }
 
-    ch->type58[14].value = source.first()->type();
+    ch->type58[14].value = description.value("type").toInt();
 
     ch->type58[25].value = (data->yValuesFormat() == DataHolder::YValuesComplex ? 6 : 4);
     ch->type58[26].value = ch->data()->samplesCount();
-
+    ch->type58[27].value = data->xValuesFormat()==DataHolder::XValuesUniform ? 1 : 0;
     ch->type58[28].value = data->xMin();
     ch->type58[29].value = data->xStep();
 
-    ch->type58[32].value = abscissaType(source.first()->xName());
+    ch->type58[32].value = abscissaType(description.value("xName").toString());
     ch->type58[36].value = abscissaTypeDescription(ch->type58[32].value.toInt());
-    ch->type58[37].value = source.first()->xName();
+    ch->type58[37].value = description.value("xName");
 
-    ch->type58[44].value = source.first()->yName();
-}
-
-void UffFileDescriptor::calculateMovingAvg(const QList<Channel*> &toAvg, int windowSize)
-{DD;
-    if (toAvg.isEmpty()) return;
-
-    QTemporaryFile temp;
-    if (!temp.open()) {
-        qDebug()<<"Не удалось создать временный файл для"<<fileName();
-        return;
-    }
-    QTextStream stream(&temp);
-    header.write(stream);
-    units.write(stream);
-
-    int id=1;
-    for (Function *f: qAsConst(channels)) {
-        const bool populated = f->populated();
-        if (!populated) f->populate();
-        f->write(stream, id);
-        if (!populated) f->clear();
-    }
-
-    for (Channel *ch: toAvg) {
-        Function *newCh = new Function(*ch, this);
-
-        const int numInd = ch->samplesCount();
-        auto format = ch->data()->yValuesFormat();
-
-        newCh->data()->setThreshold(ch->data()->threshold());
-
-        if (ch->data()->xValuesFormat()==DataHolder::XValuesUniform) {
-            newCh->type58[27].value = 1;
-            newCh->data()->setXValues(ch->data()->xMin(), ch->data()->xStep(), numInd);
-        }
-        else {
-            newCh->type58[27].value = 0;
-            newCh->data()->setXValues(ch->data()->xValues());
-        }
-
-        newCh->type58[29].value = ch->data()->xStep();
-
-        if (format == DataHolder::YValuesComplex) {
-            newCh->data()->setYValues(movingAverage(ch->data()->yValuesComplex(0), windowSize));
-        }
-        else {
-            QVector<double> values = movingAverage(ch->data()->linears(0), windowSize);
-            if (format == DataHolder::YValuesAmplitudesInDB)
-                format = DataHolder::YValuesAmplitudes;
-            newCh->data()->setYValues(values, format);
-        }
-
-
-
-        // обновляем сведения канала
-        newCh->setPopulated(true);
-        newCh->setName(ch->name()+" сглаж.");
-        newCh->setDescription("Скользящее среднее канала "+ch->name());
-
-        newCh->type58[8].value = QDateTime::currentDateTime();
-
-        newCh->type58[26].value = newCh->data()->samplesCount();
-        newCh->type58[25].value = (newCh->data()->yValuesFormat() == DataHolder::YValuesComplex ? 6 : 4);
-
-        newCh->type58[32].value = abscissaType(ch->xName());
-        newCh->type58[36].value = abscissaTypeDescription(newCh->type58[32].value.toInt());
-
-        newCh->write(stream, id);
-    }
-    removeTempFile();
-
-    temp.close();
-    QFile::remove(fileName());
-    QFile::copy(temp.fileName(), fileName());
-}
-
-QString UffFileDescriptor::calculateThirdOctave()
-{DD;
-    //populate();
-
-    QString thirdOctaveFileName = this->fileName();
-    thirdOctaveFileName.chop(4);
-
-    int index = 0;
-    if (QFile::exists(thirdOctaveFileName+"_3oct.uff")) {
-        index++;
-        while (QFile::exists(thirdOctaveFileName+"_3oct("+QString::number(index)+").uff")) {
-            index++;
-        }
-    }
-    thirdOctaveFileName = index>0?thirdOctaveFileName+"_3oct("+QString::number(index)+").uff":thirdOctaveFileName+"_3oct.uff";
-
-    UffFileDescriptor *thirdOctUff = new UffFileDescriptor(thirdOctaveFileName);
-    thirdOctUff->updateDateTimeGUID();
-
-
-    foreach (Function *ch, this->channels) {
-        const bool populated = ch->populated();
-        if (!populated) ch->populate();
-        Function *newCh = new Function(*ch, thirdOctUff);
-
-        auto result = thirdOctave(ch->data()->decibels(), ch->data()->xMin(), ch->data()->xStep());
-
-        newCh->data()->setXValues(result.first);
-        newCh->data()->setThreshold(ch->data()->threshold());
-        newCh->data()->setYValues(result.second, DataHolder::YValuesAmplitudesInDB);
-        newCh->setPopulated(true);
-
-        newCh->type58[6].value = "Третьоктава";
-
-        newCh->type58[25].value = 4; //25 Ordinate Data Type
-    //                                       2 - real, single precision
-    //                                       4 - real, double precision
-    //                                       5 - complex, single precision
-    //                                       6 - complex, double precision
-        newCh->type58[26].value = newCh->data()->samplesCount(); //26   Number of data pairs for uneven abscissa spacing,
-                                           //  or number of data values for even abscissa spacing
-        newCh->type58[27].value = 0; //27 Abscissa Spacing (1=even, 0=uneven,
-        newCh->type58[28].value = 0.0; //28 Abscissa minimum
-        newCh->type58[29].value = 0.0; //29 Abscissa increment
-        newCh->type58[44].value = "дБ"; //Ordinate name
-
-        if (!populated) ch->clear();
-    }
-
-
-    thirdOctUff->setChanged(true);
-    thirdOctUff->setDataChanged(true);
-    thirdOctUff->write();
-
-    delete thirdOctUff;
-    return thirdOctaveFileName;
+    ch->type58[44].value = description.value("yName");
 }
 
 void UffFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)

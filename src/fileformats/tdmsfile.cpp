@@ -658,15 +658,6 @@ void TDMSGroup::copyChannelsFrom(FileDescriptor *, const QVector<int> &)
 {
 }
 
-QString TDMSGroup::calculateThirdOctave()
-{
-    return "";
-}
-
-void TDMSGroup::calculateMovingAvg(const QList<Channel *> &, int )
-{
-}
-
 QString TDMSGroup::saveTimeSegment(double , double )
 {
     return "";

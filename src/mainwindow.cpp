@@ -1733,6 +1733,34 @@ void MainWindow::copyToLegend()
     }
 }
 
+//void MainWindow::calculateThirdOctave()
+//{DD;
+//    if (!tab) return;
+//    QList<FileDescriptor *> records = tab->model->selectedFiles();
+//    for (int i=records.size()-1; i>=0; --i) {
+//        if (records[i]->type() <= Descriptor::TimeResponse) {
+//            // only convert spectres
+//            records.removeAt(i);
+//        }
+//    }
+
+//    if (records.isEmpty()) {
+//        QMessageBox::warning(this,QString("DeepSea Base"),
+//                             QString("Не выделено ни одного файла со спектрами"));
+//        return;
+//    }
+
+//    QStringList toAdd;
+//    for (FileDescriptor *fd: records) {
+//        QString dfd = fd->calculateThirdOctave();
+//        if (auto f = App->find(dfd))
+//            tab->model->updateFile(f.get());
+//        else
+//           toAdd << dfd;
+//    }
+//    addFiles(toAdd);
+//}
+
 void MainWindow::calculateThirdOctave()
 {DD;
     if (!tab) return;
@@ -1750,15 +1778,22 @@ void MainWindow::calculateThirdOctave()
         return;
     }
 
-    QStringList toAdd;
-    for (FileDescriptor *fd: records) {
-        QString dfd = fd->calculateThirdOctave();
-        if (auto f = App->find(dfd))
-            tab->model->updateFile(f.get());
-        else
-           toAdd << dfd;
+    QList<F> toAdd;
+
+    for (auto f: records) {
+        QString thirdOctaveFileName = createUniqueFileName("", f->fileName(), "3oct", "dfd", false);
+        F newFile = App->addFile(thirdOctaveFileName);
+        newFile->fillPreliminary(f);
+        newFile->calculateThirdOctave(f);
+
+        int idx;
+        if (tab->model->contains(thirdOctaveFileName, &idx)) {
+            tab->model->updateFile(idx);
+        }
+        else {
+            addFile(newFile);
+        }
     }
-    addFiles(toAdd);
 }
 
 void MainWindow::calculateMovingAvg()
@@ -1876,11 +1911,6 @@ void MainWindow::calculateMovingAvg()
     }
 
     avg->calculateMovingAvg(channels,windowSize);
-
-//    avgFile->setChanged(true);
-//    avgFile->setDataChanged(true);
-//    avgFile->write();
-//    avgFile->writeRawFile();
 
     int idx;
     if (tab->model->contains(avgFileName, &idx)) {

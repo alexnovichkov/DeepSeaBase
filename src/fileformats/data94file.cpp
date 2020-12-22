@@ -687,7 +687,7 @@ void Data94File::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int>
     }
 }
 
-void Data94File::addChannelWithData(DataHolder *data, const QList<Channel *> &source)
+void Data94File::addChannelWithData(DataHolder *data, const QJsonObject &description)
 {
     Data94Channel *ch = new Data94Channel(this);
     ch->setPopulated(true);
@@ -695,12 +695,7 @@ void Data94File::addChannelWithData(DataHolder *data, const QList<Channel *> &so
     ch->setDataChanged(true);
     ch->setData(data);
 
-    ch->setName("Среднее");
-    QStringList l;
-    for (int i=0; i<source.size(); ++i) {
-        l << QString::number(source.at(i)->index()+1);
-    }
-    ch->setDescription("Среднее каналов "+l.join(","));
+    ch->_description = description;
 
     //Заполнение данными
     //xAxisBlock
@@ -718,181 +713,9 @@ void Data94File::addChannelWithData(DataHolder *data, const QList<Channel *> &so
     ch->zAxisBlock.count = 1;
 
     ch->isComplex = data->yValuesFormat() == DataHolder::YValuesComplex;
-    ch->_description.insert("yname", source.first()->yName());
-    ch->_description.insert("xname", source.first()->xName());
-    ch->_description.insert("zname", source.first()->zName());
-    ch->_description.insert("samples", qint64(ch->xAxisBlock.count));
-    ch->_description.insert("blocks", qint64(ch->zAxisBlock.count));
 
     if (ch->xAxisBlock.uniform == 1 && !qFuzzyIsNull(ch->xAxisBlock.step))
         ch->_description.insert("samplerate", int(1.0 / ch->xAxisBlock.step));
-
-    QJsonObject function;
-    function.insert("name", Descriptor::functionTypeDescription(source.first()->type()));
-    function.insert("type", source.first()->type());
-    QString formatS;
-    switch (data->yValuesFormat()) {
-        case DataHolder::YValuesComplex: formatS = "complex"; break;
-        case DataHolder::YValuesReals: formatS = "real"; break;
-        case DataHolder::YValuesAmplitudes: formatS = "amplitude"; break;
-        case DataHolder::YValuesAmplitudesInDB: formatS = "amplitudeDb"; break;
-        case DataHolder::YValuesImags: formatS = "imaginary"; break;
-        case DataHolder::YValuesPhases: formatS = "phase"; break;
-        default: formatS = "real";
-    }
-    function.insert("format", formatS);
-    function.insert("logref", data->threshold());
-    QString unitsS;
-    switch (data->yValuesUnits()) {
-        case DataHolder::UnitsUnknown: unitsS = "unknown"; break;
-        case DataHolder::UnitsLinear: unitsS = "linear"; break;
-        case DataHolder::UnitsQuadratic: unitsS = "quadratic"; break;
-        case DataHolder::UnitsDimensionless: unitsS = "dimensionless"; break;
-        default: break;
-    }
-    function.insert("units", unitsS);
-    int octave = source.first()->octaveType();
-    if (octave > 0)
-        function.insert("octaveFormat", octave);
-    ch->_description.insert("function", function);
-}
-
-QString Data94File::calculateThirdOctave()
-{
-    QString thirdOctaveFileName = createUniqueFileName("", fileName(), "3oct", "d94", false);
-
-    Data94File *thirdOctFile = new Data94File(thirdOctaveFileName);
-
-    thirdOctFile->description = this->description;
-    thirdOctFile->descriptionSize = this->descriptionSize;
-    thirdOctFile->description.insert("sourceFile", fileName());
-    thirdOctFile->updateDateTimeGUID();
-
-    for (Data94Channel *ch: qAsConst(channels)) {
-        const bool populated = ch->populated();
-        if (!populated) ch->populate();
-
-        Data94Channel *newCh = new Data94Channel(ch, thirdOctFile);
-
-        //третьоктава рассчитывается только для первого блока
-        newCh->zAxisBlock.count = 1;
-
-        auto result = thirdOctave(ch->data()->decibels(0), ch->data()->xMin(), ch->data()->xStep());
-
-        newCh->data()->setThreshold(ch->data()->threshold());
-        newCh->data()->setYValuesUnits(ch->data()->yValuesUnits());
-        newCh->data()->setXValues(result.first);
-        newCh->data()->setYValues(result.second, DataHolder::YValuesAmplitudesInDB);
-        newCh->_description.insert("samples", newCh->samplesCount());
-
-        newCh->xAxisBlock.count = result.first.size();
-        newCh->xAxisBlock.begin = result.first.constFirst();
-        newCh->xAxisBlock.uniform = 0;
-        newCh->xAxisBlock.values = result.first;
-
-        QJsonObject function;
-        function.insert("name", "OCTF3");
-        function.insert("format", "amplitudeDb");
-        function.insert("logref", ch->data()->threshold());
-        QString units;
-        switch (ch->data()->yValuesUnits()) {
-            case DataHolder::UnitsUnknown: units = "unknown"; break;
-            case DataHolder::UnitsLinear: units = "linear"; break;
-            case DataHolder::UnitsQuadratic: units = "quadratic"; break;
-            case DataHolder::UnitsDimensionless: units = "dimensionless"; break;
-            default: break;
-        }
-        function.insert("units", units);
-        function.insert("octaveFormat", 3);
-        newCh->_description.insert("function", function);
-
-        newCh->setYName(ch->yName());
-        newCh->setPopulated(true);
-        newCh->setChanged(true);
-        newCh->setDataChanged(true);
-
-        if (!populated) ch->clear();
-    }
-
-    thirdOctFile->setChanged(true);
-    thirdOctFile->setDataChanged(true);
-    thirdOctFile->write();
-
-    delete thirdOctFile;
-    return thirdOctaveFileName;
-}
-
-void Data94File::calculateMovingAvg(const QList<Channel*> &list, int windowSize)
-{
-    if (list.isEmpty()) return;
-
-    populate();
-    const Channel *firstChannel = list.first();
-    //определяем количество отсчетов
-    int numInd = firstChannel->samplesCount();
-
-    for (Channel *ch: list) {
-        const bool populated = ch->populated();
-        if (!populated) ch->populate();
-
-        Data94Channel *newCh = new Data94Channel(ch, this);
-        newCh->setPopulated(true);
-        newCh->setChanged(true);
-        newCh->setDataChanged(true);
-
-        //xAxisBlock
-        newCh->xAxisBlock.uniform = firstChannel->data()->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
-        newCh->xAxisBlock.begin = firstChannel->data()->xMin();
-        if (newCh->xAxisBlock.uniform == 0) {// not uniform
-            newCh->xAxisBlock.values = firstChannel->xValues();
-            newCh->xAxisBlock.values.resize(numInd);
-        }
-
-        newCh->xAxisBlock.count = numInd;
-        newCh->xAxisBlock.step = firstChannel->data()->xStep();
-
-        //zAxisBlock
-        newCh->zAxisBlock.count = 1;
-
-        if (ch->data()->xValuesFormat()==DataHolder::XValuesUniform) {
-            newCh->data()->setXValues(ch->data()->xMin(), ch->data()->xStep(), numInd);
-        }
-        else {
-            QVector<double> values = ch->data()->xValues();
-            values.resize(numInd);
-            newCh->data()->setXValues(values);
-        }
-
-        auto format = ch->data()->yValuesFormat();
-
-        if (format == DataHolder::YValuesComplex) {
-            auto values = movingAverage(ch->data()->yValuesComplex(0), windowSize);
-            values.resize(numInd);
-            newCh->data()->setYValues(values);
-        }
-        else {
-            QVector<double> values = movingAverage(ch->data()->linears(0), windowSize);
-            values.resize(numInd);
-            if (format == DataHolder::YValuesAmplitudesInDB)
-                format = DataHolder::YValuesAmplitudes;
-            newCh->data()->setYValues(values, format);
-        }
-
-
-
-        newCh->setName(ch->name()+" сглаж.");
-        newCh->setDescription("Скользящее среднее канала "+ch->name());
-
-        newCh->_description.insert("samples", qint64(newCh->xAxisBlock.count));
-        if (newCh->xAxisBlock.uniform == 1 && !qFuzzyIsNull(newCh->xAxisBlock.step))
-            newCh->_description.insert("samplerate", int(1.0 / newCh->xAxisBlock.step));
-
-        if (!populated) ch->clear();
-    }
-
-    setChanged(true);
-    setDataChanged(true);
-    write();
 }
 
 QString Data94File::saveTimeSegment(double from, double to)
