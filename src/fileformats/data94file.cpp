@@ -971,7 +971,7 @@ void Data94File::setXStep(const double xStep)
 int Data94File::samplesCount() const
 {
     if (channels.isEmpty()) return 0;
-    return channels.constFirst()->samplesCount();
+    return channels.constFirst()->data()->samplesCount();
 }
 
 void Data94File::setSamplesCount(int count)
@@ -1052,8 +1052,8 @@ Data94Channel::Data94Channel(Channel *other, Data94File *parent)
     xAxisBlock.uniform = other->data()->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
     xAxisBlock.begin = other->data()->xMin();
     if (xAxisBlock.uniform == 0) // not uniform
-        xAxisBlock.values = other->xValues();
-    xAxisBlock.count = other->samplesCount();
+        xAxisBlock.values = other->data()->xValues();
+    xAxisBlock.count = other->data()->samplesCount();
     xAxisBlock.step = other->data()->xStep();
 
     //zAxisBlock

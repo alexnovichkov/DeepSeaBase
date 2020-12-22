@@ -72,11 +72,9 @@ public:
     virtual void setXName(const QString &xName) override;
     virtual void setZName(const QString &zName) override;
     virtual QString legendName() const override;
-    virtual int samplesCount() const override;
 
     virtual void setCorrection(const QString &s) override;
 
-//    virtual QByteArray wavData(qint64 pos, qint64 samples) override;
 private:
     friend class UffFileDescriptor;
     void readRest();

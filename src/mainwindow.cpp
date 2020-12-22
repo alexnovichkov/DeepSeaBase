@@ -2408,13 +2408,13 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      //проверяем, все ли каналы имеют одинаковую длину
      bool allChannelsHaveSameLength = true;
      for (int i=1; i<plot->curves.size(); ++i) {
-         if (plot->curves.at(i)->channel->samplesCount() != channel->samplesCount()) {
+         if (plot->curves.at(i)->channel->data()->samplesCount() != channel->data()->samplesCount()) {
              allChannelsHaveSameLength = false;
              break;
          }
      }
 
-     const int samplesCount = channel->samplesCount();
+     const int samplesCount = channel->data()->samplesCount();
 //     const double step = channel->xStep();
 //     const bool zeroStepDetected = step<1e-9;
 
@@ -2559,14 +2559,14 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 
              QList<QVariant> cellsList;
              QList<QVariant> rowsList;
-             for (int j = 0; j < ch->samplesCount(); j++) {
+             for (int j = 0; j < ch->data()->samplesCount(); j++) {
                  double val = ch->data()->xValue(j);
                  if (!fullRange && (val < range.min || val > range.max) ) continue;
 
                  cellsList.clear();
                  if (zeroStep && exportPlots) {//размножаем каждое значение на 2
                      double f1 = j==0 ? val/pow(10.0,0.05):sqrt(val*ch->data()->xValue(j-1));
-                     double f2 = j==ch->samplesCount()-1?val*pow(10.0,0.05):sqrt(val*ch->data()->xValue(j+1));
+                     double f2 = j==ch->data()->samplesCount()-1?val*pow(10.0,0.05):sqrt(val*ch->data()->xValue(j+1));
                      //первый ряд: (f1, Li)
                      cellsList << f1 << ch->data()->yValue(j);
                      rowsList << QVariant(cellsList);

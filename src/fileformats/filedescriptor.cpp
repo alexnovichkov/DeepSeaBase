@@ -127,10 +127,10 @@ void FileDescriptor::calculateMean(const QList<Channel *> &channels)
     Channel *firstChannel = channels.constFirst();
 
     //ищем наименьшее число отсчетов
-    int numInd = firstChannel->samplesCount();
+    int numInd = firstChannel->data()->samplesCount();
     for (int i=1; i<channels.size(); ++i) {
-        if (channels.at(i)->samplesCount() < numInd)
-            numInd = channels.at(i)->samplesCount();
+        if (channels.at(i)->data()->samplesCount() < numInd)
+            numInd = channels.at(i)->data()->samplesCount();
     }
 
     // ищем формат данных для нового канала
@@ -143,9 +143,9 @@ void FileDescriptor::calculateMean(const QList<Channel *> &channels)
         }
     }
 
-    int units = firstChannel->units();
+    int units = firstChannel->data()->yValuesUnits();
     for (int i=1; i<channels.size(); ++i) {
-        if (channels.at(i)->units() != units) {
+        if (channels.at(i)->data()->yValuesUnits() != units) {
             units = DataHolder::UnitsUnknown;
             break;
         }
@@ -255,7 +255,7 @@ void FileDescriptor::calculateMovingAvg(const QList<Channel *> &channels, int wi
         data->setYValuesUnits(c->data()->yValuesUnits());
 
         if (c->data()->xValuesFormat()==DataHolder::XValuesUniform)
-            data->setXValues(c->data()->xMin(), c->data()->xStep(), c->samplesCount());
+            data->setXValues(c->data()->xMin(), c->data()->xStep(), c->data()->samplesCount());
         else
             data->setXValues(c->data()->xValues());
 
@@ -465,7 +465,7 @@ void Channel::clear()
 
 void Channel::maybeClearData()
 {
-    if (samplesCount()>1000000) clear();
+    if (data()->samplesCount()>1000000) clear();
 }
 
 QString Channel::yNameOld() const

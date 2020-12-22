@@ -184,7 +184,7 @@ DfdFileDescriptor::DfdFileDescriptor(const DfdFileDescriptor &d, const QString &
         if (destChannel->IndType==0xC0000004)
             writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-        const int sc = sourceChannel->samplesCount();
+        const int sc = sourceChannel->data()->samplesCount();
 
         //dfd не понимает многоблочные файлы
         QVector<double> yValues = sourceChannel->data()->rawYValues(0);
@@ -244,7 +244,7 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
 
     // меняем тип данных временной реализации на вырезку, чтобы DeepSea не пытался прочитать файл как сырые данные
     if (this->DataType == SourceData) this->DataType = CuttedData;
-    this->NumInd = firstChannel->samplesCount();
+    this->NumInd = firstChannel->data()->samplesCount();
     this->XName = firstChannel->xName();
 
     this->XBegin = firstChannel->data()->xMin();
@@ -285,10 +285,10 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
         ch->YNameOld.clear();
         ch->InputType.clear();
         ch->ChanDscr.clear();
-        ch->ChanBlockSize = channels.constFirst()->samplesCount();
+        ch->ChanBlockSize = channels.constFirst()->data()->samplesCount();
         ch->IndType = 3221225476;
         ch->data()->setThreshold(1.0);
-        ch->data()->setXValues(channels.constFirst()->xValues());
+        ch->data()->setXValues(channels.constFirst()->data()->xValues());
 
         channels.prepend(ch);
         channels.takeLast();
@@ -336,7 +336,7 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
         if (destChannel->IndType==0xC0000004)
             writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-        const int sc = sourceChannel->samplesCount();
+        const int sc = sourceChannel->data()->samplesCount();
 
         //dfd не понимает многоблочные файлы
         QVector<double> yValues = sourceChannel->data()->rawYValues(0);
@@ -551,7 +551,7 @@ void DfdFileDescriptor::writeRawFile()
                 if (ch->IndType==0xC0000004)
                     writeStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-                const int sc = ch->samplesCount();
+                const int sc = ch->data()->samplesCount();
 
                 //dfd не понимает многоблочные файлы
                 QVector<double> yValues = ch->data()->rawYValues(0);
@@ -1481,7 +1481,7 @@ DfdChannel::DfdChannel(Channel &other, DfdFileDescriptor *parent) : Channel(othe
     ChanName = other.name();
     ChanDscr = other.description();
     IndType = 0xc0000004; // float
-    ChanBlockSize = other.samplesCount();
+    ChanBlockSize = other.data()->samplesCount();
 
     if (DfdChannel *o=dynamic_cast<DfdChannel*>(&other)) {
         YName = o->YName;
@@ -2552,7 +2552,7 @@ QString DfdFileDescriptor::saveTimeSegment(double from, double to)
         }
     }
 
-    newDfd->setSamplesCount(newDfd->channel(0)->samplesCount());
+    newDfd->setSamplesCount(newDfd->channel(0)->data()->samplesCount());
     newDfd->setChanged(true);
     newDfd->write();
     delete newDfd;

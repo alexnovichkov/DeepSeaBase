@@ -136,7 +136,7 @@ QStringList SpectreMethod::methodSettings(FileDescriptor *dfd, const Parameters 
     spfFile << QString("Wind=%1").arg(Windowing::windowDescription(p.windowType));
     spfFile << QString("TypeAver=%1").arg(Averaging::averagingDescription(p.averagingType+1));
 
-    int numberOfInd = dfd->channel(0)->samplesCount();
+    int numberOfInd = dfd->channel(0)->data()->samplesCount();
     double NumberOfAveraging = double(numberOfInd) / p.bufferSize / (1<<p.bandStrip);
     if (NumberOfAveraging<1) NumberOfAveraging = 1;
     int nAver = qRound(NumberOfAveraging);

@@ -82,7 +82,7 @@ QStringList TimeMethod::methodSettings(FileDescriptor *dfd, const Parameters &p)
     spfFile << "TypeProc=0";
     spfFile << "Values=измеряемые";
 
-    int numberOfInd = dfd->channel(0)->samplesCount();
+    int numberOfInd = dfd->channel(0)->data()->samplesCount();
     double NumberOfAveraging = double(numberOfInd) / p.bufferSize / (1<<p.bandStrip);
 
     // at least 2 averaging

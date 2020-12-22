@@ -1016,6 +1016,8 @@ void Function::write(QTextStream &stream, int &id)
     int blocks = data()->blocksCount();
     dataPositions.clear();  dataEnds.clear();
 
+    type58[26].value = data()->samplesCount();
+
     for (int block = 0; block < blocks; ++block) {
         //writing header
         FunctionHeader h = header;
@@ -1026,7 +1028,6 @@ void Function::write(QTextStream &stream, int &id)
         t58[10].value = QString("Record %1").arg(block+1);
         t58[15].value = id+block;
         t58[16].value = block+1;
-
         t58[30].value = data()->zValue(block);
 
         for (int i=0; i<60; ++i) {
@@ -1278,7 +1279,7 @@ bool Function::populateWithStream()
         return false;
     }
 
-    int sc = samplesCount();
+    int sc = data()->samplesCount();
 
 
     Q_ASSERT_X (dataPositions.first() != -1, "Function::populate", "Data positions have been invalidated");
@@ -1439,11 +1440,6 @@ QString Function::legendName() const
     return l.join(" ");
 }
 
-int Function::samplesCount() const
-{DD;
-    return type58[26].value.toULongLong();
-}
-
 void Function::setCorrection(const QString &s)
 {
     Channel::setCorrection(s);
@@ -1493,7 +1489,7 @@ QString UffFileDescriptor::saveTimeSegment(double from, double to)
     int sampleStart = qRound((from - ch->data()->xMin())/ch->data()->xStep());
     if (sampleStart<0) sampleStart = 0;
     int sampleEnd = qRound((to - ch->data()->xMin())/ch->data()->xStep());
-    if (sampleEnd >= ch->samplesCount()) sampleEnd = ch->samplesCount() - 1;
+    if (sampleEnd >= ch->data()->samplesCount()) sampleEnd = ch->data()->samplesCount() - 1;
 //    newUff->setSamplesCount(sampleEnd - sampleStart + 1); //число отсчетов в новом файле
 
     // 4 сохраняем файл
@@ -1525,7 +1521,7 @@ QString UffFileDescriptor::saveTimeSegment(double from, double to)
 int UffFileDescriptor::samplesCount() const
 {
     if (channels.isEmpty()) return 0;
-    return channels.constFirst()->samplesCount();
+    return channels.constFirst()->data()->samplesCount();
 }
 
 void UffFileDescriptor::setSamplesCount(int count)

@@ -230,7 +230,7 @@ int BarCurve::closest(const QPoint &pos, double *dist) const
 {
     int index = -1;
 
-    const size_t numSamples = channel->samplesCount();
+    const size_t numSamples = channel->data()->samplesCount();
     if ( numSamples <= 0 )
         return -1;
 

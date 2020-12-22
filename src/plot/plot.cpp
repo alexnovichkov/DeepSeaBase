@@ -68,7 +68,7 @@ Curve * createCurve(const QString &legendName, Channel *channel)
         return new SpectroCurve(legendName, channel);
 
     // считаем, что шаг по оси х 0 только у октав и третьоктав
-    if (channel->xValuesFormat() == DataHolder::XValuesNonUniform)
+    if (channel->data()->xValuesFormat() == DataHolder::XValuesNonUniform)
         return new BarCurve(legendName, channel);
 
     return new LineCurve(legendName, channel);

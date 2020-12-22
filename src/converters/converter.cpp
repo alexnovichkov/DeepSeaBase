@@ -336,7 +336,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
 
     int factor = 1<<p.bandStrip;
 
-    const int samplesCount = file->channel(0)->samplesCount();
+    const int samplesCount = file->channel(0)->data()->samplesCount();
     int averages = int(1.0 * samplesCount / p.bufferSize / factor / (1.0 - p.overlap));
     if (p.averagesCount == -1) p.averagesCount = averages;
     else p.averagesCount = qMin(averages, p.averagesCount);
@@ -566,7 +566,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
     }
 
     if (newDfd) {
-        newDfd->setSamplesCount(newDfd->channel(0)->samplesCount());
+        newDfd->setSamplesCount(newDfd->channel(0)->data()->samplesCount());
         newDfd->setChanged(true);
         newDfd->setDataChanged(true);
         newDfd->write();

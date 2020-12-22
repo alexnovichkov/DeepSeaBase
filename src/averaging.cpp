@@ -192,10 +192,10 @@ Averaging *averageChannels(const QList<QPair<FileDescriptor *, int> > &toMean)
     Channel *firstChannel = list.constFirst();
 
     //ищем наименьшее число отсчетов
-    int numInd = firstChannel->samplesCount();
+    int numInd = firstChannel->data()->samplesCount();
     for (int i=1; i<list.size(); ++i) {
-        if (list.at(i)->samplesCount() < numInd)
-            numInd = list.at(i)->samplesCount();
+        if (list.at(i)->data()->samplesCount() < numInd)
+            numInd = list.at(i)->data()->samplesCount();
     }
 
     // ищем формат данных для нового канала
@@ -208,9 +208,9 @@ Averaging *averageChannels(const QList<QPair<FileDescriptor *, int> > &toMean)
         }
     }
 
-    int units = firstChannel->units();
+    int units = firstChannel->data()->yValuesUnits();
     for (int i=1; i<list.size(); ++i) {
-        if (list.at(i)->units() != units) {
+        if (list.at(i)->data()->yValuesUnits() != units) {
             units = DataHolder::UnitsUnknown;
             break;
         }

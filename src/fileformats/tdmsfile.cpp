@@ -709,7 +709,7 @@ double TDMSGroup::xBegin() const
 int TDMSGroup::samplesCount() const
 {
     if (channels.isEmpty()) return 0;
-    return channels.constFirst()->samplesCount();
+    return channels.constFirst()->data()->samplesCount();
 }
 
 void TDMSGroup::setSamplesCount(int)

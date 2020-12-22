@@ -360,7 +360,7 @@ void TrackingPanel::update()
     for (Curve *c: plot->curves) {
         QVector<int> steps(4);
 
-        auto xVals = c->channel->xValues();
+        auto xVals = c->channel->data()->xValues();
         auto iter = closest<QVector<double>::const_iterator, double>(xVals.constBegin(), xVals.constEnd(), leftBorder);
         steps[minBorder] = iter - xVals.constBegin();
 

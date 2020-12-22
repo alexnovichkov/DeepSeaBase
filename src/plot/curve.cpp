@@ -151,7 +151,7 @@ void Curve::evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const
         }
     }
     if (from < 0) from = 0;
-    if (to >= channel->samplesCount()) to = channel->samplesCount()-1;
+    if (to >= channel->data()->samplesCount()) to = channel->data()->samplesCount()-1;
 }
 
 void Curve::switchFixed()

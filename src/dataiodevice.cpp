@@ -27,12 +27,12 @@ bool DataIODevice::seek(qint64 pos)
 
     m_pos = pos / sizeof(qint16);
 
-    return (m_pos <= m_channel->samplesCount());
+    return (m_pos <= m_channel->data()->samplesCount());
 }
 
 bool DataIODevice::atEnd() const
 {DD;
-    return (m_pos >= m_channel->samplesCount()-1);
+    return (m_pos >= m_channel->data()->samplesCount()-1);
 }
 
 bool DataIODevice::reset()
@@ -49,7 +49,7 @@ bool DataIODevice::canReadLine() const
 
 qint64 DataIODevice::size() const
 {
-    return m_channel->samplesCount() * sizeof(qint16);
+    return m_channel->data()->samplesCount() * sizeof(qint16);
 }
 
 qint64 DataIODevice::readData(char *data, qint64 maxlen)
@@ -81,7 +81,7 @@ qint64 DataIODevice::readData(char *data, qint64 maxlen)
     m_pos += (b.length() / sizeof(qint16));
 
     // no more data available
-    if (m_pos >= m_channel->samplesCount()-1) return -1;
+    if (m_pos >= m_channel->data()->samplesCount()-1) return -1;
 
     return b.length();
 }

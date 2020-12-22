@@ -95,7 +95,7 @@ public:
     virtual void deleteChannels(const QVector<int> &channelsToDelete) = 0;
     virtual void copyChannelsFrom(FileDescriptor *, const QVector<int> &) = 0;
 
-    /** Calculates mean of channels, writes to a file */
+    /** Calculates average of channels, writes to a file */
     void calculateMean(const QList<Channel*> &channels);
     void calculateMovingAvg(const QList<Channel *> &channels, int windowSize);
     void calculateThirdOctave(FileDescriptor *source);
@@ -208,12 +208,7 @@ public:
     const DataHolder *data() const {return _data;}
     void setData(DataHolder *data) {delete _data; _data = data;}
 
-    virtual int samplesCount() const {return _data->samplesCount();}
-    virtual int xValuesFormat() const {return _data->xValuesFormat();}
-    virtual int units() const {return _data->yValuesUnits();}
-
-    virtual QVector<double> xValues() const {return _data->xValues();}
-    virtual QByteArray wavData(qint64 pos, qint64 samples);
+    QByteArray wavData(qint64 pos, qint64 samples);
 
     virtual FileDescriptor *descriptor() = 0;
 
@@ -230,6 +225,7 @@ public:
 
     bool changed() const {return _changed;}
     void setChanged(bool changed) {_changed = changed;}
+
     bool dataChanged() const {return _dataChanged;}
     void setDataChanged(bool changed) {_dataChanged = changed;}
 private:

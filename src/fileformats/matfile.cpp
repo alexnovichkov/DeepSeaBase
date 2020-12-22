@@ -207,7 +207,7 @@ QList<QVector<int> > MatFile::groupChannels() const
     QMap<QPair<int, Descriptor::DataType>, int> map;
 
     for (int i=0; i<channelsCount(); ++i) {
-        int size = channels.at(i)->samplesCount();
+        int size = channels.at(i)->data()->samplesCount();
         Descriptor::DataType type = channels.at(i)->type();
         QPair<int, Descriptor::DataType> pair = qMakePair(size, type);
         if (!map.contains(pair)) {
@@ -1183,7 +1183,7 @@ double MatFile::xBegin() const
 int MatFile::samplesCount() const
 {
     if (channels.isEmpty()) return 0;
-    return channels.constFirst()->samplesCount();
+    return channels.constFirst()->data()->samplesCount();
 }
 
 void MatFile::setSamplesCount(int count)
@@ -1275,7 +1275,7 @@ void MatlabChannel::populate()
         _data->setYValues(data, _data->yValuesFormat());
     }
     else {
-        QVector<cx_double> valuesComplex = QVector<cx_double>(samplesCount(), cx_double());
+        QVector<cx_double> valuesComplex = QVector<cx_double>(_data->samplesCount(), cx_double());
 
         int idx = real_values->header->sizeInBytesWithoutPadding / groupSize;
         QByteArray img = imag_values->getRaw(idx * indexInGroup, idx);

@@ -231,7 +231,7 @@ void SavingFunction::reset()
 
     if (m_file) {
         if (m_file->channelsCount()>0)
-            m_file->setSamplesCount(m_file->channel(0)->samplesCount());
+            m_file->setSamplesCount(m_file->channel(0)->data()->samplesCount());
         m_file->setChanged(true);
         m_file->setDataChanged(true);
         for (int i=0; i<m_file->channelsCount(); ++i) {

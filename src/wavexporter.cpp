@@ -201,10 +201,10 @@ bool WavExporter::writeWithMap(const QString &wavFileName)
         Channel *channel = file->channel(indexes.at(ch));
         bool populated = channel->populated();
         if (!populated) channel->populate();
-        QByteArray channelData = channel->wavData(0, channel->samplesCount());
+        QByteArray channelData = channel->wavData(0, channel->data()->samplesCount());
 
         //записываем каждый сэмпл на свое место
-        for (int sample = 0; sample < channel->samplesCount(); ++sample) {
+        for (int sample = 0; sample < channel->data()->samplesCount(); ++sample) {
             // i-й отсчет ch-го канала имеет номер
             //       [n + i*ChannelsCount]
             //то есть целевой указатель будет иметь адрес
