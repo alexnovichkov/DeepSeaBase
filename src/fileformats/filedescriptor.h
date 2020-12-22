@@ -96,7 +96,8 @@ public:
     virtual void copyChannelsFrom(FileDescriptor *, const QVector<int> &) = 0;
 
     /** Calculates mean of channels, writes to a file */
-    virtual void calculateMean(const QList<Channel*> &channels) = 0;
+    void calculateMean(const QList<Channel*> &channels);
+
     virtual QString calculateThirdOctave() = 0;
     virtual void calculateMovingAvg(const QList<Channel *> &channels, int windowSize) = 0;
     virtual QString saveTimeSegment(double from, double to) = 0;
@@ -150,6 +151,8 @@ public:
     virtual bool canTakeAnyChannels() const;
 
     bool hasCurves() const;
+
+    virtual void addChannelWithData(DataHolder *data, const QList<Channel *> &source) {};
 private:
     QString _fileName;
     bool _changed = false;
@@ -199,6 +202,7 @@ public:
 
     DataHolder *data() {return _data;}
     const DataHolder *data() const {return _data;}
+    void setData(DataHolder *data) {delete _data; _data = data;}
 
     virtual int samplesCount() const {return _data->samplesCount();}
     virtual int xValuesFormat() const {return _data->xValuesFormat();}

@@ -75,7 +75,6 @@ public:
     virtual QDateTime dateTime() const override;
     virtual void deleteChannels(const QVector<int> &) override;
     virtual void copyChannelsFrom(FileDescriptor *, const QVector<int> &) override;
-    virtual void calculateMean(const QList<Channel *> &) override;
     virtual QString calculateThirdOctave() override;
     virtual void calculateMovingAvg(const QList<Channel *> &, int) override;
     virtual QString saveTimeSegment(double, double) override;

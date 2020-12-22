@@ -1,6 +1,7 @@
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
 #include "dataholder.h"
+#include "averaging.h"
 
 double threshold(const QString &name)
 {
@@ -116,6 +117,87 @@ double FileDescriptor::roundedSize() const
         }
     }
     return size;
+}
+
+void FileDescriptor::calculateMean(const QList<Channel *> &channels)
+{
+    if (channels.isEmpty()) return;
+
+    Channel *firstChannel = channels.constFirst();
+
+    //ищем наименьшее число отсчетов
+    int numInd = firstChannel->samplesCount();
+    for (int i=1; i<channels.size(); ++i) {
+        if (channels.at(i)->samplesCount() < numInd)
+            numInd = channels.at(i)->samplesCount();
+    }
+
+    // ищем формат данных для нового канала
+    // если форматы разные, то формат будет линейный (амплитуды), не логарифмированный
+    auto format = firstChannel->data()->yValuesFormat();
+    for (int i=1; i<channels.size(); ++i) {
+        if (channels.at(i)->data()->yValuesFormat() != format) {
+            format = DataHolder::YValuesAmplitudes;
+            break;
+        }
+    }
+
+    int units = firstChannel->units();
+    for (int i=1; i<channels.size(); ++i) {
+        if (channels.at(i)->units() != units) {
+            units = DataHolder::UnitsUnknown;
+            break;
+        }
+    }
+
+    Averaging averaging(Averaging::Linear, channels.size());
+
+    for (Channel *ch: channels) {
+        const bool populated = ch->populated();
+        if (!populated) ch->populate();
+        if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
+            averaging.average(ch->data()->yValuesComplex(0));
+        else
+            averaging.average(ch->data()->linears(0));
+        if (!populated) ch->clear();
+    }
+
+    DataHolder *data = new DataHolder;
+
+    data->setThreshold(firstChannel->data()->threshold());
+    data->setYValuesUnits(units);
+
+    if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
+        data->setXValues(firstChannel->data()->xMin(), firstChannel->data()->xStep(), numInd);
+    }
+    else {
+        data->setXValues(firstChannel->data()->xValues().mid(0, numInd));
+    }
+    //усредняем только первый блок
+    //TODO: добавить усреднение по всем блокам
+    data->setZValues(firstChannel->data()->zMin(), firstChannel->data()->zStep(), 1);
+
+    if (format == DataHolder::YValuesComplex) {
+        auto d = averaging.getComplex().mid(0, numInd);
+        d.resize(data->samplesCount());
+        data->setYValues(d);
+    }
+    else {//не комплексные
+        QVector<double> d = averaging.get().mid(0, numInd);
+        d.resize(data->samplesCount());
+        if (format == DataHolder::YValuesAmplitudesInDB) {
+            data->setYValues(DataHolder::toLog(d, data->threshold(), units), format);
+        }
+        else
+            data->setYValues(d, format);
+    }
+
+    addChannelWithData(data, channels);
+
+    setChanged(true);
+    setDataChanged(true);
+    write();
+    writeRawFile();
 }
 
 bool FileDescriptor::fileExists() const

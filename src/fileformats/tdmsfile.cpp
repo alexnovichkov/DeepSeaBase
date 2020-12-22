@@ -658,10 +658,6 @@ void TDMSGroup::copyChannelsFrom(FileDescriptor *, const QVector<int> &)
 {
 }
 
-void TDMSGroup::calculateMean(const QList<Channel *> &)
-{
-}
-
 QString TDMSGroup::calculateThirdOctave()
 {
     return "";

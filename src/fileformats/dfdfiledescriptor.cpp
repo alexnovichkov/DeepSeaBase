@@ -734,12 +734,6 @@ bool DfdFileDescriptor::fileExists() const
     return (FileDescriptor::fileExists() && QFileInfo(rawFileName).exists());
 }
 
-void DfdFileDescriptor::setDataChanged(bool changed)
-{DD;
-    FileDescriptor::setDataChanged(changed);
-//    BlockSize = 0;
-}
-
 void DfdFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
 {DD;
     // заполняем вектор индексов каналов, как они будут выглядеть после удаления
@@ -910,94 +904,37 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
     write();
 }
 
-void DfdFileDescriptor::calculateMean(const QList<Channel*> &channels)
-{DD;
-    Channel *firstChannel = channels.constFirst();
-
-    //ищем наименьшее число отсчетов
-    int numInd = firstChannel->samplesCount();
-    for (int i=1; i<channels.size(); ++i) {
-        if (channels.at(i)->samplesCount() < numInd)
-            numInd = channels.at(i)->samplesCount();
-    }
-
-    // ищем формат данных для нового канала
-    // если форматы разные, то формат будет линейный (амплитуды), не логарифмированный
-    auto format = firstChannel->data()->yValuesFormat();
-    for (int i=1; i<channels.size(); ++i) {
-        if (channels.at(i)->data()->yValuesFormat() != format) {
-            format = DataHolder::YValuesAmplitudes;
-            break;
-        }
-    }
-
-    int units = firstChannel->units();
-    for (int i=1; i<channels.size(); ++i) {
-        if (channels.at(i)->units() != units) {
-            units = DataHolder::UnitsUnknown;
-            break;
-        }
-    }
-
-    Averaging averaging(Averaging::Linear, channels.size());
-
-    for (Channel *ch: channels) {
-        if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
-            averaging.average(ch->data()->yValuesComplex(0));
-        else
-            averaging.average(ch->data()->linears(0));
-    }
-
+void DfdFileDescriptor::addChannelWithData(DataHolder *data, const QList<Channel*> &source)
+{
     // обновляем сведения канала
     DfdChannel *ch = new DfdChannel(this, channelsCount());
     ch->setPopulated(true);
     ch->setChanged(true);
     ch->setDataChanged(true);
+    ch->setData(data);
 
     QStringList l;
-    for (Channel *c: channels) {
+    for (Channel *c: source) {
         l << c->name();
     }
     ch->ChanName = "Среднее "+l.join(", ");
     l.clear();
-    for (Channel *c: channels) {
+    for (Channel *c: source) {
         l << QString::number(c->index()+1);
     }
     ch->ChanDscr = "Среднее каналов "+l.join(",");
 
-    ch->data()->setThreshold(firstChannel->data()->threshold());
-    ch->data()->setYValuesUnits(units);
+    ch->ChanBlockSize = data->samplesCount();
 
-    if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
-        ch->data()->setXValues(firstChannel->data()->xMin(), firstChannel->data()->xStep(), numInd);
-    }
-    else {
-        ch->data()->setXValues(firstChannel->data()->xValues().mid(0, numInd));
-    }
-
-    if (format == DataHolder::YValuesComplex)
-        ch->data()->setYValues(averaging.getComplex().mid(0, numInd));
-    else if (format == DataHolder::YValuesAmplitudesInDB) {
-        QVector<double> data = averaging.get().mid(0, numInd);
-        ch->data()->setYValues(DataHolder::toLog(data, firstChannel->data()->threshold(), units),
-                               DataHolder::YValuesFormat(format));
-    }
-    else
-        ch->data()->setYValues(averaging.get().mid(0, numInd), DataHolder::YValuesFormat(format));
-
-
-
-    ch->ChanBlockSize = numInd;
-
-    ch->IndType = channelsCount()==1 ? 3221225476 : this->channels.constFirst()->IndType;
-    ch->YName = firstChannel->yName();
+    ch->IndType = channelsCount()==1 ? 3221225476 : channels.constFirst()->IndType;
+    ch->YName = source.first()->yName();
     //грязный хак
-    if (DfdChannel *dfd = dynamic_cast<DfdChannel*>(firstChannel)) {
+    if (DfdChannel *dfd = dynamic_cast<DfdChannel*>(source.first())) {
         ch->YNameOld = dfd->YNameOld;
-        if (ch->YName == ch->YNameOld && format == DataHolder::YValuesAmplitudesInDB)
+        if (ch->YName == ch->YNameOld && data->yValuesFormat() == DataHolder::YValuesAmplitudesInDB)
             ch->YName = "дБ";
     }
-    if (XName.isEmpty()) XName = firstChannel->xName();
+    if (XName.isEmpty()) XName = source.first()->xName();
 
     //третьоктава или октава: канал только один и данные по x неравномерны
     if (channelsCount()==1 && ch->data()->xValuesFormat()==DataHolder::XValuesNonUniform) {
@@ -1018,26 +955,21 @@ void DfdFileDescriptor::calculateMean(const QList<Channel*> &channels)
         ch0->data()->setYValues(xValues, DataHolder::YValuesReals);
         ch0->setPopulated(true);
 
-        this->channels.prepend(ch0);
-        this->channels.takeLast(); //нулевой канал автоматически был добавлен в конец. Убираем его в начало
+        channels.prepend(ch0);
+        channels.takeLast(); //нулевой канал автоматически был добавлен в конец. Убираем его в начало
 
         for (int i=0; i<channelsCount(); ++i)
-            this->channels[i]->channelIndex = i;
+            channels[i]->channelIndex = i;
     }
 
     if ((channelsCount()==2 && ch->data()->xValuesFormat()==DataHolder::XValuesNonUniform)
         || channelsCount()==1) {
         //заполняем всю остальную информацию
-        NumInd = numInd;
+        NumInd = data->samplesCount();
         BlockSize = 0;
-        XBegin = channels.constFirst()->data()->xMin();
-        XStep = channels.constFirst()->data()->xStep();
+        XBegin = data->xMin();
+        XStep = data->xStep();
     }
-
-    setChanged(true);
-    setDataChanged(true);
-    write();
-    writeRawFile();
 }
 
 void DfdFileDescriptor::calculateMovingAvg(const QList<Channel *> &list, int windowSize)

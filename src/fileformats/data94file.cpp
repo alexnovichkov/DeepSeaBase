@@ -687,115 +687,40 @@ void Data94File::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int>
     }
 }
 
-void Data94File::calculateMean(const QList<Channel*> &toMean)
+void Data94File::addChannelWithData(DataHolder *data, const QList<Channel *> &source)
 {
-    Channel *firstChannel = toMean.constFirst();
-    const bool firstChannelPopulated = firstChannel->populated();
-    if (!firstChannelPopulated) firstChannel->populate();
-
-    //ищем наименьшее число отсчетов
-    int numInd = firstChannel->samplesCount();
-    for (int i=1; i<toMean.size(); ++i) {
-        if (toMean.at(i)->samplesCount() < numInd)
-            numInd = toMean.at(i)->samplesCount();
-    }
-
-    // ищем формат данных для нового канала
-    // если форматы разные, то формат будет линейный (амплитуды), не логарифмированный
-    auto format = firstChannel->data()->yValuesFormat();
-    for (int i=1; i<toMean.size(); ++i) {
-        if (toMean.at(i)->data()->yValuesFormat() != format) {
-            format = DataHolder::YValuesAmplitudes;
-            break;
-        }
-    }
-
-    int units = firstChannel->units();
-    for (int i=1; i<toMean.size(); ++i) {
-        if (toMean.at(i)->units() != units) {
-            units = DataHolder::UnitsUnknown;
-            break;
-        }
-    }
-
-    Averaging averaging(Averaging::Linear, toMean.size());
-
-    foreach (Channel *ch, toMean) {
-        const bool populated = ch->populated();
-        if (!populated) ch->populate();
-
-        if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
-            averaging.average(ch->data()->yValuesComplex(0));
-        else
-            averaging.average(ch->data()->linears(0));
-
-        if (!populated) ch->clear();
-    }
-
     Data94Channel *ch = new Data94Channel(this);
     ch->setPopulated(true);
     ch->setChanged(true);
     ch->setDataChanged(true);
+    ch->setData(data);
 
+    ch->setName("Среднее");
     QStringList l;
-    foreach (Channel *c,toMean) {
-        l << c->name();
-    }
-    ch->setName("Среднее "+l.join(", "));
-    l.clear();
-    for (int i=0; i<toMean.size(); ++i) {
-        l << QString::number(toMean.at(i)->index()+1);
+    for (int i=0; i<source.size(); ++i) {
+        l << QString::number(source.at(i)->index()+1);
     }
     ch->setDescription("Среднее каналов "+l.join(","));
 
+    //Заполнение данными
     //xAxisBlock
-    ch->xAxisBlock.uniform = firstChannel->data()->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
-    ch->xAxisBlock.begin = firstChannel->data()->xMin();
+    ch->xAxisBlock.uniform = data->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
+    ch->xAxisBlock.begin = data->xMin();
     if (ch->xAxisBlock.uniform == 0) {// not uniform
-        ch->xAxisBlock.values = firstChannel->xValues();
-        ch->xAxisBlock.values.resize(numInd);
+        ch->xAxisBlock.values = data->xValues();
+        ch->xAxisBlock.values.resize(data->samplesCount());
     }
 
-    ch->xAxisBlock.count = numInd;
-    ch->xAxisBlock.step = firstChannel->data()->xStep();
-
+    ch->xAxisBlock.count = data->samplesCount();
+    ch->xAxisBlock.step = data->xStep();
 
     //zAxisBlock
     ch->zAxisBlock.count = 1;
 
-    ch->data()->setThreshold(firstChannel->data()->threshold());
-    ch->data()->setYValuesUnits(units);
-
-    if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
-        ch->data()->setXValues(ch->xAxisBlock.begin, ch->xAxisBlock.step, ch->xAxisBlock.count);
-    }
-    else {
-        ch->data()->setXValues(ch->xAxisBlock.values);
-    }
-    ch->data()->setZValues(ch->zAxisBlock.begin, ch->zAxisBlock.step, ch->zAxisBlock.count);
-
-    if (format == DataHolder::YValuesComplex) {
-        auto data = averaging.getComplex().mid(0, numInd);
-        data.resize(ch->xAxisBlock.count);
-        ch->data()->setYValues(data);
-    }
-    else {//не комплексные
-        QVector<double> data = averaging.get().mid(0, numInd);
-        data.resize(ch->xAxisBlock.count);
-        if (format == DataHolder::YValuesAmplitudesInDB) {
-            ch->data()->setYValues(DataHolder::toLog(data, firstChannel->data()->threshold(), units),
-                                   format);
-        }
-        else
-            ch->data()->setYValues(data, DataHolder::YValuesFormat(format));
-    }
-
-
-    ch->setYName(firstChannel->yName());
-
-    ch->isComplex = format == DataHolder::YValuesComplex;
-    ch->_description.insert("xname", firstChannel->xName());
-    ch->_description.insert("zname", firstChannel->zName());
+    ch->isComplex = data->yValuesFormat() == DataHolder::YValuesComplex;
+    ch->_description.insert("yname", source.first()->yName());
+    ch->_description.insert("xname", source.first()->xName());
+    ch->_description.insert("zname", source.first()->zName());
     ch->_description.insert("samples", qint64(ch->xAxisBlock.count));
     ch->_description.insert("blocks", qint64(ch->zAxisBlock.count));
 
@@ -803,10 +728,10 @@ void Data94File::calculateMean(const QList<Channel*> &toMean)
         ch->_description.insert("samplerate", int(1.0 / ch->xAxisBlock.step));
 
     QJsonObject function;
-    function.insert("name", Descriptor::functionTypeDescription(firstChannel->type()));
-    function.insert("type", firstChannel->type());
+    function.insert("name", Descriptor::functionTypeDescription(source.first()->type()));
+    function.insert("type", source.first()->type());
     QString formatS;
-    switch (format) {
+    switch (data->yValuesFormat()) {
         case DataHolder::YValuesComplex: formatS = "complex"; break;
         case DataHolder::YValuesReals: formatS = "real"; break;
         case DataHolder::YValuesAmplitudes: formatS = "amplitude"; break;
@@ -816,9 +741,9 @@ void Data94File::calculateMean(const QList<Channel*> &toMean)
         default: formatS = "real";
     }
     function.insert("format", formatS);
-    function.insert("logref", firstChannel->data()->threshold());
+    function.insert("logref", data->threshold());
     QString unitsS;
-    switch (units) {
+    switch (data->yValuesUnits()) {
         case DataHolder::UnitsUnknown: unitsS = "unknown"; break;
         case DataHolder::UnitsLinear: unitsS = "linear"; break;
         case DataHolder::UnitsQuadratic: unitsS = "quadratic"; break;
@@ -826,16 +751,10 @@ void Data94File::calculateMean(const QList<Channel*> &toMean)
         default: break;
     }
     function.insert("units", unitsS);
-    int octave = firstChannel->octaveType();
+    int octave = source.first()->octaveType();
     if (octave > 0)
         function.insert("octaveFormat", octave);
     ch->_description.insert("function", function);
-
-    if (!firstChannelPopulated) firstChannel->clear();
-
-    setChanged(true);
-    setDataChanged(true);
-    write();
 }
 
 QString Data94File::calculateThirdOctave()

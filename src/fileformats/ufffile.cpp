@@ -510,100 +510,46 @@ void UffFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
     removeTempFile();
 }
 
-void UffFileDescriptor::calculateMean(const QList<Channel*> &toMean)
-{DD;
-    if (toMean.isEmpty()) return;
-
-    Channel *firstChannel = toMean.constFirst();
-
-    //ищем наименьшее число отсчетов
-    int numInd = firstChannel->samplesCount();
-    for (int i=1; i<toMean.size(); ++i) {
-        if (toMean.at(i)->samplesCount() < numInd)
-            numInd = toMean.at(i)->samplesCount();
-    }
-
-    // ищем формат данных для нового канала
-    // если форматы разные, то формат будет линейный (амплитуды), не логарифмированный
-    auto format = firstChannel->data()->yValuesFormat();
-    for (int i=1; i<toMean.size(); ++i) {
-        if (toMean.at(i)->data()->yValuesFormat() != format) {
-            format = DataHolder::YValuesAmplitudes;
-            break;
-        }
-    }
-
-    int units = firstChannel->units();
-    for (int i=1; i<toMean.size(); ++i) {
-        if (toMean.at(i)->units() != units) {
-            units = DataHolder::UnitsUnknown;
-            break;
-        }
-    }
-
-    Averaging averaging(Averaging::Linear, toMean.size());
-
-    foreach (Channel *ch, toMean) {
-        if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
-            averaging.average(ch->data()->yValuesComplex(0));
-        else
-            averaging.average(ch->data()->linears(0));
-    }
-
+void UffFileDescriptor::addChannelWithData(DataHolder *data, const QList<Channel *> &source)
+{
     // обновляем сведения канала
     Function *ch = new Function(this);
     ch->setChanged(true);
     ch->setDataChanged(true);
     ch->setPopulated(true);
+    ch->setData(data);
 
     ch->setName("Среднее");
     ch->type58[8].value = QDateTime::currentDateTime();
 
     QStringList l;
-    for (int i=0; i<toMean.size(); ++i) {
-        l << QString::number(toMean.at(i)->index() + 1);
+    for (int i=0; i<source.size(); ++i) {
+        l << QString::number(source.at(i)->index() + 1);
     }
     ch->setDescription("Среднее каналов "+l.join(","));
 
-    if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
-        ch->type58[27].value = 1;
-        ch->data()->setXValues(firstChannel->data()->xMin(), firstChannel->data()->xStep(), numInd);
-    }
-    else {
-        ch->type58[27].value = 0;
-        ch->data()->setXValues(firstChannel->data()->xValues().mid(0, numInd));
-    }
+    //Заполнение данными
+    ch->type58[27].value = data->xValuesFormat()==DataHolder::XValuesUniform ? 1 : 0;
 
-    ch->data()->setThreshold(firstChannel->data()->threshold());
-    ch->data()->setYValuesUnits(units);
-    if (format == DataHolder::YValuesComplex)
-        ch->data()->setYValues(averaging.getComplex().mid(0, numInd));
-    else if (format == DataHolder::YValuesAmplitudesInDB) {
+    if (data->yValuesFormat() == DataHolder::YValuesAmplitudesInDB) {
         // записываем в файлы uff только линейные данные
-        ch->data()->setYValues(averaging.get().mid(0, numInd), DataHolder::YValuesAmplitudes);
+        auto d = DataHolder::fromLog(data->rawYValues(-1), data->threshold(), data->yValuesUnits());
+        ch->data()->setYValues(d, DataHolder::YValuesAmplitudes);
     }
-    else
-        ch->data()->setYValues(averaging.get().mid(0, numInd), DataHolder::YValuesFormat(format));
 
+    ch->type58[14].value = source.first()->type();
 
-
-    ch->type58[14].value = firstChannel->type();
-
-    ch->type58[25].value = (format == DataHolder::YValuesComplex ? 6 : 4);
+    ch->type58[25].value = (data->yValuesFormat() == DataHolder::YValuesComplex ? 6 : 4);
     ch->type58[26].value = ch->data()->samplesCount();
 
-    ch->type58[28].value = firstChannel->data()->xMin();
-    ch->type58[29].value = firstChannel->data()->xStep();
+    ch->type58[28].value = data->xMin();
+    ch->type58[29].value = data->xStep();
 
-    ch->type58[32].value = abscissaType(firstChannel->xName());
+    ch->type58[32].value = abscissaType(source.first()->xName());
     ch->type58[36].value = abscissaTypeDescription(ch->type58[32].value.toInt());
-    ch->type58[37].value = firstChannel->xName();
+    ch->type58[37].value = source.first()->xName();
 
-    ch->type58[44].value = firstChannel->yName();
-
-    setChanged(true);
-    setDataChanged(true);
-    write();
+    ch->type58[44].value = source.first()->yName();
 }
 
 void UffFileDescriptor::calculateMovingAvg(const QList<Channel*> &toAvg, int windowSize)

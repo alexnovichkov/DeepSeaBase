@@ -1254,7 +1254,7 @@ void MainWindow::calculateMean()
     bool namesEqual = true; // одинаковые названия осей Y
     bool oneFile = true; // каналы из одного файла
     bool writeToSeparateFile = true;
-    bool writeToUff = false;
+    bool writeToD94 = false;
 
     Channel *firstChannel = plot->curves.first()->channel;
     channels.append(firstChannel);
@@ -1279,24 +1279,24 @@ void MainWindow::calculateMean()
     }
     if (!dataTypeEqual) {
         int result = QMessageBox::warning(0, "Среднее графиков",
-                                          "Графики имеют разный тип. Среднее будет записано в файл uff. Продолжить?",
+                                          "Графики имеют разный тип. Среднее будет записано в файл d94. Продолжить?",
                                           "Да","Нет");
         if (result == 1) return;
-        else writeToUff = true;
+        else writeToD94 = true;
     }
     if (!namesEqual) {
         int result = QMessageBox::warning(0, "Среднее графиков",
-                                          "Графики по-видимому имеют разный тип. Среднее будет записано в файл uff. Продолжить?",
+                                          "Графики по-видимому имеют разный тип. Среднее будет записано в файл d94. Продолжить?",
                                           "Да", "Нет");
         if (result == 1) return;
-        else writeToUff = true;
+        else writeToD94 = true;
     }
     if (!stepsEqual) {
         int result = QMessageBox::warning(0, "Среднее графиков",
-                                          "Графики имеют разный шаг по оси X. Среднее будет записано в файл uff. Продолжить?",
+                                          "Графики имеют разный шаг по оси X. Среднее будет записано в файл d94. Продолжить?",
                                           "Да", "Нет");
         if (result == 1) return;
-        else writeToUff = true;
+        else writeToD94 = true;
     }
     if (oneFile) {
         QMessageBox box("Среднее графиков",
@@ -1320,9 +1320,9 @@ void MainWindow::calculateMean()
     if (writeToSeparateFile) {
         QString meanD = firstChannelFileName;
         meanD.chop(4);
-        if (writeToUff) meanD.append(".uff");
+        if (writeToD94) meanD.append(".d94");
 
-        meanD = App->getSetting(writeToUff?"lastMeanUffFile":"lastMeanFile", meanD).toString();
+        meanD = App->getSetting(writeToD94?"lastMeanUffFile":"lastMeanFile", meanD).toString();
 
         QStringList  filters = FormatFactory::allFilters();
         QStringList suffixes = FormatFactory::allSuffixes(true);
@@ -1333,7 +1333,7 @@ void MainWindow::calculateMean()
         dialog.setFileMode(QFileDialog::AnyFile);
 //        dialog.setDefaultSuffix(writeToUff?"uff":"dfd");
 
-        if (!writeToUff) {
+        if (!writeToD94) {
             QSortFilterProxyModel *proxy = new DfdFilterProxy(firstDescriptor, this);
             dialog.setProxyModel(proxy);
         }
@@ -1376,7 +1376,7 @@ void MainWindow::calculateMean()
         else
             meanFile->fillPreliminary(firstDescriptor);
 
-        App->setSetting(writeToUff?"lastMeanUffFile":"lastMeanFile", meanFileName);
+        App->setSetting(writeToD94?"lastMeanUffFile":"lastMeanFile", meanFileName);
     }
     else {
         meanFileName = firstChannelFileName;

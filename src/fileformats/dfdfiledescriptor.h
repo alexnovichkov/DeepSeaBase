@@ -301,13 +301,11 @@ public:
 
     virtual bool fileExists() const override;
 
-    void setDataChanged(bool changed) override;
-
     virtual int channelsCount() const override {return channels.size();}
 
     void deleteChannels(const QVector<int> &channelsToDelete) override;
     void copyChannelsFrom(FileDescriptor *file, const QVector<int> &indexes) override;
-    virtual void calculateMean(const QList<Channel *> &channels) override;
+    void addChannelWithData(DataHolder *data, const QList<Channel *> &source) override;
     virtual void calculateMovingAvg(const QList<Channel *> &channels, int windowSize) override;
     virtual QString calculateThirdOctave() override;
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;

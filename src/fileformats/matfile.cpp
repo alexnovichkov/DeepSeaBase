@@ -1121,11 +1121,6 @@ void MatFile::copyChannelsFrom(FileDescriptor *, const QVector<int> &)
 {
 }
 
-void MatFile::calculateMean(const QList<Channel*> &)
-{
-
-}
-
 QString MatFile::calculateThirdOctave()
 {
     return QString();
