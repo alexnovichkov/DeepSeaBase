@@ -31,10 +31,23 @@ struct Dataset
 {
     QString id;
     QString fileName;
-    QStringList titles;
+    QString filePath;
+    QString titles[3];
     QString date;
     QString time;
     QList<XChannel> channels;
+    DataDescription toDataDescription() const {
+        DataDescription r;
+        r.put("source.name", filePath);
+        QDate d = QDate::fromString(date, "dd.MM.yy");
+        if (d.year()<1950) d=d.addYears(100);
+        QTime t = QTime::fromString(time, "hh:mm:ss");
+        r.put("dateTime", QDateTime(d,t).toString("dd.MM.yyyy hh:mm:ss"));
+        r.put("description.title1", titles[0]);
+        r.put("description.title2", titles[1]);
+        r.put("description.title3", titles[2]);
+        return r;
+    }
 };
 
 class MatlabRecord;
@@ -65,32 +78,13 @@ private:
 
     // FileDescriptor interface
 public:
-    virtual void fillPreliminary(FileDescriptor *file) override;
     virtual void write() override;
-    virtual void writeRawFile() override;
-    virtual void updateDateTimeGUID() override;
-    virtual DescriptionList dataDescriptor() const override;
-    virtual void setDataDescriptor(const DescriptionList &data) override;
-    virtual QString dataDescriptorAsString() const override;
-    virtual QDateTime dateTime() const override;
+//    virtual DescriptionList dataDescriptor() const override;
     virtual void deleteChannels(const QVector<int> &) override;
     virtual void copyChannelsFrom(FileDescriptor *, const QVector<int> &) override;
-    virtual QString saveTimeSegment(double, double) override;
     virtual int channelsCount() const override;
     virtual void move(bool, const QVector<int> &, const QVector<int> &) override;
-    virtual QVariant channelHeader(int column) const override;
-    virtual int columnsCount() const override;
     virtual Channel *channel(int index) const override;
-    virtual QString legend() const override;
-    virtual bool setLegend(const QString &legend) override;
-    virtual double xStep() const override;
-    virtual void setXStep(const double xStep) override;
-    virtual double xBegin() const override;
-    virtual int samplesCount() const override;
-    virtual void setSamplesCount(int count) override;
-    virtual QString xName() const override;
-    virtual bool setDateTime(QDateTime) override;
-    virtual bool dataTypeEquals(FileDescriptor *) const override;
 };
 
 class MatlabChannel : public Channel

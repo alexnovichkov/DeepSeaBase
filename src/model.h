@@ -45,7 +45,7 @@ public:
     QList<FileDescriptor*> selectedFiles() const;
     QList<FileDescriptor*> selectedFiles(const QVector<Descriptor::DataType> &types) const;
 
-    void setDataDescriptor(FileDescriptor *file, const DescriptionList &data);
+    void setDataDescription(FileDescriptor *file, const DataDescription &data);
     void setChannelDescription(int channel, const QString &description);
     void setChannelName(int channel, const QString &name);
     void updateFile(FileDescriptor *file, int column = -1);

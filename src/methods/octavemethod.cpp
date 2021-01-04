@@ -134,9 +134,9 @@ DfdFileDescriptor *OctaveMethod::createNewDfdFile(const QString &fileName, FileD
     DfdFileDescriptor *newDfd = AbstractMethod::createNewDfdFile(fileName, dfd, p);
 
     // rest
-    newDfd->XName = "Гц";
-    newDfd->XStep = 0;
-    newDfd->XBegin = 0.0;
+//    newDfd->XName = "Гц";
+//    newDfd->XStep = 0;
+//    newDfd->XBegin = 0.0;
 
     return newDfd;
 }
@@ -146,11 +146,8 @@ UffFileDescriptor *OctaveMethod::createNewUffFile(const QString &fileName, FileD
     Q_UNUSED(p);
     UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
 
+    newUff->setDataDescription(dfd->dataDescription());
     newUff->updateDateTimeGUID();
-
-    if (!dfd->dataDescriptor().isEmpty()) {
-        newUff->setDataDescriptor(dfd->dataDescriptor());
-    }
 
     newUff->setXStep(0.0);
 

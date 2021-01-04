@@ -1,6 +1,32 @@
 #include "dataholder.h"
 #include "logging.h"
 
+DataHolder::YValuesFormat DataHolder::formatFromString(const QString &format)
+{
+    if (format == "complex") return YValuesComplex;
+    else if (format == "amplitude") return YValuesAmplitudes;
+    else if (format == "amplitudeDb") return YValuesAmplitudesInDB;
+    else if (format == "phase") return YValuesPhases;
+    else if (format == "real") return YValuesReals;
+    else if (format == "imaginary") return YValuesImags;
+
+    return YValuesUnknown;
+}
+
+QString DataHolder::formatToString(DataHolder::YValuesFormat format)
+{
+    switch (format) {
+    case YValuesComplex: return "complex";
+    case YValuesAmplitudes: return "amplitude";
+    case YValuesAmplitudesInDB: return "amplitudeDb";
+    case YValuesPhases: return "phase";
+    case YValuesReals: return "real";
+    case YValuesImags: return "imaginary";
+    default: break;
+    }
+    return "unknown";
+}
+
 DataHolder::DataHolder()
 {DD;
     m_threshold = 0.0;
@@ -49,6 +75,8 @@ template<typename T>
 QVector<T> segment(const QVector<T> &values, int from, int to, int blockSize, int blocks)
 {
     QVector<T> result;
+    if (values.isEmpty()) return result;
+
     result.reserve((to - from + 1)*blocks);
 
     for (int i=0; i<blocks; ++i) {

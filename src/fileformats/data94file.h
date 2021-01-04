@@ -11,11 +11,19 @@
  * --------------------------------
  * Описание файла:
  * {
- *   "dateTime" : "dd.MM.yyyy hh:mm",
- *   "sourceFile" : "",
+ *   "dateTime" : "dd.MM.yyyy hh:mm", //создание базы данных
+ *   "fileCreationTime": "dd.MM.yyyy hh:mm", //создание этого файла
+ *   "createdBy": "",//программа, которая записала файл
  *   "legend" : "",
- *   "dataDescription": {
+ *   "description": {
  *       "свойства конкретного файла" //аналогично DFD DataDescription
+ *   },
+ *   "guid": "",
+ *   "source": {
+ *     "file": "",
+ *     "guid": "",
+ *     "dateTime": "dd.MM.yyyy hh:mm",
+ *     "channels": "1,2,3,4,5"
  *   },
  *   "channels" : [
  *       {
@@ -26,10 +34,7 @@
  *           "ynameold": "V", //при пересчете единиц
  *           "xname" : "Hz",
  *           "zname" : "s",
- *           "responseName": "lop1:1",
- *           "responseDirection": "+z",
- *           "referenceName": "lop1:1",
- *           "referenceDirection": "",
+ *
  *           "samples": 3200, //количество отсчетов на один блок
  *           "blocks": 1, //количество блоков, соответствующих отдельным значениям по Z
  *                        //не читаем это значение, так как оно дублируется в zAxisBlock
@@ -42,9 +47,20 @@
  *               "type": 5, //тип функции согласно UFF - обобщенный тип
  *               "logref": 0.000314,
  *               "logscale": "linear" / "quadratic" / "dimensionless",
+ *               "responseName": "lop1:1",
+ *               "responseDirection": "+z",
+ *               "referenceName": "lop1:1",
+ *               "referenceDescription": "более полное описание из dfd",
+ *               "referenceDirection": "",
  *               "format": "real", "imaginary", "complex", "amplitude", "phase", "amplitudeDb"
  *               "octaveFormat" : 0 (default) / 1 / 3 / 2 / 6 / 12 / 24,
  *               //далее идут все параметры обработки
+ *               "averaging": "linear", "no", "exponential", "peak hold", "energetic"
+ *               "averagingCount": 38,
+ *               "window": "hann", "hamming", "square", "triangular", "gauss", "natoll", "force", "exponential", "tukey",
+ *               "blockSize": 2048,
+ *               "channels": "1,2,3,4,5",
+ *               ""
  *           }
  *       },
  *       {
@@ -78,48 +94,29 @@ class Data94File : public FileDescriptor
 {
 public:
     Data94File(const QString &fileName);
-    // creates a copy of Data94File with copying data
-    Data94File(const Data94File &other, const QString &fileName, QVector<int> indexes = QVector<int>());
     // creates a copy of FileDescriptor with copying data
     Data94File(const FileDescriptor &other, const QString &fileName, QVector<int> indexes = QVector<int>());
     ~Data94File();
 
     // FileDescriptor interface
 public:
-    virtual void fillPreliminary(FileDescriptor *file) override;
     virtual void read() override;
     virtual void write() override;
-    virtual void writeRawFile() override;
-    virtual void updateDateTimeGUID() override;
     virtual int channelsCount() const override;
-    virtual DescriptionList dataDescriptor() const override;
-    virtual void setDataDescriptor(const DescriptionList &data) override;
-    virtual QString dataDescriptorAsString() const override;
-    virtual QDateTime dateTime() const override;
+//    virtual DescriptionList dataDescriptor() const override;
+//    virtual void setDataDescriptor(const DescriptionList &data) override;
+//    virtual QString dataDescriptorAsString() const override;
     virtual void deleteChannels(const QVector<int> &channelsToDelete) override;
     virtual void copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes) override;
     void addChannelWithData(DataHolder *data, const QJsonObject &description) override;
-    virtual QString saveTimeSegment(double from, double to) override;
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
-    virtual QVariant channelHeader(int column) const override;
-    virtual int columnsCount() const override;
     virtual Channel *channel(int index) const override;
-    virtual QString legend() const override;
-    virtual bool setLegend(const QString &legend) override;
-    virtual double xBegin() const override;
-    virtual double xStep() const override;
-    virtual void setXStep(const double xStep) override;
-    virtual int samplesCount() const override;
-    virtual void setSamplesCount(int count) override;
-    virtual QString xName() const override;
-    virtual bool setDateTime(QDateTime dt) override;
-    virtual bool dataTypeEquals(FileDescriptor *other) const override;
     static QStringList fileFilters();
     static QStringList suffixes();
 private:
     void updatePositions();
     friend class Data94Channel;
-    QJsonObject description;
+//    QJsonObject description;
     QList<Data94Channel*> channels;
     quint32 descriptionSize = 0;
 };
@@ -131,6 +128,7 @@ public:
     Data94Channel(Data94Channel *other, Data94File *parent);
     Data94Channel(Channel *other, Data94File *parent);
     void read(QDataStream &r);
+    void write(QDataStream &r, QDataStream *in, DataHolder *data);
     void setXStep(double xStep);
 
     // Channel interface

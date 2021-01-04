@@ -13,7 +13,7 @@ class EditDescriptionsDialog : public QDialog
     Q_OBJECT
 public:
     explicit EditDescriptionsDialog(QList<FileDescriptor *> &records, QWidget *parent = 0);
-    QHash<FileDescriptor*, DescriptionList> descriptions();
+    QHash<FileDescriptor *, DataDescription> descriptions();
 signals:
 
 public slots:

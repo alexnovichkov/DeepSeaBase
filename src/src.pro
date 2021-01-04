@@ -322,6 +322,7 @@ CONFIG(release, debug|release):{
 # includes & libs
 INCLUDEPATH *= $$PWD $$PWD/.. $$PWD/../3rdParty/qtpropertybrowser $$PWD/../3rdParty/DspFilters
 INCLUDEPATH *= E:/My/programming/sources/strtk
+INCLUDEPATH *= E:/My/programming/sources/boost_1_73_0
 
 #PRECOMPILED_HEADER = strtk_.hpp
 

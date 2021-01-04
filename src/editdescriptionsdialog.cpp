@@ -10,9 +10,9 @@ public:
     {
         edit = new QPlainTextEdit(this);
         QStringList data;
-        DescriptionList descriptions = record->dataDescriptor();
-        foreach (const DescriptionEntry &entry, descriptions) {
-            data << descriptionEntryToString(entry);
+        DataDescription descriptions = record->dataDescription();
+        for (auto it = descriptions.data.begin(); it != descriptions.data.end(); ++it) {
+            data << it.key()+"="+it.value().toString();
         }
         edit->setPlainText(data.join("\n"));
 
@@ -20,17 +20,17 @@ public:
         l->addWidget(edit);
         setLayout(l);
     }
-    DescriptionList description()
+    DataDescription description()
     {
-        DescriptionList result;
+        DataDescription result;
         QStringList list = edit->toPlainText().split("\n");
-        foreach(const QString &s, list) {
+        for(const QString &s: list) {
             if (s.isEmpty()) continue;
             if (s.contains("=")) {
-                result << DescriptionEntry(s.section("=",0,0),s.section("=",1));
+                result.put(s.section("=",0,0),s.section("=",1));
             }
             else {
-                result << DescriptionEntry("",s);
+                result.put("", s);
             }
         }
         return result;
@@ -49,7 +49,7 @@ EditDescriptionsDialog::EditDescriptionsDialog(QList<FileDescriptor *> &records,
 
     QListWidget *recordsList = new QListWidget(this);
     stack = new QStackedWidget(this);
-    foreach (FileDescriptor *record, records) {
+    for (FileDescriptor *record: records) {
         new QListWidgetItem(QFileInfo(record->fileName()).fileName(), recordsList);
         stack->addWidget(new StackWidget(record));
     }
@@ -72,9 +72,9 @@ EditDescriptionsDialog::EditDescriptionsDialog(QList<FileDescriptor *> &records,
     resize(900,500);
 }
 
-QHash<FileDescriptor *, DescriptionList> EditDescriptionsDialog::descriptions()
+QHash<FileDescriptor *, DataDescription> EditDescriptionsDialog::descriptions()
 {
-    QHash<FileDescriptor *, DescriptionList> result;
+    QHash<FileDescriptor *, DataDescription> result;
 
     for (int i=0; i<stack->count(); ++i) {
         StackWidget *sw = dynamic_cast<StackWidget*>(stack->widget(i));

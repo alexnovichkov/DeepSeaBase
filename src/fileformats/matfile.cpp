@@ -50,6 +50,8 @@ void MatFile::read()
         }
     }
 
+    setDataDescription(xml.toDataDescription());
+
     if (records.isEmpty()) return;
 
     ///теперь реорганизуем данные - если каналы в файле сгруппированы,
@@ -1069,49 +1071,16 @@ QVector<float> getNumeric(const MatlabNumericRecord *rec)
 }
 
 
-void MatFile::fillPreliminary(FileDescriptor *file)
-{
-}
-
 void MatFile::write()
 {
 }
 
-void MatFile::writeRawFile()
-{
-}
-
-void MatFile::updateDateTimeGUID()
-{
-}
-
-DescriptionList MatFile::dataDescriptor() const
-{
-    return DescriptionList()<<DescriptionEntry("Заголовок 1", xml.titles.at(0))
-                           << DescriptionEntry("Заголовок 2", xml.titles.at(1))
-                           << DescriptionEntry("Заголовок 3", xml.titles.at(2));
-}
-
-void MatFile::setDataDescriptor(const DescriptionList &data)
-{
-    Q_UNUSED(data);
-}
-
-QString MatFile::dataDescriptorAsString() const
-{
-    return QString();
-}
-
-QDateTime MatFile::dateTime() const
-{
-    QDate d = QDate::fromString(xml.date, "dd.MM.yy");
-    if (d.year()<1950) {
-        d=d.addYears(100);
-    }
-    QTime t = QTime::fromString(xml.time, "hh:mm:ss");
-
-    return QDateTime(d,t);
-}
+//DescriptionList MatFile::dataDescriptor() const
+//{
+//    return DescriptionList()<<DescriptionEntry("Заголовок 1", xml.titles.at(0))
+//                           << DescriptionEntry("Заголовок 2", xml.titles.at(1))
+//                           << DescriptionEntry("Заголовок 3", xml.titles.at(2));
+//}
 
 void MatFile::deleteChannels(const QVector<int> &)
 {
@@ -1119,11 +1088,6 @@ void MatFile::deleteChannels(const QVector<int> &)
 
 void MatFile::copyChannelsFrom(FileDescriptor *, const QVector<int> &)
 {
-}
-
-QString MatFile::saveTimeSegment(double, double)
-{
-    return QString();
 }
 
 int MatFile::channelsCount() const
@@ -1135,78 +1099,11 @@ void MatFile::move(bool, const QVector<int> &, const QVector<int> &)
 {
 }
 
-QVariant MatFile::channelHeader(int column) const
-{
-    Q_UNUSED(column);
-    return QVariant();
-}
-
-int MatFile::columnsCount() const
-{
-    return 1;
-}
-
 Channel *MatFile::channel(int index) const
 {
     if (index < 0 || index >= channels.size()) return 0;
     return channels[index];
 }
-
-QString MatFile::legend() const
-{
-    return QString();
-}
-
-bool MatFile::setLegend(const QString &legend)
-{
-    Q_UNUSED(legend);
-    return true;
-}
-
-double MatFile::xStep() const
-{
-    if (channels.isEmpty()) return 0.0;
-    return channels.constFirst()->data()->xStep();
-}
-
-void MatFile::setXStep(const double xStep)
-{
-    Q_UNUSED(xStep);
-}
-
-double MatFile::xBegin() const
-{
-    if (channels.isEmpty()) return 0.0;
-    return channels.constFirst()->data()->xMin();
-}
-
-int MatFile::samplesCount() const
-{
-    if (channels.isEmpty()) return 0;
-    return channels.constFirst()->data()->samplesCount();
-}
-
-void MatFile::setSamplesCount(int count)
-{
-    Q_UNUSED(count);
-}
-
-QString MatFile::xName() const
-{
-    if (channels.isEmpty()) return "";
-    return channels.constFirst()->xName();
-}
-
-bool MatFile::setDateTime(QDateTime)
-{
-    return true;
-}
-
-bool MatFile::dataTypeEquals(FileDescriptor *) const
-{
-    return false;
-}
-
 
 
 MatlabChannel::MatlabChannel(MatFile *parent) : Channel(), parent(parent)

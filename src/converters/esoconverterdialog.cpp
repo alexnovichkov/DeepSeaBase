@@ -218,7 +218,7 @@ bool EsoConvertor::convert()
         }
     }
     DfdFileDescriptor *dfdFileDescriptor = DfdFileDescriptor::newFile(dfdFileName, type);
-    dfdFileDescriptor->setSamplesCount(xValues.size());
+//    dfdFileDescriptor->setSamplesCount(xValues.size());
 
     dfdFileDescriptor->CreatedBy = "Конвертер eso2dfd by Алексей Новичков";
 
@@ -245,6 +245,7 @@ bool EsoConvertor::convert()
             newCh->YNameOld=newCh->YName;
             newCh->ChanBlockSize=esoFile.xValues.size();
             newCh->IndType=3221225476;
+            newCh->setXName("Гц");
 
             switch (col) {
                 case 0: //esou
@@ -320,18 +321,17 @@ bool EsoConvertor::convert()
             for (int i=0; i<dfdFileDescriptor->channels.size(); ++i)
                 dfdFileDescriptor->channels[i]->channelIndex = i;
 
-        dfdFileDescriptor->XBegin = xValues.constFirst();
+        //dfdFileDescriptor->XBegin = xValues.constFirst();
     }
     else {
-        dfdFileDescriptor->XBegin = 0.0;
-        dfdFileDescriptor->XStep = xValues[1] - xValues[0];
+//        dfdFileDescriptor->XBegin = 0.0;
+//        dfdFileDescriptor->XStep = xValues[1] - xValues[0];
     }
-    dfdFileDescriptor->XName = "Гц";
+//    dfdFileDescriptor->XName = "Гц";
 
     dfdFileDescriptor->setChanged(true);
     dfdFileDescriptor->setDataChanged(true);
     dfdFileDescriptor->write();
-    dfdFileDescriptor->writeRawFile();
     delete dfdFileDescriptor;
 
 

@@ -87,11 +87,13 @@ class UffHeader
 public:
     /* Header */
     UffHeader();
+    UffHeader(const DataDescription &data);
 
     void read(QTextStream &stream);
     void read(char *pos, qint64 &offset);
     void write(QTextStream &stream);
     QString info() const;
+    DataDescription toDataDescription() const;
 
     QVector<FieldDescription> type151;
 };
@@ -118,38 +120,16 @@ class UffFileDescriptor : public FileDescriptor
 {
 public:
     UffFileDescriptor(const QString &fileName);
-    UffFileDescriptor(const UffFileDescriptor &other, const QString &fileName,
-                      QVector<int> indexes = QVector<int>());
     UffFileDescriptor(const FileDescriptor &other, const QString &fileName,
                       QVector<int> indexes = QVector<int>());
     ~UffFileDescriptor();
 
-    UffHeader header;
-    UffUnits units;
     QList<Function *> channels;
 
     // FileDescriptor interface
 public:
-    virtual void fillPreliminary(FileDescriptor *file) override;
     virtual void read() override;
     virtual void write() override;
-    virtual void writeRawFile() override;
-    virtual void updateDateTimeGUID() override;
-    QString dataDescriptorAsString() const override;
-
-    virtual QDateTime dateTime() const override;
-    virtual double xStep() const override;
-    virtual void setXStep(const double xStep) override;
-    virtual double xBegin() const override;
-
-    virtual QString xName() const override;
-
-    virtual bool setLegend(const QString &legend) override;
-    virtual QString legend() const override;
-
-    virtual bool setDateTime(QDateTime dt) override;
-
-    bool canTakeChannelsFrom(FileDescriptor *other) const override;
 
     virtual void deleteChannels(const QVector<int> &channelsToDelete) override;
     virtual void copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes) override;
@@ -160,27 +140,17 @@ public:
 
     virtual int channelsCount() const override;
 
-    virtual QVariant channelHeader(int column) const override;
-    virtual int columnsCount() const override;
-
     virtual Channel *channel(int index) const override;
     virtual bool operator ==(const FileDescriptor &descriptor) override;
-    virtual bool dataTypeEquals(FileDescriptor *other) const override;
-//    virtual bool hasSameParameters(FileDescriptor *other) const override;
+
+    virtual void setChanged(bool changed) override;
+
     static QStringList fileFilters();
     static QStringList suffixes();
 private:
     void removeTempFile();
     void readWithStreams();
     bool readWithMmap();
-
-public:
-    virtual DescriptionList dataDescriptor() const override;
-    virtual void setDataDescriptor(const DescriptionList &data) override;
-    virtual QString saveTimeSegment(double from, double to) override;
-    virtual int samplesCount() const override;
-    virtual void setSamplesCount(int count) override;
-    virtual void setChanged(bool changed) override;
 };
 
 #endif // UFFFILE_H

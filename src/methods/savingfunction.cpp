@@ -230,8 +230,8 @@ void SavingFunction::reset()
     //(или в функции сохранения?)
 
     if (m_file) {
-        if (m_file->channelsCount()>0)
-            m_file->setSamplesCount(m_file->channel(0)->data()->samplesCount());
+//        if (m_file->channelsCount()>0)
+//            m_file->setSamplesCount(m_file->channel(0)->data()->samplesCount());
         m_file->setChanged(true);
         m_file->setDataChanged(true);
         for (int i=0; i<m_file->channelsCount(); ++i) {
@@ -239,7 +239,6 @@ void SavingFunction::reset()
             m_file->channel(i)->setDataChanged(true);
         }
         m_file->write();
-        m_file->writeRawFile();
         newFiles << m_file->fileName();
         qDebug()<<"added"<<m_file->fileName();
     }
@@ -267,37 +266,30 @@ FileDescriptor *SavingFunction::createDfdFile(FileDescriptor *file)
 
     DfdFileDescriptor *newDfd = DfdFileDescriptor::newFile(newFileName, DfdDataType(dataType));
     newDfd->BlockSize = 0;
+    newDfd->setDataDescription(file->dataDescription());
 
     if (DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(file)) {
-        // [DataDescription]
-        if (!dfd->dataDescriptor().isEmpty()) {
-            newDfd->dataDescription = new DataDescription(newDfd);
-            newDfd->dataDescription->data = dfd->dataDescriptor();
-        }
         newDfd->DescriptionFormat = dfd->DescriptionFormat;
 
-        //TODO: не все каналы обрабатываются, а только те, что проходят фильтр
-        //      переделать
         // [Sources]
-        newDfd->source = new Source();
-        QStringList l;
-        const int count = file->channelsCount();
-        for (int i=1; i<=count; ++i)
-            l << QString::number(i);
-        newDfd->source->sFile = file->fileName()+"["+l.join(",")+"]"+dfd->DFDGUID;
-    }
+        QString channels = m_input->getProperty("?/channels").toString();
+        newDfd->dataDescription().put("source.file", file->fileName());
+        newDfd->dataDescription().put("source.guid", file->dataDescription().get("guid"));
+        newDfd->dataDescription().put("source.dateTime", file->dataDescription().get("dateTime"));
+        newDfd->dataDescription().put("source.channels", channels);
+   }
 
     // [Process]
-    QStringList data = m_input->getProperty("?/processData").toStringList();
+    auto data = m_input->getProperty("?/processData").toMap();
     if (!data.isEmpty()) {
-        newDfd->process = new Process();
-        newDfd->process->data = processData(data);
+        for (auto it = data.constBegin(); it != data.constEnd(); ++it)
+            newDfd->dataDescription().put("function."+it.key(), it.value());
     }
 
     // rest
-    newDfd->XName = m_input->getProperty("?/xName").toString();
-    newDfd->XStep = m_input->getProperty("?/xStep").toDouble();
-    newDfd->XBegin = m_input->getProperty("?/xBegin").toDouble();
+//    newDfd->XName = m_input->getProperty("?/xName").toString();
+//    newDfd->XStep = m_input->getProperty("?/xStep").toDouble();
+//    newDfd->XBegin = m_input->getProperty("?/xBegin").toDouble();
 
     return newDfd;
 }
@@ -306,12 +298,14 @@ FileDescriptor *SavingFunction::createUffFile(FileDescriptor *file)
 {DD;
     UffFileDescriptor *newUff = new UffFileDescriptor(newFileName);
 
+    newUff->setDataDescription(file->dataDescription());
     newUff->updateDateTimeGUID();
 
-    if (!file->dataDescriptor().isEmpty()) {
-        newUff->setDataDescriptor(file->dataDescriptor());
-    }
-    newUff->setLegend(file->legend());
+    QString channels = m_input->getProperty("?/channels").toString();
+    newUff->dataDescription().put("source.file", file->fileName());
+    newUff->dataDescription().put("source.guid", file->dataDescription().get("guid"));
+    newUff->dataDescription().put("source.dateTime", file->dataDescription().get("dateTime"));
+    newUff->dataDescription().put("source.channels", channels);
 
     return newUff;
 }
@@ -319,12 +313,14 @@ FileDescriptor *SavingFunction::createUffFile(FileDescriptor *file)
 FileDescriptor *SavingFunction::createD94File(FileDescriptor *file)
 {
     Data94File *newFile = new Data94File(newFileName);
+    newFile->setDataDescription(file->dataDescription());
     newFile->updateDateTimeGUID();
 
-    if (!file->dataDescriptor().isEmpty()) {
-        newFile->setDataDescriptor(file->dataDescriptor());
-    }
-    newFile->setLegend(file->legend());
+    QString channels = m_input->getProperty("?/channels").toString();
+    newFile->dataDescription().put("source.file", file->fileName());
+    newFile->dataDescription().put("source.guid", file->dataDescription().get("guid"));
+    newFile->dataDescription().put("source.dateTime", file->dataDescription().get("dateTime"));
+    newFile->dataDescription().put("source.channels", channels);
 
     return newFile;
 }

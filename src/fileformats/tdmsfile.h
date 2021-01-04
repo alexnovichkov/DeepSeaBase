@@ -61,33 +61,13 @@ private:
 
     // FileDescriptor interface
 public:
-    virtual void fillPreliminary(FileDescriptor *file) override;
     virtual void read() override;
     virtual void write() override;
-    virtual void writeRawFile() override;
-    virtual void updateDateTimeGUID() override;
-    virtual DescriptionList dataDescriptor() const override;
-    virtual void setDataDescriptor(const DescriptionList &) override;
-    virtual QString dataDescriptorAsString() const override;
-    virtual QDateTime dateTime() const override;
     virtual void deleteChannels(const QVector<int> &) override;
     virtual void copyChannelsFrom(FileDescriptor *, const QVector<int> &) override;
-    virtual QString saveTimeSegment(double, double) override;
     virtual int channelsCount() const override;
     virtual void move(bool, const QVector<int> &, const QVector<int> &) override;
-    virtual QVariant channelHeader(int) const override;
-    virtual int columnsCount() const override;
     virtual Channel *channel(int index) const override;
-    virtual QString legend() const override;
-    virtual bool setLegend(const QString &) override;
-    virtual double xStep() const override;
-    virtual void setXStep(const double) override;
-    virtual double xBegin() const override;
-    virtual int samplesCount() const override;
-    virtual void setSamplesCount(int) override;
-    virtual QString xName() const override;
-    virtual bool setDateTime(QDateTime) override;
-    virtual bool dataTypeEquals(FileDescriptor *) const override;
 };
 
 //может содержать несколько групп, поэтому рассматриваем как директорию

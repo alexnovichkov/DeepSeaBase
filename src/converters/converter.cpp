@@ -566,15 +566,15 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
     }
 
     if (newDfd) {
-        newDfd->setSamplesCount(newDfd->channel(0)->data()->samplesCount());
+//        newDfd->setSamplesCount(newDfd->channel(0)->data()->samplesCount());
         newDfd->setChanged(true);
         newDfd->setDataChanged(true);
         newDfd->write();
-        newDfd->writeRawFile();
         delete newDfd;
     }
     if (newUff) {
         newUff->setChanged(true);
+        newUff->setDataChanged(true);
         newUff->write();
         delete newUff;
     }

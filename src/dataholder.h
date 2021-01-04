@@ -32,6 +32,8 @@ public:
         YValuesAmplitudesInDB = 4,
         YValuesPhases = 5
     };
+    static YValuesFormat formatFromString(const QString &format);
+    static QString formatToString(YValuesFormat format);
 
     enum YValuesPresentation {
         ShowAsDefault = -1,

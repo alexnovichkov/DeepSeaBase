@@ -32,63 +32,20 @@ UffFileDescriptor::UffFileDescriptor(const QString &fileName) : FileDescriptor(f
 
 }
 
-UffFileDescriptor::UffFileDescriptor(const UffFileDescriptor &other, const QString &fileName,
-                                     QVector<int> indexes)
-    : FileDescriptor(fileName)
-{DD;
-    //если индексы пустые - копируем все каналы
-    if (indexes.isEmpty())
-        for (int i=0; i<other.channelsCount(); ++i) indexes << i;
-
-    this->header = other.header;
-    this->units = other.units;
-
-    QFile uff(fileName);
-    if (!uff.open(QFile::WriteOnly | QFile::Text)) {
-        qDebug()<<"Couldn't open file"<<fileName<<"to write";
-        return;
-    }
-
-    QTextStream stream(&uff);
-    header.write(stream);
-    units.write(stream);
-
-    int id=1;
-    for (int i=0; i<other.channels.count(); ++i) {
-        if (!indexes.contains(i)) continue;
-
-        Function *f = other.channels.at(i);
-        bool populated = f->populated();
-        if (!populated) f->populate();
-
-        Function *ch = new Function(*f, this);
-        ch->write(stream, id);
-
-        //clearing
-        if (!populated) {
-            f->clear();
-            ch->clear();
-        }
-    }
-}
-
 UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString &fileName,
                                      QVector<int> indexes)
     : FileDescriptor(fileName)
 {
+    setDataDescription(other.dataDescription());
+    dataDescription().put("source.file", other.fileName());
+    dataDescription().put("source.guid", other.dataDescription().get("guid"));
+    dataDescription().put("source.dateTime", other.dataDescription().get("dateTime"));
+    updateDateTimeGUID();
+
     //если индексы пустые - копируем все каналы
     if (indexes.isEmpty())
         for (int i=0; i<other.channelsCount(); ++i) indexes << i;
-
-    //заполнение header
-    header.type151[10].value = other.dateTime();
-    header.type151[12].value = other.dateTime();
-    header.type151[16].value = QDateTime::currentDateTime();
-
-    //TODO: добавить заполнение units
-
-
-    header.type151[8].value = other.legend();
+    dataDescription().put("source.channels", stringify(indexes));
 
     const int count = other.channelsCount();
 
@@ -113,8 +70,10 @@ UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString 
     }
 
     QTextStream stream(&uff);
-    header.write(stream);
-    units.write(stream);
+    UffHeader h(dataDescription());
+    h.write(stream);
+    UffUnits u;
+    u.write(stream);
 
     //заполнение каналов
 
@@ -136,7 +95,7 @@ UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString 
             f->type58[19].value = referenceChannelNumber+1;
         }
 
-        f->type58[8].value = header.type151[10].value;
+        f->type58[8].value = h.type151[10].value;
 
         f->write(stream, id);
 
@@ -150,15 +109,10 @@ UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString 
 
 UffFileDescriptor::~UffFileDescriptor()
 {DD;
-    if (changed())
+    if (changed() || dataChanged())
         write();
 
     qDeleteAll(channels);
-}
-
-void UffFileDescriptor::fillPreliminary(FileDescriptor *file)
-{DD;
-    updateDateTimeGUID();
 }
 
 void UffFileDescriptor::readWithStreams()
@@ -173,8 +127,11 @@ void UffFileDescriptor::readWithStreams()
     if (uff.open(QFile::ReadOnly | QFile::Text)) {
         QTextStream stream(&uff);
 
-        header.read(stream);
-        units.read(stream);
+        UffHeader h;
+        h.read(stream);
+        setDataDescription(h.toDataDescription());
+        UffUnits u;
+        u.read(stream);
 
         while (!stream.atEnd()) {
             Function *f = new Function(this);
@@ -204,8 +161,11 @@ bool UffFileDescriptor::readWithMmap()
 
         qint64 offset = 0;
 
-        header.read(pos, offset);
-        units.read(pos, offset);
+        UffHeader h;
+        h.read(pos, offset);
+        setDataDescription(h.toDataDescription());
+        UffUnits u;
+        u.read(pos, offset);
 
         while (offset < uff.size()) {
             Function *f = new Function(this);
@@ -221,15 +181,13 @@ void UffFileDescriptor::read()
     //если false - старый формат, удаляем файл и создаем заново
     int newUffFormat = App->getSetting("newUffFormat", 0).toInt();
 
-    if (QFile::exists(fileName()+"~") && newUffFormat == 1) {
+    if (QFile::exists(fileName()+"~") && newUffFormat == 2) {
         // в папке с записью есть двоичный файл с описанием записи
         QFile uff(fileName()+"~");
         if (uff.open(QFile::ReadOnly)) {
             QDataStream stream(&uff);
 
-
-            stream >> header;
-            stream >> units;
+            stream >> dataDescription();
 
             while (!stream.atEnd()) {
                 Function *f = new Function(this);
@@ -264,8 +222,7 @@ void UffFileDescriptor::read()
         if (buff.open(QFile::WriteOnly)) {
             QDataStream stream(&buff);
 
-            stream << header;
-            stream << units;
+            stream << dataDescription();
 
             for (Function *f: channels) {
                 stream << f->header;
@@ -275,7 +232,7 @@ void UffFileDescriptor::read()
                 stream << f->zValues;
             }
         }
-        App->setSetting("newUffFormat", 1);
+        App->setSetting("newUffFormat", 2);
     }
 }
 
@@ -287,8 +244,11 @@ void UffFileDescriptor::write()
 
     if (tempFile.open()) {
         QTextStream stream(&tempFile);
-        header.write(stream);
-        units.write(stream);
+
+        UffHeader h(dataDescription());
+        h.write(stream);
+        UffUnits u;
+        u.write(stream);
 
         int id=1;
         for (Function *c: channels) {
@@ -313,20 +273,6 @@ void UffFileDescriptor::write()
     }
 }
 
-void UffFileDescriptor::writeRawFile()
-{DD;
-    // Nothing to do here
-}
-
-void UffFileDescriptor::updateDateTimeGUID()
-{DD;
-    QDateTime t = QDateTime::currentDateTime();
-    header.type151[10].value = t;
-    header.type151[12].value = t;
-    header.type151[16].value = t;
-    header.type151[14].value = "DeepSeaBase by Novichkov";
-}
-
 QString makeStringFromPair(const QPair<QString, QString> &pair)
 {
     QString result = pair.second;
@@ -335,84 +281,6 @@ QString makeStringFromPair(const QPair<QString, QString> &pair)
     }
     result.truncate(80);
     return result;
-}
-
-QString UffFileDescriptor::dataDescriptorAsString() const
-{
-    return header.info();
-}
-
-QDateTime UffFileDescriptor::dateTime() const
-{DD;
-    return header.type151[10].value.toDateTime()/*.toString("dd.MM.yy hh:mm:ss")*/;
-}
-
-double UffFileDescriptor::xStep() const
-{
-    if (!channels.isEmpty()) return channels.constFirst()->data()->xStep();
-    return 0.0;
-}
-
-void UffFileDescriptor::setXStep(const double xStep)
-{DD;
-    if (channels.isEmpty()) return;
-    bool changed = false;
-
-    for (int i=0; i<channels.size(); ++i) {
-        if (channels.at(i)->data()->xStep()!=xStep) {
-            changed = true;
-            channels[i]->type58[29].value = xStep;
-            channels[i]->data()->setXStep(xStep);
-        }
-    }
-    if (changed) setChanged(true);
-    write();
-}
-
-double UffFileDescriptor::xBegin() const
-{
-    if (!channels.isEmpty()) return channels.constFirst()->data()->xMin();
-    return 0.0;
-}
-
-QString UffFileDescriptor::xName() const
-{
-    if (channels.isEmpty()) return QString();
-
-    QString xname = channels.constFirst()->xName();
-
-    for (int i=1; i<channels.size(); ++i) {
-        if (channels[i]->xName() != xname) return "разные";
-    }
-    return xname;
-}
-
-bool UffFileDescriptor::setLegend(const QString &legend)
-{DD;
-    if (legend == header.type151[8].value.toString()) return false;
-    header.type151[8].value = legend;
-    setChanged(true);
-    return true;
-}
-
-QString UffFileDescriptor::legend() const
-{DD;
-    return header.type151[8].value.toString();
-}
-
-bool UffFileDescriptor::setDateTime(QDateTime dt)
-{DD;
-    if (header.type151[10].value.toDateTime() == dt) return false;
-
-    header.type151[10].value = dt;
-    setChanged(true);
-    return true;
-}
-
-bool UffFileDescriptor::canTakeChannelsFrom(FileDescriptor *other) const
-{
-    Q_UNUSED(other);
-    return true;
 }
 
 void UffFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
@@ -424,8 +292,10 @@ void UffFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
     }
 
     QTextStream stream (&temp);
-    header.write(stream);
-    units.write(stream);
+    UffHeader h(dataDescription());
+    h.write(stream);
+    UffUnits u;
+    u.write(stream);
 
     int id=1;
     for (int i = 0; i < channels.size(); ++i) {
@@ -473,6 +343,8 @@ void UffFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
         return;
     }
 
+    dataDescription().put("source.channels", stringify(indexes));
+
     QTextStream stream(&uff);
 
     //добавляем каналы
@@ -481,9 +353,7 @@ void UffFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
         id += f->data()->blocksCount();
     }
 
-    for (int i=0; i<sourceFile->channelsCount(); ++i) {
-        if (!indexes.contains(i)) continue;
-
+    for (int i: indexes) {
         Channel *f = sourceFile->channel(i);
         bool populated = f->populated();
         if (!populated) f->populate();
@@ -496,7 +366,7 @@ void UffFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
             ch->type58[19].value = referenceChannelNumber+1;
         }
 
-        ch->type58[8].value = header.type151[10].value;
+        ch->type58[8].value = dataDescription().get("dateTime");
 
         ch->write(stream, id);
 
@@ -569,8 +439,10 @@ void UffFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
     }
 
     QTextStream stream(&uff);
-    header.write(stream);
-    units.write(stream);
+    UffHeader h(dataDescription());
+    h.write(stream);
+    UffUnits u;
+    u.write(stream);
 
     int id=1;
     for (int i=0; i<indexesVector.count(); ++i) {
@@ -602,18 +474,6 @@ int UffFileDescriptor::channelsCount() const
     return channels.size();
 }
 
-QVariant UffFileDescriptor::channelHeader(int column) const
-{
-    if (channels.isEmpty()) return QVariant();
-    return channels[0]->channelHeader(column);
-}
-
-int UffFileDescriptor::columnsCount() const
-{
-    if (channels.isEmpty()) return 7;
-    return channels[0]->columnsCount();
-}
-
 Channel *UffFileDescriptor::channel(int index) const
 {
     if (channels.size()>index)
@@ -624,11 +484,6 @@ Channel *UffFileDescriptor::channel(int index) const
 bool UffFileDescriptor::operator ==(const FileDescriptor &descriptor)
 {DD;
     return this->fileName() == descriptor.fileName();
-}
-
-bool UffFileDescriptor::dataTypeEquals(FileDescriptor *other) const
-{DD;
-    return (this->type() == other->type());
 }
 
 QStringList UffFileDescriptor::fileFilters()
@@ -645,6 +500,18 @@ QStringList UffFileDescriptor::suffixes()
 UffHeader::UffHeader()
 {DD;
     setType151(type151);
+}
+
+UffHeader::UffHeader(const DataDescription &data)
+{
+    setType151(type151);
+    type151[4].value = data.get("source.file");
+    //type151[6].value = "NONE";
+    type151[8].value = data.get("legend");
+    type151[10].value = data.get("dateTime");
+    type151[12].value = data.get("dateTime");
+    type151[14].value = data.get("createdBy");
+    type151[16].value = data.get("fileCreationTime");
 }
 
 void UffHeader::read(QTextStream &stream)
@@ -677,6 +544,19 @@ void UffHeader::write(QTextStream &stream)
 QString UffHeader::info() const
 {DD;
     return type151[4].value.toString()+" "+type151[6].value.toString();
+}
+
+DataDescription UffHeader::toDataDescription() const
+{
+    DataDescription data;
+    data.put("source.file", type151[4].value);
+    //type151[6].value = "NONE";
+    data.put("legend", type151[8].value);
+    data.put("dateTime", type151[10].value);
+    data.put("createdBy",type151[14].value);
+    data.put("fileCreationTime", type151[16].value);
+
+    return data;
 }
 
 
@@ -1017,6 +897,7 @@ void Function::write(QTextStream &stream, int &id)
     dataPositions.clear();  dataEnds.clear();
 
     type58[26].value = data()->samplesCount();
+    type58[29].value = data()->xStep();
 
     for (int block = 0; block < blocks; ++block) {
         //writing header
@@ -1029,6 +910,7 @@ void Function::write(QTextStream &stream, int &id)
         t58[15].value = id+block;
         t58[16].value = block+1;
         t58[30].value = data()->zValue(block);
+
 
         for (int i=0; i<60; ++i) {
             fields[t58[i].type]->print(t58[i].value, stream);
@@ -1446,88 +1328,55 @@ void Function::setCorrection(const QString &s)
     type58[12].value = s;
 }
 
-DescriptionList UffFileDescriptor::dataDescriptor() const
-{DD;
-    DescriptionList result;
-    result << DescriptionEntry("", header.type151[4].value.toString());
-    result << DescriptionEntry("", header.type151[6].value.toString());
+//QString UffFileDescriptor::saveTimeSegment(double from, double to)
+//{DD;
+//    // 0 проверяем, чтобы этот файл имел тип временных данных
+//    if (type() != Descriptor::TimeResponse) return "";
+//    // и имел данные
+//    if (channels.size() == 0) return "";
 
-    return result;
-}
+//    // 1 создаем уникальное имя файла по параметрам from и to
+//    QString fromString, toString;
+//    getUniqueFromToValues(fromString, toString, from, to);
+//    QString suffix = QString("_%1s_%2s").arg(fromString).arg(toString);
 
-void UffFileDescriptor::setDataDescriptor(const DescriptionList &data)
-{DD;
-    if (data.size()>0) {
-        header.type151[4].value = makeStringFromPair(data.constFirst());
-    }
-    if (data.size()>1) {
-        header.type151[6].value = makeStringFromPair(data.at(1));
-    }
-    setChanged(true);
-}
+//    QString newFileName = createUniqueFileName("", fileName(), suffix, "uff", false);
 
-QString UffFileDescriptor::saveTimeSegment(double from, double to)
-{DD;
-    // 0 проверяем, чтобы этот файл имел тип временных данных
-    if (type() != Descriptor::TimeResponse) return "";
-    // и имел данные
-    if (channels.size() == 0) return "";
+//    // 2 создаем новый файл
+//    UffFileDescriptor *newUff = new UffFileDescriptor(*this);
 
-    // 1 создаем уникальное имя файла по параметрам from и to
-    QString fromString, toString;
-    getUniqueFromToValues(fromString, toString, from, to);
-    QString suffix = QString("_%1s_%2s").arg(fromString).arg(toString);
+//    // 3 ищем границы данных по параметрам from и to
+//    Channel *ch = channels.constFirst();
 
-    QString newFileName = createUniqueFileName("", fileName(), suffix, "uff", false);
+//    int sampleStart = qRound((from - ch->data()->xMin())/ch->data()->xStep());
+//    if (sampleStart<0) sampleStart = 0;
+//    int sampleEnd = qRound((to - ch->data()->xMin())/ch->data()->xStep());
+//    if (sampleEnd >= ch->data()->samplesCount()) sampleEnd = ch->data()->samplesCount() - 1;
+////    newUff->setSamplesCount(sampleEnd - sampleStart + 1); //число отсчетов в новом файле
 
-    // 2 создаем новый файл
-    UffFileDescriptor *newUff = new UffFileDescriptor(*this);
+//    // 4 сохраняем файл
 
-    // 3 ищем границы данных по параметрам from и to
-    Channel *ch = channels.constFirst();
+//    for (int i=0; i<channels.size(); ++i) {
+//        bool wasPopulated = channels[i]->populated();
+//        if (!wasPopulated) channels[i]->populate();
 
-    int sampleStart = qRound((from - ch->data()->xMin())/ch->data()->xStep());
-    if (sampleStart<0) sampleStart = 0;
-    int sampleEnd = qRound((to - ch->data()->xMin())/ch->data()->xStep());
-    if (sampleEnd >= ch->data()->samplesCount()) sampleEnd = ch->data()->samplesCount() - 1;
-//    newUff->setSamplesCount(sampleEnd - sampleStart + 1); //число отсчетов в новом файле
+//        Function *ch = new Function(*(this->channels[i]), newUff);
+//        ch->data()->setSegment(*(channels[i]->data()), sampleStart, sampleEnd);
+//        ch->setPopulated(true);
+//        if (!wasPopulated) {
+//            //clearing data
+//            channels[i]->data()->clear();
+//        }
+//    }
 
-    // 4 сохраняем файл
+//    newUff->setChanged(true);
+//    newUff->setDataChanged(true);
+//    newUff->write();
+//    delete newUff;
 
-    for (int i=0; i<channels.size(); ++i) {
-        bool wasPopulated = channels[i]->populated();
-        if (!wasPopulated) channels[i]->populate();
-
-        Function *ch = new Function(*(this->channels[i]), newUff);
-        ch->data()->setSegment(*(channels[i]->data()), sampleStart, sampleEnd);
-        ch->setPopulated(true);
-        if (!wasPopulated) {
-            //clearing data
-            channels[i]->data()->clear();
-        }
-    }
-
-    newUff->setChanged(true);
-    newUff->setDataChanged(true);
-    newUff->write();
-    newUff->writeRawFile();
-    delete newUff;
-
-    // 5 возвращаем имя нового файла
-    return newFileName;
-}
-
-
-int UffFileDescriptor::samplesCount() const
-{
-    if (channels.isEmpty()) return 0;
-    return channels.constFirst()->data()->samplesCount();
-}
-
-void UffFileDescriptor::setSamplesCount(int count)
-{
-    Q_UNUSED(count);
-}
+//    // 5 возвращаем имя нового файла
+//    return newFileName;
+//}
 
 void UffFileDescriptor::setChanged(bool changed)
 {DD;

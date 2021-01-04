@@ -1120,7 +1120,6 @@ void MainWindow::addCorrections()
                 dfd->setChanged(true);
                 dfd->setDataChanged(true);
                 dfd->write();
-                dfd->writeRawFile();
             }
             if (deleteAfter) delete dfd;
         }
@@ -1218,7 +1217,6 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
         if (found) {//уже добавлен в базу
             //записываем все изменения данных, если они были
             destination->write();
-            destination->writeRawFile();
         }
         else {//еще не добавлен в базу
             destination = App->addFile(file, &isNew);
@@ -1411,11 +1409,11 @@ void MainWindow::editDescriptions()
 
     EditDescriptionsDialog dialog(records, this);
     if (dialog.exec()) {
-        QHash<FileDescriptor*,DescriptionList> descriptions = dialog.descriptions();
-        QHashIterator<FileDescriptor*,DescriptionList> it(descriptions);
+        auto descriptions = dialog.descriptions();
+        QHashIterator<FileDescriptor*, DataDescription> it(descriptions);
         while (it.hasNext()) {
             it.next();
-            tab->model->setDataDescriptor(it.key(), it.value());
+            tab->model->setDataDescription(it.key(), it.value());
         }
     }
 }
@@ -2343,13 +2341,13 @@ void MainWindow::exportToExcelData()
     exportToExcel(false, true);
 }
 
-QStringList twoStringDescription(const DescriptionList &list)
-{
-    QStringList result;
-    if (list.size()>0) result << descriptionEntryToString(list.constFirst()); else result << "";
-    if (list.size()>1) result << descriptionEntryToString(list.at(1)); else result << "";
-    return result;
-}
+//QStringList twoStringDescription(const DescriptionList &list)
+//{
+//    QStringList result;
+//    if (list.size()>0) result << descriptionEntryToString(list.constFirst()); else result << "";
+//    if (list.size()>1) result << descriptionEntryToString(list.at(1)); else result << "";
+//    return result;
+//}
 
 void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 {
@@ -2445,7 +2443,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
 
      // записываем название файла и описатели
      if (allChannelsFromOneFile) {
-         QStringList descriptions = twoStringDescription(descriptor->dataDescriptor());
+         QStringList descriptions = descriptor->dataDescription().twoStringDescription();
 
          QAxObject *cells = worksheet->querySubObject("Cells(Int,Int)", 1, 1);
          if (cells) cells->setProperty("Value", descriptor->fileName());
@@ -2461,7 +2459,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      else {
          for (int i=0; i<plot->curves.size(); ++i) {
              Curve *curve = plot->curves.at(i);
-             QStringList descriptions = twoStringDescription(curve->channel->descriptor()->dataDescriptor());
+             QStringList descriptions = curve->channel->descriptor()->dataDescription().twoStringDescription();
 
              QAxObject *cells = !writeToSeparateColumns ? worksheet->querySubObject("Cells(Int,Int)", 1, 2+i)
                                                        : worksheet->querySubObject("Cells(Int,Int)", 1, 2+i*2);

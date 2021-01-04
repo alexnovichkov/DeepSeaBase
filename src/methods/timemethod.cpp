@@ -151,10 +151,10 @@ DfdFileDescriptor *TimeMethod::createNewDfdFile(const QString &fileName, FileDes
 
     // rest
     newDfd->DataType = DfdDataType::CuttedData;
-    newDfd->XName = "с";
-    const double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
-    newDfd->XStep = 1.0 / newSampleRate;
-    newDfd->XBegin = 0.0;
+//    newDfd->XName = "с";
+//    const double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
+//    newDfd->XStep = 1.0 / newSampleRate;
+//    newDfd->XBegin = 0.0;
 
     return newDfd;
 }
@@ -163,11 +163,8 @@ UffFileDescriptor *TimeMethod::createNewUffFile(const QString &fileName, FileDes
 {DD;
     UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
 
+    newUff->setDataDescription(dfd->dataDescription());
     newUff->updateDateTimeGUID();
-
-    if (!dfd->dataDescriptor().isEmpty()) {
-        newUff->setDataDescriptor(dfd->dataDescriptor());
-    }
 
     const double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
     newUff->setXStep(newSampleRate / p.bufferSize);
@@ -179,7 +176,9 @@ DfdChannel *TimeMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescript
 {DD;
     Q_UNUSED(p);
     DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
-    ch->data()->setXValues(0.0, newDfd->XStep, spectrum.size());
+    double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
+    double XStep = newSampleRate / p.bufferSize;
+    ch->data()->setXValues(0.0, XStep, spectrum.size());
     ch->data()->setYValues(spectrum, DataHolder::YValuesReals);
     ch->setPopulated(true);
     ch->setName(dfd->channel(i)->name());

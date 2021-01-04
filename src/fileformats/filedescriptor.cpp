@@ -3,6 +3,7 @@
 #include "dataholder.h"
 #include "averaging.h"
 #include "algorithms.h"
+#include "fileformats/formatfactory.h"
 
 double threshold(const QString &name)
 {
@@ -58,12 +59,25 @@ bool FileDescriptor::rename(const QString &newName, const QString &newPath)
     return result;
 }
 
+void FileDescriptor::fillPreliminary(const FileDescriptor *)
+{
+    updateDateTimeGUID();
+}
+
 void FileDescriptor::populate()
 {
     const int count = channelsCount();
     for (int i=0; i<count; ++i) {
         if (!channel(i)->populated()) channel(i)->populate();
     }
+}
+
+void FileDescriptor::updateDateTimeGUID()
+{
+    QDateTime dt = QDateTime::currentDateTime();
+    dataDescription().put("fileCreationTime", dt.toString("dd.MM.yyyy hh:mm"));
+    dataDescription().put("guid", FileDescriptor::createGUID());
+    dataDescription().put("createdBy", "DeepSea Base");
 }
 
 bool FileDescriptor::copyTo(const QString &name)
@@ -118,6 +132,35 @@ double FileDescriptor::roundedSize() const
         }
     }
     return size;
+}
+
+QDateTime FileDescriptor::dateTime() const
+{
+    QString dt = dataDescription().get("dateTime").toString();
+    if (!dt.isEmpty())
+        return QDateTime::fromString(dt, "dd.MM.yyyy hh:mm");
+    return QDateTime();
+}
+
+bool FileDescriptor::setDateTime(const QDateTime &dt)
+{
+    if (dt==dateTime()) return false;
+    dataDescription().put("dateTime", dt.toString("dd.MM.yyyy hh:mm"));
+    setChanged(true);
+    return true;
+}
+
+QDateTime FileDescriptor::fileCreationTime() const
+{
+    QString dt = dataDescription().get("fileCreationTime").toString();
+    return QDateTime::fromString(dt, "dd.MM.yyyy hh:mm");
+}
+
+bool FileDescriptor::setFileCreationTime(const QDateTime &dt)
+{
+    dataDescription().put("fileCreationTime", dt.toString("dd.MM.yyyy hh:mm"));
+    setChanged(true);
+    return true;
 }
 
 void FileDescriptor::calculateMean(const QList<Channel *> &channels)
@@ -238,7 +281,6 @@ void FileDescriptor::calculateMean(const QList<Channel *> &channels)
     setChanged(true);
     setDataChanged(true);
     write();
-    writeRawFile();
 }
 
 void FileDescriptor::calculateMovingAvg(const QList<Channel *> &channels, int windowSize)
@@ -283,6 +325,7 @@ void FileDescriptor::calculateMovingAvg(const QList<Channel *> &channels, int wi
         descr.insert("samples",  data->samplesCount());
         descr.insert("blocks", 1);
         descr.insert("zname", c->zName());
+        descr.insert("correction", c->correction());
 
         QJsonObject function;
         function.insert("type", c->type());
@@ -317,7 +360,6 @@ void FileDescriptor::calculateMovingAvg(const QList<Channel *> &channels, int wi
     setChanged(true);
     setDataChanged(true);
     write();
-    writeRawFile();
 }
 
 void FileDescriptor::calculateThirdOctave(FileDescriptor *source)
@@ -371,12 +413,116 @@ void FileDescriptor::calculateThirdOctave(FileDescriptor *source)
     setChanged(true);
     setDataChanged(true);
     write();
-    writeRawFile();
+}
+
+QString FileDescriptor::saveTimeSegment(double from, double to)
+{
+    // 0 проверяем, чтобы этот файл имел тип временных данных
+    if (type() != Descriptor::TimeResponse) return "";
+    // и имел данные
+    if (channelsCount() == 0) return "";
+
+    // 1 создаем уникальное имя файла по параметрам from и to
+    QString fromString, toString;
+    getUniqueFromToValues(fromString, toString, from, to);
+    QString suffix = QString("_%1s_%2s").arg(fromString).arg(toString);
+
+    QString ext = QFileInfo(fileName()).suffix();
+    QString newFileName = createUniqueFileName("", fileName(), suffix, ext, false);
+
+    // 2 создаем новый файл
+    auto newFile = FormatFactory::createDescriptor(newFileName);
+
+    newFile->setDataDescription(this->dataDescription());
+    newFile->dataDescription().put("source.file", fileName());
+    newFile->dataDescription().put("source.guid", dataDescription().get("guid"));
+    newFile->dataDescription().put("source.dateTime", dataDescription().get("dateTime"));
+    newFile->fillPreliminary(this);
+
+    // 3 ищем границы данных по параметрам from и to
+    Channel *ch = channel(0);
+    int sampleStart = qRound((from - ch->data()->xMin())/ch->data()->xStep());
+    if (sampleStart<0) sampleStart = 0;
+    int sampleEnd = qRound((to - ch->data()->xMin())/ch->data()->xStep());
+    if (sampleEnd >= ch->data()->samplesCount()) sampleEnd = ch->data()->samplesCount() - 1;
+
+    // 4 сохраняем файл
+
+    for (int i=0; i<channelsCount(); ++i) {
+        Channel *c = channel(i);
+        bool wasPopulated = c->populated();
+        if (!wasPopulated) c->populate();
+
+        DataHolder *data = new DataHolder();
+        data->setSegment(*(c->data()), sampleStart, sampleEnd);
+
+        QJsonObject descr;
+        descr.insert("name", c->name()+" вырезка");
+        descr.insert("description", QString("Вырезка %1s-%2s").arg(fromString).arg(toString));
+        descr.insert("ynameold", c->yNameOld());
+        descr.insert("yname", c->yName());
+        descr.insert("xname", c->xName());
+        descr.insert("samples",  data->samplesCount());
+        descr.insert("blocks", data->blocksCount());
+        descr.insert("zname", c->zName());
+        descr.insert("correction", c->correction());
+
+        QJsonObject function;
+        function.insert("type", c->type());
+        function.insert("octaveFormat", c->octaveType());
+        function.insert("name", "SECTION");
+        function.insert("logref", data->threshold());
+        QString formatS;
+        switch (data->yValuesFormat()) {
+            case DataHolder::YValuesComplex: formatS = "complex"; break;
+            case DataHolder::YValuesAmplitudes: formatS = "amplitude"; break;
+            case DataHolder::YValuesAmplitudesInDB: formatS = "amplitudeDb"; break;
+            case DataHolder::YValuesImags: formatS = "imaginary"; break;
+            case DataHolder::YValuesPhases: formatS = "phase"; break;
+            default: formatS = "real";
+        }
+        function.insert("format", formatS);
+        QString unitsS;
+        switch (data->yValuesUnits()) {
+            case DataHolder::UnitsUnknown: unitsS = "unknown"; break;
+            case DataHolder::UnitsLinear: unitsS = "linear"; break;
+            case DataHolder::UnitsQuadratic: unitsS = "quadratic"; break;
+            case DataHolder::UnitsDimensionless: unitsS = "dimensionless"; break;
+            default: break;
+        }
+        function.insert("units", unitsS);
+        descr.insert("function", function);
+
+        newFile->addChannelWithData(data, descr);
+
+        if (!wasPopulated)
+            c->clear();
+    }
+
+    newFile->setChanged(true);
+    newFile->setDataChanged(true);
+    newFile->write();
+    delete newFile;
+
+    // 5 возвращаем имя нового файла
+    return newFileName;
 }
 
 bool FileDescriptor::fileExists() const
 {
     return QFileInfo(_fileName).exists();
+}
+
+QVariant FileDescriptor::channelHeader(int column) const
+{
+    if (channelsCount()==0) return QVariant();
+    return channel(0)->channelHeader(column);
+}
+
+int FileDescriptor::columnsCount() const
+{
+    if (channelsCount()==0) return 7;
+    return channel(0)->columnsCount();
 }
 
 
@@ -413,10 +559,75 @@ bool FileDescriptor::isSourceFile() const
     return (type == Descriptor::TimeResponse);
 }
 
+double FileDescriptor::xStep() const
+{
+    if (channelsCount()==0) return 0.0;
+    return channel(0)->data()->xStep();
+}
+
+void FileDescriptor::setXStep(const double xStep)
+{
+    if (channelsCount() == 0) return;
+    bool changed = false;
+
+    for (int i=0; i < channelsCount(); ++i) {
+        Channel *ch = channel(i);
+        if (ch->data()->xValuesFormat() == DataHolder::XValuesNonUniform) continue;
+        if (ch->data()->xStep()!=xStep) {
+            changed = true;
+            ch->data()->setXStep(xStep);
+        }
+    }
+    if (changed) setChanged(true);
+    write();
+}
+
+double FileDescriptor::xBegin() const
+{
+    if (channelsCount()==0) return 0.0;
+    return channel(0)->data()->xMin();
+}
+
+int FileDescriptor::samplesCount() const
+{
+    if (channelsCount()==0) return 0;
+    return channel(0)->data()->samplesCount();
+}
+
+QString FileDescriptor::xName() const
+{
+    QString result;
+    if (channelsCount() > 0) {
+        result = channel(0)->xName();
+        for (int i=1; i<channelsCount(); ++i) {
+            if (channel(i)->xName() != result) return "разные";
+        }
+    }
+    return result;
+}
+
+bool FileDescriptor::dataTypeEquals(FileDescriptor *other) const
+{
+    return (this->type() == other->type());
+}
+
+QString FileDescriptor::legend() const
+{
+    return dataDescription().get("legend").toString();
+}
+
+bool FileDescriptor::setLegend(const QString &s)
+{
+    if (s==legend()) return false;
+    dataDescription().put("legend", s);
+    setChanged(true);
+    return true;
+}
+
 bool FileDescriptor::canTakeChannelsFrom(FileDescriptor *other) const
 {
-    return (dataTypeEquals(other)
-            && qFuzzyIsNull(this->xStep() - other->xStep()));
+    Q_UNUSED(other);
+    return true;
 }
 
 bool FileDescriptor::canTakeAnyChannels() const
@@ -433,18 +644,27 @@ bool FileDescriptor::hasCurves() const
     return false;
 }
 
-QString descriptionEntryToString(const DescriptionEntry &entry)
+QString FileDescriptor::createGUID()
 {
-    QString result = entry.second;
-    if (!entry.first.isEmpty()) return entry.first+"="+result;
-
+    QString result = QUuid::createUuid().toString().toUpper();
+    if (result.at(24) == '-') result.remove(24,1);
+    else result.remove(25,1);
     return result;
 }
+
+//QString descriptionEntryToString(const DescriptionEntry &entry)
+//{
+//    QString result = entry.second;
+//    if (!entry.first.isEmpty()) return entry.first+"="+result;
+
+//    return result;
+//}
 
 Channel::Channel(Channel *other) :
     _color(QColor()), _plotted(0),
     _populated(other->_populated),
-    _data(new DataHolder(*(other->_data)))
+    _data(new DataHolder(*(other->_data))),
+    _dataDescription(other->_dataDescription)
 {
 
 }
@@ -452,7 +672,8 @@ Channel::Channel(Channel *other) :
 Channel::Channel(Channel &other) :
     _color(QColor()), _plotted(0),
     _populated(other._populated),
-    _data(new DataHolder(*(other._data)))
+    _data(new DataHolder(*(other._data))),
+    _dataDescription(other._dataDescription)
 {
 
 }
@@ -544,4 +765,25 @@ QString Descriptor::functionTypeDescription(int type)
         default: return "Неизв.";
     }
     return "Неизв.";
+}
+
+
+
+QString stringify(const QVector<int> &vec)
+{
+    QStringList result;
+    for (int i:vec) result<<QString::number(i);
+    return result.join(",");
+}
+
+QDataStream &operator>>(QDataStream &stream, DataDescription &data)
+{
+    stream >> data.data;
+    return stream;
+}
+
+QDataStream &operator<<(QDataStream &stream, const DataDescription &data)
+{
+    stream << data.data;
+    return stream;
 }

@@ -147,12 +147,17 @@ void MatlabConvertor::readXml(bool &success)
                         xml.last().fileName = xmlReader.attributes().value("Name").toString();
                     }
                 }
+                else if (xmlReader.attributes().hasAttribute("Path")) {
+                    if (xml.last().filePath.isEmpty()) {
+                        xml.last().filePath = xmlReader.attributes().value("Path").toString();
+                    }
+                }
             }
             else if (name == "Titles" && inDatasets) {
                 if (xmlReader.attributes().hasAttribute("Title1")) {
-                    xml.last().titles.append(xmlReader.attributes().value("Title1").toString());
-                    xml.last().titles.append(xmlReader.attributes().value("Title2").toString());
-                    xml.last().titles.append(xmlReader.attributes().value("Title3").toString());
+                    xml.last().titles[0] = xmlReader.attributes().value("Title1").toString();
+                    xml.last().titles[1] = xmlReader.attributes().value("Title2").toString();
+                    xml.last().titles[2] = xmlReader.attributes().value("Title3").toString();
                 }
             }
             else if (name == "Date" && inDatasets) {

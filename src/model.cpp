@@ -87,12 +87,12 @@ QList<FileDescriptor *> Model::selectedFiles(const QVector<Descriptor::DataType>
     return files;
 }
 
-void Model::setDataDescriptor(FileDescriptor *file, const DescriptionList &data)
+void Model::setDataDescription(FileDescriptor *file, const DataDescription &data)
 {DD;
     int row;
     if (!contains(file, &row)) return;
 
-    file->setDataDescriptor(data);
+    file->setDataDescription(data);
     auto i = index(row, MODEL_COLUMN_DESCRIPTION);
     emit dataChanged(i, i, QVector<int>()<<Qt::DisplayRole);
     i = index(row, MODEL_COLUMN_FILENAME);
@@ -173,7 +173,6 @@ void Model::save()
     for (int i=0; i<descriptors.size(); ++i) {
         auto f = descriptors[i];
         f->write();
-        f->writeRawFile();
         emit dataChanged(index(i,0), index(i,MODEL_COLUMNS_COUNT-1));
     }
 }
@@ -279,7 +278,7 @@ QVariant Model::data(const QModelIndex &index, int role) const
             case MODEL_COLUMN_XNAME: return d->xName();
             case MODEL_COLUMN_XSTEP: return d->xStep();
             case MODEL_COLUMN_CHANNELSCOUNT: return d->channelsCount();
-            case MODEL_COLUMN_DESCRIPTION: return d->dataDescriptorAsString();
+            case MODEL_COLUMN_DESCRIPTION: return d->dataDescription().toStringList().join(";");
             case MODEL_COLUMN_LEGEND: return d->legend();
             default: return QVariant();
         }

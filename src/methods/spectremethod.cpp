@@ -235,10 +235,10 @@ DfdFileDescriptor *SpectreMethod::createNewDfdFile(const QString &fileName, File
     DfdFileDescriptor *newDfd = AbstractMethod::createNewDfdFile(fileName, dfd, p);
 
     // rest
-    newDfd->XName = "Гц";
-    const double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
-    newDfd->XStep = newSampleRate / p.bufferSize;
-    newDfd->XBegin = 0.0;
+//    newDfd->XName = "Гц";
+//    const double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
+//    newDfd->XStep = newSampleRate / p.bufferSize;
+//    newDfd->XBegin = 0.0;
 
     return newDfd;
 }
@@ -247,11 +247,8 @@ UffFileDescriptor *SpectreMethod::createNewUffFile(const QString &fileName, File
 {DD;
     UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
 
+    newUff->setDataDescription(dfd->dataDescription());
     newUff->updateDateTimeGUID();
-
-    if (!dfd->dataDescriptor().isEmpty()) {
-        newUff->setDataDescriptor(dfd->dataDescriptor());
-    }
 
     const double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
     newUff->setXStep(newSampleRate / p.bufferSize);
@@ -262,7 +259,8 @@ UffFileDescriptor *SpectreMethod::createNewUffFile(const QString &fileName, File
 DfdChannel *SpectreMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
 {DD;
     DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
-    ch->data()->setXValues(0.0, newDfd->XStep, spectrum.size());
+    double XStep = p.sampleRate / pow(2.0, p.bandStrip) / p.bufferSize;
+    ch->data()->setXValues(0.0, XStep, spectrum.size());
     ch->data()->setThreshold(p.threshold);
     ch->data()->setYValues(spectrum, p.scaleType == 0 ? DataHolder::YValuesAmplitudes : DataHolder::YValuesAmplitudesInDB);
     ch->setPopulated(true);

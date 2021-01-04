@@ -602,10 +602,6 @@ int TDMSChannel::index() const
 
 /*****************************************************/
 
-void TDMSGroup::fillPreliminary(FileDescriptor *file)
-{
-}
-
 void TDMSGroup::read()
 {
 }
@@ -614,32 +610,10 @@ void TDMSGroup::write()
 {
 }
 
-void TDMSGroup::writeRawFile()
-{
-}
-
-void TDMSGroup::updateDateTimeGUID()
-{
-}
-
-DescriptionList TDMSGroup::dataDescriptor() const
-{
-    return DescriptionList();
-}
-
-void TDMSGroup::setDataDescriptor(const DescriptionList &)
-{
-}
-
-QString TDMSGroup::dataDescriptorAsString() const
-{
-    return "";
-}
-
-QDateTime TDMSGroup::dateTime() const
-{
-    return parent->properties.value("datetime").toDateTime();
-}
+//QDateTime TDMSGroup::dateTime() const
+//{
+//    return parent->properties.value("datetime").toDateTime();
+//}
 
 void TDMSGroup::deleteChannels(const QVector<int> &)
 {
@@ -647,11 +621,6 @@ void TDMSGroup::deleteChannels(const QVector<int> &)
 
 void TDMSGroup::copyChannelsFrom(FileDescriptor *, const QVector<int> &)
 {
-}
-
-QString TDMSGroup::saveTimeSegment(double , double )
-{
-    return "";
 }
 
 int TDMSGroup::channelsCount() const
@@ -663,71 +632,8 @@ void TDMSGroup::move(bool , const QVector<int> &, const QVector<int> &)
 {
 }
 
-QVariant TDMSGroup::channelHeader(int) const
-{
-    return QVariant();
-}
-
-int TDMSGroup::columnsCount() const
-{
-    return 1;
-}
-
 Channel *TDMSGroup::channel(int index) const
 {
     if (index >=0 && index < channels.size()) return channels.at(index);
     return 0;
-}
-
-QString TDMSGroup::legend() const
-{
-    return QString();
-}
-
-bool TDMSGroup::setLegend(const QString &)
-{
-    return true;
-}
-
-double TDMSGroup::xStep() const
-{
-    if (channels.isEmpty()) return 0.0;
-    return channels.constFirst()->data()->xStep();
-}
-
-void TDMSGroup::setXStep(const double)
-{
-
-}
-
-double TDMSGroup::xBegin() const
-{
-    if (channels.isEmpty()) return 0.0;
-    return channels.constFirst()->data()->xMin();
-}
-
-int TDMSGroup::samplesCount() const
-{
-    if (channels.isEmpty()) return 0;
-    return channels.constFirst()->data()->samplesCount();
-}
-
-void TDMSGroup::setSamplesCount(int)
-{
-}
-
-QString TDMSGroup::xName() const
-{
-    if (channels.isEmpty()) return "";
-    return channels.constFirst()->xName();
-}
-
-bool TDMSGroup::setDateTime(QDateTime)
-{
-    return true;
-}
-
-bool TDMSGroup::dataTypeEquals(FileDescriptor *) const
-{
-    return false;
 }

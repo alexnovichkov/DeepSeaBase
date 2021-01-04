@@ -588,3 +588,29 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
         maybeAppend(file, files);
     }
 }
+
+QVector<double> octaveStrips(int octave, int count)
+{
+    QVector<double> v(count);
+    switch (octave) {
+        case 1:
+            for (int i=0; i<count; ++i) v[i] = pow(2.0, i+1);
+            break;
+        case 2:
+            for (int i=0; i<count; ++i) v[i] = pow(2.0, i+1);
+            break;
+        case 3:
+            for (int i=0; i<count; ++i) v[i] = pow(10.0, 0.1*(i+1));
+            break;
+        case 6:
+            for (int i=0; i<count; ++i) v[i] = pow(2.0, i+1);
+            break;
+        case 12:
+            for (int i=0; i<count; ++i) v[i] = pow(2.0, i+1);
+            break;
+        case 24:
+            for (int i=0; i<count; ++i) v[i] = pow(2.0, i+1);
+            break;
+    }
+    return v;
+}

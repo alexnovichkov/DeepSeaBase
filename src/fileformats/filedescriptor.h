@@ -5,6 +5,7 @@
 #include <QColor>
 #include <QObject>
 #include "dataholder.h"
+#include "boost/property_tree/ptree.hpp"
 
 namespace Descriptor {
 enum DataType
@@ -39,18 +40,84 @@ enum DataType
     OrderFunction
 };
 
-enum OrdinateFormat {
-    RealSingle = 2,
-    RealDouble = 4,
-    ComplexSingle = 5,
-    ComplexDouble = 6
-};
-
 QString functionTypeDescription(int type);
 
 }
 
+struct DataDescription
+{
+    QVariantMap data;
 
+    void put(const QString &key, const QVariant &value) {
+        data.insert(key, value);
+    }
+    QVariant get(const QString &key) const
+    {
+        return data.value(key);
+    }
+    QJsonObject toJson() const {
+        QJsonObject result;
+        for (auto i = data.constBegin(); i != data.constEnd(); ++i) {
+            if (i.key().contains('.')) {
+                QString key = i.key().section('.',0,0);
+                auto r = result.value(key).toObject();
+                r.insert(i.key().section('.',1), QJsonValue::fromVariant(i.value()));
+                result.insert(key, r);
+            }
+            else result.insert(i.key(), QJsonValue::fromVariant(i.value()));
+        }
+        return result;
+    }
+    static DataDescription fromJson(const QJsonObject &o) {
+        DataDescription result;
+        for (auto i = o.constBegin(); i!=o.constEnd(); ++i) {
+            QString key = i.key();
+            QJsonValue val = i.value();
+            if (val.isArray()) {
+                qDebug()<<"Array found at"<<key;
+                continue;
+            }
+            else if (val.isObject()) {
+                QJsonObject v = val.toObject();
+                for (auto j = v.constBegin(); j!=v.constEnd(); ++j) {
+                    if (j->isArray()) {
+                        qDebug()<<"Array found at"<<j.key();
+                        continue;
+                    }
+                    else if (j->isObject()) {
+                        qDebug()<<"Object found at"<<j.key();
+                        continue;
+                    }
+                    QString key1 = key+"."+j.key();
+                    result.data.insert(key1, j->toVariant());
+                }
+            }
+            else
+                result.data.insert(key, val.toVariant());
+        }
+        return result;
+    }
+
+    QStringList twoStringDescription() const
+    {
+        QStringList result = toStringList("description");
+        result = result.mid(0,2);
+        return result;
+    }
+    QStringList toStringList(const QString &filter = QString()) const
+    {
+        QStringList result;
+
+        for (auto i = data.constBegin(); i != data.constEnd(); ++i) {
+            if (filter.isEmpty() || i.key().startsWith(filter+"."))
+                result << i.key()+"="+i.value().toString();
+        }
+        return result;
+    }
+};
+
+QDataStream &operator>>(QDataStream& stream, DataDescription& header);
+QDataStream &operator<<(QDataStream& stream, const DataDescription& header);
 
 
 class Channel;
@@ -59,10 +126,11 @@ class DataHolder;
 typedef QPair<QString, QString> DescriptionEntry;
 typedef QList<DescriptionEntry> DescriptionList;
 
-QString descriptionEntryToString(const DescriptionEntry &entry);
+//QString descriptionEntryToString(const DescriptionEntry &entry);
 
 double threshold(const QString &name);
 double convertFactor(const QString &from);
+QString stringify(const QVector<int> &vec);
 
 //QString valuesUnit(const QString &old, int unitType);
 
@@ -74,23 +142,36 @@ public:
 
     virtual bool rename(const QString &newName, const QString &newPath = QString());
 
-    //virtual void fillPreliminary(Descriptor::DataType) = 0;
-    virtual void fillPreliminary(FileDescriptor *) = 0;
+    //просто вызывает updateDateTimeGUID. Переопределен в DFD
+    virtual void fillPreliminary(const FileDescriptor *);
     virtual void read() = 0;
     virtual void write() = 0;
-    virtual void writeRawFile() = 0;
-    virtual void populate();
-    virtual void updateDateTimeGUID() = 0;
+    void populate();
+    void updateDateTimeGUID();
+    //переопределен в DFD
     virtual bool copyTo(const QString &name);
-
+    //переопределен в DFD
     virtual Descriptor::DataType type() const;
+    //переопределен в DFD
     virtual QString typeDisplay() const;
-    virtual double roundedSize() const;
-    virtual DescriptionList dataDescriptor() const = 0;
-    virtual void setDataDescriptor(const DescriptionList &data) = 0;
-    virtual QString dataDescriptorAsString() const = 0;
+    double roundedSize() const;
 
-    virtual QDateTime dateTime() const = 0;
+    const DataDescription & dataDescription() const {return _dataDescription;}
+    DataDescription & dataDescription() {return _dataDescription;}
+    void setDataDescription(const DataDescription &descr) {_dataDescription = descr;}
+
+    //дата и время создания базы данных
+    QDateTime dateTime() const;
+    bool setDateTime(const QDateTime &dt);
+
+    //дата и время создания этого файла
+    QDateTime fileCreationTime() const;
+    bool setFileCreationTime(const QDateTime &dt);
+
+    QString legend() const;
+    bool setLegend(const QString &s);
+
+    //QString guid() const;
 
     virtual void deleteChannels(const QVector<int> &channelsToDelete) = 0;
     virtual void copyChannelsFrom(FileDescriptor *, const QVector<int> &) = 0;
@@ -100,54 +181,52 @@ public:
     void calculateMovingAvg(const QList<Channel *> &channels, int windowSize);
     void calculateThirdOctave(FileDescriptor *source);
 
-    virtual QString saveTimeSegment(double from, double to) = 0;
+    QString saveTimeSegment(double from, double to);
 
-    virtual QString fileName() const {return _fileName;}
-    virtual void setFileName(const QString &name) { _fileName = name;}
+    QString fileName() const {return _fileName;}
+    void setFileName(const QString &name) { _fileName = name;}
+    //переопределен в DFD
     virtual bool fileExists() const;
 
     virtual int channelsCount() const = 0;
 
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) = 0;
 
-    virtual QVariant channelHeader(int column) const = 0;
-    virtual int columnsCount() const = 0;
+    QVariant channelHeader(int column) const;
+    int columnsCount() const;
 
     virtual Channel *channel(int index) const = 0;
 
+    //переопределен в UFF
     virtual void setChanged(bool changed);
     bool changed() const {return _changed;}
 
     bool dataChanged() const {return _dataChanged;}
-    virtual void setDataChanged(bool changed);
+    void setDataChanged(bool changed);
 
     int plottedCount() const;
 
     virtual bool isSourceFile() const;
 
-    virtual QString legend() const =0;
-    virtual bool setLegend(const QString &legend)=0;
 
-    virtual double xStep() const = 0;
-    virtual void setXStep(const double xStep) = 0;
+    double xStep() const;
+    void setXStep(const double xStep);
+    double xBegin() const;
+    int samplesCount() const;
+    QString xName() const;
 
-    virtual double xBegin() const = 0;
 
-    virtual int samplesCount() const = 0;
-    virtual void setSamplesCount(int count) = 0;
-
-    virtual QString xName() const = 0;
-
-    virtual bool setDateTime(QDateTime dt) = 0;
 
     virtual bool operator == (const FileDescriptor &descriptor) {
         Q_UNUSED(descriptor);
         return false;
     }
 
-    virtual bool dataTypeEquals(FileDescriptor *other) const = 0;
+    virtual bool dataTypeEquals(FileDescriptor *other) const;
 
+    //By default returns true, redefined in Dfd
     virtual bool canTakeChannelsFrom(FileDescriptor *other) const;
+    //By default returns true, redefined in Dfd
     virtual bool canTakeAnyChannels() const;
 
     bool hasCurves() const;
@@ -156,10 +235,13 @@ public:
         Q_UNUSED(data);
         Q_UNUSED(description);
     };
+
+    static QString createGUID();
 private:
     QString _fileName;
     bool _changed = false;
     bool _dataChanged = false;
+    DataDescription _dataDescription;
 };
 
 class Channel
@@ -202,6 +284,10 @@ public:
     virtual void setXName(const QString &xName) = 0;
     virtual void setZName(const QString &zName) = 0;
 
+    const DataDescription & dataDescription() const {return _dataDescription;}
+    DataDescription & dataDescription() {return _dataDescription;}
+    void setDataDescription(const DataDescription &descr) {_dataDescription = descr;}
+
     virtual QString legendName() const = 0;
 
     DataHolder *data() {return _data;}
@@ -237,6 +323,7 @@ private:
     QString _correction;
 protected:
     DataHolder *_data;
+    DataDescription _dataDescription;
 };
 
 #endif // FILEDESCRIPTOR_H

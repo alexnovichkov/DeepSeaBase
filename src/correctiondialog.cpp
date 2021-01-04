@@ -251,7 +251,6 @@ void CorrectionDialog::accept()
         f->setChanged(true);
         f->setDataChanged(true);
         f->write();
-        f->writeRawFile();
     }
 
     plot->recalculateScale(true);
