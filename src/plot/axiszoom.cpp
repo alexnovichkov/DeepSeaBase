@@ -169,7 +169,7 @@ void AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             wx = limitScale(wx,currentWidth);
             // вычисляем новую левую границу
             double xl = currentRightBorder - wx;
-            if (xl<0.0) xl=0.0;
+            //if (xl<0.0) xl=0.0;
             currentLeftBorder = xl;
             // устанавливаем ее для горизонтальной шкалы
             zoom->horizontalScaleBounds->set(xl,currentRightBorder);
