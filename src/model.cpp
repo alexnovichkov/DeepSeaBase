@@ -87,12 +87,22 @@ QList<FileDescriptor *> Model::selectedFiles(const QVector<Descriptor::DataType>
     return files;
 }
 
-void Model::setDataDescription(FileDescriptor *file, const DataDescription &data)
-{DD;
-    int row;
-    if (!contains(file, &row)) return;
+//void Model::setDataDescription(FileDescriptor *file, const DataDescription &data)
+//{DD;
+//    int row;
+//    if (!contains(file, &row)) return;
 
-    file->setDataDescription(data);
+//    file->setDataDescription(data);
+//    auto i = index(row, MODEL_COLUMN_DESCRIPTION);
+//    emit dataChanged(i, i, QVector<int>()<<Qt::DisplayRole);
+//    i = index(row, MODEL_COLUMN_FILENAME);
+//    emit dataChanged(i, i, QVector<int>()<<Qt::DecorationRole);
+//}
+void Model::setDataDescription(int selectionIndex, const DataDescription &data)
+{DD;
+    int row = indexes.at(selectionIndex);
+
+    descriptors[row]->setDataDescription(data);
     auto i = index(row, MODEL_COLUMN_DESCRIPTION);
     emit dataChanged(i, i, QVector<int>()<<Qt::DisplayRole);
     i = index(row, MODEL_COLUMN_FILENAME);
@@ -163,9 +173,13 @@ void Model::invalidateCurve(Channel* channel)
 {DD;
     channel->setPlotted(0);
     channel->setColor(QColor());
-    QModelIndex idx = modelIndexOfFile(channel->descriptor(), MODEL_COLUMN_FILENAME);
-    if (idx.isValid())
-        emit dataChanged(idx, idx, QVector<int>()<<Qt::FontRole);
+
+    int row;
+    if (contains(channel->descriptor(), &row)) {
+        QModelIndex idx = index(row, MODEL_COLUMN_FILENAME);
+        if (idx.isValid())
+            emit dataChanged(idx, idx, QVector<int>()<<Qt::FontRole);
+    }
 }
 
 void Model::save()
@@ -191,19 +205,13 @@ void Model::discardChanges()
 
 bool Model::changed() const
 {DD;
-    for (auto & d: descriptors) {
-        if (d->changed() || d->dataChanged()) return true;
-    }
-    return false;
-}
-
-QModelIndex Model::modelIndexOfFile(FileDescriptor *f, int column) const
-{DD;
-    int row;
-    if (contains(f, &row)) {
-        return index(row, column);
-    }
-    return QModelIndex();
+    return std::any_of(descriptors.cbegin(), descriptors.cend(), [](const F &d){
+        return d->changed() || d->dataChanged();
+    });
+//    for (auto & d: descriptors) {
+//        if (d->changed() || d->dataChanged()) return true;
+//    }
+//    return false;
 }
 
 Model::~Model()
@@ -278,7 +286,7 @@ QVariant Model::data(const QModelIndex &index, int role) const
             case MODEL_COLUMN_XNAME: return d->xName();
             case MODEL_COLUMN_XSTEP: return d->xStep();
             case MODEL_COLUMN_CHANNELSCOUNT: return d->channelsCount();
-            case MODEL_COLUMN_DESCRIPTION: return d->dataDescription().toStringList().join(";");
+            case MODEL_COLUMN_DESCRIPTION: return d->dataDescription().toStringList("description").join(";");
             case MODEL_COLUMN_LEGEND: return d->legend();
             default: return QVariant();
         }

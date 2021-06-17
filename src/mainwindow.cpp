@@ -35,6 +35,7 @@
 #include "longoperation.h"
 #include "filestable.h"
 #include "channelstable.h"
+#include "plot/legend.h"
 
 #include "fileformats/formatfactory.h"
 
@@ -1410,11 +1411,14 @@ void MainWindow::editDescriptions()
     EditDescriptionsDialog dialog(records, this);
     if (dialog.exec()) {
         auto descriptions = dialog.descriptions();
-        QHashIterator<FileDescriptor*, DataDescription> it(descriptions);
-        while (it.hasNext()) {
-            it.next();
-            tab->model->setDataDescription(it.key(), it.value());
+        for (int i=0; i<descriptions.size(); ++i) {
+            tab->model->setDataDescription(i, descriptions.at(i));
         }
+//        QHashIterator<FileDescriptor*, DataDescription> it(descriptions);
+//        while (it.hasNext()) {
+//            it.next();
+//            tab->model->setDataDescription(it.key(), it.value());
+//        }
     }
 }
 

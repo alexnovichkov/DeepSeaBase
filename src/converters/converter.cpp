@@ -385,7 +385,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             return false;
         }
 
-        int units = DataHolder::UnitsLinear;
+        auto units = DataHolder::UnitsLinear;
 
         p.threshold = threshold(file->channel(i)->yName());
 

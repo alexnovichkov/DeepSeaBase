@@ -35,7 +35,7 @@ QVector<int> ChannelTableModel::plotted() const
 
 void ChannelTableModel::setYName(const QString &yName)
 {DD;
-    foreach(int i, indexes) {
+    for(int i: indexes) {
         setData(index(i,1), yName, Qt::EditRole);
 //        if (descriptor->channel(i)->yName() == yName) continue;
 //        descriptor->channel(i)->setYName(yName);

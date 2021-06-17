@@ -45,7 +45,8 @@ public:
     QList<FileDescriptor*> selectedFiles() const;
     QList<FileDescriptor*> selectedFiles(const QVector<Descriptor::DataType> &types) const;
 
-    void setDataDescription(FileDescriptor *file, const DataDescription &data);
+    //void setDataDescription(FileDescriptor *file, const DataDescription &data);
+    void setDataDescription(int selectionIndex, const DataDescription &data);
     void setChannelDescription(int channel, const QString &description);
     void setChannelName(int channel, const QString &name);
     void updateFile(FileDescriptor *file, int column = -1);
@@ -78,7 +79,6 @@ signals:
     void modelChanged();
     void needAddFiles(const QStringList &files);
 private:
-    QModelIndex modelIndexOfFile(FileDescriptor* f, int column) const;
     QList<F> descriptors;
     QFont uFont;
     QFont bFont;

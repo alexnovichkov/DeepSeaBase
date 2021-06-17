@@ -16,7 +16,7 @@ class FileDescriptor;
  * ?/octaveFormat - октавный формат. 0 - не октавный, n - n-октавный, отдает только октавная функция
  * ?/windowDescription - оконная функция, строка, отдает WindowingFunction
  * ?/windowType        - оконная функция, число, отдает WindowingFunction
- * ?/weightingType - тип взвешивания, 0=no, 1=A wei, 2=B wei, 3=C wei, 4=D wei
+ * ?/weighting - тип взвешивания, no / A / B / C / D / unknown
  * ?/amplitudeScaling - 0=unknown, 1=half-peak, 2=peak, 3=RMS
  * ?/normalization - тип нормализации, 0=unknown, 1=units squared, 2=Units squared per Hz (PSD)
                                //3=Units squared seconds per Hz (ESD)

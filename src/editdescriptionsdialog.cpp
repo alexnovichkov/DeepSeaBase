@@ -72,13 +72,24 @@ EditDescriptionsDialog::EditDescriptionsDialog(QList<FileDescriptor *> &records,
     resize(900,500);
 }
 
-QHash<FileDescriptor *, DataDescription> EditDescriptionsDialog::descriptions()
+//QHash<FileDescriptor *, DataDescription> EditDescriptionsDialog::descriptions()
+//{
+//    QHash<FileDescriptor *, DataDescription> result;
+
+//    for (int i=0; i<stack->count(); ++i) {
+//        StackWidget *sw = dynamic_cast<StackWidget*>(stack->widget(i));
+//        if (sw) result.insert(sw->record, sw->description());
+//    }
+//    return result;
+//}
+
+QVector<DataDescription> EditDescriptionsDialog::descriptions()
 {
-    QHash<FileDescriptor *, DataDescription> result;
+    QVector<DataDescription> result;
 
     for (int i=0; i<stack->count(); ++i) {
         StackWidget *sw = dynamic_cast<StackWidget*>(stack->widget(i));
-        if (sw) result.insert(sw->record, sw->description());
+        if (sw) result.append(sw->description());
     }
     return result;
 }

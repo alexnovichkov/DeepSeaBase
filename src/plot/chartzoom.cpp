@@ -229,8 +229,10 @@ void ChartZoom::ScaleBounds::autoscale()
 void ChartZoom::ScaleBounds::removeToAutoscale(double min, double max)
 {DD;
     if (min==max) {
-        mins.removeOne(min-1.0);
-        maxes.removeOne(max+1.0);
+        if (min != 0.0) {
+            mins.removeOne(min-1.0);
+            maxes.removeOne(max+1.0);
+        }
     }
     else {
         mins.removeOne(min);
