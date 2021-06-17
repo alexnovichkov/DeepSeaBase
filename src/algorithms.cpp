@@ -594,23 +594,61 @@ QVector<double> octaveStrips(int octave, int count)
     QVector<double> v(count);
     switch (octave) {
         case 1:
-            for (int i=0; i<count; ++i) v[i] = pow(2.0, i+1);
+            for (int i=0; i<count; ++i) v[i] = pow(10.0, 3.0/10.0*i);
             break;
         case 2:
-            for (int i=0; i<count; ++i) v[i] = pow(2.0, i+1);
+            for (int i=0; i<count; ++i) v[i] = pow(10.0, 3.0/40.0*(2*i+1));
             break;
         case 3:
-            for (int i=0; i<count; ++i) v[i] = pow(10.0, 0.1*(i+1));
+            for (int i=0; i<count; ++i) v[i] = pow(10.0, 0.1*i);
             break;
         case 6:
-            for (int i=0; i<count; ++i) v[i] = pow(2.0, i+1);
+            for (int i=0; i<count; ++i) v[i] = pow(10.0, (2.0*i+1)/40.0);
             break;
         case 12:
-            for (int i=0; i<count; ++i) v[i] = pow(2.0, i+1);
+            for (int i=0; i<count; ++i) v[i] = pow(10.0, (2.0*i+1)/80.0);
             break;
         case 24:
-            for (int i=0; i<count; ++i) v[i] = pow(2.0, i+1);
+            for (int i=0; i<count; ++i) v[i] = pow(10.0, (2.0*i+1)/160.0);
             break;
     }
     return v;
+}
+
+QString weightingFromType(int weightingType)
+{
+    switch(weightingType) {
+        case 1: return "A";
+        case 2: return "B";
+        case 3: return "C";
+        case 4: return "D";
+        default: break;
+    }
+
+    return "";
+}
+
+int weightingType(const QString &weighting)
+{
+    if (weighting == "A") return 1;
+    if (weighting == "B") return 2;
+    if (weighting == "C") return 3;
+    if (weighting == "D") return 4;
+    return 0;
+}
+
+
+QDateTime dateTimeFromString(QString s)
+{
+    s = s.trimmed();
+    QDateTime dt = QDateTime::fromString(s, "dd.MM.yyyy hh:mm:ss");
+    if (!dt.isValid()) dt = QDateTime::fromString(s, "dd.MM.yyyy hh:mm");
+    if (!dt.isValid()) dt = QDateTime::fromString(s, "dd.MM.yy hh:mm:ss");
+    if (!dt.isValid()) dt = QDateTime::fromString(s, "dd-MMM-yy hh:mm:ss");
+    if (!dt.isValid()) {
+        QLocale l = QLocale::c();
+        dt = l.toDateTime(s, "dd-MMM-yy hh:mm:ss");
+    }
+    if (dt.date().year()<1950) dt = dt.addYears(100);
+    return dt;
 }
