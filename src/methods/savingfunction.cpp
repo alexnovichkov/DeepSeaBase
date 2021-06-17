@@ -192,7 +192,7 @@ bool SavingFunction::compute(FileDescriptor *file)
 
 
     ch->data()->setThreshold(m_input->getProperty("?/threshold").toDouble());
-    ch->data()->setYValuesUnits(m_input->getProperty("?/yValuesUnits").toInt());
+    ch->data()->setYValuesUnits(DataHolder::YValuesUnits(m_input->getProperty("?/yValuesUnits").toInt()));
 
     if (dataIsComplex) {
         // мы должны разбить поступившие данные на два массива
@@ -269,7 +269,7 @@ FileDescriptor *SavingFunction::createDfdFile(FileDescriptor *file)
     newDfd->setDataDescription(file->dataDescription());
 
     if (DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(file)) {
-        newDfd->DescriptionFormat = dfd->DescriptionFormat;
+        //newDfd->DescriptionFormat = dfd->DescriptionFormat;
 
         // [Sources]
         QString channels = m_input->getProperty("?/channels").toString();
@@ -350,7 +350,7 @@ Channel *SavingFunction::createDfdChannel(FileDescriptor *file, int dataSize, in
         ch = new DfdChannel(newDfd, newDfd->channelsCount());
         int i = m_input->getProperty("?/channelIndex").toInt();
 
-        ch->ChanName = file->channel(i)->name();
+        /*ch->ChanName = file->channel(i)->name();
         ch->ChanDscr = file->channel(i)->description();
         if (dfd)
             ch->ChanAddress = dfd->channels[i]->ChanAddress;
@@ -362,7 +362,7 @@ Channel *SavingFunction::createDfdChannel(FileDescriptor *file, int dataSize, in
         if (dfd)
             ch->YNameOld = dfd->channels[i]->YNameOld;
         else
-            ch->YNameOld = ch->YName;
+            ch->YNameOld = ch->YName;*/
     }
 
     return ch;
@@ -377,14 +377,14 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize, in
         ch = new Function(newUff);
         const int i = m_input->getProperty("?/channelIndex").toInt();
 
-        /*Заполнение заголовка функции*/
+       /* //Заполнение заголовка функции
         ch->header.type1858[4].value = 1; //4 set record number
         //5 octave format, 0=not in octave format(default), 1=octave, n=1/n oct
         ch->header.type1858[5].value = m_input->getProperty("?/octaveFormat");
         //6 measurement run number
         ch->header.type1858[6].value = 0;
         //11 weighting type, 0=no, 1=A wei, 2=B wei, 3=C wei, 4=D wei
-        ch->header.type1858[11].value = m_input->getProperty("?/weightingType");
+        ch->header.type1858[11].value = weightingType(m_input->getProperty("?/weighting").toString());
         //тип оконной функции  0=no, 1=hanning narrow, 2=hanning broad, 3=flattop,
         //                     4=exponential, 5=impact, 6=impact and exponential
         int windowType = m_input->getProperty("?/windowType").toInt();
@@ -437,7 +437,7 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize, in
         ch->type58[10].value = QString("Record %1").arg(newUff->channelsCount()+1);
         //ch->type58[11].value = //FTEmpty
 
-        //ID line 5
+        //ID line 5 - correction ?
         if (uffFile)
             ch->type58[12].value = uffFile->channels[i]->type58[12].value;
         else
@@ -543,6 +543,7 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize, in
         ch->type58[57].value = abscissaTypeDescription(ch->type58[53].value.toInt());
         ch->type58[58].value = m_input->getProperty("?/zName").toString(); // Applicate name
         //ch->type58[59].value = //FTEmpty
+        */
     }
     return ch;
 }
@@ -554,7 +555,7 @@ Channel *SavingFunction::createD94Channel(FileDescriptor *file, int dataSize, in
 //        Data94File *d94File = dynamic_cast<Data94File *>(file);
 
         ch = new Data94Channel(newD94);
-        const int i = m_input->getProperty("?/channelIndex").toInt();
+      /*  const int i = m_input->getProperty("?/channelIndex").toInt();
         Channel *channel = file->channel(i);
 
         ch->isComplex = (m_input->getProperty("?/dataFormat").toString() == "complex");
@@ -616,7 +617,7 @@ Channel *SavingFunction::createD94Channel(FileDescriptor *file, int dataSize, in
             default: break;
         }
         function.insert("octaveFormat", m_input->getProperty("?/octaveFormat").toInt());
-        ch->_description.insert("function", function);
+        ch->_description.insert("function", function);*/
     }
     return ch;
 }

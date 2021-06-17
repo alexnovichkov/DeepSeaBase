@@ -79,9 +79,9 @@ Parameters FRFMethod::parameters()
     return p;
 }
 
-Function *FRFMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
+Channel *FRFMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
 {
-    Function *ch = SpectreMethod::addUffChannel(newUff, dfd, spectrumSize, p, i);
+    Channel *ch = SpectreMethod::addUffChannel(newUff, dfd, spectrumSize, p, i);
 
     QString name = ch->name();
     if (name.endsWith("/")) name.chop(1);

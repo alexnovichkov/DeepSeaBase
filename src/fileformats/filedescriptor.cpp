@@ -8,7 +8,7 @@
 double threshold(const QString &name)
 {
     QString n = name.toLower();
-    if (n=="м/с2" || n=="м/с^2" || n=="м/с*2" || n=="m/s2" || n=="m/s^2" /*|| n=="g"*/)
+    if (n=="м/с2" || n=="м/с^2" || n=="м/с*2" || n=="m/s2" || n=="m/s^2" || n=="g")
         return 3.16e-4; //ускорение
     if (n=="па" || n=="pa" || n=="hpa" || n=="kpa" || n=="mpa"
         || n=="n/m2" || n=="n/mm2") return 2.0e-5; //давление
@@ -107,45 +107,40 @@ QString FileDescriptor::typeDisplay() const
 // 0,49999 -> 0,5
 double FileDescriptor::roundedSize() const
 {
-    double size = 0.0;
-    if (channelsCount()>0) {
-        if (channel(0)->data()->xValuesFormat() == DataHolder::XValuesUniform) {
-            size = samplesCount() * xStep();
-            // округление до ближайшего целого
-            int rounded = qRound(size);
-            if (std::abs(size - double(rounded)) < 0.001) {
-                size = rounded;
-            }
-            else {// пытаемся отловить случаи вроде 0.4999999 или 3.499999
-                double size2 = size*2.0;
-                int rounded2 = qRound(size2);
-                if (std::abs(size2 - double(rounded2)) < 0.0001) {
-                    size = double(rounded2)/2.0;
-                }
+    if (channelsCount()==0) return 0.0;
+
+    if (channel(0)->data()->xValuesFormat() == DataHolder::XValuesUniform) {
+        double size = samplesCount() * xStep();
+        // округление до ближайшего целого
+        int rounded = qRound(size);
+        if (std::abs(size - double(rounded)) < 0.001) {
+            size = rounded;
+        }
+        else {// пытаемся отловить случаи вроде 0.4999999 или 3.499999
+            double size2 = size*2.0;
+            int rounded2 = qRound(size2);
+            if (std::abs(size2 - double(rounded2)) < 0.0001) {
+                size = double(rounded2)/2.0;
             }
         }
-        else {
-            //if (!channel(0)->populated()) channel(0)->populate();
-            QVector<double> vals = channel(0)->data()->xValues();
-            if (!vals.isEmpty())
-            size = vals.last();
-        }
+        return size;
     }
-    return size;
+    else {
+        return channel(0)->data()->xValue(channel(0)->data()->samplesCount()-1);
+    }
+
+
 }
 
 QDateTime FileDescriptor::dateTime() const
 {
-    QString dt = dataDescription().get("dateTime").toString();
-    if (!dt.isEmpty())
-        return QDateTime::fromString(dt, "dd.MM.yyyy hh:mm");
-    return QDateTime();
+    return dataDescription().get("dateTime").toDateTime();
 }
 
 bool FileDescriptor::setDateTime(const QDateTime &dt)
 {
     if (dt==dateTime()) return false;
-    dataDescription().put("dateTime", dt.toString("dd.MM.yyyy hh:mm"));
+    dataDescription().put("dateTime", dt);
     setChanged(true);
     return true;
 }
@@ -186,7 +181,7 @@ void FileDescriptor::calculateMean(const QList<Channel *> &channels)
         }
     }
 
-    int units = firstChannel->data()->yValuesUnits();
+    auto units = firstChannel->data()->yValuesUnits();
     for (int i=1; i<channels.size(); ++i) {
         if (channels.at(i)->data()->yValuesUnits() != units) {
             units = DataHolder::UnitsUnknown;
@@ -236,45 +231,19 @@ void FileDescriptor::calculateMean(const QList<Channel *> &channels)
             data->setYValues(d, format);
     }
 
-    QJsonObject descr;
-    descr.insert("name", "Среднее");
+    DataDescription descr = channels.first()->dataDescription();
+    descr.put("name", "Среднее");
     QStringList l;
     for (Channel *c: channels) {
         l << c->name();
     }
-    descr.insert("description", "Среднее каналов "+l.join(","));
-    descr.insert("ynameold", channels.first()->yNameOld());
-    descr.insert("yname", channels.first()->yName());
-    descr.insert("xname", channels.first()->xName());
-    descr.insert("samples",  data->samplesCount());
-    descr.insert("blocks", 1);
-    descr.insert("zname", channels.first()->zName());
-
-    QJsonObject function;
-    function.insert("type", channels.first()->type());
-    function.insert("octaveFormat", channels.first()->octaveType());
-    function.insert("name", "AVG");
-    function.insert("logref", data->threshold());
-    QString formatS;
-    switch (data->yValuesFormat()) {
-        case DataHolder::YValuesComplex: formatS = "complex"; break;
-        case DataHolder::YValuesAmplitudes: formatS = "amplitude"; break;
-        case DataHolder::YValuesAmplitudesInDB: formatS = "amplitudeDb"; break;
-        case DataHolder::YValuesImags: formatS = "imaginary"; break;
-        case DataHolder::YValuesPhases: formatS = "phase"; break;
-        default: formatS = "real";
-    }
-    function.insert("format", formatS);
-    QString unitsS;
-    switch (data->yValuesUnits()) {
-        case DataHolder::UnitsUnknown: unitsS = "unknown"; break;
-        case DataHolder::UnitsLinear: unitsS = "linear"; break;
-        case DataHolder::UnitsQuadratic: unitsS = "quadratic"; break;
-        case DataHolder::UnitsDimensionless: unitsS = "dimensionless"; break;
-        default: break;
-    }
-    function.insert("units", unitsS);
-    descr.insert("function", function);
+    descr.put("description", QString("Среднее каналов ")+l.join(","));
+    descr.put("samples",  data->samplesCount());
+    descr.put("blocks", 1);
+    descr.put("function.name", "AVG");
+    descr.put("logref", data->threshold());
+    descr.put("function.format", DataHolder::formatToString(data->yValuesFormat()));
+    descr.put("function.logscale", DataHolder::unitsToString(data->yValuesUnits()));
 
     addChannelWithData(data, descr);
 
@@ -316,42 +285,12 @@ void FileDescriptor::calculateMovingAvg(const QList<Channel *> &channels, int wi
         //TODO: добавить сглаживание по всем блокам
         data->setZValues(c->data()->zMin(), c->data()->zStep(), 1);
 
-        QJsonObject descr;
-        descr.insert("name", c->name()+" сглаж.");
-        descr.insert("description", "Скользящее среднее канала "+c->name());
-        descr.insert("ynameold", c->yNameOld());
-        descr.insert("yname", c->yName());
-        descr.insert("xname", c->xName());
-        descr.insert("samples",  data->samplesCount());
-        descr.insert("blocks", 1);
-        descr.insert("zname", c->zName());
-        descr.insert("correction", c->correction());
-
-        QJsonObject function;
-        function.insert("type", c->type());
-        function.insert("octaveFormat", c->octaveType());
-        function.insert("name", "RAVG");
-        function.insert("logref", data->threshold());
-        QString formatS;
-        switch (data->yValuesFormat()) {
-            case DataHolder::YValuesComplex: formatS = "complex"; break;
-            case DataHolder::YValuesAmplitudes: formatS = "amplitude"; break;
-            case DataHolder::YValuesAmplitudesInDB: formatS = "amplitudeDb"; break;
-            case DataHolder::YValuesImags: formatS = "imaginary"; break;
-            case DataHolder::YValuesPhases: formatS = "phase"; break;
-            default: formatS = "real";
-        }
-        function.insert("format", formatS);
-        QString unitsS;
-        switch (data->yValuesUnits()) {
-            case DataHolder::UnitsUnknown: unitsS = "unknown"; break;
-            case DataHolder::UnitsLinear: unitsS = "linear"; break;
-            case DataHolder::UnitsQuadratic: unitsS = "quadratic"; break;
-            case DataHolder::UnitsDimensionless: unitsS = "dimensionless"; break;
-            default: break;
-        }
-        function.insert("units", unitsS);
-        descr.insert("function", function);
+        DataDescription descr = c->dataDescription();
+        descr.put("name", c->name()+" сглаж.");
+        descr.put("description", "Скользящее среднее канала "+c->name());
+        descr.put("samples",  data->samplesCount());
+        descr.put("blocks", 1);
+        descr.put("name", "RAVG");
 
         addChannelWithData(data, descr);
         if (!populated) c->clear();
@@ -378,32 +317,16 @@ void FileDescriptor::calculateThirdOctave(FileDescriptor *source)
         data->setYValuesUnits(ch->data()->yValuesUnits());
         data->setYValues(result.second, DataHolder::YValuesAmplitudesInDB);
 
-        QJsonObject descr;
-        descr.insert("name", ch->name());
-        descr.insert("description", ch->description());
-        descr.insert("ynameold", ch->yNameOld());
-        descr.insert("yname", "дБ");
-        descr.insert("xname", "Гц");
-        descr.insert("samples",  data->samplesCount());
-        descr.insert("blocks", 1);
-        descr.insert("zname", ch->zName());
-
-        QJsonObject function;
-        function.insert("type", ch->type());
-        function.insert("octaveFormat", 3);
-        function.insert("name", "OCTF3");
-        function.insert("logref", data->threshold());
-        function.insert("format", "amplitudeDb");
-        QString unitsS;
-        switch (data->yValuesUnits()) {
-            case DataHolder::UnitsUnknown: unitsS = "unknown"; break;
-            case DataHolder::UnitsLinear: unitsS = "linear"; break;
-            case DataHolder::UnitsQuadratic: unitsS = "quadratic"; break;
-            case DataHolder::UnitsDimensionless: unitsS = "dimensionless"; break;
-            default: break;
-        }
-        function.insert("units", unitsS);
-        descr.insert("function", function);
+        DataDescription descr = ch->dataDescription();
+        descr.put("yname", "дБ");
+        descr.put("xname", "Гц");
+        descr.put("samples",  data->samplesCount());
+        descr.put("blocks", 1);
+        descr.put("function.octaveFormat", 3);
+        descr.put("function.name", "OCTF3");
+        descr.put("function.logref", data->threshold());
+        descr.put("function.format", "amplitudeDb");
+        descr.put("logscale", DataHolder::unitsToString(data->yValuesUnits()));
 
         addChannelWithData(data, descr);
 
@@ -456,43 +379,13 @@ QString FileDescriptor::saveTimeSegment(double from, double to)
         DataHolder *data = new DataHolder();
         data->setSegment(*(c->data()), sampleStart, sampleEnd);
 
-        QJsonObject descr;
-        descr.insert("name", c->name()+" вырезка");
-        descr.insert("description", QString("Вырезка %1s-%2s").arg(fromString).arg(toString));
-        descr.insert("ynameold", c->yNameOld());
-        descr.insert("yname", c->yName());
-        descr.insert("xname", c->xName());
-        descr.insert("samples",  data->samplesCount());
-        descr.insert("blocks", data->blocksCount());
-        descr.insert("zname", c->zName());
-        descr.insert("correction", c->correction());
-
-        QJsonObject function;
-        function.insert("type", c->type());
-        function.insert("octaveFormat", c->octaveType());
-        function.insert("name", "SECTION");
-        function.insert("logref", data->threshold());
-        QString formatS;
-        switch (data->yValuesFormat()) {
-            case DataHolder::YValuesComplex: formatS = "complex"; break;
-            case DataHolder::YValuesAmplitudes: formatS = "amplitude"; break;
-            case DataHolder::YValuesAmplitudesInDB: formatS = "amplitudeDb"; break;
-            case DataHolder::YValuesImags: formatS = "imaginary"; break;
-            case DataHolder::YValuesPhases: formatS = "phase"; break;
-            default: formatS = "real";
-        }
-        function.insert("format", formatS);
-        QString unitsS;
-        switch (data->yValuesUnits()) {
-            case DataHolder::UnitsUnknown: unitsS = "unknown"; break;
-            case DataHolder::UnitsLinear: unitsS = "linear"; break;
-            case DataHolder::UnitsQuadratic: unitsS = "quadratic"; break;
-            case DataHolder::UnitsDimensionless: unitsS = "dimensionless"; break;
-            default: break;
-        }
-        function.insert("units", unitsS);
-        descr.insert("function", function);
-
+        DataDescription descr = c->dataDescription();
+        descr.put("name", c->name()+" вырезка");
+        descr.put("description", QString("Вырезка %1s-%2s").arg(fromString).arg(toString));
+        descr.put("samples",  data->samplesCount());
+        descr.put("blocks", data->blocksCount());
+        descr.put("name", "SECTION");
+        descr.put("logref", data->threshold());
         newFile->addChannelWithData(data, descr);
 
         if (!wasPopulated)
@@ -529,11 +422,6 @@ int FileDescriptor::columnsCount() const
 void FileDescriptor::setChanged(bool changed)
 {//DD;
     _changed = changed;
-}
-
-void FileDescriptor::setDataChanged(bool changed)
-{
-    _dataChanged = changed;
 }
 
 int FileDescriptor::plottedCount() const
@@ -678,6 +566,47 @@ Channel::Channel(Channel &other) :
 
 }
 
+QVariant Channel::info(int column, bool edit) const
+{
+    Q_UNUSED(edit)
+    switch (column) {
+        case 0: return dataDescription().get("name");
+        case 1: return dataDescription().get("yname");
+        case 2: return data()->yValuesFormatString();
+        case 3: return dataDescription().get("description");
+        case 4: return dataDescription().get("function.name");
+        case 5: return data()->blocksCount();
+        case 6: return dataDescription().get("correction");
+        default: ;
+    }
+    return QVariant();
+}
+
+int Channel::columnsCount() const
+{
+    return 7;
+}
+
+QVariant Channel::channelHeader(int column) const
+{
+    switch (column) {
+        case 0: return QString("Имя");
+        case 1: return QString("Ед.изм.");
+        case 2: return QString("Формат");
+        case 3: return QString("Описание");
+        case 4: return QString("Функция");
+        case 5: return QString("Кол-во блоков");
+        case 6: return QString("Коррекция");
+        default: return QVariant();
+    }
+    return QVariant();
+}
+
+int Channel::octaveType() const
+{
+    return dataDescription().get("function.octaveFormat").toInt();
+}
+
 void Channel::clear()
 {
     _data->clear();
@@ -689,9 +618,69 @@ void Channel::maybeClearData()
     if (data()->samplesCount()>1000000) clear();
 }
 
+QString Channel::name() const
+{
+    return dataDescription().get("name").toString();
+}
+
+void Channel::setName(const QString &name)
+{
+    dataDescription().put("name", name);
+}
+
+QString Channel::description() const
+{
+    return _dataDescription.data.value("description").toString();
+}
+
+void Channel::setDescription(const QString &description)
+{
+    _dataDescription.data.insert("description", description);
+}
+
+QString Channel::xName() const
+{
+    return _dataDescription.data.value("xname").toString();
+}
+
+QString Channel::yName() const
+{
+    return _dataDescription.data.value("yname").toString();
+}
+
 QString Channel::yNameOld() const
 {
     return yName();
+}
+
+QString Channel::zName() const
+{
+    return _dataDescription.data.value("zname").toString();
+}
+
+void Channel::setYName(const QString &yName)
+{
+    _dataDescription.data.insert("yname", yName);
+}
+
+void Channel::setXName(const QString &xName)
+{
+    _dataDescription.data.insert("xname", xName);
+}
+
+void Channel::setZName(const QString &zName)
+{
+    _dataDescription.data.insert("zname", zName);
+}
+
+QString Channel::legendName() const
+{
+    QStringList l;
+    l << name();
+    if (!correction().isEmpty()) l << correction();
+    if (!descriptor()->legend().isEmpty()) l << descriptor()->legend();
+
+    return l.join(" ");
 }
 
 QByteArray Channel::wavData(qint64 pos, qint64 samples)

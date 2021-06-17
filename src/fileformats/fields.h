@@ -2,7 +2,7 @@
 #define FIELDS_H
 
 #include <QtCore>
-
+#include "algorithms.h"
 #include <strtk_.hpp>
 
 enum FieldType {
@@ -432,19 +432,12 @@ public:
     virtual void read(QVariant &v, QTextStream &stream) {
         QDateTime d;
         QString s = stream.read(18);
-        d = QDateTime::fromString(s, " dd.MM.yy hh:mm:ss");
-        if (!d.isValid()) d = QDateTime::fromString(s, "dd-MMM-yy hh:mm:ss");
-        if (d.date().year()<1950) d=d.addYears(100);
-        v = d;
+        v = dateTimeFromString(s);
     }
     virtual int read(QVariant &v, char *pos, qint64 &offset) {
         //qDebug()<<"reading TimeDateField at"<<offset;
         QString s = QString::fromLocal8Bit(pos+offset, 18);   //qDebug()<<s;
-        QDateTime d = QDateTime::fromString(s, " dd.MM.yy hh:mm:ss");
-        if (!d.isValid()) d = QDateTime::fromString(s, "dd-MMM-yy hh:mm:ss");
-        if (d.date().year()<1950) d = d.addYears(100);
-        v = d;
-        //qDebug()<<"read"<<18;
+        v = dateTimeFromString(s);
         return 18;
     }
 };
@@ -468,14 +461,7 @@ public:
             }
         }
 
-        d = QDateTime::fromString(s.trimmed(), "dd.MM.yy hh:mm:ss");
-        if (!d.isValid()) d = QDateTime::fromString(s.trimmed(), "dd-MMM-yy hh:mm:ss");
-        if (!d.isValid()) {
-            QLocale l = QLocale::c();
-            d = l.toDateTime(s.trimmed(), "dd-MMM-yy hh:mm:ss");
-        }
-        //qDebug()<<d;
-        v = d;
+        v = dateTimeFromString(s);
     }
     virtual int read(QVariant &v, char *pos, qint64 &offset) {
         //reading at most 80 chars
@@ -487,13 +473,7 @@ public:
         }
 
         QString s = QString::fromLocal8Bit(pos, len);  //qDebug()<<s;
-        QDateTime d = QDateTime::fromString(s.trimmed(), "dd.MM.yy hh:mm:ss");
-        if (!d.isValid()) d = QDateTime::fromString(s.trimmed(), "dd-MMM-yy hh:mm:ss");
-        if (!d.isValid()) {
-            QLocale l = QLocale::c();
-            d = l.toDateTime(s.trimmed(), "dd-MMM-yy hh:mm:ss");
-        }
-        v = d;
+        v = dateTimeFromString(s);
         //qDebug()<<"read"<<len;
         return len;
     }

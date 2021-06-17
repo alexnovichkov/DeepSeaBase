@@ -195,7 +195,7 @@ Plot::Plot(QWidget *parent) :
     grid->setMinorPen(Qt::darkGray, 0, Qt::DotLine);
     grid->attach(this);
 
-    CheckableLegend *leg = new CheckableLegend();
+    leg = new CheckableLegend();
     connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
     connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurveFromLegend(QwtPlotItem*)));
     connect(leg, SIGNAL(markedToMove(QwtPlotItem*)),this, SLOT(moveCurve(QwtPlotItem*)));
@@ -276,11 +276,8 @@ bool Plot::hasCurves() const
 
 int Plot::curvesCount(int type) const
 {
-    int count = 0;
-    for (Curve *c: qAsConst(curves)) {
-        if (int(c->channel->type()) == type) count++;
-    }
-    return count;
+    return std::count_if(curves.cbegin(), curves.cend(),
+                         [type](Curve *c){return int(c->channel->type()) == type;});
 }
 
 void Plot::deleteAllCurves(bool forceDeleteFixed)
@@ -1028,28 +1025,18 @@ void Plot::updateLegends()
     updateLegend();
 }
 
-void Plot::savePlot()
+void Plot::savePlot() /*SLOT*/
 {DD;
     ImageRenderDialog dialog(this);
     if (dialog.exec()) {
         importPlot(dialog.getPath(), dialog.getSize(), dialog.getResolution());
         App->setSetting("lastPicture", dialog.getPath());
     }
-
-//    QString lastPicture = App->getSetting("lastPicture", "plot.bmp").toString();
-//    lastPicture = QFileDialog::getSaveFileName(this, QString("Сохранение графика"), lastPicture,
-//                                               "Растровые изображения (*.bmp);;Файлы JPEG (*.jpg);;Файлы pdf (*.pdf);;Файлы svg (*.svg)");
-//    if (lastPicture.isEmpty()) return;
-
-//    importPlot(lastPicture);
-
-
 }
 
-void Plot::copyToClipboard()
+void Plot::copyToClipboard() /*SLOT*/
 {DD;
     QTemporaryFile file("DeepSeaBase-XXXXXX.bmp");
-    file.setAutoRemove(false);
     if (file.open()) {
         QString fileName = file.fileName();
         file.close();
@@ -1059,49 +1046,109 @@ void Plot::copyToClipboard()
         if (dialog.exec()) {
             importPlot(fileName, dialog.getSize(), dialog.getResolution());
             QImage img;
-            if (img.load(fileName)) {
-                qDebug()<<fileName;
+            if (img.load(fileName))
                 qApp->clipboard()->setImage(img);
-            }
-            else {
+            else
                 qDebug()<<"Could not load image from"<<fileName;
-            }
         }
     }
 }
 
-void Plot::print()
+void Plot::print() /*SLOT*/
 {DD;
-    QTemporaryFile file("DeepSeaBase-XXXXXX.bmp");
-    if (file.open()) {
-        QString fileName = file.fileName();
-        file.close();
+    QPrinter printer;
+    if (printer.isValid())
+        importPlot(printer, ImageRenderDialog::defaultSize(), ImageRenderDialog::defaultResolution());
+    else
+        QMessageBox::warning(this, "Deepsea Base", "Не удалось найти подходящий принтер");
+}
 
-        importPlot(fileName, ImageRenderDialog::defaultSize(), ImageRenderDialog::defaultResolution());
+void Plot::importPlot(const QString &fileName, const QSize &size, int resolution) /*private*/
+{DD;
+    setAutoReplot(false);
+    QwtPlotRenderer renderer;
+    renderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);
+    renderer.setLayoutFlag(QwtPlotRenderer::FrameWithScales);
 
-        QImage img;
-        if (img.load(fileName)) {
-            QPrinter printer;
-            printer.setOrientation(QPrinter::Landscape);
+    QFont axisfont = axisFont(QwtAxis::yLeft);
+    axisfont.setPointSize(axisfont.pointSize()-1);
+    for (int i=0; i<QwtPlot::axisCnt; ++i)
+        if (axisEnabled(i)) setAxisFont(i, axisfont);
 
-            QPrintDialog printDialog(&printer, this);
-            if (printDialog.exec()) {
-                qreal left,right,top,bottom;
-                printer.getPageMargins(&left, &top, &right, &bottom, QPrinter::Millimeter);
-                left = 15.0;
-                top = 40.0;
-                printer.setPageMargins(left, top, right, bottom, QPrinter::Millimeter);
-                QPainter painter(&printer);
-                QRect rect = painter.viewport();
-                QSize size = img.size();
-                size.scale(rect.size(), Qt::KeepAspectRatio);
-                painter.setViewport(rect.x(), rect.y(),
-                                    size.width(), size.height());
-                painter.setWindow(img.rect());
-                painter.drawImage(0, 0, img);
-            }
-        }
+//    for (Curve *curve: curves) {
+//        QPen pen = curve->pen();
+//        if (pen.width()<2) pen.setWidth(2);
+//        pen.setColor(pen.color().lighter(120));
+//        curve->setPen(pen);
+//    }
+
+    QwtAbstractLegend *leg = new QwtLegend();
+    insertLegend(leg, QwtPlot::BottomLegend);
+
+
+    QString format = fileName.section(".", -1,-1);
+    renderer.renderDocument(this, fileName, format, size, resolution);
+
+
+    axisfont.setPointSize(axisfont.pointSize()+1);
+    for (int i=0; i<QwtPlot::axisCnt; ++i)
+        if (axisEnabled(i)) setAxisFont(i, axisfont);
+
+//    for (Curve *curve: curves) {
+//        curve->setPen(curve->oldPen);
+//    }
+
+    leg = new CheckableLegend();
+    connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
+    connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurveFromLegend(QwtPlotItem*)));
+    connect(leg, SIGNAL(markedToMove(QwtPlotItem*)),this, SLOT(moveCurve(QwtPlotItem*)));
+    connect(leg, SIGNAL(fixedChanged(QwtPlotItem*)),this, SLOT(fixCurve(QwtPlotItem*)));
+    insertLegend(leg, QwtPlot::RightLegend);
+    setAutoReplot(true);
+}
+
+void Plot::importPlot(QPrinter &printer, const QSize &size, int resolution) /*private*/
+{
+    Q_UNUSED(size);
+    Q_UNUSED(resolution);
+
+    setAutoReplot(false);
+    printer.setOrientation(QPrinter::Landscape);
+
+    QPrintDialog printDialog(&printer, this);
+    if (printDialog.exec()) {
+        qreal left,right,top,bottom;
+        printer.getPageMargins(&left, &top, &right, &bottom, QPrinter::Millimeter);
+        printer.setPageMargins(15, 15, 15, bottom, QPrinter::Millimeter);
+
+        //настройка отображения графиков
+        QFont axisfont = axisFont(QwtAxis::yLeft);
+        axisfont.setPointSize(axisfont.pointSize()-2);
+        for (int i=0; i<QwtPlot::axisCnt; ++i)
+            if (axisEnabled(i)) setAxisFont(i, axisfont);
+
+        QwtAbstractLegend *leg = new QwtLegend();
+        insertLegend(leg, QwtPlot::BottomLegend);
+
+        QwtPlotRenderer renderer;
+        renderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);
+        renderer.setLayoutFlag(QwtPlotRenderer::FrameWithScales);
+        renderer.renderTo(this, printer);
+
+        //восстанавливаем параметры графиков
+        axisfont.setPointSize(axisfont.pointSize()+2);
+        for (int i=0; i<QwtPlot::axisCnt; ++i)
+            if (axisEnabled(i)) setAxisFont(i, axisfont);
+
+        leg = new CheckableLegend();
+        connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
+        connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurveFromLegend(QwtPlotItem*)));
+        connect(leg, SIGNAL(markedToMove(QwtPlotItem*)),this, SLOT(moveCurve(QwtPlotItem*)));
+        connect(leg, SIGNAL(fixedChanged(QwtPlotItem*)),this, SLOT(fixCurve(QwtPlotItem*)));
+        insertLegend(leg, QwtPlot::RightLegend);
     }
+
+    setAutoReplot(true);
 }
 
 void Plot::switchInteractionMode()
@@ -1172,53 +1219,6 @@ void Plot::setInteractionMode(Plot::InteractionMode mode)
     if (_canvas) _canvas->setFocusIndicator(mode == ScalingInteraction?
                                               QwtPlotCanvas::CanvasFocusIndicator:
                                               QwtPlotCanvas::ItemFocusIndicator);
-}
-
-void Plot::importPlot(const QString &fileName, const QSize &size, int resolution)
-{DD;
-    setAutoReplot(false);
-    QwtPlotRenderer renderer;
-    renderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);
-    renderer.setLayoutFlag(QwtPlotRenderer::FrameWithScales);
-
-    QFont axisfont = axisFont(QwtAxis::yLeft);
-    axisfont.setPointSize(axisfont.pointSize()+1);
-
-    for (int i=0; i<QwtPlot::axisCnt; ++i)
-        if (axisEnabled(i)) setAxisFont(i, axisfont);
-
-    for (Curve *curve: curves) {
-        QPen pen = curve->pen();
-        if (pen.width()<2) pen.setWidth(2);
-        pen.setColor(pen.color().lighter(120));
-        curve->setPen(pen);
-//        curve->setTitle(QwtText("<font size=5>"+curve->channel->legendName()+"</font>"));
-    }
-
-    QwtAbstractLegend *leg = new QwtLegend();
-    insertLegend(leg, QwtPlot::BottomLegend);
-
-
-    QString format = fileName.section(".", -1,-1);
-    renderer.renderDocument(this, fileName, format, size, resolution);
-
-
-    axisfont.setPointSize(axisfont.pointSize()-1);
-    for (int i=0; i<QwtPlot::axisCnt; ++i)
-        if (axisEnabled(i)) setAxisFont(i, axisfont);
-
-    for (Curve *curve: curves) {
-        curve->setPen(curve->oldPen);
-        curve->setTitle(curve->channel->legendName());
-    }
-
-    leg = new CheckableLegend();
-    connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
-    connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurveFromLegend(QwtPlotItem*)));
-    connect(leg, SIGNAL(markedToMove(QwtPlotItem*)),this, SLOT(moveCurve(QwtPlotItem*)));
-    connect(leg, SIGNAL(fixedChanged(QwtPlotItem*)),this, SLOT(fixCurve(QwtPlotItem*)));
-    insertLegend(leg, QwtPlot::RightLegend);
-    setAutoReplot(true);
 }
 
 void Plot::switchCursor()

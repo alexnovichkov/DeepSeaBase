@@ -27,6 +27,27 @@ QString DataHolder::formatToString(DataHolder::YValuesFormat format)
     return "unknown";
 }
 
+DataHolder::YValuesUnits DataHolder::unitsFromString(const QString &format)
+{
+    if (format == "unknown") return DataHolder::UnitsUnknown;
+    if (format == "linear") return DataHolder::UnitsLinear;
+    if (format == "quadratic") return DataHolder::UnitsQuadratic;
+    if (format == "dimensionless") return DataHolder::UnitsDimensionless;
+    return DataHolder::UnitsUnknown;
+}
+
+QString DataHolder::unitsToString(DataHolder::YValuesUnits units)
+{
+    switch (units) {
+        case DataHolder::UnitsUnknown: return "unknown";
+        case DataHolder::UnitsLinear: return "linear";
+        case DataHolder::UnitsQuadratic: return "quadratic";
+        case DataHolder::UnitsDimensionless: return "dimensionless";
+        default: break;
+    }
+    return "unknown";
+}
+
 DataHolder::DataHolder()
 {DD;
     m_threshold = 0.0;

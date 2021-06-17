@@ -220,7 +220,7 @@ bool EsoConvertor::convert()
     DfdFileDescriptor *dfdFileDescriptor = DfdFileDescriptor::newFile(dfdFileName, type);
 //    dfdFileDescriptor->setSamplesCount(xValues.size());
 
-    dfdFileDescriptor->CreatedBy = "Конвертер eso2dfd by Алексей Новичков";
+    dfdFileDescriptor->dataDescription().put("createdBy", "Конвертер eso2dfd by Алексей Новичков");
 
     QStringList columnsNames;
     columnsNames << "ЭСОУ" << "МЗПХ" << "ЭСОТ" <<"MaxT"<<"ЭСОМ";
@@ -241,8 +241,8 @@ bool EsoConvertor::convert()
 
             DfdChannel *newCh = new DfdChannel(dfdFileDescriptor,index++);
 
-            newCh->ChanName=channelNames.at(i)+"-"+columnsNames.at(col);
-            newCh->YNameOld=newCh->YName;
+            newCh->setName(channelNames.at(i)+"-"+columnsNames.at(col));
+            newCh->dataDescription().put("ynameold", newCh->yName());
             newCh->ChanBlockSize=esoFile.xValues.size();
             newCh->IndType=3221225476;
             newCh->setXName("Гц");
@@ -250,26 +250,25 @@ bool EsoConvertor::convert()
             switch (col) {
                 case 0: //esou
                 case 1: //mzph
-                    newCh->InputType="U";
-                    newCh->YName="дБ";
-                    newCh->YNameOld="Па";
+                    //newCh->InputType="U";
+                    newCh->setYName("дБ");
+                    newCh->dataDescription().put("ynameold", "Па");
                     break;
                 case 2: //esot
                 case 3: //maxt
-                    newCh->InputType="U";
-                    newCh->YName="m";
-                    newCh->YNameOld="Па";
+                    //newCh->InputType="U";
+                    newCh->setYName("m");
+                    newCh->dataDescription().put("ynameold", "Па");
                     break;
                 case 4: //esom
-                    newCh->InputType="U";
-                    newCh->YName="номер";
-                    newCh->YNameOld="";
+                    //newCh->InputType="U";
+                    newCh->setYName("номер");
                     break;
                 default:
                     break;
             }
 
-            newCh->ChanDscr=newCh->ChanName;
+            newCh->setDescription(newCh->name());
             if (octave)
                 newCh->data()->setXValues(xValues);
             else
@@ -301,12 +300,8 @@ bool EsoConvertor::convert()
     if (octave) {
         //     добавляем нулевой канал с осью Х
             DfdChannel *ch = new DfdChannel(dfdFileDescriptor,index++);
-            ch->ChanAddress.clear(); //
-            ch->ChanName = "ось X"; //
-            ch->YName="Гц";
-            ch->YNameOld.clear();
-            ch->InputType.clear();
-            ch->ChanDscr.clear();
+            ch->setName("ось X"); //
+            ch->setYName("Гц");
             ch->channelIndex = 0; // нумерация с 0
             ch->ChanBlockSize=xValues.size();
             ch->IndType=3221225476;

@@ -88,11 +88,6 @@ DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
     : FileDescriptor(fileName),
       DataType(NotDef),
       BlockSize(0)
-//      ,NumInd(0),
-//      XBegin(0.0),
-//      XStep(0.0),
-//      source(0),
-//      process(0)
 {DD;
 }
 
@@ -128,6 +123,7 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
     }
     QDataStream w(&raw);
     w.setByteOrder(QDataStream::LittleEndian);
+    xChannel = firstChannel->data()->xValuesFormat()==DataHolder::XValuesNonUniform;
 
     //сначала канал для данных X
     if (xChannel) {
@@ -177,34 +173,6 @@ DfdFileDescriptor::~DfdFileDescriptor()
     qDeleteAll(channels);
 }
 
-//bool looksLikeOctave(QVector<double> &xvalues, DfdDataType DataType)
-//{
-//    if (xvalues.isEmpty() || xvalues.size()==1) return false;
-
-//    switch (DataType) {
-//        case ToSpectr: {
-//            double m = 0;
-//            for (int i=1; i<qMin(xvalues.size(),6); ++i) {
-//                m = std::max(xvalues[i]/xvalues[i-1],m);
-//                if (xvalues[i]/xvalues[i-1]<1.0) return false;
-//            }
-//            if (m<1.3 && m>0) return true;
-//            break;
-//        }
-//        case OSpectr: {
-//            double m = 0;
-//            for (int i=1; i<qMin(xvalues.size(),6); ++i) {
-//                if (xvalues[i]/xvalues[i-1]<1.0) return false;
-//                m = std::max(xvalues[i]/xvalues[i-1],m);
-//            }
-//            if (m<2.1 && m>0) return true;
-//            break;
-//        }
-//        default: break;
-//    }
-//    return false;
-//}
-
 int octaveFormat(int DataType)
 {
     switch(DataType) {
@@ -232,18 +200,16 @@ void DfdFileDescriptor::read()
     dataDescription().put("guid",dfd.value("DataFileDescriptor/DFDGUID"));
     DataType =  DfdDataType(dfd.value("DataFileDescriptor/DataType").toInt());
 
-    QDate date = QDate::fromString(dfd.value("DataFileDescriptor/Date"), "dd.MM.yyyy");
-    if (!date.isValid()) {
-        date = QDate::fromString(dfd.value("DataFileDescriptor/Date"),"dd.MM.yy");
-        date = date.addYears(100);
-    }
-    QString time = dfd.value("DataFileDescriptor/Time");
-    dataDescription().put("dateTime", date.toString("dd.MM.yyyy")+" "+time);
+    dataDescription().put("dateTime", dateTimeFromString(dfd.value("DataFileDescriptor/Date")
+                                                         +" "
+                                                         +dfd.value("DataFileDescriptor/Time")));
 
     int NumChans =  dfd.value("DataFileDescriptor/NumChans").toInt();
     uint NumInd = dfd.value("DataFileDescriptor/NumInd").toUInt();
+    dataDescription().put("samples", NumInd);
     BlockSize = dfd.value("DataFileDescriptor/BlockSize").toInt();
     QString XName = dfd.value("DataFileDescriptor/XName");
+    dataDescription().put("xname", XName);
     if (XName == "№№ полос") xChannel = true;
     double XBegin = hextodouble(dfd.value("DataFileDescriptor/XBegin"));
     double XStep = hextodouble(dfd.value("DataFileDescriptor/XStep"));
@@ -261,10 +227,8 @@ void DfdFileDescriptor::read()
     }
 
     // [Process] - channel specific
-    if (childGroups.contains("Process")) {
-        Process process(this);
-        process.read(dfd, DataType);
-    }
+    Process process(this);
+    process.read(dfd, DataType);
 
     // [Channel#]
     for (int i = 0; i<NumChans; ++i) {
@@ -280,7 +244,7 @@ void DfdFileDescriptor::read()
     if (!channels.isEmpty() && DataType >= OSpectr) {
         QVector<double> xvalues;
         DfdChannel *c = channels.constFirst();
-        xChannel = c->ChanName=="ось X";
+        xChannel = c->name()=="ось X";
         if (xChannel) {//нашли канал со значениями оси X
             c->populate();
             xvalues = c->data()->yValues(0);
@@ -307,9 +271,9 @@ void DfdFileDescriptor::writeDfd(QTextStream &dfdStream)
     dfdStream << "[DataFileDescriptor]" << endl;
     dfdStream << "DFDGUID="<<dataDescription().get("guid").toString() << endl;
     dfdStream << "DataType="<<DataType << endl;
-    dfdStream << "Date="<<dataDescription().get("dateTime").toString().section(' ',0,0)
+    dfdStream << "Date="<<dataDescription().get("dateTime").toDateTime().toString("dd.MM.yyyy")
         << endl;
-    dfdStream << "Time="<<dataDescription().get("dateTime").toString().section(' ',1)
+    dfdStream << "Time="<<dataDescription().get("dateTime").toDateTime().toString("hh:mm:ss")
         << endl;
     dfdStream << "NumChans="<< (xChannel ? channels.size()+1 : channels.size()) << endl;
     int numInd = 0;
@@ -348,8 +312,8 @@ void DfdFileDescriptor::writeDfd(QTextStream &dfdStream)
     if (xChannel) {
         //добавляем нулевой канал с осью Х
         DfdChannel ch(0, 0);
-        ch.ChanName = "ось X"; //
-        ch.YName="Гц";
+        ch.setName("ось X");
+        ch.setYName("Гц");
         ch.ChanBlockSize = channels.constFirst()->data()->samplesCount();
         ch.IndType = 3221225476;
         ch.data()->setThreshold(1.0);
@@ -481,37 +445,6 @@ bool DfdFileDescriptor::fileExists() const
     return (FileDescriptor::fileExists() && QFileInfo(rawFileName).exists());
 }
 
-//void DfdFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
-//{DD;
-//    // заполняем вектор индексов каналов, как они будут выглядеть после удаления
-//    const int count = channelsCount();
-//    QVector<QPair<int,int> > indexesVector(count);
-//    for (int i=0; i<count; ++i)
-//        indexesVector[i] = qMakePair(i, channelsToDelete.contains(i)?1:0); // 0 = keep, 1 = delete
-
-//    bool tempFileSuccessful = rewriteRawFile(indexesVector);
-
-//    // не удалось переписать файл raw, читаем весь файл и перезаписываем стандартным интерфейсом
-//    if (!tempFileSuccessful)
-//        populate();
-
-//    for (int i=channels.size()-1; i>=0; --i) {
-//        if (channelsToDelete.contains(i)) {
-//            delete channels.takeAt(i);
-//        }
-//    }
-
-//    //перенумеровываем каналы
-//    for (int i=0; i<channels.size(); ++i) {
-//        channels[i]->channelIndex = i;
-//    }
-
-//    setChanged(true);
-//    if (!tempFileSuccessful) {
-//        setDataChanged(true);
-//    }
-//    write();
-//}
 void DfdFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
 {DD;
     if (channelsToDelete.isEmpty()) return;
@@ -582,15 +515,12 @@ void DfdFileDescriptor::copyChannelsFrom_plain(FileDescriptor *file, const QVect
     //читаем все каналы, чтобы сохранить файл полностью
     populate();
 
-//    DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(file);
     for (int index: indexes) {
         bool wasPopulated = file->channel(index)->populated();
         if (!wasPopulated) file->channel(index)->populate();
         new DfdChannel(*file->channel(index), this);
         if (!wasPopulated) file->channel(index)->clear();
     }
-
-    //XName = file->xName();
 
     for (int i=0; i<channels.size(); ++i) {
         channels[i]->channelIndex = i;
@@ -677,8 +607,8 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
         else
             newCh = new DfdChannel(*sourceChannel, this);
 
-        if (newCh->data()->xValuesFormat() == DataHolder::XValuesNonUniform)
-            xValues = newCh->data()->xValues();
+//        if (newCh->data()->xValuesFormat() == DataHolder::XValuesNonUniform)
+//            xValues = newCh->data()->xValues();
 
         //меняем параметры канала
         newCh->IndType = channels[0]->IndType; //характеристика отсчета
@@ -708,7 +638,7 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
     write();
 }
 
-void DfdFileDescriptor::addChannelWithData(DataHolder *data, const QJsonObject &description)
+void DfdFileDescriptor::addChannelWithData(DataHolder *data, const DataDescription &description)
 {
     // обновляем сведения канала
     DfdChannel *ch = new DfdChannel(this, channelsCount());
@@ -716,18 +646,14 @@ void DfdFileDescriptor::addChannelWithData(DataHolder *data, const QJsonObject &
     ch->setChanged(true);
     ch->setDataChanged(true);
     ch->setData(data);
+    ch->dataDescription() = description;
 
-    ch->ChanName = description.value("name").toString();
-    ch->ChanDscr = description.value("description").toString();
     ch->ChanBlockSize = data->samplesCount();
     ch->IndType = channelsCount()==1 ? 3221225476 : channels.constFirst()->IndType;
-    ch->YName = description.value("yname").toString();
-    ch->YNameOld = description.value("ynameold").toString();
-    if (ch->YName == ch->YNameOld && data->yValuesFormat() == DataHolder::YValuesAmplitudesInDB)
-        ch->YName = "дБ";
-    ch->setXName(description.value("xname").toString());
+    if (description.get("yname") == description.get("ynameold") && data->yValuesFormat() == DataHolder::YValuesAmplitudesInDB)
+        ch->dataDescription().put("yname", "дБ");
 
-    int octave = description.value("function").toObject().value("octaveFormat").toInt();
+    int octave = description.get("function.octaveFormat").toInt();
     switch (octave) {
         case 1: DataType = OSpectr; break;
         case 3: DataType = ToSpectr; break;	// 1/3-октавный спектр
@@ -738,31 +664,31 @@ void DfdFileDescriptor::addChannelWithData(DataHolder *data, const QJsonObject &
         default: break;
     }
 
-    //третьоктава или октава: канал только один и данные по x неравномерны
-    if (channelsCount()==1 && ch->data()->xValuesFormat()==DataHolder::XValuesNonUniform) {
-        xValues = ch->data()->xValues();
-        //     добавляем нулевой канал с осью Х
-        DfdChannel *ch0 = new DfdChannel(this, channelsCount());
-        ch0->ChanAddress.clear(); //
-        ch0->ChanName = "ось X"; //
-        ch0->YName="Гц";
-        ch0->YNameOld.clear();
-        ch0->InputType.clear();
-        ch0->ChanDscr.clear();
-        ch0->channelIndex = 0; // нумерация с 0
-        ch0->ChanBlockSize = xValues.size();
-        ch0->IndType = channelsCount()==2 ? 3221225476 : this->channels.constFirst()->IndType;
-        ch0->data()->setThreshold(1.0);
-        ch0->data()->setXValues(xValues);
-        ch0->data()->setYValues(xValues, DataHolder::YValuesReals);
-        ch0->setPopulated(true);
+//    //третьоктава или октава: канал только один и данные по x неравномерны
+//    if (channelsCount()==1 && ch->data()->xValuesFormat()==DataHolder::XValuesNonUniform) {
+//        xValues = ch->data()->xValues();
+//        //     добавляем нулевой канал с осью Х
+//        DfdChannel *ch0 = new DfdChannel(this, channelsCount());
+//        ch0->ChanAddress.clear(); //
+//        ch0->ChanName = "ось X"; //
+//        ch0->YName="Гц";
+//        ch0->YNameOld.clear();
+//        ch0->InputType.clear();
+//        ch0->ChanDscr.clear();
+//        ch0->channelIndex = 0; // нумерация с 0
+//        ch0->ChanBlockSize = xValues.size();
+//        ch0->IndType = channelsCount()==2 ? 3221225476 : this->channels.constFirst()->IndType;
+//        ch0->data()->setThreshold(1.0);
+//        ch0->data()->setXValues(xValues);
+//        ch0->data()->setYValues(xValues, DataHolder::YValuesReals);
+//        ch0->setPopulated(true);
 
-        channels.prepend(ch0);
-        channels.takeLast(); //нулевой канал автоматически был добавлен в конец. Убираем его в начало
+//        channels.prepend(ch0);
+//        channels.takeLast(); //нулевой канал автоматически был добавлен в конец. Убираем его в начало
 
-        for (int i=0; i<channelsCount(); ++i)
-            channels[i]->channelIndex = i;
-    }
+//        for (int i=0; i<channelsCount(); ++i)
+//            channels[i]->channelIndex = i;
+//    }
 
     if ((channelsCount()==2 && ch->data()->xValuesFormat()==DataHolder::XValuesNonUniform)
         || channelsCount()==1) {
@@ -942,7 +868,7 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
 Channel *DfdFileDescriptor::channel(int index) const
 {
     if (channels.size()>index) return channels[index];
-    return 0;
+    return nullptr;
 }
 
 bool DfdFileDescriptor::isSourceFile() const
@@ -994,12 +920,6 @@ DfdChannel *DfdFileDescriptor::newChannel(int chanIndex)
     }
     return c;
 }
-
-//QString DfdFileDescriptor::dataDescriptorAsString() const
-//{DD;
-//    if (_dataDescription) return _dataDescription->toString();
-//    return "";
-//}
 
 QStringList DfdFileDescriptor::suffixes()
 {
@@ -1061,6 +981,17 @@ void Process::read(DfdSettings &dfd, DfdDataType dataType)
         default: break;
     }
     parent->dataDescription().put("function.format", fS);
+    int octave = 0;
+    switch (dataType) {
+        case ToSpectr: octave = 3; break;
+        case OSpectr: octave = 1; break;
+        case TwoOSpectr: octave = 2; break;
+        case SixOSpectr: octave = 6; break;
+        case TwlOSpectr: octave = 12; break;
+        case TFOSpectr: octave = 24; break;
+        default: break;
+    }
+    parent->dataDescription().put("function.octaveFormat", octave);
 }
 
 void Process::write(QTextStream &dfd)
@@ -1127,13 +1058,8 @@ void Source::read(DfdSettings &dfd)
         if (DFDGUID.startsWith("{")) DFDGUID.remove(0,1);
         if (DFDGUID.endsWith("}")) DFDGUID.chop(1);
         parent->dataDescription().put("source.guid", DFDGUID);
-
-        QDate date=QDate::fromString(dfd.value("Source/Date"),"");
-        if (!date.isValid()) {
-            date = QDate::fromString(dfd.value("Source/Date"),"dd.MM.yy");
-            date = date.addYears(100);
-        }
-        parent->dataDescription().put("source.dateTime", date.toString("dd.MM.yyyy")+" "+dfd.value("Source/Time"));
+        parent->dataDescription().put("source.dateTime",
+                                      dateTimeFromString(dfd.value("Source/Date")+" "+dfd.value("Source/Time")));
     }
 }
 
@@ -1152,9 +1078,9 @@ void Source::write(QTextStream &dfd)
     dfd << "[Source]" << endl;
     dfd << "File=" << parent->dataDescription().get("source.file").toString() << endl;
     dfd << "DFDGUID=" << parent->dataDescription().get("source.guid").toString() << endl;
-    QString dt = parent->dataDescription().get("source.dateTime").toString();
-    dfd << "Date=" << dt.section(' ',0,0) << endl;
-    dfd << "Time=" << dt.section(' ',1) << endl;
+    QDateTime dt = parent->dataDescription().get("source.dateTime").toDateTime();
+    dfd << "Date=" << dt.toString("dd.MM.yyyy") << endl;
+    dfd << "Time=" << dt.toString("hh:mm:ss") << endl;
 }
 
 DfdChannel::DfdChannel(DfdFileDescriptor *parent, int channelIndex)
@@ -1171,10 +1097,12 @@ DfdChannel::DfdChannel(DfdFileDescriptor *parent, int channelIndex)
         for (auto it = parent->dataDescription().data.begin();
              it != parent->dataDescription().data.end(); ++it) {
             if (it.key().startsWith("function.")) {
-                dataDescription().data.insert(it.key(), it.value());
+                dataDescription().put(it.key(), it.value());
                 it = parent->dataDescription().data.erase(it);
             }
         }
+        dataDescription().put("xname", parent->dataDescription().get("xname"));
+        dataDescription().put("samples", parent->dataDescription().get("xname"));
     }
 }
 
@@ -1185,17 +1113,10 @@ DfdChannel::DfdChannel(DfdChannel &other, DfdFileDescriptor *parent) : Channel(o
     this->parent = parent;
     parent->channels << this;
 
-    ChanAddress = other.ChanAddress; //
-    ChanName = other.ChanName;
+    setDataDescription(other.dataDescription());
     IndType = other.IndType;
     ChanBlockSize = other.ChanBlockSize; //размер блока в отсчетах
-    YName = other.YName;
-    YNameOld = other.YNameOld;
-    InputType = other.InputType;
-    ChanDscr = other.ChanDscr;
-
     channelIndex = parent->channels.size()-1;
-
     dataType = other.dataType;
 }
 
@@ -1206,19 +1127,25 @@ DfdChannel::DfdChannel(Channel &other, DfdFileDescriptor *parent) : Channel(othe
     this->parent = parent;
     parent->channels << this;
 
-    ChanAddress = "";
-    ChanName = other.name();
-    ChanDscr = other.description();
-    IndType = 0xc0000004; // float
+    setDataDescription(other.dataDescription());
+
+    QString precision = dataDescription().get("function.precision").toString();
+    if (precision == "uint8") IndType = 0x1;
+    else if (precision == "int8") IndType = 0x80000001;
+    else if (precision == "uint16") IndType = 0x2;
+    else if (precision == "int16") IndType = 0x80000002;
+    else if (precision == "uint32") IndType = 0x4;
+    else if (precision == "int32") IndType = 0x80000004;
+    else if (precision == "uint64") IndType = 0x8;
+    else if (precision == "int64") IndType = 0x80000008;
+    else if (precision == "float") IndType = 0xc0000004;
+    else if (precision == "double") IndType = 0xc0000008;
+
     ChanBlockSize = other.data()->samplesCount();
 
-
-    YName = other.yName();
-    YNameOld = other.yName();
-    if (other.data()->yValuesFormat() == DataHolder::YValuesAmplitudesInDB) {
-        YName = "дБ";
-    }
-
+//    if (other.data()->yValuesFormat() == DataHolder::YValuesAmplitudesInDB) {
+//        YName = "дБ";
+//    }
 
     dataType = dfdDataTypeFromDataType(other);
 }
@@ -1232,27 +1159,42 @@ void DfdChannel::read(DfdSettings &dfd, int numChans, double xBegin, double xSte
 {DD;
     QString group = QString("Channel%1/").arg(channelIndex+1);
 
-    ChanAddress = dfd.value(group+"ChanAddress");
-    ChanName = dfd.value(group+"ChanName");
+    dataDescription().put("sensorID", dfd.value(group+"ChanAddress"));
+    dataDescription().put("name", dfd.value(group+"ChanName"));
     IndType = dfd.value(group+"IndType").toUInt();
+    QString precision = "float";
+    switch (IndType) {
+        case 0x1: precision = "uint8"; break;
+        case 0x80000001: precision = "int8"; break;
+        case 0x2: precision = "uint16"; break;
+        case 0x80000002: precision = "int16"; break;
+        case 0x4: precision = "uint32"; break;
+        case 0x80000004: precision = "int32"; break;
+        case 0x8: precision = "uint64"; break;
+        case 0x80000008: precision = "int64"; break;
+        case 0xc0000004: precision = "float"; break;
+        case 0xc0000008: precision = "double"; break;
+        case 0xc000000a: precision = "double"; break;
+    }
+    dataDescription().put("function.precision", precision);
     ChanBlockSize = dfd.value(group+"ChanBlockSize").toInt();
-
-    YName = dfd.value(group+"YName");
-    YNameOld = dfd.value(group+"YNameOld");
-    InputType = dfd.value(group+"InputType");
-    ChanDscr = dfd.value(group+"ChanDscr");
-    setCorrection(dfd.value(group+"Correction"));
-
+    QString YName = dfd.value(group+"YName");
+    dataDescription().put("yname", YName);
+    dataDescription().put("ynameold", dfd.value(group+"YNameOld"));
+    dataDescription().put("inputType", dfd.value(group+"InputType"));
+    dataDescription().put("description", dfd.value(group+"ChanDscr"));
+    dataDescription().put("correction", dfd.value(group+"Correction"));
 
     //dfd не понимает многоблочные данные
     data()->setZValues(0,0,1);
+    dataDescription().put("blocks", 1);
 
     if (qFuzzyIsNull(xStep)) {// abscissa, uneven spacing
         _data->setXValues(QVector<double>());
-        _data->setSamplesCount(ChanBlockSize);
+        _data->setSamplesCount(parent->dataDescription().get("samples").toInt());
     }
     else {// abscissa, even spacing
-        _data->setXValues(xBegin, xStep, ChanBlockSize);
+        _data->setXValues(xBegin, xStep, parent->dataDescription().get("samples").toInt());
     }
 
     auto yValueFormat = DataHolder::formatFromString(dataDescription().get("function.format").toString());
@@ -1273,7 +1215,7 @@ void DfdChannel::read(DfdSettings &dfd, int numChans, double xBegin, double xSte
     QString thrString = dfd.value(group+"threshold");
     if (thrString.isEmpty()) {
         if (YName.isEmpty() || YName.toLower() == "дб" || YName.toLower() == "db")
-            thr = threshold(YNameOld);
+            thr = threshold(dataDescription().get("ynameold").toString());
         else
             thr = threshold(YName);
         if (type()==Descriptor::FrequencyResponseFunction) thr=1.0;
@@ -1282,17 +1224,15 @@ void DfdChannel::read(DfdSettings &dfd, int numChans, double xBegin, double xSte
         thr = thrString.toDouble();
     }
     _data->setThreshold(thr);
+    dataDescription().put("logref", thr);
 
-    int units = DataHolder::UnitsLinear;
+    auto units = DataHolder::UnitsLinear;
     QString unitsStr = dfd.value(group+"units");
     if (unitsStr.isEmpty()) {
         if (dataType == Spectr || dataType == XSpectr) units = DataHolder::UnitsQuadratic;
     }
     else {
-        if (unitsStr == "linear") units = DataHolder::UnitsLinear;
-        else if (unitsStr == "quadratic") units = DataHolder::UnitsQuadratic;
-        else if (unitsStr == "dimensionless") units = DataHolder::UnitsDimensionless;
-        else if (unitsStr == "unknown") units = DataHolder::UnitsUnknown;
+        units = DataHolder::unitsFromString(unitsStr);
     }
     _data->setYValuesUnits(units);
 
@@ -1318,26 +1258,20 @@ void DfdChannel::read(DfdSettings &dfd, int numChans, double xBegin, double xSte
 void DfdChannel::write(QTextStream &dfd, int index)
 {DD;
     dfd << QString("[Channel%1]").arg(index == -1 ? channelIndex+1 : index+1) << endl;
-    dfd << "ChanAddress=" << ChanAddress << endl;
+    dfd << "ChanAddress=" << dataDescription().get("sensorID").toString() << endl;
 //    QString correctedName = ChanName;
 //    if (data()->hasCorrection()) correctedName.append(data()->correctionString());
-    dfd << "ChanName=" << ChanName << endl;
+    dfd << "ChanName=" << dataDescription().get("name").toString() << endl;
     dfd << "IndType=" << IndType << endl;
     dfd << "ChanBlockSize=" << ChanBlockSize << endl;
-    dfd << "YName=" << YName << endl;
-    if (!YNameOld.isEmpty())
-        dfd << "YNameOld=" << YNameOld << endl;
-    dfd << "InputType="<<InputType << endl;
-    dfd << "ChanDscr="<<ChanDscr << endl;
+    dfd << "YName=" << dataDescription().get("yname").toString() << endl;
+    dfd << "YNameOld=" << dataDescription().get("ynameold").toString() << endl;
+    dfd << "InputType="<< dataDescription().get("inputType").toString() << endl;
+    dfd << "ChanDscr="<<dataDescription().get("description").toString() << endl;
     dfd << "Correction="<<correction() << endl;
 
     dfd << "threshold=" << QString::number(data()->threshold()) << endl;
-    switch (data()->yValuesUnits()) {
-        case DataHolder::UnitsLinear: dfd << "units=" << "linear" << endl; break;
-        case DataHolder::UnitsQuadratic: dfd << "units=" << "quadratic" << endl; break;
-        case DataHolder::UnitsDimensionless: dfd << "units=" << "dimensionless" << endl; break;
-        case DataHolder::UnitsUnknown: dfd << "units=" << "unknown" << endl; break;
-    }
+    dfd << DataHolder::unitsToString(data()->yValuesUnits());
 }
 
 void DfdChannel::write(QDataStream &s, DataHolder *d)
@@ -1362,20 +1296,17 @@ void DfdChannel::write(QDataStream &s, DataHolder *d)
 QVariant DfdChannel::info(int column, bool edit) const
 {
     switch (column) {
-        case 0: return ChanName; //name(); //avoiding conversion variant->string->variant
         case 1: {
-            QString result = YName;
+            QString result = yName();
             if (edit) return result;
-            if (!YNameOld.isEmpty() && YNameOld != YName)
-                result.append(QString(" (%1)").arg(YNameOld));
+            QString yNameO = yNameOld();
+            if (!yNameO.isEmpty() && yNameO != result)
+                result.append(QString(" (%1)").arg(yNameO));
             return result;
         }
-        case 2: return data()->yValuesFormatString();
-        case 3: return ChanDscr;
-        case 4: return correction();
-        default: ;
+        default: break;
     }
-    return QVariant();
+    return Channel::info(column, edit);
 }
 
 int DfdChannel::columnsCount() const
@@ -1395,242 +1326,6 @@ QVariant DfdChannel::channelHeader(int column) const
     }
     return QVariant();
 }
-
-//void DfdChannel::populate()
-//{DD;
-//    // clear previous data;
-//    _data->clear();
-
-//    double thr = 1.0;
-//    if (YName.isEmpty() || YName.toLower() == "дб" || YName.toLower() == "db")
-//        thr = threshold(YNameOld);
-//    else
-//        thr = threshold(YName);
-//    if (type()==Descriptor::FrequencyResponseFunction) thr=1.0;
-//    _data->setThreshold(thr);
-
-//    int units = DataHolder::UnitsLinear;
-//    if (dataType == Spectr || dataType == XSpectr) units = DataHolder::UnitsQuadratic;
-//    _data->setYValuesUnits(units);
-
-////    int yValueFormat = dataFormat();
-
-////    if (YName.toLower()=="db" || YName.toLower()=="дб")
-////        yValueFormat = DataHolder::YValuesAmplitudesInDB;
-
-//    QFile rawFile(parent->rawFileName);
-
-//    QTime time;
-//    time.start();
-
-//    if (rawFile.open(QFile::ReadOnly)) {
-//        /* Сложная система оптимизаций чтения.
-//         * Самый распространенный формат временных реализаций - IndType=2 (quint16)
-//         * Или IndType = 3221225476 (32-bit float)
-//         * Методы чтения идут в порядке убывания оптимальности
-//         * - самый быстрый - когда мы знаем положение всех блоков данных
-//         *   и отображаем файл в память.
-//         * - медленнее - читать из файла в память и интерпретировать каждый отсчет
-//         *
-//         */
-
-//        QVector<double> YValues;
-//        const quint64 blockSizeBytes = blockSizeInBytes();
-//        const int channelsCount = parent->channelsCount();
-
-//        if (IndType == 2) {//целое без знака, quint16
-//            if (!dataPositions.isEmpty()) {
-//                // уже знаем позиции всех данных
-//                // читаем или через map, или оптимизированным способом
-
-//                // map file into memory
-//                unsigned char *ptr = rawFile.map(0, rawFile.size());
-//                if (ptr) {//достаточно памяти отобразить весь файл
-//                    qDebug()<<"IndType=2, mapped, by dataPositions";
-//                    unsigned char *maxPtr = ptr + rawFile.size();
-//                    unsigned char *ptrCurrent = ptr;
-
-//                    foreach (int pos, dataPositions) {
-//                        ptrCurrent = ptr + pos;
-//                        QVector<double> temp = convertFromUINT16<double>(ptrCurrent, qMin(maxPtr-ptrCurrent, int(blockSizeBytes)), IndType);
-//                        YValues << temp;
-//                    }
-//                }
-//                else {//оптимизированно через qToLittleEndian
-//                    qDebug()<<"IndType=2, optimised, by dataPositions";
-//                    foreach (int pos, dataPositions) {
-//                        rawFile.seek(pos);
-//                        QVector<double> temp;
-
-//                        QByteArray b = rawFile.read(blockSizeBytes);
-//                        uchar *ptr = reinterpret_cast<uchar*>(b.data());
-//                        int length = b.size();
-//                        temp = convertFromUINT16<double>(ptr, length, IndType);
-
-//                        YValues << temp;
-//                    }
-//                }
-//            } /// end !dataPositions.isEmpty()
-
-//            else if (ChanBlockSize != 1) {//блоки достаточно длинные, чтобы мы могли читать в вектор
-//                // Этот блок кода никогда не будет вызван,
-//                // так как dataPositions заполняются всегда, если ChanBlockSize != 1
-
-//                if (parent->BlockSize == 0) {// без перекрытия, читаем подряд весь канал
-//                    qDebug()<<"IndType=2, blockSize=0, skipping";
-//                    // сложная схема пропуска данных на тот случай, если в каналах разное число отсчетов
-//                    for (int i=0; i<channelsCount; ++i) {
-//                        if (i==channelIndex) {
-//                            QByteArray b = rawFile.read(blockSizeBytes);
-//                            uchar *ptr = reinterpret_cast<uchar*>(b.data());
-//                            int length = b.size();
-//                            YValues = convertFromUINT16<double>(ptr, length, IndType);
-//                        }
-//                        else {
-//                            rawFile.skip(parent->dfdChannel(i)->blockSizeInBytes());
-//                        }
-//                    }
-//                } /// end parent->BlockSize == 0
-//                else {// с перекрытием, читаем классическим способом
-//                    qDebug()<<"IndType=2, с перекрытием, skipping";
-//                    //с перекрытием, сначала читаем блок данных в ChanBlockSize отчетов для всех каналов
-//                    // если каналы имеют разный размер блоков, этот метод даст сбой
-//                    int actuallyRead = 0;
-//                    const int chunkSize = channelsCount * ChanBlockSize;
-
-//                    QDataStream readStream(&rawFile);
-//                    readStream.setByteOrder(QDataStream::LittleEndian);
-
-//                    while (1) {
-//                        /*
-//                        * i-й отсчет n-го канала имеет номер
-//                        * n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
-//                        */
-//                        QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, IndType, &actuallyRead);
-
-//                        //распихиваем данные по каналам
-//                        actuallyRead /= channelsCount;
-//                        YValues << temp.mid(actuallyRead*channelIndex, actuallyRead);
-
-//                        if (actuallyRead < ChanBlockSize)
-//                            break;
-//                    }
-//                } /// end parent->BlockSize != 0
-//            } /// end ChanBlockSize != 1
-//            else {//ChanBlockSize == 1
-//                // trying to map file into memory
-//                unsigned char *ptr = rawFile.map(0, rawFile.size());
-//                if (ptr) {//достаточно памяти отобразить весь файл
-//                    unsigned char *ptrCurrent = ptr;
-//                    qDebug()<<"IndType="<<IndType<<", ChanBlockSize == 1, mapped";
-//                    YValues.resize(qMin(parent->NumInd, int(rawFile.size() / channelsCount / (IndType % 16))));
-//                    for (int i=0; i < YValues.size(); ++i) {
-//                        //
-//                        // i-й отсчет n-го канала имеет номер
-//                        // n + i*ChannelsCount
-//                        //
-//                        ptrCurrent = ptr + (channelIndex + i*channelsCount) * (IndType % 16);
-//                        YValues[i] = static_cast<double>(qFromLittleEndian<quint16>(ptrCurrent));
-//                    }
-//                }
-//                else {// не удалось прочитать никакими оптимальными методами, читаем медленным классическим
-//                    int actuallyRead = 0;
-//                    const int chunkSize = channelsCount; //ChanBlockSize = 1
-
-//                    QDataStream readStream(&rawFile);
-//                    readStream.setByteOrder(QDataStream::LittleEndian);
-
-//                    while (1) {
-//                        /*
-//                        * i-й отсчет n-го канала имеет номер
-//                        * n + i*ChannelsCount
-//                        */
-//                        QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, IndType, &actuallyRead);
-
-//                        //распихиваем данные по каналам
-//                        actuallyRead /= chunkSize;
-//                        YValues << temp.mid(actuallyRead*channelIndex, actuallyRead);
-
-//                        if (actuallyRead < ChanBlockSize)
-//                            break;
-//                    }
-//                }
-//            }/// end ChanBlockSize == 1
-//        } /// end IndType == 2
-//        else {//все остальные форматы,
-//            //читаем классическим способом через getChunk
-//            qDebug()<<"IndType="<<IndType;
-//            QDataStream readStream(&rawFile);
-//            readStream.setByteOrder(QDataStream::LittleEndian);
-//            if (IndType==0xC0000004)
-//                readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-
-//            //с перекрытием, сначала читаем блок данных в ChanBlockSize отчетов для всех каналов
-//            // если каналы имеют разный размер блоков, этот метод даст сбой
-//            int actuallyRead = 0;
-//            const int chunkSize = channelsCount * ChanBlockSize;
-//            while (1) {
-//                /*
-//                * i-й отсчет n-го канала имеет номер
-//                * n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
-//                */
-//                QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, IndType, &actuallyRead);
-
-//                //распихиваем данные по каналам
-//                actuallyRead /= channelsCount;
-//                YValues << temp.mid(actuallyRead*channelIndex, actuallyRead);
-
-//                if (actuallyRead < ChanBlockSize)
-//                    break;
-//            }
-//        } /// end IndType != 2
-
-//        YValues.resize(parent->NumInd);
-//        postprocess(YValues);
-//        _data->setYValues(YValues, DataHolder::YValuesFormat(_data->yValuesFormat()));
-//        setPopulated(true);
-
-//        if (parent->DataType == ToSpectr || parent->DataType == OSpectr) {//данные по оси Х хранятся первым каналом
-//            if (!parent->xValues.isEmpty()) {
-//                _data->setXValues(parent->xValues);
-//            }
-//            else {
-//                QDataStream readStream(&rawFile);
-//                readStream.setByteOrder(QDataStream::LittleEndian);
-//                if (IndType==0xC0000004)
-//                    readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
-//                rawFile.seek(0);
-//                readStream.setDevice(&rawFile);
-//                // читаем без перекрытия, предполагаем, что тип файла - третьоктава или октава
-//                QVector<double> temp = getChunkOfData<double>(readStream, ChanBlockSize, IndType);
-//                //checking if values are really frequency values, take four first values
-//                parent->xValues = temp;
-//                _data->setXValues(temp);
-//                //                if (temp.size()>=4) {
-//                //                    QVector<double> xv(4);
-//                //                    for (int k = 0; k<4; ++k)
-//                //                        xv[k] = pow(10.0, 0.1*k);
-//                //                    if (qAbs(temp[0]-xv[0])<1e-4
-//                //                        && qAbs(temp[1]-xv[1])<1e-4
-//                //                        && qAbs(temp[2]-xv[2])<1e-4
-//                //                        && qAbs(temp[3]-xv[3])<1e-4) {
-//                //                        setXValues(temp);
-//                //                    }
-//                //                    else if (parent->DataType == ToSpectr) {
-//                //                        QVector<double> xv(YValues.size());
-//                //                        for (int k = 0; k<YValues.size(); ++k)
-//                //                            xv[k] = pow(10.0, 0.1*k);
-//                //                        setXValues(xv);
-//                //                    }
-//                //                }
-//            }
-//        }
-//    }
-//    else {
-//        qDebug()<<"Cannot read raw file"<<parent->rawFileName;
-//    }
-//    qDebug()<<"reading finished"<<time.elapsed();
-//}
 
 void DfdChannel::populate()
 {DD;
@@ -1760,7 +1455,7 @@ quint64 DfdChannel::blockSizeInBytes() const
     return res * (IndType % 16);
 }
 
-FileDescriptor *DfdChannel::descriptor()
+FileDescriptor *DfdChannel::descriptor() const
 {
     return parent;
 }
@@ -1802,16 +1497,6 @@ void DfdChannel::appendDataTo(const QString &rawFileName)
         qDebug()<<"Не могу открыть файл для дозаписи:"<<rawFileName;
         return;
     }
-}
-
-QString DfdChannel::legendName() const
-{DD;
-    QStringList l;
-    l << (name().isEmpty()?ChanAddress:name());
-    if (!correction().isEmpty()) l << correction();
-    if (!parent->legend().isEmpty()) l << parent->legend();
-
-    return l.join(" ");
 }
 
 void DfdChannel::setValue(double val, QDataStream &writeStream)
@@ -1864,58 +1549,9 @@ Descriptor::DataType DfdChannel::type() const
     return dataTypefromDfdDataType(dataType);
 }
 
-int DfdChannel::octaveType() const
-{
-    switch (dataType) {
-        case ToSpectr: return 3;
-        case OSpectr: return 1;
-        case TwoOSpectr: return 2;
-        case SixOSpectr: return 6;
-        case TwlOSpectr: return 12;
-        case TFOSpectr: return 24;
-        default: return 0;
-    }
-    return 0;
-}
-
-QString DfdChannel::xName() const
-{DD;
-    return dataDescription().get("xname").toString();
-}
-
-QString DfdChannel::yName() const
-{
-return dataDescription().get("yname").toString();
-}
-
 QString DfdChannel::yNameOld() const
 {
     return dataDescription().get("ynameold").toString();
-}
-
-QString DfdChannel::zName() const
-{
-    return dataDescription().get("zname").toString();
-}
-
-void DfdChannel::setYName(const QString &yName)
-{
-    dataDescription().put("yname", yName);
-}
-
-void DfdChannel::setXName(const QString &xName)
-{
-    dataDescription().put("xname", xName);
-}
-
-void DfdChannel::setZName(const QString &zName)
-{
-    dataDescription().put("zname", zName);
-}
-
-void DfdChannel::setName(const QString &name)
-{
-    dataDescription().put("name", name);
 }
 
 RawChannel::RawChannel(RawChannel &other, DfdFileDescriptor *parent) : DfdChannel(other, parent)
@@ -2233,6 +1869,7 @@ DataHolder::YValuesFormat dataFormat(DfdDataType dataType, const QString& typeSc
             else if (typeScale == "в децибелах" || typeScale == "уровень СКЗ (в дБ)")
                 return DataHolder::YValuesAmplitudesInDB;
             else if (typeScale == "частота (Гц)") return DataHolder::YValuesReals;
+            break;
         }
         case XPhase:		// взаимная фаза
             return DataHolder::YValuesPhases;

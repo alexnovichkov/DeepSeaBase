@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QStyledItemDelegate>
+#include <QFileInfoList>
 
 class QProgressBar;
 class QDialogButtonBox;
@@ -58,6 +59,7 @@ private slots:
 //    void editItem(QTreeWidgetItem*item, int column);
 private:
     QString findXmlFile(bool silent) const; // silent means it won't ask for a file via dialog
+    QFileInfoList findMatFiles(QString &folder);
     QStringList convertedFiles;
     QString folder;
     QProgressBar *progress;

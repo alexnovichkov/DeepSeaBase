@@ -256,79 +256,63 @@ UffFileDescriptor *SpectreMethod::createNewUffFile(const QString &fileName, File
     return newUff;
 }
 
-DfdChannel *SpectreMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
+Channel *SpectreMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
 {DD;
-    DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
+    DataDescription descr;
+    DataHolder *d = new DataHolder();
     double XStep = p.sampleRate / pow(2.0, p.bandStrip) / p.bufferSize;
-    ch->data()->setXValues(0.0, XStep, spectrum.size());
-    ch->data()->setThreshold(p.threshold);
-    ch->data()->setYValues(spectrum, p.scaleType == 0 ? DataHolder::YValuesAmplitudes : DataHolder::YValuesAmplitudesInDB);
-    ch->setPopulated(true);
-    ch->setName(dfd->channel(i)->name());
+    d->setXValues(0.0, XStep, spectrum.size());
+    d->setThreshold(p.threshold);
+    d->setYValues(spectrum, p.scaleType == 0 ? DataHolder::YValuesAmplitudes : DataHolder::YValuesAmplitudesInDB);
+    //ch->setPopulated(true);
+    descr.put("name", dfd->channel(i)->name());
+    descr.put("description", dfd->channel(i)->description());
+    descr.put("sensorId", dfd->channel(i)->dataDescription().get("sensorID"));
+    descr.put("yname", p.scaleType==0?dfd->channel(i)->yName():"дБ");
+    descr.put("ynameold", dfd->channel(i)->yName());
 
-    ch->ChanDscr = dfd->channel(i)->description();
-//    ch->ChanAddress = dfd->channel(i)->ChanAddress;
+    newDfd->addChannelWithData(d, descr);
 
-    ch->ChanBlockSize = spectrum.size();
-    ch->IndType = 3221225476;
-
-    ch->YName = p.scaleType==0?dfd->channel(i)->yName():"дБ";
-    ch->YNameOld = dfd->channel(i)->yName();
-
-    return ch;
+    return newDfd->channel(newDfd->channelsCount()-1);
 }
 
-Function * SpectreMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
+Channel *SpectreMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
 {DD;
     Function *ch = new Function(newUff);
-    ch->setName(dfd->channel(i)->name());
-    ch->setPopulated(true);
+//    ch->setName(dfd->channel(i)->name());
+//    ch->setPopulated(true);
 
-    //FunctionHeader header;
-    ch->header.type1858[12].value = uffWindowType(p.windowType);
+//    //FunctionHeader header;
+//    ch->header.type1858[12].value = uffWindowType(p.windowType);
 
 
-    ch->type58[8].value = QDateTime::currentDateTime();;
-    ch->type58[14].value = uffMethodFromDfdMethod(id());
-    ch->type58[15].value = i+1;
-    //ch->type58[18].value = dfd->channels[i]->name(); //18  Response Entity Name ("NONE" if unused)
-    ch->type58[18].value = QString("p%1").arg(i+1);
-    ch->type58[20].value = 3; //20 Response Direction +Z
-    //ch->type58[21].value = dfd->channels[p.baseChannel]->name(); //18  Reference Entity Name ("NONE" if unused)
-    ch->type58[21].value = p.baseChannel>=0?QString("p%1").arg(p.baseChannel+1):"NONE";
-    ch->type58[23].value = 3; //20 Reference Direction +Z
-    ch->type58[25].value = p.saveAsComplex ? 5 : 2; //25 Ordinate Data Type
-    ch->type58[26].value = spectrumSize;
-    ch->type58[28].value = 0.0; //28 Abscissa minimum
+//    ch->type58[8].value = QDateTime::currentDateTime();;
+//    ch->type58[14].value = uffMethodFromDfdMethod(id());
+//    ch->type58[15].value = i+1;
+//    //ch->type58[18].value = dfd->channels[i]->name(); //18  Response Entity Name ("NONE" if unused)
+//    ch->type58[18].value = QString("p%1").arg(i+1);
+//    ch->type58[20].value = 3; //20 Response Direction +Z
+//    //ch->type58[21].value = dfd->channels[p.baseChannel]->name(); //18  Reference Entity Name ("NONE" if unused)
+//    ch->type58[21].value = p.baseChannel>=0?QString("p%1").arg(p.baseChannel+1):"NONE";
+//    ch->type58[23].value = 3; //20 Reference Direction +Z
+//    ch->type58[25].value = p.saveAsComplex ? 5 : 2; //25 Ordinate Data Type
+//    ch->type58[26].value = spectrumSize;
+//    ch->type58[28].value = 0.0; //28 Abscissa minimum
 
-    double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
-    double XStep = newSampleRate / p.bufferSize;
-    ch->type58[29].value = XStep; //29 Abscissa increment
-    ch->type58[32].value = 18; // 18 - frequency //32 Abscissa type
-    ch->type58[36].value = "Частота"; //32 Abscissa type description
-    ch->type58[37].value = "Гц"; //37 Abscissa name
+//    double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
+//    double XStep = newSampleRate / p.bufferSize;
+//    ch->type58[29].value = XStep; //29 Abscissa increment
+//    ch->type58[32].value = 18; // 18 - frequency //32 Abscissa type
+//    ch->type58[36].value = "Частота"; //32 Abscissa type description
+//    ch->type58[37].value = "Гц"; //37 Abscissa name
 
-    ch->type58[39].value = 1; //39 Ordinate (or ordinate numerator) Data Characteristics // 1 = General
-    ch->type58[44].value = dfd->channel(i)->yName(); //44 Ordinate name
+//    ch->type58[39].value = 1; //39 Ordinate (or ordinate numerator) Data Characteristics // 1 = General
+//    ch->type58[44].value = dfd->channel(i)->yName(); //44 Ordinate name
 
-    ch->type58[53].value = 0; //53 Z axis data characteristics // 0 = Unknown
-    ch->type58[57].value = "Time"; //57 Z-axis label
-    ch->type58[58].value = "s"; //58 Z-Axis units label ("NONE" if not used)
+//    ch->type58[53].value = 0; //53 Z axis data characteristics // 0 = Unknown
+//    ch->type58[57].value = "Time"; //57 Z-axis label
+//    ch->type58[58].value = "s"; //58 Z-Axis units label ("NONE" if not used)
 
-    //                                    Data Values
-    //                            Ordinate            Abscissa
-    //                Case     Type     Precision     Spacing       Format
-    //              -------------------------------------------------------------
-    //                  1      real      single        even         6E13.5
-    //                  2      real      single       uneven        6E13.5
-    //                  3     complex    single        even         6E13.5
-    //                  4     complex    single       uneven        6E13.5
-    //                  5      real      double        even         4E20.12
-    //                  6      real      double       uneven     2(E13.5,E20.12)
-    //                  7     complex    double        even         4E20.12
-    //                  8     complex    double       uneven      E13.5,2E20.12
-    //              --------------------------------------------------------------
-
-    ch->data()->setXValues(0, XStep, spectrumSize);
+//    ch->data()->setXValues(0, XStep, spectrumSize);
     return ch;
 }

@@ -50,6 +50,8 @@ public:
         UnitsQuadratic = 2, //dB = 10lg(L/L0^2)
         UnitsDimensionless = 3 //dB = L
     };
+    static YValuesUnits unitsFromString(const QString &format);
+    static QString unitsToString(YValuesUnits units);
 
     DataHolder();
     DataHolder(const DataHolder &other);
@@ -93,8 +95,8 @@ public:
     void setThreshold(double threshold) {m_threshold = threshold;}
     double threshold() const {return m_threshold;}
 
-    void setYValuesUnits(int yValuesUnits) {m_yValuesUnits = YValuesUnits(yValuesUnits);}
-    int yValuesUnits() const {return m_yValuesUnits;}
+    void setYValuesUnits(YValuesUnits yValuesUnits) {m_yValuesUnits = yValuesUnits;}
+    YValuesUnits yValuesUnits() const {return m_yValuesUnits;}
 
     QVector<double> rawYValues(int block);
     QVector<double> yValues(int block) const;

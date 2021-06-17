@@ -113,7 +113,6 @@ public:
     virtual ~DfdChannel();
 
     virtual Descriptor::DataType type() const override;
-    int octaveType() const override;
 
     virtual void read(DfdSettings &dfd, int numChans, double xBegin, double xStep);
     virtual void write(QTextStream &dfd, int index = -1);
@@ -122,7 +121,6 @@ public:
     virtual int columnsCount() const override;
     virtual QVariant channelHeader(int column) const override;
 
-    virtual QString legendName() const override;
     //дополнительная обработка, напр.
     //применение смещения и усиления,
     //для получения реального значения
@@ -131,19 +129,7 @@ public:
 
     void setValue(double val, QDataStream &writeStream);
 
-    virtual QString xName() const override;
-    virtual QString yName() const override;
     virtual QString yNameOld() const override;
-    virtual QString zName() const override;
-    virtual void setYName(const QString &yName) override;
-    virtual void setXName(const QString &xName) override;
-    virtual void setZName(const QString &zName) override;
-
-    virtual QString description() const  override {return ChanDscr;}
-    virtual void setDescription(const QString &description) override {ChanDscr = description;}
-
-    virtual QString name() const override {return ChanName;}
-    virtual void setName(const QString &name) override;
 
     virtual void populate() override;
 
@@ -160,20 +146,20 @@ public:
     void appendDataTo(const QString &rawFileName);
     void write(QDataStream &s, DataHolder *d);
 
-    QString ChanAddress; //
-    QString ChanName; //
+    //QString ChanAddress; //
+    //QString ChanName; //
     uint IndType; //характеристика отсчета
     int ChanBlockSize; //размер блока в отсчетах
-    QString YName;
-    QString YNameOld;
+    //QString YName;
+    //QString YNameOld;
 //    QString XName;
-    QString InputType;
-    QString ChanDscr;
+//    QString InputType;
+    //QString ChanDscr;
 
     quint64 blockSizeInBytes() const; //размер блока в байтах
 
     DfdFileDescriptor *parent;
-    virtual FileDescriptor *descriptor() override;
+    virtual FileDescriptor *descriptor() const override;
     int channelIndex; // нумерация с 0
 
 
@@ -268,10 +254,7 @@ class DfdFileDescriptor : public FileDescriptor
 {
 public:
     DfdFileDescriptor(const QString &fileName);
-
-    // creates a copy of DfdDataDescriptor with copying data
     DfdFileDescriptor(const DfdFileDescriptor &d, const QString &fileName, QVector<int> indexes = QVector<int>());
-    // creates a copy of DataDescriptor with copying data
     DfdFileDescriptor(const FileDescriptor &other, const QString &fileName, QVector<int> indexes = QVector<int>());
     virtual ~DfdFileDescriptor();
     virtual void read() override;
@@ -282,8 +265,6 @@ public:
 
     virtual Descriptor::DataType type() const override;
     virtual QString typeDisplay() const override;
-//    virtual DescriptionList dataDescriptor() const override;
-//    virtual void setDataDescriptor(const DescriptionList &data) override;
 
     virtual bool fileExists() const override;
 
@@ -291,7 +272,7 @@ public:
 
     void deleteChannels(const QVector<int> &channelsToDelete) override;
     void copyChannelsFrom(FileDescriptor *file, const QVector<int> &indexes) override;
-    void addChannelWithData(DataHolder *data, const QJsonObject &description) override;
+    void addChannelWithData(DataHolder *data, const DataDescription &description) override;
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
 
     Channel *channel(int index) const override;
@@ -310,35 +291,14 @@ public:
     {
         return (this->dataDescription().get("guid") == dfd.dataDescription().get("guid"));
     }
-//    QString dataDescriptorAsString() const override;
-
-
 
     DfdChannel *newChannel(int index);
 
-    //[DataFileDescriptor]
-//    QString DFDGUID; //{7FD333E3-9A20-2A3E-A9443EC17B134848}
     DfdDataType DataType; // см. выше
-//    QDate Date;
-//    QTime Time;
-
 
     int BlockSize;
-//    int NumInd;
-//    QString XName;
-//    double XBegin;
-//    double XStep;
-
-    QString DescriptionFormat;
-    QString CreatedBy;
-
-    //Source *source;
-    //Process *process;
-    //Description *_dataDescription = 0;
-
     QString rawFileName; // путь к RAW файлу
     QList<DfdChannel *> channels;
-
 private:
     bool rewriteRawFile(const QVector<QPair<int,int> > &indexesVector);
     void copyChannelsFrom_plain(FileDescriptor *file, const QVector<int> &indexes);
@@ -347,11 +307,7 @@ private:
 
     friend class Description;
     friend class DfdChannel;
-    QVector<double> xValues;
     bool xChannel = false;
-
-
-    QString _legend; // editable description
 
     // FileDescriptor interface
 public:

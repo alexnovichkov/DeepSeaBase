@@ -143,12 +143,11 @@ void MatlabConverterDialog::chooseMatFiles()
     edit->setText(folder);
     App->setSetting("matlabFolder", folder);
 
-    QDir folderDir(folder);
-    QFileInfoList matFiles = folderDir.entryInfoList(QStringList()<<"*.mat", QDir::Files | QDir::Readable);
+    QFileInfoList matFiles = findMatFiles(folder);
 
     tree->clear();
     int i=1;
-    foreach (const QFileInfo &f, matFiles) {
+    for (const QFileInfo &f: matFiles) {
         QTreeWidgetItem *item = new QTreeWidgetItem(tree);
         item->setFlags(item->flags() | Qt::ItemIsEditable);
         item->setText(0, QString::number(i++));
@@ -160,10 +159,8 @@ void MatlabConverterDialog::chooseMatFiles()
 
     buttonBox->buttons().constFirst()->setDisabled(matFiles.isEmpty());
 
-    QString xmlFileName = findXmlFile(false);
-
-    convertor->xmlFileName = xmlFileName;
-    if (xmlFileName.isEmpty()) {
+    convertor->xmlFileName = findXmlFile(false);
+    if (convertor->xmlFileName.isEmpty()) {
         textEdit->appendHtml("<font color=red>Error!</font> Не могу найти файл Analysis.xml.");
         return;
     }
@@ -172,12 +169,12 @@ void MatlabConverterDialog::chooseMatFiles()
     bool noErrors = true;
     convertor->readXml(noErrors);
     if (!noErrors) {
-        textEdit->appendHtml("<font color=red>Error!</font> Не удалось прочитать файл " + xmlFileName);
+        textEdit->appendHtml("<font color=red>Error!</font> Не удалось прочитать файл " + convertor->xmlFileName);
         return;
     }
 
     textEdit->appendHtml("Файл Analysis.xml содержит следующие записи:");
-    foreach (const Dataset &dataset, convertor->xml) {
+    for (const Dataset &dataset: convertor->xml) {
         textEdit->appendHtml(QString("%1: %2").arg(dataset.id).arg(dataset.fileName));
     }
 
@@ -260,7 +257,12 @@ void MatlabConverterDialog::updateProgressIndicator()
 
 QString MatlabConverterDialog::findXmlFile(bool silent) const
 {DD;
-    if (tree->topLevelItemCount()==0) return QString();
+    QString xmlFileName;
+
+    if (tree->topLevelItemCount()==0) {
+        textEdit->appendHtml("<font color=red>Error!</font> Не вижу ни одного файла mat.");
+        return QString();
+    }
 
     //определяем файл Analysis.xml по первому файлу mat, так как они всё равно в одной папке
     QString file = tree->topLevelItem(0)->text(1);
@@ -268,7 +270,7 @@ QString MatlabConverterDialog::findXmlFile(bool silent) const
     QDir folderDir(file); // сейчас указывает на файл
     folderDir.cdUp(); // теперь указывает на папку
 
-    QString xmlFileName;
+
     // ищем в текущей папке с файлами mat
     QStringList xmlFiles = folderDir.entryList(QStringList()<<"*.xml", QDir::Files | QDir::Readable);
     // ищем в папке Settings
@@ -284,6 +286,23 @@ QString MatlabConverterDialog::findXmlFile(bool silent) const
     // последняя попытка - вручную
         xmlFileName = QFileDialog::getOpenFileName(0, QString("Укажите файл XML с описанием каналов"), file, "Файлы XML (*.xml)");
     return xmlFileName;
+}
+
+QFileInfoList MatlabConverterDialog::findMatFiles(QString &folder)
+{
+    QDir folderDir(folder);
+    QFileInfoList matFiles = folderDir.entryInfoList(QStringList()<<"*.mat", QDir::Files | QDir::Readable);
+    //if (!matFiles.isEmpty()) return matFiles;
+
+    //Попытка 2 - проверяем наличие папки Mat на этом уровне
+    folderDir.cdUp();
+    if (folderDir.cd("Mat")) {
+        matFiles.append(folderDir.entryInfoList(QStringList()<<"*.mat", QDir::Files | QDir::Readable));
+    }
+    else if (folderDir.cd("mat")) {
+        matFiles.append(folderDir.entryInfoList(QStringList()<<"*.mat", QDir::Files | QDir::Readable));
+    }
+    return matFiles;
 }
 
 void MatlabConverterDialog::start()

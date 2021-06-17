@@ -25,24 +25,9 @@ private:
 
     // Channel interface
 public:
-    virtual QVariant info(int, bool) const override;
-    virtual int columnsCount() const override;
-    virtual QVariant channelHeader(int column) const override;
     virtual Descriptor::DataType type() const override;
-    virtual int octaveType() const override;
     virtual void populate() override;
-    virtual QString name() const override;
-    virtual void setName(const QString &name) override;
-    virtual QString description() const override;
-    virtual void setDescription(const QString &description) override;
-    virtual QString xName() const override;
-    virtual QString yName() const override;
-    virtual QString zName() const override;
-    virtual void setYName(const QString &yName) override;
-    virtual void setXName(const QString &) override;
-    virtual void setZName(const QString &) override;
-    virtual QString legendName() const override;
-    virtual FileDescriptor *descriptor() override;
+    virtual FileDescriptor *descriptor() const override;
     virtual int index() const override;
 };
 

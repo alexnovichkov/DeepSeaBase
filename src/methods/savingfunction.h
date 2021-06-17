@@ -41,7 +41,7 @@ class Channel;
  *
  * ?/processData <- ResamplingFunction, FftFunction
  * ?/octaveFormat <- OctaveFunction
- * ?/weightingType
+ * ?/weighting
  * ?/windowType <- WindowingFunction
  * ?/amplitudeScaling
  * ?/normalization <- FftFunction

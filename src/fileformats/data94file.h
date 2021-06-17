@@ -30,6 +30,7 @@
  *           "name" : "",
  *           "description": "",
  *           "correction": "",
+ *           "dateTime": "dd.MM.yyyy hh:mm", //скорее для uff, чем для остальных форматов
  *           "yname" : "m/s^2",
  *           "ynameold": "V", //при пересчете единиц
  *           "xname" : "Hz",
@@ -49,15 +50,23 @@
  *               "logscale": "linear" / "quadratic" / "dimensionless",
  *               "responseName": "lop1:1",
  *               "responseDirection": "+z",
+ *               "responseNode": "",
  *               "referenceName": "lop1:1",
+ *               "referenceNode": "",
  *               "referenceDescription": "более полное описание из dfd",
  *               "referenceDirection": "",
  *               "format": "real", "imaginary", "complex", "amplitude", "phase", "amplitudeDb"
+ *               "precision": int8 / uint8 / int16 / uint16 / int32 / uint32 / int64 / uint64 / float / double
  *               "octaveFormat" : 0 (default) / 1 / 3 / 2 / 6 / 12 / 24,
  *               //далее идут все параметры обработки
+ *               "weighting": no / A / B / C / D
+ *
  *               "averaging": "linear", "no", "exponential", "peak hold", "energetic"
  *               "averagingCount": 38,
- *               "window": "hann", "hamming", "square", "triangular", "gauss", "natoll", "force", "exponential", "tukey",
+ *               "window": "Hanning", "Hamming", "square", "triangular", "Gauss", "Natoll",
+ *                         "force", "exponential", "Tukey", "flattop", "Bartlett", "Welch symmetric",
+ *                         "Welch periodic", "Hanning broad", "impact", "Kaiser-Bessel",
+ *               "windowParameter": 0.00,
  *               "blockSize": 2048,
  *               "channels": "1,2,3,4,5",
  *               ""
@@ -103,12 +112,9 @@ public:
     virtual void read() override;
     virtual void write() override;
     virtual int channelsCount() const override;
-//    virtual DescriptionList dataDescriptor() const override;
-//    virtual void setDataDescriptor(const DescriptionList &data) override;
-//    virtual QString dataDescriptorAsString() const override;
     virtual void deleteChannels(const QVector<int> &channelsToDelete) override;
     virtual void copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes) override;
-    void addChannelWithData(DataHolder *data, const QJsonObject &description) override;
+    void addChannelWithData(DataHolder *data, const DataDescription &description) override;
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
     virtual Channel *channel(int index) const override;
     static QStringList fileFilters();
@@ -116,7 +122,6 @@ public:
 private:
     void updatePositions();
     friend class Data94Channel;
-//    QJsonObject description;
     QList<Data94Channel*> channels;
     quint32 descriptionSize = 0;
 };
@@ -133,32 +138,14 @@ public:
 
     // Channel interface
 public:
-    virtual QVariant info(int column, bool edit) const override;
-    virtual int columnsCount() const override;
-    virtual QVariant channelHeader(int column) const override;
     virtual Descriptor::DataType type() const override;
-    int octaveType() const override;
     virtual void populate() override;
-    virtual QString name() const override;
-    virtual void setName(const QString &name) override;
-    virtual QString description() const override;
-    virtual void setDescription(const QString &description) override;
 
-    virtual QString xName() const override;
-    virtual QString yName() const override;
-    virtual QString zName() const override;
-    virtual void setYName(const QString &yName) override;
-    virtual void setXName(const QString &xName) override;
-    virtual void setZName(const QString &zName) override;
-
-    virtual QString legendName() const override;
-    virtual FileDescriptor *descriptor() override;
+    virtual FileDescriptor *descriptor() const override;
     virtual int index() const override;
-    virtual void setCorrection(const QString &s) override;
 
     bool isComplex = false; //по умолчанию real
     quint32 sampleWidth = 4; //по умолчанию float
-    QJsonObject _description;
     AxisBlock xAxisBlock;
     AxisBlock zAxisBlock;
 private:

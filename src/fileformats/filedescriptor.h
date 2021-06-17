@@ -61,10 +61,18 @@ struct DataDescription
             if (i.key().contains('.')) {
                 QString key = i.key().section('.',0,0);
                 auto r = result.value(key).toObject();
-                r.insert(i.key().section('.',1), QJsonValue::fromVariant(i.value()));
+                if (key == "dateTime")
+                    r.insert(i.key().section('.',1), QJsonValue(i.value().toDateTime().toString("dd.MM.yyyy hh:mm:ss")));
+                else
+                    r.insert(i.key().section('.',1), QJsonValue::fromVariant(i.value()));
                 result.insert(key, r);
             }
-            else result.insert(i.key(), QJsonValue::fromVariant(i.value()));
+            else {
+                if (i.key() == "dateTime" || i.key() == "fileCreationTime")
+                    result.insert(i.key(), QJsonValue(i.value().toDateTime().toString("dd.MM.yyyy hh:mm:ss")));
+                else
+                    result.insert(i.key(), QJsonValue::fromVariant(i.value()));
+            }
         }
         return result;
     }
@@ -73,6 +81,7 @@ struct DataDescription
         for (auto i = o.constBegin(); i!=o.constEnd(); ++i) {
             QString key = i.key();
             QJsonValue val = i.value();
+            qDebug()<<key<<val;
             if (val.isArray()) {
                 qDebug()<<"Array found at"<<key;
                 continue;
@@ -89,11 +98,22 @@ struct DataDescription
                         continue;
                     }
                     QString key1 = key+"."+j.key();
-                    result.data.insert(key1, j->toVariant());
+                    QVariant v = j->toVariant();
+                    //дата-время требуют специальной обработки
+                    if (j.key() == "dateTime")
+                        result.data.insert(key1, dateTimeFromString(v.toString()));
+                    else
+                        result.put(key1, v);
                 }
             }
-            else
-                result.data.insert(key, val.toVariant());
+            else {
+                QVariant v = val.toVariant();
+                //дата-время требуют специальной обработки
+                if (key == "dateTime" || key=="fileCreationTime")
+                    result.data.insert(key, dateTimeFromString(v.toString()));
+                else
+                    result.put(key, v);
+            }
         }
         return result;
     }
@@ -107,10 +127,11 @@ struct DataDescription
     QStringList toStringList(const QString &filter = QString()) const
     {
         QStringList result;
-
         for (auto i = data.constBegin(); i != data.constEnd(); ++i) {
-            if (filter.isEmpty() || i.key().startsWith(filter+"."))
+            if (filter.isEmpty())
                 result << i.key()+"="+i.value().toString();
+            else if (i.key().startsWith(filter+"."))
+                result << i.key().mid(filter.length()+1)+"="+i.value().toString();
         }
         return result;
     }
@@ -140,20 +161,47 @@ public:
     FileDescriptor(const QString &fileName);
     virtual ~FileDescriptor();
 
-    virtual bool rename(const QString &newName, const QString &newPath = QString());
-
-    //просто вызывает updateDateTimeGUID. Переопределен в DFD
-    virtual void fillPreliminary(const FileDescriptor *);
+    //чисто виртуальные
     virtual void read() = 0;
     virtual void write() = 0;
-    void populate();
-    void updateDateTimeGUID();
+    virtual void deleteChannels(const QVector<int> &channelsToDelete) = 0;
+    virtual void copyChannelsFrom(FileDescriptor *, const QVector<int> &) = 0;
+    virtual int channelsCount() const = 0;
+    virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) = 0;
+    virtual Channel *channel(int index) const = 0;
+
+    //виртуальные
+    virtual bool rename(const QString &newName, const QString &newPath = QString());
+    //просто вызывает updateDateTimeGUID. Переопределен в DFD
+    virtual void fillPreliminary(const FileDescriptor *);
     //переопределен в DFD
     virtual bool copyTo(const QString &name);
     //переопределен в DFD
     virtual Descriptor::DataType type() const;
     //переопределен в DFD
     virtual QString typeDisplay() const;
+    //переопределен в DFD
+    virtual bool fileExists() const;
+    //переопределен в DFD
+    virtual bool isSourceFile() const;
+    virtual bool operator == (const FileDescriptor &descriptor) {
+        Q_UNUSED(descriptor);
+        return false;
+    }
+    virtual bool dataTypeEquals(FileDescriptor *other) const;
+    //By default returns true, redefined in Dfd
+    virtual bool canTakeChannelsFrom(FileDescriptor *other) const;
+    //By default returns true, redefined in Dfd
+    virtual bool canTakeAnyChannels() const;
+    virtual void addChannelWithData(DataHolder *data, const DataDescription & description) {
+        Q_UNUSED(data);
+        Q_UNUSED(description);
+    };
+
+    //все остальные
+    void populate();
+    void updateDateTimeGUID();
+
     double roundedSize() const;
 
     const DataDescription & dataDescription() const {return _dataDescription;}
@@ -171,11 +219,6 @@ public:
     QString legend() const;
     bool setLegend(const QString &s);
 
-    //QString guid() const;
-
-    virtual void deleteChannels(const QVector<int> &channelsToDelete) = 0;
-    virtual void copyChannelsFrom(FileDescriptor *, const QVector<int> &) = 0;
-
     /** Calculates average of channels, writes to a file */
     void calculateMean(const QList<Channel*> &channels);
     void calculateMovingAvg(const QList<Channel *> &channels, int windowSize);
@@ -183,58 +226,26 @@ public:
 
     QString saveTimeSegment(double from, double to);
 
-    QString fileName() const {return _fileName;}
-    void setFileName(const QString &name) { _fileName = name;}
-    //переопределен в DFD
-    virtual bool fileExists() const;
-
-    virtual int channelsCount() const = 0;
-
-    virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) = 0;
+    inline QString fileName() const {return _fileName;}
+    inline void setFileName(const QString &name) { _fileName = name;}
 
     QVariant channelHeader(int column) const;
     int columnsCount() const;
 
-    virtual Channel *channel(int index) const = 0;
-
+    inline bool changed() const {return _changed;}
     //переопределен в UFF
     virtual void setChanged(bool changed);
-    bool changed() const {return _changed;}
-
-    bool dataChanged() const {return _dataChanged;}
-    void setDataChanged(bool changed);
+    inline bool dataChanged() const {return _dataChanged;}
+    inline void setDataChanged(bool changed) {_dataChanged = changed;}
 
     int plottedCount() const;
-
-    virtual bool isSourceFile() const;
-
+    bool hasCurves() const;
 
     double xStep() const;
     void setXStep(const double xStep);
     double xBegin() const;
     int samplesCount() const;
     QString xName() const;
-
-
-
-    virtual bool operator == (const FileDescriptor &descriptor) {
-        Q_UNUSED(descriptor);
-        return false;
-    }
-
-    virtual bool dataTypeEquals(FileDescriptor *other) const;
-
-    //By default returns true, redefined in Dfd
-    virtual bool canTakeChannelsFrom(FileDescriptor *other) const;
-    //By default returns true, redefined in Dfd
-    virtual bool canTakeAnyChannels() const;
-
-    bool hasCurves() const;
-
-    virtual void addChannelWithData(DataHolder *data, const QJsonObject & description) {
-        Q_UNUSED(data);
-        Q_UNUSED(description);
-    };
 
     static QString createGUID();
 private:
@@ -256,13 +267,16 @@ public:
     Channel(Channel *other);
     Channel(Channel &other);
 
-    virtual QVariant info(int column, bool edit) const = 0;
-    virtual int columnsCount() const = 0;
-    virtual QVariant channelHeader(int column) const = 0;
+    //переопределен в DFD
+    virtual QVariant info(int column, bool edit) const;
+    //переопределен в DFD
+    virtual int columnsCount() const;
+    //переопределен в DFD
+    virtual QVariant channelHeader(int column) const;
 
     virtual Descriptor::DataType type() const = 0;
     //octave format, 0 = no octave, 1 = 1-octave, 3 = 1/3-octave etc.
-    virtual int octaveType() const = 0;
+    int octaveType() const;
 
     virtual bool populated() const {return _populated;}
     virtual void setPopulated(bool populated) {_populated = populated;}
@@ -270,25 +284,25 @@ public:
     virtual void clear();
     virtual void maybeClearData();
 
-    virtual QString name() const = 0;
-    virtual void setName(const QString &name) = 0;
+    QString name() const;
+    void setName(const QString &name);
 
-    virtual QString description() const = 0;
-    virtual void setDescription(const QString &description) = 0;
+    QString description() const;
+    void setDescription(const QString &description);
 
-    virtual QString xName() const = 0;
-    virtual QString yName() const = 0;
-    virtual QString yNameOld() const;
-    virtual QString zName() const = 0;
-    virtual void setYName(const QString &yName) = 0;
-    virtual void setXName(const QString &xName) = 0;
-    virtual void setZName(const QString &zName) = 0;
+    QString xName() const;
+    QString yName() const;
+    virtual QString yNameOld() const; //переопределен в DFD
+    QString zName() const;
+    void setYName(const QString &yName);
+    void setXName(const QString &xName);
+    void setZName(const QString &zName);
 
     const DataDescription & dataDescription() const {return _dataDescription;}
     DataDescription & dataDescription() {return _dataDescription;}
     void setDataDescription(const DataDescription &descr) {_dataDescription = descr;}
 
-    virtual QString legendName() const = 0;
+    QString legendName() const;
 
     DataHolder *data() {return _data;}
     const DataHolder *data() const {return _data;}
@@ -296,15 +310,15 @@ public:
 
     QByteArray wavData(qint64 pos, qint64 samples);
 
-    virtual FileDescriptor *descriptor() = 0;
+    virtual FileDescriptor *descriptor() const = 0;
 
     virtual int index() const = 0;
 
     QColor color() const {return _color;}
     void setColor(QColor color) {_color = color;}
 
-    QString correction() const {return _correction;}
-    virtual void setCorrection(const QString &s) {_correction = s;} //виртуальна, т.к. перекрывается в uff и d94
+    inline QString correction() const {return dataDescription().get("correction").toString();}
+    void setCorrection(const QString &s) {dataDescription().put("correction", s);}
 
     int plotted() const {return _plotted;}
     void setPlotted(int plotted) {_plotted = plotted;}
@@ -320,7 +334,6 @@ private:
     bool _populated = false;
     bool _changed = false;
     bool _dataChanged = false;
-    QString _correction;
 protected:
     DataHolder *_data;
     DataDescription _dataDescription;

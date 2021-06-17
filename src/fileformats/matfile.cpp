@@ -119,7 +119,7 @@ void MatFile::read()
                     if (auto *startFr = findSubrecord<MatlabNumericArray*>("start_frequency", x_values))
                         startfrequency = startFr->getNumericAsDouble().constFirst();
                     if (auto *quantity = findSubrecord<MatlabStructArray*>("quantity", x_values))
-                        channel->_xName = quantity->subRecords[quantity->fieldNames.indexOf("label")]->getString();
+                        channel->dataDescription().put("xname", quantity->subRecords[quantity->fieldNames.indexOf("label")]->getString());
                     if (MatlabNumericArray* values = findSubrecord<MatlabNumericArray*>("values", x_values))
                         xvalues = values->getNumericAsDouble();
                 }
@@ -138,12 +138,15 @@ void MatFile::read()
                         }
                     }
                 }
-                if (c.expression.startsWith("OCTF1(")) channel->_octaveType = 1;
-                else if (c.expression.startsWith("OCTF3(")) channel->_octaveType = 3;
-                else if (c.expression.startsWith("OCTF6(")) channel->_octaveType = 6;
-                else if (c.expression.startsWith("OCTF2(")) channel->_octaveType = 2;
-                else if (c.expression.startsWith("OCTF12(")) channel->_octaveType = 12;
-                else if (c.expression.startsWith("OCTF24(")) channel->_octaveType = 24;
+
+                int octave = 0;
+                if (c.expression.startsWith("OCTF1(")) octave = 1;
+                else if (c.expression.startsWith("OCTF3(")) octave = 3;
+                else if (c.expression.startsWith("OCTF6(")) octave = 6;
+                else if (c.expression.startsWith("OCTF2(")) octave = 2;
+                else if (c.expression.startsWith("OCTF12(")) octave = 12;
+                else if (c.expression.startsWith("OCTF24(")) octave = 24;
+                channel->dataDescription().put("function.octaveFormat", octave);
 
                 if (xvalues.isEmpty())
                     channel->data()->setXValues(xbegin, xstep, samplescount);
@@ -178,13 +181,23 @@ void MatFile::read()
 
                 channel->data()->setThreshold(c.logRef);
 
-                int units = DataHolder::UnitsUnknown;
+                auto units = DataHolder::UnitsUnknown;
                 if (c.scale == 10) units = DataHolder::UnitsQuadratic;
                 else if (c.scale == 20) units = DataHolder::UnitsLinear;
                 channel->data()->setYValuesUnits(units);
 
                 //ЗАГЛУШКА
                 channel->data()->setZValues(0.0, 0.0, 1);
+
+                channel->dataDescription().put("yname", channel->xml.units);
+                QString ChanAddress = QString("SCADAS\\")+channel->xml.catLabel;
+                QStringList info = channel->xml.info;
+                info.append(ChanAddress);
+                channel->dataDescription().put("description",info.join(" \\"));
+
+                QStringList l;
+                l<<channel->xml.generalName<<channel->xml.pointId<<channel->xml.direction;
+                channel->dataDescription().put("name",l.join("-"));
             }
             channels << toAppend;
         }
@@ -1111,22 +1124,6 @@ MatlabChannel::MatlabChannel(MatFile *parent) : Channel(), parent(parent)
 
 }
 
-
-QVariant MatlabChannel::info(int , bool ) const
-{
-    return QVariant();
-}
-
-int MatlabChannel::columnsCount() const
-{
-    return 5;
-}
-
-QVariant MatlabChannel::channelHeader(int) const
-{
-    return QVariant();
-}
-
 Descriptor::DataType MatlabChannel::type() const
 {
     if (_type == "Signal") return Descriptor::TimeResponse;
@@ -1143,11 +1140,6 @@ Descriptor::DataType MatlabChannel::type() const
     //TODO: добавить типов функций
 
     return Descriptor::Unknown;
-}
-
-int MatlabChannel::octaveType() const
-{
-    return _octaveType;
 }
 
 void MatlabChannel::populate()
@@ -1191,55 +1183,8 @@ void MatlabChannel::populate()
     setPopulated(true);
 }
 
-QString MatlabChannel::name() const
-{
-    QStringList l;
-    l<<xml.generalName<<xml.pointId<<xml.direction;
-    return l.join("-");
-}
 
-void MatlabChannel::setName(const QString &)
-{
-}
-
-QString MatlabChannel::description() const
-{
-    QString ChanAddress = QString("SCADAS\\")+xml.catLabel;
-    QStringList info = xml.info;
-    info.append(ChanAddress);
-    return info.join(" \\");
-}
-
-void MatlabChannel::setDescription(const QString &)
-{
-}
-
-QString MatlabChannel::xName() const
-{
-    return _xName;
-}
-
-QString MatlabChannel::yName() const
-{
-    if (xml.units.isEmpty()) return "/";
-    return xml.units;
-}
-
-QString MatlabChannel::zName() const
-{
-    return QString();
-}
-
-void MatlabChannel::setYName(const QString &)
-{
-}
-
-QString MatlabChannel::legendName() const
-{
-    return QString();
-}
-
-FileDescriptor *MatlabChannel::descriptor()
+FileDescriptor *MatlabChannel::descriptor() const
 {
     return parent;
 }
@@ -1258,11 +1203,3 @@ T findSubrecord(const QString &name, MatlabStructArray *rec)
     return result;
 }
 
-
-void MatlabChannel::setXName(const QString &)
-{
-}
-
-void MatlabChannel::setZName(const QString &)
-{
-}

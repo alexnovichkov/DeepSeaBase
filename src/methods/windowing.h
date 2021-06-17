@@ -13,9 +13,9 @@ public:
         Hamming = 3,
         Natoll = 4,
         Gauss = 5,
-        Force,
-        Exponential,
-        Tukey,
+        Force = 6,
+        Exponential = 7,
+        Tukey = 8,
         WindowCount
     };
 

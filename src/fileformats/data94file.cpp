@@ -6,18 +6,18 @@
 #include "averaging.h"
 
 QDebug operator<<(QDebug dbg, const AxisBlock &b)
-  {
-      QDebugStateSaver saver(dbg);
-      dbg << "(uniform=" << b.uniform << ", count=" << b.count;
-      if (b.uniform==1) {
-          dbg <<", begin="<<b.begin<<", step="<<b.step;
-      }
-      else
-          dbg << b.values;
-      dbg << ")";
+{
+    QDebugStateSaver saver(dbg);
+    dbg << "(uniform=" << b.uniform << ", count=" << b.count;
+    if (b.uniform==1) {
+        dbg <<", begin="<<b.begin<<", step="<<b.step;
+    }
+    else
+        dbg << b.values;
+    dbg << ")";
 
-      return dbg;
-  }
+    return dbg;
+}
 
 Data94File::Data94File(const QString &fileName) : FileDescriptor(fileName)
 {
@@ -36,7 +36,8 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVe
     //если индексы пустые - копируем все каналы
     if (indexes.isEmpty())
         for (int i=0; i<other.channelsCount(); ++i) indexes << i;
-    dataDescription().put("channels", stringify(indexes));
+    else //только если копируем не все каналы
+        dataDescription().put("source.channels", stringify(indexes));
 
     QFile f(fileName);
     if (!f.open(QFile::WriteOnly)) {
@@ -58,8 +59,7 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVe
     r.writeRawData(json.data(), descriptionSize);
 
     //записываем количество каналов
-    quint32 ccount = indexes.size();
-    r << ccount;
+    r << quint32(indexes.size());
 
     for (int i: indexes) {
         Channel *sourceChannel = other.channel(i);
@@ -69,9 +69,7 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVe
         if (!populated) sourceChannel->populate();
         c->write(r, 0, sourceChannel->data()); //данные берутся из sourceChannel
 
-        if (!populated) {
-            sourceChannel->clear();
-        }
+        if (!populated) sourceChannel->clear();
     }
 }
 
@@ -175,9 +173,7 @@ void Data94File::write()
     descriptionSize = json.size();
     r << descriptionSize;
     r.writeRawData(json.data(), descriptionSize);
-
-    quint32 ccount = channels.count();
-    r << ccount;
+    r << quint32(channels.count());
 
     for (Data94Channel *c: channels) {
         c->write(r, &in, c->data()); //данные берутся из самого канала
@@ -201,41 +197,6 @@ int Data94File::channelsCount() const
 {
     return channels.size();
 }
-
-//DescriptionList Data94File::dataDescriptor() const
-//{
-//    DescriptionList result;
-//    QJsonObject d = dataDescription().value("dataDescription").toObject();
-//    for (auto i = d.constBegin(); i != d.constEnd(); ++i) {
-//        result << qMakePair<QString, QString>(i.key(),i.value().toString());
-//    }
-
-//    return result;
-//}
-
-//void Data94File::setDataDescriptor(const DescriptionList &data)
-//{
-//    QJsonObject result;
-//    for (int i=0; i<data.size(); ++i) {
-//        result.insert(data.at(i).first, data.at(i).second);
-//    }
-//    if (dataDescription().value("dataDescription").toObject() != result) {
-//        dataDescription().insert("dataDescription", result);
-//        setChanged(true);
-//    }
-//}
-
-//QString Data94File::dataDescriptorAsString() const
-//{
-//    QStringList result;
-
-//    QJsonObject d = dataDescription().value("dataDescription").toObject();
-//    for (auto i = d.constBegin(); i != d.constEnd(); ++i) {
-//        result << i.value().toString();
-//    }
-
-//    return result.join("; ");
-//}
 
 void Data94File::deleteChannels(const QVector<int> &channelsToDelete)
 {
@@ -341,15 +302,14 @@ void Data94File::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int>
     }
 }
 
-void Data94File::addChannelWithData(DataHolder *data, const QJsonObject &description)
+void Data94File::addChannelWithData(DataHolder *data, const DataDescription &description)
 {
     Data94Channel *ch = new Data94Channel(this);
     ch->setPopulated(true);
     ch->setChanged(true);
     ch->setDataChanged(true);
     ch->setData(data);
-
-    ch->_description = description;
+    ch->dataDescription() = description;
 
     //Заполнение данными
     //xAxisBlock
@@ -369,7 +329,7 @@ void Data94File::addChannelWithData(DataHolder *data, const QJsonObject &descrip
     ch->isComplex = data->yValuesFormat() == DataHolder::YValuesComplex;
 
     if (ch->xAxisBlock.uniform == 1 && !qFuzzyIsNull(ch->xAxisBlock.step))
-        ch->_description.insert("samplerate", int(1.0 / ch->xAxisBlock.step));
+        ch->dataDescription().put("samplerate", int(1.0 / ch->xAxisBlock.step));
 }
 
 void Data94File::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
@@ -443,7 +403,7 @@ Channel *Data94File::channel(int index) const
 {
     if (channels.size()>index)
         return channels.at(index);
-    return 0;
+    return nullptr;
 }
 
 QStringList Data94File::fileFilters()
@@ -468,7 +428,6 @@ Data94Channel::Data94Channel(Data94File *parent) : Channel(),
 Data94Channel::Data94Channel(Data94Channel *other, Data94File *parent)
     : Channel(other), parent(parent)
 {
-    _description = other->_description;
     isComplex = other->isComplex;
     sampleWidth = other->sampleWidth;
     xAxisBlock = other->xAxisBlock;
@@ -482,17 +441,6 @@ Data94Channel::Data94Channel(Channel *other, Data94File *parent)
 {
     parent->channels << this;
     isComplex = other->data()->yValuesFormat() == DataHolder::YValuesComplex;
-
-    _description.insert("name", other->name());
-    _description.insert("description", other->description());
-    _description.insert("correction", other->correction());
-    _description.insert("yname", other->yName());
-    _description.insert("xname", other->xName());
-    _description.insert("zname", other->zName());
-    _description.insert("samples", other->data()->samplesCount());
-    _description.insert("blocks", other->data()->blocksCount());
-    if (other->data()->xValuesFormat() == DataHolder::XValuesUniform)
-        _description.insert("samplerate", int(1.0 / other->data()->xStep()));
 
     //xAxisBlock
     xAxisBlock.uniform = other->data()->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
@@ -515,48 +463,13 @@ Data94Channel::Data94Channel(Channel *other, Data94File *parent)
 //    qDebug()<<zAxisBlock;
 
     //по умолчанию точность float
-    sampleWidth = 4;
-
-    QJsonObject function;
-    function.insert("name", Descriptor::functionTypeDescription(other->type()));
-    function.insert("type", other->type());
-    QString format;
-    switch (other->data()->yValuesFormat()) {
-        case DataHolder::YValuesComplex: format = "complex"; break;
-        case DataHolder::YValuesReals: format = "real"; break;
-        case DataHolder::YValuesAmplitudes: format = "amplitude"; break;
-        case DataHolder::YValuesAmplitudesInDB: format = "amplitudeDb"; break;
-        case DataHolder::YValuesImags: format = "imaginary"; break;
-        case DataHolder::YValuesPhases: format = "phase"; break;
-        default: format = "real";
-    }
-    function.insert("format", format);
-    function.insert("logref", other->data()->threshold());
-    QString units;
-    switch (other->data()->yValuesUnits()) {
-        case DataHolder::UnitsUnknown: units = "unknown"; break;
-        case DataHolder::UnitsLinear: units = "linear"; break;
-        case DataHolder::UnitsQuadratic: units = "quadratic"; break;
-        case DataHolder::UnitsDimensionless: units = "dimensionless"; break;
-        default: break;
-    }
-    function.insert("units", units);
-    function.insert("octaveFormat", other->octaveType());
-    _description.insert("function", function);
-
-
-
-//    *           "sensorID" : "", //ChanAddress
-//    *           "sensorName": "", //ChanName
-
-//    *           "bandwidth": 3200, //обычно samplerate/2.56, но может и отличаться при полосной фильтрации
-//    *           "function": {
-    //    *           "responseName": "lop1:1",
-    //    *           "responseDirection": "+z",
-    //    *           "referenceName": "lop1:1",
-    //    *           "referenceDirection": "",
-//    *               //далее идут все параметры обработки
-//    *           }
+    //int8 / uint8 / int16 / uint16 / int32 / uint32 / int64 / uint64 / float / double
+    QString  precision = other->dataDescription().get("function.precision").toString();
+    if (precision.isEmpty()) precision = "float";
+    if (precision == "int64" || precision=="uint64" || precision=="double")
+        sampleWidth = 8;
+    else
+        sampleWidth = 4;
 }
 
 void Data94Channel::read(QDataStream &r)
@@ -584,7 +497,7 @@ void Data94Channel::read(QDataStream &r)
         qDebug()<<error.errorString() << error.offset;
         return;
     }
-    _description = doc.object();
+    dataDescription() = DataDescription::fromJson(doc.object());
 
     //reading xAxisBlock
     xAxisBlock.read(r);
@@ -604,26 +517,11 @@ void Data94Channel::read(QDataStream &r)
 
     dataPosition = r.device()->pos();
 
-    double thr = _description.value("function").toObject().value("logref").toDouble();
+    double thr = dataDescription().get("function.logref").toDouble();
     if (qFuzzyIsNull(thr)) thr = threshold(yName());
     _data->setThreshold(thr);
-
-    int units = DataHolder::UnitsUnknown;
-    QString unitsS = _description.value("function").toObject().value("units").toString();
-    if (unitsS == "quadratic") units = DataHolder::UnitsQuadratic;
-    else if (unitsS == "linear") units = DataHolder::UnitsLinear;
-    else if (unitsS == "dimensionless") units = DataHolder::UnitsDimensionless;
-    _data->setYValuesUnits(units);
-
-    DataHolder::YValuesFormat yValueFormat = DataHolder::YValuesUnknown;
-    QString format = _description.value("function").toObject().value("format").toString();
-    if (format == "complex") yValueFormat = DataHolder::YValuesComplex;
-    else if (format == "real") yValueFormat = DataHolder::YValuesReals;
-    else if (format == "imaginary") yValueFormat = DataHolder::YValuesImags;
-    else if (format == "amplitude") yValueFormat = DataHolder::YValuesAmplitudes;
-    else if (format == "amplitudeDb") yValueFormat = DataHolder::YValuesAmplitudesInDB;
-    else if (format == "phase") yValueFormat = DataHolder::YValuesPhases;
-    _data->setYValuesFormat(yValueFormat);
+    _data->setYValuesUnits(DataHolder::unitsFromString(dataDescription().get("function.logscale").toString()));
+    _data->setYValuesFormat(DataHolder::formatFromString(dataDescription().get("function.format").toString()));
 
     if (xAxisBlock.uniform == 1)
         _data->setXValues(xAxisBlock.begin, xAxisBlock.step, xAxisBlock.count);
@@ -662,7 +560,7 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
     //description
     if (changed()) {
         //переписываем описатель
-        QJsonDocument doc(_description);
+        QJsonDocument doc(dataDescription().toJson());
         QByteArray json = doc.toJson();
         descriptionSize = json.size();
         r << descriptionSize;
@@ -743,53 +641,9 @@ void Data94Channel::setXStep(double xStep)
     _data->setXStep(xStep);
 }
 
-QVariant Data94Channel::info(int column, bool edit) const
-{
-    Q_UNUSED(edit)
-    switch (column) {
-        case 0: return _description.value("name"); //avoiding conversion variant->string->variant
-        case 1: return _description.value("yname");
-        case 2: return data()->yValuesFormatString();
-        case 3: return _description.value("description");
-        case 4: return _description.value("function").toObject().value("name");
-        case 5: return data()->blocksCount();
-        case 6: return _description.value("correction");
-        default: ;
-    }
-    return QVariant();
-}
-
-int Data94Channel::columnsCount() const
-{
-    int minimumCount = 7;
-    ///TODO: предусмотреть возможность показывать расширенный список свойств
-
-    return minimumCount;
-}
-
-QVariant Data94Channel::channelHeader(int column) const
-{
-    switch (column) {
-        case 0: return QString("Имя");
-        case 1: return QString("Ед.изм.");
-        case 2: return QString("Формат");
-        case 3: return QString("Описание");
-        case 4: return QString("Функция");
-        case 5: return QString("Кол-во блоков");
-        case 6: return QString("Коррекция");
-        default: return QVariant();
-    }
-    return QVariant();
-}
-
 Descriptor::DataType Data94Channel::type() const
 {
-    return Descriptor::DataType(_description.value("function").toObject().value("type").toInt());
-}
-
-int Data94Channel::octaveType() const
-{
-    return _description.value("function").toObject().value("octaveFormat").toInt(0);
+    return Descriptor::DataType(dataDescription().get("function.type").toInt());
 }
 
 void Data94Channel::populate()
@@ -858,67 +712,8 @@ void Data94Channel::populate()
     }
 }
 
-QString Data94Channel::name() const
-{
-    return _description.value("name").toString();
-}
 
-void Data94Channel::setName(const QString &name)
-{
-    _description.insert("name", name);
-}
-
-QString Data94Channel::description() const
-{
-    return _description.value("description").toString();
-}
-
-void Data94Channel::setDescription(const QString &description)
-{
-    _description.insert("description", description);
-}
-
-QString Data94Channel::xName() const
-{
-    return _description.value("xname").toString();
-}
-
-QString Data94Channel::yName() const
-{
-    return _description.value("yname").toString();
-}
-
-QString Data94Channel::zName() const
-{
-    return _description.value("zname").toString();
-}
-
-void Data94Channel::setYName(const QString &yName)
-{
-    _description.insert("yname", yName);
-}
-
-void Data94Channel::setXName(const QString &xName)
-{
-    _description.insert("xname", xName);
-}
-
-void Data94Channel::setZName(const QString &zName)
-{
-    _description.insert("zname", zName);
-}
-
-QString Data94Channel::legendName() const
-{
-    QStringList l;
-    l << name();
-    if (!correction().isEmpty()) l << correction();
-    if (!parent->legend().isEmpty()) l << parent->legend();
-
-    return l.join(" ");
-}
-
-FileDescriptor *Data94Channel::descriptor()
+FileDescriptor *Data94Channel::descriptor() const
 {
     return parent;
 }
@@ -927,12 +722,6 @@ int Data94Channel::index() const
 {
     if (parent) return parent->channels.indexOf(const_cast<Data94Channel*>(this));
     return -1;
-}
-
-void Data94Channel::setCorrection(const QString &s)
-{
-    Channel::setCorrection(s);
-    _description.insert("correction", s);
 }
 
 void AxisBlock::read(QDataStream &r)

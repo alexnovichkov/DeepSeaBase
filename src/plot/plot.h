@@ -37,6 +37,8 @@ class QLabel;
 class QDoubleSpinBox;
 class TrackingPanel;
 class PlayPanel;
+class QPrinter;
+class CheckableLegend;
 
 
 class Plot : public QwtPlot
@@ -59,6 +61,8 @@ public:
     QwtAxisId yRightAxis{QwtAxis::yRight,0};
 
     bool spectrogram = false;
+
+    CheckableLegend *leg;
 
     void update();
 
@@ -164,6 +168,7 @@ private slots:
     void hoverAxis(QwtAxisId axis, int hover);
 private:
     void importPlot(const QString &fileName, const QSize &size, int resolution);
+    void importPlot(QPrinter &printer, const QSize &size, int resolution);
     bool hasDuplicateNames(const QString name) const;
     void checkDuplicates(const QString name);
     QString yValuesPresentationSuffix(int yValuesPresentation) const;

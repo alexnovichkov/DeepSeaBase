@@ -9,8 +9,17 @@
 
 class DataHolder;
 
-int abscissaType(const QString &xName);
-QString abscissaTypeDescription(int type);
+int uffWindowTypeFromDescription(const QString &description);
+QString windowDescriptionFromUffType(int type);
+int scalingTypeFromDescription(const QString &description);
+QString scalingDescriptionFromUffType(int type);
+int normalizationTypeFromDescription(const QString &description);
+QString normalizationDescriptionFromUffType(int type);
+int unitTypeFromName(const QString &name);
+QString unitNameFromUffType(int type);
+QString unitDescriptionFromUffType(int type);
+double logrefFromUffUnit(int type);
+
 
 class FunctionHeader
 {
@@ -19,8 +28,26 @@ public:
     void read(QTextStream &stream);
     void read(char *data, qint64 &offset);
     void write(QTextStream &stream);
+    void toDataDescription(DataDescription &d);
+    void sanitize();
+    static FunctionHeader fromDescription(const DataDescription &d);
 
     QVector<FieldDescription> type1858;
+    bool valid;
+};
+
+class FunctionDescription
+{
+public:
+    FunctionDescription();
+    void read(QTextStream &stream);
+    void read(char *data, qint64 &offset);
+    void write(QTextStream &stream);
+    void toDataDescription(DataDescription &d);
+    void sanitize();
+    static FunctionDescription fromDescription(const DataDescription &d);
+
+    QVector<FieldDescription> type58;
     bool valid;
 };
 
@@ -34,7 +61,6 @@ class Function : public Channel
 public:
     Function(UffFileDescriptor *parent);
     Function(Channel &other, UffFileDescriptor *parent);
-    Function(Function &other, UffFileDescriptor *parent);
     virtual ~Function();
 
     void read(QTextStream &stream, qint64 pos = -1);
@@ -42,11 +68,7 @@ public:
     void read(QDataStream &stream);
     void write(QTextStream &stream, int &id);
 
-    FunctionHeader header;
-
-    UffFileDescriptor *parent;
-    virtual FileDescriptor *descriptor() override;
-    QVector<FieldDescription> type58;
+    virtual FileDescriptor *descriptor() const override;
     QVector<qint64> dataPositions;
     QVector<qint64> dataEnds;
     QVector<double> zValues;
@@ -54,29 +76,12 @@ public:
     // Channel interface
 public:
     virtual int index() const override;
-    virtual QVariant info(int column, bool edit) const override;
-    virtual int columnsCount() const override;
-    virtual QVariant channelHeader(int column) const override;
 
     virtual Descriptor::DataType type() const override;
-    int octaveType() const override;
     virtual void populate() override;
-    virtual QString name() const override;
-    virtual void setName(const QString &name) override;
-    virtual QString description() const override;
-    virtual void setDescription(const QString &description) override;
-    virtual QString xName() const override;
-    virtual QString yName() const override;
-    virtual QString zName() const override;
-    virtual void setYName(const QString &yName) override;
-    virtual void setXName(const QString &xName) override;
-    virtual void setZName(const QString &zName) override;
-    virtual QString legendName() const override;
-
-    virtual void setCorrection(const QString &s) override;
-
 private:
     friend class UffFileDescriptor;
+    UffFileDescriptor *parent;
     void readRest();
     bool populateWithMmap();
     bool populateWithStream();
@@ -134,7 +139,7 @@ public:
     virtual void deleteChannels(const QVector<int> &channelsToDelete) override;
     virtual void copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes) override;
 
-    void addChannelWithData(DataHolder *data, const QJsonObject &description) override;
+    virtual void addChannelWithData(DataHolder *data, const DataDescription &description) override;
 
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
 

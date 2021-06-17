@@ -99,7 +99,6 @@ public:
     QString _name;
     QString _primaryChannel;
     QString _type;
-    QString _xName;
     int _octaveType = 0;
     bool grouped = false;
     int indexInGroup = 0;
@@ -108,28 +107,11 @@ public:
 
     // Channel interface
 public:
-    virtual QVariant info(int, bool) const override;
-    virtual int columnsCount() const override;
-    virtual QVariant channelHeader(int) const override;
     virtual Descriptor::DataType type() const override;
-    virtual int octaveType() const override;
     virtual void populate() override;
-    virtual QString name() const override;
-    virtual void setName(const QString &) override;
-    virtual QString description() const override;
-    virtual void setDescription(const QString &) override;
-    virtual QString xName() const override;
-    virtual QString yName() const override;
-    virtual QString zName() const override;
-    virtual void setYName(const QString &) override;
-    virtual QString legendName() const override;
-    virtual FileDescriptor *descriptor() override;
+    virtual FileDescriptor *descriptor() const override;
     virtual int index() const override;
 
-    // Channel interface
-public:
-    virtual void setXName(const QString &) override;
-    virtual void setZName(const QString &) override;
 };
 
 template <typename T>

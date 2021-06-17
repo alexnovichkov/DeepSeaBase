@@ -410,8 +410,14 @@ TDMSChannel::TDMSChannel(DDCChannelHandle channel, TDMSGroup *parent) : channel(
 //        qDebug()<<"Channel property"<<k+1<<name<<value.toString();
         properties.insert(name, value);
 
+
+
         free(nameBuf);
     }
+    dataDescription().put("name", properties.value("name"));
+    dataDescription().put("description", properties.value("description"));
+    dataDescription().put("xname", properties.value("wf_xunit_string"));
+    dataDescription().put("yname", properties.value("unit_string"));
 
     // reading data
     error = DDC_GetNumDataValues(channel, &numberOfValues);
@@ -495,30 +501,10 @@ QVector<double> TDMSChannel::getDouble()
     return data;
 }
 
-QVariant TDMSChannel::info(int, bool) const
-{
-    return QVariant();
-}
-
-int TDMSChannel::columnsCount() const
-{
-    return 5;
-}
-
-QVariant TDMSChannel::channelHeader(int) const
-{
-    return QVariant();
-}
-
 Descriptor::DataType TDMSChannel::type() const
 {
     //TODO: добавить поддержку разных сигналов в TDMS
     return Descriptor::TimeResponse;
-}
-
-int TDMSChannel::octaveType() const
-{
-    return 0;
 }
 
 void TDMSChannel::populate()
@@ -533,62 +519,7 @@ void TDMSChannel::populate()
     }
 }
 
-QString TDMSChannel::name() const
-{
-    return properties.value("name").toString();
-}
-
-void TDMSChannel::setName(const QString &name)
-{
-    properties.insert("name", name);
-}
-
-QString TDMSChannel::description() const
-{
-    return properties.value("description").toString();
-}
-
-void TDMSChannel::setDescription(const QString &description)
-{
-    properties.insert("description", description);
-}
-
-QString TDMSChannel::xName() const
-{
-    return properties.value("wf_xunit_string").toString();
-}
-
-QString TDMSChannel::yName() const
-{
-    return properties.value("unit_string").toString();
-}
-
-QString TDMSChannel::zName() const
-{
-    return "";
-}
-
-void TDMSChannel::setYName(const QString &yName)
-{
-    properties.insert("unit_string", yName);
-}
-
-void TDMSChannel::setXName(const QString &)
-{
-
-}
-
-void TDMSChannel::setZName(const QString &)
-{
-
-}
-
-QString TDMSChannel::legendName() const
-{
-    return QString();
-}
-
-FileDescriptor *TDMSChannel::descriptor()
+FileDescriptor *TDMSChannel::descriptor() const
 {
     return parent;
 }

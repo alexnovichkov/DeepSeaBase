@@ -45,7 +45,8 @@ UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString 
     //если индексы пустые - копируем все каналы
     if (indexes.isEmpty())
         for (int i=0; i<other.channelsCount(); ++i) indexes << i;
-    dataDescription().put("source.channels", stringify(indexes));
+    else
+        dataDescription().put("source.channels", stringify(indexes));
 
     const int count = other.channelsCount();
 
@@ -78,24 +79,18 @@ UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString 
     //заполнение каналов
 
     int id=1;
-    for (int i=0; i<count; ++i) {
-        if (!indexes.contains(i)) continue;
-
+    for (int i: indexes) {
         Channel *ch = other.channel(i);
         bool populated = ch->populated();
         if (!populated) ch->populate();
 
         Function *f = new Function(*ch, this);
-//        f->type58[15].value = i+1;
-//        f->type58[10].value = QString("Record %1").arg(i+1);
 
         //заполнение инфы об опорном канале
         if (referenceChannelNumber>=0) {
-            f->type58[18].value = referenceChannelName;
-            f->type58[19].value = referenceChannelNumber+1;
+            f->dataDescription().put("referenceName", referenceChannelName);
+            f->dataDescription().put("referenceNode", referenceChannelNumber+1);
         }
-
-        f->type58[8].value = h.type151[10].value;
 
         f->write(stream, id);
 
@@ -117,7 +112,6 @@ UffFileDescriptor::~UffFileDescriptor()
 
 void UffFileDescriptor::readWithStreams()
 {
-    qDebug()<<"Reading"<<fileName()<<"with streams";
     QFile uff(fileName());
     if (!uff.exists()) {
         qDebug()<<"Такого файла не существует";
@@ -130,6 +124,8 @@ void UffFileDescriptor::readWithStreams()
         UffHeader h;
         h.read(stream);
         setDataDescription(h.toDataDescription());
+
+        //not needed, just read through
         UffUnits u;
         u.read(stream);
 
@@ -145,7 +141,6 @@ void UffFileDescriptor::readWithStreams()
 
 bool UffFileDescriptor::readWithMmap()
 {
-    qDebug()<<"Reading"<<fileName()<<"with mmap";
     QFile uff(fileName());
     if (!uff.exists()) return false;
 
@@ -154,9 +149,6 @@ bool UffFileDescriptor::readWithMmap()
         if (!mapped) return false;
 
         char *pos = reinterpret_cast<char*>(mapped);
-        //char *beginning = pos;
-        //char *end = pos+uff.size()-1;
-
         const qint64 size = uff.size();
 
         qint64 offset = 0;
@@ -164,6 +156,8 @@ bool UffFileDescriptor::readWithMmap()
         UffHeader h;
         h.read(pos, offset);
         setDataDescription(h.toDataDescription());
+
+        //not needed, just read through
         UffUnits u;
         u.read(pos, offset);
 
@@ -181,9 +175,9 @@ void UffFileDescriptor::read()
     //если false - старый формат, удаляем файл и создаем заново
     int newUffFormat = App->getSetting("newUffFormat", 0).toInt();
 
-    if (QFile::exists(fileName()+"~") && newUffFormat == 2) {
+    if (QFile::exists(fileName()+QString("~%1").arg(newUffFormat))) {
         // в папке с записью есть двоичный файл с описанием записи
-        QFile uff(fileName()+"~");
+        QFile uff(fileName()+QString("~%1").arg(newUffFormat));
         if (uff.open(QFile::ReadOnly)) {
             QDataStream stream(&uff);
 
@@ -202,7 +196,9 @@ void UffFileDescriptor::read()
 
         //теперь уплощаем файл - группируем многоблочные каналы
         for (int i=channels.size()-1; i>=0; --i) {
-            if (channels.at(i)->type58[16].value.toInt() > 1) {
+            bool sequence = channels.at(i)->dataDescription().get("sequence").toInt() > 1;
+            channels.at(i)->dataDescription().data.remove("sequence");
+            if (sequence) {
                 //это часть канала, а не целый канал
                 if (i>0) {//TODO: оптимизировать
                     channels.at(i-1)->dataPositions.append(channels.at(i)->dataPositions);
@@ -218,21 +214,20 @@ void UffFileDescriptor::read()
         }
 
         removeTempFile();
-        QFile buff(fileName()+"~");
+        QFile buff(fileName()+QString("~%1").arg(newUffFormat));
         if (buff.open(QFile::WriteOnly)) {
             QDataStream stream(&buff);
 
             stream << dataDescription();
 
             for (Function *f: channels) {
-                stream << f->header;
-                stream << f->type58;
+                stream << f->dataDescription();
                 stream << f->dataPositions;
                 stream << f->dataEnds;
                 stream << f->zValues;
             }
         }
-        App->setSetting("newUffFormat", 2);
+        App->setSetting("newUffFormat", 3);
     }
 }
 
@@ -271,16 +266,6 @@ void UffFileDescriptor::write()
     else {
         qDebug()<<"Couldn't open file"<<fileName()<<"to write";
     }
-}
-
-QString makeStringFromPair(const QPair<QString, QString> &pair)
-{
-    QString result = pair.second;
-    if (!pair.first.isEmpty()) {
-        result = pair.first+"="+result;
-    }
-    result.truncate(80);
-    return result;
 }
 
 void UffFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
@@ -329,14 +314,13 @@ void UffFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
 
 void UffFileDescriptor::removeTempFile()
 {
-    if (QFile::exists(fileName()+"~")) QFile::remove(fileName()+"~");
+    int newUffFormat = App->getSetting("newUffFormat", 0).toInt();
+    QString name = fileName()+QString("~%1").arg(newUffFormat);
+    if (QFile::exists(name)) QFile::remove(name);
 }
 
 void UffFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes)
 {DD;
-    int referenceChannelNumber = -1; //номер опорного канала ("сила")
-    QString referenceChannelName;
-
     QFile uff(fileName());
     if (!uff.open(QFile::Append | QFile::Text)) {
         qDebug()<<"Couldn't open file to write";
@@ -359,15 +343,6 @@ void UffFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
         if (!populated) f->populate();
 
         Function *ch = new Function(*f, this);
-
-        //заполнение инфы об опорном канале
-        if (referenceChannelNumber>=0) {
-            ch->type58[18].value = referenceChannelName;
-            ch->type58[19].value = referenceChannelNumber+1;
-        }
-
-        ch->type58[8].value = dataDescription().get("dateTime");
-
         ch->write(stream, id);
 
         //clearing
@@ -380,7 +355,7 @@ void UffFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
     removeTempFile();
 }
 
-void UffFileDescriptor::addChannelWithData(DataHolder *data, const QJsonObject &description)
+void UffFileDescriptor::addChannelWithData(DataHolder *data, const DataDescription &description)
 {
     // обновляем сведения канала
     Function *ch = new Function(this);
@@ -388,34 +363,16 @@ void UffFileDescriptor::addChannelWithData(DataHolder *data, const QJsonObject &
     ch->setDataChanged(true);
     ch->setPopulated(true);
     ch->setData(data);
+    ch->dataDescription() = description;
 
-    int octave = description.value("function").toObject().value("octaveFormat").toInt();
-    ch->header.type1858[5].value = octave;
-
-    ch->setName(description.value("name").toString());
-    ch->type58[8].value = QDateTime::currentDateTime();
-    ch->setDescription(description.value("description").toString());
-
+    ch->dataDescription().put("dateTime", QDateTime::currentDateTime());
 
     if (data->yValuesFormat() == DataHolder::YValuesAmplitudesInDB) {
         // записываем в файлы uff только линейные данные
         auto d = DataHolder::fromLog(data->rawYValues(-1), data->threshold(), data->yValuesUnits());
         ch->data()->setYValues(d, DataHolder::YValuesAmplitudes);
+        ch->dataDescription().put("function.format", "amplitude");
     }
-
-    ch->type58[14].value = description.value("type").toInt();
-
-    ch->type58[25].value = (data->yValuesFormat() == DataHolder::YValuesComplex ? 6 : 4);
-    ch->type58[26].value = ch->data()->samplesCount();
-    ch->type58[27].value = data->xValuesFormat()==DataHolder::XValuesUniform ? 1 : 0;
-    ch->type58[28].value = data->xMin();
-    ch->type58[29].value = data->xStep();
-
-    ch->type58[32].value = abscissaType(description.value("xName").toString());
-    ch->type58[36].value = abscissaTypeDescription(ch->type58[32].value.toInt());
-    ch->type58[37].value = description.value("xName");
-
-    ch->type58[44].value = description.value("yName");
 }
 
 void UffFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
@@ -596,6 +553,7 @@ FunctionHeader::FunctionHeader()
 
 void FunctionHeader::read(QTextStream &stream)
 {
+    qint64 offs = stream.pos();
     for (int i=0; i<4; ++i) {
         fields[type1858[i].type]->read(type1858[i].value, stream);
     }
@@ -607,11 +565,13 @@ void FunctionHeader::read(QTextStream &stream)
     else {
         valid = false;
         type1858[2].value = 1858;
+        stream.seek(offs); // перемещаемся в начало, как будто и не читали
     }
 }
 
 void FunctionHeader::read(char *data, qint64 &offset)
 {DD;
+    qint64 offs = offset;
     for (int i=0; i<4; ++i) {
         offset += fields[type1858[i].type]->read(type1858[i].value, data, offset);
     }
@@ -623,6 +583,7 @@ void FunctionHeader::read(char *data, qint64 &offset)
     else {
         valid = false;
         type1858[2].value = 1858;
+        offset = offs; // перемещаемся в начало, как будто и не читали
     }
 }
 
@@ -631,6 +592,291 @@ void FunctionHeader::write(QTextStream &stream)
     for (int i=0; i<48; ++i) {
         fields[type1858[i].type]->print(type1858[i].value, stream);
     }
+}
+
+void FunctionHeader::toDataDescription(DataDescription &d)
+{
+    //{FTInteger12, 1}, //4 set record number
+    if (int v = type1858[5].value.toInt(); v!=0) {
+        d.put("function.octaveFormat", v);
+    }
+    //{FTInteger12, 0}, //6 measurement run number
+    if (int v = type1858[11].value.toInt(); v!=0) {
+        d.put("function.weighting", weightingFromType(v));
+    }
+    if (int v = type1858[12].value.toInt(); v!=0) {
+        d.put("function.window", windowDescriptionFromUffType(v));
+    }
+    if (int v = type1858[13].value.toInt(); v!=0) {
+        d.put("function.amplitudeScaling", scalingDescriptionFromUffType(v));
+    }
+    if (int v = type1858[14].value.toInt(); v!=0) {
+        d.put("function.normalization", normalizationDescriptionFromUffType(v));
+    }
+    //{FTInteger6, 0}, //15  Abscissa Data Type Qualifier,
+                      //0=translation, 1=rotation, 2=translation squared, 3=rotation squared
+    //{FTInteger6, 0}, //16 Ordinate Numerator Data Type Qualifier, see 15
+    //{FTInteger6, 0}, //17 Ordinate Denominator Data Type Qualifier, see 15
+    //{FTInteger6, 0}, //18 Z-axis Data Type Qualifier, see 15
+    //{FTInteger6, 0}, //19 sampling type, 0=dynamic, 1=static, 2=RPM from tacho, 3=freq from tach
+    //{FTFloat15_7, 0.0}, //24 Z RPM value
+    //{FTFloat15_7, 0.0}, //25 Z time value
+    //{FTFloat15_7, 0.0}, //26 Z order value
+    //{FTFloat15_7, 0.0}, //27 number of samples
+    if (double v = type1858[34].value.toDouble(); !qIsNull(v))
+        d.put("function.windowParameter", v); //34-35 Exponential window damping factor
+    //{FTString10a,"NONE  NONE"}, //42 response direction, reference direction
+}
+
+void FunctionHeader::sanitize()
+{
+    for (int i=0; i<48; ++i) {
+        if (type1858[i].type >= FTString80 && type1858[i].type <= FTTimeDate80) {
+            if (type1858[i].value.toString() == "NONE") type1858[i].value.clear();
+        }
+    }
+}
+
+FunctionHeader FunctionHeader::fromDescription(const DataDescription &d)
+{
+    FunctionHeader h;
+    h.type1858[5].value = d.get("function.octaveFormat");
+    //{FTInteger12, 0}, //6 measurement run number
+    h.type1858[11].value = weightingType(d.get("function.weighting").toString());
+    h.type1858[12].value = uffWindowTypeFromDescription(d.get("function.window").toString());
+    h.type1858[13].value = scalingTypeFromDescription(d.get("function.amplitudeScaling").toString());
+    h.type1858[14].value = normalizationTypeFromDescription(d.get("function.normalization").toString());
+    //{FTInteger6, 0}, //15  Abscissa Data Type Qualifier,
+                      //0=translation, 1=rotation, 2=translation squared, 3=rotation squared
+    //{FTInteger6, 0}, //16 Ordinate Numerator Data Type Qualifier, see 15
+    //{FTInteger6, 0}, //17 Ordinate Denominator Data Type Qualifier, see 15
+    //{FTInteger6, 0}, //18 Z-axis Data Type Qualifier, see 15
+    //{FTInteger6, 0}, //19 sampling type, 0=dynamic, 1=static, 2=RPM from tacho, 3=freq from tach
+    //{FTFloat15_7, 0.0}, //24 Z RPM value
+    //{FTFloat15_7, 0.0}, //25 Z time value
+    //{FTFloat15_7, 0.0}, //26 Z order value
+    h.type1858[27].value = d.get("samples");
+    h.type1858[34].value = d.get("function.windowParameter");
+    QString resp = d.get("function.responseDirection").toString();
+    if (resp.isEmpty()) resp = "NONE";
+    QString ref = d.get("function.referenceDirection").toString();
+    if (ref.isEmpty()) ref = "NONE";
+    h.type1858[42].value = QString("%1  %2").arg(resp,ref);
+    return h;
+}
+
+FunctionDescription::FunctionDescription()
+{
+    setType58(type58);
+    valid = true;
+}
+
+void FunctionDescription::read(QTextStream &stream)
+{
+    qint64 offs = stream.pos();
+    for (int i=0; i<4; ++i) {
+        fields[type58[i].type]->read(type58[i].value, stream);
+    }
+    if (type58[2].value.toInt()==58) {
+        for (int i=4; i<60; ++i) {
+            fields[type58[i].type]->read(type58[i].value, stream);
+        }
+    }
+    else {
+        valid = false;
+        type58[2].value = 58;
+        stream.seek(offs); // перемещаемся в начало, как будто и не читали
+    }
+}
+
+void FunctionDescription::read(char *data, qint64 &offset)
+{
+    qint64 offs = offset;
+    for (int i=0; i<4; ++i) {
+        offset += fields[type58[i].type]->read(type58[i].value, data, offset);
+    }
+    if (type58[2].value.toInt()==58) {
+        for (int i=4; i<60; ++i) {
+            offset += fields[type58[i].type]->read(type58[i].value, data, offset);
+        }
+    }
+    else {
+        valid = false;
+        type58[2].value = 58;
+        offset = offs; // перемещаемся в начало, как будто и не читали
+    }
+}
+
+void FunctionDescription::write(QTextStream &stream)
+{
+    for (int i=0; i<60; ++i) {
+        fields[type58[i].type]->print(type58[i].value, stream);
+    }
+}
+
+void FunctionDescription::toDataDescription(DataDescription &d)
+{
+    d.put("name", type58[4].value);
+    d.put("description", type58[6].value);
+    d.put("dateTime", type58[8].value); //8-9 Time date of function creation
+    //{FTString80, "Record 1" }, {FTEmpty,""}, //10-11 ID line 4,
+    d.put("correction", type58[12].value); //12-13 ID line 5
+    d.put("function.type", type58[14].value);
+    d.put("function.name", Descriptor::functionTypeDescription(type58[14].value.toInt()));
+    //{FTInteger10, 1}, //15 Function Identification Number
+    d.put("sequence", type58[16].value);
+    //{FTInteger10, 0},//17 Load Case Identification Number
+    if (QString s = type58[18].value.toString(); !s.isEmpty()) {
+        d.put("function.responseName", s);
+    }
+    //{FTInteger10, 0}, //19 Response Node
+    if (QString s = type58[20].value.toString(); !s.isEmpty()) {
+        d.put("function.responseDirection", s);
+    }
+    if (QString s = type58[21].value.toString(); !s.isEmpty()) {
+        d.put("function.referenceName", s);
+    }
+    //{FTInteger10, 0}, //22 Reference Node
+    if (QString s = type58[21].value.toString(); !s.isEmpty()) {
+        d.put("function.referenceDirection", s);
+    }
+    {
+        int v = type58[25].value.toInt();
+        d.put("function.precision", (v==2 || v==5)?"float":"double");
+        if (v>=5)
+            d.put("function.format", "complex");
+    }
+    d.put("samples", type58[26].value);
+    d.put("uneven", (type58[27].value.toInt() == 0));
+    d.put("xmin", type58[28].value.toDouble());
+    d.put("xstep", type58[29].value.toDouble());
+    //d.put("zvalue", type58[30].value.toDouble());
+
+    //Abscissa Data Characteristics 32-38
+    {
+        QString s = type58[37].value.toString();
+        if (s.isEmpty()) s = unitNameFromUffType(type58[32].value.toInt());
+        d.put("xname", s);
+        //{FTInteger5, 0}, //33 Length units exponent
+        //{FTInteger5,0}, //34 Force units exponent
+        //{FTInteger5, 0}, //35 Temperature units exponent
+        //{FTString20, "NONE"}, //36 Axis label ("NONE" if not used)
+    }
+    //Ordinate (or ordinate numerator) Data Characteristics 39-45
+    {
+        //может оказаться, что тип единицы не соответствует названию. Меняем тип единицы
+        int type = type58[39].value.toInt();
+        d.put("ylabel", type58[43].value);
+        QString s = type58[44].value.toString();
+        if (s.isEmpty()) s = unitNameFromUffType(type);
+        if (int t = unitTypeFromName(s); t != type) type = t;
+        d.put("yname", s);
+        d.put("yUnitType", type);
+        //{FTInteger5,0}, //40 Length units exponent
+        //{FTInteger5,0}, //41 Force units exponent
+        //{FTInteger5, 0}, //42 Temperature units exponent
+        //{FTString20, "NONE"}, //43  Axis label ("NONE" if not used)
+    }
+
+    {//Знаменатель единицы измерения - м/с^2/Гц = Гц
+        QString s = type58[51].value.toString();
+        if (s.isEmpty()) s = unitNameFromUffType(type58[46].value.toInt());
+        if (!s.isEmpty())
+            d.put("yname", d.get("yname").toString()+"/"+s);
+    }
+    //{FTInteger5,0}, //47
+    //{FTInteger5,0}, //48
+    //{FTInteger5,0}, //49
+    //{FTString20, "NONE"}, //50
+    {
+        QString s = type58[58].value.toString();
+        if (s.isEmpty()) s = unitNameFromUffType(type58[53].value.toInt());
+        d.put("zname", s);
+    }
+    //{FTInteger5, 0}, //54
+    //{FTInteger5, 0}, //55
+    //{FTInteger5, 0}, //56
+    //{FTString20, "NONE"}, //57
+}
+
+void FunctionDescription::sanitize()
+{
+    for (int i=0; i<60; ++i) {
+        if (type58[i].type >= FTString80 && type58[i].type <= FTTimeDate80) {
+            if (type58[i].value.toString() == "NONE") type58[i].value.clear();
+        }
+    }
+}
+
+FunctionDescription FunctionDescription::fromDescription(const DataDescription &d)
+{
+    FunctionDescription h;
+    h.type58[4].value = d.get("name");
+    h.type58[6].value = d.get("description");
+    h.type58[8].value = d.get("dateTime");
+    //{FTString80, "Record 1" }, {FTEmpty,""}, //10-11 ID line 4,
+    h.type58[12].value = d.get("correction");
+    h.type58[14].value = d.get("function.type");
+    //{FTInteger10, 1}, //15 Function Identification Number
+    //{FTInteger5, 1}, //16 Version Number, or sequence number
+    //{FTInteger10, 0},//17 Load Case Identification Number
+    h.type58[18].value = d.get("function.responseName");
+    h.type58[19].value = d.get("function.responseNode");
+    h.type58[20].value = d.get("function.responseDirection");
+    h.type58[21].value = d.get("function.referenceName");
+    h.type58[22].value = d.get("function.referenceNode");
+    h.type58[23].value = d.get("function.referenceDirection");
+    QString format = d.get("function.format").toString();
+    QString precision = d.get("function.precision").toString();
+    if (format=="complex") {
+        //write all other types (int) as float
+        h.type58[25].value = (precision == "double" ? 6 : 5);
+    }
+    else {
+        //write all other types (int) as float
+        h.type58[25].value = (precision == "double" ? 4 : 2);
+    }
+    h.type58[26].value = d.get("samples");
+    h.type58[27].value = (d.get("uneven").toBool() ? 0 : 1);
+    h.type58[28].value = d.get("xmin");
+    h.type58[29].value = d.get("xstep");
+    h.type58[30].value = d.get("zvalue");
+    h.type58[32].value = unitTypeFromName(d.get("xname").toString());
+    //{FTInteger5, 0}, //33 Length units exponent
+    //{FTInteger5,0}, //34 Force units exponent
+    //{FTInteger5, 0}, //35 Temperature units exponent
+    //{FTString20, "NONE"}, //36 Axis label ("NONE" if not used)
+    h.type58[36].value = unitDescriptionFromUffType(h.type58[32].value.toInt());
+    h.type58[37].value = d.get("xname");
+    QString yname = d.get("yname").toString();
+    h.type58[39].value = unitTypeFromName(yname);
+    //{FTInteger5,0}, //40 Length units exponent
+    //{FTInteger5,0}, //41 Force units exponent
+    //{FTInteger5, 0}, //42 Temperature units exponent
+    h.type58[43].value = unitDescriptionFromUffType(h.type58[39].value.toInt());
+    h.type58[44].value = yname;
+    //Игнорируем знаменатель единицы измерения - слишком сложно реализовывать
+    //h.type58[46].value = unitTypeFromName(ynameDenom);
+    //{FTInteger5,0}, //47
+    //{FTInteger5,0}, //48
+    //{FTInteger5,0}, //49
+    //FTString20, "NONE"}, //50
+    //h.type58[51].value = ynameDenom;
+    h.type58[53].value = unitTypeFromName(d.get("zname").toString());
+    //{FTInteger5, 0}, //54
+    //{FTInteger5, 0}, //55
+    //{FTInteger5, 0}, //56
+    h.type58[57].value = unitDescriptionFromUffType(h.type58[53].value.toInt());
+    h.type58[58].value = d.get("zname");
+
+    //sanitizing
+    for (int i=0; i<60; ++i) {
+        if (h.type58[i].type >= FTString80 && h.type58[i].type <= FTTimeDate80) {
+            if (h.type58[i].value.toString().isEmpty())
+                h.type58[i].value = "NONE";
+        }
+    }
+    return h;
 }
 
 QDataStream &operator>>(QDataStream &stream, FunctionHeader &header)
@@ -644,7 +890,7 @@ QDataStream &operator>>(QDataStream &stream, FunctionHeader &header)
 Function::Function(UffFileDescriptor *parent) : Channel(),
     parent(parent)
 {DD;
-    setType58(type58);
+    //setType58(type58);
     parent->channels << this;
 }
 
@@ -653,48 +899,8 @@ Function::Function(UffFileDescriptor *parent) : Channel(),
 Function::Function(Channel &other, UffFileDescriptor *parent) : Channel(other), parent(parent)
 {DD;
     parent->channels << this;
-    header.type1858[5].value = other.octaveType();
-    ///TODO: заполнение поля 1858 данными обработки: окно, взвешивание и т.д.
 
-    setType58(type58);
-
-    if (!other.name().isEmpty()) type58[4].value = other.name();
-    if (!other.description().isEmpty()) type58[6].value = other.description();
-    type58[8].value = QDateTime::currentDateTime();
-    type58[14].value = other.type();
-
-    if (other.data()->yValuesFormat()== DataHolder::YValuesComplex)
-        type58[25].value = 6; // 5 - complex, single precision
-    else
-        type58[25].value = 4; // 2 - real, single precision
-
-    type58[26].value = other.data()->samplesCount();
-    type58[27].value = other.data()->xValuesFormat() == DataHolder::XValuesNonUniform ? 0 : 1;
-    type58[28].value = other.data()->xMin();
-    type58[29].value = other.data()->xStep();
-//    type58[30].value = other.datzValue();
-
-    type58[32].value = abscissaType(other.xName());
-    type58[36].value = abscissaTypeDescription(type58[32].value.toInt());
-    if (!other.xName().isEmpty()) type58[37].value = other.xName();
-
-    type58[39].value = abscissaType(other.yName());
-    type58[43].value = abscissaTypeDescription(type58[39].value.toInt());
-    if (!other.yName().isEmpty()) type58[44].value = other.yName();
-
-    type58[53].value = abscissaType(other.zName());
-    type58[57].value = abscissaTypeDescription(type58[53].value.toInt());
-    if (!other.zName().isEmpty()) type58[58].value = other.zName();
-
-    dataPositions.clear(); dataEnds.clear();
-}
-
-Function::Function(Function &other, UffFileDescriptor *parent) : Channel(other), parent(parent)
-{DD;
-    parent->channels << this;
-    header = other.header;
-
-    type58 = other.type58;
+    dataDescription().put("dateTime", QDateTime::currentDateTime());
     dataPositions.clear(); dataEnds.clear();
 }
 
@@ -710,19 +916,18 @@ void Function::read(QTextStream &stream, qint64 pos)
     dataPositions.clear(); dataEnds.clear();
     zValues.clear();
 
+    FunctionHeader header;
     header.read(stream);
-    int i=0;
-    if (!header.valid) {
-        i=4;
-        type58[2].value=58;
-    }
+    header.sanitize();
+    FunctionDescription description;
+    description.read(stream);
+    description.sanitize();
+    header.toDataDescription(dataDescription());
+    description.toDataDescription(dataDescription());
 
-    for (; i<60; ++i) {
-        fields[type58[i].type]->read(type58[i].value, stream);
-    }
     //первое положение данных
     dataPositions << stream.pos();
-    zValues << type58[30].value.toDouble();
+    zValues << description.type58[30].value.toDouble();
 
     if (pos == -1) {
         QString s;
@@ -733,8 +938,6 @@ void Function::read(QTextStream &stream, qint64 pos)
         while (s != "-1");
     }
     dataEnds << stream.pos() - 6-2-2;
-
-    //readRest();
 }
 
 void Function::read(char *data, qint64 &offset, int size)
@@ -742,19 +945,18 @@ void Function::read(char *data, qint64 &offset, int size)
     dataPositions.clear();  dataEnds.clear();
     zValues.clear();
 
+    FunctionHeader header;
     header.read(data, offset);
-    int i=0;
-    if (!header.valid) {
-        i=4;
-        type58[2].value=58;
-    }
+    header.sanitize();
+    FunctionDescription description;
+    description.read(data, offset);
+    description.sanitize();
+    header.toDataDescription(dataDescription());
+    description.toDataDescription(dataDescription());
 
-    for (; i<60; ++i) {
-        offset += fields[type58[i].type]->read(type58[i].value, data, offset);
-    }
     //первое положение данных
     dataPositions << qint64(offset);
-    zValues << type58[30].value.toDouble();
+    zValues << description.type58[30].value.toDouble();
 
     for (; offset <= size-6; ++offset) {
         if (*(data+offset  ) == ' ' &&
@@ -774,13 +976,11 @@ void Function::read(char *data, qint64 &offset, int size)
     while (*(data+offset) == '\n' || *(data+offset) == '\r') {
         offset++;
     }
-    //qDebug()<<"data end at"<<offset;
 }
 
 void Function::read(QDataStream &stream)
 {
-    stream >> header;
-    stream >> type58;
+    stream >> dataDescription();
     stream >> dataPositions;
     stream >> dataEnds;
     stream >> zValues;
@@ -790,23 +990,26 @@ void Function::read(QDataStream &stream)
 
 void Function::readRest()
 {
-    if (type58[27].value.toInt() == 1) {// abscissa, even spacing
-        _data->setXValues(type58[28].value.toDouble(),
-                type58[29].value.toDouble(),
-                type58[26].value.toInt());
-    }
-    else {// abscissa, uneven spacing
-        _data->setSamplesCount(type58[26].value.toInt());
-        populate();
-    }
+    //zValues may be long - multiblock file
 
-    double thr = threshold(yName());
-    if (type()==Descriptor::FrequencyResponseFunction) thr = 1.0;
+    //может так получиться, что тип единицы по оси y будет неправильным.
+    //может так получиться, что название единицы по оси y будет неправильным.
+    //определяем пороговые значения отдельно и сравниваем
+    double thr1 = logrefFromUffUnit(dataDescription().get("yUnitType").toInt());
+    double thr2 = logrefFromUffUnit(unitTypeFromName(yName()));
+    double thr = thr1;
+    if (!qFuzzyCompare(thr1, thr2)) {
+        //если какой-то порог не равен 1.0, берем его, отдаем преимущество порогу по имени единицы
+        if (!qFuzzyCompare(thr2, 1.0)) thr = thr2;
+        else thr = thr1;
+    }
+    int ftype = dataDescription().get("function.type").toInt();
+    if (ftype==Descriptor::FrequencyResponseFunction) thr = 1.0;
     _data->setThreshold(thr);
+    dataDescription().put("function.logref", thr);
 
-    DataHolder::YValuesFormat yValueFormat = DataHolder::YValuesReals;
+    auto yValueFormat = DataHolder::YValuesReals;
 
-    int ftype = type58[14].value.toInt();
     switch (ftype) {
         case 0: yValueFormat = DataHolder::YValuesReals; break; // 0 - General or Unknown
         case 1: yValueFormat = DataHolder::YValuesReals; break; // 1 - Time Response
@@ -838,17 +1041,21 @@ void Function::readRest()
         case 27: yValueFormat = DataHolder::YValuesReals; break; // 27 - Order Function
         default: break;
     }
-    if (type58[25].value.toInt() >= 5) yValueFormat = DataHolder::YValuesComplex;
+    if (dataDescription().get("function.format").toString()=="complex")
+        yValueFormat = DataHolder::YValuesComplex;
 
-    if (yName()=="dB" || yName()=="дБ" || type58[43].value.toString()=="Уровень")
+    QString ylabel = dataDescription().get("ylabel").toString();
+
+    if (yName().toLower() == "dB" || yName().toLower() == "дБ" || ylabel.toLower()=="уровень")
         yValueFormat = DataHolder::YValuesAmplitudesInDB;
 
-    if (type58[43].value.toString()=="Phase")
+    if (ylabel.toLower()=="phase")
         yValueFormat = DataHolder::YValuesPhases;
 
     _data->setYValuesFormat(yValueFormat);
+    dataDescription().put("function.format", DataHolder::formatToString(yValueFormat));
 
-    int units = DataHolder::UnitsLinear;
+    auto units = DataHolder::UnitsLinear;
     if (ftype == 9/*PSD*/ ||
         ftype == 10/*ESD*/ ||
         ftype == 2 /*auto power spectrum*/ ||
@@ -860,33 +1067,36 @@ void Function::readRest()
 //    }
     _data->setYValuesUnits(units);
 
+    if (! dataDescription().get("uneven").toBool()) {// abscissa, even spacing
+        _data->setXValues(dataDescription().get("xmin").toDouble(),
+                dataDescription().get("xstep").toDouble(),
+                dataDescription().get("samples").toInt());
+    }
+    else {// abscissa, uneven spacing
+        _data->setXValues(QVector<double>(dataDescription().get("samples").toInt()));
+        populate();
+    }
 
-    double zBegin = 0.0;
+    Q_ASSERT(!zValues.isEmpty());
     double zStep = 0.0;
     int zCount = zValues.size();
+    double zBegin = zValues.at(0);
 
-    zBegin = zValues.at(0);
 
-    if (zCount == 1) {
-        //одиночный канал
-        _data->setZValues(zBegin, zStep, zCount);
-    }
-    else {
-        //определяем, равномерная ли шкала
-        if (zCount >= 2) zStep = zValues.at(1) - zValues.at(0);
+    //определяем, равномерная ли шкала
+    if (zCount >= 2) zStep = zValues.at(1) - zValues.at(0);
 
-        bool uniform = true;
-        for (int i=2; i<zCount; ++i) {
-            if (!qFuzzyIsNull(zValues.at(i) - zValues.at(i-1) - zStep)) {
-                uniform = false;
-                break;
-            }
+    bool uniform = true;
+    for (int i=2; i<zCount; ++i) {
+        if (!qFuzzyIsNull(zValues.at(i) - zValues.at(i-1) - zStep)) {
+            uniform = false;
+            break;
         }
-        if (uniform)
-            _data->setZValues(zBegin, zStep, zCount);
-        else
-            _data->setZValues(zValues);
     }
+    if (uniform)
+        _data->setZValues(zBegin, zStep, zCount);
+    else
+        _data->setZValues(zValues);
 }
 
 
@@ -896,16 +1106,20 @@ void Function::write(QTextStream &stream, int &id)
     int blocks = data()->blocksCount();
     dataPositions.clear();  dataEnds.clear();
 
-    type58[26].value = data()->samplesCount();
-    type58[29].value = data()->xStep();
+    FunctionHeader head = FunctionHeader::fromDescription(dataDescription());
+    FunctionDescription descr = FunctionDescription::fromDescription(dataDescription());
+
+    head.type1858[27].value = samples;
+    descr.type58[26].value = samples;
+    descr.type58[29].value = data()->xStep();
 
     for (int block = 0; block < blocks; ++block) {
         //writing header
-        FunctionHeader h = header;
+        FunctionHeader h = head;
         h.type1858[4].value = block+1;
         h.write(stream);
 
-        auto t58 = type58;
+        auto t58 = descr.type58;
         t58[10].value = QString("Record %1").arg(block+1);
         t58[15].value = id+block;
         t58[16].value = block+1;
@@ -1026,55 +1240,14 @@ void Function::write(QTextStream &stream, int &id)
     id += blocks;
 }
 
-FileDescriptor *Function::descriptor()
+FileDescriptor *Function::descriptor() const
 {
      return parent;
 }
 
-QVariant Function::info(int column, bool edit) const
-{
-    Q_UNUSED(edit)
-    switch (column) {
-        case 0: return type58[4].value; //name(); //avoiding conversion variant->string->variant
-        case 1: return type58[44].value; //yName();
-        case 2: return data()->yValuesFormatString();
-        case 3: return type58[6].value; //description();
-        case 4: return functionTypeDescription(type());
-        case 5: return data()->blocksCount();
-        case 6: return correction();
-        default: ;
-    }
-    return QVariant();
-}
-
-int Function::columnsCount() const
-{
-    return 7;
-}
-
-QVariant Function::channelHeader(int column) const
-{
-    switch (column) {
-        case 0: return QString("Имя");
-        case 1: return QString("Ед.изм.");
-        case 2: return QString("Формат");
-        case 3: return QString("Описание");
-        case 4: return QString("Функция");
-        case 5: return QString("Кол-во блоков");
-        case 6: return QString("Коррекция");
-        default: return QVariant();
-    }
-    return QVariant();
-}
-
 Descriptor::DataType Function::type() const
 {
-    return (Descriptor::DataType)type58[14].value.toInt();
-}
-
-int Function::octaveType() const
-{
-    return header.type1858[5].value.toInt();
+    return static_cast<Descriptor::DataType>(dataDescription().get("function.type").toInt());
 }
 
 bool Function::populateWithMmap()
@@ -1087,7 +1260,7 @@ bool Function::populateWithMmap()
 
     uchar *mmap = uff.map(0, uff.size());
     if (!mmap) {
-        qDebug()<<"Ошибка чтения данных";
+        qDebug()<<"Ошибка чтения данных с помощью mmap";
         return false;
     }
     char *data = reinterpret_cast<char*>(mmap);
@@ -1095,6 +1268,9 @@ bool Function::populateWithMmap()
     Q_ASSERT_X (dataPositions.first() != -1, "Function::populate", "Data positions have been invalidated");
     Q_ASSERT_X (_data->blocksCount() == dataPositions.size(), "Function::populate",
                 "Data positions не соответствуют количеству блоков");
+
+    bool real = _data->yValuesFormat() != DataHolder::YValuesComplex;
+    bool uneven = _data->xValuesFormat() == DataHolder::XValuesNonUniform;
 
     for (int block = 0; block < _data->blocksCount(); ++block) {
 //        qDebug()<<"reading block"<<block+1;
@@ -1112,8 +1288,8 @@ bool Function::populateWithMmap()
         QVector<double> xvalues;
         QVector<cx_double> valuesComplex;
 
-        if (type58[25].value.toInt() < 5) {//real values
-            if (type58[27].value.toInt() == 0) {// uneven abscissa
+        if (real) {//real values
+            if (uneven) {// uneven abscissa
                 for (uint i=0; i<vals.size(); ++i) {
                     if (i%2==0) xvalues << vals[i];
                     else values << vals[i];
@@ -1124,7 +1300,7 @@ bool Function::populateWithMmap()
             }
         }
         else {//complex values
-            if (type58[27].value.toInt() == 0) {// uneven abscissa
+            if (uneven) {// uneven abscissa
                 for (uint i=0; i<vals.size()-2; i+=3) {
                     xvalues << vals[i];
                     valuesComplex << cx_double(vals[i+1], vals[i+2]);
@@ -1140,10 +1316,10 @@ bool Function::populateWithMmap()
 //        qDebug()<<"xvalues size"<<xvalues.size();
 //        qDebug()<<"complex values size"<<valuesComplex.size();
 
-        if (type58[27].value.toInt() == 0) {// uneven abscissa
+        if (uneven) {// uneven abscissa
             _data->setXValues(xvalues);
         }
-        if (type58[25].value.toInt() < 5) {//real values
+        if (real) {//real values
             _data->setYValues(values, _data->yValuesFormat(), block);
         }
         else
@@ -1169,6 +1345,10 @@ bool Function::populateWithStream()
                 "Data positions не соответствуют количеству блоков");
 
     QTextStream stream(&uff);
+
+    bool complex = _data->yValuesFormat() == DataHolder::YValuesComplex;
+    bool uneven = _data->xValuesFormat() == DataHolder::XValuesNonUniform;
+
     for (int block = 0; block < _data->blocksCount(); ++block) {
 //        qDebug()<<"reading block"<<block+1;
         if (stream.seek(dataPositions.at(block))) {
@@ -1177,23 +1357,23 @@ bool Function::populateWithStream()
             QVector<double> values, xvalues;
             QVector<cx_double> valuesComplex;
 
-            if (_data->yValuesFormat() == DataHolder::YValuesComplex) { //complex values
+            if (complex) { //complex values
                 valuesComplex = QVector<cx_double>(sc, cx_double());
             }
             else
                 values = QVector<double>(sc, 0.0);
 
-            if (type58[27].value.toInt() == 0) {
+            if (uneven) {
                 // uneven abscissa, read data pairs
                 xvalues = QVector<double>(sc, 0.0);
             }
-            if (type58[25].value.toInt() < 5) {//real values
+            if (!complex) {//real values
                 int j=0;
                 for (int i=0; i<sc; ++i) {
                     double value;
                     stream >> value;
 
-                    if (type58[27].value.toInt() == 0) {// uneven abscissa
+                    if (uneven) {// uneven abscissa
                         xvalues[j] = value;
                         stream >> value;
                     }
@@ -1206,7 +1386,7 @@ bool Function::populateWithStream()
                 double first, second;
                 int j=0;
                 for (int i=0; i<sc; ++i) {
-                    if (type58[27].value.toInt() == 0) {// uneven abscissa
+                    if (uneven) {// uneven abscissa
                         stream >> first;
                         xvalues[j] = first;
                     }
@@ -1215,10 +1395,10 @@ bool Function::populateWithStream()
                     j++;
                 }
             }
-            if (type58[27].value.toInt() == 0) {// uneven abscissa
+            if (uneven) {// uneven abscissa
                 _data->setXValues(xvalues);
             }
-            if (type58[25].value.toInt() < 5) {//real values
+            if (!complex) {//real values
                 _data->setYValues(values, _data->yValuesFormat(), block);
             }
             else
@@ -1251,132 +1431,6 @@ void Function::populate()
     else
         setPopulated(true);
 }
-
-QString Function::name() const
-{DD;
-    QString s = type58[4].value.toString();
-    if (s == "NONE") return "";
-    return s;
-}
-
-void Function::setName(const QString &name)
-{DD;
-    type58[4].value = name.isEmpty()?"NONE":name;
-}
-
-QString Function::description() const
-{DD;
-    QString s = type58[6].value.toString();
-    if (s == "NONE") return "";
-    return s;
-}
-
-void Function::setDescription(const QString &description)
-{DD;
-    type58[6].value = description.isEmpty()?"NONE":description;
-}
-
-QString Function::xName() const
-{
-    QString s = type58[37].value.toString();
-    if (s == "NONE") return "";
-    return s;
-}
-
-QString Function::yName() const
-{DD;
-    QString s = type58[44].value.toString();
-    if (s == "NONE") return "";
-    return s;
-}
-
-QString Function::zName() const
-{
-    QString s = type58[58].value.toString();
-    if (s == "NONE") return "";
-    return s;
-}
-
-void Function::setYName(const QString &yName)
-{
-    type58[44].value = yName.isEmpty()?"NONE":yName;
-}
-
-void Function::setXName(const QString &xName)
-{
-    type58[37].value = xName.isEmpty()?"NONE":xName;
-}
-
-void Function::setZName(const QString &zName)
-{
-    type58[58].value = zName.isEmpty()?"NONE":zName;
-}
-
-QString Function::legendName() const
-{DD;
-    QStringList l;
-    l << name();
-    if (!correction().isEmpty()) l << correction();
-    if (!parent->legend().isEmpty()) l << parent->legend();
-
-    return l.join(" ");
-}
-
-void Function::setCorrection(const QString &s)
-{
-    Channel::setCorrection(s);
-    type58[12].value = s;
-}
-
-//QString UffFileDescriptor::saveTimeSegment(double from, double to)
-//{DD;
-//    // 0 проверяем, чтобы этот файл имел тип временных данных
-//    if (type() != Descriptor::TimeResponse) return "";
-//    // и имел данные
-//    if (channels.size() == 0) return "";
-
-//    // 1 создаем уникальное имя файла по параметрам from и to
-//    QString fromString, toString;
-//    getUniqueFromToValues(fromString, toString, from, to);
-//    QString suffix = QString("_%1s_%2s").arg(fromString).arg(toString);
-
-//    QString newFileName = createUniqueFileName("", fileName(), suffix, "uff", false);
-
-//    // 2 создаем новый файл
-//    UffFileDescriptor *newUff = new UffFileDescriptor(*this);
-
-//    // 3 ищем границы данных по параметрам from и to
-//    Channel *ch = channels.constFirst();
-
-//    int sampleStart = qRound((from - ch->data()->xMin())/ch->data()->xStep());
-//    if (sampleStart<0) sampleStart = 0;
-//    int sampleEnd = qRound((to - ch->data()->xMin())/ch->data()->xStep());
-//    if (sampleEnd >= ch->data()->samplesCount()) sampleEnd = ch->data()->samplesCount() - 1;
-////    newUff->setSamplesCount(sampleEnd - sampleStart + 1); //число отсчетов в новом файле
-
-//    // 4 сохраняем файл
-
-//    for (int i=0; i<channels.size(); ++i) {
-//        bool wasPopulated = channels[i]->populated();
-//        if (!wasPopulated) channels[i]->populate();
-
-//        Function *ch = new Function(*(this->channels[i]), newUff);
-//        ch->data()->setSegment(*(channels[i]->data()), sampleStart, sampleEnd);
-//        ch->setPopulated(true);
-//        if (!wasPopulated) {
-//            //clearing data
-//            channels[i]->data()->clear();
-//        }
-//    }
-
-//    newUff->setChanged(true);
-//    newUff->setDataChanged(true);
-//    newUff->write();
-//    delete newUff;
-
-//    // 5 возвращаем имя нового файла
-//    return newFileName;
-//}
 
 void UffFileDescriptor::setChanged(bool changed)
 {DD;
@@ -1423,3 +1477,181 @@ int Function::index() const
 {
     return parent->channels.indexOf(const_cast<Function*>(this));
 }
+
+int uffWindowTypeFromDescription(const QString &description)
+{
+    //window type, 0=no, 1=hanning narrow, 2=hanning broad, 3=flattop,
+                     //4=exponential, 5=impact, 6=impact and exponential
+
+    if (description == "no") return 0;
+    if (description == "Hanning") return 1;
+    if (description == "Hanning broad") return 2;
+    if (description == "flattop") return 3;
+    if (description == "exponential") return 4;
+    if (description == "impact") return 5;
+    if (description == "force") return 6;
+
+    //other types of windows unknown to uff 1858
+    return 0;
+}
+
+QString windowDescriptionFromUffType(int type)
+{
+    //window type, 0=no, 1=hanning narrow, 2=hanning broad, 3=flattop,
+                     //4=exponential, 5=impact, 6=impact and exponential
+
+    switch (type) {
+        case 0: return "no";
+        case 1: return "Hanning";
+        case 2: return "Hanning broad";
+        case 3: return "flattop";
+        case 4: return "exponential";
+        case 5: return "impact";
+        case 6: return "force";
+        default: break;
+    }
+    return "unknown";
+}
+
+int scalingTypeFromDescription(const QString &description)
+{
+    if (description == "unknown") return 0;
+    if (description == "half-peak") return 1;
+    if (description == "peak") return 2;
+    if (description == "RMS") return 3;
+    return 0;
+}
+
+QString scalingDescriptionFromUffType(int type)
+{
+    switch (type) {
+        case 1: return "half-peak";
+        case 2: return "peak";
+        case 3: return "RMS";
+    }
+    return "unknown";
+}
+
+int normalizationTypeFromDescription(const QString &description)
+{
+    //0=unknown, 1=units squared, 2=Units squared per Hz (PSD)
+    //3=Units squared seconds per Hz (ESD)
+    if (description == "unknown") return 0;
+    if (description == "squared") return 1;
+    if (description == "squared/Hz") return 2;
+    if (description == "squared sec/Hz") return 3;
+    return 0;
+}
+
+QString normalizationDescriptionFromUffType(int type)
+{
+    switch (type) {
+        case 1: return "squared";
+        case 2: return "squared/Hz";
+        case 3: return "squared sec/Hz";
+    }
+    return "unknown";
+}
+
+int unitTypeFromName(const QString &name)
+{
+    QString s = name.toLower();
+    //2 - stress - not detectable (= pressure)
+    //3 - strain - dimensionless
+    //5 - temperature
+    if (s == "k" || s == "°c" || s == "°f") return 5;
+    //6 - heat flux
+    if (s == "w/m^2" || s == "w/m2" || s == "вт/м^2" || s == "вт/м2") return 6;
+    //8 - displacement
+    if (s == "m" || s == "м") return 8;
+    //9 - reaction force - non detectable (= force)
+    //11 - velocity
+    if (s == "m/s" || s == "м/с") return 11;
+    //12 - acceleration
+    if (s == "m/s2" || s == "m/s^2" || s == "м/с2" || s == "м/с^2" || s == "g") return 12;
+    //13 - excitation force
+    if (s == "n" || s == "н") return 13;
+    //15 - pressure
+    if (s == "pa" || s == "psi" || s == "па") return 15;
+    //16 - mass
+    if (s == "kg" || s == "кг") return 16;
+    //17 - time
+    if (s == "s" || s == "с") return 17;
+    //18 - frequency
+    if (s == "hz" || s == "гц" || s == "1/s" || s == "1/с") return 18;
+    //19 - rpm
+    if (s == "rpm" || s == "rad/s" || s == "deg/s" || s == "°/s" || s == "рад/с" || s == "°/с"
+        || s == "об/мин" || s == "об/с") return 19;
+    //20 - order
+    if (s == "1/deg" || s == "1/rad" || s == "1/рад") return 20;
+
+    return 0; //0 - unknown
+}
+
+QString unitNameFromUffType(int type)
+{
+    switch (type) {
+        case 2:
+        case 15: return "Па";
+        case 5:  return "°C";
+        case 6:  return "Вт/м^2";
+        case 8:  return "м";
+        case 9:
+        case 13: return "Н";
+        case 11: return "м/с";
+        case 12: return "м/с^2";
+        case 16: return "кг";
+        case 17: return "с";
+        case 18: return "Гц";
+        case 19: return "об/мин";
+        case 20: return "1/рад";
+    }
+    return "";
+}
+
+QString unitDescriptionFromUffType(int type)
+{
+    switch (type) {
+        case 1: return "General";
+        case 2: return "Stress";
+        case 3: return "Strain";
+        case 5: return "Temperature";
+        case 6: return "Heat flux";
+        case 8: return "Displacement";
+        case 9: return "Reaction force";
+        case 11: return "Velocity";
+        case 12: return "Acceleration";
+        case 13: return "Excitation force";
+        case 15: return "Pressure";
+        case 16: return "Mass";
+        case 17: return "Time";
+        case 18: return "Frequency";
+        case 19: return "RPM";
+        case 20: return "Order";
+    }
+    return "Unknown";
+}
+
+double logrefFromUffUnit(int type)
+{
+    switch (type) {
+        case 2: return 2.0e-5; //"Stress";
+        case 3: return 1.0; //Strain
+        case 5: return 1.0; //Temperature
+        case 6: return 1.0e-12; //"Heat flux";
+        case 8: return 8.0e-14; //"Displacement"; <- значение DeepSea
+        case 9: return 1.0; //"Reaction force";
+        case 11: return 5.0e-8; //"Velocity";
+        case 12: return 3.14e-4; //"Acceleration"; <- значение базы датчиков
+        case 13: return 1.0; //"Excitation force";
+        case 15: return 2.0e-5; //Pressure
+        case 16: return 1.0; //"Mass";
+        case 17: return 1.0; //"Time";
+        case 18: return 1.0;//"Frequency";
+        case 19: return 5.0e-8;//"RPM";
+        case 20: return 1.0; //"Order";
+    }
+    return 1.0;
+}
+
+
