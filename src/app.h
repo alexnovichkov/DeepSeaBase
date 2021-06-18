@@ -30,6 +30,7 @@ public:
               const QString &name,
               const QVector<int> &indexes = QVector<int>(),
               bool *isNew = nullptr);
+    void maybeDelFile(const QString& name);
 
     ColorSelector *colors() {return m_colors;}
 private:

@@ -81,20 +81,20 @@ struct DataDescription
         for (auto i = o.constBegin(); i!=o.constEnd(); ++i) {
             QString key = i.key();
             QJsonValue val = i.value();
-            qDebug()<<key<<val;
+            //qDebug()<<key<<val;
             if (val.isArray()) {
-                qDebug()<<"Array found at"<<key;
+                //qDebug()<<"Array found at"<<key;
                 continue;
             }
             else if (val.isObject()) {
                 QJsonObject v = val.toObject();
                 for (auto j = v.constBegin(); j!=v.constEnd(); ++j) {
                     if (j->isArray()) {
-                        qDebug()<<"Array found at"<<j.key();
+                        //qDebug()<<"Array found at"<<j.key();
                         continue;
                     }
                     else if (j->isObject()) {
-                        qDebug()<<"Object found at"<<j.key();
+                        //qDebug()<<"Object found at"<<j.key();
                         continue;
                     }
                     QString key1 = key+"."+j.key();

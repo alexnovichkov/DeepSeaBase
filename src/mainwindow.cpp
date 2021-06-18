@@ -759,18 +759,13 @@ void MainWindow::closeTab(int i)
 
     if (!tab) return;
 
-    // удаление графиков тех файлов, которые были в закрываемой вкладке
     for (int i=0; i<tab->model->size(); ++i) {
-        auto f = tab->model->file(i);
-    }
-
-
-    for (int i=plot->curvesCount()-1; i>=0; --i) {
-        FileDescriptor *f = plot->curves[i]->channel->descriptor();
-        F sm = App->find(f->fileName());
-        if (sm.use_count()<=2)
-        if (tab->model->contains(f) && !duplicated(f))
-            plot->deleteCurve(plot->curves[i]);
+        F f = tab->model->file(i);
+        //use_count==3 if file is only in one tab, (1 for App, 1 for model, 1 for the prev line)
+        //use_count>=4 if file is in more than one tab
+        if (f.use_count()<=3 && f->hasCurves()) {
+            plot->deleteCurvesForDescriptor(f.get());
+        }
     }
 
     tab->channelModel->clear();
@@ -954,7 +949,7 @@ void MainWindow::deleteFiles()
     }
     tab->channelModel->clear();
 
-    tab->model->deleteFiles();
+    tab->model->deleteSelectedFiles();
 
     if (tab->model->size() == 0)
         tab->folders.clear();
@@ -2849,15 +2844,15 @@ void Tab::filesSelectionChanged(const QItemSelection &newSelection, const QItemS
     Q_UNUSED(oldSelection);
     if (newSelection.isEmpty()) filesTable->selectionModel()->setCurrentIndex(QModelIndex(), QItemSelectionModel::NoUpdate);
 
-    QSet<int> indexes;
+    QVector<int> indexes;
 
     QModelIndexList list = filesTable->selectionModel()->selection().indexes();
-    foreach (const QModelIndex &i, list) indexes << sortModel->mapToSource(i).row();
+    for (const QModelIndex &i: list) indexes << sortModel->mapToSource(i).row();
 
-    QList<int> l = indexes.values();
-    std::sort(l.begin(), l.end());
+    std::sort(indexes.begin(), indexes.end());
+    indexes.erase(std::unique(indexes.begin(), indexes.end()), indexes.end());
 
-    model->setSelected(l);
+    model->setSelected(indexes);
     if (indexes.isEmpty()) {
         channelModel->clear();
         this->filePathLabel->clear();
@@ -2870,15 +2865,15 @@ void Tab::channelsSelectionChanged(const QItemSelection &newSelection, const QIt
     Q_UNUSED(oldSelection);
     if (newSelection.isEmpty()) channelsTable->selectionModel()->setCurrentIndex(QModelIndex(), QItemSelectionModel::NoUpdate);
 
-    QSet<int> indexes;
+    QVector<int> indexes;
 
     QModelIndexList list = channelsTable->selectionModel()->selection().indexes();
-    foreach (const QModelIndex &i, list) indexes << i.row();
+    for (const QModelIndex &i: list) indexes << i.row();
 
-    QList<int> l = indexes.values();
-    std::sort(l.begin(), l.end());
+    std::sort(indexes.begin(), indexes.end());
+    indexes.erase(std::unique(indexes.begin(), indexes.end()), indexes.end());
 
-    channelModel->setSelected(l.toVector());
+    channelModel->setSelected(indexes);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

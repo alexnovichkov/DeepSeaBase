@@ -31,16 +31,15 @@ public:
     bool contains(const QString &fileName, int *index = 0) const;
     bool contains(const F &file, int *index = 0) const;
     bool contains(FileDescriptor* file, int *index = 0) const;
-    //const F &file(int i) const;
     F file(int i);
 //    FileDescriptor *find(const QString &fileName) const;
 
     void addFiles(const QList<F> &files);
-    void deleteFiles(); //удаление выделенных файлов
+    void deleteSelectedFiles(); //удаление выделенных файлов
     int size() const {return descriptors.size();}
 
-    QList<int> selected() const {return indexes;}
-    void setSelected(const QList<int> &indexes);
+    QVector<int> selected() const {return indexes;}
+    void setSelected(const QVector<int> &indexes);
     QList<FileDescriptor*> selectedFiles(Descriptor::DataType type) const;
     QList<FileDescriptor*> selectedFiles() const;
     QList<FileDescriptor*> selectedFiles(const QVector<Descriptor::DataType> &types) const;
@@ -83,7 +82,7 @@ private:
     QFont uFont;
     QFont bFont;
 
-    QList<int> indexes;
+    QVector<int> indexes;
 
 };
 

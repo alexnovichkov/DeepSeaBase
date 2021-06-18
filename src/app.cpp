@@ -69,6 +69,15 @@ F Application::addFile(const FileDescriptor &source, const QString &name, const 
     return f;
 }
 
+void Application::maybeDelFile(const QString &name)
+{
+    F& f = files[name];
+    if (f.use_count()<2) {
+        f.reset();
+        files.remove(name);
+    }
+}
+
 void Application::createSettings()
 {
     if (QFile::exists("portable")) {

@@ -15,15 +15,9 @@ Model::Model(QObject *parent) : QAbstractTableModel(parent)
     bFont.setBold(true);
 }
 
-//const F & Model::file(int i) const
-//{DD;
-//    if (i<0 || i>=descriptors.size()) return F();
-//    return descriptors[i];
-//}
-
 F Model::file(int i)
 {
-    if (i<0 || i>=descriptors.size()) return F();
+    if (i<0 || i>=descriptors.size()) return nullptr;
     return descriptors[i];
 }
 
@@ -36,23 +30,7 @@ void Model::addFiles(const QList<F> &files)
     emit modelChanged();
 }
 
-void Model::deleteFiles()
-{DD;
-    beginResetModel();
-
-    for (int i = indexes.size()-1; i>=0; --i) {
-        int toDelete = indexes.at(i);
-        if (toDelete >= 0 && toDelete < descriptors.size()) {
-            descriptors.removeAt(toDelete);
-        }
-    }
-    indexes.clear();
-
-    endResetModel();
-    emit modelChanged();
-}
-
-void Model::setSelected(const QList<int> &indexes)
+void Model::setSelected(const QVector<int> &indexes)
 {DD;
     this->indexes = indexes;
     emit modelChanged();
@@ -162,9 +140,29 @@ void Model::updateFile(int idx, int column)
 void Model::clear()
 {DD;
     beginResetModel();
-    //for (const auto &f: descriptors) qDebug()<<f.use_count()<<f->fileName();
-    descriptors.clear();
+
+    //выделяем все файлы
+    indexes.resize(size());
+    std::iota(indexes.begin(), indexes.end(), 0);
+    //удаляем выделенные файлы
+    deleteSelectedFiles();
+}
+
+void Model::deleteSelectedFiles()
+{DD;
+    beginResetModel();
+
+    for (int i = indexes.size()-1; i>=0; --i) {
+        int toDelete = indexes.at(i);
+        if (toDelete >= 0 && toDelete < descriptors.size()) {
+            QString name = descriptors[toDelete]->fileName();
+            descriptors[toDelete].reset();
+            App->maybeDelFile(name);
+            descriptors.removeAt(toDelete);
+        }
+    }
     indexes.clear();
+
     endResetModel();
     emit modelChanged();
 }
