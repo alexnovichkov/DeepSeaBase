@@ -747,7 +747,7 @@ void MainWindow::createNewTab()
     tabsNames << name;
 }
 
-void MainWindow::closeTab(int i)
+void MainWindow::closeTab(int i, bool checkForCurves)
 {DD;
     if (!tabWidget) return;
     //if (tabWidget->count()==1) return;
@@ -759,12 +759,14 @@ void MainWindow::closeTab(int i)
 
     if (!tab) return;
 
-    for (int i=0; i<tab->model->size(); ++i) {
-        F f = tab->model->file(i);
-        //use_count==3 if file is only in one tab, (1 for App, 1 for model, 1 for the prev line)
-        //use_count>=4 if file is in more than one tab
-        if (f.use_count()<=3 && f->hasCurves()) {
-            plot->deleteCurvesForDescriptor(f.get());
+    if (checkForCurves) {
+        for (int i=0; i<tab->model->size(); ++i) {
+            F f = tab->model->file(i);
+            //use_count==3 if file is only in one tab, (1 for App, 1 for model, 1 for the prev line)
+            //use_count>=4 if file is in more than one tab
+            if (f.use_count()<=3 && f->hasCurves()) {
+                plot->deleteCurvesForDescriptor(f.get());
+            }
         }
     }
 
@@ -934,18 +936,21 @@ void MainWindow::deleteFiles()
 {DD;
     if (!tab) return;
 
-    QList<FileDescriptor *> files = tab->model->selectedFiles();
-    for (FileDescriptor *d: files) {
-        // удаление графиков удаляемых файлов, если они только в одной вкладке
-        if (!duplicated(d))
-            plot->deleteCurvesForDescriptor(d);
+    auto indexes = tab->model->selected();
+    for (int i: indexes) {
+        F f = tab->model->file(i);
+        //use_count==3 if file is only in one tab, (1 for App, 1 for model, 1 for the prev line)
+        //use_count>=4 if file is in more than one tab
+        //qDebug()<<"delete file"<<f.use_count()<<f->fileName();
+        if (f.use_count()<=3 && f->hasCurves())
+            plot->deleteCurvesForDescriptor(f.get());
 
-        if (tab->folders.contains(d->fileName()))
-            tab->folders.removeOne(d->fileName());
-        else if (tab->folders.contains(d->fileName()+":0"))
-            tab->folders.removeOne(d->fileName()+":0");
-        else if (tab->folders.contains(d->fileName()+":1"))
-            tab->folders.removeOne(d->fileName()+":1");
+        if (tab->folders.contains(f->fileName()))
+            tab->folders.removeOne(f->fileName());
+        else if (tab->folders.contains(f->fileName()+":0"))
+            tab->folders.removeOne(f->fileName()+":0");
+        else if (tab->folders.contains(f->fileName()+":1"))
+            tab->folders.removeOne(f->fileName()+":1");
     }
     tab->channelModel->clear();
 
@@ -2018,20 +2023,6 @@ void MainWindow::addFile(F descriptor)
 //    tab->filesTable->setCurrentIndex(tab->model->modelIndexOfFile(descriptor, 1));
 }
 
-bool MainWindow::duplicated(FileDescriptor *file) const
-{
-    if (!file) return false;
-
-    for (int i=0; i<tabWidget->count(); ++i) {
-        Tab *t = qobject_cast<Tab *>(tabWidget->widget(i));
-        if (t==tab) continue;
-
-        if (t->model->contains(file))
-            return true;
-    }
-    return false;
-}
-
 void MainWindow::setCurrentAndPlot(FileDescriptor *d, int channelIndex)
 {DD;
     if (tab) {
@@ -2052,7 +2043,7 @@ void MainWindow::updatePlottedChannelsNumbers()
     //    qDebug()<<plottedChannelsNumbers.size();
 }
 
-void MainWindow::previousDescriptor()
+void MainWindow::previousOrNextDescriptor(bool previous) /*private*/
 {
     if (!tab || !tab->record) return;
 
@@ -2066,36 +2057,31 @@ void MainWindow::previousDescriptor()
     QModelIndex current = tab->filesTable->selectionModel()->currentIndex();
     int row = current.row();
     QModelIndex index;
-    if (row == 0)
-        index = tab->filesTable->model()->index(tab->filesTable->model()->rowCount()-1,current.column());
-    else
-        index = tab->filesTable->model()->index(row-1,current.column());
+    if (previous) {
+        if (row == 0)
+            index = tab->filesTable->model()->index(tab->filesTable->model()->rowCount()-1,current.column());
+        else
+            index = tab->filesTable->model()->index(row-1,current.column());
+    }
+    else {
+        if (row == tab->filesTable->model()->rowCount()-1)
+            index = tab->filesTable->model()->index(0,current.column());
+        else
+            index = tab->filesTable->model()->index(row+1,current.column());
+    }
     if (index.isValid())
         tab->filesTable->selectionModel()->setCurrentIndex(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Current);
     sergeiMode = mode;
 }
 
+void MainWindow::previousDescriptor()
+{
+    previousOrNextDescriptor(true);
+}
+
 void MainWindow::nextDescriptor()
 {
-    if (!tab || !tab->record) return;
-
-    //проверяем, есть ли в табе другие записи
-    if (tab->model->size() < 2) return;
-
-    bool mode = sergeiMode;
-    sergeiMode = true;
-    updatePlottedChannelsNumbers();
-
-    QModelIndex current = tab->filesTable->selectionModel()->currentIndex();
-    int row = current.row();
-    QModelIndex index;
-    if (row == tab->filesTable->model()->rowCount()-1)
-        index = tab->filesTable->model()->index(0,current.column());
-    else
-        index = tab->filesTable->model()->index(row+1,current.column());
-    if (index.isValid())
-        tab->filesTable->selectionModel()->setCurrentIndex(index, QItemSelectionModel::ClearAndSelect | QItemSelectionModel::Current);
-    sergeiMode = mode;
+    previousOrNextDescriptor(false);
 }
 
 void MainWindow::arbitraryDescriptor()
@@ -2270,10 +2256,11 @@ void MainWindow::updateActions()
 void MainWindow::renameDescriptor()
 {
     if (!tab) return;
-    QList<FileDescriptor *> records = tab->model->selectedFiles();
-    if (records.isEmpty()) return;
 
-    FileDescriptor *file = records.constFirst();
+    auto indexes = tab->model->selected();
+    if (indexes.isEmpty()) return;
+
+    F file = tab->model->file(indexes.first());
     QFileInfo fi(file->fileName());
     QString newName = QInputDialog::getText(this, "Переименование файла",
                                             "Введите новое имя файла",
@@ -2951,7 +2938,7 @@ bool MainWindow::closeRequested()
     plot->deleteAllCurves(true);
 
     for (int i= tabWidget->count()-1; i>=0; --i) {
-        closeTab(i);
+        closeTab(i, false);
     }
 
     return true;

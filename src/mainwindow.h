@@ -154,7 +154,7 @@ private slots:
 
     void createNewTab();
 
-    void closeTab(int);
+    void closeTab(int, bool checkForCurves = true);
     void closeOtherTabs(int);
     void renameTab(int i);
     void changeCurrentTab(int currentIndex);
@@ -217,10 +217,11 @@ private:
     void createTab(const QString &name, const QStringList &folders);
 
 //    FileDescriptor *findDescriptor(const QString &file);
-    bool duplicated(FileDescriptor *file) const;
 
     void addFile(F descriptor);
     void setCurrentAndPlot(FileDescriptor *d, int channelIndex);
+
+    void previousOrNextDescriptor(bool up);
 
 
     bool sergeiMode = false;
