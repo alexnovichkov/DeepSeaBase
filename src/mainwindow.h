@@ -222,11 +222,12 @@ private:
     void setCurrentAndPlot(FileDescriptor *d, int channelIndex);
 
     void previousOrNextDescriptor(bool up);
+    void cycleChannelsUpOrDown(bool up);
 
 
     bool sergeiMode = false;
     QVector<int> plottedChannelsNumbers;
-    bool cycled = false;
+    QVector<int> cycled;
 
     QStringList tabsNames;
 

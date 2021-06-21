@@ -1603,7 +1603,6 @@ void MainWindow::updateChannelsTable(FileDescriptor *descriptor)
 {DD;
     QVector<int> plottedChannels = plottedChannelsNumbers;
     if (sergeiMode) {
-    //    plottedChannelsNumbers = tab->channelModel->plotted();
         tab->channelModel->deleteCurves();
     }
     //возвращаем после удаления
@@ -1627,7 +1626,8 @@ void MainWindow::updateChannelsTable(FileDescriptor *descriptor)
             tab->channelModel->plotChannels(plottedChannelsNumbers);
         }
     }
-    //возвращаем после возможного неполного рисования
+    //возвращаем после возможного неполного рисования, чтобы не терялись каналы
+    //при переходе к файлам с меньшим количеством каналов
     plottedChannelsNumbers = plottedChannels;
 }
 
@@ -2040,7 +2040,7 @@ void MainWindow::updatePlottedChannelsNumbers()
         plottedChannelsNumbers = tab->channelModel->plotted();
     else
         plottedChannelsNumbers.clear();
-    //    qDebug()<<plottedChannelsNumbers.size();
+    //qDebug()<<"update"<<(plottedChannelsNumbers.isEmpty());
 }
 
 void MainWindow::previousOrNextDescriptor(bool previous) /*private*/
@@ -2097,31 +2097,15 @@ void MainWindow::arbitraryDescriptor()
 
 void MainWindow::cycleChannelsUp()
 {
-    if (!tab || !tab->record) return;
-
-    bool mode = sergeiMode;
-    sergeiMode = true;
-    updatePlottedChannelsNumbers();
-
-    QVector<int> plotted = plottedChannelsNumbers;
-    if (!plotted.isEmpty()) {
-        tab->channelModel->deleteCurves();
-
-        for (int i=0; i<plotted.size(); ++i) {
-            //пропускаем фиксированную кривую, остальные сдвигаем
-            if (Curve *curve = plot->plotted(tab->record->channel(plotted[i]))) {
-                if (curve->fixed) continue;
-            }
-
-            if (plotted[i] == 0) plotted[i] = tab->record->channelsCount()-1;
-            else plotted[i]=plotted[i]-1;
-        }
-        tab->channelModel->plotChannels(plotted);
-    }
-    sergeiMode = mode;
+    cycleChannelsUpOrDown(true);
 }
 
 void MainWindow::cycleChannelsDown()
+{
+    cycleChannelsUpOrDown(false);
+}
+
+void MainWindow::cycleChannelsUpOrDown(bool up) /*private*/
 {
     if (!tab || !tab->record) return;
 
@@ -2130,20 +2114,33 @@ void MainWindow::cycleChannelsDown()
     updatePlottedChannelsNumbers();
 
     QVector<int> plotted = plottedChannelsNumbers;
-    if (!plotted.isEmpty()) {
+    if (plotted.isEmpty()) cycled.clear(); //контроль очистки графика
 
-        tab->channelModel->deleteCurves();
-
-        for (int i=0; i<plotted.size(); ++i) {
-            //пропускаем фиксированную кривую, остальные сдвигаем
-            if (Curve *curve = plot->plotted(tab->record->channel(plotted[i]))) {
-                if (curve->fixed) continue;
-            }
-
-            if (plotted[i] == tab->record->channelsCount()-1) plotted[i] = 0;
-            else plotted[i]=plotted[i]+1;
+    if (cycled.isEmpty()) {
+        cycled = plotted;
+        //удаляем фиксированные каналы
+        for (int i=cycled.size()-1; i>=0; --i) {
+            if (Curve *curve = plot->plotted(tab->record->channel(cycled[i])))
+                if (curve->fixed ) {
+                    cycled.remove(i);
+                }
         }
-        tab->channelModel->plotChannels(plotted);
+    }
+    if (!cycled.isEmpty()) {
+        tab->channelModel->deleteCurves();
+        if (up) {
+            for (int i=0; i<cycled.size(); ++i) {
+                if (cycled[i] == 0) cycled[i] = tab->record->channelsCount()-1;
+                else cycled[i]=cycled[i]-1;
+            }
+        }
+        else {
+            for (int i=cycled.size()-1; i>=0; --i) {
+                if (cycled[i] == tab->record->channelsCount()-1) cycled[i] = 0;
+                else cycled[i]=cycled[i]+1;
+            }
+        }
+        tab->channelModel->plotChannels(cycled);
     }
     sergeiMode = mode;
 }
