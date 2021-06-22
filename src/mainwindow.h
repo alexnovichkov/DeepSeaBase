@@ -202,6 +202,7 @@ private slots:
     void updateActions();
     void renameDescriptor();
 private:
+    QString getFolderToAdd(bool withSubfolders);
     void moveChannels(bool up);
     void addFiles(const QStringList &files);
     void addDescriptors(const QList<F> &files);

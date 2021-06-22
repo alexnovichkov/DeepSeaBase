@@ -848,36 +848,33 @@ MainWindow::~MainWindow()
 //    ColorSelector::instance()->drop();
 }
 
-void MainWindow::addFolder() /*SLOT*/
+QString MainWindow::getFolderToAdd(bool withSubfolders)
 {DD;
     QString directory = App->getSetting("lastDirectory").toString();
 
     directory = QFileDialog::getExistingDirectory(this,
+                                                  withSubfolders?tr("Добавление папки со всеми вложенными папками"):
                                                   tr("Добавление папки"),
                                                   directory,
                                                   QFileDialog::ShowDirsOnly | QFileDialog::ReadOnly);
 
-    if (directory.isEmpty()) return;
-    App->setSetting("lastDirectory", directory);
-    addFolder(directory, false /*with subfolders*/, false /*silent*/);
+    if (!directory.isEmpty())
+        App->setSetting("lastDirectory", directory);
+    return directory;
+}
+
+void MainWindow::addFolder() /*SLOT*/
+{DD;
+    addFolder(getFolderToAdd(false /*with subfolders*/), false /*with subfolders*/, false /*silent*/);
 }
 
 void MainWindow::addFolderWithSubfolders() /*SLOT*/
-{
-    QString directory = App->getSetting("lastDirectory").toString();
-
-    directory = QFileDialog::getExistingDirectory(this,
-                                                  tr("Добавление папки со всеми вложенными папками"),
-                                                  directory,
-                                                  QFileDialog::ShowDirsOnly | QFileDialog::ReadOnly);
-
-    if (directory.isEmpty()) return;
-    App->setSetting("lastDirectory", directory);
-    addFolder(directory, true /*with subfolders*/, false /*silent*/);
+{DD;
+    addFolder(getFolderToAdd(true /*with subfolders*/), true /*with subfolders*/, false /*silent*/);
 }
 
 void MainWindow::addFile()
-{
+{DD;
     QString directory = App->getSetting("lastDirectory").toString();
 
     QFileDialog dialog(this, "Добавить файлы", directory);
@@ -2839,7 +2836,7 @@ void Tab::filesSelectionChanged(const QItemSelection &newSelection, const QItemS
     model->setSelected(indexes);
     if (indexes.isEmpty()) {
         channelModel->clear();
-        this->filePathLabel->clear();
+        filePathLabel->clear();
     }
 
 }
