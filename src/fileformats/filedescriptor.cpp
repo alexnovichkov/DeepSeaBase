@@ -463,7 +463,7 @@ void FileDescriptor::setXStep(const double xStep)
         if (ch->data()->xValuesFormat() == DataHolder::XValuesNonUniform) continue;
         if (ch->data()->xStep()!=xStep) {
             changed = true;
-            ch->data()->setXStep(xStep);
+            ch->setXStep(xStep);
         }
     }
     if (changed) setChanged(true);
@@ -671,6 +671,11 @@ void Channel::setXName(const QString &xName)
 void Channel::setZName(const QString &zName)
 {
     _dataDescription.data.insert("zname", zName);
+}
+
+void Channel::setXStep(double xStep)
+{
+    _data->setXStep(xStep);
 }
 
 QString Channel::legendName() const

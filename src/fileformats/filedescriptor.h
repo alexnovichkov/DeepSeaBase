@@ -298,6 +298,8 @@ public:
     void setXName(const QString &xName);
     void setZName(const QString &zName);
 
+    virtual void setXStep(double xStep); //переопределен в D94
+
     const DataDescription & dataDescription() const {return _dataDescription;}
     DataDescription & dataDescription() {return _dataDescription;}
     void setDataDescription(const DataDescription &descr) {_dataDescription = descr;}

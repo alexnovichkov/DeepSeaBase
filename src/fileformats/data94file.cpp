@@ -637,8 +637,8 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
 
 void Data94Channel::setXStep(double xStep)
 {
+    Channel::setXStep(xStep);
     xAxisBlock.step = float(xStep);
-    _data->setXStep(xStep);
 }
 
 Descriptor::DataType Data94Channel::type() const

@@ -134,7 +134,7 @@ public:
     Data94Channel(Channel *other, Data94File *parent);
     void read(QDataStream &r);
     void write(QDataStream &r, QDataStream *in, DataHolder *data);
-    void setXStep(double xStep);
+    void setXStep(double xStep) override;
 
     // Channel interface
 public:
