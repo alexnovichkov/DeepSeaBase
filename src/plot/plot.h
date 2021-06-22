@@ -112,7 +112,6 @@ public:
 
     void prepareAxis(QwtAxisId axis);
     void setAxis(QwtAxisId axis, const QString &name);
-    void moveToAxis(int axis, double min, double max);
     void updateAxesLabels();
 
     void setScale(QwtAxisId id, double min, double max, double step = 0);
@@ -159,11 +158,9 @@ signals:
     void updatePlotted();
     void needPlotChannels(const QVector<int> &channels, bool plotOnRight);
 private slots:
-    void editLegendItem(const QVariant &itemInfo, int index);
     void editLegendItem(QwtPlotItem *item);
     void deleteCurveFromLegend(QwtPlotItem *item);
     void showContextMenu(const QPoint &pos, QwtAxisId axis);
-    void moveCurve(QwtPlotItem *curve);
     void fixCurve(QwtPlotItem* curve);
     void hoverAxis(QwtAxisId axis, int hover);
 private:

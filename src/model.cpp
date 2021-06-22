@@ -169,9 +169,6 @@ void Model::deleteSelectedFiles()
 
 void Model::invalidateCurve(Channel* channel)
 {DD;
-    channel->setPlotted(0);
-    channel->setColor(QColor());
-
     int row;
     if (contains(channel->descriptor(), &row)) {
         QModelIndex idx = index(row, MODEL_COLUMN_FILENAME);

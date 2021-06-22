@@ -277,15 +277,11 @@ int Plot::curvesCount(int type) const
 
 void Plot::deleteAllCurves(bool forceDeleteFixed)
 {DD;
-    //ZoneScoped;
-    int leftUndeleted = curves.size();
-
     for (int i=curves.size()-1; i>=0; --i) {
         Curve *c = curves[i];
         if (!c->fixed || forceDeleteFixed) {
-            emit curveDeleted(c->channel);
+            emit curveDeleted(c->channel); //->MainWindow.onCurveDeleted
             deleteCurve(c, i==0);
-            leftUndeleted--;
         }
     }
 
@@ -299,6 +295,7 @@ void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
     for (int i = curves.size()-1; i>=0; --i) {
         Curve *curve = curves[i];
         if (descriptor == curve->channel->descriptor()) {
+            emit curveDeleted(curve->channel); //->MainWindow.onCurveDeleted
             deleteCurve(curve, true);
         }
     }
@@ -310,9 +307,9 @@ void Plot::deleteCurveFromLegend(QwtPlotItem *item)
 {DD;
     if (Curve *c = dynamic_cast<Curve *>(item)) {
         if (!c->fixed) {
-            emit curveDeleted(c->channel);
+            emit curveDeleted(c->channel); //->MainWindow.onCurveDeleted
             deleteCurve(c, true);
-            emit curvesCountChanged();
+            emit curvesCountChanged(); //->MainWindow.updateActions
         }
     }
 }
@@ -320,6 +317,7 @@ void Plot::deleteCurveFromLegend(QwtPlotItem *item)
 void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot)
 {DD;
     if (Curve *curve = plotted(dfd->channel(channel))) {
+        emit curveDeleted(curve->channel);
         deleteCurve(curve, doReplot);
         emit curvesCountChanged();
     }
@@ -625,30 +623,6 @@ void Plot::setAxis(QwtAxisId axis, const QString &name)
     }
 }
 
-void Plot::moveToAxis(int axis, double min, double max)
-{DD;
-    //запрещаем переносить спектрограмму
-    if (spectrogram) return;
-
-    switch (axis) {
-        case QwtAxis::xBottom:
-            zoom->horizontalScaleBounds->add(min, max);
-            if (!zoom->horizontalScaleBounds->isFixed()) zoom->horizontalScaleBounds->autoscale();
-            break;
-        case QwtAxis::yLeft:
-            zoom->verticalScaleBoundsSlave->removeToAutoscale(min, max);
-            zoom->verticalScaleBounds->add(min, max);
-            if (!zoom->verticalScaleBounds->isFixed()) zoom->verticalScaleBounds->autoscale();
-            break;
-        case QwtAxis::yRight:
-            zoom->verticalScaleBounds->removeToAutoscale(min, max);
-            zoom->verticalScaleBoundsSlave->add(min, max);
-            if (!zoom->verticalScaleBoundsSlave->isFixed()) zoom->verticalScaleBoundsSlave->autoscale();
-            break;
-        default: break;
-    }
-}
-
 void Plot::updateAxesLabels()
 {DD;
     if (!spectrogram) {
@@ -711,7 +685,7 @@ void Plot::setScale(QwtAxisId id, double min, double max, double step)
 
 void Plot::removeLabels()
 {
-    foreach (Curve *c, curves) {
+    for (Curve *c: curves) {
         c->removeLabels();
     }
    replot();
@@ -746,17 +720,11 @@ void Plot::moveCurve(Curve *curve, int axis)
 //        emit curvesChanged();
 
         updateAxesLabels();
-        moveToAxis(axis, curve->channel->data()->yMin(), curve->channel->data()->yMax());
+        zoom->moveToAxis(axis, curve->channel->data()->yMin(), curve->channel->data()->yMax());
     }
     else QMessageBox::warning(this, "Не могу поменять ось", "Эта ось уже занята графиком другого типа!");
 
 
-}
-
-void Plot::moveCurve(QwtPlotItem *curve)
-{
-    if (Curve *c = dynamic_cast<Curve*>(curve))
-        moveCurve(c, c->yAxis() == QwtAxis::yLeft ? QwtAxis::yRight : QwtAxis::yLeft);
 }
 
 void Plot::fixCurve(QwtPlotItem *curve)
@@ -825,7 +793,10 @@ void Plot::createLegend()
     CheckableLegend *leg = new CheckableLegend();
     connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
     connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurveFromLegend(QwtPlotItem*)));
-    connect(leg, SIGNAL(markedToMove(QwtPlotItem*)),this, SLOT(moveCurve(QwtPlotItem*)));
+    connect(leg, &CheckableLegend::markedToMove, this, [this](QwtPlotItem*curve){
+        if (Curve *c = dynamic_cast<Curve*>(curve))
+            moveCurve(c, c->yAxis() == QwtAxis::yLeft ? QwtAxis::yRight : QwtAxis::yLeft);
+    });
     connect(leg, SIGNAL(fixedChanged(QwtPlotItem*)),this, SLOT(fixCurve(QwtPlotItem*)));
     insertLegend(leg, QwtPlot::RightLegend);
 }
@@ -1222,22 +1193,6 @@ void Plot::switchCursor()
     _picker->setEnabled(!pickerEnabled);
     tracker->setEnabled(!pickerEnabled);
     App->setSetting("pickerEnabled", !pickerEnabled);
-}
-
-void Plot::editLegendItem(const QVariant &itemInfo, int index)
-{DD;
-    Q_UNUSED(index)
-
-    QwtPlotItem *item = infoToItem(itemInfo);
-    if (item) {
-        Curve *c = dynamic_cast<Curve *>(item);
-        if (c) {
-            CurvePropertiesDialog dialog(c, this);
-            connect(&dialog,SIGNAL(curveChanged(Curve*)),this, SIGNAL(curveChanged(Curve*)));
-            connect(&dialog,SIGNAL(curveChanged(Curve*)),trackingPanel, SLOT(update()));
-            dialog.exec();
-        }
-    }
 }
 
 void Plot::editLegendItem(QwtPlotItem *item)

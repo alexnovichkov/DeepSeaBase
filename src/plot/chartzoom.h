@@ -116,6 +116,7 @@ public:
 
     void addZoom(zoomCoordinates coords, bool apply = false);
     void zoomBack();
+    void moveToAxis(int axis, double min, double max);
 
     bool activated;
 public slots:

@@ -155,6 +155,27 @@ void ChartZoom::zoomBack()
     plot()->replot();
 }
 
+void ChartZoom::moveToAxis(int axis, double min, double max)
+{
+    switch (axis) {
+        case QwtAxis::xBottom:
+            horizontalScaleBounds->add(min, max);
+            if (!horizontalScaleBounds->isFixed()) horizontalScaleBounds->autoscale();
+            break;
+        case QwtAxis::yLeft:
+            verticalScaleBoundsSlave->removeToAutoscale(min, max);
+            verticalScaleBounds->add(min, max);
+            if (!verticalScaleBounds->isFixed()) verticalScaleBounds->autoscale();
+            break;
+        case QwtAxis::yRight:
+            verticalScaleBounds->removeToAutoscale(min, max);
+            verticalScaleBoundsSlave->add(min, max);
+            if (!verticalScaleBoundsSlave->isFixed()) verticalScaleBoundsSlave->autoscale();
+            break;
+        default: break;
+    }
+}
+
     /**************************************************/
     /*         Реализация класса QScaleBounds         */
     /*                  Версия 1.0.1                  */

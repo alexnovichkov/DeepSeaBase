@@ -2772,14 +2772,12 @@ void MainWindow::onCurveColorChanged(Curve *curve)
 
 void MainWindow::onCurveDeleted(Channel *channel)
 {DD;
-    for (int index = 0; index < tabWidget->count(); ++index) {
-        if (Tab *t = qobject_cast<Tab*>(tabWidget->widget(index)))
-            t->model->invalidateCurve(channel);
-    }
+    channel->setPlotted(0);
+    channel->setColor(QColor());
+
+    tab->model->invalidateCurve(channel);
     if (tab->record == channel->descriptor())
         tab->channelModel->onCurveChanged(channel);
-
-    updateActions();
 }
 
 void MainWindow::addDescriptors(const QList<F> &files)
