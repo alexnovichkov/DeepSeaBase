@@ -62,7 +62,7 @@ public:
 
     bool spectrogram = false;
 
-    CheckableLegend *leg;
+
 
     void update();
 
@@ -172,6 +172,7 @@ private:
     bool hasDuplicateNames(const QString name) const;
     void checkDuplicates(const QString name);
     QString yValuesPresentationSuffix(int yValuesPresentation) const;
+    void createLegend();
 
 
 //    void playChannel(Channel *ch);

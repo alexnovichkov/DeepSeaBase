@@ -97,7 +97,12 @@ void CheckableLegend::updateLegend(const QVariant &itemInfo, const QList<QwtLege
 void CheckableLegend::handleClick(const QModelIndex &i)
 {DD;
     if (QApplication::mouseButtons() & Qt::RightButton) {
-        emit markedForDelete(d_model->item(i.row()));
+        QMenu menu;
+        menu.addAction("Удалить", this, [this, i](){
+            emit markedForDelete(d_model->item(i.row()));
+        });
+        menu.exec(QCursor::pos());
+
         return;
     }
 
@@ -117,10 +122,10 @@ void CheckableLegend::handleClick(const QModelIndex &i)
 
 void CheckableLegend::updateItem(QwtPlotItem *item, const QwtLegendData &data)
 {
-    //QwtLegendData::UserRole+1 - дополнительный идентификатор канала
-    //QwtLegendData::UserRole+2 - индикатор того, что кривая выбрана
-    //QwtLegendData::UserRole+3 - цвет кривой
-    //QwtLegendData::UserRole+4 - индикатор того, что кривая фиксирована
+    static constexpr int additionalRole = QwtLegendData::UserRole+1;// - дополнительный идентификатор канала
+    static constexpr int selectedRole = QwtLegendData::UserRole+2;// - индикатор того, что кривая выбрана
+    static constexpr int colorRole = QwtLegendData::UserRole+3;// - цвет кривой
+    static constexpr int fixedRole = QwtLegendData::UserRole+4;// - индикатор того, что кривая фиксирована
 
     const QVariant titleValue = data.value( QwtLegendData::TitleRole );
 
@@ -128,19 +133,18 @@ void CheckableLegend::updateItem(QwtPlotItem *item, const QwtLegendData &data)
     if (titleValue.canConvert<QString>() )
         title = titleValue.value<QString>();
 
-    const QVariant iconValue = data.value(QwtLegendData::UserRole+3);
+    const QVariant iconValue = data.value(colorRole);
 
     QColor color;
     if ( iconValue.canConvert<QColor>() )
         color = iconValue.value<QColor>();
 
-    if (data.hasRole(QwtLegendData::UserRole+1)) {
-        title.append(QString(" [%1]").arg(data.value(QwtLegendData::UserRole+1).toInt()));
+    if (data.hasRole(additionalRole)) {
+        title.append(QString(" [%1]").arg(data.value(additionalRole).toInt()));
     }
 
-    bool selected = data.value(QwtLegendData::UserRole+2).toBool();
-
-    bool fixed = data.value(QwtLegendData::UserRole+4).toBool();
+    bool selected = data.value(selectedRole).toBool();
+    bool fixed = data.value(fixedRole).toBool();
 
     d_model->update(item, title, color, item->isVisible(), selected, fixed);
 }

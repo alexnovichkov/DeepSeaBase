@@ -154,7 +154,7 @@ Plot::Plot(QWidget *parent) :
     _canvas->setFocusIndicator(QwtPlotCanvas::CanvasFocusIndicator);
     _canvas->setPalette(Qt::white);
     _canvas->setFrameStyle(QFrame::StyledPanel);
-//    _canvas->setPaintAttribute(QwtPlotCanvas::BackingStore, true);
+    _canvas->setPaintAttribute(QwtPlotCanvas::BackingStore, true);
     setCanvas(_canvas);
 
     setAutoReplot(true);
@@ -195,12 +195,7 @@ Plot::Plot(QWidget *parent) :
     grid->setMinorPen(Qt::darkGray, 0, Qt::DotLine);
     grid->attach(this);
 
-    leg = new CheckableLegend();
-    connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
-    connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurveFromLegend(QwtPlotItem*)));
-    connect(leg, SIGNAL(markedToMove(QwtPlotItem*)),this, SLOT(moveCurve(QwtPlotItem*)));
-    connect(leg, SIGNAL(fixedChanged(QwtPlotItem*)),this, SLOT(fixCurve(QwtPlotItem*)));
-    insertLegend(leg, QwtPlot::RightLegend);
+    createLegend();
 
 
     zoom = new ChartZoom(this);
@@ -825,6 +820,16 @@ QString Plot::yValuesPresentationSuffix(int yValuesPresentation) const
     return QString();
 }
 
+void Plot::createLegend()
+{
+    CheckableLegend *leg = new CheckableLegend();
+    connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
+    connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurveFromLegend(QwtPlotItem*)));
+    connect(leg, SIGNAL(markedToMove(QwtPlotItem*)),this, SLOT(moveCurve(QwtPlotItem*)));
+    connect(leg, SIGNAL(fixedChanged(QwtPlotItem*)),this, SLOT(fixCurve(QwtPlotItem*)));
+    insertLegend(leg, QwtPlot::RightLegend);
+}
+
 void Plot::recalculateScale(bool leftAxis)
 {
     ChartZoom::ScaleBounds *ybounds = 0;
@@ -1082,8 +1087,7 @@ void Plot::importPlot(const QString &fileName, const QSize &size, int resolution
 //        curve->setPen(pen);
 //    }
 
-    QwtAbstractLegend *leg = new QwtLegend();
-    insertLegend(leg, QwtPlot::BottomLegend);
+    insertLegend(new QwtLegend(), QwtPlot::BottomLegend);
 
 
     QString format = fileName.section(".", -1,-1);
@@ -1098,12 +1102,7 @@ void Plot::importPlot(const QString &fileName, const QSize &size, int resolution
 //        curve->setPen(curve->oldPen);
 //    }
 
-    leg = new CheckableLegend();
-    connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
-    connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurveFromLegend(QwtPlotItem*)));
-    connect(leg, SIGNAL(markedToMove(QwtPlotItem*)),this, SLOT(moveCurve(QwtPlotItem*)));
-    connect(leg, SIGNAL(fixedChanged(QwtPlotItem*)),this, SLOT(fixCurve(QwtPlotItem*)));
-    insertLegend(leg, QwtPlot::RightLegend);
+    createLegend();
     setAutoReplot(true);
 }
 
@@ -1127,8 +1126,7 @@ void Plot::importPlot(QPrinter &printer, const QSize &size, int resolution) /*pr
         for (int i=0; i<QwtPlot::axisCnt; ++i)
             if (axisEnabled(i)) setAxisFont(i, axisfont);
 
-        QwtAbstractLegend *leg = new QwtLegend();
-        insertLegend(leg, QwtPlot::BottomLegend);
+        insertLegend(new QwtLegend(), QwtPlot::BottomLegend);
 
         QwtPlotRenderer renderer;
         renderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);
@@ -1140,12 +1138,7 @@ void Plot::importPlot(QPrinter &printer, const QSize &size, int resolution) /*pr
         for (int i=0; i<QwtPlot::axisCnt; ++i)
             if (axisEnabled(i)) setAxisFont(i, axisfont);
 
-        leg = new CheckableLegend();
-        connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
-        connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurveFromLegend(QwtPlotItem*)));
-        connect(leg, SIGNAL(markedToMove(QwtPlotItem*)),this, SLOT(moveCurve(QwtPlotItem*)));
-        connect(leg, SIGNAL(fixedChanged(QwtPlotItem*)),this, SLOT(fixCurve(QwtPlotItem*)));
-        insertLegend(leg, QwtPlot::RightLegend);
+        createLegend();
     }
 
     setAutoReplot(true);
