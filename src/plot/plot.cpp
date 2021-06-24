@@ -299,7 +299,7 @@ void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
             deleteCurve(curve, true);
         }
     }
-    emit curvesCountChanged();
+    emit curvesCountChanged(); //->MainWindow.updateActions
 }
 
 //не удаляем, если фиксирована
@@ -317,9 +317,9 @@ void Plot::deleteCurveFromLegend(QwtPlotItem *item)
 void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot)
 {DD;
     if (Curve *curve = plotted(dfd->channel(channel))) {
-        emit curveDeleted(curve->channel);
+        emit curveDeleted(curve->channel); //->MainWindow.onCurveDeleted
         deleteCurve(curve, doReplot);
-        emit curvesCountChanged();
+        emit curvesCountChanged(); //->MainWindow.updateActions
     }
 }
 
@@ -1212,7 +1212,7 @@ void Plot::dropEvent(QDropEvent *event)
     const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
     if (myData) {
 //        qDebug()<<myData->channels;
-        emit needPlotChannels(myData->channels, false);
+        emit needPlotChannels();
         event->acceptProposedAction();
     }
 }

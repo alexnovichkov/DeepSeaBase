@@ -28,6 +28,8 @@ public:
     Model(QObject *parent = 0);
     ~Model();
 
+
+
     bool contains(const QString &fileName, int *index = 0) const;
     bool contains(const F &file, int *index = 0) const;
     bool contains(FileDescriptor* file, int *index = 0) const;

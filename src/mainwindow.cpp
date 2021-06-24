@@ -38,6 +38,7 @@
 #include "plot/legend.h"
 
 #include "fileformats/formatfactory.h"
+#include "descriptorpropertiesdialog.h"
 
 class DfdFilterProxy : public QSortFilterProxyModel
 {
@@ -123,9 +124,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(plot, SIGNAL(saveTimeSegment(QList<FileDescriptor*>,double,double)), SLOT(saveTimeSegment(QList<FileDescriptor*>,double,double)));
     connect(plot, SIGNAL(curvesChanged()), SLOT(updatePlottedChannelsNumbers()));
     connect(plot, &Plot::curvesCountChanged, this, &MainWindow::updateActions);
-    connect(plot, &Plot::needPlotChannels, [=](const QVector<int> &channels, bool plotOnRight){
-        if (tab) tab->channelModel->plotChannels(channels, plotOnRight);
-    });
+    connect(plot, &Plot::needPlotChannels, this, [=](){tab->channelModel->plotChannels();});
+
 
     QIcon addFolderIcon(":/icons/open24.png");
     addFolderIcon.addFile(":/icons/open.png");
@@ -175,13 +175,12 @@ MainWindow::MainWindow(QWidget *parent)
     connect(plotAllChannelsOnRightAct, SIGNAL(triggered()), SLOT(plotAllChannelsAtRight()));
 
     plotSelectedChannelsAct = new QAction(QString("Построить выделенные каналы"), this);
-    connect(plotSelectedChannelsAct, &QAction::triggered, [=](){
-        tab->channelModel->plotChannels(tab->channelModel->selected(), false);
-    });
+    connect(plotSelectedChannelsAct, &QAction::triggered,
+            this, [=](){tab->channelModel->plotChannels();});
 
     plotSelectedChannelsOnRightAct = new QAction(QString("...на правой оси"), this);
     connect(plotSelectedChannelsOnRightAct, &QAction::triggered, [=](){
-        tab->channelModel->plotChannels(tab->channelModel->selected(), true);
+        tab->channelModel->plotChannels(true);
     });
 
     exportChannelsToWavAct = new QAction(QString("Экспортировать в WAV"), this);
@@ -1404,19 +1403,17 @@ void MainWindow::moveChannelsDown()
 void MainWindow::editDescriptions()
 {
     QList<FileDescriptor *> records = tab->model->selectedFiles();
+    if (records.isEmpty()) return;
 
-    EditDescriptionsDialog dialog(records, this);
-    if (dialog.exec()) {
-        auto descriptions = dialog.descriptions();
-        for (int i=0; i<descriptions.size(); ++i) {
-            tab->model->setDataDescription(i, descriptions.at(i));
-        }
-//        QHashIterator<FileDescriptor*, DataDescription> it(descriptions);
-//        while (it.hasNext()) {
-//            it.next();
-//            tab->model->setDataDescription(it.key(), it.value());
+//    EditDescriptionsDialog dialog(records, this);
+//    if (dialog.exec()) {
+//        auto descriptions = dialog.descriptions();
+//        for (int i=0; i<descriptions.size(); ++i) {
+//            tab->model->setDataDescription(i, descriptions.at(i));
 //        }
-    }
+//    }
+    DescriptorPropertiesDialog dialog(records, this);
+    dialog.exec();
 }
 
 void MainWindow::save()
@@ -1619,9 +1616,8 @@ void MainWindow::updateChannelsTable(FileDescriptor *descriptor)
     if (descriptor->channelsCount() == 0) return;
 
     if (sergeiMode) {
-        if (!plottedChannelsNumbers.isEmpty()) {
+        if (!plottedChannelsNumbers.isEmpty())
             tab->channelModel->plotChannels(plottedChannelsNumbers);
-        }
     }
     //возвращаем после возможного неполного рисования, чтобы не терялись каналы
     //при переходе к файлам с меньшим количеством каналов
@@ -1630,14 +1626,12 @@ void MainWindow::updateChannelsTable(FileDescriptor *descriptor)
 
 void MainWindow::plotAllChannels()
 {DD;
-    if (!tab) return;
-    tab->channelModel->plotChannels(QVector<int>(), false);
+    if (tab) tab->channelModel->plotChannels(false);
 }
 
 void MainWindow::plotAllChannelsAtRight()
 {DD;
-    if (!tab) return;
-    tab->channelModel->plotChannels(QVector<int>(), true);
+    if (tab) tab->channelModel->plotChannels(true);
 }
 
 void MainWindow::plotChannel(int index)
@@ -1921,25 +1915,18 @@ void MainWindow::calculateMovingAvg()
     setCurrentAndPlot(avg.get(), avg->channelsCount()-1);
 }
 
-void MainWindow::deleteCurve(int index)
+//соединяется с channelModel
+void MainWindow::deleteCurve(int index) /*slot*/
 {DD;
     //не удаляем, если фиксирована
-    if (Curve *c = plot->plotted(tab->record->channel(index))) {
+    if (Curve *c = plot->plotted(tab->record->channel(index)))
         if (c->fixed) return;
-    }
 
     //удаляем кривую с графика
     plot->deleteCurveForChannelIndex(tab->record, index);
-    //обновляем инфу для канала
-    tab->record->channel(index)->setPlotted(0);
-    tab->record->channel(index)->setColor(QColor());
-    //обновляем модель для канала
-    tab->channelModel->onCurveChanged(tab->record->channel(index));
-    //обновляем модель для файла
-    tab->model->updateFile(tab->record, MODEL_COLUMN_FILENAME);
 
     if (tab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
-        QList<FileDescriptor*> selectedFiles = tab->model->selectedFiles();
+        auto selectedFiles = tab->model->selectedFiles();
         for (FileDescriptor *f: qAsConst(selectedFiles)) {
             if (f == tab->record) continue;
             if (f->channelsCount()<=index) continue;
@@ -1950,12 +1937,10 @@ void MainWindow::deleteCurve(int index)
             }
 
             plot->deleteCurveForChannelIndex(f, index);
-            f->channel(index)->setPlotted(0);
-            f->channel(index)->setColor(QColor());
-
-            tab->model->updateFile(f, MODEL_COLUMN_FILENAME);
         }
     }
+    //cycled.clear();
+
     updatePlottedChannelsNumbers();
 }
 
@@ -2033,11 +2018,13 @@ void MainWindow::setCurrentAndPlot(FileDescriptor *d, int channelIndex)
 
 void MainWindow::updatePlottedChannelsNumbers()
 {
-    if (sergeiMode)
-        plottedChannelsNumbers = tab->channelModel->plotted();
-    else
-        plottedChannelsNumbers.clear();
-    //qDebug()<<"update"<<(plottedChannelsNumbers.isEmpty());
+    plottedChannelsNumbers.clear();
+
+    if (sergeiMode) {
+        for (int i=0; i<tab->record->channelsCount(); ++i)
+            if (tab->record->channel(i)->plotted()>0)
+                plottedChannelsNumbers << i;
+    }
 }
 
 void MainWindow::previousOrNextDescriptor(bool previous) /*private*/
@@ -2111,6 +2098,12 @@ void MainWindow::cycleChannelsUpOrDown(bool up) /*private*/
     updatePlottedChannelsNumbers();
 
     QVector<int> plotted = plottedChannelsNumbers;
+
+    if (cycled.size() > plotted.size())
+        cycled.clear();
+    if (cycled.size() < plotted.size())
+        qDebug()<<"size mismatch: cycled"<<cycled.size()<<"plotted"<<plotted.size();
+
     if (plotted.isEmpty()) cycled.clear(); //контроль очистки графика
 
     if (cycled.isEmpty()) {

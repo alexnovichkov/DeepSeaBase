@@ -41,6 +41,7 @@ SOURCES += main.cpp\
     channelsmimedata.cpp \
     channelstable.cpp \
     converters/tdmsconverter.cpp \
+    descriptorpropertiesdialog.cpp \
     filestable.cpp \
     mainwindow.cpp \
     methods/apsfunction.cpp \
@@ -125,6 +126,7 @@ HEADERS  += mainwindow.h \
     channelsmimedata.h \
     channelstable.h \
     converters/tdmsconverter.h \
+    descriptorpropertiesdialog.h \
     enums.h \
     filestable.h \
     methods/apsfunction.h \

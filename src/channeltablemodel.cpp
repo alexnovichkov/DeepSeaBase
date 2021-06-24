@@ -16,21 +16,12 @@ ChannelTableModel::ChannelTableModel(QObject *parent) : QAbstractTableModel(pare
 
 Channel *ChannelTableModel::channel(int index)
 {DD;
-    if (!descriptor) return 0;
+    if (!descriptor) return nullptr;
 
     if (index >= 0 && index < channelsCount)
         return descriptor->channel(index);
 
-    return 0;
-}
-
-QVector<int> ChannelTableModel::plotted() const
-{DD;
-    QVector<int>  list;
-    for (int i=0; i<channelsCount; ++i)
-        if (descriptor->channel(i)->plotted()>0)
-            list << i;
-    return list;
+    return nullptr;
 }
 
 void ChannelTableModel::setYName(const QString &yName)
@@ -67,15 +58,8 @@ void ChannelTableModel::deleteCurves()
 }
 
 void ChannelTableModel::plotChannels(const QVector<int> &toPlot, bool plotOnRight)
-{DD;
-    if (!descriptor) return;
-    QVector<int> to = toPlot;
-    if (to.isEmpty()) {
-        for (int i=0; i<channelsCount; ++i) {
-            to << i;
-        }
-    }
-    for (int i: to) {
+{
+    for (int i: toPlot) {
         if (i<channelsCount) {
             if (descriptor->channel(i)->plotted()==0) {
                 descriptor->channel(i)->setPlotted(plotOnRight?2:1);
@@ -83,6 +67,17 @@ void ChannelTableModel::plotChannels(const QVector<int> &toPlot, bool plotOnRigh
             }
         }
     }
+}
+
+void ChannelTableModel::plotChannels(bool plotOnRight)
+{DD;
+    if (!descriptor) return;
+    QVector<int> to = indexes;
+    if (to.isEmpty()) {
+        for (int i=0; i<channelsCount; ++i)
+            to << i;
+    }
+    plotChannels(to, plotOnRight);
 }
 
 void ChannelTableModel::setDescriptor(FileDescriptor *dfd)
@@ -263,7 +258,7 @@ bool ChannelTableModel::setHeaderData(int section, Qt::Orientation orientation, 
     if (role == Qt::CheckStateRole) {
         Qt::CheckState state = Qt::CheckState(value.toInt());
         switch (state) {
-            case Qt::Checked: plotChannels(QVector<int>(), false);
+            case Qt::Checked: plotChannels(false);
                 return true;
                 break;
             case Qt::Unchecked: deleteCurves();

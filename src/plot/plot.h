@@ -156,7 +156,7 @@ signals:
     void curvesChanged();
     void curvesCountChanged();
     void updatePlotted();
-    void needPlotChannels(const QVector<int> &channels, bool plotOnRight);
+    void needPlotChannels();
 private slots:
     void editLegendItem(QwtPlotItem *item);
     void deleteCurveFromLegend(QwtPlotItem *item);

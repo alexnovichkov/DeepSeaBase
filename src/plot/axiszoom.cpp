@@ -261,10 +261,10 @@ void AxisZoom::startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis)
         currentPixelWidth = plot->transform(axis, currentRightBorder) - currentLeftBorderInPixels;
         // текущее левое смещение графика
         // (в пикселах относительно виджета шкалы)
-        sab_pxl = currentLeftBorderInPixels + canvasGeometry.x() - scaleWidgetGeometry.x();
+        currentLeftShiftInPixels = currentLeftBorderInPixels + canvasGeometry.x() - scaleWidgetGeometry.x();
         // запоминаем текущее положение курсора относительно канвы
         // (за вычетом смещений графика)
-        cursorPosX = event->pos().x() - sab_pxl;
+        cursorPosX = event->pos().x() - currentLeftShiftInPixels;
 
         // если левая граница меньше правой,
         if (currentWidth > 0) {
@@ -312,10 +312,10 @@ void AxisZoom::startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis)
         currentPixelHeight = plot->transform(axis,currentBottomBorder) - currentTopBorderInPixels;
         // текущее верхнее смещение графика
         // (в пикселах относительно виджета шкалы)
-        sab_pyt = currentTopBorderInPixels + canvasGeometry.y() - scaleWidgetGeometry.y();
+        currentTopShiftInPixels = currentTopBorderInPixels + canvasGeometry.y() - scaleWidgetGeometry.y();
         // запоминаем текущее положение курсора относительно канвы
         // (за вычетом смещений графика)
-        cursorPosY = event->pos().y() - sab_pyt;
+        cursorPosY = event->pos().y() - currentTopShiftInPixels;
 
         // если нижняя граница меньше верхней,
         if (currentHeight > 0) {
@@ -375,7 +375,7 @@ void AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
 
         if (ct == ChartZoom::ctLeft || ct == ChartZoom::ctRight) {
             // emit axisClicked signal only if it is really just a click within 3 pixels
-            if (qAbs(mEvent->pos().x() - sab_pxl - cursorPosX)<3) {
+            if (qAbs(mEvent->pos().x() - currentLeftShiftInPixels - cursorPosX)<3) {
                 double xVal = zoom->plot()->canvasMap(axis).invTransform(mEvent->pos().x());
                 emit xAxisClicked(xVal, mEvent->modifiers() & Qt::ControlModifier);
             }
@@ -388,7 +388,7 @@ void AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
         }
         if (ct == ChartZoom::ctBottom ||ct == ChartZoom::ctTop) {
             // emit axisClicked signal only if it is really just a click within 3 pixels
-            if (qAbs(mEvent->pos().y() - sab_pyt - cursorPosY)<3) {
+            if (qAbs(mEvent->pos().y() - currentTopShiftInPixels - cursorPosY)<3) {
                 double yVal = zoom->plot()->canvasMap(axis).invTransform(mEvent->pos().y());
                 emit yAxisClicked(yVal, mEvent->modifiers() & Qt::ControlModifier);
             }

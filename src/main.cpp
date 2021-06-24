@@ -5,6 +5,9 @@
 #include <QtCore>
 #include <QSplashScreen>
 
+#include "windows.h"
+#include "winuser.h"
+
 //#include "converters/matlabconvertor.h"
 
 //#include "fileformats/tdmsfile.h"
@@ -13,9 +16,17 @@
 
 int main(int argc, char *argv[])
 {
+    //This mutex is used to prevent the user from installing new versions
+    //of app while app is still running, and to prevent
+    //the user from uninstalling a running application.
+    CreateMutex(NULL,false,L"DeepSeaMutex");
+
     qputenv("QT_AUTO_SCREEN_SCALE_FACTOR","1");
     QApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+    QCoreApplication::setApplicationName("DeepSeaBase");
+    QCoreApplication::setOrganizationName("DeepSeaBase");
+    QCoreApplication::setApplicationVersion(QString(DEEPSEABASE_VERSION));
 
     Application a(argc, argv);
 

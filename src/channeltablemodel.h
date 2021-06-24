@@ -15,13 +15,13 @@ public:
     ChannelTableModel(QObject *parent);
     Channel *channel(int index);
     QVector<int> selected()  const {return indexes;}
-    QVector<int> plotted() const;
 
     void setYName(const QString &yName);
 
     void clear();
     void deleteCurves();
     void plotChannels(const QVector<int> &toPlot, bool plotOnRight = false);
+    void plotChannels(bool plotOnRight = false);
 
     void setDescriptor(FileDescriptor *dfd);
     void setSelected(const QVector<int> &indexes);
