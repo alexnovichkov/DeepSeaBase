@@ -74,10 +74,7 @@ protected:
                 descriptor->read();
                 //частный случай: мы можем записать данные из SourceData в CuttedData, преобразовав их в floats,
                 //но не наоборот
-                if (descriptor->canTakeChannelsFrom(filter))
-                    return true;
-                else
-                    return false;
+                return descriptor->canTakeChannelsFrom(filter);
             }
             else //не файлы dfd, uff, d94
                 return false;
@@ -885,17 +882,14 @@ void MainWindow::addFile()
     dialog.setProxyModel(proxy);
     dialog.setFileMode(QFileDialog::ExistingFiles);
 
-
-    QStringList fileNames;
     if (dialog.exec()) {
-        fileNames = dialog.selectedFiles();
+        QStringList fileNames = dialog.selectedFiles();
+        if (fileNames.isEmpty()) return;
+        App->setSetting("lastDirectory", fileNames.constFirst());
+        addFiles(fileNames);
+        for (const QString &file: fileNames)
+            if (!tab->folders.contains(file)) tab->folders << file;
     }
-    if (fileNames.isEmpty()) return;
-
-    App->setSetting("lastDirectory", fileNames.constFirst());
-    addFiles(fileNames);
-    for (const QString &file: fileNames)
-        if (!tab->folders.contains(file)) tab->folders << file;
 }
 
 void MainWindow::addFolder(const QString &directory, bool withAllSubfolders, bool silent)
@@ -937,7 +931,6 @@ void MainWindow::deleteFiles()
         F f = tab->model->file(i);
         //use_count==3 if file is only in one tab, (1 for App, 1 for model, 1 for the prev line)
         //use_count>=4 if file is in more than one tab
-        //qDebug()<<"delete file"<<f.use_count()<<f->fileName();
         if (f.use_count()<=3 && f->hasCurves())
             plot->deleteCurvesForDescriptor(f.get());
 
@@ -1679,7 +1672,7 @@ void MainWindow::calculateSpectreRecords()
 {DD;
     if (!tab) return;
 
-    QList<FileDescriptor *> records = tab->model->selectedFiles(Descriptor::TimeResponse);
+    QList<FileDescriptor *> records = tab->model->selectedFiles({Descriptor::TimeResponse});
 
     if (records.isEmpty()) {
         QMessageBox::warning(this,QString("DeepSea Base"),
@@ -2181,7 +2174,7 @@ void MainWindow::updateActions()
     plotAllChannelsOnRightAct->setDisabled(selectedFilesCount==0);
     plotSelectedChannelsAct->setDisabled(selectedChannelsCount==0);
     //exportChannelsToWavAct;
-    calculateSpectreAct->setDisabled(tab->model->selectedFiles(Descriptor::TimeResponse).isEmpty());
+    calculateSpectreAct->setDisabled(tab->model->selectedFiles({Descriptor::TimeResponse}).isEmpty());
     const QVector<Descriptor::DataType> types {Descriptor::AutoSpectrum,
                 Descriptor::CrossSpectrum,
                 Descriptor::AutoCorrelation,

@@ -28,8 +28,6 @@ public:
     Model(QObject *parent = 0);
     ~Model();
 
-
-
     bool contains(const QString &fileName, int *index = 0) const;
     bool contains(const F &file, int *index = 0) const;
     bool contains(FileDescriptor* file, int *index = 0) const;
@@ -42,9 +40,7 @@ public:
 
     QVector<int> selected() const {return indexes;}
     void setSelected(const QVector<int> &indexes);
-    QList<FileDescriptor*> selectedFiles(Descriptor::DataType type) const;
-    QList<FileDescriptor*> selectedFiles() const;
-    QList<FileDescriptor*> selectedFiles(const QVector<Descriptor::DataType> &types) const;
+    QList<FileDescriptor*> selectedFiles(const QVector<Descriptor::DataType> &types = QVector<Descriptor::DataType>()) const;
 
     //void setDataDescription(FileDescriptor *file, const DataDescription &data);
     void setDataDescription(int selectionIndex, const DataDescription &data);

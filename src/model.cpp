@@ -36,55 +36,25 @@ void Model::setSelected(const QVector<int> &indexes)
     emit modelChanged();
 }
 
-QList<FileDescriptor *> Model::selectedFiles(Descriptor::DataType type) const
-{DD;
-    QList<FileDescriptor *> files;
-    for (int i: indexes) {
-        if (descriptors.at(i)->type() == type)
-            files << descriptors.at(i).get();
-    }
-    return files;
-}
-
-QList<FileDescriptor *> Model::selectedFiles() const
-{DD;
-    QList<FileDescriptor *> files;
-    for (int i: indexes) {
-        files << descriptors.at(i).get();
-    }
-    return files;
-}
-
 QList<FileDescriptor *> Model::selectedFiles(const QVector<Descriptor::DataType> &types) const
 {DD;
     QList<FileDescriptor *> files;
     for (int i: indexes) {
-        if (types.contains(descriptors.at(i)->type()))
+        if (types.contains(descriptors.at(i)->type()) || types.isEmpty())
             files << descriptors.at(i).get();
     }
     return files;
 }
 
-//void Model::setDataDescription(FileDescriptor *file, const DataDescription &data)
-//{DD;
-//    int row;
-//    if (!contains(file, &row)) return;
-
-//    file->setDataDescription(data);
-//    auto i = index(row, MODEL_COLUMN_DESCRIPTION);
-//    emit dataChanged(i, i, QVector<int>()<<Qt::DisplayRole);
-//    i = index(row, MODEL_COLUMN_FILENAME);
-//    emit dataChanged(i, i, QVector<int>()<<Qt::DecorationRole);
-//}
 void Model::setDataDescription(int selectionIndex, const DataDescription &data)
 {DD;
     int row = indexes.at(selectionIndex);
 
     descriptors[row]->setDataDescription(data);
     auto i = index(row, MODEL_COLUMN_DESCRIPTION);
-    emit dataChanged(i, i, QVector<int>()<<Qt::DisplayRole);
+    emit dataChanged(i, i, {Qt::DisplayRole});
     i = index(row, MODEL_COLUMN_FILENAME);
-    emit dataChanged(i, i, QVector<int>()<<Qt::DecorationRole);
+    emit dataChanged(i, i, {Qt::DecorationRole});
 }
 
 void Model::setChannelDescription(int channel, const QString &description)
@@ -94,9 +64,8 @@ void Model::setChannelDescription(int channel, const QString &description)
             if (ch->description() != description) {
                 ch->setDescription(description);
                 descriptors[i]->setChanged(true);
-                emit dataChanged(index(i, MODEL_COLUMN_SAVE),
-                                 index(i, MODEL_COLUMN_SAVE),
-                                 QVector<int>()<<Qt::DecorationRole);
+                auto ind = index(i, MODEL_COLUMN_SAVE);
+                emit dataChanged(ind, ind, {Qt::DecorationRole});
             }
         }
     }
@@ -109,9 +78,8 @@ void Model::setChannelName(int channel, const QString &name)
             if (ch->name() != name) {
                 ch->setName(name);
                 descriptors[i]->setChanged(true);
-                emit dataChanged(index(i, MODEL_COLUMN_SAVE),
-                                 index(i, MODEL_COLUMN_SAVE),
-                                 QVector<int>()<<Qt::DecorationRole);
+                auto ind = index(i, MODEL_COLUMN_SAVE);
+                emit dataChanged(ind, ind, {Qt::DecorationRole});
             }
         }
     }
@@ -161,6 +129,8 @@ void Model::deleteSelectedFiles()
             descriptors.removeAt(toDelete);
         }
     }
+
+
     indexes.clear();
 
     endResetModel();
