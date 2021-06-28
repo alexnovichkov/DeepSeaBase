@@ -9,6 +9,10 @@ class QComboBox;
 class QLineEdit;
 class FileDescriptor;
 class QLabel;
+class QTreeWidget;
+class QTabWidget;
+class QTreeWidgetItem;
+class QFormLayout;
 
 struct DescriptorProperty
 {
@@ -21,21 +25,25 @@ class DescriptorPropertiesDialog : public QDialog
 {
     Q_OBJECT
 public:
-    DescriptorPropertiesDialog(QList<FileDescriptor *> &records, QWidget *parent);
+    DescriptorPropertiesDialog(const QList<FileDescriptor *> &records, QWidget *parent);
 private:
+    void fillFiles();
     void prev();
     void next();
     void applyToCurrent();
     void applyToAll();
     void updateState();
-    QVector<DescriptorProperty> properties;
+    void currentFileChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
+//    QVector<DescriptorProperty> properties;
     QList<FileDescriptor *> records;
     QLabel *file;
+    QTreeWidget *files;
+    QFormLayout *propertiesFL;
 
-    QPushButton * prevButton;
-    QPushButton * nextButton;
-    QPushButton * applyToCurrButton;
-    QPushButton * applyToAllButton;
+//    QPushButton * prevButton;
+//    QPushButton * nextButton;
+//    QPushButton * applyToCurrButton;
+//    QPushButton * applyToAllButton;
     int current=0;
 };
 
