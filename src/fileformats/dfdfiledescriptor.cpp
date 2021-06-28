@@ -103,10 +103,12 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
     //если индексы пустые - копируем все каналы
     if (indexes.isEmpty())
         for (int i=0; i<other.channelsCount(); ++i) indexes << i;
-    dataDescription().put("source.channels", stringify(indexes));
+    else
+        dataDescription().put("source.channels", stringify(indexes));
 
     fillPreliminary(&other);
 
+    qDebug()<<dataDescription().toStringList();
 
 
     //Поскольку other может содержать каналы с разным типом, размером и шагом,
@@ -199,6 +201,7 @@ void DfdFileDescriptor::read()
         rawFileName = fileName().left(fileName().length()-4)+".raw";
     dataDescription().put("guid",dfd.value("DataFileDescriptor/DFDGUID"));
     DataType =  DfdDataType(dfd.value("DataFileDescriptor/DataType").toInt());
+    dataDescription().put("function.type", dataTypefromDfdDataType(DataType));
 
     dataDescription().put("dateTime", dateTimeFromString(dfd.value("DataFileDescriptor/Date")
                                                          +" "
@@ -1005,8 +1008,7 @@ void Process::write(QTextStream &dfd)
     dfd << "[Process]" << endl;
     ///TODO: реализовать с учетом function
     QString ref = d->data.value("function.referenceName").toString();
-    for (auto it = d->data.constBegin();
-         it != d->data.constEnd(); ++it) {
+    for (auto it = d->data.constBegin(); it != d->data.constEnd(); ++it) {
         QString key = it.key();
         QString val = it.value().toString();
         if (key == "function.averaging") {
@@ -1037,7 +1039,7 @@ void Process::write(QTextStream &dfd)
             ref = val;
             if (!ref.isEmpty()) dfd << "pBaseChan=" << ref;
         }
-        else
+        else if (key.startsWith("function."))
             dfd << key.section('.',1) << "=" << val << endl;
     }
 }
@@ -1098,7 +1100,7 @@ DfdChannel::DfdChannel(DfdFileDescriptor *parent, int channelIndex)
              it != parent->dataDescription().data.end(); ++it) {
             if (it.key().startsWith("function.")) {
                 dataDescription().put(it.key(), it.value());
-                it = parent->dataDescription().data.erase(it);
+                //it = parent->dataDescription().data.erase(it);
             }
         }
         dataDescription().put("xname", parent->dataDescription().get("xname"));
@@ -1128,6 +1130,7 @@ DfdChannel::DfdChannel(Channel &other, DfdFileDescriptor *parent) : Channel(othe
     parent->channels << this;
 
     setDataDescription(other.dataDescription());
+    qDebug()<<dataDescription().toStringList();
 
     QString precision = dataDescription().get("function.precision").toString();
     if (precision == "uint8") IndType = 0x1;
@@ -1244,7 +1247,7 @@ void DfdChannel::read(DfdSettings &dfd, int numChans, double xBegin, double xSte
     else {
         if (ChanBlockSize == 1) return; //не запоминаем положения блоков, если блок равен 1
         int i = 0; // номер блока
-        qint64 rawSize = QFile(parent->rawFileName).size(); //DebugPrint(rawSize);
+        qint64 rawSize = QFile(parent->rawFileName).size();
         while (1) {
             qint64 pos = (parent->BlockSize * numChans * i
                          + channelIndex * ChanBlockSize) * (IndType % 16);
@@ -1271,7 +1274,7 @@ void DfdChannel::write(QTextStream &dfd, int index)
     dfd << "Correction="<<correction() << endl;
 
     dfd << "threshold=" << QString::number(data()->threshold()) << endl;
-    dfd << DataHolder::unitsToString(data()->yValuesUnits());
+    dfd << "units=" << DataHolder::unitsToString(data()->yValuesUnits()) << endl;
 }
 
 void DfdChannel::write(QDataStream &s, DataHolder *d)
@@ -1281,14 +1284,12 @@ void DfdChannel::write(QDataStream &s, DataHolder *d)
     if (IndType==0xC0000004)
         s.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-    const int sc = d->samplesCount();
-
     //dfd не понимает многоблочные файлы
     QVector<double> yValues = d->rawYValues(0);
     if (yValues.isEmpty() && !d->yValuesComplex(0).isEmpty())
         yValues = d->linears(0);
-    int scc = qMin(sc, yValues.size());
-    for (int val = 0; val < scc; ++val) {
+
+    for (int val = 0; val < d->samplesCount() && val < yValues.size(); ++val) {
         setValue(yValues[val], s);
     }
 }

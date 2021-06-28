@@ -64,6 +64,8 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVe
     for (int i: indexes) {
         Channel *sourceChannel = other.channel(i);
         Data94Channel *c = new Data94Channel(sourceChannel, this);
+        c->setChanged(true);
+        c->setDataChanged(true);
 
         bool populated = sourceChannel->populated();
         if (!populated) sourceChannel->populate();
@@ -290,6 +292,8 @@ void Data94File::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int>
 
     for (int i: indexes) {
         Data94Channel *destChannel = new Data94Channel(sourceFile->channel(i), this);
+        destChannel->setChanged(true);
+        destChannel->setDataChanged(true);
 
         Channel *sourceChannel = sourceFile->channel(i);
         bool populated = sourceChannel->populated();
@@ -556,10 +560,10 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
     position = r.device()->pos();
     r.device()->write("d94chan ");
 
-
     //description
     if (changed()) {
         //переписываем описатель
+
         QJsonDocument doc(dataDescription().toJson());
         QByteArray json = doc.toJson();
         descriptionSize = json.size();
