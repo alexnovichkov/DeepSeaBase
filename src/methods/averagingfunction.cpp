@@ -3,8 +3,8 @@
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
 
-AveragingFunction::AveragingFunction(QObject *parent) :
-    AbstractFunction(parent)
+AveragingFunction::AveragingFunction(QObject *parent, const QString &name) :
+    AbstractFunction(parent, name)
 {DD;
 
 }
@@ -112,20 +112,41 @@ QVector<double> AveragingFunction::getData(const QString &id)
 }
 
 bool AveragingFunction::compute(FileDescriptor *file)
-{DD;
+{DD; qDebug()<<debugName();
     if (!m_input) return false;
 
+    if (averaging.averagingDone()) {
+        qDebug()<<"Done averaging";
+        return false;
+    }
+
+    int iter=1;
     while (1) {
-        m_input->compute(file);
+        qDebug()<<"averaging iter"<<iter;
+        if (!m_input->compute(file)) {
+            qDebug()<<"Averaging can't get data at iter"<<iter;
+            if (iter==1) averaging.reset();
+            return false;
+        }
 
         QVector<double> data = m_input->getData("input");
 
         if (!data.isEmpty()) {
             averaging.average(data);
         }
-        else break;
+        else {
+            if (!averaging.averagingDone())
+                qDebug()<<"Data for averaging is empty at iter"<<iter
+                       <<"But averaging is not finished";
+//            break;
+            return false;
+        }
 
-        if (averaging.averagingDone()) return true;
+        if (averaging.averagingDone()) {
+            qDebug()<<"Done averaging at iter"<<iter;
+        }
+        qDebug()<<"done averaging at iter"<<iter;
+        iter++;
     }
     return true;
 }
@@ -133,4 +154,15 @@ bool AveragingFunction::compute(FileDescriptor *file)
 void AveragingFunction::reset()
 {DD;
     averaging.reset();
+}
+
+DataDescription AveragingFunction::getFunctionDescription() const
+{
+    DataDescription result;
+    if (m_input) result = m_input->getFunctionDescription();
+
+    result.put("function.averaging", Averaging::averagingDescription(averaging.getAveragingType()));
+    result.put("function.averagingCount", averaging.getAveragesMade());
+
+    return result;
 }

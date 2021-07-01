@@ -30,7 +30,7 @@
 class FrfFunction : public AbstractFunction
 {
 public:
-    FrfFunction(QObject *parent = nullptr);
+    FrfFunction(QObject *parent = nullptr, const QString &name=QString());
 
     // AbstractFunction interface
 public:
@@ -49,7 +49,6 @@ private:
 
     // AbstractFunction interface
 public:
-    virtual bool propertyShowsFor(const QString &property) const override;
     virtual QVector<double> getData(const QString &id) override;
     virtual bool compute(FileDescriptor *file) override;
     virtual void reset() override;

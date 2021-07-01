@@ -16,45 +16,48 @@
 FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
 {DD;
-    channelF = new ChannelFunction(parent);
-    refChannelF = new RefChannelFunction(parent);
+    channelF = new ChannelFunction(parent, "channel");
+    refChannelF = new RefChannelFunction(parent, "refChannel");
 
-    resamplingF = new ResamplingFunction(parent);
-    refResamplingF = new ResamplingFunction(parent);
-    refResamplingF->pairWith(resamplingF);
+//    resamplingF = new ResamplingFunction(parent, "resample");
+//    refResamplingF = new ResamplingFunction(parent, "refResample");
+//    resamplingF->pairWith(refResamplingF);
 
-    samplingF = new FrameCutterFunction(parent);
-    refSamplingF = new FrameCutterFunction(parent);
-    refSamplingF->pairWith(samplingF);
+    samplingF = new FrameCutterFunction(parent, "cutter");
+    refSamplingF = new FrameCutterFunction(parent, "refCutter");
+    samplingF->pairWith(refSamplingF);
+//    refSamplingF->pairWith(samplingF);
 
-    windowingF = new WindowingFunction(parent);
-    refWindowingF = new RefWindowingFunction(parent);
+    windowingF = new WindowingFunction(parent, "window");
+    refWindowingF = new RefWindowingFunction(parent, "refWindow");
 
-    averagingF = new AveragingFunction(parent);
-    refAveragingF = new AveragingFunction(parent);
-    refAveragingF->pairWith(averagingF);
+    averagingF = new AveragingFunction(parent, "average");
+    refAveragingF = new AveragingFunction(parent, "refAverage");
+    averagingF->pairWith(refAveragingF);
 
-    fftF = new FftFunction(parent);
-    refFftF = new FftFunction(parent);
-    refFftF->pairWith(fftF);
+    fftF = new FftFunction(parent, "fft");
+    refFftF = new FftFunction(parent, "refFft");
+    fftF->pairWith(refFftF);
 
 //    apsF = new ApsFunction(parent);
-    gxyF = new GxyFunction(parent);
-    refGxyF = new GxyFunction(parent);
+    gxyF = new GxyFunction(parent, "gxy");
+    refGxyF = new GxyFunction(parent, "refGxy");
 
-    frfF = new FrfFunction(parent);
+    frfF = new FrfFunction(parent, "frf");
 
-    saver = new SavingFunction(parent);
+    saver = new SavingFunction(parent, "saver");
 
     //first chain
-    resamplingF->setInput(channelF);
-    samplingF->setInput(resamplingF);
+//    resamplingF->setInput(channelF);
+//    samplingF->setInput(resamplingF);
+    samplingF->setInput(channelF);
     windowingF->setInput(samplingF);
     fftF->setInput(windowingF);
 
     //second chain
-    refResamplingF->setInput(refChannelF);
-    refSamplingF->setInput(refResamplingF);
+//    refResamplingF->setInput(refChannelF);
+//    refSamplingF->setInput(refResamplingF);
+    refSamplingF->setInput(refChannelF);
     refWindowingF->setInput(refSamplingF);
     refFftF->setInput(refWindowingF);
 
@@ -79,11 +82,9 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     m_functions << channelF;
     m_functions << refChannelF;
 
-    m_functions << resamplingF;
-    //m_functions << refResamplingF;
+//    m_functions << resamplingF;
 
     m_functions << samplingF;
-    //m_functions << refSamplingF;
 
     m_functions << windowingF;
     m_functions << refWindowingF;
@@ -92,13 +93,8 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     //m_functions << refFftF;
 
     m_functions << gxyF;
-    //m_functions << refGxyF;
-
     m_functions << averagingF;
-    //m_functions << refAveragingF;
-
     m_functions << frfF;
-
     m_functions << saver;
 
     //выясняем общее значение xStep или значение первого файла
@@ -113,8 +109,8 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     if (xStepsDiffer) emit message("Файлы имеют разный шаг по оси X.");
 
     //начальные значения, которые будут использоваться в показе функций
-    resamplingF->setProperty(resamplingF->name()+"/xStep", xStep);
-    refResamplingF->setProperty(refResamplingF->name()+"/xStep", xStep);
+//    resamplingF->setProperty(resamplingF->name()+"/xStep", xStep);
+//    refResamplingF->setProperty(refResamplingF->name()+"/xStep", xStep);
 
     samplingF->setProperty(samplingF->name()+"/xStep", xStep);
     refSamplingF->setProperty(refSamplingF->name()+"/xStep", xStep);
@@ -124,10 +120,10 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     refChannelF->setProperty(refChannelF->name()+"/referenceChannelIndex", 1);
 
     //resamplingF отправляет сигнал об изменении "?/xStep"
-    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
-            samplingF, SLOT(updateProperty(QString,QVariant)));
-    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
-            refSamplingF, SLOT(updateProperty(QString,QVariant)));
+//    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
+//            samplingF, SLOT(updateProperty(QString,QVariant)));
+//    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
+//            refSamplingF, SLOT(updateProperty(QString,QVariant)));
 
     //перенаправляем сигналы от функций в интерфейс пользователя
     for (AbstractFunction *f: m_functions) {
@@ -163,19 +159,11 @@ bool FRFAlgorithm::compute(FileDescriptor *file)
     saver->setProperty(saver->name()+"/destination", QFileInfo(file->fileName()).canonicalPath());
     saver->reset();
 
-    resamplingF->setProperty(resamplingF->name()+"/xStep", file->xStep());
+//    resamplingF->setProperty(resamplingF->name()+"/xStep", file->xStep());
     samplingF->setProperty(samplingF->name()+"/xStep", file->xStep());
-    refResamplingF->setProperty(refResamplingF->name()+"/xStep", file->xStep());
-    refSamplingF->setProperty(refSamplingF->name()+"/xStep", file->xStep());
 
     int frfType = saver->getProperty("FRF/type").toInt();
     if (frfType == 1) {
-//        //weave together, to compute H1 by default
-//        gxyF->setInput(refFftF); //<- computes S_AB, A - reference channel
-//        gxyF->setInput2(fftF);
-//        refGxyF->setInput(refFftF); //<- computes S_AA, A - reference channel
-//        refGxyF->setInput2(refFftF);
-
         //compute H2, needs to readjust flows
         gxyF->setInput(fftF); //<- computes S_BB, A - reference channel
         gxyF->setInput2(fftF);
@@ -184,23 +172,33 @@ bool FRFAlgorithm::compute(FileDescriptor *file)
     }
 
     const int count = file->channelsCount();
+    const int refChannel = refChannelF->getProperty("RefChannel/referenceChannelIndex").toInt()-1;
+    const QStringList channels = channelF->getProperty("?/channels").toStringList();
+
     for (int i=0; i<count; ++i) {
         //beginning of the chain
         channelF->setProperty("Channel/channelIndex", i);
-        int refChannel = refChannelF->getProperty("RefChannel/referenceChannelIndex").toInt()-1;
+        qDebug()<<"channel"<<i+1<<"refChannel"<<refChannel+1;
+
+        if (!channels.isEmpty() && !channels.contains(QString::number(i+1))) {
+            emit tick();
+            continue;
+        }
+
         if (refChannel == i) {
             emit tick();
             continue;
         }
 
+
         const bool wasPopulated = file->channel(i)->populated();
 
-        resamplingF->reset();
+//        resamplingF->reset();
         samplingF->reset();
         windowingF->reset();
         frfF->reset();
         averagingF->reset();
-        refResamplingF->reset();
+//        refResamplingF->reset();
         refSamplingF->reset();
         refWindowingF->reset();
         refAveragingF->reset();

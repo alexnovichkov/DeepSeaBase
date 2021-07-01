@@ -21,9 +21,9 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     taskBarProgress = 0;
 
     //
-    algorithms << new TimeAlgorithm(dataBase, this);
-    algorithms << new WindowingAlgorithm(dataBase, this);
-    algorithms << new SpectreAlgorithm(dataBase, this);
+    //algorithms << new TimeAlgorithm(dataBase, this);
+    //algorithms << new WindowingAlgorithm(dataBase, this);
+    //algorithms << new SpectreAlgorithm(dataBase, this);
     algorithms << new FRFAlgorithm(dataBase, this);
 
     for (AbstractAlgorithm *f: algorithms) {
@@ -37,12 +37,12 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     filesTree->setAlternatingRowColors(true);
     filesTree->setHeaderLabels(QStringList()<<"№"<<"Файл"<<"Тип"<<"Каналы");
     int i=1;
-    for (FileDescriptor *f: dataBase) {
-        QStringList list;
-        list << QString::number(i++) << f->fileName() << f->typeDisplay()<<QString::number(f->channelsCount());
-        QTreeWidgetItem *item = new QTreeWidgetItem(list);
-        filesTree->addTopLevelItem(item);
-    }
+    for (FileDescriptor *f: dataBase)
+        filesTree->addTopLevelItem(new QTreeWidgetItem({QString::number(i++),
+                                                        f->fileName(),
+                                                        f->typeDisplay(),
+                                                        QString::number(f->channelsCount())}));
+
     filesTree->resizeColumnToContents(0);
     filesTree->resizeColumnToContents(1);
     filesTree->resizeColumnToContents(2);
@@ -54,7 +54,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     functionsList->setAlternatingRowColors(true);
     functionsList->setColumnCount(2);
     functionsList->setRootIsDecorated(false);
-    functionsList->setHeaderLabels(QStringList()<<"Функция"<<"Описание");
+    functionsList->setHeaderLabels({"Функция","Описание"});
     functionsList->setSizePolicy(functionsList->sizePolicy().horizontalPolicy(),
                                  QSizePolicy::Expanding);
 
@@ -135,7 +135,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
 
 FilesProcessorDialog::~FilesProcessorDialog()
 {DD;
-    foreach (AbstractAlgorithm *f, algorithms) {
+    for (AbstractAlgorithm *f: algorithms) {
         if (f) f->deleteLater();
     }
     if (thread_) {
@@ -177,7 +177,7 @@ void FilesProcessorDialog::updateVisibleProperties()
 {DD;
     if (!currentAlgorithm) return;
 
-    foreach (QtVariantProperty *property, map.keys()) {
+    for (QtVariantProperty *property: map.keys()) {
         foreach (auto item, propertyTree->items(property)) {
             propertyTree->setItemVisible(item, currentAlgorithm->propertyShowsFor(map.value(property)));
         }

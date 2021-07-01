@@ -101,7 +101,7 @@ bool TimeAlgorithm::compute(FileDescriptor *file)
     }
     saver->reset(); //сохраняем последний обработанный файл
     QString fileName = saver->getProperty(saver->name()+"/name").toString();
-    qDebug()<<fileName;
+//    qDebug()<<fileName;
 
     if (fileName.isEmpty()) return false;
     newFiles << fileName;

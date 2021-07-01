@@ -25,7 +25,7 @@
 class FrameCutterFunction : public AbstractFunction
 {
 public:
-    explicit FrameCutterFunction(QObject *parent = nullptr);
+    explicit FrameCutterFunction(QObject *parent = nullptr, const QString &name=QString());
 
     // AbstractFunction interface
 public:
@@ -46,6 +46,7 @@ private:
 public:
     virtual QString displayName() const override;
     virtual void reset() override;
+    virtual void resetData() override;
     virtual QVector<double> getData(const QString &id) override;
     virtual bool compute(FileDescriptor *file) override;
 

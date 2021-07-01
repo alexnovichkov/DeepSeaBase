@@ -49,10 +49,13 @@ QVector<double> FrameCutter::get(bool *ok)
     return result;
 }
 
-void FrameCutter::reset()
+void FrameCutter::reset(bool clearData)
 {
-    data.clear();
-    triggerData.clear();
+    if (clearData) {
+        data.clear();
+        triggerData.clear();
+    }
+
     firstTriggerSearched = false;
     currentSample = 0;
 }
@@ -82,6 +85,9 @@ QVector<double> FrameCutter::getSimple(bool *ok)
         if (ok) *ok = true;
     }
     else if (ok) *ok=false;
+
+    qDebug()<<"framecutter is at"<<currentSample;
+
     return output;
 }
 

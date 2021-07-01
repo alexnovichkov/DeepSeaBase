@@ -21,7 +21,7 @@ class WindowingFunction : public AbstractFunction
 {
 
 public:
-    WindowingFunction(QObject *parent = nullptr);
+    WindowingFunction(QObject *parent = nullptr, const QString &name=QString());
 
     // AbstractFunction interface
 public:
@@ -50,7 +50,7 @@ class RefWindowingFunction : public WindowingFunction
 {
 
 public:
-    RefWindowingFunction(QObject *parent = nullptr);
+    RefWindowingFunction(QObject *parent = nullptr, const QString &name=QString());
     virtual QString displayName() const override;
 };
 

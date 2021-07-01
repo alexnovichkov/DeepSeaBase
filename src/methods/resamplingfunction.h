@@ -29,7 +29,7 @@
 class ResamplingFunction : public AbstractFunction
 {
 public:
-    explicit ResamplingFunction(QObject *parent = nullptr);
+    explicit ResamplingFunction(QObject *parent = nullptr, const QString &name=QString());
 
     // AbstractFunction interface
 public:

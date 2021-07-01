@@ -22,8 +22,8 @@ QStringList getBlocks(double xStep, const QString &fix)
     return values;
 }
 
-FrameCutterFunction::FrameCutterFunction(QObject *parent) :
-    AbstractFunction(parent)
+FrameCutterFunction::FrameCutterFunction(QObject *parent, const QString &name) :
+    AbstractFunction(parent, name)
 {DD;
     // default values
     setProperty("FrameCutter/type", 0);
@@ -237,6 +237,12 @@ void FrameCutterFunction::reset()
     output.clear();
 }
 
+void FrameCutterFunction::resetData()
+{
+    frameCutter.reset(false);
+    AbstractFunction::resetData();
+}
+
 
 QVector<double> FrameCutterFunction::getData(const QString &id)
 {DD;
@@ -246,16 +252,22 @@ QVector<double> FrameCutterFunction::getData(const QString &id)
 }
 
 bool FrameCutterFunction::compute(FileDescriptor *file)
-{DD;
+{DD; qDebug()<<debugName();
     if (!m_input) return false;
 
     output.clear();
 
-    bool isEmpty = frameCutter.isEmpty();
-    if (isEmpty) {
-        if (!m_input->compute(file)) return false;
+    if (frameCutter.isEmpty()) {
+        if (!m_input->compute(file)) {
+            qDebug()<<"Sampling can't get data";
+            return false;
+        }
         QVector<double> data = m_input->getData("input");
-        if (data.isEmpty()) return false;
+        if (data.isEmpty()) {
+            qDebug()<<"Data for frame cutter is empty";
+            return false;
+        }
+        qDebug()<<"data for framecutter is"<<data.size()<<"size";
         frameCutter.setSource(data);
 
         if (frameCutter.type()==FrameCutter::Trigger) {
@@ -267,7 +279,9 @@ bool FrameCutterFunction::compute(FileDescriptor *file)
     }
 
     bool ok;
-    output = frameCutter.get(&ok);
+    auto d = frameCutter.get(&ok);
+    output = d;
+
     if (!ok || output.isEmpty()) return false;
 
     return true;

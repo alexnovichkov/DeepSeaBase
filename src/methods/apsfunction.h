@@ -38,7 +38,7 @@ public:
     virtual QVariant m_getProperty(const QString &property) const override;
     virtual void m_setProperty(const QString &property, const QVariant &val) override;
     virtual QString displayName() const override;
-
+    virtual DataDescription getFunctionDescription() const override;
 private:
     QMap<QString, int> map;
     QVector<double> output;

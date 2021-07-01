@@ -4,7 +4,7 @@
 #include <QObject>
 #include <QDateTime>
 
-class FileDescriptor;
+#include "fileformats/filedescriptor.h"
 
 /***
  * Описание глобальных параметров
@@ -49,9 +49,10 @@ class AbstractFunction : public QObject
 {
     Q_OBJECT
 public:
-    explicit AbstractFunction(QObject *parent = nullptr);
-    virtual ~AbstractFunction() {}
+    explicit AbstractFunction(QObject *parent = nullptr, const QString &name=QString());
+    virtual ~AbstractFunction();
     virtual QString name() const = 0;
+    QString debugName() const {return _name;}
     virtual QString displayName() const = 0;
     virtual QString description() const = 0;
     QString propertiesDescription() const;
@@ -62,10 +63,12 @@ public:
     QVariant getProperty(const QString &property) const;
     void setProperty(const QString &property, const QVariant &val);
 
-    virtual void pairWith(AbstractFunction *pair);
-    bool paired() const {return m_pair != nullptr;}
+    virtual void pairWith(AbstractFunction *slave);
+    bool paired() const {return m_master != nullptr;}
 
     virtual QVector<double> getData(const QString &id) = 0;
+
+    virtual DataDescription getFunctionDescription() const {return DataDescription();}
 
     void setInput(AbstractFunction *input);
     void setInput2(AbstractFunction *input);
@@ -76,6 +79,8 @@ public:
 
     // очищает внутреннее состояние функции, но не меняет параметры, заданные ранее
     virtual void reset();
+    // сбрасывает позицию в данных для расчета на начало
+    virtual void resetData();
 signals:
     void propertyChanged(const QString &property, const QVariant &val);
     void attributeChanged(const QString &property, const QVariant &val, const QString &attribute);
@@ -93,9 +98,10 @@ protected:
     AbstractFunction *m_input = nullptr;
     AbstractFunction *m_input2 = nullptr;
 
-    AbstractFunction *m_pair = nullptr;
-    bool suppressed = false;
-    FileDescriptor *m_file = 0;
+    AbstractFunction *m_master = nullptr;
+    AbstractFunction *m_slave = nullptr;
+    FileDescriptor *m_file = nullptr;
+    QString _name; //метка для отладки
 };
 
 class AbstractAlgorithm : public QObject
@@ -142,11 +148,9 @@ protected:
     void finalize();
 
     QList<FileDescriptor *> m_dataBase;
-    QList<AbstractFunction *> m_functions;
+    QList<AbstractFunction *> m_functions; //список функций для отображения в окне расчета
 
     QStringList newFiles;
-    QDateTime dt;
-//    QString tempFolderName;
 };
 
 #endif // ABSTRACTFUNCTION_H

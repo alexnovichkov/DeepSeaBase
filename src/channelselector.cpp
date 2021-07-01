@@ -28,11 +28,11 @@ void ChannelSelector::addIndex(int index)
     if (max_index < index) max_index = index;
 }
 
-QString ChannelSelector::indexesAsString() const
+QStringList ChannelSelector::indexes() const
 {
     QStringList result;
-    for (int index: m_indexes) result << QString::number(index+1);
-    return result.join(",");
+    for (int i: m_indexes) result << QString::number(i+1);
+    return result;
 }
 
 void ChannelSelector::recalculateIndexes()

@@ -3,7 +3,7 @@
 #include "fft.h"
 #include "logging.h"
 
-FrfFunction::FrfFunction(QObject *parent) : AbstractFunction(parent)
+FrfFunction::FrfFunction(QObject *parent, const QString &name) : AbstractFunction(parent, name)
 {DD;
 
 }
@@ -145,12 +145,6 @@ QString FrfFunction::displayName() const
     return "Передаточная";
 }
 
-bool FrfFunction::propertyShowsFor(const QString &property) const
-{DD;
-    Q_UNUSED(property);
-    return true;
-}
-
 QVector<double> FrfFunction::getData(const QString &id)
 {DD;
     if (id == "input")
@@ -160,30 +154,37 @@ QVector<double> FrfFunction::getData(const QString &id)
 }
 
 bool FrfFunction::compute(FileDescriptor *file)
-{DD;
+{DD; qDebug()<<debugName();
     output.clear();
 
     if (!m_input || !m_input2) return false;
-//    if (!m_input->compute(file)) return false;
-//    if (!m_input2->compute(file)) return false;
-
-//    QVector<double> data = m_input->getData("input");
-//    if (data.isEmpty()) return false;
-
-//    QVector<double> data2 = m_input2->getData("input");
-//    if (data2.isEmpty()) return false;
 
     switch (map.value("type")) {
         case 0: {//"H1 = Sab/Saa
-            if (!m_input->compute(file)) return false;
+            qDebug()<<"Computing input1";
+            bool inp1 = m_input->compute(file);
+            qDebug()<<"FRF input1 computing is"<<inp1;
+
             QVector<double> data = m_input->getData("input");
-            if (data.isEmpty()) return false;
+            if (data.isEmpty()) {
+                qDebug()<<"Data for FRF from input1 is empty";
+                return false;
+            }
+            qDebug()<<"Resetting input2";
+            m_input2->resetData();
 
             if (cashedReferenceOutput.isEmpty()) {
-                if (!m_input2->compute(file)) return false;
+                qDebug()<<"Computing cashed input2";
+                bool inp2 = m_input2->compute(file);
+                qDebug()<<"FRF input2 computing is"<<inp2;
+
                 QVector<double> data2 = m_input2->getData("input");
-                if (data2.isEmpty()) return false;
+                if (data2.isEmpty()) {
+                    qDebug()<<"Data for FRF from input2 is empty";
+                    return false;
+                }
                 cashedReferenceOutput = data2;
+                qDebug()<<"Cashed data";
             }
 
             //Sab is from data

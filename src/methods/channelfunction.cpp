@@ -3,8 +3,8 @@
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
 
-ChannelFunction::ChannelFunction(QObject *parent) :
-    AbstractFunction(parent)
+ChannelFunction::ChannelFunction(QObject *parent, const QString &name) :
+    AbstractFunction(parent, name)
 {DD;
 
 }
@@ -22,13 +22,13 @@ QString ChannelFunction::description() const
 
 QVariant ChannelFunction::m_getProperty(const QString &property) const
 {DD;
-    qDebug()<<"ChannelFunction::m_getProperty"<<property;
+//    qDebug()<<"ChannelFunction::m_getProperty"<<property;
     Channel *ch = 0;
     if (m_file && channel >=0) ch = m_file->channel(channel);
 
     if (property.startsWith("?/")) {
         if (property == "?/channelIndex") return channel;
-        if (property == "?/channels") return selector.indexesAsString();
+        if (property == "?/channels") return selector.indexes();
 
         //это - свойства исходного файла
         if (property == "?/sampleRate" && ch) {
@@ -44,6 +44,7 @@ QVariant ChannelFunction::m_getProperty(const QString &property) const
         if (property == "?/zAxisUniform") return true; //всегда равномерная шкала для временных данных
         if (property == "?/yType" && ch) return abscissaType(ch->yName());
         if (property == "?/yName" && ch) return ch->yName();
+        if (property == "?/yNameOld" && ch) return ch->yName();
         if (property == "?/yValuesUnits" && ch) return ch->data()->yValuesUnits();
         if (property == "?/threshold" && ch) return ch->data()->threshold();
         if (property == "?/zName" && ch) return ch->xName();
@@ -77,7 +78,7 @@ QVariant ChannelFunction::m_getProperty(const QString &property) const
 
 void ChannelFunction::m_setProperty(const QString &property, const QVariant &val)
 {DD;
-    qDebug()<<"ChannelFunction::m_setProperty"<<property<<val;
+//    qDebug()<<"ChannelFunction::m_setProperty"<<property<<val;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -146,8 +147,10 @@ QVector<double> ChannelFunction::getData(const QString &id)
 
 bool ChannelFunction::compute(FileDescriptor *file)
 {DD;
+    qDebug()<<debugName();
     if (channel < 0 || file->channelsCount() <= channel) return false;
 
+    qDebug()<<"reading channel"<<channel;
     if (selector.includes(channel)) {
         if (!file->channel(channel)->populated())
             file->channel(channel)->populate();
@@ -166,7 +169,8 @@ QString RefChannelFunction::name() const
     return "RefChannel";
 }
 
-RefChannelFunction::RefChannelFunction(QObject *parent) : ChannelFunction(parent)
+RefChannelFunction::RefChannelFunction(QObject *parent, const QString &name)
+    : ChannelFunction(parent, name)
 {
 
 }
@@ -192,8 +196,11 @@ QString RefChannelFunction::propertyDescription(const QString &property) const
 }
 
 bool RefChannelFunction::compute(FileDescriptor *file)
-{
+{DD;
+    qDebug()<<debugName();
     if (channel < 0 || file->channelsCount() <= channel) return false;
+
+    qDebug()<<"reading channel"<<channel;
 
     if (!file->channel(channel)->populated())
         file->channel(channel)->populate();
@@ -221,4 +228,18 @@ void RefChannelFunction::m_setProperty(const QString &property, const QVariant &
 {
     if (property == name()+"/referenceChannelIndex") channel = val.toInt()-1;
     else ChannelFunction::m_setProperty(property, val);
+}
+
+
+DataDescription ChannelFunction::getFunctionDescription() const
+{
+    DataDescription result;
+    if (m_input) result = m_input->getFunctionDescription();
+
+    result.put("function.name", "Time Response");
+    result.put("function.type", 1);
+    result.put("function.format", "real");
+    result.put("function.logscale", "linear");
+
+    return result;
 }

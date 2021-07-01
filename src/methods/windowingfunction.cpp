@@ -3,8 +3,8 @@
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
 
-WindowingFunction::WindowingFunction(QObject *parent) :
-    AbstractFunction(parent)
+WindowingFunction::WindowingFunction(QObject *parent, const QString &name) :
+    AbstractFunction(parent, name)
 {DD;
 
 }
@@ -102,15 +102,21 @@ QVector<double> WindowingFunction::getData(const QString &id)
 }
 
 bool WindowingFunction::compute(FileDescriptor *file)
-{DD;
+{DD; qDebug()<<debugName();
     reset();
 
     if (!m_input) return false;
 
-    if (!m_input->compute(file)) return false;
+    if (!m_input->compute(file)) {
+        qDebug()<<"Windowing can't get data";
+        return false;
+    }
 
     output = m_input->getData("input");
-    if (output.isEmpty()) return false;
+    if (output.isEmpty()) {
+        qDebug()<<"Data for windowing is empty";
+        return false;
+    }
 
     windowing.applyTo(output);
 
@@ -122,7 +128,8 @@ void WindowingFunction::reset()
     output.clear();
 }
 
-RefWindowingFunction::RefWindowingFunction(QObject *parent) : WindowingFunction(parent)
+RefWindowingFunction::RefWindowingFunction(QObject *parent, const QString &name)
+    : WindowingFunction(parent, name)
 {
 
 }

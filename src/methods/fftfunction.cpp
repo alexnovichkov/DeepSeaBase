@@ -4,8 +4,8 @@
 #include "fft.h"
 #include "logging.h"
 
-FftFunction::FftFunction(QObject *parent) :
-    AbstractFunction(parent)
+FftFunction::FftFunction(QObject *parent, const QString &name) :
+    AbstractFunction(parent, name)
 {DD;
 
 }
@@ -189,15 +189,21 @@ QVector<double> FftFunction::getData(const QString &id)
 }
 
 bool FftFunction::compute(FileDescriptor *file)
-{DD;
+{DD; qDebug()<<debugName();
     reset();
 
     if (!m_input) return false;
 
-    if (!m_input->compute(file)) return false;
+    if (!m_input->compute(file)) {
+        qDebug()<<"FFT can't get data";
+        return false;
+    }
 
     QVector<double> data = m_input->getData("input");
-    if (data.isEmpty()) return false;
+    if (data.isEmpty()) {
+        qDebug()<<"Data for FFT is empty";
+        return false;
+    }
 
     double sampleRate = m_input->getProperty("?/sampleRate").toDouble();
 

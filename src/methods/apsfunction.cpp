@@ -91,10 +91,25 @@ QString ApsFunction::displayName() const
     return "Автоспектр";
 }
 
+DataDescription ApsFunction::getFunctionDescription() const
+{
+    DataDescription result;
+    if (m_input) result = m_input->getFunctionDescription();
+
+    result.put("xname", "Гц");
+    QString s = m_input->getProperty("?/yName").toString();
+    result.put("yname", QString("(%1)^2").arg(s));
+    result.put("function.name", "APS");
+    result.put("function.type", 2);
+    result.put("function.format", "real");
+    result.put("function.logscale", "quadratic");
+
+    return result;
+}
+
 QVector<double> ApsFunction::getData(const QString &id)
 {DD;
     if (id == "input") return output;
-    //if (id == "referenceInput") return refOutput;
 
     return QVector<double>();
 }

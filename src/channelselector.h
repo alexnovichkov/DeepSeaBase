@@ -12,10 +12,12 @@ public:
 
     QString filter() const {return m_filter;}
     void setFilter(const QString &filter);
-    void addIndex(int index);
-    QString indexesAsString() const;
+
+    //список индексов из фильтра, нумерация с 1
+    QStringList indexes() const;
 
 private:
+    void addIndex(int index);
     void recalculateIndexes();
     QString m_filter = QString("все");
     QSet<int> m_indexes;

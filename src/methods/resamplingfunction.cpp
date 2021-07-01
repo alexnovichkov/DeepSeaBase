@@ -3,8 +3,8 @@
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
 
-ResamplingFunction::ResamplingFunction(QObject *parent) :
-    AbstractFunction(parent)
+ResamplingFunction::ResamplingFunction(QObject *parent, const QString &name) :
+    AbstractFunction(parent, name)
 {DD;
 }
 
@@ -198,13 +198,19 @@ QVector<double> ResamplingFunction::getData(const QString &id)
 }
 
 bool ResamplingFunction::compute(FileDescriptor *file)
-{DD;
+{DD; qDebug()<<debugName();
     if (!m_input) return false;
 
-    if (!m_input->compute(file)) return false;
+    if (!m_input->compute(file)) {
+        qDebug()<<"Resampling can't get data";
+        return false;
+    }
 
     QVector<double> data = m_input->getData("input");
-    if (data.isEmpty()) return false;
+    if (data.isEmpty()) {
+        qDebug()<<"Data for resampling is empty";
+        return false;
+    }
 
     if (qFuzzyCompare(factor+1.0, 2.0)) output = data;
     else {

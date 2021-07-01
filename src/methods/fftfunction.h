@@ -29,7 +29,7 @@
 class FftFunction : public AbstractFunction
 {
 public:
-    FftFunction(QObject *parent = nullptr);
+    FftFunction(QObject *parent = nullptr, const QString &name=QString());
 
     // AbstractFunction interface
 public:

@@ -20,6 +20,7 @@
  * ?/dataFormat
  * ?/yType
  * ?/yName
+ * ?/yNameOld
  * ?/yValuesUnits
  * ?/threshold
  * ?/zName
@@ -33,7 +34,7 @@
 class ChannelFunction : public AbstractFunction
 {
 public:
-    explicit ChannelFunction(QObject *parent = nullptr);
+    explicit ChannelFunction(QObject *parent = nullptr, const QString &name=QString());
 
     // AbstractFunction interface
 public:
@@ -53,6 +54,10 @@ private:
     int channel = 0;
     QVector<double> output;
 
+
+    // AbstractFunction interface
+public:
+    virtual DataDescription getFunctionDescription() const override;
 };
 
 class RefChannelFunction : public ChannelFunction
@@ -62,7 +67,7 @@ class RefChannelFunction : public ChannelFunction
     // AbstractFunction interface
 public:
     virtual QString name() const override;
-    explicit RefChannelFunction(QObject *parent = nullptr);
+    explicit RefChannelFunction(QObject *parent = nullptr, const QString &name=QString());
     virtual QStringList properties() const override;
     virtual QString propertyDescription(const QString &property) const override;
     virtual bool compute(FileDescriptor *file) override;

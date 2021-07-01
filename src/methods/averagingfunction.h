@@ -12,6 +12,7 @@
  * Отдает:
  * ?/averaging - [string]
  * ?/averagingType
+ * ?/zCount
  *
  * Спрашивает:
  *
@@ -19,7 +20,7 @@
 class AveragingFunction : public AbstractFunction
 {
 public:
-    explicit AveragingFunction(QObject *parent = nullptr);
+    explicit AveragingFunction(QObject *parent = nullptr, const QString &name=QString());
 
     // AbstractFunction interface
 public:
@@ -40,6 +41,7 @@ public:
     virtual QVector<double> getData(const QString &id) override;
     virtual bool compute(FileDescriptor *file) override;
     virtual void reset() override;
+    virtual DataDescription getFunctionDescription() const override;
 };
 
 #endif // AVERAGINGFUNCTION_H

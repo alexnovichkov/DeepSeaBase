@@ -8,7 +8,7 @@
 class GxyFunction : public AbstractFunction
 {
 public:
-    GxyFunction(QObject *parent = nullptr);
+    GxyFunction(QObject *parent = nullptr, const QString &name=QString());
 
     // AbstractFunction interface
 public:

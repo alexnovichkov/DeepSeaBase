@@ -3,7 +3,7 @@
 
 #include "methods/abstractfunction.h"
 #include <QVector>
-class FileDescriptor;
+#include "fileformats/filedescriptor.h"
 class Channel;
 
 /* Свойства
@@ -56,7 +56,7 @@ public:
         UffFile = 1,
         D94File = 2
     };
-    explicit SavingFunction(QObject *parent = nullptr);
+    explicit SavingFunction(QObject *parent = nullptr, const QString &name=QString());
 
     // AbstractFunction interface
 public:
@@ -65,7 +65,6 @@ public:
     virtual QString description() const override;
     virtual QStringList properties() const override;
     virtual QString propertyDescription(const QString &property) const override;
-    virtual bool propertyShowsFor(const QString &property) const override;
     virtual QVariant m_getProperty(const QString &property) const override;
     virtual void m_setProperty(const QString &property, const QVariant &val) override;
     virtual QVector<double> getData(const QString &id) override;
@@ -77,10 +76,10 @@ private:
     FileDescriptor *createUffFile(FileDescriptor *file);
     FileDescriptor *createD94File(FileDescriptor *file);
     Channel *createChannel(FileDescriptor *file, int dataSize, int blocksCount);
-    Channel *createDfdChannel(FileDescriptor *file, int dataSize, int blocksCount);
-    Channel *createUffChannel(FileDescriptor *file, int dataSize, int blocksCount);
-    Channel *createD94Channel(FileDescriptor *file, int dataSize, int blocksCount);
-    FileDescriptor *m_file;
+    Channel *createDfdChannel(FileDescriptor *file, int dataSize, int blocksCount, DataDescription &descr);
+    Channel *createUffChannel(FileDescriptor *file, int dataSize, int blocksCount, DataDescription &descr);
+    Channel *createD94Channel(FileDescriptor *file, int dataSize, int blocksCount, DataDescription &descr);
+    FileDescriptor *m_file = nullptr;
     QString newFileName;
     QStringList newFiles;
 

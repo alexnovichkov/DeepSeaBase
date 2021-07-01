@@ -4,10 +4,13 @@
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
 
-AbstractFunction::AbstractFunction(QObject *parent) : QObject(parent),
-    m_input(0)
+AbstractFunction::AbstractFunction(QObject *parent, const QString &name) : QObject(parent), _name(name)
 {
 
+}
+
+AbstractFunction::~AbstractFunction()
+{
 }
 
 QString AbstractFunction::propertiesDescription() const
@@ -32,22 +35,34 @@ bool AbstractFunction::propertyShowsFor(const QString &property) const
 
 QVariant AbstractFunction::getProperty(const QString &property) const
 {DD;
-    if (m_pair != nullptr) return m_pair->m_getProperty(property);
-
-    return m_getProperty(property);
+    //qDebug()<<debugName()<<"gets"<<property;
+    if (m_master != nullptr) {
+        //qDebug()<<debugName()<<"gets"<<property<<"from"<<m_master->debugName();
+        QVariant p = m_master->m_getProperty(property);
+        //qDebug()<<property<<"="<<p;
+        return p;
+    }
+    QVariant p = m_getProperty(property);
+    //qDebug()<<property<<"="<<p;
+    return p;
 }
 
 void AbstractFunction::setProperty(const QString &property, const QVariant &val)
 {DD;
-    if (m_pair != nullptr) m_pair->m_setProperty(property, val);
+    //qDebug()<<debugName()<<"sets"<<property<<"="<<val;
+    if (m_slave != nullptr) {
+        //qDebug()<<debugName()<<"sets"<<property<<"for"<<m_slave->debugName();
+        m_slave->m_setProperty(property, val);
+    }
 
     m_setProperty(property, val);
 }
 
-void AbstractFunction::pairWith(AbstractFunction *pair)
+void AbstractFunction::pairWith(AbstractFunction *slave)
 {DD;
-    if (pair != nullptr) {
-        //m_pair = pair;
+    if (slave != nullptr) {
+        m_slave = slave;
+        slave->m_master = this;
     };
 }
 
@@ -73,6 +88,12 @@ void AbstractFunction::reset()
     // no-op
 }
 
+void AbstractFunction::resetData()
+{
+    if (m_input) m_input->resetData();
+    if (m_input2) m_input2->resetData();
+}
+
 void AbstractFunction::updateProperty(const QString &property, const QVariant &val)
 {DD;
     Q_UNUSED(property);
@@ -85,13 +106,12 @@ void AbstractFunction::updateProperty(const QString &property, const QVariant &v
 
 AbstractAlgorithm::AbstractAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) : QObject(parent),
     m_dataBase(dataBase)
-{
+{DD;
 
 }
 
 AbstractAlgorithm::~AbstractAlgorithm()
-{
-    qDeleteAll(m_functions);
+{DD;
     m_functions.clear();
 }
 
@@ -140,7 +160,7 @@ void AbstractAlgorithm::reset()
 
 void AbstractAlgorithm::start()
 {DD;
-    dt = QDateTime::currentDateTime();
+    auto dt = QDateTime::currentDateTime();
     qDebug()<<"Start converting"<<dt.time();
     emit message(QString("Запуск расчета: %1").arg(dt.time().toString()));
 
