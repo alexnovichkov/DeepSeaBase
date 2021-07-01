@@ -95,9 +95,6 @@ const Method methods[26] = {
     {"traceFlt.dll", "Следящий фильтр", NotDef, 0}
 };
 
-//PlotType plotTypeByDataType(DfdDataType dataType);
-
-QString dataTypeDescription(int type);
 
 class DfdFileDescriptor;
 class DfdSettings;

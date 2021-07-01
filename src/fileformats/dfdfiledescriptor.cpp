@@ -9,64 +9,6 @@
 #include "dfdsettings.h"
 #include "averaging.h"
 
-QString dataTypeDescription(int type)
-{DD;
-    switch (type) {
-        case 0: return QString("Данные"); break;
-        case 1: return QString("Данные1"); break;
-        case 2: return QString("Фильтр. данные"); break;
-        case 3: return QString("Данные3"); break;
-        case 4: return QString("Данные4"); break;
-        case 5: return QString("Данные5"); break;
-        case 6: return QString("Данные6"); break;
-        case 7: return QString("Данные7"); break;
-        case 8: return QString("Данные8"); break;
-        case 9: return QString("Данные9"); break;
-        case 10: return QString("Данные10"); break;
-        case 11: return QString("Данные11"); break;
-        case 12: return QString("Данные12"); break;
-        case 13: return QString("Данные13"); break;
-        case 14: return QString("Данные14"); break;
-        case 15: return QString("Данные15"); break;
-        case 16: return QString("Огибающая"); break;
-        case 17: return QString("Мат. ож."); break;
-        case 18: return QString("СКЗ"); break;
-        case 19: return QString("Ассиметрия"); break;
-        case 20: return QString("Эксцесс"); break;
-        case 21: return QString("Фаза (Гильб.)"); break;
-        case 32: return QString("Корреляция"); break;
-        case 33: return QString("X-Корр."); break;
-        case 64: return QString("Гистограмма"); break;
-        case 65: return QString("ЭФР"); break;
-        case 66: return QString("Гистограмма (%)"); break;
-        case 67: return QString("Плотн. вероятн."); break;
-        case 128: return QString("Спектр"); break;
-        case 129: return QString("ПСМ"); break;
-        case 130: return QString("Спектр СКЗ"); break;
-        case 144: return QString("X-Спектр"); break;
-        case 145: return QString("X-Фаза"); break;
-        case 146: return QString("Когерентность"); break;
-        case 147: return QString("ПФ"); break;
-        case 148: return QString("X-Спектр Re"); break;
-        case 149: return QString("X-Спектр Im"); break;
-        case 150: return QString("ПФ Re"); break;
-        case 151: return QString("ПФ Im"); break;
-        case 152: return QString("ДН X-Спектр"); break;
-        case 153: return QString("Кепстр"); break;
-        case 154: return QString("ДН ПФ"); break;
-        case 155: return QString("Спектр огиб."); break;
-        case 156: return QString("Окт.спектр"); break;
-        case 157: return QString("1/3-окт.спектр"); break;
-        case 158: return QString("1/2-окт.спектр"); break;
-        case 159: return QString("1/6-окт.спектр"); break;
-        case 160: return QString("1/12-окт.спектр"); break;
-        case 161: return QString("1/24-окт.спектр"); break;
-        default: return QString("Неопр.");
-    }
-    return QString("Неопр.");
-}
-
-
 template <typename T>
 QVector<T> convertFromUINT16(unsigned char *ptr, qint64 length, uint IndType)
 {
@@ -108,7 +50,7 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
 
     fillPreliminary(&other);
 
-    qDebug()<<dataDescription().toStringList();
+//    qDebug()<<dataDescription().toStringList();
 
 
     //Поскольку other может содержать каналы с разным типом, размером и шагом,
@@ -378,7 +320,7 @@ void DfdFileDescriptor::write()
         }
         tempFile.close();
         // удаляем файл данных, если мы перезаписывали его
-        if (QFile::remove(rawFileName)) {
+        if (QFile::remove(rawFileName) || !QFile::exists(rawFileName)) {
             if (!tempFile.copy(rawFileName)) {
                 qDebug()<<"Failed to replace"<<rawFileName<<"with temp file";
                 return;
@@ -440,7 +382,60 @@ Descriptor::DataType DfdFileDescriptor::type() const
 
 QString DfdFileDescriptor::typeDisplay() const
 {
-    return dataTypeDescription(DataType);
+    //return dataTypeDescription(DataType);
+    switch (DataType) {
+        case 0: return QString("Данные"); break;
+        case 1: return QString("Данные1"); break;
+        case 2: return QString("Фильтр. данные"); break;
+        case 3: return QString("Данные3"); break;
+        case 4: return QString("Данные4"); break;
+        case 5: return QString("Данные5"); break;
+        case 6: return QString("Данные6"); break;
+        case 7: return QString("Данные7"); break;
+        case 8: return QString("Данные8"); break;
+        case 9: return QString("Данные9"); break;
+        case 10: return QString("Данные10"); break;
+        case 11: return QString("Данные11"); break;
+        case 12: return QString("Данные12"); break;
+        case 13: return QString("Данные13"); break;
+        case 14: return QString("Данные14"); break;
+        case 15: return QString("Данные15"); break;
+        case 16: return QString("Огибающая"); break;
+        case 17: return QString("Мат. ож."); break;
+        case 18: return QString("СКЗ"); break;
+        case 19: return QString("Ассиметрия"); break;
+        case 20: return QString("Эксцесс"); break;
+        case 21: return QString("Фаза (Гильб.)"); break;
+        case 32: return QString("Корреляция"); break;
+        case 33: return QString("X-Корр."); break;
+        case 64: return QString("Гистограмма"); break;
+        case 65: return QString("ЭФР"); break;
+        case 66: return QString("Гистограмма (%)"); break;
+        case 67: return QString("Плотн. вероятн."); break;
+        case 128: return QString("Спектр"); break;
+        case 129: return QString("ПСМ"); break;
+        case 130: return QString("Спектр СКЗ"); break;
+        case 144: return QString("X-Спектр"); break;
+        case 145: return QString("X-Фаза"); break;
+        case 146: return QString("Когерентность"); break;
+        case 147: return QString("ПФ"); break;
+        case 148: return QString("X-Спектр Re"); break;
+        case 149: return QString("X-Спектр Im"); break;
+        case 150: return QString("ПФ Re"); break;
+        case 151: return QString("ПФ Im"); break;
+        case 152: return QString("ДН X-Спектр"); break;
+        case 153: return QString("Кепстр"); break;
+        case 154: return QString("ДН ПФ"); break;
+        case 155: return QString("Спектр огиб."); break;
+        case 156: return QString("Окт.спектр"); break;
+        case 157: return QString("1/3-окт.спектр"); break;
+        case 158: return QString("1/2-окт.спектр"); break;
+        case 159: return QString("1/6-окт.спектр"); break;
+        case 160: return QString("1/12-окт.спектр"); break;
+        case 161: return QString("1/24-окт.спектр"); break;
+        default: return QString("Неопр.");
+    }
+    return QString("Неопр.");
 }
 
 bool DfdFileDescriptor::fileExists() const

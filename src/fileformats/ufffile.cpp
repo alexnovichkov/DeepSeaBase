@@ -56,7 +56,7 @@ UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString 
     //ищем силу и номер канала
     for (int i=0; i<count; ++i) {
         Channel *ch = other.channel(i);
-        if (ch->xName().toLower()=="сила") {
+        if (ch->xName().toLower()=="сила" || ch->xName().toLower()=="sila") {
             referenceChannelNumber = i;
             referenceChannelName = ch->name();
             break;
@@ -95,10 +95,8 @@ UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString 
         f->write(stream, id);
 
         //clearing
-        if (!populated) {
-            ch->clear();
-            f->clear();
-        }
+        if (!populated) ch->clear();
+        f->clear();
     }
 }
 
@@ -1003,6 +1001,7 @@ void Function::readRest()
         if (!qFuzzyCompare(thr2, 1.0)) thr = thr2;
         else thr = thr1;
     }
+    //у FRF порог всегда равен 1
     int ftype = dataDescription().get("function.type").toInt();
     if (ftype==Descriptor::FrequencyResponseFunction) thr = 1.0;
     _data->setThreshold(thr);
@@ -1102,8 +1101,8 @@ void Function::readRest()
 
 void Function::write(QTextStream &stream, int &id)
 {DD;
-    int samples = data()->samplesCount();
-    int blocks = data()->blocksCount();
+    const int samples = data()->samplesCount();
+    const int blocks = data()->blocksCount();
     dataPositions.clear();  dataEnds.clear();
 
     FunctionHeader head = FunctionHeader::fromDescription(dataDescription());
@@ -1131,6 +1130,7 @@ void Function::write(QTextStream &stream, int &id)
         }
         dataPositions << stream.pos();
 
+        const int format = data()->xValuesFormat();
         switch (t58[25].value.toInt()) {//25 Ordinate Data Type
                                             // 2 - real, single precision
                                             // 4 - real, double precision
@@ -1153,7 +1153,7 @@ void Function::write(QTextStream &stream, int &id)
             case 2: {
                 QVector<double> values = data()->rawYValues(block);
                 int j = 0;
-                const int format = data()->xValuesFormat();
+
                 for (int i=0; i<samples; ++i) {
                     if (format == DataHolder::XValuesNonUniform) {
                         fields[FTFloat13_5]->print(data()->xValue(i), stream);
@@ -1172,7 +1172,6 @@ void Function::write(QTextStream &stream, int &id)
             case 4: {
                 QVector<double> values = data()->rawYValues(block);
                 int j = 0;
-                const int format = data()->xValuesFormat();
                 for (int i=0; i<samples; ++i) {
                     if (format == DataHolder::XValuesNonUniform) {
                         fields[FTFloat13_5]->print(data()->xValue(i), stream);
@@ -1191,7 +1190,6 @@ void Function::write(QTextStream &stream, int &id)
             case 5: {
                 auto values = data()->yValuesComplex(block);
                 int j = 0;
-                const int format = data()->xValuesFormat();
                 for (int i=0; i<samples; i++) {
                     if (format == DataHolder::XValuesNonUniform) {
                         fields[FTFloat13_5]->print(data()->xValue(i), stream);
@@ -1212,7 +1210,6 @@ void Function::write(QTextStream &stream, int &id)
             case 6: {
                 auto values = data()->yValuesComplex(block);
                 int j = 0;
-                const int format = data()->xValuesFormat();
                 int limit = format == DataHolder::XValuesNonUniform ? 3 : 4;
                 for (int i=0; i<samples; i++) {
                     if (format == DataHolder::XValuesNonUniform) {
@@ -1553,9 +1550,9 @@ QString normalizationDescriptionFromUffType(int type)
     return "unknown";
 }
 
-int unitTypeFromName(const QString &name)
+int unitTypeFromName(QString s)
 {
-    QString s = name.toLower();
+    s = s.toLower();
     //2 - stress - not detectable (= pressure)
     //3 - strain - dimensionless
     //5 - temperature
@@ -1563,7 +1560,8 @@ int unitTypeFromName(const QString &name)
     //6 - heat flux
     if (s == "w/m^2" || s == "w/m2" || s == "вт/м^2" || s == "вт/м2") return 6;
     //8 - displacement
-    if (s == "m" || s == "м") return 8;
+    if (s == "m" || s == "м" || s == "mm" || s == "мм" || s == "cm"
+        || s == "см") return 8;
     //9 - reaction force - non detectable (= force)
     //11 - velocity
     if (s == "m/s" || s == "м/с") return 11;
