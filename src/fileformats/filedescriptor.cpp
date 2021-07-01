@@ -59,9 +59,10 @@ bool FileDescriptor::rename(const QString &newName, const QString &newPath)
     return result;
 }
 
-void FileDescriptor::fillPreliminary(const FileDescriptor *)
+void FileDescriptor::fillPreliminary(const FileDescriptor *d)
 {
     updateDateTimeGUID();
+    dataDescription().put("dateTime", d->dataDescription().get("dateTime"));
 }
 
 void FileDescriptor::populate()
@@ -290,7 +291,7 @@ void FileDescriptor::calculateMovingAvg(const QList<Channel *> &channels, int wi
         descr.put("description", "Скользящее среднее канала "+c->name());
         descr.put("samples",  data->samplesCount());
         descr.put("blocks", 1);
-        descr.put("name", "RAVG");
+        descr.put("function.name", "RAVG");
 
         addChannelWithData(data, descr);
         if (!populated) c->clear();

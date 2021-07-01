@@ -1292,6 +1292,7 @@ void DfdChannel::write(QDataStream &s, DataHolder *d)
 QVariant DfdChannel::info(int column, bool edit) const
 {
     switch (column) {
+        case 0: return dataDescription().get("name");
         case 1: {
             QString result = yName();
             if (edit) return result;
@@ -1300,8 +1301,12 @@ QVariant DfdChannel::info(int column, bool edit) const
                 result.append(QString(" (%1)").arg(yNameO));
             return result;
         }
+        case 2: return data()->yValuesFormatString();
+        case 3: return dataDescription().get("description");
+        case 4: return dataDescription().get("correction");
         default: break;
     }
+
     return Channel::info(column, edit);
 }
 
