@@ -37,18 +37,23 @@ class FilterPointMapper : public QwtPointMapper
 public:
     FilterPointMapper(bool createPolygon) : QwtPointMapper(), polygon(createPolygon)
     { }
+
     QPolygonF getPolygon( const QwtScaleMap &xMap, const QwtScaleMap &yMap,
             const QwtSeriesData<QPointF> *series, int from, int to)
     {
         if (from == oldFrom && to == oldTo &&
             scaleMapEquals(oldXMap, xMap) &&
-            scaleMapEquals(oldYMap, yMap)) return cashedPolyline;
+            scaleMapEquals(oldYMap, yMap)) {
+            return cashedPolyline;
+        }
 
         //number of visible points for current zoom
         const int pointCount = to - from + 1;
         if (pointCount < 5) {
             simplified = false;
             cashedPolyline = QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
+            oldFrom = from;
+            oldTo = to;
             return cashedPolyline;
         }
 
@@ -57,6 +62,8 @@ public:
         if (pixels == 0) {
             simplified = false;
             cashedPolyline = QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
+            oldFrom = from;
+            oldTo = to;
             return cashedPolyline;
         }
 
@@ -64,6 +71,8 @@ public:
         if (pointCount <= pixels*5) {
             simplified = false;
             cashedPolyline = QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
+            oldFrom = from;
+            oldTo = to;
             return cashedPolyline;
         }
 
@@ -223,7 +232,6 @@ void LineCurve::drawLines(QPainter *painter,
 {DD;
     //reevaluating from, to
     evaluateScale(from, to, xMap);
-
     if (from > to) return;
 
     const bool doAlign = QwtPainter::roundingAlignment( painter );

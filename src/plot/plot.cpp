@@ -669,7 +669,6 @@ void Plot::updateAxesLabels()
 
 void Plot::setScale(QwtAxisId id, double min, double max, double step)
 {DD;
-    qDebug()<<id<<min<<max<<step;
     if (!curves.isEmpty() && id == yRightAxis) {
         if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(curves.first())) {
             c->setColorInterval(min, max);
