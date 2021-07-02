@@ -282,7 +282,7 @@ void UffFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
 
     int id=1;
     for (int i = 0; i < channels.size(); ++i) {
-        if (!channelsToDelete.contains(i)) continue;
+        if (channelsToDelete.contains(i)) continue;
 
         Function *c = channels.at(i);
         bool populated = c->populated();
