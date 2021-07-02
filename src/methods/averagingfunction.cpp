@@ -112,19 +112,19 @@ QVector<double> AveragingFunction::getData(const QString &id)
 }
 
 bool AveragingFunction::compute(FileDescriptor *file)
-{DD; qDebug()<<debugName();
+{DD; //qDebug()<<debugName();
     if (!m_input) return false;
 
     if (averaging.averagingDone()) {
-        qDebug()<<"Done averaging";
+        //qDebug()<<"Done averaging";
         return false;
     }
 
     int iter=1;
     while (1) {
-        qDebug()<<"averaging iter"<<iter;
+        //qDebug()<<"averaging iter"<<iter;
         if (!m_input->compute(file)) {
-            qDebug()<<"Averaging can't get data at iter"<<iter;
+            //qDebug()<<"Averaging can't get data at iter"<<iter;
             if (iter==1) averaging.reset();
             return false;
         }
@@ -136,16 +136,15 @@ bool AveragingFunction::compute(FileDescriptor *file)
         }
         else {
             if (!averaging.averagingDone())
-                qDebug()<<"Data for averaging is empty at iter"<<iter
-                       <<"But averaging is not finished";
+                //qDebug()<<"Data for averaging is empty at iter"<<iter<<"But averaging is not finished";
 //            break;
             return false;
         }
 
         if (averaging.averagingDone()) {
-            qDebug()<<"Done averaging at iter"<<iter;
+            //qDebug()<<"Done averaging at iter"<<iter;
         }
-        qDebug()<<"done averaging at iter"<<iter;
+        //qDebug()<<"done averaging at iter"<<iter;
         iter++;
     }
     return true;

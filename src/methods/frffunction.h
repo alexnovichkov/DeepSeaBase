@@ -52,6 +52,10 @@ public:
     virtual QVector<double> getData(const QString &id) override;
     virtual bool compute(FileDescriptor *file) override;
     virtual void reset() override;
+
+    // AbstractFunction interface
+public:
+    virtual DataDescription getFunctionDescription() const override;
 };
 
 #endif // FRFFUNCTION_H

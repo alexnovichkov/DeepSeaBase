@@ -198,17 +198,17 @@ QVector<double> ResamplingFunction::getData(const QString &id)
 }
 
 bool ResamplingFunction::compute(FileDescriptor *file)
-{DD; qDebug()<<debugName();
+{DD; //qDebug()<<debugName();
     if (!m_input) return false;
 
     if (!m_input->compute(file)) {
-        qDebug()<<"Resampling can't get data";
+        //qDebug()<<"Resampling can't get data";
         return false;
     }
 
     QVector<double> data = m_input->getData("input");
     if (data.isEmpty()) {
-        qDebug()<<"Data for resampling is empty";
+        //qDebug()<<"Data for resampling is empty";
         return false;
     }
 

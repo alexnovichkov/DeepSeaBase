@@ -147,10 +147,10 @@ QVector<double> ChannelFunction::getData(const QString &id)
 
 bool ChannelFunction::compute(FileDescriptor *file)
 {DD;
-    qDebug()<<debugName();
+    //qDebug()<<debugName();
     if (channel < 0 || file->channelsCount() <= channel) return false;
 
-    qDebug()<<"reading channel"<<channel;
+    //qDebug()<<"reading channel"<<channel;
     if (selector.includes(channel)) {
         if (!file->channel(channel)->populated())
             file->channel(channel)->populate();
@@ -197,10 +197,10 @@ QString RefChannelFunction::propertyDescription(const QString &property) const
 
 bool RefChannelFunction::compute(FileDescriptor *file)
 {DD;
-    qDebug()<<debugName();
+    //qDebug()<<debugName();
     if (channel < 0 || file->channelsCount() <= channel) return false;
 
-    qDebug()<<"reading channel"<<channel;
+    //qDebug()<<"reading channel"<<channel;
 
     if (!file->channel(channel)->populated())
         file->channel(channel)->populate();

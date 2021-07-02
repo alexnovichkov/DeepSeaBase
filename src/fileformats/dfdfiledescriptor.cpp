@@ -208,6 +208,12 @@ void DfdFileDescriptor::read()
             //проследить, чтобы удаленный канал не мешал чтению данных и удалению/перемещению каналов
         }
     }
+    //удаляем информацию о каналах из информации о файле
+    DataDescription d;
+    for (auto i=dataDescription().data.begin(); i!=dataDescription().data.end(); ++i) {
+        if (!i.key().startsWith("function.")) d.put(i.key(), i.value());
+    }
+    dataDescription() = d;
 }
 
 void DfdFileDescriptor::writeDfd(QTextStream &dfdStream)

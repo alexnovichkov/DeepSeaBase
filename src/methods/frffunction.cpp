@@ -154,37 +154,37 @@ QVector<double> FrfFunction::getData(const QString &id)
 }
 
 bool FrfFunction::compute(FileDescriptor *file)
-{DD; qDebug()<<debugName();
+{DD; //qDebug()<<debugName();
     output.clear();
 
     if (!m_input || !m_input2) return false;
 
     switch (map.value("type")) {
         case 0: {//"H1 = Sab/Saa
-            qDebug()<<"Computing input1";
+            //qDebug()<<"Computing input1";
             bool inp1 = m_input->compute(file);
-            qDebug()<<"FRF input1 computing is"<<inp1;
+            //qDebug()<<"FRF input1 computing is"<<inp1;
 
             QVector<double> data = m_input->getData("input");
             if (data.isEmpty()) {
-                qDebug()<<"Data for FRF from input1 is empty";
+                //qDebug()<<"Data for FRF from input1 is empty";
                 return false;
             }
-            qDebug()<<"Resetting input2";
+            //qDebug()<<"Resetting input2";
             m_input2->resetData();
 
             if (cashedReferenceOutput.isEmpty()) {
-                qDebug()<<"Computing cashed input2";
+                //qDebug()<<"Computing cashed input2";
                 bool inp2 = m_input2->compute(file);
-                qDebug()<<"FRF input2 computing is"<<inp2;
+                //qDebug()<<"FRF input2 computing is"<<inp2;
 
                 QVector<double> data2 = m_input2->getData("input");
                 if (data2.isEmpty()) {
-                    qDebug()<<"Data for FRF from input2 is empty";
+                    //qDebug()<<"Data for FRF from input2 is empty";
                     return false;
                 }
                 cashedReferenceOutput = data2;
-                qDebug()<<"Cashed data";
+                //qDebug()<<"Cashed data";
             }
 
             //Sab is from data
@@ -230,3 +230,31 @@ void FrfFunction::reset()
     output.clear();
 }
 
+
+
+DataDescription FrfFunction::getFunctionDescription() const
+{
+    DataDescription result;
+    if (m_input) result = m_input->getFunctionDescription();
+
+    result.put("xname", "Гц");
+    QString s = m_input->getProperty("?/yNameOld").toString();
+    QString s1 = m_input2 ? m_input2->getProperty("?/yNameOld").toString() : "?";
+    result.put("yname", QString("%1/%2").arg(s).arg(s1));
+    result.put("function.name", "FRF");
+    result.put("function.type", 4);
+    result.put("function.description", map.value("type")==0?"H1":"H2");
+    switch (map.value("output")) {
+        case 0: result.put("function.format", "complex"); break;
+        case 1: result.put("function.format", "real"); break;
+        case 2: result.put("function.format", "imaginary"); break;
+        case 3: result.put("function.format", "amplitude"); break;
+        case 4: result.put("function.format", "phase"); break;
+        default: break;
+    }
+    result.put("function.logscale", "linear");
+    result.put("function.logref", 1);
+//    result.put("function.referenceName", );
+
+    return result;
+}

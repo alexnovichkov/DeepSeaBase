@@ -102,18 +102,18 @@ QVector<double> GxyFunction::getData(const QString &id)
 }
 
 bool GxyFunction::compute(FileDescriptor *file)
-{DD; qDebug()<<debugName();
+{DD; //qDebug()<<debugName();
     reset();
 
     if (!m_input || !m_input2) return false;
 
     if (!m_input->compute(file)) {
-        qDebug()<<"Gxy can't get data from input1";
+        //qDebug()<<"Gxy can't get data from input1";
         return false;
     }
     if (m_input != m_input2) { //no need to compute the second time, as inputs are the same
         if (!m_input2->compute(file)) {
-            qDebug()<<"Gxy can't get data from input2";
+            //qDebug()<<"Gxy can't get data from input2";
             return false;
         }
     }
@@ -121,12 +121,12 @@ bool GxyFunction::compute(FileDescriptor *file)
     //data should contain complex spectrum
     QVector<double> data1 = m_input->getData("input");
     if (data1.isEmpty()) {
-        qDebug()<<"Data for Gxy from input1 is empty";
+        //qDebug()<<"Data for Gxy from input1 is empty";
         return false;
     }
     QVector<double> data2 = m_input2->getData("input");
     if (data2.isEmpty()) {
-        qDebug()<<"Data for Gxy from input2 is empty";
+        //qDebug()<<"Data for Gxy from input2 is empty";
         return false;
     }
     if (data1.size() != data2.size()) return false;

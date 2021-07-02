@@ -109,7 +109,7 @@ QVector<double> SavingFunction::getData(const QString &id)
 }
 
 bool SavingFunction::compute(FileDescriptor *file)
-{DD; qDebug()<<debugName();
+{DD; //qDebug()<<debugName();
     /* что нужно для сохранения:
      * 1. тип файла
      * 2. папка, куда сохранять файл - конструируется из имени исходного файла
@@ -136,18 +136,18 @@ bool SavingFunction::compute(FileDescriptor *file)
     QVector<double> data;
     int i=1;
     while (1) {
-        qDebug()<<"saving iter"<<i;
+        //qDebug()<<"saving iter"<<i;
         bool computed = m_input->compute(file);
-        qDebug()<<"saving iter"<<i<<computed;
+        //qDebug()<<"saving iter"<<i<<computed;
         QVector<double> data1 = m_input->getData("input");
         if (data1.isEmpty()) {
-            qDebug()<<"data for saving at iter"<<i<<"is empty";
+            //qDebug()<<"data for saving at iter"<<i<<"is empty";
             break;
         }
         data.append(data1);
-        qDebug()<<"done saving iter"<<i++;
+        //qDebug()<<"done saving iter"<<i++;
     }
-    qDebug()<<"finished saving at iter"<<i;
+    //qDebug()<<"finished saving at iter"<<i;
 
     if (data.isEmpty()) return false;
 
@@ -559,7 +559,7 @@ Channel *SavingFunction::createD94Channel(FileDescriptor *file, int dataSize, in
         const int i = m_input->getProperty("?/channelIndex").toInt();
         Channel *channel = file->channel(i);
 
-        qDebug()<<ch->dataDescription().data.isEmpty();
+        //qDebug()<<ch->dataDescription().data.isEmpty();
 
         ch->dataDescription() = channel->dataDescription();
 
@@ -608,8 +608,9 @@ Channel *SavingFunction::createD94Channel(FileDescriptor *file, int dataSize, in
                 vals << val.toDouble();
             ch->zAxisBlock.values = vals;
         }
-
-        ch->dataDescription().data.unite(descr.data);
+        for (auto i=descr.data.begin(); i!=descr.data.end(); ++i)
+            ch->dataDescription().put(i.key(), i.value());
+        //qDebug()<<ch->dataDescription().toStringList();
 
 //        ch->dataDescription().put("function.name", m_input->getProperty("?/functionDescription").toString());
 //        ch->dataDescription().put("function.type", m_input->getProperty("?/functionType").toInt());

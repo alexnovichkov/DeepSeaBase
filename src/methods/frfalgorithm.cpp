@@ -178,7 +178,7 @@ bool FRFAlgorithm::compute(FileDescriptor *file)
     for (int i=0; i<count; ++i) {
         //beginning of the chain
         channelF->setProperty("Channel/channelIndex", i);
-        qDebug()<<"channel"<<i+1<<"refChannel"<<refChannel+1;
+        //qDebug()<<"channel"<<i+1<<"refChannel"<<refChannel+1;
 
         if (!channels.isEmpty() && !channels.contains(QString::number(i+1))) {
             emit tick();

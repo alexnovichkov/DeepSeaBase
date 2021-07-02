@@ -189,19 +189,19 @@ QVector<double> FftFunction::getData(const QString &id)
 }
 
 bool FftFunction::compute(FileDescriptor *file)
-{DD; qDebug()<<debugName();
+{DD; //qDebug()<<debugName();
     reset();
 
     if (!m_input) return false;
 
     if (!m_input->compute(file)) {
-        qDebug()<<"FFT can't get data";
+        //qDebug()<<"FFT can't get data";
         return false;
     }
 
     QVector<double> data = m_input->getData("input");
     if (data.isEmpty()) {
-        qDebug()<<"Data for FFT is empty";
+        //qDebug()<<"Data for FFT is empty";
         return false;
     }
 

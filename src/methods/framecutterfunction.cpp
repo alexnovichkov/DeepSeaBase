@@ -252,22 +252,22 @@ QVector<double> FrameCutterFunction::getData(const QString &id)
 }
 
 bool FrameCutterFunction::compute(FileDescriptor *file)
-{DD; qDebug()<<debugName();
+{DD; //qDebug()<<debugName();
     if (!m_input) return false;
 
     output.clear();
 
     if (frameCutter.isEmpty()) {
         if (!m_input->compute(file)) {
-            qDebug()<<"Sampling can't get data";
+            //qDebug()<<"Sampling can't get data";
             return false;
         }
         QVector<double> data = m_input->getData("input");
         if (data.isEmpty()) {
-            qDebug()<<"Data for frame cutter is empty";
+            //qDebug()<<"Data for frame cutter is empty";
             return false;
         }
-        qDebug()<<"data for framecutter is"<<data.size()<<"size";
+        //qDebug()<<"data for framecutter is"<<data.size()<<"size";
         frameCutter.setSource(data);
 
         if (frameCutter.type()==FrameCutter::Trigger) {

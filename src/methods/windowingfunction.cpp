@@ -102,19 +102,19 @@ QVector<double> WindowingFunction::getData(const QString &id)
 }
 
 bool WindowingFunction::compute(FileDescriptor *file)
-{DD; qDebug()<<debugName();
+{DD; //qDebug()<<debugName();
     reset();
 
     if (!m_input) return false;
 
     if (!m_input->compute(file)) {
-        qDebug()<<"Windowing can't get data";
+        //qDebug()<<"Windowing can't get data";
         return false;
     }
 
     output = m_input->getData("input");
     if (output.isEmpty()) {
-        qDebug()<<"Data for windowing is empty";
+        //qDebug()<<"Data for windowing is empty";
         return false;
     }
 

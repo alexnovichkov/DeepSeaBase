@@ -46,6 +46,7 @@
  *           "function": {
  *               "name": "FRF", //или "time" - для тонкой настройки типа функции
  *               "type": 5, //тип функции согласно UFF - обобщенный тип
+ *               "description": "H1",
  *               "logref": 0.000314,
  *               "logscale": "linear" / "quadratic" / "dimensionless",
  *               "responseName": "lop1:1",
