@@ -28,8 +28,6 @@
 ChartZoom::ChartZoom(Plot *plot) :
     QObject(plot),  qwtPlot(plot)
 {DD;
-    plot->installEventFilter(this);
-
     // сбрасываем признак режима
     convType = ctNone;
 
@@ -132,10 +130,8 @@ void ChartZoom::zoomBack()
     if (zoomStack.isEmpty()) return;
     zoomStack.pop();
     if (zoomStack.isEmpty()) {
-        // nothing to zoom back to, autoscaling to
-        horizontalScaleBounds->autoscale();
-        verticalScaleBounds->autoscale();
-        verticalScaleBoundsSlave->autoscale();
+        // nothing to zoom back to, autoscaling to maximum
+        plot()->autoscale();
     }
     else {
         zoomCoordinates coords = zoomStack.top();
@@ -176,6 +172,31 @@ void ChartZoom::moveToAxis(int axis, double min, double max)
     }
 }
 
+void ChartZoom::autoscale(int axis, bool spectrogram)
+{DD;
+    switch (axis) {
+        case 0: // x axis
+            horizontalScaleBounds->autoscale();
+            break;
+        case 1: // y axis
+            verticalScaleBounds->autoscale();
+            break;
+        case 2: // y slave axis
+            verticalScaleBoundsSlave->autoscale();
+            break;
+        case -1:
+            zoomStack.clear();
+            horizontalScaleBounds->autoscale();
+            verticalScaleBounds->autoscale();
+            if (!spectrogram) verticalScaleBoundsSlave->autoscale();
+            //replot();
+            //update();
+            break;
+        default:
+            break;
+    }
+}
+
     /**************************************************/
     /*         Реализация класса QScaleBounds         */
     /*                  Версия 1.0.1                  */
@@ -192,7 +213,7 @@ ChartZoom::ScaleBounds::ScaleBounds(Plot *plot, QwtAxisId axis) : axis(axis), pl
 }
 
 void ChartZoom::ScaleBounds::setFixed(bool fixed)
-{
+{DD;
     this->fixed = fixed;
 
     if (!fixed)

@@ -99,8 +99,7 @@ void AxisZoom::axisMouseEvent(QEvent *event,QwtAxisId axis)
                     else if (zoom->verticalScaleBounds->axis == axis.pos ||
                              zoom->verticalScaleBoundsSlave->axis == axis.pos)
                         coords.coords.insert(axis.pos, {dialog.leftBorder(), dialog.rightBorder()});
-                    if (!coords.coords.isEmpty())
-                        zoom->addZoom(coords, true);
+                    zoom->addZoom(coords, true);
 
                     if (dialog.autoscale()) {
                         emit needsAutoscale(axis);

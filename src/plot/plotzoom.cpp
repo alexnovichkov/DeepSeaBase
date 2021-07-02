@@ -25,7 +25,7 @@ constexpr int MinimumZoom = 8;
 
 PlotZoom::PlotZoom()
 {DD;
-    rubberBand = 0;
+    rubberBand = nullptr;
 }
 
 void PlotZoom::attach(ChartZoom *zm)
@@ -100,8 +100,7 @@ void PlotZoom::startZoom(QMouseEvent *mEvent)
             startingPosY >= 0 && startingPosY < cg.height()) {
             if (mEvent->button() == Qt::LeftButton) {
                 zoom->setRegime(ChartZoom::ctZoom);
-                if (!rubberBand)
-                    rubberBand = new QRubberBand(QRubberBand::Rectangle, zoom->plot()->canvas());
+                if (!rubberBand) rubberBand = new QRubberBand(QRubberBand::Rectangle, zoom->plot()->canvas());
             }
         }
     }

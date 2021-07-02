@@ -154,7 +154,7 @@ Plot::Plot(QWidget *parent) :
     _canvas->setFocusIndicator(QwtPlotCanvas::CanvasFocusIndicator);
     _canvas->setPalette(Qt::white);
     _canvas->setFrameStyle(QFrame::StyledPanel);
-    _canvas->setPaintAttribute(QwtPlotCanvas::BackingStore, true);
+    //_canvas->setPaintAttribute(QwtPlotCanvas::BackingStore, false);
     setCanvas(_canvas);
 
     setAutoReplot(true);
@@ -167,8 +167,6 @@ Plot::Plot(QWidget *parent) :
     this->axisWidget(xBottomAxis)->setMouseTracking(true);
     this->axisWidget(yLeftAxis)->setMouseTracking(true);
     this->axisWidget(yRightAxis)->setMouseTracking(true);
-
-//    connect(this->axisWidget(xBottomAxis))
 
     trackingPanel = new TrackingPanel(this);
     trackingPanel->setVisible(false);
@@ -185,8 +183,6 @@ Plot::Plot(QWidget *parent) :
     yValuesPresentationLeft = DataHolder::ShowAsDefault;
     yValuesPresentationRight = DataHolder::ShowAsDefault;
 
-
-//    setAxesCount(QwtAxis::xBottom,2);
 
     // grid
     grid = new QwtPlotGrid;
@@ -672,7 +668,8 @@ void Plot::updateAxesLabels()
 }
 
 void Plot::setScale(QwtAxisId id, double min, double max, double step)
-{
+{DD;
+    qDebug()<<id<<min<<max<<step;
     if (!curves.isEmpty() && id == yRightAxis) {
         if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(curves.first())) {
             c->setColorInterval(min, max);
@@ -1136,7 +1133,7 @@ void Plot::switchPlayerVisibility()
 }
 
 void Plot::toggleAutoscale(int axis, bool toggled)
-{
+{DD;
     switch (axis) {
         case 0: // x axis
             zoom->horizontalScaleBounds->setFixed(!toggled);
@@ -1153,25 +1150,8 @@ void Plot::toggleAutoscale(int axis, bool toggled)
 }
 
 void Plot::autoscale(int axis)
-{
-    switch (axis) {
-        case 0: // x axis
-            zoom->horizontalScaleBounds->autoscale();
-            break;
-        case 1: // y axis
-            zoom->verticalScaleBounds->autoscale();
-            break;
-        case 2: // y slave axis
-            zoom->verticalScaleBoundsSlave->autoscale();
-            break;
-        case -1:
-            zoom->horizontalScaleBounds->autoscale();
-            zoom->verticalScaleBounds->autoscale();
-            if (!spectrogram) zoom->verticalScaleBoundsSlave->autoscale();
-            break;
-        default:
-            break;
-    }
+{DD;
+    zoom->autoscale(axis, spectrogram);
 }
 
 void Plot::setInteractionMode(Plot::InteractionMode mode)

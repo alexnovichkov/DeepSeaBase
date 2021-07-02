@@ -94,7 +94,7 @@ void WheelZoom::applyWheel(QEvent *event, QwtAxisId axis)
             }
         }
 
-        if (!coords.coords.isEmpty()) zoom->addZoom(coords, true);
+        zoom->addZoom(coords, true);
     }
 }
 

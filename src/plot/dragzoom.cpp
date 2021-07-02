@@ -156,6 +156,6 @@ void DragZoom::endDrag(QMouseEvent *mEvent)
         if (!qFuzzyIsNull(dy1)) {
             coords.coords.insert(QwtAxis::yRight, {minVerticalBound1 + dy1, maxVerticalBound1 + dy1});
         }
-        if (!coords.coords.isEmpty()) zoom->addZoom(coords, true);
+        zoom->addZoom(coords, true);
     }
 }
