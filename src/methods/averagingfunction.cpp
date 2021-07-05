@@ -104,12 +104,12 @@ QString AveragingFunction::displayName() const
     return "Усреднение";
 }
 
-//QVector<double> AveragingFunction::getData(const QString &id)
-//{DD;
-//    if (id == "input") return averaging.get();
+QVector<double> AveragingFunction::getData(const QString &id)
+{DD;
+    if (id == "input") return averaging.get();
 
-//    return QVector<double>();
-//}
+    return QVector<double>();
+}
 
 bool AveragingFunction::compute(FileDescriptor *file)
 {DD;

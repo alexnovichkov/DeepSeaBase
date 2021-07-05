@@ -8,6 +8,17 @@ typedef std::complex<double> cx_double;
 
 QDebug operator <<(QDebug debug, const std::complex<double> &val);
 
+template <typename T>
+class asKeyValueRange
+{
+public:
+    asKeyValueRange(T& data) : m_data{data} {}
+    auto begin() {return m_data.keyValueBegin();}
+    auto end() {return m_data.keyValueEnd();}
+private:
+    T &m_data;
+};
+
 int abscissaType(const QString &xName);
 QString abscissaTypeDescription(int type);
 

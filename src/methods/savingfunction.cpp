@@ -103,7 +103,7 @@ void SavingFunction::m_setProperty(const QString &property, const QVariant &val)
 }
 
 bool SavingFunction::compute(FileDescriptor *file)
-{DD; //qDebug()<<debugName();
+{DD;
     /* что нужно для сохранения:
      * 1. тип файла
      * 2. папка, куда сохранять файл - конструируется из имени исходного файла
@@ -210,19 +210,6 @@ bool SavingFunction::compute(FileDescriptor *file)
     for (auto i=functionDescription.data.begin(); i!=functionDescription.data.end(); ++i)
         ch->dataDescription().put(i.key(), i.value());
 
-    //        ch->dataDescription().put("function.name", m_input->getProperty("?/functionDescription").toString());
-    //        ch->dataDescription().put("function.type", m_input->getProperty("?/functionType").toInt());
-    //        ch->dataDescription().put("function.format", m_input->getProperty("?/dataFormat").toString());
-    //        ch->dataDescription().put("function.logref", m_input->getProperty("?/threshold").toDouble());
-    //        int units = m_input->getProperty("?/normalization").toInt();
-    //        switch (units) {
-    //            case 0: ch->dataDescription().put("function.logscale", "linear"); break;
-    //            case 1:
-    //            case 2:
-    //            case 3: ch->dataDescription().put("function.logscale", "quadratic"); break;
-    //            default: break;
-    //        }
-    //        ch->dataDescription().put("function.octaveFormat", m_input->getProperty("?/octaveFormat").toInt());
     //        "responseName": "lop1:1",
     //         *               "responseDirection": "+z",
     //         *               "responseNode": "",

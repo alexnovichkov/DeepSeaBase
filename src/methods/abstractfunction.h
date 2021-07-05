@@ -66,7 +66,7 @@ public:
     void pairWith(AbstractFunction *slave);
     bool paired() const {return m_master != nullptr;}
 
-    QVector<double> getData(const QString &id);
+    virtual QVector<double> getData(const QString &id);
 
     virtual DataDescription getFunctionDescription() const {return DataDescription();}
 

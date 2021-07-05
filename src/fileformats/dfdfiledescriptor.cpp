@@ -1009,9 +1009,9 @@ void Process::write(QTextStream &dfd)
     dfd << "[Process]" << endl;
     ///TODO: реализовать с учетом function
     QString ref = d->data.value("function.referenceName").toString();
-    for (auto it = d->data.constBegin(); it != d->data.constEnd(); ++it) {
-        QString key = it.key();
-        QString val = it.value().toString();
+
+    for (auto [key, v] : asKeyValueRange(d->data)) {
+        QString val = v.toString();
         if (key == "function.averaging") {
             if (val == "linear") dfd << "TypeAver="<<"линейное"<<endl;
             else if (val == "exponential") dfd << "TypeAver="<<"линейное"<<endl;
@@ -1020,7 +1020,7 @@ void Process::write(QTextStream &dfd)
             else if (val == "no") dfd << "TypeAver="<<"без усреднения"<<endl;
         }
         else if (key == "function.averagingCount") {
-            dfd << "NAver=" << val;
+            dfd << "NAver=" << val << endl;
         }
         else if (key == "function.window") {
             QString window = val;
@@ -1038,11 +1038,17 @@ void Process::write(QTextStream &dfd)
             dfd << "ProcChansList=" << val << endl;
         else if (key == "function.referenceDescription") {
             ref = val;
-            if (!ref.isEmpty()) dfd << "pBaseChan=" << ref;
+            if (!ref.isEmpty()) dfd << "pBaseChan=" << ref << endl;
         }
         else if (key.startsWith("function."))
             dfd << key.section('.',1) << "=" << val << endl;
     }
+
+//    for (auto it = d->data.constBegin(); it != d->data.constEnd(); ++it) {
+//        QString key = it.key();
+//        QString val = it.value().toString();
+
+//    }
 }
 
 void Source::read(DfdSettings &dfd)
