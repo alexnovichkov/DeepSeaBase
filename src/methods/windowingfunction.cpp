@@ -53,8 +53,8 @@ QVariant WindowingFunction::m_getProperty(const QString &property) const
 {DD;
     if (property.startsWith("?/")) {
         if (property == "?/functionDescription") return "WIN";
-        if (property == "?/windowDescription") return Windowing::windowDescription(windowing.getWindowType());
-        if (property == "?/windowType") return windowing.getWindowType();
+//        if (property == "?/windowDescription") return Windowing::windowDescription(windowing.getWindowType());
+//        if (property == "?/windowType") return windowing.getWindowType();
 
         // do not know anything about these broadcast properties
         if (m_input) return m_input->getProperty(property);
@@ -66,6 +66,18 @@ QVariant WindowingFunction::m_getProperty(const QString &property) const
     if (p == "parameter") return windowing.getParameter();
 
     return QVariant();
+}
+
+DataDescription WindowingFunction::getFunctionDescription() const
+{
+    DataDescription result;
+    if (m_input) result = m_input->getFunctionDescription();
+
+    result.put("function.name", "WIN");
+    result.put("function.window", Windowing::windowDescription(windowing.getWindowType()));
+    result.put("function.windowParameter", windowing.getParameter());
+
+    return result;
 }
 
 void WindowingFunction::m_setProperty(const QString &property, const QVariant &val)
@@ -94,29 +106,16 @@ QString WindowingFunction::displayName() const
 }
 
 
-QVector<double> WindowingFunction::getData(const QString &id)
-{DD;
-    if (id == "input") return output;
-
-    return QVector<double>();
-}
-
 bool WindowingFunction::compute(FileDescriptor *file)
-{DD; //qDebug()<<debugName();
+{DD;
     reset();
 
     if (!m_input) return false;
 
-    if (!m_input->compute(file)) {
-        //qDebug()<<"Windowing can't get data";
-        return false;
-    }
+    if (!m_input->compute(file)) return false;
 
     output = m_input->getData("input");
-    if (output.isEmpty()) {
-        //qDebug()<<"Data for windowing is empty";
-        return false;
-    }
+    if (output.isEmpty()) return false;
 
     windowing.applyTo(output);
 

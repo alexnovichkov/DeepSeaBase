@@ -20,10 +20,10 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     thread_ = 0;
     taskBarProgress = 0;
 
-    //
-    //algorithms << new TimeAlgorithm(dataBase, this);
-    //algorithms << new WindowingAlgorithm(dataBase, this);
-    //algorithms << new SpectreAlgorithm(dataBase, this);
+
+    algorithms << new TimeAlgorithm(dataBase, this);
+    algorithms << new WindowingAlgorithm(dataBase, this);
+    algorithms << new SpectreAlgorithm(dataBase, this);
     algorithms << new FRFAlgorithm(dataBase, this);
 
     for (AbstractAlgorithm *f: algorithms) {

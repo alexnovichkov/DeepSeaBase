@@ -46,16 +46,14 @@ private:
     int exponent = 0;
     double factor = 1.0; //коэффициент new sample rate = sample rate / factor
     int currentResamplingType = 0; //тип передискретизации (0=factor, 1=range, 2=sampleRate)
-    QVector<double> output;
-    QVector<double> refOutput;
     double xStep = 0.0;
 
     // AbstractFunction interface
 public:
     virtual QString displayName() const override;
     virtual void reset() override;
-    virtual QVector<double> getData(const QString &id) override;
     virtual bool compute(FileDescriptor *file) override;
+    virtual DataDescription getFunctionDescription() const override;
 };
 
 #endif // RESAMPLINGFUNCTION_H

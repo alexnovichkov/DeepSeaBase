@@ -107,13 +107,6 @@ DataDescription ApsFunction::getFunctionDescription() const
     return result;
 }
 
-QVector<double> ApsFunction::getData(const QString &id)
-{DD;
-    if (id == "input") return output;
-
-    return QVector<double>();
-}
-
 bool ApsFunction::compute(FileDescriptor *file)
 {DD;
     reset();

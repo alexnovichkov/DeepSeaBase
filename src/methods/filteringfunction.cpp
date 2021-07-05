@@ -164,7 +164,7 @@ QVariant FilteringFunction::m_getProperty(const QString &property) const
 {DD;
     if (property.startsWith("?/")) {
         if (property == "?/dataType") return 2;//Фильтр. данные
-        if (property == "?/functionType") return 1;//Time response
+//        if (property == "?/functionType") return 1;//Time response
         if (property == "?/functionDescription") return "FILT";
 
         if (m_input) return m_input->getProperty(property);
@@ -187,6 +187,39 @@ QVariant FilteringFunction::m_getProperty(const QString &property) const
     if (p == "rolloff") return map.value(p, 0.0);
 
     return QVariant();
+}
+
+DataDescription FilteringFunction::getFunctionDescription() const
+{
+    DataDescription result;
+    if (m_input) result = m_input->getFunctionDescription();
+
+    result.put("function.name", "FILT");
+    switch (filtering.getType()) {
+        case Filtering::LowPass: result.put("function.filterType", "low pass"); break;
+        case Filtering::HighPass: result.put("function.filterType", "high pass"); break;
+        case Filtering::BandPass: result.put("function.filterType", "band pass"); break;
+        case Filtering::BandStop: result.put("function.filterType", "band stop"); break;
+        case Filtering::LowShelf: result.put("function.filterType", "low shelf"); break;
+        case Filtering::HighShelf: result.put("function.filterType", "high shelf"); break;
+        case Filtering::BandShelf: result.put("function.filterType", "band shelf"); break;
+    }
+    if (filtering.getType() != Filtering::NoFiltering) {
+        switch (filtering.getApproximation()) {
+            case Filtering::Butterworth: result.put("function.filterApproximation", "Butterworth"); break;
+            case Filtering::ChebyshevI: result.put("function.filterApproximation", "Chebyshev I"); break;
+            case Filtering::ChebyshevII: result.put("function.filterApproximation", "Chebyshev II"); break;
+            case Filtering::Bessel: result.put("function.filterApproximation", "Bessel"); break;
+            case Filtering::Elliptic: result.put("function.filterApproximation", "elliptic"); break;
+            case Filtering::Legendre: result.put("function.filterApproximation", "Legendre"); break;
+            case Filtering::RBJ: result.put("function.filterApproximation", "RBJ"); break;
+        }
+        result.put("function.filterFrequency", filtering.getParameter(Filtering::idFrequency));
+    }
+
+
+
+    return result;
 }
 
 void FilteringFunction::m_setProperty(const QString &property, const QVariant &val)
@@ -251,13 +284,6 @@ void FilteringFunction::reset()
 {DD;
     filtering.reset();
     output.clear();
-}
-
-QVector<double> FilteringFunction::getData(const QString &id)
-{DD;
-    if (id == "input") return output;
-
-    return QVector<double>();
 }
 
 bool FilteringFunction::compute(FileDescriptor *file)

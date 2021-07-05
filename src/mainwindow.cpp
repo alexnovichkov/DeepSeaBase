@@ -1672,6 +1672,9 @@ void MainWindow::calculateSpectreRecords()
 {DD;
     if (!tab) return;
 
+    //QMessageBox::warning(this, "DeepSea Database", "Эта часть программы еще не написана");
+    //return;
+
     QList<FileDescriptor *> records = tab->model->selectedFiles({Descriptor::TimeResponse});
 
     if (records.isEmpty()) {

@@ -77,34 +77,14 @@ QVariant ResamplingFunction::m_getProperty(const QString &property) const
     double sR = 1.0 / xStep;
     if (property.startsWith("?/")) {
         // recalculate sample rate to new val
-        if (property == "?/sampleRate") {
+        if (property == "?/sampleRate")
             return sR / factor;
-        }
-        if (property == "?/functionDescription") {
+        if (property == "?/functionDescription")
             return "RSMPL";
-        }
-        if (property == "?/functionType") {
-            return 1; //"Time Response";
-        }
-        if (property == "?/dataType") {// dfd DataType
+        if (property == "?/dataType") // dfd DataType
             return 1; //CuttedData
-        }
-        if (property == "?/processData") {
-            QStringList list;
-            list << "pName=Осциллограф";
-            list << "pTime=(0000000000000000)";
-            QString chanIndexes = m_input->getProperty("?/channels").toString();
-            list << "ProcChansList="+chanIndexes;
-            //TODO: размер блока должен быть равен числу отсчетов в канале
-            list << "BlockIn=1024";
-            list << "TypeProc=0";
-            list << "NAver=1";
-            list << "Values=измеряемые";
-            return list;
-        }
         if (property == "?/xStep")
             return xStep * factor;
-
         if (m_input)
             return m_input->getProperty(property);
     }
@@ -119,6 +99,19 @@ QVariant ResamplingFunction::m_getProperty(const QString &property) const
         return qRound(sR / factor);
 
     return QVariant();
+}
+
+DataDescription ResamplingFunction::getFunctionDescription() const
+{
+    DataDescription result;
+    if (m_input) result = m_input->getFunctionDescription();
+
+    result.put("function.format", "real");
+    result.put("function.precision", "float");
+    result.put("function.name", "RSMPL");
+    result.put("function.type", 12);
+
+    return result;
 }
 
 void ResamplingFunction::m_setProperty(const QString &property, const QVariant &val)
@@ -190,27 +183,16 @@ void ResamplingFunction::reset()
 }
 
 
-QVector<double> ResamplingFunction::getData(const QString &id)
-{DD;
-    if (id == "input") return output;
-
-    return QVector<double>();
-}
-
 bool ResamplingFunction::compute(FileDescriptor *file)
 {DD; //qDebug()<<debugName();
     if (!m_input) return false;
 
-    if (!m_input->compute(file)) {
-        //qDebug()<<"Resampling can't get data";
+    if (!m_input->compute(file))
         return false;
-    }
 
     QVector<double> data = m_input->getData("input");
-    if (data.isEmpty()) {
-        //qDebug()<<"Data for resampling is empty";
+    if (data.isEmpty())
         return false;
-    }
 
     if (qFuzzyCompare(factor+1.0, 2.0)) output = data;
     else {
@@ -233,7 +215,6 @@ bool ResamplingFunction::compute(FileDescriptor *file)
 
     return true;
 }
-
 
 void ResamplingFunction::updateProperty(const QString &property, const QVariant &val)
 {DD;

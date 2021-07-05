@@ -5,7 +5,7 @@
 #include "fileformats/data94file.h"
 #include "logging.h"
 
-//returns "uff" by default
+//returns "d94" by default
 QString getSuffixByType(int type)
 {DD;
     switch (type) {
@@ -102,12 +102,6 @@ void SavingFunction::m_setProperty(const QString &property, const QVariant &val)
     else if (p == "destination") destination = val.toString();
 }
 
-QVector<double> SavingFunction::getData(const QString &id)
-{DD;
-    Q_UNUSED(id);
-    return QVector<double>();
-}
-
 bool SavingFunction::compute(FileDescriptor *file)
 {DD; //qDebug()<<debugName();
     /* что нужно для сохранения:
@@ -134,20 +128,14 @@ bool SavingFunction::compute(FileDescriptor *file)
 
     // создаем канал
     QVector<double> data;
-    int i=1;
     while (1) {
-        //qDebug()<<"saving iter"<<i;
-        bool computed = m_input->compute(file);
-        //qDebug()<<"saving iter"<<i<<computed;
+        m_input->compute(file);
         QVector<double> data1 = m_input->getData("input");
-        if (data1.isEmpty()) {
-            //qDebug()<<"data for saving at iter"<<i<<"is empty";
+        if (data1.isEmpty())
             break;
-        }
+
         data.append(data1);
-        //qDebug()<<"done saving iter"<<i++;
     }
-    //qDebug()<<"finished saving at iter"<<i;
 
     if (data.isEmpty()) return false;
 
@@ -155,22 +143,23 @@ bool SavingFunction::compute(FileDescriptor *file)
     int dataSize = data.size();
     const int blocksCount = m_input->getProperty("?/zCount").toInt();
 
-    const bool dataIsComplex = m_input->getProperty("?/dataFormat").toString() == "complex";
+    const QString dataFormatString = m_input->getProperty("?/dataFormat").toString();
+    const bool dataIsComplex = dataFormatString == "complex";
     if (dataIsComplex) dataSize /= 2;
 
-    //здесь заполняются все свойства канала, не связанные с данными
+    //здесь заполняются данные канала
 
-    Channel *ch = createChannel(file, dataSize / blocksCount, blocksCount);
-    if (!ch) return false;
+    DataHolder *d = new DataHolder();
 
+    // x values
     bool abscissaEven = m_input->getProperty("?/abscissaEven").toBool();
     if (abscissaEven)
-        ch->data()->setXValues(0.0, m_input->getProperty("?/xStep").toDouble(), dataSize / blocksCount);
+        d->setXValues(m_input->getProperty("?/xBegin").toDouble(), m_input->getProperty("?/xStep").toDouble(), dataSize / blocksCount);
     else {
         const QList<QVariant> abscissaData = m_input->getProperty("?/abscissaData").toList();
         QVector<double> aData;
         for (QVariant v: abscissaData) aData << v.toDouble();
-        ch->data()->setXValues(aData);
+        d->setXValues(aData);
     }
 
     // z values
@@ -179,41 +168,78 @@ bool SavingFunction::compute(FileDescriptor *file)
     if (!zUniform) {
         const QList<QVariant> zData = m_input->getProperty("?/zData").toList();
         QVector<double> vals;
-        for (const QVariant &val: zData)
-            vals << val.toDouble();
-        ch->data()->setZValues(vals);
+        for (const QVariant &val: zData) vals << val.toDouble();
+        d->setZValues(vals);
     }
     else {
-        const double zStep = m_input->getProperty("?/zStep").toDouble();//29 Abscissa increment
+        const double zStep = m_input->getProperty("?/zStep").toDouble();
         const double zBegin = m_input->getProperty("?/zBegin").toDouble();
-        ch->data()->setZValues(zBegin, zStep, blocksCount);
+        d->setZValues(zBegin, zStep, blocksCount);
     }
 
+    // y values
 
-    ch->data()->setThreshold(m_input->getProperty("?/threshold").toDouble());
-    ch->data()->setYValuesUnits(DataHolder::YValuesUnits(m_input->getProperty("?/yValuesUnits").toInt()));
+    d->setThreshold(m_input->getProperty("?/threshold").toDouble());
+    d->setYValuesUnits(DataHolder::YValuesUnits(m_input->getProperty("?/yValuesUnits").toInt()));
 
     if (dataIsComplex) {
         // мы должны разбить поступившие данные на два массива
         QVector<cx_double> complexData(dataSize);
-        for (int i=0; i<dataSize; i++) {
+        for (int i=0; i<dataSize; i++)
             complexData[i]={data[i*2], data[i*2+1]};
-        }
-        //данные сразу всех блоков
-        ch->data()->setYValues(complexData, -1);
+        d->setYValues(complexData, -1);
     }
     else {
-        QString format = m_input->getProperty("?/dataFormat").toString();
-        int f = -1;
-        if (format == "complex") f = 0;
-        else if (format == "real") f = 1;
-        else if (format == "imaginary") f = 2;
-        else if (format == "amplitude") f = 3;
-        else if (format == "phase") f = 5;
-        else if (format == "amplitudeDb") f = 4;
-        //данные сразу всех блоков
-        ch->data()->setYValues(data, DataHolder::YValuesFormat(f), -1);
+        d->setYValues(data, DataHolder::formatFromString(dataFormatString), -1);
     }
+
+    Channel *ch = createChannel(file, d);
+    if (!ch) return false;
+
+    // Заполнение свойств канала
+    DataDescription functionDescription = m_input->getFunctionDescription();
+
+    ch->setYName(m_input->getProperty("?/yName").toString());
+    ch->setXName(m_input->getProperty("?/xName").toString());
+    ch->setZName(m_input->getProperty("?/zName").toString());
+    ch->dataDescription().put("samples", QString::number(dataSize/blocksCount));
+    ch->dataDescription().put("dateTime", QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm"));
+    ch->dataDescription().put("samplerate", int(m_input->getProperty("?/sampleRate").toDouble()));
+    ch->dataDescription().put("blocks", blocksCount);
+
+    for (auto i=functionDescription.data.begin(); i!=functionDescription.data.end(); ++i)
+        ch->dataDescription().put(i.key(), i.value());
+
+    //        ch->dataDescription().put("function.name", m_input->getProperty("?/functionDescription").toString());
+    //        ch->dataDescription().put("function.type", m_input->getProperty("?/functionType").toInt());
+    //        ch->dataDescription().put("function.format", m_input->getProperty("?/dataFormat").toString());
+    //        ch->dataDescription().put("function.logref", m_input->getProperty("?/threshold").toDouble());
+    //        int units = m_input->getProperty("?/normalization").toInt();
+    //        switch (units) {
+    //            case 0: ch->dataDescription().put("function.logscale", "linear"); break;
+    //            case 1:
+    //            case 2:
+    //            case 3: ch->dataDescription().put("function.logscale", "quadratic"); break;
+    //            default: break;
+    //        }
+    //        ch->dataDescription().put("function.octaveFormat", m_input->getProperty("?/octaveFormat").toInt());
+    //        "responseName": "lop1:1",
+    //         *               "responseDirection": "+z",
+    //         *               "responseNode": "",
+    //         *               "referenceName": "lop1:1",
+    //         *               "referenceNode": "",
+    //         *               "referenceDescription": "более полное описание из dfd",
+    //         *               "referenceDirection": "",
+    //        *               "precision": int8 / uint8 / int16 / uint16 / int32 / uint32 / int64 / uint64 / float / double
+    //        *               //далее идут все параметры обработки
+    //        *               "weighting": no / A / B / C / D
+    //        *               "averaging": "linear", "no", "exponential", "peak hold", "energetic"
+    //        *               "averagingCount": 38,
+    //        *               "window": "Hanning", "Hamming", "square", "triangular", "Gauss", "Natoll",
+    //        *                         "force", "exponential", "Tukey", "flattop", "Bartlett", "Welch symmetric",
+    //        *                         "Welch periodic", "Hanning broad", "impact", "Kaiser-Bessel",
+    //        *               "windowParameter": 0.00,
+    //        *               "blockSize": 2048,
 
     ch->setPopulated(true);
 
@@ -248,14 +274,24 @@ void SavingFunction::reset()
 
 FileDescriptor *SavingFunction::createFile(FileDescriptor *file)
 {DD;
+    FileDescriptor *f = nullptr;
     switch (type) {
-        case DfdFile: return createDfdFile(file);
-        case UffFile: return createUffFile(file);
-        case D94File: return createD94File(file);
+        case DfdFile: f = createDfdFile(file); break;
+        case UffFile: f = createUffFile(file); break;
+        case D94File: f = createD94File(file); break;
         default: break;
     }
+    if (f) {
+        f->setDataDescription(file->dataDescription());
+        f->updateDateTimeGUID();
 
-    return 0;
+        QString channels = m_input->getProperty("?/channels").toString();
+        f->dataDescription().put("source.file", file->fileName());
+        f->dataDescription().put("source.guid", file->dataDescription().get("guid"));
+        f->dataDescription().put("source.dateTime", file->dataDescription().get("dateTime"));
+        f->dataDescription().put("source.channels", channels);
+    }
+    return f;
 }
 
 FileDescriptor *SavingFunction::createDfdFile(FileDescriptor *file)
@@ -264,119 +300,82 @@ FileDescriptor *SavingFunction::createDfdFile(FileDescriptor *file)
 
     DfdFileDescriptor *newDfd = DfdFileDescriptor::newFile(newFileName, DfdDataType(dataType));
     newDfd->BlockSize = 0;
-    newDfd->setDataDescription(file->dataDescription());
-
-    if (DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(file)) {
-        //newDfd->DescriptionFormat = dfd->DescriptionFormat;
-
-        // [Sources]
-        QString channels = m_input->getProperty("?/channels").toString();
-        newDfd->dataDescription().put("source.file", file->fileName());
-        newDfd->dataDescription().put("source.guid", file->dataDescription().get("guid"));
-        newDfd->dataDescription().put("source.dateTime", file->dataDescription().get("dateTime"));
-        newDfd->dataDescription().put("source.channels", channels);
-   }
 
     // [Process]
-    auto data = m_input->getProperty("?/processData").toMap();
-    if (!data.isEmpty()) {
-        for (auto it = data.constBegin(); it != data.constEnd(); ++it)
-            newDfd->dataDescription().put("function."+it.key(), it.value());
-    }
-
-    // rest
-//    newDfd->XName = m_input->getProperty("?/xName").toString();
-//    newDfd->XStep = m_input->getProperty("?/xStep").toDouble();
-//    newDfd->XBegin = m_input->getProperty("?/xBegin").toDouble();
+//    auto data = m_input->getProperty("?/processData").toMap();
+//    if (!data.isEmpty()) {
+//        for (auto it = data.constBegin(); it != data.constEnd(); ++it)
+//            newDfd->dataDescription().put("function."+it.key(), it.value());
+//    }
 
     return newDfd;
 }
 
 FileDescriptor *SavingFunction::createUffFile(FileDescriptor *file)
 {DD;
-    UffFileDescriptor *newUff = new UffFileDescriptor(newFileName);
-
-    newUff->setDataDescription(file->dataDescription());
-    newUff->updateDateTimeGUID();
-
-    QString channels = m_input->getProperty("?/channels").toString();
-    newUff->dataDescription().put("source.file", file->fileName());
-    newUff->dataDescription().put("source.guid", file->dataDescription().get("guid"));
-    newUff->dataDescription().put("source.dateTime", file->dataDescription().get("dateTime"));
-    newUff->dataDescription().put("source.channels", channels);
-
-    return newUff;
+    return new UffFileDescriptor(newFileName);
 }
 
 FileDescriptor *SavingFunction::createD94File(FileDescriptor *file)
 {
-    Data94File *newFile = new Data94File(newFileName);
-    newFile->setDataDescription(file->dataDescription());
-    newFile->updateDateTimeGUID();
-
-    QString channels = m_input->getProperty("?/channels").toString();
-    newFile->dataDescription().put("source.file", file->fileName());
-    newFile->dataDescription().put("source.guid", file->dataDescription().get("guid"));
-    newFile->dataDescription().put("source.dateTime", file->dataDescription().get("dateTime"));
-    newFile->dataDescription().put("source.channels", channels);
-
-    qDebug()<<newFile->dataDescription().toStringList();
-
-    return newFile;
+    return new Data94File(newFileName);
 }
 
-Channel *SavingFunction::createChannel(FileDescriptor *file, int dataSize, int blocksCount)
+Channel *SavingFunction::createChannel(FileDescriptor *file, DataHolder *data)
 {DD;
-    DataDescription functionDescription = m_input->getFunctionDescription();
     switch (type) {
-        case DfdFile: return createDfdChannel(file, dataSize, blocksCount, functionDescription);
-        case UffFile: return createUffChannel(file, dataSize, blocksCount, functionDescription);
-        case D94File: return createD94Channel(file, dataSize, blocksCount, functionDescription);
+        case DfdFile: return createDfdChannel(file, data);
+        case UffFile: return createUffChannel(file, data);
+        case D94File: return createD94Channel(file, data);
         default: break;
     }
 
     return 0;
 }
 
-Channel *SavingFunction::createDfdChannel(FileDescriptor *file, int dataSize, int blocksCount, DataDescription &descr)
+Channel *SavingFunction::createDfdChannel(FileDescriptor *file, DataHolder *data)
 {DD;
-    DfdChannel *ch = 0;
-
-    DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor*>(file);
+    DfdChannel *ch = nullptr;
 
     //Преобразуем для удобства работы
     //подразумеваем, что работаем с файлом dfd
     if (DfdFileDescriptor *newDfd = dynamic_cast<DfdFileDescriptor *>(m_file)) {
-        //    ch = p.method->createDfdChannel(newDfd, file, spectrum, p, i);
+
         ch = new DfdChannel(newDfd, newDfd->channelsCount());
-        int i = m_input->getProperty("?/channelIndex").toInt();
 
-        /*ch->ChanName = file->channel(i)->name();
-        ch->ChanDscr = file->channel(i)->description();
-        if (dfd)
-            ch->ChanAddress = dfd->channels[i]->ChanAddress;
+        const int i = m_input->getProperty("?/channelIndex").toInt();
+        Channel *channel = file->channel(i);
 
-        ch->ChanBlockSize = dataSize;
+        ch->dataDescription() = channel->dataDescription();
+        ch->dataDescription().put("ynameold", channel->yName());
+        ch->setData(data);
+
+        ch->ChanBlockSize = data->samplesCount();
         ch->IndType = 3221225476;
 
-        ch->YName = file->channel(i)->yName();
-        if (dfd)
-            ch->YNameOld = dfd->channels[i]->YNameOld;
-        else
-            ch->YNameOld = ch->YName;*/
+//        ch->YName = file->channel(i)->yName();
+//        if (dfd)
+//            ch->YNameOld = dfd->channels[i]->YNameOld;
+//        else
+//            ch->YNameOld = ch->YName;
     }
 
     return ch;
 }
 
-Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize, int blocksCount, DataDescription &descr)
+Channel *SavingFunction::createUffChannel(FileDescriptor *file, DataHolder *data)
 {DD;
-    Function *ch = 0;
+    Function *ch = nullptr;
     if (UffFileDescriptor *newUff = dynamic_cast<UffFileDescriptor *>(m_file)) {
-        UffFileDescriptor *uffFile = dynamic_cast<UffFileDescriptor *>(file);
 
         ch = new Function(newUff);
+
         const int i = m_input->getProperty("?/channelIndex").toInt();
+        Channel *channel = file->channel(i);
+
+        ch->dataDescription() = channel->dataDescription();
+        ch->dataDescription().put("ynameold", channel->yName());
+        ch->setData(data);
 
        /* //Заполнение заголовка функции
         ch->header.type1858[4].value = 1; //4 set record number
@@ -549,100 +548,35 @@ Channel *SavingFunction::createUffChannel(FileDescriptor *file, int dataSize, in
     return ch;
 }
 
-Channel *SavingFunction::createD94Channel(FileDescriptor *file, int dataSize, int blocksCount, DataDescription &descr)
+Channel *SavingFunction::createD94Channel(FileDescriptor *file, DataHolder *data)
 {DD;
     Data94Channel *ch = 0;
     if (Data94File *newD94 = dynamic_cast<Data94File *>(m_file)) {
-//        Data94File *d94File = dynamic_cast<Data94File *>(file);
-
         ch = new Data94Channel(newD94);
         const int i = m_input->getProperty("?/channelIndex").toInt();
         Channel *channel = file->channel(i);
 
-        //qDebug()<<ch->dataDescription().data.isEmpty();
-
         ch->dataDescription() = channel->dataDescription();
-
-        ch->isComplex = (m_input->getProperty("?/dataFormat").toString() == "complex");
-//        ch->setName(channel->name());
-//        ch->setDescription(channel->description());
-        ch->setYName(m_input->getProperty("?/yName").toString());
         ch->dataDescription().put("ynameold", channel->yName());
-        ch->setXName(m_input->getProperty("?/xName").toString());
-        ch->setZName(m_input->getProperty("?/zName").toString());
-        ch->dataDescription().put("samples", QString::number(dataSize));
-        ch->dataDescription().put("dateTime", QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm"));
+        ch->setData(data);
+
+        ch->isComplex = (data->yValuesFormat() == DataHolder::YValuesComplex);
 
         // x values
-        const bool xEven = m_input->getProperty("?/abscissaEven").toBool();
-        const QList<QVariant> abscissaData = m_input->getProperty("?/abscissaData").toList();
-        const double xStep = m_input->getProperty("?/xStep").toDouble();
-        if (!abscissaData.isEmpty())
-            ch->xAxisBlock.begin = abscissaData.constFirst().toDouble();
-        else
-            ch->xAxisBlock.begin = 0.0;
-        if (xEven)
-            ch->dataDescription().put("samplerate", int(m_input->getProperty("?/sampleRate").toDouble()));
-        ch->xAxisBlock.uniform = xEven ? 1:0;
-        if (!xEven) {
-            QVector<double> vals;
-            for (const QVariant &val: abscissaData)
-                vals << val.toDouble();
-            ch->xAxisBlock.values = vals;
-        }
-        ch->xAxisBlock.count = dataSize;
-        ch->xAxisBlock.step = xStep;
+        ch->xAxisBlock.begin = data->xMin();
+        ch->xAxisBlock.uniform = (data->xValuesFormat() == DataHolder::XValuesUniform ? 1:0);
+        if (ch->xAxisBlock.uniform == 0)
+            ch->xAxisBlock.values = data->xValues();
+        ch->xAxisBlock.count = data->samplesCount();
+        ch->xAxisBlock.step = data->xStep();
 
         // z values
-        const double zStep = m_input->getProperty("?/zStep").toDouble();
-        const double zBegin = m_input->getProperty("?/zBegin").toDouble();
-        ch->dataDescription().put("blocks", blocksCount);
-        ch->zAxisBlock.step = zStep;
-        ch->zAxisBlock.uniform = m_input->getProperty("?/zAxisUniform").toBool() ? 1 : 0;
-        ch->zAxisBlock.count = blocksCount;
-        const QList<QVariant> zData = m_input->getProperty("?/zData").toList();
-        ch->zAxisBlock.begin = zBegin;
-        if (ch->zAxisBlock.uniform == 0) {
-            QVector<double> vals;
-            for (const QVariant &val: zData)
-                vals << val.toDouble();
-            ch->zAxisBlock.values = vals;
-        }
-        for (auto i=descr.data.begin(); i!=descr.data.end(); ++i)
-            ch->dataDescription().put(i.key(), i.value());
-        //qDebug()<<ch->dataDescription().toStringList();
-
-//        ch->dataDescription().put("function.name", m_input->getProperty("?/functionDescription").toString());
-//        ch->dataDescription().put("function.type", m_input->getProperty("?/functionType").toInt());
-//        ch->dataDescription().put("function.format", m_input->getProperty("?/dataFormat").toString());
-//        ch->dataDescription().put("function.logref", m_input->getProperty("?/threshold").toDouble());
-//        int units = m_input->getProperty("?/normalization").toInt();
-//        switch (units) {
-//            case 0: ch->dataDescription().put("function.logscale", "linear"); break;
-//            case 1:
-//            case 2:
-//            case 3: ch->dataDescription().put("function.logscale", "quadratic"); break;
-//            default: break;
-//        }
-//        ch->dataDescription().put("function.octaveFormat", m_input->getProperty("?/octaveFormat").toInt());
-//        "responseName": "lop1:1",
-//         *               "responseDirection": "+z",
-//         *               "responseNode": "",
-//         *               "referenceName": "lop1:1",
-//         *               "referenceNode": "",
-//         *               "referenceDescription": "более полное описание из dfd",
-//         *               "referenceDirection": "",
-//        *               "precision": int8 / uint8 / int16 / uint16 / int32 / uint32 / int64 / uint64 / float / double
-//        *               //далее идут все параметры обработки
-//        *               "weighting": no / A / B / C / D
-//        *               "averaging": "linear", "no", "exponential", "peak hold", "energetic"
-//        *               "averagingCount": 38,
-//        *               "window": "Hanning", "Hamming", "square", "triangular", "Gauss", "Natoll",
-//        *                         "force", "exponential", "Tukey", "flattop", "Bartlett", "Welch symmetric",
-//        *                         "Welch periodic", "Hanning broad", "impact", "Kaiser-Bessel",
-//        *               "windowParameter": 0.00,
-//        *               "blockSize": 2048,
-
+        ch->zAxisBlock.step = data->zStep();
+        ch->zAxisBlock.uniform = (data->zValuesFormat() == DataHolder::XValuesUniform ? 1:0);
+        ch->zAxisBlock.count = data->blocksCount();
+        ch->zAxisBlock.begin = data->zMin();
+        if (ch->zAxisBlock.uniform == 0)
+            ch->zAxisBlock.values = data->zValues();
     }
     return ch;
 }

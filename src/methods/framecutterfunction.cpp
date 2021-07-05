@@ -75,6 +75,31 @@ QVariant FrameCutterFunction::m_getProperty(const QString &property) const
     return parameters.value(property.section("/",1));
 }
 
+DataDescription FrameCutterFunction::getFunctionDescription() const
+{
+    DataDescription result;
+    if (m_input) result = m_input->getFunctionDescription();
+
+    result.put("function.name", "FrameCutter");
+    result.put("function.type", 1);
+    switch (frameCutter.type()) {
+        case 0: result.put("function.frameCutterType", "continuous"); break;
+        case 1:
+            result.put("function.frameCutterType", "overlap");
+            if (frameCutter.blockSize()!=0)
+                result.put("function.frameCutterOverlap", frameCutter.getDelta() / frameCutter.blockSize());
+            break;
+        case 2: result.put("function.frameCutterDelta", frameCutter.getDelta()); break;
+        case 3:
+            result.put("function.frameCutterTriggerLevel", frameCutter.getLevel());
+            result.put("function.frameCutterPretrigger", frameCutter.getPretrigger());
+            result.put("function.frameCutterTriggerChannel", frameCutter.getChannel()+1);
+            break;
+    }
+
+    return result;
+}
+
 void FrameCutterFunction::m_setProperty(const QString &property, const QVariant &val)
 {DD;
     if (!property.startsWith(name()+"/")) return;
@@ -230,7 +255,6 @@ QString FrameCutterFunction::propertyDescription(const QString &property) const
     return "";
 }
 
-
 void FrameCutterFunction::reset()
 {DD;
     frameCutter.reset();
@@ -243,31 +267,20 @@ void FrameCutterFunction::resetData()
     AbstractFunction::resetData();
 }
 
-
-QVector<double> FrameCutterFunction::getData(const QString &id)
-{DD;
-    if (id == "input") return output;
-
-    return QVector<double>();
-}
-
 bool FrameCutterFunction::compute(FileDescriptor *file)
-{DD; //qDebug()<<debugName();
+{DD;
     if (!m_input) return false;
 
     output.clear();
 
     if (frameCutter.isEmpty()) {
         if (!m_input->compute(file)) {
-            //qDebug()<<"Sampling can't get data";
             return false;
         }
         QVector<double> data = m_input->getData("input");
         if (data.isEmpty()) {
-            //qDebug()<<"Data for frame cutter is empty";
             return false;
         }
-        //qDebug()<<"data for framecutter is"<<data.size()<<"size";
         frameCutter.setSource(data);
 
         if (frameCutter.type()==FrameCutter::Trigger) {

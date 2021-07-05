@@ -34,44 +34,23 @@ QString GxyFunction::propertyDescription(const QString &property) const
 QVariant GxyFunction::m_getProperty(const QString &property) const
 {DD;
     if (property.startsWith("?/")) {
-//        if (property == "?/processData") {
-//            QStringList list;
-
-//            list << "PName=Автоспектр мощности";
-//            list << QString("BlockIn=%1").arg(m_input->getProperty("?/blockSize").toInt());
-//            list << QString("Wind=%1").arg(m_input->getProperty("?/windowDescription").toString());
-//            list << QString("TypeAver=%1").arg(m_input->getProperty("?/averaging").toString());
-//            list << "pTime=(0000000000000000)";
-//            return list;
-//        }
-        if (property == "?/dataType") {
-            return 131; // отсутствует в DeepSea, APS
-        }
+        if (property == "?/dataType") return 131; // отсутствует в DeepSea, APS
         if (property == "?/xName") return "Гц";
-        if (property == "?/xType") return 18; //frequency
         if (property == "?/xBegin") return 0.0;
         if (property == "?/xStep") {
             return m_input->getProperty("?/sampleRate").toDouble() / m_input->getProperty("?/blockSize").toDouble();
         }
-        if (property == "?/functionDescription") {
-            return "APS";
-        }
-        if (property == "?/functionType") {
-            return 2;
-        }
-        if (property == "?/normalization") {
-            return 1; //units squared
-        }
-        if (property == "?/dataFormat") {
+        if (property == "?/functionDescription")
+            return "GXY";
+
+        if (property == "?/dataFormat")
             return "complex";
-        }
-        if (property == "?/yValuesUnits") {
+
+        if (property == "?/yValuesUnits")
             return DataHolder::UnitsQuadratic;
-        }
-        if (property == "?/yName") {
-            QString s = m_input->getProperty("?/yName").toString();
-            return QString("(%1)^2").arg(s);
-        }
+
+        if (property == "?/yName")
+            return QString("(%1)^2").arg(m_input->getProperty("?/yNameOld").toString());
 
         if (property == "?/referenceChannelIndex" && m_input2)
             return m_input2->getProperty(property);
@@ -83,6 +62,16 @@ QVariant GxyFunction::m_getProperty(const QString &property) const
     return QVariant();
 }
 
+DataDescription GxyFunction::getFunctionDescription() const
+{
+    DataDescription result;
+    if (m_input) result = m_input->getFunctionDescription();
+
+    result.put("function.name", "GXY");
+
+    return result;
+}
+
 void GxyFunction::m_setProperty(const QString &property, const QVariant &val)
 {DD;
     Q_UNUSED(property);
@@ -92,13 +81,6 @@ void GxyFunction::m_setProperty(const QString &property, const QVariant &val)
 QString GxyFunction::displayName() const
 {DD;
     return "Автоспектр";
-}
-
-QVector<double> GxyFunction::getData(const QString &id)
-{DD;
-    if (id == "input") return output;
-
-    return QVector<double>();
 }
 
 bool GxyFunction::compute(FileDescriptor *file)

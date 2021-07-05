@@ -37,17 +37,16 @@ public:
 
     virtual QStringList properties() const override;
     virtual QString propertyDescription(const QString &property) const override;
+    virtual DataDescription getFunctionDescription() const override;
 private:
     FrameCutter frameCutter;
     QMap<QString, QVariant> parameters;
-    QVector<double> output;
 
     // AbstractFunction interface
 public:
     virtual QString displayName() const override;
     virtual void reset() override;
     virtual void resetData() override;
-    virtual QVector<double> getData(const QString &id) override;
     virtual bool compute(FileDescriptor *file) override;
 
     // AbstractFunction interface

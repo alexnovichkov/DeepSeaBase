@@ -29,6 +29,16 @@ public:
         }
         return "";
     }
+    static QString averagingDescriptionEng(int avgType) {
+        switch (avgType) {
+            case NoAveraging: return "no";
+            case Linear: return "linear";
+            case Exponential: return "exponential";
+            case PeakHold: return "peak hold";
+            case Energetic: return "energetic";
+        }
+        return "";
+    }
 
     explicit Averaging();
     explicit Averaging(int averagingType, int maximumAverages);

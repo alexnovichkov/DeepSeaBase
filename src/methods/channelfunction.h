@@ -45,14 +45,12 @@ public:
     virtual QStringList properties() const override;
     virtual QString propertyDescription(const QString &property) const override;
     virtual QString displayName() const override;
-    virtual QVector<double> getData(const QString &id) override;
     virtual bool compute(FileDescriptor *file) override;
 private:
     friend class RefChannelFunction;
 
     ChannelSelector selector;
     int channel = 0;
-    QVector<double> output;
 
 
     // AbstractFunction interface

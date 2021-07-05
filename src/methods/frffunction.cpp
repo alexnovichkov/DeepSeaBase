@@ -47,24 +47,24 @@ QString FrfFunction::propertyDescription(const QString &property) const
 QVariant FrfFunction::m_getProperty(const QString &property) const
 {DD;
     if (property.startsWith("?/")) {
-        if (property == "?/processData") {
-            int type = map.value("type");
-            QStringList list;
+//        if (property == "?/processData") {
+//            int type = map.value("type");
+//            QStringList list;
 
-            switch (type) {
-                case 0: list << "PName=Передаточная ф-я H1"; break;
-                case 1: list << "PName=Передаточная ф-я H2"; break;
-                default: break;
-            }
-            int referenceChannel = m_input2->getProperty("?/referenceChannelIndex").toInt();
-            list << QString("pBaseChan=%1,").arg(referenceChannel);
-            list << QString("ProcChansList=%1,%2").arg(1).arg(referenceChannel);
-            list << QString("BlockIn=%1").arg(m_input->getProperty("?/blockSize").toInt());
-            list << QString("Wind=%1").arg(m_input->getProperty("?/windowDescription").toString());
-            list << QString("TypeAver=%1").arg(m_input->getProperty("?/averaging").toString());
-            list << "pTime=(0000000000000000)";
-            return list;
-        }
+//            switch (type) {
+//                case 0: list << "PName=Передаточная ф-я H1"; break;
+//                case 1: list << "PName=Передаточная ф-я H2"; break;
+//                default: break;
+//            }
+//            int referenceChannel = m_input2->getProperty("?/referenceChannelIndex").toInt();
+//            list << QString("pBaseChan=%1,").arg(referenceChannel);
+//            list << QString("ProcChansList=%1,%2").arg(1).arg(referenceChannel);
+//            list << QString("BlockIn=%1").arg(m_input->getProperty("?/blockSize").toInt());
+//            list << QString("Wind=%1").arg(m_input->getProperty("?/windowDescription").toString());
+//            list << QString("TypeAver=%1").arg(m_input->getProperty("?/averaging").toString());
+//            list << "pTime=(0000000000000000)";
+//            return list;
+//        }
         if (property == "?/dataType") {
             switch (map.value("output")) {// dfd не различает H1 и H2
                 case 0: return 154; //DiNike,
@@ -76,7 +76,7 @@ QVariant FrfFunction::m_getProperty(const QString &property) const
             }
         }
         if (property == "?/xName") return "Гц";
-        if (property == "?/xType") return 18; //frequency
+//        if (property == "?/xType") return 18; //frequency
         if (property == "?/xBegin") return 0.0;
         if (property == "?/xStep") {
             return m_input->getProperty("?/sampleRate").toDouble() / m_input->getProperty("?/blockSize").toDouble();
@@ -88,12 +88,12 @@ QVariant FrfFunction::m_getProperty(const QString &property) const
                 default: return "H1";
             }
         }
-        if (property == "?/functionType") {
-            return 4; //FRF
-        }
-        if (property == "?/normalization") {
-            return 0; //no normalization
-        }
+//        if (property == "?/functionType") {
+//            return 4; //FRF
+//        }
+//        if (property == "?/normalization") {
+//            return 0; //no normalization
+//        }
         if (property == "?/dataFormat") {
             switch (map.value("output")) {
                 case 0: return "complex"; break;
@@ -106,17 +106,17 @@ QVariant FrfFunction::m_getProperty(const QString &property) const
         }
         if (property == "?/yValuesUnits") {
             switch (map.value("output")) {
-                case 0: return DataHolder::UnitsLinear;
-                case 1: return DataHolder::UnitsLinear;
-                case 2: return DataHolder::UnitsLinear;
+                case 0:
+                case 1:
+                case 2:
                 case 3: return DataHolder::UnitsLinear;
                 case 4: return DataHolder::UnitsDimensionless;
                 default: return "unknown";
             }
         }
         if (property == "?/yName") {
-            QString s1 = m_input->getProperty("?/yName").toString();
-            QString s2 = m_input2 ? m_input2->getProperty("?/yName").toString() : "?";
+            QString s1 = m_input->getProperty("?/yNameOld").toString();
+            QString s2 = m_input2 ? m_input2->getProperty("?/yNameOld").toString() : "?";
             return QString("%1/%2").arg(s1).arg(s2);
         }
 
@@ -145,46 +145,26 @@ QString FrfFunction::displayName() const
     return "Передаточная";
 }
 
-QVector<double> FrfFunction::getData(const QString &id)
-{DD;
-    if (id == "input")
-        return output;
-
-    return QVector<double>();
-}
-
 bool FrfFunction::compute(FileDescriptor *file)
-{DD; //qDebug()<<debugName();
+{DD;
     output.clear();
 
     if (!m_input || !m_input2) return false;
 
     switch (map.value("type")) {
         case 0: {//"H1 = Sab/Saa
-            //qDebug()<<"Computing input1";
-            bool inp1 = m_input->compute(file);
-            //qDebug()<<"FRF input1 computing is"<<inp1;
+            m_input->compute(file);
 
             QVector<double> data = m_input->getData("input");
-            if (data.isEmpty()) {
-                //qDebug()<<"Data for FRF from input1 is empty";
-                return false;
-            }
-            //qDebug()<<"Resetting input2";
+            if (data.isEmpty()) return false;
             m_input2->resetData();
 
             if (cashedReferenceOutput.isEmpty()) {
-                //qDebug()<<"Computing cashed input2";
-                bool inp2 = m_input2->compute(file);
-                //qDebug()<<"FRF input2 computing is"<<inp2;
+               m_input2->compute(file);
 
                 QVector<double> data2 = m_input2->getData("input");
-                if (data2.isEmpty()) {
-                    //qDebug()<<"Data for FRF from input2 is empty";
-                    return false;
-                }
+                if (data2.isEmpty()) return false;
                 cashedReferenceOutput = data2;
-                //qDebug()<<"Cashed data";
             }
 
             //Sab is from data
@@ -237,13 +217,6 @@ DataDescription FrfFunction::getFunctionDescription() const
     DataDescription result;
     if (m_input) result = m_input->getFunctionDescription();
 
-    result.put("xname", "Гц");
-    QString s = m_input->getProperty("?/yNameOld").toString();
-    QString s1 = m_input2 ? m_input2->getProperty("?/yNameOld").toString() : "?";
-    result.put("yname", QString("%1/%2").arg(s).arg(s1));
-    result.put("function.name", "FRF");
-    result.put("function.type", 4);
-    result.put("function.description", map.value("type")==0?"H1":"H2");
     switch (map.value("output")) {
         case 0: result.put("function.format", "complex"); break;
         case 1: result.put("function.format", "real"); break;
@@ -252,9 +225,13 @@ DataDescription FrfFunction::getFunctionDescription() const
         case 4: result.put("function.format", "phase"); break;
         default: break;
     }
+    result.put("function.precision", "float");
+    result.put("function.name", "FRF");
+    result.put("function.type", 4);
+    result.put("function.description", map.value("type")==0?"H1":"H2");
+    result.put("function.octaveFormat", 0);
     result.put("function.logscale", "linear");
     result.put("function.logref", 1);
-//    result.put("function.referenceName", );
 
     return result;
 }

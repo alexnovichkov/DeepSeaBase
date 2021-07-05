@@ -49,35 +49,31 @@ QString FftFunction::propertyDescription(const QString &property) const
 QVariant FftFunction::m_getProperty(const QString &property) const
 {DD;
     if (property.startsWith("?/")) {
-        if (property == "?/processData") {
-            int type = map.value("type");
-            QStringList list;
+//        if (property == "?/processData") {
+//            int type = map.value("type");
+//            QStringList list;
 
-            switch (type) {
-                case 0: list << "PName=Спектроанализатор"; break;
-                case 1: list << "PName=Спектр мощности"; break;
-                case 2: list << "PName=Плотн.спектра мощности"; break;
-                default: break;
-            }
+//            switch (type) {
+//                case 0: list << "PName=Спектроанализатор"; break;
+//                case 1: list << "PName=Спектр мощности"; break;
+//                case 2: list << "PName=Плотн.спектра мощности"; break;
+//                default: break;
+//            }
 
-            list << QString("BlockIn=%1").arg(m_input->getProperty("?/blockSize").toInt());
-            list << QString("Wind=%1").arg(m_input->getProperty("?/windowDescription").toString());
-            list << QString("TypeAver=%1").arg(m_input->getProperty("?/averaging").toString());
-            list << "pTime=(0000000000000000)";
-            return list;
-        }
+//            list << QString("BlockIn=%1").arg(m_input->getProperty("?/blockSize").toInt());
+//            list << QString("Wind=%1").arg(m_input->getProperty("?/windowDescription").toString());
+//            list << QString("TypeAver=%1").arg(m_input->getProperty("?/averaging").toString());
+//            list << "pTime=(0000000000000000)";
+//            return list;
+//        }
         if (property == "?/dataType") {
-//            if (typeCombo->currentText()=="спектр СКЗ") return 130;
-//            if (typeCombo->currentText()=="мощности") return 128;
-//            if (typeCombo->currentText()=="плотности мощн.") return 129;
-//            return 128;
             switch (map.value("type")) {
                 case 2: return 129; break; // "плотности мощн."
                 default: return 128;
             }
         }
         if (property == "?/xName") return "Гц";
-        if (property == "?/xType") return 18; //frequency
+//        if (property == "?/xType") return 18; //frequency
         if (property == "?/xBegin") return 0.0;
         if (property == "?/xStep") {
             return m_input->getProperty("?/sampleRate").toDouble() / m_input->getProperty("?/blockSize").toDouble();
@@ -90,26 +86,26 @@ QVariant FftFunction::m_getProperty(const QString &property) const
                 default: return "Unknown";
             }
         }
-        if (property == "?/functionType") {
-            switch (map.value("type")) {
-                case 0: return 12;//"FFT";
-                case 1: return 12;//"PS";
-                case 2: return 9;//"PSD";
-                default: return 0;//"Unknown";
-            }
-        }
-        if (property == "?/normalization") {
-            switch (map.value("type")) {
-                case 0: if (map.value("output") == 3) //amplitude
-                        return 1; //units quadratic
-                    else
-                        return 0; //no normalization
-                    break;
-                case 1: return 1; break; //units squared
-                case 2: return 2; break; //Units squared per Hz
-                default: return 0;
-            }
-        }
+//        if (property == "?/functionType") {
+//            switch (map.value("type")) {
+//                case 0: return 12;//"FFT";
+//                case 1: return 12;//"PS";
+//                case 2: return 9;//"PSD";
+//                default: return 0;//"Unknown";
+//            }
+//        }
+//        if (property == "?/normalization") {
+//            switch (map.value("type")) {
+//                case 0: if (map.value("output") == 3) //amplitude
+//                        return 1; //units quadratic
+//                    else
+//                        return 0; //no normalization
+//                    break;
+//                case 1: return 1; break; //units squared
+//                case 2: return 2; break; //Units squared per Hz
+//                default: return 0;
+//            }
+//        }
         if (property == "?/dataFormat") {
             if (map.value("type") != 0) return "amplitude";
             switch (map.value("output")) {
@@ -127,16 +123,14 @@ QVariant FftFunction::m_getProperty(const QString &property) const
                         return DataHolder::UnitsLinear;
                     else if (map.value("output") == 4) //phase
                         return DataHolder::UnitsDimensionless;
-                    else
-                        return DataHolder::UnitsQuadratic;
-                    break;
-                case 1: return DataHolder::UnitsQuadratic; break;
-                case 2: return DataHolder::UnitsQuadratic; break;
+                    return DataHolder::UnitsQuadratic;
+                case 1:
+                case 2: return DataHolder::UnitsQuadratic;
                 default: return DataHolder::UnitsUnknown;
             }
         }
         if (property == "?/yName") {
-            QString s = m_input->getProperty("?/yName").toString();
+            QString s = m_input->getProperty("?/yNameOld").toString();
             switch (map.value("type")) {
                 case 0: return s;
                 case 1: return QString("(%1)^2").arg(s);
@@ -181,27 +175,18 @@ bool FftFunction::propertyShowsFor(const QString &property) const
     return true;
 }
 
-QVector<double> FftFunction::getData(const QString &id)
-{DD;
-    if (id == "input") return output;
-
-    return QVector<double>();
-}
-
 bool FftFunction::compute(FileDescriptor *file)
-{DD; //qDebug()<<debugName();
+{DD;
     reset();
 
     if (!m_input) return false;
 
     if (!m_input->compute(file)) {
-        //qDebug()<<"FFT can't get data";
         return false;
     }
 
     QVector<double> data = m_input->getData("input");
     if (data.isEmpty()) {
-        //qDebug()<<"Data for FFT is empty";
         return false;
     }
 
@@ -278,4 +263,52 @@ bool FftFunction::compute(FileDescriptor *file)
 void FftFunction::reset()
 {DD;
     output.clear();
+}
+
+
+DataDescription FftFunction::getFunctionDescription() const
+{
+    DataDescription result;
+    if (m_input) result = m_input->getFunctionDescription();
+
+    switch (map.value("output")) {
+        case 0: result.put("function.format", "complex"); break;
+        case 1: result.put("function.format", "real"); break;
+        case 2: result.put("function.format", "imaginary"); break;
+        case 3: result.put("function.format", "amplitude"); break;
+        case 4: result.put("function.format", "phase"); break;
+        default: break;
+    }
+    result.put("function.precision", "float");
+
+    switch (map.value("type")) {
+        case 0: {
+            result.put("function.name", "FFT");
+            result.put("function.type", 12);
+            break;
+        }
+        case 1: {
+            result.put("function.name", "PS");
+            result.put("function.type", 12);
+            break;
+        }
+        case 2: {
+            result.put("function.name", "PSD");
+            result.put("function.type", 9);
+            break;
+        }
+    }
+    result.put("function.octaveFormat", 0);
+
+    switch (map.value("type")) {
+        case 0: if (map.value("output") == 3) //amplitude
+                result.put("function.logscale", "quadratic");  //units quadratic
+            else
+                result.put("function.logscale", "linear");  //no normalization
+            break;
+        case 1: //units squared
+        case 2: result.put("function.logscale", "quadratic"); break; //Units squared per Hz
+    }
+
+    return result;
 }

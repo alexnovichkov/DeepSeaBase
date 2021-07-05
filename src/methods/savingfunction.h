@@ -67,7 +67,6 @@ public:
     virtual QString propertyDescription(const QString &property) const override;
     virtual QVariant m_getProperty(const QString &property) const override;
     virtual void m_setProperty(const QString &property, const QVariant &val) override;
-    virtual QVector<double> getData(const QString &id) override;
     virtual bool compute(FileDescriptor *file) override;
     virtual void reset() override;
 private:
@@ -75,10 +74,10 @@ private:
     FileDescriptor *createDfdFile(FileDescriptor *file);
     FileDescriptor *createUffFile(FileDescriptor *file);
     FileDescriptor *createD94File(FileDescriptor *file);
-    Channel *createChannel(FileDescriptor *file, int dataSize, int blocksCount);
-    Channel *createDfdChannel(FileDescriptor *file, int dataSize, int blocksCount, DataDescription &descr);
-    Channel *createUffChannel(FileDescriptor *file, int dataSize, int blocksCount, DataDescription &descr);
-    Channel *createD94Channel(FileDescriptor *file, int dataSize, int blocksCount, DataDescription &descr);
+    Channel *createChannel(FileDescriptor *file, DataHolder *data);
+    Channel *createDfdChannel(FileDescriptor *file, DataHolder *data);
+    Channel *createUffChannel(FileDescriptor *file, DataHolder *data);
+    Channel *createD94Channel(FileDescriptor *file, DataHolder *data);
     FileDescriptor *m_file = nullptr;
     QString newFileName;
     QStringList newFiles;

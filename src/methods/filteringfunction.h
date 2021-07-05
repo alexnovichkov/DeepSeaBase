@@ -38,14 +38,16 @@ public:
 private:
     Filtering filtering;
     QMap<QString, QVariant> map;
-    QVector<double> output;
 
     // AbstractFunction interface
 public:
     virtual QString displayName() const override;
     virtual void reset() override;
-    virtual QVector<double> getData(const QString &id) override;
     virtual bool compute(FileDescriptor *file) override;
+
+    // AbstractFunction interface
+public:
+    virtual DataDescription getFunctionDescription() const override;
 };
 
 #endif // FILTERINGFUNCTION_H

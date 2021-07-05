@@ -66,6 +66,13 @@ void AbstractFunction::pairWith(AbstractFunction *slave)
     };
 }
 
+QVector<double> AbstractFunction::getData(const QString &id)
+{
+    if (id == "input") return output;
+
+    return QVector<double>();
+}
+
 void AbstractFunction::setInput(AbstractFunction *input)
 {DD;
     m_input = input;

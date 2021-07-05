@@ -35,25 +35,25 @@ QVariant ChannelFunction::m_getProperty(const QString &property) const
             if (qFuzzyIsNull(ch->data()->xStep())) return 0.0;
             return 1.0 / ch->data()->xStep();
         }
-        if (property == "?/xBegin") return 0.0;
+        if (property == "?/xBegin" && ch) return ch->data()->xMin();
         if (property == "?/xName") return "с";
-        if (property == "?/xType") return 17; //Time
+//        if (property == "?/xType") return 17; //Time
         if (property == "?/xStep" && ch) return ch->data()->xStep();
         if (property == "?/abscissaEven") return true;
         if (property == "?/dataFormat") return "real"; //<- временные данные всегда имеют такой формат
         if (property == "?/zAxisUniform") return true; //всегда равномерная шкала для временных данных
-        if (property == "?/yType" && ch) return abscissaType(ch->yName());
+//        if (property == "?/yType" && ch) return abscissaType(ch->yName());
         if (property == "?/yName" && ch) return ch->yName();
         if (property == "?/yNameOld" && ch) return ch->yName();
         if (property == "?/yValuesUnits" && ch) return ch->data()->yValuesUnits();
         if (property == "?/threshold" && ch) return ch->data()->threshold();
-        if (property == "?/zName" && ch) return ch->xName();
+        if (property == "?/zName" && ch) return ch->zName();
         if (property == "?/zCount" && ch) return ch->data()->blocksCount();
         if (property == "?/zStep" && ch) return ch->data()->zStep();
         if (property == "?/zBegin" && ch) return ch->data()->zMin();
 
         if (property == "?/dataType") return 1;//Данные
-        if (property == "?/functionType") return 1;//Time response
+//        if (property == "?/functionType") return 1;//Time response
         if (property == "?/functionDescription") return "Time Response";
     }
     else {
@@ -78,7 +78,6 @@ QVariant ChannelFunction::m_getProperty(const QString &property) const
 
 void ChannelFunction::m_setProperty(const QString &property, const QVariant &val)
 {DD;
-//    qDebug()<<"ChannelFunction::m_setProperty"<<property<<val;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -138,19 +137,10 @@ QString ChannelFunction::displayName() const
     return "Каналы";
 }
 
-QVector<double> ChannelFunction::getData(const QString &id)
-{DD;
-    if (id == "input") return output;
-
-    return QVector<double>();
-}
-
 bool ChannelFunction::compute(FileDescriptor *file)
 {DD;
-    //qDebug()<<debugName();
     if (channel < 0 || file->channelsCount() <= channel) return false;
 
-    //qDebug()<<"reading channel"<<channel;
     if (selector.includes(channel)) {
         if (!file->channel(channel)->populated())
             file->channel(channel)->populate();
@@ -197,10 +187,7 @@ QString RefChannelFunction::propertyDescription(const QString &property) const
 
 bool RefChannelFunction::compute(FileDescriptor *file)
 {DD;
-    //qDebug()<<debugName();
     if (channel < 0 || file->channelsCount() <= channel) return false;
-
-    //qDebug()<<"reading channel"<<channel;
 
     if (!file->channel(channel)->populated())
         file->channel(channel)->populate();

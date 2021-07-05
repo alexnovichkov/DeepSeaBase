@@ -32,16 +32,14 @@ public:
     virtual QVariant m_getProperty(const QString &property) const override;
     virtual void m_setProperty(const QString &property, const QVariant &val) override;
     virtual bool propertyShowsFor(const QString &property) const override;
+    virtual DataDescription getFunctionDescription() const override;
 
-private:
+protected:
     Windowing windowing;
-    QVector<double> output;
-    friend class RefWindowingFunction;
 
     // AbstractFunction interface
 public:
     virtual QString displayName() const override;
-    virtual QVector<double> getData(const QString &id) override;
     virtual bool compute(FileDescriptor *file) override;
     virtual void reset() override;
 };

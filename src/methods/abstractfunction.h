@@ -63,10 +63,10 @@ public:
     QVariant getProperty(const QString &property) const;
     void setProperty(const QString &property, const QVariant &val);
 
-    virtual void pairWith(AbstractFunction *slave);
+    void pairWith(AbstractFunction *slave);
     bool paired() const {return m_master != nullptr;}
 
-    virtual QVector<double> getData(const QString &id) = 0;
+    QVector<double> getData(const QString &id);
 
     virtual DataDescription getFunctionDescription() const {return DataDescription();}
 
@@ -102,6 +102,7 @@ protected:
     AbstractFunction *m_slave = nullptr;
     FileDescriptor *m_file = nullptr;
     QString _name; //метка для отладки
+    QVector<double> output;
 };
 
 class AbstractAlgorithm : public QObject
@@ -113,15 +114,10 @@ public:
     virtual QString name() const = 0;
     virtual QString displayName() const = 0;
     virtual QString description() const = 0;
-//    virtual QString propertiesDescription() const;
-//    virtual QStringList properties() const = 0;
-//    virtual QString propertyDescription(const QString &property) const = 0;
     bool propertyShowsFor(const QString &property) const;
 
     QVariant getProperty(const QString &property) const;
     void setProperty(const QString &property, const QVariant &val);
-
-//    virtual QVector<double> getData(const QString &id) = 0;
 
     QList<FileDescriptor *> dataBase() const {return m_dataBase;}
 

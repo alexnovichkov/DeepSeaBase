@@ -51,10 +51,10 @@ QString AveragingFunction::propertyDescription(const QString &property) const
 QVariant AveragingFunction::m_getProperty(const QString &property) const
 {DD;
     if (property.startsWith("?/")) {
-        if (property == "?/averaging")
-            return Averaging::averagingDescription(averaging.getAveragingType());
-        if (property == "?/averagingType")
-            return averaging.getAveragingType();
+//        if (property == "?/averaging")
+//            return Averaging::averagingDescription(averaging.getAveragingType());
+//        if (property == "?/averagingType")
+//            return averaging.getAveragingType();
         if (property == "?/zCount") {
             //усреднения нет - возвращаем полное число блоков
             if (averaging.getAveragingType() == 0) return m_input->getProperty("?/zCount");
@@ -104,27 +104,22 @@ QString AveragingFunction::displayName() const
     return "Усреднение";
 }
 
-QVector<double> AveragingFunction::getData(const QString &id)
-{DD;
-    if (id == "input") return averaging.get();
+//QVector<double> AveragingFunction::getData(const QString &id)
+//{DD;
+//    if (id == "input") return averaging.get();
 
-    return QVector<double>();
-}
+//    return QVector<double>();
+//}
 
 bool AveragingFunction::compute(FileDescriptor *file)
-{DD; //qDebug()<<debugName();
+{DD;
     if (!m_input) return false;
 
-    if (averaging.averagingDone()) {
-        //qDebug()<<"Done averaging";
-        return false;
-    }
+    if (averaging.averagingDone()) return false;
 
     int iter=1;
     while (1) {
-        //qDebug()<<"averaging iter"<<iter;
         if (!m_input->compute(file)) {
-            //qDebug()<<"Averaging can't get data at iter"<<iter;
             if (iter==1) averaging.reset();
             return false;
         }
@@ -136,15 +131,12 @@ bool AveragingFunction::compute(FileDescriptor *file)
         }
         else {
             if (!averaging.averagingDone())
-                //qDebug()<<"Data for averaging is empty at iter"<<iter<<"But averaging is not finished";
-//            break;
-            return false;
+                return false;
         }
 
         if (averaging.averagingDone()) {
             //qDebug()<<"Done averaging at iter"<<iter;
         }
-        //qDebug()<<"done averaging at iter"<<iter;
         iter++;
     }
     return true;
@@ -160,8 +152,10 @@ DataDescription AveragingFunction::getFunctionDescription() const
     DataDescription result;
     if (m_input) result = m_input->getFunctionDescription();
 
-    result.put("function.averaging", Averaging::averagingDescription(averaging.getAveragingType()));
-    result.put("function.averagingCount", averaging.getAveragesMade());
+    if (averaging.getAveragingType() != Averaging::NoAveraging) {
+        result.put("function.averaging", Averaging::averagingDescriptionEng(averaging.getAveragingType()));
+        result.put("function.averagingCount", averaging.getAveragesMade());
+    }
 
     return result;
 }

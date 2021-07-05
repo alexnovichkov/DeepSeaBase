@@ -44,12 +44,10 @@ public:
 
 private:
     QMap<QString, int> map;
-    QVector<double> output;
     QVector<double> cashedReferenceOutput;
 
     // AbstractFunction interface
 public:
-    virtual QVector<double> getData(const QString &id) override;
     virtual bool compute(FileDescriptor *file) override;
     virtual void reset() override;
 
