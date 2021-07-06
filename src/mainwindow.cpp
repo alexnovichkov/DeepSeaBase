@@ -2413,6 +2413,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
      // записываем название файла и описатели
      if (allChannelsFromOneFile) {
          QStringList descriptions = descriptor->dataDescription().twoStringDescription();
+         while (descriptions.size()<2) descriptions << "";
 
          QAxObject *cells = worksheet->querySubObject("Cells(Int,Int)", 1, 1);
          if (cells) cells->setProperty("Value", descriptor->fileName());
@@ -2429,6 +2430,7 @@ void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
          for (int i=0; i<plot->curves.size(); ++i) {
              Curve *curve = plot->curves.at(i);
              QStringList descriptions = curve->channel->descriptor()->dataDescription().twoStringDescription();
+             while (descriptions.size()<2) descriptions << "";
 
              QAxObject *cells = !writeToSeparateColumns ? worksheet->querySubObject("Cells(Int,Int)", 1, 2+i)
                                                        : worksheet->querySubObject("Cells(Int,Int)", 1, 2+i*2);

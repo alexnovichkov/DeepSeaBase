@@ -294,7 +294,7 @@ void Windowing::tukey()
     QVector<double> v(N/2);
     for (int i=0; i<v.size(); ++i) {
         v[i]=double(i)/double(N-1);
-        v[i]=(1.0+cos(M_PI*(2.0*v[i]/param/100-1.0)))/2.0;
+        v[i]=0.5*(1.0-cos(M_PI*(2.0*v[i]/param/100)));
     }
     for (int i=v.size()-1; i>=1; --i) {
         if (v[i]<v[i-1]) v.removeLast();
