@@ -258,8 +258,8 @@ void Windowing::force()
 
     const int N = w.size();
     int M = int(N*param/100);
-    int delta = N*5/256; // 2% переходный процесс
-    for (int i=M; i<M+delta; ++i) w[i] = cos(M_PI/2.0*(i-M)/delta);
+    int delta = N/50; // 2% переходный процесс
+    for (int i=M; i<M+delta; ++i) w[i] = 0.5+0.5*cos(M_PI*(i-M)/delta);
     for (int i=M+delta; i<N; ++i) w[i] = 0.0;
 }
 
@@ -271,10 +271,10 @@ void Windowing::forceExponential()
     const int N = w.size();
     const int M = int(N*param/100);
     const double tau = 4.345*(N-1.0)/40.0; //затухание 40 дБ
-    const int delta = N*5/256; // 2% переходный процесс
+    const int delta = N/50; // 2% переходный процесс
 
-    for (int i=0; i<M; ++i) w[i] = exp(-1.0*qAbs(i-(N-1)*0.5)*tau);
-    for (int i=M; i<M+delta; ++i) w[i] = cos(M_PI/2.0*(i-M)/delta) * exp(-1.0*qAbs(i-(N-1)*0.5)/tau);
+    for (int i=0; i<M; ++i) w[i] = exp(-1.0*qAbs(i-(N-1)*0.5)/tau);
+    for (int i=M; i<M+delta; ++i) w[i] = (0.5+0.5*cos(M_PI*(i-M)/delta)) /* * exp(-1.0*qAbs(i-(N-1)*0.5)/tau)*/;
     for (int i=M+delta; i<N; ++i) w[i] = 0.0;
 }
 
