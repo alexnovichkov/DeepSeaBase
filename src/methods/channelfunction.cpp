@@ -208,6 +208,11 @@ QVariant RefChannelFunction::m_getProperty(const QString &property) const
     if (property == name()+"/referenceChannelIndex") return channel+1;
     else if (property == "?/referenceChannelIndex") return channel+1;
 
+    Channel *ch = 0;
+    if (m_file && channel >=0) ch = m_file->channel(channel);
+    if (property == "?/yName" && ch) return ch->yName();
+    if (property == "?/yNameOld" && ch) return ch->yName();
+
     return ChannelFunction::m_getProperty(property);
 }
 

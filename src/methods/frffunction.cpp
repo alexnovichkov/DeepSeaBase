@@ -116,7 +116,13 @@ QVariant FrfFunction::m_getProperty(const QString &property) const
         }
         if (property == "?/yName") {
             QString s1 = m_input->getProperty("?/yNameOld").toString();
-            QString s2 = m_input2 ? m_input2->getProperty("?/yNameOld").toString() : "?";
+            QString s2 = "?";
+            if (m_file) {
+                int refIndex = m_input2->getProperty("?/referenceChannelIndex").toInt()-1;
+                if (m_file->channel(refIndex)) {
+                    s2 = m_file->channel(refIndex)->yName();
+                }
+            }
             return QString("%1/%2").arg(s1).arg(s2);
         }
 

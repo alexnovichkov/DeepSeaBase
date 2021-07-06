@@ -11,15 +11,23 @@ public:
         Triangular = 1,
         Hann = 2,
         Hamming = 3,
-        Natoll = 4,
+        Nuttall = 4,
         Gauss = 5,
         Force = 6,
         Exponential = 7,
         Tukey = 8,
+        Bartlett = 9,
+        Blackman,
+        BlackmanNuttall,
+        BlackmanHarris,
+        Flattop,
+        ForceExponential,
+        Welch,
         WindowCount
     };
 
     static QString windowDescription(int windowType);
+    static QString windowDescriptionEng(int windowType);
     static bool windowAcceptsParameter(int windowType);
 
     Windowing();
@@ -44,7 +52,7 @@ private:
     void hann();
     void triangular();
     void hamming();
-    void natoll();
+    void nuttall();
     void gauss();
     void force();
     void tukey();

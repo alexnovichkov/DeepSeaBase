@@ -5,7 +5,7 @@ QString Windowing::windowDescription(int windowType)
 {
     switch (windowType) {
         case 0: return "Прямоуг.";
-        case 1: return "Бартлетта";
+        case 1: return "Треугольное";
         case 2: return "Хеннинга";
         case 3: return "Хемминга";
         case 4: return "Натолл";
@@ -13,6 +13,36 @@ QString Windowing::windowDescription(int windowType)
         case 6: return "Сила";
         case 7: return "Экспонента";
         case 8: return "Тьюки";
+        case 9: return "Бартлетта";
+        case 10: return "Блэкмана";
+        case 11: return "Блэкмана-Натолла";
+        case 12: return "Блэкмана-Харриса";
+        case 13: return "Flat top";
+        case 14: return "Сила-экспонента";
+        case 15: return "Уэлча";
+    }
+    return "";
+}
+
+QString Windowing::windowDescriptionEng(int windowType)
+{
+    switch (windowType) {
+        case 0: return "no";
+        case 1: return "Bartlett";
+        case 2: return "Hann";
+        case 3: return "Hamming";
+        case 4: return "Blackman-Harris";
+        case 5: return "Gauss";
+        case 6: return "force";
+        case 7: return "exponential";
+        case 8: return "Tukey";
+        case 9: return "Bartlett";
+        case 10: return "Blackman";
+        case 11: return "Blackman-Nuttall";
+        case 12: return "Blackman-Harris";
+        case 13: return "flat top";
+        case 14: return "force & exponential";
+        case 15: return "Welch";
     }
     return "";
 }
@@ -24,11 +54,18 @@ bool Windowing::windowAcceptsParameter(int windowType)
         case Triangular: return false;
         case Hann: return false;
         case Hamming: return false;
-        case Natoll: return false;
+        case Nuttall: return false;
         case Gauss: return false;
         case Force: return true;
         case Exponential: return true;
         case Tukey: return false;
+        case 9: return false;
+        case 10: return false;
+        case 11: return false;
+        case 12: return false;
+        case 13: return false;
+        case 14: return true;
+        case 15: return false;
     }
     return false;
 }
@@ -61,7 +98,7 @@ void Windowing::init()
         case Triangular: triangular(); break;
         case Hann: hann(); break;
         case Hamming: hamming(); break;
-        case Natoll: natoll(); break;
+        case Nuttall: nuttall(); break;
         case Gauss: gauss(); break;
         case Force: force(); break;
         case Tukey: tukey(); break;
@@ -110,7 +147,7 @@ void Windowing::hamming()
     }
 }
 
-void Windowing::natoll()
+void Windowing::nuttall()
 {//
     const int N = w.size();
     const double correction = 2.75;

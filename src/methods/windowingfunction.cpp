@@ -107,7 +107,7 @@ QString WindowingFunction::displayName() const
 
 
 bool WindowingFunction::compute(FileDescriptor *file)
-{DD;
+{DD; qDebug()<<debugName()<<windowing.windowDescription(windowing.getWindowType());
     reset();
 
     if (!m_input) return false;

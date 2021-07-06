@@ -35,23 +35,18 @@ bool AbstractFunction::propertyShowsFor(const QString &property) const
 
 QVariant AbstractFunction::getProperty(const QString &property) const
 {DD;
-    //qDebug()<<debugName()<<"gets"<<property;
+    QVariant p;
     if (m_master != nullptr) {
-        //qDebug()<<debugName()<<"gets"<<property<<"from"<<m_master->debugName();
-        QVariant p = m_master->m_getProperty(property);
-        //qDebug()<<property<<"="<<p;
-        return p;
+        p = m_master->m_getProperty(property);
     }
-    QVariant p = m_getProperty(property);
-    //qDebug()<<property<<"="<<p;
+    if (!p.isValid())
+        p = m_getProperty(property);
     return p;
 }
 
 void AbstractFunction::setProperty(const QString &property, const QVariant &val)
 {DD;
-    //qDebug()<<debugName()<<"sets"<<property<<"="<<val;
     if (m_slave != nullptr) {
-        //qDebug()<<debugName()<<"sets"<<property<<"for"<<m_slave->debugName();
         m_slave->m_setProperty(property, val);
     }
 
