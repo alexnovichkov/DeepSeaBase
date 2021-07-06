@@ -57,6 +57,13 @@ private:
     void force();
     void tukey();
     void exponential();
+    void bartlett();
+    void blackman();
+    void blackmanNuttall();
+    void blackmanHarris();
+    void flattop();
+    void forceExponential();
+    void welch();
     void normalize();
 
     QVector<double> w;

@@ -34,14 +34,17 @@ QString WindowingFunction::propertyDescription(const QString &property) const
                                    "  \"defaultValue\": 0         ,"
                                    "  \"toolTip\"     : \"Тип оконной функции\","
                                    "  \"values\"      : [\"Прямоугольное\",\"Треугольное\",\"Хеннинга\","
-                                   "  \"Хемминга\",\"Наттолла\", \"Гаусса\", \"Сила\", \"Экспоненциальное\", \"Тьюки\"]"
+                                   "  \"Хемминга\",\"Наттолла\", \"Гаусса\", \"Сила\", \"Экспоненциальное\", \"Тьюки\","
+                                   "  \"Бартлетта\", \"Блэкмана\", \"Блэкмана-Натолла\", \"Блэкмана-Харриса\","
+                                   "  \"Flat top\", \"Сила-экспонента\", \"Уэлча\"]"
                                    "}";
+
     if (property == "parameter") return "{"
                                       "  \"name\"        : \"parameter\"   ,"
                                       "  \"type\"        : \"double\"   ,"
                                       "  \"displayName\" : \"%\"   ,"
                                       "  \"defaultValue\": 0         ,"
-                                      "  \"toolTip\"     : \"Параметр (%), зависящий от типа окна\","
+                                      "  \"toolTip\"     : \"Параметр, зависящий от типа окна\","
                                       "  \"values\"      : [],"
                                       "  \"minimum\"     : 0.0,"
                                       "  \"maximum\"     : 100.0"
@@ -74,7 +77,7 @@ DataDescription WindowingFunction::getFunctionDescription() const
     if (m_input) result = m_input->getFunctionDescription();
 
     result.put("function.name", "WIN");
-    result.put("function.window", Windowing::windowDescription(windowing.getWindowType()));
+    result.put("function.window", Windowing::windowDescriptionEng(windowing.getWindowType()));
     result.put("function.windowParameter", windowing.getParameter());
 
     return result;
@@ -107,7 +110,7 @@ QString WindowingFunction::displayName() const
 
 
 bool WindowingFunction::compute(FileDescriptor *file)
-{DD; qDebug()<<debugName()<<windowing.windowDescription(windowing.getWindowType());
+{DD;
     reset();
 
     if (!m_input) return false;

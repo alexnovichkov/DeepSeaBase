@@ -9,7 +9,7 @@
 
 class DataHolder;
 
-int uffWindowTypeFromDescription(const QString &description);
+int uffWindowTypeFromDescription(QString description);
 QString windowDescriptionFromUffType(int type);
 int scalingTypeFromDescription(const QString &description);
 QString scalingDescriptionFromUffType(int type);

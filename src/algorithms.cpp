@@ -156,65 +156,6 @@ QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spec
     return result;
 }
 
-/** Возвращает тип окна, применяемый в uff заголовке 1858
-    wind - тип окна, применяемый в DeepSea*/
-int uffWindowType(int dfdWindowType)
-{
-    //12 window type, 0=no, 1=hanning narrow, 2=hanning broad, 3=flattop,
-   //4=exponential, 5=impact, 6=impact and exponential
-    switch (dfdWindowType) {
-        case 0: return 3;//"Прямоуг.";
-        case 1: return 0;//"Бартлетта";
-        case 2: return 1;//"Хеннинга";
-        case 3: return 0;//"Хемминга";
-        case 4: return 0;//"Натолл";
-        case 5: return 0;//"Гаусс";
-        case 6: return 5;//"Сила";
-        case 7: return 4;//"Экспонента";
-        case 8: return 0;//"Тьюки";
-        default: return 0;
-    }
-    return 0;
-}
-
-
-int uffMethodFromDfdMethod(int methodId)
-{
-    switch (methodId) {
-        case 9: return 4; //4 - Frequency Response Function
-        case 0: return 1; //1 - Time Response
-        case 1: return 12; //12 - Spectrum
-        case 18: return 12; //12 - Spectrum
-    }
-    return 0;
-    // ниже - нереализованные методы
-    //                                       0 - General or Unknown
-    //                                       2 - Auto Spectrum
-    //                                       3 - Cross Spectrum
-    //                                       5 - Transmissibility
-    //                                       6 - Coherence
-    //                                       7 - Auto Correlation
-    //                                       8 - Cross Correlation
-    //                                       9 - Power Spectral Density (PSD)
-    //                                       10 - Energy Spectral Density (ESD)
-    //                                       11 - Probability Density Function
-    //                                       13 - Cumulative Frequency Distribution
-    //                                       14 - Peaks Valley
-    //                                       15 - Stress/Cycles
-    //                                       16 - Strain/Cycles
-    //                                       17 - Orbit
-    //                                       18 - Mode Indicator Function
-    //                                       19 - Force Pattern
-    //                                       20 - Partial Power
-    //                                       21 - Partial Coherence
-    //                                       22 - Eigenvalue
-    //                                       23 - Eigenvector
-    //                                       24 - Shock Response Spectrum
-    //                                       25 - Finite Impulse Response Filter
-    //                                       26 - Multiple Coherence
-    //                                       27 - Order Function
-}
-
 QString createUniqueFileName(const QString &folderName, const QString &fileName, QString constantPart,
                              const QString &ext, bool justified)
 {DD;

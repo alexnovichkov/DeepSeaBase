@@ -28,10 +28,10 @@ QString Windowing::windowDescriptionEng(int windowType)
 {
     switch (windowType) {
         case 0: return "no";
-        case 1: return "Bartlett";
+        case 1: return "triangular";
         case 2: return "Hann";
         case 3: return "Hamming";
-        case 4: return "Blackman-Harris";
+        case 4: return "Nuttall";
         case 5: return "Gauss";
         case 6: return "force";
         case 7: return "exponential";
@@ -55,7 +55,7 @@ bool Windowing::windowAcceptsParameter(int windowType)
         case Hann: return false;
         case Hamming: return false;
         case Nuttall: return false;
-        case Gauss: return false;
+        case Gauss: return true;
         case Force: return true;
         case Exponential: return true;
         case Tukey: return false;
@@ -94,7 +94,7 @@ void Windowing::init()
     w = QVector<double>(bufferSize, 1.0);
 
     switch (windowType) {
-        case Square: square(); break;
+        case Square: break;
         case Triangular: triangular(); break;
         case Hann: hann(); break;
         case Hamming: hamming(); break;
@@ -103,6 +103,13 @@ void Windowing::init()
         case Force: force(); break;
         case Tukey: tukey(); break;
         case Exponential: exponential(); break;
+        case Bartlett: bartlett(); break;
+        case Blackman: blackman(); break;
+        case BlackmanHarris: blackmanHarris(); break;
+        case BlackmanNuttall: blackmanNuttall(); break;
+        case Flattop: flattop(); break;
+        case ForceExponential: forceExponential(); break;
+        case Welch: welch(); break;
         default: break;
     }
     //normalize();
@@ -132,8 +139,18 @@ void Windowing::triangular()
     const int N = w.size();
 
     for (int i=0; i<N; i++) {
-        double t = (double)i/(N-1) - 0.5;
-        w[i] = 2.0 - 4.0*qAbs(t);
+        double t = (2.0*i-N)/(N+1);
+        w[i] = 1.0 - qAbs(t);
+    }
+}
+
+void Windowing::bartlett()
+{
+    const int N = w.size();
+
+    for (int i=0; i<N; i++) {
+        double t = (2.0*i-N)/N;
+        w[i] = 1.0 - qAbs(t);
     }
 }
 
@@ -142,8 +159,9 @@ void Windowing::hamming()
     const int N = w.size();
 
     for (int i=0; i<N; i++) {
-        double t = (double)i/(N-1) - 0.5;
-        w[i] = 1.85*(0.54+0.46*cos(2.0*M_PI*t));
+        double t = (double)i/(N-1);
+        //коррекция уже добавлена
+        w[i] = 1.85*(0.54-0.46*cos(2.0*M_PI*t));
     }
 }
 
@@ -153,11 +171,70 @@ void Windowing::nuttall()
     const double correction = 2.75;
 
     for (int i=0; i<N; i++) {
-        double t = (double)i/(N-1) - 0.5;
+        double t = (double)i/(N-1);
+        w[i] = correction*(0.355768
+                     - 0.487396*cos(2.0*M_PI*t)
+                     + 0.144232*cos(4.0*M_PI*t)
+                     - 0.012604*cos(8.0*M_PI*t));
+    }
+}
+
+void Windowing::blackman()
+{
+    const int N = w.size();
+    const double correction = 2.8;
+
+    for (int i=0; i<N; i++) {
+        double t = (double)i/(N-1);
+        w[i] = correction*(0.42
+                     - 0.5*cos(2.0*M_PI*t)
+                     + 0.08*cos(4.0*M_PI*t));
+    }
+}
+
+void Windowing::blackmanNuttall()
+{
+    const int N = w.size();
+    const double correction = 2.75;
+
+    for (int i=0; i<N; i++) {
+        double t = (double)i/(N-1);
         w[i] = correction*(0.3635819
-                     + 0.4891775*cos(2.0*M_PI*t)
-                     + 0.1365995*cos(2.0*M_PI*t*2.0)
-                     + 0.0106411*cos(2.0*M_PI*t*3.0));
+                     - 0.4891775*cos(2.0*M_PI*t)
+                     + 0.1365995*cos(4.0*M_PI*t)
+                     - 0.0106411*cos(6.0*M_PI*t));
+    }
+}
+
+void Windowing::blackmanHarris()
+{
+    const int N = w.size();
+    const double correction = 2.75;
+
+
+    for (int i=0; i<N; i++) {
+        double t = (double)i/(N-1);
+        w[i] = correction*(0.35875
+                     - 0.48829*cos(2.0*M_PI*t)
+                     + 0.14128*cos(4.0*M_PI*t)
+                     - 0.01168*cos(6.0*M_PI*t));
+    }
+}
+
+void Windowing::flattop()
+{
+    const int N = w.size();
+    const double correction = 4.18;
+
+    //коэффициенты согласно Matlab, коррекция согласно TestXpress
+    //max(w) = w(N/2) = 0.9
+    for (int i=0; i<N; i++) {
+        double t = (double)i/(N-1);
+        w[i] = correction*(0.21557895
+                     - 0.41663158*cos(2.0*M_PI*t)
+                     + 0.277263158*cos(4.0*M_PI*t)
+                     - 0.083578947*cos(6.0*M_PI*t))
+                     + 0.006947368*cos(8.0*M_PI*t);
     }
 }
 
@@ -165,11 +242,12 @@ void Windowing::gauss()
 {
     const int N = w.size();
     const double correction = 2.02;
-    const double alpha = 2.5;
+    if (param <=0.0) param = 0.001;
+    if (param > 0.5) param = 0.5;
 
     for (int i=0; i<N; i++) {
-        double t = (double)i/(N-1) - 0.5;
-        w[i] = correction*exp(-0.5*pow(2.0*alpha*t,2.0));
+        double t = 2.0*i/(N-1);
+        w[i] = correction*exp(-0.5*pow((t-1.0)/param, 2.0));
     }
 }
 
@@ -183,6 +261,28 @@ void Windowing::force()
     int delta = N*5/256; // 2% переходный процесс
     for (int i=M; i<M+delta; ++i) w[i] = cos(M_PI/2.0*(i-M)/delta);
     for (int i=M+delta; i<N; ++i) w[i] = 0.0;
+}
+
+void Windowing::forceExponential()
+{
+    if (param > 100.0) param = 100.0;
+    if (param < 0.0) param = 0.0;
+
+    const int N = w.size();
+    const int M = int(N*param/100);
+    const double tau = 4.345*(N-1.0)/40.0; //затухание 40 дБ
+    const int delta = N*5/256; // 2% переходный процесс
+
+    for (int i=0; i<M; ++i) w[i] = exp(-1.0*qAbs(i-(N-1)*0.5)*tau);
+    for (int i=M; i<M+delta; ++i) w[i] = cos(M_PI/2.0*(i-M)/delta) * exp(-1.0*qAbs(i-(N-1)*0.5)/tau);
+    for (int i=M+delta; i<N; ++i) w[i] = 0.0;
+}
+
+void Windowing::welch()
+{
+    const int N = w.size();
+
+    for (int i=0; i<N; ++i) w[i] = 1 - qPow(2.0*(i-N*0.5)/N, 2.0);
 }
 
 void Windowing::tukey()
@@ -209,14 +309,16 @@ void Windowing::tukey()
 
 void Windowing::exponential()
 {
+    //имеет график, симметричный относительно N/2
     const int N = w.size();
-    if (param > 100.0) param = 100.0;
-    if (param < 0.0) param = 0.0;
+//    if (param > 100.0) param = 100.0;
+    if (param <= 0.0) param = 1.0;
 
-    const double alpha = -1.0*log(param/100.0);
+    //param выражает требуемую величину затухания, дБ
+    const double tau = 4.345*(N-1.0)/param;
     for (int i=0; i<N; i++) {
-        double t = (double)i/(N-1);
-        w[i] = exp(-1.0*alpha*t);
+        double t = (double)i-(N-1)*0.5;
+        w[i] = exp(-1.0*qAbs(t)/tau);
     }
 }
 

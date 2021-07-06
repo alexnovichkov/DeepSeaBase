@@ -192,9 +192,6 @@ QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spec
 QVector<cx_double> movingAverage(const QVector<cx_double> &spectrum, int window);
 QVector<double> movingAverage(const QVector<double> &spectrum, int window);
 
-int uffWindowType(int dfdWindowType);
-int uffMethodFromDfdMethod(int methodId);
-
 /**
  * @brief createUniqueFileName возвращает уникальное имя файла в виде
  *                             folderName/fileName_constantPart_000.ext

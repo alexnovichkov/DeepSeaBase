@@ -1475,20 +1475,49 @@ int Function::index() const
     return parent->channels.indexOf(const_cast<Function*>(this));
 }
 
-int uffWindowTypeFromDescription(const QString &description)
+int uffWindowTypeFromDescription(QString description)
 {
+    //названия окон взяты из windowing.cpp
+//    case 0: return "no"; -> 0
+//    case 1: return "Bartlett";
+//    case 2: return "Hann"; -> 1
+//    case 3: return "Hamming";
+//    case 4: return "Nuttall";
+//    case 5: return "Gauss";
+//    case 6: return "force"; -> 5
+//    case 7: return "exponential"; -> 4
+//    case 8: return "Tukey";
+//    case 9: return "Bartlett";
+//    case 10: return "Blackman";
+//    case 11: return "Blackman-Nuttall";
+//    case 12: return "Blackman-Harris";
+//    case 13: return "flat top"; -> 3
+//    case 14: return "force & exponential"; -> 6
+//    case 15: return "Welch";
+
     //window type, 0=no, 1=hanning narrow, 2=hanning broad, 3=flattop,
                      //4=exponential, 5=impact, 6=impact and exponential
-
+    description = description.toLower();
     if (description == "no") return 0;
-    if (description == "Hanning") return 1;
-    if (description == "Hanning broad") return 2;
-    if (description == "flattop") return 3;
+    if (description == "hanning" || description == "hann") return 1;
+    if (description == "hanning broad") return 2;
+    if (description == "flattop" || description == "flat top") return 3;
     if (description == "exponential") return 4;
-    if (description == "impact") return 5;
-    if (description == "force") return 6;
+    if (description == "impact" || description == "force") return 5;
+    if (description == "force & exponential") return 6;
 
     //other types of windows unknown to uff 1858
+    if (description == "triangular") return 7;
+    if (description == "hamming") return 8;
+    if (description == "nuttall") return 9;
+    if (description == "gauss") return 10;
+    if (description == "tukey") return 11;
+    if (description == "bartlett") return 12;
+    if (description == "blackman") return 13;
+    if (description == "blackman-nuttall") return 14;
+    if (description == "blackman-harris") return 15;
+    if (description == "welch") return 16;
+
     return 0;
 }
 
@@ -1501,10 +1530,20 @@ QString windowDescriptionFromUffType(int type)
         case 0: return "no";
         case 1: return "Hanning";
         case 2: return "Hanning broad";
-        case 3: return "flattop";
+        case 3: return "flat top";
         case 4: return "exponential";
         case 5: return "impact";
-        case 6: return "force";
+        case 6: return "impact & exponential";
+        case 7: return "triangular";
+        case 8: return "Hamming";
+        case 9: return "Nuttall";
+        case 10: return "Gauss";
+        case 11: return "Tukey";
+        case 12: return "Bartlett";
+        case 13: return "Blackman";
+        case 14: return "Blackman-Nuttall";
+        case 15: return "Blackman-Harris";
+        case 16: return "Welch";
         default: break;
     }
     return "unknown";

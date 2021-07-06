@@ -949,12 +949,12 @@ void Process::read(DfdSettings &dfd, DfdDataType dataType)
         }
         else if (val.first == "Wind") {
             QString window = val.second;
-            if (val.second == "Хеннинга") window = "hann";
-            else if (val.second == "Хемминга") window = "hamming";
-            else if (val.second == "Натолл") window = "natoll";
-            else if (val.second == "Гаусс") window = "gauss";
+            if (val.second == "Хеннинга") window = "Hann";
+            else if (val.second == "Хемминга") window = "Hamming";
+            else if (val.second == "Натолл") window = "Nuttall";
+            else if (val.second == "Гаусс") window = "Gauss";
             else if (val.second == "Прямоуг.") window = "square";
-            else if (val.second == "Бартлетта") window = "triangular";
+            else if (val.second == "Бартлетта") window = "Bartlett";
             parent->dataDescription().put("function.window", window);
         }
         else if (val.first == "BlockIn") {
@@ -1024,12 +1024,12 @@ void Process::write(QTextStream &dfd)
         }
         else if (key == "function.window") {
             QString window = val;
-            if (val == "hann") window = "Хеннинга";
-            else if (val == "hamming") window = "Хемминга";
-            else if (val == "natoll") window = "Натолл";
-            else if (val == "gauss") window = "Гаусс";
-            else if (val == "square") window = "Прямоуг.";
-            else if (val == "triangular") window = "Бартлетта";
+            if (val.toLower() == "hann" || val.toLower() == "hanning") window = "Хеннинга";
+            else if (val.toLower() == "hamming") window = "Хемминга";
+            else if (val.toLower() == "nuttall") window = "Натолл";
+            else if (val.toLower() == "gauss") window = "Гаусс";
+            else if (val.toLower() == "square") window = "Прямоуг.";
+            else if (val.toLower() == "bartlett") window = "Бартлетта";
             dfd << "Wind=" << window << endl;
         }
         else if (key == "function.blockSize")
