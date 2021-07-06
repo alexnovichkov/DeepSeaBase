@@ -1504,7 +1504,7 @@ int uffWindowTypeFromDescription(QString description)
     if (description == "flattop" || description == "flat top") return 3;
     if (description == "exponential") return 4;
     if (description == "impact" || description == "force") return 5;
-    if (description == "force & exponential") return 6;
+    if (description == "force & exponential" || description == "impact & exponential") return 6;
 
     //other types of windows unknown to uff 1858
     if (description == "triangular") return 7;

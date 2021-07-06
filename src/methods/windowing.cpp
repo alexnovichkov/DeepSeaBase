@@ -18,8 +18,7 @@ QString Windowing::windowDescription(int windowType)
         case 11: return "Блэкмана-Натолла";
         case 12: return "Блэкмана-Харриса";
         case 13: return "Flat top";
-        case 14: return "Сила-экспонента";
-        case 15: return "Уэлча";
+        case 14: return "Уэлча";
     }
     return "";
 }
@@ -41,8 +40,7 @@ QString Windowing::windowDescriptionEng(int windowType)
         case 11: return "Blackman-Nuttall";
         case 12: return "Blackman-Harris";
         case 13: return "flat top";
-        case 14: return "force & exponential";
-        case 15: return "Welch";
+        case 14: return "Welch";
     }
     return "";
 }
@@ -64,7 +62,6 @@ bool Windowing::windowAcceptsParameter(int windowType)
         case 11: return false;
         case 12: return false;
         case 13: return false;
-        case 14: return true;
         case 15: return false;
     }
     return false;
@@ -108,7 +105,6 @@ void Windowing::init()
         case BlackmanHarris: blackmanHarris(); break;
         case BlackmanNuttall: blackmanNuttall(); break;
         case Flattop: flattop(); break;
-        case ForceExponential: forceExponential(); break;
         case Welch: welch(); break;
         default: break;
     }
@@ -260,21 +256,6 @@ void Windowing::force()
     int M = int(N*param/100);
     int delta = N/50; // 2% переходный процесс
     for (int i=M; i<M+delta; ++i) w[i] = 0.5+0.5*cos(M_PI*(i-M)/delta);
-    for (int i=M+delta; i<N; ++i) w[i] = 0.0;
-}
-
-void Windowing::forceExponential()
-{
-    if (param > 100.0) param = 100.0;
-    if (param < 0.0) param = 0.0;
-
-    const int N = w.size();
-    const int M = int(N*param/100);
-    const double tau = 4.345*(N-1.0)/40.0; //затухание 40 дБ
-    const int delta = N/50; // 2% переходный процесс
-
-    for (int i=0; i<M; ++i) w[i] = exp(-1.0*qAbs(i-(N-1)*0.5)/tau);
-    for (int i=M; i<M+delta; ++i) w[i] = (0.5+0.5*cos(M_PI*(i-M)/delta)) /* * exp(-1.0*qAbs(i-(N-1)*0.5)/tau)*/;
     for (int i=M+delta; i<N; ++i) w[i] = 0.0;
 }
 

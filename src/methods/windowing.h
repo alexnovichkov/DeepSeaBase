@@ -21,9 +21,7 @@ public:
         BlackmanNuttall,
         BlackmanHarris,
         Flattop,
-        ForceExponential,
-        Welch,
-        WindowCount
+        Welch
     };
 
     static QString windowDescription(int windowType);
@@ -62,7 +60,6 @@ private:
     void blackmanNuttall();
     void blackmanHarris();
     void flattop();
-    void forceExponential();
     void welch();
     void normalize();
 
