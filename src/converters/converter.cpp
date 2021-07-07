@@ -429,7 +429,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             Resampler filter(factor, p.bufferSize);
             QVector<double> filtered;
 
-            Windowing window(p.bufferSize, p.windowType, p.windowPercent);
+            Windowing window(p.bufferSize, Windowing::WindowType::Square, p.windowPercent);
             Averaging averaging(p.averagingType+1, p.averagesCount);
 
             bool ok;
@@ -482,8 +482,8 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
 
             Resampler filter(factor, p.bufferSize);
             Resampler baseFilter(factor, p.bufferSize);
-            Windowing window(p.bufferSize, p.windowType, p.windowPercent);
-            Windowing windowBase(p.bufferSize, p.forceWindowType, p.forceWindowPercent);
+            Windowing window(p.bufferSize, Windowing::WindowType::Square, p.windowPercent);
+            Windowing windowBase(p.bufferSize, Windowing::WindowType::Square, p.forceWindowPercent);
             Averaging averagingBase(p.averagingType+1, p.averagesCount);
             Averaging averaging(p.averagingType+1, p.averagesCount);
 

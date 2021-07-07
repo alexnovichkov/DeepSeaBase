@@ -1,79 +1,99 @@
 #include "windowing.h"
 #include "algorithms.h"
 
-QString Windowing::windowDescription(int windowType)
+QString Windowing::windowDescription(WindowType windowType)
 {
     switch (windowType) {
-        case 0: return "Прямоуг.";
-        case 1: return "Треугольное";
-        case 2: return "Хеннинга";
-        case 3: return "Хемминга";
-        case 4: return "Натолл";
-        case 5: return "Гаусс";
-        case 6: return "Сила";
-        case 7: return "Экспонента";
-        case 8: return "Тьюки";
-        case 9: return "Бартлетта";
-        case 10: return "Блэкмана";
-        case 11: return "Блэкмана-Натолла";
-        case 12: return "Блэкмана-Харриса";
-        case 13: return "Flat top";
-        case 14: return "Уэлча";
+        case WindowType::Square:          return "Прямоуг.";
+        case WindowType::Triangular:      return "Треугольное";
+        case WindowType::Hann:            return "Хеннинга";
+        case WindowType::Hamming:         return "Хемминга";
+        case WindowType::Nuttall:         return "Натолла";
+        case WindowType::Gauss:           return "Гаусса";
+        case WindowType::Force:           return "Сила";
+        case WindowType::Exponential:     return "Экспонента";
+        case WindowType::Tukey:           return "Тьюки";
+        case WindowType::Bartlett:        return "Бартлетта";
+        case WindowType::Blackman:        return "Блэкмана";
+        case WindowType::BlackmanNuttall: return "Блэкмана-Натолла";
+        case WindowType::BlackmanHarris:  return "Блэкмана-Харриса";
+        case WindowType::Flattop:         return "Flat top";
+        case WindowType::Welch:           return "Уэлча";
     }
     return "";
 }
 
-QString Windowing::windowDescriptionEng(int windowType)
+QStringList Windowing::windowDescriptions()
+{
+    return {"Прямоуг.",
+        "Треугольное",
+        "Хеннинга",
+        "Хемминга",
+        "Натолла",
+        "Гаусса",
+        "Сила",
+        "Экспонента",
+        "Тьюки",
+        "Бартлетта",
+        "Блэкмана",
+        "Блэкмана-Натолла",
+        "Блэкмана-Харриса",
+        "Flat top",
+        "Уэлча"
+    };
+}
+
+QString Windowing::windowDescriptionEng(WindowType windowType)
 {
     switch (windowType) {
-        case 0: return "no";
-        case 1: return "triangular";
-        case 2: return "Hann";
-        case 3: return "Hamming";
-        case 4: return "Nuttall";
-        case 5: return "Gauss";
-        case 6: return "force";
-        case 7: return "exponential";
-        case 8: return "Tukey";
-        case 9: return "Bartlett";
-        case 10: return "Blackman";
-        case 11: return "Blackman-Nuttall";
-        case 12: return "Blackman-Harris";
-        case 13: return "flat top";
-        case 14: return "Welch";
+        case WindowType::Square:          return "no";
+        case WindowType::Triangular:      return "triangular";
+        case WindowType::Hann:            return "Hann";
+        case WindowType::Hamming:         return "Hamming";
+        case WindowType::Nuttall:         return "Nuttall";
+        case WindowType::Gauss:           return "Gauss";
+        case WindowType::Force:           return "force";
+        case WindowType::Exponential:     return "exponential";
+        case WindowType::Tukey:           return "Tukey";
+        case WindowType::Bartlett:        return "Bartlett";
+        case WindowType::Blackman:        return "Blackman";
+        case WindowType::BlackmanNuttall: return "Blackman-Nuttall";
+        case WindowType::BlackmanHarris:  return "Blackman-Harris";
+        case WindowType::Flattop:         return "flat top";
+        case WindowType::Welch:           return "Welch";
     }
     return "";
 }
 
-bool Windowing::windowAcceptsParameter(int windowType)
+bool Windowing::windowAcceptsParameter(WindowType windowType)
 {
     switch (windowType) {
-        case Square: return false;
-        case Triangular: return false;
-        case Hann: return false;
-        case Hamming: return false;
-        case Nuttall: return false;
-        case Gauss: return true;
-        case Force: return true;
-        case Exponential: return true;
-        case Tukey: return false;
-        case 9: return false;
-        case 10: return false;
-        case 11: return false;
-        case 12: return false;
-        case 13: return false;
-        case 15: return false;
+        case WindowType::Square:          return false;
+        case WindowType::Triangular:      return false;
+        case WindowType::Hann:            return false;
+        case WindowType::Hamming:         return false;
+        case WindowType::Nuttall:         return false;
+        case WindowType::Gauss:           return true;
+        case WindowType::Force:           return true;
+        case WindowType::Exponential:     return true;
+        case WindowType::Tukey:           return false;
+        case WindowType::Bartlett:        return false;
+        case WindowType::Blackman:        return false;
+        case WindowType::BlackmanNuttall: return false;
+        case WindowType::BlackmanHarris:  return false;
+        case WindowType::Flattop:         return false;
+        case WindowType::Welch:           return false;
     }
     return false;
 }
 
 Windowing::Windowing() :
-    bufferSize(0), windowType(Hann), param(50.0)
+    bufferSize(0), param(50.0)
 {
 
 }
 
-Windowing::Windowing(int bufferSize, int windowType, double parameter) :
+Windowing::Windowing(int bufferSize, WindowType windowType, double parameter) :
     bufferSize(bufferSize), windowType(windowType), param(parameter)
 {
     init();
@@ -91,21 +111,21 @@ void Windowing::init()
     w = QVector<double>(bufferSize, 1.0);
 
     switch (windowType) {
-        case Square: break;
-        case Triangular: triangular(); break;
-        case Hann: hann(); break;
-        case Hamming: hamming(); break;
-        case Nuttall: nuttall(); break;
-        case Gauss: gauss(); break;
-        case Force: force(); break;
-        case Tukey: tukey(); break;
-        case Exponential: exponential(); break;
-        case Bartlett: bartlett(); break;
-        case Blackman: blackman(); break;
-        case BlackmanHarris: blackmanHarris(); break;
-        case BlackmanNuttall: blackmanNuttall(); break;
-        case Flattop: flattop(); break;
-        case Welch: welch(); break;
+        case WindowType::Square:            break;
+        case WindowType::Triangular:        triangular(); break;
+        case WindowType::Hann:              hann(); break;
+        case WindowType::Hamming:           hamming(); break;
+        case WindowType::Nuttall:           nuttall(); break;
+        case WindowType::Gauss:             gauss(); break;
+        case WindowType::Force:             force(); break;
+        case WindowType::Exponential:       exponential(); break;
+        case WindowType::Tukey:             tukey(); break;
+        case WindowType::Bartlett:          bartlett(); break;
+        case WindowType::Blackman:          blackman(); break;
+        case WindowType::BlackmanNuttall:   blackmanNuttall(); break;
+        case WindowType::BlackmanHarris:    blackmanHarris(); break;
+        case WindowType::Flattop:           flattop(); break;
+        case WindowType::Welch:             welch(); break;
         default: break;
     }
     //normalize();
@@ -121,12 +141,11 @@ void Windowing::square()
 void Windowing::hann()
 {
     const int N = w.size();
-    //const double correction = 2.0;
+    const double correction = 2.0;
 
     for (int i=0; i<N; i++) {
         double t = (double)i/(N-1);
-        //коррекция уже добавлена
-        w[i] = 1.0 - cos(2.0*M_PI*t);
+        w[i] = correction*(0.5 - 0.5*cos(2.0*M_PI*t));
     }
 }
 
@@ -153,18 +172,19 @@ void Windowing::bartlett()
 void Windowing::hamming()
 {
     const int N = w.size();
+    const double correction = 1.85;
 
     for (int i=0; i<N; i++) {
         double t = (double)i/(N-1);
         //коррекция уже добавлена
-        w[i] = 1.85*(0.54-0.46*cos(2.0*M_PI*t));
+        w[i] = correction*(0.54-0.46*cos(2.0*M_PI*t));
     }
 }
 
 void Windowing::nuttall()
 {//
     const int N = w.size();
-    const double correction = 2.75;
+    const double correction = 2.8;
 
     for (int i=0; i<N; i++) {
         double t = (double)i/(N-1);
@@ -191,7 +211,7 @@ void Windowing::blackman()
 void Windowing::blackmanNuttall()
 {
     const int N = w.size();
-    const double correction = 2.75;
+    const double correction = 2.8;
 
     for (int i=0; i<N; i++) {
         double t = (double)i/(N-1);
@@ -205,7 +225,7 @@ void Windowing::blackmanNuttall()
 void Windowing::blackmanHarris()
 {
     const int N = w.size();
-    const double correction = 2.75;
+    const double correction = 2.8;
 
 
     for (int i=0; i<N; i++) {
@@ -288,6 +308,8 @@ void Windowing::tukey()
     //qDebug()<<w;
 }
 
+/*
+ * Старый симметричный вариант
 void Windowing::exponential()
 {
     //имеет график, симметричный относительно N/2
@@ -300,6 +322,19 @@ void Windowing::exponential()
     for (int i=0; i<N; i++) {
         double t = (double)i-(N-1)*0.5;
         w[i] = exp(-1.0*qAbs(t)/tau);
+    }
+}*/
+
+void Windowing::exponential()
+{
+    const int N = w.size();
+    if (param > 100.0) param = 100.0;
+    if (param <= 0.0) param = 1.0;
+
+    const double alpha = log(param/100);
+    for (int i=0; i<N; i++) {
+        double t = (double)i/(N);
+        w[i] = exp(t*alpha);
     }
 }
 
@@ -334,12 +369,12 @@ void Windowing::setBufferSize(int value)
     init();
 }
 
-int Windowing::getWindowType() const
+Windowing::WindowType Windowing::getWindowType() const
 {
     return windowType;
 }
 
-void Windowing::setWindowType(int value)
+void Windowing::setWindowType(WindowType value)
 {
     windowType = value;
     init();

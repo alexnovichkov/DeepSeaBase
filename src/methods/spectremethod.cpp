@@ -47,13 +47,13 @@ SpectreMethod::SpectreMethod(QList<FileDescriptor *> &dataBase, QWidget *parent)
     windowParameter->setEnabled(false);
 
     windowCombo = new QComboBox(this);
-    for (int i=0; i<Windowing::WindowCount; ++i)
-        windowCombo->addItem(Windowing::windowDescription(i));
-    windowCombo->setCurrentIndex(2);
+//    for (Windowing:: int i=0; i<Windowing::WindowCount; ++i)
+//        windowCombo->addItem(Windowing::windowDescription(i));
+//    windowCombo->setCurrentIndex(2);
     windowCombo->setEditable(false);
-    connect(windowCombo, QOverload<int>::of(&QComboBox::activated), [=](int index){
-        windowParameter->setEnabled(Windowing::windowAcceptsParameter(index));
-    });
+//    connect(windowCombo, QOverload<int>::of(&QComboBox::activated), [=](int index){
+//        windowParameter->setEnabled(Windowing::windowAcceptsParameter(index));
+//    });
 
 
 
@@ -133,7 +133,7 @@ QStringList SpectreMethod::methodSettings(FileDescriptor *dfd, const Parameters 
     }
     spfFile << QString("YName=%1").arg(yName);
     spfFile << QString("BlockIn=%1").arg(p.bufferSize);
-    spfFile << QString("Wind=%1").arg(Windowing::windowDescription(p.windowType));
+//    spfFile << QString("Wind=%1").arg(Windowing::windowDescription(p.windowType));
     spfFile << QString("TypeAver=%1").arg(Averaging::averagingDescription(p.averagingType+1));
 
     int numberOfInd = dfd->channel(0)->data()->samplesCount();
@@ -210,7 +210,7 @@ DescriptionList SpectreMethod::processData(const Parameters &p)
     DescriptionList list;
     list.append(qMakePair(QStringLiteral("PName"), methodName()));
     list.append(qMakePair(QStringLiteral("BlockIn"), QString::number(p.bufferSize)));
-    list.append(qMakePair(QStringLiteral("Wind"), Windowing::windowDescription(p.windowType)));
+//    list.append(qMakePair(QStringLiteral("Wind"), Windowing::windowDescription(p.windowType)));
     list.append(qMakePair(QStringLiteral("TypeAver"), Averaging::averagingDescription(p.averagingType+1)));
     list.append(qMakePair(QStringLiteral("pTime"),QStringLiteral("(0000000000000000)")));
     return list;

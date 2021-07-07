@@ -65,7 +65,7 @@ QVariant WindowingFunction::m_getProperty(const QString &property) const
     if (!property.startsWith(name()+"/")) return QVariant();
     QString p = property.section("/",1);
 
-    if (p == "type") return windowing.getWindowType();
+    if (p == "type") return static_cast<int>(windowing.getWindowType());
     if (p == "parameter") return windowing.getParameter();
 
     return QVariant();
@@ -88,7 +88,7 @@ void WindowingFunction::m_setProperty(const QString &property, const QVariant &v
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
-    if (p == "type") windowing.setWindowType(val.toInt());
+    if (p == "type") windowing.setWindowType(static_cast<Windowing::WindowType>(val.toInt()));
     else if (p == "parameter") windowing.setParameter(val.toDouble());
 }
 

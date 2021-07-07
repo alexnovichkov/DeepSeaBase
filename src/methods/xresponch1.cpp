@@ -19,12 +19,11 @@ FRFMethod::FRFMethod(QList<FileDescriptor *> &dataBase, QWidget *parent) : Spect
     forceWindowParameter->setEnabled(false);
 
     forceWindowCombo = new QComboBox(this);
-    for (int i=0; i<Windowing::WindowCount; ++i)
-        forceWindowCombo->addItem(Windowing::windowDescription(i));
+    forceWindowCombo->addItems(Windowing::windowDescriptions());
     forceWindowCombo->setCurrentIndex(2);
     forceWindowCombo->setEditable(false);
     connect(forceWindowCombo, QOverload<int>::of(&QComboBox::activated), [=](int index){
-        forceWindowParameter->setEnabled(Windowing::windowAcceptsParameter(index));
+        forceWindowParameter->setEnabled(Windowing::windowAcceptsParameter(static_cast<Windowing::WindowType>(index)));
     });
 
     if (QFormLayout *l = qobject_cast<QFormLayout *>(layout())) {

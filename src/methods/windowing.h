@@ -6,7 +6,7 @@
 class Windowing
 {
 public:
-    enum WindowType {
+    enum class WindowType {
         Square = 0,
         Triangular = 1,
         Hann = 2,
@@ -17,19 +17,20 @@ public:
         Exponential = 7,
         Tukey = 8,
         Bartlett = 9,
-        Blackman,
-        BlackmanNuttall,
-        BlackmanHarris,
-        Flattop,
-        Welch
+        Blackman = 10,
+        BlackmanNuttall = 11,
+        BlackmanHarris = 12,
+        Flattop = 13,
+        Welch = 14
     };
 
-    static QString windowDescription(int windowType);
-    static QString windowDescriptionEng(int windowType);
-    static bool windowAcceptsParameter(int windowType);
+    static QString windowDescription(WindowType windowType);
+    static QStringList windowDescriptions();
+    static QString windowDescriptionEng(WindowType windowType);
+    static bool windowAcceptsParameter(WindowType windowType);
 
     Windowing();
-    Windowing(int bufferSize, int windowType, double parameter = 0.0);
+    Windowing(int bufferSize, WindowType windowType, double parameter = 0.0);
 
     void applyTo(QVector<double> &values);
 
@@ -38,8 +39,8 @@ public:
     void setParameter(double parameter);
     double getParameter() const {return param;}
 
-    int getWindowType() const;
-    void setWindowType(int value);
+    WindowType getWindowType() const;
+    void setWindowType(WindowType value);
 
     int getBufferSize() const;
     void setBufferSize(int value);
@@ -65,7 +66,7 @@ private:
 
     QVector<double> w;
     int bufferSize;
-    int windowType;
+    WindowType windowType = WindowType::Square;
     double param;
 };
 
