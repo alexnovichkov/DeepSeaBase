@@ -153,6 +153,7 @@ void DfdFileDescriptor::read()
     uint NumInd = dfd.value("DataFileDescriptor/NumInd").toUInt();
     dataDescription().put("samples", NumInd);
     BlockSize = dfd.value("DataFileDescriptor/BlockSize").toInt();
+    dataDescription().put("createdBy", dfd.value("DataFileDescriptor/CreatedBy"));
     QString XName = dfd.value("DataFileDescriptor/XName");
     dataDescription().put("xname", XName);
     if (XName == "№№ полос") xChannel = true;
@@ -163,6 +164,7 @@ void DfdFileDescriptor::read()
     if (childGroups.contains("DataDescription")) {
         Description descr(this);
         descr.read(dfd);
+        //qDebug()<<dataDescription().filter();
     }
 
     // [Source]
@@ -442,6 +444,11 @@ QString DfdFileDescriptor::typeDisplay() const
         default: return QString("Неопр.");
     }
     return QString("Неопр.");
+}
+
+qint64 DfdFileDescriptor::fileSize() const
+{
+    return QFileInfo(rawFileName).size();
 }
 
 bool DfdFileDescriptor::fileExists() const

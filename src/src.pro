@@ -20,6 +20,7 @@ QMAKE_TARGET_COPYRIGHT=Все права принадлежат мне
 QMAKE_TARGET_PRODUCT=DeepSeaBase
 
 DEFINES *= DEEPSEABASE_VERSION=\\\"$$VERSION\\\"
+message($$VERSION)
 
 CONFIG(debug, debug|release){
         DESTDIR = $$OUT_PWD/../bin.debug

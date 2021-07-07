@@ -12,7 +12,7 @@ class QLabel;
 class QTreeWidget;
 class QTabWidget;
 class QTreeWidgetItem;
-class QFormLayout;
+class QTableWidget;
 
 struct DescriptorProperty
 {
@@ -26,6 +26,8 @@ class DescriptorPropertiesDialog : public QDialog
     Q_OBJECT
 public:
     DescriptorPropertiesDialog(const QList<FileDescriptor *> &records, QWidget *parent);
+public slots:
+//    void accept() override;
 private:
     void fillFiles();
     void prev();
@@ -33,12 +35,16 @@ private:
     void applyToCurrent();
     void applyToAll();
     void updateState();
-    void currentFileChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous);
+    void currentFileChanged(QTreeWidgetItem *cur, QTreeWidgetItem *previous);
+    void cellChanged(int row, int column);
+    void addProperty();
+    void removeProperty();
 //    QVector<DescriptorProperty> properties;
     QList<FileDescriptor *> records;
     QLabel *file;
     QTreeWidget *files;
-    QFormLayout *propertiesFL;
+//    QFormLayout *propertiesFL;
+    QTableWidget *descriptionsTable;
 
 //    QPushButton * prevButton;
 //    QPushButton * nextButton;

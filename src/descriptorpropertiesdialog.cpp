@@ -15,7 +15,7 @@ public:
 
 static struct Properties
 {
-    QLabel* labels[11];
+    QLineEdit* labels[11];
 } propertiesLabels;
 
 void FilesItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
@@ -83,7 +83,8 @@ DescriptorPropertiesDialog::DescriptorPropertiesDialog(const QList<FileDescripto
 {
     setWindowTitle("Свойства записей");
 
-    QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Close);
+    QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
+                                                       | QDialogButtonBox::Cancel);
 //    prevButton = buttonBox->addButton("Предыдущий", QDialogButtonBox::ActionRole);
 //    connect(prevButton, &QAbstractButton::clicked, this, &DescriptorPropertiesDialog::prev);
 //    nextButton = buttonBox->addButton("Следующий", QDialogButtonBox::ActionRole);
@@ -115,48 +116,52 @@ DescriptorPropertiesDialog::DescriptorPropertiesDialog(const QList<FileDescripto
     QTabWidget *tab = new QTabWidget(this);
     QWidget *properties = new QWidget(this);
     tab->addTab(properties, "Свойства");
-    propertiesFL = new QFormLayout;
+    QFormLayout *propertiesFL = new QFormLayout;
     static QStringList propertiesNames {"Файл", "Размер, байт", "Количество каналов",
                                         "Дата и время записи", "Дата и время создания файла",
                                         "GUID", "Создан в", "Файл-источник", "GUID файла-источника",
                                         "Дата и время записи файла-источника", "Каналы источника"};
     for (int i=0; i<propertiesNames.size(); ++i) {
-        propertiesLabels.labels[i] = new QLabel(this);
+        propertiesLabels.labels[i] = new QLineEdit(this);
+        propertiesLabels.labels[i]->setReadOnly(true);
         propertiesFL->addRow(propertiesNames[i], propertiesLabels.labels[i]);
     }
     properties->setLayout(propertiesFL);
 
     QWidget *descriptions = new QWidget(this);
     tab->addTab(descriptions, "Описатели");
+    QToolBar *toolBar = new QToolBar(this);
+
+    QAction *addAct = toolBar->addAction("Добавить", this, &DescriptorPropertiesDialog::addProperty);
+    QAction *removeAct = toolBar->addAction("Удалить", this, &DescriptorPropertiesDialog::removeProperty);
+    removeAct->setEnabled(false);
+
+    descriptionsTable = new QTableWidget(this);
+    descriptionsTable->setColumnCount(2);
+    descriptionsTable->setHorizontalHeaderLabels({"Параметр", "Значение"});
+    descriptionsTable->horizontalHeader()->setStretchLastSection(true);
+    connect(descriptionsTable, &QTableWidget::cellChanged, this, &DescriptorPropertiesDialog::cellChanged);
+    connect(descriptionsTable, &QTableWidget::itemSelectionChanged, [=](){
+        removeAct->setDisabled(descriptionsTable->selectedItems().isEmpty());
+    });
+
+    QVBoxLayout *descriptionsL = new QVBoxLayout;
+    descriptionsL->addWidget(toolBar);
+    descriptionsL->addWidget(descriptionsTable);
+    descriptions->setLayout(descriptionsL);
 
     splitter->addWidget(tab);
-
-//    file = new QLabel(this);
-
-    //QGridLayout *grid = new QGridLayout;
-//    grid->addWidget(new QLabel("Файл", this), 0, 0, 1, 1, Qt::AlignRight);
-//    grid->addWidget(file, 0, 1, 1, 2);
-//    grid->addWidget(new QLabel("Свойство", this), 1,1);
-//    grid->addWidget(new QLabel("Значение", this), 1,2);
-//    for (int i=0; i<6; ++i) {
-//        DescriptorProperty p;
-//        p.edit = new QLineEdit(this);
-//        p.checked = new QCheckBox(this);
-//        p.property = new QComboBox(this);
-//        properties << p;
-//        grid->addWidget(p.checked, i+2, 0);
-//        grid->addWidget(p.property, i+2, 1);
-//        grid->addWidget(p.edit, i+2, 2);
-//    }
-    //grid->addWidget(buttonBox, 8, 0, 1, 3, Qt::AlignRight);
-
-//    file->setText(records.at(current)->fileName());
 
     setLayout(l);
     updateState();
     resize(qApp->primaryScreen()->availableSize().width()/2,
            qApp->primaryScreen()->availableSize().height()/2);
 }
+
+//void DescriptorPropertiesDialog::accept()
+//{
+
+//}
 
 void DescriptorPropertiesDialog::fillFiles()
 {
@@ -198,19 +203,114 @@ void DescriptorPropertiesDialog::updateState()
     //    file->setText(records.at(current)->fileName());
 }
 
-void DescriptorPropertiesDialog::currentFileChanged(QTreeWidgetItem *current, QTreeWidgetItem *previous)
+void DescriptorPropertiesDialog::currentFileChanged(QTreeWidgetItem *cur, QTreeWidgetItem *previous)
 {
+    Q_UNUSED(previous);
 //    static QStringList propertiesNames {"Файл", "Размер, байт", "Количество каналов",
 //                                        "Дата и время записи", "Дата и время создания файла",
 //                                        "GUID", "Создан в", "Файл-источник", "GUID файла-источника",
 //                                        "Дата и время записи файла-источника", "Каналы источника"};
-    if (current) {
-        FileDescriptor *d = records.at(files->indexOfTopLevelItem(current));
+    if (cur) {
+        current = files->indexOfTopLevelItem(cur);
+        QString s;
+        FileDescriptor *d = records.at(current);
         propertiesLabels.labels[0]->setText(d->fileName());
-        propertiesLabels.labels[1]->setText(QString::number(QFileInfo(d->fileName()).size()));
+        propertiesLabels.labels[1]->setText(QString::number(d->fileSize()));
         propertiesLabels.labels[2]->setText(QString::number(d->channelsCount()));
-        propertiesLabels.labels[3]->setText(d->dataDescription().get("dateTime").toString());
-        propertiesLabels.labels[3]->setText(d->dataDescription().get("fileCreationTime").toString());
+        QDateTime dt = d->dataDescription().get("dateTime").toDateTime();
+        if (dt.isValid()) s = dt.toString("d MMMM yyyy, hh:mm:ss");
+        else s.clear();
+        propertiesLabels.labels[3]->setText(s);
+        dt = d->dataDescription().get("fileCreationTime").toDateTime();
+        if (dt.isValid()) s = dt.toString("d MMMM yyyy, hh:mm:ss");
+        else s.clear();
+        propertiesLabels.labels[4]->setText(s);
+        propertiesLabels.labels[5]->setText(d->dataDescription().get("guid").toString());
+        propertiesLabels.labels[6]->setText(d->dataDescription().get("createdBy").toString());
+        propertiesLabels.labels[7]->setText(d->dataDescription().get("source.file").toString());
+        propertiesLabels.labels[8]->setText(d->dataDescription().get("source.guid").toString());
+        dt = d->dataDescription().get("source.dateTime").toDateTime();
+        if (dt.isValid()) s = dt.toString("d MMMM yyyy, hh:mm:ss");
+        else s.clear();
+        propertiesLabels.labels[9]->setText(s);
+        s = d->dataDescription().get("source.channels").toString();
+        if (s.isEmpty()) s = "все";
+        propertiesLabels.labels[10]->setText(s);
 
+        auto data = d->dataDescription().filter("description");
+        data.insert("legend",d->legend());
+        descriptionsTable->clearContents();
+        descriptionsTable->setRowCount(data.size());
+        int i=0;
+        for (auto [key, val]: asKeyValueRange(data)) {
+            if (auto item = descriptionsTable->item(i,0))
+                item->setText(key);
+            else
+                descriptionsTable->setItem(i,0, new QTableWidgetItem(key));
+            if (auto item = descriptionsTable->item(i,1))
+                item->setText(val.toString());
+            else
+                descriptionsTable->setItem(i,1, new QTableWidgetItem(val.toString()));
+            i++;
+        }
     }
+    else {
+        current = -1;
+        for (auto l: propertiesLabels.labels) l->clear();
+
+        descriptionsTable->clearContents();
+    }
+}
+
+void DescriptorPropertiesDialog::cellChanged(int row, int column)
+{
+    auto item = descriptionsTable->item(row, column);
+    if (!item || column == 0 || current < 0) return;
+
+    FileDescriptor *d = records.at(current);
+    QString key = descriptionsTable->item(row, 0)->text();
+    QString val = descriptionsTable->item(row, 1)->text();
+
+    if (key != "legend") key.prepend("description.");
+    QVariant old = d->dataDescription().get(key);
+
+    if (old.toString() == item->text()) return;
+
+    d->dataDescription().put(key, item->text());
+    d->setChanged(true);
+}
+
+void DescriptorPropertiesDialog::addProperty()
+{
+    int row = descriptionsTable->rowCount();
+    descriptionsTable->setRowCount(row+1);
+    descriptionsTable->setItem(row, 0, new QTableWidgetItem());
+    descriptionsTable->setItem(row, 1, new QTableWidgetItem());
+    QString name = QInputDialog::getText(this, "Новое свойство", "Введите название свойства");
+    if (!name.isEmpty()) {
+        descriptionsTable->item(row, 0)->setText(name);
+    }
+}
+
+void DescriptorPropertiesDialog::removeProperty()
+{
+    auto selected = descriptionsTable->selectedItems();
+    if (!selected.isEmpty()) {
+        QSet<int> rows;
+        for (auto s: selected) rows << s->row();
+
+        if (QMessageBox::question(this, "Удаление свойств", "Удалить эти свойства?")==QMessageBox::Yes) {
+            QList<int> r = rows.toList();
+            FileDescriptor *d = records.at(current);
+            for (int i=r.size()-1; i>=0; --i) {
+                QString key = descriptionsTable->item(r.at(i), 0)->text();
+                QString val = descriptionsTable->item(r.at(i), 1)->text();
+                if (key != "legend") key.prepend("description.");
+                descriptionsTable->removeRow(r.at(i));
+                d->dataDescription().data.remove(key);
+            }
+            d->setChanged(true);
+        }
+    }
+
 }

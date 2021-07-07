@@ -6,6 +6,7 @@
 #include <QObject>
 #include "dataholder.h"
 #include "boost/property_tree/ptree.hpp"
+#include <algorithm>
 
 namespace Descriptor {
 enum DataType
@@ -127,12 +128,23 @@ struct DataDescription
     QStringList toStringList(const QString &filter = QString()) const
     {
         QStringList result;
-        for (auto i = data.constBegin(); i != data.constEnd(); ++i) {
+        for (auto [key, val] : asKeyValueRange(data)) {
             if (filter.isEmpty())
-                result << i.key()+"="+i.value().toString();
-            else if (i.key().startsWith(filter+"."))
-                result << i.key().mid(filter.length()+1)+"="+i.value().toString();
+                result << key+"="+val.toString();
+            else if (key.startsWith(filter+"."))
+                result << key.mid(filter.length()+1)+"="+val.toString();
         }
+        return result;
+    }
+    QVariantMap filter(const QString &filter = QString()) const
+    {
+        if (filter.isEmpty()) return data;
+
+        QVariantMap result;
+        for (auto [key, val] : asKeyValueRange(data)) {
+            if (key.startsWith(filter+".")) result.insert(key.mid(filter.length()+1), val);
+        }
+
         return result;
     }
 };
@@ -197,6 +209,8 @@ public:
         Q_UNUSED(data);
         Q_UNUSED(description);
     };
+    //переопределен в DFD
+    virtual qint64 fileSize() const;
 
     //все остальные
     void populate();

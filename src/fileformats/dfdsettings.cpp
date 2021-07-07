@@ -46,7 +46,7 @@ void DfdSettings::read()
 
 QString DfdSettings::value(const QString &key) const
 {
-    foreach (const DescriptionEntry &entry, content) {
+    for (const DescriptionEntry &entry: content) {
         if (entry.first == key) return entry.second;
     }
     return QString();
@@ -57,7 +57,7 @@ DescriptionList DfdSettings::values(const QString &group) const
     DescriptionList result;
     if (group.isEmpty()) return result;
 
-    foreach (const DescriptionEntry &entry, content) {
+    for (const DescriptionEntry &entry: content) {
         if (entry.first.startsWith(group+"/")) {
             QString key = entry.first;
             result.append({key.remove(0, group.length()+1), entry.second});

@@ -524,6 +524,11 @@ bool FileDescriptor::canTakeAnyChannels() const
     return true;
 }
 
+qint64 FileDescriptor::fileSize() const
+{
+    return QFileInfo(fileName()).size();
+}
+
 bool FileDescriptor::hasCurves() const
 {
     const int count = channelsCount();

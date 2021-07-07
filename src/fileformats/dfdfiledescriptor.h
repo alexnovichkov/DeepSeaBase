@@ -262,6 +262,7 @@ public:
 
     virtual Descriptor::DataType type() const override;
     virtual QString typeDisplay() const override;
+    virtual qint64 fileSize() const override;
 
     virtual bool fileExists() const override;
 
