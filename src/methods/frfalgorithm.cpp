@@ -19,9 +19,9 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     channelF = new ChannelFunction(parent, "channel");
     refChannelF = new RefChannelFunction(parent, "refChannel");
 
-    resamplingF = new ResamplingFunction(parent, "resample");
-    refResamplingF = new ResamplingFunction(parent, "refResample");
-    resamplingF->pairWith(refResamplingF);
+//    resamplingF = new ResamplingFunction(parent, "resample");
+//    refResamplingF = new ResamplingFunction(parent, "refResample");
+//    resamplingF->pairWith(refResamplingF);
 
     samplingF = new FrameCutterFunction(parent, "cutter");
     refSamplingF = new FrameCutterFunction(parent, "refCutter");
@@ -46,14 +46,14 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     saver = new SavingFunction(parent, "saver");
 
     //first chain
-    resamplingF->setInput(channelF);
-    samplingF->setInput(resamplingF);
+//    resamplingF->setInput(channelF);
+    samplingF->setInput(channelF);
     windowingF->setInput(samplingF);
     fftF->setInput(windowingF);
 
     //second chain
-    refResamplingF->setInput(refChannelF);
-    refSamplingF->setInput(refResamplingF);
+//    refResamplingF->setInput(refChannelF);
+    refSamplingF->setInput(refChannelF);
     refWindowingF->setInput(refSamplingF);
     refFftF->setInput(refWindowingF);
 
@@ -76,7 +76,7 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     m_functions << channelF;
     m_functions << refChannelF;
 
-    m_functions << resamplingF;
+//    m_functions << resamplingF;
 
     m_functions << samplingF;
 
@@ -103,7 +103,7 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     if (xStepsDiffer) emit message("Файлы имеют разный шаг по оси X.");
 
     //начальные значения, которые будут использоваться в показе функций
-    resamplingF->setProperty(resamplingF->name()+"/xStep", xStep);
+//    resamplingF->setProperty(resamplingF->name()+"/xStep", xStep);
 
     samplingF->setProperty(samplingF->name()+"/xStep", xStep);
 
@@ -111,11 +111,17 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     refChannelF->setFile(dataBase.constFirst());
     refChannelF->setProperty(refChannelF->name()+"/referenceChannelIndex", 1);
 
-    //resamplingF отправляет сигнал об изменении "?/xStep"
-    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
-            samplingF, SLOT(updateProperty(QString,QVariant)));
-    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
-            refSamplingF, SLOT(updateProperty(QString,QVariant)));
+//    //resamplingF отправляет сигнал об изменении "?/xStep"
+//    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
+//            samplingF, SLOT(updateProperty(QString,QVariant)));
+//    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
+//            refSamplingF, SLOT(updateProperty(QString,QVariant)));
+    //samplingF отправляет сигнал об изменении "?/triggerChannel"
+    connect(samplingF, SIGNAL(propertyChanged(QString,QVariant)),
+            channelF, SLOT(updateProperty(QString,QVariant)));
+    //samplingF отправляет сигнал об изменении "?/triggerChannel"
+    connect(samplingF, SIGNAL(propertyChanged(QString,QVariant)),
+            refChannelF, SLOT(updateProperty(QString,QVariant)));
 
     //перенаправляем сигналы от функций в интерфейс пользователя
     for (AbstractFunction *f: m_functions) {
@@ -149,7 +155,7 @@ bool FRFAlgorithm::compute(FileDescriptor *file)
     saver->setProperty(saver->name()+"/destination", QFileInfo(file->fileName()).canonicalPath());
     saver->reset();
 
-    resamplingF->setProperty(resamplingF->name()+"/xStep", file->xStep());
+//    resamplingF->setProperty(resamplingF->name()+"/xStep", file->xStep());
     samplingF->setProperty(samplingF->name()+"/xStep", file->xStep());
 
     int frfType = saver->getProperty("FRF/type").toInt();
@@ -182,12 +188,12 @@ bool FRFAlgorithm::compute(FileDescriptor *file)
 
         const bool wasPopulated = file->channel(i)->populated();
 
-        resamplingF->reset();
+//        resamplingF->reset();
         samplingF->reset();
         windowingF->reset();
         frfF->reset();
         averagingF->reset();
-        refResamplingF->reset();
+//        refResamplingF->reset();
         refSamplingF->reset();
         refWindowingF->reset();
         refAveragingF->reset();

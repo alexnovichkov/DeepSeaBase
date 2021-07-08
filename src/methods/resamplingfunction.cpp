@@ -180,6 +180,7 @@ void ResamplingFunction::reset()
 {DD;
     //resampler.reset();
     output.clear();
+    triggerData.clear();
 }
 
 
@@ -194,7 +195,10 @@ bool ResamplingFunction::compute(FileDescriptor *file)
     if (data.isEmpty())
         return false;
 
-    if (qFuzzyCompare(factor+1.0, 2.0)) output = data;
+    if (qFuzzyCompare(factor+1.0, 2.0)) {
+        output = data;
+        triggerData = m_input->getData("triggerInput");
+    }
     else {
         int bufferSize = 1024;
         resampler.setBufferSize(bufferSize);
@@ -209,6 +213,23 @@ bool ResamplingFunction::compute(FileDescriptor *file)
             QVector<double> filtered = resampler.process(chunk);
             if (filtered.isEmpty()) break;
             output.append(filtered);
+            pos += bufferSize;
+        }
+
+        //processing trigger data
+        auto triggerD = m_input->getData("triggerInput");
+        resampler.setBufferSize(bufferSize);
+        resampler.setFactor(factor);
+        resampler.init();
+
+        pos = 0;
+        while (1) {
+            QVector<double> chunk = triggerD.mid(pos, bufferSize);
+            if (chunk.size() < bufferSize)
+                resampler.setLastChunk();
+            QVector<double> filtered = resampler.process(chunk);
+            if (filtered.isEmpty()) break;
+            triggerData.append(filtered);
             pos += bufferSize;
         }
     }

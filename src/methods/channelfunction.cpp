@@ -147,11 +147,21 @@ bool ChannelFunction::compute(FileDescriptor *file)
         //всегда первый блок, так как предполагаем, что временные данные
         //содержат только один блок
         output = file->channel(channel)->data()->yValues(0);
-
-        return !output.isEmpty();
     }
 
-    return false;
+    if (triggerChannel >=0 && triggerChannel < file->channelsCount()) {
+        qDebug() << "computing trigger channel in ChannelFunction";
+        if (!file->channel(triggerChannel)->populated())
+            file->channel(triggerChannel)->populate();
+        triggerData = file->channel(triggerChannel)->data()->yValues(0);
+    }
+
+    return !output.isEmpty();
+}
+
+void ChannelFunction::updateProperty(const QString &property, const QVariant &val)
+{
+    if (property == "?/triggerChannel") triggerChannel = val.toInt();
 }
 
 QString RefChannelFunction::name() const
@@ -194,6 +204,13 @@ bool RefChannelFunction::compute(FileDescriptor *file)
     //всегда первый блок, так как предполагаем, что временные данные
     //содержат только один блок
     output = file->channel(channel)->data()->yValues(0);
+
+    if (triggerChannel >=0 && triggerChannel < file->channelsCount()) {
+        qDebug() << "computing trigger channel in RefChannelFunction";
+        if (!file->channel(triggerChannel)->populated())
+            file->channel(triggerChannel)->populate();
+        triggerData = file->channel(triggerChannel)->data()->yValues(0);
+    }
 
     return !output.isEmpty();
 }

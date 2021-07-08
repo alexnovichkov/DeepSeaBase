@@ -64,6 +64,7 @@ void AbstractFunction::pairWith(AbstractFunction *slave)
 QVector<double> AbstractFunction::getData(const QString &id)
 {
     if (id == "input") return output;
+    if (id == "triggerInput") return triggerData;
 
     return QVector<double>();
 }

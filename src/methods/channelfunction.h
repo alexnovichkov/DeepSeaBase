@@ -46,11 +46,13 @@ public:
     virtual QString propertyDescription(const QString &property) const override;
     virtual QString displayName() const override;
     virtual bool compute(FileDescriptor *file) override;
+    virtual void updateProperty(const QString &property, const QVariant &val) override;
 private:
     friend class RefChannelFunction;
 
     ChannelSelector selector;
     int channel = 0;
+    int triggerChannel = -1;
 
 
     // AbstractFunction interface

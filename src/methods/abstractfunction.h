@@ -103,6 +103,7 @@ protected:
     FileDescriptor *m_file = nullptr;
     QString _name; //метка для отладки
     QVector<double> output;
+    QVector<double> triggerData;
 };
 
 class AbstractAlgorithm : public QObject

@@ -135,8 +135,9 @@ void FrameCutterFunction::m_setProperty(const QString &property, const QVariant 
     else if (p == "level") {
         frameCutter.setLevel(val.toDouble());
     }
-    else if (p == "channel") {
+    else if (p == "triggerChannel") {
         frameCutter.setChannel(val.toInt()-1);
+        emit propertyChanged("?/triggerChannel", val);
     }
     else if (p == "pretrigger") {
         frameCutter.setPretrigger(int(val.toDouble()/frameCutter.getXStep()));
@@ -153,7 +154,7 @@ bool FrameCutterFunction::propertyShowsFor(const QString &property) const
                                     frameCutter.type() == FrameCutter::Overlap)) return false;
     if (p == "triggerMode" && frameCutter.type() != FrameCutter::Trigger) return false;
     if (p == "level" && frameCutter.type() != FrameCutter::Trigger) return false;
-    if (p == "channel" && frameCutter.type() != FrameCutter::Trigger) return false;
+    if (p == "triggerChannel" && frameCutter.type() != FrameCutter::Trigger) return false;
     if (p == "pretrigger" && frameCutter.type() != FrameCutter::Trigger) return false;
 
     return true;
@@ -169,7 +170,7 @@ QStringList FrameCutterFunction::properties() const
                            "deltaTime"<<
                            "triggerMode"<<
                            "level"<<
-                           "channel"<<
+                           "triggerChannel"<<
                            "pretrigger";
 }
 
@@ -234,8 +235,8 @@ QString FrameCutterFunction::propertyDescription(const QString &property) const
            "  \"toolTip\"     : \"Уровень срабатывания триггера\","
            "  \"values\"      : []" //для enum
            "}";
-    if (property == "channel") return "{"
-           "  \"name\"        : \"channel\"   ,"
+    if (property == "triggerChannel") return "{"
+           "  \"name\"        : \"triggerChannel\"   ,"
            "  \"type\"        : \"int\"   ,"
            "  \"displayName\" : \"Канал триггера\"   ,"
            "  \"defaultValue\": 1        ,"
@@ -285,7 +286,7 @@ bool FrameCutterFunction::compute(FileDescriptor *file)
 
         if (frameCutter.type()==FrameCutter::Trigger) {
             // TODO: как установить данные для триггера?
-            m_input->setProperty("", 0);
+            //m_input->setProperty("", 0);
 
             frameCutter.setTriggerSource(m_input->getData("triggerInput"));
         }
