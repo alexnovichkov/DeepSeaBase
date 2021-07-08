@@ -137,7 +137,7 @@ DescriptorPropertiesDialog::DescriptorPropertiesDialog(const QList<FileDescripto
     removeAct->setEnabled(false);
 
     descriptionsTable = new QTableWidget(this);
-    descriptionsTable->setColumnCount(2);
+    descriptionsTable->setColumnCount(1);
     descriptionsTable->setHorizontalHeaderLabels({"Параметр", "Значение"});
     descriptionsTable->horizontalHeader()->setStretchLastSection(true);
     connect(descriptionsTable, &QTableWidget::cellChanged, this, &DescriptorPropertiesDialog::cellChanged);
@@ -243,14 +243,14 @@ void DescriptorPropertiesDialog::currentFileChanged(QTreeWidgetItem *cur, QTreeW
         descriptionsTable->setRowCount(data.size());
         int i=0;
         for (auto [key, val]: asKeyValueRange(data)) {
-            if (auto item = descriptionsTable->item(i,0))
+            if (auto item = descriptionsTable->verticalHeaderItem(i))
                 item->setText(key);
             else
-                descriptionsTable->setItem(i,0, new QTableWidgetItem(key));
-            if (auto item = descriptionsTable->item(i,1))
+                descriptionsTable->setVerticalHeaderItem(i, new QTableWidgetItem(key));
+            if (auto item = descriptionsTable->item(i,0))
                 item->setText(val.toString());
             else
-                descriptionsTable->setItem(i,1, new QTableWidgetItem(val.toString()));
+                descriptionsTable->setItem(i,0, new QTableWidgetItem(val.toString()));
             i++;
         }
     }
@@ -265,11 +265,11 @@ void DescriptorPropertiesDialog::currentFileChanged(QTreeWidgetItem *cur, QTreeW
 void DescriptorPropertiesDialog::cellChanged(int row, int column)
 {
     auto item = descriptionsTable->item(row, column);
-    if (!item || column == 0 || current < 0) return;
+    if (!item || current < 0) return;
 
     FileDescriptor *d = records.at(current);
-    QString key = descriptionsTable->item(row, 0)->text();
-    QString val = descriptionsTable->item(row, 1)->text();
+    QString key = descriptionsTable->verticalHeaderItem(row)->text();
+    QString val = descriptionsTable->item(row, 0)->text();
 
     if (key != "legend") key.prepend("description.");
     QVariant old = d->dataDescription().get(key);
@@ -284,11 +284,11 @@ void DescriptorPropertiesDialog::addProperty()
 {
     int row = descriptionsTable->rowCount();
     descriptionsTable->setRowCount(row+1);
+    descriptionsTable->setVerticalHeaderItem(row, new QTableWidgetItem());
     descriptionsTable->setItem(row, 0, new QTableWidgetItem());
-    descriptionsTable->setItem(row, 1, new QTableWidgetItem());
     QString name = QInputDialog::getText(this, "Новое свойство", "Введите название свойства");
     if (!name.isEmpty()) {
-        descriptionsTable->item(row, 0)->setText(name);
+        descriptionsTable->verticalHeaderItem(row)->setText(name);
     }
 }
 
@@ -301,10 +301,11 @@ void DescriptorPropertiesDialog::removeProperty()
 
         if (QMessageBox::question(this, "Удаление свойств", "Удалить эти свойства?")==QMessageBox::Yes) {
             QList<int> r = rows.toList();
+            std::sort(r.begin(), r.end());
             FileDescriptor *d = records.at(current);
             for (int i=r.size()-1; i>=0; --i) {
-                QString key = descriptionsTable->item(r.at(i), 0)->text();
-                QString val = descriptionsTable->item(r.at(i), 1)->text();
+                QString key = descriptionsTable->verticalHeaderItem(r.at(i))->text();
+                QString val = descriptionsTable->item(r.at(i), 0)->text();
                 if (key != "legend") key.prepend("description.");
                 descriptionsTable->removeRow(r.at(i));
                 d->dataDescription().data.remove(key);
