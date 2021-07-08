@@ -5,7 +5,7 @@
 #include <QMap>
 #include <QVector>
 
-/* Spectrum/type - FFT / Power spectrum / Power spectrum density
+/*
  * Spectrum/output - Комплексные / Действительные / Мнимые / Амплитуды / Фазы
  *
  * Отдает:
@@ -46,7 +46,6 @@ private:
 
     // AbstractFunction interface
 public:
-    virtual bool propertyShowsFor(const QString &property) const override;
     virtual bool compute(FileDescriptor *file) override;
     virtual void reset() override;
     virtual DataDescription getFunctionDescription() const override;

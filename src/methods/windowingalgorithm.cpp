@@ -59,7 +59,7 @@ QString WindowingAlgorithm::description() const
 
 QString WindowingAlgorithm::displayName() const
 {DD;
-    return "Оконная функция";
+    return "WIN";
 }
 
 bool WindowingAlgorithm::compute(FileDescriptor *file)

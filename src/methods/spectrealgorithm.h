@@ -1,5 +1,5 @@
-#ifndef PSDFUNCTION_H
-#define PSDFUNCTION_H
+#ifndef SPECTREALGORITHM_H
+#define SPECTREALGORITHM_H
 
 #include "abstractfunction.h"
 
@@ -26,4 +26,4 @@ public:
     virtual bool compute(FileDescriptor *file) override;
 };
 
-#endif // PSDFUNCTION_H
+#endif

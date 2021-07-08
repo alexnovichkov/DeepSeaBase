@@ -66,7 +66,7 @@ QString TimeAlgorithm::description() const
 
 QString TimeAlgorithm::displayName() const
 {DD;
-    return "Resample";
+    return "RSMPL";
 }
 
 bool TimeAlgorithm::compute(FileDescriptor *file)

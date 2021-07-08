@@ -81,7 +81,7 @@ QString SpectreAlgorithm::description() const
 
 QString SpectreAlgorithm::displayName() const
 {DD;
-    return "Спектр";
+    return "FFT";
 }
 
 bool SpectreAlgorithm::compute(FileDescriptor *file)

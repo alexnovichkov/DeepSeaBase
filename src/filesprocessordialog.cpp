@@ -12,6 +12,9 @@
 #include "methods/timealgorithm.h"
 #include "methods/windowingalgorithm.h"
 #include "methods/frfalgorithm.h"
+#include "methods/psalgorithm.h"
+#include "methods/psdalgorithm.h"
+
 
 FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QWidget *parent)
     : QDialog(parent), dataBase(dataBase), win(parent), currentAlgorithm(0)
@@ -24,6 +27,8 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     algorithms << new TimeAlgorithm(dataBase, this);
     algorithms << new WindowingAlgorithm(dataBase, this);
     algorithms << new SpectreAlgorithm(dataBase, this);
+    algorithms << new PsAlgorithm(dataBase, this);
+    algorithms << new PsdAlgorithm(dataBase, this);
     algorithms << new FRFAlgorithm(dataBase, this);
 
     for (AbstractAlgorithm *f: algorithms) {
@@ -130,7 +135,8 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
 
     setLayout(l);
 
-    resize(1000, 600);
+    resize(qApp->primaryScreen()->availableSize().width()/2,
+           qApp->primaryScreen()->availableSize().height()/2);
 }
 
 FilesProcessorDialog::~FilesProcessorDialog()

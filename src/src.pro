@@ -91,10 +91,14 @@ SOURCES += main.cpp\
     methods/averagingfunction.cpp \
     methods/windowingfunction.cpp \
     methods/fftfunction.cpp \
+    methods/psfunction.cpp \
+    methods/psdfunction.cpp \
     methods/framecutterfunction.cpp \
     framecutter.cpp \
     methods/savingfunction.cpp \
     methods/spectrealgorithm.cpp \
+    methods/psalgorithm.cpp \
+    methods/psdalgorithm.cpp \
     unitsconverter.cpp \
     dataiodevice.cpp \
     playpanel.cpp \
@@ -177,10 +181,14 @@ HEADERS  += mainwindow.h \
     methods/averagingfunction.h \
     methods/windowingfunction.h \
     methods/fftfunction.h \
+    methods/psfunction.h \
+    methods/psdfunction.h \
     methods/framecutterfunction.h \
     framecutter.h \
     methods/savingfunction.h \
     methods/spectrealgorithm.h \
+    methods/psalgorithm.h \
+    methods/psdalgorithm.h \
     unitsconverter.h \
     dataiodevice.h \
     playpanel.h \
