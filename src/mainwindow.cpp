@@ -1410,7 +1410,7 @@ void MainWindow::editDescriptions()
 }
 
 void MainWindow::save()
-{
+{DD;
     for (int i=0; i<tabWidget->count(); ++i) {
         Tab *t = qobject_cast<Tab *>(tabWidget->widget(i));
         if (t)

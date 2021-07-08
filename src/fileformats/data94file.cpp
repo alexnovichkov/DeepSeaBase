@@ -142,7 +142,7 @@ void Data94File::read()
 }
 
 void Data94File::write()
-{
+{DD;
     if (!changed() && !dataChanged()) return;
 
     QFile f(fileName());
@@ -490,6 +490,7 @@ void Data94Channel::read(QDataStream &r)
 
     //reading file description
     r >> descriptionSize;
+
     QByteArray descriptionBuffer = r.device()->read(descriptionSize);
     if ((quint32)descriptionBuffer.size() != descriptionSize) {
         qDebug()<<"не удалось прочитать описание канала";
@@ -557,7 +558,7 @@ void Data94Channel::read(QDataStream &r)
 void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
 {
     r.setFloatingPointPrecision(QDataStream::SinglePrecision);
-    position = r.device()->pos();
+    qint64 newposition = r.device()->pos();
     r.device()->write("d94chan ");
 
     //description
@@ -589,11 +590,11 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
 
     setChanged(false);
 
+    qint64 newdataposition = r.device()->pos();;
     if (dataChanged()) {
         if (sampleWidth == 8)
             r.setFloatingPointPrecision(QDataStream::DoublePrecision);
 
-        dataPosition = r.device()->pos();
         for (int block = 0; block < data->blocksCount(); ++block) {
             if (!isComplex) {
                 const QVector<double> yValues = data->rawYValues(block);
@@ -636,6 +637,8 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
         r.writeRawData(buf.data(), buf.size());
     }
     setDataChanged(false);
+    dataPosition = newdataposition;
+    position = newposition;
     size = r.device()->pos() - position;
 }
 

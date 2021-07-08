@@ -151,6 +151,7 @@ void Model::save()
 {DD;
     for (int i=0; i<descriptors.size(); ++i) {
         auto f = descriptors[i];
+        //qDebug() << f->fileName();
         f->write();
         emit dataChanged(index(i,0), index(i,MODEL_COLUMNS_COUNT-1));
     }
