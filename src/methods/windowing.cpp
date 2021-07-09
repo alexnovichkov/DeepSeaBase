@@ -87,6 +87,26 @@ bool Windowing::windowAcceptsParameter(WindowType windowType)
     return false;
 }
 
+QString Windowing::correctionDescription(Windowing::CorrectionType type)
+{
+    switch (type) {
+        case CorrectionType::NoCorrection: return "без коррекции";
+        case CorrectionType::Amplitude: return "амплитудная";
+        case CorrectionType::Energy: return "энергетическая";
+    }
+    return QString();
+}
+
+QString Windowing::correctionDescriptionEng(Windowing::CorrectionType type)
+{
+    switch (type) {
+        case CorrectionType::NoCorrection: return "no correction";
+        case CorrectionType::Amplitude: return "amplitude";
+        case CorrectionType::Energy: return "energy";
+    }
+    return QString();
+}
+
 Windowing::Windowing() :
     bufferSize(0), param(50.0)
 {
@@ -109,6 +129,7 @@ void Windowing::init()
 {
     w.clear();
     w = QVector<double>(bufferSize, 1.0);
+    correction = 1.0;
 
     switch (windowType) {
         case WindowType::Square:            break;
@@ -128,6 +149,7 @@ void Windowing::init()
         case WindowType::Welch:             welch(); break;
         default: break;
     }
+
     //normalize();
 }
 
@@ -140,8 +162,12 @@ void Windowing::square()
 
 void Windowing::hann()
 {
+    switch (correctionType) {
+        case CorrectionType::NoCorrection: correction = 1.0; break;
+        case CorrectionType::Amplitude: correction = 2.0; break;
+        case CorrectionType::Energy: correction = 1.63; break;
+    }
     const int N = w.size();
-    const double correction = 2.0;
 
     for (int i=0; i<N; i++) {
         double t = (double)i/(N-1);
@@ -153,26 +179,41 @@ void Windowing::triangular()
 {
     const int N = w.size();
 
+    switch (correctionType) {
+        case CorrectionType::NoCorrection: correction = 1.0; break;
+        case CorrectionType::Amplitude: correction = 1.027; break;
+        case CorrectionType::Energy: correction = 0.77; break;
+    }
+
     for (int i=0; i<N; i++) {
         double t = (2.0*i-N)/(N+1);
-        w[i] = 1.0 - qAbs(t);
+        w[i] = correction*(1.0 - qAbs(t));
     }
 }
 
 void Windowing::bartlett()
 {
     const int N = w.size();
+    switch (correctionType) {
+        case CorrectionType::NoCorrection: correction = 1.0; break;
+        case CorrectionType::Amplitude: correction = 1.027; break;
+        case CorrectionType::Energy: correction = 0.77; break;
+    }
 
     for (int i=0; i<N; i++) {
         double t = (2.0*i-N)/N;
-        w[i] = 1.0 - qAbs(t);
+        w[i] = correction*(1.0 - qAbs(t));
     }
 }
 
 void Windowing::hamming()
 {
     const int N = w.size();
-    const double correction = 1.85;
+    switch (correctionType) {
+        case CorrectionType::NoCorrection: correction = 1.0; break;
+        case CorrectionType::Amplitude: correction = 1.85; break;
+        case CorrectionType::Energy: correction = 1.59; break;
+    }
 
     for (int i=0; i<N; i++) {
         double t = (double)i/(N-1);
@@ -184,7 +225,11 @@ void Windowing::hamming()
 void Windowing::nuttall()
 {//
     const int N = w.size();
-    const double correction = 2.8;
+    switch (correctionType) {
+        case CorrectionType::NoCorrection: correction = 1.0; break;
+        case CorrectionType::Amplitude: correction = 2.8; break;
+        case CorrectionType::Energy: correction = 1.97; break;
+    }
 
     for (int i=0; i<N; i++) {
         double t = (double)i/(N-1);
@@ -198,7 +243,11 @@ void Windowing::nuttall()
 void Windowing::blackman()
 {
     const int N = w.size();
-    const double correction = 2.8;
+    switch (correctionType) {
+        case CorrectionType::NoCorrection: correction = 1.0; break;
+        case CorrectionType::Amplitude: correction = 2.8; break;
+        case CorrectionType::Energy: correction = 1.97; break;
+    }
 
     for (int i=0; i<N; i++) {
         double t = (double)i/(N-1);
@@ -211,7 +260,11 @@ void Windowing::blackman()
 void Windowing::blackmanNuttall()
 {
     const int N = w.size();
-    const double correction = 2.8;
+    switch (correctionType) {
+        case CorrectionType::NoCorrection: correction = 1.0; break;
+        case CorrectionType::Amplitude: correction = 2.8; break;
+        case CorrectionType::Energy: correction = 1.97; break;
+    }
 
     for (int i=0; i<N; i++) {
         double t = (double)i/(N-1);
@@ -225,7 +278,11 @@ void Windowing::blackmanNuttall()
 void Windowing::blackmanHarris()
 {
     const int N = w.size();
-    const double correction = 2.8;
+    switch (correctionType) {
+        case CorrectionType::NoCorrection: correction = 1.0; break;
+        case CorrectionType::Amplitude: correction = 2.8; break;
+        case CorrectionType::Energy: correction = 1.97; break;
+    }
 
 
     for (int i=0; i<N; i++) {
@@ -240,7 +297,11 @@ void Windowing::blackmanHarris()
 void Windowing::flattop()
 {
     const int N = w.size();
-    const double correction = 4.18;
+    switch (correctionType) {
+        case CorrectionType::NoCorrection: correction = 1.0; break;
+        case CorrectionType::Amplitude: correction = 4.18; break;
+        case CorrectionType::Energy: correction = 2.26; break;
+    }
 
     //коэффициенты согласно Matlab, коррекция согласно TestXpress
     //max(w) = w(N/2) = 0.9
@@ -257,18 +318,23 @@ void Windowing::flattop()
 void Windowing::gauss()
 {
     const int N = w.size();
-    const double correction = 2.02;
+    switch (correctionType) {
+        case CorrectionType::NoCorrection: correction = 1.0; break;
+        case CorrectionType::Amplitude: correction = 2.02; break;
+        case CorrectionType::Energy: correction = 1.63; break; //НЕПРАВИЛЬНОЕ ЗНАЧЕНИЕ!
+    }
     if (param <=0.0) param = 0.001;
-    if (param > 0.5) param = 0.5;
+    if (param > 50) param = 50;
 
     for (int i=0; i<N; i++) {
         double t = 2.0*i/(N-1);
-        w[i] = correction*exp(-0.5*pow((t-1.0)/param, 2.0));
+        w[i] = correction*exp(-0.5*pow((t-1.0)/param/100.0, 2.0));
     }
 }
 
 void Windowing::force()
 {
+    //коррекция не используется
     if (param > 100.0) param = 100.0;
     if (param < 0.0) param = 0.0;
 
@@ -291,21 +357,17 @@ void Windowing::tukey()
     const int N = w.size();
     if (param > 100.0) param = 100.0;
     if (param < 0.0) param = 0.0;
+    switch (correctionType) {
+        case CorrectionType::NoCorrection: correction = 1.0; break;
+        case CorrectionType::Amplitude: correction = 1.26; break;
+        case CorrectionType::Energy: correction = 1.17; break;
+    }
 
-    QVector<double> v(N/2);
-    for (int i=0; i<v.size(); ++i) {
-        v[i]=double(i)/double(N-1);
-        v[i]=0.5*(1.0-cos(M_PI*(2.0*v[i]/param/100)));
+    int delta = N/10; // 10% переходный процесс
+    for (int i = 0; i<delta; ++i)  {
+        w[i] = correction*0.5*(1-cos(2.0*M_PI*i*5/N));
+        w[N-1-i] = w[i];
     }
-    for (int i=v.size()-1; i>=1; --i) {
-        if (v[i]<v[i-1]) v.removeLast();
-        else break;
-    }
-    for (int i=0; i<v.size(); ++i) {
-        w[i] = v[i];
-        w[N-1-i]=v[i];
-    }
-    //qDebug()<<w;
 }
 
 /*
@@ -327,6 +389,8 @@ void Windowing::exponential()
 
 void Windowing::exponential()
 {
+    //коррекция не используется
+
     const int N = w.size();
     if (param > 100.0) param = 100.0;
     if (param <= 0.0) param = 1.0;
@@ -339,23 +403,23 @@ void Windowing::exponential()
 }
 
 void Windowing::normalize() {
-  const int size = w.size();
-  double sum = 0.0;
-  for (int i=0; i<size; i++) {
-    sum += std::abs(w[i]);
-  }
+    const int size = w.size();
+    double sum = 0.0;
+    for (int i=0; i<size; i++) {
+        sum += std::abs(w[i]);
+    }
 
-  if (qFuzzyIsNull(sum)) {
-    return;
-  }
+    if (qFuzzyIsNull(sum)) {
+        return;
+    }
 
-  // as we have half of the energy in negative frequencies, we need to scale, but
-  // multiply by two. Otherwise a sinusoid at 0db will result in 0.5 in the spectrum.
-  double scale = 2.0 / sum;
+    // as we have half of the energy in negative frequencies, we need to scale, but
+    // multiply by two. Otherwise a sinusoid at 0db will result in 0.5 in the spectrum.
+    double scale = 2.0 / sum;
 
-  for (int i=0; i<size; i++) {
-    w[i] *= scale;
-  }
+    for (int i=0; i<size; i++) {
+        w[i] *= scale;
+    }
 }
 
 int Windowing::getBufferSize() const
@@ -380,6 +444,12 @@ void Windowing::setWindowType(WindowType value)
     init();
 }
 
+void Windowing::setCorrectionType(Windowing::CorrectionType correctionType)
+{
+    this->correctionType = correctionType;
+    init();
+}
+
 
 void Windowing::applyTo(QVector<double> &values)
 {
@@ -390,6 +460,24 @@ void Windowing::applyTo(QVector<double> &values)
     const int min = qMin(values.size(), w.size());
     for (int i=0; i<min; ++i)
         values[i] *= w[i];
+}
+
+double Windowing::amplitudeCorrection() const
+{
+    double result = 0.0;
+    for (double x: w) result += std::abs(x);
+    if (w.size()>0) result /= w.size();
+    return result * 2;
+}
+
+double Windowing::energyCorrection() const
+{
+    double result = 0.0;
+    for (double x: w) result += x*x;
+//    if (w.size()>0) result /= (w.size() * w.size());
+
+//    return result * 2;
+    return result;
 }
 
 

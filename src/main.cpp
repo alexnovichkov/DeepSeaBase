@@ -14,6 +14,8 @@
 //#include "fileformats/ufffile.h"
 //#include "fileformats/matfile.h"
 
+#include "methods/windowing.h"
+
 int main(int argc, char *argv[])
 {
     //This mutex is used to prevent the user from installing new versions

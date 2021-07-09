@@ -23,11 +23,18 @@ public:
         Flattop = 13,
         Welch = 14
     };
+    enum class CorrectionType {
+        Amplitude = 0,
+        Energy,
+        NoCorrection
+    };
 
     static QString windowDescription(WindowType windowType);
     static QStringList windowDescriptions();
     static QString windowDescriptionEng(WindowType windowType);
     static bool windowAcceptsParameter(WindowType windowType);
+    static QString correctionDescription(CorrectionType type);
+    static QString correctionDescriptionEng(CorrectionType type);
 
     Windowing();
     Windowing(int bufferSize, WindowType windowType, double parameter = 0.0);
@@ -36,11 +43,18 @@ public:
 
     QVector<double> windowing() {return w;}
 
+    double amplitudeCorrection() const;
+    double energyCorrection() const;
+
+
     void setParameter(double parameter);
     double getParameter() const {return param;}
 
     WindowType getWindowType() const;
     void setWindowType(WindowType value);
+
+    CorrectionType getCorrectionType() const {return correctionType;}
+    void setCorrectionType(CorrectionType correctionType);
 
     int getBufferSize() const;
     void setBufferSize(int value);
@@ -67,7 +81,9 @@ private:
     QVector<double> w;
     int bufferSize;
     WindowType windowType = WindowType::Square;
+    CorrectionType correctionType = CorrectionType::Amplitude;
     double param;
+    double correction = 1; //величина коррекции, зависящая от типа коррекции
 };
 
 #endif // WINDOWING_H

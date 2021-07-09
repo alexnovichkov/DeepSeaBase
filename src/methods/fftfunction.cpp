@@ -91,25 +91,24 @@ bool FftFunction::compute(FileDescriptor *file)
     reset();
 
     if (!m_input) return false;
-
-    if (!m_input->compute(file)) {
-        return false;
-    }
+    if (!m_input->compute(file)) return false;
 
     QVector<double> data = m_input->getData("input");
-    if (data.isEmpty()) {
-        return false;
-    }
+    if (data.isEmpty()) return false;
 
     QVector<cx_double> fft = Fft::compute(data);
+    if (fft.isEmpty()) return false;
 
     int size = int(fft.size()/2.56);
+    const int Nvl = fft.size();
+    const double factor = sqrt(2.0) / Nvl;
+
     switch (map.value("output")) {
         case 0: {//complex
             output.resize(size*2);
             for (int i=0; i<size; ++i) {
-                output[i*2] = fft[i].real();
-                output[i*2+1] = fft[i].imag();
+                output[i*2] = fft[i].real() * factor;
+                output[i*2+1] = fft[i].imag() * factor;
             }
 
             break;
@@ -117,21 +116,21 @@ bool FftFunction::compute(FileDescriptor *file)
         case 1: {//real
             output.resize(size);
             for (int i=0; i<size; ++i) {
-                output[i] = fft[i].real();
+                output[i] = fft[i].real() * factor;
             }
             break;
         }
         case 2: {//imag
             output.resize(size);
             for (int i=0; i<size; ++i) {
-                output[i] = fft[i].imag();
+                output[i] = fft[i].imag() * factor;
             }
             break;
         }
         case 3: {//ampl
             output.resize(size);
             for (int i=0; i<size; ++i) {
-                output[i] = std::abs(fft[i]);
+                output[i] = std::abs(fft[i]) * factor;
             }
             break;
         }

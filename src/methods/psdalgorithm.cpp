@@ -54,6 +54,7 @@ PsdAlgorithm::PsdAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
 //    resamplingF->setProperty(resamplingF->name()+"/xStep", xStep);
     samplingF->setProperty(samplingF->name()+"/xStep", xStep);
     channelF->setFile(dataBase.constFirst());
+    windowingF->setProperty("Windowing/correction", 1);
 
     //resamplingF отправляет сигнал об изменении "?/xStep"
 //    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),

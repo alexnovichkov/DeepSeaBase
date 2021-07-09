@@ -22,7 +22,7 @@ QString WindowingFunction::description() const
 
 QStringList WindowingFunction::properties() const
 {DD;
-    return QStringList()<<"type"<<"parameter";
+    return {"type","parameter","correction"};
 }
 
 QString WindowingFunction::propertyDescription(const QString &property) const
@@ -37,6 +37,14 @@ QString WindowingFunction::propertyDescription(const QString &property) const
                                    "  \"Хемминга\",\"Наттолла\", \"Гаусса\", \"Сила\", \"Экспоненциальное\", \"Тьюки\","
                                    "  \"Бартлетта\", \"Блэкмана\", \"Блэкмана-Натолла\", \"Блэкмана-Харриса\","
                                    "  \"Flat top\", \"Уэлча\"]"
+                                   "}";
+    if (property == "correction") return "{"
+                                   "  \"name\"        : \"correction\"   ,"
+                                   "  \"type\"        : \"enum\"   ,"
+                                   "  \"displayName\" : \"Коррекция\"   ,"
+                                   "  \"defaultValue\": 0         ,"
+                                   "  \"toolTip\"     : \"Коррекция окна\","
+                                   "  \"values\"      : [\"амплитудная\",\"энергетическая\",\"без коррекции\"]"
                                    "}";
 
     if (property == "parameter") return "{"
@@ -66,7 +74,9 @@ QVariant WindowingFunction::m_getProperty(const QString &property) const
     QString p = property.section("/",1);
 
     if (p == "type") return static_cast<int>(windowing.getWindowType());
+    if (p == "correction") return static_cast<int>(windowing.getCorrectionType());
     if (p == "parameter") return windowing.getParameter();
+
 
     return QVariant();
 }
@@ -79,6 +89,7 @@ DataDescription WindowingFunction::getFunctionDescription() const
     result.put("function.name", "WIN");
     result.put("function.window", Windowing::windowDescriptionEng(windowing.getWindowType()));
     result.put("function.windowParameter", windowing.getParameter());
+    result.put("function.windowCorrection", Windowing::correctionDescription(windowing.getCorrectionType()));
 
     return result;
 }
@@ -89,6 +100,7 @@ void WindowingFunction::m_setProperty(const QString &property, const QVariant &v
     QString p = property.section("/",1);
 
     if (p == "type") windowing.setWindowType(static_cast<Windowing::WindowType>(val.toInt()));
+    if (p == "correction") windowing.setCorrectionType(static_cast<Windowing::CorrectionType>(val.toInt()));
     else if (p == "parameter") windowing.setParameter(val.toDouble());
 }
 
@@ -101,7 +113,6 @@ bool WindowingFunction::propertyShowsFor(const QString &property) const
 
     return true;
 }
-
 
 QString WindowingFunction::displayName() const
 {DD;
@@ -121,6 +132,7 @@ bool WindowingFunction::compute(FileDescriptor *file)
     if (output.isEmpty()) return false;
 
     windowing.applyTo(output);
+
 
     return true;
 }

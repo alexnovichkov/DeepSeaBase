@@ -7,6 +7,7 @@
 /* Windowing/type - Прямоугольное / Треугольное / Хеннинга / Хемминга /
  *                  Наттолла / Гаусса / Сила / Экспоненциальное / Тьюки
  * Windowing/parameter
+ * Windowing/correction
  *
  * Отдает:
  * ?/windowDescription -

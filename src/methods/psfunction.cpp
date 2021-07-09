@@ -27,6 +27,7 @@ QStringList PsFunction::properties() const
 
 QString PsFunction::propertyDescription(const QString &property) const
 {DD;
+    Q_UNUSED(property);
     return QString();
 }
 
