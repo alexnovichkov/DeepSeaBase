@@ -800,21 +800,17 @@ QVariant DataDescription::get(const QString &key) const
 QJsonObject DataDescription::toJson() const {
     QJsonObject result;
     for (auto i = data.constBegin(); i != data.constEnd(); ++i) {
-        if (i.key().contains('.')) {
-            QString key = i.key().section('.',0,0);
-            auto r = result.value(key).toObject();
-            if (key == "dateTime" || i.key() == "fileCreationTime")
-                r.insert(i.key().section('.',1), QJsonValue(i.value().toDateTime().toString("dd.MM.yyyy hh:mm:ss")));
-            else
-                r.insert(i.key().section('.',1), QJsonValue::fromVariant(i.value()));
+        const QString key = i.key();
+        QVariant val = i.value();
+        if (key.contains("dateTime") || key == "fileCreationTime")
+            val = val.toDateTime().toString("dd.MM.yyyy hh:mm:ss");
+        if (key.contains('.')) {
+            auto r = result.value(key.section('.',0,0)).toObject();
+            r.insert(key.section('.',1), QJsonValue::fromVariant(val));
             result.insert(key, r);
         }
-        else {
-            if (i.key() == "dateTime" || i.key() == "fileCreationTime")
-                result.insert(i.key(), QJsonValue(i.value().toDateTime().toString("dd.MM.yyyy hh:mm:ss")));
-            else
-                result.insert(i.key(), QJsonValue::fromVariant(i.value()));
-        }
+        else
+            result.insert(key, QJsonValue::fromVariant(val));
     }
     return result;
 }
