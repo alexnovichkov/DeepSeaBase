@@ -8,6 +8,7 @@
 #include "algorithms.h"
 #include "dfdsettings.h"
 #include "averaging.h"
+#include "unitsconverter.h"
 
 template <typename T>
 QVector<T> convertFromUINT16(unsigned char *ptr, qint64 length, uint IndType)
@@ -1232,9 +1233,9 @@ void DfdChannel::read(DfdSettings &dfd, int numChans, double xBegin, double xSte
     QString thrString = dfd.value(group+"threshold");
     if (thrString.isEmpty()) {
         if (YName.isEmpty() || YName.toLower() == "дб" || YName.toLower() == "db")
-            thr = threshold(dataDescription().get("ynameold").toString());
+            thr = PhysicalUnits::Units::logref(dataDescription().get("ynameold").toString());
         else
-            thr = threshold(YName);
+            thr = PhysicalUnits::Units::logref(YName);
         if (type()==Descriptor::FrequencyResponseFunction) thr=1.0;
     }
     else {

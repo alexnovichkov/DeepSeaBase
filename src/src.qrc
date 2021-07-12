@@ -49,5 +49,7 @@
         <file>icons/move_up.png</file>
         <file>icons/move_down_24.png</file>
         <file>icons/move_up_24.png</file>
+        <file>icons/list-add.png</file>
+        <file>icons/list-remove.png</file>
     </qresource>
 </RCC>

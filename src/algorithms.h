@@ -19,9 +19,6 @@ private:
     T &m_data;
 };
 
-int abscissaType(const QString &xName);
-QString abscissaTypeDescription(int type);
-
 template <typename T, typename D>
 QVector<D> readChunk(QDataStream &readStream, quint64 blockSize, qint64 *actuallyRead)
 {
@@ -237,9 +234,6 @@ double toFloat64LE(const QByteArray &v, size_t offset);
 void processDir(const QString &file, QStringList &files, bool includeSubfolders);
 
 QVector<double> octaveStrips(int octave, int count);
-
-QString weightingFromType(int weightingType);
-int weightingType(const QString &weighting);
 
 QDateTime dateTimeFromString(QString s);
 

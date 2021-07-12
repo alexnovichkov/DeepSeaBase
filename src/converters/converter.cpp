@@ -12,6 +12,7 @@
 #include "fft.h"
 #include "channelselector.h"
 #include "framecutter.h"
+#include "unitsconverter.h"
 
 Converter::Converter(QList<FileDescriptor *> &base, const Parameters &p_, QObject *parent) :
     QObject(parent), dataBase(base), p(p_), process(0)
@@ -387,7 +388,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
 
         auto units = DataHolder::UnitsLinear;
 
-        p.threshold = threshold(file->channel(i)->yName());
+        p.threshold = PhysicalUnits::Units::logref(file->channel(i)->yName());
 
         QVector<double> spectrum;
         QVector<cx_double> spectrumComplex;
@@ -515,8 +516,8 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
             spectrumComplex = transferFunction(averagingBase.get(), averaging.getComplex());
 
             //fixing units of measurement
-            const double convertF = convertFactor(file->channel(i)->yName()) /
-                              convertFactor(file->channel(p.baseChannel)->yName());
+            const double convertF = PhysicalUnits::Units::convertFactor(file->channel(i)->yName()) /
+                              PhysicalUnits::Units::convertFactor(file->channel(p.baseChannel)->yName());
             for (auto &sample: spectrumComplex)
                 sample *= convertF;
 

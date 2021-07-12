@@ -6,6 +6,8 @@
 #include "algorithms.h"
 #include "dataholder.h"
 #include "averaging.h"
+#include "methods/weighting.h"
+#include "unitsconverter.h"
 
 QList<AbstractField*> fields = {
     new DelimiterField,
@@ -600,7 +602,7 @@ void FunctionHeader::toDataDescription(DataDescription &d)
     }
     //{FTInteger12, 0}, //6 measurement run number
     if (int v = type1858[11].value.toInt(); v!=0) {
-        d.put("function.weighting", weightingFromType(v));
+        d.put("function.weighting", Weighting::toString(static_cast<Weighting::Type>(v)));
     }
     if (int v = type1858[12].value.toInt(); v!=0) {
         d.put("function.window", windowDescriptionFromUffType(v));
@@ -640,7 +642,7 @@ FunctionHeader FunctionHeader::fromDescription(const DataDescription &d)
     FunctionHeader h;
     h.type1858[5].value = d.get("function.octaveFormat");
     //{FTInteger12, 0}, //6 measurement run number
-    h.type1858[11].value = weightingType(d.get("function.weighting").toString());
+    h.type1858[11].value = static_cast<int>(Weighting::fromString(d.get("function.weighting").toString()));
     h.type1858[12].value = uffWindowTypeFromDescription(d.get("function.window").toString());
     h.type1858[13].value = scalingTypeFromDescription(d.get("function.amplitudeScaling").toString());
     h.type1858[14].value = normalizationTypeFromDescription(d.get("function.normalization").toString());
@@ -753,7 +755,7 @@ void FunctionDescription::toDataDescription(DataDescription &d)
     //Abscissa Data Characteristics 32-38
     {
         QString s = type58[37].value.toString();
-        if (s.isEmpty()) s = unitNameFromUffType(type58[32].value.toInt());
+        if (s.isEmpty()) s = PhysicalUnits::Units::unit(static_cast<PhysicalUnits::Units::Type>(type58[32].value.toInt()));
         d.put("xname", s);
         //{FTInteger5, 0}, //33 Length units exponent
         //{FTInteger5,0}, //34 Force units exponent
@@ -763,13 +765,11 @@ void FunctionDescription::toDataDescription(DataDescription &d)
     //Ordinate (or ordinate numerator) Data Characteristics 39-45
     {
         //может оказаться, что тип единицы не соответствует названию. Меняем тип единицы
-        int type = type58[39].value.toInt();
+        auto type = static_cast<PhysicalUnits::Units::Type>(type58[39].value.toInt());
         d.put("ylabel", type58[43].value);
         QString s = type58[44].value.toString();
-        if (s.isEmpty()) s = unitNameFromUffType(type);
-        if (int t = unitTypeFromName(s); t != type) type = t;
+        if (s.isEmpty()) s = PhysicalUnits::Units::unit(type);
         d.put("yname", s);
-        d.put("yUnitType", type);
         //{FTInteger5,0}, //40 Length units exponent
         //{FTInteger5,0}, //41 Force units exponent
         //{FTInteger5, 0}, //42 Temperature units exponent
@@ -778,7 +778,7 @@ void FunctionDescription::toDataDescription(DataDescription &d)
 
     {//Знаменатель единицы измерения - м/с^2/Гц = Гц
         QString s = type58[51].value.toString();
-        if (s.isEmpty()) s = unitNameFromUffType(type58[46].value.toInt());
+        if (s.isEmpty()) s = PhysicalUnits::Units::unit(static_cast<PhysicalUnits::Units::Type>(type58[46].value.toInt()));
         if (!s.isEmpty())
             d.put("yname", d.get("yname").toString()+"/"+s);
     }
@@ -788,7 +788,7 @@ void FunctionDescription::toDataDescription(DataDescription &d)
     //{FTString20, "NONE"}, //50
     {
         QString s = type58[58].value.toString();
-        if (s.isEmpty()) s = unitNameFromUffType(type58[53].value.toInt());
+        if (s.isEmpty()) s = PhysicalUnits::Units::unit(static_cast<PhysicalUnits::Units::Type>(type58[53].value.toInt()));
         d.put("zname", s);
     }
     //{FTInteger5, 0}, //54
@@ -839,19 +839,19 @@ FunctionDescription FunctionDescription::fromDescription(const DataDescription &
     h.type58[28].value = d.get("xmin");
     h.type58[29].value = d.get("xstep");
     h.type58[30].value = d.get("zvalue");
-    h.type58[32].value = unitTypeFromName(d.get("xname").toString());
+    h.type58[32].value = static_cast<int>(PhysicalUnits::Units::unitType(d.get("xname").toString()));
     //{FTInteger5, 0}, //33 Length units exponent
     //{FTInteger5,0}, //34 Force units exponent
     //{FTInteger5, 0}, //35 Temperature units exponent
     //{FTString20, "NONE"}, //36 Axis label ("NONE" if not used)
-    h.type58[36].value = unitDescriptionFromUffType(h.type58[32].value.toInt());
+    h.type58[36].value = PhysicalUnits::Units::unitDescription(d.get("xname").toString());
     h.type58[37].value = d.get("xname");
     QString yname = d.get("yname").toString();
-    h.type58[39].value = unitTypeFromName(yname);
+    h.type58[39].value = static_cast<int>(PhysicalUnits::Units::unitType(yname));
     //{FTInteger5,0}, //40 Length units exponent
     //{FTInteger5,0}, //41 Force units exponent
     //{FTInteger5, 0}, //42 Temperature units exponent
-    h.type58[43].value = unitDescriptionFromUffType(h.type58[39].value.toInt());
+    h.type58[43].value = PhysicalUnits::Units::unitDescription(yname);
     h.type58[44].value = yname;
     //Игнорируем знаменатель единицы измерения - слишком сложно реализовывать
     //h.type58[46].value = unitTypeFromName(ynameDenom);
@@ -860,11 +860,11 @@ FunctionDescription FunctionDescription::fromDescription(const DataDescription &
     //{FTInteger5,0}, //49
     //FTString20, "NONE"}, //50
     //h.type58[51].value = ynameDenom;
-    h.type58[53].value = unitTypeFromName(d.get("zname").toString());
+    h.type58[53].value = static_cast<int>(PhysicalUnits::Units::unitType(d.get("zname").toString()));
     //{FTInteger5, 0}, //54
     //{FTInteger5, 0}, //55
     //{FTInteger5, 0}, //56
-    h.type58[57].value = unitDescriptionFromUffType(h.type58[53].value.toInt());
+    h.type58[57].value = PhysicalUnits::Units::unitDescription(d.get("zname").toString());
     h.type58[58].value = d.get("zname");
 
     //sanitizing
@@ -993,14 +993,7 @@ void Function::readRest()
     //может так получиться, что тип единицы по оси y будет неправильным.
     //может так получиться, что название единицы по оси y будет неправильным.
     //определяем пороговые значения отдельно и сравниваем
-    double thr1 = logrefFromUffUnit(dataDescription().get("yUnitType").toInt());
-    double thr2 = logrefFromUffUnit(unitTypeFromName(yName()));
-    double thr = thr1;
-    if (!qFuzzyCompare(thr1, thr2)) {
-        //если какой-то порог не равен 1.0, берем его, отдаем преимущество порогу по имени единицы
-        if (!qFuzzyCompare(thr2, 1.0)) thr = thr2;
-        else thr = thr1;
-    }
+    double thr = PhysicalUnits::Units::logref(yName());
     //у FRF порог всегда равен 1
     int ftype = dataDescription().get("function.type").toInt();
     if (ftype==Descriptor::FrequencyResponseFunction) thr = 1.0;
@@ -1588,107 +1581,4 @@ QString normalizationDescriptionFromUffType(int type)
     }
     return "unknown";
 }
-
-int unitTypeFromName(QString s)
-{
-    s = s.toLower();
-    //2 - stress - not detectable (= pressure)
-    //3 - strain - dimensionless
-    //5 - temperature
-    if (s == "k" || s == "°c" || s == "°f") return 5;
-    //6 - heat flux
-    if (s == "w/m^2" || s == "w/m2" || s == "вт/м^2" || s == "вт/м2") return 6;
-    //8 - displacement
-    if (s == "m" || s == "м" || s == "mm" || s == "мм" || s == "cm"
-        || s == "см") return 8;
-    //9 - reaction force - non detectable (= force)
-    //11 - velocity
-    if (s == "m/s" || s == "м/с") return 11;
-    //12 - acceleration
-    if (s == "m/s2" || s == "m/s^2" || s == "м/с2" || s == "м/с^2" || s == "g") return 12;
-    //13 - excitation force
-    if (s == "n" || s == "н") return 13;
-    //15 - pressure
-    if (s == "pa" || s == "psi" || s == "па") return 15;
-    //16 - mass
-    if (s == "kg" || s == "кг") return 16;
-    //17 - time
-    if (s == "s" || s == "с") return 17;
-    //18 - frequency
-    if (s == "hz" || s == "гц" || s == "1/s" || s == "1/с") return 18;
-    //19 - rpm
-    if (s == "rpm" || s == "rad/s" || s == "deg/s" || s == "°/s" || s == "рад/с" || s == "°/с"
-        || s == "об/мин" || s == "об/с") return 19;
-    //20 - order
-    if (s == "1/deg" || s == "1/rad" || s == "1/рад") return 20;
-
-    return 0; //0 - unknown
-}
-
-QString unitNameFromUffType(int type)
-{
-    switch (type) {
-        case 2:
-        case 15: return "Па";
-        case 5:  return "°C";
-        case 6:  return "Вт/м^2";
-        case 8:  return "м";
-        case 9:
-        case 13: return "Н";
-        case 11: return "м/с";
-        case 12: return "м/с^2";
-        case 16: return "кг";
-        case 17: return "с";
-        case 18: return "Гц";
-        case 19: return "об/мин";
-        case 20: return "1/рад";
-    }
-    return "";
-}
-
-QString unitDescriptionFromUffType(int type)
-{
-    switch (type) {
-        case 1: return "General";
-        case 2: return "Stress";
-        case 3: return "Strain";
-        case 5: return "Temperature";
-        case 6: return "Heat flux";
-        case 8: return "Displacement";
-        case 9: return "Reaction force";
-        case 11: return "Velocity";
-        case 12: return "Acceleration";
-        case 13: return "Excitation force";
-        case 15: return "Pressure";
-        case 16: return "Mass";
-        case 17: return "Time";
-        case 18: return "Frequency";
-        case 19: return "RPM";
-        case 20: return "Order";
-    }
-    return "Unknown";
-}
-
-double logrefFromUffUnit(int type)
-{
-    switch (type) {
-        case 2: return 2.0e-5; //"Stress";
-        case 3: return 1.0; //Strain
-        case 5: return 1.0; //Temperature
-        case 6: return 1.0e-12; //"Heat flux";
-        case 8: return 8.0e-14; //"Displacement"; <- значение DeepSea
-        case 9: return 1.0; //"Reaction force";
-        case 11: return 5.0e-8; //"Velocity";
-        case 12: return 3.14e-4; //"Acceleration"; <- значение базы датчиков
-        case 13: return 1.0; //"Excitation force";
-        case 15: return 2.0e-5; //Pressure
-        case 16: return 1.0; //"Mass";
-        case 17: return 1.0; //"Time";
-        case 18: return 1.0;//"Frequency";
-        case 19: return 5.0e-8;//"RPM";
-        case 20: return 1.0; //"Order";
-    }
-    return 1.0;
-}
-
 

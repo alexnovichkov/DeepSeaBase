@@ -6,6 +6,9 @@
 namespace PhysicalUnits {
 
 namespace Quantities {
+
+
+
 class Quantity {
 public:
     Quantity() {powers = QVector<int>(8,0);}
@@ -305,6 +308,29 @@ public:
 
 namespace Units {
 
+    enum class Type
+    {
+        Unknown = 0,//        0 - unknown
+        General,//        1 - general
+        Stress,//        2 - stress
+        Strain,//        3 - strain
+        Temperature = 5,//        5 - temperature
+        HeatFlux,//        6 - heat flux
+        Displacement = 8,//        8 - displacement
+        ReactionForce,//        9 - reaction force
+        Velocity = 11,//        11 - velocity
+        Acceleration,//        12 - acceleration
+        ExcitationForce,//        13 - excitation force
+        Pressure = 15,//        15 - pressure
+        Mass,//        16 - mass
+        Time,//        17 - time
+        Frequency,//        18 - frequency
+        RPM,//        19 - rpm
+        Order,//        20 - order
+        Voltage,
+        Current
+    };
+
 template <typename Quantity>
 class Unit
 {
@@ -373,21 +399,33 @@ private:
     Quantities::Acceleration quantity;
 };
 
+bool unitsAreSame(const QString &u1, const QString u2);
+Type unitType(QString unit);
+QString unitDescription(QString unit);
+QString unitDescription(Type type);
+QString unit(Type type);
+
+double logref(const QString &name);
+double logref(Type type);
+double convertFactor(const QString &from);
+
 } // namespace Units
 
 
 
-class Converter
-{
-public:
-    enum Conversion {
-        NoConversion = 0,
-        Multiply,
-        Divide,
-        Square
-    };
-    Converter();
-};
+//class Converter
+//{
+//public:
+//    enum Conversion {
+//        NoConversion = 0,
+//        Multiply,
+//        Divide,
+//        Square
+//    };
+//    Converter();
+//};
+
+
 }
 
 #endif // UNITSCONVERTER_H

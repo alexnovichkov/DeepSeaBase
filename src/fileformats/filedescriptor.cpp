@@ -5,33 +5,6 @@
 #include "algorithms.h"
 #include "fileformats/formatfactory.h"
 
-double threshold(const QString &name)
-{
-    QString n = name.toLower();
-    if (n=="м/с2" || n=="м/с^2" || n=="м/с*2" || n=="m/s2" || n=="m/s^2" || n=="g")
-        return 3.16e-4; //ускорение
-    if (n=="па" || n=="pa" || n=="hpa" || n=="kpa" || n=="mpa"
-        || n=="n/m2" || n=="n/mm2") return 2.0e-5; //давление
-    if (n=="м/с" || n=="m/s") return 5.0e-8; //скорость
-    if (n=="м" || n=="m") return 8.0e-14; //смещение
-    if (n=="v" || n=="в" || n=="мв" || n=="mv") return 1e-6; //напряжение
-    if (n=="a" || n=="а") return 1e-9; //сила тока
-    if (n=="n" || n=="н") return 1.0; // сила
-
-
-    return 1.0;
-}
-
-
-
-double convertFactor(const QString &from)
-{
-    if (from.compare("g", Qt::CaseInsensitive)) return 9.81;
-    if (from.compare("n", Qt::CaseInsensitive)) return 1.0;
-
-    return 1.0;
-}
-
 FileDescriptor::FileDescriptor(const QString &fileName) :
     _fileName(fileName)
 {

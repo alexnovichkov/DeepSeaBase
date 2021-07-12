@@ -19,49 +19,6 @@ bool fileExists(const QString &s, const QString &suffix)
     return (QFile::exists(f) && QFile::exists(f1));
 }
 
-int abscissaType(const QString &xName)
-{
-    QString s = xName.toLower();
-    if (s == "hz" || s == "гц") return 18;
-    if (s == "s" || s == "с") return 17;
-    if (s == "m/s" || s == "м/с") return 11;
-    if (s == "m/s2" || s == "m/s^2" || s == "м/с2" || s == "м/с^2" || s == "g") return 12;
-    if (s == "n" || s == "н") return 13;
-    if (s == "pa" || s == "psi" || s == "па") return 15;
-    if (s == "m" || s == "м") return 8;
-    if (s == "kg" || s == "кг") return 16;
-
-    return 0; //0 - unknown
-}
-
-
-
-QString abscissaTypeDescription(int type)
-{
-    switch (type) {
-        case 0: return "Unknown";
-        case 1: return "General";
-        case 2: return "Stress";
-        case 3: return "Strain";
-        case 5: return "Temperature";
-        case 6: return "Heat flux";
-        case 8: return "Displacement";
-        case 9: return "Reaction force";
-        case 11: return "Velocity";
-        case 12: return "Acceleration";
-        case 13: return "Excitation force";
-        case 15: return "Pressure";
-        case 16: return "Mass";
-        case 17: return "Time";
-        case 18: return "Frequency";
-        case 19: return "RPM";
-        case 20: return "Order";
-    }
-    return "Unknown";
-}
-
-
-
 QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spectrum, double xBegin, double xStep)
 {DD;
     QPair<QVector<double>, QVector<double> > result;
@@ -293,33 +250,6 @@ QVector<double> imags(const QVector<cx_double> &values)
     return result;
 }
 
-//template <typename T>
-//QVector<T> movingAverage(const QVector<T> &spectrum, int window)
-//{
-//    int numInd = spectrum.size();
-//    QVector<T> result(numInd, T());
-
-//    int span = window / 2;
-
-//    for (int j=span; j<numInd-span; ++j) {
-//        T sum = T();
-//        for (int k=0; k<window;++k) {
-//            sum += spectrum[j-span+k];
-//        }
-//        sum /= window;
-
-//        result[j] = sum;
-//    }
-
-//    //начало диапазона и конец диапазона
-//    for (int j=0; j<span; ++j)
-//        result[j] = spectrum[j];
-//    for (int j=numInd-span; j<numInd; ++j)
-//        result[j] = spectrum[j];
-
-//    return result;
-//}
-
 QVector<cx_double> movingAverage(const QVector<cx_double> &spectrum, int window)
 {
     const int numInd = spectrum.size();
@@ -505,11 +435,6 @@ QString stripHtml(const QString &s)
     return t;
 }
 
-void maybeAppend(const QString &s, QStringList &list)
-{DD;
-    if (!list.contains(s)) list.append(s);
-}
-
 void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 {DD;
     if (QFileInfo(file).isDir()) {
@@ -522,12 +447,13 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
                     processDir(dirLst.at(i).absoluteFilePath(),files,includeSubfolders);
             }
             else
-                maybeAppend(dirLst.at(i).absoluteFilePath(), files);
+                files << dirLst.at(i).absoluteFilePath();
         }
     }
     else {
-        maybeAppend(file, files);
+        files << file;
     }
+    files.removeDuplicates();
 }
 
 QVector<double> octaveStrips(int octave, int count)
@@ -555,29 +481,6 @@ QVector<double> octaveStrips(int octave, int count)
     }
     return v;
 }
-
-QString weightingFromType(int weightingType)
-{
-    switch(weightingType) {
-        case 1: return "A";
-        case 2: return "B";
-        case 3: return "C";
-        case 4: return "D";
-        default: break;
-    }
-
-    return "";
-}
-
-int weightingType(const QString &weighting)
-{
-    if (weighting == "A") return 1;
-    if (weighting == "B") return 2;
-    if (weighting == "C") return 3;
-    if (weighting == "D") return 4;
-    return 0;
-}
-
 
 QDateTime dateTimeFromString(QString s)
 {

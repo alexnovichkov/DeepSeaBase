@@ -8,8 +8,7 @@
 #include <qwt_scale_widget.h>
 #include <qwt_color_map.h>
 
-#include "fileformats/dfdfiledescriptor.h"
-#include "fileformats/ufffile.h"
+#include "fileformats/filedescriptor.h"
 #include "curve.h"
 #include "linecurve.h"
 #include "barcurve.h"
@@ -59,6 +58,8 @@
 #include "channelsmimedata.h"
 #include "imagerenderdialog.h"
 #include "enums.h"
+
+#include "unitsconverter.h"
 
 
 // простой фабричный метод создания кривой нужного типа
@@ -579,9 +580,9 @@ bool Plot::canBePlottedOnLeftAxis(Channel *ch)
     //особый случай - спектрограмма - всегда одна на графике
     if (hasCurves() && curves.constFirst()->channel->data()->blocksCount()>1)
         return false;
-
-    if (abscissaType(ch->xName()) == abscissaType(xName) || xName.isEmpty()) { // тип графика совпадает
-        if (leftCurves.isEmpty() || yLeftName.isEmpty() || ch->yName() == yLeftName)
+    if (PhysicalUnits::Units::unitsAreSame(ch->xName(), xName) || xName.isEmpty()) { // тип графика совпадает
+        if (leftCurves.isEmpty() || yLeftName.isEmpty()
+            || PhysicalUnits::Units::unitsAreSame(ch->yName(), yLeftName))
             return true;
     }
     return false;
@@ -597,8 +598,8 @@ bool Plot::canBePlottedOnRightAxis(Channel *ch)
     if (hasCurves() && curves.constFirst()->channel->data()->blocksCount()>1)
         return false;
 
-    if (abscissaType(ch->xName()) == abscissaType(xName) || xName.isEmpty()) { // тип графика совпадает
-        if (rightCurves.isEmpty() || yRightName.isEmpty() || ch->yName() == yRightName)
+    if (PhysicalUnits::Units::unitsAreSame(ch->xName(), xName) || xName.isEmpty()) { // тип графика совпадает
+        if (rightCurves.isEmpty() || yRightName.isEmpty() || PhysicalUnits::Units::unitsAreSame(ch->yName(), yRightName))
             return true;
     }
     return false;

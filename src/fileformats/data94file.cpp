@@ -4,6 +4,7 @@
 #include "algorithms.h"
 #include "logging.h"
 #include "averaging.h"
+#include "unitsconverter.h"
 
 QDebug operator<<(QDebug dbg, const AxisBlock &b)
 {
@@ -523,7 +524,7 @@ void Data94Channel::read(QDataStream &r)
     dataPosition = r.device()->pos();
 
     double thr = dataDescription().get("function.logref").toDouble();
-    if (qFuzzyIsNull(thr)) thr = threshold(yName());
+    if (qFuzzyIsNull(thr)) thr = PhysicalUnits::Units::logref(yName());
     _data->setThreshold(thr);
     _data->setYValuesUnits(DataHolder::unitsFromString(dataDescription().get("function.logscale").toString()));
     _data->setYValuesFormat(DataHolder::formatFromString(dataDescription().get("function.format").toString()));

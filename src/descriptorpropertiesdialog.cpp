@@ -133,8 +133,10 @@ DescriptorPropertiesDialog::DescriptorPropertiesDialog(const QList<FileDescripto
     QToolBar *toolBar = new QToolBar(this);
 
     QAction *addAct = toolBar->addAction("Добавить", this, &DescriptorPropertiesDialog::addProperty);
+    addAct->setIcon(QIcon(":/icons/list-add.png"));
     QAction *removeAct = toolBar->addAction("Удалить", this, &DescriptorPropertiesDialog::removeProperty);
     removeAct->setEnabled(false);
+    removeAct->setIcon(QIcon(":/icons/list-remove.png"));
 
     descriptionsTable = new QTableWidget(this);
     descriptionsTable->setColumnCount(1);
@@ -146,6 +148,7 @@ DescriptorPropertiesDialog::DescriptorPropertiesDialog(const QList<FileDescripto
     });
 
     QVBoxLayout *descriptionsL = new QVBoxLayout;
+    descriptionsL->setContentsMargins(0,0,0,0);
     descriptionsL->addWidget(toolBar);
     descriptionsL->addWidget(descriptionsTable);
     descriptions->setLayout(descriptionsL);

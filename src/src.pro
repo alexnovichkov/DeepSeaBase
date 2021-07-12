@@ -49,6 +49,7 @@ SOURCES += main.cpp\
     methods/frfalgorithm.cpp \
     methods/frffunction.cpp \
     methods/gxyfunction.cpp \
+    methods/weighting.cpp \
     methods/windowingalgorithm.cpp \
     plot/imagerenderdialog.cpp \
     plot/trackingcursor.cpp \
@@ -138,6 +139,7 @@ HEADERS  += mainwindow.h \
     methods/frfalgorithm.h \
     methods/frffunction.h \
     methods/gxyfunction.h \
+    methods/weighting.h \
     methods/windowingalgorithm.h \
     plot/imagerenderdialog.h \
     plot/trackingcursor.h \

@@ -15,11 +15,6 @@ int scalingTypeFromDescription(const QString &description);
 QString scalingDescriptionFromUffType(int type);
 int normalizationTypeFromDescription(const QString &description);
 QString normalizationDescriptionFromUffType(int type);
-int unitTypeFromName(QString s);
-QString unitNameFromUffType(int type);
-QString unitDescriptionFromUffType(int type);
-double logrefFromUffUnit(int type);
-
 
 class FunctionHeader
 {

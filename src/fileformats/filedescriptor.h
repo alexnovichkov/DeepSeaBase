@@ -71,8 +71,6 @@ typedef QList<DescriptionEntry> DescriptionList;
 
 //QString descriptionEntryToString(const DescriptionEntry &entry);
 
-double threshold(const QString &name);
-double convertFactor(const QString &from);
 QString stringify(const QVector<int> &vec);
 
 //QString valuesUnit(const QString &old, int unitType);

@@ -2,6 +2,7 @@
 #include "app.h"
 #include "fileformats/dfdfiledescriptor.h"
 #include <QtWidgets>
+#include "unitsconverter.h"
 
 class EsoFile
 {
@@ -276,16 +277,16 @@ bool EsoConvertor::convert()
 
             switch (col) {
                 case 0:
-                    newCh->data()->setThreshold(threshold("pa"));
+                    newCh->data()->setThreshold(PhysicalUnits::Units::logref("pa"));
                     newCh->data()->setYValues(esoFile.esou, DataHolder::YValuesAmplitudesInDB); break;
                 case 1:
-                    newCh->data()->setThreshold(threshold("pa"));
+                    newCh->data()->setThreshold(PhysicalUnits::Units::logref("pa"));
                     newCh->data()->setYValues(esoFile.mzph, DataHolder::YValuesAmplitudesInDB); break;
                 case 2:
-                    newCh->data()->setThreshold(threshold("m"));
+                    newCh->data()->setThreshold(PhysicalUnits::Units::logref("m"));
                     newCh->data()->setYValues(esoFile.esot, DataHolder::YValuesReals); break;
                 case 3:
-                    newCh->data()->setThreshold(threshold("m"));
+                    newCh->data()->setThreshold(PhysicalUnits::Units::logref("m"));
                     newCh->data()->setYValues(esoFile.maxt, DataHolder::YValuesReals); break;
                 case 4:
                     newCh->data()->setThreshold(0.0);
