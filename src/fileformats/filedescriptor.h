@@ -49,104 +49,14 @@ struct DataDescription
 {
     QVariantMap data;
 
-    void put(const QString &key, const QVariant &value) {
-        data.insert(key, value);
-    }
-    QVariant get(const QString &key) const
-    {
-        return data.value(key);
-    }
-    QJsonObject toJson() const {
-        QJsonObject result;
-        for (auto i = data.constBegin(); i != data.constEnd(); ++i) {
-            if (i.key().contains('.')) {
-                QString key = i.key().section('.',0,0);
-                auto r = result.value(key).toObject();
-                if (key == "dateTime")
-                    r.insert(i.key().section('.',1), QJsonValue(i.value().toDateTime().toString("dd.MM.yyyy hh:mm:ss")));
-                else
-                    r.insert(i.key().section('.',1), QJsonValue::fromVariant(i.value()));
-                result.insert(key, r);
-            }
-            else {
-                if (i.key() == "dateTime" || i.key() == "fileCreationTime")
-                    result.insert(i.key(), QJsonValue(i.value().toDateTime().toString("dd.MM.yyyy hh:mm:ss")));
-                else
-                    result.insert(i.key(), QJsonValue::fromVariant(i.value()));
-            }
-        }
-        return result;
-    }
-    static DataDescription fromJson(const QJsonObject &o) {
-        DataDescription result;
-        for (auto i = o.constBegin(); i!=o.constEnd(); ++i) {
-            QString key = i.key();
-            QJsonValue val = i.value();
-            //qDebug()<<key<<val;
-            if (val.isArray()) {
-                //qDebug()<<"Array found at"<<key;
-                continue;
-            }
-            else if (val.isObject()) {
-                QJsonObject v = val.toObject();
-                for (auto j = v.constBegin(); j!=v.constEnd(); ++j) {
-                    if (j->isArray()) {
-                        //qDebug()<<"Array found at"<<j.key();
-                        continue;
-                    }
-                    else if (j->isObject()) {
-                        //qDebug()<<"Object found at"<<j.key();
-                        continue;
-                    }
-                    QString key1 = key+"."+j.key();
-                    QVariant v = j->toVariant();
-                    //дата-время требуют специальной обработки
-                    if (j.key() == "dateTime")
-                        result.data.insert(key1, dateTimeFromString(v.toString()));
-                    else
-                        result.put(key1, v);
-                }
-            }
-            else {
-                QVariant v = val.toVariant();
-                //дата-время требуют специальной обработки
-                if (key == "dateTime" || key=="fileCreationTime")
-                    result.data.insert(key, dateTimeFromString(v.toString()));
-                else
-                    result.put(key, v);
-            }
-        }
-        return result;
-    }
+    void put(const QString &key, const QVariant &value);
+    QVariant get(const QString &key) const;
+    QJsonObject toJson() const;
+    static DataDescription fromJson(const QJsonObject &o);
 
-    QStringList twoStringDescription() const
-    {
-        QStringList result = toStringList("description");
-        result = result.mid(0,2);
-        return result;
-    }
-    QStringList toStringList(const QString &filter = QString()) const
-    {
-        QStringList result;
-        for (auto [key, val] : asKeyValueRange(data)) {
-            if (filter.isEmpty())
-                result << key+"="+val.toString();
-            else if (key.startsWith(filter+"."))
-                result << key.mid(filter.length()+1)+"="+val.toString();
-        }
-        return result;
-    }
-    QVariantMap filter(const QString &filter = QString()) const
-    {
-        if (filter.isEmpty()) return data;
-
-        QVariantMap result;
-        for (auto [key, val] : asKeyValueRange(data)) {
-            if (key.startsWith(filter+".")) result.insert(key.mid(filter.length()+1), val);
-        }
-
-        return result;
-    }
+    QStringList twoStringDescription() const;
+    QStringList toStringList(const QString &filter = QString()) const;
+    QVariantMap filter(const QString &filter = QString()) const;
 };
 
 QDataStream &operator>>(QDataStream& stream, DataDescription& header);

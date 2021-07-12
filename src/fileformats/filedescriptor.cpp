@@ -787,3 +787,107 @@ QDataStream &operator<<(QDataStream &stream, const DataDescription &data)
     stream << data.data;
     return stream;
 }
+
+void DataDescription::put(const QString &key, const QVariant &value) {
+    data.insert(key, value);
+}
+
+QVariant DataDescription::get(const QString &key) const
+{
+    return data.value(key);
+}
+
+QJsonObject DataDescription::toJson() const {
+    QJsonObject result;
+    for (auto i = data.constBegin(); i != data.constEnd(); ++i) {
+        if (i.key().contains('.')) {
+            QString key = i.key().section('.',0,0);
+            auto r = result.value(key).toObject();
+            if (key == "dateTime" || i.key() == "fileCreationTime")
+                r.insert(i.key().section('.',1), QJsonValue(i.value().toDateTime().toString("dd.MM.yyyy hh:mm:ss")));
+            else
+                r.insert(i.key().section('.',1), QJsonValue::fromVariant(i.value()));
+            result.insert(key, r);
+        }
+        else {
+            if (i.key() == "dateTime" || i.key() == "fileCreationTime")
+                result.insert(i.key(), QJsonValue(i.value().toDateTime().toString("dd.MM.yyyy hh:mm:ss")));
+            else
+                result.insert(i.key(), QJsonValue::fromVariant(i.value()));
+        }
+    }
+    return result;
+}
+
+DataDescription DataDescription::fromJson(const QJsonObject &o) {
+    DataDescription result;
+    for (auto i = o.constBegin(); i!=o.constEnd(); ++i) {
+        QString key = i.key();
+        QJsonValue val = i.value();
+        //qDebug()<<key<<val;
+        if (val.isArray()) {
+            //qDebug()<<"Array found at"<<key;
+            continue;
+        }
+        else if (val.isObject()) {
+            QJsonObject v = val.toObject();
+            for (auto j = v.constBegin(); j!=v.constEnd(); ++j) {
+                if (j->isArray()) {
+                    //qDebug()<<"Array found at"<<j.key();
+                    continue;
+                }
+                else if (j->isObject()) {
+                    //qDebug()<<"Object found at"<<j.key();
+                    continue;
+                }
+                QString key1 = key+"."+j.key();
+                QVariant v = j->toVariant();
+                //дата-время требуют специальной обработки
+                if (j.key().contains("dateTime") || j.key() == "fileCreationTime")
+                    result.data.insert(key1, dateTimeFromString(v.toString()));
+                else
+                    result.put(key1, v);
+            }
+        }
+        else {
+            QVariant v = val.toVariant();
+            //дата-время требуют специальной обработки
+            if (key.contains("dateTime") || key=="fileCreationTime")
+                result.data.insert(key, dateTimeFromString(v.toString()));
+            else
+                result.put(key, v);
+        }
+    }
+    return result;
+}
+
+QStringList DataDescription::twoStringDescription() const
+{
+    QStringList result = toStringList("description");
+    result = result.mid(0,2);
+    return result;
+}
+
+QStringList DataDescription::toStringList(const QString &filter) const
+{
+    QStringList result;
+    for (auto [key, val] : asKeyValueRange(data)) {
+        if (filter.isEmpty())
+            result << key+"="+val.toString();
+        else if (key.startsWith(filter+"."))
+            result << key.mid(filter.length()+1)+"="+val.toString();
+    }
+    return result;
+}
+
+QVariantMap DataDescription::filter(const QString &filter) const
+{
+    if (filter.isEmpty()) return data;
+
+    QVariantMap result;
+    for (auto [key, val] : asKeyValueRange(data)) {
+        if (key.startsWith(filter+".")) result.insert(key.mid(filter.length()+1), val);
+    }
+
+    return result;
+}

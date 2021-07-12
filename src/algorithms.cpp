@@ -582,7 +582,11 @@ int weightingType(const QString &weighting)
 QDateTime dateTimeFromString(QString s)
 {
     s = s.trimmed();
-    QDateTime dt = QDateTime::fromString(s, "dd.MM.yyyy hh:mm:ss");
+
+    QDateTime dt;
+    if (s.isEmpty()) return dt;
+    dt = QDateTime::fromString(s, Qt::ISODateWithMs);
+    if (!dt.isValid()) dt = QDateTime::fromString(s, "dd.MM.yyyy hh:mm:ss");
     if (!dt.isValid()) dt = QDateTime::fromString(s, "dd.MM.yyyy hh:mm");
     if (!dt.isValid()) dt = QDateTime::fromString(s, "dd.MM.yy hh:mm:ss");
     if (!dt.isValid()) dt = QDateTime::fromString(s, "dd-MMM-yy hh:mm:ss");
