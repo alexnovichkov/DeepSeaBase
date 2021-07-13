@@ -14,18 +14,11 @@ class QTabWidget;
 class QTreeWidgetItem;
 class QTableWidget;
 
-struct DescriptorProperty
-{
-    QCheckBox *checked;
-    QComboBox *property;
-    QLineEdit *edit;
-};
-
 class DescriptorPropertiesDialog : public QDialog
 {
     Q_OBJECT
 public:
-    DescriptorPropertiesDialog(const QList<FileDescriptor *> &records, QWidget *parent);
+    DescriptorPropertiesDialog(const QList<FileDescriptor *> &records, QWidget *parent=nullptr);
 private:
     void fillFiles();
     void prev();
@@ -38,7 +31,6 @@ private:
     void addProperty();
     void removeProperty();
     QList<FileDescriptor *> records;
-    QLabel *file;
     QTreeWidget *files;
     QTableWidget *descriptionsTable;
 

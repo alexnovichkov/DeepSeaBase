@@ -15,6 +15,7 @@ public:
     ChannelTableModel(QObject *parent);
     Channel *channel(int index);
     QVector<int> selected()  const {return indexes;}
+    QVector<Channel*> selectedChannels() const;
 
     void setYName(const QString &yName);
 

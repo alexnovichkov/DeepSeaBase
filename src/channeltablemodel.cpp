@@ -24,6 +24,16 @@ Channel *ChannelTableModel::channel(int index)
     return nullptr;
 }
 
+QVector<Channel *> ChannelTableModel::selectedChannels() const
+{
+    QVector<Channel *> result;
+    if (descriptor)
+        for (int i: indexes) {
+            result << descriptor->channel(i);
+        }
+    return result;
+}
+
 void ChannelTableModel::setYName(const QString &yName)
 {DD;
     for(int i: indexes) {

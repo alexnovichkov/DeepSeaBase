@@ -39,6 +39,7 @@
 
 #include "fileformats/formatfactory.h"
 #include "descriptorpropertiesdialog.h"
+#include "channelpropertiesdialog.h"
 
 class DfdFilterProxy : public QSortFilterProxyModel
 {
@@ -315,6 +316,10 @@ MainWindow::MainWindow(QWidget *parent)
     editDescriptionsAct->setIcon(QIcon(":/icons/descriptor.png"));
     connect(editDescriptionsAct, SIGNAL(triggered()), SLOT(editDescriptions()));
 
+    editChannelDescriptionsAct = new QAction("Редактировать описание каналов...", this);
+    editChannelDescriptionsAct->setIcon(QIcon(":/icons/descriptor.png"));
+    connect(editChannelDescriptionsAct, SIGNAL(triggered()), SLOT(editChannelDescriptions()));
+
     QMenu *addFolderMenu = new QMenu(this);
     addFolderMenu->addAction(addFolderWithSubfoldersAct);
     addFolderAct->setMenu(addFolderMenu);
@@ -350,6 +355,7 @@ MainWindow::MainWindow(QWidget *parent)
     mainToolBar->addAction(addCorrectionAct);
     mainToolBar->addAction(moveChannelsUpAct);
     mainToolBar->addAction(moveChannelsDownAct);
+    mainToolBar->addAction(editChannelDescriptionsAct);
 
     mainToolBar->addSeparator();
     mainToolBar->addWidget(new QLabel("  График:"));
@@ -1409,6 +1415,15 @@ void MainWindow::editDescriptions()
     dialog.exec();
 }
 
+void MainWindow::editChannelDescriptions()
+{
+    QVector<Channel *> selectedChannels = tab->channelModel->selectedChannels();
+    if (selectedChannels.isEmpty()) return;
+
+    ChannelPropertiesDialog dialog(selectedChannels, this);
+    dialog.exec();
+}
+
 void MainWindow::save()
 {DD;
     for (int i=0; i<tabWidget->count(); ++i) {
@@ -2176,6 +2191,7 @@ void MainWindow::updateActions()
     plotAllChannelsAct->setDisabled(selectedFilesCount==0);
     plotAllChannelsOnRightAct->setDisabled(selectedFilesCount==0);
     plotSelectedChannelsAct->setDisabled(selectedChannelsCount==0);
+    editChannelDescriptionsAct->setDisabled(selectedChannelsCount==0);
     //exportChannelsToWavAct;
     calculateSpectreAct->setDisabled(tab->model->selectedFiles({Descriptor::TimeResponse}).isEmpty());
     const QVector<Descriptor::DataType> types {Descriptor::AutoSpectrum,

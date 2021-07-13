@@ -39,6 +39,7 @@ qtHaveModule(winextras) {
 
 SOURCES += main.cpp\
     app.cpp \
+    channelpropertiesdialog.cpp \
     channelsmimedata.cpp \
     channelstable.cpp \
     converters/tdmsconverter.cpp \
@@ -129,6 +130,7 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h \
     app.h \
+    channelpropertiesdialog.h \
     channelsmimedata.h \
     channelstable.h \
     converters/tdmsconverter.h \

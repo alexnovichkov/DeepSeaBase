@@ -177,6 +177,7 @@ private slots:
     void moveChannelsUp();
     void moveChannelsDown();
     void editDescriptions();
+    void editChannelDescriptions();
 
     void save();
 
@@ -273,6 +274,7 @@ private:
     QAction *moveChannelsUpAct;
     QAction *moveChannelsDownAct;
     QAction *editDescriptionsAct;
+    QAction *editChannelDescriptionsAct;
 
     QToolBar *mainToolBar;
 
