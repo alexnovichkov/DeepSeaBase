@@ -14,6 +14,23 @@ class QTabWidget;
 class QTreeWidgetItem;
 class QTableWidget;
 
+struct CurrentEdited {
+    int index = -1;
+    QString value;
+};
+
+struct ChannelProperty
+{
+    QString displayName;
+    QString name;
+    QLineEdit* edit = nullptr;
+};
+struct DataProperty
+{
+    QString displayName;
+    QLabel* label = nullptr;
+};
+
 class ChannelPropertiesDialog : public QDialog
 {
     Q_OBJECT
@@ -27,15 +44,24 @@ private:
 //    void applyToAll();
     void updateState();
     void currentChannelChanged(QTreeWidgetItem *cur, QTreeWidgetItem *previous);
+    void selectedChannelsChanged();
     void cellChanged(int row, int column);
     void addProperty();
     void removeProperty();
+    QList<Channel *> selectedChannels();
     QVector<Channel *> channels;
+
     QLabel *file;
     QTreeWidget *channelsTable;
     QTableWidget *descriptionsTable;
 
+    QVector<ChannelProperty> channelProperties;
+    QVector<DataProperty> dataProperties;
+
     int current=0;
+    //int currentEditedIndex = -1;
+//    QString currentValue;
+    CurrentEdited currentEdited;
 };
 
 #endif // CHANNELPROPERTIESDIALOG_H

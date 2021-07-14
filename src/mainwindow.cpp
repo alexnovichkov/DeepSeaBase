@@ -1422,6 +1422,8 @@ void MainWindow::editChannelDescriptions()
 
     ChannelPropertiesDialog dialog(selectedChannels, this);
     dialog.exec();
+    tab->channelModel->modelChanged();
+//    updateChannelsTable(tab->record);
 }
 
 void MainWindow::save()

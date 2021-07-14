@@ -1595,7 +1595,7 @@ void RawChannel::read(DfdSettings &dfd, int numChans, double xBegin, double xSte
 {DD;
     DfdChannel::read(dfd, numChans, xBegin, xStep);
     QString group = QString("Channel%1/").arg(channelIndex+1);
-//qDebug()<<parent->fileName();
+
     ADC0 = hextodouble( dfd.value(group+"ADC0")); //qDebug()<<"ADC0" << ADC0;
     ADCStep = hextodouble(dfd.value(group+"ADCStep")); //qDebug()<< "ADCStep"<< ADCStep;
     AmplShift = hextodouble(dfd.value(group+"AmplShift")); //qDebug()<<"AmplShift" <<AmplShift ;
@@ -1603,7 +1603,9 @@ void RawChannel::read(DfdSettings &dfd, int numChans, double xBegin, double xSte
     Sens0Shift = hextodouble(dfd.value(group+"Sens0Shift")); //qDebug()<< "Sens0Shift"<<Sens0Shift ;
     SensSensitivity = hextodouble(dfd.value(group+"SensSensitivity")); //qDebug()<< "SensSensitivity"<<SensSensitivity;
     BandWidth = hextofloat(dfd.value(group+"BandWidth")); //qDebug()<< "BandWidth"<< ch.bandwidth;
+    dataDescription().put("bandwidth", BandWidth);
     SensName = dfd.value(group+"SensName");
+    dataDescription().put("sensorName", SensName);
 
     coef1 = ADCStep / AmplLevel / SensSensitivity;
     coef2 = (ADC0 / AmplLevel - AmplShift - Sens0Shift) / SensSensitivity;
