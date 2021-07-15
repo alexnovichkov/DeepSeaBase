@@ -120,7 +120,10 @@ bool AveragingFunction::compute(FileDescriptor *file)
     int iter=1;
     while (1) {
         if (!m_input->compute(file)) {
-            if (iter==1) averaging.reset();
+            if (iter==1) {
+                qDebug() << "iter" << iter;
+                averaging.reset();
+            }
             return false;
         }
 
@@ -144,6 +147,7 @@ bool AveragingFunction::compute(FileDescriptor *file)
 
 void AveragingFunction::reset()
 {DD;
+    qDebug()<<"AveragingFunction::reset()";
     averaging.reset();
 }
 
@@ -154,7 +158,8 @@ DataDescription AveragingFunction::getFunctionDescription() const
 
     if (averaging.getAveragingType() != Averaging::NoAveraging) {
         result.put("function.averaging", Averaging::averagingDescriptionEng(averaging.getAveragingType()));
-        result.put("function.averagingCount", averaging.getAveragesMade());
+//        result.put("function.averagingCount", averaging.getAveragesMade());
+        result.put("function.averagingCount", averaging.averagesReallyMade);
     }
 
     return result;

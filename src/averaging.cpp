@@ -1,6 +1,7 @@
 #include "averaging.h"
 
 #include "fileformats/filedescriptor.h"
+#include "logging.h"
 
 Averaging::Averaging() :
     averagingType(Linear), maximumAverages(0)
@@ -95,9 +96,10 @@ QVector<cx_double> Averaging::getComplex()
 }
 
 void Averaging::reset()
-{
+{DDD;
     averaged.clear();
     averaged_.clear();
+    if (averagesMade > 0) averagesReallyMade = averagesMade;
     averagesMade = 0;
 }
 

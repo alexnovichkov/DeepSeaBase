@@ -59,6 +59,7 @@ public:
     void setMaximumAverages(int value);
 
     int getAveragesMade() const;
+    int averagesReallyMade = 0;
 
 private:
     void averageLinear(const QVector<cx_double> &input);
@@ -76,6 +77,7 @@ private:
     int averagingType;
     int maximumAverages;
     int averagesMade;
+
 
     double rho;
 };
