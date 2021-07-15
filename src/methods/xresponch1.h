@@ -22,7 +22,7 @@ public:
     virtual QString methodName();
     virtual int dataType();
     virtual Parameters parameters();
-    virtual Channel *addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i);
+//    virtual Channel *addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i);
 
 private:
     QSpinBox *baseChannelSpin;

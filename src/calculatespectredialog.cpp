@@ -31,19 +31,19 @@ CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> &dataBase
     channelsFilter = new QLineEdit(this);
     channelsFilter->setPlaceholderText("1, 3-6, 10-");
 
-    useDeepsea = new QCheckBox("Использовать DeepSea для расчета спектров", this);
-    connect(useDeepsea, &QCheckBox::clicked, [=](){
-        if (useDeepsea->isChecked()) {
-            QString s = QStandardPaths::findExecutable("DeepSea");
-            if (s.isEmpty()) infoLabel->appendPlainText("Не могу найти DeepSea.exe в стандартных путях.\n"
-                                                "Добавьте путь к DeepSea.exe в переменную PATH");
-        }
-        else infoLabel->clear();
-    });
+//    useDeepsea = new QCheckBox("Использовать DeepSea для расчета спектров", this);
+//    connect(useDeepsea, &QCheckBox::clicked, [=](){
+//        if (useDeepsea->isChecked()) {
+//            QString s = QStandardPaths::findExecutable("DeepSea");
+//            if (s.isEmpty()) infoLabel->appendPlainText("Не могу найти DeepSea.exe в стандартных путях.\n"
+//                                                "Добавьте путь к DeepSea.exe в переменную PATH");
+//        }
+//        else infoLabel->clear();
+//    });
 
     progress = new QProgressBar(this);
     int progressMax = 0;
-    foreach(FileDescriptor *dfd, dataBase) {
+    for (FileDescriptor *dfd: dataBase) {
         progressMax += dfd->channelsCount();
     }
     progress->setRange(0, progressMax);
@@ -62,8 +62,7 @@ CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> &dataBase
 
     shutdown = new QCheckBox("Выключить компьютер после завершения обработки", this);
 
-    buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok |
-                                                       QDialogButtonBox::Cancel);
+    buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(start()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(stop()));
 
@@ -79,7 +78,7 @@ CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> &dataBase
 
     l->addWidget(methodsStack,2,1,1,2);
     l->addWidget(progress,3,0,1,3);
-    l->addWidget(useDeepsea,4,0,1,3);
+//    l->addWidget(useDeepsea,4,0,1,3);
     l->addWidget(shutdown,5,0,1,3);
     l->addWidget(buttonBox, 6,0,1,3);
 
@@ -107,13 +106,21 @@ void CalculateSpectreDialog::methodChanged(int method)
 
 void CalculateSpectreDialog::start()
 {DD;
+//    QString s = QStandardPaths::findExecutable("DeepSea");
+//    if (s.isEmpty()) {
+//        infoLabel->appendPlainText("Не могу найти DeepSea.exe в стандартных путях.\n"
+//                                   "Добавьте путь к DeepSea.exe в переменную PATH");
+//        return;
+//    }
+
     newFiles.clear();
 
     buttonBox->buttons().constFirst()->setDisabled(true);
 
     Parameters p = currentMethod->parameters();
     p.method = currentMethod;
-    p.useDeepSea = useDeepsea->isChecked();
+//    p.useDeepSea = useDeepsea->isChecked();
+    p.useDeepSea = true;
     p.channelFilter = channelsFilter->text();
 
     if (!thread) thread = new QThread;

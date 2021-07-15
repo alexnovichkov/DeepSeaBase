@@ -12,8 +12,6 @@
 SpectreMethod::SpectreMethod(QList<FileDescriptor *> &dataBase, QWidget *parent) :
     QWidget(parent), AbstractMethod(dataBase)
 {
-    saveAsComplexCheckBox = new QCheckBox("Сохранять комплексные значения", this);
-
     resolutionCombo = new QComboBox(this);
     resolutionCombo->setEditable(false);
 
@@ -47,13 +45,13 @@ SpectreMethod::SpectreMethod(QList<FileDescriptor *> &dataBase, QWidget *parent)
     windowParameter->setEnabled(false);
 
     windowCombo = new QComboBox(this);
-//    for (Windowing:: int i=0; i<Windowing::WindowCount; ++i)
-//        windowCombo->addItem(Windowing::windowDescription(i));
-//    windowCombo->setCurrentIndex(2);
+    for (int i=0; i<6; ++i) //только 6 типов окон поддержвивается в Deepsea
+        windowCombo->addItem(Windowing::windowDescription(static_cast<Windowing::WindowType>(i)));
+    windowCombo->setCurrentIndex(2);
     windowCombo->setEditable(false);
-//    connect(windowCombo, QOverload<int>::of(&QComboBox::activated), [=](int index){
-//        windowParameter->setEnabled(Windowing::windowAcceptsParameter(index));
-//    });
+    connect(windowCombo, QOverload<int>::of(&QComboBox::activated), [=](int index){
+        windowParameter->setEnabled(Windowing::windowAcceptsParameter(static_cast<Windowing::WindowType>(index)));
+    });
 
 
 
@@ -84,7 +82,7 @@ SpectreMethod::SpectreMethod(QList<FileDescriptor *> &dataBase, QWidget *parent)
     typeCombo->addItem("плотности мощн.");
     typeCombo->addItem("спектр СКЗ");
     typeCombo->setCurrentIndex(0);
-    typeCombo->setEnabled(false);
+//    typeCombo->setEnabled(false);
     typeCombo->setEditable(false);
 
     scaleCombo = new QComboBox(this);
@@ -115,7 +113,6 @@ SpectreMethod::SpectreMethod(QList<FileDescriptor *> &dataBase, QWidget *parent)
     l->addRow("Тип спектра", typeCombo);
     l->addRow("Шкала", scaleCombo);
     l->addRow("Доп. обработка", addProcCombo);
-    l->addRow(saveAsComplexCheckBox);
     setLayout(l);
 }
 
@@ -174,7 +171,7 @@ Parameters SpectreMethod::parameters()
     p.overlap = 1.0 * overlap->value() / 100;
     p.bandWidth = bandWidth;
     p.initialBandStripNumber = activeStripCombo->currentIndex();
-    p.saveAsComplex = saveAsComplexCheckBox->isChecked();
+    p.saveAsComplex = false;
 
     return p;
 }
@@ -230,7 +227,7 @@ void SpectreMethod::updateResolution(int bandStrip)
 }
 
 
-DfdFileDescriptor *SpectreMethod::createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
+/*DfdFileDescriptor *SpectreMethod::createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
 {DD;
     DfdFileDescriptor *newDfd = AbstractMethod::createNewDfdFile(fileName, dfd, p);
 
@@ -241,22 +238,22 @@ DfdFileDescriptor *SpectreMethod::createNewDfdFile(const QString &fileName, File
 //    newDfd->XBegin = 0.0;
 
     return newDfd;
-}
+}*/
 
-UffFileDescriptor *SpectreMethod::createNewUffFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
-{DD;
-    UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
+//UffFileDescriptor *SpectreMethod::createNewUffFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
+//{DD;
+//    UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
 
-    newUff->setDataDescription(dfd->dataDescription());
-    newUff->updateDateTimeGUID();
+//    newUff->setDataDescription(dfd->dataDescription());
+//    newUff->updateDateTimeGUID();
 
-    const double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
-    newUff->setXStep(newSampleRate / p.bufferSize);
+//    const double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
+//    newUff->setXStep(newSampleRate / p.bufferSize);
 
-    return newUff;
-}
+//    return newUff;
+//}
 
-Channel *SpectreMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
+/*Channel *SpectreMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
 {DD;
     DataDescription descr;
     DataHolder *d = new DataHolder();
@@ -274,9 +271,9 @@ Channel *SpectreMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescript
     newDfd->addChannelWithData(d, descr);
 
     return newDfd->channel(newDfd->channelsCount()-1);
-}
+}*/
 
-Channel *SpectreMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
+/*Channel *SpectreMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
 {DD;
     Function *ch = new Function(newUff);
 //    ch->setName(dfd->channel(i)->name());
@@ -315,4 +312,4 @@ Channel *SpectreMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor 
 
 //    ch->data()->setXValues(0, XStep, spectrumSize);
     return ch;
-}
+}*/

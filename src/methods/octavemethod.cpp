@@ -129,7 +129,7 @@ DescriptionList OctaveMethod::processData(const Parameters &p)
 
 
 
-DfdFileDescriptor *OctaveMethod::createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
+/*DfdFileDescriptor *OctaveMethod::createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
 {DD;
     DfdFileDescriptor *newDfd = AbstractMethod::createNewDfdFile(fileName, dfd, p);
 
@@ -139,22 +139,22 @@ DfdFileDescriptor *OctaveMethod::createNewDfdFile(const QString &fileName, FileD
 //    newDfd->XBegin = 0.0;
 
     return newDfd;
-}
+}*/
 
-UffFileDescriptor *OctaveMethod::createNewUffFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
-{
-    Q_UNUSED(p);
-    UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
+//UffFileDescriptor *OctaveMethod::createNewUffFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
+//{
+//    Q_UNUSED(p);
+//    UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
 
-    newUff->setDataDescription(dfd->dataDescription());
-    newUff->updateDateTimeGUID();
+//    newUff->setDataDescription(dfd->dataDescription());
+//    newUff->updateDateTimeGUID();
 
-    newUff->setXStep(0.0);
+//    newUff->setXStep(0.0);
 
-    return newUff;
-}
+//    return newUff;
+//}
 
-Channel *OctaveMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
+/*Channel *OctaveMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
 {
     Q_UNUSED(p);
     DfdChannel *ch = new DfdChannel(newDfd, newDfd->channelsCount());
@@ -174,12 +174,12 @@ Channel *OctaveMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescripto
 //    ch->YNameOld = dfd->channel(i)->yName();
 
     return ch;
-}
+}*/
 
-Channel *OctaveMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
+/*Channel *OctaveMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
 {
     Function *ch = new Function(newUff);
-//    ch->setName(dfd->channel(i)->name()/*+"/Сила"*/);
+//    ch->setName(dfd->channel(i)->name()+"/Сила");
 //    ch->setPopulated(true);
 
 //    //FunctionHeader header;
@@ -215,4 +215,4 @@ Channel *OctaveMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *
 
 
     return ch;
-}
+}*/

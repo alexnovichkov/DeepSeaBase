@@ -84,87 +84,68 @@ void Converter::start()
     tempDir.setAutoRemove(true);
     tempFolderName = tempDir.path();
 
-    // Проверяем размер блока файлов и насильно конвертируем файлы с помощью DeepSea,
-    // если размер блока равен 1
-    bool blockSizeIs1 = false;
     bool someFilesAreUff = false;
-    foreach (FileDescriptor *file, dataBase) {
+    for (FileDescriptor *file: dataBase) {
         DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(file);
-        if (dfd && dfd->BlockSize==1) {
-            blockSizeIs1 = true;
+        if (!dfd) {
+            someFilesAreUff = true;
+            break;
         }
-        UffFileDescriptor *uff = dynamic_cast<UffFileDescriptor *>(file);
-        if (uff) someFilesAreUff = true;
     }
-    if (blockSizeIs1) {
-        p.useDeepSea = true;
-        emit message("Размер блока в одном из файлов равен 1. Это затрудняет"
-                     " чтение данных, поэтому для расчета будет использован DeepSea.");
-    }
-    if (p.saveAsComplex && p.useDeepSea) {
-        emit message("DeepSea не умеет сохранять комплексные результаты. Уберите одну из галок.");
+
+    if (p.saveAsComplex) {
+        emit message("DeepSea не умеет сохранять комплексные результаты.");
         return;
     }
     if (someFilesAreUff) {
-        emit message("Один из файлов имеет тип Uff. Использование DeepSea для расчетов будет блокировано.");
-        p.useDeepSea = false;
+        emit message("Не все файлы имеют формат DFD.");
+        return;
     }
 
-    if (!p.useDeepSea) {
-        p.baseChannel--;
-        foreach (FileDescriptor *file, dataBase) {
-            emit message(QString("Подождите, пока идет расчет для файла\n%1").arg(file->fileName()));
-            if (!convert(file, tempFolderName)) {
-                emit message("Не удалось сконвертировать файл " + file->fileName());
-            }
-        }
+    emit message("Подождите, пока работает DeepSea...\n"
+                 "Не забудьте закрыть DeepSea, когда она закончит расчеты");
+    QStringList spfFile = getSpfFile(tempFolderName);
+    QTemporaryFile file("spffile_XXXXXX.spf");
+    file.setAutoRemove(false);
+    if (file.open()) {
+        QTextStream out(&file);
+        out.setCodec("Windows-1251");
+        foreach (QString s, spfFile) out << s << endl;
+        file.close();
     }
-    else {
-        emit message("Подождите, пока работает DeepSea...\n"
-                           "Не забудьте закрыть DeepSea, когда она закончит расчеты");
-        QStringList spfFile = getSpfFile(tempFolderName);
-        QTemporaryFile file("spffile_XXXXXX.spf");
-        file.setAutoRemove(false);
-        if (file.open()) {
-            QTextStream out(&file);
-            out.setCodec("Windows-1251");
-            foreach (QString s, spfFile) out << s << endl;
-            file.close();
-        }
-        else return;
+    else return;
 
-        QFileSystemWatcher watcher(QStringList()<<tempFolderName,this);
-        connect(&watcher, SIGNAL(directoryChanged(QString)), SIGNAL(tick(QString)));
+    QFileSystemWatcher watcher(QStringList()<<tempFolderName,this);
+    connect(&watcher, SIGNAL(directoryChanged(QString)), SIGNAL(tick(QString)));
 
-        if (!process) {
-            process = new QProcess(this);
-            process->disconnect();
-            process->setProcessChannelMode(QProcess::MergedChannels);
-            process->setReadChannel(QProcess::StandardOutput);
-        }
+    if (!process) {
+        process = new QProcess(this);
+        process->disconnect();
+        process->setProcessChannelMode(QProcess::MergedChannels);
+        process->setReadChannel(QProcess::StandardOutput);
+    }
 
-        QStringList arguments;
-        arguments << file.fileName() << "-E" << "-S";
+    QStringList arguments;
+    arguments << file.fileName() << "-E" << "-S";
 
-        QEventLoop q;
-        connect(process,SIGNAL(finished(int)),&q,SLOT(quit()));
-        connect(process,SIGNAL(error(QProcess::ProcessError)),&q,SLOT(quit()));
+    QEventLoop q;
+    connect(process,SIGNAL(finished(int)),&q,SLOT(quit()));
+    connect(process,SIGNAL(error(QProcess::ProcessError)),&q,SLOT(quit()));
 
-        process->start("DeepSea",arguments);
+    process->start("C://Program Files (x86)//DeepSea//DeepSea.exe",arguments);
 
-        QTimer *timer = new QTimer(this);
-        timer->setInterval(1000);
-        connect(timer, SIGNAL(timeout()), this, SLOT(processTimer()));
-        timer->start();
+    QTimer *timer = new QTimer(this);
+    timer->setInterval(1000);
+    connect(timer, SIGNAL(timeout()), this, SLOT(processTimer()));
+    timer->start();
 
-        q.exec();
-        timer->stop();
+    q.exec();
+    timer->stop();
 
 
-        const int code = process->exitCode();
-        if (code != 0) {
-            emit message("DeepSea завершился с ошибкой!");
-        }
+    const int code = process->exitCode();
+    if (code != 0) {
+        emit message("DeepSea завершился с ошибкой!");
     }
 
     finalize();
@@ -181,12 +162,12 @@ void Converter::finalize()
     newFilesList.append(QDir(tempFolderName).entryInfoList(QStringList()<<"*.uff",QDir::Files));
 
 
-    Q_FOREACH(const QFileInfo &newFile, newFilesList) {
+    for (const QFileInfo &newFile: newFilesList) {
         if (newFile.birthTime()>dt || newFile.lastModified()>dt)
             newFiles_ << newFile.canonicalFilePath();
     }
 
-    foreach (FileDescriptor *file, dataBase) {
+    for (FileDescriptor *file: dataBase) {
         moveFilesFromTempDir(tempFolderName, file->fileName());
     }
 
@@ -238,77 +219,58 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
         QFile::rename(dfd.rawFileName, rawFileName);
         newFiles << dfdFileName;
     }
-    if (filtered.constFirst().endsWith("uff")) {
-        UffFileDescriptor dfd(filtered.constFirst());
-        dfd.read();
-        int suffixN = dfd.samplesCount() * dfd.xStep();
-        QString suffix = QString::number(suffixN);
-
-        if (suffixN==0) {//третьоктава или файл с неодинаковым шагом по абсциссе
-            if (dfd.channelsCount()>0) {
-                dfd.channel(0)->populate();
-                suffixN = dfd.channels.constFirst()->data()->xMax();
-                suffix = QString::number(suffixN);
-            }
-        }
-
-        QString uffFileName = createUniqueFileName(destDir, baseFileName, suffix, "uff");
-        QFile::rename(filtered.constFirst(), uffFileName);
-        newFiles << uffFileName;
-    }
     newFiles_.removeAll(filtered.constFirst());
 }
 
-QVector<float> getBlock(const QVector<double> &values, const int blockSize, const int stepBack, int &block)
-{
-    int realLength = blockSize;
-    if (block+blockSize > values.length())
-        realLength = values.length() - block;
-    if (realLength <=0) return QVector<float>();
-    QVector<float> output(realLength);
-    if (block < values.size()) {
-        std::copy(values.cbegin()+block, values.cbegin()+block+realLength, output.begin());
-//        output = values.mid(block, blockSize);
-        block += blockSize - stepBack;
-    }
-    return output;
-}
+//QVector<float> getBlock(const QVector<double> &values, const int blockSize, const int stepBack, int &block)
+//{
+//    int realLength = blockSize;
+//    if (block+blockSize > values.length())
+//        realLength = values.length() - block;
+//    if (realLength <=0) return QVector<float>();
+//    QVector<float> output(realLength);
+//    if (block < values.size()) {
+//        std::copy(values.cbegin()+block, values.cbegin()+block+realLength, output.begin());
+//        block += blockSize - stepBack;
+//    }
+//    return output;
+//}
 
 /// Эта функция не используется, но содержит полезный алгоритм для определения положения каждого отсчета
 /// файла для заданного номера канала, размера блока отсчетов, номера отсчета с нуля и величины перекрытия
-QVector<float> getBlock(uchar *mapped, quint64 mappedSize,
-                        int channel, int chanBlockSize, int channelsCount,
-                        int blockSize, int stepBack, int &block)
-{
-    QVector<float> output;
-    /*
-     * i-й отсчет n-го канала имеет номер
-     * n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
-     */
+//QVector<float> getBlock(uchar *mapped, quint64 mappedSize,
+//                        int channel, int chanBlockSize, int channelsCount,
+//                        int blockSize, int stepBack, int &block)
+//{
+//    QVector<float> output;
+//    /*
+//     * i-й отсчет n-го канала имеет номер
+//     * n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
+//     */
 
-    if (block < int(mappedSize/sizeof(float))) {
-        int realBlockSize = qMin(blockSize, int(mappedSize/sizeof(float) - block));
-        output.resize(realBlockSize);
-        for (int i = 0; i<realBlockSize; ++i) {
-            int blocki = block+i;
-            qint64 sampleNumber = channel*chanBlockSize + int(blocki/chanBlockSize)*chanBlockSize*channelsCount
-                                  +(blocki % chanBlockSize);
-            output[i] = (float)(*(mapped+sampleNumber*sizeof(float)));
-        }
-        block += realBlockSize - stepBack;
-    }
-    return output;
-}
+//    if (block < int(mappedSize/sizeof(float))) {
+//        int realBlockSize = qMin(blockSize, int(mappedSize/sizeof(float) - block));
+//        output.resize(realBlockSize);
+//        for (int i = 0; i<realBlockSize; ++i) {
+//            int blocki = block+i;
+//            qint64 sampleNumber = channel*chanBlockSize + int(blocki/chanBlockSize)*chanBlockSize*channelsCount
+//                                  +(blocki % chanBlockSize);
+//            output[i] = (float)(*(mapped+sampleNumber*sizeof(float)));
+//        }
+//        block += realBlockSize - stepBack;
+//    }
+//    return output;
+//}
 
 
-void changeScale(QVector<double> &output, const Parameters &p)
-{DD;
-    if (p.scaleType > 0) {
-        const double t2 = p.threshold * p.threshold;
-        for (double & i: output)
-            i = 10 * log10(i / t2);
-    }
-}
+//void changeScale(QVector<double> &output, const Parameters &p)
+//{DD;
+//    if (p.scaleType > 0) {
+//        const double t2 = p.threshold * p.threshold;
+//        for (double & i: output)
+//            i = 10 * log10(i / t2);
+//    }
+//}
 
 int stripNumberForBandwidth(double bandwidth, Parameters &p)
 {DD;
@@ -320,7 +282,7 @@ int stripNumberForBandwidth(double bandwidth, Parameters &p)
     return result;
 }
 
-bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
+/*bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
 {DD;
     if (QThread::currentThread()->isInterruptionRequested()) {
         finalize();
@@ -348,7 +310,7 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
 
 //    qDebug()<<p;
 
-    /** 1. Создаем конечный файл и копируем в него всю информацию из dfd */
+    // 1. Создаем конечный файл и копируем в него всю информацию из dfd
     QString method = p.method->methodDll();
     method.chop(4);
     QString fileName = createUniqueFileName(tempFolderName, file->fileName(), method,
@@ -580,92 +542,92 @@ bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
         delete newUff;
     }
     return true;
-}
+}*/
 
 // возвращает спектр
-QVector<cx_double> spectreFunction(const QVector<double> &values, int outputSize)
-{DD;
-    QVector<cx_double> complexSpectre = Fft::compute(values);
-    const int Nvl = complexSpectre.size();
-    const double factor = 2.0 / Nvl / Nvl;
+//QVector<cx_double> spectreFunction(const QVector<double> &values, int outputSize)
+//{DD;
+//    QVector<cx_double> complexSpectre = Fft::compute(values);
+//    const int Nvl = complexSpectre.size();
+//    const double factor = 2.0 / Nvl / Nvl;
 
-    complexSpectre.resize(outputSize);
-    for (int i = 0; i < outputSize; i++) {
-        complexSpectre[i] *= factor;
-    }
-    return complexSpectre;
-}
+//    complexSpectre.resize(outputSize);
+//    for (int i = 0; i < outputSize; i++) {
+//        complexSpectre[i] *= factor;
+//    }
+//    return complexSpectre;
+//}
 
 // возвращает спектр мощности 2*|complexSpectre|^2/N^2
-QVector<double> powerSpectre(const QVector<double> &values, int N)
-{DD;
-    QVector<cx_double> complexSpectre = Fft::compute(values);
+//QVector<double> powerSpectre(const QVector<double> &values, int N)
+//{DD;
+//    QVector<cx_double> complexSpectre = Fft::compute(values);
 
-    const int Nvl = complexSpectre.size();
-    const double factor = 2.0 / Nvl / Nvl;
+//    const int Nvl = complexSpectre.size();
+//    const double factor = 2.0 / Nvl / Nvl;
 
-    QVector<double> output(N);
+//    QVector<double> output(N);
 
-    for (int i = 0; i < N; i++) {
-        output[i] = factor * std::norm(complexSpectre[i]);
-    }
+//    for (int i = 0; i < N; i++) {
+//        output[i] = factor * std::norm(complexSpectre[i]);
+//    }
 
-    return output;
-}
+//    return output;
+//}
 
 // возвращает взаимный спектр мощности Y * Z (комплексный)
-QVector<cx_double> covariantSpectre(const QVector<double> &baseValues, const QVector<double> &values, int outputSize)
-{
-    QVector<cx_double> output(outputSize);
+//QVector<cx_double> covariantSpectre(const QVector<double> &baseValues, const QVector<double> &values, int outputSize)
+//{
+//    QVector<cx_double> output(outputSize);
 
-    QVector<cx_double> complexSpectre1 = Fft::compute(baseValues);
-    QVector<cx_double> complexSpectre2 = Fft::compute(values);
+//    QVector<cx_double> complexSpectre1 = Fft::compute(baseValues);
+//    QVector<cx_double> complexSpectre2 = Fft::compute(values);
 
-    for (int i = 0; i < outputSize; i++) {
-        output[i] = std::conj(complexSpectre1[i]) * complexSpectre2[i];
-    }
+//    for (int i = 0; i < outputSize; i++) {
+//        output[i] = std::conj(complexSpectre1[i]) * complexSpectre2[i];
+//    }
 
-    return output;
-}
+//    return output;
+//}
 
 // возвращает автоспектр сигнала |Y|^2
-QVector<double> autoSpectre(const QVector<double> &values, int outputSize)
-{DD;
-    QVector<double> output(outputSize);
-    QVector<cx_double> complexSpectre = Fft::compute(values);
+//QVector<double> autoSpectre(const QVector<double> &values, int outputSize)
+//{DD;
+//    QVector<double> output(outputSize);
+//    QVector<cx_double> complexSpectre = Fft::compute(values);
 
-    for (int i = 0; i < outputSize; i++) {
-        output[i] = std::norm(complexSpectre[i]);
-    }
+//    for (int i = 0; i < outputSize; i++) {
+//        output[i] = std::norm(complexSpectre[i]);
+//    }
 
-    return output;
-}
+//    return output;
+//}
 
 // возвращает передаточную функцию H1 = values2 ./ values1
 //(комплексные значения)
-QVector<cx_double> transferFunction(const QVector<cx_double> &values1, const QVector<cx_double> &values2)
-{DD;
-    const int size = qMin(values1.size(), values2.size());
-    QVector<cx_double> output(size);
+//QVector<cx_double> transferFunction(const QVector<cx_double> &values1, const QVector<cx_double> &values2)
+//{DD;
+//    const int size = qMin(values1.size(), values2.size());
+//    QVector<cx_double> output(size);
 
-    for (int i=0; i<size; ++i) {
-        output[i] = values2[i]/values1[i];
-    }
+//    for (int i=0; i<size; ++i) {
+//        output[i] = values2[i]/values1[i];
+//    }
 
-    return output;
-}
+//    return output;
+//}
 
-QVector<cx_double> transferFunction(const QVector<double> &values1, const QVector<cx_double> &values2)
-{
-    const int size = qMin(values1.size(), values2.size());
-    QVector<cx_double> output(size);
+//QVector<cx_double> transferFunction(const QVector<double> &values1, const QVector<cx_double> &values2)
+//{
+//    const int size = qMin(values1.size(), values2.size());
+//    QVector<cx_double> output(size);
 
-    for (int i=0; i<size; ++i) {
-        output[i] = values2[i]/values1[i];
-    }
+//    for (int i=0; i<size; ++i) {
+//        output[i] = values2[i]/values1[i];
+//    }
 
-    return output;
-}
+//    return output;
+//}
 
 QStringList Converter::getSpfFile(const QString &dir)
 {DD;

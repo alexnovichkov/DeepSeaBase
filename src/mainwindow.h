@@ -127,7 +127,7 @@ private slots:
      * @brief calculateSpectreRecords
      * Обработка записей - расчет спектров, взаимных характеристик и т.д.
      */
-    void calculateSpectreRecords();
+    void calculateSpectreRecords(bool useDeepsea = false);
     /**
      * @brief convertFiles
      * Конвертирует выделенные записи в другой формат и добавляет их в базу
@@ -251,6 +251,7 @@ private:
     QAction *plotSelectedChannelsOnRightAct;
     QAction *exportChannelsToWavAct;
     QAction *calculateSpectreAct;
+    QAction *calculateSpectreDeepSeaAct;
     QAction *calculateThirdOctaveAct;
     QAction *clearPlotAct;
     QAction *savePlotAct;

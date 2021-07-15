@@ -145,7 +145,7 @@ DescriptionList TimeMethod::processData(const Parameters &p)
 }
 
 
-DfdFileDescriptor *TimeMethod::createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
+/*DfdFileDescriptor *TimeMethod::createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
 {DD;
     DfdFileDescriptor *newDfd = AbstractMethod::createNewDfdFile(fileName, dfd, p);
 
@@ -157,22 +157,22 @@ DfdFileDescriptor *TimeMethod::createNewDfdFile(const QString &fileName, FileDes
 //    newDfd->XBegin = 0.0;
 
     return newDfd;
-}
+}*/
 
-UffFileDescriptor *TimeMethod::createNewUffFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
-{DD;
-    UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
+//UffFileDescriptor *TimeMethod::createNewUffFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
+//{DD;
+//    UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
 
-    newUff->setDataDescription(dfd->dataDescription());
-    newUff->updateDateTimeGUID();
+//    newUff->setDataDescription(dfd->dataDescription());
+//    newUff->updateDateTimeGUID();
 
-    const double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
-    newUff->setXStep(newSampleRate / p.bufferSize);
+//    const double newSampleRate = p.sampleRate / pow(2.0, p.bandStrip);
+//    newUff->setXStep(newSampleRate / p.bufferSize);
 
-    return newUff;
-}
+//    return newUff;
+//}
 
-Channel *TimeMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
+/*Channel *TimeMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
 {DD;
     Q_UNUSED(p);
     DataDescription d;
@@ -194,9 +194,9 @@ Channel *TimeMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor 
     newDfd->addChannelWithData(h, d);
 
     return newDfd->channel(newDfd->channelsCount()-1);
-}
+}*/
 
-Channel *TimeMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
+/*Channel *TimeMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
 {DD;
     Function *ch = new Function(newUff);
 //    ch->setName(dfd->channel(i)->name());
@@ -244,4 +244,4 @@ Channel *TimeMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *df
 //    ch->type58[58].value = "NONE";
 
     return ch;
-}
+}*/

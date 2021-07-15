@@ -78,12 +78,12 @@ Parameters FRFMethod::parameters()
     return p;
 }
 
-Channel *FRFMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
-{
-    Channel *ch = SpectreMethod::addUffChannel(newUff, dfd, spectrumSize, p, i);
+//Channel *FRFMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
+//{
+//    Channel *ch = SpectreMethod::addUffChannel(newUff, dfd, spectrumSize, p, i);
 
-    QString name = ch->name();
-    if (name.endsWith("/")) name.chop(1);
-    ch->setName(name+"/Сила");
-    return ch;
-}
+//    QString name = ch->name();
+//    if (name.endsWith("/")) name.chop(1);
+//    ch->setName(name+"/Сила");
+//    return ch;
+//}

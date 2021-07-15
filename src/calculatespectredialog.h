@@ -47,7 +47,7 @@ private:
     QComboBox *methodCombo;
     QStackedWidget *methodsStack;
     QPlainTextEdit *infoLabel;
-    QCheckBox *useDeepsea;
+//    QCheckBox *useDeepsea;
     QDialogButtonBox *buttonBox;
     QProgressBar *progress;
     QCheckBox *shutdown;

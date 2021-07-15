@@ -196,8 +196,15 @@ MainWindow::MainWindow(QWidget *parent)
 
     QIcon calculateSpectreIcon(":/icons/function.png");
     calculateSpectreIcon.addFile(":/icons/function16.png");
-    calculateSpectreAct = new QAction(calculateSpectreIcon, QString("Обработать записи..."), this);
-    connect(calculateSpectreAct, SIGNAL(triggered()), SLOT(calculateSpectreRecords()));
+    calculateSpectreAct = new QAction(calculateSpectreIcon, QString("Рассчитать спектры..."), this);
+    connect(calculateSpectreAct, &QAction::triggered, [=](){
+        calculateSpectreRecords();
+    });
+
+    calculateSpectreDeepSeaAct = new QAction(calculateSpectreIcon, QString("Рассчитать спектры с помощью Deepsea..."), this);
+    connect(calculateSpectreDeepSeaAct, &QAction::triggered, [=](){
+        calculateSpectreRecords(true);
+    });
 
     convertAct = new QAction("Конвертировать файлы...", this);
     connect(convertAct, SIGNAL(triggered()), SLOT(convertFiles()));
@@ -339,6 +346,10 @@ MainWindow::MainWindow(QWidget *parent)
     mainToolBar->addWidget(new QLabel("Записи:"));
     mainToolBar->addAction(addFolderAct);
     mainToolBar->addAction(addFileAct);
+
+    QMenu *calculateSpectreMenu = new QMenu(this);
+    calculateSpectreMenu->addAction(calculateSpectreDeepSeaAct);
+    calculateSpectreAct->setMenu(calculateSpectreMenu);
     mainToolBar->addAction(calculateSpectreAct);
     mainToolBar->addAction(calculateThirdOctaveAct);
     mainToolBar->addAction(editDescriptionsAct);
@@ -568,6 +579,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
             menu.addAction(plotAllChannelsAct);
             menu.addAction(plotAllChannelsOnRightAct);
             menu.addAction(calculateSpectreAct);
+            menu.addAction(calculateSpectreDeepSeaAct);
             menu.addAction(convertAct);
             menu.addAction(renameAct);
             menu.exec(QCursor::pos());
@@ -1685,7 +1697,7 @@ void MainWindow::plotChannel(int index)
     }
 }
 
-void MainWindow::calculateSpectreRecords()
+void MainWindow::calculateSpectreRecords(bool useDeepsea)
 {DD;
     if (!tab) return;
 
@@ -1700,14 +1712,24 @@ void MainWindow::calculateSpectreRecords()
         return;
     }
 
-    //CalculateSpectreDialog dialog(records, this);
-    FilesProcessorDialog dialog(records, this);
+    if (useDeepsea) {
+        CalculateSpectreDialog dialog(records, this);
+        if (dialog.exec()) {
+            const QStringList newFiles = dialog.getNewFiles();
+            addFiles(newFiles);
+            for (const QString &file: newFiles)
+                if (!tab->folders.contains(file)) tab->folders << file;
+        }
+    }
+    else {
+        FilesProcessorDialog dialog(records, this);
 
-    if (dialog.exec()) {
-        const QStringList newFiles = dialog.getNewFiles();
-        addFiles(newFiles);
-        for (const QString &file: newFiles)
-            if (!tab->folders.contains(file)) tab->folders << file;
+        if (dialog.exec()) {
+            const QStringList newFiles = dialog.getNewFiles();
+            addFiles(newFiles);
+            for (const QString &file: newFiles)
+                if (!tab->folders.contains(file)) tab->folders << file;
+        }
     }
 }
 
@@ -2195,7 +2217,10 @@ void MainWindow::updateActions()
     plotSelectedChannelsAct->setDisabled(selectedChannelsCount==0);
     editChannelDescriptionsAct->setDisabled(selectedChannelsCount==0);
     //exportChannelsToWavAct;
-    calculateSpectreAct->setDisabled(tab->model->selectedFiles({Descriptor::TimeResponse}).isEmpty());
+    auto timeFiles = tab->model->selectedFiles({Descriptor::TimeResponse});
+    calculateSpectreAct->setDisabled(timeFiles.isEmpty());
+    calculateSpectreDeepSeaAct->setDisabled(timeFiles.isEmpty());
+
     const QVector<Descriptor::DataType> types {Descriptor::AutoSpectrum,
                 Descriptor::CrossSpectrum,
                 Descriptor::AutoCorrelation,

@@ -25,7 +25,7 @@ QDebug operator<<(QDebug debug, const Parameters &p)
       return debug;
 }
 
-DfdFileDescriptor *AbstractMethod::createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
+/*DfdFileDescriptor *AbstractMethod::createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
 {
     DfdFileDescriptor *newDfd = DfdFileDescriptor::newFile(fileName, DfdDataType(dataType()));
     newDfd->BlockSize = 0;
@@ -45,4 +45,4 @@ DfdFileDescriptor *AbstractMethod::createNewDfdFile(const QString &fileName, Fil
 //    newDfd->process->data = processData(p);
 
     return newDfd;
-}
+}*/

@@ -27,11 +27,11 @@ public:
     virtual Parameters parameters() = 0;
     virtual DescriptionList processData(const Parameters &p) = 0;
 
-    virtual DfdFileDescriptor *createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p);
-    virtual UffFileDescriptor *createNewUffFile(const QString &fileName, FileDescriptor *dfd, Parameters &p) = 0;
-    virtual Channel *createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd,
-                       const QVector<double> &spectrum, Parameters &p, int i) = 0;
-    virtual Channel * addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i) = 0;
+//    virtual DfdFileDescriptor *createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p);
+//    virtual UffFileDescriptor *createNewUffFile(const QString &fileName, FileDescriptor *dfd, Parameters &p) = 0;
+//    virtual Channel *createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd,
+//                       const QVector<double> &spectrum, Parameters &p, int i) = 0;
+//    virtual Channel * addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i) = 0;
 private:
     QList<FileDescriptor *> dataBase;
 };
