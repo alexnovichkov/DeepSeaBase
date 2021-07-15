@@ -1242,7 +1242,7 @@ void DfdChannel::read(DfdSettings &dfd, int numChans, double xBegin, double xSte
         thr = thrString.toDouble();
     }
     _data->setThreshold(thr);
-    dataDescription().put("logref", thr);
+    dataDescription().put("function.logref", thr);
 
     auto units = DataHolder::UnitsLinear;
     QString unitsStr = dfd.value(group+"units");

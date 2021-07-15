@@ -497,6 +497,7 @@ void Data94Channel::read(QDataStream &r)
         qDebug()<<"не удалось прочитать описание канала";
         return;
     }
+//    qDebug() << descriptionBuffer;
     QJsonParseError error;
     QJsonDocument doc = QJsonDocument::fromJson(descriptionBuffer, &error);
     if (error.error != QJsonParseError::NoError) {

@@ -263,9 +263,9 @@ FileDescriptor *SavingFunction::createFile(FileDescriptor *file)
 {DD;
     FileDescriptor *f = nullptr;
     switch (type) {
-        case DfdFile: f = createDfdFile(file); break;
-        case UffFile: f = createUffFile(file); break;
-        case D94File: f = createD94File(file); break;
+        case DfdFile: f = createDfdFile(); break;
+        case UffFile: f = createUffFile(); break;
+        case D94File: f = createD94File(); break;
         default: break;
     }
     if (f) {
@@ -281,7 +281,7 @@ FileDescriptor *SavingFunction::createFile(FileDescriptor *file)
     return f;
 }
 
-FileDescriptor *SavingFunction::createDfdFile(FileDescriptor *file)
+FileDescriptor *SavingFunction::createDfdFile()
 {DD;
     int dataType = m_input->getProperty("?/dataType").toInt();
 
@@ -298,12 +298,12 @@ FileDescriptor *SavingFunction::createDfdFile(FileDescriptor *file)
     return newDfd;
 }
 
-FileDescriptor *SavingFunction::createUffFile(FileDescriptor *file)
+FileDescriptor *SavingFunction::createUffFile()
 {DD;
     return new UffFileDescriptor(newFileName);
 }
 
-FileDescriptor *SavingFunction::createD94File(FileDescriptor *file)
+FileDescriptor *SavingFunction::createD94File()
 {
     return new Data94File(newFileName);
 }

@@ -215,7 +215,7 @@ void FileDescriptor::calculateMean(const QList<Channel *> &channels)
     descr.put("samples",  data->samplesCount());
     descr.put("blocks", 1);
     descr.put("function.name", "AVG");
-    descr.put("logref", data->threshold());
+    descr.put("function.logref", data->threshold());
     descr.put("function.format", DataHolder::formatToString(data->yValuesFormat()));
     descr.put("function.logscale", DataHolder::unitsToString(data->yValuesUnits()));
 
@@ -300,7 +300,7 @@ void FileDescriptor::calculateThirdOctave(FileDescriptor *source)
         descr.put("function.name", "OCTF3");
         descr.put("function.logref", data->threshold());
         descr.put("function.format", "amplitudeDb");
-        descr.put("logscale", DataHolder::unitsToString(data->yValuesUnits()));
+        descr.put("function.logscale", DataHolder::unitsToString(data->yValuesUnits()));
 
         addChannelWithData(data, descr);
 
@@ -358,8 +358,8 @@ QString FileDescriptor::saveTimeSegment(double from, double to)
         descr.put("description", QString("Вырезка %1s-%2s").arg(fromString).arg(toString));
         descr.put("samples",  data->samplesCount());
         descr.put("blocks", data->blocksCount());
-        descr.put("name", "SECTION");
-        descr.put("logref", data->threshold());
+        descr.put("function.name", "SECTION");
+        descr.put("function.logref", data->threshold());
         newFile->addChannelWithData(data, descr);
 
         if (!wasPopulated)
@@ -780,7 +780,7 @@ QJsonObject DataDescription::toJson() const {
         if (key.contains('.')) {
             auto r = result.value(key.section('.',0,0)).toObject();
             r.insert(key.section('.',1), QJsonValue::fromVariant(val));
-            result.insert(key, r);
+            result.insert(key.section('.',0,0), r);
         }
         else
             result.insert(key, QJsonValue::fromVariant(val));

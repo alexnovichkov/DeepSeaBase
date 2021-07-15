@@ -71,9 +71,9 @@ public:
     virtual void reset() override;
 private:
     FileDescriptor *createFile(FileDescriptor *file);
-    FileDescriptor *createDfdFile(FileDescriptor *file);
-    FileDescriptor *createUffFile(FileDescriptor *file);
-    FileDescriptor *createD94File(FileDescriptor *file);
+    FileDescriptor *createDfdFile();
+    FileDescriptor *createUffFile();
+    FileDescriptor *createD94File();
     Channel *createChannel(FileDescriptor *file, DataHolder *data);
     Channel *createDfdChannel(FileDescriptor *file, DataHolder *data);
     Channel *createUffChannel(FileDescriptor *file, DataHolder *data);
