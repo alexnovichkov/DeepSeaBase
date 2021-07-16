@@ -167,6 +167,8 @@ void Picker::startPick(QMouseEvent *e)
 
 void Picker::proceedPick(QMouseEvent *e)
 {
+    if (!enabled) return;
+
     if (mode == ModeDrag) {
         QPoint currentPos = e->pos();
 
@@ -195,6 +197,8 @@ void Picker::proceedPick(QMouseEvent *e)
 
 void Picker::endPick(QMouseEvent *e)
 {
+    if (!enabled) return;
+
     if (mode == ModeDrag) {
         if (e->button() == Qt::LeftButton &&
             ((e->modifiers() == Qt::NoModifier) || (e->modifiers() == Qt::ControlModifier))) {

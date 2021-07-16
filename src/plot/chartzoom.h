@@ -128,6 +128,7 @@ signals:
     void contextMenuRequested(const QPoint &pos, QwtAxisId axis);
     void moveCursor(Enums::Direction direction);
     void hover(QwtAxisId axis, int hover);
+    void setPickerEnabled(bool);
 private:
     Plot *qwtPlot;
 

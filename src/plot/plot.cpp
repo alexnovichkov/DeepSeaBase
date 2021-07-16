@@ -217,6 +217,8 @@ Plot::Plot(QWidget *parent) :
     connect(_picker,SIGNAL(cursorSelected(TrackingCursor*)), playerPanel, SLOT(updateSelectedCursor(TrackingCursor*)));
     connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       playerPanel, SLOT(setValue(QPointF)));
     connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          playerPanel, SLOT(setValue(QPointF)));
+
+    connect(zoom, &ChartZoom::setPickerEnabled, _picker, &Picker::setEnabled);
 }
 
 Plot::~Plot()

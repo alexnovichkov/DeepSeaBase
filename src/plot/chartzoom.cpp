@@ -92,6 +92,7 @@ ChartZoom::ConvType ChartZoom::regime()
 void ChartZoom::setRegime(ChartZoom::ConvType ct)
 {DD;
     convType = ct;
+    //emit setPickerEnabled(ct == ChartZoom::ctNone);
 }
 
 Plot *ChartZoom::plot() {
