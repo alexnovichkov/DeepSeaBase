@@ -11,7 +11,7 @@ class ImageRenderDialog : public QDialog
 {
     Q_OBJECT
 public:
-    ImageRenderDialog(bool askForPath, QWidget *parent = 0);
+    ImageRenderDialog(bool askForPath, QWidget *parent);
     inline QString getPath() const {return _path;};
     inline QSize getSize() const {return {_width, _height};}
     int getResolution() const;

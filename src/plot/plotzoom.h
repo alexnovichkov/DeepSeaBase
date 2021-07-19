@@ -44,14 +44,13 @@ public:
     void startZoom(QMouseEvent *);
     void proceedZoom(QMouseEvent *);
     ChartZoom::zoomCoordinates endZoom(QMouseEvent *);
+    void stopZoom();
 private:
     QRubberBand *rubberBand = nullptr;
     Plot *plot;
 
     int startingPosX = 0;
     int startingPosY = 0;
-
-    void procKeyboardEvent(QEvent *event);
 };
 
 #endif // QMAINZOOMSVC_H

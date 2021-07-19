@@ -26,14 +26,13 @@ public:
     bool findObject(QMouseEvent *e);
     void proceedPick(QMouseEvent *e);
     void endPick(QMouseEvent *e);
+    void procKeyboardEvent(int key);
 signals:
     void cursorMovedTo(QPointF newValue);
-    void moveCursor(Enums::Direction direction);
     void cursorSelected(TrackingCursor *cursor);
     void axisClicked(QPointF value, bool secondCursor);
-    void selectCursor(int index);
 private:
-    void procKeyboardEvent(QEvent *e);
+
 
 
 

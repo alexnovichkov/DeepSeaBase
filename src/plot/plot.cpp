@@ -209,8 +209,6 @@ Plot::Plot(QWidget *parent) :
     connect(_picker,SIGNAL(cursorSelected(TrackingCursor*)), trackingPanel, SLOT(changeSelectedCursor(TrackingCursor*)));
     connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       trackingPanel, SLOT(setValue(QPointF,bool)));
     connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          trackingPanel, SLOT(setValue(QPointF)));
-    connect(_picker,SIGNAL(moveCursor(Enums::Direction)),    trackingPanel, SLOT(moveCursor(Enums::Direction)));
-
     connect(_picker,SIGNAL(cursorSelected(TrackingCursor*)), playerPanel, SLOT(updateSelectedCursor(TrackingCursor*)));
     connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       playerPanel, SLOT(setValue(QPointF)));
     connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          playerPanel, SLOT(setValue(QPointF)));
@@ -222,7 +220,6 @@ Plot::Plot(QWidget *parent) :
     axisZoom = new AxisZoom(this);
     connect(axisZoom,SIGNAL(xAxisClicked(double,bool)), trackingPanel, SLOT(setXValue(double,bool)));
     connect(axisZoom,SIGNAL(yAxisClicked(double,bool)), trackingPanel, SLOT(setYValue(double,bool)));
-    connect(axisZoom,SIGNAL(moveCursor(Enums::Direction)), trackingPanel, SLOT(moveCursor(Enums::Direction)));
     connect(axisZoom,SIGNAL(hover(QwtAxisId,int)), SLOT(hoverAxis(QwtAxisId,int)));
 
     canvasFilter = new CanvasEventFilter(this);
@@ -234,6 +231,7 @@ Plot::Plot(QWidget *parent) :
     canvasFilter->setPicker(_picker);
     connect(canvasFilter,SIGNAL(hover(QwtAxisId,int)), SLOT(hoverAxis(QwtAxisId,int)));
     connect(canvasFilter,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)), SLOT(showContextMenu(QPoint,QwtAxisId)));
+    connect(canvasFilter,SIGNAL(moveCursor(Enums::Direction)), trackingPanel, SLOT(moveCursor(Enums::Direction)));
 }
 
 Plot::~Plot()
@@ -1012,7 +1010,7 @@ void Plot::updateLegends()
 
 void Plot::savePlot() /*SLOT*/
 {DD;
-    ImageRenderDialog dialog(this);
+    ImageRenderDialog dialog(true, this);
     if (dialog.exec()) {
         importPlot(dialog.getPath(), dialog.getSize(), dialog.getResolution());
         App->setSetting("lastPicture", dialog.getPath());

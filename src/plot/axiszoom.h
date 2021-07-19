@@ -1,26 +1,7 @@
-/**********************************************************/
-/*                                                        */
-/*                   Класс QAxisZoomSvc                   */
-/*                      Версия 1.2.2                      */
-/*                                                        */
-/* Поддерживает интерфейс изменения одной из границ       */
-/* графика, является дополнением к классу QwtChartZoom,   */
-/* начиная с версии 1.5.0.                                */
-/*                                                        */
-/* Разработал Мельников Сергей Андреевич,                 */
-/* г. Каменск-Уральский Свердловской обл., 2012 г.,       */
-/* при поддержке Ю. А. Роговского, г. Новосибирск.        */
-/*                                                        */
-/* Разрешается свободное использование и распространение. */
-/* Упоминание автора обязательно.                         */
-/*                                                        */
-/**********************************************************/
-
 #ifndef QAXISZOOMSVC_H
 #define QAXISZOOMSVC_H
 
 #include "chartzoom.h"
-#include "enums.h"
 
 class Plot;
 
@@ -34,15 +15,11 @@ public:
     void startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis);
     ChartZoom::zoomCoordinates proceedAxisZoom(QMouseEvent *, QwtAxisId axis);
     ChartZoom::zoomCoordinates endAxisZoom(QMouseEvent *, QwtAxisId axis);
-//    ChartZoom::zoomCoordinates coords;
 signals:
     void xAxisClicked(double xValue, bool second);
     void yAxisClicked(double xValue, bool second);
     void needsAutoscale(QwtAxisId axis);
-    void moveCursor(Enums::Direction direction);
     void hover(QwtAxisId axis, int hover); //0=none, 1=first half, 2 = second half
-//protected:
-//    bool eventFilter(QObject *,QEvent *);
 
 private:
     Plot *plot;
@@ -66,14 +43,7 @@ private:
     double limitScale(double,double);
     ChartZoom::zoomCoordinates axisApplyMove(QPoint, QwtAxisId);
 
-//    void axisMouseEvent(QEvent *event, QwtAxisId axis);
-    void procKeyboardEvent(QEvent *event);
-
-
-
-
     ChartZoom::ConvType ct = ChartZoom::ctNone;
-
 };
 
 #endif // QAXISZOOMSVC_H

@@ -14,6 +14,8 @@ class AxisZoom;
 class PlotZoom;
 class Picker;
 
+#include "enums.h"
+
 class CanvasEventFilter : public QObject
 {
     Q_OBJECT
@@ -45,6 +47,7 @@ public:
 signals:
     void hover(QwtAxisId axis, int hover); //0=none, 1=first half, 2 = second half
     void contextMenuRequested(const QPoint &pos, QwtAxisId axis);
+    void moveCursor(Enums::Direction direction);
 protected:
     bool eventFilter(QObject *target, QEvent *event);
 private:

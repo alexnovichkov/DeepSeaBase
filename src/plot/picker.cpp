@@ -50,71 +50,57 @@ bool Picker::findObject(QMouseEvent *e)
     return (d_selectedCurve || d_selectedCursor || d_selectedLabel);
 }
 
-void Picker::procKeyboardEvent(QEvent *e)
+void Picker::procKeyboardEvent(int key)
 {
-    QKeyEvent *event = static_cast<QKeyEvent *>(e);
-
-    const int key = event->key();
-
-    if (key == Qt::Key_Left) {
-        if (d_selectedCursor)
-            emit moveCursor(Enums::Left);
-
-        if (d_selectedPoint > 0) {
-            d_selectedPoint--;
-            highlightPoint(true);
-        }
-    }
-    else if (key == Qt::Key_Right) {
-        if (d_selectedCursor)
-            emit moveCursor(Enums::Right);
-
-        if (d_selectedCurve && d_selectedPoint >=0 && d_selectedPoint < d_selectedCurve->samplesCount()-1) {
-            d_selectedPoint++;
-            highlightPoint(true);
-        }
-    }
-    else if (key == Qt::Key_Up) {
-        if (d_selectedCursor)
-            emit moveCursor(Enums::Up);
-    }
-    else if (key == Qt::Key_Down) {
-        if (d_selectedCursor)
-            emit moveCursor(Enums::Down);
-    }
-    else if (key == Qt::Key_Space) {
-        if (d_selectedCurve && d_selectedPoint >=0 && d_selectedPoint < d_selectedCurve->samplesCount()) {
-            QPointF val = d_selectedCurve->samplePoint(d_selectedPoint);
-
-            PointLabel *label = d_selectedCurve->findLabel(d_selectedPoint);
-
-            if (!label) {
-                label = new PointLabel(plot, d_selectedCurve);
-                label->setPoint(d_selectedPoint);
-                label->setOrigin(val);
-                d_selectedCurve->addLabel(label);
-
-                label->attach(plot);
+    switch (key) {
+        case Qt::Key_Left: {
+            if (d_selectedPoint > 0) {
+                d_selectedPoint--;
+                highlightPoint(true);
             }
+            break;
         }
-        else if (d_selectedLabel) {
-            d_selectedLabel->cycleMode();
+        case Qt::Key_Right: {
+            if (d_selectedCurve && d_selectedPoint >=0 && d_selectedPoint < d_selectedCurve->samplesCount()-1) {
+                d_selectedPoint++;
+                highlightPoint(true);
+            }
+            break;
         }
-    }
-    else if (key == Qt::Key_C) {
-        if (d_selectedLabel) {
-            d_selectedLabel->cycleMode();
+        case Qt::Key_Space: {
+            if (d_selectedCurve && d_selectedPoint >=0 && d_selectedPoint < d_selectedCurve->samplesCount()) {
+                QPointF val = d_selectedCurve->samplePoint(d_selectedPoint);
+
+                PointLabel *label = d_selectedCurve->findLabel(d_selectedPoint);
+
+                if (!label) {
+                    label = new PointLabel(plot, d_selectedCurve);
+                    label->setPoint(d_selectedPoint);
+                    label->setOrigin(val);
+                    d_selectedCurve->addLabel(label);
+
+                    label->attach(plot);
+                }
+            }
+            else if (d_selectedLabel) {
+                d_selectedLabel->cycleMode();
+            }
+            break;
         }
-    }
-    else if (key == Qt::Key_Delete) {
-        if (d_selectedLabel) {
-            Curve *c = d_selectedLabel->curve;
-            if (c) c->removeLabel(d_selectedLabel);
-            d_selectedLabel = 0;
+        case Qt::Key_C: {
+            if (d_selectedLabel) {
+                d_selectedLabel->cycleMode();
+            }
+            break;
         }
-    }
-    else if (key == Qt::Key_H) {
-        plot->switchLabelsVisibility();
+        case Qt::Key_Delete: {
+            if (d_selectedLabel) {
+                Curve *c = d_selectedLabel->curve;
+                if (c) c->removeLabel(d_selectedLabel);
+                d_selectedLabel = 0;
+            }
+            break;
+        }
     }
 }
 
@@ -203,12 +189,12 @@ TrackingCursor *Picker::findCursor(const QPoint &pos)
         }
     }
 
-    return 0;
+    return nullptr;
 }
 
 Curve *Picker::findClosestPoint(const QPoint &pos, int &index) const
 {
-    Curve *curve = 0;
+    Curve *curve = nullptr;
     double dist = 10e10;
     index = -1;
 
@@ -228,7 +214,7 @@ Curve *Picker::findClosestPoint(const QPoint &pos, int &index) const
     if (dist < 10 && index >=0)
         return curve;
 
-    return 0;
+    return nullptr;
 }
 
 PointLabel *Picker::findLabel(const QPoint &pos)
@@ -241,14 +227,14 @@ PointLabel *Picker::findLabel(const QPoint &pos)
         }
     }
 
-    return 0;
+    return nullptr;
 }
 
 void Picker::highlightPoint(bool enable)
 {
     if (marker) marker->detach();
     delete marker;
-    marker = 0;
+    marker = nullptr;
 
     if (enable) {
         if (!d_selectedCurve) return;

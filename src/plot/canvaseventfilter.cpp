@@ -108,7 +108,42 @@ void CanvasEventFilter::procMouseEvent(QEvent *event)
 
 void CanvasEventFilter::procKeyboardEvent(QEvent *event)
 {
-
+    QKeyEvent *kEvent = dynamic_cast<QKeyEvent*>(event);
+    switch (kEvent->key()) {
+        case Qt::Key_Backspace: {
+            zoom->zoomBack();
+            break;
+        }
+        case Qt::Key_Escape: {//прерывание выделения
+            if (actionType == ActionType::Zoom) {
+                plotZoom->stopZoom();
+                actionType = ActionType::None;
+            }
+            break;
+        }
+        case Qt::Key_Left: {
+            emit moveCursor(Enums::Left);
+            break;
+        }
+        case Qt::Key_Right: {
+            emit moveCursor(Enums::Right);
+            break;
+        }
+        case Qt::Key_Up: {
+            emit moveCursor(Enums::Up);
+            break;
+        }
+        case Qt::Key_Down: {
+            emit moveCursor(Enums::Down);
+            break;
+        }
+        case Qt::Key_H: {
+            plot->switchLabelsVisibility();
+            break;
+        }
+        default: break;
+    }
+    if (picker) picker->procKeyboardEvent(kEvent->key());
 }
 
 void CanvasEventFilter::procWheelEvent(QwtAxisId axis, QEvent *event)

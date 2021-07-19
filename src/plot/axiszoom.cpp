@@ -25,29 +25,6 @@ AxisZoom::AxisZoom(Plot *plot) :  QObject(plot), plot(plot)
 
 }
 
-void AxisZoom::procKeyboardEvent(QEvent *event)
-{
-//    QKeyEvent *kEvent = static_cast<QKeyEvent*>(event);
-//    switch (kEvent->key()) {
-//        case Qt::Key_Backspace:
-//            zoom->zoomBack();
-//            break;
-//        case Qt::Key_Left:
-//            emit moveCursor(Enums::Left);
-//            break;
-//        case Qt::Key_Right:
-//            emit moveCursor(Enums::Right);
-//            break;
-//        case Qt::Key_Up:
-//            emit moveCursor(Enums::Up);
-//            break;
-//        case Qt::Key_Down:
-//            emit moveCursor(Enums::Down);
-//            break;
-//        default: break;
-//    }
-}
-
 // Ограничение нового размера шкалы
 double AxisZoom::limitScale(double sz,double bs)
 {DD;

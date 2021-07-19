@@ -28,25 +28,6 @@ PlotZoom::PlotZoom(Plot *plot) : plot(plot)
 
 }
 
-void PlotZoom::procKeyboardEvent(QEvent *event)
-{
-//    QKeyEvent *kEvent = dynamic_cast<QKeyEvent*>(event);
-//    switch (kEvent->key()) {
-//        case Qt::Key_Backspace: {
-//            zoom->zoomBack();
-//            break;
-//        }
-//        case Qt::Key_Escape: {//прерывание выделения
-//            if (zoom->regime() == ChartZoom::ctZoom) {
-//                if (rubberBand) rubberBand->hide();
-//                zoom->setRegime(ChartZoom::ctNone);
-//            }
-//            break;
-//        }
-//        default: break;
-//    }
-}
-
 void PlotZoom::startZoom(QMouseEvent *mEvent)
 {
     QRect cg = plot->canvas()->geometry();
@@ -76,7 +57,7 @@ void PlotZoom::proceedZoom(QMouseEvent *mEvent)
 
 ChartZoom::zoomCoordinates PlotZoom::endZoom(QMouseEvent *mEvent)
 {
-    if (rubberBand) rubberBand->hide();
+    stopZoom();
     // определяем положение курсора, т.е. координаты xp и yp
     // конечной точки выделенной области (в пикселах относительно канвы QwtPlot)
     int xp = mEvent->pos().x();
@@ -104,5 +85,10 @@ ChartZoom::zoomCoordinates PlotZoom::endZoom(QMouseEvent *mEvent)
             coords.coords.insert(QwtAxis::yRight, {ySMin, ySMax});
     }
     return coords;
+}
+
+void PlotZoom::stopZoom()
+{
+    if (rubberBand) rubberBand->hide();
 }
 
