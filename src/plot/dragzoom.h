@@ -4,26 +4,10 @@
 
 #include <QObject>
 
-/**********************************************************/
-/*                                                        */
-/*                   Класс QDragZoomSvc                   */
-/*                      Версия 1.0.1                      */
-/*                                                        */
-/* Поддерживает интерфейс синхронного перемещения графика */
-/* как одну из основных функций класса QwtChartZoom.      */
-/* Выделен в отдельный класс, начиная с версии 1.4.0.     */
-/*                                                        */
-/* Разработал Мельников Сергей Андреевич,                 */
-/* г. Каменск-Уральский Свердловской обл., 2012 г.,       */
-/* при поддержке Ю. А. Роговского, г. Новосибирск.        */
-/*                                                        */
-/* Разрешается свободное использование и распространение. */
-/* Упоминание автора обязательно.                         */
-/*                                                        */
-/**********************************************************/
-
-class ChartZoom;
+#include "chartzoom.h"
 class QMouseEvent;
+class Plot;
+
 #include <QCursor>
 
 class DragZoom : public QObject
@@ -31,12 +15,12 @@ class DragZoom : public QObject
     Q_OBJECT
 
 public:
-    explicit DragZoom();
-    void attach(ChartZoom *);
-protected:
-    bool eventFilter(QObject *,QEvent *);
+    explicit DragZoom(Plot *plot);
+    void startDrag(QMouseEvent *);
+    ChartZoom::zoomCoordinates proceedDrag(QMouseEvent *);
+    ChartZoom::zoomCoordinates endDrag(QMouseEvent *);
 private:
-    ChartZoom *zoom;     // Опекаемый менеджер масштабирования
+    Plot *plot;
     QCursor tCursor;        // Буфер для временного хранения курсора
 
     double minHorizontalBound, maxHorizontalBound;   // Текущие границы графика по горизонтальной оси
@@ -45,19 +29,9 @@ private:
                             // в момент начала преобразования
     double minVerticalBound1, maxVerticalBound1;   // Текущие границы графика по вспомогательной вертикальной оси
                             // в момент начала преобразования
-    double horizontalFactor, verticalFactor, verticalFactor1;     // Текущие масштабирующие множители по обеим осям
-                            // (изменение координаты при перемещении на один пиксел)
-    int horizontalCursorPosition,verticalCursorPosition;        // Положение курсора в момент начала преобразования
+    QPoint position;        // Положение курсора в момент начала преобразования
                             // (в пикселах относительно канвы графика)
     double dx, dy, dy1; //Текущее смещение графика
-
-    void applyDrag(QPoint mousePos, bool moveRightAxis);
-
-    void dragMouseEvent(QEvent *);
-
-    void startDrag(QMouseEvent *);
-    void proceedDrag(QMouseEvent *);
-    void endDrag(QMouseEvent *);
 };
 
 #endif // QDRAGZOOMSVC_H

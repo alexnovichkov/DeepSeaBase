@@ -22,25 +22,30 @@
 #include "chartzoom.h"
 #include "enums.h"
 
+class Plot;
+
 class AxisZoom : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit AxisZoom();
-    void attach(ChartZoom *);
+    explicit AxisZoom(Plot *plot);
+    void startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis);
+    void startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis);
+    ChartZoom::zoomCoordinates proceedAxisZoom(QMouseEvent *, QwtAxisId axis);
+    ChartZoom::zoomCoordinates endAxisZoom(QMouseEvent *, QwtAxisId axis);
+    ChartZoom::zoomCoordinates coords;
 signals:
     void xAxisClicked(double xValue, bool second);
     void yAxisClicked(double xValue, bool second);
-    void contextMenuRequested(const QPoint &pos, QwtAxisId axis);
     void needsAutoscale(QwtAxisId axis);
     void moveCursor(Enums::Direction direction);
     void hover(QwtAxisId axis, int hover); //0=none, 1=first half, 2 = second half
-protected:
-    bool eventFilter(QObject *,QEvent *);
+//protected:
+//    bool eventFilter(QObject *,QEvent *);
 
 private:
-    ChartZoom *zoom;
+    Plot *plot;
 
     QCursor cursor;        // Буфер для временного хранения курсора
 
@@ -59,15 +64,15 @@ private:
 
     // ограничение нового размера шкалы
     double limitScale(double,double);
-    void axisApplyMove(QPoint, QwtAxisId);
+    ChartZoom::zoomCoordinates axisApplyMove(QPoint, QwtAxisId);
 
-    void axisMouseEvent(QEvent *event, QwtAxisId axis);
+//    void axisMouseEvent(QEvent *event, QwtAxisId axis);
     void procKeyboardEvent(QEvent *event);
 
-    void startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis);
-    void startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis);
-    void proceedAxisZoom(QMouseEvent *, QwtAxisId axis);
-    void endAxisZoom(QMouseEvent *, QwtAxisId axis);
+
+
+
+    ChartZoom::ConvType ct = ChartZoom::ctNone;
 
 };
 

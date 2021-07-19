@@ -52,6 +52,7 @@ SOURCES += main.cpp\
     methods/gxyfunction.cpp \
     methods/weighting.cpp \
     methods/windowingalgorithm.cpp \
+    plot/canvaseventfilter.cpp \
     plot/imagerenderdialog.cpp \
     plot/trackingcursor.cpp \
     sortabletreewidgetitem.cpp \
@@ -143,6 +144,7 @@ HEADERS  += mainwindow.h \
     methods/gxyfunction.h \
     methods/weighting.h \
     methods/windowingalgorithm.h \
+    plot/canvaseventfilter.h \
     plot/imagerenderdialog.h \
     plot/trackingcursor.h \
     sortabletreewidgetitem.h \

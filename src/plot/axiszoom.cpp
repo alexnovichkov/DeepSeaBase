@@ -20,121 +20,32 @@
 #include <QtMath>
 #include "plot.h"
 
-AxisZoom::AxisZoom() :  QObject()
+AxisZoom::AxisZoom(Plot *plot) :  QObject(plot), plot(plot)
 {
-}
 
-void AxisZoom::attach(ChartZoom *zm)
-{DD;
-    zoom = zm;
-    for (int ax = 0; ax < QwtAxis::PosCount; ax++) {
-        for (int j = 0; j < zoom->plot()->axesCount(ax); ++j)
-            zoom->plot()->axisWidget(QwtAxisId(ax,j))->installEventFilter(this);
-    }
-}
-
-bool AxisZoom::eventFilter(QObject *target,QEvent *event)
-{
-    if (event->type() == QEvent::KeyPress)
-        procKeyboardEvent(event);
-
-    int ax = -1;
-    int jx = -1;
-    for (int a = 0; a < QwtAxis::PosCount; a++) {
-        for (int j = 0; j < zoom->plot()->axesCount(a); ++j) {
-            if (target == zoom->plot()->axisWidget(QwtAxisId(a,j))) {
-                ax = a;
-                jx = j;
-                break;
-            }
-        }
-    }
-
-    if (ax >= 0 && jx >= 0) {
-        if (event->type() == QEvent::MouseButtonPress ||
-            event->type() == QEvent::MouseMove ||
-            event->type() == QEvent::MouseButtonRelease ||
-            event->type() == QEvent::MouseButtonDblClick)
-            axisMouseEvent(event, QwtAxisId(ax,jx));
-
-        else if (event->type() == QEvent::Leave)
-            emit hover(QwtAxisId(ax,jx), 0);
-    }
-
-    return QObject::eventFilter(target,event);
-}
-
-void AxisZoom::axisMouseEvent(QEvent *event,QwtAxisId axis)
-{DD;
-    QMouseEvent *mEvent = static_cast<QMouseEvent *>(event);
-    switch (event->type())
-    {
-        case QEvent::MouseButtonPress:
-            if (mEvent->button()==Qt::RightButton) {
-                emit contextMenuRequested(mEvent->globalPos(), axis);
-            }
-            else if (mEvent->button()==Qt::LeftButton) {
-                if (axis.isXAxis())
-                    startHorizontalAxisZoom(mEvent, axis);
-                else
-                    startVerticalAxisZoom(mEvent, axis);
-            }
-            break;
-
-        case QEvent::MouseMove:
-            proceedAxisZoom(mEvent, axis);
-            break;
-
-        case QEvent::MouseButtonRelease:
-            endAxisZoom(mEvent, axis);
-            break;
-
-        case QEvent::MouseButtonDblClick:
-            if (mEvent->button()==Qt::LeftButton) {
-                AxisBoundsDialog dialog(zoom->plot()->canvasMap(axis).s1(), zoom->plot()->canvasMap(axis).s2(), axis);
-                if (dialog.exec()) {
-                    ChartZoom::zoomCoordinates coords;
-                    if (axis == QwtAxis::xBottom || axis == QwtPlot::xTop)
-                        coords.coords.insert(QwtAxis::xBottom, {dialog.leftBorder(), dialog.rightBorder()});
-                    else if (zoom->verticalScaleBounds->axis == axis.pos ||
-                             zoom->verticalScaleBoundsSlave->axis == axis.pos)
-                        coords.coords.insert(axis.pos, {dialog.leftBorder(), dialog.rightBorder()});
-                    zoom->addZoom(coords, true);
-
-                    if (dialog.autoscale()) {
-                        emit needsAutoscale(axis);
-                    }
-                    zoom->plot()->replot();
-                }
-            }
-            break;
-
-
-        default: break;
-    }
 }
 
 void AxisZoom::procKeyboardEvent(QEvent *event)
 {
-    QKeyEvent *kEvent = static_cast<QKeyEvent*>(event);
-    switch (kEvent->key()) {
-        case Qt::Key_Backspace:
-            zoom->zoomBack();
-            break;
-        case Qt::Key_Left:
-            emit moveCursor(Enums::Left);
-            break;
-        case Qt::Key_Right:
-            emit moveCursor(Enums::Right);
-            break;
-        case Qt::Key_Up:
-            emit moveCursor(Enums::Up);
-            break;
-        case Qt::Key_Down:
-            emit moveCursor(Enums::Down);
-            break;
-        default: break;
-    }
+//    QKeyEvent *kEvent = static_cast<QKeyEvent*>(event);
+//    switch (kEvent->key()) {
+//        case Qt::Key_Backspace:
+//            zoom->zoomBack();
+//            break;
+//        case Qt::Key_Left:
+//            emit moveCursor(Enums::Left);
+//            break;
+//        case Qt::Key_Right:
+//            emit moveCursor(Enums::Right);
+//            break;
+//        case Qt::Key_Up:
+//            emit moveCursor(Enums::Up);
+//            break;
+//        case Qt::Key_Down:
+//            emit moveCursor(Enums::Down);
+//            break;
+//        default: break;
+//    }
 }
 
 // Ограничение нового размера шкалы
@@ -147,17 +58,17 @@ double AxisZoom::limitScale(double sz,double bs)
     return sz;
 }
 
-void AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
+ChartZoom::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
 {DD;
     // определяем (для удобства) геометрию
-    QRect canvasGeometry = zoom->plot()->canvas()->geometry();       // канвы графика
-    QRect axisGeometry = zoom->plot()->axisWidget(axis)->geometry(); // и виджета шкалы
+    QRect canvasGeometry = plot->canvas()->geometry();       // канвы графика
+    QRect axisGeometry = plot->axisWidget(axis)->geometry(); // и виджета шкалы
     // определяем текущее положение курсора относительно канвы
     // (за вычетом смещений графика)
     int x = evpos.x() + axisGeometry.x() - canvasGeometry.x() - currentLeftBorderInPixels;
     int y = evpos.y() + axisGeometry.y() - canvasGeometry.y() - currentTopBorderInPixels;
 
-    switch (zoom->regime()) {
+    switch (ct) {
         // режим изменения левой границы
         case ChartZoom::ctLeft: {
             // ограничение на положение курсора справа
@@ -171,9 +82,8 @@ void AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             //if (xl<0.0) xl=0.0;
             currentLeftBorder = xl;
             // устанавливаем ее для горизонтальной шкалы
-            zoom->horizontalScaleBounds->set(xl,currentRightBorder);
-            zoom->plot()->replot();
-            break;
+            coords.coords.clear();
+            coords.coords.insert(axis.pos, {xl,currentRightBorder});
         }
             // режим изменения правой границы
         case ChartZoom::ctRight:
@@ -188,9 +98,8 @@ void AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             double xr = currentLeftBorder + wx;
             // устанавливаем ее для горизонтальной шкалы
             currentRightBorder = xr;
-            zoom->horizontalScaleBounds->set(currentLeftBorder,xr);
-            zoom->plot()->replot();
-            break;
+            coords.coords.clear();
+            coords.coords.insert(axis.pos, {currentLeftBorder,xr});
         }
             // режим изменения нижней границы
         case ChartZoom::ctBottom:
@@ -205,12 +114,8 @@ void AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             double yb = currentTopBorder - hy;
 
             currentBottomBorder = yb;
-            if (zoom->verticalScaleBoundsSlave->axis == axis.pos)
-                zoom->verticalScaleBoundsSlave->set(yb,currentTopBorder);
-            else
-                zoom->verticalScaleBounds->set(yb, currentTopBorder);
-            zoom->plot()->replot();
-            break;
+            coords.coords.clear();
+            coords.coords.insert(axis.pos, {yb,currentTopBorder});
         }
             // режим изменения верхней границы
         case ChartZoom::ctTop:
@@ -225,24 +130,19 @@ void AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             double yt = currentBottomBorder + hy;
             // устанавливаем ее для вертикальной шкалы
             currentTopBorder = yt;
-
-            if (zoom->verticalScaleBoundsSlave->axis == axis.pos)
-                zoom->verticalScaleBoundsSlave->set(currentBottomBorder,yt);
-            else
-                zoom->verticalScaleBounds->set(currentBottomBorder,yt);
-            zoom->plot()->replot();
-            break;
+            coords.coords.clear();
+            coords.coords.insert(axis.pos, {currentBottomBorder,yt});
         }
         default:
             break;
     }
+    return coords;
 }
 
 
 void AxisZoom::startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis)
 {DD;
-    if (zoom->regime() == ChartZoom::ctNone) {
-        QwtPlot *plot = zoom->plot();
+    if (ct == ChartZoom::ctNone) {
         QwtScaleWidget *scaleWidget = plot->axisWidget(axis);
 
         QwtScaleMap canvasMap = plot->canvasMap(axis);
@@ -273,14 +173,14 @@ void AxisZoom::startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis)
                 // (правее или левее середины шкалы)
                 // включаем соответствующий режим - изменение
                 if (cursorPosX >= qFloor(currentPixelWidth/2))
-                    zoom->setRegime(ChartZoom::ctRight);     // правой границы
+                    ct = ChartZoom::ctRight;     // правой границы
                 else
-                    zoom->setRegime(ChartZoom::ctLeft);    // или левой
+                    ct = ChartZoom::ctLeft;    // или левой
             }
         }
 
         // если один из режимов был включен
-        if (zoom->regime() != ChartZoom::ctNone) {
+        if (ct != ChartZoom::ctNone) {
             // запоминаем текущий курсор
             cursor = scaleWidget->cursor();
             scaleWidget->setCursor(Qt::PointingHandCursor);
@@ -292,8 +192,7 @@ void AxisZoom::startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis)
 // (включение изменения масштаба шкалы)
 void AxisZoom::startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis)
 {DD;
-    if (zoom->regime() == ChartZoom::ctNone) {
-        QwtPlot *plot = zoom->plot();
+    if (ct == ChartZoom::ctNone) {
         QwtScaleWidget *scaleWidget = plot->axisWidget(axis);
 
         QwtScaleMap sm = plot->canvasMap(axis);
@@ -324,13 +223,13 @@ void AxisZoom::startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis)
                 // (ниже или выше середины шкалы)
                 // включаем соответствующий режим - изменение
                 if (cursorPosY >= floor(currentPixelHeight/2))
-                    zoom->setRegime(ChartZoom::ctBottom);     // нижней границы
-                else zoom->setRegime(ChartZoom::ctTop);    // или верхней
+                    ct = ChartZoom::ctBottom;     // нижней границы
+                else ct = ChartZoom::ctTop;    // или верхней
             }
         }
 
         // если один из режимов был включен
-        if (zoom->regime() != ChartZoom::ctNone) {
+        if (ct != ChartZoom::ctNone) {
             // запоминаем текущий курсор
             cursor = scaleWidget->cursor();
             scaleWidget->setCursor(Qt::PointingHandCursor);
@@ -338,66 +237,63 @@ void AxisZoom::startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis)
     }
 }
 
-void AxisZoom::proceedAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
+ChartZoom::zoomCoordinates AxisZoom::proceedAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
 {DD;
-    ChartZoom::ConvType ct = zoom->regime();
     if (ct == ChartZoom::ctLeft || ct == ChartZoom::ctRight
         || ct == ChartZoom::ctBottom || ct == ChartZoom::ctTop)
-        axisApplyMove(mEvent->pos(), axis);
-    else {
-        QwtScaleMap sm = zoom->plot()->canvasMap(axis);
+        return axisApplyMove(mEvent->pos(), axis);
 
-        if (axis.isXAxis()) {
-            if (mEvent->pos().x() - sm.p1() >= sm.pDist()/2)
-                emit hover(axis, 2);
-            else
-                emit hover(axis, 1);
-        }
-        else {
-            if (sm.p1() - mEvent->pos().y() <= sm.pDist()/2)
-                emit hover(axis, 2);
-            else
-                emit hover(axis, 1);
-        }
+
+    QwtScaleMap sm = plot->canvasMap(axis);
+
+    if (axis.isXAxis()) {
+        if (mEvent->pos().x() - sm.p1() >= sm.pDist()/2)
+            emit hover(axis, 2);
+        else
+            emit hover(axis, 1);
     }
+    else {
+        if (sm.p1() - mEvent->pos().y() <= sm.pDist()/2)
+            emit hover(axis, 2);
+        else
+            emit hover(axis, 1);
+    }
+    return ChartZoom::zoomCoordinates();
 }
 
-void AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
+ChartZoom::zoomCoordinates AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
 {DD;
-    ChartZoom::ConvType ct = zoom->regime();
-
     if (ct == ChartZoom::ctLeft || ct == ChartZoom::ctRight
         ||ct == ChartZoom::ctBottom ||ct == ChartZoom::ctTop) {
 
-        zoom->plot()->axisWidget(axis)->setCursor(cursor);
-        zoom->setRegime(ChartZoom::ctNone);
+        plot->axisWidget(axis)->setCursor(cursor);
 
         if (ct == ChartZoom::ctLeft || ct == ChartZoom::ctRight) {
             // emit axisClicked signal only if it is really just a click within 3 pixels
             if (qAbs(mEvent->pos().x() - currentLeftShiftInPixels - cursorPosX)<3) {
-                double xVal = zoom->plot()->canvasMap(axis).invTransform(mEvent->pos().x());
+                double xVal = plot->canvasMap(axis).invTransform(mEvent->pos().x());
                 emit xAxisClicked(xVal, mEvent->modifiers() & Qt::ControlModifier);
             }
             else if (axis.isXAxis()) {
                 // запоминаем совершенное перемещение
-                ChartZoom::zoomCoordinates coords;
+                coords.coords.clear();
                 coords.coords.insert(axis.pos, {currentLeftBorder, currentRightBorder});
-                zoom->addZoom(coords, true);
             }
         }
         if (ct == ChartZoom::ctBottom ||ct == ChartZoom::ctTop) {
             // emit axisClicked signal only if it is really just a click within 3 pixels
             if (qAbs(mEvent->pos().y() - currentTopShiftInPixels - cursorPosY)<3) {
-                double yVal = zoom->plot()->canvasMap(axis).invTransform(mEvent->pos().y());
+                double yVal = plot->canvasMap(axis).invTransform(mEvent->pos().y());
                 emit yAxisClicked(yVal, mEvent->modifiers() & Qt::ControlModifier);
             }
             else if (axis.isYAxis()) {
                 // запоминаем совершенное перемещение
-                ChartZoom::zoomCoordinates coords;
+                coords.coords.clear();
                 coords.coords.insert(axis.pos, {currentBottomBorder, currentTopBorder});
-                zoom->addZoom(coords, true);
             }
         }
+        ct = ChartZoom::ctNone;
     }
+    return coords;
 }
 

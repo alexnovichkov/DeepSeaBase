@@ -20,11 +20,9 @@ Picker::Picker(Plot *plot) : plot(plot)
     d_selectedCurve = 0;
     d_selectedLabel = 0;
     d_selectedCursor = 0;
-
-//    d_currentPos;
     marker = 0;
 
-    plot->canvas()->installEventFilter(this);
+    //plot->canvas()->installEventFilter(this);
 }
 
 bool Picker::eventFilter(QObject *watched, QEvent *event)

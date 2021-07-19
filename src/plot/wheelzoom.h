@@ -19,19 +19,19 @@
 #ifndef QWHEELZOOMSVC_H
 #define QWHEELZOOMSVC_H
 
+class Plot;
+#include <QObject>
+#include "qwt_axis_id.h"
 #include "chartzoom.h"
 
 class WheelZoom : public QObject
 {
     Q_OBJECT
 public:
-    explicit WheelZoom();
-    void attach(ChartZoom *);
-protected:
-    bool eventFilter(QObject *,QEvent *);
+    explicit WheelZoom(Plot *plot);
+    ChartZoom::zoomCoordinates applyWheel(QEvent *, QwtAxisId axis);
 private:
-    ChartZoom *zoom;
-    void applyWheel(QEvent *, QwtAxisId axis);
+    Plot *plot;
     QPointF getCoords(QwtAxisId axis, int pos, double factor);
 };
 

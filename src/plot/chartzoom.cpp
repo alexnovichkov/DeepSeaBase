@@ -14,9 +14,9 @@
 
 #include "chartzoom.h"
 #include "plotzoom.h"
-#include "wheelzoom.h"
-#include "axiszoom.h"
-#include "dragzoom.h"
+//#include "wheelzoom.h"
+//#include "axiszoom.h"
+//#include "dragzoom.h"
 #include "plot.h"
 
 #include <qwt_scale_widget.h>
@@ -31,51 +31,33 @@ ChartZoom::ChartZoom(Plot *plot) :
     // сбрасываем признак режима
     convType = ctNone;
 
-    // устанавливаем ему свойство, разрешающее обрабатывать события от клавиатуры
-    qwtPlot->setFocusPolicy(Qt::StrongFocus);
-
     // создаем контейнеры границ шкалы
     horizontalScaleBounds = new ScaleBounds(plot, QwtAxisId(QwtAxis::xBottom, 0));    // горизонтальной
     verticalScaleBounds = new ScaleBounds(plot, QwtAxisId(QwtAxis::yLeft, 0));    // и вертикальной
     verticalScaleBoundsSlave = new ScaleBounds(plot, QwtAxisId(QwtAxis::yRight, 0));
 
-    // устанавливаем обработчик всех событий
-    qwtPlot->installEventFilter(this);
-    // для всех шкал графика
-    for (int ax=0; ax < QwtPlot::axisCnt; ax++) {
-        // назначаем обработчик событий (фильтр событий)
-        qwtPlot->axisWidget(ax)->installEventFilter(this);
-        qwtPlot->axisWidget(ax)->setFocusPolicy(Qt::StrongFocus);
-    }
+//    mainZoom = new PlotZoom();
+//    mainZoom->attach(this);
 
-    mainZoom = new PlotZoom();
-    mainZoom->attach(this);
 
-    // создаем интерфейс перемещенния графика
-    dragZoom = new DragZoom();
-    dragZoom->attach(this);
-
-    wheelZoom = new WheelZoom();
-    wheelZoom->attach(this);
-
-    axisZoom = new AxisZoom();
-    connect(axisZoom,SIGNAL(xAxisClicked(double,bool)),SIGNAL(updateTrackingCursorX(double, bool)));
-    connect(axisZoom,SIGNAL(yAxisClicked(double,bool)),SIGNAL(updateTrackingCursorY(double, bool)));
-    connect(axisZoom,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)),SIGNAL(contextMenuRequested(QPoint,QwtAxisId)));
-    connect(axisZoom,SIGNAL(moveCursor(Enums::Direction)),SIGNAL(moveCursor(Enums::Direction)));
-    connect(axisZoom,SIGNAL(hover(QwtAxisId,int)),SIGNAL(hover(QwtAxisId,int)));
-    axisZoom->attach(this);
+//    axisZoom = new AxisZoom();
+//    connect(axisZoom,SIGNAL(xAxisClicked(double,bool)),SIGNAL(updateTrackingCursorX(double, bool)));
+//    connect(axisZoom,SIGNAL(yAxisClicked(double,bool)),SIGNAL(updateTrackingCursorY(double, bool)));
+//    connect(axisZoom,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)),SIGNAL(contextMenuRequested(QPoint,QwtAxisId)));
+//    connect(axisZoom,SIGNAL(moveCursor(Enums::Direction)),SIGNAL(moveCursor(Enums::Direction)));
+//    connect(axisZoom,SIGNAL(hover(QwtAxisId,int)),SIGNAL(hover(QwtAxisId,int)));
+//    axisZoom->attach(this);
 }
 
 // Деструктор
 ChartZoom::~ChartZoom()
 {DD;
     // удаляем интерфейс перемещенния графика
-    delete dragZoom;
+//    delete dragZoom;
     // удаляем интерфейс масштабирования графика
-    delete mainZoom;
-    delete axisZoom;
-    delete wheelZoom;
+//    delete mainZoom;
+//    delete axisZoom;
+//    delete wheelZoom;
     // удаляем контейнеры границ шкалы
     delete horizontalScaleBounds;    // горизонтальной
     delete verticalScaleBounds;    // и вертикальной
@@ -104,26 +86,25 @@ void ChartZoom::setZoomEnabled(bool enabled)
     this->activated = enabled;
 }
 
-void ChartZoom::addZoom(ChartZoom::zoomCoordinates coords, bool apply)
+void ChartZoom::addZoom(ChartZoom::zoomCoordinates coords, bool addToStack)
 {DD;
     if (coords.coords.isEmpty()) {
         return;
     }
-    zoomStack.push(coords);
-    if (apply) {
-        if (coords.coords.contains(QwtAxis::xBottom))
-            horizontalScaleBounds->set(coords.coords.value(QwtAxis::xBottom).x(),
-                                       coords.coords.value(QwtAxis::xBottom).y());
-        if (coords.coords.contains(QwtAxis::yLeft)) {
-            verticalScaleBounds->set(coords.coords.value(QwtAxis::yLeft).x(),
-                                     coords.coords.value(QwtAxis::yLeft).y());
-        }
-        if (coords.coords.contains(QwtAxis::yRight)/* && !qwtPlot->spectrogram*/) {
-            verticalScaleBoundsSlave->set(coords.coords.value(QwtAxis::yRight).x(),
-                                          coords.coords.value(QwtAxis::yRight).y());
-        }
-        plot()->replot();
+    if (addToStack) zoomStack.push(coords);
+
+    if (coords.coords.contains(QwtAxis::xBottom))
+        horizontalScaleBounds->set(coords.coords.value(QwtAxis::xBottom).x(),
+                                   coords.coords.value(QwtAxis::xBottom).y());
+    if (coords.coords.contains(QwtAxis::yLeft)) {
+        verticalScaleBounds->set(coords.coords.value(QwtAxis::yLeft).x(),
+                                 coords.coords.value(QwtAxis::yLeft).y());
     }
+    if (coords.coords.contains(QwtAxis::yRight)/* && !qwtPlot->spectrogram*/) {
+        verticalScaleBoundsSlave->set(coords.coords.value(QwtAxis::yRight).x(),
+                                      coords.coords.value(QwtAxis::yRight).y());
+    }
+    plot()->replot();
 }
 
 void ChartZoom::zoomBack()

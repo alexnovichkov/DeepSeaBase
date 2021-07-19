@@ -60,7 +60,10 @@
 #include "enums.h"
 
 #include "unitsconverter.h"
-
+#include "canvaseventfilter.h"
+#include "dragzoom.h"
+#include "wheelzoom.h"
+#include "axiszoom.h"
 
 // простой фабричный метод создания кривой нужного типа
 Curve * createCurve(const QString &legendName, Channel *channel)
@@ -197,11 +200,11 @@ Plot::Plot(QWidget *parent) :
 
     zoom = new ChartZoom(this);
     zoom->setZoomEnabled(true);
-    connect(zoom,SIGNAL(updateTrackingCursorX(double,bool)), trackingPanel, SLOT(setXValue(double,bool)));
-    connect(zoom,SIGNAL(updateTrackingCursorY(double,bool)), trackingPanel, SLOT(setYValue(double,bool)));
-    connect(zoom,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)),SLOT(showContextMenu(QPoint,QwtAxisId)));
-    connect(zoom,SIGNAL(moveCursor(Enums::Direction)), trackingPanel, SLOT(moveCursor(Enums::Direction)));
-    connect(zoom,SIGNAL(hover(QwtAxisId,int)),SLOT(hoverAxis(QwtAxisId,int)));
+    //connect(zoom,SIGNAL(updateTrackingCursorX(double,bool)), trackingPanel, SLOT(setXValue(double,bool)));
+    //connect(zoom,SIGNAL(updateTrackingCursorY(double,bool)), trackingPanel, SLOT(setYValue(double,bool)));
+    //connect(zoom,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)), SLOT(showContextMenu(QPoint,QwtAxisId)));
+    //connect(zoom,SIGNAL(moveCursor(Enums::Direction)), trackingPanel, SLOT(moveCursor(Enums::Direction)));
+    //connect(zoom,SIGNAL(hover(QwtAxisId,int)), SLOT(hoverAxis(QwtAxisId,int)));
 
     tracker = new PlotTracker(this);
     tracker->setEnabled(App->getSetting("pickerEnabled", true).toBool());
@@ -219,10 +222,28 @@ Plot::Plot(QWidget *parent) :
     connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          playerPanel, SLOT(setValue(QPointF)));
 
     connect(zoom, &ChartZoom::setPickerEnabled, _picker, &Picker::setEnabled);
+
+    dragZoom = new DragZoom(this);
+    wheelZoom = new WheelZoom(this);
+
+    axisZoom = new AxisZoom(this);
+    connect(axisZoom,SIGNAL(xAxisClicked(double,bool)), trackingPanel, SLOT(setXValue(double,bool)));
+    connect(axisZoom,SIGNAL(yAxisClicked(double,bool)), trackingPanel, SLOT(setYValue(double,bool)));
+    connect(axisZoom,SIGNAL(moveCursor(Enums::Direction)), trackingPanel, SLOT(moveCursor(Enums::Direction)));
+    connect(axisZoom,SIGNAL(hover(QwtAxisId,int)), SLOT(hoverAxis(QwtAxisId,int)));
+
+    canvasFilter = new CanvasEventFilter(this);
+    canvasFilter->setZoom(zoom);
+    canvasFilter->setDragZoom(dragZoom);
+    canvasFilter->setWheelZoom(wheelZoom);
+    canvasFilter->setAxisZoom(axisZoom);
+    connect(canvasFilter,SIGNAL(hover(QwtAxisId,int)), SLOT(hoverAxis(QwtAxisId,int)));
+    connect(canvasFilter,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)), SLOT(showContextMenu(QPoint,QwtAxisId)));
 }
 
 Plot::~Plot()
 {DD;
+
     delete trackingPanel;
     delete playerPanel;
     qDeleteAll(curves);
@@ -235,6 +256,10 @@ Plot::~Plot()
     App->setSetting("autoscale-y", !zoom->verticalScaleBounds->isFixed());
     App->setSetting("autoscale-y-slave", !zoom->verticalScaleBoundsSlave->isFixed());
     delete zoom;
+    delete dragZoom;
+    delete wheelZoom;
+    delete axisZoom;
+    delete canvasFilter;
 }
 
 void Plot::update()
@@ -737,16 +762,6 @@ void Plot::fixCurve(QwtPlotItem *curve)
 
 void Plot::hoverAxis(QwtAxisId axis, int hover)
 {
-//    QString s;
-//    if (axis == xBottomAxis) s.append("X axis, ");
-//    if (axis == yLeftAxis) s.append("Y left axis, ");
-//    if (axis == yRightAxis) s.append("Y right axis, ");
-
-//    if (hover==0) s.append("hover none");
-//    if (hover==1) s.append("first half");
-//    if (hover==2) s.append("second half");
-//    qDebug()<<s;
-
     if (ScaleDraw * scale = dynamic_cast<ScaleDraw*>(axisScaleDraw(axis))) {
         if (scale->hover != hover) {
             scale->hover = hover;

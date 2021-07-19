@@ -14,12 +14,16 @@ class Channel;
 class FileDescriptor;
 
 class ChartZoom;
+class DragZoom;
+class WheelZoom;
+class AxisZoom;
 class QwtPlotZoomer;
 class PlotTracker;
 class QAction;
 class QwtScaleEngine;
 class QwtPlotMarker;
 class Picker;
+class CanvasEventFilter;
 
 struct Range {
     void clear() {min = INFINITY; max = -INFINITY;}
@@ -197,7 +201,11 @@ private:
 
     bool xScaleIsLogarithmic = false; //false = linear, true = logarithmic
 
-    ChartZoom *zoom;
+    ChartZoom *zoom = nullptr;
+    DragZoom *dragZoom = nullptr;
+    WheelZoom *wheelZoom = nullptr;
+    AxisZoom *axisZoom = nullptr;
+    CanvasEventFilter *canvasFilter = nullptr;
 
     TrackingPanel *trackingPanel;
     PlayPanel *playerPanel;

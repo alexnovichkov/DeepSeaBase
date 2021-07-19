@@ -31,10 +31,10 @@ PlotZoom::PlotZoom()
 void PlotZoom::attach(ChartZoom *zm)
 {DD;
     zoom = zm;
-    zoom->plot()->canvas()->installEventFilter(this);
+    //zoom->plot()->canvas()->installEventFilter(this);
 }
 
-bool PlotZoom::eventFilter(QObject *target,QEvent *event)
+bool PlotZoom::eventFilter(QObject *target, QEvent *event)
 {
     if (zoom->activated) {
         if (target == zoom->plot()->canvas()) {

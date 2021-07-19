@@ -54,8 +54,15 @@ public:
     // ctRight - режим изменения правой границы
     // ctBottom - режим изменения нижней границы
     // ctTop - режим изменения верхней границы
-    enum ConvType {ctNone,ctZoom,ctDrag,
-                    ctLeft, ctRight, ctBottom, ctTop};
+    // ctPick - перемещение объекта по графику
+    enum ConvType {ctNone,
+                         ctZoom,
+                         ctDrag,
+                         ctLeft,
+                         ctRight,
+                         ctBottom,
+                         ctTop,
+                         ctPick};
 
     /**************************************************/
     /*               Класс QScaleBounds               */
@@ -114,12 +121,14 @@ public:
     // указатель на опекаемый компонент QwtPlot
     Plot *plot();
 
-    void addZoom(zoomCoordinates coords, bool apply = false);
+    void addZoom(zoomCoordinates coords, bool addToStack = false);
     void zoomBack();
     void moveToAxis(int axis, double min, double max);
     void autoscale(int axis, bool spectrogram);
 
     bool activated;
+
+//    DragZoom *dragZoom = nullptr;
 public slots:
     void setZoomEnabled(bool enabled);
 signals:
@@ -133,9 +142,9 @@ private:
     Plot *qwtPlot;
 
     PlotZoom *mainZoom;
-    DragZoom *dragZoom;
-    WheelZoom *wheelZoom;
-    AxisZoom *axisZoom;
+
+//    WheelZoom *wheelZoom;
+//    AxisZoom *axisZoom;
 
     ConvType convType;     // Тип текущего преобразования графика
 
