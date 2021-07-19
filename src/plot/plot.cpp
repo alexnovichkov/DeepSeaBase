@@ -64,6 +64,7 @@
 #include "dragzoom.h"
 #include "wheelzoom.h"
 #include "axiszoom.h"
+#include "plotzoom.h"
 
 // простой фабричный метод создания кривой нужного типа
 Curve * createCurve(const QString &legendName, Channel *channel)
@@ -199,19 +200,12 @@ Plot::Plot(QWidget *parent) :
 
 
     zoom = new ChartZoom(this);
-    zoom->setZoomEnabled(true);
-    //connect(zoom,SIGNAL(updateTrackingCursorX(double,bool)), trackingPanel, SLOT(setXValue(double,bool)));
-    //connect(zoom,SIGNAL(updateTrackingCursorY(double,bool)), trackingPanel, SLOT(setYValue(double,bool)));
-    //connect(zoom,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)), SLOT(showContextMenu(QPoint,QwtAxisId)));
-    //connect(zoom,SIGNAL(moveCursor(Enums::Direction)), trackingPanel, SLOT(moveCursor(Enums::Direction)));
-    //connect(zoom,SIGNAL(hover(QwtAxisId,int)), SLOT(hoverAxis(QwtAxisId,int)));
 
     tracker = new PlotTracker(this);
     tracker->setEnabled(App->getSetting("pickerEnabled", true).toBool());
 
     _picker = new Picker(this);
     _picker->setEnabled(App->getSetting("pickerEnabled", true).toBool());
-    connect(_picker,SIGNAL(setZoomEnabled(bool)),            zoom, SLOT(setZoomEnabled(bool)));
     connect(_picker,SIGNAL(cursorSelected(TrackingCursor*)), trackingPanel, SLOT(changeSelectedCursor(TrackingCursor*)));
     connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       trackingPanel, SLOT(setValue(QPointF,bool)));
     connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          trackingPanel, SLOT(setValue(QPointF)));
@@ -221,10 +215,9 @@ Plot::Plot(QWidget *parent) :
     connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       playerPanel, SLOT(setValue(QPointF)));
     connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          playerPanel, SLOT(setValue(QPointF)));
 
-    connect(zoom, &ChartZoom::setPickerEnabled, _picker, &Picker::setEnabled);
-
     dragZoom = new DragZoom(this);
     wheelZoom = new WheelZoom(this);
+    plotZoom = new PlotZoom(this);
 
     axisZoom = new AxisZoom(this);
     connect(axisZoom,SIGNAL(xAxisClicked(double,bool)), trackingPanel, SLOT(setXValue(double,bool)));
@@ -237,6 +230,8 @@ Plot::Plot(QWidget *parent) :
     canvasFilter->setDragZoom(dragZoom);
     canvasFilter->setWheelZoom(wheelZoom);
     canvasFilter->setAxisZoom(axisZoom);
+    canvasFilter->setPlotZoom(plotZoom);
+    canvasFilter->setPicker(_picker);
     connect(canvasFilter,SIGNAL(hover(QwtAxisId,int)), SLOT(hoverAxis(QwtAxisId,int)));
     connect(canvasFilter,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)), SLOT(showContextMenu(QPoint,QwtAxisId)));
 }
@@ -1175,8 +1170,6 @@ void Plot::setInteractionMode(Plot::InteractionMode mode)
 {DD;
     interactionMode = mode;
     if (_picker) _picker->setMode(mode);
-    if (zoom)
-        zoom->setZoomEnabled(mode == ScalingInteraction);
     if (_canvas) _canvas->setFocusIndicator(mode == ScalingInteraction?
                                               QwtPlotCanvas::CanvasFocusIndicator:
                                               QwtPlotCanvas::ItemFocusIndicator);

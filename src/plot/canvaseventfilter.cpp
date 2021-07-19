@@ -5,6 +5,8 @@
 #include "dragzoom.h"
 #include "wheelzoom.h"
 #include "axiszoom.h"
+#include "plotzoom.h"
+#include "picker.h"
 #include <QEvent>
 #include <QMouseEvent>
 #include <QKeyEvent>
@@ -74,6 +76,8 @@ bool CanvasEventFilter::eventFilter(QObject *target, QEvent *event)
                 case QEvent::KeyPress:
                     procKeyboardEvent(event);
                     break;
+                default:
+                    break;
             }
         }
     }
@@ -90,13 +94,13 @@ void CanvasEventFilter::procMouseEvent(QEvent *event)
 
     switch (mEvent->type())  {
         case QEvent::MouseButtonPress:
-            startPress(mEvent);
+            mousePress(mEvent);
             break;
         case QEvent::MouseMove:
-            moveMouse(mEvent);
+            mouseMove(mEvent);
             break;
         case QEvent::MouseButtonRelease:
-            endPress(mEvent);
+            mouseRelease(mEvent);
             break;
         default: ;
     }
@@ -117,11 +121,12 @@ void CanvasEventFilter::procAxisEvent(QwtAxisId axis, QEvent *event)
 {
     QMouseEvent *mEvent = static_cast<QMouseEvent *>(event);
     switch (event->type()) {
-        case QEvent::Leave:
+        case QEvent::Leave: {
             emit hover(axis,0);
             actionType = ActionType::None;
             break;
-        case QEvent::MouseButtonPress:
+        }
+        case QEvent::MouseButtonPress: {
             if (mEvent->button()==Qt::RightButton) {
                 emit contextMenuRequested(mEvent->globalPos(), axis);
                 actionType = ActionType::None;
@@ -131,9 +136,10 @@ void CanvasEventFilter::procAxisEvent(QwtAxisId axis, QEvent *event)
                     axisZoom->startHorizontalAxisZoom(mEvent, axis);
                 else
                     axisZoom->startVerticalAxisZoom(mEvent, axis);
+                actionType = ActionType::Axis;
             }
             break;
-
+        }
         case QEvent::MouseMove: {
             auto coords = axisZoom->proceedAxisZoom(mEvent, axis);
             zoom->addZoom(coords, false);
@@ -142,9 +148,10 @@ void CanvasEventFilter::procAxisEvent(QwtAxisId axis, QEvent *event)
         case QEvent::MouseButtonRelease: {
             auto coords = axisZoom->endAxisZoom(mEvent, axis);
             zoom->addZoom(coords, true);
+            actionType = ActionType::None;
             break;
         }
-        case QEvent::MouseButtonDblClick:
+        case QEvent::MouseButtonDblClick: {
             if (mEvent->button()==Qt::LeftButton) {
                 AxisBoundsDialog dialog(plot->canvasMap(axis).s1(), plot->canvasMap(axis).s2(), axis);
                 if (dialog.exec()) {
@@ -163,13 +170,13 @@ void CanvasEventFilter::procAxisEvent(QwtAxisId axis, QEvent *event)
                 }
             }
             break;
-
+        }
 
         default: break;
     }
 }
 
-void CanvasEventFilter::startPress(QMouseEvent *event)
+void CanvasEventFilter::mousePress(QMouseEvent *event)
 {
     currentPosition = event->pos();
 
@@ -180,33 +187,55 @@ void CanvasEventFilter::startPress(QMouseEvent *event)
             break;
         }
         case Qt::LeftButton: {
-
+            //либо выделение графика прямоугольником
+            //либо выбор объекта
+            //определяем, есть ли что под курсором
+            //если есть, то это выбор объекта
+            //если нет, то сбрасываем выбор объекта и это - выделение прямоугольником
+            bool selected = picker ? picker->findObject(event) : false;
+            if (selected) {
+                actionType = ActionType::Pick;
+            }
+            else {
+                actionType = ActionType::Zoom;
+                plotZoom->startZoom(event);
+                picker->endPick(event);
+            }
             break;
         }
+        default: break;
     }
 }
 
-void CanvasEventFilter::moveMouse(QMouseEvent *event)
+void CanvasEventFilter::mouseMove(QMouseEvent *event)
 {
     if (actionType == ActionType::Drag) {
         auto coords = dragZoom->proceedDrag(event);
         zoom->addZoom(coords, false);
     }
+    else if (actionType == ActionType::Zoom) {
+        plotZoom->proceedZoom(event);
+    }
+    else if (actionType == ActionType::Pick) {
+       picker->proceedPick(event);
+    }
 }
 
-void CanvasEventFilter::endPress(QMouseEvent *event)
+void CanvasEventFilter::mouseRelease(QMouseEvent *event)
 {DD;
-    switch (event->button()) {
-        case Qt::RightButton: {
-            actionType = ActionType::None;
-            auto coords = dragZoom->endDrag(event);
-            zoom->addZoom(coords, true);
-            break;
-        }
-        case Qt::LeftButton: {
-
-            break;
-        }
+    if (actionType == ActionType::Drag) {
+        auto coords = dragZoom->endDrag(event);
+        zoom->addZoom(coords, true);
+        actionType = ActionType::None;
+    }
+    else if (actionType == ActionType::Zoom) {
+        auto coords = plotZoom->endZoom(event);
+        zoom->addZoom(coords, true);
+        actionType = ActionType::None;
+    }
+    else if (actionType == ActionType::Pick) {
+        picker->endPick(event);
+        actionType = ActionType::None;
     }
 }
 

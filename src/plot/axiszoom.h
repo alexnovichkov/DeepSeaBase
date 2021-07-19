@@ -34,7 +34,7 @@ public:
     void startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis);
     ChartZoom::zoomCoordinates proceedAxisZoom(QMouseEvent *, QwtAxisId axis);
     ChartZoom::zoomCoordinates endAxisZoom(QMouseEvent *, QwtAxisId axis);
-    ChartZoom::zoomCoordinates coords;
+//    ChartZoom::zoomCoordinates coords;
 signals:
     void xAxisClicked(double xValue, bool second);
     void yAxisClicked(double xValue, bool second);

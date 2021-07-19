@@ -27,9 +27,11 @@
 #include <QColor>
 #include <QCursor>
 
-class ChartZoom;
+#include "chartzoom.h"
+
 class QMouseEvent;
 class QRubberBand;
+class Plot;
 
 class PlotZoom : public QObject
 {
@@ -37,27 +39,19 @@ class PlotZoom : public QObject
 
 public:
     // конструктор
-    explicit PlotZoom();
-
-    // прикрепление интерфейса к менеджеру масштабирования
-    void attach(ChartZoom *);
-protected:
-    bool eventFilter(QObject *,QEvent *);
-
-private:
-    ChartZoom *zoom = 0;
-    QRubberBand *rubberBand;
-
-    int startingPosX = 0;
-    int startingPosY = 0;        // Положение курсора в момент начала преобразования
-                            // (в пикселах относительно канвы графика)
-
-    void procMouseEvent(QEvent *);
-    void procKeyboardEvent(QEvent *event);
+    explicit PlotZoom(Plot *plot);
 
     void startZoom(QMouseEvent *);
     void proceedZoom(QMouseEvent *);
-    void endZoom(QMouseEvent *);
+    ChartZoom::zoomCoordinates endZoom(QMouseEvent *);
+private:
+    QRubberBand *rubberBand = nullptr;
+    Plot *plot;
+
+    int startingPosX = 0;
+    int startingPosY = 0;
+
+    void procKeyboardEvent(QEvent *event);
 };
 
 #endif // QMAINZOOMSVC_H

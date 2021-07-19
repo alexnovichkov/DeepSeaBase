@@ -71,6 +71,7 @@ public:
 public:
     void evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const;
     void switchFixed();
+    virtual void resetCashedData() {}
 };
 
 

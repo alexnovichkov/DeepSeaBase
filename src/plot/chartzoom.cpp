@@ -13,10 +13,6 @@
 /**********************************************************/
 
 #include "chartzoom.h"
-#include "plotzoom.h"
-//#include "wheelzoom.h"
-//#include "axiszoom.h"
-//#include "dragzoom.h"
 #include "plot.h"
 
 #include <qwt_scale_widget.h>
@@ -24,66 +20,18 @@
 
 #include <QKeyEvent>
 
-// Конструктор
-ChartZoom::ChartZoom(Plot *plot) :
-    QObject(plot),  qwtPlot(plot)
+ChartZoom::ChartZoom(Plot *plot) : QObject(plot),  plot(plot)
 {DD;
-    // сбрасываем признак режима
-    convType = ctNone;
-
-    // создаем контейнеры границ шкалы
-    horizontalScaleBounds = new ScaleBounds(plot, QwtAxisId(QwtAxis::xBottom, 0));    // горизонтальной
-    verticalScaleBounds = new ScaleBounds(plot, QwtAxisId(QwtAxis::yLeft, 0));    // и вертикальной
+    horizontalScaleBounds = new ScaleBounds(plot, QwtAxisId(QwtAxis::xBottom, 0));
+    verticalScaleBounds = new ScaleBounds(plot, QwtAxisId(QwtAxis::yLeft, 0));
     verticalScaleBoundsSlave = new ScaleBounds(plot, QwtAxisId(QwtAxis::yRight, 0));
-
-//    mainZoom = new PlotZoom();
-//    mainZoom->attach(this);
-
-
-//    axisZoom = new AxisZoom();
-//    connect(axisZoom,SIGNAL(xAxisClicked(double,bool)),SIGNAL(updateTrackingCursorX(double, bool)));
-//    connect(axisZoom,SIGNAL(yAxisClicked(double,bool)),SIGNAL(updateTrackingCursorY(double, bool)));
-//    connect(axisZoom,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)),SIGNAL(contextMenuRequested(QPoint,QwtAxisId)));
-//    connect(axisZoom,SIGNAL(moveCursor(Enums::Direction)),SIGNAL(moveCursor(Enums::Direction)));
-//    connect(axisZoom,SIGNAL(hover(QwtAxisId,int)),SIGNAL(hover(QwtAxisId,int)));
-//    axisZoom->attach(this);
 }
 
-// Деструктор
 ChartZoom::~ChartZoom()
 {DD;
-    // удаляем интерфейс перемещенния графика
-//    delete dragZoom;
-    // удаляем интерфейс масштабирования графика
-//    delete mainZoom;
-//    delete axisZoom;
-//    delete wheelZoom;
-    // удаляем контейнеры границ шкалы
-    delete horizontalScaleBounds;    // горизонтальной
-    delete verticalScaleBounds;    // и вертикальной
+    delete horizontalScaleBounds;
+    delete verticalScaleBounds;
     delete verticalScaleBoundsSlave;
-}
-
-// Текущий режим масштабирования
-ChartZoom::ConvType ChartZoom::regime()
-{
-    return convType;
-}
-
-// Переключение режима масштабирования
-void ChartZoom::setRegime(ChartZoom::ConvType ct)
-{DD;
-    convType = ct;
-    //emit setPickerEnabled(ct == ChartZoom::ctNone);
-}
-
-Plot *ChartZoom::plot() {
-    return qwtPlot;
-}
-
-void ChartZoom::setZoomEnabled(bool enabled)
-{DD;
-    this->activated = enabled;
 }
 
 void ChartZoom::addZoom(ChartZoom::zoomCoordinates coords, bool addToStack)
@@ -104,7 +52,7 @@ void ChartZoom::addZoom(ChartZoom::zoomCoordinates coords, bool addToStack)
         verticalScaleBoundsSlave->set(coords.coords.value(QwtAxis::yRight).x(),
                                       coords.coords.value(QwtAxis::yRight).y());
     }
-    plot()->replot();
+    plot->replot();
 }
 
 void ChartZoom::zoomBack()
@@ -113,7 +61,7 @@ void ChartZoom::zoomBack()
     zoomStack.pop();
     if (zoomStack.isEmpty()) {
         // nothing to zoom back to, autoscaling to maximum
-        plot()->autoscale();
+        plot->autoscale();
     }
     else {
         zoomCoordinates coords = zoomStack.top();
@@ -129,8 +77,7 @@ void ChartZoom::zoomBack()
                                           coords.coords.value(QwtAxis::yRight).y());
         }
     }
-    // перестраиваем график
-    plot()->replot();
+    plot->replot();
 }
 
 void ChartZoom::moveToAxis(int axis, double min, double max)

@@ -17,6 +17,7 @@ class ChartZoom;
 class DragZoom;
 class WheelZoom;
 class AxisZoom;
+class PlotZoom;
 class QwtPlotZoomer;
 class PlotTracker;
 class QAction;
@@ -205,6 +206,7 @@ private:
     DragZoom *dragZoom = nullptr;
     WheelZoom *wheelZoom = nullptr;
     AxisZoom *axisZoom = nullptr;
+    PlotZoom *plotZoom = nullptr;
     CanvasEventFilter *canvasFilter = nullptr;
 
     TrackingPanel *trackingPanel;

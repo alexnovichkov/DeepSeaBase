@@ -44,7 +44,7 @@ public:
         if (from == oldFrom && to == oldTo &&
             scaleMapEquals(oldXMap, xMap) &&
             scaleMapEquals(oldYMap, yMap)) {
-            return cashedPolyline;
+            if (!cashedPolyline.isEmpty()) return cashedPolyline;
         }
 
         //number of visible points for current zoom
@@ -268,6 +268,11 @@ void LineCurve::drawLines(QPainter *painter,
 QPointF LineCurve::samplePoint(int point) const
 {
     return QwtPlotCurve::sample(point);
+}
+
+void LineCurve::resetCashedData()
+{
+    mapper->cashedPolyline.clear();
 }
 
 void LineCurve::attachTo(QwtPlot *plot)

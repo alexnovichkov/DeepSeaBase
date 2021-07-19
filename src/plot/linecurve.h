@@ -57,6 +57,8 @@ public:
     virtual void resetHighlighting() override;
     virtual QPointF samplePoint(int point) const override;
 
+    virtual void resetCashedData();
+
     // Curve interface
 public:
     virtual int closest(const QPoint &pos, double *dist) const override;

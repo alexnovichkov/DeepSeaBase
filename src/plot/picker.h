@@ -20,24 +20,23 @@ public:
         ModeDrag
     };
     Picker(Plot *plot);
-    virtual bool eventFilter(QObject *watched, QEvent *event) override;
     inline void setMode(Plot::InteractionMode mode) {interactionMode = mode;}
     inline bool isEnabled() const {return enabled;}
     inline void setEnabled(bool enabled) {this->enabled = enabled;}
+    bool findObject(QMouseEvent *e);
+    void proceedPick(QMouseEvent *e);
+    void endPick(QMouseEvent *e);
 signals:
     void cursorMovedTo(QPointF newValue);
     void moveCursor(Enums::Direction direction);
     void cursorSelected(TrackingCursor *cursor);
-    void setZoomEnabled(bool);
     void axisClicked(QPointF value, bool secondCursor);
     void selectCursor(int index);
 private:
-    void procMouseEvent(QEvent *e);
     void procKeyboardEvent(QEvent *e);
 
-    void startPick(QMouseEvent *e);
-    void proceedPick(QMouseEvent *e);
-    void endPick(QMouseEvent *e);
+
+
 
     TrackingCursor *findCursor(const QPoint &pos);
     Curve *findClosestPoint(const QPoint &pos, int &index) const;

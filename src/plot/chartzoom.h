@@ -32,10 +32,6 @@
 #include <qwt_scale_map.h>
 #include "enums.h"
 
-class PlotZoom; // интерфейс масштабирования графика
-class DragZoom; // интерфейс перемещения графика
-class WheelZoom;
-class AxisZoom;
 class Plot;
 
 class ChartZoom : public QObject
@@ -113,42 +109,18 @@ public:
     ScaleBounds *horizontalScaleBounds,*verticalScaleBounds;
     ScaleBounds *verticalScaleBoundsSlave;
 
-    // текущий режим масштабирования
-    ConvType regime();
-    // переключение режима масштабирования
-    void setRegime(ConvType);
-
-    // указатель на опекаемый компонент QwtPlot
-    Plot *plot();
-
     void addZoom(zoomCoordinates coords, bool addToStack = false);
     void zoomBack();
     void moveToAxis(int axis, double min, double max);
     void autoscale(int axis, bool spectrogram);
-
-    bool activated;
-
-//    DragZoom *dragZoom = nullptr;
-public slots:
-    void setZoomEnabled(bool enabled);
 signals:
     void updateTrackingCursorX(double,bool);
     void updateTrackingCursorY(double,bool);
     void contextMenuRequested(const QPoint &pos, QwtAxisId axis);
     void moveCursor(Enums::Direction direction);
     void hover(QwtAxisId axis, int hover);
-    void setPickerEnabled(bool);
 private:
-    Plot *qwtPlot;
-
-    PlotZoom *mainZoom;
-
-//    WheelZoom *wheelZoom;
-//    AxisZoom *axisZoom;
-
-    ConvType convType;     // Тип текущего преобразования графика
-
-    // сохраняемый стэк масштабирования
+    Plot *plot;
     QStack<zoomCoordinates> zoomStack;
 };
 

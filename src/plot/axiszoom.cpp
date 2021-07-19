@@ -60,13 +60,14 @@ double AxisZoom::limitScale(double sz,double bs)
 
 ChartZoom::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
 {DD;
-    // определяем (для удобства) геометрию
     QRect canvasGeometry = plot->canvas()->geometry();       // канвы графика
     QRect axisGeometry = plot->axisWidget(axis)->geometry(); // и виджета шкалы
     // определяем текущее положение курсора относительно канвы
     // (за вычетом смещений графика)
     int x = evpos.x() + axisGeometry.x() - canvasGeometry.x() - currentLeftBorderInPixels;
     int y = evpos.y() + axisGeometry.y() - canvasGeometry.y() - currentTopBorderInPixels;
+
+    ChartZoom::zoomCoordinates coords;
 
     switch (ct) {
         // режим изменения левой границы
@@ -82,8 +83,8 @@ ChartZoom::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             //if (xl<0.0) xl=0.0;
             currentLeftBorder = xl;
             // устанавливаем ее для горизонтальной шкалы
-            coords.coords.clear();
-            coords.coords.insert(axis.pos, {xl,currentRightBorder});
+            coords.coords.insert(axis.pos, {xl, currentRightBorder});
+            break;
         }
             // режим изменения правой границы
         case ChartZoom::ctRight:
@@ -98,8 +99,8 @@ ChartZoom::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             double xr = currentLeftBorder + wx;
             // устанавливаем ее для горизонтальной шкалы
             currentRightBorder = xr;
-            coords.coords.clear();
             coords.coords.insert(axis.pos, {currentLeftBorder,xr});
+            break;
         }
             // режим изменения нижней границы
         case ChartZoom::ctBottom:
@@ -114,8 +115,8 @@ ChartZoom::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             double yb = currentTopBorder - hy;
 
             currentBottomBorder = yb;
-            coords.coords.clear();
             coords.coords.insert(axis.pos, {yb,currentTopBorder});
+            break;
         }
             // режим изменения верхней границы
         case ChartZoom::ctTop:
@@ -130,8 +131,8 @@ ChartZoom::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             double yt = currentBottomBorder + hy;
             // устанавливаем ее для вертикальной шкалы
             currentTopBorder = yt;
-            coords.coords.clear();
             coords.coords.insert(axis.pos, {currentBottomBorder,yt});
+            break;
         }
         default:
             break;
@@ -263,6 +264,7 @@ ChartZoom::zoomCoordinates AxisZoom::proceedAxisZoom(QMouseEvent *mEvent, QwtAxi
 
 ChartZoom::zoomCoordinates AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
 {DD;
+    ChartZoom::zoomCoordinates coords;
     if (ct == ChartZoom::ctLeft || ct == ChartZoom::ctRight
         ||ct == ChartZoom::ctBottom ||ct == ChartZoom::ctTop) {
 
@@ -276,7 +278,6 @@ ChartZoom::zoomCoordinates AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId 
             }
             else if (axis.isXAxis()) {
                 // запоминаем совершенное перемещение
-                coords.coords.clear();
                 coords.coords.insert(axis.pos, {currentLeftBorder, currentRightBorder});
             }
         }
@@ -288,12 +289,11 @@ ChartZoom::zoomCoordinates AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId 
             }
             else if (axis.isYAxis()) {
                 // запоминаем совершенное перемещение
-                coords.coords.clear();
                 coords.coords.insert(axis.pos, {currentBottomBorder, currentTopBorder});
             }
         }
         ct = ChartZoom::ctNone;
     }
-    return coords;
+    return ChartZoom::zoomCoordinates();
 }
 

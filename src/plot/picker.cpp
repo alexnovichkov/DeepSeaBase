@@ -21,41 +21,33 @@ Picker::Picker(Plot *plot) : plot(plot)
     d_selectedLabel = 0;
     d_selectedCursor = 0;
     marker = 0;
-
-    //plot->canvas()->installEventFilter(this);
 }
 
-bool Picker::eventFilter(QObject *watched, QEvent *event)
+bool Picker::findObject(QMouseEvent *e)
 {
-    if (watched == plot->canvas() && enabled) {
-        if (event->type() == QEvent::MouseButtonPress ||
-            event->type() == QEvent::MouseMove ||
-            event->type() == QEvent::MouseButtonRelease ||
-            event->type() == QEvent::MouseButtonDblClick)
-            procMouseEvent(event);
-        else if (event->type() == QEvent::KeyPress) {
-            procKeyboardEvent(event);
+    if (e->button() == Qt::LeftButton && ((e->modifiers() == Qt::NoModifier)
+                                          || (e->modifiers() == Qt::ControlModifier))) {
+        pos = e->pos();
+
+        d_selectedCursor = findCursor(pos);
+
+        if (d_selectedLabel)
+            d_selectedLabel->setSelected(false);
+        d_selectedLabel = findLabel(pos);
+
+        emit cursorSelected(d_selectedCursor);
+        if (d_selectedCursor) {
+        }
+        else if (d_selectedLabel) {
+            d_selectedLabel->setSelected(true);
+            d_currentPos = pos;
+        }
+        else {
+            d_selectedCurve = findClosestPoint(pos, d_selectedPoint);
+            d_currentPos = pos;
         }
     }
-    return QObject::eventFilter(watched,event);
-}
-
-void Picker::procMouseEvent(QEvent *e)
-{
-    QMouseEvent *mEvent = static_cast<QMouseEvent *>(e);
-
-    switch (mEvent->type())  {
-        case QEvent::MouseButtonPress:
-            startPick(mEvent);
-            break;
-        case QEvent::MouseMove:
-            proceedPick(mEvent);
-            break;
-        case QEvent::MouseButtonRelease:
-            endPick(mEvent);
-            break;
-        default: ;
-    }
+    return (d_selectedCurve || d_selectedCursor || d_selectedLabel);
 }
 
 void Picker::procKeyboardEvent(QEvent *e)
@@ -103,7 +95,6 @@ void Picker::procKeyboardEvent(QEvent *e)
                 d_selectedCurve->addLabel(label);
 
                 label->attach(plot);
-//                plot->replot();
             }
         }
         else if (d_selectedLabel) {
@@ -113,7 +104,6 @@ void Picker::procKeyboardEvent(QEvent *e)
     else if (key == Qt::Key_C) {
         if (d_selectedLabel) {
             d_selectedLabel->cycleMode();
-            //plot->replot();
         }
     }
     else if (key == Qt::Key_Delete) {
@@ -121,8 +111,6 @@ void Picker::procKeyboardEvent(QEvent *e)
             Curve *c = d_selectedLabel->curve;
             if (c) c->removeLabel(d_selectedLabel);
             d_selectedLabel = 0;
-            emit setZoomEnabled(true);
-//            plot->replot();
         }
     }
     else if (key == Qt::Key_H) {
@@ -130,117 +118,73 @@ void Picker::procKeyboardEvent(QEvent *e)
     }
 }
 
-void Picker::startPick(QMouseEvent *e)
-{
-    if (mode == ModeNone) {
-        if (e->button() == Qt::LeftButton && ((e->modifiers() == Qt::NoModifier)
-            || (e->modifiers() == Qt::ControlModifier))) {
-            pos = e->pos();
-            mode = ModeDrag;
-
-            d_selectedCursor = findCursor(pos);
-
-            if (d_selectedLabel)
-                d_selectedLabel->setSelected(false);
-            d_selectedLabel = findLabel(pos);
-
-            emit cursorSelected(d_selectedCursor);
-            if (d_selectedCursor) {
-                emit setZoomEnabled(false);
-            }
-            else if (d_selectedLabel) {
-                d_selectedLabel->setSelected(true);
-                d_currentPos = pos;
-                emit setZoomEnabled(false);
-            }
-            else {
-                d_selectedCurve = findClosestPoint(pos, d_selectedPoint);
-                d_currentPos = pos;
-                if (interactionMode == Plot::DataInteraction)
-                    emit setZoomEnabled(false);
-            }
-        }
-    }
-}
-
 void Picker::proceedPick(QMouseEvent *e)
 {
     if (!enabled) return;
 
-    if (mode == ModeDrag) {
-        QPoint currentPos = e->pos();
+    QPoint currentPos = e->pos();
 
-        if (d_selectedCursor) {
-            emit cursorMovedTo({plot->invTransform(d_selectedCursor->xAxis(), currentPos.x()),
-                                plot->invTransform(d_selectedCursor->yAxis(), currentPos.y())});
-            d_currentPos = currentPos;
-        }
-        else if (d_selectedLabel) {
-            d_selectedLabel->moveBy(currentPos-d_currentPos);
-            d_currentPos = currentPos;
-        }
-        else if (interactionMode == Plot::DataInteraction) {
-            if (d_selectedCurve && d_selectedPoint > -1) {
-                double newY = plot->invTransform(d_selectedCurve->yAxis(), currentPos.y());
-                if (d_selectedCurve->channel->data()->setYValue(d_selectedPoint, newY)) {
-                    d_selectedCurve->channel->setDataChanged(true);
-                    d_selectedCurve->channel->descriptor()->setDataChanged(true);
-                }
-                highlightPoint(true);
-            }
-        }
-        plot->replot();
+    if (d_selectedCursor) {
+        emit cursorMovedTo({plot->invTransform(d_selectedCursor->xAxis(), currentPos.x()),
+                            plot->invTransform(d_selectedCursor->yAxis(), currentPos.y())});
+        d_currentPos = currentPos;
     }
+    else if (d_selectedLabel) {
+        d_selectedLabel->moveBy(currentPos-d_currentPos);
+        d_currentPos = currentPos;
+    }
+    else if (interactionMode == Plot::DataInteraction) {
+        if (d_selectedCurve && d_selectedPoint > -1) {
+            double newY = plot->invTransform(d_selectedCurve->yAxis(), currentPos.y());
+            if (d_selectedCurve->channel->data()->setYValue(d_selectedPoint, newY)) {
+                d_selectedCurve->channel->setDataChanged(true);
+                d_selectedCurve->channel->descriptor()->setDataChanged(true);
+                d_selectedCurve->resetCashedData();
+            }
+            highlightPoint(true);
+        }
+    }
+    plot->replot();
 }
 
 void Picker::endPick(QMouseEvent *e)
 {
     if (!enabled) return;
-
-    if (mode == ModeDrag) {
-        if (e->button() == Qt::LeftButton &&
-            ((e->modifiers() == Qt::NoModifier) || (e->modifiers() == Qt::ControlModifier))) {
-            QPoint endPos = e->pos();
-
-            if (endPos == pos) {
-                highlightPoint(false);
-                for(Curve *c: plot->curves) {
-                    c->resetHighlighting();
-                }
-
-
-                //одинарный клик мышью
-                if (!d_selectedCursor) {
-                    d_selectedCursor = findCursor(endPos);
-                    if (d_selectedCursor)
-                        emit axisClicked({plot->canvasMap(d_selectedCursor->xAxis()).invTransform(endPos.x()),
-                                          plot->canvasMap(d_selectedCursor->yAxis()).invTransform(endPos.y())},
-                                         e->modifiers() & Qt::ControlModifier);
-                    else emit axisClicked({plot->canvasMap(QwtAxis::xBottom).invTransform(endPos.x()),
-                                           plot->canvasMap(QwtAxis::yLeft).invTransform(endPos.y())},
-                                          e->modifiers() & Qt::ControlModifier);
-
-                }
-
-                if (d_selectedCurve && d_selectedPoint > -1) {
-                    d_selectedCurve->highlight();
-                    highlightPoint(true);
-                }
-
-                if (d_selectedLabel) {
-                    d_selectedLabel->setSelected(true);
-                }
-            }
-            else {
-                //протащили какой-то объект, надо бросить
-            }
-
-            emit setZoomEnabled(true);
-            mode = ModeNone;
+    QPoint endPos = e->pos();
+    if (endPos == pos) {
+        //сбрасываем подсветку кривых
+        highlightPoint(false);
+        for(Curve *c: plot->curves) {
+            c->resetHighlighting();
         }
 
-        plot->replot();
+        //одинарный клик мышью
+        if (!d_selectedCursor) {
+            d_selectedCursor = findCursor(endPos);
+            if (d_selectedCursor)
+                emit axisClicked({plot->canvasMap(d_selectedCursor->xAxis()).invTransform(endPos.x()),
+                                  plot->canvasMap(d_selectedCursor->yAxis()).invTransform(endPos.y())},
+                                 e->modifiers() & Qt::ControlModifier);
+            else emit axisClicked({plot->canvasMap(QwtAxis::xBottom).invTransform(endPos.x()),
+                                   plot->canvasMap(QwtAxis::yLeft).invTransform(endPos.y())},
+                                  e->modifiers() & Qt::ControlModifier);
+
+        }
+
+        if (d_selectedCurve && d_selectedPoint > -1) {
+            d_selectedCurve->highlight();
+            highlightPoint(true);
+        }
+
+        if (d_selectedLabel) {
+            d_selectedLabel->setSelected(true);
+        }
     }
+    else {
+        //протащили какой-то объект, надо бросить
+    }
+
+    plot->replot();
 }
 
 TrackingCursor *Picker::findCursor(const QPoint &pos)

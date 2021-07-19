@@ -11,6 +11,8 @@ class ChartZoom;
 class DragZoom;
 class WheelZoom;
 class AxisZoom;
+class PlotZoom;
+class Picker;
 
 class CanvasEventFilter : public QObject
 {
@@ -26,20 +28,20 @@ public:
     // Top - режим изменения верхней границы
     // Pick - перемещение объекта по графику
     enum class ActionType {None,
-                           Zoom,
-                           Drag,
-                           Left,
-                           Right,
-                           Bottom,
-                           Top,
-                           Pick};
+                           Zoom, // выделение
+                           Drag, //перетаскивание
+                           Axis, //на осях
+                           Pick //перетаскивание объектов
+                          };
 
 
     explicit CanvasEventFilter(Plot *parent);
     void setZoom(ChartZoom *zoom) {this->zoom = zoom;}
-    void setDragZoom(DragZoom *zoom) {this->dragZoom = zoom;}
-    void setWheelZoom(WheelZoom *zoom) {this->wheelZoom = zoom;}
-    void setAxisZoom(AxisZoom *zoom) {this->axisZoom = zoom;}
+    void setDragZoom(DragZoom *zoom) {dragZoom = zoom;}
+    void setWheelZoom(WheelZoom *zoom) {wheelZoom = zoom;}
+    void setAxisZoom(AxisZoom *zoom) {axisZoom = zoom;}
+    void setPicker(Picker *picker) {this->picker = picker;}
+    void setPlotZoom(PlotZoom *zoom) {plotZoom = zoom;}
 signals:
     void hover(QwtAxisId axis, int hover); //0=none, 1=first half, 2 = second half
     void contextMenuRequested(const QPoint &pos, QwtAxisId axis);
@@ -51,16 +53,18 @@ private:
     void procWheelEvent(QwtAxisId axis, QEvent *event);
     void procAxisEvent(QwtAxisId axis, QEvent *event);
 
-    void startPress(QMouseEvent *event);
-    void moveMouse(QMouseEvent *event);
-    void endPress(QMouseEvent *event);
+    void mousePress(QMouseEvent *event);
+    void mouseMove(QMouseEvent *event);
+    void mouseRelease(QMouseEvent *event);
     void applyWheel(QEvent *event, QwtAxisId axis);
 
     Plot *plot;
-    ChartZoom *zoom;
-    DragZoom *dragZoom;
-    WheelZoom *wheelZoom;
-    AxisZoom *axisZoom;
+    ChartZoom *zoom; //отвечает за запоминание изменений масштаба
+    DragZoom *dragZoom; //отвечает за перетаскивание графика
+    WheelZoom *wheelZoom; //отвечает за зум графика колесиком
+    AxisZoom *axisZoom; //отвечает за изменение масштаба на осях
+    PlotZoom *plotZoom; //отвечает за изменение масштаба выделением
+    Picker *picker;
 
     ActionType actionType = ActionType::None;
     bool enabled = true;
