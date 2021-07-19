@@ -22,14 +22,14 @@
 class Plot;
 #include <QObject>
 #include "qwt_axis_id.h"
-#include "chartzoom.h"
+#include "zoomstack.h"
 
 class WheelZoom : public QObject
 {
     Q_OBJECT
 public:
     explicit WheelZoom(Plot *plot);
-    ChartZoom::zoomCoordinates applyWheel(QEvent *, QwtAxisId axis);
+    ZoomStack::zoomCoordinates applyWheel(QEvent *, QwtAxisId axis);
 private:
     Plot *plot;
     QPointF getCoords(QwtAxisId axis, int pos, double factor);

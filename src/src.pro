@@ -55,6 +55,7 @@ SOURCES += main.cpp\
     plot/canvaseventfilter.cpp \
     plot/imagerenderdialog.cpp \
     plot/trackingcursor.cpp \
+    plot/zoomstack.cpp \
     sortabletreewidgetitem.cpp \
     checkableheaderview.cpp \
     methods/spectremethod.cpp \
@@ -116,7 +117,6 @@ SOURCES += main.cpp\
     plot/legend.cpp \
     plot/logscaleengine.cpp \
     plot/pointlabel.cpp \
-    plot/chartzoom.cpp \
     plot/plotzoom.cpp \
     plot/axiszoom.cpp \
     plot/dragzoom.cpp \
@@ -147,6 +147,7 @@ HEADERS  += mainwindow.h \
     plot/canvaseventfilter.h \
     plot/imagerenderdialog.h \
     plot/trackingcursor.h \
+    plot/zoomstack.h \
     sortabletreewidgetitem.h \
     checkableheaderview.h \
     methods/abstractmethod.h \
@@ -209,7 +210,6 @@ HEADERS  += mainwindow.h \
     plot/barcurve.h \
     plot/logscaleengine.h \
     plot/pointlabel.h \
-    plot/chartzoom.h \
     plot/plotzoom.h \
     plot/axiszoom.h \
     plot/dragzoom.h \

@@ -1,7 +1,7 @@
 #include "canvaseventfilter.h"
 
 #include "plot.h"
-#include "chartzoom.h"
+#include "zoomstack.h"
 #include "dragzoom.h"
 #include "wheelzoom.h"
 #include "axiszoom.h"
@@ -111,7 +111,7 @@ void CanvasEventFilter::procKeyboardEvent(QEvent *event)
     QKeyEvent *kEvent = dynamic_cast<QKeyEvent*>(event);
     switch (kEvent->key()) {
         case Qt::Key_Backspace: {
-            zoom->zoomBack();
+            zoomStack->zoomBack();
             break;
         }
         case Qt::Key_Escape: {//прерывание выделения
@@ -149,7 +149,7 @@ void CanvasEventFilter::procKeyboardEvent(QEvent *event)
 void CanvasEventFilter::procWheelEvent(QwtAxisId axis, QEvent *event)
 {
     auto coords = wheelZoom->applyWheel(event, axis);
-    zoom->addZoom(coords, false);
+    zoomStack->addZoom(coords, false);
 }
 
 void CanvasEventFilter::procAxisEvent(QwtAxisId axis, QEvent *event)
@@ -177,12 +177,12 @@ void CanvasEventFilter::procAxisEvent(QwtAxisId axis, QEvent *event)
         }
         case QEvent::MouseMove: {
             auto coords = axisZoom->proceedAxisZoom(mEvent, axis);
-            zoom->addZoom(coords, false);
+            zoomStack->addZoom(coords, false);
             break;
         }
         case QEvent::MouseButtonRelease: {
             auto coords = axisZoom->endAxisZoom(mEvent, axis);
-            zoom->addZoom(coords, true);
+            zoomStack->addZoom(coords, true);
             actionType = ActionType::None;
             break;
         }
@@ -190,13 +190,13 @@ void CanvasEventFilter::procAxisEvent(QwtAxisId axis, QEvent *event)
             if (mEvent->button()==Qt::LeftButton) {
                 AxisBoundsDialog dialog(plot->canvasMap(axis).s1(), plot->canvasMap(axis).s2(), axis);
                 if (dialog.exec()) {
-                    ChartZoom::zoomCoordinates coords;
+                    ZoomStack::zoomCoordinates coords;
                     if (axis == QwtAxis::xBottom || axis == QwtPlot::xTop)
                         coords.coords.insert(QwtAxis::xBottom, {dialog.leftBorder(), dialog.rightBorder()});
-                    else if (zoom->verticalScaleBounds->axis == axis.pos ||
-                             zoom->verticalScaleBoundsSlave->axis == axis.pos)
+                    else if (zoomStack->verticalScaleBounds->axis == axis.pos ||
+                             zoomStack->verticalScaleBoundsSlave->axis == axis.pos)
                         coords.coords.insert(axis.pos, {dialog.leftBorder(), dialog.rightBorder()});
-                    zoom->addZoom(coords, true);
+                    zoomStack->addZoom(coords, true);
 
 //                    if (dialog.autoscale()) {
 //                        emit needsAutoscale(axis);
@@ -246,7 +246,7 @@ void CanvasEventFilter::mouseMove(QMouseEvent *event)
 {
     if (actionType == ActionType::Drag) {
         auto coords = dragZoom->proceedDrag(event);
-        zoom->addZoom(coords, false);
+        zoomStack->addZoom(coords, false);
     }
     else if (actionType == ActionType::Zoom) {
         plotZoom->proceedZoom(event);
@@ -260,12 +260,12 @@ void CanvasEventFilter::mouseRelease(QMouseEvent *event)
 {DD;
     if (actionType == ActionType::Drag) {
         auto coords = dragZoom->endDrag(event);
-        zoom->addZoom(coords, true);
+        zoomStack->addZoom(coords, true);
         actionType = ActionType::None;
     }
     else if (actionType == ActionType::Zoom) {
         auto coords = plotZoom->endZoom(event);
-        zoom->addZoom(coords, true);
+        zoomStack->addZoom(coords, true);
         actionType = ActionType::None;
     }
     else if (actionType == ActionType::Pick) {

@@ -13,7 +13,7 @@ class Curve;
 class Channel;
 class FileDescriptor;
 
-class ChartZoom;
+class ZoomStack;
 class DragZoom;
 class WheelZoom;
 class AxisZoom;
@@ -202,7 +202,7 @@ private:
 
     bool xScaleIsLogarithmic = false; //false = linear, true = logarithmic
 
-    ChartZoom *zoom = nullptr;
+    ZoomStack *zoom = nullptr;
     DragZoom *dragZoom = nullptr;
     WheelZoom *wheelZoom = nullptr;
     AxisZoom *axisZoom = nullptr;

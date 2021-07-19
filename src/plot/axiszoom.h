@@ -1,7 +1,7 @@
 #ifndef QAXISZOOMSVC_H
 #define QAXISZOOMSVC_H
 
-#include "chartzoom.h"
+#include "zoomstack.h"
 
 class Plot;
 
@@ -13,8 +13,8 @@ public:
     explicit AxisZoom(Plot *plot);
     void startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis);
     void startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis);
-    ChartZoom::zoomCoordinates proceedAxisZoom(QMouseEvent *, QwtAxisId axis);
-    ChartZoom::zoomCoordinates endAxisZoom(QMouseEvent *, QwtAxisId axis);
+    ZoomStack::zoomCoordinates proceedAxisZoom(QMouseEvent *, QwtAxisId axis);
+    ZoomStack::zoomCoordinates endAxisZoom(QMouseEvent *, QwtAxisId axis);
 signals:
     void xAxisClicked(double xValue, bool second);
     void yAxisClicked(double xValue, bool second);
@@ -41,9 +41,9 @@ private:
 
     // ограничение нового размера шкалы
     double limitScale(double,double);
-    ChartZoom::zoomCoordinates axisApplyMove(QPoint, QwtAxisId);
+    ZoomStack::zoomCoordinates axisApplyMove(QPoint, QwtAxisId);
 
-    ChartZoom::ConvType ct = ChartZoom::ctNone;
+    ZoomStack::ConvType ct = ZoomStack::ctNone;
 };
 
 #endif // QAXISZOOMSVC_H

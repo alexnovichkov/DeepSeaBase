@@ -34,13 +34,13 @@
 
 class Plot;
 
-class ChartZoom : public QObject
+class ZoomStack : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit ChartZoom(Plot *plot);
-    ~ChartZoom();
+    explicit ZoomStack(Plot *plot);
+    ~ZoomStack();
 
     // Значения типа текущего преобразования графика
     // ctNone - нет преобразования
@@ -102,10 +102,7 @@ public:
         QMap<int, QPointF> coords;
     };
 
-    /**************************************************/
 
-    // Контейнеры границ шкалы
-    // (вертикальной и горизонтальной)
     ScaleBounds *horizontalScaleBounds,*verticalScaleBounds;
     ScaleBounds *verticalScaleBoundsSlave;
 
@@ -113,12 +110,6 @@ public:
     void zoomBack();
     void moveToAxis(int axis, double min, double max);
     void autoscale(int axis, bool spectrogram);
-signals:
-    void updateTrackingCursorX(double,bool);
-    void updateTrackingCursorY(double,bool);
-    void contextMenuRequested(const QPoint &pos, QwtAxisId axis);
-    void moveCursor(Enums::Direction direction);
-    void hover(QwtAxisId axis, int hover);
 private:
     Plot *plot;
     QStack<zoomCoordinates> zoomStack;

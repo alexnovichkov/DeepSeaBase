@@ -15,7 +15,7 @@
 /**********************************************************/
 
 #include "logging.h"
-#include "chartzoom.h"
+#include "zoomstack.h"
 #include <QRubberBand>
 #include "qwt_scale_map.h"
 #include <QtDebug>
@@ -55,14 +55,14 @@ void PlotZoom::proceedZoom(QMouseEvent *mEvent)
     }
 }
 
-ChartZoom::zoomCoordinates PlotZoom::endZoom(QMouseEvent *mEvent)
+ZoomStack::zoomCoordinates PlotZoom::endZoom(QMouseEvent *mEvent)
 {
     stopZoom();
     // определяем положение курсора, т.е. координаты xp и yp
     // конечной точки выделенной области (в пикселах относительно канвы QwtPlot)
     int xp = mEvent->pos().x();
     int yp = mEvent->pos().y();
-    ChartZoom::zoomCoordinates coords;
+    ZoomStack::zoomCoordinates coords;
 
     if (qAbs(xp - startingPosX) >= MinimumZoom && qAbs(yp - startingPosY) >= MinimumZoom) {
         int leftmostX = qMin(xp, startingPosX); int rightmostX = qMax(xp, startingPosX);

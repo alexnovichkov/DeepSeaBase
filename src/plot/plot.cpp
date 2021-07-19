@@ -14,7 +14,7 @@
 #include "barcurve.h"
 #include "spectrocurve.h"
 
-#include "chartzoom.h"
+#include "zoomstack.h"
 #include "colormapfactory.h"
 
 #include <qwt_plot_zoomer.h>
@@ -199,7 +199,7 @@ Plot::Plot(QWidget *parent) :
     createLegend();
 
 
-    zoom = new ChartZoom(this);
+    zoom = new ZoomStack(this);
 
     tracker = new PlotTracker(this);
     tracker->setEnabled(App->getSetting("pickerEnabled", true).toBool());
@@ -554,7 +554,7 @@ void Plot::showContextMenu(const QPoint &pos, QwtAxisId axis)
             double p2 = leftMap.p2();
             double delta = leftMap.invTransform((p1+p2)/2.0);
 
-            ChartZoom::zoomCoordinates coords;
+            ZoomStack::zoomCoordinates coords;
             coords.coords.insert(QwtAxis::yLeft, {s1-delta, s2-delta});
 
             // 2. Центруем нуль правой оси
@@ -580,7 +580,7 @@ void Plot::showContextMenu(const QPoint &pos, QwtAxisId axis)
             double s = std::min(s1,s3);
             double ss = std::min(s2,s4);
 
-            ChartZoom::zoomCoordinates coords;
+            ZoomStack::zoomCoordinates coords;
             coords.coords.insert(QwtAxis::yLeft, {s, ss});
             coords.coords.insert(QwtAxis::yRight, {s, ss});
 
@@ -810,7 +810,7 @@ void Plot::createLegend()
 
 void Plot::recalculateScale(bool leftAxis)
 {
-    ChartZoom::ScaleBounds *ybounds = 0;
+    ZoomStack::ScaleBounds *ybounds = 0;
     if (leftAxis) ybounds = zoom->verticalScaleBounds;
     else ybounds = zoom->verticalScaleBoundsSlave;
 
@@ -940,7 +940,7 @@ bool Plot::plotCurve(Channel * ch, QColor *col, bool &plotOnRight, int fileNumbe
         zoom->verticalScaleBounds->add(ch->data()->zMin(), ch->data()->zMax());
     }
     else {
-        ChartZoom::ScaleBounds *ybounds = 0;
+        ZoomStack::ScaleBounds *ybounds = 0;
         if (zoom->verticalScaleBounds->axis == ax.pos) ybounds = zoom->verticalScaleBounds;
         else ybounds = zoom->verticalScaleBoundsSlave;
 

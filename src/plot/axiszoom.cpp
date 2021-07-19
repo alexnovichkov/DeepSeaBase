@@ -35,7 +35,7 @@ double AxisZoom::limitScale(double sz,double bs)
     return sz;
 }
 
-ChartZoom::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
+ZoomStack::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
 {DD;
     QRect canvasGeometry = plot->canvas()->geometry();       // канвы графика
     QRect axisGeometry = plot->axisWidget(axis)->geometry(); // и виджета шкалы
@@ -44,11 +44,11 @@ ChartZoom::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
     int x = evpos.x() + axisGeometry.x() - canvasGeometry.x() - currentLeftBorderInPixels;
     int y = evpos.y() + axisGeometry.y() - canvasGeometry.y() - currentTopBorderInPixels;
 
-    ChartZoom::zoomCoordinates coords;
+    ZoomStack::zoomCoordinates coords;
 
     switch (ct) {
         // режим изменения левой границы
-        case ChartZoom::ctLeft: {
+        case ZoomStack::ctLeft: {
             // ограничение на положение курсора справа
             if (x >= currentPixelWidth) x = currentPixelWidth-1;
             // вычисляем новую ширину шкалы
@@ -64,7 +64,7 @@ ChartZoom::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             break;
         }
             // режим изменения правой границы
-        case ChartZoom::ctRight:
+        case ZoomStack::ctRight:
         {
             // ограничение на положение курсора слева
             if (x <= 0) x = 1;
@@ -80,7 +80,7 @@ ChartZoom::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             break;
         }
             // режим изменения нижней границы
-        case ChartZoom::ctBottom:
+        case ZoomStack::ctBottom:
         {
             // ограничение на положение курсора сверху
             if (y <= 0) y = 1;
@@ -96,7 +96,7 @@ ChartZoom::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             break;
         }
             // режим изменения верхней границы
-        case ChartZoom::ctTop:
+        case ZoomStack::ctTop:
         {
             // ограничение на положение курсора снизу
             if (y >= currentPixelHeight) y = currentPixelHeight-1;
@@ -120,7 +120,7 @@ ChartZoom::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
 
 void AxisZoom::startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis)
 {DD;
-    if (ct == ChartZoom::ctNone) {
+    if (ct == ZoomStack::ctNone) {
         QwtScaleWidget *scaleWidget = plot->axisWidget(axis);
 
         QwtScaleMap canvasMap = plot->canvasMap(axis);
@@ -151,14 +151,14 @@ void AxisZoom::startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis)
                 // (правее или левее середины шкалы)
                 // включаем соответствующий режим - изменение
                 if (cursorPosX >= qFloor(currentPixelWidth/2))
-                    ct = ChartZoom::ctRight;     // правой границы
+                    ct = ZoomStack::ctRight;     // правой границы
                 else
-                    ct = ChartZoom::ctLeft;    // или левой
+                    ct = ZoomStack::ctLeft;    // или левой
             }
         }
 
         // если один из режимов был включен
-        if (ct != ChartZoom::ctNone) {
+        if (ct != ZoomStack::ctNone) {
             // запоминаем текущий курсор
             cursor = scaleWidget->cursor();
             scaleWidget->setCursor(Qt::PointingHandCursor);
@@ -170,7 +170,7 @@ void AxisZoom::startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis)
 // (включение изменения масштаба шкалы)
 void AxisZoom::startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis)
 {DD;
-    if (ct == ChartZoom::ctNone) {
+    if (ct == ZoomStack::ctNone) {
         QwtScaleWidget *scaleWidget = plot->axisWidget(axis);
 
         QwtScaleMap sm = plot->canvasMap(axis);
@@ -201,13 +201,13 @@ void AxisZoom::startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis)
                 // (ниже или выше середины шкалы)
                 // включаем соответствующий режим - изменение
                 if (cursorPosY >= floor(currentPixelHeight/2))
-                    ct = ChartZoom::ctBottom;     // нижней границы
-                else ct = ChartZoom::ctTop;    // или верхней
+                    ct = ZoomStack::ctBottom;     // нижней границы
+                else ct = ZoomStack::ctTop;    // или верхней
             }
         }
 
         // если один из режимов был включен
-        if (ct != ChartZoom::ctNone) {
+        if (ct != ZoomStack::ctNone) {
             // запоминаем текущий курсор
             cursor = scaleWidget->cursor();
             scaleWidget->setCursor(Qt::PointingHandCursor);
@@ -215,10 +215,10 @@ void AxisZoom::startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis)
     }
 }
 
-ChartZoom::zoomCoordinates AxisZoom::proceedAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
+ZoomStack::zoomCoordinates AxisZoom::proceedAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
 {DD;
-    if (ct == ChartZoom::ctLeft || ct == ChartZoom::ctRight
-        || ct == ChartZoom::ctBottom || ct == ChartZoom::ctTop)
+    if (ct == ZoomStack::ctLeft || ct == ZoomStack::ctRight
+        || ct == ZoomStack::ctBottom || ct == ZoomStack::ctTop)
         return axisApplyMove(mEvent->pos(), axis);
 
 
@@ -236,18 +236,18 @@ ChartZoom::zoomCoordinates AxisZoom::proceedAxisZoom(QMouseEvent *mEvent, QwtAxi
         else
             emit hover(axis, 1);
     }
-    return ChartZoom::zoomCoordinates();
+    return ZoomStack::zoomCoordinates();
 }
 
-ChartZoom::zoomCoordinates AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
+ZoomStack::zoomCoordinates AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
 {DD;
-    ChartZoom::zoomCoordinates coords;
-    if (ct == ChartZoom::ctLeft || ct == ChartZoom::ctRight
-        ||ct == ChartZoom::ctBottom ||ct == ChartZoom::ctTop) {
+    ZoomStack::zoomCoordinates coords;
+    if (ct == ZoomStack::ctLeft || ct == ZoomStack::ctRight
+        ||ct == ZoomStack::ctBottom ||ct == ZoomStack::ctTop) {
 
         plot->axisWidget(axis)->setCursor(cursor);
 
-        if (ct == ChartZoom::ctLeft || ct == ChartZoom::ctRight) {
+        if (ct == ZoomStack::ctLeft || ct == ZoomStack::ctRight) {
             // emit axisClicked signal only if it is really just a click within 3 pixels
             if (qAbs(mEvent->pos().x() - currentLeftShiftInPixels - cursorPosX)<3) {
                 double xVal = plot->canvasMap(axis).invTransform(mEvent->pos().x());
@@ -258,7 +258,7 @@ ChartZoom::zoomCoordinates AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId 
                 coords.coords.insert(axis.pos, {currentLeftBorder, currentRightBorder});
             }
         }
-        if (ct == ChartZoom::ctBottom ||ct == ChartZoom::ctTop) {
+        if (ct == ZoomStack::ctBottom ||ct == ZoomStack::ctTop) {
             // emit axisClicked signal only if it is really just a click within 3 pixels
             if (qAbs(mEvent->pos().y() - currentTopShiftInPixels - cursorPosY)<3) {
                 double yVal = plot->canvasMap(axis).invTransform(mEvent->pos().y());
@@ -269,8 +269,8 @@ ChartZoom::zoomCoordinates AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId 
                 coords.coords.insert(axis.pos, {currentBottomBorder, currentTopBorder});
             }
         }
-        ct = ChartZoom::ctNone;
+        ct = ZoomStack::ctNone;
     }
-    return ChartZoom::zoomCoordinates();
+    return ZoomStack::zoomCoordinates();
 }
 

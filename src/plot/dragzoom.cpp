@@ -1,7 +1,7 @@
 #include "dragzoom.h"
 
 #include "logging.h"
-#include "chartzoom.h"
+#include "zoomstack.h"
 #include "plot.h"
 
 DragZoom::DragZoom(Plot *plot) : QObject(plot), plot(plot)
@@ -38,7 +38,7 @@ void DragZoom::startDrag(QMouseEvent *mEvent)
 }
 
 
-ChartZoom::zoomCoordinates DragZoom::proceedDrag(QMouseEvent *mEvent)
+ZoomStack::zoomCoordinates DragZoom::proceedDrag(QMouseEvent *mEvent)
 {DD;
     plot->canvas()->setCursor(Qt::ClosedHandCursor);
     auto mousePos = mEvent->pos();
@@ -54,7 +54,7 @@ ChartZoom::zoomCoordinates DragZoom::proceedDrag(QMouseEvent *mEvent)
         dy1 = 0.0;
     }
 
-    ChartZoom::zoomCoordinates coords;
+    ZoomStack::zoomCoordinates coords;
     if (!qFuzzyIsNull(dx))
         coords.coords.insert(QwtAxis::xBottom, {minHorizontalBound + dx, maxHorizontalBound + dx});
     if (!qFuzzyIsNull(dy))
@@ -65,13 +65,13 @@ ChartZoom::zoomCoordinates DragZoom::proceedDrag(QMouseEvent *mEvent)
     return coords;
 }
 
-ChartZoom::zoomCoordinates DragZoom::endDrag(QMouseEvent *mEvent)
+ZoomStack::zoomCoordinates DragZoom::endDrag(QMouseEvent *mEvent)
 {DDD;
     Q_UNUSED(mEvent);
 
     plot->canvas()->setCursor(tCursor);
 
-    ChartZoom::zoomCoordinates coords;
+    ZoomStack::zoomCoordinates coords;
     if (!qFuzzyIsNull(dx)) {
         coords.coords.insert(QwtAxis::xBottom, {minHorizontalBound + dx, maxHorizontalBound + dx});
     }

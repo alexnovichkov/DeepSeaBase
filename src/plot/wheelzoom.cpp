@@ -9,7 +9,7 @@ WheelZoom::WheelZoom(Plot *plot) : QObject(plot), plot(plot)
 
 }
 
-ChartZoom::zoomCoordinates WheelZoom::applyWheel(QEvent *event, QwtAxisId axis)
+ZoomStack::zoomCoordinates WheelZoom::applyWheel(QEvent *event, QwtAxisId axis)
 {DD;
     QWheelEvent *wEvent = static_cast<QWheelEvent *>(event);
 
@@ -18,7 +18,7 @@ ChartZoom::zoomCoordinates WheelZoom::applyWheel(QEvent *event, QwtAxisId axis)
     QPoint delta = wEvent->angleDelta();
     const int wheelDelta = delta.y();
 
-    ChartZoom::zoomCoordinates coords;
+    ZoomStack::zoomCoordinates coords;
 
     if (wheelDelta != 0) {   // если колесо вращалось
         double wheelSteps = wheelDelta/120.0;

@@ -4,7 +4,7 @@
 
 #include <QObject>
 
-#include "chartzoom.h"
+#include "zoomstack.h"
 class QMouseEvent;
 class Plot;
 
@@ -17,8 +17,8 @@ class DragZoom : public QObject
 public:
     explicit DragZoom(Plot *plot);
     void startDrag(QMouseEvent *);
-    ChartZoom::zoomCoordinates proceedDrag(QMouseEvent *);
-    ChartZoom::zoomCoordinates endDrag(QMouseEvent *);
+    ZoomStack::zoomCoordinates proceedDrag(QMouseEvent *);
+    ZoomStack::zoomCoordinates endDrag(QMouseEvent *);
 private:
     Plot *plot;
     QCursor tCursor;        // Буфер для временного хранения курсора

@@ -7,7 +7,7 @@
 
 class Plot;
 class QMouseEvent;
-class ChartZoom;
+class ZoomStack;
 class DragZoom;
 class WheelZoom;
 class AxisZoom;
@@ -38,7 +38,7 @@ public:
 
 
     explicit CanvasEventFilter(Plot *parent);
-    void setZoom(ChartZoom *zoom) {this->zoom = zoom;}
+    void setZoom(ZoomStack *zoom) {this->zoomStack = zoom;}
     void setDragZoom(DragZoom *zoom) {dragZoom = zoom;}
     void setWheelZoom(WheelZoom *zoom) {wheelZoom = zoom;}
     void setAxisZoom(AxisZoom *zoom) {axisZoom = zoom;}
@@ -62,7 +62,7 @@ private:
     void applyWheel(QEvent *event, QwtAxisId axis);
 
     Plot *plot;
-    ChartZoom *zoom; //отвечает за запоминание изменений масштаба
+    ZoomStack *zoomStack; //отвечает за запоминание изменений масштаба
     DragZoom *dragZoom; //отвечает за перетаскивание графика
     WheelZoom *wheelZoom; //отвечает за зум графика колесиком
     AxisZoom *axisZoom; //отвечает за изменение масштаба на осях

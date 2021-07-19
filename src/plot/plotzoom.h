@@ -27,7 +27,7 @@
 #include <QColor>
 #include <QCursor>
 
-#include "chartzoom.h"
+#include "zoomstack.h"
 
 class QMouseEvent;
 class QRubberBand;
@@ -43,7 +43,7 @@ public:
 
     void startZoom(QMouseEvent *);
     void proceedZoom(QMouseEvent *);
-    ChartZoom::zoomCoordinates endZoom(QMouseEvent *);
+    ZoomStack::zoomCoordinates endZoom(QMouseEvent *);
     void stopZoom();
 private:
     QRubberBand *rubberBand = nullptr;
