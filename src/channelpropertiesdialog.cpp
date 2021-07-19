@@ -41,7 +41,6 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
 
     QTabWidget *tab = new QTabWidget(this);
     QWidget *properties = new QWidget(this);
-    tab->addTab(properties, "Свойства");
     QFormLayout *propertiesFL = new QFormLayout;
     dataProperties = {{"Число отсчетов", nullptr},
                       {"Число блоков", nullptr},
@@ -114,19 +113,32 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
         propertiesFL->addRow(dataProperties[i].displayName, dataProperties[i].label);
     }
     properties->setLayout(propertiesFL);
+    QScrollArea *scroll1 = new QScrollArea(this);
+    scroll1->setWidget(properties);
+    scroll1->setWidgetResizable(true);
+    tab->addTab(scroll1, "Свойства");
+    scroll1->setFrameShape(QFrame::NoFrame);
 
     QWidget *descriptions = new QWidget(this);
-    tab->addTab(descriptions, "Функция");
 
-    descriptionsTable = new QTableWidget(this);
-    descriptionsTable->setColumnCount(1);
-    descriptionsTable->setHorizontalHeaderLabels({"Параметр", "Значение"});
-    descriptionsTable->horizontalHeader()->setStretchLastSection(true);
 
-    QVBoxLayout *descriptionsL = new QVBoxLayout;
-    descriptionsL->setContentsMargins(0,0,0,0);
-    descriptionsL->addWidget(descriptionsTable);
-    descriptions->setLayout(descriptionsL);
+//    descriptionsTable = new QTableWidget(this);
+//    descriptionsTable->setColumnCount(1);
+//    descriptionsTable->setHorizontalHeaderLabels({"Параметр", "Значение"});
+//    descriptionsTable->horizontalHeader()->setStretchLastSection(true);
+
+//    QVBoxLayout *descriptionsL = new QVBoxLayout;
+//    descriptionsL->setContentsMargins(0,0,0,0);
+//    descriptionsL->addWidget(descriptionsTable);
+//    descriptions->setLayout(descriptionsL);
+
+    descriptionsLayout = new QFormLayout(this);
+    descriptions->setLayout(descriptionsLayout);
+    auto scroll2 = new QScrollArea(this);
+    scroll2->setWidget(descriptions);
+    scroll2->setWidgetResizable(true);
+    scroll2->setFrameShape(QFrame::NoFrame);
+    tab->addTab(scroll2, "Функция");
 
     splitter->addWidget(tab);
 
@@ -181,19 +193,34 @@ void ChannelPropertiesDialog::currentChannelChanged(QTreeWidgetItem *cur, QTreeW
         auto data = d->dataDescription().filter("function");
         data.remove("format");
         data.remove("precision");
-        descriptionsTable->clearContents();
-        descriptionsTable->setRowCount(data.size());
-        int i=0;
+//        descriptionsTable->clearContents();
+//        descriptionsTable->setRowCount(data.size());
+//        int i=0;
+//        for (auto [key, val]: asKeyValueRange(data)) {
+//            if (auto item = descriptionsTable->verticalHeaderItem(i))
+//                item->setText(key);
+//            else
+//                descriptionsTable->setVerticalHeaderItem(i, new QTableWidgetItem(key));
+//            if (auto item = descriptionsTable->item(i,0))
+//                item->setText(val.toString());
+//            else
+//                descriptionsTable->setItem(i,0, new QTableWidgetItem(val.toString()));
+//            i++;
+//        }
+
+        while (descriptionsLayout->rowCount()>0) descriptionsLayout->removeRow(0);
+//        int i=0;
         for (auto [key, val]: asKeyValueRange(data)) {
-            if (auto item = descriptionsTable->verticalHeaderItem(i))
-                item->setText(key);
-            else
-                descriptionsTable->setVerticalHeaderItem(i, new QTableWidgetItem(key));
-            if (auto item = descriptionsTable->item(i,0))
-                item->setText(val.toString());
-            else
-                descriptionsTable->setItem(i,0, new QTableWidgetItem(val.toString()));
-            i++;
+            descriptionsLayout->addRow(key, new QLabel(val.toString(), this));
+//            if (auto item = descriptionsTable->verticalHeaderItem(i))
+//                item->setText(key);
+//            else
+//                descriptionsTable->setVerticalHeaderItem(i, new QTableWidgetItem(key));
+//            if (auto item = descriptionsTable->item(i,0))
+//                item->setText(val.toString());
+//            else
+//                descriptionsTable->setItem(i,0, new QTableWidgetItem(val.toString()));
+//            i++;
         }
     }
     else {

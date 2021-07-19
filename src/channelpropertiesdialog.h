@@ -13,6 +13,7 @@ class QTreeWidget;
 class QTabWidget;
 class QTreeWidgetItem;
 class QTableWidget;
+class QFormLayout;
 
 struct CurrentEdited {
     int index = -1;
@@ -54,6 +55,7 @@ private:
     QLabel *file;
     QTreeWidget *channelsTable;
     QTableWidget *descriptionsTable;
+    QFormLayout *descriptionsLayout;
 
     QVector<ChannelProperty> channelProperties;
     QVector<DataProperty> dataProperties;
