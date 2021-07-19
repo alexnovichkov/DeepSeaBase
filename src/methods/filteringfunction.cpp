@@ -235,7 +235,7 @@ void FilteringFunction::m_setProperty(const QString &property, const QVariant &v
         if (map.value("type").toInt()<=Filtering::BandStop) values << "Bessel"<<"Elliptic"<<"Legendre";
         values << "RBJ";
 
-        emit attributeChanged("Filtering/approximation",values,"enumNames");
+        emit attributeChanged(this, "Filtering/approximation",values,"enumNames");
     }
 }
 

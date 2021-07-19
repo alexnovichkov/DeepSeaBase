@@ -46,10 +46,10 @@ TimeAlgorithm::TimeAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent)
 //            samplingF, SLOT(updateProperty(QString,QVariant)));
 
     //перенаправляем сигналы от функций в интерфейс пользователя
-    for (AbstractFunction *f: qAsConst(m_functions)) {
-        connect(f, SIGNAL(attributeChanged(QString,QVariant,QString)),SIGNAL(attributeChanged(QString,QVariant,QString)));
-        connect(f, SIGNAL(tick()), this, SIGNAL(tick()));
-    }
+//    for (AbstractFunction *f: qAsConst(m_functions)) {
+//        connect(f, SIGNAL(attributeChanged(QString,QVariant,QString)),SIGNAL(attributeChanged(QString,QVariant,QString)));
+//        connect(f, SIGNAL(tick()), this, SIGNAL(tick()));
+//    }
 }
 
 

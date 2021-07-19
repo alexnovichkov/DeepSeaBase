@@ -88,7 +88,8 @@ DataDescription WindowingFunction::getFunctionDescription() const
 
     result.put("function.name", "WIN");
     result.put("function.window", Windowing::windowDescriptionEng(windowing.getWindowType()));
-    result.put("function.windowParameter", windowing.getParameter());
+    if (windowing.windowAcceptsParameter(windowing.getWindowType()))
+        result.put("function.windowParameter", windowing.getParameter());
     result.put("function.windowCorrection", Windowing::correctionDescription(windowing.getCorrectionType()));
 
     return result;
@@ -99,9 +100,12 @@ void WindowingFunction::m_setProperty(const QString &property, const QVariant &v
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
-    if (p == "type") windowing.setWindowType(static_cast<Windowing::WindowType>(val.toInt()));
-    if (p == "correction") windowing.setCorrectionType(static_cast<Windowing::CorrectionType>(val.toInt()));
-    else if (p == "parameter") windowing.setParameter(val.toDouble());
+    if (p == "type")
+        windowing.setWindowType(static_cast<Windowing::WindowType>(val.toInt()));
+    else if (p == "correction")
+        windowing.setCorrectionType(static_cast<Windowing::CorrectionType>(val.toInt()));
+    else if (p == "parameter")
+        windowing.setParameter(val.toDouble());
 }
 
 bool WindowingFunction::propertyShowsFor(const QString &property) const
@@ -125,15 +129,12 @@ bool WindowingFunction::compute(FileDescriptor *file)
     reset();
 
     if (!m_input) return false;
-
     if (!m_input->compute(file)) return false;
 
     output = m_input->getData("input");
     if (output.isEmpty()) return false;
 
     windowing.applyTo(output);
-
-
     return true;
 }
 

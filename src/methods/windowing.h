@@ -43,8 +43,8 @@ public:
 
     QVector<double> windowing() {return w;}
 
-    double amplitudeCorrection() const;
-    double energyCorrection() const;
+//    double amplitudeCorrection() const;
+//    double energyCorrection() const;
 
 
     void setParameter(double parameter);

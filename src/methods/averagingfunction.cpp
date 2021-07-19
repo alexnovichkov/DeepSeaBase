@@ -121,7 +121,7 @@ bool AveragingFunction::compute(FileDescriptor *file)
     while (1) {
         if (!m_input->compute(file)) {
             if (iter==1) {
-                qDebug() << "iter" << iter;
+                //qDebug() << "iter" << iter;
                 averaging.reset();
             }
             return false;
@@ -147,7 +147,7 @@ bool AveragingFunction::compute(FileDescriptor *file)
 
 void AveragingFunction::reset()
 {DD;
-    qDebug()<<"AveragingFunction::reset()";
+    //qDebug()<<"AveragingFunction::reset()";
     averaging.reset();
 }
 

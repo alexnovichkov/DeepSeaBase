@@ -124,10 +124,10 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
             refChannelF, SLOT(updateProperty(QString,QVariant)));
 
     //перенаправляем сигналы от функций в интерфейс пользователя
-    for (AbstractFunction *f: m_functions) {
-        connect(f, SIGNAL(attributeChanged(QString,QVariant,QString)),SIGNAL(attributeChanged(QString,QVariant,QString)));
-        connect(f, SIGNAL(tick()), this, SIGNAL(tick()));
-    }
+//    for (AbstractFunction *f: m_functions) {
+//        connect(f, &AbstractFunction::attributeChanged, SIGNAL(attributeChanged(QString,QVariant,QString)));
+//        connect(f, SIGNAL(tick()), this, SIGNAL(tick()));
+//    }
 }
 
 QString FRFAlgorithm::name() const

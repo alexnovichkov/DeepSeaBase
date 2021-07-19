@@ -83,9 +83,9 @@ public:
     virtual void resetData();
 signals:
     void propertyChanged(const QString &property, const QVariant &val);
-    void attributeChanged(const QString &property, const QVariant &val, const QString &attribute);
+    void attributeChanged(AbstractFunction *f, const QString &property, const QVariant &val, const QString &attribute);
 
-    void tick();
+//    void tick();
     void tick(const QString &path);
     void message(const QString &s);
 public slots:
@@ -115,10 +115,10 @@ public:
     virtual QString name() const = 0;
     virtual QString displayName() const = 0;
     virtual QString description() const = 0;
-    bool propertyShowsFor(const QString &property) const;
+    bool propertyShowsFor(AbstractFunction *f, const QString &property) const;
 
-    QVariant getProperty(const QString &property) const;
-    void setProperty(const QString &property, const QVariant &val);
+    QVariant getProperty(AbstractFunction *f, const QString &property) const;
+    void setProperty(AbstractFunction *f, const QString &property, const QVariant &val);
 
     QList<FileDescriptor *> dataBase() const {return m_dataBase;}
 
@@ -133,7 +133,7 @@ public:
     virtual void reset();
 signals:
     void propertyChanged(const QString &property, const QVariant &val);
-    void attributeChanged(const QString &property, const QVariant &val, const QString &attribute);
+//    void attributeChanged(AbstractFunction *f, const QString &property, const QVariant &val, const QString &attribute);
 
     void tick();
     void tick(const QString &path);

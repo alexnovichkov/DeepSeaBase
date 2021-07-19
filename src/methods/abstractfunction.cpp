@@ -118,12 +118,12 @@ AbstractAlgorithm::~AbstractAlgorithm()
     m_functions.clear();
 }
 
-bool AbstractAlgorithm::propertyShowsFor(const QString &property) const
+bool AbstractAlgorithm::propertyShowsFor(AbstractFunction *function, const QString &property) const
 {DD;
     if (property.isEmpty()) return true;
 
     for (AbstractFunction *f: functions()) {
-        if (property.startsWith(f->name()+"/")) {
+        if (f == function && property.startsWith(f->name()+"/")) {
             return f->propertyShowsFor(property);
         }
     }
@@ -131,12 +131,12 @@ bool AbstractAlgorithm::propertyShowsFor(const QString &property) const
     return true;
 }
 
-QVariant AbstractAlgorithm::getProperty(const QString &property) const
+QVariant AbstractAlgorithm::getProperty(AbstractFunction *function, const QString &property) const
 {DD;
     if (property.isEmpty()) return QVariant();
 
     for (AbstractFunction *f: functions()) {
-        if (property.startsWith(f->name()+"/")) {
+        if (f == function && property.startsWith(f->name()+"/")) {
             return f->getProperty(property);
         }
     }
@@ -144,12 +144,12 @@ QVariant AbstractAlgorithm::getProperty(const QString &property) const
     return QVariant();
 }
 
-void AbstractAlgorithm::setProperty(const QString &property, const QVariant &val)
+void AbstractAlgorithm::setProperty(AbstractFunction *function, const QString &property, const QVariant &val)
 {DD;
     if (property.isEmpty()) return;
 
     for (AbstractFunction *f: functions()) {
-        if (property.startsWith(f->name()+"/")) {
+        if (f == function && property.startsWith(f->name()+"/")) {
             f->setProperty(property, val);
             return;
         }

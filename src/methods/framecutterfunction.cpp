@@ -119,7 +119,7 @@ void FrameCutterFunction::m_setProperty(const QString &property, const QVariant 
     else if (p == "xStep") {
         frameCutter.setXStep(val.toDouble());
         // мы должны обновить список blockSize
-        emit attributeChanged(name()+"/blockSize", getBlocks(frameCutter.getXStep(), ""), "enumNames");
+        emit attributeChanged(this, name()+"/blockSize", getBlocks(frameCutter.getXStep(), ""), "enumNames");
     }
     else if (p == "percent") {
         frameCutter.setDelta(int(1.0 * frameCutter.blockSize() * val.toDouble()));

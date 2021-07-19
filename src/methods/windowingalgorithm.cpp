@@ -41,10 +41,10 @@ WindowingAlgorithm::WindowingAlgorithm(QList<FileDescriptor *> &dataBase, QObjec
     channelF->setFile(dataBase.constFirst());
 
     //перенаправляем сигналы от функций в интерфейс пользователя
-    for (AbstractFunction *f: m_functions) {
-        connect(f, SIGNAL(attributeChanged(QString,QVariant,QString)),SIGNAL(attributeChanged(QString,QVariant,QString)));
-        connect(f, SIGNAL(tick()), this, SIGNAL(tick()));
-    }
+//    for (AbstractFunction *f: m_functions) {
+//        connect(f, SIGNAL(attributeChanged(QString,QVariant,QString)),SIGNAL(attributeChanged(QString,QVariant,QString)));
+//        connect(f, SIGNAL(tick()), this, SIGNAL(tick()));
+//    }
 }
 
 QString WindowingAlgorithm::name() const

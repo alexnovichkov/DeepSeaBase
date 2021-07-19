@@ -462,23 +462,21 @@ void Windowing::applyTo(QVector<double> &values)
         values[i] *= w[i];
 }
 
-double Windowing::amplitudeCorrection() const
-{
-    double result = 0.0;
-    for (double x: w) result += std::abs(x);
-    if (w.size()>0) result /= w.size();
-    return result * 2;
-}
-
-double Windowing::energyCorrection() const
-{
-    double result = 0.0;
-    for (double x: w) result += x*x;
-//    if (w.size()>0) result /= (w.size() * w.size());
-
+//double Windowing::amplitudeCorrection() const
+//{
+//    double result = 0.0;
+//    for (double x: w) result += std::abs(x);
+//    if (w.size()>0) result /= w.size();
 //    return result * 2;
-    return result;
-}
+//}
+
+//double Windowing::energyCorrection() const
+//{
+//    double result = 0.0;
+//    for (double x: w) result += x*x;
+
+//    return result;
+//}
 
 
 

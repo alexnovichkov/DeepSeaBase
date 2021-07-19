@@ -32,8 +32,14 @@ private slots:
     void start();
     void stop();
     void onValueChanged(QtProperty *property, const QVariant &val);
-    void updateProperty(const QString &property, const QVariant &val, const QString &attribute);
+    void updateProperty(AbstractFunction *f, const QString &property, const QVariant &val, const QString &attribute);
 private:
+    struct Property {
+        AbstractFunction *f;
+        QString name;
+    };
+
+
     void addProperties(AbstractFunction *f);
     void updateVisibleProperties();
 
@@ -42,7 +48,6 @@ private:
     QStringList newFiles;
 
     QPlainTextEdit *infoLabel;
-//    QCheckBox *useDeepsea;
     QDialogButtonBox *buttonBox;
     QProgressBar *progress;
     QTreeWidget *functionsList;
@@ -59,7 +64,7 @@ private:
     QWidget *win;
     QList<AbstractAlgorithm*> algorithms;
     AbstractAlgorithm * currentAlgorithm;
-    QMap<QtVariantProperty*, QString> map;
+    QMap<QtVariantProperty*, Property> map;
 };
 
 #endif // FILESPROCESSORDIALOG_H

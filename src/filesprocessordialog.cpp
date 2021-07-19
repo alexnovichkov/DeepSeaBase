@@ -19,7 +19,6 @@
 FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QWidget *parent)
     : QDialog(parent), dataBase(dataBase), win(parent), currentAlgorithm(0)
 {DD;
-//    converter = 0;
     thread_ = 0;
     taskBarProgress = 0;
 
@@ -30,11 +29,6 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     algorithms << new PsAlgorithm(dataBase, this);
     algorithms << new PsdAlgorithm(dataBase, this);
     algorithms << new FRFAlgorithm(dataBase, this);
-
-    for (AbstractAlgorithm *f: algorithms) {
-        connect(f, SIGNAL(attributeChanged(QString,QVariant,QString)),SLOT(updateProperty(QString,QVariant,QString)));
-//        connect(f, SIGNAL(propertyChanged(QString,QVariant)),SLOT(updateProperty(QString,QVariant,QString)));
-    }
 
     filesTree = new QTreeWidget(this);
     filesTree->setColumnCount(4);
@@ -157,6 +151,12 @@ void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
     propertyTree->clear();
     m_manager->clear();
     map.clear();
+    if (currentAlgorithm) {
+        for (AbstractFunction *f: currentAlgorithm->functions())
+            disconnect(f,0,0,0);
+    }
+
+    currentAlgorithm = nullptr;
 
     if (!item) return;
 
@@ -167,13 +167,14 @@ void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
     // Parsing properties descriptions
     for (AbstractFunction *f: currentAlgorithm->functions()) {
         if (!f->paired()) addProperties(f);
+        connect(f, &AbstractFunction::attributeChanged, this, &FilesProcessorDialog::updateProperty);
     }
 
     // блокируем сигналы, чтобы при каждом изменении свойства не обновлять все отображения свойств
     // мы это сделаем в самом конце функцией updateVisibleProperties();
 //    m_manager->blockSignals(true);
-    for (const QString &property: map.values()) {
-        map.key(property)->setValue(currentAlgorithm->getProperty(property));
+    for (auto [key, value]: asKeyValueRange(map)) {
+        key->setValue(currentAlgorithm->getProperty(value.f, value.name));
     }
 //    m_manager->blockSignals(false);
     updateVisibleProperties();
@@ -185,7 +186,7 @@ void FilesProcessorDialog::updateVisibleProperties()
 
     for (QtVariantProperty *property: map.keys()) {
         foreach (auto item, propertyTree->items(property)) {
-            propertyTree->setItemVisible(item, currentAlgorithm->propertyShowsFor(map.value(property)));
+            propertyTree->setItemVisible(item, currentAlgorithm->propertyShowsFor(map.value(property).f, map.value(property).name));
         }
     }
 }
@@ -194,23 +195,24 @@ void FilesProcessorDialog::onValueChanged(QtProperty *property, const QVariant &
 {DD;
     if (!currentAlgorithm) return;
 
-    QString p = map.value(dynamic_cast<QtVariantProperty*>(property));
-    if (p.isEmpty()) return;
+    Property p = map.value(dynamic_cast<QtVariantProperty*>(property));
+    if (p.name.isEmpty()) return;
 
-    currentAlgorithm->setProperty(p, val);
+    currentAlgorithm->setProperty(p.f, p.name, val);
 
     updateVisibleProperties();
 }
 
-void FilesProcessorDialog::updateProperty(const QString &property, const QVariant &val, const QString &attribute)
+void FilesProcessorDialog::updateProperty(AbstractFunction *f, const QString &property, const QVariant &val, const QString &attribute)
 {DD;
-    if (QtVariantProperty *p = map.key(property)) {
-//        qDebug()<<"updateProperty"<<property<<val<<attribute;
-        if (val.isValid() && !attribute.isEmpty())
-            p->setAttribute(attribute, val);
+    for (auto [key,v] : asKeyValueRange(map)) {
+        if (v.f == f && v.name == property) {
+            if (val.isValid() && !attribute.isEmpty())
+                key->setAttribute(attribute, val);
 
-        p->setValue(currentAlgorithm->getProperty(property));
-        updateVisibleProperties();
+            key->setValue(currentAlgorithm->getProperty(f, property));
+            updateVisibleProperties();
+        }
     }
 }
 
@@ -218,8 +220,8 @@ void FilesProcessorDialog::addProperties(AbstractFunction *f)
 {DD;
     if (!f) return;
 
-//    DebugPrint(f->name());
-    if (f->properties().size()<1) return;
+    if (f->properties().isEmpty()) return;
+
     QJsonParseError error;
     QJsonDocument doc = QJsonDocument::fromJson(f->propertiesDescription().toUtf8(), &error);
     if (error.error != QJsonParseError::NoError) {
@@ -274,7 +276,7 @@ void FilesProcessorDialog::addProperties(AbstractFunction *f)
             p->setAttribute("enumNames", names);
         }
 
-        map.insert(p, f->name()+"/"+name);
+        map.insert(p, {f, f->name()+"/"+name});
     }
 
 
