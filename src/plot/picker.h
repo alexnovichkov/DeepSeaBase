@@ -37,7 +37,7 @@ private:
 
 
 
-    TrackingCursor *findCursor(const QPoint &pos);
+    QVector<TrackingCursor *> findCursors(const QPoint &pos);
     Curve *findClosestPoint(const QPoint &pos, int &index) const;
     PointLabel *findLabel(const QPoint &pos);
 
@@ -51,7 +51,7 @@ private:
     int d_selectedPoint;
     Curve *d_selectedCurve;
     PointLabel *d_selectedLabel;
-    TrackingCursor *d_selectedCursor;
+    QVector<TrackingCursor *> d_selectedCursors;
 
     QPoint d_currentPos;
     PointMarker *marker;

@@ -19,24 +19,26 @@ Picker::Picker(Plot *plot) : plot(plot)
     d_selectedPoint = -1;
     d_selectedCurve = 0;
     d_selectedLabel = 0;
-    d_selectedCursor = 0;
     marker = 0;
 }
 
 bool Picker::findObject(QMouseEvent *e)
 {
-    if (e->button() == Qt::LeftButton && ((e->modifiers() == Qt::NoModifier)
-                                          || (e->modifiers() == Qt::ControlModifier))) {
+    if (e->modifiers() == Qt::NoModifier || e->modifiers() == Qt::ControlModifier) {
         pos = e->pos();
 
-        d_selectedCursor = findCursor(pos);
+
+        d_selectedCursors = findCursors(pos);
 
         if (d_selectedLabel)
             d_selectedLabel->setSelected(false);
         d_selectedLabel = findLabel(pos);
 
-        emit cursorSelected(d_selectedCursor);
-        if (d_selectedCursor) {
+        for (auto cursor: d_selectedCursors)
+            emit cursorSelected(cursor);
+
+        if (!d_selectedCursors.isEmpty()) {
+
         }
         else if (d_selectedLabel) {
             d_selectedLabel->setSelected(true);
@@ -47,7 +49,7 @@ bool Picker::findObject(QMouseEvent *e)
             d_currentPos = pos;
         }
     }
-    return (d_selectedCurve || d_selectedCursor || d_selectedLabel);
+    return (d_selectedCurve || !d_selectedCursors.isEmpty() || d_selectedLabel);
 }
 
 void Picker::procKeyboardEvent(int key)
@@ -110,9 +112,10 @@ void Picker::proceedPick(QMouseEvent *e)
 
     QPoint currentPos = e->pos();
 
-    if (d_selectedCursor) {
-        emit cursorMovedTo({plot->invTransform(d_selectedCursor->xAxis(), currentPos.x()),
-                            plot->invTransform(d_selectedCursor->yAxis(), currentPos.y())});
+    if (!d_selectedCursors.isEmpty()) {
+        for (auto c: d_selectedCursors)
+            emit cursorMovedTo({plot->invTransform(c->xAxis(), currentPos.x()),
+                                plot->invTransform(c->yAxis(), currentPos.y())});
         d_currentPos = currentPos;
     }
     else if (d_selectedLabel) {
@@ -138,6 +141,7 @@ void Picker::endPick(QMouseEvent *e)
     if (!enabled) return;
     QPoint endPos = e->pos();
     if (endPos == pos) {
+
         //сбрасываем подсветку кривых
         highlightPoint(false);
         for(Curve *c: plot->curves) {
@@ -145,11 +149,11 @@ void Picker::endPick(QMouseEvent *e)
         }
 
         //одинарный клик мышью
-        if (!d_selectedCursor) {
-            d_selectedCursor = findCursor(endPos);
-            if (d_selectedCursor)
-                emit axisClicked({plot->canvasMap(d_selectedCursor->xAxis()).invTransform(endPos.x()),
-                                  plot->canvasMap(d_selectedCursor->yAxis()).invTransform(endPos.y())},
+        if (d_selectedCursors.isEmpty()) {
+            d_selectedCursors = findCursors(endPos);
+            if (!d_selectedCursors.isEmpty())
+                emit axisClicked({plot->canvasMap(d_selectedCursors.first()->xAxis()).invTransform(endPos.x()),
+                                  plot->canvasMap(d_selectedCursors.first()->yAxis()).invTransform(endPos.y())},
                                  e->modifiers() & Qt::ControlModifier);
             else emit axisClicked({plot->canvasMap(QwtAxis::xBottom).invTransform(endPos.x()),
                                    plot->canvasMap(QwtAxis::yLeft).invTransform(endPos.y())},
@@ -168,28 +172,32 @@ void Picker::endPick(QMouseEvent *e)
     }
     else {
         //протащили какой-то объект, надо бросить
+
     }
 
     plot->replot();
 }
 
-TrackingCursor *Picker::findCursor(const QPoint &pos)
+QVector<TrackingCursor *> Picker::findCursors(const QPoint &pos)
 {
+    QVector<TrackingCursor *> result;
+
     const QwtPlotItemList& itmList = plot->itemList();
+
     for (QwtPlotItemIterator it = itmList.constBegin(); it != itmList.constEnd(); ++it) {
         if (auto *c = dynamic_cast<TrackingCursor *>(*it )) {
             int newX = (int)(plot->transform(c->xAxis(), c->xValue()));
             int newY = (int)(plot->transform(c->yAxis(), c->yValue()));
             if (qAbs(newX-pos.x())<=5 && (c->type == TrackingCursor::Vertical || c->type == TrackingCursor::Cross)) {
-                return c;
+                result << c;
             }
             if (qAbs(newY-pos.y())<=5 && (c->type == TrackingCursor::Horizontal || c->type == TrackingCursor::Cross)) {
-                return c;
+                result << c;
             }
         }
     }
 
-    return nullptr;
+    return result;
 }
 
 Curve *Picker::findClosestPoint(const QPoint &pos, int &index) const

@@ -422,14 +422,10 @@ void TrackingPanel::update()
 
 void TrackingPanel::changeSelectedCursor(TrackingCursor *cursor)
 {DD;
-    for (int i=0; i<cursors.size(); ++i) {
-        if (cursors[i] == cursor) {
-            cursors[i]->setCurrent(true);
-        }
-        else {
-            cursors[i]->setCurrent(false);
-        }
-    }
+    if (!cursors.contains(cursor)) return;
+
+    for (int i=0; i<cursors.size(); ++i)
+        cursors[i]->setCurrent(cursors[i] == cursor);
 }
 
 void TrackingPanel::moveCursor(Enums::Direction direction)
