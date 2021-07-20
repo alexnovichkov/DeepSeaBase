@@ -273,12 +273,14 @@ bool FrameCutterFunction::compute(FileDescriptor *file)
     if (!m_input) return false;
 
     output.clear();
-
+    int size = 0;
+    //возвращает сразу все данные, склеенные вместе блоками размером ?/blockSize
     if (frameCutter.isEmpty()) {
         if (!m_input->compute(file)) {
             return false;
         }
         QVector<double> data = m_input->getData("input");
+        size = data.size();
         if (data.isEmpty()) {
             return false;
         }
@@ -292,11 +294,10 @@ bool FrameCutterFunction::compute(FileDescriptor *file)
         }
     }
 
-    bool ok;
-    auto d = frameCutter.get(&ok);
-    output = d;
-
-    if (!ok || output.isEmpty()) return false;
+    output = frameCutter.getAll();
+//    qDebug() << "after sampling" << output.size() << "with" << frameCutter.getBlocksCount()
+//             << "blocks" << "from source of" << size;
+    if (output.isEmpty()) return false;
 
     return true;
 }

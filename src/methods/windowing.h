@@ -39,7 +39,7 @@ public:
     Windowing();
     Windowing(int bufferSize, WindowType windowType, double parameter = 0.0);
 
-    void applyTo(QVector<double> &values);
+    void applyTo(QVector<double> &values, int blockSize = 0);
 
     QVector<double> windowing() {return w;}
 

@@ -48,6 +48,7 @@ QVariant PsdFunction::m_getProperty(const QString &property) const
                 return QString("(%1)^2/Hz").arg(s);
             return QString("(%1)^2/Гц").arg(s);
         }
+        if (property == "?/portionsCount") return portionsCount;
 
         // do not know anything about these broadcast properties
         if (m_input) return m_input->getProperty(property);
@@ -57,7 +58,8 @@ QVariant PsdFunction::m_getProperty(const QString &property) const
 
 void PsdFunction::m_setProperty(const QString &property, const QVariant &val)
 {DD;
-
+    Q_UNUSED(property);
+    Q_UNUSED(val);
 }
 
 QString PsdFunction::displayName() const
@@ -70,26 +72,28 @@ bool PsdFunction::compute(FileDescriptor *file)
     reset();
 
     if (!m_input) return false;
-
-    if (!m_input->compute(file)) {
-        return false;
-    }
+    if (!m_input->compute(file)) return false;
 
     QVector<double> data = m_input->getData("input");
-    if (data.isEmpty()) {
-        return false;
-    }
+    if (data.isEmpty()) return false;
+
+    //данные приходят сразу для всего канала, поэтому мы должны разбить их по блокам
+    const int blockSize = m_input->getProperty("?/blockSize").toInt();
+    portionsCount = data.size()/blockSize;
 
     double sampleRate = m_input->getProperty("?/sampleRate").toDouble();
 
-    QVector<cx_double> fft = Fft::compute(data);
+    for (int block = 0; block < portionsCount; ++block) {
+        QVector<cx_double> fft = Fft::compute(data.mid(block*blockSize, blockSize));
 
-    int size = int(fft.size()/2.56);
-    const int Nvl = fft.size();
-    const double factor = 2.0 / Nvl / sampleRate;
-    output.resize(size);
-    for (int i = 0; i < size; i++) {
-        output[i] = factor * std::norm(fft[i]);
+        int size = fft.size()*100/256;
+        const int Nvl = fft.size();
+        const double factor = 2.0 / Nvl / sampleRate;
+        QVector<double> data1(size);
+        for (int i = 0; i < size; i++) {
+            data1[i] = factor * std::norm(fft[i]);
+        }
+        output.append(data1);
     }
 
     return true;
@@ -98,6 +102,7 @@ bool PsdFunction::compute(FileDescriptor *file)
 void PsdFunction::reset()
 {DD;
     output.clear();
+    portionsCount = 0;
 }
 
 

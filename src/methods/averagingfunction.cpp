@@ -115,33 +115,19 @@ bool AveragingFunction::compute(FileDescriptor *file)
 {DD;
     if (!m_input) return false;
 
-    if (averaging.averagingDone()) return false;
+    m_input->compute(file);
+    QVector<double> data = m_input->getData("input");
+    if (data.isEmpty()) return false;
 
-    int iter=1;
-    while (1) {
-        if (!m_input->compute(file)) {
-            if (iter==1) {
-                //qDebug() << "iter" << iter;
-                averaging.reset();
-            }
-            return false;
-        }
+    //данные приходят сразу для всего канала, поэтому мы должны разбить их по блокам
+    const int portionsCount = m_input->getProperty("?/portionsCount").toInt();
+    const int blockSize = data.size() / portionsCount;
 
-        QVector<double> data = m_input->getData("input");
-
-        if (!data.isEmpty()) {
-            averaging.average(data);
-        }
-        else {
-            if (!averaging.averagingDone())
-                return false;
-        }
-
-        if (averaging.averagingDone()) {
-            //qDebug()<<"Done averaging at iter"<<iter;
-        }
-        iter++;
+    for (int block = 0; block < portionsCount; ++block) {
+        averaging.average(data.mid(block*blockSize, blockSize));
+        if (averaging.averagingDone()) break;
     }
+
     return true;
 }
 
@@ -158,8 +144,7 @@ DataDescription AveragingFunction::getFunctionDescription() const
 
     if (averaging.getAveragingType() != Averaging::NoAveraging) {
         result.put("function.averaging", Averaging::averagingDescriptionEng(averaging.getAveragingType()));
-//        result.put("function.averagingCount", averaging.getAveragesMade());
-        result.put("function.averagingCount", averaging.averagesReallyMade);
+        result.put("function.averagingCount", averaging.getAveragesMade());
     }
 
     return result;

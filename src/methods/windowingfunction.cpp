@@ -134,7 +134,9 @@ bool WindowingFunction::compute(FileDescriptor *file)
     output = m_input->getData("input");
     if (output.isEmpty()) return false;
 
-    windowing.applyTo(output);
+    const int bufferSize = m_input->getProperty("?/blockSize").toInt();
+    windowing.setBufferSize(bufferSize);
+    windowing.applyTo(output, bufferSize);
     return true;
 }
 

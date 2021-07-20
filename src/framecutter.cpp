@@ -49,6 +49,17 @@ QVector<double> FrameCutter::get(bool *ok)
     return result;
 }
 
+QVector<double> FrameCutter::getAll()
+{
+    QVector<double> result;
+    bool ok = true;
+    while (ok) {
+        auto d = get(&ok);
+        result.append(d);
+    }
+    return result;
+}
+
 void FrameCutter::reset(bool clearData)
 {
     if (clearData) {
@@ -76,8 +87,7 @@ int FrameCutter::getBlocksCount() const
 QVector<double> FrameCutter::getSimple(bool *ok)
 {
     Q_ASSERT(currentSample >= 0);
-
-    QVector<double> output(param.blockSize);
+    QVector<double> output;
     if (currentSample < data.size()) {
         output = data.mid(currentSample, param.blockSize);
         output.resize(param.blockSize);
@@ -100,7 +110,7 @@ QVector<double> FrameCutter::getWithOverlap(bool *ok)
 {
     Q_ASSERT(currentSample >= 0);
 
-    QVector<double> output(param.blockSize);
+    QVector<double> output;
     if (currentSample < data.size()) {
         output = data.mid(currentSample, param.blockSize);
         output.resize(param.blockSize);
@@ -131,7 +141,7 @@ QVector<double> FrameCutter::getWithDelta(bool *ok)
 
     Q_ASSERT(currentSample >= 0);
 
-    QVector<double> output(param.blockSize);
+    QVector<double> output;
     if (currentSample < data.size()) {
         output = data.mid(currentSample, param.blockSize);
         output.resize(param.blockSize);

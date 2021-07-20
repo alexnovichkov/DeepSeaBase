@@ -57,6 +57,7 @@ QVariant FftFunction::m_getProperty(const QString &property) const
                 default: return "unknown";
             }
         }
+        if (property == "?/portionsCount") return portionsCount;
         if (property == "?/yValuesUnits") {
             if (map.value("output") == 4) //phase
                 return DataHolder::UnitsDimensionless;
@@ -96,51 +97,59 @@ bool FftFunction::compute(FileDescriptor *file)
     QVector<double> data = m_input->getData("input");
     if (data.isEmpty()) return false;
 
-    QVector<cx_double> fft = Fft::compute(data);
-    if (fft.isEmpty()) return false;
+    //данные приходят сразу для всего канала, поэтому мы должны разбить их по блокам
+    const int blockSize = m_input->getProperty("?/blockSize").toInt();
+    portionsCount = data.size()/blockSize;
 
-    int size = int(fft.size()/2.56);
-    const int Nvl = fft.size();
-    const double factor = sqrt(2.0) / Nvl;
+    for (int block = 0; block < portionsCount; ++block) {
+        QVector<cx_double> fft = Fft::compute(data.mid(block*blockSize, blockSize));
+        if (fft.isEmpty()) return false;
 
-    switch (map.value("output")) {
-        case 0: {//complex
-            output.resize(size*2);
-            for (int i=0; i<size; ++i) {
-                output[i*2] = fft[i].real() * factor;
-                output[i*2+1] = fft[i].imag() * factor;
-            }
+        int size = fft.size()*100/256;
+        const int Nvl = fft.size();
+        const double factor = sqrt(2.0) / Nvl;
 
-            break;
-        }
-        case 1: {//real
-            output.resize(size);
-            for (int i=0; i<size; ++i) {
-                output[i] = fft[i].real() * factor;
+        QVector<double> data1;
+
+        switch (map.value("output")) {
+            case 0: {//complex
+                data1.resize(size*2);
+                for (int i=0; i<size; ++i) {
+                    data1[i*2] = fft[i].real() * factor;
+                    data1[i*2+1] = fft[i].imag() * factor;
+                }
+
+                break;
             }
-            break;
-        }
-        case 2: {//imag
-            output.resize(size);
-            for (int i=0; i<size; ++i) {
-                output[i] = fft[i].imag() * factor;
+            case 1: {//real
+                data1.resize(size);
+                for (int i=0; i<size; ++i) {
+                    data1[i] = fft[i].real() * factor;
+                }
+                break;
             }
-            break;
-        }
-        case 3: {//ampl
-            output.resize(size);
-            for (int i=0; i<size; ++i) {
-                output[i] = std::abs(fft[i]) * factor;
+            case 2: {//imag
+                data1.resize(size);
+                for (int i=0; i<size; ++i) {
+                    data1[i] = fft[i].imag() * factor;
+                }
+                break;
             }
-            break;
-        }
-        case 4: //phase
-            output.resize(size);
-            for (int i=0; i<size; ++i) {
-                output[i] = std::arg(fft[i])*180.0/M_PI;
+            case 3: {//ampl
+                data1.resize(size);
+                for (int i=0; i<size; ++i) {
+                    data1[i] = std::abs(fft[i]) * factor;
+                }
+                break;
             }
+            case 4: //phase
+                data1.resize(size);
+                for (int i=0; i<size; ++i) {
+                    data1[i] = std::arg(fft[i])*180.0/M_PI;
+                }
+        }
+        output.append(data1);
     }
-
 
     return true;
 }
@@ -148,6 +157,7 @@ bool FftFunction::compute(FileDescriptor *file)
 void FftFunction::reset()
 {DD;
     output.clear();
+    portionsCount = 0;
 }
 
 

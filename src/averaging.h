@@ -77,6 +77,7 @@ private:
     int averagingType;
     int maximumAverages;
     int averagesMade;
+    bool averagingCompleted = false;
 
 
     double rho;

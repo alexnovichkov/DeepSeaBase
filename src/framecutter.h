@@ -51,6 +51,8 @@ public:
     void setTriggerSource(const QVector<double> &triggerData);
 
     QVector<double> get(bool *ok=0);
+    QVector<double> getAll();
+
     void reset(bool clearData = true);
 
     int getBlocksCount() const;

@@ -40,6 +40,8 @@ void Averaging::average(const QVector<cx_double> &input)
         default: break;
     }
     averagesMade++;
+    if (maximumAverages > 0)
+        averagingCompleted = averagesMade>=maximumAverages;
 }
 
 void Averaging::average(const QVector<double> &input)
@@ -65,15 +67,18 @@ void Averaging::average(const QVector<double> &input)
         default: break;
     }
     averagesMade++;
+    if (maximumAverages > 0)
+        averagingCompleted = averagesMade>=maximumAverages;
 }
 
 bool Averaging::averagingDone() const
 {
-    // усредняем пока поступают данные если количество усреднений равно нулю или -1
-    if (maximumAverages <= 0) return false;
+//    // усредняем пока поступают данные если количество усреднений равно нулю или -1
+//    if (maximumAverages <= 0) return false;
 
-    // усредняем до нужного количества если количество усреднений > 0
-    return averagesMade >= maximumAverages;
+//    // усредняем до нужного количества если количество усреднений > 0
+//    return averagesMade >= maximumAverages;
+    return averagingCompleted;
 }
 
 QVector<double> Averaging::get()
@@ -101,6 +106,7 @@ void Averaging::reset()
     averaged_.clear();
     if (averagesMade > 0) averagesReallyMade = averagesMade;
     averagesMade = 0;
+    averagingCompleted = false;
 }
 
 void Averaging::averageLinear(const QVector<cx_double> &input)
@@ -174,6 +180,7 @@ int Averaging::getMaximumAverages() const
 void Averaging::setMaximumAverages(int value)
 {
     maximumAverages = value;
+    rho = maximumAverages != 0 ? 1.0 / maximumAverages : 1.0;
 }
 
 int Averaging::getAveragingType() const

@@ -47,6 +47,7 @@ QVariant PsFunction::m_getProperty(const QString &property) const
             QString s = m_input->getProperty("?/yNameOld").toString();
             return QString("(%1)^2").arg(s);
         }
+        if (property == "?/portionsCount") return portionsCount;
 
         // do not know anything about these broadcast properties
         if (m_input) return m_input->getProperty(property);
@@ -56,7 +57,8 @@ QVariant PsFunction::m_getProperty(const QString &property) const
 
 void PsFunction::m_setProperty(const QString &property, const QVariant &val)
 {DD;
-
+    Q_UNUSED(property);
+    Q_UNUSED(val);
 }
 
 QString PsFunction::displayName() const
@@ -69,31 +71,36 @@ bool PsFunction::compute(FileDescriptor *file)
     reset();
 
     if (!m_input) return false;
-
-    if (!m_input->compute(file)) {
-        return false;
-    }
+    if (!m_input->compute(file)) return false;
 
     QVector<double> data = m_input->getData("input");
-    if (data.isEmpty()) {
-        return false;
+    if (data.isEmpty()) return false;
+
+    //данные приходят сразу для всего канала, поэтому мы должны разбить их по блокам
+    const int blockSize = m_input->getProperty("?/blockSize").toInt();
+    portionsCount = data.size()/blockSize;
+
+    for (int block = 0; block < portionsCount; ++block) {
+        QVector<cx_double> fft = Fft::compute(data.mid(block*blockSize, blockSize));
+
+        int size = fft.size() * 100 / 256;
+        const int Nvl = fft.size();
+        const double factor = 2.0 / Nvl/Nvl;
+        QVector<double> data1(size);
+
+        for (int i = 0; i < size; i++) {
+            data1[i] = factor * std::norm(fft[i]);
+        }
+        output.append(data1);
     }
 
-    QVector<cx_double> fft = Fft::compute(data);
-
-    int size = int(fft.size()/2.56);
-    const int Nvl = fft.size();
-    const double factor = 2.0 / Nvl/Nvl;
-    output.resize(size);
-    for (int i = 0; i < size; i++) {
-        output[i] = factor * std::norm(fft[i]);
-    }
     return true;
 }
 
 void PsFunction::reset()
 {DD;
     output.clear();
+    portionsCount = 0;
 }
 
 

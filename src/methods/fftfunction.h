@@ -43,7 +43,7 @@ public:
 
 private:
     QMap<QString, int> map;
-
+    int portionsCount = 0;
     // AbstractFunction interface
 public:
     virtual bool compute(FileDescriptor *file) override;

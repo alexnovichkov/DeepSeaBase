@@ -451,15 +451,22 @@ void Windowing::setCorrectionType(Windowing::CorrectionType correctionType)
 }
 
 
-void Windowing::applyTo(QVector<double> &values)
+void Windowing::applyTo(QVector<double> &values, int blockSize)
 {
-    if (w.size() != values.size()) {
+    //blockSize == 0 если применяем окно порциями, тогда values.size даст blockSize
+    //если blockSize > 0, то values содержат все отсчеты канала
+
+    //если применяем окно порциями, а не целиком канал
+    if (blockSize == 0 && w.size() != values.size()) {
         setBufferSize(values.size());
     }
 
-    const int min = qMin(values.size(), w.size());
-    for (int i=0; i<min; ++i)
-        values[i] *= w[i];
+    Q_ASSERT_X(bufferSize == blockSize, "Windowing::applyTo", "block size != window size");
+
+    for (int block = 0; block < values.size()/bufferSize; ++block) {
+        for (int i=0; i<bufferSize; ++i)
+            values[i + block*bufferSize] *= w[i];
+    }
 }
 
 //double Windowing::amplitudeCorrection() const

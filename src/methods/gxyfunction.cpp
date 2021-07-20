@@ -84,7 +84,7 @@ QString GxyFunction::displayName() const
 }
 
 bool GxyFunction::compute(FileDescriptor *file)
-{DD; //qDebug()<<debugName();
+{DD;
     reset();
 
     if (!m_input || !m_input2) return false;
@@ -114,7 +114,7 @@ bool GxyFunction::compute(FileDescriptor *file)
     if (data1.size() != data2.size()) return false;
 
     int dataSize = data1.size()/2;
-    output.resize(dataSize * 2);
+    output.resize(data1.size());
     for (int i=0; i<dataSize; ++i) {
         cx_double cd1={data1[i*2], data1[i*2+1]};
         cx_double cd2={data2[i*2], data2[i*2+1]};
