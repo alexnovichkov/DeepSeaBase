@@ -137,7 +137,7 @@ void FrameCutterFunction::m_setProperty(const QString &property, const QVariant 
     }
     else if (p == "triggerChannel") {
         frameCutter.setChannel(val.toInt()-1);
-        emit propertyChanged("?/triggerChannel", val);
+        emit propertyChanged("?/triggerChannel", val.toInt()-1);
     }
     else if (p == "pretrigger") {
         frameCutter.setPretrigger(int(val.toDouble()/frameCutter.getXStep()));
@@ -249,7 +249,7 @@ QString FrameCutterFunction::propertyDescription(const QString &property) const
            "  \"type\"        : \"double\"   ,"
            "  \"displayName\" : \"Пре-триггер [с]\"   ,"
            "  \"defaultValue\": 0.0        ,"
-           "  \"toolTip\"     : \"Время до тригера, включаемое в блок\","
+           "  \"toolTip\"     : \"Время до триггера, включаемое в блок\","
            "  \"minimum\"     : 0.0," //для int и double
            "  \"values\"      : []" //для enum
            "}";

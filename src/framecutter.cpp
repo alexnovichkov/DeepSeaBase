@@ -96,8 +96,6 @@ QVector<double> FrameCutter::getSimple(bool *ok)
     }
     else if (ok) *ok=false;
 
-    //qDebug()<<"framecutter is at"<<currentSample;
-
     return output;
 }
 

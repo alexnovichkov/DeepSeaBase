@@ -11,6 +11,19 @@ enum DfdDataType {
     SourceData =   0,		// исходные данные
     CuttedData =   1,		// вырезка из исходных данных
     FilterData =   2,		// фильтрованные данные
+    CuttedData1,
+    CuttedData2,
+    CuttedData3,
+    CuttedData4,
+    CuttedData5,
+    CuttedData6,
+    CuttedData7,
+    CuttedData8,
+    CuttedData9,
+    CuttedData10,
+    CuttedData11,
+    CuttedData12,
+    CuttedData13,
     // 16 - 31 - преобразованные данные
     Envelope   =  16,		// огибающая по Гильберту
     PassAvrg   =  17,		// проходная - мат. ожидание

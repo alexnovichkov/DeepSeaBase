@@ -149,11 +149,12 @@ bool ChannelFunction::compute(FileDescriptor *file)
         output = file->channel(channel)->data()->yValues(0);
     }
 
-    if (triggerChannel >=0 && triggerChannel < file->channelsCount()) {
-        qDebug() << "computing trigger channel in ChannelFunction";
+    if (triggerChannel >=0 && triggerChannel < file->channelsCount() && triggerData.isEmpty()) {
+        //qDebug() << "computing trigger channel in ChannelFunction";
         if (!file->channel(triggerChannel)->populated())
             file->channel(triggerChannel)->populate();
         triggerData = file->channel(triggerChannel)->data()->yValues(0);
+        //qDebug()<<"trigger data at channel"<<triggerChannel+1<<"has"<<triggerData.size()<<"samples";
     }
 
     return !output.isEmpty();
@@ -205,11 +206,12 @@ bool RefChannelFunction::compute(FileDescriptor *file)
     //содержат только один блок
     output = file->channel(channel)->data()->yValues(0);
 
-    if (triggerChannel >=0 && triggerChannel < file->channelsCount()) {
-        qDebug() << "computing trigger channel in RefChannelFunction";
+    if (triggerChannel >=0 && triggerChannel < file->channelsCount() && triggerData.isEmpty()) {
+        //qDebug() << "computing trigger channel in RefChannelFunction";
         if (!file->channel(triggerChannel)->populated())
             file->channel(triggerChannel)->populate();
         triggerData = file->channel(triggerChannel)->data()->yValues(0);
+        //qDebug()<<"trigger data at channel"<<triggerChannel+1<<"has"<<triggerData.size()<<"samples";
     }
 
     return !output.isEmpty();

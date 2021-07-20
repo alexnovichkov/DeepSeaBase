@@ -500,3 +500,31 @@ QDateTime dateTimeFromString(QString s)
     if (dt.date().year()<1950) dt = dt.addYears(100);
     return dt;
 }
+
+QDateTime dateTimeFromString(QString date, QString time)
+{
+    //date
+    QDate d;
+    date = date.trimmed();
+    d = QDate::fromString(date, Qt::ISODateWithMs);
+    if (!d.isValid()) d = QDate::fromString(date, "dd.MM.yyyy");
+    if (!d.isValid()) d = QDate::fromString(date, "dd.MM.yy");
+    if (!d.isValid()) d = QDate::fromString(date, "dd-MMM-yy");
+    if (!d.isValid()) {
+        QLocale l = QLocale::c();
+        d = l.toDate(date, "dd-MMM-yy");
+    }
+    if (d.year()<1950) d = d.addYears(100);
+
+    //time
+    QTime t;
+    t = QTime::fromString(time, Qt::ISODateWithMs);
+    if (!t.isValid()) t = QTime::fromString(time, "hh:mm:ss");
+    if (!t.isValid()) t = QTime::fromString(time, "h:mm:ss");
+    if (!t.isValid()) t = QTime::fromString(time, "hh:mm");
+    if (!t.isValid()) {
+        QLocale l = QLocale::c();
+        t = l.toTime(time, "hh:mm:ss");
+    }
+    return QDateTime(d,t);
+}

@@ -147,8 +147,8 @@ void DfdFileDescriptor::read()
     dataDescription().put("function.type", dataTypefromDfdDataType(DataType));
 
     dataDescription().put("dateTime", dateTimeFromString(dfd.value("DataFileDescriptor/Date")
-                                                         +" "
-                                                         +dfd.value("DataFileDescriptor/Time")));
+                                                         ,
+                                                         dfd.value("DataFileDescriptor/Time")));
 
     int NumChans =  dfd.value("DataFileDescriptor/NumChans").toInt();
     uint NumInd = dfd.value("DataFileDescriptor/NumInd").toUInt();

@@ -13,8 +13,6 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
 
 Application::~Application()
 {
-    //
-    //for (auto f: files) qDebug() << f.use_count() << f->fileName();
     for (auto f: files) f.reset();
 
     setSetting("colors", m_colors->getColors());
@@ -45,11 +43,10 @@ F Application::addFile(const QString &name, bool *isNew)
         return files.value(name);
     }
 
-    F f(FormatFactory::createDescriptor(name)); //qDebug()<<f.use_count()<<f->fileName();
+    F f(FormatFactory::createDescriptor(name));
     if (f)
         files.insert(name, f);
     if (isNew) *isNew = true;
-    //for (auto &f: files) qDebug()<<f.use_count()<<f->fileName();
 
     return f;
 }
