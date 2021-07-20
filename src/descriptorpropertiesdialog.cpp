@@ -115,7 +115,6 @@ DescriptorPropertiesDialog::DescriptorPropertiesDialog(const QList<FileDescripto
 
     QTabWidget *tab = new QTabWidget(this);
     QWidget *properties = new QWidget(this);
-    tab->addTab(properties, "Свойства");
     QFormLayout *propertiesFL = new QFormLayout;
     static QStringList propertiesNames {"Файл", "Размер, байт", "Количество каналов",
                                         "Дата и время записи", "Дата и время создания файла",
@@ -127,6 +126,12 @@ DescriptorPropertiesDialog::DescriptorPropertiesDialog(const QList<FileDescripto
         propertiesFL->addRow(propertiesNames[i], propertiesLabels.labels[i]);
     }
     properties->setLayout(propertiesFL);
+
+    QScrollArea *scroll1 = new QScrollArea(this);
+    scroll1->setWidget(properties);
+    scroll1->setWidgetResizable(true);
+    scroll1->setFrameShape(QFrame::NoFrame);
+    tab->addTab(scroll1, "Свойства");
 
     QWidget *descriptions = new QWidget(this);
     tab->addTab(descriptions, "Описатели");
