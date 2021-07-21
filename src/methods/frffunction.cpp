@@ -56,12 +56,12 @@ QVariant FrfFunction::m_getProperty(const QString &property) const
 //                case 1: list << "PName=Передаточная ф-я H2"; break;
 //                default: break;
 //            }
-//            int referenceChannel = m_input2->getProperty("?/referenceChannelIndex").toInt();
+//            int referenceChannel = m_input2->getParameter("?/referenceChannelIndex").toInt();
 //            list << QString("pBaseChan=%1,").arg(referenceChannel);
 //            list << QString("ProcChansList=%1,%2").arg(1).arg(referenceChannel);
-//            list << QString("BlockIn=%1").arg(m_input->getProperty("?/blockSize").toInt());
-//            list << QString("Wind=%1").arg(m_input->getProperty("?/windowDescription").toString());
-//            list << QString("TypeAver=%1").arg(m_input->getProperty("?/averaging").toString());
+//            list << QString("BlockIn=%1").arg(m_input->getParameter("?/blockSize").toInt());
+//            list << QString("Wind=%1").arg(m_input->getParameter("?/windowDescription").toString());
+//            list << QString("TypeAver=%1").arg(m_input->getParameter("?/averaging").toString());
 //            list << "pTime=(0000000000000000)";
 //            return list;
 //        }
@@ -79,7 +79,7 @@ QVariant FrfFunction::m_getProperty(const QString &property) const
 //        if (property == "?/xType") return 18; //frequency
         if (property == "?/xBegin") return 0.0;
         if (property == "?/xStep") {
-            return m_input->getProperty("?/sampleRate").toDouble() / m_input->getProperty("?/blockSize").toDouble();
+            return m_input->getParameter("?/sampleRate").toDouble() / m_input->getParameter("?/blockSize").toDouble();
         }
         if (property == "?/functionDescription") {
             switch (map.value("type")) {
@@ -115,10 +115,10 @@ QVariant FrfFunction::m_getProperty(const QString &property) const
             }
         }
         if (property == "?/yName") {
-            QString s1 = m_input->getProperty("?/yNameOld").toString();
+            QString s1 = m_input->getParameter("?/yNameOld").toString();
             QString s2 = "?";
             if (m_file) {
-                int refIndex = m_input2->getProperty("?/referenceChannelIndex").toInt()-1;
+                int refIndex = m_input2->getParameter("?/referenceChannelIndex").toInt()-1;
                 if (m_file->channel(refIndex)) {
                     s2 = m_file->channel(refIndex)->yName();
                 }
@@ -127,10 +127,10 @@ QVariant FrfFunction::m_getProperty(const QString &property) const
         }
 
         if (property == "?/referenceChannelIndex" && m_input2)
-            return m_input2->getProperty(property);
+            return m_input2->getParameter(property);
 
         // do not know anything about these broadcast properties
-        if (m_input) return m_input->getProperty(property);
+        if (m_input) return m_input->getParameter(property);
     }
     if (!property.startsWith(name()+"/")) return QVariant();
 

@@ -26,14 +26,14 @@ FrameCutterFunction::FrameCutterFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
 {DD;
     // default values
-    setProperty("FrameCutter/type", 0);
-    setProperty("FrameCutter/blockSize", 0);
-    setProperty("FrameCutter/percent", 0);
-    setProperty("FrameCutter/deltaTime", 0.0);
-    setProperty("FrameCutter/triggerMode", 0);
-    setProperty("FrameCutter/level", 0.0);
-    setProperty("FrameCutter/channel", 0);
-    setProperty("FrameCutter/pretrigger", 0.0);
+    setParameter("FrameCutter/type", 0);
+    setParameter("FrameCutter/blockSize", 0);
+    setParameter("FrameCutter/percent", 0);
+    setParameter("FrameCutter/deltaTime", 0.0);
+    setParameter("FrameCutter/triggerMode", 0);
+    setParameter("FrameCutter/level", 0.0);
+    setParameter("FrameCutter/channel", 0);
+    setParameter("FrameCutter/pretrigger", 0.0);
 }
 
 
@@ -67,7 +67,7 @@ QVariant FrameCutterFunction::m_getProperty(const QString &property) const
         }
 
         // do not know anything about these broadcast properties
-        if (m_input) return m_input->getProperty(property);
+        if (m_input) return m_input->getParameter(property);
     }
 
     if (!property.startsWith(name()+"/")) return QVariant();
@@ -288,7 +288,7 @@ bool FrameCutterFunction::compute(FileDescriptor *file)
 
         if (frameCutter.type()==FrameCutter::Trigger) {
             // TODO: как установить данные для триггера?
-            //m_input->setProperty("", 0);
+            //m_input->setParameter("", 0);
 
             frameCutter.setTriggerSource(m_input->getData("triggerInput"));
         }
@@ -307,6 +307,6 @@ void FrameCutterFunction::updateProperty(const QString &property, const QVariant
 {DD;
     // нам может прийти измененный шаг по оси Х
     if (property == "?/xStep") {
-        setProperty(name()+"/xStep", val);
+        setParameter(name()+"/xStep", val);
     }
 }

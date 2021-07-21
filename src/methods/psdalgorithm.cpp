@@ -23,6 +23,9 @@ PsdAlgorithm::PsdAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     psdF = new PsdFunction(parent);
     saver = new SavingFunction(parent);
 
+    m_chain << channelF;
+    m_chain << saver;
+
 //    filteringF->setInput(channelF);
 //    resamplingF->setInput(filteringF);
     samplingF->setInput(channelF);
@@ -51,10 +54,10 @@ PsdAlgorithm::PsdAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     if (xStepsDiffer) emit message("Файлы имеют разный шаг по оси X.");
 
     //начальные значения, которые будут использоваться в показе функций
-//    resamplingF->setProperty(resamplingF->name()+"/xStep", xStep);
-    samplingF->setProperty(samplingF->name()+"/xStep", xStep);
+//    resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);
+    samplingF->setParameter(samplingF->name()+"/xStep", xStep);
     channelF->setFile(dataBase.constFirst());
-    windowingF->setProperty("Windowing/correction", 1);
+    windowingF->setParameter("Windowing/correction", 1);
 
     //resamplingF отправляет сигнал об изменении "?/xStep"
 //    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
@@ -71,11 +74,6 @@ PsdAlgorithm::PsdAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
 }
 
 
-QString PsdAlgorithm::name() const
-{DD;
-    return "Spectrum";
-}
-
 QString PsdAlgorithm::description() const
 {DD;
     return "Плотность спектра мощности";
@@ -87,46 +85,18 @@ QString PsdAlgorithm::displayName() const
     return "PSD";
 }
 
-bool PsdAlgorithm::compute(FileDescriptor *file)
-{DD;
-    if (QThread::currentThread()->isInterruptionRequested()) {
-        finalize();
-        return false;
-    }
-    if (file->channelsCount()==0) return false;
-    saver->setProperty(saver->name()+"/destination", QFileInfo(file->fileName()).canonicalPath());
-    saver->reset();
+void PsdAlgorithm::resetChain()
+{
+    //        filteringF->reset();
+    //        resamplingF->reset();
+    samplingF->reset();
+    windowingF->reset();
+    psdF->reset();
+    averagingF->reset();
+}
 
-//    resamplingF->setProperty(resamplingF->name()+"/xStep", file->xStep());
-    samplingF->setProperty(samplingF->name()+"/xStep", file->xStep());
-
-    const int count = file->channelsCount();
-    for (int i=0; i<count; ++i) {
-        const bool wasPopulated = file->channel(i)->populated();
-
-//        filteringF->reset();
-//        resamplingF->reset();
-        samplingF->reset();
-        windowingF->reset();
-        psdF->reset();
-        averagingF->reset();
-
-        //beginning of the chain
-        channelF->setProperty("Channel/channelIndex", i);
-
-        //so far end of the chain
-        // for each channel
-        saver->setFile(file);
-        saver->compute(file); //and collect the result
-
-        if (!wasPopulated) file->channel(i)->clear();
-        emit tick();
-    }
-    saver->reset();
-    QString fileName = saver->getProperty(saver->name()+"/name").toString();
-//    qDebug()<<fileName;
-
-    if (fileName.isEmpty()) return false;
-    newFiles << fileName;
-    return true;
+void PsdAlgorithm::initChain(FileDescriptor *file)
+{
+    //    resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());
+    samplingF->setParameter(samplingF->name()+"/xStep", file->xStep());
 }

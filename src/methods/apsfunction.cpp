@@ -38,9 +38,9 @@ QVariant ApsFunction::m_getProperty(const QString &property) const
             QStringList list;
 
             list << "PName=Автоспектр мощности";
-            list << QString("BlockIn=%1").arg(m_input->getProperty("?/blockSize").toInt());
-            list << QString("Wind=%1").arg(m_input->getProperty("?/windowDescription").toString());
-            list << QString("TypeAver=%1").arg(m_input->getProperty("?/averaging").toString());
+            list << QString("BlockIn=%1").arg(m_input->getParameter("?/blockSize").toInt());
+            list << QString("Wind=%1").arg(m_input->getParameter("?/windowDescription").toString());
+            list << QString("TypeAver=%1").arg(m_input->getParameter("?/averaging").toString());
             list << "pTime=(0000000000000000)";
             return list;
         }
@@ -51,7 +51,7 @@ QVariant ApsFunction::m_getProperty(const QString &property) const
         if (property == "?/xType") return 18; //frequency
         if (property == "?/xBegin") return 0.0;
         if (property == "?/xStep") {
-            return m_input->getProperty("?/sampleRate").toDouble() / m_input->getProperty("?/blockSize").toDouble();
+            return m_input->getParameter("?/sampleRate").toDouble() / m_input->getParameter("?/blockSize").toDouble();
         }
         if (property == "?/functionDescription") {
             return "APS";
@@ -69,12 +69,12 @@ QVariant ApsFunction::m_getProperty(const QString &property) const
             return DataHolder::UnitsQuadratic;
         }
         if (property == "?/yName") {
-            QString s = m_input->getProperty("?/yName").toString();
+            QString s = m_input->getParameter("?/yName").toString();
             return QString("(%1)^2").arg(s);
         }
 
         // do not know anything about these broadcast properties
-        if (m_input) return m_input->getProperty(property);
+        if (m_input) return m_input->getParameter(property);
     }
 
     return QVariant();
@@ -97,7 +97,7 @@ DataDescription ApsFunction::getFunctionDescription() const
     if (m_input) result = m_input->getFunctionDescription();
 
     result.put("xname", "Гц");
-    QString s = m_input->getProperty("?/yName").toString();
+    QString s = m_input->getParameter("?/yName").toString();
     result.put("yname", QString("(%1)^2").arg(s));
     result.put("function.name", "APS");
     result.put("function.type", 2);
@@ -119,7 +119,7 @@ bool ApsFunction::compute(FileDescriptor *file)
     QVector<double> data = m_input->getData("input");
     if (data.isEmpty()) return false;
 
-    //double sampleRate = m_input->getProperty("?/sampleRate").toDouble();
+    //double sampleRate = m_input->getParameter("?/sampleRate").toDouble();
 
     int dataSize = data.size()/2;
     output.resize(dataSize);

@@ -14,7 +14,7 @@
 #include "methods/frfalgorithm.h"
 #include "methods/psalgorithm.h"
 #include "methods/psdalgorithm.h"
-
+#include "methods/filteringalgorithm.h"
 
 FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QWidget *parent)
     : QDialog(parent), dataBase(dataBase), win(parent), currentAlgorithm(0)
@@ -25,6 +25,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
 
     algorithms << new TimeAlgorithm(dataBase, this);
     algorithms << new WindowingAlgorithm(dataBase, this);
+    algorithms << new FilteringAlgorithm(dataBase, this);
     algorithms << new SpectreAlgorithm(dataBase, this);
     algorithms << new PsAlgorithm(dataBase, this);
     algorithms << new PsdAlgorithm(dataBase, this);
@@ -174,7 +175,7 @@ void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
     // мы это сделаем в самом конце функцией updateVisibleProperties();
 //    m_manager->blockSignals(true);
     for (auto [key, value]: asKeyValueRange(map)) {
-        key->setValue(currentAlgorithm->getProperty(value.f, value.name));
+        key->setValue(currentAlgorithm->getParameter(value.f, value.name));
     }
 //    m_manager->blockSignals(false);
     updateVisibleProperties();
@@ -198,7 +199,7 @@ void FilesProcessorDialog::onValueChanged(QtProperty *property, const QVariant &
     Property p = map.value(dynamic_cast<QtVariantProperty*>(property));
     if (p.name.isEmpty()) return;
 
-    currentAlgorithm->setProperty(p.f, p.name, val);
+    currentAlgorithm->setParameter(p.f, p.name, val);
 
     updateVisibleProperties();
 }
@@ -210,7 +211,7 @@ void FilesProcessorDialog::updateProperty(AbstractFunction *f, const QString &pr
             if (val.isValid() && !attribute.isEmpty())
                 key->setAttribute(attribute, val);
 
-            key->setValue(currentAlgorithm->getProperty(f, property));
+            key->setValue(currentAlgorithm->getParameter(f, property));
             updateVisibleProperties();
         }
     }

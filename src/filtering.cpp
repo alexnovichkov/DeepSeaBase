@@ -1,6 +1,6 @@
 #include "filtering.h"
 
-#include "../3rdParty/DSPFilters/Dsp.h"
+#include "../3rdParty/DspFilters/Dsp.h"
 
 Filtering::Filtering() : blockSize(0), type(NoFiltering), approximation(Butterworth), f(0)
 

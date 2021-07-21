@@ -38,7 +38,7 @@ QVariant GxyFunction::m_getProperty(const QString &property) const
         if (property == "?/xName") return "Гц";
         if (property == "?/xBegin") return 0.0;
         if (property == "?/xStep") {
-            return m_input->getProperty("?/sampleRate").toDouble() / m_input->getProperty("?/blockSize").toDouble();
+            return m_input->getParameter("?/sampleRate").toDouble() / m_input->getParameter("?/blockSize").toDouble();
         }
         if (property == "?/functionDescription")
             return "GXY";
@@ -50,13 +50,13 @@ QVariant GxyFunction::m_getProperty(const QString &property) const
             return DataHolder::UnitsQuadratic;
 
         if (property == "?/yName")
-            return QString("(%1)^2").arg(m_input->getProperty("?/yNameOld").toString());
+            return QString("(%1)^2").arg(m_input->getParameter("?/yNameOld").toString());
 
         if (property == "?/referenceChannelIndex" && m_input2)
-            return m_input2->getProperty(property);
+            return m_input2->getParameter(property);
 
         // do not know anything about these broadcast properties
-        if (m_input) return m_input->getProperty(property);
+        if (m_input) return m_input->getParameter(property);
     }
 
     return QVariant();

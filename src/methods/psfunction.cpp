@@ -38,19 +38,19 @@ QVariant PsFunction::m_getProperty(const QString &property) const
         if (property == "?/xName") return "Гц";
         if (property == "?/xBegin") return 0.0;
         if (property == "?/xStep") {
-            return m_input->getProperty("?/sampleRate").toDouble() / m_input->getProperty("?/blockSize").toDouble();
+            return m_input->getParameter("?/sampleRate").toDouble() / m_input->getParameter("?/blockSize").toDouble();
         }
         if (property == "?/functionDescription") return "PS";
         if (property == "?/dataFormat") return "amplitude";
         if (property == "?/yValuesUnits") return DataHolder::UnitsQuadratic;
         if (property == "?/yName") {
-            QString s = m_input->getProperty("?/yNameOld").toString();
+            QString s = m_input->getParameter("?/yNameOld").toString();
             return QString("(%1)^2").arg(s);
         }
         if (property == "?/portionsCount") return portionsCount;
 
         // do not know anything about these broadcast properties
-        if (m_input) return m_input->getProperty(property);
+        if (m_input) return m_input->getParameter(property);
     }
     return QVariant();
 }
@@ -77,7 +77,7 @@ bool PsFunction::compute(FileDescriptor *file)
     if (data.isEmpty()) return false;
 
     //данные приходят сразу для всего канала, поэтому мы должны разбить их по блокам
-    const int blockSize = m_input->getProperty("?/blockSize").toInt();
+    const int blockSize = m_input->getParameter("?/blockSize").toInt();
     portionsCount = data.size()/blockSize;
 
     for (int block = 0; block < portionsCount; ++block) {

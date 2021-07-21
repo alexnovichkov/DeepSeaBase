@@ -40,10 +40,12 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
 
     gxyF = new GxyFunction(parent, "gxy");
     refGxyF = new GxyFunction(parent, "refGxy");
-
     frfF = new FrfFunction(parent, "frf");
-
     saver = new SavingFunction(parent, "saver");
+
+    ////
+    m_chain << channelF;
+    m_chain << saver;
 
     //first chain
 //    resamplingF->setInput(channelF);
@@ -103,13 +105,13 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     if (xStepsDiffer) emit message("Файлы имеют разный шаг по оси X.");
 
     //начальные значения, которые будут использоваться в показе функций
-//    resamplingF->setProperty(resamplingF->name()+"/xStep", xStep);
+//    resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);
 
-    samplingF->setProperty(samplingF->name()+"/xStep", xStep);
+    samplingF->setParameter(samplingF->name()+"/xStep", xStep);
 
     channelF->setFile(dataBase.constFirst());
     refChannelF->setFile(dataBase.constFirst());
-    refChannelF->setProperty(refChannelF->name()+"/referenceChannelIndex", 1);
+    refChannelF->setParameter(refChannelF->name()+"/referenceChannelIndex", 1);
 
 //    //resamplingF отправляет сигнал об изменении "?/xStep"
 //    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
@@ -130,11 +132,6 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
 //    }
 }
 
-QString FRFAlgorithm::name() const
-{DD;
-    return "FRF";
-}
-
 QString FRFAlgorithm::description() const
 {DD;
     return "Передаточная функция";
@@ -145,20 +142,25 @@ QString FRFAlgorithm::displayName() const
     return "FRF";
 }
 
-bool FRFAlgorithm::compute(FileDescriptor *file)
-{DD;
-    if (QThread::currentThread()->isInterruptionRequested()) {
-        finalize();
-        return false;
-    }
-    if (file->channelsCount()==0) return false;
-    saver->setProperty(saver->name()+"/destination", QFileInfo(file->fileName()).canonicalPath());
-    saver->reset();
+void FRFAlgorithm::resetChain()
+{
+    //        resamplingF->reset();
+    samplingF->reset();
+    windowingF->reset();
+    frfF->reset();
+    averagingF->reset();
+    //        refResamplingF->reset();
+    refSamplingF->reset();
+    refWindowingF->reset();
+    refAveragingF->reset();
+}
 
-//    resamplingF->setProperty(resamplingF->name()+"/xStep", file->xStep());
-    samplingF->setProperty(samplingF->name()+"/xStep", file->xStep());
+void FRFAlgorithm::initChain(FileDescriptor *file)
+{
+//    resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());
+    samplingF->setParameter(samplingF->name()+"/xStep", file->xStep());
 
-    int frfType = saver->getProperty("FRF/type").toInt();
+    int frfType = saver->getParameter("FRF/type").toInt();
     if (frfType == 1) {
         //compute H2, needs to readjust flows
         gxyF->setInput(fftF); //<- computes S_BB, A - reference channel
@@ -166,54 +168,12 @@ bool FRFAlgorithm::compute(FileDescriptor *file)
         refGxyF->setInput(fftF); //<- computes S_BA, A - reference channel
         refGxyF->setInput2(refFftF);
     }
+    else {
+        //compute H1, needs to readjust flows
+        gxyF->setInput(refFftF); //<- computes S_AB, A - reference channel
+        gxyF->setInput2(fftF);
 
-    const int count = file->channelsCount();
-    const int refChannel = refChannelF->getProperty("RefChannel/referenceChannelIndex").toInt()-1;
-    const QStringList channels = channelF->getProperty("?/channels").toStringList();
-
-    for (int i=0; i<count; ++i) {
-        //beginning of the chain
-        channelF->setProperty("Channel/channelIndex", i);
-
-        if (!channels.isEmpty() && !channels.contains(QString::number(i+1))) {
-            emit tick();
-            continue;
-        }
-
-        if (refChannel == i) {
-            emit tick();
-            continue;
-        }
-
-
-        const bool wasPopulated = file->channel(i)->populated();
-
-//        resamplingF->reset();
-        samplingF->reset();
-        windowingF->reset();
-        frfF->reset();
-        averagingF->reset();
-//        refResamplingF->reset();
-        refSamplingF->reset();
-        refWindowingF->reset();
-        refAveragingF->reset();
-
-
-
-
-        //so far end of the chain
-        // for each channel
-        saver->setFile(file);
-        saver->compute(file); //and collect the result
-
-        if (!wasPopulated) file->channel(i)->clear();
-        emit tick();
+        refGxyF->setInput(refFftF); //<- computes S_AA, A - reference channel
+        refGxyF->setInput2(refFftF);
     }
-    saver->reset();
-    QString fileName = saver->getProperty(saver->name()+"/name").toString();
-//    qDebug()<<fileName;
-
-    if (fileName.isEmpty()) return false;
-    newFiles << fileName;
-    return true;
 }

@@ -28,6 +28,8 @@ QVariant ChannelFunction::m_getProperty(const QString &property) const
 
     if (property.startsWith("?/")) {
         if (property == "?/channelIndex") return channel;
+        if (property == "?//referenceChannelIndex") return -1;
+
         if (property == "?/channels") return selector.indexes();
 
         //это - свойства исходного файла

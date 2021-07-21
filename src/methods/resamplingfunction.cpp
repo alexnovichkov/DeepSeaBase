@@ -86,7 +86,7 @@ QVariant ResamplingFunction::m_getProperty(const QString &property) const
         if (property == "?/xStep")
             return xStep * factor;
         if (m_input)
-            return m_input->getProperty(property);
+            return m_input->getParameter(property);
     }
 
     if (property == name()+"/resampleType")
@@ -133,7 +133,7 @@ void ResamplingFunction::m_setProperty(const QString &property, const QVariant &
         }
     }
     else if (p == "frequencyRange") {
-        if (getProperty(name()+"/frequencyRange").toInt() != val.toInt()) {
+        if (getParameter(name()+"/frequencyRange").toInt() != val.toInt()) {
             double f = 1.0 / val.toDouble() / 2.56 / xStep;
             factor = f;
             emit propertyChanged("?/xStep", xStep * factor);
@@ -144,7 +144,7 @@ void ResamplingFunction::m_setProperty(const QString &property, const QVariant &
     }
     else if (p == "sampleRate") {
         int sR = val.toInt();
-        if (getProperty(name()+"/sampleRate").toInt() != sR) {
+        if (getParameter(name()+"/sampleRate").toInt() != sR) {
             double f = 1.0 / xStep / sR;
             factor = f;
             emit propertyChanged("?/xStep", xStep * factor);
@@ -240,5 +240,5 @@ bool ResamplingFunction::compute(FileDescriptor *file)
 void ResamplingFunction::updateProperty(const QString &property, const QVariant &val)
 {DD;
     if (!property.startsWith(name()+"/")) return;
-    setProperty(property, val);
+    setParameter(property, val);
 }

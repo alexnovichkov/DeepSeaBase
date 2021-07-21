@@ -57,12 +57,12 @@ QVariant AveragingFunction::m_getProperty(const QString &property) const
 //            return averaging.getAveragingType();
         if (property == "?/zCount") {
             //усреднения нет - возвращаем полное число блоков
-            if (averaging.getAveragingType() == 0) return m_input->getProperty("?/zCount");
+            if (averaging.getAveragingType() == 0) return m_input->getParameter("?/zCount");
             //усреднение есть - возвращаем один блок
             return 1;
         }
 
-        if (m_input) return m_input->getProperty(property);
+        if (m_input) return m_input->getParameter(property);
     }
 
     if (!property.startsWith(name()+"/")) return QVariant();
@@ -120,7 +120,7 @@ bool AveragingFunction::compute(FileDescriptor *file)
     if (data.isEmpty()) return false;
 
     //данные приходят сразу для всего канала, поэтому мы должны разбить их по блокам
-    const int portionsCount = m_input->getProperty("?/portionsCount").toInt();
+    const int portionsCount = m_input->getParameter("?/portionsCount").toInt();
     const int blockSize = data.size() / portionsCount;
 
     for (int block = 0; block < portionsCount; ++block) {

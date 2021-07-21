@@ -9,8 +9,8 @@ public:
     FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent = nullptr);
 
 public:
-    virtual QString name() const override;
     virtual QString description() const override;
+    virtual QString displayName() const override;
 private:
     AbstractFunction * channelF; //отдает данные для обрабатываемого канала
     AbstractFunction * refChannelF; //отдает данные для опорного канала
@@ -39,10 +39,9 @@ private:
 
     //channelF    -> samplingF    -> windowingF    ->
     //refChannelF -> refSamplingF -> refWindowingF
-
-public:
-    virtual QString displayName() const override;
-    virtual bool compute(FileDescriptor *file) override;
+protected:
+    virtual void resetChain() override;
+    virtual void initChain(FileDescriptor *file) override;
 };
 
 #endif // FRFALGORITHM_H

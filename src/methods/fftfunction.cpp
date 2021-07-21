@@ -45,7 +45,7 @@ QVariant FftFunction::m_getProperty(const QString &property) const
         if (property == "?/xName") return "Гц";
         if (property == "?/xBegin") return 0.0;
         if (property == "?/xStep")
-            return m_input->getProperty("?/sampleRate").toDouble() / m_input->getProperty("?/blockSize").toDouble();
+            return m_input->getParameter("?/sampleRate").toDouble() / m_input->getParameter("?/blockSize").toDouble();
         if (property == "?/functionDescription") return "FFT";
         if (property == "?/dataFormat") {
             switch (map.value("output")) {
@@ -63,10 +63,10 @@ QVariant FftFunction::m_getProperty(const QString &property) const
                 return DataHolder::UnitsDimensionless;
             return DataHolder::UnitsLinear;
         }
-        if (property == "?/yName") return m_input->getProperty("?/yNameOld").toString();
+        if (property == "?/yName") return m_input->getParameter("?/yNameOld").toString();
 
         // do not know anything about these broadcast properties
-        if (m_input) return m_input->getProperty(property);
+        if (m_input) return m_input->getParameter(property);
     }
     if (!property.startsWith(name()+"/")) return QVariant();
 
@@ -98,7 +98,7 @@ bool FftFunction::compute(FileDescriptor *file)
     if (data.isEmpty()) return false;
 
     //данные приходят сразу для всего канала, поэтому мы должны разбить их по блокам
-    const int blockSize = m_input->getProperty("?/blockSize").toInt();
+    const int blockSize = m_input->getParameter("?/blockSize").toInt();
     portionsCount = data.size()/blockSize;
 
     for (int block = 0; block < portionsCount; ++block) {

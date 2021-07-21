@@ -16,6 +16,9 @@ WindowingAlgorithm::WindowingAlgorithm(QList<FileDescriptor *> &dataBase, QObjec
     windowingF = new WindowingFunction(parent);
     saver = new SavingFunction(parent);
 
+    m_chain << channelF;
+    m_chain << saver;
+
     samplingF->setInput(channelF);
     windowingF->setInput(samplingF);
     saver->setInput(windowingF);
@@ -37,7 +40,7 @@ WindowingAlgorithm::WindowingAlgorithm(QList<FileDescriptor *> &dataBase, QObjec
     if (xStepsDiffer) emit message("Файлы имеют разный шаг по оси X.");
 
     //начальные значения, которые будут использоваться в показе функций
-    samplingF->setProperty(samplingF->name()+"/xStep", xStep);
+    samplingF->setParameter(samplingF->name()+"/xStep", xStep);
     channelF->setFile(dataBase.constFirst());
 
     //перенаправляем сигналы от функций в интерфейс пользователя
@@ -45,11 +48,6 @@ WindowingAlgorithm::WindowingAlgorithm(QList<FileDescriptor *> &dataBase, QObjec
 //        connect(f, SIGNAL(attributeChanged(QString,QVariant,QString)),SIGNAL(attributeChanged(QString,QVariant,QString)));
 //        connect(f, SIGNAL(tick()), this, SIGNAL(tick()));
 //    }
-}
-
-QString WindowingAlgorithm::name() const
-{DD;
-    return "Window";
 }
 
 QString WindowingAlgorithm::description() const
@@ -62,41 +60,13 @@ QString WindowingAlgorithm::displayName() const
     return "WIN";
 }
 
-bool WindowingAlgorithm::compute(FileDescriptor *file)
-{DD;
-    if (QThread::currentThread()->isInterruptionRequested()) {
-        finalize();
-        return false;
-    }
-    if (file->channelsCount()==0) return false;
-    saver->setProperty(saver->name()+"/destination", QFileInfo(file->fileName()).canonicalPath());
-    saver->reset();
+void WindowingAlgorithm::resetChain()
+{
+    samplingF->reset();
+    windowingF->reset();
+}
 
-    samplingF->setProperty(samplingF->name()+"/xStep", file->xStep());
-
-    const int count = file->channelsCount();
-    for (int i=0; i<count; ++i) {
-        const bool wasPopulated = file->channel(i)->populated();
-
-        samplingF->reset();
-        windowingF->reset();
-
-        //beginning of the chain
-        channelF->setProperty("Channel/channelIndex", i);
-
-        //so far end of the chain
-        // for each channel
-        saver->setFile(file);
-        saver->compute(file); //and collect the result
-
-        if (!wasPopulated) file->channel(i)->clear();
-        emit tick();
-    }
-    saver->reset();
-    QString fileName = saver->getProperty(saver->name()+"/name").toString();
-//    qDebug()<<fileName;
-
-    if (fileName.isEmpty()) return false;
-    newFiles << fileName;
-    return true;
+void WindowingAlgorithm::initChain(FileDescriptor *file)
+{
+    samplingF->setParameter(samplingF->name()+"/xStep", file->xStep());
 }

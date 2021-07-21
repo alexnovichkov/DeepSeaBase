@@ -23,6 +23,9 @@ PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     psF = new PsFunction(parent);
     saver = new SavingFunction(parent);
 
+    m_chain << channelF;
+    m_chain << saver;
+
 //    filteringF->setInput(channelF);
 //    resamplingF->setInput(filteringF);
     samplingF->setInput(channelF);
@@ -51,8 +54,8 @@ PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     if (xStepsDiffer) emit message("Файлы имеют разный шаг по оси X.");
 
     //начальные значения, которые будут использоваться в показе функций
-//    resamplingF->setProperty(resamplingF->name()+"/xStep", xStep);
-    samplingF->setProperty(samplingF->name()+"/xStep", xStep);
+//    resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);
+    samplingF->setParameter(samplingF->name()+"/xStep", xStep);
     channelF->setFile(dataBase.constFirst());
 
 //    //resamplingF отправляет сигнал об изменении "?/xStep"
@@ -70,11 +73,6 @@ PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
 }
 
 
-QString PsAlgorithm::name() const
-{DD;
-    return "Spectrum";
-}
-
 QString PsAlgorithm::description() const
 {DD;
     return "Спектр мощности";
@@ -86,46 +84,61 @@ QString PsAlgorithm::displayName() const
     return "PS";
 }
 
-bool PsAlgorithm::compute(FileDescriptor *file)
-{DD;
-    if (QThread::currentThread()->isInterruptionRequested()) {
-        finalize();
-        return false;
-    }
-    if (file->channelsCount()==0) return false;
-    saver->setProperty(saver->name()+"/destination", QFileInfo(file->fileName()).canonicalPath());
-    saver->reset();
+//bool PsAlgorithm::compute(FileDescriptor *file)
+//{DD;
+//    if (QThread::currentThread()->isInterruptionRequested()) {
+//        finalize();
+//        return false;
+//    }
+//    if (file->channelsCount()==0) return false;
+//    saver->setParameter(saver->name()+"/destination", QFileInfo(file->fileName()).canonicalPath());
+//    saver->reset();
 
-//    resamplingF->setProperty(resamplingF->name()+"/xStep", file->xStep());
-    samplingF->setProperty(samplingF->name()+"/xStep", file->xStep());
 
-    const int count = file->channelsCount();
-    for (int i=0; i<count; ++i) {
-        const bool wasPopulated = file->channel(i)->populated();
+//    const int count = file->channelsCount();
+//    const QStringList channels = channelF->getParameter("?/channels").toStringList();
 
-//        filteringF->reset();
-//        resamplingF->reset();
-        samplingF->reset();
-        windowingF->reset();
-        psF->reset();
-        averagingF->reset();
+//    for (int i=0; i<count; ++i) {
+//        if (!channels.isEmpty() && !channels.contains(QString::number(i+1))) {
+//            emit tick();
+//            continue;
+//        }
 
-        //beginning of the chain
-        channelF->setProperty("Channel/channelIndex", i);
+//        const bool wasPopulated = file->channel(i)->populated();
 
-        //so far end of the chain
-        // for each channel
-        saver->setFile(file);
-        saver->compute(file); //and collect the result
 
-        if (!wasPopulated) file->channel(i)->clear();
-        emit tick();
-    }
-    saver->reset();
-    QString fileName = saver->getProperty(saver->name()+"/name").toString();
-//    qDebug()<<fileName;
 
-    if (fileName.isEmpty()) return false;
-    newFiles << fileName;
-    return true;
+//        //beginning of the chain
+//        channelF->setParameter("Channel/channelIndex", i);
+
+//        //so far end of the chain
+//        // for each channel
+//        saver->setFile(file);
+//        saver->compute(file); //and collect the result
+
+//        if (!wasPopulated) file->channel(i)->clear();
+//        emit tick();
+//    }
+//    saver->reset();
+//    QString fileName = saver->getParameter(saver->name()+"/name").toString();
+////    qDebug()<<fileName;
+
+//    if (fileName.isEmpty()) return false;
+//    newFiles << fileName;
+//    return true;
+//}
+
+
+void PsAlgorithm::resetChain()
+{
+    samplingF->reset();
+    windowingF->reset();
+    psF->reset();
+    averagingF->reset();
+}
+
+void PsAlgorithm::initChain(FileDescriptor *file)
+{
+    //    resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());
+    samplingF->setParameter(samplingF->name()+"/xStep", file->xStep());
 }

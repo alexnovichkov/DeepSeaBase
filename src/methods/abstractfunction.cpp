@@ -33,7 +33,7 @@ bool AbstractFunction::propertyShowsFor(const QString &property) const
     return true;
 }
 
-QVariant AbstractFunction::getProperty(const QString &property) const
+QVariant AbstractFunction::getParameter(const QString &property) const
 {DD;
     QVariant p;
     if (m_master != nullptr) {
@@ -44,7 +44,7 @@ QVariant AbstractFunction::getProperty(const QString &property) const
     return p;
 }
 
-void AbstractFunction::setProperty(const QString &property, const QVariant &val)
+void AbstractFunction::setParameter(const QString &property, const QVariant &val)
 {DD;
     if (m_slave != nullptr) {
         m_slave->m_setProperty(property, val);
@@ -131,29 +131,83 @@ bool AbstractAlgorithm::propertyShowsFor(AbstractFunction *function, const QStri
     return true;
 }
 
-QVariant AbstractAlgorithm::getProperty(AbstractFunction *function, const QString &property) const
+QVariant AbstractAlgorithm::getParameter(AbstractFunction *function, const QString &property) const
 {DD;
     if (property.isEmpty()) return QVariant();
 
     for (AbstractFunction *f: functions()) {
         if (f == function && property.startsWith(f->name()+"/")) {
-            return f->getProperty(property);
+            return f->getParameter(property);
         }
     }
 
     return QVariant();
 }
 
-void AbstractAlgorithm::setProperty(AbstractFunction *function, const QString &property, const QVariant &val)
+void AbstractAlgorithm::setParameter(AbstractFunction *function, const QString &property, const QVariant &val)
 {DD;
     if (property.isEmpty()) return;
 
     for (AbstractFunction *f: functions()) {
         if (f == function && property.startsWith(f->name()+"/")) {
-            f->setProperty(property, val);
+            f->setParameter(property, val);
             return;
         }
     }
+}
+
+bool AbstractAlgorithm::compute(FileDescriptor *file)
+{
+    if (QThread::currentThread()->isInterruptionRequested()) {
+        finalize();
+        return false;
+    }
+    if (file->channelsCount()==0) return false;
+    if (m_chain.isEmpty()) return false;
+
+    m_chain.last()->setParameter(m_chain.last()->name()+"/destination", QFileInfo(file->fileName()).canonicalPath());
+    m_chain.last()->reset();
+
+    initChain(file);
+
+    const int count = file->channelsCount();
+    const int refChannel = m_chain.last()->getParameter("?/referenceChannelIndex").toInt()-1;
+    DebugPrint(refChannel);
+    const QStringList channels = m_chain.first()->getParameter("?/channels").toStringList();
+
+    for (int i=0; i<count; ++i) {
+        //beginning of the chain
+        m_chain.first()->setParameter("Channel/channelIndex", i);
+
+        if (!channels.isEmpty() && !channels.contains(QString::number(i+1))) {
+            emit tick();
+            continue;
+        }
+
+        if (refChannel == i) {
+            emit tick();
+            continue;
+        }
+
+        const bool wasPopulated = file->channel(i)->populated();
+
+        resetChain();
+
+        //so far end of the chain
+        // for each channel
+        m_chain.last()->setFile(file);
+        m_chain.last()->compute(file); //and collect the result
+
+        if (!wasPopulated) file->channel(i)->clear();
+        emit tick();
+    }
+    m_chain.last()->reset();
+    QString fileName = m_chain.last()->getParameter(m_chain.last()->name()+"/name").toString();
+//    qDebug()<<fileName;
+
+    if (fileName.isEmpty()) return false;
+    newFiles << fileName;
+    return true;
 }
 
 void AbstractAlgorithm::reset()

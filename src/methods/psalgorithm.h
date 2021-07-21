@@ -9,8 +9,8 @@ public:
     PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent = nullptr);
 
 public:
-    virtual QString name() const override;
     virtual QString description() const override;
+    virtual QString displayName() const override;
 private:
     AbstractFunction * channelF; //фильтрует обрабатываемые каналы
 //    AbstractFunction * filteringF; //применяет фильтр к временным данным
@@ -21,9 +21,9 @@ private:
     AbstractFunction * psF; //вычисляет БПФ
     AbstractFunction * saver; //сохраняет результат
 
-public:
-    virtual QString displayName() const override;
-    virtual bool compute(FileDescriptor *file) override;
+protected:
+    virtual void resetChain() override;
+    virtual void initChain(FileDescriptor *file) override;
 };
 
 #endif

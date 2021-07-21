@@ -23,6 +23,9 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
     fftF = new FftFunction(parent);
     saver = new SavingFunction(parent);
 
+    m_chain << channelF;
+    m_chain << saver;
+
 //    filteringF->setInput(channelF);
 //    resamplingF->setInput(filteringF);
     samplingF->setInput(channelF);
@@ -52,8 +55,8 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
     if (xStepsDiffer) emit message("Файлы имеют разный шаг по оси X.");
 
     //начальные значения, которые будут использоваться в показе функций
-//    resamplingF->setProperty(resamplingF->name()+"/xStep", xStep);
-    samplingF->setProperty(samplingF->name()+"/xStep", xStep);
+//    resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);
+    samplingF->setParameter(samplingF->name()+"/xStep", xStep);
     channelF->setFile(dataBase.constFirst());
 
 //    //resamplingF отправляет сигнал об изменении "?/xStep"
@@ -71,11 +74,6 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
 }
 
 
-QString SpectreAlgorithm::name() const
-{DD;
-    return "Spectrum";
-}
-
 QString SpectreAlgorithm::description() const
 {DD;
     return "Спектр";
@@ -87,46 +85,18 @@ QString SpectreAlgorithm::displayName() const
     return "FFT";
 }
 
-bool SpectreAlgorithm::compute(FileDescriptor *file)
-{DD;
-    if (QThread::currentThread()->isInterruptionRequested()) {
-        finalize();
-        return false;
-    }
-    if (file->channelsCount()==0) return false;
-    saver->setProperty(saver->name()+"/destination", QFileInfo(file->fileName()).canonicalPath());
-    saver->reset();
+void SpectreAlgorithm::resetChain()
+{
+    //        filteringF->reset();
+    //        resamplingF->reset();
+    samplingF->reset();
+    windowingF->reset();
+    fftF->reset();
+    averagingF->reset();
+}
 
-//    resamplingF->setProperty(resamplingF->name()+"/xStep", file->xStep());
-    samplingF->setProperty(samplingF->name()+"/xStep", file->xStep());
-
-    const int count = file->channelsCount();
-    for (int i=0; i<count; ++i) {
-        const bool wasPopulated = file->channel(i)->populated();
-
-//        filteringF->reset();
-//        resamplingF->reset();
-        samplingF->reset();
-        windowingF->reset();
-        fftF->reset();
-        averagingF->reset();
-
-        //beginning of the chain
-        channelF->setProperty("Channel/channelIndex", i);
-
-        //so far end of the chain
-        // for each channel
-        saver->setFile(file);
-        saver->compute(file); //and collect the result
-
-        if (!wasPopulated) file->channel(i)->clear();
-        emit tick();
-    }
-    saver->reset();
-    QString fileName = saver->getProperty(saver->name()+"/name").toString();
-//    qDebug()<<fileName;
-
-    if (fileName.isEmpty()) return false;
-    newFiles << fileName;
-    return true;
+void SpectreAlgorithm::initChain(FileDescriptor *file)
+{
+    //    resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());
+    samplingF->setParameter(samplingF->name()+"/xStep", file->xStep());
 }

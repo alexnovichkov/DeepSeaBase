@@ -47,6 +47,7 @@ SOURCES += main.cpp\
     filestable.cpp \
     mainwindow.cpp \
     methods/apsfunction.cpp \
+    methods/filteringalgorithm.cpp \
     methods/frfalgorithm.cpp \
     methods/frffunction.cpp \
     methods/gxyfunction.cpp \
@@ -139,6 +140,7 @@ HEADERS  += mainwindow.h \
     enums.h \
     filestable.h \
     methods/apsfunction.h \
+    methods/filteringalgorithm.h \
     methods/frfalgorithm.h \
     methods/frffunction.h \
     methods/gxyfunction.h \

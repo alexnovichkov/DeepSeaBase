@@ -60,8 +60,8 @@ public:
     virtual QString propertyDescription(const QString &property) const = 0;
     virtual bool propertyShowsFor(const QString &property) const;
 
-    QVariant getProperty(const QString &property) const;
-    void setProperty(const QString &property, const QVariant &val);
+    QVariant getParameter(const QString &property) const;
+    void setParameter(const QString &property, const QVariant &val);
 
     void pairWith(AbstractFunction *slave);
     bool paired() const {return m_master != nullptr;}
@@ -112,13 +112,12 @@ class AbstractAlgorithm : public QObject
 public:
     explicit AbstractAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent = nullptr);
     virtual ~AbstractAlgorithm();
-    virtual QString name() const = 0;
     virtual QString displayName() const = 0;
     virtual QString description() const = 0;
     bool propertyShowsFor(AbstractFunction *f, const QString &property) const;
 
-    QVariant getProperty(AbstractFunction *f, const QString &property) const;
-    void setProperty(AbstractFunction *f, const QString &property, const QVariant &val);
+    QVariant getParameter(AbstractFunction *f, const QString &property) const;
+    void setParameter(AbstractFunction *f, const QString &property, const QVariant &val);
 
     QList<FileDescriptor *> dataBase() const {return m_dataBase;}
 
@@ -126,14 +125,12 @@ public:
 
     QStringList getNewFiles() const {return newFiles;}
 
-    // по умолчанию не делает ничего
-    virtual bool compute(FileDescriptor *file) = 0;
+    bool compute(FileDescriptor *file);
 
-    // очищает внутреннее состояние функции, но не меняет параметры, заданные ранее
+    // очищает внутреннее состояние алгоритма, но не меняет параметры, заданные ранее
     virtual void reset();
 signals:
     void propertyChanged(const QString &property, const QVariant &val);
-//    void attributeChanged(AbstractFunction *f, const QString &property, const QVariant &val, const QString &attribute);
 
     void tick();
     void tick(const QString &path);
@@ -143,10 +140,12 @@ public slots:
     virtual void start();
 protected:
     void finalize();
+    virtual void resetChain() = 0;
+    virtual void initChain(FileDescriptor *file) = 0;
 
     QList<FileDescriptor *> m_dataBase;
     QList<AbstractFunction *> m_functions; //список функций для отображения в окне расчета
-
+    QList<AbstractFunction *> m_chain; //начало и конец цепи вычислений
     QStringList newFiles;
 };
 

@@ -167,7 +167,7 @@ QVariant FilteringFunction::m_getProperty(const QString &property) const
 //        if (property == "?/functionType") return 1;//Time response
         if (property == "?/functionDescription") return "FILT";
 
-        if (m_input) return m_input->getProperty(property);
+        if (m_input) return m_input->getParameter(property);
     }
 
     if (!property.startsWith(name()+"/")) return QVariant();

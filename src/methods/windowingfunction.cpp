@@ -68,7 +68,7 @@ QVariant WindowingFunction::m_getProperty(const QString &property) const
 //        if (property == "?/windowType") return windowing.getWindowType();
 
         // do not know anything about these broadcast properties
-        if (m_input) return m_input->getProperty(property);
+        if (m_input) return m_input->getParameter(property);
     }
     if (!property.startsWith(name()+"/")) return QVariant();
     QString p = property.section("/",1);
@@ -134,7 +134,7 @@ bool WindowingFunction::compute(FileDescriptor *file)
     output = m_input->getData("input");
     if (output.isEmpty()) return false;
 
-    const int bufferSize = m_input->getProperty("?/blockSize").toInt();
+    const int bufferSize = m_input->getParameter("?/blockSize").toInt();
     windowing.setBufferSize(bufferSize);
     windowing.applyTo(output, bufferSize);
     return true;
