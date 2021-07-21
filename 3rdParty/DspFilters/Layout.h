@@ -38,6 +38,7 @@ THE SOFTWARE.
 
 #include "Common.h"
 #include "MathSupplement.h"
+#include <iostream>
 
 namespace Dsp {
 
@@ -89,6 +90,7 @@ public:
   void add (const complex_t& pole, const complex_t& zero)
   {
     assert (!(m_numPoles&1)); // single comes last
+    //if (Dsp::is_nan (pole)) std::cout << "pole is nan\n";
     assert (!Dsp::is_nan (pole));
     m_pair[m_numPoles/2] = PoleZeroPair (pole, zero);
     ++m_numPoles;
@@ -98,6 +100,7 @@ public:
                                   const complex_t zero)
   {
     assert (!(m_numPoles&1)); // single comes last
+    //if (Dsp::is_nan (pole)) std::cout << "pole is nan\n";
     assert (!Dsp::is_nan (pole));
     m_pair[m_numPoles/2] = PoleZeroPair (
       pole, zero, std::conj (pole), std::conj (zero));

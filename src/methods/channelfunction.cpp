@@ -22,7 +22,6 @@ QString ChannelFunction::description() const
 
 QVariant ChannelFunction::m_getProperty(const QString &property) const
 {DD;
-//    qDebug()<<"ChannelFunction::m_getProperty"<<property;
     Channel *ch = 0;
     if (m_file && channel >=0) ch = m_file->channel(channel);
 

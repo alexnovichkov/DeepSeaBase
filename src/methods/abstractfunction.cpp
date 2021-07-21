@@ -172,7 +172,6 @@ bool AbstractAlgorithm::compute(FileDescriptor *file)
 
     const int count = file->channelsCount();
     const int refChannel = m_chain.last()->getParameter("?/referenceChannelIndex").toInt()-1;
-    DebugPrint(refChannel);
     const QStringList channels = m_chain.first()->getParameter("?/channels").toStringList();
 
     for (int i=0; i<count; ++i) {
