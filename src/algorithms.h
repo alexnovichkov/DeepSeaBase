@@ -19,6 +19,30 @@ private:
     T &m_data;
 };
 
+template<typename T>
+QVector<T> segment(const QVector<T> &values, int from, int to, int blockSize, int blocks)
+{
+    QVector<T> result;
+    if (values.isEmpty()) return result;
+    if (blockSize == 0) return result;
+    if (blocks <= 0) return result;
+
+    if (from > to) std::swap(from, to);
+    if (from < 0) from = 0;
+    if (to >= blockSize) to = blockSize-1;
+
+    const int length = to-from+1;
+
+    result.reserve(length*blocks);
+
+    for (int i=0; i<blocks; ++i) {
+        auto d = values.mid(i*blockSize + from, length);
+        d.resize(length);
+        result.append(d);
+    }
+    return result;
+}
+
 template <typename T, typename D>
 QVector<D> readChunk(QDataStream &readStream, quint64 blockSize, qint64 *actuallyRead)
 {

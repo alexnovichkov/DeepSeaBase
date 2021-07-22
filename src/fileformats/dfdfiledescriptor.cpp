@@ -160,6 +160,12 @@ void DfdFileDescriptor::read()
     double XBegin = hextodouble(dfd.value("DataFileDescriptor/XBegin"));
     double XStep = hextodouble(dfd.value("DataFileDescriptor/XStep"));
 
+    //Проверяем несовпадение типа файла и шага по оси Х
+//    if ((DataType < OSpectr || DataType > TFOSpectr) && qFuzzyIsNull(XStep)) {
+//        //шаг равен нулю, а тип файла - не третьоктава, меняем принудительно
+//        DataType = ToSpectr;
+//    }
+
     // [DataDescription]
     if (childGroups.contains("DataDescription")) {
         Description descr(this);

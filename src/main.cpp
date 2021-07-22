@@ -14,7 +14,9 @@
 //#include "fileformats/ufffile.h"
 //#include "fileformats/matfile.h"
 
-#include "methods/windowing.h"
+//#include "methods/windowing.h"
+
+//#include "algorithms.h"
 
 int main(int argc, char *argv[])
 {

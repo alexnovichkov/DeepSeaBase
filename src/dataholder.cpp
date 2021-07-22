@@ -92,20 +92,6 @@ DataHolder::DataHolder(const DataHolder &other)
     m_correction = other.m_correction;
 }
 
-template<typename T>
-QVector<T> segment(const QVector<T> &values, int from, int to, int blockSize, int blocks)
-{
-    QVector<T> result;
-    if (values.isEmpty()) return result;
-
-    result.reserve((to - from + 1)*blocks);
-
-    for (int i=0; i<blocks; ++i) {
-        result.append(values.mid(i*blockSize + from, to - from + 1));
-    }
-    return result;
-}
-
 void DataHolder::setSegment(const DataHolder &other, int from, int to)
 {DD;
     m_xBegin = other.m_xBegin + other.m_xStep * from;
@@ -115,11 +101,11 @@ void DataHolder::setSegment(const DataHolder &other, int from, int to)
     m_xCount = to - from + 1;
     m_zCount = other.m_zCount;
     m_threshold = other.m_threshold;
-    m_xValues = segment(other.m_xValues, from, to, m_xCount, m_zCount);
-    m_yValues = segment(other.m_yValues, from, to, m_xCount, m_zCount);
+    m_xValues = segment(other.m_xValues, from, to, other.m_xCount, m_zCount);
+    m_yValues = segment(other.m_yValues, from, to, other.m_xCount, m_zCount);
     m_zValues = other.m_zValues;
-    m_yValuesTemporal = segment(other.m_yValuesTemporal, from, to, m_xCount, m_zCount);
-    m_yValuesComplex  = segment(other.m_yValuesComplex, from, to, m_xCount, m_zCount);
+    m_yValuesTemporal = segment(other.m_yValuesTemporal, from, to, other.m_xCount, m_zCount);
+    m_yValuesComplex  = segment(other.m_yValuesComplex, from, to, other.m_xCount, m_zCount);
     m_xValuesFormat = other.m_xValuesFormat;
     m_zValuesFormat = other.m_zValuesFormat;
     m_yValuesFormat = other.m_yValuesFormat;
@@ -607,6 +593,7 @@ QVector<double> DataHolder::zValues() const
 
 double DataHolder::xValue(int i) const
 {
+    if (i<0) return 0.0;
     if (xValuesFormat() != XValuesNonUniform) return m_xBegin + m_xStep * i;
 
     if (i<m_xValues.size()) return m_xValues[i];
@@ -615,6 +602,7 @@ double DataHolder::xValue(int i) const
 
 double DataHolder::yValue(int i, int block) const
 {
+    if (i<0 || block < 0) return 0.0;
     i += block*m_xCount;
 
     if (i < m_yValuesTemporal.size())
@@ -624,6 +612,7 @@ double DataHolder::yValue(int i, int block) const
 
 cx_double DataHolder::yValueComplex(int i, int block) const
 {
+    if (i<0 || block < 0) return {0.0,0.0};
     i += block*m_xCount;
 
     if (i<m_yValuesComplex.size())  return m_yValuesComplex.at(i);
@@ -632,6 +621,7 @@ cx_double DataHolder::yValueComplex(int i, int block) const
 
 double DataHolder::zValue(int i) const
 {
+    if (i<0) return 0.0;
     if (m_zValuesFormat != XValuesNonUniform) return m_zBegin + m_zStep * i;
 
     if (i<m_zValues.size()) return m_zValues.at(i);
