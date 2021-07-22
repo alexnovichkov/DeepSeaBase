@@ -1,4 +1,4 @@
-#include "timealgorithm.h"
+#include "resamplingalgorithm.h"
 
 #include "fileformats/filedescriptor.h"
 #include "channelfunction.h"
@@ -12,7 +12,7 @@
 #include "logging.h"
 
 
-TimeAlgorithm::TimeAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
+ResamplingAlgorithm::ResamplingAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
 {DD;
     channelF = new ChannelFunction(parent);
@@ -55,23 +55,23 @@ TimeAlgorithm::TimeAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent)
 //    }
 }
 
-QString TimeAlgorithm::description() const
+QString ResamplingAlgorithm::description() const
 {DD;
     return "Передискретизация временных данных";
 }
 
 
-QString TimeAlgorithm::displayName() const
+QString ResamplingAlgorithm::displayName() const
 {DD;
     return "RSMPL";
 }
 
-void TimeAlgorithm::resetChain()
+void ResamplingAlgorithm::resetChain()
 {
     resamplingF->reset();
 }
 
-void TimeAlgorithm::initChain(FileDescriptor *file)
+void ResamplingAlgorithm::initChain(FileDescriptor *file)
 {
     resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());
 }

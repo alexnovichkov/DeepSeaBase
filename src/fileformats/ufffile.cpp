@@ -5,7 +5,6 @@
 #include "app.h"
 #include "algorithms.h"
 #include "dataholder.h"
-#include "averaging.h"
 #include "methods/weighting.h"
 #include "unitsconverter.h"
 

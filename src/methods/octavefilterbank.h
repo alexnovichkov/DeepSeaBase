@@ -2,7 +2,7 @@
 #define OCTAVEFILTERBANK_H
 
 #include <QtCore>
-#include "methods/abstractmethod.h"
+#include "methods/dfdmethods/abstractmethod.h"
 
 class OctaveFilterBank
 {

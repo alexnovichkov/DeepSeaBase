@@ -3,7 +3,7 @@
 
 #include <QObject>
 
-#include "methods/abstractmethod.h"
+#include "methods/dfdmethods/abstractmethod.h"
 
 #include "algorithms.h"
 

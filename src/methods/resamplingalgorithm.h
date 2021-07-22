@@ -1,12 +1,12 @@
-#ifndef TIMEALGORITHM_H
-#define TIMEALGORITHM_H
+#ifndef RESAMPLINGALGORITHM_H
+#define RESAMPLINGALGORITHM_H
 
 #include "abstractfunction.h"
 
-class TimeAlgorithm : public AbstractAlgorithm
+class ResamplingAlgorithm : public AbstractAlgorithm
 {
 public:
-    TimeAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent = nullptr);
+    ResamplingAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent = nullptr);
 
 public:
     virtual QString description() const override;
@@ -22,4 +22,4 @@ protected:
 };
 
 
-#endif // TIMEALGORITHM_H
+#endif // RESAMPLINGALGORITHM_H

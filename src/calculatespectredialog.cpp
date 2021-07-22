@@ -4,10 +4,10 @@
 #include <QThread>
 
 #include "fileformats/dfdfiledescriptor.h"
-#include "methods/spectremethod.h"
-#include "methods/timemethod.h"
-#include "methods/xresponch1.h"
-#include "methods/octavemethod.h"
+#include "methods/dfdmethods/spectremethod.h"
+#include "methods/dfdmethods/timemethod.h"
+#include "methods/dfdmethods/xresponch1.h"
+#include "methods/dfdmethods/octavemethod.h"
 #include "logging.h"
 
 #include "converters/converter.h"

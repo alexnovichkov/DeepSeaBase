@@ -7,7 +7,6 @@
 #include "logging.h"
 #include "algorithms.h"
 #include "dfdsettings.h"
-#include "averaging.h"
 #include "unitsconverter.h"
 
 template <typename T>

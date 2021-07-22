@@ -3,7 +3,6 @@
 #include <QJsonDocument>
 #include "algorithms.h"
 #include "logging.h"
-#include "averaging.h"
 #include "unitsconverter.h"
 
 QDebug operator<<(QDebug dbg, const AxisBlock &b)

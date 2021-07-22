@@ -5,13 +5,13 @@
 #include "fileformats/dfdfiledescriptor.h"
 #include "fileformats/ufffile.h"
 #include "methods/windowing.h"
-#include "averaging.h"
-#include "resampler.h"
+#include "methods/averaging.h"
+#include "methods/resampler.h"
 #include "methods/octavefilterbank.h"
 #include "algorithms.h"
-#include "fft.h"
-#include "channelselector.h"
-#include "framecutter.h"
+#include "methods/fft.h"
+#include "methods/channelselector.h"
+#include "methods/framecutter.h"
 #include "unitsconverter.h"
 
 Converter::Converter(QList<FileDescriptor *> &base, const Parameters &p_, QObject *parent) :

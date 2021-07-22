@@ -51,6 +51,7 @@ SOURCES += main.cpp\
     methods/frfalgorithm.cpp \
     methods/frffunction.cpp \
     methods/gxyfunction.cpp \
+    methods/resamplingalgorithm.cpp \
     methods/weighting.cpp \
     methods/windowingalgorithm.cpp \
     plot/canvaseventfilter.cpp \
@@ -59,35 +60,34 @@ SOURCES += main.cpp\
     plot/zoomstack.cpp \
     sortabletreewidgetitem.cpp \
     checkableheaderview.cpp \
-    methods/spectremethod.cpp \
-    methods/timemethod.cpp \
+    methods/dfdmethods/spectremethod.cpp \
+    methods/dfdmethods/timemethod.cpp \
     curvepropertiesdialog.cpp \
     tabwidget.cpp \
     coloreditdialog.cpp \
     colorselector.cpp \
     correctiondialog.cpp \
-    methods/xresponch1.cpp \
+    methods/dfdmethods/xresponch1.cpp \
     logging.cpp \
     editdescriptionsdialog.cpp \
-    iirfilter.cpp \
     methods/windowing.cpp \
     trackingpanel.cpp \
-    methods/octavemethod.cpp \
+    methods/dfdmethods/octavemethod.cpp \
     algorithms.cpp \
     methods/octavefilterbank.cpp \
     axisboundsdialog.cpp \
     calculatespectredialog.cpp \
-    averaging.cpp \
+    methods/averaging.cpp \
     timeslicer.cpp \
-    methods/abstractmethod.cpp \
+    methods/dfdmethods/abstractmethod.cpp \
     dataholder.cpp \
-    fft.cpp \
+    methods/fft.cpp \
     taskbarprogress.cpp \
     model.cpp \
     sortfiltermodel.cpp \
     filterheaderview.cpp \
-    channelselector.cpp \
-    filtering.cpp \
+    methods/channelselector.cpp \
+    methods/filtering.cpp \
     filesprocessordialog.cpp \
     methods/abstractfunction.cpp \
     methods/channelfunction.cpp \
@@ -99,7 +99,7 @@ SOURCES += main.cpp\
     methods/psfunction.cpp \
     methods/psdfunction.cpp \
     methods/framecutterfunction.cpp \
-    framecutter.cpp \
+    methods/framecutter.cpp \
     methods/savingfunction.cpp \
     methods/spectrealgorithm.cpp \
     methods/psalgorithm.cpp \
@@ -109,7 +109,6 @@ SOURCES += main.cpp\
     playpanel.cpp \
     channeltablemodel.cpp \
     headerview.cpp \
-    methods/timealgorithm.cpp \
     htmldelegate.cpp \
     plot/curve.cpp \
     plot/linecurve.cpp \
@@ -144,6 +143,7 @@ HEADERS  += mainwindow.h \
     methods/frfalgorithm.h \
     methods/frffunction.h \
     methods/gxyfunction.h \
+    methods/resamplingalgorithm.h \
     methods/weighting.h \
     methods/windowingalgorithm.h \
     plot/canvaseventfilter.h \
@@ -152,36 +152,35 @@ HEADERS  += mainwindow.h \
     plot/zoomstack.h \
     sortabletreewidgetitem.h \
     checkableheaderview.h \
-    methods/abstractmethod.h \
-    methods/spectremethod.h \
-    methods/timemethod.h \
+    methods/dfdmethods/abstractmethod.h \
+    methods/dfdmethods/spectremethod.h \
+    methods/dfdmethods/timemethod.h \
     curvepropertiesdialog.h \
     tabwidget.h \
     coloreditdialog.h \
     colorselector.h \
     correctiondialog.h \
-    methods/xresponch1.h \
+    methods/dfdmethods/xresponch1.h \
     logging.h \
     editdescriptionsdialog.h \
-    iirfilter.h \
     methods/windowing.h \
     trackingpanel.h \
-    methods/octavemethod.h \
+    methods/dfdmethods/octavemethod.h \
     algorithms.h \
     methods/octavefilterbank.h \
     axisboundsdialog.h \
     calculatespectredialog.h \
-    averaging.h \
+    methods/averaging.h \
     timeslicer.h \
     dataholder.h \
-    resampler.h \
-    fft.h \
+    methods/resampler.h \
+    methods/fft.h \
     taskbarprogress.h \
     model.h \
     sortfiltermodel.h \
     filterheaderview.h \
-    channelselector.h \
-    filtering.h \
+    methods/channelselector.h \
+    methods/filtering.h \
     filesprocessordialog.h \
     methods/abstractfunction.h \
     methods/channelfunction.h \
@@ -193,7 +192,7 @@ HEADERS  += mainwindow.h \
     methods/psfunction.h \
     methods/psdfunction.h \
     methods/framecutterfunction.h \
-    framecutter.h \
+    methods/framecutter.h \
     methods/savingfunction.h \
     methods/spectrealgorithm.h \
     methods/psalgorithm.h \
@@ -203,7 +202,6 @@ HEADERS  += mainwindow.h \
     playpanel.h \
     channeltablemodel.h \
     headerview.h \
-    methods/timealgorithm.h \
     htmldelegate.h \
     plot/plot.h \
     plot/legend.h \

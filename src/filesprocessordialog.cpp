@@ -9,7 +9,7 @@
 //#include "methods/abstractfunction.h"
 
 #include "methods/spectrealgorithm.h"
-#include "methods/timealgorithm.h"
+#include "methods/resamplingalgorithm.h"
 #include "methods/windowingalgorithm.h"
 #include "methods/frfalgorithm.h"
 #include "methods/psalgorithm.h"
@@ -23,7 +23,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     taskBarProgress = 0;
 
 
-    algorithms << new TimeAlgorithm(dataBase, this);
+    algorithms << new ResamplingAlgorithm(dataBase, this);
     algorithms << new WindowingAlgorithm(dataBase, this);
     algorithms << new FilteringAlgorithm(dataBase, this);
     algorithms << new SpectreAlgorithm(dataBase, this);

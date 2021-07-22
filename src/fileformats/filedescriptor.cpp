@@ -1,7 +1,7 @@
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
 #include "dataholder.h"
-#include "averaging.h"
+#include "methods/averaging.h"
 #include "algorithms.h"
 #include "fileformats/formatfactory.h"
 
