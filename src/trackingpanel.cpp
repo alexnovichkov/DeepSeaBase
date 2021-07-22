@@ -403,7 +403,10 @@ void TrackingPanel::update()
         }
 
         QList<QPair<double, double>> values;
-        for (int i=0; i<4; ++i) values << qMakePair<double, double>(xVals.at(steps[i]), c->channel->data()->yValue(steps[i]));
+        for (int i=0; i<4; ++i) {
+            QPair<double, double> p = {xVals.value(steps[i]), c->channel->data()->yValue(steps[i])};
+            values << p;
+        }
 
         TrackingPanel::TrackInfo ti{c->channel->name(), c->pen().color(),
                     values,
