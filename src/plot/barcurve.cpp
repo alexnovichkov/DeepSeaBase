@@ -111,7 +111,7 @@ HistogramData::HistogramData(DataHolder *data) : data(data)
 
     // если это третьоктава, то хслед/хпред = [1.23..1.3]
     int i=0;
-    while (data->xValue(i) < 1.0 || qFuzzyCompare(data->xValue(i),1.0)) i++;
+    while (data->xValue(i) <= 1.0) i++;
 
     if (data->samplesCount() < i+3) return;
 

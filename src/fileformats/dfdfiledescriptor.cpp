@@ -194,7 +194,7 @@ void DfdFileDescriptor::read()
     }
 
     // проверяем наличие канала со значениями оси X
-    if (!channels.isEmpty() && DataType >= OSpectr) {
+    if (!channels.isEmpty() && qFuzzyIsNull(XStep)) {
         QVector<double> xvalues;
         DfdChannel *c = channels.constFirst();
         xChannel = c->name()=="ось X";
@@ -203,8 +203,12 @@ void DfdFileDescriptor::read()
             xvalues = c->data()->yValues(0);
         }
         else {
-            xvalues = octaveStrips(octaveFormat(DataType), NumInd);
+            if (DataType >= OSpectr)
+                xvalues = octaveStrips(octaveFormat(DataType), NumInd);
+            else
+                xvalues = linspace(0.0, 1.0, NumInd);
         }
+
         XName = "Гц";
         if (!xvalues.isEmpty())
             for (DfdChannel *ch: channels)
