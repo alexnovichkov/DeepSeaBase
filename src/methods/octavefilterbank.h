@@ -8,7 +8,7 @@ class OctaveFilterBank
 {
 public:
     OctaveFilterBank(const Parameters &p);
-    QVector<double> compute(const QVector<double> &data, QVector<double> &xValues);
+    QVector<double> compute(QVector<double> timeData, QVector<double> &xValues);
 private:
     Parameters m_p;
     QVector<double> thirdOctaveFreqs;

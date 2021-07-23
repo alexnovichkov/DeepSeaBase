@@ -51,6 +51,8 @@ SOURCES += main.cpp\
     methods/frfalgorithm.cpp \
     methods/frffunction.cpp \
     methods/gxyfunction.cpp \
+    methods/octavealgorithm.cpp \
+    methods/octavefunction.cpp \
     methods/resamplingalgorithm.cpp \
     methods/weighting.cpp \
     methods/windowingalgorithm.cpp \
@@ -143,6 +145,8 @@ HEADERS  += mainwindow.h \
     methods/frfalgorithm.h \
     methods/frffunction.h \
     methods/gxyfunction.h \
+    methods/octavealgorithm.h \
+    methods/octavefunction.h \
     methods/resamplingalgorithm.h \
     methods/weighting.h \
     methods/windowingalgorithm.h \

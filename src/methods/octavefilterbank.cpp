@@ -6,11 +6,13 @@
 
 #include "filtering.h"
 
+constexpr int bandsCount = 44;
+
 OctaveFilterBank::OctaveFilterBank(const Parameters &p) : m_p(p)
 {DD;
-    thirdOctaveFreqs.resize(44); //точные значения частот третьоктавных фильтров, от 1 Гц до 20000 Гц,
+    thirdOctaveFreqs.resize(bandsCount); //точные значения частот третьоктавных фильтров, от 1 Гц до 20000 Гц,
                                  //частота 1000 Гц имеет индекс 30
-    for (int i=0; i<44; ++i) {
+    for (int i=0; i<bandsCount; ++i) {
         thirdOctaveFreqs[i] = 1000.0*pow(10.0,0.1*(i-30));
     }
 }
@@ -45,10 +47,9 @@ QVector<double> decimate(const QVector<double> &x, int q)
     return y;
 }
 
-QVector<double> OctaveFilterBank::compute(const QVector<double> &data, QVector<double> &xValues)
+QVector<double> OctaveFilterBank::compute(QVector<double> timeData, QVector<double> &xValues)
 {DD;
     int N = 8;  // Order of analysis filters.
-    QVector<double> x = data;
 
     QVector<double> P(thirdOctaveFreqs.size());
 
@@ -70,11 +71,11 @@ QVector<double> OctaveFilterBank::compute(const QVector<double> &data, QVector<d
     double f2 = 1.0 * pow(2.0, 1.0/6.0);
 
     for (int i = i_up; i>i_dec; --i) {
-        Filtering filt(x.size(), Filtering::BandPass, Filtering::ChebyshevI);
+        Filtering filt(timeData.size(), Filtering::BandPass, Filtering::ChebyshevI);
 
         filt.setParameters(QVector<double>()<<m_p.sampleRate<<N<<thirdOctaveFreqs[i]<<thirdOctaveFreqs[i]*(f2-f1));
 
-        QVector<double> y = x;
+        QVector<double> y = timeData;
         double *data = y.data();
         filt.apply(data);
         P[i] = leq(y, m_p.threshold);
@@ -83,13 +84,13 @@ QVector<double> OctaveFilterBank::compute(const QVector<double> &data, QVector<d
 
     // Lower frequencies, decimation by series of 3 bands.
     if (i_dec > 0) {
-        x = decimate(x, 2);
+        timeData = decimate(timeData, 2);
     }
     for (int i=i_dec; i>=i_low; --i) {
-        Filtering filt(x.size(), Filtering::BandPass, Filtering::ChebyshevI);
+        Filtering filt(timeData.size(), Filtering::BandPass, Filtering::ChebyshevI);
         filt.setParameters(QVector<double>()<<(m_p.sampleRate/2.0)<<N<<thirdOctaveFreqs[i]<<(thirdOctaveFreqs[i]*(f2-f1)));
 
-        QVector<double> y = x;
+        QVector<double> y = timeData;
         double *data = y.data();
         filt.apply(data);
 
