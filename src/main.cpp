@@ -39,6 +39,7 @@ int main(int argc, char *argv[])
     splash.show();
     a.processEvents();
 
+
 //    QFile f("K:/as.txt");
 //    f.open(QFile::WriteOnly | QFile::Text);
 //    f.write("text");

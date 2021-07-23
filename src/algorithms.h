@@ -257,8 +257,6 @@ double toFloat64LE(const QByteArray &v, size_t offset);
 
 void processDir(const QString &file, QStringList &files, bool includeSubfolders);
 
-QVector<double> octaveStrips(int octave, int count);
-
 QDateTime dateTimeFromString(QString s);
 QDateTime dateTimeFromString(QString date, QString time);
 

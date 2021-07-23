@@ -456,32 +456,6 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
     files.removeDuplicates();
 }
 
-QVector<double> octaveStrips(int octave, int count)
-{
-    QVector<double> v(count);
-    switch (octave) {
-        case 1:
-            for (int i=0; i<count; ++i) v[i] = pow(10.0, 3.0/10.0*i);
-            break;
-        case 2:
-            for (int i=0; i<count; ++i) v[i] = pow(10.0, 3.0/40.0*(2*i+1));
-            break;
-        case 3:
-            for (int i=0; i<count; ++i) v[i] = pow(10.0, 0.1*i);
-            break;
-        case 6:
-            for (int i=0; i<count; ++i) v[i] = pow(10.0, (2.0*i+1)/40.0);
-            break;
-        case 12:
-            for (int i=0; i<count; ++i) v[i] = pow(10.0, (2.0*i+1)/80.0);
-            break;
-        case 24:
-            for (int i=0; i<count; ++i) v[i] = pow(10.0, (2.0*i+1)/160.0);
-            break;
-    }
-    return v;
-}
-
 QDateTime dateTimeFromString(QString s)
 {
     s = s.trimmed();

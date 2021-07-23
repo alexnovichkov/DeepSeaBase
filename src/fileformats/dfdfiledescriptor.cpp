@@ -8,6 +8,7 @@
 #include "algorithms.h"
 #include "dfdsettings.h"
 #include "unitsconverter.h"
+#include "methods/octavefilterbank.h"
 
 template <typename T>
 QVector<T> convertFromUINT16(unsigned char *ptr, qint64 length, uint IndType)
@@ -204,7 +205,7 @@ void DfdFileDescriptor::read()
         }
         else {
             if (DataType >= OSpectr)
-                xvalues = octaveStrips(octaveFormat(DataType), NumInd);
+                xvalues = OctaveFilterBank::octaveStrips(octaveFormat(DataType), NumInd);
             else
                 xvalues = linspace(0.0, 1.0, NumInd);
         }

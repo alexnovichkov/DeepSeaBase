@@ -5,16 +5,11 @@
 #include "logging.h"
 
 #include "filtering.h"
+#include "algorithms.h"
 
-constexpr int bandsCount = 44;
-
-OctaveFilterBank::OctaveFilterBank(const Parameters &p) : m_p(p)
+OctaveFilterBank::OctaveFilterBank(OctaveType type, OctaveBase base) : type(type), base(base)
 {DD;
-    thirdOctaveFreqs.resize(bandsCount); //точные значения частот третьоктавных фильтров, от 1 Гц до 20000 Гц,
-                                 //частота 1000 Гц имеет индекс 30
-    for (int i=0; i<bandsCount; ++i) {
-        thirdOctaveFreqs[i] = 1000.0*pow(10.0,0.1*(i-30));
-    }
+    update();
 }
 
 //function p=leq(x,t,Pref)
@@ -47,38 +42,38 @@ QVector<double> decimate(const QVector<double> &x, int q)
     return y;
 }
 
-QVector<double> OctaveFilterBank::compute(QVector<double> timeData, QVector<double> &xValues)
+QVector<QVector<double>> OctaveFilterBank::compute(QVector<double> timeData, double sampleRate, double logref)
 {DD;
     int N = 8;  // Order of analysis filters.
 
-    QVector<double> P(thirdOctaveFreqs.size());
+    QVector<double> P(freqs.size());
 
-    int i_up = 43;
+    //обрезаем список частот по частоте Найквиста
+    int i_up = freqs.size()-1;
     int i_low = 0;
 
-    ///i_up = max(find(Fc<=samplerate/3));
-    auto idx = std::lower_bound(thirdOctaveFreqs.constBegin(), thirdOctaveFreqs.constEnd(), m_p.sampleRate/2.56);
-    if (idx!=thirdOctaveFreqs.constEnd()) i_up = idx-thirdOctaveFreqs.constBegin();
+    auto idx = std::lower_bound(freqs.constBegin(), freqs.constEnd(), sampleRate/2.0);
+    if (idx!=freqs.constEnd()) i_up = idx-freqs.constBegin()-1;
 
     // All filters below range Fc / 200 will be implemented after a decimation.
     int i_dec = i_up;
-    idx = std::lower_bound(thirdOctaveFreqs.constBegin(), thirdOctaveFreqs.cend(), m_p.sampleRate/200);
-    if (idx!=thirdOctaveFreqs.cend()) i_dec = idx-thirdOctaveFreqs.cbegin();
+    idx = std::lower_bound(freqs.constBegin(), freqs.cend(), sampleRate/200);
+    if (idx!=freqs.cend()) i_dec = idx-freqs.cbegin()-1;
 
     // Design filters and compute RMS powers in 1/3-oct. bands.
     // Higher octave band, direct implementation of filters.
-    double f1 = 1.0 / pow(2.0, 1.0/6.0);
-    double f2 = 1.0 * pow(2.0, 1.0/6.0);
+    double f1 = 1.0 / fd;
+    double f2 = 1.0 * fd;
 
     for (int i = i_up; i>i_dec; --i) {
         Filtering filt(timeData.size(), Filtering::BandPass, Filtering::ChebyshevI);
 
-        filt.setParameters(QVector<double>()<<m_p.sampleRate<<N<<thirdOctaveFreqs[i]<<thirdOctaveFreqs[i]*(f2-f1));
+        filt.setParameters({sampleRate, double(N), freqs[i], freqs[i]*(f2-f1)});
 
         QVector<double> y = timeData;
         double *data = y.data();
         filt.apply(data);
-        P[i] = leq(y, m_p.threshold);
+        P[i] = leq(y, logref);
     }
 
 
@@ -88,14 +83,130 @@ QVector<double> OctaveFilterBank::compute(QVector<double> timeData, QVector<doub
     }
     for (int i=i_dec; i>=i_low; --i) {
         Filtering filt(timeData.size(), Filtering::BandPass, Filtering::ChebyshevI);
-        filt.setParameters(QVector<double>()<<(m_p.sampleRate/2.0)<<N<<thirdOctaveFreqs[i]<<(thirdOctaveFreqs[i]*(f2-f1)));
+        filt.setParameters({sampleRate/2.0, double(N), freqs[i], freqs[i]*(f2-f1)});
 
         QVector<double> y = timeData;
         double *data = y.data();
         filt.apply(data);
 
-        P[i] = leq(y, m_p.threshold);
+        P[i] = leq(y, logref);
     }
-    xValues = thirdOctaveFreqs.mid(i_low, i_up-i_low+1);
-    return P.mid(i_low, i_up-i_low+1);
+
+    return {freqs.mid(i_low, i_up-i_low+1), P.mid(i_low, i_up-i_low+1)};
+}
+
+void OctaveFilterBank::setType(OctaveType type)
+{
+    if (this->type != type) {
+        this->type = type;
+        update();
+    }
+}
+
+void OctaveFilterBank::setBase(OctaveBase base)
+{
+    if (this->base != base) {
+        this->base = base;
+        update();
+    }
+}
+
+void OctaveFilterBank::setRange(double startFreq, double endFreq)
+{
+    if (this->startFreq != startFreq || this->endFreq != endFreq) {
+        this->startFreq = startFreq;
+        this->endFreq = endFreq;
+        update();
+    }
+}
+
+QVector<double> OctaveFilterBank::octaveStrips(int octave, int count, int base)
+{
+    QVector<double> v(count);
+    switch (octave) {
+        case 1:
+            if (base == 10)
+                for (int i=0; i<count; ++i) v[i] = pow(10.0, 3.0/10.0*i);
+            if (base == 2)
+                for (int i=0; i<count; ++i) v[i] = pow(2.0, i-10)*1000.0;
+            break;
+        case 2:
+            if (base == 10)
+                for (int i=0; i<count; ++i) v[i] = pow(10.0, 3.0/40.0*(2*i+1));
+            if (base==2)
+                for (int i=0; i<count; ++i) v[i] = pow(2.0, 0.25*(2*(i-20)+1))*1000.0;
+            break;
+        case 3:
+            if (base==10)
+                for (int i=0; i<count; ++i) v[i] = pow(10.0, 0.1*i);
+            if (base==2)
+                for (int i=0; i<count; ++i) v[i] = pow(2.0, 1.0*(i-30)/3.0)*1000.0;
+            break;
+        case 6:
+            if (base == 10)
+                for (int i=0; i<count; ++i) v[i] = pow(10.0, (2.0*i+1)/40.0);
+            if (base==2)
+                for (int i=0; i<count; ++i) v[i] = pow(2.0, 1.0*(2*(i-60)+1)/12.0)*1000.0;
+            break;
+        case 12:
+            if (base == 10)
+                for (int i=0; i<count; ++i) v[i] = pow(10.0, (2.0*i+1)/80.0);
+            if (base==2)
+                for (int i=0; i<count; ++i) v[i] = pow(2.0, 1.0*(2*(i-120)+1)/24.0)*1000.0;
+            break;
+        case 24:
+            if (base == 10)
+                for (int i=0; i<count; ++i) v[i] = pow(10.0, (2.0*i+1)/160.0);
+            if (base==2)
+                for (int i=0; i<count; ++i) v[i] = pow(2.0, 1.0*(2*(i-240)+1)/48.0)*1000.0;
+            break;
+    }
+    return v;
+}
+
+void OctaveFilterBank::update()
+{
+    freqs.clear();
+    if (endFreq < startFreq) std::swap(endFreq, startFreq);
+    if (startFreq < 1.0) startFreq = 1.0;
+
+    int n = 0;
+    switch (type) {
+        case OctaveType::Octave1:
+            n = 21;
+            fd = (base == OctaveBase::Base2 ? sqrt(2.0) : std::pow(10.0, 0.15));
+            break;
+        case OctaveType::Octave2:
+            n = 41;
+            fd = (base == OctaveBase::Base2 ? pow(2.0, 0.25) : std::pow(10.0, 0.075));
+            break;
+        case OctaveType::Octave3:
+            n = 61;
+            fd = (base == OctaveBase::Base2 ? pow(2.0, 1.0/6.0) : std::pow(10.0, 0.05));
+            break;
+        case OctaveType::Octave6:
+            n = 121;
+            fd = (base == OctaveBase::Base2 ? pow(2.0, 1.0/12.0) : std::pow(10.0, 0.025));
+            break;
+        case OctaveType::Octave12:
+            n = 241;
+            fd = (base == OctaveBase::Base2 ? pow(2.0, 1.0/24) : std::pow(10.0, 0.0125));
+            break;
+        case OctaveType::Octave24:
+            n = 481;
+            fd = (base == OctaveBase::Base2 ? pow(2.0, 1.0/48.0) : std::pow(10.0, 0.00625));
+            break;
+    }
+
+    freqs = octaveStrips(static_cast<int>(type), n, static_cast<int>(base));
+    int begin = 0;
+
+    auto idx = std::upper_bound(freqs.constBegin(), freqs.constEnd(), startFreq);
+    if (idx!=freqs.constEnd()) begin = idx - freqs.constBegin();
+
+    int end = freqs.length()-1;
+    idx = std::lower_bound(freqs.constBegin(), freqs.constEnd(), endFreq);
+    if (idx!=freqs.constEnd()) end = idx - freqs.constBegin()-1;
+
+    freqs = freqs.mid(begin, end-begin+1);
 }
