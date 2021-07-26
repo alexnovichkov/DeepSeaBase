@@ -17,6 +17,7 @@
 //#include "methods/windowing.h"
 
 //#include "algorithms.h"
+//#include "methods/octavefilterbank.h"
 
 int main(int argc, char *argv[])
 {
@@ -38,6 +39,12 @@ int main(int argc, char *argv[])
     QSplashScreen splash(pixmap);
     splash.show();
     a.processEvents();
+
+//    OctaveFilterBank b(OctaveType::Octave3, OctaveBase::Base10);
+//    b.setBlockSize(65536);
+//    QVector<double> v(8192, 1.0);
+//    auto res = b.compute(v, 8192, 1.0);
+//    qDebug() << res.first();
 
 
 //    QFile f("K:/as.txt");

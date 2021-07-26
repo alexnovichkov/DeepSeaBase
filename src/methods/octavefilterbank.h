@@ -21,9 +21,11 @@ enum /*class*/ OctaveBase {
 class OctaveFilterBank
 {
 public:
+    OctaveFilterBank();
     OctaveFilterBank(OctaveType type, OctaveBase base);
     //QVector<double> compute(QVector<double> timeData, QVector<double> &xValues);
 
+    //возвращает вектор {X, L}
     QVector<QVector<double>> compute(QVector<double> timeData, double sampleRate, double logref);
 
     OctaveType getType() const {return type;}
@@ -35,9 +37,14 @@ public:
     QPair<double,double> getRange() const {return {startFreq, endFreq};}
     void setRange(double startFreq, double endFreq);
 
-    QVector<double> getFrequencies() const {return freqs;}
+    void setBlockSize(int blockSize) {this->blockSize = blockSize;}
 
-    //низкоуровневая функция, которая рассчитывает нужное количество октавных полос, начиная с 1 Гц
+    QVector<double> getFrequencies(bool corrected) const;
+
+    //возвращает ширину полосы f2-f1 = fm*fd-fm/fd, fm - центральная частота полосы
+    double getBandWidth(double frequency) const;
+
+    //низкоуровневая функция, которая расчитывает нужное количество октавных полос, начиная с 1 Гц
     static QVector<double> octaveStrips(int octave, int count, int base = 10);
 private:
     //обновление списка центральных частот без обрезки по частоте Найквиста
@@ -46,11 +53,13 @@ private:
     OctaveType type = OctaveType::Octave3;
 //    double sampleRate = 8192;
 //    double logref = 1.0;
-    double startFreq = 20.0;
-    double endFreq = 20000.0;
+    double startFreq = 0.0;
+    double endFreq = 40000.0;
     double fd = 1.0; //половина ширины полосы
+    int blockSize = 65536; //количество отсчетов в одном блоке
     OctaveBase base = OctaveBase::Base10;
     QVector<double> freqs;
+    QVector<double> correctedFreqs;
 };
 
 #endif // OCTAVEFILTERBANK_H

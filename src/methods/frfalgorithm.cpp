@@ -118,6 +118,7 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
 //            samplingF, SLOT(updateProperty(QString,QVariant)));
 //    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
 //            refSamplingF, SLOT(updateProperty(QString,QVariant)));
+
     //samplingF отправляет сигнал об изменении "?/triggerChannel"
     connect(samplingF, SIGNAL(propertyChanged(QString,QVariant)),
             channelF, SLOT(updateProperty(QString,QVariant)));

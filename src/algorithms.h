@@ -33,12 +33,15 @@ QVector<T> segment(const QVector<T> &values, int from, int to, int blockSize, in
 
     const int length = to-from+1;
 
-    result.reserve(length*blocks);
-
-    for (int i=0; i<blocks; ++i) {
-        auto d = values.mid(i*blockSize + from, length);
-        d.resize(length);
-        result.append(d);
+    try {
+        result.reserve(length*blocks);
+        for (int i=0; i<blocks; ++i) {
+            auto d = values.mid(i*blockSize + from, length);
+            d.resize(length);
+            result.append(d);
+        }
+    } catch (const std::bad_alloc &bad) {
+        qDebug()<<"could not allocate"<<length*blocks<<"elements";
     }
     return result;
 }
@@ -46,11 +49,11 @@ QVector<T> segment(const QVector<T> &values, int from, int to, int blockSize, in
 template <typename T, typename D>
 QVector<D> readChunk(QDataStream &readStream, quint64 blockSize, qint64 *actuallyRead)
 {
-    qDebug()<<"trying to allocate"<<blockSize<<"elements";
+    //qDebug()<<"trying to allocate"<<blockSize<<"elements";
     QVector<D> result;
     try {
         result.resize(blockSize);
-        qDebug()<<"allocated";
+        //qDebug()<<"allocated";
 
         T v;
 

@@ -171,7 +171,7 @@ bool SavingFunction::compute(FileDescriptor *file)
 
     // y values
 
-    d->setThreshold(m_input->getParameter("?/threshold").toDouble());
+    d->setThreshold(m_input->getParameter("?/logref").toDouble());
     d->setYValuesUnits(DataHolder::YValuesUnits(m_input->getParameter("?/yValuesUnits").toInt()));
 
     if (dataIsComplex) {

@@ -13,11 +13,9 @@ public:
     virtual QString displayName() const override;
 private:
     AbstractFunction * channelF; //отбирает обрабатываемые каналы
-    //AbstractFunction * samplingF; //осуществляет нарезку блоков
-    //AbstractFunction * windowingF; //применяет оконную функцию
-    //AbstractFunction * averagingF; //применяет усреднение
-    //AbstractFunction * psF; //вычисляет БПФ
-    AbstractFunction *octaveF;
+    AbstractFunction * samplingF; //осуществляет нарезку блоков
+    AbstractFunction * averagingF; //применяет усреднение
+    AbstractFunction * octaveF;
     AbstractFunction * saver; //сохраняет результат
 
 protected:

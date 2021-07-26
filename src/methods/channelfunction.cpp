@@ -47,11 +47,13 @@ QVariant ChannelFunction::m_getProperty(const QString &property) const
         if (property == "?/yName" && ch) return ch->yName();
         if (property == "?/yNameOld" && ch) return ch->yName();
         if (property == "?/yValuesUnits" && ch) return ch->data()->yValuesUnits();
-        if (property == "?/threshold" && ch) return ch->data()->threshold();
+        if (property == "?/logref" && ch) return ch->data()->threshold();
         if (property == "?/zName" && ch) return ch->zName();
         if (property == "?/zCount" && ch) return ch->data()->blocksCount();
         if (property == "?/zStep" && ch) return ch->data()->zStep();
         if (property == "?/zBegin" && ch) return ch->data()->zMin();
+        if (property == "?/portionsCount") return 1; //единственная порция данных
+        if (property == "?/blockSize" && ch) return ch->data()->samplesCount(); //единственная порция данных
 
         if (property == "?/dataType") return 1;//Данные
 //        if (property == "?/functionType") return 1;//Time response

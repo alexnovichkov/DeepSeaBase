@@ -7,6 +7,11 @@
 #include "filtering.h"
 #include "algorithms.h"
 
+OctaveFilterBank::OctaveFilterBank()
+{
+    update();
+}
+
 OctaveFilterBank::OctaveFilterBank(OctaveType type, OctaveBase base) : type(type), base(base)
 {DD;
     update();
@@ -27,11 +32,12 @@ double leq(const QVector<T> &x, /*int T,*/ double ref=1.0)
     const int xSize = x.size();
     T p = std::accumulate(x.constBegin(), x.constEnd(), static_cast<T>(0.0), [xSize](T v1,T v2)->T{return v1+v2*v2/xSize;});
 
-    if (qIsFinite(p)) {
-        if (p > 0.0) return 10.0*log10(p/ref/ref);
-    }
+//    if (qIsFinite(p)) {
+//        if (p > 0.0) return 10.0*log10(p/ref/ref);
+//    }
 
-    return  0.0;
+//    return  0.0;
+    return p;
 }
 
 //decimates x by factor q using libresample
@@ -45,29 +51,45 @@ QVector<double> decimate(const QVector<double> &x, int q)
 QVector<QVector<double>> OctaveFilterBank::compute(QVector<double> timeData, double sampleRate, double logref)
 {DD;
     int N = 8;  // Order of analysis filters.
+    int decimation = 10; //величина децимации
 
     QVector<double> P(freqs.size());
 
     //обрезаем список частот по частоте Найквиста
-    int i_up = freqs.size()-1;
-    int i_low = 0;
-
+    int upperFrequency = freqs.size()-1;
     auto idx = std::lower_bound(freqs.constBegin(), freqs.constEnd(), sampleRate/2.0);
-    if (idx!=freqs.constEnd()) i_up = idx-freqs.constBegin()-1;
+    if (idx!=freqs.constEnd()) upperFrequency = idx-freqs.constBegin()-1;
+
+
+    int lowerFrequency = 0;
 
     // All filters below range Fc / 200 will be implemented after a decimation.
-    int i_dec = i_up;
+    int decimationFrequency = upperFrequency;
     idx = std::lower_bound(freqs.constBegin(), freqs.cend(), sampleRate/200);
-    if (idx!=freqs.cend()) i_dec = idx-freqs.cbegin()-1;
+    if (idx!=freqs.cend()) decimationFrequency = idx-freqs.cbegin()-1;
+    if (decimationFrequency < 0) decimationFrequency = 0;
+
+    //обрезаем список частот снизу, чтобы в полосу попадало хотя бы 3 отсчета
+    for (int i=0; i<=upperFrequency; ++i) {
+        double sr = (i <= decimationFrequency ? sampleRate/decimation : sampleRate);
+        double bw = getBandWidth(freqs[i]);
+//        qDebug()<<i<<freqs[i]<<sr<<bw;
+        if (int(bw / (sr/blockSize)) >= 3) {
+            lowerFrequency = i;
+            break;
+        }
+    }
+//    qDebug()<<i_low<<i_dec<<i_up;
 
     // Design filters and compute RMS powers in 1/3-oct. bands.
     // Higher octave band, direct implementation of filters.
     double f1 = 1.0 / fd;
     double f2 = 1.0 * fd;
 
-    for (int i = i_up; i>i_dec; --i) {
-        Filtering filt(timeData.size(), Filtering::BandPass, Filtering::ChebyshevI);
 
+
+    for (int i = upperFrequency; i>decimationFrequency; --i) {
+        Filtering filt(timeData.size(), Filtering::BandPass, Filtering::ChebyshevI);
         filt.setParameters({sampleRate, double(N), freqs[i], freqs[i]*(f2-f1)});
 
         QVector<double> y = timeData;
@@ -78,21 +100,23 @@ QVector<QVector<double>> OctaveFilterBank::compute(QVector<double> timeData, dou
 
 
     // Lower frequencies, decimation by series of 3 bands.
-    if (i_dec > 0) {
-        timeData = decimate(timeData, 2);
+    if (decimationFrequency >= lowerFrequency) {
+        timeData = decimate(timeData, decimation);
     }
-    for (int i=i_dec; i>=i_low; --i) {
-        Filtering filt(timeData.size(), Filtering::BandPass, Filtering::ChebyshevI);
-        filt.setParameters({sampleRate/2.0, double(N), freqs[i], freqs[i]*(f2-f1)});
+
+
+    for (int i=decimationFrequency; i>=lowerFrequency; --i) {
+        Filtering filt1(timeData.size(), Filtering::BandPass, Filtering::ChebyshevI);
+        filt1.setParameters({sampleRate/decimation, double(N), freqs[i], freqs[i]*(f2-f1)});
 
         QVector<double> y = timeData;
         double *data = y.data();
-        filt.apply(data);
+        filt1.apply(data);
 
         P[i] = leq(y, logref);
     }
-
-    return {freqs.mid(i_low, i_up-i_low+1), P.mid(i_low, i_up-i_low+1)};
+    correctedFreqs = freqs.mid(lowerFrequency, upperFrequency-lowerFrequency+1);
+    return {freqs.mid(lowerFrequency, upperFrequency-lowerFrequency+1), P.mid(lowerFrequency, upperFrequency-lowerFrequency+1)};
 }
 
 void OctaveFilterBank::setType(OctaveType type)
@@ -118,6 +142,19 @@ void OctaveFilterBank::setRange(double startFreq, double endFreq)
         this->endFreq = endFreq;
         update();
     }
+}
+
+QVector<double> OctaveFilterBank::getFrequencies(bool corrected) const
+{
+    if (corrected) return correctedFreqs;
+    return freqs;
+}
+
+double OctaveFilterBank::getBandWidth(double frequency) const
+{
+    if (qFuzzyIsNull(fd)) return 0.0;
+
+    return frequency*(fd-1.0/fd);
 }
 
 QVector<double> OctaveFilterBank::octaveStrips(int octave, int count, int base)
@@ -168,7 +205,7 @@ void OctaveFilterBank::update()
 {
     freqs.clear();
     if (endFreq < startFreq) std::swap(endFreq, startFreq);
-    if (startFreq < 1.0) startFreq = 1.0;
+    //if (startFreq < 1.0) startFreq = 1.0;
 
     int n = 0;
     switch (type) {
@@ -200,6 +237,7 @@ void OctaveFilterBank::update()
 
     freqs = octaveStrips(static_cast<int>(type), n, static_cast<int>(base));
     int begin = 0;
+//    qDebug()<<freqs;
 
     auto idx = std::upper_bound(freqs.constBegin(), freqs.constEnd(), startFreq);
     if (idx!=freqs.constEnd()) begin = idx - freqs.constBegin();

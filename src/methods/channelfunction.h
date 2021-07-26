@@ -22,7 +22,7 @@
  * ?/yName
  * ?/yNameOld
  * ?/yValuesUnits
- * ?/threshold
+ * ?/logref
  * ?/zName
  * ?/zCount
  * ?/zStep

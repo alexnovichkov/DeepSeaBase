@@ -31,7 +31,7 @@ class Channel;
  * ?/yType <- ChannelFunction
  * ?/yName <- ChannelFunction, FftFunction
  * ?/yValuesUnits <- ChannelFunction, FftFunction
- * ?/threshold <- ChannelFunction
+ * ?/logref <- ChannelFunction
  *
  * ?/zName <- ChannelFunction
  * ?/zCount <- ChannelFunction, FrameCutterFunction

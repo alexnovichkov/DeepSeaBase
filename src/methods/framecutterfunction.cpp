@@ -115,6 +115,7 @@ void FrameCutterFunction::m_setProperty(const QString &property, const QVariant 
         //double p = pow(2.0, val.toInt()); DebugPrint(p);
         //int sampleRate = int (1.0/frameCutter.getXStep()); DebugPrint(sampleRate);
         frameCutter.setBlockSize(65536 >> val.toInt());
+        emit propertyChanged("?/blockSize", 65536 >> val.toInt());
     }
     else if (p == "xStep") {
         frameCutter.setXStep(val.toDouble());

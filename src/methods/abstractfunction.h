@@ -20,7 +20,7 @@
  * ?/amplitudeScaling - 0=unknown, 1=half-peak, 2=peak, 3=RMS
  * ?/normalization - тип нормализации, 0=unknown, 1=units squared, 2=Units squared per Hz (PSD)
                                //3=Units squared seconds per Hz (ESD)
- * ?/threshold - logref
+ * ?/logref
  * ?/functionDescription - функция, строка, отдает та функция, которая позже всех в цепи
  * ?/functionType - функция, число, отдает та функция, которая позже всех в цепи
  * ?/averaging - описание усреднения, отдает AveragingFunction
