@@ -185,8 +185,16 @@ void ChannelPropertiesDialog::currentChannelChanged(QTreeWidgetItem *cur, QTreeW
 
         dataProperties[0].label->setText(QString::number(d->data()->samplesCount()));
         dataProperties[1].label->setText(QString::number(d->data()->blocksCount()));
-        dataProperties[2].label->setText(QString::number(d->dataDescription().get("samplerate").toDouble()));
-        dataProperties[3].label->setText(QString::number(d->dataDescription().get("bandwidth").toDouble()));
+        {
+            const double sr = d->dataDescription().get("samplerate").toDouble();
+            if (qFuzzyIsNull(sr)) dataProperties[2].label->setText("нет данных");
+            else dataProperties[2].label->setText(QString::number(sr));
+        }
+        {
+            const double bw = d->dataDescription().get("bandwidth").toDouble();
+            if (qFuzzyIsNull(bw)) dataProperties[3].label->setText("нет данных");
+            else dataProperties[3].label->setText(QString::number(bw));
+        }
         dataProperties[4].label->setText(d->dataDescription().get("function.format").toString());
         dataProperties[5].label->setText(d->dataDescription().get("function.precision").toString());
 

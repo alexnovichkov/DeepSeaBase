@@ -1212,6 +1212,8 @@ void DfdChannel::read(DfdSettings &dfd, int numChans, double xBegin, double xSte
     dataDescription().put("inputType", dfd.value(group+"InputType"));
     dataDescription().put("description", dfd.value(group+"ChanDscr"));
     dataDescription().put("correction", dfd.value(group+"Correction"));
+    if (dataType < 16) //временные данные
+        dataDescription().put("samplerate", 1.0/xStep);
 
     //dfd не понимает многоблочные данные
     data()->setZValues(0,0,1);
@@ -1614,6 +1616,7 @@ void RawChannel::read(DfdSettings &dfd, int numChans, double xBegin, double xSte
     SensSensitivity = hextodouble(dfd.value(group+"SensSensitivity")); //qDebug()<< "SensSensitivity"<<SensSensitivity;
     BandWidth = hextofloat(dfd.value(group+"BandWidth")); //qDebug()<< "BandWidth"<< ch.bandwidth;
     dataDescription().put("bandwidth", BandWidth);
+    dataDescription().put("samplerate", BandWidth*2.56);
     SensName = dfd.value(group+"SensName");
     dataDescription().put("sensorName", SensName);
 

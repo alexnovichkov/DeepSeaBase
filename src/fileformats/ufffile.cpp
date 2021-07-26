@@ -749,6 +749,8 @@ void FunctionDescription::toDataDescription(DataDescription &d)
     d.put("uneven", (type58[27].value.toInt() == 0));
     d.put("xmin", type58[28].value.toDouble());
     d.put("xstep", type58[29].value.toDouble());
+    if (type58[14].value.toInt() == 1) //временные данные
+        d.put("samplerate", 1.0/type58[29].value.toDouble());
     //d.put("zvalue", type58[30].value.toDouble());
 
     //Abscissa Data Characteristics 32-38
