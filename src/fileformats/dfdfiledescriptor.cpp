@@ -156,8 +156,11 @@ void DfdFileDescriptor::read()
     BlockSize = dfd.value("DataFileDescriptor/BlockSize").toInt();
     dataDescription().put("createdBy", dfd.value("DataFileDescriptor/CreatedBy"));
     QString XName = dfd.value("DataFileDescriptor/XName");
+    if (XName == "№№ полос") {
+        xChannel = true;
+        XName = "Гц";
+    }
     dataDescription().put("xname", XName);
-    if (XName == "№№ полос") xChannel = true;
     double XBegin = hextodouble(dfd.value("DataFileDescriptor/XBegin"));
     double XStep = hextodouble(dfd.value("DataFileDescriptor/XStep"));
 
@@ -198,7 +201,7 @@ void DfdFileDescriptor::read()
     if (!channels.isEmpty() && qFuzzyIsNull(XStep)) {
         QVector<double> xvalues;
         DfdChannel *c = channels.constFirst();
-        xChannel = c->name()=="ось X";
+        xChannel = xChannel || c->name()=="ось X";
         if (xChannel) {//нашли канал со значениями оси X
             c->populate();
             xvalues = c->data()->yValues(0);
