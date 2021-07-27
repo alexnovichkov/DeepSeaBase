@@ -1104,6 +1104,7 @@ void Function::write(QTextStream &stream, int &id)
 
     head.type1858[27].value = samples;
     descr.type58[26].value = samples;
+    descr.type58[27].value = data()->xValuesFormat()==DataHolder::XValuesUniform ? 1 : 0;
     descr.type58[29].value = data()->xStep();
 
     for (int block = 0; block < blocks; ++block) {

@@ -114,7 +114,8 @@ ConverterDialog::ConverterDialog(QList<FileDescriptor *> dataBase, QWidget *pare
     l->setMargin(0);
     setLayout(l);
 
-    resize(500,400);
+    resize(qApp->primaryScreen()->availableSize().width()/2,
+           qApp->primaryScreen()->availableSize().height()/2);
 
     foreach(FileDescriptor *fd, dataBase)
         addFile(fd->fileName());
@@ -218,7 +219,7 @@ bool FileConvertor::convert()
     if (QThread::currentThread()->isInterruptionRequested()) return false;
 
     //Converting
-    foreach(const QString &fileToConvert, filesToConvert) {
+    for(const QString &fileToConvert: filesToConvert) {
         if (QThread::currentThread()->isInterruptionRequested()) return false;
 
         emit message("<font color=green>Конвертируем файл "+fileToConvert+"</font>");
