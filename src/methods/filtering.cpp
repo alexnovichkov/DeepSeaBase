@@ -1,6 +1,7 @@
 #include "filtering.h"
 
 #include "../3rdParty/DspFilters/Dsp.h"
+#include "logging.h"
 
 Filtering::Filtering() : blockSize(0), type(NoFiltering), approximation(Butterworth), f(0)
 
@@ -39,16 +40,9 @@ void Filtering::setParameter(int paramType, double value)
 
 void Filtering::setParameters(const QVector<double> &params)
 {
-    //проверка количества параметров
     Dsp::Params p = f->getDefaultParams();
-    if (params.size()>0) p[0] = params.at(0);
-    if (params.size()>1) p[1] = params.at(1);
-    if (params.size()>2) p[2] = params.at(2);
-    if (params.size()>3) p[3] = params.at(3);
-    if (params.size()>4) p[4] = params.at(4);
-    if (params.size()>5) p[5] = params.at(5);
-    if (params.size()>6) p[6] = params.at(6);
-    if (params.size()>7) p[7] = params.at(7);
+    for (int i=0; i<8; ++i)
+        if (params.size()>i) p[i] = params.at(i);
     f->setParams(p);
 }
 

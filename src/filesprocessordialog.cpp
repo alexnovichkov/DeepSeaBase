@@ -24,14 +24,14 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     taskBarProgress = 0;
 
 
-    algorithms << new ResamplingAlgorithm(dataBase, this);
-    algorithms << new WindowingAlgorithm(dataBase, this);
-    algorithms << new FilteringAlgorithm(dataBase, this);
-    algorithms << new SpectreAlgorithm(dataBase, this);
-    algorithms << new PsAlgorithm(dataBase, this);
-    algorithms << new PsdAlgorithm(dataBase, this);
-    algorithms << new FRFAlgorithm(dataBase, this);
-    algorithms << new OctaveAlgorithm(dataBase, this);
+    algorithms << new ResamplingAlgorithm(dataBase);
+    algorithms << new WindowingAlgorithm(dataBase);
+    algorithms << new FilteringAlgorithm(dataBase);
+    algorithms << new SpectreAlgorithm(dataBase);
+    algorithms << new PsAlgorithm(dataBase);
+    algorithms << new PsdAlgorithm(dataBase);
+    algorithms << new FRFAlgorithm(dataBase);
+    algorithms << new OctaveAlgorithm(dataBase);
 
     filesTree = new QTreeWidget(this);
     filesTree->setColumnCount(4);

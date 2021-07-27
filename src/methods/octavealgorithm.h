@@ -12,11 +12,11 @@ public:
     virtual QString description() const override;
     virtual QString displayName() const override;
 private:
-    AbstractFunction * channelF; //отбирает обрабатываемые каналы
-    AbstractFunction * samplingF; //осуществляет нарезку блоков
-    AbstractFunction * averagingF; //применяет усреднение
-    AbstractFunction * octaveF;
-    AbstractFunction * saver; //сохраняет результат
+    AbstractFunction * channelF = nullptr; //отбирает обрабатываемые каналы
+    AbstractFunction * samplingF = nullptr; //осуществляет нарезку блоков
+    AbstractFunction * averagingF = nullptr; //применяет усреднение
+    AbstractFunction * octaveF = nullptr;
+    AbstractFunction * saver = nullptr; //сохраняет результат
 
 protected:
     virtual void resetChain() override;

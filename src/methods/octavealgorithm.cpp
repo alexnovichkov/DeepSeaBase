@@ -8,29 +8,33 @@
 #include "framecutterfunction.h"
 #include "logging.h"
 
+//#define NO_BLOCKS
+
 OctaveAlgorithm::OctaveAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
 {DD;
-    channelF = new ChannelFunction(parent);
-    octaveF = new OctaveFunction(parent);
-    saver = new SavingFunction(parent);
-    averagingF = new AveragingFunction(parent);
-    samplingF = new FrameCutterFunction(parent);
-
+    channelF = new ChannelFunction(this);
+    octaveF = new OctaveFunction(this);
+    saver = new SavingFunction(this);
+#ifndef NO_BLOCKS
+    averagingF = new AveragingFunction(this);
+    samplingF = new FrameCutterFunction(this);
+#endif
     m_chain << channelF;
     m_chain << saver;
 
-
+#ifndef NO_BLOCKS
     samplingF->setInput(channelF);
     octaveF->setInput(samplingF);
     averagingF->setInput(octaveF);
     saver->setInput(averagingF);
-
-//    octaveF->setInput(channelF);
-//    saver->setInput(octaveF);
+#else
+    octaveF->setInput(channelF);
+    saver->setInput(octaveF);
+#endif
 
     m_functions << channelF;
-    m_functions << samplingF;
+    if (samplingF) m_functions << samplingF;
     m_functions << octaveF;
     m_functions << saver;
 
@@ -45,14 +49,15 @@ OctaveAlgorithm::OctaveAlgorithm(QList<FileDescriptor *> &dataBase, QObject *par
     }
     if (xStepsDiffer) emit message("Файлы имеют разный шаг по оси X.");
 
-    samplingF->setParameter(samplingF->name()+"/xStep", xStep);
+    if (samplingF) samplingF->setParameter(samplingF->name()+"/xStep", xStep);
+
     channelF->setFile(dataBase.constFirst());
 
     //samplingF отправляет сигнал об изменении "?/triggerChannel"
-    connect(samplingF, SIGNAL(propertyChanged(QString,QVariant)),
+    if (samplingF) connect(samplingF, SIGNAL(propertyChanged(QString,QVariant)),
             channelF, SLOT(updateProperty(QString,QVariant)));
     //samplingF отправляет сигнал об изменении "?/blockSize"
-    connect(samplingF, SIGNAL(propertyChanged(QString,QVariant)),
+    if (samplingF) connect(samplingF, SIGNAL(propertyChanged(QString,QVariant)),
             octaveF, SLOT(updateProperty(QString,QVariant)));
 }
 
@@ -68,14 +73,14 @@ QString OctaveAlgorithm::displayName() const
 
 void OctaveAlgorithm::resetChain()
 {
-    samplingF->reset();
-    averagingF->reset();
+    if (samplingF) samplingF->reset();
+    if (averagingF) averagingF->reset();
 }
 
 void OctaveAlgorithm::initChain(FileDescriptor *file)
 {
     Q_UNUSED(file);
-    averagingF->setParameter(averagingF->name()+"/type", 1); //линейное усреднение
-    samplingF->setParameter(samplingF->name()+"/xStep", file->xStep());
-    samplingF->setParameter(samplingF->name()+"/type", 0);
+    if (averagingF) averagingF->setParameter(averagingF->name()+"/type", 1); //линейное усреднение
+    if (samplingF) samplingF->setParameter(samplingF->name()+"/xStep", file->xStep());
+    if (samplingF) samplingF->setParameter(samplingF->name()+"/type", 0);
 }

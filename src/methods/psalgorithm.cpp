@@ -14,14 +14,14 @@
 PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
 {DD;
-    channelF = new ChannelFunction(parent);
-//    filteringF = new FilteringFunction(parent);
-//    resamplingF = new ResamplingFunction(parent);
-    samplingF = new FrameCutterFunction(parent);
-    windowingF = new WindowingFunction(parent);
-    averagingF = new AveragingFunction(parent);
-    psF = new PsFunction(parent);
-    saver = new SavingFunction(parent);
+    channelF = new ChannelFunction(this);
+//    filteringF = new FilteringFunction(this);
+//    resamplingF = new ResamplingFunction(this);
+    samplingF = new FrameCutterFunction(this);
+    windowingF = new WindowingFunction(this);
+    averagingF = new AveragingFunction(this);
+    psF = new PsFunction(this);
+    saver = new SavingFunction(this);
 
     m_chain << channelF;
     m_chain << saver;

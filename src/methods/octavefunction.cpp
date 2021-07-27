@@ -99,14 +99,17 @@ bool OctaveFunction::compute(FileDescriptor *file)
     if (data.isEmpty()) return false;
 
     //данные приходят сразу для всего канала, поэтому мы должны разбить их по блокам
-    const int blockSize = m_input->getParameter("?/blockSize").toInt();
+//    const int blockSize = m_input->getParameter("?/blockSize").toInt();
+    constexpr const int blockSize = 65536;
     portionsCount = data.size()/blockSize;
 
     const  double sr = m_input->getParameter("?/sampleRate").toDouble();
     const double logref = m_input->getParameter("?/logref").toDouble();
 
     for (int block = 0; block < portionsCount; ++block) {
-        auto res = bank.compute(data.mid(block*blockSize, blockSize), sr, logref);
+        auto d = data.mid(block*blockSize, blockSize);
+        //d.resize(blockSize);
+        auto res = bank.compute(d, sr, logref);
         output.append(res.last());
     }
     return true;

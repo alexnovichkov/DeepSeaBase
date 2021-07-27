@@ -8,9 +8,9 @@
 FilteringAlgorithm::FilteringAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent)
     : AbstractAlgorithm(dataBase, parent)
 {
-    channelF = new ChannelFunction(parent);
-    filteringF = new FilteringFunction(parent);
-    saver = new SavingFunction(parent);
+    channelF = new ChannelFunction(this);
+    filteringF = new FilteringFunction(this);
+    saver = new SavingFunction(this);
 
     m_chain << channelF;
     m_chain << saver;

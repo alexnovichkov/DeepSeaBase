@@ -15,9 +15,9 @@
 ResamplingAlgorithm::ResamplingAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
 {DD;
-    channelF = new ChannelFunction(parent);
-    resamplingF = new ResamplingFunction(parent);
-    saver = new SavingFunction(parent);
+    channelF = new ChannelFunction(this);
+    resamplingF = new ResamplingFunction(this);
+    saver = new SavingFunction(this);
 
     m_chain << channelF;
     m_chain << saver;

@@ -11,10 +11,10 @@
 WindowingAlgorithm::WindowingAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
 {DD;
-    channelF = new ChannelFunction(parent);
-    samplingF = new FrameCutterFunction(parent);
-    windowingF = new WindowingFunction(parent);
-    saver = new SavingFunction(parent);
+    channelF = new ChannelFunction(this);
+    samplingF = new FrameCutterFunction(this);
+    windowingF = new WindowingFunction(this);
+    saver = new SavingFunction(this);
 
     m_chain << channelF;
     m_chain << saver;

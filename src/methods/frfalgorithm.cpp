@@ -16,32 +16,32 @@
 FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
 {DD;
-    channelF = new ChannelFunction(parent, "channel");
-    refChannelF = new RefChannelFunction(parent, "refChannel");
+    channelF = new ChannelFunction(this, "channel");
+    refChannelF = new RefChannelFunction(this, "refChannel");
 
-//    resamplingF = new ResamplingFunction(parent, "resample");
-//    refResamplingF = new ResamplingFunction(parent, "refResample");
+//    resamplingF = new ResamplingFunction(this, "resample");
+//    refResamplingF = new ResamplingFunction(this, "refResample");
 //    resamplingF->pairWith(refResamplingF);
 
-    samplingF = new FrameCutterFunction(parent, "cutter");
-    refSamplingF = new FrameCutterFunction(parent, "refCutter");
+    samplingF = new FrameCutterFunction(this, "cutter");
+    refSamplingF = new FrameCutterFunction(this, "refCutter");
     samplingF->pairWith(refSamplingF);
 
-    windowingF = new WindowingFunction(parent, "window");
-    refWindowingF = new RefWindowingFunction(parent, "refWindow");
+    windowingF = new WindowingFunction(this, "window");
+    refWindowingF = new RefWindowingFunction(this, "refWindow");
 
-    averagingF = new AveragingFunction(parent, "average");
-    refAveragingF = new AveragingFunction(parent, "refAverage");
+    averagingF = new AveragingFunction(this, "average");
+    refAveragingF = new AveragingFunction(this, "refAverage");
     averagingF->pairWith(refAveragingF);
 
-    fftF = new FftFunction(parent, "fft");
-    refFftF = new FftFunction(parent, "refFft");
+    fftF = new FftFunction(this, "fft");
+    refFftF = new FftFunction(this, "refFft");
     fftF->pairWith(refFftF);
 
-    gxyF = new GxyFunction(parent, "gxy");
-    refGxyF = new GxyFunction(parent, "refGxy");
-    frfF = new FrfFunction(parent, "frf");
-    saver = new SavingFunction(parent, "saver");
+    gxyF = new GxyFunction(this, "gxy");
+    refGxyF = new GxyFunction(this, "refGxy");
+    frfF = new FrfFunction(this, "frf");
+    saver = new SavingFunction(this, "saver");
 
     ////
     m_chain << channelF;
