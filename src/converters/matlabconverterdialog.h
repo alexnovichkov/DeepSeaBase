@@ -59,7 +59,7 @@ private slots:
 //    void editItem(QTreeWidgetItem*item, int column);
 private:
     QString findXmlFile(bool silent) const; // silent means it won't ask for a file via dialog
-    QFileInfoList findMatFiles(QString &folder);
+    QFileInfoList findMatFiles(const QString &folder);
     QStringList convertedFiles;
     QString folder;
     QProgressBar *progress;

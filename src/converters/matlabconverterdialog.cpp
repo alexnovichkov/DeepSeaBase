@@ -288,19 +288,17 @@ QString MatlabConverterDialog::findXmlFile(bool silent) const
     return xmlFileName;
 }
 
-QFileInfoList MatlabConverterDialog::findMatFiles(QString &folder)
+QFileInfoList MatlabConverterDialog::findMatFiles(const QString &folder)
 {
     QDir folderDir(folder);
-    QFileInfoList matFiles = folderDir.entryInfoList(QStringList()<<"*.mat", QDir::Files | QDir::Readable);
-    //if (!matFiles.isEmpty()) return matFiles;
-
-    //Попытка 2 - проверяем наличие папки Mat на этом уровне
-    folderDir.cdUp();
-    if (folderDir.cd("Mat")) {
-        matFiles.append(folderDir.entryInfoList(QStringList()<<"*.mat", QDir::Files | QDir::Readable));
-    }
-    else if (folderDir.cd("mat")) {
-        matFiles.append(folderDir.entryInfoList(QStringList()<<"*.mat", QDir::Files | QDir::Readable));
+    QFileInfoList matFiles = folderDir.entryInfoList({"*.mat"}, QDir::Files | QDir::Readable);
+    if (matFiles.isEmpty()) {
+        //Попытка 2 - проверяем наличие папки Mat на этом уровне
+        folderDir.cdUp();
+        if (folderDir.cd("Mat"))
+            matFiles.append(folderDir.entryInfoList({"*.mat"}, QDir::Files | QDir::Readable));
+        else if (folderDir.cd("mat"))
+            matFiles.append(folderDir.entryInfoList({"*.mat"}, QDir::Files | QDir::Readable));
     }
     return matFiles;
 }
