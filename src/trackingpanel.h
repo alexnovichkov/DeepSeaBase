@@ -20,11 +20,44 @@ public:
     explicit ZoneSpan(const QColor &color);
 };
 
-class ClearableSpinBox: public QDoubleSpinBox
+class ClearableSpinBox: public QAbstractSpinBox
 {
+    Q_OBJECT
 public:
     explicit ClearableSpinBox(QWidget *parent);
+    void moveLeft();
+    void moveRight();
+    void setStep(double step);
+    void setXValues(const QVector<double> &values);
+    void moveTo(double xValue);
+    void moveTo(const QPair<double, double> &position);
+    double getXValue() const {return xVal;}
+    double getYValue() const {return yVal;}
+    void setYValue(double yValue) {yVal = yValue;}
+    double getStep() const {return step;}
+    void setPrefix(const QString &prefix);
+signals:
+    void valueChanged(double value);
+private:
+    void updateText(double val);
     double yVal = 0.0;
+    double xVal = 0.0;
+    double step = 0.0;
+    int current = 0;
+    QVector<double> xValues;
+    QString prefix;
+
+    // QAbstractSpinBox interface
+public:
+    virtual void stepBy(int steps) override;
+
+protected:
+    virtual StepEnabled stepEnabled() const override;
+
+    // QWidget interface
+public:
+    virtual QSize sizeHint() const override;
+    virtual QSize minimumSizeHint() const override;
 };
 
 class TrackingPanel: public QWidget
@@ -48,8 +81,6 @@ public:
     void switchVisibility();
 public slots:
     // рассчитывает точное значение Х и Y и меняет показания на счетчиках
-    void setXValue(double value, bool second);
-    void setYValue(double value, bool second);
     void setValue(QPointF value, bool second);
     void setValue(QPointF value);
     void update();

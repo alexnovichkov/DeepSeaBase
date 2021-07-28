@@ -29,6 +29,46 @@ InputIterator closest(InputIterator first, InputIterator last, ValueType value)
     });
 }
 
+//возвращает ближайшее точное значение для заданного приближенного value
+int stepsToClosest(double xBegin, double step, double value)
+{
+    if (qFuzzyIsNull(step)) return 0;
+
+    int n = round((value - xBegin)/step);
+    return n;
+}
+double closest(double xBegin, double step, double value)
+{
+    if (qFuzzyIsNull(step)) return 0;
+
+    int n = round((value - xBegin)/step);
+    return xBegin + n*step;
+}
+
+int stepsToClosest(Channel *c, double val)
+{
+    if (!c) return 0;
+
+    if (c->data()->xValuesFormat() == DataHolder::XValuesUniform)
+        return stepsToClosest(c->data()->xMin(), c->data()->xStep(), val);
+
+    //необходимо скопировать значения, чтобы алгоритм std::min_element не падал
+    auto xValues = c->data()->xValues();
+    return closest(xValues.begin(), xValues.end(), val) - xValues.begin();
+}
+
+double closest(Channel *c, double val)
+{
+    if (!c) return 0;
+
+    if (c->data()->xValuesFormat() == DataHolder::XValuesUniform)
+        return closest(c->data()->xMin(), c->data()->xStep(), val);
+
+    //необходимо скопировать значения, чтобы алгоритм std::min_element не падал
+    auto xValues = c->data()->xValues();
+    return *closest(xValues.begin(), xValues.end(), val);
+}
+
 TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
 {DD;
     setWindowFlags(Qt::Tool /*| Qt::WindowTitleHint*/);
@@ -68,16 +108,10 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
 
     for (int i=0; i<4; ++i) {
         auto *c = new ClearableSpinBox(this);
-        c->setMinimum(0.0);
-        c->setMaximum(60000.0);
-        c->setValue(0.0);
-        c->setDecimals(5);
+        c->moveTo(0.0);
         c->setPrefix(QString("X%1  ").arg(i+1));
-//        c->lineEdit()->setClearButtonEnabled(true);
-        connect(c, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-                [=](double val){
-            DD;
-            updateTrackingCursor({val, c->yVal}, i);
+        connect(c, &ClearableSpinBox::valueChanged, [=](double val){
+            updateTrackingCursor({val, c->getYValue()}, i);
             cursorBoxes[i]->setChecked(true);
         });
         spins << c;
@@ -224,53 +258,31 @@ void TrackingPanel::updateState(const QList<TrackingPanel::TrackInfo> &curves)
 // пересчитываем значение xVal и обновляем показания счетчиков
 void TrackingPanel::setXY(QPointF value, int index)
 {DD;
-    // здесь value - произвольное число, соответствующее какому-то положению на оси X
+    // здесь value - произвольное число, соответствующее какому-то положению на осях X и Y
     double xVal = value.x();
     double yVal = value.y();
     if (plot->hasCurves()) {
         //ищем минимальный шаг по оси X
-        double xstep = (*std::min_element(plot->curves.constBegin(), plot->curves.constEnd(),
-                                  [](Curve *c1, Curve *c2){
-            return c1->channel->data()->xStep() <= c2->channel->data()->xStep();
-        }))->channel->data()->xStep();
-
-        if (xstep==0.0) xstep = plot->curves.constFirst()->channel->data()->xStep();
-
-        if (xstep!=0.0) {
-            //среди графиков есть график с минимальным ненулевым шагом
-            setStep(xstep);
-
-            //2. compute the actual xVal based on the xVal and xstep
-            int steps = int(xVal/xstep);
-            if (steps <= 0) xVal = 0.0;
-            else {
-                if (qAbs(xstep*(steps+1)-xVal) < qAbs(xstep*steps-xVal)) steps++;
-                xVal = xstep*steps;
-            }
+        Channel *c = plot->curves.first()->channel;
+        for (int i=1; i < plot->curvesCount(); ++i) {
+            if (plot->curves[i]->channel->data()->xStep() < c->data()->xStep())
+                c = plot->curves[i]->channel;
         }
-        else if (plot->curves.constFirst()->channel->data()->xValuesFormat() == DataHolder::XValuesNonUniform) {
-            //xstep == 0 -> третьоктава или еще что-нибудь, проверяем тип файла
-            QVector<double> x = plot->curves.constFirst()->channel->data()->xValues();
-            if (!x.isEmpty()) {
-                auto iter = closest<QVector<double>::const_iterator, double>(x.constBegin(), x.constEnd(), xVal);
-                xVal = *iter;
-            }
-        }
+        xVal = closest(c, xVal);
     }
-    if (!qFuzzyCompare(spins.at(index)->yVal+1.0, yVal+1.0)) {
-        spins[index]->yVal = yVal;
+    if (!qFuzzyCompare(spins.at(index)->getYValue(), yVal)) {
+        spins[index]->setYValue(yVal);
         updateTrackingCursor({xVal, yVal}, index);
         cursorBoxes[index]->setChecked(true);
     }
 
-    spins[index]->yVal = yVal;
-    spins[index]->setValue(xVal);
+    spins[index]->moveTo({xVal, yVal});
 }
 
 void TrackingPanel::setStep(double step)
 {DD;
     mStep = step;
-    for (int i=0; i<4; ++i) spins[i]->setSingleStep(mStep);
+    for (int i=0; i<4; ++i) spins[i]->setStep(mStep);
 }
 
 void TrackingPanel::switchVisibility()
@@ -304,9 +316,24 @@ void TrackingPanel::updateTrackingCursor(QPointF val, int index)
 
 void TrackingPanel::update()
 {DD;
+    if (plot->hasCurves()) {
+        //ищем минимальный шаг по оси X
+        Channel *c = plot->curves.first()->channel;
+        for (int i=1; i < plot->curvesCount(); ++i) {
+            if (plot->curves[i]->channel->data()->xStep() < c->data()->xStep())
+                c = plot->curves[i]->channel;
+        }
+        for (auto spin: spins) spin->setStep(c->data()->xStep());
+
+        if (c->data()->xValuesFormat()==DataHolder::XValuesNonUniform) {
+            for (auto spin: spins) spin->setXValues(c->data()->xValues());
+        }
+    }
+
     for (int i=0; i<4; ++i) {
         if (cursorBoxes[i]->checkState()==Qt::Checked && isVisible()) {
             cursors[i]->attach(plot);
+            spins[i]->moveTo(spins[i]->getXValue());
         }
         else {
             cursors[i]->detach();
@@ -360,22 +387,15 @@ void TrackingPanel::update()
     for (Curve *c: plot->curves) {
         QVector<int> steps(4);
 
-        auto xVals = c->channel->data()->xValues();
-        auto iter = closest<QVector<double>::const_iterator, double>(xVals.constBegin(), xVals.constEnd(), leftBorder);
-        steps[minBorder] = iter - xVals.constBegin();
+        //auto xVals = c->channel->data()->xValues();
+        steps[minBorder] = stepsToClosest(c->channel, leftBorder);
+        steps[maxBorder] = stepsToClosest(c->channel, rightBorder);
+        steps[minExclude] = stepsToClosest(c->channel, leftExclude);
+        steps[maxExclude] = stepsToClosest(c->channel, rightExclude);
 
-        iter = closest<QVector<double>::const_iterator, double>(xVals.constBegin(), xVals.constEnd(), rightBorder);
-        steps[maxBorder] = iter - xVals.constBegin();
-
-        iter = closest<QVector<double>::const_iterator, double>(xVals.constBegin(), xVals.constEnd(), leftExclude);
-        steps[minExclude] = iter - xVals.constBegin();
-
-        iter = closest<QVector<double>::const_iterator, double>(xVals.constBegin(), xVals.constEnd(), rightExclude);
-        steps[maxExclude] = iter - xVals.constBegin();
-
-        for (int i=0; i<4; ++i) {
-            if (steps[i] < 0) steps[i] = xVals.size()-1;
-        }
+//        for (int i=0; i<4; ++i) {
+//            if (steps[i] < 0) steps[i] = xVals.size()-1;
+//        }
 
         double cumul = 0.0;
         double energy = 0.0;
@@ -404,7 +424,7 @@ void TrackingPanel::update()
 
         QList<QPair<double, double>> values;
         for (int i=0; i<4; ++i) {
-            QPair<double, double> p = {xVals.value(steps[i]), c->channel->data()->yValue(steps[i])};
+            QPair<double, double> p = {c->channel->data()->xValue(steps[i]), c->channel->data()->yValue(steps[i])};
             values << p;
         }
 
@@ -437,10 +457,10 @@ void TrackingPanel::moveCursor(Enums::Direction direction)
         if (cursors[i]->current) {
             switch (direction) {
                 case Enums::Right:
-                    spins[i]->setValue(spins[i]->value()+mStep);
+                    spins[i]->moveRight();
                     break;
                 case Enums::Left:
-                    spins[i]->setValue(spins[i]->value()-mStep);
+                    spins[i]->moveLeft();
                     break;
                 default:
                     break;
@@ -451,23 +471,11 @@ void TrackingPanel::moveCursor(Enums::Direction direction)
 
 // установка первых двух курсоров
 //вызывается: 1. щелчком мыши по канве графика - сигнал PlotZoom->updateTrackingCursor
-//            2. щелчком мыши по шкале Х - сигнал AxisZoom->updateTrackingCursor
+//            2. щелчком мыши по шкале Х - сигнал _picker,SIGNAL(axisClicked(QPointF,bool)
 void TrackingPanel::setValue(QPointF value, bool second)
 {
     changeSelectedCursor(cursors[second?1:0]);
     setXY(value, second?1:0);
-}
-
-void TrackingPanel::setXValue(double value, bool second)
-{
-    changeSelectedCursor(cursors[second?1:0]);
-    setXY({value,0}, second?1:0);
-}
-
-void TrackingPanel::setYValue(double value, bool second)
-{
-    changeSelectedCursor(cursors[second?1:0]);
-    setXY({0, value}, second?1:0);
 }
 
 //установка любого курсора передвижением мышью
@@ -505,7 +513,130 @@ ZoneSpan::ZoneSpan(const QColor &color)
     setBrush(color);
 }
 
-ClearableSpinBox::ClearableSpinBox(QWidget *parent) : QDoubleSpinBox(parent)
+ClearableSpinBox::ClearableSpinBox(QWidget *parent) : QAbstractSpinBox(parent)
 {
+    setKeyboardTracking(false);
+    setWrapping(false);
+    lineEdit()->setAlignment(Qt::AlignLeft);
+    updateText(xVal);
 
+    connect(this, &QAbstractSpinBox::editingFinished, [=](){
+        interpretText();
+    });
+}
+
+void ClearableSpinBox::moveLeft()
+{
+    stepBy(-1);
+}
+
+void ClearableSpinBox::moveRight()
+{
+    stepBy(1);
+}
+
+void ClearableSpinBox::setStep(double step)
+{
+    this->step = step;
+    if (!qFuzzyIsNull(step)) xValues.clear();
+}
+
+void ClearableSpinBox::setXValues(const QVector<double> &values)
+{
+    xValues = values;
+    step = 0.0;
+}
+
+void ClearableSpinBox::moveTo(double xValue)
+{
+    if (qFuzzyIsNull(step) && !xValues.isEmpty()) {
+        //moving to the nearest xValue from xValues
+        auto currentIndex = closest(xValues.begin(), xValues.end(), xVal);
+        auto newIndex = closest(xValues.begin(), xValues.end(), xValue);
+        if (auto distance = std::distance(currentIndex, newIndex); distance != 0) {
+            stepBy(distance);
+        }
+    }
+    else {
+        if (!qFuzzyCompare(xVal, xValue)) {
+            xVal = xValue;
+            updateText(xVal);
+            emit valueChanged(xVal);
+        }
+    }
+}
+
+void ClearableSpinBox::moveTo(const QPair<double, double> &position)
+{
+    yVal = position.second;
+    moveTo(position.first);
+}
+
+void ClearableSpinBox::setPrefix(const QString &prefix)
+{
+    this->prefix = prefix;
+    updateText(xVal);
+}
+
+void ClearableSpinBox::updateText(double val)
+{
+    double v = std::abs(val);
+    QString s;
+    if (qFuzzyIsNull(v)) s = "0";
+    else if (v < 0.001) s = QString::number(val,'e',4);
+    else if (v > 99999) s = QString::number(val,'e',4);
+    else if (v < 10) s = QString::number(val,'f', 6);
+    else if (v < 100) s = QString::number(val,'f', 5);
+    else if (v < 1000) s = QString::number(val,'f', 4);
+    else if (v < 10000) s = QString::number(val,'f', 3);
+    else if (v < 100000) s = QString::number(val,'f', 2);
+    else s = QString::number(val,'f',6);
+    lineEdit()->setText(prefix+s);
+}
+
+
+void ClearableSpinBox::stepBy(int steps)
+{
+    if (steps == 0) return;
+
+    if (qFuzzyIsNull(step) && !xValues.isEmpty()) {
+        int newcurrent = std::clamp(steps + current, 0, xValues.size()-1);
+        if (current != newcurrent) {
+            current = newcurrent;
+            xVal = xValues.at(current);
+            updateText(xVal);
+            emit valueChanged(xVal);
+        }
+    }
+    else {
+        xVal += steps*step;
+        updateText(xVal);
+        emit valueChanged(xVal);
+    }
+}
+
+QAbstractSpinBox::StepEnabled ClearableSpinBox::stepEnabled() const
+{
+    if (qFuzzyIsNull(step) && !xValues.isEmpty()) {
+        if (closest(xValues.begin(), xValues.end(), xVal)==xValues.begin()) return StepUpEnabled;
+        if (closest(xValues.begin(), xValues.end(), xVal)==xValues.end()-1) return StepDownEnabled;
+    }
+
+    return StepUpEnabled | StepDownEnabled;
+}
+
+
+QSize ClearableSpinBox::sizeHint() const
+{
+    auto s = QAbstractSpinBox::sizeHint();
+
+    s.setWidth(fontMetrics().horizontalAdvance(prefix+"+9,9999e+999"));
+    return s;
+}
+
+QSize ClearableSpinBox::minimumSizeHint() const
+{
+    auto s = QAbstractSpinBox::minimumSizeHint();
+    s.setWidth(50);
+    return s;
 }
