@@ -36,8 +36,9 @@ public:
     void setYValue(double yValue) {yVal = yValue;}
     double getStep() const {return step;}
     void setPrefix(const QString &prefix);
+    void setRange(double min, double max);
 signals:
-    void valueChanged(double value);
+    void valueChanged(QPointF value);
 private:
     void updateText(double val);
     double yVal = 0.0;
@@ -46,6 +47,7 @@ private:
     int current = 0;
     QVector<double> xValues;
     QString prefix;
+    double min = 0.0, max = 0.0;
 
     // QAbstractSpinBox interface
 public:
@@ -59,6 +61,19 @@ public:
     virtual QSize sizeHint() const override;
     virtual QSize minimumSizeHint() const override;
 };
+
+//class SpinBox : public QDoubleSpinBox
+//{
+//public:
+//    SpinBox(QWidget *parent=0);
+//    void moveTo(double val);
+//    void setStep(double step);
+//    void setXValues(const QVector<double> &values);
+//    void moveLeft();
+//    void moveRight();
+//private:
+//    QVector<double> xValues;
+//};
 
 class TrackingPanel: public QWidget
 {

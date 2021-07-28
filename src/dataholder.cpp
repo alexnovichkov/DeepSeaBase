@@ -632,12 +632,13 @@ double DataHolder::YforXandZ(double x, double z, bool &success) const
 {
     int zIndex = -1;
     if (m_zValuesFormat == XValuesUniform) {
-        zIndex = qFloor((z-m_zBegin)/m_zStep);
+        if (m_zCount == 1) zIndex = 0;
+        else zIndex = std::round((z-m_zBegin)/m_zStep);
     }
     else for (zIndex = 0; zIndex < m_zValues.size(); ++zIndex) {
         if (m_zValues.at(zIndex) >= z) break;
     }
-    zIndex--;
+
     if (zIndex < 0 || zIndex >=m_zCount) {
         success = false;
         return 0;
@@ -645,12 +646,13 @@ double DataHolder::YforXandZ(double x, double z, bool &success) const
 
     int xIndex = -1;
     if (m_xValuesFormat == XValuesUniform) {
-        xIndex = qFloor((x-m_xBegin)/m_xStep);
+        if (qFuzzyIsNull(m_xStep)) xIndex = 0;
+        else xIndex = std::round((x-m_xBegin)/m_xStep);
     }
     else for (xIndex = 0; xIndex < m_xValues.size(); ++xIndex) {
         if (m_xValues.at(xIndex) >= x) break;
     }
-    xIndex--;
+
     if (xIndex < 0 || xIndex >=m_xCount) {
         success = false;
         return 0;

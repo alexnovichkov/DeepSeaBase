@@ -109,9 +109,8 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
     for (int i=0; i<4; ++i) {
         auto *c = new ClearableSpinBox(this);
         c->moveTo(0.0);
-        c->setPrefix(QString("X%1  ").arg(i+1));
-        connect(c, &ClearableSpinBox::valueChanged, [=](double val){
-            updateTrackingCursor({val, c->getYValue()}, i);
+        connect(c, &ClearableSpinBox::valueChanged, [=](QPointF val){
+            updateTrackingCursor(val, i);
             cursorBoxes[i]->setChecked(true);
         });
         spins << c;
@@ -171,36 +170,40 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
 
     QGridLayout *lay = new QGridLayout;
 
-    lay->addWidget(new QLabel("Курсоры", this), 0, 0, 1, 3);
+    lay->addWidget(new QLabel("Курсоры", this), 0, 0, 1, 4);
 
     lay->addWidget(cursorBoxes[0], 1,0);
-    lay->addWidget(spins[0], 1,1);
-    lay->addWidget(new QLabel("ЛКМ", this), 1, 2);
+    lay->addWidget(new QLabel("X1", this), 1, 1);
+    lay->addWidget(spins[0], 1,2);
+    lay->addWidget(new QLabel("ЛКМ", this), 1, 3);
 
     lay->addWidget(cursorBoxes[1], 2,0);
-    lay->addWidget(spins[1], 2,1);
-    lay->addWidget(new QLabel("Ctrl+ЛКМ", this), 2,2);
+    lay->addWidget(new QLabel("X2", this), 2, 1);
+    lay->addWidget(spins[1], 2,2);
+    lay->addWidget(new QLabel("Ctrl+ЛКМ", this), 2,3);
 
-    lay->addWidget(new QLabel("Режекция", this), 3, 0, 1, 3);
+    lay->addWidget(new QLabel("Режекция", this), 3, 0, 1, 4);
 
 
     lay->addWidget(cursorBoxes[2], 4,0);
-    lay->addWidget(spins[2], 4,1);
+    lay->addWidget(new QLabel("X3", this), 4, 1);
+    lay->addWidget(spins[2], 4,2);
 
     lay->addWidget(cursorBoxes[3], 5,0);
-    lay->addWidget(spins[3], 5,1);
+    lay->addWidget(new QLabel("X4", this), 5, 1);
+    lay->addWidget(spins[3], 5,2);
 
-    lay->addWidget(yValuesCheckBox, 7,0,1,3);
-    lay->addWidget(harmonics, 8,0,1,3);
+    lay->addWidget(yValuesCheckBox, 7,0,1,4);
+    lay->addWidget(harmonics, 8,0,1,4);
 
-    lay->addWidget(tree, 0,3,9,2);
+    lay->addWidget(tree, 0,4,9,2);
 
-    lay->addWidget(button, 9,3,2,1);
-    lay->addWidget(box, 9,4);
-    lay->addWidget(box1, 10,4);
+    lay->addWidget(button, 9,4,2,1);
+    lay->addWidget(box, 9,5);
+    lay->addWidget(box1, 10,5);
 
 //    lay->setColumnStretch(1,1);
-    lay->setColumnStretch(3,1);
+    lay->setColumnStretch(4,1);
 
     setLayout(lay);
     resize(680,250);
@@ -270,11 +273,12 @@ void TrackingPanel::setXY(QPointF value, int index)
         }
         xVal = closest(c, xVal);
     }
-    if (!qFuzzyCompare(spins.at(index)->getYValue(), yVal)) {
-        spins[index]->setYValue(yVal);
-        updateTrackingCursor({xVal, yVal}, index);
-        cursorBoxes[index]->setChecked(true);
-    }
+
+//    if (!qFuzzyCompare(spins.at(index)->getYValue(), yVal)) {
+//        spins[index]->setYValue(yVal);
+//        updateTrackingCursor({xVal, yVal}, index);
+//        cursorBoxes[index]->setChecked(true);
+//    }
 
     spins[index]->moveTo({xVal, yVal});
 }
@@ -304,6 +308,20 @@ void TrackingPanel::updateTrackingCursor(QPointF val, int index)
 {DD;
     if (!isVisible()) return;
 
+    //проверяем, не нужно ли обновить значение по оси Y
+    Curve *c = 0;
+    for (Curve *cc: plot->curves) {
+        if (cc->highlighted) {
+            c = cc;
+            break;
+        }
+    }
+    if (c) {
+        bool ok;
+        double y = c->channel->data()->YforXandZ(val.x(), 0.0, ok);
+        if (ok) val.setY(y);
+    }
+
     cursors[index]->moveTo(val);
     for (int i=0; i<cursors.size(); ++i)
         cursors[i]->setCurrent(i == index);
@@ -318,22 +336,31 @@ void TrackingPanel::update()
 {DD;
     if (plot->hasCurves()) {
         //ищем минимальный шаг по оси X
-        Channel *c = plot->curves.first()->channel;
-        for (int i=1; i < plot->curvesCount(); ++i) {
-            if (plot->curves[i]->channel->data()->xStep() < c->data()->xStep())
-                c = plot->curves[i]->channel;
-        }
-        for (auto spin: spins) spin->setStep(c->data()->xStep());
 
-        if (c->data()->xValuesFormat()==DataHolder::XValuesNonUniform) {
-            for (auto spin: spins) spin->setXValues(c->data()->xValues());
+        auto data = plot->curves.first()->channel->data();
+        double xmin = data->xMin();
+        double xmax = data->xMax();
+        for (int i=1; i < plot->curvesCount(); ++i) {
+            if (plot->curves[i]->channel->data()->xStep() < data->xStep())
+                data = plot->curves[i]->channel->data();
+            if (plot->curves[i]->channel->data()->xMin() < xmin)
+                xmin = plot->curves[i]->channel->data()->xMin();
+            if (plot->curves[i]->channel->data()->xMax() > xmax)
+                xmax = plot->curves[i]->channel->data()->xMax();
+        }
+        setStep(data->xStep());
+
+        for (auto spin: spins) {
+            if (data->xValuesFormat()==DataHolder::XValuesNonUniform)
+                spin->setXValues(data->xValues());
+            spin->setRange(xmin,xmax);
         }
     }
 
     for (int i=0; i<4; ++i) {
         if (cursorBoxes[i]->checkState()==Qt::Checked && isVisible()) {
             cursors[i]->attach(plot);
-            spins[i]->moveTo(spins[i]->getXValue());
+            //spins[i]->moveTo(spins[i]->getXValue());
         }
         else {
             cursors[i]->detach();
@@ -387,15 +414,10 @@ void TrackingPanel::update()
     for (Curve *c: plot->curves) {
         QVector<int> steps(4);
 
-        //auto xVals = c->channel->data()->xValues();
         steps[minBorder] = stepsToClosest(c->channel, leftBorder);
         steps[maxBorder] = stepsToClosest(c->channel, rightBorder);
         steps[minExclude] = stepsToClosest(c->channel, leftExclude);
         steps[maxExclude] = stepsToClosest(c->channel, rightExclude);
-
-//        for (int i=0; i<4; ++i) {
-//            if (steps[i] < 0) steps[i] = xVals.size()-1;
-//        }
 
         double cumul = 0.0;
         double energy = 0.0;
@@ -455,6 +477,14 @@ void TrackingPanel::moveCursor(Enums::Direction direction)
 {DD;
     for (int i=0; i<cursors.size(); ++i) {
         if (cursors[i]->current) {
+            Curve *c = 0;
+            for (Curve *curve:plot->curves) {
+                if (curve->highlighted) {
+                    c = curve;
+                    break;
+                }
+            }
+
             switch (direction) {
                 case Enums::Right:
                     spins[i]->moveRight();
@@ -521,7 +551,9 @@ ClearableSpinBox::ClearableSpinBox(QWidget *parent) : QAbstractSpinBox(parent)
     updateText(xVal);
 
     connect(this, &QAbstractSpinBox::editingFinished, [=](){
-        interpretText();
+        bool ok;
+        double val = lineEdit()->text().toDouble(&ok);
+        if (ok) moveTo(val);
     });
 }
 
@@ -545,6 +577,8 @@ void ClearableSpinBox::setXValues(const QVector<double> &values)
 {
     xValues = values;
     step = 0.0;
+    if (!xValues.isEmpty())
+        setRange(xValues.first(), xValues.last());
 }
 
 void ClearableSpinBox::moveTo(double xValue)
@@ -561,7 +595,7 @@ void ClearableSpinBox::moveTo(double xValue)
         if (!qFuzzyCompare(xVal, xValue)) {
             xVal = xValue;
             updateText(xVal);
-            emit valueChanged(xVal);
+            emit valueChanged({xVal, yVal});
         }
     }
 }
@@ -576,6 +610,12 @@ void ClearableSpinBox::setPrefix(const QString &prefix)
 {
     this->prefix = prefix;
     updateText(xVal);
+}
+
+void ClearableSpinBox::setRange(double min, double max)
+{
+    this->min = min;
+    this->max = max;
 }
 
 void ClearableSpinBox::updateText(double val)
@@ -605,13 +645,16 @@ void ClearableSpinBox::stepBy(int steps)
             current = newcurrent;
             xVal = xValues.at(current);
             updateText(xVal);
-            emit valueChanged(xVal);
+            emit valueChanged({xVal, yVal});
         }
     }
     else {
-        xVal += steps*step;
-        updateText(xVal);
-        emit valueChanged(xVal);
+        if (xVal + steps*step >= min && xVal + steps*step <= max) {
+            xVal += steps*step;
+            updateText(xVal);
+            emit valueChanged({xVal, yVal});
+        }
+
     }
 }
 
@@ -621,8 +664,11 @@ QAbstractSpinBox::StepEnabled ClearableSpinBox::stepEnabled() const
         if (closest(xValues.begin(), xValues.end(), xVal)==xValues.begin()) return StepUpEnabled;
         if (closest(xValues.begin(), xValues.end(), xVal)==xValues.end()-1) return StepDownEnabled;
     }
+    QAbstractSpinBox::StepEnabled res = 0;
+    if (xVal > min) res |= StepDownEnabled;
+    if (xVal < max) res |= StepUpEnabled;
 
-    return StepUpEnabled | StepDownEnabled;
+    return res;
 }
 
 
@@ -640,3 +686,75 @@ QSize ClearableSpinBox::minimumSizeHint() const
     s.setWidth(50);
     return s;
 }
+
+//SpinBox::SpinBox(QWidget *parent) : QDoubleSpinBox(parent)
+//{
+
+//}
+
+//void SpinBox::moveTo(double val)
+//{
+//    setValue(val);
+//}
+
+//int getDecimals(double val)
+//{
+//    QString s = QString::number(val, 'f',20);
+//    while (s[s.length()-1]=='0') s.chop(1);
+
+//    int index = s.indexOf('.');
+
+//    //удаляем нули в середине
+//    int zeros = s.indexOf("000", index);
+//    if (zeros == index+1) zeros = s.indexOf("000", zeros+3);
+//    if (zeros >= 0)
+//        s = s.mid(0, zeros);
+
+//    //округляем девятки
+//    int nines = s.indexOf("999", index);
+
+//    int decim = s.length()-index-1;
+//    if (nines >= 0) decim = nines-index-1;
+//    return decim;
+//}
+
+//void SpinBox::setStep(double step)
+//{
+//    if (!qFuzzyIsNull(step)) {
+//        setDecimals(getDecimals(step));
+//    }
+
+//    setSingleStep(step);
+//    if (!qFuzzyIsNull(step)) xValues.clear();
+//}
+
+//void SpinBox::setXValues(const QVector<double> &values)
+//{
+//    xValues = values;
+//    int decim = 0;
+//    for (double val: xValues) {
+//        int d = getDecimals(val);
+//        if (d > decim) decim = d;
+//    }
+
+//    setDecimals(decim);
+//    setSingleStep(0);
+//}
+
+//void SpinBox::moveLeft()
+//{
+//    if (!xValues.isEmpty()) {
+//        int oldIndex = xValues.indexOf(value());
+//        if (oldIndex>0) setValue(xValues[oldIndex-1]);
+//    }
+//    else stepBy(-1);
+//}
+
+//void SpinBox::moveRight()
+//{
+//    if (!xValues.isEmpty()) {
+//        int oldIndex = xValues.indexOf(value());
+//        if (oldIndex<xValues.size()-1) setValue(xValues[oldIndex+1]);
+//    }
+//    else stepBy(1);
+//}
