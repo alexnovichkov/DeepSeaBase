@@ -18,6 +18,11 @@ enum /*class*/ OctaveBase {
     Base10 = 10
 };
 
+enum class OctaveFrequency {
+    Exact,
+    Smoothed
+};
+
 class OctaveFilterBank
 {
 public:
