@@ -9,7 +9,7 @@ DragZoom::DragZoom(Plot *plot) : QObject(plot), plot(plot)
 }
 
 void DragZoom::startDrag(QMouseEvent *mEvent)
-{DDD;
+{DD;
     QWidget *canvas = plot->canvas();
 
     position = mEvent->pos();
@@ -66,7 +66,7 @@ ZoomStack::zoomCoordinates DragZoom::proceedDrag(QMouseEvent *mEvent)
 }
 
 ZoomStack::zoomCoordinates DragZoom::endDrag(QMouseEvent *mEvent)
-{DDD;
+{DD;
     Q_UNUSED(mEvent);
 
     plot->canvas()->setCursor(tCursor);

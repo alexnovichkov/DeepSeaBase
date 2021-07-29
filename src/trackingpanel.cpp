@@ -466,7 +466,7 @@ void TrackingPanel::update()
 }
 
 void TrackingPanel::changeSelectedCursor(TrackingCursor *cursor)
-{DD;
+{
     if (!cursors.contains(cursor)) return;
 
     for (int i=0; i<cursors.size(); ++i)
@@ -503,7 +503,7 @@ void TrackingPanel::moveCursor(Enums::Direction direction)
 //вызывается: 1. щелчком мыши по канве графика - сигнал PlotZoom->updateTrackingCursor
 //            2. щелчком мыши по шкале Х - сигнал _picker,SIGNAL(axisClicked(QPointF,bool)
 void TrackingPanel::setValue(QPointF value, bool second)
-{
+{DD;
     changeSelectedCursor(cursors[second?1:0]);
     setXY(value, second?1:0);
 }
@@ -511,7 +511,7 @@ void TrackingPanel::setValue(QPointF value, bool second)
 //установка любого курсора передвижением мышью
 //вызывается: PlotPicker->cursorMovedTo
 void TrackingPanel::setValue(QPointF value)
-{
+{DD;
     for (int i=0; i<cursors.size(); ++i) {
         if (cursors[i]->current) {
             setXY(value, i);

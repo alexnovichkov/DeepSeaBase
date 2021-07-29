@@ -234,7 +234,6 @@ void CanvasEventFilter::mousePress(QMouseEvent *event)
             else {
                 actionType = ActionType::Zoom;
                 plotZoom->startZoom(event);
-                picker->endPick(event);
             }
             break;
         }
@@ -265,10 +264,13 @@ void CanvasEventFilter::mouseRelease(QMouseEvent *event)
     }
     else if (actionType == ActionType::Zoom) {
         auto coords = plotZoom->endZoom(event);
-        zoomStack->addZoom(coords, true);
+        if (coords.coords.isEmpty())
+            picker->endPick(event);
+        else
+            zoomStack->addZoom(coords, true);
         actionType = ActionType::None;
     }
-    else if (actionType == ActionType::Pick) {
+    else {
         picker->endPick(event);
         actionType = ActionType::None;
     }

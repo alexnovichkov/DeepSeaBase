@@ -137,7 +137,7 @@ void Picker::proceedPick(QMouseEvent *e)
 }
 
 void Picker::endPick(QMouseEvent *e)
-{
+{DD;
     if (!enabled) return;
     QPoint endPos = e->pos();
     if (endPos == pos) {
@@ -151,6 +151,7 @@ void Picker::endPick(QMouseEvent *e)
         //одинарный клик мышью
         if (d_selectedCursors.isEmpty()) {
             d_selectedCursors = findCursors(endPos);
+            qDebug()<<d_selectedCursors;
             if (!d_selectedCursors.isEmpty())
                 emit axisClicked({plot->canvasMap(d_selectedCursors.first()->xAxis()).invTransform(endPos.x()),
                                   plot->canvasMap(d_selectedCursors.first()->yAxis()).invTransform(endPos.y())},
@@ -192,7 +193,7 @@ QVector<TrackingCursor *> Picker::findCursors(const QPoint &pos)
                 result << c;
             }
             if (qAbs(newY-pos.y())<=5 && (c->type == TrackingCursor::Horizontal || c->type == TrackingCursor::Cross)) {
-                result << c;
+                if (!result.contains(c)) result << c;
             }
         }
     }
