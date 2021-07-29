@@ -31,8 +31,7 @@ public:
 
     int channelsCount;
 signals:
-    void maybeUpdateChannelDescription(int row, const QString &value);
-    void maybeUpdateChannelName(int row, const QString &value);
+    void maybeUpdateChannelProperty(int row, const QString &description, const QString &property, const QString &value);
     void maybePlot(int row);
     void deleteCurve(int row);
     void updateLegends();

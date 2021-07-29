@@ -544,10 +544,18 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
     tab->channelModel = new ChannelTableModel(tab);
     connect(tab->channelModel, SIGNAL(modelChanged()), SLOT(updateActions()));
-    connect(tab->channelModel,SIGNAL(maybeUpdateChannelDescription(int,QString)),
-            SLOT(onChannelDescriptionChanged(int,QString)));
-    connect(tab->channelModel,SIGNAL(maybeUpdateChannelName(int,QString)),
-            SLOT(onChannelNameChanged(int,QString)));
+    connect(tab->channelModel, &ChannelTableModel::maybeUpdateChannelProperty,
+            [=](int channel, const QString &description, const QString &p, const QString &val){
+        if (!tab) return;
+        if (tab->model->selected().size()>1) {
+            if (QMessageBox::question(this,"DeepSea Base",QString("Выделено несколько файлов. Записать %1\n"
+                                      "во все эти файлы?").arg(description))==QMessageBox::Yes)
+            {
+                tab->model->setChannelProperty(channel, p, val);
+            }
+        }
+        tab->model->updateFile(tab->record);
+    });
     connect(tab->channelModel,SIGNAL(maybePlot(int)),SLOT(plotChannel(int)));
     connect(tab->channelModel,SIGNAL(deleteCurve(int)),SLOT(deleteCurve(int)));
 
@@ -1522,34 +1530,6 @@ void MainWindow::editYName()
     if (newYName.isEmpty()) return;
 
     tab->channelModel->setYName(newYName);
-}
-
-void MainWindow::onChannelDescriptionChanged(int index, const QString &value)
-{
-    if (!tab) return;
-    if (tab->model->selected().size()>1) {
-        if (QMessageBox::question(this,"DeepSea Base","Выделено несколько файлов. Записать такое описание канала\n"
-                                  "во все эти файлы?")==QMessageBox::Yes)
-        {
-            tab->model->setChannelDescription(index, value);
-        }
-        else {
-            tab->model->updateFile(tab->record);
-        }
-    }
-
-}
-
-void MainWindow::onChannelNameChanged(int index, const QString &value)
-{
-    if (!tab) return;
-    if (tab->model->selected().size()>1) {
-        if (QMessageBox::question(this,"DeepSea Base","Выделено несколько файлов. Записать такое название канала\n"
-                                  "во все эти файлы?")==QMessageBox::Yes)
-        {
-            tab->model->setChannelName(index, value);
-        }
-    }
 }
 
 QVector<int> computeIndexes(QVector<int> notYetMoved, bool up, int totalSize)

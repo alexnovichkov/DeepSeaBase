@@ -46,37 +46,13 @@ QList<FileDescriptor *> Model::selectedFiles(const QVector<Descriptor::DataType>
     return files;
 }
 
-void Model::setDataDescription(int selectionIndex, const DataDescription &data)
-{DD;
-    int row = indexes.at(selectionIndex);
-
-    descriptors[row]->setDataDescription(data);
-    auto i = index(row, MODEL_COLUMN_DESCRIPTION);
-    emit dataChanged(i, i, {Qt::DisplayRole});
-    i = index(row, MODEL_COLUMN_FILENAME);
-    emit dataChanged(i, i, {Qt::DecorationRole});
-}
-
-void Model::setChannelDescription(int channel, const QString &description)
-{DD;
+void Model::setChannelProperty(int channel, const QString &property, const QString &value)
+{
     for (int i: indexes) {
         if (Channel *ch = descriptors[i]->channel(channel)) {
-            if (ch->description() != description) {
-                ch->setDescription(description);
-                descriptors[i]->setChanged(true);
-                auto ind = index(i, MODEL_COLUMN_SAVE);
-                emit dataChanged(ind, ind, {Qt::DecorationRole});
-            }
-        }
-    }
-}
-
-void Model::setChannelName(int channel, const QString &name)
-{DD;
-    for (int i: indexes) {
-        if (Channel *ch = descriptors[i]->channel(channel)) {
-            if (ch->name() != name) {
-                ch->setName(name);
+            if (ch->dataDescription().get(property) != value) {
+                ch->dataDescription().put(property, value);
+                ch->setChanged(true);
                 descriptors[i]->setChanged(true);
                 auto ind = index(i, MODEL_COLUMN_SAVE);
                 emit dataChanged(ind, ind, {Qt::DecorationRole});
@@ -143,16 +119,14 @@ void Model::invalidateCurve(Channel* channel)
     if (contains(channel->descriptor(), &row)) {
         QModelIndex idx = index(row, MODEL_COLUMN_FILENAME);
         if (idx.isValid())
-            emit dataChanged(idx, idx, QVector<int>()<<Qt::FontRole);
+            emit dataChanged(idx, idx, {Qt::FontRole});
     }
 }
 
 void Model::save()
 {DD;
     for (int i=0; i<descriptors.size(); ++i) {
-        auto f = descriptors[i];
-        //qDebug() << f->fileName();
-        f->write();
+        descriptors[i]->write();
         emit dataChanged(index(i,0), index(i,MODEL_COLUMNS_COUNT-1));
     }
 }
@@ -174,10 +148,6 @@ bool Model::changed() const
     return std::any_of(descriptors.cbegin(), descriptors.cend(), [](const F &d){
         return d->changed() || d->dataChanged();
     });
-//    for (auto & d: descriptors) {
-//        if (d->changed() || d->dataChanged()) return true;
-//    }
-//    return false;
 }
 
 Model::~Model()

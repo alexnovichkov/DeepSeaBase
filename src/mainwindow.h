@@ -188,8 +188,6 @@ private slots:
     void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
 
     void editYName();
-    void onChannelDescriptionChanged(int index, const QString& value);
-    void onChannelNameChanged(int index, const QString& value);
     void updatePlottedChannelsNumbers();
 
     void previousDescriptor();

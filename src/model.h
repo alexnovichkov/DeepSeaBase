@@ -42,13 +42,9 @@ public:
     void setSelected(const QVector<int> &indexes);
     QList<FileDescriptor*> selectedFiles(const QVector<Descriptor::DataType> &types = QVector<Descriptor::DataType>()) const;
 
-    //void setDataDescription(FileDescriptor *file, const DataDescription &data);
-    void setDataDescription(int selectionIndex, const DataDescription &data);
-    void setChannelDescription(int channel, const QString &description);
-    void setChannelName(int channel, const QString &name);
+    void setChannelProperty(int channel, const QString &property, const QString &value);
     void updateFile(FileDescriptor *file, int column = -1);
     void updateFile(int idx, int column = -1);
-//    void clear(const QStringList &filesToSkip);
     void clear(); //удаление всех файлов
 
     void invalidateCurve(Channel* channel);

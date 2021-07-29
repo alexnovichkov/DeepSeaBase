@@ -187,36 +187,53 @@ bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value,
 
     switch (role) {
         case Qt::EditRole: {
+            QString p, descr;
             if (column == 3) {//description
-                if (ch->description() != value.toString()) {
-                    ch->setDescription(value.toString());
-                    descriptor->setChanged(true);
-                    ch->setChanged(true);
-                    emit dataChanged(index, index, QVector<int>()<<Qt::DisplayRole);
-                    success = true;
-                }
-                emit maybeUpdateChannelDescription(row, value.toString());
+//                if (ch->description() != value.toString()) {
+//                    ch->setDescription(value.toString());
+//                    descriptor->setChanged(true);
+//                    ch->setChanged(true);
+//                    emit dataChanged(index, index, {Qt::DisplayRole});
+//                    success = true;
+//                }
+//                emit maybeUpdateChannelDescription(row, value.toString());
+                p = "description";
+                descr = "такое описание канала";
             }
             else if (column == 1) {//ед.изм.
-                if (value.toString() != ch->yName()) {
-                    ch->setYName(value.toString());
-                    descriptor->setChanged(true);
-                    ch->setChanged(true);
-                    emit dataChanged(index, index, QVector<int>()<<Qt::DisplayRole);
-                    success = true;
-                }
+//                if (value.toString() != ch->yName()) {
+//                    ch->setYName(value.toString());
+//                    descriptor->setChanged(true);
+//                    ch->setChanged(true);
+//                    emit dataChanged(index, index, {Qt::DisplayRole});
+//                    success = true;
+//                }
+                p = "yname";
+                descr = "такую единицу измерения";
             }
             else if (column == 0) {//имя
-                if (ch->name() != value.toString()) {
-                    ch->setName(value.toString());
+//                if (ch->name() != value.toString()) {
+//                    ch->setName(value.toString());
+//                    descriptor->setChanged(true);
+//                    ch->setChanged(true);
+//                    emit dataChanged(index, index, {Qt::DisplayRole});
+//                    emit updateLegends();
+//                    success = true;
+//                }
+//                emit maybeUpdateChannelName(row, value.toString());
+                p = "name";
+                descr = "такое название канала";
+            }
+            if (!p.isEmpty()) {
+                if (ch->dataDescription().get(p) != value) {
+                    ch->dataDescription().put(p, value);
                     descriptor->setChanged(true);
                     ch->setChanged(true);
-                    emit dataChanged(index, index, QVector<int>()<<Qt::DisplayRole);
+                    emit dataChanged(index, index, {Qt::DisplayRole});
                     emit updateLegends();
                     success = true;
+                    emit maybeUpdateChannelProperty(row, descr, p, value.toString());
                 }
-                emit maybeUpdateChannelName(row, value.toString());
-
             }
             break;
         }
