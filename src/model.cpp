@@ -368,8 +368,7 @@ bool Model::canDropMimeData(const QMimeData *data, Qt::DropAction action, int ro
     Q_UNUSED(column);
     Q_UNUSED(parent);
 
-    if (data->hasUrls()) return true;
-    return false;
+    return (data->hasUrls());
 }
 
 bool Model::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
@@ -386,7 +385,7 @@ bool Model::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, 
     QStringList filters = FormatFactory::allSuffixes(true);
     QList<QUrl> urlList = data->urls();
     QStringList filesToAdd;
-    Q_FOREACH (const QUrl &url, urlList) {
+    for (const QUrl &url: urlList) {
         QString s=url.toLocalFile();
         QFileInfo f(s);
         if (f.isDir() || filters.contains(f.suffix().toLower()))

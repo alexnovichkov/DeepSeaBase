@@ -266,8 +266,10 @@ void Plot::update()
         if (spectrogram)
             zoom->verticalScaleBoundsSlave->reset();
     }
-    if (rightCurves.isEmpty() && !spectrogram)
+    if (rightCurves.isEmpty() && !spectrogram) {
         zoom->verticalScaleBoundsSlave->reset();
+        axisWidget(yRightAxis)->setColorBarEnabled(false);
+    }
     if (!hasCurves())
         zoom->horizontalScaleBounds->reset();
 
@@ -828,11 +830,9 @@ bool Plot::plotCurve(Channel * ch, QColor *col, bool &plotOnRight, int fileNumbe
 {DD;
     if (plotted(ch)) return false;
 
-    if (!ch->populated()) {
-        ch->populate();
-    }
 
-    bool spectrogr = ch->data()->blocksCount()>1;
+
+    spectrogram = ch->data()->blocksCount()>1;
 
     bool plotOnFirstYAxis = canBePlottedOnLeftAxis(ch);
     bool plotOnSecondYAxis = canBePlottedOnRightAxis(ch);
@@ -861,9 +861,12 @@ bool Plot::plotCurve(Channel * ch, QColor *col, bool &plotOnRight, int fileNumbe
                                      "Сначала очистите график."));
         return false;
     }
-    spectrogram = spectrogr;
 
-    setAxis(xBottomAxis, ch->descriptor()->xName());
+    if (!ch->populated()) {
+        ch->populate();
+    }
+
+    setAxis(xBottomAxis, ch->xName());
     prepareAxis(xBottomAxis);
 
     QwtAxisId ax = yLeftAxis;
