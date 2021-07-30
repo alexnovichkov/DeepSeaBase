@@ -264,21 +264,18 @@ void TrackingPanel::setXY(QPointF value, int index)
     // здесь value - произвольное число, соответствующее какому-то положению на осях X и Y
     double xVal = value.x();
     double yVal = value.y();
-    if (plot->hasCurves()) {
-        //ищем минимальный шаг по оси X
-        Channel *c = plot->curves.first()->channel;
-        for (int i=1; i < plot->curvesCount(); ++i) {
-            if (plot->curves[i]->channel->data()->xStep() < c->data()->xStep())
-                c = plot->curves[i]->channel;
-        }
-        xVal = closest(c, xVal);
-    }
 
-//    if (!qFuzzyCompare(spins.at(index)->getYValue(), yVal)) {
-//        spins[index]->setYValue(yVal);
-//        updateTrackingCursor({xVal, yVal}, index);
-//        cursorBoxes[index]->setChecked(true);
-//    }
+    if (!qIsNaN(xVal)) {
+        if (plot->hasCurves()) {
+            //ищем минимальный шаг по оси X
+            Channel *c = plot->curves.first()->channel;
+            for (int i=1; i < plot->curvesCount(); ++i) {
+                if (plot->curves[i]->channel->data()->xStep() < c->data()->xStep())
+                    c = plot->curves[i]->channel;
+            }
+            xVal = closest(c, xVal);
+        }
+    }
 
     spins[index]->moveTo({xVal, yVal});
 }
@@ -583,6 +580,12 @@ void ClearableSpinBox::setXValues(const QVector<double> &values)
 
 void ClearableSpinBox::moveTo(double xValue)
 {
+    if (qIsNaN(xValue)) {
+        //xValue не изменилась, перемещаем только yValue
+        emit valueChanged({xVal, yVal});
+        return;
+    }
+
     if (qFuzzyIsNull(step) && !xValues.isEmpty()) {
         //moving to the nearest xValue from xValues
         auto currentIndex = closest(xValues.begin(), xValues.end(), xVal);
@@ -602,7 +605,9 @@ void ClearableSpinBox::moveTo(double xValue)
 
 void ClearableSpinBox::moveTo(const QPair<double, double> &position)
 {
-    yVal = position.second;
+    //если координата Y действительная, запоминаем ее
+    if (!qIsNaN(position.second))
+        yVal = position.second;
     moveTo(position.first);
 }
 

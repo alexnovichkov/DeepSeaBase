@@ -39,7 +39,9 @@ void ZoomStack::addZoom(ZoomStack::zoomCoordinates coords, bool addToStack)
     if (coords.coords.isEmpty()) {
         return;
     }
-    if (addToStack) zoomStack.push(coords);
+    if (addToStack) {
+        zoomStack.push(coords);
+    }
 
     if (coords.coords.contains(QwtAxis::xBottom))
         horizontalScaleBounds->set(coords.coords.value(QwtAxis::xBottom).x(),

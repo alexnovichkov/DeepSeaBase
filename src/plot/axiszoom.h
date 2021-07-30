@@ -16,12 +16,23 @@ public:
     ZoomStack::zoomCoordinates proceedAxisZoom(QMouseEvent *, QwtAxisId axis);
     ZoomStack::zoomCoordinates endAxisZoom(QMouseEvent *, QwtAxisId axis);
 signals:
-    void xAxisClicked(double xValue, bool second);
-    void yAxisClicked(double xValue, bool second);
+    void axisClicked(const QPointF &value, bool second);
     void needsAutoscale(QwtAxisId axis);
     void hover(QwtAxisId axis, int hover); //0=none, 1=first half, 2 = second half
 
 private:
+    // Значения типа текущего преобразования графика
+    // ctNone - нет преобразования
+    // ctLeft - режим изменения левой границы
+    // ctRight - режим изменения правой границы
+    // ctBottom - режим изменения нижней границы
+    // ctTop - режим изменения верхней границы
+    enum class ConvType {ctNone,
+                   ctLeft,
+                   ctRight,
+                   ctBottom,
+                   ctTop};
+
     Plot *plot;
 
     QCursor cursor;        // Буфер для временного хранения курсора
@@ -43,7 +54,7 @@ private:
     double limitScale(double,double);
     ZoomStack::zoomCoordinates axisApplyMove(QPoint, QwtAxisId);
 
-    ZoomStack::ConvType ct = ZoomStack::ctNone;
+    ConvType ct = ConvType::ctNone;
 };
 
 #endif // QAXISZOOMSVC_H

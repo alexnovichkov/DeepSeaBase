@@ -169,9 +169,9 @@ Plot::Plot(QWidget *parent) :
     setAxisScaleDraw(yLeftAxis, new ScaleDraw());
     setAxisScaleDraw(yRightAxis, new ScaleDraw());
 
-    this->axisWidget(xBottomAxis)->setMouseTracking(true);
-    this->axisWidget(yLeftAxis)->setMouseTracking(true);
-    this->axisWidget(yRightAxis)->setMouseTracking(true);
+    axisWidget(xBottomAxis)->setMouseTracking(true);
+    axisWidget(yLeftAxis)->setMouseTracking(true);
+    axisWidget(yRightAxis)->setMouseTracking(true);
 
     trackingPanel = new TrackingPanel(this);
     trackingPanel->setVisible(false);
@@ -218,8 +218,7 @@ Plot::Plot(QWidget *parent) :
     plotZoom = new PlotZoom(this);
 
     axisZoom = new AxisZoom(this);
-    connect(axisZoom,SIGNAL(xAxisClicked(double,bool)), trackingPanel, SLOT(setXValue(double,bool)));
-    connect(axisZoom,SIGNAL(yAxisClicked(double,bool)), trackingPanel, SLOT(setYValue(double,bool)));
+    connect(axisZoom,SIGNAL(axisClicked(QPointF,bool)),   trackingPanel, SLOT(setValue(QPointF,bool)));
     connect(axisZoom,SIGNAL(hover(QwtAxisId,int)), SLOT(hoverAxis(QwtAxisId,int)));
 
     canvasFilter = new CanvasEventFilter(this);

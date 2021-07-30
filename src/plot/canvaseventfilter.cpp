@@ -177,7 +177,7 @@ void CanvasEventFilter::procAxisEvent(QwtAxisId axis, QEvent *event)
         }
         case QEvent::MouseMove: {
             auto coords = axisZoom->proceedAxisZoom(mEvent, axis);
-            zoomStack->addZoom(coords, false);
+            if (!coords.coords.isEmpty()) zoomStack->addZoom(coords, false);
             break;
         }
         case QEvent::MouseButtonRelease: {
