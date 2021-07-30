@@ -36,7 +36,6 @@ DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
 
 DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString &fileName, QVector<int> indexes)
     : FileDescriptor(fileName)
-
 {
     setDataDescription(other.dataDescription());
     dataDescription().put("source.file", other.fileName());
@@ -81,11 +80,11 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
     }
     //остальные каналы
     for (int i: indexes) {
-        DfdChannel *c = new DfdChannel(*other.channel(i), this);
-
         Channel *sourceChannel = other.channel(i);
         bool populated = sourceChannel->populated();
         if (!populated) sourceChannel->populate();
+
+        DfdChannel *c = new DfdChannel(*sourceChannel, this);
         c->write(w, sourceChannel->data()); //данные берутся из sourceChannel
 
         if (!populated)
@@ -1034,42 +1033,35 @@ void Process::write(QTextStream &dfd)
     for (auto [key, v] : asKeyValueRange(d->data)) {
         QString val = v.toString();
         if (key == "function.averaging") {
-            if (val == "linear") dfd << "TypeAver="<<"линейное"<<endl;
-            else if (val == "exponential") dfd << "TypeAver="<<"линейное"<<endl;
-            else if (val == "peak hold") dfd << "TypeAver="<<"хранение максимума"<<endl;
-            else if (val == "energetic") dfd << "TypeAver="<<"энергетическое"<<endl;
-            else if (val == "no") dfd << "TypeAver="<<"без усреднения"<<endl;
+            if (val == "linear") val="линейное";
+            else if (val == "exponential") val="экспоненциальное";
+            else if (val == "peak hold") val="хранение максимума";
+            else if (val == "energetic") val="энергетическое";
+            else if (val == "no") val="без усреднения";
+            dfd << "TypeAver="<<val<<endl;
         }
         else if (key == "function.averagingCount") {
             dfd << "NAver=" << val << endl;
         }
         else if (key == "function.window") {
-            QString window = val;
-            if (val.toLower() == "hann" || val.toLower() == "hanning") window = "Хеннинга";
-            else if (val.toLower() == "hamming") window = "Хемминга";
-            else if (val.toLower() == "nuttall") window = "Натолл";
-            else if (val.toLower() == "gauss") window = "Гаусс";
-            else if (val.toLower() == "square") window = "Прямоуг.";
-            else if (val.toLower() == "bartlett") window = "Бартлетта";
-            dfd << "Wind=" << window << endl;
+            if (val.toLower() == "hann" || val.toLower() == "hanning") val = "Хеннинга";
+            else if (val.toLower() == "hamming") val = "Хемминга";
+            else if (val.toLower() == "nuttall") val = "Натолл";
+            else if (val.toLower() == "gauss") val = "Гаусс";
+            else if (val.toLower() == "square") val = "Прямоуг.";
+            else if (val.toLower() == "bartlett") val = "Бартлетта";
+            dfd << "Wind=" << val << endl;
         }
         else if (key == "function.blockSize")
             dfd << "BlockIn=" << val << endl;
         else if (key == "function.channels")
             dfd << "ProcChansList=" << val << endl;
         else if (key == "function.referenceDescription") {
-            ref = val;
-            if (!ref.isEmpty()) dfd << "pBaseChan=" << ref << endl;
+            if (!val.isEmpty()) dfd << "pBaseChan=" << val << endl;
         }
         else if (key.startsWith("function."))
             dfd << key.section('.',1) << "=" << val << endl;
     }
-
-//    for (auto it = d->data.constBegin(); it != d->data.constEnd(); ++it) {
-//        QString key = it.key();
-//        QString val = it.value().toString();
-
-//    }
 }
 
 void Source::read(DfdSettings &dfd)

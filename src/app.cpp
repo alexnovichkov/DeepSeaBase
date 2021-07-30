@@ -59,10 +59,10 @@ F Application::addFile(const FileDescriptor &source, const QString &name, const 
     }
 
     F f(FormatFactory::createDescriptor(source, name, indexes));
-    if (f)
+    if (f) {
         files.insert(name, f);
-    if (isNew) *isNew = true;
-
+        if (isNew) *isNew = true;
+    }
     return f;
 }
 
