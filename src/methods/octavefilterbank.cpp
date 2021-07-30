@@ -50,9 +50,9 @@ QVector<double> decimate(const QVector<double> &x, int q)
 
 QVector<QVector<double>> OctaveFilterBank::compute(QVector<double> timeData, double sampleRate, double logref)
 {DD;
-    int N = 8;  // Order of analysis filters.
+    int N = 6;  // Order of analysis filters.
     int decimation = 10; //величина децимации
-    int decimationFactor = 20; // All filters below range Fc/decimationFactor will be implemented after a decimation.
+    int decimationFactor = 200; // All filters below range Fc/decimationFactor will be implemented after a decimation.
 
     QVector<double> P(freqs.size());
 
@@ -86,9 +86,9 @@ QVector<QVector<double>> OctaveFilterBank::compute(QVector<double> timeData, dou
     double f2 = 1.0 * fd;
 
 
-
+    // computing bands without decimation
     for (int i = upperFrequency; i>decimationFrequency; --i) {
-        Filtering filt(timeData.size(), Filtering::BandPass, Filtering::ChebyshevI);
+        Filtering filt(timeData.size(), Filtering::BandPass, Filtering::Butterworth);
         filt.setParameters({sampleRate,
                             double(N),
                             freqs[i]*(f2+f1)/2.0,
@@ -104,19 +104,22 @@ QVector<QVector<double>> OctaveFilterBank::compute(QVector<double> timeData, dou
     //Lower frequencies, decimation
     if (decimationFrequency >= lowerFrequency) {
         timeData = decimate(timeData, decimation);
+        sampleRate /= decimation;
     }
 
-
-    for (int i=decimationFrequency; i>=lowerFrequency; --i) {
-        Filtering filt1(timeData.size(), Filtering::BandPass, Filtering::ChebyshevI);
-        filt1.setParameters({sampleRate/decimation, double(N), freqs[i]*(f2+f1)/2.0, freqs[i]*(f2-f1)});
+    while (decimationFrequency >= lowerFrequency ) {
+        Filtering filt(timeData.size(), Filtering::BandPass, Filtering::Butterworth);
+        filt.setParameters({sampleRate, double(N),
+                            freqs[decimationFrequency]*(f2+f1)/2.0,
+                            freqs[decimationFrequency]*(f2-f1)});
 
         QVector<double> y = timeData;
         double *data = y.data();
-        filt1.apply(data);
-
-        P[i] = leq(y, logref);
+        filt.apply(data);
+        P[decimationFrequency] = leq(y, logref);
+        decimationFrequency--;
     }
+
     correctedFreqs = freqs.mid(lowerFrequency, upperFrequency-lowerFrequency+1);
     return {freqs.mid(lowerFrequency, upperFrequency-lowerFrequency+1), P.mid(lowerFrequency, upperFrequency-lowerFrequency+1)};
 }

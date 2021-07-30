@@ -41,8 +41,10 @@ void Filtering::setParameter(int paramType, double value)
 void Filtering::setParameters(const QVector<double> &params)
 {
     Dsp::Params p = f->getDefaultParams();
-    for (int i=0; i<8; ++i)
-        if (params.size()>i) p[i] = params.at(i);
+    for (int i=0; i<params.size(); ++i) {
+        int index = f->findParamId(i);
+        if (index>-1) p[index] = params.at(i);
+    }
     f->setParams(p);
 }
 

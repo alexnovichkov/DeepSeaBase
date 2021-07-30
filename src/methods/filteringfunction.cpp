@@ -307,17 +307,32 @@ bool FilteringFunction::compute(FileDescriptor *file)
     filtering.setApproximation(map.value("approximation").toInt());
     filtering.create();
     //set params
-    filtering.setParameter(Filtering::idOrder,       map.value("order", 8).toDouble());
-    filtering.setParameter(Filtering::idSampleRate,  m_input->getParameter("?/sampleRate").toDouble());
-    filtering.setParameter(Filtering::idFrequency,   map.value("frequency", 1000.0).toDouble());
-    filtering.setParameter(Filtering::idQ,           map.value("Q", 1.0).toDouble());
-    filtering.setParameter(Filtering::idBandwidth,   map.value("bandwidth", 1.0).toDouble());
-    filtering.setParameter(Filtering::idBandwidthHz, map.value("bandwidthHz", 0.0).toDouble());
-    filtering.setParameter(Filtering::idGain,        map.value("gain", -6.0).toDouble());
-    filtering.setParameter(Filtering::idSlope,       map.value("slope", 1.0).toDouble());
-    filtering.setParameter(Filtering::idRippleDb,    map.value("rippleDb", 0.01).toDouble());
-    filtering.setParameter(Filtering::idStopDb,      map.value("stopDb", 48.0).toDouble());
-    filtering.setParameter(Filtering::idRolloff,     map.value("rolloff", 0.0).toDouble());
+
+    QVector<double> params {
+        m_input->getParameter("?/sampleRate").toDouble(),
+                map.value("frequency", 1000.0).toDouble(),
+                map.value("Q", 1.0).toDouble(),
+                map.value("bandwidth", 1.0).toDouble(),
+                map.value("bandwidthHz", 0.0).toDouble(),
+                map.value("gain", -6.0).toDouble(),
+                map.value("slope", 1.0).toDouble(),
+                map.value("order", 8).toDouble(),
+                map.value("rippleDb", 0.01).toDouble(),
+                map.value("stopDb", 48.0).toDouble(),
+                map.value("rolloff", 0.0).toDouble()
+    };
+    filtering.setParameters(params);
+//    filtering.setParameter(Filtering::idOrder,       map.value("order", 8).toDouble());
+//    filtering.setParameter(Filtering::idSampleRate,  m_input->getParameter("?/sampleRate").toDouble());
+//    filtering.setParameter(Filtering::idFrequency,   map.value("frequency", 1000.0).toDouble());
+//    filtering.setParameter(Filtering::idQ,           map.value("Q", 1.0).toDouble());
+//    filtering.setParameter(Filtering::idBandwidth,   map.value("bandwidth", 1.0).toDouble());
+//    filtering.setParameter(Filtering::idBandwidthHz, map.value("bandwidthHz", 0.0).toDouble());
+//    filtering.setParameter(Filtering::idGain,        map.value("gain", -6.0).toDouble());
+//    filtering.setParameter(Filtering::idSlope,       map.value("slope", 1.0).toDouble());
+//    filtering.setParameter(Filtering::idRippleDb,    map.value("rippleDb", 0.01).toDouble());
+//    filtering.setParameter(Filtering::idStopDb,      map.value("stopDb", 48.0).toDouble());
+//    filtering.setParameter(Filtering::idRolloff,     map.value("rolloff", 0.0).toDouble());
     //process
     output = filtering.filter(data);
     return true;
