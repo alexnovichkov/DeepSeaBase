@@ -211,40 +211,58 @@ QVariant Model::data(const QModelIndex &index, int role) const
 
     const F &d = descriptors[row];
     if (!d) return QVariant();
-
-    if (role == Qt::DisplayRole || role == Qt::EditRole) {
-        switch (column) {
-            case MODEL_COLUMN_INDEX: return row+1;
-            case MODEL_COLUMN_FILENAME: return QFileInfo(d->fileName()).completeBaseName();
-            case MODEL_COLUMN_DATETIME: return d->dateTime();
-            case MODEL_COLUMN_TYPE: return d->typeDisplay();
-            case MODEL_COLUMN_SIZE: return d->roundedSize();
-            case MODEL_COLUMN_XNAME: return d->xName();
-            case MODEL_COLUMN_XSTEP: return d->xStep();
-            case MODEL_COLUMN_CHANNELSCOUNT: return d->channelsCount();
-            case MODEL_COLUMN_DESCRIPTION: return d->dataDescription().toStringList("description").join(";");
-            case MODEL_COLUMN_LEGEND: return d->legend();
-            default: return QVariant();
-        }
-    }
-    else if (role == Qt::ForegroundRole) {
-
-    }
-    else if (role == Qt::FontRole) {
-        if (column == MODEL_COLUMN_FILENAME) {
-            if (d->hasCurves()) {
-                QFont font;// = qApp->font(); //qDebug()<<font;
-                font.setBold(true);//qDebug()<<font;
-                return font;
+    switch (role) {
+        case Qt::DisplayRole:
+        case Qt::EditRole: {
+            switch (column) {
+                case MODEL_COLUMN_INDEX: return row+1;
+                case MODEL_COLUMN_FILENAME: return QFileInfo(d->fileName()).completeBaseName();
+                case MODEL_COLUMN_DATETIME: return d->dateTime();
+                case MODEL_COLUMN_TYPE: return d->typeDisplay();
+                case MODEL_COLUMN_SIZE: return d->roundedSize();
+                case MODEL_COLUMN_XNAME: return d->xName();
+                case MODEL_COLUMN_XSTEP: return d->xStep();
+                case MODEL_COLUMN_CHANNELSCOUNT: return d->channelsCount();
+                case MODEL_COLUMN_DESCRIPTION: return d->dataDescription().toStringList("description", false).join("; ");
+                case MODEL_COLUMN_LEGEND: return d->legend();
+                default: return QVariant();
             }
+            break;
         }
-        QVariant();
-    }
-    else if (role == Qt::DecorationRole) {
-        if (column == MODEL_COLUMN_SAVE) {
-            return (d->changed() || d->dataChanged())? QIcon(":/icons/disk.png") : QVariant();
+        case Qt::ToolTipRole: {
+            switch (column) {
+                //case MODEL_COLUMN_INDEX: return row+1;
+                //case MODEL_COLUMN_FILENAME: return QFileInfo(d->fileName()).completeBaseName();
+                //case MODEL_COLUMN_DATETIME: return d->dateTime();
+                //case MODEL_COLUMN_TYPE: return d->typeDisplay();
+                //case MODEL_COLUMN_SIZE: return d->roundedSize();
+                //case MODEL_COLUMN_XNAME: return d->xName();
+                //case MODEL_COLUMN_XSTEP: return d->xStep();
+                //case MODEL_COLUMN_CHANNELSCOUNT: return d->channelsCount();
+                case MODEL_COLUMN_DESCRIPTION: return d->dataDescription().toStringList("description", true).join("\n");
+                case MODEL_COLUMN_LEGEND: return d->legend();
+                default: return QVariant();
+            }
+            break;
+        }
+        case Qt::FontRole: {
+            if (column == MODEL_COLUMN_FILENAME) {
+                if (d->hasCurves()) {
+                    QFont font;
+                    font.setBold(true);
+                    return font;
+                }
+            }
+            break;
+        }
+        case Qt::DecorationRole: {
+            if (column == MODEL_COLUMN_SAVE) {
+                if (d->changed() || d->dataChanged()) return QIcon(":/icons/disk.png");
+            }
+            break;
         }
     }
+
     return QVariant();
 }
 

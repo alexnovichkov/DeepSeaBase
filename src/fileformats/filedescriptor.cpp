@@ -832,19 +832,24 @@ DataDescription DataDescription::fromJson(const QJsonObject &o) {
 
 QStringList DataDescription::twoStringDescription() const
 {
-    QStringList result = toStringList("description");
+    QStringList result = toStringList("description", true);
     result = result.mid(0,2);
     return result;
 }
 
-QStringList DataDescription::toStringList(const QString &filter) const
+QStringList DataDescription::toStringList(const QString &filter, bool includeKeys) const
 {
     QStringList result;
     for (auto [key, val] : asKeyValueRange(data)) {
-        if (filter.isEmpty())
-            result << key+"="+val.toString();
-        else if (key.startsWith(filter+"."))
-            result << key.mid(filter.length()+1)+"="+val.toString();
+        QString s;
+        if (filter.isEmpty()) {
+            if (includeKeys) s = key+"=";
+            result << s+val.toString();
+        }
+        else if (key.startsWith(filter+".")) {
+            if (includeKeys) s = key.mid(filter.length()+1)+"=";
+            result << s+val.toString();
+        }
     }
     return result;
 }

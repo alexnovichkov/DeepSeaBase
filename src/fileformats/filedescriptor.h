@@ -55,7 +55,7 @@ struct DataDescription
     static DataDescription fromJson(const QJsonObject &o);
 
     QStringList twoStringDescription() const;
-    QStringList toStringList(const QString &filter = QString()) const;
+    QStringList toStringList(const QString &filter = QString(), bool includeKeys = true) const;
     QVariantMap filter(const QString &filter = QString()) const;
 };
 

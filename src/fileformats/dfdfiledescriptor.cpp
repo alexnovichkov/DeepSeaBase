@@ -1158,7 +1158,7 @@ DfdChannel::DfdChannel(Channel &other, DfdFileDescriptor *parent) : Channel(othe
     parent->channels << this;
 
     setDataDescription(other.dataDescription());
-    qDebug()<<dataDescription().toStringList();
+//    qDebug()<<dataDescription().toStringList();
 
     QString precision = dataDescription().get("function.precision").toString();
     if (precision == "uint8") IndType = 0x1;
