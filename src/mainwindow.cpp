@@ -538,7 +538,11 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->setOrientation(Qt::Horizontal);
 
     tab->model = new Model(tab);
-    connect(tab->model, &Model::needAddFiles, this, &MainWindow::addFiles);
+    connect(tab->model, &Model::needAddFiles, [=](const QStringList &files){
+        addFiles(files);
+        for (const QString &file: files)
+            if (!tab->folders.contains(file)) tab->folders << file;
+    });
     tab->sortModel = new SortFilterModel(tab);
     tab->sortModel->setSourceModel(tab->model);
 
