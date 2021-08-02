@@ -14,8 +14,8 @@
 #include "methods/framecutter.h"
 #include "unitsconverter.h"
 
-Converter::Converter(QList<FileDescriptor *> &base, const Parameters &p_, QObject *parent) :
-    QObject(parent), dataBase(base), p(p_), process(0)
+Converter::Converter(const QList<FileDescriptor *> &base, const Parameters &p_, QObject *parent) :
+    QObject(parent), dataBase(base), p(p_), process(nullptr)
 {DD;
     stop_ = false;
 }
@@ -86,7 +86,7 @@ void Converter::start()
 
     bool someFilesAreUff = false;
     for (FileDescriptor *file: dataBase) {
-        DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(file);
+        auto dfd = dynamic_cast<DfdFileDescriptor *>(file);
         if (!dfd) {
             someFilesAreUff = true;
             break;
@@ -134,8 +134,9 @@ void Converter::start()
 
     process->start("C://Program Files (x86)//DeepSea//DeepSea.exe",arguments);
 
-    QTimer *timer = new QTimer(this);
-    timer->setInterval(1000);
+    auto timer = new QTimer(this);
+    const int deepseaTimer = 1000;
+    timer->setInterval(deepseaTimer);
     connect(timer, SIGNAL(timeout()), this, SLOT(processTimer()));
     timer->start();
 
@@ -176,7 +177,7 @@ void Converter::finalize()
     emit finished();
 }
 
-void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString fileName)
+void Converter::moveFilesFromTempDir(const QString &tempFolderName, const QString &fileName)
 {DD;
     QString destDir = QFileInfo(fileName).canonicalPath();
     QString method = p.method->methodDll();
@@ -200,7 +201,7 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, QString file
     if (filtered.constFirst().toLower().endsWith("dfd")) {
         DfdFileDescriptor dfd(filtered.constFirst());
         dfd.read();
-        int suffixN = dfd.samplesCount() * dfd.xStep();
+        auto suffixN = static_cast<int>(dfd.samplesCount() * dfd.xStep());
         QString suffix = QString::number(suffixN);
 
         if (suffixN==0) {//третьоктава или файл с неодинаковым шагом по абсциссе

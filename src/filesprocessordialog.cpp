@@ -229,7 +229,7 @@ void FilesProcessorDialog::addProperties(AbstractFunction *f)
     QJsonDocument doc = QJsonDocument::fromJson(f->propertiesDescription().toUtf8(), &error);
     if (error.error != QJsonParseError::NoError) {
         qDebug()<<error.errorString() << error.offset;
-        qDebug()<<f->propertiesDescription();
+        qDebug()<<f->propertiesDescription().toUtf8();
         return;
     }
 

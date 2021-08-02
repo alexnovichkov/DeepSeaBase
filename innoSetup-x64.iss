@@ -79,6 +79,7 @@ Source: "E:\My\build\DeepSeaBase\src\version.js"; DestDir: "{app}"; Flags: ignor
 Source: "E:\My\build\DeepSeaBase\src\icons\*.png"; DestDir: "{app}\icons"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "E:\My\build\DeepSeaBase\vc_redist.x86.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "E:\My\build\DeepSeaBase\vc_redist.x64.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\My\build\DeepSeaBase\portable"; DestDir: "{app}"; Tasks: installmode/portable
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

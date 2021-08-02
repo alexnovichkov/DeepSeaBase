@@ -74,7 +74,6 @@ QVariant OctaveFunction::m_getProperty(const QString &property) const
 void OctaveFunction::m_setProperty(const QString &property, const QVariant &val)
 {
     if (property == "OCTF/type") {
-        qDebug()<<val;
         switch (val.toInt()) {
             case 0: bank.setType(OctaveType::Octave3); break;
             case 1: bank.setType(OctaveType::Octave1); break;

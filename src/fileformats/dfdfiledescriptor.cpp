@@ -1374,7 +1374,7 @@ void DfdChannel::populate()
             unsigned char *maxPtr = ptr + rawFile.size();
             unsigned char *ptrCurrent = ptr;
             if (!dataPositions.isEmpty()) {
-                qDebug()<<"IndType="<<IndType<<", mapped, by dataPositions";
+                //qDebug()<<"IndType="<<IndType<<", mapped, by dataPositions";
                 for (qint64 pos: dataPositions) {
                     ptrCurrent = ptr + pos;
                     QVector<double> temp = convertFrom<double>(ptrCurrent, qMin(quint64(maxPtr-ptrCurrent), blockSizeBytes), IndType);
@@ -1382,7 +1382,7 @@ void DfdChannel::populate()
                 }
             } ///!dataPositions.isEmpty()
             else {
-                qDebug()<<"IndType="<<IndType<<"blocksize"<<parent->BlockSize<<", mapped, skipping";
+                //qDebug()<<"IndType="<<IndType<<"blocksize"<<parent->BlockSize<<", mapped, skipping";
                 /*
                 * i-й отсчет n-го канала имеет номер
                 * n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
@@ -1415,7 +1415,7 @@ void DfdChannel::populate()
             if (parent->BlockSize > 0)  {
                 //с перекрытием, сначала читаем блок данных в ChanBlockSize отчетов для всех каналов
                 // если каналы имеют разный размер блоков, этот метод даст сбой
-                qDebug()<<"IndType="<<IndType<<"BlockSize="<<parent->BlockSize<<"not mapped, ovlap";
+                //qDebug()<<"IndType="<<IndType<<"BlockSize="<<parent->BlockSize<<"not mapped, ovlap";
                 const quint64 chunkSize = channelsCount * ChanBlockSize;
                 while (1) {
                     QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, IndType, &actuallyRead);
@@ -1430,7 +1430,7 @@ void DfdChannel::populate()
             }
             else {
                 //без перекрытия, читаем данные всего канала (blockSize = 0, chanBlockSize != 0)
-                qDebug()<<"IndType="<<IndType<<"BlockSize="<<parent->BlockSize<<"not mapped, without ovlap";
+                //qDebug()<<"IndType="<<IndType<<"BlockSize="<<parent->BlockSize<<"not mapped, without ovlap";
                 readStream.device()->seek(channelIndex * blockSizeBytes);
                 const quint64 chunkSize = ChanBlockSize;
                 QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, IndType, &actuallyRead);

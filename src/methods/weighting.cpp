@@ -20,4 +20,5 @@ QString Weighting::toString(Weighting::Type type)
         case Type::C: return "C";
         case Type::D: return "D";
     }
+    return "no";
 }

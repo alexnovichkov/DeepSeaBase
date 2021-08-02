@@ -39,7 +39,7 @@ class Converter : public QObject
 {
     Q_OBJECT
 public:
-    explicit Converter(QList<FileDescriptor *> &base, const Parameters &p, QObject *parent = 0);
+    explicit Converter(const QList<FileDescriptor *> &base, const Parameters &p, QObject *parent = 0);
     virtual ~Converter();
 
     QStringList getNewFiles() const {return newFiles;}
@@ -54,7 +54,7 @@ public slots:
     void processTimer();
 private:
 //    bool convert(FileDescriptor *file, const QString &tempFolderName);
-    void moveFilesFromTempDir(const QString &tempFolderName, QString destDir);
+    void moveFilesFromTempDir(const QString &tempFolderName, const QString &destDir);
     QStringList getSpfFile(const QString &dir);
     void finalize();
 

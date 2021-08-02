@@ -274,14 +274,14 @@ bool FrameCutterFunction::compute(FileDescriptor *file)
     if (!m_input) return false;
 
     output.clear();
-    int size = 0;
+//    int size = 0;
     //возвращает сразу все данные, склеенные вместе блоками размером ?/blockSize
     if (frameCutter.isEmpty()) {
         if (!m_input->compute(file)) {
             return false;
         }
         QVector<double> data = m_input->getData("input");
-        size = data.size();
+//        size = data.size();
         if (data.isEmpty()) {
             return false;
         }

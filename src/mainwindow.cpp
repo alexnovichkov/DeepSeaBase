@@ -190,7 +190,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     aboutAct = new QAction("О програме", this);
     connect(aboutAct, &QAction::triggered, [=](){
-        QString version = QString("DeepSea Database - версия %1").arg(qApp->applicationVersion());
+        QString version = QString("DeepSea Database - версия %1\n").arg(qApp->applicationVersion());
+        version.append(sizeof(int*) == sizeof(qint32) ? "32-bit версия" : "64-bit версия");
         QMessageBox::about(this, tr("О программе"), version);
     });
 

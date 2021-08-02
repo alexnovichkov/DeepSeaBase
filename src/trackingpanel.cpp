@@ -474,14 +474,6 @@ void TrackingPanel::moveCursor(Enums::Direction direction)
 {DD;
     for (int i=0; i<cursors.size(); ++i) {
         if (cursors[i]->current) {
-            Curve *c = 0;
-            for (Curve *curve:plot->curves) {
-                if (curve->highlighted) {
-                    c = curve;
-                    break;
-                }
-            }
-
             switch (direction) {
                 case Enums::Right:
                     spins[i]->moveRight();

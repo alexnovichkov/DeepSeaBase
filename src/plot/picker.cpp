@@ -151,7 +151,6 @@ void Picker::endPick(QMouseEvent *e)
         //одинарный клик мышью
         if (d_selectedCursors.isEmpty()) {
             d_selectedCursors = findCursors(endPos);
-            qDebug()<<d_selectedCursors;
             if (!d_selectedCursors.isEmpty())
                 emit axisClicked({plot->canvasMap(d_selectedCursors.first()->xAxis()).invTransform(endPos.x()),
                                   plot->canvasMap(d_selectedCursors.first()->yAxis()).invTransform(endPos.y())},
