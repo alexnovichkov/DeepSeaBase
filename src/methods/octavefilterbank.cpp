@@ -50,11 +50,15 @@ QVector<double> decimate(const QVector<double> &x, int q)
 
 QVector<QVector<double>> OctaveFilterBank::compute(QVector<double> timeData, double sampleRate, double logref)
 {DD;
-    int N = 6;  // Order of analysis filters.
+    int N = 8;  // Order of analysis filters.
     int decimation = 10; //величина децимации
     int decimationFactor = 200; // All filters below range Fc/decimationFactor will be implemented after a decimation.
 
     QVector<double> P(freqs.size());
+
+//    //use only first 2 sec of data
+//    int impulseSize = qMin(int(sampleRate/2.0), timeData.size());
+//    timeData.resize(impulseSize);
 
     //обрезаем список частот по частоте Найквиста
     int upperFrequency = freqs.size()-1;
@@ -88,11 +92,16 @@ QVector<QVector<double>> OctaveFilterBank::compute(QVector<double> timeData, dou
 
     // computing bands without decimation
     for (int i = upperFrequency; i>decimationFrequency; --i) {
-        Filtering filt(timeData.size(), Filtering::BandPass, Filtering::Butterworth);
+        Filtering filt(timeData.size(), Filtering::BandPass, Filtering::ChebyshevI);
         filt.setParameters({sampleRate,
-                            double(N),
-                            freqs[i]*(f2+f1)/2.0,
-                            freqs[i]*(f2-f1)});
+                            freqs[i]*(f2+f1)/2.0, //frequency
+                            0,// Q
+                            0,// bandwidth
+                            freqs[i]*(f2-f1),// bandwidthHz
+                            0,// gain
+                            0,// slope
+                            double(N)//order
+                           });
 
         QVector<double> y = timeData;
         double *data = y.data();
@@ -107,17 +116,23 @@ QVector<QVector<double>> OctaveFilterBank::compute(QVector<double> timeData, dou
         sampleRate /= decimation;
     }
 
-    while (decimationFrequency >= lowerFrequency ) {
-        Filtering filt(timeData.size(), Filtering::BandPass, Filtering::Butterworth);
-        filt.setParameters({sampleRate, double(N),
-                            freqs[decimationFrequency]*(f2+f1)/2.0,
-                            freqs[decimationFrequency]*(f2-f1)});
+    for (int i=decimationFrequency; i>=lowerFrequency; --i) {
+        Filtering filt1(timeData.size(), Filtering::BandPass, Filtering::ChebyshevI);
+        filt1.setParameters({sampleRate,
+                             freqs[i]*(f2+f1)/2.0, //frequency
+                             0,// Q
+                             0,// bandwidth
+                             freqs[i]*(f2-f1),// bandwidthHz
+                             0,// gain
+                             0,// slope
+                             double(N)//order
+                            });
 
         QVector<double> y = timeData;
         double *data = y.data();
-        filt.apply(data);
-        P[decimationFrequency] = leq(y, logref);
-        decimationFrequency--;
+        filt1.apply(data);
+
+        P[i] = leq(y, logref);
     }
 
     correctedFreqs = freqs.mid(lowerFrequency, upperFrequency-lowerFrequency+1);
