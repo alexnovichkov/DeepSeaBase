@@ -227,7 +227,7 @@ Averaging *averageChannels(const QList<QPair<FileDescriptor *, int> > &toMean)
 
     auto *averaging = new Averaging(Averaging::Linear, list.size());
 
-    for (Channel *ch: list) {
+    for (Channel *ch: qAsConst(list)) {
         if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
             averaging->average(ch->data()->yValuesComplex(0));
         else

@@ -788,7 +788,7 @@ void MainWindow::closeTab(int i, bool checkForCurves)
 
     if (checkForCurves) {
         for (int i=0; i<tab->model->size(); ++i) {
-            F f = tab->model->file(i);
+            const F f = tab->model->file(i);
             //use_count==3 if file is only in one tab, (1 for App, 1 for model, 1 for the prev line)
             //use_count>=4 if file is in more than one tab
             if (f.use_count()<=3 && f->hasCurves()) {
@@ -914,7 +914,7 @@ void MainWindow::addFile()
     dialog.setFileMode(QFileDialog::ExistingFiles);
 
     if (dialog.exec()) {
-        QStringList fileNames = dialog.selectedFiles();
+        const QStringList fileNames = dialog.selectedFiles();
         if (fileNames.isEmpty()) return;
         App->setSetting("lastDirectory", fileNames.constFirst());
         addFiles(fileNames);
@@ -931,7 +931,7 @@ void MainWindow::addFolder(const QString &directory, bool withAllSubfolders, boo
     processDir(directory, filesToAdd, withAllSubfolders);
 
     QStringList toAdd;
-    for (const QString &file: filesToAdd) {
+    for (const QString &file: qAsConst(filesToAdd)) {
         if (!tab->model->contains(file))
             toAdd << file;
     }
@@ -957,7 +957,7 @@ void MainWindow::deleteFiles()
 {DD;
     if (!tab) return;
 
-    auto indexes = tab->model->selected();
+    const auto indexes = tab->model->selected();
     for (int i: indexes) {
         F f = tab->model->file(i);
         //use_count==3 if file is only in one tab, (1 for App, 1 for model, 1 for the prev line)
@@ -999,7 +999,7 @@ void MainWindow::deleteChannelsBatch()
     QVector<int> channels = tab->channelModel->selected();
     if (channels.isEmpty()) return;
 
-    QList<FileDescriptor*> filesToDelete = tab->model->selectedFiles();
+    const QList<FileDescriptor*> filesToDelete = tab->model->selectedFiles();
     if (filesToDelete.isEmpty()) return;
 
     // выделен только один файл
@@ -1746,34 +1746,6 @@ void MainWindow::copyToLegend()
     }
 }
 
-//void MainWindow::calculateThirdOctave()
-//{DD;
-//    if (!tab) return;
-//    QList<FileDescriptor *> records = tab->model->selectedFiles();
-//    for (int i=records.size()-1; i>=0; --i) {
-//        if (records[i]->type() <= Descriptor::TimeResponse) {
-//            // only convert spectres
-//            records.removeAt(i);
-//        }
-//    }
-
-//    if (records.isEmpty()) {
-//        QMessageBox::warning(this,QString("DeepSea Base"),
-//                             QString("Не выделено ни одного файла со спектрами"));
-//        return;
-//    }
-
-//    QStringList toAdd;
-//    for (FileDescriptor *fd: records) {
-//        QString dfd = fd->calculateThirdOctave();
-//        if (auto f = App->find(dfd))
-//            tab->model->updateFile(f.get());
-//        else
-//           toAdd << dfd;
-//    }
-//    addFiles(toAdd);
-//}
-
 void MainWindow::calculateThirdOctave()
 {DD;
     if (!tab) return;
@@ -1793,7 +1765,7 @@ void MainWindow::calculateThirdOctave()
 
     QList<F> toAdd;
 
-    for (auto f: records) {
+    for (auto f: qAsConst(records)) {
         QString thirdOctaveFileName = createUniqueFileName("", f->fileName(), "3oct", "dfd", false);
         F newFile = App->addFile(thirdOctaveFileName);
         newFile->fillPreliminary(f);
@@ -1976,7 +1948,7 @@ void MainWindow::rescanBase()
     tab->model->clear();
     tab->filePathLabel->clear();
 
-    for (QString folder: tab->folders) {
+    for (QString folder: qAsConst(tab->folders)) {
         if (folder.endsWith(":0")) {
             folder.chop(2);
             addFolder(folder, false, false);
@@ -2844,7 +2816,7 @@ void Tab::filesSelectionChanged(const QItemSelection &newSelection, const QItemS
 
     QVector<int> indexes;
 
-    QModelIndexList list = filesTable->selectionModel()->selection().indexes();
+    const QModelIndexList list = filesTable->selectionModel()->selection().indexes();
     for (const QModelIndex &i: list) indexes << sortModel->mapToSource(i).row();
 
     std::sort(indexes.begin(), indexes.end());
@@ -2865,7 +2837,7 @@ void Tab::channelsSelectionChanged(const QItemSelection &newSelection, const QIt
 
     QVector<int> indexes;
 
-    QModelIndexList list = channelsTable->selectionModel()->selection().indexes();
+    const QModelIndexList list = channelsTable->selectionModel()->selection().indexes();
     for (const QModelIndex &i: list) indexes << i.row();
 
     std::sort(indexes.begin(), indexes.end());

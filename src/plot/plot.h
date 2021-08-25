@@ -4,7 +4,7 @@
 #include <qwt_plot.h>
 #include <qwt_plot_dict.h>
 #include <math.h>
-#include <QAudio>
+//#include <QAudio>
 
 class QwtLegend;
 class QwtPlotGrid;

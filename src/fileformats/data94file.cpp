@@ -61,7 +61,7 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVe
     //записываем количество каналов
     r << quint32(indexes.size());
 
-    for (int i: indexes) {
+    for (int i: qAsConst(indexes)) {
         Channel *sourceChannel = other.channel(i);
         Data94Channel *c = new Data94Channel(sourceChannel, this);
         c->setChanged(true);
@@ -177,7 +177,7 @@ void Data94File::write()
     r.writeRawData(json.data(), descriptionSize);
     r << quint32(channels.count());
 
-    for (Data94Channel *c: channels) {
+    for (Data94Channel *c: qAsConst(channels)) {
         c->write(r, &in, c->data()); //данные берутся из самого канала
     }
     setDataChanged(false);
@@ -283,14 +283,14 @@ void Data94File::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int>
 
     //имеющийся размер файла
     qint64 pos = 8+4+descriptionSize+4;
-    for (int i=0; i<count; ++i) {
-        pos += channels.at(i)->size;
-    }
+    for (auto c: qAsConst(channels))
+        pos += c->size;
+
     Q_ASSERT_X(pos == f.size(), "copyChannelsFrom", "maximum pos must equal to file size");
 
     r.device()->seek(pos);
 
-    for (int i: indexes) {
+    for (int i: qAsConst(indexes)) {
         Data94Channel *destChannel = new Data94Channel(sourceFile->channel(i), this);
         destChannel->setChanged(true);
         destChannel->setDataChanged(true);
@@ -604,7 +604,7 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
                     continue;
                 }
 
-                for (double v: yValues) {
+                for (double v: qAsConst(yValues)) {
                     if (sampleWidth == 4)
                         r << (float)v;
                     else
@@ -617,7 +617,7 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
                     qDebug()<<"Отсутствуют данные для записи в канале"<<name();
                     continue;
                 }
-                for (cx_double v: yValues) {
+                for (cx_double v: qAsConst(yValues)) {
                     if (sampleWidth == 4) {
                         r << (float)v.real();
                         r << (float)v.imag();
@@ -766,7 +766,7 @@ void AxisBlock::write(QDataStream &r)
         r << step;
     }
     else {
-        for (double x: values) r << float(x);
+        for (double x: qAsConst(values)) r << float(x);
     }
 }
 

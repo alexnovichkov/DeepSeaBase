@@ -54,7 +54,7 @@ int stepsToClosest(Channel *c, double val)
 
     //необходимо скопировать значения, чтобы алгоритм std::min_element не падал
     auto xValues = c->data()->xValues();
-    return closest(xValues.begin(), xValues.end(), val) - xValues.begin();
+    return closest(xValues.cbegin(), xValues.cend(), val) - xValues.cbegin();
 }
 
 double closest(Channel *c, double val)
@@ -66,7 +66,7 @@ double closest(Channel *c, double val)
 
     //необходимо скопировать значения, чтобы алгоритм std::min_element не падал
     auto xValues = c->data()->xValues();
-    return *closest(xValues.begin(), xValues.end(), val);
+    return *closest(xValues.cbegin(), xValues.cend(), val);
 }
 
 TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
@@ -156,7 +156,7 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
 
     yValuesCheckBox = new QCheckBox("Показывать уровни дискрет", this);
     connect(yValuesCheckBox, &QCheckBox::stateChanged, [=](int state){
-        for (TrackingCursor *c: cursors) {
+        for (TrackingCursor *c: qAsConst(cursors)) {
             c->showYValues = state==Qt::Checked;
             c->updateLabel();
         }
@@ -172,7 +172,7 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
 
     lay->addWidget(new QLabel("Курсоры", this), 0, 0, 1, 4);
 
-    lay->addWidget(cursorBoxes[0], 1,0);
+    lay->addWidget(cursorBoxes.at(0), 1,0);
     lay->addWidget(new QLabel("X1", this), 1, 1);
     lay->addWidget(spins[0], 1,2);
     lay->addWidget(new QLabel("ЛКМ", this), 1, 3);
@@ -212,13 +212,13 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
 TrackingPanel::~TrackingPanel()
 {DD;
     App->setSetting("cursorShowYValues", yValuesCheckBox->checkState()==Qt::Checked);
-    for (auto *cursor: cursors) {
+    for (auto *cursor: qAsConst(cursors)) {
         cursor->detach();
         delete cursor;
     }
     cursors.clear();
 
-    for (auto *d: _harmonics) {
+    for (auto *d: qAsConst(_harmonics)) {
         d->detach();
         delete d;
     }
@@ -290,8 +290,8 @@ void TrackingPanel::switchVisibility()
 {DD;
     if (isVisible()) {
         setVisible(false);
-        for (auto cursor: cursors) cursor->detach();
-        for (auto h: _harmonics) h->detach();
+        for (auto cursor: qAsConst(cursors)) cursor->detach();
+        for (auto h: qAsConst(_harmonics)) h->detach();
         cursorSpan1->detach();
         cursorSpan2->detach();
     }
@@ -306,8 +306,8 @@ void TrackingPanel::updateTrackingCursor(QPointF val, int index)
     if (!isVisible()) return;
 
     //проверяем, не нужно ли обновить значение по оси Y
-    Curve *c = 0;
-    for (Curve *cc: plot->curves) {
+    Curve *c = nullptr;
+    for (auto cc: qAsConst(plot->curves)) {
         if (cc->highlighted) {
             c = cc;
             break;
@@ -347,7 +347,7 @@ void TrackingPanel::update()
         }
         setStep(data->xStep());
 
-        for (auto spin: spins) {
+        for (auto spin: qAsConst(spins)) {
             if (data->xValuesFormat()==DataHolder::XValuesNonUniform)
                 spin->setXValues(data->xValues());
             spin->setRange(xmin,xmax);
@@ -363,7 +363,7 @@ void TrackingPanel::update()
             cursors[i]->detach();
         }
     }
-    for (auto h: _harmonics) {
+    for (auto h: qAsConst(_harmonics)) {
         if (harmonics->checkState() == Qt::Checked && isVisible()) {
             h->attach(plot);
         }
@@ -408,7 +408,7 @@ void TrackingPanel::update()
     QVector<QVector<double> > yValues(4);
     QVector<QVector<QColor> > colors(4);
 
-    for (Curve *c: plot->curves) {
+    for (Curve *c: qAsConst(plot->curves)) {
         QVector<int> steps(4);
 
         steps[minBorder] = stepsToClosest(c->channel, leftBorder);
@@ -422,7 +422,7 @@ void TrackingPanel::update()
 
 
         if (computeEnergy) {
-            QVector<double> values = c->channel->data()->linears();
+            QVector<double> values = c->channel->data()->linears(0);
             for (int i=steps[minBorder]; i<=steps[maxBorder]; ++i) {
                 double v2 = values[i];
                 if (c->channel->data()->yValuesUnits() != DataHolder::YValuesUnits::UnitsQuadratic)
@@ -464,10 +464,8 @@ void TrackingPanel::update()
 
 void TrackingPanel::changeSelectedCursor(TrackingCursor *cursor)
 {
-    if (!cursors.contains(cursor)) return;
-
-    for (int i=0; i<cursors.size(); ++i)
-        cursors[i]->setCurrent(cursors[i] == cursor);
+    for (auto c: qAsConst(cursors))
+        c->setCurrent(c == cursor);
 }
 
 void TrackingPanel::moveCursor(Enums::Direction direction)
@@ -516,9 +514,9 @@ void TrackingPanel::closeEvent(QCloseEvent *event)
 
 void TrackingPanel::hideEvent(QHideEvent *event)
 {
-    for (auto *c: cursors)
+    for (auto *c: qAsConst(cursors))
         c->detach();
-    for (auto *d: _harmonics)
+    for (auto *d: qAsConst(_harmonics))
         d->detach();
 
     cursorSpan1->detach();
@@ -580,8 +578,8 @@ void ClearableSpinBox::moveTo(double xValue)
 
     if (qFuzzyIsNull(step) && !xValues.isEmpty()) {
         //moving to the nearest xValue from xValues
-        auto currentIndex = closest(xValues.begin(), xValues.end(), xVal);
-        auto newIndex = closest(xValues.begin(), xValues.end(), xValue);
+        auto currentIndex = closest(xValues.cbegin(), xValues.cend(), xVal);
+        auto newIndex = closest(xValues.cbegin(), xValues.cend(), xValue);
         if (auto distance = std::distance(currentIndex, newIndex); distance != 0) {
             stepBy(distance);
         }
@@ -658,8 +656,8 @@ void ClearableSpinBox::stepBy(int steps)
 QAbstractSpinBox::StepEnabled ClearableSpinBox::stepEnabled() const
 {
     if (qFuzzyIsNull(step) && !xValues.isEmpty()) {
-        if (closest(xValues.begin(), xValues.end(), xVal)==xValues.begin()) return StepUpEnabled;
-        if (closest(xValues.begin(), xValues.end(), xVal)==xValues.end()-1) return StepDownEnabled;
+        if (closest(xValues.cbegin(), xValues.cend(), xVal)==xValues.cbegin()) return StepUpEnabled;
+        if (closest(xValues.cbegin(), xValues.cend(), xVal)==xValues.cend()-1) return StepDownEnabled;
     }
     QAbstractSpinBox::StepEnabled res = 0;
     if (xVal > min) res |= StepDownEnabled;
@@ -683,75 +681,3 @@ QSize ClearableSpinBox::minimumSizeHint() const
     s.setWidth(50);
     return s;
 }
-
-//SpinBox::SpinBox(QWidget *parent) : QDoubleSpinBox(parent)
-//{
-
-//}
-
-//void SpinBox::moveTo(double val)
-//{
-//    setValue(val);
-//}
-
-//int getDecimals(double val)
-//{
-//    QString s = QString::number(val, 'f',20);
-//    while (s[s.length()-1]=='0') s.chop(1);
-
-//    int index = s.indexOf('.');
-
-//    //удаляем нули в середине
-//    int zeros = s.indexOf("000", index);
-//    if (zeros == index+1) zeros = s.indexOf("000", zeros+3);
-//    if (zeros >= 0)
-//        s = s.mid(0, zeros);
-
-//    //округляем девятки
-//    int nines = s.indexOf("999", index);
-
-//    int decim = s.length()-index-1;
-//    if (nines >= 0) decim = nines-index-1;
-//    return decim;
-//}
-
-//void SpinBox::setStep(double step)
-//{
-//    if (!qFuzzyIsNull(step)) {
-//        setDecimals(getDecimals(step));
-//    }
-
-//    setSingleStep(step);
-//    if (!qFuzzyIsNull(step)) xValues.clear();
-//}
-
-//void SpinBox::setXValues(const QVector<double> &values)
-//{
-//    xValues = values;
-//    int decim = 0;
-//    for (double val: xValues) {
-//        int d = getDecimals(val);
-//        if (d > decim) decim = d;
-//    }
-
-//    setDecimals(decim);
-//    setSingleStep(0);
-//}
-
-//void SpinBox::moveLeft()
-//{
-//    if (!xValues.isEmpty()) {
-//        int oldIndex = xValues.indexOf(value());
-//        if (oldIndex>0) setValue(xValues[oldIndex-1]);
-//    }
-//    else stepBy(-1);
-//}
-
-//void SpinBox::moveRight()
-//{
-//    if (!xValues.isEmpty()) {
-//        int oldIndex = xValues.indexOf(value());
-//        if (oldIndex<xValues.size()-1) setValue(xValues[oldIndex+1]);
-//    }
-//    else stepBy(1);
-//}

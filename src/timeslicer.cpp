@@ -30,7 +30,7 @@ void TimeSlicer::start()
 //    progress.setWindowModality(Qt::WindowModal);
 
     int i=0;
-    for (FileDescriptor *file: dataBase) {
+    for (FileDescriptor *file: qAsConst(dataBase)) {
         if (QThread::currentThread()->isInterruptionRequested()) {
             finalize();
             return;

@@ -122,7 +122,8 @@ bool AbstractAlgorithm::propertyShowsFor(AbstractFunction *function, const QStri
 {DD;
     if (property.isEmpty()) return true;
 
-    for (AbstractFunction *f: functions()) {
+    const auto list = functions();
+    for (AbstractFunction *f: list) {
         if (f == function && property.startsWith(f->name()+"/")) {
             return f->propertyShowsFor(property);
         }
@@ -135,7 +136,8 @@ QVariant AbstractAlgorithm::getParameter(AbstractFunction *function, const QStri
 {DD;
     if (property.isEmpty()) return QVariant();
 
-    for (AbstractFunction *f: functions()) {
+    const auto list = functions();
+    for (AbstractFunction *f: list) {
         if (f == function && property.startsWith(f->name()+"/")) {
             return f->getParameter(property);
         }
@@ -148,7 +150,8 @@ void AbstractAlgorithm::setParameter(AbstractFunction *function, const QString &
 {DD;
     if (property.isEmpty()) return;
 
-    for (AbstractFunction *f: functions()) {
+    const auto list = functions();
+    for (AbstractFunction *f: list) {
         if (f == function && property.startsWith(f->name()+"/")) {
             f->setParameter(property, val);
             return;
@@ -229,7 +232,7 @@ void AbstractAlgorithm::start()
 
 
 
-    for (FileDescriptor *file: m_dataBase) {
+    for (FileDescriptor *file: qAsConst(m_dataBase)) {
         emit message(QString("Расчет для файла\n%1").arg(file->fileName()));
         if (!compute(file)) {
             emit message("Не удалось сконвертировать файл " + file->fileName());

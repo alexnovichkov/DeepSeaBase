@@ -67,7 +67,7 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
             //заблокировано изменение в нескольких каналах
 //            selected = selectedChannels();
 //            if (selected.isEmpty())
-                selected << channels[current];
+                selected << channels.at(current);
             if (selected.size()>1) {
                 QMessageBox box;
                 box.setText(QString("Значение \"%1\" будет записано во все \nвыделенные каналы").arg(currentEdited.value));
@@ -92,25 +92,25 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
             }
 
             for (auto c: selected) {
-                if (c->dataDescription().get(channelProperties[i].name).toString() != currentEdited.value) {
-                    c->dataDescription().put(channelProperties[i].name, currentEdited.value);
+                if (c->dataDescription().get(channelProperties.at(i).name).toString() != currentEdited.value) {
+                    c->dataDescription().put(channelProperties.at(i).name, currentEdited.value);
                     c->setChanged(true);
                     c->descriptor()->setChanged(true);
                 }
             }
         });
-        connect(channelProperties[i].edit, &QLineEdit::textEdited, [=](const QString &newVal) {
+        connect(channelProperties.at(i).edit, &QLineEdit::textEdited, [=](const QString &newVal) {
             if (current < 0 || current >= channels.size()) return;
             currentEdited.index = i;
             currentEdited.value = newVal;
         });
         if (i==4 || i==7)
-            channelProperties[i].edit->setEnabled(false);
-        propertiesFL->addRow(channelProperties[i].displayName, channelProperties[i].edit);
+            channelProperties.at(i).edit->setEnabled(false);
+        propertiesFL->addRow(channelProperties.at(i).displayName, channelProperties.at(i).edit);
     }
     for (int i=0; i<dataProperties.size(); ++i) {
         dataProperties[i].label = new QLabel(this);
-        propertiesFL->addRow(dataProperties[i].displayName, dataProperties[i].label);
+        propertiesFL->addRow(dataProperties.at(i).displayName, dataProperties.at(i).label);
     }
     properties->setLayout(propertiesFL);
     QScrollArea *scroll1 = new QScrollArea(this);
@@ -168,35 +168,35 @@ void ChannelPropertiesDialog::currentChannelChanged(QTreeWidgetItem *cur, QTreeW
         current = channelsTable->indexOfTopLevelItem(cur);
         QString s;
         Channel *d = channels.at(current);
-        channelProperties[0].edit->setText(d->name());
-        channelProperties[1].edit->setText(d->description());
-        channelProperties[2].edit->setText(d->dataDescription().get("sensorName").toString());
-        channelProperties[3].edit->setText(d->dataDescription().get("sensorID").toString());
+        channelProperties.at(0).edit->setText(d->name());
+        channelProperties.at(1).edit->setText(d->description());
+        channelProperties.at(2).edit->setText(d->dataDescription().get("sensorName").toString());
+        channelProperties.at(3).edit->setText(d->dataDescription().get("sensorID").toString());
         QDateTime dt = d->dataDescription().get("dateTime").toDateTime();
         if (dt.isValid() && !d->dataDescription().get("dateTime").toString().isEmpty())
             s = dt.toString("d MMMM yyyy, hh:mm:ss");
         else
             s.clear();
-        channelProperties[4].edit->setText(s);
-        channelProperties[5].edit->setText(d->dataDescription().get("xname").toString());
-        channelProperties[6].edit->setText(d->dataDescription().get("yname").toString());
-        channelProperties[7].edit->setText(d->dataDescription().get("ynameold").toString());
-        channelProperties[8].edit->setText(d->dataDescription().get("zname").toString());
+        channelProperties.at(4).edit->setText(s);
+        channelProperties.at(5).edit->setText(d->dataDescription().get("xname").toString());
+        channelProperties.at(6).edit->setText(d->dataDescription().get("yname").toString());
+        channelProperties.at(7).edit->setText(d->dataDescription().get("ynameold").toString());
+        channelProperties.at(8).edit->setText(d->dataDescription().get("zname").toString());
 
-        dataProperties[0].label->setText(QString::number(d->data()->samplesCount()));
-        dataProperties[1].label->setText(QString::number(d->data()->blocksCount()));
+        dataProperties.at(0).label->setText(QString::number(d->data()->samplesCount()));
+        dataProperties.at(1).label->setText(QString::number(d->data()->blocksCount()));
         {
             const double sr = d->dataDescription().get("samplerate").toDouble();
-            if (qFuzzyIsNull(sr)) dataProperties[2].label->setText("нет данных");
-            else dataProperties[2].label->setText(QString::number(sr));
+            if (qFuzzyIsNull(sr)) dataProperties.at(2).label->setText("нет данных");
+            else dataProperties.at(2).label->setText(QString::number(sr));
         }
         {
             const double bw = d->dataDescription().get("bandwidth").toDouble();
-            if (qFuzzyIsNull(bw)) dataProperties[3].label->setText("нет данных");
-            else dataProperties[3].label->setText(QString::number(bw));
+            if (qFuzzyIsNull(bw)) dataProperties.at(3).label->setText("нет данных");
+            else dataProperties.at(3).label->setText(QString::number(bw));
         }
-        dataProperties[4].label->setText(d->dataDescription().get("function.format").toString());
-        dataProperties[5].label->setText(d->dataDescription().get("function.precision").toString());
+        dataProperties.at(4).label->setText(d->dataDescription().get("function.format").toString());
+        dataProperties.at(5).label->setText(d->dataDescription().get("function.precision").toString());
 
         auto data = d->dataDescription().filter("function");
         data.remove("format");
@@ -218,7 +218,7 @@ void ChannelPropertiesDialog::currentChannelChanged(QTreeWidgetItem *cur, QTreeW
 
         while (descriptionsLayout->rowCount()>0) descriptionsLayout->removeRow(0);
 //        int i=0;
-        for (auto [key, val]: asKeyValueRange(data)) {
+        for (const auto [key, val]: asKeyValueRange(data)) {
             descriptionsLayout->addRow(key, new QLabel(val.toString(), this));
 //            if (auto item = descriptionsTable->verticalHeaderItem(i))
 //                item->setText(key);

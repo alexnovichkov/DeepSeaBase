@@ -39,7 +39,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     filesTree->setAlternatingRowColors(true);
     filesTree->setHeaderLabels(QStringList()<<"№"<<"Файл"<<"Тип"<<"Каналы");
     int i=1;
-    for (FileDescriptor *f: dataBase)
+    for (FileDescriptor *f: qAsConst(dataBase))
         filesTree->addTopLevelItem(new QTreeWidgetItem({QString::number(i++),
                                                         f->fileName(),
                                                         f->typeDisplay(),
@@ -60,7 +60,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     functionsList->setSizePolicy(functionsList->sizePolicy().horizontalPolicy(),
                                  QSizePolicy::Expanding);
 
-    for (AbstractAlgorithm *f: algorithms) {
+    for (AbstractAlgorithm *f: qAsConst(algorithms)) {
         QTreeWidgetItem *item = new QTreeWidgetItem();
         item->setText(0, f->displayName());
         item->setText(1, f->description());
@@ -94,7 +94,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
 
     progress = new QProgressBar(this);
     int progressMax = 0;
-    for (FileDescriptor *dfd: dataBase) {
+    for (FileDescriptor *dfd: qAsConst(dataBase)) {
         progressMax += dfd->channelsCount();
     }
     progress->setRange(0, progressMax);
@@ -138,7 +138,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
 
 FilesProcessorDialog::~FilesProcessorDialog()
 {DD;
-    for (AbstractAlgorithm *f: algorithms) {
+    for (AbstractAlgorithm *f: qAsConst(algorithms)) {
         if (f) f->deleteLater();
     }
     if (thread_) {

@@ -175,7 +175,7 @@ bool DataHolder::makeCorrectionConstant()
                     }
                     else if (m_correctionType == 1) {// множитель
                         for (int i=0; i<m_yValuesComplex.size(); ++i) {
-                            double abs_ = std::abs(m_yValuesComplex[i]);
+                            double abs_ = std::abs(m_yValuesComplex.at(i));
                             if (!qFuzzyIsNull(abs_) && !qFuzzyIsNull(m_threshold)) {
                                 double delta = m_threshold * (pow(abs_/m_threshold, m_correctionValue)) / abs_;
                                 m_yValuesComplex[i].operator *=(delta);
@@ -196,7 +196,7 @@ bool DataHolder::makeCorrectionConstant()
                         if ((1.0 - m_correctionValue) >= 0.0) {
                             double thr = pow(m_threshold, 1.0 - m_correctionValue);
                             for (int i=0; i<m_yValues.size(); ++i)
-                                m_yValues[i] = thr * pow(m_yValues[i], m_correctionValue);
+                                m_yValues[i] = thr * pow(m_yValues.at(i), m_correctionValue);
                         }
                     }
                     break;
@@ -213,7 +213,7 @@ bool DataHolder::makeCorrectionConstant()
                         // если к амплитуде добавили положительное число, все в порядке.
                         // если к амплитуде добавили отрицательное число, то проверяем, чтобы амплитуда не была меньше нуля.
                         for (int i=0; i<m_yValuesComplex.size(); ++i) {
-                            double abs_ = std::abs(m_yValuesComplex[i]);
+                            double abs_ = std::abs(m_yValuesComplex.at(i));
                             if (abs_ + m_correctionValue < 0.0)
                                 m_yValuesComplex[i] = {0.0, 0.0};
                             else if (abs_ > 0.0)
@@ -230,9 +230,9 @@ bool DataHolder::makeCorrectionConstant()
                 case YValuesImags: {
                     if (m_correctionType == 0) {// слагаемое
                         for (int i=0; i<m_yValues.size(); ++i) {
-                            if (abs(m_yValues[i]) + m_correctionValue < 0.0)
+                            if (abs(m_yValues.at(i)) + m_correctionValue < 0.0)
                                 m_yValues[i] = 0.0;
-                            else if (m_yValues[i] >= 0.0)
+                            else if (m_yValues.at(i) >= 0.0)
                                 m_yValues[i] += m_correctionValue;
                             else
                                 m_yValues[i] -= m_correctionValue;
@@ -249,9 +249,9 @@ bool DataHolder::makeCorrectionConstant()
                     if (m_correctionType == 0) {// слагаемое
                         for (int i=0; i<m_yValues.size(); ++i) {
                             if (m_yValuesUnits == UnitsLinear)
-                                m_yValues[i] = 20.0 * log10((pow(10.0, m_yValues[i]/20.0)*m_threshold+m_correctionValue)/m_threshold);
+                                m_yValues[i] = 20.0 * log10((pow(10.0, m_yValues.at(i)/20.0)*m_threshold+m_correctionValue)/m_threshold);
                             else if (m_yValuesUnits == UnitsQuadratic)
-                                m_yValues[i] = 10.0 * log10((pow(10.0, m_yValues[i]/10.0)*m_threshold*m_threshold
+                                m_yValues[i] = 10.0 * log10((pow(10.0, m_yValues.at(i)/10.0)*m_threshold*m_threshold
                                                              +m_correctionValue)/m_threshold/m_threshold);
                         }
                     }
@@ -270,14 +270,14 @@ bool DataHolder::makeCorrectionConstant()
                 case YValuesComplex: {
                     if (m_correctionType == 0) {// слагаемое
                         for (int i=0; i<m_yValuesComplex.size(); ++i) {
-                            m_yValuesComplex[i] = {m_yValuesComplex[i].real() + m_correctionValue,
-                                                   m_yValuesComplex[i].imag()};
+                            m_yValuesComplex[i] = {m_yValuesComplex.at(i).real() + m_correctionValue,
+                                                   m_yValuesComplex.at(i).imag()};
                         }
                     }
                     else if (m_correctionType == 1) {// множитель
                         for (int i=0; i<m_yValuesComplex.size(); ++i) {
-                            m_yValuesComplex[i] = {m_yValuesComplex[i].real() * m_correctionValue,
-                                                   m_yValuesComplex[i].imag()};
+                            m_yValuesComplex[i] = {m_yValuesComplex.at(i).real() * m_correctionValue,
+                                                   m_yValuesComplex.at(i).imag()};
                         }
                     }
                     break;
@@ -290,14 +290,14 @@ bool DataHolder::makeCorrectionConstant()
                 case YValuesComplex: {
                     if (m_correctionType == 0) {// слагаемое
                         for (int i=0; i<m_yValuesComplex.size(); ++i) {
-                            m_yValuesComplex[i] = {m_yValuesComplex[i].real(),
-                                                   m_yValuesComplex[i].imag() + m_correctionValue};
+                            m_yValuesComplex[i] = {m_yValuesComplex.at(i).real(),
+                                                   m_yValuesComplex.at(i).imag() + m_correctionValue};
                         }
                     }
                     else if (m_correctionType == 1) {// множитель
                         for (int i=0; i<m_yValuesComplex.size(); ++i) {
-                            m_yValuesComplex[i] = {m_yValuesComplex[i].real(),
-                                                   m_yValuesComplex[i].imag() * m_correctionValue};
+                            m_yValuesComplex[i] = {m_yValuesComplex.at(i).real(),
+                                                   m_yValuesComplex.at(i).imag() * m_correctionValue};
                         }
                     }
                     break;
@@ -385,8 +385,6 @@ void DataHolder::setYValues(const QVector<double> &values, YValuesFormat initial
 
 bool DataHolder::setYValue(int index, double value, int block)
 {
-    Q_UNUSED(block);
-
     index += block * m_xCount;
     if (index < 0 || index >= m_xCount * m_zCount) return false;
 
@@ -408,19 +406,19 @@ bool DataHolder::setYValue(int index, double value, int block)
             case ShowAsDefault:
             case ShowAsAmplitudesInDB:
                 value = fromLog(value, m_threshold, m_yValuesUnits);
-                m_yValuesComplex[index] = std::polar(value, std::arg(m_yValuesComplex[index]));
+                m_yValuesComplex[index] = std::polar(value, std::arg(m_yValuesComplex.at(index)));
                 return true;
             case ShowAsAmplitudes:
-                m_yValuesComplex[index] = std::polar(value, std::arg(m_yValuesComplex[index]));
+                m_yValuesComplex[index] = std::polar(value, std::arg(m_yValuesComplex.at(index)));
                 return true;
             case ShowAsImags:
-                m_yValuesComplex[index] = {m_yValuesComplex[index].real(), value};
+                m_yValuesComplex[index] = {m_yValuesComplex.at(index).real(), value};
                 return true;
             case ShowAsPhases:
-                m_yValuesComplex[index] = std::polar(std::abs(m_yValuesComplex[index]), value);
+                m_yValuesComplex[index] = std::polar(std::abs(m_yValuesComplex.at(index)), value);
                 return true;
             case ShowAsReals:
-                m_yValuesComplex[index] = {value, m_yValuesComplex[index].imag()};
+                m_yValuesComplex[index] = {value, m_yValuesComplex.at(index).imag()};
                 return true;
             default: return false;
         };
@@ -430,14 +428,14 @@ bool DataHolder::setYValue(int index, double value, int block)
             case YValuesReals: {
                 if (m_yValuesPresentation == ShowAsAmplitudes) {
                     if (value < 0) return false;
-                    if (m_yValues[index] >= 0) m_yValues[index] = value;
+                    if (m_yValues.at(index) >= 0) m_yValues[index] = value;
                     else m_yValues[index] = -1.0 * value;
                     m_yValuesTemporal[index] = value;
                     return true;
                 }
                 else if (m_yValuesPresentation == ShowAsAmplitudesInDB) {
                     value = fromLog(value, m_threshold, m_yValuesUnits);
-                    if (m_yValues[index] >= 0) m_yValues[index] = value;
+                    if (m_yValues.at(index) >= 0) m_yValues[index] = value;
                     else m_yValues[index] = -1.0 * value;
                     m_yValuesTemporal[index] = value;
                     return true;
@@ -447,14 +445,14 @@ bool DataHolder::setYValue(int index, double value, int block)
             case YValuesImags: {
                 if (m_yValuesPresentation == ShowAsAmplitudes) {
                     if (value < 0) return false;
-                    if (m_yValues[index] >= 0) m_yValues[index] = value;
+                    if (m_yValues.at(index) >= 0) m_yValues[index] = value;
                     else m_yValues[index] = -1.0 * value;
                     m_yValuesTemporal[index] = value;
                     return true;
                 }
                 else if (m_yValuesPresentation == ShowAsAmplitudesInDB) {
                     value = fromLog(value, m_threshold, m_yValuesUnits);
-                    if (m_yValues[index] >= 0) m_yValues[index] = value;
+                    if (m_yValues.at(index) >= 0) m_yValues[index] = value;
                     else m_yValues[index] = -1.0 * value;
                     m_yValuesTemporal[index] = value;
                     return true;
@@ -559,7 +557,7 @@ void DataHolder::setSamplesCount(const int samplesCount)
     m_xCount = samplesCount;
 }
 
-QVector<double> DataHolder::rawYValues(int block)
+QVector<double> DataHolder::rawYValues(int block) const
 {
     if (block == -1) return m_yValues;
     return m_yValues.mid(block*m_xCount, m_xCount);
@@ -571,7 +569,7 @@ QVector<double> DataHolder::yValues(int block) const
     return m_yValuesTemporal.mid(block*m_xCount, m_xCount);
 }
 
-QVector<cx_double> DataHolder::yValuesComplex(int block)
+QVector<cx_double> DataHolder::yValuesComplex(int block) const
 {
     if (block == -1) return m_yValuesComplex;
     return m_yValuesComplex.mid(block*m_xCount, m_xCount);
@@ -596,7 +594,7 @@ double DataHolder::xValue(int i) const
     if (i<0) return 0.0;
     if (xValuesFormat() != XValuesNonUniform) return m_xBegin + m_xStep * i;
 
-    if (i<m_xValues.size()) return m_xValues[i];
+    if (i<m_xValues.size()) return m_xValues.at(i);
     return 0.0;
 }
 
@@ -729,23 +727,30 @@ int DataHolder::samplesCount() const
 QVector<double> DataHolder::linears(int block) const
 {DD;
     switch (m_yValuesFormat) {
-        case YValuesComplex: return absolutes(m_yValuesComplex.mid(block*m_xCount, m_xCount));
-        case YValuesAmplitudesInDB: return fromLog(m_yValues.mid(block*m_xCount, m_xCount),
-                                                   m_threshold, m_yValuesUnits);
+        case YValuesComplex:
+            return block==-1 ? absolutes(m_yValuesComplex)
+                             : absolutes(m_yValuesComplex.mid(block*m_xCount, m_xCount));
+        case YValuesAmplitudesInDB:
+            return block==-1 ? fromLog(m_yValues, m_threshold, m_yValuesUnits)
+                             : fromLog(m_yValues.mid(block*m_xCount, m_xCount), m_threshold, m_yValuesUnits);
         default: break;
     }
-    return m_yValues.mid(block*m_xCount, m_xCount);
+    return block==-1 ? m_yValues : m_yValues.mid(block*m_xCount, m_xCount);
 }
 
 QVector<double> DataHolder::decibels(int block) const
 {DD;
     switch (m_yValuesFormat) {
-        case YValuesComplex: return toLog(absolutes(m_yValuesComplex.mid(block*m_xCount, m_xCount)),
-                                          m_threshold, m_yValuesUnits);
-        case YValuesAmplitudesInDB: return m_yValues.mid(block*m_xCount, m_xCount);
+        case YValuesComplex:
+            return block == -1 ? toLog(absolutes(m_yValuesComplex), m_threshold, m_yValuesUnits)
+                               : toLog(absolutes(m_yValuesComplex.mid(block*m_xCount, m_xCount)),
+                                       m_threshold, m_yValuesUnits);
+        case YValuesAmplitudesInDB:
+            return block == -1 ? m_yValues : m_yValues.mid(block*m_xCount, m_xCount);
         default: break;
     }
-    return toLog(m_yValues.mid(block*m_xCount, m_xCount), m_threshold, m_yValuesUnits);
+    return block == -1 ? toLog(m_yValues, m_threshold, m_yValuesUnits)
+                       : toLog(m_yValues.mid(block*m_xCount, m_xCount), m_threshold, m_yValuesUnits);
 }
 
 QVector<double> DataHolder::toLog(const QVector<double> &values, double threshold, int units)
@@ -761,9 +766,9 @@ QVector<double> DataHolder::toLog(const QVector<double> &values, double threshol
         thr *= thr;
     }
     for (int i=0; i<values.size(); ++i) {
-        if (values[i] <= 0.0) a[i] = 0.0;
+        if (values.at(i) <= 0.0) a[i] = 0.0;
         else {
-            a[i] = factor*log10(values[i]/thr);
+            a[i] = factor*log10(values.at(i)/thr);
         }
     }
     return a;
@@ -783,7 +788,7 @@ QVector<double> DataHolder::fromLog(const QVector<double> &values, double thresh
     }
 
     for (int i=0; i<values.size(); ++i) {
-        a[i] = thr*exp(values[i]*factor);
+        a[i] = thr*exp(values.at(i)*factor);
     }
     return a;
 }
@@ -857,12 +862,11 @@ void DataHolder::recalculateMinMax()
 
 void DataHolder::recalculateYValues()
 {DD;
-    m_yValuesTemporal.clear();
-
     if (int(m_yValuesFormat) == int(m_yValuesPresentation)) {
         m_yValuesTemporal = m_yValues;
     }
     else {
+        m_yValuesTemporal.clear();
         if (m_yValuesFormat == YValuesComplex) {
             switch (m_yValuesPresentation) {
                 case ShowAsDefault:

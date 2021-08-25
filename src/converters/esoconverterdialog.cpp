@@ -216,7 +216,7 @@ bool EsoConvertor::convert()
 
     if (esoFile.xValues.size()>=3) {
         //проверяем шаг между отсчетами
-        if (qFuzzyIsNull(esoFile.xValues[0]-2.0*esoFile.xValues[1] + esoFile.xValues[2])) {
+        if (qFuzzyIsNull(esoFile.xValues.at(0)-2.0*esoFile.xValues.at(1) + esoFile.xValues.at(2))) {
             type = Spectr;
             octave = false;
         }
@@ -292,7 +292,7 @@ bool EsoConvertor::convert()
             if (octave)
                 newCh->data()->setXValues(xValues);
             else
-                newCh->data()->setXValues(xValues.constFirst(), xValues[1]-xValues[0], xValues.size());
+                newCh->data()->setXValues(xValues.constFirst(), xValues.at(1)-xValues.at(0), xValues.size());
 
             switch (col) {
                 case 0:

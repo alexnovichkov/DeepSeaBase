@@ -284,7 +284,7 @@ void FileDescriptor::calculateThirdOctave(FileDescriptor *source)
         if (!populated) ch->populate();
 
         DataHolder *data = new DataHolder;
-        auto result = thirdOctave(ch->data()->decibels(), ch->data()->xMin(), ch->data()->xStep());
+        auto result = thirdOctave(ch->data()->decibels(0), ch->data()->xMin(), ch->data()->xStep());
 
         data->setXValues(result.first);
         data->setThreshold(ch->data()->threshold());
@@ -840,7 +840,7 @@ QStringList DataDescription::twoStringDescription() const
 QStringList DataDescription::toStringList(const QString &filter, bool includeKeys) const
 {
     QStringList result;
-    for (auto [key, val] : asKeyValueRange(data)) {
+    for (const auto [key, val] : asKeyValueRange(data)) {
         QString s;
         if (filter.isEmpty()) {
             if (includeKeys) s = key+"=";
@@ -859,7 +859,7 @@ QVariantMap DataDescription::filter(const QString &filter) const
     if (filter.isEmpty()) return data;
 
     QVariantMap result;
-    for (auto [key, val] : asKeyValueRange(data)) {
+    for (const auto [key, val] : asKeyValueRange(data)) {
         if (key.startsWith(filter+".")) result.insert(key.mid(filter.length()+1), val);
     }
 

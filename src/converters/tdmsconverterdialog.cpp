@@ -132,7 +132,7 @@ void TDMSConverterDialog::chooseFiles()
 
     tree->clear();
     int i=1;
-    for (const QFileInfo &f: tdmsFiles) {
+    for (const QFileInfo &f: qAsConst(tdmsFiles)) {
         QTreeWidgetItem *item = new QTreeWidgetItem(tree);
         item->setFlags(item->flags() | Qt::ItemIsEditable);
         item->setText(0, QString::number(i++));

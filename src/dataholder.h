@@ -98,9 +98,9 @@ public:
     void setYValuesUnits(YValuesUnits yValuesUnits) {m_yValuesUnits = yValuesUnits;}
     YValuesUnits yValuesUnits() const {return m_yValuesUnits;}
 
-    QVector<double> rawYValues(int block);
+    QVector<double> rawYValues(int block) const;
     QVector<double> yValues(int block) const;
-    QVector<cx_double> yValuesComplex(int block);
+    QVector<cx_double> yValuesComplex(int block) const;
     QVector<double> xValues() const;
     QVector<double> zValues() const;
 
@@ -127,8 +127,8 @@ public:
     int blocksCount() const {return m_zCount;}
     void setBlocksCount(int count) {m_zCount = count;}
 
-    QVector<double> linears(int block = 0) const;
-    QVector<double> decibels(int block = 0) const;
+    QVector<double> linears(int block = -1) const;
+    QVector<double> decibels(int block = -1) const;
 
     static QVector<double> toLog(const QVector<double> &values, double threshold, int units);
     static QVector<double> fromLog(const QVector<double> &values, double threshold, int units);

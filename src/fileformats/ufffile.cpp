@@ -80,7 +80,7 @@ UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString 
     //заполнение каналов
 
     int id=1;
-    for (int i: indexes) {
+    for (int i: qAsConst(indexes)) {
         Channel *ch = other.channel(i);
         bool populated = ch->populated();
         if (!populated) ch->populate();
@@ -219,7 +219,7 @@ void UffFileDescriptor::read()
 
             stream << dataDescription();
 
-            for (Function *f: channels) {
+            for (Function *f: qAsConst(channels)) {
                 stream << f->dataDescription();
                 stream << f->dataPositions;
                 stream << f->dataEnds;
@@ -245,7 +245,7 @@ void UffFileDescriptor::write()
         u.write(stream);
 
         int id=1;
-        for (Function *c: channels) {
+        for (Function *c: qAsConst(channels)) {
             bool populated = c->populated();
             if (!populated) c->populate();
             c->write(stream, id);
@@ -401,8 +401,8 @@ void UffFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
     u.write(stream);
 
     int id=1;
-    for (int i=0; i<indexesVector.count(); ++i) {
-        Function *f = channels.at(indexesVector.at(i));
+    for (int i: qAsConst(indexesVector)) {
+        Function *f = channels.at(i);
         bool populated = f->populated();
         if (!populated) f->populate();
 

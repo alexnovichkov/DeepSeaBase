@@ -315,7 +315,7 @@ public:
     void slotDecimalsChanged(QtProperty *property, int prec);
     void slotValueChanged(QtProperty *property, bool val);
     void slotValueChanged(QtProperty *property, const QString &val);
-    void slotRegExpChanged(QtProperty *property, const QRegExp &regExp);
+//    void slotRegularExpressionChanged(QtProperty *property, const QRegularExpression &regularExpression);
     void slotEchoModeChanged(QtProperty *property, int);
     void slotValueChanged(QtProperty *property, const QDate &val);
     void slotRangeChanged(QtProperty *property, const QDate &min, const QDate &max);
@@ -373,7 +373,7 @@ public:
     const QString m_flagNamesAttribute;
     const QString m_maximumAttribute;
     const QString m_minimumAttribute;
-    const QString m_regExpAttribute;
+//    const QString m_regularExpressionAttribute;
     const QString m_echoModeAttribute;
     const QString m_readOnlyAttribute;
     const QString m_textVisibleAttribute;
@@ -388,7 +388,7 @@ QtVariantPropertyManagerPrivate::QtVariantPropertyManagerPrivate() :
     m_flagNamesAttribute(QLatin1String("flagNames")),
     m_maximumAttribute(QLatin1String("maximum")),
     m_minimumAttribute(QLatin1String("minimum")),
-    m_regExpAttribute(QLatin1String("regExp")),
+//    m_regularExpressionAttribute(QLatin1String("regExp")),
     m_echoModeAttribute(QLatin1String("echoMode")),
     m_readOnlyAttribute(QLatin1String("readOnly")),
     m_textVisibleAttribute(QLatin1String("textVisible"))
@@ -541,11 +541,11 @@ void QtVariantPropertyManagerPrivate::slotValueChanged(QtProperty *property, con
     valueChanged(property, QVariant(val));
 }
 
-void QtVariantPropertyManagerPrivate::slotRegExpChanged(QtProperty *property, const QRegExp &regExp)
-{
-    if (QtVariantProperty *varProp = m_internalToProperty.value(property, 0))
-        emit q_ptr->attributeChanged(varProp, m_regExpAttribute, QVariant(regExp));
-}
+//void QtVariantPropertyManagerPrivate::slotRegularExpressionChanged(QtProperty *property, const QRegularExpression &regularExpression)
+//{
+//    if (QtVariantProperty *varProp = m_internalToProperty.value(property, 0))
+//        emit q_ptr->attributeChanged(varProp, m_regularExpressionAttribute, QVariant(regularExpression));
+//}
 
 void QtVariantPropertyManagerPrivate::slotEchoModeChanged(QtProperty *property, int mode)
 {
@@ -1016,8 +1016,8 @@ QtVariantPropertyManager::QtVariantPropertyManager(QObject *parent)
     QtStringPropertyManager *stringPropertyManager = new QtStringPropertyManager(this);
     d_ptr->m_typeToPropertyManager[QVariant::String] = stringPropertyManager;
     d_ptr->m_typeToValueType[QVariant::String] = QVariant::String;
-    d_ptr->m_typeToAttributeToAttributeType[QVariant::String][d_ptr->m_regExpAttribute] =
-            QVariant::RegExp;
+//    d_ptr->m_typeToAttributeToAttributeType[QVariant::String][d_ptr->m_regularExpressionAttribute] =
+//            QVariant::RegularExpression;
     d_ptr->m_typeToAttributeToAttributeType[QVariant::String][d_ptr->m_echoModeAttribute] =
             QVariant::Int;
     d_ptr->m_typeToAttributeToAttributeType[QVariant::String][d_ptr->m_readOnlyAttribute] =
@@ -1025,8 +1025,8 @@ QtVariantPropertyManager::QtVariantPropertyManager(QObject *parent)
 
     connect(stringPropertyManager, SIGNAL(valueChanged(QtProperty *, const QString &)),
                 this, SLOT(slotValueChanged(QtProperty *, const QString &)));
-    connect(stringPropertyManager, SIGNAL(regExpChanged(QtProperty *, const QRegExp &)),
-                this, SLOT(slotRegExpChanged(QtProperty *, const QRegExp &)));
+//    connect(stringPropertyManager, SIGNAL(regularExpressionChanged(QtProperty *, const QRegularExpression &)),
+//                this, SLOT(slotRegularExpressionChanged(QtProperty *, const QRegularExpression &)));
     connect(stringPropertyManager, SIGNAL(echoModeChanged(QtProperty*,int)),
                 this, SLOT(slotEchoModeChanged(QtProperty*, int)));
     connect(stringPropertyManager, SIGNAL(readOnlyChanged(QtProperty*, bool)),
@@ -1523,8 +1523,8 @@ QVariant QtVariantPropertyManager::attributeValue(const QtProperty *property, co
             return boolManager->textVisible(internProp);
         return QVariant();
     } else if (QtStringPropertyManager *stringManager = qobject_cast<QtStringPropertyManager *>(manager)) {
-        if (attribute == d_ptr->m_regExpAttribute)
-            return stringManager->regExp(internProp);
+//        if (attribute == d_ptr->m_regularExpressionAttribute)
+//            return stringManager->regularExpression(internProp);
         if (attribute == d_ptr->m_echoModeAttribute)
             return stringManager->echoMode(internProp);
         if (attribute == d_ptr->m_readOnlyAttribute)
@@ -1778,8 +1778,8 @@ void QtVariantPropertyManager::setAttribute(QtProperty *property,
             boolManager->setTextVisible(internProp, qvariant_cast<bool>(value));
         return;
     } else if (QtStringPropertyManager *stringManager = qobject_cast<QtStringPropertyManager *>(manager)) {
-        if (attribute == d_ptr->m_regExpAttribute)
-            stringManager->setRegExp(internProp, qvariant_cast<QRegExp>(value));
+//        if (attribute == d_ptr->m_regularExpressionAttribute)
+//            stringManager->setRegularExpression(internProp, qvariant_cast<QRegularExpression>(value));
         if (attribute == d_ptr->m_echoModeAttribute)
             stringManager->setEchoMode(internProp, (EchoMode)qvariant_cast<int>(value));
         if (attribute == d_ptr->m_readOnlyAttribute)

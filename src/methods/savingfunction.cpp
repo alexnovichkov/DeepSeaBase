@@ -19,7 +19,7 @@ QString getSuffixByType(int type)
 DescriptionList processData(const QStringList &data)
 {DD;
     DescriptionList result;
-    for (const QString &s: data) {
+    for (const QString &s: qAsConst(data)) {
         QString h = s.section("=",0,0);
         QString v = s.section("=",1);
         result.append({h,v});
@@ -150,7 +150,7 @@ bool SavingFunction::compute(FileDescriptor *file)
     else {
         const QList<QVariant> abscissaData = m_input->getParameter("?/abscissaData").toList();
         QVector<double> aData;
-        for (QVariant v: abscissaData) aData << v.toDouble();
+        for (const QVariant &v: abscissaData) aData << v.toDouble();
         d->setXValues(aData);
     }
 
@@ -199,8 +199,8 @@ bool SavingFunction::compute(FileDescriptor *file)
     ch->dataDescription().put("samplerate", int(m_input->getParameter("?/sampleRate").toDouble()));
     ch->dataDescription().put("blocks", blocksCount);
 
-    for (auto i=functionDescription.data.begin(); i!=functionDescription.data.end(); ++i)
-        ch->dataDescription().put(i.key(), i.value());
+    for (const auto [key, val]: asKeyValueRange(functionDescription.data))
+        ch->dataDescription().put(key, val);
 
     //        "responseName": "lop1:1",
     //         *               "responseDirection": "+z",

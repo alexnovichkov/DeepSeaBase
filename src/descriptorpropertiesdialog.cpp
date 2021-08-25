@@ -173,7 +173,7 @@ DescriptorPropertiesDialog::DescriptorPropertiesDialog(const QList<FileDescripto
 
 void DescriptorPropertiesDialog::fillFiles()
 {
-    for(auto f: records) {
+    for(const auto f: qAsConst(records)) {
         new QTreeWidgetItem(files, {f->fileName()});
     }
 }
@@ -250,7 +250,7 @@ void DescriptorPropertiesDialog::currentFileChanged(QTreeWidgetItem *cur, QTreeW
         descriptionsTable->clearContents();
         descriptionsTable->setRowCount(data.size());
         int i=0;
-        for (auto [key, val]: asKeyValueRange(data)) {
+        for (const auto [key, val]: asKeyValueRange(data)) {
             if (auto item = descriptionsTable->verticalHeaderItem(i))
                 item->setText(key);
             else
@@ -264,7 +264,7 @@ void DescriptorPropertiesDialog::currentFileChanged(QTreeWidgetItem *cur, QTreeW
     }
     else {
         current = -1;
-        for (auto l: propertiesLabels.labels) l->clear();
+        for (auto l: qAsConst(propertiesLabels.labels)) l->clear();
 
         descriptionsTable->clearContents();
     }
@@ -302,7 +302,7 @@ void DescriptorPropertiesDialog::addProperty()
 
 void DescriptorPropertiesDialog::removeProperty()
 {
-    auto selected = descriptionsTable->selectedItems();
+    const auto selected = descriptionsTable->selectedItems();
     if (!selected.isEmpty()) {
         QSet<int> rows;
         for (auto s: selected) rows << s->row();

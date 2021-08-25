@@ -1022,7 +1022,7 @@ class QtLineEditFactoryPrivate : public EditorFactoryPrivate<QLineEdit>
 
 public:
     void slotPropertyChanged(QtProperty *property, const QString &value);
-    void slotRegExpChanged(QtProperty *property, const QRegExp &regExp);
+//    void slotRegularExpressionChanged(QtProperty *property, const QRegularExpression &regularExpression);
 	void slotEditFinished();
     void slotEchoModeChanged(QtProperty *, int);
     void slotReadOnlyChanged(QtProperty *, bool);
@@ -1045,31 +1045,31 @@ void QtLineEditFactoryPrivate::slotPropertyChanged(QtProperty *property,
     }
 }
 
-void QtLineEditFactoryPrivate::slotRegExpChanged(QtProperty *property,
-            const QRegExp &regExp)
-{
-    if (!m_createdEditors.contains(property))
-        return;
+//void QtLineEditFactoryPrivate::slotRegularExpressionChanged(QtProperty *property,
+//            const QRegularExpression &regularExpression)
+//{
+//    if (!m_createdEditors.contains(property))
+//        return;
 
-    QtStringPropertyManager *manager = q_ptr->propertyManager(property);
-    if (!manager)
-        return;
+//    QtStringPropertyManager *manager = q_ptr->propertyManager(property);
+//    if (!manager)
+//        return;
 
-    QListIterator<QLineEdit *> itEditor(m_createdEditors[property]);
-    while (itEditor.hasNext()) {
-        QLineEdit *editor = itEditor.next();
-        editor->blockSignals(true);
-        const QValidator *oldValidator = editor->validator();
-        QValidator *newValidator = 0;
-        if (regExp.isValid()) {
-            newValidator = new QRegExpValidator(regExp, editor);
-        }
-        editor->setValidator(newValidator);
-        if (oldValidator)
-            delete oldValidator;
-        editor->blockSignals(false);
-    }
-}
+//    QListIterator<QLineEdit *> itEditor(m_createdEditors[property]);
+//    while (itEditor.hasNext()) {
+//        QLineEdit *editor = itEditor.next();
+//        editor->blockSignals(true);
+//        const QValidator *oldValidator = editor->validator();
+//        QValidator *newValidator = 0;
+//        if (regularExpression.isValid()) {
+//            newValidator = new QRegularExpressionValidator(regularExpression, editor);
+//        }
+//        editor->setValidator(newValidator);
+//        if (oldValidator)
+//            delete oldValidator;
+//        editor->blockSignals(false);
+//    }
+//}
 
 void QtLineEditFactoryPrivate::slotEchoModeChanged(QtProperty *property, int echoMode)
 {
@@ -1162,8 +1162,8 @@ void QtLineEditFactory::connectPropertyManager(QtStringPropertyManager *manager)
 {
     connect(manager, SIGNAL(valueChanged(QtProperty *, const QString &)),
             this, SLOT(slotPropertyChanged(QtProperty *, const QString &)));
-    connect(manager, SIGNAL(regExpChanged(QtProperty *, const QRegExp &)),
-            this, SLOT(slotRegExpChanged(QtProperty *, const QRegExp &)));
+    connect(manager, SIGNAL(regularExpressionChanged(QtProperty *, const QRegularExpression &)),
+            this, SLOT(slotRegularExpressionChanged(QtProperty *, const QRegularExpression &)));
     connect(manager, SIGNAL(echoModeChanged(QtProperty*, int)),
             this, SLOT(slotEchoModeChanged(QtProperty *, int)));
     connect(manager, SIGNAL(readOnlyChanged(QtProperty*, bool)),
@@ -1182,11 +1182,11 @@ QWidget *QtLineEditFactory::createEditor(QtStringPropertyManager *manager,
     QLineEdit *editor = d_ptr->createEditor(property, parent);
     editor->setEchoMode((EchoMode)manager->echoMode(property));
     editor->setReadOnly(manager->isReadOnly(property));
-    QRegExp regExp = manager->regExp(property);
-    if (regExp.isValid()) {
-        QValidator *validator = new QRegExpValidator(regExp, editor);
-        editor->setValidator(validator);
-    }
+//    QRegularExpression regularExpression = manager->regularExpression(property);
+//    if (regularExpression.isValid()) {
+//        QValidator *validator = new QRegularExpressionValidator(regularExpression, editor);
+//        editor->setValidator(validator);
+//    }
     editor->setText(manager->value(property));
 
 	connect(editor, SIGNAL(editingFinished()),
@@ -1207,8 +1207,8 @@ void QtLineEditFactory::disconnectPropertyManager(QtStringPropertyManager *manag
 {
     disconnect(manager, SIGNAL(valueChanged(QtProperty *, const QString &)),
                 this, SLOT(slotPropertyChanged(QtProperty *, const QString &)));
-    disconnect(manager, SIGNAL(regExpChanged(QtProperty *, const QRegExp &)),
-                this, SLOT(slotRegExpChanged(QtProperty *, const QRegExp &)));
+//    disconnect(manager, SIGNAL(regularExpressionChanged(QtProperty *, const QRegularExpression &)),
+//                this, SLOT(slotRegularExpressionChanged(QtProperty *, const QRegularExpression &)));
     disconnect(manager, SIGNAL(echoModeChanged(QtProperty*,int)),
                 this, SLOT(slotEchoModeChanged(QtProperty *, int)));
     disconnect(manager, SIGNAL(readOnlyChanged(QtProperty*, bool)),

@@ -10,10 +10,10 @@ public:
     {
         edit = new QPlainTextEdit(this);
         QStringList data;
-        DataDescription descriptions = record->dataDescription();
-        for (auto it = descriptions.data.begin(); it != descriptions.data.end(); ++it) {
-            data << it.key()+"="+it.value().toString();
-        }
+        const DataDescription descriptions = record->dataDescription();
+        for (const auto [key,val]: asKeyValueRange(descriptions.data))
+            data << key+"="+val.toString();
+
         edit->setPlainText(data.join("\n"));
 
         QVBoxLayout *l = new QVBoxLayout;
@@ -23,7 +23,7 @@ public:
     DataDescription description()
     {
         DataDescription result;
-        QStringList list = edit->toPlainText().split("\n");
+        const QStringList list = edit->toPlainText().split("\n");
         for(const QString &s: list) {
             if (s.isEmpty()) continue;
             if (s.contains("=")) {

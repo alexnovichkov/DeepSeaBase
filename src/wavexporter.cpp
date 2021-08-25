@@ -118,7 +118,7 @@ void WavExporter::writeWithStreams(const QString &wavFileName)
         //4. очищаем данные канала
 
         QVector<QByteArray> chunkData;
-        for (int c: indexes) {
+        for (const int c: qAsConst(indexes)) {
             if (QThread::currentThread()->isInterruptionRequested()) {
                 wavFile.close();
                 qDebug()<<"Сохранение файла wav прервано";
@@ -143,7 +143,7 @@ void WavExporter::writeWithStreams(const QString &wavFileName)
                 return;
             }
 
-            for (const QByteArray &c: chunkData) {
+            for (const QByteArray &c: qAsConst(chunkData)) {
                 s.device()->write(c.mid(i*2, 2));
             }
         }
@@ -233,7 +233,7 @@ void WavExporter::start()
     if (_wavFile.isEmpty())
     _wavFile = createUniqueFileName("", file->fileName(), "", "wav", true);
 
-    if (!writeWithMap(_wavFile))
+    //if (!writeWithMap(_wavFile))
         writeWithStreams(_wavFile);
 
     finalize();

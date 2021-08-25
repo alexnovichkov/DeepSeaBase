@@ -13,7 +13,7 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
 
 Application::~Application()
 {
-    for (auto f: files) f.reset();
+    for (auto f: qAsConst(files)) f.reset();
 
     setSetting("colors", m_colors->getColors());
     delete m_colors;

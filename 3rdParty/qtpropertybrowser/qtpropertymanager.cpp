@@ -1307,12 +1307,12 @@ public:
 
     struct Data
     {
-        Data() : regExp(QString(QLatin1Char('*')),  Qt::CaseSensitive, QRegExp::Wildcard),
+        Data() : //regularExpression(".*"),
             echoMode(QLineEdit::Normal), readOnly(false)
         {
         }
         QString val;
-        QRegExp regExp;
+//        QRegularExpression regularExpression;
         int echoMode;
         bool readOnly;
     };
@@ -1401,10 +1401,10 @@ QString QtStringPropertyManager::value(const QtProperty *property) const
 
     \sa setRegExp()
 */
-QRegExp QtStringPropertyManager::regExp(const QtProperty *property) const
-{
-    return getData<QRegExp>(d_ptr->m_values, &QtStringPropertyManagerPrivate::Data::regExp, property, QRegExp());
-}
+//QRegularExpression QtStringPropertyManager::regularExpression(const QtProperty *property) const
+//{
+//    return getData<QRegularExpression>(d_ptr->m_values, &QtStringPropertyManagerPrivate::Data::regularExpression, property, QRegularExpression());
+//}
 
 /*!
     \reimp
@@ -1474,8 +1474,8 @@ void QtStringPropertyManager::setValue(QtProperty *property, const QString &val)
     if (data.val == val)
         return;
 
-    if (data.regExp.isValid() && !data.regExp.exactMatch(val))
-        return;
+//    if (data.regularExpression.isValid() && !data.regularExpression.hasMatch(val))
+//        return;
 
     data.val = val;
 
@@ -1490,23 +1490,23 @@ void QtStringPropertyManager::setValue(QtProperty *property, const QString &val)
 
     \sa regExp(), setValue(), regExpChanged()
 */
-void QtStringPropertyManager::setRegExp(QtProperty *property, const QRegExp &regExp)
-{
-    const QtStringPropertyManagerPrivate::PropertyValueMap::iterator it = d_ptr->m_values.find(property);
-    if (it == d_ptr->m_values.end())
-        return;
+//void QtStringPropertyManager::setRegularExpression(QtProperty *property, const QRegularExpression &regularExpression)
+//{
+//    const QtStringPropertyManagerPrivate::PropertyValueMap::iterator it = d_ptr->m_values.find(property);
+//    if (it == d_ptr->m_values.end())
+//        return;
 
-    QtStringPropertyManagerPrivate::Data data = it.value() ;
+//    QtStringPropertyManagerPrivate::Data data = it.value() ;
 
-    if (data.regExp == regExp)
-        return;
+//    if (data.regularExpression == regularExpression)
+//        return;
 
-    data.regExp = regExp;
+//    data.regularExpression = regularExpression;
 
-    it.value() = data;
+//    it.value() = data;
 
-    emit regExpChanged(property, data.regExp);
-}
+//    emit regularExpressionChanged(property, data.regularExpression);
+//}
 
 
 void QtStringPropertyManager::setEchoMode(QtProperty *property, EchoMode echoMode)

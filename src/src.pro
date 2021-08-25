@@ -5,7 +5,8 @@
 #-------------------------------------------------
 
 QT += core gui
-QT += widgets printsupport axcontainer multimedia
+QT += widgets printsupport
+QT += axcontainer multimedia
 
 TARGET = DeepSeaBase
 TEMPLATE = app

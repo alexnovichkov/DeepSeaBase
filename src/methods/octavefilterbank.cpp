@@ -29,6 +29,7 @@ OctaveFilterBank::OctaveFilterBank(OctaveType type, OctaveBase base) : type(type
 template <typename T>
 double leq(const QVector<T> &x, /*int T,*/ double ref=1.0)
 {DD;
+    Q_UNUSED(ref);
     const int xSize = x.size();
     T p = std::accumulate(x.constBegin(), x.constEnd(), static_cast<T>(0.0), [xSize](T v1,T v2)->T{return v1+v2*v2/xSize;});
 

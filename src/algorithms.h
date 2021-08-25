@@ -13,8 +13,8 @@ class asKeyValueRange
 {
 public:
     asKeyValueRange(T& data) : m_data{data} {}
-    auto begin() {return m_data.keyValueBegin();}
-    auto end() {return m_data.keyValueEnd();}
+    auto begin() {return m_data.constKeyValueBegin();}
+    auto end() {return m_data.constKeyValueEnd();}
 private:
     T &m_data;
 };
@@ -244,7 +244,7 @@ bool fileExists(const QString &s, const QString &suffix);
 // возвращает округленные значения переменных from и to, которые различаются как минимум в первой значащей цифре
 void getUniqueFromToValues(QString &fromString, QString &toString, double from, double to);
 
-QString stripHtml(const QString &s);
+QString stripHtml(QString s);
 
 QString doubletohex(const double d);
 

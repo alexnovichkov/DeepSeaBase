@@ -72,14 +72,14 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
     //сначала канал для данных X
     if (xChannel) {
         w.setFloatingPointPrecision(QDataStream::SinglePrecision);
-        QVector<double> vals = firstChannel->data()->xValues();
+        const QVector<double> vals = firstChannel->data()->xValues();
         DfdChannel ch(0,0);
         ch.IndType = 0xC0000004;
         for (double val: vals)
             ch.setValue(val, w);
     }
     //остальные каналы
-    for (int i: indexes) {
+    for (int i: qAsConst(indexes)) {
         Channel *sourceChannel = other.channel(i);
         bool populated = sourceChannel->populated();
         if (!populated) sourceChannel->populate();
@@ -105,7 +105,7 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
 
     //Остальные каналы
     int index = xChannel ? 1 : 0;
-    for (DfdChannel *c: channels) {
+    for (DfdChannel *c: qAsConst(channels)) {
         c->write(dfd, index++);
     }
 }
@@ -214,7 +214,7 @@ void DfdFileDescriptor::read()
 
         XName = "Гц";
         if (!xvalues.isEmpty())
-            for (DfdChannel *ch: channels)
+            for (DfdChannel *ch: qAsConst(channels))
                 ch->data()->setXValues(xvalues);
 
         if (xChannel) {
@@ -225,8 +225,8 @@ void DfdFileDescriptor::read()
     }
     //удаляем информацию о каналах из информации о файле
     DataDescription d;
-    for (auto i=dataDescription().data.begin(); i!=dataDescription().data.end(); ++i) {
-        if (!i.key().startsWith("function.")) d.put(i.key(), i.value());
+    for (const auto [key, val]: asKeyValueRange(dataDescription().data)) {
+        if (!key.startsWith("function.")) d.put(key, val);
     }
     dataDescription() = d;
 }
@@ -318,14 +318,14 @@ void DfdFileDescriptor::write()
             //сперва нулевой канал оси X
             w.setFloatingPointPrecision(QDataStream::SinglePrecision);
             if (xChannel) {
-                QVector<double> vals = channels.first()->data()->xValues();
+                const QVector<double> vals = channels.first()->data()->xValues();
                 DfdChannel ch(0,0);
                 ch.IndType = 0xC0000004;
                 for (double val: vals)
                     ch.setValue(val, w);
             }
             //остальные каналы
-            for (DfdChannel *c: channels) {
+            for (DfdChannel *c: qAsConst(channels)) {
                 bool populated = c->populated();
                 if (!populated) c->populate();
                 quint64 dataPos = w.device()->pos();
@@ -483,7 +483,7 @@ void DfdFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
         //сперва нулевой канал оси X
         w.setFloatingPointPrecision(QDataStream::SinglePrecision);
         if (xChannel) {
-            QVector<double> vals = channels.first()->data()->xValues();
+            const QVector<double> vals = channels.first()->data()->xValues();
             DfdChannel ch(0,0);
             ch.IndType = 0xC0000004;
             for (double val: vals)
@@ -745,7 +745,7 @@ bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVe
                 DfdChannel *ch = channels[indexesVector.at(ind).first];
                 qint64 dataPos = tempFile.pos();
                 //пишем канал целиком
-                for (qint64 pos: ch->dataPositions) {
+                for (qint64 pos: qAsConst(ch->dataPositions)) {
                     rawFile.seek(pos);
                     QByteArray b = rawFile.read(ch->blockSizeInBytes());
                     tempFile.write(b);
@@ -952,7 +952,7 @@ QStringList DfdFileDescriptor::suffixes()
 
 void Process::read(DfdSettings &dfd, DfdDataType dataType)
 {DD;
-    auto process = dfd.values("Process");
+    const auto process = dfd.values("Process");
     QString typeScale;
     for (const auto &val : process) {
         ///TODO: реализовать с учетом function
@@ -1030,7 +1030,7 @@ void Process::write(QTextStream &dfd)
     ///TODO: реализовать с учетом function
     QString ref = d->data.value("function.referenceName").toString();
 
-    for (auto [key, v] : asKeyValueRange(d->data)) {
+    for (const auto [key, v] : asKeyValueRange(d->data)) {
         QString val = v.toString();
         if (key == "function.averaging") {
             if (val == "linear") val="линейное";
@@ -1116,10 +1116,9 @@ DfdChannel::DfdChannel(DfdFileDescriptor *parent, int channelIndex)
         parent->channels << this;
 
         //копируем из файла описание функции
-        for (auto it = parent->dataDescription().data.begin();
-             it != parent->dataDescription().data.end(); ++it) {
-            if (it.key().startsWith("function.")) {
-                dataDescription().put(it.key(), it.value());
+        for (const auto [key, val]: asKeyValueRange(parent->dataDescription().data)) {
+            if (key.startsWith("function.")) {
+                dataDescription().put(key, val);
                 //it = parent->dataDescription().data.erase(it);
             }
         }
@@ -1375,7 +1374,7 @@ void DfdChannel::populate()
             unsigned char *ptrCurrent = ptr;
             if (!dataPositions.isEmpty()) {
                 //qDebug()<<"IndType="<<IndType<<", mapped, by dataPositions";
-                for (qint64 pos: dataPositions) {
+                for (qint64 pos: qAsConst(dataPositions)) {
                     ptrCurrent = ptr + pos;
                     QVector<double> temp = convertFrom<double>(ptrCurrent, qMin(quint64(maxPtr-ptrCurrent), blockSizeBytes), IndType);
                     YValues << temp;
@@ -1699,7 +1698,7 @@ Description::Description(DfdFileDescriptor *parent) : parent(parent)
 
 void Description::read(DfdSettings &dfd)
 {DD;
-    DescriptionList list = dfd.values("DataDescription");
+    const DescriptionList list = dfd.values("DataDescription");
 
     for (const auto &entry: list) {
         QString v = entry.second;
@@ -1719,9 +1718,9 @@ void Description::write(QTextStream &dfd)
 {DD;
     dfd << "[DataDescription]" << endl;
     const DataDescription &descr = parent->dataDescription();
-    for (auto it = descr.data.constBegin(); it != descr.data.constEnd(); ++it) {
-        if (QString key = it.key(); key.startsWith("description")) {
-            dfd << key.section('.',1) << "=\"" << it.value().toString() << "\"" << endl;
+    for (const auto [key, val]: asKeyValueRange(descr.data)) {
+        if (key.startsWith("description")) {
+            dfd << key.section('.',1) << "=\"" << val.toString() << "\"" << endl;
         }
     }
     dfd << "Legend=" << "\"" << parent->legend() << "\"" << endl;
@@ -1730,8 +1729,7 @@ void Description::write(QTextStream &dfd)
 QString Description::toString() const
 {DD;
     QStringList result;
-    for (int i=0; i<data.size(); ++i) {
-        DescriptionEntry item = data.at(i);
+    for (auto item: qAsConst(data)) {
         result.append(/*item.first+"="+*/item.second);
     }
     return result.join("; ");

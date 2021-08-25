@@ -436,7 +436,7 @@ void Plot::showContextMenu(const QPoint &pos, QwtAxisId axis)
 
             QList<FileDescriptor*> files;
 
-            for(Curve *c: curves) {
+            for (Curve *c: qAsConst(curves)) {
                 if (!files.contains(c->channel->descriptor()))
                     files << c->channel->descriptor();
             }
@@ -703,9 +703,9 @@ void Plot::setScale(QwtAxisId id, double min, double max, double step)
 
 void Plot::removeLabels()
 {
-    for (Curve *c: curves) {
+    for (Curve *c: qAsConst(curves))
         c->removeLabels();
-    }
+
    replot();
 }
 
@@ -775,11 +775,12 @@ bool Plot::hasDuplicateNames(const QString name) const
 
 void Plot::checkDuplicates(const QString name)
 {
-    QList<int> l;
-    for(int i=0; i<curves.size(); ++i) {
-        if (curves[i]->title() == name) l << i;
-    }
-    foreach(int i, l) curves[i]->duplicate = l.size()>1;
+    QVector<Curve*> l;
+    for (auto c: qAsConst(curves))
+        if (c->title() == name) l << c;
+
+    for (auto c: qAsConst(l))
+        c->duplicate = l.size()>1;
 }
 
 QString Plot::yValuesPresentationSuffix(int yValuesPresentation) const

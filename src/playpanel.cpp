@@ -88,13 +88,12 @@ void PlayPanel::update()
     int chIndex = -1;
 
     int count = 0;
-    for (int i=0; i<plot->curves.size(); ++i) {
-        Channel *c = plot->curves[i]->channel;
-        if (c->type() == Descriptor::TimeResponse) {
+    for (auto c: qAsConst(plot->curves)) {
+        if (c->channel->type() == Descriptor::TimeResponse) {
             QPixmap pix(10,10);
-            pix.fill(plot->curves[i]->pen().color());
-            channelsBox->addItem(QIcon(pix), c->name(), QVariant((qulonglong)c));
-            if (c == ch) {
+            pix.fill(c->pen().color());
+            channelsBox->addItem(QIcon(pix), c->channel->name(), QVariant((qulonglong)(c->channel)));
+            if (c->channel == ch) {
                 //раньше этот канал уже играл, поэтому мы должны восстановить положение channelsBox
                 chIndex = count;
             }

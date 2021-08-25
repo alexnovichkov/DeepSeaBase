@@ -186,7 +186,7 @@ QVector<double> absolutes(const QVector<cx_double> &values)
     QVector<double> result(size);
 
     for (int i=0; i<size; ++i) {
-        result[i] = std::abs(values[i]);
+        result[i] = std::abs(values.at(i));
     }
 
     return result;
@@ -198,7 +198,7 @@ QVector<double> absolutes(const QVector<double> &values)
     QVector<double> result(size);
 
     for (int i=0; i<size; ++i) {
-        result[i] = std::abs(values[i]);
+        result[i] = std::abs(values.at(i));
     }
 
     return result;
@@ -210,7 +210,7 @@ QVector<double> phases(const QVector<cx_double> &values)
     QVector<double> result(size);
 
     for (int i=0; i<size; ++i) {
-        result[i] = std::arg(values[i]);
+        result[i] = std::arg(values.at(i));
     }
 
     return result;
@@ -222,7 +222,7 @@ QVector<double> reals(const QVector<cx_double> &values)
     QVector<double> result(size);
 
     for (int i=0; i<size; ++i) {
-        result[i] = values[i].real();
+        result[i] = values.at(i).real();
     }
 
     return result;
@@ -244,7 +244,7 @@ QVector<double> imags(const QVector<cx_double> &values)
     QVector<double> result(size);
 
     for (int i=0; i<size; ++i) {
-        result[i] = values[i].imag();
+        result[i] = values.at(i).imag();
     }
 
     return result;
@@ -264,7 +264,7 @@ QVector<cx_double> movingAverage(const QVector<cx_double> &spectrum, int window)
     // 3. Слепляем вместе амплитуды и фазы в новый комплекснозначный вектор
     QVector<cx_double> result(numInd, cx_double());
     for(int i=0; i<numInd; ++i)
-        result[i] = std::polar(amplitudes[i], phase[i]);
+        result[i] = std::polar(amplitudes.at(i), phase.at(i));
 
     return result;
 }
@@ -279,7 +279,7 @@ QVector<double> movingAverage(const QVector<double> &spectrum, int window)
     for (int j=span; j<numInd-span; ++j) {
         double sum = 0.0;
         for (int k=0; k<window;++k) {
-            sum += spectrum[j-span+k];
+            sum += spectrum.at(j-span+k);
         }
         sum /= window;
 
@@ -288,9 +288,9 @@ QVector<double> movingAverage(const QVector<double> &spectrum, int window)
 
     //начало диапазона и конец диапазона
     for (int j=0; j<span; ++j)
-        result[j] = spectrum[j];
+        result[j] = spectrum.at(j);
     for (int j=numInd-span; j<numInd; ++j)
-        result[j] = spectrum[j];
+        result[j] = spectrum.at(j);
 
     return result;
 }
@@ -405,9 +405,9 @@ QVector<cx_double> complexes(const QVector<double> &values, bool valuesAreReals)
 
     for (int i=0; i<size; ++i) {
         if (valuesAreReals)
-            result[i] = {values[i], 0.0};
+            result[i] = {values.at(i), 0.0};
         else
-            result[i] = {0.0, values[i]};
+            result[i] = {0.0, values.at(i)};
     }
 
     return result;
@@ -420,19 +420,18 @@ QVector<cx_double> complexes(const QVector<float> &values, bool valuesAreReals)
 
     for (int i=0; i<size; ++i) {
         if (valuesAreReals)
-            result[i] = {values[i], 0.0};
+            result[i] = {values.at(i), 0.0};
         else
-            result[i] = {0.0, values[i]};
+            result[i] = {0.0, values.at(i)};
     }
 
     return result;
 }
 
-QString stripHtml(const QString &s)
+QString stripHtml(QString s)
 {
-    QString t = s;
-    t.remove(QRegExp("<[^>]*>"));
-    return t;
+    s.remove(QRegularExpression("<[^>]*>"));
+    return s;
 }
 
 void processDir(const QString &file, QStringList &files, bool includeSubfolders)

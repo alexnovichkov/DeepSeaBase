@@ -42,7 +42,7 @@ QVariant OctaveFunction::m_getProperty(const QString &property) const
     if (m_input && property.startsWith("?/")) {
         if (property == "?/octaveFormat") return static_cast<int>(bank.getType());
         if (property == "?/abscissaData") {
-            auto data = bank.getFrequencies(true);
+            const auto data = bank.getFrequencies(true);
             QVariantList l;
             for (double x: data) l << x;
             return l;

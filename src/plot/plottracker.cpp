@@ -73,7 +73,8 @@ void PlotTracker::maybeHover(const QPointF &pos)
 {
     bool found = false;
 
-    for (auto it: plot->itemList(QwtPlotItem::Rtti_PlotMarker)) {
+    const auto list = plot->itemList(QwtPlotItem::Rtti_PlotMarker);
+    for (auto it: list) {
         if (auto *c = dynamic_cast<TrackingCursor *>(it)) {
             if (!c->isVisible()) {
                 continue;

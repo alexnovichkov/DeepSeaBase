@@ -39,7 +39,7 @@ void Model::setSelected(const QVector<int> &indexes)
 QList<FileDescriptor *> Model::selectedFiles(const QVector<Descriptor::DataType> &types) const
 {DD;
     QList<FileDescriptor *> files;
-    for (int i: indexes) {
+    for (int i: qAsConst(indexes)) {
         if (types.contains(descriptors.at(i)->type()) || types.isEmpty())
             files << descriptors.at(i).get();
     }
@@ -48,7 +48,7 @@ QList<FileDescriptor *> Model::selectedFiles(const QVector<Descriptor::DataType>
 
 void Model::setChannelProperty(int channel, const QString &property, const QString &value)
 {
-    for (int i: indexes) {
+    for (int i: qAsConst(indexes)) {
         if (Channel *ch = descriptors[i]->channel(channel)) {
             if (ch->dataDescription().get(property) != value) {
                 ch->dataDescription().put(property, value);
@@ -133,7 +133,7 @@ void Model::save()
 
 void Model::discardChanges()
 {DD;
-    for (auto f: descriptors) {
+    for (auto f: qAsConst(descriptors)) {
         f->setChanged(false);
         f->setDataChanged(false);
         for (int j=0; j<f->channelsCount(); ++j) {
@@ -383,7 +383,7 @@ bool Model::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, 
 
 
     QStringList filters = FormatFactory::allSuffixes(true);
-    QList<QUrl> urlList = data->urls();
+    const QList<QUrl> urlList = data->urls();
     QStringList filesToAdd;
     for (const QUrl &url: urlList) {
         QString s=url.toLocalFile();

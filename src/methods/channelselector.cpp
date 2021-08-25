@@ -31,7 +31,7 @@ void ChannelSelector::addIndex(int index)
 QStringList ChannelSelector::indexes() const
 {
     QStringList result;
-    for (int i: m_indexes) result << QString::number(i+1);
+    for (int i: qAsConst(m_indexes)) result << QString::number(i+1);
     return result;
 }
 
