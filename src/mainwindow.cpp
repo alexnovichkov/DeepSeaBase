@@ -182,6 +182,7 @@ MainWindow::MainWindow(QWidget *parent)
     });
 
     exportChannelsToWavAct = new QAction(QString("Экспортировать в WAV"), this);
+    exportChannelsToWavAct->setIcon(QIcon(":/icons/wav.ico"));
     connect(exportChannelsToWavAct, SIGNAL(triggered(bool)), SLOT(exportChannelsToWav()));
 
 
@@ -368,6 +369,7 @@ MainWindow::MainWindow(QWidget *parent)
     mainToolBar->addAction(moveChannelsUpAct);
     mainToolBar->addAction(moveChannelsDownAct);
     mainToolBar->addAction(editChannelDescriptionsAct);
+    mainToolBar->addAction(exportChannelsToWavAct);
 
     mainToolBar->addSeparator();
     mainToolBar->addWidget(new QLabel("  График:"));
@@ -2213,6 +2215,7 @@ void MainWindow::updateActions()
     editDescriptionsAct->setDisabled(selectedFilesCount==0);
 
     exportToExcelAct->setEnabled(plot->hasCurves() && !plot->spectrogram);
+    exportChannelsToWavAct->setEnabled(!timeFiles.isEmpty() && selectedChannelsCount>0);
 
     //convertMatFilesAct;
     //QAction *convertTDMSFilesAct;

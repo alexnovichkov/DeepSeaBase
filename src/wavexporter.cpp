@@ -225,6 +225,7 @@ bool WavExporter::writeWithMap(const QString &wavFileName)
 void WavExporter::start()
 {
     if (QThread::currentThread()->isInterruptionRequested()) {
+        qDebug()<<"interrupted";
         finalize();
         return;
     }
@@ -233,7 +234,7 @@ void WavExporter::start()
     if (_wavFile.isEmpty())
     _wavFile = createUniqueFileName("", file->fileName(), "", "wav", true);
 
-    //if (!writeWithMap(_wavFile))
+    if (!writeWithMap(_wavFile))
         writeWithStreams(_wavFile);
 
     finalize();
