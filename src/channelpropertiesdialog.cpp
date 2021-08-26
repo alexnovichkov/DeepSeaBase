@@ -59,6 +59,7 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
                                {"Ось Z","zname", nullptr}};
     for (int i=0; i<channelProperties.size(); ++i) {
         channelProperties[i].edit = new QLineEdit(this);
+
         connect(channelProperties[i].edit, &QLineEdit::editingFinished, [=]() {
             if (current < 0 || current >= channels.size()
                 || currentEdited.index < 0 || currentEdited.index != i) return;
@@ -104,12 +105,23 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
             currentEdited.index = i;
             currentEdited.value = newVal;
         });
-        if (i==4 || i==7)
-            channelProperties.at(i).edit->setEnabled(false);
+        if (i==4 || i==7) {
+            channelProperties.at(i).edit->setReadOnly(true);
+            channelProperties.at(i).edit->setFrame(false);
+        }
+//        else {
+//            channelProperties.at(i).edit->setClearButtonEnabled(true);
+//        }
         propertiesFL->addRow(channelProperties.at(i).displayName, channelProperties.at(i).edit);
     }
+    auto line = new QFrame(this);
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Sunken);
+    propertiesFL->addRow(line);
     for (int i=0; i<dataProperties.size(); ++i) {
-        dataProperties[i].label = new QLabel(this);
+        dataProperties[i].label = new QLineEdit(this);
+        dataProperties[i].label->setReadOnly(true);
+        dataProperties[i].label->setFrame(false);
         propertiesFL->addRow(dataProperties.at(i).displayName, dataProperties.at(i).label);
     }
     properties->setLayout(propertiesFL);
@@ -139,6 +151,11 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
     scroll2->setWidgetResizable(true);
     scroll2->setFrameShape(QFrame::NoFrame);
     tab->addTab(scroll2, "Функция");
+    int currentTab = App->getSetting("channelPropertiesDialog.currentTab").toInt();
+    tab->setCurrentIndex(currentTab);
+    connect(tab, &QTabWidget::currentChanged, [=](int index){
+        App->setSetting("channelPropertiesDialog.currentTab", index);
+    });
 
     splitter->addWidget(tab);
 
@@ -219,7 +236,10 @@ void ChannelPropertiesDialog::currentChannelChanged(QTreeWidgetItem *cur, QTreeW
         while (descriptionsLayout->rowCount()>0) descriptionsLayout->removeRow(0);
 //        int i=0;
         for (const auto [key, val]: asKeyValueRange(data)) {
-            descriptionsLayout->addRow(key, new QLabel(val.toString(), this));
+            auto l = new QLineEdit(val.toString(), this);
+            l->setReadOnly(true);
+            l->setFrame(false);
+            descriptionsLayout->addRow(key, l);
 //            if (auto item = descriptionsTable->verticalHeaderItem(i))
 //                item->setText(key);
 //            else

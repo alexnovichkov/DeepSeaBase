@@ -29,7 +29,7 @@ struct ChannelProperty
 struct DataProperty
 {
     QString displayName;
-    QLabel* label = nullptr;
+    QLineEdit* label = nullptr;
 };
 
 class ChannelPropertiesDialog : public QDialog

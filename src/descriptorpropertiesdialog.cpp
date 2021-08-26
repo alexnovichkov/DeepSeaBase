@@ -291,11 +291,12 @@ void DescriptorPropertiesDialog::cellChanged(int row, int column)
 void DescriptorPropertiesDialog::addProperty()
 {
     int row = descriptionsTable->rowCount();
-    descriptionsTable->setRowCount(row+1);
-    descriptionsTable->setVerticalHeaderItem(row, new QTableWidgetItem());
-    descriptionsTable->setItem(row, 0, new QTableWidgetItem());
+
     QString name = QInputDialog::getText(this, "Новое свойство", "Введите название свойства");
     if (!name.isEmpty()) {
+        descriptionsTable->setRowCount(row+1);
+        descriptionsTable->setVerticalHeaderItem(row, new QTableWidgetItem());
+        descriptionsTable->setItem(row, 0, new QTableWidgetItem());
         descriptionsTable->verticalHeaderItem(row)->setText(name);
     }
 }
