@@ -134,8 +134,7 @@ MainWindow::MainWindow(QWidget *parent)
     addFolderWithSubfoldersAct = new QAction(tr("Добавить папку со всеми вложенными папками"),this);
     connect(addFolderWithSubfoldersAct, SIGNAL(triggered()), SLOT(addFolderWithSubfolders()));
 
-    QIcon addFileIcon(":/icons/open_file_24.png");
-    addFileIcon.addFile(":/icons/open_file_16.png");
+    QIcon addFileIcon(":/icons/open_file.ico");
     addFileAct = new QAction(addFileIcon, tr("Добавить файл"),this);
     connect(addFileAct, SIGNAL(triggered()), SLOT(addFile()));
 
@@ -219,7 +218,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(clearPlotAct, SIGNAL(triggered()), plot, SLOT(deleteAllCurves()));
 
     savePlotAct = new QAction(QString("Сохранить график..."), this);
-    savePlotAct->setIcon(QIcon(":/icons/picture.png"));
+    savePlotAct->setIcon(QIcon(":/icons/picture.ico"));
     connect(savePlotAct, SIGNAL(triggered()), plot, SLOT(savePlot()));
 
     rescanBaseAct = new QAction(QString("Пересканировать базу"), this);
@@ -594,7 +593,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
             menu.addAction(plotAllChannelsAct);
             menu.addAction(plotAllChannelsOnRightAct);
             menu.addAction(calculateSpectreAct);
-            menu.addAction(calculateSpectreDeepSeaAct);
+            //menu.addAction(calculateSpectreDeepSeaAct);
             menu.addAction(convertAct);
             menu.addAction(renameAct);
             menu.exec(QCursor::pos());
