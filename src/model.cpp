@@ -259,6 +259,7 @@ QVariant Model::data(const QModelIndex &index, int role) const
             if (column == MODEL_COLUMN_SAVE) {
                 if (d->changed() || d->dataChanged()) return QIcon(":/icons/disk.png");
             }
+            if (column == MODEL_COLUMN_FILENAME) return QIcon(d->icon());
             break;
         }
     }

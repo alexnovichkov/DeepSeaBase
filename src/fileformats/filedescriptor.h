@@ -90,7 +90,9 @@ public:
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) = 0;
     virtual Channel *channel(int index) const = 0;
 
+
     //виртуальные
+    virtual QString icon() const {return "";}
     virtual bool rename(const QString &newName, const QString &newPath = QString());
     //просто вызывает updateDateTimeGUID. Переопределен в DFD
     virtual void fillPreliminary(const FileDescriptor *);

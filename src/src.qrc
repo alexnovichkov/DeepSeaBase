@@ -51,5 +51,9 @@
         <file>icons/move_up_24.png</file>
         <file>icons/list-add.png</file>
         <file>icons/list-remove.png</file>
+        <file>icons/d94.svg</file>
+        <file>icons/dfd.svg</file>
+        <file>icons/uff.svg</file>
+        <file>icons/wav.ico</file>
     </qresource>
 </RCC>

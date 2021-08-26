@@ -110,6 +110,7 @@ public:
 
     // FileDescriptor interface
 public:
+    virtual QString icon() const override {return ":/icons/d94.svg";}
     virtual void read() override;
     virtual void write() override;
     virtual int channelsCount() const override;

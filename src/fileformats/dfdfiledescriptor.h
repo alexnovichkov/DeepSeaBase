@@ -267,6 +267,9 @@ public:
     DfdFileDescriptor(const DfdFileDescriptor &d, const QString &fileName, QVector<int> indexes = QVector<int>());
     DfdFileDescriptor(const FileDescriptor &other, const QString &fileName, QVector<int> indexes = QVector<int>());
     virtual ~DfdFileDescriptor();
+
+    virtual QString icon() const override {return ":/icons/dfd.svg";}
+
     virtual void read() override;
     virtual void write() override;
     virtual void fillPreliminary(const FileDescriptor *file) override;
