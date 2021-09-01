@@ -68,7 +68,7 @@ qint64 DataIODevice::readData(char *data, qint64 maxlen)
 //    }
 
     //получаем сырые данные, количество отсчетов равно буферу / sizeof(int16)
-    QByteArray b = m_channel->wavData(m_pos, maxlen / sizeof(qint16));
+    QByteArray b = m_channel->wavData(m_pos, maxlen / sizeof(qint16), 1);
 
     if (b.isEmpty()) return 0;
 

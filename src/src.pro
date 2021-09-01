@@ -127,6 +127,7 @@ SOURCES += main.cpp\
     plot/picker.cpp \
     plot/pointmarker.cpp \
     plot/plottracker.cpp \
+    wavexportdialog.cpp \
     wavexporter.cpp \
     plot/spectrocurve.cpp \
     plot/colormapfactory.cpp \
@@ -222,6 +223,7 @@ HEADERS  += mainwindow.h \
     plot/picker.h \
     plot/pointmarker.h \
     plot/plottracker.h \
+    wavexportdialog.h \
     wavexporter.h \
     longoperation.h \
     plot/spectrocurve.h \

@@ -17,7 +17,7 @@
 #include "model.h"
 #include "sortfiltermodel.h"
 #include "filterheaderview.h"
-#include "wavexporter.h"
+#include "wavexportdialog.h"
 
 #include <ActiveQt/ActiveQt>
 #include "logging.h"
@@ -2137,26 +2137,8 @@ void MainWindow::exportChannelsToWav()
     QVector<int> toExport = tab->channelModel->selected();
     if (toExport.isEmpty()) return;
 
-    QThread *thread = new QThread;
-    WavExporter *exporter = new WavExporter(tab->record, toExport);
-    exporter->moveToThread(thread);
-
-    QProgressDialog *progress = new QProgressDialog("Сохранение в WAV...", "Отменить сохранение", 0, exporter->chunksCount(), this);
-    progress->setWindowModality(Qt::WindowModal);
-
-    connect(thread, SIGNAL(started()), exporter, SLOT(start()));
-    connect(exporter, SIGNAL(finished()), thread, SLOT(quit()));
-    connect(exporter, SIGNAL(finished()), progress, SLOT(accept()));
-    connect(progress, SIGNAL(canceled()), thread, SLOT(quit()));
-    connect(exporter, &WavExporter::finished, [=](){
-        exporter->deleteLater();
-    });
-    connect(exporter, SIGNAL(tick(int)), progress, SLOT(setValue(int)));
-
-    progress->show();
-    progress->setValue(0);
-
-    thread->start();
+    WavExportDialog dialog(tab->record, toExport, this);
+    dialog.exec();
 }
 
 void MainWindow::updateActions()

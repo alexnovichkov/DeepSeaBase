@@ -5,10 +5,12 @@
 #include <QDataStream>
 #include "logging.h"
 
-#define BLOCK_SIZE 10000
+#define BLOCK_SIZE 20000
 
-WavExporter::WavExporter(FileDescriptor * file, const QVector<int> &indexes, QObject *parent)
-    : QObject(parent), file(file), indexes(indexes)
+
+
+WavExporter::WavExporter(FileDescriptor * file, const QVector<int> &indexes, int count, QObject *parent)
+    : QObject(parent), file(file), indexes(indexes), count(count)
 {
 
 }
@@ -26,50 +28,27 @@ WavExporter::~WavExporter()
 
 }
 
-static constexpr quint32 fourCC(const char (&ch)[5])
+int WavExporter::chunksCount() const
 {
-    return quint32(quint8(ch[0])) | quint32(quint8(ch[1])) << 8 | quint32(quint8(ch[2])) << 16 | quint32(quint8(ch[3])) << 24;
+    int blocks = file->samplesCount()/BLOCK_SIZE;
+    if (file->samplesCount() % BLOCK_SIZE != 0) blocks++;
+    return blocks;
 }
-
-struct WavHeader
-{
-    quint32 id = fourCC("RIFF"); //"RIFF"
-    quint32 totalSize = 0; //4 + 24 + (8 + M*Nc*Ns)
-    quint32 waveId = fourCC("WAVE"); //"WAVE"
-    quint32 fmtId = fourCC("fmt ");	//"fmt "
-    quint32 fmtSize = 16;
-    quint16 format = 1; //PCM, M=2
-    quint16 channelsCount = 0; //Nc
-    quint32 samplesPerSec = 0; //F
-    quint32 bytesPerSec = 0; //F*M*Nc
-    quint16 blockAlign = 0; //M*Nc
-    quint16 bitsPerSample = 0; //rounds up to 8*M
-    quint32 dataId = fourCC("data"); //"data"
-    quint32 dataSize = 0; //M*Nc*Ns
-} __attribute__((packed));
 
 //int WavExporter::chunksCount() const
 //{
-//    int blocks = file->samplesCount()/BLOCK_SIZE;
-//    if (file->samplesCount() % BLOCK_SIZE != 0) blocks++;
-//    return blocks;
+//    return indexes.size();
 //}
-
-int WavExporter::chunksCount() const
-{
-    return indexes.size();
-}
 
 void WavExporter::stop()
 {
     finalize();
 }
 
-void WavExporter::writeWithStreams(const QString &wavFileName)
+void WavExporter::writeWithStreams(const QVector<int> &v, const QString &wavFileName)
 {
-    if (indexes.isEmpty()) return;
+    if (v.isEmpty()) return;
 
-    //2. Записываем заголовок файла wav
     QFile wavFile(wavFileName);
     if (!wavFile.open(QFile::WriteOnly)) {
         qCritical()<<"Не удалось открыть файл"<<wavFileName;
@@ -79,32 +58,45 @@ void WavExporter::writeWithStreams(const QString &wavFileName)
 
     QDataStream s(&wavFile);
     s.setByteOrder(QDataStream::LittleEndian);
-    s.writeRawData("RIFF",4);
 
     //Определяем общий размер файла Wav
-    quint32 totalSize = 36 + 2 * indexes.size() * file->samplesCount();
+    const quint16 M = format == WavPCM ? 2 : 4; // bytesForFormat = short / float
+    const quint16 channelsCount = quint16(v.size()); //Fc
+    const quint32 sampleRate = (quint32)qRound(1.0 / file->xStep()); //F
+    const quint32 samples = quint32(file->samplesCount());
+    //const quint32 totalSize = sizeof(WavHeader) + M * channelsCount * samples;
 
-    s << totalSize;
-    s.writeRawData("WAVE",4);
-    s.writeRawData("fmt ",4);
-    s << (quint32)16; //chunk size
-    s << (quint16)1; //PCM
-    s << (quint16)indexes.size(); //channels count
-    quint32 samplerate = (quint32)(1.0 / file->xStep());
-    s << samplerate; //samplerate
-    s << quint32(samplerate * indexes.size() * 2); // bytes per second
-    s << quint16(indexes.size() * 2); //block align
-    s << (quint16)16;
+    //Создаем заголовок файла
+    WavHeader header = initHeader(channelsCount, samples, sampleRate, format);
 
-
-    //3. Записываем данные поканально
-    s.writeRawData("data",4);
-    s << quint32(2 * indexes.size() * file->samplesCount());
+    s << header.ckID;
+    s << header.cksize;
+    s << header.waveId;
+    s << header.fmtId;
+    s << header.fmtSize;
+    s << header.wFormatTag;
+    s << header.nChannels;
+    s << header.samplesPerSec;
+    s << header.bytesPerSec;
+    s << header.blockAlign;
+    s << header.bitsPerSample;
+    s << header.cbSize;
+    s << header.wValidBitsPerSample;
+    s << header.dwChannelMask;
+    s.writeRawData(header.subFormat, 16);
+    s << header.factID;
+    s << header.factSize;
+    s << header.dwSampleLength;
+    s << header.dataId;
+    s << header.dataSize;
 
     //пишем блоками по BLOCK_SIZE отсчетов
-    for (int chunk = 0; chunk < chunksCount(); ++chunk) {
+    int count = chunksCount();
+    emit chunksCountChanged(count);
+    for (int chunk = 0; chunk < count; ++chunk) {
         if (QThread::currentThread()->isInterruptionRequested()) {
             wavFile.close();
+            wavFile.remove();
             qDebug()<<"Сохранение файла wav прервано";
             finalize();
             return;
@@ -118,7 +110,7 @@ void WavExporter::writeWithStreams(const QString &wavFileName)
         //4. очищаем данные канала
 
         QVector<QByteArray> chunkData;
-        for (const int c: qAsConst(indexes)) {
+        for (const int c: qAsConst(v)) {
             if (QThread::currentThread()->isInterruptionRequested()) {
                 wavFile.close();
                 qDebug()<<"Сохранение файла wav прервано";
@@ -129,32 +121,34 @@ void WavExporter::writeWithStreams(const QString &wavFileName)
             Channel *channel = file->channel(c);
             bool populated = channel->populated();
             if (!populated) channel->populate();
-            chunkData.append(channel->wavData(chunk * BLOCK_SIZE, BLOCK_SIZE));
+            auto data = channel->wavData(chunk * BLOCK_SIZE, BLOCK_SIZE, format==WavPCM?1:2);
+            chunkData.append(data);
             if (!populated) channel->clear();
         }
 
         //теперь перетасовываем chunkData - берем из него по одному отсчету каждого канала
         //и записываем в wav
-        for (int i = 0; i < chunkData.constFirst().size()/2; ++i) {
+        for (int i = 0; i < chunkData.constFirst().size()/M; ++i) {
             if (QThread::currentThread()->isInterruptionRequested()) {
                 wavFile.close();
+                wavFile.remove();
                 qDebug()<<"Сохранение файла wav прервано";
                 finalize();
                 return;
             }
 
             for (const QByteArray &c: qAsConst(chunkData)) {
-                s.device()->write(c.mid(i*2, 2));
+                s.device()->write(c.mid(i*M, M));
             }
         }
-        emit tick(chunk+1);
+        emit tick();
     }
     wavFile.close();
 }
 
-bool WavExporter::writeWithMap(const QString &wavFileName)
+bool WavExporter::writeWithMap(const QVector<int> &v, const QString &wavFileName)
 {
-    if (indexes.isEmpty()) return false;
+    if (v.isEmpty()) return false;
 
     //2. Записываем заголовок файла wav
     QFile wavFile(wavFileName);
@@ -164,13 +158,18 @@ bool WavExporter::writeWithMap(const QString &wavFileName)
         return false;
     }
 
-    //полный размер файла равен 24 +
     //Определяем общий размер файла Wav
-    const int channelsCount = indexes.size();
-    quint32 totalSize = 44 + 2 * channelsCount * file->samplesCount();
+    const quint16 M = format == WavPCM ? 2 : 4; // bytesForFormat = short / float
+    const quint16 channelsCount = quint16(v.size()); //Fc
+    const quint32 sampleRate = (quint32)qRound(1.0 / file->xStep()); //F
+    const quint32 samples = quint32(file->samplesCount());
+    const quint32 totalSize = sizeof(WavHeader) + M * channelsCount * samples;
+
+    //Создаем пустой файл
     wavFile.write(QByteArray(totalSize, 0x0));
     wavFile.close();
 
+    //Переоткрываем файл для маппинга
     wavFile.open(QFile::ReadWrite);
     uchar *mapped = wavFile.map(0, totalSize);
     if (!mapped) {
@@ -179,43 +178,36 @@ bool WavExporter::writeWithMap(const QString &wavFileName)
         return false;
     }
 
-    WavHeader header;
-    header.totalSize = totalSize - 8; //4 + 24 + (8 + M*Nc*Ns)
-    header.channelsCount = quint16(channelsCount); //Nc
-    header.samplesPerSec = (quint32)qRound(1.0 / file->xStep()); //F
-    header.bytesPerSec = quint32(header.samplesPerSec * channelsCount * 2); //F*M*Nc
-    header.blockAlign = quint16(channelsCount * 2); //M*Nc
-    header.bitsPerSample = 16; //rounds up to 8*M
-    header.dataSize = quint32(2 * channelsCount * file->samplesCount()); //M*Nc*Ns
-
+    //Создаем заголовок файла
+    WavHeader header = initHeader(channelsCount, samples, sampleRate, format);
     memcpy(mapped, &header, sizeof(WavHeader));
 
     for (int ch = 0; ch < channelsCount; ++ch) {
         if (QThread::currentThread()->isInterruptionRequested()) {
             wavFile.close();
+            wavFile.remove();
             qDebug()<<"Сохранение файла wav прервано";
             finalize();
             return true;
         }
 
-        Channel *channel = file->channel(indexes.at(ch));
+        Channel *channel = file->channel(v.at(ch));
         bool populated = channel->populated();
         if (!populated) channel->populate();
-        QByteArray channelData = channel->wavData(0, channel->data()->samplesCount());
+        QByteArray channelData = channel->wavData(0, channel->data()->samplesCount(), format==WavPCM?1:2);
 
         //записываем каждый сэмпл на свое место
         for (int sample = 0; sample < channel->data()->samplesCount(); ++sample) {
-            // i-й отсчет ch-го канала имеет номер
+            // i-й отсчет n-го канала имеет номер
             //       [n + i*ChannelsCount]
             //то есть целевой указатель будет иметь адрес
-            //       sizeof(WavHeader) + (n+i*ChannelsCount)*2
-            int offset = sizeof(WavHeader) + (ch + sample*channelsCount)*2;
-            memcpy(mapped + offset, reinterpret_cast<void*>(channelData.data() + sample*2), 2);
-
+            //       sizeof(WavHeader) + (n+i*ChannelsCount)*M
+            int offset = sizeof(WavHeader) + (ch + sample*channelsCount)*M;
+            memcpy(mapped + offset, reinterpret_cast<void*>(channelData.data() + sample*M), M);
         }
 
         if (!populated) channel->clear();
-        emit tick(ch+1);
+        emit tick();
     }
 
     wavFile.close();
@@ -230,14 +222,57 @@ void WavExporter::start()
         return;
     }
 
-    //1. Определяем имя файла wav
-    if (_wavFile.isEmpty())
-    _wavFile = createUniqueFileName("", file->fileName(), "", "wav", true);
+    auto pool = indexes;
+    while (!pool.isEmpty()) {
+        //определяем список индексов каналов для записи
+        QVector<int> list;
+        for (int i=0; i<count && !pool.isEmpty(); ++i)
+            list << pool.takeFirst();
 
-    if (!writeWithMap(_wavFile))
-        writeWithStreams(_wavFile);
+        //определяем суффикс имени файла
+        QString nameFragment;
+        if (count==1) nameFragment = file->channel(list.first())->name();
+        else nameFragment = QString("%1-%2").arg(list.first()+1).arg(list.last()+1);
+
+        //определяем имя файла wav
+        QString name;
+
+        if (!_wavFile.isEmpty()) name = _wavFile;
+        else
+            name = createUniqueFileName("", file->fileName(),
+                                            nameFragment, "wav", false);
+        if (!writeWithMap(list, name))
+            writeWithStreams(list, name);
+    }
 
     finalize();
+}
+
+WavHeader WavExporter::initHeader(int channelsCount, int samplesCount, int sampleRate, WavFormat format)
+{
+    const int M = format==WavPCM?2:4;
+    WavHeader header;
+    header.cksize = sizeof(WavHeader) + channelsCount*samplesCount*M - 8;
+
+    //fmt block - 48 bytes
+    header.nChannels = quint16(channelsCount); //Nc
+    header.samplesPerSec = quint32(sampleRate); //F
+    header.bytesPerSec = quint32(header.samplesPerSec * channelsCount * M); //F*M*Nc
+    header.blockAlign = quint16(channelsCount * M); //M*Nc, data block size, bytes
+    header.bitsPerSample = 8*M; //rounds up to 8*M
+    header.wValidBitsPerSample = header.bitsPerSample; //используем все биты, для формата 24-bit нужно будет менять
+
+    //subFormat is PCM by default
+    if (format != WavPCM)
+        header.subFormat[0] = 3; // float
+
+    //fact block - 12 bytes
+    header.dwSampleLength = samplesCount; // Nc*Ns, number of samples
+
+    //data block - 8 + M*Nc*Ns bytes
+    header.dataSize = M*channelsCount*samplesCount; //M*Nc*Ns
+
+    return header;
 }
 
 void WavExporter::finalize()

@@ -8,6 +8,8 @@
 #include "windows.h"
 #include "winuser.h"
 
+#include <QFile>
+
 //#include "converters/matlabconvertor.h"
 
 //#include "fileformats/tdmsfile.h"

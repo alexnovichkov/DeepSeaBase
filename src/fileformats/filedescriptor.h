@@ -234,7 +234,7 @@ public:
     const DataHolder *data() const {return _data;}
     void setData(DataHolder *data) {delete _data; _data = data;}
 
-    QByteArray wavData(qint64 pos, qint64 samples);
+    QByteArray wavData(qint64 pos, qint64 samples, int format);
 
     virtual FileDescriptor *descriptor() const = 0;
 
