@@ -10,13 +10,35 @@ class QProcess;
 
 enum WavFormat {
     WavPCM = 0,
-    WavFloat = 3
+    WavExtendedPCM,
+    WavFloat
 };
 
 static constexpr quint32 fourCC(const char (&ch)[5])
 {
     return quint32(quint8(ch[0])) | quint32(quint8(ch[1])) << 8 | quint32(quint8(ch[2])) << 16 | quint32(quint8(ch[3])) << 24;
 }
+
+struct SimpleWavHeader
+{
+    const quint32 ckID = fourCC("RIFF"); //"RIFF"
+    quint32 cksize = 0; //8 + 48 + 12 + (8 + M*Nc*Ns)
+    const quint32 waveId = fourCC("WAVE"); //"WAVE"
+
+    //fmt block - 20 bytes
+    /*4*/const quint32 fmtId = fourCC("fmt ");	//"fmt "
+    /*4*/const quint32 fmtSize = 16;
+    /*2*/const quint16 wFormatTag = 1; //WAVE_FORMAT_PCM, M=2
+    /*2*/quint16 nChannels = 0; //Nc
+    /*4*/quint32 samplesPerSec = 0; //F
+    /*4*/quint32 bytesPerSec = 0; //F*M*Nc
+    /*2*/quint16 blockAlign = 0; //M*Nc, data block size, bytes
+    /*2*/quint16 bitsPerSample = 0; //rounds up to 8*M
+
+    //data block - 8 + M*Nc*Ns bytes
+    const quint32 dataId = fourCC("data"); //"data"
+    quint32 dataSize = 0; //M*Nc*Ns
+} __attribute__((packed));
 
 struct WavHeader
 {
@@ -75,6 +97,8 @@ public slots:
     void start();
 private:
     WavHeader initHeader(int channelsCount, int samplesCount, int sampleRate,
+                    WavFormat format);
+    SimpleWavHeader initSimpleHeader(int channelsCount, int samplesCount, int sampleRate,
                     WavFormat format);
     void finalize();
     void writeWithStreams(const QVector<int> &v, const QString &wavFileName);

@@ -10,6 +10,28 @@ QDebug operator <<(QDebug debug, const std::complex<double> &val)
     return debug;
 }
 
+QString replaceWinChars(QString s)
+{DD;
+    static const struct ReplaceParams {
+        const char *what;
+        const char *byWhat;
+    } params[] = {
+        {"\\","_"},
+        {":","_"},
+        {"*","_"},
+        {"|","_"},
+        {"?","_"},
+        {"/","_"},
+        {"\"","''"},
+        {"<","("},
+        {">",")"}
+    };
+    for (int i=0; i<9; ++i) {
+        s.replace(params[i].what,params[i].byWhat);
+    }
+    return s;
+}
+
 bool fileExists(const QString &s, const QString &suffix)
 {
     QString f = changeFileExt(s, suffix);

@@ -20,9 +20,9 @@ WavExportDialog::WavExportDialog(FileDescriptor * file, const QVector<int> &inde
     channelsCount->setRange(1, indexes.size());
 
     formatComboBox = new QComboBox(this);
-    formatComboBox->addItems({"PCM, 16 bit", "IEEE-float, 32 bit"});
+    formatComboBox->addItems({"PCM, 16 bit", "Extended PCM, 16 bit", "IEEE-float, 32 bit"});
 
-    connect(channelsCount, qOverload<int>(&QSpinBox::valueChanged), [=](int val){
+    connect(channelsCount, qOverload<int>(&QSpinBox::valueChanged), [=](int val) {
        QString text =  "<font color=darkblue>Формат имени файлов: %1 - %2.wav</font>";
        if (val==1) text = text.arg(QFileInfo(file->fileName()).fileName()).arg(file->channel(indexes.first())->name());
        else {
@@ -38,7 +38,7 @@ WavExportDialog::WavExportDialog(FileDescriptor * file, const QVector<int> &inde
 
     bar = new QProgressBar(this);
     bar->setTextVisible(false);
-    bar->setFixedHeight(5);
+    bar->setFixedHeight(10);
     bar->setRange(0, indexes.size());
 
     hintLabel = new QLabel(this);
@@ -78,7 +78,7 @@ void WavExportDialog::start()
     buttonBox->button(QDialogButtonBox::Ok)->setDisabled(true);
     if (!thread) thread = new QThread;
     exporter = new WavExporter(file, indexes, channelsCount->value());
-    exporter->setFormat(formatComboBox->currentIndex()==0?WavPCM:WavFloat);
+    exporter->setFormat(static_cast<WavFormat>(formatComboBox->currentIndex()));
     exporter->moveToThread(thread);
 
     connect(thread, SIGNAL(started()), exporter, SLOT(start()));

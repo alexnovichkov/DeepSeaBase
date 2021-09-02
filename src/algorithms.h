@@ -173,6 +173,9 @@ inline QVector<T> convertFrom(unsigned char *ptr, quint64 length, uint IndType)
     return temp;
 }
 
+QString replaceWinChars(QString s);
+
+
 /* возвращает значение функции-члена function первого элемента последовательности,
  * если все элементы последовательности равны
  * или значение по умолчанию, если в последовательности есть разные элементы
