@@ -21,7 +21,8 @@ QMAKE_TARGET_COPYRIGHT=Все права принадлежат мне
 QMAKE_TARGET_PRODUCT=DeepSeaBase
 
 DEFINES *= DEEPSEABASE_VERSION=\\\"$$VERSION\\\"
-message($$VERSION)
+message(DeepSea Base version $$VERSION)
+message(Compiles for $$QT_ARCH)
 
 CONFIG(debug, debug|release){
         DESTDIR = $$OUT_PWD/../bin.debug
@@ -352,27 +353,47 @@ INCLUDEPATH *= E:/My/programming/sources/boost_1_73_0
 
 #libsamplerate
 INCLUDEPATH *= E:/My/programming/sources/libsamplerate-0.1.8/src
-LIBS *= E:/My/programming/sources/build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_32_bit-Release/release/libsamplerate.a
-LIBS *= E:/My/programming/sources/build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_64_bit-Release/release/libsamplerate.a
+equals(QT_ARCH,"i386") {
+  LIBS *= E:/My/programming/sources/build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_32_bit-Release/release/libsamplerate.a
+}
+equals(QT_ARCH,"x86_64") {
+  LIBS *= E:/My/programming/sources/build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_64_bit-Release/release/libsamplerate.a
+}
 
 #tdm
 INCLUDEPATH *= E:/My/programming/sources/TDMS/tdm_dev/dev/include
-LIBS *= E:/My/programming/sources/TDMS/tdm_dev/dev/lib/64-bit/msvc64/nilibddc.lib
-LIBS *= E:/My/programming/sources/TDMS/tdm_dev/dev/lib/32-bit/msvc/nilibddc.lib
+equals(QT_ARCH,"x86_64") {
+  LIBS *= E:/My/programming/sources/TDMS/tdm_dev/dev/lib/64-bit/msvc64/nilibddc.lib
+}
+equals(QT_ARCH,"i386") {
+  LIBS *= E:/My/programming/sources/TDMS/tdm_dev/dev/lib/32-bit/msvc/nilibddc.lib
+}
 
 #FFTW
 INCLUDEPATH *= E:/My/programming/sources/fftw-3.3.5-dll32
-LIBS *= E:/My/programming/sources/fftw-3.3.5-dll32/libfftw3-3.lib
-LIBS *= E:/My/programming/sources/fftw-3.3.5-dll64/libfftw3-3.lib
+equals(QT_ARCH,"i386") {
+  LIBS *= E:/My/programming/sources/fftw-3.3.5-dll32/libfftw3-3.lib
+}
+equals(QT_ARCH,"x86_64") {
+  LIBS *= E:/My/programming/sources/fftw-3.3.5-dll64/libfftw3-3.lib
+}
 
 #qwt
 CONFIG(release, debug|release):{
+  equals(QT_ARCH,"i386") {
     LIBS *= E:/My/programming/sources/Qwt-6.4.0-svn/lib/libqwt.a
+  }
+  equals(QT_ARCH,"x86_64") {
     LIBS *= E:/My/programming/sources/Qwt-6.4.0-svn/lib64/libqwt.a
+  }
 }
 CONFIG(debug, debug|release):{
+  equals(QT_ARCH,"i386") {
     LIBS *= E:/My/programming/sources/Qwt-6.4.0-svn/lib/libqwtd.a
+  }
+  equals(QT_ARCH,"x86_64") {
     LIBS *= E:/My/programming/sources/Qwt-6.4.0-svn/lib64/libqwtd.a
+  }
 }
 INCLUDEPATH *= E:/My/programming/sources/Qwt-6.4.0-svn/include
 
