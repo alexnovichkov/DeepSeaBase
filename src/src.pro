@@ -20,6 +20,8 @@ QMAKE_TARGET_COMPANY=Novichkov &
 QMAKE_TARGET_COPYRIGHT=Все права принадлежат мне
 QMAKE_TARGET_PRODUCT=DeepSeaBase
 
+DISTFILES += version.js
+
 DEFINES *= DEEPSEABASE_VERSION=\\\"$$VERSION\\\"
 message(DeepSea Base version $$VERSION)
 message(Compiles for $$QT_ARCH)
