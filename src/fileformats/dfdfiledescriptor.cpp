@@ -1227,6 +1227,9 @@ void DfdChannel::read(DfdSettings &dfd, int numChans, double xBegin, double xSte
         yValueFormat = dataFormat(parent->DataType, "линейная");
     }
 
+    //тонкая настройка формата для нестандартных единиц измерения
+    if (YName.toLower()=="m" || YName.toLower()=="м" || YName.toLower()=="номер")
+        yValueFormat = DataHolder::YValuesReals;
     if (YName.toLower()=="db" || YName.toLower()=="дб")
         yValueFormat = DataHolder::YValuesAmplitudesInDB;
     //настройка для октавных спектров - если единица измерения не дБ, то считаем как амплитуды
@@ -1258,6 +1261,8 @@ void DfdChannel::read(DfdSettings &dfd, int numChans, double xBegin, double xSte
     else {
         units = DataHolder::unitsFromString(unitsStr);
     }
+    if (YName.toLower()=="m" || YName.toLower()=="м" || YName.toLower()=="номер")
+        units = DataHolder::UnitsLinear;
     _data->setYValuesUnits(units);
 
     // читаем позиции данных этого канала

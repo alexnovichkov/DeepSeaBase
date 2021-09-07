@@ -101,6 +101,9 @@ void CheckableLegend::handleClick(const QModelIndex &i)
         menu.addAction("Удалить", this, [this, i](){
             emit markedForDelete(d_model->item(i.row()));
         });
+        menu.addAction("Переместить на правую ось", this, [i,this](){
+            emit markedToMove(d_model->item(i.row()));
+        });
         menu.exec(QCursor::pos());
 
         return;

@@ -190,7 +190,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     aboutAct = new QAction("О програме", this);
     connect(aboutAct, &QAction::triggered, [=](){
-        QString version = QString("DeepSea Database - версия %1\n").arg(qApp->applicationVersion());
+        QString version = QString("DeepSea Database - версия %1\n").arg(DEEPSEABASE_VERSION);
         version.append(sizeof(int*) == sizeof(qint32) ? "32-bit версия" : "64-bit версия");
         QMessageBox::about(this, tr("О программе"), version);
     });
@@ -2176,7 +2176,7 @@ void MainWindow::updateActions()
     savePlotAct->setEnabled(plot->hasCurves());
     rescanBaseAct->setEnabled(tab->model->size()>0);
     //QAction *switchCursorAct;
-    trackingCursorAct->setEnabled(!plot->spectrogram);
+    //trackingCursorAct->setEnabled(!plot->spectrogram);
     copyToClipboardAct->setEnabled(plot->hasCurves());
     printPlotAct->setEnabled(plot->hasCurves());
     //QAction *editColorsAct;
