@@ -46,6 +46,7 @@ class QLineEdit;
 class FilterHeaderView;
 class FilteredHeaderView;
 class FilesTable;
+class QFileSystemWatcher;
 
 #include <QSplitter>
 
@@ -75,6 +76,7 @@ public:
     QStringList folders;
 
     FileDescriptor *record;
+    QFileSystemWatcher *watcher;
 private slots:
     void filesSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);
     void channelsSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);

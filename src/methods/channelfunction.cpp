@@ -34,6 +34,7 @@ QVariant ChannelFunction::m_getProperty(const QString &property) const
         //это - свойства исходного файла
         if (property == "?/sampleRate" && ch) {
             if (qFuzzyIsNull(ch->data()->xStep())) return 0.0;
+            //qDebug()<<ch->data()->xStep()<<(1.0 / ch->data()->xStep());
             return 1.0 / ch->data()->xStep();
         }
         if (property == "?/xBegin" && ch) return ch->data()->xMin();
