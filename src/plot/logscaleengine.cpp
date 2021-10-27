@@ -22,6 +22,11 @@ static inline QwtInterval logInterval(double base, const QwtInterval &interval)
             log(interval.maxValue()) / log(base));
 }
 
+LogScaleEngine::LogScaleEngine(uint base) : QwtLogScaleEngine()
+{
+    setBase(base);
+}
+
 void LogScaleEngine::autoScale(int maxNumSteps, double &x1, double &x2, double &stepSize) const
 {
     if (x1 > x2) qSwap(x1, x2);

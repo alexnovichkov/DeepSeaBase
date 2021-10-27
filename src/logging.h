@@ -4,7 +4,7 @@
 #include <QString>
 #include <QtDebug>
 
-//#define DO_TRACE
+#define DO_TRACE
 
 #define DebugPrint(s) qDebug()<<#s<<s;
 

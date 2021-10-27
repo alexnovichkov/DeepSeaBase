@@ -160,7 +160,6 @@ signals:
     void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
     void curvesChanged();
     void curvesCountChanged();
-    void updatePlotted();
     void needPlotChannels();
 private slots:
     void editLegendItem(QwtPlotItem *item);
@@ -171,7 +170,6 @@ private slots:
 private:
     void importPlot(const QString &fileName, const QSize &size, int resolution);
     void importPlot(QPrinter &printer, const QSize &size, int resolution);
-    bool hasDuplicateNames(const QString name) const;
     void checkDuplicates(const QString name);
     QString yValuesPresentationSuffix(int yValuesPresentation) const;
     void createLegend();

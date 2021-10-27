@@ -1000,7 +1000,7 @@ void MainWindow::deleteChannels() /** SLOT */
 }
 
 void MainWindow::deleteChannelsBatch()
-{
+{DD;
     QVector<int> channels = tab->channelModel->selected();
     if (channels.isEmpty()) return;
 
@@ -1074,7 +1074,7 @@ void MainWindow::addCorrection()
 }
 
 void MainWindow::addCorrections()
-{
+{DD;
     static QString pathToExcelFile;
     pathToExcelFile = QFileDialog::getOpenFileName(this, "Выбрать файл xls с поправками", pathToExcelFile, "*.xls;;*.xlsx");
 
@@ -1425,12 +1425,12 @@ void MainWindow::moveChannelsUp()
 }
 
 void MainWindow::moveChannelsDown()
-{
+{DD;
     moveChannels(false);
 }
 
 void MainWindow::editDescriptions()
-{
+{DD;
     QList<FileDescriptor *> records = tab->model->selectedFiles();
     if (records.isEmpty()) return;
 
@@ -1446,7 +1446,7 @@ void MainWindow::editDescriptions()
 }
 
 void MainWindow::editChannelDescriptions()
-{
+{DD;
     QVector<Channel *> selectedChannels = tab->channelModel->selectedChannels();
     if (selectedChannels.isEmpty()) return;
 
@@ -1466,7 +1466,7 @@ void MainWindow::save()
 }
 
 void MainWindow::convertMatFiles()
-{
+{DD;
     MatlabConverterDialog dialog(this);
     if (dialog.exec()) {
         if (dialog.addFiles()) {
@@ -1479,7 +1479,7 @@ void MainWindow::convertMatFiles()
 }
 
 void MainWindow::convertTDMSFiles()
-{
+{DD;
     TDMSConverterDialog dialog(this);
     if (dialog.exec()) {
         if (dialog.addFiles()) {
@@ -1492,7 +1492,7 @@ void MainWindow::convertTDMSFiles()
 }
 
 void MainWindow::convertEsoFiles()
-{
+{DD;
     EsoConverterDialog dialog(this);
     if (dialog.exec()) {
         QStringList files = dialog.getConvertedFiles();
@@ -1504,7 +1504,7 @@ void MainWindow::convertEsoFiles()
 }
 
 void MainWindow::saveTimeSegment(const QList<FileDescriptor *> &files, double from, double to)
-{
+{DD;
     QThread *thread = new QThread;
     TimeSlicer *converter = new TimeSlicer(files, from, to);
     converter->moveToThread(thread);
@@ -1530,7 +1530,7 @@ void MainWindow::saveTimeSegment(const QList<FileDescriptor *> &files, double fr
 }
 
 void MainWindow::editYName()
-{
+{DD;
     if (!tab) return;
 
     QVector<int>  selectedIndexes = tab->channelModel->selected();
@@ -1724,7 +1724,7 @@ void MainWindow::calculateSpectreRecords(bool useDeepsea)
 }
 
 void MainWindow::convertFiles()
-{
+{DD;
     if (!tab) return;
     QList<FileDescriptor *> records = tab->model->selectedFiles();
 
@@ -1740,7 +1740,7 @@ void MainWindow::convertFiles()
 }
 
 void MainWindow::copyToLegend()
-{
+{DD;
     if (!tab) return;
     const QList<FileDescriptor *> records = tab->model->selectedFiles();
 
@@ -1787,7 +1787,7 @@ void MainWindow::calculateThirdOctave()
 }
 
 void MainWindow::calculateMovingAvg()
-{
+{DD;
     if (plot->curves.size()<1) return;
 
     int windowSize = App->getSetting("movingAvgSize",3).toInt();
@@ -1943,27 +1943,34 @@ void MainWindow::deleteCurve(int index) /*slot*/
 
 void MainWindow::rescanBase()
 {DD;
-    if (!tab) return;
-
     // first we delete all curves affected
-    plot->deleteAllCurves();
+    plot->deleteAllCurves(true);
 
-    // next we clear all tab and populate it with folders anew
-    tab->channelModel->clear();
-    tab->model->clear();
-    tab->filePathLabel->clear();
+    Tab *oldTab = tab;
 
-    for (QString folder: qAsConst(tab->folders)) {
-        if (folder.endsWith(":0")) {
-            folder.chop(2);
-            addFolder(folder, false, false);
+    for (int i=0; i<tabWidget->count(); ++i) {
+        if (Tab *t = dynamic_cast<Tab*>(tabWidget->widget(i))) {
+            // next we clear all tab and populate it with folders anew
+            t->channelModel->clear();
+            t->model->clear();
+            t->filePathLabel->clear();
+            tab = t;
+
+            for (QString folder: qAsConst(t->folders)) {
+                if (folder.endsWith(":0")) {
+                    folder.chop(2);
+                    addFolder(folder, false, false);
+                }
+                else if (folder.endsWith(":1")) {
+                    folder.chop(2);
+                    addFolder(folder, true, false);
+                }
+                else addFolder(folder, true, false);
+            }
         }
-        else if (folder.endsWith(":1")) {
-            folder.chop(2);
-            addFolder(folder, true, false);
-        }
-        else addFolder(folder, true, false);
     }
+    tab = oldTab;
+
 
     //QMessageBox::information(this, "База данных", "В базе данных все записи \"живые\"!");
 }
@@ -1994,7 +2001,7 @@ void MainWindow::rescanBase()
 
 
 void MainWindow::addFile(F descriptor)
-{
+{DD;
     if (!tab) return;
     if (!descriptor) return;
 
@@ -2014,7 +2021,7 @@ void MainWindow::setCurrentAndPlot(FileDescriptor *d, int channelIndex)
 }
 
 void MainWindow::updatePlottedChannelsNumbers()
-{
+{DD;
     plottedChannelsNumbers.clear();
 
     if (sergeiMode) {
@@ -2025,7 +2032,7 @@ void MainWindow::updatePlottedChannelsNumbers()
 }
 
 void MainWindow::previousOrNextDescriptor(bool previous) /*private*/
-{
+{DD;
     if (!tab || !tab->record) return;
 
     //проверяем, есть ли в табе другие записи
@@ -2056,17 +2063,17 @@ void MainWindow::previousOrNextDescriptor(bool previous) /*private*/
 }
 
 void MainWindow::previousDescriptor()
-{
+{DD;
     previousOrNextDescriptor(true);
 }
 
 void MainWindow::nextDescriptor()
-{
+{DD;
     previousOrNextDescriptor(false);
 }
 
 void MainWindow::arbitraryDescriptor()
-{
+{DD;
     if (!tab || !tab->record) return;
 
     //проверяем, есть ли в табе другие записи
@@ -2077,17 +2084,17 @@ void MainWindow::arbitraryDescriptor()
 }
 
 void MainWindow::cycleChannelsUp()
-{
+{DD;
     cycleChannelsUpOrDown(true);
 }
 
 void MainWindow::cycleChannelsDown()
-{
+{DD;
     cycleChannelsUpOrDown(false);
 }
 
 void MainWindow::cycleChannelsUpOrDown(bool up) /*private*/
-{
+{DD;
     if (!tab || !tab->record) return;
 
     bool mode = sergeiMode;
@@ -2133,7 +2140,7 @@ void MainWindow::cycleChannelsUpOrDown(bool up) /*private*/
 }
 
 void MainWindow::exportChannelsToWav()
-{
+{DD;
     if (!tab || !tab->record) return;
     //проверяем тип файла
     if (!tab->record->isSourceFile()) return;
@@ -2146,11 +2153,14 @@ void MainWindow::exportChannelsToWav()
 }
 
 void MainWindow::updateActions()
-{
+{DD;
     if (!tab || !tab->model ||!tab->channelModel) return;
 
     const int selectedChannelsCount = tab->channelModel->selected().size();
     const int selectedFilesCount = tab->model->selected().size();
+    const int channelsCount = tab->channelModel->channelsCount;
+    const int filesCount = tab->model->size();
+    const bool hasCurves = plot->hasCurves();
 
     saveAct->setEnabled(tab->model->changed());
 
@@ -2161,7 +2171,7 @@ void MainWindow::updateActions()
     plotSelectedChannelsAct->setDisabled(selectedChannelsCount==0);
     editChannelDescriptionsAct->setDisabled(selectedChannelsCount==0);
     //exportChannelsToWavAct;
-    auto timeFiles = tab->model->selectedFiles({Descriptor::TimeResponse});
+    const auto timeFiles = tab->model->selectedFiles({Descriptor::TimeResponse});
     calculateSpectreAct->setDisabled(timeFiles.isEmpty());
     calculateSpectreDeepSeaAct->setDisabled(timeFiles.isEmpty());
 
@@ -2176,30 +2186,30 @@ void MainWindow::updateActions()
                 Descriptor::ShockResponseSpectrum};
     calculateThirdOctaveAct->setDisabled(
                 tab->model->selectedFiles(types).isEmpty());
-    clearPlotAct->setEnabled(plot->hasCurves());
-    savePlotAct->setEnabled(plot->hasCurves());
-    rescanBaseAct->setEnabled(tab->model->size()>0);
+    clearPlotAct->setEnabled(hasCurves);
+    savePlotAct->setEnabled(hasCurves);
+    rescanBaseAct->setEnabled(filesCount>0);
     //QAction *switchCursorAct;
     //trackingCursorAct->setEnabled(!plot->spectrogram);
-    copyToClipboardAct->setEnabled(plot->hasCurves());
-    printPlotAct->setEnabled(plot->hasCurves());
+    copyToClipboardAct->setEnabled(hasCurves);
+    printPlotAct->setEnabled(hasCurves);
     //QAction *editColorsAct;
 
     meanAct->setDisabled(plot->curves.size()<2);
-    movingAvgAct->setEnabled(plot->hasCurves() && !plot->spectrogram);
+    movingAvgAct->setEnabled(hasCurves && !plot->spectrogram);
     //QAction *interactionModeAct;
-    addCorrectionAct->setEnabled(plot->hasCurves() && !plot->spectrogram);
-    addCorrectionsAct->setEnabled(plot->hasCurves() && !plot->spectrogram);
+    addCorrectionAct->setEnabled(hasCurves && !plot->spectrogram);
+    addCorrectionsAct->setEnabled(hasCurves && !plot->spectrogram);
     deleteChannelsAct->setDisabled(selectedChannelsCount==0);
     deleteChannelsBatchAct->setDisabled(selectedChannelsCount==0);
     copyChannelsAct->setDisabled(selectedChannelsCount==0);
     moveChannelsAct->setDisabled(selectedChannelsCount==0);
 
-    moveChannelsDownAct->setEnabled(selectedChannelsCount > 0 && selectedChannelsCount < tab->channelModel->channelsCount);
-    moveChannelsUpAct->setEnabled(selectedChannelsCount > 0 && selectedChannelsCount < tab->channelModel->channelsCount);
+    moveChannelsDownAct->setEnabled(selectedChannelsCount > 0 && selectedChannelsCount < channelsCount);
+    moveChannelsUpAct->setEnabled(selectedChannelsCount > 0 && selectedChannelsCount < channelsCount);
     editDescriptionsAct->setDisabled(selectedFilesCount==0);
 
-    exportToExcelAct->setEnabled(plot->hasCurves() && !plot->spectrogram);
+    exportToExcelAct->setEnabled(hasCurves && !plot->spectrogram);
     exportChannelsToWavAct->setEnabled(!timeFiles.isEmpty() && selectedChannelsCount>0);
 
     //convertMatFilesAct;
@@ -2217,15 +2227,15 @@ void MainWindow::updateActions()
     playAct->setEnabled(plot->curvesCount(Descriptor::TimeResponse)>0);
     editYNameAct->setDisabled(selectedChannelsCount==0);
 
-    previousDescriptorAct->setEnabled(tab->model->size()>1 && plot->hasCurves());
-    nextDescriptorAct->setEnabled(tab->model->size()>1 && plot->hasCurves());
-    arbitraryDescriptorAct->setEnabled(tab->model->size()>1 && plot->hasCurves());
-    cycleChannelsUpAct->setEnabled(tab->channelModel->channelsCount>1 && plot->hasCurves());
-    cycleChannelsDownAct->setEnabled(tab->channelModel->channelsCount>1 && plot->hasCurves());
+    previousDescriptorAct->setEnabled(filesCount>1 && plot->hasCurves());
+    nextDescriptorAct->setEnabled(filesCount>1 && plot->hasCurves());
+    arbitraryDescriptorAct->setEnabled(filesCount>1 && plot->hasCurves());
+    cycleChannelsUpAct->setEnabled(channelsCount>1 && plot->hasCurves());
+    cycleChannelsDownAct->setEnabled(channelsCount>1 && plot->hasCurves());
 }
 
 void MainWindow::renameDescriptor()
-{
+{DD;
     if (!tab) return;
 
     auto indexes = tab->model->selected();
@@ -2307,7 +2317,7 @@ void MainWindow::exportToExcelData()
 //}
 
 void MainWindow::exportToExcel(bool fullRange, bool dataOnly)
-{
+{DD;
     static QAxObject *excel = 0;
 
     if (!plot->hasCurves()) {
@@ -2793,12 +2803,12 @@ void MainWindow::addFiles(const QStringList &files)
 }
 
 Tab::~Tab()
-{
+{DD;
 
 }
 
 void Tab::filesSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection)
-{
+{DD;
     Q_UNUSED(oldSelection);
     if (newSelection.isEmpty()) filesTable->selectionModel()->setCurrentIndex(QModelIndex(), QItemSelectionModel::NoUpdate);
 
@@ -2819,7 +2829,7 @@ void Tab::filesSelectionChanged(const QItemSelection &newSelection, const QItemS
 }
 
 void Tab::channelsSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection)
-{
+{DD;
     Q_UNUSED(oldSelection);
     if (newSelection.isEmpty()) channelsTable->selectionModel()->setCurrentIndex(QModelIndex(), QItemSelectionModel::NoUpdate);
 
@@ -2835,7 +2845,7 @@ void Tab::channelsSelectionChanged(const QItemSelection &newSelection, const QIt
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)
-{
+{DD;
     if (closeRequested())
         event->accept();
     else
@@ -2843,7 +2853,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 }
 
 bool MainWindow::closeRequested()
-{
+{DD;
     //определяем, были ли изменения
     bool changed = false;
     for (int i=0; i<tabWidget->count(); ++i) {

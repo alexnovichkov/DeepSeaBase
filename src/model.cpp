@@ -16,7 +16,7 @@ Model::Model(QObject *parent) : QAbstractTableModel(parent)
 }
 
 F Model::file(int i)
-{
+{DD;
     if (i<0 || i>=descriptors.size()) return nullptr;
     return descriptors[i];
 }
@@ -47,7 +47,7 @@ QList<FileDescriptor *> Model::selectedFiles(const QVector<Descriptor::DataType>
 }
 
 void Model::setChannelProperty(int channel, const QString &property, const QString &value)
-{
+{DD;
     for (int i: qAsConst(indexes)) {
         if (Channel *ch = descriptors[i]->channel(channel)) {
             if (ch->dataDescription().get(property) != value) {
@@ -189,19 +189,19 @@ bool Model::contains(FileDescriptor *file, int *index) const
 
 
 int Model::rowCount(const QModelIndex &parent) const
-{
+{//DD;
     Q_UNUSED(parent);
     return descriptors.size();
 }
 
 int Model::columnCount(const QModelIndex &parent) const
-{
+{//DD;
     Q_UNUSED(parent);
     return MODEL_COLUMNS_COUNT;
 }
 
 QVariant Model::data(const QModelIndex &index, int role) const
-{
+{//DD;
     if (!index.isValid()) return QVariant();
 
     const int row = index.row();
@@ -269,7 +269,7 @@ QVariant Model::data(const QModelIndex &index, int role) const
 
 
 bool Model::setData(const QModelIndex &index, const QVariant &value, int role)
-{
+{DD;
     if (role != Qt::EditRole) return false;
     if (!index.isValid()) return false;
 
@@ -320,7 +320,7 @@ bool Model::setData(const QModelIndex &index, const QVariant &value, int role)
 }
 
 QVariant Model::headerData(int section, Qt::Orientation orientation, int role) const
-{
+{//DD;
     if (orientation == Qt::Vertical)
         return QAbstractItemModel::headerData(section, orientation, role);
 
@@ -343,7 +343,7 @@ QVariant Model::headerData(int section, Qt::Orientation orientation, int role) c
 }
 
 Qt::ItemFlags Model::flags(const QModelIndex &index) const
-{
+{//DD;
     if (!index.isValid()) return QAbstractTableModel::flags(index) | Qt::ItemIsDropEnabled;
 
     const int col = index.column();
@@ -357,13 +357,13 @@ Qt::ItemFlags Model::flags(const QModelIndex &index) const
 
 
 Qt::DropActions Model::supportedDropActions() const
-{
+{DD;
     return Qt::CopyAction;
 }
 
 
 bool Model::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const
-{
+{DD;
     Q_UNUSED(action);
     Q_UNUSED(row);
     Q_UNUSED(column);
@@ -373,7 +373,7 @@ bool Model::canDropMimeData(const QMimeData *data, Qt::DropAction action, int ro
 }
 
 bool Model::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
-{
+{DD;
     if (!canDropMimeData(data, action, row, column, parent))
         return false;
 

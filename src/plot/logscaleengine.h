@@ -5,7 +5,8 @@
 
 class LogScaleEngine : public QwtLogScaleEngine
 {
-    // QwtScaleEngine interface
+public:
+    LogScaleEngine(uint base);
 public:
     virtual void autoScale(int maxNumSteps, double &x1, double &x2, double &stepSize) const;
     virtual QwtScaleDiv divideScale(double x1, double x2, int maxMajorSteps, int maxMinorSteps, double stepSize) const;

@@ -288,7 +288,7 @@ bool Plot::hasCurves() const
 }
 
 int Plot::curvesCount(int type) const
-{
+{DD;
     return std::count_if(curves.cbegin(), curves.cend(),
                          [type](Curve *c){return int(c->channel->type()) == type;});
 }
@@ -298,7 +298,6 @@ void Plot::deleteAllCurves(bool forceDeleteFixed)
     for (int i=curves.size()-1; i>=0; --i) {
         Curve *c = curves[i];
         if (!c->fixed || forceDeleteFixed) {
-            emit curveDeleted(c->channel); //->MainWindow.onCurveDeleted
             deleteCurve(c, i==0);
         }
     }
@@ -311,9 +310,7 @@ void Plot::deleteAllCurves(bool forceDeleteFixed)
 void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
 {DD;
     for (int i = curves.size()-1; i>=0; --i) {
-        Curve *curve = curves[i];
-        if (descriptor == curve->channel->descriptor()) {
-            emit curveDeleted(curve->channel); //->MainWindow.onCurveDeleted
+        if (Curve *curve = curves[i]; descriptor == curve->channel->descriptor()) {
             deleteCurve(curve, true);
         }
     }
@@ -323,19 +320,15 @@ void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
 //не удаляем, если фиксирована
 void Plot::deleteCurveFromLegend(QwtPlotItem *item)
 {DD;
-    if (Curve *c = dynamic_cast<Curve *>(item)) {
-        if (!c->fixed) {
-            emit curveDeleted(c->channel); //->MainWindow.onCurveDeleted
-            deleteCurve(c, true);
-            emit curvesCountChanged(); //->MainWindow.updateActions
-        }
+    if (Curve *c = dynamic_cast<Curve *>(item); !c->fixed) {
+        deleteCurve(c, true);
+        emit curvesCountChanged(); //->MainWindow.updateActions
     }
 }
 
 void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot)
 {DD;
     if (Curve *curve = plotted(dfd->channel(channel))) {
-        emit curveDeleted(curve->channel); //->MainWindow.onCurveDeleted
         deleteCurve(curve, doReplot);
         emit curvesCountChanged(); //->MainWindow.updateActions
     }
@@ -346,6 +339,7 @@ void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doR
 void Plot::deleteCurve(Curve *curve, bool doReplot)
 {DD;
     if (curve) {
+        emit curveDeleted(curve->channel); //->MainWindow.onCurveDeleted
         App->colors()->freeColor(curve->pen().color());
 
         int removed = leftCurves.removeAll(curve);
@@ -401,33 +395,21 @@ void Plot::showContextMenu(const QPoint &pos, QwtAxisId axis)
 
     QMenu *menu = new QMenu(this);
 
-    if (axis.pos == QwtAxis::xBottom)
-    menu->addAction(xScaleIsLogarithmic?"Линейная шкала":"Логарифмическая шкала", [=](){
-        QwtScaleEngine *engine = 0;
-        if (!xScaleIsLogarithmic) {
-            engine = new LogScaleEngine();
-//            engine = new QwtLogScaleEngine();
-            engine->setBase(2);
-            //engine->setTransformation(new LogTransform);
-        }
-        else {
-            engine = new QwtLinearScaleEngine();
-        }
-        if (engine)
-            setAxisScaleEngine(xBottomAxis, engine);
+    if (axis.pos == QwtAxis::xBottom) {
+        menu->addAction(xScaleIsLogarithmic?"Линейная шкала":"Логарифмическая шкала", [=](){
+            if (xScaleIsLogarithmic)
+                setAxisScaleEngine(xBottomAxis, new QwtLinearScaleEngine());
+            else
+                setAxisScaleEngine(xBottomAxis, new LogScaleEngine(2));
 
-        xScaleIsLogarithmic = !xScaleIsLogarithmic;
-    });
+            xScaleIsLogarithmic = !xScaleIsLogarithmic;
+        });
+    }
 
     // определяем, все ли графики представляют временные данные
-    bool time = true;
-
-    foreach (Curve *c, curves) {
-        if (c->channel->type() != Descriptor::TimeResponse) {
-            time = false;
-            break;
-        }
-    }
+    const bool time = std::all_of(curves.cbegin(), curves.cend(), [](Curve *c){
+          return c->channel->type() == Descriptor::TimeResponse;
+    });
 
     if (time && axis.pos == QwtAxis::xBottom) {
         menu->addAction("Сохранить временной сегмент", [=](){
@@ -501,7 +483,7 @@ void Plot::showContextMenu(const QPoint &pos, QwtAxisId axis)
 
         connect(ag, &QActionGroup::triggered, [=](QAction*act){
             int presentation = act->data().toInt();
-            foreach (Curve *c, list) {
+            for (Curve *c: list) {
                 c->channel->data()->setYValuesPresentation(presentation);
             }
             *ax = presentation;
@@ -702,7 +684,7 @@ void Plot::setScale(QwtAxisId id, double min, double max, double step)
 }
 
 void Plot::removeLabels()
-{
+{DD;
     for (Curve *c: qAsConst(curves))
         c->removeLabels();
 
@@ -741,21 +723,18 @@ void Plot::moveCurve(Curve *curve, int axis)
         zoom->moveToAxis(axis, curve->channel->data()->yMin(), curve->channel->data()->yMax());
     }
     else QMessageBox::warning(this, "Не могу поменять ось", "Эта ось уже занята графиком другого типа!");
-
-
 }
 
 void Plot::fixCurve(QwtPlotItem *curve)
-{
+{DD;
     if (Curve *c = dynamic_cast<Curve*>(curve)) {
         c->switchFixed();
         updateLegend();
     }
-
 }
 
 void Plot::hoverAxis(QwtAxisId axis, int hover)
-{
+{DD;
     if (ScaleDraw * scale = dynamic_cast<ScaleDraw*>(axisScaleDraw(axis))) {
         if (scale->hover != hover) {
             scale->hover = hover;
@@ -764,27 +743,24 @@ void Plot::hoverAxis(QwtAxisId axis, int hover)
     }
 }
 
-bool Plot::hasDuplicateNames(const QString name) const
-{
-    int count = 0;
-    foreach(Curve *c, curves) {
-        if (c->title() == name) count++;
-    }
-    return (count > 1);
-}
-
 void Plot::checkDuplicates(const QString name)
-{
-    QVector<Curve*> l;
-    for (auto c: qAsConst(curves))
-        if (c->title() == name) l << c;
-
-    for (auto c: qAsConst(l))
-        c->duplicate = l.size()>1;
+{DD;
+    Curve *c1 = nullptr;
+    int found = 0;
+    for (auto c: qAsConst(curves)) {
+        if (c->title() == name) {
+            if (found)
+                c->duplicate = true;
+            else
+                c1 = c;
+            found++;
+        }
+    }
+    if (c1) c1->duplicate = found>1;
 }
 
 QString Plot::yValuesPresentationSuffix(int yValuesPresentation) const
-{
+{DD;
     switch (DataHolder::YValuesPresentation(yValuesPresentation)) {
         case DataHolder::ShowAsDefault: return QString();
         case DataHolder::ShowAsReals: return " [Re]";
@@ -798,7 +774,7 @@ QString Plot::yValuesPresentationSuffix(int yValuesPresentation) const
 }
 
 void Plot::createLegend()
-{
+{DD;
     CheckableLegend *leg = new CheckableLegend();
     connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
     connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurveFromLegend(QwtPlotItem*)));
@@ -811,7 +787,7 @@ void Plot::createLegend()
 }
 
 void Plot::recalculateScale(bool leftAxis)
-{
+{DD;
     ZoomStack::ScaleBounds *ybounds = 0;
     if (leftAxis) ybounds = zoom->verticalScaleBounds;
     else ybounds = zoom->verticalScaleBoundsSlave;
@@ -821,7 +797,7 @@ void Plot::recalculateScale(bool leftAxis)
     else l = rightCurves;
 
     ybounds->reset();
-    foreach (Curve *c, l) {
+    for (Curve *c: qAsConst(l)) {
         ybounds->add(c->yMin(), c->yMax());
     }
 }
@@ -918,9 +894,6 @@ bool Plot::plotCurve(Channel * ch, QColor *col, bool &plotOnRight, int fileNumbe
     curves << g;
     g->fileNumber = fileNumber;
     checkDuplicates(g->title());
-    if (hasDuplicateNames(g->title())) {
-        g->duplicate = true;
-    }
 
     g->setYAxis(ax);
     if (plotOnRight) {
@@ -980,25 +953,25 @@ Curve * Plot::plotted(Channel *channel) const
 }
 
 Range Plot::xRange() const
-{
+{DD;
     QwtScaleMap sm = canvasMap(QwtAxis::xBottom);
     return {sm.s1(), sm.s2()};
 }
 
 Range Plot::yLeftRange() const
-{
+{DD;
     QwtScaleMap sm = canvasMap(QwtAxis::yLeft);
     return {sm.s1(), sm.s2()};
 }
 
 Range Plot::yRightRange() const
-{
+{DD;
     QwtScaleMap sm = canvasMap(QwtAxis::yRight);
     return {sm.s1(), sm.s2()};
 }
 
 void Plot::switchLabelsVisibility()
-{
+{DD;
     axisLabelsVisible = !axisLabelsVisible;
     updateAxesLabels();
 }
@@ -1088,7 +1061,7 @@ void Plot::importPlot(const QString &fileName, const QSize &size, int resolution
 }
 
 void Plot::importPlot(QPrinter &printer, const QSize &size, int resolution) /*private*/
-{
+{DD;
     Q_UNUSED(size);
     Q_UNUSED(resolution);
 
@@ -1188,8 +1161,7 @@ void Plot::switchCursor()
 
 void Plot::editLegendItem(QwtPlotItem *item)
 {DD;
-    Curve *c = dynamic_cast<Curve *>(item);
-    if (c) {
+    if (Curve *c = dynamic_cast<Curve *>(item)) {
         CurvePropertiesDialog dialog(c, this);
         connect(&dialog,SIGNAL(curveChanged(Curve*)),this, SIGNAL(curveChanged(Curve*)));
         connect(&dialog,SIGNAL(curveChanged(Curve*)),trackingPanel, SLOT(update()));
@@ -1199,7 +1171,7 @@ void Plot::editLegendItem(QwtPlotItem *item)
 
 
 void Plot::dropEvent(QDropEvent *event)
-{
+{DD;
     const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
     if (myData) {
 //        qDebug()<<myData->channels;
@@ -1209,7 +1181,7 @@ void Plot::dropEvent(QDropEvent *event)
 }
 
 void Plot::dragEnterEvent(QDragEnterEvent *event)
-{
+{DD;
     const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
     if (myData) {
 //        qDebug()<<myData->channels;
