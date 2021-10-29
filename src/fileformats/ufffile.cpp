@@ -43,13 +43,13 @@ UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString 
     dataDescription().put("source.dateTime", other.dataDescription().get("dateTime"));
     updateDateTimeGUID();
 
+    const int count = other.channelsCount();
+
     //если индексы пустые - копируем все каналы
     if (indexes.isEmpty())
-        for (int i=0; i<other.channelsCount(); ++i) indexes << i;
+        for (int i=0; i<count; ++i) indexes << i;
     else
         dataDescription().put("source.channels", stringify(indexes));
-
-    const int count = other.channelsCount();
 
     int referenceChannelNumber = -1; //номер опорного канала ("сила")
     QString referenceChannelName;

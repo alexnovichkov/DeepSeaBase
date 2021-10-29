@@ -66,8 +66,7 @@ void ChannelTableModel::clear()
 void ChannelTableModel::deleteCurves()
 {DD;
     if (!descriptor) return;
-    const int count = descriptor->channelsCount();
-    for (int i=0; i<count; ++i) {
+    for (int i=0, count = descriptor->channelsCount(); i<count; ++i) {
         if (descriptor->channel(i)->plotted()>0) {
             setData(index(i,0),Qt::Unchecked,Qt::CheckStateRole);
         }

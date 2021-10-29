@@ -132,7 +132,7 @@ void Model::discardChanges()
     for (auto f: qAsConst(descriptors)) {
         f->setChanged(false);
         f->setDataChanged(false);
-        for (int j=0; j<f->channelsCount(); ++j) {
+        for (int j=0, count = f->channelsCount(); j<count; ++j) {
             f->channel(j)->setChanged(false);
             f->channel(j)->setDataChanged(false);
         }

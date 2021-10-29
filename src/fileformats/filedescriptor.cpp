@@ -7,17 +7,17 @@
 
 FileDescriptor::FileDescriptor(const QString &fileName) :
     _fileName(fileName)
-{
+{DD;
     qDebug()<<fileName;
 }
 
 FileDescriptor::~FileDescriptor()
-{
+{DD;
     //   qDebug()<<"deleting"<<fileName();
 }
 
 bool FileDescriptor::rename(const QString &newName, const QString &newPath)
-{
+{DD;
     //newName приходит с суффиксом
 
     if (!newPath.isEmpty()) QDir().mkpath(newPath);
@@ -33,13 +33,13 @@ bool FileDescriptor::rename(const QString &newName, const QString &newPath)
 }
 
 void FileDescriptor::fillPreliminary(const FileDescriptor *d)
-{
+{DD;
     updateDateTimeGUID();
     dataDescription().put("dateTime", d->dataDescription().get("dateTime"));
 }
 
 void FileDescriptor::populate()
-{
+{DD;
     const int count = channelsCount();
     for (int i=0; i<count; ++i) {
         if (!channel(i)->populated()) channel(i)->populate();
@@ -47,7 +47,7 @@ void FileDescriptor::populate()
 }
 
 void FileDescriptor::updateDateTimeGUID()
-{
+{DD;
     QDateTime dt = QDateTime::currentDateTime();
     dataDescription().put("fileCreationTime", dt.toString("dd.MM.yyyy hh:mm"));
     dataDescription().put("guid", FileDescriptor::createGUID());
@@ -55,23 +55,24 @@ void FileDescriptor::updateDateTimeGUID()
 }
 
 bool FileDescriptor::copyTo(const QString &name)
-{
+{DD;
     return QFile::copy(fileName(), name);
 }
 
 Descriptor::DataType FileDescriptor::type() const
-{
-    if (channelsCount() == 0) return Descriptor::Unknown;
+{DD;
+    const int count = channelsCount();
+    if (count == 0) return Descriptor::Unknown;
 
     Descriptor::DataType t = channel(0)->type();
-    for (int i=1; i<channelsCount(); ++i) {
+    for (int i=1; i<count; ++i) {
         if (channel(i)->type() != t) return Descriptor::Unknown;
     }
     return t;
 }
 
 QString FileDescriptor::typeDisplay() const
-{
+{DD;
     return Descriptor::functionTypeDescription(type());
 }
 
@@ -80,7 +81,7 @@ QString FileDescriptor::typeDisplay() const
 // 3199,9999 -> 3200
 // 0,49999 -> 0,5
 double FileDescriptor::roundedSize() const
-{
+{DD;
     if (channelsCount()==0) return 0.0;
 
     if (channel(0)->data()->xValuesFormat() == DataHolder::XValuesUniform) {
@@ -107,12 +108,12 @@ double FileDescriptor::roundedSize() const
 }
 
 QDateTime FileDescriptor::dateTime() const
-{
+{DD;
     return dataDescription().get("dateTime").toDateTime();
 }
 
 bool FileDescriptor::setDateTime(const QDateTime &dt)
-{
+{DD;
     if (dt==dateTime()) return false;
     dataDescription().put("dateTime", dt);
     setChanged(true);
@@ -120,20 +121,20 @@ bool FileDescriptor::setDateTime(const QDateTime &dt)
 }
 
 QDateTime FileDescriptor::fileCreationTime() const
-{
+{DD;
     QString dt = dataDescription().get("fileCreationTime").toString();
     return QDateTime::fromString(dt, "dd.MM.yyyy hh:mm");
 }
 
 bool FileDescriptor::setFileCreationTime(const QDateTime &dt)
-{
+{DD;
     dataDescription().put("fileCreationTime", dt.toString("dd.MM.yyyy hh:mm"));
     setChanged(true);
     return true;
 }
 
 void FileDescriptor::calculateMean(const QList<Channel *> &channels)
-{
+{DD;
     if (channels.isEmpty()) return;
 
     Channel *firstChannel = channels.constFirst();
@@ -227,7 +228,7 @@ void FileDescriptor::calculateMean(const QList<Channel *> &channels)
 }
 
 void FileDescriptor::calculateMovingAvg(const QList<Channel *> &channels, int windowSize)
-{
+{DD;
     if (channels.isEmpty()) return;
 
     for (Channel *c: channels) {
@@ -276,7 +277,7 @@ void FileDescriptor::calculateMovingAvg(const QList<Channel *> &channels, int wi
 }
 
 void FileDescriptor::calculateThirdOctave(FileDescriptor *source)
-{
+{DD;
     for (int i=0; i<source->channelsCount(); ++i) {
         Channel *ch = source->channel(i);
 
@@ -313,7 +314,7 @@ void FileDescriptor::calculateThirdOctave(FileDescriptor *source)
 }
 
 QString FileDescriptor::saveTimeSegment(double from, double to)
-{
+{DD;
     // 0 проверяем, чтобы этот файл имел тип временных данных
     if (type() != Descriptor::TimeResponse) return "";
     // и имел данные
@@ -376,30 +377,32 @@ QString FileDescriptor::saveTimeSegment(double from, double to)
 }
 
 bool FileDescriptor::fileExists() const
-{
+{DD;
     return QFileInfo(_fileName).exists();
 }
 
 QVariant FileDescriptor::channelHeader(int column) const
-{
-    if (channelsCount()==0) return QVariant();
-    return channel(0)->channelHeader(column);
+{DD;
+    if (auto c = channel(0))
+        return c->channelHeader(column);
+    return QVariant();
 }
 
 int FileDescriptor::columnsCount() const
-{
-    if (channelsCount()==0) return 7;
-    return channel(0)->columnsCount();
+{DD;
+    if (auto c = channel(0))
+        return c->columnsCount();
+    return 7;
 }
 
 
 void FileDescriptor::setChanged(bool changed)
-{//DD;
+{DD;
     _changed = changed;
 }
 
 int FileDescriptor::plottedCount() const
-{
+{DD;
     int plotted = 0;
     const int count = channelsCount();
     for (int i=0; i<count; ++i) {
@@ -409,10 +412,11 @@ int FileDescriptor::plottedCount() const
 }
 
 bool FileDescriptor::isSourceFile() const
-{
-    if (channelsCount() == 0) return false;
+{DD;
+    const int count = channelsCount();
+    if (count == 0) return false;
     int type = channel(0)->type();
-    for (int i=1; i<channelsCount(); ++i) {
+    for (int i=1; i<count; ++i) {
         if (channel(i)->type() != type) {
             return false;
         }
@@ -422,17 +426,19 @@ bool FileDescriptor::isSourceFile() const
 }
 
 double FileDescriptor::xStep() const
-{
-    if (channelsCount()==0) return 0.0;
-    return channel(0)->data()->xStep();
+{DD;
+    if (auto c = channel(0))
+        return c->data()->xStep();
+    return 0.0;
 }
 
 void FileDescriptor::setXStep(const double xStep)
-{
-    if (channelsCount() == 0) return;
+{DD;
+    const int count = channelsCount();
+    if (count == 0) return;
     bool changed = false;
 
-    for (int i=0; i < channelsCount(); ++i) {
+    for (int i=0; i < count; ++i) {
         Channel *ch = channel(i);
         if (ch->data()->xValuesFormat() == DataHolder::XValuesNonUniform) continue;
         if (ch->data()->xStep()!=xStep) {
@@ -445,23 +451,26 @@ void FileDescriptor::setXStep(const double xStep)
 }
 
 double FileDescriptor::xBegin() const
-{
-    if (channelsCount()==0) return 0.0;
-    return channel(0)->data()->xMin();
+{DD;
+    if (auto c = channel(0))
+        return c->data()->xMin();
+    return 0.0;
 }
 
 int FileDescriptor::samplesCount() const
-{
-    if (channelsCount()==0) return 0;
-    return channel(0)->data()->samplesCount();
+{DD;
+    if (auto c = channel(0))
+        return c->data()->samplesCount();
+    return 0;
 }
 
 QString FileDescriptor::xName() const
-{
+{DD;
     QString result;
-    if (channelsCount() > 0) {
+    const int count = channelsCount();
+    if (count > 0) {
         result = channel(0)->xName();
-        for (int i=1; i<channelsCount(); ++i) {
+        for (int i=1; i<count; ++i) {
             if (channel(i)->xName() != result) return "разные";
         }
     }
@@ -469,17 +478,17 @@ QString FileDescriptor::xName() const
 }
 
 bool FileDescriptor::dataTypeEquals(FileDescriptor *other) const
-{
+{DD;
     return (this->type() == other->type());
 }
 
 QString FileDescriptor::legend() const
-{
+{DD;
     return dataDescription().get("legend").toString();
 }
 
 bool FileDescriptor::setLegend(const QString &s)
-{
+{DD;
     if (s==legend()) return false;
     dataDescription().put("legend", s);
     setChanged(true);
@@ -487,23 +496,23 @@ bool FileDescriptor::setLegend(const QString &s)
 }
 
 bool FileDescriptor::canTakeChannelsFrom(FileDescriptor *other) const
-{
+{DD;
     Q_UNUSED(other);
     return true;
 }
 
 bool FileDescriptor::canTakeAnyChannels() const
-{
+{DD;
     return true;
 }
 
 qint64 FileDescriptor::fileSize() const
-{
+{DD;
     return QFileInfo(fileName()).size();
 }
 
 bool FileDescriptor::hasCurves() const
-{
+{DD;
     const int count = channelsCount();
     for (int i=0; i<count; ++i) {
         if (channel(i)->plotted()) return true;
@@ -512,7 +521,7 @@ bool FileDescriptor::hasCurves() const
 }
 
 QString FileDescriptor::createGUID()
-{
+{DD;
     QString result = QUuid::createUuid().toString().toUpper();
     if (result.at(24) == '-') result.remove(24,1);
     else result.remove(25,1);

@@ -1996,7 +1996,7 @@ void MainWindow::updatePlottedChannelsNumbers()
     plottedChannelsNumbers.clear();
 
     if (sergeiMode) {
-        for (int i=0; i<tab->record->channelsCount(); ++i)
+        for (int i=0, count = tab->record->channelsCount(); i<count; ++i)
             if (tab->record->channel(i)->plotted()>0)
                 plottedChannelsNumbers << i;
     }
@@ -2783,7 +2783,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 }
 
 bool MainWindow::closeRequested()
-{DDD;
+{DD;
     //определяем, были ли изменения
     bool changed = false;
     for (int i=0; i<tabWidget->count(); ++i) {
