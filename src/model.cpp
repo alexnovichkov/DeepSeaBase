@@ -83,8 +83,6 @@ void Model::updateFile(int idx, int column)
 
 void Model::clear()
 {DD;
-    beginResetModel();
-
     //выделяем все файлы
     indexes.resize(size());
     std::iota(indexes.begin(), indexes.end(), 0);
@@ -99,9 +97,7 @@ void Model::deleteSelectedFiles()
     for (int i = indexes.size()-1; i>=0; --i) {
         int toDelete = indexes.at(i);
         if (toDelete >= 0 && toDelete < descriptors.size()) {
-            QString name = descriptors[toDelete]->fileName();
-            descriptors[toDelete].reset();
-            App->maybeDelFile(name);
+            maybeDeleteFile(i);
             descriptors.removeAt(toDelete);
         }
     }
@@ -152,7 +148,22 @@ bool Model::changed() const
 
 Model::~Model()
 {DD;
-    clear();
+    //clear();
+
+    for (int i = descriptors.size()-1; i>=0; --i) {
+        maybeDeleteFile(i);
+    }
+
+    indexes.clear();
+
+    //emit modelChanged();
+}
+
+void Model::maybeDeleteFile(int index)
+{
+    QString name = descriptors[index]->fileName();
+    descriptors[index].reset();
+    App->maybeDelFile(name);
 }
 
 bool Model::contains(const QString &fileName, int *index) const

@@ -14,6 +14,13 @@ ChannelTableModel::ChannelTableModel(QObject *parent) : QAbstractTableModel(pare
     bFont.setBold(true);
 }
 
+ChannelTableModel::~ChannelTableModel()
+{
+    descriptor = 0;
+    channelsCount = 0;
+    indexes.clear();
+}
+
 Channel *ChannelTableModel::channel(int index)
 {DD;
     if (!descriptor) return nullptr;

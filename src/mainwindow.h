@@ -24,12 +24,7 @@ class QTreeWidgetItem;
 class QScrollBar;
 class QTableWidgetItem;
 class QToolBar;
-class QItemSelection;
-class QTableView;
-
-class TabWidget;
-class HeaderView;
-
+class QSplitter;
 class Plot;
 
 class QwtLegend;
@@ -39,48 +34,8 @@ class QwtPlotCurve;
 
 class Curve;
 class Channel;
-class Model;
-class ChannelTableModel;
-class SortFilterModel;
-class QLineEdit;
-class FilterHeaderView;
-class FilteredHeaderView;
-class FilesTable;
-class QFileSystemWatcher;
-
-#include <QSplitter>
 
 #include "app.h"
-
-
-
-
-class Tab : public QSplitter
-{
-    Q_OBJECT
-public:
-    Tab(QWidget * parent) : QSplitter(parent), record(0) {}
-    ~Tab();
-
-    HeaderView *tableHeader;
-    QLabel *filePathLabel;
-    FilesTable *filesTable;
-    QTableView *channelsTable;
-    Model *model;
-    SortFilterModel *sortModel;
-//    FilterHeaderView *filterHeader;
-    FilteredHeaderView *filterHeader;
-    ChannelTableModel *channelModel;
-    QList<QLineEdit *> filters;
-
-    QStringList folders;
-
-    FileDescriptor *record;
-    QFileSystemWatcher *watcher;
-private slots:
-    void filesSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);
-    void channelsSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);
-};
 
 class MainWindow : public QMainWindow
 {
@@ -156,7 +111,7 @@ private slots:
 
     void createNewTab();
 
-    void closeTab(int, bool checkForCurves = true);
+    void closeTab(int);
     void closeOtherTabs(int);
     void renameTab(int i);
     void changeCurrentTab(int currentIndex);

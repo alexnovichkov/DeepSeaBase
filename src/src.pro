@@ -48,6 +48,7 @@ SOURCES += main.cpp\
     channelstable.cpp \
     converters/tdmsconverter.cpp \
     descriptorpropertiesdialog.cpp \
+    filehandler.cpp \
     filestable.cpp \
     mainwindow.cpp \
     methods/apsfunction.cpp \
@@ -69,6 +70,7 @@ SOURCES += main.cpp\
     methods/dfdmethods/spectremethod.cpp \
     methods/dfdmethods/timemethod.cpp \
     curvepropertiesdialog.cpp \
+    tab.cpp \
     tabwidget.cpp \
     coloreditdialog.cpp \
     colorselector.cpp \
@@ -144,6 +146,7 @@ HEADERS  += mainwindow.h \
     converters/tdmsconverter.h \
     descriptorpropertiesdialog.h \
     enums.h \
+    filehandler.h \
     filestable.h \
     methods/apsfunction.h \
     methods/filteringalgorithm.h \
@@ -165,6 +168,7 @@ HEADERS  += mainwindow.h \
     methods/dfdmethods/spectremethod.h \
     methods/dfdmethods/timemethod.h \
     curvepropertiesdialog.h \
+    tab.h \
     tabwidget.h \
     coloreditdialog.h \
     colorselector.h \

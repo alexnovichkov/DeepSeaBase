@@ -18,6 +18,7 @@
 #include "sortfiltermodel.h"
 #include "filterheaderview.h"
 #include "wavexportdialog.h"
+#include "filehandler.h"
 
 #include <ActiveQt/ActiveQt>
 #include "logging.h"
@@ -40,6 +41,8 @@
 #include "fileformats/formatfactory.h"
 #include "descriptorpropertiesdialog.h"
 #include "channelpropertiesdialog.h"
+#include "tab.h"
+#include "filehandler.h"
 
 class DfdFilterProxy : public QSortFilterProxyModel
 {
@@ -523,11 +526,9 @@ MainWindow::MainWindow(QWidget *parent)
     if (v.isEmpty())
         createNewTab();
     else {
-        QMapIterator<QString, QVariant> it(v);
-        while (it.hasNext()) {
-            it.next();
-            createTab(it.key(), it.value().toStringList());
-            tabsNames << it.key();
+        for (const auto [key,val]: asKeyValueRange(v)) {
+            createTab(key, val.toStringList());
+            tabsNames << key;
         }
     }
 
@@ -542,8 +543,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->model = new Model(tab);
     connect(tab->model, &Model::needAddFiles, [=](const QStringList &files){
         addFiles(files);
-        for (const QString &file: files)
-            if (!tab->folders.contains(file)) tab->folders << file;
+        tab->fileHandler->trackFiles(files);
     });
     tab->sortModel = new SortFilterModel(tab);
     tab->sortModel->setSourceModel(tab->model);
@@ -745,8 +745,6 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->addWidget(treeWidget);
     tab->addWidget(channelsWidget);
 
-
-
     QByteArray upperSplitterState = App->getSetting("upperSplitterState").toByteArray();
     if (!upperSplitterState.isEmpty())
         tab->restoreState(upperSplitterState);
@@ -754,16 +752,9 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     int i = tabWidget->addTab(tab, name);
     tabWidget->setCurrentIndex(i);
 
-    for (QString folder: folders) {
-        bool subfolders = folder.endsWith(":1");
-        if (subfolders || folder.endsWith(":0"))
-            folder.chop(2);
-        QFileInfo fi(folder);
-        if (fi.exists()) {
-            if (fi.isDir()) tab->watcher->addPath(folder);
-            addFolder(folder, subfolders, true);
-        }
-    }
+    connect(tab->fileHandler, SIGNAL(fileAdded(QString,bool,bool)),this,SLOT(addFolder(QString,bool,bool)));
+
+    tab->fileHandler->setFileNames(folders);
 }
 
 void MainWindow::createNewTab()
@@ -779,7 +770,7 @@ void MainWindow::createNewTab()
     tabsNames << name;
 }
 
-void MainWindow::closeTab(int i, bool checkForCurves)
+void MainWindow::closeTab(int i)
 {DD;
     if (!tabWidget) return;
     //if (tabWidget->count()==1) return;
@@ -791,7 +782,7 @@ void MainWindow::closeTab(int i, bool checkForCurves)
 
     if (!tab) return;
 
-    if (checkForCurves) {
+    if (plot) {
         for (int i=0; i<tab->model->size(); ++i) {
             const F f = tab->model->file(i);
             //use_count==3 if file is only in one tab, (1 for App, 1 for model, 1 for the prev line)
@@ -802,8 +793,11 @@ void MainWindow::closeTab(int i, bool checkForCurves)
         }
     }
 
-    tab->channelModel->clear();
-    tab->model->clear();
+//    tab->channelModel->clear();
+//    tab->model->clear();
+
+    //tab->channelModel->deleteLater();
+    //tab->model->deleteLater();
 
     QWidget *w = tabWidget->widget(index);
     tabWidget->removeTab(index);
@@ -923,8 +917,7 @@ void MainWindow::addFile()
         if (fileNames.isEmpty()) return;
         App->setSetting("lastDirectory", fileNames.constFirst());
         addFiles(fileNames);
-        for (const QString &file: fileNames)
-            if (!tab->folders.contains(file)) tab->folders << file;
+        tab->fileHandler->trackFiles(fileNames);
     }
 }
 
@@ -951,11 +944,8 @@ void MainWindow::addFolder(const QString &directory, bool withAllSubfolders, boo
                                                  .arg(filesToAdd.size()));
     }
     //успешное добавление нескольких файлов -> добавляем название папки в базу
-    if (!toAdd.isEmpty()) {
-        QString suffix = withAllSubfolders?":1":":0";
-        if (!tab->folders.contains(directory+suffix))
-            tab->folders.append(directory+suffix);
-    }
+    if (!toAdd.isEmpty())
+        tab->fileHandler->trackFolder(directory, withAllSubfolders);
 }
 
 void MainWindow::deleteFiles()
@@ -970,19 +960,14 @@ void MainWindow::deleteFiles()
         if (f.use_count()<=3 && f->hasCurves())
             plot->deleteCurvesForDescriptor(f.get());
 
-        if (tab->folders.contains(f->fileName()))
-            tab->folders.removeOne(f->fileName());
-        else if (tab->folders.contains(f->fileName()+":0"))
-            tab->folders.removeOne(f->fileName()+":0");
-        else if (tab->folders.contains(f->fileName()+":1"))
-            tab->folders.removeOne(f->fileName()+":1");
+        tab->fileHandler->untrackFile(f->fileName());
     }
     tab->channelModel->clear();
 
     tab->model->deleteSelectedFiles();
 
     if (tab->model->size() == 0)
-        tab->folders.clear();
+        tab->fileHandler->clear();
 }
 
 void MainWindow::deleteChannels() /** SLOT */
@@ -1261,7 +1246,7 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
     }
     else {
         addFile(destination);
-        if (!tab->folders.contains(file)) tab->folders << file;
+        tab->fileHandler->trackFiles({file});
     }
 
     return true;
@@ -1472,8 +1457,7 @@ void MainWindow::convertMatFiles()
         if (dialog.addFiles()) {
             QStringList files = dialog.getConvertedFiles();
             this->addFiles(files);
-            foreach (const QString &file, files)
-                if (!tab->folders.contains(file)) tab->folders << file;
+            if (tab) tab->fileHandler->trackFiles(files);
         }
     }
 }
@@ -1485,8 +1469,7 @@ void MainWindow::convertTDMSFiles()
         if (dialog.addFiles()) {
             QStringList files = dialog.getConvertedFiles();
             this->addFiles(files);
-            foreach (const QString &file, files)
-                if (!tab->folders.contains(file)) tab->folders << file;
+            if (tab) tab->fileHandler->trackFiles(files);
         }
     }
 }
@@ -1498,8 +1481,7 @@ void MainWindow::convertEsoFiles()
         QStringList files = dialog.getConvertedFiles();
         if (files.isEmpty()) return;
         this->addFiles(files);
-        foreach (const QString &file, files)
-            if (!tab->folders.contains(file)) tab->folders << file;
+        if (tab) tab->fileHandler->trackFiles(files);
     }
 }
 
@@ -1705,20 +1687,18 @@ void MainWindow::calculateSpectreRecords(bool useDeepsea)
     if (useDeepsea) {
         CalculateSpectreDialog dialog(records, this);
         if (dialog.exec()) {
-            const QStringList newFiles = dialog.getNewFiles();
-            addFiles(newFiles);
-            for (const QString &file: newFiles)
-                if (!tab->folders.contains(file)) tab->folders << file;
+            const QStringList files = dialog.getNewFiles();
+            addFiles(files);
+            tab->fileHandler->trackFiles(files);
         }
     }
     else {
         FilesProcessorDialog dialog(records, this);
 
         if (dialog.exec()) {
-            const QStringList newFiles = dialog.getNewFiles();
-            addFiles(newFiles);
-            for (const QString &file: newFiles)
-                if (!tab->folders.contains(file)) tab->folders << file;
+            const QStringList files = dialog.getNewFiles();
+            addFiles(files);
+            tab->fileHandler->trackFiles(files);
         }
     }
 }
@@ -1732,10 +1712,9 @@ void MainWindow::convertFiles()
     dialog.exec();
 
     if (dialog.addFiles()) {
-        QStringList newFiles = dialog.getConvertedFiles();
-        addFiles(newFiles);
-        foreach (const QString &file, newFiles)
-            if (!tab->folders.contains(file)) tab->folders << file;
+        QStringList files = dialog.getConvertedFiles();
+        addFiles(files);
+        tab->fileHandler->trackFiles(files);
     }
 }
 
@@ -1956,16 +1935,8 @@ void MainWindow::rescanBase()
             t->filePathLabel->clear();
             tab = t;
 
-            for (QString folder: qAsConst(t->folders)) {
-                if (folder.endsWith(":0")) {
-                    folder.chop(2);
-                    addFolder(folder, false, false);
-                }
-                else if (folder.endsWith(":1")) {
-                    folder.chop(2);
-                    addFolder(folder, true, false);
-                }
-                else addFolder(folder, true, false);
+            for (auto folder: qAsConst(t->fileHandler->files)) {
+                addFolder(folder.first, folder.second == FileHandler::FolderWithSubfolders, false);
             }
         }
     }
@@ -2160,7 +2131,8 @@ void MainWindow::updateActions()
     const int selectedFilesCount = tab->model->selected().size();
     const int channelsCount = tab->channelModel->channelsCount;
     const int filesCount = tab->model->size();
-    const bool hasCurves = plot->hasCurves();
+    const bool hasCurves = plot?plot->hasCurves():false;
+    const bool spectrogram = plot?plot->spectrogram:false;
 
     saveAct->setEnabled(tab->model->changed());
 
@@ -2190,16 +2162,16 @@ void MainWindow::updateActions()
     savePlotAct->setEnabled(hasCurves);
     rescanBaseAct->setEnabled(filesCount>0);
     //QAction *switchCursorAct;
-    //trackingCursorAct->setEnabled(!plot->spectrogram);
+    //trackingCursorAct->setEnabled(!spectrogram);
     copyToClipboardAct->setEnabled(hasCurves);
     printPlotAct->setEnabled(hasCurves);
     //QAction *editColorsAct;
 
-    meanAct->setDisabled(plot->curves.size()<2);
-    movingAvgAct->setEnabled(hasCurves && !plot->spectrogram);
+    if (plot) meanAct->setDisabled(plot->curves.size()<2);
+    movingAvgAct->setEnabled(hasCurves && !spectrogram);
     //QAction *interactionModeAct;
-    addCorrectionAct->setEnabled(hasCurves && !plot->spectrogram);
-    addCorrectionsAct->setEnabled(hasCurves && !plot->spectrogram);
+    addCorrectionAct->setEnabled(hasCurves && !spectrogram);
+    addCorrectionsAct->setEnabled(hasCurves && !spectrogram);
     deleteChannelsAct->setDisabled(selectedChannelsCount==0);
     deleteChannelsBatchAct->setDisabled(selectedChannelsCount==0);
     copyChannelsAct->setDisabled(selectedChannelsCount==0);
@@ -2209,7 +2181,7 @@ void MainWindow::updateActions()
     moveChannelsUpAct->setEnabled(selectedChannelsCount > 0 && selectedChannelsCount < channelsCount);
     editDescriptionsAct->setDisabled(selectedFilesCount==0);
 
-    exportToExcelAct->setEnabled(hasCurves && !plot->spectrogram);
+    exportToExcelAct->setEnabled(hasCurves && !spectrogram);
     exportChannelsToWavAct->setEnabled(!timeFiles.isEmpty() && selectedChannelsCount>0);
 
     //convertMatFilesAct;
@@ -2224,14 +2196,14 @@ void MainWindow::updateActions()
     //QAction *autoscaleAllAct;
 
     //QAction *removeLabelsAct;
-    playAct->setEnabled(plot->curvesCount(Descriptor::TimeResponse)>0);
+    if (plot) playAct->setEnabled(plot->curvesCount(Descriptor::TimeResponse)>0);
     editYNameAct->setDisabled(selectedChannelsCount==0);
 
-    previousDescriptorAct->setEnabled(filesCount>1 && plot->hasCurves());
-    nextDescriptorAct->setEnabled(filesCount>1 && plot->hasCurves());
-    arbitraryDescriptorAct->setEnabled(filesCount>1 && plot->hasCurves());
-    cycleChannelsUpAct->setEnabled(channelsCount>1 && plot->hasCurves());
-    cycleChannelsDownAct->setEnabled(channelsCount>1 && plot->hasCurves());
+    previousDescriptorAct->setEnabled(filesCount>1 && hasCurves);
+    nextDescriptorAct->setEnabled(filesCount>1 && hasCurves);
+    arbitraryDescriptorAct->setEnabled(filesCount>1 && hasCurves);
+    cycleChannelsUpAct->setEnabled(channelsCount>1 && hasCurves);
+    cycleChannelsDownAct->setEnabled(channelsCount>1 && hasCurves);
 }
 
 void MainWindow::renameDescriptor()
@@ -2802,48 +2774,6 @@ void MainWindow::addFiles(const QStringList &files)
     addDescriptors(items);
 }
 
-Tab::~Tab()
-{DD;
-
-}
-
-void Tab::filesSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection)
-{DD;
-    Q_UNUSED(oldSelection);
-    if (newSelection.isEmpty()) filesTable->selectionModel()->setCurrentIndex(QModelIndex(), QItemSelectionModel::NoUpdate);
-
-    QVector<int> indexes;
-
-    const QModelIndexList list = filesTable->selectionModel()->selection().indexes();
-    for (const QModelIndex &i: list) indexes << sortModel->mapToSource(i).row();
-
-    std::sort(indexes.begin(), indexes.end());
-    indexes.erase(std::unique(indexes.begin(), indexes.end()), indexes.end());
-
-    model->setSelected(indexes);
-    if (indexes.isEmpty()) {
-        channelModel->clear();
-        filePathLabel->clear();
-    }
-
-}
-
-void Tab::channelsSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection)
-{DD;
-    Q_UNUSED(oldSelection);
-    if (newSelection.isEmpty()) channelsTable->selectionModel()->setCurrentIndex(QModelIndex(), QItemSelectionModel::NoUpdate);
-
-    QVector<int> indexes;
-
-    const QModelIndexList list = channelsTable->selectionModel()->selection().indexes();
-    for (const QModelIndex &i: list) indexes << i.row();
-
-    std::sort(indexes.begin(), indexes.end());
-    indexes.erase(std::unique(indexes.begin(), indexes.end()), indexes.end());
-
-    channelModel->setSelected(indexes);
-}
-
 void MainWindow::closeEvent(QCloseEvent *event)
 {DD;
     if (closeRequested())
@@ -2853,7 +2783,7 @@ void MainWindow::closeEvent(QCloseEvent *event)
 }
 
 bool MainWindow::closeRequested()
-{DD;
+{DDD;
     //определяем, были ли изменения
     bool changed = false;
     for (int i=0; i<tabWidget->count(); ++i) {
@@ -2907,8 +2837,8 @@ bool MainWindow::closeRequested()
     QVariantMap map;
     for (int i=0; i<tabWidget->count(); ++i) {
         if (Tab *t = qobject_cast<Tab *>(tabWidget->widget(i))) {
-            if (!t->folders.isEmpty())
-                map.insert(tabWidget->tabText(i), t->folders);
+            if (auto folders = t->fileHandler->fileNames(); !folders.isEmpty())
+                map.insert(tabWidget->tabText(i), folders);
             tab->filterHeader->clear();
         }
     }
@@ -2916,10 +2846,14 @@ bool MainWindow::closeRequested()
     App->setSetting("folders1", map);
 
     //насильственно удаляем все графики
-    plot->deleteAllCurves(true);
+    //plot->deleteAllCurves(true);
+    delete plot; plot = nullptr;
 
     for (int i= tabWidget->count()-1; i>=0; --i) {
-        closeTab(i, false);
+        QWidget *w = tabWidget->widget(i);
+        tabWidget->removeTab(i);
+        w->deleteLater();
+//        closeTab(i);
     }
 
     return true;

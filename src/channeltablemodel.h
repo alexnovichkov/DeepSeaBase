@@ -13,6 +13,7 @@ class ChannelTableModel : public QAbstractTableModel
     Q_OBJECT
 public:
     ChannelTableModel(QObject *parent);
+    ~ChannelTableModel();
     Channel *channel(int index);
     QVector<int> selected()  const {return indexes;}
     QVector<Channel*> selectedChannels() const;

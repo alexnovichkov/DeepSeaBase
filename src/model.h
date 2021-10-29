@@ -72,6 +72,7 @@ signals:
     void modelChanged();
     void needAddFiles(const QStringList &files);
 private:
+    void maybeDeleteFile(int index);
     QList<F> descriptors;
     QFont uFont;
     QFont bFont;
