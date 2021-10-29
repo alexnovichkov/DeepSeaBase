@@ -21,13 +21,13 @@ F Model::file(int i)
     return descriptors[i];
 }
 
-void Model::addFiles(const QList<F> &files)
+void Model::addFiles(const QList<F> &files, bool silent)
 {DD;
     if (files.isEmpty()) return;
     beginInsertRows(QModelIndex(), descriptors.size(), descriptors.size()+files.size()-1);
     descriptors.append(files);
     endInsertRows();
-    emit modelChanged();
+    if (!silent) emit modelChanged();
 }
 
 void Model::setSelected(const QVector<int> &indexes)

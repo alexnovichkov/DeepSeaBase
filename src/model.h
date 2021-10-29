@@ -34,7 +34,7 @@ public:
     F file(int i);
 //    FileDescriptor *find(const QString &fileName) const;
 
-    void addFiles(const QList<F> &files);
+    void addFiles(const QList<F> &files, bool silent=false);
     void deleteSelectedFiles(); //удаление выделенных файлов
     int size() const {return descriptors.size();}
 

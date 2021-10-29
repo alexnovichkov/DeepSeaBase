@@ -935,7 +935,7 @@ void MainWindow::addFolder(const QString &directory, bool withAllSubfolders, boo
     }
     if (toAdd.isEmpty()) return;
 
-    addFiles(toAdd);
+    addFiles(toAdd, silent);
     if (toAdd.size() < filesToAdd.size() && !silent) {
         QMessageBox::information(this,QString("База данных"),
                                  toAdd.isEmpty()?QString("Некоторые файлы уже есть в базе"):
@@ -2741,14 +2741,12 @@ void MainWindow::onCurveDeleted(Channel *channel)
         tab->channelModel->onCurveChanged(channel);
 }
 
-void MainWindow::addDescriptors(const QList<F> &files)
+void MainWindow::addDescriptors(const QList<F> &files, bool silent)
 {DD;
-    if (!tab) return;
-
-    tab->model->addFiles(files);
+    if (tab) tab->model->addFiles(files, silent);
 }
 
-void MainWindow::addFiles(const QStringList &files)
+void MainWindow::addFiles(const QStringList &files, bool silent)
 {DD;
     if (files.isEmpty()) return;
     if (!tab) return;
@@ -2771,7 +2769,7 @@ void MainWindow::addFiles(const QStringList &files)
             items << file;
         }
     }
-    addDescriptors(items);
+    addDescriptors(items, silent);
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

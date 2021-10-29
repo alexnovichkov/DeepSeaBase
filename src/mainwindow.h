@@ -160,8 +160,8 @@ private slots:
 private:
     QString getFolderToAdd(bool withSubfolders);
     void moveChannels(bool up);
-    void addFiles(const QStringList &files);
-    void addDescriptors(const QList<F> &files);
+    void addFiles(const QStringList &files, bool silent=false);
+    void addDescriptors(const QList<F> &files, bool silent=false);
 
     bool deleteChannels(FileDescriptor *file, const QVector<int> &channelsToDelete);
     bool copyChannels(FileDescriptor *descriptor, const QVector<int> &channelsToCopy);
