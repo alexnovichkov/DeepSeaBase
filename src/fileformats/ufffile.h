@@ -121,7 +121,8 @@ class UffFileDescriptor : public FileDescriptor
 public:
     UffFileDescriptor(const QString &fileName);
     UffFileDescriptor(const FileDescriptor &other, const QString &fileName,
-                      QVector<int> indexes = QVector<int>());
+                      const QVector<int> &indexes = QVector<int>());
+    UffFileDescriptor(const QVector<Channel *> &source, const QString &fileName);
     ~UffFileDescriptor();
 
     QList<Function *> channels;
@@ -133,7 +134,7 @@ public:
     virtual QString icon() const override {return ":/icons/uff.svg";}
 
     virtual void deleteChannels(const QVector<int> &channelsToDelete) override;
-    virtual void copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes) override;
+    virtual void copyChannelsFrom(const QVector<Channel *> &source) override;
 
     virtual void addChannelWithData(DataHolder *data, const DataDescription &description) override;
 
@@ -152,6 +153,7 @@ private:
     void removeTempFile();
     void readWithStreams();
     bool readWithMmap();
+    void init(const QVector<Channel*> &source);
 };
 
 #endif // UFFFILE_H

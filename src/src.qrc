@@ -54,5 +54,8 @@
         <file>icons/wav.ico</file>
         <file>icons/picture.ico</file>
         <file>icons/open_file.ico</file>
+        <file>icons/channel-copy-plotted.png</file>
+        <file>icons/channel-cut-plotted.png</file>
+        <file>icons/remove-plotted.png</file>
     </qresource>
 </RCC>

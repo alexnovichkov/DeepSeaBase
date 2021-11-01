@@ -62,6 +62,10 @@ private slots:
     void copyChannels();
     void moveChannels();
 
+    void deletePlottedChannels();
+    void copyPlottedChannels();
+    void movePlottedChannels();
+
     void addCorrection();
     void addCorrections();
 
@@ -164,7 +168,9 @@ private:
     void addDescriptors(const QList<F> &files, bool silent=false);
 
     bool deleteChannels(FileDescriptor *file, const QVector<int> &channelsToDelete);
+    bool deleteChannels(const QVector<Channel *> channels);
     bool copyChannels(FileDescriptor *descriptor, const QVector<int> &channelsToCopy);
+    bool copyChannels(const QVector<Channel *> source);
 
     void exportToExcel(bool fullRange, bool dataOnly=false);
 
@@ -226,6 +232,11 @@ private:
     QAction *deleteChannelsBatchAct;
     QAction *copyChannelsAct;
     QAction *moveChannelsAct;
+
+    QAction *deletePlottedChannelsAct;
+    //QAction *deleteChannelsBatchAct;
+    QAction *copyPlottedChannelsAct;
+    QAction *movePlottedChannelsAct;
 
     QAction *moveChannelsUpAct;
     QAction *moveChannelsDownAct;

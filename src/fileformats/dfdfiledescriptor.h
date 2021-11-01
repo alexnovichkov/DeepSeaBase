@@ -263,6 +263,7 @@ public:
     DfdFileDescriptor(const QString &fileName);
     DfdFileDescriptor(const DfdFileDescriptor &d, const QString &fileName, QVector<int> indexes = QVector<int>());
     DfdFileDescriptor(const FileDescriptor &other, const QString &fileName, QVector<int> indexes = QVector<int>());
+    DfdFileDescriptor(const QVector<Channel *> &source, const QString &fileName);
     virtual ~DfdFileDescriptor();
 
     virtual QString icon() const override {return ":/icons/dfd.svg";}
@@ -282,7 +283,7 @@ public:
     virtual int channelsCount() const override {return channels.size();}
 
     void deleteChannels(const QVector<int> &channelsToDelete) override;
-    void copyChannelsFrom(FileDescriptor *file, const QVector<int> &indexes) override;
+    void copyChannelsFrom(const QVector<Channel*> &source) override;
     void addChannelWithData(DataHolder *data, const DataDescription &description) override;
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
 
@@ -311,8 +312,9 @@ public:
     QString rawFileName; // путь к RAW файлу
     QList<DfdChannel *> channels;
 private:
+    void init(const QVector<Channel *> &source);
     bool rewriteRawFile(const QVector<QPair<int,int> > &indexesVector);
-    void copyChannelsFrom_plain(FileDescriptor *file, const QVector<int> &indexes);
+    void copyChannelsFrom_plain(const QVector<Channel *> &source);
     bool appendRawFile(const QVector<int> &channelsToKeep, DfdFileDescriptor *sourceFile);
     void writeDfd(QTextStream &dfdStream);
 

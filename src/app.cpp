@@ -66,6 +66,21 @@ F Application::addFile(const FileDescriptor &source, const QString &name, const 
     return f;
 }
 
+F Application::addFile(const QVector<Channel*> &source, const QString &name, bool *isNew)
+{
+    if (files.contains(name)) {
+        if (isNew) *isNew = false;
+        return files.value(name);
+    }
+
+    F f(FormatFactory::createDescriptor(source, name));
+    if (f) {
+        files.insert(name, f);
+        if (isNew) *isNew = true;
+    }
+    return f;
+}
+
 void Application::maybeDelFile(const QString &name)
 {
     F& f = files[name];

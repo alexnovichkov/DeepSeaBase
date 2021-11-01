@@ -67,7 +67,7 @@ public:
 
     bool spectrogram = false;
 
-
+    QVector<Channel*> plottedChannels() const;
 
     void update();
 

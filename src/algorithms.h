@@ -6,6 +6,8 @@
 #include <complex>
 typedef std::complex<double> cx_double;
 
+class Channel;
+
 QDebug operator <<(QDebug debug, const std::complex<double> &val);
 
 template <typename T>
@@ -265,5 +267,8 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 
 QDateTime dateTimeFromString(QString s);
 QDateTime dateTimeFromString(QString date, QString time);
+
+bool channelsFromSameFile(const QVector<Channel *> &source);
+QVector<int> channelIndexes(const QVector<Channel *> &source);
 
 #endif // ALGORITHMS_H

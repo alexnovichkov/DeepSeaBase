@@ -1099,10 +1099,6 @@ void MatFile::deleteChannels(const QVector<int> &)
 {
 }
 
-void MatFile::copyChannelsFrom(FileDescriptor *, const QVector<int> &)
-{
-}
-
 int MatFile::channelsCount() const
 {
     return channels.size();

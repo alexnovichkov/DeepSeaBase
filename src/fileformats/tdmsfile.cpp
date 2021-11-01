@@ -550,10 +550,6 @@ void TDMSGroup::deleteChannels(const QVector<int> &)
 {
 }
 
-void TDMSGroup::copyChannelsFrom(FileDescriptor *, const QVector<int> &)
-{
-}
-
 int TDMSGroup::channelsCount() const
 {
     return channels.count();

@@ -27,21 +27,44 @@ Data94File::Data94File(const QString &fileName) : FileDescriptor(fileName)
 Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVector<int> indexes)
     : FileDescriptor(fileName)
 {
-    setDataDescription(other.dataDescription());
-    dataDescription().put("source.file", other.fileName());
-    dataDescription().put("source.guid", other.dataDescription().get("guid"));
-    dataDescription().put("source.dateTime", other.dataDescription().get("dateTime"));
+    QVector<Channel *> source;
+    if (indexes.isEmpty())
+        for (int i=0; i<other.channelsCount(); ++i) source << other.channel(i);
+    else
+        for (int i: indexes) source << other.channel(i);
+
+    init(source);
+}
+
+Data94File::Data94File(const QVector<Channel *> &source, const QString &fileName)
+ : FileDescriptor(fileName)
+{
+    init(source);
+}
+
+void Data94File::init(const QVector<Channel *> &source)
+{
+    if (source.isEmpty()) return;
+
+    auto d = source.first()->descriptor();
+
+    setDataDescription(d->dataDescription());
     updateDateTimeGUID();
 
-    //если индексы пустые - копируем все каналы
-    if (indexes.isEmpty())
-        for (int i=0; i<other.channelsCount(); ++i) indexes << i;
-    else //только если копируем не все каналы
-        dataDescription().put("source.channels", stringify(indexes));
+    if (channelsFromSameFile(source)) {
+        dataDescription().put("source.file", d->fileName());
+        dataDescription().put("source.guid", d->dataDescription().get("guid"));
+        dataDescription().put("source.dateTime", d->dataDescription().get("dateTime"));
 
-    QFile f(fileName);
+        if (d->channelsCount() > source.size()) {
+            //только если копируем не все каналы
+            dataDescription().put("source.channels", stringify(channelIndexes(source)));
+        }
+    }
+
+    QFile f(fileName());
     if (!f.open(QFile::WriteOnly)) {
-        qDebug()<<"Не удалось открыть файл для записи:"<<fileName;
+        qDebug()<<"Не удалось открыть файл для записи:"<<fileName();
         return;
     }
 
@@ -59,10 +82,9 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVe
     r.writeRawData(json.data(), descriptionSize);
 
     //записываем количество каналов
-    r << quint32(indexes.size());
+    r << quint32(source.size());
 
-    for (int i: qAsConst(indexes)) {
-        Channel *sourceChannel = other.channel(i);
+    for (auto sourceChannel: qAsConst(source)) {
         Data94Channel *c = new Data94Channel(sourceChannel, this);
         c->setChanged(true);
         c->setDataChanged(true);
@@ -263,7 +285,7 @@ void Data94File::deleteChannels(const QVector<int> &channelsToDelete)
     }
 }
 
-void Data94File::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes)
+void Data94File::copyChannelsFrom(const QVector<Channel *> &source)
 {
     const int count = channelsCount();
 
@@ -278,7 +300,7 @@ void Data94File::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int>
 
     //записываем новое количество каналов
     r.device()->seek(8+4+descriptionSize);
-    quint32 ccount = count + indexes.size();
+    quint32 ccount = count + source.size();
     r << ccount;
 
     //имеющийся размер файла
@@ -290,19 +312,18 @@ void Data94File::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int>
 
     r.device()->seek(pos);
 
-    for (int i: qAsConst(indexes)) {
-        Data94Channel *destChannel = new Data94Channel(sourceFile->channel(i), this);
+    for (auto c: qAsConst(source)) {
+        Data94Channel *destChannel = new Data94Channel(c, this);
         destChannel->setChanged(true);
         destChannel->setDataChanged(true);
 
-        Channel *sourceChannel = sourceFile->channel(i);
-        bool populated = sourceChannel->populated();
-        if (!populated) sourceChannel->populate();
+        bool populated = c->populated();
+        if (!populated) c->populate();
 
-        destChannel->write(r, 0, sourceChannel->data()); //данные берутся из sourceChannel
+        destChannel->write(r, 0, c->data()); //данные берутся из sourceChannel
 
         if (!populated)
-            sourceChannel->clear();
+            c->clear();
     }
 }
 

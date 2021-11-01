@@ -323,6 +323,19 @@ MainWindow::MainWindow(QWidget *parent)
     moveChannelsAct = new QAction(QIcon(":/icons/channel-cut.png"), "Переместить выделенные каналы в файл...", this);
     connect(moveChannelsAct, SIGNAL(triggered()), SLOT(moveChannels()));
 
+    deletePlottedChannelsAct = new QAction("Удалить построенные каналы...",this);
+    deletePlottedChannelsAct->setIcon(QIcon(":/icons/remove-plotted.png"));
+    connect(deletePlottedChannelsAct, SIGNAL(triggered()), this, SLOT(deletePlottedChannels()));
+
+    copyPlottedChannelsAct = new QAction(QIcon(":/icons/channel-copy-plotted.png"),
+                                         "Копировать построенные каналы в файл...", this);
+    connect(copyPlottedChannelsAct, SIGNAL(triggered()), SLOT(copyPlottedChannels()));
+
+    movePlottedChannelsAct = new QAction(QIcon(":/icons/channel-cut-plotted.png"),
+                                         "Переместить построенные каналы в файл...", this);
+    connect(movePlottedChannelsAct, SIGNAL(triggered()), SLOT(movePlottedChannels()));
+
+
     editDescriptionsAct = new QAction("Редактировать описание...", this);
     editDescriptionsAct->setIcon(QIcon(":/icons/descriptor.png"));
     connect(editDescriptionsAct, SIGNAL(triggered()), SLOT(editDescriptions()));
@@ -376,6 +389,11 @@ MainWindow::MainWindow(QWidget *parent)
     mainToolBar->addSeparator();
     mainToolBar->addWidget(new QLabel("  График:"));
     mainToolBar->addAction(clearPlotAct);
+
+    mainToolBar->addAction(copyPlottedChannelsAct);
+    mainToolBar->addAction(movePlottedChannelsAct);
+    mainToolBar->addAction(deletePlottedChannelsAct);
+
     mainToolBar->addAction(savePlotAct);
     mainToolBar->addAction(copyToClipboardAct);
     mainToolBar->addAction(printPlotAct);
@@ -1046,6 +1064,53 @@ void MainWindow::moveChannels() /** SLOT */
     }
 }
 
+QVector<FileDescriptor*> plottedDescriptors(const QList<Curve*> &curves)
+{
+    QVector<FileDescriptor*> result;
+
+    for (auto c: curves) {
+        if (auto d = c->channel->descriptor(); !result.contains(d))
+            result.append(d);
+    }
+
+    return result;
+}
+
+void MainWindow::deletePlottedChannels() /** SLOT*/
+{
+    if (QMessageBox::question(this,"DeepSea Base",
+                              "Эти каналы будут \nудалены из записей. Продолжить?"
+                              )==QMessageBox::Yes) {
+        LongOperation op;
+        deleteChannels({});
+
+        updateChannelsTable(tab->record);
+    }
+}
+
+void MainWindow::copyPlottedChannels() /** SLOT*/
+{
+    auto channels = plot->plottedChannels();
+    if (!channels.isEmpty()) {
+        if (copyChannels(channels))
+            updateChannelsTable(tab->record);
+    }
+}
+
+void MainWindow::movePlottedChannels() /** SLOT*/
+{
+    // сначала копируем каналы, затем удаляем
+    auto channels = plot->plottedChannels();
+    if (!channels.isEmpty()) {
+        if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \nудалены из файлов. Продолжить?")==QMessageBox::Yes) {
+            if (copyChannels(channels)) {
+                deleteChannels(channels);
+                updateChannelsTable(tab->record);
+            }
+        }
+    }
+}
+
 void MainWindow::addCorrection()
 {DD;
     if (plot->hasCurves()) {
@@ -1166,7 +1231,27 @@ bool MainWindow::deleteChannels(FileDescriptor *file, const QVector<int> &channe
     return true;
 }
 
+bool MainWindow::deleteChannels(const QVector<Channel *> channels)
+{
+    Q_UNUSED(channels);
+
+    auto plotted = plottedDescriptors(plot->curves);
+    for (auto d: plotted) {
+        auto list = d->plottedIndexes();
+        deleteChannels(d, list);
+    }
+    return true;
+}
+
 bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channelsToCopy)
+{DD;
+    QVector<Channel*> channels;
+    for (int i: channelsToCopy) channels << source->channel(i);
+    if (!channels.isEmpty()) return copyChannels(channels);
+    return false;
+}
+
+bool MainWindow::copyChannels(const QVector<Channel *> source)
 {DD;
     QString startFile = App->getSetting("startDir").toString();
     QStringList filters = FormatFactory::allFilters();
@@ -1178,12 +1263,25 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
     QStringList suffixes = FormatFactory::allSuffixes(true);
 
 
+    //проверка каналов на равенство
+    const auto type = source.constFirst()->type();
+    const auto xStep = source.constFirst()->data()->xStep();
+    const auto samplesCount = source.constFirst()->data()->samplesCount();
+
+    const bool typesAreSame = std::all_of(source.cbegin(), source.cend(),
+                                          [type](Channel*c){return c->type()==type;});
+    const bool stepsAreSame = std::all_of(source.cbegin(), source.cend(),
+                                          [xStep](Channel*c){return c->data()->xStep()==xStep;});
+    const bool samplesCountAreSame = std::all_of(source.cbegin(), source.cend(),
+                                                 [samplesCount](Channel*c){return c->data()->samplesCount()==samplesCount;});
+
+
     // если файл - dfd, то мы можем записать его только в dfd файл с таким же типом данных и шагом по x
     // поэтому если они различаются, то насильно записываем каналы в файл uff
 
     // мы не можем записывать каналы с разным типом/шагом в один файл dfd,
     //поэтому добавляем фильтр
-    QSortFilterProxyModel *proxy = new DfdFilterProxy(source, this);
+    QSortFilterProxyModel *proxy = new DfdFilterProxy(source.first()->descriptor(), this);
     dialog.setProxyModel(proxy);
 
     dialog.setFileMode(QFileDialog::AnyFile);
@@ -1208,6 +1306,13 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
             file.chop(currentSuffix.length()+1);
         file.append(QString(".%1").arg(filterSuffix));
     }
+
+    if ((!typesAreSame || !stepsAreSame || !samplesCountAreSame) && filterSuffix.toLower()=="dfd") {
+        QMessageBox::critical(0, "Копирование графиков",
+                              "Графики несовместимы между собой и не могут быть записаны в файл dfd");
+        return false;
+    }
+
     App->setSetting("startDir", file);
 
 
@@ -1221,7 +1326,7 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
 
     bool isNew = false;
     if (!exists) {//такого файла не существует
-        destination = App->addFile(*source, file, channelsToCopy, &isNew);
+        destination = App->addFile(source, file, &isNew);
     }
     else {
         //файл существует, два варианта:
@@ -1233,7 +1338,7 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
             destination = App->addFile(file, &isNew);
             destination->read();
         }
-        destination->copyChannelsFrom(source, channelsToCopy);
+        destination->copyChannelsFrom(source);
     }
 
     if (!destination) {
@@ -2176,6 +2281,9 @@ void MainWindow::updateActions()
     deleteChannelsBatchAct->setDisabled(selectedChannelsCount==0);
     copyChannelsAct->setDisabled(selectedChannelsCount==0);
     moveChannelsAct->setDisabled(selectedChannelsCount==0);
+    copyPlottedChannelsAct->setEnabled(hasCurves);
+    movePlottedChannelsAct->setEnabled(hasCurves);
+    deletePlottedChannelsAct->setEnabled(hasCurves);
 
     moveChannelsDownAct->setEnabled(selectedChannelsCount > 0 && selectedChannelsCount < channelsCount);
     moveChannelsUpAct->setEnabled(selectedChannelsCount > 0 && selectedChannelsCount < channelsCount);

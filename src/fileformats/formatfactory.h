@@ -64,6 +64,16 @@ inline FileDescriptor *createDescriptor(const FileDescriptor &source,
     return 0;
 }
 
+inline FileDescriptor *createDescriptor(const QVector<Channel*> &source,
+                                        const QString &fileName)
+{
+    QString suffix = QFileInfo(fileName).suffix();
+    if (suffix=="dfd") return new DfdFileDescriptor(source, fileName);
+    if (suffix=="uff") return new UffFileDescriptor(source, fileName);
+    if (suffix=="d94") return new Data94File(source, fileName);
+    return 0;
+}
+
 }
 
 #endif // FORMATFACTORY_H

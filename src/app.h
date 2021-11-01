@@ -10,6 +10,7 @@
 class ColorSelector;
 class QSettings;
 class FileDescriptor;
+class Channel;
 
 using F = std::shared_ptr<FileDescriptor>;
 
@@ -30,6 +31,7 @@ public:
               const QString &name,
               const QVector<int> &indexes = QVector<int>(),
               bool *isNew = nullptr);
+    F addFile(const QVector<Channel*> &source, const QString &name, bool *isNew = nullptr);
     void maybeDelFile(const QString& name);
 
     ColorSelector *colors() {return m_colors;}

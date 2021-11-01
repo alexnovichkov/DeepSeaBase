@@ -106,6 +106,7 @@ public:
     Data94File(const QString &fileName);
     // creates a copy of FileDescriptor with copying data
     Data94File(const FileDescriptor &other, const QString &fileName, QVector<int> indexes = QVector<int>());
+    Data94File(const QVector<Channel *> &source, const QString &fileName);
     ~Data94File();
 
     // FileDescriptor interface
@@ -115,13 +116,14 @@ public:
     virtual void write() override;
     virtual int channelsCount() const override;
     virtual void deleteChannels(const QVector<int> &channelsToDelete) override;
-    virtual void copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes) override;
+    virtual void copyChannelsFrom(const QVector<Channel*> &source) override;
     void addChannelWithData(DataHolder *data, const DataDescription &description) override;
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
     virtual Channel *channel(int index) const override;
     static QStringList fileFilters();
     static QStringList suffixes();
 private:
+    void init(const QVector<Channel *> &source);
     void updatePositions();
     friend class Data94Channel;
     QList<Data94Channel*> channels;

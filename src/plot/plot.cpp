@@ -254,6 +254,14 @@ Plot::~Plot()
     delete canvasFilter;
 }
 
+QVector<Channel *> Plot::plottedChannels() const
+{
+    QVector<Channel*> result;
+    result.reserve(curves.size());
+    for (auto c: curves) result << c->channel;
+    return result;
+}
+
 void Plot::update()
 {DD;
     updateAxes();
@@ -330,7 +338,7 @@ void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doR
 {DD;
     if (Curve *curve = plotted(dfd->channel(channel))) {
         deleteCurve(curve, doReplot);
-        emit curvesCountChanged(); //->MainWindow.updateActions
+        if (doReplot) emit curvesCountChanged(); //->MainWindow.updateActions
     }
 }
 

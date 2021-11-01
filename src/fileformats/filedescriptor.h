@@ -85,7 +85,7 @@ public:
     virtual void read() = 0;
     virtual void write() = 0;
     virtual void deleteChannels(const QVector<int> &channelsToDelete) = 0;
-    virtual void copyChannelsFrom(FileDescriptor *, const QVector<int> &) = 0;
+    virtual void copyChannelsFrom(const QVector<Channel*> &) = 0;
     virtual int channelsCount() const = 0;
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) = 0;
     virtual Channel *channel(int index) const = 0;
@@ -123,6 +123,7 @@ public:
     virtual qint64 fileSize() const;
 
     //все остальные
+    void copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes);
     void populate();
     void updateDateTimeGUID();
 
@@ -163,6 +164,7 @@ public:
     inline void setDataChanged(bool changed) {_dataChanged = changed;}
 
     int plottedCount() const;
+    QVector<int> plottedIndexes() const;
     bool hasCurves() const;
 
     double xStep() const;

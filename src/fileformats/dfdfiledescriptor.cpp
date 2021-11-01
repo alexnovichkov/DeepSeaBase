@@ -37,18 +37,41 @@ DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
 DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString &fileName, QVector<int> indexes)
     : FileDescriptor(fileName)
 {
-    setDataDescription(other.dataDescription());
-    dataDescription().put("source.file", other.fileName());
-    dataDescription().put("source.guid", other.dataDescription().get("guid"));
-    dataDescription().put("source.dateTime", other.dataDescription().get("dateTime"));
-
-    //если индексы пустые - копируем все каналы
+    QVector<Channel *> source;
     if (indexes.isEmpty())
-        for (int i=0; i<other.channelsCount(); ++i) indexes << i;
+        for (int i=0; i<other.channelsCount(); ++i) source << other.channel(i);
     else
-        dataDescription().put("source.channels", stringify(indexes));
+        for (int i: indexes) source << other.channel(i);
 
-    fillPreliminary(&other);
+    init(source);
+}
+
+DfdFileDescriptor::DfdFileDescriptor(const QVector<Channel *> &source, const QString &fileName)
+    : FileDescriptor(fileName)
+{
+    init(source);
+}
+
+void DfdFileDescriptor::init(const QVector<Channel *> &source)
+{
+    if (source.isEmpty()) return;
+
+    auto other = source.first()->descriptor();
+
+    setDataDescription(other->dataDescription());
+
+    if (channelsFromSameFile(source)) {
+        dataDescription().put("source.file", other->fileName());
+        dataDescription().put("source.guid", other->dataDescription().get("guid"));
+        dataDescription().put("source.dateTime", other->dataDescription().get("dateTime"));
+
+        if (other->channelsCount() > source.size()) {
+            //только если копируем не все каналы
+            dataDescription().put("source.channels", stringify(channelIndexes(source)));
+        }
+    }
+
+    fillPreliminary(other);
 
 //    qDebug()<<dataDescription().toStringList();
 
@@ -57,7 +80,7 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
     //данные берем из первого канала, который будем сохранять
     //предполагается, что все каналы из indexes имеют одинаковые параметры
 
-    Channel *firstChannel = other.channel(indexes.constFirst());
+    Channel *firstChannel = source.constFirst();
 
     //копируем каналы и записываем данные
     QFile raw(rawFileName);
@@ -79,8 +102,7 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
             ch.setValue(val, w);
     }
     //остальные каналы
-    for (int i: qAsConst(indexes)) {
-        Channel *sourceChannel = other.channel(i);
+    for (Channel *sourceChannel: source) {
         bool populated = sourceChannel->populated();
         if (!populated) sourceChannel->populate();
 
@@ -92,9 +114,9 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
     }
 
     //Сохраняем файл dfd
-    QFile file(fileName);
+    QFile file(fileName());
     if (!file.open(QFile::WriteOnly | QFile::Text)) {
-        qDebug()<<"Unable to open file"<<fileName<<"to write";
+        qDebug()<<"Unable to open file"<<fileName()<<"to write";
         return;
     }
 
@@ -533,17 +555,17 @@ void DfdFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
 }
 
 
-void DfdFileDescriptor::copyChannelsFrom_plain(FileDescriptor *file, const QVector<int> &indexes)
+void DfdFileDescriptor::copyChannelsFrom_plain(const QVector<Channel*> &source)
 {DD;
     //заполняем данными файл, куда будем копировать каналы
     //читаем все каналы, чтобы сохранить файл полностью
     populate();
 
-    for (int index: indexes) {
-        bool wasPopulated = file->channel(index)->populated();
-        if (!wasPopulated) file->channel(index)->populate();
-        new DfdChannel(*file->channel(index), this);
-        if (!wasPopulated) file->channel(index)->clear();
+    for (auto c: source) {
+        bool wasPopulated = c->populated();
+        if (!wasPopulated) c->populate();
+        new DfdChannel(*c, this);
+        if (!wasPopulated) c->clear();
     }
 
     for (int i=0; i<channels.size(); ++i) {
@@ -558,13 +580,14 @@ void DfdFileDescriptor::copyChannelsFrom_plain(FileDescriptor *file, const QVect
     write();
 }
 
-void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes)
+void DfdFileDescriptor::copyChannelsFrom(const QVector<Channel*> &source)
 {DD;
-//    //заглушка для релиза
-//    copyChannelsFrom_plain(file, indexes);
-//    return;
+    //    //заглушка для релиза
+    //    copyChannelsFrom_plain(file, indexes);
+    //    return;
 
     const int count = channelsCount();
+    auto sourceFile = source.constFirst()->descriptor();
     DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(sourceFile);
 
     //еще мы должны убедиться, что типы файлов совпадают, если текущий файл не пустой
@@ -602,7 +625,7 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
 
         if (BlockSize > 0 || !rewrited) {
             // не удалось переписать файл. Добавляем каналы стандартным способом
-            copyChannelsFrom_plain(sourceFile, indexes);
+            copyChannelsFrom_plain(source);
             return;
         }
     }
@@ -610,9 +633,7 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
     BlockSize = 0;
 
     //1. копируем каналы из file в this
-    for (int i: indexes) {
-        Channel *sourceChannel = sourceFile->channel(i);
-
+    for (Channel *sourceChannel: source) {
         //заполняем канал данными
         bool wasPopulated = sourceChannel->populated();
         if (!wasPopulated) sourceChannel->populate();
@@ -631,8 +652,8 @@ void DfdFileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVect
         else
             newCh = new DfdChannel(*sourceChannel, this);
 
-//        if (newCh->data()->xValuesFormat() == DataHolder::XValuesNonUniform)
-//            xValues = newCh->data()->xValues();
+        //        if (newCh->data()->xValuesFormat() == DataHolder::XValuesNonUniform)
+        //            xValues = newCh->data()->xValues();
 
         //меняем параметры канала
         newCh->IndType = channels[0]->IndType; //характеристика отсчета

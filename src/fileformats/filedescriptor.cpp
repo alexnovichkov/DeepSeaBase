@@ -411,6 +411,16 @@ int FileDescriptor::plottedCount() const
     return plotted;
 }
 
+QVector<int> FileDescriptor::plottedIndexes() const
+{
+    QVector<int> plotted;
+    const int count = channelsCount();
+    for (int i=0; i<count; ++i) {
+        if (channel(i)->plotted()) plotted << i;
+    }
+    return plotted;
+}
+
 bool FileDescriptor::isSourceFile() const
 {DD;
     const int count = channelsCount();
@@ -509,6 +519,16 @@ bool FileDescriptor::canTakeAnyChannels() const
 qint64 FileDescriptor::fileSize() const
 {DD;
     return QFileInfo(fileName()).size();
+}
+
+void FileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes)
+{DD;
+    QVector<Channel *> source;
+    for (auto i: indexes) {
+        if (auto c=sourceFile->channel(i)) source << c;
+    }
+    if (!source.isEmpty())
+        copyChannelsFrom(source);
 }
 
 bool FileDescriptor::hasCurves() const

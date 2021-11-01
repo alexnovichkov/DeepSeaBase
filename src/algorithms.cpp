@@ -523,3 +523,19 @@ QDateTime dateTimeFromString(QString date, QString time)
     }
     return QDateTime(d,t);
 }
+
+bool channelsFromSameFile(const QVector<Channel *> &source)
+{
+    if (source.isEmpty()) return false;
+    auto d = source.first()->descriptor();
+    return std::all_of(source.cbegin(), source.cend(), [d](Channel *c){
+        return c->descriptor()==d;
+    });
+}
+
+QVector<int> channelIndexes(const QVector<Channel *> &source)
+{
+    QVector<int> result;
+    for (auto c: source) result << c->index();
+    return result;
+}
