@@ -221,7 +221,7 @@ LineCurve::LineCurve(const QString &title, Channel *channel) :  QwtPlotCurve(tit
 }
 
 LineCurve::~LineCurve()
-{
+{DD;
     delete mapper;
 }
 
@@ -266,66 +266,66 @@ void LineCurve::drawLines(QPainter *painter,
 }
 
 QPointF LineCurve::samplePoint(int point) const
-{
+{DD;
     return QwtPlotCurve::sample(point);
 }
 
 void LineCurve::resetCashedData()
-{
+{DD;
     mapper->cashedPolyline.clear();
 }
 
 void LineCurve::attachTo(QwtPlot *plot)
-{
+{DD;
     QwtPlotCurve::attach(plot);
 }
 
 QString LineCurve::title() const
-{
+{DD;
     return QwtPlotCurve::title().text();
 }
 
 void LineCurve::setTitle(const QString &title)
-{
+{DD;
     QwtPlotCurve::setTitle(title);
 }
 
 QwtAxisId LineCurve::yAxis() const
-{
+{DD;
     return QwtPlotCurve::yAxis();
 }
 
 void LineCurve::setYAxis(QwtAxisId axis)
-{
+{DD;
     QwtPlotCurve::setYAxis(axis);
     foreach (PointLabel *l, labels)
         l->setYAxis(axis);
 }
 
 QwtAxisId LineCurve::xAxis() const
-{
+{DD;
     return QwtPlotCurve::xAxis();
 }
 
 void LineCurve::setXAxis(QwtAxisId axis)
-{
+{DD;
     QwtPlotCurve::setXAxis(axis);
     foreach (PointLabel *l, labels)
         l->setXAxis(axis);
 }
 
 QPen LineCurve::pen() const
-{
+{DD;
     return QwtPlotCurve::pen();
 }
 
 void LineCurve::setPen(const QPen &pen)
-{
+{DD;
     QwtPlotCurve::setPen(pen);
 }
 
 QList<QwtLegendData> LineCurve::legendData() const
-{
+{DD;
     QList<QwtLegendData> result = QwtPlotCurve::legendData();
     QwtLegendData &data = result[0];
     data.setValue(QwtLegendData::UserRole+3, pen().color());
@@ -339,14 +339,14 @@ QList<QwtLegendData> LineCurve::legendData() const
 }
 
 void LineCurve::highlight()
-{
+{DD;
     Curve::highlight();
     setZ(1000);
     plot()->updateLegend(this);
 }
 
 void LineCurve::resetHighlighting()
-{
+{DD;
     Curve::resetHighlighting();
     setZ(20);
     plot()->updateLegend(this);
@@ -356,12 +356,12 @@ void LineCurve::resetHighlighting()
 /** DfdData implementation */
 
 DfdData::DfdData(DataHolder *data) : data(data)
-{
+{DD;
 
 }
 
 QRectF DfdData::boundingRect() const
-{
+{DD;
     if ( d_boundingRect.width() < 0 ) {
         d_boundingRect.setLeft( data->xMin() );
         d_boundingRect.setRight( data->xMax() );
@@ -373,28 +373,28 @@ QRectF DfdData::boundingRect() const
 }
 
 size_t DfdData::size() const
-{
+{DD;
     return data->samplesCount();
 }
 
 QPointF DfdData::sample(size_t i) const
-{
+{DD;
     return QPointF(data->xValue(i), data->yValue(i));
 }
 
 double DfdData::xStep() const
-{
+{DD;
     return data->xStep();
 }
 
 double DfdData::xBegin() const
-{
+{DD;
     return data->xMin();
 }
 
 
 int LineCurve::closest(const QPoint &pos, double *dist) const
-{
+{DD;
     int index = -1;
 
     const size_t numSamples = channel->data()->samplesCount();
@@ -431,7 +431,7 @@ int LineCurve::closest(const QPoint &pos, double *dist) const
 
 
 void LineCurve::setVisible(bool visible)
-{
+{DD;
     QwtPlotItem::setVisible(visible);
     for (PointLabel *label: qAsConst(labels)) {
         label->setVisible(visible);

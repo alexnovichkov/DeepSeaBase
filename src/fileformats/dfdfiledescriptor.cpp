@@ -36,7 +36,7 @@ DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
 
 DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString &fileName, QVector<int> indexes)
     : FileDescriptor(fileName)
-{
+{DD;
     QVector<Channel *> source;
     if (indexes.isEmpty())
         for (int i=0; i<other.channelsCount(); ++i) source << other.channel(i);
@@ -48,12 +48,12 @@ DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString 
 
 DfdFileDescriptor::DfdFileDescriptor(const QVector<Channel *> &source, const QString &fileName)
     : FileDescriptor(fileName)
-{
+{DD;
     init(source);
 }
 
 void DfdFileDescriptor::init(const QVector<Channel *> &source)
-{
+{DD;
     if (source.isEmpty()) return;
 
     auto other = source.first()->descriptor();
@@ -140,7 +140,7 @@ DfdFileDescriptor::~DfdFileDescriptor()
 }
 
 int octaveFormat(int DataType)
-{
+{DD;
     switch(DataType) {
         case 156: return 1;
         case 157: return 3;
@@ -254,7 +254,7 @@ void DfdFileDescriptor::read()
 }
 
 void DfdFileDescriptor::writeDfd(QTextStream &dfdStream)
-{
+{DD;
     /** [DataFileDescriptor]*/
     dfdStream << "[DataFileDescriptor]" << endl;
     dfdStream << "DFDGUID="<<dataDescription().get("guid").toString() << endl;
@@ -400,7 +400,7 @@ void DfdFileDescriptor::fillPreliminary(const FileDescriptor *file)
 }
 
 DfdFileDescriptor *DfdFileDescriptor::newFile(const QString &fileName, DfdDataType type)
-{
+{DD;
     DfdFileDescriptor *dfd = new DfdFileDescriptor(fileName);
     dfd->DataType = type;
     dfd->rawFileName = fileName.left(fileName.length()-4)+".raw";
@@ -410,7 +410,7 @@ DfdFileDescriptor *DfdFileDescriptor::newFile(const QString &fileName, DfdDataTy
 }
 
 bool DfdFileDescriptor::copyTo(const QString &name)
-{
+{DD;
     QString rawFile = name;
     QString suffix = QFileInfo(name).suffix();
     rawFile.replace(rawFile.length() - suffix.length(), suffix.length(), "raw");
@@ -424,7 +424,7 @@ Descriptor::DataType DfdFileDescriptor::type() const
 }
 
 QString DfdFileDescriptor::typeDisplay() const
-{
+{DD;
     //return dataTypeDescription(DataType);
     switch (DataType) {
         case 0: return QString("Данные"); break;
@@ -482,12 +482,12 @@ QString DfdFileDescriptor::typeDisplay() const
 }
 
 qint64 DfdFileDescriptor::fileSize() const
-{
+{DD;
     return QFileInfo(rawFileName).size();
 }
 
 bool DfdFileDescriptor::fileExists() const
-{
+{DD;
     return (FileDescriptor::fileExists() && QFileInfo(rawFileName).exists());
 }
 
@@ -684,7 +684,7 @@ void DfdFileDescriptor::copyChannelsFrom(const QVector<Channel*> &source)
 }
 
 void DfdFileDescriptor::addChannelWithData(DataHolder *data, const DataDescription &description)
-{
+{DD;
     // обновляем сведения канала
     DfdChannel *ch = new DfdChannel(this, channelsCount());
     ch->setPopulated(true);
@@ -747,7 +747,7 @@ void DfdFileDescriptor::addChannelWithData(DataHolder *data, const DataDescripti
 
 
 bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVector)
-{
+{DD;
     if (indexesVector.isEmpty()) return false;
 
     // переписываем файл данных во временный файл, которым затем подменим исходный raw
@@ -911,7 +911,7 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
 }
 
 Channel *DfdFileDescriptor::channel(int index) const
-{
+{DDDD;
     if (channels.size()>index) return channels[index];
     return nullptr;
 }
@@ -930,7 +930,7 @@ bool DfdFileDescriptor::dataTypeEquals(FileDescriptor *other) const
 }
 
 bool DfdFileDescriptor::canTakeChannelsFrom(FileDescriptor *other) const
-{
+{DD;
     DfdFileDescriptor *dfd = dynamic_cast<DfdFileDescriptor *>(other);
     if (!dfd)
         return (dataTypefromDfdDataType(DataType) == other->type()) && qFuzzyIsNull(this->xStep() - other->xStep());
@@ -947,7 +947,7 @@ bool DfdFileDescriptor::canTakeChannelsFrom(FileDescriptor *other) const
 }
 
 bool DfdFileDescriptor::canTakeAnyChannels() const
-{
+{DD;
     return false;
 }
 
@@ -967,7 +967,7 @@ DfdChannel *DfdFileDescriptor::newChannel(int chanIndex)
 }
 
 QStringList DfdFileDescriptor::suffixes()
-{
+{DD;
     return QStringList()<<"*.dfd"<<"*.DFD";
 }
 
@@ -1131,7 +1131,7 @@ DfdChannel::DfdChannel(DfdFileDescriptor *parent, int channelIndex)
       ChanBlockSize(0),
       parent(parent),
       channelIndex(channelIndex)
-{
+{DD;
     if (parent) {
         dataType = parent->DataType;
         parent->channels << this;
@@ -1194,7 +1194,7 @@ DfdChannel::DfdChannel(Channel &other, DfdFileDescriptor *parent) : Channel(othe
 }
 
 DfdChannel::~DfdChannel()
-{
+{DD;
     //delete [] YValues;
 }
 
@@ -1325,7 +1325,7 @@ void DfdChannel::write(QTextStream &dfd, int index)
 }
 
 void DfdChannel::write(QDataStream &s, DataHolder *d)
-{
+{DD;
     s.setByteOrder(QDataStream::LittleEndian);
 
     if (IndType==0xC0000004)
@@ -1342,7 +1342,7 @@ void DfdChannel::write(QDataStream &s, DataHolder *d)
 }
 
 QVariant DfdChannel::info(int column, bool edit) const
-{
+{DD;
     switch (column) {
         case 0: return dataDescription().get("name");
         case 1: {
@@ -1363,12 +1363,12 @@ QVariant DfdChannel::info(int column, bool edit) const
 }
 
 int DfdChannel::columnsCount() const
-{
+{DD;
     return 5;
 }
 
 QVariant DfdChannel::channelHeader(int column) const
-{
+{DD;
     switch (column) {
         case 0: return QString("Имя");
         case 1: return QString("Ед.изм.");
@@ -1503,18 +1503,18 @@ void DfdChannel::populate()
 }
 
 quint64 DfdChannel::blockSizeInBytes() const
-{
+{DD;
     quint64 res = ChanBlockSize;
     return res * (IndType % 16);
 }
 
 FileDescriptor *DfdChannel::descriptor() const
-{
+{DD;
     return parent;
 }
 
 void DfdChannel::appendDataTo(const QString &rawFileName)
-{
+{DD;
     if (!populated()) {
         qDebug()<<"Попытка записать канал без данных";
         return;
@@ -1553,7 +1553,7 @@ void DfdChannel::appendDataTo(const QString &rawFileName)
 }
 
 void DfdChannel::setValue(double val, QDataStream &writeStream)
-{
+{DD;
     double realValue = preprocess(val);
 
     switch (IndType) {
@@ -1603,12 +1603,12 @@ Descriptor::DataType DfdChannel::type() const
 }
 
 QString DfdChannel::yNameOld() const
-{
+{DD;
     return dataDescription().get("ynameold").toString();
 }
 
 RawChannel::RawChannel(RawChannel &other, DfdFileDescriptor *parent) : DfdChannel(other, parent)
-{
+{DD;
     SensName = other.SensName;
     ADC0 = other.ADC0;
     ADCStep = other.ADCStep;
@@ -1662,7 +1662,7 @@ void RawChannel::write(QTextStream &dfd, int index)
 }
 
 QVariant RawChannel::channelHeader(int column) const
-{
+{DD;
     if (column >=0 && column < DfdChannel::columnsCount())
         return DfdChannel::channelHeader(column);
     switch (column) {
@@ -1679,7 +1679,7 @@ QVariant RawChannel::channelHeader(int column) const
 }
 
 QVariant RawChannel::info(int column, bool edit) const
-{
+{DD;
     if (column >= 0 && column < DfdChannel::columnsCount())
         return DfdChannel::info(column, edit);
     switch (column) {
@@ -1696,23 +1696,23 @@ QVariant RawChannel::info(int column, bool edit) const
 }
 
 int RawChannel::columnsCount() const
-{
+{DD;
     return DfdChannel::columnsCount() + 8;
 }
 
 void RawChannel::postprocess(QVector<double> &v)
-{
+{DD;
     for (int i=0; i<v.size(); ++i) v[i] = v[i]*coef1+coef2;
 }
 
 double RawChannel::postprocess(double v)
-{
+{DD;
     //return ((v*ADCStep+ADC0)/AmplLevel - AmplShift - Sens0Shift)/SensSensitivity;
     return v*coef1+coef2;
 }
 
 double RawChannel::preprocess(double v)
-{
+{DD;
     //return ((v * SensSensitivity + Sens0Shift + AmplShift) * AmplLevel - ADC0) / ADCStep;
     return v*coef3+coef4;
 }
@@ -1859,7 +1859,7 @@ Descriptor::DataType dataTypefromDfdDataType(DfdDataType type)
 
 
 int DfdChannel::index() const
-{
+{DD;
     return channelIndex;
 }
 
@@ -1867,7 +1867,7 @@ int DfdChannel::index() const
 
 
 bool DfdFileDescriptor::rename(const QString &newName, const QString &newPath)
-{
+{DD;
     bool result = FileDescriptor::rename(newName, newPath);
     if (!result) return false;
 
@@ -1879,7 +1879,7 @@ bool DfdFileDescriptor::rename(const QString &newName, const QString &newPath)
 }
 
 DataHolder::YValuesFormat dataFormat(DfdDataType dataType, const QString& typeScale)
-{
+{DD;
     switch (dataType) {
         case SourceData:		// исходные данные
         case CuttedData:		// вырезка из исходных данных

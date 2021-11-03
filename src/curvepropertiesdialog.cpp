@@ -8,9 +8,10 @@
 #include "plot/plot.h"
 #include "plot/curve.h"
 #include "fileformats/dfdfiledescriptor.h"
+#include "logging.h"
 
 void ClickableLabel::mouseReleaseEvent(QMouseEvent *ev)
-{
+{DD;
     if (ev->button()==Qt::LeftButton)
         Q_EMIT clicked();
     QLabel::mouseReleaseEvent(ev);
@@ -18,7 +19,7 @@ void ClickableLabel::mouseReleaseEvent(QMouseEvent *ev)
 
 CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
     QDialog(parent), curve(curve), plot(parent)
-{
+{DD;
     setWindowTitle("Настройки кривой");
 
     oldPen = curve->pen();
@@ -164,7 +165,7 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
 }
 
 void CurvePropertiesDialog::reject()
-{
+{DD;
     curve->setPen(oldPen);
     curve->oldPen = oldPen;
     curve->channel->setName(oldTitle);

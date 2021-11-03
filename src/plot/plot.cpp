@@ -68,7 +68,7 @@
 
 // простой фабричный метод создания кривой нужного типа
 Curve * createCurve(const QString &legendName, Channel *channel)
-{
+{DD;
     if (channel->data()->blocksCount() > 1)
         return new SpectroCurve(legendName, channel);
 
@@ -255,7 +255,7 @@ Plot::~Plot()
 }
 
 QVector<Channel *> Plot::plottedChannels() const
-{
+{DD;
     QVector<Channel*> result;
     result.reserve(curves.size());
     for (auto c: curves) result << c->channel;

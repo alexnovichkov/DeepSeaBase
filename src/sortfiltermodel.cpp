@@ -16,13 +16,13 @@ void SortFilterModel::setFilter(const QString &text, int column)
 }
 
 QString SortFilterModel::filter(int column) const
-{
+{DD;
     return filters.value(column);
 }
 
 
 bool SortFilterModel::lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const
-{
+{DD;
     QVariant leftData = sourceModel()->data(source_left);
     QVariant rightData = sourceModel()->data(source_right);
 

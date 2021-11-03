@@ -6,23 +6,23 @@
 
 TimeSlicer::TimeSlicer(const QList<FileDescriptor *> &files, double from, double to, QObject *parent)
     : QObject(parent), dataBase(files), from(from), to(to)
-{
+{DD;
     stop_ = false;
 }
 
 TimeSlicer::~TimeSlicer()
-{
+{DD;
 
 }
 
 void TimeSlicer::stop()
-{
+{DD;
     stop_ = true;
     finalize();
 }
 
 void TimeSlicer::start()
-{
+{DD;
     //dt = QDateTime::currentDateTime();
     //qDebug()<<"Start converting"<<dt.time();
 
@@ -50,6 +50,6 @@ void TimeSlicer::start()
 }
 
 void TimeSlicer::finalize()
-{
+{DD;
     emit finished();
 }

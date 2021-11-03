@@ -49,14 +49,14 @@ class DfdFilterProxy : public QSortFilterProxyModel
 public:
     DfdFilterProxy(FileDescriptor *filter, QObject *parent)
         : QSortFilterProxyModel(parent), filter(filter)
-    {
+    {DD;
         if (filter) {
             filterByContent = true;
         }
     }
 protected:
     bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
-    {
+    {DD;
         QFileSystemModel *model = qobject_cast<QFileSystemModel *>(sourceModel());
         if (!model) return false;
 
@@ -1065,7 +1065,7 @@ void MainWindow::moveChannels() /** SLOT */
 }
 
 QVector<FileDescriptor*> plottedDescriptors(const QList<Curve*> &curves)
-{
+{DD;
     QVector<FileDescriptor*> result;
 
     for (auto c: curves) {
@@ -1077,7 +1077,7 @@ QVector<FileDescriptor*> plottedDescriptors(const QList<Curve*> &curves)
 }
 
 void MainWindow::deletePlottedChannels() /** SLOT*/
-{
+{DD;
     if (QMessageBox::question(this,"DeepSea Base",
                               "Эти каналы будут \nудалены из записей. Продолжить?"
                               )==QMessageBox::Yes) {
@@ -1089,7 +1089,7 @@ void MainWindow::deletePlottedChannels() /** SLOT*/
 }
 
 void MainWindow::copyPlottedChannels() /** SLOT*/
-{
+{DD;
     auto channels = plot->plottedChannels();
     if (!channels.isEmpty()) {
         if (copyChannels(channels))
@@ -1098,7 +1098,7 @@ void MainWindow::copyPlottedChannels() /** SLOT*/
 }
 
 void MainWindow::movePlottedChannels() /** SLOT*/
-{
+{DD;
     // сначала копируем каналы, затем удаляем
     auto channels = plot->plottedChannels();
     if (!channels.isEmpty()) {
@@ -1232,7 +1232,7 @@ bool MainWindow::deleteChannels(FileDescriptor *file, const QVector<int> &channe
 }
 
 bool MainWindow::deleteChannels(const QVector<Channel *> channels)
-{
+{DD;
     Q_UNUSED(channels);
 
     auto plotted = plottedDescriptors(plot->curves);

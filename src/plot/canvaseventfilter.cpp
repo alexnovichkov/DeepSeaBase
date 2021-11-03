@@ -16,7 +16,7 @@
 #include "axisboundsdialog.h"
 
 CanvasEventFilter::CanvasEventFilter(Plot *parent) : QObject(parent), plot(parent)
-{
+{DD;
     //разрешаем обрабатывать события от клавиатуры
     plot->setFocusPolicy(Qt::StrongFocus);
     plot->canvas()->installEventFilter(this);
@@ -30,7 +30,7 @@ CanvasEventFilter::CanvasEventFilter(Plot *parent) : QObject(parent), plot(paren
 }
 
 bool CanvasEventFilter::eventFilter(QObject *target, QEvent *event)
-{
+{DD;
     if (!enabled) return QObject::eventFilter(target, event);
 
 
@@ -86,7 +86,7 @@ bool CanvasEventFilter::eventFilter(QObject *target, QEvent *event)
 }
 
 void CanvasEventFilter::procMouseEvent(QEvent *event)
-{
+{DD;
     //Нажатия левой кнопки - масштабирование графика, выбор объектов или сброс выбора
     //Нажатия правой кнопки - сдвиг графика
 
@@ -107,7 +107,7 @@ void CanvasEventFilter::procMouseEvent(QEvent *event)
 }
 
 void CanvasEventFilter::procKeyboardEvent(QEvent *event)
-{
+{DD;
     QKeyEvent *kEvent = dynamic_cast<QKeyEvent*>(event);
     switch (kEvent->key()) {
         case Qt::Key_Backspace: {
@@ -147,13 +147,13 @@ void CanvasEventFilter::procKeyboardEvent(QEvent *event)
 }
 
 void CanvasEventFilter::procWheelEvent(QwtAxisId axis, QEvent *event)
-{
+{DD;
     auto coords = wheelZoom->applyWheel(event, axis);
     zoomStack->addZoom(coords, false);
 }
 
 void CanvasEventFilter::procAxisEvent(QwtAxisId axis, QEvent *event)
-{
+{DD;
     QMouseEvent *mEvent = static_cast<QMouseEvent *>(event);
     switch (event->type()) {
         case QEvent::Leave: {
@@ -212,7 +212,7 @@ void CanvasEventFilter::procAxisEvent(QwtAxisId axis, QEvent *event)
 }
 
 void CanvasEventFilter::mousePress(QMouseEvent *event)
-{
+{DD;
     currentPosition = event->pos();
 
     switch (event->button()) {
@@ -242,7 +242,7 @@ void CanvasEventFilter::mousePress(QMouseEvent *event)
 }
 
 void CanvasEventFilter::mouseMove(QMouseEvent *event)
-{
+{DD;
     if (actionType == ActionType::Drag) {
         auto coords = dragZoom->proceedDrag(event);
         zoomStack->addZoom(coords, false);

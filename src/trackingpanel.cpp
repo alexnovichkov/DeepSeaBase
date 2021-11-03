@@ -463,7 +463,7 @@ void TrackingPanel::update()
 }
 
 void TrackingPanel::changeSelectedCursor(TrackingCursor *cursor)
-{
+{DD;
     for (auto c: qAsConst(cursors))
         c->setCurrent(c == cursor);
 }
@@ -507,13 +507,13 @@ void TrackingPanel::setValue(QPointF value)
 }
 
 void TrackingPanel::closeEvent(QCloseEvent *event)
-{
+{DD;
     emit closeRequested();
     QWidget::closeEvent(event);
 }
 
 void TrackingPanel::hideEvent(QHideEvent *event)
-{
+{DD;
     for (auto *c: qAsConst(cursors))
         c->detach();
     for (auto *d: qAsConst(_harmonics))
@@ -525,13 +525,13 @@ void TrackingPanel::hideEvent(QHideEvent *event)
 }
 
 ZoneSpan::ZoneSpan(const QColor &color)
-{
+{DD;
     setOrientation(Qt::Vertical);
     setBrush(color);
 }
 
 ClearableSpinBox::ClearableSpinBox(QWidget *parent) : QAbstractSpinBox(parent)
-{
+{DD;
     setKeyboardTracking(false);
     setWrapping(false);
     lineEdit()->setAlignment(Qt::AlignLeft);
@@ -545,23 +545,23 @@ ClearableSpinBox::ClearableSpinBox(QWidget *parent) : QAbstractSpinBox(parent)
 }
 
 void ClearableSpinBox::moveLeft()
-{
+{DD;
     stepBy(-1);
 }
 
 void ClearableSpinBox::moveRight()
-{
+{DD;
     stepBy(1);
 }
 
 void ClearableSpinBox::setStep(double step)
-{
+{DD;
     this->step = step;
     if (!qFuzzyIsNull(step)) xValues.clear();
 }
 
 void ClearableSpinBox::setXValues(const QVector<double> &values)
-{
+{DD;
     xValues = values;
     step = 0.0;
     if (!xValues.isEmpty())
@@ -569,7 +569,7 @@ void ClearableSpinBox::setXValues(const QVector<double> &values)
 }
 
 void ClearableSpinBox::moveTo(double xValue)
-{
+{DD;
     if (qIsNaN(xValue)) {
         //xValue не изменилась, перемещаем только yValue
         emit valueChanged({xVal, yVal});
@@ -594,7 +594,7 @@ void ClearableSpinBox::moveTo(double xValue)
 }
 
 void ClearableSpinBox::moveTo(const QPair<double, double> &position)
-{
+{DD;
     //если координата Y действительная, запоминаем ее
     if (!qIsNaN(position.second))
         yVal = position.second;
@@ -602,19 +602,19 @@ void ClearableSpinBox::moveTo(const QPair<double, double> &position)
 }
 
 void ClearableSpinBox::setPrefix(const QString &prefix)
-{
+{DD;
     this->prefix = prefix;
     updateText(xVal);
 }
 
 void ClearableSpinBox::setRange(double min, double max)
-{
+{DD;
     this->min = min;
     this->max = max;
 }
 
 void ClearableSpinBox::updateText(double val)
-{
+{DD;
     double v = std::abs(val);
     QString s;
     if (qFuzzyIsNull(v)) s = "0";
@@ -631,7 +631,7 @@ void ClearableSpinBox::updateText(double val)
 
 
 void ClearableSpinBox::stepBy(int steps)
-{
+{DD;
     if (steps == 0) return;
 
     if (qFuzzyIsNull(step) && !xValues.isEmpty()) {
@@ -654,7 +654,7 @@ void ClearableSpinBox::stepBy(int steps)
 }
 
 QAbstractSpinBox::StepEnabled ClearableSpinBox::stepEnabled() const
-{
+{DD;
     if (qFuzzyIsNull(step) && !xValues.isEmpty()) {
         if (closest(xValues.cbegin(), xValues.cend(), xVal)==xValues.cbegin()) return StepUpEnabled;
         if (closest(xValues.cbegin(), xValues.cend(), xVal)==xValues.cend()-1) return StepDownEnabled;
@@ -668,7 +668,7 @@ QAbstractSpinBox::StepEnabled ClearableSpinBox::stepEnabled() const
 
 
 QSize ClearableSpinBox::sizeHint() const
-{
+{DD;
     auto s = QAbstractSpinBox::sizeHint();
 
     s.setWidth(fontMetrics().horizontalAdvance(prefix+"+9,9999e+999"));
@@ -676,7 +676,7 @@ QSize ClearableSpinBox::sizeHint() const
 }
 
 QSize ClearableSpinBox::minimumSizeHint() const
-{
+{DD;
     auto s = QAbstractSpinBox::minimumSizeHint();
     s.setWidth(50);
     return s;

@@ -36,7 +36,7 @@ bool DataIODevice::atEnd() const
 }
 
 bool DataIODevice::reset()
-{DDD;
+{DD;
     QIODevice::reset();
     m_pos = 0;
     return true;
@@ -48,7 +48,7 @@ bool DataIODevice::canReadLine() const
 }
 
 qint64 DataIODevice::size() const
-{
+{DD;
     return m_channel->data()->samplesCount() * sizeof(qint16);
 }
 
@@ -82,7 +82,7 @@ qint64 DataIODevice::readData(char *data, qint64 maxlen)
 }
 
 qint64 DataIODevice::writeData(const char *data, qint64 len)
-{
+{DD;
     Q_UNUSED(data);
     return len;
 }

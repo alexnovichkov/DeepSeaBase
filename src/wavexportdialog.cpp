@@ -5,10 +5,11 @@
 #include "fileformats/filedescriptor.h"
 #include "wavexporter.h"
 #include "taskbarprogress.h"
+#include "logging.h"
 
 WavExportDialog::WavExportDialog(FileDescriptor * file, const QVector<int> &indexes, QWidget *parent)
     : QDialog(parent), file{file}, indexes{indexes}
-{
+{DD;
     setWindowTitle("Сохранение в WAV");
 
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok |
@@ -62,7 +63,7 @@ WavExportDialog::WavExportDialog(FileDescriptor * file, const QVector<int> &inde
 }
 
 WavExportDialog::~WavExportDialog()
-{
+{DD;
     if (exporter) {
         exporter->deleteLater();
     }
@@ -74,7 +75,7 @@ WavExportDialog::~WavExportDialog()
 }
 
 void WavExportDialog::start()
-{
+{DD;
     buttonBox->button(QDialogButtonBox::Ok)->setDisabled(true);
     if (!thread) thread = new QThread;
     exporter = new WavExporter(file, indexes, channelsCount->value());
@@ -92,33 +93,33 @@ void WavExportDialog::start()
 }
 
 void WavExportDialog::updateProgressIndicator()
-{
+{DD;
     bar->setValue(bar->value()+1);
     taskBarProgress->setValue(bar->value());
 }
 
 void WavExportDialog::updateMaxProgress(int val)
-{
+{DD;
     bar->setMaximum(val);
     if (taskBarProgress) taskBarProgress->setRange(bar->minimum(), bar->maximum());
 }
 
 void WavExportDialog::stop()
-{
+{DD;
     if (thread)
         thread->requestInterruption();
     QDialog::accept();
 }
 
 void WavExportDialog::accept()
-{
+{DD;
     //if (taskBarProgress) taskBarProgress->finalize();
 
     QDialog::accept();
 }
 
 void WavExportDialog::reject()
-{
+{DD;
     stop();
     QDialog::reject();
     if (taskBarProgress) taskBarProgress->finalize();

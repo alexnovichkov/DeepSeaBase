@@ -7,12 +7,12 @@
 #include "fileformats/tdmsfile.h"
 
 TDMSFileConverter::TDMSFileConverter(QObject *parent) : QObject(parent)
-{DDD;
+{DD;
 
 }
 
 bool TDMSFileConverter::convert()
-{DDD;
+{DD;
     if (QThread::currentThread()->isInterruptionRequested()) return false;
     bool noErrors = true;
 
@@ -65,7 +65,7 @@ bool TDMSFileConverter::convert()
 }
 
 //FileDescriptor *TDMSFileConverter::saveAs(const QString &name, TDMSGroup *g)
-//{DDD;
+//{DD;
 //    QString suffix = QFileInfo(name).suffix().toLower();
 //    if (suffix == "dfd") return saveAsDfd(name, g);
 //    if (suffix == "d94") return saveAsD94(name, g);
@@ -74,7 +74,7 @@ bool TDMSFileConverter::convert()
 //}
 
 //FileDescriptor *TDMSFileConverter::saveAsDfd(const QString &name, TDMSGroup *g)
-//{DDD;
+//{DD;
 //    QString rawFileName = changeFileExt(name, "raw");
 
 //    //writing dfd file
@@ -205,7 +205,7 @@ bool TDMSFileConverter::convert()
 //}
 
 //FileDescriptor *TDMSFileConverter::saveAsD94(const QString &name, TDMSGroup *g)
-//{DDD;
+//{DD;
 //    auto file = new Data94File(name);
 
 //    file->updateDateTimeGUID();
@@ -318,7 +318,7 @@ bool TDMSFileConverter::convert()
 //}
 
 //FileDescriptor *TDMSFileConverter::saveAsUff(const QString &name, TDMSGroup *g)
-//{DDD;
+//{DD;
 //    auto file = new UffFileDescriptor(name);
 
 //    return file;

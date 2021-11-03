@@ -21,7 +21,7 @@
 #include "plot.h"
 
 AxisZoom::AxisZoom(Plot *plot) :  QObject(plot), plot(plot)
-{
+{DD;
 
 }
 

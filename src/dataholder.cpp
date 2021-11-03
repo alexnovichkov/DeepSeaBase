@@ -2,7 +2,7 @@
 #include "logging.h"
 
 DataHolder::YValuesFormat DataHolder::formatFromString(const QString &format)
-{
+{DDDD
     if (format == "complex") return YValuesComplex;
     else if (format == "amplitude") return YValuesAmplitudes;
     else if (format == "amplitudeDb") return YValuesAmplitudesInDB;
@@ -14,7 +14,7 @@ DataHolder::YValuesFormat DataHolder::formatFromString(const QString &format)
 }
 
 QString DataHolder::formatToString(DataHolder::YValuesFormat format)
-{
+{DDDD
     switch (format) {
     case YValuesComplex: return "complex";
     case YValuesAmplitudes: return "amplitude";
@@ -28,7 +28,7 @@ QString DataHolder::formatToString(DataHolder::YValuesFormat format)
 }
 
 DataHolder::YValuesUnits DataHolder::unitsFromString(const QString &format)
-{
+{DDDD
     if (format == "unknown") return DataHolder::UnitsUnknown;
     if (format == "linear") return DataHolder::UnitsLinear;
     if (format == "quadratic") return DataHolder::UnitsQuadratic;
@@ -37,7 +37,7 @@ DataHolder::YValuesUnits DataHolder::unitsFromString(const QString &format)
 }
 
 QString DataHolder::unitsToString(DataHolder::YValuesUnits units)
-{
+{DDDD
     switch (units) {
         case DataHolder::UnitsUnknown: return "unknown";
         case DataHolder::UnitsLinear: return "linear";
@@ -153,7 +153,7 @@ void DataHolder::removeCorrection()
 }
 
 bool DataHolder::makeCorrectionConstant()
-{
+{DD
     if (!m_correction) return true; // есть временная коррекция
     if (!hasCorrection()) return true; // и эта коррекция не тривиальная
 
@@ -319,12 +319,12 @@ bool DataHolder::makeCorrectionConstant()
 
 
 QString DataHolder::correctionString() const
-{
+{DDDD
     return correctionString(m_correctionValue, m_correctionType);
 }
 
-QString DataHolder::correctionString(double value, int type)
-{
+QString DataHolder::correctionString(double value, int type) /*static*/
+{DD
     if ((type == 0 && qFuzzyIsNull(value)) || (type == 1 && qFuzzyIsNull(value - 1.0)))
         return QString();
 
@@ -337,7 +337,7 @@ QString DataHolder::correctionString(double value, int type)
 }
 
 QString DataHolder::yValuesFormatString() const
-{
+{DDDD
     switch (m_yValuesFormat) {
         case YValuesUnknown: return "Неизв."; break;
         case YValuesComplex: return "[Cmplx]"; break;
@@ -384,7 +384,7 @@ void DataHolder::setYValues(const QVector<double> &values, YValuesFormat initial
 }
 
 bool DataHolder::setYValue(int index, double value, int block)
-{
+{DD
     index += block * m_xCount;
     if (index < 0 || index >= m_xCount * m_zCount) return false;
 
@@ -527,7 +527,7 @@ void DataHolder::setXValues(double xBegin, double xStep, int count)
 }
 
 void DataHolder::setZValues(const QVector<double> &values)
-{
+{DD
     m_zValues = values;
     m_zCount = values.size();
     m_zBegin = values.isEmpty() ? 0.0 : values.constFirst();
@@ -536,7 +536,7 @@ void DataHolder::setZValues(const QVector<double> &values)
 }
 
 void DataHolder::setZValues(double zBegin, double zStep, int count)
-{
+{DD
     m_zBegin = zBegin;
     m_zStep = zStep;
     m_zCount = count;
@@ -553,24 +553,24 @@ void DataHolder::setXStep(const double xStep)
 }
 
 void DataHolder::setSamplesCount(const int samplesCount)
-{
+{DD
     m_xCount = samplesCount;
 }
 
 QVector<double> DataHolder::rawYValues(int block) const
-{
+{DD
     if (block == -1) return m_yValues;
     return m_yValues.mid(block*m_xCount, m_xCount);
 }
 
 QVector<double> DataHolder::yValues(int block) const
-{
+{DD
     if (block == -1) return m_yValuesTemporal;
     return m_yValuesTemporal.mid(block*m_xCount, m_xCount);
 }
 
 QVector<cx_double> DataHolder::yValuesComplex(int block) const
-{
+{DD
     if (block == -1) return m_yValuesComplex;
     return m_yValuesComplex.mid(block*m_xCount, m_xCount);
 }
@@ -583,14 +583,14 @@ QVector<double> DataHolder::xValues() const
 }
 
 QVector<double> DataHolder::zValues() const
-{
+{DD
     if (m_zValuesFormat == XValuesUniform) return linspace(m_zBegin, m_zStep, m_zCount);
 
     return m_zValues;
 }
 
 double DataHolder::xValue(int i) const
-{
+{DD
     if (i<0) return 0.0;
     if (xValuesFormat() != XValuesNonUniform) return m_xBegin + m_xStep * i;
 
@@ -599,7 +599,7 @@ double DataHolder::xValue(int i) const
 }
 
 double DataHolder::yValue(int i, int block) const
-{
+{DD
     if (i<0 || block < 0) return 0.0;
     i += block*m_xCount;
 
@@ -609,7 +609,7 @@ double DataHolder::yValue(int i, int block) const
 }
 
 cx_double DataHolder::yValueComplex(int i, int block) const
-{
+{DD
     if (i<0 || block < 0) return {0.0,0.0};
     i += block*m_xCount;
 
@@ -618,7 +618,7 @@ cx_double DataHolder::yValueComplex(int i, int block) const
 }
 
 double DataHolder::zValue(int i) const
-{
+{DD
     if (i<0) return 0.0;
     if (m_zValuesFormat != XValuesNonUniform) return m_zBegin + m_zStep * i;
 
@@ -627,7 +627,7 @@ double DataHolder::zValue(int i) const
 }
 
 double DataHolder::YforXandZ(double x, double z, bool &success) const
-{
+{DD
     int zIndex = -1;
     if (m_zValuesFormat == XValuesUniform) {
         if (m_zCount == 1) zIndex = 0;
@@ -720,7 +720,7 @@ double DataHolder::yMax(int block) const
 }
 
 int DataHolder::samplesCount() const
-{DD;
+{DDDD;
     return m_xCount;
 }
 
@@ -794,7 +794,7 @@ QVector<double> DataHolder::fromLog(const QVector<double> &values, double thresh
 }
 
 double DataHolder::toLog(double value, double threshold, int units)
-{
+{DD
     if (threshold == 0 || units == UnitsDimensionless) return value;
 
     if (value <= 0.0) return 0.0;
@@ -808,7 +808,7 @@ double DataHolder::toLog(double value, double threshold, int units)
 }
 
 double DataHolder::fromLog(double value, double threshold, int units)
-{
+{DD
     if (threshold == 0 || units == UnitsDimensionless) return value;
 
     double factor = log(10) / 20.0;
@@ -926,14 +926,14 @@ double correctedByType(double val, int type, double correction)
 }
 
 double DataHolder::corrected(double val) const
-{
+{DD
     if (m_correction)
         return correctedByType(val, m_correctionType, m_correctionValue);
     return val;
 }
 
 bool DataHolder::hasCorrection() const
-{
+{DD
     if (m_correctionType == 0 && !qFuzzyIsNull(m_correctionValue) ) return true;
     if (m_correctionType == 1 && !qFuzzyIsNull(m_correctionValue - 1.0) ) return true;
     return false;

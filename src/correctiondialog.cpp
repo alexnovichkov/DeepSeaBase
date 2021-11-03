@@ -128,8 +128,7 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
 }
 
 void CorrectionDialog::correct()
-{
-    DD;
+{DD;
     bool ok;
     QString s = edit->text();
     double correctionValue = s.toDouble(&ok);
@@ -191,7 +190,7 @@ void CorrectionDialog::correct()
 }
 
 void CorrectionDialog::makeCorrectionConstant(Channel *channel)
-{
+{DD;
     if (!channel) return;
 
     channel->data()->makeCorrectionConstant();
@@ -226,7 +225,7 @@ void CorrectionDialog::makeCorrectionConstant(Channel *channel)
 }
 
 void CorrectionDialog::accept()
-{
+{DD;
     QList<FileDescriptor*> list;
     // сперва графики
     for (int i=0; i<table->rowCount(); ++i) {
@@ -260,7 +259,7 @@ void CorrectionDialog::accept()
 }
 
 void CorrectionDialog::reject()
-{
+{DD;
     for (int i=0; i<table->rowCount(); ++i) {
         plot->curves.at(i)->channel->data()->removeCorrection();
 

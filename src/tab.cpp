@@ -14,7 +14,7 @@
 #include "filehandler.h"
 
 Tab::Tab(QWidget *parent) : QSplitter(parent)
-{
+{DD;
     fileHandler = new FileHandler(this);
 }
 

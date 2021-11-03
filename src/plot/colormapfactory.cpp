@@ -6,7 +6,7 @@ class LinearColorMap: public QwtLinearColorMap
 {
 public:
     LinearColorMap(): QwtLinearColorMap(Qt::black, Qt::white)
-    {
+    {DD;
         setFormat(QwtColorMap::RGB);
     }
 };
@@ -15,7 +15,7 @@ class LinearInverseColorMap: public QwtLinearColorMap
 {
 public:
     LinearInverseColorMap(): QwtLinearColorMap(Qt::white, Qt::black)
-    {
+    {DD;
         setFormat(QwtColorMap::RGB);
     }
 };
@@ -24,7 +24,7 @@ class SymmetricColorMap: public QwtLinearColorMap
 {
 public:
     SymmetricColorMap(): QwtLinearColorMap(Qt::blue, Qt::red)
-    {
+    {DD;
         setFormat(QwtColorMap::RGB);
         addColorStop( 0.5, Qt::white );
     }
@@ -34,7 +34,7 @@ class RGBColorMap: public QwtLinearColorMap
 {
 public:
     RGBColorMap():  QwtLinearColorMap(QColor(2,0,174), QColor(217,53,43))
-    {
+    {DD;
         setFormat(QwtColorMap::RGB);
         addColorStop( 0.0625, QColor(0,30,255));
         addColorStop( 0.125,  QColor(12,126,251));
@@ -57,7 +57,7 @@ class HueColorMap: public QwtHueColorMap
 {
 public:
     HueColorMap() : QwtHueColorMap(QwtColorMap::RGB)
-    {
+    {DD;
         setHueInterval(0, 300);
     }
 };
@@ -66,10 +66,10 @@ class SteppingColorMap: public QwtColorMap
 {
 public:
     SteppingColorMap() : QwtColorMap(QwtColorMap::RGB)
-    {
+    {DD;
     }
     QRgb rgb(const QwtInterval &interval, double value) const override
-    {
+    {DD;
         const double width = interval.width();
         if (width <= 0.0)
             return 0u;
@@ -100,7 +100,7 @@ private:
 };
 
 QStringList ColorMapFactory::names()
-{
+{DD;
     QStringList l;
     l << "RGB";
     l << "Серая";
@@ -112,7 +112,7 @@ QStringList ColorMapFactory::names()
 }
 
 QwtColorMap *ColorMapFactory::map(int index)
-{
+{DD;
     switch (index) {
     case RGBMap: return new RGBColorMap();
     case GreyMap : return new LinearColorMap();

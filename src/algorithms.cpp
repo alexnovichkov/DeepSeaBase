@@ -33,7 +33,7 @@ QString replaceWinChars(QString s)
 }
 
 bool fileExists(const QString &s, const QString &suffix)
-{
+{DD;
     QString f = changeFileExt(s, suffix);
     if (suffix != "dfd") return QFile::exists(f);
 
@@ -166,14 +166,14 @@ QString createUniqueFileName(const QString &folderName, const QString &fileName,
 }
 
 QString createUniqueFileName(const QString &fileName)
-{
+{DD;
     if (QFile::exists(fileName))
         return createUniqueFileName("", fileName, "", QFileInfo(fileName).suffix(), false);
     return fileName;
 }
 
 void getUniqueFromToValues(QString &fromString, QString &toString, double from, double to)
-{
+{DD;
     int factor = 0; //10, 100, 1000...
     fromString.setNum(from, 'f', factor);
     toString.setNum(to, 'f', factor);
@@ -189,7 +189,7 @@ void getUniqueFromToValues(QString &fromString, QString &toString, double from, 
 }
 
 QString changeFileExt(const QString &fileName, const QString &ext)
-{
+{DD;
     QFileInfo fi(fileName);
     if (fi.exists())
         return fi.canonicalPath()+"/"+fi.completeBaseName()+"."+ext;
@@ -203,7 +203,7 @@ QString changeFileExt(const QString &fileName, const QString &ext)
 
 
 QVector<double> absolutes(const QVector<cx_double> &values)
-{
+{DD;
     const int size = values.size();
     QVector<double> result(size);
 
@@ -215,7 +215,7 @@ QVector<double> absolutes(const QVector<cx_double> &values)
 }
 
 QVector<double> absolutes(const QVector<double> &values)
-{
+{DD;
     const int size = values.size();
     QVector<double> result(size);
 
@@ -227,7 +227,7 @@ QVector<double> absolutes(const QVector<double> &values)
 }
 
 QVector<double> phases(const QVector<cx_double> &values)
-{
+{DD;
     const int size = values.size();
     QVector<double> result(size);
 
@@ -239,7 +239,7 @@ QVector<double> phases(const QVector<cx_double> &values)
 }
 
 QVector<double> reals(const QVector<cx_double> &values)
-{
+{DD;
     const int size = values.size();
     QVector<double> result(size);
 
@@ -254,14 +254,14 @@ QVector<double> reals(const QVector<cx_double> &values)
 
 
 QVector<double> linspace(double begin, double step, int n)
-{
+{DD;
     QVector<double> result(n);
     for (int i=0; i<n; ++i) result[i]=begin+i*step;
     return result;
 }
 
 QVector<double> imags(const QVector<cx_double> &values)
-{
+{DD;
     const int size = values.size();
     QVector<double> result(size);
 
@@ -273,7 +273,7 @@ QVector<double> imags(const QVector<cx_double> &values)
 }
 
 QVector<cx_double> movingAverage(const QVector<cx_double> &spectrum, int window)
-{
+{DD;
     const int numInd = spectrum.size();
 
     // 1. Извлекаем амплитуды и фазы из комплексного спектра
@@ -292,7 +292,7 @@ QVector<cx_double> movingAverage(const QVector<cx_double> &spectrum, int window)
 }
 
 QVector<double> movingAverage(const QVector<double> &spectrum, int window)
-{
+{DD;
     int numInd = spectrum.size();
     QVector<double> result(numInd, 0.0);
 
@@ -319,7 +319,7 @@ QVector<double> movingAverage(const QVector<double> &spectrum, int window)
 
 
 QString doubletohex(const double d)
-{
+{DD;
     QString s;
     QByteArray ba;
     QDataStream stream(&ba,QIODevice::WriteOnly);
@@ -331,7 +331,7 @@ QString doubletohex(const double d)
 }
 
 double hextodouble(QString hex)
-{
+{DD;
     if (hex.startsWith("("))
         hex.remove(0,1);
     if (hex.endsWith(")"))
@@ -356,7 +356,7 @@ double hextodouble(QString hex)
 
 
 float hextofloat(QString hex)
-{
+{DD;
     if (hex.startsWith("("))
         hex.remove(0,1);
     if (hex.endsWith(")"))
@@ -379,7 +379,7 @@ float hextofloat(QString hex)
 }
 
 QString floattohex(const float f)
-{
+{DD;
     QString s;
     QByteArray ba;
     QDataStream stream(&ba,QIODevice::WriteOnly);
@@ -392,7 +392,7 @@ QString floattohex(const float f)
 
 template <typename TFloat, typename TInt, QDataStream::ByteOrder ENDIAN>
 TFloat toFloat(const QByteArray &v, size_t offset)
-{
+{DD;
     if(offset > v.size() - sizeof(TInt)) {
         qDebug()<<"toFloat() - offset is out of range. Returning 0.";
         return 0.0;
@@ -411,17 +411,17 @@ TFloat toFloat(const QByteArray &v, size_t offset)
 }
 
 double toFloat64LE(const QByteArray &v, size_t offset)
-{
+{DD;
   return toFloat<double, quint64, QDataStream::LittleEndian>(v, offset);
 }
 
 float toFloat32LE(const QByteArray &v, size_t offset)
-{
+{DD;
     return toFloat<float, quint32, QDataStream::LittleEndian>(v, offset);
 }
 
 QVector<cx_double> complexes(const QVector<double> &values, bool valuesAreReals)
-{
+{DD;
     const int size = values.size();
     QVector<cx_double> result(size);
 
@@ -436,7 +436,7 @@ QVector<cx_double> complexes(const QVector<double> &values, bool valuesAreReals)
 }
 
 QVector<cx_double> complexes(const QVector<float> &values, bool valuesAreReals)
-{
+{DD;
     const int size = values.size();
     QVector<cx_double> result(size);
 
@@ -451,7 +451,7 @@ QVector<cx_double> complexes(const QVector<float> &values, bool valuesAreReals)
 }
 
 QString stripHtml(QString s)
-{
+{DD;
     s.remove(QRegularExpression("<[^>]*>"));
     return s;
 }
@@ -478,7 +478,7 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 }
 
 QDateTime dateTimeFromString(QString s)
-{
+{DD;
     s = s.trimmed();
 
     QDateTime dt;
@@ -497,7 +497,7 @@ QDateTime dateTimeFromString(QString s)
 }
 
 QDateTime dateTimeFromString(QString date, QString time)
-{
+{DD;
     //date
     QDate d;
     date = date.trimmed();
@@ -525,7 +525,7 @@ QDateTime dateTimeFromString(QString date, QString time)
 }
 
 bool channelsFromSameFile(const QVector<Channel *> &source)
-{
+{DD;
     if (source.isEmpty()) return false;
     auto d = source.first()->descriptor();
     return std::all_of(source.cbegin(), source.cend(), [d](Channel *c){
@@ -534,7 +534,7 @@ bool channelsFromSameFile(const QVector<Channel *> &source)
 }
 
 QVector<int> channelIndexes(const QVector<Channel *> &source)
-{
+{DD;
     QVector<int> result;
     for (auto c: source) result << c->index();
     return result;

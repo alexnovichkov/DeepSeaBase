@@ -4,7 +4,13 @@
 #include <QString>
 #include <QtDebug>
 
-#define DO_TRACE
+/// maximum trace level, DDDD
+//#define TRACE_MAX
+/// medium trace level, DDD
+//#define TRACE_MED
+/// minimum trace level, DD
+//#define TRACE_MIN
+
 
 #define DebugPrint(s) qDebug()<<#s<<s;
 
@@ -18,14 +24,23 @@ private:
     QElapsedTimer *time;
 };
 
-#ifdef DO_TRACE
-
-
+#ifdef TRACE_MIN
 #define DD  Trace trace(Q_FUNC_INFO);
 #else
 #define DD
 #endif
+#ifdef TRACE_MED
+#define DDD Trace trace(Q_FUNC_INFO);
+#else
+#define DDD
+#endif
+#ifdef TRACE_MAX
+#define DDDD  Trace trace(Q_FUNC_INFO);
+#else
+#define DDDD
+#endif
 
-#define DDD  Trace trace(Q_FUNC_INFO);
+//always trace
+#define DD0  Trace trace(Q_FUNC_INFO);
 
 #endif // LOGGING_H

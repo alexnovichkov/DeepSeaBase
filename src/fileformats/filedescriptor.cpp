@@ -103,8 +103,6 @@ double FileDescriptor::roundedSize() const
     else {
         return channel(0)->data()->xValue(channel(0)->data()->samplesCount()-1);
     }
-
-
 }
 
 QDateTime FileDescriptor::dateTime() const
@@ -412,7 +410,7 @@ int FileDescriptor::plottedCount() const
 }
 
 QVector<int> FileDescriptor::plottedIndexes() const
-{
+{DD;
     QVector<int> plotted;
     const int count = channelsCount();
     for (int i=0; i<count; ++i) {
@@ -549,7 +547,7 @@ QString FileDescriptor::createGUID()
 }
 
 //QString descriptionEntryToString(const DescriptionEntry &entry)
-//{
+//{DD;
 //    QString result = entry.second;
 //    if (!entry.first.isEmpty()) return entry.first+"="+result;
 
@@ -561,7 +559,7 @@ Channel::Channel(Channel *other) :
     _populated(other->_populated),
     _data(new DataHolder(*(other->_data))),
     _dataDescription(other->_dataDescription)
-{
+{DD;
 
 }
 
@@ -570,12 +568,12 @@ Channel::Channel(Channel &other) :
     _populated(other._populated),
     _data(new DataHolder(*(other._data))),
     _dataDescription(other._dataDescription)
-{
+{DD;
 
 }
 
 QVariant Channel::info(int column, bool edit) const
-{
+{DDD;
     Q_UNUSED(edit)
     switch (column) {
         case 0: return dataDescription().get("name");
@@ -591,12 +589,12 @@ QVariant Channel::info(int column, bool edit) const
 }
 
 int Channel::columnsCount() const
-{
+{DDDD;
     return 7;
 }
 
 QVariant Channel::channelHeader(int column) const
-{
+{DDDD;
     switch (column) {
         case 0: return QString("Имя");
         case 1: return QString("Ед.изм.");
@@ -611,83 +609,83 @@ QVariant Channel::channelHeader(int column) const
 }
 
 int Channel::octaveType() const
-{
+{DD;
     return dataDescription().get("function.octaveFormat").toInt();
 }
 
 void Channel::clear()
-{
+{DD;
     _data->clear();
     setPopulated(false);
 }
 
 void Channel::maybeClearData()
-{
+{DD;
     if (data()->samplesCount()>1000000) clear();
 }
 
 QString Channel::name() const
-{
+{DDDD;
     return dataDescription().get("name").toString();
 }
 
 void Channel::setName(const QString &name)
-{
+{DD;
     dataDescription().put("name", name);
 }
 
 QString Channel::description() const
-{
+{DDDD;
     return _dataDescription.data.value("description").toString();
 }
 
 void Channel::setDescription(const QString &description)
-{
+{DD;
     _dataDescription.data.insert("description", description);
 }
 
 QString Channel::xName() const
-{
+{DDDD;
     return _dataDescription.data.value("xname").toString();
 }
 
 QString Channel::yName() const
-{
+{DDDD;
     return _dataDescription.data.value("yname").toString();
 }
 
 QString Channel::yNameOld() const
-{
+{DDDD;
     return yName();
 }
 
 QString Channel::zName() const
-{
+{DDDD;
     return _dataDescription.data.value("zname").toString();
 }
 
 void Channel::setYName(const QString &yName)
-{
+{DD;
     _dataDescription.data.insert("yname", yName);
 }
 
 void Channel::setXName(const QString &xName)
-{
+{DD;
     _dataDescription.data.insert("xname", xName);
 }
 
 void Channel::setZName(const QString &zName)
-{
+{DD;
     _dataDescription.data.insert("zname", zName);
 }
 
 void Channel::setXStep(double xStep)
-{
+{DD;
     _data->setXStep(xStep);
 }
 
 QString Channel::legendName() const
-{
+{DDDD;
     QStringList l;
     l << name();
     if (!correction().isEmpty()) l << correction();
@@ -697,7 +695,7 @@ QString Channel::legendName() const
 }
 
 QByteArray Channel::wavData(qint64 pos, qint64 samples, int format)
-{
+{DD;
     QByteArray b;
 
     //assume that channel is time response
@@ -727,7 +725,7 @@ QByteArray Channel::wavData(qint64 pos, qint64 samples, int format)
 }
 
 //QString valuesUnit(const QString &first, const QString &second, int unitType)
-//{
+//{DD;
 //    if (unitType == DataHolder::UnitsLinear)
 //    QString n = name.toLower();
 //    if (n=="м/с2" || n=="м/с^2" || n=="м/с*2" || n=="m/s2" || n=="m/s^2" /*|| n=="g"*/) return 3.16e-4; //ускорение
@@ -742,7 +740,7 @@ QByteArray Channel::wavData(qint64 pos, qint64 samples, int format)
 //}
 
 QString Descriptor::functionTypeDescription(int type)
-{
+{DD;
     switch (type) {
         case  1: return "Time Response";
         case  2: return "Auto Spectrum";
@@ -779,34 +777,36 @@ QString Descriptor::functionTypeDescription(int type)
 
 
 QString stringify(const QVector<int> &vec)
-{
+{DDDD;
     QStringList result;
     for (int i:vec) result<<QString::number(i);
     return result.join(",");
 }
 
 QDataStream &operator>>(QDataStream &stream, DataDescription &data)
-{
+{DDDD;
     stream >> data.data;
     return stream;
 }
 
 QDataStream &operator<<(QDataStream &stream, const DataDescription &data)
-{
+{DDDD;
     stream << data.data;
     return stream;
 }
 
-void DataDescription::put(const QString &key, const QVariant &value) {
+void DataDescription::put(const QString &key, const QVariant &value)
+{DDDD;
     data.insert(key, value);
 }
 
 QVariant DataDescription::get(const QString &key) const
-{
+{DDDD;
     return data.value(key);
 }
 
-QJsonObject DataDescription::toJson() const {
+QJsonObject DataDescription::toJson() const
+{DD;
     QJsonObject result;
     for (auto i = data.constBegin(); i != data.constEnd(); ++i) {
         const QString key = i.key();
@@ -824,7 +824,8 @@ QJsonObject DataDescription::toJson() const {
     return result;
 }
 
-DataDescription DataDescription::fromJson(const QJsonObject &o) {
+DataDescription DataDescription::fromJson(const QJsonObject &o)
+{DD;
     DataDescription result;
     for (auto i = o.constBegin(); i!=o.constEnd(); ++i) {
         QString key = i.key();
@@ -867,14 +868,14 @@ DataDescription DataDescription::fromJson(const QJsonObject &o) {
 }
 
 QStringList DataDescription::twoStringDescription() const
-{
+{DDDD;
     QStringList result = toStringList("description", true);
     result = result.mid(0,2);
     return result;
 }
 
 QStringList DataDescription::toStringList(const QString &filter, bool includeKeys) const
-{
+{DDDD;
     QStringList result;
     for (const auto [key, val] : asKeyValueRange(data)) {
         QString s;
@@ -891,7 +892,7 @@ QStringList DataDescription::toStringList(const QString &filter, bool includeKey
 }
 
 QVariantMap DataDescription::filter(const QString &filter) const
-{
+{DD;
     if (filter.isEmpty()) return data;
 
     QVariantMap result;

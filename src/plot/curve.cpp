@@ -74,7 +74,7 @@ PointLabel *Curve::findLabel(const int point)
 }
 
 void Curve::resetHighlighting()
-{
+{DD;
     setPen(oldPen);
 //    foreach(PointLabel *label, labels)
 //        if (label) label->setSelected(false);
@@ -82,7 +82,7 @@ void Curve::resetHighlighting()
 }
 
 void Curve::highlight()
-{
+{DD;
     QPen p = pen();
     oldPen = p;
     p.setWidth(2);
@@ -93,34 +93,34 @@ void Curve::highlight()
 
 
 double Curve::yMin() const
-{
+{DD;
     return channel->data()->yMin();
 }
 
 double Curve::yMax() const
-{
+{DD;
     return channel->data()->yMax();
 }
 
 double Curve::xMin() const
-{
+{DD;
     return channel->data()->xMin();
 }
 
 double Curve::xMax() const
-{
+{DD;
     return channel->data()->xMax();
 }
 
 int Curve::samplesCount() const
-{
+{DD;
     return channel->data()->samplesCount();
 }
 
 
 
 void Curve::setVisible(bool visible)
-{
+{DD;
     //d->setVisible(visible);
     foreach (PointLabel *label, labels) {
         label->setVisible(visible);
@@ -128,7 +128,7 @@ void Curve::setVisible(bool visible)
 }
 
 void Curve::evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const
-{
+{DD;
     const double startX = xMap.s1();
     const double endX = xMap.s2();
 
@@ -155,7 +155,7 @@ void Curve::evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const
 }
 
 void Curve::switchFixed()
-{
+{DD;
     fixed = !fixed;
 }
 

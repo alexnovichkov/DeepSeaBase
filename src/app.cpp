@@ -4,15 +4,16 @@
 #include "fileformats/filedescriptor.h"
 #include "fileformats/formatfactory.h"
 #include "colorselector.h"
+#include "logging.h"
 
 Application::Application(int &argc, char **argv) : QApplication(argc, argv)
-{
+{DD;
     QVariantList list = getSetting("colors").toList();
     m_colors = new ColorSelector(list);
 }
 
 Application::~Application()
-{
+{DD;
     for (auto f: qAsConst(files)) f.reset();
 
     setSetting("colors", m_colors->getColors());
@@ -20,24 +21,24 @@ Application::~Application()
 }
 
 QVariant Application::getSetting(const QString &key, const QVariant &defValue)
-{
+{DD;
     if (!settings) createSettings();
     return settings->value(key, defValue);
 }
 
 void Application::setSetting(const QString &key, const QVariant &value)
-{
+{DD;
     if (!settings) createSettings();
     settings->setValue(key, value);
 }
 
 F Application::find(const QString &name) const
-{
+{DD;
     return files.value(name);
 }
 
 F Application::addFile(const QString &name, bool *isNew)
-{
+{DD;
     if (files.contains(name)) {
         if (isNew) *isNew = false;
         return files.value(name);
@@ -52,7 +53,7 @@ F Application::addFile(const QString &name, bool *isNew)
 }
 
 F Application::addFile(const FileDescriptor &source, const QString &name, const QVector<int> &indexes, bool *isNew)
-{
+{DD;
     if (files.contains(name)) {
         if (isNew) *isNew = false;
         return files.value(name);
@@ -67,7 +68,7 @@ F Application::addFile(const FileDescriptor &source, const QString &name, const 
 }
 
 F Application::addFile(const QVector<Channel*> &source, const QString &name, bool *isNew)
-{
+{DD;
     if (files.contains(name)) {
         if (isNew) *isNew = false;
         return files.value(name);
@@ -82,7 +83,7 @@ F Application::addFile(const QVector<Channel*> &source, const QString &name, boo
 }
 
 void Application::maybeDelFile(const QString &name)
-{
+{DD;
     F& f = files[name];
     if (f.use_count()<2) {
         f.reset();
@@ -91,7 +92,7 @@ void Application::maybeDelFile(const QString &name)
 }
 
 void Application::createSettings()
-{
+{DD;
     if (QFile::exists("portable")) {
         settings = new QSettings("deepseabase.ini", QSettings::IniFormat);
     }

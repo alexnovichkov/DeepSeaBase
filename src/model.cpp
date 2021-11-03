@@ -160,7 +160,7 @@ Model::~Model()
 }
 
 void Model::maybeDeleteFile(int index)
-{
+{DD;
     QString name = descriptors[index]->fileName();
     descriptors[index].reset();
     App->maybeDelFile(name);
@@ -200,19 +200,19 @@ bool Model::contains(FileDescriptor *file, int *index) const
 
 
 int Model::rowCount(const QModelIndex &parent) const
-{//DD;
+{DDDD;
     Q_UNUSED(parent);
     return descriptors.size();
 }
 
 int Model::columnCount(const QModelIndex &parent) const
-{//DD;
+{DDDD;
     Q_UNUSED(parent);
     return MODEL_COLUMNS_COUNT;
 }
 
 QVariant Model::data(const QModelIndex &index, int role) const
-{//DD;
+{DDDD;
     if (!index.isValid()) return QVariant();
 
     const int row = index.row();
@@ -331,7 +331,7 @@ bool Model::setData(const QModelIndex &index, const QVariant &value, int role)
 }
 
 QVariant Model::headerData(int section, Qt::Orientation orientation, int role) const
-{//DD;
+{DDDD;
     if (orientation == Qt::Vertical)
         return QAbstractItemModel::headerData(section, orientation, role);
 
@@ -354,7 +354,7 @@ QVariant Model::headerData(int section, Qt::Orientation orientation, int role) c
 }
 
 Qt::ItemFlags Model::flags(const QModelIndex &index) const
-{//DD;
+{DDDD;
     if (!index.isValid()) return QAbstractTableModel::flags(index) | Qt::ItemIsDropEnabled;
 
     const int col = index.column();

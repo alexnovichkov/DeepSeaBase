@@ -12,7 +12,7 @@
 #include "fileformats/filedescriptor.h"
 
 Picker::Picker(Plot *plot) : plot(plot)
-{
+{DD;
     interactionMode = Plot::ScalingInteraction;
     mode = ModeNone;
 
@@ -23,7 +23,7 @@ Picker::Picker(Plot *plot) : plot(plot)
 }
 
 bool Picker::findObject(QMouseEvent *e)
-{
+{DD;
     if (e->modifiers() == Qt::NoModifier || e->modifiers() == Qt::ControlModifier) {
         pos = e->pos();
 
@@ -53,7 +53,7 @@ bool Picker::findObject(QMouseEvent *e)
 }
 
 void Picker::procKeyboardEvent(int key)
-{
+{DD;
     switch (key) {
         case Qt::Key_Left: {
             if (d_selectedPoint > 0) {
@@ -107,7 +107,7 @@ void Picker::procKeyboardEvent(int key)
 }
 
 void Picker::proceedPick(QMouseEvent *e)
-{
+{DD;
     if (!enabled) return;
 
     QPoint currentPos = e->pos();
@@ -179,7 +179,7 @@ void Picker::endPick(QMouseEvent *e)
 }
 
 QVector<TrackingCursor *> Picker::findCursors(const QPoint &pos)
-{
+{DD;
     QVector<TrackingCursor *> result;
 
     const QwtPlotItemList& itmList = plot->itemList();
@@ -201,7 +201,7 @@ QVector<TrackingCursor *> Picker::findCursors(const QPoint &pos)
 }
 
 Curve *Picker::findClosestPoint(const QPoint &pos, int &index) const
-{
+{DD;
     Curve *curve = nullptr;
     double dist = 10e10;
     index = -1;
@@ -226,7 +226,7 @@ Curve *Picker::findClosestPoint(const QPoint &pos, int &index) const
 }
 
 PointLabel *Picker::findLabel(const QPoint &pos)
-{
+{DD;
     const QwtPlotItemList& itmList = plot->itemList();
     for (auto it: itmList) {
         if (Curve *c = dynamic_cast<Curve *>(it)) {
@@ -239,7 +239,7 @@ PointLabel *Picker::findLabel(const QPoint &pos)
 }
 
 void Picker::highlightPoint(bool enable)
-{
+{DD;
     if (marker) marker->detach();
     delete marker;
     marker = nullptr;

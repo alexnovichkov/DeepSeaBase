@@ -20,61 +20,61 @@ BarCurve::BarCurve(const QString &title, Channel *channel) :  QwtPlotHistogram(t
 }
 
 QPointF BarCurve::samplePoint(int point) const
-{
+{DD;
     return histogramdata->samplePoint(point);
 }
 
 void BarCurve::attachTo(QwtPlot *plot)
-{
+{DD;
     QwtPlotHistogram::attach(plot);
 }
 
 QString BarCurve::title() const
-{
+{DD;
     return QwtPlotHistogram::title().text();
 }
 
 void BarCurve::setTitle(const QString &title)
-{
+{DD;
     QwtPlotHistogram::setTitle(title);
 }
 
 QwtAxisId BarCurve::yAxis() const
-{
+{DD;
     return QwtPlotHistogram::yAxis();
 }
 
 void BarCurve::setYAxis(QwtAxisId axis)
-{
+{DD;
     QwtPlotHistogram::setYAxis(axis);
     foreach (PointLabel *l, labels)
         l->setYAxis(axis);
 }
 
 QwtAxisId BarCurve::xAxis() const
-{
+{DD;
     return QwtPlotHistogram::xAxis();
 }
 
 void BarCurve::setXAxis(QwtAxisId axis)
-{
+{DD;
     QwtPlotHistogram::setXAxis(axis);
     foreach (PointLabel *l, labels)
         l->setXAxis(axis);
 }
 
 QPen BarCurve::pen() const
-{
+{DD;
     return QwtPlotHistogram::pen();
 }
 
 void BarCurve::setPen(const QPen &pen)
-{
+{DD;
     QwtPlotHistogram::setPen(pen);
 }
 
 QList<QwtLegendData> BarCurve::legendData() const
-{
+{DD;
     QList<QwtLegendData> result = QwtPlotHistogram::legendData();
     QwtLegendData &data = result[0];
     data.setValue(QwtLegendData::UserRole+3, pen().color());
@@ -88,14 +88,14 @@ QList<QwtLegendData> BarCurve::legendData() const
 }
 
 void BarCurve::highlight()
-{
+{DD;
     Curve::highlight();
     setZ(1000);
     plot()->updateLegend(this);
 }
 
 void BarCurve::resetHighlighting()
-{
+{DD;
     Curve::resetHighlighting();
     setZ(20);
     plot()->updateLegend(this);
@@ -105,7 +105,7 @@ void BarCurve::resetHighlighting()
 /** HistogramData implementation */
 
 HistogramData::HistogramData(DataHolder *data) : data(data)
-{
+{DD;
     // по данным оси х определяем тип октавы, не обращаясь к типу файла,
     // так как там все равно нет нужных сведений
 
@@ -143,7 +143,7 @@ HistogramData::HistogramData(DataHolder *data) : data(data)
 }
 
 QRectF HistogramData::boundingRect() const
-{
+{DD;
     if ( d_boundingRect.width() < 0 ) {
         if (data->xValuesFormat() == DataHolder::XValuesUniform) {
             d_boundingRect.setLeft( data->xMin() - data->xStep()/2.0 );
@@ -161,12 +161,12 @@ QRectF HistogramData::boundingRect() const
 }
 
 size_t HistogramData::size() const
-{
+{DD;
     return data->samplesCount();
 }
 
 QwtIntervalSample HistogramData::sample(size_t i) const
-{
+{DD;
     // если шаг по оси х постоянный, возвращаем (x/step/2, x+step/2, y)
     if (data->xValuesFormat() == DataHolder::XValuesUniform)
         return QwtIntervalSample(data->yValue(i),
@@ -193,12 +193,12 @@ QwtIntervalSample HistogramData::sample(size_t i) const
 }
 
 QPointF HistogramData::samplePoint(size_t i) const
-{
+{DD;
     return QPointF(data->xValue(i), data->yValue(i));
 }
 
 double BarCurve::xMin() const
-{
+{DD;
     // если шаг по оси х постоянный, возвращаем x-step/2
     if (histogramdata->data->xValuesFormat() == DataHolder::XValuesUniform)
         return histogramdata->data->xMin() - histogramdata->data->xStep()/2.0;
@@ -212,7 +212,7 @@ double BarCurve::xMin() const
 }
 
 double BarCurve::xMax() const
-{
+{DD;
     // если шаг по оси х постоянный, возвращаем x-step/2
     if (histogramdata->data->xValuesFormat() == DataHolder::XValuesUniform)
         return histogramdata->data->xMax() + histogramdata->data->xStep()/2.0;
@@ -227,7 +227,7 @@ double BarCurve::xMax() const
 
 
 int BarCurve::closest(const QPoint &pos, double *dist) const
-{
+{DD;
     int index = -1;
 
     const size_t numSamples = channel->data()->samplesCount();

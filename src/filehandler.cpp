@@ -6,12 +6,12 @@
 #include "logging.h"
 
 FileHandler::FileHandler(QObject *parent) : QObject(parent)
-{
+{DD;
 
 }
 
 void FileHandler::trackFiles(const QStringList &fileNames)
-{
+{DD;
     for (const QString &file: fileNames) {
         //1. Файл может уже отслеживаться
         //-либо как отдельный файл
@@ -22,13 +22,13 @@ void FileHandler::trackFiles(const QStringList &fileNames)
 }
 
 void FileHandler::trackFolder(const QString &folder, bool withSubfolders)
-{
+{DD;
     if (!tracking(folder))
         files.append({folder,withSubfolders?Folder:FolderWithSubfolders});
 }
 
 void FileHandler::untrackFile(const QString &fileName)
-{
+{DD;
     const auto fi = QFileInfo(fileName);
     const QString path = fi.canonicalPath();
 
@@ -40,7 +40,7 @@ void FileHandler::untrackFile(const QString &fileName)
 }
 
 void FileHandler::setFileNames(const QStringList &fileNames)
-{
+{DD;
     clear();
     for (QString f: fileNames) {
         bool withSubfolders = false;
@@ -61,7 +61,7 @@ void FileHandler::setFileNames(const QStringList &fileNames)
 }
 
 QStringList FileHandler::fileNames() const
-{
+{DD;
     QStringList result;
     for (auto item: files) {
         if (item.second==FolderWithSubfolders) item.first.append(":1");
@@ -73,12 +73,12 @@ QStringList FileHandler::fileNames() const
 }
 
 void FileHandler::clear()
-{
+{DD;
     files.clear();
 }
 
 bool FileHandler::tracking(const QString &file) const
-{
+{DD;
     const auto fi = QFileInfo(file);
     const QString path = fi.canonicalPath();
 

@@ -1,6 +1,7 @@
 #include "sortabletreewidgetitem.h"
 
 #include "fileformats/dfdfiledescriptor.h"
+#include "logging.h"
 
 QMap<int, SortableTreeWidgetItem::DataType> SortableTreeWidgetItem::typeMap = QMap<int, SortableTreeWidgetItem::DataType>();
 
@@ -17,17 +18,17 @@ SortableTreeWidgetItem::SortableTreeWidgetItem(FileDescriptor *dfd, const QStrin
 {}
 
 SortableTreeWidgetItem::~SortableTreeWidgetItem()
-{
+{DD;
 //    delete fileDescriptor;
 }
 
 void SortableTreeWidgetItem::setTypeMap(const QMap<int, SortableTreeWidgetItem::DataType> &map)
-{
+{DD;
     typeMap = map;
 }
 
 bool SortableTreeWidgetItem::operator<(const QTreeWidgetItem &other) const
-{
+{DD;
     int sortCol = treeWidget()->sortColumn();
     QString s = text(sortCol);
     const DataType dataType = typeMap.value(sortCol);

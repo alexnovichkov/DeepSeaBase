@@ -3,10 +3,11 @@
 #include "app.h"
 #include "colorselector.h"
 #include <QtWidgets>
+#include "logging.h"
 
 ColorEditDialog::ColorEditDialog(QWidget *parent) :
     QDialog(parent)
-{
+{DD;
     setWindowTitle("Редактор цветов графиков");
 
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);

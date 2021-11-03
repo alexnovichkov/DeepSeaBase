@@ -1139,7 +1139,7 @@ Descriptor::DataType MatlabChannel::type() const
 }
 
 void MatlabChannel::populate()
-{DDD;
+{DD;
     _data->clear();
 
     setPopulated(false);

@@ -177,7 +177,7 @@ void CalculateSpectreDialog::updateProgressIndicator(const QString &path)
 }
 
 void CalculateSpectreDialog::updateProgressIndicator()
-{
+{DD;
     progress->setValue(progress->value()+1);
     taskBarProgress->setValue(progress->value());
 }
