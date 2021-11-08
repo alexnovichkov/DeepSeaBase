@@ -186,13 +186,18 @@ QString replaceWinChars(QString s);
  * T t = find_first_unique(list.cbegin(), list.cend(), Class::function, T defVal);
  * */
 
-/**
- * @brief absolutes возвращает вектор модулей комплексных чисел
- * @param values вектор комплексных чисел
- * @return  вектор модулей комплексных чисел
- */
-QVector<double> absolutes(const QVector<cx_double> &values);
-QVector<double> absolutes(const QVector<double> &values);
+template <typename T>
+QVector<double> absolutes(const QVector<T> &values)
+{
+    const int size = values.size();
+    QVector<double> result(size);
+
+    for (int i=0; i<size; ++i) {
+        result[i] = std::abs(values.at(i));
+    }
+
+    return result;
+}
 // возвращает вектор фаз комплексных чисел
 QVector<double> phases(const QVector<cx_double> &values);
 // возвращает вектор действительных частей комплексных чисел
@@ -200,8 +205,31 @@ QVector<double> reals(const QVector<cx_double> &values);
 // возвращает вектор действительных частей комплексных чисел
 QVector<double> imags(const QVector<cx_double> &values);
 // возвращает вектор комплексных чисел с действительными частями из values
-QVector<cx_double> complexes(const QVector<float> &values, bool valuesAreReals = true);
-QVector<cx_double> complexes(const QVector<double> &values, bool valuesAreReals = true);
+
+template <typename T>
+QVector<cx_double> complexesFromReals(const QVector<T> &values)
+{
+    const int size = values.size();
+    QVector<cx_double> result(size);
+
+    for (int i=0; i<size; ++i) {
+        result[i] = {values.at(i), 0.0};
+    }
+
+    return result;
+}
+template <typename T>
+QVector<cx_double> complexesFromImags(const QVector<T> &values)
+{
+    const int size = values.size();
+    QVector<cx_double> result(size);
+
+    for (int i=0; i<size; ++i) {
+        result[i] = {0.0, values.at(i)};
+    }
+
+    return result;
+}
 
 // возвращает вектор линейно возрастающих чисел
 QVector<double> linspace(double begin, double step, int n);

@@ -885,7 +885,7 @@ void DataHolder::recalculateYValues()
                     else if (m_yValuesPresentation == ShowAsAmplitudesInDB)
                         m_yValuesTemporal = toLog(absolutes(m_yValues), m_threshold, m_yValuesUnits);
                     else if (m_yValuesPresentation == ShowAsPhases)
-                        m_yValuesTemporal = ::phases(complexes(m_yValues));
+                        m_yValuesTemporal = ::phases(complexesFromReals(m_yValues));
                     break;
                 }
                 case YValuesImags: {
@@ -894,7 +894,7 @@ void DataHolder::recalculateYValues()
                     else if (m_yValuesPresentation == ShowAsAmplitudesInDB)
                         m_yValuesTemporal = toLog(absolutes(m_yValues), m_threshold, m_yValuesUnits);
                     else if (m_yValuesPresentation == ShowAsPhases)
-                        m_yValuesTemporal = ::phases(complexes(m_yValues, false));
+                        m_yValuesTemporal = ::phases(complexesFromImags(m_yValues));
                     break;
                 }
                 case YValuesAmplitudes: {

@@ -945,6 +945,7 @@ void MainWindow::addFolder(const QString &directory, bool withAllSubfolders, boo
 
     QStringList filesToAdd;
     processDir(directory, filesToAdd, withAllSubfolders);
+    if (filesToAdd.isEmpty()) return;
 
     QStringList toAdd;
     for (const QString &file: qAsConst(filesToAdd)) {
@@ -2041,6 +2042,7 @@ void MainWindow::rescanBase()
             tab = t;
 
             for (auto folder: qAsConst(t->fileHandler->files)) {
+//                qDebug()<<folder;
                 addFolder(folder.first, folder.second == FileHandler::FolderWithSubfolders, false);
             }
         }

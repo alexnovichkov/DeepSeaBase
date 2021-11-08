@@ -202,29 +202,29 @@ QString changeFileExt(const QString &fileName, const QString &ext)
 
 
 
-QVector<double> absolutes(const QVector<cx_double> &values)
-{DD;
-    const int size = values.size();
-    QVector<double> result(size);
+//QVector<double> absolutes(const QVector<cx_double> &values)
+//{DD;
+//    const int size = values.size();
+//    QVector<double> result(size);
 
-    for (int i=0; i<size; ++i) {
-        result[i] = std::abs(values.at(i));
-    }
+//    for (int i=0; i<size; ++i) {
+//        result[i] = std::abs(values.at(i));
+//    }
 
-    return result;
-}
+//    return result;
+//}
 
-QVector<double> absolutes(const QVector<double> &values)
-{DD;
-    const int size = values.size();
-    QVector<double> result(size);
+//QVector<double> absolutes(const QVector<double> &values)
+//{DD;
+//    const int size = values.size();
+//    QVector<double> result(size);
 
-    for (int i=0; i<size; ++i) {
-        result[i] = std::abs(values.at(i));
-    }
+//    for (int i=0; i<size; ++i) {
+//        result[i] = std::abs(values.at(i));
+//    }
 
-    return result;
-}
+//    return result;
+//}
 
 QVector<double> phases(const QVector<cx_double> &values)
 {DD;
@@ -420,36 +420,6 @@ float toFloat32LE(const QByteArray &v, size_t offset)
     return toFloat<float, quint32, QDataStream::LittleEndian>(v, offset);
 }
 
-QVector<cx_double> complexes(const QVector<double> &values, bool valuesAreReals)
-{DD;
-    const int size = values.size();
-    QVector<cx_double> result(size);
-
-    for (int i=0; i<size; ++i) {
-        if (valuesAreReals)
-            result[i] = {values.at(i), 0.0};
-        else
-            result[i] = {0.0, values.at(i)};
-    }
-
-    return result;
-}
-
-QVector<cx_double> complexes(const QVector<float> &values, bool valuesAreReals)
-{DD;
-    const int size = values.size();
-    QVector<cx_double> result(size);
-
-    for (int i=0; i<size; ++i) {
-        if (valuesAreReals)
-            result[i] = {values.at(i), 0.0};
-        else
-            result[i] = {0.0, values.at(i)};
-    }
-
-    return result;
-}
-
 QString stripHtml(QString s)
 {DD;
     s.remove(QRegularExpression("<[^>]*>"));
@@ -458,23 +428,25 @@ QString stripHtml(QString s)
 
 void processDir(const QString &file, QStringList &files, bool includeSubfolders)
 {DD;
-    if (QFileInfo(file).isDir()) {
-        QFileInfoList dirLst = QDir(file).entryInfoList(FormatFactory::allSuffixes(),
-                                                        QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot,
-                                                        QDir::DirsFirst);
-        for (int i=0; i<dirLst.count(); ++i) {
-            if (dirLst.at(i).isDir()) {
-                if (includeSubfolders)
-                    processDir(dirLst.at(i).absoluteFilePath(),files,includeSubfolders);
+    if (auto fi = QFileInfo(file); fi.exists()) {
+        if (fi.isDir()) {
+            const QFileInfoList dirLst = QDir(file).entryInfoList(FormatFactory::allSuffixes(),
+                                                            QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot,
+                                                            QDir::DirsFirst);
+            for (const auto &dir: dirLst) {
+                if (dir.isDir()) {
+                    if (includeSubfolders)
+                        processDir(dir.absoluteFilePath(),files,includeSubfolders);
+                }
+                else
+                    files << dir.absoluteFilePath();
             }
-            else
-                files << dirLst.at(i).absoluteFilePath();
         }
+        else {
+            files << file;
+        }
+        files.removeDuplicates();
     }
-    else {
-        files << file;
-    }
-    files.removeDuplicates();
 }
 
 QDateTime dateTimeFromString(QString s)
