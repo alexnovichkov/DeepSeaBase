@@ -22,6 +22,9 @@ public:
     void setFileNames(const QStringList &fileNames);
     void clear();
 
+    int count() const {return files.size();}
+    Item item(int index) const {return files.at(index);}
+
     QStringList fileNames() const;
     bool tracking(const QString &file) const;
 signals:

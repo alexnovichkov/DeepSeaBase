@@ -54,9 +54,9 @@ private:
 
     QLineEdit *channelsFilter;
 
-    Converter *converter;
-    QThread *thread;
-    TaskBarProgress *taskBarProgress;
+    Converter *converter = nullptr;
+    QThread *thread = nullptr;
+    TaskBarProgress *taskBarProgress = nullptr;
     QWidget *win;
 };
 

@@ -43,6 +43,7 @@
 #include "channelpropertiesdialog.h"
 #include "tab.h"
 #include "filehandler.h"
+#include "filehandlerdialog.h"
 
 class DfdFilterProxy : public QSortFilterProxyModel
 {
@@ -438,6 +439,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(tabWidget,SIGNAL(closeOtherTabs(int)), this, SLOT(closeOtherTabs(int)));
     connect(tabWidget,SIGNAL(renameTab(int)),this, SLOT(renameTab(int)));
     connect(tabWidget,SIGNAL(currentChanged(int)),SLOT(changeCurrentTab(int)));
+    connect(tabWidget,SIGNAL(showFileHandler(int)),SLOT(showFileHandler(int)));
 
     autoscaleXAct = new QAction("Автомасштабирование по оси X", this);
     autoscaleXAct->setIcon(QIcon(":/icons/autoscale-x.png"));
@@ -857,6 +859,15 @@ void MainWindow::changeCurrentTab(int currentIndex)
     updateActions();
 }
 
+void MainWindow::showFileHandler(int i)
+{
+    if (i<0 || i>=tabWidget->count()) return;
+    if (auto t = qobject_cast<Tab *>(tabWidget->widget(i))) {
+        FileHandlerDialog dialog(t->fileHandler, this);
+        dialog.exec();
+    }
+}
+
 void MainWindow::editColors()
 {DD;
     ColorEditDialog dialog(this);
@@ -909,12 +920,14 @@ QString MainWindow::getFolderToAdd(bool withSubfolders)
 
 void MainWindow::addFolder() /*SLOT*/
 {DD;
-    addFolder(getFolderToAdd(false /*with subfolders*/), false /*with subfolders*/, false /*silent*/);
+    if (auto folder = getFolderToAdd(false /*with subfolders*/); addFolder(folder, false /*with subfolders*/, false /*silent*/))
+        tab->fileHandler->trackFolder(folder, false);
 }
 
 void MainWindow::addFolderWithSubfolders() /*SLOT*/
 {DD;
-    addFolder(getFolderToAdd(true /*with subfolders*/), true /*with subfolders*/, false /*silent*/);
+    if (auto folder = getFolderToAdd(true /*with subfolders*/); addFolder(folder, true /*with subfolders*/, false /*silent*/))
+        tab->fileHandler->trackFolder(folder, true);
 }
 
 void MainWindow::addFile()
@@ -934,25 +947,25 @@ void MainWindow::addFile()
         const QStringList fileNames = dialog.selectedFiles();
         if (fileNames.isEmpty()) return;
         App->setSetting("lastDirectory", fileNames.constFirst());
-        addFiles(fileNames);
-        tab->fileHandler->trackFiles(fileNames);
+        if (addFiles(fileNames))
+            tab->fileHandler->trackFiles(fileNames);
     }
 }
 
-void MainWindow::addFolder(const QString &directory, bool withAllSubfolders, bool silent)
+bool MainWindow::addFolder(const QString &directory, bool withAllSubfolders, bool silent)
 {DD;
-    if (directory.isEmpty() || !tab) return;
+    if (directory.isEmpty() || !tab) return false;
 
     QStringList filesToAdd;
     processDir(directory, filesToAdd, withAllSubfolders);
-    if (filesToAdd.isEmpty()) return;
+    if (filesToAdd.isEmpty()) return false;
 
     QStringList toAdd;
     for (const QString &file: qAsConst(filesToAdd)) {
         if (!tab->model->contains(file))
             toAdd << file;
     }
-    if (toAdd.isEmpty()) return;
+    if (toAdd.isEmpty()) return false;
 
     addFiles(toAdd, silent);
     if (toAdd.size() < filesToAdd.size() && !silent) {
@@ -962,9 +975,7 @@ void MainWindow::addFolder(const QString &directory, bool withAllSubfolders, boo
                                                  .arg(toAdd.size())
                                                  .arg(filesToAdd.size()));
     }
-    //успешное добавление нескольких файлов -> добавляем название папки в базу
-    if (!toAdd.isEmpty())
-        tab->fileHandler->trackFolder(directory, withAllSubfolders);
+    return true;
 }
 
 void MainWindow::deleteFiles()
@@ -2856,10 +2867,10 @@ void MainWindow::addDescriptors(const QList<F> &files, bool silent)
     if (tab) tab->model->addFiles(files, silent);
 }
 
-void MainWindow::addFiles(const QStringList &files, bool silent)
+bool MainWindow::addFiles(const QStringList &files, bool silent)
 {DD;
-    if (files.isEmpty()) return;
-    if (!tab) return;
+    if (files.isEmpty()) return false;
+    if (!tab) return false;
     LongOperation op;
 
     QList<F> items;
@@ -2880,6 +2891,7 @@ void MainWindow::addFiles(const QStringList &files, bool silent)
         }
     }
     addDescriptors(items, silent);
+    return !items.isEmpty();
 }
 
 void MainWindow::closeEvent(QCloseEvent *event)

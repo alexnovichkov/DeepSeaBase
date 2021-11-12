@@ -16,10 +16,6 @@
 CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> &dataBase, QWidget *parent) :
     QDialog(parent), dataBase(dataBase), win(parent)
 {DD;
-    converter = 0;
-    thread = 0;
-    taskBarProgress = 0;
-
     methodCombo = new QComboBox(this);
     methodCombo->setEditable(false);
     for (const auto &method: methods)

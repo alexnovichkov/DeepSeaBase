@@ -60,7 +60,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     functionsList->setSizePolicy(functionsList->sizePolicy().horizontalPolicy(),
                                  QSizePolicy::Expanding);
 
-    for (AbstractAlgorithm *f: qAsConst(algorithms)) {
+    for (auto f: qAsConst(algorithms)) {
         QTreeWidgetItem *item = new QTreeWidgetItem();
         item->setText(0, f->displayName());
         item->setText(1, f->description());
@@ -146,7 +146,6 @@ FilesProcessorDialog::~FilesProcessorDialog()
         thread_->wait();
         thread_->deleteLater();
     }
-
 }
 
 void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)

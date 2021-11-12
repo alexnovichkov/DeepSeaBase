@@ -39,6 +39,7 @@ Q_SIGNALS:
     void closeTab(int index);
     void closeOtherTabs(int index);
     void renameTab(int index);
+    void showFileHandler(int index);
 
     void tabTextChanged(const QString &text);
 public:
@@ -50,6 +51,7 @@ private Q_SLOTS:
     void closeTab();
     void closeOtherTabs();
     void renameTab();
+    void showFileHandler();
 
     void editTabName();
 private:
@@ -70,6 +72,7 @@ Q_SIGNALS:
     void closeTab(int index);
     void closeOtherTabs(int index);
     void tabTextChanged(const QString &text);
+    void showFileHandler(int index);
 private:
     TabBar *m_tabBar;
 };

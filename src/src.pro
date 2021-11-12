@@ -49,6 +49,7 @@ SOURCES += main.cpp\
     converters/tdmsconverter.cpp \
     descriptorpropertiesdialog.cpp \
     filehandler.cpp \
+    filehandlerdialog.cpp \
     filestable.cpp \
     mainwindow.cpp \
     methods/apsfunction.cpp \
@@ -147,6 +148,7 @@ HEADERS  += mainwindow.h \
     descriptorpropertiesdialog.h \
     enums.h \
     filehandler.h \
+    filehandlerdialog.h \
     filestable.h \
     methods/apsfunction.h \
     methods/filteringalgorithm.h \

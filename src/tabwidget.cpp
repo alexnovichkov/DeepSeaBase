@@ -81,6 +81,8 @@ void TabBar::contextMenuEvent(QContextMenuEvent * event)
         menu.addAction("Закрыть другие вкладки", this, SLOT(closeOtherTabs()));
         menu.addSeparator();
         menu.addAction("Переименовать...", this, SLOT(renameTab()));
+        menu.addSeparator();
+        menu.addAction("Отслеживаемые файлы и папки...", this, SLOT(showFileHandler()));
     }
     menu.exec(event->globalPos());
 }
@@ -98,6 +100,11 @@ void TabBar::closeOtherTabs()
 void TabBar::renameTab()
 {DD;
     Q_EMIT renameTab(index);
+}
+
+void TabBar::showFileHandler()
+{
+    emit showFileHandler(index);
 }
 
 void TabBar::editTabName()
@@ -127,6 +134,7 @@ TabWidget::TabWidget(QWidget *parent) : QTabWidget(parent)
     connect(m_tabBar, SIGNAL(closeOtherTabs(int)), this, SIGNAL(closeOtherTabs(int)));
     connect(m_tabBar, SIGNAL(renameTab(int)), this, SIGNAL(renameTab(int)));
     connect(m_tabBar, SIGNAL(tabTextChanged(QString)), this, SIGNAL(tabTextChanged(QString)));
+    connect(m_tabBar, SIGNAL(showFileHandler(int)), this, SIGNAL(showFileHandler(int)));
 
     setTabBar(m_tabBar);
 

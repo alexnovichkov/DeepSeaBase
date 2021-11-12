@@ -24,7 +24,7 @@ void FileHandler::trackFiles(const QStringList &fileNames)
 void FileHandler::trackFolder(const QString &folder, bool withSubfolders)
 {DD;
     if (!tracking(folder))
-        files.append({folder,withSubfolders?Folder:FolderWithSubfolders});
+        files.append({folder, withSubfolders ? FolderWithSubfolders : Folder});
 }
 
 void FileHandler::untrackFile(const QString &fileName)
@@ -82,12 +82,15 @@ bool FileHandler::tracking(const QString &file) const
     const auto fi = QFileInfo(file);
     const QString path = fi.canonicalPath();
 
-    for (const auto &item: files) {
+    for (const auto &item: qAsConst(files)) {
         if (item.second==FolderWithSubfolders) {
             if (path.startsWith(item.first+"/")) return true;
         }
+        else if (item.second == Folder) {
+            if (item.first == path) return true;
+        }
         else {
-            if (item.first==file) return true;
+            if (item.first == file) return true;
         }
     }
 

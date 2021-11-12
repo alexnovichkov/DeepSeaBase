@@ -53,7 +53,7 @@ private slots:
     void addFolder();
     void addFolderWithSubfolders();
 
-    void addFolder(const QString &directory, bool withAllSubfolders, bool silent = false);
+    bool addFolder(const QString &directory, bool withAllSubfolders, bool silent = false);
     void deleteFiles();
     void addFile();
 
@@ -161,10 +161,12 @@ private slots:
     void exportChannelsToWav();
     void updateActions();
     void renameDescriptor();
+
+    void showFileHandler(int index);
 private:
     QString getFolderToAdd(bool withSubfolders);
     void moveChannels(bool up);
-    void addFiles(const QStringList &files, bool silent=false);
+    bool addFiles(const QStringList &files, bool silent=false);
     void addDescriptors(const QList<F> &files, bool silent=false);
 
     bool deleteChannels(FileDescriptor *file, const QVector<int> &channelsToDelete);
