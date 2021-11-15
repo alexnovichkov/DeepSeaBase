@@ -5,6 +5,8 @@
 #include <QVector>
 #include <QPair>
 
+class QFileSystemWatcher;
+
 class FileHandler : public QObject
 {
     Q_OBJECT
@@ -33,8 +35,16 @@ signals:
     void filesAdded(const QStringList &fileNames);
     void fileRemoved(const QString &fileName);
     void filesRemoved(const QStringList &fileNames);
+
+    //emits when file is deleted from the drive
+    void fileDeleted(const QString &file);
 public:
     QVector<Item> files;
+private:
+    void optimizeFiles(const QString &folder, bool withSubfolders);
+    void fileChanged(const QString &file);
+
+    QFileSystemWatcher *watcher = nullptr;
 };
 
 #endif // FILEHANDLER_H

@@ -2,12 +2,14 @@
 
 #include <QDir>
 #include <QFileInfo>
+#include <QFileSystemWatcher>
 
 #include "logging.h"
 
 FileHandler::FileHandler(QObject *parent) : QObject(parent)
 {DD;
-
+    watcher = new QFileSystemWatcher(this);
+    connect(watcher, &QFileSystemWatcher::fileChanged, this, &FileHandler::fileChanged);
 }
 
 void FileHandler::trackFiles(const QStringList &fileNames)
@@ -16,15 +18,21 @@ void FileHandler::trackFiles(const QStringList &fileNames)
         //1. Файл может уже отслеживаться
         //-либо как отдельный файл
         //-либо в составе папки
-        if (!tracking(file))
+        if (!tracking(file)) {
             files.append({file,File});
+            if (!watcher->addPath(file)) qDebug() <<"tracking"<<file<<"failed";
+        }
     }
 }
 
 void FileHandler::trackFolder(const QString &folder, bool withSubfolders)
 {DD;
-    if (!tracking(folder))
+    if (!tracking(folder)) {
+        //может быть, эта папка вытеснит какие-то уже добавленные файлы и папки
+        optimizeFiles(folder, withSubfolders);
         files.append({folder, withSubfolders ? FolderWithSubfolders : Folder});
+        if (!watcher->addPath(folder)) qDebug() <<"tracking"<<folder<<"failed";
+    }
 }
 
 void FileHandler::untrackFile(const QString &fileName)
@@ -80,19 +88,38 @@ void FileHandler::clear()
 bool FileHandler::tracking(const QString &file) const
 {DD;
     const auto fi = QFileInfo(file);
-    const QString path = fi.canonicalPath();
+    const QString path = fi.canonicalPath()+"/";
 
     for (const auto &item: qAsConst(files)) {
-        if (item.second==FolderWithSubfolders) {
-            if (path.startsWith(item.first+"/")) return true;
-        }
-        else if (item.second == Folder) {
-            if (item.first == path) return true;
-        }
-        else {
-            if (item.first == file) return true;
+        switch (item.second) {
+            case File:
+            case Folder:
+                if (item.first == file) return true;
+            case FolderWithSubfolders: if (path.startsWith(item.first+"/")) return true;
         }
     }
 
     return false;
+}
+
+void FileHandler::optimizeFiles(const QString &folder, bool withSubfolders)
+{
+    //Удаляем из списка все файлы и папки, которые находятся в папке folder
+    for(int i=files.size()-1; i>=0; --i) {
+        auto &f = files.at(i);
+        QFileInfo fi(f.first);
+        if (f.second == File) {
+            if (fi.canonicalPath() == folder) files.removeAt(i);
+            else if (withSubfolders && fi.canonicalPath().startsWith(folder+"/")) files.removeAt(i);
+        }
+        else if (withSubfolders && f.first.startsWith(folder+"/")) files.removeAt(i);
+    }
+}
+
+void FileHandler::fileChanged(const QString &file)
+{
+    qDebug()<<"Changed"<<file;
+    if (!QFileInfo::exists(file)) {
+        emit fileDeleted(file);
+    }
 }

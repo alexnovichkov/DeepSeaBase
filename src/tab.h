@@ -36,7 +36,6 @@ public:
     QList<QLineEdit *> filters;
 
     FileDescriptor *record = nullptr;
-    QFileSystemWatcher *watcher = nullptr;
     FileHandler *fileHandler = nullptr;
 private slots:
     void filesSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);

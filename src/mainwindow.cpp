@@ -568,9 +568,6 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     tab->sortModel = new SortFilterModel(tab);
     tab->sortModel->setSourceModel(tab->model);
 
-    tab->watcher = new QFileSystemWatcher(tab);
-    connect(tab->watcher, SIGNAL(directoryChanged(QString)),this, SLOT(removeDirectory(QString())));
-
     tab->channelModel = new ChannelTableModel(tab);
     connect(tab->channelModel, SIGNAL(modelChanged()), SLOT(updateActions()));
     connect(tab->channelModel, &ChannelTableModel::maybeUpdateChannelProperty,
