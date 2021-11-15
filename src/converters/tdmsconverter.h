@@ -2,6 +2,7 @@
 #define TDMSCONVERTER_H
 
 #include <QObject>
+#include "fileformats/tdmsfile.h"
 
 class TDMSFileConverter : public QObject
 {

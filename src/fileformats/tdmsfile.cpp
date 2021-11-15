@@ -6,6 +6,7 @@
 #include "fileformats/filedescriptor.h"
 #include "algorithms.h"
 
+#ifdef WITH_TDMS
 TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
 {DD;
     int error;
@@ -564,3 +565,4 @@ Channel *TDMSGroup::channel(int index) const
     if (index >=0 && index < channels.size()) return channels.at(index);
     return 0;
 }
+#endif

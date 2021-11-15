@@ -6,7 +6,11 @@
 #include <QVariant>
 #include <QObject>
 
+//#define WITH_TDMS
+
+#ifdef WITH_TDMS
 #include "nilibddc.h"
+
 #include "fileformats/filedescriptor.h"
 
 class TDMSGroup;
@@ -70,5 +74,6 @@ private:
     bool _isValid = true;
     DDCChannelGroupHandle *_groups;
 };
+#endif
 
 #endif // TDMSFILE_H
