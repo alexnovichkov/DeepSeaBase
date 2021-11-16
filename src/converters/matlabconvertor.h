@@ -22,6 +22,7 @@ public:
     void setRawFileFormat(int format) {rawFileFormat = format;} // 0 = float, 1 = quint16
     void setDatasetForFile(const QString &file, int dataset) {datasets.insert(file, dataset);}
     void setDestinationFormat(const QString &format) {destinationFormat = format;} //dfd, uff, d94
+    void setOnlyTimeChannels(bool onlyTimeChannels) {this->onlyTimeChannels = onlyTimeChannels;}
 
     QStringList getNewFiles() const {return newFiles;}
     void readXml(bool &success);
@@ -42,6 +43,7 @@ private:
     QStringList filesToConvert;
     int rawFileFormat = 0;
     QString destinationFormat;
+    bool onlyTimeChannels = false;
 };
 
 #endif // MATLABCONVERTOR_H

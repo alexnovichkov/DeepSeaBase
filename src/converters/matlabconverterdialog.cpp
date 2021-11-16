@@ -24,6 +24,8 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
 
     convertor = new MatlabConvertor();
 
+    channelTypeCombo = new QComboBox(this);
+    channelTypeCombo->addItems({"Только временные данные", "Все каналы"});
 
 
     edit = new QLineEdit(this);
@@ -100,14 +102,18 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
 
     QWidget *second = new QWidget(this);
     QGridLayout *grid1 = new QGridLayout;
+    grid1->setColumnStretch(2,1);
+    grid1->setColumnStretch(3,1);
     grid1->addWidget(textEdit,0,0,1,4);
     grid1->addWidget(new QLabel("Сохранять файлы как", this), 1,0,1,1);
     grid1->addWidget(formatBox, 1,1,1,1);
+    grid1->addWidget(new QLabel("Ковертировать", this), 2,0,1,1);
+    grid1->addWidget(channelTypeCombo, 2,1,1,1);
 //    grid1->addWidget(new QLabel("Записывать данные в файл RAW как", this), 1,2,1,1);
 //    grid1->addWidget(rawFileFormat, 1,3,1,1);
-    grid1->addWidget(openFolderButton, 2,0,1,4);
-    grid1->addWidget(addFilesButton, 3,0,1,4);
-    grid1->addWidget(buttonBox,4,0,1,4);
+    grid1->addWidget(openFolderButton, 3,0,1,4);
+    grid1->addWidget(addFilesButton, 4,0,1,4);
+    grid1->addWidget(buttonBox,5,0,1,4);
     second->setLayout(grid1);
     splitter->addWidget(first);
     splitter->addWidget(second);
@@ -311,6 +317,7 @@ void MatlabConverterDialog::start()
     for (int i=0; i<tree->topLevelItemCount(); ++i)
         if (tree->topLevelItem(i)->checkState(1)==Qt::Checked) toConvert << tree->topLevelItem(i)->text(1);
     convertor->setFilesToConvert(toConvert);
+    convertor->setOnlyTimeChannels(channelTypeCombo->currentIndex()==0);
 
     if (toConvert.isEmpty()) {
         textEdit->appendHtml("<font color=red>Error!</font> Отсутствуют файлы для конвертации.");

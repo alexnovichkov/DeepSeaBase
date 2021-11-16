@@ -26,6 +26,11 @@
 
 #include <QXmlStreamReader>
 
+bool channelsAreTime(const MatFile &matlabFile, const QVector<int> &indexes)
+{
+    return matlabFile.channel(indexes.first())->type() == Descriptor::TimeResponse;
+}
+
 MatlabConvertor::MatlabConvertor(QObject *parent) : QObject(parent)
 {
 
@@ -75,15 +80,23 @@ bool MatlabConvertor::convert()
         //writing file
         QList<QVector<int>> groupedChannelsIndexes = matlabFile.groupChannels();
         if (groupedChannelsIndexes.size() == 1) {
-            FileDescriptor *destinationFile = FormatFactory::createDescriptor(matlabFile,
-                                                                              destinationFileName);
-            if (destinationFile)
-                newFiles << destinationFile->fileName();
-            else
-                noErrors = false;
-            delete destinationFile;
+            if (!channelsAreTime(matlabFile, groupedChannelsIndexes.first()) && onlyTimeChannels) {
+                emit message(QString("-- В файле mat отсутствуют временные данные!"));
+            }
+            else {
+                FileDescriptor *destinationFile = FormatFactory::createDescriptor(matlabFile,
+                                                                                  destinationFileName);
+                if (destinationFile)
+                    newFiles << destinationFile->fileName();
+                else
+                    noErrors = false;
+                delete destinationFile;
+            }
         }
         else for (int i=0; i<groupedChannelsIndexes.size(); ++i) {
+            if (!channelsAreTime(matlabFile, groupedChannelsIndexes.at(i)) && onlyTimeChannels)
+                continue;
+
             QString fname = createUniqueFileName("",
                                                  destinationFileName,
                                                  QString::number(i+1),

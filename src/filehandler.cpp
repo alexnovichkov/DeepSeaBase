@@ -10,6 +10,7 @@ FileHandler::FileHandler(QObject *parent) : QObject(parent)
 {DD;
     watcher = new QFileSystemWatcher(this);
     connect(watcher, &QFileSystemWatcher::fileChanged, this, &FileHandler::fileChanged);
+    connect(watcher, &QFileSystemWatcher::directoryChanged, this, &FileHandler::directoryChanged);
 }
 
 void FileHandler::trackFiles(const QStringList &fileNames)
@@ -64,6 +65,7 @@ void FileHandler::setFileNames(const QStringList &fileNames)
         else {
             files.append({f, File});
         }
+        if (!watcher->addPath(f)) qDebug() <<"tracking"<<f<<"failed";
         emit fileAdded(f,withSubfolders,true);
     }
 }
@@ -122,4 +124,9 @@ void FileHandler::fileChanged(const QString &file)
     if (!QFileInfo::exists(file)) {
         emit fileDeleted(file);
     }
+}
+
+void FileHandler::directoryChanged(const QString &dir)
+{
+
 }

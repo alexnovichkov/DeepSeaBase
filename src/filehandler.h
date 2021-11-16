@@ -43,6 +43,7 @@ public:
 private:
     void optimizeFiles(const QString &folder, bool withSubfolders);
     void fileChanged(const QString &file);
+    void directoryChanged(const QString &dir);
 
     QFileSystemWatcher *watcher = nullptr;
 };

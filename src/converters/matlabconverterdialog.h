@@ -74,7 +74,7 @@ private:
     QThread *thread;
     QCheckBox *openFolderButton;
     QCheckBox *addFilesButton;
-//    QComboBox *rawFileFormat;
+    QComboBox *channelTypeCombo;
     bool m_addFiles;
 public:
     MatlabConvertor *convertor;
