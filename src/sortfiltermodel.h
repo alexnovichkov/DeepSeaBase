@@ -2,6 +2,7 @@
 #define SORTFILTERMODEL_H
 
 #include <QSortFilterProxyModel>
+#include <QCollator>
 
 class SortFilterModel : public QSortFilterProxyModel
 {
@@ -17,6 +18,7 @@ protected:
     virtual bool lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const override;
 private:
     QVector<QString> filters;
+    QCollator collator;
 
     // QSortFilterProxyModel interface
 protected:

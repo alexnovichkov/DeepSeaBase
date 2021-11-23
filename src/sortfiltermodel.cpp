@@ -6,6 +6,7 @@
 SortFilterModel::SortFilterModel(QObject *parent) : QSortFilterProxyModel(parent)
 {DD;
     filters.resize(MODEL_COLUMNS_COUNT);
+    collator.setNumericMode(true);
 }
 
 void SortFilterModel::setFilter(const QString &text, int column)
@@ -33,7 +34,7 @@ bool SortFilterModel::lessThan(const QModelIndex &source_left, const QModelIndex
     else if (leftData.type() == QVariant::Double)
         return leftData.toDouble() < rightData.toDouble();
 
-    return QString::localeAwareCompare(leftData.toString(), rightData.toString()) < 0;
+    return collator.compare(leftData.toString(), rightData.toString()) < 0;
 }
 
 
