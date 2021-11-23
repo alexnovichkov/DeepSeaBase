@@ -5,7 +5,7 @@
 #include "dfdfiledescriptor.h"
 #include "ufffile.h"
 #include "data94file.h"
-#include "matfile.h"
+#include "matlabfile.h"
 
 namespace FormatFactory {
 
@@ -21,7 +21,7 @@ inline QStringList allSuffixes(bool strip = false)
     result << suffixes<DfdFileDescriptor>();
     result << suffixes<UffFileDescriptor>();
     result << suffixes<Data94File>();
-    //result << suffixes<MatFile>();
+    result << suffixes<MatlabFile>();
 
     if (strip) result.replaceInStrings("*.","");
     return result;
@@ -39,7 +39,7 @@ inline QStringList allFilters()
     result << filters<DfdFileDescriptor>();
     result << filters<UffFileDescriptor>();
     result << filters<Data94File>();
-    //result << filters<MatFile>();
+    result << filters<MatlabFile>();
     return result;
 }
 
@@ -49,7 +49,7 @@ inline FileDescriptor *createDescriptor(const QString &fileName)
     if (suffix=="dfd") return new DfdFileDescriptor(fileName);
     if (suffix=="uff") return new UffFileDescriptor(fileName);
     if (suffix=="d94") return new Data94File(fileName);
-   // if (suffix=="mat") return new MatFile(fileName);
+    if (suffix=="mat") return new MatlabFile(fileName);
     return 0;
 }
 
@@ -61,6 +61,7 @@ inline FileDescriptor *createDescriptor(const FileDescriptor &source,
     if (suffix=="dfd") return new DfdFileDescriptor(source, fileName, indexes);
     if (suffix=="uff") return new UffFileDescriptor(source, fileName, indexes);
     if (suffix=="d94") return new Data94File(source, fileName, indexes);
+    if (suffix=="mat") return new MatlabFile(source, fileName, indexes);
     return 0;
 }
 
@@ -71,6 +72,7 @@ inline FileDescriptor *createDescriptor(const QVector<Channel*> &source,
     if (suffix=="dfd") return new DfdFileDescriptor(source, fileName);
     if (suffix=="uff") return new UffFileDescriptor(source, fileName);
     if (suffix=="d94") return new Data94File(source, fileName);
+    if (suffix=="mat") return new MatlabFile(source, fileName);
     return 0;
 }
 

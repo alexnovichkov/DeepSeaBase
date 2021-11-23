@@ -42,7 +42,7 @@ void MatFile::read()
             MatlabRecord *rec = matlabRecordFactory(header, fileName()); // <- сейчас указывает на начало данных
             if (!rec) {
                 qDebug()<<"Unknown matlab data type:" << header->type;
-                return;
+                continue;
             }
 
             records << rec;
@@ -65,13 +65,13 @@ void MatFile::read()
         //запись function_record.name будет иметь размерность > 1
         if (MatlabStructArray *function_record = findSubrecord<MatlabStructArray *>("function_record", rec)) {
 
-            QList<MatlabChannel *> toAppend;
+            QList<MatChannel *> toAppend;
 
             MatlabCellArray *name = findSubrecord<MatlabCellArray*>("name", function_record);
             if (name) {//сгруппированные данные
                 int count = name->dimensions.value(1);
                 for (int i=0; i<count; ++i) {
-                    MatlabChannel *channel = new MatlabChannel(this);
+                    MatChannel *channel = new MatChannel(this);
                     channel->grouped = true;
                     channel->indexInGroup = i;
                     channel->groupSize = count;
@@ -81,13 +81,13 @@ void MatFile::read()
                 }
             }
             else {//несгруппированные данные, record -> channel
-                MatlabChannel *channel = new MatlabChannel(this);
+                MatChannel *channel = new MatChannel(this);
                 channel->_name = rec->name.section("_", 0, 0);
                 toAppend << channel;
             }
 
             for (int i=0; i<toAppend.size(); ++i) {
-                MatlabChannel *channel = toAppend.at(i);
+                MatChannel *channel = toAppend.at(i);
 
                 channel->_type = function_record->subRecords[function_record->fieldNames.indexOf("type")]->getString();
                 XChannel c;
@@ -1115,12 +1115,12 @@ Channel *MatFile::channel(int index) const
 }
 
 
-MatlabChannel::MatlabChannel(MatFile *parent) : Channel(), parent(parent)
+MatChannel::MatChannel(MatFile *parent) : Channel(), parent(parent)
 {
 
 }
 
-Descriptor::DataType MatlabChannel::type() const
+Descriptor::DataType MatChannel::type() const
 {
     if (_type == "Signal") return Descriptor::TimeResponse;
     if (_type == "FRF") return Descriptor::FrequencyResponseFunction;
@@ -1138,7 +1138,7 @@ Descriptor::DataType MatlabChannel::type() const
     return Descriptor::Unknown;
 }
 
-void MatlabChannel::populate()
+void MatChannel::populate()
 {DD;
     _data->clear();
 
@@ -1180,14 +1180,14 @@ void MatlabChannel::populate()
 }
 
 
-FileDescriptor *MatlabChannel::descriptor() const
+FileDescriptor *MatChannel::descriptor() const
 {
     return parent;
 }
 
-int MatlabChannel::index() const
+int MatChannel::index() const
 {
-    return parent->channels.indexOf(const_cast<MatlabChannel*>(this), 0);
+    return parent->channels.indexOf(const_cast<MatChannel*>(this), 0);
 }
 
 template<typename T>

@@ -48,11 +48,12 @@ struct Dataset
         r.put("description.title3", titles[2]);
         return r;
     }
+    bool isEmpty() const {return channels.isEmpty();}
 };
 
 class MatlabRecord;
 class MatlabNumericRecord;
-class MatlabChannel;
+class MatChannel;
 class MatlabStructArray;
 
 class MatFile : public FileDescriptor {
@@ -72,7 +73,7 @@ public:
     QByteArray toJson() const;
 
     QList<MatlabRecord *> records;
-    QList<MatlabChannel*> channels;
+    QList<MatChannel*> channels;
 private:
     Dataset xml;
 
@@ -87,10 +88,10 @@ public:
     virtual Channel *channel(int index) const override;
 };
 
-class MatlabChannel : public Channel
+class MatChannel : public Channel
 {
 public:
-    explicit MatlabChannel(MatFile *parent);
+    explicit MatChannel(MatFile *parent);
 
     MatFile *parent;
     MatlabNumericRecord *real_values;

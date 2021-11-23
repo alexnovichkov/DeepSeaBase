@@ -204,11 +204,11 @@ public:
     //octave format, 0 = no octave, 1 = 1-octave, 3 = 1/3-octave etc.
     int octaveType() const;
 
-    virtual bool populated() const {return _populated;}
-    virtual void setPopulated(bool populated) {_populated = populated;}
+    bool populated() const {return _populated;}
+    void setPopulated(bool populated) {_populated = populated;}
     virtual void populate() = 0;
-    virtual void clear();
-    virtual void maybeClearData();
+    void clear();
+    void maybeClearData();
 
     QString name() const;
     void setName(const QString &name);

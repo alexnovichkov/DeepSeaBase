@@ -57,5 +57,6 @@
         <file>icons/channel-copy-plotted.png</file>
         <file>icons/channel-cut-plotted.png</file>
         <file>icons/remove-plotted.png</file>
+        <file>icons/mat.svg</file>
     </qresource>
 </RCC>

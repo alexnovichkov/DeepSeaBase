@@ -48,6 +48,7 @@ SOURCES += main.cpp\
     channelstable.cpp \
     converters/tdmsconverter.cpp \
     descriptorpropertiesdialog.cpp \
+    fileformats/matlabfile.cpp \
     filehandler.cpp \
     filehandlerdialog.cpp \
     filestable.cpp \
@@ -147,6 +148,7 @@ HEADERS  += mainwindow.h \
     converters/tdmsconverter.h \
     descriptorpropertiesdialog.h \
     enums.h \
+    fileformats/matlabfile.h \
     filehandler.h \
     filehandlerdialog.h \
     filestable.h \
@@ -378,36 +380,66 @@ equals(QT_ARCH,"x86_64") {
 #}
 
 #FFTW
+message(-- Searching for fftw --)
+message(fftw include path is E:/My/programming/sources/fftw-3.3.5-dll32)
 INCLUDEPATH *= E:/My/programming/sources/fftw-3.3.5-dll32
 equals(QT_ARCH,"i386") {
+  message(fftw libs is E:/My/programming/sources/fftw-3.3.5-dll32/libfftw3-3.lib)
   LIBS *= E:/My/programming/sources/fftw-3.3.5-dll32/libfftw3-3.lib
 }
 equals(QT_ARCH,"x86_64") {
+  message(fftw libs is E:/My/programming/sources/fftw-3.3.5-dll64/libfftw3-3.lib)
   LIBS *= E:/My/programming/sources/fftw-3.3.5-dll64/libfftw3-3.lib
 }
 
 #qwt
+message(-- Searching for qwt --)
+INCLUDEPATH *= E:/My/programming/sources/Qwt-6.4.0-svn/include
+message(qwt include path is E:/My/programming/sources/Qwt-6.4.0-svn/include)
 CONFIG(release, debug|release):{
   equals(QT_ARCH,"i386") {
+    message(qwt libs is E:/My/programming/sources/Qwt-6.4.0-svn/lib/libqwt.a)
     LIBS *= E:/My/programming/sources/Qwt-6.4.0-svn/lib/libqwt.a
   }
   equals(QT_ARCH,"x86_64") {
+    message(qwt libs is E:/My/programming/sources/Qwt-6.4.0-svn/lib64/libqwt.a)
     LIBS *= E:/My/programming/sources/Qwt-6.4.0-svn/lib64/libqwt.a
   }
 }
 CONFIG(debug, debug|release):{
   equals(QT_ARCH,"i386") {
+    message(qwt libs is E:/My/programming/sources/Qwt-6.4.0-svn/lib/libqwtd.a)
     LIBS *= E:/My/programming/sources/Qwt-6.4.0-svn/lib/libqwtd.a
   }
   equals(QT_ARCH,"x86_64") {
+    message(qwt libs is E:/My/programming/sources/Qwt-6.4.0-svn/lib64/libqwtd.a)
     LIBS *= E:/My/programming/sources/Qwt-6.4.0-svn/lib64/libqwtd.a
   }
 }
-INCLUDEPATH *= E:/My/programming/sources/Qwt-6.4.0-svn/include
 
-##matio
-#INCLUDEPATH *= K:/My/programming/sources/Matlab/matio-1.5.17/src
-#LIBS *= K:/My/programming/sources/Matlab/matio-1.5.17/visual_studio/Release/libmatio.lib
+
+#matio
+message(-- Searching for matio --)
+INCLUDEPATH *= E:/My/programming/sources/matio-master/src
+message(matio include path is E:\My\programming\sources\matio-master\src)
+CONFIG(release, debug|release):{
+  equals(QT_ARCH,"i386") {
+    message(No matio x86 available on this platform)
+  }
+  equals(QT_ARCH,"x86_64") {
+    LIBS *= E:/My/programming/sources/build-matio-master-Desktop_Qt_5_12_8_MinGW_64_bit-Release/libmatio.dll.a
+    INCLUDEPATH *= E:/My/programming/sources/build-matio-master-Desktop_Qt_5_12_8_MinGW_64_bit-Release/src
+  }
+}
+CONFIG(debug, debug|release):{
+  equals(QT_ARCH,"i386") {
+    message(No matio x86 available on this platform)
+  }
+  equals(QT_ARCH,"x86_64") {
+    LIBS *= E:/My/programming/sources/build-matio-master-Desktop_Qt_5_12_8_MinGW_64_bit-Debug/libmatio.dll.a
+    INCLUDEPATH *= E:/My/programming/sources/build-matio-master-Desktop_Qt_5_12_8_MinGW_64_bit-Debug/src
+  }
+}
 
 #DEFINES += APP_PORTABLE
 

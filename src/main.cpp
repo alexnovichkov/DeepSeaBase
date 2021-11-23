@@ -9,17 +9,9 @@
 #include "winuser.h"
 
 #include <QFile>
+#include <QCollator>
 
-//#include "converters/matlabconvertor.h"
-
-//#include "fileformats/tdmsfile.h"
-//#include "fileformats/ufffile.h"
-//#include "fileformats/matfile.h"
-
-//#include "methods/windowing.h"
-
-//#include "algorithms.h"
-//#include "methods/octavefilterbank.h"
+#include "fileformats/matlabfile.h"
 
 int main(int argc, char *argv[])
 {
@@ -43,6 +35,9 @@ int main(int argc, char *argv[])
     splash.showMessage("Подождите, идет загрузка записей...",Qt::AlignBottom | Qt::AlignHCenter, Qt::white);
     a.processEvents();
 
+//    MatlabFile f("E:/Shared/1/GXYN.mat");
+//    f.read();
+//    return 0;
 
     MainWindow w;
     w.showMaximized();
