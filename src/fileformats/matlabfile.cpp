@@ -56,13 +56,14 @@ QString charToString(matvar_t * var)
     return QString::fromUtf8((char*)var->data, var->dims[0]*var->dims[1]);
 }
 
+
 void MatlabFile::read()
 {
     matfp = Mat_Open(fileName().toLocal8Bit().data(), MAT_ACC_RDONLY);
     if (NULL == matfp) return;
 
-    while (matvar_t * matvar = Mat_VarReadNext(matfp)) {
-        Mat_VarPrint(matvar, 1);
+    while (matvar_t * matvar = Mat_VarReadNextInfo(matfp)) {
+        //Mat_VarPrint(matvar, 1);
         if (matvar) records << matvar;
     }
 
@@ -72,7 +73,6 @@ void MatlabFile::read()
     /// то мы уже не имеем прямого соответствия record -> channel
 
     for (auto rec: records) {
-        qDebug()<<"record" << rec->name;
         if (rec->class_type != MAT_C_STRUCT) continue;
 
         //проверяем, сгруппирован ли канал
@@ -83,7 +83,7 @@ void MatlabFile::read()
             auto name = Mat_VarGetStructFieldByName(function_record, "name", 0);
             if (name->class_type == MAT_C_CELL) {//сгруппированные данные
                 int count = name->dims[1];
-                for (int i=0; i<count; ++i) {qDebug()<<"cell"<<i;
+                for (int i=0; i<count; ++i) {
                     MatlabChannel *channel = new MatlabChannel(this);
                     channel->grouped = true;
                     channel->indexInGroup = i;
@@ -101,6 +101,7 @@ void MatlabFile::read()
                 channel->_name = QString::fromUtf8((char*)rec->name).section("_", 0, 0);
                 toAppend << channel;
             }
+            //Mat_VarFree(name);
 
             for (MatlabChannel *channel: toAppend) {
                 if (auto type = Mat_VarGetStructFieldByName(function_record, "type", 0)) {
@@ -120,6 +121,7 @@ void MatlabFile::read()
                 double xbegin = 0.0;
                 double xstep = 0.0;
                 int samplescount = 0;
+                int bands = 0;
                 QString bandtype;
                 QVector<double> xvalues;
                 double startfrequency = 0.0;
@@ -135,12 +137,18 @@ void MatlabFile::read()
                     }
                     if (auto numberOfValues = Mat_VarGetStructFieldByName(x_values, "number_of_values", 0)) {
                         Mat_VarReadDataAll(matfp, numberOfValues);
-                        samplescount = static_cast<double*>(numberOfValues->data)[0];
+                        samplescount = int(static_cast<double*>(numberOfValues->data)[0]);
                     }
                     if (auto bandType = Mat_VarGetStructFieldByName(x_values, "band_type", 0)) {
                         Mat_VarReadDataAll(matfp, bandType);
                         bandtype = charToString(bandType);
                     }
+                    if (auto bandsCount = Mat_VarGetStructFieldByName(x_values, "number_of_bands", 0)) {
+                        Mat_VarReadDataAll(matfp, bandsCount);
+                        bands = int(static_cast<double*>(bandsCount->data)[0]);
+                        Q_ASSERT(bands == samplescount);
+                    }
+
                     if (auto startFr = Mat_VarGetStructFieldByName(x_values, "start_frequency", 0)) {
                         Mat_VarReadDataAll(matfp, startFr);
                         startfrequency = static_cast<double*>(startFr->data)[0];
@@ -175,12 +183,13 @@ void MatlabFile::read()
                 }
 
                 int octave = 0;
-                if (c.expression.startsWith("OCTF1(")) octave = 1;
-                else if (c.expression.startsWith("OCTF3(")) octave = 3;
-                else if (c.expression.startsWith("OCTF6(")) octave = 6;
-                else if (c.expression.startsWith("OCTF2(")) octave = 2;
-                else if (c.expression.startsWith("OCTF12(")) octave = 12;
-                else if (c.expression.startsWith("OCTF24(")) octave = 24;
+//                if (c.expression.startsWith("OCTF1(")) octave = 1;
+//                else if (c.expression.startsWith("OCTF3(")) octave = 3;
+//                else if (c.expression.startsWith("OCTF6(")) octave = 6;
+//                else if (c.expression.startsWith("OCTF2(")) octave = 2;
+//                else if (c.expression.startsWith("OCTF12(")) octave = 12;
+//                else if (c.expression.startsWith("OCTF24(")) octave = 24;
+                if (!bandtype.isEmpty()) octave = bandtype.section('_',1,1).toInt();
                 channel->dataDescription().put("function.octaveFormat", octave);
 
                 if (xvalues.isEmpty())
@@ -197,51 +206,138 @@ void MatlabFile::read()
                     }
                     if (auto quantity = Mat_VarGetStructFieldByName(y_values, "quantity", 0)) {
                         //y_values.quantity.label может врать
+                        QString s;
                         if (auto label = Mat_VarGetStructFieldByName(quantity, "label", 0)) {
                             Mat_VarReadDataAll(matfp, label);
-                            channel->dataDescription().put("yname", charToString(label));
+                            s = charToString(label).simplified();
+                            channel->dataDescription().put("yname", s);
                         }
                         if (auto unit = Mat_VarGetStructFieldByName(quantity, "unit_transformation", 0)) {
                             if (auto logref = Mat_VarGetStructFieldByName(unit, "log_reference", 0)) {
                                 Mat_VarReadDataAll(matfp, logref);
                                 channel->data()->setThreshold(static_cast<double*>(logref->data)[0]);
-                                channel->dataDescription().put("logref", static_cast<double*>(logref->data)[0]);
+                                channel->dataDescription().put("function.logref", static_cast<double*>(logref->data)[0]);
+                            }
+                        }
+                        if (s.isEmpty()) {
+                            if (auto q = Mat_VarGetStructFieldByName(quantity, "quantity_terms", 0)) {
+                                Mat_VarReadDataAll(matfp, q);
+                                //TODO: добавить чтение единицы
+                                //s = getLabel(q);
                             }
                         }
                     }
                 }
 
                 DataHolder::YValuesFormat yformat = DataHolder::YValuesReals;
-                if (channel->complex) yformat = DataHolder::YValuesComplex;
-                else if (c.expression.startsWith("FFT(") ||
-                         c.expression.startsWith("GXY(") ||
-                         c.expression.startsWith("GXYN(")||
-                         c.expression.startsWith("FRF(")) {
-                    if (c.fftDataType == 1) yformat = DataHolder::YValuesAmplitudes;
-                    else if (c.fftDataType == 2) yformat = DataHolder::YValuesPhases;
+                QString type;
+                if (auto typeS = Mat_VarGetStructFieldByName(function_record, "type", 0)) {
+                    Mat_VarReadDataAll(matfp, typeS);
+                    type = charToString(typeS);
                 }
-                else if (c.expression.startsWith("PSD(") ||
-                         c.expression.startsWith("ESD(") ||
-                         c.expression.startsWith("APS(") ||
-                         c.expression.startsWith("OCT"))
+                QString format;
+                if (auto formatS = Mat_VarGetStructFieldByName(function_record, "spectrum_format", 0)) {
+                    Mat_VarReadDataAll(matfp, formatS);
+                    format = charToString(formatS);
+                }
+                if (type=="Signal") {
+                    channel->dataDescription().put("function.name", "Time Response");
+                    channel->dataDescription().put("function.type", 1);
+                }
+                if (type=="FrequencySpectrum") {
+                    channel->dataDescription().put("function.type", 12);
+                    channel->dataDescription().put("function.logscale", "linear");
+                    if (channel->yName()=="deg")
+                        yformat = DataHolder::YValuesPhases;
+                    else
+                        yformat = DataHolder::YValuesAmplitudes;
+                    if (channel->dataDescription().get("function.octaveFormat").toInt()>0) {
+                        channel->dataDescription().put("function.name", "OCTF");
+                        channel->dataDescription().put("function.type", 9);
+                    }
+                    else
+                        channel->dataDescription().put("function.name", "FFT");
+                }
+                if (type=="CrossPowerSpectrum") {
+                    if (channel->yName()=="deg")
+                        yformat = DataHolder::YValuesPhases;
+                    else
+                        yformat = DataHolder::YValuesAmplitudes;
+                    if (format=="LINEAR") {
+                        channel->dataDescription().put("function.name", "GXYN");
+                    }
+                    else {
+                        channel->dataDescription().put("function.name", "GXY");
+                    }
+                    channel->dataDescription().put("function.type", 3);
+                }
+                if (type=="Coherence") {
+                    channel->dataDescription().put("function.name", "COH");
+                    channel->dataDescription().put("function.type", 6);
+                    channel->dataDescription().put("function.logscale", "dimensionless");
+                    channel->dataDescription().put("function.logref", 1);
+                }
+                if (type=="PSD") {
                     yformat = DataHolder::YValuesAmplitudes;
+                    channel->dataDescription().put("function.name", "PSD");
+                    channel->dataDescription().put("function.type", 9);
+//                    channel->dataDescription().put("function.logscale", "dimensionless");
+                }
+                if (type=="AutoPowerSpectrum") {
+                    yformat = DataHolder::YValuesAmplitudes;
+                    channel->dataDescription().put("function.name", "APS");
+                    channel->dataDescription().put("function.type", 2);
+                }
+
+
+                if (channel->complex) yformat = DataHolder::YValuesComplex;
+//                else if (c.expression.startsWith("FFT(") ||
+//                         c.expression.startsWith("GXY(") ||
+//                         c.expression.startsWith("GXYN(")||
+//                         c.expression.startsWith("FRF(")) {
+//                    if (c.fftDataType == 1) yformat = DataHolder::YValuesAmplitudes;
+//                    else if (c.fftDataType == 2) yformat = DataHolder::YValuesPhases;
+//                }
+//                else if (c.expression.startsWith("PSD(") ||
+//                         c.expression.startsWith("ESD(") ||
+//                         c.expression.startsWith("APS(") ||
+//                         c.expression.startsWith("OCT"))
+//                    yformat = DataHolder::YValuesAmplitudes;
                 channel->data()->setYValuesFormat(yformat);
 
 //                channel->data()->setThreshold(c.logRef);
 
                 auto units = DataHolder::UnitsUnknown;
-                if (c.scale == 10) units = DataHolder::UnitsQuadratic;
-                else if (c.scale == 20) units = DataHolder::UnitsLinear;
+//                if (c.scale == 10) units = DataHolder::UnitsQuadratic;
+//                else if (c.scale == 20) units = DataHolder::UnitsLinear;
+                if (format == "LINEAR") units = DataHolder::UnitsLinear;
+                else if (format == "POWER") units = DataHolder::UnitsQuadratic;
                 channel->data()->setYValuesUnits(units);
 
                 //ЗАГЛУШКА
                 channel->data()->setZValues(0.0, 0.0, 1);
 
-                //channel->dataDescription().put("yname", channel->xml.units);
-                QString ChanAddress = QString("SCADAS\\")+channel->xml.catLabel;
-                QStringList info = channel->xml.info;
-                info.append(ChanAddress);
-                channel->dataDescription().put("description",info.join(" \\"));
+                if (auto time = Mat_VarGetStructFieldByName(function_record, "creation_time", 0)) {
+                    Mat_VarReadDataAll(matfp, time);
+                    if (time->class_type == MAT_C_CELL) {
+                        if (auto t = Mat_VarGetCell(time, channel->indexInGroup)) {
+                            Mat_VarReadDataAll(matfp, t);
+                            auto timeS = charToString(t);
+                            channel->dataDescription().put("dateTime",
+                                                           QDateTime::fromString(timeS, "yyyy/MM/dd hh:mm:ss"));
+                        }
+                    }
+                    else {
+                        auto timeS = charToString(time);
+                        channel->dataDescription().put("dateTime",
+                                                       QDateTime::fromString(timeS, "yyyy/MM/dd hh:mm:ss"));
+                    }
+                }
+
+//                QString ChanAddress = QString("SCADAS\\")+channel->xml.catLabel;
+//                QStringList info = channel->xml.info;
+//                info.append(ChanAddress);
+//                channel->dataDescription().put("description",info.join(" \\"));
 
                 //QStringList l;
                 //l<<channel->xml.generalName<<channel->xml.pointId<<channel->xml.direction;

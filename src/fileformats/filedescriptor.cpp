@@ -107,7 +107,13 @@ double FileDescriptor::roundedSize() const
 
 QDateTime FileDescriptor::dateTime() const
 {DD;
-    return dataDescription().get("dateTime").toDateTime();
+    auto dt = dataDescription().get("dateTime").toDateTime();
+    if (dt.isValid()) return dt;
+
+    if (channelsCount()>0) {
+        return channel(0)->dataDescription().get("dateTime").toDateTime();
+    }
+    return QDateTime();
 }
 
 bool FileDescriptor::setDateTime(const QDateTime &dt)

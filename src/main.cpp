@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     splash.showMessage("Подождите, идет загрузка записей...",Qt::AlignBottom | Qt::AlignHCenter, Qt::white);
     a.processEvents();
 
-//    MatlabFile f("E:/Shared/1/GXYN.mat");
+//    MatlabFile f("E:/Shared/1/APS.mat");
 //    f.read();
 //    return 0;
 
