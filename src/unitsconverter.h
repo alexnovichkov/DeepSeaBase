@@ -7,7 +7,16 @@ namespace PhysicalUnits {
 
 namespace Quantities {
 
-
+enum QuantityNames {
+    Length,
+    Mass,
+    Time,
+    Angle,
+    Temperature,
+    Current,
+    LuminousIntensity,
+    Mole
+};
 
 class Quantity {
 public:
@@ -133,6 +142,12 @@ public:
     AccelerationPSD() : Quantity() {powers[0]=2; powers[2]=-3;}
     virtual QString name() {return "Acceleration PSD";}
 };
+class AccelerationPressure : public Quantity
+{
+public:
+    AccelerationPressure() : Quantity() {powers[Mass]=1; powers[Time]=-4;}
+    virtual QString name() {return "Acceleration*Pressure";}
+};
 class AngleSquared : public Quantity
 {
 public:
@@ -181,6 +196,12 @@ public:
     Charge() : Quantity() {powers[2]=1; powers[5]=1;}
     virtual QString name() {return "Charge";}
 };
+class ChargeOverAcceleration : public Quantity
+{
+public:
+    ChargeOverAcceleration() : Quantity() {powers[Length]=-1; powers[Time]=3; powers[Current]=1; }
+    virtual QString name() {return "Charge/Acceleration";}
+};
 class ChargeOverForce : public Quantity
 {
 public:
@@ -193,16 +214,10 @@ public:
     Count() : Quantity() {}
     virtual QString name() {return "Count";}
 };
-class ElectricCurrent : public Quantity
+class CurrentSquared : public Quantity
 {
 public:
-    ElectricCurrent() : Quantity() {powers[5]=1;}
-    virtual QString name() {return "Electric Current";}
-};
-class ElectricCurrentSquared : public Quantity
-{
-public:
-    ElectricCurrentSquared() : Quantity() {powers[5]=2;}
+    CurrentSquared() : Quantity() {powers[5]=2;}
     virtual QString name() {return "Electric Current^2";}
 };
 class Displacement : public Quantity
@@ -302,7 +317,12 @@ public:
     Frequency() : Quantity() {powers[2]=-1;}
     virtual QString name() {return "Frequency";}
 };
-
+class HeatFlux : public Quantity
+{
+public:
+    HeatFlux() : Quantity() {powers[Mass]=1;powers[Time]=-3;}
+    virtual QString name() {return "Heat Flux";}
+};
 
 } // namespace Quantities
 

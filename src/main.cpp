@@ -13,6 +13,45 @@
 
 #include "fileformats/matlabfile.h"
 
+void test()
+{
+    mat_t *matfp;
+        const char *FILENAME = "export.mat";
+
+        char *structname = "Test";
+        const char *fieldnames[1] = { "Data"};
+        const char *Datafieldnames[3] = { "name", "unit", "value" };
+
+        //Open file
+        matfp = Mat_CreateVer(FILENAME, NULL, MAT_FT_MAT5);
+
+        size_t structdim0[2] = { 1, 1 };
+        matvar_t* matstruct0 = Mat_VarCreateStruct(structname, 2, structdim0, 0, 0); //main struct: Test
+
+        Mat_VarAddStructField(matstruct0, "field1");
+
+
+        //Note: Matlab starts counting at 1
+
+        //create nested structs:
+
+        //Test(1).Data
+        char* mystring0 = "Data"; //Test(1).Data
+        size_t dim3[2] = { 1, 4 };
+        auto field3 = Mat_VarCreate(NULL, MAT_C_CHAR, MAT_T_UTF8, 2, dim3, mystring0, 0);
+        Mat_VarSetStructFieldByName(matstruct0, "field1", 0, field3); //save pointer into main struct - freeing matstruct1 causes a segfault at Mat_VarFree(matstruct0);
+
+
+        //save main struct
+        Mat_VarWrite(matfp, matstruct0, MAT_COMPRESSION_NONE);
+        //cleanup
+        Mat_VarFree(matstruct0);
+
+
+        //Close file
+        Mat_Close(matfp);
+}
+
 int main(int argc, char *argv[])
 {
     //This mutex is used to prevent the user from installing new versions
@@ -37,7 +76,7 @@ int main(int argc, char *argv[])
 
 //    MatlabFile f("E:/Shared/1/APS.mat");
 //    f.read();
-//    return 0;
+
 
     MainWindow w;
     w.showMaximized();
