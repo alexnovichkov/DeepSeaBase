@@ -25,7 +25,7 @@ class QScrollBar;
 class QTableWidgetItem;
 class QToolBar;
 class QSplitter;
-class Plot;
+class PlotArea;
 
 class QwtLegend;
 class QwtPlotGrid;
@@ -34,6 +34,11 @@ class QwtPlotCurve;
 
 class Curve;
 class Channel;
+namespace ads {
+    class CDockManager;
+    class CDockAreaWidget;
+    class CDockWidget;
+}
 
 #include "app.h"
 
@@ -47,9 +52,11 @@ public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-//    static QVariant getSetting(const QString &key, const QVariant &defValue=QVariant());
-//    static void setSetting(const QString &key, const QVariant &value);
+public slots:
+    void createNewTab();
+    void addPlot();
 private slots:
+
     void addFolder();
     void addFolderWithSubfolders();
 
@@ -113,11 +120,9 @@ private slots:
      */
     void rescanBase();
 
-    void createNewTab();
-
-    void closeTab(int);
+    void closeTab(ads::CDockWidget *t);
     void closeOtherTabs(int);
-    void renameTab(int i);
+//    void renameTab(int i); //Удалить
     void changeCurrentTab(int currentIndex);
 
     void editColors();
@@ -162,8 +167,10 @@ private slots:
     void updateActions();
     void renameDescriptor();
 
-    void showFileHandler(int index);
+//Удалить
+//    void showFileHandler(int index);
 private:
+    void createActions();
     QString getFolderToAdd(bool withSubfolders);
     void moveChannels(bool up);
     bool addFiles(const QStringList &files, bool silent=false);
@@ -189,6 +196,10 @@ private:
     void previousOrNextDescriptor(bool up);
     void cycleChannelsUpOrDown(bool up);
 
+    ads::CDockManager* m_DockManager;
+    ads::CDockAreaWidget *topArea = nullptr;
+    ads::CDockAreaWidget *bottomArea = nullptr;
+
 
     bool sergeiMode = false;
     QVector<int> plottedChannelsNumbers;
@@ -196,8 +207,9 @@ private:
 
     QStringList tabsNames;
 
-    Tab *tab;
+    Tab *currentTab = nullptr;
 
+    QMenu *plotsMenu;
 
 
     QAction *addFolderAct;
@@ -205,7 +217,7 @@ private:
     QAction *addFileAct;
     QAction *saveAct;
     QAction *renameAct;
-
+    QAction *plotHelpAct;
 
     QAction *delFilesAct;
     QAction *plotAllChannelsAct;
@@ -216,18 +228,12 @@ private:
     QAction *calculateSpectreAct;
     QAction *calculateSpectreDeepSeaAct;
     QAction *calculateThirdOctaveAct;
-    QAction *clearPlotAct;
-    QAction *savePlotAct;
+
     QAction *rescanBaseAct;
-    QAction *switchCursorAct;
-    QAction *trackingCursorAct;
-    QAction *copyToClipboardAct;
-    QAction *printPlotAct;
     QAction *editColorsAct;
 
     QAction *meanAct;
     QAction *movingAvgAct;
-    QAction *interactionModeAct;
     QAction *addCorrectionAct;
     QAction *addCorrectionsAct;
     QAction *deleteChannelsAct;
@@ -248,37 +254,20 @@ private:
     QToolBar *mainToolBar;
 
     QAction *exportToExcelAct;
-//    QAction *switchHarmonicsAct;
 
     QAction *convertMatFilesAct;
     QAction *convertTDMSFilesAct;
     QAction *convertEsoFilesAct;
     QAction *convertAct;
     QAction *copyToLegendAct;
-
-    QAction *autoscaleXAct;
-    QAction *autoscaleYAct;
-    QAction *autoscaleYSlaveAct;
-    QAction *autoscaleAllAct;
-
-    QAction *removeLabelsAct;
-    QAction *playAct;
     QAction *editYNameAct;
-
-    QAction *previousDescriptorAct;
-    QAction *nextDescriptorAct;
-    QAction *arbitraryDescriptorAct;
-    QAction *cycleChannelsUpAct;
-    QAction *cycleChannelsDownAct;
     QAction *aboutAct;
+    QAction *newPlotAct;
 
-    Plot *plot;
+    PlotArea *currentPlot = nullptr;
+    QVector<PlotArea *> plotAreas;
 
-    QSplitter *splitter;
-
-
-
-    TabWidget *tabWidget;
+    TabWidget *tabWidget = nullptr;
 
 //    QThread *workingThread;
 
@@ -289,8 +278,10 @@ protected:
     void closeEvent(QCloseEvent *event) override;
 signals:
     void loading(const QString &file);
+    void updateLegends();
 private:
     bool closeRequested();
+    PlotArea *createPlotArea();
 };
 
 #endif // MAINWINDOW_H

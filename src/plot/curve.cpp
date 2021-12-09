@@ -18,6 +18,7 @@ Curve::Curve(const QString &title, Channel *channel)
     this->channel = channel;
     this->duplicate = false;
     this->highlighted = false;
+    this->channel->curve = this;
 }
 
 Curve::~Curve()
@@ -28,6 +29,7 @@ Curve::~Curve()
 
     //maybe clear data that is over 1000000 samples
     if (channel) channel->maybeClearData();
+    this->channel->curve = nullptr;
 }
 
 

@@ -297,6 +297,7 @@ bool Plot::hasCurves() const
 
 int Plot::curvesCount(int type) const
 {DD;
+    if (type==-1) return curves.size();
     return std::count_if(curves.cbegin(), curves.cend(),
                          [type](Curve *c){return int(c->channel->type()) == type;});
 }
@@ -976,6 +977,11 @@ Range Plot::yRightRange() const
 {DD;
     QwtScaleMap sm = canvasMap(QwtAxis::yRight);
     return {sm.s1(), sm.s2()};
+}
+
+QString Plot::axisTitleText(QwtAxisId id) const
+{
+    return axisTitle(id).text();
 }
 
 void Plot::switchLabelsVisibility()

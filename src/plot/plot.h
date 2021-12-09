@@ -80,8 +80,7 @@ public:
      * @brief curvesCount
      * @return count of curves excluding freeCurve
      */
-    int curvesCount() const {return curves.size();}
-    int curvesCount(int type) const;
+    int curvesCount(int type=-1) const;
 
     /**
      * @brief deleteCurves deletes all curves on a plot from a descriptor
@@ -105,6 +104,8 @@ public:
     Range xRange() const;
     Range yLeftRange() const;
     Range yRightRange() const;
+
+    QString axisTitleText(QwtAxisId id) const;
 
     /**
      * @brief switchLabelsVisibility

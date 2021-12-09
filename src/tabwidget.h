@@ -31,6 +31,51 @@
 #include <QTabBar>
 class QLineEdit;
 
+#include "DockAreaTitleBar.h"
+#include "DockWidget.h"
+#include "DockWidgetTab.h"
+
+class TitleBar : public ads::CDockAreaTitleBar
+{
+    Q_OBJECT
+Q_SIGNALS:
+    void newTab();
+public:
+    TitleBar(ads::CDockAreaWidget* parent);
+protected:
+    void mouseDoubleClickEvent(QMouseEvent * event);
+    void contextMenuEvent(QContextMenuEvent * event);
+};
+
+class DockTab : public ads::CDockWidgetTab
+{
+    Q_OBJECT
+Q_SIGNALS:
+    void newTab();
+    void closeTab(int index);
+    void closeOtherTabs(int index);
+    void renameTab(int index);
+    void showFileHandler(int index);
+
+    void tabTextChanged(const QString &text);
+public:
+    DockTab(ads::CDockWidget* parent);
+protected:
+    void mouseDoubleClickEvent(QMouseEvent * event) override;
+    void contextMenuEvent(QContextMenuEvent * event) override;
+private Q_SLOTS:
+//    void closeTab();
+//    void closeOtherTabs();
+    void renameTab();
+    void showFileHandler();
+
+    void setTabName();
+private:
+    int index;
+    int pressedTab;
+    QLineEdit *editor;
+};
+
 class TabBar : public QTabBar
 {
     Q_OBJECT

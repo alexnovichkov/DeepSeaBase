@@ -181,6 +181,8 @@ private:
     DataDescription _dataDescription;
 };
 
+class Curve;
+
 class Channel
 {
 public:
@@ -250,6 +252,7 @@ public:
 
     int plotted() const {return _plotted;}
     void setPlotted(int plotted) {_plotted = plotted;}
+    Curve *curve = nullptr;
 
     bool changed() const {return _changed;}
     void setChanged(bool changed) {_changed = changed;}

@@ -65,14 +65,17 @@ SOURCES += main.cpp\
     methods/windowingalgorithm.cpp \
     plot/canvaseventfilter.cpp \
     plot/imagerenderdialog.cpp \
+    plot/plotarea.cpp \
     plot/trackingcursor.cpp \
     plot/zoomstack.cpp \
+    plotdockfactory.cpp \
     sortabletreewidgetitem.cpp \
     checkableheaderview.cpp \
     methods/dfdmethods/spectremethod.cpp \
     methods/dfdmethods/timemethod.cpp \
     curvepropertiesdialog.cpp \
     tab.cpp \
+    tabdock.cpp \
     tabwidget.cpp \
     coloreditdialog.cpp \
     colorselector.cpp \
@@ -146,7 +149,9 @@ HEADERS  += mainwindow.h \
     channelsmimedata.h \
     channelstable.h \
     converters/tdmsconverter.h \
+    customdockfactory.h \
     descriptorpropertiesdialog.h \
+    dfdfilterproxy.h \
     enums.h \
     fileformats/matlabfile.h \
     filehandler.h \
@@ -164,15 +169,19 @@ HEADERS  += mainwindow.h \
     methods/windowingalgorithm.h \
     plot/canvaseventfilter.h \
     plot/imagerenderdialog.h \
+    plot/plotarea.h \
     plot/trackingcursor.h \
     plot/zoomstack.h \
+    plotdockfactory.h \
     sortabletreewidgetitem.h \
     checkableheaderview.h \
     methods/dfdmethods/abstractmethod.h \
     methods/dfdmethods/spectremethod.h \
     methods/dfdmethods/timemethod.h \
     curvepropertiesdialog.h \
+    stepitemdelegate.h \
     tab.h \
+    tabdock.h \
     tabwidget.h \
     coloreditdialog.h \
     colorselector.h \
@@ -438,6 +447,33 @@ CONFIG(debug, debug|release):{
   equals(QT_ARCH,"x86_64") {
     LIBS *= E:/My/programming/sources/build-matio-master-Desktop_Qt_5_12_8_MinGW_64_bit-Debug/libmatio.dll.a
     INCLUDEPATH *= E:/My/programming/sources/build-matio-master-Desktop_Qt_5_12_8_MinGW_64_bit-Debug/src
+  }
+}
+
+#ADS
+message(-- Searching for Advanced docking system --)
+CONFIG(release, debug|release):{
+  equals(QT_ARCH,"i386") {
+    LIBS *= E:\My\programming\ADS\ADSx32-release/lib/libqtadvanceddocking.a
+    INCLUDEPATH *= E:\My\programming\ADS\ADSx32-release/include
+    message(ADS include path is E:\My\programming\ADS\ADSx32-release/include)
+  }
+  equals(QT_ARCH,"x86_64") {
+    LIBS *= E:\My\programming\ADS\ADSx64-release/lib/libqtadvanceddocking.a
+    INCLUDEPATH *= E:\My\programming\ADS\ADSx64-release/include
+    message(ADS include path is E:\My\programming\ADS\ADSx64-release/include)
+  }
+}
+CONFIG(debug, debug|release):{
+  equals(QT_ARCH,"i386") {
+    LIBS *= E:\My\programming\ADS\ADSx32-debug/lib/libqtadvanceddockingd.a
+    INCLUDEPATH *= E:\My\programming\ADS\ADSx32-debug/include
+    message(ADS include path is E:\My\programming\ADS\ADSx32-debug/include)
+  }
+  equals(QT_ARCH,"x86_64") {
+    LIBS *= E:\My\programming\ADS\ADSx64-debug/lib/libqtadvanceddockingd.a
+    INCLUDEPATH *= E:\My\programming\ADS\ADSx64-debug/include
+    message(ADS include path is E:\My\programming\ADS\ADSx64-debug/include)
   }
 }
 
