@@ -1231,7 +1231,10 @@ void Plot::dropEvent(QDropEvent *event)
 {DD;
     const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
     if (myData) {
-        bool plotOnLeft = event->pos().x()>0 && event->pos().x() <= rect().x()+rect().width()/2;
+        int w = 0;
+        if (auto axis = axisWidget({QwtAxis::yLeft,0}); axis->isVisible())
+            w = axis->width();
+        bool plotOnLeft = event->pos().x() <= w + canvas()->rect().x()+canvas()->rect().width()/2;
         //посылаем сигнал о том, что нужно построить эти каналы. Список каналов попадает
         //в mainWindow и возможно будет расширен за счет нажатого Ctrl
         //далее эти каналы попадут обратно в plot.
@@ -1245,7 +1248,16 @@ void Plot::dropEvent(QDropEvent *event)
 void Plot::dragEnterEvent(QDragEnterEvent *event)
 {DD;
     const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
-    if (myData) event->acceptProposedAction();
+    if (myData) {
+        //определяем, можем ли построить все каналы на левой или правой оси
+        bool canOnLeft = std::all_of(myData->channels.cbegin(), myData->channels.cend(),
+                                     [this](Channel*c){return canBePlottedOnLeftAxis(c);});
+        bool canOnRight = std::all_of(myData->channels.cbegin(), myData->channels.cend(),
+                                     [this](Channel*c){return canBePlottedOnRightAxis(c);});
+        if (canOnLeft || canOnRight)
+            event->acceptProposedAction();
+
+    }
 }
 
 void Plot::dragMoveEvent(QDragMoveEvent *event)
@@ -1258,16 +1270,23 @@ void Plot::dragMoveEvent(QDragMoveEvent *event)
         if (auto axis = axisWidget({QwtAxis::yLeft,0}); axis->isVisible())
             w = axis->width();
         bool plotOnLeft = event->pos().x() <= w + canvas()->rect().x()+canvas()->rect().width()/2;
-        bool can = true;
-        for (auto c: myData->channels) {
-            if ((plotOnLeft && !canBePlottedOnLeftAxis(c)) || (!plotOnLeft && !canBePlottedOnRightAxis(c))) {
-                can = false;
-                break;
-            }
-        }
+//        bool can = true;
+//        for (auto c: myData->channels) {
+//            if ((plotOnLeft && !canBePlottedOnLeftAxis(c)) || (!plotOnLeft && !canBePlottedOnRightAxis(c))) {
+//                can = false;
+//                break;
+//            }
+//        }
         leftOverlay->setVisible(plotOnLeft);
         rightOverlay->setVisible(!plotOnLeft);
-        if (can)
+//        if (can)
             event->acceptProposedAction();
     }
+}
+
+void Plot::dragLeaveEvent(QDragLeaveEvent *event)
+{
+    Q_UNUSED(event);
+    leftOverlay->setVisible(false);
+    rightOverlay->setVisible(false);
 }
