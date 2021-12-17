@@ -52,9 +52,26 @@ public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+    //вызывается в Tab
+    bool addFiles(const QStringList &files, bool silent=false);
+    void updateChannelsTable(FileDescriptor *descriptor);
+    void onChannelsDropped(bool plotOnLeft, const QVector<Channel*> &channels);
 public slots:
     void createNewTab();
-    void addPlot();
+    void addPlotArea();
+    void addPlotTabbed();
+    void updateActions();
+    /**
+     * @brief plotChannel строит канал текущей записи
+     * @param index номер канала
+     */
+    void plotChannel(int index);
+
+    /**
+     * @brief deleteCurve удаляет график
+     * @param index номер канала
+     */
+    void deleteCurve(int index);
 private slots:
 
     void addFolder();
@@ -76,8 +93,6 @@ private slots:
     void addCorrection();
     void addCorrections();
 
-    void updateChannelsTable(const QModelIndex &current, const QModelIndex &previous);
-
     /**
      * @brief plotAllChannels
      * Строит все каналы выделенной записи
@@ -85,11 +100,7 @@ private slots:
     void plotAllChannels();
     void plotAllChannelsAtRight();
 
-    /**
-     * @brief plotChannel строит канал текущей записи
-     * @param index номер канала
-     */
-    void plotChannel(int index);
+
 
     /**
      * @brief calculateSpectreRecords
@@ -109,12 +120,6 @@ private slots:
     void copyToLegend();
 
     /**
-     * @brief deleteCurve удаляет график
-     * @param index номер канала
-     */
-    void deleteCurve(int index);
-
-    /**
      * @brief rescanBase
      * обновляет список файлов в таблице, удаляет мертвые записи
      */
@@ -122,8 +127,9 @@ private slots:
 
     void closeTab(ads::CDockWidget *t);
     void closeOtherTabs(int);
-//    void renameTab(int i); //Удалить
-    void changeCurrentTab(int currentIndex);
+
+    void closePlot(ads::CDockWidget *t);
+    void closeOtherPlots(int index);
 
     void editColors();
 
@@ -164,7 +170,7 @@ private slots:
     void cycleChannelsDown();
 
     void exportChannelsToWav();
-    void updateActions();
+
     void renameDescriptor();
 
 //Удалить
@@ -173,7 +179,7 @@ private:
     void createActions();
     QString getFolderToAdd(bool withSubfolders);
     void moveChannels(bool up);
-    bool addFiles(const QStringList &files, bool silent=false);
+
     void addDescriptors(const QList<F> &files, bool silent=false);
 
     bool deleteChannels(FileDescriptor *file, const QVector<int> &channelsToDelete);
@@ -182,8 +188,6 @@ private:
     bool copyChannels(const QVector<Channel *> source);
 
     void exportToExcel(bool fullRange, bool dataOnly=false);
-
-    void updateChannelsTable(FileDescriptor *descriptor);
     void updateRecordsTable(const QList<FileDescriptor *> &records);
 
     void createTab(const QString &name, const QStringList &folders);
@@ -262,17 +266,9 @@ private:
     QAction *copyToLegendAct;
     QAction *editYNameAct;
     QAction *aboutAct;
-    QAction *newPlotAct;
+    QAction *addPlotAreaAct;
 
     PlotArea *currentPlot = nullptr;
-    QVector<PlotArea *> plotAreas;
-
-    TabWidget *tabWidget = nullptr;
-
-//    QThread *workingThread;
-
-
-    // QWidget interface
 
 protected:
     void closeEvent(QCloseEvent *event) override;

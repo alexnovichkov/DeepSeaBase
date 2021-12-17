@@ -65,6 +65,7 @@
 #include "wheelzoom.h"
 #include "axiszoom.h"
 #include "plotzoom.h"
+#include "scaledraw.h"
 
 // простой фабричный метод создания кривой нужного типа
 Curve * createCurve(const QString &legendName, Channel *channel)
@@ -79,82 +80,11 @@ Curve * createCurve(const QString &legendName, Channel *channel)
     return new LineCurve(legendName, channel);
 }
 
-#include <qwt_painter.h>
-class ScaleDraw : public QwtScaleDraw
-{
-public:
-    ScaleDraw()
-    {
-
-    }
-    int hover = 0; //0=none, 1=first, 2=second
-
-protected:
-    virtual void drawBackbone(QPainter *painter) const override
-    {
-        const int pw = qMax(qRound(penWidthF()),1);
-
-        const qreal len = length();
-        const QPointF _pos = pos();
-
-        switch (alignment()) {
-            case QwtScaleDraw::LeftScale:
-            {
-                const qreal x = qRound( _pos.x() - ( pw - 1 ) / 2 );
-                QwtPainter::drawLine( painter, x, _pos.y(), x, _pos.y() + len );
-                if (hover==1) {
-                    QwtPainter::drawLine( painter, x-1, _pos.y(), x-1, _pos.y() + len/2.0 );
-                }
-                else if (hover==2) {
-                    QwtPainter::drawLine( painter, x-1, _pos.y() + len/2.0, x-1, _pos.y() + len );
-                }
-
-                break;
-            }
-            case QwtScaleDraw::RightScale:
-            {
-                const qreal x = qRound( _pos.x() + pw / 2 );
-                QwtPainter::drawLine( painter, x, _pos.y(), x, _pos.y() + len );
-                if (hover==1) {
-                    QwtPainter::drawLine( painter, x+1, _pos.y(), x+1, _pos.y() + len/2.0 );
-                }
-                else if (hover==2) {
-                    QwtPainter::drawLine( painter, x+1, _pos.y() + len/2.0, x+1, _pos.y() + len );
-                }
-                break;
-            }
-            case QwtScaleDraw::TopScale:
-            {
-                const qreal y = qRound( _pos.y() - ( pw - 1 ) / 2 );
-                QwtPainter::drawLine( painter, _pos.x(), y, _pos.x() + len, y );
-                if (hover==1) {
-                    QwtPainter::drawLine( painter, _pos.x(), y-1, _pos.x() + len/2, y-1 );
-                }
-                else if (hover==2) {
-                    QwtPainter::drawLine( painter, _pos.x()+len/2, y-1, _pos.x() + len, y-1 );
-                }
-                break;
-            }
-            case QwtScaleDraw::BottomScale:
-            {
-                const qreal y = qRound( _pos.y() + pw / 2 );
-                QwtPainter::drawLine( painter, _pos.x(), y, _pos.x() + len, y );
-                if (hover==1) {
-                    QwtPainter::drawLine( painter, _pos.x(), y+1, _pos.x() + len/2, y+1 );
-                }
-                else if (hover==2) {
-                    QwtPainter::drawLine( painter, _pos.x()+len/2, y+1, _pos.x() + len, y+1 );
-                }
-                break;
-            }
-        }
-    }
-};
-
-
 Plot::Plot(QWidget *parent) :
     QwtPlot(parent), zoom(0)
 {DD;
+    QVariantList list = App->getSetting("colors").toList();
+    colors = new ColorSelector(list);
     _canvas = new QwtPlotCanvas();
     _canvas->setFocusIndicator(QwtPlotCanvas::CanvasFocusIndicator);
     _canvas->setPalette(Qt::white);
@@ -172,6 +102,9 @@ Plot::Plot(QWidget *parent) :
     axisWidget(xBottomAxis)->setMouseTracking(true);
     axisWidget(yLeftAxis)->setMouseTracking(true);
     axisWidget(yRightAxis)->setMouseTracking(true);
+
+    leftOverlay = new LeftAxisOverlay(this);
+    rightOverlay = new RightAxisOverlay(this);
 
     trackingPanel = new TrackingPanel(this);
     trackingPanel->setVisible(false);
@@ -252,6 +185,7 @@ Plot::~Plot()
     delete wheelZoom;
     delete axisZoom;
     delete canvasFilter;
+    delete colors;
 }
 
 QVector<Channel *> Plot::plottedChannels() const
@@ -752,6 +686,11 @@ void Plot::hoverAxis(QwtAxisId axis, int hover)
     }
 }
 
+QColor Plot::getNextColor()
+{
+    return colors->getColor();
+}
+
 void Plot::checkDuplicates(const QString name)
 {DD;
     Curve *c1 = nullptr;
@@ -814,8 +753,6 @@ void Plot::recalculateScale(bool leftAxis)
 bool Plot::plotCurve(Channel * ch, QColor *col, bool &plotOnRight, int fileNumber)
 {DD;
     if (plotted(ch)) return false;
-
-
 
     spectrogram = ch->data()->blocksCount()>1;
 
@@ -943,6 +880,112 @@ bool Plot::plotCurve(Channel * ch, QColor *col, bool &plotOnRight, int fileNumbe
     emit curvesCountChanged();
 
     return true;
+}
+
+void Plot::plotChannel(Channel *ch, bool plotOnLeft)
+{
+    if (plotted(ch)) return;
+
+    spectrogram = ch->data()->blocksCount()>1;
+
+    if ((plotOnLeft && !canBePlottedOnLeftAxis(ch)) || (!plotOnLeft && !canBePlottedOnRightAxis(ch))) {
+        QMessageBox::warning(this, QString("Не могу построить канал"),
+                             QString("Тип графика не подходит.\n"
+                                     "Сначала очистите график."));
+        return;
+    }
+
+    if (!ch->populated()) {
+        ch->populate();
+    }
+
+    setAxis(xBottomAxis, ch->xName());
+    prepareAxis(xBottomAxis);
+
+    QwtAxisId ax = yLeftAxis;
+    if (!spectrogram) {
+        // если графиков нет, по умолчанию будем строить амплитуды по первому добавляемому графику
+        if (plotOnLeft && leftCurves.isEmpty()) {
+            yValuesPresentationLeft = ch->data()->yValuesPresentation();
+        }
+        if (!plotOnLeft && rightCurves.isEmpty()) {
+            yValuesPresentationRight = ch->data()->yValuesPresentation();
+        }
+
+        if (plotOnLeft) ch->data()->setYValuesPresentation(yValuesPresentationLeft);
+        else ch->data()->setYValuesPresentation(yValuesPresentationRight);
+
+        ax = plotOnLeft ? yLeftAxis : yRightAxis;
+
+        axisWidget(yRightAxis)->setColorBarEnabled(false);
+
+        setAxis(ax, ch->yName());
+        prepareAxis(ax);
+    }
+    else {
+        yValuesPresentationLeft = DataHolder::ShowAsReals;
+        yValuesPresentationRight = ch->data()->yValuesPresentation();
+        ch->data()->setYValuesPresentation(yValuesPresentationRight);
+        ax = yLeftAxis;
+        setAxis(ax, ch->zName());
+        prepareAxis(ax);
+        plotOnLeft = true;
+
+        setAxis(yRightAxis, ch->yName());
+        setAxisVisible(yRightAxis);
+
+        axisWidget(yRightAxis)->setColorBarEnabled(true);
+//        plotLayout()->setAlignCanvasToScales(true);
+    }
+
+
+    Curve *g = createCurve(ch->legendName(), ch);
+    QColor nextColor = getNextColor();
+    QPen pen = g->pen();
+    pen.setColor(nextColor);
+    pen.setWidth(1);
+    g->setPen(pen);
+    g->oldPen = pen;
+    //g->channel->setColor(nextColor);
+
+    curves << g;
+    //g->fileNumber = fileNumber;
+    checkDuplicates(g->title());
+
+    g->setYAxis(ax);
+    if (!plotOnLeft) {
+        rightCurves << g;
+    }
+    else {
+        leftCurves << g;
+    }
+
+
+    if (spectrogram) {
+        axisWidget(yRightAxis)->setColorMap(QwtInterval(ch->data()->yMin(-1), ch->data()->yMax(-1)),
+                                             ColorMapFactory::map(colorMap));
+        if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(g)) {
+            c->setColorMap(ColorMapFactory::map(colorMap));
+        }
+
+        zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
+        zoom->verticalScaleBoundsSlave->add(g->yMin(), g->yMax());
+        zoom->verticalScaleBounds->add(ch->data()->zMin(), ch->data()->zMax());
+    }
+    else {
+        ZoomStack::ScaleBounds *ybounds = 0;
+        if (zoom->verticalScaleBounds->axis == ax.pos) ybounds = zoom->verticalScaleBounds;
+        else ybounds = zoom->verticalScaleBoundsSlave;
+
+        zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
+        if (ybounds) ybounds->add(g->yMin(), g->yMax());
+    }
+
+    g->attachTo(this);
+
+    update();
+    emit onPlotChannel(ch);
+    emit curvesCountChanged();
 }
 
 //Curve * Plot::plotted(FileDescriptor *dfd, int channel) const
@@ -1188,17 +1231,43 @@ void Plot::dropEvent(QDropEvent *event)
 {DD;
     const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
     if (myData) {
-//        qDebug()<<myData->channels;
-        emit needPlotChannels();
+        bool plotOnLeft = event->pos().x()>0 && event->pos().x() <= rect().x()+rect().width()/2;
+        //посылаем сигнал о том, что нужно построить эти каналы. Список каналов попадает
+        //в mainWindow и возможно будет расширен за счет нажатого Ctrl
+        //далее эти каналы попадут обратно в plot.
+        emit needPlotChannels(plotOnLeft, myData->channels);
         event->acceptProposedAction();
     }
+    leftOverlay->setVisible(false);
+    rightOverlay->setVisible(false);
 }
 
 void Plot::dragEnterEvent(QDragEnterEvent *event)
 {DD;
     const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
+    if (myData) event->acceptProposedAction();
+}
+
+void Plot::dragMoveEvent(QDragMoveEvent *event)
+{DD;
+    const ChannelsMimeData *myData = dynamic_cast<const ChannelsMimeData *>(event->mimeData());
     if (myData) {
-//        qDebug()<<myData->channels;
-        event->acceptProposedAction();
+        //определяем, можем ли построить каналы на левой или правой оси
+        //определяем, в какой области мы находимся
+        int w = 0;
+        if (auto axis = axisWidget({QwtAxis::yLeft,0}); axis->isVisible())
+            w = axis->width();
+        bool plotOnLeft = event->pos().x() <= w + canvas()->rect().x()+canvas()->rect().width()/2;
+        bool can = true;
+        for (auto c: myData->channels) {
+            if ((plotOnLeft && !canBePlottedOnLeftAxis(c)) || (!plotOnLeft && !canBePlottedOnRightAxis(c))) {
+                can = false;
+                break;
+            }
+        }
+        leftOverlay->setVisible(plotOnLeft);
+        rightOverlay->setVisible(!plotOnLeft);
+        if (can)
+            event->acceptProposedAction();
     }
 }

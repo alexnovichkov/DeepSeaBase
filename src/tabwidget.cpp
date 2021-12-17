@@ -33,215 +33,119 @@
 #include "tab.h"
 #include "filehandlerdialog.h"
 
-TabBar::TabBar(QWidget *parent) : QTabBar(parent), index(-1)
-{DD;
-    setAcceptDrops(true);
+//TabBar::TabBar(QWidget *parent) : QTabBar(parent), index(-1)
+//{DD;
+//    setAcceptDrops(true);
 
-    setTabsClosable(true);
-    connect(this, SIGNAL(tabCloseRequested(int)), this, SIGNAL(closeTab(int)));
-    setSelectionBehaviorOnRemove(QTabBar::SelectPreviousTab);
-    setMovable(true);
+//    setTabsClosable(true);
+//    connect(this, SIGNAL(tabCloseRequested(int)), this, SIGNAL(closeTab(int)));
+//    setSelectionBehaviorOnRemove(QTabBar::SelectPreviousTab);
+//    setMovable(true);
 
-    editor = new QLineEdit(this);
-    editor->hide();
+//    editor = new QLineEdit(this);
+//    editor->hide();
 
-    connect(editor, SIGNAL(editingFinished()), this, SLOT(editTabName()));
-}
+//    connect(editor, SIGNAL(editingFinished()), this, SLOT(editTabName()));
+//}
 
-void TabBar::mouseDoubleClickEvent(QMouseEvent * event)
-{DD;
-    if (event->button()==Qt::LeftButton) {
-        index = tabAt(event->pos());
+//void TabBar::mouseDoubleClickEvent(QMouseEvent * event)
+//{DD;
+//    if (event->button()==Qt::LeftButton) {
+//        index = tabAt(event->pos());
 
-        if (index==-1) {
-            Q_EMIT newTab();
-        }
-        else {
-            QRect rect = tabRect(index);
+//        if (index==-1) {
+//            Q_EMIT newTab();
+//        }
+//        else {
+//            QRect rect = tabRect(index);
 
-            if( rect.contains(event->pos()))
-            {
-                editor->setGeometry(rect.adjusted(2, 2, -2, -2));
-                QString oldTabName = tabText(index);
-                editor->setText(oldTabName);
-                editor->selectAll();
-                editor->show();
-                editor->setFocus();
-            }
-        }
-    }
-    QTabBar::mouseDoubleClickEvent(event);
-}
+//            if( rect.contains(event->pos()))
+//            {
+//                editor->setGeometry(rect.adjusted(2, 2, -2, -2));
+//                QString oldTabName = tabText(index);
+//                editor->setText(oldTabName);
+//                editor->selectAll();
+//                editor->show();
+//                editor->setFocus();
+//            }
+//        }
+//    }
+//    QTabBar::mouseDoubleClickEvent(event);
+//}
 
-void TabBar::contextMenuEvent(QContextMenuEvent * event)
-{DD;
-    QMenu menu;
-    menu.addAction("Новая вкладка", this, SIGNAL(newTab()), QKeySequence::AddTab);
-    QPoint position = event->pos();
-    index = tabAt(position);
+//void TabBar::contextMenuEvent(QContextMenuEvent * event)
+//{DD;
+//    QMenu menu;
+//    menu.addAction("Новая вкладка", this, SIGNAL(newTab()), QKeySequence::AddTab);
+//    QPoint position = event->pos();
+//    index = tabAt(position);
 
-    if (index != -1) {
-        menu.addAction("Закрыть вкладку",this, SLOT(closeTab()), QKeySequence::Close);
-        menu.addAction("Закрыть другие вкладки", this, SLOT(closeOtherTabs()));
-        menu.addSeparator();
-        menu.addAction("Переименовать...", this, SLOT(renameTab()));
-        menu.addSeparator();
-        menu.addAction("Отслеживаемые файлы и папки...", this, SLOT(showFileHandler()));
-    }
-    menu.exec(event->globalPos());
-}
+//    if (index != -1) {
+//        menu.addAction("Закрыть вкладку",this, SLOT(closeTab()), QKeySequence::Close);
+//        menu.addAction("Закрыть другие вкладки", this, SLOT(closeOtherTabs()));
+//        menu.addSeparator();
+//        menu.addAction("Переименовать...", this, SLOT(renameTab()));
+//        menu.addSeparator();
+//        menu.addAction("Отслеживаемые файлы и папки...", this, SLOT(showFileHandler()));
+//    }
+//    menu.exec(event->globalPos());
+//}
 
-void TabBar::closeTab()
-{DD;
-    Q_EMIT closeTab(index);
-}
+//void TabBar::closeTab()
+//{DD;
+//    Q_EMIT closeTab(index);
+//}
 
-void TabBar::closeOtherTabs()
-{DD;
-    Q_EMIT closeOtherTabs(index);
-}
+//void TabBar::closeOtherTabs()
+//{DD;
+//    Q_EMIT closeOtherTabs(index);
+//}
 
-void TabBar::renameTab()
-{DD;
-    Q_EMIT renameTab(index);
-}
+//void TabBar::renameTab()
+//{DD;
+//    Q_EMIT renameTab(index);
+//}
 
-void TabBar::showFileHandler()
-{
-    emit showFileHandler(index);
-}
+//void TabBar::showFileHandler()
+//{
+//    emit showFileHandler(index);
+//}
 
-void TabBar::editTabName()
-{DD;
-    if( index < 0 ) return;
-    QString oldText = tabText(index);
-    QString text = editor->text();
-    editor->hide();
-    if (text.isEmpty()) return;
+//void TabBar::editTabName()
+//{DD;
+//    if( index < 0 ) return;
+//    QString oldText = tabText(index);
+//    QString text = editor->text();
+//    editor->hide();
+//    if (text.isEmpty()) return;
 
-    if (oldText!=text) {
-        setTabText(index, text);
-        Q_EMIT tabTextChanged(text);
-    }
-}
+//    if (oldText!=text) {
+//        setTabText(index, text);
+//        Q_EMIT tabTextChanged(text);
+//    }
+//}
 
+//TabWidget::TabWidget(QWidget *parent) : QTabWidget(parent)
+//    , m_tabBar(new TabBar(this))
+//{DD;
+//    connect(m_tabBar, SIGNAL(newTab()), this, SIGNAL(newTab()));
+//    connect(m_tabBar, SIGNAL(closeTab(int)), this, SIGNAL(closeTab(int)));
+//    connect(m_tabBar, SIGNAL(closeOtherTabs(int)), this, SIGNAL(closeOtherTabs(int)));
+//    connect(m_tabBar, SIGNAL(renameTab(int)), this, SIGNAL(renameTab(int)));
+//    connect(m_tabBar, SIGNAL(tabTextChanged(QString)), this, SIGNAL(tabTextChanged(QString)));
+//    connect(m_tabBar, SIGNAL(showFileHandler(int)), this, SIGNAL(showFileHandler(int)));
 
+//    setTabBar(m_tabBar);
 
+//    QToolButton *newTabButton = new QToolButton();
+//    QAction *a = new QAction(QIcon(":/icons/newTab.png"),"Новая вкладка",this);
+//    connect(a,SIGNAL(triggered()),this,SIGNAL(newTab()));
+//    newTabButton->setDefaultAction(a);
+//    newTabButton->setAutoRaise(true);
+//    setCornerWidget(newTabButton);
 
+//    setTabsClosable(true);
+//    setDocumentMode(true);
+//    setMovable(true);
+//}
 
-
-TabWidget::TabWidget(QWidget *parent) : QTabWidget(parent)
-    , m_tabBar(new TabBar(this))
-{DD;
-    connect(m_tabBar, SIGNAL(newTab()), this, SIGNAL(newTab()));
-    connect(m_tabBar, SIGNAL(closeTab(int)), this, SIGNAL(closeTab(int)));
-    connect(m_tabBar, SIGNAL(closeOtherTabs(int)), this, SIGNAL(closeOtherTabs(int)));
-    connect(m_tabBar, SIGNAL(renameTab(int)), this, SIGNAL(renameTab(int)));
-    connect(m_tabBar, SIGNAL(tabTextChanged(QString)), this, SIGNAL(tabTextChanged(QString)));
-    connect(m_tabBar, SIGNAL(showFileHandler(int)), this, SIGNAL(showFileHandler(int)));
-
-    setTabBar(m_tabBar);
-
-    QToolButton *newTabButton = new QToolButton();
-    QAction *a = new QAction(QIcon(":/icons/newTab.png"),"Новая вкладка",this);
-    connect(a,SIGNAL(triggered()),this,SIGNAL(newTab()));
-    newTabButton->setDefaultAction(a);
-    newTabButton->setAutoRaise(true);
-    setCornerWidget(newTabButton);
-
-    setTabsClosable(true);
-    setDocumentMode(true);
-    setMovable(true);
-}
-
-TitleBar::TitleBar(ads::CDockAreaWidget *parent) : ads::CDockAreaTitleBar(parent)
-{
-}
-
-void TitleBar::mouseDoubleClickEvent(QMouseEvent *event)
-{
-    if (event->button()==Qt::LeftButton)
-        Q_EMIT newTab();
-    event->accept();
-}
-
-void TitleBar::contextMenuEvent(QContextMenuEvent *event)
-{
-    event->accept();
-    QMenu menu;
-    menu.addAction("Новая вкладка", this, SIGNAL(newTab()), QKeySequence::AddTab);
-    menu.exec(event->globalPos());
-}
-
-DockTab::DockTab(ads::CDockWidget *parent) : ads::CDockWidgetTab(parent)
-{
-    editor = new QLineEdit(this);
-    editor->hide();
-
-    connect(editor, SIGNAL(editingFinished()), this, SLOT(setTabName()));
-}
-
-void DockTab::mouseDoubleClickEvent(QMouseEvent *event)
-{
-    if (event->button()==Qt::LeftButton) {
-        event->accept();
-
-        QRect rect = this->rect();
-
-        editor->setGeometry(rect.adjusted(2, 2, -2, -2));
-        QString oldTabName = text();
-        editor->setText(oldTabName);
-        editor->selectAll();
-        editor->show();
-        editor->setFocus();
-    }
-}
-
-void DockTab::contextMenuEvent(QContextMenuEvent *event)
-{
-    event->accept();
-
-    QMenu menu;
-
-    menu.addAction("Закрыть вкладку",this, SIGNAL(closeRequested()), QKeySequence::Close);
-    menu.addAction("Закрыть другие вкладки", this, SIGNAL(closeOtherTabsRequested()));
-    menu.addSeparator();
-    menu.addAction("Переименовать...", this, SLOT(renameTab()));
-    menu.addSeparator();
-    menu.addAction("Отслеживаемые файлы и папки...", this, SLOT(showFileHandler()));
-
-    menu.exec(event->globalPos());
-}
-
-void DockTab::renameTab()
-{
-    QString oldTabName = text();
-
-    QString newTabName=QInputDialog::getText(this,
-                                             tr("Переименование вкладки"),
-                                             tr("Задайте новое имя"),
-                                             QLineEdit::Normal,
-                                             oldTabName);
-
-    if (!newTabName.isEmpty()) {
-        setText(newTabName);
-    }
-}
-
-void DockTab::showFileHandler()
-{
-    if (auto t = qobject_cast<Tab *>(this->dockWidget()->widget()))
-    {
-        FileHandlerDialog dialog(t->fileHandler, this);
-        dialog.exec();
-    }
-}
-
-void DockTab::setTabName()
-{
-    QString oldText = text();
-    QString newText = editor->text();
-    editor->hide();
-    if (!newText.isEmpty())
-        setText(newText);
-}

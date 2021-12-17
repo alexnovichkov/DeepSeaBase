@@ -4,6 +4,7 @@
 #include <qwt_plot.h>
 #include <qwt_plot_dict.h>
 #include <math.h>
+#include "colorselector.h"
 //#include <QAudio>
 
 class QwtLegend;
@@ -25,6 +26,7 @@ class QwtScaleEngine;
 class QwtPlotMarker;
 class Picker;
 class CanvasEventFilter;
+class AxisOverlay;
 
 struct Range {
     void clear() {min = INFINITY; max = -INFINITY;}
@@ -97,6 +99,7 @@ public:
     void deleteCurve(Curve *curve, bool doReplot = true);
 
     bool plotCurve(Channel * ch, QColor *col, bool &plotOnRight, int fileNumber);
+    void plotChannel(Channel * ch, bool plotOnLeft);
 
 //    Curve *plotted(FileDescriptor *dfd, int channel) const;
     Curve *plotted(Channel *channel) const;
@@ -154,6 +157,8 @@ public slots:
      */
     void deleteAllCurves(bool forceDeleteFixed = false);
 signals:
+    void onPlotChannel(Channel *ch);
+
     void curveChanged(Curve *curve);
     void curveDeleted(Channel *);
     void trackingPanelCloseRequested();
@@ -161,7 +166,7 @@ signals:
     void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
     void curvesChanged();
     void curvesCountChanged();
-    void needPlotChannels();
+    void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels);
 private slots:
     void editLegendItem(QwtPlotItem *item);
     void deleteCurveFromLegend(QwtPlotItem *item);
@@ -169,6 +174,8 @@ private slots:
     void fixCurve(QwtPlotItem* curve);
     void hoverAxis(QwtAxisId axis, int hover);
 private:
+    QColor getNextColor();
+
     void importPlot(const QString &fileName, const QSize &size, int resolution);
     void importPlot(QPrinter &printer, const QSize &size, int resolution);
     void checkDuplicates(const QString name);
@@ -197,7 +204,8 @@ private:
     Picker *_picker;
     QwtPlotCanvas *_canvas;
 
-
+    AxisOverlay *leftOverlay;
+    AxisOverlay *rightOverlay;
 
     bool xScaleIsLogarithmic = false; //false = linear, true = logarithmic
 
@@ -212,12 +220,13 @@ private:
     PlayPanel *playerPanel;
 
     InteractionMode interactionMode = ScalingInteraction;
-
+    ColorSelector *colors;
 
     // QWidget interface
 protected:
     void dropEvent(QDropEvent *event) override;
     void dragEnterEvent(QDragEnterEvent *event) override;
+    void dragMoveEvent(QDragMoveEvent *event) override;
 };
 
 #endif // PLOT_H

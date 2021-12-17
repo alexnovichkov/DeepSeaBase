@@ -44,7 +44,6 @@ qtHaveModule(winextras) {
 SOURCES += main.cpp\
     app.cpp \
     channelpropertiesdialog.cpp \
-    channelsmimedata.cpp \
     channelstable.cpp \
     converters/tdmsconverter.cpp \
     descriptorpropertiesdialog.cpp \
@@ -66,6 +65,7 @@ SOURCES += main.cpp\
     plot/canvaseventfilter.cpp \
     plot/imagerenderdialog.cpp \
     plot/plotarea.cpp \
+    plot/scaledraw.cpp \
     plot/trackingcursor.cpp \
     plot/zoomstack.cpp \
     plotdockfactory.cpp \
@@ -76,6 +76,7 @@ SOURCES += main.cpp\
     curvepropertiesdialog.cpp \
     tab.cpp \
     tabdock.cpp \
+    tabdockfactory.cpp \
     tabwidget.cpp \
     coloreditdialog.cpp \
     colorselector.cpp \
@@ -149,7 +150,6 @@ HEADERS  += mainwindow.h \
     channelsmimedata.h \
     channelstable.h \
     converters/tdmsconverter.h \
-    customdockfactory.h \
     descriptorpropertiesdialog.h \
     dfdfilterproxy.h \
     enums.h \
@@ -170,6 +170,7 @@ HEADERS  += mainwindow.h \
     plot/canvaseventfilter.h \
     plot/imagerenderdialog.h \
     plot/plotarea.h \
+    plot/scaledraw.h \
     plot/trackingcursor.h \
     plot/zoomstack.h \
     plotdockfactory.h \
@@ -182,6 +183,7 @@ HEADERS  += mainwindow.h \
     stepitemdelegate.h \
     tab.h \
     tabdock.h \
+    tabdockfactory.h \
     tabwidget.h \
     coloreditdialog.h \
     colorselector.h \

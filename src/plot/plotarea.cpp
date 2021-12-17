@@ -10,11 +10,9 @@
 
 #include <QAxObject>
 
-PlotArea::PlotArea(PlotType type, QWidget *parent) : ads::CDockWidget("", parent), plotType(type)
+PlotArea::PlotArea(int index, PlotType type, QWidget *parent)
+    : ads::CDockWidget(QString("График %1").arg(index), parent), plotType(type)
 {
-    static int plotIndex = 0;
-    plotIndex++;
-    setWindowTitle(QString("График %1").arg(plotIndex));
     setAsCurrentTab();
     setFeature(ads::CDockWidget::DockWidgetDeleteOnClose, true);
     setFeature(ads::CDockWidget::CustomCloseHandling, true);
@@ -26,36 +24,38 @@ PlotArea::PlotArea(PlotType type, QWidget *parent) : ads::CDockWidget("", parent
 //                | QDockWidget::DockWidgetFloatable);
     //setFloating(true);
 
-    plot = new Plot(this);
-    plot->resize(200,200);
+    m_plot = new Plot(this);
+    m_plot->resize(200,200);
 //    connect(plot, SIGNAL(curveChanged(Curve*)), SLOT(onCurveColorChanged(Curve*)));
 //    connect(plot, SIGNAL(curveDeleted(Channel*)), SLOT(onCurveDeleted(Channel*)));
 //    connect(plot, SIGNAL(saveTimeSegment(QList<FileDescriptor*>,double,double)), SLOT(saveTimeSegment(QList<FileDescriptor*>,double,double)));
 //    connect(plot, SIGNAL(curvesChanged()), SLOT(updatePlottedChannelsNumbers()));
 //    connect(plot, &Plot::curvesCountChanged, this, &MainWindow::updateActions);
-//    connect(plot, &Plot::needPlotChannels, this, [=](){tab->channelModel->plotChannels();});
+    //Plot::needPlotChannels -> PlotArea::needPlotChannels -> MainWindow::onChannelsDropped -> [MainWindow::plotChannel]
+
+    connect(m_plot, SIGNAL(needPlotChannels(bool,QVector<Channel*>)), this, SIGNAL(needPlotChannels(bool,QVector<Channel*>)));
 
     autoscaleXAct = new QAction("Автомасштабирование по оси X", this);
     autoscaleXAct->setIcon(QIcon(":/icons/autoscale-x.png"));
     autoscaleXAct->setCheckable(true);
     bool autoscale = App->getSetting("autoscale-x", true).toBool();
     connect(autoscaleXAct, &QAction::toggled, [this](bool toggled){
-        if (plot) plot->toggleAutoscale(0 /* x axis */,toggled);
+        if (m_plot) m_plot->toggleAutoscale(0 /* x axis */,toggled);
         App->setSetting("autoscale-x", toggled);
     });
     autoscaleXAct->setChecked(autoscale);
-    if (plot) plot->toggleAutoscale(0 /* x axis */, autoscale);
+    if (m_plot) m_plot->toggleAutoscale(0 /* x axis */, autoscale);
 
     autoscaleYAct = new QAction("Автомасштабирование по оси Y", this);
     autoscaleYAct->setIcon(QIcon(":/icons/autoscale-y-main.png"));
     autoscaleYAct->setCheckable(true);
     autoscale = App->getSetting("autoscale-y", true).toBool();
     connect(autoscaleYAct, &QAction::toggled, [this](bool toggled){
-        if (plot) plot->toggleAutoscale(1 /* y axis */,toggled);
+        if (m_plot) m_plot->toggleAutoscale(1 /* y axis */,toggled);
         App->setSetting("autoscale-y", toggled);
     });
     autoscaleYAct->setChecked(autoscale);
-    if (plot) plot->toggleAutoscale(1 /* x axis */, autoscale);
+    if (m_plot) m_plot->toggleAutoscale(1 /* x axis */, autoscale);
 
 
     autoscaleYSlaveAct = new QAction("Автомасштабирование по правой оси Y", this);
@@ -63,22 +63,22 @@ PlotArea::PlotArea(PlotType type, QWidget *parent) : ads::CDockWidget("", parent
     autoscaleYSlaveAct->setCheckable(true);
     autoscale = App->getSetting("autoscale-y-slave", true).toBool();
     connect(autoscaleYSlaveAct, &QAction::toggled, [this](bool toggled){
-        if (plot) plot->toggleAutoscale(2 /* y slave axis */,toggled);
+        if (m_plot) m_plot->toggleAutoscale(2 /* y slave axis */,toggled);
         App->setSetting("autoscale-y-slave", toggled);
     });
     autoscaleYSlaveAct->setChecked(autoscale);
-    if (plot) plot->toggleAutoscale(2 /* x axis */, autoscale);
+    if (m_plot) m_plot->toggleAutoscale(2 /* x axis */, autoscale);
 
     autoscaleAllAct  = new QAction("Автомасштабирование по всем осям", this);
     autoscaleAllAct->setIcon(QIcon(":/icons/autoscale-all.png"));
     connect(autoscaleAllAct, &QAction::triggered, [this](){
-        if (plot) plot->autoscale();
+        if (m_plot) m_plot->autoscale();
     });
 
     removeLabelsAct  = new QAction("Удалить все подписи", this);
     removeLabelsAct->setIcon(QIcon(":/icons/remove-labels.png"));
     connect(removeLabelsAct, &QAction::triggered, [this](){
-        if (plot) plot->removeLabels();
+        if (m_plot) m_plot->removeLabels();
     });
 
     previousDescriptorAct = new QAction("Предыдущая запись", this);
@@ -105,13 +105,13 @@ PlotArea::PlotArea(PlotType type, QWidget *parent) : ads::CDockWidget("", parent
     clearPlotAct  = new QAction(QString("Очистить график"), this);
     clearPlotAct->setIcon(QIcon(":/icons/cross.png"));
     connect(clearPlotAct, &QAction::triggered, [=](){
-        if (plot) plot->deleteAllCurves();
+        if (m_plot) m_plot->deleteAllCurves();
     });
 
     savePlotAct = new QAction(QString("Сохранить график..."), this);
     savePlotAct->setIcon(QIcon(":/icons/picture.ico"));
     connect(savePlotAct, &QAction::triggered, [=](){
-        if (plot) plot->savePlot();
+        if (m_plot) m_plot->savePlot();
     });
 
     switchCursorAct = new QAction(QString("Показать/скрыть курсор"), this);
@@ -121,7 +121,7 @@ PlotArea::PlotArea(PlotType type, QWidget *parent) : ads::CDockWidget("", parent
     bool pickerEnabled = App->getSetting("pickerEnabled", true).toBool();
     switchCursorAct->setChecked(pickerEnabled);
     connect(switchCursorAct, &QAction::triggered, [=](){
-        if (plot) plot->switchCursor();
+        if (m_plot) m_plot->switchCursor();
     });
 
     trackingCursorAct = new QAction(QString("Включить курсор дискрет"), this);
@@ -129,39 +129,36 @@ PlotArea::PlotArea(PlotType type, QWidget *parent) : ads::CDockWidget("", parent
     trackingCursorAct->setCheckable(true);
     trackingCursorAct->setObjectName("trackingCursor");
     connect(trackingCursorAct, &QAction::triggered, [=](){
-        if (plot) plot->switchTrackingCursor();
+        if (m_plot) m_plot->switchTrackingCursor();
     });
-    if (plot)
-    connect(plot,SIGNAL(trackingPanelCloseRequested()), trackingCursorAct, SLOT(toggle()));
+    if (m_plot)
+    connect(m_plot,SIGNAL(trackingPanelCloseRequested()), trackingCursorAct, SLOT(toggle()));
 
     copyToClipboardAct = new QAction(QString("Копировать в буфер обмена"), this);
     copyToClipboardAct->setIcon(QIcon(":/icons/clipboard.png"));
     connect(copyToClipboardAct, &QAction::triggered, [=](){
-        if (plot) plot->copyToClipboard();
+        if (m_plot) m_plot->copyToClipboard();
     });
 
     printPlotAct = new QAction(QString("Распечатать рисунок"), this);
     printPlotAct->setIcon(QIcon(":/icons/print.png"));
     connect(printPlotAct, &QAction::triggered, [=](){
-        if (plot) plot->print();
+        if (m_plot) m_plot->print();
     });
 
     interactionModeAct = new QAction(QString("Включить режим изменения данных"), this);
     interactionModeAct->setIcon(QIcon(":/icons/data.png"));
     interactionModeAct->setCheckable(true);
     connect(interactionModeAct, &QAction::triggered, [=](){
-        if (plot) plot->switchInteractionMode();
+        if (m_plot) m_plot->switchInteractionMode();
     });
 
     playAct  = new QAction("Открыть панель плеера", this);
     playAct->setIcon(QIcon(":/icons/play.png"));
     playAct->setCheckable(true);
     //TODO: отвязать плеер от графика, чтобы не было нескольких плееров в одной программе
-    connect(playAct, &QAction::triggered, [=](){
-        plot->switchPlayerVisibility();
-    });
-    if (plot)
-    connect(plot,SIGNAL(playerPanelCloseRequested()),playAct,SLOT(toggle()));
+    connect(playAct, &QAction::triggered, m_plot, &Plot::switchPlayerVisibility);
+    if (m_plot) connect(m_plot,SIGNAL(playerPanelCloseRequested()),playAct,SLOT(toggle()));
 
 
 
@@ -195,15 +192,20 @@ PlotArea::PlotArea(PlotType type, QWidget *parent) : ads::CDockWidget("", parent
 
     QGridLayout *plotsLayout = new QGridLayout;
     //plotsLayout->addWidget(scaleToolBar,0,0);
-    if (plot) plotsLayout->addWidget(plot,0,1);
+    if (m_plot) plotsLayout->addWidget(m_plot,0,1);
     auto w = new QWidget;
     w->setLayout(plotsLayout);
     setWidget(w);
 }
 
+Plot *PlotArea::plot()
+{
+    return m_plot;
+}
+
 void PlotArea::update()
 {
-    if (plot) plot->update();
+    if (m_plot) m_plot->update();
 }
 
 //QList<Curve *> PlotArea::curves() const
@@ -257,7 +259,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 {DD;
     static QAxObject *excel = 0;
 
-    QList<Curve*> &curves = plot->curves;
+    QList<Curve*> &curves = m_plot->curves;
 
     if (curves.isEmpty()) {
         QMessageBox::warning(this, "Графиков нет", "Постройте хотя бы один график!");
@@ -328,7 +330,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
      double minX = channel->data()->xMin();
      double maxX = channel->data()->xMax();
 
-     Range range = plot->xRange();
+     Range range = m_plot->xRange();
 
      for (int i=1; i<curves.size(); ++i) {
          Channel *ch = curves.at(i)->channel;
@@ -576,7 +578,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          }
          if (addRightAxis) {
              QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&,const QVariant&)", 2,2);
-             if (yAxis) setAxis(yAxis, stripHtml(plot->axisTitleText(plot->yRightAxis)));
+             if (yAxis) setAxis(yAxis, stripHtml(m_plot->axisTitleText(m_plot->yRightAxis)));
              delete yAxis;
          }
 
@@ -584,7 +586,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          // добавляем подписи осей
          QAxObject *xAxis = chart->querySubObject("Axes(const QVariant&)", 1);
          if (xAxis) {
-             setAxis(xAxis, stripHtml(plot->axisTitleText(QwtAxis::xBottom)));
+             setAxis(xAxis, stripHtml(m_plot->axisTitleText(QwtAxis::xBottom)));
              xAxis->setProperty("MaximumScale", range.max);
              xAxis->setProperty("MinimumScale", int(range.min/10)*10);
 //             if (zeroStepDetected) {
@@ -596,7 +598,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 
          QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&)", 2);
          if (yAxis) {
-             setAxis(yAxis, stripHtml(plot->axisTitleText(QwtAxis::yLeft)));
+             setAxis(yAxis, stripHtml(m_plot->axisTitleText(QwtAxis::yLeft)));
              yAxis->setProperty("CrossesAt", -1000);
          }
          delete yAxis;
@@ -607,15 +609,15 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          delete plotArea;
 
          // цвета графиков
-         for (int i = 0; i< plot->curves.size(); ++i) {
-             Curve *curve = plot->curves.at(i);
+         for (int i = 0; i< m_plot->curves.size(); ++i) {
+             Curve *curve = m_plot->curves.at(i);
              QAxObject * serie = series->querySubObject("Item(int)", i+1);
              if (serie) {
                  QAxObject *format = serie->querySubObject("Format");
                  QAxObject *formatLine = format->querySubObject("Line");
                  if (formatLine) {
-                     formatLine->setProperty("Weight", plot->curves.at(i)->pen().width());
-                     Qt::PenStyle lineStyle = plot->curves.at(i)->pen().style();
+                     formatLine->setProperty("Weight", m_plot->curves.at(i)->pen().width());
+                     Qt::PenStyle lineStyle = m_plot->curves.at(i)->pen().style();
                      int msoLineStyle = 1;
                      switch (lineStyle) {
                          case Qt::NoPen:
@@ -629,7 +631,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
                      formatLine->setProperty("DashStyle", msoLineStyle);
 
                      QAxObject *formatLineForeColor = formatLine->querySubObject("ForeColor");
-                     QColor color = plot->curves.at(i)->channel->color();
+                     QColor color = m_plot->curves.at(i)->channel->color();
                      //меняем местами красный и синий, потому что Excel неправильно понимает порядок
                      int red = color.red();
                      color.setRed(color.blue());
@@ -698,7 +700,7 @@ void PlotArea::updateActions(int filesCount, int channelsCount)
     savePlotAct->setEnabled(hasCurves);
     copyToClipboardAct->setEnabled(hasCurves);
     printPlotAct->setEnabled(hasCurves);
-    if (plot) playAct->setEnabled(plot->curvesCount(Descriptor::TimeResponse)>0);
+    if (m_plot) playAct->setEnabled(m_plot->curvesCount(Descriptor::TimeResponse)>0);
     previousDescriptorAct->setEnabled(filesCount>1 && hasCurves);
     nextDescriptorAct->setEnabled(filesCount>1 && hasCurves);
     arbitraryDescriptorAct->setEnabled(filesCount>1 && hasCurves);
@@ -706,12 +708,28 @@ void PlotArea::updateActions(int filesCount, int channelsCount)
     cycleChannelsDownAct->setEnabled(channelsCount>1 && hasCurves);
 }
 
+void PlotArea::deleteCurvesForDescriptor(FileDescriptor *f)
+{
+    if (m_plot) m_plot->deleteCurvesForDescriptor(f);
+}
+
+QVector<Channel *> PlotArea::plottedChannels() const
+{
+    if (m_plot) return m_plot->plottedChannels();
+    return QVector<Channel *>();
+}
+
 int PlotArea::curvesCount(int type) const
 {
-    return plot?plot->curvesCount(type):0;
+    return m_plot?m_plot->curvesCount(type):0;
 }
 
 PlotType PlotArea::type() const
 {
     return plotType;
+}
+
+void PlotArea::updateLegends()
+{
+    if (m_plot) m_plot->updateLegends();
 }

@@ -84,3 +84,26 @@ void PlotDockTab::setPlotName()
     if (!newText.isEmpty())
         setText(newText);
 }
+
+ads::CDockWidgetTab *PlotDockFactory::createDockWidgetTab(ads::CDockWidget *DockWidget) const
+{
+    auto tab = new PlotDockTab(DockWidget);
+    return tab;
+}
+
+ads::CDockAreaTitleBar *PlotDockFactory::createDockAreaTitleBar(ads::CDockAreaWidget *DockArea) const
+{
+    auto titleBar = new PlotTitleBar(DockArea);
+    QObject::connect(titleBar, &PlotTitleBar::newPlot, receiver, &MainWindow::addPlotTabbed);
+
+    auto addTabButton = new QToolButton(DockArea);
+    addTabButton->setToolTip(QObject::tr("Добавить график вкладкой"));
+    addTabButton->setIcon(QIcon(":/icons/list-add.png"));
+    addTabButton->setShortcut(QKeySequence("Ctrl+T"));
+    addTabButton->setAutoRaise(true);
+    int index = titleBar->indexOf(titleBar->tabBar());
+    titleBar->insertWidget(index + 1, addTabButton);
+    QObject::connect(addTabButton, &QToolButton::clicked, receiver, &MainWindow::addPlotTabbed);
+
+    return titleBar;
+}

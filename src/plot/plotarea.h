@@ -7,6 +7,7 @@
 
 class QAction;
 class Curve;
+class FileDescriptor;
 
 enum class PlotType
 {
@@ -18,20 +19,28 @@ enum class PlotType
 
 class PlotArea : public ads::CDockWidget
 {
+    Q_OBJECT
 public:
-    PlotArea(PlotType type, QWidget *parent);
+    PlotArea(int index, PlotType type, QWidget *parent);
+    Plot* plot();
 
     void update();
 
     //QList<Curve *> curves() const;
     void exportToExcel(bool fullRange, bool dataOnly);
     void updateActions(int filesCount, int channelsCount);
+    void deleteCurvesForDescriptor(FileDescriptor *f);
+    QVector<Channel*> plottedChannels() const;
 
     int curvesCount(int type=-1) const;
     PlotType type() const;
+signals:
+    void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels);
+public slots:
+    void updateLegends();
 
 private:
-    Plot *plot=nullptr;
+    Plot *m_plot =nullptr;
 
     QAction *autoscaleXAct;
     QAction *autoscaleYAct;

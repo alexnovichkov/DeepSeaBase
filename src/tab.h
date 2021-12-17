@@ -16,15 +16,16 @@ class QLineEdit;
 class FileDescriptor;
 class QFileSystemWatcher;
 class FileHandler;
+class MainWindow;
 
 class Tab : public QSplitter
 {
     Q_OBJECT
+    MainWindow *parent;
 public:
-    Tab(QWidget * parent);
+    Tab(MainWindow *parent);
     ~Tab() {}
 
-    HeaderView *tableHeader = nullptr;
     QLabel *filePathLabel = nullptr;
     FilesTable *filesTable = nullptr;
     QTableView *channelsTable = nullptr;
@@ -40,6 +41,7 @@ public:
 private slots:
     void filesSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);
     void channelsSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);
+    void updateChannelsTable(const QModelIndex &current, const QModelIndex &previous);
 };
 
 #endif // TAB_H

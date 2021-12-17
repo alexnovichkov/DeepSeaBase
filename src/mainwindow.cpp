@@ -55,7 +55,7 @@
 #include "DockAreaTabBar.h"
 #include "DockComponentsFactory.h"
 #include "DockWidgetTab.h"
-#include "customdockfactory.h"
+#include "tabdockfactory.h"
 #include "plotdockfactory.h"
 
 
@@ -73,6 +73,15 @@ MainWindow::MainWindow(QWidget *parent)
     ads::CDockManager::setConfigFlag(ads::CDockManager::EqualSplitOnInsertion, true);
 
     m_DockManager = new ads::CDockManager(this);
+    connect(m_DockManager, &ads::CDockManager::focusedDockWidgetChanged,
+            [=](ads::CDockWidget* old, ads::CDockWidget* now) {
+        Q_UNUSED(old);
+        if (auto tab = qobject_cast<Tab *>(now->widget()))
+            currentTab = tab;
+        else if (auto plot = qobject_cast<PlotArea*>(now))
+            currentPlot = plot;
+        updateActions();
+    });
 
     createActions();
 
@@ -102,7 +111,7 @@ MainWindow::MainWindow(QWidget *parent)
     mainToolBar->addAction(exportToExcelAct);
 //    mainToolBar->addAction(playAct);
     mainToolBar->addSeparator();
-    mainToolBar->addAction(newPlotAct);
+    mainToolBar->addAction(addPlotAreaAct);
 
     QWidget *fillerWidget = new QWidget(this);
     fillerWidget->setContentsMargins(0,0,0,0);
@@ -130,9 +139,9 @@ MainWindow::MainWindow(QWidget *parent)
     settingsMenu->addAction(aboutAct);
 
     plotsMenu = menuBar()->addMenu("Графики");
-    plotsMenu->addAction(newPlotAct);
+    plotsMenu->addAction(addPlotAreaAct);
 
-    addPlot();
+    addPlotArea();
 
     QVariantMap v = App->getSetting("folders1").toMap();
 
@@ -152,8 +161,8 @@ void MainWindow::createActions()
 {
     QIcon newPlotIcon(":/icons/newPlot.png");
     newPlotIcon.addFile(":/icons/newPlot24.png");
-    newPlotAct = new QAction(newPlotIcon, "Добавить график", this);
-    connect(newPlotAct, SIGNAL(triggered()), this, SLOT(addPlot()));
+    addPlotAreaAct = new QAction(newPlotIcon, "Добавить график справа", this);
+    connect(addPlotAreaAct, SIGNAL(triggered()), this, SLOT(addPlotArea()));
 
     QIcon addFolderIcon(":/icons/open24.png");
     addFolderIcon.addFile(":/icons/open.png");
@@ -345,51 +354,18 @@ void MainWindow::createActions()
 PlotArea *MainWindow::createPlotArea()
 {
     ads::CDockComponentsFactory::setFactory(new PlotDockFactory(this));
-    PlotArea *area = new PlotArea(PlotType::General, this);
+    static int plotIndex = 0;
+    plotIndex++;
+    PlotArea *area = new PlotArea(plotIndex, PlotType::General, this);
     connect(this, SIGNAL(updateLegends()), area, SLOT(updateLegends()));
+    connect(area, &PlotArea::needPlotChannels, this, &MainWindow::onChannelsDropped);
     return area;
 }
 
 void MainWindow::createTab(const QString &name, const QStringList &folders)
 {DD;
     currentTab = new Tab(this);
-    currentTab->setOrientation(Qt::Horizontal);
 
-    currentTab->model = new Model(currentTab);
-    connect(currentTab->model, &Model::needAddFiles, [=](const QStringList &files){
-        addFiles(files);
-        currentTab->fileHandler->trackFiles(files);
-    });
-    currentTab->sortModel = new SortFilterModel(currentTab);
-    currentTab->sortModel->setSourceModel(currentTab->model);
-
-    currentTab->channelModel = new ChannelTableModel(currentTab);
-    connect(currentTab->channelModel, SIGNAL(modelChanged()), SLOT(updateActions()));
-    connect(currentTab->channelModel, &ChannelTableModel::maybeUpdateChannelProperty,
-            [=](int channel, const QString &description, const QString &p, const QString &val){
-        if (!currentTab) return;
-        if (currentTab->model->selected().size()>1) {
-            if (QMessageBox::question(this,"DeepSea Base",QString("Выделено несколько файлов. Записать %1\n"
-                                      "во все эти файлы?").arg(description))==QMessageBox::Yes)
-            {
-                currentTab->model->setChannelProperty(channel, p, val);
-            }
-        }
-        currentTab->model->updateFile(currentTab->record);
-    });
-    connect(currentTab->channelModel,SIGNAL(maybePlot(int)),SLOT(plotChannel(int)));
-    connect(currentTab->channelModel,SIGNAL(deleteCurve(int)),SLOT(deleteCurve(int)));
-
-    currentTab->filesTable = new FilesTable(this);
-    //connect(tab->filesTable, &FilesTable::addFiles, this, &MainWindow::addFiles);
-    currentTab->filesTable->setModel(currentTab->sortModel);
-
-    currentTab->filesTable->setRootIsDecorated(false);
-    currentTab->filesTable->setSortingEnabled(true);
-    currentTab->filesTable->sortByColumn(MODEL_COLUMN_INDEX, Qt::AscendingOrder);
-
-    currentTab->filesTable->setContextMenuPolicy(Qt::CustomContextMenu);
-    currentTab->filesTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
     currentTab->filesTable->addAction(delFilesAct);
     currentTab->filesTable->addAction(saveAct);
 
@@ -420,59 +396,20 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
         }
     });
 
-
-    currentTab->filterHeader = new FilteredHeaderView(Qt::Horizontal, currentTab->filesTable);
-    currentTab->filesTable->setHeader(currentTab->filterHeader);
-    connect(currentTab->filterHeader, SIGNAL(filterChanged(QString,int)), currentTab->sortModel, SLOT(setFilter(QString,int)));
-//    tab->filterHeader->setFilterBoxes(tab->model->columnCount());
-
-    currentTab->filesTable->header()->setStretchLastSection(false);
-    currentTab->filesTable->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    currentTab->filesTable->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    currentTab->filesTable->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-    currentTab->filesTable->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
-    currentTab->filesTable->header()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
-    currentTab->filesTable->header()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
-    currentTab->filesTable->header()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
-    currentTab->filesTable->header()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
-
-
-    connect(currentTab->filesTable->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),currentTab, SLOT(filesSelectionChanged(QItemSelection,QItemSelection)));
-    connect(currentTab->filesTable->selectionModel(),SIGNAL(currentChanged(QModelIndex,QModelIndex)),SLOT(updateChannelsTable(QModelIndex,QModelIndex)));
-
-    currentTab->filesTable->setItemDelegateForColumn(MODEL_COLUMN_XSTEP, new StepItemDelegate);
-
     connect(currentTab->model, SIGNAL(legendsChanged()), this, SIGNAL(updateLegends()));
 
-    connect(currentTab->model, &Model::plotNeedsUpdate, [=](){
-        for (auto dock: plotAreas) {
-            if (auto plotArea = dynamic_cast<PlotArea*>(dock))
+    connect(currentTab->model, &Model::plotNeedsUpdate, [=]()
+    {
+        const auto m = m_DockManager->dockWidgetsMap();
+        for (auto &w: m.values()) {
+            if (auto plotArea = dynamic_cast<PlotArea*>(w))
                 plotArea->update();
         }
     });
-    connect(currentTab->model, SIGNAL(modelChanged()), SLOT(updateActions()));
-
-    currentTab->channelsTable = new ChannelsTable(this);
-    currentTab->channelsTable->setModel(currentTab->channelModel);
-    currentTab->channelsTable->setDragEnabled(true);
-    currentTab->channelsTable->setDragDropMode(QAbstractItemView::DragOnly);
-   // tab->channelsTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
-//    tab->channelsTable->setItemDelegateForColumn(1, new HtmlDelegate);
-    connect(currentTab->channelsTable->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),currentTab, SLOT(channelsSelectionChanged(QItemSelection,QItemSelection)));
-
-
-
-    currentTab->tableHeader = new HeaderView(Qt::Horizontal, currentTab->channelsTable);
-    currentTab->channelsTable->setHorizontalHeader(currentTab->tableHeader);
-    currentTab->tableHeader->setCheckable(0,true);
-
-    currentTab->channelsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
-    currentTab->channelsTable->horizontalHeader()->setStretchLastSection(false);
 
     currentTab->channelsTable->addAction(moveChannelsUpAct);
     currentTab->channelsTable->addAction(moveChannelsDownAct);
 
-    currentTab->channelsTable->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(currentTab->channelsTable, &QTableWidget::customContextMenuRequested, [=](){
         QMenu menu(currentTab->channelsTable);
         int column = currentTab->channelsTable->currentIndex().column();
@@ -496,69 +433,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 //        }
     });
 
-    currentTab->filePathLabel = new QLabel(this);
-    currentTab->filePathLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
-    currentTab->filePathLabel->setSizePolicy(QSizePolicy::Expanding, currentTab->filePathLabel->sizePolicy().verticalPolicy());
-
-    QAction *openFolderAct = new QAction("Открыть папку с этой записью", this);
-    openFolderAct->setIcon(QIcon(":/icons/open.png"));
-    connect(openFolderAct, &QAction::triggered, [=](){
-        if (!currentTab->filePathLabel->text().isEmpty()) {
-            QDir dir(currentTab->filePathLabel->text());
-            dir.cdUp();
-            QProcess::startDetached("explorer.exe", QStringList(dir.toNativeSeparators(dir.absolutePath())));
-        }
-    });
-
-    QAction *editFileAct = new QAction("Редактировать этот файл в текстовом редакторе", this);
-    editFileAct->setIcon(QIcon(":/icons/edit.png"));
-    connect(editFileAct, &QAction::triggered, [=](){
-        QString file = QDir::toNativeSeparators(currentTab->filePathLabel->text());
-        if (!file.isEmpty()) {
-            QString executable = App->getSetting("editor").toString();
-            if (executable.isEmpty())
-                executable = QInputDialog::getText(this, "Текстовый редактор не задан",
-                                                   "Введите путь к текстовому редактору,\n"
-                                                   "название исполняемого файла или команду для выполнения");
-
-            if (!executable.isEmpty()) {
-                if (!QProcess::startDetached(executable, QStringList()<<file)) {
-                    executable = QStandardPaths::findExecutable(executable);
-                    if (!executable.isEmpty())
-                        if (QProcess::startDetached(executable, QStringList()<<file))
-                            App->setSetting("editor", executable);
-                }
-                else
-                    App->setSetting("editor", executable);
-            }
-        }
-    });
-
-    QToolBar *channelsToolBar = new QToolBar(this);
-    channelsToolBar->setFloatable(false);
-    channelsToolBar->setMovable(false);
-    channelsToolBar->setIconSize(QSize(16,16));
-    channelsToolBar->setContentsMargins(0,0,0,0);
-    channelsToolBar->addWidget(currentTab->filePathLabel);
-    channelsToolBar->addAction(editFileAct);
-    channelsToolBar->addAction(openFolderAct);
-
-    QWidget *channelsWidget = new QWidget(this);
-    channelsWidget->setContentsMargins(0,0,0,0);
-    QGridLayout *channelsLayout = new QGridLayout;
-    channelsLayout->addWidget(channelsToolBar,0,0,1,3);
-    channelsLayout->addWidget(currentTab->channelsTable,1,0,1,3);
-    channelsWidget->setLayout(channelsLayout);
-
-
-    currentTab->addWidget(currentTab->filesTable);
-    currentTab->addWidget(channelsWidget);
-
-    QByteArray upperSplitterState = App->getSetting("upperSplitterState").toByteArray();
-    if (!upperSplitterState.isEmpty())
-        currentTab->restoreState(upperSplitterState);
-
-    ads::CDockComponentsFactory::setFactory(new CCustomDockFactory(this));
+    ads::CDockComponentsFactory::setFactory(new TabDockFactory(this));
     auto dockWidget = new ads::CDockWidget(name);
     dockWidget->setWidget(currentTab);
     dockWidget->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
@@ -568,7 +443,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
 
     if (!topArea) {
         topArea = m_DockManager->addDockWidget(ads::TopDockWidgetArea, dockWidget);
-        connect(topArea, &ads::CDockAreaWidget::currentChanged, this, &MainWindow::changeCurrentTab);
+//        connect(topArea, &ads::CDockAreaWidget::currentChanged, this, &MainWindow::changeCurrentTab);
     }
     else
         m_DockManager->addDockWidget(ads::CenterDockWidgetArea, dockWidget, topArea);
@@ -579,7 +454,6 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     });
 
     connect(currentTab->fileHandler, SIGNAL(fileAdded(QString,bool,bool)),this,SLOT(addFolder(QString,bool,bool)));
-
     currentTab->fileHandler->setFileNames(folders);
 }
 
@@ -599,20 +473,20 @@ void MainWindow::createNewTab()
 void MainWindow::closeTab(ads::CDockWidget *t)
 {DD;
     if (!t) return;
+    const auto m = m_DockManager->dockWidgetsMap();
+    for (auto [name, w] : asKeyValueRange(m)) {
+        if (PlotArea *area = dynamic_cast<PlotArea*>(w)) {
+            for (int i=0; i<currentTab->model->size(); ++i) {
+                const F f = currentTab->model->file(i);
+                //use_count==3 if file is only in one tab, (1 for App, 1 for model, 1 for the prev line)
+                //use_count>=4 if file is in more than one tab
+                if (f.use_count()<=3 && f->hasCurves()) {
+                    area->deleteCurvesForDescriptor(f.get());
+                }
+            }
+        }
+    }
 
-    qDebug()<<"tab close";
-
-    //TODO: Реализовать удаление графиков
-//    if (plot) {
-//        for (int i=0; i<tab->model->size(); ++i) {
-//            const F f = tab->model->file(i);
-//            //use_count==3 if file is only in one tab, (1 for App, 1 for model, 1 for the prev line)
-//            //use_count>=4 if file is in more than one tab
-//            if (f.use_count()<=3 && f->hasCurves()) {
-//                plot->deleteCurvesForDescriptor(f.get());
-//            }
-//        }
-//    }
     t->closeDockWidget();
 }
 
@@ -628,15 +502,26 @@ void MainWindow::closeOtherTabs(int index)
         closeTab(topArea->dockWidget(i));
 }
 
-void MainWindow::changeCurrentTab(int currentIndex)
-{DD;
-    if (!topArea) return;
+void MainWindow::closePlot(ads::CDockWidget *t)
+{
+    if (!t) return;
 
-    currentTab = 0;
-    if (currentIndex<0) return;
+    //TODO: Реализовать удаление графика
 
-    currentTab = qobject_cast<Tab *>(topArea->dockWidget(currentIndex)->widget());
-    updateActions();
+    t->closeDockWidget();
+}
+
+void MainWindow::closeOtherPlots(int index)
+{
+    if (!currentPlot) return;
+
+    int count = currentPlot->dockAreaWidget()->dockWidgetsCount();
+    if (count<=1) return;
+
+    for (int i = count - 1; i > index; --i)
+        closePlot(currentPlot->dockAreaWidget()->dockWidget(i));
+    for (int i = index - 1; i >= 0; --i)
+        closePlot(currentPlot->dockAreaWidget()->dockWidget(i));
 }
 
 void MainWindow::editColors()
@@ -672,19 +557,28 @@ MainWindow::~MainWindow()
     //    ColorSelector::instance()->drop();
 }
 
-void MainWindow::addPlot()
+void MainWindow::addPlotArea()
 {
     currentPlot = createPlotArea();
-    plotAreas << currentPlot;
 
-    if (!bottomArea)
+    if (!bottomArea) {
         bottomArea = m_DockManager->addDockWidget(ads::BottomDockWidgetArea, currentPlot);
+    }
     else {
         m_DockManager->addDockWidget(ads::RightDockWidgetArea, currentPlot, bottomArea);
     }
-
     plotsMenu->addAction(currentPlot->toggleViewAction());
     updateActions();
+}
+
+void MainWindow::addPlotTabbed()
+{
+    if (!currentPlot) addPlotArea();
+    else {
+        auto area = currentPlot->dockAreaWidget();
+        currentPlot = createPlotArea();
+        m_DockManager->addDockWidgetTabToArea(currentPlot, area);
+    }
 }
 
 QString MainWindow::getFolderToAdd(bool withSubfolders)
@@ -766,16 +660,22 @@ void MainWindow::deleteFiles()
 {DD;
     if (!currentTab) return;
 
-    const auto indexes = currentTab->model->selected();
-    for (int i: indexes) {
-        //TODO: Реализовать удаление графиков
-//        const F f = tab->model->file(i);
-//        //use_count==3 if file is only in one tab, (1 for App, 1 for model, 1 for the prev line)
-//        //use_count>=4 if file is in more than one tab
-//        if (f.use_count()<=3 && f->hasCurves())
-//            plot->deleteCurvesForDescriptor(f.get());
-//        tab->fileHandler->untrackFile(f->fileName());
+    const auto m = m_DockManager->dockWidgetsMap();
+    for (auto [name, w] : asKeyValueRange(m)) {
+        if (PlotArea *area = dynamic_cast<PlotArea*>(w)) {
+            const auto indexes = currentTab->model->selected();
+            for (int i: indexes) {
+                const F f = currentTab->model->file(i);
+                //use_count==3 if file is only in one tab, (1 for App, 1 for model, 1 for the prev line)
+                //use_count>=4 if file is in more than one tab
+                if (f.use_count()<=3 && f->hasCurves()) {
+                    area->deleteCurvesForDescriptor(f.get());
+                }
+                currentTab->fileHandler->untrackFile(f->fileName());
+            }
+        }
     }
+
     currentTab->channelModel->clear();
 
     currentTab->model->deleteSelectedFiles();
@@ -786,6 +686,8 @@ void MainWindow::deleteFiles()
 
 void MainWindow::deleteChannels() /** SLOT */
 {DD;
+    if (!currentTab) return;
+
     QVector<int> channelsToDelete = currentTab->channelModel->selected();
     if (channelsToDelete.isEmpty()) return;
 
@@ -800,6 +702,7 @@ void MainWindow::deleteChannels() /** SLOT */
 
 void MainWindow::deleteChannelsBatch()
 {DD;
+    if (!currentTab) return;
     QVector<int> channels = currentTab->channelModel->selected();
     if (channels.isEmpty()) return;
 
@@ -838,6 +741,8 @@ void MainWindow::deleteChannelsBatch()
 
 void MainWindow::copyChannels() /** SLOT */
 {DD;
+    if (!currentTab) return;
+
     QVector<int> channelsToCopy = currentTab->channelModel->selected();
     if (channelsToCopy.isEmpty()) return;
 
@@ -848,6 +753,8 @@ void MainWindow::copyChannels() /** SLOT */
 
 void MainWindow::moveChannels() /** SLOT */
 {DD;
+    if (!currentTab) return;
+
     // сначала копируем каналы, затем удаляем
     QVector<int> channelsToMove = currentTab->channelModel->selected();
     if (channelsToMove.isEmpty()) return;
@@ -886,143 +793,149 @@ void MainWindow::deletePlottedChannels() /** SLOT*/
 
 void MainWindow::copyPlottedChannels() /** SLOT*/
 {DD;
-//    auto channels = plot->plottedChannels();
-//    if (!channels.isEmpty()) {
-//        if (copyChannels(channels))
-//            updateChannelsTable(tab->record);
-//    }
+    if (!currentPlot) return;
+    auto channels = currentPlot->plottedChannels();
+    if (!channels.isEmpty()) {
+        if (copyChannels(channels))
+            updateChannelsTable(currentTab->record);
+    }
 }
 
 void MainWindow::movePlottedChannels() /** SLOT*/
 {DD;
     // сначала копируем каналы, затем удаляем
-//    auto channels = plot->plottedChannels();
-//    if (!channels.isEmpty()) {
-//        if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \nудалены из файлов. Продолжить?")==QMessageBox::Yes) {
-//            if (copyChannels(channels)) {
-//                deleteChannels(channels);
-//                updateChannelsTable(tab->record);
-//            }
-//        }
-//    }
+    if (!currentPlot) return;
+    auto channels = currentPlot->plottedChannels();
+    if (!channels.isEmpty()) {
+        if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \nудалены из файлов. Продолжить?")==QMessageBox::Yes) {
+            if (copyChannels(channels)) {
+                deleteChannels(channels);
+                updateChannelsTable(currentTab->record);
+            }
+        }
+    }
 }
 
 void MainWindow::addCorrection()
 {DD;
-//    if (plot->hasCurves()) {
-//        QList<FileDescriptor*> files = tab->model->selectedFiles();
+    if (!currentPlot || !currentTab) return;
+    if (currentPlot->curvesCount()>0) {
+        QList<FileDescriptor*> files = currentTab->model->selectedFiles();
 
-//        CorrectionDialog dialog(plot, files);
-//        dialog.exec();
+        CorrectionDialog dialog(currentPlot->plot(), files);
+        dialog.exec();
 
-//        updateChannelsTable(tab->record);
-//    }
+        updateChannelsTable(currentTab->record);
+    }
 }
 
 void MainWindow::addCorrections()
 {DD;
-//    static QString pathToExcelFile;
-//    pathToExcelFile = QFileDialog::getOpenFileName(this, "Выбрать файл xls с поправками", pathToExcelFile, "*.xls;;*.xlsx");
+    static QString pathToExcelFile;
+    pathToExcelFile = QFileDialog::getOpenFileName(this, "Выбрать файл xls с поправками", pathToExcelFile, "*.xls;;*.xlsx");
 
-//    if (pathToExcelFile.isEmpty()) return;
+    if (pathToExcelFile.isEmpty()) return;
 
-//    QAxObject *excel = 0;
+    QAxObject *excel = 0;
 
-//    if (!excel) excel = new QAxObject("Excel.Application", this);
-//    //excel->setProperty("Visible", true);
-
-
-//    //получаем рабочую книгу
-//    QAxObject * workbooks = excel->querySubObject("WorkBooks");
-//    workbooks->dynamicCall("Open(QString)", pathToExcelFile);
-
-//    QAxObject * workbook = excel->querySubObject("ActiveWorkBook");
-//    if (!workbook) {
-//        QMessageBox::critical(this, "DeepSea Database",
-//                              "Не удалось открыть текущую рабочую книгу Excel");
-//        return;
-//    }
-//    QAxObject * worksheet = workbook->querySubObject("ActiveSheet");
-//    if (!worksheet) {
-//        QMessageBox::critical(this, "DeepSea Database",
-//                              "Не удалось открыть текущий рабочий лист Excel");
-//        return;
-//    }
-
-//    int column = 1;
-//    while (1) {
-//        QAxObject *cells = worksheet->querySubObject("Cells(Int,Int)", 1, column);
-//        QString fileName = cells->property("Value").toString();
-//        if (fileName.isEmpty()) break;
-
-//        // qDebug()<<fileName;
-//        if (QFile(fileName).exists()) {
-//            fileName.replace("\\","/");
-//            FileDescriptor * dfd = App->find(fileName).get();
-//            bool deleteAfter=false;
-//            if (!dfd) {
-//                dfd = FormatFactory::createDescriptor(fileName);
-//                dfd->read();
-//                deleteAfter = true;
-//            }
-//            dfd->populate();
-
-//            int row = 2;
-//            bool corrected = false;
-//            while (1) {
-//                QAxObject *cells1 = worksheet->querySubObject("Cells(Int,Int)", row, column);
-//                QString value = cells1->property("Value").toString();
-//               // qDebug()<<value;
-//                if (value.isEmpty()) break;
-//                if (row-2>=dfd->channelsCount()) break;
-
-//                double corr = value.toDouble();
-//                if (corr != 0.0) {
-//                    corrected = true;
-//                    dfd->channel(row-2)->data()->setTemporaryCorrection(corr, 0);
-//                    dfd->channel(row-2)->data()->makeCorrectionConstant();
-//                    dfd->channel(row-2)->setCorrection(dfd->channel(row-2)->data()->correctionString());
-//                    dfd->channel(row-2)->data()->removeCorrection();
-//                    dfd->channel(row-2)->setChanged(true);
-//                    dfd->channel(row-2)->setDataChanged(true);
-//                }
-//                row++;
-//            }
-//            if (corrected) {
-//                dfd->setChanged(true);
-//                dfd->setDataChanged(true);
-//                dfd->write();
-//            }
-//            if (deleteAfter) delete dfd;
-//        }
-
-//        column++;
-//    }
-
-//    updateChannelsTable(tab->record);
-//    plot->updateAxes();
-//    emit updateLegends();
-//    plot->replot();
+    if (!excel) excel = new QAxObject("Excel.Application", this);
+    //excel->setProperty("Visible", true);
 
 
-//    delete worksheet;
-//    delete workbook;
-//    delete workbooks;
+    //получаем рабочую книгу
+    QAxObject * workbooks = excel->querySubObject("WorkBooks");
+    workbooks->dynamicCall("Open(QString)", pathToExcelFile);
 
-//    excel->dynamicCall("Quit()");
-//    delete excel;
+    QAxObject * workbook = excel->querySubObject("ActiveWorkBook");
+    if (!workbook) {
+        QMessageBox::critical(this, "DeepSea Database",
+                              "Не удалось открыть текущую рабочую книгу Excel");
+        return;
+    }
+    QAxObject * worksheet = workbook->querySubObject("ActiveSheet");
+    if (!worksheet) {
+        QMessageBox::critical(this, "DeepSea Database",
+                              "Не удалось открыть текущий рабочий лист Excel");
+        return;
+    }
 
-//    QMessageBox::information(this,"","Готово!");
+    int column = 1;
+    while (1) {
+        QAxObject *cells = worksheet->querySubObject("Cells(Int,Int)", 1, column);
+        QString fileName = cells->property("Value").toString();
+        if (fileName.isEmpty()) break;
+
+        // qDebug()<<fileName;
+        if (QFile(fileName).exists()) {
+            fileName.replace("\\","/");
+            FileDescriptor * dfd = App->find(fileName).get();
+            bool deleteAfter=false;
+            if (!dfd) {
+                dfd = FormatFactory::createDescriptor(fileName);
+                dfd->read();
+                deleteAfter = true;
+            }
+            dfd->populate();
+
+            int row = 2;
+            bool corrected = false;
+            while (1) {
+                QAxObject *cells1 = worksheet->querySubObject("Cells(Int,Int)", row, column);
+                QString value = cells1->property("Value").toString();
+               // qDebug()<<value;
+                if (value.isEmpty()) break;
+                if (row-2>=dfd->channelsCount()) break;
+
+                double corr = value.toDouble();
+                if (corr != 0.0) {
+                    corrected = true;
+                    dfd->channel(row-2)->data()->setTemporaryCorrection(corr, 0);
+                    dfd->channel(row-2)->data()->makeCorrectionConstant();
+                    dfd->channel(row-2)->setCorrection(dfd->channel(row-2)->data()->correctionString());
+                    dfd->channel(row-2)->data()->removeCorrection();
+                    dfd->channel(row-2)->setChanged(true);
+                    dfd->channel(row-2)->setDataChanged(true);
+                }
+                row++;
+            }
+            if (corrected) {
+                dfd->setChanged(true);
+                dfd->setDataChanged(true);
+                dfd->write();
+            }
+            if (deleteAfter) delete dfd;
+        }
+
+        column++;
+    }
+
+    if (currentTab) updateChannelsTable(currentTab->record);
+    if (currentPlot) {
+        currentPlot->plot()->updateAxes();
+        emit updateLegends();
+        currentPlot->plot()->replot();
+    }
+
+
+    delete worksheet;
+    delete workbook;
+    delete workbooks;
+
+    excel->dynamicCall("Quit()");
+    delete excel;
+
+    QMessageBox::information(this,"","Готово!");
 }
 
 bool MainWindow::deleteChannels(FileDescriptor *file, const QVector<int> &channelsToDelete)
 {DD;
-//    for (int i=0; i<channelsToDelete.size() - 1; ++i)
-//        plot->deleteCurveForChannelIndex(file, channelsToDelete.at(i), false);
-//    plot->deleteCurveForChannelIndex(file, channelsToDelete.last(), true);
+    if (!currentPlot) return false;
+    for (int i=0; i<channelsToDelete.size() - 1; ++i)
+        currentPlot->plot()->deleteCurveForChannelIndex(file, channelsToDelete.at(i), false);
+    currentPlot->plot()->deleteCurveForChannelIndex(file, channelsToDelete.last(), true);
 
-//    LongOperation op;
-//    file->deleteChannels(channelsToDelete);
+    LongOperation op;
+    file->deleteChannels(channelsToDelete);
 
     return true;
 }
@@ -1031,11 +944,12 @@ bool MainWindow::deleteChannels(const QVector<Channel *> channels)
 {DD;
     Q_UNUSED(channels);
 
-//    auto plotted = plottedDescriptors(plot->curves);
-//    for (auto d: plotted) {
-//        auto list = d->plottedIndexes();
-//        deleteChannels(d, list);
-//    }
+    if (!currentPlot) return false;
+    auto plotted = plottedDescriptors(currentPlot->plot()->curves);
+    for (auto d: plotted) {
+        auto list = d->plottedIndexes();
+        if (!deleteChannels(d, list)) return false;
+    }
     return true;
 }
 
@@ -1160,152 +1074,152 @@ void MainWindow::calculateMean()
 
     if (currentPlot->curvesCount()<2) return;
 
-//    QList<Channel*> channels;
+    QList<Channel*> channels;
 
-//    bool dataTypeEqual = true;
-//    bool stepsEqual = true; // одинаковый шаг по оси Х
-//    bool namesEqual = true; // одинаковые названия осей Y
-//    bool oneFile = true; // каналы из одного файла
-//    bool writeToSeparateFile = true;
-//    bool writeToD94 = false;
+    bool dataTypeEqual = true;
+    bool stepsEqual = true; // одинаковый шаг по оси Х
+    bool namesEqual = true; // одинаковые названия осей Y
+    bool oneFile = true; // каналы из одного файла
+    bool writeToSeparateFile = true;
+    bool writeToD94 = false;
 
-//    Channel *firstChannel = plot->curves.first()->channel;
-//    channels.append(firstChannel);
-//    FileDescriptor *firstDescriptor = firstChannel->descriptor();
+    Channel *firstChannel = currentPlot->plot()->curves.first()->channel;
+    channels.append(firstChannel);
+    FileDescriptor *firstDescriptor = firstChannel->descriptor();
 
-//    bool allFilesDfd = firstDescriptor->fileName().toLower().endsWith("dfd");
-//    auto firstChannelFileName = firstDescriptor->fileName();
+    bool allFilesDfd = firstDescriptor->fileName().toLower().endsWith("dfd");
+    auto firstChannelFileName = firstDescriptor->fileName();
 
-//    for (int i = 1; i<plot->curves.size(); ++i) {
-//        Curve *curve = plot->curves.at(i);
-//        channels.append(curve->channel);
+    for (int i = 1; i<currentPlot->plot()->curves.size(); ++i) {
+        Curve *curve = currentPlot->plot()->curves.at(i);
+        channels.append(curve->channel);
 
-//        allFilesDfd &= firstChannelFileName.toLower().endsWith("dfd");
-//        if (firstChannel->data()->xStep() != curve->channel->data()->xStep())
-//            stepsEqual = false;
-//        if (firstChannel->yName() != curve->channel->yName())
-//            namesEqual = false;
-//        if (firstChannelFileName != curve->channel->descriptor()->fileName())
-//            oneFile = false;
-//        if (!firstDescriptor->dataTypeEquals(curve->channel->descriptor()))
-//            dataTypeEqual = false;
-//    }
-//    if (!dataTypeEqual) {
-//        int result = QMessageBox::warning(0, "Среднее графиков",
-//                                          "Графики имеют разный тип. Среднее будет записано в файл d94. Продолжить?",
-//                                          "Да","Нет");
-//        if (result == 1) return;
-//        else writeToD94 = true;
-//    }
-//    if (!namesEqual) {
-//        int result = QMessageBox::warning(0, "Среднее графиков",
-//                                          "Графики по-видимому имеют разный тип. Среднее будет записано в файл d94. Продолжить?",
-//                                          "Да", "Нет");
-//        if (result == 1) return;
-//        else writeToD94 = true;
-//    }
-//    if (!stepsEqual) {
-//        int result = QMessageBox::warning(0, "Среднее графиков",
-//                                          "Графики имеют разный шаг по оси X. Среднее будет записано в файл d94. Продолжить?",
-//                                          "Да", "Нет");
-//        if (result == 1) return;
-//        else writeToD94 = true;
-//    }
-//    if (oneFile) {
-//        QMessageBox box("Среднее графиков",
-//                        QString("Графики взяты из одной записи %1.\n").arg(firstChannelFileName)
-//                        +
-//                        QString("Сохранить среднее в эту запись дополнительным каналом?"),
-//                        QMessageBox::Question,
-//                        QMessageBox::Yes, QMessageBox::No, QMessageBox::Cancel);
-//        box.setButtonText(QMessageBox::Yes, "Да, записать в этот файл");
-//        box.setButtonText(QMessageBox::No, "Нет, экспортировать в отдельный файл");
-//        box.setEscapeButton(QMessageBox::Cancel);
+        allFilesDfd &= firstChannelFileName.toLower().endsWith("dfd");
+        if (firstChannel->data()->xStep() != curve->channel->data()->xStep())
+            stepsEqual = false;
+        if (firstChannel->yName() != curve->channel->yName())
+            namesEqual = false;
+        if (firstChannelFileName != curve->channel->descriptor()->fileName())
+            oneFile = false;
+        if (!firstDescriptor->dataTypeEquals(curve->channel->descriptor()))
+            dataTypeEqual = false;
+    }
+    if (!dataTypeEqual) {
+        int result = QMessageBox::warning(0, "Среднее графиков",
+                                          "Графики имеют разный тип. Среднее будет записано в файл d94. Продолжить?",
+                                          "Да","Нет");
+        if (result == 1) return;
+        else writeToD94 = true;
+    }
+    if (!namesEqual) {
+        int result = QMessageBox::warning(0, "Среднее графиков",
+                                          "Графики по-видимому имеют разный тип. Среднее будет записано в файл d94. Продолжить?",
+                                          "Да", "Нет");
+        if (result == 1) return;
+        else writeToD94 = true;
+    }
+    if (!stepsEqual) {
+        int result = QMessageBox::warning(0, "Среднее графиков",
+                                          "Графики имеют разный шаг по оси X. Среднее будет записано в файл d94. Продолжить?",
+                                          "Да", "Нет");
+        if (result == 1) return;
+        else writeToD94 = true;
+    }
+    if (oneFile) {
+        QMessageBox box("Среднее графиков",
+                        QString("Графики взяты из одной записи %1.\n").arg(firstChannelFileName)
+                        +
+                        QString("Сохранить среднее в эту запись дополнительным каналом?"),
+                        QMessageBox::Question,
+                        QMessageBox::Yes, QMessageBox::No, QMessageBox::Cancel);
+        box.setButtonText(QMessageBox::Yes, "Да, записать в этот файл");
+        box.setButtonText(QMessageBox::No, "Нет, экспортировать в отдельный файл");
+        box.setEscapeButton(QMessageBox::Cancel);
 
-//        int result = box.exec();
-//        if (result == QMessageBox::Cancel) return;
-//        writeToSeparateFile = (result == QMessageBox::No);
-//    }
+        int result = box.exec();
+        if (result == QMessageBox::Cancel) return;
+        writeToSeparateFile = (result == QMessageBox::No);
+    }
 
-//    QString meanFileName;
-//    F meanFile;
+    QString meanFileName;
+    F meanFile;
 
-//    if (writeToSeparateFile) {
-//        QString meanD = firstChannelFileName;
-//        meanD.chop(4);
-//        if (writeToD94) meanD.append(".d94");
+    if (writeToSeparateFile) {
+        QString meanD = firstChannelFileName;
+        meanD.chop(4);
+        if (writeToD94) meanD.append(".d94");
 
-//        meanD = App->getSetting(writeToD94?"lastMeanUffFile":"lastMeanFile", meanD).toString();
+        meanD = App->getSetting(writeToD94?"lastMeanUffFile":"lastMeanFile", meanD).toString();
 
-//        QStringList  filters = FormatFactory::allFilters();
-//        QStringList suffixes = FormatFactory::allSuffixes(true);
+        QStringList  filters = FormatFactory::allFilters();
+        QStringList suffixes = FormatFactory::allSuffixes(true);
 
-//        QFileDialog dialog(this, "Выбор файла для записи каналов", meanD,
-//                           filters.join(";;"));
-//        dialog.setOption(QFileDialog::DontUseNativeDialog, true);
-//        dialog.setFileMode(QFileDialog::AnyFile);
-////        dialog.setDefaultSuffix(writeToUff?"uff":"dfd");
+        QFileDialog dialog(this, "Выбор файла для записи каналов", meanD,
+                           filters.join(";;"));
+        dialog.setOption(QFileDialog::DontUseNativeDialog, true);
+        dialog.setFileMode(QFileDialog::AnyFile);
+//        dialog.setDefaultSuffix(writeToUff?"uff":"dfd");
 
-//        if (!writeToD94) {
-//            QSortFilterProxyModel *proxy = new DfdFilterProxy(firstDescriptor, this);
-//            dialog.setProxyModel(proxy);
-//        }
+        if (!writeToD94) {
+            QSortFilterProxyModel *proxy = new DfdFilterProxy(firstDescriptor, this);
+            dialog.setProxyModel(proxy);
+        }
 
-//        QStringList selectedFiles;
-//        QString selectedFilter;
-//        if (dialog.exec()) {
-//            selectedFiles = dialog.selectedFiles();
-//            selectedFilter = dialog.selectedNameFilter();
-//        }
-//        if (selectedFiles.isEmpty()) return;
+        QStringList selectedFiles;
+        QString selectedFilter;
+        if (dialog.exec()) {
+            selectedFiles = dialog.selectedFiles();
+            selectedFilter = dialog.selectedNameFilter();
+        }
+        if (selectedFiles.isEmpty()) return;
 
-//        meanFileName = selectedFiles.constFirst();
-//        if (meanFileName.isEmpty()) return;
+        meanFileName = selectedFiles.constFirst();
+        if (meanFileName.isEmpty()) return;
 
-//        QString currentSuffix = QFileInfo(meanFileName).suffix().toLower();
-//        QString filterSuffix = suffixes.at(filters.indexOf(selectedFilter));
+        QString currentSuffix = QFileInfo(meanFileName).suffix().toLower();
+        QString filterSuffix = suffixes.at(filters.indexOf(selectedFilter));
 
-//        if (currentSuffix != filterSuffix) {
-//            //удаляем суффикс, если это суффикс известного нам типа файлов
-//            if (suffixes.contains(currentSuffix))
-//                meanFileName.chop(currentSuffix.length()+1);
+        if (currentSuffix != filterSuffix) {
+            //удаляем суффикс, если это суффикс известного нам типа файлов
+            if (suffixes.contains(currentSuffix))
+                meanFileName.chop(currentSuffix.length()+1);
 
-//            meanFileName.append(QString(".%1").arg(filterSuffix));
-//        }
+            meanFileName.append(QString(".%1").arg(filterSuffix));
+        }
 
-//        bool isNew = false;
-//        const bool fileExists = QFile::exists(meanFileName);
-//        meanFile = App->addFile(meanFileName, &isNew);
-//        if (!meanFile) {
-//            QMessageBox::critical(this, "Расчет среднего", "Не удалось создать файл неизвестного типа:"
-//                                  + meanFileName);
-//            qDebug()<<"Не удалось создать файл"<<meanFileName;
-//            return;
-//        }
+        bool isNew = false;
+        const bool fileExists = QFile::exists(meanFileName);
+        meanFile = App->addFile(meanFileName, &isNew);
+        if (!meanFile) {
+            QMessageBox::critical(this, "Расчет среднего", "Не удалось создать файл неизвестного типа:"
+                                  + meanFileName);
+            qDebug()<<"Не удалось создать файл"<<meanFileName;
+            return;
+        }
 
-//        if (fileExists) {
-//            if (isNew) meanFile->read();
-//        }
-//        else
-//            meanFile->fillPreliminary(firstDescriptor);
+        if (fileExists) {
+            if (isNew) meanFile->read();
+        }
+        else
+            meanFile->fillPreliminary(firstDescriptor);
 
-//        App->setSetting(writeToD94?"lastMeanUffFile":"lastMeanFile", meanFileName);
-//    }
-//    else {
-//        meanFileName = firstChannelFileName;
-//        meanFile = App->find(meanFileName);
-//    }
+        App->setSetting(writeToD94?"lastMeanUffFile":"lastMeanFile", meanFileName);
+    }
+    else {
+        meanFileName = firstChannelFileName;
+        meanFile = App->find(meanFileName);
+    }
 
-//    meanFile->calculateMean(channels);
+    meanFile->calculateMean(channels);
 
-//    int idx;
-//    if (tab->model->contains(meanFile, &idx)) {
-//        tab->model->updateFile(idx);
-//    }
-//    else {
-//        addFile(meanFile);
-//    }
-//    setCurrentAndPlot(meanFile.get(), meanFile->channelsCount()-1);
+    int idx;
+    if (currentTab && currentTab->model->contains(meanFile, &idx)) {
+        currentTab->model->updateFile(idx);
+    }
+    else {
+        addFile(meanFile);
+    }
+    setCurrentAndPlot(meanFile.get(), meanFile->channelsCount()-1);
 }
 
 void MainWindow::moveChannelsUp()
@@ -1351,12 +1265,11 @@ void MainWindow::editChannelDescriptions()
 
 void MainWindow::save()
 {DD;
-    if (!tabWidget) return;
-
-    for (int i=0; i<tabWidget->count(); ++i) {
-        Tab *t = qobject_cast<Tab *>(tabWidget->widget(i));
-        if (t)
+    const auto m = m_DockManager->dockWidgetsMap();
+    for (const auto &[key, w]: asKeyValueRange(m)) {
+        if (Tab *t = dynamic_cast<Tab*>(w->widget())) {
             t->model->save();
+        }
     }
 }
 
@@ -1476,27 +1389,6 @@ void MainWindow::moveChannels(bool up)
         currentTab->channelsTable->selectionModel()->select(currentTab->channelModel->index(i,0),QItemSelectionModel::Select);
 }
 
-void MainWindow::updateChannelsTable(const QModelIndex &current, const QModelIndex &previous)
-{DD;
-    if (!currentTab || !current.isValid()) return;
-    if (current.model() != currentTab->sortModel) return;
-
-    if (previous.isValid()) {
-        if ((previous.row()==0 && previous.column() != current.column()) ||
-            (previous.row() != current.row())) {
-            QModelIndex index = currentTab->sortModel->mapToSource(current);
-            updateChannelsTable(currentTab->model->file(index.row()).get());
-        }
-    }
-    else {
-        QModelIndex index = currentTab->sortModel->mapToSource(current);
-        updateChannelsTable(currentTab->model->file(index.row()).get());
-    }
-
-
-
-}
-
 void MainWindow::updateChannelsTable(FileDescriptor *descriptor)
 {DD;
     QVector<int> plottedChannels = plottedChannelsNumbers;
@@ -1528,6 +1420,24 @@ void MainWindow::updateChannelsTable(FileDescriptor *descriptor)
     plottedChannelsNumbers = plottedChannels;
 }
 
+//Возможно, добавляем к списку каналы из других записей, а затем строим графики
+void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &channels)
+{
+    QVector<Channel *> plot = channels;
+    if (currentTab && currentTab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
+        const QList<FileDescriptor*> selectedFiles = currentTab->model->selectedFiles();
+        for (const auto f: selectedFiles) {
+            if (f == currentTab->record) continue;
+            for (const auto &ch: channels) {
+                int index = ch->index();
+                if (auto c = f->channel(index)) plot << c;
+            }
+        }
+    }
+    if (currentPlot)
+        for (auto ch: plot) currentPlot->plot()->plotChannel(ch, plotOnLeft);
+}
+
 void MainWindow::plotAllChannels()
 {DD;
     if (currentTab) currentTab->channelModel->plotChannels(false);
@@ -1540,43 +1450,51 @@ void MainWindow::plotAllChannelsAtRight()
 
 void MainWindow::plotChannel(int index)
 {DD;
-//    QColor col;
-//    int idx;
-//    tab->model->contains(tab->record, &idx);
+    if (!currentTab || !currentPlot) return;
 
-//    bool plotOnRight = tab->record->channel(index)->plotted()==2;
-//    bool plotted = plot->plotCurve(tab->record->channel(index), &col, plotOnRight, idx+1);
+    QColor col;
+    //определяем номер записи в текущей вкладке, для легенды графика
+    int idx;
+    currentTab->model->contains(currentTab->record, &idx);
 
-//    if (plotted) {
-//        tab->record->channel(index)->setColor(col);
-//        tab->record->channel(index)->setPlotted(plotOnRight?2:1);
-//    }
-//    else {
-//        tab->record->channel(index)->setColor(QColor());
-//        tab->record->channel(index)->setPlotted(0);
-//    }
-//    tab->channelModel->onCurveChanged(tab->record->channel(index));
-//    tab->model->updateFile(tab->record, MODEL_COLUMN_FILENAME);
+    //определяем, где построить график
+    bool plotOnRight = currentTab->record->channel(index)->plotted()==2;
+    //строим график
+    bool plotted = currentPlot->plot()->plotCurve(currentTab->record->channel(index), &col, plotOnRight, idx+1);
 
-//    if (tab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
-//        QList<FileDescriptor*> selectedFiles = tab->model->selectedFiles();
-//        foreach (FileDescriptor *f, selectedFiles) {
-//            if (f == tab->record) continue;
-//            if (f->channelsCount()<=index) continue;
+    //если удалось построить - обновляем цвет и статус канала
+    if (plotted) {
+        currentTab->record->channel(index)->setColor(col);
+        currentTab->record->channel(index)->setPlotted(plotOnRight?2:1);
+    }
+    else {
+        currentTab->record->channel(index)->setColor(QColor());
+        currentTab->record->channel(index)->setPlotted(0);
+    }
+    //обновляем состояние модели
+    currentTab->channelModel->onCurveChanged(currentTab->record->channel(index));
+    currentTab->model->updateFile(currentTab->record, MODEL_COLUMN_FILENAME);
 
-//            tab->model->contains(f, &idx);
-//            plotted = plot->plotCurve(f->channel(index), &col, plotOnRight, idx+1);
-//            if (plotted) {
-//                f->channel(index)->setColor(col);
-//                f->channel(index)->setPlotted(plotOnRight?2:1);
-//            }
-//            else {
-//                f->channel(index)->setPlotted(0);
-//                f->channel(index)->setColor(QColor());
-//            }
-//            tab->model->updateFile(f, MODEL_COLUMN_FILENAME);
-//        }
-//    }
+    //возможно строим графики каналов других записей
+    if (currentTab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
+        QList<FileDescriptor*> selectedFiles = currentTab->model->selectedFiles();
+        foreach (FileDescriptor *f, selectedFiles) {
+            if (f == currentTab->record) continue;
+            if (f->channelsCount()<=index) continue;
+
+            currentTab->model->contains(f, &idx);
+            plotted = currentPlot->plot()->plotCurve(f->channel(index), &col, plotOnRight, idx+1);
+            if (plotted) {
+                f->channel(index)->setColor(col);
+                f->channel(index)->setPlotted(plotOnRight?2:1);
+            }
+            else {
+                f->channel(index)->setPlotted(0);
+                f->channel(index)->setColor(QColor());
+            }
+            currentTab->model->updateFile(f, MODEL_COLUMN_FILENAME);
+        }
+    }
 }
 
 void MainWindow::calculateSpectreRecords(bool useDeepsea)
@@ -1677,180 +1595,185 @@ void MainWindow::calculateThirdOctave()
 
 void MainWindow::calculateMovingAvg()
 {DD;
-//    if (plot->curves.size()<1) return;
+    if (!currentPlot) return;
+    if (currentPlot->plot()->curves.size()<1) return;
 
-//    int windowSize = App->getSetting("movingAvgSize",3).toInt();
-//    bool ok;
-//    windowSize = QInputDialog::getInt(this,"Скользящее среднее","Выберите величину окна усреднения",windowSize,
-//                                      3,15,2,&ok);
-//    if (ok)
-//        App->setSetting("movingAvgSize",windowSize);
-//    else
-//        return;
+    int windowSize = App->getSetting("movingAvgSize",3).toInt();
+    bool ok;
+    windowSize = QInputDialog::getInt(this,"Скользящее среднее","Выберите величину окна усреднения",windowSize,
+                                      3,15,2,&ok);
+    if (ok)
+        App->setSetting("movingAvgSize",windowSize);
+    else
+        return;
 
-//    QList<Channel*> channels;
+    QList<Channel*> channels;
 
-//    bool oneFile = true; // каналы из одного файла
-//    bool writeToSeparateFile = true;
+    bool oneFile = true; // каналы из одного файла
+    bool writeToSeparateFile = true;
 
-//    Curve *firstCurve = plot->curves.constFirst();
-//    channels.append(firstCurve->channel);
-//    const QString firstName = firstCurve->channel->descriptor()->fileName();
+    Curve *firstCurve = currentPlot->plot()->curves.constFirst();
+    channels.append(firstCurve->channel);
+    const QString firstName = firstCurve->channel->descriptor()->fileName();
 
-//    bool allFilesDfd = firstName.toLower().endsWith("dfd") ||
-//                       firstName.toLower().endsWith("d94");
+    bool allFilesDfd = firstName.toLower().endsWith("dfd") ||
+                       firstName.toLower().endsWith("d94");
 
-//    for (int i = 1; i<plot->curves.size(); ++i) {
-//        Curve *curve = plot->curves.at(i);
-//        channels.append(curve->channel);
-//        const QString curveName = curve->channel->descriptor()->fileName();
+    for (Curve *curve: currentPlot->plot()->curves) {
+        channels.append(curve->channel);
+        const QString curveName = curve->channel->descriptor()->fileName();
 
-//        allFilesDfd &= (curveName.toLower().endsWith("dfd") ||
-//                        curveName.toLower().endsWith("d94"));
-//        if (firstName != curveName)
-//            oneFile = false;
-//    }
-//    if (oneFile) {
-//        QMessageBox box("Скользящее среднее каналов", QString("Каналы взяты из одной записи %1.\n").arg(firstName)
-//                        +
-//                        QString("Сохранить скользящее среднее в эту запись дополнительными каналами?"),
-//                        QMessageBox::Question,
-//                        QMessageBox::Yes, QMessageBox::No, QMessageBox::Cancel);
-//        box.setButtonText(QMessageBox::Yes, "Да, записать в этот файл");
-//        box.setButtonText(QMessageBox::No, "Нет, экспортировать в отдельный файл");
-//        box.setEscapeButton(QMessageBox::Cancel);
+        allFilesDfd &= (curveName.toLower().endsWith("dfd") ||
+                        curveName.toLower().endsWith("d94"));
+        if (firstName != curveName)
+            oneFile = false;
+    }
+    if (oneFile) {
+        QMessageBox box("Скользящее среднее каналов", QString("Каналы взяты из одной записи %1.\n").arg(firstName)
+                        +
+                        QString("Сохранить скользящее среднее в эту запись дополнительными каналами?"),
+                        QMessageBox::Question,
+                        QMessageBox::Yes, QMessageBox::No, QMessageBox::Cancel);
+        box.setButtonText(QMessageBox::Yes, "Да, записать в этот файл");
+        box.setButtonText(QMessageBox::No, "Нет, экспортировать в отдельный файл");
+        box.setEscapeButton(QMessageBox::Cancel);
 
-//        int result = box.exec();
-//        if (result == QMessageBox::Cancel) return;
-//        writeToSeparateFile = (result == QMessageBox::No);
-//    }
+        int result = box.exec();
+        if (result == QMessageBox::Cancel) return;
+        writeToSeparateFile = (result == QMessageBox::No);
+    }
 
-//    QString avgFileName;
-//    F avg;
+    QString avgFileName;
+    F avg;
 
-//    if (writeToSeparateFile) {
-//        QString avgD = firstName;
-//        avgD.chop(4);
+    if (writeToSeparateFile) {
+        QString avgD = firstName;
+        avgD.chop(4);
 
-//        avgD = App->getSetting("lastMovingAvgFile", avgD).toString();
+        avgD = App->getSetting("lastMovingAvgFile", avgD).toString();
 
-//        QStringList filters = FormatFactory::allFilters();
-//        QStringList suffixes = FormatFactory::allSuffixes(true);
+        QStringList filters = FormatFactory::allFilters();
+        QStringList suffixes = FormatFactory::allSuffixes(true);
 
-//        QFileDialog dialog(this, "Выбор файла для записи каналов", avgD,
-//                           filters.join(";;"));
-//        dialog.setOption(QFileDialog::DontUseNativeDialog, true);
-//        dialog.setFileMode(QFileDialog::AnyFile);
+        QFileDialog dialog(this, "Выбор файла для записи каналов", avgD,
+                           filters.join(";;"));
+        dialog.setOption(QFileDialog::DontUseNativeDialog, true);
+        dialog.setFileMode(QFileDialog::AnyFile);
 
-//        if (allFilesDfd) {
-//            QSortFilterProxyModel *proxy = new DfdFilterProxy(firstCurve->channel->descriptor(), this);
-//            dialog.setProxyModel(proxy);
-//        }
+        if (allFilesDfd) {
+            QSortFilterProxyModel *proxy = new DfdFilterProxy(firstCurve->channel->descriptor(), this);
+            dialog.setProxyModel(proxy);
+        }
 
-//        QString selectedFilter;
-//        QStringList selectedFiles;
-//        if (dialog.exec()) {
-//            selectedFiles = dialog.selectedFiles();
-//            selectedFilter = dialog.selectedNameFilter();
-//        }
-//        if (selectedFiles.isEmpty()) return;
+        QString selectedFilter;
+        QStringList selectedFiles;
+        if (dialog.exec()) {
+            selectedFiles = dialog.selectedFiles();
+            selectedFilter = dialog.selectedNameFilter();
+        }
+        if (selectedFiles.isEmpty()) return;
 
-//        avgFileName = selectedFiles.constFirst();
-//        if (avgFileName.isEmpty()) return;
-//        App->setSetting("lastMovingAvgFile", avgFileName);
+        avgFileName = selectedFiles.constFirst();
+        if (avgFileName.isEmpty()) return;
+        App->setSetting("lastMovingAvgFile", avgFileName);
 
-//        //добавляем суффикс
-//        QString currentSuffix = QFileInfo(avgFileName).suffix().toLower();
-//        QString filterSuffix = suffixes.at(filters.indexOf(selectedFilter));
-//        if (currentSuffix != filterSuffix) {
-//            //удаляем суффикс, если это суффикс известного нам типа файлов
-//            if (suffixes.contains(currentSuffix))
-//                avgFileName.chop(currentSuffix.length()+1);
+        //добавляем суффикс
+        QString currentSuffix = QFileInfo(avgFileName).suffix().toLower();
+        QString filterSuffix = suffixes.at(filters.indexOf(selectedFilter));
+        if (currentSuffix != filterSuffix) {
+            //удаляем суффикс, если это суффикс известного нам типа файлов
+            if (suffixes.contains(currentSuffix))
+                avgFileName.chop(currentSuffix.length()+1);
 
-//            avgFileName.append(QString(".%1").arg(filterSuffix));
-//        }
+            avgFileName.append(QString(".%1").arg(filterSuffix));
+        }
 
-//        bool isNew = false;
-//        avg = App->addFile(avgFileName, &isNew);
+        bool isNew = false;
+        avg = App->addFile(avgFileName, &isNew);
 
-//        if (!avg) {
-//            qDebug() << "Не удалось создать файл" << avgFileName;
-//            return;
-//        }
+        if (!avg) {
+            qDebug() << "Не удалось создать файл" << avgFileName;
+            return;
+        }
 
-//        if (QFileInfo(avgFileName).exists()) {
-//            if (isNew) avg->read();
-//        }
-//        else
-//            avg->fillPreliminary(firstCurve->channel->descriptor());
-//    }
-//    else {
-//        avgFileName = firstCurve->channel->descriptor()->fileName();
-//        avg = App->find(avgFileName);
-//    }
+        if (QFileInfo(avgFileName).exists()) {
+            if (isNew) avg->read();
+        }
+        else
+            avg->fillPreliminary(firstCurve->channel->descriptor());
+    }
+    else {
+        avgFileName = firstCurve->channel->descriptor()->fileName();
+        avg = App->find(avgFileName);
+    }
 
-//    avg->calculateMovingAvg(channels,windowSize);
+    avg->calculateMovingAvg(channels,windowSize);
 
-//    int idx;
-//    if (tab->model->contains(avgFileName, &idx)) {
-//        tab->model->updateFile(idx);
-//    }
-//    else {
-//        addFile(avg);
-//    }
-//    setCurrentAndPlot(avg.get(), avg->channelsCount()-1);
+    int idx;
+    if (currentTab && currentTab->model->contains(avgFileName, &idx)) {
+        currentTab->model->updateFile(idx);
+    }
+    else {
+        addFile(avg);
+    }
+    setCurrentAndPlot(avg.get(), avg->channelsCount()-1);
 }
 
 //соединяется с channelModel
 void MainWindow::deleteCurve(int index) /*slot*/
 {DD;
-//    //не удаляем, если фиксирована
-//    if (Curve *c = plot->plotted(tab->record->channel(index)))
-//        if (c->fixed) return;
+    if (!currentPlot || !currentTab) return;
+    //не удаляем, если фиксирована
+    if (Curve *c = currentPlot->plot()->plotted(currentTab->record->channel(index)))
+        if (c->fixed) return;
 
-//    //удаляем кривую с графика
-//    plot->deleteCurveForChannelIndex(tab->record, index);
+    //удаляем кривую с графика
+    currentPlot->plot()->deleteCurveForChannelIndex(currentTab->record, index);
 
-//    if (tab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
-//        auto selectedFiles = tab->model->selectedFiles();
-//        for (FileDescriptor *f: qAsConst(selectedFiles)) {
-//            if (f == tab->record) continue;
-//            if (f->channelsCount()<=index) continue;
+    if (currentTab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
+        auto selectedFiles = currentTab->model->selectedFiles();
+        for (FileDescriptor *f: qAsConst(selectedFiles)) {
+            if (f == currentTab->record) continue;
+            if (f->channelsCount()<=index) continue;
 
-//            //не удаляем, если фиксирована
-//            if (Curve *c = plot->plotted(f->channel(index))) {
-//                if (c->fixed) continue;
-//            }
+            //не удаляем, если фиксирована
+            if (Curve *c = currentPlot->plot()->plotted(f->channel(index))) {
+                if (c->fixed) continue;
+            }
 
-//            plot->deleteCurveForChannelIndex(f, index);
-//        }
-//    }
-//    //cycled.clear();
+            currentPlot->plot()->deleteCurveForChannelIndex(f, index);
+        }
+    }
+    //cycled.clear();
 
-//    updatePlottedChannelsNumbers();
+    updatePlottedChannelsNumbers();
 }
 
 void MainWindow::rescanBase()
 {DD;
-//    // first we delete all curves affected
-//    plot->deleteAllCurves(true);
+    // first we delete all curves affected
+    const auto m = m_DockManager->dockWidgetsMap();
+    for (auto w: m.values()) {
+        if (auto area = dynamic_cast<PlotArea*>(w))
+            area->plot()->deleteAllCurves(true);
+    }
 
-//    Tab *oldTab = tab;
+    Tab *oldTab = currentTab;
 
-//    for (int i=0; i<tabWidget->count(); ++i) {
-//        if (Tab *t = dynamic_cast<Tab*>(tabWidget->widget(i))) {
-//            // next we clear all tab and populate it with folders anew
-//            t->channelModel->clear();
-//            t->model->clear();
-//            t->filePathLabel->clear();
-//            tab = t;
+    for (auto w: m.values()) {
+        if (auto t = dynamic_cast<Tab*>(w->widget())) {
+            t->channelModel->clear();
+            t->model->clear();
+            t->filePathLabel->clear();
+            currentTab = t;
 
-//            for (auto folder: qAsConst(t->fileHandler->files)) {
-//                addFolder(folder.first, folder.second == FileHandler::FolderWithSubfolders, false);
-//            }
-//        }
-//    }
-//    tab = oldTab;
+            for (auto folder: qAsConst(t->fileHandler->files)) {
+                addFolder(folder.first, folder.second == FileHandler::FolderWithSubfolders, false);
+            }
+        }
+    }
+
+    currentTab = oldTab;
 }
 
 void MainWindow::addFile(F descriptor)
@@ -2182,14 +2105,14 @@ bool MainWindow::closeRequested()
 {DD;
     //определяем, были ли изменения
     bool changed = false;
-    if (tabWidget) {
-        for (int i=0; i<tabWidget->count(); ++i) {
-            if (Tab *t = qobject_cast<Tab *>(tabWidget->widget(i)); t->model->changed()) {
-                changed = true;
-                break;
-            }
+    const auto m = m_DockManager->dockWidgetsMap();
+    for (const auto &[name, w]: asKeyValueRange(m)) {
+        if (Tab *t = qobject_cast<Tab *>(w->widget()); t && t->model->changed()) {
+            changed = true;
+            break;
         }
     }
+
     if (changed) {
         //спрашиваем, сохранять ли файлы
         QMessageBox msgBox(QMessageBox::Question,
@@ -2211,10 +2134,9 @@ bool MainWindow::closeRequested()
 
         if (msgBox.clickedButton() == cancB) return false;
         else if (msgBox.clickedButton() == discB) {
-            for (int i=0; i<tabWidget->count(); ++i) {
-                if (Tab *t = qobject_cast<Tab *>(tabWidget->widget(i))) {
+            for (const auto &[name, w]: asKeyValueRange(m)) {
+                if (Tab *t = qobject_cast<Tab *>(w->widget()))
                     t->model->discardChanges();
-                }
             }
         }
     }
@@ -2225,24 +2147,15 @@ bool MainWindow::closeRequested()
         App->setSetting("treeHeaderState", treeHeaderState);
     }
 
-    if (tabWidget) {
-        QVariantMap map;
-        for (int i=0; i<tabWidget->count(); ++i) {
-            if (Tab *t = qobject_cast<Tab *>(tabWidget->widget(i))) {
-                if (auto folders = t->fileHandler->fileNames(); !folders.isEmpty())
-                    map.insert(tabWidget->tabText(i), folders);
-                currentTab->filterHeader->clear();
-            }
-        }
-
-        App->setSetting("folders1", map);
-
-        for (int i= tabWidget->count()-1; i>=0; --i) {
-            QWidget *w = tabWidget->widget(i);
-            tabWidget->removeTab(i);
-            w->deleteLater();
+    QVariantMap map;
+    for (const auto &[name, w]: asKeyValueRange(m)) {
+        if (Tab *t = qobject_cast<Tab *>(w->widget())) {
+            if (auto folders = t->fileHandler->fileNames(); !folders.isEmpty())
+                map.insert(w->windowTitle(), folders);
+            if (currentTab) currentTab->filterHeader->clear();
         }
     }
+    App->setSetting("folders1", map);
 
     return true;
 }

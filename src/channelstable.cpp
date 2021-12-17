@@ -5,7 +5,10 @@
 
 ChannelsTable::ChannelsTable(QWidget *parent) : QTableView(parent)
 {DD;
-
+    setDragEnabled(true);
+    setDragDropMode(QAbstractItemView::DragOnly);
+//    setSelectionMode(QAbstractItemView::ExtendedSelection);
+//    setItemDelegateForColumn(1, new HtmlDelegate);
 }
 
 

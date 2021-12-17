@@ -45,6 +45,7 @@ void ChannelTableModel::setYName(const QString &yName)
 {DD;
     for(int i: indexes) {
         setData(index(i,1), yName, Qt::EditRole);
+        //TODO: проверить, нужен ли код
 //        if (descriptor->channel(i)->yName() == yName) continue;
 //        descriptor->channel(i)->setYName(yName);
 //        descriptor->setChanged(true);
@@ -65,35 +66,37 @@ void ChannelTableModel::clear()
 
 void ChannelTableModel::deleteCurves()
 {DD;
-    if (!descriptor) return;
-    for (int i=0, count = descriptor->channelsCount(); i<count; ++i) {
-        if (descriptor->channel(i)->plotted()>0) {
-            setData(index(i,0),Qt::Unchecked,Qt::CheckStateRole);
-        }
-    }
+    //TODO: Удалить
+//    if (!descriptor) return;
+//    for (int i=0, count = descriptor->channelsCount(); i<count; ++i) {
+//        if (descriptor->channel(i)->plotted()>0) {
+//            setData(index(i,0),Qt::Unchecked,Qt::CheckStateRole);
+//        }
+//    }
 }
 
 void ChannelTableModel::plotChannels(const QVector<int> &toPlot, bool plotOnRight)
 {DD;
-    for (int i: toPlot) {
-        if (i<channelsCount) {
-            if (descriptor->channel(i)->plotted()==0) {
-                descriptor->channel(i)->setPlotted(plotOnRight?2:1);
-                setData(index(i,0),Qt::Checked,Qt::CheckStateRole);
-            }
-        }
-    }
+
+//    for (int i: toPlot) {
+//        if (i<channelsCount) {
+//            if (descriptor->channel(i)->plotted()==0) {
+//                descriptor->channel(i)->setPlotted(plotOnRight?2:1);
+//                setData(index(i,0),Qt::Checked,Qt::CheckStateRole);
+//            }
+//        }
+//    }
 }
 
 void ChannelTableModel::plotChannels(bool plotOnRight)
 {DD;
-    if (!descriptor) return;
-    QVector<int> to = indexes;
-    if (to.isEmpty()) {
-        for (int i=0; i<channelsCount; ++i)
-            to << i;
-    }
-    plotChannels(to, plotOnRight);
+//    if (!descriptor) return;
+//    QVector<int> to = indexes;
+//    if (to.isEmpty()) {
+//        for (int i=0; i<channelsCount; ++i)
+//            to << i;
+//    }
+//    plotChannels(to, plotOnRight);
 }
 
 void ChannelTableModel::setDescriptor(FileDescriptor *dfd)
@@ -153,14 +156,14 @@ QVariant ChannelTableModel::data(const QModelIndex &index, int role) const
         case Qt::EditRole:
             return descriptor->channel(row)->info(column, true);
             break;
-        case Qt::ForegroundRole:
-            if (descriptor->channel(row)->plotted() && column==0)
-                return QColor(Qt::white);
-            break;
-        case Qt::BackgroundRole:
-            if (descriptor->channel(row)->plotted() && column == 0)
-                return descriptor->channel(row)->color();
-            break;
+//        case Qt::ForegroundRole:
+//            if (descriptor->channel(row)->plotted() && column==0)
+//                return QColor(Qt::white);
+//            break;
+//        case Qt::BackgroundRole:
+//            if (descriptor->channel(row)->plotted() && column == 0)
+//                return descriptor->channel(row)->color();
+//            break;
         case Qt::FontRole:
             if (descriptor->channel(row)->plotted() && column == 0) {
                 QFont font;
@@ -168,10 +171,10 @@ QVariant ChannelTableModel::data(const QModelIndex &index, int role) const
                 return font;
             }
             break;
-        case Qt::CheckStateRole:
-            if (column == 0)
-                return descriptor->channel(row)->plotted()?Qt::Checked:Qt::Unchecked;
-            break;
+//        case Qt::CheckStateRole:
+//            if (column == 0)
+//                return descriptor->channel(row)->plotted()?Qt::Checked:Qt::Unchecked;
+//            break;
         default: break;
     }
 
@@ -195,38 +198,14 @@ bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value,
         case Qt::EditRole: {
             QString p, descr;
             if (column == 3) {//description
-//                if (ch->description() != value.toString()) {
-//                    ch->setDescription(value.toString());
-//                    descriptor->setChanged(true);
-//                    ch->setChanged(true);
-//                    emit dataChanged(index, index, {Qt::DisplayRole});
-//                    success = true;
-//                }
-//                emit maybeUpdateChannelDescription(row, value.toString());
                 p = "description";
                 descr = "такое описание канала";
             }
             else if (column == 1) {//ед.изм.
-//                if (value.toString() != ch->yName()) {
-//                    ch->setYName(value.toString());
-//                    descriptor->setChanged(true);
-//                    ch->setChanged(true);
-//                    emit dataChanged(index, index, {Qt::DisplayRole});
-//                    success = true;
-//                }
                 p = "yname";
                 descr = "такую единицу измерения";
             }
             else if (column == 0) {//имя
-//                if (ch->name() != value.toString()) {
-//                    ch->setName(value.toString());
-//                    descriptor->setChanged(true);
-//                    ch->setChanged(true);
-//                    emit dataChanged(index, index, {Qt::DisplayRole});
-//                    emit updateLegends();
-//                    success = true;
-//                }
-//                emit maybeUpdateChannelName(row, value.toString());
                 p = "name";
                 descr = "такое название канала";
             }
@@ -243,21 +222,21 @@ bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value,
             }
             break;
         }
-        case Qt::CheckStateRole: {
-            if (column == 0) {
-                const Qt::CheckState state = Qt::CheckState(value.toInt());
+//        case Qt::CheckStateRole: {
+//            if (column == 0) {
+//                const Qt::CheckState state = Qt::CheckState(value.toInt());
 
-                if (state == Qt::Checked) {
-                    if (ch->plotted()==0) ch->setPlotted(1);
-                    emit maybePlot(row);
-                }
-                else if (state == Qt::Unchecked) {
-                    emit deleteCurve(row);
-                }
-                success = true;
-            }
-            break;
-        }
+//                if (state == Qt::Checked) {
+//                    if (ch->plotted()==0) ch->setPlotted(1);
+//                    emit maybePlot(row);
+//                }
+//                else if (state == Qt::Unchecked) {
+//                    emit deleteCurve(row);
+//                }
+//                success = true;
+//            }
+//            break;
+//        }
     }
     return success;
 }
@@ -267,55 +246,51 @@ QVariant ChannelTableModel::headerData(int section, Qt::Orientation orientation,
     if (orientation == Qt::Vertical)
         return QAbstractItemModel::headerData(section, orientation, role);
 
-
     switch (role) {
         case Qt::DisplayRole:
             if (descriptor) return descriptor->channelHeader(section);
             break;
-        case Qt::CheckStateRole: {
-            if (!descriptor) return QAbstractItemModel::headerData(section, orientation, role);
-            const int plotted = descriptor->plottedCount();
-            return (plotted==0 ? Qt::Unchecked : (plotted==channelsCount?Qt::Checked:Qt::PartiallyChecked));
-        }
+//        case Qt::CheckStateRole: {
+//            if (!descriptor) return QAbstractItemModel::headerData(section, orientation, role);
+//            const int plotted = descriptor->plottedCount();
+//            return (plotted==0 ? Qt::Unchecked : (plotted==channelsCount?Qt::Checked:Qt::PartiallyChecked));
+//        }
         default: ;
     }
 
     return QAbstractItemModel::headerData(section, orientation, role);
 }
 
-bool ChannelTableModel::setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role)
-{DD;
-    if (orientation == Qt::Vertical || !descriptor || section!=0)
-        return QAbstractItemModel::setHeaderData(section, orientation, value, role);
+//bool ChannelTableModel::setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role)
+//{DD;
+//    if (orientation == Qt::Vertical || !descriptor || section!=0)
+//        return QAbstractItemModel::setHeaderData(section, orientation, value, role);
 
-    if (role == Qt::CheckStateRole) {
-        Qt::CheckState state = Qt::CheckState(value.toInt());
-        switch (state) {
-            case Qt::Checked: plotChannels(false);
-                return true;
-                break;
-            case Qt::Unchecked: deleteCurves();
-                return true;
-                break;
-            default: break;
-        }
-    }
+//    if (role == Qt::CheckStateRole) {
+//        Qt::CheckState state = Qt::CheckState(value.toInt());
+//        switch (state) {
+//            case Qt::Checked: plotChannels(false);
+//                return true;
+//                break;
+//            case Qt::Unchecked: deleteCurves();
+//                return true;
+//                break;
+//            default: break;
+//        }
+//    }
 
-    return QAbstractItemModel::setHeaderData(section, orientation, value, role);
-}
+//    return QAbstractItemModel::setHeaderData(section, orientation, value, role);
+//}
 
 
 Qt::ItemFlags ChannelTableModel::flags(const QModelIndex &index) const
 {DD;
     const int col = index.column();
-    if (col == 0) {
-        return Qt::ItemIsSelectable | Qt::ItemIsEditable
-                | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren |
+    auto result = Qt::ItemIsSelectable | Qt::ItemNeverHasChildren;
+    if (col == 0) result |= Qt::ItemIsEditable/*| Qt::ItemIsUserCheckable*/ | Qt::ItemIsEnabled |
                 Qt::ItemIsDragEnabled;
-    }
-    if (col == 1 || col == 3) return Qt::ItemIsSelectable | Qt::ItemIsEditable
-            | Qt::ItemIsEnabled | Qt::ItemNeverHasChildren;
-    return Qt::ItemIsSelectable | Qt::ItemNeverHasChildren;
+    if (col == 1 || col == 3) result |= Qt::ItemIsEditable | Qt::ItemIsEnabled;
+    return result;
 }
 
 
@@ -328,6 +303,6 @@ QMimeData *ChannelTableModel::mimeData(const QModelIndexList &indexes) const
 {DD;
     if (indexes.isEmpty()) return 0;
 
-    ChannelsMimeData *mimeData = new ChannelsMimeData(selected());
+    ChannelsMimeData *mimeData = new ChannelsMimeData(selectedChannels());
     return mimeData;
 }
