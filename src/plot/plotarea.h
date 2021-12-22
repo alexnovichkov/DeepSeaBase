@@ -30,37 +30,41 @@ public:
     void exportToExcel(bool fullRange, bool dataOnly);
     void updateActions(int filesCount, int channelsCount);
     void deleteCurvesForDescriptor(FileDescriptor *f);
-    QVector<Channel*> plottedChannels() const;
+    void replotDescriptor(FileDescriptor *f);
 
+    QVector<Channel*> plottedChannels() const;
     int curvesCount(int type=-1) const;
     PlotType type() const;
 signals:
-    void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels);
+    void curvesCountChanged(); //<- MainWindow::updateActions()
+    void channelPlotted(Channel *ch);
+    void curveDeleted(Channel *);
+    void descriptorRequested(int direction, bool checked);
 public slots:
     void updateLegends();
 
 private:
     Plot *m_plot =nullptr;
 
-    QAction *autoscaleXAct;
-    QAction *autoscaleYAct;
-    QAction *autoscaleYSlaveAct;
-    QAction *autoscaleAllAct;
-    QAction *removeLabelsAct;
-    QAction *previousDescriptorAct;
-    QAction *nextDescriptorAct;
-    QAction *arbitraryDescriptorAct;
-    QAction *cycleChannelsUpAct;
-    QAction *cycleChannelsDownAct;
+    QAction *autoscaleXAct = nullptr;
+    QAction *autoscaleYAct = nullptr;
+    QAction *autoscaleYSlaveAct = nullptr;
+    QAction *autoscaleAllAct = nullptr;
+    QAction *removeLabelsAct = nullptr;
+    QAction *previousDescriptorAct = nullptr;
+    QAction *nextDescriptorAct = nullptr;
+    QAction *arbitraryDescriptorAct = nullptr;
+    QAction *cycleChannelsUpAct = nullptr;
+    QAction *cycleChannelsDownAct = nullptr;
 
-    QAction *clearPlotAct;
-    QAction *savePlotAct;
-    QAction *switchCursorAct;
-    QAction *trackingCursorAct;
-    QAction *copyToClipboardAct;
-    QAction *printPlotAct;
-    QAction *interactionModeAct;
-    QAction *playAct;
+    QAction *clearPlotAct = nullptr;
+    QAction *savePlotAct = nullptr;
+    QAction *switchCursorAct = nullptr;
+    QAction *trackingCursorAct = nullptr;
+    QAction *copyToClipboardAct = nullptr;
+    QAction *printPlotAct = nullptr;
+    QAction *interactionModeAct = nullptr;
+    QAction *playAct = nullptr;
 
     PlotType plotType = PlotType::General;
 };

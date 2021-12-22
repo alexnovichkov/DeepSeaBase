@@ -60,5 +60,6 @@
         <file>icons/mat.svg</file>
         <file>icons/newPlot.png</file>
         <file>icons/newPlot24.png</file>
+        <file>icons/edit24.png</file>
     </qresource>
 </RCC>

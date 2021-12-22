@@ -17,6 +17,7 @@ class FileDescriptor;
 class QFileSystemWatcher;
 class FileHandler;
 class MainWindow;
+class ChannelsTable;
 
 class Tab : public QSplitter
 {
@@ -26,9 +27,11 @@ public:
     Tab(MainWindow *parent);
     ~Tab() {}
 
+    void updateChannelsTable(FileDescriptor *descriptor);
+
     QLabel *filePathLabel = nullptr;
     FilesTable *filesTable = nullptr;
-    QTableView *channelsTable = nullptr;
+    ChannelsTable *channelsTable = nullptr;
     Model *model = nullptr;
     SortFilterModel *sortModel = nullptr;
 //    FilterHeaderView *filterHeader;
@@ -38,6 +41,11 @@ public:
 
     FileDescriptor *record = nullptr;
     FileHandler *fileHandler = nullptr;
+signals:
+    void descriptorChanged();
+private:
+    QAction *openFolderAct;
+    QAction *editFileAct;
 private slots:
     void filesSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);
     void channelsSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);

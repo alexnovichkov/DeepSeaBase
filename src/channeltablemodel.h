@@ -15,26 +15,24 @@ public:
     ChannelTableModel(QObject *parent);
     ~ChannelTableModel();
     Channel *channel(int index);
+    bool hasSelection() const {return !indexes.isEmpty();}
     QVector<int> selected()  const {return indexes;}
     QVector<Channel*> selectedChannels() const;
 
-    void setYName(const QString &yName);
+
 
     void clear();
-    void deleteCurves();
-    void plotChannels(const QVector<int> &toPlot, bool plotOnRight = false);
-    void plotChannels(bool plotOnRight = false);
 
     void setDescriptor(FileDescriptor *dfd);
     void setSelected(const QVector<int> &indexes);
 
-    void onCurveChanged(Channel *ch);
+    void onChannelChanged(Channel *ch);
 
     int channelsCount;
+public slots:
+    void setYName(const QString &yName);
 signals:
     void maybeUpdateChannelProperty(int row, const QString &description, const QString &property, const QString &value);
-    void maybePlot(int row);
-    void deleteCurve(int row);
     void updateLegends();
     void modelChanged();
     // QAbstractItemModel interface

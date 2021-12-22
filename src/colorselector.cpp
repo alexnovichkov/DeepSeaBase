@@ -3,9 +3,12 @@
 #include <QtCore>
 #include "logging.h"
 
-static QColor defaultColor = QColor(QRgb(0x00808080));
+inline uint qHash(const QColor &key, uint seed)
+{
+    return qHash(key.rgba(), seed);
+}
 
-static QList<QColor> usedColors;
+static QColor defaultColor = QColor(QRgb(0x00808080));
 
 static uint colorsTable[32]={
     0x00000000,
@@ -79,7 +82,7 @@ QColor ColorSelector::getColor()
 {DD;
     for (const QColor &c: colors) {
         if (!usedColors.contains(c)) {
-            usedColors.append(c);
+            usedColors << c;
             return c;
         }
     }
@@ -110,7 +113,7 @@ void ColorSelector::resetState()
 
 void ColorSelector::freeColor(const QColor &color)
 {DD;
-    usedColors.removeAll(color);
+    usedColors.remove(color);
 }
 
 

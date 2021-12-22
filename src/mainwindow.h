@@ -52,28 +52,17 @@ public:
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    //вызывается в Tab
     bool addFiles(const QStringList &files, bool silent=false);
-    void updateChannelsTable(FileDescriptor *descriptor);
+
     void onChannelsDropped(bool plotOnLeft, const QVector<Channel*> &channels);
 public slots:
     void createNewTab();
     void addPlotArea();
     void addPlotTabbed();
     void updateActions();
-    /**
-     * @brief plotChannel строит канал текущей записи
-     * @param index номер канала
-     */
-    void plotChannel(int index);
 
-    /**
-     * @brief deleteCurve удаляет график
-     * @param index номер канала
-     */
-    void deleteCurve(int index);
 private slots:
-
+    void onFocusedDockWidgetChanged(ads::CDockWidget* old, ads::CDockWidget* now);
     void addFolder();
     void addFolderWithSubfolders();
 
@@ -92,15 +81,6 @@ private slots:
 
     void addCorrection();
     void addCorrections();
-
-    /**
-     * @brief plotAllChannels
-     * Строит все каналы выделенной записи
-     */
-    void plotAllChannels();
-    void plotAllChannelsAtRight();
-
-
 
     /**
      * @brief calculateSpectreRecords
@@ -133,14 +113,11 @@ private slots:
 
     void editColors();
 
-
-
     void exportToExcel();
     void exportToExcelFull();
     void exportToExcelData();
 
-    void onCurveColorChanged(Curve *curve);
-    void onCurveDeleted(Channel *channel);
+    void onChannelChanged(Channel *ch);
 
     void calculateMean();
     void calculateThirdOctave();
@@ -159,22 +136,11 @@ private slots:
 
     void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
 
-    void editYName();
-    void updatePlottedChannelsNumbers();
-
-    void previousDescriptor();
-    void nextDescriptor();
-    void arbitraryDescriptor();
-
     void cycleChannelsUp();
     void cycleChannelsDown();
 
     void exportChannelsToWav();
-
     void renameDescriptor();
-
-//Удалить
-//    void showFileHandler(int index);
 private:
     void createActions();
     QString getFolderToAdd(bool withSubfolders);
@@ -197,17 +163,12 @@ private:
     void addFile(F descriptor);
     void setCurrentAndPlot(FileDescriptor *d, int channelIndex);
 
-    void previousOrNextDescriptor(bool up);
+    void setDescriptor(int direction, bool checked);
     void cycleChannelsUpOrDown(bool up);
 
     ads::CDockManager* m_DockManager;
     ads::CDockAreaWidget *topArea = nullptr;
     ads::CDockAreaWidget *bottomArea = nullptr;
-
-
-    bool sergeiMode = false;
-    QVector<int> plottedChannelsNumbers;
-    QVector<int> cycled;
 
     QStringList tabsNames;
 
@@ -224,10 +185,8 @@ private:
     QAction *plotHelpAct;
 
     QAction *delFilesAct;
-    QAction *plotAllChannelsAct;
-    QAction *plotAllChannelsOnRightAct;
-    QAction *plotSelectedChannelsAct;
-    QAction *plotSelectedChannelsOnRightAct;
+//    QAction *plotAllChannelsAct;
+//    QAction *plotAllChannelsOnRightAct;
     QAction *exportChannelsToWavAct;
     QAction *calculateSpectreAct;
     QAction *calculateSpectreDeepSeaAct;
@@ -244,6 +203,9 @@ private:
     QAction *deleteChannelsBatchAct;
     QAction *copyChannelsAct;
     QAction *moveChannelsAct;
+
+    QAction *plotSelectedChannelsAct;
+    QAction *plotSelectedChannelsOnRightAct;
 
     QAction *deletePlottedChannelsAct;
     //QAction *deleteChannelsBatchAct;
@@ -264,7 +226,7 @@ private:
     QAction *convertEsoFilesAct;
     QAction *convertAct;
     QAction *copyToLegendAct;
-    QAction *editYNameAct;
+
     QAction *aboutAct;
     QAction *addPlotAreaAct;
 

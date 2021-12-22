@@ -51,6 +51,12 @@ class CheckableLegend;
 class Plot : public QwtPlot
 {
     Q_OBJECT
+    struct PlottedIndex
+    {
+        int index = -1;
+        bool onLeft = true;
+    };
+
 public:
     enum InteractionMode {
         NoInteraction,
@@ -66,70 +72,41 @@ public:
     QwtAxisId xBottomAxis{QwtAxis::xBottom,0};
     QwtAxisId yLeftAxis{QwtAxis::yLeft,0};
     QwtAxisId yRightAxis{QwtAxis::yRight,0};
-
     bool spectrogram = false;
+    bool sergeiMode = false;
 
+    //Этот список хранит индексы каналов, которые имеют графики, в том случае,
+    //если все эти каналы - из одной записи. Список обновляется при добавлении
+    //или удалении кривых
+    QVector<PlottedIndex> plottedIndexes;
     QVector<Channel*> plottedChannels() const;
-
-    void update();
-
-    /**
-     * @brief hasCurves
-     * @return whether plot has any curves
-     */
     bool hasCurves() const;
-    /**
-     * @brief curvesCount
-     * @return count of curves excluding freeCurve
-     */
     int curvesCount(int type=-1) const;
-
-    /**
-     * @brief deleteCurves deletes all curves on a plot from a descriptor
-     * @param descriptor
-     */
-    void deleteCurvesForDescriptor(FileDescriptor *descriptor);
-
-    /**
-     * @brief deleteCurve deletes plotted curve
-     * @param dfd - DFD represented by a curve
-     * @param channel
-     */
-    void deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot = true);
-    void deleteCurve(Curve *curve, bool doReplot = true);
-
-    bool plotCurve(Channel * ch, QColor *col, bool &plotOnRight, int fileNumber);
-    void plotChannel(Channel * ch, bool plotOnLeft);
-
-//    Curve *plotted(FileDescriptor *dfd, int channel) const;
     Curve *plotted(Channel *channel) const;
-
     Range xRange() const;
     Range yLeftRange() const;
     Range yRightRange() const;
-
     QString axisTitleText(QwtAxisId id) const;
+    bool canBePlottedOnLeftAxis(Channel *ch) const;
+    bool canBePlottedOnRightAxis(Channel *ch) const;
 
-    /**
-     * @brief switchLabelsVisibility
-     * hides / shows axis labels
-     */
+
+
+    void updatePlottedIndexes();
+    void plotCurvesForDescriptor(FileDescriptor *d);
+    void plotChannel(Channel * ch, bool plotOnLeft);
+    void update();
+
+    void deleteCurvesForDescriptor(FileDescriptor *descriptor);
+    void deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot = true);
+    void deleteCurve(Curve *curve, bool doReplot = true);
+
     void switchLabelsVisibility();
-
-    bool canBePlottedOnLeftAxis(Channel *ch);
-    bool canBePlottedOnRightAxis(Channel *ch);
-
     void prepareAxis(QwtAxisId axis);
     void setAxis(QwtAxisId axis, const QString &name);
     void updateAxesLabels();
-
     void setScale(QwtAxisId id, double min, double max, double step = 0);
-
     void removeLabels();
-
-
-
-
     void setInteractionMode(InteractionMode mode);
     void switchInteractionMode();
     void switchTrackingCursor();
@@ -150,22 +127,20 @@ public slots:
     void updateLegends();
 
     void moveCurve(Curve *curve, int axis);
-
-    /**
-     * @brief deleteAllCurves
-     * deletes all curves on a plot
-     */
     void deleteAllCurves(bool forceDeleteFixed = false);
 signals:
-    void onPlotChannel(Channel *ch);
-
-    void curveChanged(Curve *curve);
+    //испускаем, когда удаляем или добавляем графики
+    void curvesCountChanged();//->MainWindow.updateActions
+    void focusThisPlot();
+    //испускаем, когда добавляем график
+    void channelPlotted(Channel *ch); //<- MainWindow::addPlotArea
+    //испускаем, когда удаляем кривую
     void curveDeleted(Channel *);
+
     void trackingPanelCloseRequested();
     void playerPanelCloseRequested();
     void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
-    void curvesChanged();
-    void curvesCountChanged();
+    //испускаем, когда бросаем каналы на график
     void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels);
 private slots:
     void editLegendItem(QwtPlotItem *item);

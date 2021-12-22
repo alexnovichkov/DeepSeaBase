@@ -8,7 +8,7 @@
 FileDescriptor::FileDescriptor(const QString &fileName) :
     _fileName(fileName)
 {DD;
-    qDebug()<<fileName;
+    //qDebug()<<fileName;
 }
 
 FileDescriptor::~FileDescriptor()

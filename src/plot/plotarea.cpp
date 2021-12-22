@@ -18,22 +18,13 @@ PlotArea::PlotArea(int index, PlotType type, QWidget *parent)
     setFeature(ads::CDockWidget::CustomCloseHandling, true);
     setFeature(ads::CDockWidget::DockWidgetFocusable, true);
 
-
-//    setAllowedAreas(Qt::AllDockWidgetAreas);
-//    setFeatures(QDockWidget::DockWidgetClosable | QDockWidget::DockWidgetMovable
-//                | QDockWidget::DockWidgetFloatable);
-    //setFloating(true);
-
     m_plot = new Plot(this);
     m_plot->resize(200,200);
-//    connect(plot, SIGNAL(curveChanged(Curve*)), SLOT(onCurveColorChanged(Curve*)));
-//    connect(plot, SIGNAL(curveDeleted(Channel*)), SLOT(onCurveDeleted(Channel*)));
 //    connect(plot, SIGNAL(saveTimeSegment(QList<FileDescriptor*>,double,double)), SLOT(saveTimeSegment(QList<FileDescriptor*>,double,double)));
-//    connect(plot, SIGNAL(curvesChanged()), SLOT(updatePlottedChannelsNumbers()));
-//    connect(plot, &Plot::curvesCountChanged, this, &MainWindow::updateActions);
-    //Plot::needPlotChannels -> PlotArea::needPlotChannels -> MainWindow::onChannelsDropped -> [MainWindow::plotChannel]
 
-    connect(m_plot, SIGNAL(needPlotChannels(bool,QVector<Channel*>)), this, SIGNAL(needPlotChannels(bool,QVector<Channel*>)));
+    connect(m_plot, SIGNAL(curvesCountChanged()), this, SIGNAL(curvesCountChanged()));
+    connect(m_plot, SIGNAL(channelPlotted(Channel*)), this, SIGNAL(channelPlotted(Channel*)));
+    connect(m_plot, SIGNAL(curveDeleted(Channel*)), this, SIGNAL(curveDeleted(Channel*)));
 
     autoscaleXAct = new QAction("Автомасштабирование по оси X", this);
     autoscaleXAct->setIcon(QIcon(":/icons/autoscale-x.png"));
@@ -83,16 +74,26 @@ PlotArea::PlotArea(int index, PlotType type, QWidget *parent)
 
     previousDescriptorAct = new QAction("Предыдущая запись", this);
     previousDescriptorAct->setIcon(QIcon(":/icons/rminus.png"));
-    connect(previousDescriptorAct, SIGNAL(triggered(bool)), SLOT(previousDescriptor()));
+    previousDescriptorAct->setShortcut(Qt::CTRL + Qt::Key_Up);
+    previousDescriptorAct->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    previousDescriptorAct->setToolTip(QString("%1 <font color=gray size=-1>%2</font>")
+                          .arg("Предыдущая запись")
+                          .arg(previousDescriptorAct->shortcut().toString()));
+    connect(previousDescriptorAct, &QAction::triggered, [this](bool checked){emit descriptorRequested(-1, checked);});
 
     nextDescriptorAct = new QAction("Следущая запись", this);
     nextDescriptorAct->setIcon(QIcon(":/icons/rplus.png"));
-    connect(nextDescriptorAct, SIGNAL(triggered(bool)), SLOT(nextDescriptor()));
+    nextDescriptorAct->setShortcut(Qt::CTRL + Qt::Key_Down);
+    nextDescriptorAct->setShortcutContext(Qt::WidgetWithChildrenShortcut);
+    nextDescriptorAct->setToolTip(QString("%1 <font color=gray size=-1>%2</font>")
+                          .arg("Следущая запись")
+                          .arg(nextDescriptorAct->shortcut().toString()));
+    connect(nextDescriptorAct, &QAction::triggered, [this](bool checked){emit descriptorRequested(1, checked);});
 
     arbitraryDescriptorAct = new QAction("Произвольная запись", this);
     arbitraryDescriptorAct->setIcon(QIcon(":/icons/rany.png"));
     arbitraryDescriptorAct->setCheckable(true);
-    connect(arbitraryDescriptorAct, SIGNAL(triggered()), SLOT(arbitraryDescriptor()));
+    connect(arbitraryDescriptorAct, &QAction::triggered, [this](bool checked){emit descriptorRequested(0, checked);});
 
     cycleChannelsUpAct = new QAction("Предыдущий канал", this);
     cycleChannelsUpAct->setIcon(QIcon(":/icons/cminus.png"));
@@ -163,7 +164,7 @@ PlotArea::PlotArea(int index, PlotType type, QWidget *parent)
 
 
     auto scaleToolBar = createDefaultToolBar();
-//    scaleToolBar->setIconSize(QSize(16,16));
+    scaleToolBar->setIconSize(QSize(24,24));
 //    scaleToolBar->setOrientation(Qt::Vertical);
     scaleToolBar->addAction(autoscaleXAct);
     scaleToolBar->addAction(autoscaleYAct);
@@ -695,15 +696,17 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 
 void PlotArea::updateActions(int filesCount, int channelsCount)
 {
-    bool hasCurves = curvesCount()>0;
+    const bool hasCurves = curvesCount()>0;
+    const bool allCurvesFromSameDescriptor = !plot()->plottedIndexes.isEmpty();
+
     clearPlotAct->setEnabled(hasCurves);
     savePlotAct->setEnabled(hasCurves);
     copyToClipboardAct->setEnabled(hasCurves);
     printPlotAct->setEnabled(hasCurves);
-    if (m_plot) playAct->setEnabled(m_plot->curvesCount(Descriptor::TimeResponse)>0);
-    previousDescriptorAct->setEnabled(filesCount>1 && hasCurves);
-    nextDescriptorAct->setEnabled(filesCount>1 && hasCurves);
-    arbitraryDescriptorAct->setEnabled(filesCount>1 && hasCurves);
+    playAct->setEnabled(m_plot->curvesCount(Descriptor::TimeResponse)>0);
+    previousDescriptorAct->setEnabled(filesCount>1 && allCurvesFromSameDescriptor);
+    nextDescriptorAct->setEnabled(filesCount>1 && allCurvesFromSameDescriptor);
+    arbitraryDescriptorAct->setEnabled(filesCount>1 && allCurvesFromSameDescriptor);
     cycleChannelsUpAct->setEnabled(channelsCount>1 && hasCurves);
     cycleChannelsDownAct->setEnabled(channelsCount>1 && hasCurves);
 }
@@ -711,6 +714,18 @@ void PlotArea::updateActions(int filesCount, int channelsCount)
 void PlotArea::deleteCurvesForDescriptor(FileDescriptor *f)
 {
     if (m_plot) m_plot->deleteCurvesForDescriptor(f);
+}
+
+//вызывается при переходе на предыдущую/следующую запись
+void PlotArea::replotDescriptor(FileDescriptor *f)
+{
+    //const bool keepCurves = plot()->sergeiMode; qDebug()<<keepCurves;
+    //plot()->sergeiMode = true;
+    if (plot()->sergeiMode) {
+        plot()->deleteAllCurves(false);
+        plot()->plotCurvesForDescriptor(f);
+    }
+    //plot()->sergeiMode = keepCurves;
 }
 
 QVector<Channel *> PlotArea::plottedChannels() const

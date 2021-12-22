@@ -75,6 +75,7 @@ AxisOverlay::AxisOverlay(Plot *parent)
     setWindowFlags(Qt::Tool | Qt::FramelessWindowHint);
     setAttribute(Qt::WA_TranslucentBackground);
     setVisible(false);
+    setMouseTracking(false);
 }
 
 void AxisOverlay::setVisible(bool visible)

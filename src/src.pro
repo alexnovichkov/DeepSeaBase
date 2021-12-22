@@ -11,6 +11,8 @@ QT += axcontainer multimedia
 TARGET = DeepSeaBase
 TEMPLATE = app
 
+# DEFINES += WITH_MATIO
+
 VERSIONJS = $$cat(version.js, lines)
 VERSIONJS = $$first(VERSIONJS)
 VERSION = $$section(VERSIONJS, \",1,1)
@@ -47,7 +49,6 @@ SOURCES += main.cpp\
     channelstable.cpp \
     converters/tdmsconverter.cpp \
     descriptorpropertiesdialog.cpp \
-    fileformats/matlabfile.cpp \
     filehandler.cpp \
     filehandlerdialog.cpp \
     filestable.cpp \
@@ -153,7 +154,6 @@ HEADERS  += mainwindow.h \
     descriptorpropertiesdialog.h \
     dfdfilterproxy.h \
     enums.h \
-    fileformats/matlabfile.h \
     filehandler.h \
     filehandlerdialog.h \
     filestable.h \
@@ -262,7 +262,9 @@ SOURCES +=\
     fileformats/data94file.cpp \
     fileformats/tdmsfile.cpp \
     fileformats/matfile.cpp
-
+defined(WITH_MATIO) {
+SOURCES += fileformats/matlabfile.cpp
+}
 HEADERS +=\
     fileformats/formatfactory.h \
     fileformats/data94file.h \
@@ -274,7 +276,9 @@ HEADERS +=\
     fileformats/dfdfiledescriptor.h \
     fileformats/uffheaders.h \
     fileformats/dfdsettings.h
-
+defined(WITH_MATIO) {
+HEADERS += fileformats/matlabfile.h
+}
 SOURCES +=\
     converters/matlabconvertor.cpp \
     converters/converter.cpp \
@@ -430,6 +434,7 @@ CONFIG(debug, debug|release):{
 
 
 #matio
+defined(WITH_MATIO) {
 message(-- Searching for matio --)
 INCLUDEPATH *= E:/My/programming/sources/matio-master/src
 message(matio include path is E:\My\programming\sources\matio-master\src)
@@ -450,6 +455,7 @@ CONFIG(debug, debug|release):{
     LIBS *= E:/My/programming/sources/build-matio-master-Desktop_Qt_5_12_8_MinGW_64_bit-Debug/libmatio.dll.a
     INCLUDEPATH *= E:/My/programming/sources/build-matio-master-Desktop_Qt_5_12_8_MinGW_64_bit-Debug/src
   }
+}
 }
 
 #ADS

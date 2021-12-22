@@ -56,47 +56,7 @@ void ChannelTableModel::setYName(const QString &yName)
 
 void ChannelTableModel::clear()
 {DD;
-    beginResetModel();
-    descriptor = 0;
-    channelsCount = 0;
-    indexes.clear();
-    endResetModel();
-    emit modelChanged();
-}
-
-void ChannelTableModel::deleteCurves()
-{DD;
-    //TODO: Удалить
-//    if (!descriptor) return;
-//    for (int i=0, count = descriptor->channelsCount(); i<count; ++i) {
-//        if (descriptor->channel(i)->plotted()>0) {
-//            setData(index(i,0),Qt::Unchecked,Qt::CheckStateRole);
-//        }
-//    }
-}
-
-void ChannelTableModel::plotChannels(const QVector<int> &toPlot, bool plotOnRight)
-{DD;
-
-//    for (int i: toPlot) {
-//        if (i<channelsCount) {
-//            if (descriptor->channel(i)->plotted()==0) {
-//                descriptor->channel(i)->setPlotted(plotOnRight?2:1);
-//                setData(index(i,0),Qt::Checked,Qt::CheckStateRole);
-//            }
-//        }
-//    }
-}
-
-void ChannelTableModel::plotChannels(bool plotOnRight)
-{DD;
-//    if (!descriptor) return;
-//    QVector<int> to = indexes;
-//    if (to.isEmpty()) {
-//        for (int i=0; i<channelsCount; ++i)
-//            to << i;
-//    }
-//    plotChannels(to, plotOnRight);
+    setDescriptor(nullptr);
 }
 
 void ChannelTableModel::setDescriptor(FileDescriptor *dfd)
@@ -105,7 +65,7 @@ void ChannelTableModel::setDescriptor(FileDescriptor *dfd)
     beginResetModel();
     descriptor = dfd;
     indexes.clear();
-    channelsCount = descriptor->channelsCount();
+    channelsCount = descriptor?descriptor->channelsCount():0;
     endResetModel();
     emit modelChanged();
 }
@@ -116,12 +76,12 @@ void ChannelTableModel::setSelected(const QVector<int> &indexes)
     emit modelChanged();
 }
 
-void ChannelTableModel::onCurveChanged(Channel *ch)
+void ChannelTableModel::onChannelChanged(Channel *ch)
 {DD;
     int i = ch->index();
     if (i != -1) {
-        emit dataChanged(index(i,0),index(i,0));
-        emit headerDataChanged(Qt::Horizontal,0,0);
+        emit dataChanged(index(i,0),index(i,columnCount(QModelIndex())));
+//        emit headerDataChanged(Qt::Horizontal,0,0);
     }
 }
 
@@ -222,21 +182,6 @@ bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value,
             }
             break;
         }
-//        case Qt::CheckStateRole: {
-//            if (column == 0) {
-//                const Qt::CheckState state = Qt::CheckState(value.toInt());
-
-//                if (state == Qt::Checked) {
-//                    if (ch->plotted()==0) ch->setPlotted(1);
-//                    emit maybePlot(row);
-//                }
-//                else if (state == Qt::Unchecked) {
-//                    emit deleteCurve(row);
-//                }
-//                success = true;
-//            }
-//            break;
-//        }
     }
     return success;
 }
@@ -250,38 +195,11 @@ QVariant ChannelTableModel::headerData(int section, Qt::Orientation orientation,
         case Qt::DisplayRole:
             if (descriptor) return descriptor->channelHeader(section);
             break;
-//        case Qt::CheckStateRole: {
-//            if (!descriptor) return QAbstractItemModel::headerData(section, orientation, role);
-//            const int plotted = descriptor->plottedCount();
-//            return (plotted==0 ? Qt::Unchecked : (plotted==channelsCount?Qt::Checked:Qt::PartiallyChecked));
-//        }
         default: ;
     }
 
     return QAbstractItemModel::headerData(section, orientation, role);
 }
-
-//bool ChannelTableModel::setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role)
-//{DD;
-//    if (orientation == Qt::Vertical || !descriptor || section!=0)
-//        return QAbstractItemModel::setHeaderData(section, orientation, value, role);
-
-//    if (role == Qt::CheckStateRole) {
-//        Qt::CheckState state = Qt::CheckState(value.toInt());
-//        switch (state) {
-//            case Qt::Checked: plotChannels(false);
-//                return true;
-//                break;
-//            case Qt::Unchecked: deleteCurves();
-//                return true;
-//                break;
-//            default: break;
-//        }
-//    }
-
-//    return QAbstractItemModel::setHeaderData(section, orientation, value, role);
-//}
-
 
 Qt::ItemFlags ChannelTableModel::flags(const QModelIndex &index) const
 {DD;

@@ -250,8 +250,8 @@ public:
     inline QString correction() const {return dataDescription().get("correction").toString();}
     void setCorrection(const QString &s) {dataDescription().put("correction", s);}
 
-    int plotted() const {return _plotted;}
-    void setPlotted(int plotted) {_plotted = plotted;}
+    bool plotted() const {return _plotted;}
+    void setPlotted(bool plotted) {_plotted = plotted;}
     Curve *curve = nullptr;
 
     bool changed() const {return _changed;}
@@ -261,7 +261,7 @@ public:
     void setDataChanged(bool changed) {_dataChanged = changed;}
 private:
     QColor _color;
-    int _plotted = 0; //0=not plotted, 1=plotted on left, 2=plotted on right
+    bool _plotted = false;
     bool _populated = false;
     bool _changed = false;
     bool _dataChanged = false;

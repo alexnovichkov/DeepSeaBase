@@ -109,13 +109,13 @@ Plot::Plot(QWidget *parent) :
     trackingPanel = new TrackingPanel(this);
     trackingPanel->setVisible(false);
     connect(trackingPanel,SIGNAL(closeRequested()),SIGNAL(trackingPanelCloseRequested()));
-    connect(this, SIGNAL(curvesChanged()), trackingPanel, SLOT(update()));
+    connect(this, SIGNAL(curvesCountChanged()), trackingPanel, SLOT(update()));
 
 
     playerPanel = new PlayPanel(this);
     playerPanel->setVisible(false);
     connect(playerPanel,SIGNAL(closeRequested()),SIGNAL(playerPanelCloseRequested()));
-    connect(this, SIGNAL(curvesChanged()), playerPanel, SLOT(update()));
+    connect(this, SIGNAL(curvesCountChanged()), playerPanel, SLOT(update()));
 
     axisLabelsVisible = App->getSetting("axisLabelsVisible", true).toBool();
     yValuesPresentationLeft = DataHolder::ShowAsDefault;
@@ -125,8 +125,8 @@ Plot::Plot(QWidget *parent) :
     // grid
     grid = new QwtPlotGrid;
     grid->enableXMin(true);
-    grid->setMajorPen(Qt::gray, 0, Qt::DotLine);
-    grid->setMinorPen(Qt::darkGray, 0, Qt::DotLine);
+    grid->setMajorPen(QColor(150,150,150,150),0,Qt::DotLine);
+    grid->setMinorPen(QColor(150,150,150,150),0,Qt::DotLine);
     grid->attach(this);
 
     createLegend();
@@ -168,10 +168,10 @@ Plot::Plot(QWidget *parent) :
 
 Plot::~Plot()
 {DD;
+    deleteAllCurves(true);
 
     delete trackingPanel;
     delete playerPanel;
-    qDeleteAll(curves);
     delete grid;
     delete tracker;
     delete _picker;
@@ -188,12 +188,44 @@ Plot::~Plot()
     delete colors;
 }
 
+void Plot::updatePlottedIndexes()
+{DD;
+    if (sergeiMode) return;
+
+    plottedIndexes.clear();
+    if (!curves.isEmpty()) {
+        auto d = curves.first()->channel->descriptor();
+        for (const auto c : leftCurves) {
+            if (c->channel->descriptor()==d) plottedIndexes.append({c->channel->index(), true});
+            else {
+                plottedIndexes.clear();
+                break;
+            }
+        }
+        for (const auto c : rightCurves) {
+            if (c->channel->descriptor()==d) plottedIndexes.append({c->channel->index(), false});
+            else {
+                plottedIndexes.clear();
+                break;
+            }
+        }
+    }
+    std::sort(plottedIndexes.begin(), plottedIndexes.end(), [](const PlottedIndex &f, const PlottedIndex &s){
+        return f.index < s.index;
+    });
+}
+
 QVector<Channel *> Plot::plottedChannels() const
 {DD;
     QVector<Channel*> result;
     result.reserve(curves.size());
     for (auto c: curves) result << c->channel;
     return result;
+}
+
+void Plot::plotCurvesForDescriptor(FileDescriptor *d)
+{
+    for (auto i:plottedIndexes) plotChannel(d->channel(i.index), i.onLeft);
 }
 
 void Plot::update()
@@ -244,10 +276,11 @@ void Plot::deleteAllCurves(bool forceDeleteFixed)
             deleteCurve(c, i==0);
         }
     }
-
-    playerPanel->reset();
-
-    emit curvesCountChanged();
+    if (!sergeiMode) {
+        updatePlottedIndexes();
+        playerPanel->reset();
+        emit curvesCountChanged(); //->MainWindow.updateActions
+    }
 }
 
 void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
@@ -257,6 +290,7 @@ void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
             deleteCurve(curve, true);
         }
     }
+    updatePlottedIndexes();
     emit curvesCountChanged(); //->MainWindow.updateActions
 }
 
@@ -265,6 +299,7 @@ void Plot::deleteCurveFromLegend(QwtPlotItem *item)
 {DD;
     if (Curve *c = dynamic_cast<Curve *>(item); !c->fixed) {
         deleteCurve(c, true);
+        updatePlottedIndexes();
         emit curvesCountChanged(); //->MainWindow.updateActions
     }
 }
@@ -273,7 +308,8 @@ void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doR
 {DD;
     if (Curve *curve = plotted(dfd->channel(channel))) {
         deleteCurve(curve, doReplot);
-        if (doReplot) emit curvesCountChanged(); //->MainWindow.updateActions
+        updatePlottedIndexes();
+        emit curvesCountChanged(); //->MainWindow.updateActions
     }
 }
 
@@ -282,8 +318,9 @@ void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doR
 void Plot::deleteCurve(Curve *curve, bool doReplot)
 {DD;
     if (curve) {
-        emit curveDeleted(curve->channel); //->MainWindow.onCurveDeleted
-        App->colors()->freeColor(curve->pen().color());
+        curve->channel->setPlotted(0);
+        emit curveDeleted(curve->channel); //->MainWindow.onChannelChanged
+        colors->freeColor(curve->pen().color());
 
         int removed = leftCurves.removeAll(curve);
         if (removed > 0) {
@@ -305,7 +342,6 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
         }
         QString title = curve->title();
 
-
         delete curve;
         curve = 0;
         checkDuplicates(title);
@@ -321,14 +357,8 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
             yRightName.clear();
             enableAxis(QwtAxis::yRight, false);
         }
-        if (!hasCurves()) {
-            xName.clear();
-        }
-
-        if (doReplot) {
-            update();
-        }
-        emit curvesChanged();
+        if (!hasCurves()) xName.clear();
+        if (doReplot) update();
     }
 }
 
@@ -517,7 +547,7 @@ void Plot::showContextMenu(const QPoint &pos, QwtAxisId axis)
         menu->exec(pos);
 }
 
-bool Plot::canBePlottedOnLeftAxis(Channel *ch)
+bool Plot::canBePlottedOnLeftAxis(Channel *ch) const
 {DD;
     if (!hasCurves()) // нет графиков - можем построить что угодно
         return true;
@@ -534,7 +564,7 @@ bool Plot::canBePlottedOnLeftAxis(Channel *ch)
     return false;
 }
 
-bool Plot::canBePlottedOnRightAxis(Channel *ch)
+bool Plot::canBePlottedOnRightAxis(Channel *ch) const
 {DD;
     if (!hasCurves()) // нет графиков - всегда на левой оси
         return true;
@@ -660,7 +690,7 @@ void Plot::moveCurve(Curve *curve, int axis)
             curve->channel->data()->setYValuesPresentation(yValuesPresentationLeft);
             leftCurves.append(curve);
         }
-//        emit curvesChanged();
+        emit curvesCountChanged();
 
         updateAxesLabels();
         zoom->moveToAxis(axis, curve->channel->data()->yMin(), curve->channel->data()->yMax());
@@ -750,140 +780,9 @@ void Plot::recalculateScale(bool leftAxis)
     }
 }
 
-bool Plot::plotCurve(Channel * ch, QColor *col, bool &plotOnRight, int fileNumber)
-{DD;
-    if (plotted(ch)) return false;
-
-    spectrogram = ch->data()->blocksCount()>1;
-
-    bool plotOnFirstYAxis = canBePlottedOnLeftAxis(ch);
-    bool plotOnSecondYAxis = canBePlottedOnRightAxis(ch);
-    bool skipped = false;
-
-    if (!plotOnRight) {//trying to plot on left
-        if (!plotOnFirstYAxis) {//cannot plot on left
-            if (!plotOnSecondYAxis) {//cannot plot on right either
-                skipped = true;
-            }
-            else plotOnRight = true; //confirm plotting on right
-        }
-    }
-    else /*if (plotOnRight)*/ {//trying to plot on right
-        if (!plotOnSecondYAxis) {//cannot plot on right
-            if (!plotOnFirstYAxis) {//cannot plot on left either
-                skipped = true;
-            }
-            else plotOnRight = false; //confirm plotting on left
-        }
-    }
-
-    if (skipped) {
-        QMessageBox::warning(this, QString("Не могу построить канал"),
-                             QString("Тип графика не подходит.\n"
-                                     "Сначала очистите график."));
-        return false;
-    }
-
-    if (!ch->populated()) {
-        ch->populate();
-    }
-
-    setAxis(xBottomAxis, ch->xName());
-    prepareAxis(xBottomAxis);
-
-    QwtAxisId ax = yLeftAxis;
-    if (!spectrogram) {
-        // если графиков нет, по умолчанию будем строить амплитуды по первому добавляемому графику
-        if (!plotOnRight && leftCurves.isEmpty()) {
-            yValuesPresentationLeft = ch->data()->yValuesPresentation();
-        }
-        if (plotOnRight && rightCurves.isEmpty()) {
-            yValuesPresentationRight = ch->data()->yValuesPresentation();
-        }
-
-        if (!plotOnRight) ch->data()->setYValuesPresentation(yValuesPresentationLeft);
-        else ch->data()->setYValuesPresentation(yValuesPresentationRight);
-
-        ax = plotOnRight ? yRightAxis : yLeftAxis;
-
-        axisWidget(yRightAxis)->setColorBarEnabled(false);
-
-        setAxis(ax, ch->yName());
-        prepareAxis(ax);
-    }
-    else {
-        yValuesPresentationLeft = DataHolder::ShowAsReals;
-        yValuesPresentationRight = ch->data()->yValuesPresentation();
-        ch->data()->setYValuesPresentation(yValuesPresentationRight);
-        ax = yLeftAxis;
-        setAxis(ax, ch->zName());
-        prepareAxis(ax);
-        plotOnRight = false;
-
-        setAxis(yRightAxis, ch->yName());
-        setAxisVisible(yRightAxis);
-
-        axisWidget(yRightAxis)->setColorBarEnabled(true);
-//        plotLayout()->setAlignCanvasToScales(true);
-    }
-
-
-    Curve *g = createCurve(ch->legendName(), ch);
-    QColor nextColor = App->colors()->getColor();
-    QPen pen = g->pen();
-    pen.setColor(nextColor);
-    pen.setWidth(1);
-    g->setPen(pen);
-    g->oldPen = pen;
-    if (col) *col = nextColor;
-
-    curves << g;
-    g->fileNumber = fileNumber;
-    checkDuplicates(g->title());
-
-    g->setYAxis(ax);
-    if (plotOnRight) {
-        rightCurves << g;
-    }
-    else {
-        leftCurves << g;
-    }
-
-
-    if (spectrogram) {
-        axisWidget(yRightAxis)->setColorMap(QwtInterval(ch->data()->yMin(-1), ch->data()->yMax(-1)),
-                                             ColorMapFactory::map(colorMap));
-        if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(g)) {
-            c->setColorMap(ColorMapFactory::map(colorMap));
-        }
-
-        zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
-        zoom->verticalScaleBoundsSlave->add(g->yMin(), g->yMax());
-        zoom->verticalScaleBounds->add(ch->data()->zMin(), ch->data()->zMax());
-    }
-    else {
-        ZoomStack::ScaleBounds *ybounds = 0;
-        if (zoom->verticalScaleBounds->axis == ax.pos) ybounds = zoom->verticalScaleBounds;
-        else ybounds = zoom->verticalScaleBoundsSlave;
-
-        zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
-        if (ybounds) ybounds->add(g->yMin(), g->yMax());
-    }
-
-
-
-
-    g->attachTo(this);
-
-    update();
-    emit curvesChanged();
-    emit curvesCountChanged();
-
-    return true;
-}
-
 void Plot::plotChannel(Channel *ch, bool plotOnLeft)
 {
+    //проверяем, построен ли канал на этом графике
     if (plotted(ch)) return;
 
     spectrogram = ch->data()->blocksCount()>1;
@@ -946,7 +845,7 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft)
     pen.setWidth(1);
     g->setPen(pen);
     g->oldPen = pen;
-    //g->channel->setColor(nextColor);
+    ch->setPlotted(plotOnLeft?1:2);
 
     curves << g;
     //g->fileNumber = fileNumber;
@@ -984,17 +883,10 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft)
     g->attachTo(this);
 
     update();
-    emit onPlotChannel(ch);
-    emit curvesCountChanged();
+    updatePlottedIndexes();
+    emit channelPlotted(ch);
+    emit curvesCountChanged(); //->MainWindow.updateActions
 }
-
-//Curve * Plot::plotted(FileDescriptor *dfd, int channel) const
-//{DD;
-//    foreach (Curve *curve, curves) {
-//        if (curve->descriptor == dfd && curve->channelIndex == channel) return curve;
-//    }
-//    return 0;
-//}
 
 Curve * Plot::plotted(Channel *channel) const
 {DD;
@@ -1220,7 +1112,6 @@ void Plot::editLegendItem(QwtPlotItem *item)
 {DD;
     if (Curve *c = dynamic_cast<Curve *>(item)) {
         CurvePropertiesDialog dialog(c, this);
-        connect(&dialog,SIGNAL(curveChanged(Curve*)),this, SIGNAL(curveChanged(Curve*)));
         connect(&dialog,SIGNAL(curveChanged(Curve*)),trackingPanel, SLOT(update()));
         dialog.exec();
     }
@@ -1247,6 +1138,7 @@ void Plot::dropEvent(QDropEvent *event)
 
 void Plot::dragEnterEvent(QDragEnterEvent *event)
 {DD;
+    emit focusThisPlot();
     const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
     if (myData) {
         //определяем, можем ли построить все каналы на левой или правой оси

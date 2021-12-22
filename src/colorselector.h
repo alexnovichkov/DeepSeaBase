@@ -4,6 +4,7 @@
 #include <QVector>
 #include <QColor>
 #include <QVariantList>
+#include <QSet>
 
 #define COLORS_COUNT 32
 
@@ -30,6 +31,7 @@ public:
 
 private:
     QVector<QColor> colors;
+    QSet<QColor> usedColors;
 };
 
 #endif // COLORSELECTOR_H

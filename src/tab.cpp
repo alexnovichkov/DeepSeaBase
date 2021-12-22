@@ -41,8 +41,6 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
         }
         model->updateFile(record);
     });
-    connect(channelModel,SIGNAL(maybePlot(int)), parent, SLOT(plotChannel(int)));
-    connect(channelModel,SIGNAL(deleteCurve(int)), parent, SLOT(deleteCurve(int)));
 
     filesTable = new FilesTable(this);
     //connect(tab->filesTable, &FilesTable::addFiles, this, &MainWindow::addFiles);
@@ -76,10 +74,7 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
     channelsTable->setModel(channelModel);
     connect(channelsTable->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
             this, SLOT(channelsSelectionChanged(QItemSelection,QItemSelection)));
-//    auto tableHeader = new HeaderView(Qt::Horizontal, channelsTable);
-//    channelsTable->setHorizontalHeader(tableHeader);
-//    tableHeader->setCheckable(0,true);
-
+    connect(channelsTable,SIGNAL(yNameChanged(QString)),channelModel,SLOT(setYName(QString)));
     channelsTable->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     channelsTable->horizontalHeader()->setStretchLastSection(false);
 
@@ -87,8 +82,9 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
     filePathLabel->setTextInteractionFlags(Qt::TextBrowserInteraction);
     filePathLabel->setSizePolicy(QSizePolicy::Expanding, filePathLabel->sizePolicy().verticalPolicy());
 
-    QAction *openFolderAct = new QAction("Открыть папку с этой записью", this);
-    openFolderAct->setIcon(QIcon(":/icons/open.png"));
+    openFolderAct = new QAction("Открыть папку с этой записью", this);
+    openFolderAct->setEnabled(false);
+    openFolderAct->setIcon(QIcon(":/icons/open24.png"));
     connect(openFolderAct, &QAction::triggered, [=](){
         if (!filePathLabel->text().isEmpty()) {
             QDir dir(filePathLabel->text());
@@ -96,8 +92,9 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
             QProcess::startDetached("explorer.exe", QStringList(dir.toNativeSeparators(dir.absolutePath())));
         }
     });
-    QAction *editFileAct = new QAction("Редактировать этот файл в текстовом редакторе", this);
-    editFileAct->setIcon(QIcon(":/icons/edit.png"));
+    editFileAct = new QAction("Редактировать этот файл в текстовом редакторе", this);
+    editFileAct->setEnabled(false);
+    editFileAct->setIcon(QIcon(":/icons/edit24.png"));
     connect(editFileAct, &QAction::triggered, [=](){
         QString file = QDir::toNativeSeparators(filePathLabel->text());
         if (!file.isEmpty()) {
@@ -122,14 +119,17 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
     QToolBar *channelsToolBar = new QToolBar(this);
     channelsToolBar->setFloatable(false);
     channelsToolBar->setMovable(false);
-    channelsToolBar->setIconSize(QSize(16,16));
+    channelsToolBar->setIconSize(QSize(24,24));
     channelsToolBar->setContentsMargins(0,0,0,0);
-    channelsToolBar->addWidget(filePathLabel);
     channelsToolBar->addAction(editFileAct);
     channelsToolBar->addAction(openFolderAct);
+    channelsToolBar->addWidget(filePathLabel);
+
     QWidget *channelsWidget = new QWidget(this);
     channelsWidget->setContentsMargins(0,0,0,0);
+
     QGridLayout *channelsLayout = new QGridLayout;
+    channelsLayout->setContentsMargins(0,0,0,0);
     channelsLayout->addWidget(channelsToolBar,0,0,1,3);
     channelsLayout->addWidget(channelsTable,1,0,1,3);
     channelsWidget->setLayout(channelsLayout);
@@ -141,22 +141,44 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
     if (!upperSplitterState.isEmpty()) restoreState(upperSplitterState);
 }
 
+void Tab::updateChannelsTable(FileDescriptor *descriptor)
+{
+    openFolderAct->setEnabled(descriptor != nullptr);
+    editFileAct->setEnabled(descriptor != nullptr);
+
+    record = descriptor;
+    channelModel->setDescriptor(descriptor);
+    if (!descriptor) return;
+
+    if (!descriptor->fileExists()) {
+        QMessageBox::warning(this,"Не могу получить список каналов","Такого файла уже нет");
+        return;
+    }
+
+    filePathLabel->setText(descriptor->fileName());
+
+    emit descriptorChanged();
+}
+
 void Tab::updateChannelsTable(const QModelIndex &current, const QModelIndex &previous)
 {DD;
-    if (!current.isValid()) return;
-    if (current.model() != sortModel) return;
+    if (current.isValid()) {
+        if (current.model() != sortModel) return;
 
-    if (previous.isValid()) {
-        if ((previous.row()==0 && previous.column() != current.column()) ||
-            (previous.row() != current.row())) {
+        if (previous.isValid()) {
+            if ((previous.row()==0 && previous.column() != current.column()) ||
+                (previous.row() != current.row())) {
+                QModelIndex index = sortModel->mapToSource(current);
+                updateChannelsTable(model->file(index.row()).get());
+            }
+        }
+        else {
             QModelIndex index = sortModel->mapToSource(current);
-            parent->updateChannelsTable(model->file(index.row()).get());
+            updateChannelsTable(model->file(index.row()).get());
         }
     }
-    else {
-        QModelIndex index = sortModel->mapToSource(current);
-        parent->updateChannelsTable(model->file(index.row()).get());
-    }
+    else
+        updateChannelsTable(nullptr);
 }
 
 void Tab::filesSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection)
