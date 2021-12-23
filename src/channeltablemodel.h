@@ -33,7 +33,7 @@ public slots:
     void setYName(const QString &yName);
 signals:
     void maybeUpdateChannelProperty(int row, const QString &description, const QString &property, const QString &value);
-    void updateLegends();
+    void legendsChanged();
     void modelChanged();
     // QAbstractItemModel interface
 public:

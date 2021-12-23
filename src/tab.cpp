@@ -43,7 +43,6 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
     });
 
     filesTable = new FilesTable(this);
-    //connect(tab->filesTable, &FilesTable::addFiles, this, &MainWindow::addFiles);
     filesTable->setModel(sortModel);
 
     filterHeader = new FilteredHeaderView(Qt::Horizontal, filesTable);
@@ -65,6 +64,31 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
     connect(filesTable->selectionModel(),SIGNAL(currentChanged(QModelIndex,QModelIndex)),
             this, SLOT(updateChannelsTable(QModelIndex,QModelIndex)));
     filesTable->setItemDelegateForColumn(MODEL_COLUMN_XSTEP, new StepItemDelegate);
+    connect(filesTable, &QTreeView::customContextMenuRequested, [=](){
+        QMenu menu(filesTable);
+        int column = filesTable->currentIndex().column();
+        if (!filesTable->selectionModel()->hasSelection()) {
+            menu.addAction(parentActions.value("addFolder"));
+            menu.addAction(parentActions.value("addFile"));
+            menu.exec(QCursor::pos());
+        }
+        else if (column == MODEL_COLUMN_FILENAME) {
+            menu.addAction(parentActions.value("addFolder"));
+            menu.addAction(parentActions.value("addFile"));
+            menu.addAction(parentActions.value("deleteFiles"));
+            menu.addAction(parentActions.value("calculateSpectre"));
+            //menu.addAction(calculateSpectreDeepSeaAct);
+            menu.addAction(parentActions.value("convert"));
+            menu.addAction(parentActions.value("rename"));
+            menu.exec(QCursor::pos());
+        }
+        else if (column == MODEL_COLUMN_LEGEND) {
+            //legend
+            menu.addAction(copyToLegendAct);
+            menu.exec(QCursor::pos());
+        }
+    });
+
     connect(model, SIGNAL(modelChanged()), parent, SLOT(updateActions()));
 
     fileHandler = new FileHandler(this);
@@ -116,13 +140,37 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
             }
         }
     });
+
+    plotSelectedChannelsAct = new QAction(QString("Построить выделенные каналы"), this);
+    QIcon plotIcon(":/icons/plot24.png");
+    plotIcon.addFile(":/icons/plot.png");
+    plotSelectedChannelsAct->setIcon(plotIcon);
+    connect(plotSelectedChannelsAct, &QAction::triggered, [=](){
+        auto toPlot = channelModel->selectedChannels();
+        if (!toPlot.isEmpty()) emit needPlotChannels(true, toPlot);
+    });
+    channelsTable->addAction("plot", plotSelectedChannelsAct);
+
+    plotSelectedChannelsOnRightAct = new QAction(QString("...на правой оси"), this);
+    connect(plotSelectedChannelsOnRightAct, &QAction::triggered, [=](){
+        auto toPlot = channelModel->selectedChannels();
+        if (!toPlot.isEmpty()) emit needPlotChannels(false, toPlot);
+    });
+    channelsTable->addAction("plotRight", plotSelectedChannelsOnRightAct);
+
+    copyToLegendAct = new QAction("Перенести сюда названия файлов", this);
+    connect(copyToLegendAct, &QAction::triggered, model, &Model::copyToLegend);
+
     QToolBar *channelsToolBar = new QToolBar(this);
     channelsToolBar->setFloatable(false);
     channelsToolBar->setMovable(false);
     channelsToolBar->setIconSize(QSize(24,24));
     channelsToolBar->setContentsMargins(0,0,0,0);
+    channelsToolBar->addAction(plotSelectedChannelsAct);
+    channelsToolBar->addSeparator();
     channelsToolBar->addAction(editFileAct);
     channelsToolBar->addAction(openFolderAct);
+    channelsToolBar->addSeparator();
     channelsToolBar->addWidget(filePathLabel);
 
     QWidget *channelsWidget = new QWidget(this);
@@ -139,13 +187,12 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
 
     QByteArray upperSplitterState = App->getSetting("upperSplitterState").toByteArray();
     if (!upperSplitterState.isEmpty()) restoreState(upperSplitterState);
+
+    updateActions();
 }
 
 void Tab::updateChannelsTable(FileDescriptor *descriptor)
 {
-    openFolderAct->setEnabled(descriptor != nullptr);
-    editFileAct->setEnabled(descriptor != nullptr);
-
     record = descriptor;
     channelModel->setDescriptor(descriptor);
     if (!descriptor) return;
@@ -158,6 +205,21 @@ void Tab::updateChannelsTable(FileDescriptor *descriptor)
     filePathLabel->setText(descriptor->fileName());
 
     emit descriptorChanged();
+    //updateActions();
+}
+
+void Tab::updateActions()
+{
+    openFolderAct->setEnabled(record != nullptr);
+    editFileAct->setEnabled(record != nullptr);
+    plotSelectedChannelsAct->setEnabled(channelModel->hasSelection());
+    plotSelectedChannelsOnRightAct->setEnabled(channelModel->hasSelection());
+    copyToLegendAct->setEnabled(model->selected().size()>0);
+}
+
+void Tab::addParentAction(const QString &name, QAction *action)
+{
+    parentActions.insert(name, action);
 }
 
 void Tab::updateChannelsTable(const QModelIndex &current, const QModelIndex &previous)
@@ -215,4 +277,5 @@ void Tab::channelsSelectionChanged(const QItemSelection &newSelection, const QIt
     indexes.erase(std::unique(indexes.begin(), indexes.end()), indexes.end());
 
     channelModel->setSelected(indexes);
+    //updateActions();
 }

@@ -230,9 +230,6 @@ void MainWindow::createActions()
     convertAct = new QAction("Конвертировать файлы...", this);
     connect(convertAct, SIGNAL(triggered()), SLOT(convertFiles()));
 
-    copyToLegendAct = new QAction("Перенести сюда названия файлов", this);
-    connect(copyToLegendAct, SIGNAL(triggered()), SLOT(copyToLegend()));
-
     rescanBaseAct = new QAction(QString("Пересканировать базу"), this);
     rescanBaseAct->setIcon(QIcon(":/icons/revert.png"));
     rescanBaseAct->setShortcut(QKeySequence::Refresh);
@@ -324,22 +321,6 @@ void MainWindow::createActions()
 
     convertEsoFilesAct = new QAction("Конвертировать файлы ESO...", this);
     connect(convertEsoFilesAct,SIGNAL(triggered()),SLOT(convertEsoFiles()));
-
-    plotSelectedChannelsAct = new QAction(QString("Построить выделенные каналы"), this);
-    connect(plotSelectedChannelsAct, &QAction::triggered, [=](){
-        if (currentTab) {
-            auto toPlot = currentTab->channelModel->selectedChannels();
-            onChannelsDropped(true, toPlot);
-        }
-    });
-
-    plotSelectedChannelsOnRightAct = new QAction(QString("...на правой оси"), this);
-    connect(plotSelectedChannelsOnRightAct, &QAction::triggered, [=](){
-        if (currentTab) {
-            auto toPlot = currentTab->channelModel->selectedChannels();
-            onChannelsDropped(false, toPlot);
-        }
-    });
 }
 
 void MainWindow::createTab(const QString &name, const QStringList &folders)
@@ -349,8 +330,13 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     currentTab->filesTable->addAction(delFilesAct);
     currentTab->filesTable->addAction(saveAct);
 
-    currentTab->channelsTable->addAction("plot",plotSelectedChannelsAct);
-    currentTab->channelsTable->addAction("plotRight",plotSelectedChannelsOnRightAct);
+    currentTab->addParentAction("addFolder", addFolderAct);
+    currentTab->addParentAction("addFile", addFileAct);
+    currentTab->addParentAction("deleteFiles", delFilesAct);
+    currentTab->addParentAction("calculateSpectre", calculateSpectreAct);
+    currentTab->addParentAction("convert", convertAct);
+    currentTab->addParentAction("rename", renameAct);
+
     currentTab->channelsTable->addAction("exportWav",exportChannelsToWavAct);
     currentTab->channelsTable->addAction("moveUp",moveChannelsUpAct);
     currentTab->channelsTable->addAction("moveDown",moveChannelsDownAct);
@@ -359,33 +345,8 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     currentTab->channelsTable->addAction("copy",copyChannelsAct);
     currentTab->channelsTable->addAction("move",moveChannelsAct);
 
-    connect(currentTab->filesTable, &QTreeView::customContextMenuRequested, [=](){
-        QMenu menu(currentTab->filesTable);
-        int column = currentTab->filesTable->currentIndex().column();
-        if (!currentTab->filesTable->selectionModel()->hasSelection()) {
-            menu.addAction(addFolderAct);
-            menu.addAction(addFileAct);
-            menu.exec(QCursor::pos());
-        }
-        else if (column == MODEL_COLUMN_FILENAME) {
-            menu.addAction(addFolderAct);
-            menu.addAction(addFileAct);
-            menu.addAction(delFilesAct);
-            menu.addAction(calculateSpectreAct);
-            //menu.addAction(calculateSpectreDeepSeaAct);
-            menu.addAction(convertAct);
-            menu.addAction(renameAct);
-            menu.exec(QCursor::pos());
-        }
-        else if (column == MODEL_COLUMN_LEGEND) {
-            //legend
-            menu.addAction(copyToLegendAct);
-            menu.exec(QCursor::pos());
-        }
-    });
-
     connect(currentTab->model, SIGNAL(legendsChanged()), this, SIGNAL(updateLegends()));
-
+    connect(currentTab->channelModel, SIGNAL(legendsChanged()), this, SIGNAL(updateLegends()));
     connect(currentTab->model, &Model::plotNeedsUpdate, [=]()
     {
         const auto m = m_DockManager->dockWidgetsMap();
@@ -398,6 +359,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     connect(currentTab, &Tab::descriptorChanged, [this](){
         if (currentPlot) currentPlot->replotDescriptor(currentTab->record);
     });
+    connect(currentTab, &Tab::needPlotChannels, this, &MainWindow::onChannelsDropped);
 
     ads::CDockComponentsFactory::setFactory(new TabDockFactory(this));
     auto dockWidget = new ads::CDockWidget(name);
@@ -435,8 +397,8 @@ void MainWindow::createNewTab()
 void MainWindow::closeTab(ads::CDockWidget *t)
 {DD;
     if (!t) return;
-    auto m = m_DockManager->dockWidgetsMap();
-    for (auto [name, w] : asKeyValueRange(m)) {
+    auto m = m_DockManager->dockWidgetsMap().values();
+    for (const auto &w : m) {
         if (PlotArea *area = dynamic_cast<PlotArea*>(w)) {
             for (int i=0; i<currentTab->model->size(); ++i) {
                 const F f = currentTab->model->file(i);
@@ -454,8 +416,8 @@ void MainWindow::closeTab(ads::CDockWidget *t)
 
     //проверяем, остались ли вкладки
     bool tabsLeft = false;
-    m = m_DockManager->dockWidgetsMap();
-    for (auto [name, w] : asKeyValueRange(m)) {
+    m = m_DockManager->dockWidgetsMap().values();
+    for (const auto &w : m) {
         if (Tab *t = dynamic_cast<Tab*>(w->widget())) {
             tabsLeft = true;
             break;
@@ -554,15 +516,14 @@ void MainWindow::closePlot(ads::CDockWidget *t)
 {
     if (!t) return;
 
-    //TODO: Реализовать удаление графика
     currentPlot = nullptr;
 
     t->closeDockWidget();
 
     //проверяем, остались ли не плавающие графики
     bool plotsLeft = false;
-    const auto m = m_DockManager->dockWidgetsMap();
-    for (auto [name, w] : asKeyValueRange(m)) {
+    const auto m = m_DockManager->dockWidgetsMap().values();
+    for (const auto &w: m) {
         if (PlotArea *area = dynamic_cast<PlotArea*>(w)) {
             plotsLeft = true;
             break;
@@ -663,8 +624,8 @@ void MainWindow::deleteFiles()
 {DD;
     if (!currentTab) return;
 
-    const auto m = m_DockManager->dockWidgetsMap();
-    for (auto [name, w] : asKeyValueRange(m)) {
+    const auto m = m_DockManager->dockWidgetsMap().values();
+    for (const auto &w: m) {
         if (PlotArea *area = dynamic_cast<PlotArea*>(w)) {
             const auto indexes = currentTab->model->selected();
             for (int i: indexes) {
@@ -770,25 +731,13 @@ void MainWindow::moveChannels() /** SLOT */
     }
 }
 
-QVector<FileDescriptor*> plottedDescriptors(const QList<Curve*> &curves)
-{DD;
-    QVector<FileDescriptor*> result;
-
-    for (auto c: curves) {
-        if (auto d = c->channel->descriptor(); !result.contains(d))
-            result.append(d);
-    }
-
-    return result;
-}
-
 void MainWindow::deletePlottedChannels() /** SLOT*/
 {DD;
     if (QMessageBox::question(this,"DeepSea Base",
-                              "Эти каналы будут \nудалены из записей. Продолжить?"
+                              "Построенные каналы будут \nудалены из записей. Продолжить?"
                               )==QMessageBox::Yes) {
         LongOperation op;
-        deleteChannels({});
+        deletePlotted();
 
         if (currentTab) currentTab->updateChannelsTable(currentTab->record);
     }
@@ -810,9 +759,9 @@ void MainWindow::movePlottedChannels() /** SLOT*/
     if (!currentPlot) return;
     auto channels = currentPlot->plottedChannels();
     if (!channels.isEmpty()) {
-        if (QMessageBox::question(this,"DeepSea Base","Выделенные каналы будут \nудалены из файлов. Продолжить?")==QMessageBox::Yes) {
+        if (QMessageBox::question(this,"DeepSea Base","Построенные каналы будут \nудалены из файлов. Продолжить?")==QMessageBox::Yes) {
             if (copyChannels(channels)) {
-                deleteChannels(channels);
+                deletePlotted();
                 if (currentTab) currentTab->updateChannelsTable(currentTab->record);
             }
         }
@@ -943,12 +892,14 @@ bool MainWindow::deleteChannels(FileDescriptor *file, const QVector<int> &channe
     return true;
 }
 
-bool MainWindow::deleteChannels(const QVector<Channel *> channels)
+//так как у нас есть только список каналов, которые могут быть из разных записей,
+//то сначала определяем, из каких они записей. Затем для каждой записи получаем
+//список индексов, и тогда уже удаляем.
+bool MainWindow::deletePlotted()
 {DD;
-    Q_UNUSED(channels);
-
     if (!currentPlot) return false;
-    auto plotted = plottedDescriptors(currentPlot->plot()->curves);
+
+    auto plotted = currentPlot->plottedDescriptors();
     for (auto d: plotted) {
         auto list = d->plottedIndexes();
         if (!deleteChannels(d, list)) return false;
@@ -1266,8 +1217,8 @@ void MainWindow::editChannelDescriptions()
 
 void MainWindow::save()
 {DD;
-    const auto m = m_DockManager->dockWidgetsMap();
-    for (const auto &[key, w]: asKeyValueRange(m)) {
+    const auto m = m_DockManager->dockWidgetsMap().values();
+    for (const auto &w: m) {
         if (Tab *t = dynamic_cast<Tab*>(w->widget())) {
             t->model->save();
         }
@@ -1447,18 +1398,6 @@ void MainWindow::convertFiles()
     }
 }
 
-void MainWindow::copyToLegend()
-{DD;
-    if (!currentTab) return;
-    const QList<FileDescriptor *> records = currentTab->model->selectedFiles();
-
-    for (FileDescriptor *f: records) {
-        f->setLegend(QFileInfo(f->fileName()).completeBaseName());
-        currentTab->model->updateFile(f, MODEL_COLUMN_LEGEND);
-        emit updateLegends();
-    }
-}
-
 void MainWindow::calculateThirdOctave()
 {DD;
     if (!currentTab) return;
@@ -1619,33 +1558,6 @@ void MainWindow::calculateMovingAvg()
     }
     setCurrentAndPlot(avg.get(), avg->channelsCount()-1);
 }
-
-////соединяется с channelModel
-//void MainWindow::deleteCurve(int index) /*slot*/
-//{DD;
-//    if (!currentPlot || !currentTab) return;
-//    //не удаляем, если фиксирована
-//    if (Curve *c = currentPlot->plot()->plotted(currentTab->record->channel(index)))
-//        if (c->fixed) return;
-
-//    //удаляем кривую с графика
-//    currentPlot->plot()->deleteCurveForChannelIndex(currentTab->record, index);
-
-//    if (currentTab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
-//        auto selectedFiles = currentTab->model->selectedFiles();
-//        for (FileDescriptor *f: qAsConst(selectedFiles)) {
-//            if (f == currentTab->record) continue;
-//            if (f->channelsCount()<=index) continue;
-
-//            //не удаляем, если фиксирована
-//            if (Curve *c = currentPlot->plot()->plotted(f->channel(index))) {
-//                if (c->fixed) continue;
-//            }
-
-//            currentPlot->plot()->deleteCurveForChannelIndex(f, index);
-//        }
-//    }
-//}
 
 void MainWindow::rescanBase()
 {DD;
@@ -1827,9 +1739,7 @@ void MainWindow::updateActions()
 
     renameAct->setDisabled(selectedFilesCount==0);
     delFilesAct->setDisabled(selectedFilesCount==0);
-    plotSelectedChannelsAct->setDisabled(selectedChannelsCount==0);
     editChannelDescriptionsAct->setDisabled(selectedChannelsCount==0);
-    //exportChannelsToWavAct;
     const auto timeFiles = currentTab->model->selectedFiles({Descriptor::TimeResponse});
     calculateSpectreAct->setDisabled(timeFiles.isEmpty());
     calculateSpectreDeepSeaAct->setDisabled(timeFiles.isEmpty());
@@ -1853,7 +1763,6 @@ void MainWindow::updateActions()
 
     meanAct->setDisabled(curvesCount<2);
     movingAvgAct->setEnabled(curvesCount>0 && !spectrogram);
-    //QAction *interactionModeAct;
     addCorrectionAct->setEnabled(curvesCount>0 && !spectrogram);
     addCorrectionsAct->setEnabled(curvesCount>0 && !spectrogram);
     deleteChannelsAct->setDisabled(selectedChannelsCount==0);
@@ -1871,19 +1780,8 @@ void MainWindow::updateActions()
     exportToExcelAct->setEnabled(curvesCount>0 && !spectrogram);
     exportChannelsToWavAct->setEnabled(!timeFiles.isEmpty() && selectedChannelsCount>0);
 
-    //convertMatFilesAct;
-    //QAction *convertTDMSFilesAct;
-    //QAction *convertEsoFilesAct;
-    //convertAct;
-    copyToLegendAct->setDisabled(selectedFilesCount==0);
-
-    //QAction *autoscaleXAct;
-    //QAction *autoscaleYAct;
-    //QAction *autoscaleYSlaveAct;
-    //QAction *autoscaleAllAct;
-
-    //QAction *removeLabelsAct;
     if (currentPlot) currentPlot->updateActions(filesCount, channelsCount);
+    if (currentTab) currentTab->updateActions();
 }
 
 void MainWindow::onFocusedDockWidgetChanged(ads::CDockWidget *old, ads::CDockWidget *now)
@@ -1990,8 +1888,8 @@ bool MainWindow::closeRequested()
 {DD;
     //определяем, были ли изменения
     bool changed = false;
-    const auto m = m_DockManager->dockWidgetsMap();
-    for (const auto &[name, w]: asKeyValueRange(m)) {
+    const auto m = m_DockManager->dockWidgetsMap().values();
+    for (const auto &w: m) {
         if (Tab *t = qobject_cast<Tab *>(w->widget()); t && t->model->changed()) {
             changed = true;
             break;
@@ -2019,7 +1917,7 @@ bool MainWindow::closeRequested()
 
         if (msgBox.clickedButton() == cancB) return false;
         else if (msgBox.clickedButton() == discB) {
-            for (const auto &[name, w]: asKeyValueRange(m)) {
+            for (const auto &w: m) {
                 if (Tab *t = qobject_cast<Tab *>(w->widget()))
                     t->model->discardChanges();
             }
@@ -2033,7 +1931,7 @@ bool MainWindow::closeRequested()
     }
 
     QVariantMap map;
-    for (const auto &[name, w]: asKeyValueRange(m)) {
+    for (const auto &w: m) {
         if (Tab *t = qobject_cast<Tab *>(w->widget())) {
             if (auto folders = t->fileHandler->fileNames(); !folders.isEmpty())
                 map.insert(w->windowTitle(), folders);

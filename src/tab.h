@@ -18,6 +18,7 @@ class QFileSystemWatcher;
 class FileHandler;
 class MainWindow;
 class ChannelsTable;
+class Channel;
 
 class Tab : public QSplitter
 {
@@ -28,6 +29,8 @@ public:
     ~Tab() {}
 
     void updateChannelsTable(FileDescriptor *descriptor);
+    void updateActions();
+    void addParentAction(const QString &name, QAction *action);
 
     QLabel *filePathLabel = nullptr;
     FilesTable *filesTable = nullptr;
@@ -43,9 +46,15 @@ public:
     FileHandler *fileHandler = nullptr;
 signals:
     void descriptorChanged();
+    void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels);
+    void needUpdateLegends();
 private:
     QAction *openFolderAct;
     QAction *editFileAct;
+    QAction *plotSelectedChannelsAct;
+    QAction *plotSelectedChannelsOnRightAct;
+    QAction *copyToLegendAct;
+    QHash<QString, QAction*> parentActions;
 private slots:
     void filesSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);
     void channelsSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);

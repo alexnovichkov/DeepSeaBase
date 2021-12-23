@@ -175,7 +175,7 @@ bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value,
                     descriptor->setChanged(true);
                     ch->setChanged(true);
                     emit dataChanged(index, index, {Qt::DisplayRole});
-                    emit updateLegends();
+                    emit legendsChanged();
                     success = true;
                     emit maybeUpdateChannelProperty(row, descr, p, value.toString());
                 }

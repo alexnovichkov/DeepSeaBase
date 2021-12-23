@@ -52,6 +52,8 @@ public:
     void discardChanges();
 
     bool changed() const;
+    //Копирует названия выделенных файлов в столбец легенды
+    void copyToLegend();
 
     // QAbstractItemModel interface
 public:

@@ -66,6 +66,7 @@
 #include "axiszoom.h"
 #include "plotzoom.h"
 #include "scaledraw.h"
+#include "grid.h"
 
 // простой фабричный метод создания кривой нужного типа
 Curve * createCurve(const QString &legendName, Channel *channel)
@@ -123,11 +124,7 @@ Plot::Plot(QWidget *parent) :
 
 
     // grid
-    grid = new QwtPlotGrid;
-    grid->enableXMin(true);
-    grid->setMajorPen(QColor(150,150,150,150),0,Qt::DotLine);
-    grid->setMinorPen(QColor(150,150,150,150),0,Qt::DotLine);
-    grid->attach(this);
+    grid = new Grid(this);
 
     createLegend();
 
@@ -220,6 +217,18 @@ QVector<Channel *> Plot::plottedChannels() const
     QVector<Channel*> result;
     result.reserve(curves.size());
     for (auto c: curves) result << c->channel;
+    return result;
+}
+
+QVector<FileDescriptor *> Plot::plottedDescriptors() const
+{DD;
+    QVector<FileDescriptor*> result;
+
+    for (auto c: curves) {
+        if (auto d = c->channel->descriptor(); !result.contains(d))
+            result.append(d);
+    }
+
     return result;
 }
 
@@ -1029,6 +1038,9 @@ void Plot::importPlot(QPrinter &printer, const QSize &size, int resolution) /*pr
         for (int i=0; i<QwtPlot::axisCnt; ++i)
             if (axisEnabled(i)) setAxisFont(i, axisfont);
 
+        //настройка линий сетки
+        grid->adaptToPrinter();
+
         insertLegend(new QwtLegend(), QwtPlot::BottomLegend);
 
         QwtPlotRenderer renderer;
@@ -1040,6 +1052,7 @@ void Plot::importPlot(QPrinter &printer, const QSize &size, int resolution) /*pr
         axisfont.setPointSize(axisfont.pointSize()+2);
         for (int i=0; i<QwtPlot::axisCnt; ++i)
             if (axisEnabled(i)) setAxisFont(i, axisfont);
+        grid->restore();
 
         createLegend();
     }

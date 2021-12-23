@@ -64,6 +64,7 @@ SOURCES += main.cpp\
     methods/weighting.cpp \
     methods/windowingalgorithm.cpp \
     plot/canvaseventfilter.cpp \
+    plot/grid.cpp \
     plot/imagerenderdialog.cpp \
     plot/plotarea.cpp \
     plot/scaledraw.cpp \
@@ -168,6 +169,7 @@ HEADERS  += mainwindow.h \
     methods/weighting.h \
     methods/windowingalgorithm.h \
     plot/canvaseventfilter.h \
+    plot/grid.h \
     plot/imagerenderdialog.h \
     plot/plotarea.h \
     plot/scaledraw.h \

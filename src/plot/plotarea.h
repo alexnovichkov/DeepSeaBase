@@ -33,6 +33,7 @@ public:
     void replotDescriptor(FileDescriptor *f);
 
     QVector<Channel*> plottedChannels() const;
+    QVector<FileDescriptor*> plottedDescriptors() const;
     int curvesCount(int type=-1) const;
     PlotType type() const;
 signals:

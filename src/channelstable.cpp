@@ -32,11 +32,6 @@ ChannelsTable::ChannelsTable(QWidget *parent) : QTableView(parent)
             menu.addAction(parentActions.value("move"));
             menu.exec(QCursor::pos());
         }
-//        else if (column == 9) {
-//            //legend
-//            menu.addAction(copyToLegendAct);
-//            menu.exec(QCursor::pos());
-//        }
     });
 }
 

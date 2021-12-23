@@ -90,6 +90,7 @@ void AxisOverlay::setVisible(bool visible)
 
 void AxisOverlay::paintEvent(QPaintEvent *event)
 {
+    Q_UNUSED(event);
     QRect r = rect();
 
     QPainter painter(this);

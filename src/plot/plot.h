@@ -46,7 +46,7 @@ class TrackingPanel;
 class PlayPanel;
 class QPrinter;
 class CheckableLegend;
-
+class Grid;
 
 class Plot : public QwtPlot
 {
@@ -80,6 +80,7 @@ public:
     //или удалении кривых
     QVector<PlottedIndex> plottedIndexes;
     QVector<Channel*> plottedChannels() const;
+    QVector<FileDescriptor*> plottedDescriptors() const;
     bool hasCurves() const;
     int curvesCount(int type=-1) const;
     Curve *plotted(Channel *channel) const;
@@ -174,7 +175,7 @@ private:
     QList<Curve *> leftCurves;
     QList<Curve *> rightCurves;
 
-    QwtPlotGrid *grid;
+    Grid *grid;
     PlotTracker *tracker;
     Picker *_picker;
     QwtPlotCanvas *_canvas;

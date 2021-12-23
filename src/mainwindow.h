@@ -92,13 +92,6 @@ private slots:
      * Конвертирует выделенные записи в другой формат и добавляет их в базу
      */
     void convertFiles();
-
-    /**
-     * @brief copyToLegend
-     * Копирует названия выделенных файлов в столбец легенды
-     */
-    void copyToLegend();
-
     /**
      * @brief rescanBase
      * обновляет список файлов в таблице, удаляет мертвые записи
@@ -149,7 +142,7 @@ private:
     void addDescriptors(const QList<F> &files, bool silent=false);
 
     bool deleteChannels(FileDescriptor *file, const QVector<int> &channelsToDelete);
-    bool deleteChannels(const QVector<Channel *> channels);
+    bool deletePlotted();
     bool copyChannels(FileDescriptor *descriptor, const QVector<int> &channelsToCopy);
     bool copyChannels(const QVector<Channel *> source);
 
@@ -204,9 +197,6 @@ private:
     QAction *copyChannelsAct;
     QAction *moveChannelsAct;
 
-    QAction *plotSelectedChannelsAct;
-    QAction *plotSelectedChannelsOnRightAct;
-
     QAction *deletePlottedChannelsAct;
     //QAction *deleteChannelsBatchAct;
     QAction *copyPlottedChannelsAct;
@@ -225,11 +215,8 @@ private:
     QAction *convertTDMSFilesAct;
     QAction *convertEsoFilesAct;
     QAction *convertAct;
-    QAction *copyToLegendAct;
-
     QAction *aboutAct;
     QAction *addPlotAreaAct;
-
     PlotArea *currentPlot = nullptr;
 
 protected:

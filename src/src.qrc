@@ -61,5 +61,7 @@
         <file>icons/newPlot.png</file>
         <file>icons/newPlot24.png</file>
         <file>icons/edit24.png</file>
+        <file>icons/plot.png</file>
+        <file>icons/plot24.png</file>
     </qresource>
 </RCC>

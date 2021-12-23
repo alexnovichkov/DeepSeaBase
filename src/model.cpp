@@ -102,7 +102,6 @@ void Model::deleteSelectedFiles()
         }
     }
 
-
     indexes.clear();
 
     endResetModel();
@@ -144,6 +143,16 @@ bool Model::changed() const
     return std::any_of(descriptors.cbegin(), descriptors.cend(), [](const F &d){
         return d->changed() || d->dataChanged();
     });
+}
+
+void Model::copyToLegend()
+{
+    const QList<FileDescriptor *> records = selectedFiles();
+    for (FileDescriptor *f: records) {
+        f->setLegend(QFileInfo(f->fileName()).completeBaseName());
+        updateFile(f, MODEL_COLUMN_LEGEND);
+    }
+    emit legendsChanged();
 }
 
 Model::~Model()

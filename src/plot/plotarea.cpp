@@ -734,6 +734,12 @@ QVector<Channel *> PlotArea::plottedChannels() const
     return QVector<Channel *>();
 }
 
+QVector<FileDescriptor *> PlotArea::plottedDescriptors() const
+{
+    if (m_plot) return m_plot->plottedDescriptors();
+    return QVector<FileDescriptor *>();
+}
+
 int PlotArea::curvesCount(int type) const
 {
     return m_plot?m_plot->curvesCount(type):0;
