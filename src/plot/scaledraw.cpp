@@ -2,6 +2,10 @@
 #include <QtDebug>
 #include "plot.h"
 
+#include <QEvent>
+#include <qwt_scale_map.h>
+#include <QApplication>
+
 ScaleDraw::ScaleDraw()
 {
 
@@ -67,49 +71,46 @@ void ScaleDraw::drawBackbone(QPainter *painter) const
     }
 }
 
-#include <QPainter>
-
-AxisOverlay::AxisOverlay(Plot *parent)
-    : QWidget(parent), m_plot(parent)
+AxisOverlay::AxisOverlay(Plot *parent) : QwtPlotZoneItem(), m_plot(parent)
 {
-    setWindowFlags(Qt::Tool | Qt::FramelessWindowHint);
-    setAttribute(Qt::WA_TranslucentBackground);
+    setOrientation(Qt::Vertical);
+    attach(m_plot);
     setVisible(false);
-    setMouseTracking(false);
 }
 
-void AxisOverlay::setVisible(bool visible)
+void AxisOverlay::setVisibility(bool visible)
 {
     if (visible) {
         setGeom();
-
-       // show();
+        setColor();
     }
-    QWidget::setVisible(visible);
-}
-
-void AxisOverlay::paintEvent(QPaintEvent *event)
-{
-    Q_UNUSED(event);
-    QRect r = rect();
-
-    QPainter painter(this);
-    QColor Color = palette().color(QPalette::Active, QPalette::Highlight);
-    QPen Pen = painter.pen();
-    Pen.setColor(Color.darker(120));
-    Pen.setStyle(Qt::SolidLine);
-    Pen.setWidth(1);
-    Pen.setCosmetic(true);
-    painter.setPen(Pen);
-    Color = Color.lighter(130);
-    Color.setAlpha(64);
-    painter.setBrush(Color);
-    painter.drawRect(r.adjusted(0, 0, -1, -1));
+    setVisible(visible);
 }
 
 Plot *AxisOverlay::plot()
 {
     return m_plot;
+}
+
+void AxisOverlay::setColor()
+{
+    QColor Color = m_plot->palette().color(QPalette::Active, QPalette::Highlight);
+    if (QApplication::keyboardModifiers() & Qt::CTRL) {
+        auto blue = Color.blueF();
+        Color.setBlueF(Color.greenF());
+        Color.setGreenF(blue);
+    }
+
+    QPen Pen;
+    Pen.setColor(Color.darker(120));
+    Pen.setStyle(Qt::SolidLine);
+    Pen.setWidth(1);
+    Pen.setCosmetic(true);
+    setPen(Pen);
+
+    Color = Color.lighter(130);
+    Color.setAlpha(64);
+    setBrush(Color);
 }
 
 LeftAxisOverlay::LeftAxisOverlay(Plot *parent) : AxisOverlay(parent)
@@ -118,9 +119,8 @@ LeftAxisOverlay::LeftAxisOverlay(Plot *parent) : AxisOverlay(parent)
 
 void LeftAxisOverlay::setGeom()
 {
-    resize({50, plot()->canvas()->height()});
-    QPoint TopLeft = plot()->canvas()->mapToGlobal(plot()->canvas()->rect().topLeft());
-    move(TopLeft);
+    const auto &scaleMap = plot()->canvasMap(QwtAxisId(QwtAxis::xBottom));
+    setInterval(scaleMap.s1()-scaleMap.sDist()/20, scaleMap.s1()+scaleMap.sDist()/20);
 }
 
 RightAxisOverlay::RightAxisOverlay(Plot *parent) : AxisOverlay(parent)
@@ -129,7 +129,6 @@ RightAxisOverlay::RightAxisOverlay(Plot *parent) : AxisOverlay(parent)
 
 void RightAxisOverlay::setGeom()
 {
-    resize({50,plot()->canvas()->height()});
-    auto point = plot()->canvas()->mapToGlobal(plot()->canvas()->rect().topRight());
-    move(point.x()-50, point.y());
+    const auto &scaleMap = plot()->canvasMap(QwtAxisId(QwtAxis::xBottom));
+    setInterval(scaleMap.s2()-scaleMap.sDist()/20, scaleMap.s2()+scaleMap.sDist()/20);
 }

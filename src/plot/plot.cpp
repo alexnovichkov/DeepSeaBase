@@ -1196,8 +1196,8 @@ void Plot::dropEvent(QDropEvent *event)
         emit needPlotChannels(plotOnLeft, myData->channels);
         event->acceptProposedAction();
     }
-    leftOverlay->setVisible(false);
-    rightOverlay->setVisible(false);
+    leftOverlay->setVisibility(false);
+    rightOverlay->setVisibility(false);
 }
 
 void Plot::dragEnterEvent(QDragEnterEvent *event)
@@ -1233,8 +1233,8 @@ void Plot::dragMoveEvent(QDragMoveEvent *event)
 //                break;
 //            }
 //        }
-        leftOverlay->setVisible(plotOnLeft);
-        rightOverlay->setVisible(!plotOnLeft);
+        leftOverlay->setVisibility(plotOnLeft);
+        rightOverlay->setVisibility(!plotOnLeft);
 //        if (can)
             event->acceptProposedAction();
     }
@@ -1243,6 +1243,6 @@ void Plot::dragMoveEvent(QDragMoveEvent *event)
 void Plot::dragLeaveEvent(QDragLeaveEvent *event)
 {
     Q_UNUSED(event);
-    leftOverlay->setVisible(false);
-    rightOverlay->setVisible(false);
+    leftOverlay->setVisibility(false);
+    rightOverlay->setVisibility(false);
 }

@@ -5,7 +5,7 @@
 #include <qwt_scale_draw.h>
 #include <qwt_scale_widget.h>
 
-#include <QWidget>
+#include <qwt_plot_zoneitem.h>
 
 class ScaleDraw : public QwtScaleDraw
 {
@@ -19,23 +19,21 @@ protected:
 
 class Plot;
 
-class AxisOverlay : public QWidget
+class AxisOverlay : public QwtPlotZoneItem
 {
-    Q_OBJECT
 public:
     explicit AxisOverlay(Plot *parent);
-    void setVisible(bool visible) override;
-    void paintEvent(QPaintEvent *event) override;
+    void setVisibility(bool visible);
     Plot *plot();
 protected:
     virtual void setGeom() = 0;
+    void setColor();
 private:
     Plot *m_plot;
 };
 
 class LeftAxisOverlay : public AxisOverlay
 {
-    Q_OBJECT
 public:
     explicit LeftAxisOverlay(Plot *parent);
 protected:
@@ -44,7 +42,6 @@ protected:
 
 class RightAxisOverlay : public AxisOverlay
 {
-    Q_OBJECT
 public:
     explicit RightAxisOverlay(Plot *parent);
 protected:
