@@ -74,13 +74,7 @@ QList<QwtLegendData> SpectroCurve::legendData() const
 {
     QList<QwtLegendData> result = QwtPlotSpectrogram::legendData();
     QwtLegendData &data = result[0];
-    data.setValue(QwtLegendData::UserRole+3, pen().color());
-    data.setValue(QwtLegendData::TitleRole, title());
-    if (duplicate)
-        data.setValue(QwtLegendData::UserRole+1, fileNumber);
-    data.setValue(QwtLegendData::UserRole+2, highlighted);
-    data.setValue(QwtLegendData::UserRole+4, fixed);
-
+    data.setValues(commonLegendData());
     return result;
 }
 

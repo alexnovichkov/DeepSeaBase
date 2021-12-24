@@ -64,11 +64,12 @@ public:
     QPen oldPen;
 
 
-    int fileNumber;
+    int fileNumber=0;
     bool duplicate;
     bool highlighted;
     bool fixed = false;
 public:
+    QMap<int, QVariant> commonLegendData() const;
     void evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const;
     void switchFixed();
     virtual void resetCashedData() {}

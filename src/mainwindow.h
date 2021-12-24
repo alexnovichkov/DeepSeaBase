@@ -55,6 +55,7 @@ public:
     bool addFiles(const QStringList &files, bool silent=false);
 
     void onChannelsDropped(bool plotOnLeft, const QVector<Channel*> &channels);
+    void onChannelsDropped(bool plotOnLeft, const QVector<Channel*> &channels, bool plotAll);
 public slots:
     void createNewTab();
     void addPlotArea();
@@ -129,9 +130,6 @@ private slots:
 
     void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
 
-    void cycleChannelsUp();
-    void cycleChannelsDown();
-
     void exportChannelsToWav();
     void renameDescriptor();
 private:
@@ -157,7 +155,7 @@ private:
     void setCurrentAndPlot(FileDescriptor *d, int channelIndex);
 
     void setDescriptor(int direction, bool checked);
-    void cycleChannelsUpOrDown(bool up);
+//    void cycleChannels(bool up);
 
     ads::CDockManager* m_DockManager;
     ads::CDockAreaWidget *topArea = nullptr;
@@ -178,8 +176,6 @@ private:
     QAction *plotHelpAct;
 
     QAction *delFilesAct;
-//    QAction *plotAllChannelsAct;
-//    QAction *plotAllChannelsOnRightAct;
     QAction *exportChannelsToWavAct;
     QAction *calculateSpectreAct;
     QAction *calculateSpectreDeepSeaAct;

@@ -56,6 +56,12 @@ class Plot : public QwtPlot
         int index = -1;
         bool onLeft = true;
     };
+    struct Cycled
+    {
+        Channel *ch = nullptr;
+        bool onLeft = true;
+        int fileIndex = 0;
+    };
 
 public:
     enum InteractionMode {
@@ -69,6 +75,9 @@ public:
     virtual ~Plot();
 
     QList<Curve *> curves;
+    QList<Curve *> leftCurves;
+    QList<Curve *> rightCurves;
+
     QwtAxisId xBottomAxis{QwtAxis::xBottom,0};
     QwtAxisId yLeftAxis{QwtAxis::yLeft,0};
     QwtAxisId yRightAxis{QwtAxis::yRight,0};
@@ -79,6 +88,7 @@ public:
     //если все эти каналы - из одной записи. Список обновляется при добавлении
     //или удалении кривых
     QVector<PlottedIndex> plottedIndexes;
+    QVector<Cycled> cycled;
     QVector<Channel*> plottedChannels() const;
     QVector<FileDescriptor*> plottedDescriptors() const;
     bool hasCurves() const;
@@ -94,9 +104,11 @@ public:
 
 
     void updatePlottedIndexes();
-    void plotCurvesForDescriptor(FileDescriptor *d);
-    void plotChannel(Channel * ch, bool plotOnLeft);
+    void updateCycled();
+    void plotCurvesForDescriptor(FileDescriptor *d, int fileIndex=0);
+    void plotChannel(Channel * ch, bool plotOnLeft, int fileIndex=0);
     void update();
+    void cycleChannels(bool up);
 
     void deleteCurvesForDescriptor(FileDescriptor *descriptor);
     void deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot = true);
@@ -172,8 +184,7 @@ private:
 
     int colorMap = 0;
 
-    QList<Curve *> leftCurves;
-    QList<Curve *> rightCurves;
+
 
     Grid *grid;
     PlotTracker *tracker;

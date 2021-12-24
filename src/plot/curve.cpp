@@ -10,6 +10,7 @@
 #include "qwt_clipper.h"
 #include "dataholder.h"
 #include "qwt_plot.h"
+#include "qwt_legend_data.h"
 
 Curve::Curve(const QString &title, Channel *channel)
 {DD;
@@ -159,5 +160,17 @@ void Curve::evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const
 void Curve::switchFixed()
 {DD;
     fixed = !fixed;
+}
+
+QMap<int, QVariant> Curve::commonLegendData() const
+{
+    QMap<int, QVariant> data;
+    data.insert(QwtLegendData::UserRole+3, pen().color());
+    data.insert(QwtLegendData::TitleRole, title());
+    if (duplicate && fileNumber>0)
+        data.insert(QwtLegendData::UserRole+1, fileNumber);
+    data.insert(QwtLegendData::UserRole+2, highlighted);
+    data.insert(QwtLegendData::UserRole+4, fixed);
+    return data;
 }
 

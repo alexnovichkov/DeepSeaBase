@@ -97,11 +97,11 @@ PlotArea::PlotArea(int index, PlotType type, QWidget *parent)
 
     cycleChannelsUpAct = new QAction("Предыдущий канал", this);
     cycleChannelsUpAct->setIcon(QIcon(":/icons/cminus.png"));
-    connect(cycleChannelsUpAct, SIGNAL(triggered(bool)), SLOT(cycleChannelsUp()));
+    connect(cycleChannelsUpAct, &QAction::triggered, [this](){plot()->cycleChannels(true);});
 
     cycleChannelsDownAct = new QAction("Следующий канал", this);
     cycleChannelsDownAct->setIcon(QIcon(":/icons/cplus.png"));
-    connect(cycleChannelsDownAct, SIGNAL(triggered(bool)), SLOT(cycleChannelsDown()));
+    connect(cycleChannelsDownAct, &QAction::triggered, [this](){plot()->cycleChannels(false);});
 
     clearPlotAct  = new QAction(QString("Очистить график"), this);
     clearPlotAct->setIcon(QIcon(":/icons/cross.png"));
@@ -717,15 +717,12 @@ void PlotArea::deleteCurvesForDescriptor(FileDescriptor *f)
 }
 
 //вызывается при переходе на предыдущую/следующую запись
-void PlotArea::replotDescriptor(FileDescriptor *f)
+void PlotArea::replotDescriptor(FileDescriptor *f, int fileIndex)
 {
-    //const bool keepCurves = plot()->sergeiMode; qDebug()<<keepCurves;
-    //plot()->sergeiMode = true;
     if (plot()->sergeiMode) {
         plot()->deleteAllCurves(false);
-        plot()->plotCurvesForDescriptor(f);
+        plot()->plotCurvesForDescriptor(f, fileIndex);
     }
-    //plot()->sergeiMode = keepCurves;
 }
 
 QVector<Channel *> PlotArea::plottedChannels() const

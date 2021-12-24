@@ -30,7 +30,7 @@ public:
     void exportToExcel(bool fullRange, bool dataOnly);
     void updateActions(int filesCount, int channelsCount);
     void deleteCurvesForDescriptor(FileDescriptor *f);
-    void replotDescriptor(FileDescriptor *f);
+    void replotDescriptor(FileDescriptor *f, int fileIndex);
 
     QVector<Channel*> plottedChannels() const;
     QVector<FileDescriptor*> plottedDescriptors() const;
@@ -41,8 +41,10 @@ signals:
     void channelPlotted(Channel *ch);
     void curveDeleted(Channel *);
     void descriptorRequested(int direction, bool checked);
+    //void cycleChannelsRequested(bool up);
 public slots:
     void updateLegends();
+private slots:
 
 private:
     Plot *m_plot =nullptr;

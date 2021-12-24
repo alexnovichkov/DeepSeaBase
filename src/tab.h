@@ -46,13 +46,14 @@ public:
     FileHandler *fileHandler = nullptr;
 signals:
     void descriptorChanged();
-    void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels);
+    void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels, bool plotAll = false);
     void needUpdateLegends();
 private:
     QAction *openFolderAct;
     QAction *editFileAct;
     QAction *plotSelectedChannelsAct;
     QAction *plotSelectedChannelsOnRightAct;
+    QAction *plotselectedChannelsForAllDescriptorsAct;
     QAction *copyToLegendAct;
     QHash<QString, QAction*> parentActions;
 private slots:

@@ -204,7 +204,7 @@ void MainWindow::createActions()
     plotHelpAct = new QAction(QIcon(":/icons/help.png"), "Справка", this);
     connect(plotHelpAct, &QAction::triggered, [](){QDesktopServices::openUrl(QUrl("help.html"));});
 
-    aboutAct = new QAction("О програме", this);
+    aboutAct = new QAction("О программе", this);
     connect(aboutAct, &QAction::triggered, [=](){
         QString version = QString("DeepSea Database - версия %1\n").arg(DEEPSEABASE_VERSION);
         version.append(sizeof(int*) == sizeof(qint32) ? "32-bit версия" : "64-bit версия");
@@ -357,9 +357,11 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     });
 
     connect(currentTab, &Tab::descriptorChanged, [this](){
-        if (currentPlot) currentPlot->replotDescriptor(currentTab->record);
+        int idx;
+        currentTab->model->contains(currentTab->record, &idx);
+        if (currentPlot) currentPlot->replotDescriptor(currentTab->record, idx+1);
     });
-    connect(currentTab, &Tab::needPlotChannels, this, &MainWindow::onChannelsDropped);
+    connect(currentTab, &Tab::needPlotChannels, this, qOverload<bool,const QVector<Channel*> &,bool>(&MainWindow::onChannelsDropped));
 
     ads::CDockComponentsFactory::setFactory(new TabDockFactory(this));
     auto dockWidget = new ads::CDockWidget(name);
@@ -478,7 +480,7 @@ PlotArea *MainWindow::createPlotArea()
     plotIndex++;
     PlotArea *area = new PlotArea(plotIndex, PlotType::General, this);
     connect(this, SIGNAL(updateLegends()), area, SLOT(updateLegends()));
-    connect(area->plot(), &Plot::needPlotChannels, this, &MainWindow::onChannelsDropped);
+    connect(area->plot(), &Plot::needPlotChannels, this, qOverload<bool,const QVector<Channel*> &>(&MainWindow::onChannelsDropped));
     connect(area->plot(), &Plot::focusThisPlot, [=](){
          area->setFocus();
     });
@@ -1332,8 +1334,16 @@ void MainWindow::moveChannels(bool up)
 //Возможно, добавляем к списку каналы из других записей, а затем строим графики
 void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &channels)
 {
+    if (QApplication::keyboardModifiers() & Qt::ControlModifier)
+        onChannelsDropped(plotOnLeft, channels, true);
+    else
+        onChannelsDropped(plotOnLeft, channels, false);
+}
+
+void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &channels, bool plotAll)
+{
     QVector<Channel *> toPlot = channels;
-    if (currentTab && currentTab->model->selected().size()>1 && QApplication::keyboardModifiers() & Qt::ControlModifier) {
+    if (currentTab && currentTab->model->selected().size()>1 && plotAll) {
         const QList<FileDescriptor*> selectedFiles = currentTab->model->selectedFiles();
         for (const auto f: selectedFiles) {
             if (f == currentTab->record) continue;
@@ -1343,10 +1353,17 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
             }
         }
     }
+    Plot* p = nullptr;
     if (auto plot = dynamic_cast<Plot*>(sender()))
-        for (auto ch: toPlot) plot->plotChannel(ch, plotOnLeft);
+        p = plot;
     else if (currentPlot)
-        for (auto ch: toPlot) currentPlot->plot()->plotChannel(ch, plotOnLeft);
+        p = currentPlot->plot();
+    if (p)
+        for (auto ch: toPlot) {
+            int index=-1;
+            if (currentTab) currentTab->model->contains(ch->descriptor(),&index);
+            p->plotChannel(ch, plotOnLeft, index+1);
+        }
 }
 
 void MainWindow::calculateSpectreRecords(bool useDeepsea)
@@ -1656,61 +1673,6 @@ void MainWindow::setDescriptor(int direction, bool checked) /*private*/
     }
 }
 
-void MainWindow::cycleChannelsUp()
-{DD;
-    cycleChannelsUpOrDown(true);
-}
-
-void MainWindow::cycleChannelsDown()
-{DD;
-    cycleChannelsUpOrDown(false);
-}
-
-void MainWindow::cycleChannelsUpOrDown(bool up) /*private*/
-{DD;
-//    if (!currentTab || !currentTab->record) return;
-
-//    bool mode = sergeiMode;
-//    sergeiMode = true;
-//    updatePlottedChannelsNumbers();
-
-//    QVector<int> plotted = plottedChannelsNumbers;
-
-//    if (cycled.size() > plotted.size())
-//        cycled.clear();
-//    if (cycled.size() < plotted.size())
-//        qDebug()<<"size mismatch: cycled"<<cycled.size()<<"plotted"<<plotted.size();
-
-//    if (plotted.isEmpty()) cycled.clear(); //контроль очистки графика
-
-//    if (cycled.isEmpty()) {
-//        cycled = plotted;
-//        //удаляем фиксированные каналы
-//        for (int i=cycled.size()-1; i>=0; --i) {
-//            if (Channel *ch = currentTab->record->channel(cycled[i]); ch->plotted() && ch->curve->fixed)
-//                cycled.remove(i);
-//        }
-//    }
-//    if (!cycled.isEmpty()) {
-//        currentTab->channelModel->deleteCurves();
-//        if (up) {
-//            for (int i=0; i<cycled.size(); ++i) {
-//                if (cycled[i] == 0) cycled[i] = currentTab->record->channelsCount()-1;
-//                else cycled[i]=cycled[i]-1;
-//            }
-//        }
-//        else {
-//            for (int i=cycled.size()-1; i>=0; --i) {
-//                if (cycled[i] == currentTab->record->channelsCount()-1) cycled[i] = 0;
-//                else cycled[i]=cycled[i]+1;
-//            }
-//        }
-//        //TODO: Переделать переключение каналов
-////        currentTab->channelModel->plotChannels(cycled);
-//    }
-//    sergeiMode = mode;
-}
-
 void MainWindow::exportChannelsToWav()
 {DD;
     if (!currentTab || !currentTab->record) return;
@@ -1756,10 +1718,6 @@ void MainWindow::updateActions()
     calculateThirdOctaveAct->setDisabled(
                 currentTab->model->selectedFiles(types).isEmpty());
     rescanBaseAct->setEnabled(filesCount>0);
-    //QAction *switchCursorAct;
-    //trackingCursorAct->setEnabled(!spectrogram);
-
-    //QAction *editColorsAct;
 
     meanAct->setDisabled(curvesCount<2);
     movingAvgAct->setEnabled(curvesCount>0 && !spectrogram);

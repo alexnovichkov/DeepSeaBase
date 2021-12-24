@@ -147,16 +147,26 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
     plotSelectedChannelsAct->setIcon(plotIcon);
     connect(plotSelectedChannelsAct, &QAction::triggered, [=](){
         auto toPlot = channelModel->selectedChannels();
-        if (!toPlot.isEmpty()) emit needPlotChannels(true, toPlot);
+        if (!toPlot.isEmpty()) emit needPlotChannels(true, toPlot, false);
     });
     channelsTable->addAction("plot", plotSelectedChannelsAct);
 
     plotSelectedChannelsOnRightAct = new QAction(QString("...на правой оси"), this);
     connect(plotSelectedChannelsOnRightAct, &QAction::triggered, [=](){
         auto toPlot = channelModel->selectedChannels();
-        if (!toPlot.isEmpty()) emit needPlotChannels(false, toPlot);
+        if (!toPlot.isEmpty()) emit needPlotChannels(false, toPlot, false);
     });
     channelsTable->addAction("plotRight", plotSelectedChannelsOnRightAct);
+
+    plotselectedChannelsForAllDescriptorsAct = new QAction(QString("Построить выделенные каналы для всех выделенных записей"), this);
+    QIcon plotAllIcon(":/icons/plotAll24.png");
+    plotAllIcon.addFile(":/icons/plotAll.png");
+    plotselectedChannelsForAllDescriptorsAct->setIcon(plotAllIcon);
+    connect(plotselectedChannelsForAllDescriptorsAct, &QAction::triggered, [=](){
+        auto toPlot = channelModel->selectedChannels();
+        if (!toPlot.isEmpty()) emit needPlotChannels(true, toPlot, true);
+    });
+    channelsTable->addAction("plotAll", plotselectedChannelsForAllDescriptorsAct);
 
     copyToLegendAct = new QAction("Перенести сюда названия файлов", this);
     connect(copyToLegendAct, &QAction::triggered, model, &Model::copyToLegend);
@@ -167,6 +177,7 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
     channelsToolBar->setIconSize(QSize(24,24));
     channelsToolBar->setContentsMargins(0,0,0,0);
     channelsToolBar->addAction(plotSelectedChannelsAct);
+    channelsToolBar->addAction(plotselectedChannelsForAllDescriptorsAct);
     channelsToolBar->addSeparator();
     channelsToolBar->addAction(editFileAct);
     channelsToolBar->addAction(openFolderAct);
@@ -213,6 +224,7 @@ void Tab::updateActions()
     openFolderAct->setEnabled(record != nullptr);
     editFileAct->setEnabled(record != nullptr);
     plotSelectedChannelsAct->setEnabled(channelModel->hasSelection());
+    plotselectedChannelsForAllDescriptorsAct->setEnabled(channelModel->hasSelection() && model->selected().size()>1);
     plotSelectedChannelsOnRightAct->setEnabled(channelModel->hasSelection());
     copyToLegendAct->setEnabled(model->selected().size()>0);
 }

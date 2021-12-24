@@ -232,9 +232,9 @@ QVector<FileDescriptor *> Plot::plottedDescriptors() const
     return result;
 }
 
-void Plot::plotCurvesForDescriptor(FileDescriptor *d)
+void Plot::plotCurvesForDescriptor(FileDescriptor *d, int fileIndex)
 {
-    for (auto i:plottedIndexes) plotChannel(d->channel(i.index), i.onLeft);
+    for (auto i:plottedIndexes) plotChannel(d->channel(i.index), i.onLeft, fileIndex);
 }
 
 void Plot::update()
@@ -265,6 +265,51 @@ void Plot::update()
     replot();
 }
 
+void Plot::updateCycled()
+{
+    if (sergeiMode) return;
+
+    cycled.clear();
+    for (auto curve: curves) {
+        if (!curve->fixed)
+            cycled.append({curve->channel, leftCurves.contains(curve), curve->fileNumber});
+    }
+}
+
+void Plot::cycleChannels(bool up)
+{
+    //есть список кривых, возможно, из разных записей. Необходимо для каждой записи
+    //получить список индексов, сдвинуть этот список вверх или вниз,
+    //а затем удалить имеющиеся кривые и построить сдвинутые, причем соблюдая порядок
+    //отображения.
+    //Т.о. :
+    //- для каждой кривой определяем запись, номер канала. Если возможно, сдвигаем
+    //номер канала, запоминаем канал
+
+
+    for (Cycled &c: cycled) {
+        auto d = c.ch->descriptor();
+        const int index = c.ch->index();
+        int newIndex = index;
+        if (up) {
+            if (index == 0) newIndex = d->channelsCount()-1;
+            else newIndex = index-1;
+        }
+        else {
+            if (index == d->channelsCount()-1) newIndex = 0;
+            else newIndex = index+1;
+        }
+        c.ch = d->channel(newIndex);
+    }
+
+    sergeiMode = true;
+    deleteAllCurves();
+    for (const auto &c: cycled) {
+        plotChannel(c.ch, c.onLeft, c.fileIndex);
+    }
+    sergeiMode = false;
+}
+
 bool Plot::hasCurves() const
 {DD;
     return !curves.isEmpty();
@@ -287,6 +332,7 @@ void Plot::deleteAllCurves(bool forceDeleteFixed)
     }
     if (!sergeiMode) {
         updatePlottedIndexes();
+        updateCycled();
         playerPanel->reset();
         emit curvesCountChanged(); //->MainWindow.updateActions
     }
@@ -300,6 +346,7 @@ void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
         }
     }
     updatePlottedIndexes();
+    updateCycled();
     emit curvesCountChanged(); //->MainWindow.updateActions
 }
 
@@ -309,6 +356,7 @@ void Plot::deleteCurveFromLegend(QwtPlotItem *item)
     if (Curve *c = dynamic_cast<Curve *>(item); !c->fixed) {
         deleteCurve(c, true);
         updatePlottedIndexes();
+        updateCycled();
         emit curvesCountChanged(); //->MainWindow.updateActions
     }
 }
@@ -318,6 +366,7 @@ void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doR
     if (Curve *curve = plotted(dfd->channel(channel))) {
         deleteCurve(curve, doReplot);
         updatePlottedIndexes();
+        updateCycled();
         emit curvesCountChanged(); //->MainWindow.updateActions
     }
 }
@@ -789,7 +838,7 @@ void Plot::recalculateScale(bool leftAxis)
     }
 }
 
-void Plot::plotChannel(Channel *ch, bool plotOnLeft)
+void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 {
     //проверяем, построен ли канал на этом графике
     if (plotted(ch)) return;
@@ -854,10 +903,11 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft)
     pen.setWidth(1);
     g->setPen(pen);
     g->oldPen = pen;
-    ch->setPlotted(plotOnLeft?1:2);
+    ch->setPlotted(true);
 
     curves << g;
-    //g->fileNumber = fileNumber;
+
+    g->fileNumber = fileIndex;
     checkDuplicates(g->title());
 
     g->setYAxis(ax);
@@ -893,6 +943,7 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft)
 
     update();
     updatePlottedIndexes();
+    updateCycled();
     emit channelPlotted(ch);
     emit curvesCountChanged(); //->MainWindow.updateActions
 }
