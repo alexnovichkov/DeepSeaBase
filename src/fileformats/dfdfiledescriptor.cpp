@@ -1860,7 +1860,8 @@ Descriptor::DataType dataTypefromDfdDataType(DfdDataType type)
 
 int DfdChannel::index() const
 {DD;
-    return channelIndex;
+    if (parent) return parent->channels.indexOf(const_cast<DfdChannel*>(this));
+    return -1;
 }
 
 
