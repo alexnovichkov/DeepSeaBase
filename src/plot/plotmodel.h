@@ -29,7 +29,7 @@ public:
         PlotTitleColumn,
         PlotAxisColumn,
         PlotCorrectionColumn,
-        PlotFileNumberColumn,
+        //PlotFileNumberColumn,
         PlotColumnsCount
     };
 

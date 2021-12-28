@@ -266,14 +266,22 @@ QVariant PlotModel::data(const QModelIndex &index, int role) const
     switch (role) {
         case Qt::DisplayRole: {
             switch (col) {
-                case PlotTitleColumn: return c->fileNumber>0 ? QString("%1 [%2]").arg(c->title(), c->fileNumber) :c->title();
+                case PlotTitleColumn: {
+                    QString s = c->duplicate ? QString("%1 [%2]").arg(c->title()).arg(c->fileNumber) :c->title();
+//                    if (QString corr = c->channel->correction(); !corr.isEmpty())
+//                        s.append(corr);
+                    return s;
+                }
                 case PlotAxisColumn: return c->yAxis()==QwtAxis::yLeft?"Левая":"Правая";
-                case PlotCorrectionColumn: return c->channel->correction();
+                case PlotCorrectionColumn:
+                    return c->channel->data()->hasCorrection()
+                            ? c->channel->data()->correctionString()
+                            : "";
                 default: break;
             }
             break;
         }
-        case Qt::DecorationRole: {
+        case Qt::BackgroundRole: {
             switch (col) {
                 case PlotColorColumn: return c->pen().color();
                 default: break;
@@ -283,9 +291,11 @@ QVariant PlotModel::data(const QModelIndex &index, int role) const
         case Qt::FontRole: {
             switch (col) {
                 case PlotTitleColumn: {
-                    QFont font;
-                    font.setBold(true);
-                    return font;
+                    if (c->highlighted) {
+                        QFont font;
+                        font.setBold(true);
+                        return font;
+                    }
                 }
                 default: break;
             }
@@ -311,8 +321,10 @@ QVariant PlotModel::headerData(int section, Qt::Orientation orientation, int rol
     if (orientation == Qt::Horizontal) {
         if (role == Qt::DisplayRole) {
             switch (section) {
+                case PlotColorColumn: return "";
                 case PlotTitleColumn: return "Канал";
                 case PlotCorrectionColumn: return "Поправка";
+                case PlotAxisColumn: return "Ось Y";
                 default: break;
             }
         }

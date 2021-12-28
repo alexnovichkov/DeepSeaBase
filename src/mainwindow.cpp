@@ -776,15 +776,12 @@ void MainWindow::addCorrection()
 {DD;
     if (!currentPlot || !currentTab) return;
     if (currentPlot->curvesCount()>0) {
-        QList<FileDescriptor*> files = currentTab->model->selectedFiles();
         if (!correctionDialog) {
             correctionDialog = new CorrectionDialog(currentPlot->plot(), this);
-            //connect(correctionDialog, SIGNAL())
+            connect(correctionDialog,SIGNAL(closeRequested()), addCorrectionAct, SLOT(toggle()));
+            correctionDialog->hide();
         }
-        correctionDialog->setFiles(files);
-        correctionDialog->show();
-        //CorrectionDialog dialog(currentPlot->plot(), files);
-        //dialog.exec();
+        correctionDialog->setVisible(!correctionDialog->isVisible());
 
         currentTab->updateChannelsTable(currentTab->record);
     }
@@ -1745,8 +1742,10 @@ void MainWindow::onFocusedDockWidgetChanged(ads::CDockWidget *old, ads::CDockWid
     if (!now) return;
     if (auto tab = qobject_cast<Tab *>(now->widget()))
         currentTab = tab;
-    else if (auto plot = qobject_cast<PlotArea*>(now))
+    else if (auto plot = qobject_cast<PlotArea*>(now)) {
         currentPlot = plot;
+        if (correctionDialog) correctionDialog->setPlot(currentPlot->plot());
+    }
     updateActions();
 }
 

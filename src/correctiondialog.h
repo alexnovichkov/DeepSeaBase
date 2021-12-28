@@ -4,8 +4,8 @@
 #include <QDialog>
 
 class Plot;
-class QTableWidget;
-class CheckableHeaderView;
+class QTableView;
+class HeaderView;
 class QPushButton;
 class QCheckBox;
 class FileDescriptor;
@@ -19,16 +19,21 @@ class CorrectionDialog : public QDialog
     Q_OBJECT
 public:
     explicit CorrectionDialog(Plot *plot, QWidget *parent = 0);
+    void setPlot(Plot *plot);
     void setFiles(const QList<FileDescriptor *> &descriptors);
 private slots:
     void correct();
+signals:
+    void closeRequested();
+protected:
+    void closeEvent(QCloseEvent *event) override;
 private:
 //    void
     void makeCorrectionConstant(Channel *channel);
     QLineEdit *edit;
     Plot *plot;
-    QTableWidget *table;
-    CheckableHeaderView *tableHeader;
+    QTableView *table;
+    HeaderView *tableHeader;
     QToolButton *correctButton;
     QCheckBox *allFilesCheckBox;
     QComboBox *correctionType;
