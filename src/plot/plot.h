@@ -5,7 +5,6 @@
 #include <qwt_plot_dict.h>
 #include <math.h>
 #include "colorselector.h"
-//#include <QAudio>
 
 class QwtLegend;
 class QwtPlotGrid;
@@ -37,7 +36,7 @@ struct Range {
 
 
 #include <QWidget>
-class QTreeWidget;
+
 class QPushButton;
 class QCheckBox;
 class QLabel;
@@ -47,22 +46,11 @@ class PlayPanel;
 class QPrinter;
 class CheckableLegend;
 class Grid;
+class PlotModel;
 
 class Plot : public QwtPlot
 {
     Q_OBJECT
-    struct PlottedIndex
-    {
-        int index = -1;
-        bool onLeft = true;
-    };
-    struct Cycled
-    {
-        Channel *ch = nullptr;
-        bool onLeft = true;
-        int fileIndex = 0;
-    };
-
 public:
     enum InteractionMode {
         NoInteraction,
@@ -74,9 +62,7 @@ public:
     explicit Plot(QWidget *parent = 0);
     virtual ~Plot();
 
-    QList<Curve *> curves;
-    QList<Curve *> leftCurves;
-    QList<Curve *> rightCurves;
+    PlotModel *model() {return m;}
 
     QwtAxisId xBottomAxis{QwtAxis::xBottom,0};
     QwtAxisId yLeftAxis{QwtAxis::yLeft,0};
@@ -84,16 +70,8 @@ public:
     bool spectrogram = false;
     bool sergeiMode = false;
 
-    //Этот список хранит индексы каналов, которые имеют графики, в том случае,
-    //если все эти каналы - из одной записи. Список обновляется при добавлении
-    //или удалении кривых
-    QVector<PlottedIndex> plottedIndexes;
-    QVector<Cycled> cycled;
-    QVector<Channel*> plottedChannels() const;
-    QVector<FileDescriptor*> plottedDescriptors() const;
     bool hasCurves() const;
     int curvesCount(int type=-1) const;
-    Curve *plotted(Channel *channel) const;
     Range xRange() const;
     Range yLeftRange() const;
     Range yRightRange() const;
@@ -152,7 +130,7 @@ signals:
 
     void trackingPanelCloseRequested();
     void playerPanelCloseRequested();
-    void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
+    void saveTimeSegment(const QVector<FileDescriptor*> &files, double from, double to);
     //испускаем, когда бросаем каналы на график
     void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels);
 private slots:
@@ -166,7 +144,7 @@ private:
 
     void importPlot(const QString &fileName, const QSize &size, int resolution);
     void importPlot(QPrinter &printer, const QSize &size, int resolution);
-    void checkDuplicates(const QString name);
+//    void checkDuplicates(const QString name);
     QString yValuesPresentationSuffix(int yValuesPresentation) const;
     void createLegend();
 
@@ -208,6 +186,7 @@ private:
 
     InteractionMode interactionMode = ScalingInteraction;
     ColorSelector *colors;
+    PlotModel *m = nullptr;
 
     // QWidget interface
 protected:

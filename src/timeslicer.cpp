@@ -4,7 +4,7 @@
 
 #include <QProgressDialog>
 
-TimeSlicer::TimeSlicer(const QList<FileDescriptor *> &files, double from, double to, QObject *parent)
+TimeSlicer::TimeSlicer(const QVector<FileDescriptor *> &files, double from, double to, QObject *parent)
     : QObject(parent), dataBase(files), from(from), to(to)
 {DD;
     stop_ = false;

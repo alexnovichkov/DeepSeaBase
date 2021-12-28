@@ -18,11 +18,12 @@ class CorrectionDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit CorrectionDialog(Plot *plot, QList<FileDescriptor*> &files, QWidget *parent = 0);
-    
+    explicit CorrectionDialog(Plot *plot, QWidget *parent = 0);
+    void setFiles(const QList<FileDescriptor *> &descriptors);
 private slots:
     void correct();
 private:
+//    void
     void makeCorrectionConstant(Channel *channel);
     QLineEdit *edit;
     Plot *plot;

@@ -136,8 +136,12 @@ void Curve::evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const
     const double endX = xMap.s2();
 
     if (channel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
-        from = qRound((startX - channel->data()->xMin())/channel->data()->xStep())-1;
-        to = qRound((endX - channel->data()->xMin())/channel->data()->xStep())+1;
+        const auto min = channel->data()->xMin();
+        const auto step = channel->data()->xStep();
+        if (!qFuzzyIsNull(step)) {
+            from = qRound((startX - min)/step)-1;
+            to = qRound((endX - min)/step)+1;
+        }
     }
     else {
         for (int i=0; i<to; ++i) {

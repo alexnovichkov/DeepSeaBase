@@ -176,7 +176,7 @@ QwtPlotItem *LegendModel::item(int row)
 {DD;
     if (row < 0 || row >= items.size()) return 0;
 
-    return items[row].item;
+    return items.at(row).item;
 }
 
 void LegendModel::addItem(QwtPlotItem *it)

@@ -7,7 +7,7 @@
 #include "logging.h"
 #include "fileformats/filedescriptor.h"
 #include "plot/pointlabel.h"
-
+#include "plotmodel.h"
 #include <QAxObject>
 
 PlotArea::PlotArea(int index, PlotType type, QWidget *parent)
@@ -260,9 +260,11 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 {DD;
     static QAxObject *excel = 0;
 
-    QList<Curve*> &curves = m_plot->curves;
+   // QList<Curve*> &curves = m_plot->curves;
 
-    if (curves.isEmpty()) {
+    const auto size = m_plot->model()->size();
+
+    if (size == 0) {
         QMessageBox::warning(this, "Графиков нет", "Постройте хотя бы один график!");
         return;
     }
@@ -291,13 +293,13 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 
 
 
-     Channel *channel = curves.at(0)->channel;
+     Channel *channel = m_plot->model()->curve(0)->channel;
      FileDescriptor *descriptor = channel->descriptor();
 
      // проверяем, все ли каналы из одного файла
      bool allChannelsFromOneFile = true;
-     for (int i=1; i<curves.size(); ++i) {
-         if (curves.at(i)->channel->descriptor()->fileName() != descriptor->fileName()) {
+     for (int i=1; i<size; ++i) {
+         if (m_plot->model()->curve(i)->channel->descriptor()->fileName() != descriptor->fileName()) {
              allChannelsFromOneFile = false;
              break;
          }
@@ -305,8 +307,8 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 
      //проверяем, все ли каналы имеют одинаковое разрешение по х
      bool allChannelsHaveSameXStep = true;
-     for (int i=1; i<curves.size(); ++i) {
-         if (!qFuzzyCompare(curves.at(i)->channel->data()->xStep()+1.0,
+     for (int i=1; i<size; ++i) {
+         if (!qFuzzyCompare(m_plot->model()->curve(i)->channel->data()->xStep()+1.0,
                             channel->data()->xStep()+1.0)) {
              allChannelsHaveSameXStep = false;
              break;
@@ -315,8 +317,8 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 
      //проверяем, все ли каналы имеют одинаковую длину
      bool allChannelsHaveSameLength = true;
-     for (int i=1; i<curves.size(); ++i) {
-         if (curves.at(i)->channel->data()->samplesCount() != channel->data()->samplesCount()) {
+     for (int i=1; i<size; ++i) {
+         if (m_plot->model()->curve(i)->channel->data()->samplesCount() != channel->data()->samplesCount()) {
              allChannelsHaveSameLength = false;
              break;
          }
@@ -333,8 +335,8 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 
      Range range = m_plot->xRange();
 
-     for (int i=1; i<curves.size(); ++i) {
-         Channel *ch = curves.at(i)->channel;
+     for (int i=1; i<size; ++i) {
+         Channel *ch = m_plot->model()->curve(i)->channel;
          if (ch->data()->xMin() < minX) minX = ch->data()->xMin();
          if (ch->data()->xMax() > maxX) maxX = ch->data()->xMax();
      }
@@ -368,8 +370,8 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          delete cells;
      }
      else {
-         for (int i=0; i<curves.size(); ++i) {
-             Curve *curve = curves.at(i);
+         for (int i=0; i<size; ++i) {
+             Curve *curve = m_plot->model()->curve(i);
              QStringList descriptions = curve->channel->descriptor()->dataDescription().twoStringDescription();
              while (descriptions.size()<2) descriptions << "";
 
@@ -390,8 +392,8 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
      }
 
      // записываем название канала
-     for (int i=0; i<curves.size(); ++i) {
-         Curve *curve = curves.at(i);
+     for (int i=0; i<size; ++i) {
+         Curve *curve = m_plot->model()->curve(i);
          QAxObject *cells = !writeToSeparateColumns ? worksheet->querySubObject("Cells(Int,Int)", 4, 2+i)
                                                    : worksheet->querySubObject("Cells(Int,Int)", 4, 2+i*2);
          cells->setProperty("Value", curve->title());
@@ -406,7 +408,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
      // по два столбца
      // если шаг по х нулевой, то предполагаем октаву, размножаем данные для графика
      if (!writeToSeparateColumns) {
-         const int numCols = curves.size();
+         const int numCols = size;
          const bool zeroStep = qFuzzyIsNull(channel->data()->xStep());
 
          QList<QVariant> cellsList;
@@ -423,14 +425,14 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
                  //первый ряд: (f1, Li)
                  cellsList << f1;
                  for (int j = 0; j < numCols; ++j) {
-                     cellsList << curves.at(j)->channel->data()->yValue(i);
+                     cellsList << m_plot->model()->curve(j)->channel->data()->yValue(i);
                  }
                  rowsList << QVariant(cellsList);
                  cellsList.clear();
                  //второй ряд: (f2, Li)
                  cellsList << f2;
                  for (int j = 0; j < numCols; ++j) {
-                     cellsList << curves.at(j)->channel->data()->yValue(i);
+                     cellsList << m_plot->model()->curve(j)->channel->data()->yValue(i);
                  }
                  rowsList << QVariant(cellsList);
                  cellsList.clear();
@@ -438,7 +440,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
              else {
                  cellsList << val;
                  for (int j = 0; j < numCols; ++j) {
-                     cellsList << curves.at(j)->channel->data()->yValue(i);
+                     cellsList << m_plot->model()->curve(j)->channel->data()->yValue(i);
                  }
                  rowsList << QVariant(cellsList);
              }
@@ -462,8 +464,8 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          delete Cell2;
      }
      else {
-         for (int i=0; i<curves.size(); ++i) {
-             Curve *curve = curves.at(i);
+         for (int i=0; i<size; ++i) {
+             Curve *curve = m_plot->model()->curve(i);
              Channel *ch = curve->channel;
              bool zeroStep = qFuzzyIsNull(ch->data()->xStep());
 
@@ -529,7 +531,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
                  else ok=false;
              }
 
-             for (int i=0; i<curves.size(); ++i) {
+             for (int i=0; i<size; ++i) {
                  QAxObject * serie = series->querySubObject("NewSeries()");
                  if (serie) {
                      //xvalues
@@ -566,7 +568,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          int seriesCount = series->property("Count").toInt();
          bool addRightAxis = false;
          for ( int i=0; i<seriesCount; ++i) {
-             Curve *curve = curves.at(i);
+             Curve *curve = m_plot->model()->curve(i);
              QAxObject * serie = series->querySubObject("Item (int)", i+1);
              if (serie) {
                  if (curve->yAxis()==QwtAxis::yRight) {
@@ -610,15 +612,15 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          delete plotArea;
 
          // цвета графиков
-         for (int i = 0; i< m_plot->curves.size(); ++i) {
-             Curve *curve = m_plot->curves.at(i);
+         for (int i = 0; i< size; ++i) {
+             Curve *curve = m_plot->model()->curve(i);
              QAxObject * serie = series->querySubObject("Item(int)", i+1);
              if (serie) {
                  QAxObject *format = serie->querySubObject("Format");
                  QAxObject *formatLine = format->querySubObject("Line");
                  if (formatLine) {
-                     formatLine->setProperty("Weight", m_plot->curves.at(i)->pen().width());
-                     Qt::PenStyle lineStyle = m_plot->curves.at(i)->pen().style();
+                     formatLine->setProperty("Weight", m_plot->model()->curve(i)->pen().width());
+                     Qt::PenStyle lineStyle = m_plot->model()->curve(i)->pen().style();
                      int msoLineStyle = 1;
                      switch (lineStyle) {
                          case Qt::NoPen:
@@ -632,7 +634,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
                      formatLine->setProperty("DashStyle", msoLineStyle);
 
                      QAxObject *formatLineForeColor = formatLine->querySubObject("ForeColor");
-                     QColor color = m_plot->curves.at(i)->channel->color();
+                     QColor color = m_plot->model()->curve(i)->channel->color();
                      //меняем местами красный и синий, потому что Excel неправильно понимает порядок
                      int red = color.red();
                      color.setRed(color.blue());
@@ -697,7 +699,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 void PlotArea::updateActions(int filesCount, int channelsCount)
 {
     const bool hasCurves = curvesCount()>0;
-    const bool allCurvesFromSameDescriptor = !plot()->plottedIndexes.isEmpty();
+    const bool allCurvesFromSameDescriptor = plot()->model()->allCurvesFromSameDescriptor();
 
     clearPlotAct->setEnabled(hasCurves);
     savePlotAct->setEnabled(hasCurves);
@@ -727,13 +729,13 @@ void PlotArea::replotDescriptor(FileDescriptor *f, int fileIndex)
 
 QVector<Channel *> PlotArea::plottedChannels() const
 {
-    if (m_plot) return m_plot->plottedChannels();
+    if (m_plot) return m_plot->model()->plottedChannels();
     return QVector<Channel *>();
 }
 
 QVector<FileDescriptor *> PlotArea::plottedDescriptors() const
 {
-    if (m_plot) return m_plot->plottedDescriptors();
+    if (m_plot) return m_plot->model()->plottedDescriptors();
     return QVector<FileDescriptor *>();
 }
 

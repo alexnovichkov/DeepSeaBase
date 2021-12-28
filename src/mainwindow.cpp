@@ -45,6 +45,7 @@
 #include "filehandler.h"
 #include "filehandlerdialog.h"
 #include "plot/plotarea.h"
+#include "plot/plotmodel.h"
 #include "stepitemdelegate.h"
 #include "dfdfilterproxy.h"
 
@@ -262,6 +263,7 @@ void MainWindow::createActions()
     connect(editColorsAct, SIGNAL(triggered()), this, SLOT(editColors()));
 
     addCorrectionAct = new QAction("Добавить поправку...", this);
+    addCorrectionAct->setCheckable(true);
     addCorrectionAct->setIcon(QIcon(":/icons/correction.png"));
     connect(addCorrectionAct, SIGNAL(triggered()), SLOT(addCorrection()));
 
@@ -775,9 +777,14 @@ void MainWindow::addCorrection()
     if (!currentPlot || !currentTab) return;
     if (currentPlot->curvesCount()>0) {
         QList<FileDescriptor*> files = currentTab->model->selectedFiles();
-
-        CorrectionDialog dialog(currentPlot->plot(), files);
-        dialog.exec();
+        if (!correctionDialog) {
+            correctionDialog = new CorrectionDialog(currentPlot->plot(), this);
+            //connect(correctionDialog, SIGNAL())
+        }
+        correctionDialog->setFiles(files);
+        correctionDialog->show();
+        //CorrectionDialog dialog(currentPlot->plot(), files);
+        //dialog.exec();
 
         currentTab->updateChannelsTable(currentTab->record);
     }
@@ -1030,7 +1037,7 @@ void MainWindow::calculateMean()
 
     if (currentPlot->curvesCount()<2) return;
 
-    QList<Channel*> channels;
+    QVector<Channel*> channels = currentPlot->plot()->model()->plottedChannels();
 
     bool dataTypeEqual = true;
     bool stepsEqual = true; // одинаковый шаг по оси Х
@@ -1039,25 +1046,21 @@ void MainWindow::calculateMean()
     bool writeToSeparateFile = true;
     bool writeToD94 = false;
 
-    Channel *firstChannel = currentPlot->plot()->curves.first()->channel;
-    channels.append(firstChannel);
+    Channel *firstChannel = channels.first();
     FileDescriptor *firstDescriptor = firstChannel->descriptor();
 
     bool allFilesDfd = firstDescriptor->fileName().toLower().endsWith("dfd");
     auto firstChannelFileName = firstDescriptor->fileName();
 
-    for (int i = 1; i<currentPlot->plot()->curves.size(); ++i) {
-        Curve *curve = currentPlot->plot()->curves.at(i);
-        channels.append(curve->channel);
-
+    for (auto channel: channels) {
         allFilesDfd &= firstChannelFileName.toLower().endsWith("dfd");
-        if (firstChannel->data()->xStep() != curve->channel->data()->xStep())
+        if (firstChannel->data()->xStep() != channel->data()->xStep())
             stepsEqual = false;
-        if (firstChannel->yName() != curve->channel->yName())
+        if (firstChannel->yName() != channel->yName())
             namesEqual = false;
-        if (firstChannelFileName != curve->channel->descriptor()->fileName())
+        if (firstChannelFileName != channel->descriptor()->fileName())
             oneFile = false;
-        if (!firstDescriptor->dataTypeEquals(curve->channel->descriptor()))
+        if (!firstDescriptor->dataTypeEquals(channel->descriptor()))
             dataTypeEqual = false;
     }
     if (!dataTypeEqual) {
@@ -1166,7 +1169,7 @@ void MainWindow::calculateMean()
         meanFile = App->find(meanFileName);
     }
 
-    meanFile->calculateMean(channels);
+    meanFile->calculateMean(channels.toList());
 
     int idx;
     if (currentTab && currentTab->model->contains(meanFile, &idx)) {
@@ -1262,7 +1265,7 @@ void MainWindow::convertEsoFiles()
     }
 }
 
-void MainWindow::saveTimeSegment(const QList<FileDescriptor *> &files, double from, double to)
+void MainWindow::saveTimeSegment(const QVector<FileDescriptor *> &files, double from, double to)
 {DD;
     QThread *thread = new QThread;
     TimeSlicer *converter = new TimeSlicer(files, from, to);
@@ -1453,7 +1456,7 @@ void MainWindow::calculateThirdOctave()
 void MainWindow::calculateMovingAvg()
 {DD;
     if (!currentPlot) return;
-    if (currentPlot->plot()->curves.size()<1) return;
+    if (currentPlot->plot()->curvesCount()==0) return;
 
     int windowSize = App->getSetting("movingAvgSize",3).toInt();
     bool ok;
@@ -1464,21 +1467,19 @@ void MainWindow::calculateMovingAvg()
     else
         return;
 
-    QList<Channel*> channels;
+    auto channels = currentPlot->plot()->model()->plottedChannels();
 
     bool oneFile = true; // каналы из одного файла
     bool writeToSeparateFile = true;
 
-    Curve *firstCurve = currentPlot->plot()->curves.constFirst();
-    channels.append(firstCurve->channel);
-    const QString firstName = firstCurve->channel->descriptor()->fileName();
+    auto firstChannel = channels.first();
+    const QString firstName = firstChannel->descriptor()->fileName();
 
     bool allFilesDfd = firstName.toLower().endsWith("dfd") ||
                        firstName.toLower().endsWith("d94");
 
-    for (Curve *curve: currentPlot->plot()->curves) {
-        channels.append(curve->channel);
-        const QString curveName = curve->channel->descriptor()->fileName();
+    for (auto channel: channels) {
+        const QString curveName = channel->descriptor()->fileName();
 
         allFilesDfd &= (curveName.toLower().endsWith("dfd") ||
                         curveName.toLower().endsWith("d94"));
@@ -1518,7 +1519,7 @@ void MainWindow::calculateMovingAvg()
         dialog.setFileMode(QFileDialog::AnyFile);
 
         if (allFilesDfd) {
-            QSortFilterProxyModel *proxy = new DfdFilterProxy(firstCurve->channel->descriptor(), this);
+            QSortFilterProxyModel *proxy = new DfdFilterProxy(firstChannel->descriptor(), this);
             dialog.setProxyModel(proxy);
         }
 
@@ -1557,14 +1558,14 @@ void MainWindow::calculateMovingAvg()
             if (isNew) avg->read();
         }
         else
-            avg->fillPreliminary(firstCurve->channel->descriptor());
+            avg->fillPreliminary(firstChannel->descriptor());
     }
     else {
-        avgFileName = firstCurve->channel->descriptor()->fileName();
+        avgFileName = firstChannel->descriptor()->fileName();
         avg = App->find(avgFileName);
     }
 
-    avg->calculateMovingAvg(channels,windowSize);
+    avg->calculateMovingAvg(channels.toList(),windowSize);
 
     int idx;
     if (currentTab && currentTab->model->contains(avgFileName, &idx)) {
@@ -1628,12 +1629,8 @@ void MainWindow::setDescriptor(int direction, bool checked) /*private*/
     //ищем запись первой не фиксированной кривой
     //(фиксированная кривая может быть из другой записи)
     if (currentPlot) {
-        for (Curve *c: currentPlot->plot()->curves) {
-            if (!c->fixed) {
-                d = c->channel->descriptor();
-                break;
-            }
-        }
+        auto c = currentPlot->plot()->model()->firstOf([](Curve *c){return !c->fixed;});
+        if (c) d = c->channel->descriptor();
     }
     if (!d) return;
 
@@ -1785,14 +1782,6 @@ void MainWindow::exportToExcelData()
 {DD;
     if (currentPlot) currentPlot->exportToExcel(false, true);
 }
-
-//QStringList twoStringDescription(const DescriptionList &list)
-//{
-//    QStringList result;
-//    if (list.size()>0) result << descriptionEntryToString(list.constFirst()); else result << "";
-//    if (list.size()>1) result << descriptionEntryToString(list.at(1)); else result << "";
-//    return result;
-//}
 
 void MainWindow::onChannelChanged(Channel *ch)
 {

@@ -10,6 +10,7 @@
 #include "trackingcursor.h"
 #include "curve.h"
 #include "fileformats/filedescriptor.h"
+#include "plot/plotmodel.h"
 
 PlotTracker::PlotTracker(Plot *plot) :
     QwtPlotPicker(plot->canvas()), plot(plot)
@@ -56,8 +57,8 @@ QwtText PlotTracker::trackerTextF(const QPointF &pos) const
     if (plot->spectrogram) {
         bool success = false;
         double y = 0.0;
-        if (plot->hasCurves())
-            y = plot->curves.first()->channel->data()->YforXandZ(pos.x(), pos.y(), success);
+        if (auto c = plot->model()->curve(0))
+            y = c->channel->data()->YforXandZ(pos.x(), pos.y(), success);
         if (success)
             text = QwtText(smartDouble(pos.x())+", "+smartDouble(pos.y()) + ", "+smartDouble(y));
         else

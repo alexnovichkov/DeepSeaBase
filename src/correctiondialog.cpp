@@ -8,28 +8,14 @@
 #include "fileformats/dfdfiledescriptor.h"
 #include "logging.h"
 
-CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, QWidget *parent) :
-    QDialog(parent), plot(plot), files(files)
-{DD;
+CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) : QDialog(parent), plot(plot)
+{
     setWindowTitle("Добавление поправки к графику");
 
-    // удаляем из списка файлов файлы, графики которых построены на экране
-    // чтобы эти файлы не мешались
-    foreach (Curve *curve, plot->curves)
-        this->files.removeAll(curve->channel->descriptor());
-
     table = new QTableWidget(0,3,this);
-
     tableHeader = new CheckableHeaderView(Qt::Horizontal, table);
-
     table->setHorizontalHeader(tableHeader);
     tableHeader->setCheckable(1,true);
-
-
-    allFilesCheckBox = new QCheckBox("Применить поправку ко всем выделенным файлам", this);
-    if (files.size()<1) allFilesCheckBox->setEnabled(false);
-
-
     connect(tableHeader, &CheckableHeaderView::toggled, [this](int column, Qt::CheckState state)
     {
         if (column<0 || column >= table->columnCount()) return;
@@ -38,6 +24,9 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
         for (int i=0; i<table->rowCount(); ++i)
             table->item(i,column)->setCheckState(state);
     });
+
+    allFilesCheckBox = new QCheckBox("Применить поправку ко всем выделенным файлам", this);
+
 
     connect(table, &QTableWidget::itemChanged, [=](QTableWidgetItem *item)
     {
@@ -64,21 +53,6 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
     table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
     table->horizontalHeader()->setStretchLastSection(true);
     table->setHorizontalHeaderLabels(QStringList()<<""<<"Канал"<<"Поправка");
-
-    table->setRowCount(plot->curves.size());
-    int i=0;
-    foreach (Curve *curve, plot->curves) {
-        QTableWidgetItem *item = new QTableWidgetItem(curve->channel->legendName());
-        item->setCheckState(Qt::Unchecked);
-        table->setItem(i,1,item);
-
-        item = new QTableWidgetItem();
-        table->setItem(i,2,item);
-
-        item = new QTableWidgetItem();
-        item->setBackground(curve->pen().color());
-        table->setItem(i++,0,item);
-    }
 
     edit = new QLineEdit(this);
     edit->setText("0.0");
@@ -127,66 +101,103 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QList<FileDescriptor *> &files, Q
     //resize(500,500);
 }
 
+void CorrectionDialog::setFiles(const QList<FileDescriptor *> &descriptors)
+{
+    files = descriptors;
+    // удаляем из списка файлов файлы, графики которых построены на экране
+    // чтобы эти файлы не мешались
+
+//    for (const Curve *curve: qAsConst(plot->curves))
+//        files.removeAll(curve->channel->descriptor());
+
+//    allFilesCheckBox->setEnabled(files.size()>1);
+
+//    table->setRowCount(plot->curves.size());
+//    int i=0;
+//    for (Curve *curve: plot->curves) {
+//        QTableWidgetItem *item = table->item(i,1);
+//        if (!item) {
+//            item = new QTableWidgetItem(curve->channel->legendName());
+//            item->setCheckState(Qt::Unchecked);
+//            table->setItem(i,1,item);
+//        }
+
+//        item = table->item(i,2);
+//        if (!item) {
+//            item = new QTableWidgetItem();
+//            table->setItem(i,2,item);
+//        }
+
+//        item = table->item(i,0);
+//        if (!item) {
+//            item = new QTableWidgetItem();
+//            item->setBackground(curve->pen().color());
+//            table->setItem(i,0,item);
+//        }
+//        i++;
+//    }
+}
+
 void CorrectionDialog::correct()
 {DD;
-    bool ok;
-    QString s = edit->text();
-    double correctionValue = s.toDouble(&ok);
-    if (!ok) {
-        s.replace(',','.');
-        correctionValue = s.toDouble(&ok);
-    }
-    if (!ok) {
-        QMessageBox::critical(this, "Поправка","Введенное значение поправки не является числом.");
-        return;
-    }
+//    bool ok;
+//    QString s = edit->text();
+//    double correctionValue = s.toDouble(&ok);
+//    if (!ok) {
+//        s.replace(',','.');
+//        correctionValue = s.toDouble(&ok);
+//    }
+//    if (!ok) {
+//        QMessageBox::critical(this, "Поправка","Введенное значение поправки не является числом.");
+//        return;
+//    }
 
-    int selected = 0;
-    for (int i=0; i<table->rowCount(); ++i) {
-        if (table->item(i,1)->checkState()==Qt::Checked) selected++;
-    }
+//    int selected = 0;
+//    for (int i=0; i<table->rowCount(); ++i) {
+//        if (table->item(i,1)->checkState()==Qt::Checked) selected++;
+//    }
 
-    if (selected==0) {
-        QMessageBox::critical(this, "Поправка","Ни одного канала не выделено.\n"
-                                               "Куда мне вносить поправку?");
-        return;
-    }
+//    if (selected==0) {
+//        QMessageBox::critical(this, "Поправка","Ни одного канала не выделено.\n"
+//                                               "Куда мне вносить поправку?");
+//        return;
+//    }
 
-    if (correctionValue < 0.0 && correctionType->currentIndex()==1) {
-        QMessageBox::critical(this, "Поправка","Отрицательный множитель коррекции!\n"
-                                               "Лучше так не делать");
-        return;
-    }
+//    if (correctionValue < 0.0 && correctionType->currentIndex()==1) {
+//        QMessageBox::critical(this, "Поправка","Отрицательный множитель коррекции!\n"
+//                                               "Лучше так не делать");
+//        return;
+//    }
 
 
 
-    for (int i=0; i<table->rowCount(); ++i) {
-        if (table->item(i,1)->checkState()==Qt::Checked) {
-            Curve *curve = plot->curves.at(i);
-            Channel *ch = curve->channel;
-            int channelNumber = ch->index();
-            if (channelNumber == -1) continue;
+//    for (int i=0; i<table->rowCount(); ++i) {
+//        if (table->item(i,1)->checkState()==Qt::Checked) {
+//            Curve *curve = plot->curves.at(i);
+//            Channel *ch = curve->channel;
+//            int channelNumber = ch->index();
+//            if (channelNumber == -1) continue;
 
-            ch->data()->setTemporaryCorrection(correctionValue, correctionType->currentIndex());
-            if (ch->data()->hasCorrection())
-                table->item(i,2)->setText(ch->data()->correctionString());
-            else
-                table->item(i,2)->setText("");
+//            ch->data()->setTemporaryCorrection(correctionValue, correctionType->currentIndex());
+//            if (ch->data()->hasCorrection())
+//                table->item(i,2)->setText(ch->data()->correctionString());
+//            else
+//                table->item(i,2)->setText("");
 
-            if (allFilesCheckBox->isChecked()) {
-                foreach (FileDescriptor *file, files) {
-                    if (Channel *ch1 = file->channel(channelNumber)) {
-                        if (!ch1->populated()) ch1->populate();
-                        ch1->data()->setTemporaryCorrection(correctionValue, correctionType->currentIndex());
-                    }
-                }
-            }
-        }
-    }
+//            if (allFilesCheckBox->isChecked()) {
+//                foreach (FileDescriptor *file, files) {
+//                    if (Channel *ch1 = file->channel(channelNumber)) {
+//                        if (!ch1->populated()) ch1->populate();
+//                        ch1->data()->setTemporaryCorrection(correctionValue, correctionType->currentIndex());
+//                    }
+//                }
+//            }
+//        }
+//    }
 
-    plot->recalculateScale(true);
-    plot->recalculateScale(false);
-    plot->update();
+//    plot->recalculateScale(true);
+//    plot->recalculateScale(false);
+//    plot->update();
 }
 
 void CorrectionDialog::makeCorrectionConstant(Channel *channel)
@@ -226,59 +237,56 @@ void CorrectionDialog::makeCorrectionConstant(Channel *channel)
 
 void CorrectionDialog::accept()
 {DD;
-    QList<FileDescriptor*> list;
-    // сперва графики
-    for (int i=0; i<table->rowCount(); ++i) {
-        if (table->item(i,2)->text().isEmpty()) continue;
+//    QList<FileDescriptor*> list;
+//    // сперва графики
+//    for (int i=0; i<table->rowCount(); ++i) {
+//        if (table->item(i,2)->text().isEmpty()) continue;
 
-        Channel *ch = plot->curves.at(i)->channel;
-        makeCorrectionConstant(ch);
-        if (!list.contains(ch->descriptor())) list << ch->descriptor();
+//        Channel *ch = plot->curves.at(i)->channel;
+//        makeCorrectionConstant(ch);
+//        if (!list.contains(ch->descriptor())) list << ch->descriptor();
 
-        if (allFilesCheckBox->isChecked()) {
-            foreach (FileDescriptor *file, files) {
-                const int index = ch->index();
-                if (index == -1) continue;
-                if (Channel *ch1 = file->channel(index)) {
-                    makeCorrectionConstant(ch1);
-                    if (!list.contains(ch1->descriptor())) list << ch1->descriptor();
-                }
-            }
-        }
-    }
-    foreach (FileDescriptor *f, list) {
-        f->setChanged(true);
-        f->setDataChanged(true);
-        f->write();
-    }
+//        if (allFilesCheckBox->isChecked()) {
+//            foreach (FileDescriptor *file, files) {
+//                const int index = ch->index();
+//                if (index == -1) continue;
+//                if (Channel *ch1 = file->channel(index)) {
+//                    makeCorrectionConstant(ch1);
+//                    if (!list.contains(ch1->descriptor())) list << ch1->descriptor();
+//                }
+//            }
+//        }
+//    }
+//    foreach (FileDescriptor *f, list) {
+//        f->setChanged(true);
+//        f->setDataChanged(true);
+//        f->write();
+//    }
 
-    plot->recalculateScale(true);
-    plot->recalculateScale(false);
-    plot->update();
+//    plot->recalculateScale(true);
+//    plot->recalculateScale(false);
+//    plot->update();
     QDialog::accept();
 }
 
 void CorrectionDialog::reject()
 {DD;
-    for (int i=0; i<table->rowCount(); ++i) {
-        plot->curves.at(i)->channel->data()->removeCorrection();
+//    for (int i=0; i<table->rowCount(); ++i) {
+//        plot->curves.at(i)->channel->data()->removeCorrection();
 
-        if (allFilesCheckBox->isChecked()) {
-            foreach (FileDescriptor *file, files) {
-                const int index = plot->curves.at(i)->channel->index();
-                if (index == -1) continue;
-                if (Channel *ch1 = file->channel(index)) {
-                    ch1->data()->removeCorrection();
-                }
-            }
-        }
-    }
+//        if (allFilesCheckBox->isChecked()) {
+//            foreach (FileDescriptor *file, files) {
+//                const int index = plot->curves.at(i)->channel->index();
+//                if (index == -1) continue;
+//                if (Channel *ch1 = file->channel(index)) {
+//                    ch1->data()->removeCorrection();
+//                }
+//            }
+//        }
+//    }
 
-//    plot->updateAxes();
-//    plot->updateLegends();
-//    plot->replot();
-    plot->recalculateScale(true);
-    plot->recalculateScale(false);
-    plot->update();
+//    plot->recalculateScale(true);
+//    plot->recalculateScale(false);
+//    plot->update();
     QDialog::reject();
 }

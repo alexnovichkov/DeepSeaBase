@@ -67,6 +67,7 @@ SOURCES += main.cpp\
     plot/grid.cpp \
     plot/imagerenderdialog.cpp \
     plot/plotarea.cpp \
+    plot/plotmodel.cpp \
     plot/scaledraw.cpp \
     plot/trackingcursor.cpp \
     plot/zoomstack.cpp \
@@ -172,6 +173,7 @@ HEADERS  += mainwindow.h \
     plot/grid.h \
     plot/imagerenderdialog.h \
     plot/plotarea.h \
+    plot/plotmodel.h \
     plot/scaledraw.h \
     plot/trackingcursor.h \
     plot/zoomstack.h \

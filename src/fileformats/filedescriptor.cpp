@@ -160,6 +160,7 @@ void FileDescriptor::calculateMean(const QList<Channel *> &channels)
         }
     }
 
+    //определяем единицы
     auto units = firstChannel->data()->yValuesUnits();
     for (int i=1; i<channels.size(); ++i) {
         if (channels.at(i)->data()->yValuesUnits() != units) {

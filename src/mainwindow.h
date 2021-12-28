@@ -11,28 +11,11 @@
 class FileDescriptor;
 
 class QAction;
-class QLabel;
-class TabWidget;
 class Tab;
 class QMenu;
-class QTreeWidget;
-class QStatusBar;
-class QFileSystemModel;
-class QTreeView;
-class QTableWidget;
-class QTreeWidgetItem;
-class QScrollBar;
-class QTableWidgetItem;
 class QToolBar;
-class QSplitter;
 class PlotArea;
-
-class QwtLegend;
-class QwtPlotGrid;
-class QwtPlotItem;
-class QwtPlotCurve;
-
-class Curve;
+class CorrectionDialog;
 class Channel;
 namespace ads {
     class CDockManager;
@@ -45,10 +28,7 @@ namespace ads {
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
-    
 public:
-
-
     MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
@@ -128,7 +108,7 @@ private slots:
     void convertTDMSFiles();
     void convertEsoFiles();
 
-    void saveTimeSegment(const QList<FileDescriptor*> &files, double from, double to);
+    void saveTimeSegment(const QVector<FileDescriptor*> &files, double from, double to);
 
     void exportChannelsToWav();
     void renameDescriptor();
@@ -214,6 +194,7 @@ private:
     QAction *aboutAct;
     QAction *addPlotAreaAct;
     PlotArea *currentPlot = nullptr;
+    CorrectionDialog *correctionDialog = nullptr;
 
 protected:
     void closeEvent(QCloseEvent *event) override;

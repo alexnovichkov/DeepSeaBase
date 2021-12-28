@@ -10,6 +10,7 @@
 #include "pointmarker.h"
 #include "pointlabel.h"
 #include "fileformats/filedescriptor.h"
+#include "plot/plotmodel.h"
 
 Picker::Picker(Plot *plot) : plot(plot)
 {DD;
@@ -144,9 +145,8 @@ void Picker::endPick(QMouseEvent *e)
 
         //сбрасываем подсветку кривых
         highlightPoint(false);
-        for(Curve *c: qAsConst(plot->curves)) {
-            c->resetHighlighting();
-        }
+        plot->model()->resetHighlighting();
+
 
         //одинарный клик мышью
         if (d_selectedCursors.isEmpty()) {

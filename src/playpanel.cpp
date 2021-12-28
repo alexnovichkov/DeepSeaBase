@@ -9,6 +9,7 @@
 #include "dataiodevice.h"
 #include "plot/curve.h"
 #include "plot/trackingcursor.h"
+#include "plot/plotmodel.h"
 #include "wavexporter.h"
 #include "logging.h"
 
@@ -88,17 +89,16 @@ void PlayPanel::update()
     int chIndex = -1;
 
     int count = 0;
-    for (auto c: qAsConst(plot->curves)) {
-        if (c->channel->type() == Descriptor::TimeResponse) {
-            QPixmap pix(10,10);
-            pix.fill(c->pen().color());
-            channelsBox->addItem(QIcon(pix), c->channel->name(), QVariant((qulonglong)(c->channel)));
-            if (c->channel == ch) {
-                //раньше этот канал уже играл, поэтому мы должны восстановить положение channelsBox
-                chIndex = count;
-            }
-            count++;
+    const auto curves = plot->model()->curves([](Curve *c){return c->channel->type() == Descriptor::TimeResponse;});
+    for (auto c: curves) {
+        QPixmap pix(10,10);
+        pix.fill(c->pen().color());
+        channelsBox->addItem(QIcon(pix), c->channel->name(), QVariant((qulonglong)(c->channel)));
+        if (c->channel == ch) {
+            //раньше этот канал уже играл, поэтому мы должны восстановить положение channelsBox
+            chIndex = count;
         }
+        count++;
     }
 
     controls->enable(channelsBox->count() > 0);

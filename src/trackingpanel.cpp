@@ -10,6 +10,7 @@
 #include "plot/curve.h"
 #include "logging.h"
 #include "plot/trackingcursor.h"
+#include "plot/plotmodel.h"
 
 QString roundedBy(double value)
 {
@@ -266,12 +267,13 @@ void TrackingPanel::setXY(QPointF value, int index)
     double yVal = value.y();
 
     if (!qIsNaN(xVal)) {
-        if (plot->hasCurves()) {
+        auto list = plot->model()->plottedChannels();
+        if (!list.isEmpty()) {
             //ищем минимальный шаг по оси X
-            Channel *c = plot->curves.first()->channel;
-            for (int i=1; i < plot->curvesCount(); ++i) {
-                if (plot->curves[i]->channel->data()->xStep() < c->data()->xStep())
-                    c = plot->curves[i]->channel;
+            Channel *c = list.first();
+            for (int i=1; i < list.size(); ++i) {
+                if (list[i]->data()->xStep() < c->data()->xStep())
+                    c = list[i];
             }
             xVal = closest(c, xVal);
         }
@@ -306,13 +308,7 @@ void TrackingPanel::updateTrackingCursor(QPointF val, int index)
     if (!isVisible()) return;
 
     //проверяем, не нужно ли обновить значение по оси Y
-    Curve *c = nullptr;
-    for (auto cc: qAsConst(plot->curves)) {
-        if (cc->highlighted) {
-            c = cc;
-            break;
-        }
-    }
+    Curve *c = plot->model()->firstOf([](Curve *curve){return curve->highlighted;});
     if (c) {
         bool ok;
         double y = c->channel->data()->YforXandZ(val.x(), 0.0, ok);
@@ -331,19 +327,19 @@ void TrackingPanel::updateTrackingCursor(QPointF val, int index)
 
 void TrackingPanel::update()
 {DD;
-    if (plot->hasCurves()) {
+    auto channels = plot->model()->plottedChannels();
+    if (!channels.isEmpty()) {
         //ищем минимальный шаг по оси X
-
-        auto data = plot->curves.first()->channel->data();
+        auto data = channels.first()->data();
         double xmin = data->xMin();
         double xmax = data->xMax();
-        for (int i=1; i < plot->curvesCount(); ++i) {
-            if (plot->curves[i]->channel->data()->xStep() < data->xStep())
-                data = plot->curves[i]->channel->data();
-            if (plot->curves[i]->channel->data()->xMin() < xmin)
-                xmin = plot->curves[i]->channel->data()->xMin();
-            if (plot->curves[i]->channel->data()->xMax() > xmax)
-                xmax = plot->curves[i]->channel->data()->xMax();
+        for (int i=1; i < channels.size(); ++i) {
+            if (channels[i]->data()->xStep() < data->xStep())
+                data = channels[i]->data();
+            if (channels[i]->data()->xMin() < xmin)
+                xmin = channels[i]->data()->xMin();
+            if (channels[i]->data()->xMax() > xmax)
+                xmax = channels[i]->data()->xMax();
         }
         setStep(data->xStep());
 
@@ -408,7 +404,7 @@ void TrackingPanel::update()
     QVector<QVector<double> > yValues(4);
     QVector<QVector<QColor> > colors(4);
 
-    for (Curve *c: qAsConst(plot->curves)) {
+    for (Curve *c: plot->model()->curves()) {
         QVector<int> steps(4);
 
         steps[minBorder] = stepsToClosest(c->channel, leftBorder);
