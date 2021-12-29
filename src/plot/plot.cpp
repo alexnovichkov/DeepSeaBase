@@ -67,7 +67,7 @@
 #include "plotzoom.h"
 #include "scaledraw.h"
 #include "grid.h"
-
+#include "plotinfooverlay.h"
 #include "plotmodel.h"
 
 // простой фабричный метод создания кривой нужного типа
@@ -99,6 +99,9 @@ Plot::Plot(QWidget *parent) :
 
     setAutoReplot(true);
     setAcceptDrops(true);
+
+    infoOverlay = new PlotInfoOverlay(this);
+    infoOverlay->setVisible(true);
 
     setAxisScaleDraw(xBottomAxis, new ScaleDraw());
     setAxisScaleDraw(yLeftAxis, new ScaleDraw());
@@ -355,6 +358,7 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
             enableAxis(QwtAxis::yRight, false);
         }
         if (!hasCurves()) xName.clear();
+        infoOverlay->setVisible(m->size()==0);
         if (doReplot) update();
     }
 }
@@ -849,6 +853,7 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
         zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
         if (ybounds) ybounds->add(g->yMin(), g->yMax());
     }
+    infoOverlay->hide();
 
     g->attachTo(this);
 

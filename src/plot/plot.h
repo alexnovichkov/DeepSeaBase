@@ -26,6 +26,7 @@ class QwtPlotMarker;
 class Picker;
 class CanvasEventFilter;
 class AxisOverlay;
+class PlotInfoOverlay;
 
 struct Range {
     void clear() {min = INFINITY; max = -INFINITY;}
@@ -171,6 +172,7 @@ private:
 
     AxisOverlay *leftOverlay;
     AxisOverlay *rightOverlay;
+    PlotInfoOverlay *infoOverlay;
 
     bool xScaleIsLogarithmic = false; //false = linear, true = logarithmic
 
