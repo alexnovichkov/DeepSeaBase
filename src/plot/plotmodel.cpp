@@ -128,6 +128,13 @@ void PlotModel::resetHighlighting()
     }
 }
 
+void PlotModel::setTemporaryCorrection(int i, double correctionValue, int correctionType)
+{
+    if (i >= 0 && i < m_curves.size())
+        m_curves.at(i)->channel->data()->setTemporaryCorrection(correctionValue, correctionType);
+    emit dataChanged(index(i, PlotCorrectionColumn), index(i, PlotCorrectionColumn));
+}
+
 Curve * PlotModel::plotted(Channel *channel) const
 {DD;
     for (Curve *curve: qAsConst(m_curves)) {

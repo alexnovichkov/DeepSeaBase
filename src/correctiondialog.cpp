@@ -48,7 +48,7 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) : QDialog(parent
 
 
     QGridLayout *l = new QGridLayout;
-    l->addWidget(new QLabel("Отметьте каналы, введите величину поправки и нажмите \"Скорректировать\"\n\n"
+    l->addWidget(new QLabel("Выделите каналы, введите величину поправки и нажмите \"Скорректировать\"\n\n"
                             "Если величина поправки не устроила, введите другую величину поправки.\n"
                             "Поправки не накапливаются.", this),
                  0,0,1,3);
@@ -67,7 +67,8 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) : QDialog(parent
     l->setRowStretch(5,l->rowStretch(5)+30);
     setLayout(l);
 
-    //resize(500,500);
+    resize(qApp->primaryScreen()->availableSize().width()/2,
+           qApp->primaryScreen()->availableSize().height()/2);
 }
 
 void CorrectionDialog::closeEvent(QCloseEvent *event)
@@ -107,8 +108,8 @@ void CorrectionDialog::correct()
         QMessageBox::critical(this, "Поправка","Введенное значение поправки не является числом.");
         return;
     }
-qDebug()<<table->selectionModel()->selectedRows();
-    int selected = table->selectionModel()->selectedRows().count();
+
+    auto selected = table->selectionModel()->selectedIndexes().size();
 
     if (selected==0) {
         QMessageBox::critical(this, "Поправка","Ни одного канала не выделено.\n"
@@ -123,18 +124,12 @@ qDebug()<<table->selectionModel()->selectedRows();
     }
 
     for (int i=0; i<plot->model()->size(); ++i) {
-        if (table->selectionModel()->isRowSelected(i, QModelIndex())) {
-            Curve *curve = plot->model()->curve(i);
-            Channel *ch = curve->channel;
+        if (table->selectionModel()->rowIntersectsSelection(i, QModelIndex())) {
+            Channel *ch =  plot->model()->curve(i)->channel;
             int channelNumber = ch->index();
             if (channelNumber == -1) continue;
 
-            ch->data()->setTemporaryCorrection(correctionValue, correctionType->currentIndex());
-            table->update();
-//            if (ch->data()->hasCorrection())
-//                table->item(i,2)->setText(ch->data()->correctionString());
-//            else
-//                table->item(i,2)->setText("");
+            plot->model()->setTemporaryCorrection(channelNumber, correctionValue, correctionType->currentIndex());
 
             if (allFilesCheckBox->isChecked()) {
                 foreach (FileDescriptor *file, files) {

@@ -781,6 +781,7 @@ void MainWindow::addCorrection()
             connect(correctionDialog,SIGNAL(closeRequested()), addCorrectionAct, SLOT(toggle()));
             correctionDialog->hide();
         }
+        correctionDialog->setFiles(currentTab->model->selectedFiles());
         correctionDialog->setVisible(!correctionDialog->isVisible());
 
         currentTab->updateChannelsTable(currentTab->record);
@@ -1734,6 +1735,10 @@ void MainWindow::updateActions()
 
     if (currentPlot) currentPlot->updateActions(filesCount, channelsCount);
     if (currentTab) currentTab->updateActions();
+
+    if (correctionDialog) {
+        correctionDialog->setFiles(currentTab->model->selectedFiles());
+    }
 }
 
 void MainWindow::onFocusedDockWidgetChanged(ads::CDockWidget *old, ads::CDockWidget *now)
