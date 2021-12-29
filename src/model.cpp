@@ -93,15 +93,13 @@ void Model::clear()
 void Model::deleteSelectedFiles()
 {DD;
     beginResetModel();
-
     for (int i = indexes.size()-1; i>=0; --i) {
         int toDelete = indexes.at(i);
         if (toDelete >= 0 && toDelete < descriptors.size()) {
-            maybeDeleteFile(i);
+            maybeDeleteFile(toDelete);
             descriptors.removeAt(toDelete);
         }
     }
-
     indexes.clear();
 
     endResetModel();
@@ -140,9 +138,14 @@ void Model::discardChanges()
 
 bool Model::changed() const
 {DD;
-    return std::any_of(descriptors.cbegin(), descriptors.cend(), [](const F &d){
-        return d->changed() || d->dataChanged();
-    });
+    //qDebug()<<descriptors;
+
+    for (const auto &f: descriptors)
+        if (f->changed() || f->dataChanged()) return true;
+    return false;
+//    return std::any_of(descriptors.cbegin(), descriptors.cend(), [](const F &d){
+//        return d->changed() || d->dataChanged();
+//    });
 }
 
 void Model::copyToLegend()

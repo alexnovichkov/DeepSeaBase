@@ -6,6 +6,7 @@
 #include <QSharedPointer>
 #include <QVector>
 #include <memory>
+#include <QtDebug>
 
 class ColorSelector;
 class QSettings;
@@ -13,6 +14,8 @@ class FileDescriptor;
 class Channel;
 
 using F = std::shared_ptr<FileDescriptor>;
+
+QDebug operator<<(QDebug debug, const F &f);
 
 #define App (dynamic_cast<Application *>(QCoreApplication::instance()))
 

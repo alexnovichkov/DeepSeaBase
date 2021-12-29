@@ -1,7 +1,7 @@
 #include "correctiondialog.h"
 
 #include <QtWidgets>
-
+#include "app.h"
 #include "headerview.h"
 #include "plot/plot.h"
 #include "plot/plotmodel.h"
@@ -15,10 +15,10 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) : QDialog(parent
     setWindowTitle("Поправки");
 
     table = new QTableView(this);
-    tableHeader = new HeaderView(Qt::Horizontal, table);
-    table->setHorizontalHeader(tableHeader);
+    //tableHeader = new HeaderView(Qt::Horizontal, table);
+    //table->setHorizontalHeader(tableHeader);
     table->setModel(plot->model());
-    table->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    table->horizontalHeader()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     table->horizontalHeader()->setStretchLastSection(true);
 
     allFilesCheckBox = new QCheckBox("Применить поправку ко всем выделенным файлам", this);
@@ -67,13 +67,16 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) : QDialog(parent
     l->setRowStretch(5,l->rowStretch(5)+30);
     setLayout(l);
 
-    resize(qApp->primaryScreen()->availableSize().width()/2,
-           qApp->primaryScreen()->availableSize().height()/2);
+    auto size = App->getSetting("correctionDialogSize").toSize();
+    if (!size.isEmpty()) resize(size);
+    else resize(qApp->primaryScreen()->availableSize().width()/3,
+           qApp->primaryScreen()->availableSize().height()/3);
 }
 
 void CorrectionDialog::closeEvent(QCloseEvent *event)
 {DD;
     emit closeRequested();
+    App->setSetting("correctionDialogSize", size());
     QWidget::closeEvent(event);
 }
 

@@ -100,3 +100,9 @@ void Application::createSettings()
         settings = new QSettings("Alex Novichkov","DeepSea Database");
     }
 }
+
+QDebug operator<<(QDebug debug, const F &f)
+{
+    debug << f->fileName();
+    return debug;
+}
