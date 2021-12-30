@@ -106,12 +106,6 @@ Plot::Plot(PlotType type, QWidget *parent) :
     connect(trackingPanel,SIGNAL(closeRequested()),SIGNAL(trackingPanelCloseRequested()));
     connect(this, SIGNAL(curvesCountChanged()), trackingPanel, SLOT(update()));
 
-
-    playerPanel = new PlayPanel(this);
-    playerPanel->setVisible(false);
-    connect(playerPanel,SIGNAL(closeRequested()),SIGNAL(playerPanelCloseRequested()));
-    connect(this, SIGNAL(curvesCountChanged()), playerPanel, SLOT(update()));
-
     axisLabelsVisible = App->getSetting("axisLabelsVisible", true).toBool();
     yValuesPresentationLeft = DataHolder::ShowAsDefault;
     yValuesPresentationRight = DataHolder::ShowAsDefault;
@@ -133,9 +127,6 @@ Plot::Plot(PlotType type, QWidget *parent) :
     connect(_picker,SIGNAL(cursorSelected(TrackingCursor*)), trackingPanel, SLOT(changeSelectedCursor(TrackingCursor*)));
     connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       trackingPanel, SLOT(setValue(QPointF,bool)));
     connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          trackingPanel, SLOT(setValue(QPointF)));
-    connect(_picker,SIGNAL(cursorSelected(TrackingCursor*)), playerPanel, SLOT(updateSelectedCursor(TrackingCursor*)));
-    connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       playerPanel, SLOT(setValue(QPointF)));
-    connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          playerPanel, SLOT(setValue(QPointF)));
 
     dragZoom = new DragZoom(this);
     wheelZoom = new WheelZoom(this);
@@ -162,7 +153,6 @@ Plot::~Plot()
     deleteAllCurves(true);
 
     delete trackingPanel;
-    delete playerPanel;
     delete grid;
     delete tracker;
     delete _picker;
@@ -417,7 +407,7 @@ void Plot::deleteAllCurves(bool forceDeleteFixed)
     if (!sergeiMode) {
         updatePlottedIndexes();
         updateCycled();
-        playerPanel->reset();
+       // playerPanel->reset();
         emit curvesCountChanged(); //->MainWindow.updateActions
     }
 }
@@ -962,11 +952,6 @@ void Plot::switchInteractionMode()
 void Plot::switchTrackingCursor()
 {DD;
     trackingPanel->switchVisibility();
-}
-
-void Plot::switchPlayerVisibility()
-{DD;
-    playerPanel->switchVisibility();
 }
 
 void Plot::toggleAutoscale(int axis, bool toggled)

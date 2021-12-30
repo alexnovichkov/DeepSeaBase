@@ -153,15 +153,6 @@ PlotArea::PlotArea(int index, QWidget *parent)
         if (m_plot) m_plot->switchInteractionMode();
     });
 
-    playAct  = new QAction("Открыть панель плеера", this);
-    playAct->setIcon(QIcon(":/icons/play.png"));
-    playAct->setCheckable(true);
-    //TODO: отвязать плеер от графика, чтобы не было нескольких плееров в одной программе
-    connect(playAct, &QAction::triggered, [this](){
-        if (m_plot) m_plot->switchPlayerVisibility();
-    });
-
-
     setToolBarIconSize(QSize(24,24), StateDocked);
     setToolBarIconSize(QSize(24,24), StateFloating);
     setToolBarIconSize(QSize(24,24), StateHidden);
@@ -191,7 +182,6 @@ PlotArea::PlotArea(int index, QWidget *parent)
     scaleToolBar->addAction(switchCursorAct);
     scaleToolBar->addAction(interactionModeAct);
     scaleToolBar->addAction(trackingCursorAct);
-    scaleToolBar->addAction(playAct);
 
     plotsLayout = new QGridLayout;
     infoLabel = new QLabel("- Перетащите сюда каналы, чтобы построить их графики\n"
@@ -238,6 +228,10 @@ void PlotArea::addPlot(Plot::PlotType type)
         case Plot::PlotType::Time: {
             m_plot = new TimePlot(this);
             setIcon(QIcon(":/icons/timecurve.png"));
+            if (m_plot->playAct()) {
+                playAct = m_plot->playAct();
+                toolBar()->addAction(playAct);
+            }
             break;
         }
         case Plot::PlotType::General: {
@@ -255,8 +249,6 @@ void PlotArea::addPlot(Plot::PlotType type)
     connect(m_plot, SIGNAL(curveDeleted(Channel*)), this, SIGNAL(curveDeleted(Channel*)));
     connect(m_plot, SIGNAL(needPlotChannels(bool,QVector<Channel*>)), this, SIGNAL(needPlotChannels(bool,QVector<Channel*>)));
     connect(m_plot, SIGNAL(focusThisPlot()), this, SLOT(setFocus()));
-
-    connect(m_plot, SIGNAL(playerPanelCloseRequested()),playAct,SLOT(toggle()));
     connect(m_plot, SIGNAL(trackingPanelCloseRequested()), trackingCursorAct, SLOT(toggle()));
 
     bool autoscale = App->getSetting("autoscale-x", true).toBool();
@@ -772,7 +764,7 @@ void PlotArea::updateActions(int filesCount, int channelsCount)
     savePlotAct->setEnabled(hasCurves);
     copyToClipboardAct->setEnabled(hasCurves);
     printPlotAct->setEnabled(hasCurves);
-    playAct->setEnabled(m_plot ? m_plot->type()==Plot::PlotType::Time : false);
+    if (playAct) playAct->setEnabled(hasCurves);
     previousDescriptorAct->setEnabled(filesCount>1 && allCurvesFromSameDescriptor);
     nextDescriptorAct->setEnabled(filesCount>1 && allCurvesFromSameDescriptor);
     arbitraryDescriptorAct->setEnabled(filesCount>1 && allCurvesFromSameDescriptor);

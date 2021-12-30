@@ -4,12 +4,37 @@
 #include "fileformats/filedescriptor.h"
 #include "unitsconverter.h"
 #include "plotmodel.h"
+#include <QAction>
+#include "playpanel.h"
+#include "picker.h"
+#include "logging.h"
 
 TimePlot::TimePlot(QWidget *parent) : Plot(Plot::PlotType::Time, parent)
 {
+    m_playAct = new QAction("Открыть панель плеера", this);
+    m_playAct->setIcon(QIcon(":/icons/play.png"));
+    m_playAct->setCheckable(true);
+    //TODO: отвязать плеер от графика, чтобы не было нескольких плееров в одной программе
+    connect(m_playAct, &QAction::triggered, this, &TimePlot::switchPlayerVisibility);
 
+    playerPanel = new PlayPanel(this);
+    playerPanel->setVisible(false);
+    connect(playerPanel,SIGNAL(closeRequested()),m_playAct,SLOT(toggle()));
+    connect(this, SIGNAL(curvesCountChanged()), playerPanel, SLOT(update()));
+    connect(_picker,SIGNAL(cursorSelected(TrackingCursor*)), playerPanel, SLOT(updateSelectedCursor(TrackingCursor*)));
+    connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       playerPanel, SLOT(setValue(QPointF)));
+    connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          playerPanel, SLOT(setValue(QPointF)));
 }
 
+TimePlot::~TimePlot()
+{
+    delete playerPanel;
+}
+
+void TimePlot::switchPlayerVisibility()
+{DD;
+    playerPanel->switchVisibility();
+}
 
 Curve *TimePlot::createCurve(const QString &legendName, Channel *channel)
 {

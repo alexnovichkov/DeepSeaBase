@@ -27,6 +27,17 @@ class Picker;
 class CanvasEventFilter;
 class AxisOverlay;
 class PlotInfoOverlay;
+class QPushButton;
+class QCheckBox;
+class QLabel;
+class QDoubleSpinBox;
+class TrackingPanel;
+class QPrinter;
+class CheckableLegend;
+class Grid;
+class PlotModel;
+class QMenu;
+class ChannelsMimeData;
 
 struct Range {
     void clear() {min = INFINITY; max = -INFINITY;}
@@ -38,18 +49,7 @@ struct Range {
 
 #include <QWidget>
 
-class QPushButton;
-class QCheckBox;
-class QLabel;
-class QDoubleSpinBox;
-class TrackingPanel;
-class PlayPanel;
-class QPrinter;
-class CheckableLegend;
-class Grid;
-class PlotModel;
-class QMenu;
-class ChannelsMimeData;
+
 
 class Plot : public QwtPlot
 {
@@ -75,6 +75,8 @@ public:
 
     PlotModel *model() {return m;}
     PlotType type() const {return plotType;}
+
+    virtual QAction *playAct() {return nullptr;}
 
     QwtAxisId xBottomAxis{QwtAxis::xBottom,0};
     QwtAxisId yLeftAxis{QwtAxis::yLeft,0};
@@ -124,7 +126,6 @@ public:
     void setInteractionMode(InteractionMode mode);
     void switchInteractionMode();
     void switchTrackingCursor();
-    void switchPlayerVisibility();
     void toggleAutoscale(int axis, bool toggled);
     void autoscale(int axis = -1);
     /**
@@ -161,7 +162,6 @@ protected:
     CanvasEventFilter *canvasFilter = nullptr;
 
     TrackingPanel *trackingPanel = nullptr;
-    PlayPanel *playerPanel = nullptr;
 
     InteractionMode interactionMode = ScalingInteraction;
     ColorSelector *colors = nullptr;
@@ -198,7 +198,6 @@ signals:
     void curveDeleted(Channel *);
 
     void trackingPanelCloseRequested();
-    void playerPanelCloseRequested();
     void saveTimeSegment(const QVector<FileDescriptor*> &files, double from, double to);
     //испускаем, когда бросаем каналы на график
     void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels);

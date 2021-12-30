@@ -100,6 +100,7 @@ void PlayPanel::update()
         }
         count++;
     }
+    if (channelsBox->count()==0) reset();
 
     controls->enable(channelsBox->count() > 0);
 
