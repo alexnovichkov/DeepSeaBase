@@ -65,5 +65,9 @@
         <file>icons/plot24.png</file>
         <file>icons/plotAll.png</file>
         <file>icons/plotAll24.png</file>
+        <file>icons/barcurve.png</file>
+        <file>icons/linecurve.png</file>
+        <file>icons/spectrocurve.png</file>
+        <file>icons/timecurve.png</file>
     </qresource>
 </RCC>

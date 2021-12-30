@@ -83,7 +83,9 @@ void CorrectionDialog::closeEvent(QCloseEvent *event)
 void CorrectionDialog::setPlot(Plot *plot)
 {
     this->plot = plot;
+    auto m = table->selectionModel();
     table->setModel(plot->model());
+    m->deleteLater();
 }
 
 void CorrectionDialog::setFiles(const QList<FileDescriptor *> &descriptors)

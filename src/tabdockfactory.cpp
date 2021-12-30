@@ -116,7 +116,7 @@ ads::CDockAreaTitleBar *TabDockFactory::createDockAreaTitleBar(ads::CDockAreaWid
     QObject::connect(titleBar, &TitleBar::newTab, receiver, &MainWindow::createNewTab);
 
     auto addTabButton = new QToolButton(DockArea);
-    addTabButton->setToolTip(QObject::tr("Добавить вкладку"));
+    addTabButton->setToolTip(QObject::tr("Новая вкладка"));
     addTabButton->setIcon(QIcon(":/icons/list-add.png"));
     addTabButton->setShortcut(QKeySequence("Ctrl+T"));
     addTabButton->setAutoRaise(true);

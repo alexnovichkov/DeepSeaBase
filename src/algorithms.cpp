@@ -10,6 +10,17 @@ QDebug operator <<(QDebug debug, const std::complex<double> &val)
     return debug;
 }
 
+QString smartDouble(double v)
+{
+    double v1=qAbs(v);
+    if (v1>=0.1 && v1 <= 10000) return QString::number(v,'f',2);
+    if (v1>=0.01 && v1 <= 0.1) return QString::number(v,'f',3);
+    if (v1>=0.001 && v1 <= 0.01) return QString::number(v,'f',4);
+    if (v1>=0.0001 && v1 <= 0.001) return QString::number(v,'f',5);
+
+    return QString::number(v,'g');
+}
+
 QString replaceWinChars(QString s)
 {DD;
     static const struct ReplaceParams {

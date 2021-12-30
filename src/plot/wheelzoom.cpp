@@ -35,7 +35,7 @@ ZoomStack::zoomCoordinates WheelZoom::applyWheel(QEvent *event, QwtAxisId axis)
             pos = wEvent->pos().y();
             axis = QwtAxisId(QwtAxis::yLeft, 0);
             coords.coords.insert(axis.pos, getCoords(axis, pos, factor));
-            if (!plot->spectrogram) {
+            if (plot->type() != Plot::PlotType::Spectrogram) {
                 axis = QwtAxisId(QwtAxis::yRight, 0);
                 coords.coords.insert(axis.pos, getCoords(axis, pos, factor));
             }

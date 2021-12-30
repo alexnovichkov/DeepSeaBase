@@ -81,7 +81,7 @@ ZoomStack::zoomCoordinates PlotZoom::endZoom(QMouseEvent *mEvent)
 
         coords.coords.insert(QwtAxis::xBottom, {xMin, xMax});
         coords.coords.insert(QwtAxis::yLeft, {yMin, yMax});
-        if (!plot->spectrogram)
+        if (plot->type() != Plot::PlotType::Spectrogram)
             coords.coords.insert(QwtAxis::yRight, {ySMin, ySMax});
     }
     return coords;

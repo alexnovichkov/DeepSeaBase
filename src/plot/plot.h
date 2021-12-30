@@ -48,11 +48,21 @@ class QPrinter;
 class CheckableLegend;
 class Grid;
 class PlotModel;
+class QMenu;
+class ChannelsMimeData;
 
 class Plot : public QwtPlot
 {
     Q_OBJECT
 public:
+    enum class PlotType
+    {
+        Time,
+        General,
+        Octave,
+        Spectrogram
+    };
+
     enum InteractionMode {
         NoInteraction,
         ScalingInteraction,
@@ -60,15 +70,16 @@ public:
         LabelInteraction
     };
 
-    explicit Plot(QWidget *parent = 0);
+    explicit Plot(PlotType type, QWidget *parent = 0);
     virtual ~Plot();
 
     PlotModel *model() {return m;}
+    PlotType type() const {return plotType;}
 
     QwtAxisId xBottomAxis{QwtAxis::xBottom,0};
     QwtAxisId yLeftAxis{QwtAxis::yLeft,0};
     QwtAxisId yRightAxis{QwtAxis::yRight,0};
-    bool spectrogram = false;
+
     bool sergeiMode = false;
 
     bool hasCurves() const;
@@ -77,26 +88,37 @@ public:
     Range yLeftRange() const;
     Range yRightRange() const;
     QString axisTitleText(QwtAxisId id) const;
-    bool canBePlottedOnLeftAxis(Channel *ch) const;
-    bool canBePlottedOnRightAxis(Channel *ch) const;
 
+    //default implementation returns pos as QwtText,
+    //reimplemented in spectrograms to add Z coordinate
+    virtual QString pointCoordinates(const QPointF &pos);
 
+    //default implementation returns LineCurve
+    //reimplemented in other plot types
+    virtual Curve * createCurve(const QString &legendName, Channel *channel);
+    virtual void deleteCurve(Curve *curve, bool doReplot = true);
+    //default implementation updates labels according to curves count on left and on right
+    //reimplemented in spectrograms
+    virtual void updateAxesLabels();
+    //reimplemented in plot types
+    virtual void plotChannel(Channel * ch, bool plotOnLeft, int fileIndex=0);
+
+    virtual void onDropEvent(bool plotOnLeft, const QVector<Channel *> &channels);
+    void update();
 
     void updatePlottedIndexes();
     void updateCycled();
     void plotCurvesForDescriptor(FileDescriptor *d, int fileIndex=0);
-    void plotChannel(Channel * ch, bool plotOnLeft, int fileIndex=0);
-    void update();
+
     void cycleChannels(bool up);
 
     void deleteCurvesForDescriptor(FileDescriptor *descriptor);
     void deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot = true);
-    void deleteCurve(Curve *curve, bool doReplot = true);
 
     void switchLabelsVisibility();
     void prepareAxis(QwtAxisId axis);
     void setAxis(QwtAxisId axis, const QString &name);
-    void updateAxesLabels();
+
     void setScale(QwtAxisId id, double min, double max, double step = 0);
     void removeLabels();
     void setInteractionMode(InteractionMode mode);
@@ -111,6 +133,52 @@ public:
      * @param leftAxis
      */
     void recalculateScale(bool leftAxis);
+protected:
+    PlotModel *m = nullptr;
+    ZoomStack *zoom = nullptr;
+    QString xName;
+    QString yLeftName;
+    QString yRightName;
+    bool axisLabelsVisible = true;
+    int yValuesPresentationLeft;
+    int yValuesPresentationRight;
+
+    Grid *grid = nullptr;
+    PlotTracker *tracker = nullptr;
+    Picker *_picker = nullptr;
+    QwtPlotCanvas *_canvas = nullptr;
+
+    AxisOverlay *leftOverlay = nullptr;
+    AxisOverlay *rightOverlay = nullptr;
+
+
+    bool xScaleIsLogarithmic = false; //false = linear, true = logarithmic
+
+    DragZoom *dragZoom = nullptr;
+    WheelZoom *wheelZoom = nullptr;
+    AxisZoom *axisZoom = nullptr;
+    PlotZoom *plotZoom = nullptr;
+    CanvasEventFilter *canvasFilter = nullptr;
+
+    TrackingPanel *trackingPanel = nullptr;
+    PlayPanel *playerPanel = nullptr;
+
+    InteractionMode interactionMode = ScalingInteraction;
+    ColorSelector *colors = nullptr;
+
+
+    //default implementation updates either left or right axis
+    //reimplemented in Spectrogram
+    virtual void updateBounds();
+    //default implementation does nothing
+    //reimplemented in spectrogram
+    virtual void setRightScale(QwtAxisId id, double min, double max);
+    virtual QMenu *createMenu(QwtAxisId axis);
+    virtual bool canBePlottedOnLeftAxis(Channel *ch) const;
+    virtual bool canBePlottedOnRightAxis(Channel *ch) const;
+
+    void setInfoVisible(bool visible);
+    QString yValuesPresentationSuffix(int yValuesPresentation) const;
 public slots:
     void savePlot();
     void switchCursor();
@@ -146,53 +214,14 @@ private:
     void importPlot(const QString &fileName, const QSize &size, int resolution);
     void importPlot(QPrinter &printer, const QSize &size, int resolution);
 //    void checkDuplicates(const QString name);
-    QString yValuesPresentationSuffix(int yValuesPresentation) const;
     void createLegend();
 
-
-//    void playChannel(Channel *ch);
-
-
-    // axis labels
-    QString xName;
-    QString yLeftName;
-    QString yRightName;
-    bool axisLabelsVisible;
-    int yValuesPresentationLeft;
-    int yValuesPresentationRight;
-
-    int colorMap = 0;
-
-
-
-    Grid *grid;
-    PlotTracker *tracker;
-    Picker *_picker;
-    QwtPlotCanvas *_canvas;
-
-    AxisOverlay *leftOverlay;
-    AxisOverlay *rightOverlay;
-    PlotInfoOverlay *infoOverlay;
-
-    bool xScaleIsLogarithmic = false; //false = linear, true = logarithmic
-
-    ZoomStack *zoom = nullptr;
-    DragZoom *dragZoom = nullptr;
-    WheelZoom *wheelZoom = nullptr;
-    AxisZoom *axisZoom = nullptr;
-    PlotZoom *plotZoom = nullptr;
-    CanvasEventFilter *canvasFilter = nullptr;
-
-    TrackingPanel *trackingPanel;
-    PlayPanel *playerPanel;
-
-    InteractionMode interactionMode = ScalingInteraction;
-    ColorSelector *colors;
-    PlotModel *m = nullptr;
-
+    PlotInfoOverlay *infoOverlay = nullptr;
+    PlotType plotType = PlotType::General;
     // QWidget interface
-protected:
+public:
     void dropEvent(QDropEvent *event) override;
+protected:
     void dragEnterEvent(QDragEnterEvent *event) override;
     void dragMoveEvent(QDragMoveEvent *event) override;
     void dragLeaveEvent(QDragLeaveEvent *event) override;

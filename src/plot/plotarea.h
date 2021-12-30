@@ -8,21 +8,15 @@
 class QAction;
 class Curve;
 class FileDescriptor;
-
-enum class PlotType
-{
-    Time,
-    General,
-    Octave,
-    Spectrogram
-};
+class QGridLayout;
 
 class PlotArea : public ads::CDockWidget
 {
     Q_OBJECT
 public:
-    PlotArea(int index, PlotType type, QWidget *parent);
+    PlotArea(int index, QWidget *parent);
     Plot* plot();
+    void addPlot(Plot::PlotType type);
 
     void update();
 
@@ -35,19 +29,25 @@ public:
     QVector<Channel*> plottedChannels() const;
     QVector<FileDescriptor*> plottedDescriptors() const;
     int curvesCount(int type=-1) const;
-    PlotType type() const;
+    void onDropEvent(const QVector<Channel*> &channels);
 signals:
+    void descriptorRequested(int direction, bool checked);
+    //void cycleChannelsRequested(bool up);
+
+    //redirected from m_plot
+    void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels);
     void curvesCountChanged(); //<- MainWindow::updateActions()
     void channelPlotted(Channel *ch);
     void curveDeleted(Channel *);
-    void descriptorRequested(int direction, bool checked);
-    //void cycleChannelsRequested(bool up);
+    void focusThisPlot();
 public slots:
     void updateLegends();
 private slots:
 
 private:
-    Plot *m_plot =nullptr;
+    QGridLayout *plotsLayout;
+    Plot *m_plot = nullptr;
+    QLabel * infoLabel;
 
     QAction *autoscaleXAct = nullptr;
     QAction *autoscaleYAct = nullptr;
@@ -69,7 +69,10 @@ private:
     QAction *interactionModeAct = nullptr;
     QAction *playAct = nullptr;
 
-    PlotType plotType = PlotType::General;
+    // QWidget interface
+protected:
+    virtual void dragEnterEvent(QDragEnterEvent *event) override;
+    virtual void dropEvent(QDropEvent *event) override;
 };
 
 #endif // PLOTAREA_H

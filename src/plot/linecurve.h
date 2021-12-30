@@ -32,12 +32,12 @@ public:
 
     // QwtPlotCurve interface
 protected:
+    virtual void setMapper();
     virtual void drawLines(QPainter *painter, const QwtScaleMap &xMap,
                            const QwtScaleMap &yMap, const QRectF &canvasRect,
                            int from, int to) const override;
-private:
-    DfdData *dfddata;
     FilterPointMapper *mapper;
+    DfdData *dfddata;
 
     // Curve interface
 public:
@@ -57,7 +57,7 @@ public:
     virtual void resetHighlighting() override;
     virtual QPointF samplePoint(int point) const override;
 
-    virtual void resetCashedData();
+    virtual void resetCashedData() override;
 
     // Curve interface
 public:
@@ -66,6 +66,17 @@ public:
     // QwtPlotItem interface
 public:
     virtual void setVisible(bool visible) override;
+};
+
+class TimeCurve : public LineCurve
+{
+public:
+    TimeCurve(const QString &title, Channel *channel);
+protected:
+    virtual void setMapper() override;
+    virtual void drawLines(QPainter *painter, const QwtScaleMap &xMap,
+                           const QwtScaleMap &yMap, const QRectF &canvasRect,
+                           int from, int to) const override;
 };
 
 #endif // LINECURVE_H

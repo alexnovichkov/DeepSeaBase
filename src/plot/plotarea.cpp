@@ -2,29 +2,26 @@
 
 #include <QtWidgets>
 #include "plot/plot.h"
+#include "spectrogram.h"
+#include "octaveplot.h"
+#include "timeplot.h"
 #include "plot/curve.h"
 #include "app.h"
 #include "logging.h"
 #include "fileformats/filedescriptor.h"
 #include "plot/pointlabel.h"
 #include "plotmodel.h"
+#include "channelsmimedata.h"
 #include <QAxObject>
 
-PlotArea::PlotArea(int index, PlotType type, QWidget *parent)
-    : ads::CDockWidget(QString("График %1").arg(index), parent), plotType(type)
+PlotArea::PlotArea(int index, QWidget *parent)
+    : ads::CDockWidget(QString("График %1").arg(index), parent)
 {
+    setAcceptDrops(true);
     setAsCurrentTab();
     setFeature(ads::CDockWidget::DockWidgetDeleteOnClose, true);
     setFeature(ads::CDockWidget::CustomCloseHandling, true);
     setFeature(ads::CDockWidget::DockWidgetFocusable, true);
-
-    m_plot = new Plot(this);
-    m_plot->resize(200,200);
-//    connect(plot, SIGNAL(saveTimeSegment(QList<FileDescriptor*>,double,double)), SLOT(saveTimeSegment(QList<FileDescriptor*>,double,double)));
-
-    connect(m_plot, SIGNAL(curvesCountChanged()), this, SIGNAL(curvesCountChanged()));
-    connect(m_plot, SIGNAL(channelPlotted(Channel*)), this, SIGNAL(channelPlotted(Channel*)));
-    connect(m_plot, SIGNAL(curveDeleted(Channel*)), this, SIGNAL(curveDeleted(Channel*)));
 
     autoscaleXAct = new QAction("Автомасштабирование по оси X", this);
     autoscaleXAct->setIcon(QIcon(":/icons/autoscale-x.png"));
@@ -97,11 +94,15 @@ PlotArea::PlotArea(int index, PlotType type, QWidget *parent)
 
     cycleChannelsUpAct = new QAction("Предыдущий канал", this);
     cycleChannelsUpAct->setIcon(QIcon(":/icons/cminus.png"));
-    connect(cycleChannelsUpAct, &QAction::triggered, [this](){plot()->cycleChannels(true);});
+    connect(cycleChannelsUpAct, &QAction::triggered, [this](){
+        if (m_plot) m_plot->cycleChannels(true);
+    });
 
     cycleChannelsDownAct = new QAction("Следующий канал", this);
     cycleChannelsDownAct->setIcon(QIcon(":/icons/cplus.png"));
-    connect(cycleChannelsDownAct, &QAction::triggered, [this](){plot()->cycleChannels(false);});
+    connect(cycleChannelsDownAct, &QAction::triggered, [this](){
+        if (m_plot) m_plot->cycleChannels(false);
+    });
 
     clearPlotAct  = new QAction(QString("Очистить график"), this);
     clearPlotAct->setIcon(QIcon(":/icons/cross.png"));
@@ -132,8 +133,6 @@ PlotArea::PlotArea(int index, PlotType type, QWidget *parent)
     connect(trackingCursorAct, &QAction::triggered, [=](){
         if (m_plot) m_plot->switchTrackingCursor();
     });
-    if (m_plot)
-    connect(m_plot,SIGNAL(trackingPanelCloseRequested()), trackingCursorAct, SLOT(toggle()));
 
     copyToClipboardAct = new QAction(QString("Копировать в буфер обмена"), this);
     copyToClipboardAct->setIcon(QIcon(":/icons/clipboard.png"));
@@ -158,11 +157,17 @@ PlotArea::PlotArea(int index, PlotType type, QWidget *parent)
     playAct->setIcon(QIcon(":/icons/play.png"));
     playAct->setCheckable(true);
     //TODO: отвязать плеер от графика, чтобы не было нескольких плееров в одной программе
-    connect(playAct, &QAction::triggered, m_plot, &Plot::switchPlayerVisibility);
-    if (m_plot) connect(m_plot,SIGNAL(playerPanelCloseRequested()),playAct,SLOT(toggle()));
+    connect(playAct, &QAction::triggered, [this](){
+        if (m_plot) m_plot->switchPlayerVisibility();
+    });
 
 
-
+    setToolBarIconSize(QSize(24,24), StateDocked);
+    setToolBarIconSize(QSize(24,24), StateFloating);
+    setToolBarIconSize(QSize(24,24), StateHidden);
+    setToolBarStyle(Qt::ToolButtonIconOnly, StateDocked);
+    setToolBarStyle(Qt::ToolButtonIconOnly, StateFloating);
+    setToolBarStyle(Qt::ToolButtonIconOnly, StateHidden);
     auto scaleToolBar = createDefaultToolBar();
     scaleToolBar->setIconSize(QSize(24,24));
 //    scaleToolBar->setOrientation(Qt::Vertical);
@@ -188,13 +193,19 @@ PlotArea::PlotArea(int index, PlotType type, QWidget *parent)
     scaleToolBar->addAction(trackingCursorAct);
     scaleToolBar->addAction(playAct);
 
-
-
-
-    QGridLayout *plotsLayout = new QGridLayout;
-    //plotsLayout->addWidget(scaleToolBar,0,0);
-    if (m_plot) plotsLayout->addWidget(m_plot,0,1);
+    plotsLayout = new QGridLayout;
+    infoLabel = new QLabel("- Перетащите сюда каналы, чтобы построить их графики\n"
+                                "- Если зажать Ctrl, то будут построены графики для всех\n"
+                                "  выделенных файлов", this);
+    QFont font;
+    //font.setBold(true);
+    font.setPointSize(12);
+    infoLabel->setFont(font);
+    //infoLabel->setF(QColor(150,150,150,150));
+    //infoLabel->setBackgroundRole(QColor(255,255,255,150));
+    plotsLayout->addWidget(infoLabel,0,0, Qt::AlignCenter);
     auto w = new QWidget;
+    //w->setBackgroundRole(QPalette::Light);
     w->setLayout(plotsLayout);
     setWidget(w);
 }
@@ -202,6 +213,62 @@ PlotArea::PlotArea(int index, PlotType type, QWidget *parent)
 Plot *PlotArea::plot()
 {
     return m_plot;
+}
+
+void PlotArea::addPlot(Plot::PlotType type)
+{
+    if (m_plot) {
+        plotsLayout->removeWidget(m_plot);
+        delete m_plot;
+    }
+    else {
+        infoLabel->hide();
+    }
+    switch (type) {
+        case Plot::PlotType::Spectrogram: {
+            m_plot = new Spectrogram(this);
+            setIcon(QIcon(":/icons/spectrocurve.png"));
+            break;
+        }
+        case Plot::PlotType::Octave: {
+            m_plot = new OctavePlot(this);
+            setIcon(QIcon(":/icons/barcurve.png"));
+            break;
+        }
+        case Plot::PlotType::Time: {
+            m_plot = new TimePlot(this);
+            setIcon(QIcon(":/icons/timecurve.png"));
+            break;
+        }
+        case Plot::PlotType::General: {
+            m_plot = new Plot(type, this);
+            setIcon(QIcon(":/icons/linecurve.png"));
+            break;
+        }
+    }
+
+
+    plotsLayout->addWidget(m_plot,1,0);
+
+    connect(m_plot, SIGNAL(curvesCountChanged()), this, SIGNAL(curvesCountChanged()));
+    connect(m_plot, SIGNAL(channelPlotted(Channel*)), this, SIGNAL(channelPlotted(Channel*)));
+    connect(m_plot, SIGNAL(curveDeleted(Channel*)), this, SIGNAL(curveDeleted(Channel*)));
+    connect(m_plot, SIGNAL(needPlotChannels(bool,QVector<Channel*>)), this, SIGNAL(needPlotChannels(bool,QVector<Channel*>)));
+    connect(m_plot, SIGNAL(focusThisPlot()), this, SLOT(setFocus()));
+
+    connect(m_plot, SIGNAL(playerPanelCloseRequested()),playAct,SLOT(toggle()));
+    connect(m_plot, SIGNAL(trackingPanelCloseRequested()), trackingCursorAct, SLOT(toggle()));
+
+    bool autoscale = App->getSetting("autoscale-x", true).toBool();
+    m_plot->toggleAutoscale(0 /* x axis */, autoscale);
+    autoscale = App->getSetting("autoscale-y", true).toBool();
+    m_plot->toggleAutoscale(1 /* y axis */, autoscale);
+    autoscale = App->getSetting("autoscale-y-slave", true).toBool();
+    m_plot->toggleAutoscale(2 /* y slave axis */, autoscale);
+
+
+
+    emit curvesCountChanged();
 }
 
 void PlotArea::update()
@@ -698,14 +765,14 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 
 void PlotArea::updateActions(int filesCount, int channelsCount)
 {
-    const bool hasCurves = curvesCount()>0;
-    const bool allCurvesFromSameDescriptor = plot()->model()->allCurvesFromSameDescriptor();
+    const bool hasCurves = m_plot ? curvesCount()>0 : false;
+    const bool allCurvesFromSameDescriptor = m_plot ? m_plot->model()->allCurvesFromSameDescriptor() : false;
 
     clearPlotAct->setEnabled(hasCurves);
     savePlotAct->setEnabled(hasCurves);
     copyToClipboardAct->setEnabled(hasCurves);
     printPlotAct->setEnabled(hasCurves);
-    playAct->setEnabled(m_plot->curvesCount(Descriptor::TimeResponse)>0);
+    playAct->setEnabled(m_plot ? m_plot->type()==Plot::PlotType::Time : false);
     previousDescriptorAct->setEnabled(filesCount>1 && allCurvesFromSameDescriptor);
     nextDescriptorAct->setEnabled(filesCount>1 && allCurvesFromSameDescriptor);
     arbitraryDescriptorAct->setEnabled(filesCount>1 && allCurvesFromSameDescriptor);
@@ -721,9 +788,9 @@ void PlotArea::deleteCurvesForDescriptor(FileDescriptor *f)
 //вызывается при переходе на предыдущую/следующую запись
 void PlotArea::replotDescriptor(FileDescriptor *f, int fileIndex)
 {
-    if (plot()->sergeiMode) {
-        plot()->deleteAllCurves(false);
-        plot()->plotCurvesForDescriptor(f, fileIndex);
+    if (m_plot && m_plot->sergeiMode) {
+        m_plot->deleteAllCurves(false);
+        m_plot->plotCurvesForDescriptor(f, fileIndex);
     }
 }
 
@@ -744,12 +811,42 @@ int PlotArea::curvesCount(int type) const
     return m_plot?m_plot->curvesCount(type):0;
 }
 
-PlotType PlotArea::type() const
-{
-    return plotType;
-}
-
 void PlotArea::updateLegends()
 {
     if (m_plot) m_plot->updateLegends();
+}
+
+
+void PlotArea::dragEnterEvent(QDragEnterEvent *event)
+{
+    setFocus();
+
+    const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
+    if (myData && !m_plot) {
+        event->acceptProposedAction();
+    }
+}
+
+void PlotArea::dropEvent(QDropEvent *event)
+{
+    const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
+    if (myData) {
+        onDropEvent(myData->channels);
+        event->acceptProposedAction();
+    }
+}
+
+void PlotArea::onDropEvent(const QVector<Channel *> &channels)
+{
+    auto type = Plot::PlotType::General;
+    if (!channels.isEmpty()) {
+        if (channels.first()->type() == Descriptor::TimeResponse)
+            type = Plot::PlotType::Time;
+        if (channels.first()->data()->blocksCount()>1)
+            type = Plot::PlotType::Spectrogram;
+        if (channels.first()->data()->xValuesFormat() == DataHolder::XValuesNonUniform)
+            type = Plot::PlotType::Octave;
+    }
+    addPlot(type);
+    m_plot->onDropEvent(true, channels);
 }

@@ -66,10 +66,13 @@ SOURCES += main.cpp\
     plot/canvaseventfilter.cpp \
     plot/grid.cpp \
     plot/imagerenderdialog.cpp \
+    plot/octaveplot.cpp \
     plot/plotarea.cpp \
     plot/plotinfooverlay.cpp \
     plot/plotmodel.cpp \
     plot/scaledraw.cpp \
+    plot/spectrogram.cpp \
+    plot/timeplot.cpp \
     plot/trackingcursor.cpp \
     plot/zoomstack.cpp \
     plotdockfactory.cpp \
@@ -173,10 +176,13 @@ HEADERS  += mainwindow.h \
     plot/canvaseventfilter.h \
     plot/grid.h \
     plot/imagerenderdialog.h \
+    plot/octaveplot.h \
     plot/plotarea.h \
     plot/plotinfooverlay.h \
     plot/plotmodel.h \
     plot/scaledraw.h \
+    plot/spectrogram.h \
+    plot/timeplot.h \
     plot/trackingcursor.h \
     plot/zoomstack.h \
     plotdockfactory.h \

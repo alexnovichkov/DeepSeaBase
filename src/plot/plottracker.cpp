@@ -36,42 +36,20 @@ void PlotTracker::widgetKeyPressEvent(QKeyEvent *e)
     else QwtPlotPicker::widgetKeyPressEvent(e);
 }
 
-QString smartDouble(double v)
-{
-    double v1=qAbs(v);
-    if (v1>=0.1 && v1 <= 10000) return QString::number(v,'f',2);
-    if (v1>=0.01 && v1 <= 0.1) return QString::number(v,'f',3);
-    if (v1>=0.001 && v1 <= 0.01) return QString::number(v,'f',4);
-    if (v1>=0.0001 && v1 <= 0.001) return QString::number(v,'f',5);
-
-    return QString::number(v,'g');
-}
-
 QwtText PlotTracker::trackerTextF(const QPointF &pos) const
 {
     QColor bg(Qt::white);
     bg.setAlpha(200);
 
     QwtText text;
-
-    if (plot->spectrogram) {
-        bool success = false;
-        double y = 0.0;
-        if (auto c = plot->model()->curve(0))
-            y = c->channel->data()->YforXandZ(pos.x(), pos.y(), success);
-        if (success)
-            text = QwtText(smartDouble(pos.x())+", "+smartDouble(pos.y()) + ", "+smartDouble(y));
-        else
-            text = QwtText(smartDouble(pos.x())+", "+smartDouble(pos.y()));
-    }
-    else
-        text = QwtText(smartDouble(pos.x())+", "+smartDouble(pos.y()));
+    if (plot) text = plot->pointCoordinates(pos);
     text.setBackgroundBrush(QBrush(bg));
     return text;
 }
 
 void PlotTracker::maybeHover(const QPointF &pos)
 {
+    if (!plot) return;
     bool found = false;
 
     const auto list = plot->itemList(QwtPlotItem::Rtti_PlotMarker);

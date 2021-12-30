@@ -48,6 +48,8 @@ QVector<T> segment(const QVector<T> &values, int from, int to, int blockSize, in
     return result;
 }
 
+QString smartDouble(double v);
+
 template <typename T, typename D>
 QVector<D> readChunk(QDataStream &readStream, quint64 blockSize, qint64 *actuallyRead)
 {

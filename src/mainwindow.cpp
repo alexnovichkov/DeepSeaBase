@@ -132,6 +132,9 @@ MainWindow::MainWindow(QWidget *parent)
     settingsMenu->addAction(editColorsAct);
     settingsMenu->addAction(aboutAct);
 
+    tabsMenu = menuBar()->addMenu("Вкладки");
+    tabsMenu->addAction(addTabAct);
+
     plotsMenu = menuBar()->addMenu("Графики");
     plotsMenu->addAction(addPlotAreaAct);
 
@@ -153,6 +156,10 @@ MainWindow::MainWindow(QWidget *parent)
 
 void MainWindow::createActions()
 {
+    addTabAct = new QAction("Новая вкладка", this);
+    addTabAct->setShortcut(QKeySequence::AddTab);
+    connect(addTabAct, &QAction::triggered, this, &MainWindow::createNewTab);
+
     QIcon newPlotIcon(":/icons/newPlot.png");
     newPlotIcon.addFile(":/icons/newPlot24.png");
     addPlotAreaAct = new QAction(newPlotIcon, "Добавить график справа", this);
@@ -381,6 +388,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     connect(dockWidget, &ads::CDockWidget::closeRequested, [=](){
         closeTab(dockWidget);
     });
+    tabsMenu->addAction(dockWidget->toggleViewAction());
 
     connect(currentTab->fileHandler, SIGNAL(fileAdded(QString,bool,bool)),this,SLOT(addFolder(QString,bool,bool)));
     currentTab->fileHandler->setFileNames(folders);
@@ -480,12 +488,9 @@ PlotArea *MainWindow::createPlotArea()
     ads::CDockComponentsFactory::setFactory(new PlotDockFactory(this));
     static int plotIndex = 0;
     plotIndex++;
-    PlotArea *area = new PlotArea(plotIndex, PlotType::General, this);
+    PlotArea *area = new PlotArea(plotIndex, this);
     connect(this, SIGNAL(updateLegends()), area, SLOT(updateLegends()));
-    connect(area->plot(), &Plot::needPlotChannels, this, qOverload<bool,const QVector<Channel*> &>(&MainWindow::onChannelsDropped));
-    connect(area->plot(), &Plot::focusThisPlot, [=](){
-         area->setFocus();
-    });
+    connect(area, &PlotArea::needPlotChannels, this, qOverload<bool,const QVector<Channel*> &>(&MainWindow::onChannelsDropped));
     connect(area, &PlotArea::curvesCountChanged, this, &MainWindow::updateActions);
     connect(area, &PlotArea::channelPlotted, this, &MainWindow::onChannelChanged);
     connect(area, &PlotArea::curveDeleted, this, &MainWindow::onChannelChanged);
@@ -774,7 +779,7 @@ void MainWindow::movePlottedChannels() /** SLOT*/
 
 void MainWindow::addCorrection()
 {DD;
-    if (!currentPlot || !currentTab) return;
+    if (!currentPlot || !currentTab || !currentPlot->plot()) return;
     if (currentPlot->curvesCount()>0) {
         if (!correctionDialog) {
             correctionDialog = new CorrectionDialog(currentPlot->plot(), this);
@@ -869,7 +874,7 @@ void MainWindow::addCorrections()
     }
 
     if (currentTab) currentTab->updateChannelsTable(currentTab->record);
-    if (currentPlot) {
+    if (currentPlot && currentPlot->plot()) {
         currentPlot->plot()->updateAxes();
         emit updateLegends();
         currentPlot->plot()->replot();
@@ -888,7 +893,7 @@ void MainWindow::addCorrections()
 
 bool MainWindow::deleteChannels(FileDescriptor *file, const QVector<int> &channelsToDelete)
 {DD;
-    if (!currentPlot) return false;
+    if (!currentPlot || !currentPlot->plot()) return false;
     for (int i=0; i<channelsToDelete.size() - 1; ++i)
         currentPlot->plot()->deleteCurveForChannelIndex(file, channelsToDelete.at(i), false);
     currentPlot->plot()->deleteCurveForChannelIndex(file, channelsToDelete.last(), true);
@@ -1031,7 +1036,7 @@ bool MainWindow::copyChannels(const QVector<Channel *> source)
 
 void MainWindow::calculateMean()
 {DD;
-    if (!currentPlot) return;
+    if (!currentPlot || !currentPlot->plot()) return;
 
     if (currentPlot->curvesCount()<2) return;
 
@@ -1357,8 +1362,10 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
     Plot* p = nullptr;
     if (auto plot = dynamic_cast<Plot*>(sender()))
         p = plot;
-    else if (currentPlot)
+    else if (currentPlot) {
         p = currentPlot->plot();
+        if (!p) currentPlot->onDropEvent(toPlot);
+    }
     if (p)
         for (auto ch: toPlot) {
             int index=-1;
@@ -1453,7 +1460,7 @@ void MainWindow::calculateThirdOctave()
 
 void MainWindow::calculateMovingAvg()
 {DD;
-    if (!currentPlot) return;
+    if (!currentPlot || !currentPlot->plot()) return;
     if (currentPlot->plot()->curvesCount()==0) return;
 
     int windowSize = App->getSetting("movingAvgSize",3).toInt();
@@ -1580,8 +1587,9 @@ void MainWindow::rescanBase()
     // first we delete all curves affected
     const auto m = m_DockManager->dockWidgetsMap();
     for (auto w: m.values()) {
-        if (auto area = dynamic_cast<PlotArea*>(w))
-            area->plot()->deleteAllCurves(true);
+        if (auto area = dynamic_cast<PlotArea*>(w)) {
+            if (area->plot()) area->plot()->deleteAllCurves(true);
+        }
     }
 
     Tab *oldTab = currentTab;
@@ -1626,7 +1634,7 @@ void MainWindow::setDescriptor(int direction, bool checked) /*private*/
     FileDescriptor* d = nullptr;
     //ищем запись первой не фиксированной кривой
     //(фиксированная кривая может быть из другой записи)
-    if (currentPlot) {
+    if (currentPlot && currentPlot->plot()) {
         auto c = currentPlot->plot()->model()->firstOf([](Curve *c){return !c->fixed;});
         if (c) d = c->channel->descriptor();
     }
@@ -1657,9 +1665,9 @@ void MainWindow::setDescriptor(int direction, bool checked) /*private*/
             modelIndex = currentTab->filesTable->model()->index(index+1,current.column());
     }
     else if (direction==0) {
-        if (currentPlot) currentPlot->plot()->sergeiMode = checked;
+        if (currentPlot && currentPlot->plot()) currentPlot->plot()->sergeiMode = checked;
     }
-    if (modelIndex.isValid()) {
+    if (modelIndex.isValid() && currentPlot && currentPlot->plot()) {
         //это вызывает Tab::updateChannelsTable(FileDescriptor *descriptor)
         //который посылает сигнал в MainWindow, который в свою очередь вызывает currentPlot->replotDescriptor
         currentPlot->plot()->sergeiMode = true;
@@ -1690,7 +1698,9 @@ void MainWindow::updateActions()
     const int channelsCount = currentTab->channelModel->channelsCount;
     const int filesCount = currentTab->model->size();
     const int curvesCount = currentPlot ? currentPlot->curvesCount():0;
-    const bool spectrogram = currentPlot ? currentPlot->type()==PlotType::Spectrogram:false;
+    bool spectrogram = false;
+    if (currentPlot && currentPlot->plot())
+        spectrogram = currentPlot->plot()->type() == Plot::PlotType::Spectrogram;
 
     saveAct->setEnabled(currentTab->model->changed());
 

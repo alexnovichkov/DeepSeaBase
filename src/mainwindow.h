@@ -146,8 +146,9 @@ private:
     Tab *currentTab = nullptr;
 
     QMenu *plotsMenu;
+    QMenu *tabsMenu;
 
-
+    QAction *addTabAct;
     QAction *addFolderAct;
     QAction *addFolderWithSubfoldersAct;
     QAction *addFileAct;

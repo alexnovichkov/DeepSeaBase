@@ -70,21 +70,8 @@
 #include "plotinfooverlay.h"
 #include "plotmodel.h"
 
-// простой фабричный метод создания кривой нужного типа
-Curve * createCurve(const QString &legendName, Channel *channel)
-{DD;
-    if (channel->data()->blocksCount() > 1)
-        return new SpectroCurve(legendName, channel);
-
-    // считаем, что шаг по оси х 0 только у октав и третьоктав
-    if (channel->data()->xValuesFormat() == DataHolder::XValuesNonUniform)
-        return new BarCurve(legendName, channel);
-
-    return new LineCurve(legendName, channel);
-}
-
-Plot::Plot(QWidget *parent) :
-    QwtPlot(parent), zoom(0)
+Plot::Plot(PlotType type, QWidget *parent) :
+    QwtPlot(parent), plotType(type)
 {DD;
     m = new PlotModel(this);
 
@@ -139,7 +126,7 @@ Plot::Plot(QWidget *parent) :
     zoom = new ZoomStack(this);
 
     tracker = new PlotTracker(this);
-    tracker->setEnabled(App->getSetting("pickerEnabled", true).toBool());
+//    tracker->setEnabled(App->getSetting("pickerEnabled", true).toBool());
 
     _picker = new Picker(this);
     _picker->setEnabled(App->getSetting("pickerEnabled", true).toBool());
@@ -211,15 +198,17 @@ void Plot::update()
     updateAxesLabels();
     updateLegend();
 
-    if (m->leftCurvesCount()==0) {
+    updateBounds();
+
+    replot();
+}
+
+void Plot::updateBounds()
+{
+    if (m->leftCurvesCount()==0)
         zoom->verticalScaleBounds->reset();
-        if (spectrogram)
-            zoom->verticalScaleBoundsSlave->reset();
-    }
-    if (m->rightCurvesCount()==0 && !spectrogram) {
+    if (m->rightCurvesCount()==0)
         zoom->verticalScaleBoundsSlave->reset();
-        axisWidget(yRightAxis)->setColorBarEnabled(false);
-    }
     if (!hasCurves())
         zoom->horizontalScaleBounds->reset();
 
@@ -227,10 +216,155 @@ void Plot::update()
         zoom->horizontalScaleBounds->autoscale();
     if (m->leftCurvesCount()>0 && !zoom->verticalScaleBounds->isFixed())
         zoom->verticalScaleBounds->autoscale();
-    if (m->rightCurvesCount()>0 && !zoom->verticalScaleBoundsSlave->isFixed() && !spectrogram)
+    if (m->rightCurvesCount()>0 && !zoom->verticalScaleBoundsSlave->isFixed())
         zoom->verticalScaleBoundsSlave->autoscale();
+}
 
-    replot();
+void Plot::setRightScale(QwtAxisId id, double min, double max)
+{
+    Q_UNUSED(id);
+    Q_UNUSED(min);
+    Q_UNUSED(max);
+}
+
+QMenu *Plot::createMenu(QwtAxisId axis)
+{
+    QMenu *menu = new QMenu(this);
+
+    if (axis.pos == QwtAxis::xBottom) {
+        menu->addAction(xScaleIsLogarithmic?"Линейная шкала":"Логарифмическая шкала", [=](){
+            if (xScaleIsLogarithmic)
+                setAxisScaleEngine(xBottomAxis, new QwtLinearScaleEngine());
+            else
+                setAxisScaleEngine(xBottomAxis, new LogScaleEngine(2));
+
+            xScaleIsLogarithmic = !xScaleIsLogarithmic;
+        });
+    }
+
+    // определяем, все ли графики представляют временные данные
+    if (const auto type = m->curvesDataType();
+        type == Descriptor::TimeResponse && axis.pos == QwtAxis::xBottom) {
+        menu->addAction("Сохранить временной сегмент", [=](){
+            double xStart = canvasMap(axis).s1();
+            double xEnd = canvasMap(axis).s2();
+
+            emit saveTimeSegment(m->plottedDescriptors(), xStart, xEnd);
+        });
+    }
+
+    bool curvesEmpty = true;
+    bool leftCurves = true;
+    int *ax = 0;
+
+    if (axis.pos == QwtAxis::yLeft && m->leftCurvesCount()>0) {
+        curvesEmpty = false;
+        ax = &yValuesPresentationLeft;
+    }
+    if (axis.pos == QwtAxis::yRight && m->rightCurvesCount()>0) {
+        curvesEmpty = false;
+        ax = &yValuesPresentationRight;
+        leftCurves = false;
+    }
+
+    if (!curvesEmpty) {
+        QAction *a = new QAction("Показывать как");
+        QMenu *am = new QMenu(this);
+        QActionGroup *ag = new QActionGroup(am);
+
+        QAction *act3 = new QAction("Амплитуды линейные", ag);
+        act3->setCheckable(true);
+        if (ax && *ax == DataHolder::ShowAsAmplitudes) act3->setChecked(true);
+        act3->setData(DataHolder::ShowAsAmplitudes);
+        am->addAction(act3);
+
+        QAction *act4 = new QAction("Амплитуды в дБ", ag);
+        act4->setCheckable(true);
+        if (*ax == DataHolder::ShowAsAmplitudesInDB) act4->setChecked(true);
+        act4->setData(DataHolder::ShowAsAmplitudesInDB);
+        am->addAction(act4);
+
+        QAction *act5 = new QAction("Фазы", ag);
+        act5->setCheckable(true);
+        if (*ax == DataHolder::ShowAsPhases) act5->setChecked(true);
+        act5->setData(DataHolder::ShowAsPhases);
+        am->addAction(act5);
+
+        QAction *act1 = new QAction("Действит.", ag);
+        act1->setCheckable(true);
+        if (*ax == DataHolder::ShowAsReals) act1->setChecked(true);
+        act1->setData(DataHolder::ShowAsReals);
+        am->addAction(act1);
+
+        QAction *act2 = new QAction("Мнимые", ag);
+        act2->setCheckable(true);
+        if (*ax == DataHolder::ShowAsImags) act2->setChecked(true);
+        act2->setData(DataHolder::ShowAsImags);
+        am->addAction(act2);
+
+        connect(ag, &QActionGroup::triggered, [=](QAction*act){
+            int presentation = act->data().toInt();
+            m->setYValuesPresentation(leftCurves, presentation);
+            *ax = presentation;
+            this->recalculateScale(axis.pos == QwtAxis::yLeft);
+            this->update();
+        });
+
+        a->setMenu(am);
+        menu->addAction(a);
+    }
+
+    if (m->leftCurvesCount()>0 && m->rightCurvesCount()>0) {
+        menu->addSection("Левая и правая оси");
+        menu->addAction("Совместить нули левой и правой осей", [=](){
+            // 1. Центруем нуль левой оси
+            QwtScaleMap leftMap = canvasMap(yLeft);
+            double s1 = leftMap.s1();
+            double s2 = leftMap.s2();
+
+            double p1 = leftMap.p1();
+            double p2 = leftMap.p2();
+            double delta = leftMap.invTransform((p1+p2)/2.0);
+
+            ZoomStack::zoomCoordinates coords;
+            coords.coords.insert(QwtAxis::yLeft, {s1-delta, s2-delta});
+
+            // 2. Центруем нуль правой оси
+            QwtScaleMap rightMap = canvasMap(yRight);
+            s1 = rightMap.s1();
+            s2 = rightMap.s2();
+
+            p1 = rightMap.p1();
+            p2 = rightMap.p2();
+            delta = rightMap.invTransform((p1+p2)/2.0);
+
+            coords.coords.insert(QwtAxis::yRight, {s1-delta, s2-delta});
+            zoom->addZoom(coords, true);
+        });
+        menu->addAction("Совместить диапазоны левой и правой осей", [=](){
+            QwtScaleMap leftMap = canvasMap(QwtAxis::yLeft);
+            double s1 = leftMap.s1();
+            double s2 = leftMap.s2();
+
+            QwtScaleMap rightMap = canvasMap(QwtAxis::yRight);
+            double s3 = rightMap.s1();
+            double s4 = rightMap.s2();
+            double s = std::min(s1,s3);
+            double ss = std::min(s2,s4);
+
+            ZoomStack::zoomCoordinates coords;
+            coords.coords.insert(QwtAxis::yLeft, {s, ss});
+            coords.coords.insert(QwtAxis::yRight, {s, ss});
+
+            zoom->addZoom(coords, true);
+        });
+    }
+    return menu;
+}
+
+void Plot::setInfoVisible(bool visible)
+{
+    infoOverlay->setVisible(visible);
 }
 
 void Plot::updateCycled()
@@ -334,10 +468,6 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
 
         if (removedFromLeft > 0) {
             zoom->verticalScaleBounds->removeToAutoscale(curve->yMin(), curve->yMax());
-            if (spectrogram) {
-                zoom->verticalScaleBoundsSlave->removeToAutoscale(curve->channel->data()->zMin(),
-                                                                  curve->channel->data()->zMax());
-            }
         }
         else {
             zoom->verticalScaleBoundsSlave->removeToAutoscale(curve->yMin(), curve->yMax());
@@ -348,17 +478,13 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
 
         if (m->leftCurvesCount()==0) {
             yLeftName.clear();
-            if (spectrogram) {
-                yRightName.clear();
-                enableAxis(QwtAxis::yRight, false);
-            }
         }
         if (m->rightCurvesCount()==0) {
             yRightName.clear();
             enableAxis(QwtAxis::yRight, false);
         }
         if (!hasCurves()) xName.clear();
-        infoOverlay->setVisible(m->size()==0);
+        setInfoVisible(m->size()==0);
         if (doReplot) update();
     }
 }
@@ -367,186 +493,26 @@ void Plot::showContextMenu(const QPoint &pos, QwtAxisId axis)
 {DD;
     if (!hasCurves()) return;
 
-    QMenu *menu = new QMenu(this);
+    QMenu *menu = createMenu(axis);
 
-    if (axis.pos == QwtAxis::xBottom) {
-        menu->addAction(xScaleIsLogarithmic?"Линейная шкала":"Логарифмическая шкала", [=](){
-            if (xScaleIsLogarithmic)
-                setAxisScaleEngine(xBottomAxis, new QwtLinearScaleEngine());
-            else
-                setAxisScaleEngine(xBottomAxis, new LogScaleEngine(2));
-
-            xScaleIsLogarithmic = !xScaleIsLogarithmic;
-        });
-    }
-
-    // определяем, все ли графики представляют временные данные
-    if (const auto type = m->curvesDataType();
-        type == Descriptor::TimeResponse && axis.pos == QwtAxis::xBottom) {
-        menu->addAction("Сохранить временной сегмент", [=](){
-            double xStart = canvasMap(axis).s1();
-            double xEnd = canvasMap(axis).s2();
-
-            emit saveTimeSegment(m->plottedDescriptors(), xStart, xEnd);
-        });
-    }
-
-    bool curvesEmpty = true;
-    bool leftCurves = true;
-    int *ax = 0;
-    if (spectrogram) {//всё наоборот
-        if (axis.pos == QwtAxis::yRight && m->leftCurvesCount()>0) {
-            curvesEmpty = false;
-            ax = &yValuesPresentationRight;
-        }
-    }
-    else {
-        if (axis.pos == QwtAxis::yLeft && m->leftCurvesCount()>0) {
-            curvesEmpty = false;
-            ax = &yValuesPresentationLeft;
-        }
-        if (axis.pos == QwtAxis::yRight && m->rightCurvesCount()>0) {
-            curvesEmpty = false;
-            ax = &yValuesPresentationRight;
-            leftCurves = false;
-        }
-    }
-
-    if (!curvesEmpty) {
-        QAction *a = new QAction("Показывать как");
-        QMenu *am = new QMenu(this);
-        QActionGroup *ag = new QActionGroup(am);
-
-        QAction *act3 = new QAction("Амплитуды линейные", ag);
-        act3->setCheckable(true);
-        if (ax && *ax == DataHolder::ShowAsAmplitudes) act3->setChecked(true);
-        act3->setData(DataHolder::ShowAsAmplitudes);
-        am->addAction(act3);
-
-        QAction *act4 = new QAction("Амплитуды в дБ", ag);
-        act4->setCheckable(true);
-        if (*ax == DataHolder::ShowAsAmplitudesInDB) act4->setChecked(true);
-        act4->setData(DataHolder::ShowAsAmplitudesInDB);
-        am->addAction(act4);
-
-        QAction *act5 = new QAction("Фазы", ag);
-        act5->setCheckable(true);
-        if (*ax == DataHolder::ShowAsPhases) act5->setChecked(true);
-        act5->setData(DataHolder::ShowAsPhases);
-        am->addAction(act5);
-
-        QAction *act1 = new QAction("Действит.", ag);
-        act1->setCheckable(true);
-        if (*ax == DataHolder::ShowAsReals) act1->setChecked(true);
-        act1->setData(DataHolder::ShowAsReals);
-        am->addAction(act1);
-
-        QAction *act2 = new QAction("Мнимые", ag);
-        act2->setCheckable(true);
-        if (*ax == DataHolder::ShowAsImags) act2->setChecked(true);
-        act2->setData(DataHolder::ShowAsImags);
-        am->addAction(act2);
-
-        connect(ag, &QActionGroup::triggered, [=](QAction*act){
-            int presentation = act->data().toInt();
-            m->setYValuesPresentation(leftCurves, presentation);
-            *ax = presentation;
-            this->recalculateScale(axis.pos == QwtAxis::yLeft);
-            this->update();
-        });
-
-        a->setMenu(am);
-        menu->addAction(a);
-    }
-
-    if (spectrogram && axis.pos == QwtAxis::yRight && m->leftCurvesCount()>0) {
-        if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(m->curve(0, true))) {
-            QAction *a = new QAction("Цветовая шкала");
-            QMenu *am = new QMenu(this);
-            QActionGroup *ag = new QActionGroup(am);
-
-            const QStringList l = ColorMapFactory::names();
-            for (int i=0; i<l.size(); ++i) {
-                QAction *act1 = new QAction(l.at(i), ag);
-                act1->setCheckable(true);
-                if (i == colorMap) act1->setChecked(true);
-                act1->setData(i);
-                am->addAction(act1);
-            }
-
-            connect(ag, &QActionGroup::triggered, [=](QAction*act){
-                int map = act->data().toInt();
-                if (map != colorMap) {
-                    colorMap = map;
-                    axisWidget(yRightAxis)->setColorMap(c->colorInterval(), ColorMapFactory::map(map));
-                    c->setColorMap(ColorMapFactory::map(map));
-                    replot();
-                }
-            });
-
-            a->setMenu(am);
-            menu->addAction(a);
-        }
-    }
-
-    if (m->leftCurvesCount()>0 && m->rightCurvesCount()>0) {
-        menu->addSection("Левая и правая оси");
-        menu->addAction("Совместить нули левой и правой осей", [=](){
-            // 1. Центруем нуль левой оси
-            QwtScaleMap leftMap = canvasMap(yLeft);
-            double s1 = leftMap.s1();
-            double s2 = leftMap.s2();
-
-            double p1 = leftMap.p1();
-            double p2 = leftMap.p2();
-            double delta = leftMap.invTransform((p1+p2)/2.0);
-
-            ZoomStack::zoomCoordinates coords;
-            coords.coords.insert(QwtAxis::yLeft, {s1-delta, s2-delta});
-
-            // 2. Центруем нуль правой оси
-            QwtScaleMap rightMap = canvasMap(yRight);
-            s1 = rightMap.s1();
-            s2 = rightMap.s2();
-
-            p1 = rightMap.p1();
-            p2 = rightMap.p2();
-            delta = rightMap.invTransform((p1+p2)/2.0);
-
-            coords.coords.insert(QwtAxis::yRight, {s1-delta, s2-delta});
-            zoom->addZoom(coords, true);
-        });
-        menu->addAction("Совместить диапазоны левой и правой осей", [=](){
-            QwtScaleMap leftMap = canvasMap(QwtAxis::yLeft);
-            double s1 = leftMap.s1();
-            double s2 = leftMap.s2();
-
-            QwtScaleMap rightMap = canvasMap(QwtAxis::yRight);
-            double s3 = rightMap.s1();
-            double s4 = rightMap.s2();
-            double s = std::min(s1,s3);
-            double ss = std::min(s2,s4);
-
-            ZoomStack::zoomCoordinates coords;
-            coords.coords.insert(QwtAxis::yLeft, {s, ss});
-            coords.coords.insert(QwtAxis::yRight, {s, ss});
-
-            zoom->addZoom(coords, true);
-        });
-    }
     if (!menu->actions().isEmpty())
         menu->exec(pos);
+    menu->deleteLater();
 }
 
 bool Plot::canBePlottedOnLeftAxis(Channel *ch) const
 {DD;
-    if (!hasCurves()) // нет графиков - можем построить что угодно
-        return true;
-    //особый случай - спектрограмма - всегда одна на графике
-    if (ch->data()->blocksCount()>1 && hasCurves()) return false;
-    //особый случай - спектрограмма - всегда одна на графике
-    if (auto curve = m->curve(0); curve->channel->data()->blocksCount()>1)
-        return false;
+//    if (!hasCurves()) // нет графиков - можем построить что угодно
+//        return true;
+//    //особый случай - спектрограмма - всегда одна на графике
+//    if (ch->data()->blocksCount()>1 && hasCurves()) return false;
+//    //особый случай - спектрограмма - всегда одна на графике
+//    if (auto curve = m->curve(0); curve->channel->data()->blocksCount()>1)
+//        return false;
+
+    //не можем строить временные графики на графике спектров
+    if (ch->type() == Descriptor::TimeResponse) return false;
+
     if (PhysicalUnits::Units::unitsAreSame(ch->xName(), xName) || xName.isEmpty()) { // тип графика совпадает
         if (m->leftCurvesCount()==0 || yLeftName.isEmpty()
             || PhysicalUnits::Units::unitsAreSame(ch->yName(), yLeftName))
@@ -557,13 +523,16 @@ bool Plot::canBePlottedOnLeftAxis(Channel *ch) const
 
 bool Plot::canBePlottedOnRightAxis(Channel *ch) const
 {DD;
-    if (!hasCurves()) // нет графиков - всегда на левой оси
-        return true;
-    //особый случай - спектрограмма - всегда одна на графике
-    if (ch->data()->blocksCount()>1 && hasCurves()) return false;
-    //особый случай - спектрограмма - всегда одна на графике
-    if (auto curve = m->curve(0); curve->channel->data()->blocksCount()>1)
-        return false;
+//    if (!hasCurves()) // нет графиков - всегда на левой оси
+//        return true;
+//    //особый случай - спектрограмма - всегда одна на графике
+//    if (ch->data()->blocksCount()>1 && hasCurves()) return false;
+//    //особый случай - спектрограмма - всегда одна на графике
+//    if (auto curve = m->curve(0); curve->channel->data()->blocksCount()>1)
+//        return false;
+
+    //не можем строить временные графики на графике спектров
+    if (ch->type() == Descriptor::TimeResponse) return false;
 
     if (PhysicalUnits::Units::unitsAreSame(ch->xName(), xName) || xName.isEmpty()) { // тип графика совпадает
         if (m->rightCurvesCount()==0 || yRightName.isEmpty()
@@ -571,6 +540,22 @@ bool Plot::canBePlottedOnRightAxis(Channel *ch) const
             return true;
     }
     return false;
+}
+
+QString Plot::pointCoordinates(const QPointF &pos)
+{
+    return smartDouble(pos.x())+", "+smartDouble(pos.y());
+}
+
+Curve *Plot::createCurve(const QString &legendName, Channel *channel)
+{
+    //стандартный график может отображать как обычные кривые, так и третьоктавы
+
+    // считаем, что шаг по оси х 0 только у октав и третьоктав
+    if (channel->data()->xValuesFormat() == DataHolder::XValuesNonUniform)
+        return new BarCurve(legendName, channel);
+
+    return new LineCurve(legendName, channel);
 }
 
 void Plot::prepareAxis(QwtAxisId axis)
@@ -590,38 +575,19 @@ void Plot::setAxis(QwtAxisId axis, const QString &name)
 
 void Plot::updateAxesLabels()
 {DD;
-    if (!spectrogram) {
-        if (m->leftCurvesCount()==0) enableAxis(QwtAxis::yLeft, false);
-        else {
-            enableAxis(QwtAxis::yLeft, axisLabelsVisible);
-            QString suffix = yValuesPresentationSuffix(yValuesPresentationLeft);
-            QwtText text(QString("%1 <small>%2</small>").arg(yLeftName).arg(suffix), QwtText::RichText);
-            if (axisLabelsVisible)
-                setAxisTitle(QwtAxis::yLeft, text);
-            else
-                setAxisTitle(QwtAxis::yLeft, "");
-        }
-
-        if (m->rightCurvesCount()==0) enableAxis(QwtAxis::yRight, false);
-        else {
-            enableAxis(QwtAxis::yRight, axisLabelsVisible);
-            QString suffix = yValuesPresentationSuffix(yValuesPresentationRight);
-            QwtText text(QString("%1 <small>%2</small>").arg(yRightName).arg(suffix), QwtText::RichText);
-            if (axisLabelsVisible)
-                setAxisTitle(QwtAxis::yRight, text);
-            else
-                setAxisTitle(QwtAxis::yRight, "");
-        }
-    }
+    if (m->leftCurvesCount()==0) enableAxis(QwtAxis::yLeft, false);
     else {
-        //две оси видны всегда
         enableAxis(QwtAxis::yLeft, axisLabelsVisible);
+        QString suffix = yValuesPresentationSuffix(yValuesPresentationLeft);
+        QwtText text(QString("%1 <small>%2</small>").arg(yLeftName).arg(suffix), QwtText::RichText);
         if (axisLabelsVisible)
-            setAxisTitle(QwtAxis::yLeft, QwtText(yLeftName));
+            setAxisTitle(QwtAxis::yLeft, text);
         else
             setAxisTitle(QwtAxis::yLeft, "");
+    }
 
-        //правая ось - цветовая шкала
+    if (m->rightCurvesCount()==0) enableAxis(QwtAxis::yRight, false);
+    else {
         enableAxis(QwtAxis::yRight, axisLabelsVisible);
         QString suffix = yValuesPresentationSuffix(yValuesPresentationRight);
         QwtText text(QString("%1 <small>%2</small>").arg(yRightName).arg(suffix), QwtText::RichText);
@@ -638,12 +604,7 @@ void Plot::updateAxesLabels()
 
 void Plot::setScale(QwtAxisId id, double min, double max, double step)
 {DD;
-    if (!m->isEmpty() && id == yRightAxis) {
-        if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(m->curve(0))) {
-            c->setColorInterval(min, max);
-            axisWidget(id)->setColorMap(QwtInterval(min, max), ColorMapFactory::map(colorMap));
-        }
-    }
+    setRightScale(id, min, max);
     setAxisScale(id, min, max, step);
     replot();
 }
@@ -651,12 +612,12 @@ void Plot::setScale(QwtAxisId id, double min, double max, double step)
 void Plot::removeLabels()
 {DD;
     m->removeLabels();
-   replot();
+    replot();
 }
 
 void Plot::moveCurve(Curve *curve, int axis)
 {DD;
-    if (spectrogram) return;
+    if (type()==Plot::PlotType::Spectrogram) return;
 
     if ((axis == QwtAxis::yLeft && canBePlottedOnLeftAxis(curve->channel))
         || (axis == QwtAxis::yRight && canBePlottedOnRightAxis(curve->channel))) {
@@ -755,7 +716,7 @@ void Plot::recalculateScale(bool leftAxis)
     else ybounds = zoom->verticalScaleBoundsSlave;
     ybounds->reset();
 
-    const bool left = leftAxis || spectrogram;
+    const bool left = leftAxis || type()==Plot::PlotType::Spectrogram;
     const auto count = left?m->leftCurvesCount():m->rightCurvesCount();
     for (int i=0; i<count; ++i) {
         auto curve = m->curve(i,left);
@@ -767,8 +728,6 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 {
     //проверяем, построен ли канал на этом графике
     if (m->plotted(ch)) return;
-
-    spectrogram = ch->data()->blocksCount()>1;
 
     if ((plotOnLeft && !canBePlottedOnLeftAxis(ch)) || (!plotOnLeft && !canBePlottedOnRightAxis(ch))) {
         QMessageBox::warning(this, QString("Не могу построить канал"),
@@ -785,40 +744,25 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     prepareAxis(xBottomAxis);
 
     QwtAxisId ax = yLeftAxis;
-    if (!spectrogram) {
-        // если графиков нет, по умолчанию будем строить амплитуды по первому добавляемому графику
-        if (plotOnLeft && m->leftCurvesCount()==0) {
-            yValuesPresentationLeft = ch->data()->yValuesPresentation();
-        }
-        if (!plotOnLeft && m->rightCurvesCount()==0) {
-            yValuesPresentationRight = ch->data()->yValuesPresentation();
-        }
-
-        if (plotOnLeft) ch->data()->setYValuesPresentation(yValuesPresentationLeft);
-        else ch->data()->setYValuesPresentation(yValuesPresentationRight);
-
-        ax = plotOnLeft ? yLeftAxis : yRightAxis;
-
-        axisWidget(yRightAxis)->setColorBarEnabled(false);
-
-        setAxis(ax, ch->yName());
-        prepareAxis(ax);
+    // если графиков нет, по умолчанию будем строить амплитуды по первому добавляемому графику
+    if (plotOnLeft && m->leftCurvesCount()==0) {
+        yValuesPresentationLeft = ch->data()->yValuesPresentation();
     }
-    else {
-        yValuesPresentationLeft = DataHolder::ShowAsReals;
+    if (!plotOnLeft && m->rightCurvesCount()==0) {
         yValuesPresentationRight = ch->data()->yValuesPresentation();
-        ch->data()->setYValuesPresentation(yValuesPresentationRight);
-        ax = yLeftAxis;
-        setAxis(ax, ch->zName());
-        prepareAxis(ax);
-        plotOnLeft = true;
-
-        setAxis(yRightAxis, ch->yName());
-        setAxisVisible(yRightAxis);
-
-        axisWidget(yRightAxis)->setColorBarEnabled(true);
-//        plotLayout()->setAlignCanvasToScales(true);
     }
+
+    if (plotOnLeft) ch->data()->setYValuesPresentation(yValuesPresentationLeft);
+    else ch->data()->setYValuesPresentation(yValuesPresentationRight);
+
+    ax = plotOnLeft ? yLeftAxis : yRightAxis;
+
+    axisWidget(yRightAxis)->setColorBarEnabled(false);
+
+    setAxis(ax, ch->yName());
+    prepareAxis(ax);
+
+
 
 
     Curve *g = createCurve(ch->legendName(), ch);
@@ -834,26 +778,14 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     g->fileNumber = fileIndex;
     g->setYAxis(ax);
 
-    if (spectrogram) {
-        axisWidget(yRightAxis)->setColorMap(QwtInterval(ch->data()->yMin(-1), ch->data()->yMax(-1)),
-                                             ColorMapFactory::map(colorMap));
-        if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(g)) {
-            c->setColorMap(ColorMapFactory::map(colorMap));
-        }
+    ZoomStack::ScaleBounds *ybounds = 0;
+    if (zoom->verticalScaleBounds->axis == ax.pos) ybounds = zoom->verticalScaleBounds;
+    else ybounds = zoom->verticalScaleBoundsSlave;
 
-        zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
-        zoom->verticalScaleBoundsSlave->add(g->yMin(), g->yMax());
-        zoom->verticalScaleBounds->add(ch->data()->zMin(), ch->data()->zMax());
-    }
-    else {
-        ZoomStack::ScaleBounds *ybounds = 0;
-        if (zoom->verticalScaleBounds->axis == ax.pos) ybounds = zoom->verticalScaleBounds;
-        else ybounds = zoom->verticalScaleBoundsSlave;
+    zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
+    if (ybounds) ybounds->add(g->yMin(), g->yMax());
 
-        zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
-        if (ybounds) ybounds->add(g->yMin(), g->yMax());
-    }
-    infoOverlay->hide();
+    setInfoVisible(false);
 
     g->attachTo(this);
 
@@ -1056,7 +988,7 @@ void Plot::toggleAutoscale(int axis, bool toggled)
 
 void Plot::autoscale(int axis)
 {DD;
-    zoom->autoscale(axis, spectrogram);
+    zoom->autoscale(axis, type()==Plot::PlotType::Spectrogram);
 }
 
 void Plot::setInteractionMode(Plot::InteractionMode mode)
@@ -1074,7 +1006,7 @@ void Plot::switchCursor()
 
     bool pickerEnabled = _picker->isEnabled();
     _picker->setEnabled(!pickerEnabled);
-    tracker->setEnabled(!pickerEnabled);
+    if (tracker) tracker->setEnabled(!pickerEnabled);
     App->setSetting("pickerEnabled", !pickerEnabled);
 }
 
@@ -1087,6 +1019,13 @@ void Plot::editLegendItem(QwtPlotItem *item)
     }
 }
 
+void Plot::onDropEvent(bool plotOnLeft, const QVector<Channel*> &channels)
+{
+    //посылаем сигнал о том, что нужно построить эти каналы. Список каналов попадает
+    //в mainWindow и возможно будет расширен за счет нажатого Ctrl
+    //далее эти каналы попадут обратно в plot.
+    emit needPlotChannels(plotOnLeft, channels);
+}
 
 void Plot::dropEvent(QDropEvent *event)
 {DD;
@@ -1096,10 +1035,7 @@ void Plot::dropEvent(QDropEvent *event)
         if (auto axis = axisWidget({QwtAxis::yLeft,0}); axis->isVisible())
             w = axis->width();
         bool plotOnLeft = event->pos().x() <= w + canvas()->rect().x()+canvas()->rect().width()/2;
-        //посылаем сигнал о том, что нужно построить эти каналы. Список каналов попадает
-        //в mainWindow и возможно будет расширен за счет нажатого Ctrl
-        //далее эти каналы попадут обратно в plot.
-        emit needPlotChannels(plotOnLeft, myData->channels);
+        onDropEvent(plotOnLeft, myData->channels);
         event->acceptProposedAction();
     }
     leftOverlay->setVisibility(false);

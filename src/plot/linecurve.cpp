@@ -213,8 +213,7 @@ LineCurve::LineCurve(const QString &title, Channel *channel) :  QwtPlotCurve(tit
 
     dfddata = new DfdData(this->channel->data());
     setData(dfddata);
-
-    mapper = new FilterPointMapper(channel->type()==Descriptor::TimeResponse);
+    setMapper();
     // set filter points to true
     const bool noDuplicates = true;
     mapper->setFlag(QwtPointMapper::WeedOutIntermediatePoints, noDuplicates);
@@ -223,6 +222,11 @@ LineCurve::LineCurve(const QString &title, Channel *channel) :  QwtPlotCurve(tit
 LineCurve::~LineCurve()
 {DD;
     delete mapper;
+}
+
+void LineCurve::setMapper()
+{
+    mapper = new FilterPointMapper(channel->type()==Descriptor::TimeResponse);
 }
 
 void LineCurve::drawLines(QPainter *painter,
@@ -430,4 +434,51 @@ void LineCurve::setVisible(bool visible)
     for (PointLabel *label: qAsConst(labels)) {
         label->setVisible(visible);
     }
+}
+
+TimeCurve::TimeCurve(const QString &title, Channel *channel) : LineCurve(title, channel)
+{
+
+}
+
+void TimeCurve::setMapper()
+{
+    mapper = new FilterPointMapper(true);
+}
+
+void TimeCurve::drawLines(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect, int from, int to) const
+{
+    //reevaluating from, to
+    evaluateScale(from, to, xMap);
+    if (from > to) return;
+
+    const bool doAlign = QwtPainter::roundingAlignment( painter );
+
+    QRectF clipRect;
+    painter->save();
+
+    //clip polygons
+    qreal pw = qMax(qreal(1.0), painter->pen().widthF());
+    clipRect = canvasRect.adjusted(-pw, -pw, pw, pw);
+
+    mapper->setFlag(QwtPointMapper::RoundPoints, doAlign);
+    mapper->setBoundingRect(canvasRect);
+
+    QPolygonF polyline = mapper->getPolygon(xMap, yMap, dfddata, from, to);
+    const bool close = mapper->simplified;
+    QwtClipper::clipPolygonF(clipRect, polyline, close);
+
+    if (close) {
+        QColor c = pen().color();
+        c.setAlpha(200);
+        painter->setBrush(QBrush(c));
+        painter->setPen(c);
+    }
+
+    if (close)
+        QwtPainter::drawPolygon(painter, polyline);
+    else
+        QwtPainter::drawPolyline(painter, polyline);
+
+    painter->restore();
 }
