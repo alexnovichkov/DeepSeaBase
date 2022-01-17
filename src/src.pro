@@ -398,13 +398,14 @@ equals(QT_ARCH,"x86_64") {
 }
 
 #tdm
-#INCLUDEPATH *= E:/My/programming/sources/TDMS/tdm_dev/dev/include
-#equals(QT_ARCH,"x86_64") {
-#  LIBS *= E:/My/programming/sources/TDMS/tdm_dev/dev/lib/64-bit/msvc64/nilibddc.lib
-#}
-#equals(QT_ARCH,"i386") {
-#  LIBS *= E:/My/programming/sources/TDMS/tdm_dev/dev/lib/32-bit/msvc/nilibddc.lib
-#}
+DEFINES += WITH_TDMS
+INCLUDEPATH *= E:/My/programming/sources/TDMS/tdm_dev/dev/include
+equals(QT_ARCH,"x86_64") {
+  LIBS *= E:/My/programming/sources/TDMS/tdm_dev/dev/lib/64-bit/msvc64/nilibddc.lib
+}
+equals(QT_ARCH,"i386") {
+  LIBS *= E:/My/programming/sources/TDMS/tdm_dev/dev/lib/32-bit/msvc/nilibddc.lib
+}
 
 #FFTW
 message(-- Searching for fftw --)

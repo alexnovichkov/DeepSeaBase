@@ -6,8 +6,6 @@
 #include <QVariant>
 #include <QObject>
 
-//#define WITH_TDMS
-
 #ifdef WITH_TDMS
 #include "nilibddc.h"
 
