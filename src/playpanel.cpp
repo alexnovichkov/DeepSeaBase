@@ -61,8 +61,8 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
 
 PlayPanel::~PlayPanel()
 {DD;
-    cursor->detach();
-    delete cursor;
+    //delete cursor;
+    //cursor->detach();
     //подчищаем старый временный файл, если он был
     QFile::remove(oldTempFile);
 }

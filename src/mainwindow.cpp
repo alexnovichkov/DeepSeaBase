@@ -481,6 +481,25 @@ MainWindow::~MainWindow()
 //    }
 
     //    ColorSelector::instance()->drop();
+
+    //вручную удаляем все панели с графиками, чтобы корректно удалились кривые. Иначе
+    //dockManager не гарантирует последовательность удаления панелей, и при удалении
+    //графика после вкладки с файлами программа падала
+    const auto m = m_DockManager->dockWidgetsMap().values();
+    for (const auto &w: m) {
+        if (PlotArea *area = dynamic_cast<PlotArea*>(w)) {
+            area->closeDockWidget();
+        }
+    }
+    const auto m1 = m_DockManager->floatingWidgets();
+    for (const auto &container: m1) {
+        for (auto w: container->dockWidgets()) {
+            if (PlotArea *area = dynamic_cast<PlotArea*>(w)) {
+                area->closeDockWidget();
+            }
+        }
+    }
+
 }
 
 PlotArea *MainWindow::createPlotArea()

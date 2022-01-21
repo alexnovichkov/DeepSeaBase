@@ -137,9 +137,9 @@ private:
     void setDescriptor(int direction, bool checked);
 //    void cycleChannels(bool up);
 
-    ads::CDockManager* m_DockManager;
-    ads::CDockAreaWidget *topArea = nullptr;
     ads::CDockAreaWidget *bottomArea = nullptr;
+    ads::CDockAreaWidget *topArea = nullptr;
+    ads::CDockManager* m_DockManager;
 
     QStringList tabsNames;
 

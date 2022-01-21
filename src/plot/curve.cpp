@@ -29,8 +29,10 @@ Curve::~Curve()
     labels.clear();
 
     //maybe clear data that is over 1000000 samples
-    if (channel) channel->maybeClearData();
-    this->channel->curve = nullptr;
+    if (channel) {
+        channel->maybeClearData();
+        channel->curve = nullptr;
+    }
 }
 
 

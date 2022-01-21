@@ -28,7 +28,7 @@ TimePlot::TimePlot(QWidget *parent) : Plot(Plot::PlotType::Time, parent)
 
 TimePlot::~TimePlot()
 {
-    delete playerPanel;
+    //delete playerPanel;
 }
 
 void TimePlot::switchPlayerVisibility()
