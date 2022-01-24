@@ -146,6 +146,8 @@ void Curve::evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const
         }
     }
     else {
+        //допустимо использовать обычные циклы, потому что при неравномерной шкале
+        //отсчетов всегда небольшое число (<50)
         for (int i=0; i<to; ++i) {
             if (samplePoint(i).x() >= startX) {
                 from = i-1;

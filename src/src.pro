@@ -64,6 +64,7 @@ SOURCES += main.cpp\
     methods/weighting.cpp \
     methods/windowingalgorithm.cpp \
     plot/canvaseventfilter.cpp \
+    plot/filterpointmapper.cpp \
     plot/grid.cpp \
     plot/imagerenderdialog.cpp \
     plot/octaveplot.cpp \
@@ -174,6 +175,7 @@ HEADERS  += mainwindow.h \
     methods/weighting.h \
     methods/windowingalgorithm.h \
     plot/canvaseventfilter.h \
+    plot/filterpointmapper.h \
     plot/grid.h \
     plot/imagerenderdialog.h \
     plot/octaveplot.h \
