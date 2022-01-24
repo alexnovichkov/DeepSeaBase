@@ -2,6 +2,7 @@
 
 #include <QtDebug>
 #include <qwt_series_data.h>
+#include "logging.h"
 
 bool scaleMapEquals(const QwtScaleMap &map1, const QwtScaleMap &map2)
 {
@@ -11,48 +12,14 @@ bool scaleMapEquals(const QwtScaleMap &map1, const QwtScaleMap &map2)
             qFuzzyCompare(map1.p2()+1.0, map2.p2()+1.0));
 }
 
-QDebug operator<<(QDebug debug, const PointBlock &c)
-  {
-      QDebugStateSaver saver(debug);
-      debug.nospace() << '(' << c.from << ", " << c.to << ") - " << c.minX << c.maxX << c.minY << c.maxY;
-
-      return debug;
-  }
-
-FilterPointMapper::FilterPointMapper(bool createPolygon) : QwtPointMapper(), polygon(createPolygon)
-{ }
-
-QPolygonF FilterPointMapper::getPolygon(const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QwtSeriesData<QPointF> *series, int from, int to)
+QVector<PointBlock> getBlocks(int from, int to, const QwtSeriesData<QPointF> *series, int pixels, int pointCount)
 {
-    if (from == oldFrom && to == oldTo &&
-        scaleMapEquals(oldXMap, xMap) &&
-        scaleMapEquals(oldYMap, yMap)) {
-        if (!cashedPolyline.isEmpty()) return cashedPolyline;
-    }
+    QVector<PointBlock> blocks;
 
-    //number of visible points for current zoom
-    const int pointCount = to - from + 1;
-    //number of pixels
-    const int pixels = int(xMap.transform(series->sample(to).x()) - xMap.transform(series->sample(from).x()));
-    //we have less than 5* more points than screen pixels - no need to use resample
-    if (pointCount < 5 || pixels == 0 || pointCount <= pixels*5) {
-        simplified = false;
-        cashedPolyline = QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
-        oldFrom = from;
-        oldTo = to;
-        return cashedPolyline;
-    }
-
-    simplified = true;
-
-    //array that will be used to store calculated plot points in screen coordinates
-    QPolygonF polyline(pixels*2);
-    QPointF *points = polyline.data();
-
-    int start = from;
     PointBlock block;
 
     //iterate over pixels
+    int start = from;
     for (int pixel=0; pixel<pixels; ++pixel) {
         if (start == to) {
             //qDebug()<<"reached end";
@@ -112,10 +79,115 @@ QPolygonF FilterPointMapper::getPolygon(const QwtScaleMap &xMap, const QwtScaleM
             block.to = end;
         }
 
-       // qDebug()<<block;
+        blocks << block;
 
         //new start for next iteration
         start = end;
+    }
+    return blocks;
+}
+
+QVector<PointBlock> getCashedBlocks(const QVector<PointBlock> &cashedBlocks, int from, int to)
+{
+    int left = 0;
+    int right = 0;
+    for (int i=0; i<cashedBlocks.size(); ++i) {
+        if (from >= cashedBlocks.at(i).from && from <= cashedBlocks.at(i).to) {
+            left = i;
+            break;
+        }
+    }
+    for (int i=cashedBlocks.size()-1; i>=0; i--) {
+        if (to >= cashedBlocks.at(i).from && to <= cashedBlocks.at(i).to) {
+            right = i;
+            break;
+        }
+    }
+    return cashedBlocks.mid(left, right-left+1);
+}
+
+QDebug operator<<(QDebug debug, const PointBlock &c)
+{
+    QDebugStateSaver saver(debug);
+    debug.nospace() << '(' << c.from << ", " << c.to << ") - " << c.minX << c.maxX << c.minY << c.maxY;
+
+    return debug;
+}
+
+FilterPointMapper::FilterPointMapper(bool createPolygon) : QwtPointMapper(), polygon(createPolygon)
+{ }
+
+QPolygonF FilterPointMapper::getPolygon(const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QwtSeriesData<QPointF> *series, int from, int to)
+{DD0;
+    //if horizontal distance is null
+    if (qFuzzyIsNull(xMap.sDist())) return QPolygonF();
+
+    if (from == oldFrom && to == oldTo &&
+        scaleMapEquals(oldXMap, xMap) &&
+        scaleMapEquals(oldYMap, yMap)) {
+        if (!cashedPolyline.isEmpty()) return cashedPolyline;
+    }
+
+    //number of visible points for current zoom
+    const int pointCount = to - from + 1;
+    //number of pixels
+    const int pixels = int(xMap.transform(series->sample(to).x()) - xMap.transform(series->sample(from).x()));
+    //we have less than 5* more points than screen pixels - no need to use resample
+    if (pointCount < 5 || pixels == 0 || pointCount <= pixels*5) {
+        simplified = false;
+        cashedPolyline = QwtPointMapper::toPolygonF(xMap, yMap, series, from, to);
+        oldFrom = from;
+        oldTo = to;
+        return cashedPolyline;
+    }
+
+    simplified = true;
+
+    //array that will be used to store calculated plot points in screen coordinates
+    QPolygonF polyline(pixels*2);
+    QPointF *points = polyline.data();
+
+    QVector<PointBlock> blocks;
+
+//#define NEW_BLOCKS
+
+#ifdef NEW_BLOCKS
+    if (qFuzzyIsNull(oldXMap.sDist()) || !qFuzzyCompare(xMap.pDist()/xMap.sDist(), oldXMap.pDist()/oldXMap.sDist()))
+#endif
+        blocks = getBlocks(from, to, series, pixels, pointCount);
+#ifdef NEW_BLOCKS
+    else {
+        //1. не пересекаются
+        if (oldFrom > to || from > oldTo || (oldFrom==0 && oldTo==0))
+
+            blocks = getBlocks(from, to, series, pixels, pointCount);
+        //2. пересекаются
+        else {
+            int from1 = qMax(from, oldFrom);
+            int to1 = qMin(to, oldTo);
+
+            //левый кусок
+            if (from < oldFrom)
+                blocks = getBlocks(from, oldFrom-1, series, pixels, pointCount);
+
+            //общий кусок
+            blocks.append(getCashedBlocks(cashedBlocks,from1, to1));
+
+            //правый кусок
+            if (to > oldTo)
+                blocks.append(getBlocks(oldTo+1, to, series, pixels, pointCount));
+        }
+
+        if (blocks.size() != pixels)
+            qDebug()<<"Error: blocks count != pixels count:"<<blocks.size()<<pixels;
+        blocks.resize(pixels);
+    }
+#endif
+
+    cashedBlocks = blocks;
+
+    for (int pixel=0; pixel<pixels; ++pixel) {
+        auto &block = blocks[pixel];
         if (polygon) {
             QPointF &minValue = points[pixel];
             QPointF &maxValue = points[2 * pixels - 1 - pixel];

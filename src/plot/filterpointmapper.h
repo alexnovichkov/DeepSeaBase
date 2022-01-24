@@ -34,6 +34,8 @@ public:
     int oldTo = 0;
     QwtScaleMap oldXMap;
     QwtScaleMap oldYMap;
+
+    QVector<PointBlock> cashedBlocks;
 };
 
 #endif // FILTERPOINTMAPPER_H
