@@ -51,7 +51,14 @@ QVariant OctaveFunction::m_getProperty(const QString &property) const
         if (property == "?/portionsCount") return portionsCount;
 
         if (property == "?/dataType") {
-            return 155+static_cast<int>(bank.getType());
+            switch (bank.getType()) {
+                case OctaveType::Octave1: return 156;
+                case OctaveType::Octave3: return 157;
+                case OctaveType::Octave2: return 158;
+                case OctaveType::Octave6: return 159;
+                case OctaveType::Octave12: return 160;
+                case OctaveType::Octave24: return 161;
+            }
         }
         if (property == "?/xName") return "Гц";
         if (property == "?/xBegin") {
