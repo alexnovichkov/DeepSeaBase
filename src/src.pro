@@ -5,13 +5,22 @@
 #-------------------------------------------------
 
 QT += core gui
-QT += widgets printsupport
+QT += widgets printsupport winextras
 QT += axcontainer multimedia
 
 TARGET = DeepSeaBase
 TEMPLATE = app
 
-# DEFINES += WITH_MATIO
+matioSupport=0
+equals(matioSupport,1) {
+DEFINES += WITH_MATIO
+}
+
+# Set tdmsSupport to 1 to compile with TDMS
+tdmsSupport=1
+equals(tdmsSupport,1) {
+DEFINES+=WITH_TDMS
+}
 
 VERSIONJS = $$cat(version.js, lines)
 VERSIONJS = $$first(VERSIONJS)
@@ -38,10 +47,6 @@ else{
 }
 
 CONFIG += c++14 c++17
-
-qtHaveModule(winextras) {
-    QT *= winextras
-}
 
 SOURCES += main.cpp\
     app.cpp \
@@ -400,13 +405,16 @@ equals(QT_ARCH,"x86_64") {
 }
 
 #tdm
-DEFINES += WITH_TDMS
+equals(tdmsSupport,1) {
+message(-- Searching for tdms --)
+message(tdms include path is E:/My/programming/sources/TDMS/tdm_dev/dev/include)
 INCLUDEPATH *= E:/My/programming/sources/TDMS/tdm_dev/dev/include
 equals(QT_ARCH,"x86_64") {
   LIBS *= E:/My/programming/sources/TDMS/tdm_dev/dev/lib/64-bit/msvc64/nilibddc.lib
 }
 equals(QT_ARCH,"i386") {
   LIBS *= E:/My/programming/sources/TDMS/tdm_dev/dev/lib/32-bit/msvc/nilibddc.lib
+}
 }
 
 #FFTW
@@ -449,7 +457,7 @@ CONFIG(debug, debug|release):{
 
 
 #matio
-defined(WITH_MATIO) {
+equals(matioSupport,1) {
 message(-- Searching for matio --)
 INCLUDEPATH *= E:/My/programming/sources/matio-master/src
 message(matio include path is E:\My\programming\sources\matio-master\src)

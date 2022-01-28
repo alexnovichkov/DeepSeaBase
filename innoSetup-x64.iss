@@ -10,6 +10,8 @@
 #define PathToExe "E:\My\build\build-DeepSeaBase-Desktop_Qt_5_12_8_MinGW_64_bit-Release\bin"
 #define PathToQt "C:\Qt\Qt5.12.8\5.12.8\mingw73_64"
 
+#define WithTDMS
+
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
 ; Do not use the same AppId value in installers for other applications.
@@ -22,7 +24,11 @@ AppPublisher={#MyAppPublisher}
 DefaultDirName={pf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
+#ifdef WithTDMS
+OutputBaseFilename=DeepSeaBaseInstall-{#MyAppVersion}-x64-TDMS
+#else
 OutputBaseFilename=DeepSeaBaseInstall-{#MyAppVersion}-x64
+#endif
 Compression=lzma
 SolidCompression=yes
 ArchitecturesAllowed=x64 ia64
@@ -30,9 +36,11 @@ ArchitecturesInstallIn64BitMode=x64 ia64
 PrivilegesRequired=none
 Uninstallable=IsTaskSelected('installmode/normal')
 
+#ifdef WithTDMS
 [Run]
 Filename: "{app}\vc_redist.x86.exe"
 Filename: "{app}\vc_redist.x64.exe"
+#endif
 
 [Languages]
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
@@ -60,6 +68,7 @@ Source: {#PathToQt}\bin\Qt5Network.dll; DestDir: "{app}"; Flags: ignoreversion
 Source: "E:\My\programming\sources\Qwt-6.4.0-svn\lib64\qwt.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "E:\My\programming\sources\build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_64_bit-Release\release\samplerate.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "E:\My\programming\sources\fftw-3.3.5-dll64\libfftw3-3.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\My\programming\ADS\ADSx64-release\lib\qtadvanceddocking.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: {#PathToQt}\plugins\iconengines\*.dll; DestDir: "{app}\iconengines"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 Source: {#PathToQt}\plugins\imageformats\*.dll; DestDir: "{app}\imageformats"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 Source: {#PathToQt}\plugins\platforms\*.dll; DestDir: "{app}\platforms"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
@@ -67,9 +76,13 @@ Source: {#PathToQt}\plugins\printsupport\*.dll; DestDir: "{app}\printsupport"; F
 Source: {#PathToQt}\plugins\audio\*.dll; DestDir: "{app}\audio"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 Source: {#PathToQt}\plugins\mediaservice\*.dll; DestDir: "{app}\mediaservice"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 
+#ifdef WithTDMS
 Source: "E:\My\programming\sources\TDMS\tdm_dev\dev\bin\64-bit\*.dll"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "E:\My\programming\sources\TDMS\tdm_dev\dev\bin\64-bit\DataModels\USI\1_0\usi_1_0.xsd"; DestDir: "{app}\DataModels\USI\1_0"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "E:\My\programming\sources\TDMS\tdm_dev\dev\bin\64-bit\DataModels\USI\TDM\1_0\USI_TDM_1_0.xml"; DestDir: "{app}\DataModels\USI\TDM\1_0"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "E:\My\build\DeepSeaBase\vc_redist.x86.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "E:\My\build\DeepSeaBase\vc_redist.x64.exe"; DestDir: "{app}"; Flags: ignoreversion
+#endif
 
 Source: "E:\My\build\DeepSeaBase\src\help.html"; DestDir: "{app}"; Flags: ignoreversion
 Source: "E:\My\build\DeepSeaBase\src\graphs.htm"; DestDir: "{app}"; Flags: ignoreversion
@@ -79,10 +92,7 @@ Source: "E:\My\build\DeepSeaBase\src\version.js"; DestDir: "{app}"; Flags: ignor
 Source: "E:\My\build\DeepSeaBase\src\icons\*.png"; DestDir: "{app}\icons"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "E:\My\build\DeepSeaBase\src\icons\*.ico"; DestDir: "{app}\icons"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "E:\My\build\DeepSeaBase\src\icons\*.svg"; DestDir: "{app}\icons"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "E:\My\build\DeepSeaBase\vc_redist.x86.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\My\build\DeepSeaBase\vc_redist.x64.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "E:\My\build\DeepSeaBase\portable"; DestDir: "{app}"; Tasks: installmode/portable
-; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
 Name: "{group}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: installmode/normal
