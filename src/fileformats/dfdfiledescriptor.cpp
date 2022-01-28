@@ -260,7 +260,7 @@ void DfdFileDescriptor::writeDfd(QTextStream &dfdStream)
     dfdStream << "[DataFileDescriptor]" << endl;
     dfdStream << "DFDGUID="<<dataDescription().get("guid").toString() << endl;
     dfdStream << "DataType="<<DataType << endl;
-    auto dateTime = dateTimeFromString(dataDescription().get("dateTime").toString());
+    auto dateTime = dataDescription().dateTime("dateTime");
     dfdStream << "Date="<<dateTime.toString("dd.MM.yyyy")
         << endl;
     dfdStream << "Time="<<dateTime.toString("hh:mm:ss")
@@ -1105,7 +1105,7 @@ void Source::read(DfdSettings &dfd)
         if (DFDGUID.endsWith("}")) DFDGUID.chop(1);
         parent->dataDescription().put("source.guid", DFDGUID);
         parent->dataDescription().put("source.dateTime",
-                                      dateTimeFromString(dfd.value("Source/Date")+" "+dfd.value("Source/Time")));
+                                      dateTimeFromString(dfd.value("Source/Date"),dfd.value("Source/Time")));
     }
 }
 
@@ -1124,7 +1124,7 @@ void Source::write(QTextStream &dfd)
     dfd << "[Source]" << endl;
     dfd << "File=" << parent->dataDescription().get("source.file").toString() << endl;
     dfd << "DFDGUID=" << parent->dataDescription().get("source.guid").toString() << endl;
-    QDateTime dt = parent->dataDescription().get("source.dateTime").toDateTime();
+    QDateTime dt = parent->dataDescription().dateTime("source.dateTime");
     dfd << "Date=" << dt.toString("dd.MM.yyyy") << endl;
     dfd << "Time=" << dt.toString("hh:mm:ss") << endl;
 }

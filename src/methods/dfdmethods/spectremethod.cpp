@@ -283,7 +283,7 @@ void SpectreMethod::updateResolution(int bandStrip)
 //    ch->header.type1858[12].value = uffWindowType(p.windowType);
 
 
-//    ch->type58[8].value = QDateTime::currentDateTime();;
+//    ch->type58[8].value = QDateTime::currentDateTime();
 //    ch->type58[14].value = uffMethodFromDfdMethod(id());
 //    ch->type58[15].value = i+1;
 //    //ch->type58[18].value = dfd->channels[i]->name(); //18  Response Entity Name ("NONE" if unused)

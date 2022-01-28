@@ -522,7 +522,7 @@ void MatlabFile::init(const QVector<Channel *> &source)
     if (channelsFromSameFile(source)) {
         dataDescription().put("source.file", other->fileName());
         dataDescription().put("source.guid", other->dataDescription().get("guid"));
-        dataDescription().put("source.dateTime", other->dataDescription().get("dateTime"));
+        dataDescription().put("source.dateTime", other->dataDescription().dateTime("dateTime"));
         if (other->channelsCount() > source.size()) {
             //только если копируем не все каналы
             dataDescription().put("source.channels", stringify(channelIndexes(source)));
@@ -627,7 +627,7 @@ matvar_t *MatlabFile::createFileDescription() const
 
     //1. dateTime
 
-    auto dateTime = dataDescription().get("dateTime").toDateTime();
+    auto dateTime = dataDescription().dateTime("dateTime");
     if (!dateTime.isValid()) dateTime = QDateTime::currentDateTime();
     auto field1 = createUtf8Field(dateTime.toString("yyyy/MM/dd hh:mm:ss"));
     Mat_VarSetStructFieldByName(mat, fieldnames[0], 0, field1);
@@ -1210,8 +1210,8 @@ matvar_t *MatlabChannel::createFunctionRecord()
     Mat_VarSetStructFieldByName(mat, fieldnames[0], 0, v);
     v = createUtf8Field(_type);
     Mat_VarSetStructFieldByName(mat, fieldnames[1], 0, v);
-    auto creationTime = dataDescription().get("dateTime").toDateTime();
-    if (!creationTime.isValid()) creationTime = parent->dataDescription().get("dateTime").toDateTime();
+    auto creationTime = dataDescription().dateTime("dateTime");
+    if (!creationTime.isValid()) creationTime = parent->dataDescription().dateTime("dateTime");
     if (!creationTime.isValid()) creationTime = QDateTime::currentDateTime();
     v = createUtf8Field(creationTime.toString("yyyy/MM/dd hh:mm:ss"));
     Mat_VarSetStructFieldByName(mat, fieldnames[2], 0, v);

@@ -42,7 +42,7 @@ struct Dataset
         QDate d = QDate::fromString(date, "dd.MM.yy");
         if (d.year()<1950) d=d.addYears(100);
         QTime t = QTime::fromString(time, "hh:mm:ss");
-        r.put("dateTime", QDateTime(d,t).toString("dd.MM.yyyy hh:mm:ss"));
+        r.put("dateTime", QDateTime(d,t));
         r.put("description.title1", titles[0]);
         r.put("description.title2", titles[1]);
         r.put("description.title3", titles[2]);

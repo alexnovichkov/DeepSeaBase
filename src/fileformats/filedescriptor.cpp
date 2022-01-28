@@ -107,11 +107,11 @@ double FileDescriptor::roundedSize() const
 
 QDateTime FileDescriptor::dateTime() const
 {DD;
-    auto dt = dataDescription().get("dateTime").toDateTime();
+    auto dt = dataDescription().dateTime("dateTime");
     if (dt.isValid()) return dt;
 
     if (channelsCount()>0) {
-        return channel(0)->dataDescription().get("dateTime").toDateTime();
+        return channel(0)->dataDescription().dateTime("dateTime");
     }
     return QDateTime();
 }
@@ -126,13 +126,12 @@ bool FileDescriptor::setDateTime(const QDateTime &dt)
 
 QDateTime FileDescriptor::fileCreationTime() const
 {DD;
-    QString dt = dataDescription().get("fileCreationTime").toString();
-    return QDateTime::fromString(dt, "dd.MM.yyyy hh:mm");
+    return dataDescription().dateTime("fileCreationTime");
 }
 
 bool FileDescriptor::setFileCreationTime(const QDateTime &dt)
 {DD;
-    dataDescription().put("fileCreationTime", dt.toString("dd.MM.yyyy hh:mm"));
+    dataDescription().put("fileCreationTime", dt.toString("dd.MM.yyyy hh:mm:ss"));
     setChanged(true);
     return true;
 }
@@ -872,6 +871,12 @@ DataDescription DataDescription::fromJson(const QJsonObject &o)
         }
     }
     return result;
+}
+
+QDateTime DataDescription::dateTime(const QString &key) const
+{
+    //return dateTimeFromString(get(key).toString());
+    return get(key).toDateTime();
 }
 
 QStringList DataDescription::twoStringDescription() const

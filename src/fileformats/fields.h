@@ -426,11 +426,9 @@ class TimeDateField: public AbstractField
 public:
     virtual void print(const QVariant &v, QTextStream &stream) {
         stream.reset();
-
         stream << v.toDateTime().toString(" dd.MM.yy hh:mm:ss");
     }
     virtual void read(QVariant &v, QTextStream &stream) {
-        QDateTime d;
         QString s = stream.read(18);
         v = dateTimeFromString(s);
     }
@@ -450,7 +448,6 @@ public:
         stream << v.toDateTime().toString(" dd.MM.yy hh:mm:ss").leftJustified(80, ' ');
     }
     virtual void read(QVariant &v, QTextStream &stream) {
-        QDateTime d;
         QString s;
         for (int i=0; i<80; ++i) {
             QString c = stream.read(1);

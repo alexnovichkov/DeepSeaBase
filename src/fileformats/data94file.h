@@ -11,8 +11,8 @@
  * --------------------------------
  * Описание файла:
  * {
- *   "dateTime" : "dd.MM.yyyy hh:mm", //создание базы данных
- *   "fileCreationTime": "dd.MM.yyyy hh:mm", //создание этого файла
+ *   "dateTime" : "dd.MM.yyyy hh:mm:ss", //создание базы данных
+ *   "fileCreationTime": "dd.MM.yyyy hh:mm:ss", //создание этого файла
  *   "createdBy": "",//программа, которая записала файл
  *   "legend" : "",
  *   "description": {
@@ -22,7 +22,7 @@
  *   "source": {
  *     "file": "",
  *     "guid": "",
- *     "dateTime": "dd.MM.yyyy hh:mm",
+ *     "dateTime": "dd.MM.yyyy hh:mm:ss",
  *     "channels": "1,2,3,4,5"
  *   },
  *   "channels" : [
@@ -30,7 +30,7 @@
  *           "name" : "",
  *           "description": "",
  *           "correction": "",
- *           "dateTime": "dd.MM.yyyy hh:mm", //скорее для uff, чем для остальных форматов
+ *           "dateTime": "dd.MM.yyyy hh:mm:ss", //скорее для uff, чем для остальных форматов
  *           "yname" : "m/s^2",
  *           "ynameold": "V", //при пересчете единиц
  *           "xname" : "Hz",

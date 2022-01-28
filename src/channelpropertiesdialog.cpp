@@ -190,8 +190,8 @@ void ChannelPropertiesDialog::currentChannelChanged(QTreeWidgetItem *cur, QTreeW
         channelProperties.at(1).edit->setText(d->description());
         channelProperties.at(2).edit->setText(d->dataDescription().get("sensorName").toString());
         channelProperties.at(3).edit->setText(d->dataDescription().get("sensorID").toString());
-        QDateTime dt = d->dataDescription().get("dateTime").toDateTime();
-        if (dt.isValid() && !d->dataDescription().get("dateTime").toString().isEmpty())
+        QDateTime dt = d->dataDescription().dateTime("dateTime");
+        if (dt.isValid())
             s = dt.toString("d MMMM yyyy, hh:mm:ss");
         else
             s.clear();

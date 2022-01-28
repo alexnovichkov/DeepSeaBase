@@ -195,7 +195,7 @@ bool SavingFunction::compute(FileDescriptor *file)
     ch->setXName(m_input->getParameter("?/xName").toString());
     ch->setZName(m_input->getParameter("?/zName").toString());
     ch->dataDescription().put("samples", QString::number(dataSize/blocksCount));
-    ch->dataDescription().put("dateTime", QDateTime::currentDateTime().toString("dd.MM.yyyy hh:mm"));
+    ch->dataDescription().put("dateTime", QDateTime::currentDateTime());
     ch->dataDescription().put("samplerate", int(m_input->getParameter("?/sampleRate").toDouble()));
     ch->dataDescription().put("blocks", blocksCount);
 

@@ -187,7 +187,7 @@ DescriptionList OctaveMethod::processData(const Parameters &p)
 //    ch->header.type1858[5].value = 3; // 1/3-октава
 
 
-//    ch->type58[8].value = QDateTime::currentDateTime();;
+//    ch->type58[8].value = QDateTime::currentDateTime();
 //    ch->type58[14].value = 12; // 12 = Spectrum
 //    ch->type58[15].value = i+1;
 //    //ch->type58[18].value = dfd->channels[i]->name(); //18  Response Entity Name ("NONE" if unused)

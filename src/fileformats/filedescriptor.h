@@ -53,6 +53,7 @@ struct DataDescription
     QVariant get(const QString &key) const;
     QJsonObject toJson() const;
     static DataDescription fromJson(const QJsonObject &o);
+    QDateTime dateTime(const QString &key = "dateTime") const;
 
     QStringList twoStringDescription() const;
     QStringList toStringList(const QString &filter = QString(), bool includeKeys = true) const;

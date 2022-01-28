@@ -226,11 +226,11 @@ void DescriptorPropertiesDialog::currentFileChanged(QTreeWidgetItem *cur, QTreeW
         propertiesLabels.labels[0]->setText(d->fileName());
         propertiesLabels.labels[1]->setText(QString::number(d->fileSize()));
         propertiesLabels.labels[2]->setText(QString::number(d->channelsCount()));
-        QDateTime dt = d->dataDescription().get("dateTime").toDateTime();
+        QDateTime dt = d->dataDescription().dateTime("dateTime");
         if (dt.isValid()) s = dt.toString("d MMMM yyyy, hh:mm:ss");
         else s.clear();
         propertiesLabels.labels[3]->setText(s);
-        dt = d->dataDescription().get("fileCreationTime").toDateTime();
+        dt = d->dataDescription().dateTime("fileCreationTime");
         if (dt.isValid()) s = dt.toString("d MMMM yyyy, hh:mm:ss");
         else s.clear();
         propertiesLabels.labels[4]->setText(s);
@@ -238,7 +238,7 @@ void DescriptorPropertiesDialog::currentFileChanged(QTreeWidgetItem *cur, QTreeW
         propertiesLabels.labels[6]->setText(d->dataDescription().get("createdBy").toString());
         propertiesLabels.labels[7]->setText(d->dataDescription().get("source.file").toString());
         propertiesLabels.labels[8]->setText(d->dataDescription().get("source.guid").toString());
-        dt = d->dataDescription().get("source.dateTime").toDateTime();
+        dt = d->dataDescription().dateTime("dateTime");
         if (dt.isValid()) s = dt.toString("d MMMM yyyy, hh:mm:ss");
         else s.clear();
         propertiesLabels.labels[9]->setText(s);
