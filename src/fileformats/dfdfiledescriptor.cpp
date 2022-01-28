@@ -32,6 +32,7 @@ DfdFileDescriptor::DfdFileDescriptor(const QString &fileName)
       DataType(NotDef),
       BlockSize(0)
 {DD;
+    //qDebug()<<fileName;
 }
 
 DfdFileDescriptor::DfdFileDescriptor(const FileDescriptor &other, const QString &fileName, QVector<int> indexes)
@@ -259,9 +260,10 @@ void DfdFileDescriptor::writeDfd(QTextStream &dfdStream)
     dfdStream << "[DataFileDescriptor]" << endl;
     dfdStream << "DFDGUID="<<dataDescription().get("guid").toString() << endl;
     dfdStream << "DataType="<<DataType << endl;
-    dfdStream << "Date="<<dataDescription().get("dateTime").toDateTime().toString("dd.MM.yyyy")
+    auto dateTime = dateTimeFromString(dataDescription().get("dateTime").toString());
+    dfdStream << "Date="<<dateTime.toString("dd.MM.yyyy")
         << endl;
-    dfdStream << "Time="<<dataDescription().get("dateTime").toDateTime().toString("hh:mm:ss")
+    dfdStream << "Time="<<dateTime.toString("hh:mm:ss")
         << endl;
     dfdStream << "NumChans="<< (xChannel ? channels.size()+1 : channels.size()) << endl;
     int numInd = 0;
@@ -385,6 +387,7 @@ void DfdFileDescriptor::fillPreliminary(const FileDescriptor *file)
         ///TODO: переписать определение типа данных файла DFD
         DataType = dfdDataTypeFromDataType(*file->channel(0));
     }
+    DebugPrint(DataType);
 
     rawFileName = fileName().left(fileName().length()-4)+".raw";
 
@@ -1183,6 +1186,7 @@ DfdChannel::DfdChannel(Channel &other, DfdFileDescriptor *parent) : Channel(othe
     else if (precision == "int64") IndType = 0x80000008;
     else if (precision == "float") IndType = 0xc0000004;
     else if (precision == "double") IndType = 0xc0000008;
+    else IndType = 0xc0000004; //по умолчанию
 
     ChanBlockSize = other.data()->samplesCount();
 
