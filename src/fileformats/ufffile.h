@@ -59,7 +59,7 @@ public:
     virtual ~Function();
 
     void read(QTextStream &stream, qint64 pos = -1);
-    void read(char *data, qint64 &offset, int size);
+    void read(char *data, qint64 &offset, qint64 size);
     void read(QDataStream &stream);
     void write(QTextStream &stream, int &id);
 

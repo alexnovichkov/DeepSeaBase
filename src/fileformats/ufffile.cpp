@@ -183,7 +183,7 @@ bool UffFileDescriptor::readWithMmap()
         UffUnits u;
         u.read(pos, offset);
 
-        while (offset < uff.size()) {
+        while (offset < size) {
             Function *f = new Function(this);
             f->read(pos, offset, size);
         }
@@ -959,7 +959,7 @@ void Function::read(QTextStream &stream, qint64 pos)
     dataEnds << stream.pos() - 6-2-2;
 }
 
-void Function::read(char *data, qint64 &offset, int size)
+void Function::read(char *data, qint64 &offset, qint64 size)
 {DD;
     dataPositions.clear();  dataEnds.clear();
     zValues.clear();

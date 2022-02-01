@@ -182,7 +182,6 @@ void ConverterDialog::start()
 
 void ConverterDialog::stop()
 {
-    qDebug()<<"stopped";
     if (thread)
         thread->requestInterruption();
 
