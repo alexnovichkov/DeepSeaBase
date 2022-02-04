@@ -75,6 +75,7 @@ Source: {#PathToQt}\plugins\platforms\*.dll; DestDir: "{app}\platforms"; Flags: 
 Source: {#PathToQt}\plugins\printsupport\*.dll; DestDir: "{app}\printsupport"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 Source: {#PathToQt}\plugins\audio\*.dll; DestDir: "{app}\audio"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 Source: {#PathToQt}\plugins\mediaservice\*.dll; DestDir: "{app}\mediaservice"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
+Source: {#PathToQt}\plugins\styles\*.dll; DestDir: "{app}\styles"; Flags: ignoreversion recursesubdirs createallsubdirs; Excludes: "*d.dll"
 
 #ifdef WithTDMS
 Source: "E:\My\programming\sources\TDMS\tdm_dev\dev\bin\64-bit\*.dll"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
