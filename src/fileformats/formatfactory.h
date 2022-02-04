@@ -61,6 +61,41 @@ inline FileDescriptor *createDescriptor(const QString &fileName)
     return 0;
 }
 
+//Эта функция предназначена в первую очередь для DFD файлов, которые не умеют хранить
+//каналы разных типов.
+//Эта функция создает несколько файлов, с каналами, сгруппированными по типу
+inline QList<FileDescriptor *> createDescriptors(const FileDescriptor &source,
+                                                 const QString &fileName,
+                                                 const QVector<int> &indexes = QVector<int>())
+{
+    QString suffix = QFileInfo(fileName).suffix();
+    if (suffix!="dfd") {
+        if (suffix=="uff") return {new UffFileDescriptor(source, fileName, indexes)};
+        if (suffix=="d94") return {new Data94File(source, fileName, indexes)};
+    }
+    else {
+        //Сортируем каналы по типу
+        QVector<int> idx = indexes;
+        if (idx.isEmpty()) {
+            idx = QVector<int>(source.channelsCount());
+            std::iota(idx.begin(), idx.end(), 0);
+        }
+        QMap<Descriptor::DataType, QVector<int>> map;
+        for (int index : idx) {
+            auto type = source.channel(index)->type();
+            map[type].append(index);
+        }
+        //Создаем файлы
+        QList<FileDescriptor *> result;
+        for (const auto &[type, indexes]: asKeyValueRange(map)) {
+            QString name = createUniqueFileName("", fileName, Descriptor::functionTypeDescription(type), "dfd", true);
+            result << new DfdFileDescriptor(source, name, indexes);
+        }
+        return result;
+    }
+    return QList<FileDescriptor *>();
+}
+
 inline FileDescriptor *createDescriptor(const FileDescriptor &source,
                                         const QString &fileName,
                                         const QVector<int> &indexes = QVector<int>())
