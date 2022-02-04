@@ -194,6 +194,9 @@ private:
     QAction *convertAct;
     QAction *aboutAct;
     QAction *addPlotAreaAct;
+
+    QAction *plotOctaveAsHistogramAct;
+
     PlotArea *currentPlot = nullptr;
     CorrectionDialog *correctionDialog = nullptr;
 

@@ -130,6 +130,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     QMenu *settingsMenu = menuBar()->addMenu(QString("Настройки"));
     settingsMenu->addAction(editColorsAct);
+    settingsMenu->addAction(plotOctaveAsHistogramAct);
     settingsMenu->addAction(aboutAct);
 
     tabsMenu = menuBar()->addMenu("Вкладки");
@@ -330,6 +331,13 @@ void MainWindow::createActions()
 
     convertEsoFilesAct = new QAction("Конвертировать файлы ESO...", this);
     connect(convertEsoFilesAct,SIGNAL(triggered()),SLOT(convertEsoFiles()));
+
+    plotOctaveAsHistogramAct = new QAction("Строить третьоктавы в виде гистограмм", this);
+    plotOctaveAsHistogramAct->setCheckable(true);
+    plotOctaveAsHistogramAct->setChecked(App->getSetting("plotOctaveAsHistogram", false).toBool());
+    connect(plotOctaveAsHistogramAct, &QAction::toggled, [=](bool checked){
+        App->setSetting("plotOctaveAsHistogram", checked);
+    });
 }
 
 void MainWindow::createTab(const QString &name, const QStringList &folders)
@@ -893,12 +901,16 @@ void MainWindow::addCorrections()
     }
 
     if (currentTab) currentTab->updateChannelsTable(currentTab->record);
-    if (currentPlot && currentPlot->plot()) {
-        currentPlot->plot()->updateAxes();
-        emit updateLegends();
-        currentPlot->plot()->replot();
+    const auto m = m_DockManager->dockWidgetsMap();
+    for (auto w: m.values()) {
+        if (auto area = dynamic_cast<PlotArea*>(w)) {
+            if (area->plot()) {
+                area->plot()->updateAxes();
+                if (area==currentPlot) emit updateLegends();
+                area->plot()->replot();
+            }
+        }
     }
-
 
     delete worksheet;
     delete workbook;
@@ -912,12 +924,18 @@ void MainWindow::addCorrections()
 
 bool MainWindow::deleteChannels(FileDescriptor *file, const QVector<int> &channelsToDelete)
 {DD;
-    if (!currentPlot || !currentPlot->plot()) return false;
-    for (int i=0; i<channelsToDelete.size() - 1; ++i)
-        currentPlot->plot()->deleteCurveForChannelIndex(file, channelsToDelete.at(i), false);
-    currentPlot->plot()->deleteCurveForChannelIndex(file, channelsToDelete.last(), true);
-
     LongOperation op;
+    const auto m = m_DockManager->dockWidgetsMap();
+    for (auto w: m.values()) {
+        if (auto area = dynamic_cast<PlotArea*>(w)) {
+            if (area->plot()) {
+                for (int i=0; i<channelsToDelete.size() - 1; ++i)
+                    area->plot()->deleteCurveForChannelIndex(file, channelsToDelete.at(i), false);
+                area->plot()->deleteCurveForChannelIndex(file, channelsToDelete.last(), true);
+            }
+        }
+    }
+
     file->deleteChannels(channelsToDelete);
 
     return true;

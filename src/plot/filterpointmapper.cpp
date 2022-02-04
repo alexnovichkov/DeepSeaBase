@@ -118,7 +118,7 @@ FilterPointMapper::FilterPointMapper(bool createPolygon) : QwtPointMapper(), pol
 { }
 
 QPolygonF FilterPointMapper::getPolygon(const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QwtSeriesData<QPointF> *series, int from, int to)
-{DD0;
+{DD;
     //if horizontal distance is null
     if (qFuzzyIsNull(xMap.sDist())) return QPolygonF();
 

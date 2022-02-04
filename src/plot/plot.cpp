@@ -542,8 +542,10 @@ Curve *Plot::createCurve(const QString &legendName, Channel *channel)
     //стандартный график может отображать как обычные кривые, так и третьоктавы
 
     // считаем, что шаг по оси х 0 только у октав и третьоктав
-    if (channel->data()->xValuesFormat() == DataHolder::XValuesNonUniform)
-        return new BarCurve(legendName, channel);
+    if (channel->data()->xValuesFormat() == DataHolder::XValuesNonUniform) {
+        if (App->getSetting("plotOctaveAsHistogram", false).toBool())
+            return new BarCurve(legendName, channel);
+    }
 
     return new LineCurve(legendName, channel);
 }
