@@ -1,4 +1,4 @@
-var _version="1.8.1";
+var _version="1.8.2";
 function version() {
 document.write(_version);
 }
