@@ -250,13 +250,13 @@ bool FileConvertor::convert()
             emit message(QString("&nbsp;&nbsp;&nbsp;В файле %1 каналов").arg(sourceFile->channelsCount()));
 
             emit message("&nbsp;&nbsp;&nbsp;Сохраняю файл");
-            FileDescriptor *destFile = FormatFactory::createDescriptor(*sourceFile, destFileName);
+            auto destFiles = FormatFactory::createDescriptors(*sourceFile, destFileName);
 
-            if (destFile) {
-                newFiles.append(destFileName);
-                emit message("&nbsp;&nbsp;&nbsp;Готово.");
+            for (auto f: destFiles) {
+                if (f) newFiles.append(f->fileName());
+                delete f;
             }
-            delete destFile;
+            emit message("&nbsp;&nbsp;&nbsp;Готово.");
         }
         else {
             emit message("&nbsp;&nbsp;&nbsp;Файл неизвестного типа, пропускаю.");

@@ -73,9 +73,19 @@ void DfdFileDescriptor::init(const QVector<Channel *> &source)
     }
 
     fillPreliminary(other);
-
-    //qDebug()<<dataDescription().data;
-
+    const DfdFileDescriptor *dfd = dynamic_cast<const DfdFileDescriptor*>(other);
+    if (dfd) {
+        DataType = dfd->DataType;
+    }
+    else {
+        ///TODO: переписать определение типа данных файла DFD
+        DataType = dfdDataTypeFromDataType(*source.first());
+    }
+    // time data tweak, so deepseabase doesn't take the file as raw time data
+    //так как мы вызываем эту функцию только из новых файлов,
+    //все сведения из файлов rawChannel нам не нужны
+    if (DataType == SourceData) DataType = CuttedData;
+    if (DataType >= OSpectr && DataType <= TFOSpectr) xChannel = true;
 
     //Поскольку other может содержать каналы с разным типом, размером и шагом,
     //данные берем из первого канала, который будем сохранять
@@ -122,14 +132,14 @@ void DfdFileDescriptor::init(const QVector<Channel *> &source)
     }
 
     QTextCodec *codec = QTextCodec::codecForName("Windows-1251");
-    QTextStream dfd(&file);
-    dfd.setCodec(codec);
-    writeDfd(dfd); //Записываем шапку файла и канал с осью X, если есть
+    QTextStream dfdFile(&file);
+    dfdFile.setCodec(codec);
+    writeDfd(dfdFile); //Записываем шапку файла и канал с осью X, если есть
 
     //Остальные каналы
     int index = xChannel ? 1 : 0;
     for (DfdChannel *c: qAsConst(channels)) {
-        c->write(dfd, index++);
+        c->write(dfdFile, index++);
     }
 }
 
@@ -379,27 +389,25 @@ void DfdFileDescriptor::write()
 void DfdFileDescriptor::fillPreliminary(const FileDescriptor *file)
 {DD;
     FileDescriptor::fillPreliminary(file);
-    const DfdFileDescriptor *dfd = dynamic_cast<const DfdFileDescriptor*>(file);
-    if (dfd) {
-        DataType = dfd->DataType;
-    }
-    else {
-        ///TODO: переписать определение типа данных файла DFD
-        DataType = dfdDataTypeFromDataType(*file->channel(0));
-    }
-    DebugPrint(DataType);
-
     rawFileName = fileName().left(fileName().length()-4)+".raw";
-
-
-    // time data tweak, so deepseabase doesn't take the file as raw time data
-    //так как мы вызываем эту функцию только из новых файлов,
-    //все сведения из файлов rawChannel нам не нужны
-    if (DataType == SourceData) DataType = CuttedData;
-    if (DataType >= OSpectr && DataType <= TFOSpectr) xChannel = true;
-
     BlockSize = 0; // всегда меняем размер блока новых файлов на 0,
                    // чтобы они записывались без перекрытия
+
+//    const DfdFileDescriptor *dfd = dynamic_cast<const DfdFileDescriptor*>(file);
+//    if (dfd) {
+//        DataType = dfd->DataType;
+//    }
+//    else {
+//        ///TODO: переписать определение типа данных файла DFD
+//        DataType = dfdDataTypeFromDataType(*file->channel(0));
+//    }
+//    // time data tweak, so deepseabase doesn't take the file as raw time data
+//    //так как мы вызываем эту функцию только из новых файлов,
+//    //все сведения из файлов rawChannel нам не нужны
+//    if (DataType == SourceData) DataType = CuttedData;
+//    if (DataType >= OSpectr && DataType <= TFOSpectr) xChannel = true;
+
+
 }
 
 DfdFileDescriptor *DfdFileDescriptor::newFile(const QString &fileName, DfdDataType type)

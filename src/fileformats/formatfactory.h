@@ -85,6 +85,7 @@ inline QList<FileDescriptor *> createDescriptors(const FileDescriptor &source,
             auto type = source.channel(index)->type();
             map[type].append(index);
         }
+        qDebug()<<map;
         //Создаем файлы
         QList<FileDescriptor *> result;
         for (const auto &[type, indexes]: asKeyValueRange(map)) {

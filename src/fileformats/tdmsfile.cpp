@@ -6,6 +6,7 @@
 #include "fileformats/filedescriptor.h"
 #include "algorithms.h"
 
+#ifdef WITH_TDMS
 int NITypeToUffType(const QVariantMap &properties)
 {
     const QString NI_function_type = properties.value("NI_function_type").toString();
@@ -46,7 +47,7 @@ QString NIDataTypeToPrecision(DDCDataType dataType)
     return "";
 }
 
-#ifdef WITH_TDMS
+
 TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
 {DD;
     int error;
@@ -555,7 +556,7 @@ QVector<double> TDMSChannel::getDouble()
 Descriptor::DataType TDMSChannel::type() const
 {
     //TODO: добавить поддержку разных сигналов в TDMS
-    return Descriptor::TimeResponse;
+    return Descriptor::DataType(NITypeToUffType(properties));
 }
 
 void TDMSChannel::populate()
