@@ -39,6 +39,7 @@ bool TDMSFileConverter::convert()
                 break;
             }
         }
+        if (!group && tdmsFile.groups.size()>0) group = tdmsFile.groups.first();
         if (!group) {
             emit message("В файле отсутствует нужная группа каналов");
             emit tick();
@@ -47,11 +48,14 @@ bool TDMSFileConverter::convert()
 
         QString destinationFileName = changeFileExt(tdmsFileName, destinationFormat);
 
-        FileDescriptor *destinationFile = FormatFactory::createDescriptor(*group,
+        QList<FileDescriptor *> destinationFiles = FormatFactory::createDescriptors(*group,
                                                                           destinationFileName);
-        if (destinationFile)
-            newFiles << destinationFile->fileName();
-        delete destinationFile;
+        if (!destinationFiles.isEmpty())
+            for (auto f : destinationFiles) {
+                newFiles << f->fileName();
+            }
+
+        for (auto f : destinationFiles) delete f;
 #endif
         emit message("Готово.");
         emit tick();

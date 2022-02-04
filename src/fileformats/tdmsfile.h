@@ -69,7 +69,7 @@ public:
 private:
     QString fileName;
     DDCFileHandle file;
-    bool _isValid = true;
+    bool _isValid = false;
     DDCChannelGroupHandle *_groups;
 };
 #endif
