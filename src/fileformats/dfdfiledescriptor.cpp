@@ -74,7 +74,7 @@ void DfdFileDescriptor::init(const QVector<Channel *> &source)
 
     fillPreliminary(other);
 
-//    qDebug()<<dataDescription().toStringList();
+    //qDebug()<<dataDescription().data;
 
 
     //Поскольку other может содержать каналы с разным типом, размером и шагом,
@@ -1185,8 +1185,13 @@ DfdChannel::DfdChannel(Channel &other, DfdFileDescriptor *parent) : Channel(othe
     else if (precision == "uint64") IndType = 0x8;
     else if (precision == "int64") IndType = 0x80000008;
     else if (precision == "float") IndType = 0xc0000004;
-    else if (precision == "double") IndType = 0xc0000008;
+    else if (precision == "double") {
+        IndType = 0xc0000004; //DeepSea не умеет читать такие файлы
+        dataDescription().put("function.precision", "float");
+    }
     else IndType = 0xc0000004; //по умолчанию
+
+
 
     ChanBlockSize = other.data()->samplesCount();
 
