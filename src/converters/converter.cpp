@@ -132,7 +132,7 @@ void Converter::start()
     connect(process,SIGNAL(finished(int)),&q,SLOT(quit()));
     connect(process,SIGNAL(error(QProcess::ProcessError)),&q,SLOT(quit()));
 
-    process->start("C://Program Files (x86)//DeepSea//DeepSea.exe",arguments);
+    process->start("C:\\Program Files (x86)\\DeepSea\\DeepSea.exe",arguments);
 
     auto timer = new QTimer(this);
     const int deepseaTimer = 1000;
