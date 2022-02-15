@@ -174,8 +174,8 @@ protected:
     //reimplemented in spectrogram
     virtual void setRightScale(QwtAxisId id, double min, double max);
     virtual QMenu *createMenu(QwtAxisId axis);
-    virtual bool canBePlottedOnLeftAxis(Channel *ch) const;
-    virtual bool canBePlottedOnRightAxis(Channel *ch) const;
+    virtual bool canBePlottedOnLeftAxis(Channel *ch, QString *message=nullptr) const;
+    virtual bool canBePlottedOnRightAxis(Channel *ch, QString *message=nullptr) const;
 
     void setInfoVisible(bool visible);
     QString yValuesPresentationSuffix(int yValuesPresentation) const;

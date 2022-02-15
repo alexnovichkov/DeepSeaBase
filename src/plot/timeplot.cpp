@@ -42,28 +42,39 @@ Curve *TimePlot::createCurve(const QString &legendName, Channel *channel)
 }
 
 
-bool TimePlot::canBePlottedOnLeftAxis(Channel *ch) const
+bool TimePlot::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
 {
     //не можем строить временные графики на графике спектров
-    if (ch->type() != Descriptor::TimeResponse) return false;
+    if (ch->type() != Descriptor::TimeResponse) {
+        if (message) *message = "Отсутствуют временные данные";
+        return false;
+    }
+
 
     if (PhysicalUnits::Units::unitsAreSame(ch->xName(), xName) || xName.isEmpty()) { // тип графика совпадает
         if (m->leftCurvesCount()==0 || yLeftName.isEmpty()
             || PhysicalUnits::Units::unitsAreSame(ch->yName(), yLeftName))
             return true;
+        else if (message) *message = "Единицы по оси Y не совпадают";
     }
+    else if (message) *message = "Единицы по оси X не совпадают";
     return false;
 }
 
-bool TimePlot::canBePlottedOnRightAxis(Channel *ch) const
+bool TimePlot::canBePlottedOnRightAxis(Channel *ch, QString *message) const
 {
     //не можем строить временные графики на графике спектров
-    if (ch->type() != Descriptor::TimeResponse) return false;
+    if (ch->type() != Descriptor::TimeResponse) {
+        if (message) *message = "Отсутствуют временные данные";
+        return false;
+    }
 
     if (PhysicalUnits::Units::unitsAreSame(ch->xName(), xName) || xName.isEmpty()) { // тип графика совпадает
         if (m->rightCurvesCount()==0 || yRightName.isEmpty()
             || PhysicalUnits::Units::unitsAreSame(ch->yName(), yRightName))
             return true;
+        else if (message) *message = "Единицы по оси Y не совпадают";
     }
+    else if (message) *message = "Единицы по оси X не совпадают";
     return false;
 }

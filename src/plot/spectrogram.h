@@ -16,8 +16,8 @@ public:
     virtual void onDropEvent(bool plotOnLeft, const QVector<Channel *> &channels) override;
 protected:
     virtual void updateBounds() override;
-    virtual bool canBePlottedOnLeftAxis(Channel *ch) const override;
-    virtual bool canBePlottedOnRightAxis(Channel *ch) const override;
+    virtual bool canBePlottedOnLeftAxis(Channel *ch, QString *message = nullptr) const override;
+    virtual bool canBePlottedOnRightAxis(Channel *ch, QString *message = nullptr) const override;
     virtual void setRightScale(QwtAxisId id, double min, double max) override;
 
     QMenu * createMenu(QwtAxisId axis) override;

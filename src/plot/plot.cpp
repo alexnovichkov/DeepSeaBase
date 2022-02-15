@@ -490,7 +490,7 @@ void Plot::showContextMenu(const QPoint &pos, QwtAxisId axis)
     menu->deleteLater();
 }
 
-bool Plot::canBePlottedOnLeftAxis(Channel *ch) const
+bool Plot::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
 {DD;
 //    if (!hasCurves()) // нет графиков - можем построить что угодно
 //        return true;
@@ -501,17 +501,22 @@ bool Plot::canBePlottedOnLeftAxis(Channel *ch) const
 //        return false;
 
     //не можем строить временные графики на графике спектров
-    if (ch->type() == Descriptor::TimeResponse) return false;
+    if (ch->type() == Descriptor::TimeResponse) {
+        if (message) *message = "Нельзя строить временные графики на графике спектров";
+        return false;
+    }
 
     if (PhysicalUnits::Units::unitsAreSame(ch->xName(), xName) || xName.isEmpty()) { // тип графика совпадает
         if (m->leftCurvesCount()==0 || yLeftName.isEmpty()
             || PhysicalUnits::Units::unitsAreSame(ch->yName(), yLeftName))
             return true;
+        else if (message) *message = "Единицы по оси Y не совпадают";
     }
+    else if (message) *message = "Единицы по оси X не совпадают";
     return false;
 }
 
-bool Plot::canBePlottedOnRightAxis(Channel *ch) const
+bool Plot::canBePlottedOnRightAxis(Channel *ch, QString *message) const
 {DD;
 //    if (!hasCurves()) // нет графиков - всегда на левой оси
 //        return true;
@@ -522,13 +527,18 @@ bool Plot::canBePlottedOnRightAxis(Channel *ch) const
 //        return false;
 
     //не можем строить временные графики на графике спектров
-    if (ch->type() == Descriptor::TimeResponse) return false;
+    if (ch->type() == Descriptor::TimeResponse) {
+        if (message) *message = "Нельзя строить временные графики на графике спектров";
+        return false;
+    }
 
     if (PhysicalUnits::Units::unitsAreSame(ch->xName(), xName) || xName.isEmpty()) { // тип графика совпадает
         if (m->rightCurvesCount()==0 || yRightName.isEmpty()
             || PhysicalUnits::Units::unitsAreSame(ch->yName(), yRightName))
             return true;
+        else if (message) *message = "Единицы по оси Y не совпадают";
     }
+    else if (message) *message = "Единицы по оси X не совпадают";
     return false;
 }
 
@@ -721,10 +731,10 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     //проверяем, построен ли канал на этом графике
     if (m->plotted(ch)) return;
 
-    if ((plotOnLeft && !canBePlottedOnLeftAxis(ch)) || (!plotOnLeft && !canBePlottedOnRightAxis(ch))) {
+    QString message;
+    if ((plotOnLeft && !canBePlottedOnLeftAxis(ch, &message)) || (!plotOnLeft && !canBePlottedOnRightAxis(ch, &message))) {
         QMessageBox::warning(this, QString("Не могу построить канал"),
-                             QString("Тип графика не подходит.\n"
-                                     "Сначала очистите график."));
+                             QString("%1.\nСначала очистите график.").arg(message));
         return;
     }
 

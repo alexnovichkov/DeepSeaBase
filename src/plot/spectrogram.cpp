@@ -169,14 +169,16 @@ void Spectrogram::updateBounds()
         zoom->verticalScaleBounds->autoscale();
 }
 
-bool Spectrogram::canBePlottedOnLeftAxis(Channel *ch) const
+bool Spectrogram::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
 {
+    Q_UNUSED(message);
     return ch->data()->blocksCount()>1 && !hasCurves();
 }
 
-bool Spectrogram::canBePlottedOnRightAxis(Channel *ch) const
+bool Spectrogram::canBePlottedOnRightAxis(Channel *ch, QString *message) const
 {
     Q_UNUSED(ch);
+    Q_UNUSED(message);
     return false;
 }
 
