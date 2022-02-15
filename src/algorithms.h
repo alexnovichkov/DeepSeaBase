@@ -232,6 +232,31 @@ QVector<cx_double> complexesFromImags(const QVector<T> &values)
 
     return result;
 }
+template <typename T>
+QVector<cx_double> complexesFromInterweaved(const QVector<T> &values)
+{
+    const int size = values.size();
+    QVector<cx_double> result(size/2);
+
+    for (int i=0; i<size/2; ++i) {
+        result[i] = {values.at(i*2), values.at(i*2+1)};
+    }
+
+    return result;
+}
+template <typename T>
+QVector<T> interweavedFromComplexes(const QVector<cx_double> &values)
+{
+    const int size = values.size();
+    QVector<T> result(size*2);
+
+    for (int i=0; i<size; ++i) {
+        result[i*2] = values.at(i).real();
+        result[i*2+1] = values.at(i).imag();
+    }
+
+    return result;
+}
 
 // возвращает вектор линейно возрастающих чисел
 QVector<double> linspace(double begin, double step, int n);

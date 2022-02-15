@@ -8,7 +8,7 @@
 #define FileLine StringChange(FileRead(FileHandle), "var _version=""","")
 #define MyAppVersion  StringChange(FileLine, """;","")
 #define PathToExe "E:\My\build\build-DeepSeaBase-Desktop_Qt_5_12_8_MinGW_64_bit-Release\bin"
-#define PathToQt "C:\Qt\Qt5.12.8\5.12.8\mingw73_64"
+#define PathToQt "K:\Qt\Qt5.12.8\5.12.8\mingw73_64"
 
 #define WithTDMS
 

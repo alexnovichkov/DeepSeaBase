@@ -106,7 +106,11 @@ QString AveragingFunction::displayName() const
 
 QVector<double> AveragingFunction::getData(const QString &id)
 {DD;
-    if (id == "input") return averaging.get();
+    const auto format = m_input->getParameter("?/dataFormat").toString();
+    if (id == "input") {
+        if (format=="complex") return interweavedFromComplexes<double>(averaging.getComplex());
+        return averaging.get();
+    }
 
     return QVector<double>();
 }
@@ -121,10 +125,14 @@ bool AveragingFunction::compute(FileDescriptor *file)
 
     //данные приходят сразу для всего канала, поэтому мы должны разбить их по блокам
     const int portionsCount = m_input->getParameter("?/portionsCount").toInt();
+    const auto format = m_input->getParameter("?/dataFormat").toString();
     const int blockSize = data.size() / portionsCount;
 
     for (int block = 0; block < portionsCount; ++block) {
-        averaging.average(data.mid(block*blockSize, blockSize));
+        if (format=="complex")
+            averaging.average(complexesFromInterweaved(data.mid(block*blockSize, blockSize)));
+        else
+            averaging.average(data.mid(block*blockSize, blockSize));
         if (averaging.averagingDone()) break;
     }
 
@@ -133,7 +141,6 @@ bool AveragingFunction::compute(FileDescriptor *file)
 
 void AveragingFunction::reset()
 {DD;
-    //qDebug()<<"AveragingFunction::reset()";
     averaging.reset();
 }
 
