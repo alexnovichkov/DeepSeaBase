@@ -561,7 +561,7 @@ QString FileDescriptor::createGUID()
 //}
 
 Channel::Channel(Channel *other) :
-    _color(QColor()), _plotted(0),
+    _plotted(0),
     _populated(other->_populated),
     _data(new DataHolder(*(other->_data))),
     _dataDescription(other->_dataDescription)
@@ -570,7 +570,7 @@ Channel::Channel(Channel *other) :
 }
 
 Channel::Channel(Channel &other) :
-    _color(QColor()), _plotted(0),
+    _plotted(0),
     _populated(other._populated),
     _data(new DataHolder(*(other._data))),
     _dataDescription(other._dataDescription)

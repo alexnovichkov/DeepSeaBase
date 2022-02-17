@@ -86,7 +86,6 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
                         pen.setColor(color);
                         this->curve->setPen(pen);
                         this->curve->oldPen = pen;
-                        this->curve->channel->setColor(color);
                         emit curveChanged(curve);
                     }
                 }

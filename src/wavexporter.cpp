@@ -64,7 +64,7 @@ void WavExporter::writeWithStreams(const QVector<int> &v, const QString &wavFile
     const quint16 channelsCount = quint16(v.size()); //Fc
     const quint32 sampleRate = (quint32)qRound(1.0 / file->xStep()); //F
     const quint32 samples = quint32(file->samplesCount());
-    const quint32 headerSize = format==WavPCM ? sizeof(SimpleWavHeader) : sizeof(WavHeader);
+    //const quint32 headerSize = format==WavPCM ? sizeof(SimpleWavHeader) : sizeof(WavHeader);
     //const quint32 totalSize = sizeof(WavHeader) + M * channelsCount * samples;
 
     //Создаем заголовок файла

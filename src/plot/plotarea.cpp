@@ -692,7 +692,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
                      formatLine->setProperty("DashStyle", msoLineStyle);
 
                      QAxObject *formatLineForeColor = formatLine->querySubObject("ForeColor");
-                     QColor color = m_plot->model()->curve(i)->channel->color();
+                     QColor color = m_plot->model()->curve(i)->pen().color();
                      //меняем местами красный и синий, потому что Excel неправильно понимает порядок
                      int red = color.red();
                      color.setRed(color.blue());

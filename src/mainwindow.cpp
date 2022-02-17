@@ -438,7 +438,7 @@ void MainWindow::closeTab(ads::CDockWidget *t)
     bool tabsLeft = false;
     m = m_DockManager->dockWidgetsMap().values();
     for (const auto &w : m) {
-        if (Tab *t = dynamic_cast<Tab*>(w->widget())) {
+        if (dynamic_cast<Tab*>(w->widget())) {
             tabsLeft = true;
             break;
         }
@@ -560,7 +560,7 @@ void MainWindow::closePlot(ads::CDockWidget *t)
     bool plotsLeft = false;
     const auto m = m_DockManager->dockWidgetsMap().values();
     for (const auto &w: m) {
-        if (PlotArea *area = dynamic_cast<PlotArea*>(w)) {
+        if (dynamic_cast<PlotArea*>(w)) {
             plotsLeft = true;
             break;
         }

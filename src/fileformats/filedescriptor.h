@@ -190,8 +190,7 @@ public:
     virtual ~Channel() {
         delete _data;
     }
-    Channel() : _color(QColor()),
-                _data(new DataHolder)
+    Channel() : _data(new DataHolder)
     {}
     Channel(Channel *other);
     Channel(Channel &other);
@@ -245,9 +244,6 @@ public:
 
     virtual int index() const = 0;
 
-    QColor color() const {return _color;}
-    void setColor(QColor color) {_color = color;}
-
     inline QString correction() const {return dataDescription().get("correction").toString();}
     void setCorrection(const QString &s) {dataDescription().put("correction", s);}
 
@@ -261,7 +257,6 @@ public:
     bool dataChanged() const {return _dataChanged;}
     void setDataChanged(bool changed) {_dataChanged = changed;}
 private:
-    QColor _color;
     bool _plotted = false;
     bool _populated = false;
     bool _changed = false;
