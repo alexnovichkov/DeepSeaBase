@@ -157,6 +157,8 @@ bool FrfFunction::compute(FileDescriptor *file)
 
     if (!m_input || !m_input2) return false;
 
+    const int dataFormat = map.value("output");
+
     switch (map.value("type")) {
         case 0: {//"H1 = Sab/Saa
             m_input->compute(file);
@@ -179,7 +181,15 @@ bool FrfFunction::compute(FileDescriptor *file)
                 cx_double ab = {data[i], data[i+1]};
                 cx_double aa = {cashedReferenceOutput[i], cashedReferenceOutput[i+1]};
                 cx_double h1 = ab/aa;
-                output << h1.real() << h1.imag();
+                switch (dataFormat) {
+                    case 0: output << h1.real() << h1.imag(); break;
+                    case 1: output << h1.real(); break;
+                    case 2: output << h1.imag(); break;
+                    case 3: output << std::abs(h1); break;
+                    case 4: output << std::arg(h1) * 180/M_PI; break;
+                    default: output << h1.real() << h1.imag();;
+                }
+
             }
             break;
         }
@@ -203,7 +213,14 @@ bool FrfFunction::compute(FileDescriptor *file)
                 cx_double bb = {cashedReferenceOutput[i], cashedReferenceOutput[i+1]};
                 cx_double ba = {data2[i], data2[i+1]};
                 cx_double h2 = bb/ba;
-                output << h2.real() << h2.imag();
+                switch (dataFormat) {
+                    case 0: output << h2.real() << h2.imag(); break;
+                    case 1: output << h2.real(); break;
+                    case 2: output << h2.imag(); break;
+                    case 3: output << std::abs(h2); break;
+                    case 4: output << std::arg(h2) * 180/M_PI; break;
+                    default: output << h2.real() << h2.imag();;
+                }
             }
             break;
         }
