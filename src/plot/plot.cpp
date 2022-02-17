@@ -80,7 +80,8 @@ Plot::Plot(PlotType type, QWidget *parent) :
     _canvas = new QwtPlotCanvas();
     _canvas->setFocusIndicator(QwtPlotCanvas::CanvasFocusIndicator);
     _canvas->setPalette(Qt::white);
-    _canvas->setFrameStyle(QFrame::StyledPanel);
+//    _canvas->setFrameStyle(QFrame::StyledPanel);
+    _canvas->setFrameStyle(QFrame::NoFrame);
     //_canvas->setPaintAttribute(QwtPlotCanvas::BackingStore, false);
     setCanvas(_canvas);
 

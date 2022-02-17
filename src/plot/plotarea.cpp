@@ -328,30 +328,6 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
         return;
     }
 
-    if (!excel) {
-        //excel = new QAxObject("Excel.Application",this);
-        excel = new QAxObject("{00024500-0000-0000-c000-000000000046}&",this);
-    }
-    if (!excel) return;
-    //qDebug()<<excel->generateDocumentation();
-
-    excel->setProperty("Visible", true);
-
-    //получаем рабочую книгу
-    QAxObject * workbooks = excel->querySubObject("WorkBooks");
-    QAxObject * workbook = excel->querySubObject("ActiveWorkBook");
-    if (!workbook) {
-        workbooks->dynamicCall("Add");
-    }
-    workbook = excel->querySubObject("ActiveWorkBook");
-
-    // получаем список листов и добавляем новый лист
-    QAxObject *worksheets = workbook->querySubObject("Sheets");
-    worksheets->dynamicCall("Add()");
-    QAxObject * worksheet = workbook->querySubObject("ActiveSheet");
-
-
-
      Channel *channel = m_plot->model()->curve(0)->channel;
      FileDescriptor *descriptor = channel->descriptor();
 
@@ -405,12 +381,35 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
      // определяем, будут ли экспортированы графики;
      bool exportPlots = true;
      if (samplesCount > 32000 && fullRange && !dataOnly) {
-         QMessageBox::warning(this, "Слишком много данных",
+         if (QMessageBox::question(this, "Слишком много данных",
                               "В одном или всех каналах число отсчетов превышает 32000.\n"
-                              "Будут экспортированы только данные, но не графики");
+                              "Экспортировать только данные (графики не будут экспортированы)?")==QMessageBox::Yes)
          exportPlots = false;
+         else return;
      }
      if (dataOnly) exportPlots = false;
+
+     if (!excel) {
+         //excel = new QAxObject("Excel.Application",this);
+         excel = new QAxObject("{00024500-0000-0000-c000-000000000046}&",this);
+     }
+     if (!excel) return;
+     //qDebug()<<excel->generateDocumentation();
+
+     excel->setProperty("Visible", true);
+
+     //получаем рабочую книгу
+     QAxObject * workbooks = excel->querySubObject("WorkBooks");
+     QAxObject * workbook = excel->querySubObject("ActiveWorkBook");
+     if (!workbook) {
+         workbooks->dynamicCall("Add");
+     }
+     workbook = excel->querySubObject("ActiveWorkBook");
+
+     // получаем список листов и добавляем новый лист
+     QAxObject *worksheets = workbook->querySubObject("Sheets");
+     worksheets->dynamicCall("Add()");
+     QAxObject * worksheet = workbook->querySubObject("ActiveSheet");
 
      // записываем название файла и описатели
      if (allChannelsFromOneFile) {
