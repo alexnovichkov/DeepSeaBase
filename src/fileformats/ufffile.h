@@ -132,6 +132,7 @@ public:
     virtual void read() override;
     virtual void write() override;
     virtual QString icon() const override {return ":/icons/uff.svg";}
+    virtual QString fileType() const override {return "uff";}
 
     virtual void deleteChannels(const QVector<int> &channelsToDelete) override;
     virtual void copyChannelsFrom(const QVector<Channel *> &source) override;

@@ -146,6 +146,10 @@ protected:
     virtual void resetChain() = 0;
     virtual void initChain(FileDescriptor *file) = 0;
 
+    //override this method if algorithm is applicable to channel types
+    //other than TimeResponse
+    virtual bool applicableTo(Descriptor::DataType channelType);
+
     QList<FileDescriptor *> m_dataBase;
     QList<AbstractFunction *> m_functions; //список функций для отображения в окне расчета
     QList<AbstractFunction *> m_chain; //начало и конец цепи вычислений

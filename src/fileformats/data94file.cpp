@@ -349,7 +349,12 @@ void Data94File::addChannelWithData(DataHolder *data, const DataDescription &des
     ch->xAxisBlock.step = data->xStep();
 
     //zAxisBlock
-    ch->zAxisBlock.count = 1;
+    ch->zAxisBlock.step = data->zStep();
+    ch->zAxisBlock.uniform = (data->zValuesFormat() == DataHolder::XValuesUniform ? 1:0);
+    ch->zAxisBlock.count = data->blocksCount();
+    ch->zAxisBlock.begin = data->zMin();
+    if (ch->zAxisBlock.uniform == 0)
+        ch->zAxisBlock.values = data->zValues();
 
     ch->isComplex = data->yValuesFormat() == DataHolder::YValuesComplex;
 

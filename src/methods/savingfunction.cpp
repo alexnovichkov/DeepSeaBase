@@ -16,17 +16,6 @@ QString getSuffixByType(int type)
     return "d94";
 }
 
-DescriptionList processData(const QStringList &data)
-{DD;
-    DescriptionList result;
-    for (const QString &s: qAsConst(data)) {
-        QString h = s.section("=",0,0);
-        QString v = s.section("=",1);
-        result.append({h,v});
-    }
-    return result;
-}
-
 SavingFunction::SavingFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
 {DD;
@@ -41,7 +30,7 @@ QString SavingFunction::name() const
 
 QString SavingFunction::displayName() const
 {DD;
-    return "Тип файла";
+    return "Записывать результат";
 }
 
 QString SavingFunction::description() const
@@ -51,7 +40,7 @@ QString SavingFunction::description() const
 
 QStringList SavingFunction::properties() const
 {DD;
-    return QStringList()<<"type"<<"destination";
+    return {"append", "type", "destination"};
 }
 
 QString SavingFunction::propertyDescription(const QString &property) const
@@ -73,6 +62,16 @@ QString SavingFunction::propertyDescription(const QString &property) const
                                      "  \"defaultValue\": \"\"         ,"
                                      "  \"toolTip\"     : \"Папка сохранения\""
                                      "}";
+    if (property == "append") return "{"
+                                   "  \"name\"        : \"append\"   ,"
+                                   "  \"type\"        : \"enum\"   ,"
+                                   "  \"displayName\" : \"Записывать результат\"   ,"
+                                   "  \"defaultValue\": 0,"
+                                   "  \"toolTip\"     : \"в новый файл | в текущий файл\","
+                                   "  \"values\"      : [\"в новый файл\", \"в текущий файл\"],"
+                                   "  \"minimum\"     : 0,"
+                                   "  \"maximum\"     : 0"
+                                   "}";
     return "";
 }
 
@@ -89,6 +88,7 @@ QVariant SavingFunction::m_getProperty(const QString &property) const
     if (p == "type") return type;
     if (p == "destination") return destination;
     if (p == "name") return newFileName;
+    if (p == "append") return append;
 
     return QVariant();
 }
@@ -100,6 +100,18 @@ void SavingFunction::m_setProperty(const QString &property, const QVariant &val)
 
     if (p == "type") type = val.toInt();
     else if (p == "destination") destination = val.toString();
+    else if (p == "append") append = val.toBool();
+}
+
+bool SavingFunction::propertyShowsFor(const QString &property) const
+{DD;
+    if (!property.startsWith(name()+"/")) return false;
+    QString p = property.section("/",1);
+
+    if (p == "type") return !append;
+    if (p == "destination") return !append;
+
+    return true;
 }
 
 bool SavingFunction::compute(FileDescriptor *file)
@@ -113,15 +125,28 @@ bool SavingFunction::compute(FileDescriptor *file)
      * 6. тип данных: универсальный или следующий deepsea?
      * 7. дополнительные параметры, подсасываемые из предыдущих функций
      */
+    sourceFileName.clear();
+
     if (!m_input) return false;
 
-    if (!m_file) {
-        QString fileName = file->fileName();
-        QString method = m_input->getParameter("?/functionDescription").toString();
-        newFileName = createUniqueFileName(destination, fileName, method,
-                                                getSuffixByType(type), true);
+    const bool isDfd = file->fileType() == "dfd";
 
-        m_file = createFile(file);
+    if (!m_file) {
+        //we cannot write channels of different type info DFD
+        if (append && file->canTakeAnyChannels()) {
+            m_file = file;
+        }
+        else {
+            //write to dfd only if source is dfd
+            if (isDfd) type = DfdFile;
+
+            QString fileName = file->fileName();
+            QString method = m_input->getParameter("?/functionDescription").toString();
+            newFileName = createUniqueFileName(destination, fileName, method,
+                                               getSuffixByType(type), true);
+
+            m_file = createFile(file);
+        }
     }
 
     if (!m_file) return false;
@@ -130,6 +155,8 @@ bool SavingFunction::compute(FileDescriptor *file)
     if (!m_input->compute(file)) return false;
     QVector<double> data = m_input->getData("input");
     if (data.isEmpty()) return false;
+
+    sourceFileName = file->fileName();
 
     //определяем число отсчетов в одном блоке
     int dataSize = data.size();
@@ -185,42 +212,23 @@ bool SavingFunction::compute(FileDescriptor *file)
         d->setYValues(data, DataHolder::formatFromString(dataFormatString), -1);
     }
 
-    Channel *ch = createChannel(file, d);
-    if (!ch) return false;
+    //Далее - описание канала
+    const int i = m_input->getParameter("?/channelIndex").toInt();
+    DataDescription description = file->channel(i)->dataDescription();
+    description.put("yname", m_input->getParameter("?/yName").toString());
+    description.put("xname", m_input->getParameter("?/xName").toString());
+    description.put("zname", m_input->getParameter("?/zName").toString());
+    description.put("samples", QString::number(dataSize/blocksCount));
+    description.put("dateTime", QDateTime::currentDateTime());
+    description.put("samplerate", int(m_input->getParameter("?/sampleRate").toDouble()));
+    description.put("blocks", blocksCount);
+    description.put("ynameold", file->channel(i)->yName());
 
-    // Заполнение свойств канала
     DataDescription functionDescription = m_input->getFunctionDescription();
-
-    ch->setYName(m_input->getParameter("?/yName").toString());
-    ch->setXName(m_input->getParameter("?/xName").toString());
-    ch->setZName(m_input->getParameter("?/zName").toString());
-    ch->dataDescription().put("samples", QString::number(dataSize/blocksCount));
-    ch->dataDescription().put("dateTime", QDateTime::currentDateTime());
-    ch->dataDescription().put("samplerate", int(m_input->getParameter("?/sampleRate").toDouble()));
-    ch->dataDescription().put("blocks", blocksCount);
-
     for (const auto [key, val]: asKeyValueRange(functionDescription.data))
-        ch->dataDescription().put(key, val);
+        description.put(key, val);
 
-    //        "responseName": "lop1:1",
-    //         *               "responseDirection": "+z",
-    //         *               "responseNode": "",
-    //         *               "referenceName": "lop1:1",
-    //         *               "referenceNode": "",
-    //         *               "referenceDescription": "более полное описание из dfd",
-    //         *               "referenceDirection": "",
-    //        *               "precision": int8 / uint8 / int16 / uint16 / int32 / uint32 / int64 / uint64 / float / double
-    //        *               //далее идут все параметры обработки
-    //        *               "weighting": no / A / B / C / D
-    //        *               "averaging": "linear", "no", "exponential", "peak hold", "energetic"
-    //        *               "averagingCount": 38,
-    //        *               "window": "Hanning", "Hamming", "square", "triangular", "Gauss", "Natoll",
-    //        *                         "force", "exponential", "Tukey", "flattop", "Bartlett", "Welch symmetric",
-    //        *                         "Welch periodic", "Hanning broad", "impact", "Kaiser-Bessel",
-    //        *               "windowParameter": 0.00,
-    //        *               "blockSize": 2048,
-
-    ch->setPopulated(true);
+    m_file->addChannelWithData(d, description);
 
     return true;
 }
@@ -233,20 +241,17 @@ void SavingFunction::reset()
     //(или в функции сохранения?)
 
     if (m_file) {
-//        if (m_file->channelsCount()>0)
-//            m_file->setSamplesCount(m_file->channel(0)->data()->samplesCount());
         m_file->setChanged(true);
         m_file->setDataChanged(true);
-        for (int i=0; i<m_file->channelsCount(); ++i) {
-            m_file->channel(i)->setChanged(true);
-            m_file->channel(i)->setDataChanged(true);
-        }
+
         m_file->write();
         newFiles << m_file->fileName();
-        qDebug()<<"added"<<m_file->fileName();
     }
-    delete m_file;
-    m_file = 0;
+    //do not delete file if we added channels to the source file
+    if (m_file && m_file->fileName() != sourceFileName) delete m_file;
+
+    m_file = nullptr;
+    sourceFileName.clear();
 
     data.clear();
 }
@@ -298,264 +303,4 @@ FileDescriptor *SavingFunction::createUffFile()
 FileDescriptor *SavingFunction::createD94File()
 {
     return new Data94File(newFileName);
-}
-
-Channel *SavingFunction::createChannel(FileDescriptor *file, DataHolder *data)
-{DD;
-    switch (type) {
-        case DfdFile: return createDfdChannel(file, data);
-        case UffFile: return createUffChannel(file, data);
-        case D94File: return createD94Channel(file, data);
-        default: break;
-    }
-
-    return 0;
-}
-
-Channel *SavingFunction::createDfdChannel(FileDescriptor *file, DataHolder *data)
-{DD;
-    DfdChannel *ch = nullptr;
-
-    //Преобразуем для удобства работы
-    //подразумеваем, что работаем с файлом dfd
-    if (DfdFileDescriptor *newDfd = dynamic_cast<DfdFileDescriptor *>(m_file)) {
-
-        ch = new DfdChannel(newDfd, newDfd->channelsCount());
-
-        const int i = m_input->getParameter("?/channelIndex").toInt();
-        Channel *channel = file->channel(i);
-
-        ch->dataDescription() = channel->dataDescription();
-        ch->dataDescription().put("ynameold", channel->yName());
-        ch->setData(data);
-
-        ch->ChanBlockSize = data->samplesCount();
-        ch->IndType = 3221225476;
-
-//        ch->YName = file->channel(i)->yName();
-//        if (dfd)
-//            ch->YNameOld = dfd->channels[i]->YNameOld;
-//        else
-//            ch->YNameOld = ch->YName;
-    }
-
-    return ch;
-}
-
-Channel *SavingFunction::createUffChannel(FileDescriptor *file, DataHolder *data)
-{DD;
-    Function *ch = nullptr;
-    if (UffFileDescriptor *newUff = dynamic_cast<UffFileDescriptor *>(m_file)) {
-
-        ch = new Function(newUff);
-
-        const int i = m_input->getParameter("?/channelIndex").toInt();
-        Channel *channel = file->channel(i);
-
-        ch->dataDescription() = channel->dataDescription();
-        ch->dataDescription().put("ynameold", channel->yName());
-        ch->setData(data);
-
-       /* //Заполнение заголовка функции
-        ch->header.type1858[4].value = 1; //4 set record number
-        //5 octave format, 0=not in octave format(default), 1=octave, n=1/n oct
-        ch->header.type1858[5].value = m_input->getParameter("?/octaveFormat");
-        //6 measurement run number
-        ch->header.type1858[6].value = 0;
-        //11 weighting type, 0=no, 1=A wei, 2=B wei, 3=C wei, 4=D wei
-        ch->header.type1858[11].value = weightingType(m_input->getParameter("?/weighting").toString());
-        //тип оконной функции  0=no, 1=hanning narrow, 2=hanning broad, 3=flattop,
-        //                     4=exponential, 5=impact, 6=impact and exponential
-        int windowType = m_input->getParameter("?/windowType").toInt();
-        ch->header.type1858[12].value = uffWindowType(windowType);
-        //13 amplitude units, 0=unknown, 1=half-peak, 2=peak, 3=RMS
-        ch->header.type1858[13].value = m_input->getParameter("?/amplitudeScaling");
-        //14 normalization method, 0=unknown, 1=units squared, 2=Units squared per Hz (PSD)
-                               //3=Units squared seconds per Hz (ESD)
-        ch->header.type1858[14].value = m_input->getParameter("?/normalization");
-//        {FTInteger6, 0}, //15  Abscissa Data Type Qualifier,
-//                          //0=translation, 1=rotation, 2=translation squared, 3=rotation squared
-//        {FTInteger6, 0}, //16 Ordinate Numerator Data Type Qualifier, see 15
-//        {FTInteger6, 0}, //17 Ordinate Denominator Data Type Qualifier, see 15
-//        {FTInteger6, 0}, //18 Z-axis Data Type Qualifier, see 15
-//        {FTInteger6, 0}, //19 sampling type, 0=dynamic, 1=static, 2=RPM from tacho, 3=freq from tach
-//        {FTInteger6, 0}, {FTInteger6, 0}, {FTInteger6, 0}, {FTEmpty, ""}, //20-23 not used
-
-//        {FTFloat15_7, 0.0}, //24 Z RPM value
-//        {FTFloat15_7, 0.0}, //25 Z time value
-//        {FTFloat15_7, 0.0}, //26 Z order value
-//        {FTFloat15_7, 0.0}, //27 number of samples
-//        {FTFloat15_7, 0.0}, {FTEmpty, ""}, //28-29 not used
-
-//        {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, //30-33 user values
-//        {FTFloat15_7, 0.0}, {FTEmpty, ""}, //34-35 Exponential window damping factor
-//        {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTFloat15_7, 0.0}, {FTEmpty, ""}, //36-41 not used
-//        {FTString10a,"NONE  NONE"}, //42 response direction, reference direction
-
-
-
-//        {FTString80,"NONE" }, {FTEmpty,""},  //12-13 ID line 5
-        //ch->type58[0].value = //FTDelimiter
-        //ch->type58[1].value = //FTEmpty
-        //ch->type58[2].value = 58;//
-        //ch->type58[3].value = //FTEmpty
-
-        //название канала
-        ch->type58[4].value = file->channel(i)->name();
-        //ch->type58[5].value = //FTEmpty
-
-        //описание
-        ch->type58[6].value = file->channel(i)->description();
-        //ch->type58[7].value = //FTEmpty
-
-        //время создания канала
-        ch->type58[8].value = QDateTime::currentDateTime();
-        //ch->type58[9].value = //FTEmpty
-
-        //ID line 4
-        ch->type58[10].value = QString("Record %1").arg(newUff->channelsCount()+1);
-        //ch->type58[11].value = //FTEmpty
-
-        //ID line 5 - correction ?
-        if (uffFile)
-            ch->type58[12].value = uffFile->channels[i]->type58[12].value;
-        else
-            ch->type58[12].value = "NONE";
-        //ch->type58[13].value = //FTEmpty
-
-        //тип функции
-        int functionType = m_input->getParameter("?/functionType").toInt();
-        ch->type58[14].value = functionType;
-
-        // Нумерация каналов и порций данных для каналов.
-        // 1. Каждая порция данных записывается отдельным каналом.
-        // 2. Все порции данных имеют одно название канала type58[4]
-        // 3. Каждая порция имеет свой номер
-        //номер канала, сквозная нумерация по всему файлу
-        ch->type58[15].value = newUff->channelsCount()+1;
-
-        //Version Number, or sequence number,  начинается заново для каждого нового канала
-        ch->type58[16].value = newUff->channelsCount()+1;
-        //Load Case Identification Number
-        ch->type58[17].value = 0;
-
-        //RESPONSE
-        //точка измерения
-        if (uffFile)
-            ch->type58[18].value = uffFile->channels[i]->type58[18].value;
-        else
-            ch->type58[18].value = QString("p%1").arg(newUff->channelsCount()+1);
-        //Response Node
-        if (uffFile)
-            ch->type58[19].value = uffFile->channels[i]->type58[19].value;
-        //направление отклика
-        if (uffFile)
-            ch->type58[20].value = uffFile->channels[i]->type58[20].value;
-        else
-            ch->type58[20].value = 3; //20 Response Direction +Z
-
-        //REFERENCE
-        //Reference Entity Name ("NONE" if unused)
-        if (uffFile)
-            ch->type58[21].value = uffFile->channels[i]->type58[21].value;
-        else
-            ch->type58[21].value = "NONE";
-        //Reference Node
-        if (uffFile)
-            ch->type58[22].value = uffFile->channels[i]->type58[22].value;
-        //направление возбуждения
-        if (uffFile)
-            ch->type58[23].value = uffFile->channels[i]->type58[23].value;
-        else
-            ch->type58[23].value = 3; //20 Reference Direction +Z
-        //ch->type58[24].value = //FTEmpty
-
-        ch->type58[25].value = m_input->getParameter("?/dataFormat").toString() == "complex" ? 5 : 2; //25 Ordinate Data Type
-        ch->type58[26].value = dataSize; //number of data values for abscissa
-        ch->type58[27].value = m_input->getParameter("?/abscissaEven").toBool() ? 1 : 0;//27 Abscissa Spacing (1=even, 0=uneven,
-        //28 Abscissa minimum
-        QList<QVariant> abscissaData = m_input->getParameter("?/abscissaData").toList();
-        if (!abscissaData.isEmpty())
-            ch->type58[28].value = abscissaData.constFirst().toDouble();
-        else
-            ch->type58[28].value = 0.0;
-        ch->type58[29].value = m_input->getParameter("?/xStep").toDouble(); //29 Abscissa increment
-        if (uffFile)
-            ch->type58[30].value = uffFile->channels[i]->type58[30].value; //30 Z-axis value
-        else
-            ch->type58[30].value = 0.0; //30 Z-axis value
-        //ch->type58[31].value = //FTEmpty
-
-        ch->type58[32].value = m_input->getParameter("?/xType").toInt(); // Abscissa Data Characteristics
-//        ch->type58[33].value = 0;//33 Length units exponent
-//        ch->type58[34].value = 0;//34 Force units exponent
-//        ch->type58[35].value = 0;//35 Temperature units exponent
-        ch->type58[36].value = abscissaTypeDescription(ch->type58[32].value.toInt()); //32 Abscissa type description
-        ch->type58[37].value = m_input->getParameter("?/xName").toString(); //37 Abscissa name
-        //ch->type58[38].value = //FTEmpty
-
-        ch->type58[39].value = m_input->getParameter("?/yType").toInt(); //39 Ordinate (or ordinate numerator) Data Characteristics // 1 = General
-//        ch->type58[40].value = 0;// Length units exponent
-//        ch->type58[41].value = 0;// Force units exponent
-//        ch->type58[42].value = 0;// Temperature units exponent
-        ch->type58[43].value = abscissaTypeDescription(ch->type58[39].value.toInt());
-        ch->type58[44].value = m_input->getParameter("?/yName").toString(); //44 Ordinate name
-        //ch->type58[45].value = //FTEmpty
-
-        //Заполняем при передаточной для силы
-        ch->type58[46].value = 0; //39 Ordinate (or ordinate denominator) Data Characteristics // 1 = General
-//        ch->type58[47].value = 0;// Length units exponent
-//        ch->type58[48].value = 0;// Force units exponent
-//        ch->type58[49].value = 0;// Temperature units exponent
-        ch->type58[50].value = "NONE";
-        ch->type58[51].value = "NONE"; // Ordinate name
-        //ch->type58[52].value = //FTEmpty
-
-        QString zName = m_input->getParameter("?/zName").toString().toLower();
-        if (zName == "s" || zName == "с")
-            ch->type58[53].value = 17; //39 Z axis Data Characteristics // 17 = Time
-        else
-            ch->type58[53].value = 1; //39 Z axis Data Characteristics // 1 = General
-//        ch->type58[54].value = 0;// Length units exponent
-//        ch->type58[55].value = 0;// Force units exponent
-//        ch->type58[56].value = 0;// Temperature units exponent
-        ch->type58[57].value = abscissaTypeDescription(ch->type58[53].value.toInt());
-        ch->type58[58].value = m_input->getParameter("?/zName").toString(); // Applicate name
-        //ch->type58[59].value = //FTEmpty
-        */
-    }
-    return ch;
-}
-
-Channel *SavingFunction::createD94Channel(FileDescriptor *file, DataHolder *data)
-{DD;
-    Data94Channel *ch = 0;
-    if (Data94File *newD94 = dynamic_cast<Data94File *>(m_file)) {
-        ch = new Data94Channel(newD94);
-        const int i = m_input->getParameter("?/channelIndex").toInt();
-        Channel *channel = file->channel(i);
-
-        ch->dataDescription() = channel->dataDescription();
-        ch->dataDescription().put("ynameold", channel->yName());
-        ch->setData(data);
-
-        ch->isComplex = (data->yValuesFormat() == DataHolder::YValuesComplex);
-
-        // x values
-        ch->xAxisBlock.begin = data->xMin();
-        ch->xAxisBlock.uniform = (data->xValuesFormat() == DataHolder::XValuesUniform ? 1:0);
-        if (ch->xAxisBlock.uniform == 0)
-            ch->xAxisBlock.values = data->xValues();
-        ch->xAxisBlock.count = data->samplesCount();
-        ch->xAxisBlock.step = data->xStep();
-
-        // z values
-        ch->zAxisBlock.step = data->zStep();
-        ch->zAxisBlock.uniform = (data->zValuesFormat() == DataHolder::XValuesUniform ? 1:0);
-        ch->zAxisBlock.count = data->blocksCount();
-        ch->zAxisBlock.begin = data->zMin();
-        if (ch->zAxisBlock.uniform == 0)
-            ch->zAxisBlock.values = data->zValues();
-    }
-    return ch;
 }

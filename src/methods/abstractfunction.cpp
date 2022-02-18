@@ -207,6 +207,11 @@ bool AbstractAlgorithm::compute(FileDescriptor *file)
             continue;
         }
 
+        if (!applicableTo(file->channel(i)->type())) {
+            emit tick();
+            continue;
+        }
+
         if (refChannel == i) {
             emit tick();
             continue;
@@ -241,7 +246,6 @@ void AbstractAlgorithm::reset()
 void AbstractAlgorithm::start()
 {DD;
     auto dt = QDateTime::currentDateTime();
-    qDebug()<<"Start converting"<<dt.time();
     emit message(QString("Запуск расчета: %1").arg(dt.time().toString()));
 
 //    QDir d;
@@ -256,7 +260,7 @@ void AbstractAlgorithm::start()
     for (FileDescriptor *file: qAsConst(m_dataBase)) {
         emit message(QString("Расчет для файла\n%1").arg(file->fileName()));
         if (!compute(file)) {
-            emit message("Не удалось сконвертировать файл " + file->fileName());
+            emit message("Не удалось выполнить расчет");
         }
     }
 
@@ -265,7 +269,11 @@ void AbstractAlgorithm::start()
 
 void AbstractAlgorithm::finalize()
 {DD;
-    qDebug()<<"End converting"<<QDateTime::currentDateTime().time();
     emit message(QString("Расчет закончен в %1").arg(QDateTime::currentDateTime().time().toString()));
     emit finished();
+}
+
+bool AbstractAlgorithm::applicableTo(Descriptor::DataType channelType)
+{
+    return channelType == Descriptor::TimeResponse;
 }

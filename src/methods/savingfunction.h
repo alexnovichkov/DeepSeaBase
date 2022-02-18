@@ -12,6 +12,7 @@ class Channel;
  * Saver/type - [int] file type (FileType)
  * Saver/destination - [string] destination folder
  * Saver/name - [string] file name
+ * Saver/append - [string] Append channels / Write into new file (append/new)
  *
  * Спрашивает:
  * ----------
@@ -69,21 +70,21 @@ public:
     virtual void m_setProperty(const QString &property, const QVariant &val) override;
     virtual bool compute(FileDescriptor *file) override;
     virtual void reset() override;
+    virtual bool propertyShowsFor(const QString &property) const override;
 private:
     FileDescriptor *createFile(FileDescriptor *file);
     FileDescriptor *createDfdFile();
     FileDescriptor *createUffFile();
     FileDescriptor *createD94File();
-    Channel *createChannel(FileDescriptor *file, DataHolder *data);
-    Channel *createDfdChannel(FileDescriptor *file, DataHolder *data);
-    Channel *createUffChannel(FileDescriptor *file, DataHolder *data);
-    Channel *createD94Channel(FileDescriptor *file, DataHolder *data);
+
     FileDescriptor *m_file = nullptr;
     QString newFileName;
+    QString sourceFileName;
     QStringList newFiles;
 
     int type = 2;
     QString destination;
+    bool append = false;
     QVector<QVector<double>> data;
 };
 

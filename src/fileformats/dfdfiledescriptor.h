@@ -267,6 +267,7 @@ public:
     virtual ~DfdFileDescriptor();
 
     virtual QString icon() const override {return ":/icons/dfd.svg";}
+    virtual QString fileType() const override {return "dfd";}
 
     virtual void read() override;
     virtual void write() override;

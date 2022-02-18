@@ -86,6 +86,7 @@ public:
     virtual int channelsCount() const override;
     virtual void move(bool, const QVector<int> &, const QVector<int> &) override;
     virtual Channel *channel(int index) const override;
+    virtual QString fileType() const override {return "mat";}
 };
 
 class MatChannel : public Channel
