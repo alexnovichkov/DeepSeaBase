@@ -119,6 +119,9 @@ public:
     QVariant getParameter(AbstractFunction *f, const QString &property) const;
     void setParameter(AbstractFunction *f, const QString &property, const QVariant &val);
 
+    void saveSettings();
+    void restoreSettings();
+
     QList<FileDescriptor *> dataBase() const {return m_dataBase;}
 
     QList<AbstractFunction *> functions() const {return m_functions;}

@@ -3,6 +3,7 @@
 #include <QtCore>
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
+#include "app.h"
 
 AbstractFunction::AbstractFunction(QObject *parent, const QString &name) : QObject(parent), _name(name)
 {
@@ -36,7 +37,7 @@ bool AbstractFunction::propertyShowsFor(const QString &property) const
 QVariant AbstractFunction::getParameter(const QString &property) const
 {DD;
     QVariant p;
-    if (m_master != nullptr) {
+    if (paired()) {
         p = m_master->m_getProperty(property);
     }
     if (!p.isValid())
@@ -155,6 +156,26 @@ void AbstractAlgorithm::setParameter(AbstractFunction *function, const QString &
         if (f == function && property.startsWith(f->name()+"/")) {
             f->setParameter(property, val);
             return;
+        }
+    }
+}
+
+void AbstractAlgorithm::saveSettings()
+{DD;
+    for (auto f: m_functions) {
+        for (const auto &property: f->properties()) {
+            QVariant val = f->getParameter(f->name()+"/"+property);
+            App->setSetting(displayName()+"/"+f->name()+"/"+property, val);
+        }
+    }
+}
+
+void AbstractAlgorithm::restoreSettings()
+{DD;
+    for (auto f: m_functions) {
+        for (const auto &property: f->properties()) {
+            QVariant val = App->getSetting(displayName()+"/"+f->name()+"/"+property);
+            f->setParameter(f->name()+"/"+property, val);
         }
     }
 }

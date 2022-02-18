@@ -138,6 +138,9 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
 
 FilesProcessorDialog::~FilesProcessorDialog()
 {DD;
+    if (currentAlgorithm)
+        currentAlgorithm->saveSettings();
+
     for (AbstractAlgorithm *f: qAsConst(algorithms)) {
         if (f) f->deleteLater();
     }
@@ -154,6 +157,7 @@ void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
     m_manager->clear();
     map.clear();
     if (currentAlgorithm) {
+        currentAlgorithm->saveSettings();
         for (AbstractFunction *f: currentAlgorithm->functions())
             disconnect(f,0,0,0);
     }
@@ -171,6 +175,8 @@ void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
         if (!f->paired()) addProperties(f);
         connect(f, &AbstractFunction::attributeChanged, this, &FilesProcessorDialog::updateProperty);
     }
+
+    if (currentAlgorithm) currentAlgorithm->restoreSettings();
 
     // блокируем сигналы, чтобы при каждом изменении свойства не обновлять все отображения свойств
     // мы это сделаем в самом конце функцией updateVisibleProperties();
