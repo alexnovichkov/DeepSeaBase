@@ -14,7 +14,7 @@ public:
 private:
     AbstractFunction * channelF; //фильтрует обрабатываемые каналы
 //    AbstractFunction * filteringF; //применяет фильтр к временным данным
-//    AbstractFunction * resamplingF; //изменяет частоту дискретизации
+    AbstractFunction * resamplingF; //изменяет частоту дискретизации
     AbstractFunction * samplingF; //осуществляет нарезку блоков
     AbstractFunction * windowingF; //применяет оконную функцию
     AbstractFunction * averagingF; //применяет усреднение

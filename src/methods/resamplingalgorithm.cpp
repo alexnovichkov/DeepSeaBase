@@ -47,12 +47,6 @@ ResamplingAlgorithm::ResamplingAlgorithm(QList<FileDescriptor *> &dataBase, QObj
     //resamplingF отправляет сигнал об изменении "?/xStep"
 //    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
 //            samplingF, SLOT(updateProperty(QString,QVariant)));
-
-    //перенаправляем сигналы от функций в интерфейс пользователя
-//    for (AbstractFunction *f: qAsConst(m_functions)) {
-//        connect(f, SIGNAL(attributeChanged(QString,QVariant,QString)),SIGNAL(attributeChanged(QString,QVariant,QString)));
-//        connect(f, SIGNAL(tick()), this, SIGNAL(tick()));
-//    }
 }
 
 QString ResamplingAlgorithm::description() const

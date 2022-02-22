@@ -85,7 +85,6 @@ signals:
     void propertyChanged(const QString &property, const QVariant &val);
     void attributeChanged(AbstractFunction *f, const QString &property, const QVariant &val, const QString &attribute);
 
-//    void tick();
     void tick(const QString &path);
     void message(const QString &s);
 public slots:

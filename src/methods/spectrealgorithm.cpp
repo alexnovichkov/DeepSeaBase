@@ -16,7 +16,7 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
 {DD;
     channelF = new ChannelFunction(this);
 //    filteringF = new FilteringFunction(this);
-//    resamplingF = new ResamplingFunction(this);
+    resamplingF = new ResamplingFunction(this);
     samplingF = new FrameCutterFunction(this);
     windowingF = new WindowingFunction(this);
     averagingF = new AveragingFunction(this);
@@ -27,8 +27,8 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
     m_chain << saver;
 
 //    filteringF->setInput(channelF);
-//    resamplingF->setInput(filteringF);
-    samplingF->setInput(channelF);
+    resamplingF->setInput(channelF);
+    samplingF->setInput(resamplingF);
     windowingF->setInput(samplingF);
     fftF->setInput(windowingF);
     averagingF->setInput(fftF);
@@ -36,7 +36,7 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
 
     m_functions << channelF;
 //    m_functions << filteringF;
-//    m_functions << resamplingF;
+    m_functions << resamplingF;
     m_functions << samplingF;
     m_functions << windowingF;
     m_functions << fftF;
@@ -55,22 +55,16 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
     if (xStepsDiffer) emit message("Файлы имеют разный шаг по оси X.");
 
     //начальные значения, которые будут использоваться в показе функций
-//    resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);
+    resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);
     samplingF->setParameter(samplingF->name()+"/xStep", xStep);
     channelF->setFile(dataBase.constFirst());
 
-//    //resamplingF отправляет сигнал об изменении "?/xStep"
-//    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
-//            samplingF, SLOT(updateProperty(QString,QVariant)));
+    //resamplingF отправляет сигнал об изменении "?/xStep"
+    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
+            samplingF, SLOT(updateProperty(QString,QVariant)));
     //samplingF отправляет сигнал об изменении "?/triggerChannel"
     connect(samplingF, SIGNAL(propertyChanged(QString,QVariant)),
             channelF, SLOT(updateProperty(QString,QVariant)));
-
-    //перенаправляем сигналы от функций в интерфейс пользователя
-//    for (AbstractFunction *f: m_functions) {
-//        connect(f, SIGNAL(attributeChanged(QString,QVariant,QString)),SIGNAL(attributeChanged(QString,QVariant,QString)));
-//        connect(f, SIGNAL(tick()), this, SIGNAL(tick()));
-//    }
 }
 
 
@@ -88,7 +82,7 @@ QString SpectreAlgorithm::displayName() const
 void SpectreAlgorithm::resetChain()
 {
     //        filteringF->reset();
-    //        resamplingF->reset();
+    resamplingF->reset();
     samplingF->reset();
     windowingF->reset();
     fftF->reset();
@@ -97,6 +91,6 @@ void SpectreAlgorithm::resetChain()
 
 void SpectreAlgorithm::initChain(FileDescriptor *file)
 {
-    //    resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());
+    resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());
     samplingF->setParameter(samplingF->name()+"/xStep", file->xStep());
 }

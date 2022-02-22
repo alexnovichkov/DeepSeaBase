@@ -15,8 +15,8 @@ private:
     AbstractFunction * channelF; //отдает данные для обрабатываемого канала
     AbstractFunction * refChannelF; //отдает данные для опорного канала
 
-//    AbstractFunction * resamplingF; //изменяет частоту дискретизации
-//    AbstractFunction * refResamplingF; //изменяет частоту дискретизации
+    AbstractFunction * resamplingF; //изменяет частоту дискретизации
+    AbstractFunction * refResamplingF; //изменяет частоту дискретизации
 
     AbstractFunction * samplingF; //осуществляет нарезку блоков
     AbstractFunction * refSamplingF; //осуществляет нарезку блоков

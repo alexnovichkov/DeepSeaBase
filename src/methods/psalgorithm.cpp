@@ -16,7 +16,7 @@ PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
 {DD;
     channelF = new ChannelFunction(this);
 //    filteringF = new FilteringFunction(this);
-//    resamplingF = new ResamplingFunction(this);
+    resamplingF = new ResamplingFunction(this);
     samplingF = new FrameCutterFunction(this);
     windowingF = new WindowingFunction(this);
     averagingF = new AveragingFunction(this);
@@ -27,8 +27,8 @@ PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     m_chain << saver;
 
 //    filteringF->setInput(channelF);
-//    resamplingF->setInput(filteringF);
-    samplingF->setInput(channelF);
+    resamplingF->setInput(channelF);
+    samplingF->setInput(resamplingF);
     windowingF->setInput(samplingF);
     psF->setInput(windowingF);
     averagingF->setInput(psF);
@@ -36,7 +36,7 @@ PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
 
     m_functions << channelF;
 //    m_functions << filteringF;
-//    m_functions << resamplingF;
+    m_functions << resamplingF;
     m_functions << samplingF;
     m_functions << windowingF;
     m_functions << averagingF;
@@ -54,22 +54,16 @@ PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     if (xStepsDiffer) emit message("Файлы имеют разный шаг по оси X.");
 
     //начальные значения, которые будут использоваться в показе функций
-//    resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);
+    resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);
     samplingF->setParameter(samplingF->name()+"/xStep", xStep);
     channelF->setFile(dataBase.constFirst());
 
-//    //resamplingF отправляет сигнал об изменении "?/xStep"
-//    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
-//            samplingF, SLOT(updateProperty(QString,QVariant)));
+    //resamplingF отправляет сигнал об изменении "?/xStep"
+    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
+            samplingF, SLOT(updateProperty(QString,QVariant)));
     //samplingF отправляет сигнал об изменении "?/triggerChannel"
     connect(samplingF, SIGNAL(propertyChanged(QString,QVariant)),
             channelF, SLOT(updateProperty(QString,QVariant)));
-
-    //перенаправляем сигналы от функций в интерфейс пользователя
-//    for (AbstractFunction *f: m_functions) {
-//        connect(f, SIGNAL(attributeChanged(QString,QVariant,QString)),SIGNAL(attributeChanged(QString,QVariant,QString)));
-//        connect(f, SIGNAL(tick()), this, SIGNAL(tick()));
-//    }
 }
 
 
@@ -90,10 +84,11 @@ void PsAlgorithm::resetChain()
     windowingF->reset();
     psF->reset();
     averagingF->reset();
+    resamplingF->reset();
 }
 
 void PsAlgorithm::initChain(FileDescriptor *file)
 {
-    //    resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());
+    resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());
     samplingF->setParameter(samplingF->name()+"/xStep", file->xStep());
 }

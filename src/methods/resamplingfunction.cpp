@@ -42,7 +42,7 @@ QString ResamplingFunction::propertyDescription(const QString &property) const
                "  \"type\"        : \"double\"   ,"
                "  \"displayName\" : \"Коэффициент\"   ,"
                "  \"defaultValue\": 1.0         ,"
-               "  \"toolTip\"     : \"Множитель, применяемый к частоте дискретизации\","
+               "  \"toolTip\"     : \"Частота дискретизации будет уменьшена в k раз\","
                "  \"values\"      : []"
                 "}");
     }
@@ -88,6 +88,8 @@ QVariant ResamplingFunction::m_getProperty(const QString &property) const
         if (m_input)
             return m_input->getParameter(property);
     }
+
+    qDebug()<<factor;
 
     if (property == name()+"/resampleType")
         return currentResamplingType;
