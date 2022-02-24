@@ -171,12 +171,12 @@ DfdData::DfdData(DataHolder *data) : data(data)
 
 QRectF DfdData::boundingRect() const
 {DD;
-    if ( d_boundingRect.width() < 0 ) {
-        d_boundingRect.setLeft( data->xMin() );
-        d_boundingRect.setRight( data->xMax() );
-        d_boundingRect.setTop( data->yMin() );
-        d_boundingRect.setBottom( data->yMax() );
-    }
+    QRectF d_boundingRect;
+    d_boundingRect.setLeft( data->xMin() );
+    d_boundingRect.setRight( data->xMax() );
+    d_boundingRect.setTop( data->yMin() );
+    d_boundingRect.setBottom( data->yMax() );
+
 
     return d_boundingRect;
 }

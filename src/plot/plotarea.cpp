@@ -629,7 +629,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
              Curve *curve = m_plot->model()->curve(i);
              QAxObject * serie = series->querySubObject("Item (int)", i+1);
              if (serie) {
-                 if (curve->yAxis()==QwtAxis::yRight) {
+                 if (curve->yAxis()==QwtAxis::YRight) {
                      serie->setProperty("AxisGroup", 2);
                      addRightAxis = true;
                  }
@@ -647,7 +647,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          // добавляем подписи осей
          QAxObject *xAxis = chart->querySubObject("Axes(const QVariant&)", 1);
          if (xAxis) {
-             setAxis(xAxis, stripHtml(m_plot->axisTitleText(QwtAxis::xBottom)));
+             setAxis(xAxis, stripHtml(m_plot->axisTitleText(QwtAxis::XBottom)));
              xAxis->setProperty("MaximumScale", range.max);
              xAxis->setProperty("MinimumScale", int(range.min/10)*10);
 //             if (zeroStepDetected) {
@@ -659,7 +659,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 
          QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&)", 2);
          if (yAxis) {
-             setAxis(yAxis, stripHtml(m_plot->axisTitleText(QwtAxis::yLeft)));
+             setAxis(yAxis, stripHtml(m_plot->axisTitleText(QwtAxis::YLeft)));
              yAxis->setProperty("CrossesAt", -1000);
          }
          delete yAxis;

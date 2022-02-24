@@ -43,11 +43,11 @@ void Spectrogram::deleteCurve(Curve *curve, bool doReplot)
         if (m->leftCurvesCount()==0) {
             yLeftName.clear();
             yRightName.clear();
-            enableAxis(QwtAxis::yRight, false);
+            enableAxis(QwtAxis::YRight, false);
         }
         if (m->rightCurvesCount()==0) {
             yRightName.clear();
-            enableAxis(QwtAxis::yRight, false);
+            enableAxis(QwtAxis::YRight, false);
         }
         if (!hasCurves()) xName.clear();
         setInfoVisible(true);
@@ -70,23 +70,23 @@ QString Spectrogram::pointCoordinates(const QPointF &pos)
 void Spectrogram::updateAxesLabels()
 {
     //две оси видны всегда
-    enableAxis(QwtAxis::yLeft, axisLabelsVisible);
+    enableAxis(QwtAxis::YLeft, axisLabelsVisible);
     if (axisLabelsVisible)
-        setAxisTitle(QwtAxis::yLeft, QwtText(yLeftName));
+        setAxisTitle(QwtAxis::YLeft, QwtText(yLeftName));
     else
-        setAxisTitle(QwtAxis::yLeft, "");
+        setAxisTitle(QwtAxis::YLeft, "");
 
     //правая ось - цветовая шкала
-    enableAxis(QwtAxis::yRight, axisLabelsVisible);
+    enableAxis(QwtAxis::YRight, axisLabelsVisible);
     QString suffix = yValuesPresentationSuffix(yValuesPresentationRight);
     QwtText text(QString("%1 <small>%2</small>").arg(yRightName).arg(suffix), QwtText::RichText);
     if (axisLabelsVisible)
-        setAxisTitle(QwtAxis::yRight, text);
+        setAxisTitle(QwtAxis::YRight, text);
     else
-        setAxisTitle(QwtAxis::yRight, "");
+        setAxisTitle(QwtAxis::YRight, "");
 
-    if (axisEnabled(QwtAxis::xBottom)) {
-        setAxisTitle(QwtAxis::xBottom, axisLabelsVisible ? xName : "");
+    if (axisEnabled(QwtAxis::XBottom)) {
+        setAxisTitle(QwtAxis::XBottom, axisLabelsVisible ? xName : "");
     }
 }
 
@@ -196,7 +196,7 @@ QMenu *Spectrogram::createMenu(QwtAxisId axis)
 {
     QMenu *menu = new QMenu(this);
 
-    if (axis.pos == QwtAxis::xBottom) {
+    if (axis == QwtAxis::XBottom) {
         menu->addAction(xScaleIsLogarithmic?"Линейная шкала":"Логарифмическая шкала", [=](){
             if (xScaleIsLogarithmic)
                 setAxisScaleEngine(xBottomAxis, new QwtLinearScaleEngine());
@@ -211,7 +211,7 @@ QMenu *Spectrogram::createMenu(QwtAxisId axis)
     bool leftCurves = true;
     int *ax = 0;
 
-    if (axis.pos == QwtAxis::yRight && m->leftCurvesCount()>0) {
+    if (axis == QwtAxis::YRight && m->leftCurvesCount()>0) {
         curvesEmpty = false;
         ax = &yValuesPresentationRight;
     }
@@ -256,7 +256,7 @@ QMenu *Spectrogram::createMenu(QwtAxisId axis)
             int presentation = act->data().toInt();
             m->setYValuesPresentation(leftCurves, presentation);
             *ax = presentation;
-            this->recalculateScale(axis.pos == QwtAxis::yLeft);
+            this->recalculateScale(axis == QwtAxis::YLeft);
             this->update();
         });
 
@@ -264,7 +264,7 @@ QMenu *Spectrogram::createMenu(QwtAxisId axis)
         menu->addAction(a);
     }
 
-    if (axis.pos == QwtAxis::yRight && m->leftCurvesCount()>0) {
+    if (axis == QwtAxis::YRight && m->leftCurvesCount()>0) {
         if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(m->curve(0, true))) {
             QAction *a = new QAction("Цветовая шкала");
             QMenu *am = new QMenu(this);

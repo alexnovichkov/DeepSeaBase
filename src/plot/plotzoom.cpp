@@ -67,22 +67,22 @@ ZoomStack::zoomCoordinates PlotZoom::endZoom(QMouseEvent *mEvent)
     if (qAbs(xp - startingPosX) >= MinimumZoom && qAbs(yp - startingPosY) >= MinimumZoom) {
         int leftmostX = qMin(xp, startingPosX); int rightmostX = qMax(xp, startingPosX);
         int leftmostY = qMin(yp, startingPosY); int rightmostY = qMax(yp, startingPosY);
-        QwtAxis::Position pos = QwtAxis::xBottom;
+        QwtAxis::Position pos = QwtAxis::XBottom;
         const double xMin = plot->invTransform(pos,leftmostX);
         const double xMax = plot->invTransform(pos,rightmostX);
 
-        pos = QwtAxis::yLeft;
+        pos = QwtAxis::YLeft;
         double yMin = plot->invTransform(pos,rightmostY);
         double yMax = plot->invTransform(pos,leftmostY);
 
-        pos = QwtAxis::yRight;
+        pos = QwtAxis::YRight;
         double ySMin = plot->invTransform(pos,rightmostY);
         double ySMax = plot->invTransform(pos,leftmostY);
 
-        coords.coords.insert(QwtAxis::xBottom, {xMin, xMax});
-        coords.coords.insert(QwtAxis::yLeft, {yMin, yMax});
+        coords.coords.insert(QwtAxis::XBottom, {xMin, xMax});
+        coords.coords.insert(QwtAxis::YLeft, {yMin, yMax});
         if (plot->type() != Plot::PlotType::Spectrogram)
-            coords.coords.insert(QwtAxis::yRight, {ySMin, ySMax});
+            coords.coords.insert(QwtAxis::YRight, {ySMin, ySMax});
     }
     return coords;
 }

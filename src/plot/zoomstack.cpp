@@ -22,9 +22,9 @@
 
 ZoomStack::ZoomStack(Plot *plot) : QObject(plot),  plot(plot)
 {DD;
-    horizontalScaleBounds = new ScaleBounds(plot, QwtAxisId(QwtAxis::xBottom, 0));
-    verticalScaleBounds = new ScaleBounds(plot, QwtAxisId(QwtAxis::yLeft, 0));
-    verticalScaleBoundsSlave = new ScaleBounds(plot, QwtAxisId(QwtAxis::yRight, 0));
+    horizontalScaleBounds = new ScaleBounds(plot, QwtAxis::XBottom);
+    verticalScaleBounds = new ScaleBounds(plot, QwtAxis::YLeft);
+    verticalScaleBoundsSlave = new ScaleBounds(plot, QwtAxis::YRight);
 }
 
 ZoomStack::~ZoomStack()
@@ -43,16 +43,16 @@ void ZoomStack::addZoom(ZoomStack::zoomCoordinates coords, bool addToStack)
         zoomStack.push(coords);
     }
 
-    if (coords.coords.contains(QwtAxis::xBottom))
-        horizontalScaleBounds->set(coords.coords.value(QwtAxis::xBottom).x(),
-                                   coords.coords.value(QwtAxis::xBottom).y());
-    if (coords.coords.contains(QwtAxis::yLeft)) {
-        verticalScaleBounds->set(coords.coords.value(QwtAxis::yLeft).x(),
-                                 coords.coords.value(QwtAxis::yLeft).y());
+    if (coords.coords.contains(QwtAxis::XBottom))
+        horizontalScaleBounds->set(coords.coords.value(QwtAxis::XBottom).x(),
+                                   coords.coords.value(QwtAxis::XBottom).y());
+    if (coords.coords.contains(QwtAxis::YLeft)) {
+        verticalScaleBounds->set(coords.coords.value(QwtAxis::YLeft).x(),
+                                 coords.coords.value(QwtAxis::YLeft).y());
     }
-    if (coords.coords.contains(QwtAxis::yRight)/* && !qwtPlot->spectrogram*/) {
-        verticalScaleBoundsSlave->set(coords.coords.value(QwtAxis::yRight).x(),
-                                      coords.coords.value(QwtAxis::yRight).y());
+    if (coords.coords.contains(QwtAxis::YRight)/* && !qwtPlot->spectrogram*/) {
+        verticalScaleBoundsSlave->set(coords.coords.value(QwtAxis::YRight).x(),
+                                      coords.coords.value(QwtAxis::YRight).y());
     }
     plot->replot();
 }
@@ -67,16 +67,16 @@ void ZoomStack::zoomBack()
     }
     else {
         zoomCoordinates coords = zoomStack.top();
-        if (coords.coords.contains(QwtAxis::xBottom))
-            horizontalScaleBounds->set(coords.coords.value(QwtAxis::xBottom).x(),
-                                       coords.coords.value(QwtAxis::xBottom).y());
-        if (coords.coords.contains(QwtAxis::yLeft)) {
-            verticalScaleBounds->set(coords.coords.value(QwtAxis::yLeft).x(),
-                                     coords.coords.value(QwtAxis::yLeft).y());
+        if (coords.coords.contains(QwtAxis::XBottom))
+            horizontalScaleBounds->set(coords.coords.value(QwtAxis::XBottom).x(),
+                                       coords.coords.value(QwtAxis::XBottom).y());
+        if (coords.coords.contains(QwtAxis::YLeft)) {
+            verticalScaleBounds->set(coords.coords.value(QwtAxis::YLeft).x(),
+                                     coords.coords.value(QwtAxis::YLeft).y());
         }
-        if (coords.coords.contains(QwtAxis::yRight)) {
-            verticalScaleBoundsSlave->set(coords.coords.value(QwtAxis::yRight).x(),
-                                          coords.coords.value(QwtAxis::yRight).y());
+        if (coords.coords.contains(QwtAxis::YRight)) {
+            verticalScaleBoundsSlave->set(coords.coords.value(QwtAxis::YRight).x(),
+                                          coords.coords.value(QwtAxis::YRight).y());
         }
     }
     plot->replot();
@@ -85,16 +85,16 @@ void ZoomStack::zoomBack()
 void ZoomStack::moveToAxis(int axis, double min, double max)
 {
     switch (axis) {
-        case QwtAxis::xBottom:
+        case QwtAxis::XBottom:
             horizontalScaleBounds->add(min, max);
             if (!horizontalScaleBounds->isFixed()) horizontalScaleBounds->autoscale();
             break;
-        case QwtAxis::yLeft:
+        case QwtAxis::YLeft:
             verticalScaleBoundsSlave->removeToAutoscale(min, max);
             verticalScaleBounds->add(min, max);
             if (!verticalScaleBounds->isFixed()) verticalScaleBounds->autoscale();
             break;
-        case QwtAxis::yRight:
+        case QwtAxis::YRight:
             verticalScaleBounds->removeToAutoscale(min, max);
             verticalScaleBoundsSlave->add(min, max);
             if (!verticalScaleBoundsSlave->isFixed()) verticalScaleBoundsSlave->autoscale();

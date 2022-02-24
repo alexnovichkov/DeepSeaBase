@@ -24,20 +24,20 @@ ZoomStack::zoomCoordinates WheelZoom::applyWheel(QEvent *event, QwtAxisId axis)
         double wheelSteps = wheelDelta/120.0;
         double factor = qPow(0.85, wheelSteps);
 
-        if (QwtAxis::isValid(axis.pos)) {
-            int pos = axis.isXAxis() ? wEvent->pos().x() : wEvent->pos().y();
-            coords.coords.insert(axis.pos, getCoords(axis, pos, factor));
+        if (QwtAxis::isValid(axis)) {
+            int pos = QwtAxis::isXAxis(axis) ? wEvent->pos().x() : wEvent->pos().y();
+            coords.coords.insert(axis, getCoords(axis, pos, factor));
         }
         else {
             int pos = wEvent->pos().x();
-            axis = QwtAxisId(QwtAxis::xBottom, 0);
-            coords.coords.insert(axis.pos, getCoords(axis, pos, factor));
+            axis = QwtAxis::XBottom;
+            coords.coords.insert(axis, getCoords(axis, pos, factor));
             pos = wEvent->pos().y();
-            axis = QwtAxisId(QwtAxis::yLeft, 0);
-            coords.coords.insert(axis.pos, getCoords(axis, pos, factor));
+            axis = QwtAxis::YLeft;
+            coords.coords.insert(axis, getCoords(axis, pos, factor));
             if (plot->type() != Plot::PlotType::Spectrogram) {
-                axis = QwtAxisId(QwtAxis::yRight, 0);
-                coords.coords.insert(axis.pos, getCoords(axis, pos, factor));
+                axis = QwtAxis::YRight;
+                coords.coords.insert(axis, getCoords(axis, pos, factor));
             }
         }
     }

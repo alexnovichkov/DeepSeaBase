@@ -119,7 +119,7 @@ LeftAxisOverlay::LeftAxisOverlay(Plot *parent) : AxisOverlay(parent)
 
 void LeftAxisOverlay::setGeom()
 {
-    const auto &scaleMap = plot()->canvasMap(QwtAxisId(QwtAxis::xBottom));
+    const auto &scaleMap = plot()->canvasMap(QwtAxis::XBottom);
     setInterval(scaleMap.s1()-scaleMap.sDist()/20, scaleMap.s1()+scaleMap.sDist()/20);
 }
 
@@ -129,6 +129,6 @@ RightAxisOverlay::RightAxisOverlay(Plot *parent) : AxisOverlay(parent)
 
 void RightAxisOverlay::setGeom()
 {
-    const auto &scaleMap = plot()->canvasMap(QwtAxisId(QwtAxis::xBottom));
+    const auto &scaleMap = plot()->canvasMap(QwtAxis::XBottom);
     setInterval(scaleMap.s2()-scaleMap.sDist()/20, scaleMap.s2()+scaleMap.sDist()/20);
 }

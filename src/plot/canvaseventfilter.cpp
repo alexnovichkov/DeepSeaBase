@@ -21,11 +21,9 @@ CanvasEventFilter::CanvasEventFilter(Plot *parent) : QObject(parent), plot(paren
     plot->setFocusPolicy(Qt::StrongFocus);
     plot->canvas()->installEventFilter(this);
 
-    for (int ax = 0; ax < QwtAxis::PosCount; ax++) {
-        for (int j = 0; j < plot->axesCount(ax); ++j) {
-            plot->axisWidget(QwtAxisId(ax,j))->installEventFilter(this);
-            plot->axisWidget(QwtAxisId(ax,j))->setFocusPolicy(Qt::StrongFocus);
-        }
+    for (int ax = 0; ax < QwtAxis::AxisPositions; ax++) {
+        plot->axisWidget(ax)->installEventFilter(this);
+        plot->axisWidget(ax)->setFocusPolicy(Qt::StrongFocus);
     }
 }
 
@@ -46,22 +44,20 @@ bool CanvasEventFilter::eventFilter(QObject *target, QEvent *event)
                 procKeyboardEvent(event);
                 break;
             case QEvent::Wheel:
-                procWheelEvent(QwtAxisId(-1,0), event);
+                procWheelEvent(-1, event);
                 break;
             default: break;
         }
     }
     else {
-        QwtAxisId axis(-1,0);
-        for (int a = 0; a < QwtAxis::PosCount; a++) {
-            for (int j = 0; j < plot->axesCount(a); ++j) {
-                if (target == plot->axisWidget(QwtAxisId(a,j))) {
-                    axis = QwtAxisId(a,j);
-                    break;
-                }
+        QwtAxisId axis(-1);
+        for (int a = 0; a < QwtAxis::AxisPositions; a++) {
+            if (target == plot->axisWidget(a)) {
+                axis = a;
+                break;
             }
         }
-        if (axis.id != -1) {
+        if (axis != -1) {
             switch (event->type()) {
                 case QEvent::Wheel:
                     procWheelEvent(axis, event);
@@ -167,7 +163,7 @@ void CanvasEventFilter::procAxisEvent(QwtAxisId axis, QEvent *event)
                 actionType = ActionType::None;
             }
             else if (mEvent->button()==Qt::LeftButton) {
-                if (axis.isXAxis())
+                if (QwtAxis::isXAxis(axis))
                     axisZoom->startHorizontalAxisZoom(mEvent, axis);
                 else
                     axisZoom->startVerticalAxisZoom(mEvent, axis);
@@ -191,11 +187,11 @@ void CanvasEventFilter::procAxisEvent(QwtAxisId axis, QEvent *event)
                 AxisBoundsDialog dialog(plot->canvasMap(axis).s1(), plot->canvasMap(axis).s2(), axis);
                 if (dialog.exec()) {
                     ZoomStack::zoomCoordinates coords;
-                    if (axis == QwtAxis::xBottom || axis == QwtPlot::xTop)
-                        coords.coords.insert(QwtAxis::xBottom, {dialog.leftBorder(), dialog.rightBorder()});
-                    else if (zoomStack->verticalScaleBounds->axis == axis.pos ||
-                             zoomStack->verticalScaleBoundsSlave->axis == axis.pos)
-                        coords.coords.insert(axis.pos, {dialog.leftBorder(), dialog.rightBorder()});
+                    if (axis == QwtAxis::XBottom || axis == QwtAxis::XTop)
+                        coords.coords.insert(QwtAxis::XBottom, {dialog.leftBorder(), dialog.rightBorder()});
+                    else if (zoomStack->verticalScaleBounds->axis == axis ||
+                             zoomStack->verticalScaleBoundsSlave->axis == axis)
+                        coords.coords.insert(axis, {dialog.leftBorder(), dialog.rightBorder()});
                     zoomStack->addZoom(coords, true);
 
 //                    if (dialog.autoscale()) {

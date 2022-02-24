@@ -155,8 +155,8 @@ void Picker::endPick(QMouseEvent *e)
                 emit axisClicked({plot->canvasMap(d_selectedCursors.first()->xAxis()).invTransform(endPos.x()),
                                   plot->canvasMap(d_selectedCursors.first()->yAxis()).invTransform(endPos.y())},
                                  e->modifiers() & Qt::ControlModifier);
-            else emit axisClicked({plot->canvasMap(QwtAxis::xBottom).invTransform(endPos.x()),
-                                   plot->canvasMap(QwtAxis::yLeft).invTransform(endPos.y())},
+            else emit axisClicked({plot->canvasMap(QwtAxis::XBottom).invTransform(endPos.x()),
+                                   plot->canvasMap(QwtAxis::YLeft).invTransform(endPos.y())},
                                   e->modifiers() & Qt::ControlModifier);
 
         }

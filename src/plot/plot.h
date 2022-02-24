@@ -9,6 +9,7 @@
 class QwtLegend;
 class QwtPlotGrid;
 class QwtPlotCanvas;
+class QwtPlotOpenGLCanvas;
 class Curve;
 class Channel;
 class FileDescriptor;
@@ -78,9 +79,9 @@ public:
 
     virtual QAction *playAct() {return nullptr;}
 
-    QwtAxisId xBottomAxis{QwtAxis::xBottom,0};
-    QwtAxisId yLeftAxis{QwtAxis::yLeft,0};
-    QwtAxisId yRightAxis{QwtAxis::yRight,0};
+    QwtAxisId xBottomAxis{QwtAxis::XBottom};
+    QwtAxisId yLeftAxis{QwtAxis::YLeft};
+    QwtAxisId yRightAxis{QwtAxis::YRight};
 
     bool sergeiMode = false;
 
