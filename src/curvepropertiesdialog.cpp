@@ -95,7 +95,7 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
     axisComboBox->setEditable(false);
     axisComboBox->addItems(QStringList()<<"Левая"
                            <<"Правая");
-    axisComboBox->setCurrentIndex(curve->yAxis().pos);
+    axisComboBox->setCurrentIndex(curve->yAxis());
     connect(axisComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             [=](int axis) {
         plot->moveCurve(curve, axis);

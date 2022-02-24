@@ -28,7 +28,7 @@ AxisBoundsDialog::AxisBoundsDialog(double leftBorder, double rightBorder, QwtAxi
     });
 
     QString text = "Подогнать масштаб по вертикальным осям";
-    if (axis.isYAxis())
+    if (QwtAxis::isYAxis(axis))
         text = "Подогнать масштаб по горизонтальной оси";
     QCheckBox *scaleAxis = new QCheckBox(text, this);
     scaleAxis->setChecked(false);

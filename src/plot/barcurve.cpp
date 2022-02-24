@@ -138,6 +138,7 @@ HistogramData::HistogramData(DataHolder *data) : data(data)
 
 QRectF HistogramData::boundingRect() const
 {DD;
+    QRectF d_boundingRect;
     if ( d_boundingRect.width() < 0 ) {
         if (data->xValuesFormat() == DataHolder::XValuesUniform) {
             d_boundingRect.setLeft( data->xMin() - data->xStep()/2.0 );

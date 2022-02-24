@@ -60,7 +60,7 @@ ZoomStack::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             //if (xl<0.0) xl=0.0;
             currentLeftBorder = xl;
             // устанавливаем ее для горизонтальной шкалы
-            coords.coords.insert(axis.pos, {xl, currentRightBorder});
+            coords.coords.insert(axis, {xl, currentRightBorder});
             break;
         }
             // режим изменения правой границы
@@ -76,7 +76,7 @@ ZoomStack::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             double xr = currentLeftBorder + wx;
             // устанавливаем ее для горизонтальной шкалы
             currentRightBorder = xr;
-            coords.coords.insert(axis.pos, {currentLeftBorder,xr});
+            coords.coords.insert(axis, {currentLeftBorder,xr});
             break;
         }
             // режим изменения нижней границы
@@ -92,7 +92,7 @@ ZoomStack::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             double yb = currentTopBorder - hy;
 
             currentBottomBorder = yb;
-            coords.coords.insert(axis.pos, {yb,currentTopBorder});
+            coords.coords.insert(axis, {yb,currentTopBorder});
             break;
         }
             // режим изменения верхней границы
@@ -108,7 +108,7 @@ ZoomStack::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
             double yt = currentBottomBorder + hy;
             // устанавливаем ее для вертикальной шкалы
             currentTopBorder = yt;
-            coords.coords.insert(axis.pos, {currentBottomBorder,yt});
+            coords.coords.insert(axis, {currentBottomBorder,yt});
             break;
         }
         default:
@@ -223,7 +223,7 @@ ZoomStack::zoomCoordinates AxisZoom::proceedAxisZoom(QMouseEvent *mEvent, QwtAxi
 
     QwtScaleMap sm = plot->canvasMap(axis);
 
-    if (axis.isXAxis()) {
+    if (QwtAxis::isXAxis(axis)) {
         if (mEvent->pos().x() - sm.p1() >= sm.pDist()/2)
             emit hover(axis, 2);
         else
@@ -251,9 +251,9 @@ ZoomStack::zoomCoordinates AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId 
                 double xVal = plot->canvasMap(axis).invTransform(mEvent->pos().x());
                 emit axisClicked({xVal, qQNaN()}, mEvent->modifiers() & Qt::ControlModifier);
             }
-            else if (axis.isXAxis()) {
+            else if (QwtAxis::isXAxis(axis)) {
                 // запоминаем совершенное перемещение
-                coords.coords.insert(axis.pos, {currentLeftBorder, currentRightBorder});
+                coords.coords.insert(axis, {currentLeftBorder, currentRightBorder});
             }
         }
         else if (ct == ConvType::ctBottom ||ct == ConvType::ctTop) {
@@ -262,9 +262,9 @@ ZoomStack::zoomCoordinates AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId 
                 double yVal = plot->canvasMap(axis).invTransform(mEvent->pos().y());
                 emit axisClicked({qQNaN(),yVal}, mEvent->modifiers() & Qt::ControlModifier);
             }
-            else if (axis.isYAxis()) {
+            else if (QwtAxis::isYAxis(axis)) {
                 // запоминаем совершенное перемещение
-                coords.coords.insert(axis.pos, {currentBottomBorder, currentTopBorder});
+                coords.coords.insert(axis, {currentBottomBorder, currentTopBorder});
             }
         }
         ct = ConvType::ctNone;

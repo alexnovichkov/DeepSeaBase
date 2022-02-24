@@ -24,30 +24,43 @@ class ClearableSpinBox: public QAbstractSpinBox
 {
     Q_OBJECT
 public:
+    enum Axis {
+        XAxis,
+        YAxis
+    };
     explicit ClearableSpinBox(QWidget *parent);
-    void moveLeft();
-    void moveRight();
+    void setAxis(Axis axis);
+    void moveOneStep(Enums::Direction direction);
+    void setXStep(double step);
+    void setYStep(double step);
     void setStep(double step);
     void setXValues(const QVector<double> &values);
-    void moveTo(double xValue);
-    void moveTo(const QPair<double, double> &position);
+    void setYValues(const QVector<double> &values);
+    void moveTo(const QPointF &position);
+    void moveBy(int xSteps, int ySteps);
     double getXValue() const {return xVal;}
     double getYValue() const {return yVal;}
-    void setYValue(double yValue) {yVal = yValue;}
-    double getStep() const {return step;}
+    double getXStep() const {return xStep;}
+    double getYStep() const {return yStep;}
     void setPrefix(const QString &prefix);
-    void setRange(double min, double max);
+    void setXRange(double min, double max);
+    void setYRange(double min, double max);
 signals:
     void valueChanged(QPointF value);
 private:
     void updateText(double val);
     double yVal = 0.0;
     double xVal = 0.0;
-    double step = 0.0;
-    int current = 0;
+    double xStep = 0.0;
+    double yStep = 0.0;
+    int xCurrent = 0;
+    int yCurrent = 0;
     QVector<double> xValues;
+    QVector<double> yValues;
     QString prefix;
-    double min = 0.0, max = 0.0;
+    double xMin = 0.0, xMax = 0.0;
+    double yMin = 0.0, yMax = 0.0;
+    Axis axis = XAxis;
 
     // QAbstractSpinBox interface
 public:
@@ -61,19 +74,6 @@ public:
     virtual QSize sizeHint() const override;
     virtual QSize minimumSizeHint() const override;
 };
-
-//class SpinBox : public QDoubleSpinBox
-//{
-//public:
-//    SpinBox(QWidget *parent=0);
-//    void moveTo(double val);
-//    void setStep(double step);
-//    void setXValues(const QVector<double> &values);
-//    void moveLeft();
-//    void moveRight();
-//private:
-//    QVector<double> xValues;
-//};
 
 class TrackingPanel: public QWidget
 {

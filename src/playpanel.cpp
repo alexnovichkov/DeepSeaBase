@@ -28,7 +28,7 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
     cursor = new TrackingCursor(Qt::green, TrackingCursor::Vertical);
     cursor->showYValues = true;
     cursor->attach(plot);
-    cursor->setAxes(QwtAxis::xBottom, QwtAxis::yLeft);
+    cursor->setAxes(QwtAxis::XBottom, QwtAxis::YLeft);
     cursor->setVisible(false);
 
     controls = new PlayerControls(this);

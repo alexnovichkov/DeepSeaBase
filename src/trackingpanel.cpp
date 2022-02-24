@@ -38,12 +38,12 @@ int stepsToClosest(double xBegin, double step, double value)
     int n = round((value - xBegin)/step);
     return n;
 }
-double closest(double xBegin, double step, double value)
+double closest(double begin, double step, double value)
 {
     if (qFuzzyIsNull(step)) return 0;
 
-    int n = round((value - xBegin)/step);
-    return xBegin + n*step;
+    int n = round((value - begin)/step);
+    return begin + n*step;
 }
 
 int stepsToClosest(Channel *c, double val)
@@ -58,16 +58,27 @@ int stepsToClosest(Channel *c, double val)
     return closest(xValues.cbegin(), xValues.cend(), val) - xValues.cbegin();
 }
 
-double closest(Channel *c, double val)
+double closest(Channel *c, double val, bool xAxis = true)
 {
     if (!c) return 0;
 
-    if (c->data()->xValuesFormat() == DataHolder::XValuesUniform)
-        return closest(c->data()->xMin(), c->data()->xStep(), val);
+    if (xAxis) {
+        if (c->data()->xValuesFormat() == DataHolder::XValuesUniform)
+            return closest(c->data()->xMin(), c->data()->xStep(), val);
 
-    //необходимо скопировать значения, чтобы алгоритм std::min_element не падал
-    auto xValues = c->data()->xValues();
-    return *closest(xValues.cbegin(), xValues.cend(), val);
+        //необходимо скопировать значения, чтобы алгоритм std::min_element не падал
+        auto xValues = c->data()->xValues();
+        return *closest(xValues.cbegin(), xValues.cend(), val);
+    }
+    else {
+        if (c->data()->zValuesFormat() == DataHolder::XValuesUniform)
+            return closest(c->data()->zMin(), c->data()->zStep(), val);
+
+        //необходимо скопировать значения, чтобы алгоритм std::min_element не падал
+        auto zValues = c->data()->zValues();
+        return *closest(zValues.cbegin(), zValues.cend(), val);
+    }
+    return 0.0;
 }
 
 TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
@@ -109,7 +120,7 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
 
     for (int i=0; i<4; ++i) {
         auto *c = new ClearableSpinBox(this);
-        c->moveTo(0.0);
+        c->moveTo({0.0, 0.0});
         connect(c, &ClearableSpinBox::valueChanged, [=](QPointF val){
             updateTrackingCursor(val, i);
             cursorBoxes[i]->setChecked(true);
@@ -278,6 +289,18 @@ void TrackingPanel::setXY(QPointF value, int index)
             xVal = closest(c, xVal);
         }
     }
+    if (!qIsNaN(yVal)) {
+        auto list = plot->model()->plottedChannels();
+        if (!list.isEmpty()) {
+            //ищем минимальный шаг по оси Y/Z
+            Channel *c = list.first();
+            for (int i=1; i < list.size(); ++i) {
+                if (list[i]->data()->zStep() < c->data()->zStep())
+                    c = list[i];
+            }
+            yVal = closest(c, yVal, false);
+        }
+    }
 
     spins[index]->moveTo({xVal, yVal});
 }
@@ -346,7 +369,7 @@ void TrackingPanel::update()
         for (auto spin: qAsConst(spins)) {
             if (data->xValuesFormat()==DataHolder::XValuesNonUniform)
                 spin->setXValues(data->xValues());
-            spin->setRange(xmin,xmax);
+            spin->setXRange(xmin,xmax);
         }
     }
 
@@ -468,16 +491,7 @@ void TrackingPanel::moveCursor(Enums::Direction direction)
 {DD;
     for (int i=0; i<cursors.size(); ++i) {
         if (cursors[i]->current) {
-            switch (direction) {
-                case Enums::Right:
-                    spins[i]->moveRight();
-                    break;
-                case Enums::Left:
-                    spins[i]->moveLeft();
-                    break;
-                default:
-                    break;
-            }
+            spins[i]->moveOneStep(direction);
         }
     }
 }
@@ -536,77 +550,161 @@ ClearableSpinBox::ClearableSpinBox(QWidget *parent) : QAbstractSpinBox(parent)
     connect(this, &QAbstractSpinBox::editingFinished, [=](){
         bool ok;
         double val = lineEdit()->text().toDouble(&ok);
-        if (ok) moveTo(val);
+        if (ok) {
+            if (axis == XAxis)
+                moveTo({val, yVal});
+            else
+                moveTo({xVal, val});
+        }
     });
 }
 
-void ClearableSpinBox::moveLeft()
-{DD;
-    stepBy(-1);
+void ClearableSpinBox::setAxis(ClearableSpinBox::Axis axis)
+{
+    this->axis = axis;
+    updateText(axis == XAxis?xVal:yVal);
 }
 
-void ClearableSpinBox::moveRight()
+void ClearableSpinBox::moveOneStep(Enums::Direction direction)
+{
+    switch (direction) {
+        case Enums::Up: moveBy(0,1); break;
+        case Enums::Down: moveBy(0,-1); break;
+        case Enums::Left: moveBy(-1,0); break;
+        case Enums::Right: moveBy(1,0); break;
+    }
+}
+
+void ClearableSpinBox::setXStep(double step)
 {DD;
-    stepBy(1);
+    this->xStep = step;
+    if (!qFuzzyIsNull(step)) xValues.clear();
+}
+
+void ClearableSpinBox::setYStep(double step)
+{DD;
+    this->yStep = step;
+    if (!qFuzzyIsNull(step)) yValues.clear();
 }
 
 void ClearableSpinBox::setStep(double step)
-{DD;
-    this->step = step;
-    if (!qFuzzyIsNull(step)) xValues.clear();
+{
+    if (axis==XAxis) setXStep(step);
+    else setYStep(step);
 }
 
 void ClearableSpinBox::setXValues(const QVector<double> &values)
 {DD;
     xValues = values;
-    step = 0.0;
+    xStep = 0.0;
     if (!xValues.isEmpty())
-        setRange(xValues.first(), xValues.last());
+        setXRange(xValues.first(), xValues.last());
 }
 
-void ClearableSpinBox::moveTo(double xValue)
-{DD;
-    if (qIsNaN(xValue)) {
-        //xValue не изменилась, перемещаем только yValue
-        emit valueChanged({xVal, yVal});
-        return;
-    }
-
-    if (qFuzzyIsNull(step) && !xValues.isEmpty()) {
-        //moving to the nearest xValue from xValues
-        auto currentIndex = closest(xValues.cbegin(), xValues.cend(), xVal);
-        auto newIndex = closest(xValues.cbegin(), xValues.cend(), xValue);
-        if (auto distance = std::distance(currentIndex, newIndex); distance != 0) {
-            stepBy(distance);
-        }
-    }
-    else {
-        if (!qFuzzyCompare(xVal, xValue)) {
-            xVal = xValue;
-            updateText(xVal);
-            emit valueChanged({xVal, yVal});
-        }
-    }
+void ClearableSpinBox::setYValues(const QVector<double> &values)
+{
+    yValues = values;
+    yStep = 0.0;
+    if (!xValues.isEmpty())
+        setYRange(yValues.first(), yValues.last());
 }
 
-void ClearableSpinBox::moveTo(const QPair<double, double> &position)
+void ClearableSpinBox::moveTo(const QPointF &position)
 {DD;
-    //если координата Y действительная, запоминаем ее
-    if (!qIsNaN(position.second))
-        yVal = position.second;
-    moveTo(position.first);
+    int xDistance = 0;
+    int yDistance = 0;
+
+    if (!qIsNaN(position.x())) {
+        if (qFuzzyIsNull(xStep) && !xValues.isEmpty()) {
+            //moving to the nearest xValue from xValues
+            auto currentIndex = closest(xValues.cbegin(), xValues.cend(), xVal);
+            auto newIndex = closest(xValues.cbegin(), xValues.cend(), position.x());
+            xDistance = std::distance(currentIndex, newIndex);
+        }
+        else {
+            if (!qFuzzyCompare(xVal, position.x())) {
+                xVal = position.x();
+            }
+        }
+    }
+    if (!qIsNaN(position.y())) {
+        if (qFuzzyIsNull(yStep) && !yValues.isEmpty()) {
+            //moving to the nearest yValue from yValues
+            auto currentIndex = closest(yValues.cbegin(), yValues.cend(), yVal);
+            auto newIndex = closest(yValues.cbegin(), yValues.cend(), position.y());
+            yDistance = std::distance(currentIndex, newIndex);
+        }
+        else {
+            if (!qFuzzyCompare(yVal, position.y())) {
+                yVal = position.y();
+            }
+        }
+    }
+
+    moveBy(xDistance, yDistance);
+    updateText(axis==XAxis?xVal:yVal);
+    emit valueChanged({xVal, yVal});
+}
+
+void ClearableSpinBox::moveBy(int xSteps, int ySteps)
+{
+    if (xSteps==0 && ySteps==0) return;
+
+    if (xSteps != 0) {
+        if (qFuzzyIsNull(xStep) && !xValues.isEmpty()) {
+            int newcurrent = std::clamp(xSteps + xCurrent, 0, xValues.size()-1);
+            if (xCurrent != newcurrent) {
+                xCurrent = newcurrent;
+                xVal = xValues.at(xCurrent);
+            }
+        }
+        else {
+            if (xVal + xSteps*xStep >= xMin && xVal + xSteps*xStep <= xMax) {
+                xVal += xSteps*xStep;
+            }
+        }
+    }
+    if (ySteps != 0) {
+        if (qFuzzyIsNull(yStep) && !yValues.isEmpty()) {
+            int newcurrent = std::clamp(ySteps + yCurrent, 0, yValues.size()-1);
+            if (yCurrent != newcurrent) {
+                yCurrent = newcurrent;
+                yVal = yValues.at(yCurrent);
+            }
+        }
+        else {
+            if (yVal + ySteps*yStep >= yMin && yVal + ySteps*yStep <= yMax) {
+                yVal += ySteps*yStep;
+            }
+        }
+    }
+
+    updateText(axis==XAxis?xVal:yVal);
+    emit valueChanged({xVal, yVal});
+}
+
+void ClearableSpinBox::stepBy(int steps)
+{DD;
+    if (axis==XAxis) moveBy(steps, 0);
+    else moveBy(0, steps);
 }
 
 void ClearableSpinBox::setPrefix(const QString &prefix)
 {DD;
     this->prefix = prefix;
-    updateText(xVal);
+    updateText(axis==XAxis?xVal:yVal);
 }
 
-void ClearableSpinBox::setRange(double min, double max)
+void ClearableSpinBox::setXRange(double min, double max)
 {DD;
-    this->min = min;
-    this->max = max;
+    this->xMin = min;
+    this->xMax = max;
+}
+
+void ClearableSpinBox::setYRange(double min, double max)
+{DD;
+    this->yMin = min;
+    this->yMax = max;
 }
 
 void ClearableSpinBox::updateText(double val)
@@ -626,38 +724,27 @@ void ClearableSpinBox::updateText(double val)
 }
 
 
-void ClearableSpinBox::stepBy(int steps)
-{DD;
-    if (steps == 0) return;
 
-    if (qFuzzyIsNull(step) && !xValues.isEmpty()) {
-        int newcurrent = std::clamp(steps + current, 0, xValues.size()-1);
-        if (current != newcurrent) {
-            current = newcurrent;
-            xVal = xValues.at(current);
-            updateText(xVal);
-            emit valueChanged({xVal, yVal});
-        }
-    }
-    else {
-        if (xVal + steps*step >= min && xVal + steps*step <= max) {
-            xVal += steps*step;
-            updateText(xVal);
-            emit valueChanged({xVal, yVal});
-        }
-
-    }
-}
 
 QAbstractSpinBox::StepEnabled ClearableSpinBox::stepEnabled() const
 {DD;
-    if (qFuzzyIsNull(step) && !xValues.isEmpty()) {
-        if (closest(xValues.cbegin(), xValues.cend(), xVal)==xValues.cbegin()) return StepUpEnabled;
-        if (closest(xValues.cbegin(), xValues.cend(), xVal)==xValues.cend()-1) return StepDownEnabled;
-    }
     QAbstractSpinBox::StepEnabled res = 0;
-    if (xVal > min) res |= StepDownEnabled;
-    if (xVal < max) res |= StepUpEnabled;
+    if (axis==XAxis) {
+        if (qFuzzyIsNull(xStep) && !xValues.isEmpty()) {
+            if (closest(xValues.cbegin(), xValues.cend(), xVal)==xValues.cbegin()) return StepUpEnabled;
+            if (closest(xValues.cbegin(), xValues.cend(), xVal)==xValues.cend()-1) return StepDownEnabled;
+        }
+        if (xVal > xMin) res |= StepDownEnabled;
+        if (xVal < xMax) res |= StepUpEnabled;
+    }
+    else {
+        if (qFuzzyIsNull(yStep) && !yValues.isEmpty()) {
+            if (closest(yValues.cbegin(), yValues.cend(), yVal)==yValues.cbegin()) return StepUpEnabled;
+            if (closest(yValues.cbegin(), yValues.cend(), yVal)==yValues.cend()-1) return StepDownEnabled;
+        }
+        if (yVal > yMin) res |= StepDownEnabled;
+        if (yVal < yMax) res |= StepUpEnabled;
+    }
 
     return res;
 }
