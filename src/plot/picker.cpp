@@ -146,6 +146,7 @@ void Picker::endPick(QMouseEvent *e)
         //сбрасываем подсветку кривых
         highlightPoint(false);
         plot->model()->resetHighlighting();
+        plot->updateTrackingPanel(); //need this to update xStep for spins
 
 
         //одинарный клик мышью
@@ -164,6 +165,7 @@ void Picker::endPick(QMouseEvent *e)
         if (d_selectedCurve && d_selectedPoint > -1) {
             d_selectedCurve->highlight();
             highlightPoint(true);
+            plot->updateTrackingPanel(); //need this to update xStep for spins
         }
 
         if (d_selectedLabel) {

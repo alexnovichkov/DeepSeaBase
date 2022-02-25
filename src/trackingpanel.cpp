@@ -11,6 +11,7 @@
 #include "logging.h"
 #include "plot/trackingcursor.h"
 #include "plot/plotmodel.h"
+#include "plot/clearablespinbox.h"
 
 QString roundedBy(double value)
 {
@@ -19,15 +20,6 @@ QString roundedBy(double value)
     if (s == "0.0" || s == "-0.0") return QString::number(value, 'g', 1);
 
     return s;
-}
-
-template<typename InputIterator, typename ValueType>
-InputIterator closest(InputIterator first, InputIterator last, ValueType value)
-{
-    return std::min_element(first, last, [&](ValueType x, ValueType y)
-    {
-        return std::abs(x - value) < std::abs(y - value);
-    });
 }
 
 //возвращает ближайшее точное значение для заданного приближенного value
@@ -114,7 +106,7 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
     for (int i=0; i<4; ++i) {
         QCheckBox *c = new QCheckBox(this);
         c->setProperty("trackingCursor", i+1);
-        connect(c, SIGNAL(stateChanged(int)), SLOT(update()));
+        connect(c, SIGNAL(stateChanged(int)), SLOT(updateState()));
         cursorBoxes << c;
     }
 
@@ -177,7 +169,7 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
 
     harmonics = new QCheckBox("Включить показ гармоник", this);
     connect(harmonics, &QCheckBox::stateChanged, [=](/*int state*/){
-        update();
+        updateState();
     });
 
     QGridLayout *lay = new QGridLayout;
@@ -274,31 +266,40 @@ void TrackingPanel::updateState(const QList<TrackingPanel::TrackInfo> &curves)
 void TrackingPanel::setXY(QPointF value, int index)
 {DD;
     // здесь value - произвольное число, соответствующее какому-то положению на осях X и Y
-    double xVal = value.x();
-    double yVal = value.y();
+    double xVal = value.x(); //координата по оси X
+    double yVal = value.y(); //координата по оси Y или Z, если это сонограмма
+    const bool sonogram = plot->type()==Plot::PlotType::Spectrogram;
 
     if (!qIsNaN(xVal)) {
         auto list = plot->model()->plottedChannels();
-        if (!list.isEmpty()) {
-            //ищем минимальный шаг по оси X
-            Channel *c = list.first();
-            for (int i=1; i < list.size(); ++i) {
-                if (list[i]->data()->xStep() < c->data()->xStep())
-                    c = list[i];
+        //ищем минимальный шаг по оси X
+        Channel *first = nullptr;
+        for (auto c: list) if (c->data()->xValuesFormat()==DataHolder::XValuesUniform) {
+            first = c;
+            break;
+        }
+        if (first) {
+            for (auto c: list) {
+                if (c->data()->xStep() < first->data()->xStep() && c->data()->xValuesFormat()==DataHolder::XValuesUniform)
+                    first = c;
             }
-            xVal = closest(c, xVal);
+            xVal = closest(first, xVal);
         }
     }
-    if (!qIsNaN(yVal)) {
+    if (!qIsNaN(yVal) && sonogram) {
         auto list = plot->model()->plottedChannels();
-        if (!list.isEmpty()) {
-            //ищем минимальный шаг по оси Y/Z
-            Channel *c = list.first();
-            for (int i=1; i < list.size(); ++i) {
-                if (list[i]->data()->zStep() < c->data()->zStep())
-                    c = list[i];
+        //ищем минимальный шаг по оси Y/Z
+        Channel *first = nullptr;
+        for (auto c: list) if (c->data()->zValuesFormat()==DataHolder::XValuesUniform) {
+            first = c;
+            break;
+        }
+        if (first) {
+            for (auto c: list) {
+                if (c->data()->zStep() < first->data()->zStep() && c->data()->zValuesFormat()==DataHolder::XValuesUniform)
+                    first = c;
             }
-            yVal = closest(c, yVal, false);
+            yVal = closest(first, yVal, false);
         }
     }
 
@@ -322,7 +323,7 @@ void TrackingPanel::switchVisibility()
     }
     else {
         setVisible(true);
-        update();
+        updateState();
     }
 }
 
@@ -345,38 +346,65 @@ void TrackingPanel::updateTrackingCursor(QPointF val, int index)
     for (int i=0; i<_harmonics.size(); ++i)
         _harmonics[i]->setValue(val.x()*(i+2), 0.0);
 
-    update();
+    updateState();
 }
 
 void TrackingPanel::update()
 {DD;
-    auto channels = plot->model()->plottedChannels();
-    if (!channels.isEmpty()) {
-        //ищем минимальный шаг по оси X
-        auto data = channels.first()->data();
-        double xmin = data->xMin();
-        double xmax = data->xMax();
-        for (int i=1; i < channels.size(); ++i) {
-            if (channels[i]->data()->xStep() < data->xStep())
-                data = channels[i]->data();
-            if (channels[i]->data()->xMin() < xmin)
-                xmin = channels[i]->data()->xMin();
-            if (channels[i]->data()->xMax() > xmax)
-                xmax = channels[i]->data()->xMax();
-        }
-        setStep(data->xStep());
+    auto curves = plot->model()->curves();
+    if (plot->model()->curves().count()==0) return;
+    //ищем минимальный шаг по оси X
+    auto first = plot->model()->firstOf([](Curve *c){return c->channel->data()->xValuesFormat()==DataHolder::XValuesUniform;});
+    if (!first) first = curves.first();
 
-        for (auto spin: qAsConst(spins)) {
-            if (data->xValuesFormat()==DataHolder::XValuesNonUniform)
-                spin->setXValues(data->xValues());
-            spin->setXRange(xmin,xmax);
+    auto data = first->channel->data();
+    //ищем минимальный шаг по оси X
+    for (auto c: curves) {
+        if (c->highlighted) {
+            //используем шаг по X для выбранного графика, иначе
+            data = c->channel->data();
+            break;
         }
+        if (c->channel->data()->xStep() < data->xStep() &&
+            c->channel->data()->xValuesFormat()==DataHolder::XValuesUniform)
+            data = c->channel->data();
+    }
+    setStep(data->xStep());
+
+    //ищем максимальный диапазон
+    double xmin = data->xMin();
+    double xmax = data->xMax();
+    for (auto c: curves) {
+        if (c->channel->data()->xMin() < xmin)
+            xmin = c->channel->data()->xMin();
+        if (c->channel->data()->xMax() > xmax)
+            xmax = c->channel->data()->xMax();
     }
 
+    //устанавливаем параметры
+    for (auto spin: qAsConst(spins)) {
+        if (data->xValuesFormat()==DataHolder::XValuesNonUniform)
+            spin->setXValues(data->xValues());
+        spin->setXRange(xmin,xmax);
+    }
+
+    //дополнительно для спектрограмм
+    if (plot->type()==Plot::PlotType::Spectrogram) {
+        data = curves.first()->channel->data();
+        for (auto spin: qAsConst(spins)) {
+            if (data->zValuesFormat()==DataHolder::XValuesNonUniform)
+                spin->setYValues(data->zValues());
+            spin->setYStep(data->zStep());
+            spin->setYRange(data->zMin(),data->zMax());
+        }
+    }
+}
+
+void TrackingPanel::updateState()
+{DD;
     for (int i=0; i<4; ++i) {
         if (cursorBoxes[i]->checkState()==Qt::Checked && isVisible()) {
             cursors[i]->attach(plot);
-            //spins[i]->moveTo(spins[i]->getXValue());
         }
         else {
             cursors[i]->detach();
@@ -540,227 +568,3 @@ ZoneSpan::ZoneSpan(const QColor &color)
     setBrush(color);
 }
 
-ClearableSpinBox::ClearableSpinBox(QWidget *parent) : QAbstractSpinBox(parent)
-{DD;
-    setKeyboardTracking(false);
-    setWrapping(false);
-    lineEdit()->setAlignment(Qt::AlignLeft);
-    updateText(xVal);
-
-    connect(this, &QAbstractSpinBox::editingFinished, [=](){
-        bool ok;
-        double val = lineEdit()->text().toDouble(&ok);
-        if (ok) {
-            if (axis == XAxis)
-                moveTo({val, yVal});
-            else
-                moveTo({xVal, val});
-        }
-    });
-}
-
-void ClearableSpinBox::setAxis(ClearableSpinBox::Axis axis)
-{
-    this->axis = axis;
-    updateText(axis == XAxis?xVal:yVal);
-}
-
-void ClearableSpinBox::moveOneStep(Enums::Direction direction)
-{
-    switch (direction) {
-        case Enums::Up: moveBy(0,1); break;
-        case Enums::Down: moveBy(0,-1); break;
-        case Enums::Left: moveBy(-1,0); break;
-        case Enums::Right: moveBy(1,0); break;
-    }
-}
-
-void ClearableSpinBox::setXStep(double step)
-{DD;
-    this->xStep = step;
-    if (!qFuzzyIsNull(step)) xValues.clear();
-}
-
-void ClearableSpinBox::setYStep(double step)
-{DD;
-    this->yStep = step;
-    if (!qFuzzyIsNull(step)) yValues.clear();
-}
-
-void ClearableSpinBox::setStep(double step)
-{
-    if (axis==XAxis) setXStep(step);
-    else setYStep(step);
-}
-
-void ClearableSpinBox::setXValues(const QVector<double> &values)
-{DD;
-    xValues = values;
-    xStep = 0.0;
-    if (!xValues.isEmpty())
-        setXRange(xValues.first(), xValues.last());
-}
-
-void ClearableSpinBox::setYValues(const QVector<double> &values)
-{
-    yValues = values;
-    yStep = 0.0;
-    if (!xValues.isEmpty())
-        setYRange(yValues.first(), yValues.last());
-}
-
-void ClearableSpinBox::moveTo(const QPointF &position)
-{DD;
-    int xDistance = 0;
-    int yDistance = 0;
-
-    if (!qIsNaN(position.x())) {
-        if (qFuzzyIsNull(xStep) && !xValues.isEmpty()) {
-            //moving to the nearest xValue from xValues
-            auto currentIndex = closest(xValues.cbegin(), xValues.cend(), xVal);
-            auto newIndex = closest(xValues.cbegin(), xValues.cend(), position.x());
-            xDistance = std::distance(currentIndex, newIndex);
-        }
-        else {
-            if (!qFuzzyCompare(xVal, position.x())) {
-                xVal = position.x();
-            }
-        }
-    }
-    if (!qIsNaN(position.y())) {
-        if (qFuzzyIsNull(yStep) && !yValues.isEmpty()) {
-            //moving to the nearest yValue from yValues
-            auto currentIndex = closest(yValues.cbegin(), yValues.cend(), yVal);
-            auto newIndex = closest(yValues.cbegin(), yValues.cend(), position.y());
-            yDistance = std::distance(currentIndex, newIndex);
-        }
-        else {
-            if (!qFuzzyCompare(yVal, position.y())) {
-                yVal = position.y();
-            }
-        }
-    }
-
-    moveBy(xDistance, yDistance);
-    updateText(axis==XAxis?xVal:yVal);
-    emit valueChanged({xVal, yVal});
-}
-
-void ClearableSpinBox::moveBy(int xSteps, int ySteps)
-{
-    if (xSteps==0 && ySteps==0) return;
-
-    if (xSteps != 0) {
-        if (qFuzzyIsNull(xStep) && !xValues.isEmpty()) {
-            int newcurrent = std::clamp(xSteps + xCurrent, 0, xValues.size()-1);
-            if (xCurrent != newcurrent) {
-                xCurrent = newcurrent;
-                xVal = xValues.at(xCurrent);
-            }
-        }
-        else {
-            if (xVal + xSteps*xStep >= xMin && xVal + xSteps*xStep <= xMax) {
-                xVal += xSteps*xStep;
-            }
-        }
-    }
-    if (ySteps != 0) {
-        if (qFuzzyIsNull(yStep) && !yValues.isEmpty()) {
-            int newcurrent = std::clamp(ySteps + yCurrent, 0, yValues.size()-1);
-            if (yCurrent != newcurrent) {
-                yCurrent = newcurrent;
-                yVal = yValues.at(yCurrent);
-            }
-        }
-        else {
-            if (yVal + ySteps*yStep >= yMin && yVal + ySteps*yStep <= yMax) {
-                yVal += ySteps*yStep;
-            }
-        }
-    }
-
-    updateText(axis==XAxis?xVal:yVal);
-    emit valueChanged({xVal, yVal});
-}
-
-void ClearableSpinBox::stepBy(int steps)
-{DD;
-    if (axis==XAxis) moveBy(steps, 0);
-    else moveBy(0, steps);
-}
-
-void ClearableSpinBox::setPrefix(const QString &prefix)
-{DD;
-    this->prefix = prefix;
-    updateText(axis==XAxis?xVal:yVal);
-}
-
-void ClearableSpinBox::setXRange(double min, double max)
-{DD;
-    this->xMin = min;
-    this->xMax = max;
-}
-
-void ClearableSpinBox::setYRange(double min, double max)
-{DD;
-    this->yMin = min;
-    this->yMax = max;
-}
-
-void ClearableSpinBox::updateText(double val)
-{DD;
-    double v = std::abs(val);
-    QString s;
-    if (qFuzzyIsNull(v)) s = "0";
-    else if (v < 0.001) s = QString::number(val,'e',4);
-    else if (v > 99999) s = QString::number(val,'e',4);
-    else if (v < 10) s = QString::number(val,'f', 6);
-    else if (v < 100) s = QString::number(val,'f', 5);
-    else if (v < 1000) s = QString::number(val,'f', 4);
-    else if (v < 10000) s = QString::number(val,'f', 3);
-    else if (v < 100000) s = QString::number(val,'f', 2);
-    else s = QString::number(val,'f',6);
-    lineEdit()->setText(prefix+s);
-}
-
-
-
-
-QAbstractSpinBox::StepEnabled ClearableSpinBox::stepEnabled() const
-{DD;
-    QAbstractSpinBox::StepEnabled res = 0;
-    if (axis==XAxis) {
-        if (qFuzzyIsNull(xStep) && !xValues.isEmpty()) {
-            if (closest(xValues.cbegin(), xValues.cend(), xVal)==xValues.cbegin()) return StepUpEnabled;
-            if (closest(xValues.cbegin(), xValues.cend(), xVal)==xValues.cend()-1) return StepDownEnabled;
-        }
-        if (xVal > xMin) res |= StepDownEnabled;
-        if (xVal < xMax) res |= StepUpEnabled;
-    }
-    else {
-        if (qFuzzyIsNull(yStep) && !yValues.isEmpty()) {
-            if (closest(yValues.cbegin(), yValues.cend(), yVal)==yValues.cbegin()) return StepUpEnabled;
-            if (closest(yValues.cbegin(), yValues.cend(), yVal)==yValues.cend()-1) return StepDownEnabled;
-        }
-        if (yVal > yMin) res |= StepDownEnabled;
-        if (yVal < yMax) res |= StepUpEnabled;
-    }
-
-    return res;
-}
-
-
-QSize ClearableSpinBox::sizeHint() const
-{DD;
-    auto s = QAbstractSpinBox::sizeHint();
-
-    s.setWidth(fontMetrics().horizontalAdvance(prefix+"+9,9999e+999"));
-    return s;
-}
-
-QSize ClearableSpinBox::minimumSizeHint() const
-{DD;
-    auto s = QAbstractSpinBox::minimumSizeHint();
-    s.setWidth(50);
-    return s;
-}

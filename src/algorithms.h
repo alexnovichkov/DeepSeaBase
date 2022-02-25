@@ -21,6 +21,15 @@ private:
     T &m_data;
 };
 
+template<typename InputIterator, typename ValueType>
+InputIterator closest(InputIterator first, InputIterator last, ValueType value)
+{
+    return std::min_element(first, last, [&](ValueType x, ValueType y)
+    {
+        return std::abs(x - value) < std::abs(y - value);
+    });
+}
+
 template<typename T>
 QVector<T> segment(const QVector<T> &values, int from, int to, int blockSize, int blocks)
 {

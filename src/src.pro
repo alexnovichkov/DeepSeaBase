@@ -69,6 +69,7 @@ SOURCES += main.cpp\
     methods/weighting.cpp \
     methods/windowingalgorithm.cpp \
     plot/canvaseventfilter.cpp \
+    plot/clearablespinbox.cpp \
     plot/filterpointmapper.cpp \
     plot/grid.cpp \
     plot/imagerenderdialog.cpp \
@@ -180,6 +181,7 @@ HEADERS  += mainwindow.h \
     methods/weighting.h \
     methods/windowingalgorithm.h \
     plot/canvaseventfilter.h \
+    plot/clearablespinbox.h \
     plot/filterpointmapper.h \
     plot/grid.h \
     plot/imagerenderdialog.h \

@@ -115,6 +115,8 @@ public:
 
     void cycleChannels(bool up);
 
+    void updateTrackingPanel();
+
     void deleteCurvesForDescriptor(FileDescriptor *descriptor);
     void deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot = true);
 

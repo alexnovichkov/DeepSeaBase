@@ -388,6 +388,11 @@ void Plot::cycleChannels(bool up)
     sergeiMode = false;
 }
 
+void Plot::updateTrackingPanel()
+{
+    if (trackingPanel) trackingPanel->update();
+}
+
 bool Plot::hasCurves() const
 {DD;
     return !m->isEmpty();

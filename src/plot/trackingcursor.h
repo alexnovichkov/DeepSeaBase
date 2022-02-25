@@ -29,6 +29,10 @@ public:
     QwtText yLabel;
     QwtText xLabel;
 
+    double xVal=0.0;
+    double yVal=0.0;
+    double zVal=0.0;
+
     // QwtPlotMarker interface
 protected:
     void drawLabel(QPainter *painter, const QRectF &canvasRect, const QPointF &pos) const;
