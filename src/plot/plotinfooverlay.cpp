@@ -14,7 +14,7 @@ PlotInfoOverlay::PlotInfoOverlay(QwtPlot *parent) : QwtPlotTextLabel(), parent{p
 
     QFont font;
     //font.setBold(true);
-    font.setPointSize(14);
+    font.setPointSize(12);
     title.setFont(font);
     title.setColor(QColor(150,150,150,150));
     title.setBackgroundBrush(QColor(255,255,255,150));

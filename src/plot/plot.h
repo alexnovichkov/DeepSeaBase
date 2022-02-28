@@ -84,6 +84,7 @@ public:
     QwtAxisId yRightAxis{QwtAxis::YRight};
 
     bool sergeiMode = false;
+    bool xScaleIsLogarithmic = false; //false = linear, true = logarithmic
 
     bool hasCurves() const;
     int curvesCount(int type=-1) const;
@@ -154,9 +155,6 @@ protected:
 
     AxisOverlay *leftOverlay = nullptr;
     AxisOverlay *rightOverlay = nullptr;
-
-
-    bool xScaleIsLogarithmic = false; //false = linear, true = logarithmic
 
     DragZoom *dragZoom = nullptr;
     WheelZoom *wheelZoom = nullptr;

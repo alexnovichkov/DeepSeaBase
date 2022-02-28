@@ -120,7 +120,10 @@ LeftAxisOverlay::LeftAxisOverlay(Plot *parent) : AxisOverlay(parent)
 void LeftAxisOverlay::setGeom()
 {
     const auto &scaleMap = plot()->canvasMap(QwtAxis::XBottom);
-    setInterval(scaleMap.s1()-scaleMap.sDist()/20, scaleMap.s1()+scaleMap.sDist()/20);
+    if (plot()->xScaleIsLogarithmic)
+        setInterval(scaleMap.s1()-scaleMap.sDist()/20, scaleMap.invTransform(scaleMap.p1()+scaleMap.pDist()/20));
+    else
+        setInterval(scaleMap.s1()-scaleMap.sDist()/20, scaleMap.s1()+scaleMap.sDist()/20);
 }
 
 RightAxisOverlay::RightAxisOverlay(Plot *parent) : AxisOverlay(parent)
@@ -130,5 +133,8 @@ RightAxisOverlay::RightAxisOverlay(Plot *parent) : AxisOverlay(parent)
 void RightAxisOverlay::setGeom()
 {
     const auto &scaleMap = plot()->canvasMap(QwtAxis::XBottom);
-    setInterval(scaleMap.s2()-scaleMap.sDist()/20, scaleMap.s2()+scaleMap.sDist()/20);
+    if (plot()->xScaleIsLogarithmic)
+        setInterval(scaleMap.invTransform(scaleMap.p2()-scaleMap.pDist()/20), scaleMap.s2()+scaleMap.sDist()/20);
+    else
+        setInterval(scaleMap.s2()-scaleMap.sDist()/20, scaleMap.s2()+scaleMap.sDist()/20);
 }
