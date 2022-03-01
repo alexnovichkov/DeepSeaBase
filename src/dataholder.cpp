@@ -154,8 +154,8 @@ void DataHolder::removeCorrection()
 
 bool DataHolder::makeCorrectionConstant()
 {DD
-    if (!m_correction) return true; // есть временная коррекция
-    if (!hasCorrection()) return true; // и эта коррекция не тривиальная
+    if (!hasCorrection()) return true; // есть временная коррекция
+    if (!correctionIsValid()) return true; // и эта коррекция не тривиальная
 
     if (int(m_PresentationWhenCorrecting) == int(m_yValuesFormat)) {
         // просто применяем поправку ко всем данным
@@ -313,6 +313,7 @@ bool DataHolder::makeCorrectionConstant()
 
     recalculateYValues();
     recalculateMinMax();
+    m_correction = false; //временная коррекция заменена постоянной
     return true;
 }
 
@@ -926,14 +927,14 @@ double correctedByType(double val, int type, double correction)
 }
 
 double DataHolder::corrected(double val) const
-{DD
+{DD;
     if (m_correction)
         return correctedByType(val, m_correctionType, m_correctionValue);
     return val;
 }
 
-bool DataHolder::hasCorrection() const
-{DD
+bool DataHolder::correctionIsValid() const
+{DD;
     if (m_correctionType == 0 && !qFuzzyIsNull(m_correctionValue) ) return true;
     if (m_correctionType == 1 && !qFuzzyIsNull(m_correctionValue - 1.0) ) return true;
     return false;

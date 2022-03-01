@@ -68,6 +68,7 @@ SOURCES += main.cpp\
     methods/resamplingalgorithm.cpp \
     methods/weighting.cpp \
     methods/windowingalgorithm.cpp \
+    plot/qcustomplot.cpp \
     plot/canvaseventfilter.cpp \
     plot/clearablespinbox.cpp \
     plot/filterpointmapper.cpp \
@@ -180,6 +181,7 @@ HEADERS  += mainwindow.h \
     methods/resamplingalgorithm.h \
     methods/weighting.h \
     methods/windowingalgorithm.h \
+    plot/qcustomplot.h \
     plot/canvaseventfilter.h \
     plot/clearablespinbox.h \
     plot/filterpointmapper.h \

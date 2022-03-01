@@ -252,7 +252,7 @@ public:
     void setPlotted(bool plotted) {_plotted = plotted;}
     Curve *curve = nullptr;
 
-    bool changed() const {return _changed;}
+    inline bool changed() const {return _changed;}
     void setChanged(bool changed) {_changed = changed;}
 
     bool dataChanged() const {return _dataChanged;}

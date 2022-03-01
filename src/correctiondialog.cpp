@@ -193,11 +193,12 @@ void CorrectionDialog::accept()
     // сперва графики
     for (int i=0; i<plot->curvesCount(); ++i) {
         Channel *ch = plot->model()->curve(i)->channel;
-        if (ch->correction().isEmpty()) continue;
-
+        if (!ch->data()->hasCorrection()) continue;
 
         makeCorrectionConstant(ch);
         if (!list.contains(ch->descriptor())) list << ch->descriptor();
+        ch->setChanged(true);
+        ch->setDataChanged(true);
 
         if (allFilesCheckBox->isChecked()) {
             foreach (FileDescriptor *file, files) {
@@ -206,6 +207,8 @@ void CorrectionDialog::accept()
                 if (Channel *ch1 = file->channel(index)) {
                     makeCorrectionConstant(ch1);
                     if (!list.contains(ch1->descriptor())) list << ch1->descriptor();
+                    ch1->setChanged(true);
+                    ch1->setDataChanged(true);
                 }
             }
         }

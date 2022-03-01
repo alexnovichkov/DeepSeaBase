@@ -66,8 +66,9 @@ public:
     bool makeCorrectionConstant();
     QString correctionString() const;
     static QString correctionString(double value, int type);
-    double correction() const {return m_correctionValue;}
-    bool hasCorrection() const;
+    inline double correction() const {return m_correctionValue;}
+    bool correctionIsValid() const;
+    inline bool hasCorrection() const {return m_correction;}
 
 
     int xValuesFormat() const {return m_xValuesFormat;} // не меняется, так как зависит только от формата данных в файле
