@@ -134,7 +134,7 @@ void CorrectionDialog::correct()
             int channelNumber = ch->index();
             if (channelNumber == -1) continue;
 
-            plot->model()->setTemporaryCorrection(channelNumber, correctionValue, correctionType->currentIndex());
+            plot->model()->setTemporaryCorrection(ch, correctionValue, correctionType->currentIndex());
 
             if (allFilesCheckBox->isChecked()) {
                 foreach (FileDescriptor *file, files) {

@@ -67,7 +67,7 @@ public:
     void removeLabels();
     void updateTitles();
     void resetHighlighting();
-    void setTemporaryCorrection(int index, double correctionValue, int correctionType);
+    void setTemporaryCorrection(Channel *ch, double correctionValue, int correctionType);
 
     //returns true if deleted
     void addCurve(Curve *curve, bool onLeft);
