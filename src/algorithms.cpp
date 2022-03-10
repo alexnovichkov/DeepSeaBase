@@ -21,6 +21,37 @@ QString smartDouble(double v)
     return QString::number(v,'g');
 }
 
+double closest(double begin, double step, double value)
+{
+    if (qFuzzyIsNull(step)) return 0;
+
+    int n = round((value - begin)/step);
+    return begin + n*step;
+}
+
+double closest(Channel *c, double val, bool xAxis)
+{
+    if (!c) return 0;
+
+    if (xAxis) {
+        if (c->data()->xValuesFormat() == DataHolder::XValuesUniform)
+            return closest(c->data()->xMin(), c->data()->xStep(), val);
+
+        //необходимо скопировать значения, чтобы алгоритм std::min_element не падал
+        auto xValues = c->data()->xValues();
+        return *closest(xValues.cbegin(), xValues.cend(), val);
+    }
+    else {
+        if (c->data()->zValuesFormat() == DataHolder::XValuesUniform)
+            return closest(c->data()->zMin(), c->data()->zStep(), val);
+
+        //необходимо скопировать значения, чтобы алгоритм std::min_element не падал
+        auto zValues = c->data()->zValues();
+        return *closest(zValues.cbegin(), zValues.cend(), val);
+    }
+    return 0.0;
+}
+
 QString replaceWinChars(QString s)
 {DD;
     static const struct ReplaceParams {

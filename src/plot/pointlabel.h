@@ -7,20 +7,21 @@
 class QwtPlot;
 class Curve;
 #include <QtCore>
+#include "selectable.h"
 
 /**
  * @brief The PointLabel class
  * Is intended to draw a label with constant displacement relative to a curve point
  */
 
-class PointLabel : public QwtPlotItem
+class PointLabel : public QwtPlotItem, public Selectable
 {
 public:
     explicit PointLabel(QwtPlot *parent, Curve *curve);
 
     virtual ~PointLabel();
 
-    virtual int rtti() const;
+    virtual int rtti() const override;
 
     QPointF origin() const;
 
@@ -43,23 +44,22 @@ public:
 
     QwtText label() const;
 
-    bool selected() const;
+    virtual void updateSelection() override;
+    virtual bool underMouse(const QPoint &pos, double *distanceX = nullptr, double *distanceY = nullptr) const override;
 
-    void setSelected(bool selected);
-
-    virtual void draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect) const;
+    virtual void draw(QPainter *painter, const QwtScaleMap &xMap,
+                      const QwtScaleMap &yMap, const QRectF &canvasRect) const override;
 
     void moveBy(const QPoint &pos);
-
     bool contains(const QPoint &pos);
 private:
+    void updateLabel();
     int d_mode;
     int d_point;
     QPointF d_origin; // origin of Label, equivalent to value of PlotMarker
     QPoint d_displacement; // displacement relative to invTransform(d_origin)
     QwtText d_label;
     QwtPlot *plot;
-    bool d_selected;
 public:
     Curve *curve;
 };

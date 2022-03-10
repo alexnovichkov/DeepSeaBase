@@ -11,7 +11,7 @@
 BarCurve::BarCurve(const QString &title, Channel *channel) :  QwtPlotHistogram(title),
     Curve(title, channel)
 {DD;
-
+    type = Type::Line;
     setLegendIconSize(QSize(16,8));
 
     histogramdata = new HistogramData(this->channel->data());
@@ -68,9 +68,11 @@ QPen BarCurve::pen() const
     return QwtPlotHistogram::pen();
 }
 
-void BarCurve::setPen(const QPen &pen)
+void BarCurve::updatePen()
 {DD;
-    QwtPlotHistogram::setPen(pen);
+    auto p = oldPen;
+    if (selected()) p.setWidth(2);
+    QwtPlotHistogram::setPen(p);
 }
 
 QList<QwtLegendData> BarCurve::legendData() const
@@ -81,20 +83,13 @@ QList<QwtLegendData> BarCurve::legendData() const
     return result;
 }
 
-void BarCurve::highlight()
+void BarCurve::updateSelection()
 {DD;
-    Curve::highlight();
-    setZ(1000);
+    Curve::updateSelection();
+    if (selected()) setZ(1000);
+    else setZ(20);
     plot()->updateLegend(this);
 }
-
-void BarCurve::resetHighlighting()
-{DD;
-    Curve::resetHighlighting();
-    setZ(20);
-    plot()->updateLegend(this);
-}
-
 
 /** HistogramData implementation */
 
@@ -221,7 +216,7 @@ double BarCurve::xMax() const
 }
 
 
-int BarCurve::closest(const QPoint &pos, double *dist) const
+int BarCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
 {DD;
     int index = -1;
 
@@ -237,22 +232,26 @@ int BarCurve::closest(const QPoint &pos, double *dist) const
     evaluateScale(from, to, xMap);
 
 
-    double dmin = 1.0e10;
+    double dminx = qInf();
+    double dminy = qInf();
+    double dmin = qInf();
 
     for ( int i = from; i <= to; i++ ) {
         const QPointF sample = samplePoint( i );
 
-        const double cx = xMap.transform( sample.x() ) - pos.x();
-        const double cy = yMap.transform( sample.y() ) - pos.y();
+        const double cx = qAbs(xMap.transform( sample.x() ) - pos.x());
+        const double cy = qAbs(yMap.transform( sample.y() ) - pos.y());
 
         const double f = cx*cx + cy*cy;
         if ( f < dmin ) {
             index = i;
             dmin = f;
+            dminx = cx;
+            dminy = cy;
         }
     }
-    if ( dist )
-        *dist = qSqrt( dmin );
+    if ( dist1 ) *dist1 = dminx;
+    if ( dist2 ) *dist2 = dminy;
 
     return index;
 }

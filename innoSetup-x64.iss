@@ -10,7 +10,7 @@
 #define PathToExe "E:\My\build\build-DeepSeaBase-Desktop_Qt_5_12_8_MinGW_64_bit-Release\bin"
 #define PathToQt "K:\Qt\Qt5.12.8\5.12.8\mingw73_64"
 
-#define WithTDMS
+;#define WithTDMS
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.

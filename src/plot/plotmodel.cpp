@@ -39,6 +39,14 @@ QList<Curve *> PlotModel::curves(CurvePredicate predicate) const
     return result;
 }
 
+Curve *PlotModel::selectedCurve() const
+{
+    for (const auto &c: m_curves) {
+        if (c->selected()) return c;
+    }
+    return nullptr;
+}
+
 void PlotModel::clear(bool forceDeleteFixed)
 {
     beginResetModel();
@@ -124,7 +132,7 @@ void PlotModel::updateTitles()
 void PlotModel::resetHighlighting()
 {
     for(Curve *c: qAsConst(m_curves)) {
-        c->resetHighlighting();
+        c->setSelected(false);
     }
 }
 
@@ -302,7 +310,7 @@ QVariant PlotModel::data(const QModelIndex &index, int role) const
         case Qt::FontRole: {
             switch (col) {
                 case PlotTitleColumn: {
-                    if (c->highlighted) {
+                    if (c->selected()) {
                         QFont font;
                         font.setBold(true);
                         return font;

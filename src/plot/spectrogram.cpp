@@ -140,7 +140,7 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 
     setInfoVisible(false);
 
-    g->attachTo(this);
+    g->attach(this);
 
     update();
     updatePlottedIndexes();
@@ -192,7 +192,7 @@ void Spectrogram::setRightScale(QwtAxisId id, double min, double max)
     }
 }
 
-QMenu *Spectrogram::createMenu(QwtAxisId axis)
+QMenu *Spectrogram::createMenu(QwtAxisId axis, const QPoint &pos)
 {
     QMenu *menu = new QMenu(this);
 

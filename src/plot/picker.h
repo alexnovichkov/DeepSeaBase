@@ -6,6 +6,8 @@
 #include "plot.h"
 #include "enums.h"
 
+
+class Selectable;
 class PointLabel;
 class PointMarker;
 class TrackingCursor;
@@ -20,10 +22,11 @@ public:
         ModeDrag
     };
     Picker(Plot *plot);
-    inline void setMode(Plot::InteractionMode mode) {interactionMode = mode;}
     inline bool isEnabled() const {return enabled;}
     inline void setEnabled(bool enabled) {this->enabled = enabled;}
     bool findObject(QMouseEvent *e);
+    void startPick();
+    void deselect();
     void proceedPick(QMouseEvent *e);
     void endPick(QMouseEvent *e);
     void procKeyboardEvent(int key);
@@ -37,26 +40,27 @@ private:
 
 
 
-    QVector<TrackingCursor *> findCursors(const QPoint &pos);
+//    QVector<TrackingCursor *> findCursors(const QPoint &pos);
     Curve *findClosestPoint(const QPoint &pos, int &index) const;
     PointLabel *findLabel(const QPoint &pos);
 
-    void highlightPoint(bool enable);
+//    void highlightPoint(bool enable);
 
     Plot *plot;
-    Plot::InteractionMode interactionMode;
     Mode mode;
     bool enabled;
 
-    int d_selectedPoint;
-    Curve *d_selectedCurve;
-    PointLabel *d_selectedLabel;
-    QVector<TrackingCursor *> d_selectedCursors;
+//    int d_selectedPoint;
+//    Curve *d_selectedCurve;
+//    PointLabel *d_selectedLabel;
+//    QVector<TrackingCursor *> d_selectedCursors;
 
-    QPoint d_currentPos;
-    PointMarker *marker;
+//    QPoint d_currentPos;
+//    PointMarker *marker;
 
     QPoint pos;
+
+    Selectable *currentSelected = nullptr;
 };
 
 #endif // PICKER_H

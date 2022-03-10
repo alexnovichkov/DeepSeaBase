@@ -39,6 +39,7 @@ class Grid;
 class PlotModel;
 class QMenu;
 class ChannelsMimeData;
+class Cursors;
 
 struct Range {
     void clear() {min = INFINITY; max = -INFINITY;}
@@ -85,6 +86,8 @@ public:
 
     bool sergeiMode = false;
     bool xScaleIsLogarithmic = false; //false = linear, true = logarithmic
+
+    InteractionMode interactionMode = ScalingInteraction;
 
     bool hasCurves() const;
     int curvesCount(int type=-1) const;
@@ -164,8 +167,8 @@ protected:
 
     TrackingPanel *trackingPanel = nullptr;
 
-    InteractionMode interactionMode = ScalingInteraction;
     ColorSelector *colors = nullptr;
+    Cursors *cursors = nullptr;
 
 
     //default implementation updates either left or right axis
@@ -174,7 +177,7 @@ protected:
     //default implementation does nothing
     //reimplemented in spectrogram
     virtual void setRightScale(QwtAxisId id, double min, double max);
-    virtual QMenu *createMenu(QwtAxisId axis);
+    virtual QMenu *createMenu(QwtAxisId axis, const QPoint &pos);
     virtual bool canBePlottedOnLeftAxis(Channel *ch, QString *message=nullptr) const;
     virtual bool canBePlottedOnRightAxis(Channel *ch, QString *message=nullptr) const;
 

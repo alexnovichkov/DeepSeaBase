@@ -49,7 +49,6 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
         QPen pen = curve->pen();
         pen.setWidth(newValue);
         this->curve->setPen(pen);
-        this->curve->oldPen = pen;
         emit curveChanged(curve);
     }
     );
@@ -68,7 +67,6 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
         QPen pen = curve->pen();
         pen.setStyle((Qt::PenStyle)newValue);
         this->curve->setPen(pen);
-        this->curve->oldPen = pen;
         emit curveChanged(curve);
     });
 
@@ -85,7 +83,6 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
                         colorLabel->setPalette(QPalette(color));
                         pen.setColor(color);
                         this->curve->setPen(pen);
-                        this->curve->oldPen = pen;
                         emit curveChanged(curve);
                     }
                 }
@@ -166,7 +163,6 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
 void CurvePropertiesDialog::reject()
 {DD;
     curve->setPen(oldPen);
-    curve->oldPen = oldPen;
     curve->channel->setName(oldTitle);
     curve->setTitle(curve->channel->legendName());
     QDialog::reject();

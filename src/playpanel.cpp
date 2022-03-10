@@ -12,6 +12,7 @@
 #include "plot/plotmodel.h"
 #include "wavexporter.h"
 #include "logging.h"
+#include "plot/cursor.h"
 
 PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
 {DD;
@@ -25,7 +26,7 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
     connect(player, &QMediaPlayer::mediaStatusChanged, this, &PlayPanel::statusChanged);
     connect(player, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error), this, &PlayPanel::displayErrorMessage);
 
-    cursor = new TrackingCursor(Qt::green, TrackingCursor::Vertical);
+    cursor = new TrackingCursor(Qt::green, Cursor::Style::Vertical, nullptr);
     cursor->showYValues = true;
     cursor->attach(plot);
     cursor->setAxes(QwtAxis::XBottom, QwtAxis::YLeft);
@@ -161,16 +162,16 @@ void PlayPanel::prepareDataToPlay()
 void PlayPanel::updateSelectedCursor(TrackingCursor *c)
 {DD;
     if (cursor == c) {
-        cursor->setCurrent(true);
+        cursor->setSelected(true);
     }
     else {
-        cursor->setCurrent(false);
+        cursor->setSelected(false);
     }
 }
 
 void PlayPanel::setValue(QPointF val)
 {DD;
-    if (!cursor->current) cursor->setCurrent(true);
+    if (!cursor->selected()) cursor->setSelected(true);
     if (!ch) return;
 
     // здесь xVal - произвольное число, соответствующее какому-то положению на оси X

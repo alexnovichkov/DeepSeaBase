@@ -5,20 +5,22 @@
 #include <qwt_text.h>
 #include <qwt_scale_map.h>
 #include <qwt_symbol.h>
+#include <qwt_plot.h>
 #include <QPainter>
 
-TrackingCursor::TrackingCursor(const QColor &col, Type type): type(type)
+TrackingCursor::TrackingCursor(const QColor &col, Cursor::Style type, Cursor *parent)
+    : type(type), parent{parent}
 {DD;
     auto lineStyle = QwtPlotMarker::NoLine;
     switch (type) {
-        case Horizontal: lineStyle = QwtPlotMarker::HLine; break;
-        case Vertical: lineStyle = QwtPlotMarker::VLine; break;
-        case Cross: lineStyle = QwtPlotMarker::Cross; break;
+        case Cursor::Style::Horizontal: lineStyle = QwtPlotMarker::HLine; break;
+        case Cursor::Style::Vertical: lineStyle = QwtPlotMarker::VLine; break;
+        case Cursor::Style::Cross: lineStyle = QwtPlotMarker::Cross; break;
         default: break;
     }
 
     setLineStyle(lineStyle);
-    setLinePen(col, 1, /*Qt::DashDotLine*/Qt::SolidLine);
+    setLinePen(col, 1, Qt::SolidLine);
     setLabelAlignment(Qt::AlignBottom | Qt::AlignRight);
     showYValues = App->getSetting("cursorShowYValues", false).toBool();
 
@@ -46,17 +48,10 @@ void TrackingCursor::setYValues(const QVector<double> &yValues, const QVector<QC
     updateLabel();
 }
 
-void TrackingCursor::setCurrent(bool current)
-{DD;
-    this->current = current;
-    if (current)
-        setLinePen( this->linePen().color(), 2, /*Qt::DashDotLine*/Qt::SolidLine );
-    else
-        setLinePen( this->linePen().color(), 1, /*Qt::DashDotLine*/Qt::SolidLine );
-}
-
 void TrackingCursor::updateLabel()
 {DD;
+    if (!showLabel) return;
+
     QStringList label;
     if (!yValues.isEmpty() && showYValues) {
         for (int i = 0; i < yValues.size(); ++i) {
@@ -72,6 +67,8 @@ void TrackingCursor::updateLabel()
 
 void TrackingCursor::drawLabel(QPainter *painter, const QRectF &canvasRect, const QPointF &pos) const
 {
+    if (!showLabel) return;
+
     if (!xLabel.isEmpty()) {
         painter->save();
         QPointF alignPos = pos;
@@ -114,5 +111,69 @@ void TrackingCursor::drawLabel(QPainter *painter, const QRectF &canvasRect, cons
         yLabel.draw(painter, textRect);
         painter->restore();
     }
+}
 
+void TrackingCursor::moveToPos(QPoint pos)
+{
+    double xVal = 0.0;
+    double yVal = 0.0;
+    if (plot()) {
+        if (type != Cursor::Style::Horizontal) {
+            //adjust xval
+            auto map = plot()->canvasMap(xAxis());
+            xVal = map.invTransform(pos.x());
+        }
+        if (type != Cursor::Style::Vertical) {
+            //adjust yval
+            auto map = plot()->canvasMap(yAxis());
+            yVal = map.invTransform(pos.y());
+        }
+    }
+    if (parent) parent->moveTo({xVal,yVal});
+}
+
+bool TrackingCursor::underMouse(const QPoint &pos, double *distanceX, double *distanceY) const
+{
+    int newX = (int)(plot()->transform(xAxis(), xValue()));
+    int newY = (int)(plot()->transform(yAxis(), yValue()));
+
+    if (type == Cursor::Style::Vertical) {
+        if (qAbs(newX-pos.x())<=5) {
+            if (distanceX) *distanceX = qAbs(newX-pos.x());
+            if (distanceY) *distanceY = qInf();
+            return true;
+        }
+    }
+    else if (type == Cursor::Style::Horizontal) {
+        if (qAbs(newY-pos.y())<=5) {
+            if (distanceY) *distanceY = qAbs(newY-pos.y());
+            if (distanceX) *distanceX = qInf();
+            return true;
+        }
+    }
+    else if (type == Cursor::Style::Cross) {
+        auto x = qAbs(newX-pos.x());
+        auto y = qAbs(newY-pos.y());
+        auto m = std::min(x, y);
+        if (m<=5) {
+            if (x < y) {
+                if (distanceX) *distanceX = qAbs(newX-pos.x());
+                if (distanceY) *distanceY = qInf();
+            }
+            else {
+                if (distanceY) *distanceY = qAbs(newY-pos.y());
+                if (distanceX) *distanceX = qInf();
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+void TrackingCursor::updateSelection()
+{
+    if (selected())
+        setLinePen(linePen().color(), 2, Qt::SolidLine);
+    else
+        setLinePen(linePen().color(), 1, Qt::SolidLine);
 }

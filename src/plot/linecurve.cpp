@@ -8,7 +8,7 @@
 #include "qwt_legend_data.h"
 #include "logging.h"
 #include "fileformats/filedescriptor.h"
-#include "qwt_plot.h"
+#include "plot.h"
 #include <QPainter>
 #include "pointlabel.h"
 #include "filterpointmapper.h"
@@ -16,6 +16,7 @@
 LineCurve::LineCurve(const QString &title, Channel *channel) :  QwtPlotCurve(title),
     Curve(title, channel)
 {DD;
+    type = Type::Line;
     setPaintAttribute(QwtPlotCurve::ClipPolygons);
     setPaintAttribute(QwtPlotCurve::FilterPoints);
     setRenderHint(QwtPlotItem::RenderAntialiased);
@@ -125,6 +126,7 @@ QwtAxisId LineCurve::xAxis() const
 void LineCurve::setXAxis(QwtAxisId axis)
 {DD;
     QwtPlotCurve::setXAxis(axis);
+    qDebug()<<labels;
     foreach (PointLabel *l, labels)
         l->setXAxis(axis);
 }
@@ -134,9 +136,11 @@ QPen LineCurve::pen() const
     return QwtPlotCurve::pen();
 }
 
-void LineCurve::setPen(const QPen &pen)
+void LineCurve::updatePen()
 {DD;
-    QwtPlotCurve::setPen(pen);
+    auto p = oldPen;
+    if (selected()) p.setWidth(2);
+    QwtPlotCurve::setPen(p);
 }
 
 QList<QwtLegendData> LineCurve::legendData() const
@@ -147,20 +151,13 @@ QList<QwtLegendData> LineCurve::legendData() const
     return result;
 }
 
-void LineCurve::highlight()
+void LineCurve::updateSelection()
 {DD;
-    Curve::highlight();
-    setZ(1000);
+    Curve::updateSelection();
+    if (selected()) setZ(1000);
+    else setZ(20);
     plot()->updateLegend(this);
 }
-
-void LineCurve::resetHighlighting()
-{DD;
-    Curve::resetHighlighting();
-    setZ(20);
-    plot()->updateLegend(this);
-}
-
 
 /** DfdData implementation */
 
@@ -202,7 +199,7 @@ double DfdData::xBegin() const
 }
 
 
-int LineCurve::closest(const QPoint &pos, double *dist) const
+int LineCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
 {DD;
     int index = -1;
 
@@ -210,8 +207,8 @@ int LineCurve::closest(const QPoint &pos, double *dist) const
     if ( numSamples <= 0 )
         return -1;
 
-    const QwtScaleMap xMap = plot()->canvasMap( xAxis() );
-    const QwtScaleMap yMap = plot()->canvasMap( yAxis() );
+    const QwtScaleMap xMap = m_plot->canvasMap( xAxis() );
+    const QwtScaleMap yMap = m_plot->canvasMap( yAxis() );
 
     int from = 0;
     int to = numSamples-1;
@@ -223,17 +220,17 @@ int LineCurve::closest(const QPoint &pos, double *dist) const
     for ( int i = from; i <= to; i++ ) {
         const QPointF sample = samplePoint( i );
 
-        const double cx = xMap.transform( sample.x() ) - pos.x();
-        const double cy = yMap.transform( sample.y() ) - pos.y();
+        const double cx = qAbs(xMap.transform( sample.x() ) - pos.x());
+        const double cy = qAbs(yMap.transform( sample.y() ) - pos.y());
 
         const double f = cx*cx + cy*cy;
         if ( f < dmin ) {
             index = i;
             dmin = f;
+            if (dist1) *dist1 = cx;
+            if (dist2) *dist2 = cy;
         }
     }
-    if ( dist )
-        *dist = qSqrt( dmin );
 
     return index;
 }

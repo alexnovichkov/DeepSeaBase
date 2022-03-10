@@ -226,8 +226,10 @@ void CanvasEventFilter::mousePress(QMouseEvent *event)
             bool selected = picker ? picker->findObject(event) : false;
             if (selected) {
                 actionType = ActionType::Pick;
+                picker->startPick();
             }
             else {
+                if (picker) picker->deselect();
                 actionType = ActionType::Zoom;
                 plotZoom->startZoom(event);
             }

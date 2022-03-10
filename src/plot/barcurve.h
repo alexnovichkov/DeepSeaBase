@@ -54,10 +54,9 @@ public:
     virtual void setXAxis(QwtAxisId axis) override;
 
     virtual QPen pen() const override;
-    virtual void setPen(const QPen &pen) override;
+    virtual void updatePen() override;
     virtual QList<QwtLegendData> legendData() const override;
-    virtual void highlight() override;
-    virtual void resetHighlighting() override;
+    virtual void updateSelection() override;
     virtual QPointF samplePoint(int point) const override;
 
     // Curve interface
@@ -67,7 +66,7 @@ public:
 
     // Curve interface
 public:
-    virtual int closest(const QPoint &pos, double *dist) const override;
+    virtual int closest(const QPoint &pos, double *dist1, double *dist2) const override;
 };
 
 #endif // BARCURVE_H

@@ -4,7 +4,6 @@
 #include <QAbstractTableModel>
 
 class Curve;
-class Channel;
 #include "fileformats/filedescriptor.h"
 
 using CurvePredicate = bool (Curve *c);
@@ -43,6 +42,7 @@ public:
 
     const QList<Curve*> &curves() const {return m_curves;}
     QList<Curve *> curves(CurvePredicate predicate) const;
+    Curve *selectedCurve() const;
 
     QVector<Channel *> plottedChannels() const;
     QVector<FileDescriptor*> plottedDescriptors() const;

@@ -68,6 +68,10 @@ SOURCES += main.cpp\
     methods/resamplingalgorithm.cpp \
     methods/weighting.cpp \
     methods/windowingalgorithm.cpp \
+    plot/cursor.cpp \
+    plot/cursorlabel.cpp \
+    plot/cursors.cpp \
+    plot/cursorsingle.cpp \
     plot/qcustomplot.cpp \
     plot/canvaseventfilter.cpp \
     plot/clearablespinbox.cpp \
@@ -181,6 +185,10 @@ HEADERS  += mainwindow.h \
     methods/resamplingalgorithm.h \
     methods/weighting.h \
     methods/windowingalgorithm.h \
+    plot/cursor.h \
+    plot/cursorlabel.h \
+    plot/cursors.h \
+    plot/cursorsingle.h \
     plot/qcustomplot.h \
     plot/canvaseventfilter.h \
     plot/clearablespinbox.h \
@@ -192,6 +200,7 @@ HEADERS  += mainwindow.h \
     plot/plotinfooverlay.h \
     plot/plotmodel.h \
     plot/scaledraw.h \
+    plot/selectable.h \
     plot/spectrogram.h \
     plot/timeplot.h \
     plot/trackingcursor.h \

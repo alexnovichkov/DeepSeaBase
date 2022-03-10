@@ -80,13 +80,15 @@ public:
     virtual QwtAxisId xAxis() const override;
     virtual void setXAxis(QwtAxisId axis) override;
     virtual QPen pen() const override;
-    virtual void setPen(const QPen &pen) override;
+
     virtual QList<QwtLegendData> legendData() const override;
     virtual QPointF samplePoint(int) const override;
-    virtual int closest(const QPoint &, double *) const override;
+    virtual int closest(const QPoint &, double *dist1, double *dist2) const override;
 
     void setColorInterval(double min, double max);
     QwtInterval colorInterval() const;
+protected:
+    virtual void updatePen() override {}
 };
 
 #endif // SPECTROCURVE_H

@@ -10,6 +10,7 @@
 SpectroCurve::SpectroCurve(const QString &title, Channel *channel)
     :  QwtPlotSpectrogram(title), Curve(title, channel)
 {
+    type = Type::Spectrogram;
     setLegendIconSize(QSize(16,8));
 
     setRenderThreadCount(0); // use system specific thread count
@@ -65,10 +66,10 @@ QPen SpectroCurve::pen() const
     return QPen();
 }
 
-void SpectroCurve::setPen(const QPen &pen)
-{
-    Q_UNUSED(pen);
-}
+//void SpectroCurve::setPen(const QPen &pen)
+//{
+//    Curve::setPen(pen);
+//}
 
 QList<QwtLegendData> SpectroCurve::legendData() const
 {
@@ -84,8 +85,11 @@ QPointF SpectroCurve::samplePoint(int) const
     //return spectroData->samplePoint(point);
 }
 
-int SpectroCurve::closest(const QPoint &, double *) const
+int SpectroCurve::closest(const QPoint &, double *dist1, double *dist2) const
 {
+    Q_UNUSED(dist1);
+    Q_UNUSED(dist2);
+
     int index = -1;
 
 //    const size_t numSamples = channel->samplesCount();

@@ -30,13 +30,6 @@ int stepsToClosest(double xBegin, double step, double value)
     int n = round((value - xBegin)/step);
     return n;
 }
-double closest(double begin, double step, double value)
-{
-    if (qFuzzyIsNull(step)) return 0;
-
-    int n = round((value - begin)/step);
-    return begin + n*step;
-}
 
 int stepsToClosest(Channel *c, double val)
 {
@@ -50,38 +43,15 @@ int stepsToClosest(Channel *c, double val)
     return closest(xValues.cbegin(), xValues.cend(), val) - xValues.cbegin();
 }
 
-double closest(Channel *c, double val, bool xAxis = true)
-{
-    if (!c) return 0;
-
-    if (xAxis) {
-        if (c->data()->xValuesFormat() == DataHolder::XValuesUniform)
-            return closest(c->data()->xMin(), c->data()->xStep(), val);
-
-        //необходимо скопировать значения, чтобы алгоритм std::min_element не падал
-        auto xValues = c->data()->xValues();
-        return *closest(xValues.cbegin(), xValues.cend(), val);
-    }
-    else {
-        if (c->data()->zValuesFormat() == DataHolder::XValuesUniform)
-            return closest(c->data()->zMin(), c->data()->zStep(), val);
-
-        //необходимо скопировать значения, чтобы алгоритм std::min_element не падал
-        auto zValues = c->data()->zValues();
-        return *closest(zValues.cbegin(), zValues.cend(), val);
-    }
-    return 0.0;
-}
-
 TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
 {DD;
     setWindowFlags(Qt::Tool /*| Qt::WindowTitleHint*/);
     setWindowTitle("Курсор");
 
     for (int i=0; i<2; ++i)
-        cursors.append(new TrackingCursor(QColor(40,40,150), TrackingCursor::Cross));
+        cursors.append(new TrackingCursor(QColor(40,40,150), Cursor::Style::Cross, nullptr));
     for (int i=2; i<4; ++i)
-        cursors.append(new TrackingCursor(QColor(150,40,40), TrackingCursor::Cross));
+        cursors.append(new TrackingCursor(QColor(150,40,40), Cursor::Style::Cross, nullptr));
 
     for (int i=0; i<10; ++i) {
         QwtPlotMarker *d = new QwtPlotMarker();
@@ -332,7 +302,7 @@ void TrackingPanel::updateTrackingCursor(QPointF val, int index)
     if (!isVisible()) return;
 
     //проверяем, не нужно ли обновить значение по оси Y
-    Curve *c = plot->model()->firstOf([](Curve *curve){return curve->highlighted;});
+    Curve *c = plot->model()->firstOf([](Curve *curve){return curve->selected();});
     if (c) {
         bool ok;
         double y = c->channel->data()->YforXandZ(val.x(), 0.0, ok);
@@ -341,7 +311,7 @@ void TrackingPanel::updateTrackingCursor(QPointF val, int index)
 
     cursors[index]->moveTo(val);
     for (int i=0; i<cursors.size(); ++i)
-        cursors[i]->setCurrent(i == index);
+        cursors[i]->setSelected(i == index);
 
     for (int i=0; i<_harmonics.size(); ++i)
         _harmonics[i]->setValue(val.x()*(i+2), 0.0);
@@ -360,7 +330,7 @@ void TrackingPanel::update()
     auto data = first->channel->data();
     //ищем минимальный шаг по оси X
     for (auto c: curves) {
-        if (c->highlighted) {
+        if (c->selected()) {
             //используем шаг по X для выбранного графика, иначе
             data = c->channel->data();
             break;
@@ -512,13 +482,13 @@ void TrackingPanel::updateState()
 void TrackingPanel::changeSelectedCursor(TrackingCursor *cursor)
 {DD;
     for (auto c: qAsConst(cursors))
-        c->setCurrent(c == cursor);
+        c->setSelected(c == cursor);
 }
 
 void TrackingPanel::moveCursor(Enums::Direction direction)
 {DD;
     for (int i=0; i<cursors.size(); ++i) {
-        if (cursors[i]->current) {
+        if (cursors[i]->selected()) {
             spins[i]->moveOneStep(direction);
         }
     }
@@ -538,7 +508,7 @@ void TrackingPanel::setValue(QPointF value, bool second)
 void TrackingPanel::setValue(QPointF value)
 {DD;
     for (int i=0; i<cursors.size(); ++i) {
-        if (cursors[i]->current) {
+        if (cursors[i]->selected()) {
             setXY(value, i);
         }
     }

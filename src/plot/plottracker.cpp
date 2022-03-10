@@ -11,6 +11,7 @@
 #include "curve.h"
 #include "fileformats/filedescriptor.h"
 #include "plot/plotmodel.h"
+#include "plot/cursor.h"
 
 PlotTracker::PlotTracker(Plot *plot) :
     QwtPlotPicker(plot->canvas()), plot(plot)
@@ -62,7 +63,7 @@ void PlotTracker::maybeHover(const QPointF &pos)
             int posX = (int)(plot->transform(c->xAxis(), pos.x()));
             int newY = (int)(plot->transform(c->yAxis(), c->yValue()));
             int posY = (int)(plot->transform(c->yAxis(), pos.y()));
-            if (c->type == TrackingCursor::Horizontal || c->type == TrackingCursor::Cross) {
+            if (c->type == Cursor::Style::Horizontal || c->type == Cursor::Style::Cross) {
                 if (qAbs(newY-posY)<=4) {
                     cursor = plot->canvas()->cursor();
                     plot->canvas()->setCursor(QCursor(Qt::SizeVerCursor));
@@ -70,7 +71,7 @@ void PlotTracker::maybeHover(const QPointF &pos)
                     break;
                 }
             }
-            if (c->type == TrackingCursor::Vertical || c->type == TrackingCursor::Cross) {
+            if (c->type == Cursor::Style::Vertical || c->type == Cursor::Style::Cross) {
                 if (qAbs(newX-posX)<=4) {
                     cursor = plot->canvas()->cursor();
                     plot->canvas()->setCursor(QCursor(Qt::SizeHorCursor));

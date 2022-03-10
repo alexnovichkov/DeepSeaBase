@@ -9,8 +9,9 @@
 #include "qwt_painter.h"
 #include "qwt_clipper.h"
 #include "dataholder.h"
-#include "qwt_plot.h"
 #include "qwt_legend_data.h"
+#include "pointmarker.h"
+#include "plot.h"
 
 Curve::Curve(const QString &title, Channel *channel)
 {DD;
@@ -18,8 +19,8 @@ Curve::Curve(const QString &title, Channel *channel)
 
     this->channel = channel;
     this->duplicate = false;
-    this->highlighted = false;
     this->channel->curve = this;
+    marker = new PointMarker(this);
 }
 
 Curve::~Curve()
@@ -27,6 +28,7 @@ Curve::~Curve()
     foreach(PointLabel *l, labels) l->detach();
     qDeleteAll(labels);
     labels.clear();
+    delete marker;
 
     //maybe clear data that is over 1000000 samples
     if (channel) {
@@ -35,7 +37,13 @@ Curve::~Curve()
     }
 }
 
-
+void Curve::attach(Plot *plot)
+{
+    m_plot = plot;
+    marker->attach(plot);
+    marker->setVisible(false);
+    attachTo(plot);
+}
 
 void Curve::addLabel(PointLabel *label)
 {DD;
@@ -78,24 +86,20 @@ PointLabel *Curve::findLabel(const int point)
     return 0;
 }
 
-void Curve::resetHighlighting()
-{DD;
-    setPen(oldPen);
-//    foreach(PointLabel *label, labels)
-//        if (label) label->setSelected(false);
-    highlighted = false;
+void Curve::moveToPos(QPoint pos)
+{
+    if (m_plot->interactionMode != Plot::DataInteraction) return;
+
+    if (selectedPoint < 0 || selectedPoint >= samplesCount()) return;
+    double y = m_plot->invTransform(yAxis(), pos.y());
+    if (channel->data()->setYValue(selectedPoint, y)) {
+        channel->setDataChanged(true);
+        channel->descriptor()->setDataChanged(true);
+        resetCashedData();
+
+        updateSelection();
+    }
 }
-
-void Curve::highlight()
-{DD;
-    QPen p = pen();
-    oldPen = p;
-    p.setWidth(2);
-    setPen(p);
-    highlighted = true;
-}
-
-
 
 double Curve::yMin() const
 {DD;
@@ -130,6 +134,7 @@ void Curve::setVisible(bool visible)
     foreach (PointLabel *label, labels) {
         label->setVisible(visible);
     }
+    if (marker) marker->setVisible(visible);
 }
 
 void Curve::evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const
@@ -177,8 +182,30 @@ QMap<int, QVariant> Curve::commonLegendData() const
     data.insert(QwtLegendData::TitleRole, title());
     if (duplicate && fileNumber>0)
         data.insert(QwtLegendData::UserRole+1, fileNumber);
-    data.insert(QwtLegendData::UserRole+2, highlighted);
+    data.insert(QwtLegendData::UserRole+2, selected());
     data.insert(QwtLegendData::UserRole+4, fixed);
     return data;
 }
 
+
+
+bool Curve::underMouse(const QPoint &pos, double *distanceX, double *distanceY) const
+{
+    selectedPoint = closest(pos, distanceX, distanceY);
+
+    if (distanceX && *distanceX < 5) {
+        return true;
+    }
+    return false;
+}
+
+void Curve::updateSelection()
+{
+    updatePen();
+
+    if (!selected()) marker->setVisible(false);
+    else {
+        marker->setVisible(true);
+        marker->moveTo(samplePoint(selectedPoint));
+    }
+}

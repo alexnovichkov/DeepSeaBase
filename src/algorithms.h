@@ -30,6 +30,9 @@ InputIterator closest(InputIterator first, InputIterator last, ValueType value)
     });
 }
 
+double closest(double begin, double step, double value);
+double closest(Channel *c, double val, bool xAxis = true);
+
 template<typename T>
 QVector<T> segment(const QVector<T> &values, int from, int to, int blockSize, int blocks)
 {

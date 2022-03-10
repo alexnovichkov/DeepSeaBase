@@ -20,7 +20,7 @@ protected:
     virtual bool canBePlottedOnRightAxis(Channel *ch, QString *message = nullptr) const override;
     virtual void setRightScale(QwtAxisId id, double min, double max) override;
 
-    QMenu * createMenu(QwtAxisId axis) override;
+    QMenu * createMenu(QwtAxisId axis, const QPoint &pos) override;
 private:
     int colorMap = 0;
 
