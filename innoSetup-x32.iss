@@ -8,7 +8,7 @@
 #define FileLine StringChange(FileRead(FileHandle), "var _version=""","")
 #define MyAppVersion  StringChange(FileLine, """;","")
 #define PathToExe "E:\My\build\build-DeepSeaBase-Desktop_Qt_5_12_8_MinGW_32_bit-Release\bin"
-#define PathToQt "C:\Qt\Qt5.12.8\5.12.8\mingw73_32"
+#define PathToQt "K:\Qt\Qt5.12.8\5.12.8\mingw73_32"
 
 #define WithTDMS
 
@@ -62,7 +62,7 @@ Source: {#PathToQt}\bin\Qt5Widgets.dll; DestDir: "{app}"; Flags: ignoreversion
 Source: {#PathToQt}\bin\Qt5WinExtras.dll; DestDir: "{app}"; Flags: ignoreversion
 Source: {#PathToQt}\bin\Qt5Multimedia.dll; DestDir: "{app}"; Flags: ignoreversion
 Source: {#PathToQt}\bin\Qt5Network.dll; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\Qwt-6.4.0-svn\lib\qwt.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Qwt-6.2.0-dev\x32\lib\qwt.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "E:\My\build\DeepSeaBase\3rdParty\bin\samplerate.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "E:\My\programming\sources\fftw-3.3.5-dll32\libfftw3-3.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "E:\My\programming\ADS\ADSx32-release\lib\qtadvanceddocking.dll"; DestDir: "{app}"; Flags: ignoreversion

@@ -10,7 +10,7 @@
 #define PathToExe "E:\My\build\build-DeepSeaBase-Desktop_Qt_5_12_8_MinGW_64_bit-Release\bin"
 #define PathToQt "K:\Qt\Qt5.12.8\5.12.8\mingw73_64"
 
-#define WithTDMS
+;#define WithTDMS
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -65,7 +65,7 @@ Source: {#PathToQt}\bin\Qt5Widgets.dll; DestDir: "{app}"; Flags: ignoreversion
 Source: {#PathToQt}\bin\Qt5WinExtras.dll; DestDir: "{app}"; Flags: ignoreversion
 Source: {#PathToQt}\bin\Qt5Multimedia.dll; DestDir: "{app}"; Flags: ignoreversion
 Source: {#PathToQt}\bin\Qt5Network.dll; DestDir: "{app}"; Flags: ignoreversion
-Source: "E:\My\programming\sources\Qwt-6.4.0-svn\lib64\qwt.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Qwt-6.2.0-dev\x64\lib\qwt.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "E:\My\programming\sources\build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_64_bit-Release\release\samplerate.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "E:\My\programming\sources\fftw-3.3.5-dll64\libfftw3-3.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "E:\My\programming\ADS\ADSx64-release\lib\qtadvanceddocking.dll"; DestDir: "{app}"; Flags: ignoreversion
