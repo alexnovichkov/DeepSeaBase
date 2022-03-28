@@ -19,14 +19,13 @@ class CorrectionDialog : public QDialog
     Q_OBJECT
 public:
     explicit CorrectionDialog(Plot *plot, QWidget *parent = 0);
+    ~CorrectionDialog();
     void setPlot(Plot *plot);
     void setFiles(const QList<FileDescriptor *> &descriptors);
 private slots:
     void correct();
-signals:
-    void closeRequested();
-protected:
-    void closeEvent(QCloseEvent *event) override;
+//protected:
+//    void closeEvent(QCloseEvent *event) override;
 private:
 //    void
     void makeCorrectionConstant(Channel *channel);

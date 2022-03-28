@@ -198,8 +198,6 @@ private:
     QAction *plotOctaveAsHistogramAct;
 
     PlotArea *currentPlot = nullptr;
-    CorrectionDialog *correctionDialog = nullptr;
-
 protected:
     void closeEvent(QCloseEvent *event) override;
 signals:

@@ -70,15 +70,19 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) : QDialog(parent
     auto size = App->getSetting("correctionDialogSize").toSize();
     if (!size.isEmpty()) resize(size);
     else resize(qApp->primaryScreen()->availableSize().width()/3,
-           qApp->primaryScreen()->availableSize().height()/3);
+                qApp->primaryScreen()->availableSize().height()/3);
 }
 
-void CorrectionDialog::closeEvent(QCloseEvent *event)
-{DD;
-    emit closeRequested();
+CorrectionDialog::~CorrectionDialog()
+{
     App->setSetting("correctionDialogSize", size());
-    QWidget::closeEvent(event);
 }
+
+//void CorrectionDialog::closeEvent(QCloseEvent *event)
+//{DD;
+
+//    QWidget::closeEvent(event);
+//}
 
 void CorrectionDialog::setPlot(Plot *plot)
 {
@@ -222,7 +226,6 @@ void CorrectionDialog::accept()
     plot->recalculateScale(true);
     plot->recalculateScale(false);
     plot->update();
-    emit closeRequested();
     QDialog::accept();
 }
 
@@ -245,6 +248,5 @@ void CorrectionDialog::reject()
     plot->recalculateScale(true);
     plot->recalculateScale(false);
     plot->update();
-    emit closeRequested();
     QDialog::reject();
 }

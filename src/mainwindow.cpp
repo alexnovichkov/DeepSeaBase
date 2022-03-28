@@ -271,7 +271,6 @@ void MainWindow::createActions()
     connect(editColorsAct, SIGNAL(triggered()), this, SLOT(editColors()));
 
     addCorrectionAct = new QAction("Добавить поправку...", this);
-    addCorrectionAct->setCheckable(true);
     addCorrectionAct->setIcon(QIcon(":/icons/correction.png"));
     connect(addCorrectionAct, SIGNAL(triggered()), SLOT(addCorrection()));
 
@@ -808,13 +807,11 @@ void MainWindow::addCorrection()
 {DD;
     if (!currentPlot || !currentTab || !currentPlot->plot()) return;
     if (currentPlot->curvesCount()>0) {
-        if (!correctionDialog) {
-            correctionDialog = new CorrectionDialog(currentPlot->plot(), this);
-            connect(correctionDialog,SIGNAL(closeRequested()), addCorrectionAct, SLOT(toggle()));
-            correctionDialog->hide();
-        }
-        correctionDialog->setFiles(currentTab->model->selectedFiles());
-        correctionDialog->setVisible(!correctionDialog->isVisible());
+
+        CorrectionDialog correctionDialog(currentPlot->plot(), this);
+        correctionDialog.setFiles(currentTab->model->selectedFiles());
+        correctionDialog.setFiles(currentTab->model->selectedFiles());
+        correctionDialog.exec();
 
         currentTab->updateChannelsTable(currentTab->record);
     }
@@ -1782,10 +1779,6 @@ void MainWindow::updateActions()
 
     if (currentPlot) currentPlot->updateActions(filesCount, channelsCount);
     if (currentTab) currentTab->updateActions();
-
-    if (correctionDialog) {
-        correctionDialog->setFiles(currentTab->model->selectedFiles());
-    }
 }
 
 void MainWindow::onFocusedDockWidgetChanged(ads::CDockWidget *old, ads::CDockWidget *now)
@@ -1796,7 +1789,6 @@ void MainWindow::onFocusedDockWidgetChanged(ads::CDockWidget *old, ads::CDockWid
         currentTab = tab;
     else if (auto plot = qobject_cast<PlotArea*>(now)) {
         currentPlot = plot;
-        if (correctionDialog) correctionDialog->setPlot(currentPlot->plot());
     }
     updateActions();
 }

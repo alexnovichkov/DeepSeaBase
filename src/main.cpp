@@ -33,10 +33,6 @@ int main(int argc, char *argv[])
     splash.showMessage("Подождите, идет загрузка записей...",Qt::AlignBottom | Qt::AlignHCenter, Qt::white);
     a.processEvents();
 
-//    MatlabFile f("E:/Shared/1/APS.mat");
-//    f.read();
-
-
     MainWindow w;
     w.showMaximized();
     splash.finish(&w);
