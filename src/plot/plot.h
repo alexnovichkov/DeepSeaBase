@@ -41,6 +41,7 @@ class QMenu;
 class ChannelsMimeData;
 class Cursors;
 class CursorBox;
+class Selectable;
 
 struct Range {
     void clear() {min = INFINITY; max = -INFINITY;}
@@ -124,6 +125,7 @@ public:
 
     void deleteCurvesForDescriptor(FileDescriptor *descriptor);
     void deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot = true);
+    void deleteSelectedCurve(Selectable *selected);
 
     void switchLabelsVisibility();
     void prepareAxis(QwtAxisId axis);

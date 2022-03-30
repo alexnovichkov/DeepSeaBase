@@ -492,6 +492,16 @@ void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doR
     }
 }
 
+void Plot::deleteSelectedCurve(Selectable *selected)
+{
+    if (Curve *curve = dynamic_cast<Curve*>(selected)) {
+        deleteCurve(curve, true);
+        updatePlottedIndexes();
+        updateCycled();
+        emit curvesCountChanged(); //->MainWindow.updateActions
+    }
+}
+
 //удаляет кривую, была ли она фиксирована или нет.
 //Все проверки проводятся выше
 void Plot::deleteCurve(Curve *curve, bool doReplot)

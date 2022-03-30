@@ -6,7 +6,9 @@
 #include <QPen>
 #include <QPainter>
 #include <QVector2D>
+#include <QMenu>
 #include "curve.h"
+#include <app.h>
 
 PointLabel::PointLabel(QwtPlot *parent, Curve *curve)
     : QwtPlotItem(),
@@ -17,7 +19,8 @@ PointLabel::PointLabel(QwtPlot *parent, Curve *curve)
       curve(curve)
 {DD;
     setZ(40.0);
-    d_mode=0;
+    if (App->getSetting("pointLabelRemember", true).toBool())
+        d_mode = App->getSetting("pointLabelMode", 0).toInt();
     setXAxis(curve->xAxis());
     setYAxis(curve->yAxis());
     updateLabel();
@@ -71,23 +74,6 @@ void PointLabel::setPoint(int point)
 {DD;
     d_point = point;
 }
-
-//QPoint PointLabel::displacement() const
-//{DD;
-//    return d_displacement;
-//}
-
-//void PointLabel::setDisplacement(const QPoint &displacement)
-//{DD;
-//    if (d_displacement == displacement) return;
-//    d_displacement = displacement;
-//    itemChanged();
-//}
-
-//void PointLabel::setDisplacement(int dx, int dy)
-//{DD;
-//    setDisplacement(QPoint(dx, dy));
-//}
 
 QwtText PointLabel::label() const
 {DD;
@@ -162,6 +148,56 @@ void PointLabel::moveToPos(QPoint pos, QPoint startPos)
     d_displacement.rx() += delta.x();
     d_displacement.ry() += delta.y();
     itemChanged();
+}
+
+QList<QAction *> PointLabel::actions()
+{
+    QList<QAction *> l;
+
+    auto a = new QAction("Показывать", plot);
+    QMenu *m = new QMenu();
+    QActionGroup *ag = new QActionGroup(plot);
+
+    auto a1 = m->addAction("значение по оси X", [=](){
+        if (App->getSetting("pointLabelRemember", true).toBool())
+            App->setSetting("pointLabelMode", 0);
+        setMode(0);
+    });
+    a1->setCheckable(true);
+    a1->setChecked(d_mode==0);
+    ag->addAction(a1);
+
+    a1 = m->addAction("значения по осям X и Y", [=](){
+        if (App->getSetting("pointLabelRemember", true).toBool())
+            App->setSetting("pointLabelMode", 1);
+        setMode(1);
+    });
+    a1->setCheckable(true);
+    a1->setChecked(d_mode==1);
+    ag->addAction(a1);
+
+    a1 = m->addAction("значение по оси Y", [=](){
+        if (App->getSetting("pointLabelRemember", true).toBool())
+            App->setSetting("pointLabelMode", 2);
+        setMode(2);
+    });
+    a1->setCheckable(true);
+    a1->setChecked(d_mode==2);
+    ag->addAction(a1);
+
+    a->setMenu(m);
+    l << a;
+
+    a = new QAction("Запомнить выбор", plot);
+    a->setCheckable(true);
+    a->setChecked(App->getSetting("pointLabelRemember", true).toBool());
+    QObject::connect(a, &QAction::triggered, [=](){
+        bool r = App->getSetting("pointLabelRemember", true).toBool();
+        App->setSetting("pointLabelRemember", !r);
+    });
+    l<<a;
+
+    return l;
 }
 
 bool PointLabel::contains(const QPoint &pos)

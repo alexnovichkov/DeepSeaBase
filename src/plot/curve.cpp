@@ -268,6 +268,11 @@ void Curve::fix()
     }
 }
 
+void Curve::remove()
+{
+    m_plot->deleteSelectedCurve(this);
+}
+
 void Curve::updateSelection()
 {
     updatePen();

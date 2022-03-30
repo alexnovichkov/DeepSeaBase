@@ -34,11 +34,6 @@ public:
     int point() const;
 
     void setPoint(int point);
-
-//    QPoint displacement() const;
-//    void setDisplacement(const QPoint &displacement);
-//    void setDisplacement(int dx, int dy);
-
     void setLabel(const QwtText& label);
 
     QwtText label() const;
@@ -50,12 +45,12 @@ public:
                       const QwtScaleMap &yMap, const QRectF &canvasRect) const override;
     virtual void remove() override;
     virtual void moveToPos(QPoint pos, QPoint startPos = QPoint()) override;
+    virtual QList<QAction*> actions() override;
 
-//    void moveBy(const QPoint &pos);
     bool contains(const QPoint &pos);
 private:
     void updateLabel();
-    int d_mode;
+    int d_mode = 0;
     int d_point;
     QPointF d_origin; // origin of Label, equivalent to value of PlotMarker
     QPoint d_displacement; // displacement relative to invTransform(d_origin)

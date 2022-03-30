@@ -121,36 +121,14 @@ QList<QAction *> TrackingCursor::actions()
 
     if (parent->type()==Cursor::Type::DoubleReject ||
         parent->type()==Cursor::Type::Double) {
-        Cursor::Info info = parent->info();
 
         a = new QAction("Показывать", parent);
         QMenu *m = new QMenu();
-//        auto a1 = m->addAction("СКЗ");
-//        QObject::connect(a1, &QAction::triggered, [&](){
-//            if (info & Cursor::RMS)
-//                info.setFlag(Cursor::RMS, false);
-//            else
-//                info.setFlag(Cursor::RMS, true);
-//            parent->setInfo(info);
-//        });
-//        a1->setCheckable(true);
-//        a1->setChecked(parent->info() & Cursor::RMS);
 
         m->addAction(rmsAct);
         m->addAction(energyAct);
         energyAct->setChecked(parent->info() & Cursor::Energy);
         rmsAct->setChecked(parent->info() & Cursor::RMS);
-
-//        auto a2 = m->addAction("Энергия");
-//        QObject::connect(a2, &QAction::triggered, [&](){
-//            if (info & Cursor::Energy)
-//                info.setFlag(Cursor::Energy, false);
-//            else
-//                info.setFlag(Cursor::Energy, true);
-//            parent->setInfo(info);
-//        });
-//        a2->setCheckable(true);
-//        a2->setChecked(parent->info() & Cursor::Energy);
 
         a->setMenu(m);
         l << a;
