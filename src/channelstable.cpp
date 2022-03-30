@@ -28,6 +28,7 @@ ChannelsTable::ChannelsTable(QWidget *parent) : QTableView(parent)
             menu.addAction(parentActions.value("moveDown"));
             menu.addSeparator();
             menu.addAction(parentActions.value("delete"));
+            menu.addAction(parentActions.value("deleteBatch"));
             menu.addAction(parentActions.value("copy"));
             menu.addAction(parentActions.value("move"));
             menu.exec(QCursor::pos());

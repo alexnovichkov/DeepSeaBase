@@ -170,6 +170,7 @@ private:
     QAction *addCorrectionAct;
     QAction *addCorrectionsAct;
     QAction *deleteChannelsAct;
+    QAction *deleteChannelsOneAct;
     QAction *deleteChannelsBatchAct;
     QAction *copyChannelsAct;
     QAction *moveChannelsAct;

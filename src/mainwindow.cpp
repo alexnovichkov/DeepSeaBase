@@ -284,6 +284,10 @@ void MainWindow::createActions()
     deleteChannelsAct->setIcon(QIcon(":/icons/remove.png"));
     connect(deleteChannelsAct, SIGNAL(triggered()), this, SLOT(deleteChannels()));
 
+    deleteChannelsOneAct = new QAction("Удалить выделенные каналы...",this);
+    deleteChannelsOneAct->setIcon(QIcon(":/icons/remove.png"));
+    connect(deleteChannelsOneAct, SIGNAL(triggered()), this, SLOT(deleteChannels()));
+
     deleteChannelsBatchAct = new QAction("Удалить каналы в нескольких файлах...",this);
     connect(deleteChannelsBatchAct, SIGNAL(triggered()), this, SLOT(deleteChannelsBatch()));
 
@@ -353,13 +357,13 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     currentTab->addParentAction("convert", convertAct);
     currentTab->addParentAction("rename", renameAct);
 
-    currentTab->channelsTable->addAction("exportWav",exportChannelsToWavAct);
-    currentTab->channelsTable->addAction("moveUp",moveChannelsUpAct);
-    currentTab->channelsTable->addAction("moveDown",moveChannelsDownAct);
-    currentTab->channelsTable->addAction("delete",deleteChannelsAct);
-    //currentTab->channelsTable->addAction("deleteBatch",deleteChannelsBatchAct);
-    currentTab->channelsTable->addAction("copy",copyChannelsAct);
-    currentTab->channelsTable->addAction("move",moveChannelsAct);
+    currentTab->channelsTable->addAction("exportWav", exportChannelsToWavAct);
+    currentTab->channelsTable->addAction("moveUp", moveChannelsUpAct);
+    currentTab->channelsTable->addAction("moveDown", moveChannelsDownAct);
+    currentTab->channelsTable->addAction("delete", deleteChannelsOneAct);
+    currentTab->channelsTable->addAction("deleteBatch", deleteChannelsBatchAct);
+    currentTab->channelsTable->addAction("copy", copyChannelsAct);
+    currentTab->channelsTable->addAction("move", moveChannelsAct);
 
     connect(currentTab->model, SIGNAL(legendsChanged()), this, SIGNAL(updateLegends()));
     connect(currentTab->channelModel, SIGNAL(legendsChanged()), this, SIGNAL(updateLegends()));
@@ -1773,6 +1777,7 @@ void MainWindow::updateActions()
     addCorrectionAct->setEnabled(curvesCount>0 && !spectrogram);
     addCorrectionsAct->setEnabled(curvesCount>0 && !spectrogram);
     deleteChannelsAct->setDisabled(selectedChannelsCount==0);
+    deleteChannelsOneAct->setDisabled(selectedChannelsCount==0);
     deleteChannelsBatchAct->setDisabled(selectedChannelsCount==0);
     copyChannelsAct->setDisabled(selectedChannelsCount==0);
     moveChannelsAct->setDisabled(selectedChannelsCount==0);
