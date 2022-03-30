@@ -40,6 +40,7 @@ class PlotModel;
 class QMenu;
 class ChannelsMimeData;
 class Cursors;
+class CursorBox;
 
 struct Range {
     void clear() {min = INFINITY; max = -INFINITY;}
@@ -119,7 +120,7 @@ public:
 
     void cycleChannels(bool up);
 
-    void updateTrackingPanel();
+//    void updateTrackingPanel();
 
     void deleteCurvesForDescriptor(FileDescriptor *descriptor);
     void deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot = true);
@@ -141,6 +142,7 @@ public:
      * @param leftAxis
      */
     void recalculateScale(bool leftAxis);
+
 protected:
     PlotModel *m = nullptr;
     ZoomStack *zoom = nullptr;
@@ -169,7 +171,7 @@ protected:
 
     ColorSelector *colors = nullptr;
     Cursors *cursors = nullptr;
-
+    CursorBox *cursorBox;
 
     //default implementation updates either left or right axis
     //reimplemented in Spectrogram

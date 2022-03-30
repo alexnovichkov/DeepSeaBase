@@ -7,6 +7,9 @@
 #include <qwt_symbol.h>
 #include <qwt_plot.h>
 #include <QPainter>
+#include <QInputDialog>
+#include "cursordialog.h"
+#include <QMenu>
 
 TrackingCursor::TrackingCursor(const QColor &col, Cursor::Style type, Cursor *parent)
     : type(type), parent{parent}
@@ -22,13 +25,24 @@ TrackingCursor::TrackingCursor(const QColor &col, Cursor::Style type, Cursor *pa
     setLineStyle(lineStyle);
     setLinePen(col, 1, Qt::SolidLine);
     setLabelAlignment(Qt::AlignBottom | Qt::AlignRight);
-    showYValues = App->getSetting("cursorShowYValues", false).toBool();
 
-    xLabel.setBackgroundBrush(Qt::white);
-    xLabel.setBorderRadius(1.0);
+    energyAct = new QAction("Энергия", parent);
+    energyAct->setCheckable(true);
+    energyAct->setChecked(parent->info() & Cursor::Energy);
+    QObject::connect(energyAct, &QAction::triggered, [=](){
+        auto info = parent->info();
+        info.setFlag(Cursor::Energy, !(info & Cursor::Energy));
+        parent->setInfo(info);
+    });
 
-    yLabel.setBackgroundBrush(Qt::white);
-    yLabel.setBorderRadius(1.0);
+    rmsAct = new QAction("СКЗ", parent);
+    rmsAct->setCheckable(true);
+    rmsAct->setChecked(parent->info() & Cursor::RMS);
+    QObject::connect(rmsAct, &QAction::triggered, [=](){
+        auto info = parent->info();
+        info.setFlag(Cursor::RMS, !(info & Cursor::RMS));
+        parent->setInfo(info);
+    });
 }
 
 void TrackingCursor::moveTo(const double xValue)
@@ -41,80 +55,9 @@ void TrackingCursor::moveTo(const QPointF &value)
     setValue(value);
 }
 
-void TrackingCursor::setYValues(const QVector<double> &yValues, const QVector<QColor>&colors)
-{DD;
-    this->yValues = yValues;
-    this->colors = colors;
-    updateLabel();
-}
-
-void TrackingCursor::updateLabel()
-{DD;
-    if (!showLabel) return;
-
-    QStringList label;
-    if (!yValues.isEmpty() && showYValues) {
-        for (int i = 0; i < yValues.size(); ++i) {
-            label << QString("<font color=%1>%2</font>").arg(colors[i].name()).arg(yValues[i], 0, 'f', 1);
-        }
-    }
-    label << QString("<b>%1</b>").arg(this->xValue(), 0, 'f', 1);
-    xLabel.setText(label.join("<br>"),QwtText::RichText);
-    yLabel.setText(QString("<b>%1</b>").arg(this->yValue(), 0, 'f', 1), QwtText::RichText);
-
-    setLabel(xLabel);
-}
-
-void TrackingCursor::drawLabel(QPainter *painter, const QRectF &canvasRect, const QPointF &pos) const
+void TrackingCursor::moveToPos(QPoint pos, QPoint startPos)
 {
-    if (!showLabel) return;
-
-    if (!xLabel.isEmpty()) {
-        painter->save();
-        QPointF alignPos = pos;
-        alignPos.setY(canvasRect.bottom() - 1);
-
-        qreal pw2 = linePen().widthF() / 2.0;
-        if (qFuzzyIsNull(pw2)) pw2 = 0.5;
-
-        const QSizeF textSize = xLabel.textSize(painter->font());
-
-        alignPos.rx() += pw2 + spacing();
-        alignPos.ry() -= pw2 + spacing();
-        alignPos.ry() -= textSize.height();
-
-        painter->translate(alignPos.x(), alignPos.y());
-
-        const QRectF textRect(0, 0, textSize.width(), textSize.height());
-        xLabel.draw(painter, textRect);
-        painter->restore();
-    }
-
-    if (!yLabel.isEmpty()) {
-        painter->save();
-        QPointF alignPos = pos;
-        alignPos.setX(canvasRect.left());
-
-
-        qreal pw2 = linePen().widthF() / 2.0;
-        if (qFuzzyIsNull(pw2)) pw2 = 0.5;
-
-        const QSizeF textSize = yLabel.textSize(painter->font());
-
-        alignPos.rx() += spacing();
-        alignPos.ry() -= pw2 + spacing();
-        alignPos.ry() -= textSize.height();
-
-        painter->translate(alignPos.x(), alignPos.y());
-
-        const QRectF textRect(0, 0, textSize.width(), textSize.height());
-        yLabel.draw(painter, textRect);
-        painter->restore();
-    }
-}
-
-void TrackingCursor::moveToPos(QPoint pos)
-{
+    Q_UNUSED(startPos);
     double xVal = 0.0;
     double yVal = 0.0;
     if (plot()) {
@@ -129,7 +72,91 @@ void TrackingCursor::moveToPos(QPoint pos)
             yVal = map.invTransform(pos.y());
         }
     }
-    if (parent) parent->moveTo({xVal,yVal});
+    if (parent) parent->moveTo({xVal,yVal}, this);
+}
+
+void TrackingCursor::moveLeft(int count)
+{
+    if (parent) parent->moveTo(Qt::Key_Left, count, this);
+}
+
+void TrackingCursor::moveRight(int count)
+{
+    if (parent) parent->moveTo(Qt::Key_Right, count, this);
+}
+
+void TrackingCursor::moveUp(int count)
+{
+    if (parent) parent->moveTo(Qt::Key_Up, count, this);
+}
+
+void TrackingCursor::moveDown(int count)
+{
+    if (parent) parent->moveTo(Qt::Key_Down, count, this);
+}
+
+QList<QAction *> TrackingCursor::actions()
+{
+    QList<QAction *> l;
+    QAction *
+    a = new QAction("Переместить в...", parent);
+    QObject::connect(a, &QAction::triggered, [=](){
+        double val = QInputDialog::getDouble(0, "Переместить курсор в...", "", xValue());
+        if (parent) parent->moveTo({val,yValue()}, this);
+    });
+    l << a;
+
+    a = new QAction("Копировать уровни дискрет", parent);
+    QObject::connect(a, &QAction::triggered, [=](){
+        if (parent) parent->copyValues();
+    });
+    l << a;
+
+    a = new QAction("Свойства...", parent);
+    QObject::connect(a, &QAction::triggered, [=](){
+        CursorDialog d(parent, nullptr);
+        d.exec();
+    });
+    l << a;
+
+    if (parent->type()==Cursor::Type::DoubleReject ||
+        parent->type()==Cursor::Type::Double) {
+        Cursor::Info info = parent->info();
+
+        a = new QAction("Показывать", parent);
+        QMenu *m = new QMenu();
+//        auto a1 = m->addAction("СКЗ");
+//        QObject::connect(a1, &QAction::triggered, [&](){
+//            if (info & Cursor::RMS)
+//                info.setFlag(Cursor::RMS, false);
+//            else
+//                info.setFlag(Cursor::RMS, true);
+//            parent->setInfo(info);
+//        });
+//        a1->setCheckable(true);
+//        a1->setChecked(parent->info() & Cursor::RMS);
+
+        m->addAction(rmsAct);
+        m->addAction(energyAct);
+        energyAct->setChecked(parent->info() & Cursor::Energy);
+        rmsAct->setChecked(parent->info() & Cursor::RMS);
+
+//        auto a2 = m->addAction("Энергия");
+//        QObject::connect(a2, &QAction::triggered, [&](){
+//            if (info & Cursor::Energy)
+//                info.setFlag(Cursor::Energy, false);
+//            else
+//                info.setFlag(Cursor::Energy, true);
+//            parent->setInfo(info);
+//        });
+//        a2->setCheckable(true);
+//        a2->setChecked(parent->info() & Cursor::Energy);
+
+        a->setMenu(m);
+        l << a;
+    }
+
+    return l;
 }
 
 bool TrackingCursor::underMouse(const QPoint &pos, double *distanceX, double *distanceY) const
@@ -172,8 +199,7 @@ bool TrackingCursor::underMouse(const QPoint &pos, double *distanceX, double *di
 
 void TrackingCursor::updateSelection()
 {
-    if (selected())
-        setLinePen(linePen().color(), 2, Qt::SolidLine);
-    else
-        setLinePen(linePen().color(), 1, Qt::SolidLine);
+    auto p = linePen();
+    p.setWidth(selected()?2:1);
+    setLinePen(p);
 }

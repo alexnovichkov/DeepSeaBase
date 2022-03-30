@@ -17,6 +17,7 @@
 PlotArea::PlotArea(int index, QWidget *parent)
     : ads::CDockWidget(QString("График %1").arg(index), parent)
 {
+    setObjectName(QString("График %1").arg(index));
     setAcceptDrops(true);
     setAsCurrentTab();
     setFeature(ads::CDockWidget::DockWidgetDeleteOnClose, true);
@@ -257,8 +258,6 @@ void PlotArea::addPlot(Plot::PlotType type)
     m_plot->toggleAutoscale(1 /* y axis */, autoscale);
     autoscale = App->getSetting("autoscale-y-slave", true).toBool();
     m_plot->toggleAutoscale(2 /* y slave axis */, autoscale);
-
-
 
     emit curvesCountChanged();
 }

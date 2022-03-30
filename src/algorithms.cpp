@@ -29,25 +29,29 @@ double closest(double begin, double step, double value)
     return begin + n*step;
 }
 
-double closest(Channel *c, double val, bool xAxis)
+double closest(Channel *c, double val, bool xAxis, int delta)
 {
     if (!c) return 0;
 
     if (xAxis) {
-        if (c->data()->xValuesFormat() == DataHolder::XValuesUniform)
-            return closest(c->data()->xMin(), c->data()->xStep(), val);
+        if (c->data()->xValuesFormat() == DataHolder::XValuesUniform) {
+            return closest(c->data()->xMin(), c->data()->xStep(), val + delta*c->data()->xStep());
+        }
 
         //необходимо скопировать значения, чтобы алгоритм std::min_element не падал
         auto xValues = c->data()->xValues();
-        return *closest(xValues.cbegin(), xValues.cend(), val);
+        auto c = closest(xValues.cbegin(), xValues.cend(), val)+delta;
+        return c==xValues.end()?xValues.last():*c;
     }
     else {
         if (c->data()->zValuesFormat() == DataHolder::XValuesUniform)
-            return closest(c->data()->zMin(), c->data()->zStep(), val);
+            return closest(c->data()->zMin(), c->data()->zStep(), val + delta*c->data()->zStep());
 
         //необходимо скопировать значения, чтобы алгоритм std::min_element не падал
         auto zValues = c->data()->zValues();
-        return *closest(zValues.cbegin(), zValues.cend(), val);
+        auto c = closest(zValues.cbegin(), zValues.cend(), val)+delta;
+        return c==zValues.end()?zValues.last():*c;
+//        return *closest(zValues.cbegin(), zValues.cend(), val);
     }
     return 0.0;
 }
@@ -553,3 +557,4 @@ QVector<int> channelIndexes(const QVector<Channel *> &source)
     for (auto c: source) result << c->index();
     return result;
 }
+

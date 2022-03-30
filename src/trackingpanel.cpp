@@ -131,8 +131,8 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
     yValuesCheckBox = new QCheckBox("Показывать уровни дискрет", this);
     connect(yValuesCheckBox, &QCheckBox::stateChanged, [=](int state){
         for (TrackingCursor *c: qAsConst(cursors)) {
-            c->showYValues = state==Qt::Checked;
-            c->updateLabel();
+//            c->showYValues = state==Qt::Checked;
+//            c->updateLabel();
         }
     });
     yValuesCheckBox->setChecked(App->getSetting("cursorShowYValues", false).toBool());
@@ -473,8 +473,9 @@ void TrackingPanel::updateState()
             colors[i] << c->pen().color();
         }
     }
-    for (int i=0; i<4; ++i)
-        cursors[i]->setYValues(yValues.at(i), colors.at(i));
+    for (int i=0; i<4; ++i) {
+//        cursors[i]->setYValues(yValues.at(i), colors.at(i));
+    }
 
     updateState(list);
 }

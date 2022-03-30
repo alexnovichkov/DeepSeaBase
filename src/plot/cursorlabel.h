@@ -20,13 +20,11 @@ public:
     CursorLabel(Plot *parent, TrackingCursor *cursor);
     void updateAlignment();
     void setAxis(Axis axis);
-    void setShowValues(bool show);
-    void updateLabel();
+    void updateLabel(bool showValues);
 private:
     Plot *m_plot;
     TrackingCursor *m_cursor;
     QwtText m_label;
-    bool m_showValues = false;
     Axis m_axis = Axis::XAxis;
 
     // QwtPlotItem interface
@@ -37,7 +35,7 @@ public:
     // Selectable interface
 public:
     virtual bool underMouse(const QPoint &pos, double *distanceX = nullptr, double *distanceY = nullptr) const override;
-
+    virtual QList<QAction *> actions() override; //не имеет собственных действий, берет из курсора
 protected:
     virtual void updateSelection() override;
 };

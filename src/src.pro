@@ -69,6 +69,10 @@ SOURCES += main.cpp\
     methods/weighting.cpp \
     methods/windowingalgorithm.cpp \
     plot/cursor.cpp \
+    plot/cursorbox.cpp \
+    plot/cursordialog.cpp \
+    plot/cursordouble.cpp \
+    plot/cursorharmonic.cpp \
     plot/cursorlabel.cpp \
     plot/cursors.cpp \
     plot/cursorsingle.cpp \
@@ -186,6 +190,10 @@ HEADERS  += mainwindow.h \
     methods/weighting.h \
     methods/windowingalgorithm.h \
     plot/cursor.h \
+    plot/cursorbox.h \
+    plot/cursordialog.h \
+    plot/cursordouble.h \
+    plot/cursorharmonic.h \
     plot/cursorlabel.h \
     plot/cursors.h \
     plot/cursorsingle.h \

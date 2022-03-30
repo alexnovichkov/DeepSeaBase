@@ -7,6 +7,7 @@
 typedef std::complex<double> cx_double;
 
 class Channel;
+class DataHolder;
 
 QDebug operator <<(QDebug debug, const std::complex<double> &val);
 
@@ -31,7 +32,7 @@ InputIterator closest(InputIterator first, InputIterator last, ValueType value)
 }
 
 double closest(double begin, double step, double value);
-double closest(Channel *c, double val, bool xAxis = true);
+double closest(Channel *c, double val, bool xAxis = true, int delta = 0);
 
 template<typename T>
 QVector<T> segment(const QVector<T> &values, int from, int to, int blockSize, int blocks)

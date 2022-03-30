@@ -28,17 +28,16 @@ public:
     void setOrigin(const QPointF &origin);
 
     void setMode(int mode);
-    void cycleMode();
+    virtual void cycle() override;
     int mode() const {return d_mode;}
 
     int point() const;
 
     void setPoint(int point);
 
-    QPoint displacement() const;
-
-    void setDisplacement(const QPoint &displacement);
-    void setDisplacement(int dx, int dy);
+//    QPoint displacement() const;
+//    void setDisplacement(const QPoint &displacement);
+//    void setDisplacement(int dx, int dy);
 
     void setLabel(const QwtText& label);
 
@@ -49,8 +48,10 @@ public:
 
     virtual void draw(QPainter *painter, const QwtScaleMap &xMap,
                       const QwtScaleMap &yMap, const QRectF &canvasRect) const override;
+    virtual void remove() override;
+    virtual void moveToPos(QPoint pos, QPoint startPos = QPoint()) override;
 
-    void moveBy(const QPoint &pos);
+//    void moveBy(const QPoint &pos);
     bool contains(const QPoint &pos);
 private:
     void updateLabel();

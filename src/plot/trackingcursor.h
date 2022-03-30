@@ -13,34 +13,25 @@ public:
     explicit TrackingCursor(const QColor &col, Cursor::Style type, Cursor *parent);
     void moveTo(const double xValue);
     void moveTo(const QPointF &value);
-    void setYValues(const QVector<double> &yValues, const QVector<QColor> &colors);
-    void updateLabel();
-    bool showYValues;
-    QVector<double> yValues;
-    QVector<QColor> colors;
-    bool reject = false;
+    QPointF position() const {return {xValue(),yValue()};}
 
     Cursor::Style type = Cursor::Style::Vertical;
-    QwtText yLabel;
-    QwtText xLabel;
-
     Cursor *parent = nullptr;
 
-    double xVal=0.0;
-    double yVal=0.0;
-    double zVal=0.0;
-
-    bool showLabel = true;
-
-    // QwtPlotMarker interface
-protected:
-    void drawLabel(QPainter *painter, const QRectF &canvasRect, const QPointF &pos) const override;
     // Selectable interface
 public:
     virtual bool underMouse(const QPoint &pos, double *distanceX = nullptr, double *distanceY = nullptr) const override;
-    virtual void moveToPos(QPoint pos) override;
+    virtual void moveToPos(QPoint pos, QPoint startPos = QPoint()) override;
+    virtual void moveLeft(int count = 1) override;
+    virtual void moveRight(int count = 1) override;
+    virtual void moveUp(int count = 1) override;
+    virtual void moveDown(int count = 1) override;
+    virtual QList<QAction *> actions() override;
 protected:
     virtual void updateSelection() override;
+private:
+    QAction *energyAct;
+    QAction *rmsAct;
 };
 
 #endif // TRACKINGCURSOR_H

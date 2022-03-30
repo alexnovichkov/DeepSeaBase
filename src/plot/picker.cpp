@@ -3,18 +3,14 @@
 #include "logging.h"
 #include <QMouseEvent>
 #include <QKeyEvent>
-#include "qwt_scale_map.h"
-#include "curve.h"
-//#include "trackingpanel.h"
-#include "trackingcursor.h"
-#include "pointmarker.h"
-#include "pointlabel.h"
-#include "fileformats/filedescriptor.h"
-#include "plot/plotmodel.h"
+#include <QApplication>
+//#include "qwt_scale_map.h"
+#include <QMenu>
+#include "selectable.h"
 
 Picker::Picker(Plot *plot) : plot(plot)
 {DD;
-    mode = ModeNone;
+//    mode = ModeNone;
 }
 
 bool Picker::findObject(QMouseEvent *e)
@@ -29,12 +25,13 @@ bool Picker::findObject(QMouseEvent *e)
         const auto allItems = plot->itemList();
         for (auto item: allItems) {
             if (auto selectable = dynamic_cast<Selectable*>(item)) {
-                qDebug()<<item->rtti()<<item->title().text();
                 double distx = 0.0;
                 double disty = 0.0;
                 if (selectable->underMouse(pos, &distx, &disty)) {
-                    qDebug()<<"under mouse"<<distx<<disty;
-                    double dist = sqrt(distx*distx+disty*disty);
+                    double dist = 0.0;
+                    if (distx == qInf()) dist = disty;
+                    else if (disty == qInf()) dist = distx;
+                    else dist = sqrt(distx*distx+disty*disty);
                     if (!selected || dist < minDist) {
                         selected = selectable;
                         minDist = dist;
@@ -45,40 +42,17 @@ bool Picker::findObject(QMouseEvent *e)
         if (currentSelected && currentSelected != selected)
             currentSelected->setSelected(false);
         currentSelected = selected;
-
-
-#if 0
-        d_selectedCursors = findCursors(pos);
-
-        if (d_selectedLabel)
-            d_selectedLabel->setSelected(false);
-        d_selectedLabel = findLabel(pos);
-
-        for (auto cursor: qAsConst(d_selectedCursors))
-            emit cursorSelected(cursor);
-
-        if (!d_selectedCursors.isEmpty()) {
-
-        }
-        else if (d_selectedLabel) {
-            d_selectedLabel->setSelected(true);
-            d_currentPos = pos;
-        }
-        else {
-            d_selectedCurve = findClosestPoint(pos, d_selectedPoint);
-            d_currentPos = pos;
-        }
-#endif
     }
-#if 0
-    return (d_selectedCurve || !d_selectedCursors.isEmpty() || d_selectedLabel);
-#endif
+
     return currentSelected != nullptr;
 }
 
-void Picker::startPick()
+void Picker::startPick(QPoint startPos)
 {
-    if (currentSelected) currentSelected->setSelected(true);
+    if (currentSelected) {
+        currentSelected->setSelected(true);
+        startPosition = startPos;
+    }
 }
 
 void Picker::deselect()
@@ -94,74 +68,66 @@ void Picker::deselect()
 
 void Picker::procKeyboardEvent(int key)
 {DD;
-//    switch (key) {
-//        case Qt::Key_Left: {
-//            if (d_selectedPoint > 0) {
-//                d_selectedPoint--;
-//                highlightPoint(true);
-//            }
-//            break;
-//        }
-//        case Qt::Key_Right: {
-//            if (d_selectedCurve && d_selectedPoint >=0 && d_selectedPoint < d_selectedCurve->samplesCount()-1) {
-//                d_selectedPoint++;
-//                highlightPoint(true);
-//            }
-//            break;
-//        }
-//        case Qt::Key_Space: {
-//            if (d_selectedCurve && d_selectedPoint >=0 && d_selectedPoint < d_selectedCurve->samplesCount()) {
-//                QPointF val = d_selectedCurve->samplePoint(d_selectedPoint);
+    if (!enabled || !currentSelected) return;
 
-//                PointLabel *label = d_selectedCurve->findLabel(d_selectedPoint);
+    switch (key) {
+        case Qt::Key_Left: {
+            currentSelected->moveLeft(QApplication::keyboardModifiers() & Qt::ControlModifier ? 10 : 1);
+            break;
+        }
+        case Qt::Key_Right: {
+            currentSelected->moveRight(QApplication::keyboardModifiers() & Qt::ControlModifier ? 10 : 1);
+            break;
+        }
+        case Qt::Key_Up: {
+            currentSelected->moveUp(QApplication::keyboardModifiers() & Qt::ControlModifier ? 10 : 1);
+            break;
+        }
+        case Qt::Key_Down: {
+            currentSelected->moveDown(QApplication::keyboardModifiers() & Qt::ControlModifier ? 10 : 1);
+            break;
+        }
+        case Qt::Key_Space: {
+            currentSelected->fix();
+            break;
+        }
+        case Qt::Key_C: {
+            currentSelected->cycle();
+            break;
+        }
+        case Qt::Key_Delete: {
+            //1. nothing additional for PointLabel
+            //3. Curve deletes itself
+            currentSelected->remove();
+            emit removeNeeded(currentSelected);
+            currentSelected = nullptr;
+            break;
+        }
+    }
+}
 
-//                if (!label) {
-//                    label = new PointLabel(plot, d_selectedCurve);
-//                    label->setPoint(d_selectedPoint);
-//                    label->setOrigin(val);
-//                    d_selectedCurve->addLabel(label);
+void Picker::showContextMenu(QMouseEvent *e)
+{
+    if (!currentSelected) return;
 
-//                    label->attach(plot);
-//                }
-//            }
-//            else if (d_selectedLabel) {
-//                d_selectedLabel->cycleMode();
-//            }
-//            break;
-//        }
-//        case Qt::Key_C: {
-//            if (d_selectedLabel) {
-//                d_selectedLabel->cycleMode();
-//            }
-//            break;
-//        }
-//        case Qt::Key_Delete: {
-//            if (d_selectedLabel) {
-//                Curve *c = d_selectedLabel->curve;
-//                if (c) c->removeLabel(d_selectedLabel);
-//                d_selectedLabel = 0;
-//            }
-//            break;
-//        }
-//    }
+    QMenu *m = new QMenu();
+    m->addAction("Удалить",[=](){
+        currentSelected->remove();
+        emit removeNeeded(currentSelected);
+        currentSelected = nullptr;
+    });
+    m->addActions(currentSelected->actions());
+
+    m->exec(e->globalPos());
+    m->deleteLater();
 }
 
 void Picker::proceedPick(QMouseEvent *e)
 {DD;
     if (!enabled || !currentSelected) return;
 
-    if (currentSelected) currentSelected->moveToPos(e->pos());
-
-//    if (!d_selectedCursors.isEmpty()) {
-//        for (auto c: qAsConst(d_selectedCursors))
-//            emit cursorMovedTo({plot->invTransform(c->xAxis(), currentPos.x()),
-//                                plot->invTransform(c->yAxis(), currentPos.y())});
-//        d_currentPos = currentPos;
-//    }
-//    else if (d_selectedLabel) {
-//        d_selectedLabel->moveBy(currentPos-d_currentPos);
-//        d_currentPos = currentPos;
-//    }
+    currentSelected->moveToPos(e->pos(), startPosition);
+    startPosition = e->pos();
 
     plot->replot();
 }
@@ -172,35 +138,7 @@ void Picker::endPick(QMouseEvent *e)
     QPoint endPos = e->pos();
     if (endPos == pos) { //одинарный клик мышью
 
-//        //сбрасываем подсветку кривых
-//        highlightPoint(false);
-//        plot->model()->resetHighlighting();
-//        plot->updateTrackingPanel(); //need this to update xStep for spins
 
-
-//        //одинарный клик мышью
-//        if (d_selectedCursors.isEmpty()) {
-//            //ищем, были ли выделены курсоры. Если были, то
-//            d_selectedCursors = findCursors(endPos);
-//            if (!d_selectedCursors.isEmpty())
-//                emit axisClicked({plot->canvasMap(d_selectedCursors.first()->xAxis()).invTransform(endPos.x()),
-//                                  plot->canvasMap(d_selectedCursors.first()->yAxis()).invTransform(endPos.y())},
-//                                 e->modifiers() & Qt::ControlModifier);
-//            else emit axisClicked({plot->canvasMap(QwtAxis::XBottom).invTransform(endPos.x()),
-//                                   plot->canvasMap(QwtAxis::YLeft).invTransform(endPos.y())},
-//                                  e->modifiers() & Qt::ControlModifier);
-
-//        }
-
-//        if (d_selectedCurve && d_selectedPoint > -1) {
-//            d_selectedCurve->setSelected(true);
-//            highlightPoint(true);
-//            plot->updateTrackingPanel(); //need this to update xStep for spins
-//        }
-
-//        if (d_selectedLabel) {
-//            d_selectedLabel->setSelected(true);
-//        }
     }
     else {
         //протащили какой-то объект, надо бросить
@@ -209,85 +147,4 @@ void Picker::endPick(QMouseEvent *e)
 
     plot->replot();
 }
-
-//QVector<TrackingCursor *> Picker::findCursors(const QPoint &pos)
-//{DD;
-//    QVector<TrackingCursor *> result;
-
-//    const QwtPlotItemList& itmList = plot->itemList();
-
-//    for (auto it: itmList) {
-//        if (auto *c = dynamic_cast<TrackingCursor *>(it)) {
-//            int newX = (int)(plot->transform(c->xAxis(), c->xValue()));
-//            int newY = (int)(plot->transform(c->yAxis(), c->yValue()));
-//            if (qAbs(newX-pos.x())<=5 && (c->type == Cursor::Style::Vertical || c->type == Cursor::Style::Cross)) {
-//                result << c;
-//            }
-//            if (qAbs(newY-pos.y())<=5 && (c->type == Cursor::Style::Horizontal || c->type == Cursor::Style::Cross)) {
-//                if (!result.contains(c)) result << c;
-//            }
-//        }
-//    }
-
-//    return result;
-//}
-
-Curve *Picker::findClosestPoint(const QPoint &pos, int &index) const
-{DD;
-    Curve *curve = nullptr;
-    double dist = 10e10;
-    index = -1;
-
-    const QwtPlotItemList &itmList = plot->itemList();
-    for (auto it: itmList) {
-        if (Curve *c = dynamic_cast<Curve *>(it)) {
-            double d;
-            int idx = c->closest( pos, &d );
-            if ( d < dist ) {
-                curve = c;
-                index = idx;
-                dist = d;
-            }
-        }
-    }
-
-    if (dist < 10 && index >=0)
-        return curve;
-
-    return nullptr;
-}
-
-PointLabel *Picker::findLabel(const QPoint &pos)
-{DD;
-    const QwtPlotItemList& itmList = plot->itemList();
-    for (auto it: itmList) {
-        if (Curve *c = dynamic_cast<Curve *>(it)) {
-            PointLabel *label = c->findLabel(pos);
-            if (label) return label;
-        }
-    }
-
-    return nullptr;
-}
-
-//void Picker::highlightPoint(bool enable)
-//{DD;
-//    if (marker) marker->detach();
-//    delete marker;
-//    marker = nullptr;
-
-//    if (enable) {
-//        auto selectedCurve = dynamic_cast<Curve*>(currentSelected);
-
-//        if (!selectedCurve) return;
-
-//        QPointF val = selectedCurve->samplePoint(d_selectedPoint);
-//        if (!marker) {
-//            marker = new PointMarker(d_selectedCurve->pen().color(), d_selectedCurve->yAxis());
-//        }
-//        marker->attach(plot);
-//        marker->moveTo(val);
-//        marker->show();
-//    }
-//}
 

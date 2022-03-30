@@ -5,22 +5,20 @@
 #include "plot.h"
 #include <QPen>
 #include "cursorlabel.h"
+#include <qwt_scale_map.h>
+#include "curve.h"
 
 CursorSingle::CursorSingle(Style style, Plot *plot) : Cursor(Cursor::Type::Single, style, plot)
 {
-    cursor = new TrackingCursor(color, style, this);
-//    cursor->setCurrent(true);
-    cursor->showLabel = false;
+    cursor = new TrackingCursor(m_color, style, this);
     if (style != Cursor::Style::Horizontal) {
         xlabel = new CursorLabel(plot, cursor);
         xlabel->setAxis(CursorLabel::Axis::XAxis);
-        xlabel->setShowValues(true);
         xlabel->updateAlignment();
     }
     if (style != Cursor::Style::Vertical) {
         ylabel = new CursorLabel(plot, cursor);
         ylabel->setAxis(CursorLabel::Axis::YAxis);
-        ylabel->setShowValues(false);
         ylabel->updateAlignment();
     }
 }
@@ -49,33 +47,63 @@ void CursorSingle::moveTo(const QPointF &pos1, const QPointF &pos2)
 
 void CursorSingle::moveTo(const QPointF &pos1)
 {
-    auto pos = snapToValues ? correctedPos(pos1) : pos1;
+    auto pos = m_snapToValues ? correctedPos(pos1) : pos1;
 
-    cursor->xVal = pos.x();
-    cursor->yVal = 0;
-    cursor->zVal = 0;
     cursor->moveTo(pos);
-    if (xlabel) xlabel->updateLabel();
-    if (ylabel) ylabel->updateLabel();
+    emit cursorPositionChanged();
+    update();
+}
+
+void CursorSingle::moveTo(const QPointF &pos1, TrackingCursor *source)
+{
+    if (source == cursor) moveTo(pos1);
+}
+
+void CursorSingle::moveTo(Qt::Key key, int count, TrackingCursor *source)
+{
+    if (count == 0 || source != cursor) return;
+    QPointF pos = cursor->value();
+    double rangeX = m_plot->canvasMap(cursor->xAxis()).sDist();
+    double rangeY = m_plot->canvasMap(cursor->yAxis()).sDist();
+
+    switch (key) {
+        case Qt::Key_Left: {
+            if (m_snapToValues) {
+                pos = correctedPos(pos, -count, 0);
+            }
+            else
+                pos.rx() -= count*rangeX/100;
+            break;
+        }
+        case Qt::Key_Right: {
+            if (m_snapToValues) {
+                pos = correctedPos(pos, count, 0);
+            }
+            else
+                pos.rx() += count*rangeX/100;
+            break;
+        }
+        case Qt::Key_Up: pos.ry() += count*rangeY/100; break;
+        case Qt::Key_Down: pos.ry() -= count*rangeY/100; break;
+        default: break;
+    }
+
+    moveTo(pos);
 }
 
 void CursorSingle::updatePos()
 {
     auto pos = cursor->value();
     pos = correctedPos(pos);
-    cursor->xVal = pos.x();
-    cursor->yVal = 0;
-    cursor->zVal = 0;
     cursor->moveTo(pos);
-    if (xlabel) xlabel->updateLabel();
-    if (ylabel) ylabel->updateLabel();
+    update();
 }
 
 void CursorSingle::attach()
 {
-    cursor->attach(plot);
-    if (xlabel) xlabel->attach(plot);
-    if (ylabel) ylabel->attach(plot);
+    cursor->attach(m_plot);
+    if (xlabel) xlabel->attach(m_plot);
+    if (ylabel) ylabel->attach(m_plot);
 }
 
 void CursorSingle::detach()
@@ -84,3 +112,50 @@ void CursorSingle::detach()
     if (xlabel) xlabel->detach();
     if (ylabel) ylabel->detach();
 }
+
+bool CursorSingle::contains(Selectable *selected) const
+{
+    if (auto c = dynamic_cast<TrackingCursor*>(selected))
+        return c == cursor;
+    else if (auto l = dynamic_cast<CursorLabel*>(selected))
+        return l == xlabel || l == ylabel;
+
+    return false;
+}
+
+void CursorSingle::update()
+{
+    if (xlabel) xlabel->updateLabel(m_showValues);
+    if (ylabel) ylabel->updateLabel(m_showValues);
+}
+
+QStringList CursorSingle::dataHeader(bool allData) const
+{
+    Q_UNUSED(allData);
+    char f = m_format==Format::Fixed?'f':'e';
+    return {QString::number(cursor->xValue(), f, m_digits)};
+}
+
+QList<double> CursorSingle::data(int curve, bool allData) const
+{
+    Q_UNUSED(allData);
+    auto curves = m_plot->model()->curves();
+    bool success;
+    return {curves.at(curve)->channel->data()->YforXandZ(cursor->xValue(), 0, success)};
+}
+
+//QStringList CursorSingle::getValues() const
+//{
+//    char f = m_format==Format::Fixed?'f':'e';
+//    QStringList list;
+//    list << QString("\t%1").arg(cursor->xValue(), 0, f, 1);
+
+//    auto curves = m_plot->model()->curves();
+//    for (auto curve: curves) {
+//        bool success = false;
+//        auto val = curve->channel->data()->YforXandZ(cursor->xValue(), 0, success);
+//        list << QString("%1\t%2").arg(curve->channel->name()).arg(success?val:qQNaN(), 0, 'f', 1);
+//    }
+
+//    return list;
+//}

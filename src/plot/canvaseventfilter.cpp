@@ -226,7 +226,7 @@ void CanvasEventFilter::mousePress(QMouseEvent *event)
             bool selected = picker ? picker->findObject(event) : false;
             if (selected) {
                 actionType = ActionType::Pick;
-                picker->startPick();
+                picker->startPick(event->pos());
             }
             else {
                 if (picker) picker->deselect();
@@ -259,6 +259,11 @@ void CanvasEventFilter::mouseRelease(QMouseEvent *event)
         auto coords = dragZoom->endDrag(event);
         zoomStack->addZoom(coords, true);
         actionType = ActionType::None;
+        if (currentPosition == event->pos()) {
+            if (picker->findObject(event)) {
+                picker->showContextMenu(event);
+            }
+        }
     }
     else if (actionType == ActionType::Zoom) {
         auto coords = plotZoom->endZoom(event);

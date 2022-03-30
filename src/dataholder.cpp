@@ -609,6 +609,61 @@ double DataHolder::yValue(int i, int block) const
     return 0.0;
 }
 
+int DataHolder::floor(double x) const
+{
+    int index=-1;
+    if (m_xValuesFormat == XValuesNonUniform) {
+        for (int i = 0; i < m_xCount; ++i) {
+            if (m_xValues[i]<=x) index=i;
+            else break;
+        }
+    }
+    else {
+        index = qFloor((x-m_xBegin)/m_xStep);
+        if (index >= m_xCount) index = -1;
+    }
+    return index;
+}
+
+int DataHolder::ceil(double x) const
+{
+    int index=-1;
+    if (m_xValuesFormat == XValuesNonUniform) {
+        for (int i = 0; i < m_xCount; ++i) {
+            if (m_xValues[i]<=x) index=i;
+            else {
+                index = i+1;
+                break;
+            }
+        }
+    }
+    else {
+        index = qCeil((x-m_xBegin)/m_xStep);
+        if (index >= m_xCount) index = -1;
+    }
+    return index;
+}
+
+int DataHolder::nearest(double x) const
+{
+    int index=-1;
+    if (m_xValuesFormat == XValuesNonUniform) {
+        for (int i = 0; i < m_xCount-1; ++i) {
+            if (m_xValues[i]<=x && m_xValues[i+1]>=x) {
+                index = (x-m_xValues[i] < m_xValues[i+1]-x)?i:i+1;
+            }
+            else {
+                break;
+            }
+        }
+    }
+    else {
+        index = qRound((x-m_xBegin)/m_xStep);
+        if (index >= m_xCount) index = -1;
+    }
+    return index;
+}
+
 cx_double DataHolder::yValueComplex(int i, int block) const
 {DD
     if (i<0 || block < 0) return {0.0,0.0};

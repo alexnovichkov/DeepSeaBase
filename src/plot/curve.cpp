@@ -86,7 +86,7 @@ PointLabel *Curve::findLabel(const int point)
     return 0;
 }
 
-void Curve::moveToPos(QPoint pos)
+void Curve::moveToPos(QPoint pos, QPoint startPos)
 {
     if (m_plot->interactionMode != Plot::DataInteraction) return;
 
@@ -193,10 +193,79 @@ bool Curve::underMouse(const QPoint &pos, double *distanceX, double *distanceY) 
 {
     selectedPoint = closest(pos, distanceX, distanceY);
 
-    if (distanceX && *distanceX < 5) {
-        return true;
+    if (distanceX && distanceY) {
+        if ((*distanceX)*(*distanceX)+(*distanceY)*(*distanceY) < 25)
+            return true;
     }
     return false;
+}
+
+void Curve::moveLeft(int count)
+{
+    if (selectedPoint >= count) {
+        selectedPoint -= count;
+        updateSelection();
+    }
+}
+
+void Curve::moveRight(int count)
+{
+    if (selectedPoint >=0 && selectedPoint < samplesCount()-count) {
+        selectedPoint += count;
+        updateSelection();
+    }
+}
+
+void Curve::moveUp(int count)
+{
+    if (m_plot->interactionMode != Plot::DataInteraction) return;
+    if (selectedPoint < 0 || selectedPoint >= samplesCount()) return;
+
+    QPointF val = samplePoint(selectedPoint);
+    double y = val.y()+(m_plot->canvasMap(yAxis()).sDist())/100*count;
+
+    if (channel->data()->setYValue(selectedPoint, y)) {
+        channel->setDataChanged(true);
+        channel->descriptor()->setDataChanged(true);
+        resetCashedData();
+
+        updateSelection();
+    }
+}
+
+void Curve::moveDown(int count)
+{
+    if (m_plot->interactionMode != Plot::DataInteraction) return;
+    if (selectedPoint < 0 || selectedPoint >= samplesCount()) return;
+
+    QPointF val = samplePoint(selectedPoint);
+    double y = val.y()-(m_plot->canvasMap(yAxis()).sDist())/100*count;
+
+    if (channel->data()->setYValue(selectedPoint, y)) {
+        channel->setDataChanged(true);
+        channel->descriptor()->setDataChanged(true);
+        resetCashedData();
+
+        updateSelection();
+    }
+}
+
+void Curve::fix()
+{
+    if (selectedPoint >= 0 && selectedPoint < samplesCount()) {
+        QPointF val = samplePoint(selectedPoint);
+
+        PointLabel *label = findLabel(selectedPoint);
+
+        if (!label) {
+            label = new PointLabel(m_plot, this);
+            label->setPoint(selectedPoint);
+            label->setOrigin(val);
+            addLabel(label);
+
+            label->attach(m_plot);
+        }
+    }
 }
 
 void Curve::updateSelection()

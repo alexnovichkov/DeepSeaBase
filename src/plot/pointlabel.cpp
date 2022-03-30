@@ -52,7 +52,7 @@ void PointLabel::setMode(int mode)
     updateLabel();
 }
 
-void PointLabel::cycleMode()
+void PointLabel::cycle()
 {
     switch (d_mode) {
         case 0: setMode(1); break;
@@ -72,22 +72,22 @@ void PointLabel::setPoint(int point)
     d_point = point;
 }
 
-QPoint PointLabel::displacement() const
-{DD;
-    return d_displacement;
-}
+//QPoint PointLabel::displacement() const
+//{DD;
+//    return d_displacement;
+//}
 
-void PointLabel::setDisplacement(const QPoint &displacement)
-{DD;
-    if (d_displacement == displacement) return;
-    d_displacement = displacement;
-    itemChanged();
-}
+//void PointLabel::setDisplacement(const QPoint &displacement)
+//{DD;
+//    if (d_displacement == displacement) return;
+//    d_displacement = displacement;
+//    itemChanged();
+//}
 
-void PointLabel::setDisplacement(int dx, int dy)
-{DD;
-    setDisplacement(QPoint(dx, dy));
-}
+//void PointLabel::setDisplacement(int dx, int dy)
+//{DD;
+//    setDisplacement(QPoint(dx, dy));
+//}
 
 QwtText PointLabel::label() const
 {DD;
@@ -149,11 +149,18 @@ void PointLabel::draw(QPainter *painter, const QwtScaleMap &xMap,
     d_label.draw(painter, textRect);
 }
 
-void PointLabel::moveBy(const QPoint &pos)
-{DD;
-    if (pos.x() == 0 && pos.y() == 0) return;
-    d_displacement.rx() += pos.x();
-    d_displacement.ry() += pos.y();
+void PointLabel::remove()
+{
+    if (curve) curve->removeLabel(this);
+}
+
+void PointLabel::moveToPos(QPoint pos, QPoint startPos)
+{
+    auto delta = pos-startPos;
+    qDebug()<<pos<<startPos<<delta;
+//    if (pos.x() == 0 && pos.y() == 0) return;
+    d_displacement.rx() += delta.x();
+    d_displacement.ry() += delta.y();
     itemChanged();
 }
 

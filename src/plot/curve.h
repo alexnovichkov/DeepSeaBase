@@ -58,7 +58,7 @@ public:
     PointLabel *findLabel(const int point);
     virtual int closest(const QPoint &pos, double *dist = nullptr, double *dist2 = nullptr) const = 0;
 
-    virtual void moveToPos(QPoint pos) override;
+    virtual void moveToPos(QPoint pos, QPoint startPos = QPoint()) override;
 
     virtual double yMin() const;
     virtual double yMax() const;
@@ -85,7 +85,11 @@ public:
     // Selectable interface
 public:
     virtual bool underMouse(const QPoint &pos, double *distanceX = nullptr, double *distanceY = nullptr) const override;
-
+    virtual void moveLeft(int count = 1) override;
+    virtual void moveRight(int count = 1) override;
+    virtual void moveUp(int count = 1) override;
+    virtual void moveDown(int count = 1) override;
+    virtual void fix() override;
 protected:
     virtual void attachTo(QwtPlot *plot) = 0;
     virtual void updateSelection() override;

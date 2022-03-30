@@ -10,14 +10,14 @@
 #include "curve.h"
 #include "algorithms.h"
 #include "qwt_scale_map.h"
+#include <QMenu>
+#include <app.h>
 
 CursorLabel::CursorLabel(Plot *parent, TrackingCursor *cursor)
     : QwtPlotItem(), m_plot{parent}, m_cursor{cursor}
 {
     setZ(40.0);
-//    m_label.setBorderPen(QPen(Qt::darkGray, 0, Qt::SolidLine));
     m_label.setBackgroundBrush(Qt::white);
-//    m_label.setBorderRadius(1.0);
     setXAxis(m_cursor->xAxis());
     setYAxis(m_cursor->yAxis());
 }
@@ -31,44 +31,37 @@ void CursorLabel::updateAlignment()
 {
     setXAxis(m_cursor->xAxis());
     setYAxis(m_cursor->yAxis());
-    updateLabel();
-    itemChanged();
 }
 
 void CursorLabel::setAxis(CursorLabel::Axis axis)
 {
     if (m_axis != axis) {
         m_axis = axis;
-        updateLabel();
         itemChanged();
     }
 }
 
-void CursorLabel::setShowValues(bool show)
+void CursorLabel::updateLabel(bool showValues)
 {
-    if (m_showValues != show) {
-        m_showValues = show;
-        updateLabel();
-        itemChanged();
-    }
-}
-
-void CursorLabel::updateLabel()
-{
-//    if (m_cursor->current) m_label.setBorderPen(QPen(Qt::darkGray, 0.5, Qt::SolidLine));
-//    else m_label.setBorderPen(QPen(Qt::NoPen));
     QStringList label;
-    if (m_showValues) {
+    char f = m_cursor->parent->format()==Cursor::Format::Fixed?'f':'e';
+    if (showValues && m_axis != Axis::YAxis) {
         auto list = m_plot->model()->curves();
         for (auto curve: list) {
             if (curve->xAxis()==xAxis()) {
                 bool success = false;
-                auto val = curve->channel->data()->YforXandZ(m_cursor->xValue(), m_cursor->zVal, success);
-                label << QString("<font color=%1>%2</font>").arg(curve->pen().color().name()).arg(success?val:qQNaN(), 0, 'f', 1);
+                auto val = curve->channel->data()->YforXandZ(m_cursor->xValue(), 0, success);
+                QString s = QString::number(success?val:qQNaN(), f, m_cursor->parent->digits());
+                //while(s.rightRef(1)=="0") s.chop(1);
+                label << QString("<font color=%1>%2</font>")
+                         .arg(curve->pen().color().name())
+                         .arg(s);
             }
         }
     }
-    label << QString("<b>%1</b>").arg(m_axis==Axis::XAxis?m_cursor->xValue():m_cursor->yValue(), 0, 'f', 1);
+    QString s = QString::number(m_axis==Axis::XAxis?m_cursor->xValue():m_cursor->yValue(), f, m_cursor->parent->digits());
+    //while(s.rightRef(1)=="0") s.chop(1);
+    label << QString("<b>%1</b>").arg(s);
     m_label.setText(label.join("<br>"),QwtText::RichText);
     itemChanged();
 }
@@ -89,7 +82,6 @@ void CursorLabel::draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScal
             break;
     }
 
-
     QPointF pos(xval, yval);
     const QSizeF textSize = m_label.textSize(painter->font());
     pos.rx() += 3;
@@ -99,7 +91,6 @@ void CursorLabel::draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScal
     const QRectF textRect(0, 0, textSize.width(), textSize.height());
     m_label.draw(painter, textRect);
 }
-
 
 bool CursorLabel::underMouse(const QPoint &pos, double *distanceX, double *distanceY) const
 {
@@ -137,10 +128,20 @@ bool CursorLabel::underMouse(const QPoint &pos, double *distanceX, double *dista
                   textSize.width(), textSize.height()).contains(pos);
 }
 
+QList<QAction *> CursorLabel::actions()
+{
+    return m_cursor->actions();
+}
+
 void CursorLabel::updateSelection()
 {
-    if (selected()) m_label.setBorderPen(QPen(Qt::darkGray, 0.5, Qt::SolidLine));
-    else m_label.setBorderPen(QPen(Qt::NoPen));
+    if (selected()) {
+        m_label.setBorderPen(QPen(Qt::darkGray, 0.5, Qt::SolidLine));
+        setZ(1000);
+    }
+    else {
+        m_label.setBorderPen(QPen(Qt::NoPen));
+        setZ(40);
+    }
     itemChanged();
-//    m_cursor->setSelected(selected());
 }

@@ -27,7 +27,7 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
     connect(player, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error), this, &PlayPanel::displayErrorMessage);
 
     cursor = new TrackingCursor(Qt::green, Cursor::Style::Vertical, nullptr);
-    cursor->showYValues = true;
+//    cursor->showYValues = true;
     cursor->attach(plot);
     cursor->setAxes(QwtAxis::XBottom, QwtAxis::YLeft);
     cursor->setVisible(false);
@@ -240,7 +240,7 @@ void PlayPanel::hideEvent(QHideEvent *event)
 void PlayPanel::moveCursor(QPointF val)
 {DD;
     cursor->moveTo(val);
-    cursor->updateLabel();
+//    cursor->updateLabel();
 }
 
 /*******************************************************************/

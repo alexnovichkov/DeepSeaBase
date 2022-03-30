@@ -71,6 +71,7 @@
 #include "plotinfooverlay.h"
 #include "plotmodel.h"
 #include "cursors.h"
+#include "cursorbox.h"
 
 Plot::Plot(PlotType type, QWidget *parent) :
     QwtPlot(parent), plotType(type)
@@ -105,12 +106,13 @@ Plot::Plot(PlotType type, QWidget *parent) :
     leftOverlay = new LeftAxisOverlay(this);
     rightOverlay = new RightAxisOverlay(this);
 
-    trackingPanel = new TrackingPanel(this);
-    if (trackingPanel) {
-        trackingPanel->setVisible(false);
-        connect(trackingPanel,SIGNAL(closeRequested()),SIGNAL(trackingPanelCloseRequested()));
-        connect(this, SIGNAL(curvesCountChanged()), trackingPanel, SLOT(update()));
-    }
+//    trackingPanel = new TrackingPanel(this);
+//    if (trackingPanel) {
+//        trackingPanel->setVisible(false);
+//        connect(trackingPanel,SIGNAL(closeRequested()),SIGNAL(trackingPanelCloseRequested()));
+//        connect(this, SIGNAL(curvesCountChanged()), trackingPanel, SLOT(update()));
+//    }
+
     axisLabelsVisible = App->getSetting("axisLabelsVisible", true).toBool();
     yValuesPresentationLeft = DataHolder::ShowAsDefault;
     yValuesPresentationRight = DataHolder::ShowAsDefault;
@@ -122,6 +124,14 @@ Plot::Plot(PlotType type, QWidget *parent) :
     createLegend();
 
     cursors = new Cursors(this);
+    connect(this, &Plot::curvesCountChanged, cursors, &Cursors::update);
+
+    cursorBox = new CursorBox(cursors, this);
+    cursorBox->setWindowTitle(parent->windowTitle());
+    cursorBox->setVisible(false);
+    connect(this, &Plot::curvesCountChanged, cursorBox, &CursorBox::updateLayout);
+    connect(cursorBox,SIGNAL(closeRequested()),SIGNAL(trackingPanelCloseRequested()));
+
 
     zoom = new ZoomStack(this);
 
@@ -130,18 +140,19 @@ Plot::Plot(PlotType type, QWidget *parent) :
 
     _picker = new Picker(this);
     _picker->setEnabled(App->getSetting("pickerEnabled", true).toBool());
-    if (trackingPanel) {
-        connect(_picker,SIGNAL(cursorSelected(TrackingCursor*)), trackingPanel, SLOT(changeSelectedCursor(TrackingCursor*)));
-        connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       trackingPanel, SLOT(setValue(QPointF,bool)));
-        connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          trackingPanel, SLOT(setValue(QPointF)));
-    }
+    connect(_picker, &Picker::removeNeeded, cursors, qOverload<Selectable*>(&Cursors::removeCursor));
+//    if (trackingPanel) {
+//        connect(_picker,SIGNAL(cursorSelected(TrackingCursor*)), trackingPanel, SLOT(changeSelectedCursor(TrackingCursor*)));
+//        connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       trackingPanel, SLOT(setValue(QPointF,bool)));
+//        connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          trackingPanel, SLOT(setValue(QPointF)));
+//    }
 
     dragZoom = new DragZoom(this);
     wheelZoom = new WheelZoom(this);
     plotZoom = new PlotZoom(this);
 
     axisZoom = new AxisZoom(this);
-    if (trackingPanel) connect(axisZoom,SIGNAL(axisClicked(QPointF,bool)), trackingPanel, SLOT(setValue(QPointF,bool)));
+//    if (trackingPanel) connect(axisZoom,SIGNAL(axisClicked(QPointF,bool)), trackingPanel, SLOT(setValue(QPointF,bool)));
     connect(axisZoom,SIGNAL(hover(QwtAxisId,int)), SLOT(hoverAxis(QwtAxisId,int)));
 
     canvasFilter = new CanvasEventFilter(this);
@@ -153,7 +164,7 @@ Plot::Plot(PlotType type, QWidget *parent) :
     canvasFilter->setPicker(_picker);
     connect(canvasFilter,SIGNAL(hover(QwtAxisId,int)), SLOT(hoverAxis(QwtAxisId,int)));
     connect(canvasFilter,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)), SLOT(showContextMenu(QPoint,QwtAxisId)));
-    if (trackingPanel) connect(canvasFilter,SIGNAL(moveCursor(Enums::Direction)), trackingPanel, SLOT(moveCursor(Enums::Direction)));
+//    if (trackingPanel) connect(canvasFilter,SIGNAL(moveCursor(Enums::Direction)), trackingPanel, SLOT(moveCursor(Enums::Direction)));
 }
 
 Plot::~Plot()
@@ -161,6 +172,7 @@ Plot::~Plot()
     deleteAllCurves(true);
 
     delete trackingPanel;
+    delete cursorBox;
     delete grid;
     delete tracker;
     delete _picker;
@@ -230,8 +242,26 @@ QMenu *Plot::createMenu(QwtAxisId axis, const QPoint &pos)
     QMenu *menu = new QMenu(this);
 
     if (axis == QwtAxis::XBottom) {
-        menu->addAction("Одинарный курсор", [=](){
-            cursors->addSingleCursor(canvas()->mapFromGlobal(pos));
+        auto scm = new QMenu("Одинарный курсор", this);
+        scm->addAction("Вертикальный", [=](){
+            cursors->addSingleCursor(canvas()->mapFromGlobal(pos), Cursor::Style::Vertical);
+        });
+        scm->addAction("Перекрестье", [=](){
+            cursors->addSingleCursor(canvas()->mapFromGlobal(pos), Cursor::Style::Cross);
+        });
+        menu->addMenu(scm);
+        if (type() != PlotType::Spectrogram) {
+            auto dcm = new QMenu("Двойной курсор", this);
+            dcm->addAction("Стандартный", [=](){
+                cursors->addDoubleCursor(canvas()->mapFromGlobal(pos), Cursor::Style::Vertical);
+            });
+            dcm->addAction("Режекция", [=](){
+                cursors->addRejectCursor(canvas()->mapFromGlobal(pos), Cursor::Style::Vertical);
+            });
+            menu->addMenu(dcm);
+        }
+        menu->addAction("Гармонический курсор", [=](){
+            cursors->addHarmonicCursor(canvas()->mapFromGlobal(pos));
         });
 
         menu->addAction(xScaleIsLogarithmic?"Линейная шкала":"Логарифмическая шкала", [=](){
@@ -397,10 +427,10 @@ void Plot::cycleChannels(bool up)
     sergeiMode = false;
 }
 
-void Plot::updateTrackingPanel()
-{
-    if (trackingPanel) trackingPanel->update();
-}
+//void Plot::updateTrackingPanel()
+//{
+//    if (trackingPanel) trackingPanel->update();
+//}
 
 bool Plot::hasCurves() const
 {DD;
@@ -979,7 +1009,8 @@ void Plot::switchInteractionMode()
 
 void Plot::switchTrackingCursor()
 {DD;
-    if (trackingPanel) trackingPanel->switchVisibility();
+//    if (trackingPanel) trackingPanel->switchVisibility();
+    if (cursorBox) cursorBox->setVisible(!cursorBox->isVisible());
 }
 
 void Plot::toggleAutoscale(int axis, bool toggled)
@@ -1026,7 +1057,8 @@ void Plot::editLegendItem(QwtPlotItem *item)
 {DD;
     if (Curve *c = dynamic_cast<Curve *>(item)) {
         CurvePropertiesDialog dialog(c, this);
-        if (trackingPanel) connect(&dialog,SIGNAL(curveChanged(Curve*)), trackingPanel, SLOT(update()));
+//        if (trackingPanel) connect(&dialog,SIGNAL(curveChanged(Curve*)), trackingPanel, SLOT(update()));
+        if (cursorBox) connect(&dialog,SIGNAL(curveChanged(Curve*)), cursorBox, SLOT(updateLayout()));
         dialog.exec();
     }
 }
