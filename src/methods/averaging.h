@@ -61,6 +61,8 @@ public:
     int getAveragesMade() const;
     int averagesReallyMade = 0;
 
+    int size() const;
+
 private:
     void averageLinear(const QVector<cx_double> &input);
     void averageExponential(const QVector<cx_double> &input);

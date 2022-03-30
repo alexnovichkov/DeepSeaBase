@@ -172,6 +172,13 @@ int Averaging::getAveragesMade() const
     return averagesMade;
 }
 
+int Averaging::size() const
+{
+    if (!averaged.isEmpty()) return averaged.size();
+    if (!averaged_.isEmpty()) return averaged_.size();
+    return 0;
+}
+
 int Averaging::getMaximumAverages() const
 {
     return maximumAverages;

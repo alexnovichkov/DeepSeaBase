@@ -1080,6 +1080,7 @@ void MainWindow::calculateMean()
     bool stepsEqual = true; // одинаковый шаг по оси Х
     bool namesEqual = true; // одинаковые названия осей Y
     bool oneFile = true; // каналы из одного файла
+    bool xMinDifferent = false;
     bool writeToSeparateFile = true;
     bool writeToD94 = false;
 
@@ -1099,6 +1100,8 @@ void MainWindow::calculateMean()
             oneFile = false;
         if (!firstDescriptor->dataTypeEquals(channel->descriptor()))
             dataTypeEqual = false;
+        if (firstChannel->data()->xMin() != channel->data()->xMin())
+            xMinDifferent = true;
     }
     if (!dataTypeEqual) {
         int result = QMessageBox::warning(0, "Среднее графиков",
@@ -1115,11 +1118,18 @@ void MainWindow::calculateMean()
         else writeToD94 = true;
     }
     if (!stepsEqual) {
-        int result = QMessageBox::warning(0, "Среднее графиков",
-                                          "Графики имеют разный шаг по оси X. Среднее будет записано в файл d94. Продолжить?",
-                                          "Да", "Нет");
-        if (result == 1) return;
-        else writeToD94 = true;
+        QMessageBox::critical(0, "Среднее графиков", "Графики имеют разный шаг по оси X. Прерываю");
+        return;
+
+//        int result = QMessageBox::warning(0, "Среднее графиков",
+//                                          "Графики имеют разный шаг по оси X. Среднее будет записано в файл d94. Продолжить?",
+//                                          "Да", "Нет");
+//        if (result == 1) return;
+//        else writeToD94 = true;
+    }
+    if (xMinDifferent) {
+        QMessageBox::critical(0, "Среднее графиков", "Графики имеют разное начальное значение по оси X. Прерываю");
+        return;
     }
     if (oneFile) {
         QMessageBox box("Среднее графиков",

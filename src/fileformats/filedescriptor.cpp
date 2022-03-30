@@ -142,11 +142,16 @@ void FileDescriptor::calculateMean(const QList<Channel *> &channels)
 
     Channel *firstChannel = channels.constFirst();
 
-    //ищем наименьшее число отсчетов
+    //ищем наибольшее число отсчетов
+    QVector<double> xValues;
     int numInd = firstChannel->data()->samplesCount();
+    if (firstChannel->data()->xValuesFormat()==DataHolder::XValuesNonUniform)
+        xValues = firstChannel->data()->xValues();
     for (int i=1; i<channels.size(); ++i) {
-        if (channels.at(i)->data()->samplesCount() < numInd)
+        if (channels.at(i)->data()->samplesCount() > numInd) {
             numInd = channels.at(i)->data()->samplesCount();
+            xValues = channels.at(i)->data()->xValues();
+        }
     }
 
     // ищем формат данных для нового канала
@@ -170,13 +175,23 @@ void FileDescriptor::calculateMean(const QList<Channel *> &channels)
 
     Averaging averaging(Averaging::Linear, channels.size());
 
+    //Выравниваем количество данных по самому длинному вектору
     for (Channel *ch: channels) {
         const bool populated = ch->populated();
         if (!populated) ch->populate();
-        if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex)
-            averaging.average(ch->data()->yValuesComplex(0));
-        else
-            averaging.average(ch->data()->linears(0));
+        if (ch->data()->yValuesFormat() == DataHolder::YValuesComplex) {
+            auto d = ch->data()->yValuesComplex(0);
+            if (d.size() < averaging.size())
+                d.append(QVector<cx_double>(averaging.size()-d.size()));
+            averaging.average(d);
+        }
+        else {
+            //усредняем первый блок
+            auto d = ch->data()->linears(0);
+            if (d.size() < averaging.size())
+                d.append(QVector<double>(averaging.size()-d.size()));
+            averaging.average(d);
+        }
         if (!populated) ch->clear();
     }
 
@@ -189,19 +204,19 @@ void FileDescriptor::calculateMean(const QList<Channel *> &channels)
         data->setXValues(firstChannel->data()->xMin(), firstChannel->data()->xStep(), numInd);
     }
     else {
-        data->setXValues(firstChannel->data()->xValues().mid(0, numInd));
+        data->setXValues(xValues);
     }
     //усредняем только первый блок
     //TODO: добавить усреднение по всем блокам
     data->setZValues(firstChannel->data()->zMin(), firstChannel->data()->zStep(), 1);
 
     if (format == DataHolder::YValuesComplex) {
-        auto d = averaging.getComplex().mid(0, numInd);
+        auto d = averaging.getComplex();
         d.resize(data->samplesCount());
         data->setYValues(d);
     }
     else {//не комплексные
-        QVector<double> d = averaging.get().mid(0, numInd);
+        QVector<double> d = averaging.get();
         d.resize(data->samplesCount());
         if (format == DataHolder::YValuesAmplitudesInDB) {
             data->setYValues(DataHolder::toLog(d, data->threshold(), units), format);
