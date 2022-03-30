@@ -76,6 +76,7 @@ void MatFile::read()
                     channel->indexInGroup = i;
                     channel->groupSize = count;
                     channel->_name = name->subRecords[i]->getString().section(" ", 0, 0);
+                    //channel->_type =
 
                     toAppend << channel;
                 }
@@ -148,8 +149,11 @@ void MatFile::read()
                 else if (c.expression.startsWith("OCTF24(")) octave = 24;
                 channel->dataDescription().put("function.octaveFormat", octave);
 
-                if (xvalues.isEmpty())
+                if (xvalues.isEmpty()) {
                     channel->data()->setXValues(xbegin, xstep, samplescount);
+                    if (!qFuzzyIsNull(xstep) && channel->type()==Descriptor::TimeResponse)
+                        channel->dataDescription().put("samplerate", 1.0/xstep);
+                }
                 else {
                     channel->data()->setXValues(xvalues);
                 }
@@ -160,6 +164,7 @@ void MatFile::read()
                         channel->real_values = dynamic_cast<MatlabNumericRecord *>(values->realValues);
                         channel->imag_values = dynamic_cast<MatlabNumericRecord *>(values->imagValues);
                         channel->complex = values->complex;
+                        channel->dataDescription().put("function.precision", "double");
                     }
                 }
 
@@ -178,13 +183,22 @@ void MatFile::read()
                          c.expression.startsWith("OCT"))
                     yformat = DataHolder::YValuesAmplitudes;
                 channel->data()->setYValuesFormat(yformat);
+                switch (yformat) {
+                    case DataHolder::YValuesAmplitudes: channel->dataDescription().put("function.format", "amplitude"); break;
+                    case DataHolder::YValuesPhases: channel->dataDescription().put("function.format", "phase"); break;
+                    case DataHolder::YValuesReals: channel->dataDescription().put("function.format", "real"); break;
+                    case DataHolder::YValuesComplex: channel->dataDescription().put("function.format", "complex"); break;
+                    default: channel->dataDescription().put("function.format", "real");
+                }
 
                 channel->data()->setThreshold(c.logRef);
+                channel->dataDescription().put("function.logref", c.logRef);
 
                 auto units = DataHolder::UnitsUnknown;
                 if (c.scale == 10) units = DataHolder::UnitsQuadratic;
                 else if (c.scale == 20) units = DataHolder::UnitsLinear;
                 channel->data()->setYValuesUnits(units);
+                channel->dataDescription().put("function.logscale", c.scale == 10?"quadratic":"linear");
 
                 //ЗАГЛУШКА
                 channel->data()->setZValues(0.0, 0.0, 1);
@@ -194,6 +208,56 @@ void MatFile::read()
                 QStringList info = channel->xml.info;
                 info.append(ChanAddress);
                 channel->dataDescription().put("description",info.join(" \\"));
+
+                if (channel->_type=="Signal") {
+                    channel->dataDescription().put("function.name", "Time Response");
+                    channel->dataDescription().put("function.type", 1);
+                }
+                if (channel->_type=="FrequencySpectrum") {
+                    channel->dataDescription().put("function.type", 12);
+                    channel->dataDescription().put("function.logscale", "linear");
+                    if (channel->yName()=="deg")
+                        yformat = DataHolder::YValuesPhases;
+                    else
+                        yformat = DataHolder::YValuesAmplitudes;
+                    if (channel->dataDescription().get("function.octaveFormat").toInt()>0) {
+                        channel->dataDescription().put("function.name", "OCTF");
+                        channel->dataDescription().put("function.type", 9);
+                    }
+                    else
+                        channel->dataDescription().put("function.name", "FFT");
+                }
+                if (channel->_type=="CrossPowerSpectrum") {
+                    QString format = function_record->subRecords[function_record->fieldNames.indexOf("spectrum_format")]->getString();
+                    if (channel->yName()=="deg")
+                        yformat = DataHolder::YValuesPhases;
+                    else
+                        yformat = DataHolder::YValuesAmplitudes;
+                    if (format=="LINEAR") {
+                        channel->dataDescription().put("function.name", "GXYN");
+                    }
+                    else {
+                        channel->dataDescription().put("function.name", "GXY");
+                    }
+                    channel->dataDescription().put("function.type", 3);
+                }
+                if (channel->_type=="Coherence") {
+                    channel->dataDescription().put("function.name", "COH");
+                    channel->dataDescription().put("function.type", 6);
+                    channel->dataDescription().put("function.logscale", "dimensionless");
+                    channel->dataDescription().put("function.logref", 1);
+                }
+                if (channel->_type=="PSD") {
+                    yformat = DataHolder::YValuesAmplitudes;
+                    channel->dataDescription().put("function.name", "PSD");
+                    channel->dataDescription().put("function.type", 9);
+//                    channel->dataDescription().put("function.logscale", "dimensionless");
+                }
+                if (channel->_type=="AutoPowerSpectrum") {
+                    yformat = DataHolder::YValuesAmplitudes;
+                    channel->dataDescription().put("function.name", "APS");
+                    channel->dataDescription().put("function.type", 2);
+                }
 
                 QStringList l;
                 l<<channel->xml.generalName<<channel->xml.pointId<<channel->xml.direction;
