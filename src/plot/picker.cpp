@@ -64,6 +64,7 @@ void Picker::deselect()
                 selectable->setSelected(false);
         }
     }
+    currentSelected = nullptr;
 }
 
 void Picker::procKeyboardEvent(int key)

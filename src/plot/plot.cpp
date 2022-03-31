@@ -507,6 +507,7 @@ void Plot::deleteSelectedCurve(Selectable *selected)
 void Plot::deleteCurve(Curve *curve, bool doReplot)
 {DD;
     if (!curve) return;
+    if (curve->selected()) _picker->deselect();
 
     bool removedFromLeft = true;
     if (m->deleteCurve(curve, &removedFromLeft)) {
