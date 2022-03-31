@@ -43,7 +43,6 @@ public:
     virtual void updateProperty(const QString &property, const QVariant &val) override;
 private:
     Resampler resampler;
-    int exponent = 0;
     double factor = 1.0; //коэффициент new sample rate = sample rate / factor
     int currentResamplingType = 0; //тип передискретизации (0=factor, 1=range, 2=sampleRate)
     double xStep = 0.0;

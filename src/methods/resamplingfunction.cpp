@@ -43,7 +43,8 @@ QString ResamplingFunction::propertyDescription(const QString &property) const
                "  \"displayName\" : \"Коэффициент\"   ,"
                "  \"defaultValue\": 1.0         ,"
                "  \"toolTip\"     : \"Частота дискретизации будет уменьшена в k раз\","
-               "  \"values\"      : []"
+               "  \"values\"      : [],"
+               "  \"minimum\"     : 0.0"
                 "}");
     }
     if (property == "frequencyRange") {
@@ -89,8 +90,6 @@ QVariant ResamplingFunction::m_getProperty(const QString &property) const
             return m_input->getParameter(property);
     }
 
-    qDebug()<<factor;
-
     if (property == name()+"/resampleType")
         return currentResamplingType;
     if (property == name()+"/factor")
@@ -124,16 +123,6 @@ void ResamplingFunction::m_setProperty(const QString &property, const QVariant &
     if (p == "resampleType") {
         currentResamplingType = val.toInt();
     }
-    else if (p == "factor") {
-        double f = val.toDouble();
-        if (factor != f) {
-            factor = f;
-            emit propertyChanged("?/xStep", xStep * factor);
-            //обновляем два других параметра, зависящие от этого
-            emit attributeChanged(this, name()+"/frequencyRange",QVariant(),"");
-            emit attributeChanged(this, name()+"/sampleRate",QVariant(),"");
-        }
-    }
     else if (p == "frequencyRange") {
         if (getParameter(name()+"/frequencyRange").toInt() != val.toInt()) {
             double f = 1.0 / val.toDouble() / 2.56 / xStep;
@@ -148,6 +137,16 @@ void ResamplingFunction::m_setProperty(const QString &property, const QVariant &
         int sR = val.toInt();
         if (getParameter(name()+"/sampleRate").toInt() != sR) {
             double f = 1.0 / xStep / sR;
+            factor = f;
+            emit propertyChanged("?/xStep", xStep * factor);
+            emit attributeChanged(this, name()+"/factor",QVariant(),"");
+            emit attributeChanged(this, name()+"/frequencyRange",QVariant(),"");
+            emit attributeChanged(this, name()+"/sampleRate",QVariant(),"");
+        }
+    }
+    else if (p == "factor") {
+        double f = val.toDouble();
+        if (factor != f) {
             factor = f;
             emit propertyChanged("?/xStep", xStep * factor);
             emit attributeChanged(this, name()+"/factor",QVariant(),"");
