@@ -224,6 +224,7 @@ void CanvasEventFilter::mousePress(QMouseEvent *event)
             //если есть, то это выбор объекта
             //если нет, то сбрасываем выбор объекта и это - выделение прямоугольником
             bool selected = picker ? picker->findObject(event) : false;
+
             if (selected) {
                 actionType = ActionType::Pick;
                 picker->startPick(event->pos());

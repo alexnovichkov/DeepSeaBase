@@ -193,6 +193,9 @@ bool Curve::underMouse(const QPoint &pos, double *distanceX, double *distanceY) 
 {
     selectedPoint = closest(pos, distanceX, distanceY);
 
+    //no closest point for this pos
+    if (selectedPoint == -1) return false;
+
     if (distanceX && distanceY) {
         if ((*distanceX)*(*distanceX)+(*distanceY)*(*distanceY) < 25)
             return true;
