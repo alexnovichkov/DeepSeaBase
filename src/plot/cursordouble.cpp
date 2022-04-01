@@ -123,19 +123,19 @@ void CursorDouble::setColor(const QColor &color)
     cursor2->setLinePen(pen);
 }
 
-void CursorDouble::moveTo(const QPointF &pos1, const QPointF &pos2)
+void CursorDouble::moveTo(const QPointF &pos1, const QPointF &pos2, bool silent)
 {
     cursor1->moveTo(m_snapToValues ? correctedPos(pos1) : pos1);
     if (xlabel1) xlabel1->updateLabel(m_showValues);
 
     cursor2->moveTo(m_snapToValues ? correctedPos(pos2) : pos2);
     if (xlabel2) xlabel2->updateLabel(m_showValues);
-    emit cursorPositionChanged();
+    if (!silent) emit cursorPositionChanged();
 
     zone->setRange(cursor1->value(), cursor2->value());
 }
 
-void CursorDouble::moveTo(const QPointF &pos1)
+void CursorDouble::moveTo(const QPointF &pos1, bool silent)
 {
     auto pos = m_snapToValues ? correctedPos(pos1) : pos1;
     auto delta = pos.x()-cursor1->xValue();
@@ -143,22 +143,22 @@ void CursorDouble::moveTo(const QPointF &pos1)
     cursor1->moveTo(pos);
     if (xlabel1) xlabel1->updateLabel(m_showValues);
 
-    pos = cursor2->value();
-    pos.rx() += delta;
-    cursor2->moveTo(pos);
+    auto pos2 = cursor2->value();
+    pos2.rx() += delta;
+    cursor2->moveTo(pos2);
     if (xlabel2) xlabel2->updateLabel(m_showValues);
-    emit cursorPositionChanged();
+    if (!silent) emit cursorPositionChanged();
 
     zone->setRange(cursor1->value(), cursor2->value());
 }
 
-void CursorDouble::moveTo(const QPointF &pos1, TrackingCursor *source)
+void CursorDouble::moveTo(const QPointF &pos1, TrackingCursor *source, bool silent)
 {
-    if (source == cursor2) moveTo(cursor1->value(), pos1);
-    if (source == cursor1) moveTo(pos1, cursor2->value());
+    if (source == cursor2) moveTo(cursor1->value(), pos1, silent);
+    if (source == cursor1) moveTo(pos1, cursor2->value(), silent);
 }
 
-void CursorDouble::moveTo(Qt::Key key, int count, TrackingCursor *source)
+void CursorDouble::moveTo(Qt::Key key, int count, TrackingCursor *source, bool silent)
 {
     if (count == 0) return;
     QPointF pos = source->value();
@@ -185,7 +185,7 @@ void CursorDouble::moveTo(Qt::Key key, int count, TrackingCursor *source)
     }
 
     source->moveTo(pos);
-    emit cursorPositionChanged();
+    if (!silent) emit cursorPositionChanged();
 
     if (source == cursor1) xlabel1->updateLabel(m_showValues);
     if (source == cursor2) xlabel2->updateLabel(m_showValues);
@@ -283,6 +283,11 @@ QList<double> CursorDouble::data(int curve, bool allData) const
         }
     }
     return list;
+}
+
+QPointF CursorDouble::currentPosition() const
+{
+    return cursor1->position();
 }
 
 QwtInterval CursorDouble::interval() const

@@ -47,15 +47,16 @@ public:
     virtual ~Cursor() {}
 
     virtual void setColor(const QColor &color) {this->m_color = color;}
-    virtual void moveTo(const QPointF &pos1, const QPointF &pos2) = 0;
-    virtual void moveTo(const QPointF &pos1) = 0;
-    virtual void moveTo(Qt::Key key, int count, TrackingCursor *source) = 0;
-    virtual void moveTo(const QPointF &pos, TrackingCursor *source) = 0;
+    virtual void moveTo(const QPointF &pos1, const QPointF &pos2, bool silent=false) = 0;
+    virtual void moveTo(const QPointF &pos1, bool silent=false) = 0;
+    virtual void moveTo(Qt::Key key, int count, TrackingCursor *source, bool silent=false) = 0;
+    virtual void moveTo(const QPointF &pos, TrackingCursor *source, bool silent=false) = 0;
     virtual void updatePos() = 0;
     virtual void attach() = 0;
     virtual void detach() = 0;
     virtual bool contains(Selectable*) const = 0;
     virtual void update() = 0;
+    virtual QPointF currentPosition() const = 0;
 
     virtual int dataCount(bool allData) const = 0;
     virtual QStringList dataHeader(bool allData) const = 0;

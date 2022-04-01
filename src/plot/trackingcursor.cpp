@@ -28,8 +28,9 @@ TrackingCursor::TrackingCursor(const QColor &col, Cursor::Style type, Cursor *pa
 
     energyAct = new QAction("Энергия", parent);
     energyAct->setCheckable(true);
-    energyAct->setChecked(parent->info() & Cursor::Energy);
+    energyAct->setChecked(parent?parent->info() & Cursor::Energy : false);
     QObject::connect(energyAct, &QAction::triggered, [=](){
+        if (!parent) return;
         auto info = parent->info();
         info.setFlag(Cursor::Energy, !(info & Cursor::Energy));
         parent->setInfo(info);
@@ -37,8 +38,9 @@ TrackingCursor::TrackingCursor(const QColor &col, Cursor::Style type, Cursor *pa
 
     rmsAct = new QAction("СКЗ", parent);
     rmsAct->setCheckable(true);
-    rmsAct->setChecked(parent->info() & Cursor::RMS);
+    rmsAct->setChecked(parent?parent->info() & Cursor::RMS : false);
     QObject::connect(rmsAct, &QAction::triggered, [=](){
+        if (!parent) return;
         auto info = parent->info();
         info.setFlag(Cursor::RMS, !(info & Cursor::RMS));
         parent->setInfo(info);

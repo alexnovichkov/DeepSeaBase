@@ -8,11 +8,11 @@
 #include <QMediaPlayer>
 #include "dataiodevice.h"
 #include "plot/curve.h"
-#include "plot/trackingcursor.h"
+#include "plot/cursorsingle.h"
 #include "plot/plotmodel.h"
 #include "wavexporter.h"
 #include "logging.h"
-#include "plot/cursor.h"
+
 
 PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
 {DD;
@@ -26,11 +26,10 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
     connect(player, &QMediaPlayer::mediaStatusChanged, this, &PlayPanel::statusChanged);
     connect(player, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error), this, &PlayPanel::displayErrorMessage);
 
-    cursor = new TrackingCursor(Qt::green, Cursor::Style::Vertical, nullptr);
-//    cursor->showYValues = true;
-    cursor->attach(plot);
-    cursor->setAxes(QwtAxis::XBottom, QwtAxis::YLeft);
-    cursor->setVisible(false);
+    cursor = new CursorSingle(Cursor::Style::Vertical, plot);
+    cursor->setColor(Qt::green);
+    cursor->setShowValues(false);
+    connect(cursor, &Cursor::cursorPositionChanged, this, &PlayPanel::setValue);
 
     controls = new PlayerControls(this);
     controls->setState(player->state());
@@ -62,8 +61,8 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
 
 PlayPanel::~PlayPanel()
 {DD;
-    //delete cursor;
-    //cursor->detach();
+    delete cursor;
+//    cursor->detach();
     //подчищаем старый временный файл, если он был
     QFile::remove(oldTempFile);
 }
@@ -72,11 +71,11 @@ void PlayPanel::switchVisibility()
 {DD;
     if (isVisible()) {
         setVisible(false);
-        cursor->setVisible(false);
+        cursor->detach();
     }
     else {
         setVisible(true);
-        cursor->setVisible(true);
+        cursor->attach();
     }
 }
 
@@ -136,7 +135,7 @@ void PlayPanel::setSource(int n)
     //реальная загрузка данных произойдет только при первом проигрывании
     player->setMedia(QMediaContent());
 
-    moveCursor({0,0});
+    cursor->moveTo({0, 0}, true);
 }
 
 void PlayPanel::prepareDataToPlay()
@@ -159,25 +158,24 @@ void PlayPanel::prepareDataToPlay()
     player->play();
 }
 
-void PlayPanel::updateSelectedCursor(TrackingCursor *c)
-{DD;
-    if (cursor == c) {
-        cursor->setSelected(true);
-    }
-    else {
-        cursor->setSelected(false);
-    }
-}
+//void PlayPanel::updateSelectedCursor(TrackingCursor *c)
+//{DD;
+//    if (cursor == c) {
+//        cursor->setSelected(true);
+//    }
+//    else {
+//        cursor->setSelected(false);
+//    }
+//}
 
-void PlayPanel::setValue(QPointF val)
+void PlayPanel::setValue()
 {DD;
-    if (!cursor->selected()) cursor->setSelected(true);
     if (!ch) return;
 
     // здесь xVal - произвольное число, соответствующее какому-то положению на оси X
-    moveCursor(val);
+//    moveCursor(val);
 
-    player->setPosition(qint64(val.x() * 1000.0));
+    player->setPosition(qint64(cursor->currentPosition().x() * 1000.0));
 }
 
 void PlayPanel::reset()
@@ -189,7 +187,7 @@ void PlayPanel::positionChanged(qint64 progress)
 {DD;
     //progress in milliseconds, convert to seconds
     const double xVal = double(progress) / 1000.0;
-    moveCursor({xVal, cursor->yValue()});
+    cursor->moveTo({xVal, 0}, true);
 }
 
 void PlayPanel::statusChanged(QMediaPlayer::MediaStatus status)
@@ -224,7 +222,8 @@ void PlayPanel::displayErrorMessage()
 
 void PlayPanel::closeEvent(QCloseEvent *event)
 {DD;
-    cursor->setVisible(false);
+//    cursor->setVisible(false);
+    cursor->detach();
     player->stop();
     emit closeRequested();
     QWidget::closeEvent(event);
@@ -232,15 +231,10 @@ void PlayPanel::closeEvent(QCloseEvent *event)
 
 void PlayPanel::hideEvent(QHideEvent *event)
 {DD;
-    cursor->setVisible(false);
+//    cursor->setVisible(false);
+    cursor->detach();
     player->pause();
     QWidget::hideEvent(event);
-}
-
-void PlayPanel::moveCursor(QPointF val)
-{DD;
-    cursor->moveTo(val);
-//    cursor->updateLabel();
 }
 
 /*******************************************************************/

@@ -22,7 +22,7 @@ void Cursors::update()
 void Cursors::addDoubleCursor(const QPoint &pos, Cursor::Style style, bool reject)
 {
     auto c = new CursorDouble(style, reject, plot);
-    connect(c,SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
+    connect(c, SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
     connect(c, SIGNAL(dataChanged()), this, SIGNAL(cursorsChanged()));
     double xVal1 = 0.0;
     double xVal2 = 0.0;

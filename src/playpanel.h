@@ -16,7 +16,7 @@ class QAudioOutput;
 class DataIODevice;
 
 class Channel;
-class TrackingCursor;
+class Cursor;
 class QComboBox;
 class QBuffer;
 class QFile;
@@ -83,20 +83,19 @@ private slots:
 
 public slots:
     void update();
-    void updateSelectedCursor(TrackingCursor *cursor);
-    void setValue(QPointF val);
+//    void updateSelectedCursor(TrackingCursor *cursor);
+    void setValue();
 
 protected:
     virtual void closeEvent(QCloseEvent *event);
     virtual void hideEvent(QHideEvent *event);
 private:
-    void moveCursor(QPointF val);
     void prepareDataToPlay();
 
     Channel *ch = 0;
     QMap<Channel*,QString> wavFiles;
     Plot *plot;
-    TrackingCursor *cursor;
+    Cursor *cursor;
     QComboBox *channelsBox;
 
     QMediaPlayer *player;

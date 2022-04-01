@@ -54,13 +54,13 @@ void CursorHarmonic::setColor(const QColor &color)
     for (auto &c: cursors) c->setLinePen(color, 0, Qt::DashDotLine);
 }
 
-void CursorHarmonic::moveTo(const QPointF &pos1, const QPointF &pos2)
+void CursorHarmonic::moveTo(const QPointF &pos1, const QPointF &pos2, bool silent)
 {
     Q_UNUSED(pos2);
-    moveTo(pos1);
+    moveTo(pos1, silent);
 }
 
-void CursorHarmonic::moveTo(const QPointF &pos1)
+void CursorHarmonic::moveTo(const QPointF &pos1, bool silent)
 {
     auto pos = m_snapToValues ? correctedPos(pos1) : pos1;
 
@@ -71,15 +71,15 @@ void CursorHarmonic::moveTo(const QPointF &pos1)
         cursors[i]->moveTo(pos.x()*(i+2));
         labels[i]->updateLabel(m_showValues);
     }
-    emit cursorPositionChanged();
+    if (!silent) emit cursorPositionChanged();
 }
 
-void CursorHarmonic::moveTo(const QPointF &pos1, TrackingCursor *source)
+void CursorHarmonic::moveTo(const QPointF &pos1, TrackingCursor *source, bool silent)
 {
-    if (source == cursor) moveTo(pos1);
+    if (source == cursor) moveTo(pos1, silent);
 }
 
-void CursorHarmonic::moveTo(Qt::Key key, int count, TrackingCursor *source)
+void CursorHarmonic::moveTo(Qt::Key key, int count, TrackingCursor *source, bool silent)
 {
     if (count == 0 || source != cursor) return;
     QPointF pos = cursor->value();
@@ -109,7 +109,7 @@ void CursorHarmonic::moveTo(Qt::Key key, int count, TrackingCursor *source)
         default: break;
     }
 
-    moveTo(pos);
+    moveTo(pos, silent);
 }
 
 void CursorHarmonic::updatePos()
@@ -200,4 +200,9 @@ QList<double> CursorHarmonic::data(int curve, bool allData) const
     auto curves = m_plot->model()->curves();
     bool success = false;
     return {curves.at(curve)->channel->data()->YforXandZ(cursor->xValue(), 0, success)};
+}
+
+QPointF CursorHarmonic::currentPosition() const
+{
+    return cursor->position();
 }

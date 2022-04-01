@@ -39,27 +39,27 @@ void CursorSingle::setColor(const QColor &color)
     cursor->setLinePen(pen);
 }
 
-void CursorSingle::moveTo(const QPointF &pos1, const QPointF &pos2)
+void CursorSingle::moveTo(const QPointF &pos1, const QPointF &pos2, bool silent)
 {
     Q_UNUSED(pos2);
-    moveTo(pos1);
+    moveTo(pos1, silent);
 }
 
-void CursorSingle::moveTo(const QPointF &pos1)
+void CursorSingle::moveTo(const QPointF &pos1, bool silent)
 {
     auto pos = m_snapToValues ? correctedPos(pos1) : pos1;
 
     cursor->moveTo(pos);
-    emit cursorPositionChanged();
+    if (!silent) emit cursorPositionChanged();
     update();
 }
 
-void CursorSingle::moveTo(const QPointF &pos1, TrackingCursor *source)
+void CursorSingle::moveTo(const QPointF &pos1, TrackingCursor *source, bool silent)
 {
-    if (source == cursor) moveTo(pos1);
+    if (source == cursor) moveTo(pos1, silent);
 }
 
-void CursorSingle::moveTo(Qt::Key key, int count, TrackingCursor *source)
+void CursorSingle::moveTo(Qt::Key key, int count, TrackingCursor *source, bool silent)
 {
     if (count == 0 || source != cursor) return;
     QPointF pos = cursor->value();
@@ -88,7 +88,7 @@ void CursorSingle::moveTo(Qt::Key key, int count, TrackingCursor *source)
         default: break;
     }
 
-    moveTo(pos);
+    moveTo(pos, silent);
 }
 
 void CursorSingle::updatePos()
@@ -144,18 +144,8 @@ QList<double> CursorSingle::data(int curve, bool allData) const
     return {curves.at(curve)->channel->data()->YforXandZ(cursor->xValue(), 0, success)};
 }
 
-//QStringList CursorSingle::getValues() const
-//{
-//    char f = m_format==Format::Fixed?'f':'e';
-//    QStringList list;
-//    list << QString("\t%1").arg(cursor->xValue(), 0, f, 1);
+QPointF CursorSingle::currentPosition() const
+{
+    return cursor->position();
+}
 
-//    auto curves = m_plot->model()->curves();
-//    for (auto curve: curves) {
-//        bool success = false;
-//        auto val = curve->channel->data()->YforXandZ(cursor->xValue(), 0, success);
-//        list << QString("%1\t%2").arg(curve->channel->name()).arg(success?val:qQNaN(), 0, 'f', 1);
-//    }
-
-//    return list;
-//}

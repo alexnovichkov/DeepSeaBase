@@ -21,9 +21,9 @@ TimePlot::TimePlot(QWidget *parent) : Plot(Plot::PlotType::Time, parent)
     playerPanel->setVisible(false);
     connect(playerPanel,SIGNAL(closeRequested()),m_playAct,SLOT(toggle()));
     connect(this, SIGNAL(curvesCountChanged()), playerPanel, SLOT(update()));
-    connect(_picker,SIGNAL(cursorSelected(TrackingCursor*)), playerPanel, SLOT(updateSelectedCursor(TrackingCursor*)));
-    connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       playerPanel, SLOT(setValue(QPointF)));
-    connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          playerPanel, SLOT(setValue(QPointF)));
+//    connect(_picker,SIGNAL(cursorSelected(TrackingCursor*)), playerPanel, SLOT(updateSelectedCursor(TrackingCursor*)));
+//    connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       playerPanel, SLOT(setValue(QPointF)));
+//    connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          playerPanel, SLOT(setValue(QPointF)));
 }
 
 TimePlot::~TimePlot()
