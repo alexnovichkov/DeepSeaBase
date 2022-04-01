@@ -60,42 +60,27 @@ void PlotModel::clear(bool forceDeleteFixed)
 }
 
 void PlotModel::updatePlottedIndexes()
-{
+{DD;
     m_plotted.clear();
-    if (!m_curves.isEmpty()) {
-        auto d = m_curves.first()->channel->descriptor();
-        for (const auto c : m_leftCurves) {
-            if (c->channel->descriptor()==d) m_plotted.append({c->channel->index(), true});
-            else {
-                m_plotted.clear();
-                break;
-            }
-        }
-        for (const auto c : m_rightCurves) {
-            if (c->channel->descriptor()==d) m_plotted.append({c->channel->index(), false});
-            else {
-                m_plotted.clear();
-                break;
-            }
-        }
-    }
-    std::sort(m_plotted.begin(), m_plotted.end(), [](const PlottedIndex &f, const PlottedIndex &s){
-        return f.index < s.index;
-    });
-}
-
-void PlotModel::updateCycled()
-{
-    m_cycled.clear();
     for (auto curve: m_curves) {
         if (!curve->fixed)
-            m_cycled.append({curve->channel, m_leftCurves.contains(curve), curve->fileNumber});
+            m_plotted.append({curve->channel->index(), m_leftCurves.contains(curve),
+                                 curve->channel, curve->fileNumber});
+    }
+}
+
+void PlotModel::updatePlottedIndexes(FileDescriptor *d, int fileIndex)
+{
+    for (auto &c: m_plotted) {
+        c.fileIndex = fileIndex;
+        c.ch = d->channel(c.channelIndex);
     }
 }
 
 void PlotModel::cycleChannels(bool up)
 {
-    for (Cycled &c: m_cycled) {
+    for (auto &c: m_plotted) {
+        if (!c.ch) continue;
         auto d = c.ch->descriptor();
         const int index = c.ch->index();
         int newIndex = index;
@@ -107,7 +92,8 @@ void PlotModel::cycleChannels(bool up)
             if (index == d->channelsCount()-1) newIndex = 0;
             else newIndex = index+1;
         }
-        c.ch = d->channel(newIndex);
+        c.channelIndex = newIndex;
+        c.ch = d->channel(newIndex); //can be nullptr
     }
 }
 
@@ -153,6 +139,16 @@ Curve * PlotModel::plotted(Channel *channel) const
         if (curve->channel == channel) return curve;
     }
     return 0;
+}
+
+bool PlotModel::allCurvesFromSameDescriptor() const
+{
+    if (m_curves.isEmpty()) return false;
+    auto d = m_curves.first()->channel->descriptor();
+    for (int i=1; i<m_curves.size(); ++i) {
+        if (m_curves[i]->channel->descriptor() != d) return false;
+    }
+    return true;
 }
 
 void PlotModel::addCurve(Curve *curve, bool onLeft)

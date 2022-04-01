@@ -116,7 +116,6 @@ public:
     void update();
 
     void updatePlottedIndexes();
-    void updateCycled();
     void plotCurvesForDescriptor(FileDescriptor *d, int fileIndex=0);
 
     void cycleChannels(bool up);

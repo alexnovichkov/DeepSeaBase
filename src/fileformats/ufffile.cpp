@@ -452,7 +452,7 @@ int UffFileDescriptor::channelsCount() const
 
 Channel *UffFileDescriptor::channel(int index) const
 {DDDD;
-    if (channels.size()>index)
+    if (channels.size()>index  && index>=0)
         return channels[index];
     return 0;
 }

@@ -431,7 +431,7 @@ void Data94File::move(bool up, const QVector<int> &indexes, const QVector<int> &
 
 Channel *Data94File::channel(int index) const
 {DDDD;
-    if (channels.size()>index)
+    if (channels.size()>index && index>=0)
         return channels.at(index);
     return nullptr;
 }

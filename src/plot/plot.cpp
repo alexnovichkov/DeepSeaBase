@@ -106,13 +106,6 @@ Plot::Plot(PlotType type, QWidget *parent) :
     leftOverlay = new LeftAxisOverlay(this);
     rightOverlay = new RightAxisOverlay(this);
 
-//    trackingPanel = new TrackingPanel(this);
-//    if (trackingPanel) {
-//        trackingPanel->setVisible(false);
-//        connect(trackingPanel,SIGNAL(closeRequested()),SIGNAL(trackingPanelCloseRequested()));
-//        connect(this, SIGNAL(curvesCountChanged()), trackingPanel, SLOT(update()));
-//    }
-
     axisLabelsVisible = App->getSetting("axisLabelsVisible", true).toBool();
     yValuesPresentationLeft = DataHolder::ShowAsDefault;
     yValuesPresentationRight = DataHolder::ShowAsDefault;
@@ -141,18 +134,12 @@ Plot::Plot(PlotType type, QWidget *parent) :
     _picker = new Picker(this);
     _picker->setEnabled(App->getSetting("pickerEnabled", true).toBool());
     connect(_picker, &Picker::removeNeeded, cursors, qOverload<Selectable*>(&Cursors::removeCursor));
-//    if (trackingPanel) {
-//        connect(_picker,SIGNAL(cursorSelected(TrackingCursor*)), trackingPanel, SLOT(changeSelectedCursor(TrackingCursor*)));
-//        connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       trackingPanel, SLOT(setValue(QPointF,bool)));
-//        connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          trackingPanel, SLOT(setValue(QPointF)));
-//    }
 
     dragZoom = new DragZoom(this);
     wheelZoom = new WheelZoom(this);
     plotZoom = new PlotZoom(this);
 
     axisZoom = new AxisZoom(this);
-//    if (trackingPanel) connect(axisZoom,SIGNAL(axisClicked(QPointF,bool)), trackingPanel, SLOT(setValue(QPointF,bool)));
     connect(axisZoom,SIGNAL(hover(QwtAxisId,int)), SLOT(hoverAxis(QwtAxisId,int)));
 
     canvasFilter = new CanvasEventFilter(this);
@@ -164,7 +151,6 @@ Plot::Plot(PlotType type, QWidget *parent) :
     canvasFilter->setPicker(_picker);
     connect(canvasFilter,SIGNAL(hover(QwtAxisId,int)), SLOT(hoverAxis(QwtAxisId,int)));
     connect(canvasFilter,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)), SLOT(showContextMenu(QPoint,QwtAxisId)));
-//    if (trackingPanel) connect(canvasFilter,SIGNAL(moveCursor(Enums::Direction)), trackingPanel, SLOT(moveCursor(Enums::Direction)));
 }
 
 Plot::~Plot()
@@ -191,15 +177,14 @@ Plot::~Plot()
 
 void Plot::updatePlottedIndexes()
 {DD;
-    if (sergeiMode) return;
-
-    m->updatePlottedIndexes();
+    if (!sergeiMode) m->updatePlottedIndexes();
 }
 
 void Plot::plotCurvesForDescriptor(FileDescriptor *d, int fileIndex)
 {
+    m->updatePlottedIndexes(d, fileIndex);
     const auto plotted = m->plottedIndexes();
-    for (const auto &i: plotted) plotChannel(d->channel(i.index), i.onLeft, fileIndex);
+    for (const auto &i: plotted) plotChannel(i.ch, i.onLeft, i.fileIndex);
 }
 
 void Plot::update()
@@ -399,13 +384,6 @@ void Plot::setInfoVisible(bool visible)
     infoOverlay->setVisible(visible);
 }
 
-void Plot::updateCycled()
-{
-    if (sergeiMode) return;
-
-    m->updateCycled();
-}
-
 void Plot::cycleChannels(bool up)
 {
     //есть список кривых, возможно, из разных записей. Необходимо для каждой записи
@@ -421,16 +399,11 @@ void Plot::cycleChannels(bool up)
 
     sergeiMode = true;
     deleteAllCurves();
-    for (const auto &c: m->cycled()) {
+    for (const auto &c: m->plottedIndexes()) {
         plotChannel(c.ch, c.onLeft, c.fileIndex);
     }
     sergeiMode = false;
 }
-
-//void Plot::updateTrackingPanel()
-//{
-//    if (trackingPanel) trackingPanel->update();
-//}
 
 bool Plot::hasCurves() const
 {DD;
@@ -453,7 +426,6 @@ void Plot::deleteAllCurves(bool forceDeleteFixed)
 
     if (!sergeiMode) {
         updatePlottedIndexes();
-        updateCycled();
        // playerPanel->reset();
         emit curvesCountChanged(); //->MainWindow.updateActions
     }
@@ -467,7 +439,6 @@ void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
         }
     }
     updatePlottedIndexes();
-    updateCycled();
     emit curvesCountChanged(); //->MainWindow.updateActions
 }
 
@@ -477,7 +448,6 @@ void Plot::deleteCurveFromLegend(QwtPlotItem *item)
     if (Curve *c = dynamic_cast<Curve *>(item); !c->fixed) {
         deleteCurve(c, true);
         updatePlottedIndexes();
-        updateCycled();
         emit curvesCountChanged(); //->MainWindow.updateActions
     }
 }
@@ -487,7 +457,6 @@ void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doR
     if (Curve *curve = m->plotted(dfd->channel(channel))) {
         deleteCurve(curve, doReplot);
         updatePlottedIndexes();
-        updateCycled();
         emit curvesCountChanged(); //->MainWindow.updateActions
     }
 }
@@ -497,7 +466,6 @@ void Plot::deleteSelectedCurve(Selectable *selected)
     if (Curve *curve = dynamic_cast<Curve*>(selected)) {
         deleteCurve(curve, true);
         updatePlottedIndexes();
-        updateCycled();
         emit curvesCountChanged(); //->MainWindow.updateActions
     }
 }
@@ -786,6 +754,7 @@ void Plot::recalculateScale(bool leftAxis)
 
 void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 {
+    if (!ch) return;
     //проверяем, построен ли канал на этом графике
     if (m->plotted(ch)) return;
 
@@ -850,7 +819,6 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 
     update();
     updatePlottedIndexes();
-    updateCycled();
     emit channelPlotted(ch);
     emit curvesCountChanged(); //->MainWindow.updateActions
 }

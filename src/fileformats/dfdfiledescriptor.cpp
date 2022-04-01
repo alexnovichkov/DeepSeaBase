@@ -923,7 +923,7 @@ void DfdFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
 
 Channel *DfdFileDescriptor::channel(int index) const
 {DDDD;
-    if (channels.size()>index) return channels[index];
+    if (channels.size()>index  && index>=0) return channels[index];
     return nullptr;
 }
 

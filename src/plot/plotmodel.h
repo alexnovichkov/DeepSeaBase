@@ -14,13 +14,9 @@ class PlotModel : public QAbstractTableModel
 public:
     struct PlottedIndex
     {
-        int index = -1;
+        int channelIndex = -1;
         bool onLeft = true;
-    };
-    struct Cycled
-    {
         Channel *ch = nullptr;
-        bool onLeft = true;
         int fileIndex = 0;
     };
     enum PlotModelColumn {
@@ -47,11 +43,9 @@ public:
     QVector<Channel *> plottedChannels() const;
     QVector<FileDescriptor*> plottedDescriptors() const;
     QVector<PlottedIndex> plottedIndexes() const {return m_plotted;}
-    //Этот список хранит каналы, которые были построены на момент первого сдвига
-    QVector<Cycled> cycled() const {return m_cycled;}
     Descriptor::DataType curvesDataType() const;
     Curve * plotted(Channel *channel) const;
-    bool allCurvesFromSameDescriptor() const {return !m_plotted.isEmpty();}
+    bool allCurvesFromSameDescriptor() const;
 
     Curve *curve(int index, bool left) const;
     Curve *curve(int index) const;
@@ -61,7 +55,7 @@ public:
 
     void clear(bool forceDeleteFixed = false);
     void updatePlottedIndexes();
-    void updateCycled();
+    void updatePlottedIndexes(FileDescriptor *d, int fileIndex);
     void cycleChannels(bool up);
     void setYValuesPresentation(bool m_leftCurves, int presentation);
     void removeLabels();
@@ -78,12 +72,9 @@ private:
     QList<Curve *> m_curves;
     QList<Curve *> m_leftCurves;
     QList<Curve *> m_rightCurves;
-    //Этот список хранит индексы каналов, которые имеют графики, в том случае,
-    //если все эти каналы - из одной записи. Список обновляется при добавлении
+    //Этот список хранит индексы каналов, которые имеют графики. Список обновляется при добавлении
     //или удалении кривых
     QVector<PlottedIndex> m_plotted;
-    //Этот список хранит каналы, которые были построены на момент первого сдвига
-    QVector<Cycled> m_cycled;
 
     // QAbstractItemModel interface
 public:

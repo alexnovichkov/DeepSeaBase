@@ -267,12 +267,6 @@ void PlotArea::update()
     if (m_plot) m_plot->update();
 }
 
-//QList<Curve *> PlotArea::curves() const
-//{
-//    if (plot) return plot->curves;
-//    return QList<Curve *>();
-//}
-
 void setLineColor(QAxObject *obj, int color)
 {DD;
     QAxObject *format = obj->querySubObject("Format");

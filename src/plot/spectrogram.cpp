@@ -144,7 +144,7 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 
     update();
     updatePlottedIndexes();
-    updateCycled();
+//    updateCycled();
     emit channelPlotted(ch);
     emit curvesCountChanged(); //->MainWindow.updateActions
 }
