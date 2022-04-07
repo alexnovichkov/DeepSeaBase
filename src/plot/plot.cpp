@@ -869,7 +869,8 @@ void Plot::savePlot() /*SLOT*/
 
 void Plot::copyToClipboard() /*SLOT*/
 {DD;
-    QTemporaryFile file("DeepSeaBase-XXXXXX.bmp");
+
+    QTemporaryFile file(QDir::tempPath()+"/DeepSeaBase-XXXXXX.bmp");
     if (file.open()) {
         QString fileName = file.fileName();
         file.close();
@@ -882,9 +883,11 @@ void Plot::copyToClipboard() /*SLOT*/
             if (img.load(fileName))
                 qApp->clipboard()->setImage(img);
             else
-                qDebug()<<"Could not load image from"<<fileName;
+                QMessageBox::critical(this, "Копирование рисунка", "Не удалось скопировать рисунок");
+//                qDebug()<<"Could not load image from"<<fileName;
         }
     }
+    else QMessageBox::critical(this, "Копирование рисунка", "Не удалось создать временный файл");
 }
 
 void Plot::print() /*SLOT*/
