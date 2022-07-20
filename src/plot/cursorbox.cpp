@@ -25,12 +25,18 @@ CursorBox::CursorBox(Cursors *cursors, Plot *parent) : QTreeWidget(parent),
     setFrameShape(QFrame::NoFrame);
     setRootIsDecorated(false);
     setUniformRowHeights(true);
+    setSelectionMode(QAbstractItemView::ExtendedSelection);
+    setSelectionBehavior(QAbstractItemView::SelectColumns);
+    setAlternatingRowColors(true);
+
     auto f = font();
     f.setPointSize(f.pointSize()-1);
     setFont(f);
     header()->setFont(f);
     header()->setStretchLastSection(false);
     header()->setSectionResizeMode(QHeaderView::ResizeToContents);
+    header()->setSectionsClickable(true);
+    header()->setSelectionMode(QAbstractItemView::ExtendedSelection);
     setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
     setSizePolicy(QSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum));
 
