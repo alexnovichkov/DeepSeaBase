@@ -11,19 +11,16 @@
 
 TimePlot::TimePlot(QWidget *parent) : Plot(Plot::PlotType::Time, parent)
 {
-    m_playAct = new QAction("Открыть панель плеера", this);
-    m_playAct->setIcon(QIcon(":/icons/play.png"));
-    m_playAct->setCheckable(true);
-    //TODO: отвязать плеер от графика, чтобы не было нескольких плееров в одной программе
-    connect(m_playAct, &QAction::triggered, this, &TimePlot::switchPlayerVisibility);
+//    m_playAct = new QAction("Открыть панель плеера", this);
+//    m_playAct->setIcon(QIcon(":/icons/play.png"));
+//    m_playAct->setCheckable(true);
+//    //TODO: отвязать плеер от графика, чтобы не было нескольких плееров в одной программе
+//    connect(m_playAct, &QAction::triggered, this, &TimePlot::switchPlayerVisibility);
 
     playerPanel = new PlayPanel(this);
-    playerPanel->setVisible(false);
-    connect(playerPanel,SIGNAL(closeRequested()),m_playAct,SLOT(toggle()));
+//    playerPanel->setVisible(false);
+//    connect(playerPanel,SIGNAL(closeRequested()), m_playAct, SLOT(toggle()));
     connect(this, SIGNAL(curvesCountChanged()), playerPanel, SLOT(update()));
-//    connect(_picker,SIGNAL(cursorSelected(TrackingCursor*)), playerPanel, SLOT(updateSelectedCursor(TrackingCursor*)));
-//    connect(_picker,SIGNAL(axisClicked(QPointF,bool)),       playerPanel, SLOT(setValue(QPointF)));
-//    connect(_picker,SIGNAL(cursorMovedTo(QPointF)),          playerPanel, SLOT(setValue(QPointF)));
 }
 
 TimePlot::~TimePlot()
@@ -41,6 +38,21 @@ Curve *TimePlot::createCurve(const QString &legendName, Channel *channel)
     return new TimeCurve(legendName, channel);
 }
 
+QWidget *TimePlot::toolBarWidget()
+{
+    return playerPanel;
+}
+
+void TimePlot::updateActions(int filesCount, int channelsCount)
+{
+    Q_UNUSED(filesCount);
+    Q_UNUSED(channelsCount);
+
+    if (playerPanel) {
+        const bool hasCurves = curvesCount()>0;
+        playerPanel->setEnabled(hasCurves);
+    }
+}
 
 bool TimePlot::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
 {

@@ -16,9 +16,6 @@
 
 PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
 {DD;
-    setWindowFlags(Qt::Tool /*| Qt::WindowTitleHint*/);
-    setWindowTitle("Проигрыватель");
-
     player = new QMediaPlayer(this);
     player->setAudioRole(QAudio::MusicRole);
     player->setNotifyInterval(50);
@@ -30,6 +27,7 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
     cursor->setColor(Qt::green);
     cursor->setShowValues(false);
     connect(cursor, &Cursor::cursorPositionChanged, this, &PlayPanel::setValue);
+    cursor->attach();
 
     controls = new PlayerControls(this);
     controls->setState(player->state());
@@ -52,8 +50,10 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
     channelsBox->setSizeAdjustPolicy(QComboBox::AdjustToContents);
 
     QHBoxLayout *l = new QHBoxLayout(this);
-    l->addWidget(channelsBox);
+    l->setMargin(0);
     l->addWidget(controls);
+    l->addWidget(channelsBox);
+    l->addStretch(1);
     setLayout(l);
 
     update();
@@ -129,13 +129,19 @@ void PlayPanel::setSource(int n)
     //индекс поменялся, а канал остался прежним
     if (ch && channelsBox->itemData(n).toULongLong() == (qulonglong)ch) return;
 
+    //запоминаем позицию для старого канала
+    if (ch) {
+        positions[ch] = cursor->currentPosition().x();
+    }
+
+    //новый канал
     ch = (Channel*)channelsBox->itemData(n).toULongLong();
 
-    reset();
+    //reset();
     //реальная загрузка данных произойдет только при первом проигрывании
     player->setMedia(QMediaContent());
-
-    cursor->moveTo({0, 0}, true);
+    double x = positions.contains(ch)?positions[ch]:0;
+    cursor->moveTo({x, 0}, true);
 }
 
 void PlayPanel::prepareDataToPlay()
@@ -154,27 +160,15 @@ void PlayPanel::prepareDataToPlay()
         }
 
         player->setMedia(QMediaContent(QUrl::fromLocalFile(wavFiles.value(ch))));
+        double x = positions.contains(ch)?positions[ch]:0;
+        player->setPosition(qint64(x * 1000.0));
     }
     player->play();
 }
 
-//void PlayPanel::updateSelectedCursor(TrackingCursor *c)
-//{DD;
-//    if (cursor == c) {
-//        cursor->setSelected(true);
-//    }
-//    else {
-//        cursor->setSelected(false);
-//    }
-//}
-
 void PlayPanel::setValue()
 {DD;
     if (!ch) return;
-
-    // здесь xVal - произвольное число, соответствующее какому-то положению на оси X
-//    moveCursor(val);
-
     player->setPosition(qint64(cursor->currentPosition().x() * 1000.0));
 }
 
@@ -223,7 +217,7 @@ void PlayPanel::displayErrorMessage()
 void PlayPanel::closeEvent(QCloseEvent *event)
 {DD;
 //    cursor->setVisible(false);
-    cursor->detach();
+//    cursor->detach();
     player->stop();
     emit closeRequested();
     QWidget::closeEvent(event);
@@ -232,7 +226,7 @@ void PlayPanel::closeEvent(QCloseEvent *event)
 void PlayPanel::hideEvent(QHideEvent *event)
 {DD;
 //    cursor->setVisible(false);
-    cursor->detach();
+//    cursor->detach();
     player->pause();
     QWidget::hideEvent(event);
 }
@@ -261,13 +255,14 @@ PlayerControls::PlayerControls(QWidget *parent)
 
     m_volumeSlider = new QSlider(Qt::Horizontal, this);
     m_volumeSlider->setRange(0, 100);
+    m_volumeSlider->setMaximumWidth(200);
 
     connect(m_volumeSlider, &QSlider::valueChanged, this, &PlayerControls::onVolumeSliderValueChanged);
 
     QBoxLayout *layout = new QHBoxLayout;
     layout->setMargin(0);
-    layout->addWidget(m_stopButton);
     layout->addWidget(m_playButton);
+    layout->addWidget(m_stopButton);
     layout->addWidget(m_muteButton);
     layout->addWidget(m_volumeSlider);
     setLayout(layout);
@@ -343,7 +338,7 @@ void PlayerControls::setMuted(bool muted)
 }
 
 void PlayerControls::playClicked()
-{DD;
+{DD0;
     switch (m_playerState) {
     case QMediaPlayer::StoppedState:
     case QMediaPlayer::PausedState:

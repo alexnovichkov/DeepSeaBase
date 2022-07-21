@@ -94,6 +94,7 @@ private:
 
     Channel *ch = 0;
     QMap<Channel*,QString> wavFiles;
+    QHash<Channel*, double> positions;
     Plot *plot;
     Cursor *cursor;
     QComboBox *channelsBox;

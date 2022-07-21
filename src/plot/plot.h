@@ -80,7 +80,8 @@ public:
     PlotModel *model() {return m;}
     PlotType type() const {return plotType;}
 
-    virtual QAction *playAct() {return nullptr;}
+    virtual QWidget *toolBarWidget() {return nullptr;}
+    virtual void updateActions(int filesCount, int channelsCount) {}
 
     QwtAxisId xBottomAxis{QwtAxis::XBottom};
     QwtAxisId yLeftAxis{QwtAxis::YLeft};

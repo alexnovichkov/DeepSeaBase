@@ -229,10 +229,10 @@ void PlotArea::addPlot(Plot::PlotType type)
         case Plot::PlotType::Time: {
             m_plot = new TimePlot(this);
             setIcon(QIcon(":/icons/timecurve.png"));
-            if (m_plot->playAct()) {
-                playAct = m_plot->playAct();
-                toolBar()->addAction(playAct);
-            }
+//            if (m_plot->playAct()) {
+//                playAct = m_plot->playAct();
+//                toolBar()->addAction(playAct);
+//            }
             break;
         }
         case Plot::PlotType::General: {
@@ -241,6 +241,7 @@ void PlotArea::addPlot(Plot::PlotType type)
             break;
         }
     }
+    if (m_plot->toolBarWidget()) toolBar()->addWidget(m_plot->toolBarWidget());
 
 
     plotsLayout->addWidget(m_plot,1,0);
@@ -756,7 +757,8 @@ void PlotArea::updateActions(int filesCount, int channelsCount)
     savePlotAct->setEnabled(hasCurves);
     copyToClipboardAct->setEnabled(hasCurves);
     printPlotAct->setEnabled(hasCurves);
-    if (playAct) playAct->setEnabled(hasCurves);
+    //if (playAct) playAct->setEnabled(hasCurves);
+    if (m_plot) m_plot->updateActions(filesCount, channelsCount);
     previousDescriptorAct->setEnabled(filesCount>1 && allCurvesFromSameDescriptor);
     nextDescriptorAct->setEnabled(filesCount>1 && allCurvesFromSameDescriptor);
     arbitraryDescriptorAct->setEnabled(filesCount>1 && allCurvesFromSameDescriptor);

@@ -14,10 +14,9 @@ public:
     // Plot interface
 public:
     virtual Curve *createCurve(const QString &legendName, Channel *channel) override;
-    QAction *m_playAct = nullptr;
-    virtual QAction *playAct() override {return m_playAct;}
+    virtual QWidget *toolBarWidget() override;
+    virtual void updateActions(int filesCount, int channelsCount) override;
 
-    // Plot interface
 protected:
     virtual bool canBePlottedOnLeftAxis(Channel *ch, QString *message = nullptr) const override;
     virtual bool canBePlottedOnRightAxis(Channel *ch, QString *message = nullptr) const override;
