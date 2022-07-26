@@ -182,14 +182,12 @@ void MainWindow::createActions()
     QIcon moveChannelsUpIcon(":/icons/move_up.png");
     moveChannelsUpIcon.addFile(":/icons/move_up_24.png");
     moveChannelsUpAct = new QAction(moveChannelsUpIcon, "Сдвинуть каналы вверх", this);
-    moveChannelsUpAct->setShortcutContext(Qt::WidgetShortcut);
     moveChannelsUpAct->setShortcut(tr("Ctrl+Up"));
     connect(moveChannelsUpAct, SIGNAL(triggered()), SLOT(moveChannelsUp()));
 
     QIcon moveChannelsDownIcon(":/icons/move_down.png");
     moveChannelsDownIcon.addFile(":/icons/move_down_24.png");
     moveChannelsDownAct = new QAction(moveChannelsDownIcon, "Сдвинуть каналы вниз", this);
-    moveChannelsDownAct->setShortcutContext(Qt::WidgetShortcut);
     moveChannelsDownAct->setShortcut(tr("Ctrl+Down"));
     connect(moveChannelsDownAct, SIGNAL(triggered()), SLOT(moveChannelsDown()));
 
