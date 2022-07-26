@@ -62,21 +62,8 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
 PlayPanel::~PlayPanel()
 {DD;
     delete cursor;
-//    cursor->detach();
     //подчищаем старый временный файл, если он был
     QFile::remove(oldTempFile);
-}
-
-void PlayPanel::switchVisibility()
-{DD;
-    if (isVisible()) {
-        setVisible(false);
-        cursor->detach();
-    }
-    else {
-        setVisible(true);
-        cursor->attach();
-    }
 }
 
 void PlayPanel::update()
@@ -139,9 +126,10 @@ void PlayPanel::setSource(int n)
 
     //reset();
     //реальная загрузка данных произойдет только при первом проигрывании
-    player->setMedia(QMediaContent());
+    if (wavFiles.contains(ch)) player->setMedia(QMediaContent(QUrl::fromLocalFile(wavFiles.value(ch))));
+    else player->setMedia(QMediaContent());
     double x = positions.contains(ch)?positions[ch]:0;
-    cursor->moveTo({x, 0}, true);
+    cursor->moveTo({x, 0}, false);
 }
 
 void PlayPanel::prepareDataToPlay()
@@ -170,6 +158,13 @@ void PlayPanel::setValue()
 {DD;
     if (!ch) return;
     player->setPosition(qint64(cursor->currentPosition().x() * 1000.0));
+}
+
+void PlayPanel::moveTo(const QPoint &pos)
+{DD;
+    const auto xVal = plot->invTransform(QwtAxis::XBottom, pos.x());
+    positions[ch] = xVal;
+    cursor->moveTo({xVal, 0}, false);
 }
 
 void PlayPanel::reset()
@@ -216,8 +211,6 @@ void PlayPanel::displayErrorMessage()
 
 void PlayPanel::closeEvent(QCloseEvent *event)
 {DD;
-//    cursor->setVisible(false);
-//    cursor->detach();
     player->stop();
     emit closeRequested();
     QWidget::closeEvent(event);
@@ -225,8 +218,6 @@ void PlayPanel::closeEvent(QCloseEvent *event)
 
 void PlayPanel::hideEvent(QHideEvent *event)
 {DD;
-//    cursor->setVisible(false);
-//    cursor->detach();
     player->pause();
     QWidget::hideEvent(event);
 }
@@ -338,7 +329,7 @@ void PlayerControls::setMuted(bool muted)
 }
 
 void PlayerControls::playClicked()
-{DD0;
+{DD;
     switch (m_playerState) {
     case QMediaPlayer::StoppedState:
     case QMediaPlayer::PausedState:

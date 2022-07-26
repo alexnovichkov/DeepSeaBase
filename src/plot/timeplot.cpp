@@ -8,29 +8,18 @@
 #include "playpanel.h"
 #include "picker.h"
 #include "logging.h"
+#include "canvaseventfilter.h"
 
 TimePlot::TimePlot(QWidget *parent) : Plot(Plot::PlotType::Time, parent)
 {
-//    m_playAct = new QAction("Открыть панель плеера", this);
-//    m_playAct->setIcon(QIcon(":/icons/play.png"));
-//    m_playAct->setCheckable(true);
-//    //TODO: отвязать плеер от графика, чтобы не было нескольких плееров в одной программе
-//    connect(m_playAct, &QAction::triggered, this, &TimePlot::switchPlayerVisibility);
-
     playerPanel = new PlayPanel(this);
-//    playerPanel->setVisible(false);
-//    connect(playerPanel,SIGNAL(closeRequested()), m_playAct, SLOT(toggle()));
     connect(this, SIGNAL(curvesCountChanged()), playerPanel, SLOT(update()));
+    connect(canvasFilter, SIGNAL(canvasDoubleClicked(QPoint)),playerPanel,SLOT(moveTo(QPoint)));
 }
 
 TimePlot::~TimePlot()
 {
     //delete playerPanel;
-}
-
-void TimePlot::switchPlayerVisibility()
-{DD;
-    playerPanel->switchVisibility();
 }
 
 Curve *TimePlot::createCurve(const QString &legendName, Channel *channel)

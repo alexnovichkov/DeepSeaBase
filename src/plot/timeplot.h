@@ -20,8 +20,6 @@ public:
 protected:
     virtual bool canBePlottedOnLeftAxis(Channel *ch, QString *message = nullptr) const override;
     virtual bool canBePlottedOnRightAxis(Channel *ch, QString *message = nullptr) const override;
-private slots:
-    void switchPlayerVisibility();
 private:
     PlayPanel *playerPanel = nullptr;
 };

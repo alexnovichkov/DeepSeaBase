@@ -48,6 +48,7 @@ signals:
     void hover(QwtAxisId axis, int hover); //0=none, 1=first half, 2 = second half
     void contextMenuRequested(const QPoint &pos, QwtAxisId axis);
     void moveCursor(Enums::Direction direction);
+    void canvasDoubleClicked(const QPoint &pos);
 protected:
     bool eventFilter(QObject *target, QEvent *event);
 private:
@@ -59,6 +60,7 @@ private:
     void mousePress(QMouseEvent *event);
     void mouseMove(QMouseEvent *event);
     void mouseRelease(QMouseEvent *event);
+    void mouseDoubleClick(QMouseEvent *event);
     void applyWheel(QEvent *event, QwtAxisId axis);
 
     Plot *plot;

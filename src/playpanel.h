@@ -69,7 +69,6 @@ class PlayPanel : public QWidget
 public:
     explicit PlayPanel(Plot *parent=0);
     ~PlayPanel();
-    void switchVisibility();
     void reset();
 signals:
     void closeRequested();
@@ -83,8 +82,8 @@ private slots:
 
 public slots:
     void update();
-//    void updateSelectedCursor(TrackingCursor *cursor);
     void setValue();
+    void moveTo(const QPoint &pos);
 
 protected:
     virtual void closeEvent(QCloseEvent *event);

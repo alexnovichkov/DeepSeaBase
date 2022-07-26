@@ -98,6 +98,9 @@ void CanvasEventFilter::procMouseEvent(QEvent *event)
         case QEvent::MouseButtonRelease:
             mouseRelease(mEvent);
             break;
+        case QEvent::MouseButtonDblClick:
+            mouseDoubleClick(mEvent);
+            break;
         default: ;
     }
 }
@@ -277,6 +280,17 @@ void CanvasEventFilter::mouseRelease(QMouseEvent *event)
     else {
         picker->endPick(event);
         actionType = ActionType::None;
+    }
+}
+
+void CanvasEventFilter::mouseDoubleClick(QMouseEvent *event)
+{DD;
+    switch (event->button()) {
+        case Qt::LeftButton: {
+            emit canvasDoubleClicked(currentPosition);
+            break;
+        }
+        default: break;
     }
 }
 
