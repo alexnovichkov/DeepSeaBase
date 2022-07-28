@@ -15,3 +15,5 @@ CONFIG += ordered
 
 SUBDIRS += src
 src.file = $$PWD/src/src.pro
+SUBDIRS += tdms
+tdms.file = src/plugins/tdms/tdms.pro

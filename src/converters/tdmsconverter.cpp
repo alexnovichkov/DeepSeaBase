@@ -56,6 +56,8 @@ bool TDMSFileConverter::convert()
             }
 
         for (auto f : destinationFiles) delete f;
+#else
+        emit message("Конвертация файлов TDMS не включена.");
 #endif
         emit message("Готово.");
         emit tick();

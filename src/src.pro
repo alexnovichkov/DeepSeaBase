@@ -290,7 +290,8 @@ HEADERS  += mainwindow.h \
     longoperation.h \
     plot/spectrocurve.h \
     plot/colormapfactory.h \
-    fancylineedit.h
+    fancylineedit.h \
+    convertplugin.h
 
 
 SOURCES +=\
