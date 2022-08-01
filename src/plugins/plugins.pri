@@ -9,4 +9,11 @@ QT *= concurrent
 INCLUDEPATH += ../..
 DEPENDPATH += ../..
 
-DESTDIR = $${BUILD_DIR}/plugins
+CONFIG(debug, debug|release){
+        DESTDIR = $$OUT_PWD/../../../bin.debug/plugins
+#        LIBS += -L$$OUT_PWD/../lib.debug
+}
+else{
+        DESTDIR = $$OUT_PWD/../../../bin/plugins
+#        LIBS += -L$$OUT_PWD/../lib
+}

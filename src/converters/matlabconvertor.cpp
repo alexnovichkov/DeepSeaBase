@@ -2,8 +2,9 @@
 #include <QtWidgets>
 
 #include "algorithms.h"
-#include "fileformats/formatfactory.h"
+#include "fileformats/abstractformatfactory.h"
 #include "logging.h"
+#include "app.h"
 
 //QString lms2dsunit(const QString &unit)
 //{
@@ -84,7 +85,7 @@ bool MatlabConvertor::convert()
                 emit message(QString("-- В файле mat отсутствуют временные данные!"));
             }
             else {
-                FileDescriptor *destinationFile = FormatFactory::createDescriptor(matlabFile,
+                FileDescriptor *destinationFile = App->formatFactory->createDescriptor(matlabFile,
                                                                                   destinationFileName);
                 if (destinationFile)
                     newFiles << destinationFile->fileName();
@@ -101,7 +102,7 @@ bool MatlabConvertor::convert()
                                                  destinationFileName,
                                                  QString::number(i+1),
                                                  QFileInfo(destinationFileName).suffix(), false);
-            FileDescriptor *destinationFile = FormatFactory::createDescriptor(matlabFile,
+            FileDescriptor *destinationFile = App->formatFactory->createDescriptor(matlabFile,
                                                                               fname,
                                                                               groupedChannelsIndexes.at(i));
             if (!destinationFile) noErrors = false;

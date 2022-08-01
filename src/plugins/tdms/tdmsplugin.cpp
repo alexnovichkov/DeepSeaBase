@@ -1,14 +1,11 @@
 #include "tdmsplugin.h"
 
-#include <QtWidgets>
-#include <QJsonDocument>
-#include <QApplication>
-
 #include "tdmsconverterdialog.h"
+#include "fileformats/abstractformatfactory.h"
 
-QStringList TdmsPlugin::getConvertedFiles()
+QStringList TdmsPlugin::getConvertedFiles(AbstractFormatFactory *factory)
 {
-    TDMSConverterDialog dialog;
+    TDMSConverterDialog dialog(factory);
     if (dialog.exec()) {
         m_addFiles = dialog.addFiles();
         return dialog.getConvertedFiles();

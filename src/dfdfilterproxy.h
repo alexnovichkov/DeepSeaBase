@@ -6,7 +6,7 @@
 #include "logging.h"
 #include "fileformats/filedescriptor.h"
 #include "fileformats/formatfactory.h"
-
+#include "app.h"
 
 class DfdFilterProxy : public QSortFilterProxyModel
 {
@@ -34,7 +34,7 @@ protected:
                 if (!filterByContent)
                     return true;
 
-                QScopedPointer<FileDescriptor> descriptor(FormatFactory::createDescriptor(fi.canonicalFilePath()));
+                QScopedPointer<FileDescriptor> descriptor(App->formatFactory->createDescriptor(fi.canonicalFilePath()));
 
                 if (descriptor->canTakeAnyChannels())
                     return true;
@@ -53,7 +53,7 @@ protected:
 private:
     FileDescriptor *filter;
     bool filterByContent = false;
-    QStringList suffixes = FormatFactory::allSuffixes(true);
+    QStringList suffixes = FormatFactory().allSuffixes(true);
 };
 
 #endif // DFDFILTERPROXY_H

@@ -4,7 +4,7 @@
 #include <QStringList>
 #include "filedescriptor.h"
 
-namespace FormatFactory {
+#include "abstractformatfactory.h"
 
 template<typename T>
 QStringList suffixes()
@@ -12,32 +12,33 @@ QStringList suffixes()
     return T::suffixes();
 }
 
-QStringList allSuffixes(bool strip = false);
-
 template<typename T>
 QStringList filters()
 {
     return T::fileFilters();
 }
 
-QStringList allFilters();
+class FormatFactory : public AbstractFormatFactory
+{
+public:
+    virtual QStringList allSuffixes(bool strip = false) override;
+    virtual QStringList allFilters() override;
 
-FileDescriptor *createDescriptor(const QString &fileName);
+    //Эта функция предназначена в первую очередь для DFD файлов, которые не умеют хранить
+    //каналы разных типов.
+    //Эта функция создает несколько файлов, с каналами, сгруппированными по типу
+    virtual QList<FileDescriptor *> createDescriptors(const FileDescriptor &source,
+                                                     const QString &fileName,
+                                                     const QVector<int> &indexes = QVector<int>()) override;
 
-//Эта функция предназначена в первую очередь для DFD файлов, которые не умеют хранить
-//каналы разных типов.
-//Эта функция создает несколько файлов, с каналами, сгруппированными по типу
-QList<FileDescriptor *> createDescriptors(const FileDescriptor &source,
-                                                 const QString &fileName,
-                                                 const QVector<int> &indexes = QVector<int>());
+    virtual FileDescriptor *createDescriptor(const QString &fileName) override;
+    virtual FileDescriptor *createDescriptor(const FileDescriptor &source,
+                                            const QString &fileName,
+                                            const QVector<int> &indexes = QVector<int>()) override;
+    virtual FileDescriptor *createDescriptor(const QVector<Channel*> &source,
+                                            const QString &fileName) override;
 
-FileDescriptor *createDescriptor(const FileDescriptor &source,
-                                        const QString &fileName,
-                                        const QVector<int> &indexes = QVector<int>());
-
-FileDescriptor *createDescriptor(const QVector<Channel*> &source,
-                                        const QString &fileName);
-
-}
+    virtual bool fileExists(const QString &s, const QString &suffix) override;
+};
 
 #endif // FORMATFACTORY_H

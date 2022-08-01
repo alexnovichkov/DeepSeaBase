@@ -4,9 +4,9 @@
 #include "settings.h"
 #include "checkableheaderview.h"
 #include "logging.h"
-#include "fileformats/formatfactory.h"
+#include "fileformats/abstractformatfactory.h"
 #include "algorithms.h"
-
+#include "app.h"
 
 MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
 {DD;
@@ -36,7 +36,7 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
     connect(button, SIGNAL(pressed()), this, SLOT(chooseMatFiles()));
 
     formatBox = new QComboBox(this);
-    formatBox->addItems(FormatFactory::allFilters());
+    formatBox->addItems(App->formatFactory->allFilters());
     connect(formatBox, SIGNAL(currentTextChanged(QString)), SLOT(updateFormat()));
 
     tree = new QTreeWidget(this);
@@ -220,7 +220,7 @@ void MatlabConverterDialog::updateFormat()
     suffix.chop(1);
     for (int i=0; i<tree->topLevelItemCount(); ++i) {
         QTreeWidgetItem *item = tree->topLevelItem(i);
-        if (fileExists(item->text(1), suffix)) {
+        if (App->formatFactory->fileExists(item->text(1), suffix)) {
             item->setIcon(2,QIcon(":/icons/tick.png"));
             item->setCheckState(1, Qt::Unchecked);
         }

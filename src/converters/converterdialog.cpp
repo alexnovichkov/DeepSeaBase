@@ -4,7 +4,9 @@
 #include "logging.h"
 #include "algorithms.h"
 #include "settings.h"
-#include "fileformats/formatfactory.h"
+#include "fileformats/abstractformatfactory.h"
+#include "app.h"
+#include "fileformats/filedescriptor.h"
 
 void ConverterDialog::addFile(const QString &fileName)
 {
@@ -34,7 +36,7 @@ ConverterDialog::ConverterDialog(QList<FileDescriptor *> dataBase, QWidget *pare
     button = new QPushButton("Добавить файлы", this);
     connect(button, &QPushButton::clicked, [=](){
         folder = Settings::getSetting("uffFolder").toString();
-        QStringList filters = FormatFactory::allFilters();
+        QStringList filters = App->formatFactory->allFilters();
         QStringList files = QFileDialog::getOpenFileNames(this, "Выберите файлы",folder,
                                                           filters.join(";;"));
 
@@ -87,7 +89,7 @@ ConverterDialog::ConverterDialog(QList<FileDescriptor *> dataBase, QWidget *pare
 
 
     formatBox = new QComboBox(this);
-    formatBox->addItems(FormatFactory::allFilters());
+    formatBox->addItems(App->formatFactory->allFilters());
 
     QSplitter *splitter = new QSplitter(Qt::Vertical, this);
     QWidget *first = new QWidget(this);
@@ -236,7 +238,7 @@ bool FileConvertor::convert()
         QString sourceFileName = fileToConvert;
         QString destFileName = createUniqueFileName("", fileToConvert, "", destSuffix, false);
 
-        FileDescriptor *sourceFile = FormatFactory::createDescriptor(sourceFileName);
+        FileDescriptor *sourceFile = App->formatFactory->createDescriptor(sourceFileName);
 
         if (sourceFile) {
             sourceFile->read();
@@ -250,7 +252,7 @@ bool FileConvertor::convert()
             emit message(QString("&nbsp;&nbsp;&nbsp;В файле %1 каналов").arg(sourceFile->channelsCount()));
 
             emit message("&nbsp;&nbsp;&nbsp;Сохраняю файл");
-            auto destFiles = FormatFactory::createDescriptors(*sourceFile, destFileName);
+            auto destFiles = App->formatFactory->createDescriptors(*sourceFile, destFileName);
 
             for (auto f: destFiles) {
                 if (f) newFiles.append(f->fileName());

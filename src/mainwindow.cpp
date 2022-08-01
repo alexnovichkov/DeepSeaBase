@@ -19,6 +19,7 @@
 #include "filterheaderview.h"
 #include "wavexportdialog.h"
 #include "filehandler.h"
+#include "methods/averaging.h"
 
 #include <ActiveQt/ActiveQt>
 #include "logging.h"
@@ -37,7 +38,7 @@
 #include "channelstable.h"
 #include "plot/legend.h"
 
-#include "fileformats/formatfactory.h"
+#include "fileformats/abstractformatfactory.h"
 #include "descriptorpropertiesdialog.h"
 #include "channelpropertiesdialog.h"
 #include "tab.h"
@@ -59,6 +60,7 @@
 #include "plotdockfactory.h"
 #include "plugins/convertplugin.h"
 #include "settings.h"
+#include "methods/calculations.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), currentTab(0)
@@ -665,7 +667,7 @@ bool MainWindow::addFolder(const QString &directory, bool withAllSubfolders, boo
     if (directory.isEmpty() || !currentTab) return false;
 
     QStringList filesToAdd;
-    processDir(directory, filesToAdd, withAllSubfolders);
+    processDir(directory, filesToAdd, withAllSubfolders, App->formatFactory->allSuffixes());
     if (filesToAdd.isEmpty()) return false;
 
     QStringList toAdd;
@@ -890,7 +892,7 @@ void MainWindow::addCorrections()
             FileDescriptor * dfd = App->find(fileName).get();
             bool deleteAfter=false;
             if (!dfd) {
-                dfd = FormatFactory::createDescriptor(fileName);
+                dfd = App->formatFactory->createDescriptor(fileName);
                 dfd->read();
                 deleteAfter = true;
             }
@@ -995,13 +997,13 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
 bool MainWindow::copyChannels(const QVector<Channel *> source)
 {DD;
     QString startFile = Settings::getSetting("startDir").toString();
-    QStringList filters = FormatFactory::allFilters();
+    QStringList filters = App->formatFactory->allFilters();
 
     QFileDialog dialog(this, "Выбор файла для записи каналов", startFile,
                        filters.join(";;"));
     dialog.setOption(QFileDialog::DontUseNativeDialog, true);
 
-    QStringList suffixes = FormatFactory::allSuffixes(true);
+    QStringList suffixes = App->formatFactory->allSuffixes(true);
 
 
     //проверка каналов на равенство
@@ -1188,14 +1190,13 @@ void MainWindow::calculateMean()
 
         meanD = Settings::getSetting(writeToD94?"lastMeanUffFile":"lastMeanFile", meanD).toString();
 
-        QStringList  filters = FormatFactory::allFilters();
-        QStringList suffixes = FormatFactory::allSuffixes(true);
+        QStringList  filters = App->formatFactory->allFilters();
+        QStringList suffixes = App->formatFactory->allSuffixes(true);
 
         QFileDialog dialog(this, "Выбор файла для записи каналов", meanD,
                            filters.join(";;"));
         dialog.setOption(QFileDialog::DontUseNativeDialog, true);
         dialog.setFileMode(QFileDialog::AnyFile);
-//        dialog.setDefaultSuffix(writeToUff?"uff":"dfd");
 
         if (!writeToD94) {
             QSortFilterProxyModel *proxy = new DfdFilterProxy(firstDescriptor, this);
@@ -1247,7 +1248,7 @@ void MainWindow::calculateMean()
         meanFile = App->find(meanFileName);
     }
 
-    meanFile->calculateMean(channels.toList());
+    ::calculateMean(meanFile.get(), channels.toList());
 
     int idx;
     if (currentTab && currentTab->model->contains(meanFile, &idx)) {
@@ -1331,7 +1332,7 @@ void MainWindow::onPluginTriggered(const QString &pluginKey)
     }
 
     if (plugin) {
-        QStringList files = plugin->getConvertedFiles();
+        QStringList files = plugin->getConvertedFiles(App->formatFactory);
         if (plugin->addFiles()) {
             this->addFiles(files);
             if (currentTab) currentTab->fileHandler->trackFiles(files);
@@ -1528,7 +1529,7 @@ void MainWindow::calculateThirdOctave()
         QString thirdOctaveFileName = createUniqueFileName("", f->fileName(), "3oct", "dfd", false);
         F newFile = App->addFile(thirdOctaveFileName);
         newFile->fillPreliminary(f);
-        newFile->calculateThirdOctave(f);
+        ::calculateThirdOctave(newFile.get(), f);
 
         int idx;
         if (currentTab->model->contains(thirdOctaveFileName, &idx)) {
@@ -1597,8 +1598,8 @@ void MainWindow::calculateMovingAvg()
 
         avgD = Settings::getSetting("lastMovingAvgFile", avgD).toString();
 
-        QStringList filters = FormatFactory::allFilters();
-        QStringList suffixes = FormatFactory::allSuffixes(true);
+        QStringList filters = App->formatFactory->allFilters();
+        QStringList suffixes = App->formatFactory->allSuffixes(true);
 
         QFileDialog dialog(this, "Выбор файла для записи каналов", avgD,
                            filters.join(";;"));
@@ -1652,7 +1653,7 @@ void MainWindow::calculateMovingAvg()
         avg = App->find(avgFileName);
     }
 
-    avg->calculateMovingAvg(channels.toList(),windowSize);
+    ::calculateMovingAvg(avg.get(), channels.toList(),windowSize);
 
     int idx;
     if (currentTab && currentTab->model->contains(avgFileName, &idx)) {

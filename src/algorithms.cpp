@@ -78,15 +78,6 @@ QString replaceWinChars(QString s)
     return s;
 }
 
-bool fileExists(const QString &s, const QString &suffix)
-{DD;
-    QString f = changeFileExt(s, suffix);
-    if (suffix != "dfd") return QFile::exists(f);
-
-    QString f1 = changeFileExt(s, "raw");
-    return (QFile::exists(f) && QFile::exists(f1));
-}
-
 QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spectrum, double xBegin, double xStep)
 {DD;
     QPair<QVector<double>, QVector<double> > result;
@@ -472,17 +463,17 @@ QString stripHtml(QString s)
     return s;
 }
 
-void processDir(const QString &file, QStringList &files, bool includeSubfolders)
+void processDir(const QString &file, QStringList &files, bool includeSubfolders, const QStringList &filters)
 {DD;
     if (auto fi = QFileInfo(file); fi.exists()) {
         if (fi.isDir()) {
-            const QFileInfoList dirLst = QDir(file).entryInfoList(FormatFactory::allSuffixes(),
+            const QFileInfoList dirLst = QDir(file).entryInfoList(filters,
                                                             QDir::AllDirs | QDir::Files | QDir::NoDotAndDotDot,
                                                             QDir::DirsFirst);
             for (const auto &dir: dirLst) {
                 if (dir.isDir()) {
                     if (includeSubfolders)
-                        processDir(dir.absoluteFilePath(),files,includeSubfolders);
+                        processDir(dir.absoluteFilePath(),files,includeSubfolders, filters);
                 }
                 else
                     files << dir.absoluteFilePath();

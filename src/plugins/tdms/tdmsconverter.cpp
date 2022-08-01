@@ -3,10 +3,10 @@
 #include "logging.h"
 #include "algorithms.h"
 #include "fileformats/filedescriptor.h"
-#include "fileformats/formatfactory.h"
+#include "fileformats/abstractformatfactory.h"
 #include "tdmsfile.h"
 
-TDMSFileConverter::TDMSFileConverter(QObject *parent) : QObject(parent)
+TDMSFileConverter::TDMSFileConverter(AbstractFormatFactory *factory, QObject *parent) : QObject(parent), factory(factory)
 {DD;
 
 }
@@ -49,7 +49,7 @@ bool TDMSFileConverter::convert()
 
         QString destinationFileName = changeFileExt(tdmsFileName, destinationFormat);
 
-        QList<FileDescriptor *> destinationFiles = FormatFactory::createDescriptors(*group,
+        QList<FileDescriptor *> destinationFiles = factory->createDescriptors(*group,
                                                                           destinationFileName);
         if (!destinationFiles.isEmpty())
             for (auto f : destinationFiles) {

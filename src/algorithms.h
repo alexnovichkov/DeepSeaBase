@@ -312,8 +312,6 @@ QString createUniqueFileName(const QString &fileName);
  */
 QString changeFileExt(const QString &fileName, const QString &ext);
 
-bool fileExists(const QString &s, const QString &suffix);
-
 // возвращает округленные значения переменных from и to, которые различаются как минимум в первой значащей цифре
 void getUniqueFromToValues(QString &fromString, QString &toString, double from, double to);
 
@@ -331,7 +329,7 @@ QString floattohex(const float f);
 float toFloat32LE(const QByteArray &v, size_t offset);
 double toFloat64LE(const QByteArray &v, size_t offset);
 
-void processDir(const QString &file, QStringList &files, bool includeSubfolders);
+void processDir(const QString &file, QStringList &files, bool includeSubfolders, const QStringList &filters);
 
 QDateTime dateTimeFromString(QString s);
 QDateTime dateTimeFromString(QString date, QString time);

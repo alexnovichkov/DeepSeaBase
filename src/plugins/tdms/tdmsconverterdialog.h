@@ -14,12 +14,13 @@ class QThread;
 class QCheckBox;
 class QComboBox;
 class QTreeWidgetItem;
+class AbstractFormatFactory;
 
 class TDMSConverterDialog : public QDialog
 {
     Q_OBJECT
 public:
-    TDMSConverterDialog(QWidget *parent = 0);
+    TDMSConverterDialog(AbstractFormatFactory *factory);
     ~TDMSConverterDialog();
     QStringList getConvertedFiles() const {return convertedFiles;}
     bool addFiles() const {return m_addFiles;}
@@ -48,6 +49,7 @@ private:
     QCheckBox *addFilesButton;
     QComboBox *fileFormat;
     bool m_addFiles;
+    AbstractFormatFactory *factory;
 public:
     TDMSFileConverter *converter;
 };

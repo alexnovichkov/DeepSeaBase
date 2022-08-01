@@ -100,3 +100,13 @@ FileDescriptor *FormatFactory::createDescriptor(const QVector<Channel *> &source
 #endif
     return 0;
 }
+
+
+bool FormatFactory::fileExists(const QString &s, const QString &suffix)
+{
+    QString f = changeFileExt(s, suffix);
+    if (suffix != "dfd") return QFile::exists(f);
+
+    QString f1 = changeFileExt(s, "raw");
+    return (QFile::exists(f) && QFile::exists(f1));
+}

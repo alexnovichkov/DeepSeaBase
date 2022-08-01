@@ -5,7 +5,7 @@
 #include <QApplication>
 #include "logging.h"
 #include <QIcon>
-#include "fileformats/formatfactory.h"
+#include "fileformats/abstractformatfactory.h"
 #include "mainwindow.h"
 
 Model::Model(QObject *parent) : QAbstractTableModel(parent)
@@ -406,14 +406,14 @@ bool Model::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, 
     if (row != -1) return false;
 
 
-    QStringList filters = FormatFactory::allSuffixes(true);
+    QStringList filters = App->formatFactory->allSuffixes(true);
     const QList<QUrl> urlList = data->urls();
     QStringList filesToAdd;
     for (const QUrl &url: urlList) {
         QString s=url.toLocalFile();
         QFileInfo f(s);
         if (f.isDir() || filters.contains(f.suffix().toLower()))
-            processDir(s, filesToAdd, true);
+            processDir(s, filesToAdd, true, App->formatFactory->allSuffixes());
     }
     if (filesToAdd.isEmpty()) return false;
 

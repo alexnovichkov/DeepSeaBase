@@ -18,6 +18,8 @@ QDebug operator<<(QDebug debug, const F &f);
 
 #define App (dynamic_cast<Application *>(QCoreApplication::instance()))
 
+class AbstractFormatFactory;
+
 class Application : public QApplication
 {
     Q_OBJECT
@@ -38,6 +40,7 @@ public:
     QList<QJsonObject> convertPlugins;
 
     ColorSelector *colors() {return m_colors;}
+    AbstractFormatFactory *formatFactory;
 private:
     QHash<QString, F> files;
     ColorSelector *m_colors = nullptr;

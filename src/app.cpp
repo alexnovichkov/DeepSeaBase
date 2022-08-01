@@ -11,6 +11,7 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
 {DD;
     QVariantList list = Settings::getSetting("colors").toList();
     m_colors = new ColorSelector(list);
+    formatFactory = new FormatFactory();
 }
 
 Application::~Application()
@@ -19,6 +20,7 @@ Application::~Application()
 
     Settings::setSetting("colors", m_colors->getColors());
     delete m_colors;
+    delete formatFactory;
 }
 
 F Application::find(const QString &name) const
@@ -33,7 +35,7 @@ F Application::addFile(const QString &name, bool *isNew)
         return files.value(name);
     }
 
-    F f(FormatFactory::createDescriptor(name));
+    F f(formatFactory->createDescriptor(name));
     if (f)
         files.insert(name, f);
     if (isNew) *isNew = true;
@@ -48,7 +50,7 @@ F Application::addFile(const FileDescriptor &source, const QString &name, const 
         return files.value(name);
     }
 
-    F f(FormatFactory::createDescriptor(source, name, indexes));
+    F f(formatFactory->createDescriptor(source, name, indexes));
     if (f) {
         files.insert(name, f);
         if (isNew) *isNew = true;
@@ -63,7 +65,7 @@ F Application::addFile(const QVector<Channel*> &source, const QString &name, boo
         return files.value(name);
     }
 
-    F f(FormatFactory::createDescriptor(source, name));
+    F f(formatFactory->createDescriptor(source, name));
     if (f) {
         files.insert(name, f);
         if (isNew) *isNew = true;

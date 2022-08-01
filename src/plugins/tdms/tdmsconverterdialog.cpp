@@ -4,10 +4,10 @@
 #include "../../checkableheaderview.h"
 #include "../../logging.h"
 #include "tdmsconverter.h"
-#include "../../fileformats/formatfactory.h"
+#include "../../fileformats/abstractformatfactory.h"
 #include "settings.h"
 
-TDMSConverterDialog::TDMSConverterDialog(QWidget *parent) : QDialog(parent)
+TDMSConverterDialog::TDMSConverterDialog(AbstractFormatFactory *factory) : QDialog(nullptr), factory(factory)
 {DD;
     setWindowTitle("Конвертер tdm/tdms файлов");
     thread = 0;
@@ -20,10 +20,10 @@ TDMSConverterDialog::TDMSConverterDialog(QWidget *parent) : QDialog(parent)
     buttonBox->buttons().constFirst()->setDisabled(true);
 
     fileFormat = new QComboBox(this);
-    fileFormat->addItems(FormatFactory::allFilters());
+    fileFormat->addItems(factory->allFilters());
     connect(fileFormat, SIGNAL(currentTextChanged(QString)), SLOT(updateFormat()));
 
-    converter = new TDMSFileConverter();
+    converter = new TDMSFileConverter(factory);
 
     edit = new QLineEdit(this);
     edit->setReadOnly(true);
@@ -152,7 +152,7 @@ void TDMSConverterDialog::updateFormat()
     suffix.chop(1);
     for (int i=0; i<tree->topLevelItemCount(); ++i) {
         QTreeWidgetItem *item = tree->topLevelItem(i);
-        if (fileExists(item->text(1), suffix)) {
+        if (factory->fileExists(item->text(1), suffix)) {
             item->setIcon(2,QIcon(":/icons/tick.png"));
             item->setCheckState(1, Qt::Unchecked);
         }

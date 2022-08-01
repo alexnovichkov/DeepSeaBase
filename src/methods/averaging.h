@@ -5,8 +5,6 @@
 
 #include "algorithms.h"
 
-class FileDescriptor;
-
 class Averaging
 {
 public:
@@ -84,7 +82,5 @@ private:
 
     double rho;
 };
-
-Averaging *averageChannels(const QList<QPair<FileDescriptor *, int> > &toMean);
 
 #endif // AVERAGING_H

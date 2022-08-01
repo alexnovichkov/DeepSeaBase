@@ -146,13 +146,6 @@ public:
     QString legend() const;
     bool setLegend(const QString &s);
 
-    /** Calculates average of channels, writes to a file */
-    void calculateMean(const QList<Channel*> &channels);
-    void calculateMovingAvg(const QList<Channel *> &channels, int windowSize);
-    void calculateThirdOctave(FileDescriptor *source);
-
-    QString saveTimeSegment(double from, double to);
-
     inline QString fileName() const {return _fileName;}
     inline void setFileName(const QString &name) { _fileName = name;}
 

@@ -33,11 +33,11 @@ message(Compiles for $$QT_ARCH)
 
 CONFIG(debug, debug|release){
         DESTDIR = $$OUT_PWD/../bin.debug
-        LIBS += -L$$OUT_PWD/../lib.debug
+#        LIBS += -L$$OUT_PWD/../lib.debug
 }
 else{
         DESTDIR = $$OUT_PWD/../bin
-        LIBS += -L$$OUT_PWD/../lib
+#        LIBS += -L$$OUT_PWD/../lib
 }
 
 CONFIG += c++14 c++17
@@ -54,6 +54,7 @@ SOURCES += main.cpp\
     filestable.cpp \
     mainwindow.cpp \
     methods/apsfunction.cpp \
+    methods/calculations.cpp \
     methods/filteringalgorithm.cpp \
     methods/frfalgorithm.cpp \
     methods/frffunction.cpp \
@@ -171,11 +172,13 @@ HEADERS  += mainwindow.h \
     descriptorpropertiesdialog.h \
     dfdfilterproxy.h \
     enums.h \
+    fileformats/abstractformatfactory.h \
     fileformats/fileio.h \
     filehandler.h \
     filehandlerdialog.h \
     filestable.h \
     methods/apsfunction.h \
+    methods/calculations.h \
     methods/filteringalgorithm.h \
     methods/frfalgorithm.h \
     methods/frffunction.h \

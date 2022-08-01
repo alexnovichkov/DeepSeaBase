@@ -1,6 +1,7 @@
 #include "timeslicer.h"
 #include "logging.h"
 #include "fileformats/filedescriptor.h"
+#include "methods/calculations.h"
 
 #include <QProgressDialog>
 
@@ -39,7 +40,7 @@ void TimeSlicer::start()
 //        if (progress.wasCanceled()) {
 //            break;
 //        }
-        newFiles << file->saveTimeSegment(from, to);
+        newFiles << saveTimeSegment(file, from, to);
         i++;
         emit tick(i);
     }
