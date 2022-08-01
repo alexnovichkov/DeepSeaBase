@@ -3,7 +3,7 @@
 #include <QtCore>
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
-#include "app.h"
+#include "settings.h"
 
 AbstractFunction::AbstractFunction(QObject *parent, const QString &name) : QObject(parent), _name(name)
 {
@@ -165,7 +165,7 @@ void AbstractAlgorithm::saveSettings()
     for (auto f: m_functions) {
         for (const auto &property: f->properties()) {
             QVariant val = f->getParameter(f->name()+"/"+property);
-            App->setSetting(displayName()+"/"+f->name()+"/"+property, val);
+            Settings::setSetting(displayName()+"/"+f->name()+"/"+property, val);
         }
     }
 }
@@ -174,7 +174,7 @@ void AbstractAlgorithm::restoreSettings()
 {DD;
     for (auto f: m_functions) {
         for (const auto &property: f->properties()) {
-            QVariant val = App->getSetting(displayName()+"/"+f->name()+"/"+property);
+            QVariant val = Settings::getSetting(displayName()+"/"+f->name()+"/"+property);
             f->setParameter(f->name()+"/"+property, val);
         }
     }

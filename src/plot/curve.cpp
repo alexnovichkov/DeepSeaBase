@@ -88,6 +88,7 @@ PointLabel *Curve::findLabel(const int point)
 
 void Curve::moveToPos(QPoint pos, QPoint startPos)
 {
+    Q_UNUSED(startPos);
     if (m_plot->interactionMode != Plot::DataInteraction) return;
 
     if (selectedPoint < 0 || selectedPoint >= samplesCount()) return;

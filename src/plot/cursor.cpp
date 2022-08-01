@@ -5,18 +5,19 @@
 #include "algorithms.h"
 #include <QMenu>
 #include <QClipboard>
-#include "app.h"
+#include "settings.h"
+#include <QApplication>
 
 Cursor::Cursor(Type type, Style style, Plot *plot)
     : m_type{type}, m_style{style}, m_plot{plot}
 {
-    m_snapToValues = App->getSetting("cursorSnapToValues", true).toBool();
-    m_showValues = App->getSetting("cursorShowYValues", false).toBool();
-    m_digits = App->getSetting("cursorDigits", 2).toInt();
-    m_harmonics = App->getSetting("cursorHarmonics", 10).toInt();
-    m_format = App->getSetting("cursorFormat", "fixed").toString()=="fixed"?Format::Fixed:Format::Scientific;
+    m_snapToValues = Settings::getSetting("cursorSnapToValues", true).toBool();
+    m_showValues = Settings::getSetting("cursorShowYValues", false).toBool();
+    m_digits = Settings::getSetting("cursorDigits", 2).toInt();
+    m_harmonics = Settings::getSetting("cursorHarmonics", 10).toInt();
+    m_format = Settings::getSetting("cursorFormat", "fixed").toString()=="fixed"?Format::Fixed:Format::Scientific;
     if (m_type==Type::Double || m_type==Type::DoubleReject)
-        m_info = static_cast<Info>(App->getSetting("cursorInfo", 0).toInt());
+        m_info = static_cast<Info>(Settings::getSetting("cursorInfo", 0).toInt());
 }
 
 void Cursor::copyValues() const

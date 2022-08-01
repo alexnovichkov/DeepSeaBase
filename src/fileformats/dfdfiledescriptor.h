@@ -4,7 +4,6 @@
 #include <QtCore>
 #include <QColor>
 #include "fileformats/filedescriptor.h"
-#include <qwt_series_data.h>
 
 enum DfdDataType {
     // 0 - 15 - исходные данные

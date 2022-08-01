@@ -36,11 +36,13 @@ HandlerModel::HandlerModel(FileHandler *fileHandler, QObject *parent)
 
 int HandlerModel::rowCount(const QModelIndex &parent) const
 {
+    Q_UNUSED(parent);
     return fileHandler->count();
 }
 
 int HandlerModel::columnCount(const QModelIndex &parent) const
 {
+    Q_UNUSED(parent);
     return 2;
 }
 

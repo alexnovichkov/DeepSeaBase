@@ -31,7 +31,6 @@
 #include "timeslicer.h"
 #include <QTime>
 #include "channeltablemodel.h"
-#include "converters/tdmsconverterdialog.h"
 #include "htmldelegate.h"
 #include "longoperation.h"
 #include "filestable.h"
@@ -58,7 +57,8 @@
 #include "DockWidgetTab.h"
 #include "tabdockfactory.h"
 #include "plotdockfactory.h"
-
+#include "plugins/convertplugin.h"
+#include "settings.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), currentTab(0)
@@ -77,6 +77,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(m_DockManager, &ads::CDockManager::focusedDockWidgetChanged, this, &MainWindow::onFocusedDockWidgetChanged);
 
     createActions();
+
+    App->loadPlugins();
 
     mainToolBar = addToolBar("Панель инструментов");
     mainToolBar->setIconSize(QSize(24,24));
@@ -119,8 +121,8 @@ MainWindow::MainWindow(QWidget *parent)
     fileMenu->addAction(addFileAct);
     fileMenu->addAction(convertAct);
     fileMenu->addAction(convertMatFilesAct);
-    fileMenu->addAction(convertTDMSFilesAct);
     fileMenu->addAction(convertEsoFilesAct);
+    createConvertPluginsMenu(fileMenu);
 
     QMenu *recordsMenu = menuBar()->addMenu(QString("Записи"));
     recordsMenu->addAction(delFilesAct);
@@ -141,7 +143,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     addPlotArea();
 
-    QVariantMap v = App->getSetting("folders1").toMap();
+    QVariantMap v = Settings::getSetting("folders1").toMap();
 
     if (v.isEmpty())
         createNewTab();
@@ -327,18 +329,45 @@ void MainWindow::createActions()
     convertMatFilesAct = new QAction("Конвертировать Matlab файлы...", this);
     connect(convertMatFilesAct,SIGNAL(triggered()),SLOT(convertMatFiles()));
 
-    convertTDMSFilesAct = new QAction("Конвертировать TDMS файлы...", this);
-    connect(convertTDMSFilesAct,SIGNAL(triggered()),SLOT(convertTDMSFiles()));
-
     convertEsoFilesAct = new QAction("Конвертировать файлы ESO...", this);
     connect(convertEsoFilesAct,SIGNAL(triggered()),SLOT(convertEsoFiles()));
 
     plotOctaveAsHistogramAct = new QAction("Строить третьоктавы в виде гистограмм", this);
     plotOctaveAsHistogramAct->setCheckable(true);
-    plotOctaveAsHistogramAct->setChecked(App->getSetting("plotOctaveAsHistogram", false).toBool());
+    plotOctaveAsHistogramAct->setChecked(Settings::getSetting("plotOctaveAsHistogram", false).toBool());
     connect(plotOctaveAsHistogramAct, &QAction::toggled, [=](bool checked){
-        App->setSetting("plotOctaveAsHistogram", checked);
+        Settings::setSetting("plotOctaveAsHistogram", checked);
     });
+}
+
+void MainWindow::createConvertPluginsMenu(QMenu *menu)
+{
+    if (!App->convertPlugins.isEmpty())
+        menu->addSeparator();
+
+    QSignalMapper *mapper = new QSignalMapper(this);
+#if QT_VERSION >= QT_VERSION_CHECK(5,15,0)
+    connect(mapper, &QSignalMapper::mappedString, this, &MainWindow::onPluginTriggered);
+#else
+    connect(mapper, SIGNAL(mapped(QString)), this, SLOT(onPluginTriggered(QString)));
+#endif
+    for (int it = 0; it < App->convertPlugins.size(); ++it) {
+        QJsonObject metaData = App->convertPlugins.at(it);
+        QString pluginInterface=metaData.value(("interface")).toString();
+        if (pluginInterface=="IConvertPlugin") {
+            QIcon icon(metaData.value("icon").toString());
+            QString text = metaData.value("text").toString();
+            QString tooltip = metaData.value("description").toString();
+            if (text.isEmpty()) text = tooltip;
+            QString key = metaData.value("path").toString();
+            QAction *a = new QAction(icon, text, this);
+            a->setProperty("id", it);
+            a->setToolTip(tooltip);
+            connect(a, SIGNAL(triggered()), mapper, SLOT(map()));
+            mapper->setMapping(a, key);
+            menu->insertAction(0, a);
+        }
+    }
 }
 
 void MainWindow::createTab(const QString &name, const QStringList &folders)
@@ -584,7 +613,7 @@ void MainWindow::closeOtherPlots(int index)
 
 QString MainWindow::getFolderToAdd(bool withSubfolders)
 {DD;
-    QString directory = App->getSetting("lastDirectory").toString();
+    QString directory = Settings::getSetting("lastDirectory").toString();
 
     directory = QFileDialog::getExistingDirectory(this,
                                                   withSubfolders?tr("Добавление папки со всеми вложенными папками"):
@@ -593,7 +622,7 @@ QString MainWindow::getFolderToAdd(bool withSubfolders)
                                                   QFileDialog::ShowDirsOnly | QFileDialog::ReadOnly);
 
     if (!directory.isEmpty())
-        App->setSetting("lastDirectory", directory);
+        Settings::setSetting("lastDirectory", directory);
     return directory;
 }
 
@@ -611,7 +640,7 @@ void MainWindow::addFolderWithSubfolders() /*SLOT*/
 
 void MainWindow::addFile()
 {DD;
-    QString directory = App->getSetting("lastDirectory").toString();
+    QString directory = Settings::getSetting("lastDirectory").toString();
 
     QFileDialog dialog(this, "Добавить файлы", directory);
     dialog.setOption(QFileDialog::DontUseNativeDialog, true);
@@ -625,7 +654,7 @@ void MainWindow::addFile()
     if (dialog.exec()) {
         const QStringList fileNames = dialog.selectedFiles();
         if (fileNames.isEmpty()) return;
-        App->setSetting("lastDirectory", fileNames.constFirst());
+        Settings::setSetting("lastDirectory", fileNames.constFirst());
         if (addFiles(fileNames))
             currentTab->fileHandler->trackFiles(fileNames);
     }
@@ -965,7 +994,7 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
 
 bool MainWindow::copyChannels(const QVector<Channel *> source)
 {DD;
-    QString startFile = App->getSetting("startDir").toString();
+    QString startFile = Settings::getSetting("startDir").toString();
     QStringList filters = FormatFactory::allFilters();
 
     QFileDialog dialog(this, "Выбор файла для записи каналов", startFile,
@@ -1025,7 +1054,7 @@ bool MainWindow::copyChannels(const QVector<Channel *> source)
         return false;
     }
 
-    App->setSetting("startDir", file);
+    Settings::setSetting("startDir", file);
 
 
     LongOperation op;
@@ -1157,7 +1186,7 @@ void MainWindow::calculateMean()
         meanD.chop(4);
         if (writeToD94) meanD.append(".d94");
 
-        meanD = App->getSetting(writeToD94?"lastMeanUffFile":"lastMeanFile", meanD).toString();
+        meanD = Settings::getSetting(writeToD94?"lastMeanUffFile":"lastMeanFile", meanD).toString();
 
         QStringList  filters = FormatFactory::allFilters();
         QStringList suffixes = FormatFactory::allSuffixes(true);
@@ -1211,7 +1240,7 @@ void MainWindow::calculateMean()
         else
             meanFile->fillPreliminary(firstDescriptor);
 
-        App->setSetting(writeToD94?"lastMeanUffFile":"lastMeanFile", meanFileName);
+        Settings::setSetting(writeToD94?"lastMeanUffFile":"lastMeanFile", meanFileName);
     }
     else {
         meanFileName = firstChannelFileName;
@@ -1291,12 +1320,19 @@ void MainWindow::convertMatFiles()
     }
 }
 
-void MainWindow::convertTDMSFiles()
+void MainWindow::onPluginTriggered(const QString &pluginKey)
 {DD;
-    TDMSConverterDialog dialog(this);
-    if (dialog.exec()) {
-        if (dialog.addFiles()) {
-            QStringList files = dialog.getConvertedFiles();
+    IConvertPlugin *plugin = loadedPlugins.value(pluginKey, nullptr);
+    if (!plugin) {
+        QPluginLoader loader(pluginKey);
+        QObject *o = loader.instance();
+        if (o) plugin = qobject_cast<IConvertPlugin *>(o);
+        loadedPlugins.insert(pluginKey, plugin);
+    }
+
+    if (plugin) {
+        QStringList files = plugin->getConvertedFiles();
+        if (plugin->addFiles()) {
             this->addFiles(files);
             if (currentTab) currentTab->fileHandler->trackFiles(files);
         }
@@ -1509,12 +1545,12 @@ void MainWindow::calculateMovingAvg()
     if (!currentPlot || !currentPlot->plot()) return;
     if (currentPlot->plot()->curvesCount()==0) return;
 
-    int windowSize = App->getSetting("movingAvgSize",3).toInt();
+    int windowSize = Settings::getSetting("movingAvgSize",3).toInt();
     bool ok;
     windowSize = QInputDialog::getInt(this,"Скользящее среднее","Выберите величину окна усреднения",windowSize,
                                       3,15,2,&ok);
     if (ok)
-        App->setSetting("movingAvgSize",windowSize);
+        Settings::setSetting("movingAvgSize",windowSize);
     else
         return;
 
@@ -1559,7 +1595,7 @@ void MainWindow::calculateMovingAvg()
         QString avgD = firstName;
         avgD.chop(4);
 
-        avgD = App->getSetting("lastMovingAvgFile", avgD).toString();
+        avgD = Settings::getSetting("lastMovingAvgFile", avgD).toString();
 
         QStringList filters = FormatFactory::allFilters();
         QStringList suffixes = FormatFactory::allSuffixes(true);
@@ -1584,7 +1620,7 @@ void MainWindow::calculateMovingAvg()
 
         avgFileName = selectedFiles.constFirst();
         if (avgFileName.isEmpty()) return;
-        App->setSetting("lastMovingAvgFile", avgFileName);
+        Settings::setSetting("lastMovingAvgFile", avgFileName);
 
         //добавляем суффикс
         QString currentSuffix = QFileInfo(avgFileName).suffix().toLower();
@@ -1928,9 +1964,9 @@ bool MainWindow::closeRequested()
     }
 
     if (currentTab) {
-        App->setSetting("upperSplitterState",currentTab->saveState());
+        Settings::setSetting("upperSplitterState",currentTab->saveState());
         QByteArray treeHeaderState = currentTab->filesTable->header()->saveState();
-        App->setSetting("treeHeaderState", treeHeaderState);
+        Settings::setSetting("treeHeaderState", treeHeaderState);
     }
 
     QVariantMap map;
@@ -1941,7 +1977,7 @@ bool MainWindow::closeRequested()
             if (currentTab) currentTab->filterHeader->clear();
         }
     }
-    App->setSetting("folders1", map);
+    Settings::setSetting("folders1", map);
 
     return true;
 }

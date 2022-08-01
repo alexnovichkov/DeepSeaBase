@@ -24,7 +24,7 @@ public:
     virtual void detach() override;
     virtual bool contains(Selectable *selected) const override;
     virtual void update() override;
-    virtual int dataCount(bool allData) const override {return 1;}
+    virtual int dataCount(bool allData) const override {Q_UNUSED(allData); return 1;}
     virtual QStringList dataHeader(bool allData) const override;
     virtual QList<double> data(int curve, bool allData) const override;
     virtual QPointF currentPosition() const override;

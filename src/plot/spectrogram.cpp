@@ -194,6 +194,7 @@ void Spectrogram::setRightScale(QwtAxisId id, double min, double max)
 
 QMenu *Spectrogram::createMenu(QwtAxisId axis, const QPoint &pos)
 {
+    Q_UNUSED(pos);
     QMenu *menu = new QMenu(this);
 
     if (axis == QwtAxis::XBottom) {

@@ -85,7 +85,7 @@ void CursorHarmonic::moveTo(Qt::Key key, int count, TrackingCursor *source, bool
     QPointF pos = cursor->value();
 
     double rangeX = m_plot->canvasMap(cursor->xAxis()).sDist();
-    double rangeY = m_plot->canvasMap(cursor->yAxis()).sDist();
+//    double rangeY = m_plot->canvasMap(cursor->yAxis()).sDist();
 
     switch (key) {
         case Qt::Key_Left: {

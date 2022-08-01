@@ -8,7 +8,7 @@
 #include <QVector2D>
 #include <QMenu>
 #include "curve.h"
-#include <app.h>
+#include "settings.h"
 
 PointLabel::PointLabel(QwtPlot *parent, Curve *curve)
     : QwtPlotItem(),
@@ -19,8 +19,8 @@ PointLabel::PointLabel(QwtPlot *parent, Curve *curve)
       curve(curve)
 {DD;
     setZ(40.0);
-    if (App->getSetting("pointLabelRemember", true).toBool())
-        d_mode = App->getSetting("pointLabelMode", 0).toInt();
+    if (Settings::getSetting("pointLabelRemember", true).toBool())
+        d_mode = Settings::getSetting("pointLabelMode", 0).toInt();
     setXAxis(curve->xAxis());
     setYAxis(curve->yAxis());
     updateLabel();
@@ -159,8 +159,8 @@ QList<QAction *> PointLabel::actions()
     QActionGroup *ag = new QActionGroup(plot);
 
     auto a1 = m->addAction("значение по оси X", [=](){
-        if (App->getSetting("pointLabelRemember", true).toBool())
-            App->setSetting("pointLabelMode", 0);
+        if (Settings::getSetting("pointLabelRemember", true).toBool())
+            Settings::setSetting("pointLabelMode", 0);
         setMode(0);
     });
     a1->setCheckable(true);
@@ -168,8 +168,8 @@ QList<QAction *> PointLabel::actions()
     ag->addAction(a1);
 
     a1 = m->addAction("значения по осям X и Y", [=](){
-        if (App->getSetting("pointLabelRemember", true).toBool())
-            App->setSetting("pointLabelMode", 1);
+        if (Settings::getSetting("pointLabelRemember", true).toBool())
+            Settings::setSetting("pointLabelMode", 1);
         setMode(1);
     });
     a1->setCheckable(true);
@@ -177,8 +177,8 @@ QList<QAction *> PointLabel::actions()
     ag->addAction(a1);
 
     a1 = m->addAction("значение по оси Y", [=](){
-        if (App->getSetting("pointLabelRemember", true).toBool())
-            App->setSetting("pointLabelMode", 2);
+        if (Settings::getSetting("pointLabelRemember", true).toBool())
+            Settings::setSetting("pointLabelMode", 2);
         setMode(2);
     });
     a1->setCheckable(true);
@@ -190,10 +190,10 @@ QList<QAction *> PointLabel::actions()
 
     a = new QAction("Запомнить выбор", plot);
     a->setCheckable(true);
-    a->setChecked(App->getSetting("pointLabelRemember", true).toBool());
+    a->setChecked(Settings::getSetting("pointLabelRemember", true).toBool());
     QObject::connect(a, &QAction::triggered, [=](){
-        bool r = App->getSetting("pointLabelRemember", true).toBool();
-        App->setSetting("pointLabelRemember", !r);
+        bool r = Settings::getSetting("pointLabelRemember", true).toBool();
+        Settings::setSetting("pointLabelRemember", !r);
     });
     l<<a;
 

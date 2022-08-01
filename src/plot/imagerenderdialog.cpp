@@ -1,5 +1,5 @@
 #include "imagerenderdialog.h"
-#include "app.h"
+#include "settings.h"
 
 #include <QtWidgets>
 #include "fancylineedit.h"
@@ -15,7 +15,7 @@ ImageRenderDialog::ImageRenderDialog(bool askForPath, QWidget *parent) : QDialog
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
 
 
-    _path = App->getSetting("lastPicture", "plot.bmp").toString();
+    _path = Settings::getSetting("lastPicture", "plot.bmp").toString();
 
     if (askForPath) {
         pathEdit = new FancyLineEdit(this);

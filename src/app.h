@@ -9,7 +9,6 @@
 #include <QtDebug>
 
 class ColorSelector;
-class QSettings;
 class FileDescriptor;
 class Channel;
 
@@ -25,8 +24,6 @@ class Application : public QApplication
 public:
     Application(int &argc, char **argv);
     ~Application();
-    QVariant getSetting(const QString &key, const QVariant &defValue=QVariant());
-    void setSetting(const QString &key, const QVariant &value);
     bool hasFile(const QString &name) const {return files.contains(name);}
     F find(const QString &name) const;
     F addFile(const QString &name, bool *isNew = nullptr);
@@ -36,12 +33,13 @@ public:
               bool *isNew = nullptr);
     F addFile(const QVector<Channel*> &source, const QString &name, bool *isNew = nullptr);
     void maybeDelFile(const QString& name);
+    void loadPlugins();
+
+    QList<QJsonObject> convertPlugins;
 
     ColorSelector *colors() {return m_colors;}
 private:
-    void createSettings();
     QHash<QString, F> files;
-    QSettings *settings = nullptr;
     ColorSelector *m_colors = nullptr;
 };
 

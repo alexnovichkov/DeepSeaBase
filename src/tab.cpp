@@ -4,7 +4,7 @@
 #include "mainwindow.h"
 
 #include "logging.h"
-
+#include "settings.h"
 #include "headerview.h"
 #include "filestable.h"
 #include "model.h"
@@ -122,7 +122,7 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
     connect(editFileAct, &QAction::triggered, [=](){
         QString file = QDir::toNativeSeparators(filePathLabel->text());
         if (!file.isEmpty()) {
-            QString executable = App->getSetting("editor").toString();
+            QString executable = Settings::getSetting("editor").toString();
             if (executable.isEmpty())
                 executable = QInputDialog::getText(this, "Текстовый редактор не задан",
                                                    "Введите путь к текстовому редактору,\n"
@@ -133,10 +133,10 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
                     executable = QStandardPaths::findExecutable(executable);
                     if (!executable.isEmpty())
                         if (QProcess::startDetached(executable, QStringList()<<file))
-                            App->setSetting("editor", executable);
+                            Settings::setSetting("editor", executable);
                 }
                 else
-                    App->setSetting("editor", executable);
+                    Settings::setSetting("editor", executable);
             }
         }
     });
@@ -196,7 +196,7 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
     addWidget(filesTable);
     addWidget(channelsWidget);
 
-    QByteArray upperSplitterState = App->getSetting("upperSplitterState").toByteArray();
+    QByteArray upperSplitterState = Settings::getSetting("upperSplitterState").toByteArray();
     if (!upperSplitterState.isEmpty()) restoreState(upperSplitterState);
 
     updateActions();

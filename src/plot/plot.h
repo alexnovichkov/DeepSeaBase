@@ -32,7 +32,7 @@ class QPushButton;
 class QCheckBox;
 class QLabel;
 class QDoubleSpinBox;
-class TrackingPanel;
+//class TrackingPanel;
 class QPrinter;
 class CheckableLegend;
 class Grid;
@@ -81,7 +81,7 @@ public:
     PlotType type() const {return plotType;}
 
     virtual QWidget *toolBarWidget() {return nullptr;}
-    virtual void updateActions(int filesCount, int channelsCount) {}
+    virtual void updateActions(int filesCount, int channelsCount) {Q_UNUSED(filesCount); Q_UNUSED(channelsCount);}
 
     QwtAxisId xBottomAxis{QwtAxis::XBottom};
     QwtAxisId yLeftAxis{QwtAxis::YLeft};
@@ -169,7 +169,7 @@ protected:
     PlotZoom *plotZoom = nullptr;
     CanvasEventFilter *canvasFilter = nullptr;
 
-    TrackingPanel *trackingPanel = nullptr;
+//    TrackingPanel *trackingPanel = nullptr;
 
     ColorSelector *colors = nullptr;
     Cursors *cursors = nullptr;

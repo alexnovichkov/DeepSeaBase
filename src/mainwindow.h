@@ -22,6 +22,7 @@ namespace ads {
     class CDockAreaWidget;
     class CDockWidget;
 }
+class IConvertPlugin;
 
 #include "app.h"
 
@@ -105,15 +106,17 @@ private slots:
     void save();
 
     void convertMatFiles();
-    void convertTDMSFiles();
     void convertEsoFiles();
 
     void saveTimeSegment(const QVector<FileDescriptor*> &files, double from, double to);
 
     void exportChannelsToWav();
     void renameDescriptor();
+
+    void onPluginTriggered(const QString &pluginKey);
 private:
     void createActions();
+    void createConvertPluginsMenu(QMenu *menu);
     QString getFolderToAdd(bool withSubfolders);
     void moveChannels(bool up);
 
@@ -190,7 +193,6 @@ private:
     QAction *exportToExcelAct;
 
     QAction *convertMatFilesAct;
-    QAction *convertTDMSFilesAct;
     QAction *convertEsoFilesAct;
     QAction *convertAct;
     QAction *aboutAct;
@@ -199,6 +201,7 @@ private:
     QAction *plotOctaveAsHistogramAct;
 
     PlotArea *currentPlot = nullptr;
+    QHash<QString, IConvertPlugin *> loadedPlugins;
 protected:
     void closeEvent(QCloseEvent *event) override;
 signals:

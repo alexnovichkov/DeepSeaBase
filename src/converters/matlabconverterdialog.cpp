@@ -1,7 +1,7 @@
 #include "matlabconverterdialog.h"
 #include <QtWidgets>
 #include "converters/matlabconvertor.h"
-#include "app.h"
+#include "settings.h"
 #include "checkableheaderview.h"
 #include "logging.h"
 #include "fileformats/formatfactory.h"
@@ -123,14 +123,14 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
     l->setMargin(0);
     setLayout(l);
 
-    QSize wsize = App->getSetting("matlabConverterDialogSize", QVariant::fromValue(QSize(700,500))).toSize();
+    QSize wsize = Settings::getSetting("matlabConverterDialogSize", QVariant::fromValue(QSize(700,500))).toSize();
     resize(wsize);
 }
 
 MatlabConverterDialog::~MatlabConverterDialog()
 {DD;
     QSize wsize = this->size();
-    App->setSetting("matlabConverterDialogSize", wsize);
+    Settings::setSetting("matlabConverterDialogSize", wsize);
     if (convertor) {
         convertor->deleteLater();
     }
@@ -143,11 +143,11 @@ MatlabConverterDialog::~MatlabConverterDialog()
 
 void MatlabConverterDialog::chooseMatFiles()
 {DD;
-    folder = App->getSetting("matlabFolder").toString();
+    folder = Settings::getSetting("matlabFolder").toString();
     folder = QFileDialog::getExistingDirectory(this, "Выберите папку с файлами *.mat", folder);
 
     edit->setText(folder);
-    App->setSetting("matlabFolder", folder);
+    Settings::setSetting("matlabFolder", folder);
 
     QFileInfoList matFiles = findMatFiles(folder);
 

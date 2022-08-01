@@ -6,7 +6,7 @@
 #include "octaveplot.h"
 #include "timeplot.h"
 #include "plot/curve.h"
-#include "app.h"
+#include "settings.h"
 #include "logging.h"
 #include "fileformats/filedescriptor.h"
 #include "plot/pointlabel.h"
@@ -27,10 +27,10 @@ PlotArea::PlotArea(int index, QWidget *parent)
     autoscaleXAct = new QAction("Автомасштабирование по оси X", this);
     autoscaleXAct->setIcon(QIcon(":/icons/autoscale-x.png"));
     autoscaleXAct->setCheckable(true);
-    bool autoscale = App->getSetting("autoscale-x", true).toBool();
+    bool autoscale = Settings::getSetting("autoscale-x", true).toBool();
     connect(autoscaleXAct, &QAction::toggled, [this](bool toggled){
         if (m_plot) m_plot->toggleAutoscale(0 /* x axis */,toggled);
-        App->setSetting("autoscale-x", toggled);
+        Settings::setSetting("autoscale-x", toggled);
     });
     autoscaleXAct->setChecked(autoscale);
     if (m_plot) m_plot->toggleAutoscale(0 /* x axis */, autoscale);
@@ -38,10 +38,10 @@ PlotArea::PlotArea(int index, QWidget *parent)
     autoscaleYAct = new QAction("Автомасштабирование по оси Y", this);
     autoscaleYAct->setIcon(QIcon(":/icons/autoscale-y-main.png"));
     autoscaleYAct->setCheckable(true);
-    autoscale = App->getSetting("autoscale-y", true).toBool();
+    autoscale = Settings::getSetting("autoscale-y", true).toBool();
     connect(autoscaleYAct, &QAction::toggled, [this](bool toggled){
         if (m_plot) m_plot->toggleAutoscale(1 /* y axis */,toggled);
-        App->setSetting("autoscale-y", toggled);
+        Settings::setSetting("autoscale-y", toggled);
     });
     autoscaleYAct->setChecked(autoscale);
     if (m_plot) m_plot->toggleAutoscale(1 /* x axis */, autoscale);
@@ -50,10 +50,10 @@ PlotArea::PlotArea(int index, QWidget *parent)
     autoscaleYSlaveAct = new QAction("Автомасштабирование по правой оси Y", this);
     autoscaleYSlaveAct->setIcon(QIcon(":/icons/autoscale-y-slave.png"));
     autoscaleYSlaveAct->setCheckable(true);
-    autoscale = App->getSetting("autoscale-y-slave", true).toBool();
+    autoscale = Settings::getSetting("autoscale-y-slave", true).toBool();
     connect(autoscaleYSlaveAct, &QAction::toggled, [this](bool toggled){
         if (m_plot) m_plot->toggleAutoscale(2 /* y slave axis */,toggled);
-        App->setSetting("autoscale-y-slave", toggled);
+        Settings::setSetting("autoscale-y-slave", toggled);
     });
     autoscaleYSlaveAct->setChecked(autoscale);
     if (m_plot) m_plot->toggleAutoscale(2 /* x axis */, autoscale);
@@ -121,7 +121,7 @@ PlotArea::PlotArea(int index, QWidget *parent)
     switchCursorAct->setIcon(QIcon(":/icons/cursor.png"));
     switchCursorAct->setCheckable(true);
     switchCursorAct->setObjectName("simpleCursor");
-    bool pickerEnabled = App->getSetting("pickerEnabled", true).toBool();
+    bool pickerEnabled = Settings::getSetting("pickerEnabled", true).toBool();
     switchCursorAct->setChecked(pickerEnabled);
     connect(switchCursorAct, &QAction::triggered, [=](){
         if (m_plot) m_plot->switchCursor();
@@ -253,11 +253,11 @@ void PlotArea::addPlot(Plot::PlotType type)
     connect(m_plot, SIGNAL(focusThisPlot()), this, SLOT(setFocus()));
     connect(m_plot, SIGNAL(trackingPanelCloseRequested()), trackingCursorAct, SLOT(toggle()));
 
-    bool autoscale = App->getSetting("autoscale-x", true).toBool();
+    bool autoscale = Settings::getSetting("autoscale-x", true).toBool();
     m_plot->toggleAutoscale(0 /* x axis */, autoscale);
-    autoscale = App->getSetting("autoscale-y", true).toBool();
+    autoscale = Settings::getSetting("autoscale-y", true).toBool();
     m_plot->toggleAutoscale(1 /* y axis */, autoscale);
-    autoscale = App->getSetting("autoscale-y-slave", true).toBool();
+    autoscale = Settings::getSetting("autoscale-y-slave", true).toBool();
     m_plot->toggleAutoscale(2 /* y slave axis */, autoscale);
 
     emit curvesCountChanged();

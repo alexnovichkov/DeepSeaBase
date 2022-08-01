@@ -1,7 +1,7 @@
 #include "channelpropertiesdialog.h"
 #include "fileformats/filedescriptor.h"
 #include <QtWidgets>
-#include "app.h"
+#include "settings.h"
 #include "logging.h"
 
 ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &channels, QWidget *parent)
@@ -76,8 +76,8 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
                 box.setInformativeText("Продолжить?");
                 box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
 
-                bool alreadyShown = App->getSetting("alreadyShown1", false).toBool();
-                bool alreadyShownState = App->getSetting("alreadyShownState1", false).toBool();
+                bool alreadyShown = Settings::getSetting("alreadyShown1", false).toBool();
+                bool alreadyShownState = Settings::getSetting("alreadyShownState1", false).toBool();
                 if (!alreadyShown) {
                     QCheckBox *cb = new QCheckBox("Больше не спрашивать");
                     cb->setChecked(false);
@@ -86,8 +86,8 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
 
                 int res = box.exec();
                 if (box.checkBox()->isChecked()) {
-                    App->setSetting("alreadyShown1", true);
-                    App->setSetting("alreadyShownState1", res == QMessageBox::Yes);
+                    Settings::setSetting("alreadyShown1", true);
+                    Settings::setSetting("alreadyShownState1", res == QMessageBox::Yes);
                 }
                 if (res != QMessageBox::Yes) return;
                 if (alreadyShown && !alreadyShownState) return; //ранее выбрали Всегда нет
@@ -152,10 +152,10 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
     scroll2->setWidgetResizable(true);
     scroll2->setFrameShape(QFrame::NoFrame);
     tab->addTab(scroll2, "Функция");
-    int currentTab = App->getSetting("channelPropertiesDialog.currentTab").toInt();
+    int currentTab = Settings::getSetting("channelPropertiesDialog.currentTab").toInt();
     tab->setCurrentIndex(currentTab);
     connect(tab, &QTabWidget::currentChanged, [=](int index){
-        App->setSetting("channelPropertiesDialog.currentTab", index);
+        Settings::setSetting("channelPropertiesDialog.currentTab", index);
     });
 
     splitter->addWidget(tab);

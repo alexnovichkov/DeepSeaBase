@@ -1,7 +1,7 @@
 #include "correctiondialog.h"
 
 #include <QtWidgets>
-#include "app.h"
+#include "settings.h"
 #include "headerview.h"
 #include "plot/plot.h"
 #include "plot/plotmodel.h"
@@ -67,7 +67,7 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) : QDialog(parent
     l->setRowStretch(5,l->rowStretch(5)+30);
     setLayout(l);
 
-    auto size = App->getSetting("correctionDialogSize").toSize();
+    auto size = Settings::getSetting("correctionDialogSize").toSize();
     if (!size.isEmpty()) resize(size);
     else resize(qApp->primaryScreen()->availableSize().width()/3,
                 qApp->primaryScreen()->availableSize().height()/3);
@@ -75,7 +75,7 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) : QDialog(parent
 
 CorrectionDialog::~CorrectionDialog()
 {
-    App->setSetting("correctionDialogSize", size());
+    Settings::setSetting("correctionDialogSize", size());
 }
 
 //void CorrectionDialog::closeEvent(QCloseEvent *event)

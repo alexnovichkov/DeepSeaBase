@@ -5,10 +5,11 @@
 #include "fileformats/formatfactory.h"
 #include "colorselector.h"
 #include "logging.h"
+#include "settings.h"
 
 Application::Application(int &argc, char **argv) : QApplication(argc, argv)
 {DD;
-    QVariantList list = getSetting("colors").toList();
+    QVariantList list = Settings::getSetting("colors").toList();
     m_colors = new ColorSelector(list);
 }
 
@@ -16,20 +17,8 @@ Application::~Application()
 {DD;
     for (auto f: qAsConst(files)) f.reset();
 
-    setSetting("colors", m_colors->getColors());
+    Settings::setSetting("colors", m_colors->getColors());
     delete m_colors;
-}
-
-QVariant Application::getSetting(const QString &key, const QVariant &defValue)
-{DD;
-    if (!settings) createSettings();
-    return settings->value(key, defValue);
-}
-
-void Application::setSetting(const QString &key, const QVariant &value)
-{DD;
-    if (!settings) createSettings();
-    settings->setValue(key, value);
 }
 
 F Application::find(const QString &name) const
@@ -91,13 +80,22 @@ void Application::maybeDelFile(const QString &name)
     }
 }
 
-void Application::createSettings()
+void Application::loadPlugins()
 {DD;
-    if (QFile::exists("portable")) {
-        settings = new QSettings("deepseabase.ini", QSettings::IniFormat);
-    }
-    else {
-        settings = new QSettings("Alex Novichkov","DeepSea Database");
+    QDir pluginsDir = QDir(qApp->applicationDirPath()+"/plugins");
+    const QFileInfoList potentialPlugins = pluginsDir.entryInfoList(QDir::Files);
+    for (const QFileInfo &fileName: potentialPlugins) {
+        QString path = fileName.canonicalFilePath();
+        QPluginLoader loader(path);
+        QJsonObject metaData = loader.metaData().value("MetaData").toObject();
+
+        if (metaData.isEmpty()) continue;
+        metaData.insert("path",path);
+        QString pluginInterface = metaData.value("interface").toString();
+        if (pluginInterface == "IConvertPlugin")
+            convertPlugins << metaData;
+//        if (pluginInterface=="IQoobarPlugin")
+//            plugins << metaData;
     }
 }
 

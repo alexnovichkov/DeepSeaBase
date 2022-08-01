@@ -3,7 +3,7 @@
 #include "checkableheaderview.h"
 #include "logging.h"
 #include "algorithms.h"
-#include "app.h"
+#include "settings.h"
 #include "fileformats/formatfactory.h"
 
 void ConverterDialog::addFile(const QString &fileName)
@@ -33,13 +33,13 @@ ConverterDialog::ConverterDialog(QList<FileDescriptor *> dataBase, QWidget *pare
 
     button = new QPushButton("Добавить файлы", this);
     connect(button, &QPushButton::clicked, [=](){
-        folder = App->getSetting("uffFolder").toString();
+        folder = Settings::getSetting("uffFolder").toString();
         QStringList filters = FormatFactory::allFilters();
         QStringList files = QFileDialog::getOpenFileNames(this, "Выберите файлы",folder,
                                                           filters.join(";;"));
 
         if (!files.isEmpty())
-            App->setSetting("uffFolder", QFileInfo(files.constFirst()).canonicalPath());
+            Settings::setSetting("uffFolder", QFileInfo(files.constFirst()).canonicalPath());
 
         foreach (const QString &f, files) {
             addFile(f);

@@ -31,7 +31,6 @@
 #include <QMessageBox>
 #include <QFileDialog>
 #include <QDesktopWidget>
-#include "app.h"
 #include <QClipboard>
 #include <QPrinter>
 #include <QPrintDialog>
@@ -41,7 +40,7 @@
 
 #include "mainwindow.h"
 #include "curvepropertiesdialog.h"
-
+#include "settings.h"
 #include "colorselector.h"
 #include "legend.h"
 
@@ -49,7 +48,7 @@
 #include "logscaleengine.h"
 
 #include "logging.h"
-#include "trackingpanel.h"
+//#include "trackingpanel.h"
 #include "trackingcursor.h"
 
 #include "dataiodevice.h"
@@ -78,7 +77,7 @@ Plot::Plot(PlotType type, QWidget *parent) :
 {DD;
     m = new PlotModel(this);
 
-    QVariantList list = App->getSetting("colors").toList();
+    QVariantList list = Settings::getSetting("colors").toList();
     colors = new ColorSelector(list);
     _canvas = new QwtPlotCanvas(this);
     _canvas->setFocusIndicator(QwtPlotAbstractCanvas::CanvasFocusIndicator);
@@ -106,7 +105,7 @@ Plot::Plot(PlotType type, QWidget *parent) :
     leftOverlay = new LeftAxisOverlay(this);
     rightOverlay = new RightAxisOverlay(this);
 
-    axisLabelsVisible = App->getSetting("axisLabelsVisible", true).toBool();
+    axisLabelsVisible = Settings::getSetting("axisLabelsVisible", true).toBool();
     yValuesPresentationLeft = DataHolder::ShowAsDefault;
     yValuesPresentationRight = DataHolder::ShowAsDefault;
 
@@ -129,10 +128,10 @@ Plot::Plot(PlotType type, QWidget *parent) :
     zoom = new ZoomStack(this);
 
     tracker = new PlotTracker(this);
-//    tracker->setEnabled(App->getSetting("pickerEnabled", true).toBool());
+//    tracker->setEnabled(Settings::getSetting("pickerEnabled", true).toBool());
 
     _picker = new Picker(this);
-    _picker->setEnabled(App->getSetting("pickerEnabled", true).toBool());
+    _picker->setEnabled(Settings::getSetting("pickerEnabled", true).toBool());
     connect(_picker, &Picker::removeNeeded, cursors, qOverload<Selectable*>(&Cursors::removeCursor));
 
     dragZoom = new DragZoom(this);
@@ -157,16 +156,16 @@ Plot::~Plot()
 {DD;
     deleteAllCurves(true);
 
-    delete trackingPanel;
+//    delete trackingPanel;
     delete cursorBox;
     delete grid;
     delete tracker;
     delete _picker;
 
-    App->setSetting("axisLabelsVisible", axisLabelsVisible);
-    App->setSetting("autoscale-x", !zoom->horizontalScaleBounds->isFixed());
-    App->setSetting("autoscale-y", !zoom->verticalScaleBounds->isFixed());
-    App->setSetting("autoscale-y-slave", !zoom->verticalScaleBoundsSlave->isFixed());
+    Settings::setSetting("axisLabelsVisible", axisLabelsVisible);
+    Settings::setSetting("autoscale-x", !zoom->horizontalScaleBounds->isFixed());
+    Settings::setSetting("autoscale-y", !zoom->verticalScaleBounds->isFixed());
+    Settings::setSetting("autoscale-y-slave", !zoom->verticalScaleBoundsSlave->isFixed());
     delete zoom;
     delete dragZoom;
     delete wheelZoom;
@@ -579,7 +578,7 @@ Curve *Plot::createCurve(const QString &legendName, Channel *channel)
 
     // считаем, что шаг по оси х 0 только у октав и третьоктав
     if (channel->data()->xValuesFormat() == DataHolder::XValuesNonUniform) {
-        if (App->getSetting("plotOctaveAsHistogram", false).toBool())
+        if (Settings::getSetting("plotOctaveAsHistogram", false).toBool())
             return new BarCurve(legendName, channel);
     }
 
@@ -863,7 +862,7 @@ void Plot::savePlot() /*SLOT*/
     ImageRenderDialog dialog(true, this);
     if (dialog.exec()) {
         importPlot(dialog.getPath(), dialog.getSize(), dialog.getResolution());
-        App->setSetting("lastPicture", dialog.getPath());
+        Settings::setSetting("lastPicture", dialog.getPath());
     }
 }
 
@@ -1032,7 +1031,7 @@ void Plot::switchCursor()
     bool pickerEnabled = _picker->isEnabled();
     _picker->setEnabled(!pickerEnabled);
     if (tracker) tracker->setEnabled(!pickerEnabled);
-    App->setSetting("pickerEnabled", !pickerEnabled);
+    Settings::setSetting("pickerEnabled", !pickerEnabled);
 }
 
 void Plot::editLegendItem(QwtPlotItem *item)

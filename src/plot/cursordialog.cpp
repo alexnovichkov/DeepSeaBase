@@ -2,7 +2,7 @@
 
 #include "cursor.h"
 #include <QtWidgets>
-#include "app.h"
+#include "settings.h"
 
 CursorDialog::CursorDialog(Cursor *cursor, QWidget *parent): QDialog(parent), cursor{cursor}
 {
@@ -52,10 +52,10 @@ void CursorDialog::accept()
     cursor->setSnapToValues(snapToValues->isChecked());
     cursor->setFormat(format->currentIndex()==0?Cursor::Format::Fixed:Cursor::Format::Scientific);
 
-    App->setSetting("cursorSnapToValues", snapToValues->isChecked());
-    App->setSetting("cursorShowYValues", showValues->isChecked());
-    App->setSetting("cursorDigits", cursor->digits());
-    App->setSetting("cursorHarmonics", cursor->harmonics());
-    App->setSetting("cursorFormat", cursor->format()==Cursor::Format::Fixed?"fixed":"scientific");
+    Settings::setSetting("cursorSnapToValues", snapToValues->isChecked());
+    Settings::setSetting("cursorShowYValues", showValues->isChecked());
+    Settings::setSetting("cursorDigits", cursor->digits());
+    Settings::setSetting("cursorHarmonics", cursor->harmonics());
+    Settings::setSetting("cursorFormat", cursor->format()==Cursor::Format::Fixed?"fixed":"scientific");
     QDialog::accept();
 }

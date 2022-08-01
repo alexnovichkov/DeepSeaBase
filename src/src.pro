@@ -16,12 +16,6 @@ equals(matioSupport,1) {
 DEFINES += WITH_MATIO
 }
 
-# Set tdmsSupport to 1 to compile with TDMS
-tdmsSupport=1
-equals(tdmsSupport,1) {
-DEFINES+=WITH_TDMS
-}
-
 VERSIONJS = $$cat(version.js, lines)
 VERSIONJS = $$first(VERSIONJS)
 VERSION = $$section(VERSIONJS, \",1,1)
@@ -52,8 +46,9 @@ SOURCES += main.cpp\
     app.cpp \
     channelpropertiesdialog.cpp \
     channelstable.cpp \
-    converters/tdmsconverter.cpp \
     descriptorpropertiesdialog.cpp \
+    fileformats/fileio.cpp \
+    fileformats/formatfactory.cpp \
     filehandler.cpp \
     filehandlerdialog.cpp \
     filestable.cpp \
@@ -92,6 +87,7 @@ SOURCES += main.cpp\
     plot/trackingcursor.cpp \
     plot/zoomstack.cpp \
     plotdockfactory.cpp \
+    settings.cpp \
     sortabletreewidgetitem.cpp \
     checkableheaderview.cpp \
     methods/dfdmethods/spectremethod.cpp \
@@ -172,10 +168,10 @@ HEADERS  += mainwindow.h \
     channelpropertiesdialog.h \
     channelsmimedata.h \
     channelstable.h \
-    converters/tdmsconverter.h \
     descriptorpropertiesdialog.h \
     dfdfilterproxy.h \
     enums.h \
+    fileformats/fileio.h \
     filehandler.h \
     filehandlerdialog.h \
     filestable.h \
@@ -214,6 +210,7 @@ HEADERS  += mainwindow.h \
     plot/trackingcursor.h \
     plot/zoomstack.h \
     plotdockfactory.h \
+    settings.h \
     sortabletreewidgetitem.h \
     checkableheaderview.h \
     methods/dfdmethods/abstractmethod.h \
@@ -291,7 +288,7 @@ HEADERS  += mainwindow.h \
     plot/spectrocurve.h \
     plot/colormapfactory.h \
     fancylineedit.h \
-    convertplugin.h
+    plugins/convertplugin.h
 
 
 SOURCES +=\
@@ -301,7 +298,6 @@ SOURCES +=\
     fileformats/dfdsettings.cpp \
     fileformats/fields.cpp \
     fileformats/data94file.cpp \
-    fileformats/tdmsfile.cpp \
     fileformats/matfile.cpp
 defined(WITH_MATIO) {
 SOURCES += fileformats/matlabfile.cpp
@@ -309,7 +305,6 @@ SOURCES += fileformats/matlabfile.cpp
 HEADERS +=\
     fileformats/formatfactory.h \
     fileformats/data94file.h \
-    fileformats/tdmsfile.h \
     fileformats/matfile.h \
     fileformats/filedescriptor.h \
     fileformats/ufffile.h \
@@ -325,7 +320,6 @@ SOURCES +=\
     converters/converter.cpp \
     converters/matlabconverterdialog.cpp \
     converters/esoconverterdialog.cpp \
-    converters/tdmsconverterdialog.cpp \
     converters/converterdialog.cpp
 
 HEADERS +=\
@@ -333,8 +327,7 @@ HEADERS +=\
     converters/converterdialog.h \
     converters/converter.h \
     converters/matlabconverterdialog.h \
-    converters/esoconverterdialog.h \
-    converters/tdmsconverterdialog.h
+    converters/esoconverterdialog.h
 
 SOURCES +=\
   ../3rdParty/DspFilters/State.cpp \
@@ -424,19 +417,6 @@ equals(QT_ARCH,"i386") {
 }
 equals(QT_ARCH,"x86_64") {
   LIBS *= E:/My/programming/sources/build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_64_bit-Release/release/libsamplerate.a
-}
-
-#tdm
-equals(tdmsSupport,1) {
-message(-- Searching for tdms --)
-message(tdms include path is E:/My/programming/sources/TDMS/tdm_dev/dev/include)
-INCLUDEPATH *= E:/My/programming/sources/TDMS/tdm_dev/dev/include
-equals(QT_ARCH,"x86_64") {
-  LIBS *= E:/My/programming/sources/TDMS/tdm_dev/dev/lib/64-bit/msvc64/nilibddc.lib
-}
-equals(QT_ARCH,"i386") {
-  LIBS *= E:/My/programming/sources/TDMS/tdm_dev/dev/lib/32-bit/msvc/nilibddc.lib
-}
 }
 
 #FFTW

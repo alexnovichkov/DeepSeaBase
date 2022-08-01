@@ -1,7 +1,7 @@
 #include "trackingpanel.h"
 
 #include <QtWidgets>
-#include <app.h>
+#include "settings.h"
 
 #include <qwt_text.h>
 #include <qwt_plot_zoneitem.h>
@@ -129,13 +129,13 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
     box1 = new QCheckBox("Включая значения по оси x", this);
 
     yValuesCheckBox = new QCheckBox("Показывать уровни дискрет", this);
-    connect(yValuesCheckBox, &QCheckBox::stateChanged, [=](int state){
-        for (TrackingCursor *c: qAsConst(cursors)) {
+//    connect(yValuesCheckBox, &QCheckBox::stateChanged, [=](int state){
+//        for (TrackingCursor *c: qAsConst(cursors)) {
 //            c->showYValues = state==Qt::Checked;
 //            c->updateLabel();
-        }
-    });
-    yValuesCheckBox->setChecked(App->getSetting("cursorShowYValues", false).toBool());
+//        }
+//    });
+    yValuesCheckBox->setChecked(Settings::getSetting("cursorShowYValues", false).toBool());
 
     harmonics = new QCheckBox("Включить показ гармоник", this);
     connect(harmonics, &QCheckBox::stateChanged, [=](/*int state*/){
@@ -185,7 +185,7 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
 
 TrackingPanel::~TrackingPanel()
 {DD;
-    App->setSetting("cursorShowYValues", yValuesCheckBox->checkState()==Qt::Checked);
+    Settings::setSetting("cursorShowYValues", yValuesCheckBox->checkState()==Qt::Checked);
     for (auto *cursor: qAsConst(cursors)) {
         cursor->detach();
         delete cursor;

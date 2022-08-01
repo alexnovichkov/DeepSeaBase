@@ -17,7 +17,7 @@ public:
             updateSelection();
         }
     }
-    virtual void moveToPos(QPoint pos, QPoint startPos = QPoint()) {Q_UNUSED(pos)}
+    virtual void moveToPos(QPoint pos, QPoint startPos = QPoint()) {Q_UNUSED(pos); Q_UNUSED(startPos);}
     virtual void moveLeft(int count = 1) {Q_UNUSED(count)}
     virtual void moveRight(int count = 1) {Q_UNUSED(count)}
     virtual void moveUp(int count = 1) {Q_UNUSED(count)}

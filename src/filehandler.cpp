@@ -97,6 +97,7 @@ bool FileHandler::tracking(const QString &file) const
             case File:
             case Folder:
                 if (item.first == file) return true;
+                break;
             case FolderWithSubfolders: if (path.startsWith(item.first+"/")) return true;
         }
     }
@@ -128,5 +129,5 @@ void FileHandler::fileChanged(const QString &file)
 
 void FileHandler::directoryChanged(const QString &dir)
 {
-
+    Q_UNUSED(dir);
 }

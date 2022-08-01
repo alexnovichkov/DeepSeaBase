@@ -1,7 +1,8 @@
 ﻿{
-  "interface": "IDeepseaPlugin",
+  "interface": "IConvertPlugin",
   "key": "tdms",
   "icon": "",
   "version": "1.0.0",
+  "text": "Конвертировать файлы TDMS...",
   "description": "Конвертор файлов National Instruments"
 }

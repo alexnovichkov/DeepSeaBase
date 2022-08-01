@@ -6,6 +6,7 @@ CONFIG *= debug_and_release
 QT *= widgets
 QT *= concurrent
 
-INCLUDEPATH += ..
-DEPENDPATH += ..
+INCLUDEPATH += ../..
+DEPENDPATH += ../..
 
+DESTDIR = $${BUILD_DIR}/plugins
