@@ -1327,8 +1327,14 @@ void MainWindow::onPluginTriggered(const QString &pluginKey)
     if (!plugin) {
         QPluginLoader loader(pluginKey);
         QObject *o = loader.instance();
-        if (o) plugin = qobject_cast<IConvertPlugin *>(o);
-        loadedPlugins.insert(pluginKey, plugin);
+        if (o) {
+            plugin = qobject_cast<IConvertPlugin *>(o);
+            loadedPlugins.insert(pluginKey, plugin);
+        }
+        else {
+            QMessageBox::critical(this, "Ошибка загрузки плагина",
+                                  loader.errorString());
+        }
     }
 
     if (plugin) {
