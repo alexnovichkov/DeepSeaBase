@@ -9,6 +9,7 @@
 #include "colormapfactory.h"
 #include <qwt_scale_widget.h>
 #include "channelsmimedata.h"
+#include "cursors.h"
 
 Spectrogram::Spectrogram(QWidget *parent) : Plot(Plot::PlotType::Spectrogram, parent)
 {
@@ -198,6 +199,13 @@ QMenu *Spectrogram::createMenu(QwtAxisId axis, const QPoint &pos)
     QMenu *menu = new QMenu(this);
 
     if (axis == QwtAxis::XBottom) {
+        menu->addAction("Одинарный курсор", [=](){
+            cursors->addSingleCursor(canvas()->mapFromGlobal(pos), Cursor::Style::Cross);
+        });
+        menu->addAction("Гармонический курсор", [=](){
+            cursors->addHarmonicCursor(canvas()->mapFromGlobal(pos));
+        });
+
         menu->addAction(xScaleIsLogarithmic?"Линейная шкала":"Логарифмическая шкала", [=](){
             if (xScaleIsLogarithmic)
                 setAxisScaleEngine(xBottomAxis, new QwtLinearScaleEngine());
