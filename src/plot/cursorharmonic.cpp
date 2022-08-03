@@ -191,7 +191,7 @@ void CursorHarmonic::update()
 QStringList CursorHarmonic::dataHeader(bool allData) const
 {
     Q_UNUSED(allData);
-    return {QString::number(cursor->xValue(), 'f', 2)};
+    return {/*"", "Время, с", QString("Частота ")+*/QLocale(QLocale::Russian).toString(cursor->xValue())};
 }
 
 QList<double> CursorHarmonic::data(int curve, bool allData) const
@@ -199,7 +199,14 @@ QList<double> CursorHarmonic::data(int curve, bool allData) const
     Q_UNUSED(allData);
     auto curves = m_plot->model()->curves();
     bool success = false;
-    return {curves.at(curve)->channel->data()->YforXandZ(cursor->xValue(), 0, success)};
+//    for (int i=0; i<curves.at(curve)->channel->data()->blocksCount(); ++i) {
+//        result << curves.at(curve)->channel->data()->zValue(i) <<
+//             curves.at(curve)->channel->data()->YforXandZ(cursor->xValue(),
+//                                                          curves.at(curve)->channel->data()->zValue(i),
+//                                                          success);
+//    }
+    double zval = curves.at(curve)->channel->data()->blocksCount()>1?cursor->yValue():0;
+    return {curves.at(curve)->channel->data()->YforXandZ(cursor->xValue(), zval, success)};
 }
 
 QPointF CursorHarmonic::currentPosition() const

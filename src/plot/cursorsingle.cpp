@@ -132,8 +132,7 @@ void CursorSingle::update()
 QStringList CursorSingle::dataHeader(bool allData) const
 {
     Q_UNUSED(allData);
-    char f = m_format==Format::Fixed?'f':'e';
-    return {QString::number(cursor->xValue(), f, m_digits)};
+    return {/*"", "Время, с", QString("Частота ")+*/QLocale(QLocale::Russian).toString(cursor->xValue())};
 }
 
 QList<double> CursorSingle::data(int curve, bool allData) const
@@ -141,7 +140,18 @@ QList<double> CursorSingle::data(int curve, bool allData) const
     Q_UNUSED(allData);
     auto curves = m_plot->model()->curves();
     bool success;
-    return {curves.at(curve)->channel->data()->YforXandZ(cursor->xValue(), 0, success)};
+//    QList<QList<double> > result;
+//    for (int i=0; i<curves.at(curve)->channel->data()->blocksCount(); ++i) {
+//        QList<double> l;
+//        l << curves.at(curve)->channel->data()->zValue(i) <<
+//             curves.at(curve)->channel->data()->YforXandZ(cursor->xValue(),
+//                                                          curves.at(curve)->channel->data()->zValue(i),
+//                                                          success);
+//        result << l;
+//    }
+//    return result;
+    double zval = curves.at(curve)->channel->data()->blocksCount()>1?cursor->yValue():0;
+    return {curves.at(curve)->channel->data()->YforXandZ(cursor->xValue(), zval, success)};
 }
 
 QPointF CursorSingle::currentPosition() const

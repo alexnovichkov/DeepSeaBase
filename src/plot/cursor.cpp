@@ -24,14 +24,15 @@ void Cursor::copyValues() const
 {
     QStringList list;
 
-    list << dataHeader(false).join('\t');
+    list << ""<< dataHeader(false).join('\t');
 
     auto curves = m_plot->model()->curves();
     for (int i=0; i<curves.size(); ++i) {
         auto d = data(i,false);
         QStringList l;
+        l << curves.at(i)->title();
         for (auto v: d) {
-            l << QString::number(v, m_format==Format::Fixed?'f':'e', m_digits);
+            l << QLocale(QLocale::Russian).toString(v);
         }
         list << l.join('\t');
     }

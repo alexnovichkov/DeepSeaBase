@@ -255,10 +255,10 @@ int CursorDouble::dataCount(bool allData) const
 
 QStringList CursorDouble::dataHeader(bool allData) const
 {
-    char f = m_format==Format::Fixed?'f':'e';
     QStringList list;
-    list << QString::number(cursor1->xValue(), f, m_digits);
-    list << QString::number(cursor2->xValue(), f, m_digits);
+    //list << "" << "Время, с";
+    list << /*QString("Частота ")+*/QLocale(QLocale::Russian).toString(cursor1->xValue());
+    list << /*QString("Частота ")+*/QLocale(QLocale::Russian).toString(cursor2->xValue());
     if (allData) {
         if (m_info & Cursor::RMS) list << "СКЗ";
         if (m_info & Cursor::Energy) list << "Энергия";
@@ -271,9 +271,29 @@ QList<double> CursorDouble::data(int curve, bool allData) const
 {
     auto curves = m_plot->model()->curves();
     bool success = false;
-    auto val1 = curves.at(curve)->channel->data()->YforXandZ(cursor1->xValue(), 0, success);
-    auto val2 = curves.at(curve)->channel->data()->YforXandZ(cursor2->xValue(), 0, success);
+
+//    QList<QList<double> > list;
+//    for (int i=0; i<curves.at(curve)->channel->data()->blocksCount(); ++i) {
+//        auto val1 = curves.at(curve)->channel->data()->YforXandZ(cursor1->xValue(),
+//                                                                 curves.at(curve)->channel->data()->zValue(i), success);
+//        auto val2 = curves.at(curve)->channel->data()->YforXandZ(cursor2->xValue(),
+//                                                                 curves.at(curve)->channel->data()->zValue(i), success);
+//        QList<double> l;
+//        l << curves.at(curve)->channel->data()->zValue(i) << val1 << val2;
+//        if (allData) {
+//            if (m_info & Cursor::RMS) l << rms(curves.at(curve)->channel->data(), this, rejectCursors);
+//            if (m_info & Cursor::Energy) {
+//                double e = energy(curves.at(curve)->channel->data(), this, rejectCursors);
+//                l << e;
+//            }
+//        }
+//        list << l;
+//    }
+
     QList<double> list;
+    double zval = curves.at(curve)->channel->data()->blocksCount()>1 ? cursor1->yValue():0;
+    auto val1 = curves.at(curve)->channel->data()->YforXandZ(cursor1->xValue(), zval, success);
+    auto val2 = curves.at(curve)->channel->data()->YforXandZ(cursor2->xValue(), zval, success);
     list << val1 << val2;
     if (allData) {
         if (m_info & Cursor::RMS) list << rms(curves.at(curve)->channel->data(), this, rejectCursors);
