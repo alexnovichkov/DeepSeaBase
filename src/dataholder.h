@@ -114,6 +114,13 @@ public:
     //возвращает индекс i, для которого |xValue(i)-x| минимальна, или -1
     int nearest(double x) const;
 
+    //возвращает максимальный индекс i, для которого zValue(i) <= z, или -1
+    int floorZ(double z) const;
+    //возвращает минимальный индекс i, для которого zValue(i) >= z, или -1
+    int ceilZ(double z) const;
+    //возвращает индекс i, для которого |zValue(i)-z| минимальна, или -1
+    int nearestZ(double z) const;
+
     cx_double yValueComplex(int i, int block = 0) const;
     double zValue(int i) const;
     double YforXandZ(double x, double z, bool &success) const;

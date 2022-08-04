@@ -736,6 +736,16 @@ void Plot::createLegend()
     insertLegend(leg, QwtPlot::RightLegend);
 }
 
+void Plot::saveSpectrum(double zVal)
+{
+    emit saveHorizontalSlice(zVal);
+}
+
+void Plot::saveThroughput(double xVal)
+{
+    emit saveVerticalSlice(xVal);
+}
+
 void Plot::recalculateScale(bool leftAxis)
 {DD;
     ZoomStack::ScaleBounds *ybounds = 0;

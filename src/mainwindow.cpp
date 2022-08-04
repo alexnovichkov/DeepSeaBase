@@ -555,6 +555,9 @@ PlotArea *MainWindow::createPlotArea()
     connect(area, &PlotArea::curveDeleted, this, &MainWindow::onChannelChanged);
     connect(area, &ads::CDockWidget::closeRequested, [=](){closePlot(area);});
     connect(area, &PlotArea::descriptorRequested, this, &MainWindow::setDescriptor);
+    connect(area, &PlotArea::saveHorizontalSlice, this, &MainWindow::saveHorizontalSlice);
+    connect(area, &PlotArea::saveVerticalSlice, this, &MainWindow::saveVerticalSlice);
+    connect(area, &PlotArea::saveTimeSegment, this, &MainWindow::saveTimeSegment);
 
     plotsMenu->addAction(area->toggleViewAction());
     updateActions();
@@ -1100,6 +1103,8 @@ bool MainWindow::copyChannels(const QVector<Channel *> source)
     }
     return true;
 }
+
+
 
 void MainWindow::calculateMean()
 {DD;
@@ -1669,6 +1674,109 @@ void MainWindow::calculateMovingAvg()
         addFile(avg);
     }
     setCurrentAndPlot(avg.get(), avg->channelsCount()-1);
+}
+
+//сохраняет спектр из спектрограммы
+void MainWindow::saveHorizontalSlice(double zValue)
+{
+    if (!currentPlot || !currentPlot->plot()) return;
+    if (currentPlot->plot()->curvesCount()==0) return;
+    if (currentPlot->plot()->type() != Plot::PlotType::Spectrogram) return;
+
+    auto channels = currentPlot->plot()->model()->plottedChannels();
+    if (channels.size() != 1) return;
+
+    auto firstChannel = channels.first();
+    const QString firstName = firstChannel->descriptor()->fileName();
+
+    QMessageBox box("Сохранение спектра", QString("Сохранить спектр в эту запись дополнительным каналом?"),
+                    QMessageBox::Question,
+                    QMessageBox::Yes, QMessageBox::No, QMessageBox::Cancel);
+    box.setButtonText(QMessageBox::Yes, "Да, записать в этот файл");
+    box.setButtonText(QMessageBox::No, "Нет, экспортировать в отдельный файл");
+    box.setEscapeButton(QMessageBox::Cancel);
+
+    int result = box.exec();
+    if (result == QMessageBox::Cancel) return;
+    bool writeToSeparateFile = (result == QMessageBox::No);
+
+    QString spectreFileName;
+    F spectre;
+
+    if (writeToSeparateFile) {
+        QString spectreD = firstName;
+        spectreD.chop(4);
+
+        spectreD = Settings::getSetting("lastSpectreFile", spectreD).toString();
+
+        QStringList filters = App->formatFactory->allFilters();
+        QStringList suffixes = App->formatFactory->allSuffixes(true);
+
+        QFileDialog dialog(this, "Выбор файла для записи каналов", spectreD,
+                           filters.join(";;"));
+        dialog.setOption(QFileDialog::DontUseNativeDialog, true);
+        dialog.setFileMode(QFileDialog::AnyFile);
+
+        QSortFilterProxyModel *proxy = new DfdFilterProxy(firstChannel->descriptor(), this);
+        dialog.setProxyModel(proxy);
+
+        QString selectedFilter;
+        QStringList selectedFiles;
+        if (dialog.exec()) {
+            selectedFiles = dialog.selectedFiles();
+            selectedFilter = dialog.selectedNameFilter();
+        }
+        if (selectedFiles.isEmpty()) return;
+
+        spectreFileName = selectedFiles.constFirst();
+        if (spectreFileName.isEmpty()) return;
+        Settings::setSetting("lastSpectreFile", spectreFileName);
+
+        //добавляем суффикс
+        QString currentSuffix = QFileInfo(spectreFileName).suffix().toLower();
+        QString filterSuffix = suffixes.at(filters.indexOf(selectedFilter));
+        if (currentSuffix != filterSuffix) {
+            //удаляем суффикс, если это суффикс известного нам типа файлов
+            if (suffixes.contains(currentSuffix))
+                spectreFileName.chop(currentSuffix.length()+1);
+
+            spectreFileName.append(QString(".%1").arg(filterSuffix));
+        }
+
+        bool isNew = false;
+        spectre = App->addFile(spectreFileName, &isNew);
+
+        if (!spectre) {
+            qDebug() << "Не удалось создать файл" << spectreFileName;
+            return;
+        }
+
+        if (QFileInfo(spectreFileName).exists()) {
+            if (isNew) spectre->read();
+        }
+        else
+            spectre->fillPreliminary(firstChannel->descriptor());
+    }
+    else {
+        spectreFileName = firstChannel->descriptor()->fileName();
+        spectre = App->find(spectreFileName);
+    }
+
+    ::saveSpectre(spectre.get(), channels.first(), zValue);
+
+    int idx;
+    if (currentTab && currentTab->model->contains(spectreFileName, &idx)) {
+        currentTab->model->updateFile(idx);
+        currentTab->updateChannelsTable(currentTab->record);
+    }
+    else {
+        addFile(spectre);
+    }
+}
+
+void MainWindow::saveVerticalSlice(double frequency)
+{
+
 }
 
 void MainWindow::rescanBase()

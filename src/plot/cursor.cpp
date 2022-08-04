@@ -6,7 +6,7 @@
 #include <QMenu>
 #include <QClipboard>
 #include "settings.h"
-#include <QApplication>
+#include "app.h"
 
 Cursor::Cursor(Type type, Style style, Plot *plot)
     : m_type{type}, m_style{style}, m_plot{plot}
@@ -18,6 +18,16 @@ Cursor::Cursor(Type type, Style style, Plot *plot)
     m_format = Settings::getSetting("cursorFormat", "fixed").toString()=="fixed"?Format::Fixed:Format::Scientific;
     if (m_type==Type::Double || m_type==Type::DoubleReject)
         m_info = static_cast<Info>(Settings::getSetting("cursorInfo", 0).toInt());
+}
+
+void Cursor::saveSpectrum()
+{
+
+}
+
+void Cursor::saveSlice()
+{
+
 }
 
 void Cursor::copyValues() const

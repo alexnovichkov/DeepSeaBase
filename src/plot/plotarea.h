@@ -40,6 +40,9 @@ signals:
     void channelPlotted(Channel *ch);
     void curveDeleted(Channel *);
     void focusThisPlot();
+    void saveHorizontalSlice(double zVal);
+    void saveVerticalSlice(double xVal);
+    void saveTimeSegment(const QVector<FileDescriptor*> &files, double from, double to);
 public slots:
     void updateLegends();
 private slots:

@@ -5,11 +5,11 @@
 #include <qwt_text.h>
 #include <qwt_scale_map.h>
 #include <qwt_symbol.h>
-#include <qwt_plot.h>
 #include <QPainter>
 #include <QInputDialog>
 #include "cursordialog.h"
 #include <QMenu>
+#include "plot.h"
 
 TrackingCursor::TrackingCursor(const QColor &col, Cursor::Style type, Cursor *parent)
     : type(type), parent{parent}
@@ -30,20 +30,22 @@ TrackingCursor::TrackingCursor(const QColor &col, Cursor::Style type, Cursor *pa
     energyAct->setCheckable(true);
     energyAct->setChecked(parent?parent->info() & Cursor::Energy : false);
     QObject::connect(energyAct, &QAction::triggered, [=](){
-        if (!parent) return;
-        auto info = parent->info();
-        info.setFlag(Cursor::Energy, !(info & Cursor::Energy));
-        parent->setInfo(info);
+        if (parent) {
+            auto info = parent->info();
+            info.setFlag(Cursor::Energy, !(info & Cursor::Energy));
+            parent->setInfo(info);
+        }
     });
 
     rmsAct = new QAction("СКЗ", parent);
     rmsAct->setCheckable(true);
     rmsAct->setChecked(parent?parent->info() & Cursor::RMS : false);
     QObject::connect(rmsAct, &QAction::triggered, [=](){
-        if (!parent) return;
-        auto info = parent->info();
-        info.setFlag(Cursor::RMS, !(info & Cursor::RMS));
-        parent->setInfo(info);
+        if (parent) {
+            auto info = parent->info();
+            info.setFlag(Cursor::RMS, !(info & Cursor::RMS));
+            parent->setInfo(info);
+        }
     });
 }
 
@@ -113,6 +115,20 @@ QList<QAction *> TrackingCursor::actions()
         if (parent) parent->copyValues();
     });
     l << a;
+
+    if (parent->plot()->type() == Plot::PlotType::Spectrogram) {
+        a = new QAction("Сохранить спектр...", parent);
+        QObject::connect(a, &QAction::triggered, [=](){
+            parent->plot()->saveSpectrum(yValue());
+        });
+        l << a;
+
+        a = new QAction("Сохранить проходную...", parent);
+        QObject::connect(a, &QAction::triggered, [=](){
+            parent->plot()->saveThroughput(xValue());
+        });
+        l << a;
+    }
 
     a = new QAction("Свойства...", parent);
     QObject::connect(a, &QAction::triggered, [=](){

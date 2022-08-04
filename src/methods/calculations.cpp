@@ -308,3 +308,51 @@ QString saveTimeSegment(FileDescriptor *file, double from, double to)
     // 5 возвращаем имя нового файла
     return newFileName;
 }
+
+void saveSpectre(FileDescriptor *file, Channel *channel, double zValue)
+{
+    DataHolder *data = new DataHolder;
+
+    bool populated = channel->populated();
+    if (!populated) channel->populate();
+
+    data->setThreshold(channel->data()->threshold());
+    data->setYValuesUnits(channel->data()->yValuesUnits());
+
+    if (channel->data()->xValuesFormat()==DataHolder::XValuesUniform)
+        data->setXValues(channel->data()->xMin(), channel->data()->xStep(), channel->data()->samplesCount());
+    else
+        data->setXValues(channel->data()->xValues());
+
+    //1 блок, так как вырезка спектра
+    data->setZValues(channel->data()->zMin(), channel->data()->zStep(), 1);
+
+    auto zIndex = channel->data()->nearestZ(zValue);
+
+    auto format = channel->data()->yValuesFormat();
+    if (format == DataHolder::YValuesComplex) {
+        data->setYValues(channel->data()->yValuesComplex(zIndex));
+    }
+    else {
+        QVector<double> values = channel->data()->linears(zIndex);
+        if (format == DataHolder::YValuesAmplitudesInDB)
+            format = DataHolder::YValuesAmplitudes;
+        //только первый блок
+        data->setYValues(values, format);
+    }
+
+
+    DataDescription descr = channel->dataDescription();
+    descr.put("name", channel->name()+QLocale(QLocale::Russian).toString(channel->data()->zValue(zIndex)));
+    descr.put("description", "Вырезка спектрограммы канала "+channel->name());
+    descr.put("samples",  data->samplesCount());
+    descr.put("blocks", 1);
+
+    file->addChannelWithData(data, descr);
+    if (!populated) channel->clear();
+
+
+    file->setChanged(true);
+    file->setDataChanged(true);
+    file->write();
+}

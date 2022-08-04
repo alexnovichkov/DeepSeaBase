@@ -145,6 +145,9 @@ public:
      */
     void recalculateScale(bool leftAxis);
 
+    void saveSpectrum(double zVal);
+    void saveThroughput(double xVal);
+
 protected:
     PlotModel *m = nullptr;
     ZoomStack *zoom = nullptr;
@@ -207,6 +210,8 @@ signals:
 
     void trackingPanelCloseRequested();
     void saveTimeSegment(const QVector<FileDescriptor*> &files, double from, double to);
+    void saveHorizontalSlice(double zVal);
+    void saveVerticalSlice(double xVal);
     //испускаем, когда бросаем каналы на график
     void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels);
 private slots:

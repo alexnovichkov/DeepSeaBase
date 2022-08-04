@@ -252,6 +252,10 @@ void PlotArea::addPlot(Plot::PlotType type)
     connect(m_plot, SIGNAL(needPlotChannels(bool,QVector<Channel*>)), this, SIGNAL(needPlotChannels(bool,QVector<Channel*>)));
     connect(m_plot, SIGNAL(focusThisPlot()), this, SLOT(setFocus()));
     connect(m_plot, SIGNAL(trackingPanelCloseRequested()), trackingCursorAct, SLOT(toggle()));
+    connect(m_plot, SIGNAL(saveHorizontalSlice(double)), this, SIGNAL(saveHorizontalSlice(double)));
+    connect(m_plot, SIGNAL(saveVerticalSlice(double)), this, SIGNAL(saveVerticalSlice(double)));
+    connect(m_plot, SIGNAL(saveTimeSegment(QVector<FileDescriptor*>,double,double)), this,
+            SIGNAL(saveTimeSegment(QVector<FileDescriptor*>,double,double)));
 
     bool autoscale = Settings::getSetting("autoscale-x", true).toBool();
     m_plot->toggleAutoscale(0 /* x axis */, autoscale);

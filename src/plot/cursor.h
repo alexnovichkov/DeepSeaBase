@@ -62,6 +62,11 @@ public:
     virtual QStringList dataHeader(bool allData) const = 0;
     virtual QList<double> data(int curve, bool allData) const = 0;
 
+    Plot *plot() {return m_plot;}
+
+    void saveSpectrum();
+    void saveSlice();
+
     void copyValues() const;
     QPointF correctedPos(QPointF oldPos, int deltaX=0, int deltaY=0) const;
 
@@ -91,6 +96,7 @@ public:
 signals:
     void cursorPositionChanged();
     void dataChanged();
+
 protected:
 //    virtual QStringList getValues() const = 0;
     Type m_type;

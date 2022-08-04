@@ -97,6 +97,9 @@ private slots:
     void calculateMean();
     void calculateThirdOctave();
     void calculateMovingAvg();
+    void saveHorizontalSlice(double zValue);
+    void saveVerticalSlice(double frequency);
+    void saveTimeSegment(const QVector<FileDescriptor*> &files, double from, double to);
 
     void moveChannelsUp();
     void moveChannelsDown();
@@ -107,8 +110,6 @@ private slots:
 
     void convertMatFiles();
     void convertEsoFiles();
-
-    void saveTimeSegment(const QVector<FileDescriptor*> &files, double from, double to);
 
     void exportChannelsToWav();
     void renameDescriptor();

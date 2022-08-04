@@ -664,6 +664,61 @@ int DataHolder::nearest(double x) const
     return index;
 }
 
+int DataHolder::floorZ(double z) const
+{
+    int index=-1;
+    if (m_zValuesFormat == XValuesNonUniform) {
+        for (int i = 0; i < m_zCount; ++i) {
+            if (m_zValues[i]<=z) index=i;
+            else break;
+        }
+    }
+    else {
+        index = qFloor((z-m_zBegin)/m_zStep);
+        if (index >= m_zCount) index = -1;
+    }
+    return index;
+}
+
+int DataHolder::ceilZ(double z) const
+{
+    int index=-1;
+    if (m_zValuesFormat == XValuesNonUniform) {
+        for (int i = 0; i < m_zCount; ++i) {
+            if (m_zValues[i]<=z) index=i;
+            else {
+                index = i+1;
+                break;
+            }
+        }
+    }
+    else {
+        index = qCeil((z-m_zBegin)/m_zStep);
+        if (index >= m_zCount) index = -1;
+    }
+    return index;
+}
+
+int DataHolder::nearestZ(double z) const
+{
+    int index=-1;
+    if (m_zValuesFormat == XValuesNonUniform) {
+        for (int i = 0; i < m_zCount-1; ++i) {
+            if (m_zValues[i]<=z && m_zValues[i+1]>=z) {
+                index = (z-m_zValues[i] < m_zValues[i+1]-z)?i:i+1;
+            }
+            else {
+                break;
+            }
+        }
+    }
+    else {
+        index = qRound((z-m_zBegin)/m_zStep);
+        if (index >= m_zCount) index = -1;
+    }
+    return index;
+}
+
 cx_double DataHolder::yValueComplex(int i, int block) const
 {DD
     if (i<0 || block < 0) return {0.0,0.0};
