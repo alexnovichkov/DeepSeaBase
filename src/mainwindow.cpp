@@ -1776,7 +1776,100 @@ void MainWindow::saveHorizontalSlice(double zValue)
 
 void MainWindow::saveVerticalSlice(double frequency)
 {
+    if (!currentPlot || !currentPlot->plot()) return;
+    if (currentPlot->plot()->curvesCount()==0) return;
+    if (currentPlot->plot()->type() != Plot::PlotType::Spectrogram) return;
 
+    auto channels = currentPlot->plot()->model()->plottedChannels();
+    if (channels.size() != 1) return;
+
+    auto firstChannel = channels.first();
+    const QString firstName = firstChannel->descriptor()->fileName();
+
+    QMessageBox box("Сохранение проходной характеристики", QString("Сохранить проходную в эту запись дополнительным каналом?"),
+                    QMessageBox::Question,
+                    QMessageBox::Yes, QMessageBox::No, QMessageBox::Cancel);
+    box.setButtonText(QMessageBox::Yes, "Да, записать в этот файл");
+    box.setButtonText(QMessageBox::No, "Нет, экспортировать в отдельный файл");
+    box.setEscapeButton(QMessageBox::Cancel);
+
+    int result = box.exec();
+    if (result == QMessageBox::Cancel) return;
+    bool writeToSeparateFile = (result == QMessageBox::No);
+
+    QString throughFileName;
+    F through;
+
+    if (writeToSeparateFile) {
+        QString throughD = firstName;
+        throughD.chop(4);
+
+        throughD = Settings::getSetting("lastThroughFile", throughD).toString();
+
+        QStringList filters = App->formatFactory->allFilters();
+        QStringList suffixes = App->formatFactory->allSuffixes(true);
+
+        QFileDialog dialog(this, "Выбор файла для записи каналов", throughD,
+                           filters.join(";;"));
+        dialog.setOption(QFileDialog::DontUseNativeDialog, true);
+        dialog.setFileMode(QFileDialog::AnyFile);
+
+        QSortFilterProxyModel *proxy = new DfdFilterProxy(firstChannel->descriptor(), this);
+        dialog.setProxyModel(proxy);
+
+        QString selectedFilter;
+        QStringList selectedFiles;
+        if (dialog.exec()) {
+            selectedFiles = dialog.selectedFiles();
+            selectedFilter = dialog.selectedNameFilter();
+        }
+        if (selectedFiles.isEmpty()) return;
+
+        throughFileName = selectedFiles.constFirst();
+        if (throughFileName.isEmpty()) return;
+        Settings::setSetting("lastThroughFile", throughFileName);
+
+        //добавляем суффикс
+        QString currentSuffix = QFileInfo(throughFileName).suffix().toLower();
+        QString filterSuffix = suffixes.at(filters.indexOf(selectedFilter));
+        if (currentSuffix != filterSuffix) {
+            //удаляем суффикс, если это суффикс известного нам типа файлов
+            if (suffixes.contains(currentSuffix))
+                throughFileName.chop(currentSuffix.length()+1);
+
+            throughFileName.append(QString(".%1").arg(filterSuffix));
+        }
+
+        bool isNew = false;
+        through = App->addFile(throughFileName, &isNew);
+
+        if (!through) {
+            QMessageBox::critical(this, "Сохранение проходной характеристики",
+                                  QString("Не удалось создать файл %1").arg(throughFileName));
+            return;
+        }
+
+        if (QFileInfo(throughFileName).exists()) {
+            if (isNew) through->read();
+        }
+        else
+            through->fillPreliminary(firstChannel->descriptor());
+    }
+    else {
+        throughFileName = firstChannel->descriptor()->fileName();
+        through = App->find(throughFileName);
+    }
+
+    ::saveThrough(through.get(), channels.first(), frequency);
+
+    int idx;
+    if (currentTab && currentTab->model->contains(throughFileName, &idx)) {
+        currentTab->model->updateFile(idx);
+        currentTab->updateChannelsTable(currentTab->record);
+    }
+    else {
+        addFile(through);
+    }
 }
 
 void MainWindow::rescanBase()

@@ -356,3 +356,57 @@ void saveSpectre(FileDescriptor *file, Channel *channel, double zValue)
     file->setDataChanged(true);
     file->write();
 }
+
+void saveThrough(FileDescriptor *file, Channel *channel, double xValue)
+{
+    DataHolder *data = new DataHolder;
+
+    bool populated = channel->populated();
+    if (!populated) channel->populate();
+
+    data->setThreshold(channel->data()->threshold());
+    data->setYValuesUnits(channel->data()->yValuesUnits());
+
+    //z values становятся x values
+    if (channel->data()->zValuesFormat()==DataHolder::XValuesUniform)
+        data->setXValues(channel->data()->zMin(), channel->data()->zStep(), channel->data()->blocksCount());
+    else
+        data->setXValues(channel->data()->zValues());
+
+    //1 блок, так как вырезка
+    data->setZValues(0, 1, 1);
+
+    auto xIndex = channel->data()->nearest(xValue);
+    xValue = channel->data()->xValue(xIndex);
+
+    auto format = channel->data()->yValuesFormat();
+    if (format == DataHolder::YValuesComplex) {
+        QVector<cx_double> values(channel->data()->blocksCount());
+        for (int i=0; i<channel->data()->blocksCount(); ++i)
+            values[i] = channel->data()->yValueComplex(xIndex, i);
+        data->setYValues(values);
+    }
+    else {
+        QVector<double> values(channel->data()->blocksCount());
+        for (int i=0; i<channel->data()->blocksCount(); ++i)
+            values[i] = channel->data()->yValue(xIndex, i);
+        data->setYValues(values, format);
+    }
+
+
+    DataDescription descr = channel->dataDescription();
+    descr.put("name", channel->name()+QLocale(QLocale::Russian).toString(channel->data()->xValue(xIndex)));
+    descr.put("description", "Проходная спектрограммы канала "+channel->name());
+    descr.put("samples",  data->samplesCount());
+    descr.put("blocks", 1);
+    descr.put("xname", descr.get("zname"));
+    descr.put("zname", "");
+
+    file->addChannelWithData(data, descr);
+    if (!populated) channel->clear();
+
+
+    file->setChanged(true);
+    file->setDataChanged(true);
+    file->write();
+}

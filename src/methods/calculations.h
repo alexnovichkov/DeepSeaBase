@@ -13,6 +13,7 @@ void calculateMovingAvg(FileDescriptor *file, const QList<Channel *> &channels, 
 void calculateThirdOctave(FileDescriptor *file, FileDescriptor *source);
 QString saveTimeSegment(FileDescriptor *file, double from, double to);
 void saveSpectre(FileDescriptor *file, Channel* channel, double zValue);
+void saveThrough(FileDescriptor *file, Channel* channel, double xValue);
 
 Averaging *averageChannels(const QList<QPair<FileDescriptor *, int> > &toMean);
 
