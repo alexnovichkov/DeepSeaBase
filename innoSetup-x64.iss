@@ -39,7 +39,7 @@ Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 
 [CustomMessages]
 russian.Main=Основные файлы программы
-russian.Plugins=Дополнительные плагины 
+russian.Plugins=Плагин TDMS (National Instruments) 
 
 [Tasks]
 Name: installmode; Description: "Режим установки"; GroupDescription: "Режим установки"; 
