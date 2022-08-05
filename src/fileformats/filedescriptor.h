@@ -37,8 +37,9 @@ enum DataType
     Eigenvector,
     ShockResponseSpectrum,
     FiniteImpulseResponseFilter = 25,
-    MultipleCoherence,
-    OrderFunction
+    MultipleCoherence = 26,
+    OrderFunction = 27,
+    Transit = 28
 };
 
 QString functionTypeDescription(int type);

@@ -531,7 +531,8 @@ QString Descriptor::functionTypeDescription(int type)
         case  25: return "FIR Filter";
         case  26: return "Multiple Coherence";
         case  27: return "Order Function";
-        default: return "Неизв.";
+        case  28: return "Transit";
+        default : return "Неизв.";
     }
     return "Неизв.";
 }

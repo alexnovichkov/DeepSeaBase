@@ -40,8 +40,6 @@ protected:
                     return true;
 
                 descriptor->read();
-                //частный случай: мы можем записать данные из SourceData в CuttedData, преобразовав их в floats,
-                //но не наоборот
                 return descriptor->canTakeChannelsFrom(filter);
             }
             else //не файлы dfd, uff, d94

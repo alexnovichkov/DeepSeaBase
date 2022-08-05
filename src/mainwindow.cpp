@@ -1054,8 +1054,8 @@ bool MainWindow::copyChannels(const QVector<Channel *> source)
     }
 
     if ((!typesAreSame || !stepsAreSame || !samplesCountAreSame) && filterSuffix.toLower()=="dfd") {
-        QMessageBox::critical(0, "Копирование графиков",
-                              "Графики несовместимы между собой и не могут быть записаны в файл dfd");
+        QMessageBox::critical(0, "Копирование каналов",
+                              "Каналы несовместимы между собой и не могут быть записаны в файл dfd");
         return false;
     }
 
@@ -1258,6 +1258,7 @@ void MainWindow::calculateMean()
     int idx;
     if (currentTab && currentTab->model->contains(meanFile, &idx)) {
         currentTab->model->updateFile(idx);
+        currentTab->updateChannelsTable(currentTab->record);
     }
     else {
         addFile(meanFile);

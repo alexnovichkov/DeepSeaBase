@@ -393,19 +393,19 @@ void DfdFileDescriptor::fillPreliminary(const FileDescriptor *file)
     BlockSize = 0; // всегда меняем размер блока новых файлов на 0,
                    // чтобы они записывались без перекрытия
 
-//    const DfdFileDescriptor *dfd = dynamic_cast<const DfdFileDescriptor*>(file);
-//    if (dfd) {
-//        DataType = dfd->DataType;
-//    }
-//    else {
-//        ///TODO: переписать определение типа данных файла DFD
-//        DataType = dfdDataTypeFromDataType(*file->channel(0));
-//    }
-//    // time data tweak, so deepseabase doesn't take the file as raw time data
-//    //так как мы вызываем эту функцию только из новых файлов,
-//    //все сведения из файлов rawChannel нам не нужны
-//    if (DataType == SourceData) DataType = CuttedData;
-//    if (DataType >= OSpectr && DataType <= TFOSpectr) xChannel = true;
+    const DfdFileDescriptor *dfd = dynamic_cast<const DfdFileDescriptor*>(file);
+    if (dfd) {
+        DataType = dfd->DataType;
+    }
+    else {
+        ///TODO: переписать определение типа данных файла DFD
+        DataType = dfdDataTypeFromDataType(*file->channel(0));
+    }
+    // time data tweak, so deepseabase doesn't take the file as raw time data
+    //так как мы вызываем эту функцию только из новых файлов,
+    //все сведения из файлов rawChannel нам не нужны
+    if (DataType == SourceData) DataType = CuttedData;
+    if (DataType >= OSpectr && DataType <= TFOSpectr) xChannel = true;
 
 
 }
@@ -946,9 +946,9 @@ bool DfdFileDescriptor::canTakeChannelsFrom(FileDescriptor *other) const
     if (!dfd)
         return (dataTypefromDfdDataType(DataType) == other->type()) && qFuzzyIsNull(this->xStep() - other->xStep());
     else {
-        if (DataType == dfd->DataType) return true;
-
         if (xStep() != other->xStep()) return false;
+//        if (samplesCount() != other->samplesCount()) return false;
+        if (DataType == dfd->DataType) return true;
 
         if (dfd->DataType == SourceData && DataType > 0 && DataType < 16) {
             return true;
@@ -1834,6 +1834,9 @@ DfdDataType dfdDataTypeFromDataType(const Channel &ch)
         }
         case Descriptor::FiniteImpulseResponseFilter: return FilterData;
         case Descriptor::CumulativeFrequencyDistribution: return EDF;
+        case Descriptor::Transit: {
+            return PassDev;
+        }
         default : return NotDef;
     }
     return NotDef;
@@ -1868,6 +1871,10 @@ Descriptor::DataType dataTypefromDfdDataType(DfdDataType type)
         case TwlOSpectr:
         case TFOSpectr: return Descriptor::Spectrum;
         case EDF: return Descriptor::CumulativeFrequencyDistribution;
+        case PassAss:
+        case PassDev:
+        case PassExc:
+        case PassAvrg: return Descriptor::Transit;
         default: return Descriptor::Unknown;
     }
 
