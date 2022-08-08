@@ -307,7 +307,7 @@ QList<double> CursorDouble::data(int curve, bool allData) const
 
 QPointF CursorDouble::currentPosition() const
 {
-    return cursor1->position();
+    return cursor1->value();
 }
 
 QwtInterval CursorDouble::interval() const

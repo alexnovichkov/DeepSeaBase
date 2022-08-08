@@ -50,9 +50,9 @@ void CursorLabel::updateLabel(bool showValues)
         for (auto curve: list) {
             if (curve->xAxis()==xAxis()) {
                 bool success = false;
-                auto val = curve->channel->data()->YforXandZ(m_cursor->xValue(), 0, success);
+                auto val = curve->channel->data()->YforXandZ(m_cursor->xValue(), m_cursor->yValue(), success);
                 QString s = QString::number(success?val:qQNaN(), f, m_cursor->parent->digits());
-                //while(s.rightRef(1)=="0") s.chop(1);
+
                 label << QString("<font color=%1>%2</font>")
                          .arg(curve->pen().color().name())
                          .arg(s);

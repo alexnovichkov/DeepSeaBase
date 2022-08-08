@@ -143,3 +143,39 @@ QwtInterval SpectroCurve::colorInterval() const
 //{
 //    return channel->data()->zMax();
 //}
+
+SpectrogramData::SpectrogramData(DataHolder *data) : m_data(data)
+{
+    // some minor performance improvements when the spectrogram item
+    // does not need to check for NaN values
+
+    setAttribute( QwtRasterData::WithoutGaps, true );
+
+    m_intervals[ Qt::XAxis ] = QwtInterval(m_data->xMin(), m_data->xMax());
+    m_intervals[ Qt::YAxis ] = QwtInterval(m_data->zMin(), m_data->zMax());
+    m_intervals[ Qt::ZAxis ] = QwtInterval(m_data->yMin(), m_data->yMax());
+}
+
+QwtInterval SpectrogramData::interval(Qt::Axis axis) const
+{
+    if ( axis >= 0 && axis <= 2 )
+        return m_intervals[ axis ];
+
+    return QwtInterval();
+}
+
+void SpectrogramData::setInterval(Qt::Axis axis, const QwtInterval &interval)
+{
+    if ( axis >= 0 && axis <= 2 )
+        m_intervals[ axis ] = interval;
+}
+
+double SpectrogramData::value(double x, double y) const
+{
+    int j = m_data->nearestZ(y);
+    if (j < 0) j = 0;
+
+    int i = m_data->nearest(x);
+    if (i < 0) i = 0;
+    return m_data->yValue(i, j);
+}

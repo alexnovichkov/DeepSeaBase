@@ -138,24 +138,16 @@ QStringList CursorSingle::dataHeader(bool allData) const
 QList<double> CursorSingle::data(int curve, bool allData) const
 {
     Q_UNUSED(allData);
-    auto curves = m_plot->model()->curves();
-    bool success;
-//    QList<QList<double> > result;
-//    for (int i=0; i<curves.at(curve)->channel->data()->blocksCount(); ++i) {
-//        QList<double> l;
-//        l << curves.at(curve)->channel->data()->zValue(i) <<
-//             curves.at(curve)->channel->data()->YforXandZ(cursor->xValue(),
-//                                                          curves.at(curve)->channel->data()->zValue(i),
-//                                                          success);
-//        result << l;
-//    }
-//    return result;
-    double zval = curves.at(curve)->channel->data()->blocksCount()>1?cursor->yValue():0;
-    return {curves.at(curve)->channel->data()->YforXandZ(cursor->xValue(), zval, success)};
+
+    if (auto c = m_plot->model()->curves().at(curve)) {
+        bool success = false;
+        return {c->channel->data()->YforXandZ(cursor->xValue(), cursor->yValue(), success)};
+    }
+    return QList<double>();
 }
 
 QPointF CursorSingle::currentPosition() const
 {
-    return cursor->position();
+    return cursor->value();
 }
 

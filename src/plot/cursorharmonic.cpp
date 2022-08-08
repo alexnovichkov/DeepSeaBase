@@ -211,5 +211,5 @@ QList<double> CursorHarmonic::data(int curve, bool allData) const
 
 QPointF CursorHarmonic::currentPosition() const
 {
-    return cursor->position();
+    return cursor->value();
 }

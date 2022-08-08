@@ -23,7 +23,7 @@ LineCurve::LineCurve(const QString &title, Channel *channel) :  QwtPlotCurve(tit
 
     setLegendIconSize(QSize(16,8));
 
-    dfddata = new DfdData(this->channel->data());
+    dfddata = new LineData(this->channel->data());
     setData(dfddata);
     setMapper();
     // set filter points to true
@@ -63,7 +63,7 @@ void LineCurve::drawLines(QPainter *painter,
     mapper->setBoundingRect(canvasRect);
 
     QPolygonF polyline = mapper->getPolygon(xMap, yMap, dfddata, from, to);
-    const bool close = mapper->simplified && channel->type()==Descriptor::TimeResponse;
+    const bool close = doCloseLine();
     QwtClipper::clipPolygonF(clipRect, polyline, close);
 
     if (close) {
@@ -79,6 +79,11 @@ void LineCurve::drawLines(QPainter *painter,
         QwtPainter::drawPolyline(painter, polyline);
 
     painter->restore();
+}
+
+bool LineCurve::doCloseLine() const
+{
+    return mapper->simplified && channel->type()==Descriptor::TimeResponse;
 }
 
 QPointF LineCurve::samplePoint(int point) const
@@ -161,12 +166,12 @@ void LineCurve::updateSelection()
 
 /** DfdData implementation */
 
-DfdData::DfdData(DataHolder *data) : data(data)
+LineData::LineData(DataHolder *data) : data(data)
 {DD;
 
 }
 
-QRectF DfdData::boundingRect() const
+QRectF LineData::boundingRect() const
 {DD;
     QRectF d_boundingRect;
     d_boundingRect.setLeft( data->xMin() );
@@ -178,22 +183,22 @@ QRectF DfdData::boundingRect() const
     return d_boundingRect;
 }
 
-size_t DfdData::size() const
+size_t LineData::size() const
 {DD;
     return data->samplesCount();
 }
 
-QPointF DfdData::sample(size_t i) const
+QPointF LineData::sample(size_t i) const
 {DD;
     return QPointF(data->xValue(i), data->yValue(i));
 }
 
-double DfdData::xStep() const
+double LineData::xStep() const
 {DD;
     return data->xStep();
 }
 
-double DfdData::xBegin() const
+double LineData::xBegin() const
 {DD;
     return data->xMin();
 }
@@ -235,7 +240,6 @@ int LineCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
     return index;
 }
 
-
 void LineCurve::setVisible(bool visible)
 {DD;
     QwtPlotItem::setVisible(visible);
@@ -254,40 +258,8 @@ void TimeCurve::setMapper()
     mapper = new FilterPointMapper(true);
 }
 
-void TimeCurve::drawLines(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect, int from, int to) const
+bool TimeCurve::doCloseLine() const
 {
-    //reevaluating from, to
-    evaluateScale(from, to, xMap);
-    if (from > to) return;
-
-    const bool doAlign = QwtPainter::roundingAlignment( painter );
-
-    QRectF clipRect;
-    painter->save();
-
-    //clip polygons
-    qreal pw = qMax(qreal(1.0), painter->pen().widthF());
-    clipRect = canvasRect.adjusted(-pw, -pw, pw, pw);
-
-    mapper->setFlag(QwtPointMapper::RoundPoints, doAlign);
-    mapper->setBoundingRect(canvasRect);
-
-    QPolygonF polyline = mapper->getPolygon(xMap, yMap, dfddata, from, to);
-    const bool close = mapper->simplified;
-    QwtClipper::clipPolygonF(clipRect, polyline, close);
-
-    if (close) {
-        QColor c = pen().color();
-        c.setAlpha(200);
-        painter->setBrush(QBrush(c));
-        painter->setPen(c);
-    }
-
-    if (close)
-        QwtPainter::drawPolygon(painter, polyline);
-    else
-        QwtPainter::drawPolyline(painter, polyline);
-
-    painter->restore();
+    return mapper->simplified;
 }
 

@@ -7,10 +7,10 @@
 
 class FilterPointMapper;
 
-class DfdData: public QwtSeriesData<QPointF>
+class LineData: public QwtSeriesData<QPointF>
 {
 public:
-    DfdData(DataHolder *data);
+    LineData(DataHolder *data);
 
     virtual QRectF boundingRect() const;
 
@@ -37,7 +37,8 @@ protected:
                            const QwtScaleMap &yMap, const QRectF &canvasRect,
                            int from, int to) const override;
     FilterPointMapper *mapper;
-    DfdData *dfddata;
+    LineData *dfddata;
+    virtual bool doCloseLine() const;
 
     // Curve interface
 public:
@@ -72,10 +73,8 @@ class TimeCurve : public LineCurve
 public:
     TimeCurve(const QString &title, Channel *channel);
 protected:
-    virtual void setMapper() override;
-    virtual void drawLines(QPainter *painter, const QwtScaleMap &xMap,
-                           const QwtScaleMap &yMap, const QRectF &canvasRect,
-                           int from, int to) const override;
+    virtual void setMapper() override; //always sets the mapper
+    virtual bool doCloseLine() const override; //always closes the contour
 };
 
 #endif // LINECURVE_H

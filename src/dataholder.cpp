@@ -619,7 +619,7 @@ int DataHolder::floor(double x) const
         }
     }
     else {
-        index = qFloor((x-m_xBegin)/m_xStep);
+        index = qFuzzyIsNull(m_xStep) ? -1 : qFloor((x-m_xBegin)/m_xStep);
         if (index >= m_xCount) index = -1;
     }
     return index;
@@ -638,7 +638,7 @@ int DataHolder::ceil(double x) const
         }
     }
     else {
-        index = qCeil((x-m_xBegin)/m_xStep);
+        index = qFuzzyIsNull(m_xStep) ? -1 : qCeil((x-m_xBegin)/m_xStep);
         if (index >= m_xCount) index = -1;
     }
     return index;
@@ -658,7 +658,7 @@ int DataHolder::nearest(double x) const
         }
     }
     else {
-        index = qRound((x-m_xBegin)/m_xStep);
+        index = qFuzzyIsNull(m_xStep) ? -1 : qRound((x-m_xBegin)/m_xStep);
         if (index >= m_xCount) index = -1;
     }
     return index;
@@ -674,7 +674,7 @@ int DataHolder::floorZ(double z) const
         }
     }
     else {
-        index = qFloor((z-m_zBegin)/m_zStep);
+        index = qFuzzyIsNull(m_zStep) ? -1 : qFloor((z-m_zBegin)/m_zStep);
         if (index >= m_zCount) index = -1;
     }
     return index;
@@ -693,7 +693,7 @@ int DataHolder::ceilZ(double z) const
         }
     }
     else {
-        index = qCeil((z-m_zBegin)/m_zStep);
+        index = qFuzzyIsNull(m_zStep) ? -1 : qCeil((z-m_zBegin)/m_zStep);
         if (index >= m_zCount) index = -1;
     }
     return index;
@@ -713,7 +713,7 @@ int DataHolder::nearestZ(double z) const
         }
     }
     else {
-        index = qRound((z-m_zBegin)/m_zStep);
+        index = qFuzzyIsNull(m_zStep) ? -1 : qRound((z-m_zBegin)/m_zStep);
         if (index >= m_zCount) index = -1;
     }
     return index;
@@ -738,37 +738,25 @@ double DataHolder::zValue(int i) const
 }
 
 double DataHolder::YforXandZ(double x, double z, bool &success) const
-{DD
-    int zIndex = -1;
-    if (m_zValuesFormat == XValuesUniform) {
-        if (m_zCount == 1) zIndex = 0;
-        else zIndex = std::round((z-m_zBegin)/m_zStep);
-    }
-    else for (zIndex = 0; zIndex < m_zValues.size(); ++zIndex) {
-        if (m_zValues.at(zIndex) >= z) break;
-    }
-
-    if (zIndex < 0 || zIndex >=m_zCount) {
+{DD;
+    int xIndex = nearest(x);
+    if (xIndex < 0 || xIndex >= m_xCount) {
         success = false;
         return 0;
     }
 
-    int xIndex = -1;
-    if (m_xValuesFormat == XValuesUniform) {
-        if (qFuzzyIsNull(m_xStep)) xIndex = 0;
-        else xIndex = std::round((x-m_xBegin)/m_xStep);
-    }
-    else for (xIndex = 0; xIndex < m_xValues.size(); ++xIndex) {
-        if (m_xValues.at(xIndex) >= x) break;
-    }
-
-    if (xIndex < 0 || xIndex >=m_xCount) {
-        success = false;
-        return 0;
+    if (m_zCount >= 2) {
+        int zIndex = nearestZ(z);
+        if (zIndex < 0 || zIndex >= m_zCount) {
+            success = false;
+            return 0;
+        }
+        success = true;
+        return yValue(xIndex, zIndex);
     }
 
     success = true;
-    return yValue(xIndex, zIndex);
+    return yValue(xIndex);
 }
 
 double DataHolder::xMin() const

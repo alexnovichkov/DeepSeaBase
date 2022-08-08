@@ -13,7 +13,6 @@ public:
     explicit TrackingCursor(const QColor &col, Cursor::Style type, Cursor *parent);
     void moveTo(const double xValue);
     void moveTo(const QPointF &value);
-    QPointF position() const {return {xValue(),yValue()};}
 
     Cursor::Style type = Cursor::Style::Vertical;
     Cursor *parent = nullptr;
