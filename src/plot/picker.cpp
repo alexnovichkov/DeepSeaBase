@@ -73,19 +73,19 @@ void Picker::procKeyboardEvent(int key)
 
     switch (key) {
         case Qt::Key_Left: {
-            currentSelected->moveLeft(QApplication::keyboardModifiers() & Qt::ControlModifier ? 10 : 1);
+            currentSelected->moveLeft(QApplication::keyboardModifiers() & Qt::ShiftModifier ? 10 : 1);
             break;
         }
         case Qt::Key_Right: {
-            currentSelected->moveRight(QApplication::keyboardModifiers() & Qt::ControlModifier ? 10 : 1);
+            currentSelected->moveRight(QApplication::keyboardModifiers() & Qt::ShiftModifier ? 10 : 1);
             break;
         }
         case Qt::Key_Up: {
-            currentSelected->moveUp(QApplication::keyboardModifiers() & Qt::ControlModifier ? 10 : 1);
+            currentSelected->moveUp(QApplication::keyboardModifiers() & Qt::ShiftModifier ? 10 : 1);
             break;
         }
         case Qt::Key_Down: {
-            currentSelected->moveDown(QApplication::keyboardModifiers() & Qt::ControlModifier ? 10 : 1);
+            currentSelected->moveDown(QApplication::keyboardModifiers() & Qt::ShiftModifier ? 10 : 1);
             break;
         }
         case Qt::Key_Space: {

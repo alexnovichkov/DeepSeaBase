@@ -214,7 +214,7 @@ private:
 
     // QObject interface
 public:
-    virtual bool event(QEvent *event) override;
+//    virtual bool event(QEvent *event) override;
 };
 
 #endif // MAINWINDOW_H

@@ -2193,12 +2193,27 @@ bool MainWindow::closeRequested()
 }
 
 
-bool MainWindow::event(QEvent *event)
-{
-    if (event->type() == QEvent::ShortcutOverride) {
-        if (currentTab && currentTab->channelsTable->hasFocus()) event->ignore();
-        else event->accept();
-        return true;
-    }
-    return QMainWindow::event(event);
-}
+//bool MainWindow::event(QEvent *event)
+//{
+//    if (event->type() == QEvent::ShortcutOverride) {
+//        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+//        if (keyEvent && (keyEvent->key()==Qt::Key_Up || keyEvent->key()==Qt::Key_Down) && keyEvent->modifiers()==Qt::ControlModifier) {
+//            qDebug()<<"Ctrl+Up/Down pressed";
+//            if (currentTab && currentTab->channelsTable->hasFocus()) {
+//                event->ignore(); //trigger shortcut
+//                qDebug() << "trigger shortcut";
+//            }
+//            else {
+//                event->accept(); //deliver to plot
+//                qDebug() << "delivered to plot";
+//            }
+
+//        }
+//        else {
+//            qDebug()<<"something else";
+//            event->accept();
+//        }
+//        return true;
+//    }
+//    return QMainWindow::event(event);
+//}

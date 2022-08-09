@@ -401,6 +401,8 @@ void saveThrough(FileDescriptor *file, Channel *channel, double xValue)
     descr.put("blocks", 1);
     descr.put("xname", descr.get("zname"));
     descr.put("zname", "");
+    descr.put("function.name","SECTION");
+
 
     file->addChannelWithData(data, descr);
     if (!populated) channel->clear();

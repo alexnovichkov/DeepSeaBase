@@ -84,18 +84,18 @@ void CursorSingle::moveTo(Qt::Key key, int count, TrackingCursor *source, bool s
             break;
         }
         case Qt::Key_Up: {
-            if (m_snapToValues && m_plot->type()==Plot::PlotType::Spectrogram) {
+            if (m_snapToValues && m_plot->type()==Plot::PlotType::Spectrogram)
                 pos = correctedPos(pos, 0, count);
-            }
             else
-                pos.ry() += count*rangeY/100; break;
+                pos.ry() += count*rangeY/100;
+            break;
         }
         case Qt::Key_Down: {
-            if (m_snapToValues && m_plot->type()==Plot::PlotType::Spectrogram) {
+            if (m_snapToValues && m_plot->type()==Plot::PlotType::Spectrogram)
                 pos = correctedPos(pos, 0, -count);
-            }
             else
-            pos.ry() -= count*rangeY/100; break;
+                pos.ry() -= count*rangeY/100;
+            break;
         }
         default: break;
     }
