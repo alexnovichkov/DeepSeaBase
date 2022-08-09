@@ -211,6 +211,10 @@ signals:
 private:
     bool closeRequested();
     PlotArea *createPlotArea();
+
+    // QObject interface
+public:
+    virtual bool event(QEvent *event) override;
 };
 
 #endif // MAINWINDOW_H

@@ -1413,6 +1413,7 @@ QVector<int> computeIndexes(QVector<int> notYetMoved, bool up, int totalSize)
 void MainWindow::moveChannels(bool up)
 {DD;
     if (!currentTab) return;
+    //if (!currentTab->channelsTable->hasFocus()) return;
     QVector<int> selectedIndexes = currentTab->channelModel->selected();
 
     const QVector<int> newIndexes = computeIndexes(selectedIndexes, up, currentTab->record->channelsCount());
@@ -2189,4 +2190,15 @@ bool MainWindow::closeRequested()
     Settings::setSetting("folders1", map);
 
     return true;
+}
+
+
+bool MainWindow::event(QEvent *event)
+{
+    if (event->type() == QEvent::ShortcutOverride) {
+        if (currentTab && currentTab->channelsTable->hasFocus()) event->ignore();
+        else event->accept();
+        return true;
+    }
+    return QMainWindow::event(event);
 }

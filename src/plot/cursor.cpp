@@ -65,8 +65,10 @@ QPointF Cursor::correctedPos(QPointF oldPos, int deltaX, int deltaY) const
     if (list.isEmpty()) return oldPos;
 
     //ищем минимальный шаг по оси X
+    //определяем шаг по выделенной кривой
     Curve *first = m_plot->model()->selectedCurve();
     if (!first) {
+        //нет выделенной кривой - ищем первую кривую с ненулевым шагом
         for (auto c: list) if (c->channel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
             first = c;
             break;
@@ -82,11 +84,12 @@ QPointF Cursor::correctedPos(QPointF oldPos, int deltaX, int deltaY) const
             first = list.first();
         }
     }
-    oldPos.setX(closest(first->channel, oldPos.x(), true, deltaX));
-    if (first->type == Curve::Type::Spectrogram)
-        oldPos.setY(closest(first->channel, oldPos.y(), false, deltaY));
+    auto newPos = oldPos;
 
-    return oldPos;
+    if (deltaX != 0) newPos.setX(closest(first->channel, oldPos.x(), true, deltaX));
+    if (deltaY != 0) newPos.setY(closest(first->channel, oldPos.y(), false, deltaY));
+
+    return newPos;
 }
 
 void Cursor::setShowValues(bool show)
