@@ -34,7 +34,7 @@
 #include "filehandlerdialog.h"
 
 //TabBar::TabBar(QWidget *parent) : QTabBar(parent), index(-1)
-//{DD;
+//{DDD;
 //    setAcceptDrops(true);
 
 //    setTabsClosable(true);
@@ -49,7 +49,7 @@
 //}
 
 //void TabBar::mouseDoubleClickEvent(QMouseEvent * event)
-//{DD;
+//{DDD;
 //    if (event->button()==Qt::LeftButton) {
 //        index = tabAt(event->pos());
 
@@ -74,7 +74,7 @@
 //}
 
 //void TabBar::contextMenuEvent(QContextMenuEvent * event)
-//{DD;
+//{DDD;
 //    QMenu menu;
 //    menu.addAction("Новая вкладка", this, SIGNAL(newTab()), QKeySequence::AddTab);
 //    QPoint position = event->pos();
@@ -92,17 +92,17 @@
 //}
 
 //void TabBar::closeTab()
-//{DD;
+//{DDD;
 //    Q_EMIT closeTab(index);
 //}
 
 //void TabBar::closeOtherTabs()
-//{DD;
+//{DDD;
 //    Q_EMIT closeOtherTabs(index);
 //}
 
 //void TabBar::renameTab()
-//{DD;
+//{DDD;
 //    Q_EMIT renameTab(index);
 //}
 
@@ -112,7 +112,7 @@
 //}
 
 //void TabBar::editTabName()
-//{DD;
+//{DDD;
 //    if( index < 0 ) return;
 //    QString oldText = tabText(index);
 //    QString text = editor->text();
@@ -127,7 +127,7 @@
 
 //TabWidget::TabWidget(QWidget *parent) : QTabWidget(parent)
 //    , m_tabBar(new TabBar(this))
-//{DD;
+//{DDD;
 //    connect(m_tabBar, SIGNAL(newTab()), this, SIGNAL(newTab()));
 //    connect(m_tabBar, SIGNAL(closeTab(int)), this, SIGNAL(closeTab(int)));
 //    connect(m_tabBar, SIGNAL(closeOtherTabs(int)), this, SIGNAL(closeOtherTabs(int)));

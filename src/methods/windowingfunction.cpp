@@ -5,28 +5,28 @@
 
 WindowingFunction::WindowingFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD;
+{DDD;
 
 }
 
 
 QString WindowingFunction::name() const
-{DD;
+{DDD;
     return "Windowing";
 }
 
 QString WindowingFunction::description() const
-{DD;
+{DDD;
     return "Применение оконной функции";
 }
 
 QStringList WindowingFunction::properties() const
-{DD;
+{DDD;
     return {"type","parameter","correction"};
 }
 
 QString WindowingFunction::propertyDescription(const QString &property) const
-{DD;
+{DDD;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
                                    "  \"type\"        : \"enum\"   ,"
@@ -61,7 +61,7 @@ QString WindowingFunction::propertyDescription(const QString &property) const
 }
 
 QVariant WindowingFunction::m_getProperty(const QString &property) const
-{DD;
+{DDD;
     if (property.startsWith("?/")) {
         if (property == "?/functionDescription") return "WIN";
 //        if (property == "?/windowDescription") return Windowing::windowDescription(windowing.getWindowType());
@@ -96,7 +96,7 @@ DataDescription WindowingFunction::getFunctionDescription() const
 }
 
 void WindowingFunction::m_setProperty(const QString &property, const QVariant &val)
-{DD;
+{DDD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -109,7 +109,7 @@ void WindowingFunction::m_setProperty(const QString &property, const QVariant &v
 }
 
 bool WindowingFunction::propertyShowsFor(const QString &property) const
-{DD;
+{DDD;
     if (!property.startsWith(name()+"/")) return false;
     QString p = property.section("/",1);
 
@@ -119,13 +119,13 @@ bool WindowingFunction::propertyShowsFor(const QString &property) const
 }
 
 QString WindowingFunction::displayName() const
-{DD;
+{DDD;
     return "Окно";
 }
 
 
 bool WindowingFunction::compute(FileDescriptor *file)
-{DD;
+{DDD;
     reset();
 
     if (!m_input) return false;
@@ -141,7 +141,7 @@ bool WindowingFunction::compute(FileDescriptor *file)
 }
 
 void WindowingFunction::reset()
-{DD;
+{DDD;
     output.clear();
 }
 

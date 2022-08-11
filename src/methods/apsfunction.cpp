@@ -6,33 +6,33 @@
 
 ApsFunction::ApsFunction(QObject *parent) :
     AbstractFunction(parent)
-{DD;
+{DDD;
 
 }
 
 QString ApsFunction::name() const
-{DD;
+{DDD;
     return "APS";
 }
 
 QString ApsFunction::description() const
-{DD;
+{DDD;
     return "Автоспектр";
 }
 
 QStringList ApsFunction::properties() const
-{DD;
+{DDD;
     return QStringList();
 }
 
 QString ApsFunction::propertyDescription(const QString &property) const
-{DD;
+{DDD;
     Q_UNUSED(property);
     return QString();
 }
 
 QVariant ApsFunction::m_getProperty(const QString &property) const
-{DD;
+{DDD;
     if (property.startsWith("?/")) {
         if (property == "?/processData") {
             QStringList list;
@@ -81,13 +81,13 @@ QVariant ApsFunction::m_getProperty(const QString &property) const
 }
 
 void ApsFunction::m_setProperty(const QString &property, const QVariant &val)
-{DD;
+{DDD;
     Q_UNUSED(property);
     Q_UNUSED(val);
 }
 
 QString ApsFunction::displayName() const
-{DD;
+{DDD;
     return "Автоспектр";
 }
 
@@ -108,7 +108,7 @@ DataDescription ApsFunction::getFunctionDescription() const
 }
 
 bool ApsFunction::compute(FileDescriptor *file)
-{DD;
+{DDD;
     reset();
 
     if (!m_input) return false;
@@ -132,6 +132,6 @@ bool ApsFunction::compute(FileDescriptor *file)
 }
 
 void ApsFunction::reset()
-{DD;
+{DDD;
     output.clear();
 }

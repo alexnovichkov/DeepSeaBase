@@ -5,7 +5,7 @@
 #include "logging.h"
 
 bool scaleMapEquals(const QwtScaleMap &map1, const QwtScaleMap &map2)
-{
+{DDD;
     return (qFuzzyCompare(map1.s1()+1.0, map2.s1()+1.0) &&
             qFuzzyCompare(map1.s2()+1.0, map2.s2()+1.0) &&
             qFuzzyCompare(map1.p1()+1.0, map2.p1()+1.0) &&
@@ -13,7 +13,7 @@ bool scaleMapEquals(const QwtScaleMap &map1, const QwtScaleMap &map2)
 }
 
 QVector<PointBlock> getBlocks(int from, int to, const QwtSeriesData<QPointF> *series, int pixels, int pointCount)
-{
+{DDD;
     QVector<PointBlock> blocks;
 
     PointBlock block;
@@ -88,7 +88,7 @@ QVector<PointBlock> getBlocks(int from, int to, const QwtSeriesData<QPointF> *se
 }
 
 QVector<PointBlock> getCashedBlocks(const QVector<PointBlock> &cashedBlocks, int from, int to)
-{
+{DDD;
     int left = 0;
     int right = 0;
     for (int i=0; i<cashedBlocks.size(); ++i) {
@@ -118,7 +118,7 @@ FilterPointMapper::FilterPointMapper(bool createPolygon) : QwtPointMapper(), pol
 { }
 
 QPolygonF FilterPointMapper::getPolygon(const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QwtSeriesData<QPointF> *series, int from, int to)
-{DD;
+{DDD;
     //if horizontal distance is null
     if (qFuzzyIsNull(xMap.sDist())) return QPolygonF();
 

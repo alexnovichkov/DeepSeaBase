@@ -9,12 +9,12 @@
 #include "selectable.h"
 
 Picker::Picker(Plot *plot) : plot(plot)
-{DD;
+{DDD;
 //    mode = ModeNone;
 }
 
 bool Picker::findObject(QMouseEvent *e)
-{DD;
+{DDD;
     if (e->modifiers() == Qt::NoModifier || e->modifiers() == Qt::ControlModifier) {
         pos = e->pos();
 
@@ -48,7 +48,7 @@ bool Picker::findObject(QMouseEvent *e)
 }
 
 void Picker::startPick(QPoint startPos)
-{
+{DDD;
     if (currentSelected) {
         currentSelected->setSelected(true);
         startPosition = startPos;
@@ -56,7 +56,7 @@ void Picker::startPick(QPoint startPos)
 }
 
 void Picker::deselect()
-{
+{DDD;
     const auto allItems = plot->itemList();
     for (auto item: allItems) {
         if (auto selectable = dynamic_cast<Selectable*>(item)) {
@@ -68,7 +68,7 @@ void Picker::deselect()
 }
 
 void Picker::procKeyboardEvent(int key)
-{DD;
+{DDD;
     if (!enabled || !currentSelected) return;
 
     switch (key) {
@@ -108,7 +108,7 @@ void Picker::procKeyboardEvent(int key)
 }
 
 void Picker::showContextMenu(QMouseEvent *e)
-{
+{DDD;
     if (!currentSelected) return;
 
     QMenu *m = new QMenu();
@@ -124,7 +124,7 @@ void Picker::showContextMenu(QMouseEvent *e)
 }
 
 void Picker::proceedPick(QMouseEvent *e)
-{DD;
+{DDD;
     if (!enabled || !currentSelected) return;
 
     currentSelected->moveToPos(e->pos(), startPosition);
@@ -134,7 +134,7 @@ void Picker::proceedPick(QMouseEvent *e)
 }
 
 void Picker::endPick(QMouseEvent *e)
-{DD;
+{DDD;
     if (!enabled) return;
     QPoint endPos = e->pos();
     if (endPos == pos) { //одинарный клик мышью

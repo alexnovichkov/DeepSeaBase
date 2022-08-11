@@ -6,10 +6,11 @@
 #include "qwt_plot.h"
 #include "qwt_scale_map.h"
 #include "fileformats/filedescriptor.h"
+#include "logging.h"
 
 SpectroCurve::SpectroCurve(const QString &title, Channel *channel)
     :  QwtPlotSpectrogram(title), Curve(title, channel)
-{
+{DDD;
     type = Type::Spectrogram;
     setLegendIconSize(QSize(16,8));
 
@@ -23,46 +24,46 @@ SpectroCurve::SpectroCurve(const QString &title, Channel *channel)
 }
 
 void SpectroCurve::attachTo(QwtPlot *plot)
-{
+{DDD;
     QwtPlotSpectrogram::attach(plot);
 }
 
 QString SpectroCurve::title() const
-{
+{DDD;
     return QwtPlotSpectrogram::title().text();
 }
 
 void SpectroCurve::setTitle(const QString &title)
-{
+{DDD;
     QwtPlotSpectrogram::setTitle(title);
 }
 
 QwtAxisId SpectroCurve::yAxis() const
-{
+{DDD;
     return QwtPlotSpectrogram::yAxis();
 }
 
 void SpectroCurve::setYAxis(QwtAxisId axis)
-{
+{DDD;
     QwtPlotSpectrogram::setYAxis(axis);
     foreach (PointLabel *l, labels)
         l->setYAxis(axis);
 }
 
 QwtAxisId SpectroCurve::xAxis() const
-{
+{DDD;
     return QwtPlotSpectrogram::xAxis();
 }
 
 void SpectroCurve::setXAxis(QwtAxisId axis)
-{
+{DDD;
     QwtPlotSpectrogram::setXAxis(axis);
     foreach (PointLabel *l, labels)
         l->setXAxis(axis);
 }
 
 QPen SpectroCurve::pen() const
-{
+{DDD;
     return QPen();
 }
 
@@ -72,7 +73,7 @@ QPen SpectroCurve::pen() const
 //}
 
 QList<QwtLegendData> SpectroCurve::legendData() const
-{
+{DDD;
     QList<QwtLegendData> result = QwtPlotSpectrogram::legendData();
     QwtLegendData &data = result[0];
     data.setValues(commonLegendData());
@@ -80,13 +81,13 @@ QList<QwtLegendData> SpectroCurve::legendData() const
 }
 
 QPointF SpectroCurve::samplePoint(int) const
-{
+{DDD;
     return QPointF();
     //return spectroData->samplePoint(point);
 }
 
 int SpectroCurve::closest(const QPoint &, double *dist1, double *dist2) const
-{
+{DDD;
     Q_UNUSED(dist1);
     Q_UNUSED(dist2);
 
@@ -125,12 +126,12 @@ int SpectroCurve::closest(const QPoint &, double *dist1, double *dist2) const
 }
 
 void SpectroCurve::setColorInterval(double min, double max)
-{
+{DDD;
     spectroData->setInterval(Qt::ZAxis, QwtInterval(min, max));
 }
 
 QwtInterval SpectroCurve::colorInterval() const
-{
+{DDD;
     return spectroData->interval(Qt::ZAxis);
 }
 
@@ -145,7 +146,7 @@ QwtInterval SpectroCurve::colorInterval() const
 //}
 
 SpectrogramData::SpectrogramData(DataHolder *data) : m_data(data)
-{
+{DDD;
     // some minor performance improvements when the spectrogram item
     // does not need to check for NaN values
 
@@ -157,7 +158,7 @@ SpectrogramData::SpectrogramData(DataHolder *data) : m_data(data)
 }
 
 QwtInterval SpectrogramData::interval(Qt::Axis axis) const
-{
+{DDD;
     if ( axis >= 0 && axis <= 2 )
         return m_intervals[ axis ];
 
@@ -165,13 +166,13 @@ QwtInterval SpectrogramData::interval(Qt::Axis axis) const
 }
 
 void SpectrogramData::setInterval(Qt::Axis axis, const QwtInterval &interval)
-{
+{DDD;
     if ( axis >= 0 && axis <= 2 )
         m_intervals[ axis ] = interval;
 }
 
 double SpectrogramData::value(double x, double y) const
-{
+{DDD;
     int j = m_data->nearestZ(y);
     if (j < 0) j = 0;
 

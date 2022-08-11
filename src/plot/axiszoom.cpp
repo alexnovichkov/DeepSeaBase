@@ -21,13 +21,13 @@
 #include "plot.h"
 
 AxisZoom::AxisZoom(Plot *plot) :  QObject(plot), plot(plot)
-{DD;
+{DDD;
 
 }
 
 // Ограничение нового размера шкалы
 double AxisZoom::limitScale(double sz,double bs)
-{DD;
+{DDD;
     // максимум
     double mx = 16*bs;
     // ограничение максимального размера
@@ -36,7 +36,7 @@ double AxisZoom::limitScale(double sz,double bs)
 }
 
 ZoomStack::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
-{DD;
+{DDD;
     QRect canvasGeometry = plot->canvas()->geometry();       // канвы графика
     QRect axisGeometry = plot->axisWidget(axis)->geometry(); // и виджета шкалы
     // определяем текущее положение курсора относительно канвы
@@ -119,7 +119,7 @@ ZoomStack::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
 
 
 void AxisZoom::startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis)
-{DD;
+{DDD;
     if (ct == ConvType::ctNone) {
         QwtScaleWidget *scaleWidget = plot->axisWidget(axis);
 
@@ -169,7 +169,7 @@ void AxisZoom::startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis)
 // Обработчик нажатия на кнопку мыши над шкалой
 // (включение изменения масштаба шкалы)
 void AxisZoom::startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis)
-{DD;
+{DDD;
     if (ct == ConvType::ctNone) {
         QwtScaleWidget *scaleWidget = plot->axisWidget(axis);
 
@@ -216,7 +216,7 @@ void AxisZoom::startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis)
 }
 
 ZoomStack::zoomCoordinates AxisZoom::proceedAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
-{DD;
+{DDD;
     if (ct != ConvType::ctNone)
         return axisApplyMove(mEvent->pos(), axis);
 
@@ -239,7 +239,7 @@ ZoomStack::zoomCoordinates AxisZoom::proceedAxisZoom(QMouseEvent *mEvent, QwtAxi
 }
 
 ZoomStack::zoomCoordinates AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
-{DD;
+{DDD;
     ZoomStack::zoomCoordinates coords;
     if (ct != ConvType::ctNone) {
 

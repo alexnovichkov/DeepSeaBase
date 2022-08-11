@@ -1,18 +1,18 @@
 #include "scaledraw.h"
 #include <QtDebug>
 #include "plot.h"
-
+#include "logging.h"
 #include <QEvent>
 #include <qwt_scale_map.h>
 #include <QApplication>
 
 ScaleDraw::ScaleDraw()
-{
+{DDD;
 
 }
 
 void ScaleDraw::drawBackbone(QPainter *painter) const
-{
+{DDD;
     const int pw = qMax(qRound(penWidthF()),1);
 
     const qreal len = length();
@@ -72,14 +72,14 @@ void ScaleDraw::drawBackbone(QPainter *painter) const
 }
 
 AxisOverlay::AxisOverlay(Plot *parent) : QwtPlotZoneItem(), m_plot(parent)
-{
+{DDD;
     setOrientation(Qt::Vertical);
     attach(m_plot);
     setVisible(false);
 }
 
 void AxisOverlay::setVisibility(bool visible)
-{
+{DDD;
     if (visible) {
         setGeom();
         setColor();
@@ -88,12 +88,12 @@ void AxisOverlay::setVisibility(bool visible)
 }
 
 Plot *AxisOverlay::plot()
-{
+{DDD;
     return m_plot;
 }
 
 void AxisOverlay::setColor()
-{
+{DDD;
     QColor Color = m_plot->palette().color(QPalette::Active, QPalette::Highlight);
     if (QApplication::keyboardModifiers() & Qt::CTRL) {
         auto blue = Color.blueF();
@@ -114,11 +114,11 @@ void AxisOverlay::setColor()
 }
 
 LeftAxisOverlay::LeftAxisOverlay(Plot *parent) : AxisOverlay(parent)
-{
+{DDD;
 }
 
 void LeftAxisOverlay::setGeom()
-{
+{DDD;
     const auto &scaleMap = plot()->canvasMap(QwtAxis::XBottom);
     if (plot()->xScaleIsLogarithmic)
         setInterval(scaleMap.s1()-scaleMap.sDist()/20, scaleMap.invTransform(scaleMap.p1()+scaleMap.pDist()/20));
@@ -127,11 +127,11 @@ void LeftAxisOverlay::setGeom()
 }
 
 RightAxisOverlay::RightAxisOverlay(Plot *parent) : AxisOverlay(parent)
-{
+{DDD;
 }
 
 void RightAxisOverlay::setGeom()
-{
+{DDD;
     const auto &scaleMap = plot()->canvasMap(QwtAxis::XBottom);
     if (plot()->xScaleIsLogarithmic)
         setInterval(scaleMap.invTransform(scaleMap.p2()-scaleMap.pDist()/20), scaleMap.s2()+scaleMap.sDist()/20);

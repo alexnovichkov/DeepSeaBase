@@ -10,19 +10,20 @@
 #include <qwt_scale_widget.h>
 #include "channelsmimedata.h"
 #include "cursors.h"
+#include "logging.h"
 
 Spectrogram::Spectrogram(QWidget *parent) : Plot(Plot::PlotType::Spectrogram, parent)
-{
+{DDD;
 
 }
 
 Curve *Spectrogram::createCurve(const QString &legendName, Channel *channel)
-{
+{DDD;
     return new SpectroCurve(legendName, channel);
 }
 
 void Spectrogram::deleteCurve(Curve *curve, bool doReplot)
-{
+{DDD;
     if (!curve) return;
 
     bool removedFromLeft = true;
@@ -57,7 +58,7 @@ void Spectrogram::deleteCurve(Curve *curve, bool doReplot)
 }
 
 QString Spectrogram::pointCoordinates(const QPointF &pos)
-{
+{DDD;
     bool success = false;
     double y = 0.0;
     if (auto c = model()->curve(0))
@@ -69,7 +70,7 @@ QString Spectrogram::pointCoordinates(const QPointF &pos)
 }
 
 void Spectrogram::updateAxesLabels()
-{
+{DDD;
     //две оси видны всегда
     enableAxis(QwtAxis::YLeft, axisLabelsVisible);
     if (axisLabelsVisible)
@@ -92,7 +93,7 @@ void Spectrogram::updateAxesLabels()
 }
 
 void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
-{
+{DDD;
     //проверяем, построен ли канал на этом графике
     if (m->plotted(ch)) return;
 
@@ -151,13 +152,13 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 }
 
 void Spectrogram::onDropEvent(bool plotOnLeft, const QVector<Channel *> &channels)
-{
+{DDD;
     Q_UNUSED(plotOnLeft);
     emit needPlotChannels(true, channels);
 }
 
 void Spectrogram::updateBounds()
-{
+{DDD;
     if (m->leftCurvesCount()==0) {
         zoom->verticalScaleBounds->reset();
         zoom->verticalScaleBoundsSlave->reset();
@@ -171,20 +172,20 @@ void Spectrogram::updateBounds()
 }
 
 bool Spectrogram::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
-{
+{DDD;
     Q_UNUSED(message);
     return ch->data()->blocksCount()>1 && !hasCurves();
 }
 
 bool Spectrogram::canBePlottedOnRightAxis(Channel *ch, QString *message) const
-{
+{DDD;
     Q_UNUSED(ch);
     Q_UNUSED(message);
     return false;
 }
 
 void Spectrogram::setRightScale(QwtAxisId id, double min, double max)
-{
+{DDD;
     if (!m->isEmpty() && id == yRightAxis) {
         if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(m->curve(0))) {
             c->setColorInterval(min, max);
@@ -194,7 +195,7 @@ void Spectrogram::setRightScale(QwtAxisId id, double min, double max)
 }
 
 QMenu *Spectrogram::createMenu(QwtAxisId axis, const QPoint &pos)
-{
+{DDD;
     Q_UNUSED(pos);
     QMenu *menu = new QMenu(this);
 

@@ -5,7 +5,7 @@
 
 OctaveFunction::OctaveFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD;
+{DDD;
 
 }
 

@@ -48,7 +48,7 @@ QString NIDataTypeToPrecision(DDCDataType dataType)
 
 
 TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
-{DD;
+{DDD;
     int error;
 
     QString fn = fileName;
@@ -192,7 +192,7 @@ TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
 }
 
 TDMSFile::~TDMSFile()
-{DD;
+{DDD;
     free(_groups);
     qDeleteAll(groups);
     if (file) DDC_CloseFile(file);
@@ -200,7 +200,7 @@ TDMSFile::~TDMSFile()
 
 TDMSGroup::TDMSGroup(DDCChannelGroupHandle group, const QString &name) : FileDescriptor(name),
     group(group)
-{DD;
+{DDD;
     // reading channel group properties
     uint numberOfProperties = 0;
     int error = DDC_GetNumChannelGroupProperties(group, &numberOfProperties);
@@ -319,14 +319,14 @@ TDMSGroup::TDMSGroup(DDCChannelGroupHandle group, const QString &name) : FileDes
 }
 
 TDMSGroup::~TDMSGroup()
-{DD;
+{DDD;
     free(_channels);
     qDeleteAll(channels);
     DDC_CloseChannelGroup(group);
 }
 
 TDMSChannel::TDMSChannel(DDCChannelHandle channel, TDMSGroup *parent) : channel(channel), parent(parent)
-{DD;
+{DDD;
     // reading channel properties
     uint numberOfProperties = 0;
     int error = DDC_GetNumChannelProperties(channel, &numberOfProperties);
@@ -469,12 +469,12 @@ TDMSChannel::TDMSChannel(DDCChannelHandle channel, TDMSGroup *parent) : channel(
 }
 
 TDMSChannel::~TDMSChannel()
-{DD;
+{DDD;
     DDC_CloseChannel(channel);
 }
 
 QVector<double> TDMSChannel::getDouble()
-{DD;
+{DDD;
     QVector<double> data(numberOfValues);
     int error = 0;
     switch (dataType) {

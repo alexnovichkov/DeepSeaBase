@@ -6,7 +6,7 @@
 #include "cursor.h"
 #include "curve.h"
 #include "fileformats/filedescriptor.h"
-
+#include "logging.h"
 #include <QwtText>
 #include <QTreeWidget>
 #include <QVBoxLayout>
@@ -16,7 +16,7 @@
 
 CursorBox::CursorBox(Cursors *cursors, Plot *parent) : QTreeWidget(parent),
     cursors{cursors}, plot{parent}
-{
+{DDD;
     setWindowFlag(Qt::Tool);
     setContextMenuPolicy(Qt::ActionsContextMenu);
     connect(cursors, SIGNAL(cursorsChanged()), this, SLOT(updateLayout()));
@@ -46,13 +46,13 @@ CursorBox::CursorBox(Cursors *cursors, Plot *parent) : QTreeWidget(parent),
 }
 
 void CursorBox::update()
-{
+{DDD;
     updateContents();
     updateLayout();
 }
 
 void CursorBox::updateContents()
-{
+{DDD;
     setHeaderLabels(cursors->dataHeader());
     auto size = plot->model()->curves().size();
     for (int i=0; i<size; ++i) {
@@ -64,7 +64,7 @@ void CursorBox::updateContents()
 }
 
 void CursorBox::updateLayout()
-{
+{DDD;
     clear();
 
     auto size = plot->model()->curves().size();
@@ -87,7 +87,7 @@ void CursorBox::updateLayout()
 }
 
 void CursorBox::copy()
-{
+{DDD;
     QStringList list;
     QStringList values;
     for (int i=0; i<columnCount(); ++i) values << headerItem()->text(i);
@@ -111,7 +111,7 @@ void CursorBox::copy()
 
 
 void CursorBox::closeEvent(QCloseEvent *event)
-{
+{DDD;
     emit closeRequested();
     QTreeWidget::closeEvent(event);
 }

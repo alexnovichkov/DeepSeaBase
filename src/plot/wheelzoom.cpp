@@ -5,12 +5,12 @@
 #include "plot.h"
 
 WheelZoom::WheelZoom(Plot *plot) : QObject(plot), plot(plot)
-{DD;
+{DDD;
 
 }
 
 ZoomStack::zoomCoordinates WheelZoom::applyWheel(QEvent *event, QwtAxisId axis)
-{DD;
+{DDD;
     QWheelEvent *wEvent = static_cast<QWheelEvent *>(event);
 
     // определяем угол поворота колеса мыши
@@ -45,7 +45,7 @@ ZoomStack::zoomCoordinates WheelZoom::applyWheel(QEvent *event, QwtAxisId axis)
 }
 
 QPointF WheelZoom::getCoords(QwtAxisId axis, int pos, double factor)
-{
+{DDD;
     double dPos = plot->invTransform(axis, pos);
     QwtScaleMap sm = plot->canvasMap(axis);
     double lower = (sm.s1()-dPos)*factor + dPos;

@@ -2,9 +2,10 @@
 #include <QFont>
 #include <QColor>
 #include <QBrush>
+#include "logging.h"
 
 PlotInfoOverlay::PlotInfoOverlay(QwtPlot *parent) : QwtPlotTextLabel(), parent{parent}
-{
+{DDD;
     attach(parent);
 
     QwtText title("- Перетащите сюда каналы, чтобы построить их графики\n"

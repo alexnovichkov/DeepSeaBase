@@ -21,21 +21,21 @@
 #include <QKeyEvent>
 
 ZoomStack::ZoomStack(Plot *plot) : QObject(plot),  plot(plot)
-{DD;
+{DDD;
     horizontalScaleBounds = new ScaleBounds(plot, QwtAxis::XBottom);
     verticalScaleBounds = new ScaleBounds(plot, QwtAxis::YLeft);
     verticalScaleBoundsSlave = new ScaleBounds(plot, QwtAxis::YRight);
 }
 
 ZoomStack::~ZoomStack()
-{DD;
+{DDD;
     delete horizontalScaleBounds;
     delete verticalScaleBounds;
     delete verticalScaleBoundsSlave;
 }
 
 void ZoomStack::addZoom(ZoomStack::zoomCoordinates coords, bool addToStack)
-{DD;
+{DDD;
     if (coords.coords.isEmpty()) {
         return;
     }
@@ -58,7 +58,7 @@ void ZoomStack::addZoom(ZoomStack::zoomCoordinates coords, bool addToStack)
 }
 
 void ZoomStack::zoomBack()
-{DD;
+{DDD;
     if (zoomStack.isEmpty()) return;
     zoomStack.pop();
     if (zoomStack.isEmpty()) {
@@ -83,7 +83,7 @@ void ZoomStack::zoomBack()
 }
 
 void ZoomStack::moveToAxis(int axis, double min, double max)
-{
+{DDD;
     switch (axis) {
         case QwtAxis::XBottom:
             horizontalScaleBounds->add(min, max);
@@ -104,7 +104,7 @@ void ZoomStack::moveToAxis(int axis, double min, double max)
 }
 
 void ZoomStack::autoscale(int axis, bool spectrogram)
-{DD;
+{DDD;
     switch (axis) {
         case 0: // x axis
             horizontalScaleBounds->autoscale();
@@ -135,7 +135,7 @@ void ZoomStack::autoscale(int axis, bool spectrogram)
 
 // Конструктор
 ZoomStack::ScaleBounds::ScaleBounds(Plot *plot, QwtAxisId axis) : axis(axis), plot(plot)
-{DD;
+{DDD;
     fixed = false;  // границы еще не фиксированы
     min = 0.0;
     max = 10.0;
@@ -144,7 +144,7 @@ ZoomStack::ScaleBounds::ScaleBounds(Plot *plot, QwtAxisId axis) : axis(axis), pl
 }
 
 void ZoomStack::ScaleBounds::setFixed(bool fixed)
-{DD;
+{DDD;
     this->fixed = fixed;
 
     if (!fixed)
@@ -153,7 +153,7 @@ void ZoomStack::ScaleBounds::setFixed(bool fixed)
 
 // Фиксация исходных границ шкалы
 void ZoomStack::ScaleBounds::add(double min, double max)
-{DD;
+{DDD;
     if (min==max) {
         if (min!=0.0) {
             mins << (min-1.0);
@@ -171,13 +171,13 @@ void ZoomStack::ScaleBounds::add(double min, double max)
 }
 
 void ZoomStack::ScaleBounds::set(double min, double max)
-{DD;
+{DDD;
     plot->setScale(axis, min,max);
 }
 
 // Восстановление исходных границ шкалы
 void ZoomStack::ScaleBounds::reset()
-{DD;
+{DDD;
     // если границы уже фиксированы, то восстанавливаем исходные
     if (fixed) {
         //set(min,max);
@@ -190,7 +190,7 @@ void ZoomStack::ScaleBounds::reset()
 }
 
 void ZoomStack::ScaleBounds::autoscale()
-{DD;
+{DDD;
     auto iter = std::min_element(mins.constBegin(), mins.constEnd());
     double minn = iter==mins.constEnd() ? this->min : *iter;
     iter = std::max_element(maxes.constBegin(), maxes.constEnd());
@@ -200,7 +200,7 @@ void ZoomStack::ScaleBounds::autoscale()
 }
 
 void ZoomStack::ScaleBounds::removeToAutoscale(double min, double max)
-{DD;
+{DDD;
     if (min==max) {
         if (min != 0.0) {
             mins.removeOne(min-1.0);

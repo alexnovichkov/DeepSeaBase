@@ -15,7 +15,7 @@ AbstractFunction::~AbstractFunction()
 }
 
 QString AbstractFunction::propertiesDescription() const
-{DD;
+{DDD;
     QString result="[";
     const QStringList props = properties();
     for (const QString &p: props) {
@@ -28,14 +28,14 @@ QString AbstractFunction::propertiesDescription() const
 }
 
 bool AbstractFunction::propertyShowsFor(const QString &property) const
-{DD;
+{DDD;
     Q_UNUSED(property);
 
     return true;
 }
 
 QVariant AbstractFunction::getParameter(const QString &property) const
-{DD;
+{DDD;
     QVariant p;
     if (paired()) {
         p = m_master->m_getProperty(property);
@@ -46,7 +46,7 @@ QVariant AbstractFunction::getParameter(const QString &property) const
 }
 
 void AbstractFunction::setParameter(const QString &property, const QVariant &val)
-{DD;
+{DDD;
     if (m_slave != nullptr) {
         m_slave->m_setProperty(property, val);
     }
@@ -55,7 +55,7 @@ void AbstractFunction::setParameter(const QString &property, const QVariant &val
 }
 
 void AbstractFunction::pairWith(AbstractFunction *slave)
-{DD;
+{DDD;
     if (slave != nullptr) {
         m_slave = slave;
         slave->m_master = this;
@@ -71,24 +71,24 @@ QVector<double> AbstractFunction::getData(const QString &id)
 }
 
 void AbstractFunction::setInput(AbstractFunction *input)
-{DD;
+{DDD;
     m_input = input;
 }
 
 void AbstractFunction::setInput2(AbstractFunction *input)
-{DD;
+{DDD;
     m_input2 = input;
 }
 
 void AbstractFunction::setFile(FileDescriptor *file)
-{DD;
+{DDD;
     m_file = file;
     if (m_input) m_input->setFile(file);
     if (m_input2) m_input2->setFile(file);
 }
 
 void AbstractFunction::reset()
-{DD;
+{DDD;
     // no-op
 }
 
@@ -99,7 +99,7 @@ void AbstractFunction::resetData()
 }
 
 void AbstractFunction::updateProperty(const QString &property, const QVariant &val)
-{DD;
+{DDD;
     Q_UNUSED(property);
     Q_UNUSED(val);
     //no-op
@@ -110,17 +110,17 @@ void AbstractFunction::updateProperty(const QString &property, const QVariant &v
 
 AbstractAlgorithm::AbstractAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) : QObject(parent),
     m_dataBase(dataBase)
-{DD;
+{DDD;
 
 }
 
 AbstractAlgorithm::~AbstractAlgorithm()
-{DD;
+{DDD;
     m_functions.clear();
 }
 
 bool AbstractAlgorithm::propertyShowsFor(AbstractFunction *function, const QString &property) const
-{DD;
+{DDD;
     if (property.isEmpty()) return true;
 
     const auto list = functions();
@@ -134,7 +134,7 @@ bool AbstractAlgorithm::propertyShowsFor(AbstractFunction *function, const QStri
 }
 
 QVariant AbstractAlgorithm::getParameter(AbstractFunction *function, const QString &property) const
-{DD;
+{DDD;
     if (property.isEmpty()) return QVariant();
 
     const auto list = functions();
@@ -148,7 +148,7 @@ QVariant AbstractAlgorithm::getParameter(AbstractFunction *function, const QStri
 }
 
 void AbstractAlgorithm::setParameter(AbstractFunction *function, const QString &property, const QVariant &val)
-{DD;
+{DDD;
     if (property.isEmpty()) return;
 
     const auto list = functions();
@@ -161,7 +161,7 @@ void AbstractAlgorithm::setParameter(AbstractFunction *function, const QString &
 }
 
 void AbstractAlgorithm::saveSettings()
-{DD;
+{DDD;
     for (auto f: m_functions) {
         for (const auto &property: f->properties()) {
             QVariant val = f->getParameter(f->name()+"/"+property);
@@ -171,7 +171,7 @@ void AbstractAlgorithm::saveSettings()
 }
 
 void AbstractAlgorithm::restoreSettings()
-{DD;
+{DDD;
     for (auto f: m_functions) {
         for (const auto &property: f->properties()) {
             QVariant val = Settings::getSetting(displayName()+"/"+f->name()+"/"+property);
@@ -239,12 +239,12 @@ bool AbstractAlgorithm::compute(FileDescriptor *file)
 }
 
 void AbstractAlgorithm::reset()
-{DD;
+{DDD;
     // no-op
 }
 
 void AbstractAlgorithm::start()
-{DD;
+{DDD;
     auto dt = QDateTime::currentDateTime();
     emit message(QString("Запуск расчета: %1").arg(dt.time().toString()));
 
@@ -268,7 +268,7 @@ void AbstractAlgorithm::start()
 }
 
 void AbstractAlgorithm::finalize()
-{DD;
+{DDD;
     emit message(QString("Расчет закончен в %1").arg(QDateTime::currentDateTime().time().toString()));
     emit finished();
 }

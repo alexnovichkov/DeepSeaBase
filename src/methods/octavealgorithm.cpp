@@ -12,7 +12,7 @@
 
 OctaveAlgorithm::OctaveAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DD;
+{DDD;
     channelF = new ChannelFunction(this);
     octaveF = new OctaveFunction(this);
     saver = new SavingFunction(this);

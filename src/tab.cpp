@@ -17,7 +17,7 @@
 #include "channelstable.h"
 
 Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
-{DD;
+{DDD;
     setOrientation(Qt::Horizontal);
 
     model = new Model(this);
@@ -203,7 +203,7 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
 }
 
 void Tab::updateChannelsTable(FileDescriptor *descriptor)
-{
+{DDD;
     record = descriptor;
     channelModel->setDescriptor(descriptor);
     if (!descriptor) return;
@@ -220,7 +220,7 @@ void Tab::updateChannelsTable(FileDescriptor *descriptor)
 }
 
 void Tab::updateActions()
-{
+{DDD;
     openFolderAct->setEnabled(record != nullptr);
     editFileAct->setEnabled(record != nullptr);
     plotSelectedChannelsAct->setEnabled(channelModel->hasSelection());
@@ -230,12 +230,12 @@ void Tab::updateActions()
 }
 
 void Tab::addParentAction(const QString &name, QAction *action)
-{
+{DDD;
     parentActions.insert(name, action);
 }
 
 void Tab::updateChannelsTable(const QModelIndex &current, const QModelIndex &previous)
-{DD;
+{DDD;
     if (current.isValid()) {
         if (current.model() != sortModel) return;
 
@@ -256,7 +256,7 @@ void Tab::updateChannelsTable(const QModelIndex &current, const QModelIndex &pre
 }
 
 void Tab::filesSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection)
-{DD;
+{DDD;
     Q_UNUSED(oldSelection);
     if (newSelection.isEmpty()) filesTable->selectionModel()->setCurrentIndex(QModelIndex(), QItemSelectionModel::NoUpdate);
 
@@ -276,7 +276,7 @@ void Tab::filesSelectionChanged(const QItemSelection &newSelection, const QItemS
 }
 
 void Tab::channelsSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection)
-{DD;
+{DDD;
     Q_UNUSED(oldSelection);
     if (newSelection.isEmpty()) channelsTable->selectionModel()->setCurrentIndex(QModelIndex(), QItemSelectionModel::NoUpdate);
 

@@ -17,7 +17,7 @@ PointLabel::PointLabel(QwtPlot *parent, Curve *curve)
       d_displacement(QPoint(0, -13)),
       plot(parent),
       curve(curve)
-{DD;
+{DDD;
     setZ(40.0);
     if (Settings::getSetting("pointLabelRemember", true).toBool())
         d_mode = Settings::getSetting("pointLabelMode", 0).toInt();
@@ -27,36 +27,36 @@ PointLabel::PointLabel(QwtPlot *parent, Curve *curve)
 }
 
 PointLabel::~PointLabel()
-{DD;
+{DDD;
 
 }
 
 int PointLabel::rtti() const
-{//DD;
+{//DDD;
     return QwtPlotItem::Rtti_PlotUserItem+1;
 }
 
 QPointF PointLabel::origin() const
-{DD;
+{DDD;
     return d_origin;
 }
 
 void PointLabel::setOrigin(const QPointF &origin)
-{DD;
+{DDD;
     if (d_origin == origin) return;
     d_origin = origin;
     updateLabel();
 }
 
 void PointLabel::setMode(int mode)
-{
+{DDD;
     if (d_mode==mode) return;
     d_mode = mode;
     updateLabel();
 }
 
 void PointLabel::cycle()
-{
+{DDD;
     switch (d_mode) {
         case 0: setMode(1); break;
         case 1: setMode(2); break;
@@ -66,28 +66,28 @@ void PointLabel::cycle()
 }
 
 int PointLabel::point() const
-{DD;
+{DDD;
     return d_point;
 }
 
 void PointLabel::setPoint(int point)
-{DD;
+{DDD;
     d_point = point;
 }
 
 QwtText PointLabel::label() const
-{DD;
+{DDD;
     return d_label;
 }
 
 void PointLabel::updateSelection()
-{
+{DDD;
     d_label.setBorderPen(selected()?QPen(Qt::darkGray, 1, Qt::DashLine):QPen(Qt::NoPen));
     itemChanged();
 }
 
 bool PointLabel::underMouse(const QPoint &pos, double *distanceX, double *distanceY) const
-{
+{DDD;
     QPointF point(plot->transform(curve->xAxis(), d_origin.x()),
                 plot->transform(curve->yAxis(), d_origin.y()));
 
@@ -108,7 +108,7 @@ bool PointLabel::underMouse(const QPoint &pos, double *distanceX, double *distan
 }
 
 void PointLabel::setLabel(const QwtText &label)
-{DD;
+{DDD;
     if (d_label == label) return;
     d_label = label;
     itemChanged();
@@ -117,7 +117,7 @@ void PointLabel::setLabel(const QwtText &label)
 void PointLabel::draw(QPainter *painter, const QwtScaleMap &xMap,
                       const QwtScaleMap &yMap,
                       const QRectF &canvasRect) const
-{DD;
+{DDD;
     Q_UNUSED(canvasRect)
     QPointF pos(xMap.transform(d_origin.x()), yMap.transform(d_origin.y()));
 
@@ -136,12 +136,12 @@ void PointLabel::draw(QPainter *painter, const QwtScaleMap &xMap,
 }
 
 void PointLabel::remove()
-{
+{DDD;
     if (curve) curve->removeLabel(this);
 }
 
 void PointLabel::moveToPos(QPoint pos, QPoint startPos)
-{
+{DDD;
     auto delta = pos-startPos;
     qDebug()<<pos<<startPos<<delta;
 //    if (pos.x() == 0 && pos.y() == 0) return;
@@ -151,7 +151,7 @@ void PointLabel::moveToPos(QPoint pos, QPoint startPos)
 }
 
 QList<QAction *> PointLabel::actions()
-{
+{DDD;
     QList<QAction *> l;
 
     auto a = new QAction("Показывать", plot);
@@ -201,7 +201,7 @@ QList<QAction *> PointLabel::actions()
 }
 
 bool PointLabel::contains(const QPoint &pos)
-{DD;
+{DDD;
     QPointF point(plot->transform(curve->xAxis(), d_origin.x()),
                 plot->transform(curve->yAxis(), d_origin.y()));
 
@@ -219,7 +219,7 @@ bool PointLabel::contains(const QPoint &pos)
 }
 
 void PointLabel::updateLabel()
-{
+{DDD;
     switch (d_mode) {
         case 0: d_label = QwtText(QString::number(d_origin.x(),'f',2)); break;
         case 1: d_label = QwtText(QString("%1; %2")

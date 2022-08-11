@@ -10,12 +10,13 @@
 #include "curve.h"
 #include "algorithms.h"
 #include "qwt_scale_map.h"
-#include <QMenu>
-#include <app.h>
+//#include <QMenu>
+//#include <app.h>
+#include "logging.h"
 
 CursorLabel::CursorLabel(Plot *parent, TrackingCursor *cursor)
     : QwtPlotItem(), m_plot{parent}, m_cursor{cursor}
-{
+{DDD;
     setZ(40.0);
     m_label.setBackgroundBrush(Qt::white);
     setXAxis(m_cursor->xAxis());
@@ -23,18 +24,18 @@ CursorLabel::CursorLabel(Plot *parent, TrackingCursor *cursor)
 }
 
 int CursorLabel::rtti() const
-{
+{DDD;
     return QwtPlotItem::Rtti_PlotUserItem+2;
 }
 
 void CursorLabel::updateAlignment()
-{
+{DDD;
     setXAxis(m_cursor->xAxis());
     setYAxis(m_cursor->yAxis());
 }
 
 void CursorLabel::setAxis(CursorLabel::Axis axis)
-{
+{DDD;
     if (m_axis != axis) {
         m_axis = axis;
         itemChanged();
@@ -42,7 +43,7 @@ void CursorLabel::setAxis(CursorLabel::Axis axis)
 }
 
 void CursorLabel::updateLabel(bool showValues)
-{
+{DDD;
     QStringList label;
     char f = m_cursor->parent->format()==Cursor::Format::Fixed?'f':'e';
     if (showValues && m_axis != Axis::YAxis) {
@@ -67,7 +68,7 @@ void CursorLabel::updateLabel(bool showValues)
 }
 
 void CursorLabel::draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScaleMap &yMap, const QRectF &canvasRect) const
-{
+{DDD;
     Q_UNUSED(canvasRect)
     double xval = 0.0;
     double yval = 0.0;
@@ -93,7 +94,7 @@ void CursorLabel::draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScal
 }
 
 bool CursorLabel::underMouse(const QPoint &pos, double *distanceX, double *distanceY) const
-{
+{DDD;
     double xval = 0.0;
     double yval = 0.0;
     switch (m_axis) {
@@ -129,12 +130,12 @@ bool CursorLabel::underMouse(const QPoint &pos, double *distanceX, double *dista
 }
 
 QList<QAction *> CursorLabel::actions()
-{
+{DDD;
     return m_cursor->actions();
 }
 
 void CursorLabel::updateSelection()
-{
+{DDD;
     if (selected()) {
         m_label.setBorderPen(QPen(Qt::darkGray, 0.5, Qt::SolidLine));
         setZ(1000);

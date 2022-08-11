@@ -13,7 +13,7 @@
 
 PsdAlgorithm::PsdAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DD;
+{DDD;
     channelF = new ChannelFunction(this);
 //    filteringF = new FilteringFunction(this);
     resamplingF = new ResamplingFunction(this);
@@ -69,13 +69,13 @@ PsdAlgorithm::PsdAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
 
 
 QString PsdAlgorithm::description() const
-{DD;
+{DDD;
     return "Плотность спектра мощности";
 }
 
 
 QString PsdAlgorithm::displayName() const
-{DD;
+{DDD;
     return "PSD";
 }
 

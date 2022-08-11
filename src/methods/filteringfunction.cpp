@@ -5,7 +5,7 @@
 
 FilteringFunction::FilteringFunction(QObject *parent) :
     AbstractFunction(parent)
-{DD;
+{DDD;
     // default values
     map.insert("type", Filtering::NoFiltering);
     map.insert("approximation", Filtering::Butterworth);
@@ -23,23 +23,23 @@ FilteringFunction::FilteringFunction(QObject *parent) :
 
 
 QString FilteringFunction::name() const
-{DD;
+{DDD;
     return "Filtering";
 }
 
 QString FilteringFunction::description() const
-{DD;
+{DDD;
     return "Фильтрация временных данных";
 }
 
 QStringList FilteringFunction::properties() const
-{DD;
+{DDD;
     return QStringList()<<"type"<<"approximation"<<"order"<<"frequency"<<"Q"<<"bandwidth"<<"bandwidthHz"<<"gain"<<"slope"
                        <<"rippleDb"<<"stopDb"<<"rolloff";
 }
 
 QString FilteringFunction::propertyDescription(const QString &property) const
-{DD;
+{DDD;
 //    qDebug()<<"property description"<<property;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
@@ -161,7 +161,7 @@ QString FilteringFunction::propertyDescription(const QString &property) const
 }
 
 QVariant FilteringFunction::m_getProperty(const QString &property) const
-{DD;
+{DDD;
     if (property.startsWith("?/")) {
         if (property == "?/dataType") return 2;//Фильтр. данные
 //        if (property == "?/functionType") return 1;//Time response
@@ -223,7 +223,7 @@ DataDescription FilteringFunction::getFunctionDescription() const
 }
 
 void FilteringFunction::m_setProperty(const QString &property, const QVariant &val)
-{DD;
+{DDD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -240,7 +240,7 @@ void FilteringFunction::m_setProperty(const QString &property, const QVariant &v
 }
 
 bool FilteringFunction::propertyShowsFor(const QString &property) const
-{DD;
+{DDD;
     if (!property.startsWith(name()+"/")) return false;
     QString p = property.section("/",1);
 
@@ -276,18 +276,18 @@ bool FilteringFunction::propertyShowsFor(const QString &property) const
 
 
 QString FilteringFunction::displayName() const
-{DD;
+{DDD;
     return "Фильтрация";
 }
 
 void FilteringFunction::reset()
-{DD;
+{DDD;
     filtering.reset();
     output.clear();
 }
 
 bool FilteringFunction::compute(FileDescriptor *file)
-{DD;
+{DDD;
     if (!m_input) return false;
 
     if (!m_input->compute(file)) return false;

@@ -51,7 +51,7 @@ Averaging *averageChannels(const QList<QPair<FileDescriptor *, int> > &toMean)
 }
 
 void calculateMean(FileDescriptor *file, const QList<Channel *> &channels)
-{DD;
+{DDD;
     if (channels.isEmpty()) return;
 
     Channel *firstChannel = channels.constFirst();

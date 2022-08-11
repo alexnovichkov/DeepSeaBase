@@ -8,19 +8,19 @@
 #include "cursordouble.h"
 #include "cursorharmonic.h"
 #include "qwt_scale_map.h"
-#include <QtDebug>
+#include "logging.h"
 
 Cursors::Cursors(Plot *parent) : QObject(parent), plot{parent}
-{
+{DDD;
 }
 
 void Cursors::update()
-{
+{DDD;
     for (auto c: m_cursors) c->update();
 }
 
 void Cursors::addDoubleCursor(const QPoint &pos, Cursor::Style style, bool reject)
-{
+{DDD;
     auto c = new CursorDouble(style, reject, plot);
     connect(c, SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
     connect(c, SIGNAL(dataChanged()), this, SIGNAL(cursorsChanged()));
@@ -45,7 +45,7 @@ void Cursors::addDoubleCursor(const QPoint &pos, Cursor::Style style, bool rejec
 }
 
 void Cursors::addSingleCursor(const QPoint &pos, Cursor::Style style)
-{
+{DDD;
     auto c = new CursorSingle(style, plot);
     connect(c,SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
     connect(c, SIGNAL(dataChanged()), this, SIGNAL(cursorsChanged()));
@@ -62,17 +62,17 @@ void Cursors::addSingleCursor(const QPoint &pos, Cursor::Style style)
 }
 
 void Cursors::addDoubleCursor(const QPoint &pos, Cursor::Style style)
-{
+{DDD;
     addDoubleCursor(pos, style, false);
 }
 
 void Cursors::addRejectCursor(const QPoint &pos, Cursor::Style style)
-{
+{DDD;
     addDoubleCursor(pos, style, true);
 }
 
 void Cursors::addHarmonicCursor(const QPoint &pos)
-{
+{DDD;
     auto c = new CursorHarmonic(plot);
     connect(c,SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
     connect(c, SIGNAL(dataChanged()), this, SIGNAL(cursorsChanged()));
@@ -89,14 +89,14 @@ void Cursors::addHarmonicCursor(const QPoint &pos)
 }
 
 int Cursors::dataCount() const
-{
+{DDD;
     int sum = 0;
     for (auto c: m_cursors) sum += c->dataCount(true);
     return sum;
 }
 
 QStringList Cursors::dataHeader() const
-{
+{DDD;
     QStringList l;
     l << "Канал";
     for (auto c: m_cursors) l << c->dataHeader(true);
@@ -104,7 +104,7 @@ QStringList Cursors::dataHeader() const
 }
 
 QStringList Cursors::data(int curveIndex) const
-{
+{DDD;
     QStringList l;
     l << plot->model()->curve(curveIndex)->title();
     for (auto c: m_cursors) {
@@ -115,7 +115,7 @@ QStringList Cursors::data(int curveIndex) const
 }
 
 void Cursors::removeCursor(Selectable *selected)
-{
+{DDD;
     for (int i=m_cursors.size()-1; i>=0; --i) {
         auto c = m_cursors.at(i);
         if (c->contains(selected)) {

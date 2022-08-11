@@ -5,27 +5,27 @@
 
 ResamplingFunction::ResamplingFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD;
+{DDD;
 }
 
 
 QString ResamplingFunction::name() const
-{DD;
+{DDD;
     return "Resampling";
 }
 
 QString ResamplingFunction::description() const
-{DD;
+{DDD;
     return "Выбор частотного диапазона";
 }
 
 QStringList ResamplingFunction::properties() const
-{DD;
+{DDD;
     return QStringList()<<"resampleType"<<"factor"<<"frequencyRange"<<"sampleRate";
 }
 
 QString ResamplingFunction::propertyDescription(const QString &property) const
-{DD;
+{DDD;
     if (property == "resampleType") {
         return QString("{"
                "  \"name\"        : \"resampleType\"   ,"
@@ -74,7 +74,7 @@ QString ResamplingFunction::propertyDescription(const QString &property) const
 }
 
 QVariant ResamplingFunction::m_getProperty(const QString &property) const
-{DD;
+{DDD;
     double sR = 1.0 / xStep;
     if (property.startsWith("?/")) {
         // recalculate sample rate to new val
@@ -116,7 +116,7 @@ DataDescription ResamplingFunction::getFunctionDescription() const
 }
 
 void ResamplingFunction::m_setProperty(const QString &property, const QVariant &val)
-{DD;
+{DDD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -160,7 +160,7 @@ void ResamplingFunction::m_setProperty(const QString &property, const QVariant &
 }
 
 bool ResamplingFunction::propertyShowsFor(const QString &property) const
-{DD;
+{DDD;
     if (!property.startsWith(name()+"/")) return false;
     QString p = property.section("/",1);
 
@@ -173,12 +173,12 @@ bool ResamplingFunction::propertyShowsFor(const QString &property) const
 
 
 QString ResamplingFunction::displayName() const
-{DD;
+{DDD;
     return "Передискретизация";
 }
 
 void ResamplingFunction::reset()
-{DD;
+{DDD;
     //resampler.reset();
     output.clear();
     triggerData.clear();
@@ -186,7 +186,7 @@ void ResamplingFunction::reset()
 
 
 bool ResamplingFunction::compute(FileDescriptor *file)
-{DD; //qDebug()<<debugName();
+{DDD; //qDebug()<<debugName();
     if (!m_input) return false;
 
     if (!m_input->compute(file))
@@ -239,7 +239,7 @@ bool ResamplingFunction::compute(FileDescriptor *file)
 }
 
 void ResamplingFunction::updateProperty(const QString &property, const QVariant &val)
-{DD;
+{DDD;
     if (!property.startsWith(name()+"/")) return;
     setParameter(property, val);
 }

@@ -2,7 +2,7 @@
 #include "logging.h"
 
 DataHolder::YValuesFormat DataHolder::formatFromString(const QString &format)
-{DDDD
+{DDDD;
     if (format == "complex") return YValuesComplex;
     else if (format == "amplitude") return YValuesAmplitudes;
     else if (format == "amplitudeDb") return YValuesAmplitudesInDB;
@@ -14,7 +14,7 @@ DataHolder::YValuesFormat DataHolder::formatFromString(const QString &format)
 }
 
 QString DataHolder::formatToString(DataHolder::YValuesFormat format)
-{DDDD
+{DDDD;
     switch (format) {
     case YValuesComplex: return "complex";
     case YValuesAmplitudes: return "amplitude";
@@ -28,7 +28,7 @@ QString DataHolder::formatToString(DataHolder::YValuesFormat format)
 }
 
 DataHolder::YValuesUnits DataHolder::unitsFromString(const QString &format)
-{DDDD
+{DDDD;
     if (format == "unknown") return DataHolder::UnitsUnknown;
     if (format == "linear") return DataHolder::UnitsLinear;
     if (format == "quadratic") return DataHolder::UnitsQuadratic;
@@ -37,7 +37,7 @@ DataHolder::YValuesUnits DataHolder::unitsFromString(const QString &format)
 }
 
 QString DataHolder::unitsToString(DataHolder::YValuesUnits units)
-{DDDD
+{DDDD;
     switch (units) {
         case DataHolder::UnitsUnknown: return "unknown";
         case DataHolder::UnitsLinear: return "linear";
@@ -49,7 +49,7 @@ QString DataHolder::unitsToString(DataHolder::YValuesUnits units)
 }
 
 DataHolder::DataHolder()
-{DD;
+{DDD;
     m_threshold = 0.0;
     m_xValuesFormat = XValuesUnknown;
     m_zValuesFormat = XValuesUnknown;
@@ -64,7 +64,7 @@ DataHolder::DataHolder()
 }
 
 DataHolder::DataHolder(const DataHolder &other)
-{DD;
+{DDD;
     m_xBegin = other.m_xBegin;
     m_xStep = other.m_xStep;
     m_zBegin = other.m_zBegin;
@@ -93,7 +93,7 @@ DataHolder::DataHolder(const DataHolder &other)
 }
 
 void DataHolder::setSegment(const DataHolder &other, int from, int to)
-{DD;
+{DDD;
     m_xBegin = other.m_xBegin + other.m_xStep * from;
     m_xStep = other.m_xStep;
     m_zBegin = other.m_zBegin;
@@ -121,7 +121,7 @@ void DataHolder::setSegment(const DataHolder &other, int from, int to)
 }
 
 void DataHolder::clear()
-{DD;
+{DDD;
     m_yValues.clear();         m_yValues.squeeze();
     m_yValuesComplex.clear();  m_yValuesComplex.squeeze();
     //m_xValues.clear();         m_xValues.squeeze();
@@ -137,7 +137,7 @@ void DataHolder::clear()
 }
 
 void DataHolder::setTemporaryCorrection(double correctionValue, int type)
-{DD;
+{DDD;
     this->m_correctionValue = correctionValue;
     this->m_correctionType = type;
     m_PresentationWhenCorrecting = m_yValuesPresentation;
@@ -145,7 +145,7 @@ void DataHolder::setTemporaryCorrection(double correctionValue, int type)
 }
 
 void DataHolder::removeCorrection()
-{
+{DDD;
     if (m_correctionType == 0) m_correctionValue = 0.0;
     if (m_correctionType == 1) m_correctionValue = 1.0;
     m_PresentationWhenCorrecting = ShowAsDefault;
@@ -153,7 +153,7 @@ void DataHolder::removeCorrection()
 }
 
 bool DataHolder::makeCorrectionConstant()
-{DD
+{DDD;
     if (!hasCorrection()) return true; // есть временная коррекция
     if (!correctionIsValid()) return true; // и эта коррекция не тривиальная
 
@@ -320,12 +320,12 @@ bool DataHolder::makeCorrectionConstant()
 
 
 QString DataHolder::correctionString() const
-{DDDD
+{DDDD;
     return correctionString(m_correctionValue, m_correctionType);
 }
 
 QString DataHolder::correctionString(double value, int type) /*static*/
-{DD
+{DDD;
     if ((type == 0 && qFuzzyIsNull(value)) || (type == 1 && qFuzzyIsNull(value - 1.0)))
         return QString();
 
@@ -338,7 +338,7 @@ QString DataHolder::correctionString(double value, int type) /*static*/
 }
 
 QString DataHolder::yValuesFormatString() const
-{DDDD
+{DDDD;
     switch (m_yValuesFormat) {
         case YValuesUnknown: return "Неизв."; break;
         case YValuesComplex: return "[Cmplx]"; break;
@@ -352,7 +352,7 @@ QString DataHolder::yValuesFormatString() const
 }
 
 void DataHolder::setYValuesPresentation(int presentation)
-{DD;
+{DDD;
     if (m_yValuesPresentation == DataHolder::YValuesPresentation(presentation)) return;
 
     m_yValuesPresentation = DataHolder::YValuesPresentation(presentation);
@@ -361,7 +361,7 @@ void DataHolder::setYValuesPresentation(int presentation)
 }
 
 void DataHolder::setYValues(const QVector<double> &values, YValuesFormat initially, int block)
-{DD;
+{DDD;
     m_yValuesFormat = initially; // амплитуды (чаще всего), фазы, мнимые значения и т.д.
     if (m_yValuesPresentation == ShowAsDefault) { //еще не задан формат отображения данных
         m_yValuesPresentation = YValuesPresentation(initially); // используем тот же формат, что и исходные данные
@@ -385,7 +385,7 @@ void DataHolder::setYValues(const QVector<double> &values, YValuesFormat initial
 }
 
 bool DataHolder::setYValue(int index, double value, int block)
-{DD
+{DDD;
     index += block * m_xCount;
     if (index < 0 || index >= m_xCount * m_zCount) return false;
 
@@ -484,7 +484,7 @@ bool DataHolder::setYValue(int index, double value, int block)
 }
 
 void DataHolder::setYValues(const QVector<cx_double> &values, int block)
-{DD;
+{DDD;
     m_yValuesFormat = YValuesComplex;
     if (m_yValuesPresentation == ShowAsDefault) { //еще не задан формат отображения данных
         m_yValuesPresentation = ShowAsAmplitudesInDB;
@@ -509,7 +509,7 @@ void DataHolder::setYValues(const QVector<cx_double> &values, int block)
 }
 
 void DataHolder::setXValues(const QVector<double> &values)
-{DD;
+{DDD;
     m_xValues = values;
     m_xCount = values.size();
     m_xBegin = values.isEmpty() ? 0.0 : values.constFirst();
@@ -518,7 +518,7 @@ void DataHolder::setXValues(const QVector<double> &values)
 }
 
 void DataHolder::setXValues(double xBegin, double xStep, int count)
-{DD;
+{DDD;
     m_xBegin = xBegin;
     m_xStep = xStep;
     m_xCount = count;
@@ -528,7 +528,7 @@ void DataHolder::setXValues(double xBegin, double xStep, int count)
 }
 
 void DataHolder::setZValues(const QVector<double> &values)
-{DD
+{DDD;
     m_zValues = values;
     m_zCount = values.size();
     m_zBegin = values.isEmpty() ? 0.0 : values.constFirst();
@@ -537,7 +537,7 @@ void DataHolder::setZValues(const QVector<double> &values)
 }
 
 void DataHolder::setZValues(double zBegin, double zStep, int count)
-{DD
+{DDD;
     m_zBegin = zBegin;
     m_zStep = zStep;
     m_zCount = count;
@@ -547,51 +547,51 @@ void DataHolder::setZValues(double zBegin, double zStep, int count)
 }
 
 void DataHolder::setXStep(const double xStep)
-{DD;
+{DDD;
     if (m_xValuesFormat == XValuesUniform) {
         m_xStep = xStep;
     }
 }
 
 void DataHolder::setSamplesCount(const int samplesCount)
-{DD
+{DDD;
     m_xCount = samplesCount;
 }
 
 QVector<double> DataHolder::rawYValues(int block) const
-{DD
+{DDD;
     if (block == -1) return m_yValues;
     return m_yValues.mid(block*m_xCount, m_xCount);
 }
 
 QVector<double> DataHolder::yValues(int block) const
-{DD
+{DDD;
     if (block == -1) return m_yValuesTemporal;
     return m_yValuesTemporal.mid(block*m_xCount, m_xCount);
 }
 
 QVector<cx_double> DataHolder::yValuesComplex(int block) const
-{DD
+{DDD;
     if (block == -1) return m_yValuesComplex;
     return m_yValuesComplex.mid(block*m_xCount, m_xCount);
 }
 
 QVector<double> DataHolder::xValues() const
-{DD;
+{DDD;
     if (xValuesFormat() == XValuesUniform) return linspace(m_xBegin, m_xStep, m_xCount);
 
     return m_xValues;
 }
 
 QVector<double> DataHolder::zValues() const
-{DD
+{DDD;
     if (m_zValuesFormat == XValuesUniform) return linspace(m_zBegin, m_zStep, m_zCount);
 
     return m_zValues;
 }
 
 double DataHolder::xValue(int i) const
-{DD
+{DDD;
     if (i<0) return 0.0;
     if (xValuesFormat() != XValuesNonUniform) return m_xBegin + m_xStep * i;
 
@@ -600,7 +600,7 @@ double DataHolder::xValue(int i) const
 }
 
 double DataHolder::yValue(int i, int block) const
-{DD
+{DDD;
     if (i<0 || block < 0) return 0.0;
     i += block*m_xCount;
 
@@ -610,7 +610,7 @@ double DataHolder::yValue(int i, int block) const
 }
 
 int DataHolder::floor(double x) const
-{
+{DDD;
     int index=-1;
     if (m_xValuesFormat == XValuesNonUniform) {
         for (int i = 0; i < m_xCount; ++i) {
@@ -626,7 +626,7 @@ int DataHolder::floor(double x) const
 }
 
 int DataHolder::ceil(double x) const
-{
+{DDD;
     int index=-1;
     if (m_xValuesFormat == XValuesNonUniform) {
         for (int i = 0; i < m_xCount; ++i) {
@@ -645,7 +645,7 @@ int DataHolder::ceil(double x) const
 }
 
 int DataHolder::nearest(double x) const
-{
+{DDD;
     int index=-1;
     if (m_xValuesFormat == XValuesNonUniform) {
         for (int i = 0; i < m_xCount-1; ++i) {
@@ -665,7 +665,7 @@ int DataHolder::nearest(double x) const
 }
 
 int DataHolder::floorZ(double z) const
-{
+{DDD;
     int index=-1;
     if (m_zValuesFormat == XValuesNonUniform) {
         for (int i = 0; i < m_zCount; ++i) {
@@ -681,7 +681,7 @@ int DataHolder::floorZ(double z) const
 }
 
 int DataHolder::ceilZ(double z) const
-{
+{DDD;
     int index=-1;
     if (m_zValuesFormat == XValuesNonUniform) {
         for (int i = 0; i < m_zCount; ++i) {
@@ -700,7 +700,7 @@ int DataHolder::ceilZ(double z) const
 }
 
 int DataHolder::nearestZ(double z) const
-{
+{DDD;
     int index=-1;
     if (m_zValuesFormat == XValuesNonUniform) {
         for (int i = 0; i < m_zCount-1; ++i) {
@@ -720,7 +720,7 @@ int DataHolder::nearestZ(double z) const
 }
 
 cx_double DataHolder::yValueComplex(int i, int block) const
-{DD
+{DDD;
     if (i<0 || block < 0) return {0.0,0.0};
     i += block*m_xCount;
 
@@ -729,7 +729,7 @@ cx_double DataHolder::yValueComplex(int i, int block) const
 }
 
 double DataHolder::zValue(int i) const
-{DD
+{DDD;
     if (i<0) return 0.0;
     if (m_zValuesFormat != XValuesNonUniform) return m_zBegin + m_zStep * i;
 
@@ -738,7 +738,7 @@ double DataHolder::zValue(int i) const
 }
 
 double DataHolder::YforXandZ(double x, double z, bool &success) const
-{DD;
+{DDD;
     int xIndex = nearest(x);
     if (xIndex < 0 || xIndex >= m_xCount) {
         success = false;
@@ -760,48 +760,48 @@ double DataHolder::YforXandZ(double x, double z, bool &success) const
 }
 
 double DataHolder::xMin() const
-{DD;
+{DDD;
     if (xValuesFormat() == XValuesUniform) return m_xBegin;
     if (xValuesFormat() == XValuesNonUniform && !m_xValues.isEmpty()) return m_xValues.constFirst();
     return 0;
 }
 
 double DataHolder::xMax() const
-{DD;
+{DDD;
     if (xValuesFormat() == XValuesUniform) return m_xBegin + m_xStep*(m_xCount-1);
     if (xValuesFormat() == XValuesNonUniform && !m_xValues.isEmpty()) return m_xValues.last();
     return 0.0;
 }
 
 double DataHolder::xStep() const
-{DD;
+{DDD;
     if (xValuesFormat() == XValuesUniform) return m_xStep;
 
     return 0.0;
 }
 
 double DataHolder::zMin() const
-{
+{DDD;
     if (m_zValuesFormat == XValuesUniform) return m_zBegin;
     if (m_zValuesFormat == XValuesNonUniform && !m_zValues.isEmpty()) return m_zValues.constFirst();
     return 0.0;
 }
 
 double DataHolder::zMax() const
-{
+{DDD;
     if (m_zValuesFormat == XValuesUniform) return m_zBegin + m_zStep*(m_zCount-1);
     if (m_zValuesFormat == XValuesNonUniform && !m_zValues.isEmpty()) return m_zValues.last();
     return 0.0;
 }
 
 double DataHolder::zStep() const
-{
+{DDD;
     if (m_zValuesFormat == XValuesUniform) return m_zStep;
     return 0.0;
 }
 
 double DataHolder::yMin(int block) const
-{DD;
+{DDD;
     if (block == -1) {
         double min = *std::min_element(m_yMin.constBegin(), m_yMin.constEnd());
         return corrected(min);
@@ -810,7 +810,7 @@ double DataHolder::yMin(int block) const
 }
 
 double DataHolder::yMax(int block) const
-{DD;
+{DDD;
     if (block == -1) {
         double max = *std::max_element(m_yMax.constBegin(), m_yMax.constEnd());
         return corrected(max);
@@ -824,7 +824,7 @@ int DataHolder::samplesCount() const
 }
 
 QVector<double> DataHolder::linears(int block) const
-{DD;
+{DDD;
     switch (m_yValuesFormat) {
         case YValuesComplex:
             return block==-1 ? absolutes(m_yValuesComplex)
@@ -838,7 +838,7 @@ QVector<double> DataHolder::linears(int block) const
 }
 
 QVector<double> DataHolder::decibels(int block) const
-{DD;
+{DDD;
     switch (m_yValuesFormat) {
         case YValuesComplex:
             return block == -1 ? toLog(absolutes(m_yValuesComplex), m_threshold, m_yValuesUnits)
@@ -853,7 +853,7 @@ QVector<double> DataHolder::decibels(int block) const
 }
 
 QVector<double> DataHolder::toLog(const QVector<double> &values, double threshold, int units)
-{DD;
+{DDD;
     if (qFuzzyIsNull(threshold) || units == UnitsDimensionless) return values;
     if (values.isEmpty()) return QVector<double>();
 
@@ -874,7 +874,7 @@ QVector<double> DataHolder::toLog(const QVector<double> &values, double threshol
 }
 
 QVector<double> DataHolder::fromLog(const QVector<double> &values, double threshold, int units)
-{DD;
+{DDD;
     if (threshold == 0 || units == UnitsDimensionless) return values;
     if (values.isEmpty()) return QVector<double>();
 
@@ -893,7 +893,7 @@ QVector<double> DataHolder::fromLog(const QVector<double> &values, double thresh
 }
 
 double DataHolder::toLog(double value, double threshold, int units)
-{DD
+{DDD;
     if (threshold == 0 || units == UnitsDimensionless) return value;
 
     if (value <= 0.0) return 0.0;
@@ -907,7 +907,7 @@ double DataHolder::toLog(double value, double threshold, int units)
 }
 
 double DataHolder::fromLog(double value, double threshold, int units)
-{DD
+{DDD;
     if (threshold == 0 || units == UnitsDimensionless) return value;
 
     double factor = log(10) / 20.0;
@@ -921,7 +921,7 @@ double DataHolder::fromLog(double value, double threshold, int units)
 }
 
 void DataHolder::recalculateMinMax()
-{DD;
+{DDD;
     m_yMin.clear();
     m_yMax.clear();
 
@@ -960,7 +960,7 @@ void DataHolder::recalculateMinMax()
 }
 
 void DataHolder::recalculateYValues()
-{DD;
+{DDD;
     if (int(m_yValuesFormat) == int(m_yValuesPresentation)) {
         m_yValuesTemporal = m_yValues;
     }
@@ -1018,21 +1018,21 @@ void DataHolder::recalculateYValues()
 }
 
 double correctedByType(double val, int type, double correction)
-{
+{DDD;
     if (type == 0) return val + correction;
     if (type == 1) return val * correction;
     return val;
 }
 
 double DataHolder::corrected(double val) const
-{DD;
+{DDD;
     if (m_correction)
         return correctedByType(val, m_correctionType, m_correctionValue);
     return val;
 }
 
 bool DataHolder::correctionIsValid() const
-{DD;
+{DDD;
     if (m_correctionType == 0 && !qFuzzyIsNull(m_correctionValue) ) return true;
     if (m_correctionType == 1 && !qFuzzyIsNull(m_correctionValue - 1.0) ) return true;
     return false;

@@ -6,33 +6,33 @@
 
 PsdFunction::PsdFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD;
+{DDD;
 
 }
 
 QString PsdFunction::name() const
-{DD;
+{DDD;
     return "PSD";
 }
 
 QString PsdFunction::description() const
-{DD;
+{DDD;
     return "Плотность спектра мощности";
 }
 
 QStringList PsdFunction::properties() const
-{DD;
+{DDD;
     return QStringList();
 }
 
 QString PsdFunction::propertyDescription(const QString &property) const
-{DD;
+{DDD;
     Q_UNUSED(property);
     return QString();
 }
 
 QVariant PsdFunction::m_getProperty(const QString &property) const
-{DD;
+{DDD;
     if (property.startsWith("?/")) {
         if (property == "?/dataType") return 129;
         if (property == "?/xName") return "Гц";
@@ -58,18 +58,18 @@ QVariant PsdFunction::m_getProperty(const QString &property) const
 }
 
 void PsdFunction::m_setProperty(const QString &property, const QVariant &val)
-{DD;
+{DDD;
     Q_UNUSED(property);
     Q_UNUSED(val);
 }
 
 QString PsdFunction::displayName() const
-{DD;
+{DDD;
     return "PSD";
 }
 
 bool PsdFunction::compute(FileDescriptor *file)
-{DD;
+{DDD;
     reset();
 
     if (!m_input) return false;
@@ -101,7 +101,7 @@ bool PsdFunction::compute(FileDescriptor *file)
 }
 
 void PsdFunction::reset()
-{DD;
+{DDD;
     output.clear();
     portionsCount = 0;
 }

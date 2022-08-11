@@ -101,7 +101,7 @@ QVector<cx_double> Averaging::getComplex()
 }
 
 void Averaging::reset()
-{DD;
+{DDD;
     averaged.clear();
     averaged_.clear();
     if (averagesMade > 0) averagesReallyMade = averagesMade;

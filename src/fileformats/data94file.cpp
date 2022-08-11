@@ -20,13 +20,13 @@ QDebug operator<<(QDebug dbg, const AxisBlock &b)
 }
 
 Data94File::Data94File(const QString &fileName) : FileDescriptor(fileName)
-{DD;
+{DDD;
 
 }
 
 Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVector<int> indexes)
     : FileDescriptor(fileName)
-{DD;
+{DDD;
     QVector<Channel *> source;
     if (indexes.isEmpty())
         for (int i=0; i<other.channelsCount(); ++i) source << other.channel(i);
@@ -38,12 +38,12 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVe
 
 Data94File::Data94File(const QVector<Channel *> &source, const QString &fileName)
  : FileDescriptor(fileName)
-{DD;
+{DDD;
     init(source);
 }
 
 void Data94File::init(const QVector<Channel *> &source)
-{DD;
+{DDD;
     if (source.isEmpty()) return;
 
     auto d = source.first()->descriptor();
@@ -98,7 +98,7 @@ void Data94File::init(const QVector<Channel *> &source)
 }
 
 Data94File::~Data94File()
-{DD;
+{DDD;
     if (changed() || dataChanged())
         write();
 
@@ -106,7 +106,7 @@ Data94File::~Data94File()
 }
 
 void Data94File::updatePositions()
-{DD;
+{DDD;
     // шапка файла имеет размер
 //    const qint64 fileHeader = 8+4+descriptionSize+4+paddingSize
 //                              +xAxisBlock.size()+zAxisBlock.size()+4;
@@ -124,7 +124,7 @@ void Data94File::updatePositions()
 }
 
 void Data94File::read()
-{DD;
+{DDD;
     QFile f(fileName());
 
     if (!f.open(QFile::ReadOnly)) return;
@@ -164,7 +164,7 @@ void Data94File::read()
 }
 
 void Data94File::write()
-{DD;
+{DDD;
     if (!changed() && !dataChanged()) return;
 
     QFile f(fileName());
@@ -218,12 +218,12 @@ void Data94File::write()
 }
 
 int Data94File::channelsCount() const
-{DD;
+{DDD;
     return channels.size();
 }
 
 void Data94File::deleteChannels(const QVector<int> &channelsToDelete)
-{DD;
+{DDD;
     QTemporaryFile tempFile;
     QFile rawFile(fileName());
 
@@ -286,7 +286,7 @@ void Data94File::deleteChannels(const QVector<int> &channelsToDelete)
 }
 
 void Data94File::copyChannelsFrom(const QVector<Channel *> &source)
-{DD;
+{DDD;
     const int count = channelsCount();
 
     QFile f(fileName());
@@ -328,7 +328,7 @@ void Data94File::copyChannelsFrom(const QVector<Channel *> &source)
 }
 
 void Data94File::addChannelWithData(DataHolder *data, const DataDescription &description)
-{DD;
+{DDD;
     Data94Channel *ch = new Data94Channel(this);
     ch->setPopulated(true);
     ch->setChanged(true);
@@ -363,7 +363,7 @@ void Data94File::addChannelWithData(DataHolder *data, const DataDescription &des
 }
 
 void Data94File::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
-{DD;
+{DDD;
     // заполняем вектор индексов каналов, как они будут выглядеть после перемещения
     const int count = channelsCount();
     QVector<int> indexesVector(count);
@@ -437,12 +437,12 @@ Channel *Data94File::channel(int index) const
 }
 
 QStringList Data94File::fileFilters()
-{DD;
+{DDD;
     return QStringList()<<"Файлы Data94 (*.d94)";
 }
 
 QStringList Data94File::suffixes()
-{DD;
+{DDD;
     return QStringList()<<"*.d94";
 }
 
@@ -451,13 +451,13 @@ QStringList Data94File::suffixes()
 
 Data94Channel::Data94Channel(Data94File *parent) : Channel(),
     parent(parent)
-{DD;
+{DDD;
     parent->channels << this;
 }
 
 Data94Channel::Data94Channel(Data94Channel *other, Data94File *parent)
     : Channel(other), parent(parent)
-{DD;
+{DDD;
     isComplex = other->isComplex;
     sampleWidth = other->sampleWidth;
     xAxisBlock = other->xAxisBlock;
@@ -468,7 +468,7 @@ Data94Channel::Data94Channel(Data94Channel *other, Data94File *parent)
 
 Data94Channel::Data94Channel(Channel *other, Data94File *parent)
     : Channel(other), parent(parent)
-{DD;
+{DDD;
     parent->channels << this;
     isComplex = other->data()->yValuesFormat() == DataHolder::YValuesComplex;
 
@@ -503,7 +503,7 @@ Data94Channel::Data94Channel(Channel *other, Data94File *parent)
 }
 
 void Data94Channel::read(QDataStream &r)
-{DD;
+{DDD;
     if (r.status() != QDataStream::Ok) return;
     position = r.device()->pos();
 //    qDebug()<<"Reading at"<<position;
@@ -583,7 +583,7 @@ void Data94Channel::read(QDataStream &r)
 }
 
 void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
-{DD;
+{DDD;
     r.setFloatingPointPrecision(QDataStream::SinglePrecision);
     qint64 newposition = r.device()->pos();
     r.device()->write("d94chan ");
@@ -670,18 +670,18 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
 }
 
 void Data94Channel::setXStep(double xStep)
-{DD;
+{DDD;
     Channel::setXStep(xStep);
     xAxisBlock.step = float(xStep);
 }
 
 Descriptor::DataType Data94Channel::type() const
-{DD;
+{DDD;
     return Descriptor::DataType(dataDescription().get("function.type").toInt());
 }
 
 void Data94Channel::populate()
-{DD;
+{DDD;
     _data->clear();
     setPopulated(false);
 
@@ -748,18 +748,18 @@ void Data94Channel::populate()
 
 
 FileDescriptor *Data94Channel::descriptor() const
-{DD;
+{DDD;
     return parent;
 }
 
 int Data94Channel::index() const
-{DD;
+{DDD;
     if (parent) return parent->channels.indexOf(const_cast<Data94Channel*>(this));
     return -1;
 }
 
 void AxisBlock::read(QDataStream &r)
-{DD;
+{DDD;
     if (r.status() != QDataStream::Ok) return;
 
     r.setFloatingPointPrecision(QDataStream::SinglePrecision);
@@ -779,7 +779,7 @@ void AxisBlock::read(QDataStream &r)
 }
 
 void AxisBlock::write(QDataStream &r)
-{DD;
+{DDD;
     if (r.status() != QDataStream::Ok) return;
 
     r.setFloatingPointPrecision(QDataStream::SinglePrecision);
@@ -797,7 +797,7 @@ void AxisBlock::write(QDataStream &r)
 }
 
 quint32 AxisBlock::size() const
-{DD;
+{DDD;
     if (uniform) return 16;
 
     return 8 + values.size() * 4;

@@ -2,6 +2,7 @@
 #include "qwt_math.h"
 #include "qwt_interval.h"
 #include "QtMath"
+#include "logging.h"
 
 //#define LOG_MIN_MY 1.0e-3
 #define LOG_MIN_MY 1.0
@@ -23,12 +24,12 @@ static inline QwtInterval logInterval(double base, const QwtInterval &interval)
 }
 
 LogScaleEngine::LogScaleEngine(uint base) : QwtLogScaleEngine()
-{
+{DDD;
     setBase(base);
 }
 
 void LogScaleEngine::autoScale(int maxNumSteps, double &x1, double &x2, double &stepSize) const
-{
+{DDD;
     if (x1 > x2) qSwap(x1, x2);
 
     const double logBase = base();
@@ -93,7 +94,7 @@ void LogScaleEngine::autoScale(int maxNumSteps, double &x1, double &x2, double &
 }
 
 QwtScaleDiv LogScaleEngine::divideScale(double x1, double x2, int maxMajorSteps, int maxMinorSteps, double stepSize) const
-{
+{DDD;
     QwtInterval interval = QwtInterval(x1, x2).normalized();
     interval = interval.limited(LOG_MIN_MY, LOG_MAX);
 

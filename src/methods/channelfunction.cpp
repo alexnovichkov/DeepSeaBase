@@ -5,23 +5,23 @@
 
 ChannelFunction::ChannelFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD;
+{DDD;
 
 }
 
 
 QString ChannelFunction::name() const
-{DD;
+{DDD;
     return "Channel";
 }
 
 QString ChannelFunction::description() const
-{DD;
+{DDD;
     return "Выбор каналов для обработки";
 }
 
 QVariant ChannelFunction::m_getProperty(const QString &property) const
-{DD;
+{DDD;
     Channel *ch = 0;
     if (m_file && channel >=0) ch = m_file->channel(channel);
 
@@ -81,7 +81,7 @@ QVariant ChannelFunction::m_getProperty(const QString &property) const
 }
 
 void ChannelFunction::m_setProperty(const QString &property, const QVariant &val)
-{DD;
+{DDD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -95,12 +95,12 @@ void ChannelFunction::m_setProperty(const QString &property, const QVariant &val
 
 
 QStringList ChannelFunction::properties() const
-{DD;
+{DDD;
     return QStringList()<<"filter" /*<<"minSec"<<"maxSec"*/;
 }
 
 QString ChannelFunction::propertyDescription(const QString &property) const
-{DD;
+{DDD;
     if (property == "filter") return "{"
                                      "  \"name\"        : \"filter\"   ,"
                                      "  \"type\"        : \"string\"   ,"
@@ -137,12 +137,12 @@ QString ChannelFunction::propertyDescription(const QString &property) const
 
 
 QString ChannelFunction::displayName() const
-{DD;
+{DDD;
     return "Каналы";
 }
 
 bool ChannelFunction::compute(FileDescriptor *file)
-{DD;
+{DDD;
     if (channel < 0 || file->channelsCount() <= channel) return false;
 
     if (selector.includes(channel)) {
@@ -201,7 +201,7 @@ QString RefChannelFunction::propertyDescription(const QString &property) const
 }
 
 bool RefChannelFunction::compute(FileDescriptor *file)
-{DD;
+{DDD;
     if (channel < 0 || file->channelsCount() <= channel) return false;
 
     if (!file->channel(channel)->populated())

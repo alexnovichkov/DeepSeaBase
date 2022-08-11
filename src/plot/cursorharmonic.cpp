@@ -9,9 +9,10 @@
 #include <QApplication>
 #include <QClipboard>
 #include <qwt_scale_map.h>
+#include "logging.h"
 
 CursorHarmonic::CursorHarmonic(Plot *plot) : Cursor(Cursor::Type::Harmonic, Cursor::Style::Vertical, plot)
-{
+{DDD;
     cursor = new TrackingCursor(m_color, m_style, this);
 
     label = new CursorLabel(plot, cursor);
@@ -32,7 +33,7 @@ CursorHarmonic::CursorHarmonic(Plot *plot) : Cursor(Cursor::Type::Harmonic, Curs
 }
 
 CursorHarmonic::~CursorHarmonic()
-{
+{DDD;
     cursor->detach();
     label->detach();
     delete cursor;
@@ -46,7 +47,7 @@ CursorHarmonic::~CursorHarmonic()
 }
 
 void CursorHarmonic::setColor(const QColor &color)
-{
+{DDD;
     Cursor::setColor(color);
     auto pen = cursor->linePen();
     pen.setColor(color);
@@ -55,13 +56,13 @@ void CursorHarmonic::setColor(const QColor &color)
 }
 
 void CursorHarmonic::moveTo(const QPointF &pos1, const QPointF &pos2, bool silent)
-{
+{DDD;
     Q_UNUSED(pos2);
     moveTo(pos1, silent);
 }
 
 void CursorHarmonic::moveTo(const QPointF &pos1, bool silent)
-{
+{DDD;
     auto pos = m_snapToValues ? correctedPos(pos1) : pos1;
 
     cursor->moveTo(pos);
@@ -75,12 +76,12 @@ void CursorHarmonic::moveTo(const QPointF &pos1, bool silent)
 }
 
 void CursorHarmonic::moveTo(const QPointF &pos1, TrackingCursor *source, bool silent)
-{
+{DDD;
     if (source == cursor) moveTo(pos1, silent);
 }
 
 void CursorHarmonic::moveTo(Qt::Key key, int count, TrackingCursor *source, bool silent)
-{
+{DDD;
     if (count == 0 || source != cursor) return;
     QPointF pos = cursor->value();
 
@@ -113,12 +114,12 @@ void CursorHarmonic::moveTo(Qt::Key key, int count, TrackingCursor *source, bool
 }
 
 void CursorHarmonic::updatePos()
-{
+{DDD;
     moveTo(correctedPos(cursor->value()));
 }
 
 void CursorHarmonic::attach()
-{
+{DDD;
     cursor->attach(m_plot);
     label->attach(m_plot);
     for (int i=0; i<m_harmonics; ++i) {
@@ -128,7 +129,7 @@ void CursorHarmonic::attach()
 }
 
 void CursorHarmonic::detach()
-{
+{DDD;
     cursor->detach();
     label->detach();
     for (int i=0; i<m_harmonics; ++i) {
@@ -138,7 +139,7 @@ void CursorHarmonic::detach()
 }
 
 bool CursorHarmonic::contains(Selectable *selected) const
-{
+{DDD;
     if (auto c = dynamic_cast<TrackingCursor*>(selected))
         return c == cursor;
     else if (auto l = dynamic_cast<CursorLabel*>(selected))
@@ -148,7 +149,7 @@ bool CursorHarmonic::contains(Selectable *selected) const
 }
 
 void CursorHarmonic::update()
-{
+{DDD;
     label->updateLabel(m_showValues);
     if (cursors.size() != m_harmonics) {
         while (cursors.size() > m_harmonics) {
@@ -189,13 +190,13 @@ void CursorHarmonic::update()
 //}
 
 QStringList CursorHarmonic::dataHeader(bool allData) const
-{
+{DDD;
     Q_UNUSED(allData);
     return {/*"", "Время, с", QString("Частота ")+*/QLocale(QLocale::Russian).toString(cursor->xValue())};
 }
 
 QList<double> CursorHarmonic::data(int curve, bool allData) const
-{
+{DDD;
     Q_UNUSED(allData);
     auto curves = m_plot->model()->curves();
     bool success = false;
@@ -210,6 +211,6 @@ QList<double> CursorHarmonic::data(int curve, bool allData) const
 }
 
 QPointF CursorHarmonic::currentPosition() const
-{
+{DDD;
     return cursor->value();
 }

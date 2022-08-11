@@ -8,10 +8,11 @@
 #include <qwt_scale_map.h>
 #include "curve.h"
 #include "algorithms.h"
+#include "logging.h"
 
 //возвращает СКЗ в диапазоне [x1,x2]
 double rms(DataHolder *data, const CursorDouble *cursor, const QList<Cursor*> &rejectCursors)
-{
+{DDD;
     double cumul = 0.0;
     double x1 = cursor->interval().minValue();
     double x2 = cursor->interval().maxValue();
@@ -51,7 +52,7 @@ double rms(DataHolder *data, const CursorDouble *cursor, const QList<Cursor*> &r
 
 //возвращает энергию в диапазоне [x1,x2]
 double energy(DataHolder *data, const CursorDouble *cursor, const QList<Cursor*> &rejectCursors)
-{
+{DDD;
     double x1 = cursor->interval().minValue();
     double x2 = cursor->interval().maxValue();
     double cumul = 0.0;
@@ -88,7 +89,7 @@ double energy(DataHolder *data, const CursorDouble *cursor, const QList<Cursor*>
 
 CursorDouble::CursorDouble(Cursor::Style style, bool reject, Plot *plot)
     : Cursor(reject?Cursor::Type::DoubleReject:Cursor::Type::Double, style, plot)
-{
+{DDD;
     cursor1 = new TrackingCursor(m_color, style, this);
     xlabel1 = new CursorLabel(plot, cursor1);
     xlabel1->setAxis(CursorLabel::Axis::XAxis);
@@ -105,7 +106,7 @@ CursorDouble::CursorDouble(Cursor::Style style, bool reject, Plot *plot)
 }
 
 CursorDouble::~CursorDouble()
-{
+{DDD;
     detach();
     delete cursor1;
     delete cursor2;
@@ -115,7 +116,7 @@ CursorDouble::~CursorDouble()
 }
 
 void CursorDouble::setColor(const QColor &color)
-{
+{DDD;
     Cursor::setColor(color);
     auto pen = cursor1->linePen();
     pen.setColor(color);
@@ -124,7 +125,7 @@ void CursorDouble::setColor(const QColor &color)
 }
 
 void CursorDouble::moveTo(const QPointF &pos1, const QPointF &pos2, bool silent)
-{
+{DDD;
     cursor1->moveTo(m_snapToValues ? correctedPos(pos1) : pos1);
     if (xlabel1) xlabel1->updateLabel(m_showValues);
 
@@ -136,7 +137,7 @@ void CursorDouble::moveTo(const QPointF &pos1, const QPointF &pos2, bool silent)
 }
 
 void CursorDouble::moveTo(const QPointF &pos1, bool silent)
-{
+{DDD;
     auto pos = m_snapToValues ? correctedPos(pos1) : pos1;
     auto delta = pos.x()-cursor1->xValue();
 
@@ -153,13 +154,13 @@ void CursorDouble::moveTo(const QPointF &pos1, bool silent)
 }
 
 void CursorDouble::moveTo(const QPointF &pos1, TrackingCursor *source, bool silent)
-{
+{DDD;
     if (source == cursor2) moveTo(cursor1->value(), pos1, silent);
     if (source == cursor1) moveTo(pos1, cursor2->value(), silent);
 }
 
 void CursorDouble::moveTo(Qt::Key key, int count, TrackingCursor *source, bool silent)
-{
+{DDD;
     if (count == 0) return;
     QPointF pos = source->value();
     double rangeX = m_plot->canvasMap(source->xAxis()).sDist();
@@ -194,7 +195,7 @@ void CursorDouble::moveTo(Qt::Key key, int count, TrackingCursor *source, bool s
 }
 
 void CursorDouble::updatePos()
-{
+{DDD;
     auto pos = cursor1->value();
     pos = correctedPos(pos);
     cursor1->moveTo(pos);
@@ -209,7 +210,7 @@ void CursorDouble::updatePos()
 }
 
 void CursorDouble::attach()
-{
+{DDD;
     cursor1->attach(m_plot);
     cursor2->attach(m_plot);
     if (xlabel1) xlabel1->attach(m_plot);
@@ -218,7 +219,7 @@ void CursorDouble::attach()
 }
 
 void CursorDouble::detach()
-{
+{DDD;
     cursor1->detach();
     cursor2->detach();
     xlabel1->detach();
@@ -227,7 +228,7 @@ void CursorDouble::detach()
 }
 
 bool CursorDouble::contains(Selectable *selected) const
-{
+{DDD;
     if (auto c = dynamic_cast<TrackingCursor*>(selected))
         return c == cursor1 || c == cursor2;
     else if (auto l = dynamic_cast<CursorLabel*>(selected))
@@ -237,13 +238,13 @@ bool CursorDouble::contains(Selectable *selected) const
 }
 
 void CursorDouble::update()
-{
+{DDD;
     if (xlabel1) xlabel1->updateLabel(m_showValues);
     if (xlabel2) xlabel2->updateLabel(m_showValues);
 }
 
 int CursorDouble::dataCount(bool allData) const
-{
+{DDD;
     int m=2;
     if (allData) {
         if (m_info & Cursor::RMS) m++;
@@ -254,7 +255,7 @@ int CursorDouble::dataCount(bool allData) const
 }
 
 QStringList CursorDouble::dataHeader(bool allData) const
-{
+{DDD;
     QStringList list;
     //list << "" << "Время, с";
     list << /*QString("Частота ")+*/QLocale(QLocale::Russian).toString(cursor1->xValue());
@@ -268,7 +269,7 @@ QStringList CursorDouble::dataHeader(bool allData) const
 }
 
 QList<double> CursorDouble::data(int curve, bool allData) const
-{
+{DDD;
     auto curves = m_plot->model()->curves();
     bool success = false;
 
@@ -306,12 +307,12 @@ QList<double> CursorDouble::data(int curve, bool allData) const
 }
 
 QPointF CursorDouble::currentPosition() const
-{
+{DDD;
     return cursor1->value();
 }
 
 QwtInterval CursorDouble::interval() const
-{
+{DDD;
     return QwtInterval(cursor1->xValue(), cursor2->xValue()).normalized();
 }
 
@@ -340,12 +341,12 @@ QwtInterval CursorDouble::interval() const
 //}
 
 Zone::Zone(QColor color) : QwtPlotZoneItem()
-{
+{DDD;
     setOrientation(Qt::Vertical);
     setBrush(color);
 }
 
 void Zone::setRange(const QPointF &p1, const QPointF &p2)
-{
+{DDD;
     setInterval(qMin(p1.x(), p2.x()), qMax(p1.x(), p2.x()));
 }

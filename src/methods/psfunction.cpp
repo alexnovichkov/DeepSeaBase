@@ -6,33 +6,33 @@
 
 PsFunction::PsFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD;
+{DDD;
 
 }
 
 QString PsFunction::name() const
-{DD;
+{DDD;
     return "PS";
 }
 
 QString PsFunction::description() const
-{DD;
+{DDD;
     return "Спектр мощности";
 }
 
 QStringList PsFunction::properties() const
-{DD;
+{DDD;
     return QStringList();
 }
 
 QString PsFunction::propertyDescription(const QString &property) const
-{DD;
+{DDD;
     Q_UNUSED(property);
     return QString();
 }
 
 QVariant PsFunction::m_getProperty(const QString &property) const
-{DD;
+{DDD;
     if (property.startsWith("?/")) {
         if (property == "?/dataType") return 128;
         if (property == "?/xName") return "Гц";
@@ -56,18 +56,18 @@ QVariant PsFunction::m_getProperty(const QString &property) const
 }
 
 void PsFunction::m_setProperty(const QString &property, const QVariant &val)
-{DD;
+{DDD;
     Q_UNUSED(property);
     Q_UNUSED(val);
 }
 
 QString PsFunction::displayName() const
-{DD;
+{DDD;
     return "Спектр мощности";
 }
 
 bool PsFunction::compute(FileDescriptor *file)
-{DD;
+{DDD;
     reset();
 
     if (!m_input) return false;
@@ -98,7 +98,7 @@ bool PsFunction::compute(FileDescriptor *file)
 }
 
 void PsFunction::reset()
-{DD;
+{DDD;
     output.clear();
     portionsCount = 0;
 }

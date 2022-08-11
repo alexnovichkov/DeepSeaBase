@@ -5,13 +5,13 @@
 
 DataIODevice::DataIODevice(Channel *channel, QObject *parent)
     : QIODevice(parent), m_channel(channel)
-{DD;
+{DDD;
 
 }
 
 
 bool DataIODevice::isSequential() const
-{DD;
+{DDD;
     return false;
 }
 
@@ -21,7 +21,7 @@ double DataIODevice::positionSec() const
 }
 
 bool DataIODevice::seek(qint64 pos)
-{DD;
+{DDD;
     QIODevice::seek(pos);
     if (pos < 0) return false;
 
@@ -31,29 +31,29 @@ bool DataIODevice::seek(qint64 pos)
 }
 
 bool DataIODevice::atEnd() const
-{DD;
+{DDD;
     return (m_pos >= m_channel->data()->samplesCount()-1);
 }
 
 bool DataIODevice::reset()
-{DD;
+{DDD;
     QIODevice::reset();
     m_pos = 0;
     return true;
 }
 
 bool DataIODevice::canReadLine() const
-{DD;
+{DDD;
     return false || QIODevice::canReadLine();
 }
 
 qint64 DataIODevice::size() const
-{DD;
+{DDD;
     return m_channel->data()->samplesCount() * sizeof(qint16);
 }
 
 qint64 DataIODevice::readData(char *data, qint64 maxlen)
-{DD;
+{DDD;
     //заполняем нулями
     memset(data, 0, maxlen);
 
@@ -82,7 +82,7 @@ qint64 DataIODevice::readData(char *data, qint64 maxlen)
 }
 
 qint64 DataIODevice::writeData(const char *data, qint64 len)
-{DD;
+{DDD;
     Q_UNUSED(data);
     return len;
 }

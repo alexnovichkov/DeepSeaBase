@@ -13,7 +13,7 @@
 
 TrackingCursor::TrackingCursor(const QColor &col, Cursor::Style type, Cursor *parent)
     : type(type), parent{parent}
-{DD;
+{DDD;
     auto lineStyle = QwtPlotMarker::NoLine;
     switch (type) {
         case Cursor::Style::Horizontal: lineStyle = QwtPlotMarker::HLine; break;
@@ -50,17 +50,17 @@ TrackingCursor::TrackingCursor(const QColor &col, Cursor::Style type, Cursor *pa
 }
 
 void TrackingCursor::moveTo(const double xValue)
-{DD;
+{DDD;
     setValue(xValue, 0.0);
 }
 
 void TrackingCursor::moveTo(const QPointF &value)
-{
+{DDD;
     setValue(value);
 }
 
 void TrackingCursor::moveToPos(QPoint pos, QPoint startPos)
-{
+{DDD;
     Q_UNUSED(startPos);
     double xVal = 0.0;
     double yVal = 0.0;
@@ -80,27 +80,27 @@ void TrackingCursor::moveToPos(QPoint pos, QPoint startPos)
 }
 
 void TrackingCursor::moveLeft(int count)
-{
+{DDD;
     if (parent) parent->moveTo(Qt::Key_Left, count, this);
 }
 
 void TrackingCursor::moveRight(int count)
-{
+{DDD;
     if (parent) parent->moveTo(Qt::Key_Right, count, this);
 }
 
 void TrackingCursor::moveUp(int count)
-{
+{DDD;
     if (parent) parent->moveTo(Qt::Key_Up, count, this);
 }
 
 void TrackingCursor::moveDown(int count)
-{
+{DDD;
     if (parent) parent->moveTo(Qt::Key_Down, count, this);
 }
 
 QList<QAction *> TrackingCursor::actions()
-{
+{DDD;
     QList<QAction *> l;
     QAction *
     a = new QAction("Переместить в...", parent);
@@ -156,7 +156,7 @@ QList<QAction *> TrackingCursor::actions()
 }
 
 bool TrackingCursor::underMouse(const QPoint &pos, double *distanceX, double *distanceY) const
-{
+{DDD;
     int newX = (int)(plot()->transform(xAxis(), xValue()));
     int newY = (int)(plot()->transform(yAxis(), yValue()));
 
@@ -194,7 +194,7 @@ bool TrackingCursor::underMouse(const QPoint &pos, double *distanceX, double *di
 }
 
 void TrackingCursor::updateSelection()
-{
+{DDD;
     auto p = linePen();
     p.setWidth(selected()?2:1);
     setLinePen(p);

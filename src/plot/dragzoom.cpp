@@ -5,11 +5,11 @@
 #include "plot.h"
 
 DragZoom::DragZoom(Plot *plot) : QObject(plot), plot(plot)
-{DD;
+{DDD;
 }
 
 void DragZoom::startDrag(QMouseEvent *mEvent)
-{DD;
+{DDD;
     QWidget *canvas = plot->canvas();
 
     position = mEvent->pos();
@@ -39,7 +39,7 @@ void DragZoom::startDrag(QMouseEvent *mEvent)
 
 
 ZoomStack::zoomCoordinates DragZoom::proceedDrag(QMouseEvent *mEvent)
-{DD;
+{DDD;
     plot->canvas()->setCursor(Qt::ClosedHandCursor);
     auto mousePos = mEvent->pos();
 
@@ -66,7 +66,7 @@ ZoomStack::zoomCoordinates DragZoom::proceedDrag(QMouseEvent *mEvent)
 }
 
 ZoomStack::zoomCoordinates DragZoom::endDrag(QMouseEvent *mEvent)
-{DD;
+{DDD;
     Q_UNUSED(mEvent);
 
     plot->canvas()->setCursor(tCursor);

@@ -18,17 +18,17 @@ SortableTreeWidgetItem::SortableTreeWidgetItem(FileDescriptor *dfd, const QStrin
 {}
 
 SortableTreeWidgetItem::~SortableTreeWidgetItem()
-{DD;
+{DDD;
 //    delete fileDescriptor;
 }
 
 void SortableTreeWidgetItem::setTypeMap(const QMap<int, SortableTreeWidgetItem::DataType> &map)
-{DD;
+{DDD;
     typeMap = map;
 }
 
 bool SortableTreeWidgetItem::operator<(const QTreeWidgetItem &other) const
-{DD;
+{DDD;
     int sortCol = treeWidget()->sortColumn();
     QString s = text(sortCol);
     const DataType dataType = typeMap.value(sortCol);

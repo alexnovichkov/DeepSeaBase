@@ -7,12 +7,12 @@
 #include "tdmsfile.h"
 
 TDMSFileConverter::TDMSFileConverter(AbstractFormatFactory *factory, QObject *parent) : QObject(parent), factory(factory)
-{DD;
+{DDD;
 
 }
 
 bool TDMSFileConverter::convert()
-{DD;
+{DDD;
     if (QThread::currentThread()->isInterruptionRequested()) return false;
     bool noErrors = true;
 

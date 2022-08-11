@@ -15,7 +15,7 @@
 
 FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DD;
+{DDD;
     channelF = new ChannelFunction(this, "channel");
     refChannelF = new RefChannelFunction(this, "refChannel");
 
@@ -128,12 +128,12 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
 }
 
 QString FRFAlgorithm::description() const
-{DD;
+{DDD;
     return "Передаточная функция";
 }
 
 QString FRFAlgorithm::displayName() const
-{DD;
+{DDD;
     return "FRF";
 }
 

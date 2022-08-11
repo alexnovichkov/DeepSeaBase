@@ -3,9 +3,10 @@
 #include "cursor.h"
 #include <QtWidgets>
 #include "settings.h"
+#include "logging.h"
 
 CursorDialog::CursorDialog(Cursor *cursor, QWidget *parent): QDialog(parent), cursor{cursor}
-{
+{DDD;
     setWindowFlag(Qt::Tool);
 
     showValues = new QCheckBox("Показывать уровни дискрет", this);
@@ -45,7 +46,7 @@ CursorDialog::CursorDialog(Cursor *cursor, QWidget *parent): QDialog(parent), cu
 
 
 void CursorDialog::accept()
-{
+{DDD;
     cursor->setDigits(digits->value());
     cursor->setHarmonics(harmonics->value());
     cursor->setShowValues(showValues->isChecked());

@@ -24,12 +24,12 @@
 constexpr int MinimumZoom = 8;
 
 PlotZoom::PlotZoom(Plot *plot) : plot(plot)
-{DD;
+{DDD;
 
 }
 
 void PlotZoom::startZoom(QMouseEvent *mEvent)
-{
+{DDD;
     QRect cg = plot->canvas()->geometry();
 
     startingPosX = mEvent->pos().x();
@@ -42,7 +42,7 @@ void PlotZoom::startZoom(QMouseEvent *mEvent)
 }
 
 void PlotZoom::proceedZoom(QMouseEvent *mEvent)
-{
+{DDD;
     int dx = mEvent->pos().x() - startingPosX;
     if (dx == 0) dx = 1;
 
@@ -56,7 +56,7 @@ void PlotZoom::proceedZoom(QMouseEvent *mEvent)
 }
 
 ZoomStack::zoomCoordinates PlotZoom::endZoom(QMouseEvent *mEvent)
-{
+{DDD;
     stopZoom();
     // определяем положение курсора, т.е. координаты xp и yp
     // конечной точки выделенной области (в пикселах относительно канвы QwtPlot)
@@ -88,7 +88,7 @@ ZoomStack::zoomCoordinates PlotZoom::endZoom(QMouseEvent *mEvent)
 }
 
 void PlotZoom::stopZoom()
-{
+{DDD;
     if (rubberBand) rubberBand->hide();
 }
 

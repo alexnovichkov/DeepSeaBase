@@ -46,7 +46,7 @@ static uint colorsTable[32]={
 };
 
 ColorSelector::ColorSelector(const QVariantList &list)
-{DD;
+{DDD;
     if (list.isEmpty() || list.size() < COLORS_COUNT) {
         colors.resize(COLORS_COUNT);
         for (int i=0; i<colors.size() && i<COLORS_COUNT; ++i)
@@ -62,24 +62,24 @@ ColorSelector::ColorSelector(const QVariantList &list)
 }
 
 void ColorSelector::addColor(const QColor &color)
-{DD;
+{DDD;
     colors.append(color);
 }
 
 void ColorSelector::setColor(const QColor &color, int index)
-{DD;
+{DDD;
     if (index>=0 && index<colors.size())
         colors[index] = color;
 }
 
 void ColorSelector::removeColor(int index)
-{DD;
+{DDD;
     if (index>=0 && index<colors.size())
         colors.remove(index);
 }
 
 QColor ColorSelector::getColor()
-{DD;
+{DDD;
     for (const QColor &c: colors) {
         if (!usedColors.contains(c)) {
             usedColors << c;
@@ -91,12 +91,12 @@ QColor ColorSelector::getColor()
 }
 
 QColor ColorSelector::color(int index) const
-{DD;
+{DDD;
     return colors.at(index);
 }
 
 QVariantList ColorSelector::getColors() const
-{DD;
+{DDD;
     QVariantList vec;
     std::transform(colors.cbegin(), colors.cend(), std::back_inserter(vec), [](const QColor &color){
         QVariant v;
@@ -107,12 +107,12 @@ QVariantList ColorSelector::getColors() const
 }
 
 void ColorSelector::resetState()
-{DD;
+{DDD;
     usedColors.clear();
 }
 
 void ColorSelector::freeColor(const QColor &color)
-{DD;
+{DDD;
     usedColors.remove(color);
 }
 

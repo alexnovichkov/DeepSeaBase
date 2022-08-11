@@ -41,7 +41,7 @@ QString uffTypeToMatType(Descriptor::DataType type)
 }
 
 MatlabFile::MatlabFile(const QString &fileName) : FileDescriptor(fileName)
-{DD;
+{DDD;
 
 }
 
@@ -62,7 +62,7 @@ MatlabFile::MatlabFile(const QVector<Channel *> &source, const QString &fileName
 }
 
 MatlabFile::~MatlabFile()
-{DD;
+{DDD;
     if (changed() || dataChanged())
         write();
 
@@ -744,7 +744,7 @@ MatlabChannel::MatlabChannel(MatlabFile *parent) : Channel(), parent(parent)
 }
 
 MatlabChannel::MatlabChannel(Channel &other, MatlabFile *parent) : Channel(other), parent(parent)
-{DD;
+{DDD;
     parent->channels << this;
     complex = other.data()->yValuesFormat() == DataHolder::YValuesComplex;
     _type = uffTypeToMatType(other.type());

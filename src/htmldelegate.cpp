@@ -11,7 +11,7 @@
 //}
 
 void HtmlDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
-{DD;
+{DDD;
 
     QStyleOptionViewItem optionV4 = option;
     initStyleOption(&optionV4, index);
@@ -41,7 +41,7 @@ void HtmlDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, 
 }
 
 QSize HtmlDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
-{DD;
+{DDD;
     QStyleOptionViewItem optionV4 = option;
     initStyleOption(&optionV4, index);
 

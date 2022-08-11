@@ -13,7 +13,7 @@ OctaveFilterBank::OctaveFilterBank()
 }
 
 OctaveFilterBank::OctaveFilterBank(OctaveType type, OctaveBase base) : type(type), base(base)
-{DD;
+{DDD;
     update();
 }
 
@@ -28,7 +28,7 @@ OctaveFilterBank::OctaveFilterBank(OctaveType type, OctaveBase base) : type(type
 //%
 template <typename T>
 double leq(const QVector<T> &x, /*int T,*/ double ref=1.0)
-{DD;
+{DDD;
     Q_UNUSED(ref);
     const int xSize = x.size();
     T p = std::accumulate(x.constBegin(), x.constEnd(), static_cast<T>(0.0), [xSize](T v1,T v2)->T{return v1+v2*v2/xSize;});
@@ -43,14 +43,14 @@ double leq(const QVector<T> &x, /*int T,*/ double ref=1.0)
 
 //decimates x by factor q using libresample
 QVector<double> decimate(const QVector<double> &x, int q)
-{DD;
+{DDD;
     Resampler filter(q, x.size());
     QVector<double> y = filter.process(x);
     return y;
 }
 
 QVector<QVector<double>> OctaveFilterBank::compute(QVector<double> timeData, double sampleRate, double logref)
-{DD;
+{DDD;
     int N = 8;  // Order of analysis filters.
     int decimation = 10; //величина децимации
     int decimationFactor = 200; // All filters below range Fc/decimationFactor will be implemented after a decimation.

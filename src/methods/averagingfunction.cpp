@@ -5,28 +5,28 @@
 
 AveragingFunction::AveragingFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD;
+{DDD;
 
 }
 
 
 QString AveragingFunction::name() const
-{DD;
+{DDD;
     return "Averaging";
 }
 
 QString AveragingFunction::description() const
-{DD;
+{DDD;
     return "Усреднение";
 }
 
 QStringList AveragingFunction::properties() const
-{DD;
+{DDD;
     return QStringList()<<"type"<<"maximum";
 }
 
 QString AveragingFunction::propertyDescription(const QString &property) const
-{DD;
+{DDD;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
                                    "  \"type\"        : \"enum\"   ,"
@@ -49,7 +49,7 @@ QString AveragingFunction::propertyDescription(const QString &property) const
 }
 
 QVariant AveragingFunction::m_getProperty(const QString &property) const
-{DD;
+{DDD;
     if (property.startsWith("?/")) {
 //        if (property == "?/averaging")
 //            return Averaging::averagingDescription(averaging.getAveragingType());
@@ -75,7 +75,7 @@ QVariant AveragingFunction::m_getProperty(const QString &property) const
 }
 
 void AveragingFunction::m_setProperty(const QString &property, const QVariant &val)
-{DD;
+{DDD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
     int valInt = val.toInt();
@@ -89,7 +89,7 @@ void AveragingFunction::m_setProperty(const QString &property, const QVariant &v
 }
 
 bool AveragingFunction::propertyShowsFor(const QString &property) const
-{DD;
+{DDD;
     if (!property.startsWith(name()+"/")) return false;
     QString p = property.section("/",1);
 
@@ -100,12 +100,12 @@ bool AveragingFunction::propertyShowsFor(const QString &property) const
 
 
 QString AveragingFunction::displayName() const
-{DD;
+{DDD;
     return "Усреднение";
 }
 
 QVector<double> AveragingFunction::getData(const QString &id)
-{DD;
+{DDD;
     const auto format = m_input->getParameter("?/dataFormat").toString();
     if (id == "input") {
         if (format=="complex") return interweavedFromComplexes<double>(averaging.getComplex());
@@ -116,7 +116,7 @@ QVector<double> AveragingFunction::getData(const QString &id)
 }
 
 bool AveragingFunction::compute(FileDescriptor *file)
-{DD;
+{DDD;
     if (!m_input) return false;
 
     m_input->compute(file);
@@ -140,7 +140,7 @@ bool AveragingFunction::compute(FileDescriptor *file)
 }
 
 void AveragingFunction::reset()
-{DD;
+{DDD;
     averaging.reset();
 }
 

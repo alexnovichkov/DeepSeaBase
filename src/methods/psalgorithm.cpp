@@ -13,7 +13,7 @@
 
 PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DD;
+{DDD;
     channelF = new ChannelFunction(this);
 //    filteringF = new FilteringFunction(this);
     resamplingF = new ResamplingFunction(this);
@@ -68,13 +68,13 @@ PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
 
 
 QString PsAlgorithm::description() const
-{DD;
+{DDD;
     return "Спектр мощности";
 }
 
 
 QString PsAlgorithm::displayName() const
-{DD;
+{DDD;
     return "PS";
 }
 

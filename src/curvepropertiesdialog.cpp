@@ -11,7 +11,7 @@
 #include "logging.h"
 
 void ClickableLabel::mouseReleaseEvent(QMouseEvent *ev)
-{DD;
+{DDD;
     if (ev->button()==Qt::LeftButton)
         Q_EMIT clicked();
     QLabel::mouseReleaseEvent(ev);
@@ -19,7 +19,7 @@ void ClickableLabel::mouseReleaseEvent(QMouseEvent *ev)
 
 CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
     QDialog(parent), curve(curve), plot(parent)
-{DD;
+{DDD;
     setWindowTitle("Настройки кривой");
 
     oldPen = curve->pen();
@@ -161,7 +161,7 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
 }
 
 void CurvePropertiesDialog::reject()
-{DD;
+{DDD;
     curve->setPen(oldPen);
     curve->channel->setName(oldTitle);
     curve->setTitle(curve->channel->legendName());

@@ -15,7 +15,7 @@
 
 LineCurve::LineCurve(const QString &title, Channel *channel) :  QwtPlotCurve(title),
     Curve(title, channel)
-{DD;
+{DDD;
     type = Type::Line;
     setPaintAttribute(QwtPlotCurve::ClipPolygons);
     setPaintAttribute(QwtPlotCurve::FilterPoints);
@@ -32,12 +32,12 @@ LineCurve::LineCurve(const QString &title, Channel *channel) :  QwtPlotCurve(tit
 }
 
 LineCurve::~LineCurve()
-{DD;
+{DDD;
     delete mapper;
 }
 
 void LineCurve::setMapper()
-{
+{DDD;
     mapper = new FilterPointMapper(channel->type()==Descriptor::TimeResponse);
 }
 
@@ -45,7 +45,7 @@ void LineCurve::drawLines(QPainter *painter,
                       const QwtScaleMap &xMap, const QwtScaleMap &yMap,
                       const QRectF &canvasRect,
                       int from, int to) const
-{DD;
+{DDD;
     //reevaluating from, to
     evaluateScale(from, to, xMap);
     if (from > to) return;
@@ -82,54 +82,54 @@ void LineCurve::drawLines(QPainter *painter,
 }
 
 bool LineCurve::doCloseLine() const
-{
+{DDD;
     return mapper->simplified && channel->type()==Descriptor::TimeResponse;
 }
 
 QPointF LineCurve::samplePoint(int point) const
-{DD;
+{DDD;
     return QwtPlotCurve::sample(point);
 }
 
 void LineCurve::resetCashedData()
-{DD;
+{DDD;
     mapper->cashedPolyline.clear();
 }
 
 void LineCurve::attachTo(QwtPlot *plot)
-{DD;
+{DDD;
     QwtPlotCurve::attach(plot);
 }
 
 QString LineCurve::title() const
-{DD;
+{DDD;
     return QwtPlotCurve::title().text();
 }
 
 void LineCurve::setTitle(const QString &title)
-{DD;
+{DDD;
     QwtPlotCurve::setTitle(title);
 }
 
 QwtAxisId LineCurve::yAxis() const
-{DD;
+{DDD;
     return QwtPlotCurve::yAxis();
 }
 
 void LineCurve::setYAxis(QwtAxisId axis)
-{DD;
+{DDD;
     QwtPlotCurve::setYAxis(axis);
     foreach (PointLabel *l, labels)
         l->setYAxis(axis);
 }
 
 QwtAxisId LineCurve::xAxis() const
-{DD;
+{DDD;
     return QwtPlotCurve::xAxis();
 }
 
 void LineCurve::setXAxis(QwtAxisId axis)
-{DD;
+{DDD;
     QwtPlotCurve::setXAxis(axis);
     qDebug()<<labels;
     foreach (PointLabel *l, labels)
@@ -137,19 +137,19 @@ void LineCurve::setXAxis(QwtAxisId axis)
 }
 
 QPen LineCurve::pen() const
-{DD;
+{DDD;
     return QwtPlotCurve::pen();
 }
 
 void LineCurve::updatePen()
-{DD;
+{DDD;
     auto p = oldPen;
     if (selected()) p.setWidth(2);
     QwtPlotCurve::setPen(p);
 }
 
 QList<QwtLegendData> LineCurve::legendData() const
-{DD;
+{DDD;
     QList<QwtLegendData> result = QwtPlotCurve::legendData();
     QwtLegendData &data = result[0];
     data.setValues(commonLegendData());
@@ -157,7 +157,7 @@ QList<QwtLegendData> LineCurve::legendData() const
 }
 
 void LineCurve::updateSelection()
-{DD;
+{DDD;
     Curve::updateSelection();
     if (selected()) setZ(1000);
     else setZ(20);
@@ -167,12 +167,12 @@ void LineCurve::updateSelection()
 /** DfdData implementation */
 
 LineData::LineData(DataHolder *data) : data(data)
-{DD;
+{DDD;
 
 }
 
 QRectF LineData::boundingRect() const
-{DD;
+{DDD;
     QRectF d_boundingRect;
     d_boundingRect.setLeft( data->xMin() );
     d_boundingRect.setRight( data->xMax() );
@@ -184,28 +184,28 @@ QRectF LineData::boundingRect() const
 }
 
 size_t LineData::size() const
-{DD;
+{DDD;
     return data->samplesCount();
 }
 
 QPointF LineData::sample(size_t i) const
-{DD;
+{DDD;
     return QPointF(data->xValue(i), data->yValue(i));
 }
 
 double LineData::xStep() const
-{DD;
+{DDD;
     return data->xStep();
 }
 
 double LineData::xBegin() const
-{DD;
+{DDD;
     return data->xMin();
 }
 
 
 int LineCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
-{DD;
+{DDD;
     int index = -1;
 
     const size_t numSamples = channel->data()->samplesCount();
@@ -241,7 +241,7 @@ int LineCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
 }
 
 void LineCurve::setVisible(bool visible)
-{DD;
+{DDD;
     QwtPlotItem::setVisible(visible);
     for (PointLabel *label: qAsConst(labels)) {
         label->setVisible(visible);
@@ -249,17 +249,17 @@ void LineCurve::setVisible(bool visible)
 }
 
 TimeCurve::TimeCurve(const QString &title, Channel *channel) : LineCurve(title, channel)
-{
+{DDD;
 
 }
 
 void TimeCurve::setMapper()
-{
+{DDD;
     mapper = new FilterPointMapper(true);
 }
 
 bool TimeCurve::doCloseLine() const
-{
+{DDD;
     return mapper->simplified;
 }
 

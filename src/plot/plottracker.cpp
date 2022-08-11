@@ -15,20 +15,20 @@
 
 PlotTracker::PlotTracker(Plot *plot) :
     QwtPlotPicker(plot->canvas()), plot(plot)
-{DD;
+{DDD;
     setStateMachine(new QwtPickerTrackerMachine);
     setTrackerMode(QwtPicker::AlwaysOn);
     connect(this, SIGNAL(moved(QPointF)), this, SLOT(maybeHover(QPointF)));
 }
 
 PlotTracker::~PlotTracker()
-{DD;
+{DDD;
 
 }
 
 // блокируем срабатывание клавиш, чтобы не сдвигался курсор мыши
 void PlotTracker::widgetKeyPressEvent(QKeyEvent *e)
-{
+{DDD;
     const int key = e->key();
 
     if (key == Qt::Key_Left || key == Qt::Key_Right || key == Qt::Key_Up || key == Qt::Key_Down) {
@@ -38,7 +38,7 @@ void PlotTracker::widgetKeyPressEvent(QKeyEvent *e)
 }
 
 QwtText PlotTracker::trackerTextF(const QPointF &pos) const
-{
+{DDD;
     QColor bg(Qt::white);
     bg.setAlpha(200);
 
@@ -49,7 +49,7 @@ QwtText PlotTracker::trackerTextF(const QPointF &pos) const
 }
 
 void PlotTracker::maybeHover(const QPointF &pos)
-{
+{DDD;
     if (!plot) return;
     bool found = false;
 

@@ -3,7 +3,7 @@
 #include "fileformats/filedescriptor.h"
 
 QStringList getBlocks(double xStep, const QString &fix)
-{DD;
+{DDD;
 //    double sampleRate = 1.0/xStep;
 //    DebugPrint(sampleRate);
     int sampleRate = qRound(1.0 / xStep);
@@ -24,7 +24,7 @@ QStringList getBlocks(double xStep, const QString &fix)
 
 FrameCutterFunction::FrameCutterFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD;
+{DDD;
     // default values
     setParameter("FrameCutter/type", 0);
     setParameter("FrameCutter/blockSize", 0);
@@ -38,22 +38,22 @@ FrameCutterFunction::FrameCutterFunction(QObject *parent, const QString &name) :
 
 
 QString FrameCutterFunction::name() const
-{DD;
+{DDD;
     return "FrameCutter";
 }
 
 QString FrameCutterFunction::displayName() const
-{DD;
+{DDD;
     return "Выборка блоков";
 }
 
 QString FrameCutterFunction::description() const
-{DD;
+{DDD;
     return "Разбиение данных на блоки";
 }
 
 QVariant FrameCutterFunction::m_getProperty(const QString &property) const
-{DD;
+{DDD;
     if (property.startsWith("?/")) {
         if (property == "?/blockSize") {
             return frameCutter.blockSize();
@@ -101,7 +101,7 @@ DataDescription FrameCutterFunction::getFunctionDescription() const
 }
 
 void FrameCutterFunction::m_setProperty(const QString &property, const QVariant &val)
-{DD;
+{DDD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -146,7 +146,7 @@ void FrameCutterFunction::m_setProperty(const QString &property, const QVariant 
 }
 
 bool FrameCutterFunction::propertyShowsFor(const QString &property) const
-{DD;
+{DDD;
     if (!property.startsWith(name()+"/")) return false;
     QString p = property.section("/",1);
 
@@ -163,7 +163,7 @@ bool FrameCutterFunction::propertyShowsFor(const QString &property) const
 
 
 QStringList FrameCutterFunction::properties() const
-{DD;
+{DDD;
     return QStringList()<<
                            "type"<<
                            "blockSize"<<
@@ -176,7 +176,7 @@ QStringList FrameCutterFunction::properties() const
 }
 
 QString FrameCutterFunction::propertyDescription(const QString &property) const
-{DD;
+{DDD;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
                                    "  \"type\"        : \"enum\"   ,"
@@ -258,7 +258,7 @@ QString FrameCutterFunction::propertyDescription(const QString &property) const
 }
 
 void FrameCutterFunction::reset()
-{DD;
+{DDD;
     frameCutter.reset();
     output.clear();
 }
@@ -270,7 +270,7 @@ void FrameCutterFunction::resetData()
 }
 
 bool FrameCutterFunction::compute(FileDescriptor *file)
-{DD;
+{DDD;
     if (!m_input) return false;
 
     output.clear();
@@ -305,7 +305,7 @@ bool FrameCutterFunction::compute(FileDescriptor *file)
 
 
 void FrameCutterFunction::updateProperty(const QString &property, const QVariant &val)
-{DD;
+{DDD;
     // нам может прийти измененный шаг по оси Х
     if (property == "?/xStep") {
         setParameter(name()+"/xStep", val);

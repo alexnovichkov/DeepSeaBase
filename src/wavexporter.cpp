@@ -11,42 +11,42 @@
 
 WavExporter::WavExporter(FileDescriptor * file, const QVector<int> &indexes, int count, QObject *parent)
     : QObject(parent), file(file), indexes(indexes), count(count)
-{DD;
+{DDD;
 
 }
 
 WavExporter::WavExporter(Channel *channel, QObject *parent):
     QObject(parent), channel(channel)
-{DD;
+{DDD;
     file = channel->descriptor();
     const int index = channel->index();
     if (index >= 0) indexes << index;
 }
 
 WavExporter::~WavExporter()
-{DD;
+{DDD;
 
 }
 
 int WavExporter::chunksCount() const
-{DD;
+{DDD;
     int blocks = file->samplesCount()/BLOCK_SIZE;
     if (file->samplesCount() % BLOCK_SIZE != 0) blocks++;
     return blocks;
 }
 
 //int WavExporter::chunksCount() const
-//{DD;
+//{DDD;
 //    return indexes.size();
 //}
 
 void WavExporter::stop()
-{DD;
+{DDD;
     finalize();
 }
 
 void WavExporter::writeWithStreams(const QVector<int> &v, const QString &wavFileName)
-{DD;
+{DDD;
     if (v.isEmpty()) return;
 
     QFile wavFile(wavFileName);
@@ -168,7 +168,7 @@ void WavExporter::writeWithStreams(const QVector<int> &v, const QString &wavFile
 }
 
 bool WavExporter::writeWithMap(const QVector<int> &v, const QString &wavFileName)
-{DD;
+{DDD;
     if (v.isEmpty()) return false;
 
     //2. Записываем заголовок файла wav
@@ -243,7 +243,7 @@ bool WavExporter::writeWithMap(const QVector<int> &v, const QString &wavFileName
 }
 
 void WavExporter::start()
-{DD;
+{DDD;
     if (QThread::currentThread()->isInterruptionRequested()) {
         qDebug()<<"interrupted";
         finalize();
@@ -278,7 +278,7 @@ void WavExporter::start()
 }
 
 WavHeader WavExporter::initHeader(int channelsCount, int samplesCount, int sampleRate, WavFormat format)
-{DD;
+{DDD;
     const int M = format==WavFloat?4:2;
     WavHeader header;
     header.cksize = sizeof(WavHeader) + channelsCount*samplesCount*M - 8;
@@ -305,7 +305,7 @@ WavHeader WavExporter::initHeader(int channelsCount, int samplesCount, int sampl
 }
 
 SimpleWavHeader WavExporter::initSimpleHeader(int channelsCount, int samplesCount, int sampleRate, WavFormat format)
-{DD;
+{DDD;
     Q_UNUSED(format);
     const int M = 2;
     SimpleWavHeader header;
@@ -325,6 +325,6 @@ SimpleWavHeader WavExporter::initSimpleHeader(int channelsCount, int samplesCoun
 }
 
 void WavExporter::finalize()
-{DD;
+{DDD;
     emit finished();
 }

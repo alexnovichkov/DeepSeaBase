@@ -122,7 +122,7 @@ int SpectreMethod::id()
 }
 
 QStringList SpectreMethod::methodSettings(FileDescriptor *dfd, const Parameters &p)
-{DD;
+{DDD;
     QStringList spfFile;
     QString yName = "дБ";
     if (typeCombo->currentText() != "в децибелах") {
@@ -228,7 +228,7 @@ void SpectreMethod::updateResolution(int bandStrip)
 
 
 /*DfdFileDescriptor *SpectreMethod::createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
-{DD;
+{DDD;
     DfdFileDescriptor *newDfd = AbstractMethod::createNewDfdFile(fileName, dfd, p);
 
     // rest
@@ -241,7 +241,7 @@ void SpectreMethod::updateResolution(int bandStrip)
 }*/
 
 //UffFileDescriptor *SpectreMethod::createNewUffFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
-//{DD;
+//{DDD;
 //    UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
 
 //    newUff->setDataDescription(dfd->dataDescription());
@@ -254,7 +254,7 @@ void SpectreMethod::updateResolution(int bandStrip)
 //}
 
 /*Channel *SpectreMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
-{DD;
+{DDD;
     DataDescription descr;
     DataHolder *d = new DataHolder();
     double XStep = p.sampleRate / pow(2.0, p.bandStrip) / p.bufferSize;
@@ -274,7 +274,7 @@ void SpectreMethod::updateResolution(int bandStrip)
 }*/
 
 /*Channel *SpectreMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
-{DD;
+{DDD;
     Function *ch = new Function(newUff);
 //    ch->setName(dfd->channel(i)->name());
 //    ch->setPopulated(true);

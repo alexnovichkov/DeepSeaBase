@@ -3,7 +3,7 @@
 #include "model.h"
 
 FilesTable::FilesTable(QWidget *parent) : QTreeView(parent)
-{DD;
+{DDD;
     setAcceptDrops(true);
     setDragDropMode(QAbstractItemView::DropOnly);
     setDropIndicatorShown(false);

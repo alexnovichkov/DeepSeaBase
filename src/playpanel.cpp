@@ -15,7 +15,7 @@
 
 
 PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
-{DD;
+{DDD;
     player = new QMediaPlayer(this);
     player->setAudioRole(QAudio::MusicRole);
     player->setNotifyInterval(50);
@@ -60,14 +60,14 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
 }
 
 PlayPanel::~PlayPanel()
-{DD;
+{DDD;
     delete cursor;
     //подчищаем старый временный файл, если он был
     QFile::remove(oldTempFile);
 }
 
 void PlayPanel::update()
-{DD;
+{DDD;
     // ищем канал, который сможем проиграть
 
     channelsBox->blockSignals(true);
@@ -109,7 +109,7 @@ void PlayPanel::update()
 }
 
 void PlayPanel::setSource(int n)
-{DD;
+{DDD;
     if (n < 0) return;
     if (channelsBox->count() == 0) return;
 
@@ -133,7 +133,7 @@ void PlayPanel::setSource(int n)
 }
 
 void PlayPanel::prepareDataToPlay()
-{DD;
+{DDD;
     //загружаем данные
     if (player->media().isNull()) {
         if (!wavFiles.contains(ch)) {
@@ -155,32 +155,32 @@ void PlayPanel::prepareDataToPlay()
 }
 
 void PlayPanel::setValue()
-{DD;
+{DDD;
     if (!ch) return;
     player->setPosition(qint64(cursor->currentPosition().x() * 1000.0));
 }
 
 void PlayPanel::moveTo(const QPoint &pos)
-{DD;
+{DDD;
     const auto xVal = plot->invTransform(QwtAxis::XBottom, pos.x());
     positions[ch] = xVal;
     cursor->moveTo({xVal, 0}, false);
 }
 
 void PlayPanel::reset()
-{DD;
+{DDD;
     player->stop();
 }
 
 void PlayPanel::positionChanged(qint64 progress)
-{DD;
+{DDD;
     //progress in milliseconds, convert to seconds
     const double xVal = double(progress) / 1000.0;
     cursor->moveTo({xVal, 0}, true);
 }
 
 void PlayPanel::statusChanged(QMediaPlayer::MediaStatus status)
-{DD;
+{DDD;
     switch (status) {
         case QMediaPlayer::UnknownMediaStatus:
         case QMediaPlayer::NoMedia:
@@ -205,19 +205,19 @@ void PlayPanel::statusChanged(QMediaPlayer::MediaStatus status)
 }
 
 void PlayPanel::displayErrorMessage()
-{DD;
+{DDD;
     qDebug()<<player->errorString();
 }
 
 void PlayPanel::closeEvent(QCloseEvent *event)
-{DD;
+{DDD;
     player->stop();
     emit closeRequested();
     QWidget::closeEvent(event);
 }
 
 void PlayPanel::hideEvent(QHideEvent *event)
-{DD;
+{DDD;
     player->pause();
     QWidget::hideEvent(event);
 }
@@ -227,7 +227,7 @@ void PlayPanel::hideEvent(QHideEvent *event)
 
 PlayerControls::PlayerControls(QWidget *parent)
     : QWidget(parent)
-{DD;
+{DDD;
     m_playButton = new QToolButton(this);
     m_playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
 
@@ -260,12 +260,12 @@ PlayerControls::PlayerControls(QWidget *parent)
 }
 
 QMediaPlayer::State PlayerControls::state() const
-{DD;
+{DDD;
     return m_playerState;
 }
 
 void PlayerControls::setState(QMediaPlayer::State state)
-{DD;
+{DDD;
     if (state != m_playerState) {
         m_playerState = state;
 
@@ -287,7 +287,7 @@ void PlayerControls::setState(QMediaPlayer::State state)
 }
 
 int PlayerControls::volume() const
-{DD;
+{DDD;
     qreal linearVolume =  QAudio::convertVolume(m_volumeSlider->value() / qreal(100),
                                                 QAudio::LogarithmicVolumeScale,
                                                 QAudio::LinearVolumeScale);
@@ -296,7 +296,7 @@ int PlayerControls::volume() const
 }
 
 void PlayerControls::setVolume(int volume)
-{DD;
+{DDD;
     qreal logarithmicVolume = QAudio::convertVolume(volume / qreal(100),
                                                     QAudio::LinearVolumeScale,
                                                     QAudio::LogarithmicVolumeScale);
@@ -305,12 +305,12 @@ void PlayerControls::setVolume(int volume)
 }
 
 bool PlayerControls::isMuted() const
-{DD;
+{DDD;
     return m_playerMuted;
 }
 
 void PlayerControls::enable(bool enabled)
-{DD;
+{DDD;
     m_playButton->setEnabled(enabled);
     m_stopButton->setEnabled(enabled);
     m_muteButton->setEnabled(enabled);
@@ -318,7 +318,7 @@ void PlayerControls::enable(bool enabled)
 }
 
 void PlayerControls::setMuted(bool muted)
-{DD;
+{DDD;
     if (muted != m_playerMuted) {
         m_playerMuted = muted;
 
@@ -329,7 +329,7 @@ void PlayerControls::setMuted(bool muted)
 }
 
 void PlayerControls::playClicked()
-{DD;
+{DDD;
     switch (m_playerState) {
     case QMediaPlayer::StoppedState:
     case QMediaPlayer::PausedState:
@@ -342,11 +342,11 @@ void PlayerControls::playClicked()
 }
 
 void PlayerControls::muteClicked()
-{DD;
+{DDD;
     emit changeMuting(!m_playerMuted);
 }
 
 void PlayerControls::onVolumeSliderValueChanged()
-{DD;
+{DDD;
     emit changeVolume(volume());
 }

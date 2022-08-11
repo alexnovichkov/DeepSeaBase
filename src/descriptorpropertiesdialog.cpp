@@ -20,7 +20,7 @@ static struct Properties
 } propertiesLabels;
 
 void FilesItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
-{DD;
+{DDD;
     if (!painter) return;
 
     painter->save();
@@ -73,7 +73,7 @@ void FilesItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opt
 }
 
 QSize FilesItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const
-{DD;
+{DDD;
     if (!index.isValid()) return option.rect.size();
     //QString info = index.data(Qt::DisplayRole).toString();
     return QSize(option.rect.width(), option.fontMetrics.height() * 2);
@@ -81,7 +81,7 @@ QSize FilesItemDelegate::sizeHint(const QStyleOptionViewItem &option, const QMod
 
 DescriptorPropertiesDialog::DescriptorPropertiesDialog(const QList<FileDescriptor *> &records, QWidget *parent)
     : QDialog(parent), records(records)
-{DD;
+{DDD;
     setWindowTitle("Свойства записей");
 
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok
@@ -173,14 +173,14 @@ DescriptorPropertiesDialog::DescriptorPropertiesDialog(const QList<FileDescripto
 //}
 
 void DescriptorPropertiesDialog::fillFiles()
-{DD;
+{DDD;
     for(const auto f: qAsConst(records)) {
         new QTreeWidgetItem(files, {f->fileName()});
     }
 }
 
 void DescriptorPropertiesDialog::prev()
-{DD;
+{DDD;
     if (current > 0) {
         current--;
         updateState();
@@ -188,7 +188,7 @@ void DescriptorPropertiesDialog::prev()
 }
 
 void DescriptorPropertiesDialog::next()
-{DD;
+{DDD;
     if (current < records.size()-1) {
         current++;
         updateState();
@@ -196,24 +196,24 @@ void DescriptorPropertiesDialog::next()
 }
 
 void DescriptorPropertiesDialog::applyToCurrent()
-{DD;
+{DDD;
 
 }
 
 void DescriptorPropertiesDialog::applyToAll()
-{DD;
+{DDD;
 
 }
 
 void DescriptorPropertiesDialog::updateState()
-{DD;
+{DDD;
 //    prevButton->setEnabled(current > 0);
 //    nextButton->setEnabled(current<records.size()-1);
     //    file->setText(records.at(current)->fileName());
 }
 
 void DescriptorPropertiesDialog::currentFileChanged(QTreeWidgetItem *cur, QTreeWidgetItem *previous)
-{DD;
+{DDD;
     Q_UNUSED(previous);
 //    static QStringList propertiesNames {"Файл", "Размер, байт", "Количество каналов",
 //                                        "Дата и время записи", "Дата и время создания файла",
@@ -272,7 +272,7 @@ void DescriptorPropertiesDialog::currentFileChanged(QTreeWidgetItem *cur, QTreeW
 }
 
 void DescriptorPropertiesDialog::cellChanged(int row, int column)
-{DD;
+{DDD;
     auto item = descriptionsTable->item(row, column);
     if (!item || current < 0) return;
 
@@ -290,7 +290,7 @@ void DescriptorPropertiesDialog::cellChanged(int row, int column)
 }
 
 void DescriptorPropertiesDialog::addProperty()
-{DD;
+{DDD;
     int row = descriptionsTable->rowCount();
 
     QString name = QInputDialog::getText(this, "Новое свойство", "Введите название свойства");
@@ -303,7 +303,7 @@ void DescriptorPropertiesDialog::addProperty()
 }
 
 void DescriptorPropertiesDialog::removeProperty()
-{DD;
+{DDD;
     const auto selected = descriptionsTable->selectedItems();
     if (!selected.isEmpty()) {
         QSet<int> rows;

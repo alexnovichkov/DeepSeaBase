@@ -29,20 +29,20 @@ QList<AbstractField*> fields = {
 };
 
 UffFileDescriptor::UffFileDescriptor(const QString &fileName) : FileDescriptor(fileName)
-{DD;
+{DDD;
 
 }
 
 UffFileDescriptor::UffFileDescriptor(const QVector<Channel *> &source, const QString &fileName)
  : FileDescriptor(fileName)
-{DD;
+{DDD;
     init(source);
 }
 
 UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString &fileName,
                                      const QVector<int> &indexes)
     : FileDescriptor(fileName)
-{DD;
+{DDD;
     QVector<Channel *> source;
     if (indexes.isEmpty())
         for (int i=0; i<other.channelsCount(); ++i) source << other.channel(i);
@@ -53,7 +53,7 @@ UffFileDescriptor::UffFileDescriptor(const FileDescriptor &other, const QString 
 }
 
 void UffFileDescriptor::init(const QVector<Channel*> &source)
-{DD;
+{DDD;
     if (source.isEmpty()) return;
 
     auto other = source.first()->descriptor();
@@ -125,7 +125,7 @@ void UffFileDescriptor::init(const QVector<Channel*> &source)
 }
 
 UffFileDescriptor::~UffFileDescriptor()
-{DD;
+{DDD;
     if (changed() || dataChanged())
         write();
 
@@ -133,7 +133,7 @@ UffFileDescriptor::~UffFileDescriptor()
 }
 
 void UffFileDescriptor::readWithStreams()
-{DD;
+{DDD;
     QFile uff(fileName());
     if (!uff.exists()) {
         qDebug()<<"Такого файла не существует";
@@ -162,7 +162,7 @@ void UffFileDescriptor::readWithStreams()
 }
 
 bool UffFileDescriptor::readWithMmap()
-{DD;
+{DDD;
     QFile uff(fileName());
     if (!uff.exists()) return false;
 
@@ -192,7 +192,7 @@ bool UffFileDescriptor::readWithMmap()
 }
 
 void UffFileDescriptor::read()
-{DD;
+{DDD;
     //проверяем формат файлов uff:
     //если false - старый формат, удаляем файл и создаем заново
     int newUffFormat = Settings::getSetting("newUffFormat", 0).toInt();
@@ -254,7 +254,7 @@ void UffFileDescriptor::read()
 }
 
 void UffFileDescriptor::write()
-{DD;
+{DDD;
     if (!changed() && !dataChanged()) return;
 
     QTemporaryFile tempFile;
@@ -291,7 +291,7 @@ void UffFileDescriptor::write()
 }
 
 void UffFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
-{DD;
+{DDD;
     QTemporaryFile temp;
     if (!temp.open()) {
         qDebug()<<"Couldn't open file"<<fileName()<<"to write";
@@ -335,14 +335,14 @@ void UffFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
 }
 
 void UffFileDescriptor::removeTempFile()
-{DD;
+{DDD;
     int newUffFormat = Settings::getSetting("newUffFormat", 0).toInt();
     QString name = fileName()+QString("~%1").arg(newUffFormat);
     if (QFile::exists(name)) QFile::remove(name);
 }
 
 void UffFileDescriptor::copyChannelsFrom(const QVector<Channel *> &source)
-{DD;
+{DDD;
     QFile uff(fileName());
     if (!uff.open(QFile::Append | QFile::Text)) {
         qDebug()<<"Couldn't open file to write";
@@ -375,7 +375,7 @@ void UffFileDescriptor::copyChannelsFrom(const QVector<Channel *> &source)
 }
 
 void UffFileDescriptor::addChannelWithData(DataHolder *data, const DataDescription &description)
-{DD;
+{DDD;
     // обновляем сведения канала
     Function *ch = new Function(this);
     ch->setChanged(true);
@@ -395,7 +395,7 @@ void UffFileDescriptor::addChannelWithData(DataHolder *data, const DataDescripti
 }
 
 void UffFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
-{DD;
+{DDD;
     // заполняем вектор индексов каналов, как они будут выглядеть после перемещения
     const int count = channelsCount();
     QVector<int> indexesVector(count);
@@ -446,7 +446,7 @@ void UffFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
 }
 
 int UffFileDescriptor::channelsCount() const
-{DD;
+{DDD;
     return channels.size();
 }
 
@@ -458,28 +458,28 @@ Channel *UffFileDescriptor::channel(int index) const
 }
 
 bool UffFileDescriptor::operator ==(const FileDescriptor &descriptor)
-{DD;
+{DDD;
     return this->fileName() == descriptor.fileName();
 }
 
 QStringList UffFileDescriptor::fileFilters()
-{DD;
+{DDD;
     return QStringList()<< "Файлы uff (*.uff)";
 }
 
 QStringList UffFileDescriptor::suffixes()
-{DD;
+{DDD;
     return QStringList()<<"*.uff";
 }
 
 
 UffHeader::UffHeader()
-{DD;
+{DDD;
     setType151(type151);
 }
 
 UffHeader::UffHeader(const DataDescription &data)
-{DD;
+{DDD;
     setType151(type151);
     type151[4].value = data.get("source.file");
     //type151[6].value = "NONE";
@@ -491,7 +491,7 @@ UffHeader::UffHeader(const DataDescription &data)
 }
 
 void UffHeader::read(QTextStream &stream)
-{DD;
+{DDD;
     for (int i=0; i<20; ++i) {
         fields[type151[i].type]->read(type151[i].value, stream);
 //        qDebug() << i << type151[i].value;
@@ -500,7 +500,7 @@ void UffHeader::read(QTextStream &stream)
 }
 
 void UffHeader::read(char *pos, qint64 &offset)
-{DD;
+{DDD;
     for (int i=0; i<20; ++i) {
         //qDebug()<<"pos at"<<offset;
         offset += fields[type151[i].type]->read(type151[i].value, pos, offset);
@@ -509,7 +509,7 @@ void UffHeader::read(char *pos, qint64 &offset)
 }
 
 void UffHeader::write(QTextStream &stream)
-{DD;
+{DDD;
     type151[16].value = QDateTime::currentDateTime();
 
     for (int i=0; i<20; ++i) {
@@ -518,12 +518,12 @@ void UffHeader::write(QTextStream &stream)
 }
 
 QString UffHeader::info() const
-{DD;
+{DDD;
     return type151[4].value.toString()+" "+type151[6].value.toString();
 }
 
 DataDescription UffHeader::toDataDescription() const
-{DD;
+{DDD;
     DataDescription data;
     data.put("source.file", type151[4].value);
     //type151[6].value = "NONE";
@@ -537,19 +537,19 @@ DataDescription UffHeader::toDataDescription() const
 
 
 UffUnits::UffUnits()
-{DD;
+{DDD;
     setType164(type164);
 }
 
 void UffUnits::read(QTextStream &stream)
-{DD;
+{DDD;
     for (int i=0; i<14; ++i) {
         fields[type164[i].type]->read(type164[i].value, stream);
     }
 }
 
 void UffUnits::read(char *pos, qint64 &offset)
-{DD;
+{DDD;
     for (int i=0; i<14; ++i) {
         //qDebug()<<"pos at"<<offset;
         offset += fields[type164[i].type]->read(type164[i].value, pos, offset);
@@ -557,7 +557,7 @@ void UffUnits::read(char *pos, qint64 &offset)
 }
 
 void UffUnits::write(QTextStream &stream)
-{DD;
+{DDD;
     for (int i=0; i<14; ++i) {
         fields[type164[i].type]->print(type164[i].value, stream);
     }
@@ -565,13 +565,13 @@ void UffUnits::write(QTextStream &stream)
 
 
 FunctionHeader::FunctionHeader()
-{DD;
+{DDD;
     setType1858(type1858);
     valid = true;
 }
 
 void FunctionHeader::read(QTextStream &stream)
-{DD;
+{DDD;
     qint64 offs = stream.pos();
     for (int i=0; i<4; ++i) {
         fields[type1858[i].type]->read(type1858[i].value, stream);
@@ -589,7 +589,7 @@ void FunctionHeader::read(QTextStream &stream)
 }
 
 void FunctionHeader::read(char *data, qint64 &offset)
-{DD;
+{DDD;
     qint64 offs = offset;
     for (int i=0; i<4; ++i) {
         offset += fields[type1858[i].type]->read(type1858[i].value, data, offset);
@@ -607,14 +607,14 @@ void FunctionHeader::read(char *data, qint64 &offset)
 }
 
 void FunctionHeader::write(QTextStream &stream)
-{DD;
+{DDD;
     for (int i=0; i<48; ++i) {
         fields[type1858[i].type]->print(type1858[i].value, stream);
     }
 }
 
 void FunctionHeader::toDataDescription(DataDescription &d)
-{DD;
+{DDD;
     //{FTInteger12, 1}, //4 set record number
     if (int v = type1858[5].value.toInt(); v!=0) {
         d.put("function.octaveFormat", v);
@@ -648,7 +648,7 @@ void FunctionHeader::toDataDescription(DataDescription &d)
 }
 
 void FunctionHeader::sanitize()
-{DD;
+{DDD;
     for (int i=0; i<48; ++i) {
         if (type1858[i].type >= FTString80 && type1858[i].type <= FTTimeDate80) {
             if (type1858[i].value.toString() == "NONE") type1858[i].value.clear();
@@ -657,7 +657,7 @@ void FunctionHeader::sanitize()
 }
 
 FunctionHeader FunctionHeader::fromDescription(const DataDescription &d)
-{DD;
+{DDD;
     FunctionHeader h;
     h.type1858[5].value = d.get("function.octaveFormat");
     //{FTInteger12, 0}, //6 measurement run number
@@ -685,13 +685,13 @@ FunctionHeader FunctionHeader::fromDescription(const DataDescription &d)
 }
 
 FunctionDescription::FunctionDescription()
-{DD;
+{DDD;
     setType58(type58);
     valid = true;
 }
 
 void FunctionDescription::read(QTextStream &stream)
-{DD;
+{DDD;
     qint64 offs = stream.pos();
     for (int i=0; i<4; ++i) {
         fields[type58[i].type]->read(type58[i].value, stream);
@@ -709,7 +709,7 @@ void FunctionDescription::read(QTextStream &stream)
 }
 
 void FunctionDescription::read(char *data, qint64 &offset)
-{DD;
+{DDD;
     qint64 offs = offset;
     for (int i=0; i<4; ++i) {
         offset += fields[type58[i].type]->read(type58[i].value, data, offset);
@@ -727,14 +727,14 @@ void FunctionDescription::read(char *data, qint64 &offset)
 }
 
 void FunctionDescription::write(QTextStream &stream)
-{DD;
+{DDD;
     for (int i=0; i<60; ++i) {
         fields[type58[i].type]->print(type58[i].value, stream);
     }
 }
 
 void FunctionDescription::toDataDescription(DataDescription &d)
-{DD;
+{DDD;
     d.put("name", type58[4].value);
     d.put("description", type58[6].value);
     d.put("dateTime", type58[8].value); //8-9 Time date of function creation
@@ -819,7 +819,7 @@ void FunctionDescription::toDataDescription(DataDescription &d)
 }
 
 void FunctionDescription::sanitize()
-{DD;
+{DDD;
     for (int i=0; i<60; ++i) {
         if (type58[i].type >= FTString80 && type58[i].type <= FTTimeDate80) {
             if (type58[i].value.toString() == "NONE") type58[i].value.clear();
@@ -828,7 +828,7 @@ void FunctionDescription::sanitize()
 }
 
 FunctionDescription FunctionDescription::fromDescription(const DataDescription &d)
-{DD;
+{DDD;
     FunctionDescription h;
     h.type58[4].value = d.get("name");
     h.type58[6].value = d.get("description");
@@ -899,7 +899,7 @@ FunctionDescription FunctionDescription::fromDescription(const DataDescription &
 }
 
 QDataStream &operator>>(QDataStream &stream, FunctionHeader &header)
-{DD;
+{DDD;
     stream >> header.type1858;
     stream >> header.valid;
     return stream;
@@ -908,7 +908,7 @@ QDataStream &operator>>(QDataStream &stream, FunctionHeader &header)
 
 Function::Function(UffFileDescriptor *parent) : Channel(),
     parent(parent)
-{DD;
+{DDD;
     //setType58(type58);
     parent->channels << this;
 }
@@ -916,7 +916,7 @@ Function::Function(UffFileDescriptor *parent) : Channel(),
 
 
 Function::Function(Channel &other, UffFileDescriptor *parent) : Channel(other), parent(parent)
-{DD;
+{DDD;
     parent->channels << this;
 
     dataDescription().put("dateTime", QDateTime::currentDateTime());
@@ -924,12 +924,12 @@ Function::Function(Channel &other, UffFileDescriptor *parent) : Channel(other), 
 }
 
 Function::~Function()
-{DD;
+{DDD;
 
 }
 
 void Function::read(QTextStream &stream, qint64 pos)
-{DD;
+{DDD;
     if (pos != -1) stream.seek(pos);
 
     dataPositions.clear(); dataEnds.clear();
@@ -960,7 +960,7 @@ void Function::read(QTextStream &stream, qint64 pos)
 }
 
 void Function::read(char *data, qint64 &offset, qint64 size)
-{DD;
+{DDD;
     dataPositions.clear();  dataEnds.clear();
     zValues.clear();
 
@@ -998,7 +998,7 @@ void Function::read(char *data, qint64 &offset, qint64 size)
 }
 
 void Function::read(QDataStream &stream)
-{DD;
+{DDD;
     stream >> dataDescription();
     stream >> dataPositions;
     stream >> dataEnds;
@@ -1008,7 +1008,7 @@ void Function::read(QDataStream &stream)
 }
 
 void Function::readRest()
-{DD;
+{DDD;
     //zValues may be long - multiblock file
 
     //может так получиться, что тип единицы по оси y будет неправильным.
@@ -1114,7 +1114,7 @@ void Function::readRest()
 
 
 void Function::write(QTextStream &stream, int &id)
-{DD;
+{DDD;
     const int samples = data()->samplesCount();
     const int blocks = data()->blocksCount();
     dataPositions.clear();  dataEnds.clear();
@@ -1253,17 +1253,17 @@ void Function::write(QTextStream &stream, int &id)
 }
 
 FileDescriptor *Function::descriptor() const
-{DD;
+{DDD;
      return parent;
 }
 
 Descriptor::DataType Function::type() const
-{DD;
+{DDD;
     return static_cast<Descriptor::DataType>(dataDescription().get("function.type").toInt());
 }
 
 bool Function::populateWithMmap()
-{DD;
+{DDD;
     QFile uff(parent->fileName());
     if (!uff.open(QFile::ReadOnly)) {
         qDebug()<<"Не удалось открыть файл"<<parent->fileName();
@@ -1342,7 +1342,7 @@ bool Function::populateWithMmap()
 }
 
 bool Function::populateWithStream()
-{DD;
+{DDD;
     QFile uff(parent->fileName());
     if (!uff.open(QFile::ReadOnly | QFile::Text)) {
         qDebug()<<"Не удалось открыть файл"<<parent->fileName();
@@ -1432,7 +1432,7 @@ bool Function::populateWithStream()
 }
 
 void Function::populate()
-{DD;
+{DDD;
     _data->clear();
 
     setPopulated(false);
@@ -1445,7 +1445,7 @@ void Function::populate()
 }
 
 void UffFileDescriptor::setChanged(bool changed)
-{DD;
+{DDD;
     FileDescriptor::setChanged(changed);
     if (changed) removeTempFile();
 }
@@ -1486,12 +1486,12 @@ QDataStream &operator<<(QDataStream &stream, const FunctionHeader &header)
 
 
 int Function::index() const
-{DD;
+{DDD;
     return parent->channels.indexOf(const_cast<Function*>(this));
 }
 
 int uffWindowTypeFromDescription(QString description)
-{DD;
+{DDD;
     //названия окон взяты из windowing.cpp
 //    case 0: return "no"; -> 0
 //    case 1: return "Bartlett";
@@ -1537,7 +1537,7 @@ int uffWindowTypeFromDescription(QString description)
 }
 
 QString windowDescriptionFromUffType(int type)
-{DD;
+{DDD;
     //window type, 0=no, 1=hanning narrow, 2=hanning broad, 3=flattop,
                      //4=exponential, 5=impact, 6=impact and exponential
 
@@ -1565,7 +1565,7 @@ QString windowDescriptionFromUffType(int type)
 }
 
 int scalingTypeFromDescription(const QString &description)
-{DD;
+{DDD;
     if (description == "unknown") return 0;
     if (description == "half-peak") return 1;
     if (description == "peak") return 2;
@@ -1574,7 +1574,7 @@ int scalingTypeFromDescription(const QString &description)
 }
 
 QString scalingDescriptionFromUffType(int type)
-{DD;
+{DDD;
     switch (type) {
         case 1: return "half-peak";
         case 2: return "peak";
@@ -1584,7 +1584,7 @@ QString scalingDescriptionFromUffType(int type)
 }
 
 int normalizationTypeFromDescription(const QString &description)
-{DD;
+{DDD;
     //0=unknown, 1=units squared, 2=Units squared per Hz (PSD)
     //3=Units squared seconds per Hz (ESD)
     if (description == "unknown") return 0;
@@ -1595,7 +1595,7 @@ int normalizationTypeFromDescription(const QString &description)
 }
 
 QString normalizationDescriptionFromUffType(int type)
-{DD;
+{DDD;
     switch (type) {
         case 1: return "squared";
         case 2: return "squared/Hz";

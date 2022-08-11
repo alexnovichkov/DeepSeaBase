@@ -9,20 +9,20 @@
 #include "mainwindow.h"
 
 Model::Model(QObject *parent) : QAbstractTableModel(parent)
-{DD;
+{DDD;
     uFont = qobject_cast<QApplication*>(qApp)->font();
     bFont = uFont;
     bFont.setBold(true);
 }
 
 F Model::file(int i)
-{DD;
+{DDD;
     if (i<0 || i>=descriptors.size()) return nullptr;
     return descriptors[i];
 }
 
 void Model::addFiles(const QList<F> &files, bool silent)
-{DD;
+{DDD;
     if (files.isEmpty()) return;
     beginInsertRows(QModelIndex(), descriptors.size(), descriptors.size()+files.size()-1);
     descriptors.append(files);
@@ -31,13 +31,13 @@ void Model::addFiles(const QList<F> &files, bool silent)
 }
 
 void Model::setSelected(const QVector<int> &indexes)
-{DD;
+{DDD;
     this->indexes = indexes;
     emit modelChanged();
 }
 
 QList<FileDescriptor *> Model::selectedFiles(const QVector<Descriptor::DataType> &types) const
-{DD;
+{DDD;
     QList<FileDescriptor *> files;
     for (int i: qAsConst(indexes)) {
         if (types.contains(descriptors.at(i)->type()) || types.isEmpty())
@@ -47,7 +47,7 @@ QList<FileDescriptor *> Model::selectedFiles(const QVector<Descriptor::DataType>
 }
 
 void Model::setChannelProperty(int channel, const QString &property, const QString &value)
-{DD;
+{DDD;
     for (int i: qAsConst(indexes)) {
         if (Channel *ch = descriptors[i]->channel(channel)) {
             if (ch->dataDescription().get(property) != value) {
@@ -62,14 +62,14 @@ void Model::setChannelProperty(int channel, const QString &property, const QStri
 }
 
 void Model::updateFile(FileDescriptor *file, int column)
-{DD;
+{DDD;
     int idx;
     if (contains(file, &idx))
         updateFile(idx, column);
 }
 
 void Model::updateFile(int idx, int column)
-{DD;
+{DDD;
     if (column == -1) {
         QModelIndex id1 = index(idx, 0);
         QModelIndex id2 = index(idx, MODEL_COLUMNS_COUNT-1);
@@ -82,7 +82,7 @@ void Model::updateFile(int idx, int column)
 }
 
 void Model::clear()
-{DD;
+{DDD;
     //выделяем все файлы
     indexes.resize(size());
     std::iota(indexes.begin(), indexes.end(), 0);
@@ -91,7 +91,7 @@ void Model::clear()
 }
 
 void Model::deleteSelectedFiles()
-{DD;
+{DDD;
     beginResetModel();
     for (int i = indexes.size()-1; i>=0; --i) {
         int toDelete = indexes.at(i);
@@ -107,7 +107,7 @@ void Model::deleteSelectedFiles()
 }
 
 void Model::invalidateCurve(Channel* channel)
-{DD;
+{DDD;
     int row;
     if (contains(channel->descriptor(), &row)) {
         QModelIndex idx = index(row, MODEL_COLUMN_FILENAME);
@@ -117,7 +117,7 @@ void Model::invalidateCurve(Channel* channel)
 }
 
 void Model::save()
-{DD;
+{DDD;
     for (int i=0; i<descriptors.size(); ++i) {
         descriptors[i]->write();
         emit dataChanged(index(i,0), index(i,MODEL_COLUMNS_COUNT-1));
@@ -125,7 +125,7 @@ void Model::save()
 }
 
 void Model::discardChanges()
-{DD;
+{DDD;
     for (auto f: qAsConst(descriptors)) {
         f->setChanged(false);
         f->setDataChanged(false);
@@ -137,7 +137,7 @@ void Model::discardChanges()
 }
 
 bool Model::changed() const
-{DD;
+{DDD;
     //qDebug()<<descriptors;
 
     for (const auto &f: descriptors)
@@ -149,7 +149,7 @@ bool Model::changed() const
 }
 
 void Model::copyToLegend()
-{
+{DDD;
     const QList<FileDescriptor *> records = selectedFiles();
     for (FileDescriptor *f: records) {
         f->setLegend(QFileInfo(f->fileName()).completeBaseName());
@@ -159,7 +159,7 @@ void Model::copyToLegend()
 }
 
 Model::~Model()
-{DD;
+{DDD;
     //clear();
 
     for (int i = descriptors.size()-1; i>=0; --i) {
@@ -172,14 +172,14 @@ Model::~Model()
 }
 
 void Model::maybeDeleteFile(int index)
-{DD;
+{DDD;
     QString name = descriptors[index]->fileName();
     descriptors[index].reset();
     App->maybeDelFile(name);
 }
 
 bool Model::contains(const QString &fileName, int *index) const
-{DD;
+{DDD;
     for (int i=0; i<descriptors.size(); ++i) {
         if (descriptors[i]->fileName() == fileName) {
             if (index) *index = i;
@@ -191,7 +191,7 @@ bool Model::contains(const QString &fileName, int *index) const
 }
 
 bool Model::contains(const F& file, int *index) const
-{DD;
+{DDD;
     int ind = descriptors.indexOf(file);
     if (index) *index = ind;
 
@@ -292,7 +292,7 @@ QVariant Model::data(const QModelIndex &index, int role) const
 
 
 bool Model::setData(const QModelIndex &index, const QVariant &value, int role)
-{DD;
+{DDD;
     if (role != Qt::EditRole) return false;
     if (!index.isValid()) return false;
 
@@ -380,13 +380,13 @@ Qt::ItemFlags Model::flags(const QModelIndex &index) const
 
 
 Qt::DropActions Model::supportedDropActions() const
-{DD;
+{DDD;
     return Qt::CopyAction;
 }
 
 
 bool Model::canDropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent) const
-{DD;
+{DDD;
     Q_UNUSED(action);
     Q_UNUSED(row);
     Q_UNUSED(column);
@@ -396,7 +396,7 @@ bool Model::canDropMimeData(const QMimeData *data, Qt::DropAction action, int ro
 }
 
 bool Model::dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent)
-{DD;
+{DDD;
     if (!canDropMimeData(data, action, row, column, parent))
         return false;
 

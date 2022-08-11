@@ -11,29 +11,29 @@
 #include "canvaseventfilter.h"
 
 TimePlot::TimePlot(QWidget *parent) : Plot(Plot::PlotType::Time, parent)
-{
+{DDD;
     playerPanel = new PlayPanel(this);
     connect(this, SIGNAL(curvesCountChanged()), playerPanel, SLOT(update()));
     connect(canvasFilter, SIGNAL(canvasDoubleClicked(QPoint)),playerPanel,SLOT(moveTo(QPoint)));
 }
 
 TimePlot::~TimePlot()
-{
+{DDD;
     //delete playerPanel;
 }
 
 Curve *TimePlot::createCurve(const QString &legendName, Channel *channel)
-{
+{DDD;
     return new TimeCurve(legendName, channel);
 }
 
 QWidget *TimePlot::toolBarWidget()
-{
+{DDD;
     return playerPanel;
 }
 
 void TimePlot::updateActions(int filesCount, int channelsCount)
-{
+{DDD;
     Q_UNUSED(filesCount);
     Q_UNUSED(channelsCount);
 
@@ -44,7 +44,7 @@ void TimePlot::updateActions(int filesCount, int channelsCount)
 }
 
 bool TimePlot::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
-{
+{DDD;
     //не можем строить временные графики на графике спектров
     if (ch->type() != Descriptor::TimeResponse) {
         if (message) *message = "Отсутствуют временные данные";
@@ -63,7 +63,7 @@ bool TimePlot::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
 }
 
 bool TimePlot::canBePlottedOnRightAxis(Channel *ch, QString *message) const
-{
+{DDD;
     //не можем строить временные графики на графике спектров
     if (ch->type() != Descriptor::TimeResponse) {
         if (message) *message = "Отсутствуют временные данные";

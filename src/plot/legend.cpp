@@ -20,7 +20,7 @@ static void qwtRenderBackground( QPainter *painter, const QRectF &rect, const QW
 }
 
 CheckableLegend::CheckableLegend(QWidget *parent) : QwtAbstractLegend(parent)
-{DD;
+{DDD;
     d_treeView = new LegendTreeView(this);
     d_model = new LegendModel(this);
     d_treeView->setModel(d_model);
@@ -36,12 +36,12 @@ CheckableLegend::CheckableLegend(QWidget *parent) : QwtAbstractLegend(parent)
 }
 
 CheckableLegend::~CheckableLegend()
-{DD;
+{DDD;
 
 }
 
 void CheckableLegend::renderLegend(QPainter *painter, const QRectF &rect, bool fillBackground) const
-{DD;
+{DDD;
     if (fillBackground ) {
         if (autoFillBackground() || testAttribute(Qt::WA_StyledBackground)) {
             qwtRenderBackground(painter, rect, d_treeView);
@@ -68,17 +68,17 @@ void CheckableLegend::renderLegend(QPainter *painter, const QRectF &rect, bool f
 }
 
 bool CheckableLegend::isEmpty() const
-{DD;
+{DDD;
     return d_model->rowCount() == 0;
 }
 
 int CheckableLegend::scrollExtent(Qt::Orientation) const
-{DD;
+{DDD;
     return style()->pixelMetric( QStyle::PM_ScrollBarExtent );
 }
 
 void CheckableLegend::updateLegend(const QVariant &itemInfo, const QList<QwtLegendData> &data)
-{DD;
+{DDD;
     QwtPlotItem *plotItem = qvariant_cast<QwtPlotItem *>(itemInfo);
 
     if (plotItem->rtti() == QwtPlotItem::Rtti_PlotItem)
@@ -95,7 +95,7 @@ void CheckableLegend::updateLegend(const QVariant &itemInfo, const QList<QwtLege
 }
 
 void CheckableLegend::handleClick(const QModelIndex &i)
-{DD;
+{DDD;
     if (QApplication::mouseButtons() & Qt::RightButton) {
         QMenu menu;
         menu.addAction("Удалить", this, [this, i](){
@@ -124,7 +124,7 @@ void CheckableLegend::handleClick(const QModelIndex &i)
 }
 
 void CheckableLegend::updateItem(QwtPlotItem *item, const QwtLegendData &data)
-{DD;
+{DDD;
     static constexpr int additionalRole = QwtLegendData::UserRole+1;// - дополнительный идентификатор канала
     static constexpr int selectedRole = QwtLegendData::UserRole+2;// - индикатор того, что кривая выбрана
     static constexpr int colorRole = QwtLegendData::UserRole+3;// - цвет кривой
@@ -155,17 +155,17 @@ void CheckableLegend::updateItem(QwtPlotItem *item, const QwtLegendData &data)
 
 
 LegendModel::LegendModel(QObject *parent) : QAbstractTableModel(parent)
-{DD;
+{DDD;
 
 }
 
 LegendModel::~LegendModel()
-{DD;
+{DDD;
 
 }
 
 bool LegendModel::contains(QwtPlotItem *item)
-{DD;
+{DDD;
     for (const LegendItem &i: qAsConst(items)) {
         if (i.item == item) return true;
     }
@@ -173,14 +173,14 @@ bool LegendModel::contains(QwtPlotItem *item)
 }
 
 QwtPlotItem *LegendModel::item(int row)
-{DD;
+{DDD;
     if (row < 0 || row >= items.size()) return 0;
 
     return items.at(row).item;
 }
 
 void LegendModel::addItem(QwtPlotItem *it)
-{DD;
+{DDD;
     beginInsertRows(QModelIndex(), items.size(), items.size());
     LegendItem item;
     item.checked = it->isVisible();
@@ -190,7 +190,7 @@ void LegendModel::addItem(QwtPlotItem *it)
 }
 
 void LegendModel::removeItem(QwtPlotItem *plotItem)
-{DD;
+{DDD;
     int ind = -1;
     for (int index = 0; index < items.size(); ++index) {
         if (items[index].item == plotItem) {
@@ -207,7 +207,7 @@ void LegendModel::removeItem(QwtPlotItem *plotItem)
 
 void LegendModel::update(QwtPlotItem *it, const QString &text, const QColor &color,
                          bool checked, bool selected, bool fixed)
-{DD;
+{DDD;
     int ind = -1;
     for (int index = 0; index < items.size(); ++index) {
         if (items[index].item == it) {
@@ -225,7 +225,7 @@ void LegendModel::update(QwtPlotItem *it, const QString &text, const QColor &col
 }
 
 int LegendModel::rowCount(const QModelIndex &parent) const
-{DD;
+{DDD;
     Q_UNUSED(parent);
     return items.size();
 }
@@ -237,7 +237,7 @@ int LegendModel::columnCount(const QModelIndex &parent) const
 }
 
 QVariant LegendModel::data(const QModelIndex &index, int role) const
-{DD;
+{DDD;
     if (!index.isValid()) return QVariant();
 
     const int row = index.row();
@@ -285,7 +285,7 @@ QVariant LegendModel::data(const QModelIndex &index, int role) const
 }
 
 bool LegendModel::setData(const QModelIndex &index, const QVariant &value, int role)
-{DD;
+{DDD;
     if (role != Qt::CheckStateRole) return false;
     if (!index.isValid()) return false;
 
@@ -310,7 +310,7 @@ bool LegendModel::setData(const QModelIndex &index, const QVariant &value, int r
 }
 
 Qt::ItemFlags LegendModel::flags(const QModelIndex &index) const
-{DD;
+{DDD;
     const int col = index.column();
     Qt::ItemFlags fl = QAbstractTableModel::flags(index);
     if (col==0) return fl | Qt::ItemIsUserCheckable;
@@ -319,7 +319,7 @@ Qt::ItemFlags LegendModel::flags(const QModelIndex &index) const
 }
 
 LegendTreeView::LegendTreeView(QWidget *parent) : QTreeView(parent)
-{DD;
+{DDD;
     setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Minimum);
     setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     setFrameStyle( NoFrame );
@@ -334,12 +334,12 @@ LegendTreeView::LegendTreeView(QWidget *parent) : QTreeView(parent)
 }
 
 QSize LegendTreeView::minimumSizeHint() const
-{DD;
+{DDD;
     return QSize( -1, -1 );
 }
 
 QSize LegendTreeView::sizeHint() const
-{DD;
+{DDD;
     int w = 0;
     int h = 0;
 

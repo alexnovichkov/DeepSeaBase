@@ -74,7 +74,7 @@
 
 Plot::Plot(PlotType type, QWidget *parent) :
     QwtPlot(parent), plotType(type)
-{DD;
+{DDD;
     m = new PlotModel(this);
 
     QVariantList list = Settings::getSetting("colors").toList();
@@ -153,7 +153,7 @@ Plot::Plot(PlotType type, QWidget *parent) :
 }
 
 Plot::~Plot()
-{DD;
+{DDD;
     deleteAllCurves(true);
 
 //    delete trackingPanel;
@@ -175,19 +175,19 @@ Plot::~Plot()
 }
 
 void Plot::updatePlottedIndexes()
-{DD;
+{DDD;
     if (!sergeiMode) m->updatePlottedIndexes();
 }
 
 void Plot::plotCurvesForDescriptor(FileDescriptor *d, int fileIndex)
-{
+{DD;
     m->updatePlottedIndexes(d, fileIndex);
     const auto plotted = m->plottedIndexes();
     for (const auto &i: plotted) plotChannel(i.ch, i.onLeft, i.fileIndex);
 }
 
 void Plot::update()
-{DD;
+{DDD;
     updateAxes();
     updateAxesLabels();
     updateLegend();
@@ -198,7 +198,7 @@ void Plot::update()
 }
 
 void Plot::updateBounds()
-{
+{DDD;
     if (m->leftCurvesCount()==0)
         zoom->verticalScaleBounds->reset();
     if (m->rightCurvesCount()==0)
@@ -215,14 +215,14 @@ void Plot::updateBounds()
 }
 
 void Plot::setRightScale(QwtAxisId id, double min, double max)
-{
+{DDD;
     Q_UNUSED(id);
     Q_UNUSED(min);
     Q_UNUSED(max);
 }
 
 QMenu *Plot::createMenu(QwtAxisId axis, const QPoint &pos)
-{
+{DDD;
     QMenu *menu = new QMenu(this);
 
     if (axis == QwtAxis::XBottom) {
@@ -379,12 +379,12 @@ QMenu *Plot::createMenu(QwtAxisId axis, const QPoint &pos)
 }
 
 void Plot::setInfoVisible(bool visible)
-{
+{DDD;
     infoOverlay->setVisible(visible);
 }
 
 void Plot::cycleChannels(bool up)
-{
+{DD;
     //есть список кривых, возможно, из разных записей. Необходимо для каждой записи
     //получить список индексов, сдвинуть этот список вверх или вниз,
     //а затем удалить имеющиеся кривые и построить сдвинутые, причем соблюдая порядок
@@ -405,12 +405,12 @@ void Plot::cycleChannels(bool up)
 }
 
 bool Plot::hasCurves() const
-{DD;
+{DDD;
     return !m->isEmpty();
 }
 
 int Plot::curvesCount(int type) const
-{DD;
+{DDD;
     return m->size(type);
 }
 
@@ -431,7 +431,7 @@ void Plot::deleteAllCurves(bool forceDeleteFixed)
 }
 
 void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
-{DD;
+{DDD;
     for (int i = m->size()-1; i>=0; --i) {
         if (Curve *curve = m->curve(i); descriptor == curve->channel->descriptor()) {
             deleteCurve(curve, true);
@@ -443,7 +443,7 @@ void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
 
 //не удаляем, если фиксирована
 void Plot::deleteCurveFromLegend(QwtPlotItem *item)
-{DD;
+{DDD;
     if (Curve *c = dynamic_cast<Curve *>(item); !c->fixed) {
         deleteCurve(c, true);
         updatePlottedIndexes();
@@ -452,7 +452,7 @@ void Plot::deleteCurveFromLegend(QwtPlotItem *item)
 }
 
 void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot)
-{DD;
+{DDD;
     if (Curve *curve = m->plotted(dfd->channel(channel))) {
         deleteCurve(curve, doReplot);
         updatePlottedIndexes();
@@ -461,7 +461,7 @@ void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doR
 }
 
 void Plot::deleteSelectedCurve(Selectable *selected)
-{
+{DDD;
     if (Curve *curve = dynamic_cast<Curve*>(selected)) {
         deleteCurve(curve, true);
         updatePlottedIndexes();
@@ -472,7 +472,7 @@ void Plot::deleteSelectedCurve(Selectable *selected)
 //удаляет кривую, была ли она фиксирована или нет.
 //Все проверки проводятся выше
 void Plot::deleteCurve(Curve *curve, bool doReplot)
-{DD;
+{DDD;
     if (!curve) return;
     if (curve->selected()) _picker->deselect();
 
@@ -505,7 +505,7 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
 }
 
 void Plot::showContextMenu(const QPoint &pos, QwtAxisId axis)
-{DD;
+{DDD;
     if (!hasCurves()) return;
 
     QMenu *menu = createMenu(axis, pos);
@@ -516,7 +516,7 @@ void Plot::showContextMenu(const QPoint &pos, QwtAxisId axis)
 }
 
 bool Plot::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
-{DD;
+{DDD;
 //    if (!hasCurves()) // нет графиков - можем построить что угодно
 //        return true;
 //    //особый случай - спектрограмма - всегда одна на графике
@@ -542,7 +542,7 @@ bool Plot::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
 }
 
 bool Plot::canBePlottedOnRightAxis(Channel *ch, QString *message) const
-{DD;
+{DDD;
 //    if (!hasCurves()) // нет графиков - всегда на левой оси
 //        return true;
 //    //особый случай - спектрограмма - всегда одна на графике
@@ -568,12 +568,12 @@ bool Plot::canBePlottedOnRightAxis(Channel *ch, QString *message) const
 }
 
 QString Plot::pointCoordinates(const QPointF &pos)
-{
+{DDD;
     return smartDouble(pos.x())+", "+smartDouble(pos.y());
 }
 
 Curve *Plot::createCurve(const QString &legendName, Channel *channel)
-{
+{DDD;
     //стандартный график может отображать как обычные кривые, так и третьоктавы
 
     // считаем, что шаг по оси х 0 только у октав и третьоктав
@@ -586,12 +586,12 @@ Curve *Plot::createCurve(const QString &legendName, Channel *channel)
 }
 
 void Plot::prepareAxis(QwtAxisId axis)
-{DD;
+{DDD;
     if (!isAxisVisible(axis)) setAxisVisible(axis);
 }
 
 void Plot::setAxis(QwtAxisId axis, const QString &name)
-{DD;
+{DDD;
     switch (axis) {
         case QwtAxis::YLeft: yLeftName = name; break;
         case QwtAxis::YRight: yRightName = name; break;
@@ -601,7 +601,7 @@ void Plot::setAxis(QwtAxisId axis, const QString &name)
 }
 
 void Plot::updateAxesLabels()
-{DD;
+{DDD;
     if (m->leftCurvesCount()==0) enableAxis(QwtAxis::YLeft, false);
     else {
         enableAxis(QwtAxis::YLeft, axisLabelsVisible);
@@ -630,20 +630,20 @@ void Plot::updateAxesLabels()
 }
 
 void Plot::setScale(QwtAxisId id, double min, double max, double step)
-{DD;
+{DDD;
     setRightScale(id, min, max);
     setAxisScale(id, min, max, step);
     replot();
 }
 
 void Plot::removeLabels()
-{DD;
+{DDD;
     m->removeLabels();
     replot();
 }
 
 void Plot::moveCurve(Curve *curve, int axis)
-{DD;
+{DDD;
     if (type()==Plot::PlotType::Spectrogram) return;
 
     if ((axis == QwtAxis::YLeft && canBePlottedOnLeftAxis(curve->channel))
@@ -671,7 +671,7 @@ void Plot::moveCurve(Curve *curve, int axis)
 }
 
 void Plot::fixCurve(QwtPlotItem *curve)
-{DD;
+{DDD;
     if (Curve *c = dynamic_cast<Curve*>(curve)) {
         c->switchFixed();
         updateLegend();
@@ -679,7 +679,7 @@ void Plot::fixCurve(QwtPlotItem *curve)
 }
 
 void Plot::hoverAxis(QwtAxisId axis, int hover)
-{DD;
+{DDD;
     if (ScaleDraw * scale = dynamic_cast<ScaleDraw*>(axisScaleDraw(axis))) {
         if (scale->hover != hover) {
             scale->hover = hover;
@@ -689,12 +689,12 @@ void Plot::hoverAxis(QwtAxisId axis, int hover)
 }
 
 QColor Plot::getNextColor()
-{
+{DDD;
     return colors->getColor();
 }
 
 //void Plot::checkDuplicates(const QString name)
-//{DD;
+//{DDD;
 //    Curve *c1 = nullptr;
 //    int found = 0;
 //    for (auto c: qAsConst(curves)) {
@@ -710,7 +710,7 @@ QColor Plot::getNextColor()
 //}
 
 QString Plot::yValuesPresentationSuffix(int yValuesPresentation) const
-{DD;
+{DDD;
     switch (DataHolder::YValuesPresentation(yValuesPresentation)) {
         case DataHolder::ShowAsDefault: return QString();
         case DataHolder::ShowAsReals: return " [Re]";
@@ -724,7 +724,7 @@ QString Plot::yValuesPresentationSuffix(int yValuesPresentation) const
 }
 
 void Plot::createLegend()
-{DD;
+{DDD;
     CheckableLegend *leg = new CheckableLegend();
     connect(leg, SIGNAL(clicked(QwtPlotItem*)),this,SLOT(editLegendItem(QwtPlotItem*)));
     connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurveFromLegend(QwtPlotItem*)));
@@ -737,17 +737,17 @@ void Plot::createLegend()
 }
 
 void Plot::saveSpectrum(double zVal)
-{
+{DDD;
     emit saveHorizontalSlice(zVal);
 }
 
 void Plot::saveThroughput(double xVal)
-{
+{DDD;
     emit saveVerticalSlice(xVal);
 }
 
 void Plot::recalculateScale(bool leftAxis)
-{DD;
+{DDD;
     ZoomStack::ScaleBounds *ybounds = 0;
     if (leftAxis) ybounds = zoom->verticalScaleBounds;
     else ybounds = zoom->verticalScaleBoundsSlave;
@@ -762,7 +762,7 @@ void Plot::recalculateScale(bool leftAxis)
 }
 
 void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
-{
+{DD;
     if (!ch) return;
     //проверяем, построен ли канал на этом графике
     if (m->plotted(ch)) return;
@@ -833,42 +833,42 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 }
 
 Range Plot::xRange() const
-{DD;
+{DDD;
     QwtScaleMap sm = canvasMap(QwtAxis::XBottom);
     return {sm.s1(), sm.s2()};
 }
 
 Range Plot::yLeftRange() const
-{DD;
+{DDD;
     QwtScaleMap sm = canvasMap(QwtAxis::YLeft);
     return {sm.s1(), sm.s2()};
 }
 
 Range Plot::yRightRange() const
-{DD;
+{DDD;
     QwtScaleMap sm = canvasMap(QwtAxis::YRight);
     return {sm.s1(), sm.s2()};
 }
 
 QString Plot::axisTitleText(QwtAxisId id) const
-{
+{DDD;
     return axisTitle(id).text();
 }
 
 void Plot::switchLabelsVisibility()
-{DD;
+{DDD;
     axisLabelsVisible = !axisLabelsVisible;
     updateAxesLabels();
 }
 
 void Plot::updateLegends()
-{DD;
+{DDD;
     m->updateTitles();
     updateLegend();
 }
 
 void Plot::savePlot() /*SLOT*/
-{DD;
+{DDD;
     ImageRenderDialog dialog(true, this);
     if (dialog.exec()) {
         importPlot(dialog.getPath(), dialog.getSize(), dialog.getResolution());
@@ -877,7 +877,7 @@ void Plot::savePlot() /*SLOT*/
 }
 
 void Plot::copyToClipboard() /*SLOT*/
-{DD;
+{DDD;
 
     QTemporaryFile file(QDir::tempPath()+"/DeepSeaBase-XXXXXX.bmp");
     if (file.open()) {
@@ -900,7 +900,7 @@ void Plot::copyToClipboard() /*SLOT*/
 }
 
 void Plot::print() /*SLOT*/
-{DD;
+{DDD;
     QPrinter printer;
     if (printer.isValid())
         importPlot(printer, ImageRenderDialog::defaultSize(), ImageRenderDialog::defaultResolution());
@@ -909,7 +909,7 @@ void Plot::print() /*SLOT*/
 }
 
 void Plot::importPlot(const QString &fileName, const QSize &size, int resolution) /*private*/
-{DD;
+{DDD;
     setAutoReplot(false);
     QwtPlotRenderer renderer;
     renderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);
@@ -947,7 +947,7 @@ void Plot::importPlot(const QString &fileName, const QSize &size, int resolution
 }
 
 void Plot::importPlot(QPrinter &printer, const QSize &size, int resolution) /*private*/
-{DD;
+{DDD;
     Q_UNUSED(size);
     Q_UNUSED(resolution);
 
@@ -989,7 +989,7 @@ void Plot::importPlot(QPrinter &printer, const QSize &size, int resolution) /*pr
 }
 
 void Plot::switchInteractionMode()
-{DD;
+{DDD;
     if (interactionMode == ScalingInteraction) {
         setInteractionMode(DataInteraction);
     }
@@ -999,13 +999,13 @@ void Plot::switchInteractionMode()
 }
 
 void Plot::switchTrackingCursor()
-{DD;
+{DDD;
 //    if (trackingPanel) trackingPanel->switchVisibility();
     if (cursorBox) cursorBox->setVisible(!cursorBox->isVisible());
 }
 
 void Plot::toggleAutoscale(int axis, bool toggled)
-{DD;
+{DDD;
     switch (axis) {
         case 0: // x axis
             zoom->horizontalScaleBounds->setFixed(!toggled);
@@ -1022,12 +1022,12 @@ void Plot::toggleAutoscale(int axis, bool toggled)
 }
 
 void Plot::autoscale(int axis)
-{DD;
+{DDD;
     zoom->autoscale(axis, type()==Plot::PlotType::Spectrogram);
 }
 
 void Plot::setInteractionMode(Plot::InteractionMode mode)
-{DD;
+{DDD;
     interactionMode = mode;
     if (_canvas) _canvas->setFocusIndicator(mode == ScalingInteraction?
                                               QwtPlotCanvas::CanvasFocusIndicator:
@@ -1035,7 +1035,7 @@ void Plot::setInteractionMode(Plot::InteractionMode mode)
 }
 
 void Plot::switchCursor()
-{DD;
+{DDD;
     if (!_picker) return;
 
     bool pickerEnabled = _picker->isEnabled();
@@ -1045,7 +1045,7 @@ void Plot::switchCursor()
 }
 
 void Plot::editLegendItem(QwtPlotItem *item)
-{DD;
+{DDD;
     if (Curve *c = dynamic_cast<Curve *>(item)) {
         CurvePropertiesDialog dialog(c, this);
 //        if (trackingPanel) connect(&dialog,SIGNAL(curveChanged(Curve*)), trackingPanel, SLOT(update()));
@@ -1055,7 +1055,7 @@ void Plot::editLegendItem(QwtPlotItem *item)
 }
 
 void Plot::onDropEvent(bool plotOnLeft, const QVector<Channel*> &channels)
-{
+{DDD;
     //посылаем сигнал о том, что нужно построить эти каналы. Список каналов попадает
     //в mainWindow и возможно будет расширен за счет нажатого Ctrl
     //далее эти каналы попадут обратно в plot.
@@ -1063,7 +1063,7 @@ void Plot::onDropEvent(bool plotOnLeft, const QVector<Channel*> &channels)
 }
 
 void Plot::dropEvent(QDropEvent *event)
-{DD;
+{DDD;
     const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
     if (myData) {
         int w = 0;
@@ -1078,7 +1078,7 @@ void Plot::dropEvent(QDropEvent *event)
 }
 
 void Plot::dragEnterEvent(QDragEnterEvent *event)
-{DD;
+{DDD;
     emit focusThisPlot();
     const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
     if (myData) {
@@ -1094,7 +1094,7 @@ void Plot::dragEnterEvent(QDragEnterEvent *event)
 }
 
 void Plot::dragMoveEvent(QDragMoveEvent *event)
-{DD;
+{DDD;
     const ChannelsMimeData *myData = dynamic_cast<const ChannelsMimeData *>(event->mimeData());
     if (myData) {
         //определяем, можем ли построить каналы на левой или правой оси
@@ -1118,7 +1118,7 @@ void Plot::dragMoveEvent(QDragMoveEvent *event)
 }
 
 void Plot::dragLeaveEvent(QDragLeaveEvent *event)
-{
+{DDD;
     Q_UNUSED(event);
     leftOverlay->setVisibility(false);
     rightOverlay->setVisibility(false);

@@ -7,10 +7,11 @@
 #include <QClipboard>
 #include "settings.h"
 #include "app.h"
+#include "logging.h"
 
 Cursor::Cursor(Type type, Style style, Plot *plot)
     : m_type{type}, m_style{style}, m_plot{plot}
-{
+{DDD;
     m_snapToValues = Settings::getSetting("cursorSnapToValues", true).toBool();
     m_showValues = Settings::getSetting("cursorShowYValues", false).toBool();
     m_digits = Settings::getSetting("cursorDigits", 2).toInt();
@@ -21,17 +22,17 @@ Cursor::Cursor(Type type, Style style, Plot *plot)
 }
 
 void Cursor::saveSpectrum()
-{
+{DDD;
 
 }
 
 void Cursor::saveSlice()
-{
+{DDD;
 
 }
 
 void Cursor::copyValues() const
-{
+{DDD;
     QStringList list;
 
     list << ""<< dataHeader(false).join('\t');
@@ -52,13 +53,13 @@ void Cursor::copyValues() const
 }
 
 void Cursor::setSnapToValues(bool snap)
-{
+{DDD;
     m_snapToValues = snap;
     if (snap) updatePos();
 }
 
 QPointF Cursor::correctedPos(QPointF oldPos, int deltaX, int deltaY) const
-{
+{DDD;
     if (!m_plot) return oldPos;
 
     const auto list = m_plot->model()->curves();
@@ -93,7 +94,7 @@ QPointF Cursor::correctedPos(QPointF oldPos, int deltaX, int deltaY) const
 }
 
 void Cursor::setShowValues(bool show)
-{
+{DDD;
     if (m_showValues != show) {
         m_showValues = show;
         update();
@@ -101,7 +102,7 @@ void Cursor::setShowValues(bool show)
 }
 
 void Cursor::setDigits(int digits)
-{
+{DDD;
     if (m_digits != digits) {
         m_digits = digits;
         update();
@@ -109,7 +110,7 @@ void Cursor::setDigits(int digits)
 }
 
 void Cursor::setHarmonics(int harmonics)
-{
+{DDD;
     if (m_harmonics != harmonics) {
         m_harmonics = harmonics;
         update();
@@ -117,7 +118,7 @@ void Cursor::setHarmonics(int harmonics)
 }
 
 void Cursor::setFormat(Cursor::Format format)
-{
+{DDD;
     if (m_format != format) {
         m_format = format;
         update();
@@ -125,7 +126,7 @@ void Cursor::setFormat(Cursor::Format format)
 }
 
 void Cursor::setInfo(Info info)
-{
+{DDD;
     if (m_info != info) {
         m_info = info;
         emit dataChanged();
@@ -133,11 +134,11 @@ void Cursor::setInfo(Info info)
 }
 
 void Cursor::addRejectCursor(Cursor *c)
-{
+{DDD;
     rejectCursors.append(c);
 }
 
 void Cursor::removeRejectCursor(Cursor *c)
-{
+{DDD;
     rejectCursors.removeOne(c);
 }

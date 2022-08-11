@@ -6,7 +6,7 @@
 
 ChannelTableModel::ChannelTableModel(QObject *parent) : QAbstractTableModel(parent),
     descriptor(0)
-{DD;
+{DDD;
     channelsCount = 0;
 
     uFont = qobject_cast<QApplication*>(qApp)->font();
@@ -15,14 +15,14 @@ ChannelTableModel::ChannelTableModel(QObject *parent) : QAbstractTableModel(pare
 }
 
 ChannelTableModel::~ChannelTableModel()
-{DD;
+{DDD;
     descriptor = 0;
     channelsCount = 0;
     indexes.clear();
 }
 
 Channel *ChannelTableModel::channel(int index)
-{DD;
+{DDD;
     if (!descriptor) return nullptr;
 
     if (index >= 0 && index < channelsCount)
@@ -32,7 +32,7 @@ Channel *ChannelTableModel::channel(int index)
 }
 
 QVector<Channel *> ChannelTableModel::selectedChannels() const
-{DD;
+{DDD;
     QVector<Channel *> result;
     if (descriptor)
         for (int i: indexes) {
@@ -42,7 +42,7 @@ QVector<Channel *> ChannelTableModel::selectedChannels() const
 }
 
 void ChannelTableModel::setYName(const QString &yName)
-{DD;
+{DDD;
     for(int i: indexes) {
         setData(index(i,1), yName, Qt::EditRole);
         //TODO: проверить, нужен ли код
@@ -55,12 +55,12 @@ void ChannelTableModel::setYName(const QString &yName)
 }
 
 void ChannelTableModel::clear()
-{DD;
+{DDD;
     setDescriptor(nullptr);
 }
 
 void ChannelTableModel::setDescriptor(FileDescriptor *dfd)
-{DD;
+{DDD;
     //if (descriptor == dfd) return;
     beginResetModel();
     descriptor = dfd;
@@ -71,13 +71,13 @@ void ChannelTableModel::setDescriptor(FileDescriptor *dfd)
 }
 
 void ChannelTableModel::setSelected(const QVector<int> &indexes)
-{DD;
+{DDD;
     this->indexes = indexes;
     emit modelChanged();
 }
 
 void ChannelTableModel::onChannelChanged(Channel *ch)
-{DD;
+{DDD;
     int i = ch->index();
     if (i != -1) {
         emit dataChanged(index(i,0),index(i,columnCount(QModelIndex())));
@@ -86,7 +86,7 @@ void ChannelTableModel::onChannelChanged(Channel *ch)
 }
 
 int ChannelTableModel::rowCount(const QModelIndex &parent) const
-{DD;
+{DDDD;
     Q_UNUSED(parent);
     return channelsCount;
 }
@@ -99,7 +99,7 @@ int ChannelTableModel::columnCount(const QModelIndex &parent) const
 }
 
 QVariant ChannelTableModel::data(const QModelIndex &index, int role) const
-{DD;
+{DDD;
     if (!index.isValid()) return QVariant();
 
     const int row = index.row();
@@ -142,7 +142,7 @@ QVariant ChannelTableModel::data(const QModelIndex &index, int role) const
 }
 
 bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value, int role)
-{DD;
+{DDD;
     if (!index.isValid()) return false;
 
     const int row = index.row();
@@ -187,7 +187,7 @@ bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value,
 }
 
 QVariant ChannelTableModel::headerData(int section, Qt::Orientation orientation, int role) const
-{DD;
+{DDD;
     if (orientation == Qt::Vertical)
         return QAbstractItemModel::headerData(section, orientation, role);
 
@@ -202,7 +202,7 @@ QVariant ChannelTableModel::headerData(int section, Qt::Orientation orientation,
 }
 
 Qt::ItemFlags ChannelTableModel::flags(const QModelIndex &index) const
-{DD;
+{DDD;
     const int col = index.column();
     auto result = Qt::ItemIsSelectable | Qt::ItemNeverHasChildren;
     if (col == 0) result |= Qt::ItemIsEditable/*| Qt::ItemIsUserCheckable*/ | Qt::ItemIsEnabled |
@@ -213,12 +213,12 @@ Qt::ItemFlags ChannelTableModel::flags(const QModelIndex &index) const
 
 
 QStringList ChannelTableModel::mimeTypes() const
-{DD;
+{DDD;
     return QStringList()<<"application/listofchannels";
 }
 
 QMimeData *ChannelTableModel::mimeData(const QModelIndexList &indexes) const
-{DD;
+{DDD;
     if (indexes.isEmpty()) return 0;
 
     ChannelsMimeData *mimeData = new ChannelsMimeData(selectedChannels());

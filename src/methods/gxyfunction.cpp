@@ -6,33 +6,33 @@
 
 GxyFunction::GxyFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD;
+{DDD;
 
 }
 
 QString GxyFunction::name() const
-{DD;
+{DDD;
     return "GXY";
 }
 
 QString GxyFunction::description() const
-{DD;
+{DDD;
     return "Взаимный спектр";
 }
 
 QStringList GxyFunction::properties() const
-{DD;
+{DDD;
     return QStringList();
 }
 
 QString GxyFunction::propertyDescription(const QString &property) const
-{DD;
+{DDD;
     Q_UNUSED(property);
     return QString();
 }
 
 QVariant GxyFunction::m_getProperty(const QString &property) const
-{DD;
+{DDD;
     if (property.startsWith("?/")) {
         if (property == "?/dataType") return 131; // отсутствует в DeepSea, APS
         if (property == "?/xName") return "Гц";
@@ -73,18 +73,18 @@ DataDescription GxyFunction::getFunctionDescription() const
 }
 
 void GxyFunction::m_setProperty(const QString &property, const QVariant &val)
-{DD;
+{DDD;
     Q_UNUSED(property);
     Q_UNUSED(val);
 }
 
 QString GxyFunction::displayName() const
-{DD;
+{DDD;
     return "Автоспектр";
 }
 
 bool GxyFunction::compute(FileDescriptor *file)
-{DD;
+{DDD;
     reset();
 
     if (!m_input || !m_input2) return false;
@@ -127,6 +127,6 @@ bool GxyFunction::compute(FileDescriptor *file)
 }
 
 void GxyFunction::reset()
-{DD;
+{DDD;
     output.clear();
 }

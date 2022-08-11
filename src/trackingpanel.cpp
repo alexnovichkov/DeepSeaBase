@@ -44,7 +44,7 @@ int stepsToClosest(Channel *c, double val)
 }
 
 TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
-{DD;
+{DDD;
     setWindowFlags(Qt::Tool /*| Qt::WindowTitleHint*/);
     setWindowTitle("Курсор");
 
@@ -184,7 +184,7 @@ TrackingPanel::TrackingPanel(Plot *parent) : QWidget(parent), plot(parent)
 }
 
 TrackingPanel::~TrackingPanel()
-{DD;
+{DDD;
     Settings::setSetting("cursorShowYValues", yValuesCheckBox->checkState()==Qt::Checked);
     for (auto *cursor: qAsConst(cursors)) {
         cursor->detach();
@@ -205,7 +205,7 @@ TrackingPanel::~TrackingPanel()
 }
 
 void TrackingPanel::updateState(const QList<TrackingPanel::TrackInfo> &curves)
-{DD;
+{DDD;
     for(int i=0; i<curves.size(); ++i) {
         QTreeWidgetItem *item = tree->topLevelItem(i);
         if (!item) {
@@ -234,7 +234,7 @@ void TrackingPanel::updateState(const QList<TrackingPanel::TrackInfo> &curves)
 
 // пересчитываем значение xVal и обновляем показания счетчиков
 void TrackingPanel::setXY(QPointF value, int index)
-{DD;
+{DDD;
     // здесь value - произвольное число, соответствующее какому-то положению на осях X и Y
     double xVal = value.x(); //координата по оси X
     double yVal = value.y(); //координата по оси Y или Z, если это сонограмма
@@ -277,13 +277,13 @@ void TrackingPanel::setXY(QPointF value, int index)
 }
 
 void TrackingPanel::setStep(double step)
-{DD;
+{DDD;
     mStep = step;
     for (int i=0; i<4; ++i) spins[i]->setStep(mStep);
 }
 
 void TrackingPanel::switchVisibility()
-{DD;
+{DDD;
     if (isVisible()) {
         setVisible(false);
         for (auto cursor: qAsConst(cursors)) cursor->detach();
@@ -298,7 +298,7 @@ void TrackingPanel::switchVisibility()
 }
 
 void TrackingPanel::updateTrackingCursor(QPointF val, int index)
-{DD;
+{DDD;
     if (!isVisible()) return;
 
     //проверяем, не нужно ли обновить значение по оси Y
@@ -320,7 +320,7 @@ void TrackingPanel::updateTrackingCursor(QPointF val, int index)
 }
 
 void TrackingPanel::update()
-{DD;
+{DDD;
     auto curves = plot->model()->curves();
     if (plot->model()->curves().count()==0) return;
     //ищем минимальный шаг по оси X
@@ -371,7 +371,7 @@ void TrackingPanel::update()
 }
 
 void TrackingPanel::updateState()
-{DD;
+{DDD;
     for (int i=0; i<4; ++i) {
         if (cursorBoxes[i]->checkState()==Qt::Checked && isVisible()) {
             cursors[i]->attach(plot);
@@ -481,13 +481,13 @@ void TrackingPanel::updateState()
 }
 
 void TrackingPanel::changeSelectedCursor(TrackingCursor *cursor)
-{DD;
+{DDD;
     for (auto c: qAsConst(cursors))
         c->setSelected(c == cursor);
 }
 
 void TrackingPanel::moveCursor(Enums::Direction direction)
-{DD;
+{DDD;
     for (int i=0; i<cursors.size(); ++i) {
         if (cursors[i]->selected()) {
             spins[i]->moveOneStep(direction);
@@ -499,7 +499,7 @@ void TrackingPanel::moveCursor(Enums::Direction direction)
 //вызывается: 1. щелчком мыши по канве графика - сигнал PlotZoom->updateTrackingCursor
 //            2. щелчком мыши по шкале Х - сигнал _picker,SIGNAL(axisClicked(QPointF,bool)
 void TrackingPanel::setValue(QPointF value, bool second)
-{DD;
+{DDD;
     changeSelectedCursor(cursors[second?1:0]);
     setXY(value, second?1:0);
 }
@@ -507,7 +507,7 @@ void TrackingPanel::setValue(QPointF value, bool second)
 //установка любого курсора передвижением мышью
 //вызывается: PlotPicker->cursorMovedTo
 void TrackingPanel::setValue(QPointF value)
-{DD;
+{DDD;
     for (int i=0; i<cursors.size(); ++i) {
         if (cursors[i]->selected()) {
             setXY(value, i);
@@ -516,13 +516,13 @@ void TrackingPanel::setValue(QPointF value)
 }
 
 void TrackingPanel::closeEvent(QCloseEvent *event)
-{DD;
+{DDD;
     emit closeRequested();
     QWidget::closeEvent(event);
 }
 
 void TrackingPanel::hideEvent(QHideEvent *event)
-{DD;
+{DDD;
     for (auto *c: qAsConst(cursors))
         c->detach();
     for (auto *d: qAsConst(_harmonics))
@@ -534,7 +534,7 @@ void TrackingPanel::hideEvent(QHideEvent *event)
 }
 
 ZoneSpan::ZoneSpan(const QColor &color)
-{DD;
+{DDD;
     setOrientation(Qt::Vertical);
     setBrush(color);
 }

@@ -9,7 +9,7 @@
 
 WavExportDialog::WavExportDialog(FileDescriptor * file, const QVector<int> &indexes, QWidget *parent)
     : QDialog(parent), file{file}, indexes{indexes}
-{DD;
+{DDD;
     setWindowTitle("Сохранение в WAV");
 
     buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok |
@@ -63,7 +63,7 @@ WavExportDialog::WavExportDialog(FileDescriptor * file, const QVector<int> &inde
 }
 
 WavExportDialog::~WavExportDialog()
-{DD;
+{DDD;
     if (exporter) {
         exporter->deleteLater();
     }
@@ -75,7 +75,7 @@ WavExportDialog::~WavExportDialog()
 }
 
 void WavExportDialog::start()
-{DD;
+{DDD;
     buttonBox->button(QDialogButtonBox::Ok)->setDisabled(true);
     if (!thread) thread = new QThread;
     exporter = new WavExporter(file, indexes, channelsCount->value());
@@ -93,33 +93,33 @@ void WavExportDialog::start()
 }
 
 void WavExportDialog::updateProgressIndicator()
-{DD;
+{DDD;
     bar->setValue(bar->value()+1);
     taskBarProgress->setValue(bar->value());
 }
 
 void WavExportDialog::updateMaxProgress(int val)
-{DD;
+{DDD;
     bar->setMaximum(val);
     if (taskBarProgress) taskBarProgress->setRange(bar->minimum(), bar->maximum());
 }
 
 void WavExportDialog::stop()
-{DD;
+{DDD;
     if (thread)
         thread->requestInterruption();
     QDialog::accept();
 }
 
 void WavExportDialog::accept()
-{DD;
+{DDD;
     //if (taskBarProgress) taskBarProgress->finalize();
 
     QDialog::accept();
 }
 
 void WavExportDialog::reject()
-{DD;
+{DDD;
     stop();
     QDialog::reject();
     if (taskBarProgress) taskBarProgress->finalize();

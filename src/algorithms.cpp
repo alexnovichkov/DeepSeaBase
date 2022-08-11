@@ -11,7 +11,7 @@ QDebug operator <<(QDebug debug, const std::complex<double> &val)
 }
 
 QString smartDouble(double v)
-{
+{DDD;
     double v1=qAbs(v);
     if (v1>=0.1 && v1 <= 10000) return QString::number(v,'f',2);
     if (v1>=0.01 && v1 <= 0.1) return QString::number(v,'f',3);
@@ -22,7 +22,7 @@ QString smartDouble(double v)
 }
 
 double closest(double begin, double step, double value)
-{
+{DDD;
     if (qFuzzyIsNull(step)) return 0;
 
     int n = round((value - begin)/step);
@@ -30,7 +30,7 @@ double closest(double begin, double step, double value)
 }
 
 double closest(Channel *c, double val, bool xAxis, int delta)
-{
+{DDD;
     if (!c) return 0;
 
     if (xAxis) {
@@ -57,7 +57,7 @@ double closest(Channel *c, double val, bool xAxis, int delta)
 }
 
 QString replaceWinChars(QString s)
-{DD;
+{DDD;
     static const struct ReplaceParams {
         const char *what;
         const char *byWhat;
@@ -79,7 +79,7 @@ QString replaceWinChars(QString s)
 }
 
 QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spectrum, double xBegin, double xStep)
-{DD;
+{DDD;
     QPair<QVector<double>, QVector<double> > result;
     // определяем верхнюю границу данных
     const double F_min = xBegin;
@@ -174,7 +174,7 @@ QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spec
 
 QString createUniqueFileName(const QString &folderName, const QString &fileName, QString constantPart,
                              const QString &ext, bool justified)
-{DD;
+{DDD;
     QString result;
     QFileInfo fn = QFileInfo(fileName);
 
@@ -203,14 +203,14 @@ QString createUniqueFileName(const QString &folderName, const QString &fileName,
 }
 
 QString createUniqueFileName(const QString &fileName)
-{DD;
+{DDD;
     if (QFile::exists(fileName))
         return createUniqueFileName("", fileName, "", QFileInfo(fileName).suffix(), false);
     return fileName;
 }
 
 void getUniqueFromToValues(QString &fromString, QString &toString, double from, double to)
-{DD;
+{DDD;
     int factor = 0; //10, 100, 1000...
     fromString.setNum(from, 'f', factor);
     toString.setNum(to, 'f', factor);
@@ -226,7 +226,7 @@ void getUniqueFromToValues(QString &fromString, QString &toString, double from, 
 }
 
 QString changeFileExt(const QString &fileName, const QString &ext)
-{DD;
+{DDD;
     QFileInfo fi(fileName);
     if (fi.exists())
         return fi.canonicalPath()+"/"+fi.completeBaseName()+"."+ext;
@@ -240,7 +240,7 @@ QString changeFileExt(const QString &fileName, const QString &ext)
 
 
 //QVector<double> absolutes(const QVector<cx_double> &values)
-//{DD;
+//{DDD;
 //    const int size = values.size();
 //    QVector<double> result(size);
 
@@ -252,7 +252,7 @@ QString changeFileExt(const QString &fileName, const QString &ext)
 //}
 
 //QVector<double> absolutes(const QVector<double> &values)
-//{DD;
+//{DDD;
 //    const int size = values.size();
 //    QVector<double> result(size);
 
@@ -264,7 +264,7 @@ QString changeFileExt(const QString &fileName, const QString &ext)
 //}
 
 QVector<double> phases(const QVector<cx_double> &values)
-{DD;
+{DDD;
     const int size = values.size();
     QVector<double> result(size);
 
@@ -276,7 +276,7 @@ QVector<double> phases(const QVector<cx_double> &values)
 }
 
 QVector<double> reals(const QVector<cx_double> &values)
-{DD;
+{DDD;
     const int size = values.size();
     QVector<double> result(size);
 
@@ -291,14 +291,14 @@ QVector<double> reals(const QVector<cx_double> &values)
 
 
 QVector<double> linspace(double begin, double step, int n)
-{DD;
+{DDD;
     QVector<double> result(n);
     for (int i=0; i<n; ++i) result[i]=begin+i*step;
     return result;
 }
 
 QVector<double> imags(const QVector<cx_double> &values)
-{DD;
+{DDD;
     const int size = values.size();
     QVector<double> result(size);
 
@@ -310,7 +310,7 @@ QVector<double> imags(const QVector<cx_double> &values)
 }
 
 QVector<cx_double> movingAverage(const QVector<cx_double> &spectrum, int window)
-{DD;
+{DDD;
     const int numInd = spectrum.size();
 
     // 1. Извлекаем амплитуды и фазы из комплексного спектра
@@ -329,7 +329,7 @@ QVector<cx_double> movingAverage(const QVector<cx_double> &spectrum, int window)
 }
 
 QVector<double> movingAverage(const QVector<double> &spectrum, int window)
-{DD;
+{DDD;
     int numInd = spectrum.size();
     QVector<double> result(numInd, 0.0);
 
@@ -356,7 +356,7 @@ QVector<double> movingAverage(const QVector<double> &spectrum, int window)
 
 
 QString doubletohex(const double d)
-{DD;
+{DDD;
     QString s;
     QByteArray ba;
     QDataStream stream(&ba,QIODevice::WriteOnly);
@@ -368,7 +368,7 @@ QString doubletohex(const double d)
 }
 
 double hextodouble(QString hex)
-{DD;
+{DDD;
     if (hex.startsWith("("))
         hex.remove(0,1);
     if (hex.endsWith(")"))
@@ -393,7 +393,7 @@ double hextodouble(QString hex)
 
 
 float hextofloat(QString hex)
-{DD;
+{DDD;
     if (hex.startsWith("("))
         hex.remove(0,1);
     if (hex.endsWith(")"))
@@ -416,7 +416,7 @@ float hextofloat(QString hex)
 }
 
 QString floattohex(const float f)
-{DD;
+{DDD;
     QString s;
     QByteArray ba;
     QDataStream stream(&ba,QIODevice::WriteOnly);
@@ -429,7 +429,7 @@ QString floattohex(const float f)
 
 template <typename TFloat, typename TInt, QDataStream::ByteOrder ENDIAN>
 TFloat toFloat(const QByteArray &v, size_t offset)
-{DD;
+{DDD;
     if(offset > v.size() - sizeof(TInt)) {
         qDebug()<<"toFloat() - offset is out of range. Returning 0.";
         return 0.0;
@@ -448,23 +448,23 @@ TFloat toFloat(const QByteArray &v, size_t offset)
 }
 
 double toFloat64LE(const QByteArray &v, size_t offset)
-{DD;
+{DDD;
   return toFloat<double, quint64, QDataStream::LittleEndian>(v, offset);
 }
 
 float toFloat32LE(const QByteArray &v, size_t offset)
-{DD;
+{DDD;
     return toFloat<float, quint32, QDataStream::LittleEndian>(v, offset);
 }
 
 QString stripHtml(QString s)
-{DD;
+{DDD;
     s.remove(QRegularExpression("<[^>]*>"));
     return s;
 }
 
 void processDir(const QString &file, QStringList &files, bool includeSubfolders, const QStringList &filters)
-{DD;
+{DDD;
     if (auto fi = QFileInfo(file); fi.exists()) {
         if (fi.isDir()) {
             const QFileInfoList dirLst = QDir(file).entryInfoList(filters,
@@ -487,7 +487,7 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders,
 }
 
 QDateTime dateTimeFromString(QString s)
-{DD;
+{DDD;
     s = s.trimmed();
 
     QDateTime dt;
@@ -506,7 +506,7 @@ QDateTime dateTimeFromString(QString s)
 }
 
 QDateTime dateTimeFromString(QString date, QString time)
-{DD;
+{DDD;
     //date
     QDate d;
     date = date.trimmed();
@@ -534,7 +534,7 @@ QDateTime dateTimeFromString(QString date, QString time)
 }
 
 bool channelsFromSameFile(const QVector<Channel *> &source)
-{DD;
+{DDD;
     if (source.isEmpty()) return false;
     auto d = source.first()->descriptor();
     return std::all_of(source.cbegin(), source.cend(), [d](Channel *c){
@@ -543,7 +543,7 @@ bool channelsFromSameFile(const QVector<Channel *> &source)
 }
 
 QVector<int> channelIndexes(const QVector<Channel *> &source)
-{DD;
+{DDD;
     QVector<int> result;
     for (auto c: source) result << c->index();
     return result;

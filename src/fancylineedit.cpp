@@ -51,7 +51,7 @@
  * \param widget The widget next to which to open the menu
  */
 static void execMenuAtWidget(QMenu *menu, QWidget *widget)
-{DD;
+{DDD;
     QPoint p;
     QRect screen = qApp->desktop()->availableGeometry(widget);
     QSize sh = menu->sizeHint();
@@ -158,7 +158,7 @@ bool FancyLineEditPrivate::eventFilter(QObject *obj, QEvent *event)
 FancyLineEdit::FancyLineEdit(QWidget *parent) :
     QLineEdit(parent),
     d(new FancyLineEditPrivate(this))
-{DD;
+{DDD;
     ensurePolished();
     updateMargins();
 
@@ -168,7 +168,7 @@ FancyLineEdit::FancyLineEdit(QWidget *parent) :
 }
 
 void FancyLineEdit::checkButtons(const QString &text)
-{DD;
+{DDD;
     if (m_oldText.isEmpty() || text.isEmpty()) {
         for (int i = 0; i < 2; ++i) {
             if (d->m_iconbutton[i]->hasAutoHide())
@@ -179,7 +179,7 @@ void FancyLineEdit::checkButtons(const QString &text)
 }
 
 FancyLineEdit::~FancyLineEdit()
-{DD;
+{DDD;
 }
 
 void FancyLineEdit::setButtonVisible(Side side, bool visible)

@@ -2,12 +2,12 @@
 
 #include <QtWidgets>
 #include "filehandler.h"
-
+#include "logging.h"
 
 
 FileHandlerDialog::FileHandlerDialog(FileHandler *fileHandler, QWidget *parent)
     : QDialog(parent), fileHandler(fileHandler)
-{
+{DDD;
     setWindowTitle("Отслеживаемые файлы");
 
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
@@ -30,24 +30,24 @@ FileHandlerDialog::FileHandlerDialog(FileHandler *fileHandler, QWidget *parent)
 
 HandlerModel::HandlerModel(FileHandler *fileHandler, QObject *parent)
     : QAbstractTableModel(parent), fileHandler(fileHandler)
-{
+{DDD;
 
 }
 
 int HandlerModel::rowCount(const QModelIndex &parent) const
-{
+{DDD;
     Q_UNUSED(parent);
     return fileHandler->count();
 }
 
 int HandlerModel::columnCount(const QModelIndex &parent) const
-{
+{DDD;
     Q_UNUSED(parent);
     return 2;
 }
 
 QVariant HandlerModel::data(const QModelIndex &index, int role) const
-{
+{DDD;
     if (index.isValid()) {
         if (role==Qt::DisplayRole) {
             auto item = fileHandler->item(index.row());
@@ -67,7 +67,7 @@ QVariant HandlerModel::data(const QModelIndex &index, int role) const
 }
 
 QVariant HandlerModel::headerData(int section, Qt::Orientation orientation, int role) const
-{
+{DDD;
     if (orientation == Qt::Horizontal && role==Qt::DisplayRole) {
         switch (section) {
             case 0: return "Путь";

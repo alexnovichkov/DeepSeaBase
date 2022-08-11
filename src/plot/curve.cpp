@@ -14,7 +14,7 @@
 #include "plot.h"
 
 Curve::Curve(const QString &title, Channel *channel)
-{DD;
+{DDD;
     Q_UNUSED(title)
 
     this->channel = channel;
@@ -24,7 +24,7 @@ Curve::Curve(const QString &title, Channel *channel)
 }
 
 Curve::~Curve()
-{DD;
+{DDD;
     foreach(PointLabel *l, labels) l->detach();
     qDeleteAll(labels);
     labels.clear();
@@ -38,7 +38,7 @@ Curve::~Curve()
 }
 
 void Curve::attach(Plot *plot)
-{
+{DDD;
     m_plot = plot;
     marker->attach(plot);
     marker->setVisible(false);
@@ -46,12 +46,12 @@ void Curve::attach(Plot *plot)
 }
 
 void Curve::addLabel(PointLabel *label)
-{DD;
+{DDD;
     labels << label;
 }
 
 void Curve::removeLabel(PointLabel *label)
-{DD;
+{DDD;
     if (labels.contains(label)) {
         labels.removeOne(label);
         label->detach();
@@ -60,7 +60,7 @@ void Curve::removeLabel(PointLabel *label)
 }
 
 void Curve::removeLabels()
-{
+{DDD;
     foreach (PointLabel *label, labels) {
         label->detach();
         delete label;
@@ -69,7 +69,7 @@ void Curve::removeLabels()
 }
 
 PointLabel *Curve::findLabel(const QPoint &pos/*, QwtAxisId yAxis*/)
-{DD;
+{DDD;
     foreach (PointLabel *l, labels)
         if (l->contains(pos/*, yAxis*/))
             return l;
@@ -78,7 +78,7 @@ PointLabel *Curve::findLabel(const QPoint &pos/*, QwtAxisId yAxis*/)
 }
 
 PointLabel *Curve::findLabel(const int point)
-{DD;
+{DDD;
     foreach (PointLabel *l, labels)
         if (l->point() == point)
             return l;
@@ -87,7 +87,7 @@ PointLabel *Curve::findLabel(const int point)
 }
 
 void Curve::moveToPos(QPoint pos, QPoint startPos)
-{
+{DDD;
     Q_UNUSED(startPos);
     if (m_plot->interactionMode != Plot::DataInteraction) return;
 
@@ -103,34 +103,34 @@ void Curve::moveToPos(QPoint pos, QPoint startPos)
 }
 
 double Curve::yMin() const
-{DD;
+{DDD;
     return channel->data()->yMin();
 }
 
 double Curve::yMax() const
-{DD;
+{DDD;
     return channel->data()->yMax();
 }
 
 double Curve::xMin() const
-{DD;
+{DDD;
     return channel->data()->xMin();
 }
 
 double Curve::xMax() const
-{DD;
+{DDD;
     return channel->data()->xMax();
 }
 
 int Curve::samplesCount() const
-{DD;
+{DDD;
     return channel->data()->samplesCount();
 }
 
 
 
 void Curve::setVisible(bool visible)
-{DD;
+{DDD;
     //d->setVisible(visible);
     foreach (PointLabel *label, labels) {
         label->setVisible(visible);
@@ -139,7 +139,7 @@ void Curve::setVisible(bool visible)
 }
 
 void Curve::evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const
-{DD;
+{DDD;
     const double startX = xMap.s1();
     const double endX = xMap.s2();
 
@@ -172,12 +172,12 @@ void Curve::evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const
 }
 
 void Curve::switchFixed()
-{DD;
+{DDD;
     fixed = !fixed;
 }
 
 QMap<int, QVariant> Curve::commonLegendData() const
-{
+{DDD;
     QMap<int, QVariant> data;
     data.insert(QwtLegendData::UserRole+3, pen().color());
     data.insert(QwtLegendData::TitleRole, title());
@@ -191,7 +191,7 @@ QMap<int, QVariant> Curve::commonLegendData() const
 
 
 bool Curve::underMouse(const QPoint &pos, double *distanceX, double *distanceY) const
-{
+{DDD;
     selectedPoint = closest(pos, distanceX, distanceY);
 
     //no closest point for this pos
@@ -205,7 +205,7 @@ bool Curve::underMouse(const QPoint &pos, double *distanceX, double *distanceY) 
 }
 
 void Curve::moveLeft(int count)
-{
+{DDD;
     if (selectedPoint >= count) {
         selectedPoint -= count;
         updateSelection();
@@ -213,7 +213,7 @@ void Curve::moveLeft(int count)
 }
 
 void Curve::moveRight(int count)
-{
+{DDD;
     if (selectedPoint >=0 && selectedPoint < samplesCount()-count) {
         selectedPoint += count;
         updateSelection();
@@ -221,7 +221,7 @@ void Curve::moveRight(int count)
 }
 
 void Curve::moveUp(int count)
-{
+{DDD;
     if (m_plot->interactionMode != Plot::DataInteraction) return;
     if (selectedPoint < 0 || selectedPoint >= samplesCount()) return;
 
@@ -238,7 +238,7 @@ void Curve::moveUp(int count)
 }
 
 void Curve::moveDown(int count)
-{
+{DDD;
     if (m_plot->interactionMode != Plot::DataInteraction) return;
     if (selectedPoint < 0 || selectedPoint >= samplesCount()) return;
 
@@ -255,7 +255,7 @@ void Curve::moveDown(int count)
 }
 
 void Curve::fix()
-{
+{DDD;
     if (selectedPoint >= 0 && selectedPoint < samplesCount()) {
         QPointF val = samplePoint(selectedPoint);
 
@@ -273,12 +273,12 @@ void Curve::fix()
 }
 
 void Curve::remove()
-{
+{DDD;
     m_plot->deleteSelectedCurve(this);
 }
 
 void Curve::updateSelection()
-{
+{DDD;
     updatePen();
 
     if (!selected()) marker->setVisible(false);

@@ -8,7 +8,7 @@
 
 TimeMethod::TimeMethod(QList<FileDescriptor *> &dataBase, QWidget *parent) :
     QWidget(parent), AbstractMethod(dataBase)
-{DD;
+{DDD;
     resolutionCombo = new QComboBox(this);
     resolutionCombo->setEditable(false);
 
@@ -74,7 +74,7 @@ int TimeMethod::id()
 }
 
 QStringList TimeMethod::methodSettings(FileDescriptor *dfd, const Parameters &p)
-{DD;
+{DDD;
     QStringList spfFile;
 
     spfFile << "YName="+dfd->channel(0)->yName();
@@ -94,7 +94,7 @@ QStringList TimeMethod::methodSettings(FileDescriptor *dfd, const Parameters &p)
 }
 
 Parameters TimeMethod::parameters()
-{DD;
+{DDD;
     Parameters p;
     p.averagesCount = 1;
     p.averagingType = 0;
@@ -133,7 +133,7 @@ int TimeMethod::dataType()
 }
 
 DescriptionList TimeMethod::processData(const Parameters &p)
-{DD;
+{DDD;
     DescriptionList list;
     list.append(qMakePair(QStringLiteral("PName"),    methodName()));
     list.append(qMakePair(QStringLiteral("pTime"),    QStringLiteral("(0000000000000000)")));
@@ -146,7 +146,7 @@ DescriptionList TimeMethod::processData(const Parameters &p)
 
 
 /*DfdFileDescriptor *TimeMethod::createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
-{DD;
+{DDD;
     DfdFileDescriptor *newDfd = AbstractMethod::createNewDfdFile(fileName, dfd, p);
 
     // rest
@@ -160,7 +160,7 @@ DescriptionList TimeMethod::processData(const Parameters &p)
 }*/
 
 //UffFileDescriptor *TimeMethod::createNewUffFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
-//{DD;
+//{DDD;
 //    UffFileDescriptor *newUff = new UffFileDescriptor(fileName);
 
 //    newUff->setDataDescription(dfd->dataDescription());
@@ -173,7 +173,7 @@ DescriptionList TimeMethod::processData(const Parameters &p)
 //}
 
 /*Channel *TimeMethod::createDfdChannel(DfdFileDescriptor *newDfd, FileDescriptor *dfd, const QVector<double> &spectrum, Parameters &p, int i)
-{DD;
+{DDD;
     Q_UNUSED(p);
     DataDescription d;
     DataHolder *h = new DataHolder;
@@ -197,7 +197,7 @@ DescriptionList TimeMethod::processData(const Parameters &p)
 }*/
 
 /*Channel *TimeMethod::addUffChannel(UffFileDescriptor *newUff, FileDescriptor *dfd, int spectrumSize, Parameters &p, int i)
-{DD;
+{DDD;
     Function *ch = new Function(newUff);
 //    ch->setName(dfd->channel(i)->name());
 //    ch->setPopulated(true);

@@ -13,14 +13,14 @@ class DfdFilterProxy : public QSortFilterProxyModel
 public:
     DfdFilterProxy(FileDescriptor *filter, QObject *parent)
         : QSortFilterProxyModel(parent), filter(filter)
-    {DD;
+    {DDD;
         if (filter) {
             filterByContent = true;
         }
     }
 protected:
     bool filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
-    {DD;
+    {DDD;
         QFileSystemModel *model = qobject_cast<QFileSystemModel *>(sourceModel());
         if (!model) return false;
 

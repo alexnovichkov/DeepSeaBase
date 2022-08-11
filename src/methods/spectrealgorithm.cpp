@@ -13,7 +13,7 @@
 
 SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DD;
+{DDD;
     channelF = new ChannelFunction(this);
 //    filteringF = new FilteringFunction(this);
     resamplingF = new ResamplingFunction(this);
@@ -69,13 +69,13 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
 
 
 QString SpectreAlgorithm::description() const
-{DD;
+{DDD;
     return "Спектр";
 }
 
 
 QString SpectreAlgorithm::displayName() const
-{DD;
+{DDD;
     return "FFT";
 }
 

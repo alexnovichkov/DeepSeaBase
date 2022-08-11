@@ -7,17 +7,17 @@
 
 FileDescriptor::FileDescriptor(const QString &fileName) :
     _fileName(fileName)
-{DD;
+{DDD;
     //qDebug()<<fileName;
 }
 
 FileDescriptor::~FileDescriptor()
-{DD;
+{DDD;
     //   qDebug()<<"deleting"<<fileName();
 }
 
 bool FileDescriptor::rename(const QString &newName, const QString &newPath)
-{DD;
+{DDD;
     //newName приходит с суффиксом
 
     if (!newPath.isEmpty()) QDir().mkpath(newPath);
@@ -33,13 +33,13 @@ bool FileDescriptor::rename(const QString &newName, const QString &newPath)
 }
 
 void FileDescriptor::fillPreliminary(const FileDescriptor *d)
-{DD;
+{DDD;
     updateDateTimeGUID();
     dataDescription().put("dateTime", d->dataDescription().get("dateTime"));
 }
 
 void FileDescriptor::populate()
-{DD;
+{DDD;
     const int count = channelsCount();
     for (int i=0; i<count; ++i) {
         if (!channel(i)->populated()) channel(i)->populate();
@@ -47,7 +47,7 @@ void FileDescriptor::populate()
 }
 
 void FileDescriptor::updateDateTimeGUID()
-{DD;
+{DDD;
     QDateTime dt = QDateTime::currentDateTime();
     dataDescription().put("fileCreationTime", dt.toString("dd.MM.yyyy hh:mm"));
     dataDescription().put("guid", FileDescriptor::createGUID());
@@ -55,12 +55,12 @@ void FileDescriptor::updateDateTimeGUID()
 }
 
 bool FileDescriptor::copyTo(const QString &name)
-{DD;
+{DDD;
     return QFile::copy(fileName(), name);
 }
 
 Descriptor::DataType FileDescriptor::type() const
-{DD;
+{DDD;
     const int count = channelsCount();
     if (count == 0) return Descriptor::Unknown;
 
@@ -72,7 +72,7 @@ Descriptor::DataType FileDescriptor::type() const
 }
 
 QString FileDescriptor::typeDisplay() const
-{DD;
+{DDD;
     return Descriptor::functionTypeDescription(type());
 }
 
@@ -81,7 +81,7 @@ QString FileDescriptor::typeDisplay() const
 // 3199,9999 -> 3200
 // 0,49999 -> 0,5
 double FileDescriptor::roundedSize() const
-{DD;
+{DDD;
     if (channelsCount()==0) return 0.0;
 
     if (channel(0)->data()->xValuesFormat() == DataHolder::XValuesUniform) {
@@ -106,7 +106,7 @@ double FileDescriptor::roundedSize() const
 }
 
 QDateTime FileDescriptor::dateTime() const
-{DD;
+{DDD;
     auto dt = dataDescription().dateTime("dateTime");
     if (dt.isValid()) return dt;
 
@@ -117,7 +117,7 @@ QDateTime FileDescriptor::dateTime() const
 }
 
 bool FileDescriptor::setDateTime(const QDateTime &dt)
-{DD;
+{DDD;
     if (dt==dateTime()) return false;
     dataDescription().put("dateTime", dt);
     setChanged(true);
@@ -125,31 +125,31 @@ bool FileDescriptor::setDateTime(const QDateTime &dt)
 }
 
 QDateTime FileDescriptor::fileCreationTime() const
-{DD;
+{DDD;
     return dataDescription().dateTime("fileCreationTime");
 }
 
 bool FileDescriptor::setFileCreationTime(const QDateTime &dt)
-{DD;
+{DDD;
     dataDescription().put("fileCreationTime", dt.toString("dd.MM.yyyy hh:mm:ss"));
     setChanged(true);
     return true;
 }
 
 bool FileDescriptor::fileExists() const
-{DD;
+{DDD;
     return QFileInfo(_fileName).exists();
 }
 
 QVariant FileDescriptor::channelHeader(int column) const
-{DD;
+{DDD;
     if (auto c = channel(0))
         return c->channelHeader(column);
     return QVariant();
 }
 
 int FileDescriptor::columnsCount() const
-{DD;
+{DDD;
     if (auto c = channel(0))
         return c->columnsCount();
     return 7;
@@ -157,12 +157,12 @@ int FileDescriptor::columnsCount() const
 
 
 void FileDescriptor::setChanged(bool changed)
-{DD;
+{DDD;
     _changed = changed;
 }
 
 int FileDescriptor::plottedCount() const
-{DD;
+{DDD;
     int plotted = 0;
     const int count = channelsCount();
     for (int i=0; i<count; ++i) {
@@ -172,7 +172,7 @@ int FileDescriptor::plottedCount() const
 }
 
 QVector<int> FileDescriptor::plottedIndexes() const
-{DD;
+{DDD;
     QVector<int> plotted;
     const int count = channelsCount();
     for (int i=0; i<count; ++i) {
@@ -182,7 +182,7 @@ QVector<int> FileDescriptor::plottedIndexes() const
 }
 
 bool FileDescriptor::isSourceFile() const
-{DD;
+{DDD;
     const int count = channelsCount();
     if (count == 0) return false;
     int type = channel(0)->type();
@@ -196,14 +196,14 @@ bool FileDescriptor::isSourceFile() const
 }
 
 double FileDescriptor::xStep() const
-{DD;
+{DDD;
     if (auto c = channel(0))
         return c->data()->xStep();
     return 0.0;
 }
 
 void FileDescriptor::setXStep(const double xStep)
-{DD;
+{DDD;
     const int count = channelsCount();
     if (count == 0) return;
     bool changed = false;
@@ -221,21 +221,21 @@ void FileDescriptor::setXStep(const double xStep)
 }
 
 double FileDescriptor::xBegin() const
-{DD;
+{DDD;
     if (auto c = channel(0))
         return c->data()->xMin();
     return 0.0;
 }
 
 int FileDescriptor::samplesCount() const
-{DD;
+{DDD;
     if (auto c = channel(0))
         return c->data()->samplesCount();
     return 0;
 }
 
 QString FileDescriptor::xName() const
-{DD;
+{DDD;
     QString result;
     const int count = channelsCount();
     if (count > 0) {
@@ -248,17 +248,17 @@ QString FileDescriptor::xName() const
 }
 
 bool FileDescriptor::dataTypeEquals(FileDescriptor *other) const
-{DD;
+{DDD;
     return (this->type() == other->type());
 }
 
 QString FileDescriptor::legend() const
-{DD;
+{DDD;
     return dataDescription().get("legend").toString();
 }
 
 bool FileDescriptor::setLegend(const QString &s)
-{DD;
+{DDD;
     if (s==legend()) return false;
     dataDescription().put("legend", s);
     setChanged(true);
@@ -266,23 +266,23 @@ bool FileDescriptor::setLegend(const QString &s)
 }
 
 bool FileDescriptor::canTakeChannelsFrom(FileDescriptor *other) const
-{DD;
+{DDD;
     Q_UNUSED(other);
     return true;
 }
 
 bool FileDescriptor::canTakeAnyChannels() const
-{DD;
+{DDD;
     return true;
 }
 
 qint64 FileDescriptor::fileSize() const
-{DD;
+{DDD;
     return QFileInfo(fileName()).size();
 }
 
 void FileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes)
-{DD;
+{DDD;
     QVector<Channel *> source;
     for (auto i: indexes) {
         if (auto c=sourceFile->channel(i)) source << c;
@@ -292,7 +292,7 @@ void FileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<
 }
 
 bool FileDescriptor::hasCurves() const
-{DD;
+{DDD;
     const int count = channelsCount();
     for (int i=0; i<count; ++i) {
         if (channel(i)->plotted()) return true;
@@ -301,7 +301,7 @@ bool FileDescriptor::hasCurves() const
 }
 
 QString FileDescriptor::createGUID()
-{DD;
+{DDD;
     QString result = QUuid::createUuid().toString().toUpper();
     if (result.at(24) == '-') result.remove(24,1);
     else result.remove(25,1);
@@ -309,7 +309,7 @@ QString FileDescriptor::createGUID()
 }
 
 //QString descriptionEntryToString(const DescriptionEntry &entry)
-//{DD;
+//{DDD;
 //    QString result = entry.second;
 //    if (!entry.first.isEmpty()) return entry.first+"="+result;
 
@@ -321,7 +321,7 @@ Channel::Channel(Channel *other) :
     _populated(other->_populated),
     _data(new DataHolder(*(other->_data))),
     _dataDescription(other->_dataDescription)
-{DD;
+{DDD;
 
 }
 
@@ -330,7 +330,7 @@ Channel::Channel(Channel &other) :
     _populated(other._populated),
     _data(new DataHolder(*(other._data))),
     _dataDescription(other._dataDescription)
-{DD;
+{DDD;
 
 }
 
@@ -371,18 +371,18 @@ QVariant Channel::channelHeader(int column) const
 }
 
 int Channel::octaveType() const
-{DD;
+{DDD;
     return dataDescription().get("function.octaveFormat").toInt();
 }
 
 void Channel::clear()
-{DD;
+{DDD;
     _data->clear();
     setPopulated(false);
 }
 
 void Channel::maybeClearData()
-{DD;
+{DDD;
     if (data()->samplesCount()>1000000) clear();
 }
 
@@ -392,7 +392,7 @@ QString Channel::name() const
 }
 
 void Channel::setName(const QString &name)
-{DD;
+{DDD;
     dataDescription().put("name", name);
 }
 
@@ -402,7 +402,7 @@ QString Channel::description() const
 }
 
 void Channel::setDescription(const QString &description)
-{DD;
+{DDD;
     _dataDescription.data.insert("description", description);
 }
 
@@ -427,22 +427,22 @@ QString Channel::zName() const
 }
 
 void Channel::setYName(const QString &yName)
-{DD;
+{DDD;
     _dataDescription.data.insert("yname", yName);
 }
 
 void Channel::setXName(const QString &xName)
-{DD;
+{DDD;
     _dataDescription.data.insert("xname", xName);
 }
 
 void Channel::setZName(const QString &zName)
-{DD;
+{DDD;
     _dataDescription.data.insert("zname", zName);
 }
 
 void Channel::setXStep(double xStep)
-{DD;
+{DDD;
     _data->setXStep(xStep);
 }
 
@@ -457,7 +457,7 @@ QString Channel::legendName() const
 }
 
 QByteArray Channel::wavData(qint64 pos, qint64 samples, int format)
-{DD;
+{DDD;
     QByteArray b;
 
     //assume that channel is time response
@@ -487,7 +487,7 @@ QByteArray Channel::wavData(qint64 pos, qint64 samples, int format)
 }
 
 //QString valuesUnit(const QString &first, const QString &second, int unitType)
-//{DD;
+//{DDD;
 //    if (unitType == DataHolder::UnitsLinear)
 //    QString n = name.toLower();
 //    if (n=="м/с2" || n=="м/с^2" || n=="м/с*2" || n=="m/s2" || n=="m/s^2" /*|| n=="g"*/) return 3.16e-4; //ускорение
@@ -502,7 +502,7 @@ QByteArray Channel::wavData(qint64 pos, qint64 samples, int format)
 //}
 
 QString Descriptor::functionTypeDescription(int type)
-{DD;
+{DDD;
     switch (type) {
         case  1: return "Time Response";
         case  2: return "Auto Spectrum";
@@ -569,7 +569,7 @@ QVariant DataDescription::get(const QString &key) const
 }
 
 QJsonObject DataDescription::toJson() const
-{DD;
+{DDD;
     QJsonObject result;
     for (auto i = data.constBegin(); i != data.constEnd(); ++i) {
         const QString key = i.key();
@@ -588,7 +588,7 @@ QJsonObject DataDescription::toJson() const
 }
 
 DataDescription DataDescription::fromJson(const QJsonObject &o)
-{DD;
+{DDD;
     DataDescription result;
     for (auto i = o.constBegin(); i!=o.constEnd(); ++i) {
         QString key = i.key();
@@ -661,7 +661,7 @@ QStringList DataDescription::toStringList(const QString &filter, bool includeKey
 }
 
 QVariantMap DataDescription::filter(const QString &filter) const
-{DD;
+{DDD;
     if (filter.isEmpty()) return data;
 
     QVariantMap result;

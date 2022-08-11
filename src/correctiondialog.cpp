@@ -79,7 +79,7 @@ CorrectionDialog::~CorrectionDialog()
 }
 
 //void CorrectionDialog::closeEvent(QCloseEvent *event)
-//{DD;
+//{DDD;
 
 //    QWidget::closeEvent(event);
 //}
@@ -105,7 +105,7 @@ void CorrectionDialog::setFiles(const QList<FileDescriptor *> &descriptors)
 }
 
 void CorrectionDialog::correct()
-{DD;
+{DDD;
     bool ok;
     QString s = edit->text();
     double correctionValue = s.toDouble(&ok);
@@ -157,7 +157,7 @@ void CorrectionDialog::correct()
 }
 
 void CorrectionDialog::makeCorrectionConstant(Channel *channel)
-{DD;
+{DDD;
     if (!channel) return;
 
     channel->data()->makeCorrectionConstant();
@@ -192,7 +192,7 @@ void CorrectionDialog::makeCorrectionConstant(Channel *channel)
 }
 
 void CorrectionDialog::accept()
-{DD;
+{DDD;
     QList<FileDescriptor*> list;
     // сперва графики
     for (int i=0; i<plot->curvesCount(); ++i) {
@@ -230,7 +230,7 @@ void CorrectionDialog::accept()
 }
 
 void CorrectionDialog::reject()
-{DD;
+{DDD;
     for (int i=0; i<plot->curvesCount(); ++i) {
         plot->model()->curve(i)->channel->data()->removeCorrection();
 

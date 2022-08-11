@@ -16,12 +16,12 @@
 
 Converter::Converter(const QList<FileDescriptor *> &base, const Parameters &p_, QObject *parent) :
     QObject(parent), dataBase(base), p(p_), process(nullptr)
-{DD;
+{DDD;
     stop_ = false;
 }
 
 Converter::~Converter()
-{DD;
+{DDD;
     if (process) {
         process->kill();
         process->deleteLater();
@@ -29,7 +29,7 @@ Converter::~Converter()
 }
 
 void Converter::stop()
-{DD;
+{DDD;
     stop_ = true;
     finalize();
 }
@@ -71,7 +71,7 @@ BOOL CALLBACK enumWindowsProc(HWND hWnd, LPARAM lParam)
 }
 
 void Converter::start()
-{DD;
+{DDD;
     dt = QDateTime::currentDateTime();
     qDebug()<<"Start converting"<<dt.time();
     emit message(QString("Запуск расчета: %1").arg(dt.time().toString()));
@@ -158,7 +158,7 @@ void Converter::processTimer()
 }
 
 void Converter::finalize()
-{DD;
+{DDD;
     QFileInfoList newFilesList = QDir(tempFolderName).entryInfoList(QStringList()<<"*.dfd",QDir::Files);
     newFilesList.append(QDir(tempFolderName).entryInfoList(QStringList()<<"*.uff",QDir::Files));
 
@@ -178,7 +178,7 @@ void Converter::finalize()
 }
 
 void Converter::moveFilesFromTempDir(const QString &tempFolderName, const QString &fileName)
-{DD;
+{DDD;
     QString destDir = QFileInfo(fileName).canonicalPath();
     QString method = p.method->methodDll();
     method.chop(4);
@@ -265,7 +265,7 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, const QStrin
 
 
 //void changeScale(QVector<double> &output, const Parameters &p)
-//{DD;
+//{DDD;
 //    if (p.scaleType > 0) {
 //        const double t2 = p.threshold * p.threshold;
 //        for (double & i: output)
@@ -274,7 +274,7 @@ void Converter::moveFilesFromTempDir(const QString &tempFolderName, const QStrin
 //}
 
 int stripNumberForBandwidth(double bandwidth, Parameters &p)
-{DD;
+{DDD;
     if (qAbs(bandwidth - p.bandWidth)<1.0e-3)
         return p.initialBandStripNumber;
 
@@ -284,7 +284,7 @@ int stripNumberForBandwidth(double bandwidth, Parameters &p)
 }
 
 /*bool Converter::convert(FileDescriptor *file, const QString &tempFolderName)
-{DD;
+{DDD;
     if (QThread::currentThread()->isInterruptionRequested()) {
         finalize();
         return false;
@@ -547,7 +547,7 @@ int stripNumberForBandwidth(double bandwidth, Parameters &p)
 
 // возвращает спектр
 //QVector<cx_double> spectreFunction(const QVector<double> &values, int outputSize)
-//{DD;
+//{DDD;
 //    QVector<cx_double> complexSpectre = Fft::compute(values);
 //    const int Nvl = complexSpectre.size();
 //    const double factor = 2.0 / Nvl / Nvl;
@@ -561,7 +561,7 @@ int stripNumberForBandwidth(double bandwidth, Parameters &p)
 
 // возвращает спектр мощности 2*|complexSpectre|^2/N^2
 //QVector<double> powerSpectre(const QVector<double> &values, int N)
-//{DD;
+//{DDD;
 //    QVector<cx_double> complexSpectre = Fft::compute(values);
 
 //    const int Nvl = complexSpectre.size();
@@ -593,7 +593,7 @@ int stripNumberForBandwidth(double bandwidth, Parameters &p)
 
 // возвращает автоспектр сигнала |Y|^2
 //QVector<double> autoSpectre(const QVector<double> &values, int outputSize)
-//{DD;
+//{DDD;
 //    QVector<double> output(outputSize);
 //    QVector<cx_double> complexSpectre = Fft::compute(values);
 
@@ -607,7 +607,7 @@ int stripNumberForBandwidth(double bandwidth, Parameters &p)
 // возвращает передаточную функцию H1 = values2 ./ values1
 //(комплексные значения)
 //QVector<cx_double> transferFunction(const QVector<cx_double> &values1, const QVector<cx_double> &values2)
-//{DD;
+//{DDD;
 //    const int size = qMin(values1.size(), values2.size());
 //    QVector<cx_double> output(size);
 
@@ -631,7 +631,7 @@ int stripNumberForBandwidth(double bandwidth, Parameters &p)
 //}
 
 QStringList Converter::getSpfFile(const QString &dir)
-{DD;
+{DDD;
     QStringList spfFile;
     spfFile << "[DeepSeaProjectFile]";
     spfFile << "MainWindow=133,139,1280,572";
