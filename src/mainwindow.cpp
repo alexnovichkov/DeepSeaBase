@@ -1880,7 +1880,10 @@ void MainWindow::rescanBase()
     const auto m = m_DockManager->dockWidgetsMap();
     for (auto w: m.values()) {
         if (auto area = dynamic_cast<PlotArea*>(w)) {
-            if (area->plot()) area->plot()->deleteAllCurves(true);
+            if (area->plot()) {
+                area->resetCycling();
+                area->plot()->deleteAllCurves(true);
+            }
         }
     }
 
@@ -1921,8 +1924,11 @@ void MainWindow::setCurrentAndPlot(FileDescriptor *d, int index)
 
 //Этот метод ищет нужную запись по direction и перемещает на неё выделение
 void MainWindow::setDescriptor(int direction, bool checked) /*private*/
-{DD;
-    //сначала проверяем, в какой вкладке находится та запись, для которой построены графики
+{DD0;
+    //проверяем, есть ли в табе другие записи
+    if (currentTab->model->size() < 2) return;
+
+    //проверяем, в какой вкладке находится та запись, для которой построены графики
     FileDescriptor* d = nullptr;
     //ищем запись первой не фиксированной кривой
     //(фиксированная кривая может быть из другой записи)
@@ -1937,9 +1943,6 @@ void MainWindow::setDescriptor(int direction, bool checked) /*private*/
         currentTab->model->contains(d, &index);
     }
     if (index<0) return; //мы в другой вкладке
-
-    //проверяем, есть ли в табе другие записи
-    if (currentTab->model->size() < 2) return;
 
     //перемещаем фокус на другую запись
     QModelIndex current = currentTab->model->index(index, MODEL_COLUMN_FILENAME);
@@ -1959,6 +1962,7 @@ void MainWindow::setDescriptor(int direction, bool checked) /*private*/
     else if (direction==0) {
         if (currentPlot && currentPlot->plot()) currentPlot->plot()->sergeiMode = checked;
     }
+    //ниже - только для file up/file down
     if (modelIndex.isValid() && currentPlot && currentPlot->plot()) {
         //это вызывает Tab::updateChannelsTable(FileDescriptor *descriptor)
         //который посылает сигнал в MainWindow, который в свою очередь вызывает currentPlot->replotDescriptor

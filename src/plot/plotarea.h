@@ -30,6 +30,7 @@ public:
     QVector<FileDescriptor*> plottedDescriptors() const;
     int curvesCount(int type=-1) const;
     void onDropEvent(const QVector<Channel*> &channels);
+    void resetCycling();
 signals:
     void descriptorRequested(int direction, bool checked);
     //void cycleChannelsRequested(bool up);
@@ -43,6 +44,7 @@ signals:
     void saveHorizontalSlice(double zVal);
     void saveVerticalSlice(double xVal);
     void saveTimeSegment(const QVector<FileDescriptor*> &files, double from, double to);
+    void needClearPlot();
 public slots:
     void updateLegends();
 private slots:

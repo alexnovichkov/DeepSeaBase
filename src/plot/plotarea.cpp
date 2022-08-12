@@ -108,7 +108,10 @@ PlotArea::PlotArea(int index, QWidget *parent)
     clearPlotAct  = new QAction(QString("Очистить график"), this);
     clearPlotAct->setIcon(QIcon(":/icons/cross.png"));
     connect(clearPlotAct, &QAction::triggered, [=](){
-        if (m_plot) m_plot->deleteAllCurves();
+        if (m_plot) {
+            resetCycling();
+            m_plot->deleteAllCurves(false);
+        }
     });
 
     savePlotAct = new QAction(QString("Сохранить график..."), this);
@@ -839,4 +842,10 @@ void PlotArea::onDropEvent(const QVector<Channel *> &channels)
     }
     addPlot(type);
     m_plot->onDropEvent(true, channels);
+}
+
+void PlotArea::resetCycling()
+{
+    arbitraryDescriptorAct->setChecked(false);
+    m_plot->sergeiMode = false;
 }
