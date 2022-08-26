@@ -1924,7 +1924,7 @@ void MainWindow::setCurrentAndPlot(FileDescriptor *d, int index)
 
 //Этот метод ищет нужную запись по direction и перемещает на неё выделение
 void MainWindow::setDescriptor(int direction, bool checked) /*private*/
-{DD0;
+{DDD;
     //проверяем, есть ли в табе другие записи
     if (currentTab->model->size() < 2) return;
 
@@ -1945,23 +1945,25 @@ void MainWindow::setDescriptor(int direction, bool checked) /*private*/
     if (index<0) return; //мы в другой вкладке
 
     //перемещаем фокус на другую запись
-    QModelIndex current = currentTab->model->index(index, MODEL_COLUMN_FILENAME);
+    QModelIndex current = currentTab->sortModel->mapFromSource(currentTab->model->index(index, MODEL_COLUMN_FILENAME));
     QModelIndex modelIndex;
+    index = current.row();
     if (direction==-1) {
         if (index == 0)
-            modelIndex = currentTab->filesTable->model()->index(currentTab->filesTable->model()->rowCount()-1, current.column());
+            modelIndex = currentTab->sortModel->index(currentTab->sortModel->rowCount()-1, current.column());
         else
-            modelIndex = currentTab->filesTable->model()->index(index-1,current.column());
+            modelIndex = currentTab->sortModel->index(index-1, current.column());
     }
     else if (direction==1) {
-        if (index == currentTab->filesTable->model()->rowCount()-1)
-            modelIndex = currentTab->filesTable->model()->index(0,current.column());
+        if (index == currentTab->sortModel->rowCount()-1)
+            modelIndex = currentTab->sortModel->index(0, current.column());
         else
-            modelIndex = currentTab->filesTable->model()->index(index+1,current.column());
+            modelIndex = currentTab->sortModel->index(index+1, current.column());
     }
     else if (direction==0) {
         if (currentPlot && currentPlot->plot()) currentPlot->plot()->sergeiMode = checked;
     }
+
     //ниже - только для file up/file down
     if (modelIndex.isValid() && currentPlot && currentPlot->plot()) {
         //это вызывает Tab::updateChannelsTable(FileDescriptor *descriptor)
