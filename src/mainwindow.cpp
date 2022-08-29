@@ -1897,7 +1897,7 @@ void MainWindow::rescanBase()
             currentTab = t;
 
             for (auto folder: qAsConst(t->fileHandler->files)) {
-                addFolder(folder.first, folder.second == FileHandler::FolderWithSubfolders, false);
+                addFolder(folder.path, folder.type == FileHandler::FolderWithSubfolders, false);
             }
         }
     }

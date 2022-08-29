@@ -20,8 +20,9 @@ void FileHandler::trackFiles(const QStringList &fileNames)
         //-либо как отдельный файл
         //-либо в составе папки
         if (!tracking(file)) {
-            files.append({file,File});
-            if (!watcher->addPath(file)) qDebug() <<"tracking"<<file<<"failed";
+            bool added = watcher->addPath(file);
+            files.append({file, File, added});
+            if (!added) qDebug() <<"tracking"<<file<<"failed";
         }
     }
 }
@@ -31,8 +32,10 @@ void FileHandler::trackFolder(const QString &folder, bool withSubfolders)
     if (!tracking(folder)) {
         //может быть, эта папка вытеснит какие-то уже добавленные файлы и папки
         optimizeFiles(folder, withSubfolders);
-        files.append({folder, withSubfolders ? FolderWithSubfolders : Folder});
-        if (!watcher->addPath(folder)) qDebug() <<"tracking"<<folder<<"failed";
+
+        bool added = watcher->addPath(folder);
+        files.append({folder, withSubfolders ? FolderWithSubfolders : Folder, added});
+        if (!added) qDebug() <<"tracking"<<folder<<"failed";
     }
 }
 
@@ -42,10 +45,18 @@ void FileHandler::untrackFile(const QString &fileName)
     const QString path = fi.canonicalPath();
 
     //убирает файл из отслеживаемых, но не проверяет отслеживаемые папки
-    files.removeAll({fileName, File});
+    for (int i=files.size()-1; i>=0; --i) {
+        if (files.at(i).path == fileName && files.at(i).type == File)
+            files.removeAt(i);
+    }
 
     //TODO: добавить возможность отключать отслеживание файлов в папках,
     //то есть реализовать списки исключения
+}
+
+void FileHandler::untrack(const FileHandler::TrackedItem &item)
+{DDD;
+    files.removeAll(item);
 }
 
 void FileHandler::setFileNames(const QStringList &fileNames)
@@ -55,18 +66,21 @@ void FileHandler::setFileNames(const QStringList &fileNames)
         bool withSubfolders = false;
         if (f.endsWith(":1")) {
             f.chop(2);
-            files.append({f, FolderWithSubfolders});
+            files.append({f, FolderWithSubfolders, true});
             withSubfolders = true;
         }
         else if (f.endsWith(":0")) {
             f.chop(2);
-            files.append({f, Folder});
+            files.append({f, Folder, true});
         }
         else {
-            files.append({f, File});
+            files.append({f, File, true});
         }
-        if (!watcher->addPath(f)) qDebug() <<"tracking"<<f<<"failed";
-        emit fileAdded(f,withSubfolders,true);
+        if (!watcher->addPath(f)) {
+            qDebug() <<"tracking"<<f<<"failed";
+            files.last().good = false;
+        }
+        emit fileAdded(f, withSubfolders, true);
     }
 }
 
@@ -74,9 +88,9 @@ QStringList FileHandler::fileNames() const
 {DDD;
     QStringList result;
     for (auto item: files) {
-        if (item.second==FolderWithSubfolders) item.first.append(":1");
-        else if (item.second==Folder) item.first.append(":0");
-        result << item.first;
+        if (item.type==FolderWithSubfolders) item.path.append(":1");
+        else if (item.type==Folder) item.path.append(":0");
+        result << item.path;
     }
 
     return result;
@@ -93,12 +107,12 @@ bool FileHandler::tracking(const QString &file) const
     const QString path = fi.canonicalPath()+"/";
 
     for (const auto &item: qAsConst(files)) {
-        switch (item.second) {
+        switch (item.type) {
             case File:
             case Folder:
-                if (item.first == file) return true;
+                if (item.path == file) return true;
                 break;
-            case FolderWithSubfolders: if (path.startsWith(item.first+"/")) return true;
+            case FolderWithSubfolders: if (path.startsWith(item.path+"/")) return true;
         }
     }
 
@@ -110,12 +124,12 @@ void FileHandler::optimizeFiles(const QString &folder, bool withSubfolders)
     //Удаляем из списка все файлы и папки, которые находятся в папке folder
     for(int i=files.size()-1; i>=0; --i) {
         auto &f = files.at(i);
-        QFileInfo fi(f.first);
-        if (f.second == File) {
+        QFileInfo fi(f.path);
+        if (f.type == File) {
             if (fi.canonicalPath() == folder) files.removeAt(i);
             else if (withSubfolders && fi.canonicalPath().startsWith(folder+"/")) files.removeAt(i);
         }
-        else if (withSubfolders && f.first.startsWith(folder+"/")) files.removeAt(i);
+        else if (withSubfolders && f.path.startsWith(folder+"/")) files.removeAt(i);
     }
 }
 

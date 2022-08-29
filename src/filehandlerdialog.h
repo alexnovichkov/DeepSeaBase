@@ -18,6 +18,7 @@ public:
     virtual int columnCount(const QModelIndex &parent) const override;
     virtual QVariant data(const QModelIndex &index, int role) const override;
     virtual QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+    void untrack(int index);
 private:
     FileHandler *fileHandler;
 };
@@ -28,9 +29,11 @@ class FileHandlerDialog : public QDialog
 public:
     FileHandlerDialog(FileHandler *fileHandler, QWidget *parent=nullptr);
 private:
+    void removeTrackedFile();
     FileHandler *fileHandler;
     HandlerModel *model;
     QTreeView *tree;
+    QAction *removeFileAction;
 };
 
 #endif // FILEHANDLERDIALOG_H
