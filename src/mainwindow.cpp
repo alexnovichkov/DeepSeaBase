@@ -74,6 +74,7 @@ MainWindow::MainWindow(QWidget *parent)
     ads::CDockManager::setConfigFlag(ads::CDockManager::DockAreaHasUndockButton, false);
     ads::CDockManager::setConfigFlag(ads::CDockManager::FocusHighlighting, true);
     ads::CDockManager::setConfigFlag(ads::CDockManager::EqualSplitOnInsertion, true);
+    ads::CDockManager::setConfigFlag(ads::CDockManager::XmlCompressionEnabled, false);
 
     m_DockManager = new ads::CDockManager(this);
     connect(m_DockManager, &ads::CDockManager::focusedDockWidgetChanged, this, &MainWindow::onFocusedDockWidgetChanged);
@@ -154,6 +155,11 @@ MainWindow::MainWindow(QWidget *parent)
             createTab(key, val.toStringList());
             tabsNames << key;
         }
+    }
+
+    auto splitterSizes = Settings::fromList(Settings::getSetting("centralSplitter").toList());
+    if (!splitterSizes.isEmpty()) {
+        m_DockManager->setSplitterSizes(topArea, splitterSizes);
     }
 
     updateActions();
@@ -521,6 +527,11 @@ MainWindow::~MainWindow()
 //    }
 
     //    ColorSelector::instance()->drop();
+
+//    auto dockManagerState = m_DockManager->saveState();
+//    qDebug() << dockManagerState;
+
+    Settings::setSetting("centralSplitter", Settings::toList(m_DockManager->splitterSizes(topArea)));
 
     //вручную удаляем все панели с графиками, чтобы корректно удалились кривые. Иначе
     //dockManager не гарантирует последовательность удаления панелей, и при удалении

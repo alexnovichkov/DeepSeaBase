@@ -26,3 +26,17 @@ void Settings::setSetting(const QString &key, const QVariant &value)
     s.setValue(key, value);
 }
 
+
+QList<QVariant> Settings::toList(const QList<int> &list)
+{
+    QList<QVariant> result;
+    for (int val: list) result << QVariant(val);
+    return result;
+}
+
+QList<int> Settings::fromList(const QList<QVariant> &list)
+{
+    QList<int> result;
+    for (auto val: list) result << val.toInt();
+    return result;
+}
