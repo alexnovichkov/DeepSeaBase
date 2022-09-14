@@ -220,7 +220,7 @@ int LineCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
     evaluateScale(from, to, xMap);
 
 
-    double dmin = 1.0e10;
+    double dmin = qInf();
 
     for ( int i = from; i <= to; i++ ) {
         const QPointF sample = samplePoint( i );
