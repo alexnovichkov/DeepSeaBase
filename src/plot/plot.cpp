@@ -633,7 +633,6 @@ void Plot::setScale(QwtAxisId id, double min, double max, double step)
 {DDD;
     setRightScale(id, min, max);
     setAxisScale(id, min, max, step);
-    replot();
 }
 
 void Plot::removeLabels()

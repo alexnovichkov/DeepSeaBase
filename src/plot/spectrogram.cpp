@@ -189,7 +189,8 @@ void Spectrogram::setRightScale(QwtAxisId id, double min, double max)
     if (!m->isEmpty() && id == yRightAxis) {
         if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(m->curve(0))) {
             c->setColorInterval(min, max);
-            axisWidget(id)->setColorMap(QwtInterval(min, max), ColorMapFactory::map(colorMap));
+            axisWidget(id)->setColorMap(c->colorInterval(), ColorMapFactory::map(colorMap));
+            c->setColorMap(ColorMapFactory::map(colorMap));
         }
     }
 }
