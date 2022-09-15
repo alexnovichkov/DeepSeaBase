@@ -80,49 +80,26 @@ QList<QwtLegendData> SpectroCurve::legendData() const
     return result;
 }
 
-QPointF SpectroCurve::samplePoint(int) const
+QPointF SpectroCurve::samplePoint(SelectedPoint point) const
 {DDD;
-    return QPointF();
-    //return spectroData->samplePoint(point);
+    return spectroData->samplePoint(point);
 }
 
-int SpectroCurve::closest(const QPoint &, double *dist1, double *dist2) const
+Curve::SelectedPoint SpectroCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
 {DDD;
     Q_UNUSED(dist1);
     Q_UNUSED(dist2);
 
-    int index = -1;
+    const QwtScaleMap xMap = plot()->canvasMap( xAxis() );
+    const QwtScaleMap yMap = plot()->canvasMap( yAxis() );
 
-//    const size_t numSamples = channel->samplesCount();
-//    if ( numSamples <= 0 )
-//        return -1;
+    int indexX = channel->data()->nearest(xMap.invTransform(pos.x()));
+    int indexZ = channel->data()->nearestZ(yMap.invTransform(pos.y()));
 
-//    const QwtScaleMap xMap = plot()->canvasMap( xAxis() );
-//    const QwtScaleMap yMap = plot()->canvasMap( yAxis() );
+    if (dist1 && indexX != -1) *dist1 = qAbs(xMap.transform(channel->data()->xValue(indexX)) - pos.x());
+    if (dist2 && indexZ != -1) *dist2 = qAbs(yMap.transform(channel->data()->zValue(indexZ)) - pos.y());
 
-//    int from = 0;
-//    int to = numSamples-1;
-//    evaluateScale(from, to, xMap);
-
-
-//    double dmin = 1.0e10;
-
-//    for ( int i = from; i <= to; i++ ) {
-//        const QPointF sample = samplePoint( i );
-
-//        const double cx = xMap.transform( sample.x() ) - pos.x();
-//        const double cy = yMap.transform( sample.y() ) - pos.y();
-
-//        const double f = cx*cx + cy*cy;
-//        if ( f < dmin ) {
-//            index = i;
-//            dmin = f;
-//        }
-//    }
-//    if ( dist )
-//        *dist = qSqrt( dmin );
-
-    return index;
+    return {indexX, indexZ};
 }
 
 void SpectroCurve::setColorInterval(double min, double max)
@@ -179,4 +156,9 @@ double SpectrogramData::value(double x, double y) const
     int i = m_data->nearest(x);
     if (i < 0) i = 0;
     return m_data->yValue(i, j);
+}
+
+QPointF SpectrogramData::samplePoint(Curve::SelectedPoint point) const
+{
+    return QPointF(m_data->xValue(point.x), m_data->zValue(point.z));
 }

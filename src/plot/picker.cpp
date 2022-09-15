@@ -138,7 +138,7 @@ void Picker::endPick(QMouseEvent *e)
     if (!enabled) return;
     QPoint endPos = e->pos();
     if (endPos == pos) { //одинарный клик мышью
-
+        //добавляем выделение объекту
 
     }
     else {

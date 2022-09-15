@@ -386,6 +386,7 @@ void DataHolder::setYValues(const QVector<double> &values, YValuesFormat initial
 
 bool DataHolder::setYValue(int index, double value, int block)
 {DDD;
+    if (block < 0) return false;
     index += block * m_xCount;
     if (index < 0 || index >= m_xCount * m_zCount) return false;
 

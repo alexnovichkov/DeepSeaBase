@@ -55,13 +55,13 @@ public:
     virtual void updatePen() override;
     virtual QList<QwtLegendData> legendData() const override;
     virtual void updateSelection() override;
-    virtual QPointF samplePoint(int point) const override;
+    virtual QPointF samplePoint(SelectedPoint point) const override;
 
     virtual void resetCashedData() override;
 
     // Curve interface
 public:
-    virtual int closest(const QPoint &pos, double *dist1, double *dist2) const override;
+    virtual SelectedPoint closest(const QPoint &pos, double *dist1, double *dist2) const override;
 
     // QwtPlotItem interface
 public:

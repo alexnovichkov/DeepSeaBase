@@ -15,7 +15,7 @@ public:
 
     virtual QwtIntervalSample sample( size_t i ) const;
     //возвращает не интервал, а точку из данных
-    QPointF samplePoint(size_t i) const;
+    QPointF samplePoint(Curve::SelectedPoint point) const;
 
 //    virtual double xStep() const;
 //    virtual double xBegin() const;
@@ -57,7 +57,7 @@ public:
     virtual void updatePen() override;
     virtual QList<QwtLegendData> legendData() const override;
     virtual void updateSelection() override;
-    virtual QPointF samplePoint(int point) const override;
+    virtual QPointF samplePoint(SelectedPoint point) const override;
 
     // Curve interface
 public:
@@ -66,7 +66,7 @@ public:
 
     // Curve interface
 public:
-    virtual int closest(const QPoint &pos, double *dist1, double *dist2) const override;
+    virtual SelectedPoint closest(const QPoint &pos, double *dist1, double *dist2) const override;
 };
 
 #endif // BARCURVE_H

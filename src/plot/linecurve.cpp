@@ -86,9 +86,9 @@ bool LineCurve::doCloseLine() const
     return mapper->simplified && channel->type()==Descriptor::TimeResponse;
 }
 
-QPointF LineCurve::samplePoint(int point) const
+QPointF LineCurve::samplePoint(SelectedPoint point) const
 {DDD;
-    return QwtPlotCurve::sample(point);
+    return QwtPlotCurve::sample(point.x);
 }
 
 void LineCurve::resetCashedData()
@@ -204,13 +204,13 @@ double LineData::xBegin() const
 }
 
 
-int LineCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
+Curve::SelectedPoint LineCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
 {DDD;
     int index = -1;
 
     const size_t numSamples = channel->data()->samplesCount();
     if ( numSamples <= 0 )
-        return -1;
+        return {-1, -1};
 
     const QwtScaleMap xMap = m_plot->canvasMap( xAxis() );
     const QwtScaleMap yMap = m_plot->canvasMap( yAxis() );
@@ -223,7 +223,7 @@ int LineCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
     double dmin = qInf();
 
     for ( int i = from; i <= to; i++ ) {
-        const QPointF sample = samplePoint( i );
+        const QPointF sample = samplePoint( {i,0} );
 
         const double cx = qAbs(xMap.transform( sample.x() ) - pos.x());
         const double cy = qAbs(yMap.transform( sample.y() ) - pos.y());
@@ -237,7 +237,7 @@ int LineCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
         }
     }
 
-    return index;
+    return {index, 0};
 }
 
 void LineCurve::setVisible(bool visible)

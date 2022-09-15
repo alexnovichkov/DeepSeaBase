@@ -19,7 +19,7 @@ BarCurve::BarCurve(const QString &title, Channel *channel) :  QwtPlotHistogram(t
     setStyle(QwtPlotHistogram::Outline);
 }
 
-QPointF BarCurve::samplePoint(int point) const
+QPointF BarCurve::samplePoint(SelectedPoint point) const
 {DDD;
     return histogramdata->samplePoint(point);
 }
@@ -182,9 +182,9 @@ QwtIntervalSample HistogramData::sample(size_t i) const
     return QwtIntervalSample(data->yValue(i), left, right);
 }
 
-QPointF HistogramData::samplePoint(size_t i) const
+QPointF HistogramData::samplePoint(Curve::SelectedPoint point) const
 {DDD;
-    return QPointF(data->xValue(i), data->yValue(i));
+    return QPointF(data->xValue(point.x), data->yValue(point.x, point.z));
 }
 
 double BarCurve::xMin() const
@@ -216,13 +216,13 @@ double BarCurve::xMax() const
 }
 
 
-int BarCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
+Curve::SelectedPoint BarCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
 {DDD;
     int index = -1;
 
     const size_t numSamples = channel->data()->samplesCount();
     if ( numSamples <= 0 )
-        return -1;
+        return {-1, -1};
 
     const QwtScaleMap xMap = plot()->canvasMap( xAxis() );
     const QwtScaleMap yMap = plot()->canvasMap( yAxis() );
@@ -237,7 +237,7 @@ int BarCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
     double dmin = qInf();
 
     for ( int i = from; i <= to; i++ ) {
-        const QPointF sample = samplePoint( i );
+        const QPointF sample = samplePoint( {i,0} );
 
         const double cx = qAbs(xMap.transform( sample.x() ) - pos.x());
         const double cy = qAbs(yMap.transform( sample.y() ) - pos.y());
@@ -253,5 +253,5 @@ int BarCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
     if ( dist1 ) *dist1 = dminx;
     if ( dist2 ) *dist2 = dminy;
 
-    return index;
+    return {index, 0};
 }

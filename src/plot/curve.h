@@ -26,6 +26,12 @@ public:
         Spectrogram,
         Unknown
     };
+    struct SelectedPoint {
+        int x = -1;
+        int z = -1;
+        inline bool valid() const {return x!=-1 && z!=-1;}
+    };
+
     Curve(const QString &title, Channel *channel);
     virtual ~Curve();
 
@@ -45,7 +51,7 @@ public:
 
     virtual QList<QwtLegendData> legendData() const = 0;
 
-    virtual QPointF samplePoint(int point) const = 0;
+    virtual QPointF samplePoint(SelectedPoint point) const = 0;
 
     void setVisible(bool visible);
 
@@ -56,7 +62,7 @@ public:
     PointLabel *findLabel(const QPoint &pos/*, QwtAxisId yAxis*/);
     /** find label by point on a curve */
     PointLabel *findLabel(const int point);
-    virtual int closest(const QPoint &pos, double *dist = nullptr, double *dist2 = nullptr) const = 0;
+    virtual SelectedPoint closest(const QPoint &pos, double *dist = nullptr, double *dist2 = nullptr) const = 0;
 
     virtual void moveToPos(QPoint pos, QPoint startPos = QPoint()) override;
 
@@ -97,7 +103,7 @@ protected:
     inline virtual bool updateAnyway() const override {return true;}
     virtual void updatePen() = 0;
     Plot *m_plot = nullptr;
-    mutable int selectedPoint = -1;
+    mutable SelectedPoint selectedPoint;
     PointMarker *marker;
     QPen oldPen;
 };
