@@ -14,6 +14,7 @@
 #include "qwt_scale_widget.h"
 
 #include "axisboundsdialog.h"
+#include "selectable.h"
 
 CanvasEventFilter::CanvasEventFilter(Plot *parent) : QObject(parent), plot(parent)
 {DDD;
@@ -221,22 +222,34 @@ void CanvasEventFilter::mousePress(QMouseEvent *event)
             break;
         }
         case Qt::LeftButton: {
-            //либо выделение графика прямоугольником
-            //либо выбор объекта
-            //определяем, есть ли что под курсором
-            //если есть, то это выбор объекта
-            //если нет, то сбрасываем выбор объекта и это - выделение прямоугольником
-            bool selected = picker ? picker->findObject(event) : false;
+            if (picker && picker->pickPriority() == Picker::PickPriority::PickFirst) {
+                auto selected = picker->findObject(event);
 
-            if (selected) {
-                actionType = ActionType::Pick;
-                picker->startPick(event->pos());
+                if (selected) {
+                    actionType = ActionType::Pick;
+                    picker->startPick(event->pos(), selected);
+                }
+                else {
+                    if (picker) picker->deselect();
+                    actionType = ActionType::Zoom;
+                    plotZoom->startZoom(event);
+                }
             }
             else {
-                if (picker) picker->deselect();
-                actionType = ActionType::Zoom;
-                plotZoom->startZoom(event);
+                auto selected = picker->findObject(event);
+
+                if (picker->alreadySelected(selected) ||
+                    (selected && selected->draggable())) {
+                    actionType = ActionType::Pick;
+                    picker->startPick(event->pos(), selected);
+                }
+                else {
+                    if (picker) picker->deselect();
+                    actionType = ActionType::Zoom;
+                    plotZoom->startZoom(event);
+                }
             }
+
             break;
         }
         default: break;
@@ -258,7 +271,7 @@ void CanvasEventFilter::mouseMove(QMouseEvent *event)
 }
 
 void CanvasEventFilter::mouseRelease(QMouseEvent *event)
-{DDD;
+{DD0;
     if (actionType == ActionType::Drag) {
         auto coords = dragZoom->endDrag(event);
         zoomStack->addZoom(coords, true);
@@ -294,3 +307,17 @@ void CanvasEventFilter::mouseDoubleClick(QMouseEvent *event)
     }
 }
 
+
+QDebug operator<<(QDebug debug, const CanvasEventFilter::ActionType &c)
+{
+    QDebugStateSaver saver(debug);
+    switch (c) {
+        case CanvasEventFilter::ActionType::Axis: debug << "axis"; break;
+        case CanvasEventFilter::ActionType::Drag: debug << "drag"; break;
+        case CanvasEventFilter::ActionType::None: debug << "none"; break;
+        case CanvasEventFilter::ActionType::Pick: debug << "pick"; break;
+        case CanvasEventFilter::ActionType::Zoom: debug << "zoom"; break;
+    }
+
+    return debug;
+}

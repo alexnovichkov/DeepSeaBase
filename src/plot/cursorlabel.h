@@ -36,6 +36,7 @@ public:
 public:
     virtual bool underMouse(const QPoint &pos, double *distanceX = nullptr, double *distanceY = nullptr) const override;
     virtual QList<QAction *> actions() override; //не имеет собственных действий, берет из курсора
+    virtual bool draggable() const override {return true;}
 protected:
     virtual void updateSelection() override;
 };

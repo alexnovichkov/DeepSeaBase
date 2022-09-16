@@ -97,6 +97,7 @@ public:
     virtual void moveDown(int count = 1) override;
     virtual void fix() override;
     virtual void remove() override;
+    virtual bool draggable() const override;
 protected:
     virtual void attachTo(QwtPlot *plot) = 0;
     virtual void updateSelection() override;

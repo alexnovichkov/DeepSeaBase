@@ -26,6 +26,7 @@ public:
     virtual void moveUp(int count = 1) override;
     virtual void moveDown(int count = 1) override;
     virtual QList<QAction *> actions() override;
+    virtual bool draggable() const override {return true;}
 protected:
     virtual void updateSelection() override;
 private:

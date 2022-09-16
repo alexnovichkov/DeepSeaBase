@@ -130,9 +130,10 @@ Plot::Plot(PlotType type, QWidget *parent) :
     tracker = new PlotTracker(this);
 //    tracker->setEnabled(Settings::getSetting("pickerEnabled", true).toBool());
 
-    _picker = new Picker(this);
-    _picker->setEnabled(Settings::getSetting("pickerEnabled", true).toBool());
-    connect(_picker, &Picker::removeNeeded, cursors, qOverload<Selectable*>(&Cursors::removeCursor));
+    picker = new Picker(this);
+    picker->setPickPriority(Picker::PickPriority::PickLast);
+    picker->setEnabled(Settings::getSetting("pickerEnabled", true).toBool());
+    connect(picker, &Picker::removeNeeded, cursors, qOverload<Selectable*>(&Cursors::removeCursor));
 
     dragZoom = new DragZoom(this);
     wheelZoom = new WheelZoom(this);
@@ -147,7 +148,7 @@ Plot::Plot(PlotType type, QWidget *parent) :
     canvasFilter->setWheelZoom(wheelZoom);
     canvasFilter->setAxisZoom(axisZoom);
     canvasFilter->setPlotZoom(plotZoom);
-    canvasFilter->setPicker(_picker);
+    canvasFilter->setPicker(picker);
     connect(canvasFilter,SIGNAL(hover(QwtAxisId,int)), SLOT(hoverAxis(QwtAxisId,int)));
     connect(canvasFilter,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)), SLOT(showContextMenu(QPoint,QwtAxisId)));
 }
@@ -160,7 +161,7 @@ Plot::~Plot()
     delete cursorBox;
     delete grid;
     delete tracker;
-    delete _picker;
+    delete picker;
 
     Settings::setSetting("axisLabelsVisible", axisLabelsVisible);
     Settings::setSetting("autoscale-x", !zoom->horizontalScaleBounds->isFixed());
@@ -474,7 +475,7 @@ void Plot::deleteSelectedCurve(Selectable *selected)
 void Plot::deleteCurve(Curve *curve, bool doReplot)
 {DDD;
     if (!curve) return;
-    if (curve->selected()) _picker->deselect();
+    if (curve->selected()) picker->deselect();
 
     bool removedFromLeft = true;
     if (m->deleteCurve(curve, &removedFromLeft)) {
@@ -1035,10 +1036,10 @@ void Plot::setInteractionMode(Plot::InteractionMode mode)
 
 void Plot::switchCursor()
 {DDD;
-    if (!_picker) return;
+    if (!picker) return;
 
-    bool pickerEnabled = _picker->isEnabled();
-    _picker->setEnabled(!pickerEnabled);
+    bool pickerEnabled = picker->isEnabled();
+    picker->setEnabled(!pickerEnabled);
     if (tracker) tracker->setEnabled(!pickerEnabled);
     Settings::setSetting("pickerEnabled", !pickerEnabled);
 }

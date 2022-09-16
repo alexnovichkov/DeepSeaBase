@@ -160,7 +160,7 @@ protected:
 
     Grid *grid = nullptr;
     PlotTracker *tracker = nullptr;
-    Picker *_picker = nullptr;
+    Picker *picker = nullptr;
     QwtPlotCanvas *_canvas = nullptr;
 
     AxisOverlay *leftOverlay = nullptr;

@@ -13,15 +13,15 @@ Picker::Picker(Plot *plot) : plot(plot)
 //    mode = ModeNone;
 }
 
-bool Picker::findObject(QMouseEvent *e)
+Selectable * Picker::findObject(QMouseEvent *e)
 {DDD;
+    Selectable *selected = nullptr;
+
     if (e->modifiers() == Qt::NoModifier || e->modifiers() == Qt::ControlModifier) {
         pos = e->pos();
 
         //Ищем элемент под курсором мыши
         double minDist = qInf();
-        Selectable *selected = nullptr;
-
         const auto allItems = plot->itemList();
         for (auto item: allItems) {
             if (auto selectable = dynamic_cast<Selectable*>(item)) {
@@ -39,19 +39,23 @@ bool Picker::findObject(QMouseEvent *e)
                 }
             }
         }
-        if (currentSelected && currentSelected != selected)
-            currentSelected->setSelected(false);
-        currentSelected = selected;
+//        //сбрасываем выделение
+//        if (currentSelected && currentSelected != selected)
+//            currentSelected->setSelected(false);
+//        //новое выделение
+//        currentSelected = selected;
     }
-
-    return currentSelected != nullptr;
+    return selected;
 }
 
-void Picker::startPick(QPoint startPos)
+void Picker::startPick(QPoint startPos, Selectable *selected)
 {DDD;
-    if (currentSelected) {
-        currentSelected->setSelected(true);
-        startPosition = startPos;
+    startPosition = startPos;
+
+    if (currentSelected != selected) {
+        deselect();
+        currentSelected = selected;
+        if (currentSelected) currentSelected->setSelected(true);
     }
 }
 
@@ -134,17 +138,22 @@ void Picker::proceedPick(QMouseEvent *e)
 }
 
 void Picker::endPick(QMouseEvent *e)
-{DDD;
+{DD0;
     if (!enabled) return;
-    QPoint endPos = e->pos();
-    if (endPos == pos) { //одинарный клик мышью
+//    QPoint endPos = e->pos();
+//    if (endPos == pos) { //одинарный клик мышью
+//        qDebug()<<"click";
         //добавляем выделение объекту
+        if (pickPriority() == PickPriority::PickLast) {
+            if (auto selected = findObject(e)) {
+                startPick(e->pos(), selected);
+            }
+        }
+//    }
+//    else {
+//        //протащили какой-то объект, надо бросить
 
-    }
-    else {
-        //протащили какой-то объект, надо бросить
-
-    }
+//    }
 
     plot->replot();
 }

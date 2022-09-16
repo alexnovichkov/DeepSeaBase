@@ -193,6 +193,7 @@ QMap<int, QVariant> Curve::commonLegendData() const
 bool Curve::underMouse(const QPoint &pos, double *distanceX, double *distanceY) const
 {DDD;
     selectedPoint = closest(pos, distanceX, distanceY);
+    qDebug()<<selectedPoint.x<<selectedPoint.z;
 
     //no closest point for this pos
     if (!selectedPoint.valid()) return false;
@@ -275,6 +276,11 @@ void Curve::fix()
 void Curve::remove()
 {DDD;
     m_plot->deleteSelectedCurve(this);
+}
+
+bool Curve::draggable() const
+{
+    return false;
 }
 
 void Curve::updateSelection()

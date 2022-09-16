@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QPoint>
 #include "qwt_axis_id.h"
+#include <QtDebug>
 
 class Plot;
 class QMouseEvent;
@@ -76,5 +77,7 @@ private:
 
     QPoint currentPosition;
 };
+
+QDebug operator<<(QDebug debug, const CanvasEventFilter::ActionType &c);
 
 #endif // CANVASEVENTFILTER_H

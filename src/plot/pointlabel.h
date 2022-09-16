@@ -46,6 +46,7 @@ public:
     virtual void remove() override;
     virtual void moveToPos(QPoint pos, QPoint startPos = QPoint()) override;
     virtual QList<QAction*> actions() override;
+    virtual bool draggable() const override {return true;}
 
     bool contains(const QPoint &pos);
 private:
