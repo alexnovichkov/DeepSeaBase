@@ -13,7 +13,7 @@ public:
     virtual QwtInterval interval( Qt::Axis axis ) const override;
     void setInterval(Qt::Axis axis, const QwtInterval &interval);
     virtual double value( double x, double y ) const override;
-    QPointF samplePoint(Curve::SelectedPoint point) const;
+    SamplePoint samplePoint(SelectedPoint point) const;
 private:
     QwtInterval m_intervals[3];
     DataHolder *m_data;
@@ -38,7 +38,7 @@ public:
     virtual QPen pen() const override;
 
     virtual QList<QwtLegendData> legendData() const override;
-    virtual QPointF samplePoint(SelectedPoint point) const override;
+    virtual SamplePoint samplePoint(SelectedPoint point) const override;
     virtual SelectedPoint closest(const QPoint &pos, double *dist1, double *dist2) const override;
 
     void setColorInterval(double min, double max);

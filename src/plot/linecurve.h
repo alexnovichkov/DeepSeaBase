@@ -54,8 +54,8 @@ public:
     virtual QPen pen() const override;
     virtual void updatePen() override;
     virtual QList<QwtLegendData> legendData() const override;
-    virtual void updateSelection() override;
-    virtual QPointF samplePoint(SelectedPoint point) const override;
+    virtual void updateSelection(SelectedPoint point) override;
+    virtual SamplePoint samplePoint(SelectedPoint point) const override;
 
     virtual void resetCashedData() override;
 

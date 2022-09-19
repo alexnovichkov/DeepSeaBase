@@ -19,7 +19,7 @@ public:
 
     // Selectable interface
 public:
-    virtual bool underMouse(const QPoint &pos, double *distanceX = nullptr, double *distanceY = nullptr) const override;
+    virtual bool underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const override;
     virtual void moveToPos(QPoint pos, QPoint startPos = QPoint()) override;
     virtual void moveLeft(int count = 1) override;
     virtual void moveRight(int count = 1) override;
@@ -28,7 +28,7 @@ public:
     virtual QList<QAction *> actions() override;
     virtual bool draggable() const override {return true;}
 protected:
-    virtual void updateSelection() override;
+    virtual void updateSelection(SelectedPoint point) override;
 private:
     QAction *energyAct;
     QAction *rmsAct;

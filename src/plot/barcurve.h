@@ -15,7 +15,7 @@ public:
 
     virtual QwtIntervalSample sample( size_t i ) const;
     //возвращает не интервал, а точку из данных
-    QPointF samplePoint(Curve::SelectedPoint point) const;
+    SamplePoint samplePoint(SelectedPoint point) const;
 
 //    virtual double xStep() const;
 //    virtual double xBegin() const;
@@ -56,8 +56,8 @@ public:
     virtual QPen pen() const override;
     virtual void updatePen() override;
     virtual QList<QwtLegendData> legendData() const override;
-    virtual void updateSelection() override;
-    virtual QPointF samplePoint(SelectedPoint point) const override;
+    virtual void updateSelection(SelectedPoint point) override;
+    virtual SamplePoint samplePoint(SelectedPoint point) const override;
 
     // Curve interface
 public:

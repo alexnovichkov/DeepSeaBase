@@ -4,8 +4,10 @@
 #include "qwt_plot_item.h"
 
 #include "qwt_text.h"
+#include "qwt_symbol.h"
 class QwtPlot;
 class Curve;
+
 #include <QtCore>
 #include "selectable.h"
 
@@ -17,29 +19,35 @@ class Curve;
 class PointLabel : public QwtPlotItem, public Selectable
 {
 public:
-    explicit PointLabel(QwtPlot *parent, Curve *curve);
+    enum class Mode {
+        XValue,
+        XYValue,
+        YValue,
+        XYZValue
+    };
+    explicit PointLabel(QwtPlot *parent, Curve *m_curve);
 
     virtual ~PointLabel();
 
     virtual int rtti() const override;
 
-    QPointF origin() const;
+    SamplePoint origin() const;
 
-    void setOrigin(const QPointF &origin);
+    void setOrigin(const SamplePoint &origin);
 
-    void setMode(int mode);
+    void setMode(Mode mode);
+    inline Mode mode() const {return m_mode;}
     virtual void cycle() override;
-    int mode() const {return d_mode;}
 
-    int point() const;
+    SelectedPoint point() const;
 
-    void setPoint(int point);
+    void setPoint(SelectedPoint point);
     void setLabel(const QwtText& label);
 
     QwtText label() const;
 
-    virtual void updateSelection() override;
-    virtual bool underMouse(const QPoint &pos, double *distanceX = nullptr, double *distanceY = nullptr) const override;
+    virtual void updateSelection(SelectedPoint point) override;
+    virtual bool underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const override;
 
     virtual void draw(QPainter *painter, const QwtScaleMap &xMap,
                       const QwtScaleMap &yMap, const QRectF &canvasRect) const override;
@@ -49,16 +57,17 @@ public:
     virtual bool draggable() const override {return true;}
 
     bool contains(const QPoint &pos);
+    static SamplePoint check(SamplePoint point);
 private:
     void updateLabel();
-    int d_mode = 0;
-    int d_point;
-    QPointF d_origin; // origin of Label, equivalent to value of PlotMarker
-    QPoint d_displacement; // displacement relative to invTransform(d_origin)
-    QwtText d_label;
-    QwtPlot *plot;
-public:
-    Curve *curve;
+    Mode m_mode = Mode::XValue;
+    SelectedPoint m_point;
+    SamplePoint m_origin; // origin of Label, equivalent to value of PlotMarker
+    QPoint m_displacement; // displacement relative to invTransform(d_origin)
+    QwtText m_label;
+    QwtSymbol m_marker;
+    QwtPlot *m_plot;
+    Curve *m_curve;
 };
 
 #endif // POINTLABEL_H

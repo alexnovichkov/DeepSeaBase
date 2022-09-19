@@ -118,7 +118,7 @@ void PlotModel::updateTitles()
 void PlotModel::resetHighlighting()
 {DDD;
     for(Curve *c: qAsConst(m_curves)) {
-        c->setSelected(false);
+        c->setSelected(false, SelectedPoint());
     }
 }
 

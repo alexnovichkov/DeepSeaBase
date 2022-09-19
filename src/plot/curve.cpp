@@ -77,7 +77,7 @@ PointLabel *Curve::findLabel(const QPoint &pos/*, QwtAxisId yAxis*/)
     return 0;
 }
 
-PointLabel *Curve::findLabel(const int point)
+PointLabel *Curve::findLabel(SelectedPoint point)
 {DDD;
     foreach (PointLabel *l, labels)
         if (l->point() == point)
@@ -98,7 +98,7 @@ void Curve::moveToPos(QPoint pos, QPoint startPos)
         channel->descriptor()->setDataChanged(true);
         resetCashedData();
 
-        updateSelection();
+        updateSelection(selectedPoint);
     }
 }
 
@@ -155,13 +155,13 @@ void Curve::evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const
         //допустимо использовать обычные циклы, потому что при неравномерной шкале
         //отсчетов всегда небольшое число (<50)
         for (int i=0; i<to; ++i) {
-            if (samplePoint({i,0}).x() >= startX) {
+            if (samplePoint({i,0}).x >= startX) {
                 from = i-1;
                 break;
             }
         }
         for (int i=to; i>=from; --i) {
-            if (samplePoint({i,0}).x() <= endX) {
+            if (samplePoint({i,0}).x <= endX) {
                 to = i+1;
                 break;
             }
@@ -190,17 +190,18 @@ QMap<int, QVariant> Curve::commonLegendData() const
 
 
 
-bool Curve::underMouse(const QPoint &pos, double *distanceX, double *distanceY) const
+bool Curve::underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const
 {DDD;
-    selectedPoint = closest(pos, distanceX, distanceY);
-    qDebug()<<selectedPoint.x<<selectedPoint.z;
+    SelectedPoint p = closest(pos, distanceX, distanceY);
 
     //no closest point for this pos
-    if (!selectedPoint.valid()) return false;
+    if (!p.valid()) return false;
 
     if (distanceX && distanceY) {
-        if ((*distanceX)*(*distanceX)+(*distanceY)*(*distanceY) < 25)
+        if ((*distanceX)*(*distanceX)+(*distanceY)*(*distanceY) < 25) {
+            if (point) *point = p;
             return true;
+        }
     }
     return false;
 }
@@ -209,7 +210,7 @@ void Curve::moveLeft(int count)
 {DDD;
     if (selectedPoint.x >= count) {
         selectedPoint.x -= count;
-        updateSelection();
+        updateSelection(selectedPoint);
     }
 }
 
@@ -217,7 +218,7 @@ void Curve::moveRight(int count)
 {DDD;
     if (selectedPoint.x >=0 && selectedPoint.x < samplesCount()-count) {
         selectedPoint.x += count;
-        updateSelection();
+        updateSelection(selectedPoint);
     }
 }
 
@@ -226,15 +227,15 @@ void Curve::moveUp(int count)
     if (m_plot->interactionMode != Plot::DataInteraction) return;
     if (selectedPoint.x < 0 || selectedPoint.x >= samplesCount()) return;
 
-    QPointF val = samplePoint(selectedPoint);
-    double y = val.y()+(m_plot->canvasMap(yAxis()).sDist())/100*count;
+    auto val = samplePoint(selectedPoint);
+    double y = val.y+(m_plot->canvasMap(yAxis()).sDist())/100*count;
 
     if (channel->data()->setYValue(selectedPoint.x, y, selectedPoint.z)) {
         channel->setDataChanged(true);
         channel->descriptor()->setDataChanged(true);
         resetCashedData();
 
-        updateSelection();
+        updateSelection(selectedPoint);
     }
 }
 
@@ -243,28 +244,28 @@ void Curve::moveDown(int count)
     if (m_plot->interactionMode != Plot::DataInteraction) return;
     if (selectedPoint.x < 0 || selectedPoint.x >= samplesCount()) return;
 
-    QPointF val = samplePoint(selectedPoint);
-    double y = val.y()-(m_plot->canvasMap(yAxis()).sDist())/100*count;
+    auto val = samplePoint(selectedPoint);
+    double y = val.y-(m_plot->canvasMap(yAxis()).sDist())/100*count;
 
     if (channel->data()->setYValue(selectedPoint.x, y, selectedPoint.z)) {
         channel->setDataChanged(true);
         channel->descriptor()->setDataChanged(true);
         resetCashedData();
 
-        updateSelection();
+        updateSelection(selectedPoint);
     }
 }
 
 void Curve::fix()
 {DDD;
     if (selectedPoint.x >= 0 && selectedPoint.x < samplesCount()) {
-        QPointF val = samplePoint(selectedPoint);
+        auto val = samplePoint(selectedPoint);
 
-        PointLabel *label = findLabel(selectedPoint.x);
+        PointLabel *label = findLabel(selectedPoint);
 
         if (!label) {
             label = new PointLabel(m_plot, this);
-            label->setPoint(selectedPoint.x);
+            label->setPoint(selectedPoint);
             label->setOrigin(val);
             addLabel(label);
 
@@ -283,13 +284,17 @@ bool Curve::draggable() const
     return false;
 }
 
-void Curve::updateSelection()
+void Curve::updateSelection(SelectedPoint point)
 {DDD;
     updatePen();
+
+    selectedPoint = point;
 
     if (!selected()) marker->setVisible(false);
     else {
         marker->setVisible(true);
-        marker->moveTo(samplePoint(selectedPoint));
+        auto val = samplePoint(selectedPoint);
+
+        marker->moveTo({val.x, qIsNaN(val.z) ? val.y : val.z});
     }
 }

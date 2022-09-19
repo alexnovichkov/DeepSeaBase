@@ -67,11 +67,6 @@ QPen SpectroCurve::pen() const
     return QPen();
 }
 
-//void SpectroCurve::setPen(const QPen &pen)
-//{
-//    Curve::setPen(pen);
-//}
-
 QList<QwtLegendData> SpectroCurve::legendData() const
 {DDD;
     QList<QwtLegendData> result = QwtPlotSpectrogram::legendData();
@@ -80,12 +75,12 @@ QList<QwtLegendData> SpectroCurve::legendData() const
     return result;
 }
 
-QPointF SpectroCurve::samplePoint(SelectedPoint point) const
+SamplePoint SpectroCurve::samplePoint(SelectedPoint point) const
 {DDD;
     return spectroData->samplePoint(point);
 }
 
-Curve::SelectedPoint SpectroCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
+SelectedPoint SpectroCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
 {DDD;
     Q_UNUSED(dist1);
     Q_UNUSED(dist2);
@@ -112,15 +107,8 @@ QwtInterval SpectroCurve::colorInterval() const
     return spectroData->interval(Qt::ZAxis);
 }
 
-//double SpectroCurve::yMin() const
-//{
-//    return channel->data()->zMin();
-//}
 
-//double SpectroCurve::yMax() const
-//{
-//    return channel->data()->zMax();
-//}
+
 
 SpectrogramData::SpectrogramData(DataHolder *data) : m_data(data)
 {DDD;
@@ -158,7 +146,7 @@ double SpectrogramData::value(double x, double y) const
     return m_data->yValue(i, j);
 }
 
-QPointF SpectrogramData::samplePoint(Curve::SelectedPoint point) const
+SamplePoint SpectrogramData::samplePoint(SelectedPoint point) const
 {
-    return QPointF(m_data->xValue(point.x), m_data->zValue(point.z));
+    return {m_data->xValue(point.x), m_data->yValue(point.x, point.z), m_data->zValue(point.z)};
 }

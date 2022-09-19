@@ -86,9 +86,10 @@ bool LineCurve::doCloseLine() const
     return mapper->simplified && channel->type()==Descriptor::TimeResponse;
 }
 
-QPointF LineCurve::samplePoint(SelectedPoint point) const
+SamplePoint LineCurve::samplePoint(SelectedPoint point) const
 {DDD;
-    return QwtPlotCurve::sample(point.x);
+    auto s = QwtPlotCurve::sample(point.x);
+    return {s.x(), s.y(), qQNaN()};
 }
 
 void LineCurve::resetCashedData()
@@ -156,9 +157,9 @@ QList<QwtLegendData> LineCurve::legendData() const
     return result;
 }
 
-void LineCurve::updateSelection()
+void LineCurve::updateSelection(SelectedPoint point)
 {DDD;
-    Curve::updateSelection();
+    Curve::updateSelection(point);
     if (selected()) setZ(1000);
     else setZ(20);
     plot()->updateLegend(this);
@@ -204,7 +205,7 @@ double LineData::xBegin() const
 }
 
 
-Curve::SelectedPoint LineCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
+SelectedPoint LineCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
 {DDD;
     int index = -1;
 
@@ -223,10 +224,10 @@ Curve::SelectedPoint LineCurve::closest(const QPoint &pos, double *dist1, double
     double dmin = qInf();
 
     for ( int i = from; i <= to; i++ ) {
-        const QPointF sample = samplePoint( {i,0} );
+        const auto sample = samplePoint( {i,0} );
 
-        const double cx = qAbs(xMap.transform( sample.x() ) - pos.x());
-        const double cy = qAbs(yMap.transform( sample.y() ) - pos.y());
+        const double cx = qAbs(xMap.transform( sample.x ) - pos.x());
+        const double cy = qAbs(yMap.transform( sample.y ) - pos.y());
 
         const double f = cx*cx + cy*cy;
         if ( f < dmin ) {

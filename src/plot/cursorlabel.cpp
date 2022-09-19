@@ -93,8 +93,9 @@ void CursorLabel::draw(QPainter *painter, const QwtScaleMap &xMap, const QwtScal
     m_label.draw(painter, textRect);
 }
 
-bool CursorLabel::underMouse(const QPoint &pos, double *distanceX, double *distanceY) const
+bool CursorLabel::underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const
 {DDD;
+    Q_UNUSED(point);
     double xval = 0.0;
     double yval = 0.0;
     switch (m_axis) {
@@ -110,22 +111,22 @@ bool CursorLabel::underMouse(const QPoint &pos, double *distanceX, double *dista
             break;
     }
 
-    QPointF point(xval, yval);
+    QPointF p(xval, yval);
 
     const QSizeF textSize = m_label.textSize();
 
-    point.rx() += 3;
-    point.ry() -= textSize.height();
+    p.rx() += 3;
+    p.ry() -= textSize.height();
 
-    auto vec = QVector2D(point);
+    auto vec = QVector2D(p);
     vec.setX(vec.x()+textSize.width()/2);
     vec.setY(vec.y()+textSize.height()/2);
 
     if (distanceX) *distanceX = qAbs(vec.x()-pos.x());
     if (distanceY) *distanceY = qAbs(vec.y()-pos.y());
 
-    return QRectF(point.x(),
-                  point.y(),
+    return QRectF(p.x(),
+                  p.y(),
                   textSize.width(), textSize.height()).contains(pos);
 }
 
@@ -134,8 +135,9 @@ QList<QAction *> CursorLabel::actions()
     return m_cursor->actions();
 }
 
-void CursorLabel::updateSelection()
+void CursorLabel::updateSelection(SelectedPoint point)
 {DDD;
+    Q_UNUSED(point);
     if (selected()) {
         m_label.setBorderPen(QPen(Qt::darkGray, 0.5, Qt::SolidLine));
         setZ(1000);

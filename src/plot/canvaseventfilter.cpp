@@ -225,7 +225,7 @@ void CanvasEventFilter::mousePress(QMouseEvent *event)
             if (picker && picker->pickPriority() == Picker::PickPriority::PickFirst) {
                 auto selected = picker->findObject(event);
 
-                if (selected) {
+                if (selected.object) {
                     actionType = ActionType::Pick;
                     picker->startPick(event->pos(), selected);
                 }
@@ -239,12 +239,12 @@ void CanvasEventFilter::mousePress(QMouseEvent *event)
                 auto selected = picker->findObject(event);
 
                 if (picker->alreadySelected(selected) ||
-                    (selected && selected->draggable())) {
+                    (selected.object && selected.object->draggable())) {
                     actionType = ActionType::Pick;
                     picker->startPick(event->pos(), selected);
                 }
                 else {
-                    if (picker) picker->deselect();
+                   // if (picker) picker->deselect();
                     actionType = ActionType::Zoom;
                     plotZoom->startZoom(event);
                 }
@@ -271,13 +271,13 @@ void CanvasEventFilter::mouseMove(QMouseEvent *event)
 }
 
 void CanvasEventFilter::mouseRelease(QMouseEvent *event)
-{DD0;
+{DDD;
     if (actionType == ActionType::Drag) {
         auto coords = dragZoom->endDrag(event);
         zoomStack->addZoom(coords, true);
         actionType = ActionType::None;
         if (currentPosition == event->pos()) {
-            if (picker->findObject(event)) {
+            if (auto s = picker->findObject(event); s.object) {
                 picker->showContextMenu(event);
             }
         }

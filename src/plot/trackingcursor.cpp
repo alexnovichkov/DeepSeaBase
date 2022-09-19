@@ -155,8 +155,9 @@ QList<QAction *> TrackingCursor::actions()
     return l;
 }
 
-bool TrackingCursor::underMouse(const QPoint &pos, double *distanceX, double *distanceY) const
+bool TrackingCursor::underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const
 {DDD;
+    Q_UNUSED(point);
     int newX = (int)(plot()->transform(xAxis(), xValue()));
     int newY = (int)(plot()->transform(yAxis(), yValue()));
 
@@ -193,8 +194,9 @@ bool TrackingCursor::underMouse(const QPoint &pos, double *distanceX, double *di
     return false;
 }
 
-void TrackingCursor::updateSelection()
+void TrackingCursor::updateSelection(SelectedPoint point)
 {DDD;
+    Q_UNUSED(point);
     auto p = linePen();
     p.setWidth(selected()?2:1);
     setLinePen(p);

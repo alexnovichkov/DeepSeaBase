@@ -311,7 +311,7 @@ void TrackingPanel::updateTrackingCursor(QPointF val, int index)
 
     cursors[index]->moveTo(val);
     for (int i=0; i<cursors.size(); ++i)
-        cursors[i]->setSelected(i == index);
+        cursors[i]->setSelected(i == index, SelectedPoint());
 
     for (int i=0; i<_harmonics.size(); ++i)
         _harmonics[i]->setValue(val.x()*(i+2), 0.0);
@@ -483,7 +483,7 @@ void TrackingPanel::updateState()
 void TrackingPanel::changeSelectedCursor(TrackingCursor *cursor)
 {DDD;
     for (auto c: qAsConst(cursors))
-        c->setSelected(c == cursor);
+        c->setSelected(c == cursor, SelectedPoint());
 }
 
 void TrackingPanel::moveCursor(Enums::Direction direction)

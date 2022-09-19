@@ -26,11 +26,7 @@ public:
         Spectrogram,
         Unknown
     };
-    struct SelectedPoint {
-        int x = -1;
-        int z = -1;
-        inline bool valid() const {return x!=-1 && z!=-1;}
-    };
+
 
     Curve(const QString &title, Channel *channel);
     virtual ~Curve();
@@ -51,7 +47,7 @@ public:
 
     virtual QList<QwtLegendData> legendData() const = 0;
 
-    virtual QPointF samplePoint(SelectedPoint point) const = 0;
+    virtual SamplePoint samplePoint(SelectedPoint point) const = 0;
 
     void setVisible(bool visible);
 
@@ -61,7 +57,7 @@ public:
     /** find label by canvas position */
     PointLabel *findLabel(const QPoint &pos/*, QwtAxisId yAxis*/);
     /** find label by point on a curve */
-    PointLabel *findLabel(const int point);
+    PointLabel *findLabel(SelectedPoint point);
     virtual SelectedPoint closest(const QPoint &pos, double *dist = nullptr, double *dist2 = nullptr) const = 0;
 
     virtual void moveToPos(QPoint pos, QPoint startPos = QPoint()) override;
@@ -90,7 +86,8 @@ public:
 
     // Selectable interface
 public:
-    virtual bool underMouse(const QPoint &pos, double *distanceX = nullptr, double *distanceY = nullptr) const override;
+    virtual bool underMouse(const QPoint &pos, double *distanceX, double *distanceY,
+                            SelectedPoint *point) const override;
     virtual void moveLeft(int count = 1) override;
     virtual void moveRight(int count = 1) override;
     virtual void moveUp(int count = 1) override;
@@ -100,7 +97,7 @@ public:
     virtual bool draggable() const override;
 protected:
     virtual void attachTo(QwtPlot *plot) = 0;
-    virtual void updateSelection() override;
+    virtual void updateSelection(SelectedPoint point) override;
     inline virtual bool updateAnyway() const override {return true;}
     virtual void updatePen() = 0;
     Plot *m_plot = nullptr;

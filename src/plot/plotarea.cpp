@@ -703,7 +703,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
                  }
 
                  foreach(PointLabel *label, curve->labels) {
-                     QAxObject* point = serie->querySubObject("Points(QVariant)", label->point()+1);
+                     QAxObject* point = serie->querySubObject("Points(QVariant)", label->point().x+1);
                      QVariantList options = {0, 0, 0, 0, 0, -1, 0, 0, 0, 0};
 
                      point->dynamicCall("ApplyDataLabels()", options);

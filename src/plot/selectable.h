@@ -5,16 +5,49 @@
 #include <QList>
 #include <QAction>
 
+class Selectable;
+
+struct SelectedPoint {
+    int x = -1;
+    int z = -1;
+    inline bool valid() const {return x!=-1 && z!=-1;}
+    inline bool operator==(const SelectedPoint &other) {return other.x == x && other.z == z;}
+};
+
+struct SamplePoint
+{
+    double x = qQNaN();
+    double y = qQNaN();
+    double z = qQNaN();
+    inline bool operator==(const SamplePoint &other) {
+        return qFuzzyCompare(x+1.0, other.x+1.0)
+                && qFuzzyCompare(y+1.0, other.y+1.0)
+                && qFuzzyCompare(z+1.0, other.z+1.0);
+    }
+};
+
+struct Selected
+{
+    Selectable *object;
+    SelectedPoint point;
+    inline bool operator==(const Selected &other) {
+        if (object != other.object) return false;
+        if (point.valid() || other.point.valid()) return point==other.point;
+        return false;
+    }
+    inline void clear() {object = nullptr; point.x=-1; point.z=-1;}
+};
+
 class Selectable
 {
 public:
     virtual ~Selectable() {}
     inline bool selected() const {return m_selected;}
-    inline void setSelected(bool selected) {
+    inline void setSelected(bool selected, SelectedPoint point) {
         if (m_selected != selected || updateAnyway())
         {
             m_selected = selected;
-            updateSelection();
+            updateSelection(point);
         }
     }
     virtual bool draggable() const = 0;
@@ -28,10 +61,12 @@ public:
     virtual void remove() {} //removes this object
     virtual void fix() {} //adds some fixed object to the plot (f.e. PointLabel for Curve)
 
-    virtual bool underMouse(const QPoint &pos, double *distanceX = nullptr, double *distanceY = nullptr) const = 0;
+    virtual bool underMouse(const QPoint &pos, double *distanceX, double *distanceY,
+                            SelectedPoint *point) const = 0;
+    virtual bool selectedAs(Selected *selected) const {return this == selected->object;}
     virtual QList<QAction*> actions() {return QList<QAction *>();}
 protected:
-    virtual void updateSelection() = 0;
+    virtual void updateSelection(SelectedPoint point) = 0;
     virtual bool updateAnyway() const {return false;}
 private:
     bool m_selected = false;

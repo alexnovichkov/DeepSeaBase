@@ -5,9 +5,8 @@
 
 #include "plot.h"
 #include "enums.h"
+#include "selectable.h"
 
-
-class Selectable;
 class PointLabel;
 class PointMarker;
 class TrackingCursor;
@@ -22,23 +21,18 @@ public:
         PickFirst, //mouse click immediately picks objects if any under mouse
         PickLast //Picking only if no dragging or selecting occurred
     };
-    enum class SelectedObject {
-        NewObject,
-        AlreadySelected,
-        Nothing
-    };
 
     Picker(Plot *plot);
     inline bool isEnabled() const {return enabled;}
     inline void setEnabled(bool enabled) {this->enabled = enabled;}
-    Selectable *findObject(QMouseEvent *e);
-    void startPick(QPoint startPos, Selectable *selected);
+    Selected findObject(QMouseEvent *e);
+    void startPick(QPoint startPos, Selected selected);
     void deselect();
     void proceedPick(QMouseEvent *e);
     void endPick(QMouseEvent *e);
     void procKeyboardEvent(int key);
     void showContextMenu(QMouseEvent *e);
-    inline bool alreadySelected(Selectable *selected) {return selected && currentSelected == selected; }
+    bool alreadySelected(Selected selected);
 
     void setPickPriority(PickPriority priority) {m_priority = priority;}
     inline PickPriority pickPriority() const {return m_priority;}
@@ -55,7 +49,7 @@ private:
 
     QPoint pos;
 
-    Selectable *currentSelected = nullptr;
+    Selected currentSelected;
     PickPriority m_priority = PickPriority::PickFirst;
 };
 
