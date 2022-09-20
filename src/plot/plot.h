@@ -148,6 +148,8 @@ public:
     void saveSpectrum(double zVal);
     void saveThroughput(double xVal);
 
+    void updateLabels();
+
 protected:
     PlotModel *m = nullptr;
     ZoomStack *zoom = nullptr;

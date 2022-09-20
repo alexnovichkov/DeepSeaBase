@@ -10,6 +10,7 @@
 #include "curve.h"
 #include "settings.h"
 #include "pointmarker.h"
+#include "algorithms.h"
 
 PointLabel::PointLabel(QwtPlot *parent, Curve *curve)
     : QwtPlotItem(),
@@ -45,16 +46,23 @@ int PointLabel::rtti() const
     return QwtPlotItem::Rtti_PlotUserItem+1;
 }
 
-SamplePoint PointLabel::origin() const
-{DDD;
-    return m_origin;
-}
+//SamplePoint PointLabel::origin() const
+//{DDD;
+//    return m_origin;
+//}
 
-void PointLabel::setOrigin(const SamplePoint &origin)
-{DDD;
-    if (m_origin == origin) return;
-    m_origin = origin;
-    updateLabel();
+//void PointLabel::setOrigin(const SamplePoint &origin)
+//{DDD;
+//    if (m_origin == origin) return;
+//    m_origin = origin;
+//    updateLabel();
+//}
+
+SamplePoint PointLabel::getOrigin() const
+{
+    auto val = m_curve->samplePoint(m_point);
+    if (qIsNaN(val.z)) return val;
+    return {val.x, val.z, val.y};
 }
 
 void PointLabel::setMode(Mode mode)
@@ -83,6 +91,7 @@ SelectedPoint PointLabel::point() const
 void PointLabel::setPoint(SelectedPoint point)
 {DDD;
     m_point = point;
+    updateLabel();
 }
 
 QwtText PointLabel::label() const
@@ -100,7 +109,7 @@ void PointLabel::updateSelection(SelectedPoint point)
 bool PointLabel::underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const
 {DDD;
     Q_UNUSED(point);
-    auto origin = check(m_origin);
+    auto origin = getOrigin();
     QPointF p(m_plot->transform(m_curve->xAxis(), origin.x),
                 m_plot->transform(m_curve->yAxis(), origin.y));
 
@@ -132,7 +141,7 @@ void PointLabel::draw(QPainter *painter, const QwtScaleMap &xMap,
                       const QRectF &canvasRect) const
 {DDD;
     Q_UNUSED(canvasRect);
-    auto origin = check(m_origin);
+    auto origin = getOrigin();
     QPointF pos(xMap.transform(origin.x), yMap.transform(origin.y));
 
     const QSizeF textSize = m_label.textSize(painter->font());
@@ -222,7 +231,7 @@ QList<QAction *> PointLabel::actions()
 
 bool PointLabel::contains(const QPoint &pos)
 {DDD;
-    auto origin = check(m_origin);
+    auto origin = getOrigin();
 
     QPointF point(m_plot->transform(m_curve->xAxis(), origin.x),
                 m_plot->transform(m_curve->yAxis(), origin.y));
@@ -248,16 +257,17 @@ SamplePoint PointLabel::check(SamplePoint point)
 
 void PointLabel::updateLabel()
 {DDD;
+    auto origin = getOrigin();
     switch (m_mode) {
-        case Mode::XValue: m_label.setText(QString::number(m_origin.x,'f',2)); break;
+        case Mode::XValue: m_label.setText(smartDouble(origin.x)); break;
         case Mode::XYValue: m_label.setText(QString("%1; %2")
-                                  .arg(QString::number(m_origin.x,'f',2))
-                                  .arg(QString::number(m_origin.y,'f',1))); break;
-        case Mode::YValue: m_label.setText(QString::number(m_origin.y,'f',1)); break;
+                                  .arg(smartDouble(origin.x))
+                                  .arg(smartDouble(origin.y))); break;
+        case Mode::YValue: m_label.setText(smartDouble(origin.y)); break;
         case Mode::XYZValue: m_label.setText(QString("%1; %2; %3")
-                                  .arg(QString::number(m_origin.x,'f',2))
-                                  .arg(QString::number(m_origin.z,'f',2))
-                                  .arg(QString::number(m_origin.y,'f',1))); break;
+                                  .arg(smartDouble(origin.x))
+                                  .arg(smartDouble(origin.y))
+                                  .arg(smartDouble(origin.z))); break;
     }
     m_label.setBorderPen(selected()?QPen(Qt::darkGray, 1, Qt::DashLine):QPen(Qt::NoPen));
     setTitle(m_label);

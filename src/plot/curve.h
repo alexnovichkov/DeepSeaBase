@@ -68,6 +68,8 @@ public:
     virtual double xMax() const;
     int samplesCount() const;
 
+    void updateLabels();
+
     Channel *channel;
     QList<PointLabel*> labels;
 

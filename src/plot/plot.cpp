@@ -190,6 +190,7 @@ void Plot::plotCurvesForDescriptor(FileDescriptor *d, int fileIndex)
 void Plot::update()
 {DDD;
     updateAxes();
+    updateLabels();
     updateAxesLabels();
     updateLegend();
 
@@ -744,6 +745,13 @@ void Plot::saveSpectrum(double zVal)
 void Plot::saveThroughput(double xVal)
 {DDD;
     emit saveVerticalSlice(xVal);
+}
+
+void Plot::updateLabels()
+{
+    for (auto curve: m->curves()) {
+        curve->updateLabels();
+    }
 }
 
 void Plot::recalculateScale(bool leftAxis)

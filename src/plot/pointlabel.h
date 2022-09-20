@@ -31,9 +31,10 @@ public:
 
     virtual int rtti() const override;
 
-    SamplePoint origin() const;
+//    SamplePoint origin() const;
+//    void setOrigin(const SamplePoint &origin);
 
-    void setOrigin(const SamplePoint &origin);
+    SamplePoint getOrigin() const;
 
     void setMode(Mode mode);
     inline Mode mode() const {return m_mode;}
@@ -58,11 +59,12 @@ public:
 
     bool contains(const QPoint &pos);
     static SamplePoint check(SamplePoint point);
-private:
+
     void updateLabel();
+private:
     Mode m_mode = Mode::XValue;
     SelectedPoint m_point;
-    SamplePoint m_origin; // origin of Label, equivalent to value of PlotMarker
+//    SamplePoint m_origin; // origin of Label, equivalent to value of PlotMarker
     QPoint m_displacement; // displacement relative to invTransform(d_origin)
     QwtText m_label;
     QwtSymbol m_marker;

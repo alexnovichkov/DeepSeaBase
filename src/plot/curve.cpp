@@ -127,7 +127,10 @@ int Curve::samplesCount() const
     return channel->data()->samplesCount();
 }
 
-
+void Curve::updateLabels()
+{
+    for (auto label: labels) label->updateLabel();
+}
 
 void Curve::setVisible(bool visible)
 {DDD;
@@ -259,14 +262,14 @@ void Curve::moveDown(int count)
 void Curve::fix()
 {DDD;
     if (selectedPoint.x >= 0 && selectedPoint.x < samplesCount()) {
-        auto val = samplePoint(selectedPoint);
+//        auto val = samplePoint(selectedPoint);
 
         PointLabel *label = findLabel(selectedPoint);
 
         if (!label) {
             label = new PointLabel(m_plot, this);
             label->setPoint(selectedPoint);
-            label->setOrigin(val);
+//            label->setOrigin(val);
             addLabel(label);
 
             label->attach(m_plot);
