@@ -129,17 +129,18 @@ bool SavingFunction::compute(FileDescriptor *file)
 
     if (!m_input) return false;
 
-    const bool isDfd = file->fileType() == "dfd";
-
     if (!m_file) {
         //we cannot write channels of different type info DFD
-        if (append && file->canTakeAnyChannels()) {
-            m_file = file;
+        if (append) {
+            if (file->canTakeAnyChannels()) {
+                m_file = file;
+            }
+            else {
+                emit message("Исходный файл не поддерживает сохранение каналов разных типов в один файл");
+                return false;
+            }
         }
         else {
-            //write to dfd only if source is dfd
-            if (isDfd) type = DfdFile;
-
             QString fileName = file->fileName();
             QString method = m_input->getParameter("?/functionDescription").toString();
             newFileName = createUniqueFileName(destination, fileName, method,
