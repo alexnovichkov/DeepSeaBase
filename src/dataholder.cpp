@@ -610,6 +610,16 @@ double DataHolder::yValue(int i, int block) const
     return 0.0;
 }
 
+double DataHolder::yValueRaw(int i, int block) const
+{
+    if (i<0 || block < 0) return 0.0;
+    i += block*m_xCount;
+
+    if (i < m_yValues.size())
+        return corrected(m_yValues.at(i));
+    return 0.0;
+}
+
 int DataHolder::floor(double x) const
 {DDD;
     int index=-1;

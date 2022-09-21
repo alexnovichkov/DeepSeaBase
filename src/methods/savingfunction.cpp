@@ -218,7 +218,11 @@ bool SavingFunction::compute(FileDescriptor *file)
     DataDescription description = file->channel(i)->dataDescription();
     description.put("yname", m_input->getParameter("?/yName").toString());
     description.put("xname", m_input->getParameter("?/xName").toString());
-    description.put("zname", m_input->getParameter("?/zName").toString());
+
+    //при отсутствии метки оси Z пишем 'с' по умолчанию
+    auto zname = m_input->getParameter("?/zName").toString();
+    description.put("zname", zname.isEmpty()?"с":zname);
+
     description.put("samples", QString::number(dataSize/blocksCount));
     description.put("dateTime", QDateTime::currentDateTime());
     description.put("samplerate", int(m_input->getParameter("?/sampleRate").toDouble()));

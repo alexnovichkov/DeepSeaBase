@@ -324,26 +324,25 @@ void saveSpectre(FileDescriptor *file, Channel *channel, double zValue)
     else
         data->setXValues(channel->data()->xValues());
 
-    //1 блок, так как вырезка спектра
-    data->setZValues(channel->data()->zMin(), channel->data()->zStep(), 1);
-
     auto zIndex = channel->data()->nearestZ(zValue);
+    //1 блок, так как вырезка спектра
+    data->setZValues(channel->data()->zValue(zIndex), channel->data()->zStep(), 1);
 
     auto format = channel->data()->yValuesFormat();
     if (format == DataHolder::YValuesComplex) {
-        data->setYValues(channel->data()->yValuesComplex(zIndex));
+        auto values = channel->data()->yValuesComplex(zIndex);
+        data->setYValues(values);
     }
     else {
-        QVector<double> values = channel->data()->linears(zIndex);
-        if (format == DataHolder::YValuesAmplitudesInDB)
-            format = DataHolder::YValuesAmplitudes;
-        //только первый блок
+        auto values = channel->data()->rawYValues(zIndex);
         data->setYValues(values, format);
     }
 
 
     DataDescription descr = channel->dataDescription();
-    descr.put("name", channel->name()+QLocale(QLocale::Russian).toString(channel->data()->zValue(zIndex)));
+    descr.put("name", channel->name()+" "
+              + QLocale(QLocale::Russian).toString(channel->data()->zValue(zIndex))
+              + " " + channel->xName());
     descr.put("description", "Вырезка спектрограммы канала "+channel->name());
     descr.put("samples",  data->samplesCount());
     descr.put("blocks", 1);
@@ -389,20 +388,21 @@ void saveThrough(FileDescriptor *file, Channel *channel, double xValue)
     else {
         QVector<double> values(channel->data()->blocksCount());
         for (int i=0; i<channel->data()->blocksCount(); ++i)
-            values[i] = channel->data()->yValue(xIndex, i);
+            values[i] = channel->data()->yValueRaw(xIndex, i);
         data->setYValues(values, format);
     }
 
 
     DataDescription descr = channel->dataDescription();
-    descr.put("name", channel->name()+QLocale(QLocale::Russian).toString(channel->data()->xValue(xIndex)));
+    descr.put("name", channel->name()+" "
+              +QLocale(QLocale::Russian).toString(channel->data()->xValue(xIndex))
+              +" "+(channel->zName().isEmpty()?"с":channel->zName()));
     descr.put("description", "Проходная спектрограммы канала "+channel->name());
     descr.put("samples",  data->samplesCount());
     descr.put("blocks", 1);
     descr.put("xname", descr.get("zname"));
     descr.put("zname", "");
     descr.put("function.name","SECTION");
-
 
     file->addChannelWithData(data, descr);
     if (!populated) channel->clear();

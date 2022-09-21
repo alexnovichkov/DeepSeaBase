@@ -107,6 +107,7 @@ public:
 
     double xValue(int i) const;
     double yValue(int i, int block = 0) const;
+    double yValueRaw(int i, int block = 0) const;
     //возвращает максимальный индекс i, для которого xValue(i) <= x, или -1
     int floor(double x) const;
     //возвращает минимальный индекс i, для которого xValue(i) >= x, или -1
