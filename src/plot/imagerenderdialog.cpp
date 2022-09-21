@@ -59,7 +59,7 @@ ImageRenderDialog::ImageRenderDialog(bool askForPath, QWidget *parent) : QDialog
 
     resolutionCombo = new QComboBox(this);
     resolutionCombo->addItems(QStringList()<<"экранное"<<"96 dpi"<<"150 dpi"<<"300 dpi");
-    resolutionCombo->setCurrentIndex(2);
+    resolutionCombo->setCurrentIndex(Settings::getSetting("imageResolution", 2).toInt());
 
     auto *mainLayout = new QFormLayout;
     if (askForPath)
@@ -73,9 +73,19 @@ ImageRenderDialog::ImageRenderDialog(bool askForPath, QWidget *parent) : QDialog
     resize(400,180);
 }
 
+ImageRenderDialog::~ImageRenderDialog()
+{
+    Settings::setSetting("imageResolution", resolutionCombo->currentIndex());
+}
+
 int ImageRenderDialog::getResolution() const
 {DDD;
-    switch (resolutionCombo->currentIndex()) {
+    return getResolution(resolutionCombo->currentIndex());
+}
+
+int ImageRenderDialog::getResolution(int index) const
+{
+    switch (index) {
         case 0: return qApp->desktop()->logicalDpiX(); break;
         case 1: return 96; break;
         case 2: return 150; break;

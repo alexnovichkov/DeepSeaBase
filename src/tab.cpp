@@ -77,7 +77,7 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
             menu.addAction(parentActions.value("addFile"));
             menu.addAction(parentActions.value("deleteFiles"));
             menu.addAction(parentActions.value("calculateSpectre"));
-            //menu.addAction(calculateSpectreDeepSeaAct);
+            menu.addAction(parentActions.value("calculateSpectreDeepSea"));
             menu.addAction(parentActions.value("convert"));
             menu.addAction(parentActions.value("rename"));
             menu.exec(QCursor::pos());

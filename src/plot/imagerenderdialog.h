@@ -12,6 +12,7 @@ class ImageRenderDialog : public QDialog
     Q_OBJECT
 public:
     ImageRenderDialog(bool askForPath, QWidget *parent);
+    ~ImageRenderDialog();
     inline QString getPath() const {return _path;};
     inline QSize getSize() const {return {_width, _height};}
     int getResolution() const;
@@ -19,6 +20,7 @@ public:
     static int defaultResolution() {return 150;}
     inline void setAskForPath(bool ask) {askForPath = ask;}
 private:
+    int getResolution(int index) const;
     FancyLineEdit *pathEdit;
     QLineEdit *widthEdit;
     QLineEdit *heightEdit;

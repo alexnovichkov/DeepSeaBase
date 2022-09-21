@@ -28,12 +28,15 @@ class FileHandlerDialog : public QDialog
     Q_OBJECT
 public:
     FileHandlerDialog(FileHandler *fileHandler, QWidget *parent=nullptr);
+    QStringList getTrackedPaths() const {return trackedPaths;}
 private:
     void removeTrackedFile();
     FileHandler *fileHandler;
     HandlerModel *model;
     QTreeView *tree;
     QAction *removeFileAction;
+    QAction *addFileAction;
+    QStringList trackedPaths;
 };
 
 #endif // FILEHANDLERDIALOG_H

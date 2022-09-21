@@ -342,7 +342,7 @@ void saveSpectre(FileDescriptor *file, Channel *channel, double zValue)
     DataDescription descr = channel->dataDescription();
     descr.put("name", channel->name()+" "
               + QLocale(QLocale::Russian).toString(channel->data()->zValue(zIndex))
-              + " " + channel->xName());
+              + " " + (channel->zName().isEmpty()?"с":channel->zName()));
     descr.put("description", "Вырезка спектрограммы канала "+channel->name());
     descr.put("samples",  data->samplesCount());
     descr.put("blocks", 1);
@@ -396,7 +396,7 @@ void saveThrough(FileDescriptor *file, Channel *channel, double xValue)
     DataDescription descr = channel->dataDescription();
     descr.put("name", channel->name()+" "
               +QLocale(QLocale::Russian).toString(channel->data()->xValue(xIndex))
-              +" "+(channel->zName().isEmpty()?"с":channel->zName()));
+              +" "+(channel->xName().isEmpty()?"Гц":channel->xName()));
     descr.put("description", "Проходная спектрограммы канала "+channel->name());
     descr.put("samples",  data->samplesCount());
     descr.put("blocks", 1);

@@ -235,6 +235,11 @@ void MainWindow::createActions()
         calculateSpectreRecords();
     });
 
+    calculateSpectreAct1 = new QAction(calculateSpectreIcon, QString("Рассчитать спектры..."), this);
+    connect(calculateSpectreAct1, &QAction::triggered, [=](){
+        calculateSpectreRecords();
+    });
+
     calculateSpectreDeepSeaAct = new QAction(calculateSpectreIcon, QString("Рассчитать спектры с помощью Deepsea..."), this);
     connect(calculateSpectreDeepSeaAct, &QAction::triggered, [=](){
         calculateSpectreRecords(true);
@@ -388,7 +393,8 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     currentTab->addParentAction("addFolder", addFolderAct);
     currentTab->addParentAction("addFile", addFileAct);
     currentTab->addParentAction("deleteFiles", delFilesAct);
-    currentTab->addParentAction("calculateSpectre", calculateSpectreAct);
+    currentTab->addParentAction("calculateSpectre", calculateSpectreAct1);
+    currentTab->addParentAction("calculateSpectreDeepSea", calculateSpectreDeepSeaAct);
     currentTab->addParentAction("convert", convertAct);
     currentTab->addParentAction("rename", renameAct);
 
@@ -2018,6 +2024,7 @@ void MainWindow::updateActions()
     editChannelDescriptionsAct->setDisabled(selectedChannelsCount==0);
     const auto timeFiles = currentTab->model->selectedFiles({Descriptor::TimeResponse});
     calculateSpectreAct->setDisabled(timeFiles.isEmpty());
+    calculateSpectreAct1->setDisabled(timeFiles.isEmpty());
     calculateSpectreDeepSeaAct->setDisabled(timeFiles.isEmpty());
 
     const QVector<Descriptor::DataType> types {Descriptor::AutoSpectrum,

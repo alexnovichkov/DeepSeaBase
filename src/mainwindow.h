@@ -163,6 +163,7 @@ private:
     QAction *delFilesAct;
     QAction *exportChannelsToWavAct;
     QAction *calculateSpectreAct;
+    QAction *calculateSpectreAct1;
     QAction *calculateSpectreDeepSeaAct;
     QAction *calculateThirdOctaveAct;
 
