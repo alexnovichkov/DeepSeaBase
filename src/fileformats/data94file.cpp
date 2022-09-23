@@ -19,6 +19,21 @@ QDebug operator<<(QDebug dbg, const AxisBlock &b)
     return dbg;
 }
 
+DataPrecision toDataPrecision(const QString &s)
+{
+    if (s=="int8")        return DataPrecision::Int8;
+    else if (s=="uint8")  return DataPrecision::UInt8;
+    else if (s=="int16")  return DataPrecision::Int16;
+    else if (s=="uint16") return DataPrecision::UInt16;
+    else if (s=="uint32") return DataPrecision::UInt32;
+    else if (s=="int32")  return DataPrecision::Int32;
+    else if (s=="int64")  return DataPrecision::Int64;
+    else if (s=="uint64") return DataPrecision::UInt64;
+    else if (s=="float") return DataPrecision::Float;
+    else if (s=="double") return DataPrecision::Double;
+    return DataPrecision::Float;
+}
+
 Data94File::Data94File(const QString &fileName) : FileDescriptor(fileName)
 {DDD;
 
@@ -496,10 +511,10 @@ Data94Channel::Data94Channel(Channel *other, Data94File *parent)
     //int8 / uint8 / int16 / uint16 / int32 / uint32 / int64 / uint64 / float / double
     QString  precision = other->dataDescription().get("function.precision").toString();
     if (precision.isEmpty()) precision = "float";
-    if (precision == "int64" || precision=="uint64" || precision=="double")
-        sampleWidth = 8;
-    else
-        sampleWidth = 4;
+    if (precision.endsWith("int8")) sampleWidth = 1;
+    else if (precision.endsWith("int16")) sampleWidth = 2;
+    else if (precision.endsWith("int64") || precision=="double") sampleWidth = 8;
+    else sampleWidth = 4;
 }
 
 void Data94Channel::read(QDataStream &r)
@@ -544,7 +559,7 @@ void Data94Channel::read(QDataStream &r)
 
     isComplex = valueFormat == 2;
 
-    r >> sampleWidth; // 4 или 8
+    r >> sampleWidth; // 1, 2, 4 или 8
 //    qDebug()<<"valueFormat"<<valueFormat<<"samplewidth"<<sampleWidth;
 
     dataPosition = r.device()->pos();
@@ -566,7 +581,7 @@ void Data94Channel::read(QDataStream &r)
         _data->setZValues(zAxisBlock.values);
 
     const qint64 dataToSkip = zAxisBlock.count * xAxisBlock.count * valueFormat * sampleWidth;
-    // соответствия:             blockCount        sampleCount         factor        4 или 8
+    // соответствия:             blockCount        sampleCount         factor     1, 2, 4 или 8
     r.device()->skip(dataToSkip);
 
 
@@ -584,6 +599,8 @@ void Data94Channel::read(QDataStream &r)
 
 void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
 {DDD;
+    const auto precision = dataDescription().get("function.precision").toString();
+
     r.setFloatingPointPrecision(QDataStream::SinglePrecision);
     qint64 newposition = r.device()->pos();
     r.device()->write("d94chan ");
@@ -617,7 +634,7 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
 
     setChanged(false);
 
-    qint64 newdataposition = r.device()->pos();;
+    qint64 newdataposition = r.device()->pos();
     if (dataChanged()) {
         if (sampleWidth == 8)
             r.setFloatingPointPrecision(QDataStream::DoublePrecision);
@@ -631,10 +648,16 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
                 }
 
                 for (double v: qAsConst(yValues)) {
-                    if (sampleWidth == 4)
-                        r << (float)v;
-                    else
-                        r << v;
+                    if (precision=="int8")        r << (qint8)v;
+                    else if (precision=="uint8")  r << (quint8)v;
+                    else if (precision=="int16")  r << (qint16)v;
+                    else if (precision=="uint16") r << (quint16)v;
+                    else if (precision=="uint32") r << (quint32)v;
+                    else if (precision=="int32")  r << (qint32)v;
+                    else if (precision=="int64")  r << (qint64)v;
+                    else if (precision=="uint64") r << (quint64)v;
+                    else if (precision=="float") r << (float)v;
+                    else r << v;
                 }
             } // !c->isComplex
             else {
@@ -644,10 +667,15 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
                     continue;
                 }
                 for (cx_double v: qAsConst(yValues)) {
-                    if (sampleWidth == 4) {
-                        r << (float)v.real();
-                        r << (float)v.imag();
-                    }
+                    if (precision=="int8")        {r << (qint8)v.real(); r << (qint8)v.imag();}
+                    else if (precision=="uint8")  {r << (quint8)v.real(); r << (quint8)v.imag();}
+                    else if (precision=="int16")  {r << (qint16)v.real(); r << (qint16)v.imag();}
+                    else if (precision=="uint16") {r << (quint16)v.real(); r << (quint16)v.imag();}
+                    else if (precision=="uint32") {r << (quint32)v.real(); r << (quint32)v.imag();}
+                    else if (precision=="int32")  {r << (qint32)v.real(); r << (qint32)v.imag();}
+                    else if (precision=="int64")  {r << (qint64)v.real(); r << (qint64)v.imag();}
+                    else if (precision=="uint64") {r << (quint64)v.real(); r << (quint64)v.imag();}
+                    else if (precision=="float")  {r << (float)v.real(); r << (float)v.imag();}
                     else {
                         r << v.real();
                         r << v.imag();
@@ -685,6 +713,11 @@ void Data94Channel::populate()
     _data->clear();
     setPopulated(false);
 
+    auto s = dataDescription().get("function.precision").toString();
+    auto precision = DataPrecision::Float;
+    if (s.isEmpty()) precision = fromDfdDataPrecision(sampleWidth);
+    else precision = toDataPrecision(s);
+
     QFile rawFile(parent->fileName());
 
     if (rawFile.open(QFile::ReadOnly)) {
@@ -706,18 +739,18 @@ void Data94Channel::populate()
                 if (dataPosition >= 0) {
                     YValues = convertFrom<double>(ptrCurrent,
                                                   qMin(quint64(maxPtr-ptrCurrent), quint64(fullDataSize * sampleWidth)),
-                                                  0xc0000000+sampleWidth);
+                                                  precision);
                 }
             }
             else {
                 //читаем классическим способом
                 QDataStream readStream(&rawFile);
                 readStream.setByteOrder(QDataStream::LittleEndian);
-                readStream.setFloatingPointPrecision(sampleWidth == 4 ? QDataStream::SinglePrecision :
-                                                                        QDataStream::DoublePrecision);
+                readStream.setFloatingPointPrecision(sampleWidth == 8 ? QDataStream::DoublePrecision :
+                                                                        QDataStream::SinglePrecision);
 
                 readStream.device()->seek(dataPosition);
-                YValues = getChunkOfData<double>(readStream, fullDataSize, 0xc0000000 + sampleWidth, 0);
+                YValues = getChunkOfData<double>(readStream, fullDataSize, precision, 0);
             }
         }
 
@@ -773,7 +806,7 @@ void AxisBlock::read(QDataStream &r)
     }
     else {
         qint64 actuallyRead = 0;
-        values = getChunkOfData<double>(r, count, 0xC0000004, &actuallyRead);
+        values = getChunkOfData<double>(r, count, DataPrecision::Float, &actuallyRead);
         if (uint(actuallyRead) != count) values.resize(count);
     }
 }

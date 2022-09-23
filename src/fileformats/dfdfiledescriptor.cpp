@@ -1419,7 +1419,8 @@ void DfdChannel::populate()
                 //qDebug()<<"IndType="<<IndType<<", mapped, by dataPositions";
                 for (qint64 pos: qAsConst(dataPositions)) {
                     ptrCurrent = ptr + pos;
-                    QVector<double> temp = convertFrom<double>(ptrCurrent, qMin(quint64(maxPtr-ptrCurrent), blockSizeBytes), IndType);
+                    QVector<double> temp = convertFrom<double>(ptrCurrent, qMin(quint64(maxPtr-ptrCurrent),
+                                                                                blockSizeBytes), fromDfdDataPrecision(IndType));
                     YValues << temp;
                 }
             } ///!dataPositions.isEmpty()
@@ -1440,7 +1441,7 @@ void DfdChannel::populate()
                         ptrCurrent = ptr + (channelIndex*ChanBlockSize
                                             + (i/ChanBlockSize)*ChanBlockSize*channelsCount
                                             + (i % ChanBlockSize)) * (IndType % 16);
-                    YValues[i] = convertFrom<double>(ptrCurrent, IndType);
+                    YValues[i] = convertFrom<double>(ptrCurrent, fromDfdDataPrecision(IndType));
                 }
             } /// dataPositions.isEmpty()
         } /// mapped
@@ -1460,7 +1461,7 @@ void DfdChannel::populate()
                 //qDebug()<<"IndType="<<IndType<<"BlockSize="<<parent->BlockSize<<"not mapped, ovlap";
                 const quint64 chunkSize = channelsCount * ChanBlockSize;
                 while (1) {
-                    QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, IndType, &actuallyRead);
+                    QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, fromDfdDataPrecision(IndType), &actuallyRead);
 
                     //распихиваем данные по каналам
                     actuallyRead /= channelsCount;
@@ -1475,7 +1476,7 @@ void DfdChannel::populate()
                 //qDebug()<<"IndType="<<IndType<<"BlockSize="<<parent->BlockSize<<"not mapped, without ovlap";
                 readStream.device()->seek(channelIndex * blockSizeBytes);
                 const quint64 chunkSize = ChanBlockSize;
-                QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, IndType, &actuallyRead);
+                QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, fromDfdDataPrecision(IndType), &actuallyRead);
 
                 //распихиваем данные по каналам
                 YValues = temp;
@@ -1506,7 +1507,7 @@ void DfdChannel::populate()
 //                    rawFile.seek(0);
 //                    readStream.setDevice(&rawFile);
 //                    // читаем без перекрытия, предполагаем, что тип файла - третьоктава или октава
-//                    QVector<double> temp = getChunkOfData<double>(readStream, ChanBlockSize, IndType);
+//                    QVector<double> temp = getChunkOfData<double>(readStream, ChanBlockSize, fromDfdDataPrecision(IndType));
 //                    parent->xValues = temp;
 //                    _data->setXValues(temp);
 //                }

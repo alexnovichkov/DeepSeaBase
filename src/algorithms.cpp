@@ -549,3 +549,39 @@ QVector<int> channelIndexes(const QVector<Channel *> &source)
     return result;
 }
 
+
+DataPrecision fromDfdDataPrecision(uint precision)
+{
+    switch (precision) {
+        case 1:          return DataPrecision::UInt8;
+        case 0x80000001: return DataPrecision::Int8;
+        case 2:          return DataPrecision::UInt16;
+        case 0x80000002: return DataPrecision::Int16;
+        case 4:          return DataPrecision::UInt32;
+        case 0x80000004: return DataPrecision::Int32;
+        case 0x80000008: return DataPrecision::Int64;
+        case 0xc0000004: return DataPrecision::Float;
+        case 0xc0000008: return DataPrecision::Double;
+        case 0xc000000a: return DataPrecision::LongDouble;
+        default: break;
+    }
+    return DataPrecision::Float;
+}
+
+uint toDfdDataPrecision(DataPrecision precision)
+{
+    switch (precision) {
+        case DataPrecision::UInt8: return 1;
+        case DataPrecision::UInt16: return 2;
+        case DataPrecision::UInt32: return 4;
+        case DataPrecision::UInt64: return 8;
+        case DataPrecision::Int8: return 0x80000001;
+        case DataPrecision::Int16: return 0x80000002;
+        case DataPrecision::Int32: return 0x80000004;
+        case DataPrecision::Int64: return 0x80000008;
+        case DataPrecision::Float: return 0xc0000004;
+        case DataPrecision::Double: return 0xc0000008;
+        case DataPrecision::LongDouble: return 0xc000000a;
+    }
+    return 0xc0000004;
+}

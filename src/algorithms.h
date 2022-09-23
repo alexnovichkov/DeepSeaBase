@@ -9,6 +9,23 @@ typedef std::complex<double> cx_double;
 class Channel;
 class DataHolder;
 
+enum class DataPrecision {
+    Int8,
+    UInt8,
+    Int16,
+    UInt16,
+    Int32,
+    UInt32,
+    Int64,
+    UInt64,
+    Float,
+    Double,
+    LongDouble
+};
+
+DataPrecision fromDfdDataPrecision(uint precision);
+uint toDfdDataPrecision(DataPrecision precision);
+
 QDebug operator <<(QDebug debug, const std::complex<double> &val);
 
 template <typename T>
@@ -94,48 +111,53 @@ QVector<D> readChunk(QDataStream &readStream, quint64 blockSize, qint64 *actuall
 }
 
 template <typename D>
-QVector<D> getChunkOfData(QDataStream &readStream, quint64 chunkSize, uint IndType, qint64 *actuallyRead=0)
+QVector<D> getChunkOfData(QDataStream &readStream, quint64 chunkSize, DataPrecision precision, qint64 *actuallyRead=0)
 {
     QVector<D> result;
 
-    switch (IndType) {
-        case 0x00000001: {
+    switch (precision) {
+        case DataPrecision::UInt8: {
             result = readChunk<quint8,D>(readStream, chunkSize, actuallyRead);
             break;
         }
-        case 0x80000001: {
+        case DataPrecision::Int8: {
             result = readChunk<qint8,D>(readStream, chunkSize, actuallyRead);
             break;
         }
-        case 0x00000002: {
+        case DataPrecision::UInt16: {
             result = readChunk<quint16,D>(readStream, chunkSize, actuallyRead);
             break;
         }
-        case 0x80000002: {
+        case DataPrecision::Int16: {
             result = readChunk<qint16,D>(readStream, chunkSize, actuallyRead);
             break;
         }
-        case 0x00000004: {
+        case DataPrecision::UInt32: {
             result = readChunk<quint32,D>(readStream, chunkSize, actuallyRead);
             break;
         }
-        case 0x80000004: {
+        case DataPrecision::Int32: {
             result = readChunk<qint32,D>(readStream, chunkSize, actuallyRead);
             break;
         }
-        case 0x80000008: {
+        case DataPrecision::UInt64: {
+            result = readChunk<quint64,D>(readStream, chunkSize, actuallyRead);
+            break;
+        }
+        case DataPrecision::Int64: {
             result = readChunk<qint64,D>(readStream, chunkSize, actuallyRead);
             break;
         }
-        case 0xC0000004: {
+        case DataPrecision::Float: {
             readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
             result = readChunk<float,D>(readStream, chunkSize, actuallyRead);
             break;
         }
-        case 0xC0000008: //плавающий 64 бита
-        case 0xC000000A: //плавающий 80 бит
+        case DataPrecision::Double: //плавающий 64 бита
+        case DataPrecision::LongDouble: //плавающий 80 бит
             readStream.setFloatingPointPrecision(QDataStream::DoublePrecision);
-            result = readChunk<double,D>(readStream, chunkSize, actuallyRead);
+            //не умею читать такие данные
+            result = readChunk<double, D>(readStream, chunkSize, actuallyRead);
             break;
         default: break;
     }
@@ -144,43 +166,59 @@ QVector<D> getChunkOfData(QDataStream &readStream, quint64 chunkSize, uint IndTy
 }
 
 template <typename T>
-inline T convertFrom(unsigned char *ptr, uint IndType)
+inline T convertFrom(unsigned char *ptr, DataPrecision precision)
 {
-    switch (IndType) {
-        case 1:          return static_cast<T>(qFromLittleEndian<quint8>(ptr)); break;
-        case 0x80000001: return static_cast<T>(qFromLittleEndian<qint8>(ptr)); break;
-        case 2:          return static_cast<T>(qFromLittleEndian<quint16>(ptr)); break;
-        case 0x80000002: return static_cast<T>(qFromLittleEndian<qint16>(ptr)); break;
-        case 4:          return static_cast<T>(qFromLittleEndian<quint32>(ptr)); break;
-        case 0x80000004: return static_cast<T>(qFromLittleEndian<qint32>(ptr)); break;
-        case 0x80000008: return static_cast<T>(qFromLittleEndian<qint64>(ptr)); break;
-        case 0xc0000004: return static_cast<T>(qFromLittleEndian<float>(ptr)); break;
-        case 0xc0000008: return static_cast<T>(qFromLittleEndian<double>(ptr)); break;
-        case 0xc000000a: return static_cast<T>(qFromLittleEndian<long double>(ptr)); break;
+    switch (precision) {
+        case DataPrecision::UInt8: return static_cast<T>(qFromLittleEndian<quint8>(ptr)); break;
+        case DataPrecision::Int8: return static_cast<T>(qFromLittleEndian<qint8>(ptr)); break;
+        case DataPrecision::UInt16: return static_cast<T>(qFromLittleEndian<quint16>(ptr)); break;
+        case DataPrecision::Int16: return static_cast<T>(qFromLittleEndian<qint16>(ptr)); break;
+        case DataPrecision::UInt32: return static_cast<T>(qFromLittleEndian<quint32>(ptr)); break;
+        case DataPrecision::Int32: return static_cast<T>(qFromLittleEndian<qint32>(ptr)); break;
+        case DataPrecision::UInt64: return static_cast<T>(qFromLittleEndian<quint64>(ptr)); break;
+        case DataPrecision::Int64: return static_cast<T>(qFromLittleEndian<qint64>(ptr)); break;
+        case DataPrecision::Float: return static_cast<T>(qFromLittleEndian<float>(ptr)); break;
+        case DataPrecision::Double: return static_cast<T>(qFromLittleEndian<double>(ptr)); break;
+        case DataPrecision::LongDouble: return static_cast<T>(qFromLittleEndian<long double>(ptr)); break;
         default: break;
     }
     return T();
 }
 
 template <typename T>
-inline QVector<T> convertFrom(unsigned char *ptr, quint64 length, uint IndType)
+inline QVector<T> convertFrom(unsigned char *ptr, quint64 length, DataPrecision precision)
 {
-    uint step = IndType % 16;
+    uint step = 4;
+    switch (precision) {
+        case DataPrecision::UInt8:
+        case DataPrecision::Int8: step=1; break;
+        case DataPrecision::UInt16:
+        case DataPrecision::Int16: step=2; break;
+        case DataPrecision::UInt32:
+        case DataPrecision::Float:
+        case DataPrecision::Int32: step=4; break;
+        case DataPrecision::UInt64:
+        case DataPrecision::Int64:
+        case DataPrecision::Double: step=8; break;
+        case DataPrecision::LongDouble: step=10; break;
+    }
+
     QVector<T> temp(length / step, 0.0);
 
     int i=0;
     while (length) {
-        switch (IndType) {
-            case 1: temp[i++] = static_cast<T>(qFromLittleEndian<quint8>(ptr)); break;
-            case 0x80000001: temp[i++] = static_cast<T>(qFromLittleEndian<qint8>(ptr)); break;
-            case 2: temp[i++] = static_cast<T>(qFromLittleEndian<quint16>(ptr)); break;
-            case 0x80000002: temp[i++] = static_cast<T>(qFromLittleEndian<qint16>(ptr)); break;
-            case 4: temp[i++] = static_cast<T>(qFromLittleEndian<quint32>(ptr)); break;
-            case 0x80000004: temp[i++] = static_cast<T>(qFromLittleEndian<qint32>(ptr)); break;
-            case 0x80000008: temp[i++] = static_cast<T>(qFromLittleEndian<qint64>(ptr)); break;
-            case 0xc0000004: temp[i++] = static_cast<T>(qFromLittleEndian<float>(ptr)); break;
-            case 0xc0000008: temp[i++] = static_cast<T>(qFromLittleEndian<double>(ptr)); break;
-            case 0xc000000a: temp[i++] = static_cast<T>(qFromLittleEndian<long double>(ptr)); break;
+        switch (precision) {
+            case DataPrecision::UInt8: temp[i++] = static_cast<T>(qFromLittleEndian<quint8>(ptr)); break;
+            case DataPrecision::Int8: temp[i++] = static_cast<T>(qFromLittleEndian<qint8>(ptr)); break;
+            case DataPrecision::UInt16: temp[i++] = static_cast<T>(qFromLittleEndian<quint16>(ptr)); break;
+            case DataPrecision::Int16: temp[i++] = static_cast<T>(qFromLittleEndian<qint16>(ptr)); break;
+            case DataPrecision::UInt32: temp[i++] = static_cast<T>(qFromLittleEndian<quint32>(ptr)); break;
+            case DataPrecision::Int32: temp[i++] = static_cast<T>(qFromLittleEndian<qint32>(ptr)); break;
+            case DataPrecision::UInt64: temp[i++] = static_cast<T>(qFromLittleEndian<quint64>(ptr)); break;
+            case DataPrecision::Int64: temp[i++] = static_cast<T>(qFromLittleEndian<qint64>(ptr)); break;
+            case DataPrecision::Float: temp[i++] = static_cast<T>(qFromLittleEndian<float>(ptr)); break;
+            case DataPrecision::Double: temp[i++] = static_cast<T>(qFromLittleEndian<double>(ptr)); break;
+            case DataPrecision::LongDouble: temp[i++] = static_cast<T>(qFromLittleEndian<long double>(ptr)); break;
             default: break;
         }
 
