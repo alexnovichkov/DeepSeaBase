@@ -16,8 +16,8 @@ SpectroCurve::SpectroCurve(const QString &title, Channel *channel)
 
     setRenderThreadCount(0); // use system specific thread count
     setCachePolicy(QwtPlotRasterItem::PaintCache);
-    setDisplayMode(QwtPlotSpectrogram::ImageMode, true);
-//    setDisplayMode(QwtPlotSpectrogram::ContourMode, true);
+  //  setDisplayMode(QwtPlotSpectrogram::ImageMode, true);
+    setDisplayMode(QwtPlotSpectrogram::ContourMode, true);
 
     spectroData = new SpectrogramData(this->channel->data());
     setData(spectroData);
@@ -115,7 +115,7 @@ SpectrogramData::SpectrogramData(DataHolder *data) : m_data(data)
     // some minor performance improvements when the spectrogram item
     // does not need to check for NaN values
 
-    setAttribute( QwtRasterData::WithoutGaps, true );
+    setAttribute( QwtRasterData::WithoutGaps, false );
 
     m_intervals[ Qt::XAxis ] = QwtInterval(m_data->xMin(), m_data->xMax());
     m_intervals[ Qt::YAxis ] = QwtInterval(m_data->zMin(), m_data->zMax());
@@ -138,11 +138,18 @@ void SpectrogramData::setInterval(Qt::Axis axis, const QwtInterval &interval)
 
 double SpectrogramData::value(double x, double y) const
 {DDD;
+    const QwtInterval xInterval = interval( Qt::XAxis );
+    const QwtInterval yInterval = interval( Qt::YAxis );
+
+    if ( !( xInterval.contains(x) && yInterval.contains(y) ) )
+        return qQNaN();
+
     int j = m_data->nearestZ(y);
-    if (j < 0) j = 0;
+    if (j < 0) return qQNaN();
 
     int i = m_data->nearest(x);
-    if (i < 0) i = 0;
+    if (i < 0) return qQNaN();
+
     return m_data->yValue(i, j);
 }
 

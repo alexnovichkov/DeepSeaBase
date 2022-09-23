@@ -835,9 +835,9 @@ void PlotArea::onDropEvent(const QVector<Channel *> &channels)
     if (!channels.isEmpty()) {
         if (channels.first()->type() == Descriptor::TimeResponse)
             type = Plot::PlotType::Time;
-        if (channels.first()->data()->blocksCount()>1)
+        else if (channels.first()->data()->blocksCount()>1)
             type = Plot::PlotType::Spectrogram;
-        if (channels.first()->data()->xValuesFormat() == DataHolder::XValuesNonUniform)
+        else if (channels.first()->data()->xValuesFormat() == DataHolder::XValuesNonUniform)
             type = Plot::PlotType::Octave;
     }
     addPlot(type);

@@ -659,14 +659,11 @@ int DataHolder::nearest(double x) const
 {DDD;
     int index=-1;
     if (m_xValuesFormat == XValuesNonUniform) {
-        for (int i = 0; i < m_xCount-1; ++i) {
-            if (m_xValues[i]<=x && m_xValues[i+1]>=x) {
-                index = (x-m_xValues[i] < m_xValues[i+1]-x)?i:i+1;
-            }
-            else {
-                break;
-            }
-        }
+        auto upper = std::upper_bound(m_xValues.constBegin(), m_xValues.constEnd(), x);
+        if (upper == m_xValues.constEnd()) return -1; //larger than xmax
+        if (upper == m_xValues.constBegin()) return -1; //smaller than xmin
+        index = std::distance(m_xValues.constBegin(), upper)-1;
+        if (x-m_xValues[index] > m_xValues[index+1]-x) index++;
     }
     else {
         index = qFuzzyIsNull(m_xStep) ? -1 : qRound((x-m_xBegin)/m_xStep);
@@ -714,14 +711,11 @@ int DataHolder::nearestZ(double z) const
 {DDD;
     int index=-1;
     if (m_zValuesFormat == XValuesNonUniform) {
-        for (int i = 0; i < m_zCount-1; ++i) {
-            if (m_zValues[i]<=z && m_zValues[i+1]>=z) {
-                index = (z-m_zValues[i] < m_zValues[i+1]-z)?i:i+1;
-            }
-            else {
-                break;
-            }
-        }
+        auto upper = std::upper_bound(m_zValues.constBegin(), m_zValues.constEnd(), z);
+        if (upper == m_zValues.constEnd()) return -1; //larger than zmax
+        if (upper == m_zValues.constBegin()) return -1; //smaller than zmin
+        index = std::distance(m_zValues.constBegin(), upper)-1;
+        if (z-m_zValues[index] > m_zValues[index+1]-z) index++;
     }
     else {
         index = qFuzzyIsNull(m_zStep) ? -1 : qRound((z-m_zBegin)/m_zStep);

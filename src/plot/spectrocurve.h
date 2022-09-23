@@ -5,6 +5,7 @@
 #include <qwt_plot_spectrogram.h>
 #include "curve.h"
 #include "dataholder.h"
+#include <qwt_matrix_raster_data.h>
 
 class SpectrogramData: public QwtRasterData
 {
