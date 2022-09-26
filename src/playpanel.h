@@ -7,7 +7,6 @@
 #include <QMediaPlayer>
 
 class Plot;
-class QwtPlotMarker;
 class QToolButton;
 class QSlider;
 class QAudioOutput;

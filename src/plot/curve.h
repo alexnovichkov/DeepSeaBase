@@ -15,8 +15,8 @@ class QwtScaleMap;
 class PointMarker;
 
 #include <qglobal.h>
-#include "qwt_axis_id.h"
 #include "selectable.h"
+#include "enums.h"
 
 class Curve : public Selectable
 {
@@ -36,11 +36,11 @@ public:
     virtual QString title() const = 0;
     virtual void setTitle(const QString &title) = 0;
 
-    virtual QwtAxisId yAxis() const = 0;
-    virtual void setYAxis(QwtAxisId axis) = 0;
+    virtual Enums::AxisType yAxis() const = 0;
+    virtual void setYAxis(Enums::AxisType axis) = 0;
 
-    virtual QwtAxisId xAxis() const = 0;
-    virtual void setXAxis(QwtAxisId axis) = 0;
+    virtual Enums::AxisType xAxis() const = 0;
+    virtual void setXAxis(Enums::AxisType axis) = 0;
 
     virtual QPen pen() const = 0;
     void setPen(const QPen &pen) {oldPen = pen; updatePen();}
@@ -82,7 +82,7 @@ public:
 
 public:
     QMap<int, QVariant> commonLegendData() const;
-    void evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const;
+    void evaluateScale(int &from, int &to, double startX, double endX) const;
     void switchFixed();
     virtual void resetCashedData() {}
 

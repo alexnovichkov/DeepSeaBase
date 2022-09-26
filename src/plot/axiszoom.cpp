@@ -35,10 +35,10 @@ double AxisZoom::limitScale(double sz,double bs)
     return sz;
 }
 
-ZoomStack::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
+ZoomStack::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, Enums::AxisType axis)
 {DDD;
     QRect canvasGeometry = plot->canvas()->geometry();       // канвы графика
-    QRect axisGeometry = plot->axisWidget(axis)->geometry(); // и виджета шкалы
+    QRect axisGeometry = plot->axisWidget(toQwtAxisType(axis))->geometry(); // и виджета шкалы
     // определяем текущее положение курсора относительно канвы
     // (за вычетом смещений графика)
     int x = evpos.x() + axisGeometry.x() - canvasGeometry.x() - currentLeftBorderInPixels;
@@ -118,24 +118,24 @@ ZoomStack::zoomCoordinates AxisZoom::axisApplyMove(QPoint evpos, QwtAxisId axis)
 }
 
 
-void AxisZoom::startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis)
+void AxisZoom::startHorizontalAxisZoom(QMouseEvent *event, Enums::AxisType axis)
 {DDD;
     if (ct == ConvType::ctNone) {
-        QwtScaleWidget *scaleWidget = plot->axisWidget(axis);
+        QwtScaleWidget *scaleWidget = plot->axisWidget(toQwtAxisType(axis));
 
-        QwtScaleMap canvasMap = plot->canvasMap(axis);
-        currentLeftBorder = canvasMap.s1();
-        currentRightBorder = canvasMap.s2();
-        currentWidth = canvasMap.sDist();
+        auto range = plot->plotRange(axis);
+        currentLeftBorder = range.min;
+        currentRightBorder = range.max;
+        currentWidth = qAbs(currentLeftBorder - currentRightBorder);
 
         // определяем геометрию
         QRect canvasGeometry = plot->canvas()->geometry();
         QRect scaleWidgetGeometry = scaleWidget->geometry();
 
         // текущее левое смещение графика (в пикселах относительно канвы)
-        currentLeftBorderInPixels = plot->transform(axis, currentLeftBorder);
+        currentLeftBorderInPixels = plot->plotToScreenCoordinates(axis, currentLeftBorder);
         // текущая ширина графика (в пикселах)
-        currentPixelWidth = plot->transform(axis, currentRightBorder) - currentLeftBorderInPixels;
+        currentPixelWidth = plot->plotToScreenCoordinates(axis, currentRightBorder) - currentLeftBorderInPixels;
         // текущее левое смещение графика
         // (в пикселах относительно виджета шкалы)
         currentLeftShiftInPixels = currentLeftBorderInPixels + canvasGeometry.x() - scaleWidgetGeometry.x();
@@ -168,24 +168,24 @@ void AxisZoom::startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis)
 
 // Обработчик нажатия на кнопку мыши над шкалой
 // (включение изменения масштаба шкалы)
-void AxisZoom::startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis)
+void AxisZoom::startVerticalAxisZoom(QMouseEvent *event, Enums::AxisType axis)
 {DDD;
     if (ct == ConvType::ctNone) {
-        QwtScaleWidget *scaleWidget = plot->axisWidget(axis);
+        QwtScaleWidget *scaleWidget = plot->axisWidget(toQwtAxisType(axis));
 
-        QwtScaleMap sm = plot->canvasMap(axis);
-        currentBottomBorder = sm.s1();
-        currentTopBorder = sm.s2();
-        currentHeight = sm.sDist();
+        auto range = plot->plotRange(axis);
+        currentBottomBorder = range.min;
+        currentTopBorder = range.max;
+        currentHeight = qAbs(range.min-range.max);
 
         // определяем (для удобства) геометрию
         QRect canvasGeometry = plot->canvas()->geometry();
         QRect scaleWidgetGeometry = scaleWidget->geometry();
 
         // текущее верхнее смещение графика (в пикселах относительно канвы)
-        currentTopBorderInPixels = plot->transform(axis, currentTopBorder);
+        currentTopBorderInPixels = plot->plotToScreenCoordinates(axis, currentTopBorder);
         // текущая высота графика (в пикселах)
-        currentPixelHeight = plot->transform(axis,currentBottomBorder) - currentTopBorderInPixels;
+        currentPixelHeight = plot->plotToScreenCoordinates(axis,currentBottomBorder) - currentTopBorderInPixels;
         // текущее верхнее смещение графика
         // (в пикселах относительно виджета шкалы)
         currentTopShiftInPixels = currentTopBorderInPixels + canvasGeometry.y() - scaleWidgetGeometry.y();
@@ -215,22 +215,22 @@ void AxisZoom::startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis)
     }
 }
 
-ZoomStack::zoomCoordinates AxisZoom::proceedAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
+ZoomStack::zoomCoordinates AxisZoom::proceedAxisZoom(QMouseEvent *mEvent, Enums::AxisType axis)
 {DDD;
     if (ct != ConvType::ctNone)
         return axisApplyMove(mEvent->pos(), axis);
 
+    auto range = plot->screenRange(axis);
+    auto dist = qAbs(range.min-range.max);
 
-    QwtScaleMap sm = plot->canvasMap(axis);
-
-    if (QwtAxis::isXAxis(axis)) {
-        if (mEvent->pos().x() - sm.p1() >= sm.pDist()/2)
+    if (axis == Enums::AxisType::atTop || axis==Enums::AxisType::atBottom) {
+        if (mEvent->pos().x() - range.min >= dist/2)
             emit hover(axis, 2);
         else
             emit hover(axis, 1);
     }
     else {
-        if (sm.p1() - mEvent->pos().y() <= sm.pDist()/2)
+        if (range.min - mEvent->pos().y() <= dist/2)
             emit hover(axis, 2);
         else
             emit hover(axis, 1);
@@ -238,20 +238,20 @@ ZoomStack::zoomCoordinates AxisZoom::proceedAxisZoom(QMouseEvent *mEvent, QwtAxi
     return ZoomStack::zoomCoordinates();
 }
 
-ZoomStack::zoomCoordinates AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId axis)
+ZoomStack::zoomCoordinates AxisZoom::endAxisZoom(QMouseEvent *mEvent, Enums::AxisType axis)
 {DDD;
     ZoomStack::zoomCoordinates coords;
     if (ct != ConvType::ctNone) {
 
-        plot->axisWidget(axis)->setCursor(cursor);
+        plot->axisWidget(toQwtAxisType(axis))->setCursor(cursor);
 
         if (ct == ConvType::ctLeft || ct == ConvType::ctRight) {
             // emit axisClicked signal only if it is really just a click within 3 pixels
             if (qAbs(mEvent->pos().x() - currentLeftShiftInPixels - cursorPosX)<3) {
-                double xVal = plot->canvasMap(axis).invTransform(mEvent->pos().x());
+                double xVal = plot->screenToPlotCoordinates(axis, mEvent->pos().x());
                 emit axisClicked({xVal, qQNaN()}, mEvent->modifiers() & Qt::ControlModifier);
             }
-            else if (QwtAxis::isXAxis(axis)) {
+            else if (axis == Enums::AxisType::atTop || axis == Enums::AxisType::atBottom) {
                 // запоминаем совершенное перемещение
                 coords.coords.insert(axis, {currentLeftBorder, currentRightBorder});
             }
@@ -259,10 +259,10 @@ ZoomStack::zoomCoordinates AxisZoom::endAxisZoom(QMouseEvent *mEvent, QwtAxisId 
         else if (ct == ConvType::ctBottom ||ct == ConvType::ctTop) {
             // emit axisClicked signal only if it is really just a click within 3 pixels
             if (qAbs(mEvent->pos().y() - currentTopShiftInPixels - cursorPosY)<3) {
-                double yVal = plot->canvasMap(axis).invTransform(mEvent->pos().y());
+                double yVal = plot->screenToPlotCoordinates(axis, mEvent->pos().y());
                 emit axisClicked({qQNaN(),yVal}, mEvent->modifiers() & Qt::ControlModifier);
             }
-            else if (QwtAxis::isYAxis(axis)) {
+            else if (axis == Enums::AxisType::atLeft || axis == Enums::AxisType::atRight) {
                 // запоминаем совершенное перемещение
                 coords.coords.insert(axis, {currentBottomBorder, currentTopBorder});
             }

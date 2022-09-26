@@ -25,11 +25,6 @@
 #include <QStack>
 #include <QRectF>
 
-#include <qwt_plot.h>
-#include <qwt_plot_grid.h>
-#include <qwt_plot_canvas.h>
-#include <qwt_scale_draw.h>
-#include <qwt_scale_map.h>
 #include "enums.h"
 
 class Plot;
@@ -54,9 +49,9 @@ public:
     {
     public:
         // конструктор
-        explicit ScaleBounds(Plot *plot, QwtAxisId axis);
+        explicit ScaleBounds(Plot *plot, Enums::AxisType axis);
 
-        QwtAxisId axis;   // основная шкала
+         Enums::AxisType axis;   // основная шкала
 
         bool isFixed() const {return fixed;}
         void setFixed(bool fixed);
@@ -81,7 +76,7 @@ public:
 
     struct zoomCoordinates
     {
-        QMap<int, QPointF> coords;
+        QMap<Enums::AxisType, QPointF> coords;
     };
 
 
@@ -90,8 +85,8 @@ public:
 
     void addZoom(zoomCoordinates coords, bool addToStack = false);
     void zoomBack();
-    void moveToAxis(int axis, double min, double max);
-    void autoscale(int axis, bool spectrogram);
+    void moveToAxis(Enums::AxisType axis, double min, double max);
+    void autoscale(Enums::AxisType axis, bool spectrogram);
 private:
     Plot *plot;
     QStack<zoomCoordinates> zoomStack;

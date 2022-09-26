@@ -45,20 +45,20 @@ bool CanvasEventFilter::eventFilter(QObject *target, QEvent *event)
                 procKeyboardEvent(event);
                 break;
             case QEvent::Wheel:
-                procWheelEvent(-1, event);
+                procWheelEvent(Enums::AxisType::atInvalid, event);
                 break;
             default: break;
         }
     }
     else {
-        QwtAxisId axis(-1);
+        Enums::AxisType axis = Enums::AxisType::atInvalid;
         for (int a = 0; a < QwtAxis::AxisPositions; a++) {
             if (target == plot->axisWidget(a)) {
-                axis = a;
+                axis = toAxisType(a);
                 break;
             }
         }
-        if (axis != -1) {
+        if (axis != Enums::AxisType::atInvalid) {
             switch (event->type()) {
                 case QEvent::Wheel:
                     procWheelEvent(axis, event);
@@ -146,13 +146,13 @@ void CanvasEventFilter::procKeyboardEvent(QEvent *event)
     if (picker) picker->procKeyboardEvent(kEvent->key());
 }
 
-void CanvasEventFilter::procWheelEvent(QwtAxisId axis, QEvent *event)
+void CanvasEventFilter::procWheelEvent(Enums::AxisType axis, QEvent *event)
 {DDD;
     auto coords = wheelZoom->applyWheel(event, axis);
     zoomStack->addZoom(coords, false);
 }
 
-void CanvasEventFilter::procAxisEvent(QwtAxisId axis, QEvent *event)
+void CanvasEventFilter::procAxisEvent(Enums::AxisType axis, QEvent *event)
 {DDD;
     QMouseEvent *mEvent = static_cast<QMouseEvent *>(event);
     switch (event->type()) {
@@ -167,7 +167,7 @@ void CanvasEventFilter::procAxisEvent(QwtAxisId axis, QEvent *event)
                 actionType = ActionType::None;
             }
             else if (mEvent->button()==Qt::LeftButton) {
-                if (QwtAxis::isXAxis(axis))
+                if (axis == Enums::AxisType::atTop || axis == Enums::AxisType::atBottom)
                     axisZoom->startHorizontalAxisZoom(mEvent, axis);
                 else
                     axisZoom->startVerticalAxisZoom(mEvent, axis);
@@ -188,20 +188,17 @@ void CanvasEventFilter::procAxisEvent(QwtAxisId axis, QEvent *event)
         }
         case QEvent::MouseButtonDblClick: {
             if (mEvent->button()==Qt::LeftButton) {
-                AxisBoundsDialog dialog(plot->canvasMap(axis).s1(), plot->canvasMap(axis).s2(), axis);
+                auto range = plot->plotRange(axis);
+                AxisBoundsDialog dialog(range.min, range.max, axis);
                 if (dialog.exec()) {
                     ZoomStack::zoomCoordinates coords;
-                    if (axis == QwtAxis::XBottom || axis == QwtAxis::XTop)
-                        coords.coords.insert(QwtAxis::XBottom, {dialog.leftBorder(), dialog.rightBorder()});
+                    if (axis == Enums::AxisType::atBottom || axis == Enums::AxisType::atTop)
+                        coords.coords.insert(Enums::AxisType::atBottom, {dialog.leftBorder(), dialog.rightBorder()});
                     else if (zoomStack->verticalScaleBounds->axis == axis ||
                              zoomStack->verticalScaleBoundsSlave->axis == axis)
                         coords.coords.insert(axis, {dialog.leftBorder(), dialog.rightBorder()});
                     zoomStack->addZoom(coords, true);
 
-//                    if (dialog.autoscale()) {
-//                        emit needsAutoscale(axis);
-//                    }
-//                    zoom->plot()->replot();
                 }
             }
             break;

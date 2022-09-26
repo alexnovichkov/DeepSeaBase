@@ -3,6 +3,7 @@
 #include <qwt_text.h>
 #include "curve.h"
 #include "logging.h"
+#include "plot.h"
 
 PointMarker::PointMarker(const QColor &color, QwtAxisId axis)
 {DDD;
@@ -32,6 +33,6 @@ void PointMarker::moveTo(const QPointF &val)
                                         curve->pen().color(),
                                         QSize(8, 8))
                           );
-        setYAxis(curve->yAxis());
+        setYAxis(toQwtAxisType(curve->yAxis()));
     }
 }

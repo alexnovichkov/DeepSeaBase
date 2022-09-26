@@ -2,9 +2,6 @@
 
 #include <QtWidgets>
 
-#include <qwt_plot.h>
-#include <qwt_plot_curve.h>
-#include <qwt_symbol.h>
 #include "plot/plot.h"
 #include "plot/curve.h"
 #include "fileformats/dfdfiledescriptor.h"
@@ -92,50 +89,11 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
     axisComboBox->setEditable(false);
     axisComboBox->addItems(QStringList()<<"Левая"
                            <<"Правая");
-    axisComboBox->setCurrentIndex(curve->yAxis());
+    axisComboBox->setCurrentIndex(static_cast<int>(curve->yAxis()));
     connect(axisComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             [=](int axis) {
-        plot->moveCurve(curve, axis);
+        plot->moveCurve(curve, Enums::AxisType(axis));
     });
-
-//    QComboBox *symbolCombo = new QComboBox(this);
-//    symbolCombo->setEditable(false);
-//    symbolCombo->addItems(QStringList()
-//                          <<"Без маркера"
-//                          <<"Окружность"
-//                          <<"Прямоугольник"
-//                          <<"Ромб"
-//                          <<"Треугольник"
-//                          <<"Треугольник1"
-//                          <<"Треугольник2"
-//                          <<"Треугольник3"
-//                          <<"Треугольник4"
-//                          <<"Плюс"
-//                          <<"Крест"
-//                          <<"Горизонтальная линия"
-//                          <<"Вертикальная линия"
-//                          <<"Звезда1"
-//                          <<"Звезда2"
-//                          <<"Шестиугольник");
-//    if (curve->symbol()) {
-//        if (curve->symbol()->style()>=-1 && curve->symbol()->style()<=15) {
-//            symbolCombo->setCurrentIndex(curve->symbol()->style()+1);
-//        }
-//        else
-//            symbolCombo->setCurrentIndex(0);
-//    }
-//    connect(symbolCombo, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
-//            [=](int newValue) {
-//        if (newValue == 0) {
-//            curve->setSymbol(0);
-//        }
-//        else {
-//            QwtSymbol *s = new QwtSymbol(QwtSymbol::Style(newValue-1));
-//            //s->setPen(curve->pen());
-//            //s->setBrush(curve->brush());
-//            this->curve->setSymbol(s);
-//        }
-//    });
 
     QFormLayout *l = new QFormLayout;
 

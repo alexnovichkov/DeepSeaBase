@@ -9,6 +9,6 @@ OctavePlot::OctavePlot(QWidget *parent) : Plot(Plot::PlotType::Octave, parent)
 {DDD;
     //by default for Octave curves
     xScaleIsLogarithmic = true;
-    setAxisScaleEngine(xBottomAxis, new LogScaleEngine(2));
+    setAxisScaleEngine(QwtAxis::XBottom, new LogScaleEngine(2));
 }
 

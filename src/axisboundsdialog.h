@@ -2,20 +2,20 @@
 #define AXISBOUNDSDIALOG_H
 
 #include <QDialog>
-#include <qwt_axis_id.h>
+#include "enums.h"
 
 
 class AxisBoundsDialog : public QDialog
 {
 public:
-    AxisBoundsDialog(double leftBorder, double rightBorder, QwtAxisId axis, QWidget *parent = 0);
+    AxisBoundsDialog(double leftBorder, double rightBorder, Enums::AxisType axis, QWidget *parent = 0);
     inline double leftBorder() const {return _leftBorder;}
     inline double rightBorder() const {return _rightBorder;}
     inline bool autoscale() const {return _autoscale;}
 private:
     double _leftBorder;
     double _rightBorder;
-    QwtAxisId _axis;
+    Enums::AxisType _axis;
     bool _autoscale;
 };
 

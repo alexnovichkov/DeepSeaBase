@@ -47,7 +47,7 @@ void LineCurve::drawLines(QPainter *painter,
                       int from, int to) const
 {DDD;
     //reevaluating from, to
-    evaluateScale(from, to, xMap);
+    evaluateScale(from, to, xMap.s1(), xMap.s2());
     if (from > to) return;
 
     const bool doAlign = QwtPainter::roundingAlignment( painter );
@@ -112,29 +112,28 @@ void LineCurve::setTitle(const QString &title)
     QwtPlotCurve::setTitle(title);
 }
 
-QwtAxisId LineCurve::yAxis() const
+Enums::AxisType LineCurve::yAxis() const
 {DDD;
-    return QwtPlotCurve::yAxis();
+    return toAxisType(QwtPlotCurve::yAxis());
 }
 
-void LineCurve::setYAxis(QwtAxisId axis)
+void LineCurve::setYAxis(Enums::AxisType axis)
 {DDD;
-    QwtPlotCurve::setYAxis(axis);
+    QwtPlotCurve::setYAxis(toQwtAxisType(axis));
     foreach (PointLabel *l, labels)
-        l->setYAxis(axis);
+        l->setYAxis(toQwtAxisType(axis));
 }
 
-QwtAxisId LineCurve::xAxis() const
+Enums::AxisType LineCurve::xAxis() const
 {DDD;
-    return QwtPlotCurve::xAxis();
+    return toAxisType(QwtPlotCurve::xAxis());
 }
 
-void LineCurve::setXAxis(QwtAxisId axis)
+void LineCurve::setXAxis(Enums::AxisType axis)
 {DDD;
-    QwtPlotCurve::setXAxis(axis);
-    qDebug()<<labels;
+    QwtPlotCurve::setXAxis(toQwtAxisType(axis));
     foreach (PointLabel *l, labels)
-        l->setXAxis(axis);
+        l->setXAxis(toQwtAxisType(axis));
 }
 
 QPen LineCurve::pen() const
@@ -213,12 +212,10 @@ SelectedPoint LineCurve::closest(const QPoint &pos, double *dist1, double *dist2
     if ( numSamples <= 0 )
         return {-1, -1};
 
-    const QwtScaleMap xMap = m_plot->canvasMap( xAxis() );
-    const QwtScaleMap yMap = m_plot->canvasMap( yAxis() );
-
     int from = 0;
     int to = numSamples-1;
-    evaluateScale(from, to, xMap);
+    auto range = m_plot->plotRange(xAxis());
+    evaluateScale(from, to, range.min, range.max);
 
 
     double dmin = qInf();
@@ -226,8 +223,8 @@ SelectedPoint LineCurve::closest(const QPoint &pos, double *dist1, double *dist2
     for ( int i = from; i <= to; i++ ) {
         const auto sample = samplePoint( {i,0} );
 
-        const double cx = qAbs(xMap.transform( sample.x ) - pos.x());
-        const double cy = qAbs(yMap.transform( sample.y ) - pos.y());
+        const double cx = qAbs(m_plot->plotToScreenCoordinates(xAxis(), sample.x ) - pos.x());
+        const double cy = qAbs(m_plot->plotToScreenCoordinates(yAxis(), sample.y ) - pos.y());
 
         const double f = cx*cx + cy*cy;
         if ( f < dmin ) {

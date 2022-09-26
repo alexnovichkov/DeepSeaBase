@@ -5,7 +5,7 @@
 
 #include "qwt_text.h"
 #include "qwt_symbol.h"
-class QwtPlot;
+class Plot;
 class Curve;
 
 #include <QtCore>
@@ -25,7 +25,7 @@ public:
         YValue,
         XYZValue
     };
-    explicit PointLabel(QwtPlot *parent, Curve *m_curve);
+    explicit PointLabel(Plot *parent, Curve *m_curve);
 
     virtual ~PointLabel();
 
@@ -68,7 +68,7 @@ private:
     QPoint m_displacement; // displacement relative to invTransform(d_origin)
     QwtText m_label;
     QwtSymbol m_marker;
-    QwtPlot *m_plot;
+    Plot *m_plot;
     Curve *m_curve;
 };
 

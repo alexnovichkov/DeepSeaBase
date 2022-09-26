@@ -106,7 +106,6 @@ SOURCES += main.cpp\
     logging.cpp \
     editdescriptionsdialog.cpp \
     methods/windowing.cpp \
-    trackingpanel.cpp \
     methods/dfdmethods/octavemethod.cpp \
     algorithms.cpp \
     methods/octavefilterbank.cpp \
@@ -235,7 +234,6 @@ HEADERS  += mainwindow.h \
     logging.h \
     editdescriptionsdialog.h \
     methods/windowing.h \
-    trackingpanel.h \
     methods/dfdmethods/octavemethod.h \
     algorithms.h \
     methods/octavefilterbank.h \

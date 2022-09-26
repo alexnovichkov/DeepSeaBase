@@ -49,7 +49,7 @@ void CursorLabel::updateLabel(bool showValues)
     if (showValues && m_axis != Axis::YAxis) {
         auto list = m_plot->model()->curves();
         for (auto curve: list) {
-            if (curve->xAxis()==xAxis()) {
+            if (curve->xAxis() == toAxisType(xAxis())) {
                 bool success = false;
                 auto val = curve->channel->data()->YforXandZ(m_cursor->xValue(), m_cursor->yValue(), success);
                 QString s = QString::number(success?val:qQNaN(), f, m_cursor->parent->digits());

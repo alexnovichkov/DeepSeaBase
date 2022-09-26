@@ -1,10 +1,9 @@
 #include "axisboundsdialog.h"
 
 #include <QtWidgets>
-#include <qwt_plot.h>
 #include "logging.h"
 
-AxisBoundsDialog::AxisBoundsDialog(double leftBorder, double rightBorder, QwtAxisId axis, QWidget *parent) : QDialog(parent),
+AxisBoundsDialog::AxisBoundsDialog(double leftBorder, double rightBorder, Enums::AxisType axis, QWidget *parent) : QDialog(parent),
     _leftBorder(leftBorder), _rightBorder(rightBorder), _axis(axis), _autoscale(false)
 {DDD;
     setWindowTitle("Установка шкалы");
@@ -28,7 +27,7 @@ AxisBoundsDialog::AxisBoundsDialog(double leftBorder, double rightBorder, QwtAxi
     });
 
     QString text = "Подогнать масштаб по вертикальным осям";
-    if (QwtAxis::isYAxis(axis))
+    if (axis == Enums::AxisType::atLeft || axis == Enums::AxisType::atRight)
         text = "Подогнать масштаб по горизонтальной оси";
     QCheckBox *scaleAxis = new QCheckBox(text, this);
     scaleAxis->setChecked(false);

@@ -7,6 +7,7 @@
 #include "qwt_legend_data.h"
 #include "qwt_scale_map.h"
 #include "pointlabel.h"
+#include "plot.h"
 
 BarCurve::BarCurve(const QString &title, Channel *channel) :  QwtPlotHistogram(title),
     Curve(title, channel)
@@ -39,28 +40,28 @@ void BarCurve::setTitle(const QString &title)
     QwtPlotHistogram::setTitle(title);
 }
 
-QwtAxisId BarCurve::yAxis() const
+Enums::AxisType BarCurve::yAxis() const
 {DDD;
-    return QwtPlotHistogram::yAxis();
+    return toAxisType(QwtPlotHistogram::yAxis());
 }
 
-void BarCurve::setYAxis(QwtAxisId axis)
+void BarCurve::setYAxis(Enums::AxisType axis)
 {DDD;
-    QwtPlotHistogram::setYAxis(axis);
+    QwtPlotHistogram::setYAxis(toQwtAxisType(axis));
     foreach (PointLabel *l, labels)
-        l->setYAxis(axis);
+        l->setYAxis(toQwtAxisType(axis));
 }
 
-QwtAxisId BarCurve::xAxis() const
+Enums::AxisType BarCurve::xAxis() const
 {DDD;
-    return QwtPlotHistogram::xAxis();
+    return toAxisType(QwtPlotHistogram::xAxis());
 }
 
-void BarCurve::setXAxis(QwtAxisId axis)
+void BarCurve::setXAxis(Enums::AxisType axis)
 {DDD;
-    QwtPlotHistogram::setXAxis(axis);
+    QwtPlotHistogram::setXAxis(toQwtAxisType(axis));
     foreach (PointLabel *l, labels)
-        l->setXAxis(axis);
+        l->setXAxis(toQwtAxisType(axis));
 }
 
 QPen BarCurve::pen() const
@@ -224,13 +225,11 @@ SelectedPoint BarCurve::closest(const QPoint &pos, double *dist1, double *dist2)
     if ( numSamples <= 0 )
         return {-1, -1};
 
-    const QwtScaleMap xMap = plot()->canvasMap( xAxis() );
-    const QwtScaleMap yMap = plot()->canvasMap( yAxis() );
+    auto range = m_plot->plotRange(xAxis());
 
     int from = 0;
     int to = numSamples-1;
-    evaluateScale(from, to, xMap);
-
+    evaluateScale(from, to, range.first, range.second);
 
     double dminx = qInf();
     double dminy = qInf();
@@ -239,8 +238,8 @@ SelectedPoint BarCurve::closest(const QPoint &pos, double *dist1, double *dist2)
     for ( int i = from; i <= to; i++ ) {
         const auto sample = samplePoint( {i,0} );
 
-        const double cx = qAbs(xMap.transform( sample.x ) - pos.x());
-        const double cy = qAbs(yMap.transform( sample.y ) - pos.y());
+        const double cx = qAbs(m_plot->plotToScreenCoordinates(xAxis(), sample.x ) - pos.x());
+        const double cy = qAbs(m_plot->plotToScreenCoordinates(yAxis(), sample.y ) - pos.y());
 
         const double f = cx*cx + cy*cy;
         if ( f < dmin ) {

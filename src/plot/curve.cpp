@@ -92,7 +92,7 @@ void Curve::moveToPos(QPoint pos, QPoint startPos)
     if (m_plot->interactionMode != Plot::DataInteraction) return;
 
     if (selectedPoint.x < 0 || selectedPoint.x >= samplesCount()) return;
-    double y = m_plot->invTransform(yAxis(), pos.y());
+    double y = m_plot->screenToPlotCoordinates(yAxis(), pos.y());
     if (channel->data()->setYValue(selectedPoint.x, y, selectedPoint.z)) {
         channel->setDataChanged(true);
         channel->descriptor()->setDataChanged(true);
@@ -141,11 +141,8 @@ void Curve::setVisible(bool visible)
     if (marker) marker->setVisible(visible);
 }
 
-void Curve::evaluateScale(int &from, int &to, const QwtScaleMap &xMap) const
+void Curve::evaluateScale(int &from, int &to, double startX, double endX) const
 {DDD;
-    const double startX = xMap.s1();
-    const double endX = xMap.s2();
-
     if (channel->data()->xValuesFormat()==DataHolder::XValuesUniform) {
         const auto min = channel->data()->xMin();
         const auto step = channel->data()->xStep();
@@ -231,7 +228,8 @@ void Curve::moveUp(int count)
     if (selectedPoint.x < 0 || selectedPoint.x >= samplesCount()) return;
 
     auto val = samplePoint(selectedPoint);
-    double y = val.y+(m_plot->canvasMap(yAxis()).sDist())/100*count;
+    auto range = m_plot->plotRange(yAxis());
+    double y = val.y+qAbs(range.min-range.max)/100.0*count;
 
     if (channel->data()->setYValue(selectedPoint.x, y, selectedPoint.z)) {
         channel->setDataChanged(true);
@@ -248,7 +246,8 @@ void Curve::moveDown(int count)
     if (selectedPoint.x < 0 || selectedPoint.x >= samplesCount()) return;
 
     auto val = samplePoint(selectedPoint);
-    double y = val.y-(m_plot->canvasMap(yAxis()).sDist())/100*count;
+    auto range = m_plot->plotRange(yAxis());
+    double y = val.y - qAbs(range.min-range.max)/100*count;
 
     if (channel->data()->setYValue(selectedPoint.x, y, selectedPoint.z)) {
         channel->setDataChanged(true);

@@ -1,6 +1,5 @@
 #include "pointlabel.h"
 
-#include "qwt_plot.h"
 #include "qwt_scale_map.h"
 #include "logging.h"
 #include <QPen>
@@ -11,8 +10,9 @@
 #include "settings.h"
 #include "pointmarker.h"
 #include "algorithms.h"
+#include "plot.h"
 
-PointLabel::PointLabel(QwtPlot *parent, Curve *curve)
+PointLabel::PointLabel(Plot *parent, Curve *curve)
     : QwtPlotItem(),
       m_displacement(QPoint(0, -13)),
       m_marker{QwtSymbol::Ellipse, QBrush(Qt::gray), QColor(Qt::black), QSize(16,16)},
@@ -31,8 +31,8 @@ PointLabel::PointLabel(QwtPlot *parent, Curve *curve)
     m_marker.setColor(m_curve->pen().color());
 
     m_label.setBackgroundBrush(Qt::white);
-    setXAxis(curve->xAxis());
-    setYAxis(curve->yAxis());
+    setXAxis(toQwtAxisType(curve->xAxis()));
+    setYAxis(toQwtAxisType(curve->yAxis()));
     updateLabel();
 }
 
@@ -110,8 +110,8 @@ bool PointLabel::underMouse(const QPoint &pos, double *distanceX, double *distan
 {DDD;
     Q_UNUSED(point);
     auto origin = getOrigin();
-    QPointF p(m_plot->transform(m_curve->xAxis(), origin.x),
-                m_plot->transform(m_curve->yAxis(), origin.y));
+    QPointF p(m_plot->plotToScreenCoordinates(m_curve->xAxis(), origin.x),
+                m_plot->plotToScreenCoordinates(m_curve->yAxis(), origin.y));
 
     const QSizeF textSize = m_label.textSize();
 
@@ -233,8 +233,8 @@ bool PointLabel::contains(const QPoint &pos)
 {DDD;
     auto origin = getOrigin();
 
-    QPointF point(m_plot->transform(m_curve->xAxis(), origin.x),
-                m_plot->transform(m_curve->yAxis(), origin.y));
+    QPointF point(m_plot->plotToScreenCoordinates(m_curve->xAxis(), origin.x),
+                m_plot->plotToScreenCoordinates(m_curve->yAxis(), origin.y));
 
     const QSizeF textSize = m_label.textSize();
 

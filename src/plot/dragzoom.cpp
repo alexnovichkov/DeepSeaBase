@@ -19,21 +19,19 @@ void DragZoom::startDrag(QMouseEvent *mEvent)
 
     dx = dy = dy1 = 0.0;
 
-    QwtScaleMap sm = plot->canvasMap(QwtAxis::XBottom);
-    minHorizontalBound = sm.s1();
-    maxHorizontalBound = sm.s2();
+    auto range = plot->plotRange(Enums::AxisType::atBottom);
+    minHorizontalBound = range.min;
+    maxHorizontalBound = range.max;
 
     if (mEvent->modifiers() & Qt::ControlModifier) {
-        QwtAxisId mY(QwtAxis::YRight);
-        sm = plot->canvasMap(mY);
-        minVerticalBound1 = sm.s1();
-        maxVerticalBound1 = sm.s2();
+        range = plot->plotRange(Enums::AxisType::atRight);
+        minVerticalBound1 = range.min;
+        maxVerticalBound1 = range.max;
     }
     else {
-        QwtAxisId mY(QwtAxis::YLeft);
-        sm = plot->canvasMap(mY);
-        minVerticalBound = sm.s1();
-        maxVerticalBound = sm.s2();
+        range = plot->plotRange(Enums::AxisType::atLeft);
+        minVerticalBound = range.min;
+        maxVerticalBound = range.max;
     }
 }
 
@@ -43,24 +41,27 @@ ZoomStack::zoomCoordinates DragZoom::proceedDrag(QMouseEvent *mEvent)
     plot->canvas()->setCursor(Qt::ClosedHandCursor);
     auto mousePos = mEvent->pos();
 
-    dx = plot->invTransform(QwtAxis::XBottom, position.x()) - plot->invTransform(QwtAxis::XBottom, mousePos.x());
+    dx = plot->screenToPlotCoordinates(Enums::AxisType::atBottom, position.x())
+         - plot->screenToPlotCoordinates(Enums::AxisType::atBottom, mousePos.x());
 
     if (mEvent->modifiers() & Qt::ControlModifier) {
-        dy1 = plot->invTransform(QwtAxis::YRight, position.y()) - plot->invTransform(QwtAxis::YRight, mousePos.y());
+        dy1 = plot->screenToPlotCoordinates(Enums::AxisType::atRight, position.y())
+              - plot->screenToPlotCoordinates(Enums::AxisType::atRight, mousePos.y());
         dy = 0.0;
     }
     else {
-        dy = plot->invTransform(QwtAxis::YLeft, position.y()) - plot->invTransform(QwtAxis::YLeft, mousePos.y());
+        dy = plot->screenToPlotCoordinates(Enums::AxisType::atLeft, position.y())
+             - plot->screenToPlotCoordinates(Enums::AxisType::atLeft, mousePos.y());
         dy1 = 0.0;
     }
 
     ZoomStack::zoomCoordinates coords;
     if (!qFuzzyIsNull(dx))
-        coords.coords.insert(QwtAxis::XBottom, {minHorizontalBound + dx, maxHorizontalBound + dx});
+        coords.coords.insert(Enums::AxisType::atBottom, {minHorizontalBound + dx, maxHorizontalBound + dx});
     if (!qFuzzyIsNull(dy))
-        coords.coords.insert(QwtAxis::YLeft, {minVerticalBound + dy, maxVerticalBound + dy});
+        coords.coords.insert(Enums::AxisType::atLeft, {minVerticalBound + dy, maxVerticalBound + dy});
     if (!qFuzzyIsNull(dy1))
-        coords.coords.insert(QwtAxis::YRight, {minVerticalBound1 + dy1, maxVerticalBound1 + dy1});
+        coords.coords.insert(Enums::AxisType::atRight, {minVerticalBound1 + dy1, maxVerticalBound1 + dy1});
 
     return coords;
 }
@@ -73,13 +74,13 @@ ZoomStack::zoomCoordinates DragZoom::endDrag(QMouseEvent *mEvent)
 
     ZoomStack::zoomCoordinates coords;
     if (!qFuzzyIsNull(dx)) {
-        coords.coords.insert(QwtAxis::XBottom, {minHorizontalBound + dx, maxHorizontalBound + dx});
+        coords.coords.insert(Enums::AxisType::atBottom, {minHorizontalBound + dx, maxHorizontalBound + dx});
     }
     if (!qFuzzyIsNull(dy)) {
-        coords.coords.insert(QwtAxis::YLeft, {minVerticalBound + dy, maxVerticalBound + dy});
+        coords.coords.insert(Enums::AxisType::atLeft, {minVerticalBound + dy, maxVerticalBound + dy});
     }
     if (!qFuzzyIsNull(dy1)) {
-        coords.coords.insert(QwtAxis::YRight, {minVerticalBound1 + dy1, maxVerticalBound1 + dy1});
+        coords.coords.insert(Enums::AxisType::atRight, {minVerticalBound1 + dy1, maxVerticalBound1 + dy1});
     }
     return coords;
 }

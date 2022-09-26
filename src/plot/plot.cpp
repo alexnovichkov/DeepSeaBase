@@ -7,6 +7,7 @@
 #include <qwt_plot_curve.h>
 #include <qwt_symbol.h>
 #include <qwt_scale_widget.h>
+#include <qwt_scale_map.h>
 #include <qwt_color_map.h>
 
 #include "fileformats/filedescriptor.h"
@@ -94,13 +95,13 @@ Plot::Plot(PlotType type, QWidget *parent) :
     infoOverlay = new PlotInfoOverlay(this);
     infoOverlay->setVisible(true);
 
-    setAxisScaleDraw(xBottomAxis, new ScaleDraw());
-    setAxisScaleDraw(yLeftAxis, new ScaleDraw());
-    setAxisScaleDraw(yRightAxis, new ScaleDraw());
+    setAxisScaleDraw(QwtAxis::XBottom, new ScaleDraw());
+    setAxisScaleDraw(QwtAxis::YLeft, new ScaleDraw());
+    setAxisScaleDraw(QwtAxis::YRight, new ScaleDraw());
 
-    axisWidget(xBottomAxis)->setMouseTracking(true);
-    axisWidget(yLeftAxis)->setMouseTracking(true);
-    axisWidget(yRightAxis)->setMouseTracking(true);
+    axisWidget(QwtAxis::XBottom)->setMouseTracking(true);
+    axisWidget(QwtAxis::YLeft)->setMouseTracking(true);
+    axisWidget(QwtAxis::YRight)->setMouseTracking(true);
 
     leftOverlay = new LeftAxisOverlay(this);
     rightOverlay = new RightAxisOverlay(this);
@@ -140,7 +141,7 @@ Plot::Plot(PlotType type, QWidget *parent) :
     plotZoom = new PlotZoom(this);
 
     axisZoom = new AxisZoom(this);
-    connect(axisZoom,SIGNAL(hover(QwtAxisId,int)), SLOT(hoverAxis(QwtAxisId,int)));
+    connect(axisZoom, &AxisZoom::hover, this, &Plot::hoverAxis);
 
     canvasFilter = new CanvasEventFilter(this);
     canvasFilter->setZoom(zoom);
@@ -149,8 +150,8 @@ Plot::Plot(PlotType type, QWidget *parent) :
     canvasFilter->setAxisZoom(axisZoom);
     canvasFilter->setPlotZoom(plotZoom);
     canvasFilter->setPicker(picker);
-    connect(canvasFilter,SIGNAL(hover(QwtAxisId,int)), SLOT(hoverAxis(QwtAxisId,int)));
-    connect(canvasFilter,SIGNAL(contextMenuRequested(QPoint,QwtAxisId)), SLOT(showContextMenu(QPoint,QwtAxisId)));
+    connect(canvasFilter, &CanvasEventFilter::hover, this, &Plot::hoverAxis);
+    connect(canvasFilter, &CanvasEventFilter::contextMenuRequested, this, &Plot::showContextMenu);
 }
 
 Plot::~Plot()
@@ -173,6 +174,28 @@ Plot::~Plot()
     delete axisZoom;
     delete canvasFilter;
     delete colors;
+}
+
+double Plot::screenToPlotCoordinates(Enums::AxisType axis, double value)
+{
+    return invTransform(::toQwtAxisType(axis), value);
+}
+
+double Plot::plotToScreenCoordinates(Enums::AxisType axis, double value)
+{
+    return transform(::toQwtAxisType(axis), value);
+}
+
+Range Plot::plotRange(Enums::AxisType axis)
+{
+    auto map = canvasMap(toQwtAxisType(axis));
+    return {map.s1(), map.s2()};
+}
+
+Range Plot::screenRange(Enums::AxisType axis)
+{
+    auto map = canvasMap(toQwtAxisType(axis));
+    return {map.p1(), map.p2()};
 }
 
 void Plot::updatePlottedIndexes()
@@ -216,18 +239,18 @@ void Plot::updateBounds()
         zoom->verticalScaleBoundsSlave->autoscale();
 }
 
-void Plot::setRightScale(QwtAxisId id, double min, double max)
+void Plot::setRightScale(Enums::AxisType id, double min, double max)
 {DDD;
     Q_UNUSED(id);
     Q_UNUSED(min);
     Q_UNUSED(max);
 }
 
-QMenu *Plot::createMenu(QwtAxisId axis, const QPoint &pos)
+QMenu *Plot::createMenu(Enums::AxisType axis, const QPoint &pos)
 {DDD;
     QMenu *menu = new QMenu(this);
 
-    if (axis == QwtAxis::XBottom) {
+    if (axis == Enums::AxisType::atBottom) {
         auto scm = new QMenu("Одинарный курсор", this);
         scm->addAction("Вертикальный", [=](){
             cursors->addSingleCursor(canvas()->mapFromGlobal(pos), Cursor::Style::Vertical);
@@ -252,9 +275,9 @@ QMenu *Plot::createMenu(QwtAxisId axis, const QPoint &pos)
 
         menu->addAction(xScaleIsLogarithmic?"Линейная шкала":"Логарифмическая шкала", [=](){
             if (xScaleIsLogarithmic)
-                setAxisScaleEngine(xBottomAxis, new QwtLinearScaleEngine());
+                setAxisScaleEngine(QwtAxis::XBottom, new QwtLinearScaleEngine());
             else
-                setAxisScaleEngine(xBottomAxis, new LogScaleEngine(2));
+                setAxisScaleEngine(QwtAxis::XBottom, new LogScaleEngine(2));
 
             xScaleIsLogarithmic = !xScaleIsLogarithmic;
         });
@@ -262,12 +285,11 @@ QMenu *Plot::createMenu(QwtAxisId axis, const QPoint &pos)
 
     // определяем, все ли графики представляют временные данные
     if (const auto type = m->curvesDataType();
-        type == Descriptor::TimeResponse && axis == QwtAxis::XBottom) {
+        type == Descriptor::TimeResponse && axis == Enums::AxisType::atBottom) {
         menu->addAction("Сохранить временной сегмент", [=](){
-            double xStart = canvasMap(axis).s1();
-            double xEnd = canvasMap(axis).s2();
+            auto range = plotRange(axis);
 
-            emit saveTimeSegment(m->plottedDescriptors(), xStart, xEnd);
+            emit saveTimeSegment(m->plottedDescriptors(), range.min, range.max);
         });
     }
 
@@ -275,11 +297,11 @@ QMenu *Plot::createMenu(QwtAxisId axis, const QPoint &pos)
     bool leftCurves = true;
     int *ax = 0;
 
-    if (axis == QwtAxis::YLeft && m->leftCurvesCount()>0) {
+    if (axis == Enums::AxisType::atLeft && m->leftCurvesCount()>0) {
         curvesEmpty = false;
         ax = &yValuesPresentationLeft;
     }
-    if (axis == QwtAxis::YRight && m->rightCurvesCount()>0) {
+    if (axis == Enums::AxisType::atRight && m->rightCurvesCount()>0) {
         curvesEmpty = false;
         ax = &yValuesPresentationRight;
         leftCurves = false;
@@ -324,7 +346,7 @@ QMenu *Plot::createMenu(QwtAxisId axis, const QPoint &pos)
             int presentation = act->data().toInt();
             m->setYValuesPresentation(leftCurves, presentation);
             *ax = presentation;
-            this->recalculateScale(axis == QwtAxis::YLeft);
+            this->recalculateScale(axis == Enums::AxisType::atLeft);
             this->update();
         });
 
@@ -336,43 +358,47 @@ QMenu *Plot::createMenu(QwtAxisId axis, const QPoint &pos)
         menu->addSection("Левая и правая оси");
         menu->addAction("Совместить нули левой и правой осей", [=](){
             // 1. Центруем нуль левой оси
-            QwtScaleMap leftMap = canvasMap(yLeft);
-            double s1 = leftMap.s1();
-            double s2 = leftMap.s2();
+            auto range = plotRange(Enums::AxisType::atLeft);
+            double s1 = range.min;
+            double s2 = range.max;
 
-            double p1 = leftMap.p1();
-            double p2 = leftMap.p2();
-            double delta = leftMap.invTransform((p1+p2)/2.0);
+            range = screenRange(Enums::AxisType::atLeft);
+
+            double p1 = range.min;
+            double p2 = range.max;
+            double delta = screenToPlotCoordinates(Enums::AxisType::atLeft, (p1+p2)/2.0);
 
             ZoomStack::zoomCoordinates coords;
-            coords.coords.insert(QwtAxis::YLeft, {s1-delta, s2-delta});
+            coords.coords.insert(Enums::AxisType::atLeft, {s1-delta, s2-delta});
 
             // 2. Центруем нуль правой оси
-            QwtScaleMap rightMap = canvasMap(yRight);
-            s1 = rightMap.s1();
-            s2 = rightMap.s2();
+            range = plotRange(Enums::AxisType::atRight);
+            s1 = range.min;
+            s2 = range.max;
 
-            p1 = rightMap.p1();
-            p2 = rightMap.p2();
-            delta = rightMap.invTransform((p1+p2)/2.0);
+            range = screenRange(Enums::AxisType::atRight);
 
-            coords.coords.insert(QwtAxis::YRight, {s1-delta, s2-delta});
+            p1 = range.min;
+            p2 = range.max;
+            delta = screenToPlotCoordinates(Enums::AxisType::atRight, (p1+p2)/2.0);
+
+            coords.coords.insert(Enums::AxisType::atRight, {s1-delta, s2-delta});
             zoom->addZoom(coords, true);
         });
         menu->addAction("Совместить диапазоны левой и правой осей", [=](){
-            QwtScaleMap leftMap = canvasMap(QwtAxis::YLeft);
-            double s1 = leftMap.s1();
-            double s2 = leftMap.s2();
+            auto range = plotRange(Enums::AxisType::atLeft);
+            double s1 = range.min;
+            double s2 = range.max;
 
-            QwtScaleMap rightMap = canvasMap(QwtAxis::YRight);
-            double s3 = rightMap.s1();
-            double s4 = rightMap.s2();
+            range = plotRange(Enums::AxisType::atRight);
+            double s3 = range.min;
+            double s4 = range.max;
             double s = std::min(s1,s3);
             double ss = std::min(s2,s4);
 
             ZoomStack::zoomCoordinates coords;
-            coords.coords.insert(QwtAxis::YLeft, {s, ss});
-            coords.coords.insert(QwtAxis::YRight, {s, ss});
+            coords.coords.insert(Enums::AxisType::atLeft, {s, ss});
+            coords.coords.insert(Enums::AxisType::atRight, {s, ss});
 
             zoom->addZoom(coords, true);
         });
@@ -506,7 +532,7 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
     }
 }
 
-void Plot::showContextMenu(const QPoint &pos, QwtAxisId axis)
+void Plot::showContextMenu(const QPoint &pos, Enums::AxisType axis)
 {DDD;
     if (!hasCurves()) return;
 
@@ -587,17 +613,17 @@ Curve *Plot::createCurve(const QString &legendName, Channel *channel)
     return new LineCurve(legendName, channel);
 }
 
-void Plot::prepareAxis(QwtAxisId axis)
+void Plot::prepareAxis(Enums::AxisType axis)
 {DDD;
-    if (!isAxisVisible(axis)) setAxisVisible(axis);
+    //if (!isAxisVisible(axis)) setAxisVisible(axis);
 }
 
-void Plot::setAxis(QwtAxisId axis, const QString &name)
+void Plot::setAxis(Enums::AxisType axis, const QString &name)
 {DDD;
     switch (axis) {
-        case QwtAxis::YLeft: yLeftName = name; break;
-        case QwtAxis::YRight: yRightName = name; break;
-        case QwtAxis::XBottom: xName = name; break;
+        case Enums::AxisType::atLeft: yLeftName = name; break;
+        case Enums::AxisType::atRight: yRightName = name; break;
+        case Enums::AxisType::atBottom: xName = name; break;
         default: break;
     }
 }
@@ -631,10 +657,10 @@ void Plot::updateAxesLabels()
     }
 }
 
-void Plot::setScale(QwtAxisId id, double min, double max, double step)
+void Plot::setScale(Enums::AxisType id, double min, double max, double step)
 {DDD;
     setRightScale(id, min, max);
-    setAxisScale(id, min, max, step);
+    setAxisScale(toQwtAxisType(id), min, max, step);
 }
 
 void Plot::removeLabels()
@@ -643,24 +669,24 @@ void Plot::removeLabels()
     replot();
 }
 
-void Plot::moveCurve(Curve *curve, int axis)
+void Plot::moveCurve(Curve *curve, Enums::AxisType axis)
 {DDD;
     if (type()==Plot::PlotType::Spectrogram) return;
 
-    if ((axis == QwtAxis::YLeft && canBePlottedOnLeftAxis(curve->channel))
-        || (axis == QwtAxis::YRight && canBePlottedOnRightAxis(curve->channel))) {
+    if ((axis == Enums::AxisType::atLeft && canBePlottedOnLeftAxis(curve->channel))
+        || (axis == Enums::AxisType::atRight && canBePlottedOnRightAxis(curve->channel))) {
         prepareAxis(axis);
         setAxis(axis, curve->channel->yName());
         curve->setYAxis(axis);
 
-        if (axis == QwtAxis::YRight && m->rightCurvesCount()==0)
+        if (axis == Enums::AxisType::atRight && m->rightCurvesCount()==0)
             yValuesPresentationRight = curve->channel->data()->yValuesPresentation();
-        if (axis == QwtAxis::YLeft && m->leftCurvesCount()==0)
+        if (axis == Enums::AxisType::atLeft && m->leftCurvesCount()==0)
             yValuesPresentationLeft = curve->channel->data()->yValuesPresentation();
 
         bool moved = m->moveToOtherAxis(curve);
         if (moved) {
-            curve->channel->data()->setYValuesPresentation(axis == QwtAxis::YRight ? yValuesPresentationRight
+            curve->channel->data()->setYValuesPresentation(axis == Enums::AxisType::atRight ? yValuesPresentationRight
                                                                                    : yValuesPresentationLeft);
         }
         emit curvesCountChanged();
@@ -679,12 +705,12 @@ void Plot::fixCurve(QwtPlotItem *curve)
     }
 }
 
-void Plot::hoverAxis(QwtAxisId axis, int hover)
+void Plot::hoverAxis(Enums::AxisType axis, int hover)
 {DDD;
-    if (ScaleDraw * scale = dynamic_cast<ScaleDraw*>(axisScaleDraw(axis))) {
+    if (ScaleDraw * scale = dynamic_cast<ScaleDraw*>(axisScaleDraw(toQwtAxisType(axis)))) {
         if (scale->hover != hover) {
             scale->hover = hover;
-            axisWidget(axis)->update();
+            axisWidget(toQwtAxisType(axis))->update();
         }
     }
 }
@@ -731,7 +757,7 @@ void Plot::createLegend()
     connect(leg, SIGNAL(markedForDelete(QwtPlotItem*)),this, SLOT(deleteCurveFromLegend(QwtPlotItem*)));
     connect(leg, &CheckableLegend::markedToMove, this, [this](QwtPlotItem*curve){
         if (Curve *c = dynamic_cast<Curve*>(curve))
-            moveCurve(c, c->yAxis() == QwtAxis::YLeft ? QwtAxis::YRight : QwtAxis::YLeft);
+            moveCurve(c, c->yAxis() == Enums::AxisType::atLeft ? Enums::AxisType::atRight : Enums::AxisType::atLeft);
     });
     connect(leg, SIGNAL(fixedChanged(QwtPlotItem*)),this, SLOT(fixCurve(QwtPlotItem*)));
     insertLegend(leg, QwtPlot::RightLegend);
@@ -786,10 +812,10 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
         ch->populate();
     }
 
-    setAxis(xBottomAxis, ch->xName());
-    prepareAxis(xBottomAxis);
+    setAxis(Enums::AxisType::atBottom, ch->xName());
+    prepareAxis(Enums::AxisType::atBottom);
 
-    QwtAxisId ax = yLeftAxis;
+    Enums::AxisType ax = Enums::AxisType::atLeft;
     // если графиков нет, по умолчанию будем строить амплитуды по первому добавляемому графику
     if (plotOnLeft && m->leftCurvesCount()==0) {
         yValuesPresentationLeft = ch->data()->yValuesPresentation();
@@ -801,9 +827,9 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     if (plotOnLeft) ch->data()->setYValuesPresentation(yValuesPresentationLeft);
     else ch->data()->setYValuesPresentation(yValuesPresentationRight);
 
-    ax = plotOnLeft ? yLeftAxis : yRightAxis;
+    ax = plotOnLeft ? Enums::AxisType::atLeft : Enums::AxisType::atRight;
 
-    axisWidget(yRightAxis)->setColorBarEnabled(false);
+    axisWidget(QwtAxis::YRight)->setColorBarEnabled(false);
 
     setAxis(ax, ch->yName());
     prepareAxis(ax);
@@ -840,27 +866,9 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     emit curvesCountChanged(); //->MainWindow.updateActions
 }
 
-Range Plot::xRange() const
+QString Plot::axisTitleText(Enums::AxisType id) const
 {DDD;
-    QwtScaleMap sm = canvasMap(QwtAxis::XBottom);
-    return {sm.s1(), sm.s2()};
-}
-
-Range Plot::yLeftRange() const
-{DDD;
-    QwtScaleMap sm = canvasMap(QwtAxis::YLeft);
-    return {sm.s1(), sm.s2()};
-}
-
-Range Plot::yRightRange() const
-{DDD;
-    QwtScaleMap sm = canvasMap(QwtAxis::YRight);
-    return {sm.s1(), sm.s2()};
-}
-
-QString Plot::axisTitleText(QwtAxisId id) const
-{DDD;
-    return axisTitle(id).text();
+    return axisTitle(toQwtAxisType(id)).text();
 }
 
 void Plot::switchLabelsVisibility()
@@ -1029,7 +1037,7 @@ void Plot::toggleAutoscale(int axis, bool toggled)
     }
 }
 
-void Plot::autoscale(int axis)
+void Plot::autoscale(Enums::AxisType axis)
 {DDD;
     zoom->autoscale(axis, type()==Plot::PlotType::Spectrogram);
 }
@@ -1130,4 +1138,25 @@ void Plot::dragLeaveEvent(QDragLeaveEvent *event)
     Q_UNUSED(event);
     leftOverlay->setVisibility(false);
     rightOverlay->setVisibility(false);
+}
+
+Enums::AxisType toAxisType(QwtAxisId id) {
+    switch (id) {
+        case QwtAxis::XTop : return Enums::AxisType::atTop;
+        case QwtAxis::XBottom : return Enums::AxisType::atBottom;
+        case QwtAxis::YLeft : return Enums::AxisType::atLeft;
+        case QwtAxis::YRight : return Enums::AxisType::atRight;
+    }
+    return Enums::AxisType::atInvalid;
+}
+
+QwtAxisId toQwtAxisType(Enums::AxisType type) {
+    switch (type) {
+        case Enums::AxisType::atTop: return QwtAxis::XTop;
+        case Enums::AxisType::atBottom: return QwtAxis::XBottom;
+        case Enums::AxisType::atLeft: return QwtAxis::YLeft;
+        case Enums::AxisType::atRight: return QwtAxis::YRight;
+        case Enums::AxisType::atInvalid: break;
+    }
+    return -1;
 }

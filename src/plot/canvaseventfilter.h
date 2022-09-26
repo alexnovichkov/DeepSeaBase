@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QPoint>
-#include "qwt_axis_id.h"
+#include "enums.h"
 #include <QtDebug>
 
 class Plot;
@@ -46,8 +46,8 @@ public:
     void setPicker(Picker *picker) {this->picker = picker;}
     void setPlotZoom(PlotZoom *zoom) {plotZoom = zoom;}
 signals:
-    void hover(QwtAxisId axis, int hover); //0=none, 1=first half, 2 = second half
-    void contextMenuRequested(const QPoint &pos, QwtAxisId axis);
+    void hover(Enums::AxisType axis, int hover); //0=none, 1=first half, 2 = second half
+    void contextMenuRequested(const QPoint &pos, Enums::AxisType axis);
 //    void moveCursor(Enums::Direction direction);
     void canvasDoubleClicked(const QPoint &pos);
 protected:
@@ -55,14 +55,14 @@ protected:
 private:
     void procMouseEvent(QEvent *event);
     void procKeyboardEvent(QEvent *event);
-    void procWheelEvent(QwtAxisId axis, QEvent *event);
-    void procAxisEvent(QwtAxisId axis, QEvent *event);
+    void procWheelEvent(Enums::AxisType axis, QEvent *event);
+    void procAxisEvent(Enums::AxisType axis, QEvent *event);
 
     void mousePress(QMouseEvent *event);
     void mouseMove(QMouseEvent *event);
     void mouseRelease(QMouseEvent *event);
     void mouseDoubleClick(QMouseEvent *event);
-    void applyWheel(QEvent *event, QwtAxisId axis);
+    void applyWheel(QEvent *event, Enums::AxisType axis);
 
     Plot *plot;
     ZoomStack *zoomStack; //отвечает за запоминание изменений масштаба

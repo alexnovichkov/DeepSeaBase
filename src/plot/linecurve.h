@@ -46,10 +46,10 @@ public:
     virtual QString title() const override;
     virtual void setTitle(const QString &title) override;
 
-    virtual QwtAxisId yAxis() const override;
-    virtual void setYAxis(QwtAxisId axis) override;
-    virtual QwtAxisId xAxis() const override;
-    virtual void setXAxis(QwtAxisId axis) override;
+    virtual Enums::AxisType yAxis() const override;
+    virtual void setYAxis(Enums::AxisType axis) override;
+    virtual Enums::AxisType xAxis() const override;
+    virtual void setXAxis(Enums::AxisType axis) override;
 
     virtual QPen pen() const override;
     virtual void updatePen() override;

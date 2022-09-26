@@ -8,6 +8,13 @@ namespace Enums {
         Up,
         Down
     };
+    enum class AxisType {
+        atLeft,
+        atRight,
+        atTop,
+        atBottom,
+        atInvalid
+    };
 }
 
 

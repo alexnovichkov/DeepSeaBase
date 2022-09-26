@@ -1,5 +1,4 @@
 #include "wheelzoom.h"
-#include "qwt_scale_widget.h"
 #include "logging.h"
 #include <QtMath>
 #include "plot.h"
@@ -9,7 +8,7 @@ WheelZoom::WheelZoom(Plot *plot) : QObject(plot), plot(plot)
 
 }
 
-ZoomStack::zoomCoordinates WheelZoom::applyWheel(QEvent *event, QwtAxisId axis)
+ZoomStack::zoomCoordinates WheelZoom::applyWheel(QEvent *event, Enums::AxisType axis)
 {DDD;
     QWheelEvent *wEvent = static_cast<QWheelEvent *>(event);
 
@@ -24,19 +23,19 @@ ZoomStack::zoomCoordinates WheelZoom::applyWheel(QEvent *event, QwtAxisId axis)
         double wheelSteps = wheelDelta/120.0;
         double factor = qPow(0.85, wheelSteps);
 
-        if (QwtAxis::isValid(axis)) {
-            int pos = QwtAxis::isXAxis(axis) ? wEvent->pos().x() : wEvent->pos().y();
+        if (axis != Enums::AxisType::atInvalid) {
+            int pos = (axis == Enums::AxisType::atBottom || axis == Enums::AxisType::atTop) ? wEvent->pos().x() : wEvent->pos().y();
             coords.coords.insert(axis, getCoords(axis, pos, factor));
         }
         else {
             int pos = wEvent->pos().x();
-            axis = QwtAxis::XBottom;
+            axis = Enums::AxisType::atBottom;
             coords.coords.insert(axis, getCoords(axis, pos, factor));
             pos = wEvent->pos().y();
-            axis = QwtAxis::YLeft;
+            axis = Enums::AxisType::atLeft;
             coords.coords.insert(axis, getCoords(axis, pos, factor));
             if (plot->type() != Plot::PlotType::Spectrogram) {
-                axis = QwtAxis::YRight;
+                axis = Enums::AxisType::atRight;
                 coords.coords.insert(axis, getCoords(axis, pos, factor));
             }
         }
@@ -44,12 +43,12 @@ ZoomStack::zoomCoordinates WheelZoom::applyWheel(QEvent *event, QwtAxisId axis)
     return coords;
 }
 
-QPointF WheelZoom::getCoords(QwtAxisId axis, int pos, double factor)
+QPointF WheelZoom::getCoords(Enums::AxisType axis, int pos, double factor)
 {DDD;
-    double dPos = plot->invTransform(axis, pos);
-    QwtScaleMap sm = plot->canvasMap(axis);
-    double lower = (sm.s1()-dPos)*factor + dPos;
-    double upper = (sm.s2()-dPos)*factor + dPos;
+    double dPos = plot->screenToPlotCoordinates(axis, pos);
+    auto range = plot->plotRange(axis);
+    double lower = (range.min-dPos)*factor + dPos;
+    double upper = (range.max-dPos)*factor + dPos;
     return QPointF(lower, upper);
 }
 

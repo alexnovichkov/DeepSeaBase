@@ -108,18 +108,18 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
         ch->populate();
     }
 
-    setAxis(xBottomAxis, ch->xName());
-    prepareAxis(xBottomAxis);
+    setAxis(Enums::AxisType::atBottom, ch->xName());
+    prepareAxis(Enums::AxisType::atBottom);
 
     yValuesPresentationLeft = DataHolder::ShowAsReals;
     yValuesPresentationRight = ch->data()->yValuesPresentation();
     ch->data()->setYValuesPresentation(yValuesPresentationRight);
-    setAxis(yLeftAxis, ch->zName());
-    prepareAxis(yLeftAxis);
+    setAxis(Enums::AxisType::atLeft, ch->zName());
+    prepareAxis(Enums::AxisType::atLeft);
     plotOnLeft = true;
-    setAxis(yRightAxis, ch->yName());
-    setAxisVisible(yRightAxis);
-    axisWidget(yRightAxis)->setColorBarEnabled(true);
+    setAxis(Enums::AxisType::atRight, ch->yName());
+    setAxisVisible(QwtAxis::YRight);
+    axisWidget(QwtAxis::YRight)->setColorBarEnabled(true);
 
 
     Curve *g = createCurve(ch->legendName(), ch);
@@ -127,9 +127,9 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 
     m->addCurve(g, plotOnLeft);
     g->fileNumber = fileIndex;
-    g->setYAxis(yLeftAxis);
+    g->setYAxis(Enums::AxisType::atLeft);
 
-    axisWidget(yRightAxis)->setColorMap(QwtInterval(ch->data()->yMin(-1), ch->data()->yMax(-1)),
+    axisWidget(QwtAxis::YRight)->setColorMap(QwtInterval(ch->data()->yMin(-1), ch->data()->yMax(-1)),
                                         ColorMapFactory::map(colorMap));
     if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(g)) {
         c->setColorMap(ColorMapFactory::map(colorMap));
@@ -184,23 +184,23 @@ bool Spectrogram::canBePlottedOnRightAxis(Channel *ch, QString *message) const
     return false;
 }
 
-void Spectrogram::setRightScale(QwtAxisId id, double min, double max)
+void Spectrogram::setRightScale(Enums::AxisType id, double min, double max)
 {DDD;
-    if (!m->isEmpty() && id == yRightAxis) {
+    if (!m->isEmpty() && id == Enums::AxisType::atRight) {
         if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(m->curve(0))) {
             c->setColorInterval(min, max);
-            axisWidget(id)->setColorMap(c->colorInterval(), ColorMapFactory::map(colorMap));
+            axisWidget(toQwtAxisType(id))->setColorMap(c->colorInterval(), ColorMapFactory::map(colorMap));
             c->setColorMap(ColorMapFactory::map(colorMap));
         }
     }
 }
 
-QMenu *Spectrogram::createMenu(QwtAxisId axis, const QPoint &pos)
+QMenu *Spectrogram::createMenu(Enums::AxisType axis, const QPoint &pos)
 {DDD;
     Q_UNUSED(pos);
     QMenu *menu = new QMenu(this);
 
-    if (axis == QwtAxis::XBottom) {
+    if (axis == Enums::AxisType::atBottom) {
         menu->addAction("Одинарный курсор", [=](){
             cursors->addSingleCursor(canvas()->mapFromGlobal(pos), Cursor::Style::Cross);
         });
@@ -210,9 +210,9 @@ QMenu *Spectrogram::createMenu(QwtAxisId axis, const QPoint &pos)
 
         menu->addAction(xScaleIsLogarithmic?"Линейная шкала":"Логарифмическая шкала", [=](){
             if (xScaleIsLogarithmic)
-                setAxisScaleEngine(xBottomAxis, new QwtLinearScaleEngine());
+                setAxisScaleEngine(QwtAxis::XBottom, new QwtLinearScaleEngine());
             else
-                setAxisScaleEngine(xBottomAxis, new LogScaleEngine(2));
+                setAxisScaleEngine(QwtAxis::XBottom, new LogScaleEngine(2));
 
             xScaleIsLogarithmic = !xScaleIsLogarithmic;
         });
@@ -222,7 +222,7 @@ QMenu *Spectrogram::createMenu(QwtAxisId axis, const QPoint &pos)
     bool leftCurves = true;
     int *ax = 0;
 
-    if (axis == QwtAxis::YRight && m->leftCurvesCount()>0) {
+    if (axis == Enums::AxisType::atRight && m->leftCurvesCount()>0) {
         curvesEmpty = false;
         ax = &yValuesPresentationRight;
     }
@@ -267,7 +267,7 @@ QMenu *Spectrogram::createMenu(QwtAxisId axis, const QPoint &pos)
             int presentation = act->data().toInt();
             m->setYValuesPresentation(leftCurves, presentation);
             *ax = presentation;
-            this->recalculateScale(axis == QwtAxis::YLeft);
+            this->recalculateScale(axis == Enums::AxisType::atLeft);
             this->update();
         });
 
@@ -275,7 +275,7 @@ QMenu *Spectrogram::createMenu(QwtAxisId axis, const QPoint &pos)
         menu->addAction(a);
     }
 
-    if (axis == QwtAxis::YRight && m->leftCurvesCount()>0) {
+    if (axis == Enums::AxisType::atRight && m->leftCurvesCount()>0) {
         if (SpectroCurve *c = dynamic_cast<SpectroCurve *>(m->curve(0, true))) {
             QAction *a = new QAction("Цветовая шкала");
             QMenu *am = new QMenu(this);
@@ -294,7 +294,7 @@ QMenu *Spectrogram::createMenu(QwtAxisId axis, const QPoint &pos)
                 int map = act->data().toInt();
                 if (map != colorMap) {
                     colorMap = map;
-                    axisWidget(yRightAxis)->setColorMap(c->colorInterval(), ColorMapFactory::map(map));
+                    axisWidget(QwtAxis::YRight)->setColorMap(c->colorInterval(), ColorMapFactory::map(map));
                     c->setColorMap(ColorMapFactory::map(map));
                     replot();
                 }

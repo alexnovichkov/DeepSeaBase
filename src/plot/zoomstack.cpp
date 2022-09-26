@@ -15,16 +15,15 @@
 #include "zoomstack.h"
 #include "plot.h"
 
-#include <qwt_scale_widget.h>
 #include "logging.h"
 
 #include <QKeyEvent>
 
 ZoomStack::ZoomStack(Plot *plot) : QObject(plot),  plot(plot)
 {DDD;
-    horizontalScaleBounds = new ScaleBounds(plot, QwtAxis::XBottom);
-    verticalScaleBounds = new ScaleBounds(plot, QwtAxis::YLeft);
-    verticalScaleBoundsSlave = new ScaleBounds(plot, QwtAxis::YRight);
+    horizontalScaleBounds = new ScaleBounds(plot,  Enums::AxisType::atBottom);
+    verticalScaleBounds = new ScaleBounds(plot, Enums::AxisType::atLeft);
+    verticalScaleBoundsSlave = new ScaleBounds(plot, Enums::AxisType::atRight);
 }
 
 ZoomStack::~ZoomStack()
@@ -43,16 +42,16 @@ void ZoomStack::addZoom(ZoomStack::zoomCoordinates coords, bool addToStack)
         zoomStack.push(coords);
     }
 
-    if (coords.coords.contains(QwtAxis::XBottom))
-        horizontalScaleBounds->set(coords.coords.value(QwtAxis::XBottom).x(),
-                                   coords.coords.value(QwtAxis::XBottom).y());
-    if (coords.coords.contains(QwtAxis::YLeft)) {
-        verticalScaleBounds->set(coords.coords.value(QwtAxis::YLeft).x(),
-                                 coords.coords.value(QwtAxis::YLeft).y());
+    if (coords.coords.contains(Enums::AxisType::atBottom))
+        horizontalScaleBounds->set(coords.coords.value(Enums::AxisType::atBottom).x(),
+                                   coords.coords.value(Enums::AxisType::atBottom).y());
+    if (coords.coords.contains(Enums::AxisType::atLeft)) {
+        verticalScaleBounds->set(coords.coords.value(Enums::AxisType::atLeft).x(),
+                                 coords.coords.value(Enums::AxisType::atLeft).y());
     }
-    if (coords.coords.contains(QwtAxis::YRight)/* && !qwtPlot->spectrogram*/) {
-        verticalScaleBoundsSlave->set(coords.coords.value(QwtAxis::YRight).x(),
-                                      coords.coords.value(QwtAxis::YRight).y());
+    if (coords.coords.contains(Enums::AxisType::atRight)/* && !qwtPlot->spectrogram*/) {
+        verticalScaleBoundsSlave->set(coords.coords.value(Enums::AxisType::atRight).x(),
+                                      coords.coords.value(Enums::AxisType::atRight).y());
     }
     plot->replot();
 }
@@ -67,34 +66,34 @@ void ZoomStack::zoomBack()
     }
     else {
         zoomCoordinates coords = zoomStack.top();
-        if (coords.coords.contains(QwtAxis::XBottom))
-            horizontalScaleBounds->set(coords.coords.value(QwtAxis::XBottom).x(),
-                                       coords.coords.value(QwtAxis::XBottom).y());
-        if (coords.coords.contains(QwtAxis::YLeft)) {
-            verticalScaleBounds->set(coords.coords.value(QwtAxis::YLeft).x(),
-                                     coords.coords.value(QwtAxis::YLeft).y());
+        if (coords.coords.contains(Enums::AxisType::atBottom))
+            horizontalScaleBounds->set(coords.coords.value(Enums::AxisType::atBottom).x(),
+                                       coords.coords.value(Enums::AxisType::atBottom).y());
+        if (coords.coords.contains(Enums::AxisType::atLeft)) {
+            verticalScaleBounds->set(coords.coords.value(Enums::AxisType::atLeft).x(),
+                                     coords.coords.value(Enums::AxisType::atLeft).y());
         }
-        if (coords.coords.contains(QwtAxis::YRight)) {
-            verticalScaleBoundsSlave->set(coords.coords.value(QwtAxis::YRight).x(),
-                                          coords.coords.value(QwtAxis::YRight).y());
+        if (coords.coords.contains(Enums::AxisType::atRight)) {
+            verticalScaleBoundsSlave->set(coords.coords.value(Enums::AxisType::atRight).x(),
+                                          coords.coords.value(Enums::AxisType::atRight).y());
         }
     }
     plot->replot();
 }
 
-void ZoomStack::moveToAxis(int axis, double min, double max)
+void ZoomStack::moveToAxis(Enums::AxisType axis, double min, double max)
 {DDD;
     switch (axis) {
-        case QwtAxis::XBottom:
+        case Enums::AxisType::atBottom:
             horizontalScaleBounds->add(min, max);
             if (!horizontalScaleBounds->isFixed()) horizontalScaleBounds->autoscale();
             break;
-        case QwtAxis::YLeft:
+        case Enums::AxisType::atLeft:
             verticalScaleBoundsSlave->removeToAutoscale(min, max);
             verticalScaleBounds->add(min, max);
             if (!verticalScaleBounds->isFixed()) verticalScaleBounds->autoscale();
             break;
-        case QwtAxis::YRight:
+        case Enums::AxisType::atRight:
             verticalScaleBounds->removeToAutoscale(min, max);
             verticalScaleBoundsSlave->add(min, max);
             if (!verticalScaleBoundsSlave->isFixed()) verticalScaleBoundsSlave->autoscale();
@@ -103,19 +102,19 @@ void ZoomStack::moveToAxis(int axis, double min, double max)
     }
 }
 
-void ZoomStack::autoscale(int axis, bool spectrogram)
+void ZoomStack::autoscale(Enums::AxisType axis, bool spectrogram)
 {DDD;
     switch (axis) {
-        case 0: // x axis
+        case Enums::AxisType::atBottom: // x axis
             horizontalScaleBounds->autoscale();
             break;
-        case 1: // y axis
+        case Enums::AxisType::atLeft: // y axis
             verticalScaleBounds->autoscale();
             break;
-        case 2: // y slave axis
+        case Enums::AxisType::atRight: // y slave axis
             verticalScaleBoundsSlave->autoscale();
             break;
-        case -1:
+        case Enums::AxisType::atInvalid:
             zoomStack.clear();
             horizontalScaleBounds->autoscale();
             verticalScaleBounds->autoscale();
@@ -134,7 +133,7 @@ void ZoomStack::autoscale(int axis, bool spectrogram)
     /**************************************************/
 
 // Конструктор
-ZoomStack::ScaleBounds::ScaleBounds(Plot *plot, QwtAxisId axis) : axis(axis), plot(plot)
+ZoomStack::ScaleBounds::ScaleBounds(Plot *plot, Enums::AxisType axis) : axis(axis), plot(plot)
 {DDD;
     fixed = false;  // границы еще не фиксированы
     min = 0.0;
@@ -172,7 +171,7 @@ void ZoomStack::ScaleBounds::add(double min, double max)
 
 void ZoomStack::ScaleBounds::set(double min, double max)
 {DDD;
-    plot->setScale(axis, min,max);
+    plot->setScale(axis, min, max);
 }
 
 // Восстановление исходных границ шкалы

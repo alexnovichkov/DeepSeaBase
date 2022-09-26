@@ -1,6 +1,6 @@
 #include "playpanel.h"
 #include "plot/plot.h"
-#include "qwt_plot_marker.h"
+
 #include "fileformats/filedescriptor.h"
 
 #include <QtWidgets>
@@ -162,7 +162,7 @@ void PlayPanel::setValue()
 
 void PlayPanel::moveTo(const QPoint &pos)
 {DDD;
-    const auto xVal = plot->invTransform(QwtAxis::XBottom, pos.x());
+    const auto xVal = plot->screenToPlotCoordinates(Enums::AxisType::atBottom, pos.x());
     positions[ch] = xVal;
     cursor->moveTo({xVal, 0}, false);
 }

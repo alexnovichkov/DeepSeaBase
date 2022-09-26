@@ -2,6 +2,8 @@
 #define QAXISZOOMSVC_H
 
 #include "zoomstack.h"
+#include "enums.h"
+#include <QCursor>
 
 class Plot;
 
@@ -11,14 +13,14 @@ class AxisZoom : public QObject
 
 public:
     explicit AxisZoom(Plot *plot);
-    void startVerticalAxisZoom(QMouseEvent *event, QwtAxisId axis);
-    void startHorizontalAxisZoom(QMouseEvent *event, QwtAxisId axis);
-    ZoomStack::zoomCoordinates proceedAxisZoom(QMouseEvent *, QwtAxisId axis);
-    ZoomStack::zoomCoordinates endAxisZoom(QMouseEvent *, QwtAxisId axis);
+    void startVerticalAxisZoom(QMouseEvent *event, Enums::AxisType axis);
+    void startHorizontalAxisZoom(QMouseEvent *event, Enums::AxisType axis);
+    ZoomStack::zoomCoordinates proceedAxisZoom(QMouseEvent *, Enums::AxisType axis);
+    ZoomStack::zoomCoordinates endAxisZoom(QMouseEvent *, Enums::AxisType axis);
 signals:
     void axisClicked(const QPointF &value, bool second);
-    void needsAutoscale(QwtAxisId axis);
-    void hover(QwtAxisId axis, int hover); //0=none, 1=first half, 2 = second half
+    void needsAutoscale(Enums::AxisType axis);
+    void hover(Enums::AxisType axis, int hover); //0=none, 1=first half, 2 = second half
 
 private:
     // Значения типа текущего преобразования графика
@@ -52,7 +54,7 @@ private:
 
     // ограничение нового размера шкалы
     double limitScale(double,double);
-    ZoomStack::zoomCoordinates axisApplyMove(QPoint, QwtAxisId);
+    ZoomStack::zoomCoordinates axisApplyMove(QPoint, Enums::AxisType);
 
     ConvType ct = ConvType::ctNone;
 };

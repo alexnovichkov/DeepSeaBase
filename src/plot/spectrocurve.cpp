@@ -3,7 +3,7 @@
 #include "qwt_text.h"
 #include "pointlabel.h"
 #include "qwt_legend_data.h"
-#include "qwt_plot.h"
+#include "plot.h"
 #include "qwt_scale_map.h"
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
@@ -38,28 +38,28 @@ void SpectroCurve::setTitle(const QString &title)
     QwtPlotSpectrogram::setTitle(title);
 }
 
-QwtAxisId SpectroCurve::yAxis() const
+Enums::AxisType SpectroCurve::yAxis() const
 {DDD;
-    return QwtPlotSpectrogram::yAxis();
+    return toAxisType(QwtPlotSpectrogram::yAxis());
 }
 
-void SpectroCurve::setYAxis(QwtAxisId axis)
+void SpectroCurve::setYAxis(Enums::AxisType axis)
 {DDD;
-    QwtPlotSpectrogram::setYAxis(axis);
+    QwtPlotSpectrogram::setYAxis(toQwtAxisType(axis));
     foreach (PointLabel *l, labels)
-        l->setYAxis(axis);
+        l->setYAxis(toQwtAxisType(axis));
 }
 
-QwtAxisId SpectroCurve::xAxis() const
+Enums::AxisType SpectroCurve::xAxis() const
 {DDD;
-    return QwtPlotSpectrogram::xAxis();
+    return toAxisType(QwtPlotSpectrogram::xAxis());
 }
 
-void SpectroCurve::setXAxis(QwtAxisId axis)
+void SpectroCurve::setXAxis(Enums::AxisType axis)
 {DDD;
-    QwtPlotSpectrogram::setXAxis(axis);
+    QwtPlotSpectrogram::setXAxis(toQwtAxisType(axis));
     foreach (PointLabel *l, labels)
-        l->setXAxis(axis);
+        l->setXAxis(toQwtAxisType(axis));
 }
 
 QPen SpectroCurve::pen() const
@@ -82,17 +82,11 @@ SamplePoint SpectroCurve::samplePoint(SelectedPoint point) const
 
 SelectedPoint SpectroCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
 {DDD;
-    Q_UNUSED(dist1);
-    Q_UNUSED(dist2);
+    int indexX = channel->data()->nearest(m_plot->screenToPlotCoordinates(xAxis(), pos.x()));
+    int indexZ = channel->data()->nearestZ(m_plot->screenToPlotCoordinates(yAxis(), pos.y()));
 
-    const QwtScaleMap xMap = plot()->canvasMap( xAxis() );
-    const QwtScaleMap yMap = plot()->canvasMap( yAxis() );
-
-    int indexX = channel->data()->nearest(xMap.invTransform(pos.x()));
-    int indexZ = channel->data()->nearestZ(yMap.invTransform(pos.y()));
-
-    if (dist1 && indexX != -1) *dist1 = qAbs(xMap.transform(channel->data()->xValue(indexX)) - pos.x());
-    if (dist2 && indexZ != -1) *dist2 = qAbs(yMap.transform(channel->data()->zValue(indexZ)) - pos.y());
+    if (dist1 && indexX != -1) *dist1 = qAbs(m_plot->plotToScreenCoordinates(xAxis(), channel->data()->xValue(indexX)) - pos.x());
+    if (dist2 && indexZ != -1) *dist2 = qAbs(m_plot->plotToScreenCoordinates(yAxis(), channel->data()->zValue(indexZ)) - pos.y());
 
     return {indexX, indexZ};
 }

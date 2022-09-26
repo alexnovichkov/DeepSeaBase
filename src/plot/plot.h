@@ -53,7 +53,10 @@ struct Range {
 
 #include <QWidget>
 
+#include "enums.h"
 
+Enums::AxisType toAxisType(QwtAxisId id);
+QwtAxisId toQwtAxisType(Enums::AxisType type);
 
 class Plot : public QwtPlot
 {
@@ -74,18 +77,20 @@ public:
         LabelInteraction
     };
 
+
     explicit Plot(PlotType type, QWidget *parent = 0);
     virtual ~Plot();
 
     PlotModel *model() {return m;}
     PlotType type() const {return plotType;}
 
+    double screenToPlotCoordinates(Enums::AxisType axis, double value);
+    double plotToScreenCoordinates(Enums::AxisType axis, double value);
+    Range plotRange(Enums::AxisType axis);
+    Range screenRange(Enums::AxisType axis);
+
     virtual QWidget *toolBarWidget() {return nullptr;}
     virtual void updateActions(int filesCount, int channelsCount) {Q_UNUSED(filesCount); Q_UNUSED(channelsCount);}
-
-    QwtAxisId xBottomAxis{QwtAxis::XBottom};
-    QwtAxisId yLeftAxis{QwtAxis::YLeft};
-    QwtAxisId yRightAxis{QwtAxis::YRight};
 
     bool sergeiMode = false;
     bool xScaleIsLogarithmic = false; //false = linear, true = logarithmic
@@ -94,10 +99,8 @@ public:
 
     bool hasCurves() const;
     int curvesCount(int type=-1) const;
-    Range xRange() const;
-    Range yLeftRange() const;
-    Range yRightRange() const;
-    QString axisTitleText(QwtAxisId id) const;
+
+    QString axisTitleText(Enums::AxisType id) const;
 
     //default implementation returns pos as QwtText,
     //reimplemented in spectrograms to add Z coordinate
@@ -128,16 +131,16 @@ public:
     void deleteSelectedCurve(Selectable *selected);
 
     void switchLabelsVisibility();
-    void prepareAxis(QwtAxisId axis);
-    void setAxis(QwtAxisId axis, const QString &name);
+    void prepareAxis(Enums::AxisType axis);
+    void setAxis(Enums::AxisType axis, const QString &name);
 
-    void setScale(QwtAxisId id, double min, double max, double step = 0);
+    void setScale(Enums::AxisType id, double min, double max, double step = 0);
     void removeLabels();
     void setInteractionMode(InteractionMode mode);
     void switchInteractionMode();
     void switchTrackingCursor();
     void toggleAutoscale(int axis, bool toggled);
-    void autoscale(int axis = -1);
+    void autoscale(Enums::AxisType axis = Enums::AxisType::atInvalid);
     /**
      * @brief recalculateScale пересчитывает границы графиков,
      * отдельно для левой или правой вертикальной оси
@@ -185,8 +188,8 @@ protected:
     virtual void updateBounds();
     //default implementation does nothing
     //reimplemented in spectrogram
-    virtual void setRightScale(QwtAxisId id, double min, double max);
-    virtual QMenu *createMenu(QwtAxisId axis, const QPoint &pos);
+    virtual void setRightScale(Enums::AxisType id, double min, double max);
+    virtual QMenu *createMenu(Enums::AxisType axis, const QPoint &pos);
     virtual bool canBePlottedOnLeftAxis(Channel *ch, QString *message=nullptr) const;
     virtual bool canBePlottedOnRightAxis(Channel *ch, QString *message=nullptr) const;
 
@@ -199,7 +202,7 @@ public slots:
     void print();
     void updateLegends();
 
-    void moveCurve(Curve *curve, int axis);
+    void moveCurve(Curve *curve, Enums::AxisType axis);
     void deleteAllCurves(bool forceDeleteFixed = false);
 signals:
     //испускаем, когда удаляем или добавляем графики
@@ -219,9 +222,9 @@ signals:
 private slots:
     void editLegendItem(QwtPlotItem *item);
     void deleteCurveFromLegend(QwtPlotItem *item);
-    void showContextMenu(const QPoint &pos, QwtAxisId axis);
+    void showContextMenu(const QPoint &pos, Enums::AxisType axis);
     void fixCurve(QwtPlotItem* curve);
-    void hoverAxis(QwtAxisId axis, int hover);
+    void hoverAxis(Enums::AxisType axis, int hover);
 private:
     QColor getNextColor();
 

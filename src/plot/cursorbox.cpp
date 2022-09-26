@@ -7,7 +7,6 @@
 #include "curve.h"
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
-#include <QwtText>
 #include <QTreeWidget>
 #include <QVBoxLayout>
 #include <QHeaderView>

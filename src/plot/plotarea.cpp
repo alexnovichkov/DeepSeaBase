@@ -369,7 +369,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
      double minX = channel->data()->xMin();
      double maxX = channel->data()->xMax();
 
-     Range range = m_plot->xRange();
+     Range range = m_plot->plotRange(Enums::AxisType::atBottom);
 
      for (int i=1; i<size; ++i) {
          Channel *ch = m_plot->model()->curve(i)->channel;
@@ -630,7 +630,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
              Curve *curve = m_plot->model()->curve(i);
              QAxObject * serie = series->querySubObject("Item (int)", i+1);
              if (serie) {
-                 if (curve->yAxis()==QwtAxis::YRight) {
+                 if (curve->yAxis()==Enums::AxisType::atRight) {
                      serie->setProperty("AxisGroup", 2);
                      addRightAxis = true;
                  }
@@ -640,7 +640,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          }
          if (addRightAxis) {
              QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&,const QVariant&)", 2,2);
-             if (yAxis) setAxis(yAxis, stripHtml(m_plot->axisTitleText(m_plot->yRightAxis)));
+             if (yAxis) setAxis(yAxis, stripHtml(m_plot->axisTitleText(Enums::AxisType::atRight)));
              delete yAxis;
          }
 
@@ -648,7 +648,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          // добавляем подписи осей
          QAxObject *xAxis = chart->querySubObject("Axes(const QVariant&)", 1);
          if (xAxis) {
-             setAxis(xAxis, stripHtml(m_plot->axisTitleText(QwtAxis::XBottom)));
+             setAxis(xAxis, stripHtml(m_plot->axisTitleText(Enums::AxisType::atBottom)));
              xAxis->setProperty("MaximumScale", range.max);
              xAxis->setProperty("MinimumScale", int(range.min/10)*10);
 //             if (zeroStepDetected) {
@@ -660,7 +660,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 
          QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&)", 2);
          if (yAxis) {
-             setAxis(yAxis, stripHtml(m_plot->axisTitleText(QwtAxis::YLeft)));
+             setAxis(yAxis, stripHtml(m_plot->axisTitleText(Enums::AxisType::atLeft)));
              yAxis->setProperty("CrossesAt", -1000);
          }
          delete yAxis;

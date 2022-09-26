@@ -79,10 +79,10 @@ ZoomStack::zoomCoordinates PlotZoom::endZoom(QMouseEvent *mEvent)
         double ySMin = plot->invTransform(pos,rightmostY);
         double ySMax = plot->invTransform(pos,leftmostY);
 
-        coords.coords.insert(QwtAxis::XBottom, {xMin, xMax});
-        coords.coords.insert(QwtAxis::YLeft, {yMin, yMax});
+        coords.coords.insert(Enums::AxisType::atBottom, {xMin, xMax});
+        coords.coords.insert(Enums::AxisType::atLeft, {yMin, yMax});
         if (plot->type() != Plot::PlotType::Spectrogram)
-            coords.coords.insert(QwtAxis::YRight, {ySMin, ySMax});
+            coords.coords.insert(Enums::AxisType::atRight, {ySMin, ySMax});
     }
     return coords;
 }

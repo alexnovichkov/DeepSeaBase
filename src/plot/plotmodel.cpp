@@ -287,7 +287,7 @@ QVariant PlotModel::data(const QModelIndex &index, int role) const
 //                        s.append(corr);
                     return s;
                 }
-                case PlotAxisColumn: return c->yAxis()==QwtAxis::YLeft?"Левая":"Правая";
+                case PlotAxisColumn: return c->yAxis() == Enums::AxisType::atLeft?"Левая":"Правая";
                 case PlotCorrectionColumn:
                     return c->channel->data()->hasCorrection()
                             ? c->channel->data()->correctionString()
