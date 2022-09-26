@@ -72,7 +72,7 @@ SOURCES += main.cpp\
     plot/cursorlabel.cpp \
     plot/cursors.cpp \
     plot/cursorsingle.cpp \
-    plot/qcustomplot.cpp \
+    plot/qcustomplot/qcustomplot.cpp \
     plot/canvaseventfilter.cpp \
     plot/clearablespinbox.cpp \
     plot/filterpointmapper.cpp \
@@ -87,6 +87,7 @@ SOURCES += main.cpp\
     plot/timeplot.cpp \
     plot/trackingcursor.cpp \
     plot/zoomstack.cpp \
+    plot/qcustomplot/graph2d.cpp \
     plotdockfactory.cpp \
     settings.cpp \
     sortabletreewidgetitem.cpp \
@@ -196,7 +197,9 @@ HEADERS  += mainwindow.h \
     plot/cursorlabel.h \
     plot/cursors.h \
     plot/cursorsingle.h \
-    plot/qcustomplot.h \
+    plot/qcustomplot/qcustomplot.h \
+    plot/qcustomplot/graph2d.h \
+    plot/qcustomplot/abstractdata2d.h \
     plot/canvaseventfilter.h \
     plot/clearablespinbox.h \
     plot/filterpointmapper.h \

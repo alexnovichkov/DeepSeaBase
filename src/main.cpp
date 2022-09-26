@@ -27,6 +27,23 @@ int main(int argc, char *argv[])
 
     Application a(argc, argv);
 
+//    QFile f("K://err");
+
+//    if (f.open(QFile::ReadOnly)) {
+
+//    QDataStream r(&f);
+//    r.setByteOrder(QDataStream::LittleEndian);
+
+//    QByteArray descriptionBuffer = r.device()->readAll();
+
+//    QJsonParseError error;
+//    QJsonDocument doc = QJsonDocument::fromJson(descriptionBuffer, &error);
+//    if (error.error != QJsonParseError::NoError) {
+//        qDebug()<<error.errorString() << error.offset;
+//        //return 0;
+//    }
+//    }
+
     QPixmap pixmap(":/icons/splash.png");
     QSplashScreen splash(pixmap);
     splash.show();

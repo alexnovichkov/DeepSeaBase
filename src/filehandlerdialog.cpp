@@ -30,6 +30,7 @@ FileHandlerDialog::FileHandlerDialog(FileHandler *fileHandler, QWidget *parent)
 
     connect(tree->selectionModel(), &QItemSelectionModel::selectionChanged, [=](const QItemSelection &selected, const QItemSelection &deselected)
     {
+        Q_UNUSED(deselected);
         removeFileAction->setDisabled(selected.isEmpty());
     });
 
