@@ -161,13 +161,13 @@ void Data94File::read()
         qDebug()<<"не удалось прочитать описание файла";
         return;
     }
+
     QJsonParseError error;
     QJsonDocument doc = QJsonDocument::fromJson(descriptionBuffer, &error);
     if (error.error != QJsonParseError::NoError) {
-        qDebug()<<error.errorString() << error.offset;
-        return;
+        qDebug()<<"не удалось распознать описание файла:" << error.errorString() << error.offset;
     }
-    setDataDescription(DataDescription::fromJson(doc.object()));
+    else setDataDescription(DataDescription::fromJson(doc.object()));
 
     //дальше - каналы
     quint32 channelsCount;
@@ -537,22 +537,18 @@ void Data94Channel::read(QDataStream &r)
         qDebug()<<"не удалось прочитать описание канала";
         return;
     }
-//    qDebug() << descriptionBuffer;
+
     QJsonParseError error;
     QJsonDocument doc = QJsonDocument::fromJson(descriptionBuffer, &error);
     if (error.error != QJsonParseError::NoError) {
-        qDebug()<<error.errorString() << error.offset;
-        return;
+        qDebug()<<"не удалось распознать описание канала:"<<error.errorString() << error.offset;
     }
-    dataDescription() = DataDescription::fromJson(doc.object());
+    else dataDescription() = DataDescription::fromJson(doc.object());
 
     //reading xAxisBlock
     xAxisBlock.read(r);
-//    qDebug()<<"xAxisBlock"<<xAxisBlock;
-
     //reading zAxisBlock
     zAxisBlock.read(r);
-//    qDebug()<<"zAxisBlock"<<zAxisBlock;
 
     quint32 valueFormat;
     r >> valueFormat;
