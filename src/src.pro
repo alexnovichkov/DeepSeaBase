@@ -67,11 +67,8 @@ SOURCES += main.cpp\
     plot/cursor.cpp \
     plot/cursorbox.cpp \
     plot/cursordialog.cpp \
-    plot/cursordouble.cpp \
-    plot/cursorharmonic.cpp \
     plot/cursorlabel.cpp \
     plot/cursors.cpp \
-    plot/cursorsingle.cpp \
     plot/qcustomplot/qcpplot.cpp \
     plot/qcustomplot/qcustomplot.cpp \
     plot/canvaseventfilter.cpp \
@@ -83,7 +80,13 @@ SOURCES += main.cpp\
     plot/plotarea.cpp \
     plot/plotinfooverlay.cpp \
     plot/plotmodel.cpp \
+    plot/qwtbarcurve.cpp \
+    plot/qwtcursordouble.cpp \
+    plot/qwtcursorharmonic.cpp \
+    plot/qwtcursorsingle.cpp \
+    plot/qwtlinecurve.cpp \
     plot/qwtplotimpl.cpp \
+    plot/qwtspectrocurve.cpp \
     plot/scaledraw.cpp \
     plot/spectrogram.cpp \
     plot/timeplot.cpp \
@@ -147,8 +150,6 @@ SOURCES += main.cpp\
     headerview.cpp \
     htmldelegate.cpp \
     plot/curve.cpp \
-    plot/linecurve.cpp \
-    plot/barcurve.cpp \
     plot/plot.cpp \
     plot/legend.cpp \
     plot/logscaleengine.cpp \
@@ -162,7 +163,6 @@ SOURCES += main.cpp\
     plot/plottracker.cpp \
     wavexportdialog.cpp \
     wavexporter.cpp \
-    plot/spectrocurve.cpp \
     plot/colormapfactory.cpp \
     fancylineedit.cpp
 
@@ -193,11 +193,8 @@ HEADERS  += mainwindow.h \
     plot/cursor.h \
     plot/cursorbox.h \
     plot/cursordialog.h \
-    plot/cursordouble.h \
-    plot/cursorharmonic.h \
     plot/cursorlabel.h \
     plot/cursors.h \
-    plot/cursorsingle.h \
     plot/plotinterface.h \
     plot/qcustomplot/qcpplot.h \
     plot/qcustomplot/qcustomplot.h \
@@ -212,7 +209,13 @@ HEADERS  += mainwindow.h \
     plot/plotarea.h \
     plot/plotinfooverlay.h \
     plot/plotmodel.h \
+    plot/qwtbarcurve.h \
+    plot/qwtcursordouble.h \
+    plot/qwtcursorharmonic.h \
+    plot/qwtcursorsingle.h \
+    plot/qwtlinecurve.h \
     plot/qwtplotimpl.h \
+    plot/qwtspectrocurve.h \
     plot/scaledraw.h \
     plot/selectable.h \
     plot/spectrogram.h \
@@ -280,8 +283,6 @@ HEADERS  += mainwindow.h \
     plot/plot.h \
     plot/legend.h \
     plot/curve.h \
-    plot/linecurve.h \
-    plot/barcurve.h \
     plot/logscaleengine.h \
     plot/pointlabel.h \
     plot/plotzoom.h \
@@ -294,7 +295,6 @@ HEADERS  += mainwindow.h \
     wavexportdialog.h \
     wavexporter.h \
     longoperation.h \
-    plot/spectrocurve.h \
     plot/colormapfactory.h \
     fancylineedit.h \
     plugins/convertplugin.h

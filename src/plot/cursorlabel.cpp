@@ -13,6 +13,7 @@
 //#include <QMenu>
 //#include <app.h>
 #include "logging.h"
+#include "qwtplotimpl.h"
 
 CursorLabel::CursorLabel(Plot *parent, TrackingCursor *cursor)
     : QwtPlotItem(), m_plot{parent}, m_cursor{cursor}
@@ -49,15 +50,13 @@ void CursorLabel::updateLabel(bool showValues)
     if (showValues && m_axis != Axis::YAxis) {
         auto list = m_plot->model()->curves();
         for (auto curve: list) {
-            if (curve->xAxis() == toAxisType(xAxis())) {
-                bool success = false;
-                auto val = curve->channel->data()->YforXandZ(m_cursor->xValue(), m_cursor->yValue(), success);
-                QString s = QString::number(success?val:qQNaN(), f, m_cursor->parent->digits());
+            bool success = false;
+            auto val = curve->channel->data()->YforXandZ(m_cursor->xValue(), m_cursor->yValue(), success);
+            QString s = QString::number(success?val:qQNaN(), f, m_cursor->parent->digits());
 
-                label << QString("<font color=%1>%2</font>")
-                         .arg(curve->pen().color().name())
-                         .arg(s);
-            }
+            label << QString("<font color=%1>%2</font>")
+                     .arg(curve->pen().color().name())
+                     .arg(s);
         }
     }
     QString s = QString::number(m_axis==Axis::XAxis?m_cursor->xValue():m_cursor->yValue(), f, m_cursor->parent->digits());
@@ -100,14 +99,13 @@ bool CursorLabel::underMouse(const QPoint &pos, double *distanceX, double *dista
     double yval = 0.0;
     switch (m_axis) {
         case Axis::XAxis:
-            xval = m_plot->transform(m_cursor->xAxis(), m_cursor->xValue());
-            yval = xAxis() == QwtAxis::XBottom ? m_plot->canvasMap(QwtAxis::YLeft).p1()
-                                               : m_plot->canvasMap(QwtAxis::YLeft).p2();
+            xval = m_plot->plotToScreenCoordinates(Enums::AxisType::atBottom, m_cursor->xValue());
+            yval = m_plot->screenRange(Enums::AxisType::atLeft).min;
             break;
         case Axis::YAxis:
-            yval = m_plot->transform(m_cursor->yAxis(), m_cursor->yValue());
-            xval = yAxis() == QwtAxis::YLeft ? m_plot->canvasMap(QwtAxis::XBottom).p1()
-                                             : m_plot->canvasMap(QwtAxis::XBottom).p2();
+            yval = m_plot->plotToScreenCoordinates(toAxisType(m_cursor->yAxis()), m_cursor->yValue());
+            auto range = m_plot->screenRange(Enums::AxisType::atBottom);
+            xval = yAxis() == QwtAxis::YLeft ? range.min : range.max;
             break;
     }
 

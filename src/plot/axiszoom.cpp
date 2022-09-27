@@ -19,8 +19,9 @@
 #include "logging.h"
 #include <QtMath>
 #include "plot.h"
+#include "qwtplotimpl.h"
 
-AxisZoom::AxisZoom(Plot *plot) :  QObject(plot), plot(plot)
+AxisZoom::AxisZoom(QwtPlotImpl *plot) :  QObject(plot), plot(plot)
 {DDD;
 
 }

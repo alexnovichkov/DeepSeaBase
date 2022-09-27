@@ -1,4 +1,4 @@
-#include "linecurve.h"
+#include "qwtlinecurve.h"
 
 #include "qwt_point_mapper.h"
 #include "qwt_scale_map.h"
@@ -12,8 +12,9 @@
 #include <QPainter>
 #include "pointlabel.h"
 #include "filterpointmapper.h"
+#include "qwtplotimpl.h"
 
-LineCurve::LineCurve(const QString &title, Channel *channel) :  QwtPlotCurve(title),
+QwtLineCurve::QwtLineCurve(const QString &title, Channel *channel) :  QwtPlotCurve(title),
     Curve(title, channel)
 {DDD;
     type = Type::Line;
@@ -31,17 +32,17 @@ LineCurve::LineCurve(const QString &title, Channel *channel) :  QwtPlotCurve(tit
     mapper->setFlag(QwtPointMapper::WeedOutIntermediatePoints, noDuplicates);
 }
 
-LineCurve::~LineCurve()
+QwtLineCurve::~QwtLineCurve()
 {DDD;
     delete mapper;
 }
 
-void LineCurve::setMapper()
+void QwtLineCurve::setMapper()
 {DDD;
     mapper = new FilterPointMapper(channel->type()==Descriptor::TimeResponse);
 }
 
-void LineCurve::drawLines(QPainter *painter,
+void QwtLineCurve::drawLines(QPainter *painter,
                       const QwtScaleMap &xMap, const QwtScaleMap &yMap,
                       const QRectF &canvasRect,
                       int from, int to) const
@@ -81,74 +82,74 @@ void LineCurve::drawLines(QPainter *painter,
     painter->restore();
 }
 
-bool LineCurve::doCloseLine() const
+bool QwtLineCurve::doCloseLine() const
 {DDD;
     return mapper->simplified && channel->type()==Descriptor::TimeResponse;
 }
 
-SamplePoint LineCurve::samplePoint(SelectedPoint point) const
+SamplePoint QwtLineCurve::samplePoint(SelectedPoint point) const
 {DDD;
     auto s = QwtPlotCurve::sample(point.x);
     return {s.x(), s.y(), qQNaN()};
 }
 
-void LineCurve::resetCashedData()
+void QwtLineCurve::resetCashedData()
 {DDD;
     mapper->cashedPolyline.clear();
 }
 
-void LineCurve::attachTo(QwtPlot *plot)
+void QwtLineCurve::attachTo(QwtPlot *plot)
 {DDD;
     QwtPlotCurve::attach(plot);
 }
 
-QString LineCurve::title() const
+QString QwtLineCurve::title() const
 {DDD;
     return QwtPlotCurve::title().text();
 }
 
-void LineCurve::setTitle(const QString &title)
+void QwtLineCurve::setTitle(const QString &title)
 {DDD;
     QwtPlotCurve::setTitle(title);
 }
 
-Enums::AxisType LineCurve::yAxis() const
+Enums::AxisType QwtLineCurve::yAxis() const
 {DDD;
     return toAxisType(QwtPlotCurve::yAxis());
 }
 
-void LineCurve::setYAxis(Enums::AxisType axis)
+void QwtLineCurve::setYAxis(Enums::AxisType axis)
 {DDD;
     QwtPlotCurve::setYAxis(toQwtAxisType(axis));
     foreach (PointLabel *l, labels)
         l->setYAxis(toQwtAxisType(axis));
 }
 
-Enums::AxisType LineCurve::xAxis() const
+Enums::AxisType QwtLineCurve::xAxis() const
 {DDD;
     return toAxisType(QwtPlotCurve::xAxis());
 }
 
-void LineCurve::setXAxis(Enums::AxisType axis)
+void QwtLineCurve::setXAxis(Enums::AxisType axis)
 {DDD;
     QwtPlotCurve::setXAxis(toQwtAxisType(axis));
     foreach (PointLabel *l, labels)
         l->setXAxis(toQwtAxisType(axis));
 }
 
-QPen LineCurve::pen() const
+QPen QwtLineCurve::pen() const
 {DDD;
     return QwtPlotCurve::pen();
 }
 
-void LineCurve::updatePen()
+void QwtLineCurve::updatePen()
 {DDD;
     auto p = oldPen;
     if (selected()) p.setWidth(2);
     QwtPlotCurve::setPen(p);
 }
 
-QList<QwtLegendData> LineCurve::legendData() const
+QList<QwtLegendData> QwtLineCurve::legendData() const
 {DDD;
     QList<QwtLegendData> result = QwtPlotCurve::legendData();
     QwtLegendData &data = result[0];
@@ -156,7 +157,7 @@ QList<QwtLegendData> LineCurve::legendData() const
     return result;
 }
 
-void LineCurve::updateSelection(SelectedPoint point)
+void QwtLineCurve::updateSelection(SelectedPoint point)
 {DDD;
     Curve::updateSelection(point);
     if (selected()) setZ(1000);
@@ -204,7 +205,7 @@ double LineData::xBegin() const
 }
 
 
-SelectedPoint LineCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
+SelectedPoint QwtLineCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
 {DDD;
     int index = -1;
 
@@ -238,7 +239,7 @@ SelectedPoint LineCurve::closest(const QPoint &pos, double *dist1, double *dist2
     return {index, 0};
 }
 
-void LineCurve::setVisible(bool visible)
+void QwtLineCurve::setVisible(bool visible)
 {DDD;
     QwtPlotItem::setVisible(visible);
     for (PointLabel *label: qAsConst(labels)) {
@@ -246,7 +247,7 @@ void LineCurve::setVisible(bool visible)
     }
 }
 
-TimeCurve::TimeCurve(const QString &title, Channel *channel) : LineCurve(title, channel)
+TimeCurve::TimeCurve(const QString &title, Channel *channel) : QwtLineCurve(title, channel)
 {DDD;
 
 }

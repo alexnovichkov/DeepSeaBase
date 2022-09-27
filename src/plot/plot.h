@@ -13,30 +13,15 @@ class Curve;
 class Channel;
 class FileDescriptor;
 class ZoomStack;
-class DragZoom;
-class WheelZoom;
-class AxisZoom;
-class PlotZoom;
 class PlotTracker;
 class QAction;
 class Picker;
-class CanvasEventFilter;
-class AxisOverlay;
-class PlotInfoOverlay;
 class QPrinter;
-class Grid;
 class PlotModel;
 class QMenu;
 class Cursors;
 class CursorBox;
 class Selectable;
-
-struct Range {
-    void clear() {min = INFINITY; max = -INFINITY;}
-    double min;
-    double max;
-};
-
 
 
 #include <QWidget>
@@ -49,18 +34,13 @@ class Plot : public QObject
 {
     Q_OBJECT
 public:
-    enum InteractionMode {
-        NoInteraction,
-        ScalingInteraction,
-        DataInteraction,
-        LabelInteraction
-    };
-
     explicit Plot(Enums::PlotType type, QWidget *parent = 0);
     virtual ~Plot();
 
     PlotModel *model() {return m;}
     Enums::PlotType type() const {return plotType;}
+    QWidget *widget() const;
+    PlotInterface *impl() const;
 
     double screenToPlotCoordinates(Enums::AxisType axis, double value);
     double plotToScreenCoordinates(Enums::AxisType axis, double value);
@@ -73,12 +53,17 @@ public:
     bool sergeiMode = false;
     bool xScaleIsLogarithmic = false; //false = linear, true = logarithmic
 
-    InteractionMode interactionMode = ScalingInteraction;
+    Enums::InteractionMode interactionMode = Enums::InteractionMode::ScalingInteraction;
 
     bool hasCurves() const;
     int curvesCount(int type=-1) const;
 
     QString axisTitleText(Enums::AxisType id) const;
+
+    virtual bool canBePlottedOnLeftAxis(Channel *ch, QString *message=nullptr) const;
+    virtual bool canBePlottedOnRightAxis(Channel *ch, QString *message=nullptr) const;
+
+    void focusPlot();
 
     //default implementation returns pos as QwtText,
     //reimplemented in spectrograms to add Z coordinate
@@ -104,17 +89,17 @@ public:
 
 //    void updateTrackingPanel();
 
+    void deleteCurveFromLegend(Curve *curve);
     void deleteCurvesForDescriptor(FileDescriptor *descriptor);
     void deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot = true);
     void deleteSelectedCurve(Selectable *selected);
 
     void switchLabelsVisibility();
-    void prepareAxis(Enums::AxisType axis);
     void setAxis(Enums::AxisType axis, const QString &name);
 
     void setScale(Enums::AxisType id, double min, double max, double step = 0);
     void removeLabels();
-    void setInteractionMode(InteractionMode mode);
+    void setInteractionMode(Enums::InteractionMode mode);
     void switchInteractionMode();
     void switchTrackingCursor();
     void toggleAutoscale(Enums::AxisType axis, bool toggled);
@@ -130,12 +115,17 @@ public:
     void saveThroughput(double xVal);
 
     void updateLabels();
+    void removeCursor(Selectable *selected);
+    void showContextMenu(const QPoint &pos, Enums::AxisType axis);
+    void editLegendItem(Curve *curve);
 
+    ZoomStack *zoom = nullptr;
+    Picker *picker = nullptr;
 protected:
     PlotInterface *m_plot = nullptr;
 
     PlotModel *m = nullptr;
-    ZoomStack *zoom = nullptr;
+
     QString xName;
     QString yLeftName;
     QString yRightName;
@@ -143,18 +133,7 @@ protected:
     int yValuesPresentationLeft;
     int yValuesPresentationRight;
 
-    Grid *grid = nullptr;
     PlotTracker *tracker = nullptr;
-    Picker *picker = nullptr;
-
-    AxisOverlay *leftOverlay = nullptr;
-    AxisOverlay *rightOverlay = nullptr;
-
-    DragZoom *dragZoom = nullptr;
-    WheelZoom *wheelZoom = nullptr;
-    AxisZoom *axisZoom = nullptr;
-    PlotZoom *plotZoom = nullptr;
-    CanvasEventFilter *canvasFilter = nullptr;
 
     ColorSelector *colors = nullptr;
     Cursors *cursors = nullptr;
@@ -167,10 +146,7 @@ protected:
     //reimplemented in spectrogram
     virtual void setRightScale(Enums::AxisType id, double min, double max);
     virtual QMenu *createMenu(Enums::AxisType axis, const QPoint &pos);
-    virtual bool canBePlottedOnLeftAxis(Channel *ch, QString *message=nullptr) const;
-    virtual bool canBePlottedOnRightAxis(Channel *ch, QString *message=nullptr) const;
 
-    void setInfoVisible(bool visible);
     QString yValuesPresentationSuffix(int yValuesPresentation) const;
 public slots:
     void savePlot();
@@ -197,25 +173,14 @@ signals:
     //испускаем, когда бросаем каналы на график
     void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels);
 private slots:
-//    void editLegendItem(QwtPlotItem *item);
-//    void deleteCurveFromLegend(QwtPlotItem *item);
-    void showContextMenu(const QPoint &pos, Enums::AxisType axis);
-//    void fixCurve(QwtPlotItem* curve);
-    void hoverAxis(Enums::AxisType axis, int hover);
+
+
 private:
     QColor getNextColor();
 
-    void importPlot(const QString &fileName, const QSize &size, int resolution);
-    void importPlot(QPrinter &printer, const QSize &size, int resolution);
-//    void checkDuplicates(const QString name);
-    void createLegend();
-
-    PlotInfoOverlay *infoOverlay = nullptr;
     Enums::PlotType plotType = Enums::PlotType::General;
 
 //    // QWidget interface
-//public:
-//    void dropEvent(QDropEvent *event) override;
 //protected:
 //    void dragEnterEvent(QDragEnterEvent *event) override;
 //    void dragMoveEvent(QDragMoveEvent *event) override;

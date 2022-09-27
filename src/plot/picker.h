@@ -38,10 +38,6 @@ public:
     inline PickPriority pickPriority() const {return m_priority;}
 signals:
     void removeNeeded(Selectable*);
-
-//    void cursorMovedTo(QPointF newValue);
-//    void cursorSelected(TrackingCursor *cursor);
-//    void axisClicked(QPointF value, bool secondCursor);
 private:
     Plot *plot;
     bool enabled;

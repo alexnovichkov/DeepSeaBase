@@ -33,10 +33,10 @@ public:
     double factor = 1.0;
 };
 
-class BarCurve : public QwtPlotHistogram, public Curve
+class QwtBarCurve : public QwtPlotHistogram, public Curve
 {
 public:
-    BarCurve(const QString &title, Channel *channel);
+    QwtBarCurve(const QString &title, Channel *channel);
 
 private:
     HistogramData *histogramdata;

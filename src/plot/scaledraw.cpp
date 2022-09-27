@@ -1,9 +1,10 @@
 #include "scaledraw.h"
 #include <QtDebug>
-#include "plot.h"
+#include <qwt_plot.h>
 #include "logging.h"
 #include <QEvent>
 #include <qwt_scale_map.h>
+#include <qwt_scale_engine.h>
 #include <QApplication>
 
 ScaleDraw::ScaleDraw()
@@ -71,7 +72,7 @@ void ScaleDraw::drawBackbone(QPainter *painter) const
     }
 }
 
-AxisOverlay::AxisOverlay(Plot *parent) : QwtPlotZoneItem(), m_plot(parent)
+AxisOverlay::AxisOverlay(QwtPlot *parent) : QwtPlotZoneItem(), m_plot(parent)
 {DDD;
     setOrientation(Qt::Vertical);
     attach(m_plot);
@@ -87,7 +88,7 @@ void AxisOverlay::setVisibility(bool visible)
     setVisible(visible);
 }
 
-Plot *AxisOverlay::plot()
+QwtPlot *AxisOverlay::plot()
 {DDD;
     return m_plot;
 }
@@ -113,27 +114,27 @@ void AxisOverlay::setColor()
     setBrush(Color);
 }
 
-LeftAxisOverlay::LeftAxisOverlay(Plot *parent) : AxisOverlay(parent)
+LeftAxisOverlay::LeftAxisOverlay(QwtPlot *parent) : AxisOverlay(parent)
 {DDD;
 }
 
 void LeftAxisOverlay::setGeom()
 {DDD;
     const auto &scaleMap = plot()->canvasMap(QwtAxis::XBottom);
-    if (plot()->xScaleIsLogarithmic)
+    if (dynamic_cast<QwtLogScaleEngine*>(plot()->axisScaleEngine(QwtAxis::XBottom)))
         setInterval(scaleMap.s1()-scaleMap.sDist()/20, scaleMap.invTransform(scaleMap.p1()+scaleMap.pDist()/20));
     else
         setInterval(scaleMap.s1()-scaleMap.sDist()/20, scaleMap.s1()+scaleMap.sDist()/20);
 }
 
-RightAxisOverlay::RightAxisOverlay(Plot *parent) : AxisOverlay(parent)
+RightAxisOverlay::RightAxisOverlay(QwtPlot *parent) : AxisOverlay(parent)
 {DDD;
 }
 
 void RightAxisOverlay::setGeom()
 {DDD;
     const auto &scaleMap = plot()->canvasMap(QwtAxis::XBottom);
-    if (plot()->xScaleIsLogarithmic)
+    if (dynamic_cast<QwtLogScaleEngine*>(plot()->axisScaleEngine(QwtAxis::XBottom)))
         setInterval(scaleMap.invTransform(scaleMap.p2()-scaleMap.pDist()/20), scaleMap.s2()+scaleMap.sDist()/20);
     else
         setInterval(scaleMap.s2()-scaleMap.sDist()/20, scaleMap.s2()+scaleMap.sDist()/20);

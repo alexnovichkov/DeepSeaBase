@@ -1,6 +1,6 @@
 #include "canvaseventfilter.h"
 
-#include "plot.h"
+#include "qwtplotimpl.h"
 #include "zoomstack.h"
 #include "dragzoom.h"
 #include "wheelzoom.h"
@@ -12,11 +12,11 @@
 #include <QKeyEvent>
 #include "logging.h"
 #include "qwt_scale_widget.h"
-
+#include "plot.h"
 #include "axisboundsdialog.h"
 #include "selectable.h"
 
-CanvasEventFilter::CanvasEventFilter(Plot *parent) : QObject(parent), plot(parent)
+CanvasEventFilter::CanvasEventFilter(QwtPlotImpl *parent) : QObject(parent), plot(parent)
 {DDD;
     //разрешаем обрабатывать события от клавиатуры
     plot->setFocusPolicy(Qt::StrongFocus);
@@ -138,7 +138,7 @@ void CanvasEventFilter::procKeyboardEvent(QEvent *event)
 //            break;
 //        }
         case Qt::Key_H: {
-            plot->switchLabelsVisibility();
+            plot->parent->switchLabelsVisibility();
             break;
         }
         default: break;

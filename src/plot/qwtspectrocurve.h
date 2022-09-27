@@ -20,10 +20,10 @@ private:
     DataHolder *m_data;
 };
 
-class SpectroCurve : public QwtPlotSpectrogram, public Curve
+class QwtSpectroCurve : public QwtPlotSpectrogram, public Curve
 {
 public:
-    SpectroCurve(const QString &title, Channel *channel);
+    QwtSpectroCurve(const QString &title, Channel *channel);
 private:
     SpectrogramData *spectroData;
 

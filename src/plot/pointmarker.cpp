@@ -4,6 +4,9 @@
 #include "curve.h"
 #include "logging.h"
 #include "plot.h"
+#include "qwtplotimpl.h"
+#include "plotinterface.h"
+
 
 PointMarker::PointMarker(const QColor &color, QwtAxisId axis)
 {DDD;
@@ -35,4 +38,10 @@ void PointMarker::moveTo(const QPointF &val)
                           );
         setYAxis(toQwtAxisType(curve->yAxis()));
     }
+}
+
+void PointMarker::attach(Plot *plot)
+{
+    if (auto qwt = dynamic_cast<QwtPlot*>(plot->impl()))
+        QwtPlotMarker::attach(qwt);
 }

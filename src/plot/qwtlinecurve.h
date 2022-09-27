@@ -24,11 +24,11 @@ private:
     DataHolder *data;
 };
 
-class LineCurve : public QwtPlotCurve, public Curve
+class QwtLineCurve : public QwtPlotCurve, public Curve
 {
 public:
-    LineCurve(const QString &title, Channel *channel);
-    virtual ~LineCurve();
+    QwtLineCurve(const QString &title, Channel *channel);
+    virtual ~QwtLineCurve();
 
     // QwtPlotCurve interface
 protected:
@@ -68,7 +68,7 @@ public:
     virtual void setVisible(bool visible) override;
 };
 
-class TimeCurve : public LineCurve
+class TimeCurve : public QwtLineCurve
 {
 public:
     TimeCurve(const QString &title, Channel *channel);

@@ -1,9 +1,10 @@
 #include "wheelzoom.h"
 #include "logging.h"
 #include <QtMath>
+#include "qwtplotimpl.h"
 #include "plot.h"
 
-WheelZoom::WheelZoom(Plot *plot) : QObject(plot), plot(plot)
+WheelZoom::WheelZoom(QwtPlotImpl *plot) : QObject(plot), plot(plot)
 {DDD;
 
 }
@@ -34,7 +35,7 @@ ZoomStack::zoomCoordinates WheelZoom::applyWheel(QEvent *event, Enums::AxisType 
             pos = wEvent->pos().y();
             axis = Enums::AxisType::atLeft;
             coords.coords.insert(axis, getCoords(axis, pos, factor));
-            if (plot->type() != Enums::PlotType::Spectrogram) {
+            if (plot->parent->type() != Enums::PlotType::Spectrogram) {
                 axis = Enums::AxisType::atRight;
                 coords.coords.insert(axis, getCoords(axis, pos, factor));
             }

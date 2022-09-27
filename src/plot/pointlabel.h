@@ -11,6 +11,8 @@ class Curve;
 #include <QtCore>
 #include "selectable.h"
 
+#include "plotinterface.h"
+
 /**
  * @brief The PointLabel class
  * Is intended to draw a label with constant displacement relative to a curve point
@@ -46,6 +48,7 @@ public:
     void setLabel(const QwtText& label);
 
     QwtText label() const;
+    void attach(PlotInterface *impl);
 
     virtual void updateSelection(SelectedPoint point) override;
     virtual bool underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const override;

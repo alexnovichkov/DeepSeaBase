@@ -24,6 +24,7 @@ private slots:
     void maybeHover(const QPointF &pos);
 private:
     Plot *plot;
+    QwtPlot *impl;
     QCursor cursor;
 };
 

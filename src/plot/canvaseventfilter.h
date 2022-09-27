@@ -6,7 +6,7 @@
 #include "enums.h"
 #include <QtDebug>
 
-class Plot;
+class QwtPlotImpl;
 class QMouseEvent;
 class ZoomStack;
 class DragZoom;
@@ -38,7 +38,7 @@ public:
                           };
 
 
-    explicit CanvasEventFilter(Plot *parent);
+    explicit CanvasEventFilter(QwtPlotImpl *parent);
     void setZoom(ZoomStack *zoom) {this->zoomStack = zoom;}
     void setDragZoom(DragZoom *zoom) {dragZoom = zoom;}
     void setWheelZoom(WheelZoom *zoom) {wheelZoom = zoom;}
@@ -64,7 +64,7 @@ private:
     void mouseDoubleClick(QMouseEvent *event);
     void applyWheel(QEvent *event, Enums::AxisType axis);
 
-    Plot *plot;
+    QwtPlotImpl *plot;
     ZoomStack *zoomStack; //отвечает за запоминание изменений масштаба
     DragZoom *dragZoom; //отвечает за перетаскивание графика
     WheelZoom *wheelZoom; //отвечает за зум графика колесиком

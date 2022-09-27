@@ -8,13 +8,13 @@
 #include <QMediaPlayer>
 #include "dataiodevice.h"
 #include "plot/curve.h"
-#include "plot/cursorsingle.h"
+#include "plot/qwtcursorsingle.h"
 #include "plot/plotmodel.h"
 #include "wavexporter.h"
 #include "logging.h"
 
 
-PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
+PlayPanel::PlayPanel(Plot *parent) : QWidget(parent->widget()), plot(parent)
 {DDD;
     player = new QMediaPlayer(this);
     player->setAudioRole(QAudio::MusicRole);
@@ -23,7 +23,7 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent), plot(parent)
     connect(player, &QMediaPlayer::mediaStatusChanged, this, &PlayPanel::statusChanged);
     connect(player, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error), this, &PlayPanel::displayErrorMessage);
 
-    cursor = new CursorSingle(Cursor::Style::Vertical, plot);
+    cursor = new QwtCursorSingle(Cursor::Style::Vertical, plot);
     cursor->setColor(Qt::green);
     cursor->setShowValues(false);
     connect(cursor, &Cursor::cursorPositionChanged, this, &PlayPanel::setValue);

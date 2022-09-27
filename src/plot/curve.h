@@ -13,6 +13,7 @@ class DataHolder;
 class Plot;
 class QwtScaleMap;
 class PointMarker;
+class Implementation;
 
 #include <qglobal.h>
 #include "selectable.h"
@@ -73,7 +74,7 @@ public:
     Channel *channel;
     QList<PointLabel*> labels;
 
-
+    Implementation *impl = nullptr;
 
     int fileNumber=0;
     bool duplicate;

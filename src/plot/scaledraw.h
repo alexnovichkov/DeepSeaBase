@@ -17,25 +17,25 @@ protected:
     virtual void drawBackbone(QPainter *painter) const override;
 };
 
-class Plot;
+class QwtPlot;
 
 class AxisOverlay : public QwtPlotZoneItem
 {
 public:
-    explicit AxisOverlay(Plot *parent);
+    explicit AxisOverlay(QwtPlot *parent);
     void setVisibility(bool visible);
-    Plot *plot();
+    QwtPlot *plot();
 protected:
     virtual void setGeom() = 0;
     void setColor();
 private:
-    Plot *m_plot;
+    QwtPlot *m_plot;
 };
 
 class LeftAxisOverlay : public AxisOverlay
 {
 public:
-    explicit LeftAxisOverlay(Plot *parent);
+    explicit LeftAxisOverlay(QwtPlot *parent);
 protected:
     void setGeom() override;
 };
@@ -43,7 +43,7 @@ protected:
 class RightAxisOverlay : public AxisOverlay
 {
 public:
-    explicit RightAxisOverlay(Plot *parent);
+    explicit RightAxisOverlay(QwtPlot *parent);
 protected:
     void setGeom() override;
 };

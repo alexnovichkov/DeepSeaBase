@@ -10,6 +10,8 @@
 #include "settings.h"
 #include "pointmarker.h"
 #include "algorithms.h"
+#include "qwtplotimpl.h"
+#include <qwt_plot.h>
 #include "plot.h"
 
 PointLabel::PointLabel(Plot *parent, Curve *curve)
@@ -97,6 +99,12 @@ void PointLabel::setPoint(SelectedPoint point)
 QwtText PointLabel::label() const
 {DDD;
     return m_label;
+}
+
+void PointLabel::attach(PlotInterface *impl)
+{
+    if (auto p = dynamic_cast<QwtPlot*>(impl))
+        QwtPlotItem::attach(p);
 }
 
 void PointLabel::updateSelection(SelectedPoint point)

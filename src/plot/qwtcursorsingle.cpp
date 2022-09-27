@@ -1,4 +1,4 @@
-#include "cursorsingle.h"
+#include "qwtcursorsingle.h"
 
 #include "trackingcursor.h"
 #include "plotmodel.h"
@@ -8,8 +8,9 @@
 #include <qwt_scale_map.h>
 #include "curve.h"
 #include "logging.h"
+#include "qwtplotimpl.h"
 
-CursorSingle::CursorSingle(Style style, Plot *plot) : Cursor(Cursor::Type::Single, style, plot)
+QwtCursorSingle::QwtCursorSingle(Style style, Plot *plot) : Cursor(Cursor::Type::Single, style, plot)
 {DDD;
     cursor = new TrackingCursor(m_color, style, this);
     if (style != Cursor::Style::Horizontal) {
@@ -24,7 +25,7 @@ CursorSingle::CursorSingle(Style style, Plot *plot) : Cursor(Cursor::Type::Singl
     }
 }
 
-CursorSingle::~CursorSingle()
+QwtCursorSingle::~QwtCursorSingle()
 {DDD;
     detach();
     delete xlabel;
@@ -32,7 +33,7 @@ CursorSingle::~CursorSingle()
     delete cursor;
 }
 
-void CursorSingle::setColor(const QColor &color)
+void QwtCursorSingle::setColor(const QColor &color)
 {DDD;
     Cursor::setColor(color);
     auto pen = cursor->linePen();
@@ -40,13 +41,13 @@ void CursorSingle::setColor(const QColor &color)
     cursor->setLinePen(pen);
 }
 
-void CursorSingle::moveTo(const QPointF &pos1, const QPointF &pos2, bool silent)
+void QwtCursorSingle::moveTo(const QPointF &pos1, const QPointF &pos2, bool silent)
 {DDD;
     Q_UNUSED(pos2);
     moveTo(pos1, silent);
 }
 
-void CursorSingle::moveTo(const QPointF &pos1, bool silent)
+void QwtCursorSingle::moveTo(const QPointF &pos1, bool silent)
 {DDD;
     auto pos = m_snapToValues ? correctedPos(pos1) : pos1;
 
@@ -55,17 +56,17 @@ void CursorSingle::moveTo(const QPointF &pos1, bool silent)
     update();
 }
 
-void CursorSingle::moveTo(const QPointF &pos1, TrackingCursor *source, bool silent)
+void QwtCursorSingle::moveTo(const QPointF &pos1, TrackingCursor *source, bool silent)
 {DDD;
     if (source == cursor) moveTo(pos1, silent);
 }
 
-void CursorSingle::moveTo(Qt::Key key, int count, TrackingCursor *source, bool silent)
+void QwtCursorSingle::moveTo(Qt::Key key, int count, TrackingCursor *source, bool silent)
 {DDD;
     if (count == 0 || source != cursor) return;
     QPointF pos = cursor->value();
-    double rangeX = m_plot->canvasMap(cursor->xAxis()).sDist();
-    double rangeY = m_plot->canvasMap(cursor->yAxis()).sDist();
+    double rangeX = m_plot->plotRange(toAxisType(cursor->xAxis())).dist();
+    double rangeY = m_plot->plotRange(toAxisType(cursor->yAxis())).dist();
 
     switch (key) {
         case Qt::Key_Left: {
@@ -104,7 +105,7 @@ void CursorSingle::moveTo(Qt::Key key, int count, TrackingCursor *source, bool s
     moveTo(pos, silent);
 }
 
-void CursorSingle::updatePos()
+void QwtCursorSingle::updatePos()
 {DDD;
     auto pos = cursor->value();
     pos = correctedPos(pos);
@@ -112,21 +113,23 @@ void CursorSingle::updatePos()
     update();
 }
 
-void CursorSingle::attach()
+void QwtCursorSingle::attach()
 {DDD;
-    cursor->attach(m_plot);
-    if (xlabel) xlabel->attach(m_plot);
-    if (ylabel) ylabel->attach(m_plot);
+    if (auto qwt = dynamic_cast<QwtPlot*>(m_plot->impl())) {
+        cursor->attach(qwt);
+        if (xlabel) xlabel->attach(qwt);
+        if (ylabel) ylabel->attach(qwt);
+    }
 }
 
-void CursorSingle::detach()
+void QwtCursorSingle::detach()
 {DDD;
     cursor->detach();
     if (xlabel) xlabel->detach();
     if (ylabel) ylabel->detach();
 }
 
-bool CursorSingle::contains(Selectable *selected) const
+bool QwtCursorSingle::contains(Selectable *selected) const
 {DDD;
     if (auto c = dynamic_cast<TrackingCursor*>(selected))
         return c == cursor;
@@ -136,19 +139,19 @@ bool CursorSingle::contains(Selectable *selected) const
     return false;
 }
 
-void CursorSingle::update()
+void QwtCursorSingle::update()
 {DDD;
     if (xlabel) xlabel->updateLabel(m_showValues);
     if (ylabel) ylabel->updateLabel(m_showValues);
 }
 
-QStringList CursorSingle::dataHeader(bool allData) const
+QStringList QwtCursorSingle::dataHeader(bool allData) const
 {DDD;
     Q_UNUSED(allData);
     return {/*"", "Время, с", QString("Частота ")+*/QLocale(QLocale::Russian).toString(cursor->xValue())};
 }
 
-QList<double> CursorSingle::data(int curve, bool allData) const
+QList<double> QwtCursorSingle::data(int curve, bool allData) const
 {DDD;
     Q_UNUSED(allData);
 
@@ -159,7 +162,7 @@ QList<double> CursorSingle::data(int curve, bool allData) const
     return QList<double>();
 }
 
-QPointF CursorSingle::currentPosition() const
+QPointF QwtCursorSingle::currentPosition() const
 {DDD;
     return cursor->value();
 }

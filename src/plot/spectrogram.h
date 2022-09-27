@@ -8,7 +8,6 @@ class Spectrogram : public Plot
 public:
     Spectrogram(QWidget *parent = 0);
 
-    virtual Curve * createCurve(const QString &legendName, Channel *channel) override;
     virtual void deleteCurve(Curve *curve, bool doReplot = true) override;
     virtual QString pointCoordinates(const QPointF &pos) override;
     virtual void updateAxesLabels() override;

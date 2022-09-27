@@ -1,4 +1,4 @@
-#include "spectrocurve.h"
+#include "qwtspectrocurve.h"
 #include "dataholder.h"
 #include "qwt_text.h"
 #include "pointlabel.h"
@@ -7,8 +7,9 @@
 #include "qwt_scale_map.h"
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
+#include "qwtplotimpl.h"
 
-SpectroCurve::SpectroCurve(const QString &title, Channel *channel)
+QwtSpectroCurve::QwtSpectroCurve(const QString &title, Channel *channel)
     :  QwtPlotSpectrogram(title), Curve(title, channel)
 {DDD;
     type = Type::Spectrogram;
@@ -23,51 +24,51 @@ SpectroCurve::SpectroCurve(const QString &title, Channel *channel)
     setData(spectroData);
 }
 
-void SpectroCurve::attachTo(QwtPlot *plot)
+void QwtSpectroCurve::attachTo(QwtPlot *plot)
 {DDD;
     QwtPlotSpectrogram::attach(plot);
 }
 
-QString SpectroCurve::title() const
+QString QwtSpectroCurve::title() const
 {DDD;
     return QwtPlotSpectrogram::title().text();
 }
 
-void SpectroCurve::setTitle(const QString &title)
+void QwtSpectroCurve::setTitle(const QString &title)
 {DDD;
     QwtPlotSpectrogram::setTitle(title);
 }
 
-Enums::AxisType SpectroCurve::yAxis() const
+Enums::AxisType QwtSpectroCurve::yAxis() const
 {DDD;
     return toAxisType(QwtPlotSpectrogram::yAxis());
 }
 
-void SpectroCurve::setYAxis(Enums::AxisType axis)
+void QwtSpectroCurve::setYAxis(Enums::AxisType axis)
 {DDD;
     QwtPlotSpectrogram::setYAxis(toQwtAxisType(axis));
     foreach (PointLabel *l, labels)
         l->setYAxis(toQwtAxisType(axis));
 }
 
-Enums::AxisType SpectroCurve::xAxis() const
+Enums::AxisType QwtSpectroCurve::xAxis() const
 {DDD;
     return toAxisType(QwtPlotSpectrogram::xAxis());
 }
 
-void SpectroCurve::setXAxis(Enums::AxisType axis)
+void QwtSpectroCurve::setXAxis(Enums::AxisType axis)
 {DDD;
     QwtPlotSpectrogram::setXAxis(toQwtAxisType(axis));
     foreach (PointLabel *l, labels)
         l->setXAxis(toQwtAxisType(axis));
 }
 
-QPen SpectroCurve::pen() const
+QPen QwtSpectroCurve::pen() const
 {DDD;
     return QPen();
 }
 
-QList<QwtLegendData> SpectroCurve::legendData() const
+QList<QwtLegendData> QwtSpectroCurve::legendData() const
 {DDD;
     QList<QwtLegendData> result = QwtPlotSpectrogram::legendData();
     QwtLegendData &data = result[0];
@@ -75,12 +76,12 @@ QList<QwtLegendData> SpectroCurve::legendData() const
     return result;
 }
 
-SamplePoint SpectroCurve::samplePoint(SelectedPoint point) const
+SamplePoint QwtSpectroCurve::samplePoint(SelectedPoint point) const
 {DDD;
     return spectroData->samplePoint(point);
 }
 
-SelectedPoint SpectroCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
+SelectedPoint QwtSpectroCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
 {DDD;
     int indexX = channel->data()->nearest(m_plot->screenToPlotCoordinates(xAxis(), pos.x()));
     int indexZ = channel->data()->nearestZ(m_plot->screenToPlotCoordinates(yAxis(), pos.y()));
@@ -91,12 +92,12 @@ SelectedPoint SpectroCurve::closest(const QPoint &pos, double *dist1, double *di
     return {indexX, indexZ};
 }
 
-void SpectroCurve::setColorInterval(double min, double max)
+void QwtSpectroCurve::setColorInterval(double min, double max)
 {DDD;
     spectroData->setInterval(Qt::ZAxis, QwtInterval(min, max));
 }
 
-QwtInterval SpectroCurve::colorInterval() const
+QwtInterval QwtSpectroCurve::colorInterval() const
 {DDD;
     return spectroData->interval(Qt::ZAxis);
 }

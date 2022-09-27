@@ -1,6 +1,6 @@
 #include "timeplot.h"
 
-#include "linecurve.h"
+#include "qwtlinecurve.h"
 #include "fileformats/filedescriptor.h"
 #include "unitsconverter.h"
 #include "plotmodel.h"
@@ -14,7 +14,7 @@ TimePlot::TimePlot(QWidget *parent) : Plot(Enums::PlotType::Time, parent)
 {DDD;
     playerPanel = new PlayPanel(this);
     connect(this, SIGNAL(curvesCountChanged()), playerPanel, SLOT(update()));
-    connect(canvasFilter, SIGNAL(canvasDoubleClicked(QPoint)),playerPanel,SLOT(moveTo(QPoint)));
+    connect(widget(), SIGNAL(canvasDoubleClicked(QPoint)), playerPanel, SLOT(moveTo(QPoint)));
 }
 
 TimePlot::~TimePlot()

@@ -1,4 +1,4 @@
-#include "cursorharmonic.h"
+#include "qwtcursorharmonic.h"
 
 #include "trackingcursor.h"
 #include "cursorlabel.h"
@@ -9,9 +9,11 @@
 #include <QApplication>
 #include <QClipboard>
 #include <qwt_scale_map.h>
+#include <qwt_plot.h>
+#include "plotinterface.h"
 #include "logging.h"
 
-CursorHarmonic::CursorHarmonic(Plot *plot) : Cursor(Cursor::Type::Harmonic, Cursor::Style::Vertical, plot)
+QwtCursorHarmonic::QwtCursorHarmonic(Plot *plot) : Cursor(Cursor::Type::Harmonic, Cursor::Style::Vertical, plot)
 {DDD;
     cursor = new TrackingCursor(m_color, m_style, this);
 
@@ -32,7 +34,7 @@ CursorHarmonic::CursorHarmonic(Plot *plot) : Cursor(Cursor::Type::Harmonic, Curs
     }
 }
 
-CursorHarmonic::~CursorHarmonic()
+QwtCursorHarmonic::~QwtCursorHarmonic()
 {DDD;
     cursor->detach();
     label->detach();
@@ -46,7 +48,7 @@ CursorHarmonic::~CursorHarmonic()
     qDeleteAll(labels);
 }
 
-void CursorHarmonic::setColor(const QColor &color)
+void QwtCursorHarmonic::setColor(const QColor &color)
 {DDD;
     Cursor::setColor(color);
     auto pen = cursor->linePen();
@@ -55,13 +57,13 @@ void CursorHarmonic::setColor(const QColor &color)
     for (auto &c: cursors) c->setLinePen(color, 0, Qt::DashDotLine);
 }
 
-void CursorHarmonic::moveTo(const QPointF &pos1, const QPointF &pos2, bool silent)
+void QwtCursorHarmonic::moveTo(const QPointF &pos1, const QPointF &pos2, bool silent)
 {DDD;
     Q_UNUSED(pos2);
     moveTo(pos1, silent);
 }
 
-void CursorHarmonic::moveTo(const QPointF &pos1, bool silent)
+void QwtCursorHarmonic::moveTo(const QPointF &pos1, bool silent)
 {DDD;
     auto pos = m_snapToValues ? correctedPos(pos1) : pos1;
 
@@ -75,18 +77,17 @@ void CursorHarmonic::moveTo(const QPointF &pos1, bool silent)
     if (!silent) emit cursorPositionChanged();
 }
 
-void CursorHarmonic::moveTo(const QPointF &pos1, TrackingCursor *source, bool silent)
+void QwtCursorHarmonic::moveTo(const QPointF &pos1, TrackingCursor *source, bool silent)
 {DDD;
     if (source == cursor) moveTo(pos1, silent);
 }
 
-void CursorHarmonic::moveTo(Qt::Key key, int count, TrackingCursor *source, bool silent)
+void QwtCursorHarmonic::moveTo(Qt::Key key, int count, TrackingCursor *source, bool silent)
 {DDD;
     if (count == 0 || source != cursor) return;
     QPointF pos = cursor->value();
 
-    double rangeX = m_plot->canvasMap(cursor->xAxis()).sDist();
-//    double rangeY = m_plot->canvasMap(cursor->yAxis()).sDist();
+    auto dist = m_plot->plotRange(Enums::AxisType::atBottom).dist();
 
     switch (key) {
         case Qt::Key_Left: {
@@ -94,7 +95,7 @@ void CursorHarmonic::moveTo(Qt::Key key, int count, TrackingCursor *source, bool
                 pos = correctedPos(pos, -count, 0);
             }
             else
-                pos.rx() -= count*rangeX/100;
+                pos.rx() -= count*dist/100;
             break;
         }
         case Qt::Key_Right: {
@@ -102,7 +103,7 @@ void CursorHarmonic::moveTo(Qt::Key key, int count, TrackingCursor *source, bool
                 pos = correctedPos(pos, count, 0);
             }
             else
-                pos.rx() += count*rangeX/100;
+                pos.rx() += count*dist/100;
             break;
         }
 //        case Qt::Key_Up: pos.ry() += count*rangeY/100; break;
@@ -113,22 +114,24 @@ void CursorHarmonic::moveTo(Qt::Key key, int count, TrackingCursor *source, bool
     moveTo(pos, silent);
 }
 
-void CursorHarmonic::updatePos()
+void QwtCursorHarmonic::updatePos()
 {DDD;
     moveTo(correctedPos(cursor->value()));
 }
 
-void CursorHarmonic::attach()
+void QwtCursorHarmonic::attach()
 {DDD;
-    cursor->attach(m_plot);
-    label->attach(m_plot);
-    for (int i=0; i<m_harmonics; ++i) {
-        cursors[i]->attach(m_plot);
-        labels[i]->attach(m_plot);
+    if (auto qwt = dynamic_cast<QwtPlot*>(m_plot->impl())) {
+        cursor->attach(qwt);
+        label->attach(qwt);
+        for (int i=0; i<m_harmonics; ++i) {
+            cursors[i]->attach(qwt);
+            labels[i]->attach(qwt);
+        }
     }
 }
 
-void CursorHarmonic::detach()
+void QwtCursorHarmonic::detach()
 {DDD;
     cursor->detach();
     label->detach();
@@ -138,7 +141,7 @@ void CursorHarmonic::detach()
     }
 }
 
-bool CursorHarmonic::contains(Selectable *selected) const
+bool QwtCursorHarmonic::contains(Selectable *selected) const
 {DDD;
     if (auto c = dynamic_cast<TrackingCursor*>(selected))
         return c == cursor;
@@ -148,7 +151,7 @@ bool CursorHarmonic::contains(Selectable *selected) const
     return false;
 }
 
-void CursorHarmonic::update()
+void QwtCursorHarmonic::update()
 {DDD;
     label->updateLabel(m_showValues);
     if (cursors.size() != m_harmonics) {
@@ -159,14 +162,14 @@ void CursorHarmonic::update()
         while (cursors.size() < m_harmonics) {
             auto c = new TrackingCursor(m_color, Cursor::Style::Vertical, this);
             c->setLinePen(Qt::black, 0, Qt::DashDotLine);
-            c->attach(m_plot);
+            if (auto qwt = dynamic_cast<QwtPlot*>(m_plot->impl())) c->attach(qwt);
             cursors << c;
 
             auto l = new CursorLabel(m_plot, c);
             l->setAxis(CursorLabel::Axis::XAxis);
             setShowValues(false);
             l->updateAlignment();
-            l->attach(m_plot);
+            if (auto qwt = dynamic_cast<QwtPlot*>(m_plot->impl())) l->attach(qwt);
             labels << l;
         }
     }
@@ -189,13 +192,13 @@ void CursorHarmonic::update()
 //    return list;
 //}
 
-QStringList CursorHarmonic::dataHeader(bool allData) const
+QStringList QwtCursorHarmonic::dataHeader(bool allData) const
 {DDD;
     Q_UNUSED(allData);
     return {/*"", "Время, с", QString("Частота ")+*/QLocale(QLocale::Russian).toString(cursor->xValue())};
 }
 
-QList<double> CursorHarmonic::data(int curve, bool allData) const
+QList<double> QwtCursorHarmonic::data(int curve, bool allData) const
 {DDD;
     Q_UNUSED(allData);
     auto curves = m_plot->model()->curves();
@@ -210,7 +213,7 @@ QList<double> CursorHarmonic::data(int curve, bool allData) const
     return {curves.at(curve)->channel->data()->YforXandZ(cursor->xValue(), zval, success)};
 }
 
-QPointF CursorHarmonic::currentPosition() const
+QPointF QwtCursorHarmonic::currentPosition() const
 {DDD;
     return cursor->value();
 }

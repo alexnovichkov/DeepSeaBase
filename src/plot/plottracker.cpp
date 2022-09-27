@@ -2,7 +2,9 @@
 
 #include <qwt_picker_machine.h>
 #include <qwt_text.h>
+#include <qwt_plot.h>
 #include <qwt_plot_zoomer.h>
+#include <qwt_plot_canvas.h>
 #include "logging.h"
 #include <QKeyEvent>
 #include "plot.h"
@@ -12,10 +14,12 @@
 #include "fileformats/filedescriptor.h"
 #include "plot/plotmodel.h"
 #include "plot/cursor.h"
+#include "plotinterface.h"
 
 PlotTracker::PlotTracker(Plot *plot) :
-    QwtPlotPicker(plot->canvas()), plot(plot)
+    QwtPlotPicker(dynamic_cast<QwtPlot*>(plot->impl())->canvas()), plot(plot)
 {DDD;
+    impl = dynamic_cast<QwtPlot*>(plot->impl());
     setStateMachine(new QwtPickerTrackerMachine);
     setTrackerMode(QwtPicker::AlwaysOn);
     connect(this, SIGNAL(moved(QPointF)), this, SLOT(maybeHover(QPointF)));
@@ -53,28 +57,28 @@ void PlotTracker::maybeHover(const QPointF &pos)
     if (!plot) return;
     bool found = false;
 
-    const auto list = plot->itemList(QwtPlotItem::Rtti_PlotMarker);
+    const auto list = impl->itemList(QwtPlotItem::Rtti_PlotMarker);
     for (auto it: list) {
         if (auto *c = dynamic_cast<TrackingCursor *>(it)) {
             if (!c->isVisible()) {
                 continue;
             }
-            int newX = (int)(plot->transform(c->xAxis(), c->xValue()));
-            int posX = (int)(plot->transform(c->xAxis(), pos.x()));
-            int newY = (int)(plot->transform(c->yAxis(), c->yValue()));
-            int posY = (int)(plot->transform(c->yAxis(), pos.y()));
+            int newX = (int)(impl->transform(c->xAxis(), c->xValue()));
+            int posX = (int)(impl->transform(c->xAxis(), pos.x()));
+            int newY = (int)(impl->transform(c->yAxis(), c->yValue()));
+            int posY = (int)(impl->transform(c->yAxis(), pos.y()));
             if (c->type == Cursor::Style::Horizontal || c->type == Cursor::Style::Cross) {
                 if (qAbs(newY-posY)<=4) {
-                    cursor = plot->canvas()->cursor();
-                    plot->canvas()->setCursor(QCursor(Qt::SizeVerCursor));
+                    cursor = impl->canvas()->cursor();
+                    impl->canvas()->setCursor(QCursor(Qt::SizeVerCursor));
                     found = true;
                     break;
                 }
             }
             if (c->type == Cursor::Style::Vertical || c->type == Cursor::Style::Cross) {
                 if (qAbs(newX-posX)<=4) {
-                    cursor = plot->canvas()->cursor();
-                    plot->canvas()->setCursor(QCursor(Qt::SizeHorCursor));
+                    cursor = impl->canvas()->cursor();
+                    impl->canvas()->setCursor(QCursor(Qt::SizeHorCursor));
                     found = true;
                     break;
                 }
@@ -82,5 +86,5 @@ void PlotTracker::maybeHover(const QPointF &pos)
 
         }
     }
-    if (!found) plot->canvas()->setCursor(QCursor(Qt::CrossCursor));
+    if (!found) impl->canvas()->setCursor(QCursor(Qt::CrossCursor));
 }

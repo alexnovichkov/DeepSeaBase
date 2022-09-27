@@ -2,9 +2,9 @@
 
 #include "logging.h"
 #include "zoomstack.h"
-#include "plot.h"
+#include "qwtplotimpl.h"
 
-DragZoom::DragZoom(Plot *plot) : QObject(plot), plot(plot)
+DragZoom::DragZoom(QwtPlotImpl *plot) : QObject(plot), plot(plot)
 {DDD;
 }
 

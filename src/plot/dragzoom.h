@@ -6,7 +6,7 @@
 
 #include "zoomstack.h"
 class QMouseEvent;
-class Plot;
+class QwtPlotImpl;
 
 #include <QCursor>
 
@@ -15,12 +15,12 @@ class DragZoom : public QObject
     Q_OBJECT
 
 public:
-    explicit DragZoom(Plot *plot);
+    explicit DragZoom(QwtPlotImpl *plot);
     void startDrag(QMouseEvent *);
     ZoomStack::zoomCoordinates proceedDrag(QMouseEvent *);
     ZoomStack::zoomCoordinates endDrag(QMouseEvent *);
 private:
-    Plot *plot;
+    QwtPlotImpl *plot;
     QCursor tCursor;        // Буфер для временного хранения курсора
 
     double minHorizontalBound, maxHorizontalBound;   // Текущие границы графика по горизонтальной оси

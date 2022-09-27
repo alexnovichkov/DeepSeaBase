@@ -1,18 +1,17 @@
-#ifndef CURSORHARMONIC_H
-#define CURSORHARMONIC_H
+#ifndef CURSORSINGLE_H
+#define CURSORSINGLE_H
 
 #include "cursor.h"
 
 class TrackingCursor;
 class CursorLabel;
-class Plot;
 
-class CursorHarmonic : public Cursor
+class QwtCursorSingle : public Cursor
 {
     Q_OBJECT
 public:
-    CursorHarmonic(Plot *plot = nullptr);
-    ~CursorHarmonic();
+    QwtCursorSingle(Style style, Plot *plot = nullptr);
+    ~QwtCursorSingle();
 
     virtual void setColor(const QColor &m_color) override;
     virtual void moveTo(const QPointF &pos1, const QPointF &pos2, bool silent=false) override;
@@ -24,18 +23,16 @@ public:
     virtual void detach() override;
     virtual bool contains(Selectable *selected) const override;
     virtual void update() override;
-    virtual int dataCount(bool allData) const override {Q_UNUSED(allData); return 1;}
+    virtual int  dataCount(bool allData) const override {Q_UNUSED(allData); return 1;}
     virtual QStringList dataHeader(bool allData) const override;
     virtual QList<double> data(int curve, bool allData) const override;
     virtual QPointF currentPosition() const override;
+
 //    virtual QStringList getValues() const override;
 private:
-    TrackingCursor *cursor = nullptr;
-    QList<TrackingCursor *> cursors;
-
-    CursorLabel *label = nullptr;
-    QList<CursorLabel *> labels;
+    TrackingCursor *cursor;
+    CursorLabel *xlabel = nullptr;
+    CursorLabel *ylabel = nullptr;
 };
 
-
-#endif // CURSORHARMONIC_H
+#endif // CURSORSINGLE_H

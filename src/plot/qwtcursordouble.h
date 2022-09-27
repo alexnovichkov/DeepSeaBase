@@ -14,12 +14,12 @@ public:
     void setRange(const QPointF &p1, const QPointF &p2);
 };
 
-class CursorDouble : public Cursor
+class QwtCursorDouble : public Cursor
 {
     Q_OBJECT
 public:
-    CursorDouble(Style style, bool reject, Plot *plot = nullptr);
-    ~CursorDouble();
+    QwtCursorDouble(Style style, bool reject, Plot *plot = nullptr);
+    ~QwtCursorDouble();
 
     virtual void setColor(const QColor &m_color) override;
     virtual void moveTo(const QPointF &pos1, const QPointF &pos2, bool silent=false) override;

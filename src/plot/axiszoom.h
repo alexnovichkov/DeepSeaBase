@@ -5,14 +5,14 @@
 #include "enums.h"
 #include <QCursor>
 
-class Plot;
+class QwtPlotImpl;
 
 class AxisZoom : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit AxisZoom(Plot *plot);
+    explicit AxisZoom(QwtPlotImpl *plot);
     void startVerticalAxisZoom(QMouseEvent *event, Enums::AxisType axis);
     void startHorizontalAxisZoom(QMouseEvent *event, Enums::AxisType axis);
     ZoomStack::zoomCoordinates proceedAxisZoom(QMouseEvent *, Enums::AxisType axis);
@@ -35,7 +35,7 @@ private:
                    ctBottom,
                    ctTop};
 
-    Plot *plot;
+    QwtPlotImpl *plot;
 
     QCursor cursor;        // Буфер для временного хранения курсора
 

@@ -14,7 +14,7 @@
 
 #include "zoomstack.h"
 #include "plot.h"
-#include "qcustomplot/qcpplot.h"
+#include "plotinterface.h"
 
 #include "logging.h"
 
@@ -54,7 +54,7 @@ void ZoomStack::addZoom(ZoomStack::zoomCoordinates coords, bool addToStack)
         verticalScaleBoundsSlave->set(coords.coords.value(Enums::AxisType::atRight).x(),
                                       coords.coords.value(Enums::AxisType::atRight).y());
     }
-    plot->replot();
+    plot->impl()->replot();
 }
 
 void ZoomStack::zoomBack()
@@ -79,7 +79,7 @@ void ZoomStack::zoomBack()
                                           coords.coords.value(Enums::AxisType::atRight).y());
         }
     }
-    plot->replot();
+    plot->impl()->replot();
 }
 
 void ZoomStack::moveToAxis(Enums::AxisType axis, double min, double max)

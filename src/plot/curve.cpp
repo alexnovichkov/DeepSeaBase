@@ -42,7 +42,6 @@ void Curve::attach(Plot *plot)
     m_plot = plot;
     marker->attach(plot);
     marker->setVisible(false);
-    attachTo(plot);
 }
 
 void Curve::addLabel(PointLabel *label)
@@ -89,7 +88,7 @@ PointLabel *Curve::findLabel(SelectedPoint point)
 void Curve::moveToPos(QPoint pos, QPoint startPos)
 {DDD;
     Q_UNUSED(startPos);
-    if (m_plot->interactionMode != Plot::DataInteraction) return;
+    if (m_plot->interactionMode != Enums::InteractionMode::DataInteraction) return;
 
     if (selectedPoint.x < 0 || selectedPoint.x >= samplesCount()) return;
     double y = m_plot->screenToPlotCoordinates(yAxis(), pos.y());
@@ -224,7 +223,7 @@ void Curve::moveRight(int count)
 
 void Curve::moveUp(int count)
 {DDD;
-    if (m_plot->interactionMode != Plot::DataInteraction) return;
+    if (m_plot->interactionMode != Enums::InteractionMode::DataInteraction) return;
     if (selectedPoint.x < 0 || selectedPoint.x >= samplesCount()) return;
 
     auto val = samplePoint(selectedPoint);
@@ -242,7 +241,7 @@ void Curve::moveUp(int count)
 
 void Curve::moveDown(int count)
 {DDD;
-    if (m_plot->interactionMode != Plot::DataInteraction) return;
+    if (m_plot->interactionMode != Enums::InteractionMode::DataInteraction) return;
     if (selectedPoint.x < 0 || selectedPoint.x >= samplesCount()) return;
 
     auto val = samplePoint(selectedPoint);
@@ -270,8 +269,7 @@ void Curve::fix()
             label->setPoint(selectedPoint);
 //            label->setOrigin(val);
             addLabel(label);
-
-            label->attach(m_plot);
+            label->attach(m_plot->impl());
         }
     }
 }

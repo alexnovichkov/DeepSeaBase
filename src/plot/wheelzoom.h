@@ -1,7 +1,7 @@
 #ifndef QWHEELZOOMSVC_H
 #define QWHEELZOOMSVC_H
 
-class Plot;
+class QwtPlotImpl;
 #include <QObject>
 #include "zoomstack.h"
 #include "enums.h"
@@ -10,10 +10,10 @@ class WheelZoom : public QObject
 {
     Q_OBJECT
 public:
-    explicit WheelZoom(Plot *plot);
+    explicit WheelZoom(QwtPlotImpl *plot);
     ZoomStack::zoomCoordinates applyWheel(QEvent *, Enums::AxisType axis);
 private:
-    Plot *plot;
+    QwtPlotImpl *plot;
     QPointF getCoords(Enums::AxisType axis, int pos, double factor);
 };
 

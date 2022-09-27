@@ -1,29 +1,16 @@
 #include "plotzoom.h"
 
-/**********************************************************/
-/*                                                        */
-/*             Реализация класса QMainZoomSvc             */
-/*                      Версия 1.0.1                      */
-/*                                                        */
-/* Разработал Мельников Сергей Андреевич,                 */
-/* г. Каменск-Уральский Свердловской обл., 2012 г.,       */
-/* при поддержке Ю. А. Роговского, г. Новосибирск.        */
-/*                                                        */
-/* Разрешается свободное использование и распространение. */
-/* Упоминание автора обязательно.                         */
-/*                                                        */
-/**********************************************************/
-
 #include "logging.h"
 #include "zoomstack.h"
 #include <QRubberBand>
 #include "qwt_scale_map.h"
 #include <QtDebug>
+#include "qwtplotimpl.h"
 #include "plot.h"
 
 constexpr int MinimumZoom = 8;
 
-PlotZoom::PlotZoom(Plot *plot) : plot(plot)
+PlotZoom::PlotZoom(QwtPlotImpl *plot) : plot(plot)
 {DDD;
 
 }
@@ -81,7 +68,7 @@ ZoomStack::zoomCoordinates PlotZoom::endZoom(QMouseEvent *mEvent)
 
         coords.coords.insert(Enums::AxisType::atBottom, {xMin, xMax});
         coords.coords.insert(Enums::AxisType::atLeft, {yMin, yMax});
-        if (plot->type() != Enums::PlotType::Spectrogram)
+        if (plot->parent->type() != Enums::PlotType::Spectrogram)
             coords.coords.insert(Enums::AxisType::atRight, {ySMin, ySMax});
     }
     return coords;

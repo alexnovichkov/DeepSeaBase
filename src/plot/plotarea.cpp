@@ -213,7 +213,7 @@ Plot *PlotArea::plot()
 void PlotArea::addPlot(Enums::PlotType type)
 {DDD;
     if (m_plot) {
-        plotsLayout->removeWidget(m_plot);
+        plotsLayout->removeWidget(m_plot->widget());
         delete m_plot;
     }
     else {
@@ -247,7 +247,7 @@ void PlotArea::addPlot(Enums::PlotType type)
     if (m_plot->toolBarWidget()) toolBar()->addWidget(m_plot->toolBarWidget());
 
 
-    plotsLayout->addWidget(m_plot,1,0);
+    plotsLayout->addWidget(m_plot->widget(),1,0);
 
     connect(m_plot, SIGNAL(curvesCountChanged()), this, SIGNAL(curvesCountChanged()));
     connect(m_plot, SIGNAL(channelPlotted(Channel*)), this, SIGNAL(channelPlotted(Channel*)));
@@ -837,7 +837,7 @@ void PlotArea::onDropEvent(const QVector<Channel *> &channels)
             type = Enums::PlotType::Time;
         else if (channels.first()->data()->blocksCount()>1)
             type = Enums::PlotType::Spectrogram;
-        else if (channels.first()->data()->xValuesFormat() == DataHolder::XValuesNonUniform)
+        else if (channels.first()->octaveType() != 0)
             type = Enums::PlotType::Octave;
     }
     addPlot(type);

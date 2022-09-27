@@ -31,7 +31,7 @@
 
 class QMouseEvent;
 class QRubberBand;
-class Plot;
+class QwtPlotImpl;
 
 class PlotZoom : public QObject
 {
@@ -39,7 +39,7 @@ class PlotZoom : public QObject
 
 public:
     // конструктор
-    explicit PlotZoom(Plot *plot);
+    explicit PlotZoom(QwtPlotImpl *plot);
 
     void startZoom(QMouseEvent *);
     void proceedZoom(QMouseEvent *);
@@ -47,7 +47,7 @@ public:
     void stopZoom();
 private:
     QRubberBand *rubberBand = nullptr;
-    Plot *plot;
+    QwtPlotImpl *plot;
 
     int startingPosX = 0;
     int startingPosY = 0;

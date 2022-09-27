@@ -15,7 +15,7 @@ void ClickableLabel::mouseReleaseEvent(QMouseEvent *ev)
 }
 
 CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
-    QDialog(parent), curve(curve), plot(parent)
+    QDialog(parent->widget()), curve(curve), plot(parent)
 {DDD;
     setWindowTitle("Настройки кривой");
 
@@ -92,7 +92,7 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
     axisComboBox->setCurrentIndex(static_cast<int>(curve->yAxis()));
     connect(axisComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             [=](int axis) {
-        plot->moveCurve(curve, Enums::AxisType(axis));
+        plot->moveCurve(curve, Enums::AxisType(axis+1));
     });
 
     QFormLayout *l = new QFormLayout;

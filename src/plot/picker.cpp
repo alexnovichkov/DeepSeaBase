@@ -6,17 +6,11 @@
 #include <QApplication>
 //#include "qwt_scale_map.h"
 #include <QMenu>
+#include "plotinterface.h"
 
 Picker::Picker(Plot *plot) : plot(plot)
 {DDD;
 //    mode = ModeNone;
-}
-
-bool isCurve(QwtPlotItem *i)
-{
-    auto rtti = i->rtti();
-    return (rtti == QwtPlotItem::Rtti_PlotCurve || rtti == QwtPlotItem::Rtti_PlotSpectrogram
-            || rtti == QwtPlotItem::Rtti_PlotHistogram);
 }
 
 Selected Picker::findObject(QMouseEvent *e)
@@ -25,56 +19,7 @@ Selected Picker::findObject(QMouseEvent *e)
 
     if (e->modifiers() == Qt::NoModifier || e->modifiers() == Qt::ControlModifier) {
         pos = e->pos();
-
-        //Ищем элемент под курсором мыши
-
-        //сначала ищем метки, курсоры и т.д., то есть не кривые
-        {
-            double minDist = qInf();
-            const auto allItems = plot->itemList();
-            for (auto item: allItems) {
-                if (auto selectable = dynamic_cast<Selectable*>(item)) {
-                    if (isCurve(item)) continue;
-                    double distx = 0.0;
-                    double disty = 0.0;
-                    SelectedPoint point;
-                    if (selectable->underMouse(pos, &distx, &disty, &point)) {
-                        double dist = 0.0;
-                        if (distx == qInf()) dist = disty;
-                        else if (disty == qInf()) dist = distx;
-                        else dist = sqrt(distx*distx+disty*disty);
-                        if (!selected.object || dist < minDist) {
-                            selected.object = selectable;
-                            selected.point = point;
-                            minDist = dist;
-                        }
-                    }
-                }
-            }
-        }
-        if (!selected.object) {
-            double minDist = qInf();
-            const auto allItems = plot->itemList();
-            for (auto item: allItems) {
-                if (auto selectable = dynamic_cast<Selectable*>(item)) {
-                    if (!isCurve(item)) continue;
-                    double distx = 0.0;
-                    double disty = 0.0;
-                    SelectedPoint point;
-                    if (selectable->underMouse(pos, &distx, &disty, &point)) {
-                        double dist = 0.0;
-                        if (distx == qInf()) dist = disty;
-                        else if (disty == qInf()) dist = distx;
-                        else dist = sqrt(distx*distx+disty*disty);
-                        if (!selected.object || dist < minDist) {
-                            selected.object = selectable;
-                            selected.point = point;
-                            minDist = dist;
-                        }
-                    }
-                }
-            }
-        }
+        selected = plot->impl()->findObject(pos);
     }
     return selected;
 }
@@ -96,13 +41,8 @@ void Picker::startPick(QPoint startPos, Selected selected)
 
 void Picker::deselect()
 {DDD;
-    const auto allItems = plot->itemList();
-    for (auto item: allItems) {
-        if (auto selectable = dynamic_cast<Selectable*>(item)) {
-            //if (selectable != currentSelected)
-                selectable->setSelected(false, SelectedPoint());
-        }
-    }
+    plot->impl()->deselect();
+
     currentSelected.clear();
 }
 
@@ -175,7 +115,7 @@ void Picker::proceedPick(QMouseEvent *e)
     currentSelected.object->moveToPos(e->pos(), startPosition);
     startPosition = e->pos();
 
-    plot->replot();
+    plot->impl()->replot();
 }
 
 void Picker::endPick(QMouseEvent *e)
@@ -197,6 +137,6 @@ void Picker::endPick(QMouseEvent *e)
 
 //    }
 
-    plot->replot();
+    plot->impl()->replot();
 }
 

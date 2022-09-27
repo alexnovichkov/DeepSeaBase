@@ -1,4 +1,4 @@
-#include "barcurve.h"
+#include "qwtbarcurve.h"
 
 #include "logging.h"
 #include "fileformats/filedescriptor.h"
@@ -8,8 +8,9 @@
 #include "qwt_scale_map.h"
 #include "pointlabel.h"
 #include "plot.h"
+#include "qwtplotimpl.h"
 
-BarCurve::BarCurve(const QString &title, Channel *channel) :  QwtPlotHistogram(title),
+QwtBarCurve::QwtBarCurve(const QString &title, Channel *channel) :  QwtPlotHistogram(title),
     Curve(title, channel)
 {DDD;
     type = Type::Line;
@@ -20,63 +21,63 @@ BarCurve::BarCurve(const QString &title, Channel *channel) :  QwtPlotHistogram(t
     setStyle(QwtPlotHistogram::Outline);
 }
 
-SamplePoint BarCurve::samplePoint(SelectedPoint point) const
+SamplePoint QwtBarCurve::samplePoint(SelectedPoint point) const
 {DDD;
     return histogramdata->samplePoint(point);
 }
 
-void BarCurve::attachTo(QwtPlot *plot)
+void QwtBarCurve::attachTo(QwtPlot *plot)
 {DDD;
     QwtPlotHistogram::attach(plot);
 }
 
-QString BarCurve::title() const
+QString QwtBarCurve::title() const
 {DDD;
     return QwtPlotHistogram::title().text();
 }
 
-void BarCurve::setTitle(const QString &title)
+void QwtBarCurve::setTitle(const QString &title)
 {DDD;
     QwtPlotHistogram::setTitle(title);
 }
 
-Enums::AxisType BarCurve::yAxis() const
+Enums::AxisType QwtBarCurve::yAxis() const
 {DDD;
     return toAxisType(QwtPlotHistogram::yAxis());
 }
 
-void BarCurve::setYAxis(Enums::AxisType axis)
+void QwtBarCurve::setYAxis(Enums::AxisType axis)
 {DDD;
     QwtPlotHistogram::setYAxis(toQwtAxisType(axis));
     foreach (PointLabel *l, labels)
         l->setYAxis(toQwtAxisType(axis));
 }
 
-Enums::AxisType BarCurve::xAxis() const
+Enums::AxisType QwtBarCurve::xAxis() const
 {DDD;
     return toAxisType(QwtPlotHistogram::xAxis());
 }
 
-void BarCurve::setXAxis(Enums::AxisType axis)
+void QwtBarCurve::setXAxis(Enums::AxisType axis)
 {DDD;
     QwtPlotHistogram::setXAxis(toQwtAxisType(axis));
     foreach (PointLabel *l, labels)
         l->setXAxis(toQwtAxisType(axis));
 }
 
-QPen BarCurve::pen() const
+QPen QwtBarCurve::pen() const
 {DDD;
     return QwtPlotHistogram::pen();
 }
 
-void BarCurve::updatePen()
+void QwtBarCurve::updatePen()
 {DDD;
     auto p = oldPen;
     if (selected()) p.setWidth(2);
     QwtPlotHistogram::setPen(p);
 }
 
-QList<QwtLegendData> BarCurve::legendData() const
+QList<QwtLegendData> QwtBarCurve::legendData() const
 {DDD;
     QList<QwtLegendData> result = QwtPlotHistogram::legendData();
     QwtLegendData &data = result[0];
@@ -84,7 +85,7 @@ QList<QwtLegendData> BarCurve::legendData() const
     return result;
 }
 
-void BarCurve::updateSelection(SelectedPoint point)
+void QwtBarCurve::updateSelection(SelectedPoint point)
 {DDD;
     Curve::updateSelection(point);
     if (selected()) setZ(1000);
@@ -188,7 +189,7 @@ SamplePoint HistogramData::samplePoint(SelectedPoint point) const
     return {data->xValue(point.x), data->yValue(point.x, point.z), qQNaN()};
 }
 
-double BarCurve::xMin() const
+double QwtBarCurve::xMin() const
 {DDD;
     // если шаг по оси х постоянный, возвращаем x-step/2
     if (histogramdata->data->xValuesFormat() == DataHolder::XValuesUniform)
@@ -202,7 +203,7 @@ double BarCurve::xMin() const
     return histogramdata->data->xMin() / histogramdata->factor;
 }
 
-double BarCurve::xMax() const
+double QwtBarCurve::xMax() const
 {DDD;
     // если шаг по оси х постоянный, возвращаем x-step/2
     if (histogramdata->data->xValuesFormat() == DataHolder::XValuesUniform)
@@ -217,7 +218,7 @@ double BarCurve::xMax() const
 }
 
 
-SelectedPoint BarCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
+SelectedPoint QwtBarCurve::closest(const QPoint &pos, double *dist1, double *dist2) const
 {DDD;
     int index = -1;
 
