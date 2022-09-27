@@ -10,7 +10,7 @@
 #include "logging.h"
 #include "canvaseventfilter.h"
 
-TimePlot::TimePlot(QWidget *parent) : Plot(Plot::PlotType::Time, parent)
+TimePlot::TimePlot(QWidget *parent) : Plot(Enums::PlotType::Time, parent)
 {DDD;
     playerPanel = new PlayPanel(this);
     connect(this, SIGNAL(curvesCountChanged()), playerPanel, SLOT(update()));

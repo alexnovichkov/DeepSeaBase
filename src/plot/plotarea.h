@@ -2,13 +2,15 @@
 #define PLOTAREA_H
 
 #include "DockWidget.h"
-#include <plot/plot.h>
+#include "enums.h"
 
-
+class Plot;
 class QAction;
 class Curve;
 class FileDescriptor;
 class QGridLayout;
+class Channel;
+class QLabel;
 
 class PlotArea : public ads::CDockWidget
 {
@@ -16,7 +18,7 @@ class PlotArea : public ads::CDockWidget
 public:
     PlotArea(int index, QWidget *parent);
     Plot* plot();
-    void addPlot(Plot::PlotType type);
+    void addPlot(Enums::PlotType type);
 
     void update();
 

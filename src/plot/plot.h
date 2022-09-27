@@ -1,44 +1,32 @@
 #ifndef PLOT_H
 #define PLOT_H
 
-#include <qwt_plot.h>
-#include <qwt_plot_dict.h>
+//#include <qwt_plot.h>
+//#include <qwt_plot_dict.h>
 #include <math.h>
 #include "colorselector.h"
 
-class QwtLegend;
-class QwtPlotGrid;
-class QwtPlotCanvas;
-class QwtPlotOpenGLCanvas;
+#include <QObject>
+
+class PlotInterface;
 class Curve;
 class Channel;
 class FileDescriptor;
-
 class ZoomStack;
 class DragZoom;
 class WheelZoom;
 class AxisZoom;
 class PlotZoom;
-class QwtPlotZoomer;
 class PlotTracker;
 class QAction;
-class QwtScaleEngine;
-class QwtPlotMarker;
 class Picker;
 class CanvasEventFilter;
 class AxisOverlay;
 class PlotInfoOverlay;
-class QPushButton;
-class QCheckBox;
-class QLabel;
-class QDoubleSpinBox;
-//class TrackingPanel;
 class QPrinter;
-class CheckableLegend;
 class Grid;
 class PlotModel;
 class QMenu;
-class ChannelsMimeData;
 class Cursors;
 class CursorBox;
 class Selectable;
@@ -55,21 +43,12 @@ struct Range {
 
 #include "enums.h"
 
-Enums::AxisType toAxisType(QwtAxisId id);
-QwtAxisId toQwtAxisType(Enums::AxisType type);
 
-class Plot : public QwtPlot
+
+class Plot : public QObject
 {
     Q_OBJECT
 public:
-    enum class PlotType
-    {
-        Time,
-        General,
-        Octave,
-        Spectrogram
-    };
-
     enum InteractionMode {
         NoInteraction,
         ScalingInteraction,
@@ -77,12 +56,11 @@ public:
         LabelInteraction
     };
 
-
-    explicit Plot(PlotType type, QWidget *parent = 0);
+    explicit Plot(Enums::PlotType type, QWidget *parent = 0);
     virtual ~Plot();
 
     PlotModel *model() {return m;}
-    PlotType type() const {return plotType;}
+    Enums::PlotType type() const {return plotType;}
 
     double screenToPlotCoordinates(Enums::AxisType axis, double value);
     double plotToScreenCoordinates(Enums::AxisType axis, double value);
@@ -139,7 +117,7 @@ public:
     void setInteractionMode(InteractionMode mode);
     void switchInteractionMode();
     void switchTrackingCursor();
-    void toggleAutoscale(int axis, bool toggled);
+    void toggleAutoscale(Enums::AxisType axis, bool toggled);
     void autoscale(Enums::AxisType axis = Enums::AxisType::atInvalid);
     /**
      * @brief recalculateScale пересчитывает границы графиков,
@@ -154,6 +132,8 @@ public:
     void updateLabels();
 
 protected:
+    PlotInterface *m_plot = nullptr;
+
     PlotModel *m = nullptr;
     ZoomStack *zoom = nullptr;
     QString xName;
@@ -166,7 +146,6 @@ protected:
     Grid *grid = nullptr;
     PlotTracker *tracker = nullptr;
     Picker *picker = nullptr;
-    QwtPlotCanvas *_canvas = nullptr;
 
     AxisOverlay *leftOverlay = nullptr;
     AxisOverlay *rightOverlay = nullptr;
@@ -176,8 +155,6 @@ protected:
     AxisZoom *axisZoom = nullptr;
     PlotZoom *plotZoom = nullptr;
     CanvasEventFilter *canvasFilter = nullptr;
-
-//    TrackingPanel *trackingPanel = nullptr;
 
     ColorSelector *colors = nullptr;
     Cursors *cursors = nullptr;
@@ -220,10 +197,10 @@ signals:
     //испускаем, когда бросаем каналы на график
     void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels);
 private slots:
-    void editLegendItem(QwtPlotItem *item);
-    void deleteCurveFromLegend(QwtPlotItem *item);
+//    void editLegendItem(QwtPlotItem *item);
+//    void deleteCurveFromLegend(QwtPlotItem *item);
     void showContextMenu(const QPoint &pos, Enums::AxisType axis);
-    void fixCurve(QwtPlotItem* curve);
+//    void fixCurve(QwtPlotItem* curve);
     void hoverAxis(Enums::AxisType axis, int hover);
 private:
     QColor getNextColor();
@@ -234,14 +211,15 @@ private:
     void createLegend();
 
     PlotInfoOverlay *infoOverlay = nullptr;
-    PlotType plotType = PlotType::General;
-    // QWidget interface
-public:
-    void dropEvent(QDropEvent *event) override;
-protected:
-    void dragEnterEvent(QDragEnterEvent *event) override;
-    void dragMoveEvent(QDragMoveEvent *event) override;
-    void dragLeaveEvent(QDragLeaveEvent *event) override;
+    Enums::PlotType plotType = Enums::PlotType::General;
+
+//    // QWidget interface
+//public:
+//    void dropEvent(QDropEvent *event) override;
+//protected:
+//    void dragEnterEvent(QDragEnterEvent *event) override;
+//    void dragMoveEvent(QDragMoveEvent *event) override;
+//    void dragLeaveEvent(QDragLeaveEvent *event) override;
 };
 
 #endif // PLOT_H

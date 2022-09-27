@@ -14,6 +14,7 @@
 
 #include "zoomstack.h"
 #include "plot.h"
+#include "qcustomplot/qcpplot.h"
 
 #include "logging.h"
 

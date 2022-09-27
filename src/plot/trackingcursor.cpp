@@ -116,7 +116,7 @@ QList<QAction *> TrackingCursor::actions()
     });
     l << a;
 
-    if (parent->plot()->type() == Plot::PlotType::Spectrogram) {
+    if (parent->plot()->type() == Enums::PlotType::Spectrogram) {
         a = new QAction("Сохранить спектр...", parent);
         QObject::connect(a, &QAction::triggered, [=](){
             parent->plot()->saveSpectrum(yValue());

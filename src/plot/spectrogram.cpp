@@ -12,7 +12,7 @@
 #include "cursors.h"
 #include "logging.h"
 
-Spectrogram::Spectrogram(QWidget *parent) : Plot(Plot::PlotType::Spectrogram, parent)
+Spectrogram::Spectrogram(QWidget *parent) : Plot(Enums::PlotType::Spectrogram, parent)
 {DDD;
 
 }

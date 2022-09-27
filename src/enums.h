@@ -9,11 +9,19 @@ namespace Enums {
         Down
     };
     enum class AxisType {
-        atLeft,
-        atRight,
-        atTop,
-        atBottom,
-        atInvalid
+        atLeft = 1,
+        atRight = 2,
+        atTop = 4,
+        atBottom = 8,
+        atInvalid = 0
+    };
+
+    enum class PlotType
+    {
+        Time,
+        General,
+        Octave,
+        Spectrogram
     };
 }
 

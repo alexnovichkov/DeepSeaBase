@@ -1700,7 +1700,7 @@ void MainWindow::saveHorizontalSlice(double zValue)
 {DDD;
     if (!currentPlot || !currentPlot->plot()) return;
     if (currentPlot->plot()->curvesCount()==0) return;
-    if (currentPlot->plot()->type() != Plot::PlotType::Spectrogram) return;
+    if (currentPlot->plot()->type() != Enums::PlotType::Spectrogram) return;
 
     auto channels = currentPlot->plot()->model()->plottedChannels();
     if (channels.size() != 1) return;
@@ -1797,7 +1797,7 @@ void MainWindow::saveVerticalSlice(double frequency)
 {DDD;
     if (!currentPlot || !currentPlot->plot()) return;
     if (currentPlot->plot()->curvesCount()==0) return;
-    if (currentPlot->plot()->type() != Plot::PlotType::Spectrogram) return;
+    if (currentPlot->plot()->type() != Enums::PlotType::Spectrogram) return;
 
     auto channels = currentPlot->plot()->model()->plottedChannels();
     if (channels.size() != 1) return;
@@ -2015,7 +2015,7 @@ void MainWindow::updateActions()
     const int curvesCount = currentPlot ? currentPlot->curvesCount():0;
     bool spectrogram = false;
     if (currentPlot && currentPlot->plot())
-        spectrogram = currentPlot->plot()->type() == Plot::PlotType::Spectrogram;
+        spectrogram = currentPlot->plot()->type() == Enums::PlotType::Spectrogram;
 
     saveAct->setEnabled(currentTab->model->changed());
 

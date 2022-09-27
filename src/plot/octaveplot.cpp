@@ -5,7 +5,7 @@
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
 
-OctavePlot::OctavePlot(QWidget *parent) : Plot(Plot::PlotType::Octave, parent)
+OctavePlot::OctavePlot(QWidget *parent) : Plot(Enums::PlotType::Octave, parent)
 {DDD;
     //by default for Octave curves
     xScaleIsLogarithmic = true;

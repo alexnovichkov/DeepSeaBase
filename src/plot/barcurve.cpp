@@ -229,7 +229,7 @@ SelectedPoint BarCurve::closest(const QPoint &pos, double *dist1, double *dist2)
 
     int from = 0;
     int to = numSamples-1;
-    evaluateScale(from, to, range.first, range.second);
+    evaluateScale(from, to, range.min, range.max);
 
     double dminx = qInf();
     double dminy = qInf();

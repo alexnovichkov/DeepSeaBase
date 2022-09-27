@@ -72,6 +72,7 @@ SOURCES += main.cpp\
     plot/cursorlabel.cpp \
     plot/cursors.cpp \
     plot/cursorsingle.cpp \
+    plot/qcustomplot/qcpplot.cpp \
     plot/qcustomplot/qcustomplot.cpp \
     plot/canvaseventfilter.cpp \
     plot/clearablespinbox.cpp \
@@ -82,6 +83,7 @@ SOURCES += main.cpp\
     plot/plotarea.cpp \
     plot/plotinfooverlay.cpp \
     plot/plotmodel.cpp \
+    plot/qwtplotimpl.cpp \
     plot/scaledraw.cpp \
     plot/spectrogram.cpp \
     plot/timeplot.cpp \
@@ -196,6 +198,8 @@ HEADERS  += mainwindow.h \
     plot/cursorlabel.h \
     plot/cursors.h \
     plot/cursorsingle.h \
+    plot/plotinterface.h \
+    plot/qcustomplot/qcpplot.h \
     plot/qcustomplot/qcustomplot.h \
     plot/qcustomplot/graph2d.h \
     plot/qcustomplot/abstractdata2d.h \
@@ -208,6 +212,7 @@ HEADERS  += mainwindow.h \
     plot/plotarea.h \
     plot/plotinfooverlay.h \
     plot/plotmodel.h \
+    plot/qwtplotimpl.h \
     plot/scaledraw.h \
     plot/selectable.h \
     plot/spectrogram.h \

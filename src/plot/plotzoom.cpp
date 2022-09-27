@@ -81,7 +81,7 @@ ZoomStack::zoomCoordinates PlotZoom::endZoom(QMouseEvent *mEvent)
 
         coords.coords.insert(Enums::AxisType::atBottom, {xMin, xMax});
         coords.coords.insert(Enums::AxisType::atLeft, {yMin, yMax});
-        if (plot->type() != Plot::PlotType::Spectrogram)
+        if (plot->type() != Enums::PlotType::Spectrogram)
             coords.coords.insert(Enums::AxisType::atRight, {ySMin, ySMax});
     }
     return coords;

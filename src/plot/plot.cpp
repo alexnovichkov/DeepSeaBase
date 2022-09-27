@@ -1,15 +1,5 @@
 #include "plot.h"
 
-#include <qwt_plot_opengl_canvas.h>
-#include <qwt_plot_canvas.h>
-//#include <qwt_legend.h>
-#include <qwt_plot_grid.h>
-#include <qwt_plot_curve.h>
-#include <qwt_symbol.h>
-#include <qwt_scale_widget.h>
-#include <qwt_scale_map.h>
-#include <qwt_color_map.h>
-
 #include "fileformats/filedescriptor.h"
 #include "curve.h"
 #include "linecurve.h"
@@ -18,15 +8,6 @@
 
 #include "zoomstack.h"
 #include "colormapfactory.h"
-
-#include <qwt_plot_zoomer.h>
-#include <qwt_picker.h>
-#include <qwt_picker_machine.h>
-#include <qwt_plot_renderer.h>
-#include <qwt_plot_layout.h>
-#include <qwt_plot_panner.h>
-#include <qwt_plot_magnifier.h>
-#include <qwt_text.h>
 
 #include <QtCore>
 #include <QMessageBox>
@@ -73,7 +54,7 @@
 #include "cursors.h"
 #include "cursorbox.h"
 
-Plot::Plot(PlotType type, QWidget *parent) :
+Plot::Plot(Enums::PlotType type, QWidget *parent) :
     QwtPlot(parent), plotType(type)
 {DDD;
     m = new PlotModel(this);
@@ -259,7 +240,7 @@ QMenu *Plot::createMenu(Enums::AxisType axis, const QPoint &pos)
             cursors->addSingleCursor(canvas()->mapFromGlobal(pos), Cursor::Style::Cross);
         });
         menu->addMenu(scm);
-        if (type() != PlotType::Spectrogram) {
+        if (type() != Enums::PlotType::Spectrogram) {
             auto dcm = new QMenu("Двойной курсор", this);
             dcm->addAction("Стандартный", [=](){
                 cursors->addDoubleCursor(canvas()->mapFromGlobal(pos), Cursor::Style::Vertical);
@@ -671,7 +652,7 @@ void Plot::removeLabels()
 
 void Plot::moveCurve(Curve *curve, Enums::AxisType axis)
 {DDD;
-    if (type()==Plot::PlotType::Spectrogram) return;
+    if (type()==Enums::PlotType::Spectrogram) return;
 
     if ((axis == Enums::AxisType::atLeft && canBePlottedOnLeftAxis(curve->channel))
         || (axis == Enums::AxisType::atRight && canBePlottedOnRightAxis(curve->channel))) {
@@ -787,7 +768,7 @@ void Plot::recalculateScale(bool leftAxis)
     else ybounds = zoom->verticalScaleBoundsSlave;
     ybounds->reset();
 
-    const bool left = leftAxis || type()==Plot::PlotType::Spectrogram;
+    const bool left = leftAxis || type()==Enums::PlotType::Spectrogram;
     const auto count = left?m->leftCurvesCount():m->rightCurvesCount();
     for (int i=0; i<count; ++i) {
         auto curve = m->curve(i,left);
@@ -1020,16 +1001,16 @@ void Plot::switchTrackingCursor()
     if (cursorBox) cursorBox->setVisible(!cursorBox->isVisible());
 }
 
-void Plot::toggleAutoscale(int axis, bool toggled)
+void Plot::toggleAutoscale(Enums::AxisType axis, bool toggled)
 {DDD;
     switch (axis) {
-        case 0: // x axis
+        case Enums::AxisType::atBottom: // x axis
             zoom->horizontalScaleBounds->setFixed(!toggled);
             break;
-        case 1: // y axis
+        case Enums::AxisType::atLeft: // y axis
             zoom->verticalScaleBounds->setFixed(!toggled);
             break;
-        case 2: // y slave axis
+        case Enums::AxisType::atRight: // y slave axis
             zoom->verticalScaleBoundsSlave->setFixed(!toggled);
             break;
         default:
@@ -1039,7 +1020,7 @@ void Plot::toggleAutoscale(int axis, bool toggled)
 
 void Plot::autoscale(Enums::AxisType axis)
 {DDD;
-    zoom->autoscale(axis, type()==Plot::PlotType::Spectrogram);
+    zoom->autoscale(axis, type()==Enums::PlotType::Spectrogram);
 }
 
 void Plot::setInteractionMode(Plot::InteractionMode mode)
