@@ -1,15 +1,9 @@
 #include "curve.h"
-#include "qwt_symbol.h"
 #include "pointlabel.h"
 
 #include "fileformats/filedescriptor.h"
-#include <qwt_curve_fitter.h>
 #include "logging.h"
-#include "qwt_scale_map.h"
-#include "qwt_painter.h"
-#include "qwt_clipper.h"
 #include "dataholder.h"
-#include "qwt_legend_data.h"
 #include "pointmarker.h"
 #include "plot.h"
 
@@ -20,12 +14,12 @@ Curve::Curve(const QString &title, Channel *channel)
     this->channel = channel;
     this->duplicate = false;
     this->channel->curve = this;
-    marker = new PointMarker(this);
+//    marker = new PointMarker(this);
 }
 
 Curve::~Curve()
 {DDD;
-    foreach(PointLabel *l, labels) l->detach();
+//    detachFrom(m_plot);
     qDeleteAll(labels);
     labels.clear();
     delete marker;
@@ -37,11 +31,20 @@ Curve::~Curve()
     }
 }
 
-void Curve::attach(Plot *plot)
+void Curve::attachTo(Plot *plot)
 {DDD;
     m_plot = plot;
-    marker->attach(plot);
-    marker->setVisible(false);
+    if (marker) marker->attach(plot);
+    if (marker) marker->setVisible(false);
+}
+
+void Curve::detachFrom(Plot *plot)
+{
+    //detach labels
+    foreach(PointLabel *l, labels) l->detachFrom(plot);
+    //detach marker
+    if (marker) marker->detach();
+
 }
 
 void Curve::addLabel(PointLabel *label)
@@ -53,7 +56,7 @@ void Curve::removeLabel(PointLabel *label)
 {DDD;
     if (labels.contains(label)) {
         labels.removeOne(label);
-        label->detach();
+        label->detachFrom(m_plot);
         delete label;
     }
 }
@@ -61,7 +64,7 @@ void Curve::removeLabel(PointLabel *label)
 void Curve::removeLabels()
 {DDD;
     foreach (PointLabel *label, labels) {
-        label->detach();
+        label->detachFrom(m_plot);
         delete label;
     }
     labels.clear();
@@ -178,12 +181,14 @@ void Curve::switchFixed()
 QMap<int, QVariant> Curve::commonLegendData() const
 {DDD;
     QMap<int, QVariant> data;
-    data.insert(QwtLegendData::UserRole+3, pen().color());
-    data.insert(QwtLegendData::TitleRole, title());
+
+    data.insert(Enums::ldColor, pen().color());
+    data.insert(Enums::ldTitle, title());
     if (duplicate && fileNumber>0)
-        data.insert(QwtLegendData::UserRole+1, fileNumber);
-    data.insert(QwtLegendData::UserRole+2, selected());
-    data.insert(QwtLegendData::UserRole+4, fixed);
+        data.insert(Enums::ldFileNumber, fileNumber);
+    data.insert(Enums::ldSelected, selected());
+    data.insert(Enums::ldFixed, fixed);
+
     return data;
 }
 
@@ -269,7 +274,7 @@ void Curve::fix()
             label->setPoint(selectedPoint);
 //            label->setOrigin(val);
             addLabel(label);
-            label->attach(m_plot->impl());
+            label->attachTo(m_plot);
         }
     }
 }
@@ -290,11 +295,13 @@ void Curve::updateSelection(SelectedPoint point)
 
     selectedPoint = point;
 
-    if (!selected()) marker->setVisible(false);
+    if (!selected()) {
+        if (marker) marker->setVisible(false);
+    }
     else {
-        marker->setVisible(true);
+        if (marker) marker->setVisible(true);
         auto val = samplePoint(selectedPoint);
 
-        marker->moveTo({val.x, qIsNaN(val.z) ? val.y : val.z});
+        if (marker) marker->moveTo({val.x, qIsNaN(val.z) ? val.y : val.z});
     }
 }

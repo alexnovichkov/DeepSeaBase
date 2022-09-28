@@ -69,6 +69,7 @@ SOURCES += main.cpp\
     plot/cursordialog.cpp \
     plot/cursorlabel.cpp \
     plot/cursors.cpp \
+    plot/qcustomplot/data2d.cpp \
     plot/qcustomplot/qcpplot.cpp \
     plot/qcustomplot/qcustomplot.cpp \
     plot/canvaseventfilter.cpp \
@@ -196,10 +197,10 @@ HEADERS  += mainwindow.h \
     plot/cursorlabel.h \
     plot/cursors.h \
     plot/plotinterface.h \
+    plot/qcustomplot/data2d.h \
     plot/qcustomplot/qcpplot.h \
     plot/qcustomplot/qcustomplot.h \
     plot/qcustomplot/graph2d.h \
-    plot/qcustomplot/abstractdata2d.h \
     plot/canvaseventfilter.h \
     plot/clearablespinbox.h \
     plot/filterpointmapper.h \

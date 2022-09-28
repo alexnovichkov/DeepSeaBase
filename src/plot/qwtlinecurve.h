@@ -4,6 +4,7 @@
 #include "curve.h"
 #include "qwt_axis_id.h"
 #include <QPolygonF>
+#include <qwt_plot_curve.h>
 
 class FilterPointMapper;
 
@@ -42,7 +43,7 @@ protected:
 
     // Curve interface
 public:
-    virtual void attachTo(QwtPlot *plot) override;
+    virtual void attachTo(Plot *plot) override;
     virtual QString title() const override;
     virtual void setTitle(const QString &title) override;
 

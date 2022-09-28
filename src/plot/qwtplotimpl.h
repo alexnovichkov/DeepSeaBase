@@ -18,6 +18,7 @@ class AxisZoom;
 class PlotZoom;
 class CanvasEventFilter;
 class Picker;
+class PlotTracker;
 
 Enums::AxisType toAxisType(QwtAxisId id);
 QwtAxisId toQwtAxisType(Enums::AxisType type);
@@ -30,8 +31,8 @@ public:
     ~QwtPlotImpl();
 
     virtual void createLegend() override;
-    virtual double screenToPlotCoordinates(Enums::AxisType axis, double value) override;
-    virtual double plotToScreenCoordinates(Enums::AxisType axis, double value) override;
+    virtual double screenToPlotCoordinates(Enums::AxisType axis, double value) const override;
+    virtual double plotToScreenCoordinates(Enums::AxisType axis, double value) const override;
     virtual Range plotRange(Enums::AxisType axis) const override;
     virtual Range screenRange(Enums::AxisType axis) const override;
     virtual void replot() override;
@@ -50,9 +51,8 @@ public:
     virtual QString axisTitle(Enums::AxisType axis) const override;
     virtual void importPlot(const QString &fileName, const QSize &size, int resolution) override;
     virtual void importPlot(QPrinter &printer, const QSize &size, int resolution) override;
-    virtual void addCurve(Curve *curve) override;
     virtual void setInteractionMode(Enums::InteractionMode mode) override;
-    virtual Curve *createCurve(const QString &legendName, Channel *channel) override;
+    virtual Curve *createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis) override;
     virtual Selected findObject(QPoint pos) const override;
     virtual void deselect() override;
 
@@ -78,6 +78,7 @@ private:
     AxisZoom *axisZoom = nullptr;
     PlotZoom *plotZoom = nullptr;
     CanvasEventFilter *canvasFilter = nullptr;
+    PlotTracker *tracker = nullptr;
 
     // QWidget interface
 public:

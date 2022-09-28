@@ -11,6 +11,7 @@
 #include "logging.h"
 #include <qwt_plot.h>
 #include "plotinterface.h"
+#include <qwt_interval.h>
 
 //возвращает СКЗ в диапазоне [x1,x2]
 double rms(DataHolder *data, const QwtCursorDouble *cursor, const QList<Cursor*> &rejectCursors)

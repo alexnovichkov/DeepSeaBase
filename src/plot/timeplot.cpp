@@ -22,9 +22,12 @@ TimePlot::~TimePlot()
     //delete playerPanel;
 }
 
-Curve *TimePlot::createCurve(const QString &legendName, Channel *channel)
+Curve *TimePlot::createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis)
 {DDD;
-    return new TimeCurve(legendName, channel);
+    auto result = new TimeCurve(legendName, channel);
+    result->setXAxis(xAxis);
+    result->setYAxis(yAxis);
+    return result;
 }
 
 QWidget *TimePlot::toolBarWidget()

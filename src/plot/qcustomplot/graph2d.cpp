@@ -1,16 +1,26 @@
 #include "graph2d.h"
 
-#include "abstractdata2d.h"
+#include "data2d.h"
+#include "fileformats/filedescriptor.h"
+#include "plot/plot.h"
+#include "plot/plotinterface.h"
 
-Graph2D::Graph2D(QCPAxis *keyAxis, QCPAxis *valueAxis) :
-    QCPAbstractPlottable(keyAxis, valueAxis)
+Graph2D::Graph2D(const QString &title, Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis) :
+    QCPAbstractPlottable(keyAxis, valueAxis), Curve(title, channel)
 {
+    setData(new Data2D(channel->data()));
 
 }
 
-void Graph2D::setData(Data *data)
+Graph2D::~Graph2D()
+{
+    delete m_data;
+}
+
+void Graph2D::setData(Data2D *data)
 {
     if (m_data == data) return;
+    delete m_data;
     m_data = data;
     // update();
 }
@@ -89,7 +99,7 @@ void Graph2D::getDataSegments(QList<QCPDataRange> &selectedSegments, QList<QCPDa
     unselectedSegments.clear();
     if (mSelectable == QCP::stWhole) // stWhole selection type draws the entire plottable with selected style if mSelection isn't empty
     {
-      if (selected())
+      if (QCPAbstractPlottable::selected())
         selectedSegments << QCPDataRange(0, dataCount());
       else
         unselectedSegments << QCPDataRange(0, dataCount());
@@ -1313,4 +1323,81 @@ int Graph2D::findBegin(double sortKey, bool expandedRange) const
 int Graph2D::findEnd(double sortKey, bool expandedRange) const
 {
     return m_data->findEnd(sortKey, expandedRange);
+}
+
+
+void Graph2D::attachTo(Plot *plot)
+{
+    Curve::attachTo(plot);
+
+
+}
+
+void Graph2D::detachFrom(Plot *plot)
+{
+    Curve::detachFrom(plot);
+    if (auto qcp = dynamic_cast<QCustomPlot*>(plot->impl()))
+        qcp->removePlottable(this, false);
+}
+
+QString Graph2D::title() const
+{
+    return name();
+}
+
+void Graph2D::setTitle(const QString &title)
+{
+    setName(title);
+}
+
+Enums::AxisType Graph2D::yAxis() const
+{
+    if (auto ax = this->valueAxis()) return static_cast<Enums::AxisType>(ax->axisType());
+    return Enums::AxisType::atInvalid;
+}
+
+void Graph2D::setYAxis(Enums::AxisType axis)
+{
+    auto ax = parentPlot()->axisRect(0)->axis(static_cast<QCPAxis::AxisType>(axis));
+    setValueAxis(ax);
+
+//    foreach (PointLabel *l, labels)
+//        l->setYAxis(toQwtAxisType(axis));
+}
+
+Enums::AxisType Graph2D::xAxis() const
+{
+    if (auto ax = this->keyAxis()) return static_cast<Enums::AxisType>(ax->axisType());
+    return Enums::AxisType::atInvalid;
+}
+
+void Graph2D::setXAxis(Enums::AxisType axis)
+{
+    auto ax = parentPlot()->axisRect(0)->axis(static_cast<QCPAxis::AxisType>(axis));
+    setKeyAxis(ax);
+
+//    foreach (PointLabel *l, labels)
+//        l->setXAxis(toQwtAxisType(axis));
+}
+
+QPen Graph2D::pen() const
+{
+    return QCPAbstractPlottable::pen();
+}
+
+SamplePoint Graph2D::samplePoint(SelectedPoint point) const
+{
+    return {m_data->mainKey(point.x), m_data->mainValue(point.x), qQNaN()};
+}
+
+SelectedPoint Graph2D::closest(const QPoint &pos, double *dist, double *dist2) const
+{
+    return SelectedPoint();
+}
+
+void Graph2D::updatePen()
+{
+    auto p = oldPen;
+    if (Curve::selected()) p.setWidth(2);
+    QCPAbstractPlottable::setPen(p);
 }

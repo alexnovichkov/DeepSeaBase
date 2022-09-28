@@ -26,9 +26,12 @@ SamplePoint QwtBarCurve::samplePoint(SelectedPoint point) const
     return histogramdata->samplePoint(point);
 }
 
-void QwtBarCurve::attachTo(QwtPlot *plot)
+void QwtBarCurve::attachTo(Plot *plot)
 {DDD;
-    QwtPlotHistogram::attach(plot);
+    Curve::attachTo(plot);
+
+    if (auto impl = dynamic_cast<QwtPlot*>(plot->impl()))
+        QwtPlotHistogram::attach(impl);
 }
 
 QString QwtBarCurve::title() const
@@ -50,7 +53,7 @@ void QwtBarCurve::setYAxis(Enums::AxisType axis)
 {DDD;
     QwtPlotHistogram::setYAxis(toQwtAxisType(axis));
     foreach (PointLabel *l, labels)
-        l->setYAxis(toQwtAxisType(axis));
+        l->setYAxis(axis);
 }
 
 Enums::AxisType QwtBarCurve::xAxis() const
@@ -62,7 +65,7 @@ void QwtBarCurve::setXAxis(Enums::AxisType axis)
 {DDD;
     QwtPlotHistogram::setXAxis(toQwtAxisType(axis));
     foreach (PointLabel *l, labels)
-        l->setXAxis(toQwtAxisType(axis));
+        l->setXAxis(axis);
 }
 
 QPen QwtBarCurve::pen() const
@@ -81,7 +84,17 @@ QList<QwtLegendData> QwtBarCurve::legendData() const
 {DDD;
     QList<QwtLegendData> result = QwtPlotHistogram::legendData();
     QwtLegendData &data = result[0];
-    data.setValues(commonLegendData());
+    auto common = commonLegendData();
+    for (auto [key, val] : asKeyValueRange(common)) {
+        switch (key) {
+            case Enums::ldColor: data.setValue(QwtLegendData::UserRole+3, val); break;
+            case Enums::ldTitle: data.setValue(QwtLegendData::TitleRole, val); break;
+            case Enums::ldFixed: data.setValue(QwtLegendData::UserRole+4, val); break;
+            case Enums::ldSelected: data.setValue(QwtLegendData::UserRole+2, val); break;
+            case Enums::ldFileNumber: data.setValue(QwtLegendData::UserRole+1, val); break;
+        }
+    }
+
     return result;
 }
 

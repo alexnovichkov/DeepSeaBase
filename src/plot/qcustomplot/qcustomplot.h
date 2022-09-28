@@ -3838,8 +3838,8 @@ public:
   // plottable interface:
   QCPAbstractPlottable *plottable(int index);
   QCPAbstractPlottable *plottable();
-  bool removePlottable(QCPAbstractPlottable *plottable);
-  bool removePlottable(int index);
+  bool removePlottable(QCPAbstractPlottable *plottable, bool deleteAsWell);
+  bool removePlottable(int index, bool deleteAsWell);
   int clearPlottables();
   int plottableCount() const;
   QList<QCPAbstractPlottable*> selectedPlottables() const;

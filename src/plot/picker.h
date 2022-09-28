@@ -7,7 +7,6 @@
 #include "enums.h"
 #include "selectable.h"
 
-class PointLabel;
 class PointMarker;
 class TrackingCursor;
 class Curve;

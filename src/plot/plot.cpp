@@ -42,6 +42,7 @@
 #include "cursorbox.h"
 #include "picker.h"
 #include "qwtplotimpl.h"
+#include "qcustomplot/qcpplot.h"
 
 Plot::Plot(Enums::PlotType type, QWidget *parent) :
     plotType(type)
@@ -54,10 +55,8 @@ Plot::Plot(Enums::PlotType type, QWidget *parent) :
 
     zoom = new ZoomStack(this);
 
-    m_plot = new QwtPlotImpl(this, parent);
-
-    tracker = new PlotTracker(this);
-//    tracker->setEnabled(Settings::getSetting("pickerEnabled", true).toBool());
+//    m_plot = new QwtPlotImpl(this, parent);
+    m_plot = new QCPPlot(this, parent);
 
 
     QVariantList list = Settings::getSetting("colors").toList();
@@ -86,7 +85,6 @@ Plot::~Plot()
 
 //    delete trackingPanel;
     delete cursorBox;
-    delete tracker;
     delete picker;
 
     Settings::setSetting("axisLabelsVisible", axisLabelsVisible);
@@ -107,12 +105,12 @@ PlotInterface *Plot::impl() const
     return m_plot;
 }
 
-double Plot::screenToPlotCoordinates(Enums::AxisType axis, double value)
+double Plot::screenToPlotCoordinates(Enums::AxisType axis, double value) const
 {
     return m_plot->screenToPlotCoordinates(axis, value);
 }
 
-double Plot::plotToScreenCoordinates(Enums::AxisType axis, double value)
+double Plot::plotToScreenCoordinates(Enums::AxisType axis, double value) const
 {
     return m_plot->plotToScreenCoordinates(axis, value);
 }
@@ -441,6 +439,7 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
         }
         zoom->horizontalScaleBounds->removeToAutoscale(curve->xMin(), curve->xMax());
 
+        curve->detachFrom(this);
         delete curve;
 
         if (m->leftCurvesCount()==0) {
@@ -529,9 +528,9 @@ QString Plot::pointCoordinates(const QPointF &pos)
     return smartDouble(pos.x())+", "+smartDouble(pos.y());
 }
 
-Curve *Plot::createCurve(const QString &legendName, Channel *channel)
+Curve *Plot::createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis)
 {DDD;
-    return m_plot->createCurve(legendName, channel);
+    return m_plot->createCurve(legendName, channel, xAxis, yAxis);
 }
 
 void Plot::setAxis(Enums::AxisType axis, const QString &name)
@@ -688,10 +687,12 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
         ch->populate();
     }
 
-    setAxis(Enums::AxisType::atBottom, ch->xName());
-    m_plot->enableAxis(Enums::AxisType::atBottom, true);
+    auto axX = Enums::AxisType::atBottom;
 
-    Enums::AxisType ax = Enums::AxisType::atLeft;
+    setAxis(axX, ch->xName());
+    m_plot->enableAxis(axX, true);
+
+    auto axY = Enums::AxisType::atLeft;
     // если графиков нет, по умолчанию будем строить амплитуды по первому добавляемому графику
     if (plotOnLeft && m->leftCurvesCount()==0) {
         yValuesPresentationLeft = ch->data()->yValuesPresentation();
@@ -703,15 +704,17 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     if (plotOnLeft) ch->data()->setYValuesPresentation(yValuesPresentationLeft);
     else ch->data()->setYValuesPresentation(yValuesPresentationRight);
 
-    ax = plotOnLeft ? Enums::AxisType::atLeft : Enums::AxisType::atRight;
+    axY = plotOnLeft ? Enums::AxisType::atLeft : Enums::AxisType::atRight;
 
     m_plot->enableColorBar(Enums::AxisType::atRight, false);
 
-    setAxis(ax, ch->yName());
-    m_plot->enableAxis(ax, true);
+    setAxis(axY, ch->yName());
+    m_plot->enableAxis(axY, true);
 
 
-    Curve *g = m_plot->createCurve(ch->legendName(), ch);
+
+
+    Curve *g = m_plot->createCurve(ch->legendName(), ch, axX, axY);
     QColor nextColor = getNextColor();
     QPen pen = g->pen();
     pen.setColor(nextColor);
@@ -721,10 +724,10 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 
     m->addCurve(g, plotOnLeft);
     g->fileNumber = fileIndex;
-    g->setYAxis(ax);
+//    g->setYAxis(axY);
 
     ZoomStack::ScaleBounds *ybounds = 0;
-    if (zoom->verticalScaleBounds->axis == ax) ybounds = zoom->verticalScaleBounds;
+    if (zoom->verticalScaleBounds->axis == axY) ybounds = zoom->verticalScaleBounds;
     else ybounds = zoom->verticalScaleBoundsSlave;
 
     zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
@@ -732,9 +735,7 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 
     m_plot->setInfoVisible(false);
 
-    g->attach(this);
-    m_plot->addCurve(g);
-
+    g->attachTo(this);
 
     update();
     updatePlottedIndexes();
@@ -849,7 +850,7 @@ void Plot::switchCursor()
 
     bool pickerEnabled = picker->isEnabled();
     picker->setEnabled(!pickerEnabled);
-    if (tracker) tracker->setEnabled(!pickerEnabled);
+//    if (tracker) tracker->setEnabled(!pickerEnabled);
     Settings::setSetting("pickerEnabled", !pickerEnabled);
 }
 

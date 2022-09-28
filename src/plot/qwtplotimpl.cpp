@@ -44,6 +44,7 @@
 #include "plotzoom.h"
 #include "colormapfactory.h"
 #include "selectable.h"
+#include "plottracker.h"
 
 QwtPlotImpl::QwtPlotImpl(Plot *plot, QWidget *parent) : QwtPlot(parent), parent(plot)
 {
@@ -68,6 +69,8 @@ QwtPlotImpl::QwtPlotImpl(Plot *plot, QWidget *parent) : QwtPlot(parent), parent(
     axisWidget(QwtAxis::YLeft)->setMouseTracking(true);
     axisWidget(QwtAxis::YRight)->setMouseTracking(true);
 
+    tracker = new PlotTracker(plot);
+
     leftOverlay = new LeftAxisOverlay(this);
     rightOverlay = new RightAxisOverlay(this);
 
@@ -90,7 +93,6 @@ QwtPlotImpl::QwtPlotImpl(Plot *plot, QWidget *parent) : QwtPlot(parent), parent(
     connect(canvasFilter, SIGNAL(canvasDoubleClicked(QPoint)), this, SIGNAL(canvasDoubleClicked(QPoint)));
     connect(canvasFilter, &CanvasEventFilter::hover, this, &QwtPlotImpl::hoverAxis);
     connect(canvasFilter, &CanvasEventFilter::contextMenuRequested, plot, &Plot::showContextMenu);
-
 }
 
 QwtPlotImpl::~QwtPlotImpl()
@@ -100,6 +102,7 @@ QwtPlotImpl::~QwtPlotImpl()
     delete wheelZoom;
     delete axisZoom;
     delete canvasFilter;
+    delete tracker;
 }
 
 void QwtPlotImpl::createLegend()
@@ -115,12 +118,12 @@ void QwtPlotImpl::createLegend()
     insertLegend(leg, QwtPlot::RightLegend);
 }
 
-double QwtPlotImpl::screenToPlotCoordinates(Enums::AxisType axis, double value)
+double QwtPlotImpl::screenToPlotCoordinates(Enums::AxisType axis, double value) const
 {
     return invTransform(::toQwtAxisType(axis), value);
 }
 
-double QwtPlotImpl::plotToScreenCoordinates(Enums::AxisType axis, double value)
+double QwtPlotImpl::plotToScreenCoordinates(Enums::AxisType axis, double value) const
 {
     return transform(::toQwtAxisType(axis), value);
 }
@@ -308,12 +311,6 @@ void QwtPlotImpl::importPlot(QPrinter &printer, const QSize &size, int resolutio
     setAutoReplot(true);
 }
 
-void QwtPlotImpl::addCurve(Curve *curve)
-{
-    if (auto item = dynamic_cast<QwtPlotItem*>(curve))
-        item->attach(this);
-}
-
 void QwtPlotImpl::setInteractionMode(Enums::InteractionMode mode)
 {
     if (_canvas) _canvas->setFocusIndicator(mode == Enums::InteractionMode::ScalingInteraction?
@@ -321,16 +318,23 @@ void QwtPlotImpl::setInteractionMode(Enums::InteractionMode mode)
                                                 QwtPlotCanvas::ItemFocusIndicator);
 }
 
-Curve *QwtPlotImpl::createCurve(const QString &legendName, Channel *channel)
+Curve *QwtPlotImpl::createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis)
 {
-    if (channel->data()->blocksCount() > 1) return new QwtSpectroCurve(legendName, channel);
+    Curve *result = nullptr;
 
-    if (channel->octaveType() != 0) {
+    if (channel->data()->blocksCount() > 1) result = new QwtSpectroCurve(legendName, channel);
+
+    else if (channel->octaveType() != 0) {
         if (Settings::getSetting("plotOctaveAsHistogram", false).toBool())
-            return new QwtBarCurve(legendName, channel);
+            result = new QwtBarCurve(legendName, channel);
     }
 
-    return new QwtLineCurve(legendName, channel);
+    else result = new QwtLineCurve(legendName, channel);
+
+    result->setXAxis(xAxis);
+    result->setYAxis(yAxis);
+
+    return result;
 }
 
 bool isCurve(QwtPlotItem *i)

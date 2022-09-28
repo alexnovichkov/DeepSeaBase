@@ -1,8 +1,6 @@
 #ifndef PLOT_H
 #define PLOT_H
 
-//#include <qwt_plot.h>
-//#include <qwt_plot_dict.h>
 #include <math.h>
 #include "colorselector.h"
 
@@ -13,7 +11,6 @@ class Curve;
 class Channel;
 class FileDescriptor;
 class ZoomStack;
-class PlotTracker;
 class QAction;
 class Picker;
 class QPrinter;
@@ -42,8 +39,8 @@ public:
     QWidget *widget() const;
     PlotInterface *impl() const;
 
-    double screenToPlotCoordinates(Enums::AxisType axis, double value);
-    double plotToScreenCoordinates(Enums::AxisType axis, double value);
+    double screenToPlotCoordinates(Enums::AxisType axis, double value) const;
+    double plotToScreenCoordinates(Enums::AxisType axis, double value) const;
     Range plotRange(Enums::AxisType axis);
     Range screenRange(Enums::AxisType axis);
 
@@ -65,13 +62,13 @@ public:
 
     void focusPlot();
 
-    //default implementation returns pos as QwtText,
+    //default implementation returns pos as QString,
     //reimplemented in spectrograms to add Z coordinate
     virtual QString pointCoordinates(const QPointF &pos);
 
     //default implementation returns LineCurve
     //reimplemented in other plot types
-    virtual Curve * createCurve(const QString &legendName, Channel *channel);
+    virtual Curve * createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis);
     virtual void deleteCurve(Curve *curve, bool doReplot = true);
     //default implementation updates labels according to curves count on left and on right
     //reimplemented in spectrograms
@@ -132,8 +129,6 @@ protected:
     bool axisLabelsVisible = true;
     int yValuesPresentationLeft;
     int yValuesPresentationRight;
-
-    PlotTracker *tracker = nullptr;
 
     ColorSelector *colors = nullptr;
     Cursors *cursors = nullptr;

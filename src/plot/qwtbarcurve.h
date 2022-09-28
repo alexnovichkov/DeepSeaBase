@@ -43,7 +43,7 @@ private:
 
     // Curve interface
 public:
-    virtual void attachTo(QwtPlot *plot) override;
+    virtual void attachTo(Plot *plot) override;
     virtual QString title() const override;
     virtual void setTitle(const QString &title) override;
 

@@ -105,6 +105,8 @@ public:
     QVector<double> xValues() const;
     QVector<double> zValues() const;
 
+    QPair<double,double> yMinMax(int begin, int end);
+
     double xValue(int i) const;
     double yValue(int i, int block = 0) const;
     double yValueRaw(int i, int block = 0) const;

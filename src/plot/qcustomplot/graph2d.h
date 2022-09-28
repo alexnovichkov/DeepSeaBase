@@ -2,9 +2,11 @@
 #define GRAPH2D_H
 
 #include "qcustomplot.h"
-class Data;
+#include "plot/curve.h"
 
-class Graph2D : public QCPAbstractPlottable, public QCPPlottableInterface1D
+class Data2D;
+
+class Graph2D : public QCPAbstractPlottable, public QCPPlottableInterface1D, public Curve
 {
     Q_OBJECT
 
@@ -25,11 +27,11 @@ public:
                    };
     Q_ENUMS(LineStyle)
 
-  explicit Graph2D(QCPAxis *keyAxis, QCPAxis *valueAxis);
-    virtual ~Graph2D() Q_DECL_OVERRIDE {}
+  explicit Graph2D(const QString &title, Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis);
+    virtual ~Graph2D() Q_DECL_OVERRIDE;
 
-  void setData(Data *m_data);
-  Data *data() const {return m_data;}
+  void setData(Data2D *m_data);
+  Data2D *data() const {return m_data;}
 
   // getters
   inline LineStyle lineStyle() const { return mLineStyle; }
@@ -65,8 +67,8 @@ public:
 
 protected:
   // property members:
-  Data *m_data = nullptr;
-  LineStyle mLineStyle;
+  Data2D *m_data = nullptr;
+  LineStyle mLineStyle = lsLine;
   QCPScatterStyle mScatterStyle;
   int mScatterSkip;
   QPointer<Graph2D> mChannelFillGraph;
@@ -116,6 +118,23 @@ protected:
 private:
   Q_DISABLE_COPY(Graph2D)
 
+
+  // Curve interface
+public:
+  virtual void attachTo(Plot *plot) override;
+  virtual void detachFrom(Plot *plot) override;
+  virtual QString title() const override;
+  virtual void setTitle(const QString &title) override;
+  virtual Enums::AxisType yAxis() const override;
+  virtual void setYAxis(Enums::AxisType axis) override;
+  virtual Enums::AxisType xAxis() const override;
+  virtual void setXAxis(Enums::AxisType axis) override;
+  virtual QPen pen() const override;
+  virtual SamplePoint samplePoint(SelectedPoint point) const override;
+  virtual SelectedPoint closest(const QPoint &pos, double *dist, double *dist2) const override;
+
+protected:
+  virtual void updatePen() override;
 };
 
 #endif // GRAPH2D_H

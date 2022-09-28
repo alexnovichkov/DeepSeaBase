@@ -13,7 +13,7 @@ public:
 
     // Plot interface
 public:
-    virtual Curve *createCurve(const QString &legendName, Channel *channel) override;
+    virtual Curve *createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis) override;
     virtual QWidget *toolBarWidget() override;
     virtual void updateActions(int filesCount, int channelsCount) override;
 

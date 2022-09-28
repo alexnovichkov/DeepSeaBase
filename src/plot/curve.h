@@ -1,17 +1,13 @@
 #ifndef CURVE_H
 #define CURVE_H
 
-#include <qwt_plot_curve.h>
-#include <qwt_plot_marker.h>
 #include <QPen>
 
 class FileDescriptor;
 class PointLabel;
-
 class Channel;
 class DataHolder;
 class Plot;
-class QwtScaleMap;
 class PointMarker;
 class Implementation;
 
@@ -32,7 +28,8 @@ public:
     Curve(const QString &title, Channel *channel);
     virtual ~Curve();
 
-    void attach(Plot *plot);
+    virtual void attachTo(Plot *plot);
+    virtual void detachFrom(Plot *plot);
 
     virtual QString title() const = 0;
     virtual void setTitle(const QString &title) = 0;
@@ -46,8 +43,6 @@ public:
     virtual QPen pen() const = 0;
     void setPen(const QPen &pen) {oldPen = pen; updatePen();}
 
-    virtual QList<QwtLegendData> legendData() const = 0;
-
     virtual SamplePoint samplePoint(SelectedPoint point) const = 0;
 
     void setVisible(bool visible);
@@ -56,7 +51,7 @@ public:
     void removeLabel(PointLabel *label);
     void removeLabels();
     /** find label by canvas position */
-    PointLabel *findLabel(const QPoint &pos/*, QwtAxisId yAxis*/);
+    PointLabel *findLabel(const QPoint &pos);
     /** find label by point on a curve */
     PointLabel *findLabel(SelectedPoint point);
     virtual SelectedPoint closest(const QPoint &pos, double *dist = nullptr, double *dist2 = nullptr) const = 0;
@@ -73,6 +68,7 @@ public:
 
     Channel *channel;
     QList<PointLabel*> labels;
+
 
     Implementation *impl = nullptr;
 
@@ -99,13 +95,12 @@ public:
     virtual void remove() override;
     virtual bool draggable() const override;
 protected:
-    virtual void attachTo(QwtPlot *plot) = 0;
     virtual void updateSelection(SelectedPoint point) override;
     inline virtual bool updateAnyway() const override {return true;}
     virtual void updatePen() = 0;
     Plot *m_plot = nullptr;
     mutable SelectedPoint selectedPoint;
-    PointMarker *marker;
+    PointMarker *marker = nullptr;
     QPen oldPen;
 };
 

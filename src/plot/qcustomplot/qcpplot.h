@@ -3,35 +3,50 @@
 
 #include "qcustomplot.h"
 #include "enums.h"
+#include "plot/plotinterface.h"
 
-class ZoomStack;
-class PlotModel;
+class Plot;
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type);
 
-class QCPPlot : public QCustomPlot
+class QCPPlot : public QCustomPlot, public PlotInterface
 {
     Q_OBJECT
 public:
-    QCPPlot(Enums::PlotType type, QWidget *parent = nullptr);
-    inline Enums::PlotType type() const {return plotType;}
-
-    void toggleAutoscale(Enums::AxisType axis, bool toggled);
-    void autoscale(Enums::AxisType axis = Enums::AxisType::atInvalid);
-    void setScale(Enums::AxisType id, double min, double max, double step = 0);
-    void removeLabels();
-    void cycleChannels(bool up);
-
-    void deleteAllCurves(bool forceDeleteFixed = false);
-
-    //virtual methods
-    virtual void setRightScale(Enums::AxisType id, double min, double max);
-protected:
-    PlotModel *m = nullptr;
+    QCPPlot(Plot *plot, QWidget *parent = nullptr);
+    ~QCPPlot();
 private:
-    Enums::PlotType plotType = Enums::PlotType::General;
-    ZoomStack *zoom = nullptr;
-    bool sergeiMode = false;
+    Plot *parent = nullptr;
+
+    // PlotInterface interface
+public:
+    virtual void createLegend() override;
+    virtual double screenToPlotCoordinates(Enums::AxisType axisType, double value) const override;
+    virtual double plotToScreenCoordinates(Enums::AxisType axisType, double value) const override;
+    virtual Range plotRange(Enums::AxisType axisType) const override;
+    virtual Range screenRange(Enums::AxisType axisType) const override;
+    virtual void replot() override;
+    virtual void updateAxes() override;
+    virtual void updateLegend() override;
+    virtual QPoint localCursorPosition(const QPoint &globalCursorPosition) const override;
+    virtual void setAxisScale(Enums::AxisType axisType, Enums::AxisScale scale) override;
+    virtual void setAxisRange(Enums::AxisType axis, double min, double max, double step) override;
+    virtual void setInfoVisible(bool visible) override;
+    virtual void enableAxis(Enums::AxisType axis, bool enable) override;
+    virtual bool axisEnabled(Enums::AxisType axis) override;
+    virtual void setAxisTitle(Enums::AxisType axis, const QString &title) override;
+    virtual QString axisTitle(Enums::AxisType axis) const override;
+    virtual void enableColorBar(Enums::AxisType axis, bool enable) override;
+    virtual void setColorMap(Enums::AxisType axis, Range range, int colorMap, Curve *curve) override;
+    virtual void setColorMap(int colorMap, Curve *curve) override;
+    virtual void importPlot(const QString &fileName, const QSize &size, int resolution) override;
+    virtual void importPlot(QPrinter &printer, const QSize &size, int resolution) override;
+    virtual void setInteractionMode(Enums::InteractionMode mode) override;
+    virtual Curve *createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis) override;
+    virtual Selected findObject(QPoint pos) const override;
+    virtual void deselect() override;
+private:
+    QCPAxis *axis(Enums::AxisType axis) const;
 };
 
 #endif // QCPPLOT_H

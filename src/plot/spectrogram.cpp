@@ -3,10 +3,8 @@
 #include "zoomstack.h"
 #include <QMenu>
 #include <QMessageBox>
-#include <qwt_scale_engine.h>
 #include "logscaleengine.h"
 #include "colormapfactory.h"
-#include <qwt_scale_widget.h>
 #include "channelsmimedata.h"
 #include "cursors.h"
 #include "logging.h"
@@ -117,12 +115,11 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     m_plot->enableAxis(Enums::AxisType::atRight, true);
     m_plot->enableColorBar(Enums::AxisType::atRight, true);
 
-    Curve *g = m_plot->createCurve(ch->legendName(), ch);
+    Curve *g = m_plot->createCurve(ch->legendName(), ch, Enums::AxisType::atBottom, Enums::AxisType::atLeft);
     ch->setPlotted(true);
 
     m->addCurve(g, plotOnLeft);
     g->fileNumber = fileIndex;
-    g->setYAxis(Enums::AxisType::atLeft);
 
     m_plot->setColorMap(Enums::AxisType::atRight, {ch->data()->yMin(-1), ch->data()->yMax(-1)}, colorMap, g);
 
@@ -133,7 +130,7 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 
     m_plot->setInfoVisible(false);
 
-    g->attach(this);
+    g->attachTo(this);
 
     update();
     updatePlottedIndexes();

@@ -11,6 +11,7 @@
 #include "plot.h"
 #include <QPainter>
 #include "pointlabel.h"
+#include "pointmarker.h"
 #include "filterpointmapper.h"
 #include "qwtplotimpl.h"
 
@@ -98,9 +99,12 @@ void QwtLineCurve::resetCashedData()
     mapper->cashedPolyline.clear();
 }
 
-void QwtLineCurve::attachTo(QwtPlot *plot)
+void QwtLineCurve::attachTo(Plot *plot)
 {DDD;
-    QwtPlotCurve::attach(plot);
+    Curve::attachTo(plot);
+
+    if (auto impl = dynamic_cast<QwtPlot*>(plot->impl()))
+        QwtPlotCurve::attach(impl);
 }
 
 QString QwtLineCurve::title() const
@@ -122,7 +126,7 @@ void QwtLineCurve::setYAxis(Enums::AxisType axis)
 {DDD;
     QwtPlotCurve::setYAxis(toQwtAxisType(axis));
     foreach (PointLabel *l, labels)
-        l->setYAxis(toQwtAxisType(axis));
+        l->setYAxis(axis);
 }
 
 Enums::AxisType QwtLineCurve::xAxis() const
@@ -134,7 +138,7 @@ void QwtLineCurve::setXAxis(Enums::AxisType axis)
 {DDD;
     QwtPlotCurve::setXAxis(toQwtAxisType(axis));
     foreach (PointLabel *l, labels)
-        l->setXAxis(toQwtAxisType(axis));
+        l->setXAxis(axis);
 }
 
 QPen QwtLineCurve::pen() const
@@ -153,7 +157,16 @@ QList<QwtLegendData> QwtLineCurve::legendData() const
 {DDD;
     QList<QwtLegendData> result = QwtPlotCurve::legendData();
     QwtLegendData &data = result[0];
-    data.setValues(commonLegendData());
+    auto common = commonLegendData();
+    for (auto [key, val] : asKeyValueRange(common)) {
+        switch (key) {
+            case Enums::ldColor: data.setValue(QwtLegendData::UserRole+3, val); break;
+            case Enums::ldTitle: data.setValue(QwtLegendData::TitleRole, val); break;
+            case Enums::ldFixed: data.setValue(QwtLegendData::UserRole+4, val); break;
+            case Enums::ldSelected: data.setValue(QwtLegendData::UserRole+2, val); break;
+            case Enums::ldFileNumber: data.setValue(QwtLegendData::UserRole+1, val); break;
+        }
+    }
     return result;
 }
 

@@ -6,6 +6,7 @@
 #include "curve.h"
 #include "dataholder.h"
 #include <qwt_matrix_raster_data.h>
+#include <qwt_interval.h>
 
 class SpectrogramData: public QwtRasterData
 {
@@ -29,7 +30,7 @@ private:
 
     // Curve interface
 public:
-    virtual void attachTo(QwtPlot *plot) override;
+    virtual void attachTo(Plot *plot) override;
     virtual QString title() const override;
     virtual void setTitle(const QString &title) override;
     virtual Enums::AxisType yAxis() const override;

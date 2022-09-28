@@ -1,13 +1,16 @@
-#ifndef ABSTRACTDATA2D_H
-#define ABSTRACTDATA2D_H
+#ifndef DATA2D_H
+#define DATA2D_H
 
-#include "plot/qcustomplot.h"
+#include "qcustomplot.h"
 
-class Data {
+class DataHolder;
+
+class Data2D {
 public:
-    virtual ~Data() {}
-    virtual bool isEmpty() const = 0;
-    virtual int size() const = 0;
+    explicit Data2D(DataHolder *data) : data(data) {}
+    virtual ~Data2D() {}
+    bool isEmpty() const;
+    int size() const;
 
     /*!
       Returns an index of the data point with a (sort-)key that is equal to, just below, or just
@@ -24,7 +27,7 @@ public:
 
       \see findEnd
     */
-    virtual int findBegin(double sortKey, bool expandedRange=true) const = 0;
+    int findBegin(double sortKey, bool expandedRange=true) const;
 
     /*!
       Returns an index of the element after the data point with a (sort-)key that is equal to, just
@@ -41,20 +44,22 @@ public:
 
       \see findBegin
     */
-    virtual int findEnd(double sortKey, bool expandedRange=true) const = 0;
+    int findEnd(double sortKey, bool expandedRange=true) const;
 
-    virtual void limitIteratorsToDataRange(int &begin, int &end, const QCPDataRange &dataRange) const = 0;
+    void limitIteratorsToDataRange(int &begin, int &end, const QCPDataRange &dataRange) const;
 
-    virtual double mainKey(int index) = 0;
-    virtual double sortKey(int index) = 0;
-    virtual double mainValue(int index) = 0;
-    virtual QCPRange valueRange(int index) const = 0;
-    virtual QCPRange valueRange(bool &foundRange, QCP::SignDomain signDomain,
-                                const QCPRange &inKeyRange) const = 0;
+    double mainKey(int index);
+    double sortKey(int index);
+    double mainValue(int index);
+    QCPRange valueRange(int index) const;
+    QCPRange valueRange(bool &foundRange, QCP::SignDomain signDomain,
+                                const QCPRange &inKeyRange) const;
 
-    virtual QCPRange keyRange(bool &foundRange, QCP::SignDomain signDomain) const = 0;
+    QCPRange keyRange(bool &foundRange, QCP::SignDomain signDomain) const;
 
-    virtual QVector<QCPGraphData> toLineData() const = 0;
+    QVector<QCPGraphData> toLineData() const;
+private:
+    DataHolder *data = nullptr;
 };
 
-#endif // ABSTRACTDATA2D_H
+#endif // DATA2D_H

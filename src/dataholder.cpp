@@ -591,6 +591,22 @@ QVector<double> DataHolder::zValues() const
     return m_zValues;
 }
 
+QPair<double, double> DataHolder::yMinMax(int begin, int end)
+{
+    begin = std::clamp(begin, 0, samplesCount()-1);
+    end = std::clamp(end, 0, samplesCount()-1);
+
+    if (begin == 0 && end == samplesCount()-1) return {yMin(0), yMax(0)};
+
+    double min = yValue(begin, 0);
+    double max = yValue(begin, 0);
+    for (int i=begin+1; i<=end; ++i) {
+        if (auto y = yValue(i); y < min) min = y;
+        if (auto y = yValue(i); y > max) max = y;
+    }
+    return {min, max};
+}
+
 double DataHolder::xValue(int i) const
 {DDD;
     if (i<0) return 0.0;

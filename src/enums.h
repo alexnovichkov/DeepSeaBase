@@ -35,6 +35,13 @@ namespace Enums {
         DataInteraction,
         LabelInteraction
     };
+    enum LegendData {
+        ldColor = 0,
+        ldTitle,
+        ldFileNumber,
+        ldSelected,
+        ldFixed
+    };
 }
 
 struct Range {

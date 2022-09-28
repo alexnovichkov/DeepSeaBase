@@ -16,8 +16,8 @@ class PlotInterface
 public:
     virtual ~PlotInterface() {}
     virtual void createLegend() = 0;
-    virtual double screenToPlotCoordinates(Enums::AxisType axis, double value) = 0;
-    virtual double plotToScreenCoordinates(Enums::AxisType axis, double value) = 0;
+    virtual double screenToPlotCoordinates(Enums::AxisType axis, double value) const = 0;
+    virtual double plotToScreenCoordinates(Enums::AxisType axis, double value) const = 0;
     virtual Range plotRange(Enums::AxisType axis) const = 0;
     virtual Range screenRange(Enums::AxisType axis) const = 0;
     virtual void replot() = 0;
@@ -36,11 +36,10 @@ public:
     virtual void setColorMap(Enums::AxisType axis, Range range, int colorMap, Curve *curve) = 0;
     virtual void setColorMap(int colorMap, Curve *curve) = 0;
 
-    virtual void addCurve(Curve *curve) = 0;
     virtual void importPlot(const QString &fileName, const QSize &size, int resolution) = 0;
     virtual void importPlot(QPrinter &printer, const QSize &size, int resolution) = 0;
     virtual void setInteractionMode(Enums::InteractionMode mode) = 0;
-    virtual Curve* createCurve(const QString &legendName, Channel *channel) = 0;
+    virtual Curve* createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis) = 0;
 
     virtual Selected findObject(QPoint pos) const = 0;
     virtual void deselect() = 0;
