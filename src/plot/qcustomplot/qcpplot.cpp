@@ -4,6 +4,7 @@
 #include "plot/plotmodel.h"
 #include "graph2d.h"
 #include "plot/canvaseventfilter.h"
+#include "axisboundsdialog.h"
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type) {
     return static_cast<QCPAxis::AxisType>(type);
@@ -21,16 +22,29 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
                     QCP::iSelectLegend|
                     QCP::iSelectItems|
                     QCP::iSelectOther);
+    setSelectionRectMode(QCP::srmZoom);
+
+    connect(this, &QCustomPlot::axisDoubleClick, [=](QCPAxis *axis, QCPAxis::SelectablePart part, QMouseEvent *event){
+        Q_UNUSED(part);
+        Q_UNUSED(event);
+        auto range = axis->range();
+        auto type = fromQcpAxis(axis->axisType());
+        AxisBoundsDialog dialog(range.lower, range.upper, type);
+        if (dialog.exec()) {
+            ZoomStack::zoomCoordinates coords;
+            for (auto ax: axisRect()->axes()) {
+                if (ax == axis) coords.coords.insert(type, {dialog.leftBorder(), dialog.rightBorder()});
+                else coords.coords.insert(fromQcpAxis(ax->axisType()), {ax->range().lower, ax->range().upper});
+            }
+            plot->zoom->addZoom(coords, true);
+        }
+    });
+    connect(axisRect(), &QCPAxisRect::axesRangeScaled, this, &QCPPlot::addZoom);
+    connect(axisRect(), &QCPAxisRect::draggingFinished, this, &QCPPlot::addZoom);
     for (auto ax: axisRect()->axes()) {
         connect(ax, &QCPAxis::contextMenuRequested, [=](const QPoint &pos, QCPAxis::AxisType type){
             plot->showContextMenu(pos, static_cast<Enums::AxisType>(type));
         });
-        //
-//        connect(ax, qOverload<const QCPRange&>(&QCPAxis::rangeChanged), [=](const QCPRange &newRange){
-//            auto coords = ZoomStack::zoomCoordinates();
-//            coords.coords.insert(fromQcpAxis(ax->axisType()), {newRange.lower, newRange.upper});
-//            plot->zoom->addZoom(coords, false);
-//        });
         connect(ax, &QCPAxis::draggingFinished, [=](const QCPRange &newRange){
             auto coords = ZoomStack::zoomCoordinates();
             for (auto axis: axisRect()->axes()) {
@@ -40,6 +54,7 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
 
             plot->zoom->addZoom(coords, true);
         });
+        connect(ax, &QCPAxis::rangeScaled, this, &QCPPlot::addZoom);
     }
 }
 
@@ -223,6 +238,14 @@ void QCPPlot::deselect()
 QCPAxis *QCPPlot::axis(Enums::AxisType axis) const
 {
     return axisRect(0)->axis(toQcpAxis(axis));
+}
+
+void QCPPlot::addZoom()
+{
+    auto coords = ZoomStack::zoomCoordinates();
+    for (auto axis: axisRect()->axes())
+        coords.coords.insert(fromQcpAxis(axis->axisType()), {axis->range().lower, axis->range().upper});
+    parent->zoom->addZoom(coords, true);
 }
 
 void QCPPlot::keyPressEvent(QKeyEvent *event)

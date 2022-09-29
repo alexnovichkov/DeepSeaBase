@@ -9169,6 +9169,7 @@ void QCPAxis::scaleRange(double factor, double center)
     } else
       qDebug() << Q_FUNC_INFO << "Center of scaling operation doesn't lie in same logarithmic sign domain as range:" << center;
   }
+
   emit rangeChanged(mRange);
   emit rangeChanged(mRange, oldRange);
 }
@@ -9680,6 +9681,7 @@ void QCPAxis::wheelEvent(QWheelEvent *event)
   const double wheelSteps = delta/120.0; // a single step delta is +/-120 usually
   const double factor = qPow(mAxisRect->rangeZoomFactor(orientation()), wheelSteps);
   scaleRange(factor, pixelToCoord(orientation() == Qt::Horizontal ? pos.x() : pos.y()));
+  emit rangeScaled();
   mParentPlot->replot();
 }
 
@@ -15599,9 +15601,12 @@ void QCustomPlot::mousePressEvent(QMouseEvent *event)
   mMouseHasMoved = false;
   mMousePressPos = event->pos();
   
-  if (mSelectionRect && mSelectionRectMode != QCP::srmNone)
+  if (mSelectionRect && mSelectionRectMode != QCP::srmNone && event->button() == Qt::LeftButton)
   {
-    if (mSelectionRectMode != QCP::srmZoom || qobject_cast<QCPAxisRect*>(axisRectAt(mMousePressPos))) // in zoom mode only activate selection rect if on an axis rect
+    if (
+        (mSelectionRectMode != QCP::srmZoom || qobject_cast<QCPAxisRect*>(axisRectAt(mMousePressPos)))
+
+        )// in zoom mode only activate selection rect if on an axis rect
       mSelectionRect->startSelection(event);
   } else
   {
@@ -17845,6 +17850,7 @@ void QCPAxisRect::zoom(const QRectF &pixelRect, const QList<QCPAxis*> &affectedA
       pixelRange = QCPRange(pixelRect.top(), pixelRect.bottom());
     axis->setRange(axis->pixelToCoord(pixelRange.lower), axis->pixelToCoord(pixelRange.upper));
   }
+  emit draggingFinished();
 }
 
 /*!
@@ -18562,7 +18568,7 @@ void QCPAxisRect::layoutChanged()
 void QCPAxisRect::mousePressEvent(QMouseEvent *event, const QVariant &details)
 {
   Q_UNUSED(details)
-  if (event->buttons() & Qt::LeftButton)
+  if (event->buttons() & Qt::RightButton)
   {
     mDragging = true;
     // initialize antialiasing backup in case we start dragging:
@@ -18581,6 +18587,10 @@ void QCPAxisRect::mousePressEvent(QMouseEvent *event, const QVariant &details)
       foreach (QPointer<QCPAxis> axis, mRangeDragVertAxis)
         mDragStartVertRange.append(axis.isNull() ? QCPRange() : axis->range());
     }
+  }
+
+  if (event->buttons() & Qt::LeftButton) {
+
   }
 }
 
@@ -18655,6 +18665,7 @@ void QCPAxisRect::mouseReleaseEvent(QMouseEvent *event, const QPointF &startPos)
 {
   Q_UNUSED(event)
   Q_UNUSED(startPos)
+  if (mDragging) emit draggingFinished();
   mDragging = false;
   if (mParentPlot->noAntialiasingOnDrag())
   {
@@ -18698,6 +18709,7 @@ void QCPAxisRect::wheelEvent(QWheelEvent *event)
     {
       double factor;
       double wheelSteps = delta/120.0; // a single step delta is +/-120 usually
+      bool rangeScaled = false;
       if (mRangeZoom.testFlag(Qt::Horizontal))
       {
         factor = qPow(mRangeZoomFactorHorz, wheelSteps);
@@ -18706,6 +18718,7 @@ void QCPAxisRect::wheelEvent(QWheelEvent *event)
           if (!axis.isNull())
             axis->scaleRange(factor, axis->pixelToCoord(pos.x()));
         }
+        rangeScaled = true;
       }
       if (mRangeZoom.testFlag(Qt::Vertical))
       {
@@ -18715,7 +18728,9 @@ void QCPAxisRect::wheelEvent(QWheelEvent *event)
           if (!axis.isNull())
             axis->scaleRange(factor, axis->pixelToCoord(pos.y()));
         }
+        rangeScaled = true;
       }
+      if (rangeScaled) emit axesRangeScaled();
       mParentPlot->replot();
     }
   }

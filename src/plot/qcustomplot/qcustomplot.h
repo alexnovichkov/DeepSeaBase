@@ -2297,6 +2297,7 @@ signals:
   void selectableChanged(const QCPAxis::SelectableParts &parts);
   void contextMenuRequested(const QPoint &pos, AxisType);
   void draggingFinished(const QCPRange &newRange);
+  void rangeScaled();
 
 protected:
   // property members:
@@ -4966,6 +4967,9 @@ public:
   virtual void update(UpdatePhase phase) Q_DECL_OVERRIDE;
   virtual QList<QCPLayoutElement*> elements(bool recursive) const Q_DECL_OVERRIDE;
 
+signals:
+  void axesRangeScaled();
+  void draggingFinished();
 protected:
   // property members:
   QBrush mBackgroundBrush;

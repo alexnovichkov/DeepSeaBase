@@ -2,8 +2,11 @@
 #define ENUMS_H
 
 #include "QtMath"
+#include <QObject>
 
 namespace Enums {
+    Q_NAMESPACE
+
     enum Direction {
         Left,
         Right,
@@ -17,6 +20,8 @@ namespace Enums {
         atBottom = 8,
         atInvalid = 0
     };
+    Q_ENUM_NS(AxisType)
+
     enum class AxisScale {
         Linear,
         Logarithmic
@@ -29,6 +34,8 @@ namespace Enums {
         Octave,
         Spectrogram
     };
+    Q_ENUM_NS(PlotType)
+
     enum class InteractionMode {
         NoInteraction,
         ScalingInteraction,

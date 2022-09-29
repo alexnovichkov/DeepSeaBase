@@ -51,6 +51,7 @@ public:
     virtual void deselect() override;
 private:
     QCPAxis *axis(Enums::AxisType axis) const;
+    void addZoom();
 
 protected:
     virtual void keyPressEvent(QKeyEvent *event) override;
