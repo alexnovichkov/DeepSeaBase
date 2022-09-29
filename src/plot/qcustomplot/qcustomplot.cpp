@@ -9527,8 +9527,13 @@ void QCPAxis::mousePressEvent(QMouseEvent *event, const QVariant &details)
     event->ignore();
     return;
   }
+
+  if (event->button()==Qt::RightButton) {
+      emit contextMenuRequested(event->globalPos(), this->axisType());
+  }
   
-  if (event->buttons() & Qt::LeftButton)
+  else
+      if (event->buttons() & Qt::LeftButton)
   {
     mDragging = true;
     // initialize antialiasing backup in case we start dragging:
@@ -9540,6 +9545,16 @@ void QCPAxis::mousePressEvent(QMouseEvent *event, const QVariant &details)
     // Mouse range dragging interaction:
     if (mParentPlot->interactions().testFlag(QCP::iRangeDrag))
       mDragStartRange = mRange;
+
+    //axis part clicked
+    if (orientation() == Qt::Horizontal) {
+        if (pixelToCoord(event->pos().x()) <= range().center()) mAxisPartMoved = 1; //left part
+        else mAxisPartMoved = 2; //right part
+    }
+    else {
+        if (pixelToCoord(event->pos().y()) <= range().center()) mAxisPartMoved = 3; //lower part
+        else mAxisPartMoved = 4; //upper part
+    }
   }
 }
 
@@ -9564,11 +9579,33 @@ void QCPAxis::mouseMoveEvent(QMouseEvent *event, const QPointF &startPos)
     if (mScaleType == QCPAxis::stLinear)
     {
       const double diff = pixelToCoord(startPixel) - pixelToCoord(currentPixel);
-      setRange(mDragStartRange.lower+diff, mDragStartRange.upper+diff);
+      switch (mAxisPartMoved) {
+          case 0:
+              setRange(mDragStartRange.lower+diff, mDragStartRange.upper+diff); break;
+          case 1:
+              setRange(mDragStartRange.lower+diff, mDragStartRange.upper); break;
+          case 2:
+              setRange(mDragStartRange.lower, mDragStartRange.upper+diff); break;
+          case 3:
+              setRange(mDragStartRange.lower+diff, mDragStartRange.upper); break;
+          case 4:
+              setRange(mDragStartRange.lower, mDragStartRange.upper+diff); break;
+      }
     } else if (mScaleType == QCPAxis::stLogarithmic)
     {
       const double diff = pixelToCoord(startPixel) / pixelToCoord(currentPixel);
-      setRange(mDragStartRange.lower*diff, mDragStartRange.upper*diff);
+      switch (mAxisPartMoved) {
+          case 0:
+              setRange(mDragStartRange.lower*diff, mDragStartRange.upper*diff); break;
+          case 1:
+              setRange(mDragStartRange.lower*diff, mDragStartRange.upper); break;
+          case 2:
+              setRange(mDragStartRange.lower, mDragStartRange.upper*diff); break;
+          case 3:
+              setRange(mDragStartRange.lower*diff, mDragStartRange.upper); break;
+          case 4:
+              setRange(mDragStartRange.lower, mDragStartRange.upper*diff); break;
+      }
     }
     
     if (mParentPlot->noAntialiasingOnDrag())
@@ -9593,6 +9630,7 @@ void QCPAxis::mouseReleaseEvent(QMouseEvent *event, const QPointF &startPos)
 {
   Q_UNUSED(event)
   Q_UNUSED(startPos)
+    if (mDragging) emit draggingFinished(range());
   mDragging = false;
   if (mParentPlot->noAntialiasingOnDrag())
   {

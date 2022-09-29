@@ -1,21 +1,86 @@
 #include "qcpplot.h"
-
+#include "plot/plot.h"
 #include "plot/zoomstack.h"
 #include "plot/plotmodel.h"
 #include "graph2d.h"
+#include "plot/canvaseventfilter.h"
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type) {
     return static_cast<QCPAxis::AxisType>(type);
 }
 
+Enums::AxisType fromQcpAxis(QCPAxis::AxisType type) {
+    return static_cast<Enums::AxisType>(type);
+}
+
 QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot)
 {
+    setInteractions(QCP::iRangeDrag|
+                    QCP::iRangeZoom|
+                    QCP::iSelectPlottables|
+                    QCP::iSelectLegend|
+                    QCP::iSelectItems|
+                    QCP::iSelectOther);
+    for (auto ax: axisRect()->axes()) {
+        connect(ax, &QCPAxis::contextMenuRequested, [=](const QPoint &pos, QCPAxis::AxisType type){
+            plot->showContextMenu(pos, static_cast<Enums::AxisType>(type));
+        });
+        //
+//        connect(ax, qOverload<const QCPRange&>(&QCPAxis::rangeChanged), [=](const QCPRange &newRange){
+//            auto coords = ZoomStack::zoomCoordinates();
+//            coords.coords.insert(fromQcpAxis(ax->axisType()), {newRange.lower, newRange.upper});
+//            plot->zoom->addZoom(coords, false);
+//        });
+        connect(ax, &QCPAxis::draggingFinished, [=](const QCPRange &newRange){
+            auto coords = ZoomStack::zoomCoordinates();
+            for (auto axis: axisRect()->axes()) {
+                if (axis == ax) coords.coords.insert(fromQcpAxis(axis->axisType()), {newRange.lower, newRange.upper});
+                else coords.coords.insert(fromQcpAxis(axis->axisType()), {axis->range().lower, axis->range().upper});
+            }
 
+            plot->zoom->addZoom(coords, true);
+        });
+    }
 }
 
 QCPPlot::~QCPPlot()
 {
+    delete canvasFilter;
+}
 
+void QCPPlot::setEventFilter(CanvasEventFilter *filter)
+{
+    canvasFilter = filter;
+        canvasFilter->setZoom(parent->zoom);
+    //    canvasFilter->setDragZoom(dragZoom);
+    //    canvasFilter->setWheelZoom(wheelZoom);
+    //    canvasFilter->setAxisZoom(axisZoom);
+    //    canvasFilter->setPlotZoom(plotZoom);
+        canvasFilter->setPicker(parent->picker);
+
+        connect(canvasFilter, SIGNAL(canvasDoubleClicked(QPoint)), this, SIGNAL(canvasDoubleClicked(QPoint)));
+    //    connect(canvasFilter, &CanvasEventFilter::hover, this, &QwtPlotImpl::hoverAxis);
+        connect(canvasFilter, &CanvasEventFilter::contextMenuRequested, parent, &Plot::showContextMenu);
+        installEventFilter(filter);
+
+    axisRect(0)->installEventFilter(filter);
+    for (auto ax: axisRect(0)->axes()) ax->installEventFilter(filter);
+}
+
+Enums::AxisType QCPPlot::eventTargetAxis(QEvent *event, QObject *target)
+{
+    if (auto mouseEvent = dynamic_cast<QMouseEvent*>(event)) {
+
+        QList<QVariant> details;
+        QList<QCPLayerable*> candidates = layerableListAt(mouseEvent->pos(), false, &details);
+        if (candidates.isEmpty()) return Enums::AxisType::atInvalid;
+        for (int i=0; i<candidates.size(); ++i) {
+            if (auto ax = dynamic_cast<QCPAxis*>(candidates.at(i)))
+                qDebug() << candidates.at(i) << details.at(i);
+        }
+
+    }
+    return Enums::AxisType::atInvalid;
 }
 
 
@@ -158,4 +223,14 @@ void QCPPlot::deselect()
 QCPAxis *QCPPlot::axis(Enums::AxisType axis) const
 {
     return axisRect(0)->axis(toQcpAxis(axis));
+}
+
+void QCPPlot::keyPressEvent(QKeyEvent *event)
+{
+    switch (event->key()) {
+        case Qt::Key_Backspace: {
+            parent->zoom->zoomBack();
+            break;
+        }
+    }
 }

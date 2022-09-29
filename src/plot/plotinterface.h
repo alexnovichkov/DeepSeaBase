@@ -10,11 +10,13 @@
 class Curve;
 class Channel;
 class QMouseEvent;
+class CanvasEventFilter;
 
 class PlotInterface
 {
 public:
     virtual ~PlotInterface() {}
+    virtual void setEventFilter(CanvasEventFilter *filter) = 0;
     virtual void createLegend() = 0;
     virtual double screenToPlotCoordinates(Enums::AxisType axis, double value) const = 0;
     virtual double plotToScreenCoordinates(Enums::AxisType axis, double value) const = 0;
@@ -43,6 +45,8 @@ public:
 
     virtual Selected findObject(QPoint pos) const = 0;
     virtual void deselect() = 0;
+
+    virtual Enums::AxisType eventTargetAxis(QEvent *event, QObject *target) = 0;
 };
 
 #endif // PLOTINTERFACE_H

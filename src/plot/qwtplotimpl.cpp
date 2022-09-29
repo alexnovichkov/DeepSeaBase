@@ -81,18 +81,6 @@ QwtPlotImpl::QwtPlotImpl(Plot *plot, QWidget *parent) : QwtPlot(parent), parent(
     plotZoom = new PlotZoom(this);
     axisZoom = new AxisZoom(this);
     connect(axisZoom, &AxisZoom::hover, this, &QwtPlotImpl::hoverAxis);
-
-    canvasFilter = new CanvasEventFilter(this);
-    canvasFilter->setZoom(plot->zoom);
-    canvasFilter->setDragZoom(dragZoom);
-    canvasFilter->setWheelZoom(wheelZoom);
-    canvasFilter->setAxisZoom(axisZoom);
-    canvasFilter->setPlotZoom(plotZoom);
-    canvasFilter->setPicker(plot->picker);
-
-    connect(canvasFilter, SIGNAL(canvasDoubleClicked(QPoint)), this, SIGNAL(canvasDoubleClicked(QPoint)));
-    connect(canvasFilter, &CanvasEventFilter::hover, this, &QwtPlotImpl::hoverAxis);
-    connect(canvasFilter, &CanvasEventFilter::contextMenuRequested, plot, &Plot::showContextMenu);
 }
 
 QwtPlotImpl::~QwtPlotImpl()
@@ -116,6 +104,41 @@ void QwtPlotImpl::createLegend()
     });
     connect(leg, SIGNAL(fixedChanged(QwtPlotItem*)), this, SLOT(fixCurve(QwtPlotItem*)));
     insertLegend(leg, QwtPlot::RightLegend);
+}
+
+void QwtPlotImpl::setEventFilter(CanvasEventFilter *filter)
+{
+    canvasFilter = filter;
+    canvasFilter->setZoom(parent->zoom);
+    canvasFilter->setDragZoom(dragZoom);
+    canvasFilter->setWheelZoom(wheelZoom);
+    canvasFilter->setAxisZoom(axisZoom);
+    canvasFilter->setPlotZoom(plotZoom);
+    canvasFilter->setPicker(parent->picker);
+
+    connect(canvasFilter, SIGNAL(canvasDoubleClicked(QPoint)), this, SIGNAL(canvasDoubleClicked(QPoint)));
+    connect(canvasFilter, &CanvasEventFilter::hover, this, &QwtPlotImpl::hoverAxis);
+    connect(canvasFilter, &CanvasEventFilter::contextMenuRequested, parent, &Plot::showContextMenu);
+
+    canvas()->installEventFilter(filter);
+    for (int ax = 0; ax < QwtAxis::AxisPositions; ax++) {
+        axisWidget(ax)->installEventFilter(filter);
+        axisWidget(ax)->setFocusPolicy(Qt::StrongFocus);
+    }
+}
+
+Enums::AxisType QwtPlotImpl::eventTargetAxis(QEvent *event, QObject *target)
+{
+    Q_UNUSED(event);
+    if (target == canvas()) return Enums::AxisType::atInvalid;
+
+    for (int a = 0; a < QwtAxis::AxisPositions; a++) {
+        if (target == axisWidget(a)) {
+            return toAxisType(a);
+        }
+    }
+
+    return Enums::AxisType::atInvalid;
 }
 
 double QwtPlotImpl::screenToPlotCoordinates(Enums::AxisType axis, double value) const

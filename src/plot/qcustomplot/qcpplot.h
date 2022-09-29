@@ -6,6 +6,7 @@
 #include "plot/plotinterface.h"
 
 class Plot;
+class CanvasEventFilter;
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type);
 
@@ -17,9 +18,12 @@ public:
     ~QCPPlot();
 private:
     Plot *parent = nullptr;
+    CanvasEventFilter *canvasFilter = nullptr;
 
     // PlotInterface interface
 public:
+    virtual void setEventFilter(CanvasEventFilter *filter) override;
+    virtual Enums::AxisType eventTargetAxis(QEvent *event, QObject *target) override;
     virtual void createLegend() override;
     virtual double screenToPlotCoordinates(Enums::AxisType axisType, double value) const override;
     virtual double plotToScreenCoordinates(Enums::AxisType axisType, double value) const override;
@@ -47,6 +51,9 @@ public:
     virtual void deselect() override;
 private:
     QCPAxis *axis(Enums::AxisType axis) const;
+
+protected:
+    virtual void keyPressEvent(QKeyEvent *event) override;
 };
 
 #endif // QCPPLOT_H

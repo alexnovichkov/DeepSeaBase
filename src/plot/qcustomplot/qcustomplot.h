@@ -2295,6 +2295,8 @@ signals:
   void scaleTypeChanged(QCPAxis::ScaleType scaleType);
   void selectionChanged(const QCPAxis::SelectableParts &parts);
   void selectableChanged(const QCPAxis::SelectableParts &parts);
+  void contextMenuRequested(const QPoint &pos, AxisType);
+  void draggingFinished(const QCPRange &newRange);
 
 protected:
   // property members:
@@ -2343,6 +2345,7 @@ protected:
   bool mCachedMarginValid;
   int mCachedMargin;
   bool mDragging;
+  int mAxisPartMoved = 0; //1-left, 2-right,3-lower, 4-upper
   QCPRange mDragStartRange;
   QCP::AntialiasedElements mAADragBackup, mNotAADragBackup;
   

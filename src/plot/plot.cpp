@@ -43,12 +43,14 @@
 #include "picker.h"
 #include "qwtplotimpl.h"
 #include "qcustomplot/qcpplot.h"
+#include "canvaseventfilter.h"
 
 Plot::Plot(Enums::PlotType type, QWidget *parent) :
     plotType(type)
 {DDD;
     m = new PlotModel(this);
     picker = new Picker(this);
+
     picker->setPickPriority(Picker::PickPriority::PickLast);
     picker->setEnabled(Settings::getSetting("pickerEnabled", true).toBool());
     connect(picker, &Picker::removeNeeded, this, &Plot::removeCursor);
@@ -57,6 +59,9 @@ Plot::Plot(Enums::PlotType type, QWidget *parent) :
 
 //    m_plot = new QwtPlotImpl(this, parent);
     m_plot = new QCPPlot(this, parent);
+//    m_plot->setEventFilter(new CanvasEventFilter(this));
+//    new CanvasEventFilter(this);
+
 
 
     QVariantList list = Settings::getSetting("colors").toList();
