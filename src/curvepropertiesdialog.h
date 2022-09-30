@@ -37,15 +37,20 @@ signals:
     void curveChanged(Curve *curve);
 public slots:
 private:
+    QIcon iconForMarker(int shape) const;
     Curve *curve;
     Plot *plot;
     QLineEdit *titleEdit;
     QLineEdit *legendEdit;
     QSpinBox *widthSpinBox;
     QComboBox *styleComboBox;
+    QComboBox *markerComboBox;
+    QSpinBox *markerSizeSpinBox;
 
     QPen oldPen;
     QString oldTitle;
+    int oldMarkerShape;
+    int oldMarkerSize;
 
     // QDialog interface
 public slots:

@@ -248,6 +248,8 @@ void PlotArea::addPlot(Enums::PlotType type)
 
 
     plotsLayout->addWidget(m_plot->widget(),1,0);
+    plotsLayout->addWidget(m_plot->legend, 1,1);
+    plotsLayout->setColumnStretch(0, 1);
 
     connect(m_plot, SIGNAL(curvesCountChanged()), this, SIGNAL(curvesCountChanged()));
     connect(m_plot, SIGNAL(channelPlotted(Channel*)), this, SIGNAL(channelPlotted(Channel*)));

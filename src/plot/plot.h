@@ -19,7 +19,7 @@ class QMenu;
 class Cursors;
 class CursorBox;
 class Selectable;
-
+class QCPCheckableLegend;
 
 #include <QWidget>
 
@@ -43,6 +43,7 @@ public:
     double plotToScreenCoordinates(Enums::AxisType axis, double value) const;
     Range plotRange(Enums::AxisType axis);
     Range screenRange(Enums::AxisType axis);
+    void replot();
 
     virtual QWidget *toolBarWidget() {return nullptr;}
     virtual void updateActions(int filesCount, int channelsCount) {Q_UNUSED(filesCount); Q_UNUSED(channelsCount);}
@@ -118,6 +119,7 @@ public:
 
     ZoomStack *zoom = nullptr;
     Picker *picker = nullptr;
+    QWidget *legend;
 protected:
     PlotInterface *m_plot = nullptr;
 

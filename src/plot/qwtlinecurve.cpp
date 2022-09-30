@@ -156,17 +156,17 @@ void QwtLineCurve::updatePen()
 QList<QwtLegendData> QwtLineCurve::legendData() const
 {DDD;
     QList<QwtLegendData> result = QwtPlotCurve::legendData();
-    QwtLegendData &data = result[0];
-    auto common = commonLegendData();
-    for (auto [key, val] : asKeyValueRange(common)) {
-        switch (key) {
-            case Enums::ldColor: data.setValue(QwtLegendData::UserRole+3, val); break;
-            case Enums::ldTitle: data.setValue(QwtLegendData::TitleRole, val); break;
-            case Enums::ldFixed: data.setValue(QwtLegendData::UserRole+4, val); break;
-            case Enums::ldSelected: data.setValue(QwtLegendData::UserRole+2, val); break;
-            case Enums::ldFileNumber: data.setValue(QwtLegendData::UserRole+1, val); break;
-        }
-    }
+//    QwtLegendData &data = result[0];
+//    auto common = commonLegendData();
+//    for (auto [key, val] : asKeyValueRange(common)) {
+//        switch (key) {
+//            case Enums::ldColor: data.setValue(QwtLegendData::UserRole+3, val); break;
+//            case Enums::ldTitle: data.setValue(QwtLegendData::TitleRole, val); break;
+//            case Enums::ldFixed: data.setValue(QwtLegendData::UserRole+4, val); break;
+//            case Enums::ldSelected: data.setValue(QwtLegendData::UserRole+2, val); break;
+//            case Enums::ldFileNumber: data.setValue(QwtLegendData::UserRole+1, val); break;
+//        }
+//    }
     return result;
 }
 

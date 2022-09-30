@@ -130,6 +130,11 @@ Range Plot::screenRange(Enums::AxisType axis)
     return m_plot->screenRange(axis);
 }
 
+void Plot::replot()
+{
+    if (m_plot) m_plot->replot();
+}
+
 void Plot::updatePlottedIndexes()
 {DDD;
     if (!sergeiMode) m->updatePlottedIndexes();
@@ -862,9 +867,9 @@ void Plot::switchCursor()
 void Plot::editLegendItem(Curve *curve)
 {DDD;
     CurvePropertiesDialog dialog(curve, this);
-    //        if (trackingPanel) connect(&dialog,SIGNAL(curveChanged(Curve*)), trackingPanel, SLOT(update()));
     if (cursorBox) connect(&dialog,SIGNAL(curveChanged(Curve*)), cursorBox, SLOT(updateLayout()));
     dialog.exec();
+//    m_plot->replot();
 }
 
 void Plot::onDropEvent(bool plotOnLeft, const QVector<Channel*> &channels)

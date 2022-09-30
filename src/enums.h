@@ -58,5 +58,17 @@ struct Range {
     double max;
 };
 
+#include <QColor>
+
+struct LegendData
+{
+    QString text;
+    QColor color;
+    int fileNumber = -1;
+    bool checked = true;
+    bool selected = false;
+    bool fixed = false;
+};
+
 
 #endif // ENUMS_H

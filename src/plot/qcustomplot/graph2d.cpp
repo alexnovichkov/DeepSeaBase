@@ -4,12 +4,15 @@
 #include "fileformats/filedescriptor.h"
 #include "plot/plot.h"
 #include "plot/plotinterface.h"
+#include "checkablelegenditem.h"
+#include "checkablelegend.h"
+#include "qcpplot.h"
 
 Graph2D::Graph2D(const QString &title, Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis) :
     QCPAbstractPlottable(keyAxis, valueAxis), Curve(title, channel)
 {
     setData(new Data2D(channel->data()));
-
+    setName(channel->legendName());
 }
 
 Graph2D::~Graph2D()
@@ -63,6 +66,18 @@ void Graph2D::setChannelFillGraph(Graph2D *targetGraph)
 void Graph2D::setAdaptiveSampling(bool enabled)
 {
     mAdaptiveSampling = enabled;
+}
+
+bool Graph2D::addToLegend(QCPCheckableLegend *legend)
+{
+    if (!legend) {
+        qDebug() << "passed legend is null";
+        return false;
+    }
+
+    legend->addItem(this, this->commonLegendData());
+
+    return true;
 }
 
 QCPRange Graph2D::getValueRange(bool &foundRange, QCP::SignDomain inSignDomain, const QCPRange &inKeyRange) const
@@ -1330,14 +1345,19 @@ void Graph2D::attachTo(Plot *plot)
 {
     Curve::attachTo(plot);
 
+    if (auto qcp = dynamic_cast<QCPPlot*>(mParentPlot))
 
+    addToLegend(qcp->checkableLegend);
 }
 
 void Graph2D::detachFrom(Plot *plot)
 {
     Curve::detachFrom(plot);
-    if (auto qcp = dynamic_cast<QCustomPlot*>(plot->impl()))
+    if (auto qcp = dynamic_cast<QCPPlot*>(plot->impl())) {
+        qcp->checkableLegend->removeItem(this);
         qcp->removePlottable(this, false);
+        qcp->replot();
+    }
 }
 
 QString Graph2D::title() const
@@ -1395,9 +1415,32 @@ SelectedPoint Graph2D::closest(const QPoint &pos, double *dist, double *dist2) c
     return SelectedPoint();
 }
 
+LegendData Graph2D::commonLegendData() const
+{
+    auto data = Curve::commonLegendData();
+    data.checked = visible();
+    return data;
+}
+
+void Graph2D::updateScatter()
+{
+    QCPScatterStyle ss;
+    ss.setSize(m_markerSize);
+    ss.setShape(static_cast<QCPScatterStyle::ScatterShape>(m_markerShape));
+    QPen p;
+    p.setColor(pen().color());
+    p.setWidthF(pen().widthF());
+    ss.setPen(p);
+
+    setScatterStyle(ss);
+//    setScatterSkip(10);
+}
+
 void Graph2D::updatePen()
 {
     auto p = oldPen;
-    if (Curve::selected()) p.setWidth(2);
+    if (p.style() == Qt::NoPen) setLineStyle(lsNone);
+    else setLineStyle(lsLine);
+//    if (Curve::selected()) p.setWidth(2);
     QCPAbstractPlottable::setPen(p);
 }

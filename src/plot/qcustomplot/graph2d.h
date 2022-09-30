@@ -5,6 +5,7 @@
 #include "plot/curve.h"
 
 class Data2D;
+class QCPCheckableLegend;
 
 class Graph2D : public QCPAbstractPlottable, public QCPPlottableInterface1D, public Curve
 {
@@ -46,6 +47,8 @@ public:
   void setScatterSkip(int skip);
   void setChannelFillGraph(Graph2D *targetGraph);
   void setAdaptiveSampling(bool enabled);
+
+  bool addToLegend(QCPCheckableLegend *legend);
 
   // virtual methods of 1d plottable interface:
   virtual int dataCount() const Q_DECL_OVERRIDE;
@@ -132,9 +135,11 @@ public:
   virtual QPen pen() const override;
   virtual SamplePoint samplePoint(SelectedPoint point) const override;
   virtual SelectedPoint closest(const QPoint &pos, double *dist, double *dist2) const override;
-
+  virtual LegendData commonLegendData() const override;
+  virtual void updateScatter() override;
 protected:
   virtual void updatePen() override;
+  friend class QCPCheckableLegendItem;
 };
 
 #endif // GRAPH2D_H

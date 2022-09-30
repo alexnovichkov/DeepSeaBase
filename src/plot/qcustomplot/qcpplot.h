@@ -7,6 +7,7 @@
 
 class Plot;
 class CanvasEventFilter;
+class QCPCheckableLegend;
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type);
 
@@ -16,6 +17,8 @@ class QCPPlot : public QCustomPlot, public PlotInterface
 public:
     QCPPlot(Plot *plot, QWidget *parent = nullptr);
     ~QCPPlot();
+
+    QCPCheckableLegend *checkableLegend = nullptr;
 private:
     Plot *parent = nullptr;
     CanvasEventFilter *canvasFilter = nullptr;

@@ -7,6 +7,29 @@
 #include "pointmarker.h"
 #include "plot.h"
 
+QString Curve::markerShapeDescription(Curve::MarkerShape shape)
+{
+    switch (shape) {
+        case MarkerShape::NoMarker: return "Без маркера";
+        case MarkerShape::Dot: return "Точка";
+        case MarkerShape::Cross: return "Крест";
+        case MarkerShape::Plus: return "Плюс";
+        case MarkerShape::Circle: return "Окружность";
+        case MarkerShape::Disc: return "Диск";
+        case MarkerShape::Square: return "Квадрат";
+        case MarkerShape::Diamond: return "Ромб";
+        case MarkerShape::Star: return "Звезда";
+        case MarkerShape::Triangle: return "Треугольник";
+        case MarkerShape::TriangleInverted: return "Перевернутый треугольник";
+        case MarkerShape::CrossSquare: return "Квадрат с крестом";
+        case MarkerShape::PlusSquare: return "Квадрат с плюсом";
+        case MarkerShape::CrossCircle: return "Окружность с крестом";
+        case MarkerShape::PlusCircle: return "Окружность с плюсом";
+        case MarkerShape::Peace: return "Пацифик";
+    }
+    return "";
+}
+
 Curve::Curve(const QString &title, Channel *channel)
 {DDD;
     Q_UNUSED(title)
@@ -14,7 +37,7 @@ Curve::Curve(const QString &title, Channel *channel)
     this->channel = channel;
     this->duplicate = false;
     this->channel->curve = this;
-//    marker = new PointMarker(this);
+//    pointMarker = new PointMarker(this);
 }
 
 Curve::~Curve()
@@ -22,7 +45,7 @@ Curve::~Curve()
 //    detachFrom(m_plot);
     qDeleteAll(labels);
     labels.clear();
-    delete marker;
+    delete pointMarker;
 
     //maybe clear data that is over 1000000 samples
     if (channel) {
@@ -34,8 +57,8 @@ Curve::~Curve()
 void Curve::attachTo(Plot *plot)
 {DDD;
     m_plot = plot;
-    if (marker) marker->attach(plot);
-    if (marker) marker->setVisible(false);
+    if (pointMarker) pointMarker->attach(plot);
+    if (pointMarker) pointMarker->setVisible(false);
 }
 
 void Curve::detachFrom(Plot *plot)
@@ -43,8 +66,24 @@ void Curve::detachFrom(Plot *plot)
     //detach labels
     foreach(PointLabel *l, labels) l->detachFrom(plot);
     //detach marker
-    if (marker) marker->detach();
+    if (pointMarker) pointMarker->detach();
 
+}
+
+void Curve::setMarkerShape(Curve::MarkerShape markerShape)
+{
+    if (markerShape != m_markerShape) {
+        m_markerShape = markerShape;
+        updateScatter();
+    }
+}
+
+void Curve::setMarkerSize(int markerSize)
+{
+    if (markerSize > 0 && m_markerSize != markerSize) {
+        m_markerSize = markerSize;
+        updateScatter();
+    }
 }
 
 void Curve::addLabel(PointLabel *label)
@@ -140,7 +179,7 @@ void Curve::setVisible(bool visible)
     foreach (PointLabel *label, labels) {
         label->setVisible(visible);
     }
-    if (marker) marker->setVisible(visible);
+    if (pointMarker) pointMarker->setVisible(visible);
 }
 
 void Curve::evaluateScale(int &from, int &to, double startX, double endX) const
@@ -178,16 +217,17 @@ void Curve::switchFixed()
     fixed = !fixed;
 }
 
-QMap<int, QVariant> Curve::commonLegendData() const
+LegendData Curve::commonLegendData() const
 {DDD;
-    QMap<int, QVariant> data;
+    LegendData data;
 
-    data.insert(Enums::ldColor, pen().color());
-    data.insert(Enums::ldTitle, title());
-    if (duplicate && fileNumber>0)
-        data.insert(Enums::ldFileNumber, fileNumber);
-    data.insert(Enums::ldSelected, selected());
-    data.insert(Enums::ldFixed, fixed);
+    data.color = pen().color();
+    data.text = title();
+    if (duplicate && fileNumber > 0)
+        data.fileNumber = fileNumber;
+    data.selected = selected();
+    data.fixed = fixed;
+    //data.checked = isVisible();
 
     return data;
 }
@@ -296,12 +336,12 @@ void Curve::updateSelection(SelectedPoint point)
     selectedPoint = point;
 
     if (!selected()) {
-        if (marker) marker->setVisible(false);
+        if (pointMarker) pointMarker->setVisible(false);
     }
     else {
-        if (marker) marker->setVisible(true);
+        if (pointMarker) pointMarker->setVisible(true);
         auto val = samplePoint(selectedPoint);
 
-        if (marker) marker->moveTo({val.x, qIsNaN(val.z) ? val.y : val.z});
+        if (pointMarker) pointMarker->moveTo({val.x, qIsNaN(val.z) ? val.y : val.z});
     }
 }

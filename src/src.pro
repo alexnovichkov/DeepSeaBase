@@ -69,6 +69,8 @@ SOURCES += main.cpp\
     plot/cursordialog.cpp \
     plot/cursorlabel.cpp \
     plot/cursors.cpp \
+    plot/qcustomplot/checkablelegend.cpp \
+    plot/qcustomplot/checkablelegenditem.cpp \
     plot/qcustomplot/data2d.cpp \
     plot/qcustomplot/qcpplot.cpp \
     plot/qcustomplot/qcustomplot.cpp \
@@ -197,6 +199,8 @@ HEADERS  += mainwindow.h \
     plot/cursorlabel.h \
     plot/cursors.h \
     plot/plotinterface.h \
+    plot/qcustomplot/checkablelegend.h \
+    plot/qcustomplot/checkablelegenditem.h \
     plot/qcustomplot/data2d.h \
     plot/qcustomplot/qcpplot.h \
     plot/qcustomplot/qcustomplot.h \

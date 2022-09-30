@@ -23,6 +23,25 @@ public:
         Spectrogram,
         Unknown
     };
+    enum class MarkerShape {
+        NoMarker,
+        Dot,
+        Cross,
+        Plus,
+        Circle,
+        Disc,
+        Square,
+        Diamond,
+        Star,
+        Triangle,
+        TriangleInverted,
+        CrossSquare,
+        PlusSquare,
+        CrossCircle,
+        PlusCircle,
+        Peace
+    };
+    static QString markerShapeDescription(MarkerShape shape);
 
 
     Curve(const QString &title, Channel *channel);
@@ -43,6 +62,13 @@ public:
     virtual QPen pen() const = 0;
     void setPen(const QPen &pen) {oldPen = pen; updatePen();}
 
+    MarkerShape markerShape() const {return m_markerShape;}
+    void setMarkerShape(MarkerShape markerShape);
+    virtual void updateScatter() {}
+
+    int markerSize() const {return m_markerSize;}
+    void setMarkerSize(int markerSize);
+
     virtual SamplePoint samplePoint(SelectedPoint point) const = 0;
 
     void setVisible(bool visible);
@@ -58,6 +84,8 @@ public:
 
     virtual void moveToPos(QPoint pos, QPoint startPos = QPoint()) override;
 
+    virtual LegendData commonLegendData() const;
+
     virtual double yMin() const;
     virtual double yMax() const;
     virtual double xMin() const;
@@ -68,6 +96,8 @@ public:
 
     Channel *channel;
     QList<PointLabel*> labels;
+    MarkerShape m_markerShape = MarkerShape::NoMarker;
+    int m_markerSize = 6;
 
 
     Implementation *impl = nullptr;
@@ -78,7 +108,7 @@ public:
     Type type = Type::Unknown;
 
 public:
-    QMap<int, QVariant> commonLegendData() const;
+
     void evaluateScale(int &from, int &to, double startX, double endX) const;
     void switchFixed();
     virtual void resetCashedData() {}
@@ -100,7 +130,7 @@ protected:
     virtual void updatePen() = 0;
     Plot *m_plot = nullptr;
     mutable SelectedPoint selectedPoint;
-    PointMarker *marker = nullptr;
+    PointMarker *pointMarker = nullptr;
     QPen oldPen;
 };
 

@@ -5,6 +5,7 @@
 #include "graph2d.h"
 #include "plot/canvaseventfilter.h"
 #include "axisboundsdialog.h"
+#include "checkablelegend.h"
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type) {
     return static_cast<QCPAxis::AxisType>(type);
@@ -16,6 +17,7 @@ Enums::AxisType fromQcpAxis(QCPAxis::AxisType type) {
 
 QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot)
 {
+    setNotAntialiasedElement(QCP::aeScatters , true);
     setInteractions(QCP::iRangeDrag|
                     QCP::iRangeZoom|
                     QCP::iSelectPlottables|
@@ -102,6 +104,46 @@ Enums::AxisType QCPPlot::eventTargetAxis(QEvent *event, QObject *target)
 
 void QCPPlot::createLegend()
 {
+    //legend
+//    checkableLegend = new QCPCheckableLegend;
+
+//    QCPLayoutGrid *subLayout = new QCPLayoutGrid;
+//    plotLayout()->addElement(0, 1, subLayout);
+
+//    subLayout->setMargins(QMargins(0, 0, 0, 0));
+//    subLayout->addElement(0, 0, checkableLegend);
+//    subLayout->addElement(1, 0, new QCPLayoutGrid);
+//    subLayout->setRowStretchFactor(0, 0.001);
+//    checkableLegend->setVisible(true);
+//    checkableLegend->setBorderPen(Qt::NoPen);
+//    plotLayout()->setColumnStretchFactor(1, 0.001);
+//    setAutoAddPlottableToLegend(false);
+
+    checkableLegend = new QCPCheckableLegend(this);
+    parent->legend = checkableLegend->widget();
+
+
+    connect(checkableLegend, &QCPCheckableLegend::markedForDelete, [=](QCPAbstractPlottable *plottable){
+        if (Curve *c = dynamic_cast<Curve *>(plottable))
+            parent->deleteCurveFromLegend(c);
+    });
+    connect(checkableLegend, &QCPCheckableLegend::clicked, [=](QCPAbstractPlottable *plottable){
+        if (Curve *c = dynamic_cast<Curve *>(plottable))
+            parent->editLegendItem(c);
+    });
+    connect(checkableLegend, &QCPCheckableLegend::markedToMove, [=](QCPAbstractPlottable *plottable){
+        if (Curve *c = dynamic_cast<Curve *>(plottable)) {
+            parent->moveCurve(c, c->yAxis() == Enums::AxisType::atLeft ? Enums::AxisType::atRight : Enums::AxisType::atLeft);
+            replot();
+        }
+    });
+    connect(checkableLegend, &QCPCheckableLegend::fixedChanged, [=](QCPAbstractPlottable *plottable){
+        if (Curve *c = dynamic_cast<Curve *>(plottable)) {
+            c->switchFixed();
+            checkableLegend->updateItem(plottable, c->commonLegendData());
+        }
+    });
+
 }
 
 double QCPPlot::screenToPlotCoordinates(Enums::AxisType axisType, double value) const
@@ -255,5 +297,6 @@ void QCPPlot::keyPressEvent(QKeyEvent *event)
             parent->zoom->zoomBack();
             break;
         }
+        default: QCustomPlot::keyPressEvent(event);
     }
 }
