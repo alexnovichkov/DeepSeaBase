@@ -26,6 +26,7 @@ namespace Enums {
         Linear,
         Logarithmic
     };
+    Q_ENUM_NS(AxisScale)
 
     enum class PlotType
     {

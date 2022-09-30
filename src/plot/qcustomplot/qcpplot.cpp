@@ -17,6 +17,10 @@ Enums::AxisType fromQcpAxis(QCPAxis::AxisType type) {
 
 QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot)
 {
+    linTicker.reset(new QCPAxisTicker);
+    logTicker.reset(new QCPAxisTickerLog);
+//    logTicker->setLogBase(2);
+
     setNotAntialiasedElement(QCP::aeScatters , true);
     setInteractions(QCP::iRangeDrag|
                     QCP::iRangeZoom|
@@ -44,6 +48,7 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     connect(axisRect(), &QCPAxisRect::axesRangeScaled, this, &QCPPlot::addZoom);
     connect(axisRect(), &QCPAxisRect::draggingFinished, this, &QCPPlot::addZoom);
     for (auto ax: axisRect()->axes()) {
+        ax->setSubTicks(true);
         connect(ax, &QCPAxis::contextMenuRequested, [=](const QPoint &pos, QCPAxis::AxisType type){
             plot->showContextMenu(pos, static_cast<Enums::AxisType>(type));
         });
@@ -191,10 +196,17 @@ void QCPPlot::setAxisScale(Enums::AxisType axisType, Enums::AxisScale scale)
 {
     auto a = axis(axisType);
     if (!a) return;
-    if (scale == Enums::AxisScale::Linear)
+
+    if (scale == Enums::AxisScale::Linear) {
         a->setScaleType(QCPAxis::stLinear);
-    else if (scale == Enums::AxisScale::Logarithmic)
+        a->setTicker(linTicker);
+    }
+    else if (scale == Enums::AxisScale::Logarithmic) {
         a->setScaleType(QCPAxis::stLogarithmic);
+        a->setTicker(logTicker);
+    }
+
+    replot();
 }
 
 void QCPPlot::setAxisRange(Enums::AxisType axisType, double min, double max, double step)

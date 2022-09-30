@@ -22,6 +22,8 @@ public:
 private:
     Plot *parent = nullptr;
     CanvasEventFilter *canvasFilter = nullptr;
+    QSharedPointer<QCPAxisTicker> linTicker;
+    QSharedPointer<QCPAxisTickerLog> logTicker;
 
     // PlotInterface interface
 public:

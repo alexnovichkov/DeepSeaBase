@@ -214,7 +214,7 @@ QMenu *Plot::createMenu(Enums::AxisType axis, const QPoint &pos)
             if (xScaleIsLogarithmic)
                 m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::Linear);
             else
-                m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::Linear);
+                m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::Logarithmic);
 
             xScaleIsLogarithmic = !xScaleIsLogarithmic;
         });
