@@ -10079,6 +10079,7 @@ void QCPAxisPainterPrivate::draw(QCPPainter *painter)
   QRect labelBounds;
   if (!label.isEmpty())
   {
+//    auto sl = QStaticText(label);
     margin += labelPadding;
     painter->setFont(labelFont);
     painter->setPen(QPen(labelColor));
@@ -10086,9 +10087,11 @@ void QCPAxisPainterPrivate::draw(QCPPainter *painter)
     if (type == QCPAxis::atLeft)
     {
       QTransform oldTransform = painter->transform();
+
       painter->translate((origin.x()-margin-labelBounds.height()), origin.y());
       painter->rotate(-90);
       painter->drawText(0, 0, axisRect.height(), labelBounds.height(), Qt::TextDontClip | Qt::AlignCenter, label);
+//      painter->drawStaticText(QPointF{0, 0}, sl);
       painter->setTransform(oldTransform);
     }
     else if (type == QCPAxis::atRight)
@@ -10097,12 +10100,15 @@ void QCPAxisPainterPrivate::draw(QCPPainter *painter)
       painter->translate((origin.x()+margin+labelBounds.height()), origin.y()-axisRect.height());
       painter->rotate(90);
       painter->drawText(0, 0, axisRect.height(), labelBounds.height(), Qt::TextDontClip | Qt::AlignCenter, label);
+//      painter->drawStaticText(QPointF{0, 0}, QStaticText(label));
       painter->setTransform(oldTransform);
     }
     else if (type == QCPAxis::atTop)
       painter->drawText(origin.x(), origin.y()-margin-labelBounds.height(), axisRect.width(), labelBounds.height(), Qt::TextDontClip | Qt::AlignCenter, label);
+//        painter->drawStaticText(QPointF(origin.x(), origin.y()-margin-labelBounds.height()), QStaticText(label));
     else if (type == QCPAxis::atBottom)
       painter->drawText(origin.x(), origin.y()+margin, axisRect.width(), labelBounds.height(), Qt::TextDontClip | Qt::AlignCenter, label);
+//        painter->drawStaticText(QPointF(origin.x(), origin.y()+margin), QStaticText(label));
   }
   
   // set selection boxes:
@@ -15600,8 +15606,19 @@ void QCustomPlot::mousePressEvent(QMouseEvent *event)
   // save some state to tell in releaseEvent whether it was a click:
   mMouseHasMoved = false;
   mMousePressPos = event->pos();
+
+  // first check for QCPAxis
+  bool axisClicked =false;
+  QList<QVariant> details;
+  QList<QCPLayerable*> candidates = layerableListAt(mMousePressPos, false, &details);
+  for (auto candidate: candidates) {
+      if (qobject_cast<QCPAxis*>(candidate)) {
+          axisClicked = true;
+          break;
+      }
+  }
   
-  if (mSelectionRect && mSelectionRectMode != QCP::srmNone && event->button() == Qt::LeftButton)
+  if (mSelectionRect && mSelectionRectMode != QCP::srmNone && event->button() == Qt::LeftButton && !axisClicked)
   {
     if (
         (mSelectionRectMode != QCP::srmZoom || qobject_cast<QCPAxisRect*>(axisRectAt(mMousePressPos)))
@@ -15611,8 +15628,7 @@ void QCustomPlot::mousePressEvent(QMouseEvent *event)
   } else
   {
     // no selection rect interaction, prepare for click signal emission and forward event to layerable under the cursor:
-    QList<QVariant> details;
-    QList<QCPLayerable*> candidates = layerableListAt(mMousePressPos, false, &details);
+
     if (!candidates.isEmpty())
     {
       mMouseSignalLayerable = candidates.first(); // candidate for signal emission is always topmost hit layerable (signal emitted in release event)

@@ -561,7 +561,8 @@ void Plot::updateAxesLabels()
     else {
         m_plot->enableAxis(Enums::AxisType::atLeft, axisLabelsVisible);
         QString suffix = yValuesPresentationSuffix(yValuesPresentationLeft);
-        QString text(QString("%1 <small>%2</small>").arg(yLeftName).arg(suffix));
+//        QString text(QString("%1 <small>%2</small>").arg(yLeftName).arg(suffix));
+        QString text(QString("%1 %2").arg(yLeftName).arg(suffix));
         if (axisLabelsVisible)
             m_plot->setAxisTitle(Enums::AxisType::atLeft, text);
         else
@@ -572,7 +573,8 @@ void Plot::updateAxesLabels()
     else {
         m_plot->enableAxis(Enums::AxisType::atRight, axisLabelsVisible);
         QString suffix = yValuesPresentationSuffix(yValuesPresentationRight);
-        QString text(QString("%1 <small>%2</small>").arg(yRightName).arg(suffix));
+//        QString text(QString("%1 <small>%2</small>").arg(yRightName).arg(suffix));
+        QString text(QString("%1 %2").arg(yRightName).arg(suffix));
         if (axisLabelsVisible)
             m_plot->setAxisTitle(Enums::AxisType::atRight, text);
         else
