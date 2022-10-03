@@ -97,6 +97,36 @@ void LineCurve::resetCashedData()
     mapper->cashedPolyline.clear();
 }
 
+void LineCurve::updateScatter()
+{
+    QwtSymbol *s = nullptr;
+    if (m_markerShape == MarkerShape::NoMarker) setSymbol(nullptr);
+    else {
+        switch (m_markerShape) {
+            case MarkerShape::Ellipse: s = new QwtSymbol(QwtSymbol::Ellipse); break;
+            case MarkerShape::Rect: s = new QwtSymbol(QwtSymbol::Rect); break;
+            case MarkerShape::Diamond: s = new QwtSymbol(QwtSymbol::Diamond); break;
+            case MarkerShape::Triangle: s = new QwtSymbol(QwtSymbol::Triangle); break;
+            case MarkerShape::DTriangle: s = new QwtSymbol(QwtSymbol::DTriangle); break;
+            case MarkerShape::LTriangle: s = new QwtSymbol(QwtSymbol::LTriangle); break;
+            case MarkerShape::RTriangle: s = new QwtSymbol(QwtSymbol::RTriangle); break;
+            case MarkerShape::Cross: s = new QwtSymbol(QwtSymbol::Cross); break;
+            case MarkerShape::XCross: s = new QwtSymbol(QwtSymbol::XCross); break;
+            case MarkerShape::HLine: s = new QwtSymbol(QwtSymbol::HLine); break;
+            case MarkerShape::VLine: s = new QwtSymbol(QwtSymbol::VLine); break;
+            case MarkerShape::Star1: s = new QwtSymbol(QwtSymbol::Star1); break;
+            case MarkerShape::Star2: s = new QwtSymbol(QwtSymbol::Star2); break;
+            case MarkerShape::Hexagon: s = new QwtSymbol(QwtSymbol::Hexagon); break;
+            default: break;
+        }
+        s->setSize(m_markerSize, m_markerSize);
+        QPen pen = this->pen();
+        pen.setStyle(Qt::SolidLine);
+        s->setPen(pen);
+        setSymbol(s);
+    }
+}
+
 void LineCurve::attachTo(QwtPlot *plot)
 {DDD;
     QwtPlotCurve::attach(plot);

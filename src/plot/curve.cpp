@@ -45,6 +45,22 @@ void Curve::attach(Plot *plot)
     attachTo(plot);
 }
 
+void Curve::setMarkerShape(Curve::MarkerShape markerShape)
+{
+    if (markerShape != m_markerShape) {
+        m_markerShape = markerShape;
+        updateScatter();
+    }
+}
+
+void Curve::setMarkerSize(int markerSize)
+{
+    if (markerSize > 0 && m_markerSize != markerSize) {
+        m_markerSize = markerSize;
+        updateScatter();
+    }
+}
+
 void Curve::addLabel(PointLabel *label)
 {DDD;
     labels << label;

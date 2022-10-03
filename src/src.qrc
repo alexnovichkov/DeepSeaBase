@@ -69,5 +69,19 @@
         <file>icons/linecurve.png</file>
         <file>icons/spectrocurve.png</file>
         <file>icons/timecurve.png</file>
+        <file>icons/ssCircle.png</file>
+        <file>icons/ssCross.png</file>
+        <file>icons/ssDavid.png</file>
+        <file>icons/ssDiamond.png</file>
+        <file>icons/ssHexagon.png</file>
+        <file>icons/ssHline.png</file>
+        <file>icons/ssPlus.png</file>
+        <file>icons/ssSquare.png</file>
+        <file>icons/ssStar.png</file>
+        <file>icons/ssTriangle.png</file>
+        <file>icons/ssTriangleInverted.png</file>
+        <file>icons/ssTriangleLeft.png</file>
+        <file>icons/ssTriangleRight.png</file>
+        <file>icons/ssVline.png</file>
     </qresource>
 </RCC>

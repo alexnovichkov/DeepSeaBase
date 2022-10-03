@@ -1,7 +1,10 @@
 #ifndef ENUMS_H
 #define ENUMS_H
 
+#include <QObject>
+
 namespace Enums {
+    Q_NAMESPACE
     enum Direction {
         Left,
         Right,
@@ -15,6 +18,7 @@ namespace Enums {
         atBottom,
         atInvalid
     };
+    Q_ENUM_NS(AxisType)
 }
 
 

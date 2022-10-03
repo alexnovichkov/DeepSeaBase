@@ -26,6 +26,23 @@ public:
         Spectrogram,
         Unknown
     };
+    enum class MarkerShape {
+        NoMarker,
+        Ellipse,
+        Rect,
+        Diamond,
+        Triangle,
+        DTriangle,
+        LTriangle,
+        RTriangle,
+        Cross,
+        XCross,
+        HLine,
+        VLine,
+        Star1,
+        Star2,
+        Hexagon
+    };
 
 
     Curve(const QString &title, Channel *channel);
@@ -44,6 +61,13 @@ public:
 
     virtual QPen pen() const = 0;
     void setPen(const QPen &pen) {oldPen = pen; updatePen();}
+
+    MarkerShape markerShape() const {return m_markerShape;}
+    void setMarkerShape(MarkerShape markerShape);
+    virtual void updateScatter() {}
+
+    int markerSize() const {return m_markerSize;}
+    void setMarkerSize(int markerSize);
 
     virtual QList<QwtLegendData> legendData() const = 0;
 
@@ -79,6 +103,9 @@ public:
     bool duplicate;
     bool fixed = false;
     Type type = Type::Unknown;
+
+    MarkerShape m_markerShape = MarkerShape::NoMarker;
+    int m_markerSize = 6;
 
 public:
     QMap<int, QVariant> commonLegendData() const;

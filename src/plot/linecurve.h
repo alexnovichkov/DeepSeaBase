@@ -58,6 +58,7 @@ public:
     virtual SamplePoint samplePoint(SelectedPoint point) const override;
 
     virtual void resetCashedData() override;
+    virtual void updateScatter() override;
 
     // Curve interface
 public:

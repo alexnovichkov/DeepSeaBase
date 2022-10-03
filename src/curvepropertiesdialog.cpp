@@ -6,6 +6,7 @@
 #include "plot/curve.h"
 #include "fileformats/dfdfiledescriptor.h"
 #include "logging.h"
+#include "plot/qcustomplot/qcustomplot.h"
 
 void ClickableLabel::mouseReleaseEvent(QMouseEvent *ev)
 {DDD;
@@ -21,6 +22,8 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
 
     oldPen = curve->pen();
     oldTitle = curve->channel->name();
+    oldMarkerShape = static_cast<int>(curve->markerShape());
+    oldMarkerSize = curve->markerSize();
 
     titleEdit = new QLineEdit(oldTitle, this);
     connect(titleEdit, &QLineEdit::textChanged, [=](const QString &newValue) {
@@ -32,6 +35,7 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
             curve->channel->descriptor()->setChanged(true);
     //        curve->channel->descriptor()->write();
             emit curveChanged(curve);
+            plot->replot();
         }
     }
     );
@@ -46,7 +50,21 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
         QPen pen = curve->pen();
         pen.setWidth(newValue);
         this->curve->setPen(pen);
+        curve->updateScatter();
         emit curveChanged(curve);
+        plot->replot();
+    }
+    );
+
+    markerSizeSpinBox = new QSpinBox(this);
+    markerSizeSpinBox->setRange(0,50);
+    markerSizeSpinBox->setValue(oldMarkerSize);
+
+    connect(markerSizeSpinBox, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged),
+            [=](int newValue) {
+        curve->setMarkerSize(newValue);
+        emit curveChanged(curve);
+        plot->replot();
     }
     );
 
@@ -65,6 +83,7 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
         pen.setStyle((Qt::PenStyle)newValue);
         this->curve->setPen(pen);
         emit curveChanged(curve);
+        plot->replot();
     });
 
     ClickableLabel *colorLabel = new ClickableLabel(this);
@@ -81,9 +100,38 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
                         pen.setColor(color);
                         this->curve->setPen(pen);
                         emit curveChanged(curve);
+                        plot->replot();
                     }
                 }
     );
+
+    markerComboBox = new QComboBox(this);
+    markerComboBox->setEditable(false);
+    markerComboBox->addItems({"Без маркера",
+                              "Окружность",
+                              "Квадрат",
+                              "Ромб",
+                              "Треугольник",
+                              "Перевернутый треугольник",
+                              "Треугольник влево",
+                              "Треугольник вправо",
+                              "Плюс",
+                              "Крест",
+                              "Горизонтальная линия",
+                              "Вертикальная линия",
+                              "Звезда",
+                              "6-угольная звезда",
+                              "Шестиугольник"});
+
+    for (int i=0; i<16; ++i) {
+        markerComboBox->setItemIcon(i, iconForMarker(i));
+    }
+    markerComboBox->setCurrentIndex(static_cast<int>(curve->markerShape()));
+    connect(markerComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            [=](int shape) {
+        curve->setMarkerShape(static_cast<Curve::MarkerShape>(shape));
+        plot->replot();
+    });
 
     QComboBox *axisComboBox = new QComboBox(this);
     axisComboBox->setEditable(false);
@@ -93,6 +141,7 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
     connect(axisComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             [=](int axis) {
         plot->moveCurve(curve, Enums::AxisType(axis));
+        plot->replot();
     });
 
     QFormLayout *l = new QFormLayout;
@@ -107,7 +156,8 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
     l->addWidget(line);
 
     l->addRow(new QLabel("Ось Y", this), axisComboBox);
-//    l->addRow(new QLabel("Маркер", this), symbolCombo);
+    l->addRow(new QLabel("Маркер", this), markerComboBox);
+    l->addRow(new QLabel("Размер маркера", this), markerSizeSpinBox);
 
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok |
                                                        QDialogButtonBox::Cancel);
@@ -118,10 +168,35 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
     setLayout(l);
 }
 
+QIcon CurvePropertiesDialog::iconForMarker(int shape) const
+{
+    switch (shape) {
+        case 1: return QIcon(":/icons/ssCircle.png");
+        case 2: return QIcon(":/icons/ssSquare.png");
+        case 3: return QIcon(":/icons/ssDiamond.png");
+        case 4: return QIcon(":/icons/ssTriangle.png");
+        case 5: return QIcon(":/icons/ssTriangleInverted.png");
+        case 6: return QIcon(":/icons/ssTriangleLeft.png");
+        case 7: return QIcon(":/icons/ssTriangleRight.png");
+        case 8: return QIcon(":/icons/ssPlus.png");
+        case 9: return QIcon(":/icons/ssCross.png");
+        case 10: return QIcon(":/icons/ssHline.png");
+        case 11: return QIcon(":/icons/ssVline.png");
+        case 12: return QIcon(":/icons/ssStar.png");
+        case 13: return QIcon(":/icons/ssDavid.png");
+        case 14: return QIcon(":/icons/ssHexagon.png");
+    }
+
+    return QIcon();
+}
+
 void CurvePropertiesDialog::reject()
 {DDD;
     curve->setPen(oldPen);
     curve->channel->setName(oldTitle);
     curve->setTitle(curve->channel->legendName());
+    curve->setMarkerSize(oldMarkerSize);
+    curve->setMarkerShape(static_cast<Curve::MarkerShape>(oldMarkerShape));
+    plot->replot();
     QDialog::reject();
 }

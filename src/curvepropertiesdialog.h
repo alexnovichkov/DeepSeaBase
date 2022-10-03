@@ -12,6 +12,7 @@ class Plot;
 #include <QPen>
 #include <QBrush>
 #include <QLabel>
+#include "enums.h"
 
 class ClickableLabel : public QLabel
 {
@@ -37,15 +38,22 @@ signals:
     void curveChanged(Curve *curve);
 public slots:
 private:
+    QIcon iconForMarker(int shape) const;
     Curve *curve;
     Plot *plot;
     QLineEdit *titleEdit;
     QLineEdit *legendEdit;
     QSpinBox *widthSpinBox;
     QComboBox *styleComboBox;
+    QComboBox *markerComboBox;
+    QSpinBox *markerSizeSpinBox;
 
     QPen oldPen;
     QString oldTitle;
+    int oldMarkerShape;
+    int oldMarkerSize;
+
+    Enums::AxisType oldAxis;
 
     // QDialog interface
 public slots:
