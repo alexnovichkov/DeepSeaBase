@@ -7,25 +7,22 @@
 class QKeyEvent;
 class Plot;
 
-/**
- * @brief The PlotPicker class
- * Простой класс, отображающий текущие координаты на курсоре
- */
-class PlotTracker : public QwtPlotPicker
-{
-    Q_OBJECT
-public:
-    explicit PlotTracker(Plot *plot);
-    ~PlotTracker();
-protected:
-    virtual void widgetKeyPressEvent(QKeyEvent *e);
-    virtual QwtText trackerTextF(const QPointF &pos) const;
-private slots:
-    void maybeHover(const QPointF &pos);
-private:
-    Plot *plot;
-    QwtPlot *impl;
-    QCursor cursor;
-};
+
+//class PlotTracker : public QwtPlotPicker
+//{
+//    Q_OBJECT
+//public:
+//    explicit PlotTracker(Plot *plot);
+//    ~PlotTracker();
+//protected:
+//    virtual void widgetKeyPressEvent(QKeyEvent *e);
+//    virtual QwtText trackerTextF(const QPointF &pos) const;
+//private slots:
+//    void maybeHover(const QPointF &pos);
+//private:
+//    Plot *plot;
+//    QwtPlot *impl;
+//    QCursor cursor;
+//};
 
 #endif // PLOTPICKER_H

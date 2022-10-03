@@ -11,6 +11,7 @@
 /// minimum trace level, DD
 //#define TRACE_MIN
 
+#include <chrono>
 
 #define DebugPrint(s) qDebug()<<#s<<s;
 
@@ -21,7 +22,7 @@ public:
     ~Trace();
 private:
     QString _msg;
-    QElapsedTimer *time;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start;
 };
 
 #ifdef TRACE_MIN

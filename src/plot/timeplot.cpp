@@ -1,6 +1,5 @@
 #include "timeplot.h"
 
-#include "qwtlinecurve.h"
 #include "fileformats/filedescriptor.h"
 #include "unitsconverter.h"
 #include "plotmodel.h"
@@ -9,6 +8,7 @@
 #include "picker.h"
 #include "logging.h"
 #include "canvaseventfilter.h"
+#include "qcustomplot/graphtime.h"
 
 TimePlot::TimePlot(QWidget *parent) : Plot(Enums::PlotType::Time, parent)
 {DDD;
@@ -22,13 +22,13 @@ TimePlot::~TimePlot()
     //delete playerPanel;
 }
 
-Curve *TimePlot::createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis)
-{DDD;
-    auto result = new TimeCurve(legendName, channel);
-    result->setXAxis(xAxis);
-    result->setYAxis(yAxis);
-    return result;
-}
+//Curve *TimePlot::createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis)
+//{DDD;
+//    auto result = new GraphTime(legendName, channel, axis(xAxis), axis(yAxis));
+//    result->setXAxis(xAxis);
+//    result->setYAxis(yAxis);
+//    return result;
+//}
 
 QWidget *TimePlot::toolBarWidget()
 {DDD;

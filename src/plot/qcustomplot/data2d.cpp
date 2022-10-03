@@ -1,16 +1,5 @@
 #include "data2d.h"
-
-#include "dataholder.h"
-
-bool Data2D::isEmpty() const
-{
-    return data->samplesCount() == 0;
-}
-
-int Data2D::size() const
-{
-    return data->samplesCount();
-}
+#include "logging.h"
 
 int Data2D::findBegin(double sortKey, bool expandedRange) const
 {
@@ -67,26 +56,6 @@ void Data2D::limitIteratorsToDataRange(int &begin, int &end, const QCPDataRange 
     begin = std::clamp(dataRange.begin(), 0, data->samplesCount()-1);
     end = std::clamp(dataRange.end(), 0, data->samplesCount()-1);
     if (begin > end) std::swap(begin, end);
-}
-
-double Data2D::mainKey(int index)
-{
-    return data->xValue(index);
-}
-
-double Data2D::sortKey(int index)
-{
-    return data->xValue(index);
-}
-
-double Data2D::mainValue(int index)
-{
-    return data->yValue(index, 0);
-}
-
-QCPRange Data2D::valueRange(int index) const
-{
-    return {data->yValue(index), data->yValue(index)};
 }
 
 QCPRange Data2D::valueRange(bool &foundRange, QCP::SignDomain signDomain, const QCPRange &inKeyRange) const
@@ -176,7 +145,7 @@ QCPRange Data2D::keyRange(bool &foundRange, QCP::SignDomain signDomain) const
 }
 
 QVector<QCPGraphData> Data2D::toLineData() const
-{
+{DD0;
     QVector<QCPGraphData> result(data->samplesCount());
 
     for (int i=0; i<data->samplesCount(); ++i) {

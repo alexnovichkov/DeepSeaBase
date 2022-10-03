@@ -3,9 +3,11 @@
 #include "plot/zoomstack.h"
 #include "plot/plotmodel.h"
 #include "graph2d.h"
+#include "graphtime.h"
 #include "plot/canvaseventfilter.h"
 #include "axisboundsdialog.h"
 #include "checkablelegend.h"
+#include "mousecoordinates.h"
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type) {
     return static_cast<QCPAxis::AxisType>(type);
@@ -21,6 +23,14 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     logTicker.reset(new QCPAxisTickerLog);
 //    logTicker->setLogBase(2);
 
+    oldCursor = cursor();
+
+    addLayer("mouse");
+    layer("mouse")->setMode(QCPLayer::lmBuffered);
+
+    mouseCoordinates = new MouseCoordinates(this);
+    mouseCoordinates->setLayer("mouse");
+
     setNotAntialiasedElement(QCP::aeScatters , true);
     setInteractions(QCP::iRangeDrag|
                     QCP::iRangeZoom|
@@ -29,6 +39,8 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
                     QCP::iSelectItems|
                     QCP::iSelectOther);
     setSelectionRectMode(QCP::srmZoom);
+    setMouseTracking(true);
+    setPlottingHints( QCP::phCacheLabels | /*QCP::phFastPolylines |*/ QCP::phImmediateRefresh);
 
     connect(this, &QCustomPlot::axisDoubleClick, [=](QCPAxis *axis, QCPAxis::SelectablePart part, QMouseEvent *event){
         Q_UNUSED(part);
@@ -47,6 +59,7 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     });
     connect(axisRect(), &QCPAxisRect::axesRangeScaled, this, &QCPPlot::addZoom);
     connect(axisRect(), &QCPAxisRect::draggingFinished, this, &QCPPlot::addZoom);
+    connect(this, &QCustomPlot::mouseMove, mouseCoordinates, &MouseCoordinates::update);
     for (auto ax: axisRect()->axes()) {
         ax->setSubTicks(true);
         connect(ax, &QCPAxis::contextMenuRequested, [=](const QPoint &pos, QCPAxis::AxisType type){
@@ -175,7 +188,7 @@ Range QCPPlot::screenRange(Enums::AxisType axisType) const
 
 void QCPPlot::replot()
 {
-    QCustomPlot::replot();
+    QCustomPlot::replot(rpQueuedReplot);
 }
 
 void QCPPlot::updateAxes()
@@ -276,8 +289,9 @@ void QCPPlot::setInteractionMode(Enums::InteractionMode mode)
 
 Curve *QCPPlot::createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis)
 {
-    auto g = new Graph2D(legendName, channel, axis(xAxis), axis(yAxis));
-    return g;
+//    if (channel->type() == Descriptor::TimeResponse)
+//        return new GraphTime(legendName, channel, axis(xAxis), axis(yAxis));
+    return new Graph2D(legendName, channel, axis(xAxis), axis(yAxis));
 }
 
 Selected QCPPlot::findObject(QPoint pos) const

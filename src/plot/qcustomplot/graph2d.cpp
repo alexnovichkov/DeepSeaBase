@@ -7,6 +7,7 @@
 #include "checkablelegenditem.h"
 #include "checkablelegend.h"
 #include "qcpplot.h"
+#include "logging.h"
 
 Graph2D::Graph2D(const QString &title, Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis) :
     QCPAbstractPlottable(keyAxis, valueAxis), Curve(title, channel)
@@ -109,7 +110,7 @@ QCPRange Graph2D::getKeyRange(bool &foundRange, QCP::SignDomain inSignDomain) co
 }
 
 void Graph2D::getDataSegments(QList<QCPDataRange> &selectedSegments, QList<QCPDataRange> &unselectedSegments) const
-{
+{DD0;
     selectedSegments.clear();
     unselectedSegments.clear();
     if (mSelectable == QCP::stWhole) // stWhole selection type draws the entire plottable with selected style if mSelection isn't empty
@@ -128,7 +129,7 @@ void Graph2D::getDataSegments(QList<QCPDataRange> &selectedSegments, QList<QCPDa
 }
 
 void Graph2D::drawPolyline(QCPPainter *painter, const QVector<QPointF> &lineData) const
-{
+{DD0;
     // if drawing lines in plot (instead of PDF), reduce 1px lines to cosmetic, because at least in
     // Qt6 drawing of "1px" width lines is much slower even though it has same appearance apart from
     // High-DPI. In High-DPI cases people must set a pen width slightly larger than 1.0 to get
@@ -146,7 +147,7 @@ void Graph2D::drawPolyline(QCPPainter *painter, const QVector<QPointF> &lineData
         painter->pen().style() == Qt::SolidLine &&
         !painter->modes().testFlag(QCPPainter::pmVectorized) &&
         !painter->modes().testFlag(QCPPainter::pmNoCaching))
-    {
+    {qDebug()<<"fast polylines";
       int i = 0;
       bool lastIsNan = false;
       const int lineDataSize = lineData.size();
@@ -166,7 +167,7 @@ void Graph2D::drawPolyline(QCPPainter *painter, const QVector<QPointF> &lineData
         ++i;
       }
     } else
-    {
+    {qDebug()<<"slow polylines";
       int segmentStart = 0;
       int i = 0;
       const int lineDataSize = lineData.size();
@@ -185,7 +186,7 @@ void Graph2D::drawPolyline(QCPPainter *painter, const QVector<QPointF> &lineData
 }
 
 void Graph2D::drawFill(QCPPainter *painter, QVector<QPointF> *lines) const
-{
+{DD0;
     if (mLineStyle == lsImpulse) return; // fill doesn't make sense for impulse plot
     if (painter->brush().style() == Qt::NoBrush || painter->brush().color().alpha() == 0) return;
 
@@ -212,7 +213,7 @@ void Graph2D::drawFill(QCPPainter *painter, QVector<QPointF> *lines) const
 }
 
 void Graph2D::drawScatterPlot(QCPPainter *painter, const QVector<QPointF> &scatters, const QCPScatterStyle &style) const
-{
+{DD0;
     applyScattersAntialiasingHint(painter);
     style.applyTo(painter, mPen);
     foreach (const QPointF &scatter, scatters)
@@ -220,7 +221,7 @@ void Graph2D::drawScatterPlot(QCPPainter *painter, const QVector<QPointF> &scatt
 }
 
 void Graph2D::drawLinePlot(QCPPainter *painter, const QVector<QPointF> &lines) const
-{
+{DD0;
     if (painter->pen().style() != Qt::NoPen && painter->pen().color().alpha() != 0)
     {
       applyDefaultAntialiasingHint(painter);
@@ -229,7 +230,7 @@ void Graph2D::drawLinePlot(QCPPainter *painter, const QVector<QPointF> &lines) c
 }
 
 void Graph2D::drawImpulsePlot(QCPPainter *painter, const QVector<QPointF> &lines) const
-{
+{DD0;
     if (painter->pen().style() != Qt::NoPen && painter->pen().color().alpha() != 0)
     {
       applyDefaultAntialiasingHint(painter);
@@ -243,7 +244,8 @@ void Graph2D::drawImpulsePlot(QCPPainter *painter, const QVector<QPointF> &lines
 }
 
 void Graph2D::getOptimizedLineData(QVector<QCPGraphData> *lineData, const int begin, const int end) const
-{
+{DD0;
+//    auto start = std::chrono::high_resolution_clock::now();
     if (!lineData) return;
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
@@ -252,14 +254,16 @@ void Graph2D::getOptimizedLineData(QVector<QCPGraphData> *lineData, const int be
 
     int dataCount = int(end-begin);
     int maxCount = (std::numeric_limits<int>::max)();
-    if (mAdaptiveSampling)
+
     {
       double keyPixelSpan = qAbs(keyAxis->coordToPixel(m_data->mainKey(begin)) - keyAxis->coordToPixel(m_data->mainKey(end-1)));
+
       if (2*keyPixelSpan+2 < static_cast<double>((std::numeric_limits<int>::max)()))
         maxCount = int(2*keyPixelSpan+2);
     }
 
-    if (mAdaptiveSampling && dataCount >= maxCount) // use adaptive sampling only if there are at least two points per pixel on average
+
+    if (dataCount >= maxCount) // use adaptive sampling only if there are at least two points per pixel on average
     {
       auto it = begin;
       double minValue = m_data->mainValue(it);
@@ -322,7 +326,7 @@ void Graph2D::getOptimizedLineData(QVector<QCPGraphData> *lineData, const int be
 }
 
 void Graph2D::getOptimizedScatterData(QVector<QCPGraphData> *scatterData, int begin, int end) const
-{
+{DD0;
     if (!scatterData) return;
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
@@ -340,13 +344,13 @@ void Graph2D::getOptimizedScatterData(QVector<QCPGraphData> *scatterData, int be
     if (begin == end) return;
     int dataCount = int(end-begin);
     int maxCount = (std::numeric_limits<int>::max)();
-    if (mAdaptiveSampling)
+
     {
       int keyPixelSpan = int(qAbs(keyAxis->coordToPixel(m_data->mainKey(begin)) - keyAxis->coordToPixel(m_data->mainKey(end-1))));
       maxCount = 2*keyPixelSpan+2;
     }
 
-    if (mAdaptiveSampling && dataCount >= maxCount) // use adaptive sampling only if there are at least two points per pixel on average
+    if (dataCount >= maxCount) // use adaptive sampling only if there are at least two points per pixel on average
     {
       double valueMaxRange = valueAxis->range().upper;
       double valueMinRange = valueAxis->range().lower;
@@ -494,7 +498,7 @@ void Graph2D::getOptimizedScatterData(QVector<QCPGraphData> *scatterData, int be
 }
 
 void Graph2D::getVisibleDataBounds(int &begin, int &end, const QCPDataRange &rangeRestriction) const
-{
+{DD0;
     if (rangeRestriction.isEmpty())
     {
       end = m_data->size();
@@ -513,8 +517,12 @@ void Graph2D::getVisibleDataBounds(int &begin, int &end, const QCPDataRange &ran
 }
 
 void Graph2D::getLines(QVector<QPointF> *lines, const QCPDataRange &dataRange) const
-{
+{DD0;
     if (!lines) return;
+    if (mLineStyle == lsNone) {
+        lines->clear();
+        return;
+    }
     int begin, end;
     getVisibleDataBounds(begin, end, dataRange);
     if (begin == end)
@@ -532,17 +540,17 @@ void Graph2D::getLines(QVector<QPointF> *lines, const QCPDataRange &dataRange) c
 
     switch (mLineStyle)
     {
-      case lsNone: lines->clear(); break;
       case lsLine: *lines = dataToLines(lineData); break;
       case lsStepLeft: *lines = dataToStepLeftLines(lineData); break;
       case lsStepRight: *lines = dataToStepRightLines(lineData); break;
       case lsStepCenter: *lines = dataToStepCenterLines(lineData); break;
       case lsImpulse: *lines = dataToImpulseLines(lineData); break;
+        default: break;
     }
 }
 
 void Graph2D::getScatters(QVector<QPointF> *scatters, const QCPDataRange &dataRange) const
-{
+{DD0;
     if (!scatters) return;
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
@@ -587,7 +595,7 @@ void Graph2D::getScatters(QVector<QPointF> *scatters, const QCPDataRange &dataRa
 }
 
 QVector<QPointF> Graph2D::dataToLines(const QVector<QCPGraphData> &data) const
-{
+{DD0;
     QVector<QPointF> result;
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
@@ -615,7 +623,7 @@ QVector<QPointF> Graph2D::dataToLines(const QVector<QCPGraphData> &data) const
 }
 
 QVector<QPointF> Graph2D::dataToStepLeftLines(const QVector<QCPGraphData> &data) const
-{
+{DD0;
     QVector<QPointF> result;
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
@@ -653,7 +661,7 @@ QVector<QPointF> Graph2D::dataToStepLeftLines(const QVector<QCPGraphData> &data)
 }
 
 QVector<QPointF> Graph2D::dataToStepRightLines(const QVector<QCPGraphData> &data) const
-{
+{DD0;
     QVector<QPointF> result;
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
@@ -691,7 +699,7 @@ QVector<QPointF> Graph2D::dataToStepRightLines(const QVector<QCPGraphData> &data
 }
 
 QVector<QPointF> Graph2D::dataToStepCenterLines(const QVector<QCPGraphData> &data) const
-{
+{DD0;
     QVector<QPointF> result;
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
@@ -741,7 +749,7 @@ QVector<QPointF> Graph2D::dataToStepCenterLines(const QVector<QCPGraphData> &dat
 }
 
 QVector<QPointF> Graph2D::dataToImpulseLines(const QVector<QCPGraphData> &data) const
-{
+{DD0;
     QVector<QPointF> result;
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
@@ -775,7 +783,7 @@ QVector<QPointF> Graph2D::dataToImpulseLines(const QVector<QCPGraphData> &data) 
 }
 
 QVector<QCPDataRange> Graph2D::getNonNanSegments(const QVector<QPointF> *lineData, Qt::Orientation keyOrientation) const
-{
+{DD0;
     QVector<QCPDataRange> result;
     const int n = lineData->size();
 
@@ -815,7 +823,7 @@ QVector<QCPDataRange> Graph2D::getNonNanSegments(const QVector<QPointF> *lineDat
 }
 
 QVector<QPair<QCPDataRange, QCPDataRange> > Graph2D::getOverlappingSegments(QVector<QCPDataRange> thisSegments, const QVector<QPointF> *thisData, QVector<QCPDataRange> otherSegments, const QVector<QPointF> *otherData) const
-{
+{DD0;
     QVector<QPair<QCPDataRange, QCPDataRange> > result;
     if (thisData->isEmpty() || otherData->isEmpty() || thisSegments.isEmpty() || otherSegments.isEmpty())
       return result;
@@ -886,7 +894,7 @@ bool Graph2D::segmentsIntersect(double aLower, double aUpper, double bLower, dou
 }
 
 QPointF Graph2D::getFillBasePoint(QPointF matchingDataPoint) const
-{
+{DD0;
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
     if (!keyAxis || !valueAxis) { qDebug() << Q_FUNC_INFO << "invalid key or value axis"; return {}; }
@@ -929,7 +937,7 @@ QPointF Graph2D::getFillBasePoint(QPointF matchingDataPoint) const
 }
 
 const QPolygonF Graph2D::getFillPolygon(const QVector<QPointF> *lineData, QCPDataRange segment) const
-{
+{DD0;
     if (segment.size() < 2)
       return QPolygonF();
     QPolygonF result(segment.size()+2);
@@ -942,7 +950,7 @@ const QPolygonF Graph2D::getFillPolygon(const QVector<QPointF> *lineData, QCPDat
 }
 
 const QPolygonF Graph2D::getChannelFillPolygon(const QVector<QPointF> *thisData, QCPDataRange thisSegment, const QVector<QPointF> *otherData, QCPDataRange otherSegment) const
-{
+{DD0;
     if (!mChannelFillGraph)
       return QPolygonF();
 
@@ -1183,7 +1191,7 @@ void Graph2D::drawLegendIcon(QCPPainter *painter, const QRectF &rect) const
 }
 
 void Graph2D::draw(QCPPainter *painter)
-{
+{DD0;
     if (!mKeyAxis || !mValueAxis) { qDebug() << Q_FUNC_INFO << "invalid key or value axis"; return; }
     if (mKeyAxis.data()->range().size() <= 0 || m_data->isEmpty()) return;
     if (mLineStyle == lsNone && mScatterStyle.isNone()) return;

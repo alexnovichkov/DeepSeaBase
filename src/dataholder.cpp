@@ -839,11 +839,6 @@ double DataHolder::yMax(int block) const
     return corrected(m_yMax.value(block, 0.0));
 }
 
-int DataHolder::samplesCount() const
-{DDDD;
-    return m_xCount;
-}
-
 QVector<double> DataHolder::linears(int block) const
 {DDD;
     switch (m_yValuesFormat) {

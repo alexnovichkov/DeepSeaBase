@@ -4,16 +4,8 @@
 #include <qwt_point_mapper.h>
 #include <QPolygonF>
 #include <qwt_scale_map.h>
+#include "enums.h"
 
-struct PointBlock
-{
-    double minX = 0;
-    double maxX = 0;
-    double minY = 0;
-    double maxY = 0;
-    int from = 0;
-    int to = 0;
-};
 
 
 

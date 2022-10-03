@@ -8,11 +8,13 @@
 class Plot;
 class CanvasEventFilter;
 class QCPCheckableLegend;
+class MouseCoordinates;
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type);
 
 class QCPPlot : public QCustomPlot, public PlotInterface
 {
+    friend  class MouseCoordinates;
     Q_OBJECT
 public:
     QCPPlot(Plot *plot, QWidget *parent = nullptr);
@@ -24,6 +26,8 @@ private:
     CanvasEventFilter *canvasFilter = nullptr;
     QSharedPointer<QCPAxisTicker> linTicker;
     QSharedPointer<QCPAxisTickerLog> logTicker;
+    QCursor oldCursor;
+    MouseCoordinates *mouseCoordinates;
 
     // PlotInterface interface
 public:

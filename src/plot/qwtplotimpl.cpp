@@ -69,7 +69,7 @@ QwtPlotImpl::QwtPlotImpl(Plot *plot, QWidget *parent) : QwtPlot(parent), parent(
     axisWidget(QwtAxis::YLeft)->setMouseTracking(true);
     axisWidget(QwtAxis::YRight)->setMouseTracking(true);
 
-    tracker = new PlotTracker(plot);
+//    tracker = new PlotTracker(plot);
 
     leftOverlay = new LeftAxisOverlay(this);
     rightOverlay = new RightAxisOverlay(this);
@@ -90,7 +90,7 @@ QwtPlotImpl::~QwtPlotImpl()
     delete wheelZoom;
     delete axisZoom;
     delete canvasFilter;
-    delete tracker;
+//    delete tracker;
 }
 
 void QwtPlotImpl::createLegend()

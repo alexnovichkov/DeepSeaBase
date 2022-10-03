@@ -3,14 +3,18 @@
 
 #include "qcustomplot.h"
 
-class DataHolder;
+#include "dataholder.h"
 
 class Data2D {
 public:
     explicit Data2D(DataHolder *data) : data(data) {}
     virtual ~Data2D() {}
-    bool isEmpty() const;
-    int size() const;
+    inline bool isEmpty() const {
+        return data->samplesCount() == 0;
+    }
+    inline int size() const {
+        return data->samplesCount();
+    }
 
     /*!
       Returns an index of the data point with a (sort-)key that is equal to, just below, or just
@@ -48,10 +52,18 @@ public:
 
     void limitIteratorsToDataRange(int &begin, int &end, const QCPDataRange &dataRange) const;
 
-    double mainKey(int index);
-    double sortKey(int index);
-    double mainValue(int index);
-    QCPRange valueRange(int index) const;
+    inline double mainKey(int index) {
+        return data->xValue(index);
+    }
+    inline double sortKey(int index) {
+        return data->xValue(index);
+    }
+    inline double mainValue(int index) {
+        return data->yValue(index, 0);
+    }
+    inline QCPRange valueRange(int index) const {
+        return {data->yValue(index), data->yValue(index)};
+    }
     QCPRange valueRange(bool &foundRange, QCP::SignDomain signDomain,
                                 const QCPRange &inKeyRange) const;
 

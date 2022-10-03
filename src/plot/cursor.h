@@ -8,7 +8,7 @@
 
 class Plot;
 class Selectable;
-class TrackingCursor;
+class QCPTrackingCursor;
 class QMenu;
 
 class Cursor : public QObject
@@ -49,8 +49,8 @@ public:
     virtual void setColor(const QColor &color) {this->m_color = color;}
     virtual void moveTo(const QPointF &pos1, const QPointF &pos2, bool silent=false) = 0;
     virtual void moveTo(const QPointF &pos1, bool silent=false) = 0;
-    virtual void moveTo(Qt::Key key, int count, TrackingCursor *source, bool silent=false) = 0;
-    virtual void moveTo(const QPointF &pos, TrackingCursor *source, bool silent=false) = 0;
+    virtual void moveTo(Qt::Key key, int count, QCPTrackingCursor *source, bool silent=false) = 0;
+    virtual void moveTo(const QPointF &pos, QCPTrackingCursor *source, bool silent=false) = 0;
     virtual void updatePos() = 0;
     virtual void attach() = 0;
     virtual void detach() = 0;

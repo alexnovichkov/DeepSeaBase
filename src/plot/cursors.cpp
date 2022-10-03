@@ -4,7 +4,7 @@
 #include "plotmodel.h"
 #include "curve.h"
 #include "fileformats/filedescriptor.h"
-#include "qwtcursorsingle.h"
+#include "qcpcursorsingle.h"
 #include "qwtcursordouble.h"
 #include "qwtcursorharmonic.h"
 #include "qwt_scale_map.h"
@@ -21,32 +21,32 @@ void Cursors::update()
 
 void Cursors::addDoubleCursor(const QPoint &pos, Cursor::Style style, bool reject)
 {DDD;
-    auto c = new QwtCursorDouble(style, reject, plot);
-    connect(c, SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
-    connect(c, SIGNAL(dataChanged()), this, SIGNAL(cursorsChanged()));
-    double xVal1 = 0.0;
-    double xVal2 = 0.0;
-    double yVal = 0.0;
-    if (plot) {
-        auto range = plot->plotRange(Enums::AxisType::atBottom);
-        xVal1 = plot->screenToPlotCoordinates(Enums::AxisType::atBottom, pos.x());
-        xVal2 = qMin(xVal1 + range.dist()/10, range.dist()*9/10);
-    }
-    c->attach();
-    c->moveTo({xVal1, yVal}, {xVal2, yVal});
-    m_cursors << c;
-    emit cursorsChanged();
-    if (reject) {
-        //register reject cursors for all standard double cursors
-        for (auto cu: m_cursors) {
-            if (cu->type()==Cursor::Type::Double) cu->addRejectCursor(c);
-        }
-    }
+//    auto c = new QwtCursorDouble(style, reject, plot);
+//    connect(c, SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
+//    connect(c, SIGNAL(dataChanged()), this, SIGNAL(cursorsChanged()));
+//    double xVal1 = 0.0;
+//    double xVal2 = 0.0;
+//    double yVal = 0.0;
+//    if (plot) {
+//        auto range = plot->plotRange(Enums::AxisType::atBottom);
+//        xVal1 = plot->screenToPlotCoordinates(Enums::AxisType::atBottom, pos.x());
+//        xVal2 = qMin(xVal1 + range.dist()/10, range.dist()*9/10);
+//    }
+//    c->attach();
+//    c->moveTo({xVal1, yVal}, {xVal2, yVal});
+//    m_cursors << c;
+//    emit cursorsChanged();
+//    if (reject) {
+//        //register reject cursors for all standard double cursors
+//        for (auto cu: m_cursors) {
+//            if (cu->type()==Cursor::Type::Double) cu->addRejectCursor(c);
+//        }
+//    }
 }
 
 void Cursors::addSingleCursor(const QPoint &pos, Cursor::Style style)
 {DDD;
-    auto c = new QwtCursorSingle(style, plot);
+    auto c = new QCPCursorSingle(style, plot);
     connect(c,SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
     connect(c, SIGNAL(dataChanged()), this, SIGNAL(cursorsChanged()));
     double xVal = 0.0;
@@ -72,18 +72,18 @@ void Cursors::addRejectCursor(const QPoint &pos, Cursor::Style style)
 
 void Cursors::addHarmonicCursor(const QPoint &pos)
 {DDD;
-    auto c = new QwtCursorHarmonic(plot);
-    connect(c,SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
-    connect(c, SIGNAL(dataChanged()), this, SIGNAL(cursorsChanged()));
-    double xVal = 0.0;
-    double yVal = 0.0;
-    if (plot) {
-        xVal = plot->screenToPlotCoordinates(Enums::AxisType::atBottom, pos.x());
-    }
-    c->attach();
-    c->moveTo({xVal, yVal});
-    m_cursors << c;
-    emit cursorsChanged();
+//    auto c = new QwtCursorHarmonic(plot);
+//    connect(c,SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
+//    connect(c, SIGNAL(dataChanged()), this, SIGNAL(cursorsChanged()));
+//    double xVal = 0.0;
+//    double yVal = 0.0;
+//    if (plot) {
+//        xVal = plot->screenToPlotCoordinates(Enums::AxisType::atBottom, pos.x());
+//    }
+//    c->attach();
+//    c->moveTo({xVal, yVal});
+//    m_cursors << c;
+//    emit cursorsChanged();
 }
 
 int Cursors::dataCount() const

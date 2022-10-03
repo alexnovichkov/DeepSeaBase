@@ -69,9 +69,13 @@ SOURCES += main.cpp\
     plot/cursordialog.cpp \
     plot/cursorlabel.cpp \
     plot/cursors.cpp \
+    plot/qcpcursorsingle.cpp \
+    plot/qcptrackingcursor.cpp \
     plot/qcustomplot/checkablelegend.cpp \
     plot/qcustomplot/checkablelegenditem.cpp \
     plot/qcustomplot/data2d.cpp \
+    plot/qcustomplot/graphtime.cpp \
+    plot/qcustomplot/mousecoordinates.cpp \
     plot/qcustomplot/qcpplot.cpp \
     plot/qcustomplot/qcustomplot.cpp \
     plot/canvaseventfilter.cpp \
@@ -199,9 +203,13 @@ HEADERS  += mainwindow.h \
     plot/cursorlabel.h \
     plot/cursors.h \
     plot/plotinterface.h \
+    plot/qcpcursorsingle.h \
+    plot/qcptrackingcursor.h \
     plot/qcustomplot/checkablelegend.h \
     plot/qcustomplot/checkablelegenditem.h \
     plot/qcustomplot/data2d.h \
+    plot/qcustomplot/graphtime.h \
+    plot/qcustomplot/mousecoordinates.h \
     plot/qcustomplot/qcpplot.h \
     plot/qcustomplot/qcustomplot.h \
     plot/qcustomplot/graph2d.h \
