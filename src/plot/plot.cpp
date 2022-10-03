@@ -383,6 +383,10 @@ QMenu *Plot::createMenu(Enums::AxisType axis, const QPoint &pos)
             delta = screenToPlotCoordinates(Enums::AxisType::atRight, (p1+p2)/2.0);
 
             coords.coords.insert(Enums::AxisType::atRight, {s1-delta, s2-delta});
+
+            range = plotRange(Enums::AxisType::atBottom);
+            coords.coords.insert(Enums::AxisType::atBottom, {range.min, range.max});
+
             zoom->addZoom(coords, true);
         });
         menu->addAction("Совместить диапазоны левой и правой осей", [=](){
@@ -399,6 +403,9 @@ QMenu *Plot::createMenu(Enums::AxisType axis, const QPoint &pos)
             ZoomStack::zoomCoordinates coords;
             coords.coords.insert(Enums::AxisType::atLeft, {s, ss});
             coords.coords.insert(Enums::AxisType::atRight, {s, ss});
+
+            range = plotRange(Enums::AxisType::atBottom);
+            coords.coords.insert(Enums::AxisType::atBottom, {range.min, range.max});
 
             zoom->addZoom(coords, true);
         });

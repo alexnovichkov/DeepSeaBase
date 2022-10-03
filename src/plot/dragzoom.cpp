@@ -82,5 +82,14 @@ ZoomStack::zoomCoordinates DragZoom::endDrag(QMouseEvent *mEvent)
     if (!qFuzzyIsNull(dy1)) {
         coords.coords.insert(Enums::AxisType::atRight, {minVerticalBound1 + dy1, maxVerticalBound1 + dy1});
     }
+
+    //add the rest of axes to have a consistent undo
+    for (int i=0; i<4; ++i) {
+        if (auto ax = static_cast<Enums::AxisType>(i); !coords.coords.contains(ax)) {
+            auto range = plot->plotRange(ax);
+            coords.coords.insert(ax, {range.min, range.max});
+        }
+    }
+
     return coords;
 }

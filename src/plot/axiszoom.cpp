@@ -254,6 +254,14 @@ ZoomStack::zoomCoordinates AxisZoom::endAxisZoom(QMouseEvent *mEvent, Enums::Axi
             else if (axis == Enums::AxisType::atTop || axis == Enums::AxisType::atBottom) {
                 // запоминаем совершенное перемещение
                 coords.coords.insert(axis, {currentLeftBorder, currentRightBorder});
+                if (axis != Enums::AxisType::atLeft) {
+                    auto range = plot->plotRange(Enums::AxisType::atLeft);
+                    coords.coords.insert(Enums::AxisType::atLeft, {range.min, range.max});
+                }
+                if (axis != Enums::AxisType::atRight) {
+                    auto range = plot->plotRange(Enums::AxisType::atRight);
+                    coords.coords.insert(Enums::AxisType::atRight, {range.min, range.max});
+                }
             }
         }
         else if (ct == ConvType::ctBottom ||ct == ConvType::ctTop) {
@@ -265,6 +273,18 @@ ZoomStack::zoomCoordinates AxisZoom::endAxisZoom(QMouseEvent *mEvent, Enums::Axi
             else if (axis == Enums::AxisType::atLeft || axis == Enums::AxisType::atRight) {
                 // запоминаем совершенное перемещение
                 coords.coords.insert(axis, {currentBottomBorder, currentTopBorder});
+                if (axis != Enums::AxisType::atLeft) {
+                    auto range = plot->plotRange(Enums::AxisType::atLeft);
+                    coords.coords.insert(Enums::AxisType::atLeft, {range.min, range.max});
+                }
+                if (axis != Enums::AxisType::atRight) {
+                    auto range = plot->plotRange(Enums::AxisType::atRight);
+                    coords.coords.insert(Enums::AxisType::atRight, {range.min, range.max});
+                }
+                if (axis != Enums::AxisType::atBottom) {
+                    auto range = plot->plotRange(Enums::AxisType::atBottom);
+                    coords.coords.insert(Enums::AxisType::atBottom, {range.min, range.max});
+                }
             }
         }
         ct = ConvType::ctNone;

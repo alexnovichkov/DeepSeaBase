@@ -192,13 +192,15 @@ void CanvasEventFilter::procAxisEvent(Enums::AxisType axis, QEvent *event)
                 AxisBoundsDialog dialog(range.min, range.max, axis);
                 if (dialog.exec()) {
                     ZoomStack::zoomCoordinates coords;
-                    if (axis == Enums::AxisType::atBottom || axis == Enums::AxisType::atTop)
-                        coords.coords.insert(Enums::AxisType::atBottom, {dialog.leftBorder(), dialog.rightBorder()});
-                    else if (zoomStack->verticalScaleBounds->axis == axis ||
-                             zoomStack->verticalScaleBoundsSlave->axis == axis)
-                        coords.coords.insert(axis, {dialog.leftBorder(), dialog.rightBorder()});
+                    for (int i=0; i<4; ++i) {
+                        if (auto ax = static_cast<Enums::AxisType>(i); ax == axis)
+                            coords.coords.insert(ax, {dialog.leftBorder(), dialog.rightBorder()});
+                        else {
+                            auto range = plot->plotRange(ax);
+                            coords.coords.insert(ax, {range.min, range.max});
+                        }
+                    }
                     zoomStack->addZoom(coords, true);
-
                 }
             }
             break;
