@@ -5,7 +5,7 @@ int Data2D::findBegin(double sortKey, bool expandedRange) const
 {
     if (isEmpty()) return -1;
 
-    int from = -1;
+    int from = 0;
 
     if (data->xValuesFormat()==DataHolder::XValuesUniform) {
         const auto min = data->xMin();
@@ -30,31 +30,37 @@ int Data2D::findEnd(double sortKey, bool expandedRange) const
 {
     if (isEmpty()) return -1;
 
-    int from = -1;
+    int to = data->samplesCount()-1;
 
     if (data->xValuesFormat()==DataHolder::XValuesUniform) {
         const auto min = data->xMin();
         const auto step = data->xStep();
         if (!qFuzzyIsNull(step)) {
-            from = qFloor((sortKey - min)/step);
+            to = qFloor((sortKey - min)/step);
         }
     }
     else {
         for (int i=0; i < data->samplesCount(); ++i) {
-            if (data->xValue(i) > sortKey) {
-                from = i;
+            if (auto val = data->xValue(i); val > sortKey) {
+                to = i;
                 break;
             }
         }
     }
-    if (from != -1 && expandedRange) from++;
-    return from;
+    if (to < data->samplesCount() && expandedRange) to++;
+    return to;
 }
 
 void Data2D::limitIteratorsToDataRange(int &begin, int &end, const QCPDataRange &dataRange) const
 {
-    begin = std::clamp(dataRange.begin(), 0, data->samplesCount()-1);
-    end = std::clamp(dataRange.end(), 0, data->samplesCount()-1);
+    begin = std::max(dataRange.begin(), begin);
+    if (begin < 0) begin = 0;
+    if (begin >= data->samplesCount()) begin = data->samplesCount()-1;
+
+    end = std::min(end, dataRange.end());
+    if (end < 0) end = 0;
+    if (end >= data->samplesCount()) end = data->samplesCount()-1;
+
     if (begin > end) std::swap(begin, end);
 }
 
@@ -144,12 +150,12 @@ QCPRange Data2D::keyRange(bool &foundRange, QCP::SignDomain signDomain) const
     return result;
 }
 
-QVector<QCPGraphData> Data2D::toLineData() const
-{DD0;
-    QVector<QCPGraphData> result(data->samplesCount());
+QVector<QCPGraphData> Data2D::toLineData(int begin, int end) const
+{DD;
+    QVector<QCPGraphData> result(end-begin+1);
 
-    for (int i=0; i<data->samplesCount(); ++i) {
-        result[i] = {data->xValue(i), data->yValue(i, 0)};
+    for (int i=begin; i<=end; ++i) {
+        result[i-begin] = {data->xValue(i), data->yValue(i, 0)};
     }
     return result;
 }

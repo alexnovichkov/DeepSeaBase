@@ -21,9 +21,7 @@ public:
     enum LineStyle { lsNone        ///< data points are not connected with any lines (e.g. data only represented
                                    ///< with symbols according to the scatter style, see \ref setScatterStyle)
                      ,lsLine       ///< data points are connected by a straight line
-                     ,lsStepLeft   ///< line is drawn as steps where the step height is the value of the left data point
-                     ,lsStepRight  ///< line is drawn as steps where the step height is the value of the right data point
-                     ,lsStepCenter ///< line is drawn as steps where the step is in between two data points
+                     ,lsStep       ///< line is drawn as steps for octave plots
                      ,lsImpulse    ///< each data point is represented by a line parallel to the value axis, which reaches from the data point to the zero-value-line
                    };
     Q_ENUMS(LineStyle)
@@ -73,7 +71,7 @@ protected:
   Data2D *m_data = nullptr;
   LineStyle mLineStyle = lsLine;
   QCPScatterStyle mScatterStyle;
-  int mScatterSkip;
+  int mScatterSkip = 0;
   QPointer<Graph2D> mChannelFillGraph;
   bool mAdaptiveSampling;
 
@@ -100,10 +98,8 @@ protected:
   void getScatters(QVector<QPointF> *scatters, const QCPDataRange &dataRange) const;
 
   QVector<QPointF> dataToLines(const QVector<QCPGraphData> &data) const;
-  QVector<QPointF> dataToStepLeftLines(const QVector<QCPGraphData> &data) const;
+  QVector<QPointF> dataToStepLines(const QVector<QCPGraphData> &data) const;
   QVector<QPointF> dataToStepRightLines(const QVector<QCPGraphData> &data) const;
-  QVector<QPointF> dataToStepCenterLines(const QVector<QCPGraphData> &data) const;
-  QVector<QPointF> dataToImpulseLines(const QVector<QCPGraphData> &data) const;
   QVector<QCPDataRange> getNonNanSegments(const QVector<QPointF> *lineData, Qt::Orientation keyOrientation) const;
   QVector<QPair<QCPDataRange, QCPDataRange> > getOverlappingSegments(QVector<QCPDataRange> thisSegments, const QVector<QPointF> *thisData, QVector<QCPDataRange> otherSegments, const QVector<QPointF> *otherData) const;
   bool segmentsIntersect(double aLower, double aUpper, double bLower, double bUpper, int &bPrecedence) const;

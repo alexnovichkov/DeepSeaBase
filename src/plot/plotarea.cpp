@@ -227,11 +227,11 @@ void PlotArea::addPlot(Enums::PlotType type)
 //            break;
 //        }
         case Enums::PlotType::Octave:
-//        {
-//            m_plot = new OctavePlot(this);
-//            setIcon(QIcon(":/icons/barcurve.png"));
-//            break;
-//        }
+        {
+            m_plot = new Plot(type, this);
+            setIcon(QIcon(":/icons/barcurve.png"));
+            break;
+        }
         case Enums::PlotType::Time:
         {
             m_plot = new TimePlot(this);

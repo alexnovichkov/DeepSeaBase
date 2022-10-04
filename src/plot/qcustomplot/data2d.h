@@ -69,7 +69,7 @@ public:
 
     QCPRange keyRange(bool &foundRange, QCP::SignDomain signDomain) const;
 
-    QVector<QCPGraphData> toLineData() const;
+    QVector<QCPGraphData> toLineData(int begin, int end) const;
 private:
     DataHolder *data = nullptr;
 };

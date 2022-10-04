@@ -74,7 +74,6 @@ SOURCES += main.cpp\
     plot/qcustomplot/checkablelegend.cpp \
     plot/qcustomplot/checkablelegenditem.cpp \
     plot/qcustomplot/data2d.cpp \
-    plot/qcustomplot/graphtime.cpp \
     plot/qcustomplot/mousecoordinates.cpp \
     plot/qcustomplot/qcpplot.cpp \
     plot/qcustomplot/qcustomplot.cpp \
@@ -83,7 +82,6 @@ SOURCES += main.cpp\
     plot/filterpointmapper.cpp \
     plot/grid.cpp \
     plot/imagerenderdialog.cpp \
-    plot/octaveplot.cpp \
     plot/plotarea.cpp \
     plot/plotinfooverlay.cpp \
     plot/plotmodel.cpp \
@@ -208,7 +206,6 @@ HEADERS  += mainwindow.h \
     plot/qcustomplot/checkablelegend.h \
     plot/qcustomplot/checkablelegenditem.h \
     plot/qcustomplot/data2d.h \
-    plot/qcustomplot/graphtime.h \
     plot/qcustomplot/mousecoordinates.h \
     plot/qcustomplot/qcpplot.h \
     plot/qcustomplot/qcustomplot.h \
@@ -218,7 +215,6 @@ HEADERS  += mainwindow.h \
     plot/filterpointmapper.h \
     plot/grid.h \
     plot/imagerenderdialog.h \
-    plot/octaveplot.h \
     plot/plotarea.h \
     plot/plotinfooverlay.h \
     plot/plotmodel.h \

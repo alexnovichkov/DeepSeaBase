@@ -3,11 +3,11 @@
 #include "plot/zoomstack.h"
 #include "plot/plotmodel.h"
 #include "graph2d.h"
-#include "graphtime.h"
 #include "plot/canvaseventfilter.h"
 #include "axisboundsdialog.h"
 #include "checkablelegend.h"
 #include "mousecoordinates.h"
+#include "settings.h"
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type) {
     return static_cast<QCPAxis::AxisType>(type);
@@ -289,9 +289,9 @@ void QCPPlot::setInteractionMode(Enums::InteractionMode mode)
 
 Curve *QCPPlot::createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis)
 {
-//    if (channel->type() == Descriptor::TimeResponse)
-//        return new GraphTime(legendName, channel, axis(xAxis), axis(yAxis));
-    return new Graph2D(legendName, channel, axis(xAxis), axis(yAxis));
+    auto g = new Graph2D(legendName, channel, axis(xAxis), axis(yAxis));
+
+    return g;
 }
 
 Selected QCPPlot::findObject(QPoint pos) const

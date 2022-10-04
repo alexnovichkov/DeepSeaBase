@@ -77,6 +77,11 @@ Plot::Plot(Enums::PlotType type, QWidget *parent) :
     cursors = new Cursors(this);
     connect(this, &Plot::curvesCountChanged, cursors, &Cursors::update);
 
+    if (type == Enums::PlotType::Octave) {
+        xScaleIsLogarithmic = true;
+        m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::Logarithmic);
+    }
+
     cursorBox = new CursorBox(cursors, this);
     cursorBox->setWindowTitle(parent->windowTitle());
     cursorBox->setVisible(false);
