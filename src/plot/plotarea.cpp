@@ -220,11 +220,11 @@ void PlotArea::addPlot(Enums::PlotType type)
     }
     switch (type) {
         case Enums::PlotType::Spectrogram:
-//        {
-//            m_plot = new Spectrogram(this);
-//            setIcon(QIcon(":/icons/spectrocurve.png"));
-//            break;
-//        }
+        {
+            m_plot = new Spectrogram(this);
+            setIcon(QIcon(":/icons/spectrocurve.png"));
+            break;
+        }
         case Enums::PlotType::Octave:
         {
             m_plot = new Plot(type, this);

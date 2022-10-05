@@ -6232,10 +6232,6 @@ int QCPAxisTicker::getSubTickCount(double tickStep)
 {
   int result = 1; // default to 1, if no proper value can be found
 
-  if (tickStep > 500) {
-      qDebug() << "big";
-  }
-  
   // separate integer and fractional part of mantissa:
   double epsilon = 0.01;
   double intPartf;
@@ -16803,6 +16799,56 @@ void QCPColorGradient::colorize(const double *data, const QCPRange &range, QRgb 
       }
     }
   }
+}
+
+#include "data3d.h"
+
+void QCPColorGradient::colorize(Data3D *data, const QCPRange &range, QRgb *scanLine, int line, int n, int dataIndexFactor, bool logarithmic)
+{
+    // If you change something here, make sure to also adapt color() and the other colorize() overload
+    if (!data)
+    {
+      qDebug() << Q_FUNC_INFO << "null pointer given as data";
+      return;
+    }
+    if (!scanLine)
+    {
+      qDebug() << Q_FUNC_INFO << "null pointer given as scanLine";
+      return;
+    }
+    if (mColorBufferInvalidated)
+      updateColorBuffer();
+
+    const bool skipNanCheck = mNanHandling == nhNone;
+    const double posToIndexFactor = !logarithmic ? (mLevelCount-1)/range.size() : (mLevelCount-1)/qLn(range.upper/range.lower);
+    for (int i=0; i<n; ++i)
+    {
+      const double value = data->cell(dataIndexFactor*i, line);
+      if (skipNanCheck || !std::isnan(value))
+      {
+        int index = int((!logarithmic ? value-range.lower : qLn(value/range.lower)) * posToIndexFactor);
+        if (!mPeriodic)
+        {
+          index = qBound(0, index, mLevelCount-1);
+        } else
+        {
+          index %= mLevelCount;
+          if (index < 0)
+            index += mLevelCount;
+        }
+        scanLine[i] = mColorBuffer.at(index);
+      } else
+      {
+        switch(mNanHandling)
+        {
+        case nhLowestColor: scanLine[i] = mColorBuffer.first(); break;
+        case nhHighestColor: scanLine[i] = mColorBuffer.last(); break;
+        case nhTransparent: scanLine[i] = qRgba(0, 0, 0, 0); break;
+        case nhNanColor: scanLine[i] = mNanColor.rgba(); break;
+        case nhNone: break; // shouldn't happen
+        }
+      }
+    }
 }
 
 /*! \overload

@@ -3,6 +3,7 @@
 #include "plot/zoomstack.h"
 #include "plot/plotmodel.h"
 #include "graph2d.h"
+#include "qcpspectrogram.h"
 #include "plot/canvaseventfilter.h"
 #include "axisboundsdialog.h"
 #include "checkablelegend.h"
@@ -297,9 +298,30 @@ void QCPPlot::setInteractionMode(Enums::InteractionMode mode)
 
 Curve *QCPPlot::createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis)
 {
-    auto g = new Graph2D(legendName, channel, axis(xAxis), axis(yAxis));
+    if (parent->type() == Enums::PlotType::Spectrogram) {
+        auto g = new QCPSpectrogram(legendName, channel, axis(xAxis), this->yAxis);
+        if (!colorScale) {
+            colorScale = new QCPColorScale(this);
+            plotLayout()->addElement(0, 1, colorScale); // add it to the right of the main axis rect
+            colorScale->setType(QCPAxis::atRight); // scale shall be vertical bar with tick/axis labels right (actually atRight is already the default)
 
-    return g;
+            QCPMarginGroup *marginGroup = new QCPMarginGroup(this);
+            axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
+            colorScale->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
+            yAxis2->setVisible(false);
+        }
+
+        g->setColorScale(colorScale);
+        auto gradient = QCPColorGradient(QCPColorGradient::gpGrayscale).inverted();
+        g->setGradient(gradient);
+        // rescale the data dimension (color) such that all data points lie in the span visualized by the color gradient:
+        g->rescaleDataRange();
+        colorScale->rescaleDataRange(true);
+
+        return g;
+    }
+
+    return new Graph2D(legendName, channel, axis(xAxis), axis(yAxis));
 }
 
 Selected QCPPlot::findObject(QPoint pos) const

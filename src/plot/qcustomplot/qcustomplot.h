@@ -4716,6 +4716,8 @@ void QCPAbstractPlottable1D<DataType>::drawPolyline(QCPPainter *painter, const Q
 /* including file 'src/colorgradient.h'    */
 /* modified 2021-03-29T02:30:44, size 7262 */
 
+class Data3D;
+
 class QCP_LIB_DECL QCPColorGradient
 {
   Q_GADGET
@@ -4786,6 +4788,9 @@ public:
   
   // non-property methods:
   void colorize(const double *data, const QCPRange &range, QRgb *scanLine, int n, int dataIndexFactor=1, bool logarithmic=false);
+  void colorize(Data3D *data, const QCPRange &range, QRgb *scanLine,
+                int line,
+                int n, int dataIndexFactor=1, bool logarithmic=false);
   void colorize(const double *data, const unsigned char *alpha, const QCPRange &range, QRgb *scanLine, int n, int dataIndexFactor=1, bool logarithmic=false);
   QRgb color(double position, const QCPRange &range, bool logarithmic=false);
   void loadPreset(GradientPreset preset);

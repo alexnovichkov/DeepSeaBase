@@ -8,7 +8,6 @@
 #include "picker.h"
 #include "logging.h"
 #include "canvaseventfilter.h"
-#include "qcustomplot/graphtime.h"
 
 TimePlot::TimePlot(QWidget *parent) : Plot(Enums::PlotType::Time, parent)
 {DDD;

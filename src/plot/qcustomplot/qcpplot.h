@@ -34,6 +34,8 @@ private:
     QCPAxisOverlay *leftOverlay = nullptr;
     QCPAxisOverlay *rightOverlay = nullptr;
 
+    QCPColorScale *colorScale = nullptr;
+
     // PlotInterface interface
 public:
     virtual void setEventFilter(CanvasEventFilter *filter) override;

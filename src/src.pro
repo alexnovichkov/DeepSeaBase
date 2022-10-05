@@ -74,10 +74,12 @@ SOURCES += main.cpp\
     plot/qcustomplot/checkablelegend.cpp \
     plot/qcustomplot/checkablelegenditem.cpp \
     plot/qcustomplot/data2d.cpp \
+    plot/qcustomplot/data3d.cpp \
     plot/qcustomplot/mousecoordinates.cpp \
     plot/qcustomplot/qcpaxisoverlay.cpp \
     plot/qcustomplot/qcpaxistickeroctave.cpp \
     plot/qcustomplot/qcpplot.cpp \
+    plot/qcustomplot/qcpspectrogram.cpp \
     plot/qcustomplot/qcustomplot.cpp \
     plot/canvaseventfilter.cpp \
     plot/clearablespinbox.cpp \
@@ -208,10 +210,12 @@ HEADERS  += mainwindow.h \
     plot/qcustomplot/checkablelegend.h \
     plot/qcustomplot/checkablelegenditem.h \
     plot/qcustomplot/data2d.h \
+    plot/qcustomplot/data3d.h \
     plot/qcustomplot/mousecoordinates.h \
     plot/qcustomplot/qcpaxisoverlay.h \
     plot/qcustomplot/qcpaxistickeroctave.h \
     plot/qcustomplot/qcpplot.h \
+    plot/qcustomplot/qcpspectrogram.h \
     plot/qcustomplot/qcustomplot.h \
     plot/qcustomplot/graph2d.h \
     plot/canvaseventfilter.h \
