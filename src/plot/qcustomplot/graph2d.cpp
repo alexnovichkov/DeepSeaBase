@@ -24,6 +24,8 @@ Graph2D::Graph2D(const QString &title, Channel *channel, QCPAxis *keyAxis, QCPAx
     setName(channel->legendName());
 
     setLineStyle(lineStyleByType(channel));
+    if (channel->octaveType() > 0 && Settings::getSetting("plotOctaveAsHistogram", false).toBool())
+        setAntialiased(false);
 }
 
 Graph2D::~Graph2D()

@@ -49,8 +49,11 @@ public:
     //возвращает ширину полосы f2-f1 = fm*fd-fm/fd, fm - центральная частота полосы
     double getBandWidth(double frequency) const;
 
+
+
     //низкоуровневая функция, которая расчитывает нужное количество октавных полос, начиная с 1 Гц
     static QVector<double> octaveStrips(int octave, int count, int base = 10);
+    static QString frequencyLabel(int octave, double frequency);
 private:
     //обновление списка центральных частот без обрезки по частоте Найквиста
     void update();

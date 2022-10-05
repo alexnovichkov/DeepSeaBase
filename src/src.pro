@@ -76,6 +76,7 @@ SOURCES += main.cpp\
     plot/qcustomplot/data2d.cpp \
     plot/qcustomplot/mousecoordinates.cpp \
     plot/qcustomplot/qcpaxisoverlay.cpp \
+    plot/qcustomplot/qcpaxistickeroctave.cpp \
     plot/qcustomplot/qcpplot.cpp \
     plot/qcustomplot/qcustomplot.cpp \
     plot/canvaseventfilter.cpp \
@@ -209,6 +210,7 @@ HEADERS  += mainwindow.h \
     plot/qcustomplot/data2d.h \
     plot/qcustomplot/mousecoordinates.h \
     plot/qcustomplot/qcpaxisoverlay.h \
+    plot/qcustomplot/qcpaxistickeroctave.h \
     plot/qcustomplot/qcpplot.h \
     plot/qcustomplot/qcustomplot.h \
     plot/qcustomplot/graph2d.h \

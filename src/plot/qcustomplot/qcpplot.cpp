@@ -10,6 +10,7 @@
 #include "settings.h"
 #include "channelsmimedata.h"
 #include "qcpaxisoverlay.h"
+#include "qcpaxistickeroctave.h"
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type) {
     return static_cast<QCPAxis::AxisType>(type);
@@ -26,6 +27,7 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     linTicker.reset(new QCPAxisTicker);
     logTicker.reset(new QCPAxisTickerLog);
     logTicker->setLogBase(2);
+    octaveTicker.reset(new QCPAxisTickerOctave);
 
     leftOverlay = new QCPLeftAxisOverlay(this);
     rightOverlay = new QCPRightAxisOverlay(this);
@@ -81,7 +83,6 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
                 if (axis == ax) coords.coords.insert(fromQcpAxis(axis->axisType()), {newRange.lower, newRange.upper});
                 else coords.coords.insert(fromQcpAxis(axis->axisType()), {axis->range().lower, axis->range().upper});
             }
-            qDebug() << coords.coords;
 
             plot->zoom->addZoom(coords, true);
         });
@@ -217,7 +218,10 @@ void QCPPlot::setAxisScale(Enums::AxisType axisType, Enums::AxisScale scale)
     }
     else if (scale == Enums::AxisScale::Logarithmic) {
         a->setScaleType(QCPAxis::stLogarithmic);
-        a->setTicker(logTicker);
+        if (parent->type() == Enums::PlotType::Octave)
+            a->setTicker(octaveTicker);
+        else
+            a->setTicker(logTicker);
     }
 
     replot();

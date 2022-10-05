@@ -9633,7 +9633,6 @@ void QCPAxis::mouseReleaseEvent(QMouseEvent *event, const QPointF &startPos)
   Q_UNUSED(event)
   Q_UNUSED(startPos)
     if (mDragging) {
-        qDebug() << axisType() << range();
         emit draggingFinished(range());
     }
   mDragging = false;

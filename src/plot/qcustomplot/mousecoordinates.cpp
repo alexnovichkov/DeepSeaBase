@@ -19,7 +19,7 @@ void MouseCoordinates::update(QMouseEvent *event)
     if (parent->xAxis->range().contains(x) && parent->yAxis->range().contains(y)) {
         parent->setCursor(Qt::CrossCursor);
         auto pos = event->pos();
-        QString text = parent->parent->pointCoordinates(pos);
+        QString text = parent->parent->pointCoordinates({x, y});
         setText(text);
         pos.rx() += 10;
         pos.ry() -= 10;

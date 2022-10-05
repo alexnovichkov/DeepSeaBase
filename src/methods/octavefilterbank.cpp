@@ -7,6 +7,7 @@
 #include "filtering.h"
 #include "algorithms.h"
 
+
 OctaveFilterBank::OctaveFilterBank()
 {
     update();
@@ -220,6 +221,50 @@ QVector<double> OctaveFilterBank::octaveStrips(int octave, int count, int base)
             break;
     }
     return v;
+}
+
+double round_off(double N, double n)
+{
+    int h;
+    double b, c, d, e, i, j, m, f;
+    b = N;
+    c = floor(N);
+
+    // Counting the no. of digits to the left of decimal point
+    // in the given no.
+    for (i = 0; b >= 1; ++i)
+        b = b / 10;
+
+    d = n - i;
+    b = N;
+    b = b * pow(10, d);
+    e = b + 0.5;
+    if ((float)e == (float)ceil(b)) {
+        f = (ceil(b));
+        h = f - 2;
+        if (h % 2 != 0) {
+            e = e - 1;
+        }
+    }
+    j = floor(e);
+    m = pow(10, d);
+    j = j / m;
+    return j;
+}
+
+int leftmostDigit(double d)
+{
+    while (d > 10) d /= 10;
+    return std::floor(d);
+}
+
+QString roundedLabel(double frequency)
+{
+    if (auto d = leftmostDigit(frequency); d >= 1 && d <= 4 ) {
+        return QString::number(round_off(frequency, 3));
+    }
+
+    return QString::number(round_off(frequency, 2));
 }
 
 void OctaveFilterBank::update()

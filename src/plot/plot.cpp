@@ -57,11 +57,7 @@ Plot::Plot(Enums::PlotType type, QWidget *parent) :
 
     zoom = new ZoomStack(this);
 
-//    m_plot = new QwtPlotImpl(this, parent);
     m_plot = new QCPPlot(this, parent);
-//    m_plot->setEventFilter(new CanvasEventFilter(this));
-//    new CanvasEventFilter(this);
-
 
 
     QVariantList list = Settings::getSetting("colors").toList();

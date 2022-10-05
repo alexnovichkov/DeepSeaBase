@@ -27,6 +27,7 @@ private:
     CanvasEventFilter *canvasFilter = nullptr;
     QSharedPointer<QCPAxisTicker> linTicker;
     QSharedPointer<QCPAxisTickerLog> logTicker;
+    QSharedPointer<QCPAxisTicker> octaveTicker;
     QCursor oldCursor;
     MouseCoordinates *mouseCoordinates;
 
