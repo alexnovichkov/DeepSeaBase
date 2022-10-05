@@ -6179,7 +6179,8 @@ void QCPAxisTicker::setTickOrigin(double origin)
   needed) and are respectively filled with sub tick coordinates, and tick label strings belonging
   to \a ticks by index.
 */
-void QCPAxisTicker::generate(const QCPRange &range, const QLocale &locale, QChar formatChar, int precision, QVector<double> &ticks, QVector<double> *subTicks, QVector<QString> *tickLabels)
+void QCPAxisTicker::generate(const QCPRange &range, const QLocale &locale, QChar formatChar, int precision,
+                             QVector<double> &ticks, QVector<double> *subTicks, QVector<QString> *tickLabels)
 {
   // generate (major) ticks:
   double tickStep = getTickStep(range);
@@ -6230,12 +6231,18 @@ double QCPAxisTicker::getTickStep(const QCPRange &range)
 int QCPAxisTicker::getSubTickCount(double tickStep)
 {
   int result = 1; // default to 1, if no proper value can be found
+
+  if (tickStep > 500) {
+      qDebug() << "big";
+  }
   
   // separate integer and fractional part of mantissa:
   double epsilon = 0.01;
   double intPartf;
   int intPart;
-  double fracPart = modf(getMantissa(tickStep), &intPartf);
+  double magn;
+  double mant = getMantissa(tickStep, &magn);
+  double fracPart = modf(mant, &intPartf);
   intPart = int(intPartf);
   
   // handle cases with (almost) integer mantissa:
@@ -6438,9 +6445,10 @@ double QCPAxisTicker::pickClosest(double target, const QVector<double> &candidat
 */
 double QCPAxisTicker::getMantissa(double input, double *magnitude) const
 {
-  const double mag = qPow(10.0, qFloor(qLn(input)/qLn(10.0)));
-  if (magnitude) *magnitude = mag;
-  return input/mag;
+    double mag = std::log10(input);
+    mag = qPow(10.0, qFloor(mag));
+    if (magnitude) *magnitude = mag;
+    return input/mag;
 }
 
 /*! \internal
