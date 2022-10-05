@@ -9548,12 +9548,13 @@ void QCPAxis::mousePressEvent(QMouseEvent *event, const QVariant &details)
       mDragStartRange = mRange;
 
     //axis part clicked
+    auto center = mScaleType == QCPAxis::stLogarithmic ? sqrt(range().lower * range().upper) : range().center();
     if (orientation() == Qt::Horizontal) {
-        if (pixelToCoord(event->pos().x()) <= range().center()) mAxisPartMoved = 1; //left part
+        if (pixelToCoord(event->pos().x()) <= center) mAxisPartMoved = 1; //left part
         else mAxisPartMoved = 2; //right part
     }
     else {
-        if (pixelToCoord(event->pos().y()) <= range().center()) mAxisPartMoved = 3; //lower part
+        if (pixelToCoord(event->pos().y()) <= center) mAxisPartMoved = 3; //lower part
         else mAxisPartMoved = 4; //upper part
     }
   }
@@ -9631,7 +9632,10 @@ void QCPAxis::mouseReleaseEvent(QMouseEvent *event, const QPointF &startPos)
 {
   Q_UNUSED(event)
   Q_UNUSED(startPos)
-    if (mDragging) emit draggingFinished(range());
+    if (mDragging) {
+        qDebug() << axisType() << range();
+        emit draggingFinished(range());
+    }
   mDragging = false;
   if (mParentPlot->noAntialiasingOnDrag())
   {

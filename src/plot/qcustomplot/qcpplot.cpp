@@ -8,6 +8,8 @@
 #include "checkablelegend.h"
 #include "mousecoordinates.h"
 #include "settings.h"
+#include "channelsmimedata.h"
+#include "qcpaxisoverlay.h"
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type) {
     return static_cast<QCPAxis::AxisType>(type);
@@ -19,9 +21,14 @@ Enums::AxisType fromQcpAxis(QCPAxis::AxisType type) {
 
 QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot)
 {
+    setAcceptDrops(true);
+
     linTicker.reset(new QCPAxisTicker);
     logTicker.reset(new QCPAxisTickerLog);
-//    logTicker->setLogBase(2);
+    logTicker->setLogBase(2);
+
+    leftOverlay = new QCPLeftAxisOverlay(this);
+    rightOverlay = new QCPRightAxisOverlay(this);
 
     oldCursor = cursor();
 
@@ -32,10 +39,11 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     mouseCoordinates->setLayer("mouse");
 
     setNotAntialiasedElement(QCP::aeScatters , true);
+    setNoAntialiasingOnDrag(true);
+
     setInteractions(QCP::iRangeDrag|
                     QCP::iRangeZoom|
                     QCP::iSelectPlottables|
-                    QCP::iSelectLegend|
                     QCP::iSelectItems|
                     QCP::iSelectOther);
     setSelectionRectMode(QCP::srmZoom);
@@ -57,6 +65,8 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
             plot->zoom->addZoom(coords, true);
         }
     });
+    axisRect()->setRangeDragAxes({xAxis, yAxis, yAxis2});
+    axisRect()->setRangeZoomAxes({xAxis, yAxis, yAxis2});
     connect(axisRect(), &QCPAxisRect::axesRangeScaled, this, &QCPPlot::addZoom);
     connect(axisRect(), &QCPAxisRect::draggingFinished, this, &QCPPlot::addZoom);
     connect(this, &QCustomPlot::mouseMove, mouseCoordinates, &MouseCoordinates::update);
@@ -71,6 +81,7 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
                 if (axis == ax) coords.coords.insert(fromQcpAxis(axis->axisType()), {newRange.lower, newRange.upper});
                 else coords.coords.insert(fromQcpAxis(axis->axisType()), {axis->range().lower, axis->range().upper});
             }
+            qDebug() << coords.coords;
 
             plot->zoom->addZoom(coords, true);
         });
@@ -122,20 +133,10 @@ Enums::AxisType QCPPlot::eventTargetAxis(QEvent *event, QObject *target)
 
 void QCPPlot::createLegend()
 {
-    //legend
-//    checkableLegend = new QCPCheckableLegend;
-
-//    QCPLayoutGrid *subLayout = new QCPLayoutGrid;
-//    plotLayout()->addElement(0, 1, subLayout);
-
-//    subLayout->setMargins(QMargins(0, 0, 0, 0));
-//    subLayout->addElement(0, 0, checkableLegend);
-//    subLayout->addElement(1, 0, new QCPLayoutGrid);
-//    subLayout->setRowStretchFactor(0, 0.001);
-//    checkableLegend->setVisible(true);
-//    checkableLegend->setBorderPen(Qt::NoPen);
-//    plotLayout()->setColumnStretchFactor(1, 0.001);
-//    setAutoAddPlottableToLegend(false);
+    this->axisRect(0)->insetLayout()->setInsetAlignment(0, Qt::AlignBottom | Qt::AlignCenter);
+    legend->setFillOrder(QCPLayoutGrid::FillOrder::foColumnsFirst);
+    legend->setWrap(6);
+    legend->setVisible(false);
 
     checkableLegend = new QCPCheckableLegend(this);
     parent->legend = checkableLegend->widget();
@@ -272,9 +273,12 @@ void QCPPlot::setColorMap(int colorMap, Curve *curve)
 
 void QCPPlot::importPlot(const QString &fileName, const QSize &size, int resolution)
 {
+    legend->setVisible(true);
     QString format = fileName.section(".", -1,-1);
-    if (!saveRastered(fileName, size.width(), size.height(), -1, format.toLatin1().data(), -1, resolution))
+    if (!saveRastered(fileName, int(0.0393700787401575 * size.width() * resolution),
+                      int(0.0393700787401575 * size.height() * resolution), 1.0, format.toLatin1().data(), -1, resolution))
         QMessageBox::critical(this, "Сохранение рисунка", "Не удалось сохранить график");
+    legend->setVisible(false);
 }
 
 void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution)
@@ -325,4 +329,54 @@ void QCPPlot::keyPressEvent(QKeyEvent *event)
         }
         default: QCustomPlot::keyPressEvent(event);
     }
+}
+
+
+void QCPPlot::dragEnterEvent(QDragEnterEvent *event)
+{
+    parent->focusPlot();
+    const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
+    if (myData) {
+        //определяем, можем ли построить все каналы на левой или правой оси
+        bool canOnLeft = std::all_of(myData->channels.cbegin(), myData->channels.cend(),
+                                     [this](Channel*c){return parent->canBePlottedOnLeftAxis(c);});
+        bool canOnRight = std::all_of(myData->channels.cbegin(), myData->channels.cend(),
+                                     [this](Channel*c){return parent->canBePlottedOnRightAxis(c);});
+        if (canOnLeft || canOnRight)
+            event->acceptProposedAction();
+    }
+}
+
+void QCPPlot::dragMoveEvent(QDragMoveEvent *event)
+{
+    const ChannelsMimeData *myData = dynamic_cast<const ChannelsMimeData *>(event->mimeData());
+    if (myData) {
+        //определяем, можем ли построить каналы на левой или правой оси
+        //определяем, в какой области мы находимся
+        bool plotOnLeft = event->pos().x() <= axisRect()->rect().x() + axisRect()->rect().width()/2;
+
+        if (leftOverlay) leftOverlay->setVisibility(plotOnLeft);
+        if (rightOverlay) rightOverlay->setVisibility(!plotOnLeft);
+
+            event->acceptProposedAction();
+    }
+}
+
+void QCPPlot::dragLeaveEvent(QDragLeaveEvent *event)
+{
+    Q_UNUSED(event);
+    if (leftOverlay) leftOverlay->setVisibility(false);
+    if (rightOverlay) rightOverlay->setVisibility(false);
+}
+
+void QCPPlot::dropEvent(QDropEvent *event)
+{
+    const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
+    if (myData) {
+        bool plotOnLeft = event->pos().x() <= axisRect()->rect().x()+axisRect()->rect().width()/2;
+        parent->onDropEvent(plotOnLeft, myData->channels);
+        event->acceptProposedAction();
+    }
+    if (leftOverlay) leftOverlay->setVisibility(false);
+    if (rightOverlay) rightOverlay->setVisibility(false);
 }

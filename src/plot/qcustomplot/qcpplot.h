@@ -9,6 +9,7 @@ class Plot;
 class CanvasEventFilter;
 class QCPCheckableLegend;
 class MouseCoordinates;
+class QCPAxisOverlay;
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type);
 
@@ -28,6 +29,9 @@ private:
     QSharedPointer<QCPAxisTickerLog> logTicker;
     QCursor oldCursor;
     MouseCoordinates *mouseCoordinates;
+
+    QCPAxisOverlay *leftOverlay = nullptr;
+    QCPAxisOverlay *rightOverlay = nullptr;
 
     // PlotInterface interface
 public:
@@ -64,6 +68,10 @@ private:
 
 protected:
     virtual void keyPressEvent(QKeyEvent *event) override;
+    virtual void dragEnterEvent(QDragEnterEvent *event) override;
+    virtual void dragMoveEvent(QDragMoveEvent *event) override;
+    virtual void dragLeaveEvent(QDragLeaveEvent *event) override;
+    virtual void dropEvent(QDropEvent *event) override;
 };
 
 #endif // QCPPLOT_H

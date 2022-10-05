@@ -4,7 +4,6 @@
 #include "plot/plot.h"
 //#include "qcustomplot/qcpplot.h"
 #include "spectrogram.h"
-#include "octaveplot.h"
 #include "timeplot.h"
 #include "plot/curve.h"
 #include "settings.h"
@@ -826,13 +825,13 @@ void PlotArea::dropEvent(QDropEvent *event)
 {DDD;
     const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
     if (myData) {
-        onDropEvent(myData->channels);
+        onDropEvent(true, myData->channels);
         event->acceptProposedAction();
     }
 }
 
-void PlotArea::onDropEvent(const QVector<Channel *> &channels)
-{DDD;
+void PlotArea::onDropEvent(bool plotOnLeft, const QVector<Channel *> &channels)
+{DD;
     auto type = Enums::PlotType::General;
     if (!channels.isEmpty()) {
         if (channels.first()->type() == Descriptor::TimeResponse)
@@ -843,7 +842,7 @@ void PlotArea::onDropEvent(const QVector<Channel *> &channels)
             type = Enums::PlotType::Octave;
     }
     addPlot(type);
-    m_plot->onDropEvent(true, channels);
+    m_plot->onDropEvent(plotOnLeft, channels);
 }
 
 void PlotArea::resetCycling()

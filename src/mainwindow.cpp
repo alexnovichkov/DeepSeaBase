@@ -1478,7 +1478,7 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
         p = plot;
     else if (currentPlot) {
         p = currentPlot->plot();
-        if (!p) currentPlot->onDropEvent(toPlot);
+        if (!p) currentPlot->onDropEvent(plotOnLeft, toPlot);
     }
     if (p)
         for (auto ch: toPlot) {

@@ -848,6 +848,7 @@ void Plot::toggleAutoscale(Enums::AxisType axis, bool toggled)
         default:
             break;
     }
+    replot();
 }
 
 void Plot::autoscale(Enums::AxisType axis)

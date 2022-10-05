@@ -31,7 +31,7 @@ public:
     QVector<Channel*> plottedChannels() const;
     QVector<FileDescriptor*> plottedDescriptors() const;
     int curvesCount(int type=-1) const;
-    void onDropEvent(const QVector<Channel*> &channels);
+    void onDropEvent(bool plotOnLeft, const QVector<Channel*> &channels);
     void resetCycling();
 signals:
     void descriptorRequested(int direction, bool checked);

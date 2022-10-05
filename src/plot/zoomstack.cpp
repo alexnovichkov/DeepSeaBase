@@ -108,19 +108,22 @@ void ZoomStack::autoscale(Enums::AxisType axis, bool spectrogram)
     switch (axis) {
         case Enums::AxisType::atBottom: // x axis
             horizontalScaleBounds->autoscale();
+            plot->replot();
             break;
         case Enums::AxisType::atLeft: // y axis
             verticalScaleBounds->autoscale();
+            plot->replot();
             break;
         case Enums::AxisType::atRight: // y slave axis
             verticalScaleBoundsSlave->autoscale();
+            plot->replot();
             break;
         case Enums::AxisType::atInvalid:
             zoomStack.clear();
             horizontalScaleBounds->autoscale();
             verticalScaleBounds->autoscale();
             if (!spectrogram) verticalScaleBoundsSlave->autoscale();
-            //replot();
+            plot->replot();
             //update();
             break;
         default:
