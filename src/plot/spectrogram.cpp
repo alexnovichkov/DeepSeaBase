@@ -34,6 +34,7 @@ void Spectrogram::deleteCurve(Curve *curve, bool doReplot)
         }
         zoom->horizontalScaleBounds->removeToAutoscale(curve->xMin(), curve->xMax());
 
+        curve->detachFrom(this);
         delete curve;
 
         if (m->leftCurvesCount()==0) {
@@ -46,7 +47,7 @@ void Spectrogram::deleteCurve(Curve *curve, bool doReplot)
             m_plot->enableAxis(Enums::AxisType::atRight, false);
         }
         if (!hasCurves()) xName.clear();
-        m_plot->setInfoVisible(true);
+        m_plot->setInfoVisible(m->size()==0);
         if (doReplot) update();
     }
 }
@@ -65,7 +66,6 @@ QString Spectrogram::pointCoordinates(const QPointF &pos)
 
 void Spectrogram::updateAxesLabels()
 {DDD;
-    //две оси видны всегда
     m_plot->enableAxis(Enums::AxisType::atLeft, axisLabelsVisible);
     if (axisLabelsVisible)
         m_plot->setAxisTitle(Enums::AxisType::atLeft, yLeftName);
@@ -73,13 +73,14 @@ void Spectrogram::updateAxesLabels()
         m_plot->setAxisTitle(Enums::AxisType::atLeft, "");
 
     //правая ось - цветовая шкала
-    m_plot->enableAxis(Enums::AxisType::atRight, axisLabelsVisible);
+    m_plot->enableAxis(Enums::AxisType::atRight, false);
+    m_plot->enableColorBar(Enums::AxisType::atRight, true);
     QString suffix = yValuesPresentationSuffix(yValuesPresentationRight);
-    QString text(QString("%1 <small>%2</small>").arg(yRightName).arg(suffix));
+    QString text(QString("%1 %2").arg(yRightName).arg(suffix));
     if (axisLabelsVisible)
-        m_plot->setAxisTitle(Enums::AxisType::atRight, text);
+        m_plot->setColorBarTitle(text);
     else
-        m_plot->setAxisTitle(Enums::AxisType::atRight, "");
+        m_plot->setColorBarTitle("");
 
     if (m_plot->axisEnabled(Enums::AxisType::atBottom)) {
         m_plot->setAxisTitle(Enums::AxisType::atBottom, axisLabelsVisible ? xName : "");
@@ -112,7 +113,6 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     m_plot->enableAxis(Enums::AxisType::atLeft, true);
     plotOnLeft = true;
     setAxis(Enums::AxisType::atRight, ch->yName());
-    m_plot->enableAxis(Enums::AxisType::atRight, true);
     m_plot->enableColorBar(Enums::AxisType::atRight, true);
 
     Curve *g = m_plot->createCurve(ch->legendName(), ch, Enums::AxisType::atBottom, Enums::AxisType::atLeft);
@@ -126,7 +126,6 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
     zoom->verticalScaleBoundsSlave->add(g->yMin(), g->yMax());
     zoom->verticalScaleBounds->add(ch->data()->zMin(), ch->data()->zMax());
-
 
     m_plot->setInfoVisible(false);
 

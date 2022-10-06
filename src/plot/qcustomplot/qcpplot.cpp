@@ -263,17 +263,37 @@ QString QCPPlot::axisTitle(Enums::AxisType axisType) const
 
 void QCPPlot::enableColorBar(Enums::AxisType axisType, bool enable)
 {
-    //TODO: spectrogram
+    if (!colorScale) {
+        colorScale = new QCPColorScale(this);
+        plotLayout()->addElement(0, 1, colorScale); // add it to the right of the main axis rect
+        colorScale->setType(toQcpAxis(axisType)); // scale shall be vertical bar with tick/axis labels right (actually atRight is already the default)
+
+        QCPMarginGroup *marginGroup = new QCPMarginGroup(this);
+        axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
+        colorScale->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
+    }
+    colorScale->setVisible(enable);
 }
 
 void QCPPlot::setColorMap(Enums::AxisType axisType, Range range, int colorMap, Curve *curve)
 {
-    //TODO: spectrogram
+    if (axisType != Enums::AxisType::atRight) return;
+
+    auto gradient = QCPColorGradient(QCPColorGradient::GradientPreset(colorMap));
+    if (auto c = dynamic_cast<QCPSpectrogram*>(curve)) c->setGradient(gradient);
+    if (colorScale) colorScale->setDataRange({range.min, range.max});
 }
 
 void QCPPlot::setColorMap(int colorMap, Curve *curve)
 {
-    //TODO: spectrogram
+    auto gradient = QCPColorGradient(QCPColorGradient::GradientPreset(colorMap));
+    if (auto c = dynamic_cast<QCPSpectrogram*>(curve)) c->setGradient(gradient);
+    if (colorScale) colorScale->rescaleDataRange(true);
+}
+
+void QCPPlot::setColorBarTitle(const QString &title)
+{
+    if (colorScale) colorScale->setLabel(title);
 }
 
 void QCPPlot::importPlot(const QString &fileName, const QSize &size, int resolution)
@@ -300,23 +320,13 @@ Curve *QCPPlot::createCurve(const QString &legendName, Channel *channel, Enums::
 {
     if (parent->type() == Enums::PlotType::Spectrogram) {
         auto g = new QCPSpectrogram(legendName, channel, axis(xAxis), this->yAxis);
-        if (!colorScale) {
-            colorScale = new QCPColorScale(this);
-            plotLayout()->addElement(0, 1, colorScale); // add it to the right of the main axis rect
-            colorScale->setType(QCPAxis::atRight); // scale shall be vertical bar with tick/axis labels right (actually atRight is already the default)
 
-            QCPMarginGroup *marginGroup = new QCPMarginGroup(this);
-            axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
-            colorScale->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
-            yAxis2->setVisible(false);
-        }
-
-        g->setColorScale(colorScale);
-        auto gradient = QCPColorGradient(QCPColorGradient::gpGrayscale).inverted();
-        g->setGradient(gradient);
-        // rescale the data dimension (color) such that all data points lie in the span visualized by the color gradient:
-        g->rescaleDataRange();
-        colorScale->rescaleDataRange(true);
+        if (colorScale) g->setColorScale(colorScale);
+//        auto gradient = QCPColorGradient(QCPColorGradient::gpGrayscale).inverted();
+//        g->setGradient(gradient);
+//        // rescale the data dimension (color) such that all data points lie in the span visualized by the color gradient:
+//        g->rescaleDataRange();
+//        colorScale->rescaleDataRange(true);
 
         return g;
     }

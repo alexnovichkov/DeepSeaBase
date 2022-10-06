@@ -35,6 +35,7 @@ public:
     virtual void setAxisTitle(Enums::AxisType axis, const QString &title) = 0;
     virtual QString axisTitle(Enums::AxisType axis) const = 0;
     virtual void enableColorBar(Enums::AxisType axis, bool enable) = 0;
+    virtual void setColorBarTitle(const QString &title) {}
     virtual void setColorMap(Enums::AxisType axis, Range range, int colorMap, Curve *curve) = 0;
     virtual void setColorMap(int colorMap, Curve *curve) = 0;
 
