@@ -5401,6 +5401,7 @@ signals:
   void dataRangeChanged(const QCPRange &newRange);
   void dataScaleTypeChanged(QCPAxis::ScaleType scaleType);
   void gradientChanged(const QCPColorGradient &newGradient);
+  void contextMenuRequested(const QPoint &pos, QCPAxis::AxisType);
 
 protected:
   // property members:

@@ -9523,11 +9523,13 @@ void QCPAxis::deselectEvent(bool *selectionStateChanged)
   rect is handled by the axis rect's mouse event, e.g. \ref QCPAxisRect::mousePressEvent.
 */
 void QCPAxis::mousePressEvent(QMouseEvent *event, const QVariant &details)
-{
+{qDebug()<<Q_FUNC_INFO;
   Q_UNUSED(details)
-  if (!mParentPlot->interactions().testFlag(QCP::iRangeDrag) ||
-      !mAxisRect->rangeDrag().testFlag(orientation()) ||
-      !mAxisRect->rangeDragAxes(orientation()).contains(this))
+
+    bool rdFlag = mParentPlot->interactions().testFlag(QCP::iRangeDrag);
+    bool rdTest = mAxisRect->rangeDrag().testFlag(orientation());
+    bool rdAxes = mAxisRect->rangeDragAxes(orientation()).contains(this);
+  if (!rdFlag || !rdTest || !rdAxes)
   {
     event->ignore();
     return;
@@ -15619,7 +15621,7 @@ void QCustomPlot::mousePressEvent(QMouseEvent *event)
   QList<QVariant> details;
   QList<QCPLayerable*> candidates = layerableListAt(mMousePressPos, false, &details);
   for (auto candidate: candidates) {
-      if (qobject_cast<QCPAxis*>(candidate)) {
+      if (qobject_cast<QCPAxis*>(candidate) || qobject_cast<QCPColorScale*>(candidate)) {
           axisClicked = true;
           break;
       }
@@ -20614,13 +20616,17 @@ void QCPColorScale::applyDefaultAntialiasingHint(QCPPainter *painter) const
 
 /* inherits documentation from base class */
 void QCPColorScale::mousePressEvent(QMouseEvent *event, const QVariant &details)
-{
+{qDebug()<<Q_FUNC_INFO;
   if (!mAxisRect)
   {
     qDebug() << Q_FUNC_INFO << "internal axis rect was deleted";
     return;
   }
-  mAxisRect.data()->mousePressEvent(event, details);
+  if (event->button()==Qt::RightButton) {
+      emit contextMenuRequested(event->globalPos(), QCPAxis::atRight);
+  }
+  else
+      mAxisRect.data()->mousePressEvent(event, details);
 }
 
 /* inherits documentation from base class */

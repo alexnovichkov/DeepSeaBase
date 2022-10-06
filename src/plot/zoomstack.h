@@ -24,6 +24,7 @@
 #include <QTimer>
 #include <QStack>
 #include <QRectF>
+#include <QtDebug>
 
 #include "enums.h"
 
@@ -34,7 +35,7 @@ class ZoomStack : public QObject
     Q_OBJECT
 
 public:
-    explicit ZoomStack(Plot *plot);
+    explicit ZoomStack(Plot *m_plot);
     ~ZoomStack();
 
     /**************************************************/
@@ -79,18 +80,23 @@ public:
         QMap<Enums::AxisType, QPointF> coords;
     };
 
-
-    ScaleBounds *horizontalScaleBounds,*verticalScaleBounds;
-    ScaleBounds *verticalScaleBoundsSlave;
+    ScaleBounds *scaleBounds(Enums::AxisType axis);
 
     void addZoom(zoomCoordinates coords, bool addToStack = false);
     void zoomBack();
     void moveToAxis(Enums::AxisType axis, double min, double max);
-    void autoscale(Enums::AxisType axis, bool spectrogram);
+    void autoscale(Enums::AxisType axis);
 private:
-    Plot *plot;
-    QStack<zoomCoordinates> zoomStack;
+    Plot *m_plot;
+    QStack<zoomCoordinates> m_zoomStack;
+    QMap<Enums::AxisType, ScaleBounds*> m_scaleBounds;
 };
+
+inline QDebug operator<<(QDebug deb, ZoomStack::zoomCoordinates coords)
+{
+    deb << coords.coords;
+    return deb;
+}
 
 
 #endif // QWTCHARTZOOM_H

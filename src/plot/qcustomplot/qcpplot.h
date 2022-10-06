@@ -57,7 +57,6 @@ public:
     virtual void setAxisTitle(Enums::AxisType axis, const QString &title) override;
     virtual QString axisTitle(Enums::AxisType axis) const override;
     virtual void enableColorBar(Enums::AxisType axis, bool enable) override;
-    virtual void setColorMap(Enums::AxisType axis, Range range, int colorMap, Curve *curve) override;
     virtual void setColorMap(int colorMap, Curve *curve) override;
     virtual void setColorBarTitle(const QString &title) override;
     virtual void importPlot(const QString &fileName, const QSize &size, int resolution) override;

@@ -211,16 +211,6 @@ void QwtPlotImpl::enableColorBar(Enums::AxisType axis, bool enable)
     axisWidget(toQwtAxisType(axis))->setColorBarEnabled(enable);
 }
 
-void QwtPlotImpl::setColorMap(Enums::AxisType axis, Range range, int colorMap, Curve *curve)
-{
-    axisWidget(toQwtAxisType(axis))->setColorMap(QwtInterval(range.min, range.max),
-                                                 ColorMapFactory::map(colorMap));
-    if (QwtSpectroCurve *c = dynamic_cast<QwtSpectroCurve *>(curve)) {
-        c->setColorInterval(range.min, range.max);
-        c->setColorMap(ColorMapFactory::map(colorMap));
-    }
-}
-
 void QwtPlotImpl::setColorMap(int colorMap, Curve *curve)
 {
     if (QwtSpectroCurve *c = dynamic_cast<QwtSpectroCurve *>(curve)) {

@@ -184,8 +184,7 @@ void CanvasEventFilter::procAxisEvent(Enums::AxisType axis, QEvent *event)
                     ZoomStack::zoomCoordinates coords;
                     if (axis == Enums::AxisType::atBottom || axis == Enums::AxisType::atTop)
                         coords.coords.insert(Enums::AxisType::atBottom, {dialog.leftBorder(), dialog.rightBorder()});
-                    else if (zoomStack->verticalScaleBounds->axis == axis ||
-                             zoomStack->verticalScaleBoundsSlave->axis == axis)
+                    else
                         coords.coords.insert(axis, {dialog.leftBorder(), dialog.rightBorder()});
                     zoomStack->addZoom(coords, true);
 

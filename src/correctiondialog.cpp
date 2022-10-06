@@ -151,8 +151,8 @@ void CorrectionDialog::correct()
         }
     }
 
-    plot->recalculateScale(true);
-    plot->recalculateScale(false);
+    plot->recalculateScale(Enums::AxisType::atLeft);
+    plot->recalculateScale(Enums::AxisType::atRight);
     plot->update();
 }
 
@@ -223,8 +223,8 @@ void CorrectionDialog::accept()
         f->write();
     }
 
-    plot->recalculateScale(true);
-    plot->recalculateScale(false);
+    plot->recalculateScale(Enums::AxisType::atLeft);
+    plot->recalculateScale(Enums::AxisType::atRight);
     plot->update();
     QDialog::accept();
 }
@@ -245,8 +245,8 @@ void CorrectionDialog::reject()
         }
     }
 
-    plot->recalculateScale(true);
-    plot->recalculateScale(false);
+    plot->recalculateScale(Enums::AxisType::atLeft);
+    plot->recalculateScale(Enums::AxisType::atRight);
     plot->update();
     QDialog::reject();
 }

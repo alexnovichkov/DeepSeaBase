@@ -145,12 +145,12 @@ void Curve::moveToPos(QPoint pos, QPoint startPos)
 
 double Curve::yMin() const
 {DDD;
-    return channel->data()->yMin();
+    return channel->data()->yMin(-1);
 }
 
 double Curve::yMax() const
 {DDD;
-    return channel->data()->yMax();
+    return channel->data()->yMax(-1);
 }
 
 double Curve::xMin() const

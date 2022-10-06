@@ -107,7 +107,7 @@ public:
      * отдельно для левой или правой вертикальной оси
      * @param leftAxis
      */
-    void recalculateScale(bool leftAxis);
+    void recalculateScale(Enums::AxisType axis);
 
     void saveSpectrum(double zVal);
     void saveThroughput(double xVal);
@@ -139,9 +139,6 @@ protected:
     //default implementation updates either left or right axis
     //reimplemented in Spectrogram
     virtual void updateBounds();
-    //default implementation does nothing
-    //reimplemented in spectrogram
-    virtual void setRightScale(Enums::AxisType id, double min, double max);
     virtual QMenu *createMenu(Enums::AxisType axis, const QPoint &pos);
 
     QString yValuesPresentationSuffix(int yValuesPresentation) const;

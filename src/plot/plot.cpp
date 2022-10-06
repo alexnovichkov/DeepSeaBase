@@ -94,9 +94,9 @@ Plot::~Plot()
     delete picker;
 
     Settings::setSetting("axisLabelsVisible", axisLabelsVisible);
-    Settings::setSetting("autoscale-x", !zoom->horizontalScaleBounds->isFixed());
-    Settings::setSetting("autoscale-y", !zoom->verticalScaleBounds->isFixed());
-    Settings::setSetting("autoscale-y-slave", !zoom->verticalScaleBoundsSlave->isFixed());
+    Settings::setSetting("autoscale-x", !zoom->scaleBounds(Enums::AxisType::atBottom)->isFixed());
+    Settings::setSetting("autoscale-y", !zoom->scaleBounds(Enums::AxisType::atLeft)->isFixed());
+    Settings::setSetting("autoscale-y-slave", !zoom->scaleBounds(Enums::AxisType::atRight)->isFixed());
     delete zoom;
     delete colors;
 }
@@ -163,25 +163,18 @@ void Plot::update()
 void Plot::updateBounds()
 {DDD;
     if (m->leftCurvesCount()==0)
-        zoom->verticalScaleBounds->reset();
+        zoom->scaleBounds(Enums::AxisType::atLeft)->reset();
     if (m->rightCurvesCount()==0)
-        zoom->verticalScaleBoundsSlave->reset();
+        zoom->scaleBounds(Enums::AxisType::atRight)->reset();
     if (!hasCurves())
-        zoom->horizontalScaleBounds->reset();
+        zoom->scaleBounds(Enums::AxisType::atBottom)->reset();
 
-    if (!zoom->horizontalScaleBounds->isFixed())
-        zoom->horizontalScaleBounds->autoscale();
-    if (m->leftCurvesCount()>0 && !zoom->verticalScaleBounds->isFixed())
-        zoom->verticalScaleBounds->autoscale();
-    if (m->rightCurvesCount()>0 && !zoom->verticalScaleBoundsSlave->isFixed())
-        zoom->verticalScaleBoundsSlave->autoscale();
-}
-
-void Plot::setRightScale(Enums::AxisType id, double min, double max)
-{DDD;
-    Q_UNUSED(id);
-    Q_UNUSED(min);
-    Q_UNUSED(max);
+    if (!zoom->scaleBounds(Enums::AxisType::atBottom)->isFixed())
+        zoom->scaleBounds(Enums::AxisType::atBottom)->autoscale();
+    if (m->leftCurvesCount()>0 && !zoom->scaleBounds(Enums::AxisType::atLeft)->isFixed())
+        zoom->scaleBounds(Enums::AxisType::atLeft)->autoscale();
+    if (m->rightCurvesCount()>0 && !zoom->scaleBounds(Enums::AxisType::atRight)->isFixed())
+        zoom->scaleBounds(Enums::AxisType::atRight)->autoscale();
 }
 
 QMenu *Plot::createMenu(Enums::AxisType axis, const QPoint &pos)
@@ -284,7 +277,7 @@ QMenu *Plot::createMenu(Enums::AxisType axis, const QPoint &pos)
             int presentation = act->data().toInt();
             m->setYValuesPresentation(leftCurves, presentation);
             *ax = presentation;
-            this->recalculateScale(axis == Enums::AxisType::atLeft);
+            this->recalculateScale(axis);
             this->update();
         });
 
@@ -443,12 +436,12 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
         colors->freeColor(curve->pen().color());
 
         if (removedFromLeft > 0) {
-            zoom->verticalScaleBounds->removeToAutoscale(curve->yMin(), curve->yMax());
+            zoom->scaleBounds(Enums::AxisType::atLeft)->removeToAutoscale(curve->yMin(), curve->yMax());
         }
         else {
-            zoom->verticalScaleBoundsSlave->removeToAutoscale(curve->yMin(), curve->yMax());
+            zoom->scaleBounds(Enums::AxisType::atRight)->removeToAutoscale(curve->yMin(), curve->yMax());
         }
-        zoom->horizontalScaleBounds->removeToAutoscale(curve->xMin(), curve->xMax());
+        zoom->scaleBounds(Enums::AxisType::atBottom)->removeToAutoscale(curve->xMin(), curve->xMax());
 
         curve->detachFrom(this);
         delete curve;
@@ -589,7 +582,6 @@ void Plot::updateAxesLabels()
 
 void Plot::setScale(Enums::AxisType id, double min, double max, double step)
 {DDD;
-    setRightScale(id, min, max);
     if (m_plot) m_plot->setAxisRange(id, min, max, step);
 }
 
@@ -668,18 +660,19 @@ void Plot::removeCursor(Selectable *selected)
     cursors->removeCursor(selected);
 }
 
-void Plot::recalculateScale(bool leftAxis)
+void Plot::recalculateScale(Enums::AxisType axis)
 {DDD;
-    ZoomStack::ScaleBounds *ybounds = 0;
-    if (leftAxis) ybounds = zoom->verticalScaleBounds;
-    else ybounds = zoom->verticalScaleBoundsSlave;
-    ybounds->reset();
+    auto bounds = zoom->scaleBounds(axis);
+    if (!bounds) return;
 
-    const bool left = leftAxis || type()==Enums::PlotType::Spectrogram;
-    const auto count = left?m->leftCurvesCount():m->rightCurvesCount();
+    bounds->reset();
+
+    const bool left = axis == Enums::AxisType::atColor || axis == Enums::AxisType::atLeft;
+    const auto count = left ? m->leftCurvesCount() : m->rightCurvesCount();
+
     for (int i=0; i<count; ++i) {
-        auto curve = m->curve(i,left);
-        ybounds->add(curve->yMin(), curve->yMax());;
+        auto curve = m->curve(i, left);
+        bounds->add(curve->yMin(), curve->yMax());
     }
 }
 
@@ -739,12 +732,10 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     g->fileNumber = fileIndex;
 //    g->setYAxis(axY);
 
-    ZoomStack::ScaleBounds *ybounds = 0;
-    if (zoom->verticalScaleBounds->axis == axY) ybounds = zoom->verticalScaleBounds;
-    else ybounds = zoom->verticalScaleBoundsSlave;
+    if (auto bounds = zoom->scaleBounds(axY))
+        bounds->add(g->yMin(), g->yMax());
+    zoom->scaleBounds(Enums::AxisType::atBottom)->add(g->xMin(), g->xMax());
 
-    zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
-    if (ybounds) ybounds->add(g->yMin(), g->yMax());
 
     m_plot->setInfoVisible(false);
 
@@ -831,25 +822,14 @@ void Plot::switchTrackingCursor()
 
 void Plot::toggleAutoscale(Enums::AxisType axis, bool toggled)
 {DDD;
-    switch (axis) {
-        case Enums::AxisType::atBottom: // x axis
-            zoom->horizontalScaleBounds->setFixed(!toggled);
-            break;
-        case Enums::AxisType::atLeft: // y axis
-            zoom->verticalScaleBounds->setFixed(!toggled);
-            break;
-        case Enums::AxisType::atRight: // y slave axis
-            zoom->verticalScaleBoundsSlave->setFixed(!toggled);
-            break;
-        default:
-            break;
-    }
+    if (auto b = zoom->scaleBounds(axis)) b->setFixed(!toggled);
+
     replot();
 }
 
 void Plot::autoscale(Enums::AxisType axis)
 {DDD;
-    zoom->autoscale(axis, type()==Enums::PlotType::Spectrogram);
+    zoom->autoscale(axis);
 }
 
 void Plot::setInteractionMode(Enums::InteractionMode mode)
@@ -900,7 +880,7 @@ QwtAxisId toQwtAxisType(Enums::AxisType type) {
         case Enums::AxisType::atBottom: return QwtAxis::XBottom;
         case Enums::AxisType::atLeft: return QwtAxis::YLeft;
         case Enums::AxisType::atRight: return QwtAxis::YRight;
-        case Enums::AxisType::atInvalid: break;
+        default: break;
     }
     return -1;
 }

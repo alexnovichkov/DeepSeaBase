@@ -18,6 +18,7 @@ namespace Enums {
         atRight = 2,
         atTop = 4,
         atBottom = 8,
+        atColor = 16,
         atInvalid = 0
     };
     Q_ENUM_NS(AxisType)

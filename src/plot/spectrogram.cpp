@@ -20,19 +20,14 @@ void Spectrogram::deleteCurve(Curve *curve, bool doReplot)
 {DDD;
     if (!curve) return;
 
-    bool removedFromLeft = true;
-    if (m->deleteCurve(curve, &removedFromLeft)) {
+    if (m->deleteCurve(curve)) {
         emit curveDeleted(curve->channel); //->MainWindow.onChannelChanged
-
-        if (removedFromLeft > 0) {
-            zoom->verticalScaleBounds->removeToAutoscale(curve->yMin(), curve->yMax());
-            zoom->verticalScaleBoundsSlave->removeToAutoscale(curve->channel->data()->zMin(),
+        zoom->scaleBounds(Enums::AxisType::atColor)->removeToAutoscale(curve->yMin(), curve->yMax());
+        zoom->scaleBounds(Enums::AxisType::atLeft)->removeToAutoscale(curve->channel->data()->zMin(),
                                                               curve->channel->data()->zMax());
-        }
-        else {
-            zoom->verticalScaleBoundsSlave->removeToAutoscale(curve->yMin(), curve->yMax());
-        }
-        zoom->horizontalScaleBounds->removeToAutoscale(curve->xMin(), curve->xMax());
+        zoom->scaleBounds(Enums::AxisType::atBottom)->removeToAutoscale(curve->xMin(), curve->xMax());
+
+        zoom->autoscale(Enums::AxisType::atInvalid);
 
         curve->detachFrom(this);
         delete curve;
@@ -121,11 +116,11 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     m->addCurve(g, plotOnLeft);
     g->fileNumber = fileIndex;
 
-    m_plot->setColorMap(Enums::AxisType::atRight, {ch->data()->yMin(-1), ch->data()->yMax(-1)}, colorMap, g);
+    m_plot->setColorMap(colorMap, g);
 
-    zoom->horizontalScaleBounds->add(g->xMin(), g->xMax());
-    zoom->verticalScaleBoundsSlave->add(g->yMin(), g->yMax());
-    zoom->verticalScaleBounds->add(ch->data()->zMin(), ch->data()->zMax());
+    zoom->scaleBounds(Enums::AxisType::atBottom)->add(g->xMin(), g->xMax());
+    zoom->scaleBounds(Enums::AxisType::atColor)->add(ch->data()->yMin(-1), ch->data()->yMax(-1));
+    zoom->scaleBounds(Enums::AxisType::atLeft)->add(ch->data()->zMin(), ch->data()->zMax());
 
     m_plot->setInfoVisible(false);
 
@@ -147,15 +142,17 @@ void Spectrogram::onDropEvent(bool plotOnLeft, const QVector<Channel *> &channel
 void Spectrogram::updateBounds()
 {DDD;
     if (m->leftCurvesCount()==0) {
-        zoom->verticalScaleBounds->reset();
-        zoom->verticalScaleBoundsSlave->reset();
+        zoom->scaleBounds(Enums::AxisType::atLeft)->reset();
+        zoom->scaleBounds(Enums::AxisType::atColor)->reset();
     }
     if (!hasCurves())
-        zoom->horizontalScaleBounds->reset();
-    if (!zoom->horizontalScaleBounds->isFixed())
-        zoom->horizontalScaleBounds->autoscale();
-    if (m->leftCurvesCount()>0 && !zoom->verticalScaleBounds->isFixed())
-        zoom->verticalScaleBounds->autoscale();
+        zoom->scaleBounds(Enums::AxisType::atBottom)->reset();
+    if (!zoom->scaleBounds(Enums::AxisType::atBottom)->isFixed())
+        zoom->scaleBounds(Enums::AxisType::atBottom)->autoscale();
+    if (m->leftCurvesCount()>0 && !zoom->scaleBounds(Enums::AxisType::atLeft)->isFixed())
+        zoom->scaleBounds(Enums::AxisType::atLeft)->autoscale();
+    if (m->leftCurvesCount()>0 && !zoom->scaleBounds(Enums::AxisType::atColor)->isFixed())
+        zoom->scaleBounds(Enums::AxisType::atColor)->autoscale();
 }
 
 bool Spectrogram::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
@@ -171,16 +168,9 @@ bool Spectrogram::canBePlottedOnRightAxis(Channel *ch, QString *message) const
     return false;
 }
 
-void Spectrogram::setRightScale(Enums::AxisType id, double min, double max)
-{DDD;
-    if (!m->isEmpty() && id == Enums::AxisType::atRight) {
-        m_plot->setColorMap(id, {min, max}, colorMap, m->curve(0));
-    }
-}
-
 QMenu *Spectrogram::createMenu(Enums::AxisType axis, const QPoint &pos)
 {DDD;
-    Q_UNUSED(pos);
+    Q_UNUSED(pos); qDebug()<<axis<<pos;
     QMenu *menu = new QMenu(widget());
 
     if (axis == Enums::AxisType::atBottom) {
@@ -202,10 +192,9 @@ QMenu *Spectrogram::createMenu(Enums::AxisType axis, const QPoint &pos)
     }
 
     bool curvesEmpty = true;
-    bool leftCurves = true;
     int *ax = 0;
 
-    if (axis == Enums::AxisType::atRight && m->leftCurvesCount()>0) {
+    if (axis == Enums::AxisType::atColor && m->leftCurvesCount()>0) {
         curvesEmpty = false;
         ax = &yValuesPresentationRight;
     }
@@ -248,9 +237,9 @@ QMenu *Spectrogram::createMenu(Enums::AxisType axis, const QPoint &pos)
 
         connect(ag, &QActionGroup::triggered, [=](QAction*act){
             int presentation = act->data().toInt();
-            m->setYValuesPresentation(leftCurves, presentation);
+            m->setYValuesPresentation(true, presentation);
             *ax = presentation;
-            this->recalculateScale(axis == Enums::AxisType::atLeft);
+            this->recalculateScale(axis);
             this->update();
         });
 
@@ -258,7 +247,7 @@ QMenu *Spectrogram::createMenu(Enums::AxisType axis, const QPoint &pos)
         menu->addAction(a);
     }
 
-    if (axis == Enums::AxisType::atRight && m->leftCurvesCount()>0) {
+    if (axis == Enums::AxisType::atColor && m->leftCurvesCount()>0) {
         QAction *a = new QAction("Цветовая шкала");
         QMenu *am = new QMenu(widget());
         QActionGroup *ag = new QActionGroup(am);

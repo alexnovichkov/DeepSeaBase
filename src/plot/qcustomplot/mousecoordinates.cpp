@@ -9,6 +9,10 @@ MouseCoordinates::MouseCoordinates(QCPPlot *parent) : QCPItemText(parent), paren
     setPositionAlignment(Qt::AlignBottom | Qt::AlignLeft);
     setSelectable(false);
     setVisible(true);
+
+    QColor col(Qt::white);
+    col.setAlphaF(0.8);
+    setBrush(col);
     position->setType(QCPItemPosition::ptAbsolute);
 }
 

@@ -17,7 +17,6 @@ protected:
     virtual void updateBounds() override;
     virtual bool canBePlottedOnLeftAxis(Channel *ch, QString *message = nullptr) const override;
     virtual bool canBePlottedOnRightAxis(Channel *ch, QString *message = nullptr) const override;
-    virtual void setRightScale(Enums::AxisType id, double min, double max) override;
 
     QMenu * createMenu(Enums::AxisType axis, const QPoint &pos) override;
 private:

@@ -46,7 +46,6 @@ public:
     virtual void setInfoVisible(bool visible) override;
     virtual void enableAxis(Enums::AxisType axis, bool enable) override;
     virtual void enableColorBar(Enums::AxisType axis, bool enable) override;
-    virtual void setColorMap(Enums::AxisType axis, Range range, int colorMap, Curve *curve = nullptr) override;
     virtual void setColorMap(int colorMap, Curve *curve) override;
     virtual bool axisEnabled(Enums::AxisType axis) override;
     virtual void setAxisTitle(Enums::AxisType axis, const QString &title) override;

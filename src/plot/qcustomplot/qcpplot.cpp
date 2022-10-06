@@ -12,6 +12,8 @@
 #include "channelsmimedata.h"
 #include "qcpaxisoverlay.h"
 #include "qcpaxistickeroctave.h"
+#include "logging.h"
+#include "plot/colormapfactory.h"
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type) {
     return static_cast<QCPAxis::AxisType>(type);
@@ -53,7 +55,7 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     setMouseTracking(true);
     setPlottingHints( QCP::phCacheLabels | /*QCP::phFastPolylines |*/ QCP::phImmediateRefresh);
 
-    connect(this, &QCustomPlot::axisDoubleClick, [=](QCPAxis *axis, QCPAxis::SelectablePart part, QMouseEvent *event){
+    connect(this, &QCustomPlot::axisDoubleClick, [=](QCPAxis *axis, QCPAxis::SelectablePart part, QMouseEvent *event) {
         Q_UNUSED(part);
         Q_UNUSED(event);
         auto range = axis->range();
@@ -61,33 +63,54 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
         AxisBoundsDialog dialog(range.lower, range.upper, type);
         if (dialog.exec()) {
             ZoomStack::zoomCoordinates coords;
-            for (auto ax: axisRect()->axes()) {
-                if (ax == axis) coords.coords.insert(type, {dialog.leftBorder(), dialog.rightBorder()});
-                else coords.coords.insert(fromQcpAxis(ax->axisType()), {ax->range().lower, ax->range().upper});
+            auto axes = axisRect()->axes();
+            if (axes.contains(axis)) { //5 axes types
+                for (auto ax: axes) {
+                    if (axis == ax) coords.coords.insert(fromQcpAxis(ax->axisType()), {dialog.leftBorder(), dialog.rightBorder()});
+                    else coords.coords.insert(fromQcpAxis(ax->axisType()), {ax->range().lower, ax->range().upper});
+                }
+                if (colorScale) {
+                    auto ax = colorScale->axis();
+                    coords.coords.insert(Enums::AxisType::atColor, {ax->range().lower, ax->range().upper});
+                }
             }
+            else {//5 axes types
+                for (auto ax: axes) {
+                    coords.coords.insert(fromQcpAxis(ax->axisType()), {ax->range().lower, ax->range().upper});
+                }
+                coords.coords.insert(Enums::AxisType::atColor, {dialog.leftBorder(), dialog.rightBorder()});
+            }
+
             plot->zoom->addZoom(coords, true);
         }
     });
     axisRect()->setRangeDragAxes({xAxis, yAxis, yAxis2});
+    axisRect()->setRangeDrag(Qt::Horizontal | Qt::Vertical);
     axisRect()->setRangeZoomAxes({xAxis, yAxis, yAxis2});
+
     connect(axisRect(), &QCPAxisRect::axesRangeScaled, this, &QCPPlot::addZoom);
     connect(axisRect(), &QCPAxisRect::draggingFinished, this, &QCPPlot::addZoom);
+
     connect(this, &QCustomPlot::mouseMove, mouseCoordinates, &MouseCoordinates::update);
-    for (auto ax: axisRect()->axes()) {
-        ax->setSubTicks(true);
-        connect(ax, &QCPAxis::contextMenuRequested, [=](const QPoint &pos, QCPAxis::AxisType type){
+    for (auto axis: axisRect()->axes()) {
+        axis->setSubTicks(true);
+        connect(axis, &QCPAxis::contextMenuRequested, [=](const QPoint &pos, QCPAxis::AxisType type){
             plot->showContextMenu(pos, static_cast<Enums::AxisType>(type));
         });
-        connect(ax, &QCPAxis::draggingFinished, [=](const QCPRange &newRange){
-            auto coords = ZoomStack::zoomCoordinates();
-            for (auto axis: axisRect()->axes()) {
+        connect(axis, &QCPAxis::draggingFinished, [=](const QCPRange &newRange){
+            ZoomStack::zoomCoordinates coords;
+            for (auto ax: axisRect()->axes()) {
                 if (axis == ax) coords.coords.insert(fromQcpAxis(axis->axisType()), {newRange.lower, newRange.upper});
-                else coords.coords.insert(fromQcpAxis(axis->axisType()), {axis->range().lower, axis->range().upper});
+                else coords.coords.insert(fromQcpAxis(ax->axisType()), {ax->range().lower, ax->range().upper});
+            }
+            if (colorScale) {
+                auto ax = colorScale->axis();
+                coords.coords.insert(Enums::AxisType::atColor, {ax->range().lower, ax->range().upper});
             }
 
             plot->zoom->addZoom(coords, true);
         });
-        connect(ax, &QCPAxis::rangeScaled, this, &QCPPlot::addZoom);
+        connect(axis, &QCPAxis::rangeScaled, this, &QCPPlot::addZoom);
     }
 }
 
@@ -231,7 +254,10 @@ void QCPPlot::setAxisScale(Enums::AxisType axisType, Enums::AxisScale scale)
 void QCPPlot::setAxisRange(Enums::AxisType axisType, double min, double max, double step)
 {
     Q_UNUSED(step);
-    if (auto a = axis(axisType)) a->setRange(min, max);
+    if (auto a = axis(axisType))
+        a->setRange(min, max);
+    else if (axisType == Enums::AxisType::atColor && colorScale)
+        colorScale->setDataRange({min, max});
 }
 
 void QCPPlot::setInfoVisible(bool visible)
@@ -271,22 +297,31 @@ void QCPPlot::enableColorBar(Enums::AxisType axisType, bool enable)
         QCPMarginGroup *marginGroup = new QCPMarginGroup(this);
         axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
         colorScale->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
+
+        //color bar has its own axis, so connect all the signals
+        connect(colorScale->axis(), &QCPAxis::contextMenuRequested, [=](const QPoint &pos, QCPAxis::AxisType type){
+            Q_UNUSED(type);
+            parent->showContextMenu(pos, Enums::AxisType::atColor);
+        });
+
+        colorScale->axis()->setSubTicks(true);
+        connect(colorScale->axis(), &QCPAxis::draggingFinished, [=](const QCPRange &newRange){
+            ZoomStack::zoomCoordinates coords;
+            for (auto axis: axisRect()->axes()) {
+                coords.coords.insert(fromQcpAxis(axis->axisType()), {axis->range().lower, axis->range().upper});
+            }
+            coords.coords.insert(Enums::AxisType::atColor, {newRange.lower, newRange.upper});
+            parent->zoom->addZoom(coords, true);
+        });
+        connect(colorScale->axis(), &QCPAxis::rangeScaled, this, &QCPPlot::addZoom);
+
     }
     colorScale->setVisible(enable);
 }
 
-void QCPPlot::setColorMap(Enums::AxisType axisType, Range range, int colorMap, Curve *curve)
-{
-    if (axisType != Enums::AxisType::atRight) return;
-
-    auto gradient = QCPColorGradient(QCPColorGradient::GradientPreset(colorMap));
-    if (auto c = dynamic_cast<QCPSpectrogram*>(curve)) c->setGradient(gradient);
-    if (colorScale) colorScale->setDataRange({range.min, range.max});
-}
-
 void QCPPlot::setColorMap(int colorMap, Curve *curve)
 {
-    auto gradient = QCPColorGradient(QCPColorGradient::GradientPreset(colorMap));
+    auto gradient = ColorMapFactory::gradient(colorMap);
     if (auto c = dynamic_cast<QCPSpectrogram*>(curve)) c->setGradient(gradient);
     if (colorScale) colorScale->rescaleDataRange(true);
 }
@@ -322,12 +357,6 @@ Curve *QCPPlot::createCurve(const QString &legendName, Channel *channel, Enums::
         auto g = new QCPSpectrogram(legendName, channel, axis(xAxis), this->yAxis);
 
         if (colorScale) g->setColorScale(colorScale);
-//        auto gradient = QCPColorGradient(QCPColorGradient::gpGrayscale).inverted();
-//        g->setGradient(gradient);
-//        // rescale the data dimension (color) such that all data points lie in the span visualized by the color gradient:
-//        g->rescaleDataRange();
-//        colorScale->rescaleDataRange(true);
-
         return g;
     }
 
@@ -349,10 +378,15 @@ QCPAxis *QCPPlot::axis(Enums::AxisType axis) const
 }
 
 void QCPPlot::addZoom()
-{
+{DD0;
     auto coords = ZoomStack::zoomCoordinates();
     for (auto axis: axisRect()->axes())
         coords.coords.insert(fromQcpAxis(axis->axisType()), {axis->range().lower, axis->range().upper});
+    if (colorScale) {
+        auto ax = colorScale->axis();
+        coords.coords.insert(Enums::AxisType::atColor, {ax->range().lower, ax->range().upper});
+    }
+
     parent->zoom->addZoom(coords, true);
 }
 
