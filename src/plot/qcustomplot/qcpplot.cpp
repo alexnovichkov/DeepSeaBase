@@ -290,7 +290,10 @@ QString QCPPlot::axisTitle(Enums::AxisType axisType) const
 void QCPPlot::enableColorBar(Enums::AxisType axisType, bool enable)
 {
     if (!colorScale) {
+        plotLayout()->setColumnSpacing(0);
+        axisRect()->setMinimumMargins(QMargins(0,6,0,0));
         colorScale = new QCPColorScale(this);
+        colorScale->setMinimumMargins(QMargins(0,6,0,0));
         plotLayout()->addElement(0, 1, colorScale); // add it to the right of the main axis rect
         colorScale->setType(toQcpAxis(axisType)); // scale shall be vertical bar with tick/axis labels right (actually atRight is already the default)
 
