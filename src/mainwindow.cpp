@@ -13,7 +13,6 @@
 #include "coloreditdialog.h"
 #include "correctiondialog.h"
 #include "plot/curve.h"
-#include "plot/pointlabel.h"
 #include "model.h"
 #include "sortfiltermodel.h"
 #include "filterheaderview.h"

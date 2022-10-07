@@ -1,7 +1,6 @@
 #include "qwtspectrocurve.h"
 #include "dataholder.h"
 #include "qwt_text.h"
-#include "pointlabel.h"
 #include "qwt_legend_data.h"
 #include "plot.h"
 #include "qwt_scale_map.h"

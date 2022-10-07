@@ -22,6 +22,7 @@ QCPCursorSingle::QCPCursorSingle(Style style, Plot *plot) : Cursor(Cursor::Type:
 //        ylabel->setAxis(CursorLabel::Axis::YAxis);
 //        ylabel->updateAlignment();
     }
+    plot->addSelectable(cursor);
 }
 
 QCPCursorSingle::~QCPCursorSingle()
@@ -117,6 +118,7 @@ void QCPCursorSingle::attach()
 
 void QCPCursorSingle::detach()
 {DDD;
+    m_plot->removeSelectable(cursor);
     cursor->detach();
 //    if (xlabel) xlabel->detach();
 //    if (ylabel) ylabel->detach();

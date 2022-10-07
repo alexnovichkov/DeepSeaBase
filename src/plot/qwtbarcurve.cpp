@@ -6,7 +6,6 @@
 #include "qwt_text.h"
 #include "qwt_legend_data.h"
 #include "qwt_scale_map.h"
-#include "pointlabel.h"
 #include "plot.h"
 #include "qwtplotimpl.h"
 

@@ -375,6 +375,41 @@ void QCPPlot::importPlot(const QString &fileName, const QSize &size, int resolut
 void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution)
 {
     //TODO: print support
+    printer.setOrientation(QPrinter::Landscape);
+
+    QPrintDialog printDialog(&printer, this);
+    if (printDialog.exec()) {
+        qreal left,right,top,bottom;
+        printer.getPageMargins(&left, &top, &right, &bottom, QPrinter::Millimeter);
+        printer.setPageMargins(15, 15, 15, bottom, QPrinter::Millimeter);
+
+        //настройка отображения графиков
+//        QFont axisfont = axisFont(QwtAxis::YLeft);
+//        axisfont.setPointSize(axisfont.pointSize()-2);
+//        for (int i=0; i<QwtPlot::axisCnt; ++i)
+//            if (isAxisVisible(i)) setAxisFont(i, axisfont);
+
+        //настройка линий сетки
+//        grid->adaptToPrinter();
+
+        legend->setVisible(true);
+
+//        QPainter painter(&printer);
+//        this->
+
+//        QwtPlotRenderer renderer;
+//        renderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);
+//        renderer.setLayoutFlag(QwtPlotRenderer::FrameWithScales);
+//        renderer.renderTo(this, printer);
+
+        //восстанавливаем параметры графиков
+//        axisfont.setPointSize(axisfont.pointSize()+2);
+//        for (int i=0; i<QwtPlot::axisCnt; ++i)
+//            if (isAxisVisible(i)) setAxisFont(i, axisfont);
+//        grid->restore();
+
+        legend->setVisible(false);
+    }
 }
 
 void QCPPlot::setInteractionMode(Enums::InteractionMode mode)
@@ -397,9 +432,10 @@ Curve *QCPPlot::createCurve(const QString &legendName, Channel *channel, Enums::
 Selected QCPPlot::findObject(QPoint pos) const
 {
     QList<QVariant> details;
-    QList<QCPLayerable*> candidates = layerableListAt(pos, false, &details);
+//    QList<QCPLayerable*> candidates = layerableListAt(pos, false, &details);
+    auto candidates = parent->getSelectables();
 
-    auto isCurve = [](QCPLayerable* item){if (dynamic_cast<QCPAbstractPlottable*>(item)) return true; return false;};
+    auto isCurve = [](auto item){if (dynamic_cast<QCPAbstractPlottable*>(item)) return true; return false;};
 
     //Ищем элемент под курсором мыши
     Selected selected {nullptr, SelectedPoint()};
@@ -408,45 +444,45 @@ Selected QCPPlot::findObject(QPoint pos) const
     {
         double minDist = qInf();
         for (auto candidate: candidates) {
-            if (auto selectable = dynamic_cast<Selectable*>(candidate)) {
+//            if (auto selectable = dynamic_cast<Selectable*>(candidate)) {
                 if (isCurve(candidate)) continue;
                 double distx = 0.0;
                 double disty = 0.0;
                 SelectedPoint point;
-                if (selectable->underMouse(pos, &distx, &disty, &point)) {
+                if (candidate->underMouse(pos, &distx, &disty, &point)) {
                     double dist = 0.0;
                     if (distx == qInf()) dist = disty;
                     else if (disty == qInf()) dist = distx;
                     else dist = sqrt(distx*distx+disty*disty);
                     if (!selected.object || dist < minDist) {
-                        selected.object = selectable;
+                        selected.object = candidate;
                         selected.point = point;
                         minDist = dist;
                     }
                 }
-            }
+//            }
         }
     }
     if (!selected.object) {
         double minDist = qInf();
         for (auto candidate: candidates) {
-            if (auto selectable = dynamic_cast<Selectable*>(candidate)) {
+//            if (auto selectable = dynamic_cast<Selectable*>(candidate)) {
                 if (!isCurve(candidate)) continue;
                 double distx = 0.0;
                 double disty = 0.0;
                 SelectedPoint point;
-                if (selectable->underMouse(pos, &distx, &disty, &point)) {
+                if (candidate->underMouse(pos, &distx, &disty, &point)) {
                     double dist = 0.0;
                     if (distx == qInf()) dist = disty;
                     else if (disty == qInf()) dist = distx;
                     else dist = sqrt(distx*distx+disty*disty);
                     if (!selected.object || dist < minDist) {
-                        selected.object = selectable;
+                        selected.object = candidate;
                         selected.point = point;
                         minDist = dist;
                     }
                 }
-            }
+//            }
         }
     }
     return selected;
@@ -455,12 +491,9 @@ Selected QCPPlot::findObject(QPoint pos) const
 void QCPPlot::deselect()
 {
     QList<QVariant> details;
-    QList<QCPLayerable*> candidates = layerableList();
+    auto candidates = parent->getSelectables();
     for (auto candidate: candidates) {
-        if (auto selectable = dynamic_cast<Selectable*>(candidate)) {
-            //if (selectable != currentSelected)
-            selectable->setSelected(false, SelectedPoint());
-        }
+            candidate->setSelected(false, SelectedPoint());
     }
 }
 

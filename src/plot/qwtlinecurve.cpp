@@ -10,7 +10,6 @@
 #include "fileformats/filedescriptor.h"
 #include "plot.h"
 #include <QPainter>
-#include "pointlabel.h"
 #include "pointmarker.h"
 #include "filterpointmapper.h"
 #include "qwtplotimpl.h"

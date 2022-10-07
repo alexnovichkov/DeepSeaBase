@@ -63,6 +63,10 @@ public:
 
     void focusPlot();
 
+    void addSelectable(Selectable *item);
+    void removeSelectable(Selectable *item);
+    QList<Selectable*> getSelectables() {return selectables;}
+
     //default implementation returns pos as QString,
     //reimplemented in spectrograms to add Z coordinate
     virtual QString pointCoordinates(const QPointF &pos);
@@ -135,6 +139,8 @@ protected:
     ColorSelector *colors = nullptr;
     Cursors *cursors = nullptr;
     CursorBox *cursorBox;
+
+    QList<Selectable*> selectables;
 
     //default implementation updates either left or right axis
     //reimplemented in Spectrogram

@@ -38,10 +38,12 @@ PointLabel::PointLabel(Plot *plot, Curve *curve)
         position->setType(QCPItemPosition::ptAbsolute);
         position->setCoords({0, -10});
     }
+    m_plot->addSelectable(this);
 }
 
 void PointLabel::detachFrom(Plot *plot)
 {
+    plot->removeSelectable(this);
     if (auto qcp = dynamic_cast<QCPPlot*>(plot->impl())) {
         qcp->removeItem(this);
         qcp->removeItem(m_marker);

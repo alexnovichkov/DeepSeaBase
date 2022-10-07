@@ -527,6 +527,17 @@ void Plot::focusPlot()
     emit focusThisPlot();
 }
 
+void Plot::addSelectable(Selectable *item)
+{
+    if (!selectables.contains(item))
+        selectables.append(item);
+}
+
+void Plot::removeSelectable(Selectable *item)
+{
+    selectables.removeOne(item);
+}
+
 QString Plot::pointCoordinates(const QPointF &pos)
 {DDD;
     return smartDouble(pos.x())+", "+smartDouble(pos.y());

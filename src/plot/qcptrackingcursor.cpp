@@ -19,12 +19,14 @@ QCPTrackingCursor::QCPTrackingCursor(const QColor &col, Cursor::Style type, Curs
     horizontal->point1->setAxes(impl->xAxis, impl->yAxis);
     horizontal->point2->setAxes(impl->xAxis, impl->yAxis);
     horizontal->setLayer("overlay");
+    horizontal->setAntialiased(false);
 
     vertical = new QCPItemStraightLine(impl);
     vertical->setPen(col);
     vertical->point1->setAxes(impl->xAxis, impl->yAxis);
     vertical->point2->setAxes(impl->xAxis, impl->yAxis);
     vertical->setLayer("overlay");
+    vertical->setAntialiased(false);
 
     switch (type) {
         case Cursor::Style::Horizontal: vertical->setVisible(false); break;

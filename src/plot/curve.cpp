@@ -54,6 +54,7 @@ Curve::~Curve()
 void Curve::attachTo(Plot *plot)
 {DDD;
     m_plot = plot;
+    m_plot->addSelectable(this);
     m_pointMarker = new PointLabel(plot, this);
     m_pointMarker->setMode(PointLabel::Mode::XValue);
     m_pointMarker->setVisible(false);
@@ -65,6 +66,7 @@ void Curve::detachFrom(Plot *plot)
     for(PointLabel *l: labels) l->detachFrom(plot);
     //detach marker
     if (m_pointMarker) m_pointMarker->detachFrom(plot);
+    plot->removeSelectable(this);
 }
 
 void Curve::setMarkerShape(Curve::MarkerShape markerShape)
