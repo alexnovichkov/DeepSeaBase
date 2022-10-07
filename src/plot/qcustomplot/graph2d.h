@@ -130,7 +130,7 @@ public:
   virtual void setXAxis(Enums::AxisType axis) override;
   virtual QPen pen() const override;
   virtual SamplePoint samplePoint(SelectedPoint point) const override;
-  virtual SelectedPoint closest(const QPoint &pos, double *dist, double *dist2) const override;
+  virtual SelectedPoint closest(const QPoint &pos, double *dist1, double *dist2) const override;
   virtual LegendData commonLegendData() const override;
   virtual void updateScatter() override;
 protected:

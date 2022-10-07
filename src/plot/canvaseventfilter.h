@@ -14,6 +14,8 @@ class WheelZoom;
 class AxisZoom;
 class PlotZoom;
 class Picker;
+class QWheelEvent;
+class QCPAxis;
 
 #include "enums.h"
 
@@ -40,23 +42,18 @@ public:
 
     explicit CanvasEventFilter(Plot *parent);
     void setZoom(ZoomStack *zoom) {this->zoomStack = zoom;}
-    void setDragZoom(DragZoom *zoom) {dragZoom = zoom;}
-    void setWheelZoom(WheelZoom *zoom) {wheelZoom = zoom;}
-    void setAxisZoom(AxisZoom *zoom) {axisZoom = zoom;}
     void setPicker(Picker *picker) {this->picker = picker;}
-    void setPlotZoom(PlotZoom *zoom) {plotZoom = zoom;}
 signals:
     void hover(Enums::AxisType axis, int hover); //0=none, 1=first half, 2 = second half
     void contextMenuRequested(const QPoint &pos, Enums::AxisType axis);
-//    void moveCursor(Enums::Direction direction);
+    void moveCursor(Enums::Direction direction);
     void canvasDoubleClicked(const QPoint &pos);
 protected:
     bool eventFilter(QObject *target, QEvent *event);
 private:
     void procMouseEvent(QEvent *event);
     void procKeyboardEvent(QEvent *event);
-    void procWheelEvent(Enums::AxisType axis, QEvent *event);
-    void procAxisEvent(Enums::AxisType axis, QEvent *event);
+    void procAxisEvent(QCPAxis* axis, QEvent *event);
 
     void mousePress(QMouseEvent *event);
     void mouseMove(QMouseEvent *event);
@@ -66,16 +63,12 @@ private:
 
     Plot *plot = nullptr;
     ZoomStack *zoomStack = nullptr; //отвечает за запоминание изменений масштаба
-    DragZoom *dragZoom = nullptr; //отвечает за перетаскивание графика
-    WheelZoom *wheelZoom = nullptr; //отвечает за зум графика колесиком
-    AxisZoom *axisZoom = nullptr; //отвечает за изменение масштаба на осях
-    PlotZoom *plotZoom = nullptr; //отвечает за изменение масштаба выделением
     Picker *picker = nullptr;
 
     ActionType actionType = ActionType::None;
     bool enabled = true;
 
-    QPoint currentPosition;
+    QPoint startPosition;
 };
 
 QDebug operator<<(QDebug debug, const CanvasEventFilter::ActionType &c);

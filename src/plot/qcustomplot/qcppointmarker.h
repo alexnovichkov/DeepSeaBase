@@ -82,19 +82,33 @@ Q_DECLARE_METATYPE(QCPTracer::TracerStyle)
 class Curve;
 class Plot;
 
-class QCPPointMarker : public QObject
+#include "plot/pointlabel.h"
+
+class QCPPointMarker : public LabelImpl
 {
-    Q_OBJECT
 public:
-    explicit QCPPointMarker(Curve *curve, Plot *parent);
+    explicit QCPPointMarker(PointLabel *parent);
     ~QCPPointMarker();
-    void setVisible(bool visible);
+
     void moveTo(int index);
 private:
-    void update();
-    QCPTracer *marker;
-    QCPItemText *text;
-    Curve *curve;
+    PointLabel *parent = nullptr;
+    QCPTracer *marker = nullptr;
+    QCPItemText *text = nullptr;
+
+    // LabelImpl interface
+public:
+    virtual void attachTo(Plot *plot) override;
+    virtual void detachFrom(Plot *plot) override;
+    virtual void setColor(const QColor &color) override;
+    virtual void setBrush(const QBrush &brush) override;
+    virtual void setXAxis(Enums::AxisType axis) override;
+    virtual void setYAxis(Enums::AxisType axis) override;
+    virtual void setLabel(const QString &label) override;
+    virtual void setBorder(const QPen &pen) override;
+    virtual QSizeF textSize() const override;
+    virtual void setVisible(bool visible) override;
+    virtual void update() override;
 };
 
 #endif // QCPPOINTMARKER_H

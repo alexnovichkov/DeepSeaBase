@@ -25,7 +25,6 @@ QCPTracer::QCPTracer(QCPPlot *parentPlot) :
   setBrush(Qt::NoBrush);
   setSelectedBrush(Qt::NoBrush);
   setPen(QPen(Qt::black));
-  setSelectedPen(QPen(Qt::blue, 2));
 }
 
 QCPTracer::~QCPTracer()
@@ -210,13 +209,48 @@ QBrush QCPTracer::mainBrush() const
 }
 
 
-QCPPointMarker::QCPPointMarker(Curve *curve, Plot *parent)
-    : QObject(dynamic_cast<QObject*>(parent)), curve(curve)
+QCPPointMarker::QCPPointMarker(PointLabel *parent)
+    : parent(parent)
 {
-    if (auto qcp = dynamic_cast<QCPPlot*>(parent->impl())) {
+
+}
+
+QCPPointMarker::~QCPPointMarker()
+{
+    setVisible(false);
+}
+
+void QCPPointMarker::setVisible(bool visible)
+{
+    if (marker) marker->setVisible(visible);
+    if (text) text->setVisible(visible);
+}
+
+void QCPPointMarker::moveTo(int index)
+{
+    if (marker) {
+        marker->setGraphIndex(index);
+        marker->updatePosition();
+    }
+}
+
+void QCPPointMarker::update()
+{
+    auto origin = parent->point();
+    moveTo(origin.x);
+    if (text) text->position->setCoords(parent->getDisplacement());
+    //text->setText(QString::number(marker->position->key(),'f',2));
+}
+
+
+void QCPPointMarker::attachTo(Plot *plot)
+{
+    if (auto qcp = dynamic_cast<QCPPlot*>(plot->impl())) {
         marker = new QCPTracer(qcp);
         marker->setStyle(QCPTracer::tsSquare);
-        if (auto g = dynamic_cast<Graph2D*>(curve)) {
+        marker->setSize(8);
+        marker->setAntialiased(false);
+        if (auto g = dynamic_cast<Graph2D*>(parent->curve())) {
             marker->setGraph(g);
             marker->setGraphIndex(0);
         }
@@ -231,24 +265,52 @@ QCPPointMarker::QCPPointMarker(Curve *curve, Plot *parent)
     }
 }
 
-QCPPointMarker::~QCPPointMarker()
+void QCPPointMarker::detachFrom(Plot *plot)
 {
-    setVisible(false);
+    if (auto qcp = dynamic_cast<QCPPlot*>(plot->impl())) {
+        qcp->removeItem(text);
+        qcp->removeItem(marker);
+    }
 }
 
-void QCPPointMarker::setVisible(bool visible)
+void QCPPointMarker::setColor(const QColor &color)
 {
-    marker->setVisible(visible);
-    text->setVisible(visible);
+    if (marker) {
+        auto pen = marker->pen();
+        pen.setColor(color);
+        marker->setPen(pen);
+    }
 }
 
-void QCPPointMarker::moveTo(int index)
+void QCPPointMarker::setBrush(const QBrush &brush)
 {
-    marker->setGraphIndex(index);
-    update();
+    if (text) {
+        text->setBrush(brush);
+    }
 }
 
-void QCPPointMarker::update()
+void QCPPointMarker::setXAxis(Enums::AxisType axis)
 {
-    text->setText(QString::number(marker->position->key(),'f',2));
+    Q_UNUSED(axis);
+}
+
+void QCPPointMarker::setYAxis(Enums::AxisType axis)
+{
+    Q_UNUSED(axis);
+}
+
+void QCPPointMarker::setLabel(const QString &label)
+{
+    if (text) text->setText(label);
+}
+
+void QCPPointMarker::setBorder(const QPen &pen)
+{
+    if (text) text->setPen(pen);
+}
+
+QSizeF QCPPointMarker::textSize() const
+{
+    if (text) return QFontMetricsF(text->font()).size(Qt::TextSingleLine, text->text());
+    return QSizeF();
 }

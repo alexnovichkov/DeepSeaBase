@@ -26,6 +26,7 @@ Enums::AxisType fromQcpAxis(QCPAxis::AxisType type) {
 QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot)
 {
     setAcceptDrops(true);
+    setFocusPolicy(Qt::StrongFocus);
 
     linTicker.reset(new QCPAxisTicker);
     logTicker.reset(new QCPAxisTickerLog);
@@ -88,7 +89,9 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     axisRect()->setRangeDrag(Qt::Horizontal | Qt::Vertical);
     axisRect()->setRangeZoomAxes({xAxis, yAxis, yAxis2});
 
+    //wheel event on axisRect
     connect(axisRect(), &QCPAxisRect::axesRangeScaled, this, &QCPPlot::addZoom);
+    //dragging on axisRect
     connect(axisRect(), &QCPAxisRect::draggingFinished, this, &QCPPlot::addZoom);
 
     connect(this, &QCustomPlot::mouseMove, mouseCoordinates, &MouseCoordinates::update);
@@ -112,11 +115,39 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
         });
         connect(axis, &QCPAxis::rangeScaled, this, &QCPPlot::addZoom);
     }
+
+    setEventFilter(new CanvasEventFilter(plot));
 }
 
 QCPPlot::~QCPPlot()
 {
     delete canvasFilter;
+}
+
+void QCPPlot::startZoom(QMouseEvent*event)
+{
+    mSelectionRect->setVisible(true);
+    mSelectionRect->startSelection(event);
+}
+
+void QCPPlot::proceedZoom(QMouseEvent *event)
+{
+    if (mSelectionRect && mSelectionRect->isActive())
+        mSelectionRect->moveSelection(event);
+}
+
+void QCPPlot::endZoom(QMouseEvent *event)
+{
+    if (mSelectionRect && mSelectionRect->isActive())
+        mSelectionRect->endSelection(event);
+}
+
+void QCPPlot::cancelZoom()
+{
+    if (mSelectionRect && mSelectionRect->isActive()) {
+        mSelectionRect->cancel();
+        mSelectionRect->setVisible(false);
+    }
 }
 
 void QCPPlot::setEventFilter(CanvasEventFilter *filter)
@@ -134,24 +165,21 @@ void QCPPlot::setEventFilter(CanvasEventFilter *filter)
         connect(canvasFilter, &CanvasEventFilter::contextMenuRequested, parent, &Plot::showContextMenu);
         installEventFilter(filter);
 
-    axisRect(0)->installEventFilter(filter);
-    for (auto ax: axisRect(0)->axes()) ax->installEventFilter(filter);
+//    axisRect(0)->installEventFilter(filter);
+//    for (auto ax: axisRect(0)->axes()) ax->installEventFilter(filter);
 }
 
-Enums::AxisType QCPPlot::eventTargetAxis(QEvent *event, QObject *target)
+QObject *QCPPlot::eventTargetAxis(QEvent *event, QObject *target)
 {
+    Q_UNUSED(target);
     if (auto mouseEvent = dynamic_cast<QMouseEvent*>(event)) {
-
-        QList<QVariant> details;
-        QList<QCPLayerable*> candidates = layerableListAt(mouseEvent->pos(), false, &details);
-        if (candidates.isEmpty()) return Enums::AxisType::atInvalid;
+        QList<QCPLayerable*> candidates = layerableListAt(mouseEvent->pos(), false);
         for (int i=0; i<candidates.size(); ++i) {
             if (auto ax = dynamic_cast<QCPAxis*>(candidates.at(i)))
-                qDebug() << candidates.at(i) << details.at(i);
+                return ax;
         }
-
     }
-    return Enums::AxisType::atInvalid;
+    return nullptr;
 }
 
 
@@ -368,11 +396,72 @@ Curve *QCPPlot::createCurve(const QString &legendName, Channel *channel, Enums::
 
 Selected QCPPlot::findObject(QPoint pos) const
 {
-    return Selected();
+    QList<QVariant> details;
+    QList<QCPLayerable*> candidates = layerableListAt(pos, false, &details);
+
+    auto isCurve = [](QCPLayerable* item){if (dynamic_cast<QCPAbstractPlottable*>(item)) return true; return false;};
+
+    //Ищем элемент под курсором мыши
+    Selected selected {nullptr, SelectedPoint()};
+
+    //сначала ищем метки, курсоры и т.д., то есть не кривые
+    {
+        double minDist = qInf();
+        for (auto candidate: candidates) {
+            if (auto selectable = dynamic_cast<Selectable*>(candidate)) {
+                if (isCurve(candidate)) continue;
+                double distx = 0.0;
+                double disty = 0.0;
+                SelectedPoint point;
+                if (selectable->underMouse(pos, &distx, &disty, &point)) {
+                    double dist = 0.0;
+                    if (distx == qInf()) dist = disty;
+                    else if (disty == qInf()) dist = distx;
+                    else dist = sqrt(distx*distx+disty*disty);
+                    if (!selected.object || dist < minDist) {
+                        selected.object = selectable;
+                        selected.point = point;
+                        minDist = dist;
+                    }
+                }
+            }
+        }
+    }
+    if (!selected.object) {
+        double minDist = qInf();
+        for (auto candidate: candidates) {
+            if (auto selectable = dynamic_cast<Selectable*>(candidate)) {
+                if (!isCurve(candidate)) continue;
+                double distx = 0.0;
+                double disty = 0.0;
+                SelectedPoint point;
+                if (selectable->underMouse(pos, &distx, &disty, &point)) {
+                    double dist = 0.0;
+                    if (distx == qInf()) dist = disty;
+                    else if (disty == qInf()) dist = distx;
+                    else dist = sqrt(distx*distx+disty*disty);
+                    if (!selected.object || dist < minDist) {
+                        selected.object = selectable;
+                        selected.point = point;
+                        minDist = dist;
+                    }
+                }
+            }
+        }
+    }
+    return selected;
 }
 
 void QCPPlot::deselect()
 {
+    QList<QVariant> details;
+    QList<QCPLayerable*> candidates = layerableList();
+    for (auto candidate: candidates) {
+        if (auto selectable = dynamic_cast<Selectable*>(candidate)) {
+            //if (selectable != currentSelected)
+            selectable->setSelected(false, SelectedPoint());
+        }
+    }
 }
 
 QCPAxis *QCPPlot::axis(Enums::AxisType axis) const
@@ -393,16 +482,16 @@ void QCPPlot::addZoom()
     parent->zoom->addZoom(coords, true);
 }
 
-void QCPPlot::keyPressEvent(QKeyEvent *event)
-{
-    switch (event->key()) {
-        case Qt::Key_Backspace: {
-            parent->zoom->zoomBack();
-            break;
-        }
-        default: QCustomPlot::keyPressEvent(event);
-    }
-}
+//void QCPPlot::keyPressEvent(QKeyEvent *event)
+//{
+//    switch (event->key()) {
+//        case Qt::Key_Backspace: {
+//            parent->zoom->zoomBack();
+//            break;
+//        }
+//        default: QCustomPlot::keyPressEvent(event);
+//    }
+//}
 
 
 void QCPPlot::dragEnterEvent(QDragEnterEvent *event)

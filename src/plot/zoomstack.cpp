@@ -4,7 +4,6 @@
 
 #include "logging.h"
 #include "algorithms.h"
-#include <QKeyEvent>
 
 ZoomStack::ZoomStack(Plot *plot) : QObject(plot),  m_plot(plot)
 {DDD;

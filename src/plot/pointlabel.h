@@ -8,7 +8,21 @@ class Curve;
 #include "selectable.h"
 #include "plotinterface.h"
 
-class LabelImpl;
+class LabelImpl {
+public:
+    virtual ~LabelImpl() {}
+    virtual void attachTo(Plot *plot) = 0;
+    virtual void detachFrom(Plot *plot) = 0;
+    virtual void setColor(const QColor &color) = 0;
+    virtual void setBrush(const QBrush &brush) = 0;
+    virtual void setXAxis(Enums::AxisType axis) = 0;
+    virtual void setYAxis(Enums::AxisType axis) = 0;
+    virtual void setLabel(const QString &label) = 0;
+    virtual void setBorder(const QPen &pen) = 0;
+    virtual void setVisible(bool visible) = 0;
+    virtual QSizeF textSize() const = 0;
+    virtual void update() = 0;
+};
 
 /**
  * @brief The PointLabel class
@@ -27,6 +41,8 @@ public:
     explicit PointLabel(Plot *parent, Curve *m_curve);
 
     virtual ~PointLabel();
+
+    Curve *curve() const {return m_curve;}
 
 //    SamplePoint origin() const;
 //    void setOrigin(const SamplePoint &origin);

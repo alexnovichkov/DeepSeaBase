@@ -1149,13 +1149,13 @@ protected:
   QBrush mBrush;
   // non-property members:
   bool mActive;
-  
+public:
   // introduced virtual methods:
   virtual void startSelection(QMouseEvent *event);
   virtual void moveSelection(QMouseEvent *event);
   virtual void endSelection(QMouseEvent *event);
   virtual void keyPressEvent(QKeyEvent *event);
-  
+protected:
   // reimplemented virtual methods
   virtual void applyDefaultAntialiasingHint(QCPPainter *painter) const Q_DECL_OVERRIDE;
   virtual void draw(QCPPainter *painter) Q_DECL_OVERRIDE;
@@ -2361,11 +2361,12 @@ protected:
   virtual void selectEvent(QMouseEvent *event, bool additive, const QVariant &details, bool *selectionStateChanged) Q_DECL_OVERRIDE;
   virtual void deselectEvent(bool *selectionStateChanged) Q_DECL_OVERRIDE;
   // mouse events:
+public:
   virtual void mousePressEvent(QMouseEvent *event, const QVariant &details) Q_DECL_OVERRIDE;
   virtual void mouseMoveEvent(QMouseEvent *event, const QPointF &startPos) Q_DECL_OVERRIDE;
   virtual void mouseReleaseEvent(QMouseEvent *event, const QPointF &startPos) Q_DECL_OVERRIDE;
   virtual void wheelEvent(QWheelEvent *event) Q_DECL_OVERRIDE;
-  
+protected:
   // non-virtual methods:
   void setupTickVectors();
   QPen getBasePen() const;
@@ -3984,9 +3985,9 @@ protected:
   virtual void paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;
   virtual void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
   virtual void mouseDoubleClickEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
-  virtual void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
+//  virtual void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
   virtual void mouseMoveEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
-  virtual void mouseReleaseEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
+//  virtual void mouseReleaseEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
   virtual void wheelEvent(QWheelEvent *event) Q_DECL_OVERRIDE;
   
   // introduced virtual methods:
@@ -3996,7 +3997,7 @@ protected:
   virtual void legendRemoved(QCPLegend *legend);
   Q_SLOT virtual void processRectSelection(QRect rect, QMouseEvent *event);
   Q_SLOT virtual void processRectZoom(QRect rect, QMouseEvent *event);
-  Q_SLOT virtual void processPointSelection(QMouseEvent *event);
+//  Q_SLOT virtual void processPointSelection(QMouseEvent *event);
   
   // non-virtual methods:
   bool registerPlottable(QCPAbstractPlottable *plottable);
@@ -4005,6 +4006,7 @@ protected:
   void updateLayerIndices() const;
   QCPLayerable *layerableAt(const QPointF &pos, bool onlySelectable, QVariant *selectionDetails=nullptr) const;
   QList<QCPLayerable*> layerableListAt(const QPointF &pos, bool onlySelectable, QList<QVariant> *selectionDetails=nullptr) const;
+  QList<QCPLayerable*> layerableList() const;
   void drawBackground(QCPPainter *painter);
   void setupPaintBuffers();
   QCPAbstractPaintBuffer *createPaintBuffer();
@@ -5000,11 +5002,12 @@ protected:
   virtual int calculateAutoMargin(QCP::MarginSide side) Q_DECL_OVERRIDE;
   virtual void layoutChanged() Q_DECL_OVERRIDE;
   // events:
+public:
   virtual void mousePressEvent(QMouseEvent *event, const QVariant &details) Q_DECL_OVERRIDE;
   virtual void mouseMoveEvent(QMouseEvent *event, const QPointF &startPos) Q_DECL_OVERRIDE;
   virtual void mouseReleaseEvent(QMouseEvent *event, const QPointF &startPos) Q_DECL_OVERRIDE;
   virtual void wheelEvent(QWheelEvent *event) Q_DECL_OVERRIDE;
-  
+protected:
   // non-property methods:
   void drawBackground(QCPPainter *painter);
   void updateAxesOffset(QCPAxis::AxisType type);

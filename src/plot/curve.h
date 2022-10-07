@@ -132,7 +132,7 @@ protected:
     Plot *m_plot = nullptr;
     mutable SelectedPoint selectedPoint;
     PointMarker *pointMarker = nullptr;
-    QCPPointMarker *m_pointMarker = nullptr;
+    PointLabel *m_pointMarker = nullptr;
     QPen oldPen;
 };
 

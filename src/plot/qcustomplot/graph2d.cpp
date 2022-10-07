@@ -1320,9 +1320,37 @@ SamplePoint Graph2D::samplePoint(SelectedPoint point) const
     return {m_data->mainKey(point.x), m_data->mainValue(point.x), qQNaN()};
 }
 
-SelectedPoint Graph2D::closest(const QPoint &pos, double *dist, double *dist2) const
+SelectedPoint Graph2D::closest(const QPoint &pos, double *dist1, double *dist2) const
 {
-    return SelectedPoint();
+    int index = -1;
+
+    const size_t numSamples = channel->data()->samplesCount();
+    if ( numSamples <= 0 )
+        return {-1, -1};
+
+    int from = 0;
+    int to = numSamples-1;
+    auto range = keyAxis()->range();
+    evaluateScale(from, to, range.lower, range.upper);
+
+    double dmin = qInf();
+
+    for ( int i = from; i <= to; i++ ) {
+        const auto sample = samplePoint( {i,0} );
+
+        const double cx = qAbs(keyAxis()->coordToPixel(sample.x) - pos.x());
+        const double cy = qAbs(valueAxis()->coordToPixel(sample.y) - pos.y());
+
+        const double f = cx*cx + cy*cy;
+        if ( f < dmin ) {
+            index = i;
+            dmin = f;
+            if (dist1) *dist1 = cx;
+            if (dist2) *dist2 = cy;
+        }
+    }
+
+    return {index, 0};
 }
 
 LegendData Graph2D::commonLegendData() const
@@ -1348,10 +1376,16 @@ void Graph2D::updateScatter()
 
 void Graph2D::updatePen()
 {
+//    if (Curve::selected())
+//        QCPAbstractPlottable::setSelection(QCPDataSelection({0, m_data->size()-1}));
+//        QCPAbstractPlottable::selectEvent(nullptr, false, QVariant(), nullptr);
+//    else
+//        QCPAbstractPlottable::setSelection(QCPDataSelection());
+//        QCPAbstractPlottable::deselectEvent(nullptr);
     auto p = oldPen;
     if (p.style() == Qt::NoPen) setLineStyle(lsNone);
     else setLineStyle(lineStyleByType(channel));
-//    if (Curve::selected()) p.setWidth(2);
+    if (Curve::selected()) p.setWidth(2);
     QCPAbstractPlottable::setPen(p);
 }
 

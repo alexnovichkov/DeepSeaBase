@@ -32,7 +32,7 @@ public:
 
     virtual void createLegend() override;
     virtual void setEventFilter(CanvasEventFilter *filter) override;
-    virtual Enums::AxisType eventTargetAxis(QEvent *event, QObject *target) override;
+    virtual QObject* eventTargetAxis(QEvent *event, QObject *target) override;
     virtual double screenToPlotCoordinates(Enums::AxisType axis, double value) const override;
     virtual double plotToScreenCoordinates(Enums::AxisType axis, double value) const override;
     virtual Range plotRange(Enums::AxisType axis) const override;

@@ -110,10 +110,10 @@ void QwtPlotImpl::setEventFilter(CanvasEventFilter *filter)
 {
     canvasFilter = filter;
     canvasFilter->setZoom(parent->zoom);
-    canvasFilter->setDragZoom(dragZoom);
-    canvasFilter->setWheelZoom(wheelZoom);
-    canvasFilter->setAxisZoom(axisZoom);
-    canvasFilter->setPlotZoom(plotZoom);
+//    canvasFilter->setDragZoom(dragZoom);
+//    canvasFilter->setWheelZoom(wheelZoom);
+//    canvasFilter->setAxisZoom(axisZoom);
+//    canvasFilter->setPlotZoom(plotZoom);
     canvasFilter->setPicker(parent->picker);
 
     connect(canvasFilter, SIGNAL(canvasDoubleClicked(QPoint)), this, SIGNAL(canvasDoubleClicked(QPoint)));
@@ -127,18 +127,18 @@ void QwtPlotImpl::setEventFilter(CanvasEventFilter *filter)
     }
 }
 
-Enums::AxisType QwtPlotImpl::eventTargetAxis(QEvent *event, QObject *target)
+QObject *QwtPlotImpl::eventTargetAxis(QEvent *event, QObject *target)
 {
     Q_UNUSED(event);
-    if (target == canvas()) return Enums::AxisType::atInvalid;
+    if (target == canvas()) return nullptr;
 
     for (int a = 0; a < QwtAxis::AxisPositions; a++) {
         if (target == axisWidget(a)) {
-            return toAxisType(a);
+            return target;
         }
     }
 
-    return Enums::AxisType::atInvalid;
+    return nullptr;
 }
 
 double QwtPlotImpl::screenToPlotCoordinates(Enums::AxisType axis, double value) const

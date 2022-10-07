@@ -2,9 +2,7 @@
 
 #include "logging.h"
 #include <QMouseEvent>
-#include <QKeyEvent>
 #include <QApplication>
-//#include "qwt_scale_map.h"
 #include <QMenu>
 #include "plotinterface.h"
 
@@ -25,24 +23,17 @@ Selected Picker::findObject(QMouseEvent *e)
 }
 
 void Picker::startPick(QPoint startPos, Selected selected)
-{DDD;
+{DD;
     startPosition = startPos;
 
     if (!(selected == currentSelected)) deselect();
     currentSelected = selected;
     if (currentSelected.object) currentSelected.object->setSelected(true, currentSelected.point);
-
-//    if (selected && !selected->selectedAs(currentSelected)) {
-//        deselect();
-//        currentSelected = selected;
-//        if (currentSelected) currentSelected->setSelected(true);
-//    }
 }
 
 void Picker::deselect()
-{DDD;
+{DD;
     plot->impl()->deselect();
-
     currentSelected.clear();
 }
 
@@ -109,7 +100,7 @@ bool Picker::alreadySelected(Selected selected)
 }
 
 void Picker::proceedPick(QMouseEvent *e)
-{DDD;
+{DD;
     if (!enabled || !currentSelected.object) return;
 
     currentSelected.object->moveToPos(e->pos(), startPosition);
@@ -119,23 +110,13 @@ void Picker::proceedPick(QMouseEvent *e)
 }
 
 void Picker::endPick(QMouseEvent *e)
-{DDD;
+{DD;
     if (!enabled) return;
-//    QPoint endPos = e->pos();
-//    if (endPos == pos) { //одинарный клик мышью
-//        qDebug()<<"click";
-        //добавляем выделение объекту
-        if (pickPriority() == PickPriority::PickLast) {
-            if (auto selected = findObject(e); selected.object) {
-                startPick(e->pos(), selected);
-            }
-            else deselect();
-        }
-//    }
-//    else {
-//        //протащили какой-то объект, надо бросить
 
-//    }
+    if (auto selected = findObject(e); selected.object) {
+        startPick(e->pos(), selected);
+    }
+    else deselect();
 
     plot->impl()->replot();
 }

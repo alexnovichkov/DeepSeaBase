@@ -17,22 +17,7 @@
 #include <qwt_plot.h>
 #include "qwtplotimpl.h"
 #include "plot.h"
-
-class LabelImpl {
-public:
-    virtual ~LabelImpl() {}
-    virtual void attachTo(Plot *plot) = 0;
-    virtual void detachFrom(Plot *plot) = 0;
-    virtual void setColor(const QColor &color) = 0;
-    virtual void setBrush(const QBrush &brush) = 0;
-    virtual void setXAxis(Enums::AxisType axis) = 0;
-    virtual void setYAxis(Enums::AxisType axis) = 0;
-    virtual void setLabel(const QString &label) = 0;
-    virtual void setBorder(const QPen &pen) = 0;
-    virtual void setVisible(bool visible) = 0;
-    virtual QSizeF textSize() const = 0;
-    virtual void update() = 0;
-};
+#include "qcustomplot/qcppointmarker.h"
 
 class QwtLabelImpl : public QwtPlotItem, public LabelImpl
 {
@@ -151,10 +136,10 @@ void QwtLabelImpl::draw(QPainter *painter, const QwtScaleMap &xMap, const QwtSca
 }
 
 PointLabel::PointLabel(Plot *parent, Curve *curve)
-    : m_displacement(QPoint(0, -13)),
+    : m_displacement(QPoint(0, -10)),
       m_plot(parent),
       m_curve(curve),
-      m_impl(new QwtLabelImpl(this))
+      m_impl(new QCPPointMarker(this))
 {DDD;
     if (Settings::getSetting("pointLabelRemember", true).toBool()) {
         switch (Settings::getSetting("pointLabelMode", 0).toInt()) {
@@ -164,11 +149,8 @@ PointLabel::PointLabel(Plot *parent, Curve *curve)
             case 3: m_mode = Mode::XYZValue; break;
         }
     }
-    if (m_impl) m_impl->setColor(m_curve->pen().color());
-    if (m_impl) m_impl->setBrush(Qt::white);
-    if (m_impl) m_impl->setXAxis(curve->xAxis());
-    if (m_impl) m_impl->setYAxis(curve->yAxis());
-    updateLabel();
+
+//    updateLabel();
 }
 
 PointLabel::~PointLabel()
@@ -224,7 +206,13 @@ void PointLabel::setPoint(SelectedPoint point)
 
 void PointLabel::attachTo(Plot *plot)
 {
-    if (m_impl) m_impl->attachTo(plot);
+    if (m_impl) {
+        m_impl->attachTo(plot);
+        m_impl->setColor(m_curve->pen().color());
+        m_impl->setBrush(QColor(255,255,255,220));
+        m_impl->setXAxis(m_curve->xAxis());
+        m_impl->setYAxis(m_curve->yAxis());
+    }
 }
 
 void PointLabel::detachFrom(Plot *plot)

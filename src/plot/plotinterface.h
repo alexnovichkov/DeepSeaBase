@@ -11,6 +11,7 @@ class Curve;
 class Channel;
 class QMouseEvent;
 class CanvasEventFilter;
+class QCPAxis;
 
 class PlotInterface
 {
@@ -46,7 +47,7 @@ public:
     virtual Selected findObject(QPoint pos) const = 0;
     virtual void deselect() = 0;
 
-    virtual Enums::AxisType eventTargetAxis(QEvent *event, QObject *target) = 0;
+    virtual QObject* eventTargetAxis(QEvent *event, QObject *target) = 0;
 };
 
 #endif // PLOTINTERFACE_H

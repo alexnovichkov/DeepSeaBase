@@ -12,6 +12,7 @@ class MouseCoordinates;
 class QCPAxisOverlay;
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type);
+Enums::AxisType fromQcpAxis(QCPAxis::AxisType);
 
 class QCPPlot : public QCustomPlot, public PlotInterface
 {
@@ -20,6 +21,11 @@ class QCPPlot : public QCustomPlot, public PlotInterface
 public:
     QCPPlot(Plot *plot, QWidget *parent = nullptr);
     ~QCPPlot();
+
+    void startZoom(QMouseEvent *event);
+    void proceedZoom(QMouseEvent *event);
+    void endZoom(QMouseEvent *event);
+    void cancelZoom();
 
     QCPCheckableLegend *checkableLegend = nullptr;
 private:
@@ -39,7 +45,7 @@ private:
     // PlotInterface interface
 public:
     virtual void setEventFilter(CanvasEventFilter *filter) override;
-    virtual Enums::AxisType eventTargetAxis(QEvent *event, QObject *target) override;
+    virtual QObject* eventTargetAxis(QEvent *event, QObject *target) override;
     virtual void createLegend() override;
     virtual double screenToPlotCoordinates(Enums::AxisType axisType, double value) const override;
     virtual double plotToScreenCoordinates(Enums::AxisType axisType, double value) const override;
@@ -70,7 +76,7 @@ private:
     void addZoom();
 
 protected:
-    virtual void keyPressEvent(QKeyEvent *event) override;
+//    virtual void keyPressEvent(QKeyEvent *event) override;
     virtual void dragEnterEvent(QDragEnterEvent *event) override;
     virtual void dragMoveEvent(QDragMoveEvent *event) override;
     virtual void dragLeaveEvent(QDragLeaveEvent *event) override;

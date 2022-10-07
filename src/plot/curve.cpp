@@ -62,7 +62,9 @@ void Curve::attachTo(Plot *plot)
     if (pointMarker) pointMarker->attach(plot);
     if (pointMarker) pointMarker->setVisible(false);
 
-    m_pointMarker = new QCPPointMarker(this, plot);
+    m_pointMarker = new PointLabel(plot, this);
+    m_pointMarker->attachTo(plot);
+    m_pointMarker->setMode(PointLabel::Mode::XValue);
     m_pointMarker->setVisible(false);
 }
 
@@ -72,7 +74,7 @@ void Curve::detachFrom(Plot *plot)
     foreach(PointLabel *l, labels) l->detachFrom(plot);
     //detach marker
     if (pointMarker) pointMarker->detach();
-//    if (m_pointMarker) m_pointMarker->detach();
+    if (m_pointMarker) m_pointMarker->detachFrom(plot);
 }
 
 void Curve::setMarkerShape(Curve::MarkerShape markerShape)
@@ -261,6 +263,7 @@ void Curve::moveLeft(int count)
         selectedPoint.x -= count;
         updateSelection(selectedPoint);
     }
+    m_plot->replot();
 }
 
 void Curve::moveRight(int count)
@@ -269,6 +272,7 @@ void Curve::moveRight(int count)
         selectedPoint.x += count;
         updateSelection(selectedPoint);
     }
+    m_plot->replot();
 }
 
 void Curve::moveUp(int count)
@@ -311,15 +315,17 @@ void Curve::fix()
 {DDD;
     if (selectedPoint.x >= 0 && selectedPoint.x < samplesCount()) {
 //        auto val = samplePoint(selectedPoint);
+        if (m_pointMarker) m_pointMarker->setVisible(false);
 
         PointLabel *label = findLabel(selectedPoint);
 
         if (!label) {
             label = new PointLabel(m_plot, this);
-            label->setPoint(selectedPoint);
-//            label->setOrigin(val);
-            addLabel(label);
             label->attachTo(m_plot);
+            label->setVisible(true);
+            label->setPoint(selectedPoint);
+            addLabel(label);
+            m_plot->replot();
         }
     }
 }
@@ -335,18 +341,19 @@ bool Curve::draggable() const
 }
 
 void Curve::updateSelection(SelectedPoint point)
-{DDD;
+{DD;
     updatePen();
 
     selectedPoint = point;
 
     if (!selected()) {
-        if (pointMarker) pointMarker->setVisible(false);
+        if (m_pointMarker) m_pointMarker->setVisible(false);
     }
     else {
-        if (pointMarker) pointMarker->setVisible(true);
+        if (m_pointMarker) m_pointMarker->setVisible(true);
         auto val = samplePoint(selectedPoint);
 
-        if (pointMarker) pointMarker->moveTo({val.x, qIsNaN(val.z) ? val.y : val.z});
+//        if (m_pointMarker) m_pointMarker->moveTo({val.x, qIsNaN(val.z) ? val.y : val.z});
+        if (m_pointMarker) m_pointMarker->setPoint(selectedPoint);
     }
 }
