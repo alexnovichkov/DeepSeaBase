@@ -5,6 +5,7 @@
 #include "logging.h"
 #include "dataholder.h"
 #include "pointmarker.h"
+#include "qcustomplot/qcppointmarker.h"
 #include "plot.h"
 
 QString Curve::markerShapeDescription(Curve::MarkerShape shape)
@@ -38,6 +39,7 @@ Curve::Curve(const QString &title, Channel *channel)
     this->duplicate = false;
     this->channel->curve = this;
 //    pointMarker = new PointMarker(this);
+
 }
 
 Curve::~Curve()
@@ -59,6 +61,9 @@ void Curve::attachTo(Plot *plot)
     m_plot = plot;
     if (pointMarker) pointMarker->attach(plot);
     if (pointMarker) pointMarker->setVisible(false);
+
+    m_pointMarker = new QCPPointMarker(this, plot);
+    m_pointMarker->setVisible(false);
 }
 
 void Curve::detachFrom(Plot *plot)
@@ -67,7 +72,7 @@ void Curve::detachFrom(Plot *plot)
     foreach(PointLabel *l, labels) l->detachFrom(plot);
     //detach marker
     if (pointMarker) pointMarker->detach();
-
+//    if (m_pointMarker) m_pointMarker->detach();
 }
 
 void Curve::setMarkerShape(Curve::MarkerShape markerShape)

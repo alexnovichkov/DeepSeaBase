@@ -1354,3 +1354,17 @@ void Graph2D::updatePen()
 //    if (Curve::selected()) p.setWidth(2);
     QCPAbstractPlottable::setPen(p);
 }
+
+
+void Graph2D::mousePressEvent(QMouseEvent *event, const QVariant &details)
+{DD0;
+
+}
+
+void Graph2D::mouseMoveEvent(QMouseEvent *event, const QPointF &startPos)
+{DD0;
+}
+
+void Graph2D::mouseReleaseEvent(QMouseEvent *event, const QPointF &startPos)
+{DD0;
+}

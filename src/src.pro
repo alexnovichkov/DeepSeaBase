@@ -79,6 +79,7 @@ SOURCES += main.cpp\
     plot/qcustomplot/qcpaxisoverlay.cpp \
     plot/qcustomplot/qcpaxistickeroctave.cpp \
     plot/qcustomplot/qcpplot.cpp \
+    plot/qcustomplot/qcppointmarker.cpp \
     plot/qcustomplot/qcpspectrogram.cpp \
     plot/qcustomplot/qcustomplot.cpp \
     plot/canvaseventfilter.cpp \
@@ -215,6 +216,7 @@ HEADERS  += mainwindow.h \
     plot/qcustomplot/qcpaxisoverlay.h \
     plot/qcustomplot/qcpaxistickeroctave.h \
     plot/qcustomplot/qcpplot.h \
+    plot/qcustomplot/qcppointmarker.h \
     plot/qcustomplot/qcpspectrogram.h \
     plot/qcustomplot/qcustomplot.h \
     plot/qcustomplot/graph2d.h \

@@ -15617,13 +15617,12 @@ void QCustomPlot::mousePressEvent(QMouseEvent *event)
   mMousePressPos = event->pos();
 
   // first check for QCPAxis
-  bool axisClicked =false;
+  bool axisClicked = false;
   QList<QVariant> details;
   QList<QCPLayerable*> candidates = layerableListAt(mMousePressPos, false, &details);
   for (auto candidate: candidates) {
-      if (qobject_cast<QCPAxis*>(candidate) || qobject_cast<QCPColorScale*>(candidate)) {
+      if (auto ax = qobject_cast<QCPAxis*>(candidate)) {
           axisClicked = true;
-          break;
       }
   }
   

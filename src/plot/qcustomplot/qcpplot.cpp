@@ -381,7 +381,7 @@ QCPAxis *QCPPlot::axis(Enums::AxisType axis) const
 }
 
 void QCPPlot::addZoom()
-{DD0;
+{DD;
     auto coords = ZoomStack::zoomCoordinates();
     for (auto axis: axisRect()->axes())
         coords.coords.insert(fromQcpAxis(axis->axisType()), {axis->range().lower, axis->range().upper});

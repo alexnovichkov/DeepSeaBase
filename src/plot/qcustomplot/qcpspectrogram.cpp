@@ -14,7 +14,7 @@ QCPSpectrogram::QCPSpectrogram(const QString &title, Channel *channel, QCPAxis *
 
     setInterpolate(false);
     setTightBoundary(true);
-
+    setSelectable(QCP::stSingleData);
 }
 
 QCPSpectrogram::~QCPSpectrogram()
