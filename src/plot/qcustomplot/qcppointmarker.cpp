@@ -5,312 +5,214 @@
 #include "data2d.h"
 #include "plot/curve.h"
 #include "plot/plot.h"
+#include "settings.h"
+#include "qcptracer.h"
+#include "logging.h"
 
-/*!
-  Creates a tracer item and sets default values.
-
-  The created item is automatically registered with \a parentPlot. This QCustomPlot instance takes
-  ownership of the item, so do not delete it manually but use QCustomPlot::removeItem() instead.
-*/
-QCPTracer::QCPTracer(QCPPlot *parentPlot) :
-  QCPAbstractItem(parentPlot),
-  position(createPosition(QLatin1String("position"))),
-  mSize(6),
-  mStyle(tsCrosshair),
-  mGraph(nullptr),
-  mGraphIndex(0)
+PointLabel::PointLabel(Plot *plot, Curve *curve)
+    : QCPItemText(dynamic_cast<QCustomPlot*>(plot->impl())), m_plot(plot), m_curve(curve)
 {
-  position->setCoords(0, 0);
-
-  setBrush(Qt::NoBrush);
-  setSelectedBrush(Qt::NoBrush);
-  setPen(QPen(Qt::black));
-}
-
-QCPTracer::~QCPTracer()
-{
-}
-
-void QCPTracer::setPen(const QPen &pen)
-{
-  mPen = pen;
-}
-
-void QCPTracer::setSelectedPen(const QPen &pen)
-{
-  mSelectedPen = pen;
-}
-
-void QCPTracer::setBrush(const QBrush &brush)
-{
-  mBrush = brush;
-}
-
-void QCPTracer::setSelectedBrush(const QBrush &brush)
-{
-  mSelectedBrush = brush;
-}
-
-void QCPTracer::setSize(double size)
-{
-  mSize = size;
-}
-
-void QCPTracer::setStyle(QCPTracer::TracerStyle style)
-{
-  mStyle = style;
-}
-
-void QCPTracer::setGraph(Graph2D *graph)
-{
-  if (graph)
-  {
-    if (graph->parentPlot() == mParentPlot)
-    {
-      position->setType(QCPItemPosition::ptPlotCoords);
-      position->setAxes(graph->keyAxis(), graph->valueAxis());
-      mGraph = graph;
-      updatePosition();
-    } else
-      qDebug() << Q_FUNC_INFO << "graph isn't in same QCustomPlot instance as this item";
-  } else
-  {
-    mGraph = nullptr;
-  }
-}
-
-void QCPTracer::setGraphIndex(int key)
-{
-  mGraphIndex = key;
-}
-
-double QCPTracer::selectTest(const QPointF &pos, bool onlySelectable, QVariant *details) const
-{
-  Q_UNUSED(details)
-  if (onlySelectable && !mSelectable)
-    return -1;
-
-  QPointF center(position->pixelPosition());
-  double w = mSize/2.0;
-  QRect clip = clipRect();
-  switch (mStyle)
-  {
-    case tsNone: return -1;
-    case tsPlus:
-    {
-      if (clipRect().intersects(QRectF(center-QPointF(w, w), center+QPointF(w, w)).toRect()))
-        return qSqrt(qMin(QCPVector2D(pos).distanceSquaredToLine(center+QPointF(-w, 0), center+QPointF(w, 0)),
-                          QCPVector2D(pos).distanceSquaredToLine(center+QPointF(0, -w), center+QPointF(0, w))));
-      break;
-    }
-    case tsCrosshair:
-    {
-      return qSqrt(qMin(QCPVector2D(pos).distanceSquaredToLine(QCPVector2D(clip.left(), center.y()), QCPVector2D(clip.right(), center.y())),
-                        QCPVector2D(pos).distanceSquaredToLine(QCPVector2D(center.x(), clip.top()), QCPVector2D(center.x(), clip.bottom()))));
-    }
-    case tsCircle:
-    {
-      if (clip.intersects(QRectF(center-QPointF(w, w), center+QPointF(w, w)).toRect()))
-      {
-        // distance to border:
-        double centerDist = QCPVector2D(center-pos).length();
-        double circleLine = w;
-        double result = qAbs(centerDist-circleLine);
-        // filled ellipse, allow click inside to count as hit:
-        if (result > mParentPlot->selectionTolerance()*0.99 && mBrush.style() != Qt::NoBrush && mBrush.color().alpha() != 0)
-        {
-          if (centerDist <= circleLine)
-            result = mParentPlot->selectionTolerance()*0.99;
+    if (Settings::getSetting("pointLabelRemember", true).toBool()) {
+        switch (Settings::getSetting("pointLabelMode", 0).toInt()) {
+            case 0: m_mode = Mode::XValue; break;
+            case 1: m_mode = Mode::XYValue; break;
+            case 2: m_mode = Mode::YValue; break;
+            case 3: m_mode = Mode::XYZValue; break;
         }
-        return result;
-      }
-      break;
     }
-    case tsSquare:
-    {
-      if (clip.intersects(QRectF(center-QPointF(w, w), center+QPointF(w, w)).toRect()))
-      {
-        QRectF rect = QRectF(center-QPointF(w, w), center+QPointF(w, w));
-        bool filledRect = mBrush.style() != Qt::NoBrush && mBrush.color().alpha() != 0;
-        return rectDistance(rect, pos, filledRect);
-      }
-      break;
-    }
-  }
-  return -1;
-}
+    setBrush(QColor(255,255,255,220));
+    setAntialiased(false);
 
-/* inherits documentation from base class */
-void QCPTracer::draw(QCPPainter *painter)
-{
-  updatePosition();
-  if (mStyle == tsNone)
-    return;
-
-  painter->setPen(mainPen());
-  painter->setBrush(mainBrush());
-  QPointF center(position->pixelPosition());
-  double w = mSize/2.0;
-  QRect clip = clipRect();
-  switch (mStyle)
-  {
-    case tsNone: return;
-    case tsPlus:
-    {
-      if (clip.intersects(QRectF(center-QPointF(w, w), center+QPointF(w, w)).toRect()))
-      {
-        painter->drawLine(QLineF(center+QPointF(-w, 0), center+QPointF(w, 0)));
-        painter->drawLine(QLineF(center+QPointF(0, -w), center+QPointF(0, w)));
-      }
-      break;
-    }
-    case tsCrosshair:
-    {
-      if (center.y() > clip.top() && center.y() < clip.bottom())
-        painter->drawLine(QLineF(clip.left(), center.y(), clip.right(), center.y()));
-      if (center.x() > clip.left() && center.x() < clip.right())
-        painter->drawLine(QLineF(center.x(), clip.top(), center.x(), clip.bottom()));
-      break;
-    }
-    case tsCircle:
-    {
-      if (clip.intersects(QRectF(center-QPointF(w, w), center+QPointF(w, w)).toRect()))
-        painter->drawEllipse(center, w, w);
-      break;
-    }
-    case tsSquare:
-    {
-      if (clip.intersects(QRectF(center-QPointF(w, w), center+QPointF(w, w)).toRect()))
-        painter->drawRect(QRectF(center-QPointF(w, w), center+QPointF(w, w)));
-      break;
-    }
-  }
-}
-
-void QCPTracer::updatePosition()
-{
-    if (mGraph) {
-        if (mParentPlot->hasPlottable(mGraph)) {
-            if (mGraphIndex < 0 || mGraphIndex >= mGraph->data()->size()) return;
-            position->setCoords(mGraph->data()->mainKey(mGraphIndex), mGraph->data()->mainValue(mGraphIndex));
+    if (auto qcp = dynamic_cast<QCPPlot*>(plot->impl())) {
+        m_marker = new QCPTracer(qcp);
+        m_marker->setStyle(QCPTracer::tsSquare);
+        m_marker->setSize(8);
+        m_marker->setAntialiased(false);
+        if (auto g = dynamic_cast<Graph2D*>(m_curve)) {
+            m_marker->setGraph(g);
+            m_marker->setGraphIndex(0);
         }
-        else qDebug() << Q_FUNC_INFO << "graph not contained in QCustomPlot instance (anymore)";
+
+        setPositionAlignment(Qt::AlignBottom | Qt::AlignHCenter);
+        position->setParentAnchor(m_marker->position);
+        position->setType(QCPItemPosition::ptAbsolute);
+        position->setCoords({0, -10});
     }
 }
 
-QPen QCPTracer::mainPen() const
-{
-  return mSelected ? mSelectedPen : mPen;
-}
-
-QBrush QCPTracer::mainBrush() const
-{
-  return mSelected ? mSelectedBrush : mBrush;
-}
-
-
-QCPPointMarker::QCPPointMarker(PointLabel *parent)
-    : parent(parent)
-{
-
-}
-
-QCPPointMarker::~QCPPointMarker()
-{
-    setVisible(false);
-}
-
-void QCPPointMarker::setVisible(bool visible)
-{
-    if (marker) marker->setVisible(visible);
-    if (text) text->setVisible(visible);
-}
-
-void QCPPointMarker::moveTo(int index)
-{
-    if (marker) {
-        marker->setGraphIndex(index);
-        marker->updatePosition();
-    }
-}
-
-void QCPPointMarker::update()
-{
-    auto origin = parent->point();
-    moveTo(origin.x);
-    if (text) text->position->setCoords(parent->getDisplacement());
-    //text->setText(QString::number(marker->position->key(),'f',2));
-}
-
-
-void QCPPointMarker::attachTo(Plot *plot)
+void PointLabel::detachFrom(Plot *plot)
 {
     if (auto qcp = dynamic_cast<QCPPlot*>(plot->impl())) {
-        marker = new QCPTracer(qcp);
-        marker->setStyle(QCPTracer::tsSquare);
-        marker->setSize(8);
-        marker->setAntialiased(false);
-        if (auto g = dynamic_cast<Graph2D*>(parent->curve())) {
-            marker->setGraph(g);
-            marker->setGraphIndex(0);
-        }
-
-        text = new QCPItemText(qcp);
-        QColor col(Qt::white);
-        col.setAlphaF(0.8);
-        text->setBrush(col);
-        text->setPositionAlignment(Qt::AlignBottom | Qt::AlignHCenter);
-        text->position->setParentAnchor(marker->position);
-        text->position->setPixelPosition({0, -10});
+        qcp->removeItem(this);
+        qcp->removeItem(m_marker);
     }
 }
 
-void QCPPointMarker::detachFrom(Plot *plot)
+void PointLabel::setVisible(bool visible)
+{DD;
+    QCPLayerable::setVisible(visible);
+    if (m_marker) m_marker->setVisible(visible);
+}
+
+void PointLabel::setMode(PointLabel::Mode mode)
 {
-    if (auto qcp = dynamic_cast<QCPPlot*>(plot->impl())) {
-        qcp->removeItem(text);
-        qcp->removeItem(marker);
+    if (m_mode==mode) return;
+    m_mode = mode;
+    updateLabel();
+    m_plot->replot();
+}
+
+SamplePoint PointLabel::getOrigin() const
+{
+    auto val = m_curve->samplePoint(m_point);
+    if (qIsNaN(val.z)) return val;
+    return {val.x, val.z, val.y};
+}
+
+void PointLabel::setPoint(SelectedPoint point)
+{
+    m_point = point;
+    m_marker->setGraphIndex(point.x);
+    m_marker->updatePosition();
+    updateLabel();
+}
+
+bool PointLabel::draggable() const
+{
+    return true;
+}
+
+void PointLabel::moveToPos(QPoint pos, QPoint startPos)
+{
+    auto delta = pos-startPos;
+    auto coords = position->coords();
+    coords.rx() += delta.x();
+    coords.ry() += delta.y();
+    position->setCoords(coords);
+}
+
+void PointLabel::cycle()
+{
+    switch (m_mode) {
+        case Mode::XValue: setMode(Mode::XYValue); break;
+        case Mode::XYValue: setMode(Mode::YValue); break;
+        case Mode::YValue: setMode(Mode::XYZValue); break;
+        case Mode::XYZValue: setMode(Mode::XValue); break;
+        default: break;
     }
 }
 
-void QCPPointMarker::setColor(const QColor &color)
+bool PointLabel::underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const
 {
-    if (marker) {
-        auto pen = marker->pen();
-        pen.setColor(color);
-        marker->setPen(pen);
+    Q_UNUSED(point);
+    auto origin = getOrigin();
+    QPointF p(m_plot->plotToScreenCoordinates(m_curve->xAxis(), origin.x),
+                  m_plot->plotToScreenCoordinates(m_curve->yAxis(), origin.y));
+
+    const QSizeF textSize = QFontMetricsF(font()).size(Qt::TextSingleLine, text());
+
+    p.rx() += position->coords().x();
+    p.ry() += position->coords().y();
+
+    p.rx() -= textSize.width() / 2;
+    p.ry() -= textSize.height();
+
+    if (distanceX) *distanceX = qAbs(p.x()-pos.x());
+    if (distanceY) *distanceY = qAbs(p.y()-pos.y());
+
+    return QRectF(p.x(),
+                  p.y(),
+                  textSize.width(), textSize.height()).contains(pos);
+}
+
+QList<QAction *> PointLabel::actions()
+{
+    QList<QAction *> l;
+
+    auto a = new QAction("Показывать", m_plot);
+    QMenu *m = new QMenu();
+    QActionGroup *ag = new QActionGroup(m_plot);
+
+    auto a1 = m->addAction("значение по оси X", [=](){
+        if (Settings::getSetting("pointLabelRemember", true).toBool())
+            Settings::setSetting("pointLabelMode", 0);
+        setMode(Mode::XValue);
+    });
+    a1->setCheckable(true);
+    a1->setChecked(m_mode==Mode::XValue);
+    ag->addAction(a1);
+
+    a1 = m->addAction("значения по осям X и Y", [=](){
+        if (Settings::getSetting("pointLabelRemember", true).toBool())
+            Settings::setSetting("pointLabelMode", 1);
+        setMode(Mode::XYValue);
+    });
+    a1->setCheckable(true);
+    a1->setChecked(m_mode==Mode::XYValue);
+    ag->addAction(a1);
+
+    a1 = m->addAction("значение по оси Y", [=](){
+        if (Settings::getSetting("pointLabelRemember", true).toBool())
+            Settings::setSetting("pointLabelMode", 2);
+        setMode(Mode::YValue);
+    });
+    a1->setCheckable(true);
+    a1->setChecked(m_mode==Mode::YValue);
+    ag->addAction(a1);
+
+    a1 = m->addAction("значение по осям X, Y и Z", [=](){
+        if (Settings::getSetting("pointLabelRemember", true).toBool())
+            Settings::setSetting("pointLabelMode", 3);
+        setMode(Mode::XYZValue);
+    });
+    a1->setCheckable(true);
+    a1->setChecked(m_mode==Mode::XYZValue);
+    ag->addAction(a1);
+
+    a->setMenu(m);
+    l << a;
+
+    a = new QAction("Запомнить выбор", m_plot);
+    a->setCheckable(true);
+    a->setChecked(Settings::getSetting("pointLabelRemember", true).toBool());
+    QObject::connect(a, &QAction::triggered, [=](){
+        bool r = Settings::getSetting("pointLabelRemember", true).toBool();
+        Settings::setSetting("pointLabelRemember", !r);
+    });
+    l<<a;
+
+    return l;
+}
+
+void PointLabel::remove()
+{
+    detachFrom(m_plot);
+    m_plot->replot();
+}
+
+void PointLabel::updateSelection(SelectedPoint point)
+{
+    Q_UNUSED(point);
+    setPen(Selectable::selected()?QPen(Qt::darkGray, 1, Qt::DashLine):QPen(Qt::NoPen));
+}
+
+void PointLabel::updateLabel()
+{
+    auto origin = getOrigin();
+    switch (m_mode) {
+        case Mode::XValue: setText(smartDouble(origin.x)); break;
+        case Mode::XYValue: setText(QString("%1; %2")
+                                  .arg(smartDouble(origin.x))
+                                  .arg(smartDouble(origin.y))); break;
+        case Mode::YValue: setText(smartDouble(origin.y)); break;
+        case Mode::XYZValue: setText(QString("%1; %2; %3")
+                                  .arg(smartDouble(origin.x))
+                                  .arg(smartDouble(origin.y))
+                                  .arg(smartDouble(origin.z))); break;
     }
+    setPen(Selectable::selected()?QPen(Qt::darkGray, 1, Qt::DashLine):QPen(Qt::NoPen));
+
+    //setTitle(m_label);
+//    update();
 }
 
-void QCPPointMarker::setBrush(const QBrush &brush)
-{
-    if (text) {
-        text->setBrush(brush);
-    }
-}
-
-void QCPPointMarker::setXAxis(Enums::AxisType axis)
-{
-    Q_UNUSED(axis);
-}
-
-void QCPPointMarker::setYAxis(Enums::AxisType axis)
-{
-    Q_UNUSED(axis);
-}
-
-void QCPPointMarker::setLabel(const QString &label)
-{
-    if (text) text->setText(label);
-}
-
-void QCPPointMarker::setBorder(const QPen &pen)
-{
-    if (text) text->setPen(pen);
-}
-
-QSizeF QCPPointMarker::textSize() const
-{
-    if (text) return QFontMetricsF(text->font()).size(Qt::TextSingleLine, text->text());
-    return QSizeF();
-}

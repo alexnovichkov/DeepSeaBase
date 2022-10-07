@@ -9,7 +9,7 @@
 #include "settings.h"
 #include "logging.h"
 #include "fileformats/filedescriptor.h"
-#include "plot/pointlabel.h"
+#include "plot/qcustomplot/qcppointmarker.h"
 #include "plotmodel.h"
 #include "channelsmimedata.h"
 #include <QAxObject>

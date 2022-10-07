@@ -50,8 +50,8 @@ Enums::AxisType QwtSpectroCurve::yAxis() const
 void QwtSpectroCurve::setYAxis(Enums::AxisType axis)
 {DDD;
     QwtPlotSpectrogram::setYAxis(toQwtAxisType(axis));
-    foreach (PointLabel *l, labels)
-        l->setYAxis(axis);
+//    foreach (PointLabel *l, labels)
+//        l->setYAxis(axis);
 }
 
 Enums::AxisType QwtSpectroCurve::xAxis() const
@@ -62,8 +62,8 @@ Enums::AxisType QwtSpectroCurve::xAxis() const
 void QwtSpectroCurve::setXAxis(Enums::AxisType axis)
 {DDD;
     QwtPlotSpectrogram::setXAxis(toQwtAxisType(axis));
-    foreach (PointLabel *l, labels)
-        l->setXAxis(axis);
+//    foreach (PointLabel *l, labels)
+//        l->setXAxis(axis);
 }
 
 QPen QwtSpectroCurve::pen() const

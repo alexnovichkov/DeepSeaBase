@@ -8,8 +8,6 @@ class PointLabel;
 class Channel;
 class DataHolder;
 class Plot;
-class PointMarker;
-class QCPPointMarker;
 class Implementation;
 
 #include <qglobal.h>
@@ -131,7 +129,6 @@ protected:
     virtual void updatePen() = 0;
     Plot *m_plot = nullptr;
     mutable SelectedPoint selectedPoint;
-    PointMarker *pointMarker = nullptr;
     PointLabel *m_pointMarker = nullptr;
     QPen oldPen;
 };

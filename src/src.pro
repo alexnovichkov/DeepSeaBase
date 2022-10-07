@@ -81,6 +81,7 @@ SOURCES += main.cpp\
     plot/qcustomplot/qcpplot.cpp \
     plot/qcustomplot/qcppointmarker.cpp \
     plot/qcustomplot/qcpspectrogram.cpp \
+    plot/qcustomplot/qcptracer.cpp \
     plot/qcustomplot/qcustomplot.cpp \
     plot/canvaseventfilter.cpp \
     plot/clearablespinbox.cpp \
@@ -163,7 +164,6 @@ SOURCES += main.cpp\
     plot/plot.cpp \
     plot/legend.cpp \
     plot/logscaleengine.cpp \
-    plot/pointlabel.cpp \
     plot/plotzoom.cpp \
     plot/axiszoom.cpp \
     plot/dragzoom.cpp \
@@ -218,6 +218,7 @@ HEADERS  += mainwindow.h \
     plot/qcustomplot/qcpplot.h \
     plot/qcustomplot/qcppointmarker.h \
     plot/qcustomplot/qcpspectrogram.h \
+    plot/qcustomplot/qcptracer.h \
     plot/qcustomplot/qcustomplot.h \
     plot/qcustomplot/graph2d.h \
     plot/canvaseventfilter.h \
@@ -303,7 +304,6 @@ HEADERS  += mainwindow.h \
     plot/legend.h \
     plot/curve.h \
     plot/logscaleengine.h \
-    plot/pointlabel.h \
     plot/plotzoom.h \
     plot/axiszoom.h \
     plot/dragzoom.h \

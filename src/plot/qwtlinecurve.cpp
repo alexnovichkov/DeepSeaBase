@@ -125,8 +125,8 @@ Enums::AxisType QwtLineCurve::yAxis() const
 void QwtLineCurve::setYAxis(Enums::AxisType axis)
 {DDD;
     QwtPlotCurve::setYAxis(toQwtAxisType(axis));
-    foreach (PointLabel *l, labels)
-        l->setYAxis(axis);
+//    foreach (PointLabel *l, labels)
+//        l->setYAxis(axis);
 }
 
 Enums::AxisType QwtLineCurve::xAxis() const
@@ -137,8 +137,8 @@ Enums::AxisType QwtLineCurve::xAxis() const
 void QwtLineCurve::setXAxis(Enums::AxisType axis)
 {DDD;
     QwtPlotCurve::setXAxis(toQwtAxisType(axis));
-    foreach (PointLabel *l, labels)
-        l->setXAxis(axis);
+//    foreach (PointLabel *l, labels)
+//        l->setXAxis(axis);
 }
 
 QPen QwtLineCurve::pen() const
@@ -255,9 +255,9 @@ SelectedPoint QwtLineCurve::closest(const QPoint &pos, double *dist1, double *di
 void QwtLineCurve::setVisible(bool visible)
 {DDD;
     QwtPlotItem::setVisible(visible);
-    for (PointLabel *label: qAsConst(labels)) {
-        label->setVisible(visible);
-    }
+//    for (PointLabel *label: qAsConst(labels)) {
+//        label->setVisible(visible);
+//    }
 }
 
 TimeCurve::TimeCurve(const QString &title, Channel *channel) : QwtLineCurve(title, channel)

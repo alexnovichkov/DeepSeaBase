@@ -1,10 +1,8 @@
 #include "curve.h"
-#include "pointlabel.h"
 
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
 #include "dataholder.h"
-#include "pointmarker.h"
 #include "qcustomplot/qcppointmarker.h"
 #include "plot.h"
 
@@ -38,8 +36,6 @@ Curve::Curve(const QString &title, Channel *channel)
     this->channel = channel;
     this->duplicate = false;
     this->channel->curve = this;
-//    pointMarker = new PointMarker(this);
-
 }
 
 Curve::~Curve()
@@ -47,7 +43,6 @@ Curve::~Curve()
 //    detachFrom(m_plot);
     qDeleteAll(labels);
     labels.clear();
-    delete pointMarker;
 
     //maybe clear data that is over 1000000 samples
     if (channel) {
@@ -59,11 +54,7 @@ Curve::~Curve()
 void Curve::attachTo(Plot *plot)
 {DDD;
     m_plot = plot;
-    if (pointMarker) pointMarker->attach(plot);
-    if (pointMarker) pointMarker->setVisible(false);
-
     m_pointMarker = new PointLabel(plot, this);
-    m_pointMarker->attachTo(plot);
     m_pointMarker->setMode(PointLabel::Mode::XValue);
     m_pointMarker->setVisible(false);
 }
@@ -71,9 +62,8 @@ void Curve::attachTo(Plot *plot)
 void Curve::detachFrom(Plot *plot)
 {
     //detach labels
-    foreach(PointLabel *l, labels) l->detachFrom(plot);
+    for(PointLabel *l: labels) l->detachFrom(plot);
     //detach marker
-    if (pointMarker) pointMarker->detach();
     if (m_pointMarker) m_pointMarker->detachFrom(plot);
 }
 
@@ -109,17 +99,16 @@ void Curve::removeLabel(PointLabel *label)
 
 void Curve::removeLabels()
 {DDD;
-    foreach (PointLabel *label, labels) {
+    for (PointLabel *label: labels) {
         label->detachFrom(m_plot);
-        delete label;
     }
     labels.clear();
 }
 
-PointLabel *Curve::findLabel(const QPoint &pos/*, QwtAxisId yAxis*/)
+PointLabel *Curve::findLabel(const QPoint &pos)
 {DDD;
-    foreach (PointLabel *l, labels)
-        if (l->contains(pos/*, yAxis*/))
+    for (PointLabel *l: labels)
+        if (l->underMouse(pos, nullptr, nullptr, nullptr))
             return l;
 
     return 0;
@@ -127,7 +116,7 @@ PointLabel *Curve::findLabel(const QPoint &pos/*, QwtAxisId yAxis*/)
 
 PointLabel *Curve::findLabel(SelectedPoint point)
 {DDD;
-    foreach (PointLabel *l, labels)
+    for (PointLabel *l: labels)
         if (l->point() == point)
             return l;
 
@@ -182,11 +171,10 @@ void Curve::updateLabels()
 
 void Curve::setVisible(bool visible)
 {DDD;
-    //d->setVisible(visible);
-    foreach (PointLabel *label, labels) {
+    for (PointLabel *label: labels) {
         label->setVisible(visible);
     }
-    if (pointMarker) pointMarker->setVisible(visible);
+    if (m_pointMarker) m_pointMarker->setVisible(visible);
 }
 
 void Curve::evaluateScale(int &from, int &to, double startX, double endX) const
@@ -314,16 +302,13 @@ void Curve::moveDown(int count)
 void Curve::fix()
 {DDD;
     if (selectedPoint.x >= 0 && selectedPoint.x < samplesCount()) {
-//        auto val = samplePoint(selectedPoint);
         if (m_pointMarker) m_pointMarker->setVisible(false);
 
         PointLabel *label = findLabel(selectedPoint);
-
         if (!label) {
             label = new PointLabel(m_plot, this);
-            label->attachTo(m_plot);
-            label->setVisible(true);
             label->setPoint(selectedPoint);
+            label->setVisible(true);
             addLabel(label);
             m_plot->replot();
         }
@@ -345,15 +330,8 @@ void Curve::updateSelection(SelectedPoint point)
     updatePen();
 
     selectedPoint = point;
-
-    if (!selected()) {
-        if (m_pointMarker) m_pointMarker->setVisible(false);
-    }
-    else {
-        if (m_pointMarker) m_pointMarker->setVisible(true);
-        auto val = samplePoint(selectedPoint);
-
-//        if (m_pointMarker) m_pointMarker->moveTo({val.x, qIsNaN(val.z) ? val.y : val.z});
-        if (m_pointMarker) m_pointMarker->setPoint(selectedPoint);
+    if (m_pointMarker) {
+        m_pointMarker->setPoint(selectedPoint);
+        m_pointMarker->setVisible(selected());
     }
 }

@@ -52,8 +52,8 @@ Enums::AxisType QwtBarCurve::yAxis() const
 void QwtBarCurve::setYAxis(Enums::AxisType axis)
 {DDD;
     QwtPlotHistogram::setYAxis(toQwtAxisType(axis));
-    foreach (PointLabel *l, labels)
-        l->setYAxis(axis);
+//    foreach (PointLabel *l, labels)
+//        l->setYAxis(axis);
 }
 
 Enums::AxisType QwtBarCurve::xAxis() const
@@ -64,8 +64,8 @@ Enums::AxisType QwtBarCurve::xAxis() const
 void QwtBarCurve::setXAxis(Enums::AxisType axis)
 {DDD;
     QwtPlotHistogram::setXAxis(toQwtAxisType(axis));
-    foreach (PointLabel *l, labels)
-        l->setXAxis(axis);
+//    foreach (PointLabel *l, labels)
+//        l->setXAxis(axis);
 }
 
 QPen QwtBarCurve::pen() const
