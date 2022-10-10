@@ -384,30 +384,17 @@ void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution)
         printer.setPageMargins(15, 15, 15, bottom, QPrinter::Millimeter);
 
         //настройка отображения графиков
-//        QFont axisfont = axisFont(QwtAxis::YLeft);
-//        axisfont.setPointSize(axisfont.pointSize()-2);
-//        for (int i=0; i<QwtPlot::axisCnt; ++i)
-//            if (isAxisVisible(i)) setAxisFont(i, axisfont);
-
-        //настройка линий сетки
-//        grid->adaptToPrinter();
-
         legend->setVisible(true);
 
-//        QPainter painter(&printer);
-//        this->
+        QCPPainter painter(&printer);
+        QRectF pageRect = printer.pageRect(QPrinter::DevicePixel);
 
-//        QwtPlotRenderer renderer;
-//        renderer.setDiscardFlag(QwtPlotRenderer::DiscardBackground);
-//        renderer.setLayoutFlag(QwtPlotRenderer::FrameWithScales);
-//        renderer.renderTo(this, printer);
+        painter.setMode(QCPPainter::pmVectorized);
+        painter.setMode(QCPPainter::pmNoCaching);
+        painter.setMode(QCPPainter::pmNonCosmetic); // comment this out if you want cosmetic thin lines (always 1 pixel thick independent of pdf zoom level)
+        toPainter(&painter, pageRect.width(), pageRect.height());
 
         //восстанавливаем параметры графиков
-//        axisfont.setPointSize(axisfont.pointSize()+2);
-//        for (int i=0; i<QwtPlot::axisCnt; ++i)
-//            if (isAxisVisible(i)) setAxisFont(i, axisfont);
-//        grid->restore();
-
         legend->setVisible(false);
     }
 }
