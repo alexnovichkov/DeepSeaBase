@@ -77,7 +77,9 @@ SOURCES += main.cpp\
     plot/qcustomplot/data3d.cpp \
     plot/qcustomplot/mousecoordinates.cpp \
     plot/qcustomplot/qcpaxisoverlay.cpp \
+    plot/qcustomplot/qcpaxistag.cpp \
     plot/qcustomplot/qcpaxistickeroctave.cpp \
+    plot/qcustomplot/qcpitemrichtext.cpp \
     plot/qcustomplot/qcpplot.cpp \
     plot/qcustomplot/qcppointmarker.cpp \
     plot/qcustomplot/qcpspectrogram.cpp \
@@ -214,7 +216,9 @@ HEADERS  += mainwindow.h \
     plot/qcustomplot/data3d.h \
     plot/qcustomplot/mousecoordinates.h \
     plot/qcustomplot/qcpaxisoverlay.h \
+    plot/qcustomplot/qcpaxistag.h \
     plot/qcustomplot/qcpaxistickeroctave.h \
+    plot/qcustomplot/qcpitemrichtext.h \
     plot/qcustomplot/qcpplot.h \
     plot/qcustomplot/qcppointmarker.h \
     plot/qcustomplot/qcpspectrogram.h \

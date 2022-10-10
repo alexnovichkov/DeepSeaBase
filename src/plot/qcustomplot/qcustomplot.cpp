@@ -29924,6 +29924,7 @@ void QCPItemText::draw(QCPPainter *painter)
   if (!qFuzzyIsNull(mRotation))
     transform.rotate(mRotation);
   painter->setFont(mainFont());
+
   QRect textRect = painter->fontMetrics().boundingRect(0, 0, 0, 0, Qt::TextDontClip|mTextAlignment, mText);
   QRect textBoxRect = textRect.adjusted(-mPadding.left(), -mPadding.top(), mPadding.right(), mPadding.bottom());
   QPointF textPos = getTextDrawPoint(QPointF(0, 0), textBoxRect, mPositionAlignment); // 0, 0 because the transform does the translation

@@ -7,20 +7,19 @@
 #include "cursorlabel.h"
 #include "curve.h"
 #include "logging.h"
+#include "qcustomplot/qcpaxistag.h"
+#include "qcustomplot/qcpplot.h"
+#include "algorithms.h"
 
-
-QCPCursorSingle::QCPCursorSingle(Style style, Plot *plot) : Cursor(Cursor::Type::Single, style, plot)
+QCPCursorSingle::QCPCursorSingle(Style style, Plot *plot) : Cursor(Cursor::Type::Single, style, plot), plot(plot)
 {DDD;
     cursor = new QCPTrackingCursor(m_color, style, this);
+    auto impl = dynamic_cast<QCPPlot*>(plot->impl());
     if (style != Cursor::Style::Horizontal) {
-//        xlabel = new CursorLabel(plot, cursor);
-//        xlabel->setAxis(CursorLabel::Axis::XAxis);
-//        xlabel->updateAlignment();
+        axisTagX = new QCPAxisTag(plot, cursor, impl->xAxis);
     }
     if (style != Cursor::Style::Vertical) {
-//        ylabel = new CursorLabel(plot, cursor);
-//        ylabel->setAxis(CursorLabel::Axis::YAxis);
-//        ylabel->updateAlignment();
+        axisTagY = new QCPAxisTag(plot, cursor, impl->yAxis);
     }
     plot->addSelectable(cursor);
 }
@@ -28,6 +27,9 @@ QCPCursorSingle::QCPCursorSingle(Style style, Plot *plot) : Cursor(Cursor::Type:
 QCPCursorSingle::~QCPCursorSingle()
 {DDD;
     detach();
+//    auto impl = dynamic_cast<QCPPlot*>(plot->impl());
+//    if (axisTagX) impl->removeItem(axisTagX);
+//    if (axisTagY) impl->removeItem(axisTagY);
 //    delete xlabel;
 //    delete ylabel;
     delete cursor;
@@ -50,6 +52,14 @@ void QCPCursorSingle::moveTo(const QPointF &pos1, bool silent)
     auto pos = m_snapToValues ? correctedPos(pos1) : pos1;
 
     cursor->moveTo(pos);
+    if (axisTagX) {
+        axisTagX->updatePosition(pos.x());
+        axisTagX->setText(smartDouble(pos.x()));
+    }
+    if (axisTagY) {
+        axisTagY->updatePosition(pos.y());
+        axisTagY->setText(smartDouble(pos.y()));
+    }
     if (!silent) emit cursorPositionChanged();
     update();
 }
@@ -120,24 +130,24 @@ void QCPCursorSingle::detach()
 {DDD;
     m_plot->removeSelectable(cursor);
     cursor->detach();
-//    if (xlabel) xlabel->detach();
-//    if (ylabel) ylabel->detach();
+    if (axisTagX) axisTagX->detach();
+    if (axisTagX) axisTagY->detach();
 }
 
 bool QCPCursorSingle::contains(Selectable *selected) const
 {DDD;
     if (auto c = dynamic_cast<QCPTrackingCursor*>(selected))
         return c == cursor;
-//    else if (auto l = dynamic_cast<CursorLabel*>(selected))
-//        return l == xlabel || l == ylabel;
+    else if (auto l = dynamic_cast<QCPAxisTag*>(selected))
+        return l == axisTagX || l == axisTagY;
 
     return false;
 }
 
 void QCPCursorSingle::update()
 {DDD;
-//    if (xlabel) xlabel->updateLabel(m_showValues);
-//    if (ylabel) ylabel->updateLabel(m_showValues);
+    if (axisTagX) axisTagX->updateLabel(m_showValues);
+    if (axisTagY) axisTagY->updateLabel(m_showValues);
 }
 
 QStringList QCPCursorSingle::dataHeader(bool allData) const

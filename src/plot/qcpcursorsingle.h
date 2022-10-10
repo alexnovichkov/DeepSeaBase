@@ -5,6 +5,7 @@
 
 class QCPTrackingCursor;
 class CursorLabel;
+class QCPAxisTag;
 
 class QCPCursorSingle : public Cursor
 {
@@ -31,8 +32,9 @@ public:
 //    virtual QStringList getValues() const override;
 private:
     QCPTrackingCursor *cursor;
-    CursorLabel *xlabel = nullptr;
-    CursorLabel *ylabel = nullptr;
+    QCPAxisTag *axisTagX = nullptr;
+    QCPAxisTag *axisTagY = nullptr;
+    Plot *plot;
 };
 
 #endif // CURSORSINGLE_H

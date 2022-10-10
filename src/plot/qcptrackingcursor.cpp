@@ -35,10 +35,6 @@ QCPTrackingCursor::QCPTrackingCursor(const QColor &col, Cursor::Style type, Curs
         default: break;
     }
 
-//    label = new QCPTextElement(impl);
-//    impl->axisRect()->insetLayout()->addElement(label, Qt::AlignBottom);
-//    label->setLayer("overlay");
-
     energyAct = new QAction("Энергия", parent);
     energyAct->setCheckable(true);
     energyAct->setChecked(parent?parent->info() & Cursor::Energy : false);
@@ -236,7 +232,6 @@ void QCPTrackingCursor::detach()
 {
     impl->removeItem(horizontal);
     impl->removeItem(vertical);
-    //    impl->removeItem(label);
     impl->layer("overlay")->replot();
 }
 

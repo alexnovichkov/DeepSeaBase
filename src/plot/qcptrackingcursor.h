@@ -50,7 +50,6 @@ private:
 
     QCPItemStraightLine *horizontal;
     QCPItemStraightLine *vertical;
-//    QCPTextElement *label;
 };
 
 #endif // TRACKINGCURSOR_H
