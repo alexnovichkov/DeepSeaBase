@@ -4,7 +4,7 @@
 #include <QMouseEvent>
 #include <QApplication>
 #include <QMenu>
-#include "plotinterface.h"
+#include "qcustomplot/qcpplot.h"
 
 Picker::Picker(Plot *plot) : plot(plot)
 {DDD;

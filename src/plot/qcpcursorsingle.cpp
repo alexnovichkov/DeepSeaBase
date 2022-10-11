@@ -13,13 +13,12 @@
 QCPCursorSingle::QCPCursorSingle(Style style, Plot *plot) : Cursor(Cursor::Type::Single, style, plot), plot(plot)
 {DDD;
     cursor = new QCPTrackingCursor(m_color, style, this);
-    auto impl = dynamic_cast<QCPPlot*>(plot->impl());
-    if (style != Cursor::Style::Horizontal) {
-        axisTagX = new QCPAxisTag(plot, cursor, impl->xAxis);
-    }
-    if (style != Cursor::Style::Vertical) {
-        axisTagY = new QCPAxisTag(plot, cursor, impl->yAxis);
-    }
+    if (style != Cursor::Style::Horizontal)
+        axisTagX = new QCPAxisTag(plot, cursor, plot->impl()->xAxis);
+
+    if (style != Cursor::Style::Vertical)
+        axisTagY = new QCPAxisTag(plot, cursor, plot->impl()->yAxis);
+
     plot->addSelectable(cursor);
 }
 
@@ -138,8 +137,7 @@ void QCPCursorSingle::update()
 {DDD;
     if (axisTagX) axisTagX->updateLabel(m_showValues);
     if (axisTagY) axisTagY->updateLabel(m_showValues);
-    auto impl = dynamic_cast<QCPPlot*>(plot->impl());
-    impl->layer("overlay")->replot();
+    plot->impl()->layer("overlay")->replot();
 }
 
 QStringList QCPCursorSingle::dataHeader(bool allData) const

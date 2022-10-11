@@ -21,13 +21,7 @@
 #include "curvepropertiesdialog.h"
 #include "settings.h"
 #include "colorselector.h"
-#include "legend.h"
-
-#include "plottracker.h"
-#include "logscaleengine.h"
-
 #include "logging.h"
-#include "trackingcursor.h"
 
 #include "dataiodevice.h"
 #include "playpanel.h"

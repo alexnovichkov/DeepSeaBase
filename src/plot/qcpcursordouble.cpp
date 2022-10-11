@@ -117,14 +117,13 @@ QCPCursorDouble::QCPCursorDouble(Cursor::Style style, bool reject, Plot *plot)
     m_cursor1 = new QCPTrackingCursor(m_color, style, this);
     m_cursor2 = new QCPTrackingCursor(m_color, style, this);
 
-    auto impl = dynamic_cast<QCPPlot*>(plot->impl());
-    m_axisTag1 = new QCPAxisTag(plot, m_cursor1, impl->xAxis);
-    m_axisTag2 = new QCPAxisTag(plot, m_cursor2, impl->xAxis);
+    m_axisTag1 = new QCPAxisTag(plot, m_cursor1, plot->impl()->xAxis);
+    m_axisTag2 = new QCPAxisTag(plot, m_cursor2, plot->impl()->xAxis);
 
     plot->addSelectable(m_cursor1);
     plot->addSelectable(m_cursor2);
 
-    m_zone = new QCPZone(reject?QColor(182,131,64,50):QColor(64,131,182,50), impl);
+    m_zone = new QCPZone(reject?QColor(182,131,64,50):QColor(64,131,182,50), plot->impl());
 
     setColor(reject?QColor(150,40,40):QColor(40,40,150));
 }
@@ -254,8 +253,7 @@ void QCPCursorDouble::update()
 {
     if (m_axisTag1) m_axisTag1->updateLabel(m_showValues);
     if (m_axisTag2) m_axisTag2->updateLabel(m_showValues);
-    auto impl = dynamic_cast<QCPPlot*>(m_plot->impl());
-    impl->layer("overlay")->replot();
+    m_plot->impl()->layer("overlay")->replot();
 }
 
 int QCPCursorDouble::dataCount(bool allData) const

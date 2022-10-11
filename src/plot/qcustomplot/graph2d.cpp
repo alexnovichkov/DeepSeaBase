@@ -1253,20 +1253,15 @@ int Graph2D::findEnd(double sortKey, bool expandedRange) const
 void Graph2D::attachTo(Plot *plot)
 {
     Curve::attachTo(plot);
-
-    if (auto qcp = dynamic_cast<QCPPlot*>(mParentPlot))
-
-    addToLegend(qcp->checkableLegend);
+    addToLegend(plot->impl()->checkableLegend);
 }
 
 void Graph2D::detachFrom(Plot *plot)
 {
     Curve::detachFrom(plot);
-    if (auto qcp = dynamic_cast<QCPPlot*>(plot->impl())) {
-        qcp->checkableLegend->removeItem(this);
-        qcp->removePlottable(this, false);
-        qcp->replot();
-    }
+    plot->impl()->checkableLegend->removeItem(this);
+    plot->impl()->removePlottable(this, false);
+    plot->impl()->replot();
 }
 
 QString Graph2D::title() const

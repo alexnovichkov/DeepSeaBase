@@ -12,7 +12,7 @@
 QCPTrackingCursor::QCPTrackingCursor(const QColor &col, Cursor::Style type, Cursor *parent)
     : type(type), parent{parent}
 {DDD;
-    impl = dynamic_cast<QCPPlot*>(parent->plot()->impl());
+    impl = parent->plot()->impl();
 
     horizontal = new QCPItemStraightLine(impl);
     horizontal->setPen(col);

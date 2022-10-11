@@ -17,8 +17,7 @@ QCPCursorHarmonic::QCPCursorHarmonic(Plot *plot) : Cursor(Cursor::Type::Harmonic
 {DDD;
     cursor = new QCPTrackingCursor(m_color, m_style, this);
 
-    auto impl = dynamic_cast<QCPPlot*>(plot->impl());
-    label = new QCPAxisTag(plot, cursor, impl->xAxis);
+    label = new QCPAxisTag(plot, cursor, plot->impl()->xAxis);
 
     plot->addSelectable(cursor);
     setShowValues(false);
@@ -28,7 +27,7 @@ QCPCursorHarmonic::QCPCursorHarmonic(Plot *plot) : Cursor(Cursor::Type::Harmonic
         c->setPen(QPen(Qt::black, 0, Qt::DashDotLine));
         cursors << c;
 
-        auto l = new QCPAxisTag(plot, c, impl->xAxis);
+        auto l = new QCPAxisTag(plot, c, plot->impl()->xAxis);
         labels << l;
     }
 }
@@ -143,7 +142,6 @@ bool QCPCursorHarmonic::contains(Selectable *selected) const
 
 void QCPCursorHarmonic::update()
 {DDD;
-    auto impl = dynamic_cast<QCPPlot*>(plot->impl());
     label->updateLabel(m_showValues);
     if (cursors.size() != m_harmonics) {
         while (cursors.size() > m_harmonics) {
@@ -160,12 +158,12 @@ void QCPCursorHarmonic::update()
             c->setPen(QPen(Qt::black, 0, Qt::DashDotLine));
             cursors << c;
 
-            auto l = new QCPAxisTag(plot, c, impl->xAxis);
+            auto l = new QCPAxisTag(plot, c, plot->impl()->xAxis);
             labels << l;
         }
     }
     for (auto &l: labels) l->updateLabel(m_showValues);
-    impl->layer("overlay")->replot();
+    plot->impl()->layer("overlay")->replot();
 }
 
 //QStringList CursorHarmonic::getValues() const

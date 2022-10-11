@@ -3,6 +3,7 @@
 #include <QtWidgets>
 #include "plot/plot.h"
 #include "timeplot.h"
+#include "spectrogram.h"
 #include "plot/curve.h"
 #include "settings.h"
 #include "logging.h"

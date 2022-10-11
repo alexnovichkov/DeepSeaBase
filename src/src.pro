@@ -94,6 +94,7 @@ SOURCES += main.cpp\
     plot/plotmodel.cpp \
     plot/timeplot.cpp \
     plot/zoomstack.cpp \
+    plot/spectrogram.cpp \
     plot/qcustomplot/graph2d.cpp \
     plotdockfactory.cpp \
     settings.cpp \
@@ -215,6 +216,7 @@ HEADERS  += mainwindow.h \
     plot/selectable.h \
     plot/timeplot.h \
     plot/zoomstack.h \
+    plot/spectrogram.h \
     plotdockfactory.h \
     settings.h \
     sortabletreewidgetitem.h \

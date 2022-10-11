@@ -9377,14 +9377,25 @@ QCPAxis::SelectablePart QCPAxis::getPartAt(const QPointF &pos) const
 /* inherits documentation from base class */
 double QCPAxis::selectTest(const QPointF &pos, bool onlySelectable, QVariant *details) const
 {
-  if (!mParentPlot) return -1;
-  SelectablePart part = getPartAt(pos);
-  if ((onlySelectable && !mSelectableParts.testFlag(part)) || part == spNone)
+    //переписал: теперь прямоугольник оси включает все зазоры между элементами оси
+    Q_UNUSED(onlySelectable);
+    Q_UNUSED(details);
+    auto rect = mAxisPainter->axisSelectionBox();
+    rect = rect.united(mAxisPainter->tickLabelsSelectionBox());
+    rect = rect.united(mAxisPainter->labelSelectionBox());
+    rect.setX(rect.x() - this->padding());
+    if (rect.contains(pos.toPoint()))
+        return mParentPlot->selectionTolerance()*0.99;
     return -1;
+
+//  if (!mParentPlot) return -1;
+//  SelectablePart part = getPartAt(pos);
+//  if ((onlySelectable && !mSelectableParts.testFlag(part)) || part == spNone)
+//    return -1;
   
-  if (details)
-    details->setValue(part);
-  return mParentPlot->selectionTolerance()*0.99;
+//  if (details)
+//    details->setValue(part);
+//  return mParentPlot->selectionTolerance()*0.99;
 }
 
 /*!
@@ -17740,7 +17751,7 @@ QCPAxis *QCPAxisRect::axis(QCPAxis::AxisType type, int index) const
     return ax.at(index);
   } else
   {
-    qDebug() << Q_FUNC_INFO << "Axis index out of bounds:" << index;
+//    qDebug() << Q_FUNC_INFO << "Axis index out of bounds:" << index;
     return nullptr;
   }
 }

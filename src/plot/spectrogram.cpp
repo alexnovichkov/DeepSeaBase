@@ -3,12 +3,11 @@
 #include "zoomstack.h"
 #include <QMenu>
 #include <QMessageBox>
-#include "logscaleengine.h"
 #include "colormapfactory.h"
 #include "channelsmimedata.h"
 #include "cursors.h"
 #include "logging.h"
-#include "qwtplotimpl.h"
+#include "qcustomplot/qcpplot.h"
 #include "curve.h"
 
 Spectrogram::Spectrogram(QWidget *parent) : Plot(Enums::PlotType::Spectrogram, parent)
@@ -170,7 +169,7 @@ bool Spectrogram::canBePlottedOnRightAxis(Channel *ch, QString *message) const
 
 QMenu *Spectrogram::createMenu(Enums::AxisType axis, const QPoint &pos)
 {DDD;
-    Q_UNUSED(pos); qDebug()<<axis<<pos;
+    Q_UNUSED(pos);
     QMenu *menu = new QMenu(widget());
 
     if (axis == Enums::AxisType::atBottom) {

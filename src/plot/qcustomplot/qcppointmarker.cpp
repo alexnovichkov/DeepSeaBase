@@ -23,31 +23,28 @@ PointLabel::PointLabel(Plot *plot, Curve *curve)
     setBrush(QColor(255,255,255,220));
     setAntialiased(false);
 
-    if (auto qcp = dynamic_cast<QCPPlot*>(plot->impl())) {
-        m_marker = new QCPTracer(qcp);
-        m_marker->setStyle(QCPTracer::tsSquare);
-        m_marker->setSize(8);
-        m_marker->setAntialiased(false);
-        if (auto g = dynamic_cast<Graph2D*>(m_curve)) {
-            m_marker->setGraph(g);
-            m_marker->setGraphIndex(0);
-        }
-
-        setPositionAlignment(Qt::AlignBottom | Qt::AlignHCenter);
-        position->setParentAnchor(m_marker->position);
-        position->setType(QCPItemPosition::ptAbsolute);
-        position->setCoords({0, -10});
+    m_marker = new QCPTracer(plot->impl());
+    m_marker->setStyle(QCPTracer::tsSquare);
+    m_marker->setSize(8);
+    m_marker->setAntialiased(false);
+    if (auto g = dynamic_cast<Graph2D*>(m_curve)) {
+        m_marker->setGraph(g);
+        m_marker->setGraphIndex(0);
     }
+
+    setPositionAlignment(Qt::AlignBottom | Qt::AlignHCenter);
+    position->setParentAnchor(m_marker->position);
+    position->setType(QCPItemPosition::ptAbsolute);
+    position->setCoords({0, -10});
+
     m_plot->addSelectable(this);
 }
 
 void PointLabel::detachFrom(Plot *plot)
 {
     plot->removeSelectable(this);
-    if (auto qcp = dynamic_cast<QCPPlot*>(plot->impl())) {
-        qcp->removeItem(this);
-        qcp->removeItem(m_marker);
-    }
+    plot->impl()->removeItem(this);
+    plot->impl()->removeItem(m_marker);
 }
 
 void PointLabel::setVisible(bool visible)

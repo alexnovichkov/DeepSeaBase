@@ -33,11 +33,9 @@ void QCPSpectrogram::attachTo(Plot *plot)
 void QCPSpectrogram::detachFrom(Plot *plot)
 {
     Curve::detachFrom(plot);
-    if (auto qcp = dynamic_cast<QCPPlot*>(plot->impl())) {
-//        qcp->checkableLegend->removeItem(this);
-        qcp->removePlottable(this, false);
-        qcp->replot();
-    }
+//    plot->impl()->checkableLegend->removeItem(this);
+    plot->impl()->removePlottable(this, false);
+    plot->impl()->replot();
 }
 
 QString QCPSpectrogram::title() const
