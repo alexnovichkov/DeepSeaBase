@@ -846,7 +846,6 @@ void Plot::autoscale(Enums::AxisType axis)
 void Plot::setInteractionMode(Enums::InteractionMode mode)
 {DDD;
     interactionMode = mode;
-    if (m_plot) m_plot->setInteractionMode(mode);
 }
 
 void Plot::switchCursor()

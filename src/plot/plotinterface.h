@@ -41,7 +41,6 @@ public:
 
     virtual void importPlot(const QString &fileName, const QSize &size, int resolution) = 0;
     virtual void importPlot(QPrinter &printer, const QSize &size, int resolution) = 0;
-    virtual void setInteractionMode(Enums::InteractionMode mode) = 0;
     virtual Curve* createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis) = 0;
 
     virtual Selected findObject(QPoint pos) const = 0;

@@ -81,6 +81,7 @@ SOURCES += main.cpp\
     plot/qcustomplot/qcpaxisoverlay.cpp \
     plot/qcustomplot/qcpaxistag.cpp \
     plot/qcustomplot/qcpaxistickeroctave.cpp \
+    plot/qcustomplot/qcpinfooverlay.cpp \
     plot/qcustomplot/qcpitemrichtext.cpp \
     plot/qcustomplot/qcpplot.cpp \
     plot/qcustomplot/qcppointmarker.cpp \
@@ -221,6 +222,7 @@ HEADERS  += mainwindow.h \
     plot/qcustomplot/qcpaxisoverlay.h \
     plot/qcustomplot/qcpaxistag.h \
     plot/qcustomplot/qcpaxistickeroctave.h \
+    plot/qcustomplot/qcpinfooverlay.h \
     plot/qcustomplot/qcpitemrichtext.h \
     plot/qcustomplot/qcpplot.h \
     plot/qcustomplot/qcppointmarker.h \

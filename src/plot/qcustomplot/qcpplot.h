@@ -10,6 +10,7 @@ class CanvasEventFilter;
 class QCPCheckableLegend;
 class MouseCoordinates;
 class QCPAxisOverlay;
+class QCPInfoOverlay;
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type);
 Enums::AxisType fromQcpAxis(QCPAxis::AxisType);
@@ -36,7 +37,7 @@ private:
     QSharedPointer<QCPAxisTicker> octaveTicker;
     QCursor oldCursor;
     MouseCoordinates *mouseCoordinates;
-
+    QCPInfoOverlay *infoOverlay = nullptr;
     QCPAxisOverlay *leftOverlay = nullptr;
     QCPAxisOverlay *rightOverlay = nullptr;
 
@@ -67,7 +68,6 @@ public:
     virtual void setColorBarTitle(const QString &title) override;
     virtual void importPlot(const QString &fileName, const QSize &size, int resolution) override;
     virtual void importPlot(QPrinter &printer, const QSize &size, int resolution) override;
-    virtual void setInteractionMode(Enums::InteractionMode mode) override;
     virtual Curve *createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis) override;
     virtual Selected findObject(QPoint pos) const override;
     virtual void deselect() override;

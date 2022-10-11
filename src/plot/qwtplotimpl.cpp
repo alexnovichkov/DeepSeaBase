@@ -324,13 +324,6 @@ void QwtPlotImpl::importPlot(QPrinter &printer, const QSize &size, int resolutio
     setAutoReplot(true);
 }
 
-void QwtPlotImpl::setInteractionMode(Enums::InteractionMode mode)
-{
-    if (_canvas) _canvas->setFocusIndicator(mode == Enums::InteractionMode::ScalingInteraction?
-                                              QwtPlotCanvas::CanvasFocusIndicator:
-                                                QwtPlotCanvas::ItemFocusIndicator);
-}
-
 Curve *QwtPlotImpl::createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis)
 {
     Curve *result = nullptr;

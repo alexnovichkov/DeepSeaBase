@@ -14,6 +14,7 @@
 #include "qcpaxistickeroctave.h"
 #include "logging.h"
 #include "plot/colormapfactory.h"
+#include "qcpinfooverlay.h"
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type) {
     return static_cast<QCPAxis::AxisType>(type);
@@ -37,6 +38,9 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     rightOverlay = new QCPRightAxisOverlay(this);
 
     oldCursor = cursor();
+
+    infoOverlay = new QCPInfoOverlay(this);
+    infoOverlay->setVisible(true);
 
     addLayer("mouse");
     layer("mouse")->setMode(QCPLayer::lmBuffered);
@@ -153,20 +157,13 @@ void QCPPlot::cancelZoom()
 void QCPPlot::setEventFilter(CanvasEventFilter *filter)
 {
     canvasFilter = filter;
-        canvasFilter->setZoom(parent->zoom);
-    //    canvasFilter->setDragZoom(dragZoom);
-    //    canvasFilter->setWheelZoom(wheelZoom);
-    //    canvasFilter->setAxisZoom(axisZoom);
-    //    canvasFilter->setPlotZoom(plotZoom);
-        canvasFilter->setPicker(parent->picker);
+    canvasFilter->setZoom(parent->zoom);
+    canvasFilter->setPicker(parent->picker);
 
-        connect(canvasFilter, SIGNAL(canvasDoubleClicked(QPoint)), this, SIGNAL(canvasDoubleClicked(QPoint)));
+    connect(canvasFilter, SIGNAL(canvasDoubleClicked(QPoint)), this, SIGNAL(canvasDoubleClicked(QPoint)));
     //    connect(canvasFilter, &CanvasEventFilter::hover, this, &QwtPlotImpl::hoverAxis);
-        connect(canvasFilter, &CanvasEventFilter::contextMenuRequested, parent, &Plot::showContextMenu);
-        installEventFilter(filter);
-
-//    axisRect(0)->installEventFilter(filter);
-//    for (auto ax: axisRect(0)->axes()) ax->installEventFilter(filter);
+    connect(canvasFilter, &CanvasEventFilter::contextMenuRequested, parent, &Plot::showContextMenu);
+    installEventFilter(filter);
 }
 
 QObject *QCPPlot::eventTargetAxis(QEvent *event, QObject *target)
@@ -290,7 +287,8 @@ void QCPPlot::setAxisRange(Enums::AxisType axisType, double min, double max, dou
 
 void QCPPlot::setInfoVisible(bool visible)
 {
-    //TODO: infoOverlay
+    infoOverlay->setVisible(visible);
+    layer("overlay")->replot();
 }
 
 void QCPPlot::enableAxis(Enums::AxisType axisType, bool enable)
@@ -374,7 +372,9 @@ void QCPPlot::importPlot(const QString &fileName, const QSize &size, int resolut
 
 void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution)
 {
-    //TODO: print support
+    Q_UNUSED(size);
+    Q_UNUSED(resolution);
+
     printer.setOrientation(QPrinter::Landscape);
 
     QPrintDialog printDialog(&printer, this);
@@ -397,11 +397,6 @@ void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution)
         //восстанавливаем параметры графиков
         legend->setVisible(false);
     }
-}
-
-void QCPPlot::setInteractionMode(Enums::InteractionMode mode)
-{
-    Q_UNUSED(mode);
 }
 
 Curve *QCPPlot::createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis)
@@ -501,18 +496,6 @@ void QCPPlot::addZoom()
 
     parent->zoom->addZoom(coords, true);
 }
-
-//void QCPPlot::keyPressEvent(QKeyEvent *event)
-//{
-//    switch (event->key()) {
-//        case Qt::Key_Backspace: {
-//            parent->zoom->zoomBack();
-//            break;
-//        }
-//        default: QCustomPlot::keyPressEvent(event);
-//    }
-//}
-
 
 void QCPPlot::dragEnterEvent(QDragEnterEvent *event)
 {
