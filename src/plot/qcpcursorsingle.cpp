@@ -4,7 +4,6 @@
 #include "plotmodel.h"
 #include "plot.h"
 #include <QPen>
-#include "cursorlabel.h"
 #include "curve.h"
 #include "logging.h"
 #include "qcustomplot/qcpaxistag.h"

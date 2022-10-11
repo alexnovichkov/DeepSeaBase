@@ -69,6 +69,7 @@ SOURCES += main.cpp\
     plot/cursordialog.cpp \
     plot/cursorlabel.cpp \
     plot/cursors.cpp \
+    plot/qcpcursordouble.cpp \
     plot/qcpcursorsingle.cpp \
     plot/qcptrackingcursor.cpp \
     plot/qcustomplot/checkablelegend.cpp \
@@ -208,6 +209,7 @@ HEADERS  += mainwindow.h \
     plot/cursorlabel.h \
     plot/cursors.h \
     plot/plotinterface.h \
+    plot/qcpcursordouble.h \
     plot/qcpcursorsingle.h \
     plot/qcptrackingcursor.h \
     plot/qcustomplot/checkablelegend.h \

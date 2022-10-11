@@ -14,83 +14,6 @@
 #include <qwt_interval.h>
 
 
-////возвращает СКЗ в диапазоне [x1,x2]
-//double rms(DataHolder *data, const QwtCursorDouble *cursor, const QList<Cursor*> &rejectCursors)
-//{DDD;
-//    double cumul = 0.0;
-//    double x1 = cursor->interval().minValue();
-//    double x2 = cursor->interval().maxValue();
-
-//    int left = data->floor(x1);
-//    int right = data->ceil(x2);
-//    if (left > right) std::swap(left,right);
-//    if (left < 0) left = 0;
-//    if (right < 0) return cumul;
-
-//    QVector<double> values = data->linears(0);
-//    if (values.isEmpty()) return cumul;
-//    if (right >= values.size()) right = values.size()-1;
-
-//    int count = right-left+1;
-
-//    for (int i = left; i<=right; ++i) {
-//        auto xval = data->xValue(i);
-//        if (std::any_of(rejectCursors.begin(), rejectCursors.end(), [xval](Cursor *c)
-//        {
-//            if (auto dc = dynamic_cast<QwtCursorDouble*>(c))
-//                return dc->interval().contains(xval);
-//            return false;
-//        })) {
-//            count--;
-//            continue;
-//        }
-
-//        double v2 = values[i];
-//        if (data->yValuesUnits() != DataHolder::YValuesUnits::UnitsQuadratic)
-//            v2 *= values[i];
-//        cumul += v2;
-//    }
-
-//    return DataHolder::toLog(sqrt(cumul)/double(count), data->threshold(), DataHolder::UnitsLinear);
-//}
-
-////возвращает энергию в диапазоне [x1,x2]
-//double energy(DataHolder *data, const QwtCursorDouble *cursor, const QList<Cursor*> &rejectCursors)
-//{DDD;
-//    double x1 = cursor->interval().minValue();
-//    double x2 = cursor->interval().maxValue();
-//    double cumul = 0.0;
-
-
-
-//    int left = data->floor(x1);
-//    int right = data->ceil(x2);
-//    if (left > right) std::swap(left,right);
-//    if (left < 0) left = 0;
-//    if (right < 0) return cumul;
-
-//    QVector<double> values = data->linears(0);
-//    if (values.isEmpty()) return cumul;
-//    if (right >= values.size()) right = values.size()-1;
-
-//    for (int i = left; i<=right; ++i) {
-//        auto xval = data->xValue(i);
-//        if (std::any_of(rejectCursors.begin(), rejectCursors.end(), [xval](Cursor *c)
-//        {
-//            if (auto dc = dynamic_cast<QwtCursorDouble*>(c))
-//                return dc->interval().contains(xval);
-//            return false;
-//        })) continue;
-
-//        double v2 = values[i];
-//        if (data->yValuesUnits() != DataHolder::YValuesUnits::UnitsQuadratic)
-//            v2 *= values[i];
-//        cumul += v2;
-//    }
-
-//    return DataHolder::toLog(cumul, data->threshold(), DataHolder::YValuesUnits::UnitsQuadratic);
-//}
-
 //QwtCursorDouble::QwtCursorDouble(Cursor::Style style, bool reject, Plot *plot)
 //    : Cursor(reject?Cursor::Type::DoubleReject:Cursor::Type::Double, style, plot)
 //{DDD;
@@ -117,15 +40,6 @@
 //    delete xlabel1;
 //    delete xlabel2;
 //    delete zone;
-//}
-
-//void QwtCursorDouble::setColor(const QColor &color)
-//{DDD;
-//    Cursor::setColor(color);
-//    auto pen = cursor1->linePen();
-//    pen.setColor(color);
-//    cursor1->setLinePen(pen);
-//    cursor2->setLinePen(pen);
 //}
 
 //void QwtCursorDouble::moveTo(const QPointF &pos1, const QPointF &pos2, bool silent)
@@ -213,109 +127,7 @@
 //    zone->setRange(cursor1->value(), cursor2->value());
 //}
 
-//void QwtCursorDouble::attach()
-//{DDD;
-//    if (auto qwt = dynamic_cast<QwtPlot*>(m_plot->impl())) {
-//        cursor1->attach(qwt);
-//        cursor2->attach(qwt);
-//        if (xlabel1) xlabel1->attach(qwt);
-//        if (xlabel2) xlabel2->attach(qwt);
-//        zone->attach(qwt);
-//    }
-//}
 
-//void QwtCursorDouble::detach()
-//{DDD;
-//    cursor1->detach();
-//    cursor2->detach();
-//    xlabel1->detach();
-//    xlabel2->detach();
-//    zone->detach();
-//}
-
-//bool QwtCursorDouble::contains(Selectable *selected) const
-//{DDD;
-//    if (auto c = dynamic_cast<TrackingCursor*>(selected))
-//        return c == cursor1 || c == cursor2;
-//    else if (auto l = dynamic_cast<CursorLabel*>(selected))
-//        return l == xlabel1 || l == xlabel2;
-
-//    return false;
-//}
-
-//void QwtCursorDouble::update()
-//{DDD;
-//    if (xlabel1) xlabel1->updateLabel(m_showValues);
-//    if (xlabel2) xlabel2->updateLabel(m_showValues);
-//}
-
-//int QwtCursorDouble::dataCount(bool allData) const
-//{DDD;
-//    int m=2;
-//    if (allData) {
-//        if (m_info & Cursor::RMS) m++;
-//        if (m_info & Cursor::Energy) m++;
-//        if (m_info & Cursor::Reject) m++;
-//    }
-//    return m;
-//}
-
-//QStringList QwtCursorDouble::dataHeader(bool allData) const
-//{DDD;
-//    QStringList list;
-//    //list << "" << "Время, с";
-//    list << /*QString("Частота ")+*/QLocale(QLocale::Russian).toString(cursor1->xValue());
-//    list << /*QString("Частота ")+*/QLocale(QLocale::Russian).toString(cursor2->xValue());
-//    if (allData) {
-//        if (m_info & Cursor::RMS) list << "СКЗ";
-//        if (m_info & Cursor::Energy) list << "Энергия";
-//        if (m_info & Cursor::Reject) list << "Режекция";
-//    }
-//    return list;
-//}
-
-//QList<double> QwtCursorDouble::data(int curve, bool allData) const
-//{DDD;
-//    auto curves = m_plot->model()->curves();
-//    bool success = false;
-
-////    QList<QList<double> > list;
-////    for (int i=0; i<curves.at(curve)->channel->data()->blocksCount(); ++i) {
-////        auto val1 = curves.at(curve)->channel->data()->YforXandZ(cursor1->xValue(),
-////                                                                 curves.at(curve)->channel->data()->zValue(i), success);
-////        auto val2 = curves.at(curve)->channel->data()->YforXandZ(cursor2->xValue(),
-////                                                                 curves.at(curve)->channel->data()->zValue(i), success);
-////        QList<double> l;
-////        l << curves.at(curve)->channel->data()->zValue(i) << val1 << val2;
-////        if (allData) {
-////            if (m_info & Cursor::RMS) l << rms(curves.at(curve)->channel->data(), this, rejectCursors);
-////            if (m_info & Cursor::Energy) {
-////                double e = energy(curves.at(curve)->channel->data(), this, rejectCursors);
-////                l << e;
-////            }
-////        }
-////        list << l;
-////    }
-
-//    QList<double> list;
-//    double zval = curves.at(curve)->channel->data()->blocksCount()>1 ? cursor1->yValue():0;
-//    auto val1 = curves.at(curve)->channel->data()->YforXandZ(cursor1->xValue(), zval, success);
-//    auto val2 = curves.at(curve)->channel->data()->YforXandZ(cursor2->xValue(), zval, success);
-//    list << val1 << val2;
-//    if (allData) {
-//        if (m_info & Cursor::RMS) list << rms(curves.at(curve)->channel->data(), this, rejectCursors);
-//        if (m_info & Cursor::Energy) {
-//            double e = energy(curves.at(curve)->channel->data(), this, rejectCursors);
-//            list << e;
-//        }
-//    }
-//    return list;
-//}
-
-//QPointF QwtCursorDouble::currentPosition() const
-//{DDD;
-//    return cursor1->value();
-//}
 
 //QwtInterval QwtCursorDouble::interval() const
 //{DDD;
