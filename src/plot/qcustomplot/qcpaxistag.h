@@ -3,12 +3,13 @@
 
 #include <QObject>
 #include "qcustomplot.h"
+#include "plot/selectable.h"
 
 class Plot;
 class QCPTrackingCursor;
 class QCPItemRichText;
 
-class QCPAxisTag : public QObject
+class QCPAxisTag : public QObject, public Selectable
 {
   Q_OBJECT
 public:
@@ -39,6 +40,15 @@ protected:
   QCPItemTracer *mDummyTracer = nullptr;
   QCPItemRichText *mLabel = nullptr;
   bool showLabels = false;
+
+  // Selectable interface
+public:
+  virtual bool draggable() const override;
+  virtual bool underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const override;
+  virtual QList<QAction *> actions() override;
+
+protected:
+  virtual void updateSelection(SelectedPoint point) override;
 };
 
 #endif // QCPAXISTAG_H

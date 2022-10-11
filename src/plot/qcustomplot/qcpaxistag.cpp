@@ -79,10 +79,12 @@ QCPAxisTag::QCPAxisTag(Plot *parent, QCPTrackingCursor *cursor, QCPAxis *parentA
   mLabel->setPositionAlignment(Qt::AlignLeft|Qt::AlignBottom);
   mLabel->position->setParentAnchor(mDummyTracer->position);
   mLabel->position->setCoords(2,-2);
+  parent->addSelectable(this);
 }
 
 QCPAxisTag::~QCPAxisTag()
 {
+    parent->removeSelectable(this);
 //  if (mDummyTracer)
 //    mDummyTracer->parentPlot()->removeItem(mDummyTracer);
 //  if (mLabel)
@@ -162,3 +164,34 @@ void QCPAxisTag::detach()
 }
 
 
+
+
+bool QCPAxisTag::draggable() const
+{
+    return true;
+}
+
+bool QCPAxisTag::underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const
+{
+    Q_UNUSED(point);
+    return mLabel->underMouse(pos, distanceX, distanceY);
+}
+
+QList<QAction *> QCPAxisTag::actions()
+{
+    return cursor->actions();
+}
+
+void QCPAxisTag::updateSelection(SelectedPoint point)
+{
+    Q_UNUSED(point);
+    if (selected()) {
+        mLabel->setPen(QPen(Qt::darkGray, 0.5, Qt::SolidLine));
+//        setZ(1000);
+    }
+    else {
+        mLabel->setPen(QPen(Qt::NoPen));
+//        setZ(40);
+    }
+//    mAxis->parentPlot()->layer("overlay")->replot();
+}

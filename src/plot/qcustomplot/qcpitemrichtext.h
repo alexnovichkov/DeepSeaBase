@@ -7,6 +7,7 @@ class QCPItemRichText : public QCPItemText
 {
 public:
     QCPItemRichText(QCustomPlot *parentPlot);
+    bool underMouse(const QPoint &pos, double *distanceX, double *distanceY);
 //    void setLabels(const )
 
     // QCPLayerable interface

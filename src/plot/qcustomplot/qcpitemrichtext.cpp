@@ -39,6 +39,34 @@ QCPItemRichText::QCPItemRichText(QCustomPlot *parentPlot) : QCPItemText(parentPl
 
 }
 
+bool QCPItemRichText::underMouse(const QPoint &pos, double *distanceX, double *distanceY)
+{
+    auto anchorPos = position->parentAnchor()->pixelPosition();
+
+
+    QTransform transform;
+    transform.translate(pos.x(), pos.y());
+    if (!qFuzzyIsNull(mRotation))
+      transform.rotate(mRotation);
+
+    QCPRichTextDocument doc( mText, 0, mainFont() );
+    QTextOption option = doc.defaultTextOption();
+    option.setWrapMode( QTextOption::NoWrap );
+    doc.setDefaultTextOption( option );
+    doc.adjustSize();
+
+    QRectF textRect;
+    textRect.setSize(doc.size());
+    QRectF textBoxRect = textRect.adjusted(-mPadding.left(), -mPadding.top(), mPadding.right(), mPadding.bottom());
+    QPointF textPos = getTextDrawPoint(QPointF(0, 0), textBoxRect, mPositionAlignment); // 0, 0 because the transform does the translation
+    textBoxRect.moveTopLeft(textPos + anchorPos);
+
+    if (distanceX) *distanceX = qAbs(pos.x() - (textBoxRect.center().x()));
+    if (distanceY) *distanceY = qAbs(pos.y() - (textBoxRect.center().y()));
+
+    return textBoxRect.contains(pos);
+}
+
 
 void QCPItemRichText::draw(QCPPainter *painter)
 {
