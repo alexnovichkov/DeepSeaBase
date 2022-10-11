@@ -83,10 +83,10 @@ QCPAxisTag::QCPAxisTag(Plot *parent, QCPTrackingCursor *cursor, QCPAxis *parentA
 
 QCPAxisTag::~QCPAxisTag()
 {
-  if (mDummyTracer)
-    mDummyTracer->parentPlot()->removeItem(mDummyTracer);
-  if (mLabel)
-    mLabel->parentPlot()->removeItem(mLabel);
+//  if (mDummyTracer)
+//    mDummyTracer->parentPlot()->removeItem(mDummyTracer);
+//  if (mLabel)
+//    mLabel->parentPlot()->removeItem(mLabel);
 }
 
 void QCPAxisTag::setPen(const QPen &pen)
@@ -115,12 +115,6 @@ QString QCPAxisTag::text() const { return mLabel->text(); }
 
 void QCPAxisTag::updatePosition(double value)
 {
-    // since both the arrow and the text label are chained to the dummy tracer (via anchor
-  // parent-child relationships) it is sufficient to update the dummy tracer coordinates. The
-  // Horizontal coordinate type was set to ptAxisRectRatio so to keep it aligned at the right side
-  // of the axis rect, it is always kept at 1. The vertical coordinate type was set to
-  // ptPlotCoordinates of the passed parent axis, so the vertical coordinate is set to the new
-  // value.
     switch (mAxis->axisType()) {
         case QCPAxis::atRight:
             mDummyTracer->position->setCoords(1, value);
@@ -135,7 +129,6 @@ void QCPAxisTag::updatePosition(double value)
             mDummyTracer->position->setCoords(value, 0);
             break;
     }
-//    updateLabel(showLabels);
 }
 
 void QCPAxisTag::updateLabel(bool showValues)
@@ -162,7 +155,10 @@ void QCPAxisTag::updateLabel(bool showValues)
 
 void QCPAxisTag::detach()
 {
-
+    auto plot = mAxis->parentPlot();
+    plot->removeItem(mLabel);
+    plot->removeItem(mDummyTracer);
+    plot->layer("overlay")->replot();
 }
 
 

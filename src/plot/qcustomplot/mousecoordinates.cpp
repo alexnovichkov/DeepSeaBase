@@ -21,7 +21,27 @@ void MouseCoordinates::update(QMouseEvent *event)
     double x = parent->xAxis->pixelToCoord(event->pos().x());
     double y = parent->yAxis->pixelToCoord(event->pos().y());
     if (parent->xAxis->range().contains(x) && parent->yAxis->range().contains(y)) {
-        parent->setCursor(Qt::CrossCursor);
+        auto it = parent->itemAt(event->pos());
+        if (auto *c = dynamic_cast<QCPItemStraightLine *>(it)) {
+            bool horizontal = qFuzzyCompare(c->point1->value()+1, c->point2->value()+1);
+
+            if (horizontal) {
+                int newY = (int)(parent->yAxis->coordToPixel(c->point1->value()));
+                int posY = event->y();
+                if (qAbs(newY-posY)<=4) {
+                    parent->setCursor(QCursor(Qt::SizeVerCursor));
+                }
+            }
+            else {
+                int newX = (int)(parent->xAxis->coordToPixel(c->point1->key()));
+                int posX = event->x();
+                if (qAbs(newX-posX)<=4) {
+                    parent->setCursor(QCursor(Qt::SizeHorCursor));
+                }
+            }
+        }
+        else
+            parent->setCursor(Qt::CrossCursor);
         auto pos = event->pos();
         QString text = parent->parent->pointCoordinates({x, y});
         setText(text);

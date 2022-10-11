@@ -27,11 +27,6 @@ QCPCursorSingle::QCPCursorSingle(Style style, Plot *plot) : Cursor(Cursor::Type:
 QCPCursorSingle::~QCPCursorSingle()
 {DDD;
     detach();
-//    auto impl = dynamic_cast<QCPPlot*>(plot->impl());
-//    if (axisTagX) impl->removeItem(axisTagX);
-//    if (axisTagY) impl->removeItem(axisTagY);
-//    delete xlabel;
-//    delete ylabel;
     delete cursor;
 }
 
@@ -52,14 +47,8 @@ void QCPCursorSingle::moveTo(const QPointF &pos1, bool silent)
     auto pos = m_snapToValues ? correctedPos(pos1) : pos1;
 
     cursor->moveTo(pos);
-    if (axisTagX) {
-        axisTagX->updatePosition(pos.x());
-        axisTagX->setText(smartDouble(pos.x()));
-    }
-    if (axisTagY) {
-        axisTagY->updatePosition(pos.y());
-        axisTagY->setText(smartDouble(pos.y()));
-    }
+    if (axisTagX) axisTagX->updatePosition(pos.x());
+    if (axisTagY) axisTagY->updatePosition(pos.y());
     if (!silent) emit cursorPositionChanged();
     update();
 }
@@ -131,7 +120,7 @@ void QCPCursorSingle::detach()
     m_plot->removeSelectable(cursor);
     cursor->detach();
     if (axisTagX) axisTagX->detach();
-    if (axisTagX) axisTagY->detach();
+    if (axisTagY) axisTagY->detach();
 }
 
 bool QCPCursorSingle::contains(Selectable *selected) const
@@ -148,6 +137,8 @@ void QCPCursorSingle::update()
 {DDD;
     if (axisTagX) axisTagX->updateLabel(m_showValues);
     if (axisTagY) axisTagY->updateLabel(m_showValues);
+    auto impl = dynamic_cast<QCPPlot*>(plot->impl());
+    impl->layer("overlay")->replot();
 }
 
 QStringList QCPCursorSingle::dataHeader(bool allData) const

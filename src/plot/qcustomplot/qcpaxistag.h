@@ -32,12 +32,12 @@ public:
   void detach();
 
 protected:
-  Plot *parent;
-  QCPTrackingCursor *cursor;
-  QCPAxis *mAxis;
+  Plot *parent = nullptr;
+  QCPTrackingCursor *cursor = nullptr;
+  QCPAxis *mAxis = nullptr;
 
-  QPointer<QCPItemTracer> mDummyTracer;
-  QPointer<QCPItemRichText> mLabel;
+  QCPItemTracer *mDummyTracer = nullptr;
+  QCPItemRichText *mLabel = nullptr;
   bool showLabels = false;
 };
 

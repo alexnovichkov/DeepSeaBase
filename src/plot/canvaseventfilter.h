@@ -16,6 +16,7 @@ class PlotZoom;
 class Picker;
 class QWheelEvent;
 class QCPAxis;
+class QCPPlot;
 
 #include "enums.h"
 
@@ -69,6 +70,7 @@ private:
     bool enabled = true;
 
     QPoint startPosition;
+//    QCPPlot* impl;
 };
 
 QDebug operator<<(QDebug debug, const CanvasEventFilter::ActionType &c);

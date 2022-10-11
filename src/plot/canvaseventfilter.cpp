@@ -20,14 +20,15 @@
 
 CanvasEventFilter::CanvasEventFilter(Plot *parent) : QObject(parent), plot(parent)
 {DDD;
-
+//    impl = dynamic_cast<QCPPlot*>(parent->impl());
 }
 
 bool CanvasEventFilter::eventFilter(QObject *target, QEvent *event)
 {DD;
     if (!enabled) return QObject::eventFilter(target, event);
 
-    auto targetAxis = plot->impl()->eventTargetAxis(event, target);
+    auto impl = dynamic_cast<QCPPlot*>(plot->impl());
+    auto targetAxis = impl ? impl->eventTargetAxis(event, target) : nullptr;
     auto qcpAxis = dynamic_cast<QCPAxis*>(targetAxis);
 
     if (!qcpAxis) {
@@ -96,6 +97,7 @@ void CanvasEventFilter::procMouseEvent(QEvent *event)
 
 void CanvasEventFilter::procKeyboardEvent(QEvent *event)
 {DDD;
+    auto impl = dynamic_cast<QCPPlot*>(plot->impl());
     QKeyEvent *kEvent = dynamic_cast<QKeyEvent*>(event);
     switch (kEvent->key()) {
         case Qt::Key_Backspace: {
@@ -104,8 +106,7 @@ void CanvasEventFilter::procKeyboardEvent(QEvent *event)
         }
         case Qt::Key_Escape: {//прерывание выделения
             if (actionType == ActionType::Zoom) {
-                if (auto impl = dynamic_cast<QCPPlot*>(plot->impl()))
-                    impl->cancelZoom();
+                if (impl) impl->cancelZoom();
                 actionType = ActionType::None;
             }
             break;
@@ -168,12 +169,12 @@ void CanvasEventFilter::procAxisEvent(QCPAxis *axis, QEvent *event)
 void CanvasEventFilter::mousePress(QMouseEvent *event)
 {DDD;
     startPosition = event->pos();
+    auto impl = dynamic_cast<QCPPlot*>(plot->impl());
 
     switch (event->button()) {
         case Qt::RightButton: {
             actionType = ActionType::Drag;
-            if (auto impl = dynamic_cast<QCPPlot*>(plot->impl()))
-                impl->axisRect()->mousePressEvent(event, QVariant());
+            if (impl) impl->axisRect()->mousePressEvent(event, QVariant());
             break;
         }
         case Qt::LeftButton: {
@@ -186,8 +187,7 @@ void CanvasEventFilter::mousePress(QMouseEvent *event)
             }
             else {
                 actionType = ActionType::Zoom;
-                if (auto impl = dynamic_cast<QCPPlot*>(plot->impl()))
-                    impl->startZoom(event);
+                if (impl) impl->startZoom(event);
             }
 
             break;
@@ -198,13 +198,13 @@ void CanvasEventFilter::mousePress(QMouseEvent *event)
 
 void CanvasEventFilter::mouseMove(QMouseEvent *event)
 {DDD;
+    auto impl = dynamic_cast<QCPPlot*>(plot->impl());
+
     if (actionType == ActionType::Drag) {
-        if (auto impl = dynamic_cast<QCPPlot*>(plot->impl()))
-            impl->axisRect()->mouseMoveEvent(event, startPosition);
+        impl->axisRect()->mouseMoveEvent(event, startPosition);
     }
     else if (actionType == ActionType::Zoom) {
-        if (auto impl = dynamic_cast<QCPPlot*>(plot->impl()))
-            impl->proceedZoom(event);
+        impl->proceedZoom(event);
     }
     else if (actionType == ActionType::Pick) {
        picker->proceedPick(event);
@@ -213,9 +213,10 @@ void CanvasEventFilter::mouseMove(QMouseEvent *event)
 
 void CanvasEventFilter::mouseRelease(QMouseEvent *event)
 {DDD;
+    auto impl = dynamic_cast<QCPPlot*>(plot->impl());
+
     if (actionType == ActionType::Drag) {
-        if (auto impl = dynamic_cast<QCPPlot*>(plot->impl()))
-            impl->axisRect()->mouseReleaseEvent(event, startPosition);
+        impl->axisRect()->mouseReleaseEvent(event, startPosition);
 
         actionType = ActionType::None;
         if (startPosition == event->pos()) {
@@ -225,10 +226,9 @@ void CanvasEventFilter::mouseRelease(QMouseEvent *event)
         }
     }
     else if (actionType == ActionType::Zoom) {
-        auto impl = dynamic_cast<QCPPlot*>(plot->impl());
         if ((startPosition - event->pos()).manhattanLength() <= 3) {
             //no actual mouse move
-            if (impl) impl->cancelZoom();
+            impl->cancelZoom();
             picker->endPick(event);
         }
         else
