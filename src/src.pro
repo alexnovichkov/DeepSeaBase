@@ -70,6 +70,7 @@ SOURCES += main.cpp\
     plot/cursorlabel.cpp \
     plot/cursors.cpp \
     plot/qcpcursordouble.cpp \
+    plot/qcpcursorharmonic.cpp \
     plot/qcpcursorsingle.cpp \
     plot/qcptrackingcursor.cpp \
     plot/qcustomplot/checkablelegend.cpp \
@@ -96,7 +97,6 @@ SOURCES += main.cpp\
     plot/plotmodel.cpp \
     plot/qwtbarcurve.cpp \
     plot/qwtcursordouble.cpp \
-    plot/qwtcursorharmonic.cpp \
     plot/qwtcursorsingle.cpp \
     plot/qwtlinecurve.cpp \
     plot/qwtplotimpl.cpp \
@@ -210,6 +210,7 @@ HEADERS  += mainwindow.h \
     plot/cursors.h \
     plot/plotinterface.h \
     plot/qcpcursordouble.h \
+    plot/qcpcursorharmonic.h \
     plot/qcpcursorsingle.h \
     plot/qcptrackingcursor.h \
     plot/qcustomplot/checkablelegend.h \
@@ -237,7 +238,6 @@ HEADERS  += mainwindow.h \
     plot/plotmodel.h \
     plot/qwtbarcurve.h \
     plot/qwtcursordouble.h \
-    plot/qwtcursorharmonic.h \
     plot/qwtcursorsingle.h \
     plot/qwtlinecurve.h \
     plot/qwtplotimpl.h \

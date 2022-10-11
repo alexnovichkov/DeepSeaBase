@@ -27,6 +27,8 @@ QCPCursorSingle::~QCPCursorSingle()
 {DDD;
     detach();
     delete cursor;
+    delete axisTagX;
+    delete axisTagY;
 }
 
 void QCPCursorSingle::setColor(const QColor &color)

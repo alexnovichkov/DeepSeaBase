@@ -6,8 +6,7 @@
 #include "fileformats/filedescriptor.h"
 #include "qcpcursorsingle.h"
 #include "qcpcursordouble.h"
-#include "qwtcursorharmonic.h"
-#include "qwt_scale_map.h"
+#include "qcpcursorharmonic.h"
 #include "logging.h"
 
 Cursors::Cursors(Plot *parent) : QObject(parent), plot{parent}
@@ -72,18 +71,18 @@ void Cursors::addRejectCursor(const QPoint &pos, Cursor::Style style)
 
 void Cursors::addHarmonicCursor(const QPoint &pos)
 {DDD;
-//    auto c = new QwtCursorHarmonic(plot);
-//    connect(c,SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
-//    connect(c, SIGNAL(dataChanged()), this, SIGNAL(cursorsChanged()));
-//    double xVal = 0.0;
-//    double yVal = 0.0;
-//    if (plot) {
-//        xVal = plot->screenToPlotCoordinates(Enums::AxisType::atBottom, pos.x());
-//    }
-//    c->attach();
-//    c->moveTo({xVal, yVal});
-//    m_cursors << c;
-//    emit cursorsChanged();
+    auto c = new QCPCursorHarmonic(plot);
+    connect(c,SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
+    connect(c, SIGNAL(dataChanged()), this, SIGNAL(cursorsChanged()));
+    double xVal = 0.0;
+    double yVal = 0.0;
+    if (plot) {
+        xVal = plot->screenToPlotCoordinates(Enums::AxisType::atBottom, pos.x());
+    }
+    c->attach();
+    c->moveTo({xVal, yVal});
+    m_cursors << c;
+    emit cursorsChanged();
 }
 
 int Cursors::dataCount() const

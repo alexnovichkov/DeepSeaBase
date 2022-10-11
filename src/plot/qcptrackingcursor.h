@@ -26,6 +26,7 @@ public:
     Enums::AxisType yAxis() const {return Enums::AxisType::atLeft;}
 
     void setColor(const QColor &color);
+    void setPen(const QPen &pen);
 
     Cursor::Style type = Cursor::Style::Vertical;
     Cursor *parent = nullptr;

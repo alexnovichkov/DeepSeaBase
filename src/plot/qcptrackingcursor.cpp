@@ -241,3 +241,10 @@ void QCPTrackingCursor::setColor(const QColor &color)
     vertical->setPen(color);
     impl->layer("overlay")->replot();
 }
+
+void QCPTrackingCursor::setPen(const QPen &pen)
+{
+    horizontal->setPen(pen);
+    vertical->setPen(pen);
+    impl->layer("overlay")->replot();
+}
