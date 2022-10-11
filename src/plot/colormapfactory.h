@@ -1,7 +1,6 @@
 #ifndef COLORMAPFACTORY_H
 #define COLORMAPFACTORY_H
 
-#include <qwt_color_map.h>
 #include "qcustomplot/qcustomplot.h"
 
 class ColorMapFactory
@@ -17,9 +16,6 @@ public:
     };
 
     static QStringList names();
-
-    static QwtColorMap *map(int index);
-
     static QCPColorGradient gradient(int index);
 };
 

@@ -1,23 +1,5 @@
-/**********************************************************/
-/*                                                        */
-/*                   Класс QwtChartZoom                   */
-/*                      Версия 1.5.2                      */
-/*                                                        */
-/* Обеспечивает интерфейс изменения масштаба и границ 	  */
-/* графика QwtPlot в стиле компонента TChart (Delphi,     */
-/* C++Builder).                                           */
-/*                                                        */
-/* Разработал Мельников Сергей Андреевич,                 */
-/* г. Каменск-Уральский Свердловской обл., 2012 г.,       */
-/* при поддержке Ю. А. Роговского, г. Новосибирск.        */
-/*                                                        */
-/* Разрешается свободное использование и распространение. */
-/* Упоминание автора обязательно.                         */
-/*                                                        */
-/**********************************************************/
-
-#ifndef QWTCHARTZOOM_H
-#define QWTCHARTZOOM_H
+#ifndef ZOOMSTACK_H
+#define ZOOMSTACK_H
 
 #include <QEvent>
 #include <QMouseEvent>
@@ -37,14 +19,6 @@ class ZoomStack : public QObject
 public:
     explicit ZoomStack(Plot *m_plot);
     ~ZoomStack();
-
-    /**************************************************/
-    /*               Класс QScaleBounds               */
-    /*                  Версия 1.0.1                  */
-    /*                                                */
-    /* Содержит исходные границы основной шкалы и     */
-    /* соотношение между основной и дополнительной    */
-    /* шкалой.                                        */
 
     class ScaleBounds
     {
@@ -99,4 +73,4 @@ inline QDebug operator<<(QDebug deb, ZoomStack::zoomCoordinates coords)
 }
 
 
-#endif // QWTCHARTZOOM_H
+#endif // ZOOMSTACK_H

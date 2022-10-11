@@ -3,7 +3,6 @@
 
 #include "qcustomplot.h"
 #include "enums.h"
-#include "plot/plotinterface.h"
 
 class Plot;
 class CanvasEventFilter;
@@ -11,11 +10,14 @@ class QCPCheckableLegend;
 class MouseCoordinates;
 class QCPAxisOverlay;
 class QCPInfoOverlay;
+class Curve;
+class Channel;
+class Selected;
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type);
 Enums::AxisType fromQcpAxis(QCPAxis::AxisType);
 
-class QCPPlot : public QCustomPlot, public PlotInterface
+class QCPPlot : public QCustomPlot
 {
     friend  class MouseCoordinates;
     Q_OBJECT
@@ -29,6 +31,9 @@ public:
     void cancelZoom();
 
     QCPCheckableLegend *checkableLegend = nullptr;
+signals:
+    void canvasDoubleClicked(QPoint);
+
 private:
     Plot *parent = nullptr;
     CanvasEventFilter *canvasFilter = nullptr;
@@ -45,32 +50,32 @@ private:
 
     // PlotInterface interface
 public:
-    virtual void setEventFilter(CanvasEventFilter *filter) override;
-    virtual QObject* eventTargetAxis(QEvent *event, QObject *target) override;
-    virtual void createLegend() override;
-    virtual double screenToPlotCoordinates(Enums::AxisType axisType, double value) const override;
-    virtual double plotToScreenCoordinates(Enums::AxisType axisType, double value) const override;
-    virtual Range plotRange(Enums::AxisType axisType) const override;
-    virtual Range screenRange(Enums::AxisType axisType) const override;
-    virtual void replot() override;
-    virtual void updateAxes() override;
-    virtual void updateLegend() override;
-    virtual QPoint localCursorPosition(const QPoint &globalCursorPosition) const override;
-    virtual void setAxisScale(Enums::AxisType axisType, Enums::AxisScale scale) override;
-    virtual void setAxisRange(Enums::AxisType axis, double min, double max, double step) override;
-    virtual void setInfoVisible(bool visible) override;
-    virtual void enableAxis(Enums::AxisType axis, bool enable) override;
-    virtual bool axisEnabled(Enums::AxisType axis) override;
-    virtual void setAxisTitle(Enums::AxisType axis, const QString &title) override;
-    virtual QString axisTitle(Enums::AxisType axis) const override;
-    virtual void enableColorBar(Enums::AxisType axis, bool enable) override;
-    virtual void setColorMap(int colorMap, Curve *curve) override;
-    virtual void setColorBarTitle(const QString &title) override;
-    virtual void importPlot(const QString &fileName, const QSize &size, int resolution) override;
-    virtual void importPlot(QPrinter &printer, const QSize &size, int resolution) override;
-    virtual Curve *createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis) override;
-    virtual Selected findObject(QPoint pos) const override;
-    virtual void deselect() override;
+    void setEventFilter(CanvasEventFilter *filter);
+    QObject* eventTargetAxis(QEvent *event, QObject *target);
+    void createLegend();
+    double screenToPlotCoordinates(Enums::AxisType axisType, double value) const;
+    double plotToScreenCoordinates(Enums::AxisType axisType, double value) const;
+    Range plotRange(Enums::AxisType axisType) const;
+    Range screenRange(Enums::AxisType axisType) const;
+    void replot();
+    void updateAxes();
+    void updateLegend();
+    QPoint localCursorPosition(const QPoint &globalCursorPosition) const;
+    void setAxisScale(Enums::AxisType axisType, Enums::AxisScale scale);
+    void setAxisRange(Enums::AxisType axis, double min, double max, double step);
+    void setInfoVisible(bool visible);
+    void enableAxis(Enums::AxisType axis, bool enable);
+    bool axisEnabled(Enums::AxisType axis);
+    void setAxisTitle(Enums::AxisType axis, const QString &title);
+    QString axisTitle(Enums::AxisType axis) const;
+    void enableColorBar(Enums::AxisType axis, bool enable);
+    void setColorMap(int colorMap, Curve *curve);
+    void setColorBarTitle(const QString &title);
+    void importPlot(const QString &fileName, const QSize &size, int resolution);
+    void importPlot(QPrinter &printer, const QSize &size, int resolution);
+    Curve *createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis);
+    Selected findObject(QPoint pos) const;
+    void deselect();
 private:
     QCPAxis *axis(Enums::AxisType axis) const;
     void addZoom();

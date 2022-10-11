@@ -2,8 +2,6 @@
 
 #include <QtWidgets>
 #include "plot/plot.h"
-//#include "qcustomplot/qcpplot.h"
-#include "spectrogram.h"
 #include "timeplot.h"
 #include "plot/curve.h"
 #include "settings.h"

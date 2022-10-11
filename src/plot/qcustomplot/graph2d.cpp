@@ -3,7 +3,6 @@
 #include "data2d.h"
 #include "fileformats/filedescriptor.h"
 #include "plot/plot.h"
-#include "plot/plotinterface.h"
 #include "checkablelegenditem.h"
 #include "checkablelegend.h"
 #include "qcpplot.h"

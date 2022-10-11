@@ -27,7 +27,6 @@
 #include "logscaleengine.h"
 
 #include "logging.h"
-//#include "trackingpanel.h"
 #include "trackingcursor.h"
 
 #include "dataiodevice.h"
@@ -41,7 +40,6 @@
 #include "cursors.h"
 #include "cursorbox.h"
 #include "picker.h"
-#include "qwtplotimpl.h"
 #include "qcustomplot/qcpplot.h"
 #include "canvaseventfilter.h"
 
@@ -106,7 +104,7 @@ QWidget *Plot::widget() const
     return dynamic_cast<QWidget*>(m_plot);
 }
 
-PlotInterface *Plot::impl() const
+QCPPlot *Plot::impl() const
 {
     return m_plot;
 }
@@ -763,6 +761,11 @@ QString Plot::axisTitleText(Enums::AxisType id) const
     return m_plot->axisTitle(id);
 }
 
+void Plot::updateAxes()
+{
+    m_plot->updateAxes();
+}
+
 void Plot::switchLabelsVisibility()
 {DDD;
     axisLabelsVisible = !axisLabelsVisible;
@@ -872,25 +875,4 @@ void Plot::onDropEvent(bool plotOnLeft, const QVector<Channel*> &channels)
     //в mainWindow и возможно будет расширен за счет нажатого Ctrl
     //далее эти каналы попадут обратно в plot.
     emit needPlotChannels(plotOnLeft, channels);
-}
-
-Enums::AxisType toAxisType(QwtAxisId id) {
-    switch (id) {
-        case QwtAxis::XTop : return Enums::AxisType::atTop;
-        case QwtAxis::XBottom : return Enums::AxisType::atBottom;
-        case QwtAxis::YLeft : return Enums::AxisType::atLeft;
-        case QwtAxis::YRight : return Enums::AxisType::atRight;
-    }
-    return Enums::AxisType::atInvalid;
-}
-
-QwtAxisId toQwtAxisType(Enums::AxisType type) {
-    switch (type) {
-        case Enums::AxisType::atTop: return QwtAxis::XTop;
-        case Enums::AxisType::atBottom: return QwtAxis::XBottom;
-        case Enums::AxisType::atLeft: return QwtAxis::YLeft;
-        case Enums::AxisType::atRight: return QwtAxis::YRight;
-        default: break;
-    }
-    return -1;
 }

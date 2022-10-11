@@ -1,9 +1,8 @@
 #include "zoomstack.h"
 #include "plot.h"
-#include "plotinterface.h"
-
 #include "logging.h"
 #include "algorithms.h"
+#include "qcustomplot/qcpplot.h"
 
 ZoomStack::ZoomStack(Plot *plot) : QObject(plot),  m_plot(plot)
 {DDD;

@@ -1,14 +1,12 @@
 #include "qcpcursorharmonic.h"
 
 #include "qcptrackingcursor.h"
-#include "cursorlabel.h"
 #include "plot.h"
 #include "plotmodel.h"
 #include "curve.h"
 #include <QPen>
 #include <QApplication>
 #include <QClipboard>
-#include "plotinterface.h"
 #include "logging.h"
 #include "qcustomplot/qcpaxistag.h"
 #include "qcustomplot/qcpplot.h"

@@ -152,7 +152,7 @@ void QCPAxisTag::updateLabel(bool showValues)
     }
     QString s = QString::number(mAxis->orientation()==Qt::Horizontal ? cursor->xValue():cursor->yValue(), f, cursor->parent->digits());
     label << QString("<b>%1</b>").arg(s);
-    mLabel->setText(label.join("<br>")/*, QwtText::RichText*/);
+    mLabel->setText(label.join("<br>"));
 }
 
 void QCPAxisTag::detach()

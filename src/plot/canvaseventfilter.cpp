@@ -1,26 +1,19 @@
 #include "canvaseventfilter.h"
 
-//#include "qwtplotimpl.h"
 #include "zoomstack.h"
-#include "dragzoom.h"
-#include "wheelzoom.h"
-#include "axiszoom.h"
-#include "plotzoom.h"
 #include "picker.h"
 #include <QEvent>
 #include <QMouseEvent>
 #include <QKeyEvent>
 #include "logging.h"
-//#include "qwt_scale_widget.h"
 #include "plot.h"
-#include "plotinterface.h"
 #include "axisboundsdialog.h"
 #include "selectable.h"
 #include "qcustomplot/qcpplot.h"
 
 CanvasEventFilter::CanvasEventFilter(Plot *parent) : QObject(parent), plot(parent)
 {DDD;
-//    impl = dynamic_cast<QCPPlot*>(parent->impl());
+
 }
 
 bool CanvasEventFilter::eventFilter(QObject *target, QEvent *event)

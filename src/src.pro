@@ -67,7 +67,6 @@ SOURCES += main.cpp\
     plot/cursor.cpp \
     plot/cursorbox.cpp \
     plot/cursordialog.cpp \
-    plot/cursorlabel.cpp \
     plot/cursors.cpp \
     plot/qcpcursordouble.cpp \
     plot/qcpcursorharmonic.cpp \
@@ -90,22 +89,10 @@ SOURCES += main.cpp\
     plot/qcustomplot/qcustomplot.cpp \
     plot/canvaseventfilter.cpp \
     plot/clearablespinbox.cpp \
-    plot/filterpointmapper.cpp \
-    plot/grid.cpp \
     plot/imagerenderdialog.cpp \
     plot/plotarea.cpp \
-    plot/plotinfooverlay.cpp \
     plot/plotmodel.cpp \
-    plot/qwtbarcurve.cpp \
-    plot/qwtcursordouble.cpp \
-    plot/qwtcursorsingle.cpp \
-    plot/qwtlinecurve.cpp \
-    plot/qwtplotimpl.cpp \
-    plot/qwtspectrocurve.cpp \
-    plot/scaledraw.cpp \
-    plot/spectrogram.cpp \
     plot/timeplot.cpp \
-    plot/trackingcursor.cpp \
     plot/zoomstack.cpp \
     plot/qcustomplot/graph2d.cpp \
     plotdockfactory.cpp \
@@ -166,15 +153,7 @@ SOURCES += main.cpp\
     htmldelegate.cpp \
     plot/curve.cpp \
     plot/plot.cpp \
-    plot/legend.cpp \
-    plot/logscaleengine.cpp \
-    plot/plotzoom.cpp \
-    plot/axiszoom.cpp \
-    plot/dragzoom.cpp \
-    plot/wheelzoom.cpp \
     plot/picker.cpp \
-    plot/pointmarker.cpp \
-    plot/plottracker.cpp \
     wavexportdialog.cpp \
     wavexporter.cpp \
     plot/colormapfactory.cpp \
@@ -207,9 +186,7 @@ HEADERS  += mainwindow.h \
     plot/cursor.h \
     plot/cursorbox.h \
     plot/cursordialog.h \
-    plot/cursorlabel.h \
     plot/cursors.h \
-    plot/plotinterface.h \
     plot/qcpcursordouble.h \
     plot/qcpcursorharmonic.h \
     plot/qcpcursorsingle.h \
@@ -232,23 +209,11 @@ HEADERS  += mainwindow.h \
     plot/qcustomplot/graph2d.h \
     plot/canvaseventfilter.h \
     plot/clearablespinbox.h \
-    plot/filterpointmapper.h \
-    plot/grid.h \
     plot/imagerenderdialog.h \
     plot/plotarea.h \
-    plot/plotinfooverlay.h \
     plot/plotmodel.h \
-    plot/qwtbarcurve.h \
-    plot/qwtcursordouble.h \
-    plot/qwtcursorsingle.h \
-    plot/qwtlinecurve.h \
-    plot/qwtplotimpl.h \
-    plot/qwtspectrocurve.h \
-    plot/scaledraw.h \
     plot/selectable.h \
-    plot/spectrogram.h \
     plot/timeplot.h \
-    plot/trackingcursor.h \
     plot/zoomstack.h \
     plotdockfactory.h \
     settings.h \
@@ -309,16 +274,8 @@ HEADERS  += mainwindow.h \
     headerview.h \
     htmldelegate.h \
     plot/plot.h \
-    plot/legend.h \
     plot/curve.h \
-    plot/logscaleengine.h \
-    plot/plotzoom.h \
-    plot/axiszoom.h \
-    plot/dragzoom.h \
-    plot/wheelzoom.h \
     plot/picker.h \
-    plot/pointmarker.h \
-    plot/plottracker.h \
     wavexportdialog.h \
     wavexporter.h \
     longoperation.h \
@@ -466,27 +423,6 @@ equals(QT_ARCH,"i386") {
 equals(QT_ARCH,"x86_64") {
   message(fftw libs is E:/My/programming/sources/fftw-3.3.5-dll64/libfftw3-3.lib)
   LIBS *= E:/My/programming/sources/fftw-3.3.5-dll64/libfftw3-3.lib
-}
-
-#qwt
-message(-- Searching for qwt --)
-INCLUDEPATH *= C:/Qwt-6.2.0-dev/x32/include
-message(qwt include path is C:/Qwt-6.2.0-dev/x32/include)
-CONFIG(release, debug|release):{
-  equals(QT_ARCH,"i386") {
-    LIBS *= C:/Qwt-6.2.0-dev/x32/lib/libqwt.a
-  }
-  equals(QT_ARCH,"x86_64") {
-    LIBS *= C:/Qwt-6.2.0-dev/x64/lib/libqwt.a
-  }
-}
-CONFIG(debug, debug|release):{
-  equals(QT_ARCH,"i386") {
-    LIBS *= C:/Qwt-6.2.0-dev/x32/lib/libqwtd.a
-  }
-  equals(QT_ARCH,"x86_64") {
-    LIBS *= C:/Qwt-6.2.0-dev/x64/lib/libqwtd.a
-  }
 }
 
 

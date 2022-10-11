@@ -9,10 +9,6 @@
 class Plot;
 class QMouseEvent;
 class ZoomStack;
-class DragZoom;
-class WheelZoom;
-class AxisZoom;
-class PlotZoom;
 class Picker;
 class QWheelEvent;
 class QCPAxis;
@@ -70,7 +66,6 @@ private:
     bool enabled = true;
 
     QPoint startPosition;
-//    QCPPlot* impl;
 };
 
 QDebug operator<<(QDebug debug, const CanvasEventFilter::ActionType &c);

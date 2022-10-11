@@ -19,7 +19,6 @@
 #include "wavexportdialog.h"
 #include "filehandler.h"
 #include "methods/averaging.h"
-#include "plot/plotinterface.h"
 
 #include <ActiveQt/ActiveQt>
 #include "logging.h"
@@ -36,7 +35,6 @@
 #include "longoperation.h"
 #include "filestable.h"
 #include "channelstable.h"
-#include "plot/legend.h"
 
 #include "fileformats/abstractformatfactory.h"
 #include "descriptorpropertiesdialog.h"
@@ -955,9 +953,9 @@ void MainWindow::addCorrections()
     for (auto w: m.values()) {
         if (auto area = dynamic_cast<PlotArea*>(w)) {
             if (area->plot()) {
-                area->plot()->impl()->updateAxes();
+                area->plot()->updateAxes();
                 if (area==currentPlot) emit updateLegends();
-                area->plot()->impl()->replot();
+                area->plot()->replot();
             }
         }
     }

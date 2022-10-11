@@ -6,7 +6,6 @@
 
 #include <QObject>
 
-class PlotInterface;
 class Curve;
 class Channel;
 class FileDescriptor;
@@ -20,6 +19,7 @@ class Cursors;
 class CursorBox;
 class Selectable;
 class QCPCheckableLegend;
+class QCPPlot;
 
 #include <QWidget>
 
@@ -37,7 +37,7 @@ public:
     PlotModel *model() {return m;}
     Enums::PlotType type() const {return plotType;}
     QWidget *widget() const;
-    PlotInterface *impl() const;
+    QCPPlot *impl() const;
 
     double screenToPlotCoordinates(Enums::AxisType axis, double value) const;
     double plotToScreenCoordinates(Enums::AxisType axis, double value) const;
@@ -57,6 +57,7 @@ public:
     int curvesCount(int type=-1) const;
 
     QString axisTitleText(Enums::AxisType id) const;
+    void updateAxes();
 
     virtual bool canBePlottedOnLeftAxis(Channel *ch, QString *message=nullptr) const;
     virtual bool canBePlottedOnRightAxis(Channel *ch, QString *message=nullptr) const;
@@ -89,8 +90,6 @@ public:
 
     void cycleChannels(bool up);
 
-//    void updateTrackingPanel();
-
     void deleteCurveFromLegend(Curve *curve);
     void deleteCurvesForDescriptor(FileDescriptor *descriptor);
     void deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot = true);
@@ -106,11 +105,6 @@ public:
     void switchTrackingCursor();
     void toggleAutoscale(Enums::AxisType axis, bool toggled);
     void autoscale(Enums::AxisType axis = Enums::AxisType::atInvalid);
-    /**
-     * @brief recalculateScale пересчитывает границы графиков,
-     * отдельно для левой или правой вертикальной оси
-     * @param leftAxis
-     */
     void recalculateScale(Enums::AxisType axis);
 
     void saveSpectrum(double zVal);
@@ -125,7 +119,7 @@ public:
     Picker *picker = nullptr;
     QWidget *legend;
 protected:
-    PlotInterface *m_plot = nullptr;
+    QCPPlot *m_plot = nullptr;
 
     PlotModel *m = nullptr;
 
@@ -177,14 +171,7 @@ private slots:
 
 private:
     QColor getNextColor();
-
     Enums::PlotType plotType = Enums::PlotType::General;
-
-//    // QWidget interface
-//protected:
-//    void dragEnterEvent(QDragEnterEvent *event) override;
-//    void dragMoveEvent(QDragMoveEvent *event) override;
-//    void dragLeaveEvent(QDragLeaveEvent *event) override;
 };
 
 #endif // PLOT_H

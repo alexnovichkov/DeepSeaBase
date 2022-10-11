@@ -8,12 +8,13 @@
 #include "picker.h"
 #include "logging.h"
 #include "canvaseventfilter.h"
+#include "qcustomplot/qcpplot.h"
 
 TimePlot::TimePlot(QWidget *parent) : Plot(Enums::PlotType::Time, parent)
 {DDD;
     playerPanel = new PlayPanel(this);
     connect(this, SIGNAL(curvesCountChanged()), playerPanel, SLOT(update()));
-    connect(widget(), SIGNAL(canvasDoubleClicked(QPoint)), playerPanel, SLOT(moveTo(QPoint)));
+    connect(m_plot, SIGNAL(canvasDoubleClicked(QPoint)), playerPanel, SLOT(moveTo(QPoint)));
 }
 
 TimePlot::~TimePlot()
