@@ -46,8 +46,6 @@ public:
   void setChannelFillGraph(Graph2D *targetGraph);
   void setAdaptiveSampling(bool enabled);
 
-  bool addToLegend(QCPCheckableLegend *legend);
-
   // virtual methods of 1d plottable interface:
   virtual int dataCount() const Q_DECL_OVERRIDE;
   virtual double dataMainKey(int index) const Q_DECL_OVERRIDE;
@@ -136,12 +134,6 @@ public:
 protected:
   virtual void updatePen() override;
   friend class QCPCheckableLegendItem;
-
-  // QCPLayerable interface
-protected:
-  virtual void mousePressEvent(QMouseEvent *event, const QVariant &details) override;
-  virtual void mouseMoveEvent(QMouseEvent *event, const QPointF &startPos) override;
-  virtual void mouseReleaseEvent(QMouseEvent *event, const QPointF &startPos) override;
 };
 
 #endif // GRAPH2D_H

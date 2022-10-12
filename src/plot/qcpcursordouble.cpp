@@ -6,8 +6,8 @@
 #include <QPen>
 #include "curve.h"
 #include "logging.h"
-#include "qcustomplot/qcpaxistag.h"
-#include "qcustomplot/qcpplot.h"
+#include "qcpaxistag.h"
+#include "qcpplot.h"
 #include "algorithms.h"
 
 class QCPZone : public QCPItemRect

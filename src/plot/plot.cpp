@@ -34,7 +34,7 @@
 #include "cursors.h"
 #include "cursorbox.h"
 #include "picker.h"
-#include "qcustomplot/qcpplot.h"
+#include "qcpplot.h"
 #include "canvaseventfilter.h"
 
 Plot::Plot(Enums::PlotType type, QWidget *parent) :
@@ -858,7 +858,7 @@ void Plot::switchCursor()
 void Plot::editLegendItem(Curve *curve)
 {DDD;
     CurvePropertiesDialog dialog(curve, this);
-    if (cursorBox) connect(&dialog,SIGNAL(curveChanged(Curve*)), cursorBox, SLOT(updateLayout()));
+    if (cursorBox) connect(&dialog, SIGNAL(curveChanged(Curve*)), cursorBox, SLOT(updateLayout()));
     dialog.exec();
 //    m_plot->replot();
 }

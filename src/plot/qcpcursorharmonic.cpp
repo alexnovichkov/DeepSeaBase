@@ -8,8 +8,8 @@
 #include <QApplication>
 #include <QClipboard>
 #include "logging.h"
-#include "qcustomplot/qcpaxistag.h"
-#include "qcustomplot/qcpplot.h"
+#include "qcpaxistag.h"
+#include "qcpplot.h"
 
 
 QCPCursorHarmonic::QCPCursorHarmonic(Plot *plot) : Cursor(Cursor::Type::Harmonic, Cursor::Style::Vertical, plot),

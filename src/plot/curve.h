@@ -13,6 +13,7 @@ class Implementation;
 #include <qglobal.h>
 #include "selectable.h"
 #include "enums.h"
+class QCPCheckableLegend;
 
 class Curve : public Selectable
 {
@@ -92,6 +93,8 @@ public:
     int samplesCount() const;
 
     void updateLabels();
+
+    bool addToLegend(QCPCheckableLegend *legend);
 
     Channel *channel;
     QList<PointLabel*> labels;

@@ -7,7 +7,7 @@
 #include "cursordialog.h"
 #include <QMenu>
 #include "plot.h"
-#include "qcustomplot/qcpplot.h"
+#include "qcpplot.h"
 
 QCPTrackingCursor::QCPTrackingCursor(const QColor &col, Cursor::Style type, Cursor *parent)
     : type(type), parent{parent}

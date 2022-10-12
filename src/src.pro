@@ -72,21 +72,21 @@ SOURCES += main.cpp\
     plot/qcpcursorharmonic.cpp \
     plot/qcpcursorsingle.cpp \
     plot/qcptrackingcursor.cpp \
-    plot/qcustomplot/checkablelegend.cpp \
-    plot/qcustomplot/checkablelegenditem.cpp \
-    plot/qcustomplot/data2d.cpp \
-    plot/qcustomplot/data3d.cpp \
-    plot/qcustomplot/mousecoordinates.cpp \
-    plot/qcustomplot/qcpaxisoverlay.cpp \
-    plot/qcustomplot/qcpaxistag.cpp \
-    plot/qcustomplot/qcpaxistickeroctave.cpp \
-    plot/qcustomplot/qcpinfooverlay.cpp \
-    plot/qcustomplot/qcpitemrichtext.cpp \
-    plot/qcustomplot/qcpplot.cpp \
-    plot/qcustomplot/qcppointmarker.cpp \
-    plot/qcustomplot/qcpspectrogram.cpp \
-    plot/qcustomplot/qcptracer.cpp \
-    plot/qcustomplot/qcustomplot.cpp \
+    plot/checkablelegend.cpp \
+    plot/checkablelegenditem.cpp \
+    plot/data2d.cpp \
+    plot/data3d.cpp \
+    plot/mousecoordinates.cpp \
+    plot/qcpaxisoverlay.cpp \
+    plot/qcpaxistag.cpp \
+    plot/qcpaxistickeroctave.cpp \
+    plot/qcpinfooverlay.cpp \
+    plot/qcpitemrichtext.cpp \
+    plot/qcpplot.cpp \
+    plot/qcppointmarker.cpp \
+    plot/qcpspectrogram.cpp \
+    plot/qcptracer.cpp \
+    plot/qcustomplot.cpp \
     plot/canvaseventfilter.cpp \
     plot/clearablespinbox.cpp \
     plot/imagerenderdialog.cpp \
@@ -95,7 +95,7 @@ SOURCES += main.cpp\
     plot/timeplot.cpp \
     plot/zoomstack.cpp \
     plot/spectrogram.cpp \
-    plot/qcustomplot/graph2d.cpp \
+    plot/graph2d.cpp \
     plotdockfactory.cpp \
     settings.cpp \
     sortabletreewidgetitem.cpp \
@@ -192,22 +192,22 @@ HEADERS  += mainwindow.h \
     plot/qcpcursorharmonic.h \
     plot/qcpcursorsingle.h \
     plot/qcptrackingcursor.h \
-    plot/qcustomplot/checkablelegend.h \
-    plot/qcustomplot/checkablelegenditem.h \
-    plot/qcustomplot/data2d.h \
-    plot/qcustomplot/data3d.h \
-    plot/qcustomplot/mousecoordinates.h \
-    plot/qcustomplot/qcpaxisoverlay.h \
-    plot/qcustomplot/qcpaxistag.h \
-    plot/qcustomplot/qcpaxistickeroctave.h \
-    plot/qcustomplot/qcpinfooverlay.h \
-    plot/qcustomplot/qcpitemrichtext.h \
-    plot/qcustomplot/qcpplot.h \
-    plot/qcustomplot/qcppointmarker.h \
-    plot/qcustomplot/qcpspectrogram.h \
-    plot/qcustomplot/qcptracer.h \
-    plot/qcustomplot/qcustomplot.h \
-    plot/qcustomplot/graph2d.h \
+    plot/checkablelegend.h \
+    plot/checkablelegenditem.h \
+    plot/data2d.h \
+    plot/data3d.h \
+    plot/mousecoordinates.h \
+    plot/qcpaxisoverlay.h \
+    plot/qcpaxistag.h \
+    plot/qcpaxistickeroctave.h \
+    plot/qcpinfooverlay.h \
+    plot/qcpitemrichtext.h \
+    plot/qcpplot.h \
+    plot/qcppointmarker.h \
+    plot/qcpspectrogram.h \
+    plot/qcptracer.h \
+    plot/qcustomplot.h \
+    plot/graph2d.h \
     plot/canvaseventfilter.h \
     plot/clearablespinbox.h \
     plot/imagerenderdialog.h \

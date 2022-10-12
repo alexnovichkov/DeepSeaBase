@@ -1,7 +1,7 @@
 #ifndef TRACKINGCURSOR_H
 #define TRACKINGCURSOR_H
 
-#include "qcustomplot/qcustomplot.h"
+#include "qcustomplot.h"
 #include <QVector>
 #include "cursor.h"
 #include "selectable.h"

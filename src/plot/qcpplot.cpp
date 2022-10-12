@@ -192,27 +192,23 @@ void QCPPlot::createLegend()
     parent->legend = checkableLegend->widget();
 
 
-    connect(checkableLegend, &QCPCheckableLegend::markedForDelete, [=](QCPAbstractPlottable *plottable){
-        if (Curve *c = dynamic_cast<Curve *>(plottable))
-            parent->deleteCurveFromLegend(c);
+    connect(checkableLegend, &QCPCheckableLegend::markedForDelete,
+            parent, &Plot::deleteCurveFromLegend);
+    connect(checkableLegend, &QCPCheckableLegend::clicked,
+            parent, &Plot::editLegendItem);
+    connect(checkableLegend, &QCPCheckableLegend::markedToMove, [=](Curve *c){
+        parent->moveCurve(c, c->yAxis() == Enums::AxisType::atLeft ? Enums::AxisType::atRight : Enums::AxisType::atLeft);
+        replot();
     });
-    connect(checkableLegend, &QCPCheckableLegend::clicked, [=](QCPAbstractPlottable *plottable){
-        if (Curve *c = dynamic_cast<Curve *>(plottable))
-            parent->editLegendItem(c);
+    connect(checkableLegend, &QCPCheckableLegend::fixedChanged, [=](Curve *c){
+        c->switchFixed();
+        checkableLegend->updateItem(c, c->commonLegendData());
     });
-    connect(checkableLegend, &QCPCheckableLegend::markedToMove, [=](QCPAbstractPlottable *plottable){
-        if (Curve *c = dynamic_cast<Curve *>(plottable)) {
-            parent->moveCurve(c, c->yAxis() == Enums::AxisType::atLeft ? Enums::AxisType::atRight : Enums::AxisType::atLeft);
-            replot();
-        }
+    connect(checkableLegend, &QCPCheckableLegend::visibilityChanged, [=](Curve *c, bool visible){
+        c->setVisible(visible);
+        if (auto p = dynamic_cast<QCPAbstractPlottable*>(c)) p->setVisible(visible);
+        replot();
     });
-    connect(checkableLegend, &QCPCheckableLegend::fixedChanged, [=](QCPAbstractPlottable *plottable){
-        if (Curve *c = dynamic_cast<Curve *>(plottable)) {
-            c->switchFixed();
-            checkableLegend->updateItem(plottable, c->commonLegendData());
-        }
-    });
-
 }
 
 double QCPPlot::screenToPlotCoordinates(Enums::AxisType axisType, double value) const

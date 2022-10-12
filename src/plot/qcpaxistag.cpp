@@ -25,7 +25,7 @@
 
 #include "qcpaxistag.h"
 #include "plot/plot.h"
-#include "plot/qcustomplot/qcpplot.h"
+#include "plot/qcpplot.h"
 #include "plot/qcptrackingcursor.h"
 #include "plot/plotmodel.h"
 #include "plot/curve.h"

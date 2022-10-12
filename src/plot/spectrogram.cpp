@@ -7,7 +7,7 @@
 #include "channelsmimedata.h"
 #include "cursors.h"
 #include "logging.h"
-#include "qcustomplot/qcpplot.h"
+#include "qcpplot.h"
 #include "curve.h"
 
 Spectrogram::Spectrogram(QWidget *parent) : Plot(Enums::PlotType::Spectrogram, parent)

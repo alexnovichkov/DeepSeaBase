@@ -3,6 +3,7 @@
 #include "fileformats/filedescriptor.h"
 #include "qcpplot.h"
 #include "plot/plot.h"
+#include "checkablelegend.h"
 
 QCPSpectrogram::QCPSpectrogram(const QString &title, Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis)
     : QCPAbstractPlottable(keyAxis, valueAxis), Curve(title, channel)
@@ -25,9 +26,7 @@ QCPSpectrogram::~QCPSpectrogram()
 void QCPSpectrogram::attachTo(Plot *plot)
 {
     Curve::attachTo(plot);
-
-//    if (auto qcp = dynamic_cast<QCPPlot*>(mParentPlot))
-//        addToLegend(qcp->checkableLegend);
+    Curve::addToLegend(plot->impl()->checkableLegend);
 }
 
 void QCPSpectrogram::detachFrom(Plot *plot)
@@ -97,6 +96,7 @@ SelectedPoint QCPSpectrogram::closest(const QPoint &pos, double *dist, double *d
 
 void QCPSpectrogram::updatePen()
 {
+    m_plot->impl()->checkableLegend->updateItem(this, commonLegendData());
 }
 
 void QCPSpectrogram::setDataRange(const QCPRange &dataRange)

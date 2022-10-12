@@ -9,7 +9,7 @@
 #include "plot.h"
 #include "axisboundsdialog.h"
 #include "selectable.h"
-#include "qcustomplot/qcpplot.h"
+#include "qcpplot.h"
 
 CanvasEventFilter::CanvasEventFilter(Plot *parent) : QObject(parent), plot(parent)
 {DDD;

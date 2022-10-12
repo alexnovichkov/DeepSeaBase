@@ -8,6 +8,7 @@
 #include "qcpplot.h"
 #include "logging.h"
 #include "settings.h"
+#include "qcppointmarker.h"
 
 Graph2D::LineStyle lineStyleByType(Channel *c)
 {
@@ -78,18 +79,6 @@ void Graph2D::setChannelFillGraph(Graph2D *targetGraph)
 void Graph2D::setAdaptiveSampling(bool enabled)
 {
     mAdaptiveSampling = enabled;
-}
-
-bool Graph2D::addToLegend(QCPCheckableLegend *legend)
-{
-    if (!legend) {
-        qDebug() << "passed legend is null";
-        return false;
-    }
-
-    legend->addItem(this, this->commonLegendData());
-
-    return true;
 }
 
 QCPRange Graph2D::getValueRange(bool &foundRange, QCP::SignDomain inSignDomain, const QCPRange &inKeyRange) const
@@ -1253,7 +1242,7 @@ int Graph2D::findEnd(double sortKey, bool expandedRange) const
 void Graph2D::attachTo(Plot *plot)
 {
     Curve::attachTo(plot);
-    addToLegend(plot->impl()->checkableLegend);
+    Curve::addToLegend(plot->impl()->checkableLegend);
 }
 
 void Graph2D::detachFrom(Plot *plot)
@@ -1306,7 +1295,8 @@ void Graph2D::setXAxis(Enums::AxisType axis)
 
 QPen Graph2D::pen() const
 {
-    return QCPAbstractPlottable::pen();
+//    return QCPAbstractPlottable::pen();
+    return oldPen;
 }
 
 SamplePoint Graph2D::samplePoint(SelectedPoint point) const
@@ -1370,29 +1360,11 @@ void Graph2D::updateScatter()
 
 void Graph2D::updatePen()
 {
-//    if (Curve::selected())
-//        QCPAbstractPlottable::setSelection(QCPDataSelection({0, m_data->size()-1}));
-//        QCPAbstractPlottable::selectEvent(nullptr, false, QVariant(), nullptr);
-//    else
-//        QCPAbstractPlottable::setSelection(QCPDataSelection());
-//        QCPAbstractPlottable::deselectEvent(nullptr);
     auto p = oldPen;
     if (p.style() == Qt::NoPen) setLineStyle(lsNone);
     else setLineStyle(lineStyleByType(channel));
     if (Curve::selected()) p.setWidth(2);
     QCPAbstractPlottable::setPen(p);
-}
-
-
-void Graph2D::mousePressEvent(QMouseEvent *event, const QVariant &details)
-{DD0;
-
-}
-
-void Graph2D::mouseMoveEvent(QMouseEvent *event, const QPointF &startPos)
-{DD0;
-}
-
-void Graph2D::mouseReleaseEvent(QMouseEvent *event, const QPointF &startPos)
-{DD0;
+    updateScatter();
+    if (m_plot) m_plot->impl()->checkableLegend->updateItem(this, commonLegendData());
 }

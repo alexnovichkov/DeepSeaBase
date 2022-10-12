@@ -6,7 +6,7 @@
 #include "plot/curve.h"
 #include "fileformats/dfdfiledescriptor.h"
 #include "logging.h"
-#include "plot/qcustomplot/qcustomplot.h"
+#include "plot/qcustomplot.h"
 
 void ClickableLabel::mouseReleaseEvent(QMouseEvent *ev)
 {DDD;

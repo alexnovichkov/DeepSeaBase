@@ -1,7 +1,7 @@
 #ifndef COLORMAPFACTORY_H
 #define COLORMAPFACTORY_H
 
-#include "qcustomplot/qcustomplot.h"
+#include "qcustomplot.h"
 
 class ColorMapFactory
 {

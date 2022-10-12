@@ -9,21 +9,22 @@ QCPCheckableLegend::QCPCheckableLegend(QWidget *parent) : QObject(parent)
     m_treeView->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
     m_treeView->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
     m_treeView->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
+    connect(m_model, SIGNAL(visibilityChanged(Curve*, bool)), this, SIGNAL(visibilityChanged(Curve*, bool)));
 
     connect(m_treeView, &QTreeView::pressed, this, &QCPCheckableLegend::handleClick);
 }
 
-void QCPCheckableLegend::addItem(QCPAbstractPlottable *item, const LegendData &data)
+void QCPCheckableLegend::addItem(Curve *item, const LegendData &data)
 {
     if (!m_model->contains(item)) m_model->addItem(item, data);
 }
 
-void QCPCheckableLegend::removeItem(QCPAbstractPlottable *item)
+void QCPCheckableLegend::removeItem(Curve *item)
 {
     m_model->removeItem(item);
 }
 
-void QCPCheckableLegend::updateItem(QCPAbstractPlottable *item, const LegendData &data)
+void QCPCheckableLegend::updateItem(Curve *item, const LegendData &data)
 {
     m_model->update(item, data);
 }
@@ -91,7 +92,7 @@ QCPLegendModel::~QCPLegendModel()
 
 }
 
-bool QCPLegendModel::contains(QCPAbstractPlottable *item)
+bool QCPLegendModel::contains(Curve *item)
 {
     for (const auto &i: qAsConst(items)) {
         if (i.item == item) return true;
@@ -99,14 +100,14 @@ bool QCPLegendModel::contains(QCPAbstractPlottable *item)
     return false;
 }
 
-QCPAbstractPlottable *QCPLegendModel::item(int row)
+Curve *QCPLegendModel::item(int row)
 {
     if (row < 0 || row >= items.size()) return nullptr;
 
     return items.at(row).item;
 }
 
-void QCPLegendModel::addItem(QCPAbstractPlottable *it, const LegendData &data)
+void QCPLegendModel::addItem(Curve *it, const LegendData &data)
 {
     beginInsertRows(QModelIndex(), items.size(), items.size());
     QCPLegendItem item;
@@ -116,7 +117,7 @@ void QCPLegendModel::addItem(QCPAbstractPlottable *it, const LegendData &data)
     endInsertRows();
 }
 
-void QCPLegendModel::removeItem(QCPAbstractPlottable *plotItem)
+void QCPLegendModel::removeItem(Curve *plotItem)
 {
     int ind = -1;
     for (int index = 0; index < items.size(); ++index) {
@@ -132,7 +133,7 @@ void QCPLegendModel::removeItem(QCPAbstractPlottable *plotItem)
     endRemoveRows();
 }
 
-void QCPLegendModel::update(QCPAbstractPlottable *it, const LegendData &data)
+void QCPLegendModel::update(Curve *it, const LegendData &data)
 {
     int ind = -1;
     for (int index = 0; index < items.size(); ++index) {
@@ -221,14 +222,12 @@ bool QCPLegendModel::setData(const QModelIndex &index, const QVariant &value, in
     if (row<0 || row>=items.size()) return false;
     if (column == 0) {
         items[row].data.checked = value.toInt() == int(Qt::Checked);
-        items[row].item->setVisible(items[row].data.checked);
-        items[row].item->parentPlot()->replot();
+        emit visibilityChanged(items[row].item, items[row].data.checked);
         emit dataChanged(index, index, QVector<int>()<<Qt::CheckStateRole);
 
         return true;
     }
     else if (column == 1) {
-        qDebug()<<1;
         if (items[row].data.fixed != value.toBool()) {
             items[row].data.fixed = value.toBool();
             emit dataChanged(index,index, QVector<int>()<<Qt::DecorationRole);

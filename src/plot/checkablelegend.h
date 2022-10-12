@@ -6,13 +6,14 @@
 
 class QCPLegendTreeView;
 class QCPLegendModel;
+class Curve;
 
 #include "enums.h"
 
 struct QCPLegendItem
 {
     LegendData data;
-    QCPAbstractPlottable *item;
+    Curve *item;
 };
 
 class QCPLegendModel : public QAbstractTableModel
@@ -22,12 +23,14 @@ public:
     explicit QCPLegendModel(QObject *parent = 0);
     virtual ~QCPLegendModel();
 
-    bool contains(QCPAbstractPlottable *item);
-    QCPAbstractPlottable *item(int row);
+    bool contains(Curve *item);
+    Curve *item(int row);
+signals:
+    void visibilityChanged(Curve *, bool);
 public slots:
-    void addItem(QCPAbstractPlottable *it, const LegendData &data);
-    void removeItem(QCPAbstractPlottable *plotItem);
-    void update(QCPAbstractPlottable *it, const LegendData &data);
+    void addItem(Curve *it, const LegendData &data);
+    void removeItem(Curve *plotItem);
+    void update(Curve *it, const LegendData &data);
 
     // QAbstractItemModel interface
 public:
@@ -55,15 +58,16 @@ class QCPCheckableLegend : public QObject
 public:
     QCPCheckableLegend(QWidget *parent);
     inline QWidget *widget() const {return m_treeView;}
-    void addItem(QCPAbstractPlottable *item, const LegendData &data);
-    void removeItem(QCPAbstractPlottable *item);
-    void updateItem(QCPAbstractPlottable *item, const LegendData &data);
+    void addItem(Curve *item, const LegendData &data);
+    void removeItem(Curve *item);
+    void updateItem(Curve *item, const LegendData &data);
 signals:
     //void checked( QwtPlotItem *plotItem, bool on, int index );
-    void clicked(QCPAbstractPlottable*);
-    void markedForDelete(QCPAbstractPlottable*);
-    void markedToMove(QCPAbstractPlottable*);
-    void fixedChanged(QCPAbstractPlottable*);
+    void clicked(Curve*);
+    void markedForDelete(Curve*);
+    void markedToMove(Curve*);
+    void fixedChanged(Curve*);
+    void visibilityChanged(Curve *, bool);
 private:
     void handleClick( const QModelIndex &index );
     QCPLegendTreeView *m_treeView;

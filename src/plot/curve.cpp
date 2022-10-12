@@ -3,8 +3,9 @@
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
 #include "dataholder.h"
-#include "qcustomplot/qcppointmarker.h"
+#include "qcppointmarker.h"
 #include "plot.h"
+#include "checkablelegend.h"
 
 QString Curve::markerShapeDescription(Curve::MarkerShape shape)
 {
@@ -169,6 +170,18 @@ int Curve::samplesCount() const
 void Curve::updateLabels()
 {
     for (auto label: labels) label->updateLabel();
+}
+
+bool Curve::addToLegend(QCPCheckableLegend *legend)
+{
+    if (!legend) {
+        qDebug() << "passed legend is null";
+        return false;
+    }
+
+    legend->addItem(this, this->commonLegendData());
+
+    return true;
 }
 
 void Curve::setVisible(bool visible)
