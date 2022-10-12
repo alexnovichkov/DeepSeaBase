@@ -75,6 +75,12 @@ Plot::Plot(Enums::PlotType type, QWidget *parent) :
     cursorBox->setVisible(false);
     connect(this, &Plot::curvesCountChanged, cursorBox, &CursorBox::updateLayout);
     connect(cursorBox,SIGNAL(closeRequested()),SIGNAL(trackingPanelCloseRequested()));
+
+    if (type == Enums::PlotType::Time) {
+        playerPanel = new PlayPanel(this);
+        connect(this, SIGNAL(curvesCountChanged()), playerPanel, SLOT(update()));
+        connect(m_plot, SIGNAL(canvasDoubleClicked(QPoint)), playerPanel, SLOT(moveTo(QPoint)));
+    }
 }
 
 Plot::~Plot()
@@ -126,6 +132,21 @@ Range Plot::screenRange(Enums::AxisType axis)
 void Plot::replot()
 {
     if (m_plot) m_plot->replot();
+}
+
+QWidget *Plot::toolBarWidget()
+{
+    return playerPanel;
+}
+
+void Plot::updateActions(int filesCount, int channelsCount)
+{
+    Q_UNUSED(filesCount);
+    Q_UNUSED(channelsCount);
+    if (playerPanel) {
+        const bool hasCurves = curvesCount()>0;
+        playerPanel->setEnabled(hasCurves);
+    }
 }
 
 void Plot::updatePlottedIndexes()
@@ -464,17 +485,13 @@ void Plot::showContextMenu(const QPoint &pos, Enums::AxisType axis)
 
 bool Plot::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
 {DDD;
-//    if (!hasCurves()) // нет графиков - можем построить что угодно
-//        return true;
-//    //особый случай - спектрограмма - всегда одна на графике
-//    if (ch->data()->blocksCount()>1 && hasCurves()) return false;
-//    //особый случай - спектрограмма - всегда одна на графике
-//    if (auto curve = m->curve(0); curve->channel->data()->blocksCount()>1)
-//        return false;
-
-    //не можем строить временные графики на графике спектров
-    if (ch->type() == Descriptor::TimeResponse) {
+    //не можем строить временные графики на графике спектров и наоборот
+    if (ch->type() == Descriptor::TimeResponse && type() != Enums::PlotType::Time) {
         if (message) *message = "Нельзя строить временные графики на графике спектров";
+        return false;
+    }
+    if (ch->type() != Descriptor::TimeResponse && type() == Enums::PlotType::Time) {
+        if (message) *message = "Отсутствуют временные данные";
         return false;
     }
 
@@ -490,17 +507,13 @@ bool Plot::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
 
 bool Plot::canBePlottedOnRightAxis(Channel *ch, QString *message) const
 {DDD;
-//    if (!hasCurves()) // нет графиков - всегда на левой оси
-//        return true;
-//    //особый случай - спектрограмма - всегда одна на графике
-//    if (ch->data()->blocksCount()>1 && hasCurves()) return false;
-//    //особый случай - спектрограмма - всегда одна на графике
-//    if (auto curve = m->curve(0); curve->channel->data()->blocksCount()>1)
-//        return false;
-
-    //не можем строить временные графики на графике спектров
-    if (ch->type() == Descriptor::TimeResponse) {
+    //не можем строить временные графики на графике спектров и наоборот
+    if (ch->type() == Descriptor::TimeResponse && type() != Enums::PlotType::Time) {
         if (message) *message = "Нельзя строить временные графики на графике спектров";
+        return false;
+    }
+    if (ch->type() != Descriptor::TimeResponse && type() == Enums::PlotType::Time) {
+        if (message) *message = "Отсутствуют временные данные";
         return false;
     }
 

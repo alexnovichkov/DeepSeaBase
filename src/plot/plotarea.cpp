@@ -232,7 +232,7 @@ void PlotArea::addPlot(Enums::PlotType type)
         }
         case Enums::PlotType::Time:
         {
-            m_plot = new TimePlot(this);
+            m_plot = new Plot(type, this);
             setIcon(QIcon(":/icons/timecurve.png"));
             break;
         }

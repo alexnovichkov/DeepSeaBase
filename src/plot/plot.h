@@ -20,6 +20,7 @@ class CursorBox;
 class Selectable;
 class QCPCheckableLegend;
 class QCPPlot;
+class PlayPanel;
 
 #include <QWidget>
 
@@ -45,8 +46,8 @@ public:
     Range screenRange(Enums::AxisType axis);
     void replot();
 
-    virtual QWidget *toolBarWidget() {return nullptr;}
-    virtual void updateActions(int filesCount, int channelsCount) {Q_UNUSED(filesCount); Q_UNUSED(channelsCount);}
+    virtual QWidget *toolBarWidget();
+    virtual void updateActions(int filesCount, int channelsCount);
 
     bool sergeiMode = false;
     bool xScaleIsLogarithmic = false; //false = linear, true = logarithmic
@@ -168,10 +169,10 @@ signals:
     void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels);
 private slots:
 
-
 private:
     QColor getNextColor();
     Enums::PlotType plotType = Enums::PlotType::General;
+    PlayPanel *playerPanel = nullptr;
 };
 
 #endif // PLOT_H

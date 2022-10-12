@@ -92,7 +92,6 @@ SOURCES += main.cpp\
     plot/imagerenderdialog.cpp \
     plot/plotarea.cpp \
     plot/plotmodel.cpp \
-    plot/timeplot.cpp \
     plot/zoomstack.cpp \
     plot/spectrogram.cpp \
     plot/graph2d.cpp \
@@ -214,7 +213,6 @@ HEADERS  += mainwindow.h \
     plot/plotarea.h \
     plot/plotmodel.h \
     plot/selectable.h \
-    plot/timeplot.h \
     plot/zoomstack.h \
     plot/spectrogram.h \
     plotdockfactory.h \
