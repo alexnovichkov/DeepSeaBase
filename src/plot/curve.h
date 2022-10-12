@@ -8,7 +8,6 @@ class PointLabel;
 class Channel;
 class DataHolder;
 class Plot;
-class Implementation;
 
 #include <qglobal.h>
 #include "selectable.h"
@@ -100,9 +99,6 @@ public:
     QList<PointLabel*> labels;
     MarkerShape m_markerShape = MarkerShape::NoMarker;
     int m_markerSize = 6;
-
-
-    Implementation *impl = nullptr;
 
     int fileNumber=0;
     bool duplicate;

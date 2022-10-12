@@ -16,6 +16,7 @@ QCPSpectrogram::QCPSpectrogram(const QString &title, Channel *channel, QCPAxis *
     setInterpolate(false);
     setTightBoundary(true);
     setSelectable(QCP::stSingleData);
+    type = Curve::Type::Spectrogram;
 }
 
 QCPSpectrogram::~QCPSpectrogram()
@@ -32,7 +33,7 @@ void QCPSpectrogram::attachTo(Plot *plot)
 void QCPSpectrogram::detachFrom(Plot *plot)
 {
     Curve::detachFrom(plot);
-//    plot->impl()->checkableLegend->removeItem(this);
+    plot->impl()->checkableLegend->removeItem(this);
     plot->impl()->removePlottable(this, false);
     plot->impl()->replot();
 }
@@ -40,6 +41,13 @@ void QCPSpectrogram::detachFrom(Plot *plot)
 QString QCPSpectrogram::title() const
 {
     return name();
+}
+
+LegendData QCPSpectrogram::commonLegendData() const
+{
+    auto data = Curve::commonLegendData();
+    data.checked = visible();
+    return data;
 }
 
 void QCPSpectrogram::setTitle(const QString &title)

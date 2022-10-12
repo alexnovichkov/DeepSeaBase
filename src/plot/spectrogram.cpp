@@ -9,6 +9,8 @@
 #include "logging.h"
 #include "qcpplot.h"
 #include "curve.h"
+#include "unitsconverter.h"
+#include "checkablelegend.h"
 
 Spectrogram::Spectrogram(QWidget *parent) : Plot(Enums::PlotType::Spectrogram, parent)
 {DDD;
@@ -83,15 +85,26 @@ void Spectrogram::updateAxesLabels()
 
 void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 {DDD;
+    if (!ch || !m_plot) return;
     //проверяем, построен ли канал на этом графике
     if (m->plotted(ch)) return;
 
-    if ((plotOnLeft && !canBePlottedOnLeftAxis(ch)) || (!plotOnLeft && !canBePlottedOnRightAxis(ch))) {
+    QString message;
+    if ((plotOnLeft && !canBePlottedOnLeftAxis(ch, &message)) || (!plotOnLeft && !canBePlottedOnRightAxis(ch, &message))) {
         QMessageBox::warning(widget(), QString("Не могу построить канал"),
                              QString("Тип графика не подходит.\n"
                                      "Сначала очистите график."));
         return;
     }
+
+    //скрываем все до этого построенные каналы
+    for (auto c: m->curves()) {
+        c->setVisible(false);
+        if (auto p = dynamic_cast<QCPAbstractPlottable*>(c)) p->setVisible(false);
+        impl()->checkableLegend->updateItem(c, c->commonLegendData());
+    }
+
+
 
     if (!ch->populated()) {
         ch->populate();
@@ -101,7 +114,9 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     m_plot->enableAxis(Enums::AxisType::atBottom, true);
 
     yValuesPresentationLeft = DataHolder::ShowAsReals;
-    yValuesPresentationRight = ch->data()->yValuesPresentation();
+    if (m->isEmpty()) {
+        yValuesPresentationRight = ch->data()->yValuesPresentation();
+    }
     ch->data()->setYValuesPresentation(yValuesPresentationRight);
     setAxis(Enums::AxisType::atLeft, ch->zName());
     m_plot->enableAxis(Enums::AxisType::atLeft, true);
@@ -127,7 +142,6 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 
     update();
     updatePlottedIndexes();
-//    updateCycled();
     emit channelPlotted(ch);
     emit curvesCountChanged(); //->MainWindow.updateActions
 }
@@ -159,7 +173,16 @@ bool Spectrogram::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
     Q_UNUSED(message);
     if (m->isEmpty()) return true;
 
-    return ch->data()->blocksCount()>1 && !hasCurves();
+    if (ch->data()->blocksCount()<=1) return false;
+
+    if (PhysicalUnits::Units::unitsAreSame(ch->xName(), xName) || xName.isEmpty()) { // тип графика совпадает
+        if (m->leftCurvesCount()==0 || yLeftName.isEmpty()
+            || PhysicalUnits::Units::unitsAreSame(ch->zName(), yLeftName))
+            return true;
+        else if (message) *message = "Единицы по оси Y не совпадают";
+    }
+    else if (message) *message = "Единицы по оси X не совпадают";
+    return false;
 }
 
 bool Spectrogram::canBePlottedOnRightAxis(Channel *ch, QString *message) const

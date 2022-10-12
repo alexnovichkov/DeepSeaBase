@@ -1,5 +1,6 @@
 #include "checkablelegend.h"
 #include "enums.h"
+#include "curve.h"
 
 QCPCheckableLegend::QCPCheckableLegend(QWidget *parent) : QObject(parent)
 {
@@ -224,6 +225,14 @@ bool QCPLegendModel::setData(const QModelIndex &index, const QVariant &value, in
         items[row].data.checked = value.toInt() == int(Qt::Checked);
         emit visibilityChanged(items[row].item, items[row].data.checked);
         emit dataChanged(index, index, QVector<int>()<<Qt::CheckStateRole);
+
+        if (items[row].item->type == Curve::Type::Spectrogram && items[row].data.checked) {
+            //скрываем все остальные спектрограммы
+            for (int i=0; i<rowCount(); ++i) {
+                if (i == row) continue;
+                setData(QAbstractTableModel::index(i, column), Qt::Unchecked, Qt::CheckStateRole);
+            }
+        }
 
         return true;
     }

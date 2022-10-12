@@ -35,7 +35,7 @@ public:
     virtual QPen pen() const override;
     virtual SamplePoint samplePoint(SelectedPoint point) const override;
     virtual SelectedPoint closest(const QPoint &pos, double *dist, double *dist2) const override;
-
+    virtual LegendData commonLegendData() const override;
 protected:
     virtual void updatePen() override;
 private:
