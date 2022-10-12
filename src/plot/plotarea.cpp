@@ -2,7 +2,6 @@
 
 #include <QtWidgets>
 #include "plot/plot.h"
-#include "timeplot.h"
 #include "spectrogram.h"
 #include "plot/curve.h"
 #include "settings.h"
@@ -212,6 +211,7 @@ void PlotArea::addPlot(Enums::PlotType type)
 {DDD;
     if (m_plot) {
         plotsLayout->removeWidget(m_plot->widget());
+        if (m_plot->toolBarWidget()) toolBar()->removeAction(toolBarAction);
         delete m_plot;
     }
     else {
@@ -242,7 +242,9 @@ void PlotArea::addPlot(Enums::PlotType type)
             break;
         }
     }
-    if (m_plot->toolBarWidget()) toolBar()->addWidget(m_plot->toolBarWidget());
+    if (m_plot->toolBarWidget())
+        toolBarAction = toolBar()->addWidget(m_plot->toolBarWidget());
+
 
 
     plotsLayout->addWidget(m_plot->widget(),1,0);

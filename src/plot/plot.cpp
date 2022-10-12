@@ -485,6 +485,8 @@ void Plot::showContextMenu(const QPoint &pos, Enums::AxisType axis)
 
 bool Plot::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
 {DDD;
+    if (m->isEmpty()) return true;
+
     //не можем строить временные графики на графике спектров и наоборот
     if (ch->type() == Descriptor::TimeResponse && type() != Enums::PlotType::Time) {
         if (message) *message = "Нельзя строить временные графики на графике спектров";
@@ -507,6 +509,8 @@ bool Plot::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
 
 bool Plot::canBePlottedOnRightAxis(Channel *ch, QString *message) const
 {DDD;
+    if (m->isEmpty()) return true;
+
     //не можем строить временные графики на графике спектров и наоборот
     if (ch->type() == Descriptor::TimeResponse && type() != Enums::PlotType::Time) {
         if (message) *message = "Нельзя строить временные графики на графике спектров";

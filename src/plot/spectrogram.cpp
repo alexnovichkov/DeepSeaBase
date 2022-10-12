@@ -157,6 +157,8 @@ void Spectrogram::updateBounds()
 bool Spectrogram::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
 {DDD;
     Q_UNUSED(message);
+    if (m->isEmpty()) return true;
+
     return ch->data()->blocksCount()>1 && !hasCurves();
 }
 
@@ -164,6 +166,8 @@ bool Spectrogram::canBePlottedOnRightAxis(Channel *ch, QString *message) const
 {DDD;
     Q_UNUSED(ch);
     Q_UNUSED(message);
+    if (m->isEmpty()) return true;
+
     return false;
 }
 

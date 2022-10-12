@@ -1477,12 +1477,31 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
         p = currentPlot->plot();
         if (!p) currentPlot->onDropEvent(plotOnLeft, toPlot);
     }
-    if (p)
-        for (auto ch: toPlot) {
-            int index=-1;
-            if (currentTab) currentTab->model->contains(ch->descriptor(),&index);
-            p->plotChannel(ch, plotOnLeft, index+1);
+    if (p) {//график существует
+
+        //определяем тип графика
+        auto type = Enums::PlotType::General;
+        if (!toPlot.isEmpty()) {
+            if (toPlot.first()->type() == Descriptor::TimeResponse)
+                type = Enums::PlotType::Time;
+            else if (toPlot.first()->data()->blocksCount()>1)
+                type = Enums::PlotType::Spectrogram;
+            else if (toPlot.first()->octaveType() != 0)
+                type = Enums::PlotType::Octave;
         }
+        //если график пустой, и его тип не совпадает с типом для новых кривых,
+        //создаем новый график
+        if (p->model()->isEmpty() && type != p->type()) {
+            currentPlot->onDropEvent(plotOnLeft, toPlot);
+        }
+        else {//строим кривые на старом графике
+            for (auto ch: toPlot) {
+                int index=-1;
+                if (currentTab) currentTab->model->contains(ch->descriptor(),&index);
+                p->plotChannel(ch, plotOnLeft, index+1);
+            }
+        }
+    }
 }
 
 void MainWindow::calculateSpectreRecords(bool useDeepsea)

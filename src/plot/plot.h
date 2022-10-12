@@ -173,6 +173,7 @@ private:
     QColor getNextColor();
     Enums::PlotType plotType = Enums::PlotType::General;
     PlayPanel *playerPanel = nullptr;
+    int colorMap = 0;
 };
 
 #endif // PLOT_H

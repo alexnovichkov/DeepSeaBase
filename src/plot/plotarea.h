@@ -56,6 +56,8 @@ private:
     Plot *m_plot = nullptr;
     QLabel * infoLabel;
 
+    QAction *toolBarAction = nullptr;
+
     QAction *autoscaleXAct = nullptr;
     QAction *autoscaleYAct = nullptr;
     QAction *autoscaleYSlaveAct = nullptr;
