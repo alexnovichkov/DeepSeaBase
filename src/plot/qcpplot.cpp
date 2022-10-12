@@ -52,10 +52,7 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     setNoAntialiasingOnDrag(true);
 
     setInteractions(QCP::iRangeDrag|
-                    QCP::iRangeZoom|
-                    QCP::iSelectPlottables|
-                    QCP::iSelectItems|
-                    QCP::iSelectOther);
+                    QCP::iRangeZoom);
     setSelectionRectMode(QCP::srmZoom);
     setMouseTracking(true);
     setPlottingHints( QCP::phCacheLabels | /*QCP::phFastPolylines |*/ QCP::phImmediateRefresh);
@@ -121,6 +118,29 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     }
 
     setEventFilter(new CanvasEventFilter(plot));
+
+    if (plot->type() == Enums::PlotType::Spectrogram) {
+        spectreRect = new QCPAxisRect(this);
+        throughRect = new QCPAxisRect(this);
+
+        QCPLayoutGrid *subLayout = new QCPLayoutGrid;
+        plotLayout()->addElement(0, 2, subLayout);
+
+        subLayout->addElement(0,0,new QCPTextElement(this, "Спектр"));
+        subLayout->addElement(1,0,spectreRect);
+        subLayout->addElement(2,0,new QCPTextElement(this, "Проходная"));
+        subLayout->addElement(3,0,throughRect);
+        plotLayout()->setColumnStretchFactors({4,0.1,2});
+        QList<QCPAxis*> allAxes;
+        allAxes << spectreRect->axes() << throughRect->axes();
+        for (QCPAxis *axis: allAxes)
+        {
+          axis->setLayer("axes");
+          axis->grid()->setLayer("grid");
+        }
+        spectreGraph = addGraph(spectreRect->axis(QCPAxis::atBottom), spectreRect->axis(QCPAxis::atLeft));
+        throughGraph = addGraph(throughRect->axis(QCPAxis::atBottom), throughRect->axis(QCPAxis::atLeft));
+    }
 }
 
 QCPPlot::~QCPPlot()
@@ -152,6 +172,36 @@ void QCPPlot::cancelZoom()
         mSelectionRect->cancel();
         mSelectionRect->setVisible(false);
     }
+}
+
+void QCPPlot::updateSecondaryPlots(const QPointF &value)
+{DD;
+    Curve *curve = nullptr;
+    for (auto c: parent->model()->curves()) {
+        if (auto plottable = dynamic_cast<QCPAbstractPlottable*>(c); plottable->visible()) {
+            curve = c;
+            break;
+        }
+    }
+    if (!curve) return;
+
+    if (spectreRect) {
+        QVector<double> data = curve->channel->data()->yValues(curve->channel->data()->nearestZ(value.y()));
+        QVector<double> xData = curve->channel->data()->xValues();
+        spectreGraph->setData(xData, data, true);
+        for (auto axis: spectreRect->axes()) axis->rescale(true);
+        spectreGraph->rescaleAxes();
+    }
+    if (throughRect) {
+        QVector<double> data;
+        double xIndex = curve->channel->data()->nearest(value.x());
+        for (int i=0; i<curve->channel->data()->blocksCount(); ++i)
+            data << curve->channel->data()->yValue(xIndex, i);
+        QVector<double> xData = curve->channel->data()->zValues();
+        throughGraph->setData(xData, data, true);
+        throughGraph->rescaleAxes();
+    }
+    replot();
 }
 
 void QCPPlot::setEventFilter(CanvasEventFilter *filter)

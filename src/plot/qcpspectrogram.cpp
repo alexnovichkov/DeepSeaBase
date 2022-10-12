@@ -99,7 +99,21 @@ SamplePoint QCPSpectrogram::samplePoint(SelectedPoint point) const
 
 SelectedPoint QCPSpectrogram::closest(const QPoint &pos, double *dist, double *dist2) const
 {
-    return SelectedPoint();
+    SelectedPoint p;
+    const size_t numSamples = channel->data()->samplesCount();
+    if (numSamples <= 0) return p;
+
+    auto xIndex = channel->data()->nearest(keyAxis()->pixelToCoord(pos.x()));
+    auto zIndex = channel->data()->nearestZ(valueAxis()->pixelToCoord(pos.y()));
+
+    if (xIndex == -1 || zIndex == -1) return p;
+
+    if (dist) *dist = qAbs(pos.x() - keyAxis()->coordToPixel(channel->data()->xValue(xIndex)));
+    if (dist2) *dist2 = qAbs(pos.y() - valueAxis()->coordToPixel(channel->data()->zValue(zIndex)));
+
+    p.x = xIndex;
+    p.z = zIndex;
+    return p;
 }
 
 void QCPSpectrogram::updatePen()

@@ -23,17 +23,23 @@ PointLabel::PointLabel(Plot *plot, Curve *curve)
     setBrush(QColor(255,255,255,220));
     setAntialiased(false);
 
-    m_marker = new QCPTracer(plot->impl());
-    m_marker->setStyle(QCPTracer::tsSquare);
-    m_marker->setSize(8);
-    m_marker->setAntialiased(false);
+    m_tracer = new QCPTracer(plot->impl());
+    m_tracer->setStyle(QCPTracer::tsSquare);
+    m_tracer->setSize(8);
+    m_tracer->setAntialiased(false);
     if (auto g = dynamic_cast<Graph2D*>(m_curve)) {
-        m_marker->setGraph(g);
-        m_marker->setGraphIndex(0);
+        m_tracer->setGraph(g);
+        m_tracer->setGraphIndex(0);
     }
+    else {
+        m_tracer->position->setAxes(plot->impl()->xAxis, plot->impl()->yAxis);
+        m_tracer->position->setType(QCPItemPosition::ptPlotCoords);
+    }
+//    m_tracer->setLayer("overlay");
+//    setLayer("overlay");
 
     setPositionAlignment(Qt::AlignBottom | Qt::AlignHCenter);
-    position->setParentAnchor(m_marker->position);
+    position->setParentAnchor(m_tracer->position);
     position->setType(QCPItemPosition::ptAbsolute);
     position->setCoords({0, -10});
 
@@ -44,13 +50,13 @@ void PointLabel::detachFrom(Plot *plot)
 {
     plot->removeSelectable(this);
     plot->impl()->removeItem(this);
-    plot->impl()->removeItem(m_marker);
+    plot->impl()->removeItem(m_tracer);
 }
 
 void PointLabel::setVisible(bool visible)
 {DD;
     QCPLayerable::setVisible(visible);
-    if (m_marker) m_marker->setVisible(visible);
+    if (m_tracer) m_tracer->setVisible(visible);
 }
 
 void PointLabel::setMode(PointLabel::Mode mode)
@@ -71,8 +77,14 @@ SamplePoint PointLabel::getOrigin() const
 void PointLabel::setPoint(SelectedPoint point)
 {
     m_point = point;
-    m_marker->setGraphIndex(point.x);
-    m_marker->updatePosition();
+    if (dynamic_cast<Graph2D*>(m_curve)) {
+        m_tracer->setGraphIndex(point.x);
+        m_tracer->updatePosition();
+    }
+    else {
+        auto val = m_curve->samplePoint(m_point);;
+        m_tracer->position->setCoords({val.x, val.z});
+    }
     updateLabel();
 }
 

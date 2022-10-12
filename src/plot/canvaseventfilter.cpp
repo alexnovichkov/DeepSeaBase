@@ -159,6 +159,10 @@ void CanvasEventFilter::procAxisEvent(QCPAxis *axis, QEvent *event)
 
 void CanvasEventFilter::mousePress(QMouseEvent *event)
 {DDD;
+    if (!plot->impl()->xAxis->range().contains(plot->impl()->xAxis->pixelToCoord(event->pos().x())) ||
+        !plot->impl()->yAxis->range().contains(plot->impl()->yAxis->pixelToCoord(event->pos().y())))
+        return;
+
     startPosition = event->pos();
 
     switch (event->button()) {
@@ -221,7 +225,7 @@ void CanvasEventFilter::mouseRelease(QMouseEvent *event)
             plot->impl()->endZoom(event);
         actionType = ActionType::None;
     }
-    else {
+    else if (actionType == ActionType::Pick) {
         picker->endPick(event);
         actionType = ActionType::None;
     }

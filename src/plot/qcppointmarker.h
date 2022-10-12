@@ -52,7 +52,7 @@ private:
     Mode m_mode = Mode::XValue;
     Plot *m_plot = nullptr;
     Curve *m_curve = nullptr;
-    QCPTracer *m_marker = nullptr;
+    QCPTracer *m_tracer = nullptr;
 };
 
 #endif // QCPPOINTMARKER_H

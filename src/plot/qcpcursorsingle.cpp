@@ -43,13 +43,14 @@ void QCPCursorSingle::moveTo(const QPointF &pos1, const QPointF &pos2, bool sile
 }
 
 void QCPCursorSingle::moveTo(const QPointF &pos1, bool silent)
-{DDD;
+{DD;
     auto pos = m_snapToValues ? correctedPos(pos1) : pos1;
 
     cursor->moveTo(pos);
     if (axisTagX) axisTagX->updatePosition(pos.x());
     if (axisTagY) axisTagY->updatePosition(pos.y());
     if (!silent) emit cursorPositionChanged();
+    plot->impl()->updateSecondaryPlots(pos);
     update();
 }
 
@@ -59,7 +60,7 @@ void QCPCursorSingle::moveTo(const QPointF &pos1, QCPTrackingCursor *source, boo
 }
 
 void QCPCursorSingle::moveTo(Qt::Key key, int count, QCPTrackingCursor *source, bool silent)
-{DDD;
+{DD;
     if (count == 0 || source != cursor) return;
     QPointF pos = cursor->value();
     double rangeX = m_plot->plotRange(cursor->xAxis()).dist();

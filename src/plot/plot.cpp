@@ -537,7 +537,7 @@ void Plot::focusPlot()
 }
 
 void Plot::addSelectable(Selectable *item)
-{
+{;
     if (!selectables.contains(item))
         selectables.append(item);
 }
@@ -874,6 +874,8 @@ void Plot::switchCursor()
 
 void Plot::editLegendItem(Curve *curve)
 {DDD;
+    if (curve->type == Curve::Type::Spectrogram) return; //у спектрограммы нет свойство кривой
+
     CurvePropertiesDialog dialog(curve, this);
     if (cursorBox) connect(&dialog, SIGNAL(curveChanged(Curve*)), cursorBox, SLOT(updateLayout()));
     dialog.exec();

@@ -72,7 +72,7 @@ void QCPTrackingCursor::moveTo(const QPointF &value)
 
     horizontal->point1->setCoords(0.0, value.y());
     horizontal->point2->setCoords(10.0, value.y());
-    impl->layer("overlay")->replot();
+//    impl->layer("overlay")->replot();
 }
 
 void QCPTrackingCursor::moveToPos(QPoint pos, QPoint startPos)

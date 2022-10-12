@@ -6,6 +6,12 @@
 #include <QMenu>
 #include "qcpplot.h"
 
+QDebug operator<<(QDebug deb, const Selected &o)
+{
+    deb << o.point.x << o.point.z << o.object;
+    return deb;
+}
+
 Picker::Picker(Plot *plot) : plot(plot)
 {DDD;
 //    mode = ModeNone;

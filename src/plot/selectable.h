@@ -4,6 +4,7 @@
 #include <QPoint>
 #include <QList>
 #include <QAction>
+#include <QDebug>
 
 class Selectable;
 
@@ -37,6 +38,8 @@ struct Selected
     }
     inline void clear() {object = nullptr; point.x=-1; point.z=-1;}
 };
+
+QDebug operator<<(QDebug, const Selected &);
 
 class Selectable
 {

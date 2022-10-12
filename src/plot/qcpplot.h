@@ -30,6 +30,8 @@ public:
     void endZoom(QMouseEvent *event);
     void cancelZoom();
 
+    void updateSecondaryPlots(const QPointF &value);
+
     QCPCheckableLegend *checkableLegend = nullptr;
 signals:
     void canvasDoubleClicked(QPoint);
@@ -45,8 +47,11 @@ private:
     QCPInfoOverlay *infoOverlay = nullptr;
     QCPAxisOverlay *leftOverlay = nullptr;
     QCPAxisOverlay *rightOverlay = nullptr;
-
     QCPColorScale *colorScale = nullptr;
+    QCPAxisRect *spectreRect = nullptr;
+    QCPAxisRect *throughRect = nullptr;
+    QCPGraph *spectreGraph = nullptr;
+    QCPGraph *throughGraph = nullptr;
 
     // PlotInterface interface
 public:
