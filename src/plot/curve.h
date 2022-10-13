@@ -71,6 +71,7 @@ public:
     virtual SamplePoint samplePoint(SelectedPoint point) const = 0;
 
     void setVisible(bool visible);
+    virtual bool isVisible() const = 0;
 
     void addLabel(PointLabel *label);
     void removeLabel(PointLabel *label);

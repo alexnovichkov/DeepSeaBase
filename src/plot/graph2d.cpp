@@ -1049,6 +1049,11 @@ double Graph2D::pointDistance(const QPointF &pixelPoint, int &closestData) const
     return qSqrt(minDistSqr);
 }
 
+bool Graph2D::isVisible() const
+{
+    return visible();
+}
+
 void Graph2D::drawLegendIcon(QCPPainter *painter, const QRectF &rect) const
 {
     // draw fill:

@@ -172,24 +172,25 @@ QList<QAction *> QCPTrackingCursor::actions()
 bool QCPTrackingCursor::underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const
 {DDD;
     Q_UNUSED(point);
+
     int newX = impl->xAxis->coordToPixel(xValue());
     int newY = impl->yAxis->coordToPixel(yValue());
 
-    if (type == Cursor::Style::Vertical) {
+    if (type == Cursor::Style::Vertical && vertical->visible()) {
         if (qAbs(newX-pos.x())<=5) {
             if (distanceX) *distanceX = qAbs(newX-pos.x());
             if (distanceY) *distanceY = qInf();
             return true;
         }
     }
-    else if (type == Cursor::Style::Horizontal) {
+    else if (type == Cursor::Style::Horizontal && horizontal->visible()) {
         if (qAbs(newY-pos.y())<=5) {
             if (distanceY) *distanceY = qAbs(newY-pos.y());
             if (distanceX) *distanceX = qInf();
             return true;
         }
     }
-    else if (type == Cursor::Style::Cross) {
+    else if (type == Cursor::Style::Cross && vertical->visible() && horizontal->visible()) {
         auto x = qAbs(newX-pos.x());
         auto y = qAbs(newY-pos.y());
         auto m = std::min(x, y);
@@ -215,6 +216,7 @@ void QCPTrackingCursor::updateSelection(SelectedPoint point)
     p.setWidth(selected()?2:1);
     horizontal->setPen(p);
     vertical->setPen(p);
+    impl->updateSecondaryPlots({xValue(), yValue()});
     impl->layer("overlay")->replot();
 }
 

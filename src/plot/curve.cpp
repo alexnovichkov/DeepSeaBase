@@ -246,6 +246,7 @@ LegendData Curve::commonLegendData() const
 
 bool Curve::underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const
 {DDD;
+    if (!isVisible()) return false;
     SelectedPoint p = closest(pos, distanceX, distanceY);
 
     //no closest point for this pos

@@ -126,9 +126,12 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
         QCPLayoutGrid *subLayout = new QCPLayoutGrid;
         plotLayout()->addElement(0, 2, subLayout);
 
-        subLayout->addElement(0,0,new QCPTextElement(this, "Спектр"));
+        spectreTitle = new QCPTextElement(this, "Спектр");
+        throughTitle = new QCPTextElement(this, "Проходная");
+
+        subLayout->addElement(0,0,spectreTitle);
         subLayout->addElement(1,0,spectreRect);
-        subLayout->addElement(2,0,new QCPTextElement(this, "Проходная"));
+        subLayout->addElement(2,0,throughTitle);
         subLayout->addElement(3,0,throughRect);
         plotLayout()->setColumnStretchFactors({4,0.1,2});
         QList<QCPAxis*> allAxes;
@@ -176,6 +179,9 @@ void QCPPlot::cancelZoom()
 
 void QCPPlot::updateSecondaryPlots(const QPointF &value)
 {DD;
+    static QPointF oldValue;
+    if (!qIsNaN(value.x())) oldValue = value;
+
     Curve *curve = nullptr;
     for (auto c: parent->model()->curves()) {
         if (auto plottable = dynamic_cast<QCPAbstractPlottable*>(c); plottable->visible()) {
@@ -183,23 +189,38 @@ void QCPPlot::updateSecondaryPlots(const QPointF &value)
             break;
         }
     }
-    if (!curve) return;
-
-    if (spectreRect) {
-        QVector<double> data = curve->channel->data()->yValues(curve->channel->data()->nearestZ(value.y()));
-        QVector<double> xData = curve->channel->data()->xValues();
-        spectreGraph->setData(xData, data, true);
-        for (auto axis: spectreRect->axes()) axis->rescale(true);
-        spectreGraph->rescaleAxes();
+    if (!curve) {
+        if (spectreGraph) spectreGraph->setVisible(false);
+        if (throughGraph) throughGraph->setVisible(false);
+        if (spectreTitle) spectreTitle->setText("Спектр");
+        if (throughTitle) throughTitle->setText("Проходная");
     }
-    if (throughRect) {
-        QVector<double> data;
-        double xIndex = curve->channel->data()->nearest(value.x());
-        for (int i=0; i<curve->channel->data()->blocksCount(); ++i)
-            data << curve->channel->data()->yValue(xIndex, i);
-        QVector<double> xData = curve->channel->data()->zValues();
-        throughGraph->setData(xData, data, true);
-        throughGraph->rescaleAxes();
+    else {
+        if (spectreRect) {
+            spectreGraph->setVisible(true);
+            auto zIndex = curve->channel->data()->nearestZ(oldValue.y());
+            QVector<double> data = curve->channel->data()->yValues(zIndex);
+            QVector<double> xData = curve->channel->data()->xValues();
+            spectreGraph->setData(xData, data, true);
+            for (auto axis: spectreRect->axes()) axis->rescale(true);
+            spectreGraph->rescaleAxes();
+            spectreTitle->setText(QString("Спектр %1 %2")
+                                  .arg(curve->channel->data()->zValue(zIndex))
+                                  .arg(curve->channel->zName()));
+        }
+        if (throughRect) {
+            throughGraph->setVisible(true);
+            QVector<double> data;
+            double xIndex = curve->channel->data()->nearest(oldValue.x());
+            for (int i=0; i<curve->channel->data()->blocksCount(); ++i)
+                data << curve->channel->data()->yValue(xIndex, i);
+            QVector<double> xData = curve->channel->data()->zValues();
+            throughGraph->setData(xData, data, true);
+            throughGraph->rescaleAxes();
+            throughTitle->setText(QString("Проходная %1 %2")
+                                  .arg(curve->channel->data()->xValue(xIndex))
+                                  .arg(curve->channel->xName()));
+        }
     }
     replot();
 }
@@ -257,6 +278,7 @@ void QCPPlot::createLegend()
     connect(checkableLegend, &QCPCheckableLegend::visibilityChanged, [=](Curve *c, bool visible){
         c->setVisible(visible);
         if (auto p = dynamic_cast<QCPAbstractPlottable*>(c)) p->setVisible(visible);
+        updateSecondaryPlots({qQNaN(), qQNaN()});
         replot();
     });
 }
@@ -472,45 +494,42 @@ Selected QCPPlot::findObject(QPoint pos) const
     {
         double minDist = qInf();
         for (auto candidate: candidates) {
-//            if (auto selectable = dynamic_cast<Selectable*>(candidate)) {
-                if (isCurve(candidate)) continue;
-                double distx = 0.0;
-                double disty = 0.0;
-                SelectedPoint point;
-                if (candidate->underMouse(pos, &distx, &disty, &point)) {
-                    double dist = 0.0;
-                    if (distx == qInf()) dist = disty;
-                    else if (disty == qInf()) dist = distx;
-                    else dist = sqrt(distx*distx+disty*disty);
-                    if (!selected.object || dist < minDist) {
-                        selected.object = candidate;
-                        selected.point = point;
-                        minDist = dist;
-                    }
+            if (isCurve(candidate)) continue;
+            double distx = 0.0;
+            double disty = 0.0;
+            SelectedPoint point;
+            if (candidate->underMouse(pos, &distx, &disty, &point)) {
+                double dist = 0.0;
+                if (distx == qInf()) dist = disty;
+                else if (disty == qInf()) dist = distx;
+                else dist = sqrt(distx*distx+disty*disty);
+                if (!selected.object || dist < minDist) {
+                    selected.object = candidate;
+                    selected.point = point;
+                    minDist = dist;
                 }
-//            }
+            }
         }
     }
     if (!selected.object) {
         double minDist = qInf();
         for (auto candidate: candidates) {
-//            if (auto selectable = dynamic_cast<Selectable*>(candidate)) {
-                if (!isCurve(candidate)) continue;
-                double distx = 0.0;
-                double disty = 0.0;
-                SelectedPoint point;
-                if (candidate->underMouse(pos, &distx, &disty, &point)) {
-                    double dist = 0.0;
-                    if (distx == qInf()) dist = disty;
-                    else if (disty == qInf()) dist = distx;
-                    else dist = sqrt(distx*distx+disty*disty);
-                    if (!selected.object || dist < minDist) {
-                        selected.object = candidate;
-                        selected.point = point;
-                        minDist = dist;
-                    }
+            if (!isCurve(candidate)) continue;
+
+            double distx = 0.0;
+            double disty = 0.0;
+            SelectedPoint point;
+            if (candidate->underMouse(pos, &distx, &disty, &point)) {
+                double dist = 0.0;
+                if (distx == qInf()) dist = disty;
+                else if (disty == qInf()) dist = distx;
+                else dist = sqrt(distx*distx+disty*disty);
+                if (!selected.object || dist < minDist) {
+                    selected.object = candidate;
+                    selected.point = point;
+                    minDist = dist;
                 }
-//            }
+            }
         }
     }
     return selected;

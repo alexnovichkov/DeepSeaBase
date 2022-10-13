@@ -115,7 +115,9 @@ void PointLabel::cycle()
 
 bool PointLabel::underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const
 {
+    if (!visible()) return false;
     Q_UNUSED(point);
+
     auto origin = getOrigin();
     QPointF p(m_plot->plotToScreenCoordinates(m_curve->xAxis(), origin.x),
                   m_plot->plotToScreenCoordinates(m_curve->yAxis(), origin.y));

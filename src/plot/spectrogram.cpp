@@ -44,6 +44,7 @@ void Spectrogram::deleteCurve(Curve *curve, bool doReplot)
         }
         if (!hasCurves()) xName.clear();
         m_plot->setInfoVisible(m->size()==0);
+        m_plot->updateSecondaryPlots({qQNaN(), qQNaN()});
         if (doReplot) update();
     }
 }
@@ -139,7 +140,7 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     m_plot->setInfoVisible(false);
 
     g->attachTo(this);
-
+    m_plot->updateSecondaryPlots({qQNaN(), qQNaN()});
     update();
     updatePlottedIndexes();
     emit channelPlotted(ch);

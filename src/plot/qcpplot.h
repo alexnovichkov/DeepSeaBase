@@ -52,6 +52,9 @@ private:
     QCPAxisRect *throughRect = nullptr;
     QCPGraph *spectreGraph = nullptr;
     QCPGraph *throughGraph = nullptr;
+    QCPTextElement *spectreTitle = nullptr;
+    QCPTextElement *throughTitle = nullptr;
+
 
     // PlotInterface interface
 public:

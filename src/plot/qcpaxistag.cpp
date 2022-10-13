@@ -174,7 +174,7 @@ bool QCPAxisTag::draggable() const
 bool QCPAxisTag::underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const
 {
     Q_UNUSED(point);
-    return mLabel->underMouse(pos, distanceX, distanceY);
+    return mLabel->visible() && mLabel->underMouse(pos, distanceX, distanceY);
 }
 
 QList<QAction *> QCPAxisTag::actions()

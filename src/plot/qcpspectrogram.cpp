@@ -24,6 +24,11 @@ QCPSpectrogram::~QCPSpectrogram()
     delete m_data;
 }
 
+bool QCPSpectrogram::isVisible() const
+{
+    return visible();
+}
+
 void QCPSpectrogram::attachTo(Plot *plot)
 {
     Curve::attachTo(plot);
