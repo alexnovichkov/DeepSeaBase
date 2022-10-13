@@ -210,8 +210,8 @@ Plot *PlotArea::plot()
 void PlotArea::addPlot(Enums::PlotType type)
 {DDD;
     if (m_plot) {
-        plotsLayout->removeWidget(m_plot->widget());
         if (m_plot->toolBarWidget()) toolBar()->removeAction(toolBarAction);
+        delete m_plot->legend;
         delete m_plot;
     }
     else {
