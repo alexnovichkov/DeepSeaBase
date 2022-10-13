@@ -21,6 +21,7 @@ public:
         XYZValue
     };
     explicit PointLabel(Plot *plot, Curve *curve);
+    ~PointLabel() {}
 
     void detachFrom(Plot *plot);
 

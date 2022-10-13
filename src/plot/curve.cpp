@@ -41,10 +41,6 @@ Curve::Curve(const QString &title, Channel *channel)
 
 Curve::~Curve()
 {DDD;
-//    detachFrom(m_plot);
-    qDeleteAll(labels);
-    labels.clear();
-
     //maybe clear data that is over 1000000 samples
     if (channel) {
         channel->maybeClearData();
@@ -64,9 +60,12 @@ void Curve::attachTo(Plot *plot)
 void Curve::detachFrom(Plot *plot)
 {
     //detach labels
-    for(PointLabel *l: labels) l->detachFrom(plot);
+    for(PointLabel *l: labels)
+        l->detachFrom(plot);
+
     //detach marker
-    if (m_pointMarker) m_pointMarker->detachFrom(plot);
+    if (m_pointMarker)
+        m_pointMarker->detachFrom(plot);
     plot->removeSelectable(this);
 }
 
@@ -350,4 +349,5 @@ void Curve::updateSelection(SelectedPoint point)
         m_pointMarker->setPoint(selectedPoint);
         m_pointMarker->setVisible(selected());
     }
+    m_plot->replot();
 }

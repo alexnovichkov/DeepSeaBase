@@ -62,7 +62,7 @@ Source: {#PathToQt}\bin\Qt5Widgets.dll; DestDir: "{app}"; Flags: ignoreversion; 
 Source: {#PathToQt}\bin\Qt5WinExtras.dll; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: {#PathToQt}\bin\Qt5Multimedia.dll; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: {#PathToQt}\bin\Qt5Network.dll; DestDir: "{app}"; Flags: ignoreversion; Components: main
-Source: "C:\Qwt-6.2.0-dev\x32\lib\qwt.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: main
+;Source: "C:\Qwt-6.2.0-dev\x32\lib\qwt.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: "E:\My\build\DeepSeaBase\3rdParty\bin\samplerate.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: "E:\My\programming\sources\fftw-3.3.5-dll32\libfftw3-3.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: "E:\My\programming\ADS\ADSx32-release\lib\qtadvanceddocking.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: main
