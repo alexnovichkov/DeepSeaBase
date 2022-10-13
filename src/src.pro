@@ -103,9 +103,7 @@ SOURCES += main.cpp\
     methods/dfdmethods/timemethod.cpp \
     curvepropertiesdialog.cpp \
     tab.cpp \
-    tabdock.cpp \
     tabdockfactory.cpp \
-    tabwidget.cpp \
     coloreditdialog.cpp \
     colorselector.cpp \
     correctiondialog.cpp \
@@ -225,9 +223,7 @@ HEADERS  += mainwindow.h \
     curvepropertiesdialog.h \
     stepitemdelegate.h \
     tab.h \
-    tabdock.h \
     tabdockfactory.h \
-    tabwidget.h \
     coloreditdialog.h \
     colorselector.h \
     correctiondialog.h \
