@@ -123,7 +123,17 @@ SelectedPoint QCPSpectrogram::closest(const QPoint &pos, double *dist, double *d
 
 void QCPSpectrogram::updatePen()
 {
+    updateLegendIcon(Qt::SmoothTransformation, {32,32});
     m_plot->impl()->checkableLegend->updateItem(this, commonLegendData());
+}
+
+QIcon QCPSpectrogram::thumbnail() const
+{
+    QPixmap pix(16,10);
+    QCPPainter p(&pix);
+    p.fillRect(0,0,16,10, Qt::white);
+    drawLegendIcon(&p, pix.rect());
+    return QIcon(pix);
 }
 
 void QCPSpectrogram::setDataRange(const QCPRange &dataRange)
@@ -159,6 +169,7 @@ void QCPSpectrogram::setGradient(const QCPColorGradient &gradient)
     mGradient = gradient;
     mMapImageInvalidated = true;
     emit gradientChanged(mGradient);
+    updateLegendIcon(Qt::SmoothTransformation, {32,32});
   }
 }
 

@@ -1373,3 +1373,12 @@ void Graph2D::updatePen()
     updateScatter();
     if (m_plot) m_plot->impl()->checkableLegend->updateItem(this, commonLegendData());
 }
+
+QIcon Graph2D::thumbnail() const
+{
+    QPixmap pix(16,10);
+    QCPPainter p(&pix);
+    p.fillRect(0,0,16,10, Qt::white);
+    drawLegendIcon(&p, pix.rect());
+    return QIcon(pix);
+}

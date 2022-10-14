@@ -125,6 +125,7 @@ public:
     virtual bool draggable() const override;
 public:
     virtual void updatePen() = 0;
+    virtual QIcon thumbnail() const = 0;
 protected:
     virtual void updateSelection(SelectedPoint point) override;
     inline virtual bool updateAnyway() const override {return true;}

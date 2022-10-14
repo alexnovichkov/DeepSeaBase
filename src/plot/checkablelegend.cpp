@@ -211,7 +211,8 @@ QVariant QCPLegendModel::data(const QModelIndex &index, int role) const
     else if (role == Qt::DecorationRole) {
         switch (column) {
             case 0: {
-                return d.color;
+//                return d.color;
+                return items.at(row).item->thumbnail();
             }
             case 2: {
                 return d.fixed?QIcon(":/icons/pinned.png"):QIcon(":/icons/pin.png");

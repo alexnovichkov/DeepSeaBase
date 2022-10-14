@@ -38,6 +38,7 @@ public:
     virtual SelectedPoint closest(const QPoint &pos, double *dist, double *dist2) const override;
     virtual LegendData commonLegendData() const override;
     virtual void updatePen() override;
+    virtual QIcon thumbnail() const override;
 private:
     Data3D *m_data;
 public:

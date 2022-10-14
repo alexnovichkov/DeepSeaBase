@@ -133,6 +133,7 @@ public:
   virtual LegendData commonLegendData() const override;
   virtual void updateScatter() override;
   virtual void updatePen() override;
+  virtual QIcon thumbnail() const override;
 protected:
   friend class QCPCheckableLegendItem;
 };
