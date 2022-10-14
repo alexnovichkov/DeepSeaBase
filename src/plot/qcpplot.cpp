@@ -143,6 +143,8 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
         }
         spectreGraph = addGraph(spectreRect->axis(QCPAxis::atBottom), spectreRect->axis(QCPAxis::atLeft));
         throughGraph = addGraph(throughRect->axis(QCPAxis::atBottom), throughRect->axis(QCPAxis::atLeft));
+        spectreGraph->removeFromLegend();
+        throughGraph->removeFromLegend();
     }
 }
 
@@ -277,7 +279,12 @@ void QCPPlot::createLegend()
     });
     connect(checkableLegend, &QCPCheckableLegend::visibilityChanged, [=](Curve *c, bool visible){
         c->setVisible(visible);
-        if (auto p = dynamic_cast<QCPAbstractPlottable*>(c)) p->setVisible(visible);
+        if (auto p = dynamic_cast<QCPAbstractPlottable*>(c)) {
+            p->setVisible(visible);
+            if (visible) p->addToLegend();
+            else p->removeFromLegend();
+        }
+
         updateSecondaryPlots({qQNaN(), qQNaN()});
         replot();
     });
@@ -317,6 +324,11 @@ void QCPPlot::updateAxes()
 
 void QCPPlot::updateLegend()
 {
+    for (auto c: parent->model()->curves())
+        if (auto p = dynamic_cast<QCPAbstractPlottable*>(c)) {
+            if (!p->visible()) p->removeFromLegend();
+            else p->addToLegend();
+        }
 }
 
 QPoint QCPPlot::localCursorPosition(const QPoint &globalCursorPosition) const
@@ -431,6 +443,7 @@ void QCPPlot::setColorBarTitle(const QString &title)
 void QCPPlot::importPlot(const QString &fileName, const QSize &size, int resolution)
 {
     legend->setVisible(true);
+    updateLegend();
     QString format = fileName.section(".", -1,-1);
     if (!saveRastered(fileName, int(0.0393700787401575 * size.width() * resolution),
                       int(0.0393700787401575 * size.height() * resolution), 1.0, format.toLatin1().data(), -1, resolution))
@@ -453,6 +466,7 @@ void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution)
 
         //настройка отображения графиков
         legend->setVisible(true);
+        updateLegend();
 
         QCPPainter painter(&printer);
         QRectF pageRect = printer.pageRect(QPrinter::DevicePixel);
