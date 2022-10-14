@@ -163,6 +163,9 @@ void Plot::plotCurvesForDescriptor(FileDescriptor *d, int fileIndex)
 
 void Plot::update()
 {DDD;
+    for (auto c: m->curves()) {
+        c->updatePen();
+    }
     if (m_plot) m_plot->updateAxes();
     updateLabels();
     updateAxesLabels();

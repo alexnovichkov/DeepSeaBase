@@ -132,8 +132,8 @@ public:
   virtual SelectedPoint closest(const QPoint &pos, double *dist1, double *dist2) const override;
   virtual LegendData commonLegendData() const override;
   virtual void updateScatter() override;
-protected:
   virtual void updatePen() override;
+protected:
   friend class QCPCheckableLegendItem;
 };
 

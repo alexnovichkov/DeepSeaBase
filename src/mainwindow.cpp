@@ -8,7 +8,6 @@
 #include "sortabletreewidgetitem.h"
 #include "headerview.h"
 #include "plot/plot.h"
-#include "tabwidget.h"
 #include "colorselector.h"
 #include "coloreditdialog.h"
 #include "correctiondialog.h"
@@ -348,6 +347,7 @@ void MainWindow::createActions()
     plotOctaveAsHistogramAct->setChecked(Settings::getSetting("plotOctaveAsHistogram", false).toBool());
     connect(plotOctaveAsHistogramAct, &QAction::toggled, [=](bool checked){
         Settings::setSetting("plotOctaveAsHistogram", checked);
+        if (currentPlot && currentPlot->plot()) currentPlot->plot()->update();
     });
 }
 

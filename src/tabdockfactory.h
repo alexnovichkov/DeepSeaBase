@@ -6,9 +6,8 @@
 #include "DockComponentsFactory.h"
 #include "DockAreaWidget.h"
 #include "DockAreaTabBar.h"
-#include "mainwindow.h"
-#include "tabwidget.h"
 
+class MainWindow;
 class QLineEdit;
 
 #include "DockAreaTitleBar.h"

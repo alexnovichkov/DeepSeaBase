@@ -123,10 +123,11 @@ public:
     virtual void fix() override;
     virtual void remove() override;
     virtual bool draggable() const override;
+public:
+    virtual void updatePen() = 0;
 protected:
     virtual void updateSelection(SelectedPoint point) override;
     inline virtual bool updateAnyway() const override {return true;}
-    virtual void updatePen() = 0;
     Plot *m_plot = nullptr;
     mutable SelectedPoint selectedPoint;
     PointLabel *m_pointMarker = nullptr;
