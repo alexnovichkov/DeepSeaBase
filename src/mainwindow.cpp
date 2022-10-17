@@ -1470,6 +1470,8 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
             }
         }
     }
+    if (toPlot.isEmpty()) return;
+
     Plot* p = nullptr;
     if (auto plot = dynamic_cast<Plot*>(sender()))
         p = plot;
@@ -1495,11 +1497,20 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
             currentPlot->onDropEvent(plotOnLeft, toPlot);
         }
         else {//строим кривые на старом графике
-            for (auto ch: toPlot) {
+            {//Строим первую кривую и обновляем график, чтобы высота легенды определилась правильно
+                int index=-1;
+                if (currentTab) currentTab->model->contains(toPlot.first()->descriptor(),&index);
+                p->plotChannel(toPlot.first(), plotOnLeft, index+1);
+            }
+            qApp->processEvents();
+            //Строим остальные кривые
+            for (int i=1; i<toPlot.size(); ++i) {
+                auto ch = toPlot.at(i);
                 int index=-1;
                 if (currentTab) currentTab->model->contains(ch->descriptor(),&index);
                 p->plotChannel(ch, plotOnLeft, index+1);
             }
+
         }
     }
 }

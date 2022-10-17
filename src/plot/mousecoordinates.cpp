@@ -21,8 +21,7 @@ void MouseCoordinates::update(QMouseEvent *event)
     double x = parent->xAxis->pixelToCoord(event->pos().x());
     double y = parent->yAxis->pixelToCoord(event->pos().y());
     if (parent->xAxis->range().contains(x) && parent->yAxis->range().contains(y)) {
-        auto it = parent->itemAt(event->pos());
-        if (auto *c = dynamic_cast<QCPItemStraightLine *>(it)) {
+        if (auto c = parent->itemAt<QCPItemStraightLine>(event->pos())) {
             bool horizontal = qFuzzyCompare(c->point1->value()+1, c->point2->value()+1);
 
             if (horizontal) {
