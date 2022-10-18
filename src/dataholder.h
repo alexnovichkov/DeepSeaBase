@@ -60,7 +60,6 @@ public:
 
     void clear();
 
-
     void setTemporaryCorrection(double m_correctionValue, int type);
     void removeCorrection();
     bool makeCorrectionConstant();

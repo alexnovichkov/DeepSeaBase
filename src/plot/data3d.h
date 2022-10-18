@@ -20,6 +20,7 @@ public:
     int keySize() const;
     int valueSize() const;
     QCPRange keyRange() const;
+    QCPRange keyRange(int key) const;
     QCPRange valueRange() const;
     QCPRange dataBounds() const;
     double data(double key, double value) const;

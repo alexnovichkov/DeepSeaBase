@@ -14,7 +14,6 @@ class QCPSpectrogram : public QCPAbstractPlottable, public Curve
     Q_PROPERTY(QCPRange dataRange READ dataRange WRITE setDataRange NOTIFY dataRangeChanged)
     Q_PROPERTY(QCPAxis::ScaleType dataScaleType READ dataScaleType WRITE setDataScaleType NOTIFY dataScaleTypeChanged)
     Q_PROPERTY(QCPColorGradient gradient READ gradient WRITE setGradient NOTIFY gradientChanged)
-    Q_PROPERTY(bool interpolate READ interpolate WRITE setInterpolate)
     Q_PROPERTY(bool tightBoundary READ tightBoundary WRITE setTightBoundary)
     Q_PROPERTY(QCPColorScale* colorScale READ colorScale WRITE setColorScale)
     /// \endcond
@@ -45,7 +44,6 @@ public:
     // getters:
     QCPRange dataRange() const { return mDataRange; }
     QCPAxis::ScaleType dataScaleType() const { return mDataScaleType; }
-    bool interpolate() const { return mInterpolate; }
     bool tightBoundary() const { return mTightBoundary; }
     QCPColorGradient gradient() const { return mGradient; }
     QCPColorScale *colorScale() const { return mColorScale.data(); }
@@ -54,7 +52,6 @@ public:
     Q_SLOT void setDataRange(const QCPRange &dataRange);
     Q_SLOT void setDataScaleType(QCPAxis::ScaleType scaleType);
     Q_SLOT void setGradient(const QCPColorGradient &gradient);
-    void setInterpolate(bool enabled);
     void setTightBoundary(bool enabled);
     void setColorScale(QCPColorScale *colorScale);
 
@@ -77,7 +74,6 @@ public:
     QCPRange mDataRange;
     QCPAxis::ScaleType mDataScaleType;
     QCPColorGradient mGradient;
-    bool mInterpolate;
     bool mTightBoundary;
     QPointer<QCPColorScale> mColorScale;
 

@@ -58,6 +58,7 @@ QVariant OctaveFunction::m_getProperty(const QString &property) const
                 case OctaveType::Octave6: return 159;
                 case OctaveType::Octave12: return 160;
                 case OctaveType::Octave24: return 161;
+                default: break;
             }
         }
         if (property == "?/xName") return "Гц";

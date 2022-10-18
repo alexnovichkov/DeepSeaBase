@@ -179,6 +179,43 @@ double OctaveFilterBank::getBandWidth(double frequency) const
     return frequency*(fd-1.0/fd);
 }
 
+QPair<double, double> OctaveFilterBank::getBandBorders(int index, const QVector<double> &data, OctaveType octaveType)
+{
+    if (data.isEmpty()) return {0,0};
+    double factor = 2.0;
+    switch (octaveType) {
+        case OctaveType::Octave1: factor = pow(10.0, 0.15); break;
+        case OctaveType::Octave2: factor = pow(10.0, 0.075); break;
+        case OctaveType::Octave3: factor = pow(10.0, 0.05); break;
+        case OctaveType::Octave6: factor = pow(10.0, 0.025); break;
+        case OctaveType::Octave12: factor = pow(10.0, 0.0125); break;
+        case OctaveType::Octave24: factor = pow(10.0, 0.00625); break;
+        default: break;
+    }
+
+    if (data.size() == 1) return {data[0] / factor, data[0]*factor};
+    if (index == 0) return {data[0] / factor, qSqrt(data[0]*data[1])};
+    if (index == data.size()-1) return {qSqrt(data[index]*data[index-1]), data[index]*factor};
+    return {qSqrt(data[index]*data[index-1]), qSqrt(data[index]*data[index+1])};
+}
+
+OctaveType OctaveFilterBank::guessOctaveType(const QVector<double> &data)
+{
+    double step = 0;
+    for (int i=0; i<data.size()-1; ++i) {
+        step += data[i+1]/data[i];
+    }
+    step /=data.size()-1;
+
+    if (step >= 1.9 && step <= 2.1) return OctaveType::Octave1;
+    if (step >= 1.39 && step <= 1.43) return OctaveType::Octave2;
+    if (step >= 1.23 && step <= 1.3) return OctaveType::Octave3;
+    if (step >= 1.11 && step <= 1.14) return OctaveType::Octave6;
+    if (step >= 1.05 && step <= 1.07) return OctaveType::Octave12;
+    if (step >= 1.02 && step <= 1.04) return OctaveType::Octave24;
+    return OctaveType::Unknown;
+}
+
 QVector<double> OctaveFilterBank::octaveStrips(int octave, int count, int base)
 {
     QVector<double> v(count);
@@ -299,6 +336,7 @@ void OctaveFilterBank::update()
             n = 481;
             fd = (base == OctaveBase::Base2 ? pow(2.0, 1.0/48.0) : std::pow(10.0, 0.00625));
             break;
+        default: break;
     }
 
     freqs = octaveStrips(static_cast<int>(type), n, static_cast<int>(base));

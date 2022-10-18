@@ -1,6 +1,7 @@
 #include "data3d.h"
 
 #include "dataholder.h"
+#include "methods/octavefilterbank.h"
 
 Data3D::Data3D(DataHolder *data) : mData(data)
 {
@@ -23,6 +24,29 @@ QCPRange Data3D::keyRange() const
 {
     if (mData) return QCPRange(mData->xMin(), mData->xMax());
     return QCPRange();
+}
+
+QCPRange Data3D::keyRange(int key) const
+{
+    //возвращает границы для данного сэмпла
+    //если шкала по оси x равномерная или если шкала неравномерная, но записаны не третьоктавы,
+    //то возвращает +/- пол шага по оси х
+    if (!mData) return QCPRange();
+
+    if (mData->xValuesFormat() == DataHolder::XValuesUniform)
+        return {mData->xValue(key) - mData->xStep()/2, mData->xValue(key) + mData->xStep()/2};
+
+    auto octave = OctaveFilterBank::guessOctaveType(mData->xValues());
+    if (octave == OctaveType::Unknown) {
+        double lower = mData->xValue(key);
+        double upper = lower;
+        if (key > 0) lower = (lower + mData->xValue(key-1))/2.0;
+        if (key < mData->samplesCount()-1) upper = (upper + mData->xValue(key+1))/2.0;
+        return {lower, upper};
+    }
+
+    auto bounds = OctaveFilterBank::getBandBorders(key, mData->xValues(), octave);
+    return {bounds.first, bounds.second};
 }
 
 QCPRange Data3D::valueRange() const

@@ -16829,7 +16829,8 @@ void QCPColorGradient::colorize(const double *data, const QCPRange &range, QRgb 
 
 #include "data3d.h"
 
-void QCPColorGradient::colorize(Data3D *data, const QCPRange &range, QRgb *scanLine, int line, int n, int dataIndexFactor, bool logarithmic)
+void QCPColorGradient::colorize(Data3D *data, const QCPRange &range, QRgb *scanLine,
+                                int line, int n, int dataIndexFactor, bool logarithmic)
 {
     // If you change something here, make sure to also adapt color() and the other colorize() overload
     if (!data)
