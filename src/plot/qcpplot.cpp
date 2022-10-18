@@ -201,6 +201,7 @@ void QCPPlot::updateSecondaryPlots(const QPointF &value)
         if (spectreRect) {
             spectreGraph->setVisible(true);
             auto zIndex = curve->channel->data()->nearestZ(oldValue.y());
+            if (zIndex < 0) zIndex = 0;
             QVector<double> data = curve->channel->data()->yValues(zIndex);
             QVector<double> xData = curve->channel->data()->xValues();
             spectreGraph->setData(xData, data, true);
@@ -214,6 +215,7 @@ void QCPPlot::updateSecondaryPlots(const QPointF &value)
             throughGraph->setVisible(true);
             QVector<double> data;
             double xIndex = curve->channel->data()->nearest(oldValue.x());
+            if (xIndex < 0) xIndex = 0;
             for (int i=0; i<curve->channel->data()->blocksCount(); ++i)
                 data << curve->channel->data()->yValue(xIndex, i);
             QVector<double> xData = curve->channel->data()->zValues();
@@ -344,6 +346,10 @@ void QCPPlot::setAxisScale(Enums::AxisType axisType, Enums::AxisScale scale)
     if (scale == Enums::AxisScale::Linear) {
         a->setScaleType(QCPAxis::stLinear);
         a->setTicker(linTicker);
+        if (spectreGraph) {
+            spectreGraph->keyAxis()->setScaleType(QCPAxis::stLinear);
+            spectreGraph->keyAxis()->setTicker(linTicker);
+        }
     }
     else if (scale == Enums::AxisScale::Logarithmic) {
         a->setScaleType(QCPAxis::stLogarithmic);
@@ -351,6 +357,13 @@ void QCPPlot::setAxisScale(Enums::AxisType axisType, Enums::AxisScale scale)
             a->setTicker(octaveTicker);
         else
             a->setTicker(logTicker);
+        if (spectreGraph) {
+            spectreGraph->keyAxis()->setScaleType(QCPAxis::stLogarithmic);
+            if (parent->type() == Enums::PlotType::Octave)
+                spectreGraph->keyAxis()->setTicker(octaveTicker);
+            else
+                spectreGraph->keyAxis()->setTicker(logTicker);
+        }
     }
 
     replot();
