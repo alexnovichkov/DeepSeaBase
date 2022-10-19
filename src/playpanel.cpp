@@ -128,7 +128,7 @@ void PlayPanel::setSource(int n)
     //реальная загрузка данных произойдет только при первом проигрывании
     if (wavFiles.contains(ch)) player->setMedia(QMediaContent(QUrl::fromLocalFile(wavFiles.value(ch))));
     else player->setMedia(QMediaContent());
-    double x = positions.contains(ch)?positions[ch]:0;
+    double x = positions.contains(ch)?positions[ch]:ch->data()->xMin();
     cursor->moveTo({x, 0}, false);
 }
 
@@ -148,7 +148,7 @@ void PlayPanel::prepareDataToPlay()
         }
 
         player->setMedia(QMediaContent(QUrl::fromLocalFile(wavFiles.value(ch))));
-        double x = positions.contains(ch)?positions[ch]:0;
+        double x = positions.contains(ch)?positions[ch]:ch->data()->xMin();
         player->setPosition(qint64(x * 1000.0));
     }
     player->play();
@@ -157,7 +157,7 @@ void PlayPanel::prepareDataToPlay()
 void PlayPanel::setValue()
 {DDD;
     if (!ch) return;
-    player->setPosition(qint64(cursor->currentPosition().x() * 1000.0));
+    player->setPosition(qint64((cursor->currentPosition().x()-ch->data()->xMin()) * 1000.0));
 }
 
 void PlayPanel::moveTo(const QPoint &pos)
@@ -176,7 +176,7 @@ void PlayPanel::positionChanged(qint64 progress)
 {DDD;
     //progress in milliseconds, convert to seconds
     const double xVal = double(progress) / 1000.0;
-    cursor->moveTo({xVal, 0}, true);
+    cursor->moveTo({ch?xVal+ch->data()->xMin():xVal, 0}, true);
 }
 
 void PlayPanel::statusChanged(QMediaPlayer::MediaStatus status)
