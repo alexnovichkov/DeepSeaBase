@@ -66,6 +66,7 @@ private:
     bool enabled = true;
 
     QPoint startPosition;
+    QCPAxis* currentAxis = nullptr;
 };
 
 QDebug operator<<(QDebug debug, const CanvasEventFilter::ActionType &c);

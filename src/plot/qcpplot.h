@@ -59,7 +59,7 @@ private:
     // PlotInterface interface
 public:
     void setEventFilter(CanvasEventFilter *filter);
-    QObject* eventTargetAxis(QEvent *event, QObject *target);
+    QCPAxis *eventTargetAxis(QEvent *event, QObject *target);
     void createLegend();
     double screenToPlotCoordinates(Enums::AxisType axisType, double value) const;
     double plotToScreenCoordinates(Enums::AxisType axisType, double value) const;

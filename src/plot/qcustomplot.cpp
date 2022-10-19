@@ -9647,17 +9647,17 @@ void QCPAxis::mouseMoveEvent(QMouseEvent *event, const QPointF &startPos)
 */
 void QCPAxis::mouseReleaseEvent(QMouseEvent *event, const QPointF &startPos)
 {
-  Q_UNUSED(event)
-  Q_UNUSED(startPos)
+    Q_UNUSED(event)
+    Q_UNUSED(startPos)
     if (mDragging) {
         emit draggingFinished(range());
     }
-  mDragging = false;
-  if (mParentPlot->noAntialiasingOnDrag())
-  {
-    mParentPlot->setAntialiasedElements(mAADragBackup);
-    mParentPlot->setNotAntialiasedElements(mNotAADragBackup);
-  }
+    mDragging = false;
+    if (mParentPlot->noAntialiasingOnDrag())
+    {
+        mParentPlot->setAntialiasedElements(mAADragBackup);
+        mParentPlot->setNotAntialiasedElements(mNotAADragBackup);
+    }
 }
 
 /*! \internal

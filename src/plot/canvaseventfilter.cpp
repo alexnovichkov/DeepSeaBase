@@ -20,44 +20,27 @@ bool CanvasEventFilter::eventFilter(QObject *target, QEvent *event)
 {DD;
     if (!enabled) return QObject::eventFilter(target, event);
 
-    auto targetAxis = plot->impl()->eventTargetAxis(event, target);
-    auto qcpAxis = dynamic_cast<QCPAxis*>(targetAxis);
+    QCPAxis *axis = nullptr;
+    if (dynamic_cast<QMouseEvent *>(event)) {
+        axis = plot->impl()->eventTargetAxis(event, target);
 
-    if (!qcpAxis) {
-        switch (event->type()) {
-            case QEvent::MouseButtonPress:
-            case QEvent::MouseMove:
-            case QEvent::MouseButtonRelease:
-            case QEvent::MouseButtonDblClick:
-                procMouseEvent(event);
-                break;
-            case QEvent::KeyPress:
-                procKeyboardEvent(event);
-                break;
-            case QEvent::Wheel:
-//                procWheelEvent(Enums::AxisType::atInvalid, event);
-                break;
-            default: break;
+        if (axis) {
+            currentAxis = axis;
+            procAxisEvent(axis, event);
+        }
+        else {
+            if (currentAxis) {
+                currentAxis->mouseReleaseEvent(dynamic_cast<QMouseEvent *>(event), QPointF());
+                currentAxis = nullptr;
+            }
+            procMouseEvent(event);
         }
     }
-    else {
-        switch (event->type()) {
-            case QEvent::Wheel:
-                qcpAxis->wheelEvent(dynamic_cast<QWheelEvent*>(event));
-                break;
-            case QEvent::MouseButtonPress:
-            case QEvent::MouseMove:
-            case QEvent::MouseButtonRelease:
-            case QEvent::MouseButtonDblClick:
-            case QEvent::Leave:
-                procAxisEvent(qcpAxis, event);
-                break;
-            case QEvent::KeyPress:
-                procKeyboardEvent(event);
-                break;
-            default:
-                break;
-        }
+    else if (event->type() == QEvent::KeyPress)
+        procKeyboardEvent(event);
+    else if (event->type() == QEvent::Wheel) {
+        axis = plot->impl()->eventTargetAxis(event, target);
+        if (axis) axis->wheelEvent(dynamic_cast<QWheelEvent*>(event));
     }
 
     return QObject::eventFilter(target, event);
@@ -68,7 +51,7 @@ void CanvasEventFilter::procMouseEvent(QEvent *event)
     //Нажатия левой кнопки - масштабирование графика, выбор объектов или сброс выбора
     //Нажатия правой кнопки - сдвиг графика
 
-    QMouseEvent *mEvent = static_cast<QMouseEvent *>(event);
+    QMouseEvent *mEvent = dynamic_cast<QMouseEvent *>(event);
 
     switch (mEvent->type())  {
         case QEvent::MouseButtonPress:
@@ -129,7 +112,7 @@ void CanvasEventFilter::procKeyboardEvent(QEvent *event)
 
 void CanvasEventFilter::procAxisEvent(QCPAxis *axis, QEvent *event)
 {DDD;
-    QMouseEvent *mEvent = static_cast<QMouseEvent *>(event);
+    QMouseEvent *mEvent = dynamic_cast<QMouseEvent *>(event);
     switch (event->type()) {
         case QEvent::Leave: {
             emit hover(fromQcpAxis(axis->axisType()), 0);

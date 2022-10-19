@@ -241,7 +241,7 @@ void QCPPlot::setEventFilter(CanvasEventFilter *filter)
     installEventFilter(filter);
 }
 
-QObject *QCPPlot::eventTargetAxis(QEvent *event, QObject *target)
+QCPAxis *QCPPlot::eventTargetAxis(QEvent *event, QObject *target)
 {
     Q_UNUSED(target);
     if (auto mouseEvent = dynamic_cast<QMouseEvent*>(event)) {
