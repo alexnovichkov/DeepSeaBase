@@ -238,7 +238,7 @@ void DescriptorPropertiesDialog::currentFileChanged(QTreeWidgetItem *cur, QTreeW
         propertiesLabels.labels[6]->setText(d->dataDescription().get("createdBy").toString());
         propertiesLabels.labels[7]->setText(d->dataDescription().get("source.file").toString());
         propertiesLabels.labels[8]->setText(d->dataDescription().get("source.guid").toString());
-        dt = d->dataDescription().dateTime("dateTime");
+        dt = d->dataDescription().dateTime("source.dateTime");
         if (dt.isValid()) s = dt.toString("d MMMM yyyy, hh:mm:ss");
         else s.clear();
         propertiesLabels.labels[9]->setText(s);
