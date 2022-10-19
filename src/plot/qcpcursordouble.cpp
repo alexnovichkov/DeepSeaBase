@@ -235,6 +235,7 @@ void QCPCursorDouble::detach()
     m_plot->removeSelectable(m_cursor2);
     m_cursor1->detach();
     m_cursor2->detach();
+    m_plot->impl()->removeItem(m_zone);
     if (m_axisTag1) m_axisTag1->detach();
     if (m_axisTag2) m_axisTag2->detach();
 }

@@ -122,7 +122,7 @@ SelectedPoint QCPSpectrogram::closest(const QPoint &pos, double *dist, double *d
 
 void QCPSpectrogram::updatePen()
 {
-    updateLegendIcon(Qt::SmoothTransformation, {32,32});
+    updateLegendIcon(Qt::SmoothTransformation, {16,16});
     m_plot->impl()->checkableLegend->updateItem(this, commonLegendData());
 }
 

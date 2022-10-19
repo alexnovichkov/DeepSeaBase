@@ -286,9 +286,11 @@ void QCPPlot::createLegend()
             if (visible) {
                 p->addToLegend();
                 //мы дожны автомасштабировать график, но только если это сонограмма
-                parent->zoom->scaleBounds(Enums::AxisType::atBottom)->add(c->xMin(), c->xMax(), true);
-                parent->zoom->scaleBounds(Enums::AxisType::atColor)->add(c->channel->data()->yMin(-1), c->channel->data()->yMax(-1), true);
-                parent->zoom->scaleBounds(Enums::AxisType::atLeft)->add(c->channel->data()->zMin(), c->channel->data()->zMax(), true);
+                if (dynamic_cast<QCPSpectrogram*>(c)) {
+                    parent->zoom->scaleBounds(Enums::AxisType::atBottom)->add(c->xMin(), c->xMax(), true);
+                    parent->zoom->scaleBounds(Enums::AxisType::atColor)->add(c->channel->data()->yMin(-1), c->channel->data()->yMax(-1), true);
+                    parent->zoom->scaleBounds(Enums::AxisType::atLeft)->add(c->channel->data()->zMin(), c->channel->data()->zMax(), true);
+                }
             }
             else p->removeFromLegend();
         }

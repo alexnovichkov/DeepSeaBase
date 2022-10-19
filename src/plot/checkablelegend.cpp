@@ -192,7 +192,7 @@ QVariant QCPLegendModel::data(const QModelIndex &index, int role) const
         switch (column) {
             case 1: {
                 auto s = d.text;
-                if (d.fileNumber != -1) s.append(QString(" [%]").arg(d.fileNumber));
+                if (d.fileNumber > 0) s.append(QString(" [%1]").arg(d.fileNumber));
                 return s;
             }
             default: return QVariant();

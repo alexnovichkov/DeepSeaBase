@@ -66,7 +66,7 @@ struct LegendData
 {
     QString text;
     QColor color;
-    int fileNumber = -1;
+    int fileNumber = 0;
     bool checked = true;
     bool selected = false;
     bool fixed = false;
