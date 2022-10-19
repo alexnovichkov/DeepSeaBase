@@ -28,8 +28,8 @@ SolidCompression=yes
 PrivilegesRequired=none
 Uninstallable=IsTaskSelected('installmode/normal')
 
-[Run]
-Filename: "{app}\vc_redist.x86.exe"; Components: plugins
+;[Run]
+;Filename: "{app}\vc_redist.x86.exe"; Components: plugins
 
 [Languages]
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
@@ -78,7 +78,7 @@ Source: {#PathToExe+"/plugins/*.dll"}; DestDir: "{app}\plugins"; Flags: ignoreve
 Source: "E:\My\programming\sources\TDMS\nilib-master\dll\*.dll"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: plugins
 Source: "E:\My\programming\sources\TDMS\nilib-master\dll\DataModels\USI\1_0\usi_1_0.xsd"; DestDir: "{app}\DataModels\USI\1_0"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: plugins
 Source: "E:\My\programming\sources\TDMS\nilib-master\dll\DataModels\USI\TDM\1_0\USI_TDM_1_0.xml"; DestDir: "{app}\DataModels\USI\TDM\1_0"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: plugins
-Source: "E:\My\build\DeepSeaBase\vc_redist.x86.exe"; DestDir: "{app}"; Flags: ignoreversion; Components: plugins
+;Source: "E:\My\build\DeepSeaBase\vc_redist.x86.exe"; DestDir: "{app}"; Flags: ignoreversion; Components: plugins
 
 
 Source: "E:\My\build\DeepSeaBase\src\help.html"; DestDir: "{app}"; Flags: ignoreversion; Components: main
