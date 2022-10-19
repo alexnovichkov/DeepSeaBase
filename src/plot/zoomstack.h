@@ -31,7 +31,7 @@ public:
         bool isFixed() const {return fixed;}
         void setFixed(bool fixed);
         // фиксация исходных границ шкалы
-        void add(double min, double max);
+        void add(double min, double max, bool removePrevious = false);
         // установка заданных границ шкалы
         void set(double min, double max);
         // восстановление исходных границ шкалы

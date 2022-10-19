@@ -111,8 +111,12 @@ void ZoomStack::ScaleBounds::setFixed(bool fixed)
 }
 
 // Фиксация исходных границ шкалы
-void ZoomStack::ScaleBounds::add(double min, double max)
+void ZoomStack::ScaleBounds::add(double min, double max, bool removePrevious)
 {DDD;
+    if (removePrevious) {
+        mins.clear();
+        maxes.clear();
+    }
     if (min==max) {
         if (min!=0.0) {
             mins << (min-1.0);

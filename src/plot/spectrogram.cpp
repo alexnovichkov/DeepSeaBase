@@ -23,12 +23,11 @@ void Spectrogram::deleteCurve(Curve *curve, bool doReplot)
 
     if (m->deleteCurve(curve)) {
         emit curveDeleted(curve->channel); //->MainWindow.onChannelChanged
-        zoom->scaleBounds(Enums::AxisType::atColor)->removeToAutoscale(curve->yMin(), curve->yMax());
-        zoom->scaleBounds(Enums::AxisType::atLeft)->removeToAutoscale(curve->channel->data()->zMin(),
-                                                              curve->channel->data()->zMax());
-        zoom->scaleBounds(Enums::AxisType::atBottom)->removeToAutoscale(curve->xMin(), curve->xMax());
+//        zoom->scaleBounds(Enums::AxisType::atColor)->removeToAutoscale(curve->channel->data()->yMin(-1), curve->channel->data()->yMax(-1));
+//        zoom->scaleBounds(Enums::AxisType::atLeft)->removeToAutoscale(curve->channel->data()->zMin(), curve->channel->data()->zMax());
+//        zoom->scaleBounds(Enums::AxisType::atBottom)->removeToAutoscale(curve->xMin(), curve->xMax());
 
-        zoom->autoscale(Enums::AxisType::atInvalid);
+//        zoom->autoscale(Enums::AxisType::atInvalid);
 
         curve->detachFrom(this);
         delete curve;
@@ -106,7 +105,6 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     }
 
 
-
     if (!ch->populated()) {
         ch->populate();
     }
@@ -133,9 +131,9 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 
     m_plot->setColorMap(colorMap, g);
 
-    zoom->scaleBounds(Enums::AxisType::atBottom)->add(g->xMin(), g->xMax());
-    zoom->scaleBounds(Enums::AxisType::atColor)->add(ch->data()->yMin(-1), ch->data()->yMax(-1));
-    zoom->scaleBounds(Enums::AxisType::atLeft)->add(ch->data()->zMin(), ch->data()->zMax());
+    zoom->scaleBounds(Enums::AxisType::atBottom)->add(g->xMin(), g->xMax(), true);
+    zoom->scaleBounds(Enums::AxisType::atColor)->add(ch->data()->yMin(-1), ch->data()->yMax(-1), true);
+    zoom->scaleBounds(Enums::AxisType::atLeft)->add(ch->data()->zMin(), ch->data()->zMax(), true);
 
     m_plot->setInfoVisible(false);
 

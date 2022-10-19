@@ -240,17 +240,17 @@ bool QCPLegendModel::setData(const QModelIndex &index, const QVariant &value, in
 
     if (row<0 || row>=items.size()) return false;
     if (column == 0) {
-        items[row].data.checked = value.toInt() == int(Qt::Checked);
-        emit visibilityChanged(items[row].item, items[row].data.checked);
-        emit dataChanged(index, index, QVector<int>()<<Qt::CheckStateRole);
-
-        if (items[row].item->type == Curve::Type::Spectrogram && items[row].data.checked) {
-            //скрываем все остальные спектрограммы
+        //скрываем все остальные спектрограммы
+        if (items[row].item->type == Curve::Type::Spectrogram && value.toInt() == int(Qt::Checked)) {
             for (int i=0; i<rowCount(); ++i) {
                 if (i == row) continue;
                 setData(QAbstractTableModel::index(i, column), Qt::Unchecked, Qt::CheckStateRole);
             }
         }
+
+        items[row].data.checked = value.toInt() == int(Qt::Checked);
+        emit visibilityChanged(items[row].item, items[row].data.checked);
+        emit dataChanged(index, index, QVector<int>()<<Qt::CheckStateRole);
 
         return true;
     }
