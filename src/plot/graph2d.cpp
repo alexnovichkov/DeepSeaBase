@@ -1247,7 +1247,7 @@ int Graph2D::findEnd(double sortKey, bool expandedRange) const
 void Graph2D::attachTo(Plot *plot)
 {
     Curve::attachTo(plot);
-    Curve::addToLegend(plot->impl()->checkableLegend);
+    plot->impl()->checkableLegend->addItem(this, commonLegendData());
 }
 
 void Graph2D::detachFrom(Plot *plot)

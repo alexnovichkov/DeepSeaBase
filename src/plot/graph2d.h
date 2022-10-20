@@ -5,7 +5,6 @@
 #include "plot/curve.h"
 
 class Data2D;
-class QCPCheckableLegend;
 
 class Graph2D : public QCPAbstractPlottable, public QCPPlottableInterface1D, public Curve
 {

@@ -4,6 +4,7 @@
 #include "qcpplot.h"
 #include "plot/plot.h"
 #include "checkablelegend.h"
+#include "qcpflowlegend.h"
 
 QCPSpectrogram::QCPSpectrogram(const QString &title, Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis)
     : QCPAbstractPlottable(keyAxis, valueAxis), Curve(title, channel)
@@ -31,7 +32,7 @@ bool QCPSpectrogram::isVisible() const
 void QCPSpectrogram::attachTo(Plot *plot)
 {
     Curve::attachTo(plot);
-    Curve::addToLegend(plot->impl()->checkableLegend);
+    plot->impl()->checkableLegend->addItem(this, commonLegendData());
 }
 
 void QCPSpectrogram::detachFrom(Plot *plot)

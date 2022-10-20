@@ -23,6 +23,9 @@ enum class DataPrecision {
     LongDouble
 };
 
+void initRandomGenerator();
+int getRandom(int min, int max);
+
 DataPrecision fromDfdDataPrecision(uint precision);
 uint toDfdDataPrecision(DataPrecision precision);
 

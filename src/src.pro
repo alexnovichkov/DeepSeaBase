@@ -71,6 +71,8 @@ SOURCES += main.cpp\
     plot/qcpcursordouble.cpp \
     plot/qcpcursorharmonic.cpp \
     plot/qcpcursorsingle.cpp \
+    plot/qcpflowlayout.cpp \
+    plot/qcpflowlegend.cpp \
     plot/qcptrackingcursor.cpp \
     plot/checkablelegend.cpp \
     plot/checkablelegenditem.cpp \
@@ -188,6 +190,8 @@ HEADERS  += mainwindow.h \
     plot/qcpcursordouble.h \
     plot/qcpcursorharmonic.h \
     plot/qcpcursorsingle.h \
+    plot/qcpflowlayout.h \
+    plot/qcpflowlegend.h \
     plot/qcptrackingcursor.h \
     plot/checkablelegend.h \
     plot/checkablelegenditem.h \

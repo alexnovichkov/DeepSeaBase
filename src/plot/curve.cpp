@@ -171,18 +171,6 @@ void Curve::updateLabels()
     for (auto label: labels) label->updateLabel();
 }
 
-bool Curve::addToLegend(QCPCheckableLegend *legend)
-{
-    if (!legend) {
-        qDebug() << "passed legend is null";
-        return false;
-    }
-
-    legend->addItem(this, this->commonLegendData());
-
-    return true;
-}
-
 void Curve::setVisible(bool visible)
 {DDD;
     for (PointLabel *label: labels) {

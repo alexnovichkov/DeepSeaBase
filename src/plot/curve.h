@@ -94,8 +94,6 @@ public:
 
     void updateLabels();
 
-    bool addToLegend(QCPCheckableLegend *legend);
-
     Channel *channel;
     QList<PointLabel*> labels;
     MarkerShape m_markerShape = MarkerShape::NoMarker;

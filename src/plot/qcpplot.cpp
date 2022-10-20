@@ -15,6 +15,7 @@
 #include "logging.h"
 #include "plot/colormapfactory.h"
 #include "qcpinfooverlay.h"
+#include "qcpflowlegend.h"
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type) {
     return static_cast<QCPAxis::AxisType>(type);
@@ -259,8 +260,6 @@ QCPAxis *QCPPlot::eventTargetAxis(QEvent *event, QObject *target)
 void QCPPlot::createLegend()
 {
     this->axisRect(0)->insetLayout()->setInsetAlignment(0, Qt::AlignBottom | Qt::AlignCenter);
-    legend->setFillOrder(QCPLayoutGrid::FillOrder::foColumnsFirst);
-    legend->setWrap(6);
     legend->setVisible(false);
 
     checkableLegend = new QCPCheckableLegend(this);

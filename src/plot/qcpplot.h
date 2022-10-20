@@ -13,6 +13,7 @@ class QCPInfoOverlay;
 class Curve;
 class Channel;
 class Selected;
+class QCPFlowLegend;
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type);
 Enums::AxisType fromQcpAxis(QCPAxis::AxisType);
@@ -54,7 +55,6 @@ private:
     QCPGraph *throughGraph = nullptr;
     QCPTextElement *spectreTitle = nullptr;
     QCPTextElement *throughTitle = nullptr;
-
 
     // PlotInterface interface
 public:

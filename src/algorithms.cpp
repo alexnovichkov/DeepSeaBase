@@ -585,3 +585,20 @@ uint toDfdDataPrecision(DataPrecision precision)
     }
     return 0xc0000004;
 }
+
+#include <random>
+
+std::default_random_engine g;
+
+void initRandomGenerator()
+{
+    std::random_device seeder;
+    const auto seed = seeder.entropy() ? seeder() : std::time(nullptr);
+    g = std::default_random_engine(static_cast<std::default_random_engine::result_type>(seed));
+}
+
+int getRandom(int min, int max)
+{
+    std::uniform_int_distribution intDistrib(min, max);
+    return intDistrib(g);
+}

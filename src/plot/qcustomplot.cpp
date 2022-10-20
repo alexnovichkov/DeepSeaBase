@@ -4021,6 +4021,7 @@ QSize QCPLayout::getFinalMinimumOuterSize(const QCPLayoutElement *el)
 {
   QSize minOuterHint = el->minimumOuterSizeHint();
   QSize minOuter = el->minimumSize(); // depending on sizeConstraitRect this might be with respect to inner rect, so possibly add margins in next four lines (preserving unset minimum of 0)
+
   if (minOuter.width() > 0 && el->sizeConstraintRect() == QCPLayoutElement::scrInnerRect)
     minOuter.rwidth() += el->margins().left() + el->margins().right();
   if (minOuter.height() > 0 && el->sizeConstraintRect() == QCPLayoutElement::scrInnerRect)
@@ -19208,9 +19209,10 @@ QSize QCPPlottableLegendItem::minimumOuterSizeHint() const
 QCPLegend::QCPLegend() :
   mIconTextPadding{}
 {
+#ifdef GRID_LEGEND
   setFillOrder(QCPLayoutGrid::foRowsFirst);
   setWrap(0);
-  
+#endif
   setRowSpacing(3);
   setColumnSpacing(8);
   setMargins(QMargins(7, 5, 7, 4));
@@ -19587,8 +19589,10 @@ bool QCPLegend::removeItem(int index)
   if (QCPAbstractLegendItem *ali = item(index))
   {
     bool success = remove(ali);
+#ifdef GRID_LEGEND
     if (success)
       setFillOrder(fillOrder(), true); // gets rid of empty cell by reordering
+#endif
     return success;
   } else
     return false;
@@ -19609,8 +19613,10 @@ bool QCPLegend::removeItem(int index)
 bool QCPLegend::removeItem(QCPAbstractLegendItem *item)
 {
   bool success = remove(item);
-  if (success)
-    setFillOrder(fillOrder(), true); // gets rid of empty cell by reordering
+#ifdef GRID_LEGEND
+    if (success)
+      setFillOrder(fillOrder(), true); // gets rid of empty cell by reordering
+#endif
   return success;
 }
 
@@ -19624,7 +19630,10 @@ void QCPLegend::clearItems()
     if (item(i))
       removeAt(i); // don't use removeItem() because it would unnecessarily reorder the whole legend for each item
   }
-  setFillOrder(fillOrder(), true); // get rid of empty cells by reordering once after all items are removed
+
+#ifdef GRID_LEGEND
+      setFillOrder(fillOrder(), true); // gets rid of empty cell by reordering
+#endif
 }
 
 /*!
