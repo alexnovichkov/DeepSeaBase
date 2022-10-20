@@ -161,21 +161,26 @@ void QCPFlowLayout::updateLayout()
     int x = innerRect.x();
     int y = innerRect.y();
 
+    int columns = 0;
+
     for (auto el: m_elements) {
         auto minSize = getFinalMinimumOuterSize(el);
 
         if (m_orientation == Qt::Horizontal) {
             int nextX = x + minSize.width() + m_columnSpacing;
-            if (nextX - m_columnSpacing > innerRect.right()+2 && lineHeight > 0) {
+            if ((nextX - m_columnSpacing > innerRect.right()+2 && lineHeight > 0)
+                || columns == m_maximumColumnCount) {
                 x = innerRect.x();
                 y = y + lineHeight + m_rowSpacing;
                 nextX = x + minSize.width() + m_columnSpacing;
                 lineHeight = 0;
+                columns = 0;
             }
             el->setOuterRect(QRect(QPoint(x, y), minSize));
 
             x = nextX;
             lineHeight = qMax(lineHeight, minSize.height());
+            columns++;
         }
     }
 }
@@ -192,22 +197,27 @@ QSize QCPFlowLayout::minimumOuterSizeHint() const
     int x = 0;
     int y = 0;
 
+    int columns = 0;
+
     for (auto el: m_elements) {
         auto minSize = getFinalMinimumOuterSize(el);
 
         if (m_orientation == Qt::Horizontal) {
             int nextX = x + minSize.width() + m_columnSpacing;
 
-            if (nextX - m_columnSpacing > maximumSize.width() && lineHeight > 0) {
+            if ((nextX - m_columnSpacing > maximumSize.width() && lineHeight > 0)
+                || columns == m_maximumColumnCount) {
                 x = 0;
                 y = y + lineHeight + m_rowSpacing;
                 nextX = x + minSize.width() + m_columnSpacing;
                 lineHeight = 0;
+                columns = 0;
             }
             totalWidth = qMax(totalWidth, x+minSize.width()/*-m_columnSpacing*/);
 
             x = nextX;
             lineHeight = qMax(lineHeight, minSize.height());
+            columns++;
         }
     }
     totalHeight = y + lineHeight;
@@ -217,4 +227,15 @@ QSize QCPFlowLayout::minimumOuterSizeHint() const
 QSize QCPFlowLayout::maximumOuterSizeHint() const
 {
     return minimumOuterSizeHint();
+}
+
+int QCPFlowLayout::maximumColumnCount() const
+{
+    return m_maximumColumnCount;
+}
+
+void QCPFlowLayout::setMaximumColumnCount(int maximumColumnCount)
+{
+    m_maximumColumnCount = maximumColumnCount;
+    updateLayout();
 }

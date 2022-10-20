@@ -5121,6 +5121,9 @@ public:
     Qt::Orientation orientation() const {return m_orientation;}
     void setOrientation(Qt::Orientation orientation);
 
+    int maximumColumnCount() const;
+    void setMaximumColumnCount(int maximumColumnCount);
+
     int columnSpacing() const;
     void setColumnSpacing(int columnSpacing);
 
@@ -5145,6 +5148,7 @@ public:
 public:
     virtual QSize minimumOuterSizeHint() const override;
     virtual QSize maximumOuterSizeHint() const override;
+
 protected:
     virtual void updateLayout() override;
 private:
@@ -5152,6 +5156,7 @@ private:
     Qt::Orientation m_orientation = Qt::Horizontal;
     int m_columnSpacing = 5;
     int m_rowSpacing = 5;
+    int m_maximumColumnCount = 0;
 };
 
 class QCP_LIB_DECL QCPLegend : public QCPFlowLayout//QCPLayoutGrid

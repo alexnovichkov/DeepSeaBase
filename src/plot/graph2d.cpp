@@ -1066,7 +1066,9 @@ void Graph2D::drawLegendIcon(QCPPainter *painter, const QRectF &rect) const
     if (mLineStyle != lsNone)
     {
       applyDefaultAntialiasingHint(painter);
-      painter->setPen(mPen);
+      auto p = mPen;
+      if (p.width()<2) p.setWidth(2);
+      painter->setPen(p);
       painter->drawLine(QLineF(rect.left(), rect.top()+rect.height()/2.0, rect.right()+5, rect.top()+rect.height()/2.0)); // +5 on x2 else last segment is missing from dashed/dotted pens
     }
     // draw scatter symbol:
