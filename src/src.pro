@@ -397,6 +397,7 @@ SOURCES += \
 HEADERS += \
   $$PWD/../3rdParty/juce/juce_AudioChannelSet.h
 
+
 RESOURCES *= src.qrc
 
 #RC_FILE *= src.rc
@@ -406,7 +407,7 @@ CONFIG(release, debug|release):{
 }
 
 # includes & libs
-INCLUDEPATH *= $$PWD $$PWD/.. $$PWD/../3rdParty/qtpropertybrowser $$PWD/../3rdParty/DspFilters
+INCLUDEPATH *= $$PWD $$PWD/.. $$PWD/../3rdParty/qtpropertybrowser $$PWD/../3rdParty/DspFilters $$PWD/../3rdParty/juce
 INCLUDEPATH *= E:/My/programming/sources/strtk
 INCLUDEPATH *= E:/My/programming/sources/boost_1_73_0
 

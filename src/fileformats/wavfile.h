@@ -2,6 +2,7 @@
 #define WAVFILE_H
 
 #include "filedescriptor.h"
+#include "juce_AudioChannelSet.h"
 
 class WavChannel;
 
@@ -77,6 +78,8 @@ class WavFile : public FileDescriptor
 {
 public:
     WavFile(const QString &fileName);
+    WavFile(const FileDescriptor &other, const QString &fileName, QVector<int> indexes = QVector<int>());
+    WavFile(const QVector<Channel *> &source, const QString &fileName);
     ~WavFile();
 
     // FileDescriptor interface
@@ -88,9 +91,11 @@ public:
     virtual int channelsCount() const override;
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
     virtual Channel *channel(int index) const override;
-    virtual QString fileType() const override;
     virtual bool canTakeChannelsFrom(FileDescriptor *other) const override;
     virtual bool canTakeAnyChannels() const override;
+    virtual QString fileType() const override;
+    static QStringList fileFilters();
+    static QStringList suffixes();
 
     WavHeader *m_header = nullptr;
     WavChunkFmt *m_fmtChunk = nullptr;
@@ -99,9 +104,26 @@ public:
     WavFormat m_format = WavFormat::WavExtendedPCM;
     qint64 dataBegin = -1;
     quint64 dataSize = 0;
+    juce::AudioChannelSet audioChannelSet;
 private:
     friend class WavChannel;
     QList<WavChannel*> channels;
+};
+
+class WavChannel : public Channel
+{
+public:
+    WavChannel(WavFile *parent, const QString &name);
+
+    // Channel interface
+public:
+    virtual Descriptor::DataType type() const override;
+    virtual void populate() override;
+    virtual FileDescriptor *descriptor() const override;
+    virtual int index() const override;
+
+private:
+    WavFile *parent = nullptr;
 };
 
 #endif // WAVFILE_H

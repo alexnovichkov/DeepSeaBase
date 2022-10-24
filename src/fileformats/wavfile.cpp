@@ -5,6 +5,16 @@ WavFile::WavFile(const QString &fileName) : FileDescriptor(fileName)
 
 }
 
+WavFile::WavFile(const FileDescriptor &other, const QString &fileName, QVector<int> indexes) : FileDescriptor(fileName)
+{
+
+}
+
+WavFile::WavFile(const QVector<Channel *> &source, const QString &fileName) : FileDescriptor(fileName)
+{
+
+}
+
 WavFile::~WavFile()
 {
     delete m_header;
@@ -33,7 +43,7 @@ void WavFile::read()
 
     quint16 u16;
     quint32 u32;
-    quint8 u8;
+//    quint8 u8;
 
     m_header = new WavHeader;
     r >> u32;
@@ -76,10 +86,25 @@ void WavFile::read()
                 r >> u16; m_fmtChunk->wValidBitsPerSample = u16;
                 r >> u32; m_fmtChunk->dwChannelMask = u32;
 
+
                 r >> u32; m_fmtChunk->subFormat.data1 = u32;
                 r >> u16; m_fmtChunk->subFormat.data2 = u16;
                 r >> u16; m_fmtChunk->subFormat.data3 = u16;
                 for (int i=0; i<8; ++i) r >> m_fmtChunk->subFormat.data4[i];
+            }
+
+            audioChannelSet = juce::AudioChannelSet::fromWaveChannelMask(m_fmtChunk->dwChannelMask);
+            // channel layout and number of channels do not match
+            if (audioChannelSet.size() != static_cast<int> (m_fmtChunk->nChannels)) {
+                // for backward compatibility with old wav files, assume 1 or 2
+                // channel wav files are mono/stereo respectively
+                if (m_fmtChunk->nChannels <= 2 && m_fmtChunk->dwChannelMask == 0)
+                    audioChannelSet = juce::AudioChannelSet::canonicalChannelSet (static_cast<int> (m_fmtChunk->nChannels));
+                else {
+                    auto discreteSpeaker = static_cast<int> (juce::AudioChannelSet::discreteChannel0);
+                    while (audioChannelSet.size() < static_cast<int> (m_fmtChunk->nChannels))
+                        audioChannelSet.addChannel (static_cast<juce::AudioChannelSet::ChannelType> (discreteSpeaker++));
+                }
             }
         }
 
@@ -99,6 +124,7 @@ void WavFile::read()
             r >> u32; m_dataChunk->dataSize = u32;
             dataSize = m_dataChunk->dataSize;
             dataBegin = r.device()->pos();
+            r.skipRawData(dataSize);
         }
 
 
@@ -138,7 +164,7 @@ void WavFile::read()
     }
 
     for (int i=0; i<channelsCount; ++i) {
-//        channels << new WavChannel(this);
+        channels << new WavChannel(this, audioChannelSet.getChannelTypeName(audioChannelSet.getTypeOfChannel(i)));
     }
 
 }
@@ -166,18 +192,58 @@ void WavFile::move(bool up, const QVector<int> &indexes, const QVector<int> &new
 
 Channel *WavFile::channel(int index) const
 {
-}
-
-QString WavFile::fileType() const
-{
+    return channels.value(index, nullptr);
 }
 
 bool WavFile::canTakeChannelsFrom(FileDescriptor *other) const
 {
-
+    return false;
 }
 
 bool WavFile::canTakeAnyChannels() const
 {
     return false;
+}
+
+
+WavChannel::WavChannel(WavFile *parent, const QString &name) : parent(parent)
+{
+    dataDescription().put("name", name);
+}
+
+Descriptor::DataType WavChannel::type() const
+{
+    return Descriptor::TimeResponse;
+}
+
+void WavChannel::populate()
+{
+    qDebug() << parent->dataBegin << parent->dataSize;
+}
+
+FileDescriptor *WavChannel::descriptor() const
+{
+    return parent;
+}
+
+int WavChannel::index() const
+{
+    if (parent) return parent->channels.indexOf(const_cast<WavChannel*>(this));
+    return -1;
+}
+
+
+QString WavFile::fileType() const
+{
+    return "wav";
+}
+
+QStringList WavFile::fileFilters()
+{
+    return {"Файлы wav (*.wav)"};
+}
+
+QStringList WavFile::suffixes()
+{
+    return {"wav"};
 }

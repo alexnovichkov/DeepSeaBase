@@ -6,12 +6,35 @@
 #ifdef WITH_MATIO
 #include "matlabfile.h"
 #endif
-
+#include "wavfile.h"
 
 QList<FileDescriptor *> FormatFactory::createDescriptors(const FileDescriptor &source, const QString &fileName, const QVector<int> &indexes)
 {
     QString suffix = QFileInfo(fileName).suffix();
-    if (suffix!="dfd") {
+    if (suffix=="wav") {
+        //Фильтруем временные реализации
+        //Сортируем каналы по типу
+        QVector<int> idx = indexes;
+        if (idx.isEmpty()) {
+            idx = QVector<int>(source.channelsCount());
+            std::iota(idx.begin(), idx.end(), 0);
+        }
+        QMap<Descriptor::DataType, QVector<int>> map;
+        for (int index : idx) {
+            auto type = source.channel(index)->type();
+            map[type].append(index);
+        }
+
+        //Создаем файлы
+        QList<FileDescriptor *> result;
+        for (const auto &[type, indexes]: asKeyValueRange(map)) {
+            if (type != Descriptor::TimeResponse) continue;
+            QString name = createUniqueFileName("", fileName, Descriptor::functionTypeDescription(type), "dfd", true);
+            result << new DfdFileDescriptor(source, name, indexes);
+        }
+        return result;
+    }
+    else if (suffix!="dfd") {
         if (suffix=="uff") return {new UffFileDescriptor(source, fileName, indexes)};
         if (suffix=="d94") return {new Data94File(source, fileName, indexes)};
     }
@@ -27,7 +50,7 @@ QList<FileDescriptor *> FormatFactory::createDescriptors(const FileDescriptor &s
             auto type = source.channel(index)->type();
             map[type].append(index);
         }
-        qDebug()<<map;
+
         //Создаем файлы
         QList<FileDescriptor *> result;
         for (const auto &[type, indexes]: asKeyValueRange(map)) {
@@ -45,6 +68,7 @@ QStringList FormatFactory::allSuffixes(bool strip)
     result << suffixes<DfdFileDescriptor>();
     result << suffixes<UffFileDescriptor>();
     result << suffixes<Data94File>();
+    result << suffixes<WavFile>();
 #ifdef WITH_MATIO
     result << suffixes<MatlabFile>();
 #endif
@@ -59,6 +83,7 @@ QStringList FormatFactory::allFilters()
     result << filters<DfdFileDescriptor>();
     result << filters<UffFileDescriptor>();
     result << filters<Data94File>();
+    result << filters<WavFile>();
 #ifdef WITH_MATIO
     result << filters<MatlabFile>();
 #endif
@@ -71,6 +96,7 @@ FileDescriptor *FormatFactory::createDescriptor(const QString &fileName)
     if (suffix=="dfd") return new DfdFileDescriptor(fileName);
     if (suffix=="uff") return new UffFileDescriptor(fileName);
     if (suffix=="d94") return new Data94File(fileName);
+    if (suffix == "wav") return new WavFile(fileName);
 #ifdef WITH_MATIO
     if (suffix=="mat") return new MatlabFile(fileName);
 #endif
@@ -83,6 +109,8 @@ FileDescriptor *FormatFactory::createDescriptor(const FileDescriptor &source, co
     if (suffix=="dfd") return new DfdFileDescriptor(source, fileName, indexes);
     if (suffix=="uff") return new UffFileDescriptor(source, fileName, indexes);
     if (suffix=="d94") return new Data94File(source, fileName, indexes);
+    if (suffix=="wav") return new WavFile(source, fileName, indexes);
+
 #ifdef WITH_MATIO
     if (suffix=="mat") return new MatlabFile(source, fileName, indexes);
 #endif
@@ -95,6 +123,7 @@ FileDescriptor *FormatFactory::createDescriptor(const QVector<Channel *> &source
     if (suffix=="dfd") return new DfdFileDescriptor(source, fileName);
     if (suffix=="uff") return new UffFileDescriptor(source, fileName);
     if (suffix=="d94") return new Data94File(source, fileName);
+    if (suffix=="wav") return new WavFile(source, fileName);
 #ifdef WITH_MATIO
     if (suffix=="mat") return new MatlabFile(source, fileName);
 #endif
