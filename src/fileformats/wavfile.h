@@ -103,8 +103,8 @@ public:
     WavChunkFact *m_factChunk = nullptr;
     WavFormat m_format = WavFormat::WavExtendedPCM;
     qint64 dataBegin = -1;
-    quint64 dataSize = 0;
     juce::AudioChannelSet audioChannelSet;
+    DataPrecision m_dataPrecision = DataPrecision::Float;
 private:
     friend class WavChannel;
     QList<WavChannel*> channels;

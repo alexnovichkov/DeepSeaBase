@@ -31,6 +31,9 @@ void WavFile::read()
         return;
     }
 
+    dataDescription().put("dateTime", wavFile.fileTime(QFileDevice::FileBirthTime));
+    dataDescription().put("fileCreationTime", wavFile.fileTime(QFileDevice::FileBirthTime));
+
     if (wavFile.size() < 44) {
         qCritical()<<"Файл слишком маленький:"<<fileName();
         wavFile.close();
@@ -121,10 +124,9 @@ void WavFile::read()
 
         else if (chunkType == fourCC("data")) {
             m_dataChunk = new WavChunkData;
-            r >> u32; m_dataChunk->dataSize = u32;
-            dataSize = m_dataChunk->dataSize;
+            m_dataChunk->dataSize = length;
             dataBegin = r.device()->pos();
-            r.skipRawData(dataSize);
+            r.skipRawData(m_dataChunk->dataSize);
         }
 
 
@@ -132,23 +134,23 @@ void WavFile::read()
     }
 
     int channelsCount = 0;
-    QString dataFormat;
+
     if (m_fmtChunk)  {
         switch (m_fmtChunk->wFormatTag) {
             case 3: {//floating point, simple fmt
-                dataFormat = "float";
+                m_dataPrecision = DataPrecision::Float;
                 break;
             }
             case 1: {//PCM
-                dataFormat = "int16";
+                m_dataPrecision = DataPrecision::Int16;
                 break;
             }
             case 0xfffe: {//extended fmt
                 if (m_fmtChunk->subFormat == pcmFormat) {//PCM
-                    dataFormat = "int16";
+                    m_dataPrecision = DataPrecision::Int16;
                 }
                 if (m_fmtChunk->subFormat == IEEEFloatFormat) {//floating point
-                    dataFormat = "float";
+                    m_dataPrecision = DataPrecision::Float;
                 }
                 break;
             }
@@ -157,10 +159,6 @@ void WavFile::read()
             }
         }
         channelsCount = m_fmtChunk->nChannels;
-    }
-    if (dataFormat.isEmpty()) {
-        qCritical() << "Unable to find valid data format";
-        return;
     }
 
     for (int i=0; i<channelsCount; ++i) {
@@ -209,6 +207,32 @@ bool WavFile::canTakeAnyChannels() const
 WavChannel::WavChannel(WavFile *parent, const QString &name) : parent(parent)
 {
     dataDescription().put("name", name);
+    dataDescription().put("xname", "s");
+    dataDescription().put("yname", "Pa");
+
+    uint samples = 0;
+    if (parent->m_dataChunk && parent->m_fmtChunk && parent->m_fmtChunk->blockAlign != 0)
+        samples = parent->m_dataChunk->dataSize / parent->m_fmtChunk->blockAlign;
+    dataDescription().put("samples", samples);
+
+    dataDescription().put("blocks", 1);
+    if (parent->m_fmtChunk) dataDescription().put("samplerate", parent->m_fmtChunk->samplesPerSec);
+    dataDescription().put("function.name", "Time");
+
+    dataDescription().put("function.type", 1); //time data
+    dataDescription().put("function.logscale", "linear");
+    dataDescription().put("function.logref", 1);
+    dataDescription().put("function.format", "real");
+    if (parent->m_dataPrecision == DataPrecision::Float)
+        dataDescription().put("function.precision", "float");
+    else if (parent->m_dataPrecision == DataPrecision::Int16)
+        dataDescription().put("function.precision", "int16");
+
+    _data->setThreshold(2e-5);
+    _data->setYValuesUnits(DataHolder::unitsFromString(dataDescription().get("function.logscale").toString()));
+    _data->setYValuesFormat(DataHolder::formatFromString(dataDescription().get("function.format").toString()));
+    _data->setXValues(0, 1.0 / parent->m_fmtChunk->samplesPerSec, samples);
+    _data->setZValues(0, 1, 1);
 }
 
 Descriptor::DataType WavChannel::type() const
@@ -218,7 +242,71 @@ Descriptor::DataType WavChannel::type() const
 
 void WavChannel::populate()
 {
-    qDebug() << parent->dataBegin << parent->dataSize;
+    if (parent->dataBegin < 0) return;
+
+    _data->clear();
+
+    int channelIndex = index();
+
+    QFile rawFile(parent->fileName());
+
+    if (rawFile.open(QFile::ReadOnly)) {
+        QVector<double> YValues;
+        const int channelsCount = parent->channelsCount();
+
+        // map file into memory
+        unsigned char *ptr = rawFile.map(parent->dataBegin, parent->m_dataChunk->dataSize);
+        if (ptr) {//достаточно памяти отобразить весь файл
+            unsigned char *ptrCurrent = ptr;
+
+            /*
+                * i-й отсчет n-го канала имеет номер
+                * n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
+                *
+                * если BlockSize=1 или ChanBlockSize=1, то
+                * n + i*ChannelsCount
+                */
+            YValues.resize(data()->samplesCount());
+            for (int i=0; i < YValues.size(); ++i) {
+                ptrCurrent = ptr + (channelIndex + i*channelsCount) * (parent->m_dataPrecision == DataPrecision::Int16?2:4);
+                YValues[i] = convertFrom<double>(ptrCurrent, parent->m_dataPrecision);
+            }
+
+        } /// mapped
+        else {
+            //читаем классическим способом через getChunk
+
+            QDataStream readStream(&rawFile);
+            readStream.setByteOrder(QDataStream::LittleEndian);
+            if (parent->m_dataPrecision == DataPrecision::Float)
+                readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+            qint64 actuallyRead = 0;
+            readStream.skipRawData(parent->dataBegin);
+
+
+            const quint64 chunkSize = channelsCount;
+            while (1) {
+                QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, parent->m_dataPrecision, &actuallyRead);
+
+                //распихиваем данные по каналам
+                actuallyRead /= channelsCount;
+                YValues << temp.mid(actuallyRead*channelIndex, actuallyRead);
+
+                if (actuallyRead < 1)
+                    break;
+            }
+        }
+
+        YValues.resize(data()->samplesCount());
+        _data->setYValues(YValues, _data->yValuesFormat());
+        setPopulated(true);
+        rawFile.close();
+
+    }
+    else {
+        qDebug()<<"Cannot read raw file"<<parent->fileName();
+    }
 }
 
 FileDescriptor *WavChannel::descriptor() const

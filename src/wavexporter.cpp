@@ -304,10 +304,11 @@ WavChunkFmt WavExporter::initFmt(int channelsCount, int samplesCount, int sample
 
     if (header.fmtSize == 40) {
         header.wValidBitsPerSample = 8*M; //используем все биты, для формата 24-bit нужно будет менять
+        header.dwChannelMask = juce::AudioChannelSet::discreteChannels(channelsCount).getWaveChannelMask();
 
         //subFormat is PCM by default
         if (format == WavFormat::WavFloat)
-            header.subFormat.data4[0] = 3;
+            header.subFormat = IEEEFloatFormat;
     }
     return header;
 }
