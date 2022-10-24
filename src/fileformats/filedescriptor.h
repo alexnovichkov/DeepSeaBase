@@ -96,6 +96,7 @@ public:
 
     //виртуальные
     virtual QString icon() const {return "";}
+
     virtual bool rename(const QString &newName, const QString &newPath = QString());
     //просто вызывает updateDateTimeGUID. Переопределен в DFD
     virtual void fillPreliminary(const FileDescriptor *);

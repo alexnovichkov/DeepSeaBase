@@ -49,6 +49,7 @@ SOURCES += main.cpp\
     descriptorpropertiesdialog.cpp \
     fileformats/fileio.cpp \
     fileformats/formatfactory.cpp \
+    fileformats/wavfile.cpp \
     filehandler.cpp \
     filehandlerdialog.cpp \
     filestable.cpp \
@@ -73,6 +74,7 @@ SOURCES += main.cpp\
     plot/qcpcursorsingle.cpp \
     plot/qcpflowlayout.cpp \
     plot/qcpflowlegend.cpp \
+    plot/qcpscrollbarlegend.cpp \
     plot/qcptrackingcursor.cpp \
     plot/checkablelegend.cpp \
     plot/checkablelegenditem.cpp \
@@ -169,6 +171,7 @@ HEADERS  += mainwindow.h \
     enums.h \
     fileformats/abstractformatfactory.h \
     fileformats/fileio.h \
+    fileformats/wavfile.h \
     filehandler.h \
     filehandlerdialog.h \
     filestable.h \
@@ -192,6 +195,7 @@ HEADERS  += mainwindow.h \
     plot/qcpcursorsingle.h \
     plot/qcpflowlayout.h \
     plot/qcpflowlegend.h \
+    plot/qcpscrollbarlegend.h \
     plot/qcptrackingcursor.h \
     plot/checkablelegend.h \
     plot/checkablelegenditem.h \
@@ -387,6 +391,11 @@ HEADERS +=\
   $$PWD/../3rdParty/qtpropertybrowser/qttreepropertybrowser.h\
   $$PWD/../3rdParty/qtpropertybrowser/qtvariantproperty.h
 
+SOURCES += \
+  $$PWD/../3rdParty/juce/juce_AudioChannelSet.cpp
+
+HEADERS += \
+  $$PWD/../3rdParty/juce/juce_AudioChannelSet.h
 
 RESOURCES *= src.qrc
 
