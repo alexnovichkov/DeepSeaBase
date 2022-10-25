@@ -87,7 +87,7 @@ DataDescription FrameCutterFunction::getFunctionDescription() const
         case 1:
             result.put("function.frameCutterType", "overlap");
             if (frameCutter.blockSize()!=0)
-                result.put("function.frameCutterOverlap", frameCutter.getDelta() / frameCutter.blockSize());
+                result.put("function.frameCutterOverlap", 1.0 * frameCutter.getDelta() / frameCutter.blockSize());
             break;
         case 2: result.put("function.frameCutterDelta", frameCutter.getDelta()); break;
         case 3:
@@ -123,11 +123,11 @@ void FrameCutterFunction::m_setProperty(const QString &property, const QVariant 
         emit attributeChanged(this, name()+"/blockSize", getBlocks(frameCutter.getXStep(), ""), "enumNames");
     }
     else if (p == "percent") {
-        frameCutter.setDelta(int(1.0 * frameCutter.blockSize() * val.toDouble()));
+        frameCutter.setDelta(val.toDouble(), FrameCutter::DeltaPercent);
     }
     else if (p == "deltaTime") {
         if (frameCutter.getXStep()!=0.0) {
-            frameCutter.setDelta(int(val.toDouble()/frameCutter.getXStep()));
+            frameCutter.setDelta(val.toDouble(), FrameCutter::DeltaTime);
         }
     }
     else if (p == "triggerMode") {
