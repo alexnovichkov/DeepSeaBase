@@ -98,6 +98,21 @@ void WavExporter::writeWithStreams(const QVector<int> &v, const QString &wavFile
         }
     }
     {
+        WavChunkCue header = initCue(channelsCount, samples, format);
+        s << header.cueId;
+        s << header.cueSize;
+        s << header.dwCuePoints;
+        for (auto c: header.cues) {
+            s << c.identifier << c.order << c.chunkID << c.chunkStart << c.blockStart << c.offset;
+        }
+    }
+    {
+        auto assocFile = initFile(v);
+        s << assocFile.fileId << assocFile.fileSize;
+        s << assocFile.dwName << assocFile.dwMedType;
+        s.writeRawData(assocFile.data.data(), assocFile.data.size());
+    }
+    {
         WavChunkData header = initDataHeader(channelsCount, samples, format);
         s << header.dataId;
         s << header.dataSize;
@@ -209,6 +224,21 @@ bool WavExporter::writeWithMap(const QVector<int> &v, const QString &wavFileName
         mapped += sizeof(fact);
     }
 
+    WavChunkCue cue = initCue(channelsCount, samples, format);
+    memcpy(mapped, &cue.cueId, 4); mapped +=4;
+    memcpy(mapped, &cue.cueSize, 4); mapped +=4;
+    memcpy(mapped, &cue.dwCuePoints, 4); mapped +=4;
+    for (auto c: cue.cues) {
+        memcpy(mapped, &c, sizeof(c)); mapped += sizeof(c);
+    }
+
+    auto assocFile = initFile(v);
+    memcpy(mapped, &assocFile.fileId, 4); mapped += 4;
+    memcpy(mapped, &assocFile.fileSize, 4); mapped += 4;
+    memcpy(mapped, &assocFile.dwName, 4); mapped += 4;
+    memcpy(mapped, &assocFile.dwMedType, 4); mapped += 4;
+    memcpy(mapped, assocFile.data.data(), assocFile.data.size()); mapped += assocFile.data.size();
+
     auto data = initDataHeader(channelsCount, samples, format);
     memcpy(mapped, &data, sizeof(data));
     mapped += sizeof(data);
@@ -304,7 +334,8 @@ WavChunkFmt WavExporter::initFmt(int channelsCount, int samplesCount, int sample
 
     if (header.fmtSize == 40) {
         header.wValidBitsPerSample = 8*M; //используем все биты, для формата 24-bit нужно будет менять
-        header.dwChannelMask = juce::AudioChannelSet::discreteChannels(channelsCount).getWaveChannelMask();
+//        header.dwChannelMask = juce::AudioChannelSet::discreteChannels(channelsCount).getWaveChannelMask();
+        qDebug() << header.dwChannelMask;
 
         //subFormat is PCM by default
         if (format == WavFormat::WavFloat)
@@ -316,6 +347,7 @@ WavChunkFmt WavExporter::initFmt(int channelsCount, int samplesCount, int sample
 WavChunkFact WavExporter::initFact(int channelsCount, int samplesCount, int sampleRate, WavFormat format)
 {
     WavChunkFact header;
+    header.factSize = 4;
     header.dwSampleLength = samplesCount; // Nc*Ns, number of samples
     return header;
 }
@@ -327,6 +359,33 @@ WavChunkData WavExporter::initDataHeader(int channelsCount, int samplesCount, Wa
     //data block - 8 + M*Nc*Ns bytes
     header.dataSize = M*channelsCount*samplesCount; //M*Nc*Ns
     return header;
+}
+
+WavChunkCue WavExporter::initCue(int channelsCount, int samplesCount, WavFormat format)
+{
+    WavChunkCue cue;
+    cue.dwCuePoints = 1;
+    cue.cueSize = sizeof (WavChunkCue::Cue) + 4;
+    WavChunkCue::Cue c;
+    cue.cues.append(c);
+
+    return cue;
+}
+
+WavChunkFile WavExporter::initFile(const QVector<int> &v)
+{
+    WavChunkFile chunk;
+    QJsonArray array;
+    for (auto index: v)
+        array.append(file->channel(index)->dataDescription().toJson());
+    QJsonObject o;
+    o.insert("channels", array);
+
+    auto data = QJsonDocument(o).toJson();
+    chunk.fileSize = 8 + data.size();
+    chunk.data = data;
+
+    return chunk;
 }
 
 void WavExporter::finalize()

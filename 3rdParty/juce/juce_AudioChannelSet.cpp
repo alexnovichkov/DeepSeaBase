@@ -25,14 +25,14 @@
 namespace {
     int findNextSetBit(std::bitset<1024> channels, int index)
     {
-        for (int i=index; i<32; ++i) {
+        for (int i=index; i<1024; ++i) {
             if (channels.test(i)) return i;
         }
         return -1;
     }
     void setBitRange(std::bitset<1024> &channels, int index, int count)
     {
-        Q_ASSERT(index+count<32);
+        Q_ASSERT(index+count<1024);
         for (int i=0; i<count; ++i) {
             channels.set(index+i);
         }

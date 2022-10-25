@@ -40,6 +40,8 @@ private:
     WavChunkFact initFact(int channelsCount, int samplesCount, int sampleRate,
                           WavFormat format);
     WavChunkData initDataHeader(int channelsCount, int samplesCount, WavFormat format);
+    WavChunkCue initCue(int channelsCount, int samplesCount, WavFormat format);
+    WavChunkFile initFile(const QVector<int> &v);
     void finalize();
     void writeWithStreams(const QVector<int> &v, const QString &wavFileName);
     bool writeWithMap(const QVector<int> &v, const QString &wavFileName);

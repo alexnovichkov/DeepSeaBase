@@ -43,8 +43,8 @@ static const ExtensibleWavSubFormat ambisonicFormat = { 0x00000001, 0x0721, 0x11
 struct WavChunkFmt
 {
     /*4*/ /*const*/ quint32 fmtId = fourCC("fmt ");	//"fmt "
-    /*4*/quint32 fmtSize = 40;
-    /*2*/quint16 wFormatTag = 0xfffe; //WAVE_FORMAT_EXTENSIBLE, M=2
+    /*4*/quint32 fmtSize = 0;
+    /*2*/quint16 wFormatTag = 0; //WAVE_FORMAT
     /*2*/quint16 nChannels = 0; //Nc
     /*4*/quint32 samplesPerSec = 0; //F
     /*4*/quint32 bytesPerSec = 0; //F*M*Nc
@@ -63,7 +63,7 @@ struct WavChunkFact
 {
     //fact block - 12 bytes
     /*4*//*const*/ quint32 factID = fourCC("fact");
-    /*4*//*const*/ quint32 factSize = 4;
+    /*4*//*const*/ quint32 factSize = 0;
     /*4*/quint32 dwSampleLength = 0; // Nc*Ns, number of samples
 }__attribute__((packed));
 
@@ -73,6 +73,38 @@ struct WavChunkData
     /*const*/ quint32 dataId = fourCC("data"); //"data"
     quint32 dataSize = 0; //M*Nc*Ns
 }__attribute__((packed));
+
+struct WavChunkCue
+{
+    struct Cue
+    {
+        quint32 identifier = 0;
+        quint32 order = 0;
+        quint32 chunkID = fourCC("data");
+        quint32 chunkStart = 0;
+        quint32 blockStart = 0;
+        quint32 offset = 0;
+    } __attribute__((packed));
+
+    quint32 cueId = fourCC("cue "); //"data"
+    quint32 cueSize = 0; //M*Nc*Ns
+    quint32 dwCuePoints = 0;
+    QList<Cue> cues;
+};
+
+struct WavChunkFile
+{
+    quint32 fileId = fourCC("file");
+    quint32 fileSize = 0;
+    quint32 dwName = 0;
+    quint32 dwMedType = 0;
+    QByteArray data;
+};
+
+//struct WavChunkAdtl
+//{
+
+//};
 
 class WavFile : public FileDescriptor
 {
@@ -97,14 +129,17 @@ public:
     static QStringList fileFilters();
     static QStringList suffixes();
 
-    WavHeader *m_header = nullptr;
-    WavChunkFmt *m_fmtChunk = nullptr;
-    WavChunkData *m_dataChunk = nullptr;
-    WavChunkFact *m_factChunk = nullptr;
+    WavHeader m_header;
+    WavChunkFmt m_fmtChunk;
+    WavChunkData m_dataChunk;
+    WavChunkFact m_factChunk;
+    WavChunkCue m_cueChunk;
+    QList<WavChunkFile> m_assocFiles;
     WavFormat m_format = WavFormat::WavExtendedPCM;
     qint64 dataBegin = -1;
     juce::AudioChannelSet audioChannelSet;
     DataPrecision m_dataPrecision = DataPrecision::Float;
+    bool m_valid = true;
 private:
     friend class WavChannel;
     QList<WavChannel*> channels;
@@ -114,6 +149,7 @@ class WavChannel : public Channel
 {
 public:
     WavChannel(WavFile *parent, const QString &name);
+    WavChannel(WavFile *parent, const DataDescription &description);
 
     // Channel interface
 public:
