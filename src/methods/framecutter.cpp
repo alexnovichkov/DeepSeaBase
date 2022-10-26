@@ -1,4 +1,5 @@
 #include "framecutter.h"
+#include "logging.h"
 
 FrameCutter::FrameCutter()
 {

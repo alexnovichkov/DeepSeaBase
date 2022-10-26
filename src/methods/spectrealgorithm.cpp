@@ -55,8 +55,7 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
     if (xStepsDiffer) emit message("Файлы имеют разный шаг по оси X.");
 
     //начальные значения, которые будут использоваться в показе функций
-    resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);
-    samplingF->setParameter(samplingF->name()+"/xStep", xStep);
+    resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);  //автоматически задает xStep для samplingF
     channelF->setFile(dataBase.constFirst());
 
     //resamplingF отправляет сигнал об изменении "?/xStep"
@@ -91,6 +90,5 @@ void SpectreAlgorithm::resetChain()
 
 void SpectreAlgorithm::initChain(FileDescriptor *file)
 {
-    resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());
-    samplingF->setParameter(samplingF->name()+"/xStep", file->xStep());
+    resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());  //автоматически задает xStep для samplingF
 }

@@ -217,8 +217,8 @@ void FilesProcessorDialog::updateProperty(AbstractFunction *f, const QString &pr
         if (v.f == f && v.name == property) {
             if (val.isValid() && !attribute.isEmpty())
                 key->setAttribute(attribute, val);
-
-            key->setValue(currentAlgorithm->getParameter(f, property));
+            auto param = currentAlgorithm->getParameter(f, property);
+            key->setValue(param);
             updateVisibleProperties();
         }
     }

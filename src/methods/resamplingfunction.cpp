@@ -128,9 +128,9 @@ void ResamplingFunction::m_setProperty(const QString &property, const QVariant &
             double f = 1.0 / val.toDouble() / 2.56 / xStep;
             factor = f;
             emit propertyChanged("?/xStep", xStep * factor);
-            emit attributeChanged(this, name()+"/factor",QVariant(),"");
+//            emit attributeChanged(this, name()+"/factor",QVariant(),"");
             emit attributeChanged(this, name()+"/frequencyRange",QVariant(),"");
-            emit attributeChanged(this, name()+"/sampleRate",QVariant(),"");
+//            emit attributeChanged(this, name()+"/sampleRate",QVariant(),"");
         }
     }
     else if (p == "sampleRate") {
@@ -139,8 +139,8 @@ void ResamplingFunction::m_setProperty(const QString &property, const QVariant &
             double f = 1.0 / xStep / sR;
             factor = f;
             emit propertyChanged("?/xStep", xStep * factor);
-            emit attributeChanged(this, name()+"/factor",QVariant(),"");
-            emit attributeChanged(this, name()+"/frequencyRange",QVariant(),"");
+//            emit attributeChanged(this, name()+"/factor",QVariant(),"");
+//            emit attributeChanged(this, name()+"/frequencyRange",QVariant(),"");
             emit attributeChanged(this, name()+"/sampleRate",QVariant(),"");
         }
     }
@@ -150,12 +150,16 @@ void ResamplingFunction::m_setProperty(const QString &property, const QVariant &
             factor = f;
             emit propertyChanged("?/xStep", xStep * factor);
             emit attributeChanged(this, name()+"/factor",QVariant(),"");
-            emit attributeChanged(this, name()+"/frequencyRange",QVariant(),"");
-            emit attributeChanged(this, name()+"/sampleRate",QVariant(),"");
+//            emit attributeChanged(this, name()+"/frequencyRange",QVariant(),"");
+//            emit attributeChanged(this, name()+"/sampleRate",QVariant(),"");
         }
     }
     else if (p == "xStep") {
         xStep = val.toDouble();
+        emit propertyChanged("?/xStep", xStep * factor);
+//        emit attributeChanged(this, name()+"/factor",QVariant(),"");
+//        emit attributeChanged(this, name()+"/frequencyRange",QVariant(),"");
+//        emit attributeChanged(this, name()+"/sampleRate",QVariant(),"");
     }
 }
 

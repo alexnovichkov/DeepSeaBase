@@ -105,10 +105,7 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     if (xStepsDiffer) emit message("Файлы имеют разный шаг по оси X.");
 
     //начальные значения, которые будут использоваться в показе функций
-    resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);
-
-    samplingF->setParameter(samplingF->name()+"/xStep", xStep);
-
+    resamplingF->setParameter(resamplingF->name()+"/xStep", xStep); //автоматически задает xStep для samplingF
     channelF->setFile(dataBase.constFirst());
     refChannelF->setFile(dataBase.constFirst());
     refChannelF->setParameter(refChannelF->name()+"/referenceChannelIndex", 1);
@@ -152,8 +149,7 @@ void FRFAlgorithm::resetChain()
 
 void FRFAlgorithm::initChain(FileDescriptor *file)
 {
-    resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());
-    samplingF->setParameter(samplingF->name()+"/xStep", file->xStep());
+    resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());  //автоматически задает xStep для samplingF
 
     int frfType = saver->getParameter("FRF/type").toInt();
     if (frfType == 1) {
