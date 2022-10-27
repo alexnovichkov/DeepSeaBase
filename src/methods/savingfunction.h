@@ -10,7 +10,7 @@ class Channel;
  * --------
  * ?/ - ничего не знает
  * Saver/type - [int] file type (FileType)
- * Saver/destination - [string] destination folder
+ * Saver/destination - [url] destination folder
  * Saver/name - [string] file name
  * Saver/append - [string] Append channels / Write into new file (append/new)
  *

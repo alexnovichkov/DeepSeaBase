@@ -57,7 +57,7 @@ QString SavingFunction::propertyDescription(const QString &property) const
                                    "}";
     if (property == "destination") return "{"
                                      "  \"name\"        : \"destination\"   ,"
-                                     "  \"type\"        : \"string\"   ,"
+                                     "  \"type\"        : \"url\"   ,"
                                      "  \"displayName\" : \"Сохранять в\"   ,"
                                      "  \"defaultValue\": \"\"         ,"
                                      "  \"toolTip\"     : \"Папка сохранения\""

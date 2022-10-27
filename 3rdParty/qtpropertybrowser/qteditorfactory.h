@@ -198,6 +198,30 @@ private:
     Q_PRIVATE_SLOT(d_func(), void slotEditorDestroyed(QObject *))
 };
 
+class QtDirEditFactoryPrivate;
+
+class QT_QTPROPERTYBROWSER_EXPORT QtDirEditFactory : public QtAbstractEditorFactory<QtDirPropertyManager>
+{
+    Q_OBJECT
+public:
+    QtDirEditFactory(QObject *parent = 0);
+    ~QtDirEditFactory();
+protected:
+    void connectPropertyManager(QtDirPropertyManager *manager);
+    QWidget *createEditor(QtDirPropertyManager *manager, QtProperty *property,
+                QWidget *parent);
+    void disconnectPropertyManager(QtDirPropertyManager *manager);
+private:
+    QtDirEditFactoryPrivate *d_ptr;
+    Q_DECLARE_PRIVATE(QtDirEditFactory)
+    Q_DISABLE_COPY(QtDirEditFactory)
+    Q_PRIVATE_SLOT(d_func(), void slotPropertyChanged(QtProperty *, const QString &))
+    Q_PRIVATE_SLOT(d_func(), void slotReadOnlyChanged(QtProperty *, bool))
+    //Q_PRIVATE_SLOT(d_func(), void slotSetValue(const QString &))
+    Q_PRIVATE_SLOT(d_func(), void slotEditFinished())
+    Q_PRIVATE_SLOT(d_func(), void slotEditorDestroyed(QObject *))
+};
+
 class QtDateEditFactoryPrivate;
 
 class QT_QTPROPERTYBROWSER_EXPORT QtDateEditFactory : public QtAbstractEditorFactory<QtDatePropertyManager>

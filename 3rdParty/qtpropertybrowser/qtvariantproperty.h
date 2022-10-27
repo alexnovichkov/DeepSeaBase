@@ -99,6 +99,7 @@ public:
     static int enumTypeId();
     static int flagTypeId();
     static int groupTypeId();
+    static int dirTypeId();
     static int iconMapTypeId();
 public Q_SLOTS:
     virtual void setValue(QtProperty *property, const QVariant &val);
@@ -126,7 +127,7 @@ private:
     Q_PRIVATE_SLOT(d_func(), void slotDecimalsChanged(QtProperty *, int))
     Q_PRIVATE_SLOT(d_func(), void slotValueChanged(QtProperty *, bool))
     Q_PRIVATE_SLOT(d_func(), void slotValueChanged(QtProperty *, const QString &))
-//    Q_PRIVATE_SLOT(d_func(), void slotRegularExpressionChanged(QtProperty *, const QRegularExpression &))
+//    Q_PRIVATE_SLOT(d_func(), void slotValueChanged(QtProperty *, const QDir &))
     Q_PRIVATE_SLOT(d_func(), void slotEchoModeChanged(QtProperty *, int))
     Q_PRIVATE_SLOT(d_func(), void slotValueChanged(QtProperty *, const QDate &))
     Q_PRIVATE_SLOT(d_func(), void slotRangeChanged(QtProperty *, const QDate &, const QDate &))

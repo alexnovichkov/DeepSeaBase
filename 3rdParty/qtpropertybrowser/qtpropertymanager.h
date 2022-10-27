@@ -211,6 +211,37 @@ private:
     Q_DISABLE_COPY(QtStringPropertyManager)
 };
 
+class QtDirPropertyManagerPrivate;
+
+class QT_QTPROPERTYBROWSER_EXPORT QtDirPropertyManager : public QtAbstractPropertyManager
+{
+    Q_OBJECT
+public:
+    QtDirPropertyManager(QObject *parent = 0);
+    ~QtDirPropertyManager();
+
+    QString value(const QtProperty *property) const;
+    bool isReadOnly(const QtProperty *property) const;
+
+public Q_SLOTS:
+    void setValue(QtProperty *property, const QString &val);
+    void setReadOnly(QtProperty *property, bool readOnly);
+
+Q_SIGNALS:
+    void valueChanged(QtProperty *property, const QString &val);
+    void readOnlyChanged(QtProperty *property, bool);
+
+protected:
+    QString valueText(const QtProperty *property) const;
+    QString displayText(const QtProperty *property) const;
+    virtual void initializeProperty(QtProperty *property);
+    virtual void uninitializeProperty(QtProperty *property);
+private:
+    QtDirPropertyManagerPrivate *d_ptr;
+    Q_DECLARE_PRIVATE(QtDirPropertyManager)
+    Q_DISABLE_COPY(QtDirPropertyManager)
+};
+
 class QtDatePropertyManagerPrivate;
 
 class QT_QTPROPERTYBROWSER_EXPORT QtDatePropertyManager : public QtAbstractPropertyManager
