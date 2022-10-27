@@ -82,13 +82,14 @@ QVariant SavingFunction::m_getProperty(const QString &property) const
         if (m_input) return m_input->getParameter(property);
     }
 
-    if (!property.startsWith(name()+"/")) return QVariant();
-    QString p = property.section("/",1);
+    if (property.startsWith(name()+"/")) {
+        QString p = property.section("/",1);
 
-    if (p == "type") return type;
-    if (p == "destination") return destination;
-    if (p == "name") return newFileName;
-    if (p == "append") return append;
+        if (p == "type") return type;
+        if (p == "destination") return destination;
+        if (p == "name") return newFileName;
+        if (p == "append") return append;
+    }
 
     return QVariant();
 }

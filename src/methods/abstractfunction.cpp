@@ -189,7 +189,6 @@ bool AbstractAlgorithm::compute(FileDescriptor *file)
     if (file->channelsCount()==0) return false;
     if (m_chain.isEmpty()) return false;
 
-    m_chain.last()->setParameter(m_chain.last()->name()+"/destination", QFileInfo(file->fileName()).canonicalPath());
     m_chain.last()->reset();
 
     initChain(file);

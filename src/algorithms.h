@@ -342,7 +342,7 @@ QVector<double> movingAverage(const QVector<double> &spectrum, int window);
  *                    если false, то к имени добавляется суффикс "(1)", если файл уже существует
  * @return folderName/fileName_constantPart_000.ext, folderName/fileName_constantPart_001.ext
  */
-QString createUniqueFileName(const QString &folderName, const QString &fileName, QString constantPart,
+QString createUniqueFileName(QString folderName, const QString &fileName, QString constantPart,
                              const QString &ext, bool justified = false);
 QString createUniqueFileName(const QString &fileName);
 /**

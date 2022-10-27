@@ -172,16 +172,15 @@ QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spec
     return result;
 }
 
-QString createUniqueFileName(const QString &folderName, const QString &fileName, QString constantPart,
+QString createUniqueFileName(QString folderName, const QString &fileName, QString constantPart,
                              const QString &ext, bool justified)
 {DDD;
-    QString result;
     QFileInfo fn = QFileInfo(fileName);
 
-    if (folderName.isEmpty())
-        result = fn.absolutePath()+"/"+fn.completeBaseName();
-    else
-        result = folderName+"/"+fn.completeBaseName();
+    if (folderName.isEmpty()) folderName = fn.absolutePath();
+    if (folderName.endsWith('/')) folderName.chop(1);
+
+    QString result = folderName+"/"+fn.completeBaseName();
     if (!constantPart.isEmpty()) result.append("_"+constantPart);
 
     if (!justified && !QFile::exists(result+"."+ext))
