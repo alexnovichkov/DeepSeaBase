@@ -840,10 +840,10 @@ void PlotArea::onDropEvent(bool plotOnLeft, const QVector<Channel *> &channels)
 {DD;
     auto type = Enums::PlotType::General;
     if (!channels.isEmpty()) {
-        if (channels.first()->type() == Descriptor::TimeResponse)
-            type = Enums::PlotType::Time;
-        else if (channels.first()->data()->blocksCount()>1)
+        if (channels.first()->data()->blocksCount()>1)
             type = Enums::PlotType::Spectrogram;
+        else if (channels.first()->type() == Descriptor::TimeResponse)
+            type = Enums::PlotType::Time;
         else if (channels.first()->octaveType() != 0)
             type = Enums::PlotType::Octave;
     }

@@ -77,8 +77,7 @@ QVariant FrameCutterFunction::m_getProperty(const QString &property) const
 
 DataDescription FrameCutterFunction::getFunctionDescription() const
 {
-    DataDescription result;
-    if (m_input) result = m_input->getFunctionDescription();
+    DataDescription result = AbstractFunction::getFunctionDescription();
 
     result.put("function.name", "FrameCutter");
     result.put("function.type", 1);

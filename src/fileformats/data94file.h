@@ -154,6 +154,7 @@ public:
     AxisBlock xAxisBlock;
     AxisBlock zAxisBlock;
 private:
+    void initFrom(DataHolder *data, const DataDescription &description);
     friend class Data94File;
     Data94File *parent = 0;
 

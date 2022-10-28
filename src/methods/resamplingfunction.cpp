@@ -104,8 +104,7 @@ QVariant ResamplingFunction::m_getProperty(const QString &property) const
 
 DataDescription ResamplingFunction::getFunctionDescription() const
 {
-    DataDescription result;
-    if (m_input) result = m_input->getFunctionDescription();
+    DataDescription result = AbstractFunction::getFunctionDescription();
 
     result.put("function.format", "real");
     result.put("function.precision", "float");

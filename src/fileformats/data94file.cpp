@@ -352,30 +352,7 @@ void Data94File::addChannelWithData(DataHolder *data, const DataDescription &des
     ch->setData(data);
     ch->dataDescription() = description;
 
-    //Заполнение данными
-    //xAxisBlock
-    ch->xAxisBlock.uniform = data->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
-    ch->xAxisBlock.begin = data->xMin();
-    if (ch->xAxisBlock.uniform == 0) {// not uniform
-        ch->xAxisBlock.values = data->xValues();
-        ch->xAxisBlock.values.resize(data->samplesCount());
-    }
-
-    ch->xAxisBlock.count = data->samplesCount();
-    ch->xAxisBlock.step = data->xStep();
-
-    //zAxisBlock
-    ch->zAxisBlock.step = data->zStep();
-    ch->zAxisBlock.uniform = (data->zValuesFormat() == DataHolder::XValuesUniform ? 1:0);
-    ch->zAxisBlock.count = data->blocksCount();
-    ch->zAxisBlock.begin = data->zMin();
-    if (ch->zAxisBlock.uniform == 0)
-        ch->zAxisBlock.values = data->zValues();
-
-    ch->isComplex = data->yValuesFormat() == DataHolder::YValuesComplex;
-
-    if (ch->xAxisBlock.uniform == 1 && !qFuzzyIsNull(ch->xAxisBlock.step))
-        ch->dataDescription().put("samplerate", int(1.0 / ch->xAxisBlock.step));
+    ch->initFrom(data, description);
 }
 
 void Data94File::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
@@ -482,40 +459,47 @@ Data94Channel::Data94Channel(Data94Channel *other, Data94File *parent)
     parent->channels << this;
 }
 
-Data94Channel::Data94Channel(Channel *other, Data94File *parent)
-    : Channel(other), parent(parent)
-{DDD;
-    parent->channels << this;
-    isComplex = other->data()->yValuesFormat() == DataHolder::YValuesComplex;
+void Data94Channel::initFrom(DataHolder *data, const DataDescription &description)
+{
+    isComplex = data->yValuesFormat() == DataHolder::YValuesComplex;
 
     //xAxisBlock
-    xAxisBlock.uniform = other->data()->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
-    xAxisBlock.begin = other->data()->xMin();
+    xAxisBlock.uniform = data->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;
+    xAxisBlock.begin = data->xMin();
     if (xAxisBlock.uniform == 0) // not uniform
-        xAxisBlock.values = other->data()->xValues();
-    xAxisBlock.count = other->data()->samplesCount();
-    xAxisBlock.step = other->data()->xStep();
+        xAxisBlock.values = data->xValues();
+    xAxisBlock.count = data->samplesCount();
+    xAxisBlock.step = data->xStep();
 
     //zAxisBlock
-    zAxisBlock.uniform = other->data()->zValuesFormat() == DataHolder::XValuesUniform ? 1:0;
-    zAxisBlock.count = other->data()->blocksCount();
-    zAxisBlock.begin = other->data()->zMin();
-    zAxisBlock.step = other->data()->zStep();
+    zAxisBlock.uniform = data->zValuesFormat() == DataHolder::XValuesUniform ? 1:0;
+    zAxisBlock.count = data->blocksCount();
+    zAxisBlock.begin = data->zMin();
+    zAxisBlock.step = data->zStep();
     if (zAxisBlock.uniform == 0) // not uniform
-        zAxisBlock.values = other->data()->zValues();
+        zAxisBlock.values = data->zValues();
     if (zAxisBlock.values.isEmpty() && !zAxisBlock.uniform) {
         for (uint i=0; i<zAxisBlock.count; ++i) zAxisBlock.values << i;
     }
-//    qDebug()<<zAxisBlock;
+
+    if (xAxisBlock.uniform == 1 && !qFuzzyIsNull(xAxisBlock.step))
+        dataDescription().put("samplerate", int(1.0 / xAxisBlock.step));
 
     //по умолчанию точность float
     //int8 / uint8 / int16 / uint16 / int32 / uint32 / int64 / uint64 / float / double
-    QString  precision = other->dataDescription().get("function.precision").toString();
+    QString  precision = description.get("function.precision").toString();
     if (precision.isEmpty()) precision = "float";
     if (precision.endsWith("int8")) sampleWidth = 1;
     else if (precision.endsWith("int16")) sampleWidth = 2;
     else if (precision.endsWith("int64") || precision=="double") sampleWidth = 8;
     else sampleWidth = 4;
+}
+
+Data94Channel::Data94Channel(Channel *other, Data94File *parent)
+    : Channel(other), parent(parent)
+{DDD;
+    parent->channels << this;
+    initFrom(other->data(), other->dataDescription());
 }
 
 void Data94Channel::read(QDataStream &r)
@@ -597,8 +581,10 @@ void Data94Channel::read(QDataStream &r)
 void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
 {DDD;
     const auto precision = dataDescription().get("function.precision").toString();
-
-    r.setFloatingPointPrecision(QDataStream::SinglePrecision);
+    if (precision == "float")
+        r.setFloatingPointPrecision(QDataStream::SinglePrecision);
+    else
+        r.setFloatingPointPrecision(QDataStream::DoublePrecision);
     qint64 newposition = r.device()->pos();
     r.device()->write("d94chan ");
 
@@ -639,6 +625,7 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
         for (int block = 0; block < data->blocksCount(); ++block) {
             if (!isComplex) {
                 const QVector<double> yValues = data->rawYValues(block);
+                qDebug()<<"block"<<block<<yValues.mid(0,20);
                 if (yValues.isEmpty()) {
                     qDebug()<<"Отсутствуют данные для записи в канале"<<name();
                     continue;

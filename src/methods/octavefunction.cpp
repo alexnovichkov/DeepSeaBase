@@ -129,8 +129,7 @@ void OctaveFunction::reset()
 
 DataDescription OctaveFunction::getFunctionDescription() const
 {
-    DataDescription d;
-    if (m_input) d = m_input->getFunctionDescription();
+    DataDescription d = AbstractFunction::getFunctionDescription();
     d.put("function.format", "amplitude");
     d.put("function.octaveFormat", static_cast<int>(bank.getType()));
     d.put("function.precision", "float");

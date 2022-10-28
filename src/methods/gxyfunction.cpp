@@ -64,8 +64,7 @@ QVariant GxyFunction::m_getProperty(const QString &property) const
 
 DataDescription GxyFunction::getFunctionDescription() const
 {
-    DataDescription result;
-    if (m_input) result = m_input->getFunctionDescription();
+    DataDescription result = AbstractFunction::getFunctionDescription();
 
     result.put("function.name", "GXY");
 

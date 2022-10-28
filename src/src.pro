@@ -57,6 +57,7 @@ SOURCES += main.cpp\
     methods/apsfunction.cpp \
     methods/calculations.cpp \
     methods/filteringalgorithm.cpp \
+    methods/flatteningfunction.cpp \
     methods/frfalgorithm.cpp \
     methods/frffunction.cpp \
     methods/gxyfunction.cpp \
@@ -178,6 +179,7 @@ HEADERS  += mainwindow.h \
     methods/apsfunction.h \
     methods/calculations.h \
     methods/filteringalgorithm.h \
+    methods/flatteningfunction.h \
     methods/frfalgorithm.h \
     methods/frffunction.h \
     methods/gxyfunction.h \

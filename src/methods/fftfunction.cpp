@@ -163,8 +163,7 @@ void FftFunction::reset()
 
 DataDescription FftFunction::getFunctionDescription() const
 {
-    DataDescription result;
-    if (m_input) result = m_input->getFunctionDescription();
+    DataDescription result = AbstractFunction::getFunctionDescription();
 
     switch (map.value("output")) {
         case 0: result.put("function.format", "complex"); break;

@@ -15,6 +15,7 @@ private:
     AbstractFunction * channelF; //фильтрует обрабатываемые каналы
     AbstractFunction * samplingF; //осуществляет нарезку блоков
     AbstractFunction * windowingF; //применяет оконную функцию
+    AbstractFunction * flatteningF; //объединяет блоки
     AbstractFunction * saver; //сохраняет результат
 
 protected:

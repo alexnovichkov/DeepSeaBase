@@ -70,6 +70,13 @@ QVector<double> AbstractFunction::getData(const QString &id)
     return QVector<double>();
 }
 
+DataDescription AbstractFunction::getFunctionDescription() const
+{
+    DataDescription result;
+    if (m_input) result = m_input->getFunctionDescription();
+    return result;
+}
+
 void AbstractFunction::setInput(AbstractFunction *input)
 {DDD;
     m_input = input;

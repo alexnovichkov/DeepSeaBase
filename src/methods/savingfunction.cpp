@@ -156,6 +156,7 @@ bool SavingFunction::compute(FileDescriptor *file)
     // создаем канал
     if (!m_input->compute(file)) return false;
     QVector<double> data = m_input->getData("input");
+
     if (data.isEmpty()) return false;
 
     sourceFileName = file->fileName();
