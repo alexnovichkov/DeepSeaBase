@@ -53,16 +53,16 @@ PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     }
     if (xStepsDiffer) emit message("Файлы имеют разный шаг по оси X.");
 
-    //начальные значения, которые будут использоваться в показе функций
-    resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);  //автоматически задает xStep для samplingF
-    channelF->setFile(dataBase.constFirst());
-
     //resamplingF отправляет сигнал об изменении "?/xStep"
     connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
             samplingF, SLOT(updateProperty(QString,QVariant)));
     //samplingF отправляет сигнал об изменении "?/triggerChannel"
     connect(samplingF, SIGNAL(propertyChanged(QString,QVariant)),
             channelF, SLOT(updateProperty(QString,QVariant)));
+
+    //начальные значения, которые будут использоваться в показе функций
+    resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);  //автоматически задает xStep для samplingF
+    channelF->setFile(dataBase.constFirst());
 }
 
 
