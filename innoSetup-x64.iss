@@ -9,6 +9,7 @@
 #define MyAppVersion  StringChange(FileLine, """;","")
 #define PathToExe "E:\My\build\build-DeepSeaBase-Desktop_Qt_5_12_8_MinGW_64_bit-Release\bin"
 #define PathToQt "K:\Qt\Qt5.12.8\5.12.8\mingw73_64"
+#define CurrentDate GetDateTimeString('dd/mm/yyyy', '.', '');
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -22,7 +23,7 @@ AppPublisher={#MyAppPublisher}
 DefaultDirName={pf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
-OutputBaseFilename=DeepSeaBaseInstall-{#MyAppVersion}-x64
+OutputBaseFilename=DeepSeaBaseInstall-{#MyAppVersion}-{#CurrentDate}-x64
 Compression=lzma
 SolidCompression=yes
 ArchitecturesAllowed=x64 ia64
