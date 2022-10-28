@@ -41,7 +41,6 @@ bool FlatteningFunction::compute(FileDescriptor *file)
         return false;
     }
     output = m_input->getData("input");
-    qDebug()<<output.mid(0,20);
     return !output.isEmpty();
 }
 

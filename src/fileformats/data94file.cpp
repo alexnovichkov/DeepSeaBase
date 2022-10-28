@@ -625,7 +625,6 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
         for (int block = 0; block < data->blocksCount(); ++block) {
             if (!isComplex) {
                 const QVector<double> yValues = data->rawYValues(block);
-                qDebug()<<"block"<<block<<yValues.mid(0,20);
                 if (yValues.isEmpty()) {
                     qDebug()<<"Отсутствуют данные для записи в канале"<<name();
                     continue;

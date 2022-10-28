@@ -13,6 +13,7 @@ class Channel;
  * Saver/destination - [url] destination folder
  * Saver/name - [string] file name
  * Saver/append - [string] Append channels / Write into new file (append/new)
+ * Saver/precision - [enum] precision (single/double)
  *
  * Спрашивает:
  * ----------
@@ -85,6 +86,7 @@ private:
     int type = 2;
     QString destination;
     bool append = false;
+    int precision = 0; // 0=single, 1 = double
     QVector<QVector<double>> data;
 };
 

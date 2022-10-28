@@ -109,7 +109,6 @@ DataDescription PsFunction::getFunctionDescription() const
     DataDescription result = AbstractFunction::getFunctionDescription();
 
     result.put("function.format", "amplitude");
-    result.put("function.precision", "float");
     result.put("function.name", "PS");
     result.put("function.type", 12);
     result.put("function.octaveFormat", 0);

@@ -247,7 +247,6 @@ DataDescription FrfFunction::getFunctionDescription() const
         case 4: result.put("function.format", "phase"); break;
         default: break;
     }
-    result.put("function.precision", "float");
     result.put("function.name", "FRF");
     result.put("function.type", 4);
     result.put("function.description", map.value("type")==0?"H1":"H2");

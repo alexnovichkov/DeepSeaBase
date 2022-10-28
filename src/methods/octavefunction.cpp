@@ -132,7 +132,6 @@ DataDescription OctaveFunction::getFunctionDescription() const
     DataDescription d = AbstractFunction::getFunctionDescription();
     d.put("function.format", "amplitude");
     d.put("function.octaveFormat", static_cast<int>(bank.getType()));
-    d.put("function.precision", "float");
     d.put("function.name", "OCTF");
     d.put("function.type", 9);
     d.put("function.logscale", "quadratic");

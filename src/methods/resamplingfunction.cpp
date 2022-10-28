@@ -107,7 +107,6 @@ DataDescription ResamplingFunction::getFunctionDescription() const
     DataDescription result = AbstractFunction::getFunctionDescription();
 
     result.put("function.format", "real");
-    result.put("function.precision", "float");
     result.put("function.name", "RSMPL");
     result.put("function.type", 12);
 

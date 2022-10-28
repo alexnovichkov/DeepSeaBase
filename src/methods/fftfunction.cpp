@@ -173,7 +173,6 @@ DataDescription FftFunction::getFunctionDescription() const
         case 4: result.put("function.format", "phase"); break;
         default: break;
     }
-    result.put("function.precision", "float");
     result.put("function.name", "FFT");
     result.put("function.type", 12);
     result.put("function.octaveFormat", 0);
