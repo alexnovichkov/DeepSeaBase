@@ -202,6 +202,11 @@ PlotArea::PlotArea(int index, QWidget *parent)
     setWidget(w);
 }
 
+PlotArea::~PlotArea()
+{
+    if (m_plot) m_plot->deleteAllCurves(true);
+}
+
 Plot *PlotArea::plot()
 {DDD;
     return m_plot;

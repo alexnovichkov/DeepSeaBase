@@ -17,6 +17,7 @@ class PlotArea : public ads::CDockWidget
     Q_OBJECT
 public:
     PlotArea(int index, QWidget *parent);
+    ~PlotArea();
     Plot* plot();
     void addPlot(Enums::PlotType type);
 
