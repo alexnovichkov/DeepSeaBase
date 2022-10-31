@@ -69,6 +69,11 @@ class QtGroupPropertyType
 {
 };
 
+class QtDirPropertyType
+{
+
+};
+
 #if QT_VERSION >= 0x040400
 QT_END_NAMESPACE
 #endif
@@ -76,6 +81,7 @@ QT_END_NAMESPACE
 Q_DECLARE_METATYPE(QtEnumPropertyType)
 Q_DECLARE_METATYPE(QtFlagPropertyType)
 Q_DECLARE_METATYPE(QtGroupPropertyType)
+Q_DECLARE_METATYPE(QtDirPropertyType)
 
 #if QT_VERSION >= 0x040400
 QT_BEGIN_NAMESPACE
@@ -121,6 +127,11 @@ int QtVariantPropertyManager::flagTypeId()
 int QtVariantPropertyManager::groupTypeId()
 {
     return qMetaTypeId<QtGroupPropertyType>();
+}
+
+int QtVariantPropertyManager::dirTypeId()
+{
+    return qMetaTypeId<QtDirPropertyType>();
 }
 
 /*!
@@ -315,7 +326,7 @@ public:
     void slotDecimalsChanged(QtProperty *property, int prec);
     void slotValueChanged(QtProperty *property, bool val);
     void slotValueChanged(QtProperty *property, const QString &val);
-//    void slotRegularExpressionChanged(QtProperty *property, const QRegularExpression &regularExpression);
+//    void slotValueChanged(QtProperty *property, const QDir &dir);
     void slotEchoModeChanged(QtProperty *property, int);
     void slotValueChanged(QtProperty *property, const QDate &val);
     void slotRangeChanged(QtProperty *property, const QDate &min, const QDate &max);
@@ -541,10 +552,9 @@ void QtVariantPropertyManagerPrivate::slotValueChanged(QtProperty *property, con
     valueChanged(property, QVariant(val));
 }
 
-//void QtVariantPropertyManagerPrivate::slotRegularExpressionChanged(QtProperty *property, const QRegularExpression &regularExpression)
+//void QtVariantPropertyManagerPrivate::slotValueChanged(QtProperty *property, const QDir &val)
 //{
-//    if (QtVariantProperty *varProp = m_internalToProperty.value(property, 0))
-//        emit q_ptr->attributeChanged(varProp, m_regularExpressionAttribute, QVariant(regularExpression));
+//    valueChanged(property, QVariant::fromValue<QDir>(val));
 //}
 
 void QtVariantPropertyManagerPrivate::slotEchoModeChanged(QtProperty *property, int mode)
@@ -1032,6 +1042,19 @@ QtVariantPropertyManager::QtVariantPropertyManager(QObject *parent)
     connect(stringPropertyManager, SIGNAL(readOnlyChanged(QtProperty*, bool)),
                 this, SLOT(slotReadOnlyChanged(QtProperty*, bool)));
 
+    // DirPropertyManager
+    int dirId = dirTypeId();
+    QtDirPropertyManager *dirPropertyManager = new QtDirPropertyManager(this);
+    d_ptr->m_typeToPropertyManager[dirId] = dirPropertyManager;
+    d_ptr->m_typeToValueType[dirId] = QVariant::String;
+    d_ptr->m_typeToAttributeToAttributeType[dirId][d_ptr->m_readOnlyAttribute] =
+        QVariant::Bool;
+
+    connect(dirPropertyManager, SIGNAL(valueChanged(QtProperty *, const QString &)),
+                this, SLOT(slotValueChanged(QtProperty *, const QString &)));
+    connect(dirPropertyManager, SIGNAL(readOnlyChanged(QtProperty*, bool)),
+                this, SLOT(slotReadOnlyChanged(QtProperty*, bool)));
+
     // DatePropertyManager
     QtDatePropertyManager *datePropertyManager = new QtDatePropertyManager(this);
     d_ptr->m_typeToPropertyManager[QVariant::Date] = datePropertyManager;
@@ -1382,6 +1405,8 @@ QVariant QtVariantPropertyManager::value(const QtProperty *property) const
         return boolManager->value(internProp);
     } else if (QtStringPropertyManager *stringManager = qobject_cast<QtStringPropertyManager *>(manager)) {
         return stringManager->value(internProp);
+    } else if (QtDirPropertyManager *dirManager = qobject_cast<QtDirPropertyManager *>(manager)) {
+        return dirManager->value(internProp);
     } else if (QtDatePropertyManager *dateManager = qobject_cast<QtDatePropertyManager *>(manager)) {
         return dateManager->value(internProp);
     } else if (QtTimePropertyManager *timeManager = qobject_cast<QtTimePropertyManager *>(manager)) {
@@ -1530,6 +1555,10 @@ QVariant QtVariantPropertyManager::attributeValue(const QtProperty *property, co
         if (attribute == d_ptr->m_readOnlyAttribute)
             return stringManager->isReadOnly(internProp);
         return QVariant();
+    } else if (QtDirPropertyManager *dirManager = qobject_cast<QtDirPropertyManager *>(manager)) {
+        if (attribute == d_ptr->m_readOnlyAttribute)
+            return dirManager->isReadOnly(internProp);
+        return QVariant();
     } else if (QtDatePropertyManager *dateManager = qobject_cast<QtDatePropertyManager *>(manager)) {
         if (attribute == d_ptr->m_maximumAttribute)
             return dateManager->maximum(internProp);
@@ -1660,6 +1689,9 @@ void QtVariantPropertyManager::setValue(QtProperty *property, const QVariant &va
     } else if (QtStringPropertyManager *stringManager = qobject_cast<QtStringPropertyManager *>(manager)) {
         stringManager->setValue(internProp, qvariant_cast<QString>(val));
         return;
+    } else if (QtDirPropertyManager *dirManager = qobject_cast<QtDirPropertyManager *>(manager)) {
+        dirManager->setValue(internProp, qvariant_cast<QString>(val));
+        return;
     } else if (QtDatePropertyManager *dateManager = qobject_cast<QtDatePropertyManager *>(manager)) {
         dateManager->setValue(internProp, qvariant_cast<QDate>(val));
         return;
@@ -1784,6 +1816,10 @@ void QtVariantPropertyManager::setAttribute(QtProperty *property,
             stringManager->setEchoMode(internProp, (EchoMode)qvariant_cast<int>(value));
         if (attribute == d_ptr->m_readOnlyAttribute)
             stringManager->setReadOnly(internProp, (EchoMode)qvariant_cast<bool>(value));
+        return;
+    } else if (QtDirPropertyManager *dirManager = qobject_cast<QtDirPropertyManager *>(manager)) {
+        if (attribute == d_ptr->m_readOnlyAttribute)
+            dirManager->setReadOnly(internProp, (EchoMode)qvariant_cast<bool>(value));
         return;
     } else if (QtDatePropertyManager *dateManager = qobject_cast<QtDatePropertyManager *>(manager)) {
         if (attribute == d_ptr->m_maximumAttribute)
@@ -1940,6 +1976,7 @@ public:
     QtDoubleSpinBoxFactory     *m_doubleSpinBoxFactory;
     QtCheckBoxFactory          *m_checkBoxFactory;
     QtLineEditFactory          *m_lineEditFactory;
+    QtDirEditFactory           *m_dirEditFactory;
     QtDateEditFactory          *m_dateEditFactory;
     QtTimeEditFactory          *m_timeEditFactory;
     QtDateTimeEditFactory      *m_dateTimeEditFactory;
@@ -2036,6 +2073,11 @@ QtVariantEditorFactory::QtVariantEditorFactory(QObject *parent)
     d_ptr->m_factoryToType[d_ptr->m_lineEditFactory] = QVariant::String;
     d_ptr->m_typeToFactory[QVariant::String] = d_ptr->m_lineEditFactory;
 
+    d_ptr->m_dirEditFactory = new QtDirEditFactory(this);
+    const int dirId = QtVariantPropertyManager::dirTypeId();
+    d_ptr->m_factoryToType[d_ptr->m_dirEditFactory] = dirId;
+    d_ptr->m_typeToFactory[dirId] = d_ptr->m_dirEditFactory;
+
     d_ptr->m_dateEditFactory = new QtDateEditFactory(this);
     d_ptr->m_factoryToType[d_ptr->m_dateEditFactory] = QVariant::Date;
     d_ptr->m_typeToFactory[QVariant::Date] = d_ptr->m_dateEditFactory;
@@ -2108,6 +2150,11 @@ void QtVariantEditorFactory::connectPropertyManager(QtVariantPropertyManager *ma
     QListIterator<QtStringPropertyManager *> itString(stringPropertyManagers);
     while (itString.hasNext())
         d_ptr->m_lineEditFactory->addPropertyManager(itString.next());
+
+    QList<QtDirPropertyManager *> dirPropertyManagers = manager->findChildren<QtDirPropertyManager *>();
+    QListIterator<QtDirPropertyManager *> itDir(dirPropertyManagers);
+    while (itDir.hasNext())
+        d_ptr->m_dirEditFactory->addPropertyManager(itDir.next());
 
     QList<QtDatePropertyManager *> datePropertyManagers = manager->findChildren<QtDatePropertyManager *>();
     QListIterator<QtDatePropertyManager *> itDate(datePropertyManagers);
@@ -2252,6 +2299,11 @@ void QtVariantEditorFactory::disconnectPropertyManager(QtVariantPropertyManager 
     QListIterator<QtStringPropertyManager *> itString(stringPropertyManagers);
     while (itString.hasNext())
         d_ptr->m_lineEditFactory->removePropertyManager(itString.next());
+
+    QList<QtDirPropertyManager *> dirPropertyManagers = manager->findChildren<QtDirPropertyManager *>();
+    QListIterator<QtDirPropertyManager *> itDir(dirPropertyManagers);
+    while (itDir.hasNext())
+        d_ptr->m_dirEditFactory->removePropertyManager(itDir.next());
 
     QList<QtDatePropertyManager *> datePropertyManagers = manager->findChildren<QtDatePropertyManager *>();
     QListIterator<QtDatePropertyManager *> itDate(datePropertyManagers);

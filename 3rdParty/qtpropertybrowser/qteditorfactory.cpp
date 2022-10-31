@@ -59,6 +59,7 @@
 #include <QStyleOption>
 #include <QPainter>
 #include <QMap>
+#include <QDir>
 
 #if defined(Q_CC_MSVC)
 #    pragma warning(disable: 4786) /* MS VS 6: truncating debug info after 255 characters */
@@ -1045,32 +1046,6 @@ void QtLineEditFactoryPrivate::slotPropertyChanged(QtProperty *property,
     }
 }
 
-//void QtLineEditFactoryPrivate::slotRegularExpressionChanged(QtProperty *property,
-//            const QRegularExpression &regularExpression)
-//{
-//    if (!m_createdEditors.contains(property))
-//        return;
-
-//    QtStringPropertyManager *manager = q_ptr->propertyManager(property);
-//    if (!manager)
-//        return;
-
-//    QListIterator<QLineEdit *> itEditor(m_createdEditors[property]);
-//    while (itEditor.hasNext()) {
-//        QLineEdit *editor = itEditor.next();
-//        editor->blockSignals(true);
-//        const QValidator *oldValidator = editor->validator();
-//        QValidator *newValidator = 0;
-//        if (regularExpression.isValid()) {
-//            newValidator = new QRegularExpressionValidator(regularExpression, editor);
-//        }
-//        editor->setValidator(newValidator);
-//        if (oldValidator)
-//            delete oldValidator;
-//        editor->blockSignals(false);
-//    }
-//}
-
 void QtLineEditFactoryPrivate::slotEchoModeChanged(QtProperty *property, int echoMode)
 {
     if (!m_createdEditors.contains(property))
@@ -1214,6 +1189,149 @@ void QtLineEditFactory::disconnectPropertyManager(QtStringPropertyManager *manag
     disconnect(manager, SIGNAL(readOnlyChanged(QtProperty*, bool)),
         this, SLOT(slotReadOnlyChanged(QtProperty *, bool)));
 
+}
+
+// QtDirEditFactory
+#include "fancylineedit.h"
+
+class QtDirEditFactoryPrivate : public EditorFactoryPrivate<FancyLineEdit>
+{
+    QtDirEditFactory *q_ptr;
+    Q_DECLARE_PUBLIC(QtDirEditFactory)
+
+public:
+    void slotPropertyChanged(QtProperty *property, const QString &value);
+    void slotEditFinished();
+    void slotReadOnlyChanged(QtProperty *, bool);
+};
+
+void QtDirEditFactoryPrivate::slotPropertyChanged(QtProperty *property,
+                const QString &value)
+{
+    if (!m_createdEditors.contains(property))
+        return;
+
+    for (auto editor: m_createdEditors[property]) {
+        if (editor->text() != value) {
+            editor->blockSignals(true);
+            editor->setText(value);
+            editor->blockSignals(false);
+        }
+    }
+}
+
+void QtDirEditFactoryPrivate::slotReadOnlyChanged( QtProperty *property, bool readOnly)
+{
+    if (!m_createdEditors.contains(property))
+        return;
+
+    QtDirPropertyManager *manager = q_ptr->propertyManager(property);
+    if (!manager)
+        return;
+
+    for (auto editor: m_createdEditors[property]) {
+        editor->blockSignals(true);
+        editor->setReadOnly(readOnly);
+        editor->blockSignals(false);
+    }
+}
+
+void QtDirEditFactoryPrivate::slotEditFinished()
+{
+    QObject *object = q_ptr->sender();
+    const QMap<FancyLineEdit *, QtProperty *>::ConstIterator ecend = m_editorToProperty.constEnd();
+    for (QMap<FancyLineEdit *, QtProperty *>::ConstIterator itEditor = m_editorToProperty.constBegin(); itEditor != ecend; ++itEditor)
+        if (itEditor.key() == object) {
+            QtProperty *property = itEditor.value();
+            QtDirPropertyManager *manager = q_ptr->propertyManager(property);
+            if (!manager)
+                return;
+            manager->setValue(property, itEditor.key()->text());
+            return;
+        }
+}
+
+QtDirEditFactory::QtDirEditFactory(QObject *parent)
+    : QtAbstractEditorFactory<QtDirPropertyManager>(parent)
+{
+    d_ptr = new QtDirEditFactoryPrivate();
+    d_ptr->q_ptr = this;
+
+}
+
+/*!
+    Destroys this factory, and all the widgets it has created.
+*/
+QtDirEditFactory::~QtDirEditFactory()
+{
+    qDeleteAll(d_ptr->m_editorToProperty.keys());
+    delete d_ptr;
+}
+
+/*!
+    \internal
+
+    Reimplemented from the QtAbstractEditorFactory class.
+*/
+void QtDirEditFactory::connectPropertyManager(QtDirPropertyManager *manager)
+{
+    connect(manager, SIGNAL(valueChanged(QtProperty *, const QString &)),
+            this, SLOT(slotPropertyChanged(QtProperty *, const QString &)));
+    connect(manager, SIGNAL(readOnlyChanged(QtProperty*, bool)),
+        this, SLOT(slotReadOnlyChanged(QtProperty *, bool)));
+}
+
+/*!
+    \internal
+
+    Reimplemented from the QtAbstractEditorFactory class.
+*/
+#include <QFileDialog>
+
+QWidget *QtDirEditFactory::createEditor(QtDirPropertyManager *manager,
+        QtProperty *property, QWidget *parent)
+{
+
+    FancyLineEdit *editor = d_ptr->createEditor(property, parent);
+    editor->setReadOnly(manager->isReadOnly(property));
+    editor->setText(manager->value(property));
+
+    QPixmap pixmap(16, 16);
+    pixmap.fill(Qt::transparent);
+    QPainter painter(&pixmap);
+    painter.drawText(0,14,"...");
+
+    editor->setButtonPixmap(FancyLineEdit::Right, pixmap);
+    editor->setButtonVisible(FancyLineEdit::Right, true);
+    editor->setButtonToolTip(FancyLineEdit::Right, tr("Выбрать путь"));
+    editor->setAutoHideButton(FancyLineEdit::Right, true);
+    connect(editor, &FancyLineEdit::rightButtonClicked, [=](){
+        auto s = QFileDialog::getExistingDirectory(parent, "Директория сохранения файлов", editor->text());
+        if (!s.isEmpty()) {
+            editor->setText(s);
+        }
+    });
+
+    connect(editor, SIGNAL(editingFinished()),
+        this, SLOT(slotEditFinished()));
+    //connect(editor, SIGNAL(textChanged(const QString &)),
+    //            this, SLOT(slotSetValue(const QString &)));
+    connect(editor, SIGNAL(destroyed(QObject *)),
+                this, SLOT(slotEditorDestroyed(QObject *)));
+    return editor;
+}
+
+/*!
+    \internal
+
+    Reimplemented from the QtAbstractEditorFactory class.
+*/
+void QtDirEditFactory::disconnectPropertyManager(QtDirPropertyManager *manager)
+{
+    disconnect(manager, SIGNAL(valueChanged(QtProperty *, const QString &)),
+                this, SLOT(slotPropertyChanged(QtProperty *, const QString &)));
+    disconnect(manager, SIGNAL(readOnlyChanged(QtProperty*, bool)),
+        this, SLOT(slotReadOnlyChanged(QtProperty *, bool)));
 }
 
 // QtDateEditFactory

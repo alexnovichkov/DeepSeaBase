@@ -1,36 +1,26 @@
-/**********************************************************/
-/*                                                        */
-/*             Реализация класса QwtChartZoom             */
-/*                      Версия 1.5.2                      */
-/*                                                        */
-/* Разработал Мельников Сергей Андреевич,                 */
-/* г. Каменск-Уральский Свердловской обл., 2012 г.,       */
-/* при поддержке Ю. А. Роговского, г. Новосибирск.        */
-/*                                                        */
-/* Разрешается свободное использование и распространение. */
-/* Упоминание автора обязательно.                         */
-/*                                                        */
-/**********************************************************/
-
 #include "zoomstack.h"
 #include "plot.h"
-
 #include "logging.h"
+#include "algorithms.h"
+#include "qcpplot.h"
 
-#include <QKeyEvent>
-
-ZoomStack::ZoomStack(Plot *plot) : QObject(plot),  plot(plot)
+ZoomStack::ZoomStack(Plot *plot) : QObject(plot),  m_plot(plot)
 {DDD;
-    horizontalScaleBounds = new ScaleBounds(plot,  Enums::AxisType::atBottom);
-    verticalScaleBounds = new ScaleBounds(plot, Enums::AxisType::atLeft);
-    verticalScaleBoundsSlave = new ScaleBounds(plot, Enums::AxisType::atRight);
+    m_scaleBounds.insert(Enums::AxisType::atTop, new ScaleBounds(plot,  Enums::AxisType::atTop));
+    m_scaleBounds.insert(Enums::AxisType::atBottom, new ScaleBounds(plot,  Enums::AxisType::atBottom));
+    m_scaleBounds.insert(Enums::AxisType::atLeft, new ScaleBounds(plot, Enums::AxisType::atLeft));
+    m_scaleBounds.insert(Enums::AxisType::atRight, new ScaleBounds(plot, Enums::AxisType::atRight));
+    m_scaleBounds.insert(Enums::AxisType::atColor, new ScaleBounds(plot, Enums::AxisType::atColor));
 }
 
 ZoomStack::~ZoomStack()
 {DDD;
-    delete horizontalScaleBounds;
-    delete verticalScaleBounds;
-    delete verticalScaleBoundsSlave;
+    for (auto b: m_scaleBounds.values()) delete b;
+}
+
+ZoomStack::ScaleBounds *ZoomStack::scaleBounds(Enums::AxisType axis)
+{
+    return m_scaleBounds.value(axis, nullptr);
 }
 
 void ZoomStack::addZoom(ZoomStack::zoomCoordinates coords, bool addToStack)
@@ -39,92 +29,62 @@ void ZoomStack::addZoom(ZoomStack::zoomCoordinates coords, bool addToStack)
         return;
     }
     if (addToStack) {
-        zoomStack.push(coords);
+        m_zoomStack.push(coords);
     }
 
-    if (coords.coords.contains(Enums::AxisType::atBottom))
-        horizontalScaleBounds->set(coords.coords.value(Enums::AxisType::atBottom).x(),
-                                   coords.coords.value(Enums::AxisType::atBottom).y());
-    if (coords.coords.contains(Enums::AxisType::atLeft)) {
-        verticalScaleBounds->set(coords.coords.value(Enums::AxisType::atLeft).x(),
-                                 coords.coords.value(Enums::AxisType::atLeft).y());
+    for (auto [key, val] : asKeyValueRange(coords.coords)) {
+        scaleBounds(key)->set(val.x(), val.y());
     }
-    if (coords.coords.contains(Enums::AxisType::atRight)/* && !qwtPlot->spectrogram*/) {
-        verticalScaleBoundsSlave->set(coords.coords.value(Enums::AxisType::atRight).x(),
-                                      coords.coords.value(Enums::AxisType::atRight).y());
-    }
-    plot->replot();
+
+    m_plot->impl()->replot();
 }
 
 void ZoomStack::zoomBack()
 {DDD;
-    if (zoomStack.isEmpty()) return;
-    zoomStack.pop();
-    if (zoomStack.isEmpty()) {
+    if (m_zoomStack.isEmpty()) return;
+    m_zoomStack.pop();
+    if (m_zoomStack.isEmpty()) {
         // nothing to zoom back to, autoscaling to maximum
-        plot->autoscale();
+        m_plot->autoscale();
     }
     else {
-        zoomCoordinates coords = zoomStack.top();
-        if (coords.coords.contains(Enums::AxisType::atBottom))
-            horizontalScaleBounds->set(coords.coords.value(Enums::AxisType::atBottom).x(),
-                                       coords.coords.value(Enums::AxisType::atBottom).y());
-        if (coords.coords.contains(Enums::AxisType::atLeft)) {
-            verticalScaleBounds->set(coords.coords.value(Enums::AxisType::atLeft).x(),
-                                     coords.coords.value(Enums::AxisType::atLeft).y());
-        }
-        if (coords.coords.contains(Enums::AxisType::atRight)) {
-            verticalScaleBoundsSlave->set(coords.coords.value(Enums::AxisType::atRight).x(),
-                                          coords.coords.value(Enums::AxisType::atRight).y());
+        zoomCoordinates coords = m_zoomStack.top();
+        for (auto [key, val] : asKeyValueRange(coords.coords)) {
+            scaleBounds(key)->set(val.x(), val.y());
         }
     }
-    plot->replot();
+    m_plot->impl()->replot();
 }
 
 void ZoomStack::moveToAxis(Enums::AxisType axis, double min, double max)
 {DDD;
+    auto b = scaleBounds(axis);
+    if (!b) return;
+    b->add(min, max);
+    if (!b->isFixed()) b->autoscale();
+
     switch (axis) {
-        case Enums::AxisType::atBottom:
-            horizontalScaleBounds->add(min, max);
-            if (!horizontalScaleBounds->isFixed()) horizontalScaleBounds->autoscale();
-            break;
         case Enums::AxisType::atLeft:
-            verticalScaleBoundsSlave->removeToAutoscale(min, max);
-            verticalScaleBounds->add(min, max);
-            if (!verticalScaleBounds->isFixed()) verticalScaleBounds->autoscale();
+            scaleBounds(Enums::AxisType::atRight)->removeToAutoscale(min, max);
             break;
         case Enums::AxisType::atRight:
-            verticalScaleBounds->removeToAutoscale(min, max);
-            verticalScaleBoundsSlave->add(min, max);
-            if (!verticalScaleBoundsSlave->isFixed()) verticalScaleBoundsSlave->autoscale();
+            scaleBounds(Enums::AxisType::atLeft)->removeToAutoscale(min, max);
             break;
         default: break;
     }
 }
 
-void ZoomStack::autoscale(Enums::AxisType axis, bool spectrogram)
+void ZoomStack::autoscale(Enums::AxisType axis)
 {DDD;
-    switch (axis) {
-        case Enums::AxisType::atBottom: // x axis
-            horizontalScaleBounds->autoscale();
-            break;
-        case Enums::AxisType::atLeft: // y axis
-            verticalScaleBounds->autoscale();
-            break;
-        case Enums::AxisType::atRight: // y slave axis
-            verticalScaleBoundsSlave->autoscale();
-            break;
-        case Enums::AxisType::atInvalid:
-            zoomStack.clear();
-            horizontalScaleBounds->autoscale();
-            verticalScaleBounds->autoscale();
-            if (!spectrogram) verticalScaleBoundsSlave->autoscale();
-            //replot();
-            //update();
-            break;
-        default:
-            break;
+    auto b = scaleBounds(axis);
+    if (b) {
+        b->autoscale();
     }
+    else {
+        m_zoomStack.clear();
+        for (auto b: m_scaleBounds.values()) b->autoscale();
+    }
+    m_plot->replot();
 }
 
     /**************************************************/
@@ -151,8 +111,12 @@ void ZoomStack::ScaleBounds::setFixed(bool fixed)
 }
 
 // Фиксация исходных границ шкалы
-void ZoomStack::ScaleBounds::add(double min, double max)
+void ZoomStack::ScaleBounds::add(double min, double max, bool removePrevious)
 {DDD;
+    if (removePrevious) {
+        mins.clear();
+        maxes.clear();
+    }
     if (min==max) {
         if (min!=0.0) {
             mins << (min-1.0);

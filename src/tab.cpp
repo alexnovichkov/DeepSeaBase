@@ -50,14 +50,21 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
     connect(filterHeader, SIGNAL(filterChanged(QString,int)), sortModel, SLOT(setFilter(QString,int)));
 
     filesTable->header()->setStretchLastSection(false);
-    filesTable->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
-    filesTable->header()->setSectionResizeMode(1, QHeaderView::ResizeToContents);
-    filesTable->header()->setSectionResizeMode(2, QHeaderView::ResizeToContents);
-    filesTable->header()->setSectionResizeMode(3, QHeaderView::ResizeToContents);
-    filesTable->header()->setSectionResizeMode(4, QHeaderView::ResizeToContents);
-    filesTable->header()->setSectionResizeMode(5, QHeaderView::ResizeToContents);
-    filesTable->header()->setSectionResizeMode(6, QHeaderView::ResizeToContents);
-    filesTable->header()->setSectionResizeMode(7, QHeaderView::ResizeToContents);
+//    filesTable->header()->setSectionResizeMode(MODEL_COLUMN_SAVE, QHeaderView::ResizeToContents);
+    filesTable->header()->setSectionResizeMode(MODEL_COLUMN_SAVE, QHeaderView::Fixed);
+    filesTable->header()->resizeSection(MODEL_COLUMN_SAVE, 15);
+//    filesTable->header()->setSectionResizeMode(MODEL_COLUMN_INDEX, QHeaderView::ResizeToContents);
+    filesTable->header()->setSectionResizeMode(MODEL_COLUMN_INDEX, QHeaderView::Fixed);
+    filesTable->header()->resizeSection(MODEL_COLUMN_INDEX, QFontMetrics(qApp->font()).width("9999"));
+//    filesTable->header()->setSectionResizeMode(MODEL_COLUMN_FILENAME, QHeaderView::ResizeToContents);
+    filesTable->header()->resizeSection(MODEL_COLUMN_FILENAME, filesTable->header()->defaultSectionSize()*2);
+//    filesTable->header()->setSectionResizeMode(MODEL_COLUMN_DATETIME, QHeaderView::ResizeToContents);
+    filesTable->header()->setSectionResizeMode(MODEL_COLUMN_DATETIME, QHeaderView::Fixed);
+    filesTable->header()->resizeSection(MODEL_COLUMN_DATETIME, QFontMetrics(qApp->font()).width("00.00.0000 00:00:00"));
+    filesTable->header()->setSectionResizeMode(MODEL_COLUMN_TYPE, QHeaderView::ResizeToContents);
+    filesTable->header()->setSectionResizeMode(MODEL_COLUMN_SIZE, QHeaderView::ResizeToContents);
+    filesTable->header()->setSectionResizeMode(MODEL_COLUMN_XNAME, QHeaderView::ResizeToContents);
+    filesTable->header()->setSectionResizeMode(MODEL_COLUMN_XSTEP, QHeaderView::ResizeToContents);
 
     connect(filesTable->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),
             this, SLOT(filesSelectionChanged(QItemSelection,QItemSelection)));
@@ -237,7 +244,7 @@ void Tab::addParentAction(const QString &name, QAction *action)
 void Tab::updateChannelsTable(const QModelIndex &current, const QModelIndex &previous)
 {DDD;
     if (current.isValid()) {
-        if (current.model() != sortModel) return;
+        if (current.model() != sortModel || !sortModel) return;
 
         if (previous.isValid()) {
             if ((previous.row()==0 && previous.column() != current.column()) ||

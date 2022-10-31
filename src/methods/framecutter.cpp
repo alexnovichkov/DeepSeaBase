@@ -1,4 +1,5 @@
 #include "framecutter.h"
+#include "logging.h"
 
 FrameCutter::FrameCutter()
 {
@@ -108,11 +109,13 @@ QVector<double> FrameCutter::getWithOverlap(bool *ok)
 {
     Q_ASSERT(currentSample >= 0);
 
+    double delta = getDelta();
+
     QVector<double> output;
     if (currentSample < data.size()) {
         output = data.mid(currentSample, param.blockSize);
         output.resize(param.blockSize);
-        currentSample += param.blockSize - param.delta;
+        currentSample += param.blockSize - delta;
         if (ok) *ok = true;
     }
     else if (ok) *ok=false;
@@ -123,7 +126,7 @@ int FrameCutter::getBlocksCountWithOverlap() const
 {
     int count = 0;
     for (int i=0; i<data.size(); ) {
-        i += (param.blockSize - param.delta);
+        i += (param.blockSize - getDelta());
         count++;
     }
     return count;
@@ -143,7 +146,7 @@ QVector<double> FrameCutter::getWithDelta(bool *ok)
     if (currentSample < data.size()) {
         output = data.mid(currentSample, param.blockSize);
         output.resize(param.blockSize);
-        currentSample += param.blockSize + param.delta;
+        currentSample += param.blockSize + getDelta();
         if (ok) *ok = true;
     }
     else if (ok) *ok = false;
@@ -154,7 +157,7 @@ int FrameCutter::getBlocksCountWithDelta() const
 {
     int count = 0;
     for (int i=0; i<data.size(); ) {
-        i += (param.blockSize + param.delta);
+        i += (param.blockSize + getDelta());
         count++;
     }
     return count;
@@ -189,7 +192,7 @@ int FrameCutter::searchTrigger(const int pos)
     int current = pos;
     if (firstTriggerSearched) {
         current += param.blockSize;
-        current += param.delta;
+        current += getDelta();
     }
     bool found = false;
     for (int i=current; i<triggerData.size(); ++i) {
@@ -224,12 +227,15 @@ void FrameCutter::setXStep(double value)
 
 int FrameCutter::getDelta() const
 {
-    return param.delta;
+    if (param.deltaType == DeltaPercent) return int(1.0 * param.blockSize * param.deltaValue / 100);
+    if (param.deltaType == DeltaTime && !qFuzzyIsNull(param.xStep)) return int(param.deltaValue / param.xStep);
+    return 0;
 }
 
-void FrameCutter::setDelta(int value)
+void FrameCutter::setDelta(double value, DeltaType type)
 {
-    param.delta = value;
+    param.deltaValue = value;
+    param.deltaType = type;
 }
 
 int FrameCutter::getChannel() const

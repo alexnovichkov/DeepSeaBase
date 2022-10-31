@@ -172,16 +172,15 @@ QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spec
     return result;
 }
 
-QString createUniqueFileName(const QString &folderName, const QString &fileName, QString constantPart,
+QString createUniqueFileName(QString folderName, const QString &fileName, QString constantPart,
                              const QString &ext, bool justified)
 {DDD;
-    QString result;
     QFileInfo fn = QFileInfo(fileName);
 
-    if (folderName.isEmpty())
-        result = fn.absolutePath()+"/"+fn.completeBaseName();
-    else
-        result = folderName+"/"+fn.completeBaseName();
+    if (folderName.isEmpty()) folderName = fn.absolutePath();
+    if (folderName.endsWith('/')) folderName.chop(1);
+
+    QString result = folderName+"/"+fn.completeBaseName();
     if (!constantPart.isEmpty()) result.append("_"+constantPart);
 
     if (!justified && !QFile::exists(result+"."+ext))
@@ -584,4 +583,21 @@ uint toDfdDataPrecision(DataPrecision precision)
         case DataPrecision::LongDouble: return 0xc000000a;
     }
     return 0xc0000004;
+}
+
+#include <random>
+
+std::default_random_engine g;
+
+void initRandomGenerator()
+{
+    std::random_device seeder;
+    const auto seed = seeder.entropy() ? seeder() : std::time(nullptr);
+    g = std::default_random_engine(static_cast<std::default_random_engine::result_type>(seed));
+}
+
+int getRandom(int min, int max)
+{
+    std::uniform_int_distribution intDistrib(min, max);
+    return intDistrib(g);
 }

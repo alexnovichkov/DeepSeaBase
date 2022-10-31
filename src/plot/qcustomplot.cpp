@@ -4021,6 +4021,7 @@ QSize QCPLayout::getFinalMinimumOuterSize(const QCPLayoutElement *el)
 {
   QSize minOuterHint = el->minimumOuterSizeHint();
   QSize minOuter = el->minimumSize(); // depending on sizeConstraitRect this might be with respect to inner rect, so possibly add margins in next four lines (preserving unset minimum of 0)
+
   if (minOuter.width() > 0 && el->sizeConstraintRect() == QCPLayoutElement::scrInnerRect)
     minOuter.rwidth() += el->margins().left() + el->margins().right();
   if (minOuter.height() > 0 && el->sizeConstraintRect() == QCPLayoutElement::scrInnerRect)
@@ -6179,7 +6180,8 @@ void QCPAxisTicker::setTickOrigin(double origin)
   needed) and are respectively filled with sub tick coordinates, and tick label strings belonging
   to \a ticks by index.
 */
-void QCPAxisTicker::generate(const QCPRange &range, const QLocale &locale, QChar formatChar, int precision, QVector<double> &ticks, QVector<double> *subTicks, QVector<QString> *tickLabels)
+void QCPAxisTicker::generate(const QCPRange &range, const QLocale &locale, QChar formatChar, int precision,
+                             QVector<double> &ticks, QVector<double> *subTicks, QVector<QString> *tickLabels)
 {
   // generate (major) ticks:
   double tickStep = getTickStep(range);
@@ -6230,12 +6232,14 @@ double QCPAxisTicker::getTickStep(const QCPRange &range)
 int QCPAxisTicker::getSubTickCount(double tickStep)
 {
   int result = 1; // default to 1, if no proper value can be found
-  
+
   // separate integer and fractional part of mantissa:
   double epsilon = 0.01;
   double intPartf;
   int intPart;
-  double fracPart = modf(getMantissa(tickStep), &intPartf);
+  double magn;
+  double mant = getMantissa(tickStep, &magn);
+  double fracPart = modf(mant, &intPartf);
   intPart = int(intPartf);
   
   // handle cases with (almost) integer mantissa:
@@ -6438,9 +6442,10 @@ double QCPAxisTicker::pickClosest(double target, const QVector<double> &candidat
 */
 double QCPAxisTicker::getMantissa(double input, double *magnitude) const
 {
-  const double mag = qPow(10.0, qFloor(qLn(input)/qLn(10.0)));
-  if (magnitude) *magnitude = mag;
-  return input/mag;
+    double mag = std::log10(input);
+    mag = qPow(10.0, qFloor(mag));
+    if (magnitude) *magnitude = mag;
+    return input/mag;
 }
 
 /*! \internal
@@ -9169,6 +9174,7 @@ void QCPAxis::scaleRange(double factor, double center)
     } else
       qDebug() << Q_FUNC_INFO << "Center of scaling operation doesn't lie in same logarithmic sign domain as range:" << center;
   }
+
   emit rangeChanged(mRange);
   emit rangeChanged(mRange, oldRange);
 }
@@ -9372,14 +9378,25 @@ QCPAxis::SelectablePart QCPAxis::getPartAt(const QPointF &pos) const
 /* inherits documentation from base class */
 double QCPAxis::selectTest(const QPointF &pos, bool onlySelectable, QVariant *details) const
 {
-  if (!mParentPlot) return -1;
-  SelectablePart part = getPartAt(pos);
-  if ((onlySelectable && !mSelectableParts.testFlag(part)) || part == spNone)
+    //переписал: теперь прямоугольник оси включает все зазоры между элементами оси
+    Q_UNUSED(onlySelectable);
+    Q_UNUSED(details);
+    auto rect = mAxisPainter->axisSelectionBox();
+    rect = rect.united(mAxisPainter->tickLabelsSelectionBox());
+    rect = rect.united(mAxisPainter->labelSelectionBox());
+    rect.setX(rect.x() - this->padding());
+    if (rect.contains(pos.toPoint()))
+        return mParentPlot->selectionTolerance()*0.99;
     return -1;
+
+//  if (!mParentPlot) return -1;
+//  SelectablePart part = getPartAt(pos);
+//  if ((onlySelectable && !mSelectableParts.testFlag(part)) || part == spNone)
+//    return -1;
   
-  if (details)
-    details->setValue(part);
-  return mParentPlot->selectionTolerance()*0.99;
+//  if (details)
+//    details->setValue(part);
+//  return mParentPlot->selectionTolerance()*0.99;
 }
 
 /*!
@@ -9520,15 +9537,22 @@ void QCPAxis::deselectEvent(bool *selectionStateChanged)
 void QCPAxis::mousePressEvent(QMouseEvent *event, const QVariant &details)
 {
   Q_UNUSED(details)
-  if (!mParentPlot->interactions().testFlag(QCP::iRangeDrag) ||
-      !mAxisRect->rangeDrag().testFlag(orientation()) ||
-      !mAxisRect->rangeDragAxes(orientation()).contains(this))
+
+    bool rdFlag = mParentPlot->interactions().testFlag(QCP::iRangeDrag);
+    bool rdTest = mAxisRect->rangeDrag().testFlag(orientation());
+    bool rdAxes = mAxisRect->rangeDragAxes(orientation()).contains(this);
+  if (!rdFlag || !rdTest || !rdAxes)
   {
     event->ignore();
     return;
   }
+
+  if (event->button()==Qt::RightButton) {
+      emit contextMenuRequested(event->globalPos(), this->axisType());
+  }
   
-  if (event->buttons() & Qt::LeftButton)
+  else
+      if (event->buttons() & Qt::LeftButton)
   {
     mDragging = true;
     // initialize antialiasing backup in case we start dragging:
@@ -9540,6 +9564,17 @@ void QCPAxis::mousePressEvent(QMouseEvent *event, const QVariant &details)
     // Mouse range dragging interaction:
     if (mParentPlot->interactions().testFlag(QCP::iRangeDrag))
       mDragStartRange = mRange;
+
+    //axis part clicked
+    auto center = mScaleType == QCPAxis::stLogarithmic ? sqrt(range().lower * range().upper) : range().center();
+    if (orientation() == Qt::Horizontal) {
+        if (pixelToCoord(event->pos().x()) <= center) mAxisPartMoved = 1; //left part
+        else mAxisPartMoved = 2; //right part
+    }
+    else {
+        if (pixelToCoord(event->pos().y()) <= center) mAxisPartMoved = 3; //lower part
+        else mAxisPartMoved = 4; //upper part
+    }
   }
 }
 
@@ -9564,11 +9599,33 @@ void QCPAxis::mouseMoveEvent(QMouseEvent *event, const QPointF &startPos)
     if (mScaleType == QCPAxis::stLinear)
     {
       const double diff = pixelToCoord(startPixel) - pixelToCoord(currentPixel);
-      setRange(mDragStartRange.lower+diff, mDragStartRange.upper+diff);
+      switch (mAxisPartMoved) {
+          case 0:
+              setRange(mDragStartRange.lower+diff, mDragStartRange.upper+diff); break;
+          case 1:
+              setRange(mDragStartRange.lower+diff, mDragStartRange.upper); break;
+          case 2:
+              setRange(mDragStartRange.lower, mDragStartRange.upper+diff); break;
+          case 3:
+              setRange(mDragStartRange.lower+diff, mDragStartRange.upper); break;
+          case 4:
+              setRange(mDragStartRange.lower, mDragStartRange.upper+diff); break;
+      }
     } else if (mScaleType == QCPAxis::stLogarithmic)
     {
       const double diff = pixelToCoord(startPixel) / pixelToCoord(currentPixel);
-      setRange(mDragStartRange.lower*diff, mDragStartRange.upper*diff);
+      switch (mAxisPartMoved) {
+          case 0:
+              setRange(mDragStartRange.lower*diff, mDragStartRange.upper*diff); break;
+          case 1:
+              setRange(mDragStartRange.lower*diff, mDragStartRange.upper); break;
+          case 2:
+              setRange(mDragStartRange.lower, mDragStartRange.upper*diff); break;
+          case 3:
+              setRange(mDragStartRange.lower*diff, mDragStartRange.upper); break;
+          case 4:
+              setRange(mDragStartRange.lower, mDragStartRange.upper*diff); break;
+      }
     }
     
     if (mParentPlot->noAntialiasingOnDrag())
@@ -9591,14 +9648,17 @@ void QCPAxis::mouseMoveEvent(QMouseEvent *event, const QPointF &startPos)
 */
 void QCPAxis::mouseReleaseEvent(QMouseEvent *event, const QPointF &startPos)
 {
-  Q_UNUSED(event)
-  Q_UNUSED(startPos)
-  mDragging = false;
-  if (mParentPlot->noAntialiasingOnDrag())
-  {
-    mParentPlot->setAntialiasedElements(mAADragBackup);
-    mParentPlot->setNotAntialiasedElements(mNotAADragBackup);
-  }
+    Q_UNUSED(event)
+    Q_UNUSED(startPos)
+    if (mDragging) {
+        emit draggingFinished(range());
+    }
+    mDragging = false;
+    if (mParentPlot->noAntialiasingOnDrag())
+    {
+        mParentPlot->setAntialiasedElements(mAADragBackup);
+        mParentPlot->setNotAntialiasedElements(mNotAADragBackup);
+    }
 }
 
 /*! \internal
@@ -9642,6 +9702,7 @@ void QCPAxis::wheelEvent(QWheelEvent *event)
   const double wheelSteps = delta/120.0; // a single step delta is +/-120 usually
   const double factor = qPow(mAxisRect->rangeZoomFactor(orientation()), wheelSteps);
   scaleRange(factor, pixelToCoord(orientation() == Qt::Horizontal ? pos.x() : pos.y()));
+  emit rangeScaled();
   mParentPlot->replot();
 }
 
@@ -10039,6 +10100,7 @@ void QCPAxisPainterPrivate::draw(QCPPainter *painter)
   QRect labelBounds;
   if (!label.isEmpty())
   {
+//    auto sl = QStaticText(label);
     margin += labelPadding;
     painter->setFont(labelFont);
     painter->setPen(QPen(labelColor));
@@ -10046,9 +10108,11 @@ void QCPAxisPainterPrivate::draw(QCPPainter *painter)
     if (type == QCPAxis::atLeft)
     {
       QTransform oldTransform = painter->transform();
+
       painter->translate((origin.x()-margin-labelBounds.height()), origin.y());
       painter->rotate(-90);
       painter->drawText(0, 0, axisRect.height(), labelBounds.height(), Qt::TextDontClip | Qt::AlignCenter, label);
+//      painter->drawStaticText(QPointF{0, 0}, sl);
       painter->setTransform(oldTransform);
     }
     else if (type == QCPAxis::atRight)
@@ -10057,12 +10121,15 @@ void QCPAxisPainterPrivate::draw(QCPPainter *painter)
       painter->translate((origin.x()+margin+labelBounds.height()), origin.y()-axisRect.height());
       painter->rotate(90);
       painter->drawText(0, 0, axisRect.height(), labelBounds.height(), Qt::TextDontClip | Qt::AlignCenter, label);
+//      painter->drawStaticText(QPointF{0, 0}, QStaticText(label));
       painter->setTransform(oldTransform);
     }
     else if (type == QCPAxis::atTop)
       painter->drawText(origin.x(), origin.y()-margin-labelBounds.height(), axisRect.width(), labelBounds.height(), Qt::TextDontClip | Qt::AlignCenter, label);
+//        painter->drawStaticText(QPointF(origin.x(), origin.y()-margin-labelBounds.height()), QStaticText(label));
     else if (type == QCPAxis::atBottom)
       painter->drawText(origin.x(), origin.y()+margin, axisRect.width(), labelBounds.height(), Qt::TextDontClip | Qt::AlignCenter, label);
+//        painter->drawStaticText(QPointF(origin.x(), origin.y()+margin), QStaticText(label));
   }
   
   // set selection boxes:
@@ -14272,7 +14339,7 @@ QCPAbstractPlottable *QCustomPlot::plottable()
   
   \see clearPlottables
 */
-bool QCustomPlot::removePlottable(QCPAbstractPlottable *plottable)
+bool QCustomPlot::removePlottable(QCPAbstractPlottable *plottable, bool deleteAsWell)
 {
   if (!mPlottables.contains(plottable))
   {
@@ -14286,7 +14353,7 @@ bool QCustomPlot::removePlottable(QCPAbstractPlottable *plottable)
   if (QCPGraph *graph = qobject_cast<QCPGraph*>(plottable))
     mGraphs.removeOne(graph);
   // remove plottable:
-  delete plottable;
+  if (deleteAsWell) delete plottable;
   mPlottables.removeOne(plottable);
   return true;
 }
@@ -14295,10 +14362,10 @@ bool QCustomPlot::removePlottable(QCPAbstractPlottable *plottable)
   
   Removes and deletes the plottable by its \a index.
 */
-bool QCustomPlot::removePlottable(int index)
+bool QCustomPlot::removePlottable(int index, bool deleteAsWell)
 {
   if (index >= 0 && index < mPlottables.size())
-    return removePlottable(mPlottables[index]);
+    return removePlottable(mPlottables[index], deleteAsWell);
   else
   {
     qDebug() << Q_FUNC_INFO << "index out of bounds:" << index;
@@ -14318,7 +14385,7 @@ int QCustomPlot::clearPlottables()
 {
   int c = mPlottables.size();
   for (int i=c-1; i >= 0; --i)
-    removePlottable(mPlottables[i]);
+    removePlottable(mPlottables[i], true);
   return c;
 }
 
@@ -14452,7 +14519,7 @@ QCPGraph *QCustomPlot::addGraph(QCPAxis *keyAxis, QCPAxis *valueAxis)
 */
 bool QCustomPlot::removeGraph(QCPGraph *graph)
 {
-  return removePlottable(graph);
+  return removePlottable(graph, true);
 }
 
 /*! \overload
@@ -15554,43 +15621,53 @@ void QCustomPlot::mouseDoubleClickEvent(QMouseEvent *event)
   
   \see mouseMoveEvent, mouseReleaseEvent
 */
-void QCustomPlot::mousePressEvent(QMouseEvent *event)
-{
-  emit mousePress(event);
-  // save some state to tell in releaseEvent whether it was a click:
-  mMouseHasMoved = false;
-  mMousePressPos = event->pos();
+//void QCustomPlot::mousePressEvent(QMouseEvent *event)
+//{
+//  emit mousePress(event);
+//  // save some state to tell in releaseEvent whether it was a click:
+//  mMouseHasMoved = false;
+//  mMousePressPos = event->pos();
+
+//  // first check for QCPAxis
+//  bool axisClicked = false;
+//  QList<QVariant> details;
+//  QList<QCPLayerable*> candidates = layerableListAt(mMousePressPos, false, &details);
+//  for (auto candidate: candidates) {
+//      if (auto ax = qobject_cast<QCPAxis*>(candidate)) {
+//          axisClicked = true;
+//      }
+//  }
   
-  if (mSelectionRect && mSelectionRectMode != QCP::srmNone)
-  {
-    if (mSelectionRectMode != QCP::srmZoom || qobject_cast<QCPAxisRect*>(axisRectAt(mMousePressPos))) // in zoom mode only activate selection rect if on an axis rect
-      mSelectionRect->startSelection(event);
-  } else
-  {
-    // no selection rect interaction, prepare for click signal emission and forward event to layerable under the cursor:
-    QList<QVariant> details;
-    QList<QCPLayerable*> candidates = layerableListAt(mMousePressPos, false, &details);
-    if (!candidates.isEmpty())
-    {
-      mMouseSignalLayerable = candidates.first(); // candidate for signal emission is always topmost hit layerable (signal emitted in release event)
-      mMouseSignalLayerableDetails = details.first();
-    }
-    // forward event to topmost candidate which accepts the event:
-    for (int i=0; i<candidates.size(); ++i)
-    {
-      event->accept(); // default impl of QCPLayerable's mouse events call ignore() on the event, in that case propagate to next candidate in list
-      candidates.at(i)->mousePressEvent(event, details.at(i));
-      if (event->isAccepted())
-      {
-        mMouseEventLayerable = candidates.at(i);
-        mMouseEventLayerableDetails = details.at(i);
-        break;
-      }
-    }
-  }
+//  if (mSelectionRect && mSelectionRectMode != QCP::srmNone && event->button() == Qt::LeftButton && !axisClicked)
+//  {
+//    if (mSelectionRectMode != QCP::srmZoom || qobject_cast<QCPAxisRect*>(axisRectAt(mMousePressPos)))
+//        // in zoom mode only activate selection rect if on an axis rect
+//      mSelectionRect->startSelection(event);
+//  } else
+//  {
+//    // no selection rect interaction, prepare for click signal emission and forward event to layerable under the cursor:
+
+//    if (!candidates.isEmpty())
+//    {
+//      mMouseSignalLayerable = candidates.first(); // candidate for signal emission is always topmost hit layerable (signal emitted in release event)
+//      mMouseSignalLayerableDetails = details.first();
+//    }
+//    // forward event to topmost candidate which accepts the event:
+//    for (int i=0; i<candidates.size(); ++i)
+//    {
+//      event->accept(); // default impl of QCPLayerable's mouse events call ignore() on the event, in that case propagate to next candidate in list
+//      candidates.at(i)->mousePressEvent(event, details.at(i));
+//      if (event->isAccepted())
+//      {
+//        mMouseEventLayerable = candidates.at(i);
+//        mMouseEventLayerableDetails = details.at(i);
+//        break;
+//      }
+//    }
+//  }
   
-  event->accept(); // in case QCPLayerable reimplementation manipulates event accepted state. In QWidget event system, QCustomPlot wants to accept the event.
-}
+//  event->accept(); // in case QCPLayerable reimplementation manipulates event accepted state. In QWidget event system, QCustomPlot wants to accept the event.
+//}
 
 /*! \internal
   
@@ -15608,15 +15685,15 @@ void QCustomPlot::mouseMoveEvent(QMouseEvent *event)
 {
   emit mouseMove(event);
   
-  if (!mMouseHasMoved && (mMousePressPos-event->pos()).manhattanLength() > 3)
-    mMouseHasMoved = true; // moved too far from mouse press position, don't handle as click on mouse release
+//  if (!mMouseHasMoved && (mMousePressPos-event->pos()).manhattanLength() > 3)
+//    mMouseHasMoved = true; // moved too far from mouse press position, don't handle as click on mouse release
   
-  if (mSelectionRect && mSelectionRect->isActive())
-    mSelectionRect->moveSelection(event);
-  else if (mMouseEventLayerable) // call event of affected layerable:
-    mMouseEventLayerable->mouseMoveEvent(event, mMousePressPos);
+//  if (mSelectionRect && mSelectionRect->isActive())
+//    mSelectionRect->moveSelection(event);
+//  else if (mMouseEventLayerable) // call event of affected layerable:
+//    mMouseEventLayerable->mouseMoveEvent(event, mMousePressPos);
   
-  event->accept(); // in case QCPLayerable reimplementation manipulates event accepted state. In QWidget event system, QCustomPlot wants to accept the event.
+//  event->accept(); // in case QCPLayerable reimplementation manipulates event accepted state. In QWidget event system, QCustomPlot wants to accept the event.
 }
 
 /*! \internal
@@ -15633,54 +15710,54 @@ void QCustomPlot::mouseMoveEvent(QMouseEvent *event)
 
   \see mousePressEvent, mouseMoveEvent
 */
-void QCustomPlot::mouseReleaseEvent(QMouseEvent *event)
-{
-  emit mouseRelease(event);
+//void QCustomPlot::mouseReleaseEvent(QMouseEvent *event)
+//{
+//  emit mouseRelease(event);
   
-  if (!mMouseHasMoved) // mouse hasn't moved (much) between press and release, so handle as click
-  {
-    if (mSelectionRect && mSelectionRect->isActive()) // a simple click shouldn't successfully finish a selection rect, so cancel it here
-      mSelectionRect->cancel();
-    if (event->button() == Qt::LeftButton)
-      processPointSelection(event);
+//  if (!mMouseHasMoved) // mouse hasn't moved (much) between press and release, so handle as click
+//  {
+//    if (mSelectionRect && mSelectionRect->isActive()) // a simple click shouldn't successfully finish a selection rect, so cancel it here
+//      mSelectionRect->cancel();
+//    if (event->button() == Qt::LeftButton)
+//      processPointSelection(event);
     
-    // emit specialized click signals of QCustomPlot instance:
-    if (QCPAbstractPlottable *ap = qobject_cast<QCPAbstractPlottable*>(mMouseSignalLayerable))
-    {
-      int dataIndex = 0;
-      if (!mMouseSignalLayerableDetails.value<QCPDataSelection>().isEmpty())
-        dataIndex = mMouseSignalLayerableDetails.value<QCPDataSelection>().dataRange().begin();
-      emit plottableClick(ap, dataIndex, event);
-    } else if (QCPAxis *ax = qobject_cast<QCPAxis*>(mMouseSignalLayerable))
-      emit axisClick(ax, mMouseSignalLayerableDetails.value<QCPAxis::SelectablePart>(), event);
-    else if (QCPAbstractItem *ai = qobject_cast<QCPAbstractItem*>(mMouseSignalLayerable))
-      emit itemClick(ai, event);
-    else if (QCPLegend *lg = qobject_cast<QCPLegend*>(mMouseSignalLayerable))
-      emit legendClick(lg, nullptr, event);
-    else if (QCPAbstractLegendItem *li = qobject_cast<QCPAbstractLegendItem*>(mMouseSignalLayerable))
-      emit legendClick(li->parentLegend(), li, event);
-    mMouseSignalLayerable = nullptr;
-  }
+//    // emit specialized click signals of QCustomPlot instance:
+//    if (QCPAbstractPlottable *ap = qobject_cast<QCPAbstractPlottable*>(mMouseSignalLayerable))
+//    {
+//      int dataIndex = 0;
+//      if (!mMouseSignalLayerableDetails.value<QCPDataSelection>().isEmpty())
+//        dataIndex = mMouseSignalLayerableDetails.value<QCPDataSelection>().dataRange().begin();
+//      emit plottableClick(ap, dataIndex, event);
+//    } else if (QCPAxis *ax = qobject_cast<QCPAxis*>(mMouseSignalLayerable))
+//      emit axisClick(ax, mMouseSignalLayerableDetails.value<QCPAxis::SelectablePart>(), event);
+//    else if (QCPAbstractItem *ai = qobject_cast<QCPAbstractItem*>(mMouseSignalLayerable))
+//      emit itemClick(ai, event);
+//    else if (QCPLegend *lg = qobject_cast<QCPLegend*>(mMouseSignalLayerable))
+//      emit legendClick(lg, nullptr, event);
+//    else if (QCPAbstractLegendItem *li = qobject_cast<QCPAbstractLegendItem*>(mMouseSignalLayerable))
+//      emit legendClick(li->parentLegend(), li, event);
+//    mMouseSignalLayerable = nullptr;
+//  }
   
-  if (mSelectionRect && mSelectionRect->isActive()) // Note: if a click was detected above, the selection rect is canceled there
-  {
-    // finish selection rect, the appropriate action will be taken via signal-slot connection:
-    mSelectionRect->endSelection(event);
-  } else
-  {
-    // call event of affected layerable:
-    if (mMouseEventLayerable)
-    {
-      mMouseEventLayerable->mouseReleaseEvent(event, mMousePressPos);
-      mMouseEventLayerable = nullptr;
-    }
-  }
+//  if (mSelectionRect && mSelectionRect->isActive()) // Note: if a click was detected above, the selection rect is canceled there
+//  {
+//    // finish selection rect, the appropriate action will be taken via signal-slot connection:
+//    mSelectionRect->endSelection(event);
+//  } else
+//  {
+//    // call event of affected layerable:
+//    if (mMouseEventLayerable)
+//    {
+//      mMouseEventLayerable->mouseReleaseEvent(event, mMousePressPos);
+//      mMouseEventLayerable = nullptr;
+//    }
+//  }
   
-  if (noAntialiasingOnDrag())
-    replot(rpQueuedReplot);
+//  if (noAntialiasingOnDrag())
+//    replot(rpQueuedReplot);
   
-  event->accept(); // in case QCPLayerable reimplementation manipulates event accepted state. In QWidget event system, QCustomPlot wants to accept the event.
-}
+//  event->accept(); // in case QCPLayerable reimplementation manipulates event accepted state. In QWidget event system, QCustomPlot wants to accept the event.
+//}
 
 /*! \internal
 
@@ -16144,41 +16221,41 @@ void QCustomPlot::processRectZoom(QRect rect, QMouseEvent *event)
 
   \see processRectSelection, QCPLayerable::selectTest
 */
-void QCustomPlot::processPointSelection(QMouseEvent *event)
-{
-  QVariant details;
-  QCPLayerable *clickedLayerable = layerableAt(event->pos(), true, &details);
-  bool selectionStateChanged = false;
-  bool additive = mInteractions.testFlag(QCP::iMultiSelect) && event->modifiers().testFlag(mMultiSelectModifier);
-  // deselect all other layerables if not additive selection:
-  if (!additive)
-  {
-    foreach (QCPLayer *layer, mLayers)
-    {
-      foreach (QCPLayerable *layerable, layer->children())
-      {
-        if (layerable != clickedLayerable && mInteractions.testFlag(layerable->selectionCategory()))
-        {
-          bool selChanged = false;
-          layerable->deselectEvent(&selChanged);
-          selectionStateChanged |= selChanged;
-        }
-      }
-    }
-  }
-  if (clickedLayerable && mInteractions.testFlag(clickedLayerable->selectionCategory()))
-  {
-    // a layerable was actually clicked, call its selectEvent:
-    bool selChanged = false;
-    clickedLayerable->selectEvent(event, additive, details, &selChanged);
-    selectionStateChanged |= selChanged;
-  }
-  if (selectionStateChanged)
-  {
-    emit selectionChangedByUser();
-    replot(rpQueuedReplot);
-  }
-}
+//void QCustomPlot::processPointSelection(QMouseEvent *event)
+//{
+//  QVariant details;
+//  QCPLayerable *clickedLayerable = layerableAt(event->pos(), true, &details);
+//  bool selectionStateChanged = false;
+//  bool additive = mInteractions.testFlag(QCP::iMultiSelect) && event->modifiers().testFlag(mMultiSelectModifier);
+//  // deselect all other layerables if not additive selection:
+//  if (!additive)
+//  {
+//    foreach (QCPLayer *layer, mLayers)
+//    {
+//      foreach (QCPLayerable *layerable, layer->children())
+//      {
+//        if (layerable != clickedLayerable && mInteractions.testFlag(layerable->selectionCategory()))
+//        {
+//          bool selChanged = false;
+//          layerable->deselectEvent(&selChanged);
+//          selectionStateChanged |= selChanged;
+//        }
+//      }
+//    }
+//  }
+//  if (clickedLayerable && mInteractions.testFlag(clickedLayerable->selectionCategory()))
+//  {
+//    // a layerable was actually clicked, call its selectEvent:
+//    bool selChanged = false;
+//    clickedLayerable->selectEvent(event, additive, details, &selChanged);
+//    selectionStateChanged |= selChanged;
+//  }
+//  if (selectionStateChanged)
+//  {
+//    emit selectionChangedByUser();
+//    replot(rpQueuedReplot);
+//  }
+//}
 
 /*! \internal
   
@@ -16347,6 +16424,22 @@ QList<QCPLayerable*> QCustomPlot::layerableListAt(const QPointF &pos, bool onlyS
     }
   }
   return result;
+}
+
+QList<QCPLayerable *> QCustomPlot::layerableList() const
+{
+    QList<QCPLayerable*> result;
+    for (int layerIndex=mLayers.size()-1; layerIndex>=0; --layerIndex)
+    {
+        const QList<QCPLayerable*> layerables = mLayers.at(layerIndex)->children();
+        for (int i=layerables.size()-1; i>=0; --i)
+        {
+            if (!layerables.at(i)->realVisibility())
+                continue;
+            result.append(layerables.at(i));
+        }
+    }
+    return result;
 }
 
 /*!
@@ -16733,6 +16826,57 @@ void QCPColorGradient::colorize(const double *data, const QCPRange &range, QRgb 
       }
     }
   }
+}
+
+#include "data3d.h"
+
+void QCPColorGradient::colorize(Data3D *data, const QCPRange &range, QRgb *scanLine,
+                                int line, int n, int dataIndexFactor, bool logarithmic)
+{
+    // If you change something here, make sure to also adapt color() and the other colorize() overload
+    if (!data)
+    {
+      qDebug() << Q_FUNC_INFO << "null pointer given as data";
+      return;
+    }
+    if (!scanLine)
+    {
+      qDebug() << Q_FUNC_INFO << "null pointer given as scanLine";
+      return;
+    }
+    if (mColorBufferInvalidated)
+      updateColorBuffer();
+
+    const bool skipNanCheck = mNanHandling == nhNone;
+    const double posToIndexFactor = !logarithmic ? (mLevelCount-1)/range.size() : (mLevelCount-1)/qLn(range.upper/range.lower);
+    for (int i=0; i<n; ++i)
+    {
+      const double value = data->cell(dataIndexFactor*i, line);
+      if (skipNanCheck || !std::isnan(value))
+      {
+        int index = int((!logarithmic ? value-range.lower : qLn(value/range.lower)) * posToIndexFactor);
+        if (!mPeriodic)
+        {
+          index = qBound(0, index, mLevelCount-1);
+        } else
+        {
+          index %= mLevelCount;
+          if (index < 0)
+            index += mLevelCount;
+        }
+        scanLine[i] = mColorBuffer.at(index);
+      } else
+      {
+        switch(mNanHandling)
+        {
+        case nhLowestColor: scanLine[i] = mColorBuffer.first(); break;
+        case nhHighestColor: scanLine[i] = mColorBuffer.last(); break;
+        case nhTransparent: scanLine[i] = qRgba(0, 0, 0, 0); break;
+        case nhNanColor: scanLine[i] = mNanColor.rgba(); break;
+        case nhNone: break; // shouldn't happen
+        }
+      }
+    }
 }
 
 /*! \overload
@@ -17609,7 +17753,7 @@ QCPAxis *QCPAxisRect::axis(QCPAxis::AxisType type, int index) const
     return ax.at(index);
   } else
   {
-    qDebug() << Q_FUNC_INFO << "Axis index out of bounds:" << index;
+//    qDebug() << Q_FUNC_INFO << "Axis index out of bounds:" << index;
     return nullptr;
   }
 }
@@ -17807,6 +17951,7 @@ void QCPAxisRect::zoom(const QRectF &pixelRect, const QList<QCPAxis*> &affectedA
       pixelRange = QCPRange(pixelRect.top(), pixelRect.bottom());
     axis->setRange(axis->pixelToCoord(pixelRange.lower), axis->pixelToCoord(pixelRange.upper));
   }
+  emit draggingFinished();
 }
 
 /*!
@@ -18524,7 +18669,7 @@ void QCPAxisRect::layoutChanged()
 void QCPAxisRect::mousePressEvent(QMouseEvent *event, const QVariant &details)
 {
   Q_UNUSED(details)
-  if (event->buttons() & Qt::LeftButton)
+  if (event->buttons() & Qt::RightButton)
   {
     mDragging = true;
     // initialize antialiasing backup in case we start dragging:
@@ -18544,6 +18689,10 @@ void QCPAxisRect::mousePressEvent(QMouseEvent *event, const QVariant &details)
         mDragStartVertRange.append(axis.isNull() ? QCPRange() : axis->range());
     }
   }
+
+  if (event->buttons() & Qt::LeftButton) {
+
+  }
 }
 
 /*! \internal
@@ -18555,7 +18704,8 @@ void QCPAxisRect::mousePressEvent(QMouseEvent *event, const QVariant &details)
 */
 void QCPAxisRect::mouseMoveEvent(QMouseEvent *event, const QPointF &startPos)
 {
-  Q_UNUSED(startPos)
+  Q_UNUSED(startPos);
+
   // Mouse range dragging interaction:
   if (mDragging && mParentPlot->interactions().testFlag(QCP::iRangeDrag))
   {
@@ -18617,6 +18767,7 @@ void QCPAxisRect::mouseReleaseEvent(QMouseEvent *event, const QPointF &startPos)
 {
   Q_UNUSED(event)
   Q_UNUSED(startPos)
+  if (mDragging) emit draggingFinished();
   mDragging = false;
   if (mParentPlot->noAntialiasingOnDrag())
   {
@@ -18660,6 +18811,7 @@ void QCPAxisRect::wheelEvent(QWheelEvent *event)
     {
       double factor;
       double wheelSteps = delta/120.0; // a single step delta is +/-120 usually
+      bool rangeScaled = false;
       if (mRangeZoom.testFlag(Qt::Horizontal))
       {
         factor = qPow(mRangeZoomFactorHorz, wheelSteps);
@@ -18668,6 +18820,7 @@ void QCPAxisRect::wheelEvent(QWheelEvent *event)
           if (!axis.isNull())
             axis->scaleRange(factor, axis->pixelToCoord(pos.x()));
         }
+        rangeScaled = true;
       }
       if (mRangeZoom.testFlag(Qt::Vertical))
       {
@@ -18677,7 +18830,9 @@ void QCPAxisRect::wheelEvent(QWheelEvent *event)
           if (!axis.isNull())
             axis->scaleRange(factor, axis->pixelToCoord(pos.y()));
         }
+        rangeScaled = true;
       }
+      if (rangeScaled) emit axesRangeScaled();
       mParentPlot->replot();
     }
   }
@@ -19054,9 +19209,10 @@ QSize QCPPlottableLegendItem::minimumOuterSizeHint() const
 QCPLegend::QCPLegend() :
   mIconTextPadding{}
 {
+#ifdef GRID_LEGEND
   setFillOrder(QCPLayoutGrid::foRowsFirst);
   setWrap(0);
-  
+#endif
   setRowSpacing(3);
   setColumnSpacing(8);
   setMargins(QMargins(7, 5, 7, 4));
@@ -19433,8 +19589,10 @@ bool QCPLegend::removeItem(int index)
   if (QCPAbstractLegendItem *ali = item(index))
   {
     bool success = remove(ali);
+#ifdef GRID_LEGEND
     if (success)
       setFillOrder(fillOrder(), true); // gets rid of empty cell by reordering
+#endif
     return success;
   } else
     return false;
@@ -19455,8 +19613,10 @@ bool QCPLegend::removeItem(int index)
 bool QCPLegend::removeItem(QCPAbstractLegendItem *item)
 {
   bool success = remove(item);
-  if (success)
-    setFillOrder(fillOrder(), true); // gets rid of empty cell by reordering
+#ifdef GRID_LEGEND
+    if (success)
+      setFillOrder(fillOrder(), true); // gets rid of empty cell by reordering
+#endif
   return success;
 }
 
@@ -19470,7 +19630,10 @@ void QCPLegend::clearItems()
     if (item(i))
       removeAt(i); // don't use removeItem() because it would unnecessarily reorder the whole legend for each item
   }
-  setFillOrder(fillOrder(), true); // get rid of empty cells by reordering once after all items are removed
+
+#ifdef GRID_LEGEND
+      setFillOrder(fillOrder(), true); // gets rid of empty cell by reordering
+#endif
 }
 
 /*!
@@ -20487,13 +20650,17 @@ void QCPColorScale::applyDefaultAntialiasingHint(QCPPainter *painter) const
 
 /* inherits documentation from base class */
 void QCPColorScale::mousePressEvent(QMouseEvent *event, const QVariant &details)
-{
+{qDebug()<<Q_FUNC_INFO;
   if (!mAxisRect)
   {
     qDebug() << Q_FUNC_INFO << "internal axis rect was deleted";
     return;
   }
-  mAxisRect.data()->mousePressEvent(event, details);
+  if (event->button()==Qt::RightButton) {
+      emit contextMenuRequested(event->globalPos(), QCPAxis::atRight);
+  }
+  else
+      mAxisRect.data()->mousePressEvent(event, details);
 }
 
 /* inherits documentation from base class */
@@ -29778,6 +29945,7 @@ void QCPItemText::draw(QCPPainter *painter)
   if (!qFuzzyIsNull(mRotation))
     transform.rotate(mRotation);
   painter->setFont(mainFont());
+
   QRect textRect = painter->fontMetrics().boundingRect(0, 0, 0, 0, Qt::TextDontClip|mTextAlignment, mText);
   QRect textBoxRect = textRect.adjusted(-mPadding.left(), -mPadding.top(), mPadding.right(), mPadding.bottom());
   QPointF textPos = getTextDrawPoint(QPointF(0, 0), textBoxRect, mPositionAlignment); // 0, 0 because the transform does the translation
@@ -35492,5 +35660,4 @@ QVector<QPointF> QCPPolarGraph::dataToLines(const QVector<QCPGraphData> &data) c
   return result;
 }
 /* end of 'src/polar/polargraph.cpp' */
-
 

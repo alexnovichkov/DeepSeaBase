@@ -1,22 +1,18 @@
 #ifndef CURVE_H
 #define CURVE_H
 
-#include <qwt_plot_curve.h>
-#include <qwt_plot_marker.h>
 #include <QPen>
 
 class FileDescriptor;
 class PointLabel;
-
 class Channel;
 class DataHolder;
 class Plot;
-class QwtScaleMap;
-class PointMarker;
 
 #include <qglobal.h>
 #include "selectable.h"
 #include "enums.h"
+class QCPCheckableLegend;
 
 class Curve : public Selectable
 {
@@ -28,27 +24,30 @@ public:
     };
     enum class MarkerShape {
         NoMarker,
-        Ellipse,
-        Rect,
-        Diamond,
-        Triangle,
-        DTriangle,
-        LTriangle,
-        RTriangle,
+        Dot,
         Cross,
-        XCross,
-        HLine,
-        VLine,
-        Star1,
-        Star2,
-        Hexagon
+        Plus,
+        Circle,
+        Disc,
+        Square,
+        Diamond,
+        Star,
+        Triangle,
+        TriangleInverted,
+        CrossSquare,
+        PlusSquare,
+        CrossCircle,
+        PlusCircle,
+        Peace
     };
+    static QString markerShapeDescription(MarkerShape shape);
 
 
     Curve(const QString &title, Channel *channel);
     virtual ~Curve();
 
-    void attach(Plot *plot);
+    virtual void attachTo(Plot *plot);
+    virtual void detachFrom(Plot *plot);
 
     virtual QString title() const = 0;
     virtual void setTitle(const QString &title) = 0;
@@ -69,22 +68,23 @@ public:
     int markerSize() const {return m_markerSize;}
     void setMarkerSize(int markerSize);
 
-    virtual QList<QwtLegendData> legendData() const = 0;
-
     virtual SamplePoint samplePoint(SelectedPoint point) const = 0;
 
     void setVisible(bool visible);
+    virtual bool isVisible() const = 0;
 
     void addLabel(PointLabel *label);
     void removeLabel(PointLabel *label);
     void removeLabels();
     /** find label by canvas position */
-    PointLabel *findLabel(const QPoint &pos/*, QwtAxisId yAxis*/);
+    PointLabel *findLabel(const QPoint &pos);
     /** find label by point on a curve */
     PointLabel *findLabel(SelectedPoint point);
     virtual SelectedPoint closest(const QPoint &pos, double *dist = nullptr, double *dist2 = nullptr) const = 0;
 
     virtual void moveToPos(QPoint pos, QPoint startPos = QPoint()) override;
+
+    virtual LegendData commonLegendData() const;
 
     virtual double yMin() const;
     virtual double yMax() const;
@@ -96,19 +96,16 @@ public:
 
     Channel *channel;
     QList<PointLabel*> labels;
-
-
+    MarkerShape m_markerShape = MarkerShape::NoMarker;
+    int m_markerSize = 6;
 
     int fileNumber=0;
     bool duplicate;
     bool fixed = false;
     Type type = Type::Unknown;
 
-    MarkerShape m_markerShape = MarkerShape::NoMarker;
-    int m_markerSize = 6;
-
 public:
-    QMap<int, QVariant> commonLegendData() const;
+
     void evaluateScale(int &from, int &to, double startX, double endX) const;
     void switchFixed();
     virtual void resetCashedData() {}
@@ -124,14 +121,15 @@ public:
     virtual void fix() override;
     virtual void remove() override;
     virtual bool draggable() const override;
+public:
+    virtual void updatePen() = 0;
+    virtual QIcon thumbnail() const = 0;
 protected:
-    virtual void attachTo(QwtPlot *plot) = 0;
     virtual void updateSelection(SelectedPoint point) override;
     inline virtual bool updateAnyway() const override {return true;}
-    virtual void updatePen() = 0;
     Plot *m_plot = nullptr;
     mutable SelectedPoint selectedPoint;
-    PointMarker *marker;
+    PointLabel *m_pointMarker = nullptr;
     QPen oldPen;
 };
 

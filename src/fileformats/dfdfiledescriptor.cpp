@@ -705,6 +705,7 @@ void DfdFileDescriptor::addChannelWithData(DataHolder *data, const DataDescripti
     ch->dataDescription() = description;
 
     ch->ChanBlockSize = data->samplesCount();
+    //DeepSea не умеет читать файлы с IndType == C0000008, поэтому игнорируем function.precision
     ch->IndType = channelsCount()==1 ? 3221225476 : channels.constFirst()->IndType;
     if (description.get("yname") == description.get("ynameold") && data->yValuesFormat() == DataHolder::YValuesAmplitudesInDB)
         ch->dataDescription().put("yname", "дБ");

@@ -5,6 +5,7 @@
 #include "framecutterfunction.h"
 #include "windowingfunction.h"
 #include "savingfunction.h"
+#include "flatteningfunction.h"
 #include "logging.h"
 
 
@@ -14,6 +15,7 @@ WindowingAlgorithm::WindowingAlgorithm(QList<FileDescriptor *> &dataBase, QObjec
     channelF = new ChannelFunction(this);
     samplingF = new FrameCutterFunction(this);
     windowingF = new WindowingFunction(this);
+    flatteningF = new FlatteningFunction(this);
     saver = new SavingFunction(this);
 
     m_chain << channelF;
@@ -21,7 +23,8 @@ WindowingAlgorithm::WindowingAlgorithm(QList<FileDescriptor *> &dataBase, QObjec
 
     samplingF->setInput(channelF);
     windowingF->setInput(samplingF);
-    saver->setInput(windowingF);
+    flatteningF->setInput(windowingF);
+    saver->setInput(flatteningF);
 
     m_functions << channelF;
     m_functions << samplingF;

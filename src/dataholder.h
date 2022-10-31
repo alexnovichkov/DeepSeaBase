@@ -60,7 +60,6 @@ public:
 
     void clear();
 
-
     void setTemporaryCorrection(double m_correctionValue, int type);
     void removeCorrection();
     bool makeCorrectionConstant();
@@ -105,6 +104,8 @@ public:
     QVector<double> xValues() const;
     QVector<double> zValues() const;
 
+    QPair<double,double> yMinMax(int begin, int end);
+
     double xValue(int i) const;
     double yValue(int i, int block = 0) const;
     double yValueRaw(int i, int block = 0) const;
@@ -139,9 +140,11 @@ public:
     double yMin(int block = 0) const;
     double yMax(int block = 0) const;
 
-    int samplesCount() const;
-    int blocksCount() const {return m_zCount;}
-    void setBlocksCount(int count) {m_zCount = count;}
+    inline int samplesCount() const {
+        return m_xCount;
+    }
+    inline int blocksCount() const {return m_zCount;}
+    inline void setBlocksCount(int count) {m_zCount = count;}
 
     QVector<double> linears(int block = -1) const;
     QVector<double> decibels(int block = -1) const;

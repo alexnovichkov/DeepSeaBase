@@ -93,8 +93,7 @@ QString ApsFunction::displayName() const
 
 DataDescription ApsFunction::getFunctionDescription() const
 {
-    DataDescription result;
-    if (m_input) result = m_input->getFunctionDescription();
+    DataDescription result = AbstractFunction::getFunctionDescription();
 
     result.put("xname", "Гц");
     QString s = m_input->getParameter("?/yName").toString();

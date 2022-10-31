@@ -6,7 +6,7 @@
 #include "plot/curve.h"
 #include "fileformats/dfdfiledescriptor.h"
 #include "logging.h"
-#include "plot/qcustomplot/qcustomplot.h"
+#include "plot/qcustomplot.h"
 
 void ClickableLabel::mouseReleaseEvent(QMouseEvent *ev)
 {DDD;
@@ -16,7 +16,7 @@ void ClickableLabel::mouseReleaseEvent(QMouseEvent *ev)
 }
 
 CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
-    QDialog(parent), curve(curve), plot(parent)
+    QDialog(parent->widget()), curve(curve), plot(parent)
 {DDD;
     setWindowTitle("Настройки кривой");
 
@@ -108,20 +108,21 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
     markerComboBox = new QComboBox(this);
     markerComboBox->setEditable(false);
     markerComboBox->addItems({"Без маркера",
+                              "Точка",
+                              "Крест",
+                              "Плюс",
                               "Окружность",
+                              "Диск",
                               "Квадрат",
                               "Ромб",
+                              "Звезда",
                               "Треугольник",
                               "Перевернутый треугольник",
-                              "Треугольник влево",
-                              "Треугольник вправо",
-                              "Плюс",
-                              "Крест",
-                              "Горизонтальная линия",
-                              "Вертикальная линия",
-                              "Звезда",
-                              "6-угольная звезда",
-                              "Шестиугольник"});
+                              "Квадрат с крестом",
+                              "Квадрат с плюсом",
+                              "Окружность с крестом",
+                              "Окружность с плюсом",
+                              "Пацифик"});
 
     for (int i=0; i<16; ++i) {
         markerComboBox->setItemIcon(i, iconForMarker(i));
@@ -137,10 +138,10 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
     axisComboBox->setEditable(false);
     axisComboBox->addItems(QStringList()<<"Левая"
                            <<"Правая");
-    axisComboBox->setCurrentIndex(static_cast<int>(curve->yAxis()));
+    axisComboBox->setCurrentIndex(static_cast<int>(curve->yAxis())-1);
     connect(axisComboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             [=](int axis) {
-        plot->moveCurve(curve, Enums::AxisType(axis));
+        plot->moveCurve(curve, Enums::AxisType(axis+1));
         plot->replot();
     });
 
@@ -171,20 +172,21 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
 QIcon CurvePropertiesDialog::iconForMarker(int shape) const
 {
     switch (shape) {
-        case 1: return QIcon(":/icons/ssCircle.png");
-        case 2: return QIcon(":/icons/ssSquare.png");
-        case 3: return QIcon(":/icons/ssDiamond.png");
-        case 4: return QIcon(":/icons/ssTriangle.png");
-        case 5: return QIcon(":/icons/ssTriangleInverted.png");
-        case 6: return QIcon(":/icons/ssTriangleLeft.png");
-        case 7: return QIcon(":/icons/ssTriangleRight.png");
-        case 8: return QIcon(":/icons/ssPlus.png");
-        case 9: return QIcon(":/icons/ssCross.png");
-        case 10: return QIcon(":/icons/ssHline.png");
-        case 11: return QIcon(":/icons/ssVline.png");
-        case 12: return QIcon(":/icons/ssStar.png");
-        case 13: return QIcon(":/icons/ssDavid.png");
-        case 14: return QIcon(":/icons/ssHexagon.png");
+        case 1: return QIcon(":/icons/ssDot.png");
+        case 2: return QIcon(":/icons/ssCross.png");
+        case 3: return QIcon(":/icons/ssPlus.png");
+        case 4: return QIcon(":/icons/ssCircle.png");
+        case 5: return QIcon(":/icons/ssDisc.png");
+        case 6: return QIcon(":/icons/ssSquare.png");
+        case 7: return QIcon(":/icons/ssDiamond.png");
+        case 8: return QIcon(":/icons/ssStar.png");
+        case 9: return QIcon(":/icons/ssTriangle.png");
+        case 10: return QIcon(":/icons/ssTriangleInverted.png");
+        case 11: return QIcon(":/icons/ssCrossSquare.png");
+        case 12: return QIcon(":/icons/ssPlusSquare.png");
+        case 13: return QIcon(":/icons/ssCrossCircle.png");
+        case 14: return QIcon(":/icons/ssPlusCircle.png");
+        case 15: return QIcon(":/icons/ssPeace.png");
     }
 
     return QIcon();

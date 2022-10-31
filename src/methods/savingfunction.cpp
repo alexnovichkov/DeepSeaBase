@@ -40,7 +40,7 @@ QString SavingFunction::description() const
 
 QStringList SavingFunction::properties() const
 {DDD;
-    return {"append", "type", "destination"};
+    return {"append", "type", "precision", "destination"};
 }
 
 QString SavingFunction::propertyDescription(const QString &property) const
@@ -57,7 +57,7 @@ QString SavingFunction::propertyDescription(const QString &property) const
                                    "}";
     if (property == "destination") return "{"
                                      "  \"name\"        : \"destination\"   ,"
-                                     "  \"type\"        : \"string\"   ,"
+                                     "  \"type\"        : \"url\"   ,"
                                      "  \"displayName\" : \"Сохранять в\"   ,"
                                      "  \"defaultValue\": \"\"         ,"
                                      "  \"toolTip\"     : \"Папка сохранения\""
@@ -72,6 +72,14 @@ QString SavingFunction::propertyDescription(const QString &property) const
                                    "  \"minimum\"     : 0,"
                                    "  \"maximum\"     : 0"
                                    "}";
+    if (property == "precision") return "{"
+                                        "  \"name\"        : \"precision\"   ,"
+                                        "  \"type\"        : \"enum\"   ,"
+                                        "  \"displayName\" : \"Точность\"   ,"
+                                        "  \"defaultValue\": 0         ,"
+                                        "  \"toolTip\"     : \"Точность представления отсчетов\","
+                                        "  \"values\"      : [\"Одинарная (single)\",\"Двойная (double)\"]"
+                                        "}";
     return "";
 }
 
@@ -82,13 +90,15 @@ QVariant SavingFunction::m_getProperty(const QString &property) const
         if (m_input) return m_input->getParameter(property);
     }
 
-    if (!property.startsWith(name()+"/")) return QVariant();
-    QString p = property.section("/",1);
+    if (property.startsWith(name()+"/")) {
+        QString p = property.section("/",1);
 
-    if (p == "type") return type;
-    if (p == "destination") return destination;
-    if (p == "name") return newFileName;
-    if (p == "append") return append;
+        if (p == "type") return type;
+        if (p == "destination") return destination;
+        if (p == "name") return newFileName;
+        if (p == "append") return append;
+        if (p == "precision") return precision;
+    }
 
     return QVariant();
 }
@@ -101,6 +111,7 @@ void SavingFunction::m_setProperty(const QString &property, const QVariant &val)
     if (p == "type") type = val.toInt();
     else if (p == "destination") destination = val.toString();
     else if (p == "append") append = val.toBool();
+    else if (p == "precision") precision = val.toInt();
 }
 
 bool SavingFunction::propertyShowsFor(const QString &property) const
@@ -110,6 +121,7 @@ bool SavingFunction::propertyShowsFor(const QString &property) const
 
     if (p == "type") return !append;
     if (p == "destination") return !append;
+    if (p == "precision") return type==SavingFunction::D94File;
 
     return true;
 }
@@ -155,6 +167,7 @@ bool SavingFunction::compute(FileDescriptor *file)
     // создаем канал
     if (!m_input->compute(file)) return false;
     QVector<double> data = m_input->getData("input");
+
     if (data.isEmpty()) return false;
 
     sourceFileName = file->fileName();
@@ -232,6 +245,7 @@ bool SavingFunction::compute(FileDescriptor *file)
     DataDescription functionDescription = m_input->getFunctionDescription();
     for (const auto [key, val]: asKeyValueRange(functionDescription.data))
         description.put(key, val);
+    description.put("function.precision", precision==0?"float":"double");
 
     m_file->addChannelWithData(d, description);
 

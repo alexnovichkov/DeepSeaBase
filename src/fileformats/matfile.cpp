@@ -5,7 +5,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 
-#define PRINT_CONTENT
+//#define PRINT_CONTENT
 
 MatFile::MatFile(const QString &fileName) : FileDescriptor(fileName)
 {DDD;
@@ -49,7 +49,6 @@ void MatFile::read()
             rec->readData(&stream);
         }
     }
-
     setDataDescription(xml.toDataDescription());
 
     if (records.isEmpty()) return;
@@ -364,7 +363,7 @@ MatlabRecord *matlabRecordFactory(MatlabHeader *header, const QString &fileName)
             break;
         }
         case 0xF: {//15 miCOMPRESSED
-            qDebug()<<"zlib data";
+//            qDebug()<<"zlib data";
             return rec;
             break;
         }

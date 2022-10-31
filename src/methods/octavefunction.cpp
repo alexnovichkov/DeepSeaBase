@@ -58,6 +58,7 @@ QVariant OctaveFunction::m_getProperty(const QString &property) const
                 case OctaveType::Octave6: return 159;
                 case OctaveType::Octave12: return 160;
                 case OctaveType::Octave24: return 161;
+                default: break;
             }
         }
         if (property == "?/xName") return "Гц";
@@ -128,11 +129,9 @@ void OctaveFunction::reset()
 
 DataDescription OctaveFunction::getFunctionDescription() const
 {
-    DataDescription d;
-    if (m_input) d = m_input->getFunctionDescription();
+    DataDescription d = AbstractFunction::getFunctionDescription();
     d.put("function.format", "amplitude");
     d.put("function.octaveFormat", static_cast<int>(bank.getType()));
-    d.put("function.precision", "float");
     d.put("function.name", "OCTF");
     d.put("function.type", 9);
     d.put("function.logscale", "quadratic");

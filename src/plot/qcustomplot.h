@@ -28,8 +28,6 @@
 
 #include <QtCore/qglobal.h>
 
-//#define QCUSTOMPLOT_USE_OPENGL
-
 // some Qt version/configuration dependent macros to include or exclude certain code paths:
 #ifdef QCUSTOMPLOT_USE_OPENGL
 #  if QT_VERSION < QT_VERSION_CHECK(5, 0, 0)
@@ -72,7 +70,6 @@
 #include <limits>
 #include <algorithm>
 #ifdef QCP_OPENGL_FBO
-#  include <QOpenGLFunctions>
 #  include <QtGui/QOpenGLContext>
 #  if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 #    include <QtGui/QOpenGLFramebufferObject>
@@ -1152,13 +1149,13 @@ protected:
   QBrush mBrush;
   // non-property members:
   bool mActive;
-  
+public:
   // introduced virtual methods:
   virtual void startSelection(QMouseEvent *event);
   virtual void moveSelection(QMouseEvent *event);
   virtual void endSelection(QMouseEvent *event);
   virtual void keyPressEvent(QKeyEvent *event);
-  
+protected:
   // reimplemented virtual methods
   virtual void applyDefaultAntialiasingHint(QCPPainter *painter) const Q_DECL_OVERRIDE;
   virtual void draw(QCPPainter *painter) Q_DECL_OVERRIDE;
@@ -2298,6 +2295,9 @@ signals:
   void scaleTypeChanged(QCPAxis::ScaleType scaleType);
   void selectionChanged(const QCPAxis::SelectableParts &parts);
   void selectableChanged(const QCPAxis::SelectableParts &parts);
+  void contextMenuRequested(const QPoint &pos, AxisType);
+  void draggingFinished(const QCPRange &newRange);
+  void rangeScaled();
 
 protected:
   // property members:
@@ -2346,6 +2346,7 @@ protected:
   bool mCachedMarginValid;
   int mCachedMargin;
   bool mDragging;
+  int mAxisPartMoved = 0; //1-left, 2-right,3-lower, 4-upper
   QCPRange mDragStartRange;
   QCP::AntialiasedElements mAADragBackup, mNotAADragBackup;
   
@@ -2360,11 +2361,12 @@ protected:
   virtual void selectEvent(QMouseEvent *event, bool additive, const QVariant &details, bool *selectionStateChanged) Q_DECL_OVERRIDE;
   virtual void deselectEvent(bool *selectionStateChanged) Q_DECL_OVERRIDE;
   // mouse events:
+public:
   virtual void mousePressEvent(QMouseEvent *event, const QVariant &details) Q_DECL_OVERRIDE;
   virtual void mouseMoveEvent(QMouseEvent *event, const QPointF &startPos) Q_DECL_OVERRIDE;
   virtual void mouseReleaseEvent(QMouseEvent *event, const QPointF &startPos) Q_DECL_OVERRIDE;
   virtual void wheelEvent(QWheelEvent *event) Q_DECL_OVERRIDE;
-  
+protected:
   // non-virtual methods:
   void setupTickVectors();
   QPen getBasePen() const;
@@ -3841,8 +3843,8 @@ public:
   // plottable interface:
   QCPAbstractPlottable *plottable(int index);
   QCPAbstractPlottable *plottable();
-  bool removePlottable(QCPAbstractPlottable *plottable);
-  bool removePlottable(int index);
+  bool removePlottable(QCPAbstractPlottable *plottable, bool deleteAsWell);
+  bool removePlottable(int index, bool deleteAsWell);
   int clearPlottables();
   int plottableCount() const;
   QList<QCPAbstractPlottable*> selectedPlottables() const;
@@ -3983,9 +3985,9 @@ protected:
   virtual void paintEvent(QPaintEvent *event) Q_DECL_OVERRIDE;
   virtual void resizeEvent(QResizeEvent *event) Q_DECL_OVERRIDE;
   virtual void mouseDoubleClickEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
-  virtual void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
+//  virtual void mousePressEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
   virtual void mouseMoveEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
-  virtual void mouseReleaseEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
+//  virtual void mouseReleaseEvent(QMouseEvent *event) Q_DECL_OVERRIDE;
   virtual void wheelEvent(QWheelEvent *event) Q_DECL_OVERRIDE;
   
   // introduced virtual methods:
@@ -3995,7 +3997,7 @@ protected:
   virtual void legendRemoved(QCPLegend *legend);
   Q_SLOT virtual void processRectSelection(QRect rect, QMouseEvent *event);
   Q_SLOT virtual void processRectZoom(QRect rect, QMouseEvent *event);
-  Q_SLOT virtual void processPointSelection(QMouseEvent *event);
+//  Q_SLOT virtual void processPointSelection(QMouseEvent *event);
   
   // non-virtual methods:
   bool registerPlottable(QCPAbstractPlottable *plottable);
@@ -4004,6 +4006,7 @@ protected:
   void updateLayerIndices() const;
   QCPLayerable *layerableAt(const QPointF &pos, bool onlySelectable, QVariant *selectionDetails=nullptr) const;
   QList<QCPLayerable*> layerableListAt(const QPointF &pos, bool onlySelectable, QList<QVariant> *selectionDetails=nullptr) const;
+  QList<QCPLayerable*> layerableList() const;
   void drawBackground(QCPPainter *painter);
   void setupPaintBuffers();
   QCPAbstractPaintBuffer *createPaintBuffer();
@@ -4715,6 +4718,8 @@ void QCPAbstractPlottable1D<DataType>::drawPolyline(QCPPainter *painter, const Q
 /* including file 'src/colorgradient.h'    */
 /* modified 2021-03-29T02:30:44, size 7262 */
 
+class Data3D;
+
 class QCP_LIB_DECL QCPColorGradient
 {
   Q_GADGET
@@ -4785,6 +4790,9 @@ public:
   
   // non-property methods:
   void colorize(const double *data, const QCPRange &range, QRgb *scanLine, int n, int dataIndexFactor=1, bool logarithmic=false);
+  void colorize(Data3D *data, const QCPRange &range, QRgb *scanLine,
+                int line,
+                int n, int dataIndexFactor=1, bool logarithmic=false);
   void colorize(const double *data, const unsigned char *alpha, const QCPRange &range, QRgb *scanLine, int n, int dataIndexFactor=1, bool logarithmic=false);
   QRgb color(double position, const QCPRange &range, bool logarithmic=false);
   void loadPreset(GradientPreset preset);
@@ -4966,6 +4974,9 @@ public:
   virtual void update(UpdatePhase phase) Q_DECL_OVERRIDE;
   virtual QList<QCPLayoutElement*> elements(bool recursive) const Q_DECL_OVERRIDE;
 
+signals:
+  void axesRangeScaled();
+  void draggingFinished();
 protected:
   // property members:
   QBrush mBackgroundBrush;
@@ -4991,11 +5002,12 @@ protected:
   virtual int calculateAutoMargin(QCP::MarginSide side) Q_DECL_OVERRIDE;
   virtual void layoutChanged() Q_DECL_OVERRIDE;
   // events:
+public:
   virtual void mousePressEvent(QMouseEvent *event, const QVariant &details) Q_DECL_OVERRIDE;
   virtual void mouseMoveEvent(QMouseEvent *event, const QPointF &startPos) Q_DECL_OVERRIDE;
   virtual void mouseReleaseEvent(QMouseEvent *event, const QPointF &startPos) Q_DECL_OVERRIDE;
   virtual void wheelEvent(QWheelEvent *event) Q_DECL_OVERRIDE;
-  
+protected:
   // non-property methods:
   void drawBackground(QCPPainter *painter);
   void updateAxesOffset(QCPAxis::AxisType type);
@@ -5100,8 +5112,54 @@ protected:
   QFont getFont() const;
 };
 
+class QCPFlowLayout : public QCPLayout
+{
+    Q_OBJECT
+public:
+    QCPFlowLayout();
 
-class QCP_LIB_DECL QCPLegend : public QCPLayoutGrid
+    Qt::Orientation orientation() const {return m_orientation;}
+    void setOrientation(Qt::Orientation orientation);
+
+    int maximumColumnCount() const;
+    void setMaximumColumnCount(int maximumColumnCount);
+
+    int columnSpacing() const;
+    void setColumnSpacing(int columnSpacing);
+
+    int rowSpacing() const;
+    void setRowSpacing(int rowSpacing);
+
+    bool hasElement(QCPLayoutElement *element) const;
+
+    bool appendElement(QCPLayoutElement *element);
+    bool addElement(QCPLayoutElement *element);
+    bool prependElement(QCPLayoutElement *element);
+    bool insertElement(QCPLayoutElement *element, int index);
+
+    // QCPLayout interface
+public:
+    virtual int elementCount() const override;
+    virtual QCPLayoutElement *elementAt(int index) const override;
+    virtual QCPLayoutElement *takeAt(int index) override;
+    virtual bool take(QCPLayoutElement *element) override;
+
+    // QCPLayoutElement interface
+public:
+    virtual QSize minimumOuterSizeHint() const override;
+    virtual QSize maximumOuterSizeHint() const override;
+
+protected:
+    virtual void updateLayout() override;
+private:
+    QVector<QCPLayoutElement*> m_elements;
+    Qt::Orientation m_orientation = Qt::Horizontal;
+    int m_columnSpacing = 5;
+    int m_rowSpacing = 5;
+    int m_maximumColumnCount = 0;
+};
+
+class QCP_LIB_DECL QCPLegend : public QCPFlowLayout//QCPLayoutGrid
 {
   Q_OBJECT
   /// \cond INCLUDE_QPROPERTIES
@@ -5392,6 +5450,7 @@ signals:
   void dataRangeChanged(const QCPRange &newRange);
   void dataScaleTypeChanged(QCPAxis::ScaleType scaleType);
   void gradientChanged(const QCPColorGradient &newGradient);
+  void contextMenuRequested(const QPoint &pos, QCPAxis::AxisType);
 
 protected:
   // property members:

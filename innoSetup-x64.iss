@@ -9,6 +9,7 @@
 #define MyAppVersion  StringChange(FileLine, """;","")
 #define PathToExe "E:\My\build\build-DeepSeaBase-Desktop_Qt_5_12_8_MinGW_64_bit-Release\bin"
 #define PathToQt "K:\Qt\Qt5.12.8\5.12.8\mingw73_64"
+#define CurrentDate GetDateTimeString('dd/mm/yyyy', '.', '');
 
 [Setup]
 ; NOTE: The value of AppId uniquely identifies this application.
@@ -22,7 +23,7 @@ AppPublisher={#MyAppPublisher}
 DefaultDirName={pf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
-OutputBaseFilename=DeepSeaBaseInstall-{#MyAppVersion}-x64
+OutputBaseFilename=DeepSeaBaseInstall-{#MyAppVersion}-{#CurrentDate}-x64
 Compression=lzma
 SolidCompression=yes
 ArchitecturesAllowed=x64 ia64
@@ -30,9 +31,9 @@ ArchitecturesInstallIn64BitMode=x64 ia64
 PrivilegesRequired=none
 Uninstallable=IsTaskSelected('installmode/normal')
 
-[Run]
-Filename: "{app}\vc_redist.x86.exe"; Components: plugins
-Filename: "{app}\vc_redist.x64.exe"; Components: plugins
+;[Run]
+;Filename: "{app}\vc_redist.x86.exe"; Components: plugins
+;Filename: "{app}\vc_redist.x64.exe"; Components: plugins
 
 [Languages]
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
@@ -65,7 +66,7 @@ Source: {#PathToQt}\bin\Qt5Widgets.dll; DestDir: "{app}"; Flags: ignoreversion; 
 Source: {#PathToQt}\bin\Qt5WinExtras.dll; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: {#PathToQt}\bin\Qt5Multimedia.dll; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: {#PathToQt}\bin\Qt5Network.dll; DestDir: "{app}"; Flags: ignoreversion; Components: main
-Source: "C:\Qwt-6.2.0-dev\x64\lib\qwt.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: main
+;Source: "C:\Qwt-6.2.0-dev\x64\lib\qwt.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: "E:\My\programming\sources\build-libsamplerate-0.1.8-Desktop_Qt_5_12_8_MinGW_64_bit-Release\release\samplerate.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: "E:\My\programming\sources\fftw-3.3.5-dll64\libfftw3-3.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: "E:\My\programming\ADS\ADSx64-release\lib\qtadvanceddocking.dll"; DestDir: "{app}"; Flags: ignoreversion; Components: main
@@ -81,8 +82,8 @@ Source: {#PathToExe+"/plugins/*.dll"}; DestDir: "{app}\plugins"; Flags: ignoreve
 Source: "E:\My\programming\sources\TDMS\tdm_dev\dev\bin\64-bit\*.dll"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: plugins
 Source: "E:\My\programming\sources\TDMS\tdm_dev\dev\bin\64-bit\DataModels\USI\1_0\usi_1_0.xsd"; DestDir: "{app}\DataModels\USI\1_0"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: plugins
 Source: "E:\My\programming\sources\TDMS\tdm_dev\dev\bin\64-bit\DataModels\USI\TDM\1_0\USI_TDM_1_0.xml"; DestDir: "{app}\DataModels\USI\TDM\1_0"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: plugins
-Source: "E:\My\build\DeepSeaBase\vc_redist.x86.exe"; DestDir: "{app}"; Flags: ignoreversion; Components: plugins
-Source: "E:\My\build\DeepSeaBase\vc_redist.x64.exe"; DestDir: "{app}"; Flags: ignoreversion; Components: plugins
+;Source: "E:\My\build\DeepSeaBase\vc_redist.x86.exe"; DestDir: "{app}"; Flags: ignoreversion; Components: plugins
+;Source: "E:\My\build\DeepSeaBase\vc_redist.x64.exe"; DestDir: "{app}"; Flags: ignoreversion; Components: plugins
 
 
 Source: "E:\My\build\DeepSeaBase\src\help.html"; DestDir: "{app}"; Flags: ignoreversion; Components: main

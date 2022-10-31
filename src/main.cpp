@@ -47,7 +47,7 @@ int main(int argc, char *argv[])
     QPixmap pixmap(":/icons/splash.png");
     QSplashScreen splash(pixmap);
     splash.show();
-    splash.showMessage("Подождите, идет загрузка записей...",Qt::AlignBottom | Qt::AlignHCenter, Qt::white);
+    splash.showMessage(QString(DEEPSEABASE_VERSION)+" - Подождите, идет загрузка записей...",Qt::AlignBottom | Qt::AlignHCenter, Qt::white);
     a.processEvents();
 
     MainWindow w;

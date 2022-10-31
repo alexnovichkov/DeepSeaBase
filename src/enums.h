@@ -1,10 +1,12 @@
 #ifndef ENUMS_H
 #define ENUMS_H
 
+#include "QtMath"
 #include <QObject>
 
 namespace Enums {
     Q_NAMESPACE
+
     enum Direction {
         Left,
         Right,
@@ -12,14 +14,73 @@ namespace Enums {
         Down
     };
     enum class AxisType {
-        atLeft,
-        atRight,
-        atTop,
-        atBottom,
-        atInvalid
+        atLeft = 1,
+        atRight = 2,
+        atTop = 4,
+        atBottom = 8,
+        atColor = 16,
+        atInvalid = 0
     };
     Q_ENUM_NS(AxisType)
+
+    enum class AxisScale {
+        Linear,
+        Logarithmic
+    };
+    Q_ENUM_NS(AxisScale)
+
+    enum class PlotType
+    {
+        Time,
+        General,
+        Octave,
+        Spectrogram
+    };
+    Q_ENUM_NS(PlotType)
+
+    enum class InteractionMode {
+        NoInteraction,
+        ScalingInteraction,
+        DataInteraction,
+        LabelInteraction
+    };
+    enum LegendData {
+        ldColor = 0,
+        ldTitle,
+        ldFileNumber,
+        ldSelected,
+        ldFixed
+    };
 }
+
+struct Range {
+    inline void clear() {min = INFINITY; max = -INFINITY;}
+    inline double dist() const {return qAbs(max-min);}
+    double min;
+    double max;
+};
+
+#include <QColor>
+
+struct LegendData
+{
+    QString text;
+    QColor color;
+    int fileNumber = 0;
+    bool checked = true;
+    bool selected = false;
+    bool fixed = false;
+};
+
+struct PointBlock
+{
+    double minX = 0;
+    double maxX = 0;
+    double minY = 0;
+    double maxY = 0;
+    int from = 0;
+    int to = 0;
+};
 
 
 #endif // ENUMS_H

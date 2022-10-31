@@ -13,7 +13,7 @@
 #include <QApplication>
 #include <QClipboard>
 
-CursorBox::CursorBox(Cursors *cursors, Plot *parent) : QTreeWidget(parent),
+CursorBox::CursorBox(Cursors *cursors, Plot *parent) : QTreeWidget(parent->widget()),
     cursors{cursors}, plot{parent}
 {DDD;
     setWindowFlag(Qt::Tool);

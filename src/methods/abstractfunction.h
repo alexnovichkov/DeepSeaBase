@@ -68,7 +68,7 @@ public:
 
     virtual QVector<double> getData(const QString &id);
 
-    virtual DataDescription getFunctionDescription() const {return DataDescription();}
+    virtual DataDescription getFunctionDescription() const;
 
     void setInput(AbstractFunction *input);
     void setInput2(AbstractFunction *input);

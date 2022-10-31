@@ -49,6 +49,7 @@ SOURCES += main.cpp\
     descriptorpropertiesdialog.cpp \
     fileformats/fileio.cpp \
     fileformats/formatfactory.cpp \
+    fileformats/wavfile.cpp \
     filehandler.cpp \
     filehandlerdialog.cpp \
     filestable.cpp \
@@ -56,6 +57,7 @@ SOURCES += main.cpp\
     methods/apsfunction.cpp \
     methods/calculations.cpp \
     methods/filteringalgorithm.cpp \
+    methods/flatteningfunction.cpp \
     methods/frfalgorithm.cpp \
     methods/frffunction.cpp \
     methods/gxyfunction.cpp \
@@ -67,27 +69,37 @@ SOURCES += main.cpp\
     plot/cursor.cpp \
     plot/cursorbox.cpp \
     plot/cursordialog.cpp \
-    plot/cursordouble.cpp \
-    plot/cursorharmonic.cpp \
-    plot/cursorlabel.cpp \
     plot/cursors.cpp \
-    plot/cursorsingle.cpp \
-    plot/qcustomplot/qcustomplot.cpp \
+    plot/qcpcursordouble.cpp \
+    plot/qcpcursorharmonic.cpp \
+    plot/qcpcursorsingle.cpp \
+    plot/qcpflowlayout.cpp \
+    plot/qcpflowlegend.cpp \
+    plot/qcpscrollbarlegend.cpp \
+    plot/qcptrackingcursor.cpp \
+    plot/checkablelegend.cpp \
+    plot/checkablelegenditem.cpp \
+    plot/data2d.cpp \
+    plot/data3d.cpp \
+    plot/mousecoordinates.cpp \
+    plot/qcpaxisoverlay.cpp \
+    plot/qcpaxistag.cpp \
+    plot/qcpaxistickeroctave.cpp \
+    plot/qcpinfooverlay.cpp \
+    plot/qcpitemrichtext.cpp \
+    plot/qcpplot.cpp \
+    plot/qcppointmarker.cpp \
+    plot/qcpspectrogram.cpp \
+    plot/qcptracer.cpp \
+    plot/qcustomplot.cpp \
     plot/canvaseventfilter.cpp \
     plot/clearablespinbox.cpp \
-    plot/filterpointmapper.cpp \
-    plot/grid.cpp \
     plot/imagerenderdialog.cpp \
-    plot/octaveplot.cpp \
     plot/plotarea.cpp \
-    plot/plotinfooverlay.cpp \
     plot/plotmodel.cpp \
-    plot/scaledraw.cpp \
-    plot/spectrogram.cpp \
-    plot/timeplot.cpp \
-    plot/trackingcursor.cpp \
     plot/zoomstack.cpp \
-    plot/qcustomplot/graph2d.cpp \
+    plot/spectrogram.cpp \
+    plot/graph2d.cpp \
     plotdockfactory.cpp \
     settings.cpp \
     sortabletreewidgetitem.cpp \
@@ -96,9 +108,7 @@ SOURCES += main.cpp\
     methods/dfdmethods/timemethod.cpp \
     curvepropertiesdialog.cpp \
     tab.cpp \
-    tabdock.cpp \
     tabdockfactory.cpp \
-    tabwidget.cpp \
     coloreditdialog.cpp \
     colorselector.cpp \
     correctiondialog.cpp \
@@ -145,22 +155,10 @@ SOURCES += main.cpp\
     headerview.cpp \
     htmldelegate.cpp \
     plot/curve.cpp \
-    plot/linecurve.cpp \
-    plot/barcurve.cpp \
     plot/plot.cpp \
-    plot/legend.cpp \
-    plot/logscaleengine.cpp \
-    plot/pointlabel.cpp \
-    plot/plotzoom.cpp \
-    plot/axiszoom.cpp \
-    plot/dragzoom.cpp \
-    plot/wheelzoom.cpp \
     plot/picker.cpp \
-    plot/pointmarker.cpp \
-    plot/plottracker.cpp \
     wavexportdialog.cpp \
     wavexporter.cpp \
-    plot/spectrocurve.cpp \
     plot/colormapfactory.cpp \
     fancylineedit.cpp
 
@@ -174,12 +172,14 @@ HEADERS  += mainwindow.h \
     enums.h \
     fileformats/abstractformatfactory.h \
     fileformats/fileio.h \
+    fileformats/wavfile.h \
     filehandler.h \
     filehandlerdialog.h \
     filestable.h \
     methods/apsfunction.h \
     methods/calculations.h \
     methods/filteringalgorithm.h \
+    methods/flatteningfunction.h \
     methods/frfalgorithm.h \
     methods/frffunction.h \
     methods/gxyfunction.h \
@@ -191,29 +191,38 @@ HEADERS  += mainwindow.h \
     plot/cursor.h \
     plot/cursorbox.h \
     plot/cursordialog.h \
-    plot/cursordouble.h \
-    plot/cursorharmonic.h \
-    plot/cursorlabel.h \
     plot/cursors.h \
-    plot/cursorsingle.h \
-    plot/qcustomplot/qcustomplot.h \
-    plot/qcustomplot/graph2d.h \
-    plot/qcustomplot/abstractdata2d.h \
+    plot/qcpcursordouble.h \
+    plot/qcpcursorharmonic.h \
+    plot/qcpcursorsingle.h \
+    plot/qcpflowlayout.h \
+    plot/qcpflowlegend.h \
+    plot/qcpscrollbarlegend.h \
+    plot/qcptrackingcursor.h \
+    plot/checkablelegend.h \
+    plot/checkablelegenditem.h \
+    plot/data2d.h \
+    plot/data3d.h \
+    plot/mousecoordinates.h \
+    plot/qcpaxisoverlay.h \
+    plot/qcpaxistag.h \
+    plot/qcpaxistickeroctave.h \
+    plot/qcpinfooverlay.h \
+    plot/qcpitemrichtext.h \
+    plot/qcpplot.h \
+    plot/qcppointmarker.h \
+    plot/qcpspectrogram.h \
+    plot/qcptracer.h \
+    plot/qcustomplot.h \
+    plot/graph2d.h \
     plot/canvaseventfilter.h \
     plot/clearablespinbox.h \
-    plot/filterpointmapper.h \
-    plot/grid.h \
     plot/imagerenderdialog.h \
-    plot/octaveplot.h \
     plot/plotarea.h \
-    plot/plotinfooverlay.h \
     plot/plotmodel.h \
-    plot/scaledraw.h \
     plot/selectable.h \
-    plot/spectrogram.h \
-    plot/timeplot.h \
-    plot/trackingcursor.h \
     plot/zoomstack.h \
+    plot/spectrogram.h \
     plotdockfactory.h \
     settings.h \
     sortabletreewidgetitem.h \
@@ -224,9 +233,7 @@ HEADERS  += mainwindow.h \
     curvepropertiesdialog.h \
     stepitemdelegate.h \
     tab.h \
-    tabdock.h \
     tabdockfactory.h \
-    tabwidget.h \
     coloreditdialog.h \
     colorselector.h \
     correctiondialog.h \
@@ -273,23 +280,11 @@ HEADERS  += mainwindow.h \
     headerview.h \
     htmldelegate.h \
     plot/plot.h \
-    plot/legend.h \
     plot/curve.h \
-    plot/linecurve.h \
-    plot/barcurve.h \
-    plot/logscaleengine.h \
-    plot/pointlabel.h \
-    plot/plotzoom.h \
-    plot/axiszoom.h \
-    plot/dragzoom.h \
-    plot/wheelzoom.h \
     plot/picker.h \
-    plot/pointmarker.h \
-    plot/plottracker.h \
     wavexportdialog.h \
     wavexporter.h \
     longoperation.h \
-    plot/spectrocurve.h \
     plot/colormapfactory.h \
     fancylineedit.h \
     plugins/convertplugin.h
@@ -398,6 +393,12 @@ HEADERS +=\
   $$PWD/../3rdParty/qtpropertybrowser/qttreepropertybrowser.h\
   $$PWD/../3rdParty/qtpropertybrowser/qtvariantproperty.h
 
+SOURCES += \
+  $$PWD/../3rdParty/juce/juce_AudioChannelSet.cpp
+
+HEADERS += \
+  $$PWD/../3rdParty/juce/juce_AudioChannelSet.h
+
 
 RESOURCES *= src.qrc
 
@@ -408,7 +409,7 @@ CONFIG(release, debug|release):{
 }
 
 # includes & libs
-INCLUDEPATH *= $$PWD $$PWD/.. $$PWD/../3rdParty/qtpropertybrowser $$PWD/../3rdParty/DspFilters
+INCLUDEPATH *= $$PWD $$PWD/.. $$PWD/../3rdParty/qtpropertybrowser $$PWD/../3rdParty/DspFilters $$PWD/../3rdParty/juce
 INCLUDEPATH *= E:/My/programming/sources/strtk
 INCLUDEPATH *= E:/My/programming/sources/boost_1_73_0
 
@@ -434,27 +435,6 @@ equals(QT_ARCH,"i386") {
 equals(QT_ARCH,"x86_64") {
   message(fftw libs is E:/My/programming/sources/fftw-3.3.5-dll64/libfftw3-3.lib)
   LIBS *= E:/My/programming/sources/fftw-3.3.5-dll64/libfftw3-3.lib
-}
-
-#qwt
-message(-- Searching for qwt --)
-INCLUDEPATH *= C:/Qwt-6.2.0-dev/x32/include
-message(qwt include path is C:/Qwt-6.2.0-dev/x32/include)
-CONFIG(release, debug|release):{
-  equals(QT_ARCH,"i386") {
-    LIBS *= C:/Qwt-6.2.0-dev/x32/lib/libqwt.a
-  }
-  equals(QT_ARCH,"x86_64") {
-    LIBS *= C:/Qwt-6.2.0-dev/x64/lib/libqwt.a
-  }
-}
-CONFIG(debug, debug|release):{
-  equals(QT_ARCH,"i386") {
-    LIBS *= C:/Qwt-6.2.0-dev/x32/lib/libqwtd.a
-  }
-  equals(QT_ARCH,"x86_64") {
-    LIBS *= C:/Qwt-6.2.0-dev/x64/lib/libqwtd.a
-  }
 }
 
 

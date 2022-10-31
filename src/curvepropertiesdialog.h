@@ -12,7 +12,6 @@ class Plot;
 #include <QPen>
 #include <QBrush>
 #include <QLabel>
-#include "enums.h"
 
 class ClickableLabel : public QLabel
 {
@@ -52,8 +51,6 @@ private:
     QString oldTitle;
     int oldMarkerShape;
     int oldMarkerSize;
-
-    Enums::AxisType oldAxis;
 
     // QDialog interface
 public slots:

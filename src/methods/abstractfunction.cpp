@@ -70,6 +70,13 @@ QVector<double> AbstractFunction::getData(const QString &id)
     return QVector<double>();
 }
 
+DataDescription AbstractFunction::getFunctionDescription() const
+{
+    DataDescription result;
+    if (m_input) result = m_input->getFunctionDescription();
+    return result;
+}
+
 void AbstractFunction::setInput(AbstractFunction *input)
 {DDD;
     m_input = input;
@@ -189,7 +196,6 @@ bool AbstractAlgorithm::compute(FileDescriptor *file)
     if (file->channelsCount()==0) return false;
     if (m_chain.isEmpty()) return false;
 
-    m_chain.last()->setParameter(m_chain.last()->name()+"/destination", QFileInfo(file->fileName()).canonicalPath());
     m_chain.last()->reset();
 
     initChain(file);

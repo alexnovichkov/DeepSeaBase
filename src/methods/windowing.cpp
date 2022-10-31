@@ -463,9 +463,16 @@ void Windowing::applyTo(QVector<double> &values, int blockSize)
 
     Q_ASSERT_X(bufferSize == blockSize, "Windowing::applyTo", "block size != window size");
 
-    for (int block = 0; block < values.size()/bufferSize; ++block) {
-        for (int i=0; i<bufferSize; ++i)
+    int blocksCount = values.size()/bufferSize;
+    int lastBlockSize = values.size() % bufferSize;
+    for (int block = 0; block < blocksCount; ++block) {
+        for (int i=0; i<bufferSize; ++i) {
             values[i + block*bufferSize] *= w[i];
+        }
+    }
+    if (lastBlockSize > 0) {
+        for (int i=0; i<lastBlockSize; ++i)
+            values[i + blocksCount*bufferSize] *= w[i];
     }
 }
 

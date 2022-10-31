@@ -14,6 +14,7 @@ FilesTable::FilesTable(QWidget *parent) : QTreeView(parent)
 
     setContextMenuPolicy(Qt::CustomContextMenu);
     setSelectionMode(QAbstractItemView::ExtendedSelection);
+    setUniformRowHeights(true);
 }
 
 

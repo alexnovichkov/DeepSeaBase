@@ -1,17 +1,34 @@
 #include "curve.h"
-#include "qwt_symbol.h"
-#include "pointlabel.h"
 
 #include "fileformats/filedescriptor.h"
-#include <qwt_curve_fitter.h>
 #include "logging.h"
-#include "qwt_scale_map.h"
-#include "qwt_painter.h"
-#include "qwt_clipper.h"
 #include "dataholder.h"
-#include "qwt_legend_data.h"
-#include "pointmarker.h"
+#include "qcppointmarker.h"
 #include "plot.h"
+#include "checkablelegend.h"
+
+QString Curve::markerShapeDescription(Curve::MarkerShape shape)
+{
+    switch (shape) {
+        case MarkerShape::NoMarker: return "Без маркера";
+        case MarkerShape::Dot: return "Точка";
+        case MarkerShape::Cross: return "Крест";
+        case MarkerShape::Plus: return "Плюс";
+        case MarkerShape::Circle: return "Окружность";
+        case MarkerShape::Disc: return "Диск";
+        case MarkerShape::Square: return "Квадрат";
+        case MarkerShape::Diamond: return "Ромб";
+        case MarkerShape::Star: return "Звезда";
+        case MarkerShape::Triangle: return "Треугольник";
+        case MarkerShape::TriangleInverted: return "Перевернутый треугольник";
+        case MarkerShape::CrossSquare: return "Квадрат с крестом";
+        case MarkerShape::PlusSquare: return "Квадрат с плюсом";
+        case MarkerShape::CrossCircle: return "Окружность с крестом";
+        case MarkerShape::PlusCircle: return "Окружность с плюсом";
+        case MarkerShape::Peace: return "Пацифик";
+    }
+    return "";
+}
 
 Curve::Curve(const QString &title, Channel *channel)
 {DDD;
@@ -20,16 +37,10 @@ Curve::Curve(const QString &title, Channel *channel)
     this->channel = channel;
     this->duplicate = false;
     this->channel->curve = this;
-    marker = new PointMarker(this);
 }
 
 Curve::~Curve()
 {DDD;
-    foreach(PointLabel *l, labels) l->detach();
-    qDeleteAll(labels);
-    labels.clear();
-    delete marker;
-
     //maybe clear data that is over 1000000 samples
     if (channel) {
         channel->maybeClearData();
@@ -37,12 +48,25 @@ Curve::~Curve()
     }
 }
 
-void Curve::attach(Plot *plot)
+void Curve::attachTo(Plot *plot)
 {DDD;
     m_plot = plot;
-    marker->attach(plot);
-    marker->setVisible(false);
-    attachTo(plot);
+    m_plot->addSelectable(this);
+    m_pointMarker = new PointLabel(plot, this);
+    m_pointMarker->setMode(PointLabel::Mode::XValue);
+    m_pointMarker->setVisible(false);
+}
+
+void Curve::detachFrom(Plot *plot)
+{
+    //detach labels
+    for(PointLabel *l: labels)
+        l->detachFrom(plot);
+
+    //detach marker
+    if (m_pointMarker)
+        m_pointMarker->detachFrom(plot);
+    plot->removeSelectable(this);
 }
 
 void Curve::setMarkerShape(Curve::MarkerShape markerShape)
@@ -70,24 +94,23 @@ void Curve::removeLabel(PointLabel *label)
 {DDD;
     if (labels.contains(label)) {
         labels.removeOne(label);
-        label->detach();
+        label->detachFrom(m_plot);
         delete label;
     }
 }
 
 void Curve::removeLabels()
 {DDD;
-    foreach (PointLabel *label, labels) {
-        label->detach();
-        delete label;
+    for (PointLabel *label: labels) {
+        label->detachFrom(m_plot);
     }
     labels.clear();
 }
 
-PointLabel *Curve::findLabel(const QPoint &pos/*, QwtAxisId yAxis*/)
+PointLabel *Curve::findLabel(const QPoint &pos)
 {DDD;
-    foreach (PointLabel *l, labels)
-        if (l->contains(pos/*, yAxis*/))
+    for (PointLabel *l: labels)
+        if (l->underMouse(pos, nullptr, nullptr, nullptr))
             return l;
 
     return 0;
@@ -95,7 +118,7 @@ PointLabel *Curve::findLabel(const QPoint &pos/*, QwtAxisId yAxis*/)
 
 PointLabel *Curve::findLabel(SelectedPoint point)
 {DDD;
-    foreach (PointLabel *l, labels)
+    for (PointLabel *l: labels)
         if (l->point() == point)
             return l;
 
@@ -105,7 +128,7 @@ PointLabel *Curve::findLabel(SelectedPoint point)
 void Curve::moveToPos(QPoint pos, QPoint startPos)
 {DDD;
     Q_UNUSED(startPos);
-    if (m_plot->interactionMode != Plot::DataInteraction) return;
+    if (m_plot->interactionMode != Enums::InteractionMode::DataInteraction) return;
 
     if (selectedPoint.x < 0 || selectedPoint.x >= samplesCount()) return;
     double y = m_plot->screenToPlotCoordinates(yAxis(), pos.y());
@@ -120,12 +143,12 @@ void Curve::moveToPos(QPoint pos, QPoint startPos)
 
 double Curve::yMin() const
 {DDD;
-    return channel->data()->yMin();
+    return channel->data()->yMin(-1);
 }
 
 double Curve::yMax() const
 {DDD;
-    return channel->data()->yMax();
+    return channel->data()->yMax(-1);
 }
 
 double Curve::xMin() const
@@ -150,11 +173,10 @@ void Curve::updateLabels()
 
 void Curve::setVisible(bool visible)
 {DDD;
-    //d->setVisible(visible);
-    foreach (PointLabel *label, labels) {
+    for (PointLabel *label: labels) {
         label->setVisible(visible);
     }
-    if (marker) marker->setVisible(visible);
+    if (m_pointMarker) m_pointMarker->setVisible(visible);
 }
 
 void Curve::evaluateScale(int &from, int &to, double startX, double endX) const
@@ -192,15 +214,18 @@ void Curve::switchFixed()
     fixed = !fixed;
 }
 
-QMap<int, QVariant> Curve::commonLegendData() const
+LegendData Curve::commonLegendData() const
 {DDD;
-    QMap<int, QVariant> data;
-    data.insert(QwtLegendData::UserRole+3, pen().color());
-    data.insert(QwtLegendData::TitleRole, title());
-    if (duplicate && fileNumber>0)
-        data.insert(QwtLegendData::UserRole+1, fileNumber);
-    data.insert(QwtLegendData::UserRole+2, selected());
-    data.insert(QwtLegendData::UserRole+4, fixed);
+    LegendData data;
+
+    data.color = pen().color();
+    data.text = title();
+    if (duplicate && fileNumber > 0)
+        data.fileNumber = fileNumber;
+    data.selected = selected();
+    data.fixed = fixed;
+    //data.checked = isVisible();
+
     return data;
 }
 
@@ -208,6 +233,7 @@ QMap<int, QVariant> Curve::commonLegendData() const
 
 bool Curve::underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const
 {DDD;
+    if (!isVisible()) return false;
     SelectedPoint p = closest(pos, distanceX, distanceY);
 
     //no closest point for this pos
@@ -228,6 +254,7 @@ void Curve::moveLeft(int count)
         selectedPoint.x -= count;
         updateSelection(selectedPoint);
     }
+    m_plot->replot();
 }
 
 void Curve::moveRight(int count)
@@ -236,11 +263,12 @@ void Curve::moveRight(int count)
         selectedPoint.x += count;
         updateSelection(selectedPoint);
     }
+    m_plot->replot();
 }
 
 void Curve::moveUp(int count)
 {DDD;
-    if (m_plot->interactionMode != Plot::DataInteraction) return;
+    if (m_plot->interactionMode != Enums::InteractionMode::DataInteraction) return;
     if (selectedPoint.x < 0 || selectedPoint.x >= samplesCount()) return;
 
     auto val = samplePoint(selectedPoint);
@@ -258,7 +286,7 @@ void Curve::moveUp(int count)
 
 void Curve::moveDown(int count)
 {DDD;
-    if (m_plot->interactionMode != Plot::DataInteraction) return;
+    if (m_plot->interactionMode != Enums::InteractionMode::DataInteraction) return;
     if (selectedPoint.x < 0 || selectedPoint.x >= samplesCount()) return;
 
     auto val = samplePoint(selectedPoint);
@@ -277,17 +305,15 @@ void Curve::moveDown(int count)
 void Curve::fix()
 {DDD;
     if (selectedPoint.x >= 0 && selectedPoint.x < samplesCount()) {
-//        auto val = samplePoint(selectedPoint);
+        if (m_pointMarker) m_pointMarker->setVisible(false);
 
         PointLabel *label = findLabel(selectedPoint);
-
         if (!label) {
             label = new PointLabel(m_plot, this);
             label->setPoint(selectedPoint);
-//            label->setOrigin(val);
+            label->setVisible(true);
             addLabel(label);
-
-            label->attach(m_plot);
+            m_plot->replot();
         }
     }
 }
@@ -303,16 +329,13 @@ bool Curve::draggable() const
 }
 
 void Curve::updateSelection(SelectedPoint point)
-{DDD;
+{DD;
     updatePen();
 
     selectedPoint = point;
-
-    if (!selected()) marker->setVisible(false);
-    else {
-        marker->setVisible(true);
-        auto val = samplePoint(selectedPoint);
-
-        marker->moveTo({val.x, qIsNaN(val.z) ? val.y : val.z});
+    if (m_pointMarker) {
+        m_pointMarker->setPoint(selectedPoint);
+        m_pointMarker->setVisible(selected());
     }
+    m_plot->replot();
 }

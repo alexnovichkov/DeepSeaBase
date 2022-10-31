@@ -217,8 +217,8 @@ void FilesProcessorDialog::updateProperty(AbstractFunction *f, const QString &pr
         if (v.f == f && v.name == property) {
             if (val.isValid() && !attribute.isEmpty())
                 key->setAttribute(attribute, val);
-
-            key->setValue(currentAlgorithm->getParameter(f, property));
+            auto param = currentAlgorithm->getParameter(f, property);
+            key->setValue(param);
             updateVisibleProperties();
         }
     }
@@ -258,9 +258,14 @@ void FilesProcessorDialog::addProperties(AbstractFunction *f)
         else if (type=="double") typeId = QVariant::Double;
         else if (type=="bool") typeId = QVariant::Bool;
         else if (type=="enum") typeId = QtVariantPropertyManager::enumTypeId();
+        else if (type == "url") typeId = QtVariantPropertyManager::dirTypeId();
 
 
         QtVariantProperty *p = m_manager->addProperty(typeId, displayName);
+        if (!p) {
+            qDebug() << f->name() << ": Unable to create property for"<<type<<name;
+            continue;
+        }
         if (i==0) {
             group = p;
             auto item = propertyTree->addProperty(group);

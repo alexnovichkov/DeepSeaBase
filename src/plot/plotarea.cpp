@@ -3,13 +3,11 @@
 #include <QtWidgets>
 #include "plot/plot.h"
 #include "spectrogram.h"
-#include "octaveplot.h"
-#include "timeplot.h"
 #include "plot/curve.h"
 #include "settings.h"
 #include "logging.h"
 #include "fileformats/filedescriptor.h"
-#include "plot/pointlabel.h"
+#include "plot/qcppointmarker.h"
 #include "plotmodel.h"
 #include "channelsmimedata.h"
 #include <QAxObject>
@@ -29,22 +27,22 @@ PlotArea::PlotArea(int index, QWidget *parent)
     autoscaleXAct->setCheckable(true);
     bool autoscale = Settings::getSetting("autoscale-x", true).toBool();
     connect(autoscaleXAct, &QAction::toggled, [this](bool toggled){
-        if (m_plot) m_plot->toggleAutoscale(0 /* x axis */,toggled);
+        if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atBottom /* x axis */,toggled);
         Settings::setSetting("autoscale-x", toggled);
     });
     autoscaleXAct->setChecked(autoscale);
-    if (m_plot) m_plot->toggleAutoscale(0 /* x axis */, autoscale);
+    if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atBottom /* x axis */, autoscale);
 
     autoscaleYAct = new QAction("Автомасштабирование по оси Y", this);
     autoscaleYAct->setIcon(QIcon(":/icons/autoscale-y-main.png"));
     autoscaleYAct->setCheckable(true);
     autoscale = Settings::getSetting("autoscale-y", true).toBool();
     connect(autoscaleYAct, &QAction::toggled, [this](bool toggled){
-        if (m_plot) m_plot->toggleAutoscale(1 /* y axis */,toggled);
+        if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atLeft /* y axis */,toggled);
         Settings::setSetting("autoscale-y", toggled);
     });
     autoscaleYAct->setChecked(autoscale);
-    if (m_plot) m_plot->toggleAutoscale(1 /* x axis */, autoscale);
+    if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atLeft /* y axis */, autoscale);
 
 
     autoscaleYSlaveAct = new QAction("Автомасштабирование по правой оси Y", this);
@@ -52,11 +50,11 @@ PlotArea::PlotArea(int index, QWidget *parent)
     autoscaleYSlaveAct->setCheckable(true);
     autoscale = Settings::getSetting("autoscale-y-slave", true).toBool();
     connect(autoscaleYSlaveAct, &QAction::toggled, [this](bool toggled){
-        if (m_plot) m_plot->toggleAutoscale(2 /* y slave axis */,toggled);
+        if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atRight /* y slave axis */,toggled);
         Settings::setSetting("autoscale-y-slave", toggled);
     });
     autoscaleYSlaveAct->setChecked(autoscale);
-    if (m_plot) m_plot->toggleAutoscale(2 /* x axis */, autoscale);
+    if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atRight /* y slave axis */, autoscale);
 
     autoscaleAllAct  = new QAction("Автомасштабирование по всем осям", this);
     autoscaleAllAct->setIcon(QIcon(":/icons/autoscale-all.png"));
@@ -204,50 +202,59 @@ PlotArea::PlotArea(int index, QWidget *parent)
     setWidget(w);
 }
 
+PlotArea::~PlotArea()
+{
+    if (m_plot) m_plot->deleteAllCurves(true);
+}
+
 Plot *PlotArea::plot()
 {DDD;
     return m_plot;
 }
 
-void PlotArea::addPlot(Plot::PlotType type)
+void PlotArea::addPlot(Enums::PlotType type)
 {DDD;
     if (m_plot) {
-        plotsLayout->removeWidget(m_plot);
+        if (m_plot->toolBarWidget()) toolBar()->removeAction(toolBarAction);
+        delete m_plot->legend;
         delete m_plot;
     }
     else {
         infoLabel->hide();
     }
     switch (type) {
-        case Plot::PlotType::Spectrogram: {
+        case Enums::PlotType::Spectrogram:
+        {
             m_plot = new Spectrogram(this);
             setIcon(QIcon(":/icons/spectrocurve.png"));
             break;
         }
-        case Plot::PlotType::Octave: {
-            m_plot = new OctavePlot(this);
+        case Enums::PlotType::Octave:
+        {
+            m_plot = new Plot(type, this);
             setIcon(QIcon(":/icons/barcurve.png"));
             break;
         }
-        case Plot::PlotType::Time: {
-            m_plot = new TimePlot(this);
+        case Enums::PlotType::Time:
+        {
+            m_plot = new Plot(type, this);
             setIcon(QIcon(":/icons/timecurve.png"));
-//            if (m_plot->playAct()) {
-//                playAct = m_plot->playAct();
-//                toolBar()->addAction(playAct);
-//            }
             break;
         }
-        case Plot::PlotType::General: {
+        case Enums::PlotType::General: {
             m_plot = new Plot(type, this);
             setIcon(QIcon(":/icons/linecurve.png"));
             break;
         }
     }
-    if (m_plot->toolBarWidget()) toolBar()->addWidget(m_plot->toolBarWidget());
+    if (m_plot->toolBarWidget())
+        toolBarAction = toolBar()->addWidget(m_plot->toolBarWidget());
 
 
-    plotsLayout->addWidget(m_plot,1,0);
+
+    plotsLayout->addWidget(m_plot->widget(),1,0);
+    plotsLayout->addWidget(m_plot->legend, 1,1);
+    plotsLayout->setColumnStretch(0, 1);
 
     connect(m_plot, SIGNAL(curvesCountChanged()), this, SIGNAL(curvesCountChanged()));
     connect(m_plot, SIGNAL(channelPlotted(Channel*)), this, SIGNAL(channelPlotted(Channel*)));
@@ -261,11 +268,11 @@ void PlotArea::addPlot(Plot::PlotType type)
             SIGNAL(saveTimeSegment(QVector<FileDescriptor*>,double,double)));
 
     bool autoscale = Settings::getSetting("autoscale-x", true).toBool();
-    m_plot->toggleAutoscale(0 /* x axis */, autoscale);
+    m_plot->toggleAutoscale(Enums::AxisType::atBottom /* x axis */, autoscale);
     autoscale = Settings::getSetting("autoscale-y", true).toBool();
-    m_plot->toggleAutoscale(1 /* y axis */, autoscale);
+    m_plot->toggleAutoscale(Enums::AxisType::atLeft /* y axis */, autoscale);
     autoscale = Settings::getSetting("autoscale-y-slave", true).toBool();
-    m_plot->toggleAutoscale(2 /* y slave axis */, autoscale);
+    m_plot->toggleAutoscale(Enums::AxisType::atRight /* y slave axis */, autoscale);
 
     emit curvesCountChanged();
 }
@@ -824,24 +831,24 @@ void PlotArea::dropEvent(QDropEvent *event)
 {DDD;
     const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
     if (myData) {
-        onDropEvent(myData->channels);
+        onDropEvent(true, myData->channels);
         event->acceptProposedAction();
     }
 }
 
-void PlotArea::onDropEvent(const QVector<Channel *> &channels)
-{DDD;
-    auto type = Plot::PlotType::General;
+void PlotArea::onDropEvent(bool plotOnLeft, const QVector<Channel *> &channels)
+{DD;
+    auto type = Enums::PlotType::General;
     if (!channels.isEmpty()) {
-        if (channels.first()->type() == Descriptor::TimeResponse)
-            type = Plot::PlotType::Time;
-        else if (channels.first()->data()->blocksCount()>1)
-            type = Plot::PlotType::Spectrogram;
-        else if (channels.first()->data()->xValuesFormat() == DataHolder::XValuesNonUniform)
-            type = Plot::PlotType::Octave;
+        if (channels.first()->data()->blocksCount()>1)
+            type = Enums::PlotType::Spectrogram;
+        else if (channels.first()->type() == Descriptor::TimeResponse)
+            type = Enums::PlotType::Time;
+        else if (channels.first()->octaveType() != 0)
+            type = Enums::PlotType::Octave;
     }
     addPlot(type);
-    m_plot->onDropEvent(true, channels);
+    m_plot->onDropEvent(plotOnLeft, channels);
 }
 
 void PlotArea::resetCycling()

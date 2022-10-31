@@ -2,6 +2,7 @@
 #include "tab.h"
 #include "filehandlerdialog.h"
 #include "logging.h"
+#include "mainwindow.h"
 
 #include <QLineEdit>
 #include <QMenu>

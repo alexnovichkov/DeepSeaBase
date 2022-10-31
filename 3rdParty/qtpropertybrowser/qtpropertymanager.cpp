@@ -1566,6 +1566,144 @@ void QtStringPropertyManager::uninitializeProperty(QtProperty *property)
     d_ptr->m_values.remove(property);
 }
 
+class QtDirPropertyManagerPrivate
+{
+    QtDirPropertyManager *q_ptr;
+    Q_DECLARE_PUBLIC(QtDirPropertyManager)
+public:
+
+    struct Data
+    {
+        Data() : readOnly(false)
+        {
+        }
+        QString val;
+        bool readOnly;
+    };
+
+    typedef QMap<const QtProperty *, Data> PropertyValueMap;
+    QMap<const QtProperty *, Data> m_values;
+};
+
+/*!
+    Creates a manager with the given \a parent.
+*/
+QtDirPropertyManager::QtDirPropertyManager(QObject *parent)
+    : QtAbstractPropertyManager(parent)
+{
+    d_ptr = new QtDirPropertyManagerPrivate;
+    d_ptr->q_ptr = this;
+}
+
+/*!
+    Destroys this manager, and all the properties it has created.
+*/
+QtDirPropertyManager::~QtDirPropertyManager()
+{
+    clear();
+    delete d_ptr;
+}
+
+/*!
+    Returns the given \a property's value.
+
+    If the given property is not managed by this manager, this
+    function returns an empty string.
+
+    \sa setValue()
+*/
+QString QtDirPropertyManager::value(const QtProperty *property) const
+{
+    return getValue<QString>(d_ptr->m_values, property);
+}
+
+bool QtDirPropertyManager::isReadOnly(const QtProperty *property) const
+{
+    return getData<bool>(d_ptr->m_values, &QtDirPropertyManagerPrivate::Data::readOnly, property, false);
+}
+
+/*!
+    \reimp
+*/
+QString QtDirPropertyManager::valueText(const QtProperty *property) const
+{
+    const QtDirPropertyManagerPrivate::PropertyValueMap::const_iterator it = d_ptr->m_values.constFind(property);
+    if (it == d_ptr->m_values.constEnd())
+        return QString();
+
+    return it.value().val;
+}
+
+/*!
+    \reimp
+*/
+QString QtDirPropertyManager::displayText(const QtProperty *property) const
+{
+    return valueText(property);
+}
+
+/*!
+    \fn void QtStringPropertyManager::setValue(QtProperty *property, const QString &value)
+
+    Sets the value of the given \a property to \a value.
+
+    If the specified \a value doesn't match the given \a property's
+    regular expression, this function does nothing.
+
+    \sa value(), setRegExp(), valueChanged()
+*/
+void QtDirPropertyManager::setValue(QtProperty *property, const QString &val)
+{
+    const QtDirPropertyManagerPrivate::PropertyValueMap::iterator it = d_ptr->m_values.find(property);
+    if (it == d_ptr->m_values.end())
+        return;
+
+    QtDirPropertyManagerPrivate::Data data = it.value();
+
+    if (data.val == val)
+        return;
+
+    data.val = val;
+
+    it.value() = data;
+
+    emit propertyChanged(property);
+    emit valueChanged(property, data.val);
+}
+
+void QtDirPropertyManager::setReadOnly(QtProperty *property, bool readOnly)
+{
+    const QtDirPropertyManagerPrivate::PropertyValueMap::iterator it = d_ptr->m_values.find(property);
+    if (it == d_ptr->m_values.end())
+        return;
+
+    QtDirPropertyManagerPrivate::Data data = it.value();
+
+    if (data.readOnly == readOnly)
+        return;
+
+    data.readOnly = readOnly;
+    it.value() = data;
+
+    emit propertyChanged(property);
+}
+
+/*!
+    \reimp
+*/
+void QtDirPropertyManager::initializeProperty(QtProperty *property)
+{
+    d_ptr->m_values[property] = QtDirPropertyManagerPrivate::Data();
+}
+
+/*!
+    \reimp
+*/
+void QtDirPropertyManager::uninitializeProperty(QtProperty *property)
+{
+    d_ptr->m_values.remove(property);
+}
+
 // QtBoolPropertyManager
 //     Return an icon containing a check box indicator
 static QIcon drawCheckBox(bool value)

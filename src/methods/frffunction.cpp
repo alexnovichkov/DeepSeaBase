@@ -237,8 +237,7 @@ void FrfFunction::reset()
 
 DataDescription FrfFunction::getFunctionDescription() const
 {
-    DataDescription result;
-    if (m_input) result = m_input->getFunctionDescription();
+    DataDescription result = AbstractFunction::getFunctionDescription();
 
     switch (map.value("output")) {
         case 0: result.put("function.format", "complex"); break;
@@ -248,7 +247,6 @@ DataDescription FrfFunction::getFunctionDescription() const
         case 4: result.put("function.format", "phase"); break;
         default: break;
     }
-    result.put("function.precision", "float");
     result.put("function.name", "FRF");
     result.put("function.type", 4);
     result.put("function.description", map.value("type")==0?"H1":"H2");

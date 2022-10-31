@@ -2,21 +2,24 @@
 #define PLOTAREA_H
 
 #include "DockWidget.h"
-#include <plot/plot.h>
+#include "enums.h"
 
-
+class Plot;
 class QAction;
 class Curve;
 class FileDescriptor;
 class QGridLayout;
+class Channel;
+class QLabel;
 
 class PlotArea : public ads::CDockWidget
 {
     Q_OBJECT
 public:
     PlotArea(int index, QWidget *parent);
+    ~PlotArea();
     Plot* plot();
-    void addPlot(Plot::PlotType type);
+    void addPlot(Enums::PlotType type);
 
     void update();
 
@@ -29,7 +32,7 @@ public:
     QVector<Channel*> plottedChannels() const;
     QVector<FileDescriptor*> plottedDescriptors() const;
     int curvesCount(int type=-1) const;
-    void onDropEvent(const QVector<Channel*> &channels);
+    void onDropEvent(bool plotOnLeft, const QVector<Channel*> &channels);
     void resetCycling();
 signals:
     void descriptorRequested(int direction, bool checked);
@@ -53,6 +56,8 @@ private:
     QGridLayout *plotsLayout;
     Plot *m_plot = nullptr;
     QLabel * infoLabel;
+
+    QAction *toolBarAction = nullptr;
 
     QAction *autoscaleXAct = nullptr;
     QAction *autoscaleYAct = nullptr;

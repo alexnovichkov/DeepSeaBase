@@ -8,12 +8,10 @@
 #include "sortabletreewidgetitem.h"
 #include "headerview.h"
 #include "plot/plot.h"
-#include "tabwidget.h"
 #include "colorselector.h"
 #include "coloreditdialog.h"
 #include "correctiondialog.h"
 #include "plot/curve.h"
-#include "plot/pointlabel.h"
 #include "model.h"
 #include "sortfiltermodel.h"
 #include "filterheaderview.h"
@@ -36,7 +34,6 @@
 #include "longoperation.h"
 #include "filestable.h"
 #include "channelstable.h"
-#include "plot/legend.h"
 
 #include "fileformats/abstractformatfactory.h"
 #include "descriptorpropertiesdialog.h"
@@ -350,6 +347,7 @@ void MainWindow::createActions()
     plotOctaveAsHistogramAct->setChecked(Settings::getSetting("plotOctaveAsHistogram", false).toBool());
     connect(plotOctaveAsHistogramAct, &QAction::toggled, [=](bool checked){
         Settings::setSetting("plotOctaveAsHistogram", checked);
+        if (currentPlot && currentPlot->plot()) currentPlot->plot()->update();
     });
 }
 
@@ -1472,19 +1470,49 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
             }
         }
     }
+    if (toPlot.isEmpty()) return;
+
     Plot* p = nullptr;
     if (auto plot = dynamic_cast<Plot*>(sender()))
         p = plot;
     else if (currentPlot) {
         p = currentPlot->plot();
-        if (!p) currentPlot->onDropEvent(toPlot);
+        if (!p) currentPlot->onDropEvent(plotOnLeft, toPlot);
     }
-    if (p)
-        for (auto ch: toPlot) {
-            int index=-1;
-            if (currentTab) currentTab->model->contains(ch->descriptor(),&index);
-            p->plotChannel(ch, plotOnLeft, index+1);
+    if (p) {//график существует
+
+        //определяем тип графика
+        auto type = Enums::PlotType::General;
+        if (!toPlot.isEmpty()) {
+            if (toPlot.first()->type() == Descriptor::TimeResponse)
+                type = Enums::PlotType::Time;
+            else if (toPlot.first()->data()->blocksCount()>1)
+                type = Enums::PlotType::Spectrogram;
+            else if (toPlot.first()->octaveType() != 0)
+                type = Enums::PlotType::Octave;
         }
+        //если график пустой, и его тип не совпадает с типом для новых кривых,
+        //создаем новый график
+        if (p->model()->isEmpty() && type != p->type()) {
+            currentPlot->onDropEvent(plotOnLeft, toPlot);
+        }
+        else {//строим кривые на старом графике
+            {//Строим первую кривую и обновляем график, чтобы высота легенды определилась правильно
+                int index=-1;
+                if (currentTab) currentTab->model->contains(toPlot.first()->descriptor(),&index);
+                p->plotChannel(toPlot.first(), plotOnLeft, index+1);
+            }
+            qApp->processEvents();
+            //Строим остальные кривые
+            for (int i=1; i<toPlot.size(); ++i) {
+                auto ch = toPlot.at(i);
+                int index=-1;
+                if (currentTab) currentTab->model->contains(ch->descriptor(),&index);
+                p->plotChannel(ch, plotOnLeft, index+1);
+            }
+
+        }
+    }
 }
 
 void MainWindow::calculateSpectreRecords(bool useDeepsea)
@@ -1700,7 +1728,7 @@ void MainWindow::saveHorizontalSlice(double zValue)
 {DDD;
     if (!currentPlot || !currentPlot->plot()) return;
     if (currentPlot->plot()->curvesCount()==0) return;
-    if (currentPlot->plot()->type() != Plot::PlotType::Spectrogram) return;
+    if (currentPlot->plot()->type() != Enums::PlotType::Spectrogram) return;
 
     auto channels = currentPlot->plot()->model()->plottedChannels();
     if (channels.size() != 1) return;
@@ -1797,7 +1825,7 @@ void MainWindow::saveVerticalSlice(double frequency)
 {DDD;
     if (!currentPlot || !currentPlot->plot()) return;
     if (currentPlot->plot()->curvesCount()==0) return;
-    if (currentPlot->plot()->type() != Plot::PlotType::Spectrogram) return;
+    if (currentPlot->plot()->type() != Enums::PlotType::Spectrogram) return;
 
     auto channels = currentPlot->plot()->model()->plottedChannels();
     if (channels.size() != 1) return;
@@ -2015,7 +2043,7 @@ void MainWindow::updateActions()
     const int curvesCount = currentPlot ? currentPlot->curvesCount():0;
     bool spectrogram = false;
     if (currentPlot && currentPlot->plot())
-        spectrogram = currentPlot->plot()->type() == Plot::PlotType::Spectrogram;
+        spectrogram = currentPlot->plot()->type() == Enums::PlotType::Spectrogram;
 
     saveAct->setEnabled(currentTab->model->changed());
 
@@ -2215,29 +2243,3 @@ bool MainWindow::closeRequested()
 
     return true;
 }
-
-
-//bool MainWindow::event(QEvent *event)
-//{
-//    if (event->type() == QEvent::ShortcutOverride) {
-//        QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
-//        if (keyEvent && (keyEvent->key()==Qt::Key_Up || keyEvent->key()==Qt::Key_Down) && keyEvent->modifiers()==Qt::ControlModifier) {
-//            qDebug()<<"Ctrl+Up/Down pressed";
-//            if (currentTab && currentTab->channelsTable->hasFocus()) {
-//                event->ignore(); //trigger shortcut
-//                qDebug() << "trigger shortcut";
-//            }
-//            else {
-//                event->accept(); //deliver to plot
-//                qDebug() << "delivered to plot";
-//            }
-
-//        }
-//        else {
-//            qDebug()<<"something else";
-//            event->accept();
-//        }
-//        return true;
-//    }
-//    return QMainWindow::event(event);
-//}

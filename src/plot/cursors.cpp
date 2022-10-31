@@ -4,10 +4,9 @@
 #include "plotmodel.h"
 #include "curve.h"
 #include "fileformats/filedescriptor.h"
-#include "cursorsingle.h"
-#include "cursordouble.h"
-#include "cursorharmonic.h"
-#include "qwt_scale_map.h"
+#include "qcpcursorsingle.h"
+#include "qcpcursordouble.h"
+#include "qcpcursorharmonic.h"
 #include "logging.h"
 
 Cursors::Cursors(Plot *parent) : QObject(parent), plot{parent}
@@ -21,16 +20,16 @@ void Cursors::update()
 
 void Cursors::addDoubleCursor(const QPoint &pos, Cursor::Style style, bool reject)
 {DDD;
-    auto c = new CursorDouble(style, reject, plot);
+    auto c = new QCPCursorDouble(style, reject, plot);
     connect(c, SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
     connect(c, SIGNAL(dataChanged()), this, SIGNAL(cursorsChanged()));
     double xVal1 = 0.0;
     double xVal2 = 0.0;
     double yVal = 0.0;
     if (plot) {
-        auto map = plot->canvasMap(QwtAxis::XBottom);
-        xVal1 = map.invTransform(pos.x());
-        xVal2 = qMin(xVal1 + map.sDist()/10, map.sDist()*9/10);
+        auto range = plot->plotRange(Enums::AxisType::atBottom);
+        xVal1 = plot->screenToPlotCoordinates(Enums::AxisType::atBottom, pos.x());
+        xVal2 = qMin(xVal1 + range.dist()/10, range.dist()*9/10);
     }
     c->attach();
     c->moveTo({xVal1, yVal}, {xVal2, yVal});
@@ -46,14 +45,13 @@ void Cursors::addDoubleCursor(const QPoint &pos, Cursor::Style style, bool rejec
 
 void Cursors::addSingleCursor(const QPoint &pos, Cursor::Style style)
 {DDD;
-    auto c = new CursorSingle(style, plot);
+    auto c = new QCPCursorSingle(style, plot);
     connect(c,SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
     connect(c, SIGNAL(dataChanged()), this, SIGNAL(cursorsChanged()));
     double xVal = 0.0;
     double yVal = 0.0;
     if (plot) {
-        auto map = plot->canvasMap(QwtAxis::XBottom);
-        xVal = map.invTransform(pos.x());
+        xVal = plot->screenToPlotCoordinates(Enums::AxisType::atBottom, pos.x());
     }
     c->attach();
     c->moveTo({xVal, yVal});
@@ -73,14 +71,13 @@ void Cursors::addRejectCursor(const QPoint &pos, Cursor::Style style)
 
 void Cursors::addHarmonicCursor(const QPoint &pos)
 {DDD;
-    auto c = new CursorHarmonic(plot);
+    auto c = new QCPCursorHarmonic(plot);
     connect(c,SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
     connect(c, SIGNAL(dataChanged()), this, SIGNAL(cursorsChanged()));
     double xVal = 0.0;
     double yVal = 0.0;
     if (plot) {
-        auto map = plot->canvasMap(QwtAxis::XBottom);
-        xVal = map.invTransform(pos.x());
+        xVal = plot->screenToPlotCoordinates(Enums::AxisType::atBottom, pos.x());
     }
     c->attach();
     c->moveTo({xVal, yVal});

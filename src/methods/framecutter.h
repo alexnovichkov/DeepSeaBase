@@ -17,6 +17,10 @@ public:
         GreaterThan = 0,
         LessThan
     };
+    enum DeltaType {
+        DeltaPercent = 0,
+        DeltaTime
+    };
 
 
     explicit FrameCutter();
@@ -31,7 +35,8 @@ public:
     void setXStep(double value);
 
     int getDelta() const;
-    void setDelta(int value);
+//    void setDelta(int value);
+    void setDelta(double value, DeltaType type);
 
     int getChannel() const;
     void setChannel(int value);
@@ -61,7 +66,9 @@ private:
         int blockSize = 1024;
         int type = Continuous;
         double xStep = 1.0;
-        int delta = 0;
+//        int delta = 0;
+        double deltaValue = 0;
+        DeltaType deltaType = DeltaPercent;
         int channel = 0;
         double level = 0.0;
         int mode = GreaterThan;

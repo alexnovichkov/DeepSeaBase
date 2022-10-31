@@ -27,12 +27,10 @@ WavExportDialog::WavExportDialog(FileDescriptor * file, const QVector<int> &inde
        QString text =  "<font color=darkblue>Формат имени файлов: %1 - %2.wav</font>";
        if (val==1) text = text.arg(QFileInfo(file->fileName()).fileName()).arg(file->channel(indexes.first())->name());
        else {
-           int start = indexes.first();
-           int end = indexes.at(val-1);
            text =  "<font color=darkblue>Формат имени файлов: %1 - %2-%3.wav</font>";
            text = text.arg(QFileInfo(file->fileName()).fileName())
-                  .arg(indexes.at(start)+1)
-                  .arg(end+1);
+                  .arg(indexes.first())
+                  .arg(indexes.at(val-1));
        }
        hintLabel->setText(text);
     });
