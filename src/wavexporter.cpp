@@ -67,13 +67,13 @@ void WavExporter::writeWithStreams(const QVector<int> &v, const QString &wavFile
 
     //Создаем заголовок файла
     {
-        WavHeader header = initHeader(channelsCount, samples, sampleRate, format);
+        WavHeader header = initHeader(channelsCount, samples, format);
         s << header.ckID;
         s << header.cksize;
         s << header.waveId;
     }
     {
-        auto header = initFmt(channelsCount, samples, sampleRate, format);
+        auto header = initFmt(channelsCount, sampleRate, format);
         s << header.fmtId;
         s << header.fmtSize;
         s << header.wFormatTag;
@@ -91,14 +91,14 @@ void WavExporter::writeWithStreams(const QVector<int> &v, const QString &wavFile
             s << header.subFormat.data3;
             for (int i=0; i<8; ++i) s << header.subFormat.data4[i];
 
-            auto fact = initFact(channelsCount, samples, sampleRate, format);
+            auto fact = initFact(samples);
             s << fact.factID;
             s << fact.factSize;
             s << fact.dwSampleLength;
         }
     }
     {
-        WavChunkCue header = initCue(channelsCount, samples, format);
+        WavChunkCue header = initCue();
         s << header.cueId;
         s << header.cueSize;
         s << header.dwCuePoints;
@@ -209,22 +209,22 @@ bool WavExporter::writeWithMap(const QVector<int> &v, const QString &wavFileName
     }
 
     //Создаем заголовок файла
-    WavHeader header = initHeader(channelsCount, samples, sampleRate, format);
+    WavHeader header = initHeader(channelsCount, samples, format);
     memcpy(mapped, &header, sizeof(WavHeader));
     mapped += sizeof(WavHeader);
 
-    auto fmt = initFmt(channelsCount, samples, sampleRate, format);
+    auto fmt = initFmt(channelsCount, sampleRate, format);
     if (format == WavFormat::WavPCM) memcpy(mapped, &fmt, 24);
     else memcpy(mapped, &fmt, sizeof(fmt));
     mapped += format == WavFormat::WavPCM ? 24 : sizeof(fmt);
 
     if (format!=WavFormat::WavPCM) {
-        auto fact = initFact(channelsCount, samples, sampleRate, format);
+        auto fact = initFact(samples);
         memcpy(mapped, &fact, sizeof(fact));
         mapped += sizeof(fact);
     }
 
-    WavChunkCue cue = initCue(channelsCount, samples, format);
+    WavChunkCue cue = initCue();
     memcpy(mapped, &cue.cueId, 4); mapped +=4;
     memcpy(mapped, &cue.cueSize, 4); mapped +=4;
     memcpy(mapped, &cue.dwCuePoints, 4); mapped +=4;
@@ -310,7 +310,7 @@ void WavExporter::start()
     finalize();
 }
 
-WavHeader WavExporter::initHeader(int channelsCount, int samplesCount, int sampleRate, WavFormat format)
+WavHeader WavExporter::initHeader(int channelsCount, int samplesCount, WavFormat format)
 {DDD;
     const int M = format==WavFormat::WavFloat?4:2;
     WavHeader header;
@@ -319,7 +319,7 @@ WavHeader WavExporter::initHeader(int channelsCount, int samplesCount, int sampl
     return header;
 }
 
-WavChunkFmt WavExporter::initFmt(int channelsCount, int samplesCount, int sampleRate, WavFormat format)
+WavChunkFmt WavExporter::initFmt(int channelsCount, int sampleRate, WavFormat format)
 {
     const int M = format==WavFormat::WavFloat?4:2;
     WavChunkFmt header;
@@ -335,7 +335,6 @@ WavChunkFmt WavExporter::initFmt(int channelsCount, int samplesCount, int sample
     if (header.fmtSize == 40) {
         header.wValidBitsPerSample = 8*M; //используем все биты, для формата 24-bit нужно будет менять
 //        header.dwChannelMask = juce::AudioChannelSet::discreteChannels(channelsCount).getWaveChannelMask();
-        qDebug() << header.dwChannelMask;
 
         //subFormat is PCM by default
         if (format == WavFormat::WavFloat)
@@ -344,7 +343,7 @@ WavChunkFmt WavExporter::initFmt(int channelsCount, int samplesCount, int sample
     return header;
 }
 
-WavChunkFact WavExporter::initFact(int channelsCount, int samplesCount, int sampleRate, WavFormat format)
+WavChunkFact WavExporter::initFact(int samplesCount)
 {
     WavChunkFact header;
     header.factSize = 4;
@@ -361,7 +360,7 @@ WavChunkData WavExporter::initDataHeader(int channelsCount, int samplesCount, Wa
     return header;
 }
 
-WavChunkCue WavExporter::initCue(int channelsCount, int samplesCount, WavFormat format)
+WavChunkCue WavExporter::initCue()
 {
     WavChunkCue cue;
     cue.dwCuePoints = 1;

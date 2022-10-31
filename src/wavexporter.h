@@ -33,14 +33,11 @@ public slots:
     void stop();
     void start();
 private:
-    WavHeader initHeader(int channelsCount, int samplesCount, int sampleRate,
-                    WavFormat format);
-    WavChunkFmt initFmt(int channelsCount, int samplesCount, int sampleRate,
-                        WavFormat format);
-    WavChunkFact initFact(int channelsCount, int samplesCount, int sampleRate,
-                          WavFormat format);
+    WavHeader initHeader(int channelsCount, int samplesCount, WavFormat format);
+    WavChunkFmt initFmt(int channelsCount, int sampleRate, WavFormat format);
+    WavChunkFact initFact(int samplesCount);
     WavChunkData initDataHeader(int channelsCount, int samplesCount, WavFormat format);
-    WavChunkCue initCue(int channelsCount, int samplesCount, WavFormat format);
+    WavChunkCue initCue();
     WavChunkFile initFile(const QVector<int> &v);
     void finalize();
     void writeWithStreams(const QVector<int> &v, const QString &wavFileName);
