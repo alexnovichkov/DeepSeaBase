@@ -94,6 +94,11 @@ struct WavChunkCue
 
 struct WavChunkFile
 {
+    quint32 listId = fourCC("LIST");
+    quint32 listSize = 0;
+    quint32 adtlId = fourCC("adtl");
+    quint32 adtlSize = 0;
+
     quint32 fileId = fourCC("file");
     quint32 fileSize = 0;
     quint32 dwName = 0;
@@ -145,12 +150,12 @@ public:
     bool m_valid = true;
 private:
     void init(const QVector<Channel*> &source);
-    bool writeWithMap(const QVector<Channel *> &source);
+    bool writeWithMap(const QVector<Channel *> &source, quint32 totalSize);
     void writeWithStream(const QVector<Channel *> &source);
     WavHeader initHeader(int totalSize);
     WavChunkFmt initFmt(int channelsCount, int sampleRate);
     WavChunkFact initFact(int samplesCount);
-    WavChunkData initDataHeader(int channelsCount, int samplesCount, WavFormat format);
+    WavChunkData initDataHeader(int channelsCount, int samplesCount);
     WavChunkCue initCue();
     WavChunkFile initFile(const QVector<Channel*> &v);
 

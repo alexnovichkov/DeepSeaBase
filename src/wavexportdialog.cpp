@@ -29,8 +29,8 @@ WavExportDialog::WavExportDialog(FileDescriptor * file, const QVector<int> &inde
        else {
            text =  "<font color=darkblue>Формат имени файлов: %1 - %2-%3.wav</font>";
            text = text.arg(QFileInfo(file->fileName()).fileName())
-                  .arg(indexes.first())
-                  .arg(indexes.at(val-1));
+                  .arg(indexes.first()+1)
+                  .arg(indexes.at(val-1)+1);
        }
        hintLabel->setText(text);
     });
@@ -81,7 +81,7 @@ void WavExportDialog::start()
     exporter->moveToThread(thread);
 
     connect(thread, SIGNAL(started()), exporter, SLOT(start()));
-    connect(exporter, SIGNAL(chunksCountChanged(int)), this, SLOT(updateMaxProgress(int)));
+//    connect(exporter, SIGNAL(chunksCountChanged(int)), this, SLOT(updateMaxProgress(int)));
     connect(exporter, SIGNAL(finished()), thread, SLOT(quit()));
     connect(exporter, SIGNAL(finished()), this, SLOT(accept()));
     connect(exporter, SIGNAL(finished()), taskBarProgress, SLOT(finalize()));
