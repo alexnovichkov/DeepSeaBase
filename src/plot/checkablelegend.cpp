@@ -5,6 +5,7 @@
 QCPCheckableLegend::QCPCheckableLegend(QWidget *parent) : QObject(parent)
 {
     m_treeView = new QCPLegendTreeView(parent);
+    m_treeView->setSizeAdjustPolicy(QAbstractScrollArea::AdjustToContents);
     m_model = new QCPLegendModel(parent);
     m_treeView->setModel(m_model);
     m_treeView->header()->setSectionResizeMode(0, QHeaderView::ResizeToContents);
