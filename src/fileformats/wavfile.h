@@ -136,6 +136,7 @@ public:
     virtual QString fileType() const override;
     static QStringList fileFilters();
     static QStringList suffixes();
+    virtual QString icon() const override {return ":/icons/wav.svg";}
 
     WavHeader m_header;
     WavChunkFmt m_fmtChunk;
