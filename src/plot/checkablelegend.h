@@ -21,7 +21,7 @@ class QCPLegendModel : public QAbstractTableModel
     Q_OBJECT
 public:
     explicit QCPLegendModel(QObject *parent = 0);
-    virtual ~QCPLegendModel();
+    virtual ~QCPLegendModel() = default;
 
     bool contains(Curve *item);
     Curve *item(int row);

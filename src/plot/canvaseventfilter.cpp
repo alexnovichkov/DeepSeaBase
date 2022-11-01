@@ -51,7 +51,7 @@ void CanvasEventFilter::procMouseEvent(QEvent *event)
     //Нажатия левой кнопки - масштабирование графика, выбор объектов или сброс выбора
     //Нажатия правой кнопки - сдвиг графика
 
-    QMouseEvent *mEvent = dynamic_cast<QMouseEvent *>(event);
+    auto mEvent = dynamic_cast<QMouseEvent *>(event);
 
     switch (mEvent->type())  {
         case QEvent::MouseButtonPress:
@@ -72,7 +72,7 @@ void CanvasEventFilter::procMouseEvent(QEvent *event)
 
 void CanvasEventFilter::procKeyboardEvent(QEvent *event)
 {DDD;
-    QKeyEvent *kEvent = dynamic_cast<QKeyEvent*>(event);
+    auto kEvent = dynamic_cast<QKeyEvent*>(event);
     switch (kEvent->key()) {
         case Qt::Key_Backspace: {
             zoomStack->zoomBack();
@@ -112,7 +112,7 @@ void CanvasEventFilter::procKeyboardEvent(QEvent *event)
 
 void CanvasEventFilter::procAxisEvent(QCPAxis *axis, QEvent *event)
 {DDD;
-    QMouseEvent *mEvent = dynamic_cast<QMouseEvent *>(event);
+    auto mEvent = dynamic_cast<QMouseEvent *>(event);
     switch (event->type()) {
         case QEvent::Leave: {
             emit hover(fromQcpAxis(axis->axisType()), 0);

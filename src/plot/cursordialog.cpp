@@ -28,12 +28,11 @@ CursorDialog::CursorDialog(Cursor *cursor, QWidget *parent): QDialog(parent), cu
     harmonics->setValue(cursor->harmonics());
     harmonics->setEnabled(cursor->type() == Cursor::Type::Harmonic);
 
-    QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok |
-                                                       QDialogButtonBox::Cancel);
+    auto buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
 
-    QFormLayout *l = new QFormLayout;
+    auto l = new QFormLayout;
     l->addRow(showValues);
     l->addRow(snapToValues);
     l->addRow("Формат числа", format);

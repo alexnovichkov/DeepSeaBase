@@ -70,7 +70,7 @@ protected:
   QCPScatterStyle mScatterStyle;
   int mScatterSkip = 0;
   QPointer<Graph2D> mChannelFillGraph;
-  bool mAdaptiveSampling;
+  bool mAdaptiveSampling = true;
 
   // helpers for subclasses:
   void getDataSegments(QList<QCPDataRange> &selectedSegments, QList<QCPDataRange> &unselectedSegments) const;

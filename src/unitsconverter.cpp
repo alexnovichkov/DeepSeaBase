@@ -28,7 +28,7 @@ PhysicalUnits::Units::Type PhysicalUnits::Units::unitType(QString unit)
     //9 - reaction force - non detectable (= force)
 }
 
-bool PhysicalUnits::Units::unitsAreSame(const QString &u1, const QString u2)
+bool PhysicalUnits::Units::unitsAreSame(const QString &u1, const QString &u2)
 {
     return unitType(u1) == unitType(u2);
 }

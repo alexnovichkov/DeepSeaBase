@@ -113,7 +113,7 @@ PointLabel *Curve::findLabel(const QPoint &pos)
         if (l->underMouse(pos, nullptr, nullptr, nullptr))
             return l;
 
-    return 0;
+    return nullptr;
 }
 
 PointLabel *Curve::findLabel(SelectedPoint point)
@@ -122,7 +122,7 @@ PointLabel *Curve::findLabel(SelectedPoint point)
         if (l->point() == point)
             return l;
 
-    return 0;
+    return nullptr;
 }
 
 void Curve::moveToPos(QPoint pos, QPoint startPos)

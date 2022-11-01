@@ -419,7 +419,7 @@ private:
     Quantities::Acceleration quantity;
 };
 
-bool unitsAreSame(const QString &u1, const QString u2);
+bool unitsAreSame(const QString &u1, const QString &u2);
 Type unitType(QString unit);
 QString unitDescription(QString unit);
 QString unitDescription(Type type);

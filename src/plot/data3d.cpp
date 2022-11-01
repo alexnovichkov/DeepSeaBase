@@ -40,8 +40,8 @@ QCPRange Data3D::keyRange(int key) const
     if (octave == OctaveType::Unknown) {
         double lower = mData->xValue(key);
         double upper = lower;
-        if (key > 0) lower = (lower + mData->xValue(key-1))/2.0;
-        if (key < mData->samplesCount()-1) upper = (upper + mData->xValue(key+1))/2.0;
+        if (key > 0) lower = (lower + mData->xValue(key-1))/2;
+        if (key < mData->samplesCount()-1) upper = (upper + mData->xValue(key+1))/2;
         return {lower, upper};
     }
 

@@ -100,8 +100,8 @@ double Graph2D::selectTest(const QPointF &pos, bool onlySelectable, QVariant *de
       if (details)
         details->setValue(QCPDataSelection(QCPDataRange(closestDataPoint, closestDataPoint+1)));
       return result;
-    } else
-        return -1;
+    }
+    return -1;
 }
 
 QCPRange Graph2D::getKeyRange(bool &foundRange, QCP::SignDomain inSignDomain) const

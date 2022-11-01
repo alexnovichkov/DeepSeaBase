@@ -106,7 +106,7 @@ protected:
     bool m_snapToValues = true;
     bool m_showValues = false;
     int m_digits = 2;
-    int m_harmonics = 0;
+    int m_harmonics = 10;
     Format m_format = Format::Fixed;
     Info m_info = NoInfo;
 

@@ -14,11 +14,11 @@ Cursor::Cursor(Type type, Style style, Plot *plot)
 {DDD;
     m_snapToValues = Settings::getSetting("cursorSnapToValues", true).toBool();
     m_showValues = Settings::getSetting("cursorShowYValues", false).toBool();
-    m_digits = Settings::getSetting("cursorDigits", 2).toInt();
-    m_harmonics = Settings::getSetting("cursorHarmonics", 10).toInt();
+    m_digits = Settings::getSetting("cursorDigits", m_digits).toInt();
+    m_harmonics = Settings::getSetting("cursorHarmonics", m_harmonics).toInt();
     m_format = Settings::getSetting("cursorFormat", "fixed").toString()=="fixed"?Format::Fixed:Format::Scientific;
     if (m_type==Type::Double || m_type==Type::DoubleReject)
-        m_info = static_cast<Info>(Settings::getSetting("cursorInfo", 0).toInt());
+        m_info = static_cast<Info>(Settings::getSetting("cursorInfo", NoInfo).toInt());
 }
 
 void Cursor::saveSpectrum()

@@ -105,11 +105,6 @@ QCPLegendModel::QCPLegendModel(QObject *parent) : QAbstractTableModel(parent)
 
 }
 
-QCPLegendModel::~QCPLegendModel()
-{
-
-}
-
 bool QCPLegendModel::contains(Curve *item)
 {
     for (const auto &i: qAsConst(items)) {
@@ -254,7 +249,7 @@ bool QCPLegendModel::setData(const QModelIndex &index, const QVariant &value, in
 
         return true;
     }
-    else if (column == 1) {
+    if (column == 1) {
         if (items[row].data.fixed != value.toBool()) {
             items[row].data.fixed = value.toBool();
             emit dataChanged(index,index, QVector<int>()<<Qt::DecorationRole);
