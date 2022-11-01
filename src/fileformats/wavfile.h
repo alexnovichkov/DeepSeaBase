@@ -111,7 +111,10 @@ class WavFile : public FileDescriptor
 public:
     WavFile(const QString &fileName);
     WavFile(const FileDescriptor &other, const QString &fileName, QVector<int> indexes = QVector<int>());
+    WavFile(const FileDescriptor &other, const QString &fileName, QVector<int> indexes = QVector<int>(),
+            WavFormat format = WavFormat::WavFloat);
     WavFile(const QVector<Channel *> &source, const QString &fileName);
+    WavFile(const QVector<Channel *> &source, const QString &fileName, WavFormat format = WavFormat::WavFloat);
     ~WavFile();
 
     // FileDescriptor interface
@@ -135,11 +138,22 @@ public:
     WavChunkFact m_factChunk;
     WavChunkCue m_cueChunk;
     QList<WavChunkFile> m_assocFiles;
-    WavFormat m_format = WavFormat::WavExtendedPCM;
-    qint64 dataBegin = -1;
-    juce::AudioChannelSet audioChannelSet;
+    WavFormat m_format = WavFormat::WavFloat;
+    qint64 m_dataBegin = -1;
+//    juce::AudioChannelSet audioChannelSet;
     DataPrecision m_dataPrecision = DataPrecision::Float;
     bool m_valid = true;
+private:
+    void init(const QVector<Channel*> &source);
+    bool writeWithMap(const QVector<Channel *> &source);
+    void writeWithStream(const QVector<Channel *> &source);
+    WavHeader initHeader(int totalSize);
+    WavChunkFmt initFmt(int channelsCount, int sampleRate);
+    WavChunkFact initFact(int samplesCount);
+    WavChunkData initDataHeader(int channelsCount, int samplesCount, WavFormat format);
+    WavChunkCue initCue();
+    WavChunkFile initFile(const QVector<Channel*> &v);
+
 private:
     friend class WavChannel;
     QList<WavChannel*> channels;
@@ -150,6 +164,7 @@ class WavChannel : public Channel
 public:
     WavChannel(WavFile *parent, const QString &name);
     WavChannel(WavFile *parent, const DataDescription &description);
+    WavChannel(Channel *other, WavFile *parent);
 
     // Channel interface
 public:

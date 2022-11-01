@@ -7,12 +7,36 @@ WavFile::WavFile(const QString &fileName) : FileDescriptor(fileName)
 
 WavFile::WavFile(const FileDescriptor &other, const QString &fileName, QVector<int> indexes) : FileDescriptor(fileName)
 {
+    QVector<Channel *> source;
+    if (indexes.isEmpty())
+        for (int i=0; i<other.channelsCount(); ++i) source << other.channel(i);
+    else
+        for (int i: indexes) source << other.channel(i);
 
+    init(source);
+}
+
+WavFile::WavFile(const FileDescriptor &other, const QString &fileName, QVector<int> indexes,
+                 WavFormat format) : FileDescriptor(fileName), m_format(format)
+{
+    QVector<Channel *> source;
+    if (indexes.isEmpty())
+        for (int i=0; i<other.channelsCount(); ++i) source << other.channel(i);
+    else
+        for (int i: indexes) source << other.channel(i);
+
+    init(source);
 }
 
 WavFile::WavFile(const QVector<Channel *> &source, const QString &fileName) : FileDescriptor(fileName)
 {
+    init(source);
+}
 
+WavFile::WavFile(const QVector<Channel *> &source, const QString &fileName, WavFormat format)
+    : FileDescriptor(fileName), m_format(format)
+{
+    init(source);
 }
 
 WavFile::~WavFile()
@@ -101,7 +125,7 @@ void WavFile::read()
                 for (int i=0; i<8; ++i) r >> m_fmtChunk.subFormat.data4[i];
             }
 
-            audioChannelSet = juce::AudioChannelSet::fromWaveChannelMask(m_fmtChunk.dwChannelMask);
+//            audioChannelSet = juce::AudioChannelSet::fromWaveChannelMask(m_fmtChunk.dwChannelMask);
 //            if (audioChannelSet.size() != static_cast<int> (m_fmtChunk.nChannels)) {
 //                // for backward compatibility with old wav files, assume 1 or 2
 //                // channel wav files are mono/stereo respectively
@@ -133,7 +157,7 @@ void WavFile::read()
                 return;
             }
             m_dataChunk.dataSize = length;
-            dataBegin = r.device()->pos();
+            m_dataBegin = r.device()->pos();
             r.skipRawData(m_dataChunk.dataSize);
         }
 
@@ -303,6 +327,11 @@ WavChannel::WavChannel(WavFile *parent, const DataDescription &description) : pa
     _data->setZValues(0, 1, 1);
 }
 
+WavChannel::WavChannel(Channel *other, WavFile *parent) : Channel(other), parent(parent)
+{
+    parent->channels << this;
+}
+
 Descriptor::DataType WavChannel::type() const
 {
     return Descriptor::TimeResponse;
@@ -310,7 +339,7 @@ Descriptor::DataType WavChannel::type() const
 
 void WavChannel::populate()
 {
-    if (parent->dataBegin < 0 || !parent->m_valid) return;
+    if (parent->m_dataBegin < 0 || !parent->m_valid) return;
 
     _data->clear();
 
@@ -336,7 +365,7 @@ void WavChannel::populate()
         const int channelsCount = parent->channelsCount();
 
         // map file into memory
-        unsigned char *ptr = rawFile.map(parent->dataBegin, parent->m_dataChunk.dataSize);
+        unsigned char *ptr = rawFile.map(parent->m_dataBegin, parent->m_dataChunk.dataSize);
         if (ptr) {//достаточно памяти отобразить весь файл
             unsigned char *ptrCurrent = ptr;
 
@@ -363,7 +392,7 @@ void WavChannel::populate()
                 readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
             qint64 actuallyRead = 0;
-            readStream.skipRawData(parent->dataBegin);
+            readStream.skipRawData(parent->m_dataBegin);
 
 
             const quint64 chunkSize = channelsCount;
@@ -415,4 +444,342 @@ QStringList WavFile::fileFilters()
 QStringList WavFile::suffixes()
 {
     return {"wav"};
+}
+
+void WavFile::init(const QVector<Channel *> &source)
+{
+    auto d = source.first()->descriptor();
+    setDataDescription(d->dataDescription());
+    updateDateTimeGUID();
+
+    if (channelsFromSameFile(source)) {
+        dataDescription().put("source.file", d->fileName());
+        dataDescription().put("source.guid", d->dataDescription().get("guid"));
+        dataDescription().put("source.dateTime", d->dataDescription().get("dateTime"));
+
+        if (d->channelsCount() > source.size()) {
+            //только если копируем не все каналы
+            dataDescription().put("source.channels", stringify(channelIndexes(source)));
+        }
+    }
+
+    //1. если среди indexes нет временных каналов, то ничего не делаем
+    //2. параметры файла берем по первому каналу. Каналы, не подходящие по типу, пропускаем
+
+    QVector<Channel*> timeChannels;
+    timeChannels.reserve(source.size());
+    Channel *firstChannel = nullptr;
+    for (auto c: source) if (c->type()==Descriptor::TimeResponse) {
+        firstChannel = c;
+        break;
+    }
+
+    if (!firstChannel) {
+        m_valid = false;
+        return;
+    }
+
+    for (auto c: source) {
+        if (c->type()==Descriptor::TimeResponse && c->data()->xStep() == firstChannel->data()->xStep()
+            && c->data()->samplesCount() == firstChannel->data()->samplesCount())
+            timeChannels << c;
+    }
+    if (timeChannels.isEmpty()) {
+        m_valid = false;
+        return;
+    }
+
+    const quint16 channelsCount = quint16(timeChannels.size()); //Fc
+    const quint32 sampleRate = (quint32)qRound(1.0 / firstChannel->data()->xStep()); //F
+    const quint32 samples = quint32(firstChannel->data()->samplesCount());
+    const quint16 M = m_format == WavFormat::WavFloat ? 4 : 2; // bytesForFormat = short / float
+    auto assocFile = initFile(timeChannels);
+
+    quint32 totalSize =  sizeof(WavHeader)
+                         + (m_format == WavFormat::WavPCM ? 24 : sizeof(WavChunkFmt))
+                         + (m_format!=WavFormat::WavPCM ? sizeof (WavChunkFact) : 0)
+                         + 12 + sizeof(WavChunkCue::Cue)
+                         + 16 + assocFile.data.size()
+                         + sizeof(WavChunkData)
+                         + M * channelsCount * samples;
+
+    m_header = initHeader(totalSize);
+    m_fmtChunk = initFmt(channelsCount, sampleRate);
+    if (m_format != WavFormat::WavPCM) {
+        m_factChunk = initFact(samples);
+    }
+    m_cueChunk = initCue();
+    m_assocFiles << assocFile;
+    m_dataBegin = totalSize - M * channelsCount * samples;
+
+    for (int ch = 0; ch < channelsCount; ++ch)
+        new WavChannel(timeChannels.at(ch), this);
+
+    if (!writeWithMap(timeChannels))
+        writeWithStream(timeChannels);
+}
+
+bool WavFile::writeWithMap(const QVector<Channel*> &source)
+{
+    const quint16 M = m_format == WavFormat::WavFloat ? 4 : 2; // bytesForFormat = short / float
+    quint32 totalSize =  sizeof(WavHeader)
+                         + (m_format == WavFormat::WavPCM ? 24 : sizeof(WavChunkFmt))
+                         + (m_format!=WavFormat::WavPCM ? sizeof (WavChunkFact) : 0)
+                         + 12 + sizeof(WavChunkCue::Cue)
+                         + 16 + m_assocFiles.first().data.size()
+                         + sizeof(WavChunkData)
+                         + M * channels.size() * channels.first()->data()->samplesCount();
+
+    // Сохранение
+    QFile wavFile(fileName());
+    if (!wavFile.open(QFile::WriteOnly)) {
+        qCritical()<<"Не удалось открыть файл"<<fileName();
+        m_valid = false;
+        return false;
+    }
+
+    //Создаем пустой файл
+    if (wavFile.write(QByteArray(totalSize, 0x0)) < totalSize) {
+        qCritical()<<"Не удалось создать файл нужного размера";
+        m_valid = false;
+        return false;
+    }
+    wavFile.close();
+
+    //Переоткрываем файл для маппинга
+    wavFile.open(QFile::ReadWrite);
+    uchar *mapped = wavFile.map(0, totalSize);
+    if (!mapped) {
+        qCritical()<<"Не удалось создать файл нужного размера";
+        wavFile.close();
+        m_valid = false;
+        return false;
+    }
+
+    //Создаем заголовок файла
+    memcpy(mapped, &m_header, sizeof(WavHeader));
+    mapped += sizeof(WavHeader);
+
+    if (m_format == WavFormat::WavPCM) memcpy(mapped, &m_fmtChunk, 24);
+    else memcpy(mapped, &m_fmtChunk, sizeof(m_fmtChunk));
+    mapped += m_format == WavFormat::WavPCM ? 24 : sizeof(m_fmtChunk);
+
+    if (m_format!=WavFormat::WavPCM) {
+        memcpy(mapped, &m_factChunk, sizeof(m_factChunk));
+        mapped += sizeof(m_factChunk);
+    }
+
+    memcpy(mapped, &m_cueChunk.cueId, 4); mapped +=4;
+    memcpy(mapped, &m_cueChunk.cueSize, 4); mapped +=4;
+    memcpy(mapped, &m_cueChunk.dwCuePoints, 4); mapped +=4;
+    for (auto c: m_cueChunk.cues) {
+        memcpy(mapped, &c, sizeof(c)); mapped += sizeof(c);
+    }
+
+    if (!m_assocFiles.isEmpty()) {
+        auto assocFile = m_assocFiles.first();
+
+        memcpy(mapped, &assocFile.fileId, 4); mapped += 4;
+        memcpy(mapped, &assocFile.fileSize, 4); mapped += 4;
+        memcpy(mapped, &assocFile.dwName, 4); mapped += 4;
+        memcpy(mapped, &assocFile.dwMedType, 4); mapped += 4;
+        memcpy(mapped, assocFile.data.data(), assocFile.data.size()); mapped += assocFile.data.size();
+    }
+
+    memcpy(mapped, &m_dataChunk, sizeof(m_dataChunk));
+    mapped += sizeof(m_dataChunk);
+
+    for (int ch = 0; ch < source.size(); ++ch) {
+        auto sourceChannel = source.at(ch);
+
+        bool populated = sourceChannel->populated();
+        if (!populated) sourceChannel->populate();
+
+        QByteArray channelData = sourceChannel->wavData(0, sourceChannel->data()->samplesCount(),
+                                                        m_format==WavFormat::WavFloat?2:1);
+
+        //записываем каждый сэмпл на свое место
+        for (int sample = 0; sample < sourceChannel->data()->samplesCount(); ++sample) {
+            // i-й отсчет n-го канала имеет номер
+            //       [n + i*ChannelsCount]
+            //то есть целевой указатель будет иметь адрес
+            //       sizeof(WavHeader) + (n+i*ChannelsCount)*M
+            int offset = (ch + sample*source.size())*M;
+            memcpy(mapped + offset, reinterpret_cast<void*>(channelData.data() + sample*M), M);
+        }
+
+        if (!populated) sourceChannel->clear();
+    }
+    return true;
+}
+
+void WavFile::writeWithStream(const QVector<Channel *> &source)
+{
+    QFile wavFile(fileName());
+    if (!wavFile.open(QFile::WriteOnly)) {
+        qCritical()<<"Не удалось открыть файл"<<fileName();
+        return;
+    }
+
+    QDataStream s(&wavFile);
+    s.setByteOrder(QDataStream::LittleEndian);
+
+    //Определяем общий размер файла Wav
+    const quint16 M = m_format == WavFormat::WavFloat ? 4 : 2; // bytesForFormat = short / float
+
+    //Создаем заголовок файла
+    {
+        s << m_header.ckID;
+        s << m_header.cksize;
+        s << m_header.waveId;
+    }
+    {
+        s << m_fmtChunk.fmtId;
+        s << m_fmtChunk.fmtSize;
+        s << m_fmtChunk.wFormatTag;
+        s << m_fmtChunk.nChannels;
+        s << m_fmtChunk.samplesPerSec;
+        s << m_fmtChunk.bytesPerSec;
+        s << m_fmtChunk.blockAlign;
+        s << m_fmtChunk.bitsPerSample;
+        if (m_format != WavFormat::WavPCM) {
+            s << m_fmtChunk.cbSize;
+            s << m_fmtChunk.wValidBitsPerSample;
+            s << m_fmtChunk.dwChannelMask;
+            s << m_fmtChunk.subFormat.data1;
+            s << m_fmtChunk.subFormat.data2;
+            s << m_fmtChunk.subFormat.data3;
+            for (unsigned char i: m_fmtChunk.subFormat.data4) s << i;
+
+            s << m_factChunk.factID;
+            s << m_factChunk.factSize;
+            s << m_factChunk.dwSampleLength;
+        }
+    }
+    {
+        s << m_cueChunk.cueId;
+        s << m_cueChunk.cueSize;
+        s << m_cueChunk.dwCuePoints;
+        for (auto c: m_cueChunk.cues) {
+            s << c.identifier << c.order << c.chunkID << c.chunkStart << c.blockStart << c.offset;
+        }
+    }
+    if (!m_assocFiles.isEmpty()) {
+        auto assocFile = m_assocFiles.first();
+        s << assocFile.fileId << assocFile.fileSize;
+        s << assocFile.dwName << assocFile.dwMedType;
+        s.writeRawData(assocFile.data.data(), assocFile.data.size());
+    }
+    {
+        s << m_dataChunk.dataId;
+        s << m_dataChunk.dataSize;
+    }
+
+    constexpr const int BLOCK_SIZE = 20000;
+    int blocks = samplesCount()/BLOCK_SIZE;
+    if (samplesCount() % BLOCK_SIZE != 0) blocks++;
+
+    //пишем блоками по BLOCK_SIZE отсчетов
+    for (int chunk = 0; chunk < blocks; ++chunk) {
+        //мы должны сформировать блоки с каждого канала.
+        //Так как читать сразу все каналы в память слишком объемно,
+        //1. заполняем канал
+        //2. берем из него BLOCK_SIZE отсчетов
+        //3. из всех каналов формируем колбасу для записи
+        //4. очищаем данные канала
+
+        QVector<QByteArray> chunkData;
+        for (auto c: source) {
+            bool populated = c->populated();
+            if (!populated) c->populate();
+            auto data = c->wavData(chunk * BLOCK_SIZE, BLOCK_SIZE, m_format==WavFormat::WavFloat?2:1);
+            chunkData.append(data);
+            if (!populated) c->clear();
+        }
+
+        //теперь перетасовываем chunkData - берем из него по одному отсчету каждого канала
+        //и записываем в wav
+        for (int i = 0; i < chunkData.constFirst().size()/M; ++i) {
+            for (const QByteArray &c: qAsConst(chunkData)) {
+                s.device()->write(c.mid(i*M, M));
+            }
+        }
+    }
+    wavFile.close();
+}
+
+WavHeader WavFile::initHeader(int totalSize)
+{
+    WavHeader header;
+    header.cksize = totalSize;
+
+    return header;
+}
+
+WavChunkFmt WavFile::initFmt(int channelsCount, int sampleRate)
+{
+    const int M = m_format==WavFormat::WavFloat?4:2;
+    WavChunkFmt header;
+
+    header.fmtSize = (m_format==WavFormat::WavPCM?16:40);
+    header.wFormatTag = m_format==WavFormat::WavPCM?1:0xfffe;
+    header.nChannels = quint16(channelsCount); //Nc
+    header.samplesPerSec = quint32(sampleRate); //F
+    header.bytesPerSec = quint32(header.samplesPerSec * channelsCount * M); //F*M*Nc
+    header.blockAlign = quint16(channelsCount * M); //M*Nc, data block size, bytes
+    header.bitsPerSample = 8*M; //rounds up to 8*M
+
+    if (header.fmtSize == 40) {
+        header.wValidBitsPerSample = 8*M; //используем все биты, для формата 24-bit нужно будет менять
+//        header.dwChannelMask = juce::AudioChannelSet::discreteChannels(channelsCount).getWaveChannelMask();
+
+        //subFormat is PCM by default
+        if (m_format == WavFormat::WavFloat)
+            header.subFormat = IEEEFloatFormat;
+    }
+    return header;
+}
+
+WavChunkFact WavFile::initFact(int samplesCount)
+{
+    WavChunkFact header;
+    header.factSize = 4;
+    header.dwSampleLength = samplesCount; // Nc*Ns, number of samples
+    return header;
+}
+
+WavChunkData WavFile::initDataHeader(int channelsCount, int samplesCount, WavFormat format)
+{
+    const int M = format==WavFormat::WavFloat?4:2;
+    WavChunkData header;
+    //data block - 8 + M*Nc*Ns bytes
+    header.dataSize = M*channelsCount*samplesCount; //M*Nc*Ns
+    return header;
+}
+
+WavChunkCue WavFile::initCue()
+{
+    WavChunkCue cue;
+    cue.dwCuePoints = 1;
+    cue.cueSize = sizeof (WavChunkCue::Cue) + 4;
+    WavChunkCue::Cue c;
+    cue.cues.append(c);
+
+    return cue;
+}
+
+WavChunkFile WavFile::initFile(const QVector<Channel *> &v)
+{
+    WavChunkFile chunk;
+    QJsonArray array;
+    for (auto c: v)
+        array.append(c->dataDescription().toJson());
+    QJsonObject o;
+    o.insert("channels", array);
+
+    auto data = QJsonDocument(o).toJson();
+    chunk.fileSize = 8 + data.size();
+    chunk.data = data;
+
+    return chunk;
 }

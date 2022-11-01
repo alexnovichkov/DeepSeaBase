@@ -20,7 +20,6 @@ public:
     explicit WavExporter(Channel *channel, QObject *parent = nullptr);
     virtual ~WavExporter();
     void setTempFile(const QString &tempFile) {_wavFile = tempFile;}
-    int chunksCount() const;
     QString wavFileName() const {return _wavFile;}
     void setFormat(WavFormat format) {this->format = format;}
 signals:
@@ -28,20 +27,11 @@ signals:
     //void tick(int);
     void finished();
     void message(const QString &s);
-    void chunksCountChanged(int count);
 public slots:
     void stop();
     void start();
 private:
-    WavHeader initHeader(int channelsCount, int samplesCount, WavFormat format);
-    WavChunkFmt initFmt(int channelsCount, int sampleRate, WavFormat format);
-    WavChunkFact initFact(int samplesCount);
-    WavChunkData initDataHeader(int channelsCount, int samplesCount, WavFormat format);
-    WavChunkCue initCue();
-    WavChunkFile initFile(const QVector<int> &v);
     void finalize();
-    void writeWithStreams(const QVector<int> &v, const QString &wavFileName);
-    bool writeWithMap(const QVector<int> &v, const QString &wavFileName);
 
     FileDescriptor * file = 0;
     Channel *channel = 0;

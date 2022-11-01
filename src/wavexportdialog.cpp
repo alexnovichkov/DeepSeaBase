@@ -50,7 +50,7 @@ WavExportDialog::WavExportDialog(FileDescriptor * file, const QVector<int> &inde
     taskBarProgress = new TaskBarProgress(this, this);
     taskBarProgress->setRange(bar->minimum(), bar->maximum());
 
-    QFormLayout *l = new QFormLayout;
+    auto l = new QFormLayout;
     l->addRow("Файл", new QLabel(file->fileName(),this));
     l->addRow("Каналов на файл", channelsCount);
     l->addRow("Формат файла", formatComboBox);

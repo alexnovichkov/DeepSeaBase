@@ -109,7 +109,7 @@ FileDescriptor *FormatFactory::createDescriptor(const FileDescriptor &source, co
     if (suffix=="dfd") return new DfdFileDescriptor(source, fileName, indexes);
     if (suffix=="uff") return new UffFileDescriptor(source, fileName, indexes);
     if (suffix=="d94") return new Data94File(source, fileName, indexes);
-    if (suffix=="wav") return new WavFile(source, fileName, indexes);
+    if (suffix=="wav") return new WavFile(source, fileName, indexes, WavFormat::WavFloat);
 
 #ifdef WITH_MATIO
     if (suffix=="mat") return new MatlabFile(source, fileName, indexes);
@@ -123,7 +123,7 @@ FileDescriptor *FormatFactory::createDescriptor(const QVector<Channel *> &source
     if (suffix=="dfd") return new DfdFileDescriptor(source, fileName);
     if (suffix=="uff") return new UffFileDescriptor(source, fileName);
     if (suffix=="d94") return new Data94File(source, fileName);
-    if (suffix=="wav") return new WavFile(source, fileName);
+    if (suffix=="wav") return new WavFile(source, fileName, WavFormat::WavFloat);
 #ifdef WITH_MATIO
     if (suffix=="mat") return new MatlabFile(source, fileName);
 #endif
