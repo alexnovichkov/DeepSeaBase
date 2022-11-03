@@ -22,6 +22,7 @@ public:
     void setTempFile(const QString &tempFile) {_wavFile = tempFile;}
     QString wavFileName() const {return _wavFile;}
     void setFormat(WavFormat format) {this->format = format;}
+    void setSimplified(bool simplified) {this->simplified = simplified;}
 signals:
     void tick();
     //void tick(int);
@@ -40,6 +41,7 @@ private:
     QString _wavFile;
     bool useTemp = false;
     WavFormat format = WavFormat::WavPCM;
+    bool simplified = false;
 };
 
 

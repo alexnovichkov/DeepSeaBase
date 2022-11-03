@@ -138,7 +138,8 @@ void PlayPanel::prepareDataToPlay()
     if (player->media().isNull()) {
         if (!wavFiles.contains(ch)) {
             WavExporter expo(ch, this);
-            QTemporaryFile temp;
+            expo.setSimplified(true);
+            QTemporaryFile temp(QDir::tempPath()+"/DeepSeaBase.XXXXXX.wav");
             temp.setAutoRemove(false);
             temp.open();
             oldTempFile = temp.fileName();

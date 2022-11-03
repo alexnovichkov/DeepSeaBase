@@ -158,7 +158,7 @@ private:
     WavChunkFact initFact(int samplesCount);
     WavChunkData initDataHeader(int channelsCount, int samplesCount);
     WavChunkCue initCue();
-    WavChunkFile initFile(const QVector<Channel*> &v);
+    WavChunkFile initFile();
 
 private:
     friend class WavChannel;
