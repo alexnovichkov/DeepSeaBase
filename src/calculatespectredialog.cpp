@@ -15,7 +15,7 @@
 
 CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> &dataBase, QWidget *parent) :
     QDialog(parent), dataBase(dataBase), win(parent)
-{DDD;
+{DD;
     methodCombo = new QComboBox(this);
     methodCombo->setEditable(false);
     for (const auto &method: methods)
@@ -83,7 +83,7 @@ CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> &dataBase
 }
 
 CalculateSpectreDialog::~CalculateSpectreDialog()
-{DDD;
+{DD;
     if (converter) {
         converter->deleteLater();
     }
@@ -95,13 +95,13 @@ CalculateSpectreDialog::~CalculateSpectreDialog()
 }
 
 void CalculateSpectreDialog::methodChanged(int method)
-{DDD;
+{DD;
     methodsStack->setCurrentIndex(method);
     currentMethod = dynamic_cast<AbstractMethod *>(methodsStack->currentWidget());
 }
 
 void CalculateSpectreDialog::start()
-{DDD;
+{DD;
 //    QString s = QStandardPaths::findExecutable("DeepSea");
 //    if (s.isEmpty()) {
 //        infoLabel->appendPlainText("Не могу найти DeepSea.exe в стандартных путях.\n"
@@ -142,14 +142,14 @@ void CalculateSpectreDialog::start()
 }
 
 void CalculateSpectreDialog::stop()
-{DDD;
+{DD;
     if (thread)
         thread->requestInterruption();
     QDialog::accept();
 }
 
 void CalculateSpectreDialog::accept()
-{DDD;
+{DD;
     newFiles = converter->getNewFiles();
     if (taskBarProgress) taskBarProgress->finalize();
 
@@ -161,19 +161,19 @@ void CalculateSpectreDialog::accept()
 }
 
 void CalculateSpectreDialog::reject()
-{DDD;
+{DD;
     stop();
     QDialog::reject();
     if (taskBarProgress) taskBarProgress->finalize();
 }
 
 void CalculateSpectreDialog::updateProgressIndicator(const QString &path)
-{DDD;
+{DD;
     progress->setValue(int(QDir(path).count()-2));
 }
 
 void CalculateSpectreDialog::updateProgressIndicator()
-{DDD;
+{DD;
     progress->setValue(progress->value()+1);
     taskBarProgress->setValue(progress->value());
 }

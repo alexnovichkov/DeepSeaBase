@@ -13,12 +13,12 @@
 #include "checkablelegend.h"
 
 Spectrogram::Spectrogram(QWidget *parent) : Plot(Enums::PlotType::Spectrogram, parent)
-{DDD;
+{DD;
 
 }
 
 void Spectrogram::deleteCurve(Curve *curve, bool doReplot)
-{DDD;
+{DD;
     if (!curve) return;
 
     if (m->deleteCurve(curve)) {
@@ -49,7 +49,7 @@ void Spectrogram::deleteCurve(Curve *curve, bool doReplot)
 }
 
 QString Spectrogram::pointCoordinates(const QPointF &pos)
-{DDD;
+{DD;
     bool success = false;
     double y = 0.0;
     if (auto c = model()->curve(0))
@@ -61,7 +61,7 @@ QString Spectrogram::pointCoordinates(const QPointF &pos)
 }
 
 void Spectrogram::updateAxesLabels()
-{DDD;
+{DD;
     m_plot->enableAxis(Enums::AxisType::atLeft, axisLabelsVisible);
     if (axisLabelsVisible)
         m_plot->setAxisTitle(Enums::AxisType::atLeft, yLeftName);
@@ -84,7 +84,7 @@ void Spectrogram::updateAxesLabels()
 }
 
 void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
-{DDD;
+{DD;
     if (!ch || !m_plot) return;
     //проверяем, построен ли канал на этом графике
     if (m->plotted(ch)) return;
@@ -146,13 +146,13 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 }
 
 void Spectrogram::onDropEvent(bool plotOnLeft, const QVector<Channel *> &channels)
-{DDD;
+{DD;
     Q_UNUSED(plotOnLeft);
     emit needPlotChannels(true, channels);
 }
 
 void Spectrogram::updateBounds()
-{DDD;
+{DD;
     if (m->leftCurvesCount()==0) {
         zoom->scaleBounds(Enums::AxisType::atLeft)->reset();
         zoom->scaleBounds(Enums::AxisType::atColor)->reset();
@@ -168,7 +168,7 @@ void Spectrogram::updateBounds()
 }
 
 bool Spectrogram::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
-{DDD;
+{DD;
     Q_UNUSED(message);
     if (m->isEmpty()) return true;
 
@@ -185,7 +185,7 @@ bool Spectrogram::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
 }
 
 bool Spectrogram::canBePlottedOnRightAxis(Channel *ch, QString *message) const
-{DDD;
+{DD;
     Q_UNUSED(ch);
     Q_UNUSED(message);
     if (m->isEmpty()) return true;
@@ -194,7 +194,7 @@ bool Spectrogram::canBePlottedOnRightAxis(Channel *ch, QString *message) const
 }
 
 QMenu *Spectrogram::createMenu(Enums::AxisType axis, const QPoint &pos)
-{DDD;
+{DD;
     Q_UNUSED(pos);
     QMenu *menu = new QMenu(widget());
 

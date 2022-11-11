@@ -6,12 +6,12 @@
 HeaderView::HeaderView(Qt::Orientation orientation, QWidget *parent)
     : QHeaderView(orientation, parent)
 
-{DDD;
+{DD;
     setSectionsClickable(true);
 }
 
 void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalIndex) const
-{DDD;
+{DD;
     painter->save();
     QHeaderView::paintSection(painter, rect, logicalIndex);
     painter->restore();
@@ -34,7 +34,7 @@ void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalI
 }
 
 void HeaderView::mousePressEvent(QMouseEvent *event)
-{DDD;
+{DD;
     int logicalIndex = logicalIndexAt(event->pos());
     QRect r(0,0,sectionSize(logicalIndex), this->height());
     QRect rr = checkBoxRect(r);
@@ -55,7 +55,7 @@ void HeaderView::mousePressEvent(QMouseEvent *event)
 }
 
 QRect HeaderView::checkBoxRect(const QRect &sourceRect) const
-{DDD;
+{DD;
     QStyleOptionButton checkBoxStyleOption;
     QRect checkBoxRect = style()->subElementRect(QStyle::SE_CheckBoxIndicator,
                                                  &checkBoxStyleOption);
@@ -67,7 +67,7 @@ QRect HeaderView::checkBoxRect(const QRect &sourceRect) const
 }
 
 void HeaderView::setCheckable(int section, bool checkable)
-{DDD;
+{DD;
     if (checkable) m_isCheckable.insert(section);
     else m_isCheckable.remove(section);
 }

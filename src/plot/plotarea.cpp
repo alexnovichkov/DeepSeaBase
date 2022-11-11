@@ -14,7 +14,7 @@
 
 PlotArea::PlotArea(int index, QWidget *parent)
     : ads::CDockWidget(QString("График %1").arg(index), parent)
-{DDD;
+{DD;
     setObjectName(QString("График %1").arg(index));
     setAcceptDrops(true);
     setAsCurrentTab();
@@ -208,12 +208,12 @@ PlotArea::~PlotArea()
 }
 
 Plot *PlotArea::plot()
-{DDD;
+{DD;
     return m_plot;
 }
 
 void PlotArea::addPlot(Enums::PlotType type)
-{DDD;
+{DD;
     if (m_plot) {
         if (m_plot->toolBarWidget()) toolBar()->removeAction(toolBarAction);
         delete m_plot->legend;
@@ -278,12 +278,12 @@ void PlotArea::addPlot(Enums::PlotType type)
 }
 
 void PlotArea::update()
-{DDD;
+{DD;
     if (m_plot) m_plot->update();
 }
 
 void setLineColor(QAxObject *obj, int color)
-{DDD;
+{DD;
     QAxObject *format = obj->querySubObject("Format");
     QAxObject *formatLine = format->querySubObject("Line");
     formatLine->setProperty("Visible",true);
@@ -296,7 +296,7 @@ void setLineColor(QAxObject *obj, int color)
 }
 
 void setAxis(QAxObject *xAxis, const QString &title)
-{DDD;
+{DD;
     xAxis->dynamicCall("SetHasTitle(bool)",true);
     QAxObject *axisTitle = xAxis->querySubObject("AxisTitle()");
     axisTitle->setProperty("Text", title);
@@ -324,7 +324,7 @@ void setAxis(QAxObject *xAxis, const QString &title)
 }
 
 void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
-{DDD;
+{DD;
     static QAxObject *excel = 0;
 
    // QList<Curve*> &curves = m_plot->curves;
@@ -402,7 +402,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          excel = new QAxObject("{00024500-0000-0000-c000-000000000046}&",this);
      }
      if (!excel) return;
-     //qDebug()<<excel->generateDocumentation();
+     //LOG(DEBUG)<<excel->generateDocumentation();
 
      excel->setProperty("Visible", true);
 
@@ -763,7 +763,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 }
 
 void PlotArea::updateActions(int filesCount, int channelsCount)
-{DDD;
+{DD;
     const bool hasCurves = m_plot ? curvesCount()>0 : false;
     const bool allCurvesFromSameDescriptor = m_plot ? m_plot->model()->allCurvesFromSameDescriptor() : false;
 
@@ -781,7 +781,7 @@ void PlotArea::updateActions(int filesCount, int channelsCount)
 }
 
 void PlotArea::deleteCurvesForDescriptor(FileDescriptor *f)
-{DDD;
+{DD;
     if (m_plot) m_plot->deleteCurvesForDescriptor(f);
 }
 
@@ -795,30 +795,30 @@ void PlotArea::replotDescriptor(FileDescriptor *f, int fileIndex)
 }
 
 QVector<Channel *> PlotArea::plottedChannels() const
-{DDD;
+{DD;
     if (m_plot) return m_plot->model()->plottedChannels();
     return QVector<Channel *>();
 }
 
 QVector<FileDescriptor *> PlotArea::plottedDescriptors() const
-{DDD;
+{DD;
     if (m_plot) return m_plot->model()->plottedDescriptors();
     return QVector<FileDescriptor *>();
 }
 
 int PlotArea::curvesCount(int type) const
-{DDD;
+{DD;
     return m_plot?m_plot->curvesCount(type):0;
 }
 
 void PlotArea::updateLegends()
-{DDD;
+{DD;
     if (m_plot) m_plot->updateLegends();
 }
 
 
 void PlotArea::dragEnterEvent(QDragEnterEvent *event)
-{DDD;
+{DD;
     setFocus();
 
     const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
@@ -828,7 +828,7 @@ void PlotArea::dragEnterEvent(QDragEnterEvent *event)
 }
 
 void PlotArea::dropEvent(QDropEvent *event)
-{DDD;
+{DD;
     const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
     if (myData) {
         onDropEvent(true, myData->channels);

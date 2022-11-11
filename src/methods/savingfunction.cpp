@@ -7,7 +7,7 @@
 
 //returns "d94" by default
 QString getSuffixByType(int type)
-{DDD;
+{DD;
     switch (type) {
         case SavingFunction::DfdFile: return "dfd";
         case SavingFunction::UffFile: return "uff";
@@ -18,33 +18,33 @@ QString getSuffixByType(int type)
 
 SavingFunction::SavingFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DDD;
+{DD;
 
 }
 
 
 QString SavingFunction::name() const
-{DDD;
+{DD;
     return "Saver";
 }
 
 QString SavingFunction::displayName() const
-{DDD;
+{DD;
     return "Записывать результат";
 }
 
 QString SavingFunction::description() const
-{DDD;
+{DD;
     return "Сохранение файлов";
 }
 
 QStringList SavingFunction::properties() const
-{DDD;
+{DD;
     return {"append", "type", "precision", "destination"};
 }
 
 QString SavingFunction::propertyDescription(const QString &property) const
-{DDD;
+{DD;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
                                    "  \"type\"        : \"enum\"   ,"
@@ -84,7 +84,7 @@ QString SavingFunction::propertyDescription(const QString &property) const
 }
 
 QVariant SavingFunction::m_getProperty(const QString &property) const
-{DDD;
+{DD;
     if (property.startsWith("?/")) {
         // do not know anything about these broadcast properties, propagating
         if (m_input) return m_input->getParameter(property);
@@ -104,7 +104,7 @@ QVariant SavingFunction::m_getProperty(const QString &property) const
 }
 
 void SavingFunction::m_setProperty(const QString &property, const QVariant &val)
-{DDD;
+{DD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -115,7 +115,7 @@ void SavingFunction::m_setProperty(const QString &property, const QVariant &val)
 }
 
 bool SavingFunction::propertyShowsFor(const QString &property) const
-{DDD;
+{DD;
     if (!property.startsWith(name()+"/")) return false;
     QString p = property.section("/",1);
 
@@ -127,7 +127,7 @@ bool SavingFunction::propertyShowsFor(const QString &property) const
 }
 
 bool SavingFunction::compute(FileDescriptor *file)
-{DDD;
+{DD;
     /* что нужно для сохранения:
      * 1. тип файла
      * 2. папка, куда сохранять файл - конструируется из имени исходного файла
@@ -253,7 +253,7 @@ bool SavingFunction::compute(FileDescriptor *file)
 }
 
 void SavingFunction::reset()
-{DDD;
+{DD;
     // вызывается для каждого файла в базе
     //1. настраивает выходное название файла
     //2. подготавливает данные для выходного файла
@@ -276,7 +276,7 @@ void SavingFunction::reset()
 }
 
 FileDescriptor *SavingFunction::createFile(FileDescriptor *file)
-{DDD;
+{DD;
     FileDescriptor *f = nullptr;
     switch (type) {
         case DfdFile: f = createDfdFile(); break;
@@ -298,7 +298,7 @@ FileDescriptor *SavingFunction::createFile(FileDescriptor *file)
 }
 
 FileDescriptor *SavingFunction::createDfdFile()
-{DDD;
+{DD;
     int dataType = m_input->getParameter("?/dataType").toInt();
 
     DfdFileDescriptor *newDfd = DfdFileDescriptor::newFile(newFileName, DfdDataType(dataType));
@@ -315,11 +315,11 @@ FileDescriptor *SavingFunction::createDfdFile()
 }
 
 FileDescriptor *SavingFunction::createUffFile()
-{DDD;
+{DD;
     return new UffFileDescriptor(newFileName);
 }
 
 FileDescriptor *SavingFunction::createD94File()
-{
+{DD;
     return new Data94File(newFileName);
 }

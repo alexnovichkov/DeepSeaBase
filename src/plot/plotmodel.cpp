@@ -6,24 +6,24 @@
 #include <QFont>
 
 PlotModel::PlotModel(QObject *parent) : QAbstractTableModel(parent)
-{DDD;
+{DD;
 
 }
 
 bool PlotModel::isEmpty() const
-{DDD;
+{DD;
     return m_curves.isEmpty();
 }
 
 int PlotModel::size(int type) const
-{DDD;
+{DD;
     if (type==-1) return m_curves.size();
     return std::count_if(m_curves.cbegin(), m_curves.cend(),
                          [type](Curve *c){return int(c->channel->type()) == type;});
 }
 
 Curve *PlotModel::firstOf(CurvePredicate predicate)
-{DDD;
+{DD;
     const auto result = std::find_if(m_curves.cbegin(), m_curves.cend(), predicate);
     if (result != m_curves.cend()) return *result;
 
@@ -31,7 +31,7 @@ Curve *PlotModel::firstOf(CurvePredicate predicate)
 }
 
 QList<Curve *> PlotModel::curves(CurvePredicate predicate) const
-{DDD;
+{DD;
     QList<Curve *> result;
     for (const auto &c: m_curves) {
         if (predicate(c)) result << c;
@@ -40,7 +40,7 @@ QList<Curve *> PlotModel::curves(CurvePredicate predicate) const
 }
 
 Curve *PlotModel::selectedCurve() const
-{DDD;
+{DD;
     for (const auto &c: m_curves) {
         if (c->selected()) return c;
     }
@@ -48,7 +48,7 @@ Curve *PlotModel::selectedCurve() const
 }
 
 void PlotModel::clear(bool forceDeleteFixed)
-{DDD;
+{DD;
     beginResetModel();
     for (int i=m_curves.size()-1; i>=0; --i) {
         Curve *c = m_curves[i];
@@ -60,7 +60,7 @@ void PlotModel::clear(bool forceDeleteFixed)
 }
 
 void PlotModel::updatePlottedIndexes()
-{DDD;
+{DD;
     m_plotted.clear();
     for (auto curve: m_curves) {
         if (!curve->fixed)
@@ -70,7 +70,7 @@ void PlotModel::updatePlottedIndexes()
 }
 
 void PlotModel::updatePlottedIndexes(FileDescriptor *d, int fileIndex)
-{DDD;
+{DD;
     for (auto &c: m_plotted) {
         c.fileIndex = fileIndex;
         c.ch = d->channel(c.channelIndex);
@@ -78,7 +78,7 @@ void PlotModel::updatePlottedIndexes(FileDescriptor *d, int fileIndex)
 }
 
 void PlotModel::cycleChannels(bool up)
-{DDD;
+{DD;
     for (auto &c: m_plotted) {
         if (!c.ch) continue;
         auto d = c.ch->descriptor();
@@ -98,32 +98,32 @@ void PlotModel::cycleChannels(bool up)
 }
 
 void PlotModel::setYValuesPresentation(bool leftCurves, int presentation)
-{DDD;
+{DD;
     auto &list = leftCurves?this->m_leftCurves:m_rightCurves;
     for (auto &curve: list) curve->channel->data()->setYValuesPresentation(presentation);
 }
 
 void PlotModel::removeLabels()
-{DDD;
+{DD;
     for (Curve *c: qAsConst(m_curves))
         c->removeLabels();
 }
 
 void PlotModel::updateTitles()
-{DDD;
+{DD;
     for (Curve *curve: qAsConst(m_curves))
         curve->setTitle(curve->channel->legendName());
 }
 
 void PlotModel::resetHighlighting()
-{DDD;
+{DD;
     for(Curve *c: qAsConst(m_curves)) {
         c->setSelected(false, SelectedPoint());
     }
 }
 
 void PlotModel::setTemporaryCorrection(Channel *ch, double correctionValue, int correctionType)
-{DDD;
+{DD;
     ch->data()->setTemporaryCorrection(correctionValue, correctionType);
 
     for (int i=0; i<m_curves.size(); ++i) {
@@ -134,7 +134,7 @@ void PlotModel::setTemporaryCorrection(Channel *ch, double correctionValue, int 
 }
 
 Curve * PlotModel::plotted(Channel *channel) const
-{DDD;
+{DD;
     for (Curve *curve: qAsConst(m_curves)) {
         if (curve->channel == channel) return curve;
     }
@@ -142,7 +142,7 @@ Curve * PlotModel::plotted(Channel *channel) const
 }
 
 bool PlotModel::allCurvesFromSameDescriptor() const
-{DDD;
+{DD;
     if (m_curves.isEmpty()) return false;
     auto d = m_curves.first()->channel->descriptor();
     for (int i=1; i<m_curves.size(); ++i) {
@@ -152,7 +152,7 @@ bool PlotModel::allCurvesFromSameDescriptor() const
 }
 
 void PlotModel::addCurve(Curve *curve, bool onLeft)
-{DDD;
+{DD;
     beginInsertRows(QModelIndex(), m_curves.size(), m_curves.size());
     m_curves.append(curve);
     if (onLeft) m_leftCurves.append(curve);
@@ -162,7 +162,7 @@ void PlotModel::addCurve(Curve *curve, bool onLeft)
 }
 
 bool PlotModel::deleteCurve(Curve *curve, bool *removedFromLeft)
-{DDD;
+{DD;
     curve->channel->setPlotted(false);
 
     const auto index = m_curves.indexOf(curve);
@@ -186,7 +186,7 @@ bool PlotModel::deleteCurve(Curve *curve, bool *removedFromLeft)
 }
 
 bool PlotModel::moveToOtherAxis(Curve *curve)
-{DDD;
+{DD;
     if (m_leftCurves.contains(curve)) {
         m_leftCurves.removeAll(curve);
         m_rightCurves.append(curve);
@@ -201,7 +201,7 @@ bool PlotModel::moveToOtherAxis(Curve *curve)
 }
 
 void PlotModel::checkDuplicates(const QString name)
-{DDD;
+{DD;
     Curve *c1 = nullptr;
     int found = 0;
     for (auto c: qAsConst(m_curves)) {
@@ -217,7 +217,7 @@ void PlotModel::checkDuplicates(const QString name)
 }
 
 QVector<Channel *> PlotModel::plottedChannels() const
-{DDD;
+{DD;
     QVector<Channel*> result;
     result.reserve(m_curves.size());
     for (auto c: m_curves) result << c->channel;
@@ -225,7 +225,7 @@ QVector<Channel *> PlotModel::plottedChannels() const
 }
 
 QVector<FileDescriptor *> PlotModel::plottedDescriptors() const
-{DDD;
+{DD;
     QVector<FileDescriptor*> result;
 
     for (auto c: m_curves) {
@@ -237,7 +237,7 @@ QVector<FileDescriptor *> PlotModel::plottedDescriptors() const
 }
 
 Descriptor::DataType PlotModel::curvesDataType() const
-{DDD;
+{DD;
     if (m_curves.isEmpty()) return Descriptor::Unknown;
     auto type = m_curves.constFirst()->channel->type();
     if (std::all_of(m_curves.cbegin(), m_curves.cend(), [type](Curve *c){return c->channel->type()==type;}))
@@ -246,14 +246,14 @@ Descriptor::DataType PlotModel::curvesDataType() const
 }
 
 Curve *PlotModel::curve(int index, bool left) const
-{DDD;
+{DD;
     auto &list = left ? m_leftCurves : m_rightCurves;
     if (index > -1 && index < list.size()) return list.at(index);
     return nullptr;
 }
 
 Curve *PlotModel::curve(int index) const
-{DDD;
+{DD;
     if (index > -1 && index < m_curves.size()) return m_curves.at(index);
     return nullptr;
 }
@@ -272,7 +272,7 @@ int PlotModel::columnCount(const QModelIndex &parent) const
 }
 
 QVariant PlotModel::data(const QModelIndex &index, int role) const
-{DDD;
+{DD;
     if (!index.isValid()) return QVariant();
     const auto row = index.row();
     const auto col = index.column();
@@ -326,7 +326,7 @@ QVariant PlotModel::data(const QModelIndex &index, int role) const
 }
 
 bool PlotModel::setData(const QModelIndex &index, const QVariant &value, int role)
-{DDD;
+{DD;
     Q_UNUSED(index);
     Q_UNUSED(value);
     Q_UNUSED(role);
@@ -335,7 +335,7 @@ bool PlotModel::setData(const QModelIndex &index, const QVariant &value, int rol
 
 
 QVariant PlotModel::headerData(int section, Qt::Orientation orientation, int role) const
-{DDD;
+{DD;
     if (orientation == Qt::Horizontal) {
         if (role == Qt::DisplayRole) {
             switch (section) {
@@ -351,7 +351,7 @@ QVariant PlotModel::headerData(int section, Qt::Orientation orientation, int rol
 }
 
 Qt::ItemFlags PlotModel::flags(const QModelIndex &index) const
-{DDD;
+{DD;
     const int col = index.column();
     auto result = Qt::ItemIsSelectable | Qt::ItemNeverHasChildren | Qt::ItemIsEnabled;
     if (col == PlotCorrectionColumn) result |= Qt::ItemIsEditable;

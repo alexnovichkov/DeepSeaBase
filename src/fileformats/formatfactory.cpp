@@ -7,9 +7,10 @@
 #include "matlabfile.h"
 #endif
 #include "wavfile.h"
+#include "logging.h"
 
 QList<FileDescriptor *> FormatFactory::createDescriptors(const FileDescriptor &source, const QString &fileName, const QVector<int> &indexes)
-{
+{DD;
     QString suffix = QFileInfo(fileName).suffix();
     if (suffix=="wav") {
         //Фильтруем временные реализации
@@ -63,7 +64,7 @@ QList<FileDescriptor *> FormatFactory::createDescriptors(const FileDescriptor &s
 }
 
 QStringList FormatFactory::allSuffixes(bool strip)
-{
+{DD;
     QStringList result;
     result << suffixes<DfdFileDescriptor>();
     result << suffixes<UffFileDescriptor>();
@@ -78,7 +79,7 @@ QStringList FormatFactory::allSuffixes(bool strip)
 }
 
 QStringList FormatFactory::allFilters()
-{
+{DD;
     QStringList result;
     result << filters<DfdFileDescriptor>();
     result << filters<UffFileDescriptor>();
@@ -91,7 +92,7 @@ QStringList FormatFactory::allFilters()
 }
 
 FileDescriptor *FormatFactory::createDescriptor(const QString &fileName)
-{
+{DD;
     const QString suffix = QFileInfo(fileName).suffix().toLower();
     if (suffix=="dfd") return new DfdFileDescriptor(fileName);
     if (suffix=="uff") return new UffFileDescriptor(fileName);
@@ -104,7 +105,7 @@ FileDescriptor *FormatFactory::createDescriptor(const QString &fileName)
 }
 
 FileDescriptor *FormatFactory::createDescriptor(const FileDescriptor &source, const QString &fileName, const QVector<int> &indexes)
-{
+{DD;
     QString suffix = QFileInfo(fileName).suffix();
     if (suffix=="dfd") return new DfdFileDescriptor(source, fileName, indexes);
     if (suffix=="uff") return new UffFileDescriptor(source, fileName, indexes);
@@ -118,7 +119,7 @@ FileDescriptor *FormatFactory::createDescriptor(const FileDescriptor &source, co
 }
 
 FileDescriptor *FormatFactory::createDescriptor(const QVector<Channel *> &source, const QString &fileName)
-{
+{DD;
     QString suffix = QFileInfo(fileName).suffix();
     if (suffix=="dfd") return new DfdFileDescriptor(source, fileName);
     if (suffix=="uff") return new UffFileDescriptor(source, fileName);
@@ -132,7 +133,7 @@ FileDescriptor *FormatFactory::createDescriptor(const QVector<Channel *> &source
 
 
 bool FormatFactory::fileExists(const QString &s, const QString &suffix)
-{
+{DD;
     QString f = changeFileExt(s, suffix);
     if (suffix != "dfd") return QFile::exists(f);
 

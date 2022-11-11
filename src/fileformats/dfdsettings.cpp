@@ -1,13 +1,14 @@
 #include "dfdsettings.h"
 #include <QtCore>
+#include "logging.h"
 
 DfdSettings::DfdSettings(const QString &fileName) : m_fileName(fileName)
-{
+{DD;
 
 }
 
 void DfdSettings::read()
-{
+{DD;
     content.clear();
     m_childGroups.clear();
 
@@ -45,7 +46,7 @@ void DfdSettings::read()
 }
 
 QString DfdSettings::value(const QString &key) const
-{
+{DD;
     for (const DescriptionEntry &entry: qAsConst(content)) {
         if (entry.first == key) return entry.second;
     }
@@ -53,7 +54,7 @@ QString DfdSettings::value(const QString &key) const
 }
 
 DescriptionList DfdSettings::values(const QString &group) const
-{
+{DD;
     DescriptionList result;
     if (group.isEmpty()) return result;
 

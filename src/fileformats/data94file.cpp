@@ -20,7 +20,7 @@ QDebug operator<<(QDebug dbg, const AxisBlock &b)
 }
 
 DataPrecision toDataPrecision(const QString &s)
-{
+{DD;
     if (s=="int8")        return DataPrecision::Int8;
     else if (s=="uint8")  return DataPrecision::UInt8;
     else if (s=="int16")  return DataPrecision::Int16;
@@ -35,13 +35,13 @@ DataPrecision toDataPrecision(const QString &s)
 }
 
 Data94File::Data94File(const QString &fileName) : FileDescriptor(fileName)
-{DDD;
+{DD;
 
 }
 
 Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVector<int> indexes)
     : FileDescriptor(fileName)
-{DDD;
+{DD;
     QVector<Channel *> source;
     if (indexes.isEmpty())
         for (int i=0; i<other.channelsCount(); ++i) source << other.channel(i);
@@ -53,12 +53,12 @@ Data94File::Data94File(const FileDescriptor &other, const QString &fileName, QVe
 
 Data94File::Data94File(const QVector<Channel *> &source, const QString &fileName)
  : FileDescriptor(fileName)
-{DDD;
+{DD;
     init(source);
 }
 
 void Data94File::init(const QVector<Channel *> &source)
-{DDD;
+{DD;
     if (source.isEmpty()) return;
 
     auto d = source.first()->descriptor();
@@ -79,7 +79,7 @@ void Data94File::init(const QVector<Channel *> &source)
 
     QFile f(fileName());
     if (!f.open(QFile::WriteOnly)) {
-        qDebug()<<"Не удалось открыть файл для записи:"<<fileName();
+        LOG(ERROR)<<"Не удалось открыть файл для записи:"<<fileName();
         return;
     }
 
@@ -113,7 +113,7 @@ void Data94File::init(const QVector<Channel *> &source)
 }
 
 Data94File::~Data94File()
-{DDD;
+{DD;
     if (changed() || dataChanged())
         write();
 
@@ -121,7 +121,7 @@ Data94File::~Data94File()
 }
 
 void Data94File::updatePositions()
-{DDD;
+{DD;
     // шапка файла имеет размер
 //    const qint64 fileHeader = 8+4+descriptionSize+4+paddingSize
 //                              +xAxisBlock.size()+zAxisBlock.size()+4;
@@ -139,7 +139,7 @@ void Data94File::updatePositions()
 }
 
 void Data94File::read()
-{DDD;
+{DD;
     QFile f(fileName());
 
     if (!f.open(QFile::ReadOnly)) return;
@@ -150,7 +150,7 @@ void Data94File::read()
     QString label = QString::fromLocal8Bit(r.device()->read(8));
 
     if (label != "data94  ") {
-        qDebug()<<"файл неправильного типа";
+        LOG(ERROR)<<"файл неправильного типа";
         return;
     }
 
@@ -158,15 +158,15 @@ void Data94File::read()
     r >> descriptionSize;
     QByteArray descriptionBuffer = r.device()->read(descriptionSize);
     if ((quint32)descriptionBuffer.size() != descriptionSize) {
-        qDebug()<<"не удалось прочитать описание файла";
+        LOG(ERROR)<<"не удалось прочитать описание файла";
         return;
     }
 
     QJsonParseError error;
     QJsonDocument doc = QJsonDocument::fromJson(descriptionBuffer, &error);
     if (error.error != QJsonParseError::NoError) {
-        qDebug()<<"не удалось распознать описание файла:" << error.errorString() << error.offset;
-        qDebug()<<descriptionBuffer;
+        LOG(ERROR)<<"не удалось распознать описание файла:" << error.errorString() << error.offset;
+//        LOG(DEBUG)<<descriptionBuffer;
     }
     else setDataDescription(DataDescription::fromJson(doc.object()));
 
@@ -180,20 +180,20 @@ void Data94File::read()
 }
 
 void Data94File::write()
-{DDD;
+{DD;
     if (!changed() && !dataChanged()) return;
 
     QFile f(fileName());
     bool newFile = !f.exists();
 
     if (!f.open(QFile::ReadOnly) && !newFile) {
-        qDebug()<<"Не удалось открыть файл для чтения";
+        LOG(ERROR)<<"Не удалось открыть файл для чтения";
         return;
     }
 
     QTemporaryFile temp;
     if (!temp.open()) {
-        qDebug()<<"Не удалось открыть временный файл для записи";
+        LOG(ERROR)<<"Не удалось открыть временный файл для записи";
         return;
     }
 
@@ -226,25 +226,25 @@ void Data94File::write()
 
     if (QFile::remove(fileName()) || newFile) {
         if (!QFile::copy(temp.fileName(), fileName()))
-            qDebug()<<"Не удалось сохранить файл"<<fileName();
+            LOG(ERROR)<<"Не удалось сохранить файл"<<fileName();
     }
     else {
-        qDebug()<<"Не удалось удалить исходный файл"<<fileName();
+        LOG(ERROR)<<"Не удалось удалить исходный файл"<<fileName();
     }
 }
 
 int Data94File::channelsCount() const
-{DDD;
+{DD;
     return channels.size();
 }
 
 void Data94File::deleteChannels(const QVector<int> &channelsToDelete)
-{DDD;
+{DD;
     QTemporaryFile tempFile;
     QFile rawFile(fileName());
 
     if (!tempFile.open() || !rawFile.open(QFile::ReadOnly)) {
-        qDebug()<<" Couldn't replace raw file with temp file.";
+        LOG(ERROR)<<" Couldn't replace raw file with temp file.";
         return;
     }
 
@@ -285,12 +285,12 @@ void Data94File::deleteChannels(const QVector<int> &channelsToDelete)
 
     if (QFile::remove(fileName())) {
         if (!QFile::copy(tempFile.fileName(), fileName())) {
-            qDebug()<<"Не удалось сохранить файл"<<fileName();
+            LOG(ERROR)<<"Не удалось сохранить файл"<<fileName();
             return;
         }
     }
     else {
-        qDebug()<<"Не удалось удалить исходный файл"<<fileName();
+        LOG(ERROR)<<"Не удалось удалить исходный файл"<<fileName();
         return;
     }
 
@@ -302,12 +302,12 @@ void Data94File::deleteChannels(const QVector<int> &channelsToDelete)
 }
 
 void Data94File::copyChannelsFrom(const QVector<Channel *> &source)
-{DDD;
+{DD;
     const int count = channelsCount();
 
     QFile f(fileName());
     if (!f.open(QFile::ReadWrite)) {
-        qDebug()<<"Не удалось открыть файл для записи";
+        LOG(ERROR)<<"Не удалось открыть файл для записи";
         return;
     }
     QDataStream r(&f);
@@ -344,7 +344,7 @@ void Data94File::copyChannelsFrom(const QVector<Channel *> &source)
 }
 
 void Data94File::addChannelWithData(DataHolder *data, const DataDescription &description)
-{DDD;
+{DD;
     Data94Channel *ch = new Data94Channel(this);
     ch->setPopulated(true);
     ch->setChanged(true);
@@ -356,7 +356,7 @@ void Data94File::addChannelWithData(DataHolder *data, const DataDescription &des
 }
 
 void Data94File::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
-{DDD;
+{DD;
     // заполняем вектор индексов каналов, как они будут выглядеть после перемещения
     const int count = channelsCount();
     QVector<int> indexesVector(count);
@@ -371,7 +371,7 @@ void Data94File::move(bool up, const QVector<int> &indexes, const QVector<int> &
 
     QTemporaryFile temp;
     if (!temp.open()) {
-        qDebug()<<"Couldn't open temp file to write";
+        LOG(ERROR)<<"Couldn't open temp file to write";
         return;
     }
 
@@ -381,7 +381,7 @@ void Data94File::move(bool up, const QVector<int> &indexes, const QVector<int> &
 
     QFile f(fileName());
     if (!f.open(QFile::ReadOnly)) {
-        qDebug()<<"Couldn't open file to write";
+        LOG(ERROR)<<"Couldn't open file to write";
         return;
     }
     QDataStream in(&f);
@@ -423,19 +423,19 @@ void Data94File::move(bool up, const QVector<int> &indexes, const QVector<int> &
 }
 
 Channel *Data94File::channel(int index) const
-{DDDD;
+{DD;
     if (channels.size()>index && index>=0)
         return channels.at(index);
     return nullptr;
 }
 
 QStringList Data94File::fileFilters()
-{DDD;
+{DD;
     return QStringList()<<"Файлы Data94 (*.d94)";
 }
 
 QStringList Data94File::suffixes()
-{DDD;
+{DD;
     return QStringList()<<"*.d94";
 }
 
@@ -444,13 +444,13 @@ QStringList Data94File::suffixes()
 
 Data94Channel::Data94Channel(Data94File *parent) : Channel(),
     parent(parent)
-{DDD;
+{DD;
     parent->channels << this;
 }
 
 Data94Channel::Data94Channel(Data94Channel *other, Data94File *parent)
     : Channel(other), parent(parent)
-{DDD;
+{DD;
     isComplex = other->isComplex;
     sampleWidth = other->sampleWidth;
     xAxisBlock = other->xAxisBlock;
@@ -460,7 +460,7 @@ Data94Channel::Data94Channel(Data94Channel *other, Data94File *parent)
 }
 
 void Data94Channel::initFrom(DataHolder *data, const DataDescription &description)
-{
+{DD;
     isComplex = data->yValuesFormat() == DataHolder::YValuesComplex;
 
     //xAxisBlock
@@ -497,20 +497,20 @@ void Data94Channel::initFrom(DataHolder *data, const DataDescription &descriptio
 
 Data94Channel::Data94Channel(Channel *other, Data94File *parent)
     : Channel(other), parent(parent)
-{DDD;
+{DD;
     parent->channels << this;
     initFrom(other->data(), other->dataDescription());
 }
 
 void Data94Channel::read(QDataStream &r)
-{DDD;
+{DD;
     if (r.status() != QDataStream::Ok) return;
     position = r.device()->pos();
-//    qDebug()<<"Reading at"<<position;
+//    LOG(DEBUG)<<"Reading at"<<position;
     QString label = QString::fromLocal8Bit(r.device()->read(8));
 
     if (label != "d94chan ") {
-        qDebug()<<"канал неправильного типа";
+        LOG(ERROR)<<"канал неправильного типа";
         return;
     }
 
@@ -519,14 +519,14 @@ void Data94Channel::read(QDataStream &r)
 
     QByteArray descriptionBuffer = r.device()->read(descriptionSize);
     if ((quint32)descriptionBuffer.size() != descriptionSize) {
-        qDebug()<<"не удалось прочитать описание канала";
+        LOG(ERROR)<<"не удалось прочитать описание канала";
         return;
     }
 
     QJsonParseError error;
     QJsonDocument doc = QJsonDocument::fromJson(descriptionBuffer, &error);
     if (error.error != QJsonParseError::NoError) {
-        qDebug()<<"не удалось распознать описание канала:"<<error.errorString() << error.offset;
+        LOG(ERROR)<<"не удалось распознать описание канала:"<<error.errorString() << error.offset;
     }
     else dataDescription() = DataDescription::fromJson(doc.object());
 
@@ -541,7 +541,7 @@ void Data94Channel::read(QDataStream &r)
     isComplex = valueFormat == 2;
 
     r >> sampleWidth; // 1, 2, 4 или 8
-//    qDebug()<<"valueFormat"<<valueFormat<<"samplewidth"<<sampleWidth;
+//    LOG(DEBUG)<<"valueFormat"<<valueFormat<<"samplewidth"<<sampleWidth;
 
     dataPosition = r.device()->pos();
 
@@ -567,19 +567,19 @@ void Data94Channel::read(QDataStream &r)
 
 
     size = r.device()->pos() - position;
-//    qDebug()<<"actual size"<<size;
+//    LOG(DEBUG)<<"actual size"<<size;
 
     const qint64 requiredSize = 8 + 4 + descriptionSize + xAxisBlock.size() + zAxisBlock.size() +
                           4 + 4 + dataToSkip;
-//    qDebug()<<"required size"<<requiredSize;
-//    qDebug()<<"pos"<<hex<<r.device()->pos();
+//    LOG(DEBUG)<<"required size"<<requiredSize;
+//    LOG(DEBUG)<<"pos"<<hex<<r.device()->pos();
 
     if (size != requiredSize)
-        qDebug()<<"Strange channel sizeBytes: should be"<<requiredSize<<"got"<<size;
+        LOG(WARNING)<<"Strange channel sizeBytes: should be"<<requiredSize<<"got"<<size;
 }
 
 void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
-{DDD;
+{DD;
     const auto precision = dataDescription().get("function.precision").toString();
     if (precision == "float")
         r.setFloatingPointPrecision(QDataStream::SinglePrecision);
@@ -626,7 +626,7 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
             if (!isComplex) {
                 const QVector<double> yValues = data->rawYValues(block);
                 if (yValues.isEmpty()) {
-                    qDebug()<<"Отсутствуют данные для записи в канале"<<name();
+                    LOG(ERROR)<<"Отсутствуют данные для записи в канале"<<name();
                     continue;
                 }
 
@@ -646,7 +646,7 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
             else {
                 const auto yValues = data->yValuesComplex(block);
                 if (yValues.isEmpty()) {
-                    qDebug()<<"Отсутствуют данные для записи в канале"<<name();
+                    LOG(ERROR)<<"Отсутствуют данные для записи в канале"<<name();
                     continue;
                 }
                 for (cx_double v: qAsConst(yValues)) {
@@ -681,18 +681,18 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
 }
 
 void Data94Channel::setXStep(double xStep)
-{DDD;
+{DD;
     Channel::setXStep(xStep);
     xAxisBlock.step = float(xStep);
 }
 
 Descriptor::DataType Data94Channel::type() const
-{DDD;
+{DD;
     return Descriptor::DataType(dataDescription().get("function.type").toInt());
 }
 
 void Data94Channel::populate()
-{DDD;
+{DD;
     _data->clear();
     setPopulated(false);
 
@@ -711,7 +711,7 @@ void Data94Channel::populate()
         const quint64 fullDataSize = zAxisBlock.count * blockSize;
 
         if (dataPosition < 0) {
-            qDebug()<<"Поврежденный файл: не удалось найти положение данных в файле";
+            LOG(ERROR)<<"Поврежденный файл: не удалось найти положение данных в файле";
         }
         else {
             // map file into memory
@@ -758,24 +758,24 @@ void Data94Channel::populate()
         }
     }
     else {
-        qDebug()<<"Не удалось открыть файл"<<parent->fileName();
+        LOG(ERROR)<<"Не удалось открыть файл"<<parent->fileName();
     }
 }
 
 
 FileDescriptor *Data94Channel::descriptor() const
-{DDD;
+{DD;
     return parent;
 }
 
 int Data94Channel::index() const
-{DDD;
+{DD;
     if (parent) return parent->channels.indexOf(const_cast<Data94Channel*>(this));
     return -1;
 }
 
 void AxisBlock::read(QDataStream &r)
-{DDD;
+{DD;
     if (r.status() != QDataStream::Ok) return;
 
     r.setFloatingPointPrecision(QDataStream::SinglePrecision);
@@ -795,7 +795,7 @@ void AxisBlock::read(QDataStream &r)
 }
 
 void AxisBlock::write(QDataStream &r)
-{DDD;
+{DD;
     if (r.status() != QDataStream::Ok) return;
 
     r.setFloatingPointPrecision(QDataStream::SinglePrecision);
@@ -813,7 +813,7 @@ void AxisBlock::write(QDataStream &r)
 }
 
 quint32 AxisBlock::size() const
-{DDD;
+{DD;
     if (uniform) return 16;
 
     return 8 + values.size() * 4;

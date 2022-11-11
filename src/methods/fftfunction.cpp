@@ -6,27 +6,27 @@
 
 FftFunction::FftFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DDD;
+{DD;
 
 }
 
 QString FftFunction::name() const
-{DDD;
+{DD;
     return "Spectrum";
 }
 
 QString FftFunction::description() const
-{DDD;
+{DD;
     return "Спектр";
 }
 
 QStringList FftFunction::properties() const
-{DDD;
+{DD;
     return QStringList()<<"output";
 }
 
 QString FftFunction::propertyDescription(const QString &property) const
-{DDD;
+{DD;
     if (property == "output") return "{"
                                      "  \"name\"        : \"output\"   ,"
                                      "  \"type\"        : \"enum\"   ,"
@@ -39,7 +39,7 @@ QString FftFunction::propertyDescription(const QString &property) const
 }
 
 QVariant FftFunction::m_getProperty(const QString &property) const
-{DDD;
+{DD;
     if (property.startsWith("?/")) {
         if (property == "?/dataType") return 128;
         if (property == "?/xName") return "Гц";
@@ -75,7 +75,7 @@ QVariant FftFunction::m_getProperty(const QString &property) const
 }
 
 void FftFunction::m_setProperty(const QString &property, const QVariant &val)
-{DDD;
+{DD;
     if (!property.startsWith(name()+"/")) return;
 
     QString p = property.section("/",1);
@@ -83,12 +83,12 @@ void FftFunction::m_setProperty(const QString &property, const QVariant &val)
 }
 
 QString FftFunction::displayName() const
-{DDD;
+{DD;
     return "Значения";
 }
 
 bool FftFunction::compute(FileDescriptor *file)
-{DDD;
+{DD;
     reset();
 
     if (!m_input) return false;
@@ -155,14 +155,14 @@ bool FftFunction::compute(FileDescriptor *file)
 }
 
 void FftFunction::reset()
-{DDD;
+{DD;
     output.clear();
     portionsCount = 0;
 }
 
 
 DataDescription FftFunction::getFunctionDescription() const
-{
+{DD;
     DataDescription result = AbstractFunction::getFunctionDescription();
 
     switch (map.value("output")) {

@@ -1,21 +1,22 @@
 #include "channelselector.h"
+#include "logging.h"
 
 ChannelSelector::ChannelSelector() = default;
 
 
 ChannelSelector::ChannelSelector(const QString &filter) : m_filter(filter)
-{
+{DD;
     recalculateIndexes();
 }
 
 bool ChannelSelector::includes(int index) const
-{
+{DD;
     if (m_filter.isEmpty() || m_filter == "все") return true; // пустой фильтр - все каналы
     return (m_indexes.contains(index));
 }
 
 void ChannelSelector::setFilter(const QString &filter)
-{
+{DD;
     if (m_filter == filter) return;
 
     m_filter = filter;
@@ -23,20 +24,20 @@ void ChannelSelector::setFilter(const QString &filter)
 }
 
 void ChannelSelector::addIndex(int index)
-{
+{DD;
     m_indexes << index;
     if (max_index < index) max_index = index;
 }
 
 QStringList ChannelSelector::indexes() const
-{
+{DD;
     QStringList result;
     for (int i: qAsConst(m_indexes)) result << QString::number(i+1);
     return result;
 }
 
 void ChannelSelector::recalculateIndexes()
-{
+{DD;
     m_indexes.clear();
     max_index = -1;
     if (m_filter.isEmpty() || m_filter == "все") return;

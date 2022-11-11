@@ -41,7 +41,7 @@ QString uffTypeToMatType(Descriptor::DataType type)
 }
 
 MatlabFile::MatlabFile(const QString &fileName) : FileDescriptor(fileName)
-{DDD;
+{DD;
 
 }
 
@@ -62,7 +62,7 @@ MatlabFile::MatlabFile(const QVector<Channel *> &source, const QString &fileName
 }
 
 MatlabFile::~MatlabFile()
-{DDD;
+{DD;
     if (changed() || dataChanged())
         write();
 
@@ -532,7 +532,7 @@ void MatlabFile::init(const QVector<Channel *> &source)
     //сохраняем файл, попутно подсасывая данные из other
     matfp = Mat_CreateVer(fileName().toLocal8Bit().data(), NULL, MAT_FT_MAT73);
     if (!matfp) {
-        qDebug()<<"Couldn't open file"<<fileName()<<"to write";
+        LOG(ERROR)<<"Couldn't open file"<<fileName()<<"to write";
         return;
     }
 
@@ -744,7 +744,7 @@ MatlabChannel::MatlabChannel(MatlabFile *parent) : Channel(), parent(parent)
 }
 
 MatlabChannel::MatlabChannel(Channel &other, MatlabFile *parent) : Channel(other), parent(parent)
-{DDD;
+{DD;
     parent->channels << this;
     complex = other.data()->yValuesFormat() == DataHolder::YValuesComplex;
     _type = uffTypeToMatType(other.type());

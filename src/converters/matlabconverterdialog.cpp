@@ -9,7 +9,7 @@
 #include "app.h"
 
 MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
-{DDD;
+{DD;
     setWindowTitle("Конвертер matlab файлов");
     thread = 0;
     m_addFiles = false;
@@ -128,7 +128,7 @@ MatlabConverterDialog::MatlabConverterDialog(QWidget *parent) : QDialog(parent)
 }
 
 MatlabConverterDialog::~MatlabConverterDialog()
-{DDD;
+{DD;
     QSize wsize = this->size();
     Settings::setSetting("matlabConverterDialogSize", wsize);
     if (convertor) {
@@ -142,7 +142,7 @@ MatlabConverterDialog::~MatlabConverterDialog()
 }
 
 void MatlabConverterDialog::chooseMatFiles()
-{DDD;
+{DD;
     folder = Settings::getSetting("matlabFolder").toString();
     folder = QFileDialog::getExistingDirectory(this, "Выберите папку с файлами *.mat", folder);
 
@@ -214,7 +214,7 @@ void MatlabConverterDialog::chooseMatFiles()
 }
 
 void MatlabConverterDialog::updateFormat()
-{DDD;
+{DD;
     QString formatString = formatBox->currentText();
     QString suffix = formatString.right(4);
     suffix.chop(1);
@@ -245,13 +245,13 @@ void MatlabConverterDialog::converted(const QString &file)
 }
 
 void MatlabConverterDialog::accept()
-{DDD;
+{DD;
     convertedFiles = convertor->getNewFiles();
     QDialog::accept();
 }
 
 void MatlabConverterDialog::reject()
-{DDD;
+{DD;
     stop();
     QDialog::reject();
 }
@@ -262,7 +262,7 @@ void MatlabConverterDialog::updateProgressIndicator()
 }
 
 QString MatlabConverterDialog::findXmlFile(bool silent) const
-{DDD;
+{DD;
     QString xmlFileName;
 
     if (tree->topLevelItemCount()==0) {
@@ -310,7 +310,7 @@ QFileInfoList MatlabConverterDialog::findMatFiles(const QString &folder)
 }
 
 void MatlabConverterDialog::start()
-{DDD;
+{DD;
     buttonBox->buttons().constFirst()->setDisabled(true);
 
     QStringList toConvert;
@@ -344,14 +344,14 @@ void MatlabConverterDialog::start()
 }
 
 void MatlabConverterDialog::stop()
-{DDD;
+{DD;
     if (thread)
         thread->requestInterruption();
     QDialog::accept();
 }
 
 void MatlabConverterDialog::finalize()
-{DDD;
+{DD;
     buttonBox->buttons().constFirst()->setDisabled(false);
     if (openFolderButton->isChecked()) {
         QDir dir(folder);
@@ -364,7 +364,7 @@ void MatlabConverterDialog::finalize()
 QWidget *ComboBoxItemDelegate::createEditor(QWidget *parent,
                                             const QStyleOptionViewItem &/* option */,
                                             const QModelIndex &/* index */) const
-{DDD;
+{DD;
     QComboBox *editor = new QComboBox(parent);
     if (editor) {
         for (int i=0; i<convertor->xml.size(); ++i)
@@ -375,7 +375,7 @@ QWidget *ComboBoxItemDelegate::createEditor(QWidget *parent,
 
 void ComboBoxItemDelegate::setEditorData(QWidget *editor,
                                          const QModelIndex &index) const
-{DDD;
+{DD;
     if (!index.isValid()) return;
     int row = index.model()->data(index, Qt::UserRole).toInt();
 
@@ -385,7 +385,7 @@ void ComboBoxItemDelegate::setEditorData(QWidget *editor,
 
 void ComboBoxItemDelegate::setModelData(QWidget *editor, QAbstractItemModel *model,
                                         const QModelIndex &index) const
-{DDD;
+{DD;
     if (!index.isValid()) return;
 
     QComboBox *box = qobject_cast<QComboBox*>(editor);

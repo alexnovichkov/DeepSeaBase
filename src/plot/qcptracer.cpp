@@ -64,7 +64,7 @@ void QCPTracer::setGraph(Graph2D *graph)
       mGraph = graph;
       updatePosition();
     } else
-      qDebug() << Q_FUNC_INFO << "graph isn't in same QCustomPlot instance as this item";
+      LOG(DEBUG) << Q_FUNC_INFO << "graph isn't in same QCustomPlot instance as this item";
   } else
   {
     mGraph = nullptr;
@@ -186,7 +186,7 @@ void QCPTracer::updatePosition()
             if (mGraphIndex < 0 || mGraphIndex >= mGraph->data()->size()) return;
             position->setCoords(mGraph->data()->mainKey(mGraphIndex), mGraph->data()->mainValue(mGraphIndex));
         }
-        else qDebug() << Q_FUNC_INFO << "graph not contained in QCustomPlot instance (anymore)";
+        else LOG(DEBUG) << Q_FUNC_INFO << "graph not contained in QCustomPlot instance (anymore)";
     }
 }
 

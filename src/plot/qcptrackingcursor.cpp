@@ -11,7 +11,7 @@
 
 QCPTrackingCursor::QCPTrackingCursor(const QColor &col, Cursor::Style type, Cursor *parent)
     : type(type), parent{parent}
-{DDD;
+{DD;
     impl = parent->plot()->impl();
 
     horizontal = new QCPItemStraightLine(impl);
@@ -59,14 +59,14 @@ QCPTrackingCursor::QCPTrackingCursor(const QColor &col, Cursor::Style type, Curs
 }
 
 void QCPTrackingCursor::moveTo(const double xValue)
-{DDD;
+{DD;
     vertical->point1->setCoords(xValue, 0.0);
     vertical->point2->setCoords(xValue, 10.0);
     impl->layer("overlay")->replot();
 }
 
 void QCPTrackingCursor::moveTo(const QPointF &value)
-{DDD;
+{DD;
     vertical->point1->setCoords(value.x(), 0.0);
     vertical->point2->setCoords(value.x(), 10.0);
 
@@ -76,7 +76,7 @@ void QCPTrackingCursor::moveTo(const QPointF &value)
 }
 
 void QCPTrackingCursor::moveToPos(QPoint pos, QPoint startPos)
-{DDD;
+{DD;
     Q_UNUSED(startPos);
     double xVal = 0.0;
     double yVal = 0.0;
@@ -94,27 +94,27 @@ void QCPTrackingCursor::moveToPos(QPoint pos, QPoint startPos)
 }
 
 void QCPTrackingCursor::moveLeft(int count)
-{DDD;
+{DD;
     if (parent) parent->moveTo(Qt::Key_Left, count, this);
 }
 
 void QCPTrackingCursor::moveRight(int count)
-{DDD;
+{DD;
     if (parent) parent->moveTo(Qt::Key_Right, count, this);
 }
 
 void QCPTrackingCursor::moveUp(int count)
-{DDD;
+{DD;
     if (parent) parent->moveTo(Qt::Key_Up, count, this);
 }
 
 void QCPTrackingCursor::moveDown(int count)
-{DDD;
+{DD;
     if (parent) parent->moveTo(Qt::Key_Down, count, this);
 }
 
 QList<QAction *> QCPTrackingCursor::actions()
-{DDD;
+{DD;
     QList<QAction *> l;
     QAction *
     a = new QAction("Переместить в...", parent);
@@ -170,7 +170,7 @@ QList<QAction *> QCPTrackingCursor::actions()
 }
 
 bool QCPTrackingCursor::underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const
-{DDD;
+{DD;
     Q_UNUSED(point);
 
     int newX = impl->xAxis->coordToPixel(xValue());
@@ -210,7 +210,7 @@ bool QCPTrackingCursor::underMouse(const QPoint &pos, double *distanceX, double 
 }
 
 void QCPTrackingCursor::updateSelection(SelectedPoint point)
-{DDD;
+{DD;
     Q_UNUSED(point);
     auto p = horizontal->pen();
     p.setWidth(selected()?2:1);

@@ -12,7 +12,7 @@
 
 OctaveAlgorithm::OctaveAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DDD;
+{DD;
     channelF = new ChannelFunction(this);
     octaveF = new OctaveFunction(this);
     saver = new SavingFunction(this);
@@ -62,23 +62,23 @@ OctaveAlgorithm::OctaveAlgorithm(QList<FileDescriptor *> &dataBase, QObject *par
 }
 
 QString OctaveAlgorithm::description() const
-{
+{DD;
     return "Расчет полосовых спектров";
 }
 
 QString OctaveAlgorithm::displayName() const
-{
+{DD;
     return "OCTF";
 }
 
 void OctaveAlgorithm::resetChain()
-{
+{DD;
     if (samplingF) samplingF->reset();
     if (averagingF) averagingF->reset();
 }
 
 void OctaveAlgorithm::initChain(FileDescriptor *file)
-{
+{DD;
     Q_UNUSED(file);
     if (averagingF) averagingF->setParameter(averagingF->name()+"/type", 1); //линейное усреднение
     if (samplingF) samplingF->setParameter(samplingF->name()+"/xStep", file->xStep());

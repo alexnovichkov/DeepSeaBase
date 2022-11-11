@@ -6,7 +6,7 @@
 #include <QInputDialog>
 
 ChannelsTable::ChannelsTable(QWidget *parent) : QTableView(parent)
-{DDD;
+{DD;
     setDragEnabled(true);
     setDragDropMode(QAbstractItemView::DragOnly);
 
@@ -37,19 +37,19 @@ ChannelsTable::ChannelsTable(QWidget *parent) : QTableView(parent)
 }
 
 void ChannelsTable::addAction(const QString &name, QAction *action)
-{
+{DD;
     parentActions.insert(name, action);
 }
 
 
 void ChannelsTable::startDrag(Qt::DropActions supportedActions)
-{DDD;
+{DD;
     if (enableDragging) QTableView::startDrag(supportedActions);
 }
 
 
 void ChannelsTable::mousePressEvent(QMouseEvent *event)
-{DDD;
+{DD;
     QModelIndex i = indexAt(event->pos());
     if (!i.isValid())
         enableDragging = false;
@@ -59,7 +59,7 @@ void ChannelsTable::mousePressEvent(QMouseEvent *event)
 }
 
 void ChannelsTable::editYName()
-{DDD;
+{DD;
     if (!selectionModel()->hasSelection()) return;
 
     QString newYName = QInputDialog::getText(this, "Новая единица измерения", "Введите новую единицу");

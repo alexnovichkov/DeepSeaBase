@@ -1,4 +1,5 @@
 #include "qcpflowlegend.h"
+#include "logging.h"
 
 QCPFlowLegend::QCPFlowLegend() :
   mIconTextPadding{}
@@ -191,7 +192,7 @@ void QCPFlowLegend::setSelectedParts(const SelectableParts &selected)
   {
     if (!mSelectedParts.testFlag(spItems) && newSelected.testFlag(spItems)) // attempt to set spItems flag (can't do that)
     {
-      qDebug() << Q_FUNC_INFO << "spItems flag can not be set, it can only be unset with this function";
+      LOG(DEBUG) << Q_FUNC_INFO << "spItems flag can not be set, it can only be unset with this function";
       newSelected &= ~spItems;
     }
     if (mSelectedParts.testFlag(spItems) && !newSelected.testFlag(spItems)) // spItems flag was unset, so clear item selection

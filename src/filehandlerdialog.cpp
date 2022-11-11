@@ -7,7 +7,7 @@
 
 FileHandlerDialog::FileHandlerDialog(FileHandler *fileHandler, QWidget *parent)
     : QDialog(parent), fileHandler(fileHandler)
-{DDD;
+{DD;
     setWindowTitle("Отслеживаемые файлы");
 
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
@@ -50,7 +50,7 @@ FileHandlerDialog::FileHandlerDialog(FileHandler *fileHandler, QWidget *parent)
 }
 
 void FileHandlerDialog::removeTrackedFile()
-{
+{DD;
     auto selection = tree->selectionModel()->selectedRows();
     for (auto b = selection.rbegin(); b!=selection.rend(); ++b) {
         model->untrack((*b).row());
@@ -60,24 +60,24 @@ void FileHandlerDialog::removeTrackedFile()
 
 HandlerModel::HandlerModel(FileHandler *fileHandler, QObject *parent)
     : QAbstractTableModel(parent), fileHandler(fileHandler)
-{DDD;
+{DD;
 
 }
 
 int HandlerModel::rowCount(const QModelIndex &parent) const
-{DDD;
+{DD;
     Q_UNUSED(parent);
     return fileHandler->count();
 }
 
 int HandlerModel::columnCount(const QModelIndex &parent) const
-{DDD;
+{DD;
     Q_UNUSED(parent);
     return 2;
 }
 
 QVariant HandlerModel::data(const QModelIndex &index, int role) const
-{DDD;
+{DD;
     if (index.isValid()) {
         auto item = fileHandler->item(index.row());
         switch (role) {
@@ -113,7 +113,7 @@ QVariant HandlerModel::data(const QModelIndex &index, int role) const
 }
 
 QVariant HandlerModel::headerData(int section, Qt::Orientation orientation, int role) const
-{DDD;
+{DD;
     if (orientation == Qt::Horizontal && role==Qt::DisplayRole) {
         switch (section) {
             case 0: return "Путь";
@@ -124,7 +124,7 @@ QVariant HandlerModel::headerData(int section, Qt::Orientation orientation, int 
 }
 
 void HandlerModel::untrack(int index)
-{
+{DD;
     beginResetModel();
     fileHandler->untrack(fileHandler->item(index));
     endResetModel();

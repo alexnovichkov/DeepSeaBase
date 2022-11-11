@@ -1,4 +1,5 @@
 #include "qcpitemrichtext.h"
+#include "logging.h"
 
 class QCPRichTextDocument : public QTextDocument
 {
@@ -156,6 +157,6 @@ QPointF QCPItemRichText::anchorPixelPosition(int anchorId) const
       case aiLeft:        return (rectPoly.at(3)+rectPoly.at(0))*0.5;
     }
 
-    qDebug() << Q_FUNC_INFO << "invalid anchorId" << anchorId;
+    LOG(DEBUG) << Q_FUNC_INFO << "invalid anchorId" << anchorId;
     return {};
 }

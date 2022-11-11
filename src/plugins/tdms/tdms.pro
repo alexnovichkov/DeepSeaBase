@@ -43,6 +43,18 @@ equals(QT_ARCH,"i386") {
   LIBS *= E:/My/programming/sources/TDMS/tdm_dev/dev/lib/32-bit/msvc/nilibddc.lib
 }
 
+# easylogging++
+SOURCES += $$PWD/../../../3rdParty/easylogging/easylogging++.cc
+HEADERS += $$PWD/../../../3rdParty/easylogging/easylogging++.h
+DEFINES += ELPP_QT_LOGGING    \
+          ELPP_FEATURE_ALL \
+          ELPP_STL_LOGGING   \
+          ELPP_STRICT_SIZE_CHECK \
+          ELPP_FEATURE_CRASH_LOG \
+          ELPP_THREAD_SAFE \
+          ELPP_NO_DEFAULT_LOG_FILE \
+          ELPP_FEATURE_PERFORMANCE_TRACKING
+INCLUDEPATH *= $$PWD/../../../3rdParty/easylogging
 
 INCLUDEPATH *= E:/My/programming/sources/boost_1_73_0
 

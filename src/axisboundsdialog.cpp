@@ -5,7 +5,7 @@
 
 AxisBoundsDialog::AxisBoundsDialog(double leftBorder, double rightBorder, Enums::AxisType axis, QWidget *parent) : QDialog(parent),
     _leftBorder(leftBorder), _rightBorder(rightBorder), _axis(axis), _autoscale(false)
-{DDD;
+{DD;
     setWindowTitle("Установка шкалы");
 
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);

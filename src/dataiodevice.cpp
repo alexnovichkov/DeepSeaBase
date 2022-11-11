@@ -5,13 +5,13 @@
 
 DataIODevice::DataIODevice(Channel *channel, QObject *parent)
     : QIODevice(parent), m_channel(channel)
-{DDD;
+{DD;
 
 }
 
 
 bool DataIODevice::isSequential() const
-{DDD;
+{DD;
     return false;
 }
 
@@ -21,7 +21,7 @@ double DataIODevice::positionSec() const
 }
 
 bool DataIODevice::seek(qint64 pos)
-{DDD;
+{DD;
     QIODevice::seek(pos);
     if (pos < 0) return false;
 
@@ -31,40 +31,40 @@ bool DataIODevice::seek(qint64 pos)
 }
 
 bool DataIODevice::atEnd() const
-{DDD;
+{DD;
     return (m_pos >= m_channel->data()->samplesCount()-1);
 }
 
 bool DataIODevice::reset()
-{DDD;
+{DD;
     QIODevice::reset();
     m_pos = 0;
     return true;
 }
 
 bool DataIODevice::canReadLine() const
-{DDD;
+{DD;
     return false || QIODevice::canReadLine();
 }
 
 qint64 DataIODevice::size() const
-{DDD;
+{DD;
     return m_channel->data()->samplesCount() * sizeof(qint16);
 }
 
 qint64 DataIODevice::readData(char *data, qint64 maxlen)
-{DDD;
+{DD;
     //заполняем нулями
     memset(data, 0, maxlen);
 
     //что-то пошло не так в seek
     if (m_pos < 0) {
-//        qDebug()<<"why m_pos < 0?";
+//        LOG(ERROR)<<"why m_pos < 0?";
         return 0;
     }
 
 //    if (m_pos *2 != pos()) {
-//        qDebug()<<"position mismatch: m_pos"<<m_pos<<"pos"<<pos();
+//        LOG(ERROR)<<"position mismatch: m_pos"<<m_pos<<"pos"<<pos();
 //    }
 
     //получаем сырые данные, количество отсчетов равно буферу / sizeof(int16)
@@ -82,7 +82,7 @@ qint64 DataIODevice::readData(char *data, qint64 maxlen)
 }
 
 qint64 DataIODevice::writeData(const char *data, qint64 len)
-{DDD;
+{DD;
     Q_UNUSED(data);
     return len;
 }

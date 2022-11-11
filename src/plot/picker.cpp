@@ -13,12 +13,12 @@ QDebug operator<<(QDebug deb, const Selected &o)
 }
 
 Picker::Picker(Plot *plot) : plot(plot)
-{DDD;
+{DD;
 //    mode = ModeNone;
 }
 
 Selected Picker::findObject(QMouseEvent *e)
-{DDD;
+{DD;
     Selected selected {nullptr, SelectedPoint()};
 
     if (e->modifiers() == Qt::NoModifier || e->modifiers() == Qt::ControlModifier) {
@@ -44,7 +44,7 @@ void Picker::deselect()
 }
 
 void Picker::procKeyboardEvent(int key)
-{DDD;
+{DD;
     if (!enabled || !currentSelected.object) return;
 
     switch (key) {
@@ -84,7 +84,7 @@ void Picker::procKeyboardEvent(int key)
 }
 
 void Picker::showContextMenu(QMouseEvent *e)
-{DDD;
+{DD;
     if (!currentSelected.object) return;
 
     QMenu *m = new QMenu();

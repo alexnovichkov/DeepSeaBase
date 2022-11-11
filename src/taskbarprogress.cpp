@@ -7,7 +7,7 @@
 
 TaskBarProgress::TaskBarProgress(QWidget *window, QObject *parent) : QObject(parent),
     window(window)
-{DDD;
+{DD;
     QWinTaskbarButton *button = new QWinTaskbarButton(window);
     button->setWindow(window->windowHandle());
 
@@ -17,26 +17,26 @@ TaskBarProgress::TaskBarProgress(QWidget *window, QObject *parent) : QObject(par
 
 
 void TaskBarProgress::setRange(int min, int max)
-{DDD;
+{DD;
     range = qMakePair(min, max);
     winProgress->setRange(min, max);
 }
 
 void TaskBarProgress::setValue(int value)
-{DDD;
+{DD;
     this->value = value;
     winProgress->setValue(value);
 }
 
 void TaskBarProgress::reset()
-{DDD;
+{DD;
     winProgress->reset();
     winProgress->setVisible(false);
     this->deleteLater();
 }
 
 void TaskBarProgress::finalize()
-{DDD;
+{DD;
     //QTimer::singleShot(500, this, SLOT(reset()));
     reset();
 }

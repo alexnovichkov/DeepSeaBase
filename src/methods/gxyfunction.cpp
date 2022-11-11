@@ -6,33 +6,33 @@
 
 GxyFunction::GxyFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DDD;
+{DD;
 
 }
 
 QString GxyFunction::name() const
-{DDD;
+{DD;
     return "GXY";
 }
 
 QString GxyFunction::description() const
-{DDD;
+{DD;
     return "Взаимный спектр";
 }
 
 QStringList GxyFunction::properties() const
-{DDD;
+{DD;
     return QStringList();
 }
 
 QString GxyFunction::propertyDescription(const QString &property) const
-{DDD;
+{DD;
     Q_UNUSED(property);
     return QString();
 }
 
 QVariant GxyFunction::m_getProperty(const QString &property) const
-{DDD;
+{DD;
     if (property.startsWith("?/")) {
         if (property == "?/dataType") return 131; // отсутствует в DeepSea, APS
         if (property == "?/xName") return "Гц";
@@ -63,7 +63,7 @@ QVariant GxyFunction::m_getProperty(const QString &property) const
 }
 
 DataDescription GxyFunction::getFunctionDescription() const
-{
+{DD;
     DataDescription result = AbstractFunction::getFunctionDescription();
 
     result.put("function.name", "GXY");
@@ -72,29 +72,29 @@ DataDescription GxyFunction::getFunctionDescription() const
 }
 
 void GxyFunction::m_setProperty(const QString &property, const QVariant &val)
-{DDD;
+{DD;
     Q_UNUSED(property);
     Q_UNUSED(val);
 }
 
 QString GxyFunction::displayName() const
-{DDD;
+{DD;
     return "Автоспектр";
 }
 
 bool GxyFunction::compute(FileDescriptor *file)
-{DDD;
+{DD;
     reset();
 
     if (!m_input || !m_input2) return false;
 
     if (!m_input->compute(file)) {
-        qDebug()<<"Gxy can't get data from input1";
+        LOG(ERROR)<<"Gxy can't get data from input1";
         return false;
     }
     if (m_input != m_input2) { //no need to compute the second time, as inputs are the same
         if (!m_input2->compute(file)) {
-            qDebug()<<"Gxy can't get data from input2";
+            LOG(ERROR)<<"Gxy can't get data from input2";
             return false;
         }
     }
@@ -102,12 +102,12 @@ bool GxyFunction::compute(FileDescriptor *file)
     //data should contain complex spectrum
     QVector<double> data1 = m_input->getData("input");
     if (data1.isEmpty()) {
-        qDebug()<<"Data for Gxy from input1 is empty";
+        LOG(ERROR)<<"Data for Gxy from input1 is empty";
         return false;
     }
     QVector<double> data2 = m_input2->getData("input");
     if (data2.isEmpty()) {
-        qDebug()<<"Data for Gxy from input2 is empty";
+        LOG(ERROR)<<"Data for Gxy from input2 is empty";
         return false;
     }
     if (data1.size() != data2.size()) return false;
@@ -126,6 +126,6 @@ bool GxyFunction::compute(FileDescriptor *file)
 }
 
 void GxyFunction::reset()
-{DDD;
+{DD;
     output.clear();
 }

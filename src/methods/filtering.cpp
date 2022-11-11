@@ -5,24 +5,24 @@
 
 Filtering::Filtering() : blockSize(0), type(NoFiltering), approximation(Butterworth), f(0)
 
-{
+{DD;
 
 }
 
 Filtering::Filtering(int blockSize, int type, int approximation)
     : blockSize(blockSize), type(type), approximation(approximation)
       ,f(0)
-{
+{DD;
     create();
 }
 
 Filtering::~Filtering()
-{
+{DD;
     delete f;
 }
 
 double Filtering::getParameter(int paramType) const
-{
+{DD;
     if (!f) return 0.0;
     int index = f->findParamId(paramType);
     if (index != -1) return f->getParam(index);
@@ -30,7 +30,7 @@ double Filtering::getParameter(int paramType) const
 }
 
 void Filtering::setParameter(int paramType, double value)
-{
+{DD;
     if (!f) return;
 
     int index = f->findParamId(paramType);
@@ -39,7 +39,7 @@ void Filtering::setParameter(int paramType, double value)
 }
 
 void Filtering::setParameters(const QVector<double> &params)
-{
+{DD;
     Dsp::Params p = f->getDefaultParams();
     for (int i=0; i<params.size(); ++i) {
         int index = f->findParamId(i);
@@ -49,12 +49,12 @@ void Filtering::setParameters(const QVector<double> &params)
 }
 
 void Filtering::apply(double *data)
-{
+{DD;
     if (f) f->process(blockSize, &data);
 }
 
 QVector<double> Filtering::filter(const QVector<double> &data)
-{
+{DD;
     if (!f) return data;
 
     QVector<double> x = data;
@@ -64,7 +64,7 @@ QVector<double> Filtering::filter(const QVector<double> &data)
 }
 
 void Filtering::create()
-{
+{DD;
     delete f;
     f = 0;
 
@@ -197,7 +197,7 @@ void Filtering::create()
 }
 
 void Filtering::reset()
-{
+{DD;
     delete f;
     f = 0;
     blockSize = 0;
@@ -206,31 +206,31 @@ void Filtering::reset()
 }
 
 int Filtering::getApproximation() const
-{
+{DD;
     return approximation;
 }
 
 void Filtering::setApproximation(int value)
-{
+{DD;
     approximation = value;
 }
 
 int Filtering::getType() const
-{
+{DD;
     return type;
 }
 
 void Filtering::setType(int value)
-{
+{DD;
     type = value;
 }
 
 int Filtering::getBlockSize() const
-{
+{DD;
     return blockSize;
 }
 
 void Filtering::setBlockSize(int value)
-{
+{DD;
     blockSize = value;
 }

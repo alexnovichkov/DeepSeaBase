@@ -7,7 +7,7 @@
 
 ColorEditDialog::ColorEditDialog(QWidget *parent) :
     QDialog(parent)
-{DDD;
+{DD;
     setWindowTitle("Редактор цветов графиков");
 
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);

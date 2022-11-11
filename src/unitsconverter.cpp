@@ -1,7 +1,9 @@
 #include "unitsconverter.h"
 
+#include "logging.h"
+
 PhysicalUnits::Units::Type PhysicalUnits::Units::unitType(QString unit)
-{
+{DD;
     unit = unit.toLower();
     if (unit == "hz" || unit == "гц" || unit == "1/s" || unit == "1/с") return Type::Frequency;
     if (unit == "s" || unit == "с") return Type::Time;
@@ -29,22 +31,22 @@ PhysicalUnits::Units::Type PhysicalUnits::Units::unitType(QString unit)
 }
 
 bool PhysicalUnits::Units::unitsAreSame(const QString &u1, const QString &u2)
-{
+{DD;
     return unitType(u1) == unitType(u2);
 }
 
 QString PhysicalUnits::Units::unitDescription(QString unit)
-{
+{DD;
     return unitDescription(unitType(unit));
 }
 
 double PhysicalUnits::Units::logref(const QString &name)
-{
+{DD;
     return logref(unitType(name));
 }
 
 double PhysicalUnits::Units::logref(PhysicalUnits::Units::Type type)
-{
+{DD;
     switch (type) {
         case Type::Stress: return 2.0e-5;
         case Type::Strain: return 1.0;
@@ -71,7 +73,7 @@ double PhysicalUnits::Units::logref(PhysicalUnits::Units::Type type)
 }
 
 double PhysicalUnits::Units::convertFactor(const QString &from)
-{
+{DD;
     if (from.compare("g", Qt::CaseInsensitive)) return 9.81;
     if (from.compare("n", Qt::CaseInsensitive)) return 1.0;
 
@@ -79,7 +81,7 @@ double PhysicalUnits::Units::convertFactor(const QString &from)
 }
 
 QString PhysicalUnits::Units::unit(PhysicalUnits::Units::Type type)
-{
+{DD;
     switch (type) {
         case Type::Stress:
         case Type::Pressure: return "Па";
@@ -106,7 +108,7 @@ QString PhysicalUnits::Units::unit(PhysicalUnits::Units::Type type)
 }
 
 QString PhysicalUnits::Units::unitDescription(PhysicalUnits::Units::Type type)
-{
+{DD;
     switch (type) {
         case Type::Unknown: return "Unknown";
         case Type::General: return "General";

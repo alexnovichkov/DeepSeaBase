@@ -10,7 +10,7 @@
 #include "logging.h"
 
 CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) : QDialog(parent), plot(plot)
-{
+{DD;
     setWindowFlags(Qt::Tool /*| Qt::WindowTitleHint*/);
     setWindowTitle("Поправки");
 
@@ -74,18 +74,18 @@ CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) : QDialog(parent
 }
 
 CorrectionDialog::~CorrectionDialog()
-{
+{DD;
     Settings::setSetting("correctionDialogSize", size());
 }
 
 //void CorrectionDialog::closeEvent(QCloseEvent *event)
-//{DDD;
+//{DD;
 
 //    QWidget::closeEvent(event);
 //}
 
 void CorrectionDialog::setPlot(Plot *plot)
-{
+{DD;
     this->plot = plot;
     auto m = table->selectionModel();
     table->setModel(plot->model());
@@ -93,7 +93,7 @@ void CorrectionDialog::setPlot(Plot *plot)
 }
 
 void CorrectionDialog::setFiles(const QList<FileDescriptor *> &descriptors)
-{
+{DD;
     files = descriptors;
     // удаляем из списка файлов файлы, графики которых построены на экране
     // чтобы эти файлы не мешались
@@ -105,7 +105,7 @@ void CorrectionDialog::setFiles(const QList<FileDescriptor *> &descriptors)
 }
 
 void CorrectionDialog::correct()
-{DDD;
+{DD;
     bool ok;
     QString s = edit->text();
     double correctionValue = s.toDouble(&ok);
@@ -157,7 +157,7 @@ void CorrectionDialog::correct()
 }
 
 void CorrectionDialog::makeCorrectionConstant(Channel *channel)
-{DDD;
+{DD;
     if (!channel) return;
 
     channel->data()->makeCorrectionConstant();
@@ -192,7 +192,7 @@ void CorrectionDialog::makeCorrectionConstant(Channel *channel)
 }
 
 void CorrectionDialog::accept()
-{DDD;
+{DD;
     QList<FileDescriptor*> list;
     // сперва графики
     for (int i=0; i<plot->curvesCount(); ++i) {
@@ -230,7 +230,7 @@ void CorrectionDialog::accept()
 }
 
 void CorrectionDialog::reject()
-{DDD;
+{DD;
     for (int i=0; i<plot->curvesCount(); ++i) {
         plot->model()->curve(i)->channel->data()->removeCorrection();
 

@@ -1,4 +1,5 @@
 #include "fields.h"
+#include "logging.h"
 
 QDataStream &operator>>(QDataStream &stream, FieldDescription &field)
 {
@@ -18,6 +19,7 @@ QDataStream &operator<<(QDataStream &stream, const FieldDescription &field)
 
 void setType151(QVector<FieldDescription> &type151)
 {//Uff header
+    DDD;
     type151  = { // header
        {FTDelimiter, "-1"}, {FTEmpty, ""}, //0-1
        {FTInteger6, 151}, {FTEmpty, ""}, //2-3
@@ -34,6 +36,7 @@ void setType151(QVector<FieldDescription> &type151)
 
 void setType164(QVector<FieldDescription> &type164)
 {//Uff units
+    DDD;
     type164 = {
         {FTDelimiter, ""}, {FTEmpty, ""}, //0-1
         {FTInteger6, 164}, {FTEmpty, ""}, //2-3
@@ -48,6 +51,7 @@ void setType164(QVector<FieldDescription> &type164)
 
 void setType1858(QVector<FieldDescription> &type1858)
 {//Function header
+    DDD;
     type1858  = {
         {FTDelimiter, ""}, {FTEmpty, ""}, //0-1
         {FTInteger6, 1858}, {FTEmpty, ""}, //2-3
@@ -89,6 +93,7 @@ void setType1858(QVector<FieldDescription> &type1858)
 
 void setType58(QVector<FieldDescription> &type58)
 {//Function description
+    DDD;
     type58 = {
         {FTDelimiter,""}, {FTEmpty, ""}, //0-1
         {FTInteger6, 58}, {FTEmpty, ""}, //2-3

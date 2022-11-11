@@ -81,17 +81,17 @@
 
 EditMenuAction::EditMenuAction(int section, const QString &filter, const QString &sectionText, QObject *parent)
     : QWidgetAction(parent), section(section), filter(filter), sectionText(sectionText)
-{DDD;
+{DD;
 
 }
 
 void EditMenuAction::onTextChanged(const QString &text)
-{DDD;
+{DD;
     emit filterChanged(text,section);
 }
 
 QWidget *EditMenuAction::createWidget(QWidget *parent)
-{DDD;
+{DD;
     QLineEdit *edit = new QLineEdit(parent);
     edit->setText(filter);
     edit->setClearButtonEnabled(true);
@@ -103,13 +103,13 @@ QWidget *EditMenuAction::createWidget(QWidget *parent)
 
 FilteredHeaderView::FilteredHeaderView(Qt::Orientation orientation, QWidget *parent)
     : QHeaderView(orientation, parent)
-{DDD;
+{DD;
     setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
     setSortIndicatorShown(false);
 }
 
 void FilteredHeaderView::clear()
-{DDD;
+{DD;
     for (int i=0; i<model()->columnCount(); ++i)
         emit filterChanged("",i);
 }
@@ -118,7 +118,7 @@ void FilteredHeaderView::clear()
 
 
 void FilteredHeaderView::paintEvent(QPaintEvent *event)
-{DDD;
+{DD;
     QHeaderView::paintEvent(event);
     QRect rect = event->rect();
 
@@ -153,7 +153,7 @@ void FilteredHeaderView::paintEvent(QPaintEvent *event)
 
 
 void FilteredHeaderView::mousePressEvent(QMouseEvent *event)
-{DDD;
+{DD;
     QRect geom = geometry();
     int w = geom.height()+12;
     int padding = 2;

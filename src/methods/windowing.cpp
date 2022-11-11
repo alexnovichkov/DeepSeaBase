@@ -1,8 +1,9 @@
 #include "windowing.h"
 #include "algorithms.h"
+#include "logging.h"
 
 QString Windowing::windowDescription(WindowType windowType)
-{
+{DD;
     switch (windowType) {
         case WindowType::Square:          return "Прямоуг.";
         case WindowType::Triangular:      return "Треугольное";
@@ -24,7 +25,7 @@ QString Windowing::windowDescription(WindowType windowType)
 }
 
 QStringList Windowing::windowDescriptions()
-{
+{DD;
     return {"Прямоуг.",
         "Треугольное",
         "Хеннинга",
@@ -44,7 +45,7 @@ QStringList Windowing::windowDescriptions()
 }
 
 QString Windowing::windowDescriptionEng(WindowType windowType)
-{
+{DD;
     switch (windowType) {
         case WindowType::Square:          return "no";
         case WindowType::Triangular:      return "triangular";
@@ -66,7 +67,7 @@ QString Windowing::windowDescriptionEng(WindowType windowType)
 }
 
 bool Windowing::windowAcceptsParameter(WindowType windowType)
-{
+{DD;
     switch (windowType) {
         case WindowType::Square:          return false;
         case WindowType::Triangular:      return false;
@@ -88,7 +89,7 @@ bool Windowing::windowAcceptsParameter(WindowType windowType)
 }
 
 QString Windowing::correctionDescription(Windowing::CorrectionType type)
-{
+{DD;
     switch (type) {
         case CorrectionType::NoCorrection: return "без коррекции";
         case CorrectionType::Amplitude: return "амплитудная";
@@ -98,7 +99,7 @@ QString Windowing::correctionDescription(Windowing::CorrectionType type)
 }
 
 QString Windowing::correctionDescriptionEng(Windowing::CorrectionType type)
-{
+{DD;
     switch (type) {
         case CorrectionType::NoCorrection: return "no correction";
         case CorrectionType::Amplitude: return "amplitude";
@@ -109,24 +110,24 @@ QString Windowing::correctionDescriptionEng(Windowing::CorrectionType type)
 
 Windowing::Windowing() :
     bufferSize(0), param(50.0)
-{
+{DD;
 
 }
 
 Windowing::Windowing(int bufferSize, WindowType windowType, double parameter) :
     bufferSize(bufferSize), windowType(windowType), param(parameter)
-{
+{DD;
     init();
 }
 
 void Windowing::setParameter(double parameter)
-{
+{DD;
     param = parameter;
     init();
 }
 
 void Windowing::init()
-{
+{DD;
     w.clear();
     w = QVector<double>(bufferSize, 1.0);
     correction = 1.0;
@@ -154,14 +155,14 @@ void Windowing::init()
 }
 
 void Windowing::square()
-{
+{DD;
     // do nothing: window is square by default
 //    for (int i=0; i<w.size(); ++i)
 //        w[i] = 1.0;
 }
 
 void Windowing::hann()
-{
+{DD;
     switch (correctionType) {
         case CorrectionType::NoCorrection: correction = 1.0; break;
         case CorrectionType::Amplitude: correction = 2.0; break;
@@ -176,7 +177,7 @@ void Windowing::hann()
 }
 
 void Windowing::triangular()
-{
+{DD;
     const int N = w.size();
 
     switch (correctionType) {
@@ -192,7 +193,7 @@ void Windowing::triangular()
 }
 
 void Windowing::bartlett()
-{
+{DD;
     const int N = w.size();
     switch (correctionType) {
         case CorrectionType::NoCorrection: correction = 1.0; break;
@@ -207,7 +208,7 @@ void Windowing::bartlett()
 }
 
 void Windowing::hamming()
-{
+{DD;
     const int N = w.size();
     switch (correctionType) {
         case CorrectionType::NoCorrection: correction = 1.0; break;
@@ -223,7 +224,7 @@ void Windowing::hamming()
 }
 
 void Windowing::nuttall()
-{//
+{DD;
     const int N = w.size();
     switch (correctionType) {
         case CorrectionType::NoCorrection: correction = 1.0; break;
@@ -241,7 +242,7 @@ void Windowing::nuttall()
 }
 
 void Windowing::blackman()
-{
+{DD;
     const int N = w.size();
     switch (correctionType) {
         case CorrectionType::NoCorrection: correction = 1.0; break;
@@ -258,7 +259,7 @@ void Windowing::blackman()
 }
 
 void Windowing::blackmanNuttall()
-{
+{DD;
     const int N = w.size();
     switch (correctionType) {
         case CorrectionType::NoCorrection: correction = 1.0; break;
@@ -276,7 +277,7 @@ void Windowing::blackmanNuttall()
 }
 
 void Windowing::blackmanHarris()
-{
+{DD;
     const int N = w.size();
     switch (correctionType) {
         case CorrectionType::NoCorrection: correction = 1.0; break;
@@ -295,7 +296,7 @@ void Windowing::blackmanHarris()
 }
 
 void Windowing::flattop()
-{
+{DD;
     const int N = w.size();
     switch (correctionType) {
         case CorrectionType::NoCorrection: correction = 1.0; break;
@@ -316,7 +317,7 @@ void Windowing::flattop()
 }
 
 void Windowing::gauss()
-{
+{DD;
     const int N = w.size();
     switch (correctionType) {
         case CorrectionType::NoCorrection: correction = 1.0; break;
@@ -333,7 +334,7 @@ void Windowing::gauss()
 }
 
 void Windowing::force()
-{
+{DD;
     //коррекция не используется
     if (param > 100.0) param = 100.0;
     if (param < 0.0) param = 0.0;
@@ -346,14 +347,14 @@ void Windowing::force()
 }
 
 void Windowing::welch()
-{
+{DD;
     const int N = w.size();
 
     for (int i=0; i<N; ++i) w[i] = 1 - qPow(2.0*(i-N*0.5)/N, 2.0);
 }
 
 void Windowing::tukey()
-{
+{DD;
     const int N = w.size();
     if (param > 100.0) param = 100.0;
     if (param < 0.0) param = 0.0;
@@ -373,7 +374,7 @@ void Windowing::tukey()
 /*
  * Старый симметричный вариант
 void Windowing::exponential()
-{
+{DD;
     //имеет график, симметричный относительно N/2
     const int N = w.size();
 //    if (param > 100.0) param = 100.0;
@@ -388,7 +389,7 @@ void Windowing::exponential()
 }*/
 
 void Windowing::exponential()
-{
+{DD;
     //коррекция не используется
 
     const int N = w.size();
@@ -402,7 +403,8 @@ void Windowing::exponential()
     }
 }
 
-void Windowing::normalize() {
+void Windowing::normalize()
+{DD;
     const int size = w.size();
     double sum = 0.0;
     for (int i=0; i<size; i++) {
@@ -423,36 +425,36 @@ void Windowing::normalize() {
 }
 
 int Windowing::getBufferSize() const
-{
+{DD;
     return bufferSize;
 }
 
 void Windowing::setBufferSize(int value)
-{
+{DD;
     bufferSize = value;
     init();
 }
 
 Windowing::WindowType Windowing::getWindowType() const
-{
+{DD;
     return windowType;
 }
 
 void Windowing::setWindowType(WindowType value)
-{
+{DD;
     windowType = value;
     init();
 }
 
 void Windowing::setCorrectionType(Windowing::CorrectionType correctionType)
-{
+{DD;
     this->correctionType = correctionType;
     init();
 }
 
 
 void Windowing::applyTo(QVector<double> &values, int blockSize)
-{
+{DD;
     //blockSize == 0 если применяем окно порциями, тогда values.size даст blockSize
     //если blockSize > 0, то values содержат все отсчеты канала
 
@@ -477,7 +479,7 @@ void Windowing::applyTo(QVector<double> &values, int blockSize)
 }
 
 //double Windowing::amplitudeCorrection() const
-//{
+//{DD;
 //    double result = 0.0;
 //    for (double x: w) result += std::abs(x);
 //    if (w.size()>0) result /= w.size();
@@ -485,7 +487,7 @@ void Windowing::applyTo(QVector<double> &values, int blockSize)
 //}
 
 //double Windowing::energyCorrection() const
-//{
+//{DD;
 //    double result = 0.0;
 //    for (double x: w) result += x*x;
 

@@ -1,6 +1,7 @@
 #include "app.h"
 #include <QFile>
 #include <QSettings>
+#include <QStandardPaths>
 #include "fileformats/filedescriptor.h"
 #include "fileformats/formatfactory.h"
 #include "colorselector.h"
@@ -8,28 +9,35 @@
 #include "settings.h"
 
 Application::Application(int &argc, char **argv) : QApplication(argc, argv)
-{DDD;
+{DD;
     QVariantList list = Settings::getSetting("colors").toList();
-    m_colors = new ColorSelector(list);
-    formatFactory = new FormatFactory();
+    m_colors = std::make_unique<ColorSelector>(list);
+    formatFactory = std::make_unique<FormatFactory>();
+    auto loc = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation)+"/DeepSea Database/";
+    if (!QDir().exists(loc)) QDir().mkdir(loc);
+    QFile *f = new QFile(loc+"log.txt");
+    f->open(QFile::Append | QFile::Text);
+    logStream.setDevice(f);
+    logStream << QString(80, QChar('=')) << endl<<"      " << QDateTime::currentDateTime().toString() << endl;
+    logStream << QString(80, QChar('=')) << endl;
 }
 
 Application::~Application()
-{DDD;
+{DD;
     for (auto f: qAsConst(files)) f.reset();
 
     Settings::setSetting("colors", m_colors->getColors());
-    delete m_colors;
-    delete formatFactory;
+    logStream.device()->close();
+//    delete logStream.device();
 }
 
 F Application::find(const QString &name) const
-{DDD;
+{DD;
     return files.value(name);
 }
 
 F Application::addFile(const QString &name, bool *isNew)
-{DDD;
+{DD;
     if (files.contains(name)) {
         if (isNew) *isNew = false;
         return files.value(name);
@@ -44,7 +52,7 @@ F Application::addFile(const QString &name, bool *isNew)
 }
 
 F Application::addFile(const FileDescriptor &source, const QString &name, const QVector<int> &indexes, bool *isNew)
-{DDD;
+{DD;
     if (files.contains(name)) {
         if (isNew) *isNew = false;
         return files.value(name);
@@ -59,7 +67,7 @@ F Application::addFile(const FileDescriptor &source, const QString &name, const 
 }
 
 F Application::addFile(const QVector<Channel*> &source, const QString &name, bool *isNew)
-{DDD;
+{DD;
     if (files.contains(name)) {
         if (isNew) *isNew = false;
         return files.value(name);
@@ -74,7 +82,7 @@ F Application::addFile(const QVector<Channel*> &source, const QString &name, boo
 }
 
 void Application::maybeDelFile(const QString &name)
-{DDD;
+{DD;
     F& f = files[name];
     if (f.use_count()<2) {
         f.reset();
@@ -83,7 +91,7 @@ void Application::maybeDelFile(const QString &name)
 }
 
 void Application::loadPlugins()
-{DDD;
+{DD;
     QDir pluginsDir = QDir(qApp->applicationDirPath()+"/plugins");
     const QFileInfoList potentialPlugins = pluginsDir.entryInfoList(QDir::Files);
     for (const QFileInfo &fileName: potentialPlugins) {

@@ -1,7 +1,8 @@
 #include "weighting.h"
+#include "logging.h"
 
 Weighting::Type Weighting::fromString(QString s)
-{
+{DD;
     s = s.toLower();
     if (s == "a") return Type::A;
     if (s == "b") return Type::B;
@@ -12,7 +13,7 @@ Weighting::Type Weighting::fromString(QString s)
 
 
 QString Weighting::toString(Weighting::Type type)
-{
+{DD;
     switch (type) {
         case Type::No: return "no";
         case Type::A: return "A";

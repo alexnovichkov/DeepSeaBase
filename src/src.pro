@@ -399,6 +399,20 @@ SOURCES += \
 HEADERS += \
   $$PWD/../3rdParty/juce/juce_AudioChannelSet.h
 
+# easylogging++
+SOURCES += \
+  $$PWD/../3rdParty/easylogging/easylogging++.cc
+HEADERS += \
+  $$PWD/../3rdParty/easylogging/easylogging++.h
+DEFINES += ELPP_QT_LOGGING    \
+          ELPP_FEATURE_ALL \
+          ELPP_STL_LOGGING   \
+          ELPP_STRICT_SIZE_CHECK \
+          ELPP_FEATURE_CRASH_LOG \
+          ELPP_THREAD_SAFE \
+          ELPP_NO_DEFAULT_LOG_FILE \
+          ELPP_FEATURE_PERFORMANCE_TRACKING
+INCLUDEPATH *= $$PWD/../3rdParty/easylogging
 
 RESOURCES *= src.qrc
 
@@ -412,6 +426,7 @@ CONFIG(release, debug|release):{
 INCLUDEPATH *= $$PWD $$PWD/.. $$PWD/../3rdParty/qtpropertybrowser $$PWD/../3rdParty/DspFilters $$PWD/../3rdParty/juce
 INCLUDEPATH *= E:/My/programming/sources/strtk
 INCLUDEPATH *= E:/My/programming/sources/boost_1_73_0
+
 
 #PRECOMPILED_HEADER = strtk_.hpp
 

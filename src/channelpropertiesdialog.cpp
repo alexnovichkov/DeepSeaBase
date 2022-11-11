@@ -6,7 +6,7 @@
 
 ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &channels, QWidget *parent)
     : QDialog(parent), channels(channels)
-{DDD;
+{DD;
     setWindowTitle("Свойства каналов");
 
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Close);
@@ -166,14 +166,14 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
 }
 
 void ChannelPropertiesDialog::fillFiles()
-{DDD;
+{DD;
     for(auto f: channels) {
         new QTreeWidgetItem(channelsTable, {f->name()});
     }
 }
 
 void ChannelPropertiesDialog::currentChannelChanged(QTreeWidgetItem *cur, QTreeWidgetItem *previous)
-{DDD;
+{DD;
     Q_UNUSED(previous);
 //    static QStringList dataPropertiesNames {"Число отсчетов", "Число блоков", "Частота дискретизации",
 //                                        "Ширина полосы", "Формат данных", "Формат отсчета"};
@@ -262,12 +262,12 @@ void ChannelPropertiesDialog::currentChannelChanged(QTreeWidgetItem *cur, QTreeW
 }
 
 void ChannelPropertiesDialog::selectedChannelsChanged()
-{DDD;
+{DD;
 
 }
 
 QList<Channel *> ChannelPropertiesDialog::selectedChannels()
-{DDD;
+{DD;
     QMap<int, Channel *> result;
     for (auto item: channelsTable->selectedItems()) {
         auto i = channelsTable->indexOfTopLevelItem(item);

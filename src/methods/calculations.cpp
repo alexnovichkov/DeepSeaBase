@@ -7,7 +7,7 @@
 #include "app.h"
 
 Averaging *averageChannels(const QList<QPair<FileDescriptor *, int> > &toMean)
-{
+{DD;
     QList<Channel*> list;
     for (auto i : toMean)
         list << i.first->channel(i.second);
@@ -51,7 +51,7 @@ Averaging *averageChannels(const QList<QPair<FileDescriptor *, int> > &toMean)
 }
 
 void calculateMean(FileDescriptor *file, const QList<Channel *> &channels)
-{DDD;
+{DD;
     if (channels.isEmpty()) return;
 
     Channel *firstChannel = channels.constFirst();
@@ -161,7 +161,7 @@ void calculateMean(FileDescriptor *file, const QList<Channel *> &channels)
 }
 
 void calculateMovingAvg(FileDescriptor *file, const QList<Channel *> &channels, int windowSize)
-{
+{DD;
     if (channels.isEmpty()) return;
 
     for (Channel *c: channels) {
@@ -210,7 +210,7 @@ void calculateMovingAvg(FileDescriptor *file, const QList<Channel *> &channels, 
 }
 
 void calculateThirdOctave(FileDescriptor *file, FileDescriptor *source)
-{
+{DD;
     for (int i=0; i<source->channelsCount(); ++i) {
         Channel *ch = source->channel(i);
 
@@ -247,7 +247,7 @@ void calculateThirdOctave(FileDescriptor *file, FileDescriptor *source)
 }
 
 QString saveTimeSegment(FileDescriptor *file, double from, double to)
-{
+{DD;
     // 0 проверяем, чтобы этот файл имел тип временных данных
     if (file->type() != Descriptor::TimeResponse) return "";
     // и имел данные
@@ -310,7 +310,7 @@ QString saveTimeSegment(FileDescriptor *file, double from, double to)
 }
 
 void saveSpectre(FileDescriptor *file, Channel *channel, double zValue)
-{
+{DD;
     DataHolder *data = new DataHolder;
 
     bool populated = channel->populated();
@@ -357,7 +357,7 @@ void saveSpectre(FileDescriptor *file, Channel *channel, double zValue)
 }
 
 void saveThrough(FileDescriptor *file, Channel *channel, double xValue)
-{
+{DD;
     DataHolder *data = new DataHolder;
 
     bool populated = channel->populated();

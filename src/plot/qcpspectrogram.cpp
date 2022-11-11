@@ -5,6 +5,7 @@
 #include "plot/plot.h"
 #include "checkablelegend.h"
 #include "qcpflowlegend.h"
+#include "logging.h"
 
 QCPSpectrogram::QCPSpectrogram(const QString &title, Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis)
     : QCPAbstractPlottable(keyAxis, valueAxis), Curve(title, channel)
@@ -314,7 +315,7 @@ void QCPSpectrogram::updateMapImage()
     mMapImage = QImage(QSize(samplesCount, blocksCount), format);
 
   if (mMapImage.isNull()) {
-    qDebug() << Q_FUNC_INFO << "Couldn't create map image (possibly too large for memory)";
+    LOG(ERROR) << "Couldn't create map image (possibly too large for memory)";
     mMapImage = QImage(QSize(10, 10), format);
     mMapImage.fill(Qt::black);
   }

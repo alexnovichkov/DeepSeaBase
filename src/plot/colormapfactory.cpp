@@ -64,7 +64,7 @@ private:
 };
 
 QStringList ColorMapFactory::names()
-{DDD;
+{DD;
     QStringList l;
     l << "RGB";
     l << "Серая";

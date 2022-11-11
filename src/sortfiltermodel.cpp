@@ -4,26 +4,26 @@
 #include "model.h"
 
 SortFilterModel::SortFilterModel(QObject *parent) : QSortFilterProxyModel(parent)
-{DDD;
+{DD;
     filters.resize(MODEL_COLUMNS_COUNT);
     collator.setNumericMode(true);
 }
 
 void SortFilterModel::setFilter(const QString &text, int column)
-{DDD;
+{DD;
     if (filters.at(column) == text) return;
     filters[column] = text;
     invalidateFilter();
 }
 
 QString SortFilterModel::filter(int column) const
-{DDD;
+{DD;
     return filters.value(column);
 }
 
 
 bool SortFilterModel::lessThan(const QModelIndex &source_left, const QModelIndex &source_right) const
-{DDD;
+{DD;
     QVariant leftData = sourceModel()->data(source_left);
     QVariant rightData = sourceModel()->data(source_right);
 
@@ -39,7 +39,7 @@ bool SortFilterModel::lessThan(const QModelIndex &source_left, const QModelIndex
 
 
 bool SortFilterModel::filterAcceptsRow(int source_row, const QModelIndex &source_parent) const
-{DDD;
+{DD;
     bool accept = true;
     for (int i=0; i<sourceModel()->columnCount(); ++i) {
         if (filters.at(i).isEmpty()) continue;

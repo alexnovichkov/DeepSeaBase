@@ -48,7 +48,7 @@ QString NIDataTypeToPrecision(DDCDataType dataType)
 
 
 TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
-{DDD;
+{DD;
     int error;
 
     QString fn = fileName;
@@ -56,7 +56,7 @@ TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
 
     error = DDC_OpenFileEx(fn.toLocal8Bit().data(), 0, 1, &file);
     if (error < 0) {
-        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
         return;
     }
 
@@ -65,7 +65,7 @@ TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
 
     error = DDC_GetNumFileProperties(file, &numberOfProperties);
     if (error < 0) {
-        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
     }
     else {
         for (size_t i=0; i<numberOfProperties; ++i) {
@@ -73,7 +73,7 @@ TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
             size_t length = 0;
             error = DDC_GetFilePropertyNameLengthFromIndex(file, i, &length);
             if (error < 0) {
-                qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+                LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
                 continue;
             }
             //property name
@@ -81,7 +81,7 @@ TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
             nameBuf = (char*)malloc(length+1);
             error = DDC_GetFilePropertyNameFromIndex(file, i, nameBuf, length+1);
             if (error < 0) {
-                qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+                LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
                 free(nameBuf);
                 continue;
             }
@@ -93,42 +93,42 @@ TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
             DDCDataType dataType;
             error = DDC_GetFilePropertyType(file, nameBuf, &dataType);
             if (error < 0) {
-                qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+                LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
             }
             else {
                 switch (dataType) {
                     case DDC_UInt8: {
                         quint8 val;
                         error = DDC_GetFileProperty(file, nameBuf, &val, 1);
-                        if (error < 0) qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+                        if (error < 0) LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
                         else value = val;
                         break;
                     }
                     case DDC_Int16: {
                         qint16 val;
                         error = DDC_GetFileProperty(file, nameBuf, &val, 2);
-                        if (error < 0) qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+                        if (error < 0) LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
                         else value = val;
                         break;
                     }
                     case DDC_Int32: {
                         qint32 val;
                         error = DDC_GetFileProperty(file, nameBuf, &val, 4);
-                        if (error < 0) qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+                        if (error < 0) LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
                         else value = val;
                         break;
                     }
                     case DDC_Float: {
                         float val;
                         error = DDC_GetFileProperty(file, nameBuf, &val, sizeof(float));
-                        if (error < 0) qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+                        if (error < 0) LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
                         else value = val;
                         break;
                     }
                     case DDC_Double: {
                         double val;
                         error = DDC_GetFileProperty(file, nameBuf, &val, sizeof(double));
-                        if (error < 0) qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+                        if (error < 0) LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
                         else value = val;
                         break;
                     }
@@ -136,12 +136,12 @@ TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
                         char *buffer=0;
                         uint propLength;
                         error = DDC_GetFileStringPropertyLength (file, nameBuf, &propLength);
-                        if (error < 0) qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+                        if (error < 0) LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
                         else {
                             if (propLength > 0) {
                                 buffer = (char*)malloc(propLength+1);
                                 error = DDC_GetFileProperty(file, nameBuf, buffer, propLength+1);
-                                if (error < 0) qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+                                if (error < 0) LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
                                 else value = QString::fromLocal8Bit(buffer);
                                 free (buffer);
                             }
@@ -153,7 +153,7 @@ TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
                         double millisecond;
                         error = DDC_GetFilePropertyTimestampComponents(file, nameBuf, &year, &month, &day,
                                                                        &hour, &minute, &second, &millisecond, &weekDay);
-                        if (error < 0) qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+                        if (error < 0) LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
                         else value = QDateTime(QDate(year,month,day),QTime(hour, minute, second,int(millisecond)));
                         break;
                     }
@@ -171,19 +171,19 @@ TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
     uint numberOfChannelGroups=0;
     error = DDC_GetNumChannelGroups(file, &numberOfChannelGroups);
     if (error < 0) {
-        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
         return;
     }
 
     _groups = (DDCChannelGroupHandle *)calloc(numberOfChannelGroups, sizeof (DDCChannelGroupHandle));
     error = DDC_GetChannelGroups(file, _groups, numberOfChannelGroups);
     if (error < 0) {
-        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
         return;
     }
 
     for (size_t i=0; i<numberOfChannelGroups; ++i) {
-        qDebug()<<"Reading channel group"<<i+1<<"of"<<numberOfChannelGroups;
+        LOG(DEBUG)<<"Reading channel group"<<i+1<<"of"<<numberOfChannelGroups;
         TDMSGroup *group = new TDMSGroup(_groups[i], fileName);
         group->parent = this;
         groups << group;
@@ -192,7 +192,7 @@ TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
 }
 
 TDMSFile::~TDMSFile()
-{DDD;
+{DD;
     free(_groups);
     qDeleteAll(groups);
     if (file) DDC_CloseFile(file);
@@ -200,22 +200,22 @@ TDMSFile::~TDMSFile()
 
 TDMSGroup::TDMSGroup(DDCChannelGroupHandle group, const QString &name) : FileDescriptor(name),
     group(group)
-{DDD;
+{DD;
     // reading channel group properties
     uint numberOfProperties = 0;
     int error = DDC_GetNumChannelGroupProperties(group, &numberOfProperties);
     if (error < 0) {
-        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
     }
     else {
-        qDebug()<<"Channel group"<<"contains"<<numberOfProperties<<"properties";
+        LOG(DEBUG)<<"Channel group"<<"contains"<<numberOfProperties<<"properties";
 
         for (size_t j=0; j<numberOfProperties; ++j) {
             //property name length
             size_t length;
             error = DDC_GetChannelGroupPropertyNameLengthFromIndex(group, j, &length);
             if (error < 0) {
-                qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+                LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
                 continue;
             }
             //property name
@@ -223,7 +223,7 @@ TDMSGroup::TDMSGroup(DDCChannelGroupHandle group, const QString &name) : FileDes
             nameBuf = (char*)malloc(length+1);
             error = DDC_GetChannelGroupPropertyNameFromIndex(group, j, nameBuf, length+1);
             if (error < 0) {
-                qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+                LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
                 continue;
             }
             QString name = QString::fromLocal8Bit(nameBuf);
@@ -232,7 +232,7 @@ TDMSGroup::TDMSGroup(DDCChannelGroupHandle group, const QString &name) : FileDes
             //property type
             DDCDataType dataType;
             error = DDC_GetChannelGroupPropertyType(group, nameBuf, &dataType);
-            if (error < 0) qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+            if (error < 0) LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
             else {
                 switch (dataType) {
                     case DDC_UInt8: {
@@ -287,28 +287,28 @@ TDMSGroup::TDMSGroup(DDCChannelGroupHandle group, const QString &name) : FileDes
                     }
                     default: break;
                 }
-                if (error < 0) qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+                if (error < 0) LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
             }
             properties.insert(name, value);
             free(nameBuf);
         }
     }
-    qDebug()<<properties;
+//    qDebug()<<properties;
 
     // number of channels
     uint numberOfChannels = 0;
     error = DDC_GetNumChannels(group, &numberOfChannels);
     if (error < 0) {
-        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
         return;
     }
-    qDebug()<<"Channel group"<<"contains"<<numberOfChannels<<"channels";
+    LOG(DEBUG)<<"Channel group"<<"contains"<<numberOfChannels<<"channels";
 
     // reading channels
     _channels = (DDCChannelHandle *)calloc(numberOfChannels, sizeof(DDCChannelHandle));
     error = DDC_GetChannels(group, _channels, numberOfChannels);
     if (error < 0) {
-        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
         return;
     }
 
@@ -319,19 +319,19 @@ TDMSGroup::TDMSGroup(DDCChannelGroupHandle group, const QString &name) : FileDes
 }
 
 TDMSGroup::~TDMSGroup()
-{DDD;
+{DD;
     free(_channels);
     qDeleteAll(channels);
     DDC_CloseChannelGroup(group);
 }
 
 TDMSChannel::TDMSChannel(DDCChannelHandle channel, TDMSGroup *parent) : channel(channel), parent(parent)
-{DDD;
+{DD;
     // reading channel properties
     uint numberOfProperties = 0;
     int error = DDC_GetNumChannelProperties(channel, &numberOfProperties);
     if (error < 0) {
-        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
         return;
     }
 
@@ -340,7 +340,7 @@ TDMSChannel::TDMSChannel(DDCChannelHandle channel, TDMSGroup *parent) : channel(
         size_t length;
         error = DDC_GetChannelPropertyNameLengthFromIndex(channel, k, &length);
         if (error < 0) {
-            qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+            LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
             continue;
         }
         //property name
@@ -348,7 +348,7 @@ TDMSChannel::TDMSChannel(DDCChannelHandle channel, TDMSGroup *parent) : channel(
         nameBuf = (char*)malloc(length+1);
         error = DDC_GetChannelPropertyNameFromIndex(channel, k, nameBuf, length+1);
         if (error < 0) {
-            qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+            LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
             continue;
         }
         QString name = QString::fromLocal8Bit(nameBuf);
@@ -357,7 +357,7 @@ TDMSChannel::TDMSChannel(DDCChannelHandle channel, TDMSGroup *parent) : channel(
         //property type
         DDCDataType dataType;
         error = DDC_GetChannelPropertyType(channel, nameBuf, &dataType);
-        if (error < 0) qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        if (error < 0) LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
         else {
             switch (dataType) {
                 case DDC_UInt8: {
@@ -413,13 +413,13 @@ TDMSChannel::TDMSChannel(DDCChannelHandle channel, TDMSGroup *parent) : channel(
                 default: break;
             }
             if (error < 0) {
-                qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+                LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
             }
         }
         properties.insert(name, value);
         free(nameBuf);
     }
-    qDebug() << "Channel properties" << properties;
+//    LOG(DEBUG) << "Channel properties" << properties;
 
     dataDescription().put("name", properties.value("name"));
     dataDescription().put("description", properties.value("description"));
@@ -440,15 +440,15 @@ TDMSChannel::TDMSChannel(DDCChannelHandle channel, TDMSGroup *parent) : channel(
     // reading data
     error = DDC_GetNumDataValues(channel, &numberOfValues);
     if (error < 0) {
-        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
         return;
     }
     error = DDC_GetDataType(channel, &dataType);
     if (error < 0) {
-        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
         return;
     }
-    qDebug()<<"Channel"<<"contains"<<numberOfValues<<"values of type"<<dataType;
+    LOG(DEBUG)<<"Channel"<<"contains"<<numberOfValues<<"values of type"<<dataType;
     dataDescription().put("function.precision", NIDataTypeToPrecision(dataType));
     dataDescription().put("samples", numberOfValues);
     dataDescription().put("blocks", 1); //1 block by default
@@ -469,12 +469,12 @@ TDMSChannel::TDMSChannel(DDCChannelHandle channel, TDMSGroup *parent) : channel(
 }
 
 TDMSChannel::~TDMSChannel()
-{DDD;
+{DD;
     DDC_CloseChannel(channel);
 }
 
 QVector<double> TDMSChannel::getDouble()
-{DDD;
+{DD;
     QVector<double> data(numberOfValues);
     int error = 0;
     switch (dataType) {
@@ -547,7 +547,7 @@ QVector<double> TDMSChannel::getDouble()
         default: break;
     }
     if (error < 0) {
-        qDebug() << "Error:" << DDC_GetLibraryErrorDescription(error);
+        LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
     }
     return data;
 }

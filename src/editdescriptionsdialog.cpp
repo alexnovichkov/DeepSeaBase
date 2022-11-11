@@ -8,7 +8,7 @@ class StackWidget : public QWidget
 public:
     StackWidget(FileDescriptor *record, QWidget *parent = 0) : QWidget(parent),
         record(record)
-    {DDD;
+    {DD;
         edit = new QPlainTextEdit(this);
         QStringList data;
         const DataDescription descriptions = record->dataDescription();
@@ -22,7 +22,7 @@ public:
         setLayout(l);
     }
     DataDescription description()
-    {DDD;
+    {DD;
         DataDescription result;
         const QStringList list = edit->toPlainText().split("\n");
         for(const QString &s: list) {
@@ -45,7 +45,7 @@ private:
 
 EditDescriptionsDialog::EditDescriptionsDialog(QList<FileDescriptor *> &records, QWidget *parent) :
     QDialog(parent)
-{DDD;
+{DD;
     this->setWindowTitle("Описатели файлов");
 
     QListWidget *recordsList = new QListWidget(this);
@@ -74,7 +74,7 @@ EditDescriptionsDialog::EditDescriptionsDialog(QList<FileDescriptor *> &records,
 }
 
 //QHash<FileDescriptor *, DataDescription> EditDescriptionsDialog::descriptions()
-//{DDD;
+//{DD;
 //    QHash<FileDescriptor *, DataDescription> result;
 
 //    for (int i=0; i<stack->count(); ++i) {
@@ -85,7 +85,7 @@ EditDescriptionsDialog::EditDescriptionsDialog(QList<FileDescriptor *> &records,
 //}
 
 QVector<DataDescription> EditDescriptionsDialog::descriptions()
-{DDD;
+{DD;
     QVector<DataDescription> result;
 
     for (int i=0; i<stack->count(); ++i) {

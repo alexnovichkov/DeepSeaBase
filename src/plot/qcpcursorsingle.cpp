@@ -11,7 +11,7 @@
 #include "algorithms.h"
 
 QCPCursorSingle::QCPCursorSingle(Style style, Plot *plot) : Cursor(Cursor::Type::Single, style, plot), plot(plot)
-{DDD;
+{DD;
     cursor = new QCPTrackingCursor(m_color, style, this);
     if (style != Cursor::Style::Horizontal)
         axisTagX = new QCPAxisTag(plot, cursor, plot->impl()->xAxis);
@@ -23,7 +23,7 @@ QCPCursorSingle::QCPCursorSingle(Style style, Plot *plot) : Cursor(Cursor::Type:
 }
 
 QCPCursorSingle::~QCPCursorSingle()
-{DDD;
+{DD;
     detach();
     delete cursor;
     delete axisTagX;
@@ -31,13 +31,13 @@ QCPCursorSingle::~QCPCursorSingle()
 }
 
 void QCPCursorSingle::setColor(const QColor &color)
-{DDD;
+{DD;
     Cursor::setColor(color);
     cursor->setColor(color);
 }
 
 void QCPCursorSingle::moveTo(const QPointF &pos1, const QPointF &pos2, bool silent)
-{DDD;
+{DD;
     Q_UNUSED(pos2);
     moveTo(pos1, silent);
 }
@@ -55,7 +55,7 @@ void QCPCursorSingle::moveTo(const QPointF &pos1, bool silent)
 }
 
 void QCPCursorSingle::moveTo(const QPointF &pos1, QCPTrackingCursor *source, bool silent)
-{DDD;
+{DD;
     if (source == cursor) moveTo(pos1, silent);
 }
 
@@ -104,7 +104,7 @@ void QCPCursorSingle::moveTo(Qt::Key key, int count, QCPTrackingCursor *source, 
 }
 
 void QCPCursorSingle::updatePos()
-{DDD;
+{DD;
     auto pos = cursor->value();
     pos = correctedPos(pos);
     cursor->moveTo(pos);
@@ -112,12 +112,12 @@ void QCPCursorSingle::updatePos()
 }
 
 void QCPCursorSingle::attach()
-{DDD;
+{DD;
 
 }
 
 void QCPCursorSingle::detach()
-{DDD;
+{DD;
     m_plot->removeSelectable(cursor);
     cursor->detach();
     if (axisTagX) axisTagX->detach();
@@ -125,7 +125,7 @@ void QCPCursorSingle::detach()
 }
 
 bool QCPCursorSingle::contains(Selectable *selected) const
-{DDD;
+{DD;
     if (auto c = dynamic_cast<QCPTrackingCursor*>(selected))
         return c == cursor;
     else if (auto l = dynamic_cast<QCPAxisTag*>(selected))
@@ -135,20 +135,20 @@ bool QCPCursorSingle::contains(Selectable *selected) const
 }
 
 void QCPCursorSingle::update()
-{DDD;
+{DD;
     if (axisTagX) axisTagX->updateLabel(m_showValues);
     if (axisTagY) axisTagY->updateLabel(m_showValues);
     plot->impl()->layer("overlay")->replot();
 }
 
 QStringList QCPCursorSingle::dataHeader(bool allData) const
-{DDD;
+{DD;
     Q_UNUSED(allData);
     return {/*"", "Время, с", QString("Частота ")+*/QLocale(QLocale::Russian).toString(cursor->xValue())};
 }
 
 QList<double> QCPCursorSingle::data(int curve, bool allData) const
-{DDD;
+{DD;
     Q_UNUSED(allData);
 
     if (auto c = m_plot->model()->curves().at(curve)) {
@@ -159,7 +159,7 @@ QList<double> QCPCursorSingle::data(int curve, bool allData) const
 }
 
 QPointF QCPCursorSingle::currentPosition() const
-{DDD;
+{DD;
     return cursor->value();
 }
 

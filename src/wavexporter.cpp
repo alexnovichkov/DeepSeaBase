@@ -4,32 +4,32 @@
 
 WavExporter::WavExporter(FileDescriptor * file, const QVector<int> &indexes, int count, QObject *parent)
     : QObject(parent), file(file), indexes(indexes), count(count)
-{DDD;
+{DD;
 
 }
 
 WavExporter::WavExporter(Channel *channel, QObject *parent):
     QObject(parent), channel(channel)
-{DDD;
+{DD;
     file = channel->descriptor();
     const int index = channel->index();
     if (index >= 0) indexes << index;
 }
 
 WavExporter::~WavExporter()
-{DDD;
+{DD;
 
 }
 
 void WavExporter::stop()
-{DDD;
+{DD;
     finalize();
 }
 
 void WavExporter::start()
-{DDD;
+{DD;
     if (QThread::currentThread()->isInterruptionRequested()) {
-        qDebug()<<"interrupted";
+        LOG(WARNING)<<"WavExporter interrupted";
         finalize();
         return;
     }
@@ -62,7 +62,7 @@ void WavExporter::start()
 }
 
 void WavExporter::finalize()
-{DDD;
+{DD;
     emit finished();
 }
 

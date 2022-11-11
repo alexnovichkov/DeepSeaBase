@@ -2,42 +2,42 @@
 #include "logging.h"
 
 FrameCutter::FrameCutter()
-{
+{DD;
 
 }
 
 int FrameCutter::type() const
-{
+{DD;
     return param.type;
 }
 
 void FrameCutter::setType(int type)
-{
+{DD;
     param.type = type;
 }
 
 int FrameCutter::blockSize() const
-{
+{DD;
     return param.blockSize;
 }
 
 void FrameCutter::setBlockSize(int blockSize)
-{
+{DD;
     param.blockSize = blockSize;
 }
 
 void FrameCutter::setSource(const QVector<double> &data)
-{
+{DD;
     this->data = data;
 }
 
 void FrameCutter::setTriggerSource(const QVector<double> &triggerData)
-{
+{DD;
     this->triggerData = triggerData;
 }
 
 QVector<double> FrameCutter::get(bool *ok)
-{
+{DD;
     QVector<double> result;
     switch (param.type) {
         case Continuous: return getSimple(ok);
@@ -51,7 +51,7 @@ QVector<double> FrameCutter::get(bool *ok)
 }
 
 QVector<double> FrameCutter::getAll()
-{
+{DD;
     QVector<double> result;
     bool ok = true;
     while (ok) {
@@ -62,7 +62,7 @@ QVector<double> FrameCutter::getAll()
 }
 
 void FrameCutter::reset(bool clearData)
-{
+{DD;
     if (clearData) {
         data.clear();
         triggerData.clear();
@@ -73,7 +73,7 @@ void FrameCutter::reset(bool clearData)
 }
 
 int FrameCutter::getBlocksCount() const
-{
+{DD;
     switch (param.type) {
         case Continuous: return getBlocksCountSimple();
         case Overlap: return getBlocksCountWithOverlap();
@@ -86,7 +86,7 @@ int FrameCutter::getBlocksCount() const
 }
 
 QVector<double> FrameCutter::getSimple(bool *ok)
-{
+{DD;
     Q_ASSERT(currentSample >= 0);
     QVector<double> output;
     if (currentSample < data.size()) {
@@ -101,12 +101,12 @@ QVector<double> FrameCutter::getSimple(bool *ok)
 }
 
 int FrameCutter::getBlocksCountSimple() const
-{
+{DD;
     return qCeil(double(data.size()) / param.blockSize);
 }
 
 QVector<double> FrameCutter::getWithOverlap(bool *ok)
-{
+{DD;
     Q_ASSERT(currentSample >= 0);
 
     double delta = getDelta();
@@ -123,7 +123,7 @@ QVector<double> FrameCutter::getWithOverlap(bool *ok)
 }
 
 int FrameCutter::getBlocksCountWithOverlap() const
-{
+{DD;
     int count = 0;
     for (int i=0; i<data.size(); ) {
         i += (param.blockSize - getDelta());
@@ -133,7 +133,7 @@ int FrameCutter::getBlocksCountWithOverlap() const
 }
 
 QVector<double> FrameCutter::getWithDelta(bool *ok)
-{
+{DD;
     //Delta может быть задана тремя способами:
     //* percent double [1..99], в % от размера блока
     //* deltaTime double [s] [0..inf]
@@ -154,7 +154,7 @@ QVector<double> FrameCutter::getWithDelta(bool *ok)
 }
 
 int FrameCutter::getBlocksCountWithDelta() const
-{
+{DD;
     int count = 0;
     for (int i=0; i<data.size(); ) {
         i += (param.blockSize + getDelta());
@@ -164,7 +164,7 @@ int FrameCutter::getBlocksCountWithDelta() const
 }
 
 QVector<double> FrameCutter::getWithTrigger(bool *ok)
-{
+{DD;
     currentSample = searchTrigger(currentSample);
 
     Q_ASSERT(currentSample >= 0);
@@ -182,13 +182,13 @@ QVector<double> FrameCutter::getWithTrigger(bool *ok)
 }
 
 int FrameCutter::getBlocksCountWithTrigger() const
-{
+{DD;
     //TODO: сделать подсчет блоков для триггера - сейчас стоит заглушка
     return getBlocksCountSimple();
 }
 
 int FrameCutter::searchTrigger(const int pos)
-{
+{DD;
     int current = pos;
     if (firstTriggerSearched) {
         current += param.blockSize;
@@ -216,64 +216,64 @@ int FrameCutter::searchTrigger(const int pos)
 }
 
 double FrameCutter::getXStep() const
-{
+{DD;
     return param.xStep;
 }
 
 void FrameCutter::setXStep(double value)
-{
+{DD;
     param.xStep = value;
 }
 
 int FrameCutter::getDelta() const
-{
+{DD;
     if (param.deltaType == DeltaPercent) return int(1.0 * param.blockSize * param.deltaValue / 100);
     if (param.deltaType == DeltaTime && !qFuzzyIsNull(param.xStep)) return int(param.deltaValue / param.xStep);
     return 0;
 }
 
 void FrameCutter::setDelta(double value, DeltaType type)
-{
+{DD;
     param.deltaValue = value;
     param.deltaType = type;
 }
 
 int FrameCutter::getChannel() const
-{
+{DD;
     return param.channel;
 }
 
 void FrameCutter::setChannel(int value)
-{
+{DD;
     param.channel = value;
 }
 
 double FrameCutter::getLevel() const
-{
+{DD;
     return param.level;
 }
 
 void FrameCutter::setLevel(double value)
-{
+{DD;
     param.level = value;
 }
 
 int FrameCutter::getMode() const
-{
+{DD;
     return param.mode;
 }
 
 void FrameCutter::setMode(int value)
-{
+{DD;
     param.mode = value;
 }
 
 int FrameCutter::getPretrigger() const
-{
+{DD;
     return param.pretrigger;
 }
 
 void FrameCutter::setPretrigger(int value)
-{
+{DD;
     param.pretrigger = value;
 }

@@ -130,7 +130,7 @@ DescriptionList OctaveMethod::processData(const Parameters &p)
 
 
 /*DfdFileDescriptor *OctaveMethod::createNewDfdFile(const QString &fileName, FileDescriptor *dfd, Parameters &p)
-{DDD;
+{DD;
     DfdFileDescriptor *newDfd = AbstractMethod::createNewDfdFile(fileName, dfd, p);
 
     // rest

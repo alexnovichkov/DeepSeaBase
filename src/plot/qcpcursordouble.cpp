@@ -36,7 +36,7 @@ public:
 
 //возвращает СКЗ в диапазоне [x1,x2]
 double rms(DataHolder *data, const QCPCursorDouble *cursor, const QList<Cursor*> &rejectCursors)
-{DDD;
+{DD;
     double cumul = 0.0;
     double x1 = cursor->interval().first;
     double x2 = cursor->interval().second;
@@ -76,7 +76,7 @@ double rms(DataHolder *data, const QCPCursorDouble *cursor, const QList<Cursor*>
 
 //возвращает энергию в диапазоне [x1,x2]
 double energy(DataHolder *data, const QCPCursorDouble *cursor, const QList<Cursor*> &rejectCursors)
-{DDD;
+{DD;
     double x1 = cursor->interval().first;
     double x2 = cursor->interval().second;
     double cumul = 0.0;

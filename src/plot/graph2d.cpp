@@ -11,7 +11,7 @@
 #include "qcppointmarker.h"
 
 Graph2D::LineStyle lineStyleByType(Channel *c)
-{
+{DD;
     if (c->octaveType() > 0 && Settings::getSetting("plotOctaveAsHistogram", false).toBool())
         return Graph2D::lsStep;
     return Graph2D::lsLine;
@@ -19,7 +19,7 @@ Graph2D::LineStyle lineStyleByType(Channel *c)
 
 Graph2D::Graph2D(const QString &title, Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis) :
     QCPAbstractPlottable(keyAxis, valueAxis), Curve(title, channel)
-{
+{DD;
     setData(new Data2D(channel->data()));
     setName(channel->legendName());
 
@@ -29,12 +29,12 @@ Graph2D::Graph2D(const QString &title, Channel *channel, QCPAxis *keyAxis, QCPAx
 }
 
 Graph2D::~Graph2D()
-{
+{DD;
     delete m_data;
 }
 
 void Graph2D::setData(Data2D *data)
-{
+{DD;
     if (m_data == data) return;
     delete m_data;
     m_data = data;
@@ -47,28 +47,28 @@ void Graph2D::setLineStyle(Graph2D::LineStyle ls)
 }
 
 void Graph2D::setScatterStyle(const QCPScatterStyle &style)
-{
+{DD;
     mScatterStyle = style;
 }
 
 void Graph2D::setScatterSkip(int skip)
-{
+{DD;
     mScatterSkip = qMax(0, skip);
 }
 
 void Graph2D::setChannelFillGraph(Graph2D *targetGraph)
-{
+{DD;
     // prevent setting channel target to this graph itself:
     if (targetGraph == this)
     {
-      qDebug() << Q_FUNC_INFO << "targetGraph is this graph itself";
+      LOG(WARNING) << Q_FUNC_INFO << "targetGraph is this graph itself";
       mChannelFillGraph = nullptr;
       return;
     }
     // prevent setting channel target to a graph not in the plot:
     if (targetGraph && targetGraph->mParentPlot != mParentPlot)
     {
-      qDebug() << Q_FUNC_INFO << "targetGraph not in same plot";
+      LOG(WARNING) << Q_FUNC_INFO << "targetGraph not in same plot";
       mChannelFillGraph = nullptr;
       return;
     }
@@ -77,17 +77,17 @@ void Graph2D::setChannelFillGraph(Graph2D *targetGraph)
 }
 
 void Graph2D::setAdaptiveSampling(bool enabled)
-{
+{DD;
     mAdaptiveSampling = enabled;
 }
 
 QCPRange Graph2D::getValueRange(bool &foundRange, QCP::SignDomain inSignDomain, const QCPRange &inKeyRange) const
-{
+{DD;
     return m_data->valueRange(foundRange, inSignDomain, inKeyRange);
 }
 
 double Graph2D::selectTest(const QPointF &pos, bool onlySelectable, QVariant *details) const
-{
+{DD;
     if ((onlySelectable && mSelectable == QCP::stNone) || m_data->isEmpty())
       return -1;
     if (!mKeyAxis || !mValueAxis)
@@ -105,7 +105,7 @@ double Graph2D::selectTest(const QPointF &pos, bool onlySelectable, QVariant *de
 }
 
 QCPRange Graph2D::getKeyRange(bool &foundRange, QCP::SignDomain inSignDomain) const
-{
+{DD;
     return m_data->keyRange(foundRange, inSignDomain);
 }
 
@@ -248,7 +248,7 @@ void Graph2D::getOptimizedLineData(QVector<QCPGraphData> *lineData, const int be
     if (!lineData) return;
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
-    if (!keyAxis || !valueAxis) { qDebug() << Q_FUNC_INFO << "invalid key or value axis"; return; }
+    if (!keyAxis || !valueAxis) { LOG(ERROR) << Q_FUNC_INFO << "invalid key or value axis"; return; }
     if (begin == end) return;
 
     int extraPoints = 0;
@@ -343,7 +343,7 @@ void Graph2D::getOptimizedScatterData(QVector<QCPGraphData> *scatterData, int be
     if (!scatterData) return;
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
-    if (!keyAxis || !valueAxis) { qDebug() << Q_FUNC_INFO << "invalid key or value axis"; return; }
+    if (!keyAxis || !valueAxis) { LOG(ERROR) << Q_FUNC_INFO << "invalid key or value axis"; return; }
 
     const int scatterModulo = mScatterSkip+1;
     const bool doScatterSkip = mScatterSkip > 0;
@@ -520,7 +520,7 @@ void Graph2D::getVisibleDataBounds(int &begin, int &end, const QCPDataRange &ran
     {
       QCPAxis *keyAxis = mKeyAxis.data();
       QCPAxis *valueAxis = mValueAxis.data();
-      if (!keyAxis || !valueAxis) { qDebug() << Q_FUNC_INFO << "invalid key or value axis"; return; }
+      if (!keyAxis || !valueAxis) { LOG(ERROR) << Q_FUNC_INFO << "invalid key or value axis"; return; }
       // get visible data range:
       begin = m_data->findBegin(keyAxis->range().lower);
       end = m_data->findEnd(keyAxis->range().upper);
@@ -564,7 +564,7 @@ void Graph2D::getScatters(QVector<QPointF> *scatters, const QCPDataRange &dataRa
     if (!scatters) return;
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
-    if (!keyAxis || !valueAxis) { qDebug() << Q_FUNC_INFO << "invalid key or value axis"; scatters->clear(); return; }
+    if (!keyAxis || !valueAxis) { LOG(ERROR) << Q_FUNC_INFO << "invalid key or value axis"; scatters->clear(); return; }
 
     int begin, end;
     getVisibleDataBounds(begin, end, dataRange);
@@ -609,7 +609,7 @@ QVector<QPointF> Graph2D::dataToLines(const QVector<QCPGraphData> &data) const
     QVector<QPointF> result;
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
-    if (!keyAxis || !valueAxis) { qDebug() << Q_FUNC_INFO << "invalid key or value axis"; return result; }
+    if (!keyAxis || !valueAxis) { LOG(ERROR) << Q_FUNC_INFO << "invalid key or value axis"; return result; }
 
     result.resize(data.size());
 
@@ -633,11 +633,11 @@ QVector<QPointF> Graph2D::dataToLines(const QVector<QCPGraphData> &data) const
 }
 
 QVector<QPointF> Graph2D::dataToStepLines(const QVector<QCPGraphData> &data) const
-{
+{DD;
     QVector<QPointF> result;
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
-    if (!keyAxis || !valueAxis) { qDebug() << Q_FUNC_INFO << "invalid key or value axis"; return result; }
+    if (!keyAxis || !valueAxis) { LOG(ERROR) << Q_FUNC_INFO << "invalid key or value axis"; return result; }
 
     result.resize(data.size()*2);
 
@@ -766,7 +766,7 @@ QVector<QPair<QCPDataRange, QCPDataRange> > Graph2D::getOverlappingSegments(QVec
 }
 
 bool Graph2D::segmentsIntersect(double aLower, double aUpper, double bLower, double bUpper, int &bPrecedence) const
-{
+{DD;
     bPrecedence = 0;
     if (aLower > bUpper)
     {
@@ -791,7 +791,7 @@ QPointF Graph2D::getFillBasePoint(QPointF matchingDataPoint) const
 {DD;
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
-    if (!keyAxis || !valueAxis) { qDebug() << Q_FUNC_INFO << "invalid key or value axis"; return {}; }
+    if (!keyAxis || !valueAxis) { LOG(ERROR) << Q_FUNC_INFO << "invalid key or value axis"; return {}; }
 
     QPointF result;
     if (valueAxis->scaleType() == QCPAxis::stLinear)
@@ -850,8 +850,8 @@ const QPolygonF Graph2D::getChannelFillPolygon(const QVector<QPointF> *thisData,
 
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
-    if (!keyAxis || !valueAxis) { qDebug() << Q_FUNC_INFO << "invalid key or value axis"; return QPolygonF(); }
-    if (!mChannelFillGraph.data()->mKeyAxis) { qDebug() << Q_FUNC_INFO << "channel fill target key axis invalid"; return QPolygonF(); }
+    if (!keyAxis || !valueAxis) { LOG(ERROR) << Q_FUNC_INFO << "invalid key or value axis"; return QPolygonF(); }
+    if (!mChannelFillGraph.data()->mKeyAxis) { LOG(ERROR) << Q_FUNC_INFO << "channel fill target key axis invalid"; return QPolygonF(); }
 
     if (mChannelFillGraph.data()->mKeyAxis.data()->orientation() != keyAxis->orientation())
       return QPolygonF(); // don't have same axis orientation, can't fill that (Note: if keyAxis fits, valueAxis will fit too, because it's always orthogonal to keyAxis)
@@ -943,7 +943,7 @@ const QPolygonF Graph2D::getChannelFillPolygon(const QVector<QPointF> *thisData,
 }
 
 int Graph2D::findIndexBelowX(const QVector<QPointF> *data, double x) const
-{
+{DD;
     for (int i=0; i<data->size(); ++i)
     {
       if (data->at(i).x() > x)
@@ -958,7 +958,7 @@ int Graph2D::findIndexBelowX(const QVector<QPointF> *data, double x) const
 }
 
 int Graph2D::findIndexAboveX(const QVector<QPointF> *data, double x) const
-{
+{DD;
     for (int i=data->size()-1; i>=0; --i)
     {
       if (data->at(i).x() < x)
@@ -973,7 +973,7 @@ int Graph2D::findIndexAboveX(const QVector<QPointF> *data, double x) const
 }
 
 int Graph2D::findIndexBelowY(const QVector<QPointF> *data, double y) const
-{
+{DD;
     for (int i=0; i<data->size(); ++i)
     {
       if (data->at(i).y() > y)
@@ -988,7 +988,7 @@ int Graph2D::findIndexBelowY(const QVector<QPointF> *data, double y) const
 }
 
 int Graph2D::findIndexAboveY(const QVector<QPointF> *data, double y) const
-{
+{DD;
     for (int i=data->size()-1; i>=0; --i)
     {
       if (data->at(i).y() < y)
@@ -1003,7 +1003,7 @@ int Graph2D::findIndexAboveY(const QVector<QPointF> *data, double y) const
 }
 
 double Graph2D::pointDistance(const QPointF &pixelPoint, int &closestData) const
-{
+{DD;
     closestData = m_data->size();
     if (m_data->isEmpty())
       return -1.0;
@@ -1050,12 +1050,12 @@ double Graph2D::pointDistance(const QPointF &pixelPoint, int &closestData) const
 }
 
 bool Graph2D::isVisible() const
-{
+{DD;
     return visible();
 }
 
 void Graph2D::drawLegendIcon(QCPPainter *painter, const QRectF &rect) const
-{
+{DD;
     // draw fill:
     if (mBrush.style() != Qt::NoBrush)
     {
@@ -1092,7 +1092,7 @@ void Graph2D::drawLegendIcon(QCPPainter *painter, const QRectF &rect) const
 
 void Graph2D::draw(QCPPainter *painter)
 {DD;
-    if (!mKeyAxis || !mValueAxis) { qDebug() << Q_FUNC_INFO << "invalid key or value axis"; return; }
+    if (!mKeyAxis || !mValueAxis) { LOG(ERROR) << Q_FUNC_INFO << "invalid key or value axis"; return; }
     if (mKeyAxis.data()->range().size() <= 0 || m_data->isEmpty()) return;
     if (mLineStyle == lsNone && mScatterStyle.isNone()) return;
 
@@ -1145,56 +1145,56 @@ void Graph2D::draw(QCPPainter *painter)
 }
 
 int Graph2D::dataCount() const
-{
+{DD;
     return m_data->size();
 }
 
 double Graph2D::dataMainKey(int index) const
-{
+{DD;
     return m_data->mainKey(index);
 }
 
 double Graph2D::dataSortKey(int index) const
-{
+{DD;
     return m_data->sortKey(index);
 }
 
 double Graph2D::dataMainValue(int index) const
-{
+{DD;
     return m_data->mainValue(index);
 }
 
 QCPRange Graph2D::dataValueRange(int index) const
-{
+{DD;
     if (index >= 0 && index < m_data->size())
     {
         return m_data->valueRange(index);
     } else
     {
-        qDebug() << Q_FUNC_INFO << "Index out of bounds" << index;
+        LOG(ERROR) << Q_FUNC_INFO << "Index out of bounds" << index;
         return QCPRange(0, 0);
     }
 }
 
 QPointF Graph2D::dataPixelPosition(int index) const
-{
+{DD;
     if (index >= 0 && index < m_data->size())
     {
       return coordsToPixels(m_data->mainKey(index), m_data->mainValue(index));
     } else
     {
-      qDebug() << Q_FUNC_INFO << "Index out of bounds" << index;
+      LOG(ERROR) << Q_FUNC_INFO << "Index out of bounds" << index;
       return QPointF();
     }
 }
 
 bool Graph2D::sortKeyIsMainKey() const
-{
+{DD;
     return true;
 }
 
 QCPDataSelection Graph2D::selectTestRect(const QRectF &rect, bool onlySelectable) const
-{
+{DD;
     QCPDataSelection result;
     if ((onlySelectable && mSelectable == QCP::stNone) || m_data->isEmpty())
       return result;
@@ -1236,24 +1236,24 @@ QCPDataSelection Graph2D::selectTestRect(const QRectF &rect, bool onlySelectable
 }
 
 int Graph2D::findBegin(double sortKey, bool expandedRange) const
-{
+{DD;
     return m_data->findBegin(sortKey, expandedRange);
 }
 
 int Graph2D::findEnd(double sortKey, bool expandedRange) const
-{
+{DD;
     return m_data->findEnd(sortKey, expandedRange);
 }
 
 
 void Graph2D::attachTo(Plot *plot)
-{
+{DD;
     Curve::attachTo(plot);
     plot->impl()->checkableLegend->addItem(this, commonLegendData());
 }
 
 void Graph2D::detachFrom(Plot *plot)
-{
+{DD;
     Curve::detachFrom(plot);
     plot->impl()->checkableLegend->removeItem(this);
     plot->impl()->removePlottable(this, false);
@@ -1261,23 +1261,23 @@ void Graph2D::detachFrom(Plot *plot)
 }
 
 QString Graph2D::title() const
-{
+{DD;
     return name();
 }
 
 void Graph2D::setTitle(const QString &title)
-{
+{DD;
     setName(title);
 }
 
 Enums::AxisType Graph2D::yAxis() const
-{
+{DD;
     if (auto ax = this->valueAxis()) return static_cast<Enums::AxisType>(ax->axisType());
     return Enums::AxisType::atInvalid;
 }
 
 void Graph2D::setYAxis(Enums::AxisType axis)
-{
+{DD;
     auto ax = parentPlot()->axisRect(0)->axis(static_cast<QCPAxis::AxisType>(axis));
     setValueAxis(ax);
 
@@ -1286,13 +1286,13 @@ void Graph2D::setYAxis(Enums::AxisType axis)
 }
 
 Enums::AxisType Graph2D::xAxis() const
-{
+{DD;
     if (auto ax = this->keyAxis()) return static_cast<Enums::AxisType>(ax->axisType());
     return Enums::AxisType::atInvalid;
 }
 
 void Graph2D::setXAxis(Enums::AxisType axis)
-{
+{DD;
     auto ax = parentPlot()->axisRect(0)->axis(static_cast<QCPAxis::AxisType>(axis));
     setKeyAxis(ax);
 
@@ -1301,18 +1301,18 @@ void Graph2D::setXAxis(Enums::AxisType axis)
 }
 
 QPen Graph2D::pen() const
-{
+{DD;
 //    return QCPAbstractPlottable::pen();
     return oldPen;
 }
 
 SamplePoint Graph2D::samplePoint(SelectedPoint point) const
-{
+{DD;
     return {m_data->mainKey(point.x), m_data->mainValue(point.x), qQNaN()};
 }
 
 SelectedPoint Graph2D::closest(const QPoint &pos, double *dist1, double *dist2) const
-{
+{DD;
     int index = -1;
 
     const size_t numSamples = channel->data()->samplesCount();
@@ -1345,14 +1345,14 @@ SelectedPoint Graph2D::closest(const QPoint &pos, double *dist1, double *dist2) 
 }
 
 LegendData Graph2D::commonLegendData() const
-{
+{DD;
     auto data = Curve::commonLegendData();
     data.checked = visible();
     return data;
 }
 
 void Graph2D::updateScatter()
-{
+{DD;
     QCPScatterStyle ss;
     ss.setSize(m_markerSize);
     ss.setShape(static_cast<QCPScatterStyle::ScatterShape>(m_markerShape));
@@ -1366,7 +1366,7 @@ void Graph2D::updateScatter()
 }
 
 void Graph2D::updatePen()
-{
+{DD;
     auto p = oldPen;
     if (p.style() == Qt::NoPen) setLineStyle(lsNone);
     else setLineStyle(lineStyleByType(channel));
@@ -1377,7 +1377,7 @@ void Graph2D::updatePen()
 }
 
 QIcon Graph2D::thumbnail() const
-{
+{DD;
     QPixmap pix(16,10);
     QCPPainter p(&pix);
     p.fillRect(0,0,16,10, Qt::white);

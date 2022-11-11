@@ -13,7 +13,7 @@
 
 PsdAlgorithm::PsdAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DDD;
+{DD;
     channelF = new ChannelFunction(this);
 //    filteringF = new FilteringFunction(this);
     resamplingF = new ResamplingFunction(this);
@@ -68,18 +68,18 @@ PsdAlgorithm::PsdAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
 
 
 QString PsdAlgorithm::description() const
-{DDD;
+{DD;
     return "Плотность спектра мощности";
 }
 
 
 QString PsdAlgorithm::displayName() const
-{DDD;
+{DD;
     return "PSD";
 }
 
 void PsdAlgorithm::resetChain()
-{
+{DD;
     resamplingF->reset();
     samplingF->reset();
     windowingF->reset();
@@ -88,6 +88,6 @@ void PsdAlgorithm::resetChain()
 }
 
 void PsdAlgorithm::initChain(FileDescriptor *file)
-{
+{DD;
     resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());  //автоматически задает xStep для samplingF
 }

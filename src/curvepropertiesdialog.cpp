@@ -9,7 +9,7 @@
 #include "plot/qcustomplot.h"
 
 void ClickableLabel::mouseReleaseEvent(QMouseEvent *ev)
-{DDD;
+{DD;
     if (ev->button()==Qt::LeftButton)
         Q_EMIT clicked();
     QLabel::mouseReleaseEvent(ev);
@@ -17,7 +17,7 @@ void ClickableLabel::mouseReleaseEvent(QMouseEvent *ev)
 
 CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
     QDialog(parent->widget()), curve(curve), plot(parent)
-{DDD;
+{DD;
     setWindowTitle("Настройки кривой");
 
     oldPen = curve->pen();
@@ -170,7 +170,7 @@ CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
 }
 
 QIcon CurvePropertiesDialog::iconForMarker(int shape) const
-{
+{DD;
     switch (shape) {
         case 1: return QIcon(":/icons/ssDot.png");
         case 2: return QIcon(":/icons/ssCross.png");
@@ -193,7 +193,7 @@ QIcon CurvePropertiesDialog::iconForMarker(int shape) const
 }
 
 void CurvePropertiesDialog::reject()
-{DDD;
+{DD;
     curve->setPen(oldPen);
     curve->channel->setName(oldTitle);
     curve->setTitle(curve->channel->legendName());

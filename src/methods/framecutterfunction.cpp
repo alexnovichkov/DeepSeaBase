@@ -3,7 +3,7 @@
 #include "fileformats/filedescriptor.h"
 
 QStringList getBlocks(double xStep, const QString &fix)
-{DDD;
+{DD;
 //    double sampleRate = 1.0/xStep;
 //    DebugPrint(sampleRate);
     int sampleRate = qRound(1.0 / xStep);
@@ -24,7 +24,7 @@ QStringList getBlocks(double xStep, const QString &fix)
 
 FrameCutterFunction::FrameCutterFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DDD;
+{DD;
     // default values
     setParameter("FrameCutter/type", 0);
     setParameter("FrameCutter/blockSize", 0);
@@ -38,22 +38,22 @@ FrameCutterFunction::FrameCutterFunction(QObject *parent, const QString &name) :
 
 
 QString FrameCutterFunction::name() const
-{DDD;
+{DD;
     return "FrameCutter";
 }
 
 QString FrameCutterFunction::displayName() const
-{DDD;
+{DD;
     return "Выборка блоков";
 }
 
 QString FrameCutterFunction::description() const
-{DDD;
+{DD;
     return "Разбиение данных на блоки";
 }
 
 QVariant FrameCutterFunction::m_getProperty(const QString &property) const
-{DDD;
+{DD;
     if (property.startsWith("?/")) {
         if (property == "?/blockSize") {
             return frameCutter.blockSize();
@@ -76,7 +76,7 @@ QVariant FrameCutterFunction::m_getProperty(const QString &property) const
 }
 
 DataDescription FrameCutterFunction::getFunctionDescription() const
-{
+{DD;
     DataDescription result = AbstractFunction::getFunctionDescription();
 
     result.put("function.name", "FrameCutter");
@@ -100,7 +100,7 @@ DataDescription FrameCutterFunction::getFunctionDescription() const
 }
 
 void FrameCutterFunction::m_setProperty(const QString &property, const QVariant &val)
-{DDD;
+{DD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -110,7 +110,7 @@ void FrameCutterFunction::m_setProperty(const QString &property, const QVariant 
         frameCutter.setType(val.toInt());
     }
     else if (p == "blockSize") {
-        //qDebug()<<"setting FrameCutter/blocksize as"<<(65536 >> val.toInt());
+        //LOG(DEBUG)<<"setting FrameCutter/blocksize as"<<(65536 >> val.toInt());
         //double p = pow(2.0, val.toInt()); DebugPrint(p);
         //int sampleRate = int (1.0/frameCutter.getXStep()); DebugPrint(sampleRate);
         frameCutter.setBlockSize(65536 >> val.toInt());
@@ -145,7 +145,7 @@ void FrameCutterFunction::m_setProperty(const QString &property, const QVariant 
 }
 
 bool FrameCutterFunction::propertyShowsFor(const QString &property) const
-{DDD;
+{DD;
     if (!property.startsWith(name()+"/")) return false;
     QString p = property.section("/",1);
 
@@ -162,7 +162,7 @@ bool FrameCutterFunction::propertyShowsFor(const QString &property) const
 
 
 QStringList FrameCutterFunction::properties() const
-{DDD;
+{DD;
     return QStringList()<<
                            "type"<<
                            "blockSize"<<
@@ -175,7 +175,7 @@ QStringList FrameCutterFunction::properties() const
 }
 
 QString FrameCutterFunction::propertyDescription(const QString &property) const
-{DDD;
+{DD;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
                                    "  \"type\"        : \"enum\"   ,"
@@ -257,19 +257,19 @@ QString FrameCutterFunction::propertyDescription(const QString &property) const
 }
 
 void FrameCutterFunction::reset()
-{DDD;
+{DD;
     frameCutter.reset();
     output.clear();
 }
 
 void FrameCutterFunction::resetData()
-{
+{DD;
     frameCutter.reset(false);
     AbstractFunction::resetData();
 }
 
 bool FrameCutterFunction::compute(FileDescriptor *file)
-{DDD;
+{DD;
     if (!m_input) return false;
 
     output.clear();
@@ -295,7 +295,7 @@ bool FrameCutterFunction::compute(FileDescriptor *file)
     }
 
     output = frameCutter.getAll();
-//    qDebug() << "after sampling" << output.size() << "with" << frameCutter.getBlocksCount()
+//    LOG(DEBUG) << "after sampling" << output.size() << "with" << frameCutter.getBlocksCount()
 //             << "blocks" << "from source of" << size;
     if (output.isEmpty()) return false;
 
@@ -304,7 +304,7 @@ bool FrameCutterFunction::compute(FileDescriptor *file)
 
 
 void FrameCutterFunction::updateProperty(const QString &property, const QVariant &val)
-{DDD;
+{DD;
     // нам может прийти измененный шаг по оси Х
     if (property == "?/xStep") {
         setParameter(name()+"/xStep", val);

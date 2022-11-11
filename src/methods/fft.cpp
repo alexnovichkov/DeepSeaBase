@@ -1,9 +1,10 @@
 #include "fft.h"
 //#include "../3rdParty/alglib/fasttransforms.h"
 #include "fftw3.h"
+#include "logging.h"
 
 QVector<cx_double> Fft::compute(const QVector<double> &input)
-{
+{DD;
 //    QVector<cx_double> a = computeWithAlgLib(input);
 //    QVector<cx_double> b = computeWithFftw(input);
 
@@ -13,7 +14,7 @@ QVector<cx_double> Fft::compute(const QVector<double> &input)
 }
 
 QVector<cx_double> Fft::computeWithFftw(const QVector<double> &input)
-{
+{DD;
     double *in;
     fftw_complex *out;
     static fftw_plan p;
@@ -36,7 +37,7 @@ QVector<cx_double> Fft::computeWithFftw(const QVector<double> &input)
 }
 
 //QVector<cx_double> Fft::computeWithAlgLib(const QVector<double> &input)
-//{
+//{DD;
 //    const int n = input.size();
 //    QVector<double> y = input;
 
@@ -52,7 +53,7 @@ QVector<cx_double> Fft::computeWithFftw(const QVector<double> &input)
 //}
 
 QVector<cx_double> Fft::compute1(const QVector<double> &input)
-{
+{DD;
     int Nvl = input.size();
 
     int i, j, n, m, Mmax, Istp;
@@ -114,7 +115,7 @@ QVector<cx_double> Fft::compute1(const QVector<double> &input)
 }
 
 //QVector<double> Fft::computeReal(const QVector<double> &input)
-//{
+//{DD;
 //    const int n = input.size();
 //    QVector<double> y = input;
 
@@ -133,7 +134,7 @@ QVector<cx_double> Fft::compute1(const QVector<double> &input)
 //}
 
 QVector<cx_double> Fft::computeComplex(const QVector<cx_double> &input)
-{
+{DD;
 //    const int n = input.size();
 //    // copying data
 //    alglib::complex_1d_array x;
@@ -169,7 +170,7 @@ QVector<cx_double> Fft::computeComplex(const QVector<cx_double> &input)
 }
 
 QVector<cx_double> Fft::computeInverse(const QVector<cx_double> &input)
-{
+{DD;
 //    const int n = input.size();
 //    // copying data
 //    alglib::complex_1d_array x;

@@ -8,7 +8,7 @@
 #include "settings.h"
 
 TDMSConverterDialog::TDMSConverterDialog(AbstractFormatFactory *factory) : QDialog(nullptr), factory(factory)
-{DDD;
+{DD;
     setWindowTitle("Конвертер tdm/tdms файлов");
     thread = 0;
     m_addFiles = false;

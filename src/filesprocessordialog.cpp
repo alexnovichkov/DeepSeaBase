@@ -19,7 +19,7 @@
 
 FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QWidget *parent)
     : QDialog(parent), dataBase(dataBase), win(parent), currentAlgorithm(0)
-{DDD;
+{DD;
     thread_ = 0;
     taskBarProgress = 0;
 
@@ -137,7 +137,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
 }
 
 FilesProcessorDialog::~FilesProcessorDialog()
-{DDD;
+{DD;
     if (currentAlgorithm)
         currentAlgorithm->saveSettings();
 
@@ -152,7 +152,7 @@ FilesProcessorDialog::~FilesProcessorDialog()
 }
 
 void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
-{DDD;
+{DD;
     propertyTree->clear();
     m_manager->clear();
     map.clear();
@@ -189,7 +189,7 @@ void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
 }
 
 void FilesProcessorDialog::updateVisibleProperties()
-{DDD;
+{DD;
     if (!currentAlgorithm) return;
 
     for (QtVariantProperty *property: map.keys()) {
@@ -200,7 +200,7 @@ void FilesProcessorDialog::updateVisibleProperties()
 }
 
 void FilesProcessorDialog::onValueChanged(QtProperty *property, const QVariant &val)
-{DDD;
+{DD;
     if (!currentAlgorithm) return;
 
     Property p = map.value(dynamic_cast<QtVariantProperty*>(property));
@@ -212,7 +212,7 @@ void FilesProcessorDialog::onValueChanged(QtProperty *property, const QVariant &
 }
 
 void FilesProcessorDialog::updateProperty(AbstractFunction *f, const QString &property, const QVariant &val, const QString &attribute)
-{DDD;
+{DD;
     for (auto [key,v] : asKeyValueRange(map)) {
         if (v.f == f && v.name == property) {
             if (val.isValid() && !attribute.isEmpty())
@@ -225,7 +225,7 @@ void FilesProcessorDialog::updateProperty(AbstractFunction *f, const QString &pr
 }
 
 void FilesProcessorDialog::addProperties(AbstractFunction *f)
-{DDD;
+{DD;
     if (!f) return;
 
     if (f->properties().isEmpty()) return;
@@ -233,8 +233,8 @@ void FilesProcessorDialog::addProperties(AbstractFunction *f)
     QJsonParseError error;
     QJsonDocument doc = QJsonDocument::fromJson(f->propertiesDescription().toUtf8(), &error);
     if (error.error != QJsonParseError::NoError) {
-        qDebug()<<error.errorString() << error.offset;
-        qDebug()<<f->propertiesDescription().toUtf8();
+        LOG(ERROR)<<error.errorString() << error.offset;
+        LOG(DEBUG)<<f->propertiesDescription().toUtf8();
         return;
     }
 
@@ -263,7 +263,7 @@ void FilesProcessorDialog::addProperties(AbstractFunction *f)
 
         QtVariantProperty *p = m_manager->addProperty(typeId, displayName);
         if (!p) {
-            qDebug() << f->name() << ": Unable to create property for"<<type<<name;
+            LOG(ERROR) << f->name() << ": Unable to create property for"<<type<<name;
             continue;
         }
         if (i==0) {
@@ -296,7 +296,7 @@ void FilesProcessorDialog::addProperties(AbstractFunction *f)
 }
 
 void FilesProcessorDialog::accept()
-{DDD;
+{DD;
     newFiles = currentAlgorithm->getNewFiles();
     if (taskBarProgress) taskBarProgress->finalize();
 
@@ -308,25 +308,25 @@ void FilesProcessorDialog::accept()
 }
 
 void FilesProcessorDialog::reject()
-{DDD;
+{DD;
     stop();
     QDialog::reject();
     if (taskBarProgress) taskBarProgress->finalize();
 }
 
 void FilesProcessorDialog::updateProgressIndicator(const QString &path)
-{DDD;
+{DD;
     progress->setValue(QDir(path).count()-2);
 }
 
 void FilesProcessorDialog::updateProgressIndicator()
-{DDD;
+{DD;
     progress->setValue(progress->value()+1);
     taskBarProgress->setValue(progress->value());
 }
 
 void FilesProcessorDialog::start()
-{DDD;
+{DD;
     if (!currentAlgorithm) return;
 
     newFiles.clear();
@@ -354,7 +354,7 @@ void FilesProcessorDialog::start()
 }
 
 void FilesProcessorDialog::stop()
-{DDD;
+{DD;
     if (thread_)
     thread_->requestInterruption();
     QDialog::accept();

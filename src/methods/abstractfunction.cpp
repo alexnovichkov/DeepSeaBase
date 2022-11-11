@@ -6,16 +6,16 @@
 #include "settings.h"
 
 AbstractFunction::AbstractFunction(QObject *parent, const QString &name) : QObject(parent), _name(name)
-{
+{DD;
 
 }
 
 AbstractFunction::~AbstractFunction()
-{
+{DD;
 }
 
 QString AbstractFunction::propertiesDescription() const
-{DDD;
+{DD;
     QString result="[";
     const QStringList props = properties();
     for (const QString &p: props) {
@@ -28,14 +28,14 @@ QString AbstractFunction::propertiesDescription() const
 }
 
 bool AbstractFunction::propertyShowsFor(const QString &property) const
-{DDD;
+{DD;
     Q_UNUSED(property);
 
     return true;
 }
 
 QVariant AbstractFunction::getParameter(const QString &property) const
-{DDD;
+{DD;
     QVariant p;
     if (paired()) {
         p = m_master->m_getProperty(property);
@@ -46,7 +46,7 @@ QVariant AbstractFunction::getParameter(const QString &property) const
 }
 
 void AbstractFunction::setParameter(const QString &property, const QVariant &val)
-{DDD;
+{DD;
     if (m_slave != nullptr) {
         m_slave->m_setProperty(property, val);
     }
@@ -55,7 +55,7 @@ void AbstractFunction::setParameter(const QString &property, const QVariant &val
 }
 
 void AbstractFunction::pairWith(AbstractFunction *slave)
-{DDD;
+{DD;
     if (slave != nullptr) {
         m_slave = slave;
         slave->m_master = this;
@@ -63,7 +63,7 @@ void AbstractFunction::pairWith(AbstractFunction *slave)
 }
 
 QVector<double> AbstractFunction::getData(const QString &id)
-{
+{DD;
     if (id == "input") return output;
     if (id == "triggerInput") return triggerData;
 
@@ -71,42 +71,42 @@ QVector<double> AbstractFunction::getData(const QString &id)
 }
 
 DataDescription AbstractFunction::getFunctionDescription() const
-{
+{DD;
     DataDescription result;
     if (m_input) result = m_input->getFunctionDescription();
     return result;
 }
 
 void AbstractFunction::setInput(AbstractFunction *input)
-{DDD;
+{DD;
     m_input = input;
 }
 
 void AbstractFunction::setInput2(AbstractFunction *input)
-{DDD;
+{DD;
     m_input2 = input;
 }
 
 void AbstractFunction::setFile(FileDescriptor *file)
-{DDD;
+{DD;
     m_file = file;
     if (m_input) m_input->setFile(file);
     if (m_input2) m_input2->setFile(file);
 }
 
 void AbstractFunction::reset()
-{DDD;
+{DD;
     // no-op
 }
 
 void AbstractFunction::resetData()
-{
+{DD;
     if (m_input) m_input->resetData();
     if (m_input2) m_input2->resetData();
 }
 
 void AbstractFunction::updateProperty(const QString &property, const QVariant &val)
-{DDD;
+{DD;
     Q_UNUSED(property);
     Q_UNUSED(val);
     //no-op
@@ -117,17 +117,17 @@ void AbstractFunction::updateProperty(const QString &property, const QVariant &v
 
 AbstractAlgorithm::AbstractAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) : QObject(parent),
     m_dataBase(dataBase)
-{DDD;
+{DD;
 
 }
 
 AbstractAlgorithm::~AbstractAlgorithm()
-{DDD;
+{DD;
     m_functions.clear();
 }
 
 bool AbstractAlgorithm::propertyShowsFor(AbstractFunction *function, const QString &property) const
-{DDD;
+{DD;
     if (property.isEmpty()) return true;
 
     const auto list = functions();
@@ -141,7 +141,7 @@ bool AbstractAlgorithm::propertyShowsFor(AbstractFunction *function, const QStri
 }
 
 QVariant AbstractAlgorithm::getParameter(AbstractFunction *function, const QString &property) const
-{DDD;
+{DD;
     if (property.isEmpty()) return QVariant();
 
     const auto list = functions();
@@ -155,7 +155,7 @@ QVariant AbstractAlgorithm::getParameter(AbstractFunction *function, const QStri
 }
 
 void AbstractAlgorithm::setParameter(AbstractFunction *function, const QString &property, const QVariant &val)
-{DDD;
+{DD;
     if (property.isEmpty()) return;
 
     const auto list = functions();
@@ -168,7 +168,7 @@ void AbstractAlgorithm::setParameter(AbstractFunction *function, const QString &
 }
 
 void AbstractAlgorithm::saveSettings()
-{DDD;
+{DD;
     for (auto f: m_functions) {
         for (const auto &property: f->properties()) {
             QVariant val = f->getParameter(f->name()+"/"+property);
@@ -178,7 +178,7 @@ void AbstractAlgorithm::saveSettings()
 }
 
 void AbstractAlgorithm::restoreSettings()
-{DDD;
+{DD;
     for (auto f: m_functions) {
         for (const auto &property: f->properties()) {
             QVariant val = Settings::getSetting(displayName()+"/"+f->name()+"/"+property);
@@ -188,7 +188,7 @@ void AbstractAlgorithm::restoreSettings()
 }
 
 bool AbstractAlgorithm::compute(FileDescriptor *file)
-{
+{DD;
     if (QThread::currentThread()->isInterruptionRequested()) {
         finalize();
         return false;
@@ -237,7 +237,7 @@ bool AbstractAlgorithm::compute(FileDescriptor *file)
     }
     m_chain.last()->reset();
     QString fileName = m_chain.last()->getParameter(m_chain.last()->name()+"/name").toString();
-//    qDebug()<<fileName;
+//    LOG(DEBUG)<<fileName;
 
     if (fileName.isEmpty()) return false;
     newFiles << fileName;
@@ -245,12 +245,12 @@ bool AbstractAlgorithm::compute(FileDescriptor *file)
 }
 
 void AbstractAlgorithm::reset()
-{DDD;
+{DD;
     // no-op
 }
 
 void AbstractAlgorithm::start()
-{DDD;
+{DD;
     auto dt = QDateTime::currentDateTime();
     emit message(QString("Запуск расчета: %1").arg(dt.time().toString()));
 
@@ -274,12 +274,12 @@ void AbstractAlgorithm::start()
 }
 
 void AbstractAlgorithm::finalize()
-{DDD;
+{DD;
     emit message(QString("Расчет закончен в %1").arg(QDateTime::currentDateTime().time().toString()));
     emit finished();
 }
 
 bool AbstractAlgorithm::applicableTo(Descriptor::DataType channelType)
-{
+{DD;
     return channelType == Descriptor::TimeResponse;
 }

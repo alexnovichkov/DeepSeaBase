@@ -80,11 +80,10 @@ Source: "E:\My\programming\sources\TDMS\nilib-master\dll\*.dll"; DestDir: "{app}
 Source: "E:\My\programming\sources\TDMS\nilib-master\dll\DataModels\USI\1_0\usi_1_0.xsd"; DestDir: "{app}\DataModels\USI\1_0"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: plugins
 Source: "E:\My\programming\sources\TDMS\nilib-master\dll\DataModels\USI\TDM\1_0\USI_TDM_1_0.xml"; DestDir: "{app}\DataModels\USI\TDM\1_0"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: plugins
 ;Source: "E:\My\build\DeepSeaBase\vc_redist.x86.exe"; DestDir: "{app}"; Flags: ignoreversion; Components: plugins
+Source: "E:\My\build\DeepSeaBase\3rdParty\easylogging\*.conf"; DestDir: "{app}"; Flags: ignoreversion; Components: main
+Source: "E:\My\build\DeepSeaBase\src\DeepSeaBase-logging.bat"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 
-
-Source: "E:\My\build\DeepSeaBase\src\help.html"; DestDir: "{app}"; Flags: ignoreversion; Components: main
-Source: "E:\My\build\DeepSeaBase\src\graphs.htm"; DestDir: "{app}"; Flags: ignoreversion; Components: main
-Source: "E:\My\build\DeepSeaBase\src\files.html"; DestDir: "{app}"; Flags: ignoreversion; Components: main
+Source: "E:\My\build\DeepSeaBase\src\*.html"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: "E:\My\build\DeepSeaBase\src\style.css"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: "E:\My\build\DeepSeaBase\src\version.js"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: "E:\My\build\DeepSeaBase\src\icons\*.png"; DestDir: "{app}\icons"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main

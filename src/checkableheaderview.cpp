@@ -32,13 +32,13 @@
 CheckableHeaderView::CheckableHeaderView(Qt::Orientation orientation, QWidget *parent)
     : QHeaderView(orientation, parent)
 
-{DDD;
+{DD;
     setSectionsClickable(true);
     connect(this,SIGNAL(sectionCountChanged(int,int)),SLOT(updateSectionCount(int,int)));
 }
 
 void CheckableHeaderView::setCheckState(int section, Qt::CheckState checkState)
-{DDD;
+{DD;
     if (isEnabled() && m_isChecked.at(section) != checkState) {
         m_isChecked[section] = checkState;
         updateSection(section);
@@ -46,7 +46,7 @@ void CheckableHeaderView::setCheckState(int section, Qt::CheckState checkState)
 }
 
 void CheckableHeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalIndex) const
-{DDD;
+{DD;
     painter->save();
     QHeaderView::paintSection(painter, rect, logicalIndex);
     painter->restore();
@@ -67,7 +67,7 @@ void CheckableHeaderView::paintSection(QPainter *painter, const QRect &rect, int
 }
 
 void CheckableHeaderView::mousePressEvent(QMouseEvent *event)
-{DDD;
+{DD;
     int logicalIndex = logicalIndexAt(event->pos());
     if (isEnabled() && m_isCheckable.at(logicalIndex)) {
         if (m_isChecked.at(logicalIndex)==Qt::Checked)
@@ -81,7 +81,7 @@ void CheckableHeaderView::mousePressEvent(QMouseEvent *event)
 }
 
 QRect CheckableHeaderView::checkBoxRect(const QRect &sourceRect) const
-{DDD;
+{DD;
     QStyleOptionButton checkBoxStyleOption;
     QRect checkBoxRect = style()->subElementRect(QStyle::SE_CheckBoxIndicator,
                                                  &checkBoxStyleOption);
@@ -93,19 +93,19 @@ QRect CheckableHeaderView::checkBoxRect(const QRect &sourceRect) const
 }
 
 void CheckableHeaderView::setCheckable(int section, bool checkable)
-{DDD;
+{DD;
     if (section<0 || section>=count()) return;
     m_isCheckable[section]=checkable;
 }
 
 void CheckableHeaderView::updateSectionCount(int oldCount, int newCount)
-{DDD;
+{DD;
     Q_UNUSED(oldCount)
     m_isChecked.resize(newCount);
     m_isCheckable.resize(newCount);
 }
 
 bool CheckableHeaderView::isSectionCheckable(const int section) const
-{DDD;
+{DD;
     return m_isCheckable.at(section);
 }

@@ -6,15 +6,20 @@
 
 #include "logging.h"
 
+void logWarning(const QString &s)
+{
+    LOG(WARNING) <<QString("Не удалось добавить ")<<s<<QString(" к отслеживаемым файлам");
+}
+
 FileHandler::FileHandler(QObject *parent) : QObject(parent)
-{DDD;
+{DD;
     watcher = new QFileSystemWatcher(this);
     connect(watcher, &QFileSystemWatcher::fileChanged, this, &FileHandler::fileChanged);
     connect(watcher, &QFileSystemWatcher::directoryChanged, this, &FileHandler::directoryChanged);
 }
 
 void FileHandler::trackFiles(const QStringList &fileNames)
-{DDD;
+{DD;
     for (const QString &file: fileNames) {
         //1. Файл может уже отслеживаться
         //-либо как отдельный файл
@@ -22,25 +27,25 @@ void FileHandler::trackFiles(const QStringList &fileNames)
         if (!tracking(file)) {
             bool added = watcher->addPath(file);
             files.append({file, File, added});
-            if (!added) qDebug() <<"tracking"<<file<<"failed";
+            if (!added) logWarning(file);
         }
     }
 }
 
 void FileHandler::trackFolder(const QString &folder, bool withSubfolders)
-{DDD;
+{DD;
     if (!tracking(folder)) {
         //может быть, эта папка вытеснит какие-то уже добавленные файлы и папки
         optimizeFiles(folder, withSubfolders);
 
         bool added = watcher->addPath(folder);
         files.append({folder, withSubfolders ? FolderWithSubfolders : Folder, added});
-        if (!added) qDebug() <<"tracking"<<folder<<"failed";
+        if (!added) logWarning(folder);
     }
 }
 
 void FileHandler::untrackFile(const QString &fileName)
-{DDD;
+{DD;
     const auto fi = QFileInfo(fileName);
     const QString path = fi.canonicalPath();
 
@@ -55,12 +60,12 @@ void FileHandler::untrackFile(const QString &fileName)
 }
 
 void FileHandler::untrack(const FileHandler::TrackedItem &item)
-{DDD;
+{DD;
     files.removeAll(item);
 }
 
 void FileHandler::setFileNames(const QStringList &fileNames)
-{DDD;
+{DD;
     clear();
     for (QString f: fileNames) {
         bool withSubfolders = false;
@@ -77,7 +82,7 @@ void FileHandler::setFileNames(const QStringList &fileNames)
             files.append({f, File, true});
         }
         if (!watcher->addPath(f)) {
-            qDebug() <<"tracking"<<f<<"failed";
+            logWarning(f);
             files.last().good = false;
         }
         emit fileAdded(f, withSubfolders, true);
@@ -85,7 +90,7 @@ void FileHandler::setFileNames(const QStringList &fileNames)
 }
 
 QStringList FileHandler::fileNames() const
-{DDD;
+{DD;
     QStringList result;
     for (auto item: files) {
         if (item.type==FolderWithSubfolders) item.path.append(":1");
@@ -97,12 +102,12 @@ QStringList FileHandler::fileNames() const
 }
 
 void FileHandler::clear()
-{DDD;
+{DD;
     files.clear();
 }
 
 bool FileHandler::tracking(const QString &file) const
-{DDD;
+{DD;
     const auto fi = QFileInfo(file);
     const QString path = fi.canonicalPath()+"/";
 
@@ -120,7 +125,7 @@ bool FileHandler::tracking(const QString &file) const
 }
 
 void FileHandler::optimizeFiles(const QString &folder, bool withSubfolders)
-{DDD;
+{DD;
     //Удаляем из списка все файлы и папки, которые находятся в папке folder
     for(int i=files.size()-1; i>=0; --i) {
         auto &f = files.at(i);
@@ -134,14 +139,13 @@ void FileHandler::optimizeFiles(const QString &folder, bool withSubfolders)
 }
 
 void FileHandler::fileChanged(const QString &file)
-{DDD;
-    qDebug()<<"Changed"<<file;
+{DD;
     if (!QFileInfo::exists(file)) {
         emit fileDeleted(file);
     }
 }
 
 void FileHandler::directoryChanged(const QString &dir)
-{DDD;
+{DD;
     Q_UNUSED(dir);
 }

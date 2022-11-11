@@ -9,12 +9,12 @@
 
 
 OctaveFilterBank::OctaveFilterBank()
-{
+{DD;
     update();
 }
 
 OctaveFilterBank::OctaveFilterBank(OctaveType type, OctaveBase base) : type(type), base(base)
-{DDD;
+{DD;
     update();
 }
 
@@ -29,7 +29,7 @@ OctaveFilterBank::OctaveFilterBank(OctaveType type, OctaveBase base) : type(type
 //%
 template <typename T>
 double leq(const QVector<T> &x, /*int T,*/ double ref=1.0)
-{DDD;
+{DD;
     Q_UNUSED(ref);
     const int xSize = x.size();
     T p = std::accumulate(x.constBegin(), x.constEnd(), static_cast<T>(0.0), [xSize](T v1,T v2)->T{return v1+v2*v2/xSize;});
@@ -44,14 +44,14 @@ double leq(const QVector<T> &x, /*int T,*/ double ref=1.0)
 
 //decimates x by factor q using libresample
 QVector<double> decimate(const QVector<double> &x, int q)
-{DDD;
+{DD;
     Resampler filter(q, x.size());
     QVector<double> y = filter.process(x);
     return y;
 }
 
 QVector<QVector<double>> OctaveFilterBank::compute(QVector<double> timeData, double sampleRate, double logref)
-{DDD;
+{DD;
     int N = 8;  // Order of analysis filters.
     int decimation = 10; //величина децимации
     int decimationFactor = 200; // All filters below range Fc/decimationFactor will be implemented after a decimation.
@@ -142,7 +142,7 @@ QVector<QVector<double>> OctaveFilterBank::compute(QVector<double> timeData, dou
 }
 
 void OctaveFilterBank::setType(OctaveType type)
-{
+{DD;
     if (this->type != type) {
         this->type = type;
         update();
@@ -150,7 +150,7 @@ void OctaveFilterBank::setType(OctaveType type)
 }
 
 void OctaveFilterBank::setBase(OctaveBase base)
-{
+{DD;
     if (this->base != base) {
         this->base = base;
         update();
@@ -158,7 +158,7 @@ void OctaveFilterBank::setBase(OctaveBase base)
 }
 
 void OctaveFilterBank::setRange(double startFreq, double endFreq)
-{
+{DD;
     if (this->startFreq != startFreq || this->endFreq != endFreq) {
         this->startFreq = startFreq;
         this->endFreq = endFreq;
@@ -167,20 +167,20 @@ void OctaveFilterBank::setRange(double startFreq, double endFreq)
 }
 
 QVector<double> OctaveFilterBank::getFrequencies(bool corrected) const
-{
+{DD;
     if (corrected) return correctedFreqs;
     return freqs;
 }
 
 double OctaveFilterBank::getBandWidth(double frequency) const
-{
+{DD;
     if (qFuzzyIsNull(fd)) return 0.0;
 
     return frequency*(fd-1.0/fd);
 }
 
 QPair<double, double> OctaveFilterBank::getBandBorders(int index, const QVector<double> &data, OctaveType octaveType)
-{
+{DD;
     if (data.isEmpty()) return {0,0};
     double factor = 2.0;
     switch (octaveType) {
@@ -200,7 +200,7 @@ QPair<double, double> OctaveFilterBank::getBandBorders(int index, const QVector<
 }
 
 OctaveType OctaveFilterBank::guessOctaveType(const QVector<double> &data)
-{
+{DD;
     double step = 0;
     for (int i=0; i<data.size()-1; ++i) {
         step += data[i+1]/data[i];
@@ -217,7 +217,7 @@ OctaveType OctaveFilterBank::guessOctaveType(const QVector<double> &data)
 }
 
 QVector<double> OctaveFilterBank::octaveStrips(int octave, int count, int base)
-{
+{DD;
     QVector<double> v(count);
     switch (octave) {
         case 1:
@@ -261,7 +261,7 @@ QVector<double> OctaveFilterBank::octaveStrips(int octave, int count, int base)
 }
 
 double round_off(double N, double n)
-{
+{DD;
     int h;
     double b, c, d, e, i, j, m, f;
     b = N;
@@ -290,13 +290,13 @@ double round_off(double N, double n)
 }
 
 int leftmostDigit(double d)
-{
+{DD;
     while (d > 10) d /= 10;
     return std::floor(d);
 }
 
 QString roundedLabel(double frequency)
-{
+{DD;
     if (auto d = leftmostDigit(frequency); d >= 1 && d <= 4 ) {
         return QString::number(round_off(frequency, 3));
     }
@@ -305,7 +305,7 @@ QString roundedLabel(double frequency)
 }
 
 void OctaveFilterBank::update()
-{
+{DD;
     freqs.clear();
     if (endFreq < startFreq) std::swap(endFreq, startFreq);
     //if (startFreq < 1.0) startFreq = 1.0;
@@ -341,7 +341,7 @@ void OctaveFilterBank::update()
 
     freqs = octaveStrips(static_cast<int>(type), n, static_cast<int>(base));
     int begin = 0;
-//    qDebug()<<freqs;
+//    LOG(DEBUG)<<freqs;
 
     auto idx = std::upper_bound(freqs.constBegin(), freqs.constEnd(), startFreq);
     if (idx!=freqs.constEnd()) begin = idx - freqs.constBegin();

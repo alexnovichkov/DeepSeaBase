@@ -7,17 +7,17 @@
 
 FileDescriptor::FileDescriptor(const QString &fileName) :
     _fileName(fileName)
-{DDD;
-    //qDebug()<<fileName;
+{DD;
+    //LOG(DEBUG)<<fileName;
 }
 
 FileDescriptor::~FileDescriptor()
-{DDD;
-    //   qDebug()<<"deleting"<<fileName();
+{DD;
+    //   LOG(DEBUG)<<"deleting"<<fileName();
 }
 
 bool FileDescriptor::rename(const QString &newName, const QString &newPath)
-{DDD;
+{DD;
     //newName приходит с суффиксом
 
     if (!newPath.isEmpty()) QDir().mkpath(newPath);
@@ -33,13 +33,13 @@ bool FileDescriptor::rename(const QString &newName, const QString &newPath)
 }
 
 void FileDescriptor::fillPreliminary(const FileDescriptor *d)
-{DDD;
+{DD;
     updateDateTimeGUID();
     dataDescription().put("dateTime", d->dataDescription().get("dateTime"));
 }
 
 void FileDescriptor::populate()
-{DDD;
+{DD;
     const int count = channelsCount();
     for (int i=0; i<count; ++i) {
         if (!channel(i)->populated()) channel(i)->populate();
@@ -47,7 +47,7 @@ void FileDescriptor::populate()
 }
 
 void FileDescriptor::updateDateTimeGUID()
-{DDD;
+{DD;
     QDateTime dt = QDateTime::currentDateTime();
     dataDescription().put("fileCreationTime", dt.toString("dd.MM.yyyy hh:mm"));
     dataDescription().put("guid", FileDescriptor::createGUID());
@@ -55,12 +55,12 @@ void FileDescriptor::updateDateTimeGUID()
 }
 
 bool FileDescriptor::copyTo(const QString &name)
-{DDD;
+{DD;
     return QFile::copy(fileName(), name);
 }
 
 Descriptor::DataType FileDescriptor::type() const
-{DDD;
+{DD;
     const int count = channelsCount();
     if (count == 0) return Descriptor::Unknown;
 
@@ -72,7 +72,7 @@ Descriptor::DataType FileDescriptor::type() const
 }
 
 QString FileDescriptor::typeDisplay() const
-{DDD;
+{DD;
     return Descriptor::functionTypeDescription(type());
 }
 
@@ -81,7 +81,7 @@ QString FileDescriptor::typeDisplay() const
 // 3199,9999 -> 3200
 // 0,49999 -> 0,5
 double FileDescriptor::roundedSize() const
-{DDD;
+{DD;
     if (channelsCount()==0) return 0.0;
 
     if (channel(0)->data()->xValuesFormat() == DataHolder::XValuesUniform) {
@@ -106,7 +106,7 @@ double FileDescriptor::roundedSize() const
 }
 
 QDateTime FileDescriptor::dateTime() const
-{DDD;
+{DD;
     auto dt = dataDescription().dateTime("dateTime");
     if (dt.isValid()) return dt;
 
@@ -117,7 +117,7 @@ QDateTime FileDescriptor::dateTime() const
 }
 
 bool FileDescriptor::setDateTime(const QDateTime &dt)
-{DDD;
+{DD;
     if (dt==dateTime()) return false;
     dataDescription().put("dateTime", dt);
     setChanged(true);
@@ -125,31 +125,31 @@ bool FileDescriptor::setDateTime(const QDateTime &dt)
 }
 
 QDateTime FileDescriptor::fileCreationTime() const
-{DDD;
+{DD;
     return dataDescription().dateTime("fileCreationTime");
 }
 
 bool FileDescriptor::setFileCreationTime(const QDateTime &dt)
-{DDD;
+{DD;
     dataDescription().put("fileCreationTime", dt.toString("dd.MM.yyyy hh:mm:ss"));
     setChanged(true);
     return true;
 }
 
 bool FileDescriptor::fileExists() const
-{DDD;
+{DD;
     return QFileInfo(_fileName).exists();
 }
 
 QVariant FileDescriptor::channelHeader(int column) const
-{DDD;
+{DD;
     if (auto c = channel(0))
         return c->channelHeader(column);
     return QVariant();
 }
 
 int FileDescriptor::columnsCount() const
-{DDD;
+{DD;
     if (auto c = channel(0))
         return c->columnsCount();
     return 7;
@@ -157,12 +157,12 @@ int FileDescriptor::columnsCount() const
 
 
 void FileDescriptor::setChanged(bool changed)
-{DDD;
+{DD;
     _changed = changed;
 }
 
 int FileDescriptor::plottedCount() const
-{DDD;
+{DD;
     int plotted = 0;
     const int count = channelsCount();
     for (int i=0; i<count; ++i) {
@@ -172,7 +172,7 @@ int FileDescriptor::plottedCount() const
 }
 
 QVector<int> FileDescriptor::plottedIndexes() const
-{DDD;
+{DD;
     QVector<int> plotted;
     const int count = channelsCount();
     for (int i=0; i<count; ++i) {
@@ -182,7 +182,7 @@ QVector<int> FileDescriptor::plottedIndexes() const
 }
 
 bool FileDescriptor::isSourceFile() const
-{DDD;
+{DD;
     const int count = channelsCount();
     if (count == 0) return false;
     int type = channel(0)->type();
@@ -196,14 +196,14 @@ bool FileDescriptor::isSourceFile() const
 }
 
 double FileDescriptor::xStep() const
-{DDD;
+{DD;
     if (auto c = channel(0))
         return c->data()->xStep();
     return 0.0;
 }
 
 void FileDescriptor::setXStep(const double xStep)
-{DDD;
+{DD;
     const int count = channelsCount();
     if (count == 0) return;
     bool changed = false;
@@ -221,21 +221,21 @@ void FileDescriptor::setXStep(const double xStep)
 }
 
 double FileDescriptor::xBegin() const
-{DDD;
+{DD;
     if (auto c = channel(0))
         return c->data()->xMin();
     return 0.0;
 }
 
 int FileDescriptor::samplesCount() const
-{DDD;
+{DD;
     if (auto c = channel(0))
         return c->data()->samplesCount();
     return 0;
 }
 
 QString FileDescriptor::xName() const
-{DDD;
+{DD;
     QString result;
     const int count = channelsCount();
     if (count > 0) {
@@ -248,17 +248,17 @@ QString FileDescriptor::xName() const
 }
 
 bool FileDescriptor::dataTypeEquals(FileDescriptor *other) const
-{DDD;
+{DD;
     return (this->type() == other->type());
 }
 
 QString FileDescriptor::legend() const
-{DDD;
+{DD;
     return dataDescription().get("legend").toString();
 }
 
 bool FileDescriptor::setLegend(const QString &s)
-{DDD;
+{DD;
     if (s==legend()) return false;
     dataDescription().put("legend", s);
     setChanged(true);
@@ -266,23 +266,23 @@ bool FileDescriptor::setLegend(const QString &s)
 }
 
 bool FileDescriptor::canTakeChannelsFrom(FileDescriptor *other) const
-{DDD;
+{DD;
     Q_UNUSED(other);
     return true;
 }
 
 bool FileDescriptor::canTakeAnyChannels() const
-{DDD;
+{DD;
     return true;
 }
 
 qint64 FileDescriptor::fileSize() const
-{DDD;
+{DD;
     return QFileInfo(fileName()).size();
 }
 
 void FileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<int> &indexes)
-{DDD;
+{DD;
     QVector<Channel *> source;
     for (auto i: indexes) {
         if (auto c=sourceFile->channel(i)) source << c;
@@ -292,7 +292,7 @@ void FileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<
 }
 
 bool FileDescriptor::hasCurves() const
-{DDD;
+{DD;
     const int count = channelsCount();
     for (int i=0; i<count; ++i) {
         if (channel(i)->plotted()) return true;
@@ -301,7 +301,7 @@ bool FileDescriptor::hasCurves() const
 }
 
 QString FileDescriptor::createGUID()
-{DDD;
+{DD;
     QString result = QUuid::createUuid().toString().toUpper();
     if (result.at(24) == '-') result.remove(24,1);
     else result.remove(25,1);
@@ -309,7 +309,7 @@ QString FileDescriptor::createGUID()
 }
 
 //QString descriptionEntryToString(const DescriptionEntry &entry)
-//{DDD;
+//{DD;
 //    QString result = entry.second;
 //    if (!entry.first.isEmpty()) return entry.first+"="+result;
 
@@ -321,7 +321,7 @@ Channel::Channel(Channel *other) :
     _populated(other->_populated),
     _data(new DataHolder(*(other->_data))),
     _dataDescription(other->_dataDescription)
-{DDD;
+{DD;
 
 }
 
@@ -330,12 +330,12 @@ Channel::Channel(Channel &other) :
     _populated(other._populated),
     _data(new DataHolder(*(other._data))),
     _dataDescription(other._dataDescription)
-{DDD;
+{DD;
 
 }
 
 QVariant Channel::info(int column, bool edit) const
-{DDD;
+{DD;
     Q_UNUSED(edit)
     switch (column) {
         case 0: return dataDescription().get("name");
@@ -351,12 +351,12 @@ QVariant Channel::info(int column, bool edit) const
 }
 
 int Channel::columnsCount() const
-{DDDD;
+{DD;
     return 7;
 }
 
 QVariant Channel::channelHeader(int column) const
-{DDDD;
+{DD;
     switch (column) {
         case 0: return QString("Имя");
         case 1: return QString("Ед.изм.");
@@ -371,83 +371,83 @@ QVariant Channel::channelHeader(int column) const
 }
 
 int Channel::octaveType() const
-{DDD;
+{DD;
     return dataDescription().get("function.octaveFormat").toInt();
 }
 
 void Channel::clear()
-{DDD;
+{DD;
     _data->clear();
     setPopulated(false);
 }
 
 void Channel::maybeClearData()
-{DDD;
+{DD;
     if (data()->samplesCount()>1000000) clear();
 }
 
 QString Channel::name() const
-{DDDD;
+{DD;
     return dataDescription().get("name").toString();
 }
 
 void Channel::setName(const QString &name)
-{DDD;
+{DD;
     dataDescription().put("name", name);
 }
 
 QString Channel::description() const
-{DDDD;
+{DD;
     return _dataDescription.data.value("description").toString();
 }
 
 void Channel::setDescription(const QString &description)
-{DDD;
+{DD;
     _dataDescription.data.insert("description", description);
 }
 
 QString Channel::xName() const
-{DDDD;
+{DD;
     return _dataDescription.data.value("xname").toString();
 }
 
 QString Channel::yName() const
-{DDDD;
+{DD;
     return _dataDescription.data.value("yname").toString();
 }
 
 QString Channel::yNameOld() const
-{DDDD;
+{DD;
     return yName();
 }
 
 QString Channel::zName() const
-{DDDD;
+{DD;
     return _dataDescription.data.value("zname").toString();
 }
 
 void Channel::setYName(const QString &yName)
-{DDD;
+{DD;
     _dataDescription.data.insert("yname", yName);
 }
 
 void Channel::setXName(const QString &xName)
-{DDD;
+{DD;
     _dataDescription.data.insert("xname", xName);
 }
 
 void Channel::setZName(const QString &zName)
-{DDD;
+{DD;
     _dataDescription.data.insert("zname", zName);
 }
 
 void Channel::setXStep(double xStep)
-{DDD;
+{DD;
     _data->setXStep(xStep);
 }
 
 QString Channel::legendName() const
-{DDDD;
+{DD;
     QStringList l;
     l << name();
     if (!correction().isEmpty()) l << correction();
@@ -457,7 +457,7 @@ QString Channel::legendName() const
 }
 
 QByteArray Channel::wavData(qint64 pos, qint64 samples, int format)
-{DDD;
+{DD;
     QByteArray b;
 
     //assume that channel is time response
@@ -487,7 +487,7 @@ QByteArray Channel::wavData(qint64 pos, qint64 samples, int format)
 }
 
 //QString valuesUnit(const QString &first, const QString &second, int unitType)
-//{DDD;
+//{DD;
 //    if (unitType == DataHolder::UnitsLinear)
 //    QString n = name.toLower();
 //    if (n=="м/с2" || n=="м/с^2" || n=="м/с*2" || n=="m/s2" || n=="m/s^2" /*|| n=="g"*/) return 3.16e-4; //ускорение
@@ -502,7 +502,7 @@ QByteArray Channel::wavData(qint64 pos, qint64 samples, int format)
 //}
 
 QString Descriptor::functionTypeDescription(int type)
-{DDD;
+{DD;
     switch (type) {
         case  1: return "Time Response";
         case  2: return "Auto Spectrum";
@@ -540,36 +540,36 @@ QString Descriptor::functionTypeDescription(int type)
 
 
 QString stringify(const QVector<int> &vec)
-{DDDD;
+{DD;
     QStringList result;
     for (int i:vec) result<<QString::number(i);
     return result.join(",");
 }
 
 QDataStream &operator>>(QDataStream &stream, DataDescription &data)
-{DDDD;
+{DD;
     stream >> data.data;
     return stream;
 }
 
 QDataStream &operator<<(QDataStream &stream, const DataDescription &data)
-{DDDD;
+{DD;
     stream << data.data;
     return stream;
 }
 
 void DataDescription::put(const QString &key, const QVariant &value)
-{DDDD;
+{DD;
     data.insert(key, value);
 }
 
 QVariant DataDescription::get(const QString &key) const
-{DDDD;
+{DD;
     return data.value(key);
 }
 
 QJsonObject DataDescription::toJson() const
-{DDD;
+{DD;
     QJsonObject result;
     for (auto i = data.constBegin(); i != data.constEnd(); ++i) {
         const QString key = i.key();
@@ -588,25 +588,25 @@ QJsonObject DataDescription::toJson() const
 }
 
 DataDescription DataDescription::fromJson(const QJsonObject &o)
-{DDD;
+{DD;
     DataDescription result;
     for (auto i = o.constBegin(); i!=o.constEnd(); ++i) {
         QString key = i.key();
         QJsonValue val = i.value();
-        //qDebug()<<key<<val;
+        //LOG(DEBUG)<<key<<val;
         if (val.isArray()) {
-            //qDebug()<<"Array found at"<<key;
+            //LOG(DEBUG)<<"Array found at"<<key;
             continue;
         }
         else if (val.isObject()) {
             QJsonObject v = val.toObject();
             for (auto j = v.constBegin(); j!=v.constEnd(); ++j) {
                 if (j->isArray()) {
-                    //qDebug()<<"Array found at"<<j.key();
+                    //LOG(DEBUG)<<"Array found at"<<j.key();
                     continue;
                 }
                 else if (j->isObject()) {
-                    //qDebug()<<"Object found at"<<j.key();
+                    //LOG(DEBUG)<<"Object found at"<<j.key();
                     continue;
                 }
                 QString key1 = key+"."+j.key();
@@ -631,20 +631,20 @@ DataDescription DataDescription::fromJson(const QJsonObject &o)
 }
 
 QDateTime DataDescription::dateTime(const QString &key) const
-{
+{DD;
     //return dateTimeFromString(get(key).toString());
     return get(key).toDateTime();
 }
 
 QStringList DataDescription::twoStringDescription() const
-{DDDD;
+{DD;
     QStringList result = toStringList("description", true);
     result = result.mid(0,2);
     return result;
 }
 
 QStringList DataDescription::toStringList(const QString &filter, bool includeKeys) const
-{DDDD;
+{DD;
     QStringList result;
     for (const auto [key, val] : asKeyValueRange(data)) {
         QString s;
@@ -661,7 +661,7 @@ QStringList DataDescription::toStringList(const QString &filter, bool includeKey
 }
 
 QVariantMap DataDescription::filter(const QString &filter) const
-{DDD;
+{DD;
     if (filter.isEmpty()) return data;
 
     QVariantMap result;

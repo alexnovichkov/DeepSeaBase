@@ -5,27 +5,27 @@
 
 ResamplingFunction::ResamplingFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DDD;
+{DD;
 }
 
 
 QString ResamplingFunction::name() const
-{DDD;
+{DD;
     return "Resampling";
 }
 
 QString ResamplingFunction::description() const
-{DDD;
+{DD;
     return "Выбор частотного диапазона";
 }
 
 QStringList ResamplingFunction::properties() const
-{DDD;
+{DD;
     return QStringList()<<"resampleType"<<"factor"<<"frequencyRange"<<"sampleRate";
 }
 
 QString ResamplingFunction::propertyDescription(const QString &property) const
-{DDD;
+{DD;
     if (property == "resampleType") {
         return QString("{"
                "  \"name\"        : \"resampleType\"   ,"
@@ -74,7 +74,7 @@ QString ResamplingFunction::propertyDescription(const QString &property) const
 }
 
 QVariant ResamplingFunction::m_getProperty(const QString &property) const
-{DDD;
+{DD;
     double sR = 1.0 / xStep;
     if (property.startsWith("?/")) {
         // recalculate sample rate to new val
@@ -103,7 +103,7 @@ QVariant ResamplingFunction::m_getProperty(const QString &property) const
 }
 
 DataDescription ResamplingFunction::getFunctionDescription() const
-{
+{DD;
     DataDescription result = AbstractFunction::getFunctionDescription();
 
     result.put("function.format", "real");
@@ -114,7 +114,7 @@ DataDescription ResamplingFunction::getFunctionDescription() const
 }
 
 void ResamplingFunction::m_setProperty(const QString &property, const QVariant &val)
-{DDD;
+{DD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -162,7 +162,7 @@ void ResamplingFunction::m_setProperty(const QString &property, const QVariant &
 }
 
 bool ResamplingFunction::propertyShowsFor(const QString &property) const
-{DDD;
+{DD;
     if (!property.startsWith(name()+"/")) return false;
     QString p = property.section("/",1);
 
@@ -175,12 +175,12 @@ bool ResamplingFunction::propertyShowsFor(const QString &property) const
 
 
 QString ResamplingFunction::displayName() const
-{DDD;
+{DD;
     return "Передискретизация";
 }
 
 void ResamplingFunction::reset()
-{DDD;
+{DD;
     //resampler.reset();
     output.clear();
     triggerData.clear();
@@ -188,7 +188,7 @@ void ResamplingFunction::reset()
 
 
 bool ResamplingFunction::compute(FileDescriptor *file)
-{DDD; //qDebug()<<debugName();
+{DD; //LOG(DEBUG)<<debugName();
     if (!m_input) return false;
 
     if (!m_input->compute(file))
@@ -241,7 +241,7 @@ bool ResamplingFunction::compute(FileDescriptor *file)
 }
 
 void ResamplingFunction::updateProperty(const QString &property, const QVariant &val)
-{DDD;
+{DD;
     if (!property.startsWith(name()+"/")) return;
     setParameter(property, val);
 }

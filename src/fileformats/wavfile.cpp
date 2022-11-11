@@ -1,12 +1,13 @@
 #include "wavfile.h"
+#include "logging.h"
 
 WavFile::WavFile(const QString &fileName) : FileDescriptor(fileName)
-{
+{DD;
 
 }
 
 WavFile::WavFile(const FileDescriptor &other, const QString &fileName, QVector<int> indexes) : FileDescriptor(fileName)
-{
+{DD;
     QVector<Channel *> source;
     if (indexes.isEmpty())
         for (int i=0; i<other.channelsCount(); ++i) source << other.channel(i);
@@ -18,7 +19,7 @@ WavFile::WavFile(const FileDescriptor &other, const QString &fileName, QVector<i
 
 WavFile::WavFile(const FileDescriptor &other, const QString &fileName, QVector<int> indexes,
                  WavFormat format) : FileDescriptor(fileName), m_format(format)
-{
+{DD;
     QVector<Channel *> source;
     if (indexes.isEmpty())
         for (int i=0; i<other.channelsCount(); ++i) source << other.channel(i);
@@ -29,18 +30,18 @@ WavFile::WavFile(const FileDescriptor &other, const QString &fileName, QVector<i
 }
 
 WavFile::WavFile(const QVector<Channel *> &source, const QString &fileName) : FileDescriptor(fileName)
-{
+{DD;
     init(source);
 }
 
 WavFile::WavFile(const QVector<Channel *> &source, const QString &fileName, WavFormat format)
     : FileDescriptor(fileName), m_format(format)
-{
+{DD;
     init(source);
 }
 
 WavFile::~WavFile()
-{
+{DD;
 //    delete m_header;
 //    delete m_dataChunk;
 //    delete m_fmtChunk;
@@ -51,10 +52,10 @@ WavFile::~WavFile()
 
 
 void WavFile::read()
-{
+{DD;
     QFile wavFile(fileName());
     if (!wavFile.open(QFile::ReadOnly)) {
-        qCritical()<<"Не удалось открыть файл"<<fileName();
+        LOG(ERROR)<<"Не удалось открыть файл"<<fileName();
         m_valid = false;
         return;
     }
@@ -63,7 +64,7 @@ void WavFile::read()
     dataDescription().put("fileCreationTime", wavFile.fileTime(QFileDevice::FileBirthTime));
 
     if (wavFile.size() < 44) {
-        qCritical()<<"Файл слишком маленький:"<<fileName();
+        LOG(ERROR)<<"Файл слишком маленький:"<<fileName();
         wavFile.close();
         m_valid = false;
         return;
@@ -79,7 +80,7 @@ void WavFile::read()
     r >> u32;
     m_header.ckID = u32;
     if (m_header.ckID != fourCC("RIFF")) {
-        qCritical()<<"Неизвестный тип файла:"<<fileName();
+        LOG(ERROR)<<"Неизвестный тип файла:"<<fileName();
         m_valid = false;
         return;
     }
@@ -87,7 +88,7 @@ void WavFile::read()
     r >> u32; m_header.cksize = u32;
     r >> u32; m_header.waveId = u32;
     if (m_header.waveId != fourCC("WAVE")) {
-        qCritical()<<"Неизвестный тип файла:"<<fileName();
+        LOG(ERROR)<<"Неизвестный тип файла:"<<fileName();
         m_valid = false;
         return;
     }
@@ -100,7 +101,7 @@ void WavFile::read()
 
         if (chunkType == fourCC("fmt ")) {
             if (m_fmtChunk.fmtSize != 0) {
-                qCritical()<<"Два блока fmt в одном файле:"<<fileName();
+                LOG(ERROR)<<"Два блока fmt в одном файле:"<<fileName();
                 m_valid = false;
                 return;
             }
@@ -141,7 +142,7 @@ void WavFile::read()
 
         else if (chunkType == fourCC("fact")) {
             if (m_factChunk.factSize) {
-                qCritical()<<"Два блока fact в одном файле:"<<fileName();
+                LOG(ERROR)<<"Два блока fact в одном файле:"<<fileName();
                 m_valid = false;
                 return;
             }
@@ -152,7 +153,7 @@ void WavFile::read()
 
         else if (chunkType == fourCC("data")) {
             if (m_dataChunk.dataSize != 0) {
-                qCritical()<<"Два блока data в одном файле:"<<fileName();
+                LOG(ERROR)<<"Два блока data в одном файле:"<<fileName();
                 m_valid = false;
                 return;
             }
@@ -163,7 +164,7 @@ void WavFile::read()
 
         else if (chunkType == fourCC("cue ")) {
             if (m_cueChunk.cueSize != 0) {
-                qCritical()<<"Два блока cue в одном файле:"<<fileName();
+                LOG(ERROR)<<"Два блока cue в одном файле:"<<fileName();
                 m_valid = false;
                 return;
             }
@@ -237,7 +238,7 @@ void WavFile::read()
             break;
         }
         default: {
-            qCritical() << "This type of data is not supported:"<<m_fmtChunk.wFormatTag;
+            LOG(ERROR) << "This type of data is not supported:"<<m_fmtChunk.wFormatTag;
             m_valid = false;
         }
     }
@@ -263,58 +264,58 @@ void WavFile::read()
 }
 
 void WavFile::write()
-{
+{DD;
 }
 
 void WavFile::deleteChannels(const QVector<int> &channelsToDelete)
-{
+{DD;
 }
 
 void WavFile::copyChannelsFrom(const QVector<Channel *> &)
-{
+{DD;
 }
 
 int WavFile::channelsCount() const
-{
+{DD;
     return channels.size();
 }
 
 void WavFile::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
-{
+{DD;
 }
 
 Channel *WavFile::channel(int index) const
-{
+{DD;
     return channels.value(index, nullptr);
 }
 
 bool WavFile::canTakeChannelsFrom(FileDescriptor *other) const
-{
+{DD;
     return false;
 }
 
 bool WavFile::canTakeAnyChannels() const
-{
+{DD;
     return false;
 }
 
 QString WavFile::fileType() const
-{
+{DD;
     return "wav";
 }
 
 QStringList WavFile::fileFilters()
-{
+{DD;
     return {"Файлы wav (*.wav)"};
 }
 
 QStringList WavFile::suffixes()
-{
+{DD;
     return {"wav"};
 }
 
 void WavFile::init(const QVector<Channel *> &source)
-{
+{DD;
     auto d = source.first()->descriptor();
     setDataDescription(d->dataDescription());
     updateDateTimeGUID();
@@ -388,20 +389,20 @@ void WavFile::init(const QVector<Channel *> &source)
 }
 
 bool WavFile::writeWithMap(const QVector<Channel*> &source, quint32 totalSize)
-{
+{DD;
     const quint16 M = m_format == WavFormat::WavFloat ? 4 : 2; // bytesForFormat = short / float
 
     // Сохранение
     QFile wavFile(fileName());
     if (!wavFile.open(QFile::WriteOnly)) {
-        qCritical()<<"Не удалось открыть файл"<<fileName();
+        LOG(ERROR)<<"Не удалось открыть файл"<<fileName();
         m_valid = false;
         return false;
     }
 
     //Создаем пустой файл
     if (wavFile.write(QByteArray(totalSize, 0x0)) < totalSize) {
-        qCritical()<<"Не удалось создать файл нужного размера";
+        LOG(ERROR)<<"Не удалось создать файл нужного размера";
         m_valid = false;
         return false;
     }
@@ -411,7 +412,7 @@ bool WavFile::writeWithMap(const QVector<Channel*> &source, quint32 totalSize)
     wavFile.open(QFile::ReadWrite);
     uchar *mapped = wavFile.map(0, totalSize);
     if (!mapped) {
-        qCritical()<<"Не удалось создать файл нужного размера";
+        LOG(ERROR)<<"Не удалось создать файл нужного размера";
         wavFile.close();
         m_valid = false;
         return false;
@@ -478,10 +479,10 @@ bool WavFile::writeWithMap(const QVector<Channel*> &source, quint32 totalSize)
 }
 
 void WavFile::writeWithStream(const QVector<Channel *> &source)
-{
+{DD;
     QFile wavFile(fileName());
     if (!wavFile.open(QFile::WriteOnly)) {
-        qCritical()<<"Не удалось открыть файл"<<fileName();
+        LOG(ERROR)<<"Не удалось открыть файл"<<fileName();
         return;
     }
 
@@ -575,7 +576,7 @@ void WavFile::writeWithStream(const QVector<Channel *> &source)
 }
 
 WavHeader WavFile::initHeader(int totalSize)
-{
+{DD;
     WavHeader header;
     header.cksize = totalSize;
 
@@ -583,7 +584,7 @@ WavHeader WavFile::initHeader(int totalSize)
 }
 
 WavChunkFmt WavFile::initFmt(int channelsCount, int sampleRate)
-{
+{DD;
     const int M = m_format==WavFormat::WavFloat?4:2;
     WavChunkFmt header;
 
@@ -607,7 +608,7 @@ WavChunkFmt WavFile::initFmt(int channelsCount, int sampleRate)
 }
 
 WavChunkFact WavFile::initFact(int samplesCount)
-{
+{DD;
     WavChunkFact header;
     header.factSize = 4;
     header.dwSampleLength = samplesCount; // Nc*Ns, number of samples
@@ -615,7 +616,7 @@ WavChunkFact WavFile::initFact(int samplesCount)
 }
 
 WavChunkData WavFile::initDataHeader(int channelsCount, int samplesCount)
-{
+{DD;
     const int M = m_format==WavFormat::WavFloat?4:2;
     WavChunkData header;
     //data block - 8 + M*Nc*Ns bytes
@@ -624,7 +625,7 @@ WavChunkData WavFile::initDataHeader(int channelsCount, int samplesCount)
 }
 
 WavChunkCue WavFile::initCue()
-{
+{DD;
     WavChunkCue cue;
     cue.dwCuePoints = 1;
     cue.cueSize = sizeof (WavChunkCue::Cue) + 4;
@@ -635,7 +636,7 @@ WavChunkCue WavFile::initCue()
 }
 
 WavChunkFile WavFile::initFile()
-{
+{DD;
     WavChunkFile chunk;
     QJsonArray array;
     for (auto c: channels)
@@ -654,7 +655,7 @@ WavChunkFile WavFile::initFile()
 }
 
 WavChannel::WavChannel(WavFile *parent, const QString &name) : parent(parent)
-{
+{DD;
     dataDescription().put("name", name);
     dataDescription().put("xname", "s");
     dataDescription().put("yname", "Pa");
@@ -694,7 +695,7 @@ WavChannel::WavChannel(WavFile *parent, const QString &name) : parent(parent)
 }
 
 WavChannel::WavChannel(WavFile *parent, const DataDescription &description) : parent(parent)
-{
+{DD;
     dataDescription() = description;
 
     uint samples = 0;
@@ -710,7 +711,7 @@ WavChannel::WavChannel(WavFile *parent, const DataDescription &description) : pa
 }
 
 WavChannel::WavChannel(Channel *other, WavFile *parent) : Channel(other), parent(parent)
-{
+{DD;
     parent->channels << this;
     uint samples = 0;
     if (parent->m_fmtChunk.blockAlign != 0)
@@ -719,12 +720,12 @@ WavChannel::WavChannel(Channel *other, WavFile *parent) : Channel(other), parent
 }
 
 Descriptor::DataType WavChannel::type() const
-{
+{DD;
     return Descriptor::TimeResponse;
 }
 
 void WavChannel::populate()
-{
+{DD;
     if (parent->m_dataBegin < 0 || !parent->m_valid) return;
 
     _data->clear();
@@ -801,17 +802,17 @@ void WavChannel::populate()
 
     }
     else {
-        qDebug()<<"Cannot read raw file"<<parent->fileName();
+        LOG(ERROR)<<"Cannot read raw file"<<parent->fileName();
     }
 }
 
 FileDescriptor *WavChannel::descriptor() const
-{
+{DD;
     return parent;
 }
 
 int WavChannel::index() const
-{
+{DD;
     if (parent) return parent->channels.indexOf(const_cast<WavChannel*>(this));
     return -1;
 }

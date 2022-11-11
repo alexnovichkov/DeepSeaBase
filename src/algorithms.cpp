@@ -11,7 +11,7 @@ QDebug operator <<(QDebug debug, const std::complex<double> &val)
 }
 
 QString smartDouble(double v)
-{DDD;
+{DD;
     double v1=qAbs(v);
     if (v1>=0.1 && v1 <= 10000) return QString::number(v,'f',2);
     if (v1>=0.01 && v1 <= 0.1) return QString::number(v,'f',3);
@@ -22,7 +22,7 @@ QString smartDouble(double v)
 }
 
 double closest(double begin, double step, double value)
-{DDD;
+{DD;
     if (qFuzzyIsNull(step)) return 0;
 
     int n = round((value - begin)/step);
@@ -30,7 +30,7 @@ double closest(double begin, double step, double value)
 }
 
 double closest(Channel *c, double val, bool xAxis, int delta)
-{DDD;
+{DD;
     if (!c) return 0;
 
     if (xAxis) {
@@ -57,7 +57,7 @@ double closest(Channel *c, double val, bool xAxis, int delta)
 }
 
 QString replaceWinChars(QString s)
-{DDD;
+{DD;
     static const struct ReplaceParams {
         const char *what;
         const char *byWhat;
@@ -79,7 +79,7 @@ QString replaceWinChars(QString s)
 }
 
 QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spectrum, double xBegin, double xStep)
-{DDD;
+{DD;
     QPair<QVector<double>, QVector<double> > result;
     // определяем верхнюю границу данных
     const double F_min = xBegin;
@@ -174,7 +174,7 @@ QPair<QVector<double>, QVector<double> > thirdOctave(const QVector<double> &spec
 
 QString createUniqueFileName(QString folderName, const QString &fileName, QString constantPart,
                              const QString &ext, bool justified)
-{DDD;
+{DD;
     QFileInfo fn = QFileInfo(fileName);
 
     if (folderName.isEmpty()) folderName = fn.absolutePath();
@@ -202,14 +202,14 @@ QString createUniqueFileName(QString folderName, const QString &fileName, QStrin
 }
 
 QString createUniqueFileName(const QString &fileName)
-{DDD;
+{DD;
     if (QFile::exists(fileName))
         return createUniqueFileName("", fileName, "", QFileInfo(fileName).suffix(), false);
     return fileName;
 }
 
 void getUniqueFromToValues(QString &fromString, QString &toString, double from, double to)
-{DDD;
+{DD;
     int factor = 0; //10, 100, 1000...
     fromString.setNum(from, 'f', factor);
     toString.setNum(to, 'f', factor);
@@ -225,7 +225,7 @@ void getUniqueFromToValues(QString &fromString, QString &toString, double from, 
 }
 
 QString changeFileExt(const QString &fileName, const QString &ext)
-{DDD;
+{DD;
     QFileInfo fi(fileName);
     if (fi.exists())
         return fi.canonicalPath()+"/"+fi.completeBaseName()+"."+ext;
@@ -239,7 +239,7 @@ QString changeFileExt(const QString &fileName, const QString &ext)
 
 
 //QVector<double> absolutes(const QVector<cx_double> &values)
-//{DDD;
+//{DD;
 //    const int size = values.size();
 //    QVector<double> result(size);
 
@@ -251,7 +251,7 @@ QString changeFileExt(const QString &fileName, const QString &ext)
 //}
 
 //QVector<double> absolutes(const QVector<double> &values)
-//{DDD;
+//{DD;
 //    const int size = values.size();
 //    QVector<double> result(size);
 
@@ -263,7 +263,7 @@ QString changeFileExt(const QString &fileName, const QString &ext)
 //}
 
 QVector<double> phases(const QVector<cx_double> &values)
-{DDD;
+{DD;
     const int size = values.size();
     QVector<double> result(size);
 
@@ -275,7 +275,7 @@ QVector<double> phases(const QVector<cx_double> &values)
 }
 
 QVector<double> reals(const QVector<cx_double> &values)
-{DDD;
+{DD;
     const int size = values.size();
     QVector<double> result(size);
 
@@ -290,14 +290,14 @@ QVector<double> reals(const QVector<cx_double> &values)
 
 
 QVector<double> linspace(double begin, double step, int n)
-{DDD;
+{DD;
     QVector<double> result(n);
     for (int i=0; i<n; ++i) result[i]=begin+i*step;
     return result;
 }
 
 QVector<double> imags(const QVector<cx_double> &values)
-{DDD;
+{DD;
     const int size = values.size();
     QVector<double> result(size);
 
@@ -309,7 +309,7 @@ QVector<double> imags(const QVector<cx_double> &values)
 }
 
 QVector<cx_double> movingAverage(const QVector<cx_double> &spectrum, int window)
-{DDD;
+{DD;
     const int numInd = spectrum.size();
 
     // 1. Извлекаем амплитуды и фазы из комплексного спектра
@@ -328,7 +328,7 @@ QVector<cx_double> movingAverage(const QVector<cx_double> &spectrum, int window)
 }
 
 QVector<double> movingAverage(const QVector<double> &spectrum, int window)
-{DDD;
+{DD;
     int numInd = spectrum.size();
     QVector<double> result(numInd, 0.0);
 
@@ -355,7 +355,7 @@ QVector<double> movingAverage(const QVector<double> &spectrum, int window)
 
 
 QString doubletohex(const double d)
-{DDD;
+{DD;
     QString s;
     QByteArray ba;
     QDataStream stream(&ba,QIODevice::WriteOnly);
@@ -367,7 +367,7 @@ QString doubletohex(const double d)
 }
 
 double hextodouble(QString hex)
-{DDD;
+{DD;
     if (hex.startsWith("("))
         hex.remove(0,1);
     if (hex.endsWith(")"))
@@ -392,7 +392,7 @@ double hextodouble(QString hex)
 
 
 float hextofloat(QString hex)
-{DDD;
+{DD;
     if (hex.startsWith("("))
         hex.remove(0,1);
     if (hex.endsWith(")"))
@@ -415,7 +415,7 @@ float hextofloat(QString hex)
 }
 
 QString floattohex(const float f)
-{DDD;
+{DD;
     QString s;
     QByteArray ba;
     QDataStream stream(&ba,QIODevice::WriteOnly);
@@ -428,9 +428,9 @@ QString floattohex(const float f)
 
 template <typename TFloat, typename TInt, QDataStream::ByteOrder ENDIAN>
 TFloat toFloat(const QByteArray &v, size_t offset)
-{DDD;
+{DD;
     if(offset > v.size() - sizeof(TInt)) {
-        qDebug()<<"toFloat() - offset is out of range. Returning 0.";
+        LOG(ERROR)<<"toFloat() - offset is out of range. Returning 0.";
         return 0.0;
     }
 
@@ -447,23 +447,23 @@ TFloat toFloat(const QByteArray &v, size_t offset)
 }
 
 double toFloat64LE(const QByteArray &v, size_t offset)
-{DDD;
+{DD;
   return toFloat<double, quint64, QDataStream::LittleEndian>(v, offset);
 }
 
 float toFloat32LE(const QByteArray &v, size_t offset)
-{DDD;
+{DD;
     return toFloat<float, quint32, QDataStream::LittleEndian>(v, offset);
 }
 
 QString stripHtml(QString s)
-{DDD;
+{DD;
     s.remove(QRegularExpression("<[^>]*>"));
     return s;
 }
 
 void processDir(const QString &file, QStringList &files, bool includeSubfolders, const QStringList &filters)
-{DDD;
+{DD;
     if (auto fi = QFileInfo(file); fi.exists()) {
         if (fi.isDir()) {
             const QFileInfoList dirLst = QDir(file).entryInfoList(filters,
@@ -486,7 +486,7 @@ void processDir(const QString &file, QStringList &files, bool includeSubfolders,
 }
 
 QDateTime dateTimeFromString(QString s)
-{DDD;
+{DD;
     s = s.trimmed();
 
     QDateTime dt;
@@ -505,7 +505,7 @@ QDateTime dateTimeFromString(QString s)
 }
 
 QDateTime dateTimeFromString(QString date, QString time)
-{DDD;
+{DD;
     //date
     QDate d;
     date = date.trimmed();
@@ -533,7 +533,7 @@ QDateTime dateTimeFromString(QString date, QString time)
 }
 
 bool channelsFromSameFile(const QVector<Channel *> &source)
-{DDD;
+{DD;
     if (source.isEmpty()) return false;
     auto d = source.first()->descriptor();
     return std::all_of(source.cbegin(), source.cend(), [d](Channel *c){
@@ -542,7 +542,7 @@ bool channelsFromSameFile(const QVector<Channel *> &source)
 }
 
 QVector<int> channelIndexes(const QVector<Channel *> &source)
-{DDD;
+{DD;
     QVector<int> result;
     for (auto c: source) result << c->index();
     return result;
@@ -550,7 +550,7 @@ QVector<int> channelIndexes(const QVector<Channel *> &source)
 
 
 DataPrecision fromDfdDataPrecision(uint precision)
-{
+{DD;
     switch (precision) {
         case 1:          return DataPrecision::UInt8;
         case 0x80000001: return DataPrecision::Int8;
@@ -568,7 +568,7 @@ DataPrecision fromDfdDataPrecision(uint precision)
 }
 
 uint toDfdDataPrecision(DataPrecision precision)
-{
+{DD;
     switch (precision) {
         case DataPrecision::UInt8: return 1;
         case DataPrecision::UInt16: return 2;
@@ -590,14 +590,14 @@ uint toDfdDataPrecision(DataPrecision precision)
 std::default_random_engine g;
 
 void initRandomGenerator()
-{
+{DD;
     std::random_device seeder;
     const auto seed = seeder.entropy() ? seeder() : std::time(nullptr);
     g = std::default_random_engine(static_cast<std::default_random_engine::result_type>(seed));
 }
 
 int getRandom(int min, int max)
-{
+{DD;
     std::uniform_int_distribution intDistrib(min, max);
     return intDistrib(g);
 }

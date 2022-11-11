@@ -6,18 +6,18 @@
 #include "logging.h"
 
 PlotTitleBar::PlotTitleBar(ads::CDockAreaWidget *parent) : ads::CDockAreaTitleBar(parent)
-{DDD;
+{DD;
 
 }
 void PlotTitleBar::mouseDoubleClickEvent(QMouseEvent *event)
-{DDD;
+{DD;
     if (event->button()==Qt::LeftButton)
         Q_EMIT newPlot();
     event->accept();
 }
 
 void PlotTitleBar::contextMenuEvent(QContextMenuEvent *event)
-{DDD;
+{DD;
     event->accept();
     QMenu menu;
     menu.addAction("Новый график", this, SIGNAL(newPlot()), QKeySequence::AddTab);
@@ -25,7 +25,7 @@ void PlotTitleBar::contextMenuEvent(QContextMenuEvent *event)
 }
 
 PlotDockTab::PlotDockTab(ads::CDockWidget *parent) : ads::CDockWidgetTab(parent)
-{DDD;
+{DD;
     editor = new QLineEdit(this);
     editor->hide();
 
@@ -33,7 +33,7 @@ PlotDockTab::PlotDockTab(ads::CDockWidget *parent) : ads::CDockWidgetTab(parent)
 }
 
 void PlotDockTab::mouseDoubleClickEvent(QMouseEvent *event)
-{DDD;
+{DD;
     if (event->button()==Qt::LeftButton) {
         event->accept();
 
@@ -49,7 +49,7 @@ void PlotDockTab::mouseDoubleClickEvent(QMouseEvent *event)
 }
 
 void PlotDockTab::contextMenuEvent(QContextMenuEvent *event)
-{DDD;
+{DD;
     event->accept();
 
     QMenu menu;
@@ -63,7 +63,7 @@ void PlotDockTab::contextMenuEvent(QContextMenuEvent *event)
 }
 
 void PlotDockTab::renamePlot()
-{DDD;
+{DD;
     QString oldTabName = text();
 
     QString newTabName=QInputDialog::getText(this,
@@ -78,7 +78,7 @@ void PlotDockTab::renamePlot()
 }
 
 void PlotDockTab::setPlotName()
-{DDD;
+{DD;
     QString oldText = text();
     QString newText = editor->text();
     editor->hide();
@@ -87,13 +87,13 @@ void PlotDockTab::setPlotName()
 }
 
 ads::CDockWidgetTab *PlotDockFactory::createDockWidgetTab(ads::CDockWidget *DockWidget) const
-{DDD;
+{DD;
     auto tab = new PlotDockTab(DockWidget);
     return tab;
 }
 
 ads::CDockAreaTitleBar *PlotDockFactory::createDockAreaTitleBar(ads::CDockAreaWidget *DockArea) const
-{DDD;
+{DD;
     auto titleBar = new PlotTitleBar(DockArea);
     QObject::connect(titleBar, &PlotTitleBar::newPlot, receiver, &MainWindow::addPlotTabbed);
 

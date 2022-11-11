@@ -15,7 +15,7 @@
 
 CursorBox::CursorBox(Cursors *cursors, Plot *parent) : QTreeWidget(parent->widget()),
     cursors{cursors}, plot{parent}
-{DDD;
+{DD;
     setWindowFlag(Qt::Tool);
     setContextMenuPolicy(Qt::ActionsContextMenu);
     connect(cursors, SIGNAL(cursorsChanged()), this, SLOT(updateLayout()));
@@ -45,13 +45,13 @@ CursorBox::CursorBox(Cursors *cursors, Plot *parent) : QTreeWidget(parent->widge
 }
 
 void CursorBox::update()
-{DDD;
+{DD;
     updateContents();
     updateLayout();
 }
 
 void CursorBox::updateContents()
-{DDD;
+{DD;
     setHeaderLabels(cursors->dataHeader());
     auto size = plot->model()->curves().size();
     for (int i=0; i<size; ++i) {
@@ -63,7 +63,7 @@ void CursorBox::updateContents()
 }
 
 void CursorBox::updateLayout()
-{DDD;
+{DD;
     clear();
 
     auto size = plot->model()->curves().size();
@@ -86,7 +86,7 @@ void CursorBox::updateLayout()
 }
 
 void CursorBox::copy()
-{DDD;
+{DD;
     QStringList list;
     QStringList values;
     for (int i=0; i<columnCount(); ++i) values << headerItem()->text(i);
@@ -110,7 +110,7 @@ void CursorBox::copy()
 
 
 void CursorBox::closeEvent(QCloseEvent *event)
-{DDD;
+{DD;
     emit closeRequested();
     QTreeWidget::closeEvent(event);
 }

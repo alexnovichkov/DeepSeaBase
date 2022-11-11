@@ -15,7 +15,7 @@
 
 FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DDD;
+{DD;
     channelF = new ChannelFunction(this, "channel");
     refChannelF = new RefChannelFunction(this, "refChannel");
 
@@ -125,17 +125,17 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
 }
 
 QString FRFAlgorithm::description() const
-{DDD;
+{DD;
     return "Передаточная функция";
 }
 
 QString FRFAlgorithm::displayName() const
-{DDD;
+{DD;
     return "FRF";
 }
 
 void FRFAlgorithm::resetChain()
-{
+{DD;
     resamplingF->reset();
     samplingF->reset();
     windowingF->reset();
@@ -148,7 +148,7 @@ void FRFAlgorithm::resetChain()
 }
 
 void FRFAlgorithm::initChain(FileDescriptor *file)
-{
+{DD;
     resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());  //автоматически задает xStep для samplingF
 
     int frfType = saver->getParameter("FRF/type").toInt();

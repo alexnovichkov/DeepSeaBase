@@ -39,11 +39,12 @@ public:
 
     QList<QJsonObject> convertPlugins;
 
-    ColorSelector *colors() {return m_colors;}
-    AbstractFormatFactory *formatFactory;
+    ColorSelector *colors() {return m_colors.get();}
+    std::unique_ptr<AbstractFormatFactory> formatFactory;
+    QTextStream logStream;
 private:
     QHash<QString, F> files;
-    ColorSelector *m_colors = nullptr;
+    std::unique_ptr<ColorSelector> m_colors;
 };
 
 #endif // APP_H

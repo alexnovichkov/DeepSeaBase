@@ -5,7 +5,7 @@
 
 
 ClearableSpinBox::ClearableSpinBox(QWidget *parent) : QAbstractSpinBox(parent)
-{DDD;
+{DD;
     setKeyboardTracking(false);
     setWrapping(false);
     lineEdit()->setAlignment(Qt::AlignLeft);
@@ -24,13 +24,13 @@ ClearableSpinBox::ClearableSpinBox(QWidget *parent) : QAbstractSpinBox(parent)
 }
 
 void ClearableSpinBox::setAxis(ClearableSpinBox::Axis axis)
-{DDD;
+{DD;
     this->axis = axis;
     updateText(axis == XAxis?xVal:yVal);
 }
 
 void ClearableSpinBox::moveOneStep(Enums::Direction direction)
-{DDD;
+{DD;
     switch (direction) {
         case Enums::Up: moveBy(0,1); break;
         case Enums::Down: moveBy(0,-1); break;
@@ -40,25 +40,25 @@ void ClearableSpinBox::moveOneStep(Enums::Direction direction)
 }
 
 void ClearableSpinBox::setXStep(double step)
-{DDD;
+{DD;
     this->xStep = step;
     if (!qFuzzyIsNull(step)) xValues.clear();
 }
 
 void ClearableSpinBox::setYStep(double step)
-{DDD;
+{DD;
     this->yStep = step;
     if (!qFuzzyIsNull(step)) yValues.clear();
 }
 
 void ClearableSpinBox::setStep(double step)
-{DDD;
+{DD;
     if (axis==XAxis) setXStep(step);
     else setYStep(step);
 }
 
 void ClearableSpinBox::setXValues(const QVector<double> &values)
-{DDD;
+{DD;
     xValues = values;
     xStep = 0.0;
     if (!xValues.isEmpty())
@@ -66,7 +66,7 @@ void ClearableSpinBox::setXValues(const QVector<double> &values)
 }
 
 void ClearableSpinBox::setYValues(const QVector<double> &values)
-{DDD;
+{DD;
     yValues = values;
     yStep = 0.0;
     if (!xValues.isEmpty())
@@ -74,7 +74,7 @@ void ClearableSpinBox::setYValues(const QVector<double> &values)
 }
 
 void ClearableSpinBox::moveTo(const QPointF &position)
-{DDD;
+{DD;
     //если spectrogram, то вторая координата соответствует zVal
     int xDistance = 0;
     int yDistance = 0;
@@ -115,7 +115,7 @@ void ClearableSpinBox::moveTo(const QPointF &position)
 }
 
 void ClearableSpinBox::moveBy(int xSteps, int ySteps)
-{DDD;
+{DD;
     if (xSteps==0 && ySteps==0) return;
 
     if (xSteps != 0) moveByX(xSteps);
@@ -126,7 +126,7 @@ void ClearableSpinBox::moveBy(int xSteps, int ySteps)
 }
 
 void ClearableSpinBox::moveByX(int steps)
-{DDD;
+{DD;
     if (qFuzzyIsNull(xStep) && !xValues.isEmpty()) {
         int newcurrent = std::clamp(steps + xCurrent, 0, xValues.size()-1);
         if (xCurrent != newcurrent) {
@@ -142,7 +142,7 @@ void ClearableSpinBox::moveByX(int steps)
 }
 
 void ClearableSpinBox::moveByY(int steps)
-{DDD;
+{DD;
     if (qFuzzyIsNull(yStep) && !yValues.isEmpty()) {
         int newcurrent = std::clamp(steps + yCurrent, 0, yValues.size()-1);
         if (yCurrent != newcurrent) {
@@ -158,31 +158,31 @@ void ClearableSpinBox::moveByY(int steps)
 }
 
 void ClearableSpinBox::stepBy(int steps)
-{DDD;
+{DD;
     if (axis==XAxis) moveBy(steps, 0);
     else moveBy(0, steps);
 }
 
 void ClearableSpinBox::setPrefix(const QString &prefix)
-{DDD;
+{DD;
     this->prefix = prefix;
     updateText(axis==XAxis?xVal:yVal);
 }
 
 void ClearableSpinBox::setXRange(double min, double max)
-{DDD;
+{DD;
     this->xMin = min;
     this->xMax = max;
 }
 
 void ClearableSpinBox::setYRange(double min, double max)
-{DDD;
+{DD;
     this->yMin = min;
     this->yMax = max;
 }
 
 void ClearableSpinBox::updateText(double val)
-{DDD;
+{DD;
     double v = std::abs(val);
     QString s;
     if (qFuzzyIsNull(v)) s = "0";
@@ -201,7 +201,7 @@ void ClearableSpinBox::updateText(double val)
 
 
 QAbstractSpinBox::StepEnabled ClearableSpinBox::stepEnabled() const
-{DDD;
+{DD;
     QAbstractSpinBox::StepEnabled res = 0;
     if (axis==XAxis) {
         if (qFuzzyIsNull(xStep) && !xValues.isEmpty()) {
@@ -225,7 +225,7 @@ QAbstractSpinBox::StepEnabled ClearableSpinBox::stepEnabled() const
 
 
 QSize ClearableSpinBox::sizeHint() const
-{DDD;
+{DD;
     auto s = QAbstractSpinBox::sizeHint();
 
     s.setWidth(fontMetrics().horizontalAdvance(prefix+"+9,9999e+999"));
@@ -233,7 +233,7 @@ QSize ClearableSpinBox::sizeHint() const
 }
 
 QSize ClearableSpinBox::minimumSizeHint() const
-{DDD;
+{DD;
     auto s = QAbstractSpinBox::minimumSizeHint();
     s.setWidth(50);
     return s;

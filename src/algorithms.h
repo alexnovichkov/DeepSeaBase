@@ -4,6 +4,7 @@
 #include <QtCore>
 #include <vector>
 #include <complex>
+#include "logging.h"
 typedef std::complex<double> cx_double;
 
 class Channel;
@@ -76,7 +77,7 @@ QVector<T> segment(const QVector<T> &values, int from, int to, int blockSize, in
             result.append(d);
         }
     } catch (const std::bad_alloc &bad) {
-        qDebug()<<"could not allocate"<<length*blocks<<"elements";
+        LOG(ERROR)<<"could not allocate"<<length*blocks<<"elements";
     }
     return result;
 }
@@ -86,11 +87,11 @@ QString smartDouble(double v);
 template <typename T, typename D>
 QVector<D> readChunk(QDataStream &readStream, quint64 blockSize, qint64 *actuallyRead)
 {
-    //qDebug()<<"trying to allocate"<<blockSize<<"elements";
+    //LOG(DEBUG)<<"trying to allocate"<<blockSize<<"elements";
     QVector<D> result;
     try {
         result.resize(blockSize);
-        //qDebug()<<"allocated";
+        //LOG(DEBUG)<<"allocated";
 
         T v;
 
@@ -106,7 +107,7 @@ QVector<D> readChunk(QDataStream &readStream, quint64 blockSize, qint64 *actuall
             if (actuallyRead) (*actuallyRead)++;
         }
     } catch (const std::bad_alloc &bad) {
-        qDebug()<<"could not allocate"<<blockSize<<"elements";
+        LOG(ERROR)<<"could not allocate"<<blockSize<<"elements";
         if (actuallyRead) *actuallyRead = 0;
     }
 

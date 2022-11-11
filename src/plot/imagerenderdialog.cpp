@@ -7,7 +7,7 @@
 
 ImageRenderDialog::ImageRenderDialog(bool askForPath, QWidget *parent) : QDialog(parent),
     askForPath(askForPath)
-{DDD;
+{DD;
     setWindowTitle("Установка параметров рисунка");
 
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
@@ -79,7 +79,7 @@ ImageRenderDialog::~ImageRenderDialog()
 }
 
 int ImageRenderDialog::getResolution() const
-{DDD;
+{DD;
     return getResolution(resolutionCombo->currentIndex());
 }
 

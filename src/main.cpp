@@ -11,8 +11,31 @@
 #include <QFile>
 #include <QCollator>
 
+#include "logging.h"
+INITIALIZE_EASYLOGGINGPP
+
 int main(int argc, char *argv[])
 {
+    bool logToFile = false;
+    if (argc > 1) {
+        for (int i=1; i<argc; ++i) {
+            if (strcmp(argv[i], "-l") || strcmp(argv[i], "--log")) logToFile = true;
+        }
+    }
+
+    START_EASYLOGGINGPP(argc, argv);
+    el::Loggers::addFlag(el::LoggingFlag::LogDetailedCrashReason);
+    el::Loggers::addFlag(el::LoggingFlag::AutoSpacing);
+
+    if (logToFile) {
+        el::Configurations fileConf("file.conf");
+        el::Loggers::reconfigureAllLoggers(fileConf);
+    }
+    else {
+        el::Configurations consoleConf("console.conf");
+        el::Loggers::reconfigureAllLoggers(consoleConf);
+    }
+
     //This mutex is used to prevent the user from installing new versions
     //of app while app is still running, and to prevent
     //the user from uninstalling a running application.
@@ -26,23 +49,6 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationVersion(QString(DEEPSEABASE_VERSION));
 
     Application a(argc, argv);
-
-//    QFile f("K://err");
-
-//    if (f.open(QFile::ReadOnly)) {
-
-//    QDataStream r(&f);
-//    r.setByteOrder(QDataStream::LittleEndian);
-
-//    QByteArray descriptionBuffer = r.device()->readAll();
-
-//    QJsonParseError error;
-//    QJsonDocument doc = QJsonDocument::fromJson(descriptionBuffer, &error);
-//    if (error.error != QJsonParseError::NoError) {
-//        qDebug()<<error.errorString() << error.offset;
-//        //return 0;
-//    }
-//    }
 
     QPixmap pixmap(":/icons/splash.png");
     QSplashScreen splash(pixmap);

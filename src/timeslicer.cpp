@@ -7,26 +7,23 @@
 
 TimeSlicer::TimeSlicer(const QVector<FileDescriptor *> &files, double from, double to, QObject *parent)
     : QObject(parent), dataBase(files), from(from), to(to)
-{DDD;
+{DD;
     stop_ = false;
 }
 
 TimeSlicer::~TimeSlicer()
-{DDD;
+{DD;
 
 }
 
 void TimeSlicer::stop()
-{DDD;
+{DD;
     stop_ = true;
     finalize();
 }
 
 void TimeSlicer::start()
-{DDD;
-    //dt = QDateTime::currentDateTime();
-    //qDebug()<<"Start converting"<<dt.time();
-
+{DD;
 //    QProgressDialog progress("Сохранение вырезки...", "Отменить сохранение", 0, dataBase.size(), this);
 //    progress.setWindowModality(Qt::WindowModal);
 
@@ -51,6 +48,6 @@ void TimeSlicer::start()
 }
 
 void TimeSlicer::finalize()
-{DDD;
+{DD;
     emit finished();
 }

@@ -8,18 +8,18 @@
 //#define PRINT_CONTENT
 
 MatFile::MatFile(const QString &fileName) : FileDescriptor(fileName)
-{DDD;
+{DD;
 
 }
 
 MatFile::~MatFile()
-{DDD;
+{DD;
     qDeleteAll(records);
     qDeleteAll(channels);
 }
 
 int MatFile::getChannelsCount() const
-{DDD;
+{DD;
     int count = 0;
     foreach (MatlabRecord *rec, records) {
         if (rec) count += rec->getChannelsCount();
@@ -28,7 +28,7 @@ int MatFile::getChannelsCount() const
 }
 
 void MatFile::read()
-{DDD;
+{DD;
     QFile f(fileName());
     if (f.open(QFile::ReadOnly)) {
         QDataStream stream(&f);
@@ -41,7 +41,7 @@ void MatFile::read()
 
             MatlabRecord *rec = matlabRecordFactory(header, fileName()); // <- сейчас указывает на начало данных
             if (!rec) {
-                qDebug()<<"Unknown matlab data type:" << header->type;
+                LOG(ERROR)<<"Unknown matlab data type:" << header->type;
                 continue;
             }
 
@@ -325,7 +325,7 @@ QByteArray MatFile::toJson() const
 
 
 MatlabRecord *matlabRecordFactory(MatlabHeader *header, const QString &fileName)
-{DDD;
+{DD;
     MatlabRecord *rec = 0;
     switch (header->type) {
         case 0: return rec; break;
@@ -363,7 +363,7 @@ MatlabRecord *matlabRecordFactory(MatlabHeader *header, const QString &fileName)
             break;
         }
         case 0xF: {//15 miCOMPRESSED
-//            qDebug()<<"zlib data";
+//            LOG(DEBUG)<<"zlib data";
             return rec;
             break;
         }
@@ -374,7 +374,7 @@ MatlabRecord *matlabRecordFactory(MatlabHeader *header, const QString &fileName)
 }
 
 void MatlabNumericRecord::readData(QDataStream *f)
-{DDD;
+{DD;
 //    f->setFloatingPointPrecision(QDataStream::DoublePrecision);
 
     switch(header->type) {
@@ -400,14 +400,14 @@ void MatlabNumericRecord::readData(QDataStream *f)
 }
 
 QVector<double> MatlabNumericRecord::getNumericAsDouble() const
-{DDD;
+{DD;
     QVector<double> data = this->getNumeric<double>();
 
     return data;
 }
 
 QVector<qint64> MatlabNumericRecord::getNumericAsInt() const
-{DDD;
+{DD;
     QVector<qint64> data = this->getNumeric<qint64>();
 
     return data;
@@ -423,7 +423,7 @@ QJsonValue MatlabNumericRecord::toJson() const
 
 template<typename T>
 QVector<T> MatlabNumericRecord::getNumeric() const
-{DDD;
+{DD;
     QVector<T> data;
 
     QFile f(fileName);
@@ -453,7 +453,7 @@ QVector<T> MatlabNumericRecord::getNumeric() const
 }
 
 MatlabArrayRecord::~MatlabArrayRecord()
-{DDD;
+{DD;
     qDeleteAll(subRecords);
 
 }
@@ -479,7 +479,7 @@ QJsonValue MatlabArrayRecord::toJson() const
 }
 
 void MatlabArrayRecord::readData(QDataStream *f)
-{DDD;
+{DD;
     uint alreadyRead = 16;
 
     if (header->flags & 0b00001000) complex = true;
@@ -535,12 +535,12 @@ void MatlabArrayRecord::readData(QDataStream *f)
 
     QStringList dimsL; foreach(int i, dimensions) dimsL << QString::number(i);
 #ifdef PRINT_CONTENT
-    qDebug()<<"Array name:"<<name<<"Array dimensions:"<<dimsL.join("x");
+    LOG(DEBUG)<<"Array name:"<<name<<"Array dimensions:"<<dimsL.join("x");
 #endif
 }
 
 void MatlabHeader::read(QDataStream *f)
-{DDD;
+{DD;
     headerBegin = f->device()->pos();
 
     *f >> type;
@@ -574,7 +574,7 @@ void MatlabHeader::read(QDataStream *f)
         f->skipRawData(6);
 
 #ifdef PRINT_CONTENT
-        qDebug()<<"Array class ="<<arrayClass<<"flags="<<flags<< "Block size:"<<sizeInBytesWithoutPadding
+        LOG(DEBUG)<<"Array class ="<<arrayClass<<"flags="<<flags<< "Block size:"<<sizeInBytesWithoutPadding
                << "actually"<<actualSize
                <<"header starts with:" <<hex<<headerBegin<<dec
                <<"data starts with:" <<hex<<dataBegin<<dec
@@ -584,7 +584,7 @@ void MatlabHeader::read(QDataStream *f)
     }
     else {
 #ifdef PRINT_CONTENT
-        qDebug()<<"Matlab Data Type=" <<type
+        LOG(DEBUG)<<"Matlab Data Type=" <<type
                << "Block size:"<<sizeInBytesWithoutPadding
                << "actually"<<actualSize
                <<"header starts with:" <<hex<<headerBegin<<dec
@@ -596,7 +596,7 @@ void MatlabHeader::read(QDataStream *f)
 }
 
 void MatlabCellArray::readData(QDataStream *f)
-{DDD;
+{DD;
     MatlabArrayRecord::readData(f);
 
     // читаем поля - это могут быть только miMatrix
@@ -606,7 +606,7 @@ void MatlabCellArray::readData(QDataStream *f)
 
     for (int cellNumber = 0; cellNumber < totalSize; ++cellNumber) {
 #ifdef PRINT_CONTENT
-    qDebug()<<"reading cell"<<cellNumber+1<<"of"<<totalSize;
+    LOG(DEBUG)<<"reading cell"<<cellNumber+1<<"of"<<totalSize;
 #endif
 
         MatlabHeader *header = new MatlabHeader();
@@ -614,14 +614,14 @@ void MatlabCellArray::readData(QDataStream *f)
 
         MatlabRecord *rec = matlabRecordFactory(header, fileName); // <- сейчас указывает на начало данных
         if (!rec) {
-            qDebug()<<"Unknown matlab data type:" << header->type;
+            LOG(ERROR)<<"Unknown matlab data type:" << header->type;
             return;
         }
         rec->readData(f);
 
         subRecords << rec;
 #ifdef PRINT_CONTENT
-    qDebug()<<"after reading cell" <<cellNumber+1<< "pos at"<<hex<<f->device()->pos()<<dec;
+    LOG(DEBUG)<<"after reading cell" <<cellNumber+1<< "pos at"<<hex<<f->device()->pos()<<dec;
 #endif
     }
 }
@@ -636,7 +636,7 @@ QJsonValue MatlabCellArray::toJson() const
 }
 
 void MatlabStructArray::readData(QDataStream *f)
-{DDD;
+{DD;
     MatlabArrayRecord::readData(f);
 
     // dims, name были прочитаны ранее
@@ -664,7 +664,7 @@ void MatlabStructArray::readData(QDataStream *f)
     if (padding > 0)
         f->skipRawData(8 - padding);
 #ifdef PRINT_CONTENT
-    qDebug()<<"  fields names"<<fieldNames;
+    LOG(DEBUG)<<"  fields names"<<fieldNames;
 #endif
 //
 
@@ -675,12 +675,12 @@ void MatlabStructArray::readData(QDataStream *f)
 
     for (int structNumber = 0; structNumber < totalSize; ++structNumber) {
 #ifdef PRINT_CONTENT
-    qDebug()<<"reading struct"<<structNumber+1<<"of"<<totalSize;
+    LOG(DEBUG)<<"reading struct"<<structNumber+1<<"of"<<totalSize;
 #endif
 //
         for (int fieldNumber = 0; fieldNumber < fieldNames.size(); ++fieldNumber) {
 #ifdef PRINT_CONTENT
-    qDebug()<<"reading field"<<fieldNames.at(fieldNumber)<<"of"<<fieldNames.size();
+    LOG(DEBUG)<<"reading field"<<fieldNames.at(fieldNumber)<<"of"<<fieldNames.size();
 #endif
 //
 
@@ -689,14 +689,14 @@ void MatlabStructArray::readData(QDataStream *f)
 
             MatlabRecord *rec = matlabRecordFactory(header, fileName); // <- сейчас указывает на начало данных
             if (!rec) {
-                qDebug()<<"Unknown matlab data type:" << header->type;
+                LOG(ERROR)<<"Unknown matlab data type:" << header->type;
                 return;
             }
             rec->readData(f);
 
             subRecords << rec;
 #ifdef PRINT_CONTENT
-    qDebug()<<"end reading struct"<<fieldNames.at(fieldNumber)<<structNumber+1<<"of"<<totalSize <<"at"<<hex<<f->device()->pos()<<dec;
+    LOG(DEBUG)<<"end reading struct"<<fieldNames.at(fieldNumber)<<structNumber+1<<"of"<<totalSize <<"at"<<hex<<f->device()->pos()<<dec;
 #endif
 //
         }
@@ -727,7 +727,7 @@ QJsonValue MatlabStructArray::toJson() const
 }
 
 void MatlabObjectArray::readData(QDataStream *f)
-{DDD;
+{DD;
     MatlabArrayRecord::readData(f);
 
     //reading class name
@@ -771,7 +771,7 @@ void MatlabObjectArray::readData(QDataStream *f)
     if (padding > 0)
         f->skipRawData(8 - padding);
 #ifdef PRINT_CONTENT
-    qDebug()<<"  object fields names"<<fieldNames;
+    LOG(DEBUG)<<"  object fields names"<<fieldNames;
 #endif
 //
 
@@ -781,12 +781,12 @@ void MatlabObjectArray::readData(QDataStream *f)
     foreach (int dim, dimensions) totalSize *= dim;
     for (int fieldNumber = 0; fieldNumber < fieldNames.size(); ++fieldNumber) {
 #ifdef PRINT_CONTENT
-    qDebug()<<"reading field"<<fieldNames.at(fieldNumber)<<"of"<<fieldNames.size();
+    LOG(DEBUG)<<"reading field"<<fieldNames.at(fieldNumber)<<"of"<<fieldNames.size();
 #endif
 //
         for (int cellNumber = 0; cellNumber < totalSize; ++cellNumber) {
 #ifdef PRINT_CONTENT
-    qDebug()<<"reading cell"<<cellNumber+1<<"of"<<totalSize;
+    LOG(DEBUG)<<"reading cell"<<cellNumber+1<<"of"<<totalSize;
 #endif
 //
             MatlabHeader *header = new MatlabHeader();
@@ -794,14 +794,14 @@ void MatlabObjectArray::readData(QDataStream *f)
 
             MatlabRecord *rec = matlabRecordFactory(header, fileName); // <- сейчас указывает на начало данных
             if (!rec) {
-                qDebug()<<"Unknown matlab data type:" << header->type;
+                LOG(ERROR)<<"Unknown matlab data type:" << header->type;
                 return;
             }
             rec->readData(f);
 
             subRecords << rec;
 #ifdef PRINT_CONTENT
-    qDebug()<<"after reading pos at"<<hex<<f->device()->pos()<<dec;
+    LOG(DEBUG)<<"after reading pos at"<<hex<<f->device()->pos()<<dec;
 #endif
 //
         }
@@ -818,7 +818,7 @@ QJsonValue MatlabObjectArray::toJson() const
 }
 
 void MatlabCharacterArray::readData(QDataStream *f)
-{DDD;
+{DD;
     MatlabArrayRecord::readData(f);
 
     MatlabHeader *h = new MatlabHeader;
@@ -830,7 +830,7 @@ void MatlabCharacterArray::readData(QDataStream *f)
         delete rec;
     }
 #ifdef PRINT_CONTENT
-    qDebug()<<"values"<<values;
+    LOG(DEBUG)<<"values"<<values;
 #endif
     //
 }
@@ -841,12 +841,12 @@ QJsonValue MatlabCharacterArray::toJson() const
 }
 
 QString MatlabCharacterArray::getString() const
-{DDD;
+{DD;
     return values.join("");
 }
 
 void MatlabSparseArray::readData(QDataStream *f)
-{DDD;
+{DD;
     MatlabArrayRecord::readData(f);
 }
 
@@ -871,7 +871,7 @@ QJsonValue MatlabNumericArray::toJson() const
 }
 
 void MatlabNumericArray::readData(QDataStream *f)
-{DDD;
+{DD;
     MatlabArrayRecord::readData(f);
 
     MatlabHeader *h1 = new MatlabHeader;
@@ -886,9 +886,9 @@ void MatlabNumericArray::readData(QDataStream *f)
         if (imagValues) imagValues->readData(f);
     }
 #ifdef PRINT_CONTENT
-//    if (realValues->header->==1) qDebug()<<"Value:"<<realValues.constFirst();
+//    if (realValues->header->==1) LOG(DEBUG)<<"Value:"<<realValues.constFirst();
 //    else
-//        qDebug()<<"    values size"<<realValues.size()<<"imags size"<<valuesImag.size();
+//        LOG(DEBUG)<<"    values size"<<realValues.size()<<"imags size"<<valuesImag.size();
 #endif
 
 }
@@ -946,7 +946,7 @@ void MatlabNumericArray::readData(QDataStream *f)
 //}
 
 void MatlabUtf8Record::readData(QDataStream *f)
-{DDD;
+{DD;
     if (header->smallData) {
         data = QString::fromUtf8(f->device()->read(4));
     }
@@ -964,9 +964,9 @@ QJsonValue MatlabUtf8Record::toJson() const
 }
 
 void MatlabUtf16Record::readData(QDataStream *f)
-{DDD;
+{DD;
 #ifdef PRINT_CONTENT
-    qDebug()<<hex<<f->device()->pos()<<dec;
+    LOG(DEBUG)<<hex<<f->device()->pos()<<dec;
 #endif
 //
     if (header->smallData) {
@@ -987,7 +987,7 @@ QJsonValue MatlabUtf16Record::toJson() const
 
 
 QVector<double> MatlabNumericArray::getNumericAsDouble() const
-{DDD;
+{DD;
     QVector<double> data;
     if (!realValues) return data;
 
@@ -998,7 +998,7 @@ QVector<double> MatlabNumericArray::getNumericAsDouble() const
 }
 
 QVector<qint64> MatlabNumericArray::getNumericAsInt() const
-{DDD;
+{DD;
     QVector<qint64> data;
     if (!realValues) return data;
 
@@ -1009,7 +1009,7 @@ QVector<qint64> MatlabNumericArray::getNumericAsInt() const
 }
 
 QByteArray MatlabRecord::getRaw(qint64 position, qint64 length) const
-{DDD;
+{DD;
     QFile f(fileName);
     if (!f.open(QFile::ReadOnly))  return QByteArray();
 
@@ -1117,7 +1117,7 @@ QJsonValue MatlabRecord::toJson() const
 
 
 QVector<float> getNumeric(const MatlabNumericRecord *rec)
-{DDD;
+{DD;
     QVector<float> data;
 
     QFile f(rec->fileName);
@@ -1202,7 +1202,7 @@ Descriptor::DataType MatChannel::type() const
 }
 
 void MatChannel::populate()
-{DDD;
+{DD;
     _data->clear();
 
     setPopulated(false);
@@ -1210,14 +1210,14 @@ void MatChannel::populate()
     qint64 idx = real_values->header->sizeInBytesWithoutPadding;
     idx /= groupSize;
     QByteArray raw = real_values->getRaw(idx * indexInGroup, idx);
-    qDebug()<<"Read"<<raw.length()<<"bytes in channel";
+    LOG(DEBUG)<<"Read"<<raw.length()<<"bytes in channel";
 
     QDataStream stream(&raw, QIODevice::ReadOnly);
     stream.setByteOrder(QDataStream::LittleEndian);
     //stream.setFloatingPointPrecision(QDataStream::SinglePrecision);
     QVector<double> data = readNumeric<double>(&stream, real_values->actualDataSize / groupSize,
                                               real_values->header->type);
-    qDebug()<<"Converted to"<<data.size()<<"double values";
+    LOG(DEBUG)<<"Converted to"<<data.size()<<"double values";
 
     if (!complex) {
         _data->setYValues(data, _data->yValuesFormat());
@@ -1255,7 +1255,7 @@ int MatChannel::index() const
 
 template<typename T>
 T findSubrecord(const QString &name, MatlabStructArray *rec)
-{DDD;
+{DD;
     T result = T(0);
     int index = rec->fieldNames.indexOf(name);
     if (index >=0) result = dynamic_cast<T>(rec->subRecords[index]);

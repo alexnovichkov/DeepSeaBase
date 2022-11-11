@@ -39,7 +39,7 @@
 
 Plot::Plot(Enums::PlotType type, QWidget *parent) :
     plotType(type)
-{DDD;
+{DD;
     m = new PlotModel(this);
     picker = new Picker(this);
 
@@ -84,7 +84,7 @@ Plot::Plot(Enums::PlotType type, QWidget *parent) :
 }
 
 Plot::~Plot()
-{DDD;
+{DD;
     deleteAllCurves(true);
 
 //    delete trackingPanel;
@@ -150,7 +150,7 @@ void Plot::updateActions(int filesCount, int channelsCount)
 }
 
 void Plot::updatePlottedIndexes()
-{DDD;
+{DD;
     if (!sergeiMode) m->updatePlottedIndexes();
 }
 
@@ -162,7 +162,7 @@ void Plot::plotCurvesForDescriptor(FileDescriptor *d, int fileIndex)
 }
 
 void Plot::update()
-{DDD;
+{DD;
     for (auto c: m->curves()) {
         c->updatePen();
     }
@@ -177,7 +177,7 @@ void Plot::update()
 }
 
 void Plot::updateBounds()
-{DDD;
+{DD;
     if (m->leftCurvesCount()==0)
         zoom->scaleBounds(Enums::AxisType::atLeft)->reset();
     if (m->rightCurvesCount()==0)
@@ -194,7 +194,7 @@ void Plot::updateBounds()
 }
 
 QMenu *Plot::createMenu(Enums::AxisType axis, const QPoint &pos)
-{DDD;
+{DD;
     QMenu *menu = new QMenu(0);
 
     if (axis == Enums::AxisType::atBottom) {
@@ -382,12 +382,12 @@ void Plot::cycleChannels(bool up)
 }
 
 bool Plot::hasCurves() const
-{DDD;
+{DD;
     return !m->isEmpty();
 }
 
 int Plot::curvesCount(int type) const
-{DDD;
+{DD;
     return m->size(type);
 }
 
@@ -408,7 +408,7 @@ void Plot::deleteAllCurves(bool forceDeleteFixed)
 }
 
 void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
-{DDD;
+{DD;
     for (int i = m->size()-1; i>=0; --i) {
         if (Curve *curve = m->curve(i); descriptor == curve->channel->descriptor()) {
             deleteCurve(curve, true);
@@ -420,7 +420,7 @@ void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
 
 //не удаляем, если фиксирована
 void Plot::deleteCurveFromLegend(Curve *curve)
-{DDD;
+{DD;
     if (!curve->fixed) {
         deleteCurve(curve, true);
         updatePlottedIndexes();
@@ -429,7 +429,7 @@ void Plot::deleteCurveFromLegend(Curve *curve)
 }
 
 void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot)
-{DDD;
+{DD;
     if (Curve *curve = m->plotted(dfd->channel(channel))) {
         deleteCurve(curve, doReplot);
         updatePlottedIndexes();
@@ -438,7 +438,7 @@ void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doR
 }
 
 void Plot::deleteSelectedCurve(Selectable *selected)
-{DDD;
+{DD;
     if (Curve *curve = dynamic_cast<Curve*>(selected)) {
         deleteCurve(curve, true);
         updatePlottedIndexes();
@@ -449,7 +449,7 @@ void Plot::deleteSelectedCurve(Selectable *selected)
 //удаляет кривую, была ли она фиксирована или нет.
 //Все проверки проводятся выше
 void Plot::deleteCurve(Curve *curve, bool doReplot)
-{DDD;
+{DD;
     if (!curve) return;
     if (curve->selected()) picker->deselect();
 
@@ -468,6 +468,7 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
 
         curve->detachFrom(this);
         delete curve;
+        delete curve;
 
         if (m->leftCurvesCount()==0) {
             yLeftName.clear();
@@ -483,7 +484,7 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
 }
 
 void Plot::showContextMenu(const QPoint &pos, Enums::AxisType axis)
-{DDD;
+{DD;
     if (!hasCurves()) return;
 
     QMenu *menu = createMenu(axis, pos);
@@ -494,7 +495,7 @@ void Plot::showContextMenu(const QPoint &pos, Enums::AxisType axis)
 }
 
 bool Plot::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
-{DDD;
+{DD;
     if (m->isEmpty()) return true;
 
     //не можем строить временные графики на графике спектров и наоборот
@@ -518,7 +519,7 @@ bool Plot::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
 }
 
 bool Plot::canBePlottedOnRightAxis(Channel *ch, QString *message) const
-{DDD;
+{DD;
     if (m->isEmpty()) return true;
 
     //не можем строить временные графики на графике спектров и наоборот
@@ -558,17 +559,17 @@ void Plot::removeSelectable(Selectable *item)
 }
 
 QString Plot::pointCoordinates(const QPointF &pos)
-{DDD;
+{DD;
     return smartDouble(pos.x())+", "+smartDouble(pos.y());
 }
 
 Curve *Plot::createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis)
-{DDD;
+{DD;
     return m_plot->createCurve(legendName, channel, xAxis, yAxis);
 }
 
 void Plot::setAxis(Enums::AxisType axis, const QString &name)
-{DDD;
+{DD;
     switch (axis) {
         case Enums::AxisType::atLeft: yLeftName = name; break;
         case Enums::AxisType::atRight: yRightName = name; break;
@@ -578,7 +579,7 @@ void Plot::setAxis(Enums::AxisType axis, const QString &name)
 }
 
 void Plot::updateAxesLabels()
-{DDD;
+{DD;
     if (!m_plot) return;
 
     if (m->leftCurvesCount()==0) m_plot->enableAxis(Enums::AxisType::atLeft, false);
@@ -611,18 +612,18 @@ void Plot::updateAxesLabels()
 }
 
 void Plot::setScale(Enums::AxisType id, double min, double max, double step)
-{DDD;
+{DD;
     if (m_plot) m_plot->setAxisRange(id, min, max, step);
 }
 
 void Plot::removeLabels()
-{DDD;
+{DD;
     m->removeLabels();
     if (m_plot) m_plot->replot();
 }
 
 void Plot::moveCurve(Curve *curve, Enums::AxisType axis)
-{DDD;
+{DD;
     if (type()==Enums::PlotType::Spectrogram) return;
 
     if ((axis == Enums::AxisType::atLeft && canBePlottedOnLeftAxis(curve->channel))
@@ -650,12 +651,12 @@ void Plot::moveCurve(Curve *curve, Enums::AxisType axis)
 }
 
 QColor Plot::getNextColor()
-{DDD;
+{DD;
     return colors->getColor();
 }
 
 QString Plot::yValuesPresentationSuffix(int yValuesPresentation) const
-{DDD;
+{DD;
     switch (DataHolder::YValuesPresentation(yValuesPresentation)) {
         case DataHolder::ShowAsDefault: return QString();
         case DataHolder::ShowAsReals: return " [Re]";
@@ -669,12 +670,12 @@ QString Plot::yValuesPresentationSuffix(int yValuesPresentation) const
 }
 
 void Plot::saveSpectrum(double zVal)
-{DDD;
+{DD;
     emit saveHorizontalSlice(zVal);
 }
 
 void Plot::saveThroughput(double xVal)
-{DDD;
+{DD;
     emit saveVerticalSlice(xVal);
 }
 
@@ -691,7 +692,7 @@ void Plot::removeCursor(Selectable *selected)
 }
 
 void Plot::recalculateScale(Enums::AxisType axis)
-{DDD;
+{DD;
     auto bounds = zoom->scaleBounds(axis);
     if (!bounds) return;
 
@@ -778,7 +779,7 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 }
 
 QString Plot::axisTitleText(Enums::AxisType id) const
-{DDD;
+{DD;
     return m_plot->axisTitle(id);
 }
 
@@ -788,19 +789,19 @@ void Plot::updateAxes()
 }
 
 void Plot::switchLabelsVisibility()
-{DDD;
+{DD;
     axisLabelsVisible = !axisLabelsVisible;
     updateAxesLabels();
 }
 
 void Plot::updateLegends()
-{DDD;
+{DD;
     m->updateTitles();
     if (m_plot) m_plot->updateLegend();
 }
 
 void Plot::savePlot() /*SLOT*/
-{DDD;
+{DD;
     ImageRenderDialog dialog(true, 0);
     if (dialog.exec()) {
         if (m_plot) m_plot->importPlot(dialog.getPath(), dialog.getSize(), dialog.getResolution());
@@ -809,7 +810,7 @@ void Plot::savePlot() /*SLOT*/
 }
 
 void Plot::copyToClipboard() /*SLOT*/
-{DDD;
+{DD;
 
     QTemporaryFile file(QDir::tempPath()+"/DeepSeaBase-XXXXXX.bmp");
     if (file.open()) {
@@ -825,14 +826,14 @@ void Plot::copyToClipboard() /*SLOT*/
                 qApp->clipboard()->setImage(img);
             else
                 QMessageBox::critical(0, "Копирование рисунка", "Не удалось скопировать рисунок");
-//                qDebug()<<"Could not load image from"<<fileName;
+//                LOG(ERROR)<<"Could not load image from"<<fileName;
         }
     }
     else QMessageBox::critical(0, "Копирование рисунка", "Не удалось создать временный файл");
 }
 
 void Plot::print() /*SLOT*/
-{DDD;
+{DD;
     QPrinter printer;
     if (printer.isValid())
         m_plot->importPlot(printer, ImageRenderDialog::defaultSize(), ImageRenderDialog::defaultResolution());
@@ -841,7 +842,7 @@ void Plot::print() /*SLOT*/
 }
 
 void Plot::switchInteractionMode()
-{DDD;
+{DD;
     if (interactionMode == Enums::InteractionMode::ScalingInteraction) {
         setInteractionMode(Enums::InteractionMode::DataInteraction);
     }
@@ -851,29 +852,29 @@ void Plot::switchInteractionMode()
 }
 
 void Plot::switchTrackingCursor()
-{DDD;
+{DD;
     if (cursorBox) cursorBox->setVisible(!cursorBox->isVisible());
 }
 
 void Plot::toggleAutoscale(Enums::AxisType axis, bool toggled)
-{DDD;
+{DD;
     if (auto b = zoom->scaleBounds(axis)) b->setFixed(!toggled);
 
     replot();
 }
 
 void Plot::autoscale(Enums::AxisType axis)
-{DDD;
+{DD;
     zoom->autoscale(axis);
 }
 
 void Plot::setInteractionMode(Enums::InteractionMode mode)
-{DDD;
+{DD;
     interactionMode = mode;
 }
 
 void Plot::switchCursor()
-{DDD;
+{DD;
     if (!picker) return;
 
     bool pickerEnabled = picker->isEnabled();
@@ -883,7 +884,7 @@ void Plot::switchCursor()
 }
 
 void Plot::editLegendItem(Curve *curve)
-{DDD;
+{DD;
     if (curve->type == Curve::Type::Spectrogram) return; //у спектрограммы нет свойство кривой
 
     CurvePropertiesDialog dialog(curve, this);
@@ -893,7 +894,7 @@ void Plot::editLegendItem(Curve *curve)
 }
 
 void Plot::onDropEvent(bool plotOnLeft, const QVector<Channel*> &channels)
-{DDD;
+{DD;
     //посылаем сигнал о том, что нужно построить эти каналы. Список каналов попадает
     //в mainWindow и возможно будет расширен за счет нажатого Ctrl
     //далее эти каналы попадут обратно в plot.

@@ -12,7 +12,7 @@
 #include "qcpplot.h"
 
 CanvasEventFilter::CanvasEventFilter(Plot *parent) : QObject(parent), plot(parent)
-{DDD;
+{DD;
 
 }
 
@@ -47,7 +47,7 @@ bool CanvasEventFilter::eventFilter(QObject *target, QEvent *event)
 }
 
 void CanvasEventFilter::procMouseEvent(QEvent *event)
-{DDD;
+{DD;
     //Нажатия левой кнопки - масштабирование графика, выбор объектов или сброс выбора
     //Нажатия правой кнопки - сдвиг графика
 
@@ -71,7 +71,7 @@ void CanvasEventFilter::procMouseEvent(QEvent *event)
 }
 
 void CanvasEventFilter::procKeyboardEvent(QEvent *event)
-{DDD;
+{DD;
     auto kEvent = dynamic_cast<QKeyEvent*>(event);
     switch (kEvent->key()) {
         case Qt::Key_Backspace: {
@@ -111,7 +111,7 @@ void CanvasEventFilter::procKeyboardEvent(QEvent *event)
 }
 
 void CanvasEventFilter::procAxisEvent(QCPAxis *axis, QEvent *event)
-{DDD;
+{DD;
     auto mEvent = dynamic_cast<QMouseEvent *>(event);
     switch (event->type()) {
         case QEvent::Leave: {
@@ -141,7 +141,7 @@ void CanvasEventFilter::procAxisEvent(QCPAxis *axis, QEvent *event)
 }
 
 void CanvasEventFilter::mousePress(QMouseEvent *event)
-{DDD;
+{DD;
     if (!plot->impl()->xAxis->range().contains(plot->impl()->xAxis->pixelToCoord(event->pos().x())) ||
         !plot->impl()->yAxis->range().contains(plot->impl()->yAxis->pixelToCoord(event->pos().y())))
         return;
@@ -174,7 +174,7 @@ void CanvasEventFilter::mousePress(QMouseEvent *event)
 }
 
 void CanvasEventFilter::mouseMove(QMouseEvent *event)
-{DDD;
+{DD;
     if (actionType == ActionType::Drag) {
         plot->impl()->axisRect()->mouseMoveEvent(event, startPosition);
     }
@@ -187,7 +187,7 @@ void CanvasEventFilter::mouseMove(QMouseEvent *event)
 }
 
 void CanvasEventFilter::mouseRelease(QMouseEvent *event)
-{DDD;
+{DD;
     if (actionType == ActionType::Drag) {
         plot->impl()->axisRect()->mouseReleaseEvent(event, startPosition);
 
@@ -215,7 +215,7 @@ void CanvasEventFilter::mouseRelease(QMouseEvent *event)
 }
 
 void CanvasEventFilter::mouseDoubleClick(QMouseEvent *event)
-{DDD;
+{DD;
     switch (event->button()) {
         case Qt::LeftButton: {
             emit canvasDoubleClicked(startPosition);

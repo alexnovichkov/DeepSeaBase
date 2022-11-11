@@ -5,23 +5,23 @@
 
 ChannelFunction::ChannelFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DDD;
+{DD;
 
 }
 
 
 QString ChannelFunction::name() const
-{DDD;
+{DD;
     return "Channel";
 }
 
 QString ChannelFunction::description() const
-{DDD;
+{DD;
     return "Выбор каналов для обработки";
 }
 
 QVariant ChannelFunction::m_getProperty(const QString &property) const
-{DDD;
+{DD;
     Channel *ch = 0;
     if (m_file && channel >=0) ch = m_file->channel(channel);
 
@@ -34,7 +34,7 @@ QVariant ChannelFunction::m_getProperty(const QString &property) const
         //это - свойства исходного файла
         if (property == "?/sampleRate" && ch) {
             if (qFuzzyIsNull(ch->data()->xStep())) return 0.0;
-            //qDebug()<<ch->data()->xStep()<<(1.0 / ch->data()->xStep());
+            //LOG(DEBUG)<<ch->data()->xStep()<<(1.0 / ch->data()->xStep());
             return 1.0 / ch->data()->xStep();
         }
         if (property == "?/xBegin" && ch) return ch->data()->xMin();
@@ -81,7 +81,7 @@ QVariant ChannelFunction::m_getProperty(const QString &property) const
 }
 
 void ChannelFunction::m_setProperty(const QString &property, const QVariant &val)
-{DDD;
+{DD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -95,12 +95,12 @@ void ChannelFunction::m_setProperty(const QString &property, const QVariant &val
 
 
 QStringList ChannelFunction::properties() const
-{DDD;
+{DD;
     return QStringList()<<"filter" /*<<"minSec"<<"maxSec"*/;
 }
 
 QString ChannelFunction::propertyDescription(const QString &property) const
-{DDD;
+{DD;
     if (property == "filter") return "{"
                                      "  \"name\"        : \"filter\"   ,"
                                      "  \"type\"        : \"string\"   ,"
@@ -137,12 +137,12 @@ QString ChannelFunction::propertyDescription(const QString &property) const
 
 
 QString ChannelFunction::displayName() const
-{DDD;
+{DD;
     return "Каналы";
 }
 
 bool ChannelFunction::compute(FileDescriptor *file)
-{DDD;
+{DD;
     if (channel < 0 || file->channelsCount() <= channel) return false;
 
     if (selector.includes(channel)) {
@@ -154,39 +154,39 @@ bool ChannelFunction::compute(FileDescriptor *file)
     }
 
     if (triggerChannel >=0 && triggerChannel < file->channelsCount() && triggerData.isEmpty()) {
-        //qDebug() << "computing trigger channel in ChannelFunction";
+        //LOG(DEBUG) << "computing trigger channel in ChannelFunction";
         if (!file->channel(triggerChannel)->populated())
             file->channel(triggerChannel)->populate();
         triggerData = file->channel(triggerChannel)->data()->yValues(0);
-        //qDebug()<<"trigger data at channel"<<triggerChannel+1<<"has"<<triggerData.size()<<"samples";
+        //LOG(DEBUG)<<"trigger data at channel"<<triggerChannel+1<<"has"<<triggerData.size()<<"samples";
     }
 
     return !output.isEmpty();
 }
 
 void ChannelFunction::updateProperty(const QString &property, const QVariant &val)
-{
+{DD;
     if (property == "?/triggerChannel") triggerChannel = val.toInt();
 }
 
 QString RefChannelFunction::name() const
-{
+{DD;
     return "RefChannel";
 }
 
 RefChannelFunction::RefChannelFunction(QObject *parent, const QString &name)
     : ChannelFunction(parent, name)
-{
+{DD;
 
 }
 
 QStringList RefChannelFunction::properties() const
-{
+{DD;
     return QStringList()<<"referenceChannelIndex";
 }
 
 QString RefChannelFunction::propertyDescription(const QString &property) const
-{
+{DD;
     if (property == "referenceChannelIndex") return "{"
                                                "  \"name\"        : \"referenceChannelIndex\"   ,"
                                                "  \"type\"        : \"int\"   ,"
@@ -201,7 +201,7 @@ QString RefChannelFunction::propertyDescription(const QString &property) const
 }
 
 bool RefChannelFunction::compute(FileDescriptor *file)
-{DDD;
+{DD;
     if (channel < 0 || file->channelsCount() <= channel) return false;
 
     if (!file->channel(channel)->populated())
@@ -211,23 +211,23 @@ bool RefChannelFunction::compute(FileDescriptor *file)
     output = file->channel(channel)->data()->yValues(0);
 
     if (triggerChannel >=0 && triggerChannel < file->channelsCount() && triggerData.isEmpty()) {
-        //qDebug() << "computing trigger channel in RefChannelFunction";
+        //LOG(DEBUG) << "computing trigger channel in RefChannelFunction";
         if (!file->channel(triggerChannel)->populated())
             file->channel(triggerChannel)->populate();
         triggerData = file->channel(triggerChannel)->data()->yValues(0);
-        //qDebug()<<"trigger data at channel"<<triggerChannel+1<<"has"<<triggerData.size()<<"samples";
+        //LOG(DEBUG)<<"trigger data at channel"<<triggerChannel+1<<"has"<<triggerData.size()<<"samples";
     }
 
     return !output.isEmpty();
 }
 
 QString RefChannelFunction::displayName() const
-{
+{DD;
     return "Опорный канал";
 }
 
 QVariant RefChannelFunction::m_getProperty(const QString &property) const
-{
+{DD;
     if (property == name()+"/referenceChannelIndex") return channel+1;
     else if (property == "?/referenceChannelIndex") return channel+1;
 
@@ -240,14 +240,14 @@ QVariant RefChannelFunction::m_getProperty(const QString &property) const
 }
 
 void RefChannelFunction::m_setProperty(const QString &property, const QVariant &val)
-{
+{DD;
     if (property == name()+"/referenceChannelIndex") channel = val.toInt()-1;
     else ChannelFunction::m_setProperty(property, val);
 }
 
 
 DataDescription ChannelFunction::getFunctionDescription() const
-{
+{DD;
     DataDescription result = AbstractFunction::getFunctionDescription();
 
     result.put("function.name", "Time Response");

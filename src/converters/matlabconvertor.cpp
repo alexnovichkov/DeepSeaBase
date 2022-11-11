@@ -38,7 +38,7 @@ MatlabConvertor::MatlabConvertor(QObject *parent) : QObject(parent)
 }
 
 bool MatlabConvertor::convert()
-{DDD;
+{DD;
     if (QThread::currentThread()->isInterruptionRequested()) return false;
     bool noErrors = true;
 

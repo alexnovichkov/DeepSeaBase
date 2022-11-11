@@ -51,7 +51,7 @@
  * \param widget The widget next to which to open the menu
  */
 static void execMenuAtWidget(QMenu *menu, QWidget *widget)
-{DDD;
+{DD;
     QPoint p;
     QRect screen = qApp->desktop()->availableGeometry(widget);
     QSize sh = menu->sizeHint();
@@ -130,7 +130,7 @@ FancyLineEditPrivate::FancyLineEditPrivate(FancyLineEdit *parent) :
 }
 
 bool FancyLineEditPrivate::eventFilter(QObject *obj, QEvent *event)
-{
+{DD;
     int buttonIndex = -1;
     for (int i = 0; i < 2; ++i) {
         if (obj == m_iconbutton[i]) {
@@ -158,7 +158,7 @@ bool FancyLineEditPrivate::eventFilter(QObject *obj, QEvent *event)
 FancyLineEdit::FancyLineEdit(QWidget *parent) :
     QLineEdit(parent),
     d(new FancyLineEditPrivate(this))
-{DDD;
+{DD;
     ensurePolished();
     updateMargins();
 
@@ -168,7 +168,7 @@ FancyLineEdit::FancyLineEdit(QWidget *parent) :
 }
 
 void FancyLineEdit::checkButtons(const QString &text)
-{DDD;
+{DD;
     if (m_oldText.isEmpty() || text.isEmpty()) {
         for (int i = 0; i < 2; ++i) {
             if (d->m_iconbutton[i]->hasAutoHide())
@@ -179,7 +179,7 @@ void FancyLineEdit::checkButtons(const QString &text)
 }
 
 FancyLineEdit::~FancyLineEdit()
-{DDD;
+{DD;
 }
 
 void FancyLineEdit::setButtonVisible(Side side, bool visible)
@@ -329,7 +329,7 @@ IconButton::IconButton(QWidget *parent)
 }
 
 void IconButton::paintEvent(QPaintEvent *)
-{
+{DD;
     QPainter painter(this);
     QRect pixmapRect = QRect(0, 0, m_pixmap.width(), m_pixmap.height());
     pixmapRect.moveCenter(rect().center());

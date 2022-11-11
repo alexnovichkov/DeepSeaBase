@@ -7,28 +7,28 @@ QMap<int, SortableTreeWidgetItem::DataType> SortableTreeWidgetItem::typeMap = QM
 
 SortableTreeWidgetItem::SortableTreeWidgetItem(QTreeWidget *tree) :
     QTreeWidgetItem(tree), fileDescriptor(0)
-{}
+{DD;}
 
 SortableTreeWidgetItem::SortableTreeWidgetItem(QTreeWidget *parent, const QStringList &strings)
     : QTreeWidgetItem (parent,strings), fileDescriptor(0)
-{}
+{DD;}
 
 SortableTreeWidgetItem::SortableTreeWidgetItem(FileDescriptor *dfd, const QStringList &strings)
     : QTreeWidgetItem (strings) , fileDescriptor(dfd)
-{}
+{DD;}
 
 SortableTreeWidgetItem::~SortableTreeWidgetItem()
-{DDD;
+{DD;
 //    delete fileDescriptor;
 }
 
 void SortableTreeWidgetItem::setTypeMap(const QMap<int, SortableTreeWidgetItem::DataType> &map)
-{DDD;
+{DD;
     typeMap = map;
 }
 
 bool SortableTreeWidgetItem::operator<(const QTreeWidgetItem &other) const
-{DDD;
+{DD;
     int sortCol = treeWidget()->sortColumn();
     QString s = text(sortCol);
     const DataType dataType = typeMap.value(sortCol);

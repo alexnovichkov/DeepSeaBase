@@ -13,7 +13,7 @@
 
 PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DDD;
+{DD;
     channelF = new ChannelFunction(this);
 //    filteringF = new FilteringFunction(this);
     resamplingF = new ResamplingFunction(this);
@@ -67,18 +67,18 @@ PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
 
 
 QString PsAlgorithm::description() const
-{DDD;
+{DD;
     return "Спектр мощности";
 }
 
 
 QString PsAlgorithm::displayName() const
-{DDD;
+{DD;
     return "PS";
 }
 
 void PsAlgorithm::resetChain()
-{
+{DD;
     samplingF->reset();
     windowingF->reset();
     psF->reset();
@@ -87,6 +87,6 @@ void PsAlgorithm::resetChain()
 }
 
 void PsAlgorithm::initChain(FileDescriptor *file)
-{
+{DD;
     resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());  //автоматически задает xStep для samplingF
 }

@@ -34,7 +34,7 @@ QCPLayoutElement *QCPFlowLayout::takeAt(int index)
       return el;
     } else
     {
-      qDebug() << Q_FUNC_INFO << "Attempt to take invalid index:" << index;
+      LOG(ERROR) << Q_FUNC_INFO << "Attempt to take invalid index:" << index;
       return nullptr;
     }
 }
@@ -51,9 +51,9 @@ bool QCPFlowLayout::take(QCPLayoutElement *element)
           return true;
         }
       }
-      qDebug() << Q_FUNC_INFO << "Element not in this layout, couldn't take";
+      LOG(ERROR) << Q_FUNC_INFO << "Element not in this layout, couldn't take";
     } else
-      qDebug() << Q_FUNC_INFO << "Can't take nullptr element";
+      LOG(ERROR) << Q_FUNC_INFO << "Can't take nullptr element";
     return false;
 }
 
@@ -78,11 +78,11 @@ bool QCPFlowLayout::hasElement(QCPLayoutElement *element) const
 bool QCPFlowLayout::appendElement(QCPLayoutElement *element)
 {
     if (!element) {
-        qDebug() << "Element is null";
+        LOG(ERROR) << "Element is null";
         return false;
     }
     if (hasElement(element)) {
-        qDebug() << "Element"<<element<<"already in layout";
+        LOG(ERROR) << "Element"<<element<<"already in layout";
         return false;
     }
 
@@ -102,11 +102,11 @@ bool QCPFlowLayout::addElement(QCPLayoutElement *element)
 bool QCPFlowLayout::prependElement(QCPLayoutElement *element)
 {
     if (!element) {
-        qDebug() << "Element is null";
+        LOG(DEBUG) << "Element is null";
         return false;
     }
     if (hasElement(element)) {
-        qDebug() << "Element"<<element<<"already in layout";
+        LOG(DEBUG) << "Element"<<element<<"already in layout";
         return false;
     }
 
@@ -121,11 +121,11 @@ bool QCPFlowLayout::prependElement(QCPLayoutElement *element)
 bool QCPFlowLayout::insertElement(QCPLayoutElement *element, int index)
 {
     if (!element) {
-        qDebug() << "Element is null";
+        LOG(DEBUG) << "Element is null";
         return false;
     }
     if (hasElement(element)) {
-        qDebug() << "Element"<<element<<"already in layout";
+        LOG(DEBUG) << "Element"<<element<<"already in layout";
         return false;
     }
     if (index < 0) index = 0;

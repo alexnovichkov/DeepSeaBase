@@ -9,18 +9,18 @@
 #include <QInputDialog>
 
 TitleBar::TitleBar(ads::CDockAreaWidget *parent) : ads::CDockAreaTitleBar(parent)
-{
+{DD;
 }
 
 void TitleBar::mouseDoubleClickEvent(QMouseEvent *event)
-{
+{DD;
     if (event->button()==Qt::LeftButton)
         Q_EMIT newTab();
     event->accept();
 }
 
 void TitleBar::contextMenuEvent(QContextMenuEvent *event)
-{
+{DD;
     event->accept();
     QMenu menu;
     menu.addAction("Новая вкладка", this, SIGNAL(newTab()), QKeySequence::AddTab);
@@ -28,7 +28,7 @@ void TitleBar::contextMenuEvent(QContextMenuEvent *event)
 }
 
 DockTab::DockTab(ads::CDockWidget *parent) : ads::CDockWidgetTab(parent)
-{
+{DD;
     editor = new QLineEdit(this);
     editor->hide();
 
@@ -36,7 +36,7 @@ DockTab::DockTab(ads::CDockWidget *parent) : ads::CDockWidgetTab(parent)
 }
 
 void DockTab::mouseDoubleClickEvent(QMouseEvent *event)
-{
+{DD;
     if (event->button()==Qt::LeftButton) {
         event->accept();
 
@@ -52,7 +52,7 @@ void DockTab::mouseDoubleClickEvent(QMouseEvent *event)
 }
 
 void DockTab::contextMenuEvent(QContextMenuEvent *event)
-{
+{DD;
     event->accept();
 
     QMenu menu;
@@ -68,7 +68,7 @@ void DockTab::contextMenuEvent(QContextMenuEvent *event)
 }
 
 void DockTab::renameTab()
-{
+{DD;
     QString oldText = text();
 
     QString newText=QInputDialog::getText(this,
@@ -82,7 +82,7 @@ void DockTab::renameTab()
 }
 
 void DockTab::showFileHandler()
-{
+{DD;
     if (auto t = qobject_cast<Tab *>(this->dockWidget()->widget()))
     {
         FileHandlerDialog dialog(t->fileHandler, this);
@@ -91,7 +91,7 @@ void DockTab::showFileHandler()
 }
 
 void DockTab::setTabName()
-{
+{DD;
     QString oldText = text();
     QString newText = editor->text();
     editor->hide();
@@ -102,17 +102,17 @@ void DockTab::setTabName()
 
 TabDockFactory::TabDockFactory(MainWindow *receiver)
     : ads::CDockComponentsFactory(), receiver(receiver)
-{}
+{DD;}
 
 ads::CDockWidgetTab *TabDockFactory::createDockWidgetTab(ads::CDockWidget *DockWidget) const
-{
+{DD;
     auto tab = new DockTab(DockWidget);
     QObject::connect(tab, &DockTab::tabTextChanged, DockWidget, &ads::CDockWidget::setWindowTitle);
     return tab;
 }
 
 ads::CDockAreaTitleBar *TabDockFactory::createDockAreaTitleBar(ads::CDockAreaWidget *DockArea) const
-{
+{DD;
     auto titleBar = new TitleBar(DockArea);
     QObject::connect(titleBar, &TitleBar::newTab, receiver, &MainWindow::createNewTab);
 
