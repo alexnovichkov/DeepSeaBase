@@ -33,6 +33,8 @@ void WavExporter::start()
         finalize();
         return;
     }
+    LOG(INFO) << QString("Начало экспорта в WAV для файла ")<<file->fileName();
+    LOG(INFO) << QString("  Экспортируются каналы ")<<indexes;
 
     auto pool = indexes;
     while (!pool.isEmpty()) {
@@ -56,6 +58,7 @@ void WavExporter::start()
                                             nameFragment, "wav", false);
 
         WavFile f(*file, name, list, format);
+        LOG(INFO) << QString("  Экспортирован в файл ") << name;
     }
 
     finalize();
@@ -63,6 +66,7 @@ void WavExporter::start()
 
 void WavExporter::finalize()
 {DD;
+    LOG(INFO) << QString("Завершен экспорт в WAV для файла ")<<file->fileName();
     emit finished();
 }
 

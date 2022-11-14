@@ -8,7 +8,7 @@ MouseCoordinates::MouseCoordinates(QCPPlot *parent) : QCPItemText(parent), paren
     setText("text");
     setPositionAlignment(Qt::AlignBottom | Qt::AlignLeft);
     setSelectable(false);
-    setVisible(true);
+    setVisible(false);
 
     QColor col(Qt::white);
     col.setAlphaF(0.8);

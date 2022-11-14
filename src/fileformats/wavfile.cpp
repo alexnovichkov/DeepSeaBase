@@ -395,14 +395,14 @@ bool WavFile::writeWithMap(const QVector<Channel*> &source, quint32 totalSize)
     // Сохранение
     QFile wavFile(fileName());
     if (!wavFile.open(QFile::WriteOnly)) {
-        LOG(ERROR)<<"Не удалось открыть файл"<<fileName();
+        LOG(ERROR)<<QString("Не удалось открыть файл ")<<fileName();
         m_valid = false;
         return false;
     }
 
     //Создаем пустой файл
     if (wavFile.write(QByteArray(totalSize, 0x0)) < totalSize) {
-        LOG(ERROR)<<"Не удалось создать файл нужного размера";
+        LOG(ERROR)<<QString("Не удалось создать файл нужного размера ");
         m_valid = false;
         return false;
     }
@@ -412,7 +412,7 @@ bool WavFile::writeWithMap(const QVector<Channel*> &source, quint32 totalSize)
     wavFile.open(QFile::ReadWrite);
     uchar *mapped = wavFile.map(0, totalSize);
     if (!mapped) {
-        LOG(ERROR)<<"Не удалось создать файл нужного размера";
+        LOG(ERROR)<<QString("Не удалось создать файл нужного размера ");
         wavFile.close();
         m_valid = false;
         return false;
@@ -482,7 +482,7 @@ void WavFile::writeWithStream(const QVector<Channel *> &source)
 {DD;
     QFile wavFile(fileName());
     if (!wavFile.open(QFile::WriteOnly)) {
-        LOG(ERROR)<<"Не удалось открыть файл"<<fileName();
+        LOG(ERROR)<<QString("Не удалось открыть файл ")<<fileName();
         return;
     }
 
@@ -799,10 +799,9 @@ void WavChannel::populate()
         _data->setYValues(YValues, _data->yValuesFormat());
         setPopulated(true);
         rawFile.close();
-
     }
     else {
-        LOG(ERROR)<<"Cannot read raw file"<<parent->fileName();
+        LOG(ERROR)<<QString("Не смог прочитать ")<<parent->fileName();
     }
 }
 

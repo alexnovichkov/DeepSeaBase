@@ -44,12 +44,6 @@ bool QCPItemRichText::underMouse(const QPoint &pos, double *distanceX, double *d
 {
     auto anchorPos = position->parentAnchor()->pixelPosition();
 
-
-    QTransform transform;
-    transform.translate(pos.x(), pos.y());
-    if (!qFuzzyIsNull(mRotation))
-      transform.rotate(mRotation);
-
     QCPRichTextDocument doc( mText, 0, mainFont() );
     QTextOption option = doc.defaultTextOption();
     option.setWrapMode( QTextOption::NoWrap );

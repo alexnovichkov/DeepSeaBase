@@ -29932,7 +29932,6 @@ double QCPItemText::selectTest(const QPointF &pos, bool onlySelectable, QVariant
   QRect textBoxRect = textRect.adjusted(-mPadding.left(), -mPadding.top(), mPadding.right(), mPadding.bottom());
   QPointF textPos = getTextDrawPoint(positionPixels, textBoxRect, mPositionAlignment);
   textBoxRect.moveTopLeft(textPos.toPoint());
-
   return rectDistance(textBoxRect, rotatedPos, true);
 }
 

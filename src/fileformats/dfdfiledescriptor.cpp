@@ -96,7 +96,7 @@ void DfdFileDescriptor::init(const QVector<Channel *> &source)
     //копируем каналы и записываем данные
     QFile raw(rawFileName);
     if (!raw.open(QFile::WriteOnly)) {
-        LOG(ERROR)<<"Unable to open file"<<rawFileName<<"to write";
+        LOG(ERROR)<<QString("Не могу открыть файл для записи: ")<<rawFileName;
         return;
     }
     QDataStream w(&raw);
@@ -127,7 +127,7 @@ void DfdFileDescriptor::init(const QVector<Channel *> &source)
     //Сохраняем файл dfd
     QFile file(fileName());
     if (!file.open(QFile::WriteOnly | QFile::Text)) {
-        LOG(ERROR)<<"Unable to open file"<<fileName()<<"to write";
+        LOG(ERROR)<<QString("Не могу открыть файл для записи: ")<<fileName();
         return;
     }
 
@@ -377,7 +377,7 @@ void DfdFileDescriptor::write()
         // удаляем файл данных, если мы перезаписывали его
         if (QFile::remove(rawFileName) || !QFile::exists(rawFileName)) {
             if (!tempFile.copy(rawFileName)) {
-                LOG(ERROR)<<"Failed to replace"<<rawFileName<<"with temp file";
+                LOG(ERROR)<<QString("Не удалось заменить файл ")<<rawFileName<<QString(" временным файлом");
                 return;
             }
         }
@@ -542,7 +542,7 @@ void DfdFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
     // удаляем файл данных, если мы перезаписывали его
     if (QFile::remove(rawFileName)) {
         if (!tempFile.copy(rawFileName)) {
-            LOG(ERROR)<<"Failed to replace"<<rawFileName<<"with temp file";
+            LOG(ERROR)<<QString("Не удалось заменить ")<<rawFileName<<QString(" временным файлом");
             return;
         }
     }
@@ -610,12 +610,12 @@ void DfdFileDescriptor::copyChannelsFrom(const QVector<Channel*> &source)
                 (dfd->DataType > 15 ||
                  DataType > 15 ||
                  (dfd->DataType != SourceData && DataType == SourceData))) {
-                LOG(ERROR)<<"Попытка скопировать каналы в файл с другим типом";
+                LOG(ERROR)<<QString("Попытка скопировать каналы в файл с другим типом");
                 return;
             }
         }
         else if (dataTypefromDfdDataType(DataType) != sourceFile->type()) {
-            LOG(ERROR)<<"Попытка скопировать каналы в файл с другим типом";
+            LOG(ERROR)<<QString("Попытка скопировать каналы в файл с другим типом");
             return;
         }
     }
@@ -1415,6 +1415,7 @@ void DfdChannel::populate()
         // map file into memory
         unsigned char *ptr = rawFile.map(0, rawFile.size());
         if (ptr) {//достаточно памяти отобразить весь файл
+            LOG(DEBUG)<<QString("Чтение канала ")<<index()<<QString(" через mmap");
             unsigned char *maxPtr = ptr + rawFile.size();
             unsigned char *ptrCurrent = ptr;
             if (!dataPositions.isEmpty()) {
@@ -1449,7 +1450,7 @@ void DfdChannel::populate()
         } /// mapped
         else {
             //читаем классическим способом через getChunk
-
+            LOG(DEBUG)<<QString("Чтение канала ")<<index()<<QString(" через потоки");
             QDataStream readStream(&rawFile);
             readStream.setByteOrder(QDataStream::LittleEndian);
             if (IndType==0xC0000004)
@@ -1511,11 +1512,11 @@ FileDescriptor *DfdChannel::descriptor() const
 void DfdChannel::appendDataTo(const QString &rawFileName)
 {DD;
     if (!populated()) {
-        LOG(ERROR)<<"Попытка записать канал без данных";
+        LOG(ERROR)<<QString("Попытка записать канал без данных");
         return;
     }
     if (parent->BlockSize != 0) {
-        LOG(ERROR)<<"Попытка записать канал в файл с перекрытием";
+        LOG(ERROR)<<QString("Попытка записать канал в файл с перекрытием");
         return;
     }
 
@@ -1542,7 +1543,7 @@ void DfdChannel::appendDataTo(const QString &rawFileName)
         }
     }
     else {
-        LOG(ERROR)<<"Не могу открыть файл для дозаписи:"<<rawFileName;
+        LOG(ERROR)<<QString("Не могу открыть файл для дозаписи: ")<<rawFileName;
         return;
     }
 }

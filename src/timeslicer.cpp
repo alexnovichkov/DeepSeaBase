@@ -24,26 +24,22 @@ void TimeSlicer::stop()
 
 void TimeSlicer::start()
 {DD;
-//    QProgressDialog progress("Сохранение вырезки...", "Отменить сохранение", 0, dataBase.size(), this);
-//    progress.setWindowModality(Qt::WindowModal);
-
+    LOG(INFO) << QString("Начало сохранения временной вырезки");
     int i=0;
     for (FileDescriptor *file: qAsConst(dataBase)) {
         if (QThread::currentThread()->isInterruptionRequested()) {
             finalize();
+            LOG(INFO)<<QString("Сохранение прервано");
             return;
         }
-//        progress.setValue(i);
-//        if (progress.wasCanceled()) {
-//            break;
-//        }
+        LOG(INFO)<<QString("  Сохранение файла ")<<file->fileName();
+
         newFiles << saveTimeSegment(file, from, to);
         i++;
         emit tick(i);
+        LOG(INFO)<<QString("  Новый файл: ")<<newFiles.last();
     }
-//    progress.setValue(dataBase.size());
-    //addFiles(newFiles);
-
+    LOG(INFO) << QString("Сохранение временной вырезки завершено");
     finalize();
 }
 
