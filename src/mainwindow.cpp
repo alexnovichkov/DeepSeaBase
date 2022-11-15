@@ -1740,13 +1740,10 @@ void MainWindow::calculateMovingAvg()
 void MainWindow::saveHorizontalSlice(double zValue)
 {DD;
     if (!currentPlot || !currentPlot->plot()) return;
-    if (currentPlot->plot()->curvesCount()==0) return;
-    if (currentPlot->plot()->type() != Enums::PlotType::Spectrogram) return;
+    auto visibleCurves = currentPlot->plot()->model()->curves([](Curve*c){return c->isVisible();});
+    if (visibleCurves.isEmpty()) return;
 
-    auto channels = currentPlot->plot()->model()->plottedChannels();
-    if (channels.size() != 1) return;
-
-    auto firstChannel = channels.first();
+    auto firstChannel = visibleCurves.first()->channel;
     const QString firstName = firstChannel->descriptor()->fileName();
 
     QMessageBox box("Сохранение спектра", QString("Сохранить спектр в эту запись дополнительным каналом?"),
@@ -1822,7 +1819,7 @@ void MainWindow::saveHorizontalSlice(double zValue)
         spectre = App->find(spectreFileName);
     }
 
-    ::saveSpectre(spectre.get(), channels.first(), zValue);
+    ::saveSpectre(spectre.get(), firstChannel, zValue);
 
     int idx;
     if (currentTab && currentTab->model->contains(spectreFileName, &idx)) {
@@ -1837,13 +1834,10 @@ void MainWindow::saveHorizontalSlice(double zValue)
 void MainWindow::saveVerticalSlice(double frequency)
 {DD;
     if (!currentPlot || !currentPlot->plot()) return;
-    if (currentPlot->plot()->curvesCount()==0) return;
-    if (currentPlot->plot()->type() != Enums::PlotType::Spectrogram) return;
+    auto visibleCurves = currentPlot->plot()->model()->curves([](Curve*c){return c->isVisible();});
+    if (visibleCurves.isEmpty()) return;
 
-    auto channels = currentPlot->plot()->model()->plottedChannels();
-    if (channels.size() != 1) return;
-
-    auto firstChannel = channels.first();
+    auto firstChannel = visibleCurves.first()->channel;
     const QString firstName = firstChannel->descriptor()->fileName();
 
     QMessageBox box("Сохранение проходной характеристики", QString("Сохранить проходную в эту запись дополнительным каналом?"),
