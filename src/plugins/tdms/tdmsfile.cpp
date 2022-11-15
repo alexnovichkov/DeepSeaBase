@@ -165,7 +165,7 @@ TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
             free(nameBuf);
         }
     }
-    qDebug()<<properties;
+    //LOG(DEBUG)<<properties;
 
     // Reading Channel groups
     uint numberOfChannelGroups=0;
@@ -183,7 +183,7 @@ TDMSFile::TDMSFile(const QString &fileName) : fileName(fileName)
     }
 
     for (size_t i=0; i<numberOfChannelGroups; ++i) {
-        LOG(DEBUG)<<"Reading channel group"<<i+1<<"of"<<numberOfChannelGroups;
+        //LOG(DEBUG)<<"Reading channel group"<<i+1<<"of"<<numberOfChannelGroups;
         TDMSGroup *group = new TDMSGroup(_groups[i], fileName);
         group->parent = this;
         groups << group;
@@ -208,7 +208,7 @@ TDMSGroup::TDMSGroup(DDCChannelGroupHandle group, const QString &name) : FileDes
         LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
     }
     else {
-        LOG(DEBUG)<<"Channel group"<<"contains"<<numberOfProperties<<"properties";
+        //LOG(DEBUG)<<"Channel group"<<"contains"<<numberOfProperties<<"properties";
 
         for (size_t j=0; j<numberOfProperties; ++j) {
             //property name length
@@ -293,7 +293,7 @@ TDMSGroup::TDMSGroup(DDCChannelGroupHandle group, const QString &name) : FileDes
             free(nameBuf);
         }
     }
-//    qDebug()<<properties;
+//    LOG(DEBUG)<<properties;
 
     // number of channels
     uint numberOfChannels = 0;
@@ -302,7 +302,7 @@ TDMSGroup::TDMSGroup(DDCChannelGroupHandle group, const QString &name) : FileDes
         LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
         return;
     }
-    LOG(DEBUG)<<"Channel group"<<"contains"<<numberOfChannels<<"channels";
+    //LOG(DEBUG)<<"Channel group"<<"contains"<<numberOfChannels<<"channels";
 
     // reading channels
     _channels = (DDCChannelHandle *)calloc(numberOfChannels, sizeof(DDCChannelHandle));
@@ -448,12 +448,12 @@ TDMSChannel::TDMSChannel(DDCChannelHandle channel, TDMSGroup *parent) : channel(
         LOG(ERROR) << DDC_GetLibraryErrorDescription(error);
         return;
     }
-    LOG(DEBUG)<<"Channel"<<"contains"<<numberOfValues<<"values of type"<<dataType;
+    //LOG(DEBUG)<<"Channel"<<"contains"<<numberOfValues<<"values of type"<<dataType;
     dataDescription().put("function.precision", NIDataTypeToPrecision(dataType));
     dataDescription().put("samples", numberOfValues);
     dataDescription().put("blocks", 1); //1 block by default
 
-    qDebug()<<"TDMS channel description:"<<dataDescription().data;
+    //LOG(DEBUG)<<"TDMS channel description:"<<dataDescription().data;
 
     double xBegin = properties.value("wf_start_offset").toDouble();
     double xStep = properties.value("wf_increment").toDouble();

@@ -15,15 +15,18 @@ class QElapsedTimer;
 class Trace {
 public:
     Trace(const QString &msg);
+    Trace(int level, const QString &msg);
     ~Trace();
+    static int level;
+    bool cleanup = false;
 private:
     QString _msg;
     QString file;
-    std::chrono::time_point<std::chrono::high_resolution_clock> start;
+    std::chrono::time_point<std::chrono::steady_clock> start;
 };
 
-#define DD    if (VLOG_IS_ON(1)) Trace trace(Q_FUNC_INFO);
-#define DDD   if (VLOG_IS_ON(2)) Trace trace(Q_FUNC_INFO);
+#define DD    Trace trace(1, Q_FUNC_INFO);
+#define DDD   Trace trace(2, Q_FUNC_INFO);
 //always trace
 #define DD0  Trace trace(Q_FUNC_INFO);
 

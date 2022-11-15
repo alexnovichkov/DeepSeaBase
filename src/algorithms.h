@@ -87,21 +87,15 @@ QString smartDouble(double v);
 template <typename T, typename D>
 QVector<D> readChunk(QDataStream &readStream, quint64 blockSize, qint64 *actuallyRead)
 {
-    //LOG(DEBUG)<<"trying to allocate"<<blockSize<<"elements";
+    LOG(DEBUG)<<"trying to allocate "<<blockSize<<" elements";
     QVector<D> result;
     try {
         result.resize(blockSize);
-        //LOG(DEBUG)<<"allocated";
-
         T v;
-
         if (actuallyRead) *actuallyRead = 0;
-
         for (quint64 i=0; i<blockSize; ++i) {
-            if (readStream.atEnd()) {
+            if (readStream.atEnd())
                 break;
-            }
-
             readStream >> v;
             result[i] = D(v);
             if (actuallyRead) (*actuallyRead)++;
@@ -207,27 +201,33 @@ inline QVector<T> convertFrom(unsigned char *ptr, quint64 length, DataPrecision 
         case DataPrecision::LongDouble: step=10; break;
     }
 
-    QVector<T> temp(length / step, 0.0);
+    QVector<T> temp;
+    try {
+        temp.resize(length / step);
 
-    int i=0;
-    while (length) {
-        switch (precision) {
-            case DataPrecision::UInt8: temp[i++] = static_cast<T>(qFromLittleEndian<quint8>(ptr)); break;
-            case DataPrecision::Int8: temp[i++] = static_cast<T>(qFromLittleEndian<qint8>(ptr)); break;
-            case DataPrecision::UInt16: temp[i++] = static_cast<T>(qFromLittleEndian<quint16>(ptr)); break;
-            case DataPrecision::Int16: temp[i++] = static_cast<T>(qFromLittleEndian<qint16>(ptr)); break;
-            case DataPrecision::UInt32: temp[i++] = static_cast<T>(qFromLittleEndian<quint32>(ptr)); break;
-            case DataPrecision::Int32: temp[i++] = static_cast<T>(qFromLittleEndian<qint32>(ptr)); break;
-            case DataPrecision::UInt64: temp[i++] = static_cast<T>(qFromLittleEndian<quint64>(ptr)); break;
-            case DataPrecision::Int64: temp[i++] = static_cast<T>(qFromLittleEndian<qint64>(ptr)); break;
-            case DataPrecision::Float: temp[i++] = static_cast<T>(qFromLittleEndian<float>(ptr)); break;
-            case DataPrecision::Double: temp[i++] = static_cast<T>(qFromLittleEndian<double>(ptr)); break;
-            case DataPrecision::LongDouble: temp[i++] = static_cast<T>(qFromLittleEndian<long double>(ptr)); break;
-            default: break;
+        int i=0;
+        while (length) {
+            switch (precision) {
+                case DataPrecision::UInt8: temp[i++] = static_cast<T>(qFromLittleEndian<quint8>(ptr)); break;
+                case DataPrecision::Int8: temp[i++] = static_cast<T>(qFromLittleEndian<qint8>(ptr)); break;
+                case DataPrecision::UInt16: temp[i++] = static_cast<T>(qFromLittleEndian<quint16>(ptr)); break;
+                case DataPrecision::Int16: temp[i++] = static_cast<T>(qFromLittleEndian<qint16>(ptr)); break;
+                case DataPrecision::UInt32: temp[i++] = static_cast<T>(qFromLittleEndian<quint32>(ptr)); break;
+                case DataPrecision::Int32: temp[i++] = static_cast<T>(qFromLittleEndian<qint32>(ptr)); break;
+                case DataPrecision::UInt64: temp[i++] = static_cast<T>(qFromLittleEndian<quint64>(ptr)); break;
+                case DataPrecision::Int64: temp[i++] = static_cast<T>(qFromLittleEndian<qint64>(ptr)); break;
+                case DataPrecision::Float: temp[i++] = static_cast<T>(qFromLittleEndian<float>(ptr)); break;
+                case DataPrecision::Double: temp[i++] = static_cast<T>(qFromLittleEndian<double>(ptr)); break;
+                case DataPrecision::LongDouble: temp[i++] = static_cast<T>(qFromLittleEndian<long double>(ptr)); break;
+                default: break;
+            }
+
+            length -= step;
+            ptr += step;
         }
-
-        length -= step;
-        ptr += step;
+    }
+    catch (const std::bad_alloc &bad) {
+        LOG(ERROR)<<"could not allocate"<<(length / step)<<"elements";
     }
     return temp;
 }

@@ -2431,6 +2431,7 @@ public:
   QVector<double> subTickPositions;
   QVector<double> tickPositions;
   QVector<QString> tickLabels;
+  bool invalidated = false;
   
 protected:
   struct CachedLabel
@@ -2445,11 +2446,11 @@ protected:
     QFont baseFont, expFont;
   };
   QCustomPlot *mParentPlot;
-  QByteArray mLabelParameterHash; // to determine whether mLabelCache needs to be cleared due to changed parameters
+  uint mLabelParameterHash; // to determine whether mLabelCache needs to be cleared due to changed parameters
   QCache<QString, CachedLabel> mLabelCache;
   QRect mAxisSelectionBox, mTickLabelsSelectionBox, mLabelSelectionBox;
   
-  virtual QByteArray generateLabelParameterHash() const;
+  virtual uint generateLabelParameterHash() const;
   
   virtual void placeTickLabel(QCPPainter *painter, double position, int distanceToAxis, const QString &text, QSize *tickLabelsSize);
   virtual void drawTickLabel(QCPPainter *painter, double x, double y, const TickLabelData &labelData) const;

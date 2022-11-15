@@ -41,7 +41,7 @@ public:
 
     ColorSelector *colors() {return m_colors.get();}
     std::unique_ptr<AbstractFormatFactory> formatFactory;
-    QTextStream logStream;
+//    QTextStream logStream;
 private:
     QHash<QString, F> files;
     std::unique_ptr<ColorSelector> m_colors;

@@ -24,7 +24,7 @@
 ****************************************************************************/
 
 #include "qcustomplot.h"
-
+#include "logging.h"
 
 /* including file 'src/vector2d.cpp'       */
 /* modified 2021-03-29T02:30:44, size 7973 */
@@ -8661,6 +8661,7 @@ void QCPAxis::setTickLabelRotation(double degrees)
   {
     mAxisPainter->tickLabelRotation = qBound(-90.0, degrees, 90.0);
     mCachedMarginValid = false;
+    mAxisPainter->invalidated = true;
   }
 }
 
@@ -8673,8 +8674,10 @@ void QCPAxis::setTickLabelRotation(double degrees)
 */
 void QCPAxis::setTickLabelSide(LabelSide side)
 {
-  mAxisPainter->tickLabelSide = side;
-  mCachedMarginValid = false;
+    if (mAxisPainter->tickLabelSide == side) return;
+    mAxisPainter->tickLabelSide = side;
+    mCachedMarginValid = false;
+    mAxisPainter->invalidated = true;
 }
 
 /*!
@@ -8720,6 +8723,7 @@ void QCPAxis::setNumberFormat(const QString &formatCode)
     return;
   }
   mCachedMarginValid = false;
+  mAxisPainter->invalidated = true;
   
   // interpret first char as number format char:
   QString allowedFormatChars(QLatin1String("eEfgG"));
@@ -9990,7 +9994,7 @@ QCPAxisPainterPrivate::~QCPAxisPainterPrivate()
 */
 void QCPAxisPainterPrivate::draw(QCPPainter *painter)
 {
-  QByteArray newHash = generateLabelParameterHash();
+  auto newHash = generateLabelParameterHash();
   if (newHash != mLabelParameterHash)
   {
     mLabelCache.clear();
@@ -10191,7 +10195,7 @@ int QCPAxisPainterPrivate::size()
 {
   int result = 0;
 
-  QByteArray newHash = generateLabelParameterHash();
+  auto newHash = generateLabelParameterHash();
   if (newHash != mLabelParameterHash)
   {
     mLabelCache.clear();
@@ -10245,16 +10249,23 @@ void QCPAxisPainterPrivate::clearCache()
   return value of this method hasn't changed since the last redraw, the respective label parameters
   haven't changed and cached labels may be used.
 */
-QByteArray QCPAxisPainterPrivate::generateLabelParameterHash() const
+uint QCPAxisPainterPrivate::generateLabelParameterHash() const
 {
-  QByteArray result;
-  result.append(QByteArray::number(mParentPlot->bufferDevicePixelRatio()));
-  result.append(QByteArray::number(tickLabelRotation));
-  result.append(QByteArray::number(int(tickLabelSide)));
-  result.append(QByteArray::number(int(substituteExponent)));
-  result.append(QByteArray::number(int(numberMultiplyCross)));
-  result.append(tickLabelColor.name().toLatin1()+QByteArray::number(tickLabelColor.alpha(), 16));
-  result.append(tickLabelFont.toString().toLatin1());
+  uint result = qHash(mParentPlot->bufferDevicePixelRatio());
+  result ^= qHash(tickLabelRotation);
+  result ^= qHash(tickLabelSide);
+  result ^= qHash(substituteExponent);
+  result ^= qHash(numberMultiplyCross);
+  result ^= qHash(tickLabelColor.name().toLatin1()+QByteArray::number(tickLabelColor.alpha(), 16));
+  result ^= qHash(tickLabelFont.toString());
+
+//  result.append(QByteArray::number(mParentPlot->bufferDevicePixelRatio()));
+//  result.append(QByteArray::number(tickLabelRotation));
+//  result.append(QByteArray::number(int(tickLabelSide)));
+//  result.append(QByteArray::number(int(substituteExponent)));
+//  result.append(QByteArray::number(int(numberMultiplyCross)));
+//  result.append(tickLabelColor.name().toLatin1()+QByteArray::number(tickLabelColor.alpha(), 16));
+//  result.append(tickLabelFont.toString().toLatin1());
   return result;
 }
 
@@ -10351,10 +10362,7 @@ void QCPAxisPainterPrivate::placeTickLabel(QCPPainter *painter, double position,
   }
   
   // expand passed tickLabelsSize if current tick label is larger:
-  if (finalSize.width() > tickLabelsSize->width())
-    tickLabelsSize->setWidth(finalSize.width());
-  if (finalSize.height() > tickLabelsSize->height())
-    tickLabelsSize->setHeight(finalSize.height());
+  *tickLabelsSize = tickLabelsSize->expandedTo(finalSize);
 }
 
 /*! \internal

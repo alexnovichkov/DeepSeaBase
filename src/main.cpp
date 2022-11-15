@@ -31,7 +31,8 @@ int main(int argc, char *argv[])
         el::Configurations fileConf("file.conf");
         el::Loggers::reconfigureAllLoggers(fileConf);
     }
-    else {
+    else
+    {
         el::Configurations consoleConf("console.conf");
         el::Loggers::reconfigureAllLoggers(consoleConf);
     }

@@ -106,7 +106,7 @@ bool QCPFlowLayout::prependElement(QCPLayoutElement *element)
         return false;
     }
     if (hasElement(element)) {
-        LOG(DEBUG) << "Element"<<element<<"already in layout";
+        LOG(DEBUG) << "Element "<<element<<" already in layout";
         return false;
     }
 
@@ -125,7 +125,7 @@ bool QCPFlowLayout::insertElement(QCPLayoutElement *element, int index)
         return false;
     }
     if (hasElement(element)) {
-        LOG(DEBUG) << "Element"<<element<<"already in layout";
+        LOG(DEBUG) << "Element "<<element<<" already in layout";
         return false;
     }
     if (index < 0) index = 0;
