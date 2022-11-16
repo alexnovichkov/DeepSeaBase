@@ -23,12 +23,12 @@ QString FlatteningFunction::description() const
     return "Объединение блоков данных";
 }
 
-QStringList FlatteningFunction::properties() const
+QStringList FlatteningFunction::parameters() const
 {DD;
     return QStringList();
 }
 
-QString FlatteningFunction::propertyDescription(const QString &property) const
+QString FlatteningFunction::parameterDescription(const QString &property) const
 {DD;
     Q_UNUSED(property);
     return "";
@@ -46,7 +46,7 @@ bool FlatteningFunction::compute(FileDescriptor *file)
     return !output.isEmpty();
 }
 
-QVariant FlatteningFunction::m_getProperty(const QString &property) const
+QVariant FlatteningFunction::m_getParameter(const QString &property) const
 {DD;
     if (property == "?/zCount") {
         //количество блоков
@@ -57,7 +57,7 @@ QVariant FlatteningFunction::m_getProperty(const QString &property) const
     return QVariant();
 }
 
-void FlatteningFunction::m_setProperty(const QString &property, const QVariant &val)
+void FlatteningFunction::m_setParameter(const QString &property, const QVariant &val)
 {DD;
     Q_UNUSED(property);
     Q_UNUSED(val);

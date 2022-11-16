@@ -31,16 +31,17 @@ public:
 public:
     virtual QString name() const override;
     virtual QString description() const override;
-    virtual QVariant m_getProperty(const QString &property) const override;
-    virtual void m_setProperty(const QString &property, const QVariant &val) override;
-    virtual bool propertyShowsFor(const QString &property) const override;
-
-    virtual QStringList properties() const override;
-    virtual QString propertyDescription(const QString &property) const override;
+    virtual void updateParameter(const QString &property, const QVariant &val) override;
+    virtual QStringList parameters() const override;
+    virtual QString parameterDescription(const QString &property) const override;
     virtual DataDescription getFunctionDescription() const override;
+protected:
+    virtual QVariant m_getParameter(const QString &property) const override;
+    virtual void m_setParameter(const QString &property, const QVariant &val) override;
+    virtual bool m_parameterShowsFor(const QString &parameter) const override;
 private:
     FrameCutter frameCutter;
-    QMap<QString, QVariant> parameters;
+    QMap<QString, QVariant> m_parameters; //хранит параметры в исходном виде. В frameCutter передаются уже пересчитанные значения
 
     // AbstractFunction interface
 public:
@@ -48,10 +49,6 @@ public:
     virtual void reset() override;
     virtual void resetData() override;
     virtual bool compute(FileDescriptor *file) override;
-
-    // AbstractFunction interface
-public slots:
-    virtual void updateProperty(const QString &property, const QVariant &val) override;
 };
 
 #endif // SAMPLINGFUNCTION_H

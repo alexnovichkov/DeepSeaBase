@@ -32,13 +32,13 @@ QString FilteringFunction::description() const
     return "Фильтрация временных данных";
 }
 
-QStringList FilteringFunction::properties() const
+QStringList FilteringFunction::parameters() const
 {DD;
-    return QStringList()<<"type"<<"approximation"<<"order"<<"frequency"<<"Q"<<"bandwidth"<<"bandwidthHz"<<"gain"<<"slope"
-                       <<"rippleDb"<<"stopDb"<<"rolloff";
+    return {"type","approximation","order","frequency","Q","bandwidth","bandwidthHz","gain","slope"
+                       ,"rippleDb","stopDb","rolloff"};
 }
 
-QString FilteringFunction::propertyDescription(const QString &property) const
+QString FilteringFunction::parameterDescription(const QString &property) const
 {DD;
 //    LOG(DEBUG)<<"property description"<<property;
     if (property == "type") return "{"
@@ -160,7 +160,7 @@ QString FilteringFunction::propertyDescription(const QString &property) const
     return "";
 }
 
-QVariant FilteringFunction::m_getProperty(const QString &property) const
+QVariant FilteringFunction::m_getParameter(const QString &property) const
 {DD;
     if (property.startsWith("?/")) {
         if (property == "?/dataType") return 2;//Фильтр. данные
@@ -221,7 +221,7 @@ DataDescription FilteringFunction::getFunctionDescription() const
     return result;
 }
 
-void FilteringFunction::m_setProperty(const QString &property, const QVariant &val)
+void FilteringFunction::m_setParameter(const QString &property, const QVariant &val)
 {DD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
@@ -238,37 +238,33 @@ void FilteringFunction::m_setProperty(const QString &property, const QVariant &v
     }
 }
 
-bool FilteringFunction::propertyShowsFor(const QString &property) const
+bool FilteringFunction::m_parameterShowsFor(const QString &parameter) const
 {DD;
-    if (!property.startsWith(name()+"/")) return false;
-    QString p = property.section("/",1);
-
     const int approx = map.value("approximation").toInt();
     const int type = map.value("type").toInt();
 
-    if (type == 0 && p != "type") return false;
+    if (type == 0 && parameter != "type") return false;
 
-    if (p == "order") return approx != Filtering::RBJ;
-    else if (p == "Q")
+    if (parameter == "order") return approx != Filtering::RBJ;
+    if (parameter == "Q")
         return (approx == Filtering::RBJ && (type==Filtering::LowPass || type==Filtering::HighPass));
-    else if (p == "bandwidthHz") {
+    if (parameter == "bandwidthHz") {
         if (approx == Filtering::RBJ) return false;
-        else if (type==Filtering::BandPass || type==Filtering::BandStop) return true;
-        else if (type==Filtering::BandShelf)
+        if (type==Filtering::BandPass || type==Filtering::BandStop) return true;
+        if (type==Filtering::BandShelf)
             return (approx == Filtering::Butterworth || approx == Filtering::ChebyshevI || approx == Filtering::ChebyshevII);
-        else return false;
+        return false;
     }
-    else if (p == "bandwidth")
+    if (parameter == "bandwidth")
         return (approx == Filtering::RBJ &&
                 (type==Filtering::BandPass || type==Filtering::BandStop || type==Filtering::BandShelf));
-    else if (p == "gain")
+    if (parameter == "gain")
         return (type==Filtering::LowShelf || type==Filtering::HighShelf || type==Filtering::BandShelf);
-    else if (p == "slope")
-        return (approx == Filtering::RBJ &&
-                (type==Filtering::LowShelf || type==Filtering::HighShelf));
-    else if (p == "rippleDb") return (approx == Filtering::ChebyshevI || approx == Filtering::Elliptic);
-    else if (p == "stopDb") return (approx == Filtering::ChebyshevII);
-    else if (p == "rolloff") return (approx == Filtering::Elliptic);
+    if (parameter == "slope")
+        return (approx == Filtering::RBJ && (type==Filtering::LowShelf || type==Filtering::HighShelf));
+    if (parameter == "rippleDb") return (approx == Filtering::ChebyshevI || approx == Filtering::Elliptic);
+    if (parameter == "stopDb") return (approx == Filtering::ChebyshevII);
+    if (parameter == "rolloff") return (approx == Filtering::Elliptic);
 
     return true;
 }

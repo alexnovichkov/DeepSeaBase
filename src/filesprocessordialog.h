@@ -32,7 +32,7 @@ private slots:
     void start();
     void stop();
     void onValueChanged(QtProperty *property, const QVariant &val);
-    void updateProperty(AbstractFunction *f, const QString &property, const QVariant &val, const QString &attribute);
+    void updateParameter(AbstractFunction *f, const QString &parameter, const QVariant &val, const QString &attribute);
 private:
     struct Property {
         AbstractFunction *f;

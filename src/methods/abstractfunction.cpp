@@ -14,44 +14,44 @@ AbstractFunction::~AbstractFunction()
 {DD;
 }
 
-QString AbstractFunction::propertiesDescription() const
+QString AbstractFunction::parametersDescription() const
 {DD;
-    QString result="[";
-    const QStringList props = properties();
+    const QStringList props = parameters();
+    if (props.isEmpty()) return "";
+
+    QStringList result;
     for (const QString &p: props) {
-        result.append(propertyDescription(p));
-        result.append(",");
+        result.append(parameterDescription(p));
     }
-    result.chop(1);
-    result.append("]");
-    return result;
+    return "["+result.join(',')+"]";
 }
 
-bool AbstractFunction::propertyShowsFor(const QString &property) const
+bool AbstractFunction::parameterShowsFor(const QString &parameter) const
 {DD;
-    Q_UNUSED(property);
+    if (!parameter.startsWith(name()+"/")) return false;
+    QString p = parameter.section("/",1);
 
-    return true;
+    return m_parameterShowsFor(p);
 }
 
-QVariant AbstractFunction::getParameter(const QString &property) const
+QVariant AbstractFunction::getParameter(const QString &parameter) const
 {DD;
     QVariant p;
     if (paired()) {
-        p = m_master->m_getProperty(property);
+        p = m_master->m_getParameter(parameter);
     }
     if (!p.isValid())
-        p = m_getProperty(property);
+        p = m_getParameter(parameter);
     return p;
 }
 
-void AbstractFunction::setParameter(const QString &property, const QVariant &val)
+void AbstractFunction::setParameter(const QString &parameter, const QVariant &val)
 {DD;
     if (m_slave != nullptr) {
-        m_slave->m_setProperty(property, val);
+        m_slave->m_setParameter(parameter, val);
     }
 
-    m_setProperty(property, val);
+    m_setParameter(parameter, val);
 }
 
 void AbstractFunction::pairWith(AbstractFunction *slave)
@@ -105,15 +105,11 @@ void AbstractFunction::resetData()
     if (m_input2) m_input2->resetData();
 }
 
-void AbstractFunction::updateProperty(const QString &property, const QVariant &val)
+void AbstractFunction::updateParameter(const QString &parameter, const QVariant &val)
 {DD;
-    Q_UNUSED(property);
+    Q_UNUSED(parameter);
     Q_UNUSED(val);
-    //no-op
 }
-
-
-
 
 AbstractAlgorithm::AbstractAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) : QObject(parent),
     m_dataBase(dataBase)
@@ -126,42 +122,42 @@ AbstractAlgorithm::~AbstractAlgorithm()
     m_functions.clear();
 }
 
-bool AbstractAlgorithm::propertyShowsFor(AbstractFunction *function, const QString &property) const
+bool AbstractAlgorithm::parameterShowsFor(AbstractFunction *function, const QString &parameter) const
 {DD;
-    if (property.isEmpty()) return true;
+    if (parameter.isEmpty()) return true;
 
     const auto list = functions();
     for (AbstractFunction *f: list) {
-        if (f == function && property.startsWith(f->name()+"/")) {
-            return f->propertyShowsFor(property);
+        if (f == function && parameter.startsWith(f->name()+"/")) {
+            return f->parameterShowsFor(parameter);
         }
     }
 
     return true;
 }
 
-QVariant AbstractAlgorithm::getParameter(AbstractFunction *function, const QString &property) const
+QVariant AbstractAlgorithm::getParameter(AbstractFunction *function, const QString &parameter) const
 {DD;
-    if (property.isEmpty()) return QVariant();
+    if (parameter.isEmpty()) return QVariant();
 
     const auto list = functions();
     for (AbstractFunction *f: list) {
-        if (f == function && property.startsWith(f->name()+"/")) {
-            return f->getParameter(property);
+        if (f == function && parameter.startsWith(f->name()+"/")) {
+            return f->getParameter(parameter);
         }
     }
 
     return QVariant();
 }
 
-void AbstractAlgorithm::setParameter(AbstractFunction *function, const QString &property, const QVariant &val)
+void AbstractAlgorithm::setParameter(AbstractFunction *function, const QString &parameter, const QVariant &val)
 {DD;
-    if (property.isEmpty()) return;
+    if (parameter.isEmpty()) return;
 
     const auto list = functions();
     for (AbstractFunction *f: list) {
-        if (f == function && property.startsWith(f->name()+"/")) {
-            f->setParameter(property, val);
+        if (f == function && parameter.startsWith(f->name()+"/")) {
+            f->setParameter(parameter, val);
             return;
         }
     }
@@ -170,9 +166,9 @@ void AbstractAlgorithm::setParameter(AbstractFunction *function, const QString &
 void AbstractAlgorithm::saveSettings()
 {DD;
     for (auto f: m_functions) {
-        for (const auto &property: f->properties()) {
-            QVariant val = f->getParameter(f->name()+"/"+property);
-            Settings::setSetting(displayName()+"/"+f->name()+"/"+property, val);
+        for (const auto &p: f->parameters()) {
+            QVariant val = f->getParameter(f->name()+"/"+p);
+            Settings::setSetting(displayName()+"/"+f->name()+"/"+p, val);
         }
     }
 }
@@ -180,9 +176,9 @@ void AbstractAlgorithm::saveSettings()
 void AbstractAlgorithm::restoreSettings()
 {DD;
     for (auto f: m_functions) {
-        for (const auto &property: f->properties()) {
-            QVariant val = Settings::getSetting(displayName()+"/"+f->name()+"/"+property);
-            f->setParameter(f->name()+"/"+property, val);
+        for (const auto &p: f->parameters()) {
+            QVariant val = Settings::getSetting(displayName()+"/"+f->name()+"/"+p);
+            f->setParameter(f->name()+"/"+p, val);
         }
     }
 }

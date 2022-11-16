@@ -52,7 +52,7 @@ QString FrameCutterFunction::description() const
     return "Разбиение данных на блоки";
 }
 
-QVariant FrameCutterFunction::m_getProperty(const QString &property) const
+QVariant FrameCutterFunction::m_getParameter(const QString &property) const
 {DD;
     if (property.startsWith("?/")) {
         if (property == "?/blockSize") {
@@ -72,7 +72,7 @@ QVariant FrameCutterFunction::m_getProperty(const QString &property) const
 
     if (!property.startsWith(name()+"/")) return QVariant();
 
-    return parameters.value(property.section("/",1));
+    return m_parameters.value(property.section("/",1));
 }
 
 DataDescription FrameCutterFunction::getFunctionDescription() const
@@ -99,12 +99,12 @@ DataDescription FrameCutterFunction::getFunctionDescription() const
     return result;
 }
 
-void FrameCutterFunction::m_setProperty(const QString &property, const QVariant &val)
+void FrameCutterFunction::m_setParameter(const QString &property, const QVariant &val)
 {DD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
-    parameters.insert(p, val);
+    m_parameters.insert(p, val);
 
     if (p == "type") {
         frameCutter.setType(val.toInt());
@@ -114,7 +114,7 @@ void FrameCutterFunction::m_setProperty(const QString &property, const QVariant 
         //double p = pow(2.0, val.toInt()); DebugPrint(p);
         //int sampleRate = int (1.0/frameCutter.getXStep()); DebugPrint(sampleRate);
         frameCutter.setBlockSize(65536 >> val.toInt());
-        emit propertyChanged("?/blockSize", 65536 >> val.toInt());
+        emit parameterChanged("?/blockSize", 65536 >> val.toInt());
     }
     else if (p == "xStep") {
         frameCutter.setXStep(val.toDouble());
@@ -137,18 +137,15 @@ void FrameCutterFunction::m_setProperty(const QString &property, const QVariant 
     }
     else if (p == "triggerChannel") {
         frameCutter.setChannel(val.toInt()-1);
-        emit propertyChanged("?/triggerChannel", val.toInt()-1);
+        emit parameterChanged("?/triggerChannel", val.toInt()-1);
     }
     else if (p == "pretrigger") {
         frameCutter.setPretrigger(int(val.toDouble()/frameCutter.getXStep()));
     }
 }
 
-bool FrameCutterFunction::propertyShowsFor(const QString &property) const
+bool FrameCutterFunction::m_parameterShowsFor(const QString &p) const
 {DD;
-    if (!property.startsWith(name()+"/")) return false;
-    QString p = property.section("/",1);
-
     if (p == "percent" && frameCutter.type() != FrameCutter::Overlap) return false;
     if (p == "deltaTime" && (frameCutter.type() == FrameCutter::Continuous ||
                                     frameCutter.type() == FrameCutter::Overlap)) return false;
@@ -161,20 +158,13 @@ bool FrameCutterFunction::propertyShowsFor(const QString &property) const
 }
 
 
-QStringList FrameCutterFunction::properties() const
+QStringList FrameCutterFunction::parameters() const
 {DD;
-    return QStringList()<<
-                           "type"<<
-                           "blockSize"<<
-                           "percent"<<
-                           "deltaTime"<<
-                           "triggerMode"<<
-                           "level"<<
-                           "triggerChannel"<<
-                           "pretrigger";
+    return {"type", "blockSize", "percent", "deltaTime", "triggerMode", "level",
+        "triggerChannel", "pretrigger"};
 }
 
-QString FrameCutterFunction::propertyDescription(const QString &property) const
+QString FrameCutterFunction::parameterDescription(const QString &property) const
 {DD;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
@@ -304,7 +294,7 @@ bool FrameCutterFunction::compute(FileDescriptor *file)
 }
 
 
-void FrameCutterFunction::updateProperty(const QString &property, const QVariant &val)
+void FrameCutterFunction::updateParameter(const QString &property, const QVariant &val)
 {DD;
     // нам может прийти измененный шаг по оси Х
     if (property == "?/xStep") {

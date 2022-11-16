@@ -20,7 +20,7 @@ QString ChannelFunction::description() const
     return "Выбор каналов для обработки";
 }
 
-QVariant ChannelFunction::m_getProperty(const QString &property) const
+QVariant ChannelFunction::m_getParameter(const QString &property) const
 {DD;
     Channel *ch = 0;
     if (m_file && channel >=0) ch = m_file->channel(channel);
@@ -80,7 +80,7 @@ QVariant ChannelFunction::m_getProperty(const QString &property) const
     return QVariant();
 }
 
-void ChannelFunction::m_setProperty(const QString &property, const QVariant &val)
+void ChannelFunction::m_setParameter(const QString &property, const QVariant &val)
 {DD;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
@@ -94,12 +94,12 @@ void ChannelFunction::m_setProperty(const QString &property, const QVariant &val
 
 
 
-QStringList ChannelFunction::properties() const
+QStringList ChannelFunction::parameters() const
 {DD;
-    return QStringList()<<"filter" /*<<"minSec"<<"maxSec"*/;
+    return {"filter",  /*"minSec", "maxSec"*/};
 }
 
-QString ChannelFunction::propertyDescription(const QString &property) const
+QString ChannelFunction::parameterDescription(const QString &property) const
 {DD;
     if (property == "filter") return "{"
                                      "  \"name\"        : \"filter\"   ,"
@@ -165,7 +165,7 @@ bool ChannelFunction::compute(FileDescriptor *file)
     return !output.isEmpty();
 }
 
-void ChannelFunction::updateProperty(const QString &property, const QVariant &val)
+void ChannelFunction::updateParameter(const QString &property, const QVariant &val)
 {DD;
     if (property == "?/triggerChannel") triggerChannel = val.toInt();
 }
@@ -181,12 +181,12 @@ RefChannelFunction::RefChannelFunction(QObject *parent, const QString &name)
 
 }
 
-QStringList RefChannelFunction::properties() const
+QStringList RefChannelFunction::parameters() const
 {DD;
-    return QStringList()<<"referenceChannelIndex";
+    return {"referenceChannelIndex"};
 }
 
-QString RefChannelFunction::propertyDescription(const QString &property) const
+QString RefChannelFunction::parameterDescription(const QString &property) const
 {DD;
     if (property == "referenceChannelIndex") return "{"
                                                "  \"name\"        : \"referenceChannelIndex\"   ,"
@@ -227,7 +227,7 @@ QString RefChannelFunction::displayName() const
     return "Опорный канал";
 }
 
-QVariant RefChannelFunction::m_getProperty(const QString &property) const
+QVariant RefChannelFunction::m_getParameter(const QString &property) const
 {DD;
     if (property == name()+"/referenceChannelIndex") return channel+1;
     else if (property == "?/referenceChannelIndex") return channel+1;
@@ -237,13 +237,13 @@ QVariant RefChannelFunction::m_getProperty(const QString &property) const
     if (property == "?/yName" && ch) return ch->yName();
     if (property == "?/yNameOld" && ch) return ch->yName();
 
-    return ChannelFunction::m_getProperty(property);
+    return ChannelFunction::m_getParameter(property);
 }
 
-void RefChannelFunction::m_setProperty(const QString &property, const QVariant &val)
+void RefChannelFunction::m_setParameter(const QString &property, const QVariant &val)
 {DD;
     if (property == name()+"/referenceChannelIndex") channel = val.toInt()-1;
-    else ChannelFunction::m_setProperty(property, val);
+    else ChannelFunction::m_setParameter(property, val);
 }
 
 

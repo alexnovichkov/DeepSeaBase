@@ -20,12 +20,12 @@ QString FftFunction::description() const
     return "Спектр";
 }
 
-QStringList FftFunction::properties() const
+QStringList FftFunction::parameters() const
 {DD;
-    return QStringList()<<"output";
+    return {"output"};
 }
 
-QString FftFunction::propertyDescription(const QString &property) const
+QString FftFunction::parameterDescription(const QString &property) const
 {DD;
     if (property == "output") return "{"
                                      "  \"name\"        : \"output\"   ,"
@@ -38,7 +38,7 @@ QString FftFunction::propertyDescription(const QString &property) const
     return QString();
 }
 
-QVariant FftFunction::m_getProperty(const QString &property) const
+QVariant FftFunction::m_getParameter(const QString &property) const
 {DD;
     if (property.startsWith("?/")) {
         if (property == "?/dataType") return 128;
@@ -74,7 +74,7 @@ QVariant FftFunction::m_getProperty(const QString &property) const
     return map.value(p);
 }
 
-void FftFunction::m_setProperty(const QString &property, const QVariant &val)
+void FftFunction::m_setParameter(const QString &property, const QVariant &val)
 {DD;
     if (!property.startsWith(name()+"/")) return;
 

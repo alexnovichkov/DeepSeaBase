@@ -20,21 +20,21 @@ QString ApsFunction::description() const
     return "Автоспектр";
 }
 
-QStringList ApsFunction::properties() const
+QStringList ApsFunction::parameters() const
 {DD;
     return QStringList();
 }
 
-QString ApsFunction::propertyDescription(const QString &property) const
+QString ApsFunction::parameterDescription(const QString &parameter) const
 {DD;
-    Q_UNUSED(property);
+    Q_UNUSED(parameter);
     return QString();
 }
 
-QVariant ApsFunction::m_getProperty(const QString &property) const
+QVariant ApsFunction::m_getParameter(const QString &parameter) const
 {DD;
-    if (property.startsWith("?/")) {
-        if (property == "?/processData") {
+    if (parameter.startsWith("?/")) {
+        if (parameter == "?/processData") {
             QStringList list;
 
             list << "PName=Автоспектр мощности";
@@ -44,45 +44,45 @@ QVariant ApsFunction::m_getProperty(const QString &property) const
             list << "pTime=(0000000000000000)";
             return list;
         }
-        if (property == "?/dataType") {
+        if (parameter == "?/dataType") {
             return 131; // отсутствует в DeepSea, APS
         }
-        if (property == "?/xName") return "Гц";
-        if (property == "?/xType") return 18; //frequency
-        if (property == "?/xBegin") return 0.0;
-        if (property == "?/xStep") {
+        if (parameter == "?/xName") return "Гц";
+        if (parameter == "?/xType") return 18; //frequency
+        if (parameter == "?/xBegin") return 0.0;
+        if (parameter == "?/xStep") {
             return m_input->getParameter("?/sampleRate").toDouble() / m_input->getParameter("?/blockSize").toDouble();
         }
-        if (property == "?/functionDescription") {
+        if (parameter == "?/functionDescription") {
             return "APS";
         }
-        if (property == "?/functionType") {
+        if (parameter == "?/functionType") {
             return 2;
         }
-        if (property == "?/normalization") {
+        if (parameter == "?/normalization") {
             return 1; //units squared
         }
-        if (property == "?/dataFormat") {
+        if (parameter == "?/dataFormat") {
             return "real";
         }
-        if (property == "?/yValuesUnits") {
+        if (parameter == "?/yValuesUnits") {
             return DataHolder::UnitsQuadratic;
         }
-        if (property == "?/yName") {
+        if (parameter == "?/yName") {
             QString s = m_input->getParameter("?/yName").toString();
             return QString("(%1)^2").arg(s);
         }
 
         // do not know anything about these broadcast properties
-        if (m_input) return m_input->getParameter(property);
+        if (m_input) return m_input->getParameter(parameter);
     }
 
     return QVariant();
 }
 
-void ApsFunction::m_setProperty(const QString &property, const QVariant &val)
+void ApsFunction::m_setParameter(const QString &parameter, const QVariant &val)
 {DD;
-    Q_UNUSED(property);
+    Q_UNUSED(parameter);
     Q_UNUSED(val);
 }
 

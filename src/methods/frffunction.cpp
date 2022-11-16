@@ -18,12 +18,12 @@ QString FrfFunction::description() const
     return "Передаточная";
 }
 
-QStringList FrfFunction::properties() const
+QStringList FrfFunction::parameters() const
 {DD;
-    return QStringList()<<"type"<<"output";
+    return {"type", "output"};
 }
 
-QString FrfFunction::propertyDescription(const QString &property) const
+QString FrfFunction::parameterDescription(const QString &property) const
 {DD;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
@@ -44,7 +44,7 @@ QString FrfFunction::propertyDescription(const QString &property) const
     return QString();
 }
 
-QVariant FrfFunction::m_getProperty(const QString &property) const
+QVariant FrfFunction::m_getParameter(const QString &property) const
 {DD;
     if (property.startsWith("?/")) {
 //        if (property == "?/processData") {
@@ -138,7 +138,7 @@ QVariant FrfFunction::m_getProperty(const QString &property) const
     return map.value(p);
 }
 
-void FrfFunction::m_setProperty(const QString &property, const QVariant &val)
+void FrfFunction::m_setParameter(const QString &property, const QVariant &val)
 {DD;
     if (!property.startsWith(name()+"/")) return;
 

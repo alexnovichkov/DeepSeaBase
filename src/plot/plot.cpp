@@ -468,7 +468,6 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
 
         curve->detachFrom(this);
         delete curve;
-        delete curve;
 
         if (m->leftCurvesCount()==0) {
             yLeftName.clear();

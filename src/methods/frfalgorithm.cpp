@@ -104,24 +104,30 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     }
     if (xStepsDiffer) emit message("Файлы имеют разный шаг по оси X.");
 
+//    //resamplingF отправляет сигнал об изменении "?/xStep"
+    //resamplingF отправляет сигнал об изменении "?/xStep"
+    connect(resamplingF, &AbstractFunction::parameterChanged, samplingF, &AbstractFunction::updateParameter);
+    connect(resamplingF, &AbstractFunction::parameterChanged, refSamplingF, &AbstractFunction::updateParameter);
+    //samplingF отправляет сигнал об изменении "?/triggerChannel"
+    connect(samplingF, &AbstractFunction::parameterChanged, channelF, &AbstractFunction::updateParameter);
+    connect(samplingF, &AbstractFunction::parameterChanged, refChannelF, &AbstractFunction::updateParameter);
+//    connect(resamplingF, SIGNAL(parameterChanged(QString,QVariant)),
+//            samplingF, SLOT(updateParameter(QString,QVariant)));
+//    connect(resamplingF, SIGNAL(parameterChanged(QString,QVariant)),
+//            refSamplingF, SLOT(updateParameter(QString,QVariant)));
+
+//    //samplingF отправляет сигнал об изменении "?/triggerChannel"
+//    connect(samplingF, SIGNAL(parameterChanged(QString,QVariant)),
+//            channelF, SLOT(updateParameter(QString,QVariant)));
+//    //samplingF отправляет сигнал об изменении "?/triggerChannel"
+//    connect(samplingF, SIGNAL(parameterChanged(QString,QVariant)),
+//            refChannelF, SLOT(updateParameter(QString,QVariant)));
+
     //начальные значения, которые будут использоваться в показе функций
     resamplingF->setParameter(resamplingF->name()+"/xStep", xStep); //автоматически задает xStep для samplingF
     channelF->setFile(dataBase.constFirst());
     refChannelF->setFile(dataBase.constFirst());
     refChannelF->setParameter(refChannelF->name()+"/referenceChannelIndex", 1);
-
-//    //resamplingF отправляет сигнал об изменении "?/xStep"
-    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
-            samplingF, SLOT(updateProperty(QString,QVariant)));
-    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
-            refSamplingF, SLOT(updateProperty(QString,QVariant)));
-
-    //samplingF отправляет сигнал об изменении "?/triggerChannel"
-    connect(samplingF, SIGNAL(propertyChanged(QString,QVariant)),
-            channelF, SLOT(updateProperty(QString,QVariant)));
-    //samplingF отправляет сигнал об изменении "?/triggerChannel"
-    connect(samplingF, SIGNAL(propertyChanged(QString,QVariant)),
-            refChannelF, SLOT(updateProperty(QString,QVariant)));
 }
 
 QString FRFAlgorithm::description() const

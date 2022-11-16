@@ -55,11 +55,14 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
     if (xStepsDiffer) emit message("Файлы имеют разный шаг по оси X.");
 
     //resamplingF отправляет сигнал об изменении "?/xStep"
-    connect(resamplingF, SIGNAL(propertyChanged(QString,QVariant)),
-            samplingF, SLOT(updateProperty(QString,QVariant)));
+    connect(resamplingF, &AbstractFunction::parameterChanged, samplingF, &AbstractFunction::updateParameter);
     //samplingF отправляет сигнал об изменении "?/triggerChannel"
-    connect(samplingF, SIGNAL(propertyChanged(QString,QVariant)),
-            channelF, SLOT(updateProperty(QString,QVariant)));
+    connect(samplingF, &AbstractFunction::parameterChanged, channelF, &AbstractFunction::updateParameter);
+
+//    connect(resamplingF, SIGNAL(parameterChanged(QString,QVariant)),
+//            samplingF, SLOT(updateParameter(QString,QVariant)));
+//    connect(samplingF, SIGNAL(parameterChanged(QString,QVariant)),
+//            channelF, SLOT(updateParameter(QString,QVariant)));
 
     //начальные значения, которые будут использоваться в показе функций
     resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);  //автоматически задает xStep для samplingF

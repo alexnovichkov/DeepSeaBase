@@ -20,14 +20,14 @@ QString AveragingFunction::description() const
     return "Усреднение";
 }
 
-QStringList AveragingFunction::properties() const
+QStringList AveragingFunction::parameters() const
 {DD;
-    return QStringList()<<"type"<<"maximum";
+    return {"type", "maximum"};
 }
 
-QString AveragingFunction::propertyDescription(const QString &property) const
+QString AveragingFunction::parameterDescription(const QString &parameter) const
 {DD;
-    if (property == "type") return "{"
+    if (parameter == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
                                    "  \"type\"        : \"enum\"   ,"
                                    "  \"displayName\" : \"Тип\"   ,"
@@ -36,7 +36,7 @@ QString AveragingFunction::propertyDescription(const QString &property) const
                                    "  \"values\"      : [\"Без усреднения\",\"Линейное\",\"Экспоненциальное\","
                                    "  \"Хранение максимума\",\"Энергетическое\"]" //для enum
                                    "}";
-    if (property == "maximum") return "{"
+    if (parameter == "maximum") return "{"
                                       "  \"name\"        : \"maximum\"   ,"
                                       "  \"type\"        : \"int\"   ,"
                                       "  \"displayName\" : \"Число усреднений\"   ,"
@@ -48,25 +48,25 @@ QString AveragingFunction::propertyDescription(const QString &property) const
     return "";
 }
 
-QVariant AveragingFunction::m_getProperty(const QString &property) const
+QVariant AveragingFunction::m_getParameter(const QString &parameter) const
 {DD;
-    if (property.startsWith("?/")) {
+    if (parameter.startsWith("?/")) {
 //        if (property == "?/averaging")
 //            return Averaging::averagingDescription(averaging.getAveragingType());
 //        if (property == "?/averagingType")
 //            return averaging.getAveragingType();
-        if (property == "?/zCount") {
+        if (parameter == "?/zCount") {
             //усреднения нет - возвращаем полное число блоков
             if (averaging.getAveragingType() == 0) return m_input->getParameter("?/zCount");
             //усреднение есть - возвращаем один блок
             return 1;
         }
 
-        if (m_input) return m_input->getParameter(property);
+        if (m_input) return m_input->getParameter(parameter);
     }
 
-    if (!property.startsWith(name()+"/")) return QVariant();
-    QString p = property.section("/",1);
+    if (!parameter.startsWith(name()+"/")) return QVariant();
+    QString p = parameter.section("/",1);
 
     if (p == "type") return averaging.getAveragingType();
     if (p == "maximum") return averaging.getMaximumAverages();
@@ -74,10 +74,10 @@ QVariant AveragingFunction::m_getProperty(const QString &property) const
     return QVariant();
 }
 
-void AveragingFunction::m_setProperty(const QString &property, const QVariant &val)
+void AveragingFunction::m_setParameter(const QString &parameter, const QVariant &val)
 {DD;
-    if (!property.startsWith(name()+"/")) return;
-    QString p = property.section("/",1);
+    if (!parameter.startsWith(name()+"/")) return;
+    QString p = parameter.section("/",1);
     int valInt = val.toInt();
 
     if (p == "type") {
@@ -88,12 +88,10 @@ void AveragingFunction::m_setProperty(const QString &property, const QVariant &v
     }
 }
 
-bool AveragingFunction::propertyShowsFor(const QString &property) const
+bool AveragingFunction::m_parameterShowsFor(const QString &parameter) const
 {DD;
-    if (!property.startsWith(name()+"/")) return false;
-    QString p = property.section("/",1);
-
-    if (p == "maximum") return (averaging.getAveragingType() != Averaging::NoAveraging);
+    if (parameter == "maximum")
+        return (averaging.getAveragingType() != Averaging::NoAveraging);
 
     return true;
 }

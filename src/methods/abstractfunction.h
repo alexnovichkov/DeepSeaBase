@@ -20,7 +20,7 @@
  * ?/amplitudeScaling - 0=unknown, 1=half-peak, 2=peak, 3=RMS
  * ?/normalization - тип нормализации, 0=unknown, 1=units squared, 2=Units squared per Hz (PSD)
                                //3=Units squared seconds per Hz (ESD)
- * ?/logref
+ * ?/logref - пороговое значение для перевода из U в dB
  * ?/functionDescription - функция, строка, отдает та функция, которая позже всех в цепи
  * ?/functionType - функция, число, отдает та функция, которая позже всех в цепи
  * ?/averaging - описание усреднения, отдает AveragingFunction
@@ -30,7 +30,7 @@
  * ?/dataFormat - complex / real / amplitude / amplitudeDb / imaginary / phase
  * ?/abscissaEven - true/false
  * ?/abscissaData - вектор, отдается пустой вектор, если шаг по абсциссе постоянный
- *                  только функция OctaveFunction будет отдавать непустой вектор
+ *                  непустой вектор будет отдавать только функция, возвращающая непостоянный шаг (OctaveFunction)
  * ?/xType - тип данных по оси X
  * ?/xName - единица измерения по оси Х
  * ?/xStep
@@ -51,17 +51,20 @@ class AbstractFunction : public QObject
 public:
     explicit AbstractFunction(QObject *parent = nullptr, const QString &name=QString());
     virtual ~AbstractFunction();
+
     virtual QString name() const = 0;
     QString debugName() const {return _name;}
     virtual QString displayName() const = 0;
     virtual QString description() const = 0;
-    QString propertiesDescription() const;
-    virtual QStringList properties() const = 0;
-    virtual QString propertyDescription(const QString &property) const = 0;
-    virtual bool propertyShowsFor(const QString &property) const;
+    QString parametersDescription() const;
+    bool parameterShowsFor(const QString &parameter) const;
 
-    QVariant getParameter(const QString &property) const;
-    void setParameter(const QString &property, const QVariant &val);
+    virtual QString parameterDescription(const QString &parameter) const = 0;
+
+
+    QVariant getParameter(const QString &parameter) const;
+    void setParameter(const QString &parameter, const QVariant &val);
+    virtual void updateParameter(const QString &parameter, const QVariant &val);
 
     void pairWith(AbstractFunction *slave);
     bool paired() const {return m_master != nullptr;}
@@ -82,16 +85,23 @@ public:
     // сбрасывает позицию в данных для расчета на начало
     virtual void resetData();
 signals:
-    void propertyChanged(const QString &property, const QVariant &val);
-    void attributeChanged(AbstractFunction *f, const QString &property, const QVariant &val, const QString &attribute);
+    void parameterChanged(const QString &parameter, const QVariant &val);
+    void attributeChanged(AbstractFunction *f, const QString &parameter, const QVariant &val, const QString &attribute);
 
     void tick(const QString &path);
     void message(const QString &s);
-public slots:
-    virtual void updateProperty(const QString &property, const QVariant &val);
+//public slots:
+//    void updateParameter(const QString &parameter, const QVariant &val);
 protected:
-    virtual QVariant m_getProperty(const QString &property) const = 0;
-    virtual void m_setProperty(const QString &property, const QVariant &val) = 0;
+    virtual QStringList parameters() const = 0;
+    virtual QVariant m_getParameter(const QString &parameter) const = 0;
+    virtual void m_setParameter(const QString &parameter, const QVariant &val) = 0;
+    /**
+     * @brief m_parameterShowsFor по умолчанию показываем все параметры
+     * @param parameter - название параметра без ?/ или FRF/
+     * @return true если параметр следует показать
+     */
+    virtual bool m_parameterShowsFor(const QString &parameter) const {Q_UNUSED(parameter); return true;}
 
 //    QList<FileDescriptor *> m_dataBase;
     AbstractFunction *m_input = nullptr;
@@ -113,10 +123,10 @@ public:
     virtual ~AbstractAlgorithm();
     virtual QString displayName() const = 0;
     virtual QString description() const = 0;
-    bool propertyShowsFor(AbstractFunction *f, const QString &property) const;
+    bool parameterShowsFor(AbstractFunction *f, const QString &parameter) const;
 
-    QVariant getParameter(AbstractFunction *f, const QString &property) const;
-    void setParameter(AbstractFunction *f, const QString &property, const QVariant &val);
+    QVariant getParameter(AbstractFunction *f, const QString &parameter) const;
+    void setParameter(AbstractFunction *f, const QString &parameter, const QVariant &val);
 
     void saveSettings();
     void restoreSettings();
@@ -132,7 +142,7 @@ public:
     // очищает внутреннее состояние алгоритма, но не меняет параметры, заданные ранее
     virtual void reset();
 signals:
-    void propertyChanged(const QString &property, const QVariant &val);
+    void parameterChanged(const QString &parameter, const QVariant &val);
 
     void tick();
     void tick(const QString &path);

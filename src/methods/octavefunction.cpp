@@ -19,12 +19,12 @@ QString OctaveFunction::description() const
     return "Октавный спектр";
 }
 
-QStringList OctaveFunction::properties() const
+QStringList OctaveFunction::parameters() const
 {DD;
     return {"type"};
 }
 
-QString OctaveFunction::propertyDescription(const QString &property) const
+QString OctaveFunction::parameterDescription(const QString &property) const
 {DD;
     if (property == "type") return "{"
                                       "  \"name\"        : \"type\"   ,"
@@ -37,7 +37,7 @@ QString OctaveFunction::propertyDescription(const QString &property) const
     return QString();
 }
 
-QVariant OctaveFunction::m_getProperty(const QString &property) const
+QVariant OctaveFunction::m_getParameter(const QString &property) const
 {DD;
     if (m_input && property.startsWith("?/")) {
         if (property == "?/octaveFormat") return static_cast<int>(bank.getType());
@@ -79,7 +79,7 @@ QVariant OctaveFunction::m_getProperty(const QString &property) const
     return QVariant();
 }
 
-void OctaveFunction::m_setProperty(const QString &property, const QVariant &val)
+void OctaveFunction::m_setParameter(const QString &property, const QVariant &val)
 {DD;
     if (property == "OCTF/type") {
         switch (val.toInt()) {
@@ -141,9 +141,7 @@ DataDescription OctaveFunction::getFunctionDescription() const
 
 }
 
-
-
-void OctaveFunction::updateProperty(const QString &property, const QVariant &val)
+void OctaveFunction::updateParameter(const QString &property, const QVariant &val)
 {DD;
     if (property == "?/blockSize") bank.setBlockSize(val.toInt());
 }

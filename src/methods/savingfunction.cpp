@@ -38,12 +38,12 @@ QString SavingFunction::description() const
     return "Сохранение файлов";
 }
 
-QStringList SavingFunction::properties() const
+QStringList SavingFunction::parameters() const
 {DD;
     return {"append", "type", "precision", "destination"};
 }
 
-QString SavingFunction::propertyDescription(const QString &property) const
+QString SavingFunction::parameterDescription(const QString &property) const
 {DD;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
@@ -83,15 +83,15 @@ QString SavingFunction::propertyDescription(const QString &property) const
     return "";
 }
 
-QVariant SavingFunction::m_getProperty(const QString &property) const
+QVariant SavingFunction::m_getParameter(const QString &parameter) const
 {DD;
-    if (property.startsWith("?/")) {
+    if (parameter.startsWith("?/")) {
         // do not know anything about these broadcast properties, propagating
-        if (m_input) return m_input->getParameter(property);
+        if (m_input) return m_input->getParameter(parameter);
     }
 
-    if (property.startsWith(name()+"/")) {
-        QString p = property.section("/",1);
+    if (parameter.startsWith(name()+"/")) {
+        QString p = parameter.section("/",1);
 
         if (p == "type") return type;
         if (p == "destination") return destination;
@@ -103,10 +103,10 @@ QVariant SavingFunction::m_getProperty(const QString &property) const
     return QVariant();
 }
 
-void SavingFunction::m_setProperty(const QString &property, const QVariant &val)
+void SavingFunction::m_setParameter(const QString &parameter, const QVariant &val)
 {DD;
-    if (!property.startsWith(name()+"/")) return;
-    QString p = property.section("/",1);
+    if (!parameter.startsWith(name()+"/")) return;
+    QString p = parameter.section("/",1);
 
     if (p == "type") type = val.toInt();
     else if (p == "destination") destination = val.toString();
@@ -114,11 +114,8 @@ void SavingFunction::m_setProperty(const QString &property, const QVariant &val)
     else if (p == "precision") precision = val.toInt();
 }
 
-bool SavingFunction::propertyShowsFor(const QString &property) const
+bool SavingFunction::m_parameterShowsFor(const QString &p) const
 {DD;
-    if (!property.startsWith(name()+"/")) return false;
-    QString p = property.section("/",1);
-
     if (p == "type") return !append;
     if (p == "destination") return !append;
     if (p == "precision") return type==SavingFunction::D94File;

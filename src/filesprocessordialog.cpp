@@ -173,7 +173,7 @@ void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
     // Parsing properties descriptions
     for (AbstractFunction *f: currentAlgorithm->functions()) {
         if (!f->paired()) addProperties(f);
-        connect(f, &AbstractFunction::attributeChanged, this, &FilesProcessorDialog::updateProperty);
+        connect(f, &AbstractFunction::attributeChanged, this, &FilesProcessorDialog::updateParameter);
     }
 
     if (currentAlgorithm) currentAlgorithm->restoreSettings();
@@ -194,7 +194,7 @@ void FilesProcessorDialog::updateVisibleProperties()
 
     for (QtVariantProperty *property: map.keys()) {
         foreach (auto item, propertyTree->items(property)) {
-            propertyTree->setItemVisible(item, currentAlgorithm->propertyShowsFor(map.value(property).f, map.value(property).name));
+            propertyTree->setItemVisible(item, currentAlgorithm->parameterShowsFor(map.value(property).f, map.value(property).name));
         }
     }
 }
@@ -211,13 +211,13 @@ void FilesProcessorDialog::onValueChanged(QtProperty *property, const QVariant &
     updateVisibleProperties();
 }
 
-void FilesProcessorDialog::updateProperty(AbstractFunction *f, const QString &property, const QVariant &val, const QString &attribute)
+void FilesProcessorDialog::updateParameter(AbstractFunction *f, const QString &parameter, const QVariant &val, const QString &attribute)
 {DD;
     for (auto [key,v] : asKeyValueRange(map)) {
-        if (v.f == f && v.name == property) {
+        if (v.f == f && v.name == parameter) {
             if (val.isValid() && !attribute.isEmpty())
                 key->setAttribute(attribute, val);
-            auto param = currentAlgorithm->getParameter(f, property);
+            auto param = currentAlgorithm->getParameter(f, parameter);
             key->setValue(param);
             updateVisibleProperties();
         }
@@ -228,13 +228,14 @@ void FilesProcessorDialog::addProperties(AbstractFunction *f)
 {DD;
     if (!f) return;
 
-    if (f->properties().isEmpty()) return;
+    QString parameters = f->parametersDescription();
+    if (parameters.isEmpty()) return;
 
     QJsonParseError error;
-    QJsonDocument doc = QJsonDocument::fromJson(f->propertiesDescription().toUtf8(), &error);
+    QJsonDocument doc = QJsonDocument::fromJson(parameters.toUtf8(), &error);
     if (error.error != QJsonParseError::NoError) {
         LOG(ERROR)<<error.errorString() << error.offset;
-        LOG(DEBUG)<<f->propertiesDescription().toUtf8();
+        LOG(DEBUG)<<parameters.toUtf8();
         return;
     }
 

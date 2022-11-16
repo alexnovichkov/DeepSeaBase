@@ -20,18 +20,18 @@ QString GxyFunction::description() const
     return "Взаимный спектр";
 }
 
-QStringList GxyFunction::properties() const
+QStringList GxyFunction::parameters() const
 {DD;
     return QStringList();
 }
 
-QString GxyFunction::propertyDescription(const QString &property) const
+QString GxyFunction::parameterDescription(const QString &property) const
 {DD;
     Q_UNUSED(property);
     return QString();
 }
 
-QVariant GxyFunction::m_getProperty(const QString &property) const
+QVariant GxyFunction::m_getParameter(const QString &property) const
 {DD;
     if (property.startsWith("?/")) {
         if (property == "?/dataType") return 131; // отсутствует в DeepSea, APS
@@ -71,7 +71,7 @@ DataDescription GxyFunction::getFunctionDescription() const
     return result;
 }
 
-void GxyFunction::m_setProperty(const QString &property, const QVariant &val)
+void GxyFunction::m_setParameter(const QString &property, const QVariant &val)
 {DD;
     Q_UNUSED(property);
     Q_UNUSED(val);

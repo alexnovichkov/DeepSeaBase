@@ -65,13 +65,14 @@ public:
     virtual QString name() const override;
     virtual QString displayName() const override;
     virtual QString description() const override;
-    virtual QStringList properties() const override;
-    virtual QString propertyDescription(const QString &property) const override;
-    virtual QVariant m_getProperty(const QString &property) const override;
-    virtual void m_setProperty(const QString &property, const QVariant &val) override;
+    virtual QStringList parameters() const override;
+    virtual QString parameterDescription(const QString &parameter) const override;
+    virtual QVariant m_getParameter(const QString &parameter) const override;
+    virtual void m_setParameter(const QString &parameter, const QVariant &val) override;
     virtual bool compute(FileDescriptor *file) override;
     virtual void reset() override;
-    virtual bool propertyShowsFor(const QString &property) const override;
+protected:
+    virtual bool m_parameterShowsFor(const QString &parameter) const override;
 private:
     FileDescriptor *createFile(FileDescriptor *file);
     FileDescriptor *createDfdFile();

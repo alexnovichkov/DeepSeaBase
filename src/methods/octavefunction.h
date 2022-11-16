@@ -15,23 +15,21 @@ public:
 public:
     virtual QString name() const override;
     virtual QString description() const override;
-    virtual QStringList properties() const override;
-    virtual QString propertyDescription(const QString &property) const override;
-    virtual QVariant m_getProperty(const QString &property) const override;
-    virtual void m_setProperty(const QString &property, const QVariant &val) override;
+    virtual QStringList parameters() const override;
+    virtual QString parameterDescription(const QString &property) const override;
     virtual QString displayName() const override;
+    virtual void updateParameter(const QString &parameter, const QVariant &val) override;
 
     virtual bool compute(FileDescriptor *file) override;
     virtual void reset() override;
     virtual DataDescription getFunctionDescription() const override;
+protected:
+    virtual QVariant m_getParameter(const QString &property) const override;
+    virtual void m_setParameter(const QString &property, const QVariant &val) override;
 private:
 //    OctaveType type = OctaveType::Octave3;
     OctaveFilterBank bank;
     int portionsCount = 0;
-
-    // AbstractFunction interface
-public slots:
-    virtual void updateProperty(const QString &property, const QVariant &val) override;
 };
 
 #endif // OCTAVEFUNCTION_H

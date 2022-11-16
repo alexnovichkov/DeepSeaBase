@@ -20,18 +20,18 @@ QString PsFunction::description() const
     return "Спектр мощности";
 }
 
-QStringList PsFunction::properties() const
+QStringList PsFunction::parameters() const
 {DD;
     return QStringList();
 }
 
-QString PsFunction::propertyDescription(const QString &property) const
+QString PsFunction::parameterDescription(const QString &property) const
 {DD;
     Q_UNUSED(property);
     return QString();
 }
 
-QVariant PsFunction::m_getProperty(const QString &property) const
+QVariant PsFunction::m_getParameter(const QString &property) const
 {DD;
     if (property.startsWith("?/")) {
         if (property == "?/dataType") return 128;
@@ -55,7 +55,7 @@ QVariant PsFunction::m_getProperty(const QString &property) const
     return QVariant();
 }
 
-void PsFunction::m_setProperty(const QString &property, const QVariant &val)
+void PsFunction::m_setParameter(const QString &property, const QVariant &val)
 {DD;
     Q_UNUSED(property);
     Q_UNUSED(val);

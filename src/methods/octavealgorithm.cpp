@@ -53,12 +53,17 @@ OctaveAlgorithm::OctaveAlgorithm(QList<FileDescriptor *> &dataBase, QObject *par
 
     channelF->setFile(dataBase.constFirst());
 
+//    //samplingF отправляет сигнал об изменении "?/triggerChannel"
+//    if (samplingF) connect(samplingF, SIGNAL(parameterChanged(QString,QVariant)),
+//            channelF, SLOT(updateParameter(QString,QVariant)));
+//    //samplingF отправляет сигнал об изменении "?/blockSize"
+//    if (samplingF) connect(samplingF, SIGNAL(parameterChanged(QString,QVariant)),
+//            octaveF, SLOT(updateParameter(QString,QVariant)));
+
     //samplingF отправляет сигнал об изменении "?/triggerChannel"
-    if (samplingF) connect(samplingF, SIGNAL(propertyChanged(QString,QVariant)),
-            channelF, SLOT(updateProperty(QString,QVariant)));
+    connect(samplingF, &AbstractFunction::parameterChanged, channelF, &AbstractFunction::updateParameter);
     //samplingF отправляет сигнал об изменении "?/blockSize"
-    if (samplingF) connect(samplingF, SIGNAL(propertyChanged(QString,QVariant)),
-            octaveF, SLOT(updateProperty(QString,QVariant)));
+    connect(samplingF, &AbstractFunction::parameterChanged, octaveF, &AbstractFunction::updateParameter);
 }
 
 QString OctaveAlgorithm::description() const

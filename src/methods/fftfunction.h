@@ -35,10 +35,10 @@ public:
 public:
     virtual QString name() const override;
     virtual QString description() const override;
-    virtual QStringList properties() const override;
-    virtual QString propertyDescription(const QString &property) const override;
-    virtual QVariant m_getProperty(const QString &property) const override;
-    virtual void m_setProperty(const QString &property, const QVariant &val) override;
+    virtual QStringList parameters() const override;
+    virtual QString parameterDescription(const QString &property) const override;
+    virtual QVariant m_getParameter(const QString &property) const override;
+    virtual void m_setParameter(const QString &property, const QVariant &val) override;
     virtual QString displayName() const override;
 
 private:

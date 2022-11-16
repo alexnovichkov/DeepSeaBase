@@ -20,14 +20,14 @@ QString WindowingFunction::description() const
     return "Применение оконной функции";
 }
 
-QStringList WindowingFunction::properties() const
+QStringList WindowingFunction::parameters() const
 {DD;
     return {"type","parameter","correction"};
 }
 
-QString WindowingFunction::propertyDescription(const QString &property) const
+QString WindowingFunction::parameterDescription(const QString &parameter) const
 {DD;
-    if (property == "type") return "{"
+    if (parameter == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
                                    "  \"type\"        : \"enum\"   ,"
                                    "  \"displayName\" : \"Функция\"   ,"
@@ -38,7 +38,7 @@ QString WindowingFunction::propertyDescription(const QString &property) const
                                    "  \"Бартлетта\", \"Блэкмана\", \"Блэкмана-Натолла\", \"Блэкмана-Харриса\","
                                    "  \"Flat top\", \"Уэлча\"]"
                                    "}";
-    if (property == "correction") return "{"
+    if (parameter == "correction") return "{"
                                    "  \"name\"        : \"correction\"   ,"
                                    "  \"type\"        : \"enum\"   ,"
                                    "  \"displayName\" : \"Коррекция\"   ,"
@@ -47,7 +47,7 @@ QString WindowingFunction::propertyDescription(const QString &property) const
                                    "  \"values\"      : [\"амплитудная\",\"энергетическая\",\"без коррекции\"]"
                                    "}";
 
-    if (property == "parameter") return "{"
+    if (parameter == "parameter") return "{"
                                       "  \"name\"        : \"parameter\"   ,"
                                       "  \"type\"        : \"double\"   ,"
                                       "  \"displayName\" : \"%\"   ,"
@@ -60,18 +60,18 @@ QString WindowingFunction::propertyDescription(const QString &property) const
     return "";
 }
 
-QVariant WindowingFunction::m_getProperty(const QString &property) const
+QVariant WindowingFunction::m_getParameter(const QString &parameter) const
 {DD;
-    if (property.startsWith("?/")) {
-        if (property == "?/functionDescription") return "WIN";
+    if (parameter.startsWith("?/")) {
+        if (parameter == "?/functionDescription") return "WIN";
 //        if (property == "?/windowDescription") return Windowing::windowDescription(windowing.getWindowType());
 //        if (property == "?/windowType") return windowing.getWindowType();
 
         // do not know anything about these broadcast properties
-        if (m_input) return m_input->getParameter(property);
+        if (m_input) return m_input->getParameter(parameter);
     }
-    if (!property.startsWith(name()+"/")) return QVariant();
-    QString p = property.section("/",1);
+    if (!parameter.startsWith(name()+"/")) return QVariant();
+    QString p = parameter.section("/",1);
 
     if (p == "type") return static_cast<int>(windowing.getWindowType());
     if (p == "correction") return static_cast<int>(windowing.getCorrectionType());
@@ -94,10 +94,10 @@ DataDescription WindowingFunction::getFunctionDescription() const
     return result;
 }
 
-void WindowingFunction::m_setProperty(const QString &property, const QVariant &val)
+void WindowingFunction::m_setParameter(const QString &parameter, const QVariant &val)
 {DD;
-    if (!property.startsWith(name()+"/")) return;
-    QString p = property.section("/",1);
+    if (!parameter.startsWith(name()+"/")) return;
+    QString p = parameter.section("/",1);
 
     if (p == "type")
         windowing.setWindowType(static_cast<Windowing::WindowType>(val.toInt()));
@@ -107,13 +107,9 @@ void WindowingFunction::m_setProperty(const QString &property, const QVariant &v
         windowing.setParameter(val.toDouble());
 }
 
-bool WindowingFunction::propertyShowsFor(const QString &property) const
+bool WindowingFunction::m_parameterShowsFor(const QString &p) const
 {DD;
-    if (!property.startsWith(name()+"/")) return false;
-    QString p = property.section("/",1);
-
     if (p == "parameter") return (windowing.windowAcceptsParameter(windowing.getWindowType()));
-
     return true;
 }
 
