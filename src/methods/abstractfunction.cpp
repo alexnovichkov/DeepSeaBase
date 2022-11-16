@@ -190,6 +190,7 @@ void AbstractAlgorithm::restoreSettings()
 bool AbstractAlgorithm::compute(FileDescriptor *file)
 {DD;
     if (QThread::currentThread()->isInterruptionRequested()) {
+        LOG(WARNING) << QString("Запрошена отмена расчета");
         finalize();
         return false;
     }
@@ -214,6 +215,11 @@ bool AbstractAlgorithm::compute(FileDescriptor *file)
         }
 
         if (!applicableTo(file->channel(i)->type())) {
+            LOG(WARNING) << QString("Алгоритм %1 не умеет обрабатывать каналы типа %2. "
+                                    "Канал %3 будет пропущен")
+                            .arg(displayName())
+                            .arg(file->channel(i)->type())
+                            .arg(i+1);
             emit tick();
             continue;
         }
@@ -239,7 +245,11 @@ bool AbstractAlgorithm::compute(FileDescriptor *file)
     QString fileName = m_chain.last()->getParameter(m_chain.last()->name()+"/name").toString();
 //    LOG(DEBUG)<<fileName;
 
-    if (fileName.isEmpty()) return false;
+    if (fileName.isEmpty()) {
+        LOG(ERROR) << QString("Не удалось создать файл %1").arg(fileName);
+        return false;
+    }
+    LOG(INFO) << QString("Сохранен файл %1").arg(fileName);
     newFiles << fileName;
     return true;
 }
@@ -252,6 +262,7 @@ void AbstractAlgorithm::reset()
 void AbstractAlgorithm::start()
 {DD;
     auto dt = QDateTime::currentDateTime();
+    LOG(INFO) << QString("Запуск расчета %1 в %2").arg(displayName()).arg(dt.time().toString());
     emit message(QString("Запуск расчета: %1").arg(dt.time().toString()));
 
 //    QDir d;
@@ -264,8 +275,10 @@ void AbstractAlgorithm::start()
 
 
     for (FileDescriptor *file: qAsConst(m_dataBase)) {
+        LOG(INFO) << QString("Расчет для файла %1").arg(file->fileName());
         emit message(QString("Расчет для файла\n%1").arg(file->fileName()));
         if (!compute(file)) {
+            LOG(ERROR) << QString("Не удалось выполнить расчет");
             emit message("Не удалось выполнить расчет");
         }
     }
@@ -276,6 +289,8 @@ void AbstractAlgorithm::start()
 void AbstractAlgorithm::finalize()
 {DD;
     emit message(QString("Расчет закончен в %1").arg(QDateTime::currentDateTime().time().toString()));
+    LOG(INFO) << QString("Расчет закончен в %1").arg(QDateTime::currentDateTime().time().toString());
+
     emit finished();
 }
 

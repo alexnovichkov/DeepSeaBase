@@ -271,6 +271,7 @@ void FrameCutterFunction::resetData()
 bool FrameCutterFunction::compute(FileDescriptor *file)
 {DD;
     if (!m_input) return false;
+    LOG(INFO) << QString("Запуск расчета для функции отбора данных");
 
     output.clear();
 //    int size = 0;

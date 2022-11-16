@@ -87,7 +87,7 @@ bool GxyFunction::compute(FileDescriptor *file)
     reset();
 
     if (!m_input || !m_input2) return false;
-
+    LOG(INFO) << QString("Запуск расчета для функции взаимного спектра");
     if (!m_input->compute(file)) {
         LOG(ERROR)<<"Gxy can't get data from input1";
         return false;

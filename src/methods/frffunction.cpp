@@ -156,6 +156,7 @@ bool FrfFunction::compute(FileDescriptor *file)
     output.clear();
 
     if (!m_input || !m_input2) return false;
+    LOG(INFO) << QString("Запуск расчета для передаточной функции");
 
     const int dataFormat = map.value("output");
 

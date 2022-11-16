@@ -190,6 +190,7 @@ void ResamplingFunction::reset()
 bool ResamplingFunction::compute(FileDescriptor *file)
 {DD; //LOG(DEBUG)<<debugName();
     if (!m_input) return false;
+    LOG(INFO) << QString("Запуск расчета для функции передискретизации");
 
     if (!m_input->compute(file))
         return false;

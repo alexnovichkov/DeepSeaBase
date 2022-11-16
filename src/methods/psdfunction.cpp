@@ -73,6 +73,7 @@ bool PsdFunction::compute(FileDescriptor *file)
     reset();
 
     if (!m_input) return false;
+    LOG(INFO) << QString("Запуск расчета для функции плотности спектра мощности");
     if (!m_input->compute(file)) return false;
 
     QVector<double> data = m_input->getData("input");

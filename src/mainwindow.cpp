@@ -1914,7 +1914,7 @@ void MainWindow::saveVerticalSlice(double frequency)
         through = App->find(throughFileName);
     }
 
-    ::saveThrough(through.get(), channels.first(), frequency);
+    ::saveThrough(through.get(), firstChannel, frequency);
 
     int idx;
     if (currentTab && currentTab->model->contains(throughFileName, &idx)) {

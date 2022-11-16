@@ -127,6 +127,8 @@ bool WindowingFunction::compute(FileDescriptor *file)
 {DD;
     reset();
 
+    LOG(INFO) << QString("Запуск расчета для оконной функции");
+
     if (!m_input) return false;
     if (!m_input->compute(file)) return false;
 

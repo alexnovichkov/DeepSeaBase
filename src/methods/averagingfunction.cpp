@@ -118,6 +118,7 @@ QVector<double> AveragingFunction::getData(const QString &id)
 bool AveragingFunction::compute(FileDescriptor *file)
 {DD;
     if (!m_input) return false;
+    LOG(INFO) << QString("Запуск расчета для функции усреднения");
 
     m_input->compute(file);
     QVector<double> data = m_input->getData("input");

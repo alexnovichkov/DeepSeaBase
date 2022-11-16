@@ -144,6 +144,7 @@ QString ChannelFunction::displayName() const
 bool ChannelFunction::compute(FileDescriptor *file)
 {DD;
     if (channel < 0 || file->channelsCount() <= channel) return false;
+    LOG(INFO) << QString("Запуск отбора каналов");
 
     if (selector.includes(channel)) {
         if (!file->channel(channel)->populated())

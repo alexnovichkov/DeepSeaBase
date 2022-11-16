@@ -140,6 +140,7 @@ bool SavingFunction::compute(FileDescriptor *file)
     sourceFileName.clear();
 
     if (!m_input) return false;
+    LOG(INFO) << QString("Запуск расчета для функции сохранения");
 
     if (!m_file) {
         //we cannot write channels of different type info DFD

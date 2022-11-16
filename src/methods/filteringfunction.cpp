@@ -288,7 +288,7 @@ void FilteringFunction::reset()
 bool FilteringFunction::compute(FileDescriptor *file)
 {DD;
     if (!m_input) return false;
-
+    LOG(INFO) << QString("Запуск расчета для функции фильтрации");
     if (!m_input->compute(file)) return false;
 
     QVector<double> data = m_input->getData("input");

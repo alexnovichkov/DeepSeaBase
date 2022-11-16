@@ -37,6 +37,7 @@ QString FlatteningFunction::propertyDescription(const QString &property) const
 bool FlatteningFunction::compute(FileDescriptor *file)
 {DD;
     if (!m_input) return false;
+    LOG(INFO) << QString("Запуск расчета для функции объединения блоков данных");
     output.clear();
     if (!m_input->compute(file)) {
         return false;

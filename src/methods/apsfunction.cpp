@@ -111,6 +111,7 @@ bool ApsFunction::compute(FileDescriptor *file)
     reset();
 
     if (!m_input) return false;
+    LOG(INFO) << QString("Запуск расчета для функции автоспектра");
 
     if (!m_input->compute(file)) return false;
 
