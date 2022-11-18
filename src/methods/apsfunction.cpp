@@ -25,7 +25,7 @@ QStringList ApsFunction::parameters() const
     return QStringList();
 }
 
-QString ApsFunction::parameterDescription(const QString &parameter) const
+QString ApsFunction::m_parameterDescription(const QString &parameter) const
 {DD;
     Q_UNUSED(parameter);
     return QString();
@@ -129,9 +129,4 @@ bool ApsFunction::compute(FileDescriptor *file)
     }
 
     return true;
-}
-
-void ApsFunction::reset()
-{DD;
-    output.clear();
 }

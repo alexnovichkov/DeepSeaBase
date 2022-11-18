@@ -23,7 +23,7 @@ QStringList FrfFunction::parameters() const
     return {"type", "output"};
 }
 
-QString FrfFunction::parameterDescription(const QString &property) const
+QString FrfFunction::m_parameterDescription(const QString &property) const
 {DD;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
@@ -228,13 +228,6 @@ bool FrfFunction::compute(FileDescriptor *file)
     }
     return true;
 }
-
-void FrfFunction::reset()
-{DD;
-    output.clear();
-}
-
-
 
 DataDescription FrfFunction::getFunctionDescription() const
 {DD;

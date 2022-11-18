@@ -21,12 +21,12 @@ QString AbstractFunction::parametersDescription() const
 
     QStringList result;
     for (const QString &p: props) {
-        result.append(parameterDescription(p));
+        result.append(m_parameterDescription(p));
     }
     return "["+result.join(',')+"]";
 }
 
-bool AbstractFunction::parameterShowsFor(const QString &parameter) const
+bool AbstractFunction::shouldParameterBeVisible(const QString &parameter) const
 {DD;
     if (!parameter.startsWith(name()+"/")) return false;
     QString p = parameter.section("/",1);
@@ -96,7 +96,8 @@ void AbstractFunction::setFile(FileDescriptor *file)
 
 void AbstractFunction::reset()
 {DD;
-    // no-op
+    output.clear();
+//    triggerData.clear();
 }
 
 void AbstractFunction::resetData()
@@ -120,20 +121,6 @@ AbstractAlgorithm::AbstractAlgorithm(QList<FileDescriptor *> &dataBase, QObject 
 AbstractAlgorithm::~AbstractAlgorithm()
 {DD;
     m_functions.clear();
-}
-
-bool AbstractAlgorithm::parameterShowsFor(AbstractFunction *function, const QString &parameter) const
-{DD;
-    if (parameter.isEmpty()) return true;
-
-    const auto list = functions();
-    for (AbstractFunction *f: list) {
-        if (f == function && parameter.startsWith(f->name()+"/")) {
-            return f->parameterShowsFor(parameter);
-        }
-    }
-
-    return true;
 }
 
 QVariant AbstractAlgorithm::getParameter(AbstractFunction *function, const QString &parameter) const
@@ -248,11 +235,6 @@ bool AbstractAlgorithm::compute(FileDescriptor *file)
     LOG(INFO) << QString("Сохранен файл %1").arg(fileName);
     newFiles << fileName;
     return true;
-}
-
-void AbstractAlgorithm::reset()
-{DD;
-    // no-op
 }
 
 void AbstractAlgorithm::start()

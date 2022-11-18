@@ -25,7 +25,7 @@ QStringList AveragingFunction::parameters() const
     return {"type", "maximum"};
 }
 
-QString AveragingFunction::parameterDescription(const QString &parameter) const
+QString AveragingFunction::m_parameterDescription(const QString &parameter) const
 {DD;
     if (parameter == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
@@ -102,16 +102,16 @@ QString AveragingFunction::displayName() const
     return "Усреднение";
 }
 
-QVector<double> AveragingFunction::getData(const QString &id)
-{DD;
-    const auto format = m_input->getParameter("?/dataFormat").toString();
-    if (id == "input") {
-        if (format=="complex") return interweavedFromComplexes<double>(averaging.getComplex());
-        return averaging.get();
-    }
+//QVector<double> AveragingFunction::getData(const QString &id)
+//{DD;
+//    const auto format = m_input->getParameter("?/dataFormat").toString();
+//    if (id == "input") {
+//        if (format=="complex") return interweavedFromComplexes<double>(averaging.getComplex());
+//        return averaging.get();
+//    }
 
-    return QVector<double>();
-}
+//    return QVector<double>();
+//}
 
 bool AveragingFunction::compute(FileDescriptor *file)
 {DD;
@@ -134,6 +134,8 @@ bool AveragingFunction::compute(FileDescriptor *file)
             averaging.average(data.mid(block*blockSize, blockSize));
         if (averaging.averagingDone()) break;
     }
+    if (format=="complex") output = interweavedFromComplexes<double>(averaging.getComplex());
+    else output = averaging.get();
 
     return true;
 }

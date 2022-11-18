@@ -81,7 +81,7 @@ public:
     void setColorBarTitle(const QString &title);
     void importPlot(const QString &fileName, const QSize &size, int resolution);
     void importPlot(QPrinter &printer, const QSize &size, int resolution);
-    Curve *createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis);
+    Curve *createCurve(Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis);
     Selected findObject(QPoint pos) const;
     void deselect();
 private:

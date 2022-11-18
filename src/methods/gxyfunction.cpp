@@ -25,7 +25,7 @@ QStringList GxyFunction::parameters() const
     return QStringList();
 }
 
-QString GxyFunction::parameterDescription(const QString &property) const
+QString GxyFunction::m_parameterDescription(const QString &property) const
 {DD;
     Q_UNUSED(property);
     return QString();
@@ -125,7 +125,3 @@ bool GxyFunction::compute(FileDescriptor *file)
     return true;
 }
 
-void GxyFunction::reset()
-{DD;
-    output.clear();
-}

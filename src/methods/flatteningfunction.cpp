@@ -28,7 +28,7 @@ QStringList FlatteningFunction::parameters() const
     return QStringList();
 }
 
-QString FlatteningFunction::parameterDescription(const QString &property) const
+QString FlatteningFunction::m_parameterDescription(const QString &property) const
 {DD;
     Q_UNUSED(property);
     return "";

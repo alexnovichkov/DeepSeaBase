@@ -23,7 +23,7 @@ public:
     virtual QString displayName() const override;
     virtual QString description() const override;
     virtual QStringList parameters() const override;
-    virtual QString parameterDescription(const QString &property) const override;
+    virtual QString m_parameterDescription(const QString &property) const override;
     virtual bool compute(FileDescriptor *file) override;
 
 protected:

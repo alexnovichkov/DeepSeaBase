@@ -36,8 +36,7 @@ public:
     virtual QString name() const override;
     virtual QString description() const override;
     virtual QStringList parameters() const override;
-    virtual QString parameterDescription(const QString &property) const override;
-    virtual void updateParameter(const QString &property, const QVariant &val) override;
+    virtual QString m_parameterDescription(const QString &property) const override;
 protected:
     virtual QVariant m_getParameter(const QString &property) const override;
     virtual void m_setParameter(const QString &property, const QVariant &val) override;
@@ -51,7 +50,6 @@ private:
     // AbstractFunction interface
 public:
     virtual QString displayName() const override;
-    virtual void reset() override;
     virtual bool compute(FileDescriptor *file) override;
     virtual DataDescription getFunctionDescription() const override;
 };

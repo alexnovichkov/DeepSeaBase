@@ -562,11 +562,6 @@ QString Plot::pointCoordinates(const QPointF &pos)
     return smartDouble(pos.x())+", "+smartDouble(pos.y());
 }
 
-Curve *Plot::createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis)
-{DD;
-    return m_plot->createCurve(legendName, channel, xAxis, yAxis);
-}
-
 void Plot::setAxis(Enums::AxisType axis, const QString &name)
 {DD;
     switch (axis) {
@@ -750,7 +745,7 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 
 
 
-    Curve *g = m_plot->createCurve(ch->legendName(), ch, axX, axY);
+    Curve *g = m_plot->createCurve(ch, axX, axY);
     QColor nextColor = getNextColor();
     QPen pen = g->pen();
     pen.setColor(nextColor);

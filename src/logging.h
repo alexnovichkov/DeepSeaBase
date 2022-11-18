@@ -8,7 +8,7 @@
 #include "easylogging++.h"
 
 #include <chrono>
-
+//#define DO_DEBUG
 #define DebugPrint(s) LOG(DEBUG)<<#s<<" "<<s;
 
 class QElapsedTimer;
@@ -25,9 +25,16 @@ private:
     std::chrono::time_point<std::chrono::steady_clock> start;
 };
 
-#define DD    Trace trace(1, Q_FUNC_INFO);
-#define DDD   Trace trace(2, Q_FUNC_INFO);
+#ifdef DO_DEBUG
+#    define DD    Trace trace(1, Q_FUNC_INFO);
+#    define DDD   Trace trace(2, Q_FUNC_INFO);
+#else
+#    define DD
+#    define DDD
+#endif
 //always trace
 #define DD0  Trace trace(Q_FUNC_INFO);
+
+
 
 #endif // LOGGING_H

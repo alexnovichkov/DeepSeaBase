@@ -3,7 +3,6 @@
 #include "data2d.h"
 #include "fileformats/filedescriptor.h"
 #include "plot/plot.h"
-#include "checkablelegenditem.h"
 #include "checkablelegend.h"
 #include "qcpplot.h"
 #include "logging.h"
@@ -17,8 +16,8 @@ Graph2D::LineStyle lineStyleByType(Channel *c)
     return Graph2D::lsLine;
 }
 
-Graph2D::Graph2D(const QString &title, Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis) :
-    QCPAbstractPlottable(keyAxis, valueAxis), Curve(title, channel)
+Graph2D::Graph2D(Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis) :
+    QCPAbstractPlottable(keyAxis, valueAxis), Curve(channel)
 {DD;
     setData(new Data2D(channel->data()));
     setName(channel->legendName());

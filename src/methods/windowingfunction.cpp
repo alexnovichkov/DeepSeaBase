@@ -25,7 +25,7 @@ QStringList WindowingFunction::parameters() const
     return {"type","parameter","correction"};
 }
 
-QString WindowingFunction::parameterDescription(const QString &parameter) const
+QString WindowingFunction::m_parameterDescription(const QString &parameter) const
 {DD;
     if (parameter == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"

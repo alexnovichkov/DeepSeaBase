@@ -18,7 +18,6 @@ class QMenu;
 class Cursors;
 class CursorBox;
 class Selectable;
-class QCPCheckableLegend;
 class QCPPlot;
 class PlayPanel;
 
@@ -73,9 +72,6 @@ public:
     //reimplemented in spectrograms to add Z coordinate
     virtual QString pointCoordinates(const QPointF &pos);
 
-    //default implementation returns LineCurve
-    //reimplemented in other plot types
-    virtual Curve * createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis);
     virtual void deleteCurve(Curve *curve, bool doReplot = true);
     //default implementation updates labels according to curves count on left and on right
     //reimplemented in spectrograms

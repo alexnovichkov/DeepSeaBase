@@ -123,7 +123,7 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     setAxis(Enums::AxisType::atRight, ch->yName());
     m_plot->enableColorBar(Enums::AxisType::atRight, true);
 
-    Curve *g = m_plot->createCurve(ch->legendName(), ch, Enums::AxisType::atBottom, Enums::AxisType::atLeft);
+    Curve *g = m_plot->createCurve(ch, Enums::AxisType::atBottom, Enums::AxisType::atLeft);
     ch->setPlotted(true);
 
     m->addCurve(g, plotOnLeft);

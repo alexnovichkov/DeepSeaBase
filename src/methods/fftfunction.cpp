@@ -25,7 +25,7 @@ QStringList FftFunction::parameters() const
     return {"output"};
 }
 
-QString FftFunction::parameterDescription(const QString &property) const
+QString FftFunction::m_parameterDescription(const QString &property) const
 {DD;
     if (property == "output") return "{"
                                      "  \"name\"        : \"output\"   ,"
@@ -157,7 +157,7 @@ bool FftFunction::compute(FileDescriptor *file)
 
 void FftFunction::reset()
 {DD;
-    output.clear();
+    AbstractFunction::reset();
     portionsCount = 0;
 }
 

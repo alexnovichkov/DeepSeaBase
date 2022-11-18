@@ -43,7 +43,7 @@ public:
     virtual QVariant m_getParameter(const QString &property) const override;
     virtual void m_setParameter(const QString &property, const QVariant &val) override;
     virtual QStringList parameters() const override;
-    virtual QString parameterDescription(const QString &property) const override;
+    virtual QString m_parameterDescription(const QString &property) const override;
     virtual QString displayName() const override;
     virtual bool compute(FileDescriptor *file) override;
     virtual DataDescription getFunctionDescription() const override;
@@ -53,7 +53,7 @@ private:
 
     ChannelSelector selector;
     int channel = 0;
-    int triggerChannel = -1;
+    int triggerChannel = 0;
 };
 
 class RefChannelFunction : public ChannelFunction
@@ -63,7 +63,7 @@ public:
     virtual QString name() const override;
     explicit RefChannelFunction(QObject *parent = nullptr, const QString &name=QString());
     virtual QStringList parameters() const override;
-    virtual QString parameterDescription(const QString &property) const override;
+    virtual QString m_parameterDescription(const QString &property) const override;
     virtual bool compute(FileDescriptor *file) override;
     virtual QString displayName() const override;
 

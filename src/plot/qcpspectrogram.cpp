@@ -7,8 +7,8 @@
 #include "qcpflowlegend.h"
 #include "logging.h"
 
-QCPSpectrogram::QCPSpectrogram(const QString &title, Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis)
-    : QCPAbstractPlottable(keyAxis, valueAxis), Curve(title, channel)
+QCPSpectrogram::QCPSpectrogram(Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis)
+    : QCPAbstractPlottable(keyAxis, valueAxis), Curve(channel)
 {
     m_data = new Data3D(channel->data());
     mMapImageInvalidated = true;

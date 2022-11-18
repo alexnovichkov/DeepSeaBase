@@ -27,7 +27,7 @@ public:
     virtual QString name() const override;
     virtual QString description() const override;
     virtual QStringList parameters() const override;
-    virtual QString parameterDescription(const QString &parameter) const override;
+    virtual QString m_parameterDescription(const QString &parameter) const override;
     virtual QVariant m_getParameter(const QString &parameter) const override;
     virtual void m_setParameter(const QString &parameter, const QVariant &val) override;
 protected:
@@ -39,7 +39,7 @@ private:
     // AbstractFunction interface
 public:
     virtual QString displayName() const override;
-    virtual QVector<double> getData(const QString &id) override;
+//    virtual QVector<double> getData(const QString &id) override;
     virtual bool compute(FileDescriptor *file) override;
     virtual void reset() override;
     virtual DataDescription getFunctionDescription() const override;

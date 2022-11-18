@@ -38,7 +38,7 @@ QStringList FilteringFunction::parameters() const
                        ,"rippleDb","stopDb","rolloff"};
 }
 
-QString FilteringFunction::parameterDescription(const QString &property) const
+QString FilteringFunction::m_parameterDescription(const QString &property) const
 {DD;
 //    LOG(DEBUG)<<"property description"<<property;
     if (property == "type") return "{"
@@ -278,7 +278,7 @@ QString FilteringFunction::displayName() const
 void FilteringFunction::reset()
 {DD;
     filtering.reset();
-    output.clear();
+    AbstractFunction::reset();
 }
 
 bool FilteringFunction::compute(FileDescriptor *file)

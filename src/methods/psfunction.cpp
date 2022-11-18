@@ -25,7 +25,7 @@ QStringList PsFunction::parameters() const
     return QStringList();
 }
 
-QString PsFunction::parameterDescription(const QString &property) const
+QString PsFunction::m_parameterDescription(const QString &property) const
 {DD;
     Q_UNUSED(property);
     return QString();
@@ -100,7 +100,7 @@ bool PsFunction::compute(FileDescriptor *file)
 
 void PsFunction::reset()
 {DD;
-    output.clear();
+    AbstractFunction::reset();
     portionsCount = 0;
 }
 

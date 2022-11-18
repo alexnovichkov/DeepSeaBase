@@ -25,7 +25,7 @@ public:
                    };
     Q_ENUMS(LineStyle)
 
-  explicit Graph2D(const QString &title, Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis);
+  explicit Graph2D(Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis);
     virtual ~Graph2D() Q_DECL_OVERRIDE;
 
   void setData(Data2D *m_data);

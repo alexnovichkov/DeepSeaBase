@@ -24,7 +24,7 @@ QStringList ResamplingFunction::parameters() const
     return {"resampleType", "factor", "frequencyRange", "sampleRate"};
 }
 
-QString ResamplingFunction::parameterDescription(const QString &property) const
+QString ResamplingFunction::m_parameterDescription(const QString &property) const
 {DD;
     if (property == "resampleType") {
         return QString("{"
@@ -176,14 +176,6 @@ QString ResamplingFunction::displayName() const
     return "Передискретизация";
 }
 
-void ResamplingFunction::reset()
-{DD;
-    //resampler.reset();
-    output.clear();
-    triggerData.clear();
-}
-
-
 bool ResamplingFunction::compute(FileDescriptor *file)
 {DD; //LOG(DEBUG)<<debugName();
     if (!m_input) return false;
@@ -219,27 +211,24 @@ bool ResamplingFunction::compute(FileDescriptor *file)
 
         //processing trigger data
         auto triggerD = m_input->getData("triggerInput");
-        resampler.setBufferSize(bufferSize);
-        resampler.setFactor(factor);
-        resampler.init();
+        if (!triggerD.isEmpty()) {
+            resampler.setBufferSize(bufferSize);
+            resampler.setFactor(factor);
+            resampler.init();
 
-        pos = 0;
-        while (1) {
-            QVector<double> chunk = triggerD.mid(pos, bufferSize);
-            if (chunk.size() < bufferSize)
-                resampler.setLastChunk();
-            QVector<double> filtered = resampler.process(chunk);
-            if (filtered.isEmpty()) break;
-            triggerData.append(filtered);
-            pos += bufferSize;
+            pos = 0;
+            while (1) {
+                QVector<double> chunk = triggerD.mid(pos, bufferSize);
+                if (chunk.size() < bufferSize)
+                    resampler.setLastChunk();
+                QVector<double> filtered = resampler.process(chunk);
+                if (filtered.isEmpty()) break;
+                triggerData.append(filtered);
+                pos += bufferSize;
+            }
         }
     }
 
     return true;
 }
 
-void ResamplingFunction::updateParameter(const QString &property, const QVariant &val)
-{DD;
-    if (!property.startsWith(name()+"/")) return;
-    setParameter(property, val);
-}

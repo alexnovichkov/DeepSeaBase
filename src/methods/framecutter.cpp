@@ -34,6 +34,8 @@ void FrameCutter::setSource(const QVector<double> &data)
 void FrameCutter::setTriggerSource(const QVector<double> &triggerData)
 {DD;
     this->triggerData = triggerData;
+    if (triggerData.isEmpty())
+        LOG(WARNING) << QString("Попытка задать пустой вектор данных для триггера");
 }
 
 QVector<double> FrameCutter::get(bool *ok)

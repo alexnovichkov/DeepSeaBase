@@ -56,33 +56,96 @@ public:
     QString debugName() const {return _name;}
     virtual QString displayName() const = 0;
     virtual QString description() const = 0;
+
+    /**
+     * @brief parameters
+     * @return список параметров функции
+     */
+    virtual QStringList parameters() const = 0;
+    /**
+     * @brief parametersDescription
+     * @return описание параметров функции в формате JSON
+     */
     QString parametersDescription() const;
-    bool parameterShowsFor(const QString &parameter) const;
-
-    virtual QString parameterDescription(const QString &parameter) const = 0;
-
-
+    /**
+     * @brief shouldParameterBeVisible
+     * @param parameter название параметра
+     * @return true если при данных сочетаниях параметров функции parameter должен быть виден
+     */
+    bool shouldParameterBeVisible(const QString &parameter) const;
+    /**
+     * @brief getParameter возвращает текущее значение параметра с учетом сопряженности функции
+     *        (некоторые взаимные характеристики содержат только один комплект параметров)
+     * @param parameter название параметра
+     * @return значение параметра
+     */
     QVariant getParameter(const QString &parameter) const;
+    /**
+     * @brief setParameter задает текущее значение параметра с учетом сопряженности функции
+     *        (некоторые взаимные характеристики содержат только один комплект параметров)
+     * @param parameter название параметра
+     * @param val новое значение параметра
+     */
     void setParameter(const QString &parameter, const QVariant &val);
+    /**
+     * @brief updateParameter слот, позволяющий связать изменение параметров одной функции и
+     *        обновление параметров другой функции
+     * @param parameter название параметра
+     * @param val новое значение параметра
+     * По умолчанию не делает ничего, переопределена только в ChannelFunction, frameCutterFunction, octaveFunction
+     */
     virtual void updateParameter(const QString &parameter, const QVariant &val);
-
+    /**
+     * @brief pairWith позволяет связать две функции, используемые при расчете взаимной характеристики
+     * @param slave функция, возвращающая не свои свойства, а свойства ведущей функции
+     */
     void pairWith(AbstractFunction *slave);
+    /**
+     * @brief paired
+     * @return true если функция связана с другой, то есть получает от неё значения параметров
+     */
     bool paired() const {return m_master != nullptr;}
-
-    virtual QVector<double> getData(const QString &id);
-
+    /**
+     * @brief getData возвращает результат расчета функции
+     * @param id позволяет указать назначение данных. Пока что поддерживается input и triggerInput
+     * @return данные, возможно, в переплетенном виде, если данные комплексные (re,im,re,im...)
+     */
+    QVector<double> getData(const QString &id);
+    /**
+     * @brief getFunctionDescription получает описание параметров расчета от предыдущей функции
+     *        (в цепочке выполнения), а затем добавляет/перезаписывает специфичные параметры
+     * @return QVarianMap со значениями параметров
+     */
     virtual DataDescription getFunctionDescription() const;
-
+    /**
+     * @brief setInput задает предыдущее звено в цепи расчета
+     * @param input предыдущее звено
+     */
     void setInput(AbstractFunction *input);
+    /**
+     * @brief setInput2 задает предыдущее звено в цепи расчета для функций, принимающих данные
+     *        из двух источников (взаимные характеристики)
+     * @param input
+     */
     void setInput2(AbstractFunction *input);
+    /**
+     * @brief setFile задает начальный файл и распространяет его для всей цепи расчета
+     * @param file начальный файл, используется для первичной инициализации параметров алгоритма
+     */
     void setFile(FileDescriptor *file);
-
-    // по умолчанию не делает ничего
+    /**
+     * @brief compute запускает расчет для данной функции
+     * @param file текущий рассчитываемый файл
+     * @return true если расчет окончился успешно
+     */
     virtual bool compute(FileDescriptor *file) = 0;
-
-    // очищает внутреннее состояние функции, но не меняет параметры, заданные ранее
+    /**
+     * @brief reset очищает внутреннее состояние функции, но не меняет параметры, заданные ранее
+     */
     virtual void reset();
-    // сбрасывает позицию в данных для расчета на начало
+    /**
+     * @brief resetData сбрасывает позицию в данных для расчета на начало
+     */
     virtual void resetData();
 signals:
     void parameterChanged(const QString &parameter, const QVariant &val);
@@ -93,7 +156,7 @@ signals:
 //public slots:
 //    void updateParameter(const QString &parameter, const QVariant &val);
 protected:
-    virtual QStringList parameters() const = 0;
+    virtual QString m_parameterDescription(const QString &parameter) const = 0;
     virtual QVariant m_getParameter(const QString &parameter) const = 0;
     virtual void m_setParameter(const QString &parameter, const QVariant &val) = 0;
     /**
@@ -123,7 +186,6 @@ public:
     virtual ~AbstractAlgorithm();
     virtual QString displayName() const = 0;
     virtual QString description() const = 0;
-    bool parameterShowsFor(AbstractFunction *f, const QString &parameter) const;
 
     QVariant getParameter(AbstractFunction *f, const QString &parameter) const;
     void setParameter(AbstractFunction *f, const QString &parameter, const QVariant &val);
@@ -138,18 +200,14 @@ public:
     QStringList getNewFiles() const {return newFiles;}
 
     bool compute(FileDescriptor *file);
-
-    // очищает внутреннее состояние алгоритма, но не меняет параметры, заданные ранее
-    virtual void reset();
 signals:
     void parameterChanged(const QString &parameter, const QVariant &val);
 
     void tick();
-    void tick(const QString &path);
     void finished();
     void message(const QString &s);
 public slots:
-    virtual void start();
+    void start();
 protected:
     void finalize();
     virtual void resetChain() = 0;
@@ -160,8 +218,18 @@ protected:
     virtual bool applicableTo(Descriptor::DataType channelType);
 
     QList<FileDescriptor *> m_dataBase;
-    QList<AbstractFunction *> m_functions; //список функций для отображения в окне расчета
-    QList<AbstractFunction *> m_chain; //начало и конец цепи вычислений
+    /**
+     * @brief m_functions включает те функции, которые нужно отобразить в окне расчета,
+     * то есть те, которые имеют настраиваемые пользователем параметры
+     */
+    QList<AbstractFunction *> m_functions;
+    /**
+     * @brief m_chain включает первую и последнюю функции цепочки вычислений.
+     * Порядок вычислений настраивается с помощью методов
+     * AbstractFunction setInput() и setInput2().
+     */
+    QList<AbstractFunction *> m_chain;
+
     QStringList newFiles;
 };
 

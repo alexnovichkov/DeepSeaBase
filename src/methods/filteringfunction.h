@@ -31,7 +31,7 @@ public:
     virtual QString name() const override;
     virtual QString description() const override;
     virtual QStringList parameters() const override;
-    virtual QString parameterDescription(const QString &property) const override;
+    virtual QString m_parameterDescription(const QString &property) const override;
     virtual QVariant m_getParameter(const QString &property) const override;
     virtual void m_setParameter(const QString &property, const QVariant &val) override;
 protected:

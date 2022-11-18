@@ -108,6 +108,7 @@ void FrameCutterFunction::m_setParameter(const QString &property, const QVariant
 
     if (p == "type") {
         frameCutter.setType(val.toInt());
+        emit parameterChanged("?/triggerChannel", val.toInt() == FrameCutter::Trigger?frameCutter.getChannel():-1);
     }
     else if (p == "blockSize") {
         //LOG(DEBUG)<<"setting FrameCutter/blocksize as"<<(65536 >> val.toInt());
@@ -164,7 +165,7 @@ QStringList FrameCutterFunction::parameters() const
         "triggerChannel", "pretrigger"};
 }
 
-QString FrameCutterFunction::parameterDescription(const QString &property) const
+QString FrameCutterFunction::m_parameterDescription(const QString &property) const
 {DD;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
@@ -249,7 +250,7 @@ QString FrameCutterFunction::parameterDescription(const QString &property) const
 void FrameCutterFunction::reset()
 {DD;
     frameCutter.reset();
-    output.clear();
+    AbstractFunction::reset();
 }
 
 void FrameCutterFunction::resetData()

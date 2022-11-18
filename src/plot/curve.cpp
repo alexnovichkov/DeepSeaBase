@@ -30,10 +30,8 @@ QString Curve::markerShapeDescription(Curve::MarkerShape shape)
     return "";
 }
 
-Curve::Curve(const QString &title, Channel *channel)
+Curve::Curve(Channel *channel)
 {DD;
-    Q_UNUSED(title)
-
     this->channel = channel;
     this->duplicate = false;
     this->channel->curve = this;

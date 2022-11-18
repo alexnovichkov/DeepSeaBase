@@ -99,7 +99,7 @@ QStringList ChannelFunction::parameters() const
     return {"filter",  /*"minSec", "maxSec"*/};
 }
 
-QString ChannelFunction::parameterDescription(const QString &property) const
+QString ChannelFunction::m_parameterDescription(const QString &property) const
 {DD;
     if (property == "filter") return "{"
                                      "  \"name\"        : \"filter\"   ,"
@@ -154,13 +154,18 @@ bool ChannelFunction::compute(FileDescriptor *file)
         output = file->channel(channel)->data()->yValues(0);
     }
 
-    if (triggerChannel >=0 && triggerChannel < file->channelsCount() && triggerData.isEmpty()) {
-        //LOG(DEBUG) << "computing trigger channel in ChannelFunction";
-        if (!file->channel(triggerChannel)->populated())
-            file->channel(triggerChannel)->populate();
-        triggerData = file->channel(triggerChannel)->data()->yValues(0);
-        //LOG(DEBUG)<<"trigger data at channel"<<triggerChannel+1<<"has"<<triggerData.size()<<"samples";
+    if (triggerData.isEmpty()) {
+        if (triggerChannel >= 0 && triggerChannel < file->channelsCount()) {
+            LOG(DEBUG) << "computing trigger channel in ChannelFunction";
+            bool populated = file->channel(triggerChannel)->populated();
+            if (!populated) file->channel(triggerChannel)->populate();
+            triggerData = file->channel(triggerChannel)->data()->yValues(0);
+            if (!populated) file->channel(triggerChannel)->clear();
+            LOG(DEBUG)<<"trigger data at channel"<<triggerChannel+1<<"has"<<triggerData.size()<<"samples";
+        }
     }
+    else
+        LOG(DEBUG)<<"trigger data at channel"<<triggerChannel+1<<"has"<<triggerData.size()<<"samples";
 
     return !output.isEmpty();
 }
@@ -186,7 +191,7 @@ QStringList RefChannelFunction::parameters() const
     return {"referenceChannelIndex"};
 }
 
-QString RefChannelFunction::parameterDescription(const QString &property) const
+QString RefChannelFunction::m_parameterDescription(const QString &property) const
 {DD;
     if (property == "referenceChannelIndex") return "{"
                                                "  \"name\"        : \"referenceChannelIndex\"   ,"

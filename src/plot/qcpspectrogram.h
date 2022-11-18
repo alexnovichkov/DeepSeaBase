@@ -18,7 +18,7 @@ class QCPSpectrogram : public QCPAbstractPlottable, public Curve
     Q_PROPERTY(QCPColorScale* colorScale READ colorScale WRITE setColorScale)
     /// \endcond
   public:
-    explicit QCPSpectrogram(const QString &title, Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis);
+    explicit QCPSpectrogram(Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis);
     virtual ~QCPSpectrogram() Q_DECL_OVERRIDE;
 
     // Curve interface

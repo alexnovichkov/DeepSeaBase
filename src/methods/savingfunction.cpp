@@ -43,7 +43,7 @@ QStringList SavingFunction::parameters() const
     return {"append", "type", "precision", "destination"};
 }
 
-QString SavingFunction::parameterDescription(const QString &property) const
+QString SavingFunction::m_parameterDescription(const QString &property) const
 {DD;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"

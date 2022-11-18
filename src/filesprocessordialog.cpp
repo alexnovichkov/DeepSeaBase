@@ -189,12 +189,12 @@ void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
 }
 
 void FilesProcessorDialog::updateVisibleProperties()
-{DD;
+{DD0;
     if (!currentAlgorithm) return;
 
     for (QtVariantProperty *property: map.keys()) {
         foreach (auto item, propertyTree->items(property)) {
-            propertyTree->setItemVisible(item, currentAlgorithm->parameterShowsFor(map.value(property).f, map.value(property).name));
+            propertyTree->setItemVisible(item, map.value(property).f->shouldParameterBeVisible(map.value(property).name));
         }
     }
 }

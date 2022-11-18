@@ -12,7 +12,6 @@ class Plot;
 #include <qglobal.h>
 #include "selectable.h"
 #include "enums.h"
-class QCPCheckableLegend;
 
 class Curve : public Selectable
 {
@@ -43,7 +42,7 @@ public:
     static QString markerShapeDescription(MarkerShape shape);
 
 
-    Curve(const QString &title, Channel *channel);
+    Curve(Channel *channel);
     virtual ~Curve();
 
     virtual void attachTo(Plot *plot);

@@ -78,7 +78,6 @@ SOURCES += main.cpp\
     plot/qcpscrollbarlegend.cpp \
     plot/qcptrackingcursor.cpp \
     plot/checkablelegend.cpp \
-    plot/checkablelegenditem.cpp \
     plot/data2d.cpp \
     plot/data3d.cpp \
     plot/mousecoordinates.cpp \
@@ -93,7 +92,6 @@ SOURCES += main.cpp\
     plot/qcptracer.cpp \
     plot/qcustomplot.cpp \
     plot/canvaseventfilter.cpp \
-    plot/clearablespinbox.cpp \
     plot/imagerenderdialog.cpp \
     plot/plotarea.cpp \
     plot/plotmodel.cpp \
@@ -200,7 +198,6 @@ HEADERS  += mainwindow.h \
     plot/qcpscrollbarlegend.h \
     plot/qcptrackingcursor.h \
     plot/checkablelegend.h \
-    plot/checkablelegenditem.h \
     plot/data2d.h \
     plot/data3d.h \
     plot/mousecoordinates.h \
@@ -216,7 +213,6 @@ HEADERS  += mainwindow.h \
     plot/qcustomplot.h \
     plot/graph2d.h \
     plot/canvaseventfilter.h \
-    plot/clearablespinbox.h \
     plot/imagerenderdialog.h \
     plot/plotarea.h \
     plot/plotmodel.h \

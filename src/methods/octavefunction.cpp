@@ -24,7 +24,7 @@ QStringList OctaveFunction::parameters() const
     return {"type"};
 }
 
-QString OctaveFunction::parameterDescription(const QString &property) const
+QString OctaveFunction::m_parameterDescription(const QString &property) const
 {DD;
     if (property == "type") return "{"
                                       "  \"name\"        : \"type\"   ,"
@@ -120,11 +120,6 @@ bool OctaveFunction::compute(FileDescriptor *file)
         output.append(res.last());
     }
     return true;
-}
-
-void OctaveFunction::reset()
-{DD;
- //no-op
 }
 
 DataDescription OctaveFunction::getFunctionDescription() const

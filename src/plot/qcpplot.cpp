@@ -501,16 +501,16 @@ void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution)
     }
 }
 
-Curve *QCPPlot::createCurve(const QString &legendName, Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis)
+Curve *QCPPlot::createCurve(Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis)
 {
     if (parent->type() == Enums::PlotType::Spectrogram) {
-        auto g = new QCPSpectrogram(legendName, channel, axis(xAxis), this->yAxis);
+        auto g = new QCPSpectrogram(channel, axis(xAxis), this->yAxis);
 
         if (colorScale) g->setColorScale(colorScale);
         return g;
     }
 
-    return new Graph2D(legendName, channel, axis(xAxis), axis(yAxis));
+    return new Graph2D(channel, axis(xAxis), axis(yAxis));
 }
 
 Selected QCPPlot::findObject(QPoint pos) const
