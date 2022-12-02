@@ -369,8 +369,8 @@ void WavFile::init(const QVector<Channel *> &source)
     quint32 totalSize =  sizeof(WavHeader)
                          + (m_format == WavFormat::WavPCM ? 24 : sizeof(WavChunkFmt))
                          + (m_format!=WavFormat::WavPCM ? sizeof (WavChunkFact) : 0)
-                         + 12 + sizeof(WavChunkCue::Cue)
-                         + 32 + assocFile.data.size()
+                         //+ 12 + sizeof(WavChunkCue::Cue)
+                         //+ 32 + assocFile.data.size()
                          + sizeof(WavChunkData)
                          + M * channelsCount * samples;
 
@@ -431,25 +431,25 @@ bool WavFile::writeWithMap(const QVector<Channel*> &source, quint32 totalSize)
         mapped += sizeof(m_factChunk);
     }
 
-    memcpy(mapped, &m_cueChunk.cueId, 4); mapped +=4;
-    memcpy(mapped, &m_cueChunk.cueSize, 4); mapped +=4;
-    memcpy(mapped, &m_cueChunk.dwCuePoints, 4); mapped +=4;
-    for (auto c: m_cueChunk.cues) {
-        memcpy(mapped, &c, sizeof(c)); mapped += sizeof(c);
-    }
+//    memcpy(mapped, &m_cueChunk.cueId, 4); mapped +=4;
+//    memcpy(mapped, &m_cueChunk.cueSize, 4); mapped +=4;
+//    memcpy(mapped, &m_cueChunk.dwCuePoints, 4); mapped +=4;
+//    for (auto c: m_cueChunk.cues) {
+//        memcpy(mapped, &c, sizeof(c)); mapped += sizeof(c);
+//    }
 
-    if (!m_assocFiles.isEmpty()) {
-        auto assocFile = m_assocFiles.first();
-        memcpy(mapped, &assocFile.listId, 4); mapped += 4;
-        memcpy(mapped, &assocFile.listSize, 4); mapped += 4;
-        memcpy(mapped, &assocFile.adtlId, 4); mapped += 4;
-        memcpy(mapped, &assocFile.adtlSize, 4); mapped += 4;
-        memcpy(mapped, &assocFile.fileId, 4); mapped += 4;
-        memcpy(mapped, &assocFile.fileSize, 4); mapped += 4;
-        memcpy(mapped, &assocFile.dwName, 4); mapped += 4;
-        memcpy(mapped, &assocFile.dwMedType, 4); mapped += 4;
-        memcpy(mapped, assocFile.data.data(), assocFile.data.size()); mapped += assocFile.data.size();
-    }
+//    if (!m_assocFiles.isEmpty()) {
+//        auto assocFile = m_assocFiles.first();
+//        memcpy(mapped, &assocFile.listId, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.listSize, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.adtlId, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.adtlSize, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.fileId, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.fileSize, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.dwName, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.dwMedType, 4); mapped += 4;
+//        memcpy(mapped, assocFile.data.data(), assocFile.data.size()); mapped += assocFile.data.size();
+//    }
 
     memcpy(mapped, &m_dataChunk, sizeof(m_dataChunk));
     mapped += sizeof(m_dataChunk);
@@ -521,22 +521,22 @@ void WavFile::writeWithStream(const QVector<Channel *> &source)
             s << m_factChunk.dwSampleLength;
         }
     }
-    {
-        s << m_cueChunk.cueId;
-        s << m_cueChunk.cueSize;
-        s << m_cueChunk.dwCuePoints;
-        for (auto c: m_cueChunk.cues) {
-            s << c.identifier << c.order << c.chunkID << c.chunkStart << c.blockStart << c.offset;
-        }
-    }
-    if (!m_assocFiles.isEmpty()) {
-        auto assocFile = m_assocFiles.first();
-        s << assocFile.listId << assocFile.listSize;
-        s << assocFile.adtlId << assocFile.adtlSize;
-        s << assocFile.fileId << assocFile.fileSize;
-        s << assocFile.dwName << assocFile.dwMedType;
-        s.writeRawData(assocFile.data.data(), assocFile.data.size());
-    }
+//    {
+//        s << m_cueChunk.cueId;
+//        s << m_cueChunk.cueSize;
+//        s << m_cueChunk.dwCuePoints;
+//        for (auto c: m_cueChunk.cues) {
+//            s << c.identifier << c.order << c.chunkID << c.chunkStart << c.blockStart << c.offset;
+//        }
+//    }
+//    if (!m_assocFiles.isEmpty()) {
+//        auto assocFile = m_assocFiles.first();
+//        s << assocFile.listId << assocFile.listSize;
+//        s << assocFile.adtlId << assocFile.adtlSize;
+//        s << assocFile.fileId << assocFile.fileSize;
+//        s << assocFile.dwName << assocFile.dwMedType;
+//        s.writeRawData(assocFile.data.data(), assocFile.data.size());
+//    }
     {
         s << m_dataChunk.dataId;
         s << m_dataChunk.dataSize;
