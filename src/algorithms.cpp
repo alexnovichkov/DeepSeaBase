@@ -496,6 +496,7 @@ QDateTime dateTimeFromString(QString s)
     if (!dt.isValid()) dt = QDateTime::fromString(s, "dd.MM.yyyy hh:mm");
     if (!dt.isValid()) dt = QDateTime::fromString(s, "dd.MM.yy hh:mm:ss");
     if (!dt.isValid()) dt = QDateTime::fromString(s, "dd-MMM-yy hh:mm:ss");
+    if (!dt.isValid()) dt = QDateTime::fromString(s, "dd-MM-yy hh:mm:ss");
     if (!dt.isValid()) {
         QLocale l = QLocale::c();
         dt = l.toDateTime(s, "dd-MMM-yy hh:mm:ss");
@@ -513,6 +514,7 @@ QDateTime dateTimeFromString(QString date, QString time)
     if (!d.isValid()) d = QDate::fromString(date, "dd.MM.yyyy");
     if (!d.isValid()) d = QDate::fromString(date, "dd.MM.yy");
     if (!d.isValid()) d = QDate::fromString(date, "dd-MMM-yy");
+    if (!d.isValid()) d = QDate::fromString(date, "dd-MM-yyyy");
     if (!d.isValid()) {
         QLocale l = QLocale::c();
         d = l.toDate(date, "dd-MMM-yy");
@@ -524,6 +526,7 @@ QDateTime dateTimeFromString(QString date, QString time)
     t = QTime::fromString(time, Qt::ISODateWithMs);
     if (!t.isValid()) t = QTime::fromString(time, "hh:mm:ss");
     if (!t.isValid()) t = QTime::fromString(time, "h:mm:ss");
+    if (!t.isValid()) t = QTime::fromString(time, "h:mm:ss.z");
     if (!t.isValid()) t = QTime::fromString(time, "hh:mm");
     if (!t.isValid()) {
         QLocale l = QLocale::c();
@@ -535,6 +538,7 @@ QDateTime dateTimeFromString(QString date, QString time)
 bool channelsFromSameFile(const QVector<Channel *> &source)
 {DD;
     if (source.isEmpty()) return false;
+    if (source.size()==1) return true;
     auto d = source.first()->descriptor();
     return std::all_of(source.cbegin(), source.cend(), [d](Channel *c){
         return c->descriptor()==d;
