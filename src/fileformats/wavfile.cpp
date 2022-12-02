@@ -60,9 +60,6 @@ void WavFile::read()
         return;
     }
 
-    dataDescription().put("dateTime", wavFile.fileTime(QFileDevice::FileBirthTime));
-    dataDescription().put("fileCreationTime", wavFile.fileTime(QFileDevice::FileBirthTime));
-
     if (wavFile.size() < 44) {
         LOG(ERROR)<<"Файл слишком маленький:"<<fileName();
         wavFile.close();
@@ -185,25 +182,44 @@ void WavFile::read()
             r >> subChunk >> subChunkSize;
             if (subChunk == fourCC("adtl")) {
                 quint32 adtlLength = subChunkSize;
+                WavChunkFile file;
+                file.listSize = length;
+                file.adtlSize = adtlLength;
                 while (subChunkSize > 0) {
                     quint32 adtlSubChunk = 0;
                     quint32 adtlSubChunkSize = 0;
                     r >> adtlSubChunk >> adtlSubChunkSize;
                     subChunkSize -= adtlSubChunkSize+8;
                     if (adtlSubChunk == fourCC("file")) {
-                        WavChunkFile file;
-                        file.listSize = length;
-                        file.adtlSize = adtlLength;
                         file.fileSize = adtlSubChunkSize;
-                        r >> file.dwName >> file.dwMedType;
-                        file.data.resize(file.fileSize - 8);
-                        r.readRawData(file.data.data(), file.data.size());
-
-                        m_assocFiles << file;
+                        r >> file.fileName >> file.fileMedType;
+                        file.fileData.resize(file.fileSize - 8);
+                        r.readRawData(file.fileData.data(), file.fileData.size());
+                    } else
+                    if (adtlSubChunk == fourCC("labl")) {
+                        file.lablSize = adtlSubChunkSize;
+                        r >> file.lablName;
+                        file.lablData.resize(file.lablSize - 4);
+                        r.readRawData(file.lablData.data(), file.lablData.size());
+                    } else
+                    if (adtlSubChunk == fourCC("note")) {
+                        file.noteSize = adtlSubChunkSize;
+                        r >> file.noteName;
+                        file.noteData.resize(file.noteSize - 4);
+                        r.readRawData(file.noteData.data(), file.noteData.size());
+                    } else
+                    if (adtlSubChunk == fourCC("ltxt")) {
+                        file.ltxtSize = adtlSubChunkSize;
+                        r >> file.ltxtName >> file.ltxtSampleLength >> file.ltxtPurpose;
+                        r >> file.ltxtCountry >> file.ltxtLanguage >> file.ltxtDialect >> file.ltxtCodePage;
+                        file.ltxtData.resize(file.ltxtSize - 20);
+                        r.readRawData(file.ltxtData.data(), file.ltxtData.size());
                     }
                     else r.skipRawData(adtlSubChunkSize);
                 }
+                m_assocFiles << file;
             }
+            else r.skipRawData(subChunkSize); //неизвестный LIST
         }
 
 
@@ -247,9 +263,12 @@ void WavFile::read()
     QJsonArray channelsData;
     if (!m_assocFiles.isEmpty()) {
         QJsonParseError error;
-        auto json = QJsonDocument::fromJson(m_assocFiles.first().data, &error);
+        QByteArray data = QByteArray::fromBase64(m_assocFiles.first().ltxtData);
+
+        auto json = QJsonDocument::fromJson(data, &error);
         if (error.error == QJsonParseError::NoError)  {
-            channelsData = json.object().value("channels").toArray();
+            channelsData = json.object().take("channels").toArray();
+            dataDescription() = DataDescription::fromJson(json.object());
         }
     }
 
@@ -320,17 +339,6 @@ void WavFile::init(const QVector<Channel *> &source)
     setDataDescription(d->dataDescription());
     updateDateTimeGUID();
 
-    if (channelsFromSameFile(source)) {
-        dataDescription().put("source.file", d->fileName());
-        dataDescription().put("source.guid", d->dataDescription().get("guid"));
-        dataDescription().put("source.dateTime", d->dataDescription().get("dateTime"));
-
-        if (d->channelsCount() > source.size()) {
-            //только если копируем не все каналы
-            dataDescription().put("source.channels", stringify(channelIndexes(source)));
-        }
-    }
-
     //1. если среди indexes нет временных каналов, то ничего не делаем
     //2. параметры файла берем по первому каналу. Каналы, не подходящие по типу, пропускаем
 
@@ -357,6 +365,19 @@ void WavFile::init(const QVector<Channel *> &source)
         return;
     }
 
+    if (channelsFromSameFile(timeChannels)) {
+        dataDescription().put("source.file", d->fileName());
+        dataDescription().put("source.guid", d->dataDescription().get("guid"));
+        dataDescription().put("source.dateTime", d->dataDescription().get("dateTime"));
+        dataDescription().put("dateTime", d->dataDescription().get("dateTime"));
+
+        if (d->channelsCount() > timeChannels.size()) {
+            //только если копируем не все каналы
+            dataDescription().put("source.channels", stringify(channelIndexes(timeChannels)));
+        }
+    }
+
+
     for (int ch = 0; ch < timeChannels.size(); ++ch)
         new WavChannel(timeChannels.at(ch), this);
 
@@ -364,13 +385,21 @@ void WavFile::init(const QVector<Channel *> &source)
     const quint32 sampleRate = (quint32)qRound(1.0 / firstChannel->data()->xStep()); //F
     const quint32 samples = quint32(firstChannel->data()->samplesCount());
     const quint16 M = m_format == WavFormat::WavFloat ? 4 : 2; // bytesForFormat = short / float
-    auto assocFile = initFile();
+
+    QString channelName;
+    QString channelDescription;
+    if (channelsCount == 1) {
+        channelName = firstChannel->name();
+        channelDescription = firstChannel->description();
+    }
+
+    auto assocFile = initFile(samples, channelName, channelDescription);
 
     quint32 totalSize =  sizeof(WavHeader)
                          + (m_format == WavFormat::WavPCM ? 24 : sizeof(WavChunkFmt))
                          + (m_format!=WavFormat::WavPCM ? sizeof (WavChunkFact) : 0)
-                         //+ 12 + sizeof(WavChunkCue::Cue)
-                         //+ 32 + assocFile.data.size()
+                         + 12 + sizeof(WavChunkCue::Cue)
+                         + 8 + assocFile.listSize
                          + sizeof(WavChunkData)
                          + M * channelsCount * samples;
 
@@ -431,25 +460,47 @@ bool WavFile::writeWithMap(const QVector<Channel*> &source, quint32 totalSize)
         mapped += sizeof(m_factChunk);
     }
 
-//    memcpy(mapped, &m_cueChunk.cueId, 4); mapped +=4;
-//    memcpy(mapped, &m_cueChunk.cueSize, 4); mapped +=4;
-//    memcpy(mapped, &m_cueChunk.dwCuePoints, 4); mapped +=4;
-//    for (auto c: m_cueChunk.cues) {
-//        memcpy(mapped, &c, sizeof(c)); mapped += sizeof(c);
-//    }
+    memcpy(mapped, &m_cueChunk.cueId, 4); mapped +=4;
+    memcpy(mapped, &m_cueChunk.cueSize, 4); mapped +=4;
+    memcpy(mapped, &m_cueChunk.dwCuePoints, 4); mapped +=4;
+    for (auto c: m_cueChunk.cues) {
+        memcpy(mapped, &c, sizeof(c)); mapped += sizeof(c);
+    }
 
-//    if (!m_assocFiles.isEmpty()) {
-//        auto assocFile = m_assocFiles.first();
-//        memcpy(mapped, &assocFile.listId, 4); mapped += 4;
-//        memcpy(mapped, &assocFile.listSize, 4); mapped += 4;
-//        memcpy(mapped, &assocFile.adtlId, 4); mapped += 4;
-//        memcpy(mapped, &assocFile.adtlSize, 4); mapped += 4;
+    if (!m_assocFiles.isEmpty()) {
+        auto assocFile = m_assocFiles.first();
+        memcpy(mapped, &assocFile.listId, 4); mapped += 4;
+        memcpy(mapped, &assocFile.listSize, 4); mapped += 4;
+        memcpy(mapped, &assocFile.adtlId, 4); mapped += 4;
+        memcpy(mapped, &assocFile.adtlSize, 4); mapped += 4;
+
+        memcpy(mapped, &assocFile.lablId, 4); mapped += 4;
+        memcpy(mapped, &assocFile.lablSize, 4); mapped += 4;
+        memcpy(mapped, &assocFile.lablName, 4); mapped += 4;
+        memcpy(mapped, assocFile.lablData.data(), assocFile.lablData.size()); mapped += assocFile.lablData.size();
+
+        memcpy(mapped, &assocFile.noteId, 4); mapped += 4;
+        memcpy(mapped, &assocFile.noteSize, 4); mapped += 4;
+        memcpy(mapped, &assocFile.noteName, 4); mapped += 4;
+        memcpy(mapped, assocFile.noteData.data(), assocFile.noteData.size()); mapped += assocFile.noteData.size();
+
+        memcpy(mapped, &assocFile.ltxtId, 4); mapped += 4;
+        memcpy(mapped, &assocFile.ltxtSize, 4); mapped += 4;
+        memcpy(mapped, &assocFile.ltxtName, 4); mapped += 4;
+        memcpy(mapped, &assocFile.ltxtSampleLength, 4); mapped += 4;
+        memcpy(mapped, &assocFile.ltxtPurpose, 4); mapped += 4;
+        memcpy(mapped, &assocFile.ltxtCountry, 2); mapped += 2;
+        memcpy(mapped, &assocFile.ltxtLanguage, 2); mapped += 2;
+        memcpy(mapped, &assocFile.ltxtDialect, 2); mapped += 2;
+        memcpy(mapped, &assocFile.ltxtCodePage, 2); mapped += 2;
+        memcpy(mapped, assocFile.ltxtData.data(), assocFile.ltxtData.size()); mapped += assocFile.ltxtData.size();
+
 //        memcpy(mapped, &assocFile.fileId, 4); mapped += 4;
 //        memcpy(mapped, &assocFile.fileSize, 4); mapped += 4;
-//        memcpy(mapped, &assocFile.dwName, 4); mapped += 4;
-//        memcpy(mapped, &assocFile.dwMedType, 4); mapped += 4;
-//        memcpy(mapped, assocFile.data.data(), assocFile.data.size()); mapped += assocFile.data.size();
-//    }
+//        memcpy(mapped, &assocFile.fileName, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.fileMedType, 4); mapped += 4;
+//        memcpy(mapped, assocFile.fileData.data(), assocFile.fileData.size()); mapped += assocFile.fileData.size();
+    }
 
     memcpy(mapped, &m_dataChunk, sizeof(m_dataChunk));
     mapped += sizeof(m_dataChunk);
@@ -521,22 +572,36 @@ void WavFile::writeWithStream(const QVector<Channel *> &source)
             s << m_factChunk.dwSampleLength;
         }
     }
-//    {
-//        s << m_cueChunk.cueId;
-//        s << m_cueChunk.cueSize;
-//        s << m_cueChunk.dwCuePoints;
-//        for (auto c: m_cueChunk.cues) {
-//            s << c.identifier << c.order << c.chunkID << c.chunkStart << c.blockStart << c.offset;
-//        }
-//    }
-//    if (!m_assocFiles.isEmpty()) {
-//        auto assocFile = m_assocFiles.first();
-//        s << assocFile.listId << assocFile.listSize;
-//        s << assocFile.adtlId << assocFile.adtlSize;
+    {
+        s << m_cueChunk.cueId;
+        s << m_cueChunk.cueSize;
+        s << m_cueChunk.dwCuePoints;
+        for (auto c: m_cueChunk.cues) {
+            s << c.identifier << c.order << c.chunkID << c.chunkStart << c.blockStart << c.offset;
+        }
+    }
+    if (!m_assocFiles.isEmpty()) {
+        auto assocFile = m_assocFiles.first();
+        s << assocFile.listId << assocFile.listSize;
+        s << assocFile.adtlId << assocFile.adtlSize;
+
+        s << assocFile.lablId << assocFile.lablSize;
+        s << assocFile.lablName;
+        s.writeRawData(assocFile.lablData.data(), assocFile.lablData.size());
+
+        s << assocFile.noteId << assocFile.noteSize << assocFile.noteName;
+        s.writeRawData(assocFile.noteData.data(), assocFile.noteData.size());
+
+        s << assocFile.ltxtId << assocFile.ltxtSize << assocFile.ltxtName;
+        s << assocFile.ltxtSampleLength << assocFile.ltxtPurpose;
+        s << assocFile.ltxtCountry << assocFile.ltxtLanguage;
+        s << assocFile.ltxtDialect << assocFile.ltxtCodePage;
+        s.writeRawData(assocFile.ltxtData.data(), assocFile.ltxtData.size());
+
 //        s << assocFile.fileId << assocFile.fileSize;
 //        s << assocFile.dwName << assocFile.dwMedType;
 //        s.writeRawData(assocFile.data.data(), assocFile.data.size());
-//    }
+    }
     {
         s << m_dataChunk.dataId;
         s << m_dataChunk.dataSize;
@@ -635,20 +700,44 @@ WavChunkCue WavFile::initCue()
     return cue;
 }
 
-WavChunkFile WavFile::initFile()
+WavChunkFile WavFile::initFile(quint32 samplesCount, const QString &name, const QString &description)
 {DD;
     WavChunkFile chunk;
     QJsonArray array;
-    for (auto c: channels)
-        array.append(c->dataDescription().toJson());
-    QJsonObject o;
+    for (auto c: channels) {
+        auto chDescr = c->dataDescription();
+        chDescr.put("function.precision", m_format==WavFormat::WavFloat?"float":"int16");
+        chDescr.put("function.name", "Time");
+        chDescr.put("function.type", Descriptor::TimeResponse);
+        array.append(chDescr.toJson());
+    }
+    QJsonObject o = dataDescription().toJson();
     o.insert("channels", array);
 
     auto data = QJsonDocument(o).toJson();
 
-    chunk.fileSize = 8 + data.size();
-    chunk.data = data;
-    chunk.adtlSize = chunk.fileSize + 8;
+//    chunk.fileSize = 8 + data.size();
+//    chunk.fileData = data;
+
+    //labl chunk is empty if name is empty
+    chunk.lablData = name.toUtf8();
+    chunk.lablSize = 4+chunk.lablData.size();
+
+    //note chunk is empty if description is empty
+    chunk.noteData = description.toUtf8();
+    chunk.noteSize = 4+chunk.noteData.size();
+
+    //ltxt chunk is empty
+    chunk.ltxtName = 0;
+    chunk.ltxtSampleLength = samplesCount;
+    chunk.ltxtCountry = 0;
+    chunk.ltxtLanguage = 25; //russian
+    chunk.ltxtDialect = 1; //russian
+    chunk.ltxtCodePage = 0;
+    chunk.ltxtData = data.toBase64();
+    chunk.ltxtSize = 20+chunk.ltxtData.size();
+
+    chunk.adtlSize = /*chunk.fileSize+8 +*/ chunk.ltxtSize+8 + chunk.lablSize+8 + chunk.noteSize+8;
     chunk.listSize = chunk.adtlSize + 8;
 
     return chunk;

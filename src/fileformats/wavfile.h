@@ -17,6 +17,11 @@ static constexpr quint32 fourCC(const char (&ch)[5])
     return quint32(quint8(ch[0])) | quint32(quint8(ch[1])) << 8 | quint32(quint8(ch[2])) << 16 | quint32(quint8(ch[3])) << 24;
 }
 
+static constexpr quint16 twoCC(const char (&ch)[3])
+{
+    return quint16(quint8(ch[0])) | quint16(quint8(ch[1])) << 8;
+}
+
 struct WavHeader
 {
     /*const*/ quint32 ckID = fourCC("RIFF"); //"RIFF"
@@ -99,11 +104,32 @@ struct WavChunkFile
     quint32 adtlId = fourCC("adtl");
     quint32 adtlSize = 0;
 
+    quint32 lablId = fourCC("labl");
+    quint32 lablSize = 0;
+    quint32 lablName = 0;
+    QByteArray lablData;
+
+    quint32 noteId = fourCC("note");
+    quint32 noteSize = 0;
+    quint32 noteName = 0;
+    QByteArray noteData;
+
+    quint32 ltxtId = fourCC("ltxt");
+    quint32 ltxtSize = 0;
+    quint32 ltxtName = 0;
+    quint32 ltxtSampleLength = 0;
+    quint32 ltxtPurpose = fourCC("scrp");
+    quint16 ltxtCountry = 0;
+    quint16 ltxtLanguage = 0;
+    quint16 ltxtDialect = 0;
+    quint16 ltxtCodePage = 0;
+    QByteArray ltxtData;
+
     quint32 fileId = fourCC("file");
     quint32 fileSize = 0;
-    quint32 dwName = 0;
-    quint32 dwMedType = 0;
-    QByteArray data;
+    quint32 fileName = 0;
+    quint32 fileMedType = 0;
+    QByteArray fileData;
 };
 
 //struct WavChunkAdtl
@@ -158,7 +184,7 @@ private:
     WavChunkFact initFact(int samplesCount);
     WavChunkData initDataHeader(int channelsCount, int samplesCount);
     WavChunkCue initCue();
-    WavChunkFile initFile();
+    WavChunkFile initFile(quint32 samplesCount, const QString &name, const QString &description);
 
 private:
     friend class WavChannel;

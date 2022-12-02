@@ -523,10 +523,12 @@ QDateTime dateTimeFromString(QString date, QString time)
 
     //time
     QTime t;
+    time = time.trimmed();
+    if (time.endsWith(".00")) time.chop(3);
     t = QTime::fromString(time, Qt::ISODateWithMs);
     if (!t.isValid()) t = QTime::fromString(time, "hh:mm:ss");
     if (!t.isValid()) t = QTime::fromString(time, "h:mm:ss");
-    if (!t.isValid()) t = QTime::fromString(time, "h:mm:ss.z");
+    if (!t.isValid()) t = QTime::fromString(time, "h:mm:ss");
     if (!t.isValid()) t = QTime::fromString(time, "hh:mm");
     if (!t.isValid()) {
         QLocale l = QLocale::c();

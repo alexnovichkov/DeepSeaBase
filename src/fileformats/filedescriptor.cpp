@@ -49,7 +49,7 @@ void FileDescriptor::populate()
 void FileDescriptor::updateDateTimeGUID()
 {DD;
     QDateTime dt = QDateTime::currentDateTime();
-    dataDescription().put("fileCreationTime", dt.toString("dd.MM.yyyy hh:mm"));
+    dataDescription().put("fileCreationTime", dt);
     dataDescription().put("guid", FileDescriptor::createGUID());
     dataDescription().put("createdBy", "DeepSea Base");
 }
@@ -471,6 +471,8 @@ QByteArray Channel::wavData(qint64 pos, qint64 samples, int format)
     s.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
     QVector<double> values = data()->rawYValues(0).mid(pos,samples);
+
+    //формат данных PCM - [-32768..32767]
 
     const double max = qMax(qAbs(data()->yMax()), qAbs(data()->yMin()));
     const double coef = 32768.0 / max;

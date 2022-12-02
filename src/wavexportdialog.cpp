@@ -6,6 +6,7 @@
 #include "wavexporter.h"
 #include "taskbarprogress.h"
 #include "logging.h"
+#include "settings.h"
 
 WavExportDialog::WavExportDialog(FileDescriptor * file, const QVector<int> &indexes, QWidget *parent)
     : QDialog(parent), file{file}, indexes{indexes}
@@ -33,6 +34,7 @@ WavExportDialog::WavExportDialog(FileDescriptor * file, const QVector<int> &inde
                   .arg(indexes.at(val-1)+1);
        }
        hintLabel->setText(text);
+       Settings::setSetting("wavChannelsCount", val);
     });
 
     bar = new QProgressBar(this);
@@ -43,8 +45,8 @@ WavExportDialog::WavExportDialog(FileDescriptor * file, const QVector<int> &inde
     hintLabel = new QLabel(this);
     hintLabel->setIndent(10);
 
-
-    channelsCount->setValue(indexes.size());
+    auto wavChannelsCount = Settings::getSetting("wavChannelsCount", indexes.size()).toInt();
+    channelsCount->setValue(qMin(wavChannelsCount, indexes.size()));
     bar->setValue(0);
 
     taskBarProgress = new TaskBarProgress(this, this);
