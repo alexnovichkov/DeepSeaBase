@@ -50,7 +50,6 @@ void QCPCursorSingle::moveTo(const QPointF &pos1, bool silent)
     if (axisTagX) axisTagX->updatePosition(pos.x());
     if (axisTagY) axisTagY->updatePosition(pos.y());
     if (!silent) emit cursorPositionChanged();
-    plot->impl()->updateSecondaryPlots(pos);
     update();
 }
 

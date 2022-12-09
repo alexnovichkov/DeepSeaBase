@@ -18,7 +18,7 @@ void Cursors::update()
     for (auto c: m_cursors) c->update();
 }
 
-void Cursors::addDoubleCursor(const QPoint &pos, Cursor::Style style, bool reject)
+Cursor *Cursors::addDoubleCursor(const QPoint &pos, Cursor::Style style, bool reject)
 {DD;
     auto c = new QCPCursorDouble(style, reject, plot);
     connect(c, SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
@@ -41,9 +41,10 @@ void Cursors::addDoubleCursor(const QPoint &pos, Cursor::Style style, bool rejec
             if (cu->type()==Cursor::Type::Double) cu->addRejectCursor(c);
         }
     }
+    return c;
 }
 
-void Cursors::addSingleCursor(const QPoint &pos, Cursor::Style style)
+Cursor *Cursors::addSingleCursor(const QPoint &pos, Cursor::Style style)
 {DD;
     auto c = new QCPCursorSingle(style, plot);
     connect(c,SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
@@ -57,19 +58,20 @@ void Cursors::addSingleCursor(const QPoint &pos, Cursor::Style style)
     c->moveTo({xVal, yVal});
     m_cursors << c;
     emit cursorsChanged();
+    return c;
 }
 
-void Cursors::addDoubleCursor(const QPoint &pos, Cursor::Style style)
+Cursor *Cursors::addDoubleCursor(const QPoint &pos, Cursor::Style style)
 {DD;
-    addDoubleCursor(pos, style, false);
+    return addDoubleCursor(pos, style, false);
 }
 
-void Cursors::addRejectCursor(const QPoint &pos, Cursor::Style style)
+Cursor *Cursors::addRejectCursor(const QPoint &pos, Cursor::Style style)
 {DD;
-    addDoubleCursor(pos, style, true);
+    return addDoubleCursor(pos, style, true);
 }
 
-void Cursors::addHarmonicCursor(const QPoint &pos)
+Cursor *Cursors::addHarmonicCursor(const QPoint &pos)
 {DD;
     auto c = new QCPCursorHarmonic(plot);
     connect(c,SIGNAL(cursorPositionChanged()), this, SIGNAL(cursorPositionChanged()));
@@ -83,6 +85,7 @@ void Cursors::addHarmonicCursor(const QPoint &pos)
     c->moveTo({xVal, yVal});
     m_cursors << c;
     emit cursorsChanged();
+    return c;
 }
 
 int Cursors::dataCount() const
@@ -111,21 +114,25 @@ QStringList Cursors::data(int curveIndex) const
     return l;
 }
 
-void Cursors::removeCursor(Selectable *selected)
-{DD;
-    for (int i=m_cursors.size()-1; i>=0; --i) {
+Cursor *Cursors::cursorFor(Selectable *selected) const
+{
+    for (int i = m_cursors.size()-1; i >= 0; --i) {
         auto c = m_cursors.at(i);
-        if (c->contains(selected)) {
-            if (c->type()==Cursor::Type::DoubleReject) {
-                //remove registered reject cursor
-                for (auto cu: m_cursors) {
-                    if (cu->type()==Cursor::Type::Double) cu->removeRejectCursor(c);
-                }
-            }
-            delete m_cursors.takeAt(i);
-            emit cursorsChanged();
-            return;
+        if (c->contains(selected)) return c;
+    }
+    return nullptr;
+}
+
+void Cursors::removeCursor(Cursor *cursor)
+{DD;
+    if (cursor->type()==Cursor::Type::DoubleReject) {
+        //remove registered reject cursor
+        for (auto cu: m_cursors) {
+            if (cu->type()==Cursor::Type::Double) cu->removeRejectCursor(cursor);
         }
     }
+    m_cursors.removeOne(cursor);
+    delete cursor;
+    emit cursorsChanged();
 }
 

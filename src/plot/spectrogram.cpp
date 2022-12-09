@@ -29,6 +29,8 @@ void Spectrogram::deleteCurve(Curve *curve, bool doReplot)
 
 //        zoom->autoscale(Enums::AxisType::atInvalid);
 
+//        m_plot->updateSecondaryPlots({qQNaN(), qQNaN()});
+
         curve->detachFrom(this);
         delete curve;
 
@@ -43,7 +45,7 @@ void Spectrogram::deleteCurve(Curve *curve, bool doReplot)
         }
         if (!hasCurves()) xName.clear();
         m_plot->setInfoVisible(m->size()==0);
-        m_plot->updateSecondaryPlots({qQNaN(), qQNaN()});
+
         if (doReplot) update();
     }
 }
@@ -138,7 +140,8 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     m_plot->setInfoVisible(false);
 
     g->attachTo(this);
-    m_plot->updateSecondaryPlots({qQNaN(), qQNaN()});
+    m_plot->setCurrentCurve(g);
+//    m_plot->updateSecondaryPlots({qQNaN(), qQNaN()});
     update();
     updatePlottedIndexes();
     emit channelPlotted(ch);
@@ -200,10 +203,12 @@ QMenu *Spectrogram::createMenu(Enums::AxisType axis, const QPoint &pos)
 
     if (axis == Enums::AxisType::atBottom) {
         menu->addAction("Одинарный курсор", [=](){
-            cursors->addSingleCursor(m_plot->localCursorPosition(pos), Cursor::Style::Cross);
+            auto cursor = cursors->addSingleCursor(m_plot->localCursorPosition(pos), Cursor::Style::Cross);
+            m_plot->addCursorToSecondaryPlots(cursor);
         });
         menu->addAction("Гармонический курсор", [=](){
-            cursors->addHarmonicCursor(m_plot->localCursorPosition(pos));
+            auto cursor = cursors->addHarmonicCursor(m_plot->localCursorPosition(pos));
+            m_plot->addCursorToSecondaryPlots(cursor);
         });
 
         menu->addAction(xScaleIsLogarithmic?"Линейная шкала":"Логарифмическая шкала", [=](){

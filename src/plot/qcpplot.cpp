@@ -16,6 +16,7 @@
 #include "plot/colormapfactory.h"
 #include "qcpinfooverlay.h"
 #include "qcpflowlegend.h"
+#include "secondaryplot.h"
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type) {
     return static_cast<QCPAxis::AxisType>(type);
@@ -121,31 +122,12 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     setEventFilter(new CanvasEventFilter(plot));
 
     if (plot->type() == Enums::PlotType::Spectrogram) {
-        spectreRect = new QCPAxisRect(this);
-        throughRect = new QCPAxisRect(this);
-
         QCPLayoutGrid *subLayout = new QCPLayoutGrid;
         plotLayout()->addElement(0, 2, subLayout);
 
-        spectreTitle = new QCPTextElement(this, "Спектр");
-        throughTitle = new QCPTextElement(this, "Проходная");
-
-        subLayout->addElement(0,0,spectreTitle);
-        subLayout->addElement(1,0,spectreRect);
-        subLayout->addElement(2,0,throughTitle);
-        subLayout->addElement(3,0,throughRect);
+        spectrePlot = new SpectrePlot(this, "Спектр", subLayout);
+        throughPlot = new ThroughPlot(this, "Проходная", subLayout);
         plotLayout()->setColumnStretchFactors({4,0.1,2});
-        QList<QCPAxis*> allAxes;
-        allAxes << spectreRect->axes() << throughRect->axes();
-        for (QCPAxis *axis: allAxes)
-        {
-          axis->setLayer("axes");
-          axis->grid()->setLayer("grid");
-        }
-        spectreGraph = addGraph(spectreRect->axis(QCPAxis::atBottom), spectreRect->axis(QCPAxis::atLeft));
-        throughGraph = addGraph(throughRect->axis(QCPAxis::atBottom), throughRect->axis(QCPAxis::atLeft));
-        spectreGraph->removeFromLegend();
-        throughGraph->removeFromLegend();
     }
 }
 
@@ -180,53 +162,67 @@ void QCPPlot::cancelZoom()
     }
 }
 
-void QCPPlot::updateSecondaryPlots(const QPointF &value)
-{DD;
-    static QPointF oldValue;
-    if (!qIsNaN(value.x())) oldValue = value;
+void QCPPlot::addCursorToSecondaryPlots(Cursor *cursor)
+{
+    if (spectrePlot) spectrePlot->addCursor(cursor);
+    if (throughPlot) throughPlot->addCursor(cursor);
+    replot();
+}
 
-    Curve *curve = nullptr;
-    for (auto c: parent->model()->curves()) {
-        if (auto plottable = dynamic_cast<QCPAbstractPlottable*>(c); plottable->visible()) {
-            curve = c;
-            break;
-        }
-    }
-    if (!curve) {
-        if (spectreGraph) spectreGraph->setVisible(false);
-        if (throughGraph) throughGraph->setVisible(false);
-        if (spectreTitle) spectreTitle->setText("Спектр");
-        if (throughTitle) throughTitle->setText("Проходная");
-    }
-    else {
-        if (spectreRect) {
-            spectreGraph->setVisible(true);
-            auto zIndex = curve->channel->data()->nearestZ(oldValue.y());
-            if (zIndex < 0) zIndex = 0;
-            QVector<double> data = curve->channel->data()->yValues(zIndex);
-            QVector<double> xData = curve->channel->data()->xValues();
-            spectreGraph->setData(xData, data, true);
-            for (auto axis: spectreRect->axes()) axis->rescale(true);
-            spectreGraph->rescaleAxes();
-            spectreTitle->setText(QString("Спектр %1 %2")
-                                  .arg(curve->channel->data()->zValue(zIndex))
-                                  .arg(curve->channel->zName()));
-        }
-        if (throughRect) {
-            throughGraph->setVisible(true);
-            QVector<double> data;
-            double xIndex = curve->channel->data()->nearest(oldValue.x());
-            if (xIndex < 0) xIndex = 0;
-            for (int i=0; i<curve->channel->data()->blocksCount(); ++i)
-                data << curve->channel->data()->yValue(xIndex, i);
-            QVector<double> xData = curve->channel->data()->zValues();
-            throughGraph->setData(xData, data, true);
-            throughGraph->rescaleAxes();
-            throughTitle->setText(QString("Проходная %1 %2")
-                                  .arg(curve->channel->data()->xValue(xIndex))
-                                  .arg(curve->channel->xName()));
-        }
-    }
+void QCPPlot::removeCursorFromSecondaryPlots(Cursor *cursor)
+{
+    if (spectrePlot) spectrePlot->removeCursor(cursor);
+    if (throughPlot) throughPlot->removeCursor(cursor);
+//    replot();
+}
+
+//void QCPPlot::updateSecondaryPlots(const QPointF &value)
+//{DD;
+//    static QPointF oldValue;
+//    if (!qIsNaN(value.x())) oldValue = value;
+
+//    Curve *curve = nullptr;
+//    for (auto c: parent->model()->curves()) {
+//        if (auto plottable = dynamic_cast<QCPAbstractPlottable*>(c); plottable->visible()) {
+//            curve = c;
+//            break;
+//        }
+//    }
+//    if (!curve) {
+//        spectrePlot->clear();
+//        throughPlot->clear();
+//    }
+//    else {
+//        if (spectrePlot) {
+//            auto zIndex = curve->channel->data()->nearestZ(oldValue.y());
+//            if (zIndex < 0) zIndex = 0;
+//            QVector<double> data = curve->channel->data()->yValues(zIndex);
+//            QVector<double> xData = curve->channel->data()->xValues();
+//            spectrePlot->update(xData, data);
+//        }
+//        if (throughPlot) {
+//            QVector<double> data;
+//            double xIndex = curve->channel->data()->nearest(oldValue.x());
+//            if (xIndex < 0) xIndex = 0;
+//            for (int i=0; i<curve->channel->data()->blocksCount(); ++i)
+//                data << curve->channel->data()->yValue(xIndex, i);
+//            QVector<double> xData = curve->channel->data()->zValues();
+//            throughPlot->update(xData, data);
+//        }
+//    }
+//    replot();
+//}
+
+void QCPPlot::updateSecondaryPlots()
+{
+    if (spectrePlot) spectrePlot->update();
+    if (throughPlot) throughPlot->update();
+}
+
+void QCPPlot::setCurrentCurve(Curve *curve)
+{
+    if (spectrePlot) spectrePlot->setCurve(curve);
+    if (throughPlot) throughPlot->setCurve(curve);
     replot();
 }
 
@@ -290,11 +286,12 @@ void QCPPlot::createLegend()
                     parent->zoom->scaleBounds(Enums::AxisType::atColor)->add(c->channel->data()->yMin(-1), c->channel->data()->yMax(-1), true);
                     parent->zoom->scaleBounds(Enums::AxisType::atLeft)->add(c->channel->data()->zMin(), c->channel->data()->zMax(), true);
                 }
+                setCurrentCurve(c);
             }
             else p->removeFromLegend();
         }
 
-        updateSecondaryPlots({qQNaN(), qQNaN()});
+//        updateSecondaryPlots({qQNaN(), qQNaN()});
         replot();
     });
 }
@@ -350,26 +347,21 @@ void QCPPlot::setAxisScale(Enums::AxisType axisType, Enums::AxisScale scale)
     auto a = axis(axisType);
     if (!a) return;
 
-    if (scale == Enums::AxisScale::Linear) {
-        a->setScaleType(QCPAxis::stLinear);
-        a->setTicker(linTicker);
-        if (spectreGraph) {
-            spectreGraph->keyAxis()->setScaleType(QCPAxis::stLinear);
-            spectreGraph->keyAxis()->setTicker(linTicker);
+    QList<QCPAxis*> axes;
+    axes << a;
+    if (spectrePlot) axes << spectrePlot->axis(axisType);
+
+    for (auto &ax: axes) {
+        if (scale == Enums::AxisScale::Linear) {
+            ax->setScaleType(QCPAxis::stLinear);
+            ax->setTicker(linTicker);
         }
-    }
-    else if (scale == Enums::AxisScale::Logarithmic) {
-        a->setScaleType(QCPAxis::stLogarithmic);
-        if (parent->type() == Enums::PlotType::Octave)
-            a->setTicker(octaveTicker);
-        else
-            a->setTicker(logTicker);
-        if (spectreGraph) {
-            spectreGraph->keyAxis()->setScaleType(QCPAxis::stLogarithmic);
+        else if (scale == Enums::AxisScale::Logarithmic) {
+            ax->setScaleType(QCPAxis::stLogarithmic);
             if (parent->type() == Enums::PlotType::Octave)
-                spectreGraph->keyAxis()->setTicker(octaveTicker);
+                ax->setTicker(octaveTicker);
             else
-                spectreGraph->keyAxis()->setTicker(logTicker);
+                ax->setTicker(logTicker);
         }
     }
 

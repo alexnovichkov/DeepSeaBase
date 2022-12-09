@@ -46,6 +46,8 @@ SOURCES += main.cpp\
     app.cpp \
     channelpropertiesdialog.cpp \
     channelstable.cpp \
+    converters/anaconverter.cpp \
+    converters/anaconverterdialog.cpp \
     descriptorpropertiesdialog.cpp \
     fileformats/fileio.cpp \
     fileformats/formatfactory.cpp \
@@ -95,6 +97,7 @@ SOURCES += main.cpp\
     plot/imagerenderdialog.cpp \
     plot/plotarea.cpp \
     plot/plotmodel.cpp \
+    plot/secondaryplot.cpp \
     plot/zoomstack.cpp \
     plot/spectrogram.cpp \
     plot/graph2d.cpp \
@@ -165,6 +168,8 @@ HEADERS  += mainwindow.h \
     channelpropertiesdialog.h \
     channelsmimedata.h \
     channelstable.h \
+    converters/anaconverter.h \
+    converters/anaconverterdialog.h \
     descriptorpropertiesdialog.h \
     dfdfilterproxy.h \
     enums.h \
@@ -216,6 +221,7 @@ HEADERS  += mainwindow.h \
     plot/imagerenderdialog.h \
     plot/plotarea.h \
     plot/plotmodel.h \
+    plot/secondaryplot.h \
     plot/selectable.h \
     plot/zoomstack.h \
     plot/spectrogram.h \

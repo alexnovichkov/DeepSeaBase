@@ -216,7 +216,7 @@ void QCPTrackingCursor::updateSelection(SelectedPoint point)
     p.setWidth(selected()?2:1);
     horizontal->setPen(p);
     vertical->setPen(p);
-    impl->updateSecondaryPlots({xValue(), yValue()});
+//    impl->updateSecondaryPlots({xValue(), yValue()});
     impl->layer("overlay")->replot();
 }
 

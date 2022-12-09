@@ -41,16 +41,12 @@ Plot::Plot(Enums::PlotType type, QWidget *parent) :
     plotType(type)
 {DD;
     m = new PlotModel(this);
-    picker = new Picker(this);
 
+    picker = new Picker(this);
     picker->setPickPriority(Picker::PickPriority::PickLast);
     picker->setEnabled(Settings::getSetting("pickerEnabled", true).toBool());
-    connect(picker, &Picker::removeNeeded, this, &Plot::removeCursor);
-
     zoom = new ZoomStack(this);
-
     m_plot = new QCPPlot(this, parent);
-
 
     QVariantList list = Settings::getSetting("colors").toList();
     colors = new ColorSelector(list);
@@ -59,20 +55,21 @@ Plot::Plot(Enums::PlotType type, QWidget *parent) :
     yValuesPresentationLeft = DataHolder::ShowAsDefault;
     yValuesPresentationRight = DataHolder::ShowAsDefault;
 
-
     m_plot->createLegend();
 
     cursors = new Cursors(this);
-    connect(this, &Plot::curvesCountChanged, cursors, &Cursors::update);
+    cursorBox = new CursorBox(cursors, this);
+    cursorBox->setWindowTitle(parent->windowTitle());
+    cursorBox->setVisible(false);
 
     if (type == Enums::PlotType::Octave) {
         xScaleIsLogarithmic = true;
         m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::Logarithmic);
     }
 
-    cursorBox = new CursorBox(cursors, this);
-    cursorBox->setWindowTitle(parent->windowTitle());
-    cursorBox->setVisible(false);
+    connect(picker, &Picker::removeNeeded, this, &Plot::removeCursor);
+    connect(this, &Plot::curvesCountChanged, cursors, &Cursors::update);
+    connect(cursors, &Cursors::cursorPositionChanged, m_plot, qOverload<>(&QCPPlot::updateSecondaryPlots));
     connect(this, &Plot::curvesCountChanged, cursorBox, &CursorBox::updateLayout);
     connect(cursorBox,SIGNAL(closeRequested()),SIGNAL(trackingPanelCloseRequested()));
 
@@ -200,24 +197,29 @@ QMenu *Plot::createMenu(Enums::AxisType axis, const QPoint &pos)
     if (axis == Enums::AxisType::atBottom) {
         auto scm = new QMenu("Одинарный курсор", 0);
         scm->addAction("Вертикальный", [=](){
-            cursors->addSingleCursor(m_plot->localCursorPosition(pos), Cursor::Style::Vertical);
+            auto cursor = cursors->addSingleCursor(m_plot->localCursorPosition(pos), Cursor::Style::Vertical);
+            m_plot->addCursorToSecondaryPlots(cursor);
         });
-        scm->addAction("Перекрестье", [=](){
-            cursors->addSingleCursor(m_plot->localCursorPosition(pos), Cursor::Style::Cross);
+        scm->addAction("Перекрестье", [=]() {
+            auto cursor = cursors->addSingleCursor(m_plot->localCursorPosition(pos), Cursor::Style::Cross);
+            m_plot->addCursorToSecondaryPlots(cursor);
         });
         menu->addMenu(scm);
         if (type() != Enums::PlotType::Spectrogram) {
             auto dcm = new QMenu("Двойной курсор", 0);
             dcm->addAction("Стандартный", [=](){
-                cursors->addDoubleCursor(m_plot->localCursorPosition(pos), Cursor::Style::Vertical);
+                auto cursor = cursors->addDoubleCursor(m_plot->localCursorPosition(pos), Cursor::Style::Vertical);
+                m_plot->addCursorToSecondaryPlots(cursor);
             });
             dcm->addAction("Режекция", [=](){
-                cursors->addRejectCursor(m_plot->localCursorPosition(pos), Cursor::Style::Vertical);
+                auto cursor = cursors->addRejectCursor(m_plot->localCursorPosition(pos), Cursor::Style::Vertical);
+                m_plot->addCursorToSecondaryPlots(cursor);
             });
             menu->addMenu(dcm);
         }
         menu->addAction("Гармонический курсор", [=](){
-            cursors->addHarmonicCursor(m_plot->localCursorPosition(pos));
+            auto cursor = cursors->addHarmonicCursor(m_plot->localCursorPosition(pos));
+            m_plot->addCursorToSecondaryPlots(cursor);
         });
 
         menu->addAction(xScaleIsLogarithmic?"Линейная шкала":"Логарифмическая шкала", [=]() {
@@ -682,7 +684,10 @@ void Plot::updateLabels()
 
 void Plot::removeCursor(Selectable *selected)
 {
-    cursors->removeCursor(selected);
+    if (auto cursor = cursors->cursorFor(selected)) {
+        m_plot->removeCursorFromSecondaryPlots(cursor);
+        cursors->removeCursor(cursor);
+    }
 }
 
 void Plot::recalculateScale(Enums::AxisType axis)

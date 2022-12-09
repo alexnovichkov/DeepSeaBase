@@ -14,6 +14,8 @@ class Curve;
 class Channel;
 class Selected;
 class QCPFlowLegend;
+class SecondaryPlot;
+class Cursor;
 
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type);
 Enums::AxisType fromQcpAxis(QCPAxis::AxisType);
@@ -31,7 +33,10 @@ public:
     void endZoom(QMouseEvent *event);
     void cancelZoom();
 
-    void updateSecondaryPlots(const QPointF &value);
+    void addCursorToSecondaryPlots(Cursor *cursor);
+    void removeCursorFromSecondaryPlots(Cursor *cursor);
+    void updateSecondaryPlots();
+    void setCurrentCurve(Curve *curve);
 
     QCPCheckableLegend *checkableLegend = nullptr;
 signals:
@@ -49,12 +54,15 @@ private:
     QCPAxisOverlay *leftOverlay = nullptr;
     QCPAxisOverlay *rightOverlay = nullptr;
     QCPColorScale *colorScale = nullptr;
-    QCPAxisRect *spectreRect = nullptr;
-    QCPAxisRect *throughRect = nullptr;
-    QCPGraph *spectreGraph = nullptr;
-    QCPGraph *throughGraph = nullptr;
-    QCPTextElement *spectreTitle = nullptr;
-    QCPTextElement *throughTitle = nullptr;
+
+//    QCPAxisRect *spectreRect = nullptr;
+//    QCPAxisRect *throughRect = nullptr;
+//    QCPGraph *spectreGraph = nullptr;
+//    QCPGraph *throughGraph = nullptr;
+//    QCPTextElement *spectreTitle = nullptr;
+//    QCPTextElement *throughTitle = nullptr;
+    SecondaryPlot *spectrePlot = nullptr;
+    SecondaryPlot *throughPlot = nullptr;
 
     // PlotInterface interface
 public:
