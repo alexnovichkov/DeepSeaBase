@@ -2092,7 +2092,7 @@ void MainWindow::updateActions()
     moveChannelsUpAct->setEnabled(selectedChannelsCount > 0 && selectedChannelsCount < channelsCount);
     editDescriptionsAct->setDisabled(selectedFilesCount==0);
 
-    exportToExcelAct->setEnabled(curvesCount>0 && !spectrogram);
+    exportToExcelAct->setEnabled(curvesCount>0 /*&& !spectrogram*/);
     exportChannelsToWavAct->setEnabled(!timeFiles.isEmpty() && selectedChannelsCount>0);
 
     if (currentPlot) currentPlot->updateActions(filesCount, channelsCount);
