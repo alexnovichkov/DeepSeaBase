@@ -39,10 +39,8 @@ namespace Enums {
     Q_ENUM_NS(PlotType)
 
     enum class InteractionMode {
-        NoInteraction,
         ScalingInteraction,
-        DataInteraction,
-        LabelInteraction
+        DataInteraction
     };
     enum LegendData {
         ldColor = 0,

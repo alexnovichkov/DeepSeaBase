@@ -63,7 +63,6 @@ Plot::Plot(Enums::PlotType type, QWidget *parent) :
     cursorBox->setVisible(false);
 
     if (type == Enums::PlotType::Octave) {
-        xScaleIsLogarithmic = true;
         m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::Logarithmic);
     }
 
@@ -116,12 +115,12 @@ double Plot::plotToScreenCoordinates(Enums::AxisType axis, double value) const
     return m_plot->plotToScreenCoordinates(axis, value);
 }
 
-Range Plot::plotRange(Enums::AxisType axis)
+Range Plot::plotRange(Enums::AxisType axis) const
 {
     return m_plot->plotRange(axis);
 }
 
-Range Plot::screenRange(Enums::AxisType axis)
+Range Plot::screenRange(Enums::AxisType axis) const
 {
     return m_plot->screenRange(axis);
 }
@@ -140,10 +139,8 @@ void Plot::updateActions(int filesCount, int channelsCount)
 {
     Q_UNUSED(filesCount);
     Q_UNUSED(channelsCount);
-    if (playerPanel) {
-        const bool hasCurves = curvesCount()>0;
-        playerPanel->setEnabled(hasCurves);
-    }
+    if (playerPanel)
+        playerPanel->setEnabled(!m->isEmpty());
 }
 
 void Plot::updatePlottedIndexes()
@@ -163,7 +160,6 @@ void Plot::update()
     for (auto c: m->curves()) {
         c->updatePen();
     }
-    if (m_plot) m_plot->updateAxes();
     updateLabels();
     updateAxesLabels();
     if (m_plot) m_plot->updateLegend();
@@ -179,7 +175,7 @@ void Plot::updateBounds()
         zoom->scaleBounds(Enums::AxisType::atLeft)->reset();
     if (m->rightCurvesCount()==0)
         zoom->scaleBounds(Enums::AxisType::atRight)->reset();
-    if (!hasCurves())
+    if (m->isEmpty())
         zoom->scaleBounds(Enums::AxisType::atBottom)->reset();
 
     if (!zoom->scaleBounds(Enums::AxisType::atBottom)->isFixed())
@@ -222,13 +218,11 @@ QMenu *Plot::createMenu(Enums::AxisType axis, const QPoint &pos)
             m_plot->addCursorToSecondaryPlots(cursor);
         });
 
-        menu->addAction(xScaleIsLogarithmic?"Линейная шкала":"Логарифмическая шкала", [=]() {
-            if (xScaleIsLogarithmic)
+        menu->addAction(m_plot->axisScale(axis)==Enums::AxisScale::Linear?"Линейная шкала":"Логарифмическая шкала", [=]() {
+            if (m_plot->axisScale(axis)==Enums::AxisScale::Logarithmic)
                 m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::Linear);
             else
                 m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::Logarithmic);
-
-            xScaleIsLogarithmic = !xScaleIsLogarithmic;
         });
     }
 
@@ -383,11 +377,6 @@ void Plot::cycleChannels(bool up)
     sergeiMode = false;
 }
 
-bool Plot::hasCurves() const
-{DD;
-    return !m->isEmpty();
-}
-
 int Plot::curvesCount(int type) const
 {DD;
     return m->size(type);
@@ -478,7 +467,7 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
             yRightName.clear();
             if (m_plot) m_plot->enableAxis(Enums::AxisType::atRight, false);
         }
-        if (!hasCurves()) xName.clear();
+        if (m->isEmpty()) xName.clear();
         if (m_plot) m_plot->setInfoVisible(m->size()==0);
         if (doReplot) update();
     }
@@ -486,7 +475,7 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
 
 void Plot::showContextMenu(const QPoint &pos, Enums::AxisType axis)
 {DD;
-    if (!hasCurves()) return;
+    if (m->isEmpty()) return;
 
     QMenu *menu = createMenu(axis, pos);
 
@@ -780,11 +769,6 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 QString Plot::axisTitleText(Enums::AxisType id) const
 {DD;
     return m_plot->axisTitle(id);
-}
-
-void Plot::updateAxes()
-{
-    m_plot->updateAxes();
 }
 
 void Plot::switchLabelsVisibility()

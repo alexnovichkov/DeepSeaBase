@@ -965,7 +965,6 @@ void MainWindow::addCorrections()
     for (auto w: m.values()) {
         if (auto area = dynamic_cast<PlotArea*>(w)) {
             if (area->plot()) {
-                area->plot()->updateAxes();
                 if (area==currentPlot) emit updateLegends();
                 area->plot()->replot();
             }

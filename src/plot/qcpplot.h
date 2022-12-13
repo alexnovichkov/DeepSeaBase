@@ -74,10 +74,11 @@ public:
     Range plotRange(Enums::AxisType axisType) const;
     Range screenRange(Enums::AxisType axisType) const;
     void replot();
-    void updateAxes();
     void updateLegend();
     QPoint localCursorPosition(const QPoint &globalCursorPosition) const;
     void setAxisScale(Enums::AxisType axisType, Enums::AxisScale scale);
+    Enums::AxisScale axisScale(Enums::AxisType axisType) const;
+
     void setAxisRange(Enums::AxisType axis, double min, double max, double step);
     void setInfoVisible(bool visible);
     void enableAxis(Enums::AxisType axis, bool enable);

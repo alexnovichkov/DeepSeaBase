@@ -323,11 +323,6 @@ void QCPPlot::replot()
     QCustomPlot::replot(rpQueuedReplot);
 }
 
-void QCPPlot::updateAxes()
-{
-    //QCustomPlot::axisRect(0)->update()
-}
-
 void QCPPlot::updateLegend()
 {
     for (auto c: parent->model()->curves())
@@ -366,6 +361,14 @@ void QCPPlot::setAxisScale(Enums::AxisType axisType, Enums::AxisScale scale)
     }
 
     replot();
+}
+
+Enums::AxisScale QCPPlot::axisScale(Enums::AxisType axisType) const
+{
+    auto a = axis(axisType);
+    if (a && a->scaleType() == QCPAxis::stLogarithmic)
+        return Enums::AxisScale::Logarithmic;
+    return Enums::AxisScale::Linear;
 }
 
 void QCPPlot::setAxisRange(Enums::AxisType axisType, double min, double max, double step)
@@ -508,7 +511,6 @@ Curve *QCPPlot::createCurve(Channel *channel, Enums::AxisType xAxis, Enums::Axis
 Selected QCPPlot::findObject(QPoint pos) const
 {
     QList<QVariant> details;
-//    QList<QCPLayerable*> candidates = layerableListAt(pos, false, &details);
     auto candidates = parent->getSelectables();
 
     auto isCurve = [](auto item){if (dynamic_cast<QCPAbstractPlottable*>(item)) return true; return false;};

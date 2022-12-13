@@ -34,42 +34,120 @@ public:
     explicit Plot(Enums::PlotType type, QWidget *parent = 0);
     virtual ~Plot();
 
+    /**
+     * @brief model
+     * @return модель, содержащая список построенных кривых
+     */
     PlotModel *model() {return m;}
+
     Enums::PlotType type() const {return plotType;}
+
+    /**
+     * @brief widget
+     * @return виджет графика для размещения во вкладке графика
+     */
     QWidget *widget() const;
+
+    /**
+     * @brief toolBarWidget
+     * @return виджет с дополнительными кнопками для размещения на панели инструментов
+     * во вкладке графика
+     */
+    virtual QWidget *toolBarWidget();
+
+    /**
+     * @brief impl
+     * @return ссылка на виджет графика
+     */
     QCPPlot *impl() const;
 
+    /**
+     * @brief screenToPlotCoordinates, plotToScreenCoordinates
+     * @param axis ось координат
+     * @param value значение на экране/графике
+     * @return преобразование экранных координат в координаты на графике и обратно
+     */
     double screenToPlotCoordinates(Enums::AxisType axis, double value) const;
     double plotToScreenCoordinates(Enums::AxisType axis, double value) const;
-    Range plotRange(Enums::AxisType axis);
-    Range screenRange(Enums::AxisType axis);
-    void replot();
 
-    virtual QWidget *toolBarWidget();
+    /**
+     * @brief plotRange
+     * @param axis ось координат
+     * @return отображаемый диапазон для оси axis
+     */
+    Range plotRange(Enums::AxisType axis) const;
+
+    /**
+     * @brief screenRange
+     * @param axis ось координат
+     * @return диапазон в пикселях для оси axis,
+     */
+    Range screenRange(Enums::AxisType axis) const;
+
+    /**
+     * @brief updateActions обновляет дополнительные кнопки на панели инструментов
+     * во вкладке графика, \sa toolbarWidget
+     * @param filesCount
+     * @param channelsCount
+     */
     virtual void updateActions(int filesCount, int channelsCount);
 
+    /**
+     * @brief sergeiMode переводит график в режим, позволяющий выбирать записи/каналы
+     */
     bool sergeiMode = false;
-    bool xScaleIsLogarithmic = false; //false = linear, true = logarithmic
 
     Enums::InteractionMode interactionMode = Enums::InteractionMode::ScalingInteraction;
 
-    bool hasCurves() const;
+    /**
+     * @brief curvesCount
+     * @param type тип канала, для которого построена кривая (Descriptor::DataType)
+     * @return количество кривых такого типа на графике
+     */
     int curvesCount(int type=-1) const;
 
     QString axisTitleText(Enums::AxisType id) const;
-    void updateAxes();
 
+    /**
+     * @brief canBePlottedOnLeftAxis, canBePlottedOnRightAxis
+     * проверяют, можно ли построить канал \a ch на текущем графике на левой/правой оси
+     * @param ch канал
+     * @param message сообщение, которое надо вывести на экран при невозможности построить канал
+     * @return true если канал можно построить
+     */
     virtual bool canBePlottedOnLeftAxis(Channel *ch, QString *message=nullptr) const;
     virtual bool canBePlottedOnRightAxis(Channel *ch, QString *message=nullptr) const;
 
+    /**
+     * @brief focusPlot вызывается из QCPPlot при перетаскивании каналов на график
+     * для перевода фокуса на вкладку с графиком
+     */
     void focusPlot();
 
+    /**
+     * @brief addSelectable добавляет выделяемый элемент (курсор, метку, кривую) в список
+     * отслеживаемых выделяемых элементов
+     * @param item выделяемый элемент
+     */
     void addSelectable(Selectable *item);
+    /**
+     * @brief removeSelectable удаляет выделяемый элемент из списка отслеживаемых
+     * @param item
+     */
     void removeSelectable(Selectable *item);
+    /**
+     * @brief getSelectables
+     * @return список выделяемых элементов (курсоры, метки, кривые)
+     */
     QList<Selectable*> getSelectables() {return selectables;}
 
     //default implementation returns pos as QString,
     //reimplemented in spectrograms to add Z coordinate
+    /**
+     * @brief pointCoordinates координаты точки в текстовом формате для курсора мыши
+     * @param pos координаты точки (в координатах осей графика)
+     * @return x,y (для обычных кривых) , x,y,z (для сонограмм)
+     */
     virtual QString pointCoordinates(const QPointF &pos);
 
     virtual void deleteCurve(Curve *curve, bool doReplot = true);
@@ -140,6 +218,7 @@ protected:
 
     QString yValuesPresentationSuffix(int yValuesPresentation) const;
 public slots:
+    void replot();
     void savePlot();
     void switchCursor();
     void copyToClipboard();
