@@ -118,22 +118,12 @@ PlotArea::PlotArea(int index, QWidget *parent)
         if (m_plot) m_plot->savePlot();
     });
 
-    switchCursorAct = new QAction(QString("Показать/скрыть курсор"), this);
-    switchCursorAct->setIcon(QIcon(":/icons/cursor.png"));
-    switchCursorAct->setCheckable(true);
-    switchCursorAct->setObjectName("simpleCursor");
-    bool pickerEnabled = Settings::getSetting("pickerEnabled", true).toBool();
-    switchCursorAct->setChecked(pickerEnabled);
-    connect(switchCursorAct, &QAction::triggered, [=](){
-        if (m_plot) m_plot->switchCursor();
-    });
-
-    trackingCursorAct = new QAction(QString("Включить курсор дискрет"), this);
-    trackingCursorAct->setIcon(QIcon(":/icons/tracking.png"));
-    trackingCursorAct->setCheckable(true);
-    trackingCursorAct->setObjectName("trackingCursor");
-    connect(trackingCursorAct, &QAction::triggered, [=](){
-        if (m_plot) m_plot->switchTrackingCursor();
+    cursorBoxAct = new QAction(QString("Показать окно курсоров"), this);
+    cursorBoxAct->setIcon(QIcon(":/icons/tracking.png"));
+    cursorBoxAct->setCheckable(true);
+    cursorBoxAct->setObjectName("trackingCursor");
+    connect(cursorBoxAct, &QAction::triggered, [=](){
+        if (m_plot) m_plot->switchCursorBox();
     });
 
     copyToClipboardAct = new QAction(QString("Копировать в буфер обмена"), this);
@@ -181,9 +171,8 @@ PlotArea::PlotArea(int index, QWidget *parent)
     scaleToolBar->addAction(savePlotAct);
     scaleToolBar->addAction(copyToClipboardAct);
     scaleToolBar->addAction(printPlotAct);
-    scaleToolBar->addAction(switchCursorAct);
     scaleToolBar->addAction(interactionModeAct);
-    scaleToolBar->addAction(trackingCursorAct);
+    scaleToolBar->addAction(cursorBoxAct);
 
     plotsLayout = new QGridLayout;
     infoLabel = new QLabel("- Перетащите сюда каналы, чтобы построить их графики\n"
@@ -261,7 +250,7 @@ void PlotArea::addPlot(Enums::PlotType type)
     connect(m_plot, SIGNAL(curveDeleted(Channel*)), this, SIGNAL(curveDeleted(Channel*)));
     connect(m_plot, SIGNAL(needPlotChannels(bool,QVector<Channel*>)), this, SIGNAL(needPlotChannels(bool,QVector<Channel*>)));
     connect(m_plot, SIGNAL(focusThisPlot()), this, SLOT(setFocus()));
-    connect(m_plot, SIGNAL(trackingPanelCloseRequested()), trackingCursorAct, SLOT(toggle()));
+    connect(m_plot, SIGNAL(trackingPanelCloseRequested()), cursorBoxAct, SLOT(toggle()));
     connect(m_plot, SIGNAL(saveHorizontalSlice(double)), this, SIGNAL(saveHorizontalSlice(double)));
     connect(m_plot, SIGNAL(saveVerticalSlice(double)), this, SIGNAL(saveVerticalSlice(double)));
     connect(m_plot, SIGNAL(saveTimeSegment(QVector<FileDescriptor*>,double,double)), this,
@@ -788,10 +777,8 @@ void PlotArea::deleteCurvesForDescriptor(FileDescriptor *f)
 //вызывается при переходе на предыдущую/следующую запись
 void PlotArea::replotDescriptor(FileDescriptor *f, int fileIndex)
 {DD;
-    if (m_plot && m_plot->sergeiMode) {
-        m_plot->deleteAllCurves(false);
+    if (m_plot)
         m_plot->plotCurvesForDescriptor(f, fileIndex);
-    }
 }
 
 QVector<Channel *> PlotArea::plottedChannels() const

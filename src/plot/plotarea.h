@@ -72,8 +72,7 @@ private:
 
     QAction *clearPlotAct = nullptr;
     QAction *savePlotAct = nullptr;
-    QAction *switchCursorAct = nullptr;
-    QAction *trackingCursorAct = nullptr;
+    QAction *cursorBoxAct = nullptr;
     QAction *copyToClipboardAct = nullptr;
     QAction *printPlotAct = nullptr;
     QAction *interactionModeAct = nullptr;

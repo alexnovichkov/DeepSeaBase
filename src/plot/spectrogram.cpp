@@ -145,7 +145,6 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     update();
     updatePlottedIndexes();
     emit channelPlotted(ch);
-    emit curvesCountChanged(); //->MainWindow.updateActions
 }
 
 void Spectrogram::onDropEvent(bool plotOnLeft, const QVector<Channel *> &channels)

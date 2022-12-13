@@ -146,13 +146,17 @@ void Plot::updateActions(int filesCount, int channelsCount)
 void Plot::updatePlottedIndexes()
 {DD;
     if (!sergeiMode) m->updatePlottedIndexes();
+    emit curvesCountChanged(); //->MainWindow.updateActions
 }
 
 void Plot::plotCurvesForDescriptor(FileDescriptor *d, int fileIndex)
 {DD;
-    m->updatePlottedIndexes(d, fileIndex);
-    const auto plotted = m->plottedIndexes();
-    for (const auto &i: plotted) plotChannel(i.ch, i.onLeft, i.fileIndex);
+    if (sergeiMode) {
+        deleteAllCurves(false);
+        m->updatePlottedIndexes(d, fileIndex);
+        const auto plotted = m->plottedIndexes();
+        for (const auto &i: plotted) plotChannel(i.ch, i.onLeft, i.fileIndex);
+    }
 }
 
 void Plot::update()
@@ -369,12 +373,13 @@ void Plot::cycleChannels(bool up)
 
     m->cycleChannels(up);
 
+    const bool sm = sergeiMode;
     sergeiMode = true;
     deleteAllCurves();
     for (const auto &c: m->plottedIndexes()) {
         plotChannel(c.ch, c.onLeft, c.fileIndex);
     }
-    sergeiMode = false;
+    sergeiMode = sm;
 }
 
 int Plot::curvesCount(int type) const
@@ -391,11 +396,7 @@ void Plot::deleteAllCurves(bool forceDeleteFixed)
         }
     }
 
-    if (!sergeiMode) {
-        updatePlottedIndexes();
-       // playerPanel->reset();
-        emit curvesCountChanged(); //->MainWindow.updateActions
-    }
+    updatePlottedIndexes();
 }
 
 void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
@@ -406,7 +407,6 @@ void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
         }
     }
     updatePlottedIndexes();
-    emit curvesCountChanged(); //->MainWindow.updateActions
 }
 
 //не удаляем, если фиксирована
@@ -415,7 +415,6 @@ void Plot::deleteCurveFromLegend(Curve *curve)
     if (!curve->fixed) {
         deleteCurve(curve, true);
         updatePlottedIndexes();
-        emit curvesCountChanged(); //->MainWindow.updateActions
     }
 }
 
@@ -424,7 +423,6 @@ void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doR
     if (Curve *curve = m->plotted(dfd->channel(channel))) {
         deleteCurve(curve, doReplot);
         updatePlottedIndexes();
-        emit curvesCountChanged(); //->MainWindow.updateActions
     }
 }
 
@@ -433,7 +431,6 @@ void Plot::deleteSelectedCurve(Selectable *selected)
     if (Curve *curve = dynamic_cast<Curve*>(selected)) {
         deleteCurve(curve, true);
         updatePlottedIndexes();
-        emit curvesCountChanged(); //->MainWindow.updateActions
     }
 }
 
@@ -763,7 +760,6 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     update();
     updatePlottedIndexes();
     emit channelPlotted(ch);
-    emit curvesCountChanged(); //->MainWindow.updateActions
 }
 
 QString Plot::axisTitleText(Enums::AxisType id) const
@@ -827,14 +823,14 @@ void Plot::print() /*SLOT*/
 void Plot::switchInteractionMode()
 {DD;
     if (interactionMode == Enums::InteractionMode::ScalingInteraction) {
-        setInteractionMode(Enums::InteractionMode::DataInteraction);
+        interactionMode = Enums::InteractionMode::DataInteraction;
     }
     else {
-        setInteractionMode(Enums::InteractionMode::ScalingInteraction);
+        interactionMode = Enums::InteractionMode::ScalingInteraction;
     }
 }
 
-void Plot::switchTrackingCursor()
+void Plot::switchCursorBox()
 {DD;
     if (cursorBox) cursorBox->setVisible(!cursorBox->isVisible());
 }
@@ -851,24 +847,9 @@ void Plot::autoscale(Enums::AxisType axis)
     zoom->autoscale(axis);
 }
 
-void Plot::setInteractionMode(Enums::InteractionMode mode)
-{DD;
-    interactionMode = mode;
-}
-
-void Plot::switchCursor()
-{DD;
-    if (!picker) return;
-
-    bool pickerEnabled = picker->isEnabled();
-    picker->setEnabled(!pickerEnabled);
-//    if (tracker) tracker->setEnabled(!pickerEnabled);
-    Settings::setSetting("pickerEnabled", !pickerEnabled);
-}
-
 void Plot::editLegendItem(Curve *curve)
 {DD;
-    if (curve->type == Curve::Type::Spectrogram) return; //у спектрограммы нет свойство кривой
+    if (curve->type == Curve::Type::Spectrogram) return; //у спектрограммы нет свойств кривой
 
     CurvePropertiesDialog dialog(curve, this);
     if (cursorBox) connect(&dialog, SIGNAL(curveChanged(Curve*)), cursorBox, SLOT(updateLayout()));

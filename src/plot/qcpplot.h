@@ -55,12 +55,6 @@ private:
     QCPAxisOverlay *rightOverlay = nullptr;
     QCPColorScale *colorScale = nullptr;
 
-//    QCPAxisRect *spectreRect = nullptr;
-//    QCPAxisRect *throughRect = nullptr;
-//    QCPGraph *spectreGraph = nullptr;
-//    QCPGraph *throughGraph = nullptr;
-//    QCPTextElement *spectreTitle = nullptr;
-//    QCPTextElement *throughTitle = nullptr;
     SecondaryPlot *spectrePlot = nullptr;
     SecondaryPlot *throughPlot = nullptr;
 

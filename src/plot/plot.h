@@ -106,6 +106,11 @@ public:
      */
     int curvesCount(int type=-1) const;
 
+    /**
+     * @brief axisTitleText
+     * @param id
+     * @return текст/метку для данной оси
+     */
     QString axisTitleText(Enums::AxisType id) const;
 
     /**
@@ -160,9 +165,19 @@ public:
     virtual void onDropEvent(bool plotOnLeft, const QVector<Channel *> &channels);
     void update();
 
-    void updatePlottedIndexes();
+    /**
+     * @brief plotCurvesForDescriptor меняет кривые одной записи на кривые другой записи
+     * при переходе между записями
+     * @param d новая запись
+     * @param fileIndex индекс новой записи в таблице записей
+     */
     void plotCurvesForDescriptor(FileDescriptor *d, int fileIndex=0);
 
+    /**
+     * @brief cycleChannels сдвигает построенные каналы вверх/вниз, соответственно удаляя
+     * кривые из начала/конца списка построенных каналов и добавляя в конец/начало
+     * @param up флаг сдвига вверх/вниз
+     */
     void cycleChannels(bool up);
 
     void deleteCurveFromLegend(Curve *curve);
@@ -175,9 +190,19 @@ public:
 
     void setScale(Enums::AxisType id, double min, double max, double step = 0);
     void removeLabels();
-    void setInteractionMode(Enums::InteractionMode mode);
+
+    /**
+     * @brief switchInteractionMode переключает режим взаимодействия с графиком:
+     * - data interaction / scale interaction
+     */
     void switchInteractionMode();
-    void switchTrackingCursor();
+
+    /**
+     * @brief switchCursorBox показывает/прячет окно курсоров
+     */
+    void switchCursorBox();
+
+
     void toggleAutoscale(Enums::AxisType axis, bool toggled);
     void autoscale(Enums::AxisType axis = Enums::AxisType::atInvalid);
     void recalculateScale(Enums::AxisType axis);
@@ -217,10 +242,10 @@ protected:
     virtual QMenu *createMenu(Enums::AxisType axis, const QPoint &pos);
 
     QString yValuesPresentationSuffix(int yValuesPresentation) const;
+    void updatePlottedIndexes();
 public slots:
     void replot();
     void savePlot();
-    void switchCursor();
     void copyToClipboard();
     void print();
     void updateLegends();
