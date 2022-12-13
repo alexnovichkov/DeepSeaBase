@@ -43,7 +43,7 @@ void Spectrogram::deleteCurve(Curve *curve, bool doReplot)
             yRightName.clear();
             m_plot->enableAxis(Enums::AxisType::atRight, false);
         }
-        if (!hasCurves()) xName.clear();
+        if (!m->isEmpty()) xName.clear();
         m_plot->setInfoVisible(m->size()==0);
 
         if (doReplot) update();
@@ -160,7 +160,7 @@ void Spectrogram::updateBounds()
         zoom->scaleBounds(Enums::AxisType::atLeft)->reset();
         zoom->scaleBounds(Enums::AxisType::atColor)->reset();
     }
-    if (!hasCurves())
+    if (m->isEmpty())
         zoom->scaleBounds(Enums::AxisType::atBottom)->reset();
     if (!zoom->scaleBounds(Enums::AxisType::atBottom)->isFixed())
         zoom->scaleBounds(Enums::AxisType::atBottom)->autoscale();
@@ -211,13 +211,11 @@ QMenu *Spectrogram::createMenu(Enums::AxisType axis, const QPoint &pos)
             m_plot->addCursorToSecondaryPlots(cursor);
         });
 
-        menu->addAction(xScaleIsLogarithmic?"Линейная шкала":"Логарифмическая шкала", [=](){
-            if (xScaleIsLogarithmic)
+        menu->addAction(m_plot->axisScale(axis)==Enums::AxisScale::Linear?"Линейная шкала":"Логарифмическая шкала", [=]() {
+            if (m_plot->axisScale(axis)==Enums::AxisScale::Logarithmic)
                 m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::Linear);
             else
                 m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::Logarithmic);
-
-            xScaleIsLogarithmic = !xScaleIsLogarithmic;
         });
     }
 

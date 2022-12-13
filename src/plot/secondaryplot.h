@@ -29,8 +29,7 @@ public:
     virtual ~SecondaryPlot() = default;
     inline QCPLayoutGrid *layout() const {return m_layout;}
     void clear();
-    void update(const QVector<double> &xData, const QVector<double> &yData);
-    virtual void update() = 0;
+    void update();
     QCPAxis *axis(Enums::AxisType axis) const;
 
     void addCursor(Cursor *cursor);
@@ -41,6 +40,9 @@ signals:
 protected:
     QColor firstFreeColor();
     void freeColor(QColor color);
+    virtual QVector<double> xData(Cursor *cursor) const = 0;
+    virtual QVector<double> yData(Cursor *cursor) const = 0;
+    virtual QString value(Cursor *cursor) const = 0;
 
     QCPAxisRect *m_axisRect = nullptr;
     QCPTextElement *m_title = nullptr;
@@ -61,7 +63,10 @@ class SpectrePlot : public SecondaryPlot
     Q_OBJECT
 public:
     explicit SpectrePlot(QCPPlot *parent, const QString &title, QCPLayoutGrid *subLayout);
-    virtual void update() override;
+protected:
+    virtual QVector<double> xData(Cursor *cursor) const override;
+    virtual QVector<double> yData(Cursor *cursor) const override;
+    virtual QString value(Cursor *cursor) const override;
 };
 
 class ThroughPlot : public SecondaryPlot
@@ -69,7 +74,10 @@ class ThroughPlot : public SecondaryPlot
     Q_OBJECT
 public:
     explicit ThroughPlot(QCPPlot *parent, const QString &title, QCPLayoutGrid *subLayout);
-    virtual void update() override;
+protected:
+    virtual QVector<double> xData(Cursor *cursor) const override;
+    virtual QVector<double> yData(Cursor *cursor) const override;
+    virtual QString value(Cursor *cursor) const override;
 };
 
 #endif // SECONDARYPLOT_H

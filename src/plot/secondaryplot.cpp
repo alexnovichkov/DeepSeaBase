@@ -57,20 +57,16 @@ void SecondaryPlot::clear()
     }
 }
 
-void SecondaryPlot::update(const QVector<double> &xData, const QVector<double> &yData)
+void SecondaryPlot::update()
 {
-//    for (auto &graph: m_graphs) {
-//        graph->setVisible(true);
-//    }
-
-//    m_graphs.first()->setData(xData, yData, true);
-//    for (auto axis: m_axisRect->axes()) axis->rescale(true);
-//    m_graphs.first()->rescaleAxes();
-
-
-//    spectreTitle->setText(QString("Спектр %1 %2")
-//                          .arg(curve->channel->data()->zValue(zIndex))
-    //                          .arg(curve->channel->zName()));
+    if (m_curve) {
+        for (const auto &[cursor, graph] : asKeyValueRange(m_graphs)) {
+            graph->setData(xData(cursor), yData(cursor), true);
+            for (auto axis: m_axisRect->axes()) axis->rescale(true);
+            graph->setName(value(cursor));
+            graph->setVisible(true);
+        }
+    }
 }
 
 QCPAxis *SecondaryPlot::axis(Enums::AxisType axis) const
@@ -92,6 +88,7 @@ void SecondaryPlot::addCursor(Cursor *cursor)
 
         graph->setName(QString("%1 с").arg(val));
         graph->setPen(firstFreeColor());
+        cursor->setColor(graph->pen().color().darker());
         m_graphs.insert(cursor, graph);
         if (m_legend) graph->addToLegend(m_legend);
     }
@@ -122,21 +119,24 @@ SpectrePlot::SpectrePlot(QCPPlot *parent, const QString &title, QCPLayoutGrid *s
 
 }
 
-void SpectrePlot::update()
+QVector<double> SpectrePlot::xData(Cursor *cursor) const
 {
-    if (m_curve) {
-        for (const auto &[cursor, graph] : asKeyValueRange(m_graphs)) {
-            auto zIndex = m_curve->channel->data()->nearestZ(cursor->currentPosition().y());
-            if (zIndex < 0) zIndex = 0;
-            QVector<double> yData = m_curve->channel->data()->yValues(zIndex);
-            QVector<double> xData = m_curve->channel->data()->xValues();
-            graph->setData(xData, yData, true);
-            for (auto axis: m_axisRect->axes()) axis->rescale(true);
-            graph->rescaleAxes();
-            graph->setName(QString("%1 с").arg(m_curve->channel->data()->zValue(zIndex)));
-            graph->setVisible(true);
-        }
-    }
+    Q_UNUSED(cursor);
+    return m_curve->channel->data()->xValues();
+}
+
+QVector<double> SpectrePlot::yData(Cursor *cursor) const
+{
+    auto zIndex = m_curve->channel->data()->nearestZ(cursor->currentPosition().y());
+    if (zIndex < 0) zIndex = 0;
+    return m_curve->channel->data()->yValues(zIndex);
+}
+
+QString SpectrePlot::value(Cursor *cursor) const
+{
+    auto zIndex = m_curve->channel->data()->nearestZ(cursor->currentPosition().y());
+    if (zIndex < 0) zIndex = 0;
+    return QString("%1 с").arg(m_curve->channel->data()->zValue(zIndex));
 }
 
 ThroughPlot::ThroughPlot(QCPPlot *parent, const QString &title, QCPLayoutGrid *subLayout)
@@ -145,22 +145,25 @@ ThroughPlot::ThroughPlot(QCPPlot *parent, const QString &title, QCPLayoutGrid *s
 
 }
 
-void ThroughPlot::update()
+QVector<double> ThroughPlot::xData(Cursor *cursor) const
 {
-    if (m_curve) {
-        for (const auto &[cursor, graph] : asKeyValueRange(m_graphs)) {
-            QVector<double> yData;
-            double xIndex = m_curve->channel->data()->nearest(cursor->currentPosition().x());
-            if (xIndex < 0) xIndex = 0;
-            for (int i=0; i<m_curve->channel->data()->blocksCount(); ++i)
-                yData << m_curve->channel->data()->yValue(xIndex, i);
-            QVector<double> xData = m_curve->channel->data()->zValues();
+    Q_UNUSED(cursor);
+    return m_curve->channel->data()->zValues();
+}
 
-            graph->setData(xData, yData, true);
-            for (auto axis: m_axisRect->axes()) axis->rescale(true);
-            graph->rescaleAxes();
-            graph->setName(QString("%1 Гц").arg(m_curve->channel->data()->xValue(xIndex)));
-            graph->setVisible(true);
-        }
-    }
+QVector<double> ThroughPlot::yData(Cursor *cursor) const
+{
+    QVector<double> data(m_curve->channel->data()->blocksCount());
+    double xIndex = m_curve->channel->data()->nearest(cursor->currentPosition().x());
+    if (xIndex < 0) xIndex = 0;
+    for (int i=0; i<m_curve->channel->data()->blocksCount(); ++i)
+        data[i] = m_curve->channel->data()->yValue(xIndex, i);
+    return data;
+}
+
+QString ThroughPlot::value(Cursor *cursor) const
+{
+    double xIndex = m_curve->channel->data()->nearest(cursor->currentPosition().x());
+    if (xIndex < 0) xIndex = 0;
+    return QString("%1 Гц").arg(m_curve->channel->data()->xValue(xIndex));
 }
