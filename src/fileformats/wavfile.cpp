@@ -398,8 +398,8 @@ void WavFile::init(const QVector<Channel *> &source)
     quint32 totalSize =  sizeof(WavHeader)
                          + (m_format == WavFormat::WavPCM ? 24 : sizeof(WavChunkFmt))
                          + (m_format!=WavFormat::WavPCM ? sizeof (WavChunkFact) : 0)
-                         + 12 + sizeof(WavChunkCue::Cue)
-                         + 8 + assocFile.listSize
+//                         + 12 + sizeof(WavChunkCue::Cue)
+//                         + 8 + assocFile.listSize
                          + sizeof(WavChunkData)
                          + M * channelsCount * samples;
 
@@ -408,8 +408,8 @@ void WavFile::init(const QVector<Channel *> &source)
     if (m_format != WavFormat::WavPCM) {
         m_factChunk = initFact(samples);
     }
-    m_cueChunk = initCue();
-    m_assocFiles << assocFile;
+//    m_cueChunk = initCue();
+//    m_assocFiles << assocFile;
     m_dataChunk = initDataHeader(channelsCount, samples);
     m_dataBegin = totalSize - M * channelsCount * samples;
 
@@ -460,47 +460,41 @@ bool WavFile::writeWithMap(const QVector<Channel*> &source, quint32 totalSize)
         mapped += sizeof(m_factChunk);
     }
 
-    memcpy(mapped, &m_cueChunk.cueId, 4); mapped +=4;
-    memcpy(mapped, &m_cueChunk.cueSize, 4); mapped +=4;
-    memcpy(mapped, &m_cueChunk.dwCuePoints, 4); mapped +=4;
-    for (auto c: m_cueChunk.cues) {
-        memcpy(mapped, &c, sizeof(c)); mapped += sizeof(c);
-    }
+//    memcpy(mapped, &m_cueChunk.cueId, 4); mapped +=4;
+//    memcpy(mapped, &m_cueChunk.cueSize, 4); mapped +=4;
+//    memcpy(mapped, &m_cueChunk.dwCuePoints, 4); mapped +=4;
+//    for (auto c: m_cueChunk.cues) {
+//        memcpy(mapped, &c, sizeof(c)); mapped += sizeof(c);
+//    }
 
-    if (!m_assocFiles.isEmpty()) {
-        auto assocFile = m_assocFiles.first();
-        memcpy(mapped, &assocFile.listId, 4); mapped += 4;
-        memcpy(mapped, &assocFile.listSize, 4); mapped += 4;
-        memcpy(mapped, &assocFile.adtlId, 4); mapped += 4;
-        memcpy(mapped, &assocFile.adtlSize, 4); mapped += 4;
+//    if (!m_assocFiles.isEmpty()) {
+//        auto assocFile = m_assocFiles.first();
+//        memcpy(mapped, &assocFile.listId, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.listSize, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.adtlId, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.adtlSize, 4); mapped += 4;
 
-        memcpy(mapped, &assocFile.lablId, 4); mapped += 4;
-        memcpy(mapped, &assocFile.lablSize, 4); mapped += 4;
-        memcpy(mapped, &assocFile.lablName, 4); mapped += 4;
-        memcpy(mapped, assocFile.lablData.data(), assocFile.lablData.size()); mapped += assocFile.lablData.size();
+//        memcpy(mapped, &assocFile.lablId, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.lablSize, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.lablName, 4); mapped += 4;
+//        memcpy(mapped, assocFile.lablData.data(), assocFile.lablData.size()); mapped += assocFile.lablData.size();
 
-        memcpy(mapped, &assocFile.noteId, 4); mapped += 4;
-        memcpy(mapped, &assocFile.noteSize, 4); mapped += 4;
-        memcpy(mapped, &assocFile.noteName, 4); mapped += 4;
-        memcpy(mapped, assocFile.noteData.data(), assocFile.noteData.size()); mapped += assocFile.noteData.size();
+//        memcpy(mapped, &assocFile.noteId, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.noteSize, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.noteName, 4); mapped += 4;
+//        memcpy(mapped, assocFile.noteData.data(), assocFile.noteData.size()); mapped += assocFile.noteData.size();
 
-        memcpy(mapped, &assocFile.ltxtId, 4); mapped += 4;
-        memcpy(mapped, &assocFile.ltxtSize, 4); mapped += 4;
-        memcpy(mapped, &assocFile.ltxtName, 4); mapped += 4;
-        memcpy(mapped, &assocFile.ltxtSampleLength, 4); mapped += 4;
-        memcpy(mapped, &assocFile.ltxtPurpose, 4); mapped += 4;
-        memcpy(mapped, &assocFile.ltxtCountry, 2); mapped += 2;
-        memcpy(mapped, &assocFile.ltxtLanguage, 2); mapped += 2;
-        memcpy(mapped, &assocFile.ltxtDialect, 2); mapped += 2;
-        memcpy(mapped, &assocFile.ltxtCodePage, 2); mapped += 2;
-        memcpy(mapped, assocFile.ltxtData.data(), assocFile.ltxtData.size()); mapped += assocFile.ltxtData.size();
-
-//        memcpy(mapped, &assocFile.fileId, 4); mapped += 4;
-//        memcpy(mapped, &assocFile.fileSize, 4); mapped += 4;
-//        memcpy(mapped, &assocFile.fileName, 4); mapped += 4;
-//        memcpy(mapped, &assocFile.fileMedType, 4); mapped += 4;
-//        memcpy(mapped, assocFile.fileData.data(), assocFile.fileData.size()); mapped += assocFile.fileData.size();
-    }
+//        memcpy(mapped, &assocFile.ltxtId, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.ltxtSize, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.ltxtName, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.ltxtSampleLength, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.ltxtPurpose, 4); mapped += 4;
+//        memcpy(mapped, &assocFile.ltxtCountry, 2); mapped += 2;
+//        memcpy(mapped, &assocFile.ltxtLanguage, 2); mapped += 2;
+//        memcpy(mapped, &assocFile.ltxtDialect, 2); mapped += 2;
+//        memcpy(mapped, &assocFile.ltxtCodePage, 2); mapped += 2;
+//        memcpy(mapped, assocFile.ltxtData.data(), assocFile.ltxtData.size()); mapped += assocFile.ltxtData.size();
+//    }
 
     memcpy(mapped, &m_dataChunk, sizeof(m_dataChunk));
     mapped += sizeof(m_dataChunk);
@@ -572,36 +566,32 @@ void WavFile::writeWithStream(const QVector<Channel *> &source)
             s << m_factChunk.dwSampleLength;
         }
     }
-    {
-        s << m_cueChunk.cueId;
-        s << m_cueChunk.cueSize;
-        s << m_cueChunk.dwCuePoints;
-        for (auto c: m_cueChunk.cues) {
-            s << c.identifier << c.order << c.chunkID << c.chunkStart << c.blockStart << c.offset;
-        }
-    }
-    if (!m_assocFiles.isEmpty()) {
-        auto assocFile = m_assocFiles.first();
-        s << assocFile.listId << assocFile.listSize;
-        s << assocFile.adtlId << assocFile.adtlSize;
+//    {
+//        s << m_cueChunk.cueId;
+//        s << m_cueChunk.cueSize;
+//        s << m_cueChunk.dwCuePoints;
+//        for (auto c: m_cueChunk.cues) {
+//            s << c.identifier << c.order << c.chunkID << c.chunkStart << c.blockStart << c.offset;
+//        }
+//    }
+//    if (!m_assocFiles.isEmpty()) {
+//        auto assocFile = m_assocFiles.first();
+//        s << assocFile.listId << assocFile.listSize;
+//        s << assocFile.adtlId << assocFile.adtlSize;
 
-        s << assocFile.lablId << assocFile.lablSize;
-        s << assocFile.lablName;
-        s.writeRawData(assocFile.lablData.data(), assocFile.lablData.size());
+//        s << assocFile.lablId << assocFile.lablSize;
+//        s << assocFile.lablName;
+//        s.writeRawData(assocFile.lablData.data(), assocFile.lablData.size());
 
-        s << assocFile.noteId << assocFile.noteSize << assocFile.noteName;
-        s.writeRawData(assocFile.noteData.data(), assocFile.noteData.size());
+//        s << assocFile.noteId << assocFile.noteSize << assocFile.noteName;
+//        s.writeRawData(assocFile.noteData.data(), assocFile.noteData.size());
 
-        s << assocFile.ltxtId << assocFile.ltxtSize << assocFile.ltxtName;
-        s << assocFile.ltxtSampleLength << assocFile.ltxtPurpose;
-        s << assocFile.ltxtCountry << assocFile.ltxtLanguage;
-        s << assocFile.ltxtDialect << assocFile.ltxtCodePage;
-        s.writeRawData(assocFile.ltxtData.data(), assocFile.ltxtData.size());
-
-//        s << assocFile.fileId << assocFile.fileSize;
-//        s << assocFile.dwName << assocFile.dwMedType;
-//        s.writeRawData(assocFile.data.data(), assocFile.data.size());
-    }
+//        s << assocFile.ltxtId << assocFile.ltxtSize << assocFile.ltxtName;
+//        s << assocFile.ltxtSampleLength << assocFile.ltxtPurpose;
+//        s << assocFile.ltxtCountry << assocFile.ltxtLanguage;
+//        s << assocFile.ltxtDialect << assocFile.ltxtCodePage;
+//        s.writeRawData(assocFile.ltxtData.data(), assocFile.ltxtData.size());
+//    }
     {
         s << m_dataChunk.dataId;
         s << m_dataChunk.dataSize;

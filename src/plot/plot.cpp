@@ -547,7 +547,14 @@ void Plot::removeSelectable(Selectable *item)
 
 QString Plot::pointCoordinates(const QPointF &pos)
 {DD;
-    return smartDouble(pos.x())+", "+smartDouble(pos.y());
+    return smartDouble(pos.x(), m_plot->tickDistance(Enums::AxisType::atBottom))+", "+
+            smartDouble(pos.y(), m_plot->tickDistance(Enums::AxisType::atLeft));
+}
+
+double Plot::tickDistance(Enums::AxisType axisType) const
+{
+    if (m_plot) return m_plot->tickDistance(axisType);
+    return 0.0;
 }
 
 void Plot::setAxis(Enums::AxisType axis, const QString &name)

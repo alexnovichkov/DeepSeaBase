@@ -10,14 +10,19 @@ QDebug operator <<(QDebug debug, const std::complex<double> &val)
     return debug;
 }
 
-QString smartDouble(double v)
+QString smartDouble(double v, double tickDistance)
 {DD;
-    double v1=qAbs(v);
-    if (v1>=0.1 && v1 <= 10000) return QString::number(v,'f',2);
-    if (v1>=0.01 && v1 <= 0.1) return QString::number(v,'f',3);
-    if (v1>=0.001 && v1 <= 0.01) return QString::number(v,'f',4);
-    if (v1>=0.0001 && v1 <= 0.001) return QString::number(v,'f',5);
-
+    if (!qFuzzyIsNull(tickDistance)) {
+        if (tickDistance>=0.1 && tickDistance <= 10000) return QString::number(v,'f',2);
+        if (tickDistance>=0.01 && tickDistance <= 0.1) return QString::number(v,'f',3);
+        if (tickDistance>=0.001 && tickDistance <= 0.01) return QString::number(v,'f',4);
+        if (tickDistance>=0.0001 && tickDistance <= 0.001) return QString::number(v,'f',5);
+        if (tickDistance>=0.00001 && tickDistance <= 0.0001) return QString::number(v,'f',6);
+        if (tickDistance>=0.000001 && tickDistance <= 0.00001) return QString::number(v,'f',7);
+        if (tickDistance>=0.0000001 && tickDistance <= 0.000001) return QString::number(v,'f',8);
+        if (tickDistance>=0.00000001 && tickDistance <= 0.0000001) return QString::number(v,'f',9);
+        if (tickDistance>=0.000000001 && tickDistance <= 0.00000001) return QString::number(v,'f',10);
+    }
     return QString::number(v,'g');
 }
 

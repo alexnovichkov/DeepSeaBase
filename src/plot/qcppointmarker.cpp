@@ -212,16 +212,19 @@ void PointLabel::updateSelection(SelectedPoint point)
 void PointLabel::updateLabel()
 {
     auto origin = getOrigin();
+    double xDist = m_plot->tickDistance(Enums::AxisType::atBottom);
+    double yDist = m_plot->tickDistance(Enums::AxisType::atLeft);
+    double zDist = m_plot->tickDistance(Enums::AxisType::atRight);
     switch (m_mode) {
-        case Mode::XValue: setText(smartDouble(origin.x)); break;
+        case Mode::XValue: setText(smartDouble(origin.x, xDist)); break;
         case Mode::XYValue: setText(QString("%1; %2")
-                                  .arg(smartDouble(origin.x))
-                                  .arg(smartDouble(origin.y))); break;
-        case Mode::YValue: setText(smartDouble(origin.y)); break;
+                                  .arg(smartDouble(origin.x, xDist))
+                                  .arg(smartDouble(origin.y, yDist))); break;
+        case Mode::YValue: setText(smartDouble(origin.y, yDist)); break;
         case Mode::XYZValue: setText(QString("%1; %2; %3")
-                                  .arg(smartDouble(origin.x))
-                                  .arg(smartDouble(origin.y))
-                                  .arg(smartDouble(origin.z))); break;
+                                  .arg(smartDouble(origin.x, xDist))
+                                  .arg(smartDouble(origin.y, yDist))
+                                  .arg(smartDouble(origin.z, zDist))); break;
     }
     setPen(Selectable::selected()?QPen(Qt::darkGray, 1, Qt::DashLine):QPen(Qt::NoPen));
 

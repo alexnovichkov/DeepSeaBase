@@ -100,6 +100,7 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     connect(this, &QCustomPlot::mouseMove, mouseCoordinates, &MouseCoordinates::update);
     for (auto axis: axisRect()->axes()) {
         axis->setSubTicks(true);
+        axis->setNumberPrecision(10);
         connect(axis, &QCPAxis::contextMenuRequested, [=](const QPoint &pos, QCPAxis::AxisType type){
             plot->showContextMenu(pos, static_cast<Enums::AxisType>(type));
         });
@@ -570,6 +571,18 @@ void QCPPlot::deselect()
     for (auto candidate: candidates) {
             candidate->setSelected(false, SelectedPoint());
     }
+}
+
+double QCPPlot::tickDistance(Enums::AxisType axisType) const
+{
+    auto ax = axis(axisType);
+
+    if (ax && ax->scaleType() != QCPAxis::stLogarithmic) {
+        auto v = ax->tickVector();
+        if (v.size()>1) return v[1]-v[0];
+    }
+
+    return 0.0;
 }
 
 QCPAxis *QCPPlot::axis(Enums::AxisType axis) const

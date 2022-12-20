@@ -87,6 +87,7 @@ public:
     Curve *createCurve(Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis);
     Selected findObject(QPoint pos) const;
     void deselect();
+    double tickDistance(Enums::AxisType axisType) const;
 private:
     QCPAxis *axis(Enums::AxisType axis) const;
     void addZoom();

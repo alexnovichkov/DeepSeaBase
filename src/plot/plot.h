@@ -155,6 +155,13 @@ public:
      */
     virtual QString pointCoordinates(const QPointF &pos);
 
+    /**
+     * @brief tickDistance возвращает расстояние между двумя смежными метками на оси
+     * @param axisType тип оси - нижняя, левая, правая, цветовая
+     * @return 0 если ось неравномерная, не 0 если ось линейная
+     */
+    double tickDistance(Enums::AxisType axisType) const;
+
     virtual void deleteCurve(Curve *curve, bool doReplot = true);
     //default implementation updates labels according to curves count on left and on right
     //reimplemented in spectrograms

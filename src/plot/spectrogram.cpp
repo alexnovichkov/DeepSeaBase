@@ -57,9 +57,12 @@ QString Spectrogram::pointCoordinates(const QPointF &pos)
     if (auto c = model()->curve(0))
         y = c->channel->data()->YforXandZ(pos.x(), pos.y(), success);
     if (success)
-        return smartDouble(pos.x())+", "+smartDouble(pos.y()) + ", "+smartDouble(y);
+        return smartDouble(pos.x(), m_plot->tickDistance(Enums::AxisType::atBottom))+", "
+                +smartDouble(pos.y(), m_plot->tickDistance(Enums::AxisType::atLeft)) + ", "
+                +smartDouble(y, m_plot->tickDistance(Enums::AxisType::atRight));
     else
-        return smartDouble(pos.x())+", "+smartDouble(pos.y());
+        return smartDouble(pos.x(), m_plot->tickDistance(Enums::AxisType::atBottom))+", "
+                +smartDouble(pos.y(), m_plot->tickDistance(Enums::AxisType::atLeft));
 }
 
 void Spectrogram::updateAxesLabels()
