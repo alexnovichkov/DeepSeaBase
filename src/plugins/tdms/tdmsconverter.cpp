@@ -35,6 +35,12 @@ bool TDMSFileConverter::convert()
         //ищем группу каналов, которая содержит все данные
         TDMSGroup *group = 0;
         for (TDMSGroup *g: tdmsFile.groups) {
+            //FlexLogger пишет данные в группу каналов Log. Если мы её нашли, то используем её
+            if (g->properties.value("name").toString()=="Log") {
+                group = g;
+                break;
+            }
+            //Если не нашли Log, то используем ту группу, в которой исходные временные данные
             if (g->properties.value("DecimationLevel").toString() == "0") {
                 group = g;
                 break;
@@ -51,10 +57,13 @@ bool TDMSFileConverter::convert()
 
         QList<FileDescriptor *> destinationFiles = factory->createDescriptors(*group,
                                                                           destinationFileName);
-        if (!destinationFiles.isEmpty())
+        if (!destinationFiles.isEmpty()) {
             for (auto f : destinationFiles) {
                 newFiles << f->fileName();
             }
+        }
+        else emit message("Не удалось создать целевые файлы");
+        emit message("Созданы файлы:\n" + newFiles.join("\n"));
 
         for (auto f : destinationFiles) delete f;
 

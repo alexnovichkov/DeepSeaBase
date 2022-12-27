@@ -352,6 +352,7 @@ TDMSChannel::TDMSChannel(DDCChannelHandle channel, TDMSGroup *parent) : channel(
             continue;
         }
         QString name = QString::fromLocal8Bit(nameBuf);
+//        QString name = QString::fromUtf8(nameBuf);
         //property data
         QVariant value;
         //property type
