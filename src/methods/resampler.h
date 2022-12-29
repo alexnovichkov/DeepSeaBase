@@ -4,6 +4,7 @@
 #include "samplerate.h"
 #include <QVector>
 #include <QString>
+#include <QDebug>
 
 class Resampler
 {
@@ -12,7 +13,7 @@ public:
     }
     explicit Resampler(double factor, int bufferSize) : src_state(0), m_factor(factor), m_bufferSize(bufferSize)
     {
-        init();
+        init(0);
     }
 
     virtual ~Resampler()
@@ -35,20 +36,19 @@ public:
 //        src_state = 0;
 //    }
 
-    void init() {
-        if (src_state)
-            src_delete(src_state);
-        src_state = src_new(0, 1, &_error);
-        src_data.src_ratio = 1.0 / m_factor;
+    void init(size_t size) {
+        src_data.src_ratio = 1.0/m_factor;
         src_data.end_of_input = 0;
 
-        const int newBlockSize = m_bufferSize; //* m_factor;
+        if (!src_is_valid_ratio(1.0/m_factor)) {
+            qDebug()<<"Ratio"<<m_factor<<"is not valid";
+        }
 
-        filterOut.resize(newBlockSize+100);
-        src_data.output_frames = filterOut.size();
-        src_data.data_out = filterOut.data();
-
-        src_data.input_frames = 0;
+        if (size > 0) {
+            filterOut.resize(double(size) / m_factor + 100);
+            src_data.output_frames = filterOut.size();
+            src_data.data_out = filterOut.data();
+        }
     }
 
     void setFactor(double factor) {
@@ -66,11 +66,11 @@ public:
 
     QVector<float> process(QVector<float> &chunk)
     {
-        if (m_factor > 1.0) {//do filtration
+        if (m_factor != 1.0) {//do filtration
             src_data.data_in = chunk.data();
             src_data.input_frames = chunk.size();
 
-            _error = src_process(src_state, &src_data);
+            _error = src_simple(&src_data, SRC_SINC_BEST_QUALITY, 1);
             return filterOut.mid(0, src_data.output_frames_gen);
         }
         else {

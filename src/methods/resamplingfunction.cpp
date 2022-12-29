@@ -193,39 +193,19 @@ bool ResamplingFunction::compute(FileDescriptor *file)
         triggerData = m_input->getData("triggerInput");
     }
     else {
-        int bufferSize = 1024;
-        resampler.setBufferSize(bufferSize);
         resampler.setFactor(factor);
-        resampler.init();
+        resampler.init(data.size());
 
-        int pos = 0;
-        while (1) {
-            QVector<double> chunk = data.mid(pos, bufferSize);
-            if (chunk.size() < bufferSize)
-                resampler.setLastChunk();
-            QVector<double> filtered = resampler.process(chunk);
-            if (filtered.isEmpty()) break;
-            output.append(filtered);
-            pos += bufferSize;
+        output = resampler.process(data);
+        if (output.isEmpty()) {
+            LOG(ERROR) << "Resampling error:"<<resampler.error();
         }
+
 
         //processing trigger data
         auto triggerD = m_input->getData("triggerInput");
         if (!triggerD.isEmpty()) {
-            resampler.setBufferSize(bufferSize);
-            resampler.setFactor(factor);
-            resampler.init();
-
-            pos = 0;
-            while (1) {
-                QVector<double> chunk = triggerD.mid(pos, bufferSize);
-                if (chunk.size() < bufferSize)
-                    resampler.setLastChunk();
-                QVector<double> filtered = resampler.process(chunk);
-                if (filtered.isEmpty()) break;
-                triggerData.append(filtered);
-                pos += bufferSize;
-            }
+            triggerData = resampler.process(triggerD);
         }
     }
 

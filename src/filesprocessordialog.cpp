@@ -189,7 +189,7 @@ void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
 }
 
 void FilesProcessorDialog::updateVisibleProperties()
-{DD0;
+{DD;
     if (!currentAlgorithm) return;
 
     for (QtVariantProperty *property: map.keys()) {
