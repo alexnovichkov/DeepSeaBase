@@ -162,28 +162,6 @@ void FileDescriptor::setChanged(bool changed)
     _changed = changed;
 }
 
-int FileDescriptor::plottedCount() const
-{DD;
-    int plotted = 0;
-    const int count = channelsCount();
-    for (int i=0; i<count; ++i) {
-        if (PlottedModel::instance().plotted(channel(i)))
-            plotted++;
-
-    }
-    return plotted;
-}
-
-QVector<int> FileDescriptor::plottedIndexes() const
-{DD;
-    QVector<int> plotted;
-    const int count = channelsCount();
-    for (int i=0; i<count; ++i) {
-        if (PlottedModel::instance().plotted(channel(i))) plotted << i;
-    }
-    return plotted;
-}
-
 bool FileDescriptor::isSourceFile() const
 {DD;
     const int count = channelsCount();
@@ -292,15 +270,6 @@ void FileDescriptor::copyChannelsFrom(FileDescriptor *sourceFile, const QVector<
     }
     if (!source.isEmpty())
         copyChannelsFrom(source);
-}
-
-bool FileDescriptor::hasCurves() const
-{DD;
-    const int count = channelsCount();
-    for (int i=0; i<count; ++i) {
-        if (PlottedModel::instance().plotted(channel(i))) return true;
-    }
-    return false;
 }
 
 QString FileDescriptor::createGUID()

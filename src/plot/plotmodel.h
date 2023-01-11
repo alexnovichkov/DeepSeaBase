@@ -41,7 +41,9 @@ public:
     Curve *selectedCurve() const;
 
     QVector<Channel *> plottedChannels() const;
-    QVector<FileDescriptor*> plottedDescriptors() const;
+//    QMap<FileDescriptor *, QVector<int> > plottedDescriptors() const;
+    QVector<FileDescriptor *> plottedDescriptors() const;
+    QVector<int> plottedIndexesForDescriptor(FileDescriptor *d) const;
     QVector<PlottedIndex> plottedIndexes() const {return m_plotted;}
     Descriptor::DataType curvesDataType() const;
     Curve * plotted(Channel *channel) const;

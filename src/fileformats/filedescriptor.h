@@ -2,7 +2,7 @@
 #define FILEDESCRIPTOR_H
 
 #include <QtCore>
-#include <QColor>
+//#include <QColor>
 #include <QObject>
 #include "dataholder.h"
 #include "boost/property_tree/ptree.hpp"
@@ -160,10 +160,6 @@ public:
     inline bool dataChanged() const {return _dataChanged;}
     inline void setDataChanged(bool changed) {_dataChanged = changed;}
 
-    int plottedCount() const;
-    QVector<int> plottedIndexes() const;
-    bool hasCurves() const;
-
     double xStep() const;
     void setXStep(const double xStep);
     double xBegin() const;
@@ -177,8 +173,6 @@ private:
     bool _dataChanged = false;
     DataDescription _dataDescription;
 };
-
-class Curve;
 
 class Channel
 {

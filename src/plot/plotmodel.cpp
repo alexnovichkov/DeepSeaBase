@@ -222,15 +222,35 @@ QVector<Channel *> PlotModel::plottedChannels() const
     return result;
 }
 
+//QMap<FileDescriptor *, QVector<int> > PlotModel::plottedDescriptors() const
+//{DD;
+//    QMap<FileDescriptor *, QVector<int> > result;
+
+//    for (auto c: m_curves) {
+//        result[c->channel->descriptor()].append(c->channel->index());
+//    }
+
+//    return result;
+//}
+
 QVector<FileDescriptor *> PlotModel::plottedDescriptors() const
-{DD;
-    QVector<FileDescriptor*> result;
-
+{
+    QVector<FileDescriptor *> result;
     for (auto c: m_curves) {
-        if (auto d = c->channel->descriptor(); !result.contains(d))
-            result.append(d);
+        if (!result.contains(c->channel->descriptor()))
+            result << c->channel->descriptor();
     }
+    return result;
+}
 
+QVector<int> PlotModel::plottedIndexesForDescriptor(FileDescriptor *d) const
+{
+    QVector<int> result;
+    for (auto c: m_curves) {
+        if (c->channel->descriptor() == d && !result.contains(c->channel->index()))
+            result << c->channel->index();
+    }
+    qSort(result);
     return result;
 }
 

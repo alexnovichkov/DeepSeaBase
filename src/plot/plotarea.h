@@ -30,7 +30,7 @@ public:
     void replotDescriptor(FileDescriptor *f, int fileIndex);
 
     QVector<Channel*> plottedChannels() const;
-    QVector<FileDescriptor*> plottedDescriptors() const;
+    QMap<FileDescriptor *, QVector<int> > plottedDescriptors() const;
     int curvesCount(int type=-1) const;
     void onDropEvent(bool plotOnLeft, const QVector<Channel*> &channels);
     void resetCycling();

@@ -6,7 +6,7 @@
 #include "logging.h"
 #include <QIcon>
 #include "fileformats/abstractformatfactory.h"
-#include "mainwindow.h"
+#include "plot/plottedmodel.h"
 
 Model::Model(QObject *parent) : QAbstractTableModel(parent)
 {DD;
@@ -139,14 +139,9 @@ void Model::discardChanges()
 
 bool Model::changed() const
 {DD;
-    //LOG(DEBUG)<<descriptors;
-
     for (const auto &f: descriptors)
         if (f->changed() || f->dataChanged()) return true;
     return false;
-//    return std::any_of(descriptors.cbegin(), descriptors.cend(), [](const F &d){
-//        return d->changed() || d->dataChanged();
-//    });
 }
 
 void Model::copyToLegend()
@@ -271,7 +266,7 @@ QVariant Model::data(const QModelIndex &index, int role) const
         }
         case Qt::FontRole: {
             if (column == MODEL_COLUMN_FILENAME) {
-                if (d->hasCurves()) {
+                if (PlottedModel::instance().plotted(d.get())) {
                     QFont font;
                     font.setBold(true);
                     return font;

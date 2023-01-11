@@ -467,7 +467,7 @@ void MainWindow::closeTab(ads::CDockWidget *t)
                 const F f = currentTab->model->file(i);
                 //use_count==3 if file is only in one tab, (1 for App, 1 for model, 1 for the prev line)
                 //use_count>=4 if file is in more than one tab
-                if (f.use_count()<=3 && f->hasCurves()) {
+                if (f.use_count()<=3) {
                     area->deleteCurvesForDescriptor(f.get());
                 }
             }
@@ -733,7 +733,7 @@ void MainWindow::deleteFiles()
                 const F f = currentTab->model->file(i);
                 //use_count==3 if file is only in one tab, (1 for App, 1 for model, 1 for the prev line)
                 //use_count>=4 if file is in more than one tab
-                if (f.use_count()<=3 && f->hasCurves()) {
+                if (f.use_count()<=3) {
                     area->deleteCurvesForDescriptor(f.get());
                 }
                 currentTab->fileHandler->untrackFile(f->fileName());
@@ -1011,9 +1011,9 @@ bool MainWindow::deletePlotted()
     if (!currentPlot) return false;
 
     auto plotted = currentPlot->plottedDescriptors();
-    for (auto d: plotted) {
-        auto list = d->plottedIndexes();
-        if (!deleteChannels(d, list)) return false;
+
+    for (const auto & [d, indexes]: asKeyValueRange(plotted)) {
+        if (!deleteChannels(d, indexes)) return false;
     }
     return true;
 }

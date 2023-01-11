@@ -787,10 +787,14 @@ QVector<Channel *> PlotArea::plottedChannels() const
     return QVector<Channel *>();
 }
 
-QVector<FileDescriptor *> PlotArea::plottedDescriptors() const
+QMap<FileDescriptor *, QVector<int> > PlotArea::plottedDescriptors() const
 {DD;
-    if (m_plot) return m_plot->model()->plottedDescriptors();
-    return QVector<FileDescriptor *>();
+    QMap<FileDescriptor *, QVector<int> > result;
+    if (m_plot) {
+        auto list = m_plot->model()->plottedDescriptors();
+        for (auto &d : list) result.insert(d, m_plot->model()->plottedIndexesForDescriptor(d));
+    }
+    return result;
 }
 
 int PlotArea::curvesCount(int type) const
