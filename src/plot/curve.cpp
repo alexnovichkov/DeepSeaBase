@@ -34,7 +34,6 @@ Curve::Curve(Channel *channel)
 {DD;
     this->channel = channel;
     this->duplicate = false;
-    this->channel->curve = this;
 }
 
 Curve::~Curve()
@@ -42,7 +41,6 @@ Curve::~Curve()
     //maybe clear data that is over 1000000 samples
     if (channel) {
         channel->maybeClearData();
-        channel->curve = nullptr;
     }
 }
 

@@ -138,7 +138,7 @@ Curve * PlotModel::plotted(Channel *channel) const
     for (Curve *curve: qAsConst(m_curves)) {
         if (curve->channel == channel) return curve;
     }
-    return 0;
+    return nullptr;
 }
 
 bool PlotModel::allCurvesFromSameDescriptor() const
@@ -163,8 +163,6 @@ void PlotModel::addCurve(Curve *curve, bool onLeft)
 
 bool PlotModel::deleteCurve(Curve *curve, bool *removedFromLeft)
 {DD;
-    curve->channel->setPlotted(false);
-
     const auto index = m_curves.indexOf(curve);
     beginRemoveRows(QModelIndex(), index, index);
     int removed = m_leftCurves.removeAll(curve);

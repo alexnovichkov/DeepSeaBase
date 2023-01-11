@@ -1,6 +1,6 @@
 include(../plugins.pri)
 
-PVERSION = 1.0.0
+PVERSION = 1.0.1
 DEFINES += PLUGIN_VERSION=\\\"$$PVERSION\\\"
 
 OTHER_FILES += tdms.json
@@ -18,7 +18,8 @@ HEADERS += tdmsplugin.h \
            ../../fileformats/filedescriptor.h \
            ../../dataholder.h \
            ../../settings.h \
-           ../../algorithms.h
+           ../../algorithms.h \
+           ../../plot/plottedmodel.h
 
 SOURCES += tdmsplugin.cpp \
            tdmsconverter.cpp \
@@ -29,7 +30,8 @@ SOURCES += tdmsplugin.cpp \
            ../../fileformats/filedescriptor.cpp \
            ../../dataholder.cpp \
            ../../settings.cpp \
-           ../../algorithms.cpp
+           ../../algorithms.cpp \
+           ../../plot/plottedmodel.cpp
 
 TARGET = tdms
 

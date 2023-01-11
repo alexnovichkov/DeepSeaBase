@@ -11,6 +11,7 @@
 #include "curve.h"
 #include "unitsconverter.h"
 #include "checkablelegend.h"
+#include "plottedmodel.h"
 
 Spectrogram::Spectrogram(QWidget *parent) : Plot(Enums::PlotType::Spectrogram, parent)
 {DD;
@@ -129,7 +130,7 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     m_plot->enableColorBar(Enums::AxisType::atRight, true);
 
     Curve *g = m_plot->createCurve(ch, Enums::AxisType::atBottom, Enums::AxisType::atLeft);
-    ch->setPlotted(true);
+    PlottedModel::instance().add(ch, g);
 
     m->addCurve(g, plotOnLeft);
     g->fileNumber = fileIndex;

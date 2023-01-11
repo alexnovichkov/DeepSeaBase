@@ -3,6 +3,9 @@
 #include "logging.h"
 #include "fileformats/filedescriptor.h"
 #include "channelsmimedata.h"
+#include "plot/plot.h"
+#include "plot/plotmodel.h"
+#include "plot/curve.h"
 
 ChannelTableModel::ChannelTableModel(QObject *parent) : QAbstractTableModel(parent),
     descriptor(0)
@@ -39,6 +42,15 @@ QVector<Channel *> ChannelTableModel::selectedChannels() const
             result << descriptor->channel(i);
         }
     return result;
+}
+
+void ChannelTableModel::setCurrentPlot(Plot *currentPlot)
+{
+    if (this->currentPlot != currentPlot) {
+        beginResetModel();
+        this->currentPlot = currentPlot;
+        endResetModel();
+    }
 }
 
 void ChannelTableModel::setYName(const QString &yName)
@@ -109,32 +121,36 @@ QVariant ChannelTableModel::data(const QModelIndex &index, int role) const
 
     if (!descriptor) return QVariant();
 
+    Curve *curve = nullptr;
+    if (currentPlot) curve = currentPlot->model()->plotted(descriptor->channel(row));
+
+    const bool plotted = curve!=nullptr;
+    const auto color = curve ? curve->pen().color() : QColor(Qt::white);
+
     switch (role) {
         case Qt::DisplayRole:
             return descriptor->channel(row)->info(column, false);
-            break;
         case Qt::EditRole:
             return descriptor->channel(row)->info(column, true);
+        case Qt::ForegroundRole:
+            if (plotted && column==0)
+                return QColor(Qt::white);
             break;
-//        case Qt::ForegroundRole:
-//            if (descriptor->channel(row)->plotted() && column==0)
-//                return QColor(Qt::white);
-//            break;
-//        case Qt::BackgroundRole:
-//            if (descriptor->channel(row)->plotted() && column == 0)
-//                return descriptor->channel(row)->color();
-//            break;
+        case Qt::BackgroundRole:
+            if (plotted && column == 0)
+                return color;
+            break;
         case Qt::FontRole:
-            if (descriptor->channel(row)->plotted() && column == 0) {
+            if (plotted && column == 0) {
                 QFont font;
                 font.setBold(true);
                 return font;
             }
             break;
-//        case Qt::CheckStateRole:
-//            if (column == 0)
-//                return descriptor->channel(row)->plotted()?Qt::Checked:Qt::Unchecked;
-//            break;
+        case Qt::CheckStateRole:
+            if (column == 0)
+                return plotted?Qt::Checked:Qt::Unchecked;
+            break;
         default: break;
     }
 
@@ -143,7 +159,7 @@ QVariant ChannelTableModel::data(const QModelIndex &index, int role) const
 
 bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {DD;
-    if (!index.isValid()) return false;
+    if (!index.isValid() || !descriptor) return false;
 
     const int row = index.row();
     const int column = index.column();
@@ -151,6 +167,10 @@ bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value,
     if (row<0 || row>=channelsCount) return false;
 
     Channel *ch = descriptor->channel(row);
+
+    Curve *curve = nullptr;
+    if (currentPlot) curve = currentPlot->model()->plotted(descriptor->channel(row));
+    const bool plotted = curve!=nullptr;
 
     bool success = false;
 
@@ -182,6 +202,20 @@ bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value,
             }
             break;
         }
+        case Qt::CheckStateRole: {
+            if (column == 0) {
+                bool forAllDescriptors = QApplication::keyboardModifiers() & Qt::ControlModifier;
+                if (!plotted) {
+                    emit plotChannel(ch, forAllDescriptors);
+                }
+                else {
+                    emit unplotChannel(ch, forAllDescriptors);
+                }
+                emit dataChanged(index,index, {Qt::CheckStateRole});
+                success = true;
+            }
+            break;
+        }
     }
     return success;
 }
@@ -205,8 +239,8 @@ Qt::ItemFlags ChannelTableModel::flags(const QModelIndex &index) const
 {DD;
     const int col = index.column();
     auto result = Qt::ItemIsSelectable | Qt::ItemNeverHasChildren;
-    if (col == 0) result |= Qt::ItemIsEditable/*| Qt::ItemIsUserCheckable*/ | Qt::ItemIsEnabled |
-                Qt::ItemIsDragEnabled;
+    if (col == 0) result |= Qt::ItemIsEditable | Qt::ItemIsEnabled
+                | Qt::ItemIsUserCheckable | Qt::ItemIsDragEnabled;
     if (col == 1 || col == 3) result |= Qt::ItemIsEditable | Qt::ItemIsEnabled;
     return result;
 }

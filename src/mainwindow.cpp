@@ -578,6 +578,8 @@ PlotArea *MainWindow::createPlotArea()
     connect(area, &PlotArea::saveTimeSegment, this, &MainWindow::saveTimeSegment);
 
     plotsMenu->addAction(area->toggleViewAction());
+    //в текущей вкладке графика еще нет самого графика
+    if (currentTab) currentTab->setCurrentPlot(nullptr);
     updateActions();
     return area;
 }
@@ -607,6 +609,7 @@ void MainWindow::closePlot(ads::CDockWidget *t)
     if (!t) return;
 
     currentPlot = nullptr;
+    if (currentTab) currentTab->setCurrentPlot(nullptr);
     auto name = t->tabWidget()->text();
 
     t->closeDockWidget();
@@ -1490,6 +1493,9 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
     else if (currentPlot) {
         p = currentPlot->plot();
         if (!p) currentPlot->onDropEvent(plotOnLeft, toPlot);
+        //в текущей вкладке графика еще нет самого графика
+        if (currentTab)
+            currentTab->setCurrentPlot(currentPlot->plot());
     }
     if (p) {//график существует
 
@@ -2102,10 +2108,13 @@ void MainWindow::onFocusedDockWidgetChanged(ads::CDockWidget *old, ads::CDockWid
 {DD;
     Q_UNUSED(old);
     if (!now) return;
-    if (auto tab = qobject_cast<Tab *>(now->widget()))
+    if (auto tab = qobject_cast<Tab *>(now->widget())) {
         currentTab = tab;
+        currentTab->setCurrentPlot(currentPlot->plot());
+    }
     else if (auto plot = qobject_cast<PlotArea*>(now)) {
         currentPlot = plot;
+        if (currentTab) currentTab->setCurrentPlot(currentPlot->plot());
     }
     updateActions();
 }

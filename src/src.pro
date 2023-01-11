@@ -72,6 +72,7 @@ SOURCES += main.cpp\
     plot/cursorbox.cpp \
     plot/cursordialog.cpp \
     plot/cursors.cpp \
+    plot/plottedmodel.cpp \
     plot/qcpcursordouble.cpp \
     plot/qcpcursorharmonic.cpp \
     plot/qcpcursorsingle.cpp \
@@ -195,6 +196,7 @@ HEADERS  += mainwindow.h \
     plot/cursorbox.h \
     plot/cursordialog.h \
     plot/cursors.h \
+    plot/plottedmodel.h \
     plot/qcpcursordouble.h \
     plot/qcpcursorharmonic.h \
     plot/qcpcursorsingle.h \

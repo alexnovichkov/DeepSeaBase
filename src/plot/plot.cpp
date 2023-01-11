@@ -5,6 +5,7 @@
 
 #include "zoomstack.h"
 #include "colormapfactory.h"
+#include "plottedmodel.h"
 
 #include <QtCore>
 #include <QMessageBox>
@@ -426,6 +427,19 @@ void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doR
     }
 }
 
+void Plot::deleteCurveForAllDescriptors(int channel)
+{
+
+}
+
+void Plot::deleteCurveForChannel(Channel *channel)
+{
+    if (Curve *curve = m->plotted(channel)) {
+        deleteCurve(curve, true);
+        updatePlottedIndexes();
+    }
+}
+
 void Plot::deleteSelectedCurve(Selectable *selected)
 {DD;
     if (Curve *curve = dynamic_cast<Curve*>(selected)) {
@@ -443,6 +457,7 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
 
     bool removedFromLeft = true;
     if (m->deleteCurve(curve, &removedFromLeft)) {
+        PlottedModel::instance().remove(curve);
         emit curveDeleted(curve->channel); //->MainWindow.onChannelChanged
         colors->freeColor(curve->pen().color());
 
@@ -749,7 +764,7 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     pen.setColor(nextColor);
     pen.setWidth(1);
     g->setPen(pen);
-    ch->setPlotted(true);
+    PlottedModel::instance().add(ch,g);
 
     m->addCurve(g, plotOnLeft);
     g->fileNumber = fileIndex;

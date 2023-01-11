@@ -190,6 +190,8 @@ public:
     void deleteCurveFromLegend(Curve *curve);
     void deleteCurvesForDescriptor(FileDescriptor *descriptor);
     void deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot = true);
+    void deleteCurveForAllDescriptors(int channel);
+    void deleteCurveForChannel(Channel *channel);
     void deleteSelectedCurve(Selectable *selected);
 
     void switchLabelsVisibility();

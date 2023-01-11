@@ -4,6 +4,7 @@
 #include "methods/averaging.h"
 #include "algorithms.h"
 #include "fileformats/formatfactory.h"
+#include "plot/plottedmodel.h"
 
 FileDescriptor::FileDescriptor(const QString &fileName) :
     _fileName(fileName)
@@ -166,7 +167,9 @@ int FileDescriptor::plottedCount() const
     int plotted = 0;
     const int count = channelsCount();
     for (int i=0; i<count; ++i) {
-        if (channel(i)->plotted()) plotted++;
+        if (PlottedModel::instance().plotted(channel(i)))
+            plotted++;
+
     }
     return plotted;
 }
@@ -176,7 +179,7 @@ QVector<int> FileDescriptor::plottedIndexes() const
     QVector<int> plotted;
     const int count = channelsCount();
     for (int i=0; i<count; ++i) {
-        if (channel(i)->plotted()) plotted << i;
+        if (PlottedModel::instance().plotted(channel(i))) plotted << i;
     }
     return plotted;
 }
@@ -295,7 +298,7 @@ bool FileDescriptor::hasCurves() const
 {DD;
     const int count = channelsCount();
     for (int i=0; i<count; ++i) {
-        if (channel(i)->plotted()) return true;
+        if (PlottedModel::instance().plotted(channel(i))) return true;
     }
     return false;
 }
@@ -317,7 +320,6 @@ QString FileDescriptor::createGUID()
 //}
 
 Channel::Channel(Channel *other) :
-    _plotted(0),
     _populated(other->_populated),
     _data(new DataHolder(*(other->_data))),
     _dataDescription(other->_dataDescription)
@@ -326,7 +328,6 @@ Channel::Channel(Channel *other) :
 }
 
 Channel::Channel(Channel &other) :
-    _plotted(0),
     _populated(other._populated),
     _data(new DataHolder(*(other._data))),
     _dataDescription(other._dataDescription)

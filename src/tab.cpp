@@ -15,6 +15,7 @@
 #include "filehandler.h"
 #include "stepitemdelegate.h"
 #include "channelstable.h"
+#include "plot/plot.h"
 
 Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
 {DD;
@@ -41,6 +42,20 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
         }
         model->updateFile(record);
     });
+    connect(channelModel, &ChannelTableModel::plotChannel, [=](Channel *channel, bool forAllDescriptors) {
+        emit needPlotChannels(true, {channel}, forAllDescriptors);
+    });
+    connect(channelModel, &ChannelTableModel::unplotChannel, [=](Channel *channel, bool forAllDescriptors) {
+        if (!currentPlot) return;
+        const int channelIndex = channel->index();
+        if (forAllDescriptors) {
+            const QList<FileDescriptor*> selectedFiles = model->selectedFiles();
+            for (auto descriptor: selectedFiles) currentPlot->deleteCurveForChannelIndex(descriptor, channelIndex);
+        }
+        else {
+            currentPlot->deleteCurveForChannelIndex(channel->descriptor(), channelIndex);
+        }
+    });
 
     filesTable = new FilesTable(this);
     filesTable->setModel(sortModel);
@@ -49,6 +64,7 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
     filesTable->setHeader(filterHeader);
     connect(filterHeader, SIGNAL(filterChanged(QString,int)), sortModel, SLOT(setFilter(QString,int)));
 
+    //закомментирование строк ниже позволяет многократно ускорить отрисовку таблицы на экране
     filesTable->header()->setStretchLastSection(false);
 //    filesTable->header()->setSectionResizeMode(MODEL_COLUMN_SAVE, QHeaderView::ResizeToContents);
     filesTable->header()->setSectionResizeMode(MODEL_COLUMN_SAVE, QHeaderView::Fixed);
@@ -239,6 +255,12 @@ void Tab::updateActions()
 void Tab::addParentAction(const QString &name, QAction *action)
 {DD;
     parentActions.insert(name, action);
+}
+
+void Tab::setCurrentPlot(Plot *plot)
+{
+    currentPlot = plot;
+    channelModel->setCurrentPlot(plot);
 }
 
 void Tab::updateChannelsTable(const QModelIndex &current, const QModelIndex &previous)

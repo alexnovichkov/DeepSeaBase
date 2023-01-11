@@ -216,6 +216,13 @@ public:
 
     QString xName() const;
     QString yName() const;
+    /**
+     * @brief yNameOld нужен из-за того, что в файлах dfd, в которых записаны уровни, уже
+     * пересчитанные к дБ, единица измерения пишется дБ, а прежняя единица измерения (м/с^2)
+     * записывается в YNameOld.
+     * В файлах других форматов различие исходных данных и пересчитанных сохраняется другими способами
+     * @return
+     */
     virtual QString yNameOld() const; //переопределен в DFD
     QString zName() const;
     void setYName(const QString &yName);
@@ -243,17 +250,12 @@ public:
     inline QString correction() const {return dataDescription().get("correction").toString();}
     void setCorrection(const QString &s) {dataDescription().put("correction", s);}
 
-    bool plotted() const {return _plotted;}
-    void setPlotted(bool plotted) {_plotted = plotted;}
-    Curve *curve = nullptr;
-
     inline bool changed() const {return _changed;}
     void setChanged(bool changed) {_changed = changed;}
 
     bool dataChanged() const {return _dataChanged;}
     void setDataChanged(bool changed) {_dataChanged = changed;}
 private:
-    bool _plotted = false;
     bool _populated = false;
     bool _changed = false;
     bool _dataChanged = false;

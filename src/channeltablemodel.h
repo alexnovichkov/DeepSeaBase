@@ -7,6 +7,7 @@
 
 class Channel;
 class FileDescriptor;
+class Plot;
 
 class ChannelTableModel : public QAbstractTableModel
 {
@@ -18,6 +19,8 @@ public:
     bool hasSelection() const {return !indexes.isEmpty();}
     QVector<int> selected()  const {return indexes;}
     QVector<Channel*> selectedChannels() const;
+
+    void setCurrentPlot(Plot *currentPlot);
 
 
 
@@ -35,6 +38,8 @@ signals:
     void maybeUpdateChannelProperty(int row, const QString &description, const QString &property, const QString &value);
     void legendsChanged();
     void modelChanged();
+    void plotChannel(Channel *channel, bool forAllDescriptors);
+    void unplotChannel(Channel *channel, bool forAllDescriptors);
     // QAbstractItemModel interface
 public:
     virtual int rowCount(const QModelIndex &parent) const override;
@@ -46,6 +51,7 @@ public:
     virtual Qt::ItemFlags flags(const QModelIndex &index) const override;
 private:
     FileDescriptor *descriptor;
+    Plot *currentPlot = nullptr;
     QVector<int> indexes;
 
     QFont uFont;
