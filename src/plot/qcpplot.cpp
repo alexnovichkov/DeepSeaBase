@@ -101,9 +101,6 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     for (auto axis: axisRect()->axes()) {
         axis->setSubTicks(true);
         axis->setNumberPrecision(10);
-        connect(axis, &QCPAxis::contextMenuRequested, [=](const QPoint &pos, QCPAxis::AxisType type){
-            plot->showContextMenu(pos, static_cast<Enums::AxisType>(type));
-        });
         connect(axis, &QCPAxis::draggingFinished, [=](const QCPRange &newRange){
             ZoomStack::zoomCoordinates coords;
             for (auto ax: axisRect()->axes()) {
@@ -239,9 +236,8 @@ void QCPPlot::setEventFilter(CanvasEventFilter *filter)
     installEventFilter(filter);
 }
 
-QCPAxis *QCPPlot::eventTargetAxis(QEvent *event, QObject *target)
+QCPAxis *QCPPlot::eventTargetAxis(QEvent *event)
 {
-    Q_UNUSED(target);
     if (auto mouseEvent = dynamic_cast<QMouseEvent*>(event)) {
         QList<QCPLayerable*> candidates = layerableListAt(mouseEvent->pos(), false);
         for (int i=0; i<candidates.size(); ++i) {
@@ -423,12 +419,6 @@ void QCPPlot::enableColorBar(Enums::AxisType axisType, bool enable)
         axisRect()->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
         colorScale->setMarginGroup(QCP::msBottom|QCP::msTop, marginGroup);
 
-        //color bar has its own axis, so connect all the signals
-        connect(colorScale->axis(), &QCPAxis::contextMenuRequested, [=](const QPoint &pos, QCPAxis::AxisType type){
-            Q_UNUSED(type);
-            parent->showContextMenu(pos, Enums::AxisType::atColor);
-        });
-
         colorScale->axis()->setSubTicks(true);
         connect(colorScale->axis(), &QCPAxis::draggingFinished, [=](const QCPRange &newRange){
             ZoomStack::zoomCoordinates coords;
@@ -587,7 +577,15 @@ double QCPPlot::tickDistance(Enums::AxisType axisType) const
 
 QCPAxis *QCPPlot::axis(Enums::AxisType axis) const
 {
+    if (axis == Enums::AxisType::atColor && colorScale)
+        return colorScale->axis();
     return axisRect(0)->axis(toQcpAxis(axis));
+}
+
+Enums::AxisType QCPPlot::axisType(QCPAxis *axis) const
+{
+    if (colorScale && axis == colorScale->axis()) return Enums::AxisType::atColor;
+    return fromQcpAxis(axis->axisType());
 }
 
 void QCPPlot::addZoom()

@@ -20,38 +20,22 @@ bool CanvasEventFilter::eventFilter(QObject *target, QEvent *event)
 {DD;
     if (!enabled) return QObject::eventFilter(target, event);
 
-    QCPAxis *axis = nullptr;
-    if (dynamic_cast<QMouseEvent *>(event)) {
-        axis = plot->impl()->eventTargetAxis(event, target);
-
-        if (axis) {
-            currentAxis = axis;
-            procAxisEvent(axis, event);
-        }
-        else {
-            if (currentAxis) {
-                currentAxis->mouseReleaseEvent(dynamic_cast<QMouseEvent *>(event), QPointF());
-                currentAxis = nullptr;
-            }
-            procMouseEvent(event);
-        }
-    }
+    if (QMouseEvent * mEvent = dynamic_cast<QMouseEvent *>(event))
+        procMouseEvent(mEvent);
     else if (event->type() == QEvent::KeyPress)
         procKeyboardEvent(event);
     else if (event->type() == QEvent::Wheel) {
-        axis = plot->impl()->eventTargetAxis(event, target);
+        auto axis = plot->impl()->eventTargetAxis(event);
         if (axis) axis->wheelEvent(dynamic_cast<QWheelEvent*>(event));
     }
 
     return QObject::eventFilter(target, event);
 }
 
-void CanvasEventFilter::procMouseEvent(QEvent *event)
+void CanvasEventFilter::procMouseEvent(QMouseEvent *mEvent)
 {DD;
     //Нажатия левой кнопки - масштабирование графика, выбор объектов или сброс выбора
     //Нажатия правой кнопки - сдвиг графика
-
-    auto mEvent = dynamic_cast<QMouseEvent *>(event);
 
     switch (mEvent->type())  {
         case QEvent::MouseButtonPress:
@@ -66,7 +50,123 @@ void CanvasEventFilter::procMouseEvent(QEvent *event)
         case QEvent::MouseButtonDblClick:
             mouseDoubleClick(mEvent);
             break;
+        case QEvent::Leave:
+            mouseLeave(mEvent);
+            break;
         default: ;
+    }
+}
+
+void CanvasEventFilter::mousePress(QMouseEvent *event)
+{DD;
+    startPosition = event->pos();
+
+    auto axis = plot->impl()->eventTargetAxis(event);
+    if (axis) {
+        currentAxis = axis;
+        if (event->button()==Qt::RightButton) {
+            emit contextMenuRequested(event->globalPos(), plot->impl()->axisType(axis));
+            currentAxis = nullptr;
+        }
+        else axis->mousePressEvent(event, QVariant());
+    }
+    else {
+        switch (event->button()) {
+            case Qt::RightButton: {
+                actionType = ActionType::Drag;
+                plot->impl()->axisRect()->mousePressEvent(event, QVariant());
+                break;
+            }
+            case Qt::LeftButton: {
+                auto selected = picker->findObject(event);
+
+                if (picker->alreadySelected(selected) ||
+                    (selected.object && selected.object->draggable())) {
+
+                    actionType = ActionType::Pick;
+                    picker->startPick(event->pos(), selected);
+                }
+                else {
+                    actionType = ActionType::Zoom;
+                    plot->impl()->startZoom(event);
+                }
+
+                break;
+            }
+            default: break;
+        }
+    }
+}
+
+void CanvasEventFilter::mouseMove(QMouseEvent *event)
+{DD;
+    if (currentAxis) {
+        currentAxis->mouseMoveEvent(event, startPosition);
+    }
+
+    else if (actionType == ActionType::Drag) {
+        plot->impl()->axisRect()->mouseMoveEvent(event, startPosition);
+    }
+    else if (actionType == ActionType::Zoom) {
+        plot->impl()->proceedZoom(event);
+    }
+    else if (actionType == ActionType::Pick) {
+        picker->proceedPick(event);
+    }
+}
+
+void CanvasEventFilter::mouseRelease(QMouseEvent *event)
+{DD;
+    if (currentAxis) {
+        currentAxis->mouseReleaseEvent(event, startPosition);
+        currentAxis = nullptr;
+    }
+    else if (actionType == ActionType::Drag) {
+        plot->impl()->axisRect()->mouseReleaseEvent(event, startPosition);
+
+        actionType = ActionType::None;
+        if (startPosition == event->pos()) {
+            if (auto s = picker->findObject(event); s.object) {
+                picker->showContextMenu(event);
+            }
+        }
+    }
+    else if (actionType == ActionType::Zoom) {
+        if ((startPosition - event->pos()).manhattanLength() <= 3) {
+            //no actual mouse move
+            plot->impl()->cancelZoom();
+            picker->endPick(event);
+        }
+        else
+            plot->impl()->endZoom(event);
+        actionType = ActionType::None;
+    }
+    else if (actionType == ActionType::Pick) {
+        picker->endPick(event);
+        actionType = ActionType::None;
+    }
+}
+
+void CanvasEventFilter::mouseDoubleClick(QMouseEvent *event)
+{DD;
+    if (currentAxis) {
+
+    }
+    else switch (event->button()) {
+        case Qt::LeftButton: {
+            emit canvasDoubleClicked(startPosition);
+            break;
+        }
+        default: break;
+    }
+}
+
+void CanvasEventFilter::mouseLeave(QMouseEvent *event)
+{
+    Q_UNUSED(event);
+    if (currentAxis) {
+        emit hover(fromQcpAxis(currentAxis->axisType()), 0);
+        actionType = ActionType::None;
     }
 }
 
@@ -109,122 +209,6 @@ void CanvasEventFilter::procKeyboardEvent(QEvent *event)
     }
     if (picker) picker->procKeyboardEvent(kEvent->key());
 }
-
-void CanvasEventFilter::procAxisEvent(QCPAxis *axis, QEvent *event)
-{DD;
-    auto mEvent = dynamic_cast<QMouseEvent *>(event);
-    switch (event->type()) {
-        case QEvent::Leave: {
-            emit hover(fromQcpAxis(axis->axisType()), 0);
-            actionType = ActionType::None;
-            break;
-        }
-        case QEvent::MouseButtonPress: {
-            startPosition = mEvent->pos();
-            axis->mousePressEvent(mEvent, QVariant());
-            break;
-        }
-        case QEvent::MouseMove: {
-            axis->mouseMoveEvent(mEvent, startPosition);
-            break;
-        }
-        case QEvent::MouseButtonRelease: {
-            axis->mouseReleaseEvent(mEvent, startPosition);
-            break;
-        }
-        case QEvent::MouseButtonDblClick:
-            // обрабатываем прямо в QCPPlot
-            break;
-
-        default: break;
-    }
-}
-
-void CanvasEventFilter::mousePress(QMouseEvent *event)
-{DD;
-    if (!plot->impl()->xAxis->range().contains(plot->impl()->xAxis->pixelToCoord(event->pos().x())) ||
-        !plot->impl()->yAxis->range().contains(plot->impl()->yAxis->pixelToCoord(event->pos().y())))
-        return;
-
-    startPosition = event->pos();
-
-    switch (event->button()) {
-        case Qt::RightButton: {
-            actionType = ActionType::Drag;
-            plot->impl()->axisRect()->mousePressEvent(event, QVariant());
-            break;
-        }
-        case Qt::LeftButton: {
-            auto selected = picker->findObject(event);
-
-            if (picker->alreadySelected(selected) ||
-                (selected.object && selected.object->draggable())) {
-                actionType = ActionType::Pick;
-                picker->startPick(event->pos(), selected);
-            }
-            else {
-                actionType = ActionType::Zoom;
-                plot->impl()->startZoom(event);
-            }
-
-            break;
-        }
-        default: break;
-    }
-}
-
-void CanvasEventFilter::mouseMove(QMouseEvent *event)
-{DD;
-    if (actionType == ActionType::Drag) {
-        plot->impl()->axisRect()->mouseMoveEvent(event, startPosition);
-    }
-    else if (actionType == ActionType::Zoom) {
-        plot->impl()->proceedZoom(event);
-    }
-    else if (actionType == ActionType::Pick) {
-       picker->proceedPick(event);
-    }
-}
-
-void CanvasEventFilter::mouseRelease(QMouseEvent *event)
-{DD;
-    if (actionType == ActionType::Drag) {
-        plot->impl()->axisRect()->mouseReleaseEvent(event, startPosition);
-
-        actionType = ActionType::None;
-        if (startPosition == event->pos()) {
-            if (auto s = picker->findObject(event); s.object) {
-                picker->showContextMenu(event);
-            }
-        }
-    }
-    else if (actionType == ActionType::Zoom) {
-        if ((startPosition - event->pos()).manhattanLength() <= 3) {
-            //no actual mouse move
-            plot->impl()->cancelZoom();
-            picker->endPick(event);
-        }
-        else
-            plot->impl()->endZoom(event);
-        actionType = ActionType::None;
-    }
-    else if (actionType == ActionType::Pick) {
-        picker->endPick(event);
-        actionType = ActionType::None;
-    }
-}
-
-void CanvasEventFilter::mouseDoubleClick(QMouseEvent *event)
-{DD;
-    switch (event->button()) {
-        case Qt::LeftButton: {
-            emit canvasDoubleClicked(startPosition);
-            break;
-        }
-        default: break;
-    }
-}
-
 
 QDebug operator<<(QDebug debug, const CanvasEventFilter::ActionType &c)
 {

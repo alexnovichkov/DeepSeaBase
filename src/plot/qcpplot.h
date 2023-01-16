@@ -38,6 +38,8 @@ public:
     void updateSecondaryPlots();
     void setCurrentCurve(Curve *curve);
 
+    Enums::AxisType axisType(QCPAxis *axis) const;
+
     QCPCheckableLegend *checkableLegend = nullptr;
 signals:
     void canvasDoubleClicked(QPoint);
@@ -61,7 +63,7 @@ private:
     // PlotInterface interface
 public:
     void setEventFilter(CanvasEventFilter *filter);
-    QCPAxis *eventTargetAxis(QEvent *event, QObject *target);
+    QCPAxis *eventTargetAxis(QEvent *event);
     void createLegend();
     double screenToPlotCoordinates(Enums::AxisType axisType, double value) const;
     double plotToScreenCoordinates(Enums::AxisType axisType, double value) const;
@@ -90,6 +92,7 @@ public:
     double tickDistance(Enums::AxisType axisType) const;
 private:
     QCPAxis *axis(Enums::AxisType axis) const;
+
     void addZoom();
 
 protected:

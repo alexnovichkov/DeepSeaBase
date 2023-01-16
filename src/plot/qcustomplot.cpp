@@ -9551,12 +9551,7 @@ void QCPAxis::mousePressEvent(QMouseEvent *event, const QVariant &details)
     return;
   }
 
-  if (event->button()==Qt::RightButton) {
-      emit contextMenuRequested(event->globalPos(), this->axisType());
-  }
-  
-  else
-      if (event->buttons() & Qt::LeftButton)
+  if (event->buttons() & Qt::LeftButton)
   {
     mDragging = true;
     // initialize antialiasing backup in case we start dragging:
@@ -20658,16 +20653,13 @@ void QCPColorScale::applyDefaultAntialiasingHint(QCPPainter *painter) const
 
 /* inherits documentation from base class */
 void QCPColorScale::mousePressEvent(QMouseEvent *event, const QVariant &details)
-{qDebug()<<Q_FUNC_INFO;
+{
   if (!mAxisRect)
   {
     qDebug() << Q_FUNC_INFO << "internal axis rect was deleted";
     return;
   }
-  if (event->button()==Qt::RightButton) {
-      emit contextMenuRequested(event->globalPos(), QCPAxis::atRight);
-  }
-  else
+  if (event->button()!=Qt::RightButton)
       mAxisRect.data()->mousePressEvent(event, details);
 }
 

@@ -48,14 +48,14 @@ signals:
 protected:
     bool eventFilter(QObject *target, QEvent *event);
 private:
-    void procMouseEvent(QEvent *event);
+    void procMouseEvent(QMouseEvent *event);
     void procKeyboardEvent(QEvent *event);
-    void procAxisEvent(QCPAxis* axis, QEvent *event);
 
     void mousePress(QMouseEvent *event);
     void mouseMove(QMouseEvent *event);
     void mouseRelease(QMouseEvent *event);
     void mouseDoubleClick(QMouseEvent *event);
+    void mouseLeave(QMouseEvent *event);
     void applyWheel(QEvent *event, Enums::AxisType axis);
 
     Plot *plot = nullptr;

@@ -2295,7 +2295,6 @@ signals:
   void scaleTypeChanged(QCPAxis::ScaleType scaleType);
   void selectionChanged(const QCPAxis::SelectableParts &parts);
   void selectableChanged(const QCPAxis::SelectableParts &parts);
-  void contextMenuRequested(const QPoint &pos, AxisType);
   void draggingFinished(const QCPRange &newRange);
   void rangeScaled();
 
@@ -5451,7 +5450,6 @@ signals:
   void dataRangeChanged(const QCPRange &newRange);
   void dataScaleTypeChanged(QCPAxis::ScaleType scaleType);
   void gradientChanged(const QCPColorGradient &newGradient);
-  void contextMenuRequested(const QPoint &pos, QCPAxis::AxisType);
 
 protected:
   // property members:
