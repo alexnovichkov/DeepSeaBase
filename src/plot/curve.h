@@ -8,6 +8,7 @@ class PointLabel;
 class Channel;
 class DataHolder;
 class Plot;
+class QCPCheckableLegend;
 
 #include <qglobal.h>
 #include "selectable.h"
@@ -93,6 +94,9 @@ public:
 
     void updateLabels();
 
+    void setLegend(QCPCheckableLegend *legend) {this->legend = legend;}
+    void updateInLegend();
+
     Channel *channel;
     QList<PointLabel*> labels;
     MarkerShape m_markerShape = MarkerShape::NoMarker;
@@ -102,7 +106,7 @@ public:
     bool duplicate;
     bool fixed = false;
     Type type = Type::Unknown;
-
+    QCPCheckableLegend *legend = nullptr;
 public:
 
     void evaluateScale(int &from, int &to, double startX, double endX) const;

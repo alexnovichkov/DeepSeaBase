@@ -17,14 +17,13 @@ class PlotModel;
 class QMenu;
 class Cursors;
 class CursorBox;
-class Selectable;
 class QCPPlot;
 class PlayPanel;
 
 #include <QWidget>
 
 #include "enums.h"
-
+#include "selectable.h"
 
 
 class Plot : public QObject
@@ -39,7 +38,10 @@ public:
      * @return модель, содержащая список построенных кривых
      */
     PlotModel *model() {return m;}
-
+    /**
+     * @brief type
+     * @return тип графика (см. \a Enums::PlotType)
+     */
     Enums::PlotType type() const {return plotType;}
 
     /**
@@ -97,19 +99,25 @@ public:
      */
     bool sergeiMode = false;
 
+    /**
+     * @brief interactionMode задает режим взаимодействия с графиком:
+     * ScalingInteraction - масштабирование графика
+     * DataInteraction - передвижение точек на графике
+     */
     Enums::InteractionMode interactionMode = Enums::InteractionMode::ScalingInteraction;
 
     /**
      * @brief curvesCount
      * @param type тип канала, для которого построена кривая (Descriptor::DataType)
      * @return количество кривых такого типа на графике
+     * Если type=-1, то возвращается общее количество кривых на графике
      */
     int curvesCount(int type=-1) const;
 
     /**
      * @brief axisTitleText
      * @param id
-     * @return текст/метку для данной оси
+     * @return текст/метка для данной оси
      */
     QString axisTitleText(Enums::AxisType id) const;
 
@@ -140,11 +148,22 @@ public:
      * @param item
      */
     void removeSelectable(Selectable *item);
+
+    /**
+     * @brief deselect убирает выделение со всех объектов на графике
+     */
+    void deselect();
     /**
      * @brief getSelectables
      * @return список выделяемых элементов (курсоры, метки, кривые)
      */
     QList<Selectable*> getSelectables() {return selectables;}
+    /**
+     * @brief findSelected ищет выделенный объект под курсором
+     * @param pos позиция курсора
+     * @return  выделенный объект + доп.информация
+     */
+    Selected findSelected(QPoint pos) const;
 
     //default implementation returns pos as QString,
     //reimplemented in spectrograms to add Z coordinate
@@ -162,6 +181,11 @@ public:
      */
     double tickDistance(Enums::AxisType axisType) const;
 
+    /**
+     * @brief deleteCurve удаляет кривую с графика
+     * @param curve кривая
+     * @param doReplot задает немедленную перерисовку графика
+     */
     virtual void deleteCurve(Curve *curve, bool doReplot = true);
     //default implementation updates labels according to curves count on left and on right
     //reimplemented in spectrograms
@@ -170,6 +194,10 @@ public:
     virtual void plotChannel(Channel * ch, bool plotOnLeft, int fileIndex=0);
 
     virtual void onDropEvent(bool plotOnLeft, const QVector<Channel *> &channels);
+
+    /**
+     * @brief update обновляет оси, метки, легенду и перерисовывает график
+     */
     void update();
 
     /**
@@ -187,17 +215,60 @@ public:
      */
     void cycleChannels(bool up);
 
+    /**
+     * @brief deleteCurveFromLegend удаляет не фиксированную кривую по запросу из легенды
+     * @param curve
+     */
     void deleteCurveFromLegend(Curve *curve);
+
+    /**
+     * @brief deleteCurvesForDescriptor удаляет кривые, построенные для записи \a descriptor
+     * при закрытии вкладки или удалении записи
+     * @param descriptor
+     */
     void deleteCurvesForDescriptor(FileDescriptor *descriptor);
-    void deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doReplot = true);
-    void deleteCurveForAllDescriptors(int channel);
-    void deleteCurveForChannel(Channel *channel);
+
+    /**
+     * @brief deleteCurveForChannelIndex удаляет кривую по записи и индексу канала.
+     * Используется при удалении каналов из записи или удалении кривой с нажатой Ctrl
+     * @param descriptor запись
+     * @param channel номер канала
+     * @param doReplot
+     */
+    void deleteCurveForChannelIndex(FileDescriptor *descriptor, int channel, bool doReplot = true);
+
+    /**
+     * @brief deleteSelectedCurve удаляет выделенную кривую по запросу от неё самой.
+     * (может быть небезопасно)
+     * @param selected выделенный объект
+     */
     void deleteSelectedCurve(Selectable *selected);
 
+    /**
+     * @brief switchLabelsVisibility переключает отображение меток на осях
+     */
     void switchLabelsVisibility();
+
+    /**
+     * @brief setAxis задает название оси (только запоминает, настоящее задание названия
+     * происходит в update() )
+     * @param axis
+     * @param name
+     */
     void setAxis(Enums::AxisType axis, const QString &name);
 
+    /**
+     * @brief setScale задает диапазон для оси
+     * @param id
+     * @param min
+     * @param max
+     * @param step
+     */
     void setScale(Enums::AxisType id, double min, double max, double step = 0);
+
+    /**
+     * @brief removeLabels удаляет все метки с графика
+     */
     void removeLabels();
 
     /**
@@ -221,7 +292,18 @@ public:
 
     void updateLabels();
     void removeCursor(Selectable *selected);
+
+    /**
+     * @brief showContextMenu показывает контекстное меню над осью axis
+     * @param pos
+     * @param axis
+     */
     void showContextMenu(const QPoint &pos, Enums::AxisType axis);
+
+    /**
+     * @brief editLegendItem открывает диалог параметров кривой
+     * @param curve
+     */
     void editLegendItem(Curve *curve);
 
     ZoomStack *zoom = nullptr;

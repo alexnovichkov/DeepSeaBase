@@ -499,70 +499,6 @@ Curve *QCPPlot::createCurve(Channel *channel, Enums::AxisType xAxis, Enums::Axis
     return new Graph2D(channel, axis(xAxis), axis(yAxis));
 }
 
-Selected QCPPlot::findObject(QPoint pos) const
-{
-    QList<QVariant> details;
-    auto candidates = parent->getSelectables();
-
-    auto isCurve = [](auto item){if (dynamic_cast<QCPAbstractPlottable*>(item)) return true; return false;};
-
-    //Ищем элемент под курсором мыши
-    Selected selected {nullptr, SelectedPoint()};
-
-    //сначала ищем метки, курсоры и т.д., то есть не кривые
-    {
-        double minDist = qInf();
-        for (auto candidate: candidates) {
-            if (isCurve(candidate)) continue;
-            double distx = 0.0;
-            double disty = 0.0;
-            SelectedPoint point;
-            if (candidate->underMouse(pos, &distx, &disty, &point)) {
-                double dist = 0.0;
-                if (distx == qInf()) dist = disty;
-                else if (disty == qInf()) dist = distx;
-                else dist = sqrt(distx*distx+disty*disty);
-                if (!selected.object || dist < minDist) {
-                    selected.object = candidate;
-                    selected.point = point;
-                    minDist = dist;
-                }
-            }
-        }
-    }
-    if (!selected.object) {
-        double minDist = qInf();
-        for (auto candidate: candidates) {
-            if (!isCurve(candidate)) continue;
-
-            double distx = 0.0;
-            double disty = 0.0;
-            SelectedPoint point;
-            if (candidate->underMouse(pos, &distx, &disty, &point)) {
-                double dist = 0.0;
-                if (distx == qInf()) dist = disty;
-                else if (disty == qInf()) dist = distx;
-                else dist = sqrt(distx*distx+disty*disty);
-                if (!selected.object || dist < minDist) {
-                    selected.object = candidate;
-                    selected.point = point;
-                    minDist = dist;
-                }
-            }
-        }
-    }
-    return selected;
-}
-
-void QCPPlot::deselect()
-{
-    QList<QVariant> details;
-    auto candidates = parent->getSelectables();
-    for (auto candidate: candidates) {
-            candidate->setSelected(false, SelectedPoint());
-    }
-}
-
 double QCPPlot::tickDistance(Enums::AxisType axisType) const
 {
     auto ax = axis(axisType);
@@ -573,6 +509,13 @@ double QCPPlot::tickDistance(Enums::AxisType axisType) const
     }
 
     return 0.0;
+}
+
+bool QCPPlot::isCurve(Selectable *item) const
+{
+    if (dynamic_cast<QCPAbstractPlottable*>(item))
+        return true;
+    return false;
 }
 
 QCPAxis *QCPPlot::axis(Enums::AxisType axis) const

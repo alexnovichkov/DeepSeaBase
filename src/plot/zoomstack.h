@@ -60,6 +60,8 @@ public:
     void zoomBack();
     void moveToAxis(Enums::AxisType axis, double min, double max);
     void autoscale(Enums::AxisType axis);
+signals:
+    void replotNeeded();
 private:
     Plot *m_plot;
     QStack<zoomCoordinates> m_zoomStack;

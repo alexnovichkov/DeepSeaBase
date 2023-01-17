@@ -13,6 +13,7 @@ class QCPInfoOverlay;
 class Curve;
 class Channel;
 class Selected;
+class Selectable;
 class QCPFlowLegend;
 class SecondaryPlot;
 class Cursor;
@@ -38,6 +39,7 @@ public:
     void updateSecondaryPlots();
     void setCurrentCurve(Curve *curve);
 
+    QCPAxis *axis(Enums::AxisType axis) const;
     Enums::AxisType axisType(QCPAxis *axis) const;
 
     QCPCheckableLegend *checkableLegend = nullptr;
@@ -87,12 +89,9 @@ public:
     void importPlot(const QString &fileName, const QSize &size, int resolution);
     void importPlot(QPrinter &printer, const QSize &size, int resolution);
     Curve *createCurve(Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis);
-    Selected findObject(QPoint pos) const;
-    void deselect();
     double tickDistance(Enums::AxisType axisType) const;
+    bool isCurve(Selectable* item) const;
 private:
-    QCPAxis *axis(Enums::AxisType axis) const;
-
     void addZoom();
 
 protected:

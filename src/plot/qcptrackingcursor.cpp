@@ -169,6 +169,11 @@ QList<QAction *> QCPTrackingCursor::actions()
     return l;
 }
 
+void QCPTrackingCursor::replot()
+{
+    impl->layer("overlay")->replot();
+}
+
 bool QCPTrackingCursor::underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const
 {DD;
     Q_UNUSED(point);

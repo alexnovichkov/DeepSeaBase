@@ -112,13 +112,13 @@ double energy(DataHolder *data, const QCPCursorDouble *cursor, const QList<Curso
 }
 
 QCPCursorDouble::QCPCursorDouble(Cursor::Style style, bool reject, Plot *plot)
-    : Cursor(reject?Cursor::Type::DoubleReject:Cursor::Type::Double, style, plot), m_plot(plot)
+    : Cursor(reject?Cursor::Type::DoubleReject : Cursor::Type::Double, style, plot), m_plot(plot)
 {
     m_cursor1 = new QCPTrackingCursor(m_color, style, this);
     m_cursor2 = new QCPTrackingCursor(m_color, style, this);
 
-    m_axisTag1 = new QCPAxisTag(plot, m_cursor1, plot->impl()->xAxis);
-    m_axisTag2 = new QCPAxisTag(plot, m_cursor2, plot->impl()->xAxis);
+    m_axisTag1 = new QCPAxisTag(plot, m_cursor1, Enums::AxisType::atBottom);
+    m_axisTag2 = new QCPAxisTag(plot, m_cursor2, Enums::AxisType::atBottom);
 
     plot->addSelectable(m_cursor1);
     plot->addSelectable(m_cursor2);
@@ -254,7 +254,7 @@ void QCPCursorDouble::update()
 {
     if (m_axisTag1) m_axisTag1->updateLabel(m_showValues);
     if (m_axisTag2) m_axisTag2->updateLabel(m_showValues);
-    m_plot->impl()->layer("overlay")->replot();
+    m_cursor1->replot(); //no need to m_cursor2->replot();
 }
 
 int QCPCursorDouble::dataCount(bool allData) const
@@ -286,24 +286,6 @@ QList<double> QCPCursorDouble::data(int curve, bool allData) const
 {
     auto curves = m_plot->model()->curves();
     bool success = false;
-
-    //    QList<QList<double> > list;
-    //    for (int i=0; i<curves.at(curve)->channel->data()->blocksCount(); ++i) {
-    //        auto val1 = curves.at(curve)->channel->data()->YforXandZ(cursor1->xValue(),
-    //                                                                 curves.at(curve)->channel->data()->zValue(i), success);
-    //        auto val2 = curves.at(curve)->channel->data()->YforXandZ(cursor2->xValue(),
-    //                                                                 curves.at(curve)->channel->data()->zValue(i), success);
-    //        QList<double> l;
-    //        l << curves.at(curve)->channel->data()->zValue(i) << val1 << val2;
-    //        if (allData) {
-    //            if (m_info & Cursor::RMS) l << rms(curves.at(curve)->channel->data(), this, rejectCursors);
-    //            if (m_info & Cursor::Energy) {
-    //                double e = energy(curves.at(curve)->channel->data(), this, rejectCursors);
-    //                l << e;
-    //            }
-    //        }
-    //        list << l;
-    //    }
 
     QList<double> list;
     double zval = curves.at(curve)->channel->data()->blocksCount()>1 ? m_cursor1->yValue():0;

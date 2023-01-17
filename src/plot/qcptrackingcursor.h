@@ -28,6 +28,8 @@ public:
     void setColor(const QColor &color);
     void setPen(const QPen &pen);
 
+    void replot();
+
     Cursor::Style type = Cursor::Style::Vertical;
     Cursor *parent = nullptr;
 

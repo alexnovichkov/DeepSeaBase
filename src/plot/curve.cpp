@@ -51,6 +51,7 @@ void Curve::attachTo(Plot *plot)
     m_pointMarker = new PointLabel(plot, this);
     m_pointMarker->setMode(PointLabel::Mode::XValue);
     m_pointMarker->setVisible(false);
+    if (legend) legend->addItem(this, commonLegendData());
 }
 
 void Curve::detachFrom(Plot *plot)
@@ -62,6 +63,9 @@ void Curve::detachFrom(Plot *plot)
     //detach marker
     if (m_pointMarker)
         m_pointMarker->detachFrom(plot);
+
+    if (legend) legend->removeItem(this);
+
     plot->removeSelectable(this);
 }
 
@@ -165,6 +169,11 @@ int Curve::samplesCount() const
 void Curve::updateLabels()
 {
     for (auto label: labels) label->updateLabel();
+}
+
+void Curve::updateInLegend()
+{
+    if (legend) legend->updateItem(this, commonLegendData());
 }
 
 void Curve::setVisible(bool visible)

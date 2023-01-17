@@ -1244,19 +1244,11 @@ int Graph2D::findEnd(double sortKey, bool expandedRange) const
     return m_data->findEnd(sortKey, expandedRange);
 }
 
-
-void Graph2D::attachTo(Plot *plot)
-{DD;
-    Curve::attachTo(plot);
-    plot->impl()->checkableLegend->addItem(this, commonLegendData());
-}
-
 void Graph2D::detachFrom(Plot *plot)
 {DD;
     Curve::detachFrom(plot);
-    plot->impl()->checkableLegend->removeItem(this);
     plot->impl()->removePlottable(this, false);
-    plot->impl()->replot();
+    plot->replot();
 }
 
 QString Graph2D::title() const
@@ -1372,7 +1364,7 @@ void Graph2D::updatePen()
     if (Curve::selected()) p.setWidth(2);
     QCPAbstractPlottable::setPen(p);
     updateScatter();
-    if (m_plot) m_plot->impl()->checkableLegend->updateItem(this, commonLegendData());
+    updateInLegend();
 }
 
 QIcon Graph2D::thumbnail() const

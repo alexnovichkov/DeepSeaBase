@@ -12,6 +12,7 @@
 #include "unitsconverter.h"
 #include "checkablelegend.h"
 #include "plottedmodel.h"
+#include "picker.h"
 
 Spectrogram::Spectrogram(QWidget *parent) : Plot(Enums::PlotType::Spectrogram, parent)
 {DD;
@@ -21,8 +22,10 @@ Spectrogram::Spectrogram(QWidget *parent) : Plot(Enums::PlotType::Spectrogram, p
 void Spectrogram::deleteCurve(Curve *curve, bool doReplot)
 {DD;
     if (!curve) return;
+    if (curve->selected()) picker->deselect();
 
     if (m->deleteCurve(curve)) {
+        PlottedModel::instance().remove(curve);
         emit curveDeleted(curve->channel); //->MainWindow.onChannelChanged
 //        zoom->scaleBounds(Enums::AxisType::atColor)->removeToAutoscale(curve->channel->data()->yMin(-1), curve->channel->data()->yMax(-1));
 //        zoom->scaleBounds(Enums::AxisType::atLeft)->removeToAutoscale(curve->channel->data()->zMin(), curve->channel->data()->zMax());
@@ -45,7 +48,7 @@ void Spectrogram::deleteCurve(Curve *curve, bool doReplot)
             m_plot->enableAxis(Enums::AxisType::atRight, false);
         }
         if (!m->isEmpty()) xName.clear();
-        m_plot->setInfoVisible(m->size()==0);
+        if (m_plot) m_plot->setInfoVisible(m->size()==0);
 
         if (doReplot) update();
     }
@@ -107,7 +110,7 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     for (auto c: m->curves()) {
         c->setVisible(false);
         if (auto p = dynamic_cast<QCPAbstractPlottable*>(c)) p->setVisible(false);
-        impl()->checkableLegend->updateItem(c, c->commonLegendData());
+        c->updateInLegend();
     }
 
 
@@ -143,6 +146,7 @@ void Spectrogram::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 
     m_plot->setInfoVisible(false);
 
+    g->setLegend(m_plot->checkableLegend);
     g->attachTo(this);
     m_plot->setCurrentCurve(g);
 //    m_plot->updateSecondaryPlots({qQNaN(), qQNaN()});

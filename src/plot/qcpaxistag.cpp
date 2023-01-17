@@ -31,55 +31,56 @@
 #include "plot/curve.h"
 #include "qcpitemrichtext.h"
 
-QCPAxisTag::QCPAxisTag(Plot *parent, QCPTrackingCursor *cursor, QCPAxis *parentAxis) :
-  QObject(parentAxis), parent(parent), cursor(cursor), mAxis(parentAxis)
+QCPAxisTag::QCPAxisTag(Plot *parent, QCPTrackingCursor *cursor, Enums::AxisType parentAxis) :
+    QObject(parent), parent(parent), cursor(cursor)
 {
-  mDummyTracer = new QCPItemTracer(mAxis->parentPlot());
-  mDummyTracer->setVisible(false);
+    mAxis = parent->impl()->axis(parentAxis);
+    mDummyTracer = new QCPItemTracer(mAxis->parentPlot());
+    mDummyTracer->setVisible(false);
 
-  switch (mAxis->axisType()) {
-      case QCPAxis::atRight:
-          mDummyTracer->position->setTypeX(QCPItemPosition::ptAxisRectRatio);
-          mDummyTracer->position->setTypeY(QCPItemPosition::ptPlotCoords);
-          mDummyTracer->position->setAxisRect(mAxis->axisRect());
-          mDummyTracer->position->setAxes(0, mAxis);
-          mDummyTracer->position->setCoords(1, 0);
-          break;
-      case QCPAxis::atLeft:
-          mDummyTracer->position->setTypeX(QCPItemPosition::ptAxisRectRatio);
-          mDummyTracer->position->setTypeY(QCPItemPosition::ptPlotCoords);
-          mDummyTracer->position->setAxisRect(mAxis->axisRect());
-          mDummyTracer->position->setAxes(0, mAxis);
-          mDummyTracer->position->setCoords(0, 0);
-          break;
-      case QCPAxis::atBottom:
-          mDummyTracer->position->setTypeX(QCPItemPosition::ptPlotCoords);
-          mDummyTracer->position->setTypeY(QCPItemPosition::ptAxisRectRatio);
-          mDummyTracer->position->setAxisRect(mAxis->axisRect());
-          mDummyTracer->position->setAxes(mAxis, 0);
-          mDummyTracer->position->setCoords(0, 1);
-          break;
-      case QCPAxis::atTop:
-          mDummyTracer->position->setTypeX(QCPItemPosition::ptPlotCoords);
-          mDummyTracer->position->setTypeY(QCPItemPosition::ptAxisRectRatio);
-          mDummyTracer->position->setAxisRect(mAxis->axisRect());
-          mDummyTracer->position->setAxes(mAxis, 0);
-          mDummyTracer->position->setCoords(0, 0);
-          break;
-  }
+    switch (mAxis->axisType()) {
+        case QCPAxis::atRight:
+            mDummyTracer->position->setTypeX(QCPItemPosition::ptAxisRectRatio);
+            mDummyTracer->position->setTypeY(QCPItemPosition::ptPlotCoords);
+            mDummyTracer->position->setAxisRect(mAxis->axisRect());
+            mDummyTracer->position->setAxes(0, mAxis);
+            mDummyTracer->position->setCoords(1, 0);
+            break;
+        case QCPAxis::atLeft:
+            mDummyTracer->position->setTypeX(QCPItemPosition::ptAxisRectRatio);
+            mDummyTracer->position->setTypeY(QCPItemPosition::ptPlotCoords);
+            mDummyTracer->position->setAxisRect(mAxis->axisRect());
+            mDummyTracer->position->setAxes(0, mAxis);
+            mDummyTracer->position->setCoords(0, 0);
+            break;
+        case QCPAxis::atBottom:
+            mDummyTracer->position->setTypeX(QCPItemPosition::ptPlotCoords);
+            mDummyTracer->position->setTypeY(QCPItemPosition::ptAxisRectRatio);
+            mDummyTracer->position->setAxisRect(mAxis->axisRect());
+            mDummyTracer->position->setAxes(mAxis, 0);
+            mDummyTracer->position->setCoords(0, 1);
+            break;
+        case QCPAxis::atTop:
+            mDummyTracer->position->setTypeX(QCPItemPosition::ptPlotCoords);
+            mDummyTracer->position->setTypeY(QCPItemPosition::ptAxisRectRatio);
+            mDummyTracer->position->setAxisRect(mAxis->axisRect());
+            mDummyTracer->position->setAxes(mAxis, 0);
+            mDummyTracer->position->setCoords(0, 0);
+            break;
+    }
 
-  // The text label is anchored at the arrow start (tail) and has its "position" aligned at the
-  // left, and vertically centered to the text label box.
-  mLabel = new QCPItemRichText(mAxis->parentPlot());
-  mLabel->setLayer("overlay");
-  mLabel->setClipToAxisRect(false);
-  mLabel->setPadding(QMargins(3, 3, 3, 3));
-  mLabel->setBrush(QBrush(QColor(255,255,255,230)));
-//  mLabel->setPen(QPen(Qt::black));
-  mLabel->setPositionAlignment(Qt::AlignLeft|Qt::AlignBottom);
-  mLabel->position->setParentAnchor(mDummyTracer->position);
-  mLabel->position->setCoords(2,-2);
-  parent->addSelectable(this);
+    // The text label is anchored at the arrow start (tail) and has its "position" aligned at the
+    // left, and vertically centered to the text label box.
+    mLabel = new QCPItemRichText(mAxis->parentPlot());
+    mLabel->setLayer("overlay");
+    mLabel->setClipToAxisRect(false);
+    mLabel->setPadding(QMargins(3, 3, 3, 3));
+    mLabel->setBrush(QBrush(QColor(255,255,255,230)));
+    //  mLabel->setPen(QPen(Qt::black));
+    mLabel->setPositionAlignment(Qt::AlignLeft|Qt::AlignBottom);
+    mLabel->position->setParentAnchor(mDummyTracer->position);
+    mLabel->position->setCoords(2,-2);
+    parent->addSelectable(this);
 }
 
 QCPAxisTag::~QCPAxisTag()

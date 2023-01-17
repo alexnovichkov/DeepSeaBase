@@ -47,6 +47,7 @@ Plot::Plot(Enums::PlotType type, QWidget *parent) :
     picker->setPickPriority(Picker::PickPriority::PickLast);
     picker->setEnabled(Settings::getSetting("pickerEnabled", true).toBool());
     zoom = new ZoomStack(this);
+    connect(zoom, &ZoomStack::replotNeeded, this, &Plot::replot);
     m_plot = new QCPPlot(this, parent);
 
     QVariantList list = Settings::getSetting("colors").toList();
@@ -427,19 +428,6 @@ void Plot::deleteCurveForChannelIndex(FileDescriptor *dfd, int channel, bool doR
     }
 }
 
-void Plot::deleteCurveForAllDescriptors(int channel)
-{
-
-}
-
-void Plot::deleteCurveForChannel(Channel *channel)
-{
-    if (Curve *curve = m->plotted(channel)) {
-        deleteCurve(curve, true);
-        updatePlottedIndexes();
-    }
-}
-
 void Plot::deleteSelectedCurve(Selectable *selected)
 {DD;
     if (Curve *curve = dynamic_cast<Curve*>(selected)) {
@@ -558,6 +546,63 @@ void Plot::addSelectable(Selectable *item)
 void Plot::removeSelectable(Selectable *item)
 {
     selectables.removeOne(item);
+}
+
+void Plot::deselect()
+{
+    for (auto candidate: selectables) {
+        candidate->setSelected(false, SelectedPoint());
+    }
+}
+
+Selected Plot::findSelected(QPoint pos) const
+{
+    //Ищем элемент под курсором мыши
+    Selected selected {nullptr, SelectedPoint()};
+
+    //сначала ищем метки, курсоры и т.д., то есть не кривые
+    {
+        double minDist = qInf();
+        for (auto candidate: selectables) {
+            if (m_plot->isCurve(candidate)) continue;
+            double distx = 0.0;
+            double disty = 0.0;
+            SelectedPoint point;
+            if (candidate->underMouse(pos, &distx, &disty, &point)) {
+                double dist = 0.0;
+                if (distx == qInf()) dist = disty;
+                else if (disty == qInf()) dist = distx;
+                else dist = sqrt(distx*distx+disty*disty);
+                if (!selected.object || dist < minDist) {
+                    selected.object = candidate;
+                    selected.point = point;
+                    minDist = dist;
+                }
+            }
+        }
+    }
+    if (!selected.object) {
+        double minDist = qInf();
+        for (auto candidate: selectables) {
+            if (!m_plot->isCurve(candidate)) continue;
+
+            double distx = 0.0;
+            double disty = 0.0;
+            SelectedPoint point;
+            if (candidate->underMouse(pos, &distx, &disty, &point)) {
+                double dist = 0.0;
+                if (distx == qInf()) dist = disty;
+                else if (disty == qInf()) dist = distx;
+                else dist = sqrt(distx*distx+disty*disty);
+                if (!selected.object || dist < minDist) {
+                    selected.object = candidate;
+                    selected.point = point;
+                    minDist = dist;
+                }
+            }
+        }
+    }
+    return selected;
 }
 
 QString Plot::pointCoordinates(const QPointF &pos)
@@ -776,7 +821,7 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 
 
     m_plot->setInfoVisible(false);
-
+    g->setLegend(m_plot->checkableLegend);
     g->attachTo(this);
 
     update();
@@ -876,7 +921,6 @@ void Plot::editLegendItem(Curve *curve)
     CurvePropertiesDialog dialog(curve, this);
     if (cursorBox) connect(&dialog, SIGNAL(curveChanged(Curve*)), cursorBox, SLOT(updateLayout()));
     dialog.exec();
-//    m_plot->replot();
 }
 
 void Plot::onDropEvent(bool plotOnLeft, const QVector<Channel*> &channels)

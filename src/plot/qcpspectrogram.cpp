@@ -30,18 +30,11 @@ bool QCPSpectrogram::isVisible() const
     return visible();
 }
 
-void QCPSpectrogram::attachTo(Plot *plot)
-{
-    Curve::attachTo(plot);
-    plot->impl()->checkableLegend->addItem(this, commonLegendData());
-}
-
 void QCPSpectrogram::detachFrom(Plot *plot)
 {
     Curve::detachFrom(plot);
-    plot->impl()->checkableLegend->removeItem(this);
     plot->impl()->removePlottable(this, false);
-    plot->impl()->replot();
+    plot->replot();
 }
 
 QString QCPSpectrogram::title() const
@@ -125,7 +118,7 @@ SelectedPoint QCPSpectrogram::closest(const QPoint &pos, double *dist, double *d
 void QCPSpectrogram::updatePen()
 {
     updateLegendIcon(Qt::SmoothTransformation, {16,16});
-    m_plot->impl()->checkableLegend->updateItem(this, commonLegendData());
+    updateInLegend();
 }
 
 QIcon QCPSpectrogram::thumbnail() const

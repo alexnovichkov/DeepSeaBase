@@ -24,7 +24,6 @@ class QCPSpectrogram : public QCPAbstractPlottable, public Curve
     // Curve interface
 public:
     virtual bool isVisible() const override;
-    virtual void attachTo(Plot *plot) override;
     virtual void detachFrom(Plot *plot) override;
     virtual QString title() const override;
     virtual void setTitle(const QString &title) override;

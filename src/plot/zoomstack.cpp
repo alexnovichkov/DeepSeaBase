@@ -2,7 +2,6 @@
 #include "plot.h"
 #include "logging.h"
 #include "algorithms.h"
-#include "qcpplot.h"
 
 ZoomStack::ZoomStack(Plot *plot) : QObject(plot),  m_plot(plot)
 {DD;
@@ -36,7 +35,7 @@ void ZoomStack::addZoom(ZoomStack::zoomCoordinates coords, bool addToStack)
         scaleBounds(key)->set(val.x(), val.y());
     }
 
-    m_plot->impl()->replot();
+    emit replotNeeded();
 }
 
 void ZoomStack::zoomBack()
@@ -53,7 +52,7 @@ void ZoomStack::zoomBack()
             scaleBounds(key)->set(val.x(), val.y());
         }
     }
-    m_plot->impl()->replot();
+    emit replotNeeded();
 }
 
 void ZoomStack::moveToAxis(Enums::AxisType axis, double min, double max)
@@ -84,7 +83,7 @@ void ZoomStack::autoscale(Enums::AxisType axis)
         m_zoomStack.clear();
         for (auto b: m_scaleBounds.values()) b->autoscale();
     }
-    m_plot->replot();
+    emit replotNeeded();
 }
 
     /**************************************************/

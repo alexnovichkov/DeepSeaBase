@@ -4,7 +4,6 @@
 #include <QMouseEvent>
 #include <QApplication>
 #include <QMenu>
-#include "qcpplot.h"
 
 QDebug operator<<(QDebug deb, const Selected &o)
 {
@@ -23,7 +22,7 @@ Selected Picker::findObject(QMouseEvent *e)
 
     if (e->modifiers() == Qt::NoModifier || e->modifiers() == Qt::ControlModifier) {
         pos = e->pos();
-        selected = plot->impl()->findObject(pos);
+        selected = plot->findSelected(pos);
     }
     return selected;
 }
@@ -39,7 +38,7 @@ void Picker::startPick(QPoint startPos, Selected selected)
 
 void Picker::deselect()
 {DD;
-    plot->impl()->deselect();
+    plot->deselect();
     currentSelected.clear();
 }
 
@@ -112,7 +111,7 @@ void Picker::proceedPick(QMouseEvent *e)
     currentSelected.object->moveToPos(e->pos(), startPosition);
     startPosition = e->pos();
 
-    plot->impl()->replot();
+    plot->replot();
 }
 
 void Picker::endPick(QMouseEvent *e)
@@ -124,6 +123,6 @@ void Picker::endPick(QMouseEvent *e)
     }
     else deselect();
 
-    plot->impl()->replot();
+    plot->replot();
 }
 
