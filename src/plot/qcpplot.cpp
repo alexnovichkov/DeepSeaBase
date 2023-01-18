@@ -157,6 +157,7 @@ void QCPPlot::cancelZoom()
     if (mSelectionRect && mSelectionRect->isActive()) {
         mSelectionRect->cancel();
         mSelectionRect->setVisible(false);
+        replot();
     }
 }
 
