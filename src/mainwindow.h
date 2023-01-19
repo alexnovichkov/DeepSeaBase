@@ -193,6 +193,8 @@ private:
     QToolBar *mainToolBar;
 
     QAction *exportToExcelAct;
+    QAction *exportToExcelFullAct;
+    QAction *exportToExcelOnlyDataAct;
 
     QAction *convertMatFilesAct;
     QAction *convertEsoFilesAct;

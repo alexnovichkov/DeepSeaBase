@@ -855,7 +855,7 @@ void Plot::savePlot() /*SLOT*/
     }
 }
 
-void Plot::copyToClipboard() /*SLOT*/
+void Plot::copyToClipboard(bool useDialog) /*SLOT*/
 {DD;
 
     QTemporaryFile file(QDir::tempPath()+"/DeepSeaBase-XXXXXX.bmp");
@@ -863,17 +863,26 @@ void Plot::copyToClipboard() /*SLOT*/
         QString fileName = file.fileName();
         file.close();
 
-        ImageRenderDialog dialog(false, 0);
+        QSize size = ImageRenderDialog::defaultSize();
+        int resolution = ImageRenderDialog::defaultResolution();
 
-        if (dialog.exec()) {
-            if (m_plot) m_plot->importPlot(fileName, dialog.getSize(), dialog.getResolution());
-            QImage img;
-            if (img.load(fileName))
-                qApp->clipboard()->setImage(img);
-            else
-                QMessageBox::critical(0, "Копирование рисунка", "Не удалось скопировать рисунок");
-//                LOG(ERROR)<<"Could not load image from"<<fileName;
+        if (useDialog) {
+            ImageRenderDialog dialog(false, 0);
+
+            if (dialog.exec())  {
+                size = dialog.getSize();
+                resolution = dialog.getResolution();
+            }
         }
+        if (m_plot) m_plot->importPlot(fileName, size, resolution);
+        QImage img;
+        if (img.load(fileName))
+            qApp->clipboard()->setImage(img);
+        else {
+            QMessageBox::critical(0, "Копирование рисунка", "Не удалось скопировать рисунок");
+            LOG(ERROR)<<"Could not load image from"<<fileName;
+        }
+
     }
     else QMessageBox::critical(0, "Копирование рисунка", "Не удалось создать временный файл");
 }

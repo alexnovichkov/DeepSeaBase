@@ -258,10 +258,10 @@ void MainWindow::createActions()
     exportToExcelAct->setIcon(QIcon(":/icons/excel.png"));
     connect(exportToExcelAct, SIGNAL(triggered()), this, SLOT(exportToExcel()));
     QMenu *excelMenu = new QMenu(this);
-    QAction *exportToExcelFullAct = new QAction("Экспортировать в Excel весь диапазон", this);
+    exportToExcelFullAct = new QAction("Экспортировать в Excel весь диапазон", this);
     connect(exportToExcelFullAct, SIGNAL(triggered()), this, SLOT(exportToExcelFull()));
     excelMenu->addAction(exportToExcelFullAct);
-    QAction *exportToExcelOnlyDataAct = new QAction("Экспортировать в Excel только данные", this);
+    exportToExcelOnlyDataAct = new QAction("Экспортировать в Excel только данные", this);
     connect(exportToExcelOnlyDataAct, SIGNAL(triggered()), this, SLOT(exportToExcelData()));
     excelMenu->addAction(exportToExcelOnlyDataAct);
     exportToExcelAct->setMenu(excelMenu);
@@ -2098,6 +2098,8 @@ void MainWindow::updateActions()
     editDescriptionsAct->setDisabled(selectedFilesCount==0);
 
     exportToExcelAct->setEnabled(curvesCount>0 /*&& !spectrogram*/);
+    exportToExcelFullAct->setEnabled(curvesCount>0 && !spectrogram);
+    exportToExcelOnlyDataAct->setEnabled(curvesCount>0 && !spectrogram);
     exportChannelsToWavAct->setEnabled(!timeFiles.isEmpty() && selectedChannelsCount>0);
 
     if (currentPlot) currentPlot->updateActions(filesCount, channelsCount);

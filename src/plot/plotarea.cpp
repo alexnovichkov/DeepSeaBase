@@ -129,7 +129,7 @@ PlotArea::PlotArea(int index, QWidget *parent)
     copyToClipboardAct = new QAction(QString("Копировать в буфер обмена"), this);
     copyToClipboardAct->setIcon(QIcon(":/icons/clipboard.png"));
     connect(copyToClipboardAct, &QAction::triggered, [=](){
-        if (m_plot) m_plot->copyToClipboard();
+        if (m_plot) m_plot->copyToClipboard(true);
     });
 
     printPlotAct = new QAction(QString("Распечатать рисунок"), this);
@@ -312,8 +312,251 @@ void setAxis(QAxObject *xAxis, const QString &title)
     delete axisTitle;
 }
 
+void PlotArea::exportSonogramToExcel(bool fullRange, bool dataOnly)
+{
+    static QAxObject *excel = 0;
+    auto curves = m_plot->model()->curves([](Curve*c){return c->isVisible();});
+    if (curves.isEmpty()) return;
+
+    Curve *curve =  curves.first();
+
+    Channel *channel = curve->channel;
+    FileDescriptor *descriptor = channel->descriptor();
+
+    const int samplesCount = channel->data()->samplesCount();
+
+    double minX = channel->data()->xMin();
+    double maxX = channel->data()->xMax();
+
+    double minZ = channel->data()->zMin();
+    double maxZ = channel->data()->zMax();
+
+    Range rangeX = m_plot->plotRange(Enums::AxisType::atBottom);
+    Range rangeZ = m_plot->plotRange(Enums::AxisType::atLeft);
+
+    if (minX >= rangeX.min && maxX <= rangeX.max && minZ >= rangeZ.min && maxZ <= rangeZ.max)
+        fullRange = true;
+
+    // определяем, будут ли экспортированы графики;
+    bool exportPlots = true;
+    if (samplesCount > 32000 && fullRange && !dataOnly) {
+        if (QMessageBox::question(this, "Слишком много данных",
+                             "Число отсчетов превышает 32000.\n"
+                             "Экспортировать только данные (графики не будут экспортированы)?")==QMessageBox::Yes)
+        exportPlots = false;
+        else return;
+    }
+    if (dataOnly) exportPlots = false;
+
+    if (!excel) {
+        excel = new QAxObject("{00024500-0000-0000-c000-000000000046}&",this);
+    }
+    if (!excel) return;
+
+    excel->setProperty("Visible", true);
+
+    //получаем рабочую книгу
+    QAxObject * workbooks = excel->querySubObject("WorkBooks");
+    QAxObject * workbook = excel->querySubObject("ActiveWorkBook");
+    if (!workbook) {
+        workbooks->dynamicCall("Add");
+    }
+    workbook = excel->querySubObject("ActiveWorkBook");
+
+    // получаем список листов и добавляем новый лист
+    QAxObject *worksheets = workbook->querySubObject("Sheets");
+    worksheets->dynamicCall("Add()");
+    QAxObject * worksheet = workbook->querySubObject("ActiveSheet");
+
+    // записываем название файла и описатели
+    {
+        QStringList descriptions = descriptor->dataDescription().twoStringDescription();
+        while (descriptions.size()<2) descriptions << "";
+
+        QAxObject *cells = worksheet->querySubObject("Cells(Int,Int)", 1, 1);
+        if (cells) cells->setProperty("Value", descriptor->fileName());
+
+        cells = worksheet->querySubObject("Cells(Int,Int)", 2, 1);
+        if (cells) cells->setProperty("Value", curve->title());
+
+        cells = worksheet->querySubObject("Cells(Int,Int)", 3, 1);
+        if (cells) cells->setProperty("Value", descriptions.constFirst());
+
+        cells = worksheet->querySubObject("Cells(Int,Int)", 4, 1);
+        if (cells) cells->setProperty("Value", descriptions.at(1));
+
+        delete cells;
+    }
+
+    QAxObject *cells = nullptr;
+
+    //получаем рисунок сонограммы
+    m_plot->copyToClipboard(false);
+    //вставляем рисунок из буфера обмена в лист
+
+    cells = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5, 1);
+    QAxObject* range = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", cells->asVariant(), cells->asVariant() );
+    range->dynamicCall("Select (void)");
+    worksheet->dynamicCall("Paste()");
+    delete range;
+
+//    int numCols = 0;
+//    int numRows = 0;
+//    for (int x=0; x<channel->data()->samplesCount(); ++x) {
+//        double val = channel->data()->xValue(x);
+//        if (!fullRange && (val < rangeX.min || val > rangeX.max)) continue;
+
+//        cells = worksheet->querySubObject("Cells(Int,Int)", 6+numRows, 1);
+//        if (cells) cells->setProperty("Value", val);
+//        numRows++;
+//    }
+//    for (int z=0; z<channel->data()->blocksCount(); ++z) {
+//        double val = channel->data()->zValue(z);
+//        if (!fullRange && (val < rangeZ.min || val > rangeZ.max)) continue;
+
+//        cells = worksheet->querySubObject("Cells(Int,Int)", 5, 2+numCols);
+//        if (cells) cells->setProperty("Value", val);
+//        numCols++;
+//    }
+
+//    int col = 0;
+//    for (int z = 0; z < channel->data()->blocksCount(); ++z) {
+//        int row = 0;
+//        double zval =  channel->data()->zValue(z);
+//        if (!fullRange && (zval < rangeZ.min || zval > rangeZ.max)) continue;
+
+//        for (int x=0; x<channel->data()->samplesCount(); ++x) {
+//            double xval = channel->data()->xValue(x);
+//            if (!fullRange && (xval < rangeX.min || xval > rangeX.max)) continue;
+
+//            cells = worksheet->querySubObject("Cells(Int,Int)", 6+row, 2+col);
+//            if (cells) cells->setProperty("Value", channel->data()->yValue(x,z));
+//            row++;
+//        }
+//        col++;
+//    }
+
+//    // выделяем диапазон, чтобы он автоматически использовался для построения диаграммы
+//    QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5, 1);
+//    QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5 + numRows, 1 + numCols);
+//    QAxObject* range = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", Cell1->asVariant(), Cell2->asVariant() );
+//    range->dynamicCall("Select (void)");
+
+//    delete Cell1;
+//    delete Cell2;
+//    delete range;
+
+//    if (exportPlots) {
+//        QAxObject *charts = workbook->querySubObject("Charts");
+//        charts->dynamicCall("Add()");
+//        QAxObject *chart = workbook->querySubObject("ActiveChart");
+//        chart->setProperty("ChartType", 85);
+//        QAxObject * series = chart->querySubObject("SeriesCollection");
+
+//        QAxObject * serie = series->querySubObject("Item (int)", 1);
+//        if (serie) {
+//            serie->setProperty("Name", curve->channel->name());
+//            foreach(PointLabel *label, curve->labels) {
+//                QAxObject* point = serie->querySubObject("Points(QVariant)", label->point().x+1);
+//                QVariantList options = {0, 0, 0, 0, 0, -1, 0, 0, 0, 0};
+
+//                point->dynamicCall("ApplyDataLabels()", options);
+//                QAxObject* dataLabel = point->querySubObject("DataLabel");
+//                dataLabel->setProperty("ShowCategoryName", -1);
+//                dataLabel->setProperty("ShowValue", 0);
+//                dataLabel->setProperty("Position", 0);
+//                delete dataLabel;
+//                delete point;
+//            }
+//        }
+//        delete serie;
+
+        // перемещаем графики на дополнительную вертикальную ось,
+        // если они были там в программе
+        // и меняем название кривой
+//        int seriesCount = series->property("Count").toInt();
+//        bool addRightAxis = false;
+//        for ( int i=0; i<seriesCount; ++i) {
+//            Curve *curve = m_plot->model()->curve(i);
+//            QAxObject * serie = series->querySubObject("Item (int)", i+1);
+//            if (serie) {
+//                if (curve->yAxis()==Enums::AxisType::atRight) {
+//                    serie->setProperty("AxisGroup", 2);
+//                    addRightAxis = true;
+//                }
+//                serie->setProperty("Name", curve->channel->name());
+//            }
+//            delete serie;
+//        }
+//        if (addRightAxis) {
+//            QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&,const QVariant&)", 2,2);
+//            if (yAxis) setAxis(yAxis, stripHtml(m_plot->axisTitleText(Enums::AxisType::atRight)));
+//            delete yAxis;
+//        }
+
+
+        // добавляем подписи осей
+//        QAxObject *xAxis = chart->querySubObject("Axes(const QVariant&)", 1);
+//        if (xAxis) {
+//            setAxis(xAxis, stripHtml(m_plot->axisTitleText(Enums::AxisType::atBottom)));
+//            xAxis->setProperty("MaximumScale", rangeX.max);
+//            xAxis->setProperty("MinimumScale", int(rangeX.min/10)*10);
+//        }
+//        delete xAxis;
+
+//        QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&)", 2);
+//        if (yAxis) {
+//            setAxis(yAxis, stripHtml(m_plot->axisTitleText(Enums::AxisType::atLeft)));
+//            yAxis->setProperty("CrossesAt", -1000);
+//            yAxis->setProperty("MaximumScale", rangeZ.max);
+//            yAxis->setProperty("MinimumScale", int(rangeZ.min/10)*10);
+//        }
+//        delete yAxis;
+
+//        // рамка вокруг графика
+//        QAxObject *plotArea = chart->querySubObject("PlotArea");
+//        if (plotArea) setLineColor(plotArea, 13);
+//        delete plotArea;
+
+
+//        QAxObject *chartArea = chart->querySubObject("ChartArea");
+//        chartArea->querySubObject("Format")->querySubObject("Line")->setProperty("Visible", 0);
+//        delete chartArea;
+
+
+
+
+//        QAxObject *legendObject = chart->querySubObject("Legend");
+//        QAxObject *legendFormat = legendObject->querySubObject("Format");
+//        QAxObject *legendFormatFill = legendFormat->querySubObject("Fill");
+
+//        legendFormatFill->setProperty("Visible", 1);
+//        legendFormatFill->querySubObject("ForeColor")->setProperty("RGB", QColor(Qt::white).rgb());
+//        legendFormat->querySubObject("Line")->setProperty("Visible", 1);
+//        legendFormat->querySubObject("Line")->querySubObject("ForeColor")->setProperty("RGB", QColor(Qt::black).rgb());
+
+//        delete legendFormatFill;
+//        delete legendFormat;
+//        delete legendObject;
+//        delete series;
+//        delete chart;
+//        delete charts;
+//    }
+
+    delete cells;
+    delete worksheet;
+    delete worksheets;
+    delete workbook;
+    delete workbooks;
+}
+
 void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 {DD;
+    if (plot() && plot()->type() == Enums::PlotType::Spectrogram) {
+        exportSonogramToExcel(fullRange, dataOnly);
+        return;
+    }
+
     static QAxObject *excel = 0;
 
    // QList<Curve*> &curves = m_plot->curves;

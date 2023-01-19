@@ -337,7 +337,7 @@ protected:
 public slots:
     void replot();
     void savePlot();
-    void copyToClipboard();
+    void copyToClipboard(bool useDialog);
     void print();
     void updateLegends();
 
