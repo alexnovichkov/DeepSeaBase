@@ -49,6 +49,7 @@ SOURCES += main.cpp\
     converters/anaconverter.cpp \
     converters/anaconverterdialog.cpp \
     descriptorpropertiesdialog.cpp \
+    fileformats/anafile.cpp \
     fileformats/fileio.cpp \
     fileformats/formatfactory.cpp \
     fileformats/wavfile.cpp \
@@ -175,6 +176,7 @@ HEADERS  += mainwindow.h \
     dfdfilterproxy.h \
     enums.h \
     fileformats/abstractformatfactory.h \
+    fileformats/anafile.h \
     fileformats/fileio.h \
     fileformats/wavfile.h \
     filehandler.h \

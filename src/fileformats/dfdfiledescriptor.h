@@ -260,7 +260,6 @@ class DfdFileDescriptor : public FileDescriptor
 {
 public:
     DfdFileDescriptor(const QString &fileName);
-    DfdFileDescriptor(const DfdFileDescriptor &d, const QString &fileName, QVector<int> indexes = QVector<int>());
     DfdFileDescriptor(const FileDescriptor &other, const QString &fileName, QVector<int> indexes = QVector<int>());
     DfdFileDescriptor(const QVector<Channel *> &source, const QString &fileName);
     virtual ~DfdFileDescriptor();

@@ -26,6 +26,7 @@
 #include "converters/matlabconvertor.h"
 #include "converters/matlabconverterdialog.h"
 #include "converters/esoconverterdialog.h"
+#include "converters/anaconverterdialog.h"
 #include "converters/converterdialog.h"
 #include "timeslicer.h"
 #include <QTime>
@@ -122,6 +123,7 @@ MainWindow::MainWindow(QWidget *parent)
     fileMenu->addAction(convertAct);
     fileMenu->addAction(convertMatFilesAct);
     fileMenu->addAction(convertEsoFilesAct);
+    fileMenu->addAction(convertAnaFilesAct);
     createConvertPluginsMenu(fileMenu);
 
     QMenu *recordsMenu = menuBar()->addMenu(QString("Записи"));
@@ -341,6 +343,9 @@ void MainWindow::createActions()
 
     convertEsoFilesAct = new QAction("Конвертировать файлы ESO...", this);
     connect(convertEsoFilesAct,SIGNAL(triggered()),SLOT(convertEsoFiles()));
+
+    convertAnaFilesAct = new QAction("Конвертировать файлы ANA/ANP...", this);
+    connect(convertAnaFilesAct,SIGNAL(triggered()),SLOT(convertAnaFiles()));
 
     plotOctaveAsHistogramAct = new QAction("Строить третьоктавы в виде гистограмм", this);
     plotOctaveAsHistogramAct->setCheckable(true);
@@ -1385,6 +1390,17 @@ void MainWindow::onPluginTriggered(const QString &pluginKey)
 void MainWindow::convertEsoFiles()
 {DD;
     EsoConverterDialog dialog(this);
+    if (dialog.exec()) {
+        QStringList files = dialog.getConvertedFiles();
+        if (files.isEmpty()) return;
+        this->addFiles(files);
+        if (currentTab) currentTab->fileHandler->trackFiles(files);
+    }
+}
+
+void MainWindow::convertAnaFiles()
+{
+    AnaConverterDialog dialog(this);
     if (dialog.exec()) {
         QStringList files = dialog.getConvertedFiles();
         if (files.isEmpty()) return;

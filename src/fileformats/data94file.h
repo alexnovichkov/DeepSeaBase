@@ -42,7 +42,7 @@
  *           "sensorID" : "", //ChanAddress
  *           "sensorName": "", //ChanName
  *           "samplerate": 8192,
- *           "bandwidth": 3200, //обычно samplerate/2.56, но может и отличаться при полосной фильтрации
+ *           "bandwidth": 3200, //обычно samplerate/2.56, но может и отличаться при полосовой фильтрации
  *           "function": {
  *               "name": "FRF", //или "time" - для тонкой настройки типа функции
  *               "type": 5, //тип функции согласно UFF - обобщенный тип

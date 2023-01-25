@@ -2,16 +2,14 @@
 #define ANACONVERTER_H
 
 #include <QStringList>
+#include <QObject>
 
-class AnaFile
-{
-
-};
-
-class AnaConverter
+class AnaConverter : public QObject
 {
 public:
     void setFilesToConvert(const QStringList &files);
+    QStringList getNewFiles() {}
+    void setResultFile(const QString &resultFile) {}
 };
 
 #endif // ANACONVERTER_H

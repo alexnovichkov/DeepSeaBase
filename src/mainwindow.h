@@ -110,6 +110,7 @@ private slots:
 
     void convertMatFiles();
     void convertEsoFiles();
+    void convertAnaFiles();
 
     void exportChannelsToWav();
     void renameDescriptor();
@@ -198,6 +199,7 @@ private:
 
     QAction *convertMatFilesAct;
     QAction *convertEsoFilesAct;
+    QAction *convertAnaFilesAct;
     QAction *convertAct;
     QAction *aboutAct;
     QAction *addPlotAreaAct;

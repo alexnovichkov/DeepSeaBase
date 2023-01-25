@@ -5,7 +5,6 @@
 //#include <QColor>
 #include <QObject>
 #include "dataholder.h"
-#include "boost/property_tree/ptree.hpp"
 #include <algorithm>
 
 namespace Descriptor {

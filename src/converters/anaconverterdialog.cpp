@@ -35,7 +35,7 @@ AnaConverterDialog::AnaConverterDialog(QWidget *parent) : QDialog(parent)
                 QTreeWidgetItem *item = new QTreeWidgetItem(tree);
                 item->setText(0, QString::number(i++));
                 item->setText(1, QFileInfo(f).fileName());
-                item->setFlags(item->flags() | Qt::ItemIsEditable);
+//                item->setFlags(item->flags() | Qt::ItemIsEditable);
                 //item->setText(2, QFileInfo(f).fileName());
             }
             tree->resizeColumnToContents(0);
@@ -51,27 +51,10 @@ AnaConverterDialog::AnaConverterDialog(QWidget *parent) : QDialog(parent)
     tree->setHeaderLabels(QStringList()<<"№"<< "Файл"<<"Название канала");
     tree->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
 
-    QStringList columns;
-    columns << "ЭСОУ" << "МЗПХ" << "ЭСОТ" <<"MaxT"<<"ЭСОМ";
-
-    //QSplitter *splitter = new QSplitter(Qt::Vertical, this);
-    //QWidget *first = new QWidget(this);
-
     QGridLayout *grid = new QGridLayout;
     grid->addWidget(new QLabel("Файлы", this),0,0);
     grid->addWidget(button,0,1);
     grid->addWidget(tree, 1,0,6,2);
-    grid->addWidget(new QLabel("Столбцы", this),1,2,1,1,Qt::AlignBottom);
-
-    for (int i=0; i<5; ++i) {
-        QCheckBox *checkBox = new QCheckBox(columns.at(i), this);
-        connect(checkBox, &QCheckBox::clicked, [=](){
-//            converter->setColumn(i,checkBox->isChecked());
-        });
-        checkBox->setChecked(true);
-//        converter->setColumn(i,checkBox->isChecked());
-        grid->addWidget(checkBox, i+2,2);
-    }
 
     grid->addWidget(progress,7,0,1,3);
     grid->addWidget(buttonBox,8,0,1,3);
@@ -91,12 +74,14 @@ AnaConverterDialog::~AnaConverterDialog()
 
 void AnaConverterDialog::accept()
 {
-
+    convertedFiles << converter->getNewFiles();
+    QDialog::accept();
 }
 
 void AnaConverterDialog::reject()
 {
-
+    stop();
+    QDialog::reject();
 }
 
 void AnaConverterDialog::updateProgressIndicator()
@@ -106,7 +91,33 @@ void AnaConverterDialog::updateProgressIndicator()
 
 void AnaConverterDialog::start()
 {
+    QString dfdFolder = Settings::getSetting("dfdFolder").toString();
+    if (dfdFolder.isEmpty()) dfdFolder = folder;
+    QString resultFile = QFileDialog::getSaveFileName(this,"Сохранение файла dfd", dfdFolder,"Файлы dfd (*.dfd)");
+    if (resultFile.isEmpty()) return;
+    converter->setResultFile(resultFile);
 
+    buttonBox->buttons().constFirst()->setDisabled(true);
+    if (!thread) thread = new QThread;
+    converter->moveToThread(thread);
+    QStringList channelNames;
+    for (int i=0; i<tree->topLevelItemCount(); ++i) {
+        channelNames << (tree->topLevelItem(i)->text(2).isEmpty()?
+                             QFileInfo(tree->topLevelItem(i)->text(1)).baseName():
+                             tree->topLevelItem(i)->text(2));
+    }
+
+    //converter->setChannelNames(channelNames);
+    connect(thread, SIGNAL(started()), converter, SLOT(convert()));
+    connect(converter, SIGNAL(finished()), thread, SLOT(quit()));
+    connect(converter, SIGNAL(finished()), this, SLOT(finalize()));
+    connect(converter, SIGNAL(tick()), SLOT(updateProgressIndicator()));
+    //connect(convertor, SIGNAL(tick(QString)), SLOT(updateProgressIndicator(QString)));
+    //connect(convertor, SIGNAL(message(QString)), textEdit, SLOT(appendHtml(QString)));
+
+    progress->setValue(0);
+
+    thread->start();
 }
 
 void AnaConverterDialog::stop()
