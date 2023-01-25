@@ -82,6 +82,8 @@ QVariant ResamplingFunction::m_getParameter(const QString &property) const
             return sR / factor;
         if (property == "?/functionDescription")
             return "RSMPL";
+        if (property == "?/functionType")
+            return 1; //Time data
         if (property == "?/dataType") // dfd DataType
             return 1; //CuttedData
         if (property == "?/xStep")
@@ -108,7 +110,7 @@ DataDescription ResamplingFunction::getFunctionDescription() const
 
     result.put("function.format", "real");
     result.put("function.name", "RSMPL");
-    result.put("function.type", 12);
+    result.put("function.type", 1);
 
     return result;
 }
@@ -126,9 +128,7 @@ void ResamplingFunction::m_setParameter(const QString &property, const QVariant 
             double f = 1.0 / val.toDouble() / 2.56 / xStep;
             factor = f;
             emit parameterChanged("?/xStep", xStep * factor);
-//            emit attributeChanged(this, name()+"/factor",QVariant(),"");
             emit attributeChanged(this, name()+"/frequencyRange",QVariant(),"");
-//            emit attributeChanged(this, name()+"/sampleRate",QVariant(),"");
         }
     }
     else if (p == "sampleRate") {
@@ -137,8 +137,6 @@ void ResamplingFunction::m_setParameter(const QString &property, const QVariant 
             double f = 1.0 / xStep / sR;
             factor = f;
             emit parameterChanged("?/xStep", xStep * factor);
-//            emit attributeChanged(this, name()+"/factor",QVariant(),"");
-//            emit attributeChanged(this, name()+"/frequencyRange",QVariant(),"");
             emit attributeChanged(this, name()+"/sampleRate",QVariant(),"");
         }
     }
@@ -148,8 +146,6 @@ void ResamplingFunction::m_setParameter(const QString &property, const QVariant 
             factor = f;
             emit parameterChanged("?/xStep", xStep * factor);
             emit attributeChanged(this, name()+"/factor",QVariant(),"");
-//            emit attributeChanged(this, name()+"/frequencyRange",QVariant(),"");
-//            emit attributeChanged(this, name()+"/sampleRate",QVariant(),"");
         }
     }
     else if (p == "xStep") {
