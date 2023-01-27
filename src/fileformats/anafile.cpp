@@ -2,7 +2,7 @@
 
 #include "logging.h"
 #include "algorithms.h"
-
+#include "unitsconverter.h"
 
 AnaFile::AnaFile(const QString &fileName) : FileDescriptor(fileName)
 {DD;
@@ -37,6 +37,16 @@ AnaFile::~AnaFile()
     delete _channel;
 }
 
+QStringList AnaFile::fileFilters()
+{
+    return QStringList()<< "Файлы ana/anp (*.anp)";
+}
+
+QStringList AnaFile::suffixes()
+{
+    return QStringList()<<"*.anp";
+}
+
 void AnaFile::read()
 {
     QFile anp(fileName());
@@ -46,6 +56,10 @@ void AnaFile::read()
     }
 
     DataDescription channel;
+
+    int format = getFormat();
+    double samplerate = 1;
+    int samples = 0;
 
     QTextStream s(&anp);
     QString date;
@@ -57,7 +71,7 @@ void AnaFile::read()
         }
         else if (line.startsWith("GAIN ")) channel.put("description.gain", line.mid(5).toInt());
         else if (line.startsWith("ABSVOLT ")) channel.put("description.absvolt", line.mid(8).toDouble());
-        else if (line == "FORMAT i") channel.put("function.precision", "int16");
+        else if (line == "FORMAT i") channel.put("function.precision", format == 2 ? "int16" : "int32");
         else if (line == "FORMAT d") channel.put("function.precision", "float");
         else if (line.startsWith("DATE ")) date = line.mid(5);
         else if (line.startsWith("TIME_TSS ")) time = line.mid(9);
@@ -69,7 +83,7 @@ void AnaFile::read()
         else if (line.startsWith("TTR ")) channel.put("description.time", line.mid(4).toDouble());
         else if (line.startsWith("VOLTAGE ")) channel.put("description.voltage", line.mid(8).toInt());
         else if (line.startsWith("CHANNEL ")) channel.put("description", line.toLower());
-        else if (line.startsWith("FRQ ")) channel.put("samplerate", line.mid(4).toInt());
+        else if (line.startsWith("FRQ ")) samplerate = line.mid(4).toDouble();
     }
     dataDescription().put("dateTime", dateTimeFromString(date,time));
     channel.put("function.name", "time");
@@ -81,14 +95,24 @@ void AnaFile::read()
     channel.put("yname", "В");
     channel.put("zname", "");
     channel.put("blocks", 1);
-//    channel.put("samples", );
+    samples = QFile(rawFileName).size() / format;
+    channel.put("samples", samples);
+    channel.put("samplerate", samplerate);
 
     _channel  = new AnaChannel(this);
     _channel->setDataDescription(channel);
+    _channel->data()->setXValues(0, 1.0 / samplerate, samples);
+    _channel->data()->setZValues(0,0,1);
+    _channel->data()->setYValuesFormat(DataHolder::YValuesReals);
+    _channel->data()->setYValuesUnits(DataHolder::UnitsLinear);
+    auto thr = PhysicalUnits::Units::logref("В");
+    _channel->data()->setThreshold(thr);
+    dataDescription().put("function.logref", thr);
 }
 
 void AnaFile::write()
 {
+    //File is read-only
     //TODO: дописать
 }
 
@@ -264,10 +288,25 @@ void AnaFile::writeAnp(QTextStream &stream)
 
 }
 
+int AnaFile::getFormat() const
+{
+    //Если в папке с файлом нет файла zrec.ini, то возвращаем 2 (16-бит формат)
+    //Если файл zrec.ini есть, то читаем из него параметр Format. Если он равен 0,
+    //то возвращаем 2, иначе - 4
+
+    QFileInfo fi(fileName());
+    if (QFile f(fi.canonicalPath()+"/"+"zrec.ini"); f.exists()) {
+        QSettings s(f.fileName(), QSettings::IniFormat);
+        return s.value("Common/Format", 0).toInt() == 0 ? 2 : 4;
+    }
+    return 2;
+}
+
 
 AnaChannel::AnaChannel(AnaFile *parent) : Channel(), parent(parent)
 {
     parent->_channel = this;
+    //return ((v*ADCStep+ADC0)/AmplLevel - AmplShift - Sens0Shift)/SensSensitivity;
 }
 
 AnaChannel::AnaChannel(Channel &other, AnaFile *parent) : Channel(other), parent(parent)
@@ -285,6 +324,7 @@ AnaChannel::AnaChannel(Channel &other, AnaFile *parent) : Channel(other), parent
 bool AnaChannel::write(QDataStream &stream, const DataHolder *data)
 {
 
+    return true;
 }
 
 QVariant AnaChannel::info(int column, bool edit) const
@@ -305,7 +345,7 @@ QVariant AnaChannel::info(int column, bool edit) const
 
 int AnaChannel::columnsCount() const
 {
-    return 8;
+    return 7;
 }
 
 QVariant AnaChannel::channelHeader(int column) const
@@ -314,11 +354,10 @@ QVariant AnaChannel::channelHeader(int column) const
         case 0: return QString("Имя");
         case 1: return QString("Ед.изм.");
         case 2: return QString("Описание");
-        case 3: return QString("Коррекция");
-        case 4: return QString("Усиление");
-        case 5: return QString("База");
-        case 6: return QString("Скорость");
-        case 7: return QString("Расст. до СИД");
+        case 3: return QString("База");
+        case 4: return QString("Скорость");
+        case 5: return QString("Расст. до СИД");
+        case 6: return QString("Время");
         default: return QVariant();
     }
     return QVariant();
@@ -329,22 +368,79 @@ Descriptor::DataType AnaChannel::type() const
     return Descriptor::TimeResponse;
 }
 
+DataPrecision fromAnaPrecision(const QString &s)
+{
+    if (s == "int16") return DataPrecision::Int16;
+    if (s == "int32") return DataPrecision::Int32;
+    if (s == "float") return DataPrecision::Float;
+    return DataPrecision::Int16;
+}
+
 void AnaChannel::populate()
 {
-}
+    _data->clear();
 
-QString AnaChannel::yNameOld() const
-{
-}
+    QFile rawFile(parent->rawFileName);
 
-void AnaChannel::setXStep(double xStep)
-{
+    if (rawFile.open(QFile::ReadOnly)) {
+        const auto prec = fromAnaPrecision(dataDescription().get("function.precision").toString());
+        QVector<double> YValues;
+        const quint64 blockSizeBytes = rawFile.size();
+        const int channelsCount = 1;
+
+        // map file into memory
+        unsigned char *ptr = rawFile.map(0, rawFile.size());
+        if (ptr) {//достаточно памяти отобразить весь файл
+            qDebug()<<QString("Чтение канала ")<<index()<<QString(" через mmap");
+            YValues = convertFrom<double>(ptr, blockSizeBytes, prec);
+        }
+        else {
+            //читаем классическим способом через getChunk
+            qDebug()<<QString("Чтение канала ")<<index()<<QString(" через потоки");
+            QDataStream readStream(&rawFile);
+            readStream.setByteOrder(QDataStream::LittleEndian);
+            if (prec == DataPrecision::Float)
+                readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+            qint64 actuallyRead = 0;
+            const quint64 chunkSize = dataDescription().get("samples").toLongLong();
+            YValues = getChunkOfData<double>(readStream, chunkSize, prec, &actuallyRead);
+        }
+
+        YValues.resize(data()->samplesCount());
+        postprocess(YValues);
+        _data->setYValues(YValues, _data->yValuesFormat());
+        setPopulated(true);
+        rawFile.close();
+    }
+    else {
+        LOG(ERROR)<<"Cannot read raw file"<<parent->rawFileName;
+    }
 }
 
 FileDescriptor *AnaChannel::descriptor() const
 {
+    return parent;
 }
 
 int AnaChannel::index() const
 {
+    return 0;
+}
+
+void AnaChannel::postprocess(QVector<double> &v)
+{
+    //Определяем максимальный уровень
+    int maxLevel = 32768;
+    if (dataDescription().get("function.precision").toString() != "int16") {
+        maxLevel = *(std::max_element(v.constBegin(), v.constEnd(), [](double a, double b){
+            return std::abs(a) < std::abs(b);
+        }));
+    }
+    //Определяем параметры
+    double ABSVolt = dataDescription().get("description.absvolt").toDouble();
+    double ADCStep = ABSVolt * maxLevel / 32768;
+    double ADC0 = - ABSVolt * maxLevel;
+
+    for (int i=0; i<v.size(); ++i) v[i] = v[i]*ADCStep+ADC0;
 }

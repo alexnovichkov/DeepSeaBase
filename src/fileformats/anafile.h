@@ -20,6 +20,9 @@ public:
     AnaFile(const QVector<Channel *> &source, const QString &fileName);
     virtual ~AnaFile();
 
+    static QStringList fileFilters();
+    static QStringList suffixes();
+
     // FileDescriptor interface
 public:
     virtual void read() override;
@@ -48,6 +51,7 @@ private:
     friend class AnaChannel;
     void init(Channel * source);
     void writeAnp(QTextStream &stream);
+    int getFormat() const;
     QString rawFileName; // путь к RAW файлу
     AnaChannel *_channel = nullptr;
 };
@@ -99,14 +103,14 @@ public:
     virtual QVariant channelHeader(int column) const override;
     virtual Descriptor::DataType type() const override;
     virtual void populate() override;
-    virtual QString yNameOld() const override;
-    virtual void setXStep(double xStep) override;
     virtual FileDescriptor *descriptor() const override;
     virtual int index() const override;
 private:
+    void postprocess(QVector<double> &v);
     friend class AnaFile;
 
     AnaFile *parent = nullptr;
+    double coef1, coef2;
 };
 
 #endif // ANAFILE_H

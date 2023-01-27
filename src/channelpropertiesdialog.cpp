@@ -133,25 +133,27 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
     scroll1->setFrameShape(QFrame::NoFrame);
 
     QWidget *descriptions = new QWidget(this);
-
-
-//    descriptionsTable = new QTableWidget(this);
-//    descriptionsTable->setColumnCount(1);
-//    descriptionsTable->setHorizontalHeaderLabels({"Параметр", "Значение"});
-//    descriptionsTable->horizontalHeader()->setStretchLastSection(true);
-
-//    QVBoxLayout *descriptionsL = new QVBoxLayout;
-//    descriptionsL->setContentsMargins(0,0,0,0);
-//    descriptionsL->addWidget(descriptionsTable);
-//    descriptions->setLayout(descriptionsL);
-
     descriptionsLayout = new QFormLayout(this);
     descriptions->setLayout(descriptionsLayout);
     auto scroll2 = new QScrollArea(this);
     scroll2->setWidget(descriptions);
     scroll2->setWidgetResizable(true);
     scroll2->setFrameShape(QFrame::NoFrame);
-    tab->addTab(scroll2, "Функция");
+    tab->addTab(scroll2, "Описатели");
+
+
+    QWidget *function = new QWidget(this);
+    functionLayout = new QFormLayout(this);
+    function->setLayout(functionLayout);
+    auto scroll3 = new QScrollArea(this);
+    scroll3->setWidget(function);
+    scroll3->setWidgetResizable(true);
+    scroll3->setFrameShape(QFrame::NoFrame);
+    tab->addTab(scroll3, "Функция");
+
+
+
+
     int currentTab = Settings::getSetting("channelPropertiesDialog.currentTab").toInt();
     tab->setCurrentIndex(currentTab);
     connect(tab, &QTabWidget::currentChanged, [=](int index){
@@ -216,48 +218,35 @@ void ChannelPropertiesDialog::currentChannelChanged(QTreeWidgetItem *cur, QTreeW
         dataProperties.at(4).label->setText(d->dataDescription().get("function.format").toString());
         dataProperties.at(5).label->setText(d->dataDescription().get("function.precision").toString());
 
-        auto data = d->dataDescription().filter("function");
-        data.remove("format");
-        data.remove("precision");
-//        descriptionsTable->clearContents();
-//        descriptionsTable->setRowCount(data.size());
-//        int i=0;
-//        for (auto [key, val]: asKeyValueRange(data)) {
-//            if (auto item = descriptionsTable->verticalHeaderItem(i))
-//                item->setText(key);
-//            else
-//                descriptionsTable->setVerticalHeaderItem(i, new QTableWidgetItem(key));
-//            if (auto item = descriptionsTable->item(i,0))
-//                item->setText(val.toString());
-//            else
-//                descriptionsTable->setItem(i,0, new QTableWidgetItem(val.toString()));
-//            i++;
-//        }
+        {
+            auto data = d->dataDescription().filter("function");
+            data.remove("format");
+            data.remove("precision");
 
-        while (descriptionsLayout->rowCount()>0) descriptionsLayout->removeRow(0);
-//        int i=0;
-        for (const auto [key, val]: asKeyValueRange(data)) {
-            auto l = new QLineEdit(val.toString(), this);
-            l->setReadOnly(true);
-            l->setFrame(false);
-            descriptionsLayout->addRow(key, l);
-//            if (auto item = descriptionsTable->verticalHeaderItem(i))
-//                item->setText(key);
-//            else
-//                descriptionsTable->setVerticalHeaderItem(i, new QTableWidgetItem(key));
-//            if (auto item = descriptionsTable->item(i,0))
-//                item->setText(val.toString());
-//            else
-//                descriptionsTable->setItem(i,0, new QTableWidgetItem(val.toString()));
-//            i++;
+            while (functionLayout->rowCount()>0) functionLayout->removeRow(0);
+            for (const auto [key, val]: asKeyValueRange(data)) {
+                auto l = new QLineEdit(val.toString(), this);
+                l->setReadOnly(true);
+                l->setFrame(false);
+                functionLayout->addRow(key, l);
+            }
+        }
+        {
+            auto data = d->dataDescription().filter("description");
+
+            while (descriptionsLayout->rowCount()>0) descriptionsLayout->removeRow(0);
+            for (const auto [key, val]: asKeyValueRange(data)) {
+                auto l = new QLineEdit(val.toString(), this);
+                l->setReadOnly(true);
+                l->setFrame(false);
+                descriptionsLayout->addRow(key, l);
+            }
         }
     }
     else {
         current = -1;
         for (auto l: channelProperties) l.edit->clear();
         for (auto l: dataProperties) l.label->clear();
-
-        descriptionsTable->clearContents();
     }
 }
 

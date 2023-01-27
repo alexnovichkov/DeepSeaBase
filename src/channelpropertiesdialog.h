@@ -54,8 +54,8 @@ private:
 
     QLabel *file;
     QTreeWidget *channelsTable;
-    QTableWidget *descriptionsTable;
     QFormLayout *descriptionsLayout;
+    QFormLayout *functionLayout;
 
     QVector<ChannelProperty> channelProperties;
     QVector<DataProperty> dataProperties;

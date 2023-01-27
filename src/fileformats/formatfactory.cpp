@@ -6,6 +6,7 @@
 #ifdef WITH_MATIO
 #include "matlabfile.h"
 #endif
+#include "anafile.h"
 #include "wavfile.h"
 #include "logging.h"
 
@@ -70,6 +71,7 @@ QStringList FormatFactory::allSuffixes(bool strip)
     result << suffixes<UffFileDescriptor>();
     result << suffixes<Data94File>();
     result << suffixes<WavFile>();
+    result << suffixes<AnaFile>();
 #ifdef WITH_MATIO
     result << suffixes<MatlabFile>();
 #endif
@@ -85,6 +87,7 @@ QStringList FormatFactory::allFilters()
     result << filters<UffFileDescriptor>();
     result << filters<Data94File>();
     result << filters<WavFile>();
+    result << filters<AnaFile>();
 #ifdef WITH_MATIO
     result << filters<MatlabFile>();
 #endif
@@ -98,6 +101,7 @@ FileDescriptor *FormatFactory::createDescriptor(const QString &fileName)
     if (suffix=="uff") return new UffFileDescriptor(fileName);
     if (suffix=="d94") return new Data94File(fileName);
     if (suffix == "wav") return new WavFile(fileName);
+    if (suffix == "anp") return new AnaFile(fileName);
 #ifdef WITH_MATIO
     if (suffix=="mat") return new MatlabFile(fileName);
 #endif
@@ -111,6 +115,7 @@ FileDescriptor *FormatFactory::createDescriptor(const FileDescriptor &source, co
     if (suffix=="uff") return new UffFileDescriptor(source, fileName, indexes);
     if (suffix=="d94") return new Data94File(source, fileName, indexes);
     if (suffix=="wav") return new WavFile(source, fileName, indexes, WavFormat::WavFloat);
+    if (suffix == "anp") return new AnaFile(source, fileName, indexes);
 
 #ifdef WITH_MATIO
     if (suffix=="mat") return new MatlabFile(source, fileName, indexes);
@@ -124,6 +129,7 @@ FileDescriptor *FormatFactory::createDescriptor(const QVector<Channel *> &source
     if (suffix=="dfd") return new DfdFileDescriptor(source, fileName);
     if (suffix=="uff") return new UffFileDescriptor(source, fileName);
     if (suffix=="d94") return new Data94File(source, fileName);
+    if (suffix == "anp") return new AnaFile(source, fileName);
     if (suffix=="wav") return new WavFile(source, fileName, WavFormat::WavFloat);
 #ifdef WITH_MATIO
     if (suffix=="mat") return new MatlabFile(source, fileName);
@@ -135,8 +141,13 @@ FileDescriptor *FormatFactory::createDescriptor(const QVector<Channel *> &source
 bool FormatFactory::fileExists(const QString &s, const QString &suffix)
 {DD;
     QString f = changeFileExt(s, suffix);
-    if (suffix != "dfd") return QFile::exists(f);
-
-    QString f1 = changeFileExt(s, "raw");
-    return (QFile::exists(f) && QFile::exists(f1));
+    if (suffix == "dfd") {
+        QString f1 = changeFileExt(s, "raw");
+        return (QFile::exists(f) && QFile::exists(f1));
+    }
+    else if (suffix == "anp") {
+        QString f1 = changeFileExt(s, "ana");
+        return (QFile::exists(f) && QFile::exists(f1));
+    }
+    return QFile::exists(f);
 }
