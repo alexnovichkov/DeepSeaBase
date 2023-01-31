@@ -58,7 +58,7 @@ private:
 
 
 /*
- * function.precision int32/float <- "FORMAT"
+ * function.precision int16/int32 <- "FORMAT"
  * function.name "time"
  * function.type 1
  * function.logref

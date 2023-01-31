@@ -72,7 +72,7 @@ void AnaFile::read()
         else if (line.startsWith("GAIN ")) channel.put("description.gain", line.mid(5).toInt());
         else if (line.startsWith("ABSVOLT ")) channel.put("description.absvolt", line.mid(8).toDouble());
         else if (line == "FORMAT i") channel.put("function.precision", format == 2 ? "int16" : "int32");
-        else if (line == "FORMAT d") channel.put("function.precision", "float");
+        else if (line == "FORMAT d") channel.put("function.precision", "int32");
         else if (line.startsWith("DATE ")) date = line.mid(5);
         else if (line.startsWith("TIME_TSS ")) time = line.mid(9);
         else if (line.startsWith("BASE ")) channel.put("description.base", line.mid(5).toInt());
@@ -235,7 +235,6 @@ void AnaFile::addChannelWithData(DataHolder *data, const DataDescription &descri
         channel.put("description.base", 1);
         channel.put("description.dboff", 120);
         channel.put("description.voltage", 1);
-
     }
 }
 
@@ -314,9 +313,9 @@ AnaChannel::AnaChannel(Channel &other, AnaFile *parent) : Channel(other), parent
     QString precision = dataDescription().get("function.precision").toString();
     if (precision == "uint8" || precision == "int8" || precision == "uint16"
         || precision == "int16" || precision == "uint32" || precision == "int32"
-        || precision == "uint64" || precision == "int64") dataDescription().put("function.precision", "int32");
+        || precision == "uint64" || precision == "int64") dataDescription().put("function.precision", "int16");
     else if (precision == "float" || precision == "double") dataDescription().put("function.precision", "float");
-    else dataDescription().put("function.precision", "float"); //по умолчанию
+    else dataDescription().put("function.precision", "int16"); //по умолчанию
 
 
 }
@@ -372,7 +371,6 @@ DataPrecision fromAnaPrecision(const QString &s)
 {
     if (s == "int16") return DataPrecision::Int16;
     if (s == "int32") return DataPrecision::Int32;
-    if (s == "float") return DataPrecision::Float;
     return DataPrecision::Int16;
 }
 
@@ -386,7 +384,6 @@ void AnaChannel::populate()
         const auto prec = fromAnaPrecision(dataDescription().get("function.precision").toString());
         QVector<double> YValues;
         const quint64 blockSizeBytes = rawFile.size();
-        const int channelsCount = 1;
 
         // map file into memory
         unsigned char *ptr = rawFile.map(0, rawFile.size());
