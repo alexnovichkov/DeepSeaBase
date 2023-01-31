@@ -14,6 +14,10 @@ class QTabWidget;
 class QTreeWidgetItem;
 class QTableWidget;
 class QFormLayout;
+class QToolButton;
+class QtTreePropertyBrowser;
+class QtVariantPropertyManager;
+class QtVariantEditorFactory;
 
 struct CurrentEdited {
     int index = -1;
@@ -25,6 +29,8 @@ struct ChannelProperty
     QString displayName;
     QString name;
     QLineEdit* edit = nullptr;
+//    QToolButton *writeAllBtn = nullptr;
+    QCheckBox *check = nullptr;
 };
 struct DataProperty
 {
@@ -39,17 +45,13 @@ public:
     ChannelPropertiesDialog(const QVector<Channel *> &channels, QWidget *parent=nullptr);
 private:
     void fillFiles();
-//    void prev();
-//    void next();
-//    void applyToCurrent();
-//    void applyToAll();
-    void updateState();
+    void prev();
+    void next();
+    void applyToCurrent();
+    void applyToAll();
     void currentChannelChanged(QTreeWidgetItem *cur, QTreeWidgetItem *previous);
-    void selectedChannelsChanged();
-    void cellChanged(int row, int column);
-    void addProperty();
+    void addProperty(QFormLayout *l, ChannelProperty &p);
     void removeProperty();
-    QList<Channel *> selectedChannels();
     QVector<Channel *> channels;
 
     QLabel *file;
@@ -57,8 +59,21 @@ private:
     QFormLayout *descriptionsLayout;
     QFormLayout *functionLayout;
 
+    QPushButton *prevButton;
+    QPushButton *nextButton;
+    QPushButton *applyToCurrButton;
+    QPushButton *applyToAllButton;
+
     QVector<ChannelProperty> channelProperties;
+    QVector<ChannelProperty> functionProperties;
+    QVector<ChannelProperty> descriptionProperties;
     QVector<DataProperty> dataProperties;
+
+
+//    QtTreePropertyBrowser *propertyTree;
+//    QtVariantPropertyManager *m_manager;
+//    QtVariantEditorFactory *m_factory;
+
 
     int current=0;
     //int currentEditedIndex = -1;

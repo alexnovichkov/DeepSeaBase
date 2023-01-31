@@ -124,6 +124,7 @@ DescriptorPropertiesDialog::DescriptorPropertiesDialog(const QList<FileDescripto
     for (int i=0; i<propertiesNames.size(); ++i) {
         propertiesLabels.labels[i] = new QLineEdit(this);
         propertiesLabels.labels[i]->setReadOnly(true);
+        propertiesLabels.labels[i]->setFrame(false);
         propertiesFL->addRow(propertiesNames[i], propertiesLabels.labels[i]);
     }
     properties->setLayout(propertiesFL);

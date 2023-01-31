@@ -1,6 +1,10 @@
 #include "channelpropertiesdialog.h"
 #include "fileformats/filedescriptor.h"
 #include <QtWidgets>
+//#include <QJsonDocument>
+//#include <QtTreePropertyBrowser>
+//#include <QtVariantPropertyManager>
+
 #include "settings.h"
 #include "logging.h"
 
@@ -10,14 +14,18 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
     setWindowTitle("Свойства каналов");
 
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Close);
-//    prevButton = buttonBox->addButton("Предыдущий", QDialogButtonBox::ActionRole);
-//    connect(prevButton, &QAbstractButton::clicked, this, &DescriptorPropertiesDialog::prev);
-//    nextButton = buttonBox->addButton("Следующий", QDialogButtonBox::ActionRole);
-//    connect(nextButton, &QAbstractButton::clicked, this, &DescriptorPropertiesDialog::next);
-//    applyToCurrButton = buttonBox->addButton("Применить к текущему", QDialogButtonBox::ActionRole);
-//    connect(applyToCurrButton, &QAbstractButton::clicked, this, &DescriptorPropertiesDialog::applyToCurrent);
-//    applyToAllButton = buttonBox->addButton("Применить ко всем", QDialogButtonBox::ActionRole);
-//    connect(applyToAllButton, &QAbstractButton::clicked, this, &DescriptorPropertiesDialog::applyToAll);
+    prevButton = buttonBox->addButton("←", QDialogButtonBox::ActionRole);
+    prevButton->setEnabled(false);
+    connect(prevButton, &QAbstractButton::clicked, this, &ChannelPropertiesDialog::prev);
+    nextButton = buttonBox->addButton("→", QDialogButtonBox::ActionRole);
+    nextButton->setEnabled(false);
+    connect(nextButton, &QAbstractButton::clicked, this, &ChannelPropertiesDialog::next);
+    applyToCurrButton = buttonBox->addButton("Применить к текущему", QDialogButtonBox::ActionRole);
+    applyToCurrButton->setFocusPolicy(Qt::NoFocus);
+    connect(applyToCurrButton, &QAbstractButton::clicked, this, &ChannelPropertiesDialog::applyToCurrent);
+    applyToAllButton = buttonBox->addButton("Применить ко всем", QDialogButtonBox::ActionRole);
+    applyToAllButton->setFocusPolicy(Qt::NoFocus);
+    connect(applyToAllButton, &QAbstractButton::clicked, this, &ChannelPropertiesDialog::applyToAll);
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
 
@@ -27,18 +35,15 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
     l->addWidget(buttonBox);
 
     channelsTable = new QTreeWidget(this);
-    channelsTable->setAlternatingRowColors(true);
     channelsTable->setRootIsDecorated(false);
     channelsTable->setColumnCount(1);
     channelsTable->setHeaderLabel("Каналы");
-//    channelsTable->setSelectionMode(QAbstractItemView::ExtendedSelection);
     channelsTable->setSelectionMode(QAbstractItemView::SingleSelection);
-    //files->setItemDelegateForColumn(0, new FilesItemDelegate());
     connect(channelsTable, &QTreeWidget::currentItemChanged, this, &ChannelPropertiesDialog::currentChannelChanged);
-    //connect(channelsTable, &QTreeWidget::itemSelectionChanged, this, &ChannelPropertiesDialog::selectedChannelsChanged);
 
     fillFiles();
     splitter->addWidget(channelsTable);
+
 
     QTabWidget *tab = new QTabWidget(this);
     QWidget *properties = new QWidget(this);
@@ -49,71 +54,18 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
                       {"Ширина полосы", nullptr},
                       {"Формат данных", nullptr},
                       {"Формат отсчета", nullptr}};
-    channelProperties = {{"Название", "name", nullptr},
-                               {"Описание", "description", nullptr},
-                               {"Датчик","sensorName", nullptr},
-                               {"ID датчика", "sensorID", nullptr},
-                               {"Дата и время записи", "dateTime", nullptr},
-                               {"Ось X", "xname", nullptr},
-                               {"Ось Y","yname", nullptr},
-                               {"Ось Y (исходная)","ynameold", nullptr},
-                               {"Ось Z","zname", nullptr}};
+    channelProperties = {{"Название", "name", nullptr,  nullptr},
+                               {"Описание", "description", nullptr,  nullptr},
+                               {"Датчик","sensorName", nullptr,  nullptr},
+                               {"ID датчика", "sensorID", nullptr,  nullptr},
+                               {"Дата и время записи", "dateTime",  nullptr, nullptr},
+                               {"Ось X", "xname", nullptr,  nullptr},
+                               {"Ось Y","yname", nullptr,  nullptr},
+                               {"Ось Y (исходная)","ynameold",  nullptr, nullptr},
+                               {"Ось Z","zname", nullptr,  nullptr}};
+
     for (int i=0; i<channelProperties.size(); ++i) {
-        channelProperties[i].edit = new QLineEdit(this);
-
-        connect(channelProperties[i].edit, &QLineEdit::editingFinished, [=]() {
-            if (current < 0 || current >= channels.size()
-                || currentEdited.index < 0 || currentEdited.index != i) return;
-
-            QList<Channel*> selected;
-            //заблокировано изменение в нескольких каналах
-//            selected = selectedChannels();
-//            if (selected.isEmpty())
-                selected << channels.at(current);
-            if (selected.size()>1) {
-                QMessageBox box;
-                box.setText(QString("Значение \"%1\" будет записано во все \nвыделенные каналы").arg(currentEdited.value));
-                box.setInformativeText("Продолжить?");
-                box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-
-                bool alreadyShown = Settings::getSetting("alreadyShown1", false).toBool();
-                bool alreadyShownState = Settings::getSetting("alreadyShownState1", false).toBool();
-                if (!alreadyShown) {
-                    QCheckBox *cb = new QCheckBox("Больше не спрашивать");
-                    cb->setChecked(false);
-                    box.setCheckBox(cb);
-                }
-
-                int res = box.exec();
-                if (box.checkBox()->isChecked()) {
-                    Settings::setSetting("alreadyShown1", true);
-                    Settings::setSetting("alreadyShownState1", res == QMessageBox::Yes);
-                }
-                if (res != QMessageBox::Yes) return;
-                if (alreadyShown && !alreadyShownState) return; //ранее выбрали Всегда нет
-            }
-
-            for (auto c: selected) {
-                if (c->dataDescription().get(channelProperties.at(i).name).toString() != currentEdited.value) {
-                    c->dataDescription().put(channelProperties.at(i).name, currentEdited.value);
-                    c->setChanged(true);
-                    c->descriptor()->setChanged(true);
-                }
-            }
-        });
-        connect(channelProperties.at(i).edit, &QLineEdit::textEdited, [=](const QString &newVal) {
-            if (current < 0 || current >= channels.size()) return;
-            currentEdited.index = i;
-            currentEdited.value = newVal;
-        });
-        if (i==4 || i==7) {
-            channelProperties.at(i).edit->setReadOnly(true);
-            channelProperties.at(i).edit->setFrame(false);
-        }
-//        else {
-//            channelProperties.at(i).edit->setClearButtonEnabled(true);
-//        }
-        propertiesFL->addRow(channelProperties.at(i).displayName, channelProperties.at(i).edit);
+        addProperty(propertiesFL, channelProperties[i]);
     }
     auto line = new QFrame(this);
     line->setFrameShape(QFrame::HLine);
@@ -133,8 +85,47 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
     scroll1->setFrameShape(QFrame::NoFrame);
 
     QWidget *descriptions = new QWidget(this);
-    descriptionsLayout = new QFormLayout(this);
-    descriptions->setLayout(descriptionsLayout);
+    descriptionsLayout = new QFormLayout;
+
+    auto addDescr = new QToolButton(this);
+    addDescr->setText("Добавить");
+    addDescr->setAutoRaise(true);
+    connect(addDescr, &QToolButton::clicked, [=]() {
+        QString key = QInputDialog::getText(this, "Добавить описатель", "Название:");
+        if (!key.isEmpty()) {
+            descriptionProperties.append({key, "description."+key, nullptr, nullptr});
+            auto &p = descriptionProperties.last();
+            addProperty(descriptionsLayout, p);
+        }
+    });
+//    auto removeDescr = new QToolButton(this);
+//    removeDescr->setText("Удалить");
+//    removeDescr->setAutoRaise(true);
+//    connect(removeDescr, &QToolButton::clicked, [=]() {
+//        for (int i=0; i<descriptionProperties.size(); ++i) {
+//            auto &p = descriptionProperties[i];
+//            if (p.edit->hasFocus()) {
+
+//                break;
+//            }
+//        }
+//        QString key =
+//        if (!key.isEmpty()) {
+//            descriptionProperties.append({key, "description."+key, nullptr, nullptr});
+//            auto &p = descriptionProperties.last();
+//            addProperty(descriptionsLayout, p);
+//        }
+//    });
+
+    auto ll = new QHBoxLayout;
+    ll->addWidget(addDescr);
+//    ll->addWidget(removeDescr);
+    ll->addStretch();
+    auto lll = new QVBoxLayout;
+    lll->addLayout(descriptionsLayout);
+    lll->addStretch();
+    lll->addLayout(ll);
+    descriptions->setLayout(lll);
     auto scroll2 = new QScrollArea(this);
     scroll2->setWidget(descriptions);
     scroll2->setWidgetResizable(true);
@@ -174,20 +165,81 @@ void ChannelPropertiesDialog::fillFiles()
     }
 }
 
+void ChannelPropertiesDialog::prev()
+{
+    auto it = channelsTable->currentItem();
+    int index = channelsTable->indexOfTopLevelItem(it);
+    if (index > 0) {
+        channelsTable->setCurrentItem(channelsTable->itemAbove(it));
+    }
+
+}
+
+void ChannelPropertiesDialog::next()
+{
+    auto it = channelsTable->currentItem();
+    int index = channelsTable->indexOfTopLevelItem(it);
+    if (index < channels.size()-1) {
+        channelsTable->setCurrentItem(channelsTable->itemBelow(it));
+    }
+}
+
+void ChannelPropertiesDialog::applyToCurrent()
+{
+    Channel *c = channels.at(current);
+
+    auto list = channelProperties;
+    list.append(functionProperties);
+    list.append(descriptionProperties);
+
+    for (auto &p: list) {
+        if (p.check->isChecked()) {
+            if (c->dataDescription().get(p.name).toString() != p.edit->text()) {
+                c->dataDescription().put(p.name, p.edit->text());
+                c->setChanged(true);
+                c->descriptor()->setChanged(true);
+            }
+        }
+    }
+}
+
+void ChannelPropertiesDialog::applyToAll()
+{
+    auto list = channelProperties;
+    list.append(functionProperties);
+    list.append(descriptionProperties);
+
+    for (auto &c: channels) {
+        for (auto &p: list) {
+            if (p.check->isChecked()) {
+                if (c->dataDescription().get(p.name).toString() != p.edit->text()) {
+                    c->dataDescription().put(p.name, p.edit->text());
+                    c->setChanged(true);
+                    c->descriptor()->setChanged(true);
+                }
+            }
+        }
+    }
+}
+
 void ChannelPropertiesDialog::currentChannelChanged(QTreeWidgetItem *cur, QTreeWidgetItem *previous)
 {DD;
-    Q_UNUSED(previous);
-//    static QStringList dataPropertiesNames {"Число отсчетов", "Число блоков", "Частота дискретизации",
-//                                        "Ширина полосы", "Формат данных", "Формат отсчета"};
-//    static QStringList channelPropertiesNames {"Название", "Описание", "Датчик",
-//                                        "ID датчика", "Дата и время записи", "Ось X",
-//                                              "Ось Y","Ось Y (исходная)","Ось Z"};
+    auto font = channelsTable->font();
+
+    if (previous) previous->setFont(0, font);
+    font.setBold(true);
+    cur->setFont(0, font);
 
 
     if (cur) {
         current = channelsTable->indexOfTopLevelItem(cur);
+        nextButton->setEnabled(current < channels.size()-1);
+        prevButton->setEnabled(current > 0);
+
         QString s;
         Channel *d = channels.at(current);
+
+
         channelProperties.at(0).edit->setText(d->name());
         channelProperties.at(1).edit->setText(d->description());
         channelProperties.at(2).edit->setText(d->dataDescription().get("sensorName").toString());
@@ -224,22 +276,26 @@ void ChannelPropertiesDialog::currentChannelChanged(QTreeWidgetItem *cur, QTreeW
             data.remove("precision");
 
             while (functionLayout->rowCount()>0) functionLayout->removeRow(0);
+            functionProperties.clear();
             for (const auto [key, val]: asKeyValueRange(data)) {
-                auto l = new QLineEdit(val.toString(), this);
-                l->setReadOnly(true);
-                l->setFrame(false);
-                functionLayout->addRow(key, l);
+                functionProperties.append({key, "function."+key, nullptr, nullptr});
+            }
+            for (int i=0; i<functionProperties.size(); ++i) {
+                auto &p = functionProperties[i];
+                addProperty(functionLayout, p);
             }
         }
         {
             auto data = d->dataDescription().filter("description");
 
             while (descriptionsLayout->rowCount()>0) descriptionsLayout->removeRow(0);
+            descriptionProperties.clear();
             for (const auto [key, val]: asKeyValueRange(data)) {
-                auto l = new QLineEdit(val.toString(), this);
-                l->setReadOnly(true);
-                l->setFrame(false);
-                descriptionsLayout->addRow(key, l);
+                descriptionProperties.append({key, "description."+key, nullptr, nullptr});
+            }
+            for (int i=0; i<descriptionProperties.size(); ++i) {
+                auto &p = descriptionProperties[i];
+                addProperty(descriptionsLayout, p);
             }
         }
     }
@@ -250,17 +306,19 @@ void ChannelPropertiesDialog::currentChannelChanged(QTreeWidgetItem *cur, QTreeW
     }
 }
 
-void ChannelPropertiesDialog::selectedChannelsChanged()
-{DD;
+void ChannelPropertiesDialog::addProperty(QFormLayout *l, ChannelProperty &p)
+{
+    Channel *d = channels.at(current);
+    p.edit = new QLineEdit(d->dataDescription().get(p.name).toString(), this);
+    p.edit->setEnabled(false);
+    p.check = new QCheckBox(this);
+    connect(p.check, &QCheckBox::stateChanged, [=](int state){
+        p.edit->setEnabled(state == Qt::Checked);
+    });
 
+    QHBoxLayout *ll = new QHBoxLayout;
+    ll->addWidget(p.check);
+    ll->addWidget(p.edit);
+    l->addRow(p.displayName, ll);
 }
 
-QList<Channel *> ChannelPropertiesDialog::selectedChannels()
-{DD;
-    QMap<int, Channel *> result;
-    for (auto item: channelsTable->selectedItems()) {
-        auto i = channelsTable->indexOfTopLevelItem(item);
-        result.insert(i, channels.at(i));
-    }
-    return result.values();
-}
