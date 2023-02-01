@@ -6,10 +6,23 @@
 
 class AnaConverter : public QObject
 {
+    Q_OBJECT
 public:
+    AnaConverter(QObject *parent = nullptr) : QObject(parent)
+    {}
     void setFilesToConvert(const QStringList &files);
-    QStringList getNewFiles() {}
-    void setResultFile(const QString &resultFile) {}
+    QStringList getNewFiles() const;
+    void setDestinationFormat(const QString &format);
+public slots:
+    bool convert();
+signals:
+    void tick();
+    void finished();
+    void message(const QString &s);
+private:
+    QStringList files;
+    QStringList newFiles;
+    QString format;
 };
 
 #endif // ANACONVERTER_H

@@ -33,6 +33,21 @@ bool FileDescriptor::rename(const QString &newName, const QString &newPath)
     return result;
 }
 
+bool FileDescriptor::rename(const QString &newNamePath)
+{
+    //newName приходит с суффиксом и полным путем
+    QString name = newNamePath;
+    name.replace("//", "/");
+    bool result = QFile::rename(fileName(), name);
+    if (result) setFileName(name);
+    return result;
+}
+
+bool FileDescriptor::remove()
+{
+    return QFile::remove(fileName());
+}
+
 void FileDescriptor::fillPreliminary(const FileDescriptor *d)
 {DD;
     updateDateTimeGUID();

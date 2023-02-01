@@ -324,6 +324,8 @@ private:
     // FileDescriptor interface
 public:
     virtual bool rename(const QString &newName, const QString &newPath) override;
+    virtual bool rename(const QString &newName) override;
+    virtual bool remove() override;
 };
 
 #endif // DFDFILEDESCRIPTOR_H

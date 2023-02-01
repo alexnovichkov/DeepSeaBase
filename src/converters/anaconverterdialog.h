@@ -9,6 +9,8 @@ class QLineEdit;
 class QTreeWidget;
 class QPlainTextEdit;
 class AnaConverter;
+class QCheckBox;
+class QComboBox;
 
 class AnaConverterDialog : public QDialog
 {
@@ -17,25 +19,31 @@ public:
     AnaConverterDialog(QWidget *parent = 0);
     ~AnaConverterDialog();
     QStringList getConvertedFiles() const {return convertedFiles;}
+    bool addFiles() const;
 public slots:
     virtual void accept();
     virtual void reject();
     void updateProgressIndicator();
 private slots:
+    void chooseFiles();
     void start();
     void stop();
     void finalize();
+    void updateFormat();
 private:
     QStringList convertedFiles;
     QString folder;
     QProgressBar *progress;
     QDialogButtonBox *buttonBox;
+    QComboBox *fileFormat;
     QLineEdit *edit;
     QTreeWidget *tree;
     QPlainTextEdit *textEdit;
     QPushButton *button;
-    AnaConverter *converter;
-    QThread *thread;
+    AnaConverter *converter = nullptr;
+    QThread *thread = nullptr;
+    QCheckBox *addFilesButton;
+    QCheckBox *openFolderButton;
 };
 
 #endif // ANACONVERTERDIALOG_H

@@ -11,7 +11,7 @@ class Averaging;
 void calculateMean(FileDescriptor *file, const QList<Channel*> &channels);
 void calculateMovingAvg(FileDescriptor *file, const QList<Channel *> &channels, int windowSize);
 void calculateThirdOctave(FileDescriptor *file, FileDescriptor *source);
-QString saveTimeSegment(FileDescriptor *file, double from, double to);
+QString saveTimeSegment(FileDescriptor *file, double from, double to, bool changeNames = true);
 void saveSpectre(FileDescriptor *file, Channel* channel, double zValue);
 void saveThrough(FileDescriptor *file, Channel* channel, double xValue);
 

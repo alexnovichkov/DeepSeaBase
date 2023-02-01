@@ -585,6 +585,7 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
         r.setFloatingPointPrecision(QDataStream::SinglePrecision);
     else
         r.setFloatingPointPrecision(QDataStream::DoublePrecision);
+
     qint64 newposition = r.device()->pos();
     r.device()->write("d94chan ");
 
@@ -604,8 +605,6 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
         QByteArray buf = in->device()->read(4+descriptionSize);
         r.writeRawData(buf.data(), buf.size());
     }
-
-
 
     xAxisBlock.write(r);
     zAxisBlock.write(r);

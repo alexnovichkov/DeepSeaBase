@@ -246,7 +246,7 @@ void calculateThirdOctave(FileDescriptor *file, FileDescriptor *source)
     file->write();
 }
 
-QString saveTimeSegment(FileDescriptor *file, double from, double to)
+QString saveTimeSegment(FileDescriptor *file, double from, double to, bool changeNames)
 {DD;
     // 0 проверяем, чтобы этот файл имел тип временных данных
     if (file->type() != Descriptor::TimeResponse) return "";
@@ -265,9 +265,11 @@ QString saveTimeSegment(FileDescriptor *file, double from, double to)
     auto newFile = App->formatFactory->createDescriptor(newFileName);
 
     newFile->setDataDescription(file->dataDescription());
-    newFile->dataDescription().put("source.file", file->fileName());
-    newFile->dataDescription().put("source.guid", file->dataDescription().get("guid"));
-    newFile->dataDescription().put("source.dateTime", file->dataDescription().get("dateTime"));
+    if (changeNames) {
+        newFile->dataDescription().put("source.file", file->fileName());
+        newFile->dataDescription().put("source.guid", file->dataDescription().get("guid"));
+        newFile->dataDescription().put("source.dateTime", file->dataDescription().get("dateTime"));
+    }
     newFile->fillPreliminary(file);
 
     // 3 ищем границы данных по параметрам from и to
@@ -288,12 +290,15 @@ QString saveTimeSegment(FileDescriptor *file, double from, double to)
         data->setSegment(*(c->data()), sampleStart, sampleEnd);
 
         DataDescription descr = c->dataDescription();
-        descr.put("name", c->name()+" вырезка");
-        descr.put("description", QString("Вырезка %1s-%2s").arg(fromString).arg(toString));
         descr.put("samples",  data->samplesCount());
         descr.put("blocks", data->blocksCount());
-        descr.put("function.name", "SECTION");
         descr.put("function.logref", data->threshold());
+        if (changeNames) {
+            descr.put("name", c->name()+" вырезка");
+            descr.put("description", QString("Вырезка %1s-%2s").arg(fromString).arg(toString));
+            descr.put("function.name", "SECTION");
+        }
+
         newFile->addChannelWithData(data, descr);
 
         if (!wasPopulated)

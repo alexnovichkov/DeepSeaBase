@@ -35,6 +35,8 @@ public:
     virtual QString fileType() const override;
     virtual QString icon() const override;
     virtual bool rename(const QString &newName, const QString &newPath) override;
+    virtual bool rename(const QString &newName) override;
+    virtual bool remove() override;
     virtual void fillPreliminary(const FileDescriptor *file) override;
     virtual bool copyTo(const QString &name) override;
     virtual Descriptor::DataType type() const override;
@@ -111,6 +113,7 @@ private:
 
     AnaFile *parent = nullptr;
     double coef1, coef2;
+    int format = 2; //2 - int16, 4 - int32
 };
 
 #endif // ANAFILE_H

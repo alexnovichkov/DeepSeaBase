@@ -106,7 +106,7 @@ void DfdFileDescriptor::init(const QVector<Channel *> &source)
     //сначала канал для данных X
     if (xChannel) {
         w.setFloatingPointPrecision(QDataStream::SinglePrecision);
-        const QVector<double> vals = firstChannel->data()->xValues();
+        QVector<double> vals = firstChannel->data()->xValues();
         DfdChannel ch(0,0);
         ch.IndType = 0xC0000004;
         for (double val: vals)
@@ -1876,6 +1876,29 @@ bool DfdFileDescriptor::rename(const QString &newName, const QString &newPath)
 
     result &= QFile::rename(rawFileName, newRawName);
     if (result) rawFileName = newRawName;
+    return result;
+}
+
+bool DfdFileDescriptor::rename(const QString &newName)
+{
+    bool result = FileDescriptor::rename(newName);
+    if (!result) return false;
+
+    QString newRawName = changeFileExt(fileName(), "raw");
+
+    result &= QFile::rename(rawFileName, newRawName);
+    if (result) rawFileName = newRawName;
+    return result;
+}
+
+bool DfdFileDescriptor::remove()
+{
+    bool result = FileDescriptor::remove();
+    if (!result) return false;
+
+    QString newRawName = changeFileExt(fileName(), "raw");
+
+    result &= QFile::remove(newRawName);
     return result;
 }
 

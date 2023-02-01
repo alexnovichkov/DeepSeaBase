@@ -71,8 +71,8 @@ void AnaFile::read()
         }
         else if (line.startsWith("GAIN ")) channel.put("description.gain", line.mid(5).toInt());
         else if (line.startsWith("ABSVOLT ")) channel.put("description.absvolt", line.mid(8).toDouble());
-        else if (line == "FORMAT i") channel.put("function.precision", format == 2 ? "int16" : "int32");
-        else if (line == "FORMAT d") channel.put("function.precision", "int32");
+       // else if (line == "FORMAT i") channel.put("function.precision", format == 2 ? "int16" : "int32");
+        else if (line == "FORMAT d") format = 4;
         else if (line.startsWith("DATE ")) date = line.mid(5);
         else if (line.startsWith("TIME_TSS ")) time = line.mid(9);
         else if (line.startsWith("BASE ")) channel.put("description.base", line.mid(5).toInt());
@@ -98,9 +98,12 @@ void AnaFile::read()
     samples = QFile(rawFileName).size() / format;
     channel.put("samples", samples);
     channel.put("samplerate", samplerate);
+    channel.put("function.precision", "float"); //всегда отдаем этот формат, потому что
+    //целочисленные значения, записанные в ana, преобразуются в double
 
     _channel  = new AnaChannel(this);
     _channel->setDataDescription(channel);
+    _channel->format = format;
     _channel->data()->setXValues(0, 1.0 / samplerate, samples);
     _channel->data()->setZValues(0,0,1);
     _channel->data()->setYValuesFormat(DataHolder::YValuesReals);
@@ -168,6 +171,29 @@ bool AnaFile::rename(const QString &newName, const QString &newPath)
     return result;
 }
 
+bool AnaFile::rename(const QString &newName)
+{
+    bool result = FileDescriptor::rename(newName);
+    if (!result) return false;
+
+    QString newRawName = changeFileExt(fileName(), "ana");
+
+    result &= QFile::rename(rawFileName, newRawName);
+    if (result) rawFileName = newRawName;
+    return result;
+}
+
+bool AnaFile::remove()
+{
+    bool result = FileDescriptor::remove();
+    if (!result) return false;
+
+    QString newRawName = changeFileExt(fileName(), "ana");
+
+    result &= QFile::remove(newRawName);
+    return result;
+}
+
 void AnaFile::fillPreliminary(const FileDescriptor *file)
 {
     FileDescriptor::fillPreliminary(file);
@@ -231,9 +257,9 @@ void AnaFile::addChannelWithData(DataHolder *data, const DataDescription &descri
         DataDescription &channel = _channel->dataDescription();
         channel.put("description.gain", 1);
         channel.put("description.absvolt", 1);
-        channel.put("function.precision", "int16");
+        channel.put("function.precision", "float");
         channel.put("description.base", 1);
-        channel.put("description.dboff", 120);
+        channel.put("description.dboff", 0);
         channel.put("description.voltage", 1);
     }
 }
@@ -367,10 +393,10 @@ Descriptor::DataType AnaChannel::type() const
     return Descriptor::TimeResponse;
 }
 
-DataPrecision fromAnaPrecision(const QString &s)
+DataPrecision fromAnaPrecision(int f)
 {
-    if (s == "int16") return DataPrecision::Int16;
-    if (s == "int32") return DataPrecision::Int32;
+    if (f == 2) return DataPrecision::Int16;
+    if (f == 4) return DataPrecision::Int32;
     return DataPrecision::Int16;
 }
 
@@ -381,19 +407,17 @@ void AnaChannel::populate()
     QFile rawFile(parent->rawFileName);
 
     if (rawFile.open(QFile::ReadOnly)) {
-        const auto prec = fromAnaPrecision(dataDescription().get("function.precision").toString());
+        const auto prec = fromAnaPrecision(format);
         QVector<double> YValues;
         const quint64 blockSizeBytes = rawFile.size();
 
         // map file into memory
         unsigned char *ptr = rawFile.map(0, rawFile.size());
         if (ptr) {//достаточно памяти отобразить весь файл
-            qDebug()<<QString("Чтение канала ")<<index()<<QString(" через mmap");
             YValues = convertFrom<double>(ptr, blockSizeBytes, prec);
         }
         else {
             //читаем классическим способом через getChunk
-            qDebug()<<QString("Чтение канала ")<<index()<<QString(" через потоки");
             QDataStream readStream(&rawFile);
             readStream.setByteOrder(QDataStream::LittleEndian);
             if (prec == DataPrecision::Float)
@@ -427,17 +451,7 @@ int AnaChannel::index() const
 
 void AnaChannel::postprocess(QVector<double> &v)
 {
-    //Определяем максимальный уровень
-    int maxLevel = 32768;
-    if (dataDescription().get("function.precision").toString() != "int16") {
-        maxLevel = *(std::max_element(v.constBegin(), v.constEnd(), [](double a, double b){
-            return std::abs(a) < std::abs(b);
-        }));
-    }
-    //Определяем параметры
-    double ABSVolt = dataDescription().get("description.absvolt").toDouble();
-    double ADCStep = ABSVolt * maxLevel / 32768;
-    double ADC0 = - ABSVolt * maxLevel;
+    const double ABSVolt = dataDescription().get("description.absvolt").toDouble();
 
-    for (int i=0; i<v.size(); ++i) v[i] = v[i]*ADCStep+ADC0;
+    for (int i=0; i<v.size(); ++i) v[i] = v[i]*ABSVolt;
 }
