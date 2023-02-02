@@ -14,6 +14,7 @@ public:
     QStringList getNewFiles() const;
     void setDestinationFormat(const QString &format);
     void setTrimFiles(bool trim);
+    void setTargetFolder(const QString &folder);
 public slots:
     bool convert();
 signals:
@@ -24,6 +25,7 @@ private:
     QStringList files;
     QStringList newFiles;
     QString format;
+    QString targetFolder;
     bool trimFiles;
 };
 

@@ -32,6 +32,7 @@ private slots:
     void stop();
     void finalize();
     void updateFormat();
+    void setTargetFolder();
 private:
     QStringList convertedFiles;
     QString folder;
@@ -39,6 +40,8 @@ private:
     QDialogButtonBox *buttonBox;
     QComboBox *fileFormat;
     QLineEdit *edit;
+    QLineEdit *targetFolderEdit;
+    QPushButton *targetButton;
     QTreeWidget *tree;
     QPlainTextEdit *textEdit;
     QPushButton *button;

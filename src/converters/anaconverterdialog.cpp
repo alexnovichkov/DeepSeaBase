@@ -30,8 +30,13 @@ AnaConverterDialog::AnaConverterDialog(QWidget *parent) : QDialog(parent)
     edit->setReadOnly(true);
     edit->setPlaceholderText("путь/к/папке/ANP/");
 
+    targetFolderEdit = new QLineEdit(this);
+
     button = new QPushButton("Выбрать", this);
     connect(button, SIGNAL(pressed()), this, SLOT(chooseFiles()));
+
+    targetButton = new QPushButton("Выбрать", this);
+    connect(targetButton, SIGNAL(pressed()), this, SLOT(setTargetFolder()));
 
     tree = new QTreeWidget(this);
     tree->setAlternatingRowColors(true);
@@ -54,8 +59,11 @@ AnaConverterDialog::AnaConverterDialog(QWidget *parent) : QDialog(parent)
     grid->addWidget(new QLabel("Папка:", this),1,0);
     grid->addWidget(edit,1,1);
     grid->addWidget(button,1,2);
-    grid->addWidget(tree, 2,0,1,3);
-    grid->addWidget(progress,3,0,1,3);
+    grid->addWidget(new QLabel("Сохранять в:", this),2,0);
+    grid->addWidget(targetFolderEdit,2,1);
+    grid->addWidget(targetButton,2,2);
+    grid->addWidget(tree, 3,0,1,3);
+    grid->addWidget(progress,4,0,1,3);
     first->setLayout(grid);
 
     QWidget *second = new QWidget(this);
@@ -121,6 +129,7 @@ void AnaConverterDialog::chooseFiles()
 
     edit->setText(folder);
     Settings::setSetting("anaFolder", folder);
+    targetFolderEdit->setPlaceholderText(folder);
 
     QDir folderDir(folder);
     QFileInfoList files = folderDir.entryInfoList(QStringList()<<"*.anp", QDir::Files | QDir::Readable);
@@ -153,6 +162,7 @@ void AnaConverterDialog::start()
         toConvert << tree->topLevelItem(i)->text(1);
     converter->setFilesToConvert(toConvert);
     converter->setTrimFiles(trimFilesButton->isChecked());
+    converter->setTargetFolder(targetFolderEdit->text());
 
     if (toConvert.isEmpty()) {
         textEdit->appendHtml("<font color=red>Error!</font> Отсутствуют файлы для конвертации.");
@@ -198,4 +208,13 @@ void AnaConverterDialog::updateFormat()
     QString suffix = formatString.right(4);
     suffix.chop(1);
     converter->setDestinationFormat(suffix.toLower());
+}
+
+void AnaConverterDialog::setTargetFolder()
+{
+    QString targetFolder = Settings::getSetting("anaTargetFolder").toString();
+    targetFolder = QFileDialog::getExistingDirectory(this, "Выберите папку, в которую будут сохранены файлы", targetFolder);
+
+    targetFolderEdit->setText(targetFolder);
+    Settings::setSetting("anaTargetFolder", targetFolder);
 }

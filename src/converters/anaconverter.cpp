@@ -26,6 +26,11 @@ void AnaConverter::setTrimFiles(bool trim)
     trimFiles = trim;
 }
 
+void AnaConverter::setTargetFolder(const QString &folder)
+{
+    targetFolder = folder;
+}
+
 bool AnaConverter::convert()
 {
     if (QThread::currentThread()->isInterruptionRequested()) return false;
@@ -35,8 +40,10 @@ bool AnaConverter::convert()
     //Converting
 
     QString folder = QFileInfo(files.first()).canonicalPath();
+    QString folderName = folder.split("/").last();
+    if (!targetFolder.isEmpty()) folder = targetFolder;
 
-    QString destinationFileName = createUniqueFileName(folder, folder.split("/").last(), "", format);
+    QString destinationFileName = createUniqueFileName(folder, folderName, "", format);
 
     QList<AnaFile*> anaFiles;
     QVector<Channel*> anaChannels;
