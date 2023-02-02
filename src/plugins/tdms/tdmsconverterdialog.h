@@ -24,8 +24,9 @@ public:
     ~TDMSConverterDialog();
     QStringList getConvertedFiles() const {return convertedFiles;}
     bool addFiles() const {return m_addFiles;}
+signals:
+    void filesConverted(const QStringList &files);
 public slots:
-    virtual void accept();
     virtual void reject();
     void updateProgressIndicator();
 private slots:

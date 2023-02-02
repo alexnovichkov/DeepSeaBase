@@ -153,22 +153,25 @@ void EsoConverterDialog::start()
     convertor->setResultFile(resultFile);
 
     buttonBox->buttons().constFirst()->setDisabled(true);
-    if (!thread) thread = new QThread;
-    convertor->moveToThread(thread);
+
     QStringList channelNames;
     for (int i=0; i<tree->topLevelItemCount(); ++i) {
         channelNames << (tree->topLevelItem(i)->text(2).isEmpty()?
                              QFileInfo(tree->topLevelItem(i)->text(1)).baseName():
                              tree->topLevelItem(i)->text(2));
     }
-
     convertor->setChannelNames(channelNames);
-    connect(thread, SIGNAL(started()), convertor, SLOT(convert()));
-    connect(convertor, SIGNAL(finished()), thread, SLOT(quit()));
-    connect(convertor, SIGNAL(finished()), this, SLOT(finalize()));
-    connect(convertor, SIGNAL(tick()), SLOT(updateProgressIndicator()));
-    //connect(convertor, SIGNAL(tick(QString)), SLOT(updateProgressIndicator(QString)));
-    //connect(convertor, SIGNAL(message(QString)), textEdit, SLOT(appendHtml(QString)));
+
+    if (!thread) {
+        thread = new QThread;
+        convertor->moveToThread(thread);
+        connect(thread, SIGNAL(started()), convertor, SLOT(convert()));
+        connect(convertor, SIGNAL(finished()), thread, SLOT(quit()));
+        connect(convertor, SIGNAL(finished()), this, SLOT(finalize()));
+        connect(convertor, SIGNAL(tick()), SLOT(updateProgressIndicator()));
+        //connect(convertor, SIGNAL(tick(QString)), SLOT(updateProgressIndicator(QString)));
+        //connect(convertor, SIGNAL(message(QString)), textEdit, SLOT(appendHtml(QString)));
+    }
 
     progress->setValue(0);
 
@@ -184,6 +187,7 @@ void EsoConverterDialog::stop()
 
 void EsoConverterDialog::finalize()
 {
+    //emit filesConverted(convertor->getNewFile());
     accept();
 }
 

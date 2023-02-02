@@ -47,6 +47,8 @@ public:
     EsoConverterDialog(QWidget *parent = 0);
     ~EsoConverterDialog();
     QStringList getConvertedFiles() const {return convertedFiles;}
+signals:
+    void filesConverted(const QStringList &files);
 public slots:
     virtual void accept();
     virtual void reject();

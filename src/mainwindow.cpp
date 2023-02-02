@@ -1353,13 +1353,11 @@ void MainWindow::save()
 void MainWindow::convertMatFiles()
 {DD;
     MatlabConverterDialog dialog(this);
-    if (dialog.exec()) {
-        if (dialog.addFiles()) {
-            QStringList files = dialog.getConvertedFiles();
-            this->addFiles(files);
-            if (currentTab) currentTab->fileHandler->trackFiles(files);
-        }
-    }
+    connect(&dialog, &MatlabConverterDialog::filesConverted, [=](const QStringList &files){
+        this->addFiles(files);
+        if (currentTab) currentTab->fileHandler->trackFiles(files);
+    });
+    dialog.exec();
 }
 
 void MainWindow::onPluginTriggered(const QString &pluginKey)
@@ -1401,12 +1399,11 @@ void MainWindow::convertEsoFiles()
 void MainWindow::convertAnaFiles()
 {
     AnaConverterDialog dialog(this);
-    if (dialog.exec()) {
-        QStringList files = dialog.getConvertedFiles();
-        if (files.isEmpty()) return;
-        this->addFiles(files);
+    connect(&dialog, &AnaConverterDialog::filesConverted, [=](const QStringList &files){
+        addFiles(files);
         if (currentTab) currentTab->fileHandler->trackFiles(files);
-    }
+    });
+    dialog.exec();
 }
 
 void MainWindow::saveTimeSegment(const QVector<FileDescriptor *> &files, double from, double to)

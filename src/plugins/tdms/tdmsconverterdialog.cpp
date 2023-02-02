@@ -164,12 +164,6 @@ void TDMSConverterDialog::updateFormat()
     converter->setDestinationFormat(suffix.toLower());
 }
 
-void TDMSConverterDialog::accept()
-{
-    convertedFiles = converter->getNewFiles();
-    QDialog::accept();
-}
-
 void TDMSConverterDialog::reject()
 {
     stop();
@@ -196,16 +190,18 @@ void TDMSConverterDialog::start()
         return;
     }
 
-    progress->setRange(0, toConvert.size()-1);
+    progress->setRange(0, toConvert.size());
 
-    if (!thread) thread = new QThread;
-    converter->moveToThread(thread);
-    connect(thread, SIGNAL(started()), converter, SLOT(convert()));
-    connect(converter, SIGNAL(finished()), thread, SLOT(quit()));
-    connect(converter, SIGNAL(finished()), this, SLOT(finalize()));
-    connect(converter, SIGNAL(tick()), SLOT(updateProgressIndicator()));
-    //connect(convertor, SIGNAL(tick(QString)), SLOT(updateProgressIndicator(QString)));
-    connect(converter, SIGNAL(message(QString)), textEdit, SLOT(appendHtml(QString)));
+    if (!thread) {
+        thread = new QThread;
+        converter->moveToThread(thread);
+        connect(thread, SIGNAL(started()), converter, SLOT(convert()));
+        connect(converter, SIGNAL(finished()), thread, SLOT(quit()));
+        connect(converter, SIGNAL(finished()), this, SLOT(finalize()));
+        connect(converter, SIGNAL(tick()), SLOT(updateProgressIndicator()));
+        //connect(convertor, SIGNAL(tick(QString)), SLOT(updateProgressIndicator(QString)));
+        connect(converter, SIGNAL(message(QString)), textEdit, SLOT(appendHtml(QString)));
+    }
 
     progress->setValue(0);
 
@@ -225,17 +221,6 @@ void TDMSConverterDialog::finalize()
         QDir dir(folder);
         QProcess::startDetached("explorer.exe", QStringList(dir.toNativeSeparators(dir.absolutePath())));
     }
+    convertedFiles << converter->getNewFiles();
     m_addFiles = addFilesButton->isChecked();
-
-//    buttonBox->buttons().constFirst()->setDisabled(false);
-//    if (convertor) {
-//        convertor->deleteLater();
-//        //convertor=0;
-//    }
-//    if (thread) {
-//        thread->quit();
-//        thread->wait();
-//        thread->deleteLater();
-//       // thread = 0;
-//    }
 }

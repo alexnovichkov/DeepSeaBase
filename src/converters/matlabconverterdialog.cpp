@@ -331,14 +331,14 @@ void MatlabConverterDialog::start()
 
     if (!thread) {
         thread = new QThread;
+        convertor->moveToThread(thread);
+        connect(thread, SIGNAL(started()), convertor, SLOT(convert()), Qt::UniqueConnection);
+        connect(convertor, SIGNAL(finished()), thread, SLOT(quit()), Qt::UniqueConnection);
+        connect(convertor, SIGNAL(finished()), this, SLOT(finalize()), Qt::UniqueConnection);
+        connect(convertor, SIGNAL(tick()), SLOT(updateProgressIndicator()), Qt::UniqueConnection);
+        connect(convertor, SIGNAL(message(QString)), textEdit, SLOT(appendHtml(QString)), Qt::UniqueConnection);
+        connect(convertor, SIGNAL(converted(QString)), SLOT(converted(QString)), Qt::UniqueConnection);
     }
-    convertor->moveToThread(thread);
-    connect(thread, SIGNAL(started()), convertor, SLOT(convert()), Qt::UniqueConnection);
-    connect(convertor, SIGNAL(finished()), thread, SLOT(quit()), Qt::UniqueConnection);
-    connect(convertor, SIGNAL(finished()), this, SLOT(finalize()), Qt::UniqueConnection);
-    connect(convertor, SIGNAL(tick()), SLOT(updateProgressIndicator()), Qt::UniqueConnection);
-    connect(convertor, SIGNAL(message(QString)), textEdit, SLOT(appendHtml(QString)), Qt::UniqueConnection);
-    connect(convertor, SIGNAL(converted(QString)), SLOT(converted(QString)), Qt::UniqueConnection);
 
     thread->start();
 }
@@ -357,6 +357,8 @@ void MatlabConverterDialog::finalize()
         QDir dir(folder);
         QProcess::startDetached("explorer.exe", QStringList(dir.toNativeSeparators(dir.absolutePath())));
     }
+    if (addFilesButton->isChecked())
+        emit filesConverted(convertor->getNewFiles());
     m_addFiles = addFilesButton->isChecked();
 }
 
