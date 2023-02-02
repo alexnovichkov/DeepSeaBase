@@ -242,7 +242,6 @@ QCPAxis *QCPPlot::eventTargetAxis(QEvent *event)
 {
     if (auto mouseEvent = dynamic_cast<QMouseEvent*>(event)) {
         QList<QCPLayerable*> candidates = layerableListAt(mouseEvent->pos(), false);
-        qDebug()<<candidates;
         for (int i=0; i<candidates.size(); ++i) {
             if (auto ax = dynamic_cast<QCPAxis*>(candidates.at(i)))
                 return ax;

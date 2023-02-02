@@ -156,7 +156,7 @@ QString AnaFile::fileType() const
 
 QString AnaFile::icon() const
 {
-    return "";
+    return ":/icons/anp.svg";
 }
 
 bool AnaFile::rename(const QString &newName, const QString &newPath)

@@ -85,5 +85,6 @@
         <file>icons/ssTriangle.png</file>
         <file>icons/ssTriangleInverted.png</file>
         <file>icons/wav.svg</file>
+        <file>icons/anp.svg</file>
     </qresource>
 </RCC>
