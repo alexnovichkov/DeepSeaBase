@@ -45,6 +45,7 @@ signals:
     void contextMenuRequested(const QPoint &pos, Enums::AxisType axis);
     void moveCursor(Enums::Direction direction);
     void canvasDoubleClicked(const QPoint &pos);
+    void axisDoubleClicked(QCPAxis* axis);
 protected:
     bool eventFilter(QObject *target, QEvent *event);
 private:

@@ -149,11 +149,13 @@ void CanvasEventFilter::mouseRelease(QMouseEvent *event)
 
 void CanvasEventFilter::mouseDoubleClick(QMouseEvent *event)
 {DD;
-    if (currentAxis) {
-
+    auto axis = plot->impl()->eventTargetAxis(event);
+    if (axis) {
+        emit axisDoubleClicked(axis);
     }
     else switch (event->button()) {
         case Qt::LeftButton: {
+            //перенаправляется в Plot и перемещает курсор проигрывателя
             emit canvasDoubleClicked(startPosition);
             break;
         }

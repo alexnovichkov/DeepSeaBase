@@ -94,6 +94,7 @@ public:
 private:
     void addZoom();
 
+    void axisDoubleClicked(QCPAxis *axis);
 protected:
 //    virtual void keyPressEvent(QKeyEvent *event) override;
     virtual void dragEnterEvent(QDragEnterEvent *event) override;

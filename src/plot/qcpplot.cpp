@@ -59,35 +59,6 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     setMouseTracking(true);
     setPlottingHints( QCP::phCacheLabels | /*QCP::phFastPolylines |*/ QCP::phImmediateRefresh);
 
-    connect(this, &QCustomPlot::axisDoubleClick, [=](QCPAxis *axis, QCPAxis::SelectablePart part, QMouseEvent *event) {
-        Q_UNUSED(part);
-        Q_UNUSED(event);
-        auto range = axis->range();
-        auto type = fromQcpAxis(axis->axisType());
-        AxisBoundsDialog dialog(range.lower, range.upper, type);
-        if (dialog.exec()) {
-            ZoomStack::zoomCoordinates coords;
-            auto axes = axisRect()->axes();
-            if (axes.contains(axis)) { //5 axes types
-                for (auto ax: axes) {
-                    if (axis == ax) coords.coords.insert(fromQcpAxis(ax->axisType()), {dialog.leftBorder(), dialog.rightBorder()});
-                    else coords.coords.insert(fromQcpAxis(ax->axisType()), {ax->range().lower, ax->range().upper});
-                }
-                if (colorScale) {
-                    auto ax = colorScale->axis();
-                    coords.coords.insert(Enums::AxisType::atColor, {ax->range().lower, ax->range().upper});
-                }
-            }
-            else {//5 axes types
-                for (auto ax: axes) {
-                    coords.coords.insert(fromQcpAxis(ax->axisType()), {ax->range().lower, ax->range().upper});
-                }
-                coords.coords.insert(Enums::AxisType::atColor, {dialog.leftBorder(), dialog.rightBorder()});
-            }
-
-            plot->zoom->addZoom(coords, true);
-        }
-    });
     axisRect()->setRangeDragAxes({xAxis, yAxis, yAxis2});
     axisRect()->setRangeDrag(Qt::Horizontal | Qt::Vertical);
     axisRect()->setRangeZoomAxes({xAxis, yAxis, yAxis2});
@@ -234,13 +205,44 @@ void QCPPlot::setEventFilter(CanvasEventFilter *filter)
     connect(canvasFilter, SIGNAL(canvasDoubleClicked(QPoint)), this, SIGNAL(canvasDoubleClicked(QPoint)));
     //    connect(canvasFilter, &CanvasEventFilter::hover, this, &QwtPlotImpl::hoverAxis);
     connect(canvasFilter, &CanvasEventFilter::contextMenuRequested, parent, &Plot::showContextMenu);
+    connect(canvasFilter, &CanvasEventFilter::axisDoubleClicked, this, &QCPPlot::axisDoubleClicked);
     installEventFilter(filter);
+}
+
+void QCPPlot::axisDoubleClicked(QCPAxis *axis)
+{
+    auto range = axis->range();
+    auto type = fromQcpAxis(axis->axisType());
+    AxisBoundsDialog dialog(range.lower, range.upper, type);
+    if (dialog.exec()) {
+        ZoomStack::zoomCoordinates coords;
+        auto axes = axisRect()->axes();
+        if (axes.contains(axis)) { //5 axes types
+            for (auto ax: axes) {
+                if (axis == ax) coords.coords.insert(fromQcpAxis(ax->axisType()), {dialog.leftBorder(), dialog.rightBorder()});
+                else coords.coords.insert(fromQcpAxis(ax->axisType()), {ax->range().lower, ax->range().upper});
+            }
+            if (colorScale) {
+                auto ax = colorScale->axis();
+                coords.coords.insert(Enums::AxisType::atColor, {ax->range().lower, ax->range().upper});
+            }
+        }
+        else {//5 axes types
+            for (auto ax: axes) {
+                coords.coords.insert(fromQcpAxis(ax->axisType()), {ax->range().lower, ax->range().upper});
+            }
+            coords.coords.insert(Enums::AxisType::atColor, {dialog.leftBorder(), dialog.rightBorder()});
+        }
+
+        parent->zoom->addZoom(coords, true);
+    }
 }
 
 QCPAxis *QCPPlot::eventTargetAxis(QEvent *event)
 {
     if (auto mouseEvent = dynamic_cast<QMouseEvent*>(event)) {
         QList<QCPLayerable*> candidates = layerableListAt(mouseEvent->pos(), false);
+        qDebug()<<candidates;
         for (int i=0; i<candidates.size(); ++i) {
             if (auto ax = dynamic_cast<QCPAxis*>(candidates.at(i)))
                 return ax;

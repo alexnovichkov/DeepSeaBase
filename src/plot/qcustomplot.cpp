@@ -15602,7 +15602,8 @@ void QCustomPlot::mouseDoubleClickEvent(QMouseEvent *event)
       if (!details.first().value<QCPDataSelection>().isEmpty())
         dataIndex = details.first().value<QCPDataSelection>().dataRange().begin();
       emit plottableDoubleClick(ap, dataIndex, event);
-    } else if (QCPAxis *ax = qobject_cast<QCPAxis*>(candidates.first()))
+    }
+    else if (QCPAxis *ax = qobject_cast<QCPAxis*>(candidates.first()))
       emit axisDoubleClick(ax, details.first().value<QCPAxis::SelectablePart>(), event);
     else if (QCPAbstractItem *ai = qobject_cast<QCPAbstractItem*>(candidates.first()))
       emit itemDoubleClick(ai, event);
