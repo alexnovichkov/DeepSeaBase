@@ -21,10 +21,16 @@ void AnaConverter::setDestinationFormat(const QString &format)
     this->format = format;
 }
 
+void AnaConverter::setTrimFiles(bool trim)
+{
+    trimFiles = trim;
+}
+
 bool AnaConverter::convert()
 {
     if (QThread::currentThread()->isInterruptionRequested()) return false;
     bool noErrors = true;
+    newFiles.clear();
 
     //Converting
 
@@ -58,6 +64,8 @@ bool AnaConverter::convert()
     {
         return a->data()->samplesCount() == minCount;
     });
+    truncate &= trimFiles;
+    truncate |= format.toLower() == "dfd";
 
     //Затем сохраняем целевой файл
     emit message("Сохраняю итоговый файл. Не закрывайте это окно");

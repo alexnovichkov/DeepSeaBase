@@ -44,6 +44,9 @@ AnaConverterDialog::AnaConverterDialog(QWidget *parent) : QDialog(parent)
 
     addFilesButton = new QCheckBox("Добавить новые файлы в текущую вкладку", this);
 
+    trimFilesButton = new QCheckBox("Обрезать файлы по самому короткому", this);
+    trimFilesButton->setChecked(true);
+
     QSplitter *splitter = new QSplitter(Qt::Vertical, this);
     QWidget *first = new QWidget(this);
 
@@ -60,8 +63,9 @@ AnaConverterDialog::AnaConverterDialog(QWidget *parent) : QDialog(parent)
     grid1->addWidget(textEdit,0,0,1,4);
     grid1->addWidget(new QLabel("Сохранять как", this), 1,0,1,1);
     grid1->addWidget(fileFormat, 1,1,1,1);
-    grid1->addWidget(openFolderButton, 2,0,1,4);
-    grid1->addWidget(addFilesButton, 3, 0,1,4);
+    grid1->addWidget(trimFilesButton,  2,0,1,2);
+    grid1->addWidget(openFolderButton, 2,2,1,2);
+    grid1->addWidget(addFilesButton,   3,0,1,4);
     grid1->addWidget(buttonBox,4,0,1,4);
     second->setLayout(grid1);
     splitter->addWidget(first);
@@ -148,6 +152,7 @@ void AnaConverterDialog::start()
     for (int i=0; i<tree->topLevelItemCount(); ++i)
         toConvert << tree->topLevelItem(i)->text(1);
     converter->setFilesToConvert(toConvert);
+    converter->setTrimFiles(trimFilesButton->isChecked());
 
     if (toConvert.isEmpty()) {
         textEdit->appendHtml("<font color=red>Error!</font> Отсутствуют файлы для конвертации.");
@@ -157,15 +162,15 @@ void AnaConverterDialog::start()
 
     progress->setRange(0, toConvert.size());
 
-    if (!thread) thread = new QThread;
-    converter->moveToThread(thread);
-    connect(thread, SIGNAL(started()), converter, SLOT(convert()));
-    connect(converter, SIGNAL(finished()), thread, SLOT(quit()));
-    connect(converter, SIGNAL(finished()), this, SLOT(finalize()));
-    connect(converter, SIGNAL(tick()), SLOT(updateProgressIndicator()));
-    //connect(convertor, SIGNAL(tick(QString)), SLOT(updateProgressIndicator(QString)));
-    connect(converter, SIGNAL(message(QString)), textEdit, SLOT(appendHtml(QString)));
-
+    if (!thread) {
+        thread = new QThread;
+        converter->moveToThread(thread);
+        connect(thread, SIGNAL(started()), converter, SLOT(convert()));
+        connect(converter, SIGNAL(finished()), thread, SLOT(quit()));
+        connect(converter, SIGNAL(finished()), this, SLOT(finalize()));
+        connect(converter, SIGNAL(tick()), SLOT(updateProgressIndicator()));
+        connect(converter, SIGNAL(message(QString)), textEdit, SLOT(appendHtml(QString)));
+    }
     progress->setValue(0);
 
     thread->start();
@@ -180,6 +185,7 @@ void AnaConverterDialog::stop()
 
 void AnaConverterDialog::finalize()
 {
+    emit filesConverted(converter->getNewFiles());
     if (openFolderButton->isChecked()) {
         QDir dir(folder);
         QProcess::startDetached("explorer.exe", QStringList(dir.toNativeSeparators(dir.absolutePath())));

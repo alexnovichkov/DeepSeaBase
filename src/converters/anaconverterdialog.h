@@ -20,6 +20,8 @@ public:
     ~AnaConverterDialog();
     QStringList getConvertedFiles() const {return convertedFiles;}
     bool addFiles() const;
+signals:
+    void filesConverted(const QStringList &files);
 public slots:
     virtual void accept();
     virtual void reject();
@@ -44,6 +46,7 @@ private:
     QThread *thread = nullptr;
     QCheckBox *addFilesButton;
     QCheckBox *openFolderButton;
+    QCheckBox *trimFilesButton;
 };
 
 #endif // ANACONVERTERDIALOG_H

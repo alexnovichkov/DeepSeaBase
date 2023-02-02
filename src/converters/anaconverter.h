@@ -13,6 +13,7 @@ public:
     void setFilesToConvert(const QStringList &files);
     QStringList getNewFiles() const;
     void setDestinationFormat(const QString &format);
+    void setTrimFiles(bool trim);
 public slots:
     bool convert();
 signals:
@@ -23,6 +24,7 @@ private:
     QStringList files;
     QStringList newFiles;
     QString format;
+    bool trimFiles;
 };
 
 #endif // ANACONVERTER_H
