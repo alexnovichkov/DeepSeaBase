@@ -56,7 +56,8 @@ class MatlabNumericRecord;
 class MatChannel;
 class MatlabStructArray;
 
-class MatFile : public FileDescriptor {
+class MatFile : public FileDescriptor
+{
 public:
     MatFile(const QString &fileName);
     virtual ~MatFile();
@@ -80,11 +81,7 @@ private:
     // FileDescriptor interface
 public:
     virtual void write() override;
-//    virtual DescriptionList dataDescriptor() const override;
-    virtual void deleteChannels(const QVector<int> &) override;
-    virtual void copyChannelsFrom(const QVector<Channel*> &) override {}
     virtual int channelsCount() const override;
-    virtual void move(bool, const QVector<int> &, const QVector<int> &) override;
     virtual Channel *channel(int index) const override;
     virtual QString fileType() const override {return "mat";}
 };

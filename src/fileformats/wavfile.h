@@ -152,10 +152,7 @@ public:
 public:
     virtual void read() override;
     virtual void write() override;
-    virtual void deleteChannels(const QVector<int> &channelsToDelete) override;
-    virtual void copyChannelsFrom(const QVector<Channel *> &) override;
     virtual int channelsCount() const override;
-    virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
     virtual Channel *channel(int index) const override;
     virtual bool canTakeChannelsFrom(FileDescriptor *other) const override;
     virtual bool canTakeAnyChannels() const override;

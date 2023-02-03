@@ -84,14 +84,15 @@ public:
 
     //чисто виртуальные
     virtual void read() = 0;
-    virtual void write() = 0;
-    virtual void deleteChannels(const QVector<int> &channelsToDelete) = 0;
-    virtual void copyChannelsFrom(const QVector<Channel*> &) = 0;
     virtual int channelsCount() const = 0;
-    virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) = 0;
     virtual Channel *channel(int index) const = 0;
     virtual QString fileType() const = 0;
 
+    //переопределите эти методы, если файл поддерживает изменение
+    virtual void write() {};
+    virtual void deleteChannels(const QVector<int> &) {};
+    virtual void copyChannelsFrom(const QVector<Channel*> &) {};
+    virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) {};
 
     //виртуальные
     virtual QString icon() const {return "";}
@@ -124,7 +125,7 @@ public:
         Q_UNUSED(data);
         Q_UNUSED(description);
     };
-    //переопределен в DFD
+    //переопределен в DFD и в ANP
     virtual qint64 fileSize() const;
 
     //все остальные

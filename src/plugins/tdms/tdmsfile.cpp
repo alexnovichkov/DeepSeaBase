@@ -598,17 +598,9 @@ void TDMSGroup::write()
 //    return parent->properties.value("datetime").toDateTime();
 //}
 
-void TDMSGroup::deleteChannels(const QVector<int> &)
-{
-}
-
 int TDMSGroup::channelsCount() const
 {
     return channels.count();
-}
-
-void TDMSGroup::move(bool , const QVector<int> &, const QVector<int> &)
-{
 }
 
 Channel *TDMSGroup::channel(int index) const

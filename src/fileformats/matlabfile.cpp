@@ -423,22 +423,9 @@ void MatlabFile::write()
 
 }
 
-void MatlabFile::deleteChannels(const QVector<int> &channelsToDelete)
-{
-
-}
-
-void MatlabFile::copyChannelsFrom(const QVector<Channel *> &)
-{
-}
-
 int MatlabFile::channelsCount() const
 {
     return channels.size();
-}
-
-void MatlabFile::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
-{
 }
 
 Channel *MatlabFile::channel(int index) const
@@ -456,10 +443,6 @@ QString MatlabFile::icon() const
 //bool MatlabFile::rename(const QString &newName, const QString &newPath)
 //{
 //}
-
-void MatlabFile::fillPreliminary(const FileDescriptor *)
-{
-}
 
 //bool MatlabFile::copyTo(const QString &name)
 //{
@@ -497,10 +480,6 @@ void MatlabFile::fillPreliminary(const FileDescriptor *)
 //bool MatlabFile::canTakeAnyChannels() const
 //{
 //}
-
-void MatlabFile::addChannelWithData(DataHolder *data, const DataDescription &description)
-{
-}
 
 //qint64 MatlabFile::fileSize() const
 //{

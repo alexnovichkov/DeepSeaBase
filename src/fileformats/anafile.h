@@ -16,8 +16,6 @@ class AnaFile : public FileDescriptor
 {
 public:
     AnaFile(const QString &fileName);
-    AnaFile(const FileDescriptor &other, const QString &fileName, QVector<int> indexes = QVector<int>());
-    AnaFile(const QVector<Channel *> &source, const QString &fileName);
     virtual ~AnaFile();
 
     static QStringList fileFilters();
@@ -26,18 +24,13 @@ public:
     // FileDescriptor interface
 public:
     virtual void read() override;
-    virtual void write() override;
-    virtual void deleteChannels(const QVector<int> &channelsToDelete) override;
-    virtual void copyChannelsFrom(const QVector<Channel *> &) override;
     virtual int channelsCount() const override;
-    virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
     virtual Channel *channel(int index) const override;
     virtual QString fileType() const override;
     virtual QString icon() const override;
     virtual bool rename(const QString &newName, const QString &newPath) override;
     virtual bool rename(const QString &newName) override;
     virtual bool remove() override;
-    virtual void fillPreliminary(const FileDescriptor *file) override;
     virtual bool copyTo(const QString &name) override;
     virtual Descriptor::DataType type() const override;
     virtual QString typeDisplay() const override;
@@ -46,13 +39,10 @@ public:
     virtual bool dataTypeEquals(FileDescriptor *other) const override;
     virtual bool canTakeChannelsFrom(FileDescriptor *other) const override;
     virtual bool canTakeAnyChannels() const override;
-    virtual void addChannelWithData(DataHolder *data, const DataDescription &description) override;
     virtual qint64 fileSize() const override;
 
 private:
     friend class AnaChannel;
-    void init(Channel * source);
-    void writeAnp(QTextStream &stream);
     int getFormat() const;
     QString rawFileName; // путь к RAW файлу
     AnaChannel *_channel = nullptr;
@@ -93,10 +83,6 @@ class AnaChannel: public Channel
 {
 public:
     AnaChannel(AnaFile *parent);
-    AnaChannel(AnaChannel &other, AnaFile *parent);
-    AnaChannel(Channel &other, AnaFile *parent);
-
-    bool write(QDataStream &stream, const DataHolder *data);
 
     // Channel interface
 public:

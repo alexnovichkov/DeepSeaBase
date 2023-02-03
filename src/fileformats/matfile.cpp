@@ -1158,17 +1158,9 @@ void MatFile::write()
 //                           << DescriptionEntry("Заголовок 3", xml.titles.at(2));
 //}
 
-void MatFile::deleteChannels(const QVector<int> &)
-{
-}
-
 int MatFile::channelsCount() const
 {
     return channels.size();
-}
-
-void MatFile::move(bool, const QVector<int> &, const QVector<int> &)
-{
 }
 
 Channel *MatFile::channel(int index) const

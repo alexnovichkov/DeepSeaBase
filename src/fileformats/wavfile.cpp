@@ -286,21 +286,9 @@ void WavFile::write()
 {DD;
 }
 
-void WavFile::deleteChannels(const QVector<int> &channelsToDelete)
-{DD;
-}
-
-void WavFile::copyChannelsFrom(const QVector<Channel *> &)
-{DD;
-}
-
 int WavFile::channelsCount() const
 {DD;
     return channels.size();
-}
-
-void WavFile::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
-{DD;
 }
 
 Channel *WavFile::channel(int index) const

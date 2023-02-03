@@ -9,27 +9,6 @@ AnaFile::AnaFile(const QString &fileName) : FileDescriptor(fileName)
     rawFileName = fileName.left(fileName.length()-3)+"ana";
 }
 
-AnaFile::AnaFile(const FileDescriptor &other, const QString &fileName, QVector<int> indexes)
-: FileDescriptor(fileName)
-{DD;
-    //файл ana поддерживает сохранение только одного канала
-    Channel * source = nullptr;
-    if (indexes.isEmpty())
-        //берем первый канал
-         source = other.channel(0);
-    else
-        source = other.channel(indexes.first());
-
-    init(source);
-}
-
-AnaFile::AnaFile(const QVector<Channel *> &source, const QString &fileName)
-    : FileDescriptor(fileName)
-{DD;
-    //файл ana поддерживает сохранение только одного канала
-    init(source.first());
-}
-
 AnaFile::~AnaFile()
 {
     if (changed() || dataChanged())
@@ -113,34 +92,9 @@ void AnaFile::read()
     dataDescription().put("function.logref", thr);
 }
 
-void AnaFile::write()
-{
-    //File is read-only
-    //TODO: дописать
-}
-
-void AnaFile::deleteChannels(const QVector<int> &channelsToDelete)
-{
-    //Удаление каналов не поддерживается
-    Q_UNUSED(channelsToDelete);
-}
-
-void AnaFile::copyChannelsFrom(const QVector<Channel *> &)
-{
-    //вставка доп.каналов не поддерживается
-}
-
 int AnaFile::channelsCount() const
 {
     return 1;
-}
-
-void AnaFile::move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
-{
-    Q_UNUSED(up)
-    Q_UNUSED(indexes)
-    Q_UNUSED(newIndexes)
-    //перемещение каналов не поддерживается
 }
 
 Channel *AnaFile::channel(int index) const
@@ -194,12 +148,6 @@ bool AnaFile::remove()
     return result;
 }
 
-void AnaFile::fillPreliminary(const FileDescriptor *file)
-{
-    FileDescriptor::fillPreliminary(file);
-    rawFileName = fileName().left(fileName().length()-4)+".ana";
-}
-
 bool AnaFile::copyTo(const QString &name)
 {
     QString rawFile = name;
@@ -245,72 +193,9 @@ bool AnaFile::canTakeAnyChannels() const
     return false;
 }
 
-void AnaFile::addChannelWithData(DataHolder *data, const DataDescription &description)
-{
-    if (!_channel) {
-        _channel = new AnaChannel(this);
-        _channel->setPopulated(true);
-        _channel->setChanged(true);
-        _channel->setDataChanged(true);
-        _channel->setData(data);
-        _channel->setDataDescription(description);
-        DataDescription &channel = _channel->dataDescription();
-        channel.put("description.gain", 1);
-        channel.put("description.absvolt", 1);
-        channel.put("function.precision", "float");
-        channel.put("description.base", 1);
-        channel.put("description.dboff", 0);
-        channel.put("description.voltage", 1);
-    }
-}
-
 qint64 AnaFile::fileSize() const
 {
     return QFile(rawFileName).size();
-}
-
-void AnaFile::init(Channel *source)
-{
-    auto other = source->descriptor();
-
-    setDataDescription(other->dataDescription());
-
-    fillPreliminary(other);
-
-    //копируем каналы и записываем данные в ana
-    QFile raw(rawFileName);
-    if (!raw.open(QFile::WriteOnly)) {
-        LOG(ERROR)<<QString("Не могу открыть файл для записи: ")<<rawFileName;
-        return;
-    }
-    QDataStream w(&raw);
-    w.setByteOrder(QDataStream::LittleEndian);
-
-    bool populated = source->populated();
-    if (!populated) source->populate();
-
-    _channel = new AnaChannel(*source, this);
-    _channel->write(w, source->data()); //данные берутся из sourceChannel
-
-    if (!populated)
-        source->clear();
-
-    //Сохраняем файл anp
-    QFile file(fileName());
-    if (!file.open(QFile::WriteOnly | QFile::Text)) {
-        LOG(ERROR)<<QString("Не могу открыть файл для записи: ")<<fileName();
-        return;
-    }
-
-    QTextCodec *codec = QTextCodec::codecForName("Windows-1251");
-    QTextStream anpFile(&file);
-    anpFile.setCodec(codec);
-    writeAnp(anpFile); //Записываем шапку файла
-}
-
-void AnaFile::writeAnp(QTextStream &stream)
-{
-
 }
 
 int AnaFile::getFormat() const
@@ -332,24 +217,6 @@ AnaChannel::AnaChannel(AnaFile *parent) : Channel(), parent(parent)
 {
     parent->_channel = this;
     //return ((v*ADCStep+ADC0)/AmplLevel - AmplShift - Sens0Shift)/SensSensitivity;
-}
-
-AnaChannel::AnaChannel(Channel &other, AnaFile *parent) : Channel(other), parent(parent)
-{
-    QString precision = dataDescription().get("function.precision").toString();
-    if (precision == "uint8" || precision == "int8" || precision == "uint16"
-        || precision == "int16" || precision == "uint32" || precision == "int32"
-        || precision == "uint64" || precision == "int64") dataDescription().put("function.precision", "int16");
-    else if (precision == "float" || precision == "double") dataDescription().put("function.precision", "float");
-    else dataDescription().put("function.precision", "int16"); //по умолчанию
-
-
-}
-
-bool AnaChannel::write(QDataStream &stream, const DataHolder *data)
-{
-
-    return true;
 }
 
 QVariant AnaChannel::info(int column, bool edit) const
