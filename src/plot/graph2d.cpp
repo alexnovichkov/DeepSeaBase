@@ -243,28 +243,26 @@ void Graph2D::drawImpulsePlot(QCPPainter *painter, const QVector<QPointF> &lines
 
 void Graph2D::getOptimizedLineData(QVector<QCPGraphData> *lineData, const int begin, const int end) const
 {DD;
-//    auto start = std::chrono::high_resolution_clock::now();
     if (!lineData) return;
     QCPAxis *keyAxis = mKeyAxis.data();
     QCPAxis *valueAxis = mValueAxis.data();
     if (!keyAxis || !valueAxis) { LOG(ERROR) << Q_FUNC_INFO << "invalid key or value axis"; return; }
     if (begin == end) return;
 
-    int extraPoints = 0;
-
-    int dataCount = int(end-begin);
     int maxCount = (std::numeric_limits<int>::max)();
 
-    {
-        double keyPixelSpan = qAbs(keyAxis->coordToPixel(channel->data()->xValue(begin))
-                                   - keyAxis->coordToPixel(channel->data()->xValue(end-1)));
+    double keyPixelSpan = qAbs(keyAxis->coordToPixel(channel->data()->xValue(begin))
+                               - keyAxis->coordToPixel(channel->data()->xValue(end-1)));
 
-        if (2*keyPixelSpan+2 < static_cast<double>((std::numeric_limits<int>::max)()))
-            maxCount = int(2*keyPixelSpan+2);
+    if (2*keyPixelSpan+2 < static_cast<double>(maxCount))
+        maxCount = int(2*keyPixelSpan+2);
+
+    if (begin == cashedBegin && end == cashedEnd && keyPixelSpan == cashedKeyPixelSpan && !channel->dataChanged()) {
+        *lineData = cashedLineData;
+        return;
     }
 
-
-    if (dataCount >= maxCount) {// use adaptive sampling only if there are at least two points per pixel on average
+    if (end-begin >= maxCount) {// use adaptive sampling only if there are at least two points per pixel on average
         auto it = begin;
         double minYValue = channel->data()->yValue(it);
         double maxYValue = minYValue;
@@ -279,6 +277,12 @@ void Graph2D::getOptimizedLineData(QVector<QCPGraphData> *lineData, const int be
         double keyEpsilon = qAbs(currentIntervalStartKey - keyAxis->pixelToCoord(keyAxis->coordToPixel(currentIntervalStartKey)+1.0*reversedFactor)); // interval of one pixel on screen when mapped to plot key coordinates
         bool keyEpsilonVariable = keyAxis->scaleType() == QCPAxis::stLogarithmic; // indicates whether keyEpsilon needs to be updated after every interval (for log axes)
         int intervalDataCount = 1;
+
+        double epsilon02 = keyEpsilon*0.2;
+        double epsilon025 = keyEpsilon*0.25;
+        double epsilon075 = keyEpsilon*0.75;
+        double epsilon08 = keyEpsilon*0.8;
+
         ++it; // advance iterator to second data point because adaptive sampling works in 1 point retrospect
         while (it != end) {
             xValue = channel->data()->xValue(it);
@@ -293,14 +297,12 @@ void Graph2D::getOptimizedLineData(QVector<QCPGraphData> *lineData, const int be
             else {// new pixel interval started
                 if (intervalDataCount >= 2) {// last pixel had multiple data points, consolidate them to a cluster
                     if (lastIntervalEndKey < currentIntervalStartKey-keyEpsilon) {// last point is further away, so first point of this cluster must be at a real data point
-                        lineData->append(QCPGraphData(currentIntervalStartKey + keyEpsilon*0.2, currentIntervalFirstPointY));
-                        extraPoints++;
+                        lineData->append(QCPGraphData(currentIntervalStartKey + epsilon02, currentIntervalFirstPointY));
                     }
-                    lineData->append(QCPGraphData(currentIntervalStartKey + keyEpsilon*0.25, minYValue));
-                    lineData->append(QCPGraphData(currentIntervalStartKey + keyEpsilon*0.75, maxYValue));
+                    lineData->append(QCPGraphData(currentIntervalStartKey + epsilon025, minYValue));
+                    lineData->append(QCPGraphData(currentIntervalStartKey + epsilon075, maxYValue));
                     if (xValue > currentIntervalStartKey+keyEpsilon*2) {// new pixel started further away from previous cluster, so make sure the last point of the cluster is at a real data point
-                        extraPoints++;
-                        lineData->append(QCPGraphData(currentIntervalStartKey+keyEpsilon*0.8, channel->data()->yValue(it-1)));
+                        lineData->append(QCPGraphData(currentIntervalStartKey+epsilon08, channel->data()->yValue(it-1)));
                     }
                 }
                 else
@@ -313,8 +315,13 @@ void Graph2D::getOptimizedLineData(QVector<QCPGraphData> *lineData, const int be
                 currentIntervalFirstPointX = xValue;
 
                 currentIntervalStartKey = keyAxis->pixelToCoord(int(keyAxis->coordToPixel(xValue)));
-                if (keyEpsilonVariable)
+                if (keyEpsilonVariable) {
                     keyEpsilon = qAbs(currentIntervalStartKey-keyAxis->pixelToCoord(keyAxis->coordToPixel(currentIntervalStartKey)+1.0*reversedFactor));
+                    epsilon02 = keyEpsilon*0.2;
+                    epsilon025 = keyEpsilon*0.25;
+                    epsilon075 = keyEpsilon*0.75;
+                    epsilon08 = keyEpsilon*0.8;
+                }
                 intervalDataCount = 1;
             }
             ++it;
@@ -322,7 +329,6 @@ void Graph2D::getOptimizedLineData(QVector<QCPGraphData> *lineData, const int be
         // handle last interval:
         if (intervalDataCount >= 2) {// last pixel had multiple data points, consolidate them to a cluster
             if (lastIntervalEndKey < currentIntervalStartKey-keyEpsilon) {// last point wasn't a cluster, so first point of this cluster must be at a real data point
-                extraPoints++;
                 lineData->append(QCPGraphData(currentIntervalStartKey+keyEpsilon*0.2, currentIntervalFirstPointY));
             }
             lineData->append(QCPGraphData(currentIntervalStartKey+keyEpsilon*0.25, minYValue));
@@ -335,6 +341,10 @@ void Graph2D::getOptimizedLineData(QVector<QCPGraphData> *lineData, const int be
     else {
         *lineData = m_data->toLineData(begin, end);
     }
+    cashedLineData = *lineData;
+    cashedBegin = begin;
+    cashedEnd = end;
+    cashedKeyPixelSpan = keyPixelSpan;
 }
 
 void Graph2D::getOptimizedScatterData(QVector<QCPGraphData> *scatterData, int begin, int end) const
@@ -1002,7 +1012,7 @@ int Graph2D::findIndexAboveY(const QVector<QPointF> *data, double y) const
 }
 
 double Graph2D::pointDistance(const QPointF &pixelPoint, int &closestData) const
-{DD;
+{
     closestData = m_data->size();
     if (m_data->isEmpty())
       return -1.0;
@@ -1090,7 +1100,7 @@ void Graph2D::drawLegendIcon(QCPPainter *painter, const QRectF &rect) const
 }
 
 void Graph2D::draw(QCPPainter *painter)
-{DD;
+{
     if (!mKeyAxis || !mValueAxis) { LOG(ERROR) << Q_FUNC_INFO << "invalid key or value axis"; return; }
     if (mKeyAxis.data()->range().size() <= 0 || m_data->isEmpty()) return;
     if (mLineStyle == lsNone && mScatterStyle.isNone()) return;

@@ -31,6 +31,7 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
 
+
     linTicker.reset(new QCPAxisTicker);
     logTicker.reset(new QCPAxisTickerLog);
     logTicker->setLogBase(2);
@@ -45,7 +46,7 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     infoOverlay->setVisible(true);
 
     addLayer("mouse");
-    layer("mouse")->setMode(QCPLayer::lmBuffered);
+    for (int i=0; i<layerCount(); ++i) layer(i)->setMode(QCPLayer::lmBuffered);
 
     mouseCoordinates = new MouseCoordinates(this);
     mouseCoordinates->setLayer("mouse");
@@ -381,8 +382,11 @@ void QCPPlot::setAxisRange(Enums::AxisType axisType, double min, double max, dou
 
 void QCPPlot::setInfoVisible(bool visible)
 {
-    infoOverlay->setVisible(visible);
-    layer("overlay")->replot();
+    //replot only if visibility is changed
+    if (infoOverlay->visible() != visible) {
+        infoOverlay->setVisible(visible);
+        layer("overlay")->replot();
+    }
 }
 
 void QCPPlot::enableAxis(Enums::AxisType axisType, bool enable)

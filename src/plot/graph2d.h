@@ -113,7 +113,10 @@ protected:
   friend class QCPLegend;
 private:
   Q_DISABLE_COPY(Graph2D)
-
+  mutable QVector<QCPGraphData> cashedLineData;
+  mutable int cashedBegin = 0;
+  mutable int cashedEnd = 0;
+  mutable double cashedKeyPixelSpan = 0;
 
   // Curve interface
 public:

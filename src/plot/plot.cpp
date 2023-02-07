@@ -771,6 +771,7 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
                              QString("%1.\nСначала очистите график.").arg(message));
         return;
     }
+    m_plot->setInfoVisible(false);
 
     if (!ch->populated()) {
         ch->populate();
@@ -819,8 +820,6 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
         bounds->add(g->yMin(), g->yMax());
     zoom->scaleBounds(Enums::AxisType::atBottom)->add(g->xMin(), g->xMax());
 
-
-    m_plot->setInfoVisible(false);
     g->setLegend(m_plot->checkableLegend);
     g->attachTo(this);
 
