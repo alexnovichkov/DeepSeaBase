@@ -48,8 +48,8 @@ class QCPLegendTreeView : public QTreeView
 {
 public:
     explicit QCPLegendTreeView(QWidget *parent=nullptr);
-    virtual QSize sizeHint() const;
-    virtual QSize minimumSizeHint() const;
+//    virtual QSize sizeHint() const;
+//    virtual QSize minimumSizeHint() const;
 };
 
 //class QCPLegendListView : public QListView

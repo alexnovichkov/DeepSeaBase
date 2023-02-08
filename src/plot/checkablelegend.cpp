@@ -69,37 +69,37 @@ QCPLegendTreeView::QCPLegendTreeView(QWidget *parent) : QTreeView(parent)
     header()->setStretchLastSection(false);
 }
 
-QSize QCPLegendTreeView::sizeHint() const
-{
-    int w = 0;
-    int h = 0;
+//QSize QCPLegendTreeView::sizeHint() const
+//{
+//    int w = 0;
+//    int h = 0;
 
-    for (int i=0; i<model()->columnCount(); ++i)
-        w += sizeHintForColumn(i);
-    if (model()->rowCount()>0) {
-        int h1 = sizeHintForRow(0);
-        h = h1 * model()->rowCount();
-    }
+//    for (int i=0; i<model()->columnCount(); ++i)
+//        w += sizeHintForColumn(i);
+//    if (model()->rowCount()>0) {
+//        int h1 = sizeHintForRow(0);
+//        h = h1 * model()->rowCount();
+//    }
 
-    w += 10;
-    return QSize( w, h );
-}
+//    w += 10;
+//    return QSize( w, h );
+//}
 
-QSize QCPLegendTreeView::minimumSizeHint() const
-{
-    int w = 0;
-    int h = 0;
+//QSize QCPLegendTreeView::minimumSizeHint() const
+//{
+//    int w = 0;
+//    int h = 0;
 
-    for (int i=0; i<model()->columnCount(); ++i)
-        w += sizeHintForColumn(i);
-    if (model()->rowCount()>0) {
-        int h1 = sizeHintForRow(0);
-        h = h1 * model()->rowCount();
-    }
+//    for (int i=0; i<model()->columnCount(); ++i)
+//        w += sizeHintForColumn(i);
+//    if (model()->rowCount()>0) {
+//        int h1 = sizeHintForRow(0);
+//        h = h1 * model()->rowCount();
+//    }
 
-    w += 10;
-    return QSize( w, h );
-}
+//    w += 10;
+//    return QSize( w, h );
+//}
 
 QCPLegendModel::QCPLegendModel(QObject *parent) : QAbstractTableModel(parent)
 {
