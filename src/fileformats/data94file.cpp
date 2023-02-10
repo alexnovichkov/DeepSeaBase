@@ -459,6 +459,13 @@ Data94Channel::Data94Channel(Data94Channel *other, Data94File *parent)
     parent->channels << this;
 }
 
+Data94Channel::Data94Channel(Channel *other, Data94File *parent)
+    : Channel(other), parent(parent)
+{DD;
+    parent->channels << this;
+    initFrom(other->data(), other->dataDescription());
+}
+
 void Data94Channel::initFrom(DataHolder *data, const DataDescription &description)
 {DD;
     isComplex = data->yValuesFormat() == DataHolder::YValuesComplex;
@@ -495,12 +502,7 @@ void Data94Channel::initFrom(DataHolder *data, const DataDescription &descriptio
     else sampleWidth = 4;
 }
 
-Data94Channel::Data94Channel(Channel *other, Data94File *parent)
-    : Channel(other), parent(parent)
-{DD;
-    parent->channels << this;
-    initFrom(other->data(), other->dataDescription());
-}
+
 
 void Data94Channel::read(QDataStream &r)
 {DD;

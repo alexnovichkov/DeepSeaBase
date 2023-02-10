@@ -1,6 +1,6 @@
 #include "fileio.h"
 
-FileIO::FileIO()
+FileIO::FileIO(FileDescriptor *file, QObject *parent) : QObject(parent), m_file(file)
 {
 
 }
