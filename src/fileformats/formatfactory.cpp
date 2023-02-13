@@ -13,8 +13,7 @@
 QList<FileDescriptor *> FormatFactory::createDescriptors(const FileDescriptor &source, const QString &fileName, const QVector<int> &indexes)
 {DD;
     QString suffix = QFileInfo(fileName).suffix();
-    if (suffix=="wav") {
-        //Фильтруем временные реализации
+    if (suffix=="wav" || suffix=="dfd") {
         //Сортируем каналы по типу
         QVector<int> idx = indexes;
         if (idx.isEmpty()) {
@@ -30,38 +29,13 @@ QList<FileDescriptor *> FormatFactory::createDescriptors(const FileDescriptor &s
         //Создаем файлы
         QList<FileDescriptor *> result;
         for (const auto &[type, indexes]: asKeyValueRange(map)) {
-            if (type != Descriptor::TimeResponse) continue;
-            QString name = createUniqueFileName("", fileName, Descriptor::functionTypeDescription(type), "dfd", true);
-            result << new DfdFileDescriptor(source, name, indexes);
+            if (suffix=="wav" && type != Descriptor::TimeResponse) continue;
+            QString name = createUniqueFileName("", fileName, Descriptor::functionTypeDescription(type), suffix, true);
+            result << createDescriptor(source, name, indexes);
         }
         return result;
     }
-    else if (suffix!="dfd") {
-        if (suffix=="uff") return {new UffFileDescriptor(source, fileName, indexes)};
-        if (suffix=="d94") return {new Data94File(source, fileName, indexes)};
-    }
-    else {
-        //Сортируем каналы по типу
-        QVector<int> idx = indexes;
-        if (idx.isEmpty()) {
-            idx = QVector<int>(source.channelsCount());
-            std::iota(idx.begin(), idx.end(), 0);
-        }
-        QMap<Descriptor::DataType, QVector<int>> map;
-        for (int index : idx) {
-            auto type = source.channel(index)->type();
-            map[type].append(index);
-        }
-
-        //Создаем файлы
-        QList<FileDescriptor *> result;
-        for (const auto &[type, indexes]: asKeyValueRange(map)) {
-            QString name = createUniqueFileName("", fileName, Descriptor::functionTypeDescription(type), "dfd", true);
-            result << new DfdFileDescriptor(source, name, indexes);
-        }
-        return result;
-    }
-    return QList<FileDescriptor *>();
+    return {createDescriptor(source, fileName, indexes)};
 }
 
 QStringList FormatFactory::allSuffixes(bool strip)

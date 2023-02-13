@@ -85,8 +85,7 @@ bool MatlabConvertor::convert()
                 emit message(QString("-- В файле mat отсутствуют временные данные!"));
             }
             else {
-                FileDescriptor *destinationFile = App->formatFactory->createDescriptor(matlabFile,
-                                                                                  destinationFileName);
+                FileDescriptor *destinationFile = App->formatFactory->createDescriptor(matlabFile, destinationFileName);
                 if (destinationFile)
                     newFiles << destinationFile->fileName();
                 else
@@ -102,9 +101,7 @@ bool MatlabConvertor::convert()
                                                  destinationFileName,
                                                  QString::number(i+1),
                                                  QFileInfo(destinationFileName).suffix(), false);
-            FileDescriptor *destinationFile = App->formatFactory->createDescriptor(matlabFile,
-                                                                              fname,
-                                                                              groupedChannelsIndexes.at(i));
+            FileDescriptor *destinationFile = App->formatFactory->createDescriptor(matlabFile,fname,groupedChannelsIndexes.at(i));
             if (!destinationFile) noErrors = false;
             newFiles << destinationFile->fileName();
             delete destinationFile;
