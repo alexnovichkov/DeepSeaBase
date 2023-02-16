@@ -5,6 +5,7 @@
 #include "fileformats/formatfactory.h"
 #include "algorithms.h"
 #include "methods/calculations.h"
+#include "fileformats/fileio.h"
 
 void AnaConverter::setFilesToConvert(const QStringList &files)
 {
@@ -60,7 +61,7 @@ bool AnaConverter::convert()
         anaFiles << file;
         anaChannels << file->channel(0);
 
-        emit tick();
+        //emit tick();
     }
 
     auto min = *(std::min_element(anaChannels.begin(), anaChannels.end(), [](Channel *a, Channel *b) {
@@ -77,36 +78,46 @@ bool AnaConverter::convert()
     //Затем сохраняем целевой файл
     emit message("Сохраняю итоговый файл. Не закрывайте это окно");
 
-    QString fn = destinationFileName;
-    QTemporaryFile temp;
-    temp.setAutoRemove(true);
-    if (truncate) {
-        //Сохраненный файл мы должны обрезать по минимальной длине. Для этого:
-        //1. сохраняем во временный файл
-        //2. сохраняем временную вырезку
-        //3. переименовываем временную вырезку в нужный нам файл
-        temp.open();
-        fn = temp.fileName();
-        fn.append("."+format);
-    }
-    FileDescriptor *destinationFile = App->formatFactory->createDescriptor(anaChannels, fn);
+//    QString fn = destinationFileName;
+//    QTemporaryFile temp;
+//    temp.setAutoRemove(true);
+//    if (truncate) {
+//        //Сохраненный файл мы должны обрезать по минимальной длине. Для этого:
+//        //1. сохраняем во временный файл
+//        //2. сохраняем временную вырезку
+//        //3. переименовываем временную вырезку в нужный нам файл
+//        temp.open();
+//        fn = temp.fileName();
+//        fn.append("."+format);
+//    }
+//    FileDescriptor *destinationFile = App->formatFactory->createDescriptor(anaChannels, fn);
     if (truncate) {
         emit message("Каналы имеют разную длину. Они будут обрезаны по самому короткому.");
-        QString newFn = saveTimeSegment(destinationFile, 0, double(minCount) * anaChannels.first()->data()->xStep(), false);
-        FileDescriptor *newFd = App->formatFactory->createDescriptor(newFn);
-        newFd->read();
-        newFd->rename(destinationFileName);
+//        QString newFn = saveTimeSegment(destinationFile, 0, double(minCount) * anaChannels.first()->data()->xStep(), false);
+//        FileDescriptor *newFd = App->formatFactory->createDescriptor(newFn);
+//        newFd->read();
+//        newFd->rename(destinationFileName);
     }
-    newFiles << destinationFileName;
+
+    auto io = std::make_unique<FileIO*>(App->formatFactory->createIO(anaChannels, destinationFileName));
+    if ((*io)) {
+        if (truncate) (*io)->setParameter("samplesCount", minCount);
+        connect(*io, SIGNAL(tick()), this, SIGNAL(tick()));
+        for (auto ch: anaChannels) {
+            (*io)->addChannel(ch);
+        }
+        (*io)->finalize();
+        newFiles << destinationFileName;
+    }
 
 
     emit tick();
     emit message("Готово.");
-    if (truncate) {
-        //мы должны удалить сконвертирвоанный не обрезанный файл
-        destinationFile->remove();
-    }
-    delete destinationFile;
+//    if (truncate) {
+//        //мы должны удалить сконвертирвоанный не обрезанный файл
+//        destinationFile->remove();
+//    }
+//    delete destinationFile;
     qDeleteAll(anaFiles);
 
     if (noErrors) emit message("<font color=blue>Конвертация закончена без ошибок.</font>");

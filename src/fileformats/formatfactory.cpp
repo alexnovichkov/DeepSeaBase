@@ -10,6 +10,9 @@
 #include "wavfile.h"
 #include "logging.h"
 
+#include "d94io.h"
+#include "dfdio.h"
+
 QList<FileDescriptor *> FormatFactory::createDescriptors(const FileDescriptor &source, const QString &fileName, const QVector<int> &indexes)
 {DD;
     QString suffix = QFileInfo(fileName).suffix();
@@ -122,4 +125,17 @@ bool FormatFactory::fileExists(const QString &s, const QString &suffix)
         return (QFile::exists(f) && QFile::exists(f1));
     }
     return QFile::exists(f);
+}
+
+FileIO *FormatFactory::createIO(const QVector<Channel *> &source, const QString &fileName)
+{
+    QString suffix = QFileInfo(fileName).suffix();
+    if (suffix=="dfd") return new DfdIO(source, fileName);
+//    if (suffix=="uff") return new UffIO(source, fileName);
+    if (suffix=="d94") return new D94IO(source, fileName);
+//    if (suffix=="wav") return new WavIO(source, fileName);
+#ifdef WITH_MATIO
+    if (suffix=="mat") return new MatlabIO(source, fileName);
+#endif
+    return nullptr;
 }

@@ -226,6 +226,7 @@ public:
     Source(FileDescriptor *parent) : parent(parent) {}
     void read(DfdSettings &dfd);
     void write(QTextStream &dfd);
+    void write(QTextStream &dfd, const DataDescription &description);
 private:
     FileDescriptor *parent;
 };
@@ -250,6 +251,7 @@ public:
     Description(DfdFileDescriptor *parent);
     void read(DfdSettings &dfd);
     void write(QTextStream &dfd);
+    void write(QTextStream &dfd, const DataDescription &description);
     QString toString() const;
     DescriptionList data;
 private:

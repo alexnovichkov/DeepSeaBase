@@ -39,6 +39,7 @@ public:
                                             const QString &fileName) override;
 
     virtual bool fileExists(const QString &s, const QString &suffix) override;
+    virtual FileIO * createIO(const QVector<Channel *> &source, const QString &fileName) override;
 };
 
 #endif // FORMATFACTORY_H

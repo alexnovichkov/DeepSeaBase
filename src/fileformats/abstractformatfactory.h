@@ -6,6 +6,7 @@
 
 class FileDescriptor;
 class Channel;
+class FileIO;
 
 class AbstractFormatFactory
 {
@@ -27,6 +28,8 @@ public:
                                             const QVector<int> &indexes = QVector<int>()) = 0;
     virtual FileDescriptor *createDescriptor(const QVector<Channel*> &source,
                                             const QString &fileName) = 0;
+    virtual FileIO *createIO(const QVector<Channel*> &source,
+                             const QString &fileName) = 0;
 };
 
 #endif // ABSTRACTFORMATFACTORY_H

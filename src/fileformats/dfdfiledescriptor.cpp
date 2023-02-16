@@ -1120,20 +1120,24 @@ void Source::read(DfdSettings &dfd)
 
 void Source::write(QTextStream &dfd)
 {DD;
+    write(dfd, parent->dataDescription());
+}
 
-    if (QString channels = parent->dataDescription().get("source.channels").toString();
+void Source::write(QTextStream &dfd, const DataDescription &description)
+{
+    if (QString channels = description.get("source.channels").toString();
         !channels.isEmpty()) {
         dfd << "[Sources]" << endl;
         dfd << "sFile=";
-        dfd << parent->dataDescription().get("source.file").toString()
+        dfd << description.get("source.file").toString()
             << "["<<channels<<"],{"
-            << parent->dataDescription().get("source.guid").toString() <<"}";
+            << description.get("source.guid").toString() <<"}";
     }
 
     dfd << "[Source]" << endl;
-    dfd << "File=" << parent->dataDescription().get("source.file").toString() << endl;
-    dfd << "DFDGUID=" << parent->dataDescription().get("source.guid").toString() << endl;
-    QDateTime dt = parent->dataDescription().dateTime("source.dateTime");
+    dfd << "File=" << description.get("source.file").toString() << endl;
+    dfd << "DFDGUID=" << description.get("source.guid").toString() << endl;
+    QDateTime dt = description.dateTime("source.dateTime");
     dfd << "Date=" << dt.toString("dd.MM.yyyy") << endl;
     dfd << "Time=" << dt.toString("hh:mm:ss") << endl;
 }
@@ -1735,14 +1739,19 @@ void Description::read(DfdSettings &dfd)
 
 void Description::write(QTextStream &dfd)
 {DD;
-    dfd << "[DataDescription]" << endl;
     const DataDescription &descr = parent->dataDescription();
-    for (const auto [key, val]: asKeyValueRange(descr.data)) {
+    write(dfd, descr);
+}
+
+void Description::write(QTextStream &dfd, const DataDescription &description)
+{
+    dfd << "[DataDescription]" << endl;
+    for (const auto [key, val]: asKeyValueRange(description.data)) {
         if (key.startsWith("description")) {
             dfd << key.section('.',1) << "=\"" << val.toString() << "\"" << endl;
         }
     }
-    dfd << "Legend=" << "\"" << parent->legend() << "\"" << endl;
+    dfd << "Legend=" << "\"" << description.get("legend").toString() << "\"" << endl;
 }
 
 QString Description::toString() const
