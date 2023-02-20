@@ -1487,17 +1487,19 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
 
 void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &channels, bool plotAll)
 {DD;
-    QVector<Channel *> toPlot = channels;
+    QVector<Channel *> toPlot;// = channels;
     if (currentTab && currentTab->model->selected().size()>1 && plotAll) {
         const QList<FileDescriptor*> selectedFiles = currentTab->model->selectedFiles();
         for (const auto f: selectedFiles) {
-            if (f == currentTab->record) continue;
+//            if (f == currentTab->record) continue;
             for (const auto &ch: channels) {
                 int index = ch->index();
                 if (auto c = f->channel(index)) toPlot << c;
             }
         }
     }
+    else
+        toPlot = channels;
     if (toPlot.isEmpty()) return;
 
     Plot* p = nullptr;
