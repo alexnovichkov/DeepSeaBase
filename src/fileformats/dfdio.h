@@ -12,7 +12,6 @@ public:
 
     // FileIO interface
 public:
-    virtual void addChannel(Channel *channel) override;
     virtual void addChannel(DataDescription *description, DataHolder *data) override;
     virtual void finalize() override;
 private:

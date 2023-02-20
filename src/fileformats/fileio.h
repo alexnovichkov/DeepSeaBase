@@ -16,7 +16,7 @@ public:
     explicit FileIO(QString fileName, QObject *parent = nullptr);
     virtual ~FileIO() {}
     void setParameter(const QString &name, const QVariant &value);
-    virtual void addChannel(Channel *channel) = 0;
+    void addChannel(Channel *channel);
     virtual void addChannel(DataDescription *description, DataHolder *data) = 0;
     virtual void finalize() = 0;
 signals:

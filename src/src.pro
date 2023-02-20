@@ -54,6 +54,7 @@ SOURCES += main.cpp\
     fileformats/dfdio.cpp \
     fileformats/fileio.cpp \
     fileformats/formatfactory.cpp \
+    fileformats/uffio.cpp \
     fileformats/wavfile.cpp \
     filehandler.cpp \
     filehandlerdialog.cpp \
@@ -182,6 +183,7 @@ HEADERS  += mainwindow.h \
     fileformats/d94io.h \
     fileformats/dfdio.h \
     fileformats/fileio.h \
+    fileformats/uffio.h \
     fileformats/wavfile.h \
     filehandler.h \
     filehandlerdialog.h \

@@ -92,7 +92,8 @@ public:
     virtual void write() {};
     virtual void deleteChannels(const QVector<int> &) {};
     virtual void copyChannelsFrom(const QVector<Channel*> &) {};
-    virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) {};
+    virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes)
+    {Q_UNUSED(up); Q_UNUSED(indexes); Q_UNUSED(newIndexes);};
 
     //виртуальные
     virtual QString icon() const {return "";}

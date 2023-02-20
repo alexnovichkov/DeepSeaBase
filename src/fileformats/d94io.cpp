@@ -51,14 +51,6 @@ D94IO::D94IO(const QVector<Channel *> &source, const QString &fileName, QObject 
 }
 
 
-void D94IO::addChannel(Channel *channel)
-{
-    bool populated = channel->populated();
-    if (!populated) channel->populate();
-    addChannel(&channel->dataDescription(), channel->data());
-    if (!populated) channel->clear();
-}
-
 void D94IO::addChannel(DataDescription *description, DataHolder *data)
 {
     QFile f(fileName);

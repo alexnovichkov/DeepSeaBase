@@ -133,14 +133,6 @@ DfdIO::DfdIO(const QVector<Channel *> &source, const QString &fileName, QObject 
 }
 
 
-void DfdIO::addChannel(Channel *channel)
-{
-    bool populated = channel->populated();
-    if (!populated) channel->populate();
-    addChannel(&channel->dataDescription(), channel->data());
-    if (!populated) channel->clear();
-}
-
 void DfdIO::addChannel(DataDescription *description, DataHolder *data)
 {
     int samplesCount = m_parameters.value("samplesCount").toInt();
@@ -238,7 +230,6 @@ void DfdIO::addChannel(DataDescription *description, DataHolder *data)
     dfd << "InputType="<< description->get("inputType").toString() << endl;
     dfd << "ChanDscr="<< description->get("description").toString() << endl;
     dfd << "Correction="<< description->get("correction").toString() << endl;
-
     dfd << "threshold=" << QString::number(data->threshold()) << endl;
     dfd << "units=" << DataHolder::unitsToString(data->yValuesUnits()) << endl;
     emit tick();
