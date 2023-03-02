@@ -37,6 +37,7 @@ void Spectrogram::deleteCurve(Curve *curve, bool doReplot)
 
         curve->detachFrom(this);
         delete curve;
+        m_plot->setCurrentCurve(nullptr);
 
         if (m->leftCurvesCount()==0) {
             yLeftName.clear();

@@ -391,6 +391,7 @@ int Plot::curvesCount(int type) const
 
 void Plot::deleteAllCurves(bool forceDeleteFixed)
 {DD;
+
     for (int i=m->size()-1; i>=0; --i) {
         Curve *c = m->curve(i);
         if (!c->fixed || forceDeleteFixed) {
@@ -459,6 +460,7 @@ void Plot::deleteCurve(Curve *curve, bool doReplot)
 
         curve->detachFrom(this);
         delete curve;
+        m_plot->setCurrentCurve(nullptr);
 
         if (m->leftCurvesCount()==0) {
             yLeftName.clear();

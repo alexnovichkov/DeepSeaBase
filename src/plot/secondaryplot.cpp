@@ -67,6 +67,7 @@ void SecondaryPlot::update()
             graph->setVisible(true);
         }
     }
+    else clear();
 }
 
 QCPAxis *SecondaryPlot::axis(Enums::AxisType axis) const
