@@ -16,6 +16,7 @@
 #include "methods/psdalgorithm.h"
 #include "methods/filteringalgorithm.h"
 #include "methods/octavealgorithm.h"
+#include "methods/splitalgorithm.h"
 
 FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QWidget *parent)
     : QDialog(parent), dataBase(dataBase), win(parent), currentAlgorithm(0)
@@ -32,6 +33,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     algorithms << new PsdAlgorithm(dataBase);
     algorithms << new FRFAlgorithm(dataBase);
     algorithms << new OctaveAlgorithm(dataBase);
+    algorithms << new SplitAlgorithm(dataBase);
 
     filesTree = new QTreeWidget(this);
     filesTree->setColumnCount(4);

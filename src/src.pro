@@ -70,6 +70,8 @@ SOURCES += main.cpp\
     methods/octavealgorithm.cpp \
     methods/octavefunction.cpp \
     methods/resamplingalgorithm.cpp \
+    methods/splitalgorithm.cpp \
+    methods/splitfunction.cpp \
     methods/weighting.cpp \
     methods/windowingalgorithm.cpp \
     plot/cursor.cpp \
@@ -198,6 +200,8 @@ HEADERS  += mainwindow.h \
     methods/octavealgorithm.h \
     methods/octavefunction.h \
     methods/resamplingalgorithm.h \
+    methods/splitalgorithm.h \
+    methods/splitfunction.h \
     methods/weighting.h \
     methods/windowingalgorithm.h \
     plot/cursor.h \
