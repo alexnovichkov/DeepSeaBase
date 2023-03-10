@@ -208,19 +208,19 @@ bool Model::contains(FileDescriptor *file, int *index) const
 
 
 int Model::rowCount(const QModelIndex &parent) const
-{DD;
+{DDD;
     Q_UNUSED(parent);
     return descriptors.size();
 }
 
 int Model::columnCount(const QModelIndex &parent) const
-{DD;
+{DDD;
     Q_UNUSED(parent);
     return MODEL_COLUMNS_COUNT;
 }
 
 QVariant Model::data(const QModelIndex &index, int role) const
-{DD;
+{DDD;
     if (!index.isValid()) return QVariant();
 
     const int row = index.row();
@@ -288,7 +288,7 @@ QVariant Model::data(const QModelIndex &index, int role) const
 
 
 bool Model::setData(const QModelIndex &index, const QVariant &value, int role)
-{DD;
+{DDD;
     if (role != Qt::EditRole) return false;
     if (!index.isValid()) return false;
 
@@ -339,7 +339,7 @@ bool Model::setData(const QModelIndex &index, const QVariant &value, int role)
 }
 
 QVariant Model::headerData(int section, Qt::Orientation orientation, int role) const
-{DD;
+{DDD;
     if (orientation == Qt::Vertical)
         return QAbstractItemModel::headerData(section, orientation, role);
 
@@ -362,7 +362,7 @@ QVariant Model::headerData(int section, Qt::Orientation orientation, int role) c
 }
 
 Qt::ItemFlags Model::flags(const QModelIndex &index) const
-{DD;
+{DDD;
     if (!index.isValid()) return QAbstractTableModel::flags(index) | Qt::ItemIsDropEnabled;
 
     const int col = index.column();
@@ -376,7 +376,7 @@ Qt::ItemFlags Model::flags(const QModelIndex &index) const
 
 
 Qt::DropActions Model::supportedDropActions() const
-{DD;
+{DDD;
     return Qt::CopyAction;
 }
 

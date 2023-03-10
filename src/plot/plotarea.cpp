@@ -204,9 +204,12 @@ Plot *PlotArea::plot()
 void PlotArea::addPlot(Enums::PlotType type)
 {DD;
     if (m_plot) {
-        if (m_plot->toolBarWidget()) toolBar()->removeAction(toolBarAction);
-        delete m_plot->legend;
-        delete m_plot;
+        if (m_plot->type() != type) {
+            if (m_plot->toolBarWidget()) toolBar()->removeAction(toolBarAction);
+            delete m_plot->legend;
+            delete m_plot;
+        }
+        else return;
     }
     else {
         infoLabel->hide();
@@ -264,6 +267,20 @@ void PlotArea::addPlot(Enums::PlotType type)
     m_plot->toggleAutoscale(Enums::AxisType::atRight /* y slave axis */, autoscale);
 
     emit curvesCountChanged();
+}
+
+Enums::PlotType PlotArea::getPlotType(const QVector<Channel *> &channels)
+{
+    auto type = Enums::PlotType::General;
+    if (!channels.isEmpty()) {
+        if (channels.first()->type() == Descriptor::TimeResponse)
+            type = Enums::PlotType::Time;
+        else if (channels.first()->data()->blocksCount()>1)
+            type = Enums::PlotType::Spectrogram;
+        else if (channels.first()->octaveType() != 0)
+            type = Enums::PlotType::Octave;
+    }
+    return type;
 }
 
 void PlotArea::update()
@@ -1072,21 +1089,13 @@ void PlotArea::dropEvent(QDropEvent *event)
 
 void PlotArea::onDropEvent(bool plotOnLeft, const QVector<Channel *> &channels)
 {DD;
-    auto type = Enums::PlotType::General;
-    if (!channels.isEmpty()) {
-        if (channels.first()->data()->blocksCount()>1)
-            type = Enums::PlotType::Spectrogram;
-        else if (channels.first()->type() == Descriptor::TimeResponse)
-            type = Enums::PlotType::Time;
-        else if (channels.first()->octaveType() != 0)
-            type = Enums::PlotType::Octave;
-    }
+    auto type = getPlotType(channels);
     addPlot(type);
     m_plot->onDropEvent(plotOnLeft, channels);
 }
 
 void PlotArea::resetCycling()
-{
+{DD;
     arbitraryDescriptorAct->setChecked(false);
     m_plot->sergeiMode = false;
 }

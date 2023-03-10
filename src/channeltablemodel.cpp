@@ -45,7 +45,7 @@ QVector<Channel *> ChannelTableModel::selectedChannels() const
 }
 
 void ChannelTableModel::setCurrentPlot(Plot *currentPlot)
-{
+{DD;
     if (this->currentPlot != currentPlot) {
         beginResetModel();
         this->currentPlot = currentPlot;
@@ -98,20 +98,20 @@ void ChannelTableModel::onChannelChanged(Channel *ch)
 }
 
 int ChannelTableModel::rowCount(const QModelIndex &parent) const
-{DD;
+{DDD;
     Q_UNUSED(parent);
     return channelsCount;
 }
 
 int ChannelTableModel::columnCount(const QModelIndex &parent) const
-{DD;
+{DDD;
     Q_UNUSED(parent);
     if (descriptor) return descriptor->columnsCount();
     return 0;
 }
 
 QVariant ChannelTableModel::data(const QModelIndex &index, int role) const
-{DD;
+{DDD;
     if (!index.isValid()) return QVariant();
 
     const int row = index.row();
@@ -158,7 +158,7 @@ QVariant ChannelTableModel::data(const QModelIndex &index, int role) const
 }
 
 bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value, int role)
-{DD;
+{DDD;
     if (!index.isValid() || !descriptor) return false;
 
     const int row = index.row();
@@ -221,7 +221,7 @@ bool ChannelTableModel::setData(const QModelIndex &index, const QVariant &value,
 }
 
 QVariant ChannelTableModel::headerData(int section, Qt::Orientation orientation, int role) const
-{DD;
+{DDD;
     if (orientation == Qt::Vertical)
         return QAbstractItemModel::headerData(section, orientation, role);
 
@@ -247,12 +247,12 @@ Qt::ItemFlags ChannelTableModel::flags(const QModelIndex &index) const
 
 
 QStringList ChannelTableModel::mimeTypes() const
-{DD;
+{DDD;
     return QStringList()<<"application/listofchannels";
 }
 
 QMimeData *ChannelTableModel::mimeData(const QModelIndexList &indexes) const
-{DD;
+{DDD;
     if (indexes.isEmpty()) return 0;
 
     ChannelsMimeData *mimeData = new ChannelsMimeData(selectedChannels());

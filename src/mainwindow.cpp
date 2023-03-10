@@ -1487,6 +1487,7 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
 
 void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &channels, bool plotAll)
 {DD;
+    //определяем список каналов, которые нужно построить
     QVector<Channel *> toPlot;// = channels;
     if (currentTab && currentTab->model->selected().size()>1 && plotAll) {
         const QList<FileDescriptor*> selectedFiles = currentTab->model->selectedFiles();
@@ -1502,50 +1503,51 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
         toPlot = channels;
     if (toPlot.isEmpty()) return;
 
+    //определяем график, на котором будем строить каналы
     Plot* p = nullptr;
-    if (auto plot = dynamic_cast<Plot*>(sender()))
-        p = plot;
-    else if (currentPlot) {
+
+    if (currentPlot) {
         p = currentPlot->plot();
-        if (!p) currentPlot->onDropEvent(plotOnLeft, toPlot);
+        auto type = PlotArea::getPlotType(toPlot);
+        //графика нет - создаем график
+        if (!p)
+            currentPlot->addPlot(type);
+        else {
+            //или график есть, но не того типа
+            if (p->type() != type) {
+                //кривых нет - меняем тип графика
+                if (p->model()->isEmpty()) currentPlot->addPlot(type);
+                else {
+                    //кривые есть - выводим сообщение
+                    QMessageBox::warning(this, QString("Не могу построить канал"),
+                                         QString("Тип графика не подходит.\nСначала очистите график."));
+                    return;
+                }
+            }
+        }
+
+        p = currentPlot->plot();
         //в текущей вкладке графика еще нет самого графика
         if (currentTab)
             currentTab->setCurrentPlot(currentPlot->plot());
     }
+
     if (p) {//график существует
-
-        //определяем тип графика
-        auto type = Enums::PlotType::General;
-        if (!toPlot.isEmpty()) {
-            if (toPlot.first()->type() == Descriptor::TimeResponse)
-                type = Enums::PlotType::Time;
-            else if (toPlot.first()->data()->blocksCount()>1)
-                type = Enums::PlotType::Spectrogram;
-            else if (toPlot.first()->octaveType() != 0)
-                type = Enums::PlotType::Octave;
+        {//Строим первую кривую и обновляем график, чтобы высота легенды определилась правильно
+            int index=-1;
+            if (currentTab) currentTab->model->contains(toPlot.first()->descriptor(),&index);
+            p->plotChannel(toPlot.first(), plotOnLeft, index+1);
         }
-        //если график пустой, и его тип не совпадает с типом для новых кривых,
-        //создаем новый график
-        if (p->model()->isEmpty() && type != p->type()) {
-            currentPlot->onDropEvent(plotOnLeft, toPlot);
-        }
-        else {//строим кривые на старом графике
-            {//Строим первую кривую и обновляем график, чтобы высота легенды определилась правильно
-                int index=-1;
-                if (currentTab) currentTab->model->contains(toPlot.first()->descriptor(),&index);
-                p->plotChannel(toPlot.first(), plotOnLeft, index+1);
-            }
-            qApp->processEvents();
-            //Строим остальные кривые
-            for (int i=1; i<toPlot.size(); ++i) {
-                auto ch = toPlot.at(i);
-                int index=-1;
-                if (currentTab) currentTab->model->contains(ch->descriptor(),&index);
-                p->plotChannel(ch, plotOnLeft, index+1);
-            }
-
+        qApp->processEvents();
+        //Строим остальные кривые
+        for (int i=1; i<toPlot.size(); ++i) {
+            auto ch = toPlot.at(i);
+            int index=-1;
+            if (currentTab) currentTab->model->contains(ch->descriptor(),&index);
+            p->plotChannel(ch, plotOnLeft, index+1);
         }
     }
+    else LOG(ERROR) << QString("Во вкладке не создан подходящий график");
 }
 
 void MainWindow::calculateSpectreRecords(bool useDeepsea)

@@ -20,6 +20,7 @@ public:
     ~PlotArea();
     Plot* plot();
     void addPlot(Enums::PlotType type);
+    static Enums::PlotType getPlotType(const QVector<Channel*> &channels);
 
     void update();
 

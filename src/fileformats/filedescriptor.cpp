@@ -546,12 +546,12 @@ QDataStream &operator<<(QDataStream &stream, const DataDescription &data)
 }
 
 void DataDescription::put(const QString &key, const QVariant &value)
-{DD;
+{DDD;
     data.insert(key, value);
 }
 
 QVariant DataDescription::get(const QString &key) const
-{DD;
+{DDD;
     return data.value(key);
 }
 
