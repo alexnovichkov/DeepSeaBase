@@ -6,7 +6,6 @@
 #include <QtWidgets>
 #include <QAudioOutput>
 #include <QMediaPlayer>
-#include "dataiodevice.h"
 #include "plot/curve.h"
 #include "plot/qcpcursorsingle.h"
 #include "plot/plotmodel.h"

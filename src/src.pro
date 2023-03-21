@@ -56,6 +56,7 @@ SOURCES += main.cpp\
     fileformats/formatfactory.cpp \
     fileformats/uffio.cpp \
     fileformats/wavfile.cpp \
+    fileformats/wavio.cpp \
     filehandler.cpp \
     filehandlerdialog.cpp \
     filestable.cpp \
@@ -157,7 +158,6 @@ SOURCES += main.cpp\
     methods/psalgorithm.cpp \
     methods/psdalgorithm.cpp \
     unitsconverter.cpp \
-    dataiodevice.cpp \
     playpanel.cpp \
     channeltablemodel.cpp \
     headerview.cpp \
@@ -187,6 +187,7 @@ HEADERS  += mainwindow.h \
     fileformats/fileio.h \
     fileformats/uffio.h \
     fileformats/wavfile.h \
+    fileformats/wavio.h \
     filehandler.h \
     filehandlerdialog.h \
     filestable.h \
@@ -290,7 +291,6 @@ HEADERS  += mainwindow.h \
     methods/psalgorithm.h \
     methods/psdalgorithm.h \
     unitsconverter.h \
-    dataiodevice.h \
     playpanel.h \
     channeltablemodel.h \
     headerview.h \

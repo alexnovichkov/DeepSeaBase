@@ -13,6 +13,7 @@
 #include "d94io.h"
 #include "dfdio.h"
 #include "uffio.h"
+#include "wavio.h"
 
 QList<FileDescriptor *> FormatFactory::createDescriptors(const FileDescriptor &source, const QString &fileName, const QVector<int> &indexes)
 {DD;
@@ -134,7 +135,7 @@ FileIO *FormatFactory::createIO(const QVector<Channel *> &source, const QString 
     if (suffix=="dfd") return new DfdIO(source, fileName);
     if (suffix=="uff") return new UffIO(source, fileName);
     if (suffix=="d94") return new D94IO(source, fileName);
-//    if (suffix=="wav") return new WavIO(source, fileName);
+    if (suffix=="wav") return new WavIO(source, fileName);
 #ifdef WITH_MATIO
     if (suffix=="mat") return new MatlabIO(source, fileName);
 #endif

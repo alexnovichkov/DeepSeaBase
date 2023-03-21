@@ -40,8 +40,8 @@ AnaConverterDialog::AnaConverterDialog(QWidget *parent) : QDialog(parent)
 
     tree = new QTreeWidget(this);
     tree->setAlternatingRowColors(true);
-    tree->setColumnCount(4);
-    tree->setHeaderLabels({"№","Файл","Канал","Дата/время"});
+    tree->setColumnCount(5);
+    tree->setHeaderLabels({"№","Файл","Канал","Дата/время", "Размер"});
 
     textEdit = new QPlainTextEdit(this);
 
@@ -145,6 +145,7 @@ void AnaConverterDialog::chooseFiles()
         file.read();
         item->setText(2, file.channel(0)->name());
         item->setText(3, file.dateTime().toString("yyyy.MM.dd hh:mm:ss"));
+        item->setText(4, QString("%1 отсчетов").arg(file.channel(0)->data()->samplesCount()));
     }
     tree->resizeColumnToContents(0);
     tree->resizeColumnToContents(1);

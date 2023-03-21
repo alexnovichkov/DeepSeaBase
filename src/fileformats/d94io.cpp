@@ -82,7 +82,7 @@ void D94IO::addChannel(DataDescription *description, DataHolder *data)
 
     bool isComplex = data->yValuesFormat() == DataHolder::YValuesComplex;
 
-    int samplesCount = m_parameters.value("samplesCount").toInt();
+    int samplesCount = data->samplesCount();
 
     AxisBlock xAxisBlock;
     xAxisBlock.uniform = data->xValuesFormat() == DataHolder::XValuesUniform ? 1:0;

@@ -441,38 +441,6 @@ QString Channel::legendName() const
     return l.join(" ");
 }
 
-QByteArray Channel::wavData(qint64 pos, qint64 samples, int format)
-{DD;
-    QByteArray b;
-
-    //assume that channel is time response
-//    if (type() != Descriptor::TimeResponse) return b;
-
-    //assume that channel is populated
-//    populate();
-
-    QDataStream s(&b, QIODevice::WriteOnly);
-    s.setByteOrder(QDataStream::LittleEndian);
-    s.setFloatingPointPrecision(QDataStream::SinglePrecision);
-
-    QVector<double> values = data()->rawYValues(0).mid(pos,samples);
-
-    //формат данных PCM - [-32768..32767]
-
-    const double max = qMax(qAbs(data()->yMax()), qAbs(data()->yMin()));
-    const double coef = 32768.0 / max;
-    for (qint64 i=0; i<values.size(); ++i) {
-        if (format == 1) {//format == 1 - PCM
-            qint16 v = qint16(coef * values[i]);
-            s << v;
-        }
-        else if (format == 2) {//format = 2 - float
-            s << static_cast<float>(values[i]);
-        }
-    }
-    return b;
-}
-
 //QString valuesUnit(const QString &first, const QString &second, int unitType)
 //{DD;
 //    if (unitType == DataHolder::UnitsLinear)

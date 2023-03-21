@@ -149,6 +149,8 @@ public:
     QVector<double> linears(int block = -1) const;
     QVector<double> decibels(int block = -1) const;
 
+    QByteArray wavData(qint64 pos, qint64 samples, int format);
+
     static QVector<double> toLog(const QVector<double> &values, double threshold, int units);
     static QVector<double> fromLog(const QVector<double> &values, double threshold, int units);
     static double toLog(double value, double threshold, int units);

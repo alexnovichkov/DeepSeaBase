@@ -34,7 +34,7 @@ DfdIO::DfdIO(const QVector<Channel *> &source, const QString &fileName, QObject 
     //все сведения из файлов rawChannel нам не нужны
     if (dataType == SourceData) dataType = CuttedData;
 
-    int samplesCount = m_parameters.value("samplesCount").toInt();
+    int samplesCount = m_parameters.value("samplesCount", firstChannel->data()->samplesCount()).toInt();
 
     //Поскольку other может содержать каналы с разным типом, размером и шагом,
     //данные берем из первого канала, который будем сохранять
@@ -135,7 +135,7 @@ DfdIO::DfdIO(const QVector<Channel *> &source, const QString &fileName, QObject 
 
 void DfdIO::addChannel(DataDescription *description, DataHolder *data)
 {
-    int samplesCount = m_parameters.value("samplesCount").toInt();
+    int samplesCount = data->samplesCount();
 
     //копируем каналы и записываем данные
     QString rawFileName = fileName.left(fileName.length()-4)+".raw";

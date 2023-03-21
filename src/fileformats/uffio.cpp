@@ -56,7 +56,7 @@ void UffIO::addChannel(DataDescription *description, DataHolder *data)
     }
     QTextStream stream(&uff);
 
-    int samplesCount = m_parameters.value("samplesCount").toInt();
+    int samplesCount = data->samplesCount();
 
 
     //заполнение инфы об опорном канале

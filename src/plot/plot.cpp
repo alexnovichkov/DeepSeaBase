@@ -24,7 +24,6 @@
 #include "colorselector.h"
 #include "logging.h"
 
-#include "dataiodevice.h"
 #include "playpanel.h"
 #include "channelsmimedata.h"
 #include "imagerenderdialog.h"

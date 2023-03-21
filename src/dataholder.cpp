@@ -868,6 +868,32 @@ QVector<double> DataHolder::decibels(int block) const
                        : toLog(m_yValues.mid(block*m_xCount, m_xCount), m_threshold, m_yValuesUnits);
 }
 
+QByteArray DataHolder::wavData(qint64 pos, qint64 samples, int format)
+{
+    QByteArray b;
+
+    QDataStream s(&b, QIODevice::WriteOnly);
+    s.setByteOrder(QDataStream::LittleEndian);
+    s.setFloatingPointPrecision(QDataStream::SinglePrecision);
+
+    QVector<double> values = rawYValues(0).mid(pos,samples);
+
+    //формат данных PCM - [-32768..32767]
+
+    const double max = qMax(qAbs(yMax()), qAbs(yMin()));
+    const double coef = 32768.0 / max;
+    for (qint64 i=0; i<values.size(); ++i) {
+        if (format == 1) {//format == 1 - PCM
+            qint16 v = qint16(coef * values[i]);
+            s << v;
+        }
+        else if (format == 2) {//format = 2 - float
+            s << static_cast<float>(values[i]);
+        }
+    }
+    return b;
+}
+
 QVector<double> DataHolder::toLog(const QVector<double> &values, double threshold, int units)
 {DD;
     if (qFuzzyIsNull(threshold) || units == UnitsDimensionless) return values;

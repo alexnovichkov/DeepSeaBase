@@ -16,6 +16,12 @@ void FileIO::addChannel(Channel *channel)
 {
     bool populated = channel->populated();
     if (!populated) channel->populate();
-    addChannel(&channel->dataDescription(), channel->data());
+    if (m_parameters.contains("samplesCount")) {
+        DataHolder d;
+        d.setSegment(*channel->data(), 0, m_parameters.value("samplesCount").toInt()-1);
+        addChannel(&channel->dataDescription(), &d);
+    }
+    else
+        addChannel(&channel->dataDescription(), channel->data());
     if (!populated) channel->clear();
 }

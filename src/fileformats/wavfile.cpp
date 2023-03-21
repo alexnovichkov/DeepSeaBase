@@ -298,6 +298,7 @@ Channel *WavFile::channel(int index) const
 
 bool WavFile::canTakeChannelsFrom(FileDescriptor *other) const
 {DD;
+    Q_UNUSED(other);
     return false;
 }
 
@@ -493,7 +494,7 @@ bool WavFile::writeWithMap(const QVector<Channel*> &source, quint32 totalSize)
         bool populated = sourceChannel->populated();
         if (!populated) sourceChannel->populate();
 
-        QByteArray channelData = sourceChannel->wavData(0, sourceChannel->data()->samplesCount(),
+        QByteArray channelData = sourceChannel->data()->wavData(0, sourceChannel->data()->samplesCount(),
                                                         m_format==WavFormat::WavFloat?2:1);
 
         //записываем каждый сэмпл на свое место
@@ -602,7 +603,7 @@ void WavFile::writeWithStream(const QVector<Channel *> &source)
         for (auto c: source) {
             bool populated = c->populated();
             if (!populated) c->populate();
-            auto data = c->wavData(chunk * BLOCK_SIZE, BLOCK_SIZE, m_format==WavFormat::WavFloat?2:1);
+            auto data = c->data()->wavData(chunk * BLOCK_SIZE, BLOCK_SIZE, m_format==WavFormat::WavFloat?2:1);
             chunkData.append(data);
             if (!populated) c->clear();
         }
