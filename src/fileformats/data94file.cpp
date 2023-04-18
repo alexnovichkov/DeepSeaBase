@@ -697,10 +697,7 @@ void Data94Channel::populate()
     _data->clear();
     setPopulated(false);
 
-    auto s = dataDescription().get("function.precision").toString();
-    auto precision = DataPrecision::Float;
-    if (s.isEmpty()) precision = fromDfdDataPrecision(sampleWidth);
-    else precision = toDataPrecision(s);
+    auto precision = toDataPrecision(dataDescription().get("function.precision").toString());
 
     QFile rawFile(parent->fileName());
 
