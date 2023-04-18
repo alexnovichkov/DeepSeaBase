@@ -87,6 +87,15 @@ Descriptor::DataType FileDescriptor::type() const
     return t;
 }
 
+QVector<Descriptor::DataType> FileDescriptor::types() const
+{
+    QVector<Descriptor::DataType> result;
+    for (int i=0; i<channelsCount(); ++i) {
+        if (auto t = channel(i)->type(); !result.contains(t)) result.append(t);
+    }
+    return result;
+}
+
 QString FileDescriptor::typeDisplay() const
 {DD;
     return Descriptor::functionTypeDescription(type());
@@ -179,16 +188,7 @@ void FileDescriptor::setChanged(bool changed)
 
 bool FileDescriptor::isSourceFile() const
 {DD;
-    const int count = channelsCount();
-    if (count == 0) return false;
-    int type = channel(0)->type();
-    for (int i=1; i<count; ++i) {
-        if (channel(i)->type() != type) {
-            return false;
-        }
-    }
-
-    return (type == Descriptor::TimeResponse);
+    return types().contains(Descriptor::TimeResponse);
 }
 
 double FileDescriptor::xStep() const

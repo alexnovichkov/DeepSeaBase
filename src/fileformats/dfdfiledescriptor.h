@@ -276,6 +276,7 @@ public:
     virtual bool copyTo(const QString &name) override;
 
     virtual Descriptor::DataType type() const override;
+    virtual QVector<Descriptor::DataType> types() const override;
     virtual QString typeDisplay() const override;
     virtual qint64 fileSize() const override;
 

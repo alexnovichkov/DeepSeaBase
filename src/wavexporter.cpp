@@ -40,12 +40,19 @@ void WavExporter::start()
     while (!pool.isEmpty()) {
         //определяем список индексов каналов для записи
         QVector<int> list;
-        for (int i=0; i<count && !pool.isEmpty(); ++i)
-            list << pool.takeFirst();
+        for (int i=0; i<count && !pool.isEmpty(); ++i) {
+            //берем только каналы с временными данными
+            auto t = pool.takeFirst();
+            if (file->channel(t)->type() == Descriptor::TimeResponse)
+                list << t;
+            else
+                continue;
+        }
+        if (list.isEmpty()) continue;
 
         //определяем суффикс имени файла
         QString nameFragment;
-        if (count==1) nameFragment = file->channel(list.first())->name();
+        if (list.size() == 1) nameFragment = file->channel(list.first())->name();
         else nameFragment = QString("%1-%2").arg(list.first()+1).arg(list.last()+1);
         nameFragment = replaceWinChars(nameFragment);
 

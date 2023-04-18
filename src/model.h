@@ -40,7 +40,8 @@ public:
 
     QVector<int> selected() const {return indexes;}
     void setSelected(const QVector<int> &indexes);
-    QList<FileDescriptor*> selectedFiles(const QVector<Descriptor::DataType> &types = QVector<Descriptor::DataType>()) const;
+    QList<FileDescriptor*> selectedFiles(const QVector<Descriptor::DataType> &types = QVector<Descriptor::DataType>(),
+                                         bool strict = true) const;
 
     void setChannelProperty(int channel, const QString &property, const QString &value);
     void updateFile(FileDescriptor *file, int column = -1);

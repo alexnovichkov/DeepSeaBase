@@ -37,12 +37,23 @@ void Model::setSelected(const QVector<int> &indexes)
     emit modelChanged();
 }
 
-QList<FileDescriptor *> Model::selectedFiles(const QVector<Descriptor::DataType> &types) const
+QList<FileDescriptor *> Model::selectedFiles(const QVector<Descriptor::DataType> &types, bool strict) const
 {DD;
     QList<FileDescriptor *> files;
     for (int i: qAsConst(indexes)) {
-        if (types.contains(descriptors.at(i)->type()) || types.isEmpty())
-            files << descriptors.at(i).get();
+        if (types.isEmpty()) files << descriptors.at(i).get();
+        else if (strict) {
+            //все каналы записи должны иметь тип types
+            if (types.contains(descriptors.at(i)->type()))
+                files << descriptors.at(i).get();
+        }
+        else {
+            //в записи должны присутствовать каналы типа types
+            const auto tt = descriptors.at(i)->types();
+            auto t = std::find_first_of(tt.constBegin(), tt.constEnd(), types.constBegin(), types.constEnd());
+            if (t != tt.end())
+                files << descriptors.at(i).get();
+        }
     }
     return files;
 }

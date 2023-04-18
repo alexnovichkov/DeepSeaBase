@@ -106,7 +106,11 @@ public:
     //переопределен в DFD
     virtual bool copyTo(const QString &name);
     //переопределен в DFD
+    //возвращает Descriptor::Unknown если в записи каналы разных типов
     virtual Descriptor::DataType type() const;
+    //переопределен в DFD
+    //возвращает список типов каналов
+    virtual QVector<Descriptor::DataType> types() const;
     //переопределен в DFD
     virtual QString typeDisplay() const;
     //переопределен в DFD

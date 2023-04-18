@@ -1557,7 +1557,7 @@ void MainWindow::calculateSpectreRecords(bool useDeepsea)
     //QMessageBox::warning(this, "DeepSea Database", "Эта часть программы еще не написана");
     //return;
 
-    QList<FileDescriptor *> records = currentTab->model->selectedFiles({Descriptor::TimeResponse});
+    QList<FileDescriptor *> records = currentTab->model->selectedFiles({Descriptor::TimeResponse}, false);
 
     if (records.isEmpty()) {
         QMessageBox::warning(this,QString("DeepSea Base"),
@@ -2079,7 +2079,7 @@ void MainWindow::updateActions()
     renameAct->setDisabled(selectedFilesCount==0);
     delFilesAct->setDisabled(selectedFilesCount==0);
     editChannelDescriptionsAct->setDisabled(selectedChannelsCount==0);
-    const auto timeFiles = currentTab->model->selectedFiles({Descriptor::TimeResponse});
+    const auto timeFiles = currentTab->model->selectedFiles({Descriptor::TimeResponse}, false);
     calculateSpectreAct->setDisabled(timeFiles.isEmpty());
     calculateSpectreAct1->setDisabled(timeFiles.isEmpty());
     calculateSpectreDeepSeaAct->setDisabled(timeFiles.isEmpty());
@@ -2094,7 +2094,7 @@ void MainWindow::updateActions()
                 Descriptor::Spectrum,
                 Descriptor::ShockResponseSpectrum};
     calculateThirdOctaveAct->setDisabled(
-                currentTab->model->selectedFiles(types).isEmpty());
+                currentTab->model->selectedFiles(types, false).isEmpty());
     rescanBaseAct->setEnabled(filesCount>0);
 
     meanAct->setDisabled(curvesCount<2);

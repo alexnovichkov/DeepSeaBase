@@ -434,6 +434,11 @@ Descriptor::DataType DfdFileDescriptor::type() const
     return dataTypefromDfdDataType(DataType);
 }
 
+QVector<Descriptor::DataType> DfdFileDescriptor::types() const
+{
+    return {type()};
+}
+
 QString DfdFileDescriptor::typeDisplay() const
 {DD;
     //return dataTypeDescription(DataType);
