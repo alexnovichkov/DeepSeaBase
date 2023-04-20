@@ -8,6 +8,10 @@
 
 class Selectable;
 
+/**
+ * @brief The SelectedPoint struct
+ * Задает выделенную точку на кривой или сонограмме, в номерах отсчетов, по оси x (номер отсчета) и по оси z (номер блока)
+ */
 struct SelectedPoint {
     int x = -1;
     int z = -1;
@@ -15,6 +19,10 @@ struct SelectedPoint {
     inline bool operator==(const SelectedPoint &other) {return other.x == x && other.z == z;}
 };
 
+/**
+ * @brief The SamplePoint struct
+ * Задает произвольную точку на канве графика
+ */
 struct SamplePoint
 {
     double x = qQNaN();
@@ -27,9 +35,15 @@ struct SamplePoint
     }
 };
 
+/**
+ * @brief The Selected struct
+ * Задает выделенный объект на канве:
+ * object - указатель на объект
+ * point - выделенная точка на объекте
+ */
 struct Selected
 {
-    Selectable *object;
+    Selectable *object = nullptr;
     SelectedPoint point;
     inline bool operator==(const Selected &other) {
         if (object != other.object) return false;
@@ -41,6 +55,11 @@ struct Selected
 
 QDebug operator<<(QDebug, const Selected &);
 
+/**
+ * @brief The Selectable class
+ * Абстрактный класс, выражающий выделяемый объект на канве.
+ * Наследники: кривые, метки, курсоры и т.д.
+ */
 class Selectable
 {
 public:
