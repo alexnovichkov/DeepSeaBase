@@ -30,11 +30,28 @@ public:
     virtual QList<FileDescriptor *> createDescriptors(const FileDescriptor &source,
                                                      const QString &fileName,
                                                      const QVector<int> &indexes = QVector<int>()) override;
-
+    /**
+     * @brief createDescriptor читает файл fileName и создает дескриптор
+     * @param fileName название файла
+     * @return указатель на созданный объект
+     */
     virtual FileDescriptor *createDescriptor(const QString &fileName) override;
+    /**
+     * @brief createDescriptor создает новый файл на основе данных из дескриптора source
+     * @param source источник данных
+     * @param fileName название нового файла
+     * @param indexes список каналов, которые берутся из источника
+     * @return
+     */
     virtual FileDescriptor *createDescriptor(const FileDescriptor &source,
                                             const QString &fileName,
                                             const QVector<int> &indexes = QVector<int>()) override;
+    /**
+     * @brief createDescriptor создает новый файл из списка каналов source
+     * @param source
+     * @param fileName
+     * @return
+     */
     virtual FileDescriptor *createDescriptor(const QVector<Channel*> &source,
                                             const QString &fileName) override;
 

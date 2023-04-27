@@ -847,9 +847,9 @@ void Plot::updateLegends()
 
 void Plot::savePlot() /*SLOT*/
 {DD;
-    ImageRenderDialog dialog(true, 0);
+    ImageRenderDialog dialog(true, type()==Enums::PlotType::Spectrogram, nullptr);
     if (dialog.exec()) {
-        if (m_plot) m_plot->importPlot(dialog.getPath(), dialog.getSize(), dialog.getResolution());
+        if (m_plot) m_plot->importPlot(dialog.getPath(), dialog.getSize(), dialog.getResolution(), dialog.graphOnly());
         Settings::setSetting("lastPicture", dialog.getPath());
     }
 }
@@ -864,16 +864,18 @@ void Plot::copyToClipboard(bool useDialog) /*SLOT*/
 
         QSize size = ImageRenderDialog::defaultSize();
         int resolution = ImageRenderDialog::defaultResolution();
+        bool graphOnly = false;
 
         if (useDialog) {
-            ImageRenderDialog dialog(false, 0);
+            ImageRenderDialog dialog(false, type()==Enums::PlotType::Spectrogram, 0);
 
             if (dialog.exec())  {
                 size = dialog.getSize();
                 resolution = dialog.getResolution();
+                graphOnly = dialog.graphOnly();
             }
         }
-        if (m_plot) m_plot->importPlot(fileName, size, resolution);
+        if (m_plot) m_plot->importPlot(fileName, size, resolution, graphOnly);
         QImage img;
         if (img.load(fileName))
             qApp->clipboard()->setImage(img);
@@ -890,7 +892,7 @@ void Plot::print() /*SLOT*/
 {DD;
     QPrinter printer;
     if (printer.isValid())
-        m_plot->importPlot(printer, ImageRenderDialog::defaultSize(), ImageRenderDialog::defaultResolution());
+        m_plot->importPlot(printer, ImageRenderDialog::defaultSize(), ImageRenderDialog::defaultResolution(), false);
     else
         QMessageBox::warning(widget(), "Deepsea Base", "Не удалось найти подходящий принтер");
 }

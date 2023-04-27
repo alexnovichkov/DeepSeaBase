@@ -47,6 +47,7 @@ signals:
     void canvasDoubleClicked(QPoint);
 
 private:
+    void setSecondaryPlotsVisible(bool visible);
     Plot *parent = nullptr;
     CanvasEventFilter *canvasFilter = nullptr;
     QSharedPointer<QCPAxisTicker> linTicker;
@@ -61,6 +62,7 @@ private:
 
     SecondaryPlot *spectrePlot = nullptr;
     SecondaryPlot *throughPlot = nullptr;
+    QCPLayoutGrid *subLayout = nullptr;
 
     // PlotInterface interface
 public:
@@ -86,8 +88,8 @@ public:
     void enableColorBar(Enums::AxisType axis, bool enable);
     void setColorMap(int colorMap, Curve *curve);
     void setColorBarTitle(const QString &title);
-    void importPlot(const QString &fileName, const QSize &size, int resolution);
-    void importPlot(QPrinter &printer, const QSize &size, int resolution);
+    void importPlot(const QString &fileName, const QSize &size, int resolution, bool graphOnly);
+    void importPlot(QPrinter &printer, const QSize &size, int resolution, bool graphOnly);
     Curve *createCurve(Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis);
     double tickDistance(Enums::AxisType axisType) const;
     bool isCurve(Selectable* item) const;

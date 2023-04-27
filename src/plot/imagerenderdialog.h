@@ -6,12 +6,13 @@
 class QLineEdit;
 class QComboBox;
 class FancyLineEdit;
+class QCheckBox;
 
 class ImageRenderDialog : public QDialog
 {
     Q_OBJECT
 public:
-    ImageRenderDialog(bool askForPath, QWidget *parent);
+    ImageRenderDialog(bool askForPath, bool askForGraphOnly, QWidget *parent);
     ~ImageRenderDialog();
     inline QString getPath() const {return _path;};
     inline QSize getSize() const {return {_width, _height};}
@@ -19,12 +20,14 @@ public:
     static QSize defaultSize() {return {257,145};}
     static int defaultResolution() {return 150;}
     inline void setAskForPath(bool ask) {askForPath = ask;}
+    bool graphOnly() const;
 private:
     int getResolution(int index) const;
     FancyLineEdit *pathEdit;
     QLineEdit *widthEdit;
     QLineEdit *heightEdit;
     QComboBox *resolutionCombo;
+    QCheckBox *graphOnlyCheckBox = nullptr;
 
     QString _path;
     int _width = defaultSize().width();

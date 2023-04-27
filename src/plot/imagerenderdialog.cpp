@@ -5,7 +5,7 @@
 #include "fancylineedit.h"
 #include "logging.h"
 
-ImageRenderDialog::ImageRenderDialog(bool askForPath, QWidget *parent) : QDialog(parent),
+ImageRenderDialog::ImageRenderDialog(bool askForPath, bool askForGraphOnly, QWidget *parent) : QDialog(parent),
     askForPath(askForPath)
 {DD;
     setWindowTitle("Установка параметров рисунка");
@@ -43,6 +43,11 @@ ImageRenderDialog::ImageRenderDialog(bool askForPath, QWidget *parent) : QDialog
         });
     }
 
+    if (askForGraphOnly) {
+        graphOnlyCheckBox = new QCheckBox("Убрать вспомогательные графики", this);
+        graphOnlyCheckBox->setChecked(false);
+    }
+
     widthEdit = new QLineEdit(QString::number(_width), this);
     connect(widthEdit, &QLineEdit::textChanged, [=](const QString &text){
         bool ok = true;
@@ -64,6 +69,8 @@ ImageRenderDialog::ImageRenderDialog(bool askForPath, QWidget *parent) : QDialog
     auto *mainLayout = new QFormLayout;
     if (askForPath)
         mainLayout->addRow(new QLabel("Куда сохраняем", this), pathEdit);
+    if (askForGraphOnly)
+        mainLayout->addRow(graphOnlyCheckBox);
     mainLayout->addRow(new QLabel("Ширина рисунка, мм", this), widthEdit);
     mainLayout->addRow(new QLabel("Высота рисунка, мм", this), heightEdit);
     mainLayout->addRow(new QLabel("Разрешение", this), resolutionCombo);
@@ -81,6 +88,11 @@ ImageRenderDialog::~ImageRenderDialog()
 int ImageRenderDialog::getResolution() const
 {DD;
     return getResolution(resolutionCombo->currentIndex());
+}
+
+bool ImageRenderDialog::graphOnly() const
+{
+    return graphOnlyCheckBox && graphOnlyCheckBox->isChecked();
 }
 
 int ImageRenderDialog::getResolution(int index) const

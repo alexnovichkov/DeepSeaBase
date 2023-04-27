@@ -92,7 +92,7 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     setEventFilter(new CanvasEventFilter(plot));
 
     if (plot->type() == Enums::PlotType::Spectrogram) {
-        QCPLayoutGrid *subLayout = new QCPLayoutGrid;
+        subLayout = new QCPLayoutGrid;
         plotLayout()->addElement(0, 2, subLayout);
 
         spectrePlot = new SpectrePlot(this, "Спектр", subLayout);
@@ -452,18 +452,20 @@ void QCPPlot::setColorBarTitle(const QString &title)
     if (colorScale) colorScale->setLabel(title);
 }
 
-void QCPPlot::importPlot(const QString &fileName, const QSize &size, int resolution)
+void QCPPlot::importPlot(const QString &fileName, const QSize &size, int resolution, bool graphOnly)
 {
     legend->setVisible(true);
     updateLegend();
+    if (graphOnly) setSecondaryPlotsVisible(false);
     QString format = fileName.section(".", -1,-1);
     if (!saveRastered(fileName, int(0.0393700787401575 * size.width() * resolution),
                       int(0.0393700787401575 * size.height() * resolution), 1.0, format.toLatin1().data(), -1, resolution))
         QMessageBox::critical(this, "Сохранение рисунка", "Не удалось сохранить график");
     legend->setVisible(false);
+    if (graphOnly) setSecondaryPlotsVisible(true);
 }
 
-void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution)
+void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution, bool graphOnly)
 {
     Q_UNUSED(size);
     Q_UNUSED(resolution);
@@ -479,6 +481,7 @@ void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution)
         //настройка отображения графиков
         legend->setVisible(true);
         updateLegend();
+        if (graphOnly) setSecondaryPlotsVisible(false);
 
         QCPPainter painter(&printer);
         QRectF pageRect = printer.pageRect(QPrinter::DevicePixel);
@@ -490,6 +493,7 @@ void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution)
 
         //восстанавливаем параметры графиков
         legend->setVisible(false);
+        if (graphOnly) setSecondaryPlotsVisible(true);
     }
 }
 
@@ -535,6 +539,25 @@ Enums::AxisType QCPPlot::axisType(QCPAxis *axis) const
 {
     if (colorScale && axis == colorScale->axis()) return Enums::AxisType::atColor;
     return fromQcpAxis(axis->axisType());
+}
+
+void QCPPlot::setSecondaryPlotsVisible(bool visible)
+{
+    if (!subLayout) return;
+
+    if (visible) {
+        plotLayout()->addElement(0, 2, subLayout);
+//        replot();
+//        subLayout->setVisible(true);
+        plotLayout()->setColumnStretchFactors({4,0.1,2});
+    }
+    else {
+        plotLayout()->take(subLayout);
+        plotLayout()->simplify();
+//        replot();
+//        subLayout->setVisible(false);
+        plotLayout()->setColumnStretchFactors({4,0.1});
+    }
 }
 
 void QCPPlot::addZoom()
