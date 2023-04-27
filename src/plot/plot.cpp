@@ -784,10 +784,10 @@ void Plot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
 
     auto axY = Enums::AxisType::atLeft;
     // если графиков нет, по умолчанию будем строить амплитуды по первому добавляемому графику
-    if (plotOnLeft && m->leftCurvesCount()==0) {
+    if (plotOnLeft && m->leftCurvesCount()==0 && !sergeiMode) {
         yValuesPresentationLeft = ch->data()->yValuesPresentation();
     }
-    if (!plotOnLeft && m->rightCurvesCount()==0) {
+    if (!plotOnLeft && m->rightCurvesCount()==0 && !sergeiMode) {
         yValuesPresentationRight = ch->data()->yValuesPresentation();
     }
 
