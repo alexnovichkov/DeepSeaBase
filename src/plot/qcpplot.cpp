@@ -486,7 +486,8 @@ void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution, b
         QCPPainter painter(&printer);
         QRectF pageRect = printer.pageRect(QPrinter::DevicePixel);
 
-        painter.setMode(QCPPainter::pmVectorized);
+        if (parent->type() != Enums::PlotType::Spectrogram)
+            painter.setMode(QCPPainter::pmVectorized);
         painter.setMode(QCPPainter::pmNoCaching);
         painter.setMode(QCPPainter::pmNonCosmetic); // comment this out if you want cosmetic thin lines (always 1 pixel thick independent of pdf zoom level)
         toPainter(&painter, pageRect.width(), pageRect.height());
@@ -547,16 +548,16 @@ void QCPPlot::setSecondaryPlotsVisible(bool visible)
 
     if (visible) {
         plotLayout()->addElement(0, 2, subLayout);
-//        replot();
-//        subLayout->setVisible(true);
+        subLayout->setVisible(true);
         plotLayout()->setColumnStretchFactors({4,0.1,2});
+        replot();
     }
     else {
         plotLayout()->take(subLayout);
         plotLayout()->simplify();
-//        replot();
-//        subLayout->setVisible(false);
+        subLayout->setVisible(false);
         plotLayout()->setColumnStretchFactors({4,0.1});
+        replot();
     }
 }
 

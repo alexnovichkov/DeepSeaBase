@@ -892,7 +892,7 @@ void Plot::print() /*SLOT*/
 {DD;
     QPrinter printer;
     if (printer.isValid())
-        m_plot->importPlot(printer, ImageRenderDialog::defaultSize(), ImageRenderDialog::defaultResolution(), false);
+        m_plot->importPlot(printer, ImageRenderDialog::defaultSize(), ImageRenderDialog::defaultResolution(), true);
     else
         QMessageBox::warning(widget(), "Deepsea Base", "Не удалось найти подходящий принтер");
 }
