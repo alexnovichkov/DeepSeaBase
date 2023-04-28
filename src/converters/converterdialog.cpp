@@ -29,7 +29,7 @@ ConverterDialog::ConverterDialog(QList<FileDescriptor *> dataBase, QWidget *pare
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(stop()));
 //    buttonBox->buttons().constFirst()->setDisabled(true);
 
-    convertor = new FileConvertor();
+    convertor = new FileConverter();
 
     addFilesButton = new QCheckBox("Добавить новые файлы в текущую вкладку", this);
 
@@ -200,12 +200,12 @@ void ConverterDialog::finalize()
 
 
 
-FileConvertor::FileConvertor(QObject *parent) : QObject(parent)
+FileConverter::FileConverter(QObject *parent) : QObject(parent)
 {
 
 }
 
-QStringList FileConvertor::getUffFiles() const
+QStringList FileConverter::getUffFiles() const
 {
     QStringList result;
     foreach (const QFileInfo &fi, uffFiles)
@@ -214,7 +214,7 @@ QStringList FileConvertor::getUffFiles() const
     return result;
 }
 
-bool FileConvertor::convert()
+bool FileConverter::convert()
 {
     //TODO: проверить конвертацию файлов uff
     if (QThread::currentThread()->isInterruptionRequested()) return false;

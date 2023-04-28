@@ -1,5 +1,5 @@
-#ifndef CONVERTDIALOG_H
-#define CONVERTDIALOG_H
+#ifndef DeepSeaProcessorDialog_H
+#define DeepSeaProcessorDialog_H
 
 #include <QDialog>
 #include <QtCore>
@@ -15,18 +15,18 @@ class DfdFileDescriptor;
 class QProgressBar;
 class QCheckBox;
 class QThread;
-class Converter;
+class DeepseaProcessor;
 class QDialogButtonBox;
 class QPlainTextEdit;
 class TaskBarProgress;
 class QLineEdit;
 
-class CalculateSpectreDialog : public QDialog
+class DeepSeaProcessorDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit CalculateSpectreDialog(QList<FileDescriptor *> &dataBase, QWidget *parent = 0);
-    ~CalculateSpectreDialog();
+    explicit DeepSeaProcessorDialog(QList<FileDescriptor *> &dataBase, QWidget *parent = 0);
+    ~DeepSeaProcessorDialog();
     QStringList getNewFiles() const {return newFiles;}
 
 public slots:
@@ -54,10 +54,10 @@ private:
 
     QLineEdit *channelsFilter;
 
-    Converter *converter = nullptr;
+    DeepseaProcessor *converter = nullptr;
     QThread *thread = nullptr;
     TaskBarProgress *taskBarProgress = nullptr;
     QWidget *win;
 };
 
-#endif // CONVERTDIALOG_H
+#endif // DeepSeaProcessorDialog_H

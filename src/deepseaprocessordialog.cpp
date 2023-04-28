@@ -1,4 +1,4 @@
-#include "calculatespectredialog.h"
+#include "deepseaprocessordialog.h"
 
 #include <QtWidgets>
 #include <QThread>
@@ -10,10 +10,10 @@
 #include "methods/dfdmethods/octavemethod.h"
 #include "logging.h"
 
-#include "converters/converter.h"
+#include "converters/deepseaprocessor.h"
 #include "taskbarprogress.h"
 
-CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> &dataBase, QWidget *parent) :
+DeepSeaProcessorDialog::DeepSeaProcessorDialog(QList<FileDescriptor *> &dataBase, QWidget *parent) :
     QDialog(parent), dataBase(dataBase), win(parent)
 {DD;
     methodCombo = new QComboBox(this);
@@ -82,7 +82,7 @@ CalculateSpectreDialog::CalculateSpectreDialog(QList<FileDescriptor *> &dataBase
     methodCombo->setCurrentIndex(1);
 }
 
-CalculateSpectreDialog::~CalculateSpectreDialog()
+DeepSeaProcessorDialog::~DeepSeaProcessorDialog()
 {DD;
     if (converter) {
         converter->deleteLater();
@@ -94,13 +94,13 @@ CalculateSpectreDialog::~CalculateSpectreDialog()
     }
 }
 
-void CalculateSpectreDialog::methodChanged(int method)
+void DeepSeaProcessorDialog::methodChanged(int method)
 {DD;
     methodsStack->setCurrentIndex(method);
     currentMethod = dynamic_cast<AbstractMethod *>(methodsStack->currentWidget());
 }
 
-void CalculateSpectreDialog::start()
+void DeepSeaProcessorDialog::start()
 {DD;
 //    QString s = QStandardPaths::findExecutable("DeepSea");
 //    if (s.isEmpty()) {
@@ -120,7 +120,7 @@ void CalculateSpectreDialog::start()
     p.channelFilter = channelsFilter->text();
 
     if (!thread) thread = new QThread;
-    converter = new Converter(dataBase, p);
+    converter = new DeepseaProcessor(dataBase, p);
     converter->moveToThread(thread);
 
     taskBarProgress = new TaskBarProgress(win, this);
@@ -141,14 +141,14 @@ void CalculateSpectreDialog::start()
     thread->start();
 }
 
-void CalculateSpectreDialog::stop()
+void DeepSeaProcessorDialog::stop()
 {DD;
     if (thread)
         thread->requestInterruption();
     QDialog::accept();
 }
 
-void CalculateSpectreDialog::accept()
+void DeepSeaProcessorDialog::accept()
 {DD;
     newFiles = converter->getNewFiles();
     if (taskBarProgress) taskBarProgress->finalize();
@@ -160,19 +160,19 @@ void CalculateSpectreDialog::accept()
     else QDialog::accept();
 }
 
-void CalculateSpectreDialog::reject()
+void DeepSeaProcessorDialog::reject()
 {DD;
     stop();
     QDialog::reject();
     if (taskBarProgress) taskBarProgress->finalize();
 }
 
-void CalculateSpectreDialog::updateProgressIndicator(const QString &path)
+void DeepSeaProcessorDialog::updateProgressIndicator(const QString &path)
 {DD;
     progress->setValue(int(QDir(path).count()-2));
 }
 
-void CalculateSpectreDialog::updateProgressIndicator()
+void DeepSeaProcessorDialog::updateProgressIndicator()
 {DD;
     progress->setValue(progress->value()+1);
     taskBarProgress->setValue(progress->value());

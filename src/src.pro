@@ -48,6 +48,8 @@ SOURCES += main.cpp\
     channelstable.cpp \
     converters/anaconverter.cpp \
     converters/anaconverterdialog.cpp \
+    deepseaprocessor.cpp \
+    deepseaprocessordialog.cpp \
     descriptorpropertiesdialog.cpp \
     fileformats/anafile.cpp \
     fileformats/d94io.cpp \
@@ -129,7 +131,6 @@ SOURCES += main.cpp\
     algorithms.cpp \
     methods/octavefilterbank.cpp \
     axisboundsdialog.cpp \
-    calculatespectredialog.cpp \
     methods/averaging.cpp \
     timeslicer.cpp \
     methods/dfdmethods/abstractmethod.cpp \
@@ -177,6 +178,8 @@ HEADERS  += mainwindow.h \
     channelstable.h \
     converters/anaconverter.h \
     converters/anaconverterdialog.h \
+    deepseaprocessor.h \
+    deepseaprocessordialog.h \
     descriptorpropertiesdialog.h \
     dfdfilterproxy.h \
     enums.h \
@@ -262,7 +265,6 @@ HEADERS  += mainwindow.h \
     algorithms.h \
     methods/octavefilterbank.h \
     axisboundsdialog.h \
-    calculatespectredialog.h \
     methods/averaging.h \
     timeslicer.h \
     dataholder.h \
@@ -332,7 +334,6 @@ HEADERS += fileformats/matlabfile.h
 }
 SOURCES +=\
     converters/matlabconvertor.cpp \
-    converters/converter.cpp \
     converters/matlabconverterdialog.cpp \
     converters/esoconverterdialog.cpp \
     converters/converterdialog.cpp
@@ -340,7 +341,6 @@ SOURCES +=\
 HEADERS +=\
     converters/matlabconvertor.h \
     converters/converterdialog.h \
-    converters/converter.h \
     converters/matlabconverterdialog.h \
     converters/esoconverterdialog.h
 

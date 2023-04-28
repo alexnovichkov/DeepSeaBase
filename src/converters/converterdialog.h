@@ -15,11 +15,11 @@ class FileDescriptor;
 class QComboBox;
 class QCheckBox;
 
-class FileConvertor : public QObject
+class FileConverter : public QObject
 {
     Q_OBJECT
 public:
-    FileConvertor(QObject *parent = 0);
+    FileConverter(QObject *parent = 0);
     void setFilesToConvert(const QStringList &toConvert) {filesToConvert = toConvert;}
     void setDestinationFormat(const QString &format) {destinationFormat = format;}
 
@@ -64,7 +64,7 @@ private:
     QTreeWidget *tree;
     QPlainTextEdit *textEdit;
     QPushButton *button;
-    FileConvertor *convertor;
+    FileConverter *convertor;
     QComboBox *formatBox;
     QThread *thread;
     QCheckBox *addFilesButton;

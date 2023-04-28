@@ -3,7 +3,7 @@
 #include <QtWidgets>
 
 
-#include "calculatespectredialog.h"
+#include "deepseaprocessordialog.h"
 #include "filesprocessordialog.h"
 #include "sortabletreewidgetitem.h"
 #include "headerview.h"
@@ -1554,9 +1554,6 @@ void MainWindow::calculateSpectreRecords(bool useDeepsea)
 {DD;
     if (!currentTab) return;
 
-    //QMessageBox::warning(this, "DeepSea Database", "Эта часть программы еще не написана");
-    //return;
-
     QList<FileDescriptor *> records = currentTab->model->selectedFiles({Descriptor::TimeResponse}, false);
 
     if (records.isEmpty()) {
@@ -1566,7 +1563,7 @@ void MainWindow::calculateSpectreRecords(bool useDeepsea)
     }
 
     if (useDeepsea) {
-        CalculateSpectreDialog dialog(records, this);
+        DeepSeaProcessorDialog dialog(records, this);
         if (dialog.exec()) {
             const QStringList files = dialog.getNewFiles();
             addFiles(files);
