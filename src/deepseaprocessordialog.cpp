@@ -10,7 +10,7 @@
 #include "methods/dfdmethods/octavemethod.h"
 #include "logging.h"
 
-#include "converters/deepseaprocessor.h"
+#include "deepseaprocessor.h"
 #include "taskbarprogress.h"
 
 DeepSeaProcessorDialog::DeepSeaProcessorDialog(QList<FileDescriptor *> &dataBase, QWidget *parent) :

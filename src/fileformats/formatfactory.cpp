@@ -33,7 +33,12 @@ QList<FileDescriptor *> FormatFactory::createDescriptors(const FileDescriptor &s
 
         //Создаем файлы
         QList<FileDescriptor *> result;
-        for (const auto &[type, indexes]: asKeyValueRange(map)) {
+        if (map.size() == 1) {
+            if (suffix=="wav" && map.firstKey() != Descriptor::TimeResponse) return result;
+
+            result << createDescriptor(source, fileName, indexes);
+        }
+        else for (const auto &[type, indexes]: asKeyValueRange(map)) {
             if (suffix=="wav" && type != Descriptor::TimeResponse) continue;
             QString name = createUniqueFileName("", fileName, Descriptor::functionTypeDescription(type), suffix, true);
             result << createDescriptor(source, name, indexes);
