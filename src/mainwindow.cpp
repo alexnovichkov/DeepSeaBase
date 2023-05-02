@@ -1502,21 +1502,27 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
     else
         toPlot = channels;
     if (toPlot.isEmpty()) return;
-
+//qDebug()<<1;
     //определяем график, на котором будем строить каналы
     Plot* p = nullptr;
 
     if (currentPlot) {
         p = currentPlot->plot();
         auto type = PlotArea::getPlotType(toPlot);
+        //qDebug()<<type;
         //графика нет - создаем график
-        if (!p)
+        if (!p) {
             currentPlot->addPlot(type);
+            //qDebug()<<1.1;
+        }
         else {
             //или график есть, но не того типа
             if (p->type() != type) {
                 //кривых нет - меняем тип графика
-                if (p->model()->isEmpty()) currentPlot->addPlot(type);
+                if (p->model()->isEmpty()) {
+                    currentPlot->addPlot(type);
+                    //qDebug()<<1.2;
+                }
                 else {
                     //кривые есть - выводим сообщение
                     QMessageBox::warning(this, QString("Не могу построить канал"),
@@ -1525,13 +1531,13 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
                 }
             }
         }
-
+//qDebug()<<1.3;
         p = currentPlot->plot();
         //в текущей вкладке графика еще нет самого графика
         if (currentTab)
             currentTab->setCurrentPlot(currentPlot->plot());
     }
-
+//qDebug()<<2;
     if (p) {//график существует
         {//Строим первую кривую и обновляем график, чтобы высота легенды определилась правильно
             int index=-1;
@@ -1548,6 +1554,7 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
         }
     }
     else LOG(ERROR) << QString("Во вкладке не создан подходящий график");
+    //qDebug()<<3;
 }
 
 void MainWindow::calculateSpectreRecords(bool useDeepsea)

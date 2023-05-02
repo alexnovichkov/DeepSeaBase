@@ -258,7 +258,7 @@ void Tab::addParentAction(const QString &name, QAction *action)
 }
 
 void Tab::setCurrentPlot(Plot *plot)
-{
+{DD;
     currentPlot = plot;
     channelModel->setCurrentPlot(plot);
 }
