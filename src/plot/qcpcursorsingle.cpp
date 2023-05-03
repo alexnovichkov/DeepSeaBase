@@ -136,7 +136,7 @@ bool QCPCursorSingle::contains(Selectable *selected) const
 void QCPCursorSingle::update()
 {DD;
     if (axisTagX) axisTagX->updateLabel(m_showValues);
-    if (axisTagY) axisTagY->updateLabel(m_showValues);
+    if (axisTagY) axisTagY->updateLabel(m_showValues, m_showPeaksInfo);
     cursor->replot();
 }
 

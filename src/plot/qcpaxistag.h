@@ -29,7 +29,7 @@ public:
 
   // other methods:
   void updatePosition(double value);
-  void updateLabel(bool showValues);
+  void updateLabel(bool showValues, bool showPeaksInfo = false);
 
   void detach();
 

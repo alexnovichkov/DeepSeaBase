@@ -76,6 +76,9 @@ public:
     inline bool showValues() const {return m_showValues;}
     void setShowValues(bool show);
 
+    inline bool showPeaksInfo() const {return m_showPeaksInfo;}
+    void setShowPeaksInfo(bool show);
+
     int digits() const {return m_digits;}
     void setDigits(int digits);
 
@@ -105,6 +108,7 @@ protected:
     Plot *m_plot = nullptr;
     bool m_snapToValues = true;
     bool m_showValues = false;
+    bool m_showPeaksInfo = false;
     int m_digits = 2;
     int m_harmonics = 10;
     Format m_format = Format::Fixed;

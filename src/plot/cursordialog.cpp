@@ -15,6 +15,9 @@ CursorDialog::CursorDialog(Cursor *cursor, QWidget *parent): QDialog(parent), cu
     snapToValues = new QCheckBox("Привязать к данным", this);
     snapToValues->setChecked(cursor->snapToValues());
 
+    showPeaksInfo = new QCheckBox("Показывать информацию о пиках", this);
+    showPeaksInfo->setChecked(cursor->showPeaksInfo());
+
     format = new QComboBox(this);
     format->addItems({"Фиксированный","Научный"});
     format->setCurrentIndex(static_cast<int>(cursor->format()));
@@ -35,6 +38,7 @@ CursorDialog::CursorDialog(Cursor *cursor, QWidget *parent): QDialog(parent), cu
     auto l = new QFormLayout;
     l->addRow(showValues);
     l->addRow(snapToValues);
+    l->addRow(showPeaksInfo);
     l->addRow("Формат числа", format);
     l->addRow("Знаков после запятой", digits);
     l->addRow("Количество гармоник", harmonics);
@@ -51,9 +55,11 @@ void CursorDialog::accept()
     cursor->setShowValues(showValues->isChecked());
     cursor->setSnapToValues(snapToValues->isChecked());
     cursor->setFormat(format->currentIndex()==0?Cursor::Format::Fixed:Cursor::Format::Scientific);
+    cursor->setShowPeaksInfo(showPeaksInfo->isChecked());
 
     Settings::setSetting("cursorSnapToValues", snapToValues->isChecked());
     Settings::setSetting("cursorShowYValues", showValues->isChecked());
+    Settings::setSetting("cursorShowPeaksInfo", showPeaksInfo->isChecked());
     Settings::setSetting("cursorDigits", cursor->digits());
     Settings::setSetting("cursorHarmonics", cursor->harmonics());
     Settings::setSetting("cursorFormat", cursor->format()==Cursor::Format::Fixed?"fixed":"scientific");

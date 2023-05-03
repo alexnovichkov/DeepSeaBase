@@ -134,7 +134,7 @@ void QCPAxisTag::updatePosition(double value)
     }
 }
 
-void QCPAxisTag::updateLabel(bool showValues)
+void QCPAxisTag::updateLabel(bool showValues, bool showPeaksInfo)
 {
     this->showLabels = showValues;
     QStringList label;
@@ -152,7 +152,33 @@ void QCPAxisTag::updateLabel(bool showValues)
         }
     }
     QString s = QString::number(mAxis->orientation()==Qt::Horizontal ? cursor->xValue():cursor->yValue(), f, cursor->parent->digits());
+    QString s1;
+    if (mAxis->orientation() == Qt::Vertical && showPeaksInfo) {
+        auto list = parent->model()->curves();
+        if (list.size() == 1) {
+            auto data = list.first()->channel->data();
+            double minDistance = data->xMax() - data->xMin();
+            int prevMax = -1;
+            int peaksCount = 0;
+            int minBlockSize = 100;
+            for (int i=0; i<data->samplesCount(); ) {
+                if (data->yValue(i) > cursor->yValue()) {
+                    peaksCount++;
+                    if (prevMax != -1) {
+                        minDistance = qMin(minDistance, data->xValue(i) - data->xValue(prevMax));
+                    }
+                    prevMax = i;
+                    i += minBlockSize;
+                }
+                else {
+                    i++;
+                }
+            }
+            s1 = QString("%1 пиков, мин. %2 %3").arg(peaksCount).arg(minDistance, 0, 'f', 1).arg(list.first()->channel->xName());
+        }
+    }
     label << QString("<b>%1</b>").arg(s);
+    if (!s1.isEmpty()) label << s1;
     mLabel->setText(label.join("<br>"));
 }
 

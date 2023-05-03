@@ -101,6 +101,14 @@ void Cursor::setShowValues(bool show)
     }
 }
 
+void Cursor::setShowPeaksInfo(bool show)
+{
+    if (m_showPeaksInfo != show) {
+        m_showPeaksInfo = show;
+        update();
+    }
+}
+
 void Cursor::setDigits(int digits)
 {DD;
     if (m_digits != digits) {

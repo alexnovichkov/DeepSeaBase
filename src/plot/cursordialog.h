@@ -17,6 +17,7 @@ private:
     Cursor *cursor;
     QCheckBox *showValues;
     QCheckBox *snapToValues;
+    QCheckBox *showPeaksInfo;
     QComboBox *format;
     QSpinBox *digits;
     QSpinBox *harmonics;
