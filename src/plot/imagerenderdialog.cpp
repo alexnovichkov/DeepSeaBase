@@ -16,6 +16,9 @@ ImageRenderDialog::ImageRenderDialog(bool askForPath, bool askForGraphOnly, QWid
 
 
     _path = Settings::getSetting("lastPicture", "plot.bmp").toString();
+    _width = Settings::getSetting("lastPictureWidth", defaultSize().width()).toInt();
+    _height = Settings::getSetting("lastPictureHeight", defaultSize().height()).toInt();
+    _resolution = Settings::getSetting("lastPictureResolution", defaultResolution()).toInt();
 
     if (askForPath) {
         pathEdit = new FancyLineEdit(this);
@@ -45,7 +48,7 @@ ImageRenderDialog::ImageRenderDialog(bool askForPath, bool askForGraphOnly, QWid
 
     if (askForGraphOnly) {
         graphOnlyCheckBox = new QCheckBox("Убрать вспомогательные графики", this);
-        graphOnlyCheckBox->setChecked(false);
+        graphOnlyCheckBox->setChecked(Settings::getSetting("lastPictureGraphOnly", false).toBool());
     }
 
     widthEdit = new QLineEdit(QString::number(_width), this);
@@ -83,6 +86,11 @@ ImageRenderDialog::ImageRenderDialog(bool askForPath, bool askForGraphOnly, QWid
 ImageRenderDialog::~ImageRenderDialog()
 {
     Settings::setSetting("imageResolution", resolutionCombo->currentIndex());
+    Settings::setSetting("lastPicture", _path);
+    Settings::setSetting("lastPictureWidth", _width);
+    Settings::setSetting("lastPictureHeight", _height);
+    Settings::setSetting("lastPictureResolution", _resolution);
+    if (graphOnlyCheckBox) Settings::setSetting("lastPictureGraphOnly", graphOnlyCheckBox->isChecked());
 }
 
 int ImageRenderDialog::getResolution() const

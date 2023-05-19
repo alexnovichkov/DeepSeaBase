@@ -850,7 +850,6 @@ void Plot::savePlot() /*SLOT*/
     ImageRenderDialog dialog(true, type()==Enums::PlotType::Spectrogram, nullptr);
     if (dialog.exec()) {
         if (m_plot) m_plot->importPlot(dialog.getPath(), dialog.getSize(), dialog.getResolution(), dialog.graphOnly());
-        Settings::setSetting("lastPicture", dialog.getPath());
     }
 }
 

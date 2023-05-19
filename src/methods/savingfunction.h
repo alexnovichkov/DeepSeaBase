@@ -5,6 +5,7 @@
 #include <QVector>
 #include "fileformats/filedescriptor.h"
 class Channel;
+class FileIO;
 
 /* Свойства
  * --------
@@ -78,6 +79,8 @@ private:
     FileDescriptor *createDfdFile();
     FileDescriptor *createUffFile();
     FileDescriptor *createD94File();
+
+    FileIO *createFileIO(FileDescriptor *file);
 
     FileDescriptor *m_file = nullptr;
     QString newFileName;

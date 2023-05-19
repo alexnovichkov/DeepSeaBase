@@ -3,6 +3,11 @@
 #include "fileformats/dfdfiledescriptor.h"
 #include "fileformats/ufffile.h"
 #include "fileformats/data94file.h"
+
+#include "fileformats/d94io.h"
+#include "fileformats/dfdio.h"
+#include "fileformats/uffio.h"
+
 #include "logging.h"
 
 //returns "d94" by default
@@ -245,6 +250,10 @@ bool SavingFunction::compute(FileDescriptor *file)
         description.put(key, val);
     description.put("function.precision", precision==0?"float":"double");
 
+    if (type == DfdFile && blocksCount > 1) {
+        emit message("ВНИМАНИЕ! При сохранении сонограммы в файл DFD будет сохранен только первый блок!");
+    }
+
     m_file->addChannelWithData(d, description);
 
     return true;
@@ -320,4 +329,32 @@ FileDescriptor *SavingFunction::createUffFile()
 FileDescriptor *SavingFunction::createD94File()
 {DD;
     return new Data94File(newFileName);
+}
+
+FileIO *SavingFunction::createFileIO(FileDescriptor *file)
+{
+    DataDescription d = file->dataDescription();
+    QString channels = m_input->getParameter("?/channels").toString();
+    d.put("source.file", file->fileName());
+    d.put("source.guid", file->dataDescription().get("guid"));
+    d.put("source.dateTime", file->dataDescription().get("dateTime"));
+    d.put("source.channels", channels);
+
+
+    FileIO *f = nullptr;
+    switch (type) {
+        case DfdFile: {
+            f = new DfdIO(d, newFileName, this);
+            int dataType = m_input->getParameter("?/dataType").toInt();
+            f->setParameter("dataType", dataType);
+            break;
+        }
+//        case UffFile: f = new UffIO(d, newFileName, this); break;
+//        case D94File: f = new D94IO(d, newFileName, this); break;
+        default: break;
+    }
+    if (f) {
+        //f->updateDateTimeGUID();
+    }
+    return f;
 }

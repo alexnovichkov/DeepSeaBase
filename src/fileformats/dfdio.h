@@ -2,6 +2,7 @@
 #define DFDIO_H
 
 #include "fileio.h"
+#include "filedescriptor.h"
 
 class DfdIO : public FileIO
 {
@@ -9,13 +10,19 @@ class DfdIO : public FileIO
 public:
     DfdIO(const QVector<Channel*> &source,
           const QString &fileName, QObject *parent = nullptr);
+    //Используется для создания нового файла или дозаписи каналов в файл,
+    //если заранее не известно количество каналов
+    DfdIO(const DataDescription &description, const QString &fileName, QObject *parent = nullptr);
 
     // FileIO interface
 public:
     virtual void addChannel(DataDescription *description, DataHolder *data) override;
     virtual void finalize() override;
 private:
-    int channelsCount=0;
+    int m_channelsCount = 0;
+    QString m_rawFileName;
+    bool m_fileExists = false;
+    DataDescription m_fileDescription;
 };
 
 #endif // DFDIO_H

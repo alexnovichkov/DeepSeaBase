@@ -1,5 +1,4 @@
 #include "dfdio.h"
-#include "filedescriptor.h"
 #include "dfdfiledescriptor.h"
 #include "logging.h"
 
@@ -8,17 +7,22 @@ DfdIO::DfdIO(const QVector<Channel *> &source, const QString &fileName, QObject 
 {
     if (source.isEmpty()) return;
 
+    if (QFile::exists(fileName)) {
+        LOG(ERROR)<<QString("Такой файл уже существует: ")<<m_rawFileName;
+        return;
+    }
+
     Channel *firstChannel = source.constFirst();
     auto other = firstChannel->descriptor();
 
-    DataDescription description(other->dataDescription());
+    m_fileDescription = other->dataDescription();
 
     QDateTime dt = QDateTime::currentDateTime();
-    description.put("fileCreationTime", dt);
-    description.put("guid", FileDescriptor::createGUID());
-    description.put("createdBy", "DeepSea Base");
+    m_fileDescription.put("fileCreationTime", dt);
+    m_fileDescription.put("guid", FileDescriptor::createGUID());
+    m_fileDescription.put("createdBy", "DeepSea Base");
 
-    QString rawFileName = fileName.left(fileName.length()-4)+".raw";
+    m_rawFileName = fileName.left(fileName.length()-4)+".raw";
 
     const DfdFileDescriptor *dfd = dynamic_cast<const DfdFileDescriptor*>(other);
     DfdDataType dataType;
@@ -41,9 +45,9 @@ DfdIO::DfdIO(const QVector<Channel *> &source, const QString &fileName, QObject 
     //предполагается, что все каналы из indexes имеют одинаковые параметры
 
     //копируем каналы и записываем данные
-    QFile raw(rawFileName);
+    QFile raw(m_rawFileName);
     if (!raw.open(QFile::WriteOnly)) {
-        LOG(ERROR)<<QString("Не могу открыть файл для записи: ")<<rawFileName;
+        LOG(ERROR)<<QString("Не могу открыть файл для записи: ")<<m_rawFileName;
         return;
     }
     QDataStream w(&raw);
@@ -63,9 +67,9 @@ DfdIO::DfdIO(const QVector<Channel *> &source, const QString &fileName, QObject 
 
     //Записываем шапку файла и канал с осью X, если есть
     dfdStream << "[DataFileDescriptor]" << endl;
-    dfdStream << "DFDGUID="<<description.get("guid").toString() << endl;
+    dfdStream << "DFDGUID="<<m_fileDescription.get("guid").toString() << endl;
     dfdStream << "DataType="<<dataType << endl;
-    auto dateTime = description.dateTime("dateTime");
+    auto dateTime = m_fileDescription.dateTime("dateTime");
     dfdStream << "Date="<<dateTime.toString("dd.MM.yyyy")
         << endl;
     dfdStream << "Time="<<dateTime.toString("hh:mm:ss")
@@ -78,30 +82,30 @@ DfdIO::DfdIO(const QVector<Channel *> &source, const QString &fileName, QObject 
 
     dfdStream << "NumInd="<< numInd << endl;
     dfdStream << "BlockSize="<< 0 << endl;
-    auto xname = description.get("xname").toString();
+    auto xname = m_fileDescription.get("xname").toString();
     if (xname.isEmpty()) xname="s";
     dfdStream << "XName="<< xname << endl;
     dfdStream << "XBegin=" << doubletohex(xBegin).toUpper() << endl;
     dfdStream << "XStep=" << doubletohex(xStep).toUpper() << endl;
-    dfdStream << "DescriptionFormat=" << description.get("description.format").toString() << endl;
-    dfdStream << "CreatedBy="<<description.get("createdBy").toString() << endl;
+    dfdStream << "DescriptionFormat=" << m_fileDescription.get("description.format").toString() << endl;
+    dfdStream << "CreatedBy="<<m_fileDescription.get("createdBy").toString() << endl;
 
     /** [DataDescription] */
     Description descr(nullptr);
-    descr.write(dfdStream, description);
+    descr.write(dfdStream, m_fileDescription);
 
     /** [Source] */
     if (channelsFromSameFile(source)) {
-        description.put("source.file", other->fileName());
-        description.put("source.guid", other->dataDescription().get("guid"));
-        description.put("source.dateTime", other->dataDescription().get("dateTime"));
+        m_fileDescription.put("source.file", other->fileName());
+        m_fileDescription.put("source.guid", other->dataDescription().get("guid"));
+        m_fileDescription.put("source.dateTime", other->dataDescription().get("dateTime"));
 
         if (other->channelsCount() > source.size()) {
             //только если копируем не все каналы
-            description.put("source.channels", stringify(channelIndexes(source)));
+            m_fileDescription.put("source.channels", stringify(channelIndexes(source)));
         }
         Source source1(nullptr);
-        source1.write(dfdStream, description);
+        source1.write(dfdStream, m_fileDescription);
     }
 
     /** [Process] */
@@ -128,7 +132,32 @@ DfdIO::DfdIO(const QVector<Channel *> &source, const QString &fileName, QObject 
             ch.setValue(val, w);
 
         ch.write(dfdStream, 0);
-        channelsCount++;
+        m_channelsCount++;
+    }
+}
+
+DfdIO::DfdIO(const DataDescription &description, const QString &fileName, QObject *parent) : FileIO(fileName, parent)
+{
+    m_fileExists = QFile::exists(fileName);
+
+    //Если файл существует, то считаем, что можем дописывать в него каналы
+    //Все проверки на совпадение типов должны проводиться где-то еще
+
+    if (m_fileExists) {
+        DfdFileDescriptor d(fileName);
+        d.read();
+        m_fileDescription = d.dataDescription();
+    }
+    else {
+        m_fileDescription = description;
+        QDateTime dt = QDateTime::currentDateTime();
+        m_fileDescription.put("fileCreationTime", dt);
+        m_fileDescription.put("guid", FileDescriptor::createGUID());
+        m_fileDescription.put("createdBy", "DeepSea Base");
+
+        //Тип файла берется по первому каналу
+
+        //Date и Time берутся по первому каналу
     }
 }
 
@@ -138,10 +167,9 @@ void DfdIO::addChannel(DataDescription *description, DataHolder *data)
     int samplesCount = data->samplesCount();
 
     //копируем каналы и записываем данные
-    QString rawFileName = fileName.left(fileName.length()-4)+".raw";
-    QFile raw(rawFileName);
+    QFile raw(m_rawFileName);
     if (!raw.open(QFile::Append)) {
-        LOG(ERROR)<<QString("Не могу открыть файл для записи: ")<<rawFileName;
+        LOG(ERROR)<<QString("Не могу открыть файл для записи: ")<<m_rawFileName;
         return;
     }
     QDataStream w(&raw);
@@ -220,7 +248,7 @@ void DfdIO::addChannel(DataDescription *description, DataHolder *data)
     QTextStream dfd(&file);
     dfd.setCodec(codec);
 
-    dfd << QString("[Channel%1]").arg(++channelsCount) << endl;
+    dfd << QString("[Channel%1]").arg(++m_channelsCount) << endl;
     dfd << "ChanAddress=" << description->get("sensorID").toString() << endl;
     dfd << "ChanName=" << description->get("name").toString() << endl;
     dfd << "IndType=" << IndType << endl;
