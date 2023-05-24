@@ -44,7 +44,7 @@ Plot::Plot(Enums::PlotType type, QWidget *parent) :
 
     picker = new Picker(this);
     picker->setPickPriority(Picker::PickPriority::PickLast);
-    picker->setEnabled(Settings::getSetting("pickerEnabled", true).toBool());
+    picker->setEnabled(true);
     zoom = new ZoomStack(this);
     connect(zoom, &ZoomStack::replotNeeded, this, &Plot::replot);
     m_plot = new QCPPlot(this, parent);
