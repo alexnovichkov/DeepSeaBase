@@ -369,19 +369,44 @@ void DataHolder::setYValues(const QVector<double> &values, YValuesFormat initial
 
     if (block == -1) {
         //весь канал
-        m_yValues = values;
+        try {
+            m_yValues = values;
+        }
+        catch (const std::bad_alloc& bad) {
+            qDebug()<<"Exception at setting YValues:" << bad.what();
+            return;
+        }
+
     }
     else {
-        if (m_yValues.size() < m_zCount*m_xCount) m_yValues.resize(m_zCount*m_xCount);
-        for (int i=0; i<values.size(); ++i)
-            m_yValues[block*m_xCount + i] = values.at(i);
+        try {
+            if (m_yValues.size() < m_zCount*m_xCount) m_yValues.resize(m_zCount*m_xCount);
+            for (int i=0; i<values.size(); ++i)
+                m_yValues[block*m_xCount + i] = values.at(i);
+        }
+        catch (const std::bad_alloc& bad) {
+            qDebug()<<"Exception at setting YValues block:" << bad.what();
+            return;
+        }
     }
 
     m_yValuesComplex.clear(); // комплексные значения не нужны, очищаем
     m_yValuesComplex.squeeze();
 
-    recalculateYValues(); // нужно, чтобы подцепился указатель на данные для построения кривых
-    recalculateMinMax();
+    try {
+        recalculateYValues(); // нужно, чтобы подцепился указатель на данные для построения кривых
+    }
+    catch (const std::bad_alloc& bad) {
+        qDebug()<<"Exception at recalculating YValues:" << bad.what();
+        return;
+    }
+
+    try {
+        recalculateMinMax();
+    }
+    catch (const std::bad_alloc& bad) {
+        qDebug()<<"Exception at recalculating min & max:" << bad.what();
+    }
 }
 
 bool DataHolder::setYValue(int index, double value, int block)

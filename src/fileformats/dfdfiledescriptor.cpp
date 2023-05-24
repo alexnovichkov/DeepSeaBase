@@ -1415,6 +1415,14 @@ void DfdChannel::populate()
     if (rawFile.open(QFile::ReadOnly)) {
         const auto prec = fromDfdDataPrecision(IndType);
         QVector<double> YValues;
+        try {
+            YValues.reserve(data()->samplesCount());
+        }
+        catch (const std::bad_alloc &bad) {
+            LOG(ERROR)<<"DfdChannel::populate: could not allocate"<<data()->samplesCount()<<"elements for YValues";
+            return;
+        }
+
         const quint64 blockSizeBytes = blockSizeInBytes();
         const int channelsCount = parent->channelsCount();
 
@@ -1442,7 +1450,13 @@ void DfdChannel::populate()
                 * если BlockSize=1 или ChanBlockSize=1, то
                 * n + i*ChannelsCount
                 */
-                YValues.resize(data()->samplesCount());
+                try {
+                    YValues.resize(data()->samplesCount());
+                }
+                catch (const std::bad_alloc &bad) {
+                    LOG(ERROR)<<"DfdChannel::populate: could not allocate"<<data()->samplesCount()<<"elements for YValues";
+                    return;
+                }
                 for (int i=0; i < YValues.size(); ++i) {
                     if (ChanBlockSize == 1)
                         ptrCurrent = ptr + (channelIndex + i*channelsCount) * (IndType % 16);
@@ -1469,15 +1483,53 @@ void DfdChannel::populate()
                 // если каналы имеют разный размер блоков, этот метод даст сбой
                 //LOG(DEBUG)<<"IndType="<<IndType<<"BlockSize="<<parent->BlockSize<<"not mapped, ovlap";
                 const quint64 chunkSize = channelsCount * ChanBlockSize;
-                while (1) {
-                    QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, prec, &actuallyRead);
+                /*
+                * i-й отсчет n-го канала имеет номер
+                * n*ChanBlockSize + (i/ChanBlockSize)*ChanBlockSize*ChannelsCount+(i % ChanBlockSize)
+                *
+                * если BlockSize=1 или ChanBlockSize=1, то
+                * n + i*ChannelsCount
+                */
+                if (ChanBlockSize == 1) {
+                    QByteArray values;
+                    try {
+                        values.resize(data()->samplesCount() * (IndType % 16));
+                    }
+                    catch (const std::bad_alloc &bad) {
+                        LOG(ERROR)<<"DfdChannel::populate: could not allocate"<<data()->samplesCount()<<"elements for values";
+                        return;
+                    }
 
-                    //распихиваем данные по каналам
-                    actuallyRead /= channelsCount;
-                    YValues << temp.mid(actuallyRead*channelIndex, actuallyRead);
+                    //пропускаем первые channelIndex отсчетов
+                    readStream.skipRawData(channelIndex * (IndType % 16));
+                    //читаем по одному отсчету
+                    for (int i=0; i<data()->samplesCount(); ++i) {
+                        QByteArray d = readStream.device()->read(IndType % 16);
+                        for (int j=0;j<d.size();++j) values[i*(IndType % 16)+j] = d[j];
+                        if (d.size() < (IndType % 16)) break;
+                        //пропускаем channelsCount-1 отсчетов
+                        readStream.skipRawData((channelsCount-1)*(IndType % 16));
+                    }
+                    //преобразуем values в YValues
+                    try {
+                        YValues = convertFrom<double>(reinterpret_cast<unsigned char*>(values.data()), values.size(), prec);
+                    }
+                    catch (const std::bad_alloc &bad) {
+                        LOG(ERROR)<<"DfdChannel::populate: could not allocate"<<data()->samplesCount()<<"elements for YValues";
+                        return;
+                    }
+                }
+                else {
+                    while (1) {
+                        QVector<double> temp = getChunkOfData<double>(readStream, chunkSize, prec, &actuallyRead);
 
-                    if (actuallyRead < ChanBlockSize)
-                        break;
+                        //распихиваем данные по каналам
+                        actuallyRead /= channelsCount;
+                        YValues << temp.mid(actuallyRead*channelIndex, actuallyRead);
+
+                        if (actuallyRead < ChanBlockSize)
+                            break;
+                    }
                 }
             }
             else {
@@ -1501,7 +1553,7 @@ void DfdChannel::populate()
     else {
         LOG(ERROR)<<"Cannot read raw file"<<parent->rawFileName;
     }
-//    LOG(DEBUG)<<"reading finished"<<timer.elapsed();
+    LOG(DEBUG)<<"reading finished";
 }
 
 quint64 DfdChannel::blockSizeInBytes() const

@@ -87,7 +87,7 @@ QString smartDouble(double v, double tickDistance=0.0);
 template <typename T, typename D>
 QVector<D> readChunk(QDataStream &readStream, quint64 blockSize, qint64 *actuallyRead)
 {
-    LOG(DEBUG)<<"trying to allocate "<<blockSize<<" elements";
+    //LOG(DEBUG)<<"trying to allocate "<<blockSize<<" elements";
     QVector<D> result;
     try {
         result.resize(blockSize);
@@ -103,6 +103,80 @@ QVector<D> readChunk(QDataStream &readStream, quint64 blockSize, qint64 *actuall
     } catch (const std::bad_alloc &bad) {
         LOG(ERROR)<<"could not allocate"<<blockSize<<"elements";
         if (actuallyRead) *actuallyRead = 0;
+    }
+
+    return result;
+}
+
+template <typename T, typename D>
+D readValue(QDataStream &readStream, qint64 *actuallyRead)
+{
+    //LOG(DEBUG)<<"trying to allocate "<<blockSize<<" elements";
+    D result;
+
+    T v;
+    if (actuallyRead) *actuallyRead = 0;
+    if (!readStream.atEnd()) {
+        readStream >> v;
+        result = D(v);
+        if (actuallyRead) (*actuallyRead)++;
+    }
+    else
+        if (actuallyRead) *actuallyRead = 0;
+
+    return result;
+}
+
+template <typename D>
+D getChunkOfData(QDataStream &readStream, DataPrecision precision, qint64 *actuallyRead=0)
+{
+    D result;
+
+    switch (precision) {
+        case DataPrecision::UInt8: {
+            result = readValue<quint8,D>(readStream, actuallyRead);
+            break;
+        }
+        case DataPrecision::Int8: {
+            result = readValue<qint8,D>(readStream, actuallyRead);
+            break;
+        }
+        case DataPrecision::UInt16: {
+            result = readValue<quint16,D>(readStream, actuallyRead);
+            break;
+        }
+        case DataPrecision::Int16: {
+            result = readValue<qint16,D>(readStream, actuallyRead);
+            break;
+        }
+        case DataPrecision::UInt32: {
+            result = readValue<quint32,D>(readStream, actuallyRead);
+            break;
+        }
+        case DataPrecision::Int32: {
+            result = readValue<qint32,D>(readStream, actuallyRead);
+            break;
+        }
+        case DataPrecision::UInt64: {
+            result = readValue<quint64,D>(readStream, actuallyRead);
+            break;
+        }
+        case DataPrecision::Int64: {
+            result = readValue<qint64,D>(readStream, actuallyRead);
+            break;
+        }
+        case DataPrecision::Float: {
+            readStream.setFloatingPointPrecision(QDataStream::SinglePrecision);
+            result = readValue<float,D>(readStream, actuallyRead);
+            break;
+        }
+        case DataPrecision::Double: //плавающий 64 бита
+        case DataPrecision::LongDouble: //плавающий 80 бит
+            readStream.setFloatingPointPrecision(QDataStream::DoublePrecision);
+            //не умею читать такие данные
+            result = readValue<double, D>(readStream, actuallyRead);
+            break;
+        default: break;
     }
 
     return result;
