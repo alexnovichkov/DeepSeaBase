@@ -176,7 +176,7 @@ void deinterleave (int channels,
                    Td* const* dest,
                    Ts const* src)
 {
-  assert (channels > 1);
+  if (channels <= 1) return;
 
   switch (channels)
   {
@@ -306,7 +306,7 @@ void interleave (int channels,
                  Td* dest,
                  Ts const* const* src)
 {
-  assert (channels>1);
+  if (channels <= 1) return;
 
   if (samples==0)
     return;
