@@ -53,7 +53,7 @@ private:
 
     ChannelSelector selector;
     int channel = 0;
-    int triggerChannel = 0;
+    int triggerChannel = -1;
 };
 
 class RefChannelFunction : public ChannelFunction

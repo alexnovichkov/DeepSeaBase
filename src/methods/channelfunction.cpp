@@ -156,16 +156,17 @@ bool ChannelFunction::compute(FileDescriptor *file)
 
     if (triggerData.isEmpty()) {
         if (triggerChannel >= 0 && triggerChannel < file->channelsCount()) {
-            LOG(DEBUG) << "computing trigger channel in ChannelFunction";
+            LOG(DEBUG) << QString("Канал триггера")<<triggerChannel+1;
+            LOG(DEBUG) << QString("Чтение канала триггера в ChannelFunction");
             bool populated = file->channel(triggerChannel)->populated();
             if (!populated) file->channel(triggerChannel)->populate();
             triggerData = file->channel(triggerChannel)->data()->yValues(0);
             if (!populated) file->channel(triggerChannel)->clear();
-            LOG(DEBUG)<<"trigger data at channel"<<triggerChannel+1<<"has"<<triggerData.size()<<"samples";
+            LOG(DEBUG)<<QString("Канал триггера %1 имеет %2 отсчетов").arg(triggerChannel+1).arg(triggerData.size());
         }
     }
     else
-        LOG(DEBUG)<<"trigger data at channel"<<triggerChannel+1<<"has"<<triggerData.size()<<"samples";
+        LOG(DEBUG)<<QString("Канал триггера %1 имеет %2 отсчетов").arg(triggerChannel+1).arg(triggerData.size());
 
     return !output.isEmpty();
 }
@@ -216,7 +217,7 @@ bool RefChannelFunction::compute(FileDescriptor *file)
     //содержат только один блок
     output = file->channel(channel)->data()->yValues(0);
 
-    if (triggerChannel >=0 && triggerChannel < file->channelsCount() && triggerData.isEmpty()) {
+    if (triggerChannel >= 0 && triggerChannel < file->channelsCount() && triggerData.isEmpty()) {
         //LOG(DEBUG) << "computing trigger channel in RefChannelFunction";
         if (!file->channel(triggerChannel)->populated())
             file->channel(triggerChannel)->populate();
