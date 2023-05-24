@@ -47,8 +47,9 @@ QString FilteringFunction::m_parameterDescription(const QString &property) const
                                    "  \"displayName\" : \"Тип\"   ,"
                                    "  \"defaultValue\": 0         ,"
                                    "  \"toolTip\"     : \"Тип фильтрации\","
-                                   "  \"values\"      : [\"Без фильтрации\", \"LowPass\",\"HighPass\",\"BandPass\","
-                                   "  \"BandStop\",\"LowShelf\",\"HighShelf\",\"BandShelf\"]" //для enum
+                                   "  \"values\"      : [\"Без фильтрации\", \"Нижних частот\",\"Верхних частот\",\"Полосовой\","
+                                   "  \"Режекторный\", \"Обрезной верхних частот\","
+                                   "  \"Обрезной низких частот\",\"Обрезной полосовой\"]" //для enum
                                    "}";
     if (property == "approximation") {
         QStringList values;
