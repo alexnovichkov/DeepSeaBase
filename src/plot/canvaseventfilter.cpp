@@ -62,7 +62,20 @@ void CanvasEventFilter::mousePress(QMouseEvent *event)
     startPosition = event->pos();
 
     auto axis = plot->impl()->eventTargetAxis(event);
+
+    auto selected = picker->findObject(event);
+    const bool maybePick = picker->alreadySelected(selected) || (selected.object && selected.object->draggable());
+
+    //we need to prefer picking over axis if selected overlaps with the axis
+    if (maybePick && event->button() == Qt::LeftButton) {
+        //LOG(DEBUG) << "Start picking object"<<selected.object;
+        actionType = ActionType::Pick;
+        picker->startPick(event->pos(), selected);
+        return;
+    }
+
     if (axis) {
+        //LOG(DEBUG) << "Start interacting with the axis"<<axis->axisType();
         currentAxis = axis;
         if (event->button()==Qt::RightButton) {
             emit contextMenuRequested(event->globalPos(), plot->impl()->axisType(axis));
@@ -73,21 +86,20 @@ void CanvasEventFilter::mousePress(QMouseEvent *event)
     else {
         switch (event->button()) {
             case Qt::RightButton: {
+                //LOG(DEBUG) << "Start dragging";
                 actionType = ActionType::Drag;
                 plot->impl()->axisRect()->mousePressEvent(event, QVariant());
                 break;
             }
             case Qt::LeftButton: {
-                auto selected = picker->findObject(event);
-
-                if (picker->alreadySelected(selected) ||
-                    (selected.object && selected.object->draggable())) {
-
+                if (maybePick) {
+                    //LOG(DEBUG) << "Start picking object"<<selected.object;
                     actionType = ActionType::Pick;
                     picker->startPick(event->pos(), selected);
                 }
                 else {
                     actionType = ActionType::Zoom;
+                    //LOG(DEBUG) << "Start zooming canvas";
                     plot->impl()->startZoom(event);
                 }
 
@@ -101,16 +113,20 @@ void CanvasEventFilter::mousePress(QMouseEvent *event)
 void CanvasEventFilter::mouseMove(QMouseEvent *event)
 {DD;
     if (currentAxis) {
+        //LOG(DEBUG) << "Proceed moving axis";
         currentAxis->mouseMoveEvent(event, startPosition);
     }
 
     else if (actionType == ActionType::Drag) {
+        //LOG(DEBUG) << "Proceed dragging";
         plot->impl()->axisRect()->mouseMoveEvent(event, startPosition);
     }
     else if (actionType == ActionType::Zoom) {
         plot->impl()->proceedZoom(event);
+        //LOG(DEBUG) << "Proceed zooming";
     }
     else if (actionType == ActionType::Pick) {
+        //LOG(DEBUG) << "Proceed picking";
         picker->proceedPick(event);
     }
 }
@@ -118,10 +134,12 @@ void CanvasEventFilter::mouseMove(QMouseEvent *event)
 void CanvasEventFilter::mouseRelease(QMouseEvent *event)
 {DD;
     if (currentAxis) {
+        //LOG(DEBUG) << "Stop moving axis";
         currentAxis->mouseReleaseEvent(event, startPosition);
         currentAxis = nullptr;
     }
     else if (actionType == ActionType::Drag) {
+        //LOG(DEBUG) << "Stop dragging";
         plot->impl()->axisRect()->mouseReleaseEvent(event, startPosition);
 
         actionType = ActionType::None;
@@ -132,6 +150,7 @@ void CanvasEventFilter::mouseRelease(QMouseEvent *event)
         }
     }
     else if (actionType == ActionType::Zoom) {
+        //LOG(DEBUG) << "Stop zooming";
         if ((startPosition - event->pos()).manhattanLength() <= 3) {
             //no actual mouse move
             plot->impl()->cancelZoom();
@@ -142,6 +161,7 @@ void CanvasEventFilter::mouseRelease(QMouseEvent *event)
         actionType = ActionType::None;
     }
     else if (actionType == ActionType::Pick) {
+        //LOG(DEBUG) << "End picking";
         picker->endPick(event);
         actionType = ActionType::None;
     }

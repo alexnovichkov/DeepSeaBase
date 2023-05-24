@@ -658,6 +658,7 @@ void Plot::updateAxesLabels()
     if (m_plot->axisEnabled(Enums::AxisType::atBottom)) {
         m_plot->setAxisTitle(Enums::AxisType::atBottom, axisLabelsVisible ? xName : "");
     }
+    m_plot->replot();
 }
 
 void Plot::setScale(Enums::AxisType id, double min, double max, double step)
