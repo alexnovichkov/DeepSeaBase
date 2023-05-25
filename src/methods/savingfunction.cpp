@@ -50,16 +50,18 @@ QStringList SavingFunction::parameters() const
 
 QString SavingFunction::m_parameterDescription(const QString &property) const
 {DD;
-    if (property == "type") return "{"
-                                   "  \"name\"        : \"type\"   ,"
-                                   "  \"type\"        : \"enum\"   ,"
-                                   "  \"displayName\" : \"Тип файла\"   ,"
-                                   "  \"defaultValue\": 0         ,"
-                                   "  \"toolTip\"     : \"DFD | UFF | D94\","
-                                   "  \"values\"      : [\"DFD\", \"UFF\", \"D94\"],"
-                                   "  \"minimum\"     : 0,"
-                                   "  \"maximum\"     : 0"
-                                   "}";
+    if (property == "type") {
+        return "{"
+               "  \"name\"        : \"type\"   ,"
+               "  \"type\"        : \"enum\"   ,"
+               "  \"displayName\" : \"Тип файла\"   ,"
+               "  \"defaultValue\": 0         ,"
+               "  \"toolTip\"     : \"DFD | UFF | D94\","
+               "  \"values\"      : [\"DFD\", \"UFF\", \"D94\"],"
+               "  \"minimum\"     : 0,"
+               "  \"maximum\"     : 0"
+               "}";
+    }
     if (property == "destination") return "{"
                                      "  \"name\"        : \"destination\"   ,"
                                      "  \"type\"        : \"url\"   ,"
@@ -357,4 +359,12 @@ FileIO *SavingFunction::createFileIO(FileDescriptor *file)
         //f->updateDateTimeGUID();
     }
     return f;
+}
+
+
+void SavingFunction::updateParameter(const QString &parameter, const QVariant &val)
+{
+    if (parameter == "?/dataFormat") {
+
+    }
 }

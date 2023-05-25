@@ -970,7 +970,7 @@ bool DfdFileDescriptor::canTakeAnyChannels() const
 
 QStringList DfdFileDescriptor::fileFilters()
 {DD;
-    return QStringList()<< "Файлы dfd (*.dfd)" << "Файлы dfd (*.DFD)";
+    return QStringList()<< "Файлы dfd (*.dfd)";
 }
 
 DfdChannel *DfdFileDescriptor::newChannel(int chanIndex)
@@ -985,7 +985,7 @@ DfdChannel *DfdFileDescriptor::newChannel(int chanIndex)
 
 QStringList DfdFileDescriptor::suffixes()
 {DD;
-    return QStringList()<<"*.dfd"<<"*.DFD";
+    return QStringList()<<"*.dfd";
 }
 
 void Process::read(DfdSettings &dfd, DfdDataType dataType)
@@ -1028,8 +1028,10 @@ void Process::read(DfdSettings &dfd, DfdDataType dataType)
             parent->dataDescription().put("function.referenceName", val.second.section(',', 2,2));
             parent->dataDescription().put("function.referenceDescription", val.second);
         }
-        else
+        else {
+            LOG(INFO) << QString("Неизвестный параметр dfd: %1").arg(val.first);
             parent->dataDescription().put("function."+val.first, val.second);
+        }
     }
     auto format = dataFormat(dataType, typeScale);
     QString fS = "unknown";

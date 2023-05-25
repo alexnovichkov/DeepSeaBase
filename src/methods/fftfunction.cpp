@@ -74,12 +74,15 @@ QVariant FftFunction::m_getParameter(const QString &property) const
     return map.value(p);
 }
 
-void FftFunction::m_setParameter(const QString &property, const QVariant &val)
+void FftFunction::m_setParameter(const QString &parameter, const QVariant &val)
 {DD;
-    if (!property.startsWith(name()+"/")) return;
+    if (!parameter.startsWith(name()+"/")) return;
 
-    QString p = property.section("/",1);
+    QString p = parameter.section("/",1);
     map.insert(p, val.toInt());
+    if (p == "output")
+        //emit parameterChanged("?/dataFormat", getParameter("?/dataFormat"));
+    emit attributeChanged(this, parameter, QVariant(), "enumNames");
 }
 
 QString FftFunction::displayName() const

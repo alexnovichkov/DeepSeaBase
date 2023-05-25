@@ -92,6 +92,10 @@ private:
     bool append = false;
     int precision = 0; // 0=single, 1 = double
     QVector<QVector<double>> data;
+
+    // AbstractFunction interface
+public:
+    virtual void updateParameter(const QString &parameter, const QVariant &val) override;
 };
 
 #endif // SAVINGFUNCTION_H

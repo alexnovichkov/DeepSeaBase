@@ -59,6 +59,9 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
     //samplingF отправляет сигнал об изменении "?/triggerChannel"
     connect(samplingF, &AbstractFunction::parameterChanged, channelF, &AbstractFunction::updateParameter);
 
+    //fftF отправляет сигнал об изменении ?/dataFormat
+    connect(fftF, &AbstractFunction::parameterChanged, saver, &AbstractFunction::updateParameter);
+
 //    connect(resamplingF, SIGNAL(parameterChanged(QString,QVariant)),
 //            samplingF, SLOT(updateParameter(QString,QVariant)));
 //    connect(samplingF, SIGNAL(parameterChanged(QString,QVariant)),
