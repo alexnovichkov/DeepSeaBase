@@ -3,7 +3,7 @@
 
 FlatteningFunction::FlatteningFunction(QObject *parent, const QString &name)
     : AbstractFunction(parent, name)
-{DD;
+{DD0;
 
 }
 
@@ -14,28 +14,28 @@ QString FlatteningFunction::name() const
 }
 
 QString FlatteningFunction::displayName() const
-{DD;
+{DD0;
     return "Выпрямитель данных";
 }
 
 QString FlatteningFunction::description() const
-{DD;
+{DD0;
     return "Объединение блоков данных";
 }
 
 QStringList FlatteningFunction::parameters() const
-{DD;
+{DD0;
     return QStringList();
 }
 
 QString FlatteningFunction::m_parameterDescription(const QString &property) const
-{DD;
+{DD0;
     Q_UNUSED(property);
     return "";
 }
 
 bool FlatteningFunction::compute(FileDescriptor *file)
-{DD;
+{DD0;
     if (!m_input) return false;
     LOG(INFO) << QString("Запуск расчета для функции объединения блоков данных");
     output.clear();
@@ -47,7 +47,7 @@ bool FlatteningFunction::compute(FileDescriptor *file)
 }
 
 QVariant FlatteningFunction::m_getParameter(const QString &property) const
-{DD;
+{DD0;
     if (property == "?/zCount") {
         //количество блоков
         return 1;
@@ -58,7 +58,7 @@ QVariant FlatteningFunction::m_getParameter(const QString &property) const
 }
 
 void FlatteningFunction::m_setParameter(const QString &property, const QVariant &val)
-{DD;
+{DD0;
     Q_UNUSED(property);
     Q_UNUSED(val);
 }

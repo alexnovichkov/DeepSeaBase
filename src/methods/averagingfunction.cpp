@@ -5,7 +5,7 @@
 
 AveragingFunction::AveragingFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD;
+{DD0;
 
 }
 
@@ -16,17 +16,17 @@ QString AveragingFunction::name() const
 }
 
 QString AveragingFunction::description() const
-{DD;
+{DD0;
     return "Усреднение";
 }
 
 QStringList AveragingFunction::parameters() const
-{DD;
+{DD0;
     return {"type", "maximum"};
 }
 
 QString AveragingFunction::m_parameterDescription(const QString &parameter) const
-{DD;
+{DD0;
     if (parameter == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
                                    "  \"type\"        : \"enum\"   ,"
@@ -49,7 +49,7 @@ QString AveragingFunction::m_parameterDescription(const QString &parameter) cons
 }
 
 QVariant AveragingFunction::m_getParameter(const QString &parameter) const
-{DD;
+{DD0;
     if (parameter.startsWith("?/")) {
 //        if (property == "?/averaging")
 //            return Averaging::averagingDescription(averaging.getAveragingType());
@@ -75,7 +75,7 @@ QVariant AveragingFunction::m_getParameter(const QString &parameter) const
 }
 
 void AveragingFunction::m_setParameter(const QString &parameter, const QVariant &val)
-{DD;
+{DD0;
     if (!parameter.startsWith(name()+"/")) return;
     QString p = parameter.section("/",1);
     int valInt = val.toInt();
@@ -89,7 +89,7 @@ void AveragingFunction::m_setParameter(const QString &parameter, const QVariant 
 }
 
 bool AveragingFunction::m_parameterShowsFor(const QString &parameter) const
-{DD;
+{DD0;
     if (parameter == "maximum")
         return (averaging.getAveragingType() != Averaging::NoAveraging);
 
@@ -98,7 +98,7 @@ bool AveragingFunction::m_parameterShowsFor(const QString &parameter) const
 
 
 QString AveragingFunction::displayName() const
-{DD;
+{DD0;
     return "Усреднение";
 }
 
@@ -114,7 +114,7 @@ QString AveragingFunction::displayName() const
 //}
 
 bool AveragingFunction::compute(FileDescriptor *file)
-{DD;
+{DD0;
     if (!m_input) return false;
     LOG(INFO) << QString("Запуск расчета для функции усреднения");
 
@@ -141,12 +141,12 @@ bool AveragingFunction::compute(FileDescriptor *file)
 }
 
 void AveragingFunction::reset()
-{DD;
+{DD0;
     averaging.reset();
 }
 
 DataDescription AveragingFunction::getFunctionDescription() const
-{DD;
+{DD0;
     DataDescription result = AbstractFunction::getFunctionDescription();
 
     if (averaging.getAveragingType() != Averaging::NoAveraging) {

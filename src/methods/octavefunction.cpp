@@ -5,7 +5,7 @@
 
 OctaveFunction::OctaveFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD;
+{DD0;
 
 }
 
@@ -15,17 +15,17 @@ QString OctaveFunction::name() const
 }
 
 QString OctaveFunction::description() const
-{DD;
+{DD0;
     return "Октавный спектр";
 }
 
 QStringList OctaveFunction::parameters() const
-{DD;
+{DD0;
     return {"type"};
 }
 
 QString OctaveFunction::m_parameterDescription(const QString &property) const
-{DD;
+{DD0;
     if (property == "type") return "{"
                                       "  \"name\"        : \"type\"   ,"
                                       "  \"type\"        : \"enum\"   ,"
@@ -38,7 +38,7 @@ QString OctaveFunction::m_parameterDescription(const QString &property) const
 }
 
 QVariant OctaveFunction::m_getParameter(const QString &property) const
-{DD;
+{DD0;
     if (m_input && property.startsWith("?/")) {
         if (property == "?/octaveFormat") return static_cast<int>(bank.getType());
         if (property == "?/abscissaData") {
@@ -80,7 +80,7 @@ QVariant OctaveFunction::m_getParameter(const QString &property) const
 }
 
 void OctaveFunction::m_setParameter(const QString &property, const QVariant &val)
-{DD;
+{DD0;
     if (property == "OCTF/type") {
         switch (val.toInt()) {
             case 0: bank.setType(OctaveType::Octave3); break;
@@ -90,12 +90,12 @@ void OctaveFunction::m_setParameter(const QString &property, const QVariant &val
 }
 
 QString OctaveFunction::displayName() const
-{DD;
+{DD0;
     return description();
 }
 
 bool OctaveFunction::compute(FileDescriptor *file)
-{DD;
+{DD0;
     output.clear();
 
     if (!m_input) return false;
@@ -123,7 +123,7 @@ bool OctaveFunction::compute(FileDescriptor *file)
 }
 
 DataDescription OctaveFunction::getFunctionDescription() const
-{DD;
+{DD0;
     DataDescription d = AbstractFunction::getFunctionDescription();
     d.put("function.format", "amplitude");
     d.put("function.octaveFormat", static_cast<int>(bank.getType()));
@@ -137,6 +137,6 @@ DataDescription OctaveFunction::getFunctionDescription() const
 }
 
 void OctaveFunction::updateParameter(const QString &property, const QVariant &val)
-{DD;
+{DD0;
     if (property == "?/blockSize") bank.setBlockSize(val.toInt());
 }

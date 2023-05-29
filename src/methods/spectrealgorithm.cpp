@@ -13,7 +13,7 @@
 
 SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DD;
+{DD0;
     channelF = new ChannelFunction(this);
 //    filteringF = new FilteringFunction(this);
     resamplingF = new ResamplingFunction(this);
@@ -74,18 +74,18 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
 
 
 QString SpectreAlgorithm::description() const
-{DD;
+{DD0;
     return "Спектр";
 }
 
 
 QString SpectreAlgorithm::displayName() const
-{DD;
+{DD0;
     return "FFT";
 }
 
 void SpectreAlgorithm::resetChain()
-{DD;
+{DD0;
     //        filteringF->reset();
     resamplingF->reset();
     samplingF->reset();
@@ -95,6 +95,6 @@ void SpectreAlgorithm::resetChain()
 }
 
 void SpectreAlgorithm::initChain(FileDescriptor *file)
-{DD;
+{DD0;
     resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());  //автоматически задает xStep для samplingF
 }

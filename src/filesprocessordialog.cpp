@@ -20,7 +20,7 @@
 
 FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QWidget *parent)
     : QDialog(parent), dataBase(dataBase), win(parent), currentAlgorithm(0)
-{DD;
+{DD0;
     thread_ = 0;
     taskBarProgress = 0;
 
@@ -139,7 +139,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
 }
 
 FilesProcessorDialog::~FilesProcessorDialog()
-{DD;
+{DD0;
     if (currentAlgorithm)
         currentAlgorithm->saveSettings();
 
@@ -154,7 +154,7 @@ FilesProcessorDialog::~FilesProcessorDialog()
 }
 
 void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
-{DD;
+{DD0;
     propertyTree->clear();
     m_manager->clear();
     map.clear();
@@ -191,7 +191,7 @@ void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
 }
 
 void FilesProcessorDialog::updateVisibleProperties()
-{DD;
+{DD0;
     if (!currentAlgorithm) return;
 
     for (QtVariantProperty *property: map.keys()) {
@@ -202,7 +202,7 @@ void FilesProcessorDialog::updateVisibleProperties()
 }
 
 void FilesProcessorDialog::onValueChanged(QtProperty *property, const QVariant &val)
-{DD;
+{DD0;
     if (!currentAlgorithm) return;
 
     Property p = map.value(dynamic_cast<QtVariantProperty*>(property));
@@ -227,7 +227,7 @@ void FilesProcessorDialog::updateParameter(AbstractFunction *f, const QString &p
 }
 
 void FilesProcessorDialog::addProperties(AbstractFunction *f)
-{DD;
+{DD0;
     if (!f) return;
 
     QString parameters = f->parametersDescription();
@@ -299,7 +299,7 @@ void FilesProcessorDialog::addProperties(AbstractFunction *f)
 }
 
 void FilesProcessorDialog::accept()
-{DD;
+{DD0;
     newFiles = currentAlgorithm->getNewFiles();
     if (taskBarProgress) taskBarProgress->finalize();
 
@@ -311,25 +311,25 @@ void FilesProcessorDialog::accept()
 }
 
 void FilesProcessorDialog::reject()
-{DD;
+{DD0;
     stop();
     QDialog::reject();
     if (taskBarProgress) taskBarProgress->finalize();
 }
 
 void FilesProcessorDialog::updateProgressIndicator(const QString &path)
-{DD;
+{DD0;
     progress->setValue(QDir(path).count()-2);
 }
 
 void FilesProcessorDialog::updateProgressIndicator()
-{DD;
+{DD0;
     progress->setValue(progress->value()+1);
     taskBarProgress->setValue(progress->value());
 }
 
 void FilesProcessorDialog::start()
-{DD;
+{DD0;
     if (!currentAlgorithm) return;
 
     newFiles.clear();
@@ -357,7 +357,7 @@ void FilesProcessorDialog::start()
 }
 
 void FilesProcessorDialog::stop()
-{DD;
+{DD0;
     if (thread_)
     thread_->requestInterruption();
     QDialog::accept();

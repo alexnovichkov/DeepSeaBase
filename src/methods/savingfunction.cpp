@@ -12,7 +12,7 @@
 
 //returns "d94" by default
 QString getSuffixByType(int type)
-{DD;
+{DD0;
     switch (type) {
         case SavingFunction::DfdFile: return "dfd";
         case SavingFunction::UffFile: return "uff";
@@ -23,7 +23,7 @@ QString getSuffixByType(int type)
 
 SavingFunction::SavingFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD;
+{DD0;
 
 }
 
@@ -34,22 +34,22 @@ QString SavingFunction::name() const
 }
 
 QString SavingFunction::displayName() const
-{DD;
+{DD0;
     return "Записывать результат";
 }
 
 QString SavingFunction::description() const
-{DD;
+{DD0;
     return "Сохранение файлов";
 }
 
 QStringList SavingFunction::parameters() const
-{DD;
+{DD0;
     return {"append", "type", "precision", "destination"};
 }
 
 QString SavingFunction::m_parameterDescription(const QString &property) const
-{DD;
+{DD0;
     if (property == "type") {
         return "{"
                "  \"name\"        : \"type\"   ,"
@@ -91,7 +91,7 @@ QString SavingFunction::m_parameterDescription(const QString &property) const
 }
 
 QVariant SavingFunction::m_getParameter(const QString &parameter) const
-{DD;
+{DD0;
     if (parameter.startsWith("?/")) {
         // do not know anything about these broadcast properties, propagating
         if (m_input) return m_input->getParameter(parameter);
@@ -111,7 +111,7 @@ QVariant SavingFunction::m_getParameter(const QString &parameter) const
 }
 
 void SavingFunction::m_setParameter(const QString &parameter, const QVariant &val)
-{DD;
+{DD0;
     if (!parameter.startsWith(name()+"/")) return;
     QString p = parameter.section("/",1);
 
@@ -122,7 +122,7 @@ void SavingFunction::m_setParameter(const QString &parameter, const QVariant &va
 }
 
 bool SavingFunction::m_parameterShowsFor(const QString &p) const
-{DD;
+{DD0;
     if (p == "type") return !append;
     if (p == "destination") return !append;
     if (p == "precision") return type==SavingFunction::D94File;
@@ -131,7 +131,7 @@ bool SavingFunction::m_parameterShowsFor(const QString &p) const
 }
 
 bool SavingFunction::compute(FileDescriptor *file)
-{DD;
+{DD0;
     /* что нужно для сохранения:
      * 1. тип файла
      * 2. папка, куда сохранять файл - конструируется из имени исходного файла
@@ -262,7 +262,7 @@ bool SavingFunction::compute(FileDescriptor *file)
 }
 
 void SavingFunction::reset()
-{DD;
+{DD0;
     // вызывается для каждого файла в базе
     //1. настраивает выходное название файла
     //2. подготавливает данные для выходного файла
@@ -285,7 +285,7 @@ void SavingFunction::reset()
 }
 
 FileDescriptor *SavingFunction::createFile(FileDescriptor *file)
-{DD;
+{DD0;
     FileDescriptor *f = nullptr;
     switch (type) {
         case DfdFile: f = createDfdFile(); break;
@@ -307,7 +307,7 @@ FileDescriptor *SavingFunction::createFile(FileDescriptor *file)
 }
 
 FileDescriptor *SavingFunction::createDfdFile()
-{DD;
+{DD0;
     int dataType = m_input->getParameter("?/dataType").toInt();
 
     DfdFileDescriptor *newDfd = DfdFileDescriptor::newFile(newFileName, DfdDataType(dataType));
@@ -324,17 +324,17 @@ FileDescriptor *SavingFunction::createDfdFile()
 }
 
 FileDescriptor *SavingFunction::createUffFile()
-{DD;
+{DD0;
     return new UffFileDescriptor(newFileName);
 }
 
 FileDescriptor *SavingFunction::createD94File()
-{DD;
+{DD0;
     return new Data94File(newFileName);
 }
 
 FileIO *SavingFunction::createFileIO(FileDescriptor *file)
-{
+{DD0;
     DataDescription d = file->dataDescription();
     QString channels = m_input->getParameter("?/channels").toString();
     d.put("source.file", file->fileName());
@@ -363,7 +363,7 @@ FileIO *SavingFunction::createFileIO(FileDescriptor *file)
 
 
 void SavingFunction::updateParameter(const QString &parameter, const QVariant &val)
-{
+{DD0;
     if (parameter == "?/dataFormat") {
 
     }

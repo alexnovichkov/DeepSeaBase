@@ -5,7 +5,7 @@
 
 FilteringFunction::FilteringFunction(QObject *parent) :
     AbstractFunction(parent)
-{DD;
+{DD0;
     // default values
     map.insert("type", Filtering::NoFiltering);
     map.insert("approximation", Filtering::Butterworth);
@@ -28,18 +28,18 @@ QString FilteringFunction::name() const
 }
 
 QString FilteringFunction::description() const
-{DD;
+{DD0;
     return "Фильтрация временных данных";
 }
 
 QStringList FilteringFunction::parameters() const
-{DD;
+{DD0;
     return {"type","approximation","order","frequency","Q","bandwidth","bandwidthHz","gain","slope"
                        ,"rippleDb","stopDb","rolloff"};
 }
 
 QString FilteringFunction::m_parameterDescription(const QString &property) const
-{DD;
+{DD0;
 //    LOG(DEBUG)<<"property description"<<property;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
@@ -162,7 +162,7 @@ QString FilteringFunction::m_parameterDescription(const QString &property) const
 }
 
 QVariant FilteringFunction::m_getParameter(const QString &property) const
-{DD;
+{DD0;
     if (property.startsWith("?/")) {
         if (property == "?/dataType") return 2;//Фильтр. данные
 //        if (property == "?/functionType") return 1;//Time response
@@ -191,7 +191,7 @@ QVariant FilteringFunction::m_getParameter(const QString &property) const
 }
 
 DataDescription FilteringFunction::getFunctionDescription() const
-{DD;
+{DD0;
     DataDescription result = AbstractFunction::getFunctionDescription();
 
     result.put("function.name", "FILT");
@@ -223,7 +223,7 @@ DataDescription FilteringFunction::getFunctionDescription() const
 }
 
 void FilteringFunction::m_setParameter(const QString &property, const QVariant &val)
-{DD;
+{DD0;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -240,7 +240,7 @@ void FilteringFunction::m_setParameter(const QString &property, const QVariant &
 }
 
 bool FilteringFunction::m_parameterShowsFor(const QString &parameter) const
-{DD;
+{DD0;
     const int approx = map.value("approximation").toInt();
     const int type = map.value("type").toInt();
 
@@ -272,18 +272,18 @@ bool FilteringFunction::m_parameterShowsFor(const QString &parameter) const
 
 
 QString FilteringFunction::displayName() const
-{DD;
+{DD0;
     return "Фильтрация";
 }
 
 void FilteringFunction::reset()
-{DD;
+{DD0;
     filtering.reset();
     AbstractFunction::reset();
 }
 
 bool FilteringFunction::compute(FileDescriptor *file)
-{DD;
+{DD0;
     if (!m_input) return false;
     LOG(INFO) << QString("Запуск расчета для функции фильтрации");
     if (!m_input->compute(file)) return false;

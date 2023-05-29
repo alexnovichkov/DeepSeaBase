@@ -6,16 +6,16 @@
 #include "settings.h"
 
 AbstractFunction::AbstractFunction(QObject *parent, const QString &name) : QObject(parent), _name(name)
-{DD;
+{DD0;
 
 }
 
 AbstractFunction::~AbstractFunction()
-{DD;
+{DD0;
 }
 
 QString AbstractFunction::parametersDescription() const
-{DD;
+{DD0;
     const QStringList props = parameters();
     if (props.isEmpty()) return "";
 
@@ -27,7 +27,7 @@ QString AbstractFunction::parametersDescription() const
 }
 
 bool AbstractFunction::shouldParameterBeVisible(const QString &parameter) const
-{DD;
+{DD0;
     if (!parameter.startsWith(name()+"/")) return false;
     QString p = parameter.section("/",1);
 
@@ -35,7 +35,7 @@ bool AbstractFunction::shouldParameterBeVisible(const QString &parameter) const
 }
 
 QVariant AbstractFunction::getParameter(const QString &parameter) const
-{DD;
+{DD0;
     QVariant p;
     if (paired()) {
         p = m_master->m_getParameter(parameter);
@@ -46,7 +46,7 @@ QVariant AbstractFunction::getParameter(const QString &parameter) const
 }
 
 void AbstractFunction::setParameter(const QString &parameter, const QVariant &val)
-{DD;
+{DD0;
     if (m_slave != nullptr) {
         m_slave->m_setParameter(parameter, val);
     }
@@ -55,7 +55,7 @@ void AbstractFunction::setParameter(const QString &parameter, const QVariant &va
 }
 
 void AbstractFunction::pairWith(AbstractFunction *slave)
-{DD;
+{DD0;
     if (slave != nullptr) {
         m_slave = slave;
         slave->m_master = this;
@@ -71,7 +71,7 @@ QVector<double> AbstractFunction::getData(const QString &id)
 }
 
 DataDescription AbstractFunction::getFunctionDescription() const
-{DD;
+{DD0;
     DataDescription result;
     if (m_input) result = m_input->getFunctionDescription();
     return result;
@@ -83,19 +83,19 @@ void AbstractFunction::setInput(AbstractFunction *input)
 }
 
 void AbstractFunction::setInput2(AbstractFunction *input)
-{DD;
+{DD0;
     m_input2 = input;
 }
 
 void AbstractFunction::setFile(FileDescriptor *file)
-{DD;
+{DD0;
     m_file = file;
     if (m_input) m_input->setFile(file);
     if (m_input2) m_input2->setFile(file);
 }
 
 void AbstractFunction::reset()
-{DD;
+{DD0;
     output.clear();
 //    triggerData.clear();
 }
@@ -107,19 +107,19 @@ void AbstractFunction::resetData()
 }
 
 void AbstractFunction::updateParameter(const QString &parameter, const QVariant &val)
-{DD;
+{DD0;
     Q_UNUSED(parameter);
     Q_UNUSED(val);
 }
 
 AbstractAlgorithm::AbstractAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) : QObject(parent),
     m_dataBase(dataBase)
-{DD;
+{DD0;
 
 }
 
 AbstractAlgorithm::~AbstractAlgorithm()
-{DD;
+{DD0;
     m_functions.clear();
 }
 
@@ -138,7 +138,7 @@ QVariant AbstractAlgorithm::getParameter(AbstractFunction *function, const QStri
 }
 
 void AbstractAlgorithm::setParameter(AbstractFunction *function, const QString &parameter, const QVariant &val)
-{DD;
+{DD0;
     if (parameter.isEmpty()) return;
 
     const auto list = functions();
@@ -151,7 +151,7 @@ void AbstractAlgorithm::setParameter(AbstractFunction *function, const QString &
 }
 
 void AbstractAlgorithm::saveSettings()
-{DD;
+{DD0;
     for (auto f: m_functions) {
         for (const auto &p: f->parameters()) {
             QVariant val = f->getParameter(f->name()+"/"+p);
@@ -161,7 +161,7 @@ void AbstractAlgorithm::saveSettings()
 }
 
 void AbstractAlgorithm::restoreSettings()
-{DD;
+{DD0;
     for (auto f: m_functions) {
         for (const auto &p: f->parameters()) {
             QVariant val = Settings::getSetting(displayName()+"/"+f->name()+"/"+p);
@@ -171,7 +171,7 @@ void AbstractAlgorithm::restoreSettings()
 }
 
 bool AbstractAlgorithm::compute(FileDescriptor *file)
-{DD;
+{DD0;
     if (QThread::currentThread()->isInterruptionRequested()) {
         LOG(WARNING) << QString("Запрошена отмена расчета");
         finalize();
@@ -238,7 +238,7 @@ bool AbstractAlgorithm::compute(FileDescriptor *file)
 }
 
 void AbstractAlgorithm::start()
-{DD;
+{DD0;
     auto dt = QDateTime::currentDateTime();
     LOG(INFO) << QString("Запуск расчета %1 в %2").arg(displayName()).arg(dt.time().toString());
     emit message(QString("Запуск расчета: %1").arg(dt.time().toString()));
@@ -265,7 +265,7 @@ void AbstractAlgorithm::start()
 }
 
 void AbstractAlgorithm::finalize()
-{DD;
+{DD0;
     emit message(QString("Расчет закончен в %1").arg(QDateTime::currentDateTime().time().toString()));
     LOG(INFO) << QString("Расчет закончен в %1").arg(QDateTime::currentDateTime().time().toString());
 
@@ -273,6 +273,6 @@ void AbstractAlgorithm::finalize()
 }
 
 bool AbstractAlgorithm::applicableTo(Descriptor::DataType channelType)
-{DD;
+{DD0;
     return channelType == Descriptor::TimeResponse;
 }

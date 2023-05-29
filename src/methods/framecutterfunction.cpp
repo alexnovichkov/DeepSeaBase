@@ -3,7 +3,7 @@
 #include "fileformats/filedescriptor.h"
 
 QStringList getBlocks(double xStep, const QString &fix)
-{DD;
+{DD0;
 //    double sampleRate = 1.0/xStep;
 //    DebugPrint(sampleRate);
     int sampleRate = qRound(1.0 / xStep);
@@ -24,7 +24,7 @@ QStringList getBlocks(double xStep, const QString &fix)
 
 FrameCutterFunction::FrameCutterFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD;
+{DD0;
     // default values
     setParameter("FrameCutter/type", 0);
     setParameter("FrameCutter/blockSize", 0);
@@ -43,17 +43,17 @@ QString FrameCutterFunction::name() const
 }
 
 QString FrameCutterFunction::displayName() const
-{DD;
+{DD0;
     return "Выборка блоков";
 }
 
 QString FrameCutterFunction::description() const
-{DD;
+{DD0;
     return "Разбиение данных на блоки";
 }
 
 QVariant FrameCutterFunction::m_getParameter(const QString &property) const
-{DD;
+{DD0;
     if (property.startsWith("?/")) {
         if (property == "?/blockSize") {
             return frameCutter.blockSize();
@@ -76,7 +76,7 @@ QVariant FrameCutterFunction::m_getParameter(const QString &property) const
 }
 
 DataDescription FrameCutterFunction::getFunctionDescription() const
-{DD;
+{DD0;
     DataDescription result = AbstractFunction::getFunctionDescription();
 
     result.put("function.name", "FrameCutter");
@@ -100,7 +100,7 @@ DataDescription FrameCutterFunction::getFunctionDescription() const
 }
 
 void FrameCutterFunction::m_setParameter(const QString &property, const QVariant &val)
-{DD;
+{DD0;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -146,7 +146,7 @@ void FrameCutterFunction::m_setParameter(const QString &property, const QVariant
 }
 
 bool FrameCutterFunction::m_parameterShowsFor(const QString &p) const
-{DD;
+{DD0;
     if (p == "percent" && frameCutter.type() != FrameCutter::Overlap) return false;
     if (p == "deltaTime" && (frameCutter.type() == FrameCutter::Continuous ||
                                     frameCutter.type() == FrameCutter::Overlap)) return false;
@@ -160,7 +160,7 @@ bool FrameCutterFunction::m_parameterShowsFor(const QString &p) const
 
 
 QStringList FrameCutterFunction::parameters() const
-{DD;
+{DD0;
     return {"type", "blockSize", "percent", "deltaTime", "triggerMode", "level",
         "triggerChannel", "pretrigger"};
 }
@@ -248,19 +248,19 @@ QString FrameCutterFunction::m_parameterDescription(const QString &property) con
 }
 
 void FrameCutterFunction::reset()
-{DD;
+{DD0;
     frameCutter.reset();
     AbstractFunction::reset();
 }
 
 void FrameCutterFunction::resetData()
-{DD;
+{DD0;
     frameCutter.reset(false);
     AbstractFunction::resetData();
 }
 
 bool FrameCutterFunction::compute(FileDescriptor *file)
-{DD;
+{DD0;
     if (!m_input) return false;
     LOG(INFO) << QString("Запуск расчета для функции отбора данных");
 
@@ -296,7 +296,7 @@ bool FrameCutterFunction::compute(FileDescriptor *file)
 
 
 void FrameCutterFunction::updateParameter(const QString &property, const QVariant &val)
-{DD;
+{DD0;
     // нам может прийти измененный шаг по оси Х
     if (property == "?/xStep") {
         setParameter(name()+"/xStep", val);

@@ -4,7 +4,7 @@
 #include "logging.h"
 
 FrfFunction::FrfFunction(QObject *parent, const QString &name) : AbstractFunction(parent, name)
-{DD;
+{DD0;
 
 }
 
@@ -14,17 +14,17 @@ QString FrfFunction::name() const
 }
 
 QString FrfFunction::description() const
-{DD;
+{DD0;
     return "Передаточная";
 }
 
 QStringList FrfFunction::parameters() const
-{DD;
+{DD0;
     return {"type", "output"};
 }
 
 QString FrfFunction::m_parameterDescription(const QString &property) const
-{DD;
+{DD0;
     if (property == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
                                    "  \"type\"        : \"enum\"   ,"
@@ -45,7 +45,7 @@ QString FrfFunction::m_parameterDescription(const QString &property) const
 }
 
 QVariant FrfFunction::m_getParameter(const QString &property) const
-{DD;
+{DD0;
     if (property.startsWith("?/")) {
 //        if (property == "?/processData") {
 //            int type = map.value("type");
@@ -139,7 +139,7 @@ QVariant FrfFunction::m_getParameter(const QString &property) const
 }
 
 void FrfFunction::m_setParameter(const QString &property, const QVariant &val)
-{DD;
+{DD0;
     if (!property.startsWith(name()+"/")) return;
 
     QString p = property.section("/",1);
@@ -147,12 +147,12 @@ void FrfFunction::m_setParameter(const QString &property, const QVariant &val)
 }
 
 QString FrfFunction::displayName() const
-{DD;
+{DD0;
     return "Передаточная";
 }
 
 bool FrfFunction::compute(FileDescriptor *file)
-{DD;
+{DD0;
     output.clear();
 
     if (!m_input || !m_input2) return false;
@@ -230,7 +230,7 @@ bool FrfFunction::compute(FileDescriptor *file)
 }
 
 DataDescription FrfFunction::getFunctionDescription() const
-{DD;
+{DD0;
     DataDescription result = AbstractFunction::getFunctionDescription();
 
     switch (map.value("output")) {

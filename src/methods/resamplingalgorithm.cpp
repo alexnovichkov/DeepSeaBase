@@ -14,7 +14,7 @@
 
 ResamplingAlgorithm::ResamplingAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DD;
+{DD0;
     channelF = new ChannelFunction(this);
     resamplingF = new ResamplingFunction(this);
     saver = new SavingFunction(this);
@@ -43,29 +43,25 @@ ResamplingAlgorithm::ResamplingAlgorithm(QList<FileDescriptor *> &dataBase, QObj
     //начальные значения, которые будут использоваться в показе функций
     resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);
     channelF->setFile(dataBase.constFirst());
-
-    //resamplingF отправляет сигнал об изменении "?/xStep"
-//    connect(resamplingF, SIGNAL(parameterChanged(QString,QVariant)),
-//            samplingF, SLOT(updateParameter(QString,QVariant)));
 }
 
 QString ResamplingAlgorithm::description() const
-{DD;
+{DD0;
     return "Передискретизация временных данных";
 }
 
 
 QString ResamplingAlgorithm::displayName() const
-{DD;
+{DD0;
     return "RSMPL";
 }
 
 void ResamplingAlgorithm::resetChain()
-{DD;
+{DD0;
     resamplingF->reset();
 }
 
 void ResamplingAlgorithm::initChain(FileDescriptor *file)
-{DD;
+{DD0;
     resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());
 }

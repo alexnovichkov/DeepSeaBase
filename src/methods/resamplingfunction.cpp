@@ -5,7 +5,7 @@
 
 ResamplingFunction::ResamplingFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD;
+{DD0;
 }
 
 
@@ -15,17 +15,17 @@ QString ResamplingFunction::name() const
 }
 
 QString ResamplingFunction::description() const
-{DD;
+{DD0;
     return "Выбор частотного диапазона";
 }
 
 QStringList ResamplingFunction::parameters() const
-{DD;
+{DD0;
     return {"resampleType", "factor", "frequencyRange", "sampleRate"};
 }
 
 QString ResamplingFunction::m_parameterDescription(const QString &property) const
-{DD;
+{DD0;
     if (property == "resampleType") {
         return QString("{"
                "  \"name\"        : \"resampleType\"   ,"
@@ -74,7 +74,7 @@ QString ResamplingFunction::m_parameterDescription(const QString &property) cons
 }
 
 QVariant ResamplingFunction::m_getParameter(const QString &property) const
-{DD;
+{DD0;
     double sR = 1.0 / xStep;
     if (property.startsWith("?/")) {
         // recalculate sample rate to new val
@@ -105,7 +105,7 @@ QVariant ResamplingFunction::m_getParameter(const QString &property) const
 }
 
 DataDescription ResamplingFunction::getFunctionDescription() const
-{DD;
+{DD0;
     DataDescription result = AbstractFunction::getFunctionDescription();
 
     result.put("function.format", "real");
@@ -116,7 +116,7 @@ DataDescription ResamplingFunction::getFunctionDescription() const
 }
 
 void ResamplingFunction::m_setParameter(const QString &property, const QVariant &val)
-{DD;
+{DD0;
     if (!property.startsWith(name()+"/")) return;
     QString p = property.section("/",1);
 
@@ -158,7 +158,7 @@ void ResamplingFunction::m_setParameter(const QString &property, const QVariant 
 }
 
 bool ResamplingFunction::m_parameterShowsFor(const QString &p) const
-{DD;
+{DD0;
     if (p == "factor" && currentResamplingType != 0) return false;
     if (p == "frequencyRange" && currentResamplingType != 1) return false;
     if (p == "sampleRate" && currentResamplingType != 2) return false;
@@ -168,12 +168,12 @@ bool ResamplingFunction::m_parameterShowsFor(const QString &p) const
 
 
 QString ResamplingFunction::displayName() const
-{DD;
+{DD0;
     return "Передискретизация";
 }
 
 bool ResamplingFunction::compute(FileDescriptor *file)
-{DD; //LOG(DEBUG)<<debugName();
+{DD0; //LOG(DEBUG)<<debugName();
     if (!m_input) return false;
     LOG(INFO) << QString("Запуск расчета для функции передискретизации");
 
