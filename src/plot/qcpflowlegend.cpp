@@ -544,6 +544,7 @@ QCP::Interaction QCPFlowLegend::selectionCategory() const
 /* inherits documentation from base class */
 void QCPFlowLegend::parentPlotInitialized(QCustomPlot *parentPlot)
 {
+    Q_UNUSED(parentPlot);
 //  if (parentPlot && !parentPlot->legend)
 //    parentPlot->legend = this;
 }

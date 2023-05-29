@@ -278,6 +278,7 @@ void ChannelPropertiesDialog::currentChannelChanged(QTreeWidgetItem *cur, QTreeW
             while (functionLayout->rowCount()>0) functionLayout->removeRow(0);
             functionProperties.clear();
             for (const auto [key, val]: asKeyValueRange(data)) {
+                Q_UNUSED(val);
                 functionProperties.append({key, "function."+key, nullptr, nullptr});
             }
             for (int i=0; i<functionProperties.size(); ++i) {
@@ -291,6 +292,7 @@ void ChannelPropertiesDialog::currentChannelChanged(QTreeWidgetItem *cur, QTreeW
             while (descriptionsLayout->rowCount()>0) descriptionsLayout->removeRow(0);
             descriptionProperties.clear();
             for (const auto [key, val]: asKeyValueRange(data)) {
+                Q_UNUSED(val);
                 descriptionProperties.append({key, "description."+key, nullptr, nullptr});
             }
             for (int i=0; i<descriptionProperties.size(); ++i) {

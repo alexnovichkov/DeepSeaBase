@@ -54,7 +54,7 @@ public slots:
 private slots:
 
 private:
-    void exportSonogramToExcel(bool fullRange, bool dataOnly);
+    void exportSonogramToExcel();
     QGridLayout *plotsLayout;
     Plot *m_plot = nullptr;
     QLabel * infoLabel;

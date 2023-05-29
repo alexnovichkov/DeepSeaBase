@@ -1508,7 +1508,7 @@ void DfdChannel::populate()
                     for (int i=0; i<data()->samplesCount(); ++i) {
                         QByteArray d = readStream.device()->read(IndType % 16);
                         for (int j=0;j<d.size();++j) values[i*(IndType % 16)+j] = d[j];
-                        if (d.size() < (IndType % 16)) break;
+                        if (uint(d.size()) < (IndType % 16)) break;
                         //пропускаем channelsCount-1 отсчетов
                         readStream.skipRawData((channelsCount-1)*(IndType % 16));
                     }

@@ -329,7 +329,7 @@ void setAxis(QAxObject *xAxis, const QString &title)
     delete axisTitle;
 }
 
-void PlotArea::exportSonogramToExcel(bool fullRange, bool dataOnly)
+void PlotArea::exportSonogramToExcel()
 {
     static QAxObject *excel = 0;
     auto curves = m_plot->model()->curves([](Curve*c){return c->isVisible();});
@@ -340,8 +340,6 @@ void PlotArea::exportSonogramToExcel(bool fullRange, bool dataOnly)
     Channel *channel = curve->channel;
     FileDescriptor *descriptor = channel->descriptor();
 
-    const int samplesCount = channel->data()->samplesCount();
-
     double minX = channel->data()->xMin();
     double maxX = channel->data()->xMax();
 
@@ -350,20 +348,6 @@ void PlotArea::exportSonogramToExcel(bool fullRange, bool dataOnly)
 
     Range rangeX = m_plot->plotRange(Enums::AxisType::atBottom);
     Range rangeZ = m_plot->plotRange(Enums::AxisType::atLeft);
-
-    if (minX >= rangeX.min && maxX <= rangeX.max && minZ >= rangeZ.min && maxZ <= rangeZ.max)
-        fullRange = true;
-
-    // определяем, будут ли экспортированы графики;
-    bool exportPlots = true;
-    if (samplesCount > 32000 && fullRange && !dataOnly) {
-        if (QMessageBox::question(this, "Слишком много данных",
-                             "Число отсчетов превышает 32000.\n"
-                             "Экспортировать только данные (графики не будут экспортированы)?")==QMessageBox::Yes)
-        exportPlots = false;
-        else return;
-    }
-    if (dataOnly) exportPlots = false;
 
     if (!excel) {
         excel = new QAxObject("{00024500-0000-0000-c000-000000000046}&",this);
@@ -570,7 +554,7 @@ void PlotArea::exportSonogramToExcel(bool fullRange, bool dataOnly)
 void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 {DD;
     if (plot() && plot()->type() == Enums::PlotType::Spectrogram) {
-        exportSonogramToExcel(fullRange, dataOnly);
+        exportSonogramToExcel();
         return;
     }
 

@@ -263,9 +263,8 @@ QVector<double> OctaveFilterBank::octaveStrips(int octave, int count, int base)
 double round_off(double N, double n)
 {DD;
     int h;
-    double b, c, d, e, i, j, m, f;
+    double b, d, e, i, j, m, f;
     b = N;
-    c = floor(N);
 
     // Counting the no. of digits to the left of decimal point
     // in the given no.
