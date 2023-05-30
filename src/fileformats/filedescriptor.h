@@ -38,7 +38,8 @@ enum DataType
     FiniteImpulseResponseFilter = 25,
     MultipleCoherence = 26,
     OrderFunction = 27,
-    Transit = 28
+    Transit = 28,
+    Different = -1
 };
 
 QString functionTypeDescription(int type);

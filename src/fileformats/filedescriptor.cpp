@@ -82,7 +82,7 @@ Descriptor::DataType FileDescriptor::type() const
 
     Descriptor::DataType t = channel(0)->type();
     for (int i=1; i<count; ++i) {
-        if (channel(i)->type() != t) return Descriptor::Unknown;
+        if (channel(i)->type() != t) return Descriptor::Different;
     }
     return t;
 }
@@ -245,7 +245,7 @@ QString FileDescriptor::xName() const
 
 bool FileDescriptor::dataTypeEquals(FileDescriptor *other) const
 {DD;
-    return (this->type() == other->type());
+    return (this->type() == other->type() && this->type() != Descriptor::Different);
 }
 
 QString FileDescriptor::legend() const
@@ -487,7 +487,8 @@ QString Descriptor::functionTypeDescription(int type)
         case  26: return "Multiple Coherence";
         case  27: return "Order Function";
         case  28: return "Transit";
-        default : return "Неизв.";
+        case  -1: return "Разные";
+        default : break;
     }
     return "Неизв.";
 }

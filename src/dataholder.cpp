@@ -340,13 +340,13 @@ QString DataHolder::correctionString(double value, int type) /*static*/
 QString DataHolder::yValuesFormatString() const
 {DD;
     switch (m_yValuesFormat) {
-        case YValuesUnknown: return "Неизв."; break;
         case YValuesComplex: return "[Cmplx]"; break;
         case YValuesReals: return "[Re]"; break;
         case YValuesImags: return "[Im]"; break;
         case YValuesAmplitudes: return "[Abs]"; break;
         case YValuesAmplitudesInDB: return "[dB]"; break;
         case YValuesPhases: return "[Phase]"; break;
+        default: break;
     }
     return "Неизв.";
 }
