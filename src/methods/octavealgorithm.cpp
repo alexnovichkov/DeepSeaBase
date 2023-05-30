@@ -12,7 +12,7 @@
 
 OctaveAlgorithm::OctaveAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DD0;
+{DD;
     channelF = new ChannelFunction(this);
     octaveF = new OctaveFunction(this);
     saver = new SavingFunction(this);
@@ -53,37 +53,32 @@ OctaveAlgorithm::OctaveAlgorithm(QList<FileDescriptor *> &dataBase, QObject *par
 
     channelF->setFile(dataBase.constFirst());
 
-//    //samplingF отправляет сигнал об изменении "?/triggerChannel"
-//    if (samplingF) connect(samplingF, SIGNAL(parameterChanged(QString,QVariant)),
-//            channelF, SLOT(updateParameter(QString,QVariant)));
-//    //samplingF отправляет сигнал об изменении "?/blockSize"
-//    if (samplingF) connect(samplingF, SIGNAL(parameterChanged(QString,QVariant)),
-//            octaveF, SLOT(updateParameter(QString,QVariant)));
-
     //samplingF отправляет сигнал об изменении "?/triggerChannel"
     connect(samplingF, &AbstractFunction::parameterChanged, channelF, &AbstractFunction::updateParameter);
     //samplingF отправляет сигнал об изменении "?/blockSize"
     connect(samplingF, &AbstractFunction::parameterChanged, octaveF, &AbstractFunction::updateParameter);
+    //averagingF отправляет сигнал об изменении ?/averagingType
+    connect(averagingF, &AbstractFunction::parameterChanged, saver, &AbstractFunction::updateParameter);
 }
 
 QString OctaveAlgorithm::description() const
-{DD0;
+{DD;
     return "Расчет полосовых спектров";
 }
 
 QString OctaveAlgorithm::displayName() const
-{DD0;
+{DD;
     return "OCTF";
 }
 
 void OctaveAlgorithm::resetChain()
-{DD0;
+{DD;
     if (samplingF) samplingF->reset();
     if (averagingF) averagingF->reset();
 }
 
 void OctaveAlgorithm::initChain(FileDescriptor *file)
-{DD0;
+{DD;
     Q_UNUSED(file);
     if (averagingF) averagingF->setParameter(averagingF->name()+"/type", 1); //линейное усреднение
     if (samplingF) samplingF->setParameter(samplingF->name()+"/xStep", file->xStep());

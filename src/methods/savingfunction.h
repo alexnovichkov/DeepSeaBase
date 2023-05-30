@@ -75,6 +75,7 @@ public:
 protected:
     virtual bool m_parameterShowsFor(const QString &parameter) const override;
 private:
+    void updateAvailableTypes();
     FileDescriptor *createFile(FileDescriptor *file);
     FileDescriptor *createDfdFile();
     FileDescriptor *createUffFile();
@@ -87,7 +88,8 @@ private:
     QString sourceFileName;
     QStringList newFiles;
 
-    int type = 2;
+    int type = 2; //тип файла согласно индексу в списке types
+    QStringList availableTypes = {"DFD", "UFF", "D94"}; //список доступных типов
     QString destination;
     bool append = false;
     int precision = 0; // 0=single, 1 = double

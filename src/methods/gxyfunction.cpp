@@ -6,7 +6,7 @@
 
 GxyFunction::GxyFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD0;
+{DD;
 
 }
 
@@ -16,23 +16,23 @@ QString GxyFunction::name() const
 }
 
 QString GxyFunction::description() const
-{DD0;
+{DD;
     return "Взаимный спектр";
 }
 
 QStringList GxyFunction::parameters() const
-{DD0;
+{DD;
     return QStringList();
 }
 
 QString GxyFunction::m_parameterDescription(const QString &property) const
-{DD0;
+{DD;
     Q_UNUSED(property);
     return QString();
 }
 
 QVariant GxyFunction::m_getParameter(const QString &property) const
-{DD0;
+{DD;
     if (property.startsWith("?/")) {
         if (property == "?/dataType") return 131; // отсутствует в DeepSea, APS
         if (property == "?/xName") return "Гц";
@@ -63,7 +63,7 @@ QVariant GxyFunction::m_getParameter(const QString &property) const
 }
 
 DataDescription GxyFunction::getFunctionDescription() const
-{DD0;
+{DD;
     DataDescription result = AbstractFunction::getFunctionDescription();
 
     result.put("function.name", "GXY");
@@ -72,18 +72,18 @@ DataDescription GxyFunction::getFunctionDescription() const
 }
 
 void GxyFunction::m_setParameter(const QString &property, const QVariant &val)
-{DD0;
+{DD;
     Q_UNUSED(property);
     Q_UNUSED(val);
 }
 
 QString GxyFunction::displayName() const
-{DD0;
+{DD;
     return "Автоспектр";
 }
 
 bool GxyFunction::compute(FileDescriptor *file)
-{DD0;
+{DD;
     reset();
 
     if (!m_input || !m_input2) return false;

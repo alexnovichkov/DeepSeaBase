@@ -15,7 +15,7 @@
 
 FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DD0;
+{DD;
     channelF = new ChannelFunction(this, "channel");
     refChannelF = new RefChannelFunction(this, "refChannel");
 
@@ -43,7 +43,6 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     frfF = new FrfFunction(this, "frf");
     saver = new SavingFunction(this, "saver");
 
-    ////
     m_chain << channelF;
     m_chain << saver;
 
@@ -111,17 +110,10 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     //samplingF отправляет сигнал об изменении "?/triggerChannel"
     connect(samplingF, &AbstractFunction::parameterChanged, channelF, &AbstractFunction::updateParameter);
     connect(samplingF, &AbstractFunction::parameterChanged, refChannelF, &AbstractFunction::updateParameter);
-//    connect(resamplingF, SIGNAL(parameterChanged(QString,QVariant)),
-//            samplingF, SLOT(updateParameter(QString,QVariant)));
-//    connect(resamplingF, SIGNAL(parameterChanged(QString,QVariant)),
-//            refSamplingF, SLOT(updateParameter(QString,QVariant)));
-
-//    //samplingF отправляет сигнал об изменении "?/triggerChannel"
-//    connect(samplingF, SIGNAL(parameterChanged(QString,QVariant)),
-//            channelF, SLOT(updateParameter(QString,QVariant)));
-//    //samplingF отправляет сигнал об изменении "?/triggerChannel"
-//    connect(samplingF, SIGNAL(parameterChanged(QString,QVariant)),
-//            refChannelF, SLOT(updateParameter(QString,QVariant)));
+    //averagingF отправляет сигнал об изменении ?/averagingType
+    connect(averagingF, &AbstractFunction::parameterChanged, saver, &AbstractFunction::updateParameter);
+    //frfF отправляет сигнал об изменении ?/dataFormat
+    connect(frfF, &AbstractFunction::parameterChanged, saver, &AbstractFunction::updateParameter);
 
     //начальные значения, которые будут использоваться в показе функций
     resamplingF->setParameter(resamplingF->name()+"/xStep", xStep); //автоматически задает xStep для samplingF
@@ -131,17 +123,17 @@ FRFAlgorithm::FRFAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
 }
 
 QString FRFAlgorithm::description() const
-{DD0;
+{DD;
     return "Передаточная функция";
 }
 
 QString FRFAlgorithm::displayName() const
-{DD0;
+{DD;
     return "FRF";
 }
 
 void FRFAlgorithm::resetChain()
-{DD0;
+{DD;
     resamplingF->reset();
     samplingF->reset();
     windowingF->reset();
@@ -154,7 +146,7 @@ void FRFAlgorithm::resetChain()
 }
 
 void FRFAlgorithm::initChain(FileDescriptor *file)
-{DD0;
+{DD;
     resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());  //автоматически задает xStep для samplingF
 
     int frfType = saver->getParameter("FRF/type").toInt();

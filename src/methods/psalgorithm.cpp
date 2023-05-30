@@ -13,9 +13,8 @@
 
 PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DD0;
+{DD;
     channelF = new ChannelFunction(this);
-//    filteringF = new FilteringFunction(this);
     resamplingF = new ResamplingFunction(this);
     samplingF = new FrameCutterFunction(this);
     windowingF = new WindowingFunction(this);
@@ -26,7 +25,6 @@ PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     m_chain << channelF;
     m_chain << saver;
 
-//    filteringF->setInput(channelF);
     resamplingF->setInput(channelF);
     samplingF->setInput(resamplingF);
     windowingF->setInput(samplingF);
@@ -35,7 +33,6 @@ PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     saver->setInput(averagingF);
 
     m_functions << channelF;
-//    m_functions << filteringF;
     m_functions << resamplingF;
     m_functions << samplingF;
     m_functions << windowingF;
@@ -53,17 +50,12 @@ PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     }
     if (xStepsDiffer) emit message("Файлы имеют разный шаг по оси X.");
 
-//    //resamplingF отправляет сигнал об изменении "?/xStep"
-//    connect(resamplingF, SIGNAL(parameterChanged(QString,QVariant)),
-//            samplingF, SLOT(updateParameter(QString,QVariant)));
-//    //samplingF отправляет сигнал об изменении "?/triggerChannel"
-//    connect(samplingF, SIGNAL(parameterChanged(QString,QVariant)),
-//            channelF, SLOT(updateParameter(QString,QVariant)));
-
     //resamplingF отправляет сигнал об изменении "?/xStep"
     connect(resamplingF, &AbstractFunction::parameterChanged, samplingF, &AbstractFunction::updateParameter);
     //samplingF отправляет сигнал об изменении "?/triggerChannel"
     connect(samplingF, &AbstractFunction::parameterChanged, channelF, &AbstractFunction::updateParameter);
+    //averagingF отправляет сигнал об изменении ?/averagingType
+    connect(averagingF, &AbstractFunction::parameterChanged, saver, &AbstractFunction::updateParameter);
 
     //начальные значения, которые будут использоваться в показе функций
     resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);  //автоматически задает xStep для samplingF
@@ -72,18 +64,18 @@ PsAlgorithm::PsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
 
 
 QString PsAlgorithm::description() const
-{DD0;
+{DD;
     return "Спектр мощности";
 }
 
 
 QString PsAlgorithm::displayName() const
-{DD0;
+{DD;
     return "PS";
 }
 
 void PsAlgorithm::resetChain()
-{DD0;
+{DD;
     samplingF->reset();
     windowingF->reset();
     psF->reset();
@@ -92,6 +84,6 @@ void PsAlgorithm::resetChain()
 }
 
 void PsAlgorithm::initChain(FileDescriptor *file)
-{DD0;
+{DD;
     resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());  //автоматически задает xStep для samplingF
 }

@@ -20,7 +20,7 @@
 
 FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QWidget *parent)
     : QDialog(parent), dataBase(dataBase), win(parent), currentAlgorithm(0)
-{DD0;
+{DD;
     thread_ = 0;
     taskBarProgress = 0;
 
@@ -139,7 +139,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
 }
 
 FilesProcessorDialog::~FilesProcessorDialog()
-{DD0;
+{DD;
     if (currentAlgorithm)
         currentAlgorithm->saveSettings();
 
@@ -154,7 +154,7 @@ FilesProcessorDialog::~FilesProcessorDialog()
 }
 
 void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
-{DD0;
+{DD;
     propertyTree->clear();
     m_manager->clear();
     map.clear();
@@ -172,26 +172,26 @@ void FilesProcessorDialog::methodChanged(QTreeWidgetItem *item)
     if (index < 0 || index >= algorithms.size()) return;
     currentAlgorithm = algorithms[index];
 
+    if (currentAlgorithm) currentAlgorithm->restoreSettings();
+
     // Parsing properties descriptions
     for (AbstractFunction *f: currentAlgorithm->functions()) {
         if (!f->paired()) addProperties(f);
         connect(f, &AbstractFunction::attributeChanged, this, &FilesProcessorDialog::updateParameter);
     }
 
-    if (currentAlgorithm) currentAlgorithm->restoreSettings();
-
     // блокируем сигналы, чтобы при каждом изменении свойства не обновлять все отображения свойств
     // мы это сделаем в самом конце функцией updateVisibleProperties();
-//    m_manager->blockSignals(true);
+    //m_manager->blockSignals(true);
     for (auto [key, value]: asKeyValueRange(map)) {
         key->setValue(currentAlgorithm->getParameter(value.f, value.name));
     }
-//    m_manager->blockSignals(false);
+    //m_manager->blockSignals(false);
     updateVisibleProperties();
 }
 
 void FilesProcessorDialog::updateVisibleProperties()
-{DD0;
+{DD;
     if (!currentAlgorithm) return;
 
     for (QtVariantProperty *property: map.keys()) {
@@ -202,7 +202,7 @@ void FilesProcessorDialog::updateVisibleProperties()
 }
 
 void FilesProcessorDialog::onValueChanged(QtProperty *property, const QVariant &val)
-{DD0;
+{DD;
     if (!currentAlgorithm) return;
 
     Property p = map.value(dynamic_cast<QtVariantProperty*>(property));
@@ -221,13 +221,14 @@ void FilesProcessorDialog::updateParameter(AbstractFunction *f, const QString &p
                 key->setAttribute(attribute, val);
             auto param = currentAlgorithm->getParameter(f, parameter);
             key->setValue(param);
-            updateVisibleProperties();
+
         }
     }
+    updateVisibleProperties();
 }
 
 void FilesProcessorDialog::addProperties(AbstractFunction *f)
-{DD0;
+{DD;
     if (!f) return;
 
     QString parameters = f->parametersDescription();
@@ -293,13 +294,14 @@ void FilesProcessorDialog::addProperties(AbstractFunction *f)
         }
 
         map.insert(p, {f, f->name()+"/"+name});
+        p->setValue(currentAlgorithm->getParameter(f, f->name()+"/"+name));
     }
 
 
 }
 
 void FilesProcessorDialog::accept()
-{DD0;
+{DD;
     newFiles = currentAlgorithm->getNewFiles();
     if (taskBarProgress) taskBarProgress->finalize();
 
@@ -311,25 +313,25 @@ void FilesProcessorDialog::accept()
 }
 
 void FilesProcessorDialog::reject()
-{DD0;
+{DD;
     stop();
     QDialog::reject();
     if (taskBarProgress) taskBarProgress->finalize();
 }
 
 void FilesProcessorDialog::updateProgressIndicator(const QString &path)
-{DD0;
+{DD;
     progress->setValue(QDir(path).count()-2);
 }
 
 void FilesProcessorDialog::updateProgressIndicator()
-{DD0;
+{DD;
     progress->setValue(progress->value()+1);
     taskBarProgress->setValue(progress->value());
 }
 
 void FilesProcessorDialog::start()
-{DD0;
+{DD;
     if (!currentAlgorithm) return;
 
     newFiles.clear();
@@ -357,7 +359,7 @@ void FilesProcessorDialog::start()
 }
 
 void FilesProcessorDialog::stop()
-{DD0;
+{DD;
     if (thread_)
     thread_->requestInterruption();
     QDialog::accept();

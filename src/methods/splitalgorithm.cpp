@@ -6,7 +6,7 @@
 
 SplitAlgorithm::SplitAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DD0;
+{DD;
     channelF = new ChannelFunction(this);
 //    filteringF = new FilteringFunction(this);
     splitF = new SplitFunction(this);

@@ -5,7 +5,7 @@
 
 AveragingFunction::AveragingFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD0;
+{DD;
 
 }
 
@@ -16,17 +16,17 @@ QString AveragingFunction::name() const
 }
 
 QString AveragingFunction::description() const
-{DD0;
+{DD;
     return "Усреднение";
 }
 
 QStringList AveragingFunction::parameters() const
-{DD0;
+{DD;
     return {"type", "maximum"};
 }
 
 QString AveragingFunction::m_parameterDescription(const QString &parameter) const
-{DD0;
+{DD;
     if (parameter == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
                                    "  \"type\"        : \"enum\"   ,"
@@ -49,12 +49,12 @@ QString AveragingFunction::m_parameterDescription(const QString &parameter) cons
 }
 
 QVariant AveragingFunction::m_getParameter(const QString &parameter) const
-{DD0;
+{DD;
     if (parameter.startsWith("?/")) {
-//        if (property == "?/averaging")
-//            return Averaging::averagingDescription(averaging.getAveragingType());
-//        if (property == "?/averagingType")
-//            return averaging.getAveragingType();
+        if (parameter == "?/averaging") //текстовое описание типа усреднения
+            return Averaging::averagingDescription(averaging.getAveragingType());
+        if (parameter == "?/averagingType") //индекс типа усреднения
+            return averaging.getAveragingType();
         if (parameter == "?/zCount") {
             //усреднения нет - возвращаем полное число блоков
             if (averaging.getAveragingType() == 0) return m_input->getParameter("?/zCount");
@@ -75,13 +75,16 @@ QVariant AveragingFunction::m_getParameter(const QString &parameter) const
 }
 
 void AveragingFunction::m_setParameter(const QString &parameter, const QVariant &val)
-{DD0;
+{DD;
     if (!parameter.startsWith(name()+"/")) return;
     QString p = parameter.section("/",1);
     int valInt = val.toInt();
 
     if (p == "type") {
-        averaging.setAveragingType(valInt);
+        //if (averaging.getAveragingType() != valInt) {
+            averaging.setAveragingType(valInt);
+            emit parameterChanged("?/averagingType", valInt);
+        //}
     }
     else if (p == "maximum") {
         averaging.setMaximumAverages(valInt);
@@ -89,7 +92,7 @@ void AveragingFunction::m_setParameter(const QString &parameter, const QVariant 
 }
 
 bool AveragingFunction::m_parameterShowsFor(const QString &parameter) const
-{DD0;
+{DD;
     if (parameter == "maximum")
         return (averaging.getAveragingType() != Averaging::NoAveraging);
 
@@ -98,7 +101,7 @@ bool AveragingFunction::m_parameterShowsFor(const QString &parameter) const
 
 
 QString AveragingFunction::displayName() const
-{DD0;
+{DD;
     return "Усреднение";
 }
 
@@ -114,7 +117,7 @@ QString AveragingFunction::displayName() const
 //}
 
 bool AveragingFunction::compute(FileDescriptor *file)
-{DD0;
+{DD;
     if (!m_input) return false;
     LOG(INFO) << QString("Запуск расчета для функции усреднения");
 
@@ -141,12 +144,12 @@ bool AveragingFunction::compute(FileDescriptor *file)
 }
 
 void AveragingFunction::reset()
-{DD0;
+{DD;
     averaging.reset();
 }
 
 DataDescription AveragingFunction::getFunctionDescription() const
-{DD0;
+{DD;
     DataDescription result = AbstractFunction::getFunctionDescription();
 
     if (averaging.getAveragingType() != Averaging::NoAveraging) {

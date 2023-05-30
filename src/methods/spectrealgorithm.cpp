@@ -13,29 +13,25 @@
 
 SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DD0;
+{DD;
     channelF = new ChannelFunction(this);
-//    filteringF = new FilteringFunction(this);
     resamplingF = new ResamplingFunction(this);
+    resamplingF->setInput(channelF);
     samplingF = new FrameCutterFunction(this);
+    samplingF->setInput(resamplingF);
     windowingF = new WindowingFunction(this);
-    averagingF = new AveragingFunction(this);
+    windowingF->setInput(samplingF);
     fftF = new FftFunction(this);
+    fftF->setInput(windowingF);
+    averagingF = new AveragingFunction(this);
+    averagingF->setInput(fftF);
     saver = new SavingFunction(this);
+    saver->setInput(averagingF);
 
     m_chain << channelF;
     m_chain << saver;
 
-//    filteringF->setInput(channelF);
-    resamplingF->setInput(channelF);
-    samplingF->setInput(resamplingF);
-    windowingF->setInput(samplingF);
-    fftF->setInput(windowingF);
-    averagingF->setInput(fftF);
-    saver->setInput(averagingF);
-
     m_functions << channelF;
-//    m_functions << filteringF;
     m_functions << resamplingF;
     m_functions << samplingF;
     m_functions << windowingF;
@@ -61,11 +57,8 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
 
     //fftF отправляет сигнал об изменении ?/dataFormat
     connect(fftF, &AbstractFunction::parameterChanged, saver, &AbstractFunction::updateParameter);
-
-//    connect(resamplingF, SIGNAL(parameterChanged(QString,QVariant)),
-//            samplingF, SLOT(updateParameter(QString,QVariant)));
-//    connect(samplingF, SIGNAL(parameterChanged(QString,QVariant)),
-//            channelF, SLOT(updateParameter(QString,QVariant)));
+    //averagingF отправляет сигнал об изменении ?/averagingType
+    connect(averagingF, &AbstractFunction::parameterChanged, saver, &AbstractFunction::updateParameter);
 
     //начальные значения, которые будут использоваться в показе функций
     resamplingF->setParameter(resamplingF->name()+"/xStep", xStep);  //автоматически задает xStep для samplingF
@@ -74,18 +67,18 @@ SpectreAlgorithm::SpectreAlgorithm(QList<FileDescriptor *> &dataBase, QObject *p
 
 
 QString SpectreAlgorithm::description() const
-{DD0;
+{DD;
     return "Спектр";
 }
 
 
 QString SpectreAlgorithm::displayName() const
-{DD0;
+{DD;
     return "FFT";
 }
 
 void SpectreAlgorithm::resetChain()
-{DD0;
+{DD;
     //        filteringF->reset();
     resamplingF->reset();
     samplingF->reset();
@@ -95,6 +88,6 @@ void SpectreAlgorithm::resetChain()
 }
 
 void SpectreAlgorithm::initChain(FileDescriptor *file)
-{DD0;
+{DD;
     resamplingF->setParameter(resamplingF->name()+"/xStep", file->xStep());  //автоматически задает xStep для samplingF
 }

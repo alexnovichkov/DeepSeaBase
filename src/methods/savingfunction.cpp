@@ -10,21 +10,10 @@
 
 #include "logging.h"
 
-//returns "d94" by default
-QString getSuffixByType(int type)
-{DD0;
-    switch (type) {
-        case SavingFunction::DfdFile: return "dfd";
-        case SavingFunction::UffFile: return "uff";
-        case SavingFunction::D94File: return "d94";
-    }
-    return "d94";
-}
-
 SavingFunction::SavingFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD0;
-
+{DD;
+    updateAvailableTypes();
 }
 
 
@@ -34,33 +23,35 @@ QString SavingFunction::name() const
 }
 
 QString SavingFunction::displayName() const
-{DD0;
+{DD;
     return "Записывать результат";
 }
 
 QString SavingFunction::description() const
-{DD0;
+{DD;
     return "Сохранение файлов";
 }
 
 QStringList SavingFunction::parameters() const
-{DD0;
+{DD;
     return {"append", "type", "precision", "destination"};
 }
 
 QString SavingFunction::m_parameterDescription(const QString &property) const
-{DD0;
+{DD;
     if (property == "type") {
-        return "{"
+        QStringList types = availableTypes;
+        for (QString &type: types) type = "\""+type+"\"";
+        return QString("{"
                "  \"name\"        : \"type\"   ,"
                "  \"type\"        : \"enum\"   ,"
                "  \"displayName\" : \"Тип файла\"   ,"
                "  \"defaultValue\": 0         ,"
                "  \"toolTip\"     : \"DFD | UFF | D94\","
-               "  \"values\"      : [\"DFD\", \"UFF\", \"D94\"],"
+               "  \"values\"      : [%1],"
                "  \"minimum\"     : 0,"
                "  \"maximum\"     : 0"
-               "}";
+               "}").arg(types.join(","));
     }
     if (property == "destination") return "{"
                                      "  \"name\"        : \"destination\"   ,"
@@ -91,7 +82,7 @@ QString SavingFunction::m_parameterDescription(const QString &property) const
 }
 
 QVariant SavingFunction::m_getParameter(const QString &parameter) const
-{DD0;
+{DD;
     if (parameter.startsWith("?/")) {
         // do not know anything about these broadcast properties, propagating
         if (m_input) return m_input->getParameter(parameter);
@@ -111,27 +102,45 @@ QVariant SavingFunction::m_getParameter(const QString &parameter) const
 }
 
 void SavingFunction::m_setParameter(const QString &parameter, const QVariant &val)
-{DD0;
+{DD;
     if (!parameter.startsWith(name()+"/")) return;
     QString p = parameter.section("/",1);
 
     if (p == "type") type = val.toInt();
     else if (p == "destination") destination = val.toString();
-    else if (p == "append") append = val.toBool();
+    else if (p == "append") {
+        if (append != val.toBool()) {
+            append = val.toBool();
+            updateAvailableTypes();
+            emit attributeChanged(this, name()+"/type", availableTypes, "enumNames");
+        }
+    }
     else if (p == "precision") precision = val.toInt();
 }
 
 bool SavingFunction::m_parameterShowsFor(const QString &p) const
-{DD0;
+{DD;
     if (p == "type") return !append;
     if (p == "destination") return !append;
-    if (p == "precision") return type==SavingFunction::D94File;
+    if (p == "precision") return availableTypes.value(type, "D94") == "D94";
 
     return true;
 }
 
+void SavingFunction::updateAvailableTypes()
+{
+    QStringList availableTypes = {"DFD", "UFF", "D94"};
+    if (m_input) {
+        auto val = m_input->getParameter("?/dataFormat").toString();
+        auto averagingType = m_input->getParameter("?/averagingType").toInt();
+        if (val == "complex" || averagingType == 0 /*no averaging*/ || append)
+            availableTypes.removeFirst();
+    }
+    this->availableTypes = availableTypes;
+}
+
 bool SavingFunction::compute(FileDescriptor *file)
-{DD0;
+{DD;
     /* что нужно для сохранения:
      * 1. тип файла
      * 2. папка, куда сохранять файл - конструируется из имени исходного файла
@@ -161,7 +170,7 @@ bool SavingFunction::compute(FileDescriptor *file)
             QString fileName = file->fileName();
             QString method = m_input->getParameter("?/functionDescription").toString();
             newFileName = createUniqueFileName(destination, fileName, method,
-                                               getSuffixByType(type), true);
+                                               availableTypes.value(type, "D94").toLower(), true);
 
             m_file = createFile(file);
         }
@@ -252,7 +261,7 @@ bool SavingFunction::compute(FileDescriptor *file)
         description.put(key, val);
     description.put("function.precision", precision==0?"float":"double");
 
-    if (type == DfdFile && blocksCount > 1) {
+    if (availableTypes.value(type, "D94") == "DFD" && blocksCount > 1) {
         emit message("ВНИМАНИЕ! При сохранении сонограммы в файл DFD будет сохранен только первый блок!");
     }
 
@@ -262,7 +271,7 @@ bool SavingFunction::compute(FileDescriptor *file)
 }
 
 void SavingFunction::reset()
-{DD0;
+{DD;
     // вызывается для каждого файла в базе
     //1. настраивает выходное название файла
     //2. подготавливает данные для выходного файла
@@ -285,14 +294,15 @@ void SavingFunction::reset()
 }
 
 FileDescriptor *SavingFunction::createFile(FileDescriptor *file)
-{DD0;
+{DD;
     FileDescriptor *f = nullptr;
-    switch (type) {
-        case DfdFile: f = createDfdFile(); break;
-        case UffFile: f = createUffFile(); break;
-        case D94File: f = createD94File(); break;
-        default: break;
-    }
+    if (auto t = availableTypes.value(type, "D94"); t == "DFD")
+        f = createDfdFile();
+    else if (t == "UFF")
+        f = createUffFile();
+    else if (t == "D94")
+        f = createD94File();
+
     if (f) {
         f->setDataDescription(file->dataDescription());
         f->updateDateTimeGUID();
@@ -307,7 +317,7 @@ FileDescriptor *SavingFunction::createFile(FileDescriptor *file)
 }
 
 FileDescriptor *SavingFunction::createDfdFile()
-{DD0;
+{DD;
     int dataType = m_input->getParameter("?/dataType").toInt();
 
     DfdFileDescriptor *newDfd = DfdFileDescriptor::newFile(newFileName, DfdDataType(dataType));
@@ -324,17 +334,17 @@ FileDescriptor *SavingFunction::createDfdFile()
 }
 
 FileDescriptor *SavingFunction::createUffFile()
-{DD0;
+{DD;
     return new UffFileDescriptor(newFileName);
 }
 
 FileDescriptor *SavingFunction::createD94File()
-{DD0;
+{DD;
     return new Data94File(newFileName);
 }
 
 FileIO *SavingFunction::createFileIO(FileDescriptor *file)
-{DD0;
+{DD;
     DataDescription d = file->dataDescription();
     QString channels = m_input->getParameter("?/channels").toString();
     d.put("source.file", file->fileName());
@@ -344,16 +354,12 @@ FileIO *SavingFunction::createFileIO(FileDescriptor *file)
 
 
     FileIO *f = nullptr;
-    switch (type) {
-        case DfdFile: {
+    if (availableTypes.value(type, "D94") == "DFD") {
             f = new DfdIO(d, newFileName, this);
             int dataType = m_input->getParameter("?/dataType").toInt();
             f->setParameter("dataType", dataType);
-            break;
-        }
 //        case UffFile: f = new UffIO(d, newFileName, this); break;
 //        case D94File: f = new D94IO(d, newFileName, this); break;
-        default: break;
     }
     if (f) {
         //f->updateDateTimeGUID();
@@ -363,8 +369,10 @@ FileIO *SavingFunction::createFileIO(FileDescriptor *file)
 
 
 void SavingFunction::updateParameter(const QString &parameter, const QVariant &val)
-{DD0;
-    if (parameter == "?/dataFormat") {
-
+{DD;
+    Q_UNUSED(val);
+    if (parameter == "?/dataFormat" || parameter == "?/averagingType") {
+        updateAvailableTypes();
+        emit attributeChanged(this, name()+"/type", availableTypes, "enumNames");
     }
 }

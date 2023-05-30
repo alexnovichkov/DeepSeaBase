@@ -7,7 +7,7 @@
 
 FilteringAlgorithm::FilteringAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent)
     : AbstractAlgorithm(dataBase, parent)
-{DD0;
+{DD;
     channelF = new ChannelFunction(this);
     filteringF = new FilteringFunction(this);
     saver = new SavingFunction(this);
@@ -26,21 +26,21 @@ FilteringAlgorithm::FilteringAlgorithm(QList<FileDescriptor *> &dataBase, QObjec
 }
 
 QString FilteringAlgorithm::description() const
-{DD0;
+{DD;
     return "Фильтр временных данных";
 }
 
 QString FilteringAlgorithm::displayName() const
-{DD0;
+{DD;
     return "FILT";
 }
 
 void FilteringAlgorithm::resetChain()
-{DD0;
+{DD;
     filteringF->reset();
 }
 
 void FilteringAlgorithm::initChain(FileDescriptor *file)
-{DD0;
+{DD;
     Q_UNUSED(file);
 }

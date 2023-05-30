@@ -11,7 +11,7 @@
 
 WindowingAlgorithm::WindowingAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     AbstractAlgorithm(dataBase, parent)
-{DD0;
+{DD;
     channelF = new ChannelFunction(this);
     samplingF = new FrameCutterFunction(this);
     windowingF = new WindowingFunction(this);
@@ -48,22 +48,22 @@ WindowingAlgorithm::WindowingAlgorithm(QList<FileDescriptor *> &dataBase, QObjec
 }
 
 QString WindowingAlgorithm::description() const
-{DD0;
+{DD;
     return "Оконная функция";
 }
 
 QString WindowingAlgorithm::displayName() const
-{DD0;
+{DD;
     return "WIN";
 }
 
 void WindowingAlgorithm::resetChain()
-{DD0;
+{DD;
     samplingF->reset();
     windowingF->reset();
 }
 
 void WindowingAlgorithm::initChain(FileDescriptor *file)
-{DD0;
+{DD;
     samplingF->setParameter(samplingF->name()+"/xStep", file->xStep());
 }

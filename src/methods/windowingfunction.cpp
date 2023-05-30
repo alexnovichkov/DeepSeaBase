@@ -5,7 +5,7 @@
 
 WindowingFunction::WindowingFunction(QObject *parent, const QString &name) :
     AbstractFunction(parent, name)
-{DD0;
+{DD;
 
 }
 
@@ -16,17 +16,17 @@ QString WindowingFunction::name() const
 }
 
 QString WindowingFunction::description() const
-{DD0;
+{DD;
     return "Применение оконной функции";
 }
 
 QStringList WindowingFunction::parameters() const
-{DD0;
+{DD;
     return {"type","parameter","correction"};
 }
 
 QString WindowingFunction::m_parameterDescription(const QString &parameter) const
-{DD0;
+{DD;
     if (parameter == "type") return "{"
                                    "  \"name\"        : \"type\"   ,"
                                    "  \"type\"        : \"enum\"   ,"
@@ -61,7 +61,7 @@ QString WindowingFunction::m_parameterDescription(const QString &parameter) cons
 }
 
 QVariant WindowingFunction::m_getParameter(const QString &parameter) const
-{DD0;
+{DD;
     if (parameter.startsWith("?/")) {
         if (parameter == "?/functionDescription") return "WIN";
 //        if (property == "?/windowDescription") return Windowing::windowDescription(windowing.getWindowType());
@@ -82,7 +82,7 @@ QVariant WindowingFunction::m_getParameter(const QString &parameter) const
 }
 
 DataDescription WindowingFunction::getFunctionDescription() const
-{DD0;
+{DD;
     DataDescription result = AbstractFunction::getFunctionDescription();
 
     result.put("function.name", "WIN");
@@ -95,7 +95,7 @@ DataDescription WindowingFunction::getFunctionDescription() const
 }
 
 void WindowingFunction::m_setParameter(const QString &parameter, const QVariant &val)
-{DD0;
+{DD;
     if (!parameter.startsWith(name()+"/")) return;
     QString p = parameter.section("/",1);
 
@@ -108,19 +108,19 @@ void WindowingFunction::m_setParameter(const QString &parameter, const QVariant 
 }
 
 bool WindowingFunction::m_parameterShowsFor(const QString &p) const
-{DD0;
+{DD;
     if (p == "parameter") return (windowing.windowAcceptsParameter(windowing.getWindowType()));
     return true;
 }
 
 QString WindowingFunction::displayName() const
-{DD0;
+{DD;
     return "Окно";
 }
 
 
 bool WindowingFunction::compute(FileDescriptor *file)
-{DD0;
+{DD;
     reset();
 
     LOG(INFO) << QString("Запуск расчета для оконной функции");
@@ -138,18 +138,18 @@ bool WindowingFunction::compute(FileDescriptor *file)
 }
 
 void WindowingFunction::reset()
-{DD0;
+{DD;
     output.clear();
 }
 
 RefWindowingFunction::RefWindowingFunction(QObject *parent, const QString &name)
     : WindowingFunction(parent, name)
-{DD0;
+{DD;
 
 }
 
 QString RefWindowingFunction::displayName() const
-{DD0;
+{DD;
     return "Опорное окно";
 }
 
