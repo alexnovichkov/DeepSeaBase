@@ -52,7 +52,7 @@ QVector<double> decimate(const QVector<double> &x, int q)
 
 QVector<QVector<double>> OctaveFilterBank::compute(QVector<double> timeData, double sampleRate, double logref)
 {DD;
-    int N = 8;  // Order of analysis filters.
+    int N = 20;  // Order of analysis filters.
     int decimation = 10; //величина децимации
     int decimationFactor = 200; // All filters below range Fc/decimationFactor will be implemented after a decimation.
 
