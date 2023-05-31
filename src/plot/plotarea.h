@@ -21,6 +21,7 @@ public:
     Plot* plot();
     void addPlot(Enums::PlotType type);
     static Enums::PlotType getPlotType(const QVector<Channel*> &channels);
+    static bool plotTypesCompatible(Enums::PlotType first, Enums::PlotType second);
 
     void update();
 

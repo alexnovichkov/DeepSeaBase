@@ -283,6 +283,16 @@ Enums::PlotType PlotArea::getPlotType(const QVector<Channel *> &channels)
     return type;
 }
 
+bool PlotArea::plotTypesCompatible(Enums::PlotType first, Enums::PlotType second)
+{
+    if (first == second) return true;
+    if (first == Enums::PlotType::Octave && second == Enums::PlotType::General)
+        return true;
+    if (second == Enums::PlotType::Octave && first == Enums::PlotType::General)
+        return true;
+    return false;
+}
+
 void PlotArea::update()
 {DD;
     if (m_plot) m_plot->update();
