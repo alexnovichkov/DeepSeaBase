@@ -1,9 +1,6 @@
 #include "channelpropertiesdialog.h"
 #include "fileformats/filedescriptor.h"
 #include <QtWidgets>
-//#include <QJsonDocument>
-//#include <QtTreePropertyBrowser>
-//#include <QtVariantPropertyManager>
 
 #include "settings.h"
 #include "logging.h"
@@ -279,7 +276,7 @@ void ChannelPropertiesDialog::currentChannelChanged(QTreeWidgetItem *cur, QTreeW
             functionProperties.clear();
             for (const auto [key, val]: asKeyValueRange(data)) {
                 Q_UNUSED(val);
-                functionProperties.append({key, "function."+key, nullptr, nullptr});
+                functionProperties.append({displayName(key), "function."+key, nullptr, nullptr});
             }
             for (int i=0; i<functionProperties.size(); ++i) {
                 auto &p = functionProperties[i];
@@ -322,5 +319,34 @@ void ChannelPropertiesDialog::addProperty(QFormLayout *l, ChannelProperty &p)
     ll->addWidget(p.check);
     ll->addWidget(p.edit);
     l->addRow(p.displayName, ll);
+}
+
+QString ChannelPropertiesDialog::displayName(const QString &property)
+{
+    if (property == "name") return "Название";
+    if (property == "type") return "Тип";
+    if (property == "description") return "Описание";
+    if (property == "logref") return "Пороговое значение";
+    if (property == "logscale") return "Шкала";
+    if (property == "responseName") return "Название канала отклика";
+    if (property == "responseDirection") return "Направление канала отклика";
+    if (property == "responseNode") return "Узел канала отклика";
+    if (property == "referenceName") return "Название опорного канала";
+    if (property == "referenceNode") return "Узел опорного канала";
+    if (property == "referenceDescription") return "Описание опорного канала";
+    if (property == "referenceDirection") return "Направление опорного канала";
+    if (property == "format") return "Формат данных";
+    if (property == "precision") return "Точность данных";
+    if (property == "octaveFormat") return "Тип октавы";
+    if (property == "weighting") return "Взвешивание";
+    if (property == "averaging") return "Усреднение";
+    if (property == "averagingCount") return "Количество усреднений";
+    if (property == "window") return "Окно";
+    if (property == "windowParameter") return "Параметр окна";
+    if (property == "blockSize") return "Размер блока";
+    if (property == "channels") return "Каналы источника";
+    if (property == "frameCutterType") return "Выборка блоков";
+    if (property == "windowCorrection") return "Коррекция окна";
+    return property;
 }
 

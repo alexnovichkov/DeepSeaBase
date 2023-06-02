@@ -52,6 +52,7 @@ private:
     void currentChannelChanged(QTreeWidgetItem *cur, QTreeWidgetItem *previous);
     void addProperty(QFormLayout *l, ChannelProperty &p);
     void removeProperty();
+    static QString displayName(const QString &property);
     QVector<Channel *> channels;
 
     QLabel *file;
@@ -69,15 +70,7 @@ private:
     QVector<ChannelProperty> descriptionProperties;
     QVector<DataProperty> dataProperties;
 
-
-//    QtTreePropertyBrowser *propertyTree;
-//    QtVariantPropertyManager *m_manager;
-//    QtVariantEditorFactory *m_factory;
-
-
     int current=0;
-    //int currentEditedIndex = -1;
-//    QString currentValue;
     CurrentEdited currentEdited;
 };
 
