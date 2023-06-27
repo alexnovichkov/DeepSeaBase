@@ -1949,8 +1949,46 @@ void MainWindow::saveVerticalSlice(double frequency)
 
 void MainWindow::rescanBase()
 {DD;
-    // first we delete all curves affected
     const auto m = m_DockManager->dockWidgetsMap();
+
+    //определяем, были ли изменения
+    bool changed = false;
+    for (const auto &w: m.values()) {
+        if (Tab *t = qobject_cast<Tab *>(w->widget()); t && t->model->changed()) {
+            changed = true;
+            break;
+        }
+    }
+
+    if (changed) {
+        //спрашиваем, сохранять ли файлы
+        QMessageBox msgBox(QMessageBox::Question,
+                           tr("Deepsea Base"),
+                           tr("Были изменены некоторые файлы."),
+                           QMessageBox::NoButton,
+                           this);
+        msgBox.setInformativeText(tr("Сохранить изменения?"));
+        QPushButton *saveB=msgBox.addButton(tr("Да, сохранить"),QMessageBox::YesRole);
+        saveB->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogSaveButton));
+        QPushButton *discB=msgBox.addButton(tr("Нет, сбросить изменения"),QMessageBox::NoRole);
+        discB->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogDiscardButton));
+        QPushButton *cancB=msgBox.addButton(QMessageBox::Cancel);
+        cancB->setIcon(qApp->style()->standardIcon(QStyle::SP_DialogCancelButton));
+        msgBox.setDefaultButton(saveB);
+        msgBox.setEscapeButton(cancB);
+        msgBox.setWindowModality(Qt::WindowModal);
+        msgBox.exec();
+
+        if (msgBox.clickedButton() == cancB) return;
+        if (msgBox.clickedButton() == discB) {
+            for (const auto &w: m) {
+                if (Tab *t = qobject_cast<Tab *>(w->widget()))
+                    t->model->discardChanges();
+            }
+        }
+    }
+
+    // first we delete all curves affected
     for (auto w: m.values()) {
         if (auto area = dynamic_cast<PlotArea*>(w)) {
             if (area->plot()) {

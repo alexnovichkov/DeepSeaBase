@@ -1,0 +1,52 @@
+QLineEdit {
+      //border: 1px solid gray;
+      //border-radius: 2px;
+      padding: 0;
+      //background: yellow;
+      selection-background-color: darkgray;
+}
+QLineEdit:!read-only {
+      border: 1px solid rgb(0,213,242);
+}
+QLineEdit:read-only {
+      border: 1px solid rgb(210,210,210);
+}
+QLineEdit:!enabled {
+      border: 1px solid rgb(210,210,210);
+}
+QComboBox {
+      border: none; padding: 4px 18px 1px 3px;
+}
+QComboBox:editable {
+      background: white;
+}
+QComboBox:!editable, QComboBox::drop-down:editable {
+      background: rgb(228,228,228);
+}
+QComboBox:!editable:on, QComboBox::drop-down:editable:on {
+      background: rgb(205,205,205);
+}
+QComboBox:on {
+      padding-left: 7px;
+}
+QComboBox:hover {
+      background: rgb(246,246,246);
+}
+QComboBox::drop-down {
+      subcontrol-origin: padding;
+      subcontrol-position: top right;
+      padding-right:8px;
+      width: 16px;
+      border-left-width: 1px;
+      border-left-color: darkgray;
+      border-left-style: none;
+}
+QComboBox::down-arrow {
+      image: url(:/icons/go-down-gray.svg);
+}
+QCheckBox {
+      height:30px; 
+      padding-left:4px; 
+      padding-right:4px; 
+      //background-color: rgb(228,228,228)
+}

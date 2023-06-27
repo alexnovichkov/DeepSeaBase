@@ -86,5 +86,8 @@
         <file>icons/ssTriangleInverted.png</file>
         <file>icons/wav.svg</file>
         <file>icons/anp.svg</file>
+        <file>icons/go-down-gray.svg</file>
+        <file>icons/checkbox-checked.png</file>
+        <file>icons/checkbox-checked.svg</file>
     </qresource>
 </RCC>

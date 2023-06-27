@@ -7,6 +7,7 @@
 #include "colorselector.h"
 #include "logging.h"
 #include "settings.h"
+#include "qeasysettings.hpp"
 
 Application::Application(int &argc, char **argv) : QApplication(argc, argv)
 {DD;
@@ -14,6 +15,52 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
     QVariantList list = Settings::getSetting("colors").toList();
     m_colors = std::make_unique<ColorSelector>(list);
     formatFactory = std::make_unique<FormatFactory>();
+
+//#ifdef APP_PORTABLE
+//    QEasySettings::init(QEasySettings::Format::iniFormat, "DeepSea Database");
+//#else
+//    QEasySettings::init(QEasySettings::Format::regFormat, "DeepSea Database");
+//#endif
+
+//    //reading and applying style
+//    QFile cssFile("qtstyle.css");
+//    if (cssFile.open(QFile::Text | QFile::ReadOnly)) {
+//        QString style = cssFile.readAll();
+//        setStyleSheet(style);
+//    }
+
+//    QEasySettings::writeStyle(QEasySettings::Style::autoFusion);
+//    auto currentStyle = QEasySettings::readStyle();
+//    QEasySettings::setStyle(currentStyle);
+
+//    QString themePrefix;
+//    //follow system theme
+//    if (currentStyle == QEasySettings::Style::autoFusion) {
+//        QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+//                           QSettings::NativeFormat);
+//        if(settings.value("AppsUseLightTheme")==0)
+//            themePrefix = "[dark]";
+//        else
+//            themePrefix = "[light]";
+//    }
+//    else if (currentStyle == QEasySettings::Style::darkFusion)
+//        themePrefix = "[dark]";
+//    else {
+//        themePrefix = "[light]";
+//    }
+//    if (themePrefix == "[light]") alternateTextColor = "#505050";
+//    if (themePrefix == "[dark]") alternateTextColor = "#b0b0b0";
+
+//    //some icon themes may have no dark mode
+//    iconTheme = se->value(QSL("iconTheme"),QSL("maia")).toString();
+//    if (QFileInfo::exists("icons/"+iconTheme+themePrefix)) {
+//        QIcon::setThemeName(iconTheme+themePrefix);
+//        isDarkTheme = themePrefix == "[dark]";
+//    }
+//    else
+//        QIcon::setThemeName(iconTheme);
+
+    //setStyle(new MyProxyStyle(style()));
 }
 
 Application::~Application()

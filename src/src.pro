@@ -430,6 +430,11 @@ DEFINES += ELPP_QT_LOGGING    \
           ELPP_FEATURE_PERFORMANCE_TRACKING
 INCLUDEPATH *= $$PWD/../3rdParty/easylogging
 
+# these files are used to add the styles support into Windows
+# so far only classic, vista & fusion styles are supported.
+HEADERS += qeasysettings.hpp
+SOURCES += qeasysettings.cpp
+
 RESOURCES *= src.qrc
 
 #RC_FILE *= src.rc
