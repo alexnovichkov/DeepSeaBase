@@ -119,8 +119,14 @@ void QCPCursorSingle::detach()
 {DD;
     m_plot->removeSelectable(cursor);
     cursor->detach();
-    if (axisTagX) axisTagX->detach();
-    if (axisTagY) axisTagY->detach();
+    if (axisTagX) {
+        m_plot->removeSelectable(axisTagX);
+        axisTagX->detach();
+    }
+    if (axisTagY) {
+        m_plot->removeSelectable(axisTagY);
+        axisTagY->detach();
+    }
 }
 
 bool QCPCursorSingle::contains(Selectable *selected) const

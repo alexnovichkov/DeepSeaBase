@@ -236,8 +236,15 @@ void QCPCursorDouble::detach()
     m_cursor1->detach();
     m_cursor2->detach();
     m_plot->impl()->removeItem(m_zone);
-    if (m_axisTag1) m_axisTag1->detach();
-    if (m_axisTag2) m_axisTag2->detach();
+    if (m_axisTag1) {
+        m_plot->removeSelectable(m_axisTag1);
+        m_axisTag1->detach();
+    }
+
+    if (m_axisTag2) {
+        m_plot->removeSelectable(m_axisTag2);
+        m_axisTag2->detach();
+    }
 }
 
 bool QCPCursorDouble::contains(Selectable *selected) const

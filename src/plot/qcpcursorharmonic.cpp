@@ -123,6 +123,7 @@ void QCPCursorHarmonic::detach()
 {DD;
     m_plot->removeSelectable(cursor);
     cursor->detach();
+    m_plot->removeSelectable(label);
     label->detach();
     for (int i=0; i<m_harmonics; ++i) {
         cursors[i]->detach();
