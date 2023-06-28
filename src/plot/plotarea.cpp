@@ -22,39 +22,51 @@ PlotArea::PlotArea(int index, QWidget *parent)
     setFeature(ads::CDockWidget::CustomCloseHandling, true);
     setFeature(ads::CDockWidget::DockWidgetFocusable, true);
 
+    bool toggleAutoscaleAtStartup = false;
+
     autoscaleXAct = new QAction("Автомасштабирование по оси X", this);
     autoscaleXAct->setIcon(QIcon(":/icons/autoscale-x.png"));
     autoscaleXAct->setCheckable(true);
-    bool autoscale = Settings::getSetting("autoscale-x", true).toBool();
+
     connect(autoscaleXAct, &QAction::toggled, [this](bool toggled){
         if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atBottom /* x axis */,toggled);
         Settings::setSetting("autoscale-x", toggled);
     });
-    autoscaleXAct->setChecked(autoscale);
-    if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atBottom /* x axis */, autoscale);
 
     autoscaleYAct = new QAction("Автомасштабирование по оси Y", this);
     autoscaleYAct->setIcon(QIcon(":/icons/autoscale-y-main.png"));
     autoscaleYAct->setCheckable(true);
-    autoscale = Settings::getSetting("autoscale-y", true).toBool();
     connect(autoscaleYAct, &QAction::toggled, [this](bool toggled){
         if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atLeft /* y axis */,toggled);
         Settings::setSetting("autoscale-y", toggled);
     });
-    autoscaleYAct->setChecked(autoscale);
-    if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atLeft /* y axis */, autoscale);
-
 
     autoscaleYSlaveAct = new QAction("Автомасштабирование по правой оси Y", this);
     autoscaleYSlaveAct->setIcon(QIcon(":/icons/autoscale-y-slave.png"));
     autoscaleYSlaveAct->setCheckable(true);
-    autoscale = Settings::getSetting("autoscale-y-slave", true).toBool();
     connect(autoscaleYSlaveAct, &QAction::toggled, [this](bool toggled){
         if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atRight /* y slave axis */,toggled);
         Settings::setSetting("autoscale-y-slave", toggled);
     });
-    autoscaleYSlaveAct->setChecked(autoscale);
-    if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atRight /* y slave axis */, autoscale);
+
+    if (toggleAutoscaleAtStartup) {
+        bool autoscale = Settings::getSetting("autoscale-x", true).toBool();
+        autoscaleXAct->setChecked(autoscale);
+        if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atBottom /* x axis */, autoscale);
+
+        autoscale = Settings::getSetting("autoscale-y", true).toBool();
+        autoscaleYAct->setChecked(autoscale);
+        if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atLeft /* y axis */, autoscale);
+
+        autoscale = Settings::getSetting("autoscale-y-slave", true).toBool();
+        autoscaleYSlaveAct->setChecked(autoscale);
+        if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atRight /* y slave axis */, autoscale);
+    }
+    else {
+        autoscaleXAct->setChecked(true);
+        autoscaleYAct->setChecked(true);
+        autoscaleYSlaveAct->setChecked(true);
+    }
 
     autoscaleAllAct  = new QAction("Автомасштабирование по всем осям", this);
     autoscaleAllAct->setIcon(QIcon(":/icons/autoscale-all.png"));
