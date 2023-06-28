@@ -117,6 +117,7 @@ private slots:
 
     void onPluginTriggered(const QString &pluginKey);
 private:
+    void saveTabsState();
     void createActions();
     void createConvertPluginsMenu(QMenu *menu);
     QString getFolderToAdd(bool withSubfolders);

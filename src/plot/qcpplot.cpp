@@ -31,7 +31,6 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     setAcceptDrops(true);
     setFocusPolicy(Qt::StrongFocus);
 
-
     linTicker.reset(new QCPAxisTicker);
     logTicker.reset(new QCPAxisTickerLog);
     logTicker->setLogBase(2);

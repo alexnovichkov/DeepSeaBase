@@ -16,7 +16,6 @@
 #include "sortfiltermodel.h"
 #include "filterheaderview.h"
 #include "wavexportdialog.h"
-#include "filehandler.h"
 #include "methods/averaging.h"
 
 #include <ActiveQt/ActiveQt>
@@ -677,6 +676,7 @@ void MainWindow::addFolder() /*SLOT*/
     if (auto folder = getFolderToAdd(false /*with subfolders*/); addFolder(folder, false /*with subfolders*/, false /*silent*/)) {
         currentTab->fileHandler->trackFolder(folder, false);
         LOG(INFO) << QString("Добавлена папка ")<<folder;
+        saveTabsState();
     }
 }
 
@@ -685,6 +685,7 @@ void MainWindow::addFolderWithSubfolders() /*SLOT*/
     if (auto folder = getFolderToAdd(true /*with subfolders*/); addFolder(folder, true /*with subfolders*/, false /*silent*/)) {
         currentTab->fileHandler->trackFolder(folder, true);
         LOG(INFO) << QString("Добавлена папка ")<<folder;
+        saveTabsState();
     }
 }
 
@@ -705,8 +706,10 @@ void MainWindow::addFile()
         const QStringList fileNames = dialog.selectedFiles();
         if (fileNames.isEmpty()) return;
         Settings::setSetting("lastDirectory", fileNames.constFirst());
-        if (addFiles(fileNames))
+        if (addFiles(fileNames)) {
             currentTab->fileHandler->trackFiles(fileNames);
+            saveTabsState();
+        }
     }
 }
 
@@ -764,6 +767,7 @@ void MainWindow::deleteFiles()
 
     if (currentTab->model->size() == 0)
         currentTab->fileHandler->clear();
+    saveTabsState();
 }
 
 void MainWindow::deleteChannels() /** SLOT */
@@ -1146,6 +1150,7 @@ bool MainWindow::copyChannels(const QVector<Channel *> source)
         else {
             addFile(destination);
             currentTab->fileHandler->trackFiles({file});
+            saveTabsState();
         }
     }
     return true;
@@ -1368,6 +1373,7 @@ void MainWindow::convertMatFiles()
     connect(&dialog, &MatlabConverterDialog::filesConverted, [=](const QStringList &files){
         this->addFiles(files);
         if (currentTab) currentTab->fileHandler->trackFiles(files);
+        saveTabsState();
     });
     dialog.exec();
 }
@@ -1393,8 +1399,23 @@ void MainWindow::onPluginTriggered(const QString &pluginKey)
         if (plugin->addFiles()) {
             this->addFiles(files);
             if (currentTab) currentTab->fileHandler->trackFiles(files);
+            saveTabsState();
         }
     }
+}
+
+void MainWindow::saveTabsState()
+{
+    QVariantMap map;
+    const auto m = m_DockManager->dockWidgetsMap().values();
+    for (const auto &w: m) {
+        if (Tab *t = qobject_cast<Tab *>(w->widget())) {
+            if (auto folders = t->fileHandler->fileNames(); !folders.isEmpty())
+                map.insert(w->windowTitle(), folders);
+            if (currentTab) currentTab->filterHeader->clear();
+        }
+    }
+    Settings::setSetting("folders1", map);
 }
 
 void MainWindow::convertEsoFiles()
