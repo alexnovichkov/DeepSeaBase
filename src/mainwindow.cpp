@@ -191,14 +191,26 @@ void MainWindow::createActions()
     QIcon moveChannelsUpIcon(":/icons/move_up.png");
     moveChannelsUpIcon.addFile(":/icons/move_up_24.png");
     moveChannelsUpAct = new QAction(moveChannelsUpIcon, "Сдвинуть каналы вверх", this);
-    moveChannelsUpAct->setShortcut(tr("Ctrl+Up"));
+    //moveChannelsUpAct->setShortcut(tr("Ctrl+Up"));
     connect(moveChannelsUpAct, SIGNAL(triggered()), SLOT(moveChannelsUp()));
 
     QIcon moveChannelsDownIcon(":/icons/move_down.png");
     moveChannelsDownIcon.addFile(":/icons/move_down_24.png");
     moveChannelsDownAct = new QAction(moveChannelsDownIcon, "Сдвинуть каналы вниз", this);
-    moveChannelsDownAct->setShortcut(tr("Ctrl+Down"));
+    //moveChannelsDownAct->setShortcut(tr("Ctrl+Down"));
     connect(moveChannelsDownAct, SIGNAL(triggered()), SLOT(moveChannelsDown()));
+
+    ctrlUpAct = new QAction(this);
+    ctrlUpAct->setShortcut(Qt::CTRL+Qt::Key_Up);
+    ctrlUpAct->setShortcutContext(Qt::ApplicationShortcut);
+    connect(ctrlUpAct, &QAction::triggered, this, &MainWindow::ctrlUpTriggered);
+    addAction(ctrlUpAct);
+
+    ctrlDownAct = new QAction(this);
+    ctrlDownAct->setShortcut(Qt::CTRL+Qt::Key_Down);
+    ctrlDownAct->setShortcutContext(Qt::ApplicationShortcut);
+    connect(ctrlDownAct, &QAction::triggered, this, &MainWindow::ctrlDownTriggered);
+    addAction(ctrlDownAct);
 
     saveAct = new QAction("Сохранить файлы", this);
     saveAct->setIcon(QIcon(":/icons/disk.png"));
@@ -1476,6 +1488,28 @@ void MainWindow::moveChannels(bool up)
         currentTab->channelsTable->selectionModel()->select(currentTab->channelModel->index(i,0),QItemSelectionModel::Select);
 }
 
+void MainWindow::ctrlUpTriggered(bool b)
+{DD;
+    Q_UNUSED(b);
+    if (ctrlUpTargetsChannels) {
+        moveChannelsUp();
+    }
+    else {
+        setDescriptor(-1, false);
+    }
+}
+
+void MainWindow::ctrlDownTriggered(bool b)
+{DD;
+    Q_UNUSED(b);
+    if (ctrlUpTargetsChannels) {
+        moveChannelsDown();
+    }
+    else {
+        setDescriptor(1, false);
+    }
+}
+
 //Возможно, добавляем к списку каналы из других записей, а затем строим графики
 void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &channels)
 {DD;
@@ -2166,10 +2200,12 @@ void MainWindow::onFocusedDockWidgetChanged(ads::CDockWidget *old, ads::CDockWid
     if (!now) return;
     if (auto tab = qobject_cast<Tab *>(now->widget())) {
         currentTab = tab;
-        currentTab->setCurrentPlot(currentPlot->plot());
+        ctrlUpTargetsChannels = true;
+        if (currentPlot) currentTab->setCurrentPlot(currentPlot->plot());
     }
     else if (auto plot = qobject_cast<PlotArea*>(now)) {
         currentPlot = plot;
+        ctrlUpTargetsChannels = false;
         if (currentTab) currentTab->setCurrentPlot(currentPlot->plot());
     }
     updateActions();

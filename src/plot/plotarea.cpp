@@ -70,21 +70,15 @@ PlotArea::PlotArea(int index, QWidget *parent)
 
     previousDescriptorAct = new QAction("Предыдущая запись", this);
     previousDescriptorAct->setIcon(QIcon(":/icons/rminus.png"));
-    previousDescriptorAct->setShortcut(Qt::CTRL + Qt::Key_Up);
-    previousDescriptorAct->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-    previousDescriptorAct->setToolTip(QString("%1 <font color=gray size=-1>%2</font>")
-                          .arg("Предыдущая запись")
-                          .arg(previousDescriptorAct->shortcut().toString()));
-    connect(previousDescriptorAct, &QAction::triggered, [this](bool checked){emit descriptorRequested(-1, checked);});
+    previousDescriptorAct->setToolTip(QString("%1 <font color=gray size=-1>Ctrl+Up</font>")
+                          .arg("Предыдущая запись"));
+    connect(previousDescriptorAct, &QAction::triggered, this, &PlotArea::moveToPreviousDescriptor);
 
     nextDescriptorAct = new QAction("Следущая запись", this);
     nextDescriptorAct->setIcon(QIcon(":/icons/rplus.png"));
-    nextDescriptorAct->setShortcut(Qt::CTRL + Qt::Key_Down);
-    nextDescriptorAct->setShortcutContext(Qt::WidgetWithChildrenShortcut);
-    nextDescriptorAct->setToolTip(QString("%1 <font color=gray size=-1>%2</font>")
-                          .arg("Следущая запись")
-                          .arg(nextDescriptorAct->shortcut().toString()));
-    connect(nextDescriptorAct, &QAction::triggered, [this](bool checked){emit descriptorRequested(1, checked);});
+    nextDescriptorAct->setToolTip(QString("%1 <font color=gray size=-1>Ctrl+Down</font>")
+                          .arg("Следущая запись"));
+    connect(nextDescriptorAct, &QAction::triggered, this, &PlotArea::moveToNextDescriptor);
 
     arbitraryDescriptorAct = new QAction("Произвольная запись", this);
     arbitraryDescriptorAct->setIcon(QIcon(":/icons/rany.png"));
@@ -1092,4 +1086,14 @@ void PlotArea::resetCycling()
 {DD;
     arbitraryDescriptorAct->setChecked(false);
     m_plot->sergeiMode = false;
+}
+
+void PlotArea::moveToPreviousDescriptor(bool checked)
+{
+    emit descriptorRequested(-1, checked);
+}
+
+void PlotArea::moveToNextDescriptor(bool checked)
+{
+    emit descriptorRequested(1, checked);
 }

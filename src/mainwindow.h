@@ -122,6 +122,9 @@ private:
     QString getFolderToAdd(bool withSubfolders);
     void moveChannels(bool up);
 
+    void ctrlUpTriggered(bool b);
+    void ctrlDownTriggered(bool b);
+
     void addDescriptors(const QList<F> &files, bool silent=false);
 
     bool deleteChannels(FileDescriptor *file, const QVector<int> &channelsToDelete);
@@ -190,6 +193,10 @@ private:
     QAction *moveChannelsDownAct;
     QAction *editDescriptionsAct;
     QAction *editChannelDescriptionsAct;
+
+    QAction *ctrlUpAct;
+    QAction *ctrlDownAct;
+    bool ctrlUpTargetsChannels = true;
 
     QToolBar *mainToolBar;
 

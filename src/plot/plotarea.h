@@ -36,6 +36,9 @@ public:
     int curvesCount(int type=-1) const;
     void onDropEvent(bool plotOnLeft, const QVector<Channel*> &channels);
     void resetCycling();
+
+    void moveToPreviousDescriptor(bool checked);
+    void moveToNextDescriptor(bool checked);
 signals:
     void descriptorRequested(int direction, bool checked);
     //void cycleChannelsRequested(bool up);
