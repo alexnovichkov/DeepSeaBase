@@ -116,20 +116,20 @@ MainWindow::MainWindow(QWidget *parent)
     mainToolBar->addAction(plotHelpAct);
 
 
-    QMenu *fileMenu = menuBar()->addMenu(tr("Файл"));
+    QMenu *fileMenu = menuBar()->addMenu(tr("Записи"));
     fileMenu->addAction(addFolderAct);
     fileMenu->addAction(addFileAct);
-    fileMenu->addAction(convertAct);
-    fileMenu->addAction(convertMatFilesAct);
-    fileMenu->addAction(convertEsoFilesAct);
-    fileMenu->addAction(convertAnaFilesAct);
-    createConvertPluginsMenu(fileMenu);
+    fileMenu->addAction(delFilesAct);
+    fileMenu->addAction(rescanBaseAct);
+    fileMenu->addAction(saveAct);
+    fileMenu->addAction(renameAct);
 
-    QMenu *recordsMenu = menuBar()->addMenu(QString("Записи"));
-    recordsMenu->addAction(delFilesAct);
-    recordsMenu->addAction(rescanBaseAct);
-    recordsMenu->addAction(saveAct);
-    recordsMenu->addAction(renameAct);
+    QMenu *convertMenu = menuBar()->addMenu(QString("Конвертеры"));
+    convertMenu->addAction(convertAct);
+    convertMenu->addAction(convertMatFilesAct);
+    convertMenu->addAction(convertEsoFilesAct);
+    convertMenu->addAction(convertAnaFilesAct);
+    createConvertPluginsMenu(convertMenu);
 
     QMenu *settingsMenu = menuBar()->addMenu(QString("Настройки"));
     settingsMenu->addAction(editColorsAct);
