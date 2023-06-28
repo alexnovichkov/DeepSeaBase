@@ -17683,6 +17683,7 @@ QPointF QCPSelectionDecoratorBracket::getPixelCoordinates(const QCPPlottableInte
 */
 QCPAxisRect::QCPAxisRect(QCustomPlot *parentPlot, bool setupDefaultAxes) :
   QCPLayoutElement(parentPlot),
+  mBorderPen(Qt::NoPen),
   mBackgroundBrush(Qt::NoBrush),
   mBackgroundScaled(true),
   mBackgroundScaledMode(Qt::KeepAspectRatioByExpanding),
@@ -18333,7 +18334,12 @@ QList<QCPAxis*> QCPAxisRect::rangeZoomAxes(Qt::Orientation orientation)
 */
 double QCPAxisRect::rangeZoomFactor(Qt::Orientation orientation)
 {
-  return (orientation == Qt::Horizontal ? mRangeZoomFactorHorz : mRangeZoomFactorVert);
+    return (orientation == Qt::Horizontal ? mRangeZoomFactorHorz : mRangeZoomFactorVert);
+}
+
+void QCPAxisRect::setBorderPen(const QPen &pen)
+{
+    mBorderPen = pen;
 }
 
 /*!
@@ -18585,6 +18591,12 @@ void QCPAxisRect::drawBackground(QCPPainter *painter)
     {
       painter->drawPixmap(mRect.topLeft()+QPoint(0, -1), mBackgroundPixmap, QRect(0, 0, mRect.width(), mRect.height()));
     }
+  }
+
+  //draw border
+  if (mBorderPen != Qt::NoPen) {
+      painter->setPen(mBorderPen);
+      painter->drawRect(mRect);
   }
 }
 

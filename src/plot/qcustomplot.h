@@ -4900,6 +4900,8 @@ class QCP_LIB_DECL QCPAxisRect : public QCPLayoutElement
   Q_OBJECT
   /// \cond INCLUDE_QPROPERTIES
   Q_PROPERTY(QPixmap background READ background WRITE setBackground)
+  Q_PROPERTY(QPen borderPen READ borderPen WRITE setBorderPen)
+
   Q_PROPERTY(bool backgroundScaled READ backgroundScaled WRITE setBackgroundScaled)
   Q_PROPERTY(Qt::AspectRatioMode backgroundScaledMode READ backgroundScaledMode WRITE setBackgroundScaledMode)
   Q_PROPERTY(Qt::Orientations rangeDrag READ rangeDrag WRITE setRangeDrag)
@@ -4910,6 +4912,7 @@ public:
   virtual ~QCPAxisRect() Q_DECL_OVERRIDE;
   
   // getters:
+    QPen borderPen() const { return mBorderPen;}
   QPixmap background() const { return mBackgroundPixmap; }
   QBrush backgroundBrush() const { return mBackgroundBrush; }
   bool backgroundScaled() const { return mBackgroundScaled; }
@@ -4923,6 +4926,7 @@ public:
   double rangeZoomFactor(Qt::Orientation orientation);
   
   // setters:
+  void setBorderPen(const QPen & pen);
   void setBackground(const QPixmap &pm);
   void setBackground(const QPixmap &pm, bool scaled, Qt::AspectRatioMode mode=Qt::KeepAspectRatioByExpanding);
   void setBackground(const QBrush &brush);
@@ -4979,6 +4983,7 @@ signals:
   void draggingFinished();
 protected:
   // property members:
+  QPen mBorderPen;
   QBrush mBackgroundBrush;
   QPixmap mBackgroundPixmap;
   QPixmap mScaledBackgroundPixmap;

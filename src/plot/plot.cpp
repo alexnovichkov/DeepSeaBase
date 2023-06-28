@@ -538,7 +538,7 @@ void Plot::focusPlot()
 }
 
 void Plot::addSelectable(Selectable *item)
-{;
+{
     if (!selectables.contains(item))
         selectables.append(item);
 }

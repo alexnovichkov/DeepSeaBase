@@ -453,6 +453,7 @@ void QCPPlot::setColorBarTitle(const QString &title)
 
 void QCPPlot::importPlot(const QString &fileName, const QSize &size, int resolution, bool graphOnly)
 {
+    axisRect()->setBorderPen(QPen(Qt::black));
     legend->setVisible(true);
     updateLegend();
     if (graphOnly) setSecondaryPlotsVisible(false);
@@ -462,6 +463,7 @@ void QCPPlot::importPlot(const QString &fileName, const QSize &size, int resolut
         QMessageBox::critical(this, "Сохранение рисунка", "Не удалось сохранить график");
     legend->setVisible(false);
     if (graphOnly) setSecondaryPlotsVisible(true);
+    axisRect()->setBorderPen(Qt::NoPen);
 }
 
 void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution, bool graphOnly)
@@ -478,6 +480,7 @@ void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution, b
         printer.setPageMargins(15, 15, 15, bottom, QPrinter::Millimeter);
 
         //настройка отображения графиков
+        axisRect()->setBorderPen(QPen(Qt::black));
         legend->setVisible(true);
         updateLegend();
         if (graphOnly) setSecondaryPlotsVisible(false);
@@ -494,6 +497,7 @@ void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution, b
         //восстанавливаем параметры графиков
         legend->setVisible(false);
         if (graphOnly) setSecondaryPlotsVisible(true);
+        axisRect()->setBorderPen(Qt::NoPen);
     }
 }
 
