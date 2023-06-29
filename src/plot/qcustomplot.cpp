@@ -6135,7 +6135,12 @@ QCPAxisTicker::~QCPAxisTicker()
 */
 void QCPAxisTicker::setTickStepStrategy(QCPAxisTicker::TickStepStrategy strategy)
 {
-  mTickStepStrategy = strategy;
+    mTickStepStrategy = strategy;
+}
+
+void QCPAxisTicker::setSubTickStepStrategy(QCPAxisTicker::TickStepStrategy strategy)
+{
+    mSubTickStepStrategy = strategy;
 }
 
 /*!
@@ -6164,7 +6169,19 @@ void QCPAxisTicker::setTickCount(int count)
 */
 void QCPAxisTicker::setTickOrigin(double origin)
 {
-  mTickOrigin = origin;
+    mTickOrigin = origin;
+}
+
+double QCPAxisTicker::tickStep() const
+{
+    if (mTickStepStrategy == tssFixed) return  mTickStep;
+    return mGeneratedTickStep;
+}
+
+double QCPAxisTicker::subTickStep() const
+{
+    if (mSubTickStepStrategy == tssFixed) return  mSubTickStep;
+    return mGeneratedSubTickStep;
 }
 
 /*!
@@ -6184,19 +6201,25 @@ void QCPAxisTicker::generate(const QCPRange &range, const QLocale &locale, QChar
                              QVector<double> &ticks, QVector<double> *subTicks, QVector<QString> *tickLabels)
 {
   // generate (major) ticks:
-  double tickStep = getTickStep(range);
-  ticks = createTickVector(tickStep, range);
+  mGeneratedTickStep = getTickStep(range);
+  ticks = createTickVector(mGeneratedTickStep, range);
   trimTicks(range, ticks, true); // trim ticks to visible range plus one outer tick on each side (incase a subclass createTickVector creates more)
   
   // generate sub ticks between major ticks:
   if (subTicks)
   {
-    if (!ticks.isEmpty())
-    {
-      *subTicks = createSubTickVector(getSubTickCount(tickStep), ticks);
-      trimTicks(range, *subTicks, false);
-    } else
-      *subTicks = QVector<double>();
+      if (mSubTickStepStrategy == tssFixed) {
+          *subTicks = createTickVector(mSubTickStep, range);
+          trimTicks(range, *subTicks, true);
+      }
+      else {
+          if (!ticks.isEmpty())
+          {
+            *subTicks = createSubTickVector(getSubTickCount(mGeneratedTickStep), ticks);
+            trimTicks(range, *subTicks, false);
+          } else
+            *subTicks = QVector<double>();
+      }
   }
   
   // finally trim also outliers (no further clipping happens in axis drawing):
@@ -6218,8 +6241,33 @@ void QCPAxisTicker::generate(const QCPRange &range, const QLocale &locale, QChar
 */
 double QCPAxisTicker::getTickStep(const QCPRange &range)
 {
-  double exactStep = range.size()/double(mTickCount+1e-10); // mTickCount ticks on average, the small addition is to prevent jitter on exact integers
-  return cleanMantissa(exactStep);
+    if (mTickStepStrategy == tssFixed) {
+        switch (mScaleStrategy)
+        {
+            case ssNone:
+            {
+                return mTickStep;
+            }
+            case ssMultiples:
+            {
+                double exactStep = range.size()/double(mTickCount+1e-10); // mTickCount ticks on average, the small addition is to prevent jitter on exact integers
+                if (exactStep < mTickStep)
+                    return mTickStep;
+                else
+                    return qint64(cleanMantissa(exactStep/mTickStep)+0.5)*mTickStep;
+            }
+            case ssPowers:
+            {
+                double exactStep = range.size()/double(mTickCount+1e-10); // mTickCount ticks on average, the small addition is to prevent jitter on exact integers
+                return qPow(mTickStep, int(qLn(exactStep)/qLn(mTickStep)+0.5));
+            }
+        }
+        return mTickStep;
+    }
+    else {
+        double exactStep = range.size()/double(mTickCount+1e-10); // mTickCount ticks on average, the small addition is to prevent jitter on exact integers
+        return cleanMantissa(exactStep);
+    }
 }
 
 /*! \internal
@@ -6280,6 +6328,7 @@ int QCPAxisTicker::getSubTickCount(double tickStep)
     // if mantissa fraction isn't 0.0 or 0.5, don't bother finding good sub tick marks, leave default
   }
   
+  mGeneratedSubTickStep = tickStep / result;
   return result;
 }
 
@@ -6472,6 +6521,7 @@ double QCPAxisTicker::cleanMantissa(double input) const
       else
         return int(mantissa/2.0)*2.0*magnitude; // round to first digit in multiples of 2
     }
+      default: break;
   }
   return input;
 }
@@ -7134,7 +7184,15 @@ void QCPAxisTickerFixed::setTickStep(double step)
   if (step > 0)
     mTickStep = step;
   else
-    qDebug() << Q_FUNC_INFO << "tick step must be greater than zero:" << step;
+      qDebug() << Q_FUNC_INFO << "tick step must be greater than zero:" << step;
+}
+
+void QCPAxisTickerFixed::setSubTickStep(double step)
+{
+    if (step > 0)
+      mSubTickStep = step;
+    else
+        qDebug() << Q_FUNC_INFO << "subtick step must be greater than zero:" << step;
 }
 
 /*!

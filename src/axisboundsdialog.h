@@ -4,19 +4,19 @@
 #include <QDialog>
 #include "enums.h"
 
+#include "plot/qcustomplot.h"
 
 class AxisBoundsDialog : public QDialog
 {
 public:
-    AxisBoundsDialog(double leftBorder, double rightBorder, Enums::AxisType axis, QWidget *parent = 0);
-    inline double leftBorder() const {return _leftBorder;}
-    inline double rightBorder() const {return _rightBorder;}
-    inline bool autoscale() const {return _autoscale;}
+    AxisBoundsDialog(QCPAxis *axis, AxisTickerParameters parameters, QWidget *parent = 0);
+    inline QCPRange range() const {return {_leftBorder, _rightBorder};}
+    AxisTickerParameters parameters() const;
 private:
-    double _leftBorder;
-    double _rightBorder;
-    Enums::AxisType _axis;
-    bool _autoscale;
+    double _leftBorder = 0; //левая граница
+    double _rightBorder = 0; //правая граница
+    QCPAxis* _axis = nullptr;
+    AxisTickerParameters _parameters;
 };
 
 #endif // AXISBOUNDSDIALOG_H

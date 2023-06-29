@@ -53,6 +53,9 @@ private:
     QSharedPointer<QCPAxisTicker> linTicker;
     QSharedPointer<QCPAxisTickerLog> logTicker;
     QSharedPointer<QCPAxisTicker> octaveTicker;
+
+    QMap<Enums::AxisType, AxisTickerParameters> tickers;
+
     QCursor oldCursor;
     MouseCoordinates *mouseCoordinates;
     QCPInfoOverlay *infoOverlay = nullptr;

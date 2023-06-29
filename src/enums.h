@@ -80,5 +80,12 @@ struct PointBlock
     int to = 0;
 };
 
+struct AxisTickerParameters
+{
+    double tickStep = 0;
+    double subTickStep = 0;
+    bool tickStepAutomatic = true;
+    bool subTickStepAutomatic = true;
+};
 
 #endif // ENUMS_H

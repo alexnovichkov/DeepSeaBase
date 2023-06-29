@@ -32,6 +32,11 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     setFocusPolicy(Qt::StrongFocus);
 
     linTicker.reset(new QCPAxisTicker);
+//    linTicker->setTickStepStrategy(QCPAxisTicker::tssFixed);
+//    linTicker->setTickStep(400);
+//    linTicker->setSubTickStep(60);
+//    linTicker->setScaleStrategy(QCPAxisTicker::ssNone);
+
     logTicker.reset(new QCPAxisTickerLog);
     logTicker->setLogBase(2);
     octaveTicker.reset(new QCPAxisTickerOctave);
@@ -72,15 +77,18 @@ QCPPlot::QCPPlot(Plot *plot, QWidget *parent) : QCustomPlot(parent), parent(plot
     for (auto axis: axisRect()->axes()) {
         axis->setSubTicks(true);
         axis->setNumberPrecision(10);
+//        axis->setScaleType(QCPAxis::stLinear);
+//        axis->setTicker(linTicker);
+
         connect(axis, &QCPAxis::draggingFinished, [=](const QCPRange &newRange){
             ZoomStack::zoomCoordinates coords;
             for (auto ax: axisRect()->axes()) {
-                if (axis == ax) coords.coords.insert(fromQcpAxis(axis->axisType()), {newRange.lower, newRange.upper});
-                else coords.coords.insert(fromQcpAxis(ax->axisType()), {ax->range().lower, ax->range().upper});
+                if (axis == ax) coords.insert(fromQcpAxis(axis->axisType()), newRange);
+                else coords.insert(fromQcpAxis(ax->axisType()), ax->range());
             }
             if (colorScale) {
                 auto ax = colorScale->axis();
-                coords.coords.insert(Enums::AxisType::atColor, {ax->range().lower, ax->range().upper});
+                coords.insert(Enums::AxisType::atColor, ax->range());
             }
 
             plot->zoom->addZoom(coords, true);
@@ -211,27 +219,39 @@ void QCPPlot::setEventFilter(CanvasEventFilter *filter)
 
 void QCPPlot::axisDoubleClicked(QCPAxis *axis)
 {
-    auto range = axis->range();
     auto type = fromQcpAxis(axis->axisType());
-    AxisBoundsDialog dialog(range.lower, range.upper, type);
+    AxisBoundsDialog dialog(axis, tickers.value(type));
     if (dialog.exec()) {
+        if (axis->scaleType() == QCPAxis::stLinear) {
+            auto ticker = new QCPAxisTicker();
+
+            auto t = dialog.parameters();
+            ticker->setTickStepStrategy(t.tickStepAutomatic ? QCPAxisTicker::tssReadability : QCPAxisTicker::tssFixed);
+            ticker->setSubTickStepStrategy(t.subTickStepAutomatic ? QCPAxisTicker::tssReadability : QCPAxisTicker::tssFixed);
+            ticker->setTickStep(t.tickStep);
+            ticker->setSubTickStep(t.subTickStep);
+
+            axis->setTicker(QSharedPointer<QCPAxisTicker>(ticker));
+            tickers.insert(type, t);
+        }
+
         ZoomStack::zoomCoordinates coords;
         auto axes = axisRect()->axes();
         if (axes.contains(axis)) { //5 axes types
             for (auto ax: axes) {
-                if (axis == ax) coords.coords.insert(fromQcpAxis(ax->axisType()), {dialog.leftBorder(), dialog.rightBorder()});
-                else coords.coords.insert(fromQcpAxis(ax->axisType()), {ax->range().lower, ax->range().upper});
+                if (axis == ax) coords.insert(fromQcpAxis(ax->axisType()), dialog.range());
+                else coords.insert(fromQcpAxis(ax->axisType()), ax->range());
             }
             if (colorScale) {
                 auto ax = colorScale->axis();
-                coords.coords.insert(Enums::AxisType::atColor, {ax->range().lower, ax->range().upper});
+                coords.insert(Enums::AxisType::atColor, ax->range());
             }
         }
         else {//5 axes types
             for (auto ax: axes) {
-                coords.coords.insert(fromQcpAxis(ax->axisType()), {ax->range().lower, ax->range().upper});
+                coords.insert(fromQcpAxis(ax->axisType()), ax->range());
             }
-            coords.coords.insert(Enums::AxisType::atColor, {dialog.leftBorder(), dialog.rightBorder()});
+            coords.insert(Enums::AxisType::atColor, dialog.range());
         }
 
         parent->zoom->addZoom(coords, true);
@@ -348,7 +368,15 @@ void QCPPlot::setAxisScale(Enums::AxisType axisType, Enums::AxisScale scale)
     for (auto &ax: axes) {
         if (scale == Enums::AxisScale::Linear) {
             ax->setScaleType(QCPAxis::stLinear);
-            ax->setTicker(linTicker);
+            auto ticker = new QCPAxisTicker();
+            if (tickers.contains(axisType)) {
+                auto t = tickers.value(axisType);
+                ticker->setTickStepStrategy(t.tickStepAutomatic ? QCPAxisTicker::tssReadability : QCPAxisTicker::tssFixed);
+                ticker->setSubTickStepStrategy(t.subTickStepAutomatic ? QCPAxisTicker::tssReadability : QCPAxisTicker::tssFixed);
+                ticker->setTickStep(t.tickStep);
+                ticker->setSubTickStep(t.subTickStep);
+            }
+            ax->setTicker(QSharedPointer<QCPAxisTicker>(ticker));
         }
         else if (scale == Enums::AxisScale::Logarithmic) {
             ax->setScaleType(QCPAxis::stLogarithmic);
@@ -428,9 +456,9 @@ void QCPPlot::enableColorBar(Enums::AxisType axisType, bool enable)
         connect(colorScale->axis(), &QCPAxis::draggingFinished, [=](const QCPRange &newRange){
             ZoomStack::zoomCoordinates coords;
             for (auto axis: axisRect()->axes()) {
-                coords.coords.insert(fromQcpAxis(axis->axisType()), {axis->range().lower, axis->range().upper});
+                coords.insert(fromQcpAxis(axis->axisType()), axis->range());
             }
-            coords.coords.insert(Enums::AxisType::atColor, {newRange.lower, newRange.upper});
+            coords.insert(Enums::AxisType::atColor, newRange);
             parent->zoom->addZoom(coords, true);
         });
         connect(colorScale->axis(), &QCPAxis::rangeScaled, this, &QCPPlot::addZoom);
@@ -568,10 +596,10 @@ void QCPPlot::addZoom()
 {DD;
     auto coords = ZoomStack::zoomCoordinates();
     for (auto axis: axisRect()->axes())
-        coords.coords.insert(fromQcpAxis(axis->axisType()), {axis->range().lower, axis->range().upper});
+        coords.insert(fromQcpAxis(axis->axisType()), axis->range());
     if (colorScale) {
         auto ax = colorScale->axis();
-        coords.coords.insert(Enums::AxisType::atColor, {ax->range().lower, ax->range().upper});
+        coords.insert(Enums::AxisType::atColor, ax->range());
     }
 
     parent->zoom->addZoom(coords, true);

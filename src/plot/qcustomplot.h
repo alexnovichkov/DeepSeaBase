@@ -1706,22 +1706,47 @@ public:
   enum TickStepStrategy
   {
     tssReadability    ///< A nicely readable tick step is prioritized over matching the requested number of ticks (see \ref setTickCount)
-    ,tssMeetTickCount ///< Less readable tick steps are allowed which in turn facilitates getting closer to the requested tick count
+    ,tssMeetTickCount, ///< Less readable tick steps are allowed which in turn facilitates getting closer to the requested tick count
+      tssFixed         /// Tick step is fixed
   };
   Q_ENUMS(TickStepStrategy)
-  
+
+  /*!
+    Defines how the axis ticker may modify the specified tick step (\ref setTickStep) in order to
+    control the number of ticks in the axis range.
+
+    \see setScaleStrategy
+  */
+  enum ScaleStrategy { ssNone      ///< Modifications are not allowed, the specified tick step is absolutely fixed. This might cause a high tick density and overlapping labels if the axis range is zoomed out.
+                       ,ssMultiples ///< An integer multiple of the specified tick step is allowed. The used factor follows the base class properties of \ref setTickStepStrategy and \ref setTickCount.
+                       ,ssPowers    ///< An integer power of the specified tick step is allowed.
+                     };
+  Q_ENUMS(ScaleStrategy)
+
   QCPAxisTicker();
   virtual ~QCPAxisTicker();
   
   // getters:
   TickStepStrategy tickStepStrategy() const { return mTickStepStrategy; }
+  TickStepStrategy subTickStepStrategy() const { return mSubTickStepStrategy; }
   int tickCount() const { return mTickCount; }
   double tickOrigin() const { return mTickOrigin; }
   
   // setters:
   void setTickStepStrategy(TickStepStrategy strategy);
+  void setSubTickStepStrategy(TickStepStrategy strategy);
   void setTickCount(int count);
   void setTickOrigin(double origin);
+
+  // getters:
+  double tickStep() const;
+  double subTickStep() const;
+  ScaleStrategy scaleStrategy() const { return mScaleStrategy; }
+
+  // setters:
+  void setTickStep(double step) {mTickStep = step;}
+  void setSubTickStep(double step) {mSubTickStep = step;}
+  void setScaleStrategy(ScaleStrategy strategy) {mScaleStrategy = strategy;}
   
   // introduced virtual methods:
   virtual void generate(const QCPRange &range, const QLocale &locale, QChar formatChar, int precision, QVector<double> &ticks, QVector<double> *subTicks, QVector<QString> *tickLabels);
@@ -1729,8 +1754,16 @@ public:
 protected:
   // property members:
   TickStepStrategy mTickStepStrategy;
+  TickStepStrategy mSubTickStepStrategy;
   int mTickCount;
   double mTickOrigin;
+
+  // property members:
+  double mTickStep; //постоянный шаг
+  double mSubTickStep; //постоянный шаг
+  double mGeneratedTickStep = 0;
+  double mGeneratedSubTickStep = 0;
+  ScaleStrategy mScaleStrategy;
   
   // introduced virtual methods:
   virtual double getTickStep(const QCPRange &range);
@@ -1752,9 +1785,53 @@ private:
 };
 Q_DECLARE_METATYPE(QCPAxisTicker::TickStepStrategy)
 Q_DECLARE_METATYPE(QSharedPointer<QCPAxisTicker>)
+Q_DECLARE_METATYPE(QCPAxisTicker::ScaleStrategy)
 
 /* end of 'src/axis/axisticker.h' */
 
+/* including file 'src/axis/axistickerfixed.h' */
+/* modified 2021-03-29T02:30:44, size 3308     */
+
+class QCP_LIB_DECL QCPAxisTickerFixed : public QCPAxisTicker
+{
+  Q_GADGET
+public:
+  /*!
+    Defines how the axis ticker may modify the specified tick step (\ref setTickStep) in order to
+    control the number of ticks in the axis range.
+
+    \see setScaleStrategy
+  */
+  enum ScaleStrategy { ssNone      ///< Modifications are not allowed, the specified tick step is absolutely fixed. This might cause a high tick density and overlapping labels if the axis range is zoomed out.
+                       ,ssMultiples ///< An integer multiple of the specified tick step is allowed. The used factor follows the base class properties of \ref setTickStepStrategy and \ref setTickCount.
+                       ,ssPowers    ///< An integer power of the specified tick step is allowed.
+                     };
+  Q_ENUMS(ScaleStrategy)
+
+  QCPAxisTickerFixed();
+
+  // getters:
+  double tickStep() const { return mTickStep; }
+  double subTickStep() const {return mSubTickStep;}
+  ScaleStrategy scaleStrategy() const { return mScaleStrategy; }
+
+  // setters:
+  void setTickStep(double step);
+  void setSubTickStep(double step);
+  void setScaleStrategy(ScaleStrategy strategy);
+
+protected:
+  // property members:
+  double mTickStep;
+  double mSubTickStep;
+  ScaleStrategy mScaleStrategy;
+
+  // reimplemented virtual methods:
+  virtual double getTickStep(const QCPRange &range) Q_DECL_OVERRIDE;
+};
+Q_DECLARE_METATYPE(QCPAxisTickerFixed::ScaleStrategy)
+
+/* end of 'src/axis/axistickerfixed.h' */
 
 /* including file 'src/axis/axistickerdatetime.h' */
 /* modified 2021-03-29T02:30:44, size 3600        */
@@ -1855,49 +1932,6 @@ protected:
 Q_DECLARE_METATYPE(QCPAxisTickerTime::TimeUnit)
 
 /* end of 'src/axis/axistickertime.h' */
-
-
-/* including file 'src/axis/axistickerfixed.h' */
-/* modified 2021-03-29T02:30:44, size 3308     */
-
-class QCP_LIB_DECL QCPAxisTickerFixed : public QCPAxisTicker
-{
-  Q_GADGET
-public:
-  /*!
-    Defines how the axis ticker may modify the specified tick step (\ref setTickStep) in order to
-    control the number of ticks in the axis range.
-    
-    \see setScaleStrategy
-  */
-  enum ScaleStrategy { ssNone      ///< Modifications are not allowed, the specified tick step is absolutely fixed. This might cause a high tick density and overlapping labels if the axis range is zoomed out.
-                       ,ssMultiples ///< An integer multiple of the specified tick step is allowed. The used factor follows the base class properties of \ref setTickStepStrategy and \ref setTickCount.
-                       ,ssPowers    ///< An integer power of the specified tick step is allowed.
-                     };
-  Q_ENUMS(ScaleStrategy)
-  
-  QCPAxisTickerFixed();
-  
-  // getters:
-  double tickStep() const { return mTickStep; }
-  ScaleStrategy scaleStrategy() const { return mScaleStrategy; }
-  
-  // setters:
-  void setTickStep(double step);
-  void setScaleStrategy(ScaleStrategy strategy);
-  
-protected:
-  // property members:
-  double mTickStep;
-  ScaleStrategy mScaleStrategy;
-  
-  // reimplemented virtual methods:
-  virtual double getTickStep(const QCPRange &range) Q_DECL_OVERRIDE;
-};
-Q_DECLARE_METATYPE(QCPAxisTickerFixed::ScaleStrategy)
-
-/* end of 'src/axis/axistickerfixed.h' */
-
 
 /* including file 'src/axis/axistickertext.h' */
 /* modified 2021-03-29T02:30:44, size 3090    */
