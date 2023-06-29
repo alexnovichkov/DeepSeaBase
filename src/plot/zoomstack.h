@@ -9,6 +9,7 @@
 #include <QtDebug>
 
 #include "enums.h"
+#include "qcustomplot.h"
 
 class Plot;
 
@@ -49,10 +50,7 @@ public:
         bool fixed;             // признак фиксации границ
     };
 
-    struct zoomCoordinates
-    {
-        QMap<Enums::AxisType, QPointF> coords;
-    };
+    using zoomCoordinates = QMap<Enums::AxisType, QCPRange>;
 
     ScaleBounds *scaleBounds(Enums::AxisType axis);
 
@@ -70,7 +68,7 @@ private:
 
 inline QDebug operator<<(QDebug deb, ZoomStack::zoomCoordinates coords)
 {
-    deb << coords.coords;
+    deb << coords;
     return deb;
 }
 

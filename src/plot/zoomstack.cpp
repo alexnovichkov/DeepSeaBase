@@ -24,15 +24,15 @@ ZoomStack::ScaleBounds *ZoomStack::scaleBounds(Enums::AxisType axis)
 
 void ZoomStack::addZoom(ZoomStack::zoomCoordinates coords, bool addToStack)
 {DD;
-    if (coords.coords.isEmpty()) {
+    if (coords.isEmpty()) {
         return;
     }
     if (addToStack) {
         m_zoomStack.push(coords);
     }
 
-    for (auto [key, val] : asKeyValueRange(coords.coords)) {
-        scaleBounds(key)->set(val.x(), val.y());
+    for (auto [key, val] : asKeyValueRange(coords)) {
+        scaleBounds(key)->set(val.lower, val.upper);
     }
 
     emit replotNeeded();
@@ -48,8 +48,8 @@ void ZoomStack::zoomBack()
     }
     else {
         zoomCoordinates coords = m_zoomStack.top();
-        for (auto [key, val] : asKeyValueRange(coords.coords)) {
-            scaleBounds(key)->set(val.x(), val.y());
+        for (auto [key, val] : asKeyValueRange(coords)) {
+            scaleBounds(key)->set(val.lower, val.upper);
         }
     }
     emit replotNeeded();

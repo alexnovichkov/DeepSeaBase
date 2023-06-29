@@ -223,7 +223,7 @@ QMenu *Plot::createMenu(Enums::AxisType axis, const QPoint &pos)
             m_plot->addCursorToSecondaryPlots(cursor);
         });
 
-        menu->addAction(m_plot->axisScale(axis)==Enums::AxisScale::Linear?"Линейная шкала":"Логарифмическая шкала", [=]() {
+        menu->addAction(m_plot->axisScale(axis)==Enums::AxisScale::Linear?"Логарифмическая шкала":"Линейная шкала", [=]() {
             if (m_plot->axisScale(axis)==Enums::AxisScale::Logarithmic)
                 m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::Linear);
             else
@@ -317,7 +317,7 @@ QMenu *Plot::createMenu(Enums::AxisType axis, const QPoint &pos)
             double delta = screenToPlotCoordinates(Enums::AxisType::atLeft, (p1+p2)/2.0);
 
             ZoomStack::zoomCoordinates coords;
-            coords.coords.insert(Enums::AxisType::atLeft, {s1-delta, s2-delta});
+            coords.insert(Enums::AxisType::atLeft, {s1-delta, s2-delta});
 
             // 2. Центруем нуль правой оси
             range = plotRange(Enums::AxisType::atRight);
@@ -330,10 +330,10 @@ QMenu *Plot::createMenu(Enums::AxisType axis, const QPoint &pos)
             p2 = range.max;
             delta = screenToPlotCoordinates(Enums::AxisType::atRight, (p1+p2)/2.0);
 
-            coords.coords.insert(Enums::AxisType::atRight, {s1-delta, s2-delta});
+            coords.insert(Enums::AxisType::atRight, {s1-delta, s2-delta});
 
             range = plotRange(Enums::AxisType::atBottom);
-            coords.coords.insert(Enums::AxisType::atBottom, {range.min, range.max});
+            coords.insert(Enums::AxisType::atBottom, {range.min, range.max});
 
             zoom->addZoom(coords, true);
         });
@@ -349,11 +349,11 @@ QMenu *Plot::createMenu(Enums::AxisType axis, const QPoint &pos)
             double ss = std::min(s2,s4);
 
             ZoomStack::zoomCoordinates coords;
-            coords.coords.insert(Enums::AxisType::atLeft, {s, ss});
-            coords.coords.insert(Enums::AxisType::atRight, {s, ss});
+            coords.insert(Enums::AxisType::atLeft, {s, ss});
+            coords.insert(Enums::AxisType::atRight, {s, ss});
 
             range = plotRange(Enums::AxisType::atBottom);
-            coords.coords.insert(Enums::AxisType::atBottom, {range.min, range.max});
+            coords.insert(Enums::AxisType::atBottom, {range.min, range.max});
 
             zoom->addZoom(coords, true);
         });
