@@ -81,14 +81,14 @@ void QCPTrackingCursor::moveToPos(QPoint pos, QPoint startPos)
     double xVal = 0.0;
     double yVal = 0.0;
 
-        if (type != Cursor::Style::Horizontal) {
-            //adjust xval
-            xVal = impl->xAxis->pixelToCoord(pos.x());
-        }
-        if (type != Cursor::Style::Vertical) {
-            //adjust yval
-            yVal = impl->yAxis->pixelToCoord(pos.y());
-        }
+    if (type != Cursor::Style::Horizontal) {
+        //adjust xval
+        xVal = impl->xAxis->pixelToCoord(pos.x());
+    }
+    if (type != Cursor::Style::Vertical) {
+        //adjust yval
+        yVal = impl->yAxis->pixelToCoord(pos.y());
+    }
 
     if (parent) parent->moveTo({xVal,yVal}, this);
 }

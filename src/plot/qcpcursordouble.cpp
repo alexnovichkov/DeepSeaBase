@@ -169,10 +169,27 @@ void QCPCursorDouble::moveTo(const QPointF &pos1, bool silent)
     moveTo(pos, pos2, silent);
 }
 
-void QCPCursorDouble::moveTo(const QPointF &pos1, QCPTrackingCursor *source, bool silent)
+void QCPCursorDouble::moveTo(const QPointF &pos, QCPTrackingCursor *source, bool silent)
 {
-    if (source == m_cursor2) moveTo(m_cursor1->value(), pos1, silent);
-    if (source == m_cursor1) moveTo(pos1, m_cursor2->value(), silent);
+    if (source == m_cursor2) {
+        auto pos2 = pos;
+        auto pos1 = m_cursor1->value();
+        if (QApplication::keyboardModifiers() & Qt::ControlModifier) {
+            auto delta = pos.x() - m_cursor2->xValue();
+            pos1.rx() += delta;
+        }
+        moveTo(pos1, pos2, silent);
+    }
+    if (source == m_cursor1) {
+        auto pos1 = pos;
+        auto pos2 = m_cursor2->value();
+        if (QApplication::keyboardModifiers() & Qt::ControlModifier) {
+            auto delta = pos.x() - m_cursor1->xValue();
+            pos2.rx() += delta;
+        }
+        moveTo(pos1, pos2, silent);
+    }
+
 }
 
 void QCPCursorDouble::moveTo(Qt::Key key, int count, QCPTrackingCursor *source, bool silent)
