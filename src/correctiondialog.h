@@ -20,7 +20,6 @@ class CorrectionDialog : public QDialog
 public:
     explicit CorrectionDialog(Plot *plot, QWidget *parent = 0);
     ~CorrectionDialog();
-    void setPlot(Plot *plot);
     void setFiles(const QList<FileDescriptor *> &descriptors);
 private slots:
     void correct();

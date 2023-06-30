@@ -896,7 +896,10 @@ void MainWindow::addCorrection()
     if (currentPlot->curvesCount()>0) {
 
         CorrectionDialog correctionDialog(currentPlot->plot(), this);
-        correctionDialog.setFiles(currentTab->model->selectedFiles());
+        //correctionDialog.setFiles(currentTab->model->selectedFiles());
+
+        //задаем файлы, которые дополнительно должны быть скорректированы
+        //помимо построенных на графике
         correctionDialog.setFiles(currentTab->model->selectedFiles());
         correctionDialog.exec();
 

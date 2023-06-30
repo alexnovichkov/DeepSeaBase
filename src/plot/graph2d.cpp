@@ -257,7 +257,8 @@ void Graph2D::getOptimizedLineData(QVector<QCPGraphData> *lineData, const int be
     if (2*keyPixelSpan+2 < static_cast<double>(maxCount))
         maxCount = int(2*keyPixelSpan+2);
 
-    if (begin == cashedBegin && end == cashedEnd && keyPixelSpan == cashedKeyPixelSpan && !channel->dataChanged()) {
+    if (begin == cashedBegin && end == cashedEnd && keyPixelSpan == cashedKeyPixelSpan
+        && !channel->dataChanged() && !channel->data()->hasCorrection()) {
         *lineData = cashedLineData;
         return;
     }

@@ -84,14 +84,6 @@ CorrectionDialog::~CorrectionDialog()
 //    QWidget::closeEvent(event);
 //}
 
-void CorrectionDialog::setPlot(Plot *plot)
-{DD;
-    this->plot = plot;
-    auto m = table->selectionModel();
-    table->setModel(plot->model());
-    m->deleteLater();
-}
-
 void CorrectionDialog::setFiles(const QList<FileDescriptor *> &descriptors)
 {DD;
     files = descriptors;
