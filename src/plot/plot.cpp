@@ -499,10 +499,10 @@ bool Plot::canBePlottedOnLeftAxis(Channel *ch, QString *message) const
     }
 
     if (PhysicalUnits::Units::unitsAreSame(ch->xName(), xName) || xName.isEmpty()) { // тип графика совпадает
-        if (m->leftCurvesCount()==0 || yLeftName.isEmpty()
-            || PhysicalUnits::Units::unitsAreSame(ch->yName(), yLeftName))
-            return true;
-        else if (message) *message = "Единицы по оси Y не совпадают";
+        if (m->leftCurvesCount()==0) return true;
+        if (yLeftName.isEmpty()) return true;
+        if (PhysicalUnits::Units::unitsAreSame(ch->yName(), yLeftName)) return true;
+        if (message) *message = "Единицы по оси Y не совпадают";
     }
     else if (message) *message = "Единицы по оси X не совпадают";
     return false;
@@ -523,10 +523,10 @@ bool Plot::canBePlottedOnRightAxis(Channel *ch, QString *message) const
     }
 
     if (PhysicalUnits::Units::unitsAreSame(ch->xName(), xName) || xName.isEmpty()) { // тип графика совпадает
-        if (m->rightCurvesCount()==0 || yRightName.isEmpty()
-            || PhysicalUnits::Units::unitsAreSame(ch->yName(), yRightName))
-            return true;
-        else if (message) *message = "Единицы по оси Y не совпадают";
+        if (m->rightCurvesCount()==0) return true;
+        if (yRightName.isEmpty()) return true;
+        if (PhysicalUnits::Units::unitsAreSame(ch->yName(), yRightName)) return true;
+        if (message) *message = "Единицы по оси Y не совпадают";
     }
     else if (message) *message = "Единицы по оси X не совпадают";
     return false;

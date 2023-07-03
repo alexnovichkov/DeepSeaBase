@@ -4,7 +4,7 @@
 
 PhysicalUnits::Units::Type PhysicalUnits::Units::unitType(QString unit)
 {DD;
-    unit = unit.toLower();
+    unit = unit.toLower().trimmed();
     if (unit == "hz" || unit == "гц" || unit == "1/s" || unit == "1/с") return Type::Frequency;
     if (unit == "s" || unit == "с") return Type::Time;
     if (unit == "m/s" || unit == "м/с") return Type::Velocity;
