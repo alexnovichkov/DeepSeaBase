@@ -95,22 +95,22 @@ void QCPTrackingCursor::moveToPos(QPoint pos, QPoint startPos)
 
 void QCPTrackingCursor::moveLeft(int count)
 {DD;
-    if (parent) parent->moveTo(Qt::Key_Left, count, this);
+    if (parent) parent->moveTo(Qt::Key_Left, count, this, false);
 }
 
 void QCPTrackingCursor::moveRight(int count)
 {DD;
-    if (parent) parent->moveTo(Qt::Key_Right, count, this);
+    if (parent) parent->moveTo(Qt::Key_Right, count, this, false);
 }
 
 void QCPTrackingCursor::moveUp(int count)
 {DD;
-    if (parent) parent->moveTo(Qt::Key_Up, count, this);
+    if (parent) parent->moveTo(Qt::Key_Up, count, this, false);
 }
 
 void QCPTrackingCursor::moveDown(int count)
 {DD;
-    if (parent) parent->moveTo(Qt::Key_Down, count, this);
+    if (parent) parent->moveTo(Qt::Key_Down, count, this, false);
 }
 
 QList<QAction *> QCPTrackingCursor::actions()

@@ -49,26 +49,32 @@ void Picker::procKeyboardEvent(int key)
     switch (key) {
         case Qt::Key_Left: {
             currentSelected.object->moveLeft(QApplication::keyboardModifiers() & Qt::ShiftModifier ? 10 : 1);
+            plot->replot();
             break;
         }
         case Qt::Key_Right: {
             currentSelected.object->moveRight(QApplication::keyboardModifiers() & Qt::ShiftModifier ? 10 : 1);
+            plot->replot();
             break;
         }
         case Qt::Key_Up: {
             currentSelected.object->moveUp(QApplication::keyboardModifiers() & Qt::ShiftModifier ? 10 : 1);
+            plot->replot();
             break;
         }
         case Qt::Key_Down: {
             currentSelected.object->moveDown(QApplication::keyboardModifiers() & Qt::ShiftModifier ? 10 : 1);
+            plot->replot();
             break;
         }
         case Qt::Key_Space: {
             currentSelected.object->fix();
+            plot->replot();
             break;
         }
         case Qt::Key_C: {
             currentSelected.object->cycle();
+            plot->replot();
             break;
         }
         case Qt::Key_Delete: {
@@ -77,6 +83,7 @@ void Picker::procKeyboardEvent(int key)
             currentSelected.object->remove();
             emit removeNeeded(currentSelected.object);
             currentSelected.clear();
+            plot->replot();
             break;
         }
     }

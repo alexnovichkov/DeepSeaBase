@@ -207,22 +207,6 @@ void CanvasEventFilter::procKeyboardEvent(QEvent *event)
             }
             break;
         }
-        case Qt::Key_Left: {
-            emit moveCursor(Enums::Left);
-            break;
-        }
-        case Qt::Key_Right: {
-            emit moveCursor(Enums::Right);
-            break;
-        }
-        case Qt::Key_Up: {
-            emit moveCursor(Enums::Up);
-            break;
-        }
-        case Qt::Key_Down: {
-            emit moveCursor(Enums::Down);
-            break;
-        }
         case Qt::Key_H: {
             plot->switchLabelsVisibility();
             break;

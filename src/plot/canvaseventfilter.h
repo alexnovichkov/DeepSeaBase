@@ -43,7 +43,6 @@ public:
 signals:
     void hover(Enums::AxisType axis, int hover); //0=none, 1=first half, 2 = second half
     void contextMenuRequested(const QPoint &pos, Enums::AxisType axis);
-    void moveCursor(Enums::Direction direction);
     void canvasDoubleClicked(const QPoint &pos);
     void axisDoubleClicked(QCPAxis* axis);
 protected:
