@@ -618,6 +618,7 @@ void MainWindow::addPlotTabbed()
         currentPlot = createPlotArea();
         m_DockManager->addDockWidgetTabToArea(currentPlot, area);
     }
+    LOG(INFO) << QString("Добавлен график ")<< currentPlot->tabWidget()->text();
 }
 
 void MainWindow::closePlot(ads::CDockWidget *t)
@@ -1515,7 +1516,7 @@ void MainWindow::moveChannels(bool up)
 void MainWindow::ctrlUpTriggered(bool b)
 {DD;
     Q_UNUSED(b);
-    if (ctrlUpTargetsChannels) {
+    if (dynamic_cast<ChannelsTable*>(qApp->focusWidget())) {
         moveChannelsUp();
     }
     else {
@@ -1526,7 +1527,7 @@ void MainWindow::ctrlUpTriggered(bool b)
 void MainWindow::ctrlDownTriggered(bool b)
 {DD;
     Q_UNUSED(b);
-    if (ctrlUpTargetsChannels) {
+    if (dynamic_cast<ChannelsTable*>(qApp->focusWidget())) {
         moveChannelsDown();
     }
     else {
