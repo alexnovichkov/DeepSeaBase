@@ -1277,10 +1277,10 @@ void DfdChannel::read(DfdSettings &dfd, int numChans, double xBegin, double xSte
     //тонкая настройка формата для нестандартных единиц измерения
     if (YName.toLower()=="m" || YName.toLower()=="м" || YName.toLower()=="номер")
         yValueFormat = DataHolder::YValuesReals;
-    if (YName.toLower()=="db" || YName.toLower()=="дб")
+    else if (YName.toLower()=="db" || YName.toLower()=="дб")
         yValueFormat = DataHolder::YValuesAmplitudesInDB;
     //настройка для октавных спектров - если единица измерения не дБ, то считаем как амплитуды
-    if ((parent->DataType >= OSpectr) && YName.toLower() != "db" && YName.toLower() != "дб")
+    else if ((parent->DataType >= OSpectr) && YName.toLower() != "db" && YName.toLower() != "дб")
         yValueFormat = DataHolder::YValuesAmplitudes;
 
     _data->setYValuesFormat(yValueFormat);
