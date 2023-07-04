@@ -85,7 +85,6 @@ void DfdFileDescriptor::init(const QVector<Channel *> &source)
     //так как мы вызываем эту функцию только из новых файлов,
     //все сведения из файлов rawChannel нам не нужны
     if (DataType == SourceData) DataType = CuttedData;
-    if (DataType >= OSpectr && DataType <= TFOSpectr) xChannel = true;
 
     //Поскольку other может содержать каналы с разным типом, размером и шагом,
     //данные берем из первого канала, который будем сохранять
@@ -406,8 +405,6 @@ void DfdFileDescriptor::fillPreliminary(const FileDescriptor *file)
     //все сведения из файлов rawChannel нам не нужны
     if (DataType == SourceData) DataType = CuttedData;
     if (DataType >= OSpectr && DataType <= TFOSpectr) xChannel = true;
-
-
 }
 
 DfdFileDescriptor *DfdFileDescriptor::newFile(const QString &fileName, DfdDataType type)
@@ -1357,8 +1354,9 @@ void DfdChannel::write(QDataStream &s, DataHolder *d)
     if (IndType==0xC0000004)
         s.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
-    //dfd не понимает многоблочные файлы
+    //dfd не понимает многоблочные данные
     QVector<double> yValues = d->rawYValues(0);
+    //dfd не понимает комплексные данные
     if (yValues.isEmpty() && !d->yValuesComplex(0).isEmpty())
         yValues = d->linears(0);
 
