@@ -226,6 +226,7 @@ void QCPPlot::axisDoubleClicked(QCPAxis *axis)
             auto ticker = new QCPAxisTicker();
 
             auto t = dialog.parameters();
+            ticker->setScaleStrategy(t.tickStepAutomatic ? QCPAxisTicker::ssMultiples : QCPAxisTicker::ssNone);
             ticker->setTickStepStrategy(t.tickStepAutomatic ? QCPAxisTicker::tssReadability : QCPAxisTicker::tssFixed);
             ticker->setSubTickStepStrategy(t.subTickStepAutomatic ? QCPAxisTicker::tssReadability : QCPAxisTicker::tssFixed);
             ticker->setTickStep(t.tickStep);
