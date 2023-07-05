@@ -6,12 +6,18 @@
 class ChannelSelector
 {
 public:
+    enum class Selection {
+        All,
+        Some
+    };
     ChannelSelector();
     ChannelSelector(const QString &filter);
     bool includes(int index) const;
 
-    QString filter() const {return m_filter;}
+    QString filter() const {return mFilter;}
+    Selection selection() const {return mSelection;}
     void setFilter(const QString &filter);
+    void setSelection(Selection selection);
 
     //список индексов из фильтра, нумерация с 1
     QStringList indexes() const;
@@ -19,9 +25,10 @@ public:
 private:
     void addIndex(int index);
     void recalculateIndexes();
-    QString m_filter = QString("все");
-    QSet<int> m_indexes;
-    int max_index = -1;
+    QString mFilter;
+    QSet<int> mIndexes;
+    Selection mSelection = Selection::All;
+    int maxIndex = -1;
 };
 
 #endif // CHANNELSELECTOR_H

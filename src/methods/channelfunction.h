@@ -54,6 +54,10 @@ private:
     ChannelSelector selector;
     int channel = 0;
     int triggerChannel = -1;
+
+    // AbstractFunction interface
+protected:
+    virtual bool m_parameterShowsFor(const QString &parameter) const override;
 };
 
 class RefChannelFunction : public ChannelFunction

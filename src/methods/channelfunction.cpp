@@ -65,6 +65,7 @@ QVariant ChannelFunction::m_getParameter(const QString &property) const
         QString p = property.section("/",1);
 
         if (p == "filter") return selector.filter();
+        else if (p == "selection") return static_cast<int>(selector.selection());
 
 //        if (p == "minSec") {
 //            double min = ch->data()->xMin();
@@ -86,6 +87,14 @@ void ChannelFunction::m_setParameter(const QString &property, const QVariant &va
     QString p = property.section("/",1);
 
     if (p == "filter") selector.setFilter(val.toString());
+    else if (p == "selection") {
+        switch (val.toInt()) {
+            case 0: selector.setSelection(ChannelSelector::Selection::All); break;
+            case 1: selector.setSelection(ChannelSelector::Selection::Some); break;
+            default: break;
+        }
+    }
+
     else if (p == "channelIndex") channel = val.toInt();
 
 //    else if (p == "minSec") minSec = val.toDouble();
@@ -96,7 +105,7 @@ void ChannelFunction::m_setParameter(const QString &property, const QVariant &va
 
 QStringList ChannelFunction::parameters() const
 {DD;
-    return {"filter",  /*"minSec", "maxSec"*/};
+    return {"selection", "filter" /*, "minSec", "maxSec"*/};
 }
 
 QString ChannelFunction::m_parameterDescription(const QString &property) const
@@ -110,6 +119,16 @@ QString ChannelFunction::m_parameterDescription(const QString &property) const
                                      "  \"values\"      : []," //для enum
                                      "  \"minimum\"     : -2.4," //для int и double
                                      "  \"maximum\"     : 30.5" //для int и double
+                                     "}";
+    if (property == "selection") return "{"
+                                     "  \"name\"        : \"selection\"   ,"
+                                     "  \"type\"        : \"enum\"   ,"
+                                     "  \"displayName\" : \"Каналы\"   ,"
+                                     "  \"defaultValue\": 0         ,"
+                                     "  \"toolTip\"     : \"\","
+                                     "  \"values\"      : [\"Все\", \"Выборка\"]," //для enum
+                                     "  \"minimum\"     : 0," //для int и double
+                                     "  \"maximum\"     : 0" //для int и double
                                      "}";
 
 //    if (property == "minSec") return "{"
@@ -263,4 +282,11 @@ DataDescription ChannelFunction::getFunctionDescription() const
     result.put("function.logscale", "linear");
 
     return result;
+}
+
+
+bool ChannelFunction::m_parameterShowsFor(const QString &parameter) const
+{
+    if (parameter == "filter") return selector.selection() == ChannelSelector::Selection::Some;
+    return true;
 }

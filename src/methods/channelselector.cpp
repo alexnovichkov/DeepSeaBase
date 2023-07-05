@@ -4,46 +4,56 @@
 ChannelSelector::ChannelSelector() = default;
 
 
-ChannelSelector::ChannelSelector(const QString &filter) : m_filter(filter)
+ChannelSelector::ChannelSelector(const QString &filter) : mFilter(filter)
 {DD;
     recalculateIndexes();
 }
 
 bool ChannelSelector::includes(int index) const
 {DD;
-    if (m_filter.isEmpty() || m_filter == "все") return true; // пустой фильтр - все каналы
-    return (m_indexes.contains(index));
+    if (mFilter.isEmpty() || mSelection == Selection::All)
+        return true; // пустой фильтр - все каналы
+
+    return (mIndexes.contains(index));
 }
 
 void ChannelSelector::setFilter(const QString &filter)
 {DD;
-    if (m_filter == filter) return;
+    if (mFilter == filter) return;
 
-    m_filter = filter;
+    mFilter = filter;
+    recalculateIndexes();
+}
+
+void ChannelSelector::setSelection(ChannelSelector::Selection selection)
+{
+    if (mSelection == selection) return;
+
+    mSelection = selection;
     recalculateIndexes();
 }
 
 void ChannelSelector::addIndex(int index)
 {DD;
-    m_indexes << index;
-    if (max_index < index) max_index = index;
+    mIndexes << index;
+    if (maxIndex < index) maxIndex = index;
 }
 
 QStringList ChannelSelector::indexes() const
 {DD;
     QStringList result;
-    for (int i: qAsConst(m_indexes)) result << QString::number(i+1);
+    for (int i: qAsConst(mIndexes)) result << QString::number(i+1);
     return result;
 }
 
 void ChannelSelector::recalculateIndexes()
 {DD;
-    m_indexes.clear();
-    max_index = -1;
-    if (m_filter.isEmpty() || m_filter == "все") return;
+    mIndexes.clear();
+    maxIndex = -1;
+    if (mFilter.isEmpty() || mSelection == Selection::All) return;
 
     bool ok;
-    const QStringList filters = m_filter.split(",",QString::SkipEmptyParts);
+    const QStringList filters = mFilter.split(",",QString::SkipEmptyParts);
     for (const QString &filter: filters) {
         if (filter.contains("-")) {
             QStringList range = filter.split("-");
