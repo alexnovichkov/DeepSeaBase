@@ -4,7 +4,7 @@
 #include "logging.h"
 #include "plot/qcustomplot.h"
 
-AxisBoundsDialog::AxisBoundsDialog(QCPAxis *axis, AxisTickerParameters parameters, QWidget *parent) : QDialog(parent),
+AxisBoundsDialog::AxisBoundsDialog(QCPAxis *axis, AxisParameters parameters, QWidget *parent) : QDialog(parent),
     _axis(axis), _parameters(parameters)
 {DD;
     setWindowTitle("Установка шкалы");
@@ -89,7 +89,7 @@ AxisBoundsDialog::AxisBoundsDialog(QCPAxis *axis, AxisTickerParameters parameter
     setLayout(l);
 }
 
-AxisTickerParameters AxisBoundsDialog::parameters() const
+AxisParameters AxisBoundsDialog::parameters() const
 {
     return _parameters;
 }

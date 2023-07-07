@@ -63,7 +63,7 @@ Plot::Plot(Enums::PlotType type, QWidget *parent) :
     cursorBox->setVisible(false);
 
     if (type == Enums::PlotType::Octave) {
-        m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::Logarithmic);
+        m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::ThirdOctave);
     }
 
     connect(picker, &Picker::removeNeeded, this, &Plot::removeCursor);
@@ -197,10 +197,10 @@ void Plot::updateBounds()
 
 QMenu *Plot::createMenu(Enums::AxisType axis, const QPoint &pos)
 {DD;
-    QMenu *menu = new QMenu(0);
+    QMenu *menu = new QMenu(m_plot);
 
     if (axis == Enums::AxisType::atBottom) {
-        auto scm = new QMenu("Одинарный курсор", 0);
+        auto scm = new QMenu("Одинарный курсор", menu);
         scm->addAction("Вертикальный", [=](){
             auto cursor = cursors->addSingleCursor(m_plot->localCursorPosition(pos), Cursor::Style::Vertical);
             m_plot->addCursorToSecondaryPlots(cursor);
@@ -210,29 +210,55 @@ QMenu *Plot::createMenu(Enums::AxisType axis, const QPoint &pos)
             m_plot->addCursorToSecondaryPlots(cursor);
         });
         menu->addMenu(scm);
-        if (type() != Enums::PlotType::Spectrogram) {
-            auto dcm = new QMenu("Двойной курсор", 0);
-            dcm->addAction("Стандартный", [=](){
-                auto cursor = cursors->addDoubleCursor(m_plot->localCursorPosition(pos), Cursor::Style::Vertical);
-                m_plot->addCursorToSecondaryPlots(cursor);
-            });
-            dcm->addAction("Режекция", [=](){
-                auto cursor = cursors->addRejectCursor(m_plot->localCursorPosition(pos), Cursor::Style::Vertical);
-                m_plot->addCursorToSecondaryPlots(cursor);
-            });
-            menu->addMenu(dcm);
-        }
+
+        auto dcm = new QMenu("Двойной курсор", menu);
+        dcm->addAction("Стандартный", [=](){
+            auto cursor = cursors->addDoubleCursor(m_plot->localCursorPosition(pos), Cursor::Style::Vertical);
+            m_plot->addCursorToSecondaryPlots(cursor);
+        });
+        dcm->addAction("Режекция", [=](){
+            auto cursor = cursors->addRejectCursor(m_plot->localCursorPosition(pos), Cursor::Style::Vertical);
+            m_plot->addCursorToSecondaryPlots(cursor);
+        });
+        menu->addMenu(dcm);
+
         menu->addAction("Гармонический курсор", [=](){
             auto cursor = cursors->addHarmonicCursor(m_plot->localCursorPosition(pos));
             m_plot->addCursorToSecondaryPlots(cursor);
         });
 
-        menu->addAction(m_plot->axisScale(axis)==Enums::AxisScale::Linear?"Логарифмическая шкала":"Линейная шкала", [=]() {
-            if (m_plot->axisScale(axis)==Enums::AxisScale::Logarithmic)
-                m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::Linear);
-            else
-                m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::Logarithmic);
+        auto axisScaleAct = new QAction("Шкала", menu);
+        auto axisScaleMenu = new QMenu(menu);
+        axisScaleAct->setMenu(axisScaleMenu);
+        auto scaleGroup = new QActionGroup(axisScaleMenu);
+
+        auto linear = new QAction("Линейная", scaleGroup);
+        linear->setCheckable(true);
+        linear->setData(static_cast<int>(Enums::AxisScale::Linear));
+        axisScaleMenu->addAction(linear);
+
+        auto logar = new QAction("Логарифмическая", scaleGroup);
+        logar->setCheckable(true);
+        logar->setData(static_cast<int>(Enums::AxisScale::Logarithmic));
+        axisScaleMenu->addAction(logar);
+
+        auto oct = new QAction("Третьоктава", scaleGroup);
+        oct->setCheckable(true);
+        oct->setData(static_cast<int>(Enums::AxisScale::ThirdOctave));
+        axisScaleMenu->addAction(oct);
+
+        switch (m_plot->axisScale(axis)) {
+            case Enums::AxisScale::Linear: linear->setChecked(true); break;
+            case Enums::AxisScale::Logarithmic: logar->setChecked(true); break;
+            case Enums::AxisScale::ThirdOctave: oct->setChecked(true); break;
+        }
+
+        connect(scaleGroup, &QActionGroup::triggered, [=](QAction *act){
+            Enums::AxisScale scale = static_cast<Enums::AxisScale>(act->data().toInt());
+            m_plot->setAxisScale(Enums::AxisType::atBottom, scale);
         });
+
+        menu->addAction(axisScaleAct);
     }
 
     // определяем, все ли графики представляют временные данные

@@ -206,7 +206,6 @@ bool Spectrogram::canBePlottedOnRightAxis(Channel *ch, QString *message) const
 
 QMenu *Spectrogram::createMenu(Enums::AxisType axis, const QPoint &pos)
 {DD;
-    Q_UNUSED(pos);
     QMenu *menu = new QMenu(widget());
 
     if (axis == Enums::AxisType::atBottom) {
@@ -219,12 +218,38 @@ QMenu *Spectrogram::createMenu(Enums::AxisType axis, const QPoint &pos)
             m_plot->addCursorToSecondaryPlots(cursor);
         });
 
-        menu->addAction(m_plot->axisScale(axis)==Enums::AxisScale::Linear?"Линейная шкала":"Логарифмическая шкала", [=]() {
-            if (m_plot->axisScale(axis)==Enums::AxisScale::Logarithmic)
-                m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::Linear);
-            else
-                m_plot->setAxisScale(Enums::AxisType::atBottom, Enums::AxisScale::Logarithmic);
+        auto axisScaleAct = new QAction("Шкала", menu);
+        auto axisScaleMenu = new QMenu(menu);
+        axisScaleAct->setMenu(axisScaleMenu);
+        auto scaleGroup = new QActionGroup(axisScaleMenu);
+
+        auto linear = new QAction("Линейная", scaleGroup);
+        linear->setCheckable(true);
+        linear->setData(static_cast<int>(Enums::AxisScale::Linear));
+        axisScaleMenu->addAction(linear);
+
+        auto logar = new QAction("Логарифмическая", scaleGroup);
+        logar->setCheckable(true);
+        logar->setData(static_cast<int>(Enums::AxisScale::Logarithmic));
+        axisScaleMenu->addAction(logar);
+
+        auto oct = new QAction("Третьоктава", scaleGroup);
+        oct->setCheckable(true);
+        oct->setData(static_cast<int>(Enums::AxisScale::ThirdOctave));
+        axisScaleMenu->addAction(oct);
+
+        switch (m_plot->axisScale(axis)) {
+            case Enums::AxisScale::Linear: linear->setChecked(true); break;
+            case Enums::AxisScale::Logarithmic: logar->setChecked(true); break;
+            case Enums::AxisScale::ThirdOctave: oct->setChecked(true); break;
+        }
+
+        connect(scaleGroup, &QActionGroup::triggered, [=](QAction *act){
+            Enums::AxisScale scale = static_cast<Enums::AxisScale>(act->data().toInt());
+            m_plot->setAxisScale(Enums::AxisType::atBottom, scale);
         });
+
+        menu->addAction(axisScaleAct);
     }
 
     bool curvesEmpty = true;

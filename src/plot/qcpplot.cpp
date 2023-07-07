@@ -154,43 +154,6 @@ void QCPPlot::removeCursorFromSecondaryPlots(Cursor *cursor)
 //    replot();
 }
 
-//void QCPPlot::updateSecondaryPlots(const QPointF &value)
-//{DD;
-//    static QPointF oldValue;
-//    if (!qIsNaN(value.x())) oldValue = value;
-
-//    Curve *curve = nullptr;
-//    for (auto c: parent->model()->curves()) {
-//        if (auto plottable = dynamic_cast<QCPAbstractPlottable*>(c); plottable->visible()) {
-//            curve = c;
-//            break;
-//        }
-//    }
-//    if (!curve) {
-//        spectrePlot->clear();
-//        throughPlot->clear();
-//    }
-//    else {
-//        if (spectrePlot) {
-//            auto zIndex = curve->channel->data()->nearestZ(oldValue.y());
-//            if (zIndex < 0) zIndex = 0;
-//            QVector<double> data = curve->channel->data()->yValues(zIndex);
-//            QVector<double> xData = curve->channel->data()->xValues();
-//            spectrePlot->update(xData, data);
-//        }
-//        if (throughPlot) {
-//            QVector<double> data;
-//            double xIndex = curve->channel->data()->nearest(oldValue.x());
-//            if (xIndex < 0) xIndex = 0;
-//            for (int i=0; i<curve->channel->data()->blocksCount(); ++i)
-//                data << curve->channel->data()->yValue(xIndex, i);
-//            QVector<double> xData = curve->channel->data()->zValues();
-//            throughPlot->update(xData, data);
-//        }
-//    }
-//    replot();
-//}
-
 void QCPPlot::updateSecondaryPlots()
 {
     if (spectrePlot) spectrePlot->update();
@@ -220,7 +183,7 @@ void QCPPlot::setEventFilter(CanvasEventFilter *filter)
 void QCPPlot::axisDoubleClicked(QCPAxis *axis)
 {
     auto type = fromQcpAxis(axis->axisType());
-    AxisBoundsDialog dialog(axis, tickers.value(type));
+    AxisBoundsDialog dialog(axis, axisParameters.value(type));
     if (dialog.exec()) {
         if (axis->scaleType() == QCPAxis::stLinear) {
             auto ticker = new QCPAxisTicker();
@@ -233,7 +196,7 @@ void QCPPlot::axisDoubleClicked(QCPAxis *axis)
             ticker->setSubTickStep(t.subTickStep);
 
             axis->setTicker(QSharedPointer<QCPAxisTicker>(ticker));
-            tickers.insert(type, t);
+            axisParameters.insert(type, t);
         }
 
         ZoomStack::zoomCoordinates coords;
@@ -362,29 +325,38 @@ void QCPPlot::setAxisScale(Enums::AxisType axisType, Enums::AxisScale scale)
     auto a = axis(axisType);
     if (!a) return;
 
+    const bool c = axisParameters.contains(axisType);
+    auto &t = axisParameters[axisType];
+    t.scale = scale;
+
     QList<QCPAxis*> axes;
     axes << a;
     if (spectrePlot) axes << spectrePlot->axis(axisType);
 
     for (auto &ax: axes) {
-        if (scale == Enums::AxisScale::Linear) {
-            ax->setScaleType(QCPAxis::stLinear);
-            auto ticker = new QCPAxisTicker();
-            if (tickers.contains(axisType)) {
-                auto t = tickers.value(axisType);
-                ticker->setTickStepStrategy(t.tickStepAutomatic ? QCPAxisTicker::tssReadability : QCPAxisTicker::tssFixed);
-                ticker->setSubTickStepStrategy(t.subTickStepAutomatic ? QCPAxisTicker::tssReadability : QCPAxisTicker::tssFixed);
-                ticker->setTickStep(t.tickStep);
-                ticker->setSubTickStep(t.subTickStep);
+        switch (scale) {
+            case Enums::AxisScale::Linear: {
+                ax->setScaleType(QCPAxis::stLinear);
+                auto ticker = new QCPAxisTicker();
+                if (c) {
+                    ticker->setTickStepStrategy(t.tickStepAutomatic ? QCPAxisTicker::tssReadability : QCPAxisTicker::tssFixed);
+                    ticker->setSubTickStepStrategy(t.subTickStepAutomatic ? QCPAxisTicker::tssReadability : QCPAxisTicker::tssFixed);
+                    ticker->setTickStep(t.tickStep);
+                    ticker->setSubTickStep(t.subTickStep);
+                }
+                ax->setTicker(QSharedPointer<QCPAxisTicker>(ticker));
+                break;
             }
-            ax->setTicker(QSharedPointer<QCPAxisTicker>(ticker));
-        }
-        else if (scale == Enums::AxisScale::Logarithmic) {
-            ax->setScaleType(QCPAxis::stLogarithmic);
-            if (parent->type() == Enums::PlotType::Octave)
-                ax->setTicker(octaveTicker);
-            else
+            case Enums::AxisScale::Logarithmic: {
+                ax->setScaleType(QCPAxis::stLogarithmic);
                 ax->setTicker(logTicker);
+                break;
+            }
+            case Enums::AxisScale::ThirdOctave: {
+                ax->setScaleType(QCPAxis::stLogarithmic);
+                ax->setTicker(octaveTicker);
+                break;
+            }
         }
     }
 
@@ -393,10 +365,7 @@ void QCPPlot::setAxisScale(Enums::AxisType axisType, Enums::AxisScale scale)
 
 Enums::AxisScale QCPPlot::axisScale(Enums::AxisType axisType) const
 {
-    auto a = axis(axisType);
-    if (a && a->scaleType() == QCPAxis::stLogarithmic)
-        return Enums::AxisScale::Logarithmic;
-    return Enums::AxisScale::Linear;
+    return axisParameters.value(axisType).scale;
 }
 
 void QCPPlot::setAxisRange(Enums::AxisType axisType, double min, double max, double step)

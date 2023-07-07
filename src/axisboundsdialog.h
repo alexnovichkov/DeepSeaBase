@@ -9,14 +9,14 @@
 class AxisBoundsDialog : public QDialog
 {
 public:
-    AxisBoundsDialog(QCPAxis *axis, AxisTickerParameters parameters, QWidget *parent = 0);
+    AxisBoundsDialog(QCPAxis *axis, AxisParameters parameters, QWidget *parent = 0);
     inline QCPRange range() const {return {_leftBorder, _rightBorder};}
-    AxisTickerParameters parameters() const;
+    AxisParameters parameters() const;
 private:
     double _leftBorder = 0; //левая граница
     double _rightBorder = 0; //правая граница
     QCPAxis* _axis = nullptr;
-    AxisTickerParameters _parameters;
+    AxisParameters _parameters;
 };
 
 #endif // AXISBOUNDSDIALOG_H

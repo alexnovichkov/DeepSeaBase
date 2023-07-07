@@ -25,7 +25,8 @@ namespace Enums {
 
     enum class AxisScale {
         Linear,
-        Logarithmic
+        Logarithmic,
+        ThirdOctave
     };
     Q_ENUM_NS(AxisScale)
 
@@ -80,12 +81,13 @@ struct PointBlock
     int to = 0;
 };
 
-struct AxisTickerParameters
+struct AxisParameters
 {
     double tickStep = 0;
     double subTickStep = 0;
     bool tickStepAutomatic = true;
     bool subTickStepAutomatic = true;
+    Enums::AxisScale scale = Enums::AxisScale::Linear;
 };
 
 #endif // ENUMS_H
