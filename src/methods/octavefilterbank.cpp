@@ -6,7 +6,7 @@
 
 #include "filtering.h"
 #include "algorithms.h"
-
+#include "settings.h"
 
 OctaveFilterBank::OctaveFilterBank()
 {DD;
@@ -216,7 +216,7 @@ OctaveType OctaveFilterBank::guessOctaveType(const QVector<double> &data)
     return OctaveType::Unknown;
 }
 
-QVector<double> OctaveFilterBank::octaveStrips(int octave, int count, int base)
+QVector<double> OctaveFilterBank::octaveStrips(int octave, int count, int base, int start)
 {DD;
     QVector<double> v(count);
     switch (octave) {
@@ -233,8 +233,9 @@ QVector<double> OctaveFilterBank::octaveStrips(int octave, int count, int base)
                 for (int i=0; i<count; ++i) v[i] = pow(2.0, 0.25*(2*(i-20)+1))*1000.0;
             break;
         case 3:
-            if (base==10)
-                for (int i=0; i<count; ++i) v[i] = pow(10.0, 0.1*i);
+            if (base==10) {
+                for (int i=0; i<count; ++i) v[i] = pow(10.0, 0.1*(i+start));
+            }
             if (base==2)
                 for (int i=0; i<count; ++i) v[i] = pow(2.0, 1.0*(i-30)/3.0)*1000.0;
             break;

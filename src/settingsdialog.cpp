@@ -5,6 +5,7 @@
 #include "enums.h"
 #include "logging.h"
 #include "settings.h"
+#include "methods/octavefilterbank.h"
 
 #include <QtTreePropertyBrowser>
 #include <QtVariantPropertyManager>
@@ -63,7 +64,7 @@ void SettingsDialog::addSettings()
     auto graphs = m_manager->addProperty(QVariant::String, "Графики");
     graphs->setValue(QVariant());
     auto item = propertyTree->addProperty(graphs);
-    propertyTree->setExpanded(item, true);
+    //propertyTree->setExpanded(item, true);
 
 
     auto cursorDialogFont = m_manager->addProperty(QVariant::Font, "Шрифт окна курсоров");
@@ -78,4 +79,22 @@ void SettingsDialog::addSettings()
     m_displayNames.insert("График 1/3октавы", "plotOctaveAsHistogram");
     plotOctaveAsHistogram->setValue(se->getSetting("plotOctaveAsHistogram", 0).toInt());
     graphs->addSubProperty(plotOctaveAsHistogram);
+
+    /* DFD */
+    auto dfd = m_manager->addProperty(QVariant::String, "Файлы DFD");
+    dfd->setValue(QVariant());
+    item = propertyTree->addProperty(dfd);
+    //propertyTree->setExpanded(item, true);
+
+    auto thirdOctaveInitialFilter = m_manager->addProperty(QtVariantPropertyManager::enumTypeId(),
+                                                           "Начальный фильтр третьоктавы");
+    m_displayNames.insert("Начальный фильтр третьоктавы", "thirdOctaveInitialFilter");
+    thirdOctaveInitialFilter->setToolTip("Если в файле отсутствует канал для оси X, \n"
+                                         "первый фильтр будет равен этому числу");
+    auto vals = OctaveFilterBank::octaveStrips(3, 40, 10, 0);
+    QVariantList vals1;
+    for (double v: vals) vals1 << v;
+    thirdOctaveInitialFilter->setAttribute("enumNames", vals1);
+    thirdOctaveInitialFilter->setValue(se->getSetting("thirdOctaveInitialFilter", 1).toInt());
+    dfd->addSubProperty(thirdOctaveInitialFilter);
 }

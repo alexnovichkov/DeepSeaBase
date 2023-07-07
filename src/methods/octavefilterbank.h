@@ -54,8 +54,9 @@ public:
 
     static OctaveType guessOctaveType(const QVector<double> &data);
 
-    //низкоуровневая функция, которая расчитывает нужное количество октавных полос, начиная с 1 Гц
-    static QVector<double> octaveStrips(int octave, int count, int base = 10);
+    //низкоуровневая функция, которая расчитывает нужное количество октавных полос,
+    //начиная с фильтра start ( 0 = 1 Гц, 1=1.25 Гц и т.д.)
+    static QVector<double> octaveStrips(int octave, int count, int base, int start = 0);
     static QString frequencyLabel(int octave, double frequency);
 private:
     //обновление списка центральных частот без обрезки по частоте Найквиста

@@ -49,7 +49,8 @@ bool Settings::hasSetting(const QString &key) const
 {
     static QStringList allSettings {
         "cursorDialogFont",
-        "plotOctaveAsHistogram"
+        "plotOctaveAsHistogram",
+        "thirdOctaveInitialFilter"
     };
 
     if (key.isEmpty()) return false;
