@@ -4,7 +4,6 @@
 #include <QStandardPaths>
 #include "fileformats/filedescriptor.h"
 #include "fileformats/formatfactory.h"
-#include "colorselector.h"
 #include "logging.h"
 #include "settings.h"
 #include "qeasysettings.hpp"

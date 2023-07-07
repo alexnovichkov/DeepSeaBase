@@ -15,7 +15,7 @@ public:
 signals:
     
 public slots:
-    void accept() override;
+
 };
 
 #endif // COLOREDITDIALOG_H

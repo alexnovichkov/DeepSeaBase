@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QMap>
 #include <enums.h>
+#include "colorselector.h"
 
 class QCPAxisRect;
 class QCPGraph;
@@ -14,7 +15,6 @@ class QCPLayoutGrid;
 class QCPAxis;
 class Cursor;
 class Curve;
-class ColorSelector;
 
 class SecondaryPlot : public QObject
 {
@@ -44,7 +44,7 @@ protected:
     QCPPlot *m_parent = nullptr;
     QCPLayoutGrid *m_layout = nullptr;
     Curve *m_curve = nullptr;
-    ColorSelector *m_colorSelector = nullptr;
+    ColorSelector m_colorSelector;
 };
 
 class SpectrePlot : public SecondaryPlot

@@ -14,15 +14,14 @@ ColorEditDialog::ColorEditDialog(QWidget *parent) :
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
 
-    QVariantList list = se->getSetting("colors").toList();
-    selector = new ColorSelector(list);
+    ColorSelector selector;
 
-    QTableWidget *table = new QTableWidget(selector->colorsCount(),1, this);
+    QTableWidget *table = new QTableWidget(selector.colorsCount(),1, this);
     table->setHorizontalHeaderLabels(QStringList("Цвет"));
 
-    for (int i =0; i<selector->colorsCount(); ++i) {
+    for (int i = 0; i < selector.colorsCount(); ++i) {
         QTableWidgetItem *item = new QTableWidgetItem();
-        item->setBackground(selector->color(i));
+        item->setBackground(selector.color(i));
         table->setItem(i,0,item);
     }
     connect(table,&QTableWidget::cellClicked, [=](int row, int col) {
@@ -31,7 +30,8 @@ ColorEditDialog::ColorEditDialog(QWidget *parent) :
 
         if (color.isValid()) {
             table->item(row, col)->setBackground(color);
-            selector->setColor(color, row);
+            ColorSelector sel;
+            sel.setColor(color, row);
         }
     }
     );
@@ -42,10 +42,4 @@ ColorEditDialog::ColorEditDialog(QWidget *parent) :
     i++;
     l->addWidget(buttonBox,i,0);
     setLayout(l);
-}
-
-void ColorEditDialog::accept()
-{
-    auto list = selector->getColors();
-    se->setSetting("colors", list);
 }

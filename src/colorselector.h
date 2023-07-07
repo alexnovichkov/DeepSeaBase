@@ -11,27 +11,27 @@
 class ColorSelector
 {
 public:
-    ColorSelector(const QVariantList &list);
+    ColorSelector();
 
-    int colorsCount() const {return colors.size();}
-    void addColor(const QColor &color);
+    int colorsCount() const {return COLORS_COUNT;}
+//    void addColor(const QColor &color);
 
-    void setColor(const QColor &color, int index);
+    void setColor(QColor color, int index);
 
-    void removeColor(int index);
+//    void removeColor(int index);
 
     QColor getColor();
     QColor color(int index) const;
 
     QVariantList getColors() const;
 
-    void resetState();
+//    void resetState();
 
     void freeColor(const QColor &color);
 
 private:
-    QVector<QColor> colors;
-    QSet<QColor> usedColors;
+    //QVector<QColor> colors;
+    QVector<bool> usedColors;
 };
 
 #endif // COLORSELECTOR_H

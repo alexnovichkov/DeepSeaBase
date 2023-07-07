@@ -49,8 +49,7 @@ Plot::Plot(Enums::PlotType type, QWidget *parent) :
     connect(zoom, &ZoomStack::replotNeeded, this, &Plot::replot);
     m_plot = new QCPPlot(this, parent);
 
-    QVariantList list = se->getSetting("colors").toList();
-    colors = new ColorSelector(list);
+    colors = new ColorSelector();
 
     axisLabelsVisible = se->getSetting("axisLabelsVisible", true).toBool();
     yValuesPresentationLeft = DataHolder::ShowAsDefault;

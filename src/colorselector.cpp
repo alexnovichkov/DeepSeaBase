@@ -2,6 +2,7 @@
 
 #include <QtCore>
 #include "logging.h"
+#include "settings.h"
 
 inline uint qHash(const QColor &key, uint seed)
 {
@@ -45,45 +46,49 @@ static uint colorsTable[32]={
     0x000d890a
 };
 
-ColorSelector::ColorSelector(const QVariantList &list)
+ColorSelector::ColorSelector()
 {DD;
-    if (list.isEmpty() || list.size() < COLORS_COUNT) {
-        colors.resize(COLORS_COUNT);
+    QVariantList colors = se->getSetting("colors").toList();
+    if (colors.isEmpty() || colors.size() < COLORS_COUNT) {
+        //список пустой - создаем новый список и сохраняем его в настройках
+        colors.clear();
         for (int i=0; i<colors.size() && i<COLORS_COUNT; ++i)
-            colors[i] = QColor(QRgb(colorsTable[i]));
+            colors << QColor(QRgb(colorsTable[i]));
+
+        se->setSetting("colors", colors);
     }
-    else {
-        colors.resize(list.size());
-        for (int i=0; i<list.size(); ++i) {
-            QVariant v = list.at(i);
-            colors[i] = v.value<QColor>();
-        }
-    }
+
+    usedColors.fill(false, colors.size());
 }
 
-void ColorSelector::addColor(const QColor &color)
-{DD;
-    colors.append(color);
-}
+//void ColorSelector::addColor(const QColor &color)
+//{DD;
+//    colors.append(color);
+//}
 
-void ColorSelector::setColor(const QColor &color, int index)
+void ColorSelector::setColor(QColor color, int index)
 {DD;
-    if (index>=0 && index<colors.size())
+    QVariantList colors = se->getSetting("colors").toList();
+    if (index>=0 && index < colors.size()) {
         colors[index] = color;
+        se->setSetting("colors", colors);
+    }
 }
 
-void ColorSelector::removeColor(int index)
-{DD;
-    if (index>=0 && index<colors.size())
-        colors.remove(index);
-}
+//void ColorSelector::removeColor(int index)
+//{DD;
+//    if (index>=0 && index<colors.size())
+//        colors.remove(index);
+//}
 
 QColor ColorSelector::getColor()
 {DD;
-    for (const QColor &c: colors) {
-        if (!usedColors.contains(c)) {
-            usedColors << c;
-            return c;
+    QVariantList colors = se->getSetting("colors").toList();
+    for (int i=0; i<usedColors.size(); i++) {
+        bool &used = usedColors[i];
+        if (!used) {
+            used = true;
+            return colors[i].value<QColor>();
         }
     }
 
@@ -92,28 +97,31 @@ QColor ColorSelector::getColor()
 
 QColor ColorSelector::color(int index) const
 {DD;
-    return colors.at(index);
+    QVariantList colors = se->getSetting("colors").toList();
+    return colors.value(index).value<QColor>();
 }
 
 QVariantList ColorSelector::getColors() const
 {DD;
-    QVariantList vec;
-    std::transform(colors.cbegin(), colors.cend(), std::back_inserter(vec), [](const QColor &color){
-        QVariant v;
-        v.setValue<QColor>(color);
-        return v;
-    });
+    QVariantList vec = se->getSetting("colors").toList();
+
     return vec;
 }
 
-void ColorSelector::resetState()
-{DD;
-    usedColors.clear();
-}
+//void ColorSelector::resetState()
+//{DD;
+//    usedColors.fill(false, COLORS_COUNT);
+//}
 
 void ColorSelector::freeColor(const QColor &color)
 {DD;
-    usedColors.remove(color);
+    QVariantList vec = se->getSetting("colors").toList();
+    for (int i=0; i<usedColors.size(); ++i) {
+        if (vec.value(i).value<QColor>() == color) {
+            usedColors[i] = false;
+            break;
+        }
+    }
 }
 
 
