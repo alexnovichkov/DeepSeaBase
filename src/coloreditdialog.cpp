@@ -4,6 +4,7 @@
 #include "colorselector.h"
 #include <QtWidgets>
 #include "logging.h"
+#include "settings.h"
 
 ColorEditDialog::ColorEditDialog(QWidget *parent) :
     QDialog(parent)
@@ -13,7 +14,8 @@ ColorEditDialog::ColorEditDialog(QWidget *parent) :
     QDialogButtonBox *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok);
     connect(buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
 
-    ColorSelector *selector = App->colors();
+    QVariantList list = se->getSetting("colors").toList();
+    selector = new ColorSelector(list);
 
     QTableWidget *table = new QTableWidget(selector->colorsCount(),1, this);
     table->setHorizontalHeaderLabels(QStringList("Цвет"));
@@ -40,4 +42,10 @@ ColorEditDialog::ColorEditDialog(QWidget *parent) :
     i++;
     l->addWidget(buttonBox,i,0);
     setLayout(l);
+}
+
+void ColorEditDialog::accept()
+{
+    auto list = selector->getColors();
+    se->setSetting("colors", list);
 }

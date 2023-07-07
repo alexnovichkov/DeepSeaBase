@@ -12,8 +12,6 @@
 Application::Application(int &argc, char **argv) : QApplication(argc, argv)
 {DD;
     Trace::level = el::Loggers::verboseLevel();
-    QVariantList list = Settings::getSetting("colors").toList();
-    m_colors = std::make_unique<ColorSelector>(list);
     formatFactory = std::make_unique<FormatFactory>();
 
 //#ifdef APP_PORTABLE
@@ -66,9 +64,6 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
 Application::~Application()
 {DD;
     for (auto f: qAsConst(files)) f.reset();
-
-    Settings::setSetting("colors", m_colors->getColors());
-//    logStream.device()->close();
 }
 
 F Application::find(const QString &name) const

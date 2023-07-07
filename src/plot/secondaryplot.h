@@ -14,12 +14,7 @@ class QCPLayoutGrid;
 class QCPAxis;
 class Cursor;
 class Curve;
-
-struct SecondaryColors
-{
-    QColor color;
-    bool taken;
-};
+class ColorSelector;
 
 class SecondaryPlot : public QObject
 {
@@ -38,8 +33,6 @@ public:
 
 signals:
 protected:
-    QColor firstFreeColor();
-    void freeColor(QColor color);
     virtual QVector<double> xData(Cursor *cursor) const = 0;
     virtual QVector<double> yData(Cursor *cursor) const = 0;
     virtual QString value(Cursor *cursor) const = 0;
@@ -51,11 +44,7 @@ protected:
     QCPPlot *m_parent = nullptr;
     QCPLayoutGrid *m_layout = nullptr;
     Curve *m_curve = nullptr;
-    SecondaryColors secondaryColors[12] =
-      {{QColor(79,129,189),false}, {QColor(192,80,77),false}, {QColor(155,187,89),false},
-       {QColor(128,100,162),false}, {QColor(75,172,198),false}, {QColor(247,150,70),false},
-       {QColor(44,77,117),false}, {QColor(119,44,42),false}, {QColor(95,117,48),false},
-       {QColor(77,59,98),false}, {QColor(39,106,124),false}, {QColor(182,87,8),false}};
+    ColorSelector *m_colorSelector = nullptr;
 };
 
 class SpectrePlot : public SecondaryPlot

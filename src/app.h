@@ -8,7 +8,6 @@
 #include <memory>
 #include <QtDebug>
 
-class ColorSelector;
 class FileDescriptor;
 class Channel;
 
@@ -38,13 +37,9 @@ public:
     void loadPlugins();
 
     QList<QJsonObject> convertPlugins;
-
-    ColorSelector *colors() {return m_colors.get();}
     std::unique_ptr<AbstractFormatFactory> formatFactory;
-//    QTextStream logStream;
 private:
     QHash<QString, F> files;
-    std::unique_ptr<ColorSelector> m_colors;
 };
 
 #endif // APP_H

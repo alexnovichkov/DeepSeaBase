@@ -5,24 +5,8 @@
 #include "curve.h"
 #include "dataholder.h"
 #include "fileformats/filedescriptor.h"
-
-QColor SecondaryPlot::firstFreeColor()
-{
-    for (int i=0; i<12; i++) {
-        if (!secondaryColors[i].taken) {
-            secondaryColors[i].taken = true;
-            return secondaryColors[i].color;
-        }
-    }
-    return Qt::gray;
-}
-
-void SecondaryPlot::freeColor(QColor color)
-{
-    for (int i=0; i<12; i++) {
-        if (secondaryColors[i].color == color) secondaryColors[i].taken = false;
-    }
-}
+#include "colorselector.h"
+#include "settings.h"
 
 SecondaryPlot::SecondaryPlot(QCPPlot *parent, const QString &title, QCPLayoutGrid *subLayout)
     : QObject(parent), m_parent{parent}
@@ -40,6 +24,9 @@ SecondaryPlot::SecondaryPlot(QCPPlot *parent, const QString &title, QCPLayoutGri
     m_layout->addElement(0,0, m_title);
     m_layout->addElement(1,0, m_axisRect);
     m_axisRect->insetLayout()->addElement(m_legend, Qt::AlignBottom);
+
+    QVariantList list = se->getSetting("colors").toList();
+    m_colorSelector = new ColorSelector(list);
 
     QList<QCPAxis*> allAxes;
     allAxes << m_axisRect->axes();
@@ -88,8 +75,8 @@ void SecondaryPlot::addCursor(Cursor *cursor)
         }
 
         graph->setName(QString("%1 с").arg(val));
-        graph->setPen(firstFreeColor());
-        cursor->setColor(graph->pen().color().darker());
+        graph->setPen(m_colorSelector->getColor());
+        //cursor->setColor(graph->pen().color().darker());
         m_graphs.insert(cursor, graph);
         if (m_legend) graph->addToLegend(m_legend);
     }
@@ -99,7 +86,7 @@ void SecondaryPlot::addCursor(Cursor *cursor)
 void SecondaryPlot::removeCursor(Cursor *cursor)
 {
     if (auto graph = m_graphs.take(cursor)) {
-        freeColor(graph->pen().color());
+        m_colorSelector->freeColor(graph->pen().color());
         graph->removeFromLegend(m_legend);
         m_parent->removeGraph(graph);
     }
