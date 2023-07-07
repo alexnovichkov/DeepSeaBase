@@ -15,10 +15,10 @@ ImageRenderDialog::ImageRenderDialog(bool askForPath, bool askForGraphOnly, QWid
     connect(buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
 
 
-    _path = Settings::getSetting("lastPicture", "plot.bmp").toString();
-    _width = Settings::getSetting("lastPictureWidth", defaultSize().width()).toInt();
-    _height = Settings::getSetting("lastPictureHeight", defaultSize().height()).toInt();
-    _resolution = Settings::getSetting("lastPictureResolution", defaultResolution()).toInt();
+    _path = se->getSetting("lastPicture", "plot.bmp").toString();
+    _width = se->getSetting("lastPictureWidth", defaultSize().width()).toInt();
+    _height = se->getSetting("lastPictureHeight", defaultSize().height()).toInt();
+    _resolution = se->getSetting("lastPictureResolution", defaultResolution()).toInt();
 
     if (askForPath) {
         pathEdit = new FancyLineEdit(this);
@@ -48,7 +48,7 @@ ImageRenderDialog::ImageRenderDialog(bool askForPath, bool askForGraphOnly, QWid
 
     if (askForGraphOnly) {
         graphOnlyCheckBox = new QCheckBox("Убрать вспомогательные графики", this);
-        graphOnlyCheckBox->setChecked(Settings::getSetting("lastPictureGraphOnly", false).toBool());
+        graphOnlyCheckBox->setChecked(se->getSetting("lastPictureGraphOnly", false).toBool());
     }
 
     widthEdit = new QLineEdit(QString::number(_width), this);
@@ -67,7 +67,7 @@ ImageRenderDialog::ImageRenderDialog(bool askForPath, bool askForGraphOnly, QWid
 
     resolutionCombo = new QComboBox(this);
     resolutionCombo->addItems(QStringList()<<"экранное"<<"96 dpi"<<"150 dpi"<<"300 dpi");
-    resolutionCombo->setCurrentIndex(Settings::getSetting("imageResolution", 2).toInt());
+    resolutionCombo->setCurrentIndex(se->getSetting("imageResolution", 2).toInt());
 
     auto *mainLayout = new QFormLayout;
     if (askForPath)
@@ -85,12 +85,12 @@ ImageRenderDialog::ImageRenderDialog(bool askForPath, bool askForGraphOnly, QWid
 
 ImageRenderDialog::~ImageRenderDialog()
 {
-    Settings::setSetting("imageResolution", resolutionCombo->currentIndex());
-    Settings::setSetting("lastPicture", _path);
-    Settings::setSetting("lastPictureWidth", _width);
-    Settings::setSetting("lastPictureHeight", _height);
-    Settings::setSetting("lastPictureResolution", _resolution);
-    if (graphOnlyCheckBox) Settings::setSetting("lastPictureGraphOnly", graphOnlyCheckBox->isChecked());
+    se->setSetting("imageResolution", resolutionCombo->currentIndex());
+    se->setSetting("lastPicture", _path);
+    se->setSetting("lastPictureWidth", _width);
+    se->setSetting("lastPictureHeight", _height);
+    se->setSetting("lastPictureResolution", _resolution);
+    if (graphOnlyCheckBox) se->setSetting("lastPictureGraphOnly", graphOnlyCheckBox->isChecked());
 }
 
 int ImageRenderDialog::getResolution() const

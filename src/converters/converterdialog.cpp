@@ -35,13 +35,13 @@ ConverterDialog::ConverterDialog(QList<FileDescriptor *> dataBase, QWidget *pare
 
     button = new QPushButton("Добавить файлы", this);
     connect(button, &QPushButton::clicked, [=](){
-        folder = Settings::getSetting("uffFolder").toString();
+        folder = se->getSetting("uffFolder").toString();
         QStringList filters = App->formatFactory->allFilters();
         QStringList files = QFileDialog::getOpenFileNames(this, "Выберите файлы",folder,
                                                           filters.join(";;"));
 
         if (!files.isEmpty())
-            Settings::setSetting("uffFolder", QFileInfo(files.constFirst()).canonicalPath());
+            se->setSetting("uffFolder", QFileInfo(files.constFirst()).canonicalPath());
 
         foreach (const QString &f, files) {
             addFile(f);

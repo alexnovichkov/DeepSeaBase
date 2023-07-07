@@ -113,6 +113,7 @@ SOURCES += main.cpp\
     plot/graph2d.cpp \
     plotdockfactory.cpp \
     settings.cpp \
+    settingsdialog.cpp \
     sortabletreewidgetitem.cpp \
     checkableheaderview.cpp \
     methods/dfdmethods/spectremethod.cpp \
@@ -245,6 +246,7 @@ HEADERS  += mainwindow.h \
     plot/spectrogram.h \
     plotdockfactory.h \
     settings.h \
+    settingsdialog.h \
     sortabletreewidgetitem.h \
     checkableheaderview.h \
     methods/dfdmethods/abstractmethod.h \

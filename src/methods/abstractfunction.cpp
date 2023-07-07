@@ -155,7 +155,7 @@ void AbstractAlgorithm::saveSettings()
     for (auto f: m_functions) {
         for (const auto &p: f->parameters()) {
             QVariant val = f->getParameter(f->name()+"/"+p);
-            Settings::setSetting(displayName()+"/"+f->name()+"/"+p, val);
+            se->setSetting(displayName()+"/"+f->name()+"/"+p, val);
         }
     }
 }
@@ -164,7 +164,7 @@ void AbstractAlgorithm::restoreSettings()
 {DD;
     for (auto f: m_functions) {
         for (const auto &p: f->parameters()) {
-            QVariant val = Settings::getSetting(displayName()+"/"+f->name()+"/"+p);
+            QVariant val = se->getSetting(displayName()+"/"+f->name()+"/"+p);
             f->setParameter(f->name()+"/"+p, val);
         }
     }

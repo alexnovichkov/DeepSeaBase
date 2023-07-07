@@ -12,13 +12,13 @@
 Cursor::Cursor(Type type, Style style, Plot *plot)
     : m_type{type}, m_style{style}, m_plot{plot}
 {DD;
-    m_snapToValues = Settings::getSetting("cursorSnapToValues", true).toBool();
-    m_showValues = Settings::getSetting("cursorShowYValues", false).toBool();
-    m_digits = Settings::getSetting("cursorDigits", m_digits).toInt();
-    m_harmonics = Settings::getSetting("cursorHarmonics", m_harmonics).toInt();
-    m_format = Settings::getSetting("cursorFormat", "fixed").toString()=="fixed"?Format::Fixed:Format::Scientific;
+    m_snapToValues = se->getSetting("cursorSnapToValues", true).toBool();
+    m_showValues = se->getSetting("cursorShowYValues", false).toBool();
+    m_digits = se->getSetting("cursorDigits", m_digits).toInt();
+    m_harmonics = se->getSetting("cursorHarmonics", m_harmonics).toInt();
+    m_format = se->getSetting("cursorFormat", "fixed").toString()=="fixed"?Format::Fixed:Format::Scientific;
     if (m_type==Type::Double || m_type==Type::DoubleReject)
-        m_info = static_cast<Info>(Settings::getSetting("cursorInfo", NoInfo).toInt());
+        m_info = static_cast<Info>(se->getSetting("cursorInfo", NoInfo).toInt());
 }
 
 void Cursor::saveSpectrum()

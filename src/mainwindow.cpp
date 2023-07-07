@@ -8,7 +8,6 @@
 #include "sortabletreewidgetitem.h"
 #include "headerview.h"
 #include "plot/plot.h"
-#include "colorselector.h"
 #include "coloreditdialog.h"
 #include "correctiondialog.h"
 #include "plot/curve.h"
@@ -58,6 +57,7 @@
 #include "plugins/convertplugin.h"
 #include "settings.h"
 #include "methods/calculations.h"
+#include "settingsdialog.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), currentTab(0)
@@ -132,8 +132,8 @@ MainWindow::MainWindow(QWidget *parent)
     createConvertPluginsMenu(convertMenu);
 
     QMenu *settingsMenu = menuBar()->addMenu(QString("Настройки"));
+    settingsMenu->addAction(settingsAct);
     settingsMenu->addAction(editColorsAct);
-    settingsMenu->addAction(plotOctaveAsHistogramAct);
     settingsMenu->addAction(aboutAct);
 
     tabsMenu = menuBar()->addMenu("Вкладки");
@@ -144,7 +144,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     addPlotArea();
 
-    QVariantMap v = Settings::getSetting("folders1").toMap();
+    QVariantMap v = se->getSetting("folders1").toMap();
 
     if (v.isEmpty())
         createNewTab();
@@ -155,7 +155,7 @@ MainWindow::MainWindow(QWidget *parent)
         }
     }
 
-    auto splitterSizes = Settings::fromList(Settings::getSetting("centralSplitter").toList());
+    auto splitterSizes = se->fromList(se->getSetting("centralSplitter").toList());
     if (!splitterSizes.isEmpty()) {
         m_DockManager->setSplitterSizes(topArea, splitterSizes);
     }
@@ -165,6 +165,14 @@ MainWindow::MainWindow(QWidget *parent)
 
 void MainWindow::createActions()
 {DD;
+
+    settingsAct = new QAction("Настройки", this);
+    connect(settingsAct, &QAction::triggered, [this](){
+        SettingsDialog dialog(this);
+        if (dialog.exec()) {
+
+        }
+    });
     addTabAct = new QAction("Новая вкладка", this);
     addTabAct->setShortcut(QKeySequence::AddTab);
     connect(addTabAct, &QAction::triggered, this, &MainWindow::createNewTab);
@@ -357,14 +365,6 @@ void MainWindow::createActions()
 
     convertAnaFilesAct = new QAction("Конвертировать файлы ANA/ANP...", this);
     connect(convertAnaFilesAct,SIGNAL(triggered()),SLOT(convertAnaFiles()));
-
-    plotOctaveAsHistogramAct = new QAction("Строить третьоктавы в виде гистограмм", this);
-    plotOctaveAsHistogramAct->setCheckable(true);
-    plotOctaveAsHistogramAct->setChecked(Settings::getSetting("plotOctaveAsHistogram", false).toBool());
-    connect(plotOctaveAsHistogramAct, &QAction::toggled, [=](bool checked){
-        Settings::setSetting("plotOctaveAsHistogram", checked);
-        if (currentPlot && currentPlot->plot()) currentPlot->plot()->update();
-    });
 }
 
 void MainWindow::createConvertPluginsMenu(QMenu *menu)
@@ -549,12 +549,10 @@ MainWindow::~MainWindow()
 //        closeTab(i);
 //    }
 
-    //    ColorSelector::instance()->drop();
-
 //    auto dockManagerState = m_DockManager->saveState();
 //    LOG(DEBUG) << dockManagerState;
 
-    Settings::setSetting("centralSplitter", Settings::toList(m_DockManager->splitterSizes(topArea)));
+    se->setSetting("centralSplitter", se->toList(m_DockManager->splitterSizes(topArea)));
 
     //вручную удаляем все панели с графиками, чтобы корректно удалились кривые. Иначе
     //dockManager не гарантирует последовательность удаления панелей, и при удалении
@@ -659,7 +657,7 @@ void MainWindow::closeOtherPlots(int index)
 
 QString MainWindow::getFolderToAdd(bool withSubfolders)
 {DD;
-    QString directory = Settings::getSetting("lastDirectory").toString();
+    QString directory = se->getSetting("lastDirectory").toString();
 
     directory = QFileDialog::getExistingDirectory(this,
                                                   withSubfolders?tr("Добавление папки со всеми вложенными папками"):
@@ -668,7 +666,7 @@ QString MainWindow::getFolderToAdd(bool withSubfolders)
                                                   QFileDialog::ShowDirsOnly | QFileDialog::ReadOnly);
 
     if (!directory.isEmpty())
-        Settings::setSetting("lastDirectory", directory);
+        se->setSetting("lastDirectory", directory);
     return directory;
 }
 
@@ -692,7 +690,7 @@ void MainWindow::addFolderWithSubfolders() /*SLOT*/
 
 void MainWindow::addFile()
 {DD;
-    QString directory = Settings::getSetting("lastDirectory").toString();
+    QString directory = se->getSetting("lastDirectory").toString();
 
     QFileDialog dialog(this, "Добавить файлы", directory);
     dialog.setOption(QFileDialog::DontUseNativeDialog, true);
@@ -706,7 +704,7 @@ void MainWindow::addFile()
     if (dialog.exec()) {
         const QStringList fileNames = dialog.selectedFiles();
         if (fileNames.isEmpty()) return;
-        Settings::setSetting("lastDirectory", fileNames.constFirst());
+        se->setSetting("lastDirectory", fileNames.constFirst());
         if (addFiles(fileNames)) {
             currentTab->fileHandler->trackFiles(fileNames);
             saveTabsState();
@@ -1053,7 +1051,7 @@ bool MainWindow::copyChannels(FileDescriptor *source, const QVector<int> &channe
 
 bool MainWindow::copyChannels(const QVector<Channel *> source)
 {DD;
-    QString startFile = Settings::getSetting("startDir").toString();
+    QString startFile = se->getSetting("startDir").toString();
     QStringList filters = App->formatFactory->allFilters();
 
     QFileDialog dialog(this, "Выбор файла для записи каналов", startFile,
@@ -1113,7 +1111,7 @@ bool MainWindow::copyChannels(const QVector<Channel *> source)
         return false;
     }
 
-    Settings::setSetting("startDir", file);
+    se->setSetting("startDir", file);
 
 
     LongOperation op;
@@ -1249,7 +1247,7 @@ void MainWindow::calculateMean()
         meanD.chop(4);
         if (writeToD94) meanD.append(".d94");
 
-        meanD = Settings::getSetting(writeToD94?"lastMeanUffFile":"lastMeanFile", meanD).toString();
+        meanD = se->getSetting(writeToD94?"lastMeanUffFile":"lastMeanFile", meanD).toString();
 
         QStringList  filters = App->formatFactory->allFilters();
         QStringList suffixes = App->formatFactory->allSuffixes(true);
@@ -1302,7 +1300,7 @@ void MainWindow::calculateMean()
         else
             meanFile->fillPreliminary(firstDescriptor);
 
-        Settings::setSetting(writeToD94?"lastMeanUffFile":"lastMeanFile", meanFileName);
+        se->setSetting(writeToD94?"lastMeanUffFile":"lastMeanFile", meanFileName);
     }
     else {
         meanFileName = firstChannelFileName;
@@ -1419,7 +1417,7 @@ void MainWindow::saveTabsState()
             if (currentTab) currentTab->filterHeader->clear();
         }
     }
-    Settings::setSetting("folders1", map);
+    se->setSetting("folders1", map);
 }
 
 void MainWindow::convertEsoFiles()
@@ -1697,12 +1695,12 @@ void MainWindow::calculateMovingAvg()
     if (!currentPlot || !currentPlot->plot()) return;
     if (currentPlot->plot()->curvesCount()==0) return;
 
-    int windowSize = Settings::getSetting("movingAvgSize",3).toInt();
+    int windowSize = se->getSetting("movingAvgSize",3).toInt();
     bool ok;
     windowSize = QInputDialog::getInt(this,"Скользящее среднее","Выберите величину окна усреднения",windowSize,
                                       3,15,2,&ok);
     if (ok)
-        Settings::setSetting("movingAvgSize",windowSize);
+        se->setSetting("movingAvgSize",windowSize);
     else
         return;
 
@@ -1747,7 +1745,7 @@ void MainWindow::calculateMovingAvg()
         QString avgD = firstName;
         avgD.chop(4);
 
-        avgD = Settings::getSetting("lastMovingAvgFile", avgD).toString();
+        avgD = se->getSetting("lastMovingAvgFile", avgD).toString();
 
         QStringList filters = App->formatFactory->allFilters();
         QStringList suffixes = App->formatFactory->allSuffixes(true);
@@ -1772,7 +1770,7 @@ void MainWindow::calculateMovingAvg()
 
         avgFileName = selectedFiles.constFirst();
         if (avgFileName.isEmpty()) return;
-        Settings::setSetting("lastMovingAvgFile", avgFileName);
+        se->setSetting("lastMovingAvgFile", avgFileName);
 
         //добавляем суффикс
         QString currentSuffix = QFileInfo(avgFileName).suffix().toLower();
@@ -1844,7 +1842,7 @@ void MainWindow::saveHorizontalSlice(double zValue)
         QString spectreD = firstName;
         spectreD.chop(4);
 
-        spectreD = Settings::getSetting("lastSpectreFile", spectreD).toString();
+        spectreD = se->getSetting("lastSpectreFile", spectreD).toString();
 
         QStringList filters = App->formatFactory->allFilters();
         QStringList suffixes = App->formatFactory->allSuffixes(true);
@@ -1867,7 +1865,7 @@ void MainWindow::saveHorizontalSlice(double zValue)
 
         spectreFileName = selectedFiles.constFirst();
         if (spectreFileName.isEmpty()) return;
-        Settings::setSetting("lastSpectreFile", spectreFileName);
+        se->setSetting("lastSpectreFile", spectreFileName);
 
         //добавляем суффикс
         QString currentSuffix = QFileInfo(spectreFileName).suffix().toLower();
@@ -1938,7 +1936,7 @@ void MainWindow::saveVerticalSlice(double frequency)
         QString throughD = firstName;
         throughD.chop(4);
 
-        throughD = Settings::getSetting("lastThroughFile", throughD).toString();
+        throughD = se->getSetting("lastThroughFile", throughD).toString();
 
         QStringList filters = App->formatFactory->allFilters();
         QStringList suffixes = App->formatFactory->allSuffixes(true);
@@ -1961,7 +1959,7 @@ void MainWindow::saveVerticalSlice(double frequency)
 
         throughFileName = selectedFiles.constFirst();
         if (throughFileName.isEmpty()) return;
-        Settings::setSetting("lastThroughFile", throughFileName);
+        se->setSetting("lastThroughFile", throughFileName);
 
         //добавляем суффикс
         QString currentSuffix = QFileInfo(throughFileName).suffix().toLower();
@@ -2358,9 +2356,9 @@ bool MainWindow::closeRequested()
     }
 
     if (currentTab) {
-        Settings::setSetting("upperSplitterState",currentTab->saveState());
+        se->setSetting("upperSplitterState",currentTab->saveState());
         QByteArray treeHeaderState = currentTab->filesTable->header()->saveState();
-        Settings::setSetting("treeHeaderState", treeHeaderState);
+        se->setSetting("treeHeaderState", treeHeaderState);
     }
 
     QVariantMap map;
@@ -2371,7 +2369,7 @@ bool MainWindow::closeRequested()
             if (currentTab) currentTab->filterHeader->clear();
         }
     }
-    Settings::setSetting("folders1", map);
+    se->setSetting("folders1", map);
 
     return true;
 }

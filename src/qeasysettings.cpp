@@ -146,7 +146,7 @@ void QEasySettings::writeSettings(const QString group, const QString key,
 }
 #endif
 
-QEasySettings *QEasySettings::instance() { 
+QEasySettings *QEasySettings::instance() {
     assertm(m_instance, "Call QEasySettings::init() function first!");
     return m_instance; 
 }

@@ -12,8 +12,8 @@
 PointLabel::PointLabel(Plot *plot, Curve *curve)
     : QCPItemText(dynamic_cast<QCustomPlot*>(plot->impl())), m_plot(plot), m_curve(curve)
 {
-    if (Settings::getSetting("pointLabelRemember", true).toBool()) {
-        switch (Settings::getSetting("pointLabelMode", 0).toInt()) {
+    if (se->getSetting("pointLabelRemember", true).toBool()) {
+        switch (se->getSetting("pointLabelMode", 0).toInt()) {
             case 0: m_mode = Mode::XValue; break;
             case 1: m_mode = Mode::XYValue; break;
             case 2: m_mode = Mode::YValue; break;
@@ -147,8 +147,8 @@ QList<QAction *> PointLabel::actions()
     QActionGroup *ag = new QActionGroup(m_plot);
 
     auto a1 = m->addAction("значение по оси X", [=](){
-        if (Settings::getSetting("pointLabelRemember", true).toBool())
-            Settings::setSetting("pointLabelMode", 0);
+        if (se->getSetting("pointLabelRemember", true).toBool())
+            se->setSetting("pointLabelMode", 0);
         setMode(Mode::XValue);
     });
     a1->setCheckable(true);
@@ -156,8 +156,8 @@ QList<QAction *> PointLabel::actions()
     ag->addAction(a1);
 
     a1 = m->addAction("значения по осям X и Y", [=](){
-        if (Settings::getSetting("pointLabelRemember", true).toBool())
-            Settings::setSetting("pointLabelMode", 1);
+        if (se->getSetting("pointLabelRemember", true).toBool())
+            se->setSetting("pointLabelMode", 1);
         setMode(Mode::XYValue);
     });
     a1->setCheckable(true);
@@ -165,8 +165,8 @@ QList<QAction *> PointLabel::actions()
     ag->addAction(a1);
 
     a1 = m->addAction("значение по оси Y", [=](){
-        if (Settings::getSetting("pointLabelRemember", true).toBool())
-            Settings::setSetting("pointLabelMode", 2);
+        if (se->getSetting("pointLabelRemember", true).toBool())
+            se->setSetting("pointLabelMode", 2);
         setMode(Mode::YValue);
     });
     a1->setCheckable(true);
@@ -174,8 +174,8 @@ QList<QAction *> PointLabel::actions()
     ag->addAction(a1);
 
     a1 = m->addAction("значение по осям X, Y и Z", [=](){
-        if (Settings::getSetting("pointLabelRemember", true).toBool())
-            Settings::setSetting("pointLabelMode", 3);
+        if (se->getSetting("pointLabelRemember", true).toBool())
+            se->setSetting("pointLabelMode", 3);
         setMode(Mode::XYZValue);
     });
     a1->setCheckable(true);
@@ -187,10 +187,10 @@ QList<QAction *> PointLabel::actions()
 
     a = new QAction("Запомнить выбор", m_plot);
     a->setCheckable(true);
-    a->setChecked(Settings::getSetting("pointLabelRemember", true).toBool());
+    a->setChecked(se->getSetting("pointLabelRemember", true).toBool());
     QObject::connect(a, &QAction::triggered, [=](){
-        bool r = Settings::getSetting("pointLabelRemember", true).toBool();
-        Settings::setSetting("pointLabelRemember", !r);
+        bool r = se->getSetting("pointLabelRemember", true).toBool();
+        se->setSetting("pointLabelRemember", !r);
     });
     l<<a;
 

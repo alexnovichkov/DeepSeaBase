@@ -157,6 +157,7 @@ private:
     QMenu *plotsMenu;
     QMenu *tabsMenu;
 
+    QAction *settingsAct;
     QAction *addTabAct;
     QAction *addFolderAct;
     QAction *addFolderWithSubfoldersAct;
@@ -211,8 +212,6 @@ private:
     QAction *convertAct;
     QAction *aboutAct;
     QAction *addPlotAreaAct;
-
-    QAction *plotOctaveAsHistogramAct;
 
     PlotArea *currentPlot = nullptr;
     QHash<QString, IConvertPlugin *> loadedPlugins;

@@ -34,7 +34,7 @@ WavExportDialog::WavExportDialog(FileDescriptor * file, const QVector<int> &inde
                   .arg(indexes.at(val-1)+1);
        }
        hintLabel->setText(text);
-       Settings::setSetting("wavChannelsCount", val);
+       se->setSetting("wavChannelsCount", val);
     });
 
     bar = new QProgressBar(this);
@@ -45,7 +45,7 @@ WavExportDialog::WavExportDialog(FileDescriptor * file, const QVector<int> &inde
     hintLabel = new QLabel(this);
     hintLabel->setIndent(10);
 
-    auto wavChannelsCount = Settings::getSetting("wavChannelsCount", indexes.size()).toInt();
+    auto wavChannelsCount = se->getSetting("wavChannelsCount", indexes.size()).toInt();
     channelsCount->setValue(qMin(wavChannelsCount, indexes.size()));
     bar->setValue(0);
 

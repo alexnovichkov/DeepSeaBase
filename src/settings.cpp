@@ -14,7 +14,7 @@ QSettings createSettings()
     }
 }
 
-QVariant Settings::getSetting(const QString &key, const QVariant &defValue)
+QVariant Settings::getSetting(const QString &key, const QVariant &defValue) const
 {DD;
     auto s = createSettings();
     return s.value(key, defValue);
@@ -23,7 +23,11 @@ QVariant Settings::getSetting(const QString &key, const QVariant &defValue)
 void Settings::setSetting(const QString &key, const QVariant &value)
 {DD;
     auto s = createSettings();
-    s.setValue(key, value);
+    auto oldValue = s.value(key);
+    if (oldValue != value) {
+        s.setValue(key, value);
+        emit settingChanged(key, value);
+    }
 }
 
 
@@ -39,4 +43,25 @@ QList<int> Settings::fromList(const QList<QVariant> &list)
     QList<int> result;
     for (auto val: list) result << val.toInt();
     return result;
+}
+
+bool Settings::hasSetting(const QString &key) const
+{
+    static QStringList allSettings {
+        "cursorDialogFont",
+        "plotOctaveAsHistogram"
+    };
+
+    if (key.isEmpty()) return false;
+
+    return allSettings.contains(key);
+}
+
+Settings *Settings::instance()
+{
+    static Settings *inst = nullptr;
+    if (!inst) {
+        inst = new Settings();
+    }
+    return inst;
 }

@@ -124,11 +124,11 @@ void AnaConverterDialog::updateProgressIndicator()
 
 void AnaConverterDialog::chooseFiles()
 {
-    folder = Settings::getSetting("anaFolder").toString();
+    folder = se->getSetting("anaFolder").toString();
     folder = QFileDialog::getExistingDirectory(this, "Выберите папку с файлами *.anp/*.ana", folder);
 
     edit->setText(folder);
-    Settings::setSetting("anaFolder", folder);
+    se->setSetting("anaFolder", folder);
     targetFolderEdit->setPlaceholderText(folder);
 
     QDir folderDir(folder);
@@ -213,9 +213,9 @@ void AnaConverterDialog::updateFormat()
 
 void AnaConverterDialog::setTargetFolder()
 {
-    QString targetFolder = Settings::getSetting("anaTargetFolder").toString();
+    QString targetFolder = se->getSetting("anaTargetFolder").toString();
     targetFolder = QFileDialog::getExistingDirectory(this, "Выберите папку, в которую будут сохранены файлы", targetFolder);
 
     targetFolderEdit->setText(targetFolder);
-    Settings::setSetting("anaTargetFolder", targetFolder);
+    se->setSetting("anaTargetFolder", targetFolder);
 }

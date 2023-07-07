@@ -142,10 +142,10 @@ ChannelPropertiesDialog::ChannelPropertiesDialog(const QVector<Channel *> &chann
 
 
 
-    int currentTab = Settings::getSetting("channelPropertiesDialog.currentTab").toInt();
+    int currentTab = se->getSetting("channelPropertiesDialog.currentTab").toInt();
     tab->setCurrentIndex(currentTab);
     connect(tab, &QTabWidget::currentChanged, [=](int index){
-        Settings::setSetting("channelPropertiesDialog.currentTab", index);
+        se->setSetting("channelPropertiesDialog.currentTab", index);
     });
 
     splitter->addWidget(tab);

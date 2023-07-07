@@ -5,7 +5,7 @@ DataHolder::YValuesFormat DataHolder::formatFromString(const QString &format)
 {DD;
     if (format == "complex") return YValuesComplex;
     else if (format == "amplitude") return YValuesAmplitudes;
-    else if (format == "amplitudeDb") return YValuesAmplitudesInDB;
+    else if (format.toLower() == "amplitudedb") return YValuesAmplitudesInDB;
     else if (format == "phase") return YValuesPhases;
     else if (format == "real") return YValuesReals;
     else if (format == "imaginary") return YValuesImags;

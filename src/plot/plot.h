@@ -2,7 +2,6 @@
 #define PLOT_H
 
 #include <math.h>
-#include "colorselector.h"
 
 #include <QObject>
 
@@ -19,6 +18,7 @@ class Cursors;
 class CursorBox;
 class QCPPlot;
 class PlayPanel;
+class ColorSelector;
 
 #include <QWidget>
 

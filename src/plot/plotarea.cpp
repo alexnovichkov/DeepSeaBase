@@ -30,7 +30,7 @@ PlotArea::PlotArea(int index, QWidget *parent)
 
     connect(autoscaleXAct, &QAction::toggled, [this](bool toggled){
         if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atBottom /* x axis */,toggled);
-        Settings::setSetting("autoscale-x", toggled);
+        se->setSetting("autoscale-x", toggled);
     });
 
     autoscaleYAct = new QAction("Автомасштабирование по оси Y", this);
@@ -38,7 +38,7 @@ PlotArea::PlotArea(int index, QWidget *parent)
     autoscaleYAct->setCheckable(true);
     connect(autoscaleYAct, &QAction::toggled, [this](bool toggled){
         if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atLeft /* y axis */,toggled);
-        Settings::setSetting("autoscale-y", toggled);
+        se->setSetting("autoscale-y", toggled);
     });
 
     autoscaleYSlaveAct = new QAction("Автомасштабирование по правой оси Y", this);
@@ -46,19 +46,19 @@ PlotArea::PlotArea(int index, QWidget *parent)
     autoscaleYSlaveAct->setCheckable(true);
     connect(autoscaleYSlaveAct, &QAction::toggled, [this](bool toggled){
         if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atRight /* y slave axis */,toggled);
-        Settings::setSetting("autoscale-y-slave", toggled);
+        se->setSetting("autoscale-y-slave", toggled);
     });
 
     if (toggleAutoscaleAtStartup) {
-        bool autoscale = Settings::getSetting("autoscale-x", true).toBool();
+        bool autoscale = se->getSetting("autoscale-x", true).toBool();
         autoscaleXAct->setChecked(autoscale);
         if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atBottom /* x axis */, autoscale);
 
-        autoscale = Settings::getSetting("autoscale-y", true).toBool();
+        autoscale = se->getSetting("autoscale-y", true).toBool();
         autoscaleYAct->setChecked(autoscale);
         if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atLeft /* y axis */, autoscale);
 
-        autoscale = Settings::getSetting("autoscale-y-slave", true).toBool();
+        autoscale = se->getSetting("autoscale-y-slave", true).toBool();
         autoscaleYSlaveAct->setChecked(autoscale);
         if (m_plot) m_plot->toggleAutoscale(Enums::AxisType::atRight /* y slave axis */, autoscale);
     }
@@ -265,11 +265,11 @@ void PlotArea::addPlot(Enums::PlotType type)
     connect(m_plot, SIGNAL(saveTimeSegment(QVector<FileDescriptor*>,double,double)), this,
             SIGNAL(saveTimeSegment(QVector<FileDescriptor*>,double,double)));
 
-    bool autoscale = Settings::getSetting("autoscale-x", true).toBool();
+    bool autoscale = se->getSetting("autoscale-x", true).toBool();
     m_plot->toggleAutoscale(Enums::AxisType::atBottom /* x axis */, autoscale);
-    autoscale = Settings::getSetting("autoscale-y", true).toBool();
+    autoscale = se->getSetting("autoscale-y", true).toBool();
     m_plot->toggleAutoscale(Enums::AxisType::atLeft /* y axis */, autoscale);
-    autoscale = Settings::getSetting("autoscale-y-slave", true).toBool();
+    autoscale = se->getSetting("autoscale-y-slave", true).toBool();
     m_plot->toggleAutoscale(Enums::AxisType::atRight /* y slave axis */, autoscale);
 
     emit curvesCountChanged();

@@ -5,6 +5,7 @@
 #include "cursors.h"
 #include "cursor.h"
 #include "curve.h"
+#include "settings.h"
 #include "fileformats/filedescriptor.h"
 #include "logging.h"
 #include <QTreeWidget>
@@ -30,8 +31,16 @@ CursorBox::CursorBox(Cursors *cursors, Plot *parent) : QTreeWidget(parent->widge
 
     auto f = font();
     f.setPointSize(f.pointSize()-1);
+    f = se->instance()->getSetting("cursorDialogFont", f).value<QFont>();
     setFont(f);
     header()->setFont(f);
+
+    connect(se->instance(), &se->settingChanged, [this](const QString &key, const QVariant & val){
+        auto f = val.value<QFont>();
+        setFont(f);
+        header()->setFont(f);
+    });
+
     header()->setStretchLastSection(false);
     header()->setSectionResizeMode(QHeaderView::ResizeToContents);
     header()->setSectionsClickable(true);

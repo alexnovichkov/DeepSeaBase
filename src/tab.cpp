@@ -145,7 +145,7 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
     connect(editFileAct, &QAction::triggered, [=](){
         QString file = QDir::toNativeSeparators(filePathLabel->text());
         if (!file.isEmpty()) {
-            QString executable = Settings::getSetting("editor").toString();
+            QString executable = se->getSetting("editor").toString();
             if (executable.isEmpty())
                 executable = QInputDialog::getText(this, "Текстовый редактор не задан",
                                                    "Введите путь к текстовому редактору,\n"
@@ -156,10 +156,10 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
                     executable = QStandardPaths::findExecutable(executable);
                     if (!executable.isEmpty())
                         if (QProcess::startDetached(executable, QStringList()<<file))
-                            Settings::setSetting("editor", executable);
+                            se->setSetting("editor", executable);
                 }
                 else
-                    Settings::setSetting("editor", executable);
+                    se->setSetting("editor", executable);
             }
         }
     });
@@ -219,7 +219,7 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
     addWidget(filesTable);
     addWidget(channelsWidget);
 
-    QByteArray upperSplitterState = Settings::getSetting("upperSplitterState").toByteArray();
+    QByteArray upperSplitterState = se->getSetting("upperSplitterState").toByteArray();
     if (!upperSplitterState.isEmpty()) restoreState(upperSplitterState);
 
     updateActions();

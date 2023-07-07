@@ -54,11 +54,11 @@ EsoConverterDialog::EsoConverterDialog(QWidget *parent) : QDialog(parent)
 
     button = new QPushButton("Выбрать", this);
     connect(button, &QPushButton::clicked, [=](){
-        folder = Settings::getSetting("esoFolder").toString();
+        folder = se->getSetting("esoFolder").toString();
         QStringList files = QFileDialog::getOpenFileNames(this, "Выберите файлы *.eso",folder,"*.eso");
         if (!files.isEmpty()) {
             convertor->setFilesToConvert(files);
-            Settings::setSetting("esoFolder", QFileInfo(files.constFirst()).canonicalFilePath());
+            se->setSetting("esoFolder", QFileInfo(files.constFirst()).canonicalFilePath());
             //QStringList matFiles = convertor->getMatFiles();
             tree->clear();
             int i=1;
@@ -146,7 +146,7 @@ void EsoConverterDialog::updateProgressIndicator()
 
 void EsoConverterDialog::start()
 {
-    QString dfdFolder = Settings::getSetting("dfdFolder").toString();
+    QString dfdFolder = se->getSetting("dfdFolder").toString();
     if (dfdFolder.isEmpty()) dfdFolder = folder;
     QString resultFile = QFileDialog::getSaveFileName(this,"Сохранение файла dfd", dfdFolder,"Файлы dfd (*.dfd)");
     if (resultFile.isEmpty()) return;

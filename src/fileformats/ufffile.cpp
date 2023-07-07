@@ -195,7 +195,7 @@ void UffFileDescriptor::read()
 {DD;
     //проверяем формат файлов uff:
     //если false - старый формат, удаляем файл и создаем заново
-    int newUffFormat = Settings::getSetting("newUffFormat", 0).toInt();
+    int newUffFormat = se->getSetting("newUffFormat", 0).toInt();
 
     if (QFile::exists(fileName()+QString("~%1").arg(newUffFormat))) {
         // в папке с записью есть двоичный файл с описанием записи
@@ -249,7 +249,7 @@ void UffFileDescriptor::read()
                 stream << f->zValues;
             }
         }
-        Settings::setSetting("newUffFormat", 3);
+        se->setSetting("newUffFormat", 3);
     }
 }
 
@@ -336,7 +336,7 @@ void UffFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
 
 void UffFileDescriptor::removeTempFile()
 {DD;
-    int newUffFormat = Settings::getSetting("newUffFormat", 0).toInt();
+    int newUffFormat = se->getSetting("newUffFormat", 0).toInt();
     QString name = fileName()+QString("~%1").arg(newUffFormat);
     if (QFile::exists(name)) QFile::remove(name);
 }

@@ -57,11 +57,11 @@ void CursorDialog::accept()
     cursor->setFormat(format->currentIndex()==0?Cursor::Format::Fixed:Cursor::Format::Scientific);
     cursor->setShowPeaksInfo(showPeaksInfo->isChecked());
 
-    Settings::setSetting("cursorSnapToValues", snapToValues->isChecked());
-    Settings::setSetting("cursorShowYValues", showValues->isChecked());
-    Settings::setSetting("cursorShowPeaksInfo", showPeaksInfo->isChecked());
-    Settings::setSetting("cursorDigits", cursor->digits());
-    Settings::setSetting("cursorHarmonics", cursor->harmonics());
-    Settings::setSetting("cursorFormat", cursor->format()==Cursor::Format::Fixed?"fixed":"scientific");
+    se->setSetting("cursorSnapToValues", snapToValues->isChecked());
+    se->setSetting("cursorShowYValues", showValues->isChecked());
+    se->setSetting("cursorShowPeaksInfo", showPeaksInfo->isChecked());
+    se->setSetting("cursorDigits", cursor->digits());
+    se->setSetting("cursorHarmonics", cursor->harmonics());
+    se->setSetting("cursorFormat", cursor->format()==Cursor::Format::Fixed?"fixed":"scientific");
     QDialog::accept();
 }

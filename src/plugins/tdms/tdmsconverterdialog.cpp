@@ -120,11 +120,11 @@ TDMSConverterDialog::~TDMSConverterDialog()
 
 void TDMSConverterDialog::chooseFiles()
 {
-    folder = Settings::getSetting("tdmsFolder").toString();
+    folder = se->getSetting("tdmsFolder").toString();
     folder = QFileDialog::getExistingDirectory(this, "Выберите папку с файлами *.tdm/*.tdms", folder);
 
     edit->setText(folder);
-    Settings::setSetting("tdmsFolder", folder);
+    se->setSetting("tdmsFolder", folder);
 
     QDir folderDir(folder);
     QFileInfoList tdmsFiles = folderDir.entryInfoList(QStringList()<<"*.tdms", QDir::Files | QDir::Readable);

@@ -11,7 +11,7 @@
 
 Graph2D::LineStyle lineStyleByType(Channel *c)
 {DD;
-    if (c->octaveType() > 0 && Settings::getSetting("plotOctaveAsHistogram", false).toBool())
+    if (c->octaveType() > 0 && se->getSetting("plotOctaveAsHistogram", 0).toInt()==1)
         return Graph2D::lsStep;
     return Graph2D::lsLine;
 }
@@ -23,7 +23,7 @@ Graph2D::Graph2D(Channel *channel, QCPAxis *keyAxis, QCPAxis *valueAxis) :
     setName(channel->legendName());
 
     setLineStyle(lineStyleByType(channel));
-    if (channel->octaveType() > 0 && Settings::getSetting("plotOctaveAsHistogram", false).toBool())
+    if (channel->octaveType() > 0 && se->getSetting("plotOctaveAsHistogram", 0).toInt()==1)
         setAntialiased(false);
 }
 

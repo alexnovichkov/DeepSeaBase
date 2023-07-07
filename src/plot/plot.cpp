@@ -49,10 +49,10 @@ Plot::Plot(Enums::PlotType type, QWidget *parent) :
     connect(zoom, &ZoomStack::replotNeeded, this, &Plot::replot);
     m_plot = new QCPPlot(this, parent);
 
-    QVariantList list = Settings::getSetting("colors").toList();
+    QVariantList list = se->getSetting("colors").toList();
     colors = new ColorSelector(list);
 
-    axisLabelsVisible = Settings::getSetting("axisLabelsVisible", true).toBool();
+    axisLabelsVisible = se->getSetting("axisLabelsVisible", true).toBool();
     yValuesPresentationLeft = DataHolder::ShowAsDefault;
     yValuesPresentationRight = DataHolder::ShowAsDefault;
 
@@ -78,6 +78,11 @@ Plot::Plot(Enums::PlotType type, QWidget *parent) :
         connect(this, SIGNAL(curvesCountChanged()), playerPanel, SLOT(update()));
         connect(m_plot, SIGNAL(canvasDoubleClicked(QPoint)), playerPanel, SLOT(moveTo(QPoint)));
     }
+
+    connect(se, &Settings::settingChanged, [this](const QString &key, const QVariant &val){
+        Q_UNUSED(val);
+        if (key == "plotOctaveAsHistogram") update();
+    });
 }
 
 Plot::~Plot()
@@ -88,10 +93,10 @@ Plot::~Plot()
     delete cursorBox;
     delete picker;
 
-    Settings::setSetting("axisLabelsVisible", axisLabelsVisible);
-    Settings::setSetting("autoscale-x", !zoom->scaleBounds(Enums::AxisType::atBottom)->isFixed());
-    Settings::setSetting("autoscale-y", !zoom->scaleBounds(Enums::AxisType::atLeft)->isFixed());
-    Settings::setSetting("autoscale-y-slave", !zoom->scaleBounds(Enums::AxisType::atRight)->isFixed());
+    se->setSetting("axisLabelsVisible", axisLabelsVisible);
+    se->setSetting("autoscale-x", !zoom->scaleBounds(Enums::AxisType::atBottom)->isFixed());
+    se->setSetting("autoscale-y", !zoom->scaleBounds(Enums::AxisType::atLeft)->isFixed());
+    se->setSetting("autoscale-y-slave", !zoom->scaleBounds(Enums::AxisType::atRight)->isFixed());
     delete zoom;
     delete colors;
 }
