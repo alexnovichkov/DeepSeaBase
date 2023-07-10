@@ -1248,8 +1248,16 @@ void DfdChannel::read(DfdSettings &dfd, int numChans, double xBegin, double xSte
     dataDescription().put("function.precision", precision);
     ChanBlockSize = dfd.value(group+"ChanBlockSize").toInt();
     QString YName = dfd.value(group+"YName");
-    dataDescription().put("yname", YName);
-    dataDescription().put("ynameold", dfd.value(group+"YNameOld"));
+    QString YNameOld = dfd.value(group+"YNameOld");
+    if ((YName.toLower()=="дб" || YName.toLower()=="db") && !YNameOld.isEmpty()) {
+        dataDescription().put("yname", YNameOld);
+    }
+    else {
+        dataDescription().put("yname", YName);
+        dataDescription().put("ynameold", YNameOld);
+    }
+
+
     dataDescription().put("inputType", dfd.value(group+"InputType"));
     dataDescription().put("description", dfd.value(group+"ChanDscr"));
     dataDescription().put("correction", dfd.value(group+"Correction"));
@@ -1284,14 +1292,12 @@ void DfdChannel::read(DfdSettings &dfd, int numChans, double xBegin, double xSte
         yValueFormat = DataHolder::YValuesAmplitudes;
 
     _data->setYValuesFormat(yValueFormat);
+    dataDescription().put("function.format", DataHolder::formatToString(yValueFormat));
 
     double thr = 1.0;
     QString thrString = dfd.value(group+"threshold");
     if (thrString.isEmpty()) {
-        if (YName.isEmpty() || YName.toLower() == "дб" || YName.toLower() == "db")
-            thr = PhysicalUnits::Units::logref(dataDescription().get("ynameold").toString());
-        else
-            thr = PhysicalUnits::Units::logref(YName);
+        thr = PhysicalUnits::Units::logref(dataDescription().get("yname").toString());
         if (type()==Descriptor::FrequencyResponseFunction) thr=1.0;
     }
     else {
@@ -1340,8 +1346,17 @@ void DfdChannel::write(QTextStream &dfd, int index)
     dfd << "ChanName=" << dataDescription().get("name").toString() << endl;
     dfd << "IndType=" << IndType << endl;
     dfd << "ChanBlockSize=" << ChanBlockSize << endl;
-    dfd << "YName=" << dataDescription().get("yname").toString() << endl;
-    dfd << "YNameOld=" << dataDescription().get("ynameold").toString() << endl;
+
+    auto yValueFormat = DataHolder::formatFromString(dataDescription().get("function.format").toString());
+    if (yValueFormat == DataHolder::YValuesAmplitudesInDB){
+        dfd << "YName=дБ" << endl;
+        dfd << "YNameOld=" << dataDescription().get("yname").toString() << endl;
+    }
+    else {
+        dfd << "YName=" << dataDescription().get("yname").toString() << endl;
+        dfd << "YNameOld=" << dataDescription().get("ynameold").toString() << endl;
+    }
+
     dfd << "InputType="<< dataDescription().get("inputType").toString() << endl;
     dfd << "ChanDscr="<<dataDescription().get("description").toString() << endl;
     dfd << "Correction="<<correction() << endl;
