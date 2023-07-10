@@ -1566,19 +1566,19 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
     if (currentPlot) {
         p = currentPlot->plot();
         auto type = PlotArea::getPlotType(toPlot);
-        //qDebug()<<type;
+
         //графика нет - создаем график
         if (!p) {
             currentPlot->addPlot(type);
         }
         else {
-            //или график есть, но не того типа
-            if (!PlotArea::plotTypesCompatible(p->type(), type)) {
-                //кривых нет - меняем тип графика
-                if (p->model()->isEmpty()) {
+            if (p->model()->isEmpty()) {
+                if (p->type() != type) {
                     currentPlot->addPlot(type);
                 }
-                else {
+            }
+            else {
+                if (!PlotArea::plotTypesCompatible(p->type(), type)) {
                     //кривые есть - выводим сообщение
                     QMessageBox::warning(this, QString("Не могу построить канал"),
                                          QString("Тип графика не подходит.\nСначала очистите график."));
