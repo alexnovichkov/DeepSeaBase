@@ -27,7 +27,7 @@ public:
 private:
     QSpinBox *baseChannelSpin;
 
-    QComboBox *forceWindowCombo;//Окно "Прямоуг.", "Бартлетта", "Хеннинга", "Хемминга", "Натолл", "Гаусс"
+    QComboBox *forceWindowCombo;//Окно "Прямоуг.", "Бартлетта", "Ханна", "Хемминга", "Натолл", "Гаусс"
     QLineEdit *forceWindowParameter;// Параметр для окна
 };
 

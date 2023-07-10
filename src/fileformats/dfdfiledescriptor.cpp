@@ -1007,7 +1007,7 @@ void Process::read(DfdSettings &dfd, DfdDataType dataType)
         }
         else if (val.first == "Wind") {
             QString window = val.second;
-            if (val.second == "Хеннинга") window = "Hann";
+            if (val.second == "Хеннинга" || val.second == "Ханна") window = "Hann";
             else if (val.second == "Хемминга") window = "Hamming";
             else if (val.second == "Натолл") window = "Nuttall";
             else if (val.second == "Гаусс") window = "Gauss";

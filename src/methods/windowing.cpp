@@ -7,7 +7,7 @@ QString Windowing::windowDescription(WindowType windowType)
     switch (windowType) {
         case WindowType::Square:          return "Прямоуг.";
         case WindowType::Triangular:      return "Треугольное";
-        case WindowType::Hann:            return "Хеннинга";
+        case WindowType::Hann:            return "Ханна";
         case WindowType::Hamming:         return "Хемминга";
         case WindowType::Nuttall:         return "Натолла";
         case WindowType::Gauss:           return "Гаусса";
@@ -28,7 +28,7 @@ QStringList Windowing::windowDescriptions()
 {DD;
     return {"Прямоуг.",
         "Треугольное",
-        "Хеннинга",
+        "Ханна",
         "Хемминга",
         "Натолла",
         "Гаусса",

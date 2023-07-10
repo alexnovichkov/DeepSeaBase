@@ -4,7 +4,7 @@
 #include "abstractfunction.h"
 #include "windowing.h"
 
-/* Windowing/type - Прямоугольное / Треугольное / Хеннинга / Хемминга /
+/* Windowing/type - Прямоугольное / Треугольное / Ханна / Хемминга /
  *                  Наттолла / Гаусса / Сила / Экспоненциальное / Тьюки
  * Windowing/parameter
  * Windowing/correction

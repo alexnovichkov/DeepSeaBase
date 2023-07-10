@@ -5,7 +5,7 @@
 #include <QObject>
 
 class DfdFileDescriptor;
-class Parameters;
+struct Parameters;
 class UffFileDescriptor;
 class DfdChannel;
 class Function;
@@ -45,7 +45,7 @@ struct Parameters
                        //2 - хранение максимума
     int windowType = 2; //0 - прямоугольное
                     //1 - Бартлетта / треугольное
-                    //2 - Хеннинга
+                    //2 - Ханна
                     //3 - Хемминга
                     //4 - Натолл
                     //5 - Гаусс
