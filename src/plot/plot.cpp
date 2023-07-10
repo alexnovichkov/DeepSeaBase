@@ -751,12 +751,36 @@ QString Plot::yValuesPresentationSuffix(int yValuesPresentation) const
 
 void Plot::saveSpectrum(double zVal)
 {DD;
-    emit saveHorizontalSlice(zVal);
+    QVector<double> vals;
+    if (qIsNaN(zVal)) {
+        //сохранение для всех курсоров
+        for (auto c: cursors->cursors()) {
+            if (c->type() != Cursor::Type::Single) continue;
+
+            vals << c->currentPosition().y();
+        }
+    }
+    else {
+        vals << zVal;
+    }
+    emit saveHorizontalSlice(vals);
 }
 
 void Plot::saveThroughput(double xVal)
 {DD;
-    emit saveVerticalSlice(xVal);
+    QVector<double> vals;
+    if (qIsNaN(xVal)) {
+        //сохранение для всех курсоров
+        for (auto c: cursors->cursors()) {
+            if (c->type() != Cursor::Type::Single) continue;
+
+            vals << c->currentPosition().x();
+        }
+    }
+    else {
+        vals << xVal;
+    }
+    emit saveVerticalSlice(vals);
 }
 
 void Plot::updateLabels()

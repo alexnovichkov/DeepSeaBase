@@ -260,8 +260,8 @@ void PlotArea::addPlot(Enums::PlotType type)
     connect(m_plot, SIGNAL(needPlotChannels(bool,QVector<Channel*>)), this, SIGNAL(needPlotChannels(bool,QVector<Channel*>)));
     connect(m_plot, SIGNAL(focusThisPlot()), this, SLOT(setFocus()));
     connect(m_plot, SIGNAL(trackingPanelCloseRequested()), cursorBoxAct, SLOT(toggle()));
-    connect(m_plot, SIGNAL(saveHorizontalSlice(double)), this, SIGNAL(saveHorizontalSlice(double)));
-    connect(m_plot, SIGNAL(saveVerticalSlice(double)), this, SIGNAL(saveVerticalSlice(double)));
+    connect(m_plot, SIGNAL(saveHorizontalSlice(QVector<double>)), this, SIGNAL(saveHorizontalSlice(QVector<double>)));
+    connect(m_plot, SIGNAL(saveVerticalSlice(QVector<double>)), this, SIGNAL(saveVerticalSlice(QVector<double>)));
     connect(m_plot, SIGNAL(saveTimeSegment(QVector<FileDescriptor*>,double,double)), this,
             SIGNAL(saveTimeSegment(QVector<FileDescriptor*>,double,double)));
 

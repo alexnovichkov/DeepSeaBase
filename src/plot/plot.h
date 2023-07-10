@@ -354,8 +354,8 @@ signals:
 
     void trackingPanelCloseRequested();
     void saveTimeSegment(const QVector<FileDescriptor*> &files, double from, double to);
-    void saveHorizontalSlice(double zVal);
-    void saveVerticalSlice(double xVal);
+    void saveHorizontalSlice(const QVector<double>& zVal);
+    void saveVerticalSlice(const QVector<double>& xVal);
     //испускаем, когда бросаем каналы на график
     void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels);
 private slots:

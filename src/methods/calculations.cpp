@@ -354,11 +354,6 @@ void saveSpectre(FileDescriptor *file, Channel *channel, double zValue)
 
     file->addChannelWithData(data, descr);
     if (!populated) channel->clear();
-
-
-    file->setChanged(true);
-    file->setDataChanged(true);
-    file->write();
 }
 
 void saveThrough(FileDescriptor *file, Channel *channel, double xValue)
@@ -411,9 +406,4 @@ void saveThrough(FileDescriptor *file, Channel *channel, double xValue)
 
     file->addChannelWithData(data, descr);
     if (!populated) channel->clear();
-
-
-    file->setChanged(true);
-    file->setDataChanged(true);
-    file->write();
 }

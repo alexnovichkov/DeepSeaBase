@@ -97,8 +97,8 @@ private slots:
     void calculateMean();
     void calculateThirdOctave();
     void calculateMovingAvg();
-    void saveHorizontalSlice(double zValue);
-    void saveVerticalSlice(double frequency);
+    void saveHorizontalSlice(const QVector<double> &zValues);
+    void saveVerticalSlice(const QVector<double>& frequencies);
     void saveTimeSegment(const QVector<FileDescriptor*> &files, double from, double to);
 
     void moveChannelsUp();

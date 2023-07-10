@@ -1815,7 +1815,7 @@ void MainWindow::calculateMovingAvg()
 }
 
 //сохраняет спектр из спектрограммы
-void MainWindow::saveHorizontalSlice(double zValue)
+void MainWindow::saveHorizontalSlice(const QVector<double>& zValues)
 {DD;
     if (!currentPlot || !currentPlot->plot()) return;
     auto visibleCurves = currentPlot->plot()->model()->curves([](Curve*c){return c->isVisible();});
@@ -1824,7 +1824,10 @@ void MainWindow::saveHorizontalSlice(double zValue)
     auto firstChannel = visibleCurves.first()->channel;
     const QString firstName = firstChannel->descriptor()->fileName();
 
-    QMessageBox box("Сохранение спектра", QString("Сохранить спектр в эту запись дополнительным каналом?"),
+    QString title = zValues.size()>1 ? "Сохранение спектров" : "Сохранение спектра";
+    QString message = zValues.size()>1 ? "Сохранить спектры в эту запись дополнительными каналами?" :
+                                   "Сохранить спектр в эту запись дополнительным каналом?";
+    QMessageBox box(title, message,
                     QMessageBox::Question,
                     QMessageBox::Yes, QMessageBox::No, QMessageBox::Cancel);
     box.setButtonText(QMessageBox::Yes, "Да, записать в этот файл");
@@ -1897,7 +1900,14 @@ void MainWindow::saveHorizontalSlice(double zValue)
         spectre = App->find(spectreFileName);
     }
 
-    ::saveSpectre(spectre.get(), firstChannel, zValue);
+    auto file = spectre.get();
+
+    for (double zValue: zValues)
+        ::saveSpectre(file, firstChannel, zValue);
+
+    file->setChanged(true);
+    file->setDataChanged(true);
+    file->write();
 
     int idx;
     if (currentTab && currentTab->model->contains(spectreFileName, &idx)) {
@@ -1909,7 +1919,7 @@ void MainWindow::saveHorizontalSlice(double zValue)
     }
 }
 
-void MainWindow::saveVerticalSlice(double frequency)
+void MainWindow::saveVerticalSlice(const QVector<double> &frequencies)
 {DD;
     if (!currentPlot || !currentPlot->plot()) return;
     auto visibleCurves = currentPlot->plot()->model()->curves([](Curve*c){return c->isVisible();});
@@ -1918,7 +1928,10 @@ void MainWindow::saveVerticalSlice(double frequency)
     auto firstChannel = visibleCurves.first()->channel;
     const QString firstName = firstChannel->descriptor()->fileName();
 
-    QMessageBox box("Сохранение проходной характеристики", QString("Сохранить проходную в эту запись дополнительным каналом?"),
+    QString title = frequencies.size()>1 ? "Сохранение проходных характеристик" : "Сохранение проходной характеристики";
+    QString message = frequencies.size()>1 ? "Сохранить проходные в эту запись дополнительными каналами?" :
+                                   "Сохранить проходную в эту запись дополнительным каналом?";
+    QMessageBox box(title, message,
                     QMessageBox::Question,
                     QMessageBox::Yes, QMessageBox::No, QMessageBox::Cancel);
     box.setButtonText(QMessageBox::Yes, "Да, записать в этот файл");
@@ -1992,7 +2005,14 @@ void MainWindow::saveVerticalSlice(double frequency)
         through = App->find(throughFileName);
     }
 
-    ::saveThrough(through.get(), firstChannel, frequency);
+    auto file = through.get();
+
+    for (double xValue: frequencies)
+        ::saveThrough(file, firstChannel, xValue);
+
+    file->setChanged(true);
+    file->setDataChanged(true);
+    file->write();
 
     int idx;
     if (currentTab && currentTab->model->contains(throughFileName, &idx)) {

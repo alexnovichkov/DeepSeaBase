@@ -142,6 +142,18 @@ QList<QAction *> QCPTrackingCursor::actions()
             parent->plot()->saveThroughput(xValue());
         });
         l << a;
+
+        a = new QAction("Сохранить все спектры...", parent);
+        QObject::connect(a, &QAction::triggered, [=](){
+            parent->plot()->saveSpectrum(qQNaN());
+        });
+        l << a;
+
+        a = new QAction("Сохранить все проходные...", parent);
+        QObject::connect(a, &QAction::triggered, [=](){
+            parent->plot()->saveThroughput(qQNaN());
+        });
+        l << a;
     }
 
     a = new QAction("Свойства...", parent);

@@ -49,8 +49,8 @@ signals:
     void channelPlotted(Channel *ch);
     void curveDeleted(Channel *);
     void focusThisPlot();
-    void saveHorizontalSlice(double zVal);
-    void saveVerticalSlice(double xVal);
+    void saveHorizontalSlice(const QVector<double>& zVal);
+    void saveVerticalSlice(const QVector<double>& xVal);
     void saveTimeSegment(const QVector<FileDescriptor*> &files, double from, double to);
     void needClearPlot();
 public slots:
