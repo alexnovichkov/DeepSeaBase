@@ -18,6 +18,7 @@ private:
     AbstractFunction * samplingF; //осуществляет нарезку блоков
     AbstractFunction * windowingF; //применяет оконную функцию
     AbstractFunction * averagingF; //применяет усреднение
+    AbstractFunction * psF; //вычисляет спектр мощности
     AbstractFunction * rmsF; //вычисляет СКЗ
     AbstractFunction * saver; //сохраняет результат
 

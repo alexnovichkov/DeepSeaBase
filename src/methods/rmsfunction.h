@@ -44,10 +44,7 @@ public:
     // AbstractFunction interface
 public:
     virtual bool compute(FileDescriptor *file) override;
-    virtual void reset() override;
     virtual DataDescription getFunctionDescription() const override;
-private:
-    int portionsCount = 0;
 };
 
 #endif // PSFUNCTION_H

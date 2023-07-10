@@ -7,6 +7,7 @@
 #include "framecutterfunction.h"
 #include "windowingfunction.h"
 #include "averagingfunction.h"
+#include "psfunction.h"
 #include "rmsfunction.h"
 #include "savingfunction.h"
 #include "logging.h"
@@ -19,6 +20,7 @@ RmsAlgorithm::RmsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     samplingF = new FrameCutterFunction(this);
     windowingF = new WindowingFunction(this);
     averagingF = new AveragingFunction(this);
+    psF = new PsFunction(this);
     rmsF = new RmsFunction(this);
     saver = new SavingFunction(this);
 
@@ -28,9 +30,10 @@ RmsAlgorithm::RmsAlgorithm(QList<FileDescriptor *> &dataBase, QObject *parent) :
     resamplingF->setInput(channelF);
     samplingF->setInput(resamplingF);
     windowingF->setInput(samplingF);
-    rmsF->setInput(windowingF);
-    averagingF->setInput(rmsF);
-    saver->setInput(averagingF);
+    psF->setInput(windowingF);
+    averagingF->setInput(psF);
+    rmsF->setInput(averagingF);
+    saver->setInput(rmsF);
 
     m_functions << channelF;
     m_functions << resamplingF;
@@ -78,6 +81,7 @@ void RmsAlgorithm::resetChain()
 {DD;
     samplingF->reset();
     windowingF->reset();
+    psF->reset();
     rmsF->reset();
     averagingF->reset();
     resamplingF->reset();

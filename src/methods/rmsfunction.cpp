@@ -46,7 +46,6 @@ QVariant RmsFunction::m_getParameter(const QString &property) const
         if (property == "?/yName") {
             return m_input->getParameter("?/yNameOld").toString();
         }
-        if (property == "?/portionsCount") return portionsCount;
 
         // do not know anything about these broadcast properties
         if (m_input) return m_input->getParameter(property);
@@ -75,34 +74,15 @@ bool RmsFunction::compute(FileDescriptor *file)
 
     QVector<double> data = m_input->getData("input");
     if (data.isEmpty()) return false;
+    output.resize(data.size());
 
-    //данные приходят сразу для всего канала, поэтому мы должны разбить их по блокам
-    const int blockSize = m_input->getParameter("?/blockSize").toInt();
-    portionsCount = data.size()/blockSize;
-
-    for (int block = 0; block < portionsCount; ++block) {
-        QVector<cx_double> fft = Fft::compute(data.mid(block*blockSize, blockSize));
-
-        int size = fft.size() * 100 / 256;
-        const int Nvl = fft.size();
-        const double factor = 2.0 / Nvl/Nvl;
-        QVector<double> data1(size);
-
-        for (int i = 0; i < size; i++) {
-            data1[i] = qSqrt(factor * std::norm(fft[i]));
-        }
-        output.append(data1);
+    //данные приходят усредненные
+    for (int i = 0; i < data.size(); i++) {
+        output[i] = qSqrt(data[i]);
     }
 
     return true;
 }
-
-void RmsFunction::reset()
-{DD;
-    AbstractFunction::reset();
-    portionsCount = 0;
-}
-
 
 DataDescription RmsFunction::getFunctionDescription() const
 {DD;
@@ -112,7 +92,7 @@ DataDescription RmsFunction::getFunctionDescription() const
     result.put("function.name", "RMS");
     result.put("function.type", 12); //Spectrum
     result.put("function.octaveFormat", 0);
-    result.put("function.logscale", "linear");  //units quadratic
+    result.put("function.logscale", "linear");  //units linear
 
     return result;
 }

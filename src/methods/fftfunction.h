@@ -26,6 +26,18 @@
  * ?/sampleRate
  *
  */
+
+/**
+ * @brief The FftFunction class
+ * Вычисляет FFT от временного сигнала по формуле:
+ * F = FFT(s) * factor, где
+ * factor = sqrt(2) / N,
+ * N - блина блока данных, в отсчетах
+ *
+ * Если сохраняются амплитуды, то FFT фактически вычисляет спектр СКЗ ДО УСРЕДНЕНИЯ,
+ * то есть F = average(RMS(s))
+ * DeepSea вычисляет спектр СКЗ ПОСЛЕ УСРЕДНЕНИЯ, то есть F = RMS(average(PS))
+ */
 class FftFunction : public AbstractFunction
 {
 public:
