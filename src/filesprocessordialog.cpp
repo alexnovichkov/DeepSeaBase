@@ -17,6 +17,7 @@
 #include "methods/filteringalgorithm.h"
 #include "methods/octavealgorithm.h"
 #include "methods/splitalgorithm.h"
+#include "methods/rmsalgorithm.h"
 
 FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QWidget *parent)
     : QDialog(parent), dataBase(dataBase), win(parent), currentAlgorithm(0)
@@ -30,6 +31,7 @@ FilesProcessorDialog::FilesProcessorDialog(QList<FileDescriptor *> &dataBase, QW
     algorithms << new FilteringAlgorithm(dataBase);
     algorithms << new SpectreAlgorithm(dataBase);
     algorithms << new PsAlgorithm(dataBase);
+    algorithms << new RmsAlgorithm(dataBase);
     algorithms << new PsdAlgorithm(dataBase);
     algorithms << new FRFAlgorithm(dataBase);
     algorithms << new OctaveAlgorithm(dataBase);

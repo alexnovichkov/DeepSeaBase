@@ -152,11 +152,13 @@ SOURCES += main.cpp\
     methods/windowingfunction.cpp \
     methods/fftfunction.cpp \
     methods/psfunction.cpp \
+    methods/rmsfunction.cpp \
     methods/psdfunction.cpp \
     methods/framecutterfunction.cpp \
     methods/framecutter.cpp \
     methods/savingfunction.cpp \
     methods/spectrealgorithm.cpp \
+    methods/rmsalgorithm.cpp \
     methods/psalgorithm.cpp \
     methods/psdalgorithm.cpp \
     unitsconverter.cpp \
@@ -287,12 +289,14 @@ HEADERS  += mainwindow.h \
     methods/windowingfunction.h \
     methods/fftfunction.h \
     methods/psfunction.h \
+    methods/rmsfunction.h \
     methods/psdfunction.h \
     methods/framecutterfunction.h \
     methods/framecutter.h \
     methods/savingfunction.h \
     methods/spectrealgorithm.h \
     methods/psalgorithm.h \
+    methods/rmsalgorithm.h \
     methods/psdalgorithm.h \
     unitsconverter.h \
     playpanel.h \
