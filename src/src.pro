@@ -457,6 +457,12 @@ INCLUDEPATH *= E:/My/programming/sources/boost_1_73_0
 
 #PRECOMPILED_HEADER = strtk_.hpp
 
+# QXlsx code for Application Qt project
+QXLSX_PARENTPATH=$$PWD/../3rdParty/QXlsx/         # current QXlsx path is . (. means curret directory)
+QXLSX_HEADERPATH=$$PWD/../3rdParty/QXlsx/header/  # current QXlsx header path is ./header/
+QXLSX_SOURCEPATH=$$PWD/../3rdParty/QXlsx/source/  # current QXlsx source path is ./source/
+include($$PWD/../3rdParty/QXlsx/QXlsx.pri)
+
 #libsamplerate
 INCLUDEPATH *= E:/My/programming/sources/libsamplerate-0.1.8/src
 equals(QT_ARCH,"i386") {

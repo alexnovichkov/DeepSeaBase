@@ -12,6 +12,8 @@
 #include "channelsmimedata.h"
 #include <QAxObject>
 
+#include "xlsxdocument.h"
+
 PlotArea::PlotArea(int index, QWidget *parent)
     : ads::CDockWidget(QString("График %1").arg(index), parent)
 {DD;
@@ -365,45 +367,27 @@ void PlotArea::exportSonogramToExcel()
     Range rangeX = m_plot->plotRange(Enums::AxisType::atBottom);
     Range rangeZ = m_plot->plotRange(Enums::AxisType::atLeft);
 
-    if (!excel) {
-        excel = new QAxObject("{00024500-0000-0000-c000-000000000046}&",this);
-    }
-    if (!excel) return;
-
-    excel->setProperty("Visible", true);
+//    if (!excel) {
+//        excel = new QAxObject("{00024500-0000-0000-c000-000000000046}&",this);
+//    }
+//    if (!excel) return;
+//    excel->setProperty("Visible", true);
 
     //получаем рабочую книгу
-    QAxObject * workbooks = excel->querySubObject("WorkBooks");
-    //LOG(DEBUG) << workbooks->generateDocumentation();
-    QAxObject * workbook = excel->querySubObject("ActiveWorkBook");
-    if (!workbook) {
-        workbooks->dynamicCall("Add");
-    }
-    workbook = excel->querySubObject("ActiveWorkBook");
+    QXlsx::Document output;
+    output.addSheet(channel->name());
+    output.selectSheet(channel->name());
 
-    // получаем список листов и добавляем новый лист
-    QAxObject *worksheets = workbook->querySubObject("Sheets");
-    worksheets->dynamicCall("Add()");
-    QAxObject * worksheet = workbook->querySubObject("ActiveSheet");
 
     // записываем название файла и описатели
 
-        QStringList descriptions = descriptor->dataDescription().twoStringDescription();
-        while (descriptions.size()<2) descriptions << "";
+    QStringList descriptions = descriptor->dataDescription().twoStringDescription();
+    while (descriptions.size()<2) descriptions << "";
 
-//        QAxObject *cells = worksheet->querySubObject("Cells(Int,Int)", 1, 1);
-//        if (cells) cells->setProperty("Value", descriptor->fileName());
-
-//        cells = worksheet->querySubObject("Cells(Int,Int)", 2, 1);
-//        if (cells) cells->setProperty("Value", curve->title());
-
-//        cells = worksheet->querySubObject("Cells(Int,Int)", 3, 1);
-//        if (cells) cells->setProperty("Value", descriptions.constFirst());
-
-//        cells = worksheet->querySubObject("Cells(Int,Int)", 4, 1);
-//        if (cells) cells->setProperty("Value", descriptions.at(1));
-
-//        delete cells;
+    output.write(1, 1, descriptor->fileName());
+    output.write(2, 1, curve->title());
+    output.write(3, 1, descriptions.constFirst());
+    output.write(4, 1, descriptions.at(1));
 
 
     /* //Сохранение рисунка сонограммы
@@ -420,270 +404,34 @@ void PlotArea::exportSonogramToExcel()
     delete range;
     */
 
-    //Сохранение данных в промежуточный текстовый файл
-    QTemporaryFile tcvFile;
-    tcvFile.setAutoRemove(false);
-    QString cvFileName;
-    if (tcvFile.open()) {
-        cvFileName = tcvFile.fileName();
-        tcvFile.close();
+    // записываем данные
+    auto xCount = channel->data()->samplesCount();
+    auto zCount = channel->data()->blocksCount();
+    for (int col=0; col<xCount; col++) {
+        output.write(5, col+2, QString::number(channel->data()->xValue(col)));
     }
-    LOG(DEBUG) << cvFileName;
-
-    QFile cvFile(cvFileName);
-    if (cvFile.open(QFile::WriteOnly | QFile::Text)) {
-        QTextStream ts(&cvFile);
-
-        // записываем описатели
-        ts << descriptor->fileName() << endl;
-        ts << curve->title() << endl;
-        ts << descriptions.constFirst() << endl;
-        ts << descriptions.at(1) << endl;
-
-        // записываем данные
-        auto xCount = channel->data()->samplesCount();
-        auto zCount = channel->data()->blocksCount();
-        QStringList list {" "};
-        for (int i=0; i<xCount; i++) {
-            list << QString::number(channel->data()->xValue(i));
+    for (int row=0; row<zCount; row++) {
+        output.write(row+6, 1, QString::number(channel->data()->zValue(row)));
+        for (int col=0; col<xCount; col++) {
+            output.write(row+6, col+2, QString::number(channel->data()->yValue(col, row)));
         }
-        ts << list.join(";") << endl;
-
-        for (int i=0; i<zCount; i++) {
-            list.clear();
-            list << QString::number(channel->data()->zValue(i));
-            for (int j=0; j<xCount; j++) {
-                list << QString::number(channel->data()->yValue(j, i));
-            }
-            ts << list.join(";") << endl;
-        }
-        cvFile.close();
-
-        //импортируем данные в Excel
-        /*auto queryTables = worksheet->querySubObject("QueryTables");
-        if (queryTables) {
-            //LOG(DEBUG) << queryTables->generateDocumentation();
-            QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 1, 1);
-            QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 1, 1);
-            QAxObject* range = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", Cell1->asVariant(), Cell2->asVariant() );
-
-
-            QVariantList options = {QString("TEXT;%1").arg(cvFileName), range->asVariant(), 0};
-            auto q = queryTables->dynamicCall("Add()", options).value<QAxObject*>();
-            if (q) {
-                q->setProperty("Count", 1);
-                q->setProperty("CommandType", 0);
-                q->setProperty("FieldNames", true);
-                q->setProperty("RowNumbers", false);
-                q->setProperty("SaveData", true);
-                q->setProperty("TextFileParseType", 1); //xlDelimited
-                q->setProperty("TextFileTextQualifier", 1); //xlTextQualifierDoubleQuote
-                q->setProperty("TextFileConsecutiveDelimiter", false);
-                q->setProperty("TextFileTabDelimiter", false);
-                q->setProperty("TextFileSemicolonDelimiter", true);
-                q->setProperty("TextFileCommaDelimiter", false);
-                q->setProperty("TextFileSpaceDelimiter", false);
-                q->setProperty("TextFileDecimalSeparator", ".");
-            }
-            else LOG(DEBUG) << "Unable to add new query table";
-            delete range;
-            delete Cell1;
-            delete Cell2;
-        }
-        delete queryTables;*/
-
-        QVariantList options = {cvFileName.replace('/','\\'), 1251, 1,
-                               1, 1, false,
-                               false, true, false, false,
-                                false, ' ',
-                                QVariantList{QVariantList{1,1}, QVariantList{2,1},QVariantList{3,1},QVariantList{4,1},
-                                QVariantList{5,1}, QVariantList{6,1},QVariantList{7,1},QVariantList{8,1},
-                                QVariantList{9,1}, QVariantList{10,1},QVariantList{11,1},QVariantList{12,1},
-                                QVariantList{13,1}, QVariantList{14,1},QVariantList{15,1},QVariantList{16,1},
-                                QVariantList{17,1}, QVariantList{18,1},QVariantList{19,1},QVariantList{20,1},
-                                QVariantList{21,1}, QVariantList{22,1},QVariantList{23,1},QVariantList{24,1},
-                                QVariantList{25,1}, QVariantList{26,1},QVariantList{27,1},QVariantList{28,1},
-                                QVariantList{29,1}, QVariantList{30,1},QVariantList{31,1},QVariantList{32,1},
-                                QVariantList{33,1}, QVariantList{34,1},QVariantList{35,1},QVariantList{36,1},
-                                QVariantList{37,1}, QVariantList{38,1},QVariantList{39,1},QVariantList{40,1}},
-                               1, ".", false,
-                               true, 15, QVariant()};
-        workbooks->dynamicCall("OpenText()", options);
-        //workbooks->dynamicCall("OpenText()", cvFileName);
     }
+    QTemporaryFile tempFile("DeepSeaBase-XXXXXX.xlsx");
+    tempFile.open();
+    output.saveAs(tempFile.fileName());
+
+    if (!excel) {
+        //excel = new QAxObject("Excel.Application",this);
+        excel = new QAxObject("{00024500-0000-0000-c000-000000000046}&",this);
+    }
+    if (!excel) return;
+
+    excel->setProperty("Visible", true);
+    QAxObject * workbooks = excel->querySubObject("WorkBooks");
+    QAxObject * tempWorkbook = workbooks->querySubObject("Open(QString)", tempFile.fileName());
 
 
 
-    /*
-     * void OpenText(QString Filename, QVariant Origin = 0, QVariant StartRow = 0,
-     * QVariant DataType = 0, XlTextQualifier TextQualifier = 0, QVariant ConsecutiveDelimiter = 0,
-     * QVariant Tab = 0, QVariant Semicolon = 0, QVariant Comma = 0, QVariant Space = 0,
-     * QVariant Other = 0, QVariant OtherChar = 0, QVariant FieldInfo = 0,
-     * QVariant TextVisualLayout = 0, QVariant DecimalSeparator = 0, QVariant ThousandsSeparator = 0,
-     * QVariant TrailingMinusNumbers = 0, QVariant Local = 0);
-     *
-     * Workbooks.OpenText Filename:= _
-        "C:\Users\Novichkov\AppData\Local\Temp\DeepSeaBase.iAYXzK", Origin:=1251, _
-        StartRow:=1, DataType:=xlDelimited, TextQualifier:=xlDoubleQuote, _
-        ConsecutiveDelimiter:=False, Tab:=False, Semicolon:=True, Comma:=False _
-        , Space:=False, Other:=False, FieldInfo:=Array(Array(1, 1), Array(2, 1), _
-        Array(3, 1), Array(4, 1), Array(5, 1), Array(6, 1), Array(7, 1), Array(8, 1), Array(9, 1), _
-        Array(10, 1), Array(11, 1), Array(12, 1), Array(13, 1), Array(14, 1), Array(15, 1), Array( _
-        16, 1), Array(17, 1), Array(18, 1), Array(19, 1), Array(20, 1), Array(21, 1), Array(22, 1), _
-        Array(23, 1), Array(24, 1), Array(25, 1), Array(26, 1), Array(27, 1), Array(28, 1), Array( _
-        29, 1), Array(30, 1), Array(31, 1), Array(32, 1), Array(33, 1), Array(34, 1), Array(35, 1), _
-        Array(36, 1), Array(37, 1), Array(38, 1), Array(39, 1), Array(40, 1)), DecimalSeparator _
-        :=".", TrailingMinusNumbers:=True
-     */
-
-//    int numCols = 0;
-//    int numRows = 0;
-//    for (int x=0; x<channel->data()->samplesCount(); ++x) {
-//        double val = channel->data()->xValue(x);
-//        if (!fullRange && (val < rangeX.min || val > rangeX.max)) continue;
-
-//        cells = worksheet->querySubObject("Cells(Int,Int)", 6+numRows, 1);
-//        if (cells) cells->setProperty("Value", val);
-//        numRows++;
-//    }
-//    for (int z=0; z<channel->data()->blocksCount(); ++z) {
-//        double val = channel->data()->zValue(z);
-//        if (!fullRange && (val < rangeZ.min || val > rangeZ.max)) continue;
-
-//        cells = worksheet->querySubObject("Cells(Int,Int)", 5, 2+numCols);
-//        if (cells) cells->setProperty("Value", val);
-//        numCols++;
-//    }
-
-//    int col = 0;
-//    for (int z = 0; z < channel->data()->blocksCount(); ++z) {
-//        int row = 0;
-//        double zval =  channel->data()->zValue(z);
-//        if (!fullRange && (zval < rangeZ.min || zval > rangeZ.max)) continue;
-
-//        for (int x=0; x<channel->data()->samplesCount(); ++x) {
-//            double xval = channel->data()->xValue(x);
-//            if (!fullRange && (xval < rangeX.min || xval > rangeX.max)) continue;
-
-//            cells = worksheet->querySubObject("Cells(Int,Int)", 6+row, 2+col);
-//            if (cells) cells->setProperty("Value", channel->data()->yValue(x,z));
-//            row++;
-//        }
-//        col++;
-//    }
-
-//    // выделяем диапазон, чтобы он автоматически использовался для построения диаграммы
-//    QAxObject* Cell1 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5, 1);
-//    QAxObject* Cell2 = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5 + numRows, 1 + numCols);
-//    QAxObject* range = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", Cell1->asVariant(), Cell2->asVariant() );
-//    range->dynamicCall("Select (void)");
-
-//    delete Cell1;
-//    delete Cell2;
-//    delete range;
-
-//    if (exportPlots) {
-//        QAxObject *charts = workbook->querySubObject("Charts");
-//        charts->dynamicCall("Add()");
-//        QAxObject *chart = workbook->querySubObject("ActiveChart");
-//        chart->setProperty("ChartType", 85);
-//        QAxObject * series = chart->querySubObject("SeriesCollection");
-
-//        QAxObject * serie = series->querySubObject("Item (int)", 1);
-//        if (serie) {
-//            serie->setProperty("Name", curve->channel->name());
-//            foreach(PointLabel *label, curve->labels) {
-//                QAxObject* point = serie->querySubObject("Points(QVariant)", label->point().x+1);
-//                QVariantList options = {0, 0, 0, 0, 0, -1, 0, 0, 0, 0};
-
-//                point->dynamicCall("ApplyDataLabels()", options);
-//                QAxObject* dataLabel = point->querySubObject("DataLabel");
-//                dataLabel->setProperty("ShowCategoryName", -1);
-//                dataLabel->setProperty("ShowValue", 0);
-//                dataLabel->setProperty("Position", 0);
-//                delete dataLabel;
-//                delete point;
-//            }
-//        }
-//        delete serie;
-
-        // перемещаем графики на дополнительную вертикальную ось,
-        // если они были там в программе
-        // и меняем название кривой
-//        int seriesCount = series->property("Count").toInt();
-//        bool addRightAxis = false;
-//        for ( int i=0; i<seriesCount; ++i) {
-//            Curve *curve = m_plot->model()->curve(i);
-//            QAxObject * serie = series->querySubObject("Item (int)", i+1);
-//            if (serie) {
-//                if (curve->yAxis()==Enums::AxisType::atRight) {
-//                    serie->setProperty("AxisGroup", 2);
-//                    addRightAxis = true;
-//                }
-//                serie->setProperty("Name", curve->channel->name());
-//            }
-//            delete serie;
-//        }
-//        if (addRightAxis) {
-//            QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&,const QVariant&)", 2,2);
-//            if (yAxis) setAxis(yAxis, stripHtml(m_plot->axisTitleText(Enums::AxisType::atRight)));
-//            delete yAxis;
-//        }
-
-
-        // добавляем подписи осей
-//        QAxObject *xAxis = chart->querySubObject("Axes(const QVariant&)", 1);
-//        if (xAxis) {
-//            setAxis(xAxis, stripHtml(m_plot->axisTitleText(Enums::AxisType::atBottom)));
-//            xAxis->setProperty("MaximumScale", rangeX.max);
-//            xAxis->setProperty("MinimumScale", int(rangeX.min/10)*10);
-//        }
-//        delete xAxis;
-
-//        QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&)", 2);
-//        if (yAxis) {
-//            setAxis(yAxis, stripHtml(m_plot->axisTitleText(Enums::AxisType::atLeft)));
-//            yAxis->setProperty("CrossesAt", -1000);
-//            yAxis->setProperty("MaximumScale", rangeZ.max);
-//            yAxis->setProperty("MinimumScale", int(rangeZ.min/10)*10);
-//        }
-//        delete yAxis;
-
-//        // рамка вокруг графика
-//        QAxObject *plotArea = chart->querySubObject("PlotArea");
-//        if (plotArea) setLineColor(plotArea, 13);
-//        delete plotArea;
-
-
-//        QAxObject *chartArea = chart->querySubObject("ChartArea");
-//        chartArea->querySubObject("Format")->querySubObject("Line")->setProperty("Visible", 0);
-//        delete chartArea;
-
-
-
-
-//        QAxObject *legendObject = chart->querySubObject("Legend");
-//        QAxObject *legendFormat = legendObject->querySubObject("Format");
-//        QAxObject *legendFormatFill = legendFormat->querySubObject("Fill");
-
-//        legendFormatFill->setProperty("Visible", 1);
-//        legendFormatFill->querySubObject("ForeColor")->setProperty("RGB", QColor(Qt::white).rgb());
-//        legendFormat->querySubObject("Line")->setProperty("Visible", 1);
-//        legendFormat->querySubObject("Line")->querySubObject("ForeColor")->setProperty("RGB", QColor(Qt::black).rgb());
-
-//        delete legendFormatFill;
-//        delete legendFormat;
-//        delete legendObject;
-//        delete series;
-//        delete chart;
-//        delete charts;
-//    }
-
-//    delete cells;
-    delete worksheet;
-    delete worksheets;
-    delete workbook;
-    delete workbooks;
 }
 
 void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
@@ -736,9 +484,6 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
      }
 
      const int samplesCount = channel->data()->samplesCount();
-//     const double step = channel->xStep();
-//     const bool zeroStepDetected = step<1e-9;
-
      const bool writeToSeparateColumns = !allChannelsHaveSameXStep || !allChannelsHaveSameLength;
 
      double minX = channel->data()->xMin();
@@ -836,6 +581,8 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 
      QVector<int> selectedSamples;
 
+     bool someStepIsZero = false;
+
      // если все каналы имеют одинаковый шаг по х, то в первый столбец записываем
      // данные х
      // если каналы имеют разный шаг по х, то для каждого канала отдельно записываем
@@ -844,6 +591,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
      if (!writeToSeparateColumns) {
          const int numCols = size;
          const bool zeroStep = qFuzzyIsNull(channel->data()->xStep());
+         someStepIsZero |= zeroStep;
 
          QList<QVariant> cellsList;
          QList<QVariant> rowsList;
@@ -853,7 +601,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 
              cellsList.clear();
 
-             if (zeroStep && exportPlots) {//размножаем каждое значение на 2
+             if (zeroStep && se->getSetting("plotOctaveAsHistogram").toInt()==1) {//размножаем каждое значение на 2
                  double f1 = i==0 ? val/pow(10.0,0.05):sqrt(val*channel->data()->xValue(i-1));
                  double f2 = i==samplesCount-1?val*pow(10.0,0.05):sqrt(val*channel->data()->xValue(i+1));
                  //первый ряд: (f1, Li)
@@ -902,6 +650,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
              Curve *curve = m_plot->model()->curve(i);
              Channel *ch = curve->channel;
              bool zeroStep = qFuzzyIsNull(ch->data()->xStep());
+             someStepIsZero |= zeroStep;
 
              QList<QVariant> cellsList;
              QList<QVariant> rowsList;
@@ -910,7 +659,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
                  if (!fullRange && (val < range.min || val > range.max) ) continue;
 
                  cellsList.clear();
-                 if (zeroStep && exportPlots) {//размножаем каждое значение на 2
+                 if (zeroStep && se->getSetting("plotOctaveAsHistogram").toInt()==1) {//размножаем каждое значение на 2
                      double f1 = j==0 ? val/pow(10.0,0.05):sqrt(val*ch->data()->xValue(j-1));
                      double f2 = j==ch->data()->samplesCount()-1?val*pow(10.0,0.05):sqrt(val*ch->data()->xValue(j+1));
                      //первый ряд: (f1, Li)
@@ -1024,12 +773,9 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          QAxObject *xAxis = chart->querySubObject("Axes(const QVariant&)", 1);
          if (xAxis) {
              setAxis(xAxis, stripHtml(m_plot->axisTitleText(Enums::AxisType::atBottom)));
+             if (someStepIsZero) xAxis->setProperty("ScaleType", -4133); //logarithmic
              xAxis->setProperty("MaximumScale", range.max);
              xAxis->setProperty("MinimumScale", int(range.min/10)*10);
-//             if (zeroStepDetected) {
-//                 xAxis->setProperty("ScaleType", "xlLogarithmic");
-//                 xAxis->setProperty("LogBase", 2);
-//             }
          }
          delete xAxis;
 
