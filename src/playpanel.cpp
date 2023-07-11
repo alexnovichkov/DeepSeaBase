@@ -7,7 +7,7 @@
 #include <QAudioOutput>
 #include <QMediaPlayer>
 #include "plot/curve.h"
-#include "plot/qcpcursorsingle.h"
+#include "plot/qcpcursorplayer.h"
 #include "plot/plotmodel.h"
 #include "wavexporter.h"
 #include "logging.h"
@@ -22,7 +22,7 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent->widget()), plot(parent)
     connect(player, &QMediaPlayer::mediaStatusChanged, this, &PlayPanel::statusChanged);
     connect(player, QOverload<QMediaPlayer::Error>::of(&QMediaPlayer::error), this, &PlayPanel::displayErrorMessage);
 
-    cursor = new QCPCursorSingle(Cursor::Style::Vertical, plot);
+    cursor = new QCPCursorPlayer(plot);
     cursor->setColor(Qt::green);
     cursor->setShowValues(false);
     connect(cursor, &Cursor::cursorPositionChanged, this, &PlayPanel::setValue);

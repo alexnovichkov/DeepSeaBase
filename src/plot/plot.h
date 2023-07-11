@@ -323,7 +323,7 @@ protected:
 
     ColorSelector *colors = nullptr;
     Cursors *cursors = nullptr;
-    CursorBox *cursorBox;
+    CursorBox *cursorBox = nullptr;
 
     QList<Selectable*> selectables;
 

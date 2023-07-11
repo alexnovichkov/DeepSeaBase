@@ -90,8 +90,8 @@ Plot::~Plot()
     deleteAllCurves(true);
 
 //    delete trackingPanel;
-    delete cursorBox;
-    delete picker;
+    delete playerPanel; //имеет родителем m_plot, поэтому сначала удаляем панель, чтобы удалилась правильно
+    delete cursorBox; //имеет родителем m_plot, поэтому сначала удаляем cursorBox, чтобы удалился правильно
 
     se->setSetting("axisLabelsVisible", axisLabelsVisible);
     se->setSetting("autoscale-x", !zoom->scaleBounds(Enums::AxisType::atBottom)->isFixed());

@@ -82,8 +82,10 @@ SOURCES += main.cpp\
     plot/cursordialog.cpp \
     plot/cursors.cpp \
     plot/plottedmodel.cpp \
+    plot/qcpaxishandle.cpp \
     plot/qcpcursordouble.cpp \
     plot/qcpcursorharmonic.cpp \
+    plot/qcpcursorplayer.cpp \
     plot/qcpcursorsingle.cpp \
     plot/qcpflowlayout.cpp \
     plot/qcpflowlegend.cpp \
@@ -216,8 +218,10 @@ HEADERS  += mainwindow.h \
     plot/cursordialog.h \
     plot/cursors.h \
     plot/plottedmodel.h \
+    plot/qcpaxishandle.h \
     plot/qcpcursordouble.h \
     plot/qcpcursorharmonic.h \
+    plot/qcpcursorplayer.h \
     plot/qcpcursorsingle.h \
     plot/qcpflowlayout.h \
     plot/qcpflowlegend.h \
