@@ -175,7 +175,7 @@ void CanvasEventFilter::mouseDoubleClick(QMouseEvent *event)
     }
     else switch (event->button()) {
         case Qt::LeftButton: {
-            //перенаправляется в Plot и перемещает курсор проигрывателя
+            //перенаправляется в Plot
             emit canvasDoubleClicked(startPosition);
             break;
         }

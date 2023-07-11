@@ -53,6 +53,7 @@ Cursor *Cursors::addSingleCursor(const QPoint &pos, Cursor::Style style)
     double yVal = 0.0;
     if (plot) {
         xVal = plot->screenToPlotCoordinates(Enums::AxisType::atBottom, pos.x());
+        yVal = plot->screenToPlotCoordinates(Enums::AxisType::atLeft, pos.y());
     }
     c->attach();
     c->moveTo({xVal, yVal});

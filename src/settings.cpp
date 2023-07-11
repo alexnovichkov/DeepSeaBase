@@ -50,7 +50,9 @@ bool Settings::hasSetting(const QString &key) const
     static QStringList allSettings {
         "cursorDialogFont",
         "plotOctaveAsHistogram",
-        "thirdOctaveInitialFilter"
+        "thirdOctaveInitialFilter",
+        "canvasDoubleClick",
+        "canvasDoubleClickCursor"
     };
 
     if (key.isEmpty()) return false;

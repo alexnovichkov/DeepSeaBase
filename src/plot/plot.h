@@ -359,7 +359,9 @@ signals:
     //испускаем, когда бросаем каналы на график
     void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels);
 private slots:
-
+    //обрабатывает двойной щелчок по канве, в зависимости от опций "canvasDoubleClick" и "canvasDoubleClickCursor"
+    //либо создает новый курсор, либо передвигает курсор плеера
+    void canvasDoubleClicked(const QPoint &position);
 private:
     QColor getNextColor();
     Enums::PlotType plotType = Enums::PlotType::General;

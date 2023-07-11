@@ -80,6 +80,22 @@ void SettingsDialog::addSettings()
     plotOctaveAsHistogram->setValue(se->getSetting("plotOctaveAsHistogram", 0).toInt());
     graphs->addSubProperty(plotOctaveAsHistogram);
 
+    auto canvasDoubleClick = m_manager->addProperty(QtVariantPropertyManager::enumTypeId(), "Двойной щелчок по канве");
+    canvasDoubleClick->setAttribute("enumNames",
+                                    QStringList({"Создаёт новый курсор в графиках любого типа",
+                                                 "Создает новый курсор, но только в спектрах"}));
+    m_displayNames.insert("Двойной щелчок по канве", "canvasDoubleClick");
+    canvasDoubleClick->setValue(se->getSetting("canvasDoubleClick", 1).toInt());
+    graphs->addSubProperty(canvasDoubleClick);
+
+    auto canvasDoubleClickCursor = m_manager->addProperty(QtVariantPropertyManager::enumTypeId(), "Тип курсора");
+    canvasDoubleClickCursor->setAttribute("enumNames",
+                                    QStringList({"Вертикальный",
+                                                 "Перекрестье"}));
+    m_displayNames.insert("Тип курсора", "canvasDoubleClickCursor");
+    canvasDoubleClickCursor->setValue(se->getSetting("canvasDoubleClickCursor", 0).toInt());
+    canvasDoubleClick->addSubProperty(canvasDoubleClickCursor);
+
     /* DFD */
     auto dfd = m_manager->addProperty(QVariant::String, "Файлы DFD");
     dfd->setValue(QVariant());

@@ -75,8 +75,9 @@ Plot::Plot(Enums::PlotType type, QWidget *parent) :
     if (type == Enums::PlotType::Time) {
         playerPanel = new PlayPanel(this);
         connect(this, SIGNAL(curvesCountChanged()), playerPanel, SLOT(update()));
-        connect(m_plot, SIGNAL(canvasDoubleClicked(QPoint)), playerPanel, SLOT(moveTo(QPoint)));
     }
+
+    connect(m_plot, &QCPPlot::canvasDoubleClicked, this, &Plot::canvasDoubleClicked);
 
     connect(se, &Settings::settingChanged, [this](const QString &key, const QVariant &val){
         Q_UNUSED(val);
@@ -428,6 +429,26 @@ void Plot::deleteAllCurves(bool forceDeleteFixed)
     }
 
     updatePlottedIndexes();
+}
+
+void Plot::canvasDoubleClicked(const QPoint &position)
+{
+    int canvasDoubleClick = se->getSetting("canvasDoubleClick", 1).toInt();
+    int canvasDoubleClickCursor = se->getSetting("canvasDoubleClickCursor", 0).toInt();
+
+    if (canvasDoubleClick == 1) {//во временных передвигаем курсор, в спектрах создаем курсор
+        if (playerPanel) playerPanel->moveTo(position);
+        else {
+            auto cursor = cursors->addSingleCursor(position,
+                                                   canvasDoubleClickCursor == 0 ? Cursor::Style::Vertical : Cursor::Style::Cross);
+            m_plot->addCursorToSecondaryPlots(cursor);
+        }
+    }
+    else {
+        auto cursor = cursors->addSingleCursor(position,
+                                               canvasDoubleClickCursor == 0 ? Cursor::Style::Vertical : Cursor::Style::Cross);
+        m_plot->addCursorToSecondaryPlots(cursor);
+    }
 }
 
 void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
