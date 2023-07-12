@@ -23,8 +23,6 @@ SettingsDialog::SettingsDialog(QWidget *parent) : QDialog(parent)
     propertyTree->setSizePolicy(propertyTree->sizePolicy().horizontalPolicy(),
                                  QSizePolicy::Expanding);
     propertyTree->setFactoryForManager(m_manager, m_factory);
-    connect(m_manager, SIGNAL(valueChanged(QtProperty*, const QVariant&)),
-                this, SLOT(propertyChanged(QtProperty*, const QVariant&)));
     propertyTree->setPropertiesWithoutValueMarked(true);
     propertyTree->setResizeMode(QtTreePropertyBrowser::ResizeToContents);
 
@@ -113,4 +111,7 @@ void SettingsDialog::addSettings()
     thirdOctaveInitialFilter->setAttribute("enumNames", vals1);
     thirdOctaveInitialFilter->setValue(se->getSetting("thirdOctaveInitialFilter", 1).toInt());
     dfd->addSubProperty(thirdOctaveInitialFilter);
+
+    connect(m_manager, SIGNAL(valueChanged(QtProperty*, const QVariant&)),
+                this, SLOT(propertyChanged(QtProperty*, const QVariant&)));
 }
