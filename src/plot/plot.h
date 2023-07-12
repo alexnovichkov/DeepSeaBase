@@ -226,7 +226,7 @@ public:
      * при закрытии вкладки или удалении записи
      * @param descriptor
      */
-    void deleteCurvesForDescriptor(FileDescriptor *descriptor);
+    void deleteCurvesForDescriptor(FileDescriptor *descriptor, QVector<int> indexes);
 
     /**
      * @brief deleteCurveForChannelIndex удаляет кривую по записи и индексу канала.

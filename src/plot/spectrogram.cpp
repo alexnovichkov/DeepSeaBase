@@ -13,6 +13,7 @@
 #include "checkablelegend.h"
 #include "plottedmodel.h"
 #include "picker.h"
+#include "settings.h"
 
 Spectrogram::Spectrogram(QWidget *parent) : Plot(Enums::PlotType::Spectrogram, parent)
 {DD;
@@ -247,6 +248,40 @@ QMenu *Spectrogram::createMenu(Enums::AxisType axis, const QPoint &pos)
         connect(scaleGroup, &QActionGroup::triggered, [=](QAction *act){
             Enums::AxisScale scale = static_cast<Enums::AxisScale>(act->data().toInt());
             m_plot->setAxisScale(Enums::AxisType::atBottom, scale);
+        });
+
+        menu->addAction(axisScaleAct);
+    }
+
+    // Попытка написать шкалу дистанции
+    if (axis == Enums::AxisType::atLeft) {
+        auto axisScaleAct = new QAction("Шкала", menu);
+        auto axisScaleMenu = new QMenu(menu);
+        axisScaleAct->setMenu(axisScaleMenu);
+        auto scaleGroup = new QActionGroup(axisScaleMenu);
+
+        auto time = new QAction("Время", scaleGroup);
+        time->setCheckable(true);
+        time->setData(0);
+        axisScaleMenu->addAction(time);
+
+        auto dist = new QAction("Дистанция", scaleGroup);
+        dist->setCheckable(true);
+        dist->setData(1);
+        axisScaleMenu->addAction(dist);
+
+        int scale = se->getSetting("spectrogramTimeScale", 0).toInt();
+
+        switch (scale) {
+            case 0: time->setChecked(true); break;
+            case 1: dist->setChecked(true); break;
+            default: break;
+        }
+
+        connect(scaleGroup, &QActionGroup::triggered, [=](QAction *act){
+            int scale = act->data().toInt();
+            se->setSetting("spectrogramTimeScale", scale);
+//            m_plot->setTimeAxisScale(Enums::AxisType::atLeft, scale);
         });
 
         menu->addAction(axisScaleAct);

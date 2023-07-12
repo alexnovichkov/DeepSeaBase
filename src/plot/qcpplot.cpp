@@ -363,6 +363,25 @@ void QCPPlot::setAxisScale(Enums::AxisType axisType, Enums::AxisScale scale)
     replot();
 }
 
+void QCPPlot::setTimeAxisScale(Enums::AxisType axisType, int scale)
+{
+    if (axisType != Enums::AxisType::atLeft) return;
+    auto curves = parent->model()->curves();
+    if (curves.isEmpty()) return;
+
+    //мы должны извлечь данные из канала: Ttr и Vel
+    QStringList description = curves.first()->channel->description().split(",");
+    if (description.isEmpty()) return;
+    double velocity = 0;
+    double traverseTime = 0;
+    for (const QString &s: description) {
+        if (s.startsWith("Vel=")) velocity = s.midRef(4).toDouble();
+        if (s.startsWith("Ttr=")) traverseTime = s.midRef(4).toDouble();
+    }
+    if (velocity == 0.0) return;
+    qDebug()<<velocity << traverseTime;
+}
+
 Enums::AxisScale QCPPlot::axisScale(Enums::AxisType axisType) const
 {
     return axisParameters.value(axisType).scale;

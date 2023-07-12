@@ -52,7 +52,8 @@ bool Settings::hasSetting(const QString &key) const
         "plotOctaveAsHistogram",
         "thirdOctaveInitialFilter",
         "canvasDoubleClick",
-        "canvasDoubleClickCursor"
+        "canvasDoubleClickCursor",
+        "spectrogramTimeScale" //0 - время, 1 - дистанция
     };
 
     if (key.isEmpty()) return false;

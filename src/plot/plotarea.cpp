@@ -10,6 +10,7 @@
 #include "plot/qcppointmarker.h"
 #include "plotmodel.h"
 #include "channelsmimedata.h"
+#include "correctiondialog.h"
 #include <QAxObject>
 
 #include "xlsxdocument.h"
@@ -347,9 +348,8 @@ void setAxis(QAxObject *xAxis, const QString &title)
     delete axisTitle;
 }
 
-void PlotArea::exportSonogramToExcel()
+void PlotArea::exportSonogramToExcel(bool fullRange, bool dataOnly)
 {
-    static QAxObject *excel = 0;
     auto curves = m_plot->model()->curves([](Curve*c){return c->isVisible();});
     if (curves.isEmpty()) return;
 
@@ -358,29 +358,21 @@ void PlotArea::exportSonogramToExcel()
     Channel *channel = curve->channel;
     FileDescriptor *descriptor = channel->descriptor();
 
-    double minX = channel->data()->xMin();
-    double maxX = channel->data()->xMax();
-
-    double minZ = channel->data()->zMin();
-    double maxZ = channel->data()->zMax();
-
     Range rangeX = m_plot->plotRange(Enums::AxisType::atBottom);
     Range rangeZ = m_plot->plotRange(Enums::AxisType::atLeft);
 
-//    if (!excel) {
-//        excel = new QAxObject("{00024500-0000-0000-c000-000000000046}&",this);
-//    }
-//    if (!excel) return;
-//    excel->setProperty("Visible", true);
-
+    int xMin = fullRange?0:qMax(channel->data()->nearest(rangeX.min), 0);
+    int xMax = fullRange?channel->data()->samplesCount()-1:
+                         qMin(channel->data()->nearest(rangeX.max), channel->data()->samplesCount()-1);
+    int zMin = fullRange?0:qMax(channel->data()->nearestZ(rangeZ.min), 0);
+    int zMax = fullRange?channel->data()->blocksCount()-1:
+                         qMin(channel->data()->nearestZ(rangeZ.max), channel->data()->blocksCount()-1);
     //получаем рабочую книгу
     QXlsx::Document output;
     output.addSheet(channel->name());
     output.selectSheet(channel->name());
 
-
     // записываем название файла и описатели
-
     QStringList descriptions = descriptor->dataDescription().twoStringDescription();
     while (descriptions.size()<2) descriptions << "";
 
@@ -389,55 +381,41 @@ void PlotArea::exportSonogramToExcel()
     output.write(3, 1, descriptions.constFirst());
     output.write(4, 1, descriptions.at(1));
 
-
-    /* //Сохранение рисунка сонограммы
-    QAxObject *cells = nullptr;
-
-    //получаем рисунок сонограммы
-    m_plot->copyToClipboard(false);
-    //вставляем рисунок из буфера обмена в лист
-
-    cells = worksheet->querySubObject("Cells(QVariant&,QVariant&)", 5, 1);
-    QAxObject* range = worksheet->querySubObject("Range(const QVariant&,const QVariant&)", cells->asVariant(), cells->asVariant() );
-    range->dynamicCall("Select (void)");
-    worksheet->dynamicCall("Paste()");
-    delete range;
-    */
-
     // записываем данные
-    auto xCount = channel->data()->samplesCount();
-    auto zCount = channel->data()->blocksCount();
-    for (int col=0; col<xCount; col++) {
-        output.write(5, col+2, QString::number(channel->data()->xValue(col)));
+    QXlsx::Format fmt;
+    fmt.setNumberFormatIndex(1);
+    for (int col=xMin; col<=xMax; col++) {
+        output.write(5, col+2-xMin, channel->data()->xValue(col));
     }
-    for (int row=0; row<zCount; row++) {
-        output.write(row+6, 1, QString::number(channel->data()->zValue(row)));
-        for (int col=0; col<xCount; col++) {
-            output.write(row+6, col+2, QString::number(channel->data()->yValue(col, row)));
+    for (int row=zMin; row<=zMax; row++) {
+        output.write(row+6-zMin, 1, channel->data()->zValue(row));
+        for (int col=xMin; col<=xMax; col++) {
+            output.write(row+6-zMin, col+2-xMin, channel->data()->yValue(col, row));
         }
     }
+
+    //Сохранение рисунка сонограммы
+    if (!dataOnly) {
+        //получаем рисунок сонограммы
+        m_plot->copyToClipboard(false);
+        //вставляем рисунок из буфера обмена в лист
+        output.addSheet(channel->name()+"-рис.");
+        output.selectSheet(channel->name()+"-рис.");
+
+        output.insertImage(1,1, qApp->clipboard()->image());
+    }
+
     QTemporaryFile tempFile("DeepSeaBase-XXXXXX.xlsx");
     tempFile.open();
     output.saveAs(tempFile.fileName());
 
-    if (!excel) {
-        //excel = new QAxObject("Excel.Application",this);
-        excel = new QAxObject("{00024500-0000-0000-c000-000000000046}&",this);
-    }
-    if (!excel) return;
-
-    excel->setProperty("Visible", true);
-    QAxObject * workbooks = excel->querySubObject("WorkBooks");
-    QAxObject * tempWorkbook = workbooks->querySubObject("Open(QString)", tempFile.fileName());
-
-
-
+    QDesktopServices::openUrl(QUrl::fromLocalFile(tempFile.fileName()));
 }
 
 void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 {DD;
     if (plot() && plot()->type() == Enums::PlotType::Spectrogram) {
-        exportSonogramToExcel();
+        exportSonogramToExcel(fullRange, dataOnly);
         return;
     }
 
@@ -894,9 +872,9 @@ void PlotArea::updateActions(int filesCount, int channelsCount)
     cycleChannelsDownAct->setEnabled(channelsCount>1 && hasCurves);
 }
 
-void PlotArea::deleteCurvesForDescriptor(FileDescriptor *f)
+void PlotArea::deleteCurvesForDescriptor(FileDescriptor *f, const QVector<int> &indexes)
 {DD;
-    if (m_plot) m_plot->deleteCurvesForDescriptor(f);
+    if (m_plot) m_plot->deleteCurvesForDescriptor(f, indexes);
 }
 
 //вызывается при переходе на предыдущую/следующую запись
@@ -906,10 +884,30 @@ void PlotArea::replotDescriptor(FileDescriptor *f, int fileIndex)
         m_plot->plotCurvesForDescriptor(f, fileIndex);
 }
 
+void PlotArea::addCorrection(const QList<FileDescriptor *> &additionalFiles)
+{
+    if (m_plot && m_plot->curvesCount() > 0) {
+        CorrectionDialog correctionDialog(m_plot, this);
+
+        //задаем файлы, которые дополнительно должны быть скорректированы
+        //помимо построенных на графике
+        correctionDialog.setFiles(additionalFiles);
+        correctionDialog.exec();
+    }
+}
+
 QVector<Channel *> PlotArea::plottedChannels() const
 {DD;
     if (m_plot) return m_plot->model()->plottedChannels();
     return QVector<Channel *>();
+}
+
+Channel *PlotArea::firstVisible() const
+{
+    if (!m_plot) return nullptr;
+    if (Curve *c = m_plot->model()->firstOf([](Curve*c){return c->isVisible();}))
+        return c->channel;
+    return nullptr;
 }
 
 QMap<FileDescriptor *, QVector<int> > PlotArea::plottedDescriptors() const

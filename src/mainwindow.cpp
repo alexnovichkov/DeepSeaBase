@@ -9,7 +9,6 @@
 #include "headerview.h"
 #include "plot/plot.h"
 #include "coloreditdialog.h"
-#include "correctiondialog.h"
 #include "plot/curve.h"
 #include "model.h"
 #include "sortfiltermodel.h"
@@ -420,6 +419,7 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     currentTab->channelsTable->addAction("copy", copyChannelsAct);
     currentTab->channelsTable->addAction("move", moveChannelsAct);
 
+    //сигнал updateLegends() передается всем имеющимся графикам
     connect(currentTab->model, SIGNAL(legendsChanged()), this, SIGNAL(updateLegends()));
     connect(currentTab->channelModel, SIGNAL(legendsChanged()), this, SIGNAL(updateLegends()));
     connect(currentTab->model, &Model::plotNeedsUpdate, [=]()
@@ -580,7 +580,9 @@ PlotArea *MainWindow::createPlotArea()
     static int plotIndex = 0;
     plotIndex++;
     PlotArea *area = new PlotArea(plotIndex, this);
+    //это соединение позволяет обновить сразу все вкладки графиков
     connect(this, SIGNAL(updateLegends()), area, SLOT(updateLegends()));
+
     connect(area, &PlotArea::needPlotChannels, this, qOverload<bool,const QVector<Channel*> &>(&MainWindow::onChannelsDropped));
     connect(area, &PlotArea::curvesCountChanged, this, &MainWindow::updateActions);
     connect(area, &PlotArea::channelPlotted, this, &MainWindow::onChannelChanged);
@@ -891,19 +893,9 @@ void MainWindow::movePlottedChannels() /** SLOT*/
 
 void MainWindow::addCorrection()
 {DD;
-    if (!currentPlot || !currentTab || !currentPlot->plot()) return;
-    if (currentPlot->curvesCount()>0) {
-
-        CorrectionDialog correctionDialog(currentPlot->plot(), this);
-        //correctionDialog.setFiles(currentTab->model->selectedFiles());
-
-        //задаем файлы, которые дополнительно должны быть скорректированы
-        //помимо построенных на графике
-        correctionDialog.setFiles(currentTab->model->selectedFiles());
-        correctionDialog.exec();
-
-        currentTab->updateChannelsTable(currentTab->record);
-    }
+    if (!currentPlot || !currentTab) return;
+    currentPlot->addCorrection(currentTab->model->selectedFiles());
+    currentTab->updateChannelsTable(currentTab->record);
 }
 
 void MainWindow::addCorrections()
@@ -990,10 +982,7 @@ void MainWindow::addCorrections()
     const auto m = m_DockManager->dockWidgetsMap();
     for (auto w: m.values()) {
         if (auto area = dynamic_cast<PlotArea*>(w)) {
-            if (area->plot()) {
-                if (area==currentPlot) emit updateLegends();
-                area->plot()->replot();
-            }
+            area->update();
         }
     }
 
@@ -1013,11 +1002,7 @@ bool MainWindow::deleteChannels(FileDescriptor *file, const QVector<int> &channe
     const auto m = m_DockManager->dockWidgetsMap();
     for (auto w: m.values()) {
         if (auto area = dynamic_cast<PlotArea*>(w)) {
-            if (area->plot()) {
-                for (int i=0; i<channelsToDelete.size() - 1; ++i)
-                    area->plot()->deleteCurveForChannelIndex(file, channelsToDelete.at(i), false);
-                area->plot()->deleteCurveForChannelIndex(file, channelsToDelete.last(), true);
-            }
+            area->deleteCurvesForDescriptor(file, channelsToDelete);
         }
     }
 
@@ -1162,11 +1147,10 @@ bool MainWindow::copyChannels(const QVector<Channel *> source)
 
 void MainWindow::calculateMean()
 {DD;
-    if (!currentPlot || !currentPlot->plot()) return;
-
+    if (!currentPlot) return;
     if (currentPlot->curvesCount()<2) return;
 
-    QVector<Channel*> channels = currentPlot->plot()->model()->plottedChannels();
+    QVector<Channel*> channels = currentPlot->plottedChannels();
 
     bool dataTypeEqual = true;
     bool stepsEqual = true; // одинаковый шаг по оси Х
@@ -1692,8 +1676,8 @@ void MainWindow::calculateThirdOctave()
 
 void MainWindow::calculateMovingAvg()
 {DD;
-    if (!currentPlot || !currentPlot->plot()) return;
-    if (currentPlot->plot()->curvesCount()==0) return;
+    if (!currentPlot) return;
+    if (currentPlot->curvesCount()==0) return;
 
     int windowSize = se->getSetting("movingAvgSize",3).toInt();
     bool ok;
@@ -1704,7 +1688,7 @@ void MainWindow::calculateMovingAvg()
     else
         return;
 
-    auto channels = currentPlot->plot()->model()->plottedChannels();
+    auto channels = currentPlot->plottedChannels();
 
     bool oneFile = true; // каналы из одного файла
     bool writeToSeparateFile = true;
@@ -1817,11 +1801,11 @@ void MainWindow::calculateMovingAvg()
 //сохраняет спектр из спектрограммы
 void MainWindow::saveHorizontalSlice(const QVector<double>& zValues)
 {DD;
-    if (!currentPlot || !currentPlot->plot()) return;
-    auto visibleCurves = currentPlot->plot()->model()->curves([](Curve*c){return c->isVisible();});
-    if (visibleCurves.isEmpty()) return;
+    if (!currentPlot) return;
 
-    auto firstChannel = visibleCurves.first()->channel;
+    auto firstChannel = currentPlot->firstVisible();
+    if (!firstChannel) return;
+
     const QString firstName = firstChannel->descriptor()->fileName();
 
     QString title = zValues.size()>1 ? "Сохранение спектров" : "Сохранение спектра";
@@ -1921,11 +1905,11 @@ void MainWindow::saveHorizontalSlice(const QVector<double>& zValues)
 
 void MainWindow::saveVerticalSlice(const QVector<double> &frequencies)
 {DD;
-    if (!currentPlot || !currentPlot->plot()) return;
-    auto visibleCurves = currentPlot->plot()->model()->curves([](Curve*c){return c->isVisible();});
-    if (visibleCurves.isEmpty()) return;
+    if (!currentPlot) return;
 
-    auto firstChannel = visibleCurves.first()->channel;
+    auto firstChannel = currentPlot->firstVisible();
+    if (!firstChannel) return;
+
     const QString firstName = firstChannel->descriptor()->fileName();
 
     QString title = frequencies.size()>1 ? "Сохранение проходных характеристик" : "Сохранение проходной характеристики";
@@ -2229,8 +2213,8 @@ void MainWindow::updateActions()
     editDescriptionsAct->setDisabled(selectedFilesCount==0);
 
     exportToExcelAct->setEnabled(curvesCount>0 /*&& !spectrogram*/);
-    exportToExcelFullAct->setEnabled(curvesCount>0 && !spectrogram);
-    exportToExcelOnlyDataAct->setEnabled(curvesCount>0 && !spectrogram);
+    exportToExcelFullAct->setEnabled(curvesCount>0);
+    exportToExcelOnlyDataAct->setEnabled(curvesCount>0);
     exportChannelsToWavAct->setEnabled(!timeFiles.isEmpty() && selectedChannelsCount>0);
 
     if (currentPlot) currentPlot->updateActions(filesCount, channelsCount);

@@ -28,10 +28,13 @@ public:
     //QList<Curve *> curves() const;
     void exportToExcel(bool fullRange, bool dataOnly);
     void updateActions(int filesCount, int channelsCount);
-    void deleteCurvesForDescriptor(FileDescriptor *f);
+    void deleteCurvesForDescriptor(FileDescriptor *f, const QVector<int> &indexes = QVector<int>());
     void replotDescriptor(FileDescriptor *f, int fileIndex);
 
+    void addCorrection(const QList<FileDescriptor*> &additionalFiles);
+
     QVector<Channel*> plottedChannels() const;
+    Channel* firstVisible() const;
     QMap<FileDescriptor *, QVector<int> > plottedDescriptors() const;
     int curvesCount(int type=-1) const;
     void onDropEvent(bool plotOnLeft, const QVector<Channel*> &channels);
@@ -58,7 +61,7 @@ public slots:
 private slots:
 
 private:
-    void exportSonogramToExcel();
+    void exportSonogramToExcel(bool fullRange, bool dataOnly);
     QGridLayout *plotsLayout;
     Plot *m_plot = nullptr;
     QLabel * infoLabel;

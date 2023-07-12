@@ -700,11 +700,18 @@ int DataHolder::nearest(double x) const
 {DD;
     int index=-1;
     if (m_xValuesFormat == XValuesNonUniform) {
-        auto upper = std::upper_bound(m_xValues.constBegin(), m_xValues.constEnd(), x);
-        if (upper == m_xValues.constEnd()) return -1; //larger than xmax
-        if (upper == m_xValues.constBegin()) return -1; //smaller than xmin
-        index = std::distance(m_xValues.constBegin(), upper)-1;
-        if (x-m_xValues[index] > m_xValues[index+1]-x) index++;
+
+        auto idx = std::min_element(m_xValues.constBegin(), m_xValues.constEnd(),
+                                    [x](double a, double b){
+            return std::abs(a-x) < std::abs(b-x);
+        });
+        if (idx == m_xValues.constEnd()) return -1;
+        return std::distance(m_xValues.constBegin(), idx);
+//        auto upper = std::upper_bound(m_xValues.constBegin(), m_xValues.constEnd(), x);
+//        if (upper == m_xValues.constEnd()) return -1; //larger than xmax
+//        if (upper == m_xValues.constBegin()) return -1; //smaller than xmin
+//        index = std::distance(m_xValues.constBegin(), upper)-1;
+//        if (x-m_xValues[index] > m_xValues[index+1]-x) index++;
     }
     else {
         index = qFuzzyIsNull(m_xStep) ? -1 : qRound((x-m_xBegin)/m_xStep);

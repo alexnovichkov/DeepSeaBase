@@ -170,6 +170,7 @@ void Plot::update()
     for (auto c: m->curves()) {
         c->updatePen();
     }
+    m->updateTitles();
     updateLabels();
     updateAxesLabels();
     if (m_plot) m_plot->updateLegend();
@@ -451,13 +452,17 @@ void Plot::canvasDoubleClicked(const QPoint &position)
     }
 }
 
-void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor)
+void Plot::deleteCurvesForDescriptor(FileDescriptor *descriptor, QVector<int> indexes)
 {DD;
-    for (int i = m->size()-1; i>=0; --i) {
-        if (Curve *curve = m->curve(i); descriptor == curve->channel->descriptor()) {
-            deleteCurve(curve, true);
-        }
+    if (indexes.isEmpty()) {
+        for (int i=0; i<descriptor->channelsCount(); ++i) indexes << i;
     }
+
+    for (int i: indexes) {
+        if (Curve *curve = m->plotted(descriptor->channel(i)))
+            deleteCurve(curve, i==indexes.last());
+    }
+
     updatePlottedIndexes();
 }
 
@@ -931,7 +936,6 @@ void Plot::savePlot() /*SLOT*/
 
 void Plot::copyToClipboard(bool useDialog) /*SLOT*/
 {DD;
-
     QTemporaryFile file(QDir::tempPath()+"/DeepSeaBase-XXXXXX.bmp");
     if (file.open()) {
         QString fileName = file.fileName();

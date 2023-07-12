@@ -81,6 +81,7 @@ public:
     QPoint localCursorPosition(const QPoint &globalCursorPosition) const;
     void setAxisScale(Enums::AxisType axisType, Enums::AxisScale scale);
     Enums::AxisScale axisScale(Enums::AxisType axisType) const;
+    void setTimeAxisScale(Enums::AxisType axisType, int scale);
 
     void setAxisRange(Enums::AxisType axis, double min, double max, double step);
     void setInfoVisible(bool visible);
