@@ -1,6 +1,7 @@
 #include "app.h"
 #include <QFile>
 #include <QSettings>
+#include <QFont>
 #include <QStandardPaths>
 #include "fileformats/filedescriptor.h"
 #include "fileformats/formatfactory.h"
@@ -58,6 +59,8 @@ Application::Application(int &argc, char **argv) : QApplication(argc, argv)
 //        QIcon::setThemeName(iconTheme);
 
     //setStyle(new MyProxyStyle(style()));
+
+    setFont(se->getSetting("font").value<QFont>());
 }
 
 Application::~Application()

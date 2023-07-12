@@ -48,6 +48,7 @@ QList<int> Settings::fromList(const QList<QVariant> &list)
 bool Settings::hasSetting(const QString &key) const
 {
     static QStringList allSettings {
+        "font",
         "cursorDialogFont",
         "plotOctaveAsHistogram",
         "thirdOctaveInitialFilter",

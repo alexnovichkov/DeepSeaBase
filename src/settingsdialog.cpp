@@ -53,15 +53,29 @@ void SettingsDialog::propertyChanged(QtProperty *p, const QVariant &v)
 {
     if (auto key = m_displayNames.value(p->propertyName()); se->hasSetting(key)) {
         se->setSetting(key, v);
+
+        if (key == "font") QMessageBox::information(this, "DeepSea Database",
+                                                    "Изменение шрифта вступит в силу\nпосле перезапуска программы");
     }
 }
 
 void SettingsDialog::addSettings()
 {
+    /*   Общие   */
+    auto global = m_manager->addProperty(QVariant::String, "Общие");
+    global->setValue(QVariant());
+    auto item = propertyTree->addProperty(global);
+
+    auto _font = m_manager->addProperty(QVariant::Font, "Шрифт приложения");
+    m_displayNames.insert("Шрифт приложения", "font");
+    _font->setValue(se->getSetting("font", font()));
+    global->addSubProperty(_font);
+    propertyTree->setExpanded(item, false);
+
     /*   Графики    */
     auto graphs = m_manager->addProperty(QVariant::String, "Графики");
     graphs->setValue(QVariant());
-    auto item = propertyTree->addProperty(graphs);
+    item = propertyTree->addProperty(graphs);
     //propertyTree->setExpanded(item, true);
 
 

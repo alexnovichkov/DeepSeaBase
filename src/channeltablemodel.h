@@ -54,9 +54,6 @@ private:
     Plot *currentPlot = nullptr;
     QVector<int> indexes;
 
-    QFont uFont;
-    QFont bFont;
-
     // QAbstractItemModel interface
 public:
     virtual QStringList mimeTypes() const override;

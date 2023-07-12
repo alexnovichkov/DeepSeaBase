@@ -6,15 +6,12 @@
 #include "plot/plot.h"
 #include "plot/plotmodel.h"
 #include "plot/curve.h"
+#include "settings.h"
 
 ChannelTableModel::ChannelTableModel(QObject *parent) : QAbstractTableModel(parent),
     descriptor(0)
 {DD;
     channelsCount = 0;
-
-    uFont = qobject_cast<QApplication*>(qApp)->font();
-    bFont = uFont;
-    bFont.setBold(true);
 }
 
 ChannelTableModel::~ChannelTableModel()
@@ -142,7 +139,7 @@ QVariant ChannelTableModel::data(const QModelIndex &index, int role) const
             break;
         case Qt::FontRole:
             if (plotted && column == 0) {
-                QFont font;
+                QFont font = QFont();
                 font.setBold(true);
                 return font;
             }
