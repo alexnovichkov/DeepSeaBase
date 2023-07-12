@@ -57,6 +57,7 @@
 #include "settings.h"
 #include "methods/calculations.h"
 #include "settingsdialog.h"
+#include "version.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), currentTab(0)
@@ -160,6 +161,31 @@ MainWindow::MainWindow(QWidget *parent)
     }
 
     updateActions();
+
+    QDir distrDir("\\\\192.168.1.6\\Disk 2\\Distributives\\Work\\УЗКС ФП\\DeepSea Database");
+    auto distrList = distrDir.entryInfoList(QDir::Files);
+
+    std::string thisVersion = DEEPSEABASE_VERSION;
+
+    //определяем максимальную версию, выложенную в папке
+    for (auto dist: distrList) {
+        //DeepSeaBaseInstall-2.1.6-12.07.2023-x64
+        QString name = dist.fileName();
+        if (!name.startsWith("DeepSeaBaseInstall-")) continue;
+        std::string version = name.split("-").at(1).toStdString();
+        auto c = CompareVersions(version, thisVersion);
+        if (c > 0) {
+            thisVersion = version;
+        }
+    }
+
+    auto c = CompareVersions(thisVersion, DEEPSEABASE_VERSION);
+    if (c > 0) {
+        QMessageBox::information(this, "DeepSea Database",
+            QString("В папке \"%1\" уже лежит более новая версия программы - %2")
+                                 .arg(distrDir.path())
+                                 .arg(QString::fromStdString(thisVersion)));
+    }
 }
 
 void MainWindow::createActions()

@@ -1029,7 +1029,7 @@ void Process::read(DfdSettings &dfd, DfdDataType dataType)
             parent->dataDescription().put("function.referenceDescription", val.second);
         }
         else {
-            LOG(INFO) << QString("Неизвестный параметр dfd: %1").arg(val.first);
+//            LOG(INFO) << QString("Неизвестный параметр dfd: %1").arg(val.first);
             parent->dataDescription().put("function."+val.first, val.second);
         }
     }

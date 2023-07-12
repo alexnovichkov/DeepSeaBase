@@ -250,7 +250,7 @@ QVector<int> PlotModel::plottedIndexesForDescriptor(FileDescriptor *d) const
         if (c->channel->descriptor() == d && !result.contains(c->channel->index()))
             result << c->channel->index();
     }
-    qSort(result);
+    std::sort(result.begin(), result.end());
     return result;
 }
 

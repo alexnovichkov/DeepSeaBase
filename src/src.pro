@@ -171,6 +171,7 @@ SOURCES += main.cpp\
     plot/curve.cpp \
     plot/plot.cpp \
     plot/picker.cpp \
+    version.cpp \
     wavexportdialog.cpp \
     wavexporter.cpp \
     plot/colormapfactory.cpp \
@@ -310,6 +311,7 @@ HEADERS  += mainwindow.h \
     plot/plot.h \
     plot/curve.h \
     plot/picker.h \
+    version.h \
     wavexportdialog.h \
     wavexporter.h \
     longoperation.h \
