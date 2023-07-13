@@ -42,8 +42,27 @@ public:
 
     QVector<Channel *> plottedChannels() const;
 //    QMap<FileDescriptor *, QVector<int> > plottedDescriptors() const;
+
+    /**
+     * @brief plottedDescriptors возвращает список записей, каналы которых построены
+     * в текущей модели
+     * @return
+     */
     QVector<FileDescriptor *> plottedDescriptors() const;
+
+    /**
+     * @brief plottedIndexesForDescriptor возвращает список индексов построенных каналов
+     * для записи d
+     * @param d
+     * @return
+     */
     QVector<int> plottedIndexesForDescriptor(FileDescriptor *d) const;
+
+    /**
+     * @brief plottedIndexes возвращает вспомогательный список построенных каналов,
+     * использующийся для быстрой навигации по построенным записям (режим Сергея)
+     * @return
+     */
     QVector<PlottedIndex> plottedIndexes() const {return m_plotted;}
     Descriptor::DataType curvesDataType() const;
     Curve * plotted(Channel *channel) const;

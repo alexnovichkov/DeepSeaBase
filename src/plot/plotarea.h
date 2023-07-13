@@ -20,31 +20,90 @@ public:
     ~PlotArea();
     Plot* plot();
     void addPlot(Enums::PlotType type);
+
+    /**
+     * @brief getPlotType
+     * @param channels список каналов, которые планируется построить в новом графике
+     * @return тип графика, подходящий для каналов channels
+     */
     static Enums::PlotType getPlotType(const QVector<Channel*> &channels);
+
+    /**
+     * @brief plotTypesCompatible используется для определения возможности построения
+     * каналов другого типа на уже имеющемся графике
+     * @param first
+     * @param second
+     * @return true если типы совместимы. Пока что только Enums::PlotType::General
+     * и Enums::PlotType::Octave считаются совместимыми.
+     */
     static bool plotTypesCompatible(Enums::PlotType first, Enums::PlotType second);
 
     void update();
 
-    //QList<Curve *> curves() const;
+    /**
+     * @brief exportToExcel экспортирует кривые в Excel и запускает его
+     * @param fullRange если true, то будут экспортированы все данные. Если false,
+     * то будут экспортированы только данные в пределах диапазона осей графика
+     * @param dataOnly если true, то графики не экспортируются.
+     */
     void exportToExcel(bool fullRange, bool dataOnly);
     void updateActions(int filesCount, int channelsCount);
     void deleteCurvesForDescriptor(FileDescriptor *f, const QVector<int> &indexes = QVector<int>());
+
+    /**
+     * @brief replotDescriptor вызывается при переходе на предыдущую/следующую запись
+     * @param f
+     * @param fileIndex
+     */
     void replotDescriptor(FileDescriptor *f, int fileIndex);
 
+    /**
+     * @brief addCorrection добавляет коррекцию к построенным каналам в отдельном диалоговом окне.
+     * @param additionalFiles дополнительные файлы, к которым нужно применить коррекцию
+     * помимо построенных каналов.
+     */
     void addCorrection(const QList<FileDescriptor*> &additionalFiles);
 
+    /**
+     * @brief plottedChannels возвращает список каналов, для которых построены графики
+     * @return список
+     */
     QVector<Channel*> plottedChannels() const;
-    Channel* firstVisible() const;
-    QMap<FileDescriptor *, QVector<int> > plottedDescriptors() const;
-    int curvesCount(int type=-1) const;
-    void onDropEvent(bool plotOnLeft, const QVector<Channel*> &channels);
-    void resetCycling();
 
-    void moveToPreviousDescriptor(bool checked);
-    void moveToNextDescriptor(bool checked);
+    /**
+     * @brief firstVisible возвращает первый видимый канал
+     * @return
+     */
+    Channel* firstVisible() const;
+
+    /**
+     * @brief plottedDescriptors возвращает массив записей с
+     * @return
+     */
+    QMap<FileDescriptor *, QVector<int> > plottedDescriptors() const;
+
+    /**
+     * @brief curvesCount возвращает количество построенных каналов определенного типа
+     * @param type тип канала согласно типам UFF
+     * @return
+     */
+    int curvesCount(int type=-1) const;
+
+
+//    void onDropEvent(bool plotOnLeft, const QVector<Channel*> &channels);
+
+    /**
+     * @brief resetCycling вызывается для сброса состояния навигации по произвольным записям
+     */
+    void resetCycling();
 signals:
+    /**
+     * @brief descriptorRequested испускается по запросу от действий previousDescriptorAct
+     * и nextDescriptorAct в mainWindow
+     * @param direction 1 для следующей записи, -1 для предыдущей записи
+     * @param checked состояние режима Сергея
+     */
     void descriptorRequested(int direction, bool checked);
-    //void cycleChannelsRequested(bool up);
 
     //redirected from m_plot
     void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels);
@@ -55,7 +114,6 @@ signals:
     void saveHorizontalSlice(const QVector<double>& zVal);
     void saveVerticalSlice(const QVector<double>& xVal);
     void saveTimeSegment(const QVector<FileDescriptor*> &files, double from, double to);
-    void needClearPlot();
 public slots:
     void updateLegends();
 private slots:

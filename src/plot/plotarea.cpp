@@ -87,13 +87,15 @@ PlotArea::PlotArea(int index, QWidget *parent)
     previousDescriptorAct->setIcon(QIcon(":/icons/rminus.png"));
     previousDescriptorAct->setToolTip(QString("%1 <font color=gray size=-1>Ctrl+Up</font>")
                           .arg("Предыдущая запись"));
-    connect(previousDescriptorAct, &QAction::triggered, this, &PlotArea::moveToPreviousDescriptor);
+    connect(previousDescriptorAct, &QAction::triggered, [this](bool checked){
+        emit descriptorRequested(-1, checked);});
 
     nextDescriptorAct = new QAction("Следущая запись", this);
     nextDescriptorAct->setIcon(QIcon(":/icons/rplus.png"));
     nextDescriptorAct->setToolTip(QString("%1 <font color=gray size=-1>Ctrl+Down</font>")
                           .arg("Следущая запись"));
-    connect(nextDescriptorAct, &QAction::triggered, this, &PlotArea::moveToNextDescriptor);
+    connect(nextDescriptorAct, &QAction::triggered, [this](bool checked){
+        emit descriptorRequested(1, checked);});
 
     arbitraryDescriptorAct = new QAction("Произвольная запись", this);
     arbitraryDescriptorAct->setIcon(QIcon(":/icons/rany.png"));
@@ -414,7 +416,7 @@ void PlotArea::exportSonogramToExcel(bool fullRange, bool dataOnly)
 
 void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 {DD;
-    if (plot() && plot()->type() == Enums::PlotType::Spectrogram) {
+    if (m_plot && m_plot->type() == Enums::PlotType::Spectrogram) {
         exportSonogramToExcel(fullRange, dataOnly);
         return;
     }
@@ -423,7 +425,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 
    // QList<Curve*> &curves = m_plot->curves;
 
-    const auto size = m_plot->model()->size();
+    const auto size = curvesCount();
 
     if (size == 0) {
         QMessageBox::warning(this, "Графиков нет", "Постройте хотя бы один график!");
@@ -945,30 +947,22 @@ void PlotArea::dropEvent(QDropEvent *event)
 {DD;
     const ChannelsMimeData *myData = qobject_cast<const ChannelsMimeData *>(event->mimeData());
     if (myData) {
-        onDropEvent(true, myData->channels);
+        auto type = getPlotType(myData->channels);
+        addPlot(type);
+        m_plot->onDropEvent(true /*plot on left*/, myData->channels);
         event->acceptProposedAction();
     }
 }
 
-void PlotArea::onDropEvent(bool plotOnLeft, const QVector<Channel *> &channels)
-{DD;
-    auto type = getPlotType(channels);
-    addPlot(type);
-    m_plot->onDropEvent(plotOnLeft, channels);
-}
+//void PlotArea::onDropEvent(bool plotOnLeft, const QVector<Channel *> &channels)
+//{DD;
+//    auto type = getPlotType(channels);
+//    addPlot(type);
+//    m_plot->onDropEvent(plotOnLeft, channels);
+//}
 
 void PlotArea::resetCycling()
 {DD;
     arbitraryDescriptorAct->setChecked(false);
     m_plot->sergeiMode = false;
-}
-
-void PlotArea::moveToPreviousDescriptor(bool checked)
-{
-    emit descriptorRequested(-1, checked);
-}
-
-void PlotArea::moveToNextDescriptor(bool checked)
-{
-    emit descriptorRequested(1, checked);
 }

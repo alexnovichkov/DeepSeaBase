@@ -129,6 +129,11 @@ private:
     void addDescriptors(const QList<F> &files, bool silent=false);
 
     bool deleteChannels(FileDescriptor *file, const QVector<int> &channelsToDelete);
+
+    /**
+     * @brief deletePlotted удаляет каналы, построенные на текущем графике
+     * @return true если удаление успешно
+     */
     bool deletePlotted();
     bool copyChannels(FileDescriptor *descriptor, const QVector<int> &channelsToCopy);
     bool copyChannels(const QVector<Channel *> source);
