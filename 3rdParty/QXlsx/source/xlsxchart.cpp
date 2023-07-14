@@ -184,6 +184,56 @@ void Chart::addSeries(const CellRange &range, AbstractSheet *sheet, bool headerH
     }
 }
 
+void Chart::addSeries(const CellRange &keyRange, const CellRange &valRange, AbstractSheet *sheet, bool header)
+{
+    Q_D(Chart);
+
+    if (!keyRange.isValid() || !valRange.isValid())
+        return;
+    if (sheet && sheet->sheetType() != AbstractSheet::ST_WorkSheet)
+        return;
+    if (!sheet && d->sheet->sheetType() != AbstractSheet::ST_WorkSheet)
+        return;
+
+    QString sheetName = sheet ? sheet->sheetName() : d->sheet->sheetName();
+    //In case sheetName contains space or '
+    sheetName = escapeSheetName(sheetName);
+
+    if (!(keyRange.columnCount() == 1 || keyRange.rowCount() == 1))
+        return;
+    if (!(valRange.columnCount() == 1 || valRange.rowCount() == 1))
+        return;
+
+    auto series = std::make_shared<XlsxSeries>();
+    CellRange subRange = keyRange;
+    if (keyRange.columnCount() == 1) {
+        //Column based series
+        if (header) subRange.setFirstRow(subRange.firstRow()+1);
+    }
+    if (keyRange.rowCount() == 1) {
+        //Row based series
+        if (header) subRange.setFirstColumn(subRange.firstColumn()+1);
+    }
+    series->axDataSource_numRef = sheetName + QLatin1String("!") + subRange.toString(true, true);
+    subRange = valRange;
+    if (valRange.columnCount() == 1) {
+        //Column based series
+        if (header) subRange.setFirstRow(subRange.firstRow()+1);
+    }
+    if (valRange.rowCount() == 1) {
+        //Row based series
+        if (header) subRange.setFirstColumn(subRange.firstColumn()+1);
+    }
+    series->numberDataSource_numRef = sheetName + QLatin1String("!") + subRange.toString(true, true);
+
+    if(header) {
+        CellRange subRange(valRange.firstRow(), valRange.firstColumn(), valRange.firstRow(), valRange.firstColumn());
+        series->headerH_numRef = sheetName + QLatin1String("!") + subRange.toString(true, true);
+    }
+    series->swapHeader = true;
+    d->seriesList.append(series);
+}
+
 /*!
  * Set the type of the chart to \a type
  */
@@ -1398,10 +1448,21 @@ void ChartPrivate::saveXmlSer(QXmlStreamWriter &writer, XlsxSeries *ser, int id)
         writer.writeEmptyElement("c:size");
         writer.writeAttribute("val", QString::number(ser->markerFormat.size()));
 
+        writer.writeStartElement("c:spPr");
+            writer.writeEmptyElement("a:noFill");
+            writer.writeStartElement("a:ln");
+                if (ser->lineFormat.isValid())
+                    writer.writeAttribute("w", QString::number(qRound(ser->lineFormat.width()*12700)));
+                writer.writeStartElement("a:solidFill");
+                    writer.writeEmptyElement("a:srgbClr");
+                    writer.writeAttribute("val", ser->lineFormat.color().name().mid(1));
+                writer.writeEndElement(); //a:solidFill
+            writer.writeEndElement(); //a:ln
+        writer.writeEndElement(); //c:spPr
+
         writer.writeEndElement(); //c:marker
     }
 
-#if 0
     if (!ser->axDataSource_numRef.isEmpty())
     {
         if (chartType == Chart::CT_ScatterChart || chartType == Chart::CT_BubbleChart)
@@ -1418,7 +1479,6 @@ void ChartPrivate::saveXmlSer(QXmlStreamWriter &writer, XlsxSeries *ser, int id)
         writer.writeEndElement();//c:numRef
         writer.writeEndElement();//c:cat or c:xVal
     }
-#endif
 
     if (!ser->numberDataSource_numRef.isEmpty())
     {

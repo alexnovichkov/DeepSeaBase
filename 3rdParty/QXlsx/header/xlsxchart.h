@@ -46,6 +46,7 @@ public:
     ~Chart();
 public:
     void addSeries(const CellRange &range, AbstractSheet *sheet = NULL, bool headerH = false, bool headerV = false, bool swapHeaders = false);
+    void addSeries(const CellRange &keyRange, const CellRange &valRange, AbstractSheet *sheet = NULL, bool headerH = false);
     void setChartType(ChartType type);
     void setAxisTitle(Chart::ChartAxisPos pos, QString axisTitle);
     void setChartTitle(QString strchartTitle);

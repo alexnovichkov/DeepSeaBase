@@ -58,18 +58,22 @@ int main(int argc, char *argv[])
 
     Application a(argc, argv);
 
-//    QXlsx::Document xlsx;
-//    xlsx.write(1,1, "x");
-//    xlsx.write(1,2, "y");
-//    for (int i=1; i<10; ++i) {
-//        xlsx.write(i+1, 1, i);
-//        xlsx.write(i+1, 2, i*i);
-//    }
-//    xlsx.addSheet("Chart1", QXlsx::AbstractSheet::ST_ChartSheet);
-//    QXlsx::Chartsheet *sheet = static_cast<QXlsx::Chartsheet*>(xlsx.currentSheet());
-//    QXlsx::Chart *chart = sheet->chart();
-//    chart->setChartType(QXlsx::Chart::CT_ScatterChart);
-//    chart->addSeries(QXlsx::CellRange("A1:B10"), xlsx.sheet("Sheet1"));
+    QXlsx::Document xlsx;
+    xlsx.write(1,1, "x");
+    xlsx.write(1,2, "y");
+    for (int i=1; i<10; ++i) {
+        xlsx.write(i+1, 1, i);
+        xlsx.write(i+1, 2, i*i);
+        xlsx.write(i+1, 3, i*i+10);
+    }
+    xlsx.addSheet("Chart1", QXlsx::AbstractSheet::ST_ChartSheet);
+    QXlsx::Chartsheet *sheet = static_cast<QXlsx::Chartsheet*>(xlsx.currentSheet());
+    QXlsx::Chart *chart = sheet->chart();
+    chart->setChartType(QXlsx::Chart::CT_ScatterChart);
+//    chart->addSeries(QXlsx::CellRange("A1:B10"), xlsx.sheet("Sheet1"), true);
+    chart->addSeries(QXlsx::CellRange("A1:A10"), QXlsx::CellRange("B1:B10"), xlsx.sheet("Sheet1"), true);
+    chart->addSeries(QXlsx::CellRange("A1:A10"), QXlsx::CellRange("C1:C10"), xlsx.sheet("Sheet1"), true);
+
 //    QXlsx::LineFormat format;
 //    format.setColor(QColor(Qt::gray));
 //    format.setAlpha(0.7);
@@ -82,7 +86,7 @@ int main(int argc, char *argv[])
 //    QXlsx::MarkerFormat marker;
 //    marker.setMarkerType(QXlsx::MarkerFormat::MT_Star);
 //    chart->setSeriesMarkerFormat(0, marker);
-//    xlsx.saveAs("chartsheet1.xlsx");
+    xlsx.saveAs("chartsheet1.xlsx");
 
     QPixmap pixmap(":/icons/splash.png");
     QSplashScreen splash(pixmap);
