@@ -15,7 +15,8 @@
 QT_BEGIN_NAMESPACE_XLSX
 
 ChartPrivate::ChartPrivate(Chart *q, Chart::CreateFlag flag)
-    : AbstractOOXmlFilePrivate(q, flag), chartType(static_cast<Chart::ChartType>(0))
+    : AbstractOOXmlFilePrivate(q, flag), chartType(static_cast<Chart::ChartType>(0)),
+      chartStyle(static_cast<Chart::ChartStyle>(0))
 {
 
 }
@@ -198,10 +199,11 @@ void Chart::setChartType(ChartType type)
  * \internal
  *
  */
-void Chart::setChartStyle(int id)
+void Chart::setChartStyle(ChartStyle style)
 {
-    Q_UNUSED(id)
-    //!Todo
+    Q_D(Chart);
+
+    d->chartStyle = style;
 }
 
 void Chart::setAxisTitle(Chart::ChartAxisPos pos, QString axisTitle)
@@ -257,6 +259,13 @@ void Chart::setGridlinesEnable(bool majorGridlinesEnable, bool minorGridlinesEna
     d->minorGridlinesEnabled = minorGridlinesEnable;
 }
 
+void Chart::setSeriesFormat(int series, const LineFormat &format)
+{
+    Q_D(Chart);
+
+    if (series < 0 || series >= d->seriesList.size()) return;
+    d->seriesList[series]->format = format;
+}
 
 /*!
  * \internal
@@ -1192,6 +1201,18 @@ void ChartPrivate::saveXmlScatterChart(QXmlStreamWriter &writer) const
     writer.writeStartElement(name);
 
     writer.writeEmptyElement(QStringLiteral("c:scatterStyle"));
+    switch (chartStyle) {
+        case Chart::CS_ScatterLine:
+        case Chart::CS_ScatterMarker:
+        case Chart::CS_ScatterLineMarker:
+            writer.writeAttribute("val", "lineMarker");
+            break;
+        case Chart::CS_ScatterSmooth:
+        case Chart::CS_ScatterSmoothMarker:
+            writer.writeAttribute("val", "smoothMarker");
+            break;
+        default: break;
+    }
 
     for (int i=0; i<seriesList.size(); ++i)
         saveXmlSer(writer, seriesList[i].get(), i);
@@ -1302,6 +1323,48 @@ void ChartPrivate::saveXmlSer(QXmlStreamWriter &writer, XlsxSeries *ser, int id)
         writer.writeEndElement();
     }
 
+
+
+    {
+        writer.writeStartElement("c:spPr");
+        writer.writeStartElement("a:ln");
+        if (ser->format.isValid())
+            writer.writeAttribute("w", QString::number(qRound(ser->format.width()*12700)));
+        else
+            writer.writeAttribute("w", "28575");
+        switch (chartStyle) {
+            case Chart::CS_ScatterSmoothMarker:
+            case Chart::CS_ScatterLineMarker:
+            case Chart::CS_ScatterLine:
+            case Chart::CS_ScatterSmooth:
+                writer.writeStartElement("a:solidFill");
+                if (ser->format.isValid()) {
+                    writer.writeEmptyElement("a:srgbClr");
+                    writer.writeAttribute("val", ser->format.color().name().mid(1));
+                }
+                writer.writeEndElement(); //a:solidFill
+                break;
+            case Chart::CS_ScatterMarker:
+                writer.writeEmptyElement("a:noFill");
+                break;
+            default: break;
+        }
+
+        writer.writeEndElement(); //a:ln
+        writer.writeEndElement(); //c:spPr
+    }
+
+    switch (chartStyle) {
+        case Chart::CS_ScatterSmooth:
+        case Chart::CS_ScatterLine:
+            writer.writeStartElement("c:marker");
+            writer.writeEmptyElement("c:symbol");
+            writer.writeAttribute("val", "none");
+            writer.writeEndElement();
+            break;
+        default: break;
+    }
+
 #if 0
     if (!ser->axDataSource_numRef.isEmpty())
     {
@@ -1331,6 +1394,20 @@ void ChartPrivate::saveXmlSer(QXmlStreamWriter &writer, XlsxSeries *ser, int id)
         writer.writeTextElement(QStringLiteral("c:f"), ser->numberDataSource_numRef);
         writer.writeEndElement();//c:numRef
         writer.writeEndElement();//c:val or c:yVal
+    }
+    switch (chartStyle) {
+        case Chart::CS_ScatterSmooth:
+        case Chart::CS_ScatterSmoothMarker:
+            writer.writeEmptyElement("c:smooth");
+            writer.writeAttribute("val", "1");
+            break;
+        case Chart::CS_ScatterLine:
+        case Chart::CS_ScatterLineMarker:
+        case Chart::CS_ScatterMarker:
+            writer.writeEmptyElement("c:smooth");
+            writer.writeAttribute("val", "0");
+            break;
+        default: break;
     }
 
     writer.writeEndElement();//c:ser

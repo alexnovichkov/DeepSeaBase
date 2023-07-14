@@ -27,6 +27,7 @@ public:
     QString headerH_numRef;
     QString headerV_numRef;
     bool    swapHeader = false;
+    LineFormat format;
 };
 
 class XlsxAxis
@@ -130,6 +131,7 @@ protected:
 
 public:
     Chart::ChartType chartType;
+    Chart::ChartStyle chartStyle;
     QList< std::shared_ptr<XlsxSeries> > seriesList;
     QList< std::shared_ptr<XlsxAxis> > axisList;
     QMap< XlsxAxis::AxisPos, QString > axisNames;

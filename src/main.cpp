@@ -14,6 +14,13 @@
 #include "logging.h"
 INITIALIZE_EASYLOGGINGPP
 
+#include "xlsxdocument.h"
+#include "xlsxchartsheet.h"
+#include "xlsxchart.h"
+#include "xlsxcellrange.h"
+#include "xlsxcellrange.h"
+#include "xlsxlineformat.h"
+
 int main(int argc, char *argv[])
 {
     bool logToFile = false;
@@ -50,6 +57,25 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationVersion(QString(DEEPSEABASE_VERSION));
 
     Application a(argc, argv);
+
+    QXlsx::Document xlsx;
+    xlsx.write(1,1, "x");
+    xlsx.write(1,2, "y");
+    for (int i=1; i<10; ++i) {
+        xlsx.write(i+1, 1, i);
+        xlsx.write(i+1, 2, i*i);
+    }
+    xlsx.addSheet("Chart1", QXlsx::AbstractSheet::ST_ChartSheet);
+    QXlsx::Chartsheet *sheet = static_cast<QXlsx::Chartsheet*>(xlsx.currentSheet());
+    QXlsx::Chart *chart = sheet->chart();
+    chart->setChartType(QXlsx::Chart::CT_ScatterChart);
+    chart->addSeries(QXlsx::CellRange("A1:B10"), xlsx.sheet("Sheet1"));
+    chart->setChartStyle(QXlsx::Chart::CS_ScatterLineMarker);
+    QXlsx::LineFormat format;
+    format.setColor(QColor(Qt::lightGray));
+    format.setWidth(1);
+    chart->setSeriesFormat(0, format);
+    xlsx.saveAs("chartsheet1.xlsx");
 
     QPixmap pixmap(":/icons/splash.png");
     QSplashScreen splash(pixmap);
