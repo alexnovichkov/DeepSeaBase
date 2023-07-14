@@ -40,15 +40,26 @@ public:
     //прозрачность - double [0..1]
 
     enum CompoundLineType {
-        CLT_Simple,
+        CLT_Single,
         CLT_Double,
         CLT_ThickThin,
         CLT_ThinThick,
         CLT_Triple,
     };
 
+    enum StrokeType {
+        ST_Solid,
+        ST_Dot,
+        ST_RoundDot,
+        ST_Dash,
+        ST_DashDot,
+        ST_LongDash,
+        ST_LongDashDot,
+        ST_LongDashDotDot,
+    };
+
     enum PointType {
-        PT_Rectangular,
+        PT_Square,
         PT_Round,
         PT_Flat,
     };
@@ -77,11 +88,29 @@ public:
     LineFormat &operator=(const LineFormat &rhs);
     ~LineFormat();
 
+    LineType lineType() const;
+    void setLineType(LineType type);
+
     QColor color() const;
     void setColor(const QColor &color);
 
+    bool smooth() const;
+    void setSmooth(bool smooth);
+
     double width() const;
     void setWidth(double width);
+
+    CompoundLineType compoundLineType() const;
+    void setCompoundLineType(CompoundLineType compoundLineType);
+
+    StrokeType strokeType() const;
+    void setStrokeType(StrokeType strokeType);
+
+    PointType pointType() const;
+    void setPointType(PointType pointType);
+
+    double alpha() const;
+    void setAlpha(double alpha);
 
     /* marker */
 

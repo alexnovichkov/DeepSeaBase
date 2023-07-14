@@ -54,6 +54,8 @@ INCLUDEPATH += $${QXLSX_HEADERPATH}
 # source code 
 
 HEADERS += \
+$${QXLSX_HEADERPATH}xlsxmarkerformat.h \
+$${QXLSX_HEADERPATH}xlsxmarkerformat_p.h \
 $${QXLSX_HEADERPATH}xlsxlineformat.h \
 $${QXLSX_HEADERPATH}xlsxlineformat_p.h \
 $${QXLSX_HEADERPATH}xlsxabstractooxmlfile.h \
@@ -105,6 +107,7 @@ $${QXLSX_HEADERPATH}xlsxzipreader_p.h \
 $${QXLSX_HEADERPATH}xlsxzipwriter_p.h
 
 SOURCES += \
+$${QXLSX_SOURCEPATH}xlsxmarkerformat.cpp \
 $${QXLSX_SOURCEPATH}xlsxlineformat.cpp \
 $${QXLSX_SOURCEPATH}xlsxabstractooxmlfile.cpp \
 $${QXLSX_SOURCEPATH}xlsxabstractsheet.cpp \

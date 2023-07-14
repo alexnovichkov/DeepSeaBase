@@ -15,8 +15,7 @@
 QT_BEGIN_NAMESPACE_XLSX
 
 ChartPrivate::ChartPrivate(Chart *q, Chart::CreateFlag flag)
-    : AbstractOOXmlFilePrivate(q, flag), chartType(static_cast<Chart::ChartType>(0)),
-      chartStyle(static_cast<Chart::ChartStyle>(0))
+    : AbstractOOXmlFilePrivate(q, flag), chartType(static_cast<Chart::ChartType>(0))
 {
 
 }
@@ -199,13 +198,6 @@ void Chart::setChartType(ChartType type)
  * \internal
  *
  */
-void Chart::setChartStyle(ChartStyle style)
-{
-    Q_D(Chart);
-
-    d->chartStyle = style;
-}
-
 void Chart::setAxisTitle(Chart::ChartAxisPos pos, QString axisTitle)
 {
     Q_D(Chart);
@@ -259,12 +251,20 @@ void Chart::setGridlinesEnable(bool majorGridlinesEnable, bool minorGridlinesEna
     d->minorGridlinesEnabled = minorGridlinesEnable;
 }
 
-void Chart::setSeriesFormat(int series, const LineFormat &format)
+void Chart::setSeriesLineFormat(int series, const LineFormat &format)
 {
     Q_D(Chart);
 
     if (series < 0 || series >= d->seriesList.size()) return;
-    d->seriesList[series]->format = format;
+    d->seriesList[series]->lineFormat = format;
+}
+
+void Chart::setSeriesMarkerFormat(int series, const MarkerFormat &format)
+{
+    Q_D(Chart);
+
+    if (series < 0 || series >= d->seriesList.size()) return;
+    d->seriesList[series]->markerFormat = format;
 }
 
 /*!
@@ -1201,18 +1201,7 @@ void ChartPrivate::saveXmlScatterChart(QXmlStreamWriter &writer) const
     writer.writeStartElement(name);
 
     writer.writeEmptyElement(QStringLiteral("c:scatterStyle"));
-    switch (chartStyle) {
-        case Chart::CS_ScatterLine:
-        case Chart::CS_ScatterMarker:
-        case Chart::CS_ScatterLineMarker:
-            writer.writeAttribute("val", "lineMarker");
-            break;
-        case Chart::CS_ScatterSmooth:
-        case Chart::CS_ScatterSmoothMarker:
-            writer.writeAttribute("val", "smoothMarker");
-            break;
-        default: break;
-    }
+    writer.writeAttribute("val", "lineMarker");
 
     for (int i=0; i<seriesList.size(); ++i)
         saveXmlSer(writer, seriesList[i].get(), i);
@@ -1325,44 +1314,91 @@ void ChartPrivate::saveXmlSer(QXmlStreamWriter &writer, XlsxSeries *ser, int id)
 
 
 
+    // линия
     {
         writer.writeStartElement("c:spPr");
         writer.writeStartElement("a:ln");
-        if (ser->format.isValid())
-            writer.writeAttribute("w", QString::number(qRound(ser->format.width()*12700)));
-        else
-            writer.writeAttribute("w", "28575");
-        switch (chartStyle) {
-            case Chart::CS_ScatterSmoothMarker:
-            case Chart::CS_ScatterLineMarker:
-            case Chart::CS_ScatterLine:
-            case Chart::CS_ScatterSmooth:
-                writer.writeStartElement("a:solidFill");
-                if (ser->format.isValid()) {
-                    writer.writeEmptyElement("a:srgbClr");
-                    writer.writeAttribute("val", ser->format.color().name().mid(1));
-                }
-                writer.writeEndElement(); //a:solidFill
-                break;
-            case Chart::CS_ScatterMarker:
-                writer.writeEmptyElement("a:noFill");
-                break;
-            default: break;
+        if (ser->lineFormat.isValid()) {
+            writer.writeAttribute("w", QString::number(qRound(ser->lineFormat.width()*12700)));
+            switch (ser->lineFormat.compoundLineType()) {
+                case LineFormat::CLT_Single: writer.writeAttribute("cmpd", "sng"); break;
+                case LineFormat::CLT_Double: writer.writeAttribute("cmpd", "dbl"); break;
+                case LineFormat::CLT_ThickThin: writer.writeAttribute("cmpd", "thickThin"); break;
+                case LineFormat::CLT_ThinThick: writer.writeAttribute("cmpd", "thinThick"); break;
+                case LineFormat::CLT_Triple: writer.writeAttribute("cmpd", "tri"); break;
+            }
+            switch (ser->lineFormat.pointType()) {
+                case LineFormat::PT_Flat: writer.writeAttribute("cap", "flat"); break;
+                case LineFormat::PT_Round: writer.writeAttribute("cap", "rnd"); break;
+                case LineFormat::PT_Square: writer.writeAttribute("cap", "sq"); break;
+            }
+        }
+        //line type
+        if (ser->lineFormat.isValid()) {
+            switch (ser->lineFormat.lineType()) {
+                case LineFormat::LT_NoLine:
+                    writer.writeEmptyElement("a:noFill");
+                    break;
+                case LineFormat::LT_SolidLine:
+                    writer.writeStartElement("a:solidFill");
+                    if (ser->lineFormat.alpha() != 0.0)
+                        writer.writeStartElement("a:srgbClr");
+                    else
+                        writer.writeEmptyElement("a:srgbClr");
+                    writer.writeAttribute("val", ser->lineFormat.color().name().mid(1));
+                    if (ser->lineFormat.alpha() != 0.0) {
+                        writer.writeEmptyElement("a:alpha");
+                        writer.writeAttribute("val", QString::number(qRound(100000 * (1.0-ser->lineFormat.alpha()))));
+                        writer.writeEndElement(); //a:srgbClr
+                    }
+                    writer.writeEndElement(); //a:solidFill
+                    break;
+                case LineFormat::LT_GradientLine:
+                    //TODO:
+                    break;
+                default: break;
+            }
+            writer.writeEmptyElement("a:prstDash");
+            switch (ser->lineFormat.strokeType()) {
+                case LineFormat::ST_Solid: writer.writeAttribute("val", "solid"); break;
+                case LineFormat::ST_Dot: writer.writeAttribute("val", "sysDash"); break;
+                case LineFormat::ST_RoundDot: writer.writeAttribute("val", "sysDot"); break;
+                case LineFormat::ST_Dash: writer.writeAttribute("val", "dash"); break;
+                case LineFormat::ST_DashDot: writer.writeAttribute("val", "dashDot"); break;
+                case LineFormat::ST_LongDash: writer.writeAttribute("val", "lgDash"); break;
+                case LineFormat::ST_LongDashDot: writer.writeAttribute("val", "lgDashDot"); break;
+                case LineFormat::ST_LongDashDotDot: writer.writeAttribute("val", "lgDashDotDot"); break;
+            }
         }
 
         writer.writeEndElement(); //a:ln
         writer.writeEndElement(); //c:spPr
+
+        if (ser->lineFormat.isValid()) {
+            writer.writeEmptyElement("c:smooth");
+            writer.writeAttribute("val", ser->lineFormat.smooth()?"1":"0");
+        }
     }
 
-    switch (chartStyle) {
-        case Chart::CS_ScatterSmooth:
-        case Chart::CS_ScatterLine:
-            writer.writeStartElement("c:marker");
-            writer.writeEmptyElement("c:symbol");
-            writer.writeAttribute("val", "none");
-            writer.writeEndElement();
-            break;
-        default: break;
+    if (ser->markerFormat.isValid()) {
+        writer.writeStartElement("c:marker");
+        writer.writeEmptyElement("c:symbol");
+        switch (ser->markerFormat.markerType()) {
+            case MarkerFormat::MT_NoMarker: writer.writeAttribute("val", "none"); break;
+            case MarkerFormat::MT_Diamond: writer.writeAttribute("val", "diamond"); break;
+            case MarkerFormat::MT_Square: writer.writeAttribute("val", "square"); break;
+            case MarkerFormat::MT_Triangle: writer.writeAttribute("val", "triangle"); break;
+            case MarkerFormat::MT_Cross: writer.writeAttribute("val", "x"); break;
+            case MarkerFormat::MT_Star: writer.writeAttribute("val", "star"); break;
+            case MarkerFormat::MT_Dot: writer.writeAttribute("val", "dot"); break;
+            case MarkerFormat::MT_Dash: writer.writeAttribute("val", "dash"); break;
+            case MarkerFormat::MT_Circle: writer.writeAttribute("val", "circle"); break;
+            case MarkerFormat::MT_Plus: writer.writeAttribute("val", "plus"); break;
+        }
+        writer.writeEmptyElement("c:size");
+        writer.writeAttribute("val", QString::number(ser->markerFormat.size()));
+
+        writer.writeEndElement(); //c:marker
     }
 
 #if 0
@@ -1395,20 +1431,7 @@ void ChartPrivate::saveXmlSer(QXmlStreamWriter &writer, XlsxSeries *ser, int id)
         writer.writeEndElement();//c:numRef
         writer.writeEndElement();//c:val or c:yVal
     }
-    switch (chartStyle) {
-        case Chart::CS_ScatterSmooth:
-        case Chart::CS_ScatterSmoothMarker:
-            writer.writeEmptyElement("c:smooth");
-            writer.writeAttribute("val", "1");
-            break;
-        case Chart::CS_ScatterLine:
-        case Chart::CS_ScatterLineMarker:
-        case Chart::CS_ScatterMarker:
-            writer.writeEmptyElement("c:smooth");
-            writer.writeAttribute("val", "0");
-            break;
-        default: break;
-    }
+
 
     writer.writeEndElement();//c:ser
 }

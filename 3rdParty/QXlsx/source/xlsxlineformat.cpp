@@ -59,6 +59,19 @@ LineFormat::~LineFormat()
 {
 }
 
+LineFormat::LineType LineFormat::lineType() const
+{
+    if (d) return d->lineType;
+    return LineType::LT_SolidLine;
+}
+
+void LineFormat::setLineType(LineFormat::LineType type)
+{
+    if (!d)
+        d = new LineFormatPrivate;
+    d->lineType = type;
+}
+
 QColor LineFormat::color() const
 {
     if (d) return d->color;
@@ -70,6 +83,19 @@ void LineFormat::setColor(const QColor &color)
     if (!d)
         d = new LineFormatPrivate;
     d->color = color;
+}
+
+bool LineFormat::smooth() const
+{
+    if (d) return d->smooth;
+    return false;
+}
+
+void LineFormat::setSmooth(bool smooth)
+{
+    if (!d)
+        d = new LineFormatPrivate;
+    d->smooth = smooth;
 }
 
 double LineFormat::width() const
@@ -85,6 +111,57 @@ void LineFormat::setWidth(double width)
     d->width = width;
 }
 
+LineFormat::CompoundLineType LineFormat::compoundLineType() const
+{
+    if (d) return d->compoundLineType;
+    return LineFormat::CLT_Single;
+}
+
+void LineFormat::setCompoundLineType(LineFormat::CompoundLineType compoundLineType)
+{
+    if (!d)
+        d = new LineFormatPrivate;
+    d->compoundLineType = compoundLineType;
+}
+
+LineFormat::StrokeType LineFormat::strokeType() const
+{
+    if (d) return d->strokeType;
+    return LineFormat::ST_Solid;
+}
+
+void LineFormat::setStrokeType(LineFormat::StrokeType strokeType)
+{
+    if (!d)
+        d = new LineFormatPrivate;
+    d->strokeType = strokeType;
+}
+
+LineFormat::PointType LineFormat::pointType() const
+{
+    if (d) return d->pointType;
+    return LineFormat::PT_Round;
+}
+
+void LineFormat::setPointType(LineFormat::PointType pointType)
+{
+    if (!d)
+        d = new LineFormatPrivate;
+    d->pointType = pointType;
+}
+
+double LineFormat::alpha() const
+{
+    if (d) return d->alpha;
+    return 0.0;
+}
+
+void LineFormat::setAlpha(double alpha)
+{
+    if (!d)
+        d = new LineFormatPrivate;
+    d->alpha = alpha;
+}
 
 /*!
 	Returns true if the format is valid; otherwise returns false.
