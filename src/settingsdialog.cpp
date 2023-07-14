@@ -78,6 +78,13 @@ void SettingsDialog::addSettings()
     item = propertyTree->addProperty(graphs);
     //propertyTree->setExpanded(item, true);
 
+    auto legendMiddleButton = m_manager->addProperty(QtVariantPropertyManager::enumTypeId(),
+                                                     "Средняя кнопка мыши по легенде");
+    legendMiddleButton->setAttribute("enumNames", QStringList({"Удаляет кривую",
+                                                               "Перемещает кривую на левую/правую ось"}));
+    m_displayNames.insert("Средняя кнопка мыши по легенде", "legendMiddleButton");
+    legendMiddleButton->setValue(se->getSetting("legendMiddleButton", 0).toInt());
+    graphs->addSubProperty(legendMiddleButton);
 
     auto cursorDialogFont = m_manager->addProperty(QVariant::Font, "Шрифт окна курсоров");
     m_displayNames.insert("Шрифт окна курсоров", "cursorDialogFont");

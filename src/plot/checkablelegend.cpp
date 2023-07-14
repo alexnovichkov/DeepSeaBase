@@ -1,6 +1,8 @@
 #include "checkablelegend.h"
 #include "enums.h"
 #include "curve.h"
+#include "settings.h"
+#include "logging.h"
 
 QCPCheckableLegend::QCPCheckableLegend(QWidget *parent) : QObject(parent)
 {
@@ -44,8 +46,13 @@ void QCPCheckableLegend::handleClick(const QModelIndex &index)
         });
         menu.exec(QCursor::pos());
     }
-    else if (QApplication::mouseButtons() & Qt::MiddleButton)
-        emit markedToMove(item);
+    else if (QApplication::mouseButtons() & Qt::MiddleButton) {
+        int legendMiddleButton = se->getSetting("legendMiddleButton", 1).toInt();
+        if (legendMiddleButton == 1)
+            emit markedToMove(item);
+        else
+            emit markedForDelete(item);
+    }
     else if (index.column() == 1)
         emit clicked(item);
     else if (index.column() == 2)

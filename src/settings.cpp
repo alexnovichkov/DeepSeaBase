@@ -54,7 +54,8 @@ bool Settings::hasSetting(const QString &key) const
         "thirdOctaveInitialFilter",
         "canvasDoubleClick",
         "canvasDoubleClickCursor",
-        "spectrogramTimeScale" //0 - время, 1 - дистанция
+        "spectrogramTimeScale", //0 - время, 1 - дистанция
+        "legendMiddleButton",
     };
 
     if (key.isEmpty()) return false;
