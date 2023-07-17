@@ -19,6 +19,37 @@ class ChartPrivate;
 class CellRange;
 class DrawingAnchor;
 
+class XlsxAxis
+{
+public:
+    enum Type { T_None = (-1), T_Cat, T_Val, T_Date, T_Ser };
+    enum Position { None = (-1), Left, Right, Top, Bottom };
+public:
+    XlsxAxis(){}
+
+    XlsxAxis( Type t,
+              XlsxAxis::Position p,
+              int id,
+              int crossId,
+              QString axisTitle = QString())
+    {
+        type = t;
+        axisPos = p;
+        axisId = id;
+        crossAx = crossId;
+        axisName = axisTitle;
+    }
+
+public:
+    Type type;
+    Position axisPos;
+    int axisId;
+    int crossAx;
+    QString axisName;
+    bool visible = true;
+    bool logarithmic = false;
+};
+
 class QXLSX_EXPORT Chart : public AbstractOOXmlFile
 {
     Q_DECLARE_PRIVATE(Chart)
@@ -48,12 +79,18 @@ public:
     void addSeries(const CellRange &range, AbstractSheet *sheet = NULL, bool headerH = false, bool headerV = false, bool swapHeaders = false);
     void addSeries(const CellRange &keyRange, const CellRange &valRange, AbstractSheet *sheet = NULL, bool headerH = false);
     void setChartType(ChartType type);
-    void setAxisTitle(Chart::ChartAxisPos pos, QString axisTitle);
+    void setLineFormat(const LineFormat &format);
+    void setCanvasLineFormat(const LineFormat &format);
+
+    int addAxis(XlsxAxis::Type type, XlsxAxis::Position pos, int pairedAxisId, QString title = QString());
+    void setAxisTitle(int id, QString axisTitle);
+    void setAxisLogarithmic(int id, bool logarithmic);
     void setChartTitle(QString strchartTitle);
     void setChartLegend(Chart::ChartAxisPos legendPos, bool overlap = false);
     void setGridlinesEnable(bool majorGridlinesEnable = false, bool minorGridlinesEnable = false);
     void setSeriesLineFormat(int series, const LineFormat &format);
     void setSeriesMarkerFormat(int series, const MarkerFormat &format);
+    void setSeriesAxes(int series, QList<int> axesIds);
 public:
     bool loadFromXmlFile(QIODevice *device) override;
     void saveToXmlFile(QIODevice *device) const override;

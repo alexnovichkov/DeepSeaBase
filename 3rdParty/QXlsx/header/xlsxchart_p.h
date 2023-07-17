@@ -29,39 +29,7 @@ public:
     bool    swapHeader = false;
     LineFormat lineFormat;
     MarkerFormat markerFormat;
-};
-
-class XlsxAxis
-{
-public:
-    enum Type { T_None = (-1), T_Cat, T_Val, T_Date, T_Ser };
-    enum AxisPos { None = (-1), Left, Right, Top, Bottom };
-public:
-    XlsxAxis(){}
-
-    XlsxAxis( Type t,
-              XlsxAxis::AxisPos p,
-              int id,
-              int crossId,
-              QString axisTitle = QString())
-    {
-        type = t;
-        axisPos = p;
-        axisId = id;
-        crossAx = crossId;
-
-        if ( !axisTitle.isEmpty() )
-        {
-            axisNames[ p ] = axisTitle;
-        }
-    }
-
-public:
-    Type type;
-    XlsxAxis::AxisPos axisPos;
-    int axisId;
-    int crossAx;
-    QMap< XlsxAxis::AxisPos, QString > axisNames;
+    QList<int> axes; //2...
 };
 
 class ChartPrivate : public AbstractOOXmlFilePrivate
@@ -109,12 +77,12 @@ protected:
 public:
     void saveXmlChart(QXmlStreamWriter &writer) const;
     void saveXmlChartTitle(QXmlStreamWriter &writer) const;
-    void saveXmlPieChart(QXmlStreamWriter &writer) const;
-    void saveXmlBarChart(QXmlStreamWriter &writer) const;
-    void saveXmlLineChart(QXmlStreamWriter &writer) const;
-    void saveXmlScatterChart(QXmlStreamWriter &writer) const;
-    void saveXmlAreaChart(QXmlStreamWriter &writer) const;
-    void saveXmlDoughnutChart(QXmlStreamWriter &writer) const;
+    void saveXmlPieChart(QXmlStreamWriter &writer, QList<int> axes) const;
+    void saveXmlBarChart(QXmlStreamWriter &writer, QList<int> axes) const;
+    void saveXmlLineChart(QXmlStreamWriter &writer, QList<int> axes) const;
+    void saveXmlScatterChart(QXmlStreamWriter &writer, QList<int> axes) const;
+    void saveXmlAreaChart(QXmlStreamWriter &writer, QList<int> axes) const;
+    void saveXmlDoughnutChart(QXmlStreamWriter &writer, QList<int> axes) const;
     void saveXmlSer(QXmlStreamWriter &writer, XlsxSeries *ser, int id) const;
     void saveXmlAxis(QXmlStreamWriter &writer) const;
     void saveXmlChartLegend(QXmlStreamWriter &writer) const;
@@ -127,20 +95,21 @@ protected:
 
     void saveXmlAxisEG_AxShared(QXmlStreamWriter &writer, XlsxAxis* axis) const;
     void saveXmlAxisEG_AxShared_Title(QXmlStreamWriter &writer, XlsxAxis* axis) const;
-    QString GetAxisPosString( XlsxAxis::AxisPos axisPos ) const;
+    QString GetAxisPosString( XlsxAxis::Position axisPos ) const;
     QString GetAxisName(XlsxAxis* ptrXlsxAxis) const;
 
 public:
     Chart::ChartType chartType;
     QList< std::shared_ptr<XlsxSeries> > seriesList;
     QList< std::shared_ptr<XlsxAxis> > axisList;
-    QMap< XlsxAxis::AxisPos, QString > axisNames;
     QString chartTitle;
     AbstractSheet* sheet;
     Chart::ChartAxisPos legendPos;
     bool legendOverlay;
     bool majorGridlinesEnabled;
     bool minorGridlinesEnabled;
+    LineFormat lineFormat;
+    LineFormat canvasLineFormat;
 
     QString layout;             // only for storing a readed file
 };

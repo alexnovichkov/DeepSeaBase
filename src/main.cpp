@@ -74,6 +74,14 @@ int main(int argc, char *argv[])
     chart->addSeries(QXlsx::CellRange("A1:A10"), QXlsx::CellRange("B1:B10"), xlsx.sheet("Sheet1"), true);
     chart->addSeries(QXlsx::CellRange("A1:A10"), QXlsx::CellRange("C1:C10"), xlsx.sheet("Sheet1"), true);
 
+    int b = chart->addAxis(QXlsx::XlsxAxis::T_Val, QXlsx::XlsxAxis::Bottom, -1, "bottom");
+    int l = chart->addAxis(QXlsx::XlsxAxis::T_Val, QXlsx::XlsxAxis::Left, b, "left");
+    int br = chart->addAxis(QXlsx::XlsxAxis::T_Val, QXlsx::XlsxAxis::Bottom, -1, "");
+    int r = chart->addAxis(QXlsx::XlsxAxis::T_Val, QXlsx::XlsxAxis::Right, br, "right");
+    chart->setSeriesAxes(0, {b,l});
+    chart->setSeriesAxes(1, {br,r});
+
+
 //    QXlsx::LineFormat format;
 //    format.setColor(QColor(Qt::gray));
 //    format.setAlpha(0.7);

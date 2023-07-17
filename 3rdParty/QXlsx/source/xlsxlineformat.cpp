@@ -187,6 +187,66 @@ QByteArray LineFormat::formatKey() const
     return key;
 }
 
+void LineFormat::write(QXmlStreamWriter &writer) const
+{
+    if (!isValid()) return;
+
+    writer.writeStartElement("c:spPr");
+    writer.writeStartElement("a:ln");
+
+    writer.writeAttribute("w", QString::number(qRound(width()*12700)));
+    switch (compoundLineType()) {
+        case LineFormat::CLT_Single: writer.writeAttribute("cmpd", "sng"); break;
+        case LineFormat::CLT_Double: writer.writeAttribute("cmpd", "dbl"); break;
+        case LineFormat::CLT_ThickThin: writer.writeAttribute("cmpd", "thickThin"); break;
+        case LineFormat::CLT_ThinThick: writer.writeAttribute("cmpd", "thinThick"); break;
+        case LineFormat::CLT_Triple: writer.writeAttribute("cmpd", "tri"); break;
+    }
+    switch (pointType()) {
+        case LineFormat::PT_Flat: writer.writeAttribute("cap", "flat"); break;
+        case LineFormat::PT_Round: writer.writeAttribute("cap", "rnd"); break;
+        case LineFormat::PT_Square: writer.writeAttribute("cap", "sq"); break;
+    }
+
+    switch (lineType()) {
+        case LineFormat::LT_NoLine:
+            writer.writeEmptyElement("a:noFill");
+            break;
+        case LineFormat::LT_SolidLine:
+            writer.writeStartElement("a:solidFill");
+            if (alpha() != 0.0)
+                writer.writeStartElement("a:srgbClr");
+            else
+                writer.writeEmptyElement("a:srgbClr");
+            writer.writeAttribute("val", color().name().mid(1));
+            if (alpha() != 0.0) {
+                writer.writeEmptyElement("a:alpha");
+                writer.writeAttribute("val", QString::number(qRound(100000 * (1.0-alpha()))));
+                writer.writeEndElement(); //a:srgbClr
+            }
+            writer.writeEndElement(); //a:solidFill
+            break;
+        case LineFormat::LT_GradientLine:
+            //TODO:
+            break;
+        default: break;
+    }
+    writer.writeEmptyElement("a:prstDash");
+    switch (strokeType()) {
+        case LineFormat::ST_Solid: writer.writeAttribute("val", "solid"); break;
+        case LineFormat::ST_Dot: writer.writeAttribute("val", "sysDash"); break;
+        case LineFormat::ST_RoundDot: writer.writeAttribute("val", "sysDot"); break;
+        case LineFormat::ST_Dash: writer.writeAttribute("val", "dash"); break;
+        case LineFormat::ST_DashDot: writer.writeAttribute("val", "dashDot"); break;
+        case LineFormat::ST_LongDash: writer.writeAttribute("val", "lgDash"); break;
+        case LineFormat::ST_LongDashDot: writer.writeAttribute("val", "lgDashDot"); break;
+        case LineFormat::ST_LongDashDotDot: writer.writeAttribute("val", "lgDashDotDot"); break;
+    }
+
+    writer.writeEndElement(); //a:ln
+    writer.writeEndElement(); //c:spPr
+}
+
 /*!
 	Returns ture if the \a format is equal to this format.
 */

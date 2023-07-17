@@ -9,6 +9,7 @@
 #include <QList>
 #include <QExplicitlySharedDataPointer>
 #include <QVariant>
+#include <QXmlStreamWriter>
 
 #include "xlsxglobal.h"
 
@@ -116,6 +117,8 @@ public:
 
     bool isValid() const;
     QByteArray formatKey() const;
+
+    void write(QXmlStreamWriter &writer) const;
 
     bool operator == (const LineFormat &format) const;
     bool operator != (const LineFormat &format) const;

@@ -674,84 +674,56 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
              chart->setSeriesMarkerFormat(i, mf);
          }
 
-#if 0
          // перемещаем графики на дополнительную вертикальную ось,
          // если они были там в программе
          // и меняем название кривой
-         int seriesCount = series->property("Count").toInt();
-         bool addRightAxis = false;
-         for ( int i=0; i<seriesCount; ++i) {
+         int b = chart->addAxis(QXlsx::XlsxAxis::T_Val, QXlsx::XlsxAxis::Bottom, -1,
+                                stripHtml(m_plot->axisTitleText(Enums::AxisType::atBottom)));
+         if (someStepIsZero) chart->setAxisLogarithmic(b, true);
+         chart->setGridlinesEnable(true, false);
+//         xAxis->setProperty("MaximumScale", range.max);
+//         xAxis->setProperty("MinimumScale", int(range.min/10)*10);
+         int l = chart->addAxis(QXlsx::XlsxAxis::T_Val, QXlsx::XlsxAxis::Left, b, stripHtml(m_plot->axisTitleText(Enums::AxisType::atLeft)));
+//         yAxis->setProperty("CrossesAt", -1000);
+
+         for ( int i=0; i<size; ++i) {
              Curve *curve = m_plot->model()->curve(i);
-             QAxObject * serie = series->querySubObject("Item (int)", i+1);
-             if (serie) {
-                 if (curve->yAxis()==Enums::AxisType::atRight) {
-                     serie->setProperty("AxisGroup", 2);
-                     addRightAxis = true;
+             int r = -1;
+             int br = -1;
+             if (curve->yAxis()==Enums::AxisType::atRight) {
+                 if (r == -1) {
+                     br = chart->addAxis(QXlsx::XlsxAxis::T_Val, QXlsx::XlsxAxis::Bottom, -1);
+                     r = chart->addAxis(QXlsx::XlsxAxis::T_Val, QXlsx::XlsxAxis::Right, br, stripHtml(m_plot->axisTitleText(Enums::AxisType::atRight)));
                  }
-                 serie->setProperty("Name", curve->channel->name());
+
+                 chart->setSeriesAxes(i, {br, r});
              }
-             delete serie;
+             else {
+                 chart->setSeriesAxes(i, {b, l});
+             }
          }
-         if (addRightAxis) {
-             QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&,const QVariant&)", 2,2);
-             if (yAxis) setAxis(yAxis, stripHtml(m_plot->axisTitleText(Enums::AxisType::atRight)));
-             delete yAxis;
-         }
-
-
-         // добавляем подписи осей
-         QAxObject *xAxis = chart->querySubObject("Axes(const QVariant&)", 1);
-         if (xAxis) {
-             setAxis(xAxis, stripHtml(m_plot->axisTitleText(Enums::AxisType::atBottom)));
-             if (someStepIsZero) xAxis->setProperty("ScaleType", -4133); //logarithmic
-             xAxis->setProperty("MaximumScale", range.max);
-             xAxis->setProperty("MinimumScale", int(range.min/10)*10);
-         }
-         delete xAxis;
-
-         QAxObject *yAxis = chart->querySubObject("Axes(const QVariant&)", 2);
-         if (yAxis) {
-             setAxis(yAxis, stripHtml(m_plot->axisTitleText(Enums::AxisType::atLeft)));
-             yAxis->setProperty("CrossesAt", -1000);
-         }
-         delete yAxis;
 
          // рамка вокруг графика
-         QAxObject *plotArea = chart->querySubObject("PlotArea");
-         if (plotArea) setLineColor(plotArea, 13);
-         delete plotArea;
+         QXlsx::LineFormat lf;
+         lf.setLineType(QXlsx::LineFormat::LT_NoLine);
+         chart->setLineFormat(lf);
 
+         // рамка вокруг полотна
+         QXlsx::LineFormat lf1;
+         lf1.setLineType(QXlsx::LineFormat::LT_SolidLine);
+         lf1.setColor(Qt::black);
+         lf1.setWidth(1);
+         chart->setCanvasLineFormat(lf1);
+
+         //легенда
+         chart->setChartLegend(QXlsx::Chart::Right, false);
+
+#if 0
          // цвета графиков
          for (int i = 0; i< size; ++i) {
              Curve *curve = m_plot->model()->curve(i);
              QAxObject * serie = series->querySubObject("Item(int)", i+1);
              if (serie) {
-                 QAxObject *format = serie->querySubObject("Format");
-                 QAxObject *formatLine = format->querySubObject("Line");
-                 if (formatLine) {
-                     formatLine->setProperty("Weight", m_plot->model()->curve(i)->pen().width());
-                     Qt::PenStyle lineStyle = m_plot->model()->curve(i)->pen().style();
-                     int msoLineStyle = 1;
-                     switch (lineStyle) {
-                         case Qt::NoPen:
-                         case Qt::SolidLine: msoLineStyle = 1; break;
-                         case Qt::DashLine: msoLineStyle = 4; break;
-                         case Qt::DotLine: msoLineStyle = 3; break;
-                         case Qt::DashDotLine: msoLineStyle = 5; break;
-                         case Qt::DashDotDotLine: msoLineStyle = 6; break;
-                         default: break;
-                     }
-                     formatLine->setProperty("DashStyle", msoLineStyle);
-
-                     QAxObject *formatLineForeColor = formatLine->querySubObject("ForeColor");
-                     QColor color = m_plot->model()->curve(i)->pen().color();
-                     //меняем местами красный и синий, потому что Excel неправильно понимает порядок
-                     int red = color.red();
-                     color.setRed(color.blue());
-                     color.setBlue(red);
-                     if (formatLineForeColor) formatLineForeColor->setProperty("RGB", color.rgb());
-                     delete formatLineForeColor;
-                 }
 
                  foreach(PointLabel *label, curve->labels) {
                      QAxObject* point = serie->querySubObject("Points(QVariant)", label->point().x+1);
@@ -766,15 +738,9 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
                      delete point;
                  }
 
-                 delete formatLine;
-                 delete format;
              }
              delete serie;
          }
-
-         QAxObject *chartArea = chart->querySubObject("ChartArea");
-         chartArea->querySubObject("Format")->querySubObject("Line")->setProperty("Visible", 0);
-         delete chartArea;
 
          QAxObject *legendObject = chart->querySubObject("Legend");
          QAxObject *legendFormat = legendObject->querySubObject("Format");
@@ -795,6 +761,8 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
      }
 
      QTemporaryFile tempFile("DeepSeaBase-XXXXXX.xlsx");
+     tempFile.setAutoRemove(false);
+     LOG(DEBUG) << tempFile.fileName();
      tempFile.open();
      output.saveAs(tempFile.fileName());
 
