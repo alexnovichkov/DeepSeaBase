@@ -712,8 +712,6 @@ void DfdFileDescriptor::addChannelWithData(DataHolder *data, const DataDescripti
     ch->ChanBlockSize = data->samplesCount();
     //DeepSea не умеет читать файлы с IndType == C0000008, поэтому игнорируем function.precision
     ch->IndType = channelsCount()==1 ? 3221225476 : channels.constFirst()->IndType;
-    if (description.get("yname") == description.get("ynameold") && data->yValuesFormat() == DataHolder::YValuesAmplitudesInDB)
-        ch->dataDescription().put("yname", "дБ");
 
     int octave = description.get("function.octaveFormat").toInt();
     switch (octave) {
@@ -1349,7 +1347,7 @@ void DfdChannel::write(QTextStream &dfd, int index)
 
     auto yValueFormat = DataHolder::formatFromString(dataDescription().get("function.format").toString());
     if (yValueFormat == DataHolder::YValuesAmplitudesInDB){
-        dfd << "YName=дБ" << endl;
+        dfd << "YName=" << QString("дБ") << endl;
         dfd << "YNameOld=" << dataDescription().get("yname").toString() << endl;
     }
     else {
