@@ -625,27 +625,16 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
                               true);
              QXlsx::LineFormat lf;
              lf.setWidth(m_plot->model()->curve(i)->pen().widthF());
+             lf.setType(QXlsx::FillProperties::FillType::SolidFill);
 
              Qt::PenStyle lineStyle = m_plot->model()->curve(i)->pen().style();
              switch (lineStyle) {
-                 case Qt::NoPen: lf.setLineType(QXlsx::LineFormat::LT_NoLine); break;
-                 case Qt::SolidLine: lf.setLineType(QXlsx::LineFormat::LT_SolidLine); break;
-                 case Qt::DashLine:
-                     lf.setLineType(QXlsx::LineFormat::LT_SolidLine);
-                     lf.setStrokeType(QXlsx::LineFormat::ST_Dash);
-                     break;
-                 case Qt::DotLine:
-                     lf.setLineType(QXlsx::LineFormat::LT_SolidLine);
-                     lf.setStrokeType(QXlsx::LineFormat::ST_Dot);
-                     break;
-                 case Qt::DashDotLine:
-                     lf.setLineType(QXlsx::LineFormat::LT_SolidLine);
-                     lf.setStrokeType(QXlsx::LineFormat::ST_DashDot);
-                     break;
-                 case Qt::DashDotDotLine:
-                     lf.setLineType(QXlsx::LineFormat::LT_SolidLine);
-                     lf.setStrokeType(QXlsx::LineFormat::ST_LongDashDotDot);
-                     break;
+                 case Qt::NoPen:       lf.setType(QXlsx::FillProperties::FillType::NoFill); break;
+                 case Qt::SolidLine: break;
+                 case Qt::DashLine:    lf.setStrokeType(QXlsx::LineFormat::StrokeType::Dash); break;
+                 case Qt::DotLine:     lf.setStrokeType(QXlsx::LineFormat::StrokeType::Dot); break;
+                 case Qt::DashDotLine: lf.setStrokeType(QXlsx::LineFormat::StrokeType::DashDot); break;
+                 case Qt::DashDotDotLine: lf.setStrokeType(QXlsx::LineFormat::StrokeType::LongDashDotDot); break;
                  default: break;
              }
 
@@ -655,20 +644,20 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 
              QXlsx::MarkerFormat mf;
              switch (curve->markerShape()) {
-                 case Curve::MarkerShape::NoMarker: mf.setMarkerType(QXlsx::MarkerFormat::MT_NoMarker); break;
-                 case Curve::MarkerShape::Square: mf.setMarkerType(QXlsx::MarkerFormat::MT_Square); break;
-                 case Curve::MarkerShape::Diamond: mf.setMarkerType(QXlsx::MarkerFormat::MT_Diamond); break;
+                 case Curve::MarkerShape::NoMarker: mf.setType(QXlsx::MarkerFormat::MarkerType::None); break;
+                 case Curve::MarkerShape::Square: mf.setType(QXlsx::MarkerFormat::MarkerType::Square); break;
+                 case Curve::MarkerShape::Diamond: mf.setType(QXlsx::MarkerFormat::MarkerType::Diamond); break;
                  case Curve::MarkerShape::Triangle:
                  case Curve::MarkerShape::TriangleInverted:
-                     mf.setMarkerType(QXlsx::MarkerFormat::MT_Triangle); break;
+                     mf.setType(QXlsx::MarkerFormat::MarkerType::Triangle); break;
                  case Curve::MarkerShape::Circle:
                  case Curve::MarkerShape::Disc:
-                     mf.setMarkerType(QXlsx::MarkerFormat::MT_Circle); break;
-                 case Curve::MarkerShape::Plus: mf.setMarkerType(QXlsx::MarkerFormat::MT_Plus); break;
-                 case Curve::MarkerShape::Cross: mf.setMarkerType(QXlsx::MarkerFormat::MT_Cross); break;
-                 case Curve::MarkerShape::Star: mf.setMarkerType(QXlsx::MarkerFormat::MT_Star); break;
-                 case Curve::MarkerShape::Dot: mf.setMarkerType(QXlsx::MarkerFormat::MT_Dot); break;
-                 default: mf.setMarkerType(QXlsx::MarkerFormat::MT_Diamond); break;
+                     mf.setType(QXlsx::MarkerFormat::MarkerType::Circle); break;
+                 case Curve::MarkerShape::Plus: mf.setType(QXlsx::MarkerFormat::MarkerType::Plus); break;
+                 case Curve::MarkerShape::Cross: mf.setType(QXlsx::MarkerFormat::MarkerType::Cross); break;
+                 case Curve::MarkerShape::Star: mf.setType(QXlsx::MarkerFormat::MarkerType::Star); break;
+                 case Curve::MarkerShape::Dot: mf.setType(QXlsx::MarkerFormat::MarkerType::Dot); break;
+                 default: mf.setType(QXlsx::MarkerFormat::MarkerType::Diamond); break;
              }
              mf.setSize(curve->markerSize());
              chart->setSeriesMarkerFormat(i, mf);
@@ -677,43 +666,48 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          // перемещаем графики на дополнительную вертикальную ось,
          // если они были там в программе
          // и меняем название кривой
-         int b = chart->addAxis(QXlsx::XlsxAxis::T_Val, QXlsx::XlsxAxis::Bottom, -1,
-                                stripHtml(m_plot->axisTitleText(Enums::AxisType::atBottom)));
-         if (someStepIsZero) chart->setAxisLogarithmic(b, true);
+         auto b = chart->addAxis(QXlsx::Axis::Type::Val, QXlsx::Axis::Position::Bottom);
+         b->setTitle(stripHtml(m_plot->axisTitleText(Enums::AxisType::atBottom)));
+         if (someStepIsZero)
+             b->scaling()->logBase = 10; // TODO: replace with a method
          chart->setGridlinesEnable(true, false);
 //         xAxis->setProperty("MaximumScale", range.max);
 //         xAxis->setProperty("MinimumScale", int(range.min/10)*10);
-         int l = chart->addAxis(QXlsx::XlsxAxis::T_Val, QXlsx::XlsxAxis::Left, b, stripHtml(m_plot->axisTitleText(Enums::AxisType::atLeft)));
+         auto l = chart->addAxis(QXlsx::Axis::Type::Val, QXlsx::Axis::Position::Left);
+         l->setTitle(stripHtml(m_plot->axisTitleText(Enums::AxisType::atLeft)));
+         l->setCrossAxis(b);
 //         yAxis->setProperty("CrossesAt", -1000);
 
          for ( int i=0; i<size; ++i) {
              Curve *curve = m_plot->model()->curve(i);
-             int r = -1;
-             int br = -1;
+             QXlsx::Axis* r = nullptr;
+             QXlsx::Axis* br = nullptr;
              if (curve->yAxis()==Enums::AxisType::atRight) {
-                 if (r == -1) {
-                     br = chart->addAxis(QXlsx::XlsxAxis::T_Val, QXlsx::XlsxAxis::Bottom, -1);
-                     r = chart->addAxis(QXlsx::XlsxAxis::T_Val, QXlsx::XlsxAxis::Right, br, stripHtml(m_plot->axisTitleText(Enums::AxisType::atRight)));
+                 if (!r) {
+                     br = chart->addAxis(QXlsx::Axis::Type::Val, QXlsx::Axis::Position::Bottom);
+                     r = chart->addAxis(QXlsx::Axis::Type::Val, QXlsx::Axis::Position::Right);
+                     r->setTitle(stripHtml(m_plot->axisTitleText(Enums::AxisType::atRight)));
+                     r->setCrossAxis(br);
                  }
 
-                 chart->setSeriesAxes(i, {br, r});
+                 chart->setSeriesAxes(i, {br->id(), r->id()});
              }
              else {
-                 chart->setSeriesAxes(i, {b, l});
+                 chart->setSeriesAxes(i, {b->id(), l->id()});
              }
          }
 
          // рамка вокруг графика
          QXlsx::LineFormat lf;
-         lf.setLineType(QXlsx::LineFormat::LT_NoLine);
+         lf.setType(QXlsx::FillProperties::FillType::NoFill);
          chart->setLineFormat(lf);
 
          // рамка вокруг полотна
-         QXlsx::LineFormat lf1;
-         lf1.setLineType(QXlsx::LineFormat::LT_SolidLine);
-         lf1.setColor(Qt::black);
-         lf1.setWidth(1);
-         chart->setCanvasLineFormat(lf1);
+         //QXlsx::LineFormat lf1;
+         lf.setType(QXlsx::FillProperties::FillType::SolidFill);
+         lf.setColor(QColor(Qt::black));
+         lf.setWidth(1.0);
+         chart->setCanvasLineFormat(lf);
 
          //легенда
          chart->setChartLegend(QXlsx::Chart::Right, false);

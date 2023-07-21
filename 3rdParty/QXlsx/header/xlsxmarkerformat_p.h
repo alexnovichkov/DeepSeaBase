@@ -5,7 +5,7 @@
 #include <QSharedData>
 #include <QMap>
 #include <QSet>
-
+#include <optional>
 #include "xlsxmarkerformat.h"
 
 QT_BEGIN_NAMESPACE_XLSX
@@ -13,9 +13,9 @@ QT_BEGIN_NAMESPACE_XLSX
 class MarkerFormatPrivate : public QSharedData
 {
 public:
-    int size = 7; // [2..]
-    MarkerFormat::MarkerType markerType = MarkerFormat::MT_Diamond;
-
+    std::optional<int> size; // [2..72]
+    std::optional<MarkerFormat::MarkerType> markerType;
+    ShapeProperties shape;
 
     MarkerFormatPrivate();
     MarkerFormatPrivate(const MarkerFormatPrivate &other);

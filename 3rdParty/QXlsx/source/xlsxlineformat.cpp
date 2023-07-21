@@ -14,8 +14,19 @@ LineFormatPrivate::LineFormatPrivate()
 }
 
 LineFormatPrivate::LineFormatPrivate(const LineFormatPrivate &other)
-	: QSharedData(other)
-    , color(other.color), width(other.width)
+    : QSharedData(other), fill(other.fill),
+      width(other.width),
+      compoundLineType(other.compoundLineType),
+      strokeType(other.strokeType),
+      lineCap(other.lineCap),
+      penAlignment(other.penAlignment),
+      lineJoin(other.lineJoin),
+      tailType(other.tailType),
+      headType(other.headType),
+      tailLength(other.tailLength),
+      headLength(other.headLength),
+      tailWidth(other.tailWidth),
+      headWidth(other.headWidth)
 {
 
 }
@@ -30,7 +41,23 @@ LineFormatPrivate::~LineFormatPrivate()
  */
 LineFormat::LineFormat()
 {
-	//The d pointer is initialized with a null pointer
+    //The d pointer is initialized with a null pointer
+}
+
+LineFormat::LineFormat(FillProperties::FillType fill, double widthInPt, QColor color)
+{
+    d = new LineFormatPrivate;
+    d->fill.setType(fill);
+    d->fill.setColor(color);
+    setWidth(widthInPt);
+}
+
+LineFormat::LineFormat(FillProperties::FillType fill, qint64 widthInEMU, QColor color)
+{
+    d = new LineFormatPrivate;
+    d->fill.setType(fill);
+    d->fill.setColor(color);
+    setWidth(widthInEMU);
 }
 
 /*!
@@ -59,108 +86,196 @@ LineFormat::~LineFormat()
 {
 }
 
-LineFormat::LineType LineFormat::lineType() const
+FillProperties::FillType LineFormat::type() const
 {
-    if (d) return d->lineType;
-    return LineType::LT_SolidLine;
+    if (d->fill.isValid()) return d->fill.type();
+    return FillProperties::FillType::SolidFill; //default
 }
 
-void LineFormat::setLineType(LineFormat::LineType type)
+void LineFormat::setType(FillProperties::FillType type)
 {
-    if (!d)
-        d = new LineFormatPrivate;
-    d->lineType = type;
+    if (!d) d = new LineFormatPrivate;
+    d->fill.setType(type);
 }
 
-QColor LineFormat::color() const
+Color LineFormat::color() const
 {
-    if (d) return d->color;
-    return QColor();
+    if (d && d->fill.isValid()) return d->fill.color().value();
+    return Color();
+}
+
+void LineFormat::setColor(const Color &color)
+{
+    if (!d) d = new LineFormatPrivate;
+    d->fill.setColor(color);
 }
 
 void LineFormat::setColor(const QColor &color)
 {
-    if (!d)
-        d = new LineFormatPrivate;
-    d->color = color;
+    if (!d) d = new LineFormatPrivate;
+    d->fill.setColor(color);
 }
 
-bool LineFormat::smooth() const
+FillProperties LineFormat::fill() const
 {
-    if (d) return d->smooth;
-    return false;
+    if (d) return d->fill;
+    return {};
 }
 
-void LineFormat::setSmooth(bool smooth)
+void LineFormat::setFill(const FillProperties &fill)
 {
-    if (!d)
-        d = new LineFormatPrivate;
-    d->smooth = smooth;
+    if (!d) d = new LineFormatPrivate;
+    d->fill = fill;
 }
 
-double LineFormat::width() const
+std::optional<Coordinate> LineFormat::width() const
 {
     if (d) return d->width;
-    return 0;
+    return {};
 }
 
-void LineFormat::setWidth(double width)
+void LineFormat::setWidth(double widthInPt)
 {
-    if (!d)
-        d = new LineFormatPrivate;
-    d->width = width;
+    if (!d) d = new LineFormatPrivate;
+    d->width = Coordinate(widthInPt);
 }
 
-LineFormat::CompoundLineType LineFormat::compoundLineType() const
+void LineFormat::setWidth(qint64 widthInEMU)
+{
+    if (!d) d = new LineFormatPrivate;
+    d->width = Coordinate(widthInEMU);
+}
+
+std::optional<LineFormat::PenAlignment> LineFormat::penAlignment() const
+{
+    if (d) return d->penAlignment;
+    return {};
+}
+
+void LineFormat::setPenAlignment(LineFormat::PenAlignment val)
+{
+    if (!d) d = new LineFormatPrivate;
+    d->penAlignment = val;
+}
+
+std::optional<LineFormat::CompoundLineType> LineFormat::compoundLineType() const
 {
     if (d) return d->compoundLineType;
-    return LineFormat::CLT_Single;
+    return {};
 }
 
-void LineFormat::setCompoundLineType(LineFormat::CompoundLineType compoundLineType)
+void LineFormat::setCompoundLineType(LineFormat::CompoundLineType val)
 {
-    if (!d)
-        d = new LineFormatPrivate;
-    d->compoundLineType = compoundLineType;
+    if (!d) d = new LineFormatPrivate;
+    d->compoundLineType = val;
 }
 
-LineFormat::StrokeType LineFormat::strokeType() const
+std::optional<LineFormat::StrokeType> LineFormat::strokeType() const
 {
     if (d) return d->strokeType;
-    return LineFormat::ST_Solid;
+    return {};
 }
 
-void LineFormat::setStrokeType(LineFormat::StrokeType strokeType)
+void LineFormat::setStrokeType(LineFormat::StrokeType val)
 {
-    if (!d)
-        d = new LineFormatPrivate;
-    d->strokeType = strokeType;
+    if (!d) d = new LineFormatPrivate;
+    d->strokeType = val;
 }
 
-LineFormat::PointType LineFormat::pointType() const
+LineFormat::LineCap LineFormat::lineCap() const
 {
-    if (d) return d->pointType;
-    return LineFormat::PT_Round;
+    if (d) return d->lineCap.value();
+    return LineCap::Square;
 }
 
-void LineFormat::setPointType(LineFormat::PointType pointType)
+void LineFormat::setLineCap(LineCap val)
 {
-    if (!d)
-        d = new LineFormatPrivate;
-    d->pointType = pointType;
+    if (!d) d = new LineFormatPrivate;
+    d->lineCap = val;
 }
 
-double LineFormat::alpha() const
+std::optional<LineFormat::LineJoin> LineFormat::lineJoin() const
 {
-    if (d) return d->alpha;
-    return 0.0;
+    if (d) return d->lineJoin;
+    return {};
 }
 
-void LineFormat::setAlpha(double alpha)
+void LineFormat::setLineJoin(LineFormat::LineJoin val)
 {
-    if (!d)
-        d = new LineFormatPrivate;
-    d->alpha = alpha;
+    if (!d) d = new LineFormatPrivate;
+    d->lineJoin = val;
+}
+
+std::optional<LineFormat::LineEndType> LineFormat::lineEndType()
+{
+    if (d) return d->tailType;
+    return {};
+}
+
+std::optional<LineFormat::LineEndType> LineFormat::lineStartType()
+{
+    if (d) return d->headType;
+    return {};
+}
+
+void LineFormat::setLineEndType(LineFormat::LineEndType val)
+{
+    if (!d) d = new LineFormatPrivate;
+    d->tailType = val;
+}
+
+void LineFormat::setLineStartType(LineFormat::LineEndType val)
+{
+    if (!d) d = new LineFormatPrivate;
+    d->headType = val;
+}
+
+std::optional<LineFormat::LineEndSize> LineFormat::lineEndLength()
+{
+    if (d) return d->tailLength;
+    return {};
+}
+
+std::optional<LineFormat::LineEndSize> LineFormat::lineStartLength()
+{
+    if (d) return d->headLength;
+    return {};
+}
+
+void LineFormat::setLineEndLength(LineFormat::LineEndSize val)
+{
+    if (!d) d = new LineFormatPrivate;
+    d->tailLength = val;
+}
+
+void LineFormat::setLineStartLength(LineFormat::LineEndSize val)
+{
+    if (!d) d = new LineFormatPrivate;
+    d->headLength = val;
+}
+
+std::optional<LineFormat::LineEndSize> LineFormat::lineEndWidth()
+{
+    if (d) return d->tailWidth;
+    return {};
+}
+
+std::optional<LineFormat::LineEndSize> LineFormat::lineStartWidth()
+{
+    if (d) return d->headWidth;
+    return {};
+}
+
+void LineFormat::setLineEndWidth(LineFormat::LineEndSize val)
+{
+    if (!d) d = new LineFormatPrivate;
+    d->tailWidth = val;
+}
+
+void LineFormat::setLineStartWidth(LineFormat::LineEndSize val)
+{
+    if (!d) d = new LineFormatPrivate;
+    d->headWidth = val;
 }
 
 /*!
@@ -173,101 +288,260 @@ bool LineFormat::isValid() const
     return false;
 }
 
-QByteArray LineFormat::formatKey() const
-{
-    if (!d)
-        return QByteArray();
-
-    QByteArray key;
-    QDataStream stream(&key, QIODevice::WriteOnly);
-
-    stream<<"color"<<d->color;
-    stream<<"width"<<d->width;
-
-    return key;
-}
-
 void LineFormat::write(QXmlStreamWriter &writer) const
 {
     if (!isValid()) return;
 
-    writer.writeStartElement("c:spPr");
     writer.writeStartElement("a:ln");
-
-    writer.writeAttribute("w", QString::number(qRound(width()*12700)));
-    switch (compoundLineType()) {
-        case LineFormat::CLT_Single: writer.writeAttribute("cmpd", "sng"); break;
-        case LineFormat::CLT_Double: writer.writeAttribute("cmpd", "dbl"); break;
-        case LineFormat::CLT_ThickThin: writer.writeAttribute("cmpd", "thickThin"); break;
-        case LineFormat::CLT_ThinThick: writer.writeAttribute("cmpd", "thinThick"); break;
-        case LineFormat::CLT_Triple: writer.writeAttribute("cmpd", "tri"); break;
+    if (d->width.has_value()) writer.writeAttribute("w", d->width->toString());
+    if (d->compoundLineType.has_value()) {
+        switch (d->compoundLineType.value()) {
+            case CompoundLineType::Single: writer.writeAttribute("cmpd", "sng"); break;
+            case CompoundLineType::Double: writer.writeAttribute("cmpd", "dbl"); break;
+            case CompoundLineType::ThickThin: writer.writeAttribute("cmpd", "thickThin"); break;
+            case CompoundLineType::ThinThick: writer.writeAttribute("cmpd", "thinThick"); break;
+            case CompoundLineType::Triple: writer.writeAttribute("cmpd", "tri"); break;
+        }
     }
-    switch (pointType()) {
-        case LineFormat::PT_Flat: writer.writeAttribute("cap", "flat"); break;
-        case LineFormat::PT_Round: writer.writeAttribute("cap", "rnd"); break;
-        case LineFormat::PT_Square: writer.writeAttribute("cap", "sq"); break;
+    if (d->lineCap.has_value()) {
+        switch (d->lineCap.value()) {
+            case LineCap::Flat: writer.writeAttribute("cap", "flat"); break;
+            case LineCap::Round: writer.writeAttribute("cap", "rnd"); break;
+            case LineCap::Square: writer.writeAttribute("cap", "sq"); break;
+        }
     }
-
-    switch (lineType()) {
-        case LineFormat::LT_NoLine:
-            writer.writeEmptyElement("a:noFill");
-            break;
-        case LineFormat::LT_SolidLine:
-            writer.writeStartElement("a:solidFill");
-            if (alpha() != 0.0)
-                writer.writeStartElement("a:srgbClr");
-            else
-                writer.writeEmptyElement("a:srgbClr");
-            writer.writeAttribute("val", color().name().mid(1));
-            if (alpha() != 0.0) {
-                writer.writeEmptyElement("a:alpha");
-                writer.writeAttribute("val", QString::number(qRound(100000 * (1.0-alpha()))));
-                writer.writeEndElement(); //a:srgbClr
+    if (d->penAlignment.has_value()) {
+        switch (d->penAlignment.value()) {
+            case PenAlignment::Center: writer.writeAttribute("algn", "ctr"); break;
+            case PenAlignment::Inset: writer.writeAttribute("algn", "in"); break;
+        }
+    }
+    if (d->strokeType.has_value()) {
+        writer.writeEmptyElement("a:prstDash");
+        switch (d->strokeType.value()) {
+            case LineFormat::StrokeType::Solid: writer.writeAttribute("val", "solid"); break;
+            case LineFormat::StrokeType::Dot: writer.writeAttribute("val", "sysDash"); break;
+            case LineFormat::StrokeType::RoundDot: writer.writeAttribute("val", "sysDot"); break;
+            case LineFormat::StrokeType::Dash: writer.writeAttribute("val", "dash"); break;
+            case LineFormat::StrokeType::DashDot: writer.writeAttribute("val", "dashDot"); break;
+            case LineFormat::StrokeType::LongDash: writer.writeAttribute("val", "lgDash"); break;
+            case LineFormat::StrokeType::LongDashDot: writer.writeAttribute("val", "lgDashDot"); break;
+            case LineFormat::StrokeType::LongDashDotDot: writer.writeAttribute("val", "lgDashDotDot"); break;
+        }
+    }
+    if (d->lineJoin.has_value()) {
+        switch (d->lineJoin.value()) {
+            case LineJoin::Bevel: writer.writeEmptyElement("a:bevel"); break;
+            case LineJoin::Miter: writer.writeEmptyElement("a:miter"); break;
+            case LineJoin::Round: writer.writeEmptyElement("a:round"); break;
+        }
+    }
+    if (d->headType.has_value() || d->headLength.has_value() || d->headWidth.has_value()) {
+        writer.writeEmptyElement("a:headEnd");
+        if (d->headType.has_value()) {
+            switch (d->headType.value()) {
+                case LineEndType::None: writer.writeAttribute("type", "none"); break;
+                case LineEndType::Oval: writer.writeAttribute("type", "oval"); break;
+                case LineEndType::Arrow: writer.writeAttribute("type", "arrow"); break;
+                case LineEndType::Diamond: writer.writeAttribute("type", "diamond"); break;
+                case LineEndType::Stealth: writer.writeAttribute("type", "stealth"); break;
+                case LineEndType::Triangle: writer.writeAttribute("type", "triangle"); break;
             }
-            writer.writeEndElement(); //a:solidFill
-            break;
-        case LineFormat::LT_GradientLine:
-            //TODO:
-            break;
-        default: break;
+        }
+        if (d->headLength.has_value()) {
+            switch (d->headLength.value()) {
+                case LineEndSize::Large: writer.writeAttribute("len", "lg"); break;
+                case LineEndSize::Small: writer.writeAttribute("len", "sm"); break;
+                case LineEndSize::Medium: writer.writeAttribute("len", "med"); break;
+            }
+        }
+        if (d->headWidth.has_value()) {
+            switch (d->headWidth.value()) {
+                case LineEndSize::Large: writer.writeAttribute("w", "lg"); break;
+                case LineEndSize::Small: writer.writeAttribute("w", "sm"); break;
+                case LineEndSize::Medium: writer.writeAttribute("w", "med"); break;
+            }
+        }
     }
-    writer.writeEmptyElement("a:prstDash");
-    switch (strokeType()) {
-        case LineFormat::ST_Solid: writer.writeAttribute("val", "solid"); break;
-        case LineFormat::ST_Dot: writer.writeAttribute("val", "sysDash"); break;
-        case LineFormat::ST_RoundDot: writer.writeAttribute("val", "sysDot"); break;
-        case LineFormat::ST_Dash: writer.writeAttribute("val", "dash"); break;
-        case LineFormat::ST_DashDot: writer.writeAttribute("val", "dashDot"); break;
-        case LineFormat::ST_LongDash: writer.writeAttribute("val", "lgDash"); break;
-        case LineFormat::ST_LongDashDot: writer.writeAttribute("val", "lgDashDot"); break;
-        case LineFormat::ST_LongDashDotDot: writer.writeAttribute("val", "lgDashDotDot"); break;
+    if (d->tailType.has_value() || d->tailLength.has_value() || d->tailWidth.has_value()) {
+        writer.writeEmptyElement("a:tailEnd");
+        if (d->tailType.has_value()) {
+            switch (d->tailType.value()) {
+                case LineEndType::None: writer.writeAttribute("type", "none"); break;
+                case LineEndType::Oval: writer.writeAttribute("type", "oval"); break;
+                case LineEndType::Arrow: writer.writeAttribute("type", "arrow"); break;
+                case LineEndType::Diamond: writer.writeAttribute("type", "diamond"); break;
+                case LineEndType::Stealth: writer.writeAttribute("type", "stealth"); break;
+                case LineEndType::Triangle: writer.writeAttribute("type", "triangle"); break;
+            }
+        }
+        if (d->tailLength.has_value()) {
+            switch (d->tailLength.value()) {
+                case LineEndSize::Large: writer.writeAttribute("len", "lg"); break;
+                case LineEndSize::Small: writer.writeAttribute("len", "sm"); break;
+                case LineEndSize::Medium: writer.writeAttribute("len", "med"); break;
+            }
+        }
+        if (d->tailWidth.has_value()) {
+            switch (d->tailWidth.value()) {
+                case LineEndSize::Large: writer.writeAttribute("w", "lg"); break;
+                case LineEndSize::Small: writer.writeAttribute("w", "sm"); break;
+                case LineEndSize::Medium: writer.writeAttribute("w", "med"); break;
+            }
+        }
     }
+
+    if (d->fill.isValid()) d->fill.write(writer);
 
     writer.writeEndElement(); //a:ln
-    writer.writeEndElement(); //c:spPr
+}
+
+void LineFormat::read(QXmlStreamReader &reader)
+{
+    const auto &name = reader.name();
+    const auto &a = reader.attributes();
+    if (a.hasAttribute("w")) d->width = Coordinate::create(a.value("w").toString());
+    if (a.hasAttribute("cap")) {
+        const auto &s = a.value("cap");
+        if (s == "flat") d->lineCap = LineCap::Flat;
+        if (s == "rnd") d->lineCap = LineCap::Round;
+        if (s == "sq") d->lineCap = LineCap::Square;
+    }
+    if (a.hasAttribute("cmpd")) {
+        const auto &s = a.value("cmpd");
+        if (s == "sng") d->compoundLineType = CompoundLineType::Single;
+        if (s == "dbl") d->compoundLineType = CompoundLineType::Double;
+        if (s == "thickThin") d->compoundLineType = CompoundLineType::ThickThin;
+        if (s == "thinThick") d->compoundLineType = CompoundLineType::ThinThick;
+        if (s == "tri") d->compoundLineType = CompoundLineType::Triple;
+    }
+    if (a.hasAttribute("algn")) {
+        const auto &s = a.value("algn");
+        if (s == "ctr") d->penAlignment = PenAlignment::Center;
+        if (s == "in") d->penAlignment = PenAlignment::Inset;
+    }
+
+    while (!reader.atEnd()) {
+        auto token = reader.readNext();
+        if (token == QXmlStreamReader::StartElement) {
+            if (reader.name() == "noFill") {
+                FillProperties fill(FillProperties::FillType::NoFill);
+                fill.read(reader);
+                d->fill = fill;
+            }
+            if (reader.name() == "solidFill") {
+                FillProperties fill(FillProperties::FillType::SolidFill);
+                fill.read(reader);
+                d->fill = fill;
+            }
+            if (reader.name() == "gradFill") {
+                FillProperties fill(FillProperties::FillType::GradientFill);
+                fill.read(reader);
+                d->fill = fill;
+            }
+            if (reader.name() == "pattFill") {
+                FillProperties fill(FillProperties::FillType::PatternFill);
+                fill.read(reader);
+                d->fill = fill;
+            }
+            if (reader.name() == "prstDash") {
+                auto val = reader.attributes().value("val");
+                if (val == QLatin1String("solid")) d->strokeType = LineFormat::StrokeType::Solid;
+                if (val == QLatin1String("sysDash")) d->strokeType = LineFormat::StrokeType::Dot;
+                if (val == QLatin1String("sysDot")) d->strokeType = LineFormat::StrokeType::RoundDot;
+                if (val == QLatin1String("dash")) d->strokeType = LineFormat::StrokeType::Dash;
+                if (val == QLatin1String("dashDot")) d->strokeType = LineFormat::StrokeType::DashDot;
+                if (val == QLatin1String("lgDash")) d->strokeType = LineFormat::StrokeType::LongDash;
+                if (val == QLatin1String("lgDashDot")) d->strokeType = LineFormat::StrokeType::LongDashDot;
+                if (val == QLatin1String("lgDashDotDot")) d->strokeType = LineFormat::StrokeType::LongDashDotDot;
+            }
+            if (reader.name() == "round") d->lineJoin = LineFormat::LineJoin::Round;
+            if (reader.name() == "bevel") d->lineJoin = LineFormat::LineJoin::Bevel;
+            if (reader.name() == "miter") d->lineJoin = LineFormat::LineJoin::Miter;
+            if (reader.name() == "headEnd") {
+                const auto &a = reader.attributes();
+                if (a.hasAttribute("type")) {
+                    const auto &s = a.value("type");
+                    if (s == "none") d->headType = LineEndType::None;
+                    else if (s == "oval") d->headType = LineEndType::Oval;
+                    else if (s == "arrow") d->headType = LineEndType::Arrow;
+                    else if (s == "diamond") d->headType = LineEndType::Diamond;
+                    else if (s == "stealth") d->headType = LineEndType::Stealth;
+                    else if (s == "triangle") d->headType = LineEndType::Triangle;
+                }
+                if (a.hasAttribute("len")) {
+                    const auto &s = a.value("len");
+                    if (s == "lg") d->headLength = LineEndSize::Large;
+                    else if (s == "sm") d->headLength = LineEndSize::Small;
+                    else if (s == "med") d->headLength = LineEndSize::Medium;
+                }
+                if (a.hasAttribute("w")) {
+                    const auto &s = a.value("w");
+                    if (s == "lg") d->headWidth = LineEndSize::Large;
+                    else if (s == "sm") d->headWidth = LineEndSize::Small;
+                    else if (s == "med") d->headWidth = LineEndSize::Medium;
+                }
+            }if (reader.name() == "tailEnd") {
+                const auto &a = reader.attributes();
+                if (a.hasAttribute("type")) {
+                    const auto &s = a.value("type");
+                    if (s == "none") d->tailType = LineEndType::None;
+                    else if (s == "oval") d->tailType = LineEndType::Oval;
+                    else if (s == "arrow") d->tailType = LineEndType::Arrow;
+                    else if (s == "diamond") d->tailType = LineEndType::Diamond;
+                    else if (s == "stealth") d->tailType = LineEndType::Stealth;
+                    else if (s == "triangle") d->tailType = LineEndType::Triangle;
+                }
+                if (a.hasAttribute("len")) {
+                    const auto &s = a.value("len");
+                    if (s == "lg") d->tailLength = LineEndSize::Large;
+                    else if (s == "sm") d->tailLength = LineEndSize::Small;
+                    else if (s == "med") d->tailLength = LineEndSize::Medium;
+                }
+                if (a.hasAttribute("w")) {
+                    const auto &s = a.value("w");
+                    if (s == "lg") d->tailWidth = LineEndSize::Large;
+                    else if (s == "sm") d->tailWidth = LineEndSize::Small;
+                    else if (s == "med") d->tailWidth = LineEndSize::Medium;
+                }
+            }
+        }
+        else if (token == QXmlStreamReader::EndElement && reader.name() == name)
+            break;
+    }
 }
 
 /*!
-	Returns ture if the \a format is equal to this format.
+    Returns true if the \a format is equal to this format.
 */
-bool LineFormat::operator ==(const LineFormat &format) const
-{
-	return this->formatKey() == format.formatKey();
-}
+//bool LineFormat::operator ==(const LineFormat &format) const
+//{
+//	return this->formatKey() == format.formatKey();
+//}
 
 /*!
-	Returns ture if the \a format is not equal to this format.
+    Returns true if the \a format is not equal to this format.
 */
-bool LineFormat::operator !=(const LineFormat &format) const
-{
-	return this->formatKey() != format.formatKey();
-}
+//bool LineFormat::operator !=(const LineFormat &format) const
+//{
+//	return this->formatKey() != format.formatKey();
+//}
 
 #ifndef QT_NO_DEBUG_STREAM
 QDebug operator<<(QDebug dbg, const LineFormat &f)
 {
-    dbg.nospace() << "QXlsx::LineFormat(" << f.d->color << f.d->width << ")";
-	return dbg.space();
+    QDebugStateSaver saver(dbg);
+
+    dbg.nospace() << "QXlsx::LineFormat(" ;
+    dbg.nospace() << f.d->fill << ", ";
+    dbg.nospace() << "width=" << (f.d->width.has_value() ? f.d->width.value().toString() : QString("not set")) << ", ";
+    dbg.nospace() << "strokeType=" << (f.d->strokeType.has_value() ? static_cast<int>(f.d->strokeType.value()) : -1) << ", ";
+    dbg.nospace() << "compoundLineType=" << (f.d->compoundLineType.has_value() ? static_cast<int>(f.d->compoundLineType.value()) : -1) << ", ";
+    dbg.nospace() << "lineCap=" << (f.d->lineCap.has_value() ? static_cast<int>(f.d->lineCap.value()) : -1) << ", ";
+    dbg.nospace() << "penAlignment=" << (f.d->penAlignment.has_value() ? static_cast<int>(f.d->penAlignment.value()) : -1) << ", ";
+    dbg.nospace() << "lineJoin=" << (f.d->lineJoin.has_value() ? static_cast<int>(f.d->lineJoin.value()) : -1) << ", ";
+    dbg.nospace() << ")";
+    return dbg;
 }
 #endif
 

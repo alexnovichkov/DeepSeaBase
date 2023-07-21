@@ -7,8 +7,11 @@
 #include <QList>
 #include <QExplicitlySharedDataPointer>
 #include <QVariant>
+#include <QXmlStreamReader>
+#include <QXmlStreamWriter>
 
 #include "xlsxglobal.h"
+#include "xlsxshapeproperties.h"
 
 QT_BEGIN_NAMESPACE_XLSX
 
@@ -23,40 +26,46 @@ class MarkerFormatPrivate;
 class QXLSX_EXPORT MarkerFormat
 {
 public:
-    enum MarkerType {
-        MT_NoMarker,
-        MT_Square,
-        MT_Diamond,
-        MT_Triangle,
-        MT_Cross,
-        MT_Star,
-        MT_Dot,
-        MT_Dash,
-        MT_Circle,
-        MT_Plus
+    enum class MarkerType {
+        None,
+        Square,
+        Diamond,
+        Triangle,
+        Cross,
+        Star,
+        Dot,
+        Dash,
+        Circle,
+        Plus,
+        Picture,
+        X,
+        Auto
     };
 
     MarkerFormat();
+    MarkerFormat(MarkerType type);
     MarkerFormat(const MarkerFormat &other);
     MarkerFormat &operator=(const MarkerFormat &rhs);
     ~MarkerFormat();
 
-    MarkerType markerType() const;
-    void setMarkerType(MarkerType type);
+    std::optional<MarkerType> type() const;
+    void setType(MarkerType type);
 
-    int size() const;
+    std::optional<int> size() const;
     void setSize(int size);
 
-    bool isValid() const;
-    QByteArray formatKey() const;
+    void write(QXmlStreamWriter &writer);
+    void read(QXmlStreamReader &reader);
 
-    bool operator == (const MarkerFormat &format) const;
-    bool operator != (const MarkerFormat &format) const;
+    ShapeProperties shape() const;
+    void setShape(ShapeProperties shape);
+
+    bool isValid() const;
 
 private:
-    friend   QDebug operator<<(QDebug, const MarkerFormat &f);
+    friend QDebug operator<<(QDebug, const MarkerFormat &f);
 
-    QExplicitlySharedDataPointer<MarkerFormatPrivate> d;
+    QSharedDataPointer<MarkerFormatPrivate> d;
 };
 
 #ifndef QT_NO_DEBUG_STREAM

@@ -13,7 +13,7 @@
 #include "xlsxstyles_p.h"
 #include "xlsxformat_p.h"
 #include "xlsxutility_p.h"
-#include "xlsxcolor_p.h"
+#include "xlsxcolor.h"
 
 QT_BEGIN_NAMESPACE_XLSX
 
@@ -37,7 +37,7 @@ Styles::Styles(CreateFlag flag)
     if (QMetaType::type("XlsxColor") == QMetaType::UnknownType)
 #endif
     {
-        qRegisterMetaType<XlsxColor>("XlsxColor");
+        qRegisterMetaType<Color>("XlsxColor");
 
 #if QT_VERSION >= 0x060000
         // Qt 6
@@ -47,9 +47,9 @@ Styles::Styles(CreateFlag flag)
 #else
         // Qt 5
 
-        qRegisterMetaTypeStreamOperators<XlsxColor>("XlsxColor");
+//        qRegisterMetaTypeStreamOperators<XlsxColor>("XlsxColor");
 
-        QMetaType::registerDebugStreamOperator<XlsxColor>();
+        QMetaType::registerDebugStreamOperator<Color>();
 
 #endif
     }
@@ -456,8 +456,8 @@ void Styles::writeFont(QXmlStreamWriter &writer, const Format &format, bool isDx
     }
 
     if (format.hasProperty(FormatPrivate::P_Font_Color)) {
-        XlsxColor color = format.property(FormatPrivate::P_Font_Color).value<XlsxColor>();
-        color.saveToXml(writer);
+        Color color = format.property(FormatPrivate::P_Font_Color).value<Color>();
+        color.write(writer);
     }
 
     if (!isDxf) {
@@ -529,14 +529,14 @@ void Styles::writeFill(QXmlStreamWriter &writer, const Format &fill, bool isDxf)
     // For a solid fill, Excel reverses the role of foreground and background colours
     if (fill.fillPattern() == Format::PatternSolid) {
         if (fill.hasProperty(FormatPrivate::P_Fill_BgColor))
-            fill.property(FormatPrivate::P_Fill_BgColor).value<XlsxColor>().saveToXml(writer, QStringLiteral("fgColor"));
+            fill.property(FormatPrivate::P_Fill_BgColor).value<Color>().write(writer, QStringLiteral("fgColor"));
         if (fill.hasProperty(FormatPrivate::P_Fill_FgColor))
-            fill.property(FormatPrivate::P_Fill_FgColor).value<XlsxColor>().saveToXml(writer, QStringLiteral("bgColor"));
+            fill.property(FormatPrivate::P_Fill_FgColor).value<Color>().write(writer, QStringLiteral("bgColor"));
     } else {
         if (fill.hasProperty(FormatPrivate::P_Fill_FgColor))
-            fill.property(FormatPrivate::P_Fill_FgColor).value<XlsxColor>().saveToXml(writer, QStringLiteral("fgColor"));
+            fill.property(FormatPrivate::P_Fill_FgColor).value<Color>().write(writer, QStringLiteral("fgColor"));
         if (fill.hasProperty(FormatPrivate::P_Fill_BgColor))
-            fill.property(FormatPrivate::P_Fill_BgColor).value<XlsxColor>().saveToXml(writer, QStringLiteral("bgColor"));
+            fill.property(FormatPrivate::P_Fill_BgColor).value<Color>().write(writer, QStringLiteral("bgColor"));
     }
     writer.writeEndElement();//patternFill
     writer.writeEndElement();//fill
@@ -569,14 +569,14 @@ void Styles::writeBorder(QXmlStreamWriter &writer, const Format &border, bool is
         }
     }
 
-    writeSubBorder(writer, QStringLiteral("left"), border.leftBorderStyle(), border.property(FormatPrivate::P_Border_LeftColor).value<XlsxColor>());
-    writeSubBorder(writer, QStringLiteral("right"), border.rightBorderStyle(), border.property(FormatPrivate::P_Border_RightColor).value<XlsxColor>());
-    writeSubBorder(writer, QStringLiteral("top"), border.topBorderStyle(), border.property(FormatPrivate::P_Border_TopColor).value<XlsxColor>());
-    writeSubBorder(writer, QStringLiteral("bottom"), border.bottomBorderStyle(), border.property(FormatPrivate::P_Border_BottomColor).value<XlsxColor>());
+    writeSubBorder(writer, QStringLiteral("left"), border.leftBorderStyle(), border.property(FormatPrivate::P_Border_LeftColor).value<Color>());
+    writeSubBorder(writer, QStringLiteral("right"), border.rightBorderStyle(), border.property(FormatPrivate::P_Border_RightColor).value<Color>());
+    writeSubBorder(writer, QStringLiteral("top"), border.topBorderStyle(), border.property(FormatPrivate::P_Border_TopColor).value<Color>());
+    writeSubBorder(writer, QStringLiteral("bottom"), border.bottomBorderStyle(), border.property(FormatPrivate::P_Border_BottomColor).value<Color>());
 
     //Condition DXF formats don't allow diagonal style
     if (!isDxf)
-        writeSubBorder(writer, QStringLiteral("diagonal"), border.diagonalBorderStyle(), border.property(FormatPrivate::P_Border_DiagonalColor).value<XlsxColor>());
+        writeSubBorder(writer, QStringLiteral("diagonal"), border.diagonalBorderStyle(), border.property(FormatPrivate::P_Border_DiagonalColor).value<Color>());
 
     if (isDxf) {
 //        writeSubBorder(wirter, QStringLiteral("vertical"), );
@@ -586,7 +586,7 @@ void Styles::writeBorder(QXmlStreamWriter &writer, const Format &border, bool is
     writer.writeEndElement();//border
 }
 
-void Styles::writeSubBorder(QXmlStreamWriter &writer, const QString &type, int style, const XlsxColor &color) const
+void Styles::writeSubBorder(QXmlStreamWriter &writer, const QString &type, int style, const Color &color) const
 {
     if (style == Format::BorderNone) {
         writer.writeEmptyElement(type);
@@ -612,7 +612,7 @@ void Styles::writeSubBorder(QXmlStreamWriter &writer, const QString &type, int s
 
     writer.writeStartElement(type);
     writer.writeAttribute(QStringLiteral("style"), stylesString[style]);
-    color.saveToXml(writer); //write color element
+    color.write(writer); //write color element
 
     writer.writeEndElement();//type
 }
@@ -744,7 +744,7 @@ void Styles::writeColors(QXmlStreamWriter &writer) const
     writer.writeStartElement(QStringLiteral("indexedColors"));
     for (const QColor &color : m_indexedColors) {
         writer.writeEmptyElement(QStringLiteral("rgbColor"));
-        writer.writeAttribute(QStringLiteral("rgb"), XlsxColor::toARGBString(color));
+        writer.writeAttribute(QStringLiteral("rgb"), Color::toARGBString(color));
     }
 
     writer.writeEndElement();//indexedColors
@@ -843,8 +843,8 @@ bool Styles::readFont(QXmlStreamReader &reader, Format &format)
             } else if (reader.name() == QLatin1String("extend")) {
                 format.setProperty(FormatPrivate::P_Font_Extend, attributes.value(QLatin1String("val")).toInt());
             } else if (reader.name() == QLatin1String("color")) {
-                XlsxColor color;
-                color.loadFromXml(reader);
+                Color color(Color::ColorType::SimpleColor);
+                color.read(reader);
                 format.setProperty(FormatPrivate::P_Font_Color, color);
             } else if (reader.name() == QLatin1String("sz")) {
                 const auto sz = attributes.value(QLatin1String("val")).toInt();
@@ -942,8 +942,8 @@ bool Styles::readFill(QXmlStreamReader &reader, Format &fill)
                         reader.readNextStartElement();
                         if (reader.tokenType() == QXmlStreamReader::StartElement) {
                             if (reader.name() == QLatin1String("fgColor")) {
-                                XlsxColor c;
-                                if ( c.loadFromXml(reader) )
+                                Color c;
+                                if ( c.read(reader) )
                                 {
                                     if (fill.fillPattern() == Format::PatternSolid)
                                         fill.setProperty(FormatPrivate::P_Fill_BgColor, c);
@@ -951,8 +951,8 @@ bool Styles::readFill(QXmlStreamReader &reader, Format &fill)
                                         fill.setProperty(FormatPrivate::P_Fill_FgColor, c);
                                 }
                             } else if (reader.name() == QLatin1String("bgColor")) {
-                                XlsxColor c;
-                                if ( c.loadFromXml(reader) )
+                                Color c;
+                                if ( c.read(reader) )
                                 {
                                     if (fill.fillPattern() == Format::PatternSolid)
                                         fill.setProperty(FormatPrivate::P_Fill_FgColor, c);
@@ -1022,7 +1022,7 @@ bool Styles::readBorder(QXmlStreamReader &reader, Format &border)
                     || reader.name() == QLatin1String("top") || reader.name() == QLatin1String("bottom")
                     || reader.name() == QLatin1String("diagonal") ) {
                 Format::BorderStyle style(Format::BorderNone);
-                XlsxColor color;
+                Color color;
                 readSubBorder(reader, reader.name().toString(), style, color);
 
                 if (reader.name() == QLatin1String("left")) {
@@ -1062,7 +1062,7 @@ bool Styles::readCellStyleXfs(QXmlStreamReader &reader)
     return true;
 }
 
-bool Styles::readSubBorder(QXmlStreamReader &reader, const QString &name, Format::BorderStyle &style, XlsxColor &color)
+bool Styles::readSubBorder(QXmlStreamReader &reader, const QString &name, Format::BorderStyle &style, Color &color)
 {
     Q_ASSERT(reader.name() == name);
 
@@ -1094,7 +1094,7 @@ bool Styles::readSubBorder(QXmlStreamReader &reader, const QString &name, Format
                 reader.readNextStartElement();
                 if (reader.tokenType() == QXmlStreamReader::StartElement) {
                     if (reader.name() == QLatin1String("color"))
-                        color.loadFromXml(reader);
+                        color.read(reader);
                 }
             }
         }
@@ -1331,7 +1331,7 @@ bool Styles::readIndexedColors(QXmlStreamReader &reader)
         if (reader.tokenType() == QXmlStreamReader::StartElement) {
             if (reader.name() == QLatin1String("rgbColor")) {
                 const auto& color = reader.attributes().value(QLatin1String("rgb")).toString();
-                m_indexedColors.append(XlsxColor::fromARGBString(color));
+                m_indexedColors.append(Color::fromARGBString(color));
             }
         }
     }

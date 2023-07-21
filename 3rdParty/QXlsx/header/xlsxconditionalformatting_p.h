@@ -10,7 +10,7 @@
 
 #include "xlsxconditionalformatting.h"
 #include "xlsxformat.h"
-#include "xlsxcolor_p.h"
+#include "xlsxcolor.h"
 
 QT_BEGIN_NAMESPACE_XLSX
 

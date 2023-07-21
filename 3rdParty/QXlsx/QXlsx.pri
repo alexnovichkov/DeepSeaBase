@@ -54,6 +54,17 @@ INCLUDEPATH += $${QXLSX_HEADERPATH}
 # source code 
 
 HEADERS += \
+$${QXLSX_HEADERPATH}xlsxtext.h \
+$${QXLSX_HEADERPATH}xlsxtext_p.h \
+$${QXLSX_HEADERPATH}xlsxtitle.h \
+$${QXLSX_HEADERPATH}xlsxtitle_p.h \
+$${QXLSX_HEADERPATH}xlsxfillproperties_p.h \
+$${QXLSX_HEADERPATH}xlsxfillproperties.h \
+$${QXLSX_HEADERPATH}xlsxmain.h \
+$${QXLSX_HEADERPATH}xlsxshapeproperties_p.h \
+$${QXLSX_HEADERPATH}xlsxshapeproperties.h \
+$${QXLSX_HEADERPATH}xlsxaxis_p.h \
+$${QXLSX_HEADERPATH}xlsxaxis.h \
 $${QXLSX_HEADERPATH}xlsxmarkerformat.h \
 $${QXLSX_HEADERPATH}xlsxmarkerformat_p.h \
 $${QXLSX_HEADERPATH}xlsxlineformat.h \
@@ -73,7 +84,7 @@ $${QXLSX_HEADERPATH}xlsxchart.h \
 $${QXLSX_HEADERPATH}xlsxchartsheet.h \
 $${QXLSX_HEADERPATH}xlsxchartsheet_p.h \
 $${QXLSX_HEADERPATH}xlsxchart_p.h \
-$${QXLSX_HEADERPATH}xlsxcolor_p.h \
+$${QXLSX_HEADERPATH}xlsxcolor.h \
 $${QXLSX_HEADERPATH}xlsxconditionalformatting.h \
 $${QXLSX_HEADERPATH}xlsxconditionalformatting_p.h \
 $${QXLSX_HEADERPATH}xlsxcontenttypes_p.h \
@@ -107,6 +118,12 @@ $${QXLSX_HEADERPATH}xlsxzipreader_p.h \
 $${QXLSX_HEADERPATH}xlsxzipwriter_p.h
 
 SOURCES += \
+$${QXLSX_SOURCEPATH}xlsxtext.cpp \
+$${QXLSX_SOURCEPATH}xlsxtitle.cpp \
+$${QXLSX_SOURCEPATH}xlsxfillproperties.cpp \
+$${QXLSX_SOURCEPATH}xlsxmain.cpp \
+$${QXLSX_SOURCEPATH}xlsxshapeproperties.cpp \
+$${QXLSX_SOURCEPATH}xlsxaxis.cpp \
 $${QXLSX_SOURCEPATH}xlsxmarkerformat.cpp \
 $${QXLSX_SOURCEPATH}xlsxlineformat.cpp \
 $${QXLSX_SOURCEPATH}xlsxabstractooxmlfile.cpp \

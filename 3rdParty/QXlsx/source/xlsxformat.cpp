@@ -6,7 +6,7 @@
 
 #include "xlsxformat.h"
 #include "xlsxformat_p.h"
-#include "xlsxcolor_p.h"
+#include "xlsxcolor.h"
 #include "xlsxnumformatparser_p.h"
 
 QT_BEGIN_NAMESPACE_XLSX
@@ -359,7 +359,7 @@ QColor Format::fontColor() const
  */
 void Format::setFontColor(const QColor &color)
 {
-	setProperty(FormatPrivate::P_Font_Color, XlsxColor(color), XlsxColor());
+    setProperty(FormatPrivate::P_Font_Color, Color(Color::ColorType::SimpleColor, color), Color());
 }
 
 /*!
@@ -736,7 +736,7 @@ QColor Format::leftBorderColor() const
 */
 void Format::setLeftBorderColor(const QColor &color)
 {
-	setProperty(FormatPrivate::P_Border_LeftColor, XlsxColor(color), XlsxColor());
+    setProperty(FormatPrivate::P_Border_LeftColor, Color(Color::ColorType::SimpleColor, color), Color());
 }
 
 /*!
@@ -768,7 +768,7 @@ QColor Format::rightBorderColor() const
 */
 void Format::setRightBorderColor(const QColor &color)
 {
-	setProperty(FormatPrivate::P_Border_RightColor, XlsxColor(color), XlsxColor());
+    setProperty(FormatPrivate::P_Border_RightColor, Color(Color::ColorType::SimpleColor, color), Color());
 }
 
 /*!
@@ -800,7 +800,7 @@ QColor Format::topBorderColor() const
 */
 void Format::setTopBorderColor(const QColor &color)
 {
-	setProperty(FormatPrivate::P_Border_TopColor, XlsxColor(color), XlsxColor());
+    setProperty(FormatPrivate::P_Border_TopColor, Color(Color::ColorType::SimpleColor, color), Color());
 }
 
 /*!
@@ -832,7 +832,7 @@ QColor Format::bottomBorderColor() const
 */
 void Format::setBottomBorderColor(const QColor &color)
 {
-	setProperty(FormatPrivate::P_Border_BottomColor, XlsxColor(color), XlsxColor());
+    setProperty(FormatPrivate::P_Border_BottomColor, Color(Color::ColorType::SimpleColor, color), Color());
 }
 
 /*!
@@ -880,7 +880,7 @@ QColor Format::diagonalBorderColor() const
 */
 void Format::setDiagonalBorderColor(const QColor &color)
 {
-	setProperty(FormatPrivate::P_Border_DiagonalColor, XlsxColor(color), XlsxColor());
+    setProperty(FormatPrivate::P_Border_DiagonalColor, Color(Color::ColorType::SimpleColor, color), Color());
 }
 
 /*!
@@ -984,7 +984,7 @@ void Format::setPatternForegroundColor(const QColor &color)
 {
 	if (color.isValid() && !hasProperty(FormatPrivate::P_Fill_Pattern))
 		setFillPattern(PatternSolid);
-	setProperty(FormatPrivate::P_Fill_FgColor, XlsxColor(color), XlsxColor());
+    setProperty(FormatPrivate::P_Fill_FgColor, Color(Color::ColorType::SimpleColor, color), Color());
 }
 
 /*!
@@ -1002,7 +1002,7 @@ void Format::setPatternBackgroundColor(const QColor &color)
 {
 	if (color.isValid() && !hasProperty(FormatPrivate::P_Fill_Pattern))
 		setFillPattern(PatternSolid);
-	setProperty(FormatPrivate::P_Fill_BgColor, XlsxColor(color), XlsxColor());
+    setProperty(FormatPrivate::P_Fill_BgColor, Color(Color::ColorType::SimpleColor, color), Color());
 }
 
 /*!
@@ -1421,9 +1421,9 @@ QColor Format::colorProperty(int propertyId, const QColor &defaultValue) const
 		return defaultValue;
 
 	const QVariant prop = d->properties[propertyId];
-	if (prop.userType() != qMetaTypeId<XlsxColor>())
+	if (prop.userType() != qMetaTypeId<Color>())
 		return defaultValue;
-	return qvariant_cast<XlsxColor>(prop).rgbColor();
+    return qvariant_cast<Color>(prop).rgb();
 }
 
 #ifndef QT_NO_DEBUG_STREAM

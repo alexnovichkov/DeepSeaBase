@@ -35,7 +35,8 @@ CursorBox::CursorBox(Cursors *cursors, Plot *parent) : QTreeWidget(parent->widge
     setFont(f);
     header()->setFont(f);
 
-    connect(se->instance(), &se->settingChanged, [this](const QString &key, const QVariant & val){
+    connect(se->instance(), &Settings::settingChanged, [this](const QString &key, const QVariant & val){
+        Q_UNUSED(key);
         auto f = val.value<QFont>();
         setFont(f);
         header()->setFont(f);

@@ -300,7 +300,7 @@ bool ConditionalFormatting::addDataBarRule(const QColor &color, ValueObjectType 
     auto cfRule = std::make_shared<XlsxCfRuleData>();
 
     cfRule->attrs[XlsxCfRuleData::A_type] = QStringLiteral("dataBar");
-    cfRule->attrs[XlsxCfRuleData::A_color1] = XlsxColor(color);
+    cfRule->attrs[XlsxCfRuleData::A_color1] = Color(Color::ColorType::SimpleColor, color);
     if (stopIfTrue)
         cfRule->attrs[XlsxCfRuleData::A_stopIfTrue] = true;
     if (!showData)
@@ -338,8 +338,8 @@ bool ConditionalFormatting::add2ColorScaleRule(const QColor &minColor, const QCo
     auto cfRule = std::make_shared<XlsxCfRuleData>();
 
     cfRule->attrs[XlsxCfRuleData::A_type] = QStringLiteral("colorScale");
-    cfRule->attrs[XlsxCfRuleData::A_color1] = XlsxColor(minColor);
-    cfRule->attrs[XlsxCfRuleData::A_color2] = XlsxColor(maxColor);
+    cfRule->attrs[XlsxCfRuleData::A_color1] = Color(Color::ColorType::SimpleColor, minColor);
+    cfRule->attrs[XlsxCfRuleData::A_color2] = Color(Color::ColorType::SimpleColor, maxColor);
     if (stopIfTrue)
         cfRule->attrs[XlsxCfRuleData::A_stopIfTrue] = true;
 
@@ -368,9 +368,9 @@ bool ConditionalFormatting::add3ColorScaleRule(const QColor &minColor, const QCo
     auto cfRule = std::make_shared<XlsxCfRuleData>();
 
     cfRule->attrs[XlsxCfRuleData::A_type] = QStringLiteral("colorScale");
-    cfRule->attrs[XlsxCfRuleData::A_color1] = XlsxColor(minColor);
-    cfRule->attrs[XlsxCfRuleData::A_color2] = XlsxColor(midColor);
-    cfRule->attrs[XlsxCfRuleData::A_color3] = XlsxColor(maxColor);
+    cfRule->attrs[XlsxCfRuleData::A_color1] = Color(Color::ColorType::SimpleColor, minColor);
+    cfRule->attrs[XlsxCfRuleData::A_color2] = Color(Color::ColorType::SimpleColor, midColor);
+    cfRule->attrs[XlsxCfRuleData::A_color3] = Color(Color::ColorType::SimpleColor, maxColor);
 
     if (stopIfTrue)
         cfRule->attrs[XlsxCfRuleData::A_stopIfTrue] = true;
@@ -522,8 +522,8 @@ bool ConditionalFormattingPrivate::readCfDataBar(QXmlStreamReader &reader, XlsxC
                 else
                     rule->attrs[XlsxCfRuleData::A_cfvo2] = QVariant::fromValue(data);
             } else if (reader.name() == QLatin1String("color")) {
-                XlsxColor color;
-                color.loadFromXml(reader);
+                Color color;
+                color.read(reader);
                 rule->attrs[XlsxCfRuleData::A_color1] = color;
             }
         }
@@ -553,8 +553,8 @@ bool ConditionalFormattingPrivate::readCfColorScale(QXmlStreamReader &reader, Xl
                 else
                     rule->attrs[XlsxCfRuleData::A_cfvo3] = QVariant::fromValue(data);
             } else if (reader.name() == QLatin1String("color")) {
-                XlsxColor color;
-                color.loadFromXml(reader);
+                Color color;
+                color.read(reader);
                 if (!rule->attrs.contains(XlsxCfRuleData::A_color1))
                     rule->attrs[XlsxCfRuleData::A_color1] = color;
                 else if (!rule->attrs.contains(XlsxCfRuleData::A_color2))
@@ -698,7 +698,7 @@ bool ConditionalFormatting::saveToXml(QXmlStreamWriter &writer) const
                 writer.writeAttribute(QStringLiteral("showValue"), QStringLiteral("0"));
             d->writeCfVo(writer, rule->attrs[XlsxCfRuleData::A_cfvo1].value<XlsxCfVoData>());
             d->writeCfVo(writer, rule->attrs[XlsxCfRuleData::A_cfvo2].value<XlsxCfVoData>());
-            rule->attrs[XlsxCfRuleData::A_color1].value<XlsxColor>().saveToXml(writer);
+            rule->attrs[XlsxCfRuleData::A_color1].value<Color>().write(writer);
             writer.writeEndElement();//dataBar
         } else if (rule->attrs[XlsxCfRuleData::A_type] == QLatin1String("colorScale")) {
             writer.writeStartElement(QStringLiteral("colorScale"));
@@ -709,12 +709,12 @@ bool ConditionalFormatting::saveToXml(QXmlStreamWriter &writer) const
             if (it != rule->attrs.constEnd())
                 d->writeCfVo(writer, it.value().value<XlsxCfVoData>());
 
-            rule->attrs[XlsxCfRuleData::A_color1].value<XlsxColor>().saveToXml(writer);
-            rule->attrs[XlsxCfRuleData::A_color2].value<XlsxColor>().saveToXml(writer);
+            rule->attrs[XlsxCfRuleData::A_color1].value<Color>().write(writer);
+            rule->attrs[XlsxCfRuleData::A_color2].value<Color>().write(writer);
 
             it = rule->attrs.constFind(XlsxCfRuleData::A_color3);
             if (it != rule->attrs.constEnd())
-                it.value().value<XlsxColor>().saveToXml(writer);
+                it.value().value<Color>().write(writer);
 
             writer.writeEndElement();//colorScale
         }

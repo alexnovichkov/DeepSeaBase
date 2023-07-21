@@ -8,8 +8,10 @@
 #include <QXmlStreamWriter>
 
 #include "xlsxabstractooxmlfile.h"
+#include "xlsxshapeproperties.h"
 #include "xlsxlineformat.h"
 #include "xlsxmarkerformat.h"
+#include "xlsxaxis.h"
 
 QT_BEGIN_NAMESPACE_XLSX
 
@@ -18,37 +20,6 @@ class Worksheet;
 class ChartPrivate;
 class CellRange;
 class DrawingAnchor;
-
-class XlsxAxis
-{
-public:
-    enum Type { T_None = (-1), T_Cat, T_Val, T_Date, T_Ser };
-    enum Position { None = (-1), Left, Right, Top, Bottom };
-public:
-    XlsxAxis(){}
-
-    XlsxAxis( Type t,
-              XlsxAxis::Position p,
-              int id,
-              int crossId,
-              QString axisTitle = QString())
-    {
-        type = t;
-        axisPos = p;
-        axisId = id;
-        crossAx = crossId;
-        axisName = axisTitle;
-    }
-
-public:
-    Type type;
-    Position axisPos;
-    int axisId;
-    int crossAx;
-    QString axisName;
-    bool visible = true;
-    bool logarithmic = false;
-};
 
 class QXLSX_EXPORT Chart : public AbstractOOXmlFile
 {
@@ -82,13 +53,14 @@ public:
     void setLineFormat(const LineFormat &format);
     void setCanvasLineFormat(const LineFormat &format);
 
-    int addAxis(XlsxAxis::Type type, XlsxAxis::Position pos, int pairedAxisId, QString title = QString());
-    void setAxisTitle(int id, QString axisTitle);
-    void setAxisLogarithmic(int id, bool logarithmic);
+    Axis *addAxis(Axis::Type type, Axis::Position pos, QString title = QString());
+    Axis *axis(int id);
+
     void setChartTitle(QString strchartTitle);
     void setChartLegend(Chart::ChartAxisPos legendPos, bool overlap = false);
     void setGridlinesEnable(bool majorGridlinesEnable = false, bool minorGridlinesEnable = false);
     void setSeriesLineFormat(int series, const LineFormat &format);
+    void setSeriesShape(int series, const ShapeProperties &shape);
     void setSeriesMarkerFormat(int series, const MarkerFormat &format);
     void setSeriesAxes(int series, QList<int> axesIds);
 public:

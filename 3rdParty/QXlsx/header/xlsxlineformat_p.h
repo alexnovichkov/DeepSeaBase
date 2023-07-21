@@ -8,20 +8,45 @@
 #include <QSet>
 
 #include "xlsxlineformat.h"
+#include "xlsxcolor.h"
+#include "xlsxfillproperties.h"
+#include "xlsxmain.h"
 
 QT_BEGIN_NAMESPACE_XLSX
+
+//<xsd:complexType name="CT_LineProperties">
+//    <xsd:sequence>
+//      <xsd:group ref="EG_LineFillProperties" minOccurs="0" maxOccurs="1"/>
+//      <xsd:group ref="EG_LineDashProperties" minOccurs="0" maxOccurs="1"/>
+//      <xsd:group ref="EG_LineJoinProperties" minOccurs="0" maxOccurs="1"/>
+//      <xsd:element name="headEnd" type="CT_LineEndProperties" minOccurs="0" maxOccurs="1"/>
+//      <xsd:element name="tailEnd" type="CT_LineEndProperties" minOccurs="0" maxOccurs="1"/>
+//      <xsd:element name="extLst" type="CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+//    </xsd:sequence>
+//    <xsd:attribute name="w" type="ST_LineWidth" use="optional"/>
+//    <xsd:attribute name="cap" type="ST_LineCap" use="optional"/>
+//    <xsd:attribute name="cmpd" type="ST_CompoundLine" use="optional"/>
+//    <xsd:attribute name="algn" type="ST_PenAlignment" use="optional"/>
+//  </xsd:complexType>
 
 class LineFormatPrivate : public QSharedData
 {
 public:
-    LineFormat::LineType lineType = LineFormat::LT_SolidLine;
-    QColor color;
-    double alpha = 0; // [0..1]
-    double width = 2.25; //px
-    bool smooth = false;
-    LineFormat::CompoundLineType compoundLineType = LineFormat::CLT_Single;
-    LineFormat::StrokeType strokeType = LineFormat::ST_Solid;
-    LineFormat::PointType pointType = LineFormat::PT_Square;
+    FillProperties fill;
+    std::optional<Coordinate> width; //pt or EMU
+    std::optional<LineFormat::CompoundLineType> compoundLineType;
+    std::optional<LineFormat::StrokeType> strokeType;
+    std::optional<LineFormat::LineCap> lineCap;
+    std::optional<LineFormat::PenAlignment> penAlignment;
+
+    std::optional<LineFormat::LineJoin> lineJoin;
+
+    std::optional<LineFormat::LineEndType> tailType;
+    std::optional<LineFormat::LineEndType> headType;
+    std::optional<LineFormat::LineEndSize> tailLength;
+    std::optional<LineFormat::LineEndSize> headLength;
+    std::optional<LineFormat::LineEndSize> tailWidth;
+    std::optional<LineFormat::LineEndSize> headWidth;
 
     LineFormatPrivate();
     LineFormatPrivate(const LineFormatPrivate &other);

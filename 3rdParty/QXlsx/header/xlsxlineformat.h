@@ -7,11 +7,14 @@
 #include <QColor>
 #include <QByteArray>
 #include <QList>
-#include <QExplicitlySharedDataPointer>
 #include <QVariant>
 #include <QXmlStreamWriter>
+#include <QSharedData>
 
 #include "xlsxglobal.h"
+#include "xlsxcolor.h"
+#include "xlsxfillproperties.h"
+#include "xlsxmain.h"
 
 QT_BEGIN_NAMESPACE_XLSX
 
@@ -20,113 +23,139 @@ class Worksheet;
 class WorksheetPrivate;
 class RichStringPrivate;
 class SharedStrings;
-
 class LineFormatPrivate;
 
 class QXLSX_EXPORT LineFormat
 {
 public:
-    enum LineType {
-        LT_NoLine,
-        LT_SolidLine,
-        LT_GradientLine
+    enum class CompoundLineType {
+        Single,
+        Double,
+        ThickThin,
+        ThinThick,
+        Triple,
     };
 
-    enum ColorType {
-        CT_RGB,
-        CT_Theme,
-        CT_Standard,
+    enum class StrokeType {
+        Solid,
+        Dot,
+        RoundDot,
+        Dash,
+        DashDot,
+        LongDash,
+        LongDashDot,
+        LongDashDotDot,
     };
 
-    //прозрачность - double [0..1]
-
-    enum CompoundLineType {
-        CLT_Single,
-        CLT_Double,
-        CLT_ThickThin,
-        CLT_ThinThick,
-        CLT_Triple,
+    enum class LineJoin {
+        Round,
+        Bevel,
+        Miter
     };
 
-    enum StrokeType {
-        ST_Solid,
-        ST_Dot,
-        ST_RoundDot,
-        ST_Dash,
-        ST_DashDot,
-        ST_LongDash,
-        ST_LongDashDot,
-        ST_LongDashDotDot,
+    enum class LineCap {
+        Square,
+        Round,
+        Flat,
     };
 
-    enum PointType {
-        PT_Square,
-        PT_Round,
-        PT_Flat,
+    enum class LineEndType {
+        None,
+        Triangle,
+        Stealth,
+        Oval,
+        Arrow,
+        Diamond
     };
 
-    enum ConnectionType {
-        CoT_Rounded,
-        CoT_Relief,
-        CoT_Straight,
+    enum class LineEndSize {
+        Small,
+        Medium,
+        Large
     };
 
-    enum ArrowType {
-        AT_NoArrow,
-        AT_SimpleArrow,
-        AT_OpenArrow,
-        AT_IncurvedArrow,
-        AT_DiamondArrow,
-        AT_RoundArrow,
+    enum class PenAlignment
+    {
+        Center,
+        Inset
     };
 
-    // размер стрелки - int [1..9]
-
-    // сглаженная линия - bool
-
-    LineFormat();
+    LineFormat(); //no fill
+    LineFormat(FillProperties::FillType fill, double widthInPt, QColor color); // quick create
+    LineFormat(FillProperties::FillType fill, qint64 widthInEMU, QColor color); // quick create
     LineFormat(const LineFormat &other);
     LineFormat &operator=(const LineFormat &rhs);
     ~LineFormat();
 
-    LineType lineType() const;
-    void setLineType(LineType type);
+    FillProperties::FillType type() const;
+    void setType(FillProperties::FillType type);
 
-    QColor color() const;
-    void setColor(const QColor &color);
+    Color color() const;
+    void setColor(const Color &color);
+    void setColor(const QColor &color); //assume color type is sRGB
 
-    bool smooth() const;
-    void setSmooth(bool smooth);
+    FillProperties fill() const;
+    void setFill(const FillProperties &fill);
 
-    double width() const;
-    void setWidth(double width);
+    /**
+     * @brief width returns width in range [0..20116800 EMU] or [0..1584 pt]
+     * @return optional value
+     */
+    std::optional<Coordinate> width() const;
+    /**
+     * @brief setWidth sets line width in points
+     * @param widthInPt width in range [0..1584 pt]
+     */
+    void setWidth(double widthInPt);
 
-    CompoundLineType compoundLineType() const;
-    void setCompoundLineType(CompoundLineType compoundLineType);
+    /**
+     * @brief setWidth sets line width in EMU
+     * @param widthInEMU width in range [0..20116800 EMU]
+     */
+    void setWidth(qint64 widthInEMU);
 
-    StrokeType strokeType() const;
-    void setStrokeType(StrokeType strokeType);
+    std::optional<PenAlignment> penAlignment() const;
+    void setPenAlignment(PenAlignment val);
 
-    PointType pointType() const;
-    void setPointType(PointType pointType);
+    std::optional<CompoundLineType> compoundLineType() const;
+    void setCompoundLineType(CompoundLineType val);
 
-    double alpha() const;
-    void setAlpha(double alpha);
+    std::optional<StrokeType> strokeType() const;
+    void setStrokeType(StrokeType val);
 
-    /* marker */
+    LineCap lineCap() const;
+    void setLineCap(LineCap val);
+
+    std::optional<LineJoin> lineJoin() const;
+    void setLineJoin(LineJoin val);
+
+    std::optional<LineEndType> lineEndType();
+    std::optional<LineEndType> lineStartType();
+    void setLineEndType(LineEndType val);
+    void setLineStartType(LineEndType val);
+
+    std::optional<LineEndSize> lineEndLength();
+    std::optional<LineEndSize> lineStartLength();
+    void setLineEndLength(LineEndSize val);
+    void setLineStartLength(LineEndSize val);
+
+    std::optional<LineEndSize> lineEndWidth();
+    std::optional<LineEndSize> lineStartWidth();
+    void setLineEndWidth(LineEndSize val);
+    void setLineStartWidth(LineEndSize val);
 
     bool isValid() const;
-    QByteArray formatKey() const;
 
     void write(QXmlStreamWriter &writer) const;
+    void read(QXmlStreamReader &reader);
 
-    bool operator == (const LineFormat &format) const;
-    bool operator != (const LineFormat &format) const;
+//    bool operator == (const LineFormat &format) const;
+//    bool operator != (const LineFormat &format) const;
 
 private:
-    friend   QDebug operator<<(QDebug, const LineFormat &f);
+    friend QDebug operator<<(QDebug, const LineFormat &f);
 
-    QExplicitlySharedDataPointer<LineFormatPrivate> d;
+    QSharedDataPointer<LineFormatPrivate> d;
 };
 
 #ifndef QT_NO_DEBUG_STREAM

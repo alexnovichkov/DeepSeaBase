@@ -17,6 +17,42 @@
 
 QT_BEGIN_NAMESPACE_XLSX
 
+double fromST_Percent(QStringRef val)
+{
+    if (val.endsWith('%')) {
+        val.chop(1);
+        return val.toDouble();
+    }
+    return val.toDouble()/1000;
+}
+
+double fromST_Angle(QStringRef val)
+{
+    // [-5400000..5400000] -> [-90..90°]
+    // [0..2160000] -> [0..360°]
+    return val.toDouble() / 60000.0;
+}
+
+bool fromST_Boolean(QStringRef val)
+{
+    return (val == "true" || val == "1");
+}
+
+QString toST_Angle(double angle)
+{
+    return QString::number(qRound(angle * 60000));
+}
+
+QString toST_Percent(double val)
+{
+    return QString::number(val, 'f')+'%';
+}
+
+QString toST_Boolean(bool val)
+{
+    return val ? "1" : "0";
+}
+
 bool parseXsdBoolean(const QString &value, bool defaultValue)
 {
     if (value == QLatin1String("1") || value == QLatin1String("true"))
@@ -286,6 +322,31 @@ QString convertSharedFormula(const QString &rootFormula, const CellReference &ro
 
     //OK
     return result.join(QString());
+}
+
+//void parseAttributeBool(const QXmlStreamAttributes &a, const QLatin1String &name, bool &target)
+//{
+//    if (a.hasAttribute(name)) target = fromST_Boolean(a.value(name));
+//}
+
+void parseAttributePercent(const QXmlStreamAttributes &a, const QLatin1String &name, std::optional<double> &target)
+{
+    if (a.hasAttribute(name)) target = fromST_Percent(a.value(name));
+}
+
+void parseAttributeInt(const QXmlStreamAttributes &a, const QLatin1String &name, std::optional<int> &target)
+{
+    if (a.hasAttribute(name)) target = a.value(name).toInt();
+}
+
+void parseAttributeBool(const QXmlStreamAttributes &a, const QLatin1String &name, std::optional<bool> &target)
+{
+    if (a.hasAttribute(name)) target = fromST_Boolean(a.value(name));
+}
+
+void parseAttributeInt(const QXmlStreamAttributes &a, const QLatin1String &name, int &target)
+{
+    if (a.hasAttribute(name)) target = a.value(name).toInt();
 }
 
 QT_END_NAMESPACE_XLSX

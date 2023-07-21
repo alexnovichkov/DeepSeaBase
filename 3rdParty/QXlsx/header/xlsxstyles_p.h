@@ -55,7 +55,7 @@
 QT_BEGIN_NAMESPACE_XLSX
 
 class Format;
-class XlsxColor;
+class Color;
 
 struct XlsxFormatNumberData
 {
@@ -93,7 +93,7 @@ private:
     void writeFill(QXmlStreamWriter &writer, const Format &fill, bool isDxf = false) const;
     void writeBorders(QXmlStreamWriter &writer) const;
     void writeBorder(QXmlStreamWriter &writer, const Format &border, bool isDxf = false) const;
-    void writeSubBorder(QXmlStreamWriter &writer, const QString &type, int style, const XlsxColor &color) const;
+    void writeSubBorder(QXmlStreamWriter &writer, const QString &type, int style, const Color &color) const;
     void writeCellXfs(QXmlStreamWriter &writer) const;
     void writeDxfs(QXmlStreamWriter &writer) const;
     void writeDxf(QXmlStreamWriter &writer, const Format &format) const;
@@ -106,7 +106,7 @@ private:
     bool readFill(QXmlStreamReader &reader, Format &format);
     bool readBorders(QXmlStreamReader &reader);
     bool readBorder(QXmlStreamReader &reader, Format &format);
-    bool readSubBorder(QXmlStreamReader &reader, const QString &name, Format::BorderStyle &style, XlsxColor &color);
+    bool readSubBorder(QXmlStreamReader &reader, const QString &name, Format::BorderStyle &style, Color &color);
     bool readCellXfs(QXmlStreamReader &reader);
     bool readDxfs(QXmlStreamReader &reader);
     bool readDxf(QXmlStreamReader &reader);

@@ -134,6 +134,9 @@ bool QCPAxisHandle::draggable() const
 bool QCPAxisHandle::underMouse(const QPoint &pos, double *distanceX, double *distanceY, SelectedPoint *point) const
 {
     Q_UNUSED(point);
+    Q_UNUSED(pos);
+    Q_UNUSED(distanceX);
+    Q_UNUSED(distanceY);
     return false;
 }
 

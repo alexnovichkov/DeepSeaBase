@@ -12,7 +12,7 @@
 #include "xlsxsharedstrings_p.h"
 #include "xlsxutility_p.h"
 #include "xlsxformat_p.h"
-#include "xlsxcolor_p.h"
+#include "xlsxcolor.h"
 
 QT_BEGIN_NAMESPACE_XLSX
 
@@ -170,8 +170,8 @@ void SharedStrings::writeRichStringPart_rPr(QXmlStreamWriter &writer, const Form
     }
 
     if (format.hasProperty(FormatPrivate::P_Font_Color)) {
-        XlsxColor color = format.property(FormatPrivate::P_Font_Color).value<XlsxColor>();
-        color.saveToXml(writer);
+        Color color = format.property(FormatPrivate::P_Font_Color).value<Color>();
+        color.write(writer);
     }
 
     if (!format.fontName().isEmpty()) {
@@ -319,8 +319,8 @@ Format SharedStrings::readRichStringPart_rPr(QXmlStreamReader &reader)
             } else if (reader.name() == QLatin1String("extend")) {
                 format.setProperty(FormatPrivate::P_Font_Extend, attributes.value(QLatin1String("val")).toInt());
             } else if (reader.name() == QLatin1String("color")) {
-                XlsxColor color;
-                color.loadFromXml(reader);
+                Color color;
+                color.read(reader);
                 format.setProperty(FormatPrivate::P_Font_Color, color);
             } else if (reader.name() == QLatin1String("sz")) {
                 format.setFontSize(attributes.value(QLatin1String("val")).toInt());

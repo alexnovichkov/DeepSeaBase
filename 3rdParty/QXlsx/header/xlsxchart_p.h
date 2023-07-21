@@ -27,8 +27,8 @@ public:
     QString headerH_numRef;
     QString headerV_numRef;
     bool    swapHeader = false;
-    LineFormat lineFormat;
-    MarkerFormat markerFormat;
+    ShapeProperties shape;
+    MarkerFormat marker;
     QList<int> axes; //2...
 };
 
@@ -62,15 +62,15 @@ protected:
     bool loadXmlAxisDateAx(QXmlStreamReader &reader);
     bool loadXmlAxisSerAx(QXmlStreamReader &reader);
     bool loadXmlAxisValAx(QXmlStreamReader &reader);
-    bool loadXmlAxisEG_AxShared(QXmlStreamReader &reader, XlsxAxis* axis);
-    bool loadXmlAxisEG_AxShared_Scaling(QXmlStreamReader &reader, XlsxAxis* axis);
-    bool loadXmlAxisEG_AxShared_Title(QXmlStreamReader &reader, XlsxAxis* axis);
-    bool loadXmlAxisEG_AxShared_Title_Overlay(QXmlStreamReader &reader, XlsxAxis* axis);
-    bool loadXmlAxisEG_AxShared_Title_Tx(QXmlStreamReader &reader, XlsxAxis* axis);
-    bool loadXmlAxisEG_AxShared_Title_Tx_Rich(QXmlStreamReader &reader, XlsxAxis* axis);
-    bool loadXmlAxisEG_AxShared_Title_Tx_Rich_P(QXmlStreamReader &reader, XlsxAxis* axis);
-    bool loadXmlAxisEG_AxShared_Title_Tx_Rich_P_pPr(QXmlStreamReader &reader, XlsxAxis* axis);
-    bool loadXmlAxisEG_AxShared_Title_Tx_Rich_P_R(QXmlStreamReader &reader, XlsxAxis* axis);
+    bool loadXmlAxisEG_AxShared(QXmlStreamReader &reader, Axis* axis);
+    bool loadXmlAxisEG_AxShared_Scaling(QXmlStreamReader &reader, Axis* axis);
+    bool loadXmlAxisEG_AxShared_Title(QXmlStreamReader &reader, Axis* axis);
+    bool loadXmlAxisEG_AxShared_Title_Overlay(QXmlStreamReader &reader, Axis* axis);
+    bool loadXmlAxisEG_AxShared_Title_Tx(QXmlStreamReader &reader, Axis* axis);
+    bool loadXmlAxisEG_AxShared_Title_Tx_Rich(QXmlStreamReader &reader, Axis* axis);
+    bool loadXmlAxisEG_AxShared_Title_Tx_Rich_P(QXmlStreamReader &reader, Axis* axis);
+    bool loadXmlAxisEG_AxShared_Title_Tx_Rich_P_pPr(QXmlStreamReader &reader, Axis* axis);
+    bool loadXmlAxisEG_AxShared_Title_Tx_Rich_P_R(QXmlStreamReader &reader, Axis* axis);
 
     QString readSubTree(QXmlStreamReader &reader);
 
@@ -88,20 +88,20 @@ public:
     void saveXmlChartLegend(QXmlStreamWriter &writer) const;
 
 protected:
-    void saveXmlAxisCatAx(QXmlStreamWriter &writer, XlsxAxis* axis) const;
-    void saveXmlAxisDateAx(QXmlStreamWriter &writer, XlsxAxis* axis) const;
-    void saveXmlAxisSerAx(QXmlStreamWriter &writer, XlsxAxis* axis) const;
-    void saveXmlAxisValAx(QXmlStreamWriter &writer, XlsxAxis* axis) const;
+    void saveXmlAxisCatAx(QXmlStreamWriter &writer, Axis* axis) const;
+    void saveXmlAxisDateAx(QXmlStreamWriter &writer, Axis* axis) const;
+    void saveXmlAxisSerAx(QXmlStreamWriter &writer, Axis* axis) const;
+    void saveXmlAxisValAx(QXmlStreamWriter &writer, Axis* axis) const;
 
-    void saveXmlAxisEG_AxShared(QXmlStreamWriter &writer, XlsxAxis* axis) const;
-    void saveXmlAxisEG_AxShared_Title(QXmlStreamWriter &writer, XlsxAxis* axis) const;
-    QString GetAxisPosString( XlsxAxis::Position axisPos ) const;
-    QString GetAxisName(XlsxAxis* ptrXlsxAxis) const;
+    void saveXmlAxisEG_AxShared(QXmlStreamWriter &writer, Axis* axis) const;
+    void saveXmlAxisEG_AxShared_Title(QXmlStreamWriter &writer, Axis* axis) const;
+    QString GetAxisPosString( Axis::Position axisPos ) const;
+    QString GetAxisName(Axis* ptrXlsxAxis) const;
 
 public:
     Chart::ChartType chartType;
     QList< std::shared_ptr<XlsxSeries> > seriesList;
-    QList< std::shared_ptr<XlsxAxis> > axisList;
+    QList< std::shared_ptr<Axis> > axisList;
     QString chartTitle;
     AbstractSheet* sheet;
     Chart::ChartAxisPos legendPos;

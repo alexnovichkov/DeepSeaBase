@@ -79,6 +79,16 @@ RichString &RichString::operator =(const RichString &other)
     return *this;
 }
 
+void RichString::read(QXmlStreamReader &reader)
+{
+
+}
+
+void RichString::write(QXmlStreamWriter &writer)
+{
+
+}
+
 /*!
     Returns the rich string as a QVariant
 */

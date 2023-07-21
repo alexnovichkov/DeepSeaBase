@@ -420,11 +420,7 @@ bool CellFormula::loadFromXml(QXmlStreamReader &reader)
     {
         QString ca = attributes.value(QLatin1String("si")).toString();
         d->ca = parseXsdBoolean(ca, false);
-
-        if (attributes.hasAttribute(QLatin1String("si")))
-        {
-            d->si = attributes.value(QLatin1String("si")).toInt();
-        }
+        parseAttributeInt(attributes, QLatin1String("si"), d->si);
     }
 
     d->formula = reader.readElementText(); // read formula
