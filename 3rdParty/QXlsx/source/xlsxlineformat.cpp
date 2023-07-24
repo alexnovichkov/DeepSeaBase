@@ -295,13 +295,9 @@ void LineFormat::write(QXmlStreamWriter &writer) const
     writer.writeStartElement("a:ln");
     if (d->width.has_value()) writer.writeAttribute("w", d->width->toString());
     if (d->compoundLineType.has_value()) {
-        switch (d->compoundLineType.value()) {
-            case CompoundLineType::Single: writer.writeAttribute("cmpd", "sng"); break;
-            case CompoundLineType::Double: writer.writeAttribute("cmpd", "dbl"); break;
-            case CompoundLineType::ThickThin: writer.writeAttribute("cmpd", "thickThin"); break;
-            case CompoundLineType::ThinThick: writer.writeAttribute("cmpd", "thinThick"); break;
-            case CompoundLineType::Triple: writer.writeAttribute("cmpd", "tri"); break;
-        }
+        QString s;
+        toString(d->compoundLineType.value(), s);
+        writer.writeAttribute("cmpd", s);
     }
     if (d->lineCap.has_value()) {
         switch (d->lineCap.value()) {
@@ -425,24 +421,16 @@ void LineFormat::read(QXmlStreamReader &reader)
         auto token = reader.readNext();
         if (token == QXmlStreamReader::StartElement) {
             if (reader.name() == "noFill") {
-                FillProperties fill(FillProperties::FillType::NoFill);
-                fill.read(reader);
-                d->fill = fill;
+                d->fill.read(reader);
             }
             if (reader.name() == "solidFill") {
-                FillProperties fill(FillProperties::FillType::SolidFill);
-                fill.read(reader);
-                d->fill = fill;
+                d->fill.read(reader);
             }
             if (reader.name() == "gradFill") {
-                FillProperties fill(FillProperties::FillType::GradientFill);
-                fill.read(reader);
-                d->fill = fill;
+                d->fill.read(reader);
             }
             if (reader.name() == "pattFill") {
-                FillProperties fill(FillProperties::FillType::PatternFill);
-                fill.read(reader);
-                d->fill = fill;
+                d->fill.read(reader);
             }
             if (reader.name() == "prstDash") {
                 auto val = reader.attributes().value("val");

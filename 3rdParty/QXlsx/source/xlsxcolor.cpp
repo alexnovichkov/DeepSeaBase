@@ -98,27 +98,10 @@ QString Color::schemeColor() const
     if (type != ColorType::SchemeColor) return QString();
 
     SchemeColor c = static_cast<SchemeColor>(val.toInt());
-    switch (c) {
-        case SchemeColor::Background1: return "bg1";
-        case SchemeColor::Text1: return "tx1";
-        case SchemeColor::Background2: return "bg2";
-        case SchemeColor::Text2: return "bg1";
-        case SchemeColor::Accent1: return "accent1";
-        case SchemeColor::Accent2: return "accent2";
-        case SchemeColor::Accent3: return "accent3";
-        case SchemeColor::Accent4: return "accent4";
-        case SchemeColor::Accent5: return "accent5";
-        case SchemeColor::Accent6: return "accent6";
-        case SchemeColor::Hlink: return "hlink";
-        case SchemeColor::FollowedHlink: return "folHlink";
-        case SchemeColor::Style: return "phClr";
-        case SchemeColor::Dark1: return "dk1";
-        case SchemeColor::Light1: return "lt1";
-        case SchemeColor::Dark2: return "dk2";
-        case SchemeColor::Light2: return "lt2";
-    }
+    QString s;
+    toString(c, s);
 
-    return QString();
+    return s;
 }
 
 QString Color::systemColor() const
@@ -126,40 +109,10 @@ QString Color::systemColor() const
     if (type != ColorType::SystemColor) return QString();
 
     SystemColor c = static_cast<SystemColor>(val.toInt());
-    switch (c) {
-        case SystemColor::scrollBar: return QLatin1String("scrollBar");
-        case SystemColor::background: return QLatin1String("background");
-        case SystemColor::activeCaption: return QLatin1String("activeCaption");
-        case SystemColor::inactiveCaption: return QLatin1String("inactiveCaption");
-        case SystemColor::menu: return QLatin1String("menu");
-        case SystemColor::window: return QLatin1String("window");
-        case SystemColor::windowFrame: return QLatin1String("windowFrame");
-        case SystemColor::menuText: return QLatin1String("menuText");
-        case SystemColor::windowText: return QLatin1String("windowText");
-        case SystemColor::captionText: return QLatin1String("captionText");
-        case SystemColor::activeBorder: return QLatin1String("activeBorder");
-        case SystemColor::inactiveBorder: return QLatin1String("inactiveBorder");
-        case SystemColor::appWorkspace: return QLatin1String("appWorkspace");
-        case SystemColor::highlight: return QLatin1String("highlight");
-        case SystemColor::highlightText: return QLatin1String("highlightText");
-        case SystemColor::btnFace: return QLatin1String("btnFace");
-        case SystemColor::btnShadow: return QLatin1String("btnShadow");
-        case SystemColor::grayText: return QLatin1String("grayText");
-        case SystemColor::btnText: return QLatin1String("btnText");
-        case SystemColor::inactiveCaptionText: return QLatin1String("inactiveCaptionText");
-        case SystemColor::btnHighlight: return QLatin1String("btnHighlight");
-        case SystemColor::DkShadow3d: return QLatin1String("3dDkShadow");
-        case SystemColor::Light3d: return QLatin1String("3dLight");
-        case SystemColor::infoText: return QLatin1String("infoText");
-        case SystemColor::infoBk: return QLatin1String("infoBk");
-        case SystemColor::hotLight: return QLatin1String("hotLight");
-        case SystemColor::gradientActiveCaption: return QLatin1String("gradientActiveCaption");
-        case SystemColor::gradientInactiveCaption: return QLatin1String("gradientInactiveCaption");
-        case SystemColor::menuHighlight: return QLatin1String("menuHighlight");
-        case SystemColor::menuBar: return QLatin1String("menuBar");
-    }
+    QString s;
+    toString(c, s);
 
-    return QString();
+    return s;
 }
 
 int Color::indexedColor() const
@@ -258,6 +211,7 @@ bool Color::write(QXmlStreamWriter &writer, const QString &node) const
             writer.writeEndElement();
             break;
         }
+        default: break;
     }
 
     return true;
@@ -329,60 +283,18 @@ bool Color::read(QXmlStreamReader &reader)
             break;
         }
         case ColorType::SchemeColor: {
-            const auto& colorString = attributes.value(QLatin1String("val"));
-            if (colorString == QLatin1String("bg1")) setSchemeColor(SchemeColor::Background1);
-            else if (colorString == QLatin1String("tx1")) setSchemeColor(SchemeColor::Text1);
-            else if (colorString == QLatin1String("bg2")) setSchemeColor(SchemeColor::Background2);
-            else if (colorString == QLatin1String("bg1")) setSchemeColor(SchemeColor::Text2);
-            else if (colorString == QLatin1String("accent1")) setSchemeColor(SchemeColor::Accent1);
-            else if (colorString == QLatin1String("accent2")) setSchemeColor(SchemeColor::Accent2);
-            else if (colorString == QLatin1String("accent3")) setSchemeColor(SchemeColor::Accent3);
-            else if (colorString == QLatin1String("accent4")) setSchemeColor(SchemeColor::Accent4);
-            else if (colorString == QLatin1String("accent5")) setSchemeColor(SchemeColor::Accent5);
-            else if (colorString == QLatin1String("accent6")) setSchemeColor(SchemeColor::Accent6);
-            else if (colorString == QLatin1String("hlink")) setSchemeColor(SchemeColor::Hlink);
-            else if (colorString == QLatin1String("folHlink")) setSchemeColor(SchemeColor::FollowedHlink);
-            else if (colorString == QLatin1String("phClr")) setSchemeColor(SchemeColor::Style);
-            else if (colorString == QLatin1String("dk1")) setSchemeColor(SchemeColor::Dark1);
-            else if (colorString == QLatin1String("lt1")) setSchemeColor(SchemeColor::Light1);
-            else if (colorString == QLatin1String("dk2")) setSchemeColor(SchemeColor::Dark2);
-            else if (colorString == QLatin1String("lt2")) setSchemeColor(SchemeColor::Light2);
+            const auto& colorString = attributes.value(QLatin1String("val")).toString();
+            Color::SchemeColor col;
+            fromString(colorString, col);
+            setSchemeColor(col);
             tr.read(reader);
             break;
         }
         case ColorType::SystemColor: {
-            const auto& colorString = attributes.value(QLatin1String("val"));
-            if (colorString == QLatin1String("scrollBar")) setSystemColor(SystemColor::scrollBar);
-            if (colorString == QLatin1String("background")) setSystemColor( SystemColor::background);
-            if (colorString == QLatin1String("activeCaption")) setSystemColor( SystemColor::activeCaption);
-            if (colorString == QLatin1String("inactiveCaption")) setSystemColor( SystemColor::inactiveCaption);
-            if (colorString == QLatin1String("menu")) setSystemColor( SystemColor::menu);
-            if (colorString == QLatin1String("window")) setSystemColor( SystemColor::window);
-            if (colorString == QLatin1String("windowFrame")) setSystemColor( SystemColor::windowFrame);
-            if (colorString == QLatin1String("menuText")) setSystemColor( SystemColor::menuText);
-            if (colorString == QLatin1String("windowText")) setSystemColor( SystemColor::windowText);
-            if (colorString == QLatin1String("captionText")) setSystemColor( SystemColor::captionText);
-            if (colorString == QLatin1String("activeBorder")) setSystemColor( SystemColor::activeBorder);
-            if (colorString == QLatin1String("inactiveBorder")) setSystemColor( SystemColor::inactiveBorder);
-            if (colorString == QLatin1String("appWorkspace")) setSystemColor( SystemColor::appWorkspace);
-            if (colorString == QLatin1String("highlight")) setSystemColor( SystemColor::highlight);
-            if (colorString == QLatin1String("highlightText")) setSystemColor( SystemColor::highlightText);
-            if (colorString == QLatin1String("btnFace")) setSystemColor( SystemColor::btnFace);
-            if (colorString == QLatin1String("btnShadow")) setSystemColor( SystemColor::btnShadow);
-            if (colorString == QLatin1String("grayText")) setSystemColor( SystemColor::grayText);
-            if (colorString == QLatin1String("btnText")) setSystemColor( SystemColor::btnText);
-            if (colorString == QLatin1String("inactiveCaptionText")) setSystemColor( SystemColor::inactiveCaptionText);
-            if (colorString == QLatin1String("btnHighlight")) setSystemColor( SystemColor::btnHighlight);
-            if (colorString == QLatin1String("3dDkShadow")) setSystemColor( SystemColor::DkShadow3d);
-            if (colorString == QLatin1String("3dLight")) setSystemColor( SystemColor::Light3d);
-            if (colorString == QLatin1String("infoText")) setSystemColor( SystemColor::infoText);
-            if (colorString == QLatin1String("infoBk")) setSystemColor( SystemColor::infoBk);
-            if (colorString == QLatin1String("hotLight")) setSystemColor( SystemColor::hotLight);
-            if (colorString == QLatin1String("gradientActiveCaption")) setSystemColor( SystemColor::gradientActiveCaption);
-            if (colorString == QLatin1String("gradientInactiveCaption")) setSystemColor( SystemColor::gradientInactiveCaption);
-            if (colorString == QLatin1String("menuHighlight")) setSystemColor( SystemColor::menuHighlight);
-            if (colorString == QLatin1String("menuBar")) setSystemColor( SystemColor::menuBar);
-
+            const auto& colorString = attributes.value(QLatin1String("val")).toString();
+            Color::SystemColor col;
+            fromString(colorString, col);
+            setSystemColor(col);
             tr.read(reader);
 
             //TODO: integrate lastColor to val
@@ -391,6 +303,7 @@ bool Color::read(QXmlStreamReader &reader)
 //                lastColor = fromARGBString(attributes.value("lastClr").toString());
             break;
         }
+        default: break;
     }
     return true;
 }

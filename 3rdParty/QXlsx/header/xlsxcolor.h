@@ -10,6 +10,7 @@
 #include <QXmlStreamReader>
 
 #include "xlsxglobal.h"
+#include "xlsxutility_p.h"
 
 QT_BEGIN_NAMESPACE_XLSX
 
@@ -104,36 +105,37 @@ public:
 
     enum class SystemColor
     {
-        scrollBar,
-        background,
-        activeCaption,
-        inactiveCaption,
-        menu,
-        window,
-        windowFrame,
-        menuText,
-        windowText,
-        captionText,
-        activeBorder,
-        inactiveBorder,
-        appWorkspace,
-        highlight,
-        highlightText,
-        btnFace,
-        btnShadow,
-        grayText,
-        btnText,
-        inactiveCaptionText,
-        btnHighlight,
-        DkShadow3d,
+        None,
+        ScrollBar,
+        Background,
+        ActiveCaption,
+        InactiveCaption,
+        Menu,
+        Window,
+        WindowFrame,
+        MenuText,
+        WindowText,
+        CaptionText,
+        ActiveBorder,
+        InactiveBorder,
+        ApplicationWorkspace,
+        Highlight,
+        HighlightText,
+        ButtonFace,
+        ButtonShadow,
+        GrayText,
+        ButtonText,
+        InactiveCaptionText,
+        ButtonHighlight,
+        DarkShadow3d,
         Light3d,
-        infoText,
-        infoBk,
-        hotLight,
-        gradientActiveCaption,
-        gradientInactiveCaption,
-        menuHighlight,
-        menuBar,
+        InfoText,
+        InfoBackground,
+        HotLight,
+        GradientActiveCaption,
+        GradientInactiveCaption,
+        MenuHighlight,
+        MenuBar,
     };
 
     explicit Color();
@@ -170,6 +172,58 @@ public:
     bool read(QXmlStreamReader &reader);
 
 private:
+    SERIALIZE_ENUM(SchemeColor, {
+        {SchemeColor::Background1, "bg1"},
+        {SchemeColor::Text1, "tx1"},
+        {SchemeColor::Background2, "bg2"},
+        {SchemeColor::Text2, "bg1"},
+        {SchemeColor::Accent1, "accent1"},
+        {SchemeColor::Accent2, "accent2"},
+        {SchemeColor::Accent3, "accent3"},
+        {SchemeColor::Accent4, "accent4"},
+        {SchemeColor::Accent5, "accent5"},
+        {SchemeColor::Accent6, "accent6"},
+        {SchemeColor::Hlink, "hlink"},
+        {SchemeColor::FollowedHlink, "folHlink"},
+        {SchemeColor::Style, "phClr"},
+        {SchemeColor::Dark1, "dk1"},
+        {SchemeColor::Light1, "lt1"},
+        {SchemeColor::Dark2, "dk2"},
+        {SchemeColor::Light2, "lt2"},
+    });
+    SERIALIZE_ENUM(SystemColor, {
+        {SystemColor::ScrollBar, "scrollBar"},
+        {SystemColor::Background, "background"},
+        {SystemColor::ActiveCaption, "activeCaption"},
+        {SystemColor::InactiveCaption, "inactiveCaption"},
+        {SystemColor::Menu, "menu"},
+        {SystemColor::Window, "window"},
+        {SystemColor::WindowFrame, "windowFrame"},
+        {SystemColor::MenuText, "menuText"},
+        {SystemColor::WindowText, "windowText"},
+        {SystemColor::CaptionText, "captionText"},
+        {SystemColor::ActiveBorder, "activeBorder"},
+        {SystemColor::InactiveBorder, "inactiveBorder"},
+        {SystemColor::ApplicationWorkspace, "appWorkspace"},
+        {SystemColor::Highlight, "highlight"},
+        {SystemColor::HighlightText, "highlightText"},
+        {SystemColor::ButtonFace, "btnFace"},
+        {SystemColor::ButtonShadow, "btnShadow"},
+        {SystemColor::GrayText, "grayText"},
+        {SystemColor::ButtonText, "btnText"},
+        {SystemColor::InactiveCaptionText, "inactiveCaptionText"},
+        {SystemColor::ButtonHighlight, "btnHighlight"},
+        {SystemColor::DarkShadow3d, "3dDkShadow"},
+        {SystemColor::Light3d, "3dLight"},
+        {SystemColor::InfoText, "infoText"},
+        {SystemColor::InfoBackground, "infoBk"},
+        {SystemColor::HotLight, "hotLight"},
+        {SystemColor::GradientActiveCaption, "gradientActiveCaption"},
+        {SystemColor::GradientInactiveCaption, "gradientInactiveCaption"},
+        {SystemColor::MenuHighlight, "menuHighlight"},
+        {SystemColor::MenuBar, "menuBar"},
+    });
+
     QVariant val;
     ColorType type = ColorType::Invalid;
     ColorTransform tr;

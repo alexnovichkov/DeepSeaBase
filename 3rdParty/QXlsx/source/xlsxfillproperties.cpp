@@ -101,10 +101,17 @@ void FillProperties::write(QXmlStreamWriter &writer) const
 
 void FillProperties::read(QXmlStreamReader &reader)
 {
-    if (!d) return;
+    const QString &name = reader.name().toString();
+    FillType t;
+    fromString(name, t);
+
+    if (t == FillType::NoFill) return;
+    if (!d) {
+        d = new FillPropertiesPrivate;
+        d->type = t;
+    }
 
     switch (d->type) {
-        case FillType::NoFill : readNoFill(reader); break;
         case FillType::SolidFill : readSolidFill(reader); break;
 
         case FillType::GradientFill : readGradientFill(reader); break;
@@ -112,6 +119,7 @@ void FillProperties::read(QXmlStreamReader &reader)
 //        case FillType::BlipFill : readBlipFill(reader); break;
 //        case FillType::PatternFill : readPatternFill(reader); break;
 //        case FillType::GroupFill : readGroupFill(reader); break;
+        default: break;
     }
 }
 
@@ -141,11 +149,9 @@ void FillProperties::readGradientFill(QXmlStreamReader &reader)
 
     const auto &attr = reader.attributes();
     if (attr.hasAttribute(QLatin1String("flip"))) {
-        const auto &s = attr.value(QLatin1String("flip"));
-        if (s == QLatin1String("none")) d->tileFlipMode = TileFlipMode::None;
-        if (s == QLatin1String("x")) d->tileFlipMode = TileFlipMode::X;
-        if (s == QLatin1String("y")) d->tileFlipMode = TileFlipMode::Y;
-        if (s == QLatin1String("xy")) d->tileFlipMode = TileFlipMode::XY;
+        TileFlipMode t;
+        fromString(attr.value(QLatin1String("flip")).toString(), t);
+        d->tileFlipMode = t;
     }
     parseAttributeBool(attr, QLatin1String("rotWithShape"), d->rotWithShape);
 
@@ -223,12 +229,9 @@ void FillProperties::writeGradientFill(QXmlStreamWriter &writer) const
 {
     writer.writeStartElement(QLatin1String("a:gradFill"));
     if (d->tileFlipMode.has_value()) {
-        switch (d->tileFlipMode.value()) {
-            case TileFlipMode::None: writer.writeAttribute("flip", "none"); break;
-            case TileFlipMode::X: writer.writeAttribute("flip", "x"); break;
-            case TileFlipMode::Y: writer.writeAttribute("flip", "y"); break;
-            case TileFlipMode::XY: writer.writeAttribute("flip", "xy"); break;
-        }
+        QString s;
+        toString(d->tileFlipMode.value(), s);
+        writer.writeAttribute("flip", s);
     }
     if (d->rotWithShape.has_value()) writer.writeAttribute("rotWithShape", d->rotWithShape.value() ? "true" : "false");
     writeGradientList(writer);

@@ -132,34 +132,22 @@ void ShapeProperties::read(QXmlStreamReader &reader)
                 d->presetGeometry->read(reader);
             }
             else if (reader.name() == QLatin1String("noFill")) {
-                FillProperties p(FillProperties::FillType::NoFill);
-                p.read(reader);
-                d->fill = p;
+                d->fill.read(reader);
             }
             else if (reader.name() == QLatin1String("solidFill")) {
-                FillProperties p(FillProperties::FillType::SolidFill);
-                p.read(reader);
-                d->fill = p;
+                d->fill.read(reader);
             }
             else if (reader.name() == QLatin1String("gradFill")) {
-                FillProperties p(FillProperties::FillType::GradientFill);
-                p.read(reader);
-                d->fill = p;
+                d->fill.read(reader);
             }
             else if (reader.name() == QLatin1String("blipFill")) {
-                FillProperties p(FillProperties::FillType::BlipFill);
-                p.read(reader);
-                d->fill = p;
+                d->fill.read(reader);
             }
             else if (reader.name() == QLatin1String("pattFill")) {
-                FillProperties p(FillProperties::FillType::PatternFill);
-                p.read(reader);
-                d->fill = p;
+                d->fill.read(reader);
             }
             else if (reader.name() == QLatin1String("grpFill")) {
-                FillProperties p(FillProperties::FillType::GroupFill);
-                p.read(reader);
-                d->fill = p;
+                d->fill.read(reader);
             }
             else if (reader.name() == QLatin1String("ln")) {
                 d->line.read(reader);

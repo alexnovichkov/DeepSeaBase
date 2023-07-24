@@ -13,6 +13,7 @@
 #include "xlsxglobal.h"
 #include "xlsxcolor.h"
 #include "xlsxmain.h"
+#include "xlsxutility_p.h"
 
 QT_BEGIN_NAMESPACE_XLSX
 
@@ -71,6 +72,25 @@ public:
     void read(QXmlStreamReader &reader);
 
 private:
+    SERIALIZE_ENUM(FillType, {
+        {FillType::NoFill, "noFill"},
+        {FillType::SolidFill, "solidFill"},
+        {FillType::GradientFill, "gradFill"},
+        {FillType::BlipFill, "blipFill"},
+        {FillType::PatternFill, "pattFill"},
+        {FillType::GroupFill, "grpFill"},
+    });
+    SERIALIZE_ENUM(PathShadeType, {
+        {PathShadeType::Shape, "shape"},
+        {PathShadeType::Circle, "circle"},
+        {PathShadeType::Rectangle, "rect"},
+    });
+    SERIALIZE_ENUM(TileFlipMode, {
+        {TileFlipMode::None, "none"},
+        {TileFlipMode::X, "x"},
+        {TileFlipMode::Y, "y"},
+        {TileFlipMode::XY, "xy"},
+    });
     friend QDebug operator<<(QDebug, const FillProperties &f);
     QSharedDataPointer<FillPropertiesPrivate> d;
     void readNoFill(QXmlStreamReader &reader);

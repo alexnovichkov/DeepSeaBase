@@ -187,13 +187,7 @@ void Axis::write(QXmlStreamWriter &writer) const
     }
 
     writer.writeEmptyElement("c:axPos");
-    switch (d->position) {
-        case Position::Top: writer.writeAttribute("val", "t"); break;
-        case Position::Bottom: writer.writeAttribute("val", "b"); break;
-        case Position::Left: writer.writeAttribute("val", "l"); break;
-        case Position::Right: writer.writeAttribute("val", "r"); break;
-        default: break;
-    }
+    QString s; toString(d->position, s); writer.writeAttribute(QLatin1String("val"), s);
 
     if (d->majorGridlines.isValid()) {
         writer.writeStartElement("c:majorGridlines");
@@ -236,11 +230,8 @@ void Axis::read(QXmlStreamReader &reader)
                 parseAttributeBool(reader.attributes(), QLatin1String("val"), d->visible);
             }
             else if (reader.name() == QLatin1String("axPos")) {
-                const auto &pos = reader.attributes().value("val");
-                if (pos == "b") d->position = Position::Bottom;
-                if (pos == "t") d->position = Position::Top;
-                if (pos == "l") d->position = Position::Left;
-                if (pos == "r") d->position = Position::Right;
+                const auto &pos = reader.attributes().value("val").toString();
+                fromString(pos, d->position);
             }
             else if (reader.name() == QLatin1String("majorGridlines")) {
                 reader.readNextStartElement();
@@ -295,7 +286,7 @@ bool Axis::operator !=(const Axis &axis) const
     return false;
 }
 
-AxisPrivate::AxisPrivate() : type(Axis::Type::None), position(Axis::Position::None)
+AxisPrivate::AxisPrivate() : position(Axis::Position::None), type(Axis::Type::None)
 {
 
 }

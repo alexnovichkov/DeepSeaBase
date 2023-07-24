@@ -12,6 +12,7 @@
 
 #include "xlsxglobal.h"
 #include "xlsxshapeproperties.h"
+#include "xlsxutility_p.h"
 
 QT_BEGIN_NAMESPACE_XLSX
 
@@ -78,6 +79,21 @@ public:
     bool operator != (const Axis &axis) const;
 
 private:
+    SERIALIZE_ENUM(Type, {
+                       {Type::None, "none"},
+                       {Type::Cat, "cat"},
+                       {Type::None, "none"},
+                       {Type::None, "none"}
+
+                   });
+
+    SERIALIZE_ENUM(Position, {
+                       {Position::None, "none"},
+                       {Position::Top, "t"},
+                       {Position::Bottom, "b"},
+                       {Position::Left, "l"},
+                       {Position::Right, "r"}
+                   });
     friend QDebug operator<<(QDebug, const Axis &axis);
 
     QSharedDataPointer<AxisPrivate> d;

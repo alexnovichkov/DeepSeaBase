@@ -10,6 +10,7 @@
 #include <QXmlStreamWriter>
 
 #include "xlsxmain.h"
+#include "xlsxfont.h"
 
 QT_BEGIN_NAMESPACE_XLSX
 
@@ -82,43 +83,24 @@ public:
     std::optional<Scene3D> text3D;
     std::optional<Coordinate> z;
 
-    QByteArray idKey() const;
+    //QByteArray idKey() const;
     bool isValid() const;
+
+    void read(QXmlStreamReader &reader);
+    void write(QXmlStreamWriter &writer);
 };
 
 /**
- * @brief The TextSpacing class
- * The class is used to set line spacing or spacing before and after a paragraph of text.
- * Spacing can either be set as a whole positive number or as a percentage.
+ * @brief The Size class
+ * The class is used to set a size either in points or in percents.
+ * Size can either be set as a whole positive number (int) or as a percentage (double).
  */
-class TextSpacing
+class Size
 {
-//    <xsd:complexType name="CT_TextSpacing">
-//      <xsd:choice>
-//        <xsd:element name="spcPct" type="CT_TextSpacingPercent"/>
-//        <xsd:element name="spcPts" type="CT_TextSpacingPoint"/>
-//      </xsd:choice>
-//    </xsd:complexType>
-
-//    <xsd:complexType name="CT_TextSpacingPoint">
-//      <xsd:attribute name="val" type="ST_TextSpacingPoint" use="required"/>
-//    </xsd:complexType>
-//    <xsd:simpleType name="ST_TextSpacingPoint">
-//        <xsd:restriction base="xsd:int">
-//          <xsd:minInclusive value="0"/>
-//          <xsd:maxInclusive value="158400"/>
-//        </xsd:restriction>
-//      </xsd:simpleType>
-//    <xsd:simpleType name="ST_TextSpacingPercentOrPercentString">
-//      <xsd:union memberTypes="s:ST_Percentage"/>
-//    </xsd:simpleType>
-//    <xsd:complexType name="CT_TextSpacingPercent">
-//      <xsd:attribute name="val" type="ST_TextSpacingPercentOrPercentString" use="required"/>
-//    </xsd:complexType>
 public:
-    TextSpacing();
-    TextSpacing(uint points); // [0..158400]
-    TextSpacing(double percents); // 34.0 = 34.0%
+    Size();
+    Size(uint points); // [0..158400]
+    Size(double percents); // 34.0 = 34.0%
 
     int toPoints() const;
     double toPercents() const;
@@ -126,6 +108,9 @@ public:
 
     void setPoints(int points);
     void setPercents(double percents);
+
+    void read(QXmlStreamReader &reader);
+    void write(QXmlStreamWriter &writer, const QString &name) const;
 private:
     QVariant val;
 };
@@ -178,6 +163,67 @@ public:
         Bottom
     };
 
+    enum class BulletType
+    {
+        None,
+        AutoNumber,
+        Char,
+        Blip
+    };
+
+    enum class BulletAutonumberType
+    {
+        AlphaLowcaseParentheses, // (a), (b), (c)
+        AlphaUppercaseParentheses, // (A), (B), (C)
+        AlphaLowcaseRightParentheses, // a), b), c)
+        AlphaUppercaseRightParentheses, // A), B), C)
+        AlphaLowcasePeriod, // a., b., c.
+        AlphaUppercasePeriod, // A., B., C.
+        ArabicParentheses, // (1), (2), (3)
+        ArabicRightParentheses, // 1), 2), 3)
+        ArabicPeriod, // 1., 2., 3.
+        ArabicPlain, // 1, 2, 3
+        RomanLowcaseParentheses, // (i), (ii), (iii)
+        RomanUppercaseParentheses, // (I), (II), (III)
+        RomanLowcaseRightParentheses, // i), ii), iii)
+        RomanUppercaseRightParentheses, // I), II), III)
+        RomanLowcasePeriod, // i., ii., iii.
+        RomanUppercasePeriod, // I., II, III.
+        Circle,
+        CircleWindingsBlack,
+        CircleWindingsWhite,
+        ArabicDoubleBytePeriod,
+        ArabicDoubleByte,
+        SimplifiedChinesePeriod,
+        SimplifiedChinese,
+        TraditionalChinesePeriod,
+        TraditionalChinese,
+        JapanesePeriod,
+        JapaneseKorean,
+        JapaneseKoreanPeriod,
+        BidiArabic1Minus,
+        BidiArabic2Minus,
+        BidiHebrewMinus,
+        ThaiAlphaPeriod,
+        ThaiAlphaRightParentheses,
+        ThaiAlphaParentheses,
+        ThaiNumberPeriod,
+        ThaiNumberRightParentheses,
+        ThaiNumberParentheses,
+        HindiAlphaPeriod,
+        HindiNumberPeriod,
+        HindiNumberParentheses,
+        HindiAlpha1Period,
+    };
+
+    enum class TabAlign
+    {
+        Left,
+        Center,
+        Right,
+        Decimal
+    };
+
     std::optional<Coordinate> leftMargin;
     std::optional<Coordinate> rightMargin;
     std::optional<Coordinate> indent;
@@ -190,15 +236,86 @@ public:
     std::optional<bool> hangingPunctuation;
     std::optional<FontAlign> fontAlign;
 
-    std::optional<TextSpacing> lineSpacing;
-    std::optional<TextSpacing> spacingBefore;
-    std::optional<TextSpacing> spacingAfter;
+    std::optional<Size> lineSpacing;
+    std::optional<Size> spacingBefore;
+    std::optional<Size> spacingAfter;
 
     std::optional<Color> bulletColor;
-    std::optional<double> bulletSize; //[25-400%]
+    std::optional<Size> bulletSize;
+    Font bulletFont;
+    std::optional<BulletType> bulletType;
+    BulletAutonumberType bulletAutonumberType; //makes sense only if bulletType == Autonumber
+    std::optional<int> bulletAutonumberStart;
+    QString bulletChar; //makes sense only if bulletType == Char
+
+    QList<QPair<Coordinate, TabAlign>> tabStops;
 
     void read(QXmlStreamReader &reader);
-    void write(QXmlStreamWriter &writer);
+    void write(QXmlStreamWriter &writer, const QString &name) const;
+
+    SERIALIZE_ENUM(BulletAutonumberType, {
+        {BulletAutonumberType::AlphaLowcaseParentheses, "alphaLcParenBoth"}, // (a), (b), (c)
+        {BulletAutonumberType::AlphaUppercaseParentheses, "alphaUcParenBoth"}, // (A), (B), (C)
+        {BulletAutonumberType::AlphaLowcaseRightParentheses, "alphaLcParenR"}, // a), b), c)
+        {BulletAutonumberType::AlphaUppercaseRightParentheses, "alphaUcParenR"}, // A), B), C)
+        {BulletAutonumberType::AlphaLowcasePeriod, "alphaLcPeriod"}, // a., b., c.
+        {BulletAutonumberType::AlphaUppercasePeriod, "alphaUcPeriod"}, // A., B., C.
+        {BulletAutonumberType::ArabicParentheses, "arabicParenBoth"}, // (1), (2), (3)
+        {BulletAutonumberType::ArabicRightParentheses, "arabicParenR"}, // 1), 2), 3)
+        {BulletAutonumberType::ArabicPeriod, "arabicPeriod"}, // 1., 2., 3.
+        {BulletAutonumberType::ArabicPlain, "arabicPlain"}, // 1, 2, 3
+        {BulletAutonumberType::RomanLowcaseParentheses, "romanLcParenBoth"}, // (i), (ii), (iii)
+        {BulletAutonumberType::RomanUppercaseParentheses, "romanUcParenBoth"}, // (I), (II), (III)
+        {BulletAutonumberType::RomanLowcaseRightParentheses, "romanLcParenR"}, // i), ii), iii)
+        {BulletAutonumberType::RomanUppercaseRightParentheses, "romanUcParenR"}, // I), II), III)
+        {BulletAutonumberType::RomanLowcasePeriod, "romanLcPeriod"}, // i., ii., iii.
+        {BulletAutonumberType::RomanUppercasePeriod, "romanUcPeriod"}, //I., II, III.
+        {BulletAutonumberType::Circle, "circleNumDbPlain"},
+        {BulletAutonumberType::CircleWindingsBlack, "circleNumWdBlackPlain"},
+        {BulletAutonumberType::CircleWindingsWhite, "circleNumWdWhitePlain"},
+        {BulletAutonumberType::ArabicDoubleBytePeriod, "arabicDbPeriod"},
+        {BulletAutonumberType::ArabicDoubleByte, "arabicDbPlain"},
+        {BulletAutonumberType::SimplifiedChinesePeriod, "ea1ChsPeriod"},
+        {BulletAutonumberType::SimplifiedChinese, "ea1ChsPlain"},
+        {BulletAutonumberType::TraditionalChinesePeriod, "ea1ChtPeriod"},
+                       {BulletAutonumberType::TraditionalChinese, "ea1ChtPlain"},
+                       {BulletAutonumberType::JapanesePeriod, "ea1JpnChsDbPeriod"},
+                       {BulletAutonumberType::JapaneseKorean, "ea1JpnKorPlain"},
+                       {BulletAutonumberType::JapaneseKoreanPeriod, "ea1JpnKorPeriod"},
+                       {BulletAutonumberType::BidiArabic1Minus, "arabic1Minus"},
+                       {BulletAutonumberType::BidiArabic2Minus, "arabic2Minus"},
+                       {BulletAutonumberType::BidiHebrewMinus, "hebrew2Minus"},
+                       {BulletAutonumberType::ThaiAlphaPeriod, "thaiAlphaPeriod"},
+                       {BulletAutonumberType::ThaiAlphaRightParentheses, "thaiAlphaParenR"},
+                       {BulletAutonumberType::ThaiAlphaParentheses, "thaiAlphaParenBoth"},
+                       {BulletAutonumberType::ThaiNumberPeriod, "thaiNumPeriod"},
+                       {BulletAutonumberType::ThaiNumberRightParentheses, "thaiNumParenR"},
+                       {BulletAutonumberType::ThaiNumberParentheses, "thaiNumParenBoth"},
+                       {BulletAutonumberType::HindiAlphaPeriod, "hindiAlphaPeriod"},
+                       {BulletAutonumberType::HindiNumberPeriod, "hindiNumPeriod"},
+                       {BulletAutonumberType::HindiNumberParentheses, "hindiNumParenR"},
+                       {BulletAutonumberType::HindiAlpha1Period, "hindiAlpha1Period"},
+    });
+    SERIALIZE_ENUM(TabAlign, {
+        {TabAlign::Left, "l"},
+        {TabAlign::Right, "r"},
+        {TabAlign::Center, "ctr"},
+        {TabAlign::Decimal, "dec"},
+    });
+private:
+    void readTabStops(QXmlStreamReader &reader);
+    void writeTabStops(QXmlStreamWriter &writer, const QString &name) const;
+};
+
+class QXLSX_EXPORT ListStypeProperties
+{
+public:
+    QVector<ParagraphProperties> vals;
+    bool isEmpty() const;
+    ParagraphProperties getDefault() const;
+    ParagraphProperties value(int level) const;
+    void read(QXmlStreamReader &reader);
+    void write(QXmlStreamWriter &writer, const QString &name) const;
 };
 
 class TextPrivate;
@@ -263,8 +380,6 @@ public:
 private:
     void readStringReference(QXmlStreamReader &reader);
     void readRichString(QXmlStreamReader &reader);
-    void readTextProperties(QXmlStreamReader &reader);
-    void readTextListStyle(QXmlStreamReader &reader);
     void readParagraph(QXmlStreamReader &reader);
 
 
@@ -314,7 +429,7 @@ public:
     QString ref;
 
     TextProperties textProperties; //element, required
-    QList<ParagraphProperties> paragraphProperties; //element, optional
+    ListStypeProperties paragraphProperties; //element, optional
 };
 
 QT_END_NAMESPACE_XLSX

@@ -15,6 +15,7 @@
 #include "xlsxcolor.h"
 #include "xlsxfillproperties.h"
 #include "xlsxmain.h"
+#include "xlsxutility_p.h"
 
 QT_BEGIN_NAMESPACE_XLSX
 
@@ -153,6 +154,14 @@ public:
 //    bool operator != (const LineFormat &format) const;
 
 private:
+    SERIALIZE_ENUM(CompoundLineType, {
+        {CompoundLineType::Single, "sng"},
+        {CompoundLineType::Double, "dbl"},
+        {CompoundLineType::ThickThin, "thickThin"},
+        {CompoundLineType::ThinThick, "thinThick"},
+        {CompoundLineType::Triple, "tri"}
+    });
+
     friend QDebug operator<<(QDebug, const LineFormat &f);
 
     QSharedDataPointer<LineFormatPrivate> d;

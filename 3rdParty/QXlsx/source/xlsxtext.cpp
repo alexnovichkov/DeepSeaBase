@@ -84,7 +84,7 @@ Text::Text(const Text &other) : d(other.d)
 
 Text::~Text()
 {
-
+    delete d;
 }
 
 void Text::setType(Type type)
@@ -314,10 +314,10 @@ void Text::readRichString(QXmlStreamReader &reader)
         auto token = reader.readNext();
         if (token == QXmlStreamReader::StartElement) {
             if (reader.name() == QLatin1String("bodyPr")) {
-                readTextProperties(reader);
+                d->textProperties.read(reader);
             }
             else if (reader.name() == QLatin1String("lstStyle")) {
-                readTextListStyle(reader);
+                d->paragraphProperties.read(reader);
             }
             else if (reader.name() == QLatin1String("p")) {
                 readParagraph(reader);
@@ -327,100 +327,6 @@ void Text::readRichString(QXmlStreamReader &reader)
             break;
     }
 
-}
-
-void Text::readTextProperties(QXmlStreamReader &reader)
-{
-    const auto &name = reader.name();
-    const auto &a = reader.attributes();
-    parseAttribute(a, QLatin1String("rot"), d->textProperties.rotation);
-    parseAttributeBool(a, QLatin1String("spcFirstLastPara"), d->textProperties.spcFirstLastPara);
-
-    if (a.hasAttribute(QLatin1String("vertOverflow"))) {
-        const auto &val = a.value(QLatin1String("vertOverflow"));
-        if (val == QLatin1String("overflow")) d->textProperties.verticalOverflow = TextProperties::OverflowType::Overflow;
-        if (val == QLatin1String("ellipsis")) d->textProperties.verticalOverflow = TextProperties::OverflowType::Ellipsis;
-        if (val == QLatin1String("clip")) d->textProperties.verticalOverflow = TextProperties::OverflowType::Clip;
-    }
-    if (a.hasAttribute(QLatin1String("horzOverflow"))) {
-        const auto &val = a.value(QLatin1String("horzOverflow"));
-        if (val == QLatin1String("overflow")) d->textProperties.horizontalOverflow = TextProperties::OverflowType::Overflow;
-        if (val == QLatin1String("ellipsis")) d->textProperties.horizontalOverflow = TextProperties::OverflowType::Ellipsis;
-        if (val == QLatin1String("clip")) d->textProperties.horizontalOverflow = TextProperties::OverflowType::Clip;
-    }
-    if (a.hasAttribute(QLatin1String("vert"))) {
-        const auto &val = a.value(QLatin1String("vert"));
-        if (val == QLatin1String("horz")) d->textProperties.verticalOrientation = TextProperties::VerticalType::Horizontal;
-        if (val == QLatin1String("vert")) d->textProperties.verticalOrientation = TextProperties::VerticalType::Vertical;
-        if (val == QLatin1String("vert270")) d->textProperties.verticalOrientation = TextProperties::VerticalType::Vertical270;
-        if (val == QLatin1String("wordArtVert")) d->textProperties.verticalOrientation = TextProperties::VerticalType::WordArtVertical;
-        if (val == QLatin1String("eaVert")) d->textProperties.verticalOrientation = TextProperties::VerticalType::EastAsianVertical;
-        if (val == QLatin1String("mongolianVert")) d->textProperties.verticalOrientation = TextProperties::VerticalType::MongolianVertical;
-        if (val == QLatin1String("wordArtVertRtl")) d->textProperties.verticalOrientation = TextProperties::VerticalType::WordArtVerticalRtl;
-    }
-    if (a.hasAttribute(QLatin1String("wrap"))) {
-        const auto &val = a.value(QLatin1String("wrap"));
-        d->textProperties.wrap = val == QLatin1String("square"); //"none" -> false
-    }
-    parseAttribute(a, QLatin1String("lIns"), d->textProperties.leftInset);
-    parseAttribute(a, QLatin1String("rIns"), d->textProperties.rightInset);
-    parseAttribute(a, QLatin1String("tIns"), d->textProperties.topInset);
-    parseAttribute(a, QLatin1String("bIns"), d->textProperties.bottomInset);
-    parseAttributeInt(a, QLatin1String("numCol"), d->textProperties.columnCount);
-    parseAttribute(a, QLatin1String("spcCol"), d->textProperties.columnSpace);
-    parseAttributeBool(a, QLatin1String("rtlCol"), d->textProperties.columnsRtl);
-    parseAttributeBool(a, QLatin1String("fromWordArt"), d->textProperties.fromWordArt);
-    parseAttributeBool(a, QLatin1String("anchorCtr"), d->textProperties.anchorCentering);
-    parseAttributeBool(a, QLatin1String("forceAA"), d->textProperties.forceAntiAlias);
-    parseAttributeBool(a, QLatin1String("upright"), d->textProperties.upright);
-    parseAttributeBool(a, QLatin1String("compatLnSpc"), d->textProperties.compatibleLineSpacing);
-
-    if (a.hasAttribute(QLatin1String("anchor"))) {
-        const auto &val = a.value(QLatin1String("anchor"));
-        if (val == QLatin1String("b")) d->textProperties.anchor = TextProperties::Anchor::Bottom;
-        if (val == QLatin1String("t")) d->textProperties.anchor = TextProperties::Anchor::Top;
-        if (val == QLatin1String("ctr")) d->textProperties.anchor = TextProperties::Anchor::Center;
-        if (val == QLatin1String("just")) d->textProperties.anchor = TextProperties::Anchor::Justified;
-        if (val == QLatin1String("dist")) d->textProperties.anchor = TextProperties::Anchor::Distributed;
-    }
-
-    while (!reader.atEnd()) {
-        auto token = reader.readNext();
-        if (token == QXmlStreamReader::StartElement) {
-            if (reader.name() == QLatin1String("prstTxWarp")) {
-                d->textProperties.textShape->read(reader);
-            }
-            else if (reader.name() == QLatin1String("noAutofit")) {
-                d->textProperties.textAutofit = TextProperties::TextAutofit::NoAutofit;
-            }
-            else if (reader.name() == QLatin1String("spAutoFit")) {
-                d->textProperties.textAutofit = TextProperties::TextAutofit::ShapeAutofit;
-            }
-            else if (reader.name() == QLatin1String("normAutofit")) {
-                d->textProperties.textAutofit = TextProperties::TextAutofit::NormalAutofit;
-                const auto &a = reader.attributes();
-                parseAttributePercent(a, QLatin1String("fontScale"), d->textProperties.fontScale);
-                parseAttributePercent(a, QLatin1String("lnSpcReduction"), d->textProperties.lineSpaceReduction);
-            }
-            else if (reader.name() == QLatin1String("sp3d")) {
-                d->textProperties.text3D->read(reader);
-            }
-            else if (reader.name() == QLatin1String("flatTx")) {
-                d->textProperties.z = Coordinate::create(reader.attributes().value(QLatin1String("z")).toString());
-            }
-            else if (reader.name() == QLatin1String("")) {
-                //TODO:
-            }
-
-        }
-        else if (token == QXmlStreamReader::EndElement && reader.name() == name)
-            break;
-    }
-}
-
-void Text::readTextListStyle(QXmlStreamReader &reader)
-{
-    //TODO:
 }
 
 void Text::readParagraph(QXmlStreamReader &reader)
@@ -730,46 +636,180 @@ bool TextProperties::isValid() const
     return false;
 }
 
-TextSpacing::TextSpacing()
+void TextProperties::read(QXmlStreamReader &reader)
+{
+    const auto &name = reader.name();
+    const auto &a = reader.attributes();
+    parseAttribute(a, QLatin1String("rot"), rotation);
+    parseAttributeBool(a, QLatin1String("spcFirstLastPara"), spcFirstLastPara);
+
+    if (a.hasAttribute(QLatin1String("vertOverflow"))) {
+        const auto &val = a.value(QLatin1String("vertOverflow"));
+        if (val == QLatin1String("overflow")) verticalOverflow = TextProperties::OverflowType::Overflow;
+        if (val == QLatin1String("ellipsis")) verticalOverflow = TextProperties::OverflowType::Ellipsis;
+        if (val == QLatin1String("clip")) verticalOverflow = TextProperties::OverflowType::Clip;
+    }
+    if (a.hasAttribute(QLatin1String("horzOverflow"))) {
+        const auto &val = a.value(QLatin1String("horzOverflow"));
+        if (val == QLatin1String("overflow")) horizontalOverflow = TextProperties::OverflowType::Overflow;
+        if (val == QLatin1String("ellipsis")) horizontalOverflow = TextProperties::OverflowType::Ellipsis;
+        if (val == QLatin1String("clip")) horizontalOverflow = TextProperties::OverflowType::Clip;
+    }
+    if (a.hasAttribute(QLatin1String("vert"))) {
+        const auto &val = a.value(QLatin1String("vert"));
+        if (val == QLatin1String("horz")) verticalOrientation = TextProperties::VerticalType::Horizontal;
+        if (val == QLatin1String("vert")) verticalOrientation = TextProperties::VerticalType::Vertical;
+        if (val == QLatin1String("vert270")) verticalOrientation = TextProperties::VerticalType::Vertical270;
+        if (val == QLatin1String("wordArtVert")) verticalOrientation = TextProperties::VerticalType::WordArtVertical;
+        if (val == QLatin1String("eaVert")) verticalOrientation = TextProperties::VerticalType::EastAsianVertical;
+        if (val == QLatin1String("mongolianVert")) verticalOrientation = TextProperties::VerticalType::MongolianVertical;
+        if (val == QLatin1String("wordArtVertRtl")) verticalOrientation = TextProperties::VerticalType::WordArtVerticalRtl;
+    }
+    if (a.hasAttribute(QLatin1String("wrap"))) {
+        const auto &val = a.value(QLatin1String("wrap"));
+        wrap = val == QLatin1String("square"); //"none" -> false
+    }
+    parseAttribute(a, QLatin1String("lIns"), leftInset);
+    parseAttribute(a, QLatin1String("rIns"), rightInset);
+    parseAttribute(a, QLatin1String("tIns"), topInset);
+    parseAttribute(a, QLatin1String("bIns"), bottomInset);
+    parseAttributeInt(a, QLatin1String("numCol"), columnCount);
+    parseAttribute(a, QLatin1String("spcCol"), columnSpace);
+    parseAttributeBool(a, QLatin1String("rtlCol"), columnsRtl);
+    parseAttributeBool(a, QLatin1String("fromWordArt"), fromWordArt);
+    parseAttributeBool(a, QLatin1String("anchorCtr"), anchorCentering);
+    parseAttributeBool(a, QLatin1String("forceAA"), forceAntiAlias);
+    parseAttributeBool(a, QLatin1String("upright"), upright);
+    parseAttributeBool(a, QLatin1String("compatLnSpc"), compatibleLineSpacing);
+
+    if (a.hasAttribute(QLatin1String("anchor"))) {
+        const auto &val = a.value(QLatin1String("anchor"));
+        if (val == QLatin1String("b")) anchor = TextProperties::Anchor::Bottom;
+        if (val == QLatin1String("t")) anchor = TextProperties::Anchor::Top;
+        if (val == QLatin1String("ctr")) anchor = TextProperties::Anchor::Center;
+        if (val == QLatin1String("just")) anchor = TextProperties::Anchor::Justified;
+        if (val == QLatin1String("dist")) anchor = TextProperties::Anchor::Distributed;
+    }
+
+    while (!reader.atEnd()) {
+        auto token = reader.readNext();
+        if (token == QXmlStreamReader::StartElement) {
+            if (reader.name() == QLatin1String("prstTxWarp")) {
+                textShape->read(reader);
+            }
+            else if (reader.name() == QLatin1String("noAutofit")) {
+                textAutofit = TextProperties::TextAutofit::NoAutofit;
+            }
+            else if (reader.name() == QLatin1String("spAutoFit")) {
+                textAutofit = TextProperties::TextAutofit::ShapeAutofit;
+            }
+            else if (reader.name() == QLatin1String("normAutofit")) {
+                textAutofit = TextProperties::TextAutofit::NormalAutofit;
+                const auto &a = reader.attributes();
+                parseAttributePercent(a, QLatin1String("fontScale"), fontScale);
+                parseAttributePercent(a, QLatin1String("lnSpcReduction"), lineSpaceReduction);
+            }
+            else if (reader.name() == QLatin1String("sp3d")) {
+                text3D->read(reader);
+            }
+            else if (reader.name() == QLatin1String("flatTx")) {
+                z = Coordinate::create(reader.attributes().value(QLatin1String("z")).toString());
+            }
+        }
+        else if (token == QXmlStreamReader::EndElement && reader.name() == name)
+            break;
+    }
+}
+
+Size::Size()
 {
 
 }
 
-TextSpacing::TextSpacing(uint points)
+Size::Size(uint points)
 {
     val = QVariant::fromValue<uint>(points);
 }
 
-TextSpacing::TextSpacing(double percents)
+Size::Size(double percents)
 {
     val = QVariant::fromValue<double>(percents);
 }
 
-int TextSpacing::toPoints() const
+int Size::toPoints() const
 {
     return val.toUInt();
 }
 
-double TextSpacing::toPercents() const
+double Size::toPercents() const
 {
     return val.toDouble();
 }
 
-QString TextSpacing::toString() const
+QString Size::toString() const
 {
     if (val.userType() == QMetaType::UInt) return QString::number(val.toUInt());
     if (val.userType() == QMetaType::Double) return QString::number(val.toDouble())+'%';
     return QString();
 }
 
-void TextSpacing::setPoints(int points)
+void Size::setPoints(int points)
 {
     val = QVariant::fromValue<uint>(points);
 }
 
-void TextSpacing::setPercents(double percents)
+void Size::setPercents(double percents)
 {
     val = QVariant::fromValue<double>(percents);
+}
+
+void Size::read(QXmlStreamReader &reader)
+{
+    //    <xsd:complexType name="CT_TextSpacing">
+    //      <xsd:choice>
+    //        <xsd:element name="spcPct" type="CT_TextSpacingPercent"/>
+    //        <xsd:element name="spcPts" type="CT_TextSpacingPoint"/>
+    //      </xsd:choice>
+    //    </xsd:complexType>
+
+    //    <xsd:complexType name="CT_TextSpacingPoint">
+    //      <xsd:attribute name="val" type="ST_TextSpacingPoint" use="required"/>
+    //    </xsd:complexType>
+    //    <xsd:simpleType name="ST_TextSpacingPoint">
+    //        <xsd:restriction base="xsd:int">
+    //          <xsd:minInclusive value="0"/>
+    //          <xsd:maxInclusive value="158400"/>
+    //        </xsd:restriction>
+    //      </xsd:simpleType>
+    //    <xsd:simpleType name="ST_TextSpacingPercentOrPercentString">
+    //      <xsd:union memberTypes="s:ST_Percentage"/>
+    //    </xsd:simpleType>
+    //    <xsd:complexType name="CT_TextSpacingPercent">
+    //      <xsd:attribute name="val" type="ST_TextSpacingPercentOrPercentString" use="required"/>
+    //    </xsd:complexType>
+    reader.readNextStartElement();
+    if (reader.name() == QLatin1String("spcPct")) {
+        std::optional<double> v;
+        parseAttributePercent(reader.attributes(), QLatin1String("val"), v);
+        if (v.has_value()) val = v.value();
+    }
+    if (reader.name() == QLatin1String("spcPts")) {
+        int v;
+        parseAttributeInt(reader.attributes(), QLatin1String("val"), v);
+        val = v;
+    }
+}
+
+void Size::write(QXmlStreamWriter &writer, const QString &name) const
+{
+    if (val.userType() == QMetaType::Int) {
+        writer.writeEmptyElement(QLatin1String("spcPts"));
+        writer.writeAttribute(QLatin1String("val"), QString::number(val.toInt()));
+    }
+    if (val.userType() == QMetaType::Double) {
+        writer.writeEmptyElement(QLatin1String("spcPct"));
+        writer.writeAttribute(QLatin1String("val"), toST_Percent(val.toDouble()));
+    }
 }
 
 void ParagraphProperties::read(QXmlStreamReader &reader)
@@ -778,59 +818,127 @@ void ParagraphProperties::read(QXmlStreamReader &reader)
 
     const auto &a = reader.attributes();
 
-    if (a.hasAttribute(QLatin1String("marL"))) {
+    parseAttribute(a, QLatin1String("marL"), leftMargin);
+    parseAttribute(a, QLatin1String("marR"), rightMargin);
+    parseAttributeInt(a, QLatin1String("lvl"), indentLevel);
+    parseAttribute(a, QLatin1String("indent"), indent);
 
+    if (a.hasAttribute(QLatin1String("algn"))) {
+        const auto s = a.value(QLatin1String("algn"));
+        if (s == QLatin1String("l")) align = TextAlign::Left;
+        if (s == QLatin1String("r")) align = TextAlign::Right;
+        if (s == QLatin1String("ctr")) align = TextAlign::Center;
+        if (s == QLatin1String("just")) align = TextAlign::Justify;
+        if (s == QLatin1String("justLow")) align = TextAlign::JustifyLow;
+        if (s == QLatin1String("dist")) align = TextAlign::Distrubute;
+        if (s == QLatin1String("thaiDist")) align = TextAlign::DistrubuteThai;
     }
-    if (a.hasAttribute(QLatin1String("marR"))) {
+    parseAttribute(a, QLatin1String("defTabSz"), defaultTabSize);
+    parseAttributeBool(a, QLatin1String("rtl"), rtl);
+    parseAttributeBool(a, QLatin1String("eaLnBrk"), eastAsianLineBreak);
 
+    if (a.hasAttribute(QLatin1String("fontAlgn"))) {
+        const auto s = a.value(QLatin1String("fontAlgn"));
+        if (s == QLatin1String("t")) fontAlign = FontAlign::Top;
+        if (s == QLatin1String("b")) fontAlign = FontAlign::Bottom;
+        if (s == QLatin1String("auto")) fontAlign = FontAlign::Auto;
+        if (s == QLatin1String("ctr")) fontAlign = FontAlign::Center;
+        if (s == QLatin1String("base")) fontAlign = FontAlign::Base;
     }
-    if (a.hasAttribute(QLatin1String(""))) {
-
-    }
-    if (a.hasAttribute(QLatin1String(""))) {
-
-    }
-    if (a.hasAttribute(QLatin1String(""))) {
-
-    }
-    if (a.hasAttribute(QLatin1String(""))) {
-
-    }
-    if (a.hasAttribute(QLatin1String(""))) {
-
-    }
-    if (a.hasAttribute(QLatin1String(""))) {
-
-    }
-    if (a.hasAttribute(QLatin1String(""))) {
-
-    }
-    if (a.hasAttribute(QLatin1String(""))) {
-
-    }
-    if (a.hasAttribute(QLatin1String(""))) {
-
-    }
+    parseAttributeBool(a, QLatin1String("latinLnBrk"), latinLineBreak);
+    parseAttributeBool(a, QLatin1String("hangingPunct"), hangingPunctuation);
 
     while (!reader.atEnd()) {
         auto token = reader.readNext();
         if (token == QXmlStreamReader::StartElement) {
-            if (reader.name() == QLatin1String("")) {
-
+            if (reader.name() == QLatin1String("lnSpc")) {
+                reader.readNextStartElement();
+                if (reader.name() == QLatin1String("spcPct")) {
+                    std::optional<double> v;
+                    parseAttributePercent(reader.attributes(), QLatin1String("val"), v);
+                    if (v.has_value()) lineSpacing = Size(v.value());
+                }
+                if (reader.name() == QLatin1String("spcPts")) {
+                    uint v;
+                    parseAttributeUInt(reader.attributes(), QLatin1String("val"), v);
+                    lineSpacing = Size(v);
+                }
             }
-            else if (reader.name() == QLatin1String("")) {
-
+            else if (reader.name() == QLatin1String("spcBef")) {
+                reader.readNextStartElement();
+                if (reader.name() == QLatin1String("spcPct")) {
+                    std::optional<double> v;
+                    parseAttributePercent(reader.attributes(), QLatin1String("val"), v);
+                    if (v.has_value()) spacingBefore = Size(v.value());
+                }
+                if (reader.name() == QLatin1String("spcPts")) {
+                    uint v;
+                    parseAttributeUInt(reader.attributes(), QLatin1String("val"), v);
+                    spacingBefore = Size(v);
+                }
             }
-            else if (reader.name() == QLatin1String("")) {
-
+            else if (reader.name() == QLatin1String("spcAft")) {
+                reader.readNextStartElement();
+                if (reader.name() == QLatin1String("spcPct")) {
+                    std::optional<double> v;
+                    parseAttributePercent(reader.attributes(), QLatin1String("val"), v);
+                    if (v.has_value()) spacingAfter = Size(v.value());
+                }
+                if (reader.name() == QLatin1String("spcPts")) {
+                    uint v;
+                    parseAttributeUInt(reader.attributes(), QLatin1String("val"), v);
+                    spacingAfter = Size(v);
+                }
             }
-            else if (reader.name() == QLatin1String("")) {
-
+            else if (reader.name() == QLatin1String("buClrTx")) {
+                // bullet color follows text
             }
-            else if (reader.name() == QLatin1String("")) {
-
+            else if (reader.name() == QLatin1String("buClr")) {
+                reader.readNextStartElement();
+                bulletColor->read(reader);
             }
-            else if (reader.name() == QLatin1String("")) {
+            else if (reader.name() == QLatin1String("buSzTx")) {
+                // bullet size follows text
+            }
+            else if (reader.name() == QLatin1String("buSzPct")) {
+                std::optional<double> v;
+                parseAttributePercent(reader.attributes(), QLatin1String("val"), v);
+                if (v.has_value()) bulletSize = Size(v.value());
+            }
+            else if (reader.name() == QLatin1String("buSzPts")) {
+                uint v;
+                parseAttributeUInt(reader.attributes(), QLatin1String("val"), v);
+                bulletSize = Size(v);
+            }
+            else if (reader.name() == QLatin1String("buFontTx")) {
+                // bullet font follows text
+            }
+            else if (reader.name() == QLatin1String("buFont")) {
+                bulletFont.read(reader);
+            }
+            else if (reader.name() == QLatin1String("buNone")) {
+                bulletType = BulletType::None;
+            }
+            else if (reader.name() == QLatin1String("buAutoNum")) {
+                bulletType = BulletType::AutoNumber;
+                const auto &a = reader.attributes();
+                const QString &type = a.value(QLatin1String("type")).toString();
+                fromString(type, bulletAutonumberType);
+                if (a.hasAttribute(QLatin1String("startAt")))
+                    bulletAutonumberStart = a.value(QLatin1String("startAt")).toInt();
+            }
+            else if (reader.name() == QLatin1String("buChar")) {
+                bulletType = BulletType::Char;
+                bulletChar = reader.attributes().value(QLatin1String("char")).toString();
+            }
+            else if (reader.name() == QLatin1String("buBlip")) {
+                //TODO:
+                bulletType = BulletType::Blip;
+            }
+            else if (reader.name() == QLatin1String("tabLst")) {
+                readTabStops(reader);
+            }
+            else if (reader.name() == QLatin1String("defRPr")) {
 
             }
         }
@@ -839,6 +947,158 @@ void ParagraphProperties::read(QXmlStreamReader &reader)
     }
 }
 
+void ParagraphProperties::write(QXmlStreamWriter &writer, const QString &name) const
+{
+
+}
+
+bool ListStypeProperties::isEmpty() const
+{
+    return vals.isEmpty();
+}
+
+ParagraphProperties ListStypeProperties::getDefault() const
+{
+    if (vals.size()>0) return vals[0];
+    return {};
+}
+
+ParagraphProperties ListStypeProperties::value(int level) const
+{
+    if (vals.size()>level && level > 0) return vals[level];
+    return {};
+}
+
+void ListStypeProperties::read(QXmlStreamReader &reader)
+{
+    const auto &name = reader.name();
+
+    while (!reader.atEnd()) {
+        auto token = reader.readNext();
+        if (token == QXmlStreamReader::StartElement) {
+            if (reader.name() == QLatin1String("defPPr")) {
+                if (vals.size() < 1) vals.resize(1);
+                ParagraphProperties p;
+                p.read(reader);
+                vals[0] = p;
+            }
+            else if (reader.name() == QLatin1String("lvl1pPr")) {
+                if (vals.size() < 2) vals.resize(2);
+                ParagraphProperties p;
+                p.read(reader);
+                vals[1] = p;
+            }
+            else if (reader.name() == QLatin1String("lvl2pPr")) {
+                if (vals.size() < 3) vals.resize(3);
+                ParagraphProperties p;
+                p.read(reader);
+                vals[2] = p;
+            }
+            else if (reader.name() == QLatin1String("lvl3pPr")) {
+                if (vals.size() < 4) vals.resize(4);
+                ParagraphProperties p;
+                p.read(reader);
+                vals[3] = p;
+            }
+            else if (reader.name() == QLatin1String("lvl4pPr")) {
+                if (vals.size() < 5) vals.resize(5);
+                ParagraphProperties p;
+                p.read(reader);
+                vals[4] = p;
+            }
+            else if (reader.name() == QLatin1String("lvl5pPr")) {
+                if (vals.size() < 6) vals.resize(6);
+                ParagraphProperties p;
+                p.read(reader);
+                vals[5] = p;
+            }
+            else if (reader.name() == QLatin1String("lvl6pPr")) {
+                if (vals.size() < 7) vals.resize(7);
+                ParagraphProperties p;
+                p.read(reader);
+                vals[6] = p;
+            }
+            else if (reader.name() == QLatin1String("lvl7pPr")) {
+                if (vals.size() < 8) vals.resize(8);
+                ParagraphProperties p;
+                p.read(reader);
+                vals[7] = p;
+            }
+            else if (reader.name() == QLatin1String("lvl8pPr")) {
+                if (vals.size() < 9) vals.resize(9);
+                ParagraphProperties p;
+                p.read(reader);
+                vals[8] = p;
+            }
+            else if (reader.name() == QLatin1String("lvl9pPr")) {
+                if (vals.size() < 10) vals.resize(10);
+                ParagraphProperties p;
+                p.read(reader);
+                vals[9] = p;
+            }
+        }
+        else if (token == QXmlStreamReader::EndElement && reader.name() == name)
+            break;
+    }
+}
+
+void ListStypeProperties::write(QXmlStreamWriter &writer, const QString &name) const
+{
+    if (vals.isEmpty()) {
+        writer.writeEmptyElement(name);
+        return;
+    }
+
+    writer.writeStartElement(name);
+    if (vals.size()>0) vals[0].write(writer, QLatin1String("defPPr"));
+    if (vals.size()>1) vals[1].write(writer, QLatin1String("lvl1pPr"));
+    if (vals.size()>2) vals[2].write(writer, QLatin1String("lvl2pPr"));
+    if (vals.size()>3) vals[3].write(writer, QLatin1String("lvl3pPr"));
+    if (vals.size()>4) vals[4].write(writer, QLatin1String("lvl4pPr"));
+    if (vals.size()>5) vals[5].write(writer, QLatin1String("lvl5pPr"));
+    if (vals.size()>6) vals[6].write(writer, QLatin1String("lvl6pPr"));
+    if (vals.size()>7) vals[7].write(writer, QLatin1String("lvl7pPr"));
+    if (vals.size()>8) vals[8].write(writer, QLatin1String("lvl8pPr"));
+    if (vals.size()>9) vals[9].write(writer, QLatin1String("lvl9pPr"));
+    writer.writeEndElement();
+}
+
 #endif
+
+void ParagraphProperties::readTabStops(QXmlStreamReader &reader)
+{
+    const auto &name = reader.name();
+    while (!reader.atEnd()) {
+        auto token = reader.readNext();
+        if (token == QXmlStreamReader::StartElement && reader.name() == QLatin1String("tab")) {
+            const auto &a = reader.attributes();
+            QPair<Coordinate, TabAlign> p;
+            if (a.hasAttribute(QLatin1String("pos"))) p.first = Coordinate::create(a.value(QLatin1String("pos")));
+            if (a.hasAttribute(QLatin1String("algn"))) {
+                TabAlign t;
+                fromString(a.value(QLatin1String("algn")).toString(), t);
+                p.second = t;
+                tabStops << p;
+            }
+        }
+        else if (token == QXmlStreamReader::EndElement && reader.name() == name)
+            break;
+    }
+}
+
+void ParagraphProperties::writeTabStops(QXmlStreamWriter &writer, const QString &name) const
+{
+    if (tabStops.isEmpty()) return;
+    writer.writeStartElement(name); //
+    for (const auto &p: tabStops) {
+        writer.writeEmptyElement(QLatin1String("a:tab"));
+        writer.writeAttribute(QLatin1String("pos"), p.first.toString());
+        QString s;
+        toString(p.second, s);
+        writer.writeAttribute(QLatin1String("algn"), s);
+    }
+    writer.writeEndElement();
+}
+
 
 QT_END_NAMESPACE_XLSX
