@@ -69,6 +69,10 @@ ImageRenderDialog::ImageRenderDialog(bool askForPath, bool askForGraphOnly, QWid
     resolutionCombo->addItems(QStringList()<<"экранное"<<"96 dpi"<<"150 dpi"<<"300 dpi");
     resolutionCombo->setCurrentIndex(se->getSetting("imageResolution", 2).toInt());
 
+    legendCombo = new QComboBox(this);
+    legendCombo->addItems(QStringList()<<"внизу графика"<<"вверху графика");
+    legendCombo->setCurrentIndex(0);
+
     auto *mainLayout = new QFormLayout;
     if (askForPath)
         mainLayout->addRow(new QLabel("Куда сохраняем", this), pathEdit);
@@ -77,6 +81,7 @@ ImageRenderDialog::ImageRenderDialog(bool askForPath, bool askForGraphOnly, QWid
     mainLayout->addRow(new QLabel("Ширина рисунка, мм", this), widthEdit);
     mainLayout->addRow(new QLabel("Высота рисунка, мм", this), heightEdit);
     mainLayout->addRow(new QLabel("Разрешение", this), resolutionCombo);
+    mainLayout->addRow(new QLabel("Положение легенды", this), legendCombo);
     mainLayout->addRow(buttonBox);
 
     setLayout(mainLayout);
@@ -93,15 +98,41 @@ ImageRenderDialog::~ImageRenderDialog()
     if (graphOnlyCheckBox) se->setSetting("lastPictureGraphOnly", graphOnlyCheckBox->isChecked());
 }
 
-int ImageRenderDialog::getResolution() const
-{DD;
-    return getResolution(resolutionCombo->currentIndex());
+ImageRenderDialog::PlotRenderOptions ImageRenderDialog::getRenderOptions() const
+{
+    PlotRenderOptions o;
+    o.path = _path;
+    o.size = {_width, _height};
+    o.graphOnly = graphOnlyCheckBox && graphOnlyCheckBox->isChecked();
+    o.resolution = getResolution(resolutionCombo->currentIndex());
+    o.legendPosition = legendCombo->currentIndex();
+    return o;
 }
 
-bool ImageRenderDialog::graphOnly() const
+ImageRenderDialog::PlotRenderOptions ImageRenderDialog::defaultRenderOptions()
 {
-    return graphOnlyCheckBox && graphOnlyCheckBox->isChecked();
+    PlotRenderOptions o;
+    o.size = defaultSize();
+    o.resolution = defaultResolution();
+    o.graphOnly = false;
+    o.legendPosition = 0;
+    return o;
 }
+
+//int ImageRenderDialog::getResolution() const
+//{DD;
+//    return getResolution(resolutionCombo->currentIndex());
+//}
+
+//bool ImageRenderDialog::graphOnly() const
+//{
+//    return graphOnlyCheckBox && graphOnlyCheckBox->isChecked();
+//}
+
+//int ImageRenderDialog::getLegendPosition() const
+//{
+//    return legendCombo->currentIndex();
+//}
 
 int ImageRenderDialog::getResolution(int index) const
 {

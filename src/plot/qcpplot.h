@@ -3,6 +3,7 @@
 
 #include "qcustomplot.h"
 #include "enums.h"
+#include "imagerenderdialog.h"
 
 class Plot;
 class CanvasEventFilter;
@@ -92,8 +93,8 @@ public:
     void enableColorBar(Enums::AxisType axis, bool enable);
     void setColorMap(int colorMap, Curve *curve);
     void setColorBarTitle(const QString &title);
-    void importPlot(const QString &fileName, const QSize &size, int resolution, bool graphOnly);
-    void importPlot(QPrinter &printer, const QSize &size, int resolution, bool graphOnly);
+    void importPlot(ImageRenderDialog::PlotRenderOptions options);
+    void importPlot(QPrinter &printer, ImageRenderDialog::PlotRenderOptions options);
     Curve *createCurve(Channel *channel, Enums::AxisType xAxis, Enums::AxisType yAxis);
     double tickDistance(Enums::AxisType axisType) const;
     bool isCurve(Selectable* item) const;

@@ -18,6 +18,7 @@
 #include "qcpflowlegend.h"
 #include "secondaryplot.h"
 
+
 QCPAxis::AxisType toQcpAxis(Enums::AxisType type) {
     return static_cast<QCPAxis::AxisType>(type);
 }
@@ -468,26 +469,32 @@ void QCPPlot::setColorBarTitle(const QString &title)
     if (colorScale) colorScale->setLabel(title);
 }
 
-void QCPPlot::importPlot(const QString &fileName, const QSize &size, int resolution, bool graphOnly)
+void QCPPlot::importPlot(ImageRenderDialog::PlotRenderOptions options)
 {
     axisRect()->setBorderPen(QPen(Qt::black));
     legend->setVisible(true);
+    switch (options.legendPosition) {
+        case 0: axisRect(0)->insetLayout()->setInsetAlignment(0, Qt::AlignBottom); break;
+        case 1: axisRect(0)->insetLayout()->setInsetAlignment(0, Qt::AlignTop); break;
+    }
     updateLegend();
-    if (graphOnly) setSecondaryPlotsVisible(false);
-    QString format = fileName.section(".", -1,-1);
-    if (!saveRastered(fileName, int(0.0393700787401575 * size.width() * resolution),
-                      int(0.0393700787401575 * size.height() * resolution), 1.0, format.toLatin1().data(), -1, resolution))
+    if (options.graphOnly) setSecondaryPlotsVisible(false);
+    QString format = options.path.section(".", -1,-1);
+    if (!saveRastered(options.path,
+                      int(0.0393700787401575 * options.size.width() * options.resolution),
+                      int(0.0393700787401575 * options.size.height() * options.resolution),
+                      1.0,
+                      format.toLatin1().data(),
+                      -1,
+                      options.resolution))
         QMessageBox::critical(this, "Сохранение рисунка", "Не удалось сохранить график");
     legend->setVisible(false);
-    if (graphOnly) setSecondaryPlotsVisible(true);
+    if (options.graphOnly) setSecondaryPlotsVisible(true);
     axisRect()->setBorderPen(Qt::NoPen);
 }
 
-void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution, bool graphOnly)
+void QCPPlot::importPlot(QPrinter &printer, ImageRenderDialog::PlotRenderOptions options)
 {
-    Q_UNUSED(size);
-    Q_UNUSED(resolution);
-
     printer.setOrientation(QPrinter::Landscape);
 
     QPrintDialog printDialog(&printer, this);
@@ -499,8 +506,13 @@ void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution, b
         //настройка отображения графиков
         axisRect()->setBorderPen(QPen(Qt::black));
         legend->setVisible(true);
+        switch (options.legendPosition) {
+            case 0: axisRect(0)->insetLayout()->setInsetAlignment(0, Qt::AlignBottom); break;
+            case 1: axisRect(0)->insetLayout()->setInsetAlignment(0, Qt::AlignTop); break;
+        }
+
         updateLegend();
-        if (graphOnly) setSecondaryPlotsVisible(false);
+        if (options.graphOnly) setSecondaryPlotsVisible(false);
 
         QCPPainter painter(&printer);
         QRectF pageRect = printer.pageRect(QPrinter::DevicePixel);
@@ -513,7 +525,7 @@ void QCPPlot::importPlot(QPrinter &printer, const QSize &size, int resolution, b
 
         //восстанавливаем параметры графиков
         legend->setVisible(false);
-        if (graphOnly) setSecondaryPlotsVisible(true);
+        if (options.graphOnly) setSecondaryPlotsVisible(true);
         axisRect()->setBorderPen(Qt::NoPen);
     }
 }
