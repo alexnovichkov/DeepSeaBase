@@ -18,6 +18,9 @@ class Text;
 
 uint qHash(const Text &rs, uint seed = 0) Q_DECL_NOTHROW;
 
+/**
+ * @brief The TextProperties class
+ */
 class QXLSX_EXPORT TextProperties
 {
 public:
@@ -90,12 +93,103 @@ public:
     void write(QXmlStreamWriter &writer);
 };
 
+class QXLSX_EXPORT TextCharacterProperties
+{
+public:
+    enum class UnderlineType
+    {
+        None,
+        Words,
+        Single,
+        Double,
+        Heavy,
+        Dotted,
+        DottedHeavy,
+        Dash,
+        DashHeavy,
+        DashLong,
+        DashLongHeavy,
+        DotDash,
+        DotDashHeavy,
+        DotDotDash,
+        DotDotDashHeavy,
+        Wavy,
+        WavyHeavy,
+        WavyDouble,
+    };
+    enum class StrikeType
+    {
+        None,
+        Single,
+        Double
+    };
+    enum class CapitalizationType
+    {
+        None,
+        AllCaps,
+        SmallCaps
+    };
+
+    std::optional<bool> kumimoji;
+    QString language; // f.e. "en-US"
+    QString alternateLanguage; // f.e. "en-US"
+    std::optional<double> fontSize; //in pt
+    std::optional<bool> bold;
+    std::optional<bool> italic;
+    std::optional<UnderlineType> underline;
+    std::optional<StrikeType> strike;
+    std::optional<double> kerningFontSize; //in pt
+    std::optional<CapitalizationType> capitalization;
+    std::optional<TextPoint> spacing;
+    std::optional<bool> normalizeHeights;
+    std::optional<bool> noProofing;
+    std::optional<bool> proofingNeeded;
+    std::optional<bool> checkForSmartTagsNeeded;
+    std::optional<bool> spellingErrorFound;
+    std::optional<double> baseline;
+    std::optional<int> smartTagId;
+
+    void read(QXmlStreamReader &reader);
+    void write(QXmlStreamWriter &writer, const QString &name) const;
+private:
+    SERIALIZE_ENUM(UnderlineType, {
+        {UnderlineType::None, "none"},
+        {UnderlineType::Words, "words"},
+        {UnderlineType::Single, "sng"},
+        {UnderlineType::Double, "dbl"},
+        {UnderlineType::Heavy, "heavy"},
+        {UnderlineType::Dotted, "dotted"},
+        {UnderlineType::DottedHeavy, "dottedHeavy"},
+        {UnderlineType::Dash, "dash"},
+        {UnderlineType::DashHeavy, "dashHeavy"},
+        {UnderlineType::DashLong, "dashLong"},
+        {UnderlineType::DashLongHeavy, "dashLongHeavy"},
+        {UnderlineType::DotDash, "dotDash"},
+        {UnderlineType::DotDashHeavy, "dotDashHeavy"},
+        {UnderlineType::DotDotDash, "dotDotDash"},
+        {UnderlineType::DotDotDashHeavy, "dotDotDashHeavy"},
+        {UnderlineType::Wavy, "wavy"},
+        {UnderlineType::WavyHeavy, "wavyHeavy"},
+        {UnderlineType::WavyDouble, "wavyDbl"},
+    });
+    SERIALIZE_ENUM(StrikeType, {
+        {StrikeType::None, "noStrike"},
+        {StrikeType::Single, "sngStrike"},
+        {StrikeType::Double, "dblStrike"},
+    });
+    SERIALIZE_ENUM(CapitalizationType, {
+        {CapitalizationType::None,"none"},
+        {CapitalizationType::AllCaps, "all"},
+        {CapitalizationType::SmallCaps, "small"},
+    });
+};
+
 /**
  * @brief The Size class
  * The class is used to set a size either in points or in percents.
  * Size can either be set as a whole positive number (int) or as a percentage (double).
  */
-class Size
+class QXLSX_EXPORT Size
 {
 public:
     Size();
@@ -247,6 +341,8 @@ public:
     BulletAutonumberType bulletAutonumberType; //makes sense only if bulletType == Autonumber
     std::optional<int> bulletAutonumberStart;
     QString bulletChar; //makes sense only if bulletType == Char
+
+    std::optional<TextCharacterProperties> defaultTextCharacterProperties;
 
     QList<QPair<Coordinate, TabAlign>> tabStops;
 

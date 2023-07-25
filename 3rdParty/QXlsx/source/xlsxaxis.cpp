@@ -140,6 +140,31 @@ void Axis::setCrossAxis(int axisId)
     d->crossAxis = axisId;
 }
 
+double Axis::crossesAt() const
+{
+    if (d) return d->crossesPosition.value_or(0.0);
+    return 0.0;
+}
+
+void Axis::setCrossesAt(double val)
+{
+    if (!d) d = new AxisPrivate;
+    d->crossesType = CrossesType::Position;
+    d->crossesPosition = val;
+}
+
+Axis::CrossesType Axis::crossesType() const
+{
+    if (d) return d->crossesType.value_or(CrossesType::AutoZero);
+    return CrossesType::AutoZero;
+}
+
+void Axis::setCrossesAt(Axis::CrossesType val)
+{
+    if (!d) d = new AxisPrivate;
+    d->crossesType = val;
+}
+
 QString Axis::title() const
 {
     if (d) return d->title;
@@ -162,6 +187,19 @@ void Axis::setScaling(Axis::Scaling scaling)
 {
     if (!d) d = new AxisPrivate;
     d->scaling = scaling;
+}
+
+QPair<double, double> Axis::range() const
+{
+    if (d) return {d->scaling.min.value_or(0.0), d->scaling.max.value_or(0.0)};
+    return {0.0, 0.0};
+}
+
+void Axis::setRange(double min, double max)
+{
+    if (!d) d = new AxisPrivate;
+    d->scaling.min = min;
+    d->scaling.max = max;
 }
 
 void Axis::write(QXmlStreamWriter &writer) const
@@ -191,19 +229,36 @@ void Axis::write(QXmlStreamWriter &writer) const
 
     if (d->majorGridlines.isValid()) {
         writer.writeStartElement("c:majorGridlines");
-        d->majorGridlines.write(writer);
+        d->majorGridlines.write(writer, "c:spPr");
         writer.writeEndElement();
     }
 
     if (d->minorGridlines.isValid()) {
         writer.writeStartElement("c:minorGridlines");
-        d->minorGridlines.write(writer);
+        d->minorGridlines.write(writer, "c:spPr");
         writer.writeEndElement();
     }
 
     writer.writeEmptyElement("c:crossAx");
     if (d->crossAxis != -1)
         writer.writeAttribute("val", QString::number(d->crossAxis));
+
+    if (d->crossesType.has_value()) {
+        switch (d->crossesType.value()) {
+            case CrossesType::Maximum: writer.writeEmptyElement(QLatin1String("c:crosses"));
+                writer.writeAttribute("val", "max");
+                break;
+            case CrossesType::Minimum: writer.writeEmptyElement(QLatin1String("c:crosses"));
+                writer.writeAttribute("val", "min");
+                break;
+            case CrossesType::AutoZero: writer.writeEmptyElement(QLatin1String("c:crosses"));
+                writer.writeAttribute("val", "autoZero");
+                break;
+            case CrossesType::Position: writer.writeEmptyElement(QLatin1String("c:crossesAt"));
+                writer.writeAttribute("val", QString::number(d->crossesPosition.value_or(0.0)));
+                break;
+        }
+    }
 
     writer.writeEndElement();
 }
@@ -247,11 +302,15 @@ void Axis::read(QXmlStreamReader &reader)
             else if (reader.name() == QLatin1String("crossAx")) {
                 d->crossAxis = reader.attributes().value("val").toInt();
             }
-            else if (reader.name() == QLatin1String("")) {
-
+            else if (reader.name() == QLatin1String("crosses")) {
+                const auto &s = reader.attributes().value(QLatin1String("val"));
+                if (s == QLatin1String("autoZero")) d->crossesType = CrossesType::AutoZero;
+                else if (s == QLatin1String("min")) d->crossesType = CrossesType::Minimum;
+                if (s == QLatin1String("max")) d->crossesType = CrossesType::Maximum;
             }
-            else if (reader.name() == QLatin1String("")) {
-
+            else if (reader.name() == QLatin1String("crossesAt")) {
+                d->crossesType = CrossesType::Position;
+                d->crossesPosition = reader.attributes().value(QLatin1String("val")).toDouble();
             }
             else if (reader.name() == QLatin1String("")) {
 

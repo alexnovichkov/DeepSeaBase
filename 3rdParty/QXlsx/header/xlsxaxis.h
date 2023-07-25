@@ -46,6 +46,12 @@ public:
     };
     enum class Type { None = (-1), Cat, Val, Date, Ser };
     enum class Position { None = (-1), Left, Right, Top, Bottom };
+    enum class CrossesType {
+        Minimum,
+        Maximum,
+        Position,
+        AutoZero
+    };
 
     Axis(Type type, Position position);
     Axis(Type type);
@@ -66,11 +72,20 @@ public:
     void setCrossAxis(Axis *axis);
     void setCrossAxis(int axisId);
 
+    double crossesAt() const;
+    void setCrossesAt(double val);
+    CrossesType crossesType() const;
+    void setCrossesAt(CrossesType val);
+
+
     QString title() const;
     void setTitle(const QString &title);
 
     Scaling *scaling();
     void setScaling(Scaling scaling);
+
+    QPair<double, double> range() const;
+    void setRange(double min, double max);
 
     void write(QXmlStreamWriter &writer) const;
     void read(QXmlStreamReader &reader);
@@ -107,7 +122,11 @@ public:
     std::optional<bool> visible;
     Axis::Position position;
     Axis::Type type;
+
     int crossAxis = -1;
+    std::optional<Axis::CrossesType> crossesType;
+    std::optional<double> crossesPosition;
+
     ShapeProperties majorGridlines;
     ShapeProperties minorGridlines;
 

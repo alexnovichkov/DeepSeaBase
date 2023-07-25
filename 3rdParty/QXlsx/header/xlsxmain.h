@@ -437,6 +437,58 @@ private:
     QVariant val;
 };
 
+/**
+ * @brief The TextPoint class
+ * The class is used to set character spacing, either in points,
+ * or as a qualified measure in mm, pt, in etc.
+ */
+class TextPoint
+{
+public:
+    /**
+     * @brief TextPoint creates invalid spacing
+     */
+    TextPoint() {}
+
+    /**
+     * @brief TextPoint creates TextPoint in points
+     * @param points spacing value [-4000.0 .. 4000.0]
+     */
+    explicit TextPoint(double points);
+
+    /**
+     * @brief TextPoint creates spacing measure
+     * @param val string in the format "-?[0-9]+(\.[0-9]+)?(mm|cm|in|pt|pc|pi)",
+     * f.e. "-12.3pt" or "200mm"
+     */
+    explicit TextPoint(const QString &val);
+
+    /**
+     * @brief toString returns string representation of spacing
+     * @return
+     */
+    QString toString() const;
+
+    /**
+     * @brief toPoints return spacing in points
+     * @return
+     */
+    double toPoints() const;
+
+    void setString(const QString &val);
+    void setPoints(double points);
+
+    /**
+     * @brief create parses val and creates a valid TextPoint
+     * @param val string, either pt*100 ([-400000..400000]) or measure (30pt)
+     * @return
+     */
+    static TextPoint create(const QString &val);
+    static TextPoint create(const QStringRef &val);
+private:
+    QVariant val;
+};
+
 void parseAttribute(const QXmlStreamAttributes &a, const QLatin1String &name, std::optional<Coordinate> &target);
 
 /**

@@ -437,6 +437,61 @@ Coordinate Coordinate::create(const QStringRef &val)
     return Coordinate(val.toString());
 }
 
+
+TextPoint::TextPoint(const QString &val)
+{
+    this->val = val;
+}
+
+TextPoint::TextPoint(double points)
+{
+    this->val = QVariant::fromValue<double>(points);
+}
+
+QString TextPoint::toString() const
+{
+    if (val.userType() == QMetaType::Int) {
+        int pt = qRound(val.toDouble() * 100);
+        return QString::number(pt);
+    }
+
+    return val.toString();
+}
+
+double TextPoint::toPoints() const
+{
+    return val.toDouble();
+}
+
+void TextPoint::setString(const QString &val)
+{
+    this->val = val;
+}
+
+void TextPoint::setPoints(double points)
+{
+    this->val = QVariant::fromValue<double>(points);
+}
+
+TextPoint TextPoint::create(const QString &val)
+{
+    bool ok;
+    double n = val.toDouble(&ok);
+    if (ok) return TextPoint(n/100.0);
+
+    return TextPoint(val);
+}
+
+TextPoint TextPoint::create(const QStringRef &val)
+{
+    bool ok;
+    double n = val.toInt(&ok);
+    if (ok) return TextPoint(n/100.0);
+
+    return TextPoint(val.toString());
+}
+
+
 void Bevel::write(QXmlStreamWriter &writer, const QString &name) const
 {
     writer.writeEmptyElement(name);

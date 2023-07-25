@@ -54,7 +54,7 @@ public:
     bool isValid() const;
     QByteArray formatKey() const;
 
-    void write(QXmlStreamWriter &writer) const;
+    void write(QXmlStreamWriter &writer, const QString &name) const;
     void read(QXmlStreamReader &reader);
 
     bool operator == (const ShapeProperties &format) const;

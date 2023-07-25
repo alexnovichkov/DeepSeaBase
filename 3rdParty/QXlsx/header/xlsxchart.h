@@ -50,8 +50,8 @@ public:
     void addSeries(const CellRange &range, AbstractSheet *sheet = NULL, bool headerH = false, bool headerV = false, bool swapHeaders = false);
     void addSeries(const CellRange &keyRange, const CellRange &valRange, AbstractSheet *sheet = NULL, bool headerH = false);
     void setChartType(ChartType type);
-    void setLineFormat(const LineFormat &format);
-    void setCanvasLineFormat(const LineFormat &format);
+    void setChartLineFormat(const LineFormat &format);
+    void setPlotAreaLineFormat(const LineFormat &format);
 
     Axis *addAxis(Axis::Type type, Axis::Position pos, QString title = QString());
     Axis *axis(int id);

@@ -354,4 +354,9 @@ void parseAttributeUInt(const QXmlStreamAttributes &a, const QLatin1String &name
     if (a.hasAttribute(name)) target = a.value(name).toUInt();
 }
 
+void parseAttributeString(const QXmlStreamAttributes &a, const QLatin1String &name, QString &target)
+{
+    if (a.hasAttribute(name)) target = a.value(name).toString();
+}
+
 QT_END_NAMESPACE_XLSX

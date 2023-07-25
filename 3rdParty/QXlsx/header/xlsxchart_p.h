@@ -108,8 +108,8 @@ public:
     bool legendOverlay;
     bool majorGridlinesEnabled;
     bool minorGridlinesEnabled;
-    LineFormat lineFormat;
-    LineFormat canvasLineFormat;
+    ShapeProperties plotAreaShapeProperties;
+    ShapeProperties chartShapeProperties;
 
     QString layout;             // only for storing a readed file
 };

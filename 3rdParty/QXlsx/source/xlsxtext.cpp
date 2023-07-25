@@ -895,6 +895,7 @@ void ParagraphProperties::read(QXmlStreamReader &reader)
             }
             else if (reader.name() == QLatin1String("buClr")) {
                 reader.readNextStartElement();
+                bulletColor = Color();
                 bulletColor->read(reader);
             }
             else if (reader.name() == QLatin1String("buSzTx")) {
@@ -939,7 +940,9 @@ void ParagraphProperties::read(QXmlStreamReader &reader)
                 readTabStops(reader);
             }
             else if (reader.name() == QLatin1String("defRPr")) {
-
+                TextCharacterProperties p;
+                p.read(reader);
+                defaultTextCharacterProperties = p;
             }
         }
         else if (token == QXmlStreamReader::EndElement && reader.name() == name)
@@ -1097,6 +1100,133 @@ void ParagraphProperties::writeTabStops(QXmlStreamWriter &writer, const QString 
         toString(p.second, s);
         writer.writeAttribute(QLatin1String("algn"), s);
     }
+    writer.writeEndElement();
+}
+
+void TextCharacterProperties::read(QXmlStreamReader &reader)
+{
+//    <xsd:complexType name="CT_TextCharacterProperties">
+//        <xsd:sequence>
+//          <xsd:element name="ln" type="CT_LineProperties" minOccurs="0" maxOccurs="1"/>
+//          <xsd:group ref="EG_FillProperties" minOccurs="0" maxOccurs="1"/>
+//          <xsd:group ref="EG_EffectProperties" minOccurs="0" maxOccurs="1"/>
+//          <xsd:element name="highlight" type="CT_Color" minOccurs="0" maxOccurs="1"/>
+//          <xsd:group ref="EG_TextUnderlineLine" minOccurs="0" maxOccurs="1"/>
+//          <xsd:group ref="EG_TextUnderlineFill" minOccurs="0" maxOccurs="1"/>
+//          <xsd:element name="latin" type="CT_TextFont" minOccurs="0" maxOccurs="1"/>
+//          <xsd:element name="ea" type="CT_TextFont" minOccurs="0" maxOccurs="1"/>
+//          <xsd:element name="cs" type="CT_TextFont" minOccurs="0" maxOccurs="1"/>
+//          <xsd:element name="sym" type="CT_TextFont" minOccurs="0" maxOccurs="1"/>
+//          <xsd:element name="hlinkClick" type="CT_Hyperlink" minOccurs="0" maxOccurs="1"/>
+//          <xsd:element name="hlinkMouseOver" type="CT_Hyperlink" minOccurs="0" maxOccurs="1"/>
+//          <xsd:element name="rtl" type="CT_Boolean" minOccurs="0"/>
+//          <xsd:element name="extLst" type="CT_OfficeArtExtensionList" minOccurs="0" maxOccurs="1"/>
+//        </xsd:sequence>
+//        <xsd:attribute name="kumimoji" type="xsd:boolean" use="optional"/>
+//        <xsd:attribute name="lang" type="s:ST_Lang" use="optional"/>
+//        <xsd:attribute name="altLang" type="s:ST_Lang" use="optional"/>
+//        <xsd:attribute name="sz" type="ST_TextFontSize" use="optional"/>
+//        <xsd:attribute name="b" type="xsd:boolean" use="optional"/>
+//        <xsd:attribute name="i" type="xsd:boolean" use="optional"/>
+//        <xsd:attribute name="u" type="ST_TextUnderlineType" use="optional"/>
+//        <xsd:attribute name="strike" type="ST_TextStrikeType" use="optional"/>
+//        <xsd:attribute name="kern" type="ST_TextNonNegativePoint" use="optional"/>
+//        <xsd:attribute name="cap" type="ST_TextCapsType" use="optional" default="none"/>
+//        <xsd:attribute name="spc" type="ST_TextPoint" use="optional"/>
+//        <xsd:attribute name="normalizeH" type="xsd:boolean" use="optional"/>
+//        <xsd:attribute name="baseline" type="ST_Percentage" use="optional"/>
+//        <xsd:attribute name="noProof" type="xsd:boolean" use="optional"/>
+//        <xsd:attribute name="dirty" type="xsd:boolean" use="optional" default="true"/>
+//        <xsd:attribute name="err" type="xsd:boolean" use="optional" default="false"/>
+//        <xsd:attribute name="smtClean" type="xsd:boolean" use="optional" default="true"/>
+//        <xsd:attribute name="smtId" type="xsd:unsignedInt" use="optional" default="0"/>
+//        <xsd:attribute name="bmk" type="xsd:string" use="optional"/>
+//      </xsd:complexType>
+    const auto &name = reader.name();
+
+    const auto &a = reader.attributes();
+    parseAttributeBool(a, QLatin1String("kumimoji"), kumimoji);
+    parseAttributeString(a, QLatin1String("lang"), language);
+    parseAttributeString(a, QLatin1String("altLang"), alternateLanguage);
+    if (a.hasAttribute(QLatin1String("sz"))) fontSize = a.value(QLatin1String("sz")).toDouble() / 100;
+    parseAttributeBool(a, QLatin1String("b"), bold);
+    parseAttributeBool(a, QLatin1String("i"), italic);
+    if (a.hasAttribute(QLatin1String("u"))) {
+        UnderlineType t;
+        fromString(a.value(QLatin1String("u")).toString(), t);
+        underline = t;
+    }
+    if (a.hasAttribute(QLatin1String("strike"))) {
+        StrikeType t;
+        fromString(a.value(QLatin1String("strike")).toString(), t);
+        strike = t;
+    }
+    if (a.hasAttribute(QLatin1String("kern"))) kerningFontSize = a.value(QLatin1String("kern")).toDouble() / 100;
+    if (a.hasAttribute(QLatin1String("cap"))) {
+        CapitalizationType t;
+        fromString(a.value(QLatin1String("cap")).toString(), t);
+        capitalization = t;
+    }
+    if (a.hasAttribute(QLatin1String("spc"))) spacing = TextPoint::create(a.value(QLatin1String("spc")));
+    parseAttributeBool(a, QLatin1String("normalizeH"), normalizeHeights);
+    parseAttributeBool(a, QLatin1String("noProof"), noProofing);
+    parseAttributeBool(a, QLatin1String("dirty"), proofingNeeded);
+    parseAttributeBool(a, QLatin1String("err"), spellingErrorFound);
+    parseAttributeBool(a, QLatin1String("smtClean"), checkForSmartTagsNeeded);
+    parseAttributePercent(a, QLatin1String("baseline"), baseline);
+    parseAttributeInt(a, QLatin1String("smtId"), smartTagId);
+
+    while (!reader.atEnd()) {
+        auto token = reader.readNext();
+        if (token == QXmlStreamReader::StartElement) {
+            if (reader.name() == QLatin1String("tab")) {
+
+            }
+        }
+        else if (token == QXmlStreamReader::EndElement && reader.name() == name)
+            break;
+    }
+}
+
+void TextCharacterProperties::write(QXmlStreamWriter &writer, const QString &name) const
+{
+    writer.writeStartElement(name);
+    if (kumimoji.has_value()) writer.writeAttribute(QLatin1String("kumimoji"),
+                                                    toST_Boolean(kumimoji.value()));
+    if (!language.isEmpty()) writer.writeAttribute(QLatin1String("lang"), language);
+    if (!alternateLanguage.isEmpty()) writer.writeAttribute(QLatin1String("lang"),
+                                                            alternateLanguage);
+    if (fontSize.has_value()) writer.writeAttribute(QLatin1String("sz"),
+                                                    QString::number(qRound(fontSize.value()*100)));
+    if (underline.has_value()) {
+        QString s; toString(underline.value(), s);
+        writer.writeAttribute(QLatin1String("u"), s);
+    }
+    if (strike.has_value()) {
+        QString s; toString(strike.value(), s);
+        writer.writeAttribute(QLatin1String("strike"), s);
+    }
+    if (kerningFontSize.has_value()) writer.writeAttribute(QLatin1String("kern"),
+                                                           QString::number(qRound(kerningFontSize.value()*100)));
+    if (capitalization.has_value()) {
+        QString s; toString(capitalization.value(), s);
+        writer.writeAttribute(QLatin1String("cap"), s);
+    }
+    if (spacing.has_value()) writer.writeAttribute(QLatin1String("spc"), spacing.value().toString());
+    if (normalizeHeights.has_value()) writer.writeAttribute(QLatin1String("normalizeH"),
+                                                    toST_Boolean(normalizeHeights.value()));
+    if (baseline.has_value()) writer.writeAttribute(QLatin1String("baseline"),
+                                                    toST_Percent(baseline.value()));
+    if (noProofing.has_value()) writer.writeAttribute(QLatin1String("noProof"),
+                                                    toST_Boolean(noProofing.value()));
+    if (proofingNeeded.has_value()) writer.writeAttribute(QLatin1String("dirty"),
+                                                    toST_Boolean(proofingNeeded.value()));
+    if (spellingErrorFound.has_value()) writer.writeAttribute(QLatin1String("err"),
+                                                    toST_Boolean(spellingErrorFound.value()));
+    if (checkForSmartTagsNeeded.has_value()) writer.writeAttribute(QLatin1String("smtClean"),
+                                                    toST_Boolean(checkForSmartTagsNeeded.value()));
+    if (smartTagId.has_value()) writer.writeAttribute(QLatin1String("smtId"),
+                                                    QString::number(smartTagId.value()));
     writer.writeEndElement();
 }
 

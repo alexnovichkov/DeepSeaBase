@@ -106,7 +106,7 @@ void MarkerFormat::write(QXmlStreamWriter &writer)
     }
 
     if (d->shape.isValid()) {
-        d->shape.write(writer);
+        d->shape.write(writer, "c:spPr");
     }
 
     writer.writeEndElement();

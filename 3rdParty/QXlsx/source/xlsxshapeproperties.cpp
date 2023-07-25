@@ -80,11 +80,11 @@ bool ShapeProperties::isValid() const
     return false;
 }
 
-void ShapeProperties::write(QXmlStreamWriter &writer) const
+void ShapeProperties::write(QXmlStreamWriter &writer, const QString &name) const
 {
     if (!d) return;
 
-    writer.writeStartElement(QLatin1String("a:spPr"));
+    writer.writeStartElement(name);
     if (d->blackWhiteMode.has_value()) writer.writeAttribute(QLatin1String("bwMode"), toString(d->blackWhiteMode.value()));
     if (d->xfrm.has_value()) d->xfrm->write(writer, QLatin1String("a:xfrm"));
     if (d->presetGeometry.has_value()) {

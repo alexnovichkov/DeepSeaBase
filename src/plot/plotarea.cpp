@@ -670,13 +670,12 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          b->setTitle(stripHtml(m_plot->axisTitleText(Enums::AxisType::atBottom)));
          if (someStepIsZero)
              b->scaling()->logBase = 10; // TODO: replace with a method
+         b->setRange(int(range.min/10)*10, range.max);
          chart->setGridlinesEnable(true, false);
-//         xAxis->setProperty("MaximumScale", range.max);
-//         xAxis->setProperty("MinimumScale", int(range.min/10)*10);
          auto l = chart->addAxis(QXlsx::Axis::Type::Val, QXlsx::Axis::Position::Left);
          l->setTitle(stripHtml(m_plot->axisTitleText(Enums::AxisType::atLeft)));
          l->setCrossAxis(b);
-//         yAxis->setProperty("CrossesAt", -1000);
+         l->setCrossesAt(QXlsx::Axis::CrossesType::Minimum);
 
          for ( int i=0; i<size; ++i) {
              Curve *curve = m_plot->model()->curve(i);
@@ -700,14 +699,14 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          // рамка вокруг графика
          QXlsx::LineFormat lf;
          lf.setType(QXlsx::FillProperties::FillType::NoFill);
-         chart->setLineFormat(lf);
+         chart->setChartLineFormat(lf);
 
          // рамка вокруг полотна
          //QXlsx::LineFormat lf1;
          lf.setType(QXlsx::FillProperties::FillType::SolidFill);
          lf.setColor(QColor(Qt::black));
          lf.setWidth(1.0);
-         chart->setCanvasLineFormat(lf);
+         chart->setPlotAreaLineFormat(lf);
 
          //легенда
          chart->setChartLegend(QXlsx::Chart::Right, false);
@@ -756,8 +755,9 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 
      QTemporaryFile tempFile("DeepSeaBase-XXXXXX.xlsx");
      tempFile.setAutoRemove(false);
-     LOG(DEBUG) << tempFile.fileName();
+
      tempFile.open();
+     LOG(DEBUG) << tempFile.fileName();
      output.saveAs(tempFile.fileName());
 
      QDesktopServices::openUrl(QUrl::fromLocalFile(tempFile.fileName()));

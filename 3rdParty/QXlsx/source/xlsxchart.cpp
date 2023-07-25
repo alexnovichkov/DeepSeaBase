@@ -244,18 +244,18 @@ void Chart::setChartType(ChartType type)
     d->chartType = type;
 }
 
-void Chart::setLineFormat(const LineFormat &format)
+void Chart::setChartLineFormat(const LineFormat &format)
 {
     Q_D(Chart);
 
-    d->lineFormat = format;
+    d->chartShapeProperties.setLine(format);
 }
 
-void Chart::setCanvasLineFormat(const LineFormat &format)
+void Chart::setPlotAreaLineFormat(const LineFormat &format)
 {
     Q_D(Chart);
 
-    d->canvasLineFormat = format;
+    d->plotAreaShapeProperties.setLine(format);
 }
 
 Axis* Chart::addAxis(Axis::Type type, Axis::Position pos, QString title)
@@ -396,6 +396,7 @@ void Chart::saveToXmlFile(QIODevice *device) const
     */
 
     d->saveXmlChart(writer);
+    if (d->chartShapeProperties.isValid()) d->chartShapeProperties.write(writer, "c:spPr");
 
     writer.writeEndElement();// c:chartSpace
     writer.writeEndDocument();
@@ -841,9 +842,12 @@ void ChartPrivate::saveXmlChart(QXmlStreamWriter &writer) const
     writer.writeStartElement(QStringLiteral("c:plotArea"));
 
     // a little workaround for Start- and EndElement with starting ">" and ending without ">"
-    writer.device()->write("><c:layout>"); //layout
-    writer.device()->write(layout.toUtf8());
-    writer.device()->write("</c:layout"); //layout
+    if (layout.isEmpty()) writer.writeEmptyElement("c:layout");
+    else {
+        writer.device()->write("><c:layout>"); //layout
+        writer.device()->write(layout.toUtf8());
+        writer.device()->write("</c:layout"); //layout
+    }
 
     // Chart can have more than one subcharts. So we triage series by axes and
     // create as many scatterCharts as needed
@@ -886,14 +890,13 @@ void ChartPrivate::saveXmlChart(QXmlStreamWriter &writer) const
     // c:spPr   CT_ShapeProperties
     // c:extLst CT_ExtensionList
 
-    if (canvasLineFormat.isValid()) canvasLineFormat.write(writer);
+    if (plotAreaShapeProperties.isValid()) plotAreaShapeProperties.write(writer, "c:spPr");
     writer.writeEndElement(); // c:plotArea
 
     // c:legend
     saveXmlChartLegend(writer); // c:legend
 
     writer.writeEndElement(); // c:chart
-    if (lineFormat.isValid()) lineFormat.write(writer);
 }
 
 bool ChartPrivate::loadXmlChartTitle(QXmlStreamReader &reader)
@@ -1415,7 +1418,7 @@ void ChartPrivate::saveXmlSer(QXmlStreamWriter &writer, XlsxSeries *ser, int id)
 
     // line
     if (ser->shape.isValid()) {
-        ser->shape.write(writer);
+        ser->shape.write(writer, QLatin1String("c:spPr"));
     }
     // marker
     if (ser->marker.isValid()) {

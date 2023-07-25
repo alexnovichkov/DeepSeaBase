@@ -59,7 +59,7 @@ void parseAttributePercent(const QXmlStreamAttributes &a, const QLatin1String &n
 void parseAttributeInt(const QXmlStreamAttributes &a, const QLatin1String &name, std::optional<int> &target);
 void parseAttributeInt(const QXmlStreamAttributes &a, const QLatin1String &name, int &target);
 void parseAttributeUInt(const QXmlStreamAttributes &a, const QLatin1String &name, uint &target);
-
+void parseAttributeString(const QXmlStreamAttributes &a, const QLatin1String &name, QString &target);
 
 bool parseXsdBoolean(const QString &value, bool defaultValue=false);
 
