@@ -311,19 +311,6 @@ void PlotArea::update()
     if (m_plot) m_plot->update();
 }
 
-void setLineColor(QAxObject *obj, int color)
-{DD;
-    QAxObject *format = obj->querySubObject("Format");
-    QAxObject *formatLine = format->querySubObject("Line");
-    formatLine->setProperty("Visible",true);
-    QAxObject *formatLineForeColor = formatLine->querySubObject("ForeColor");
-    formatLineForeColor->setProperty("ObjectThemeColor", color);
-
-    delete formatLineForeColor;
-    delete formatLine;
-    delete format;
-}
-
 void setAxis(QAxObject *xAxis, const QString &title)
 {DD;
     xAxis->dynamicCall("SetHasTitle(bool)",true);
@@ -671,11 +658,12 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          if (someStepIsZero)
              b->scaling()->logBase = 10; // TODO: replace with a method
          b->setRange(int(range.min/10)*10, range.max);
-         chart->setGridlinesEnable(true, false);
+         b->setMajorGridLines(QColor(Qt::darkGray), 0.5, QXlsx::LineFormat::StrokeType::Dash);
          auto l = chart->addAxis(QXlsx::Axis::Type::Val, QXlsx::Axis::Position::Left);
          l->setTitle(stripHtml(m_plot->axisTitleText(Enums::AxisType::atLeft)));
          l->setCrossAxis(b);
-         l->setCrossesAt(QXlsx::Axis::CrossesType::Minimum);
+         l->setMajorGridLines(QColor(Qt::darkGray), 0.5, QXlsx::LineFormat::StrokeType::Dash);
+         b->setCrossesAt(QXlsx::Axis::CrossesType::Minimum);
 
          for ( int i=0; i<size; ++i) {
              Curve *curve = m_plot->model()->curve(i);
@@ -705,7 +693,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          //QXlsx::LineFormat lf1;
          lf.setType(QXlsx::FillProperties::FillType::SolidFill);
          lf.setColor(QColor(Qt::black));
-         lf.setWidth(1.0);
+         lf.setWidth(0.5);
          chart->setPlotAreaLineFormat(lf);
 
          //легенда

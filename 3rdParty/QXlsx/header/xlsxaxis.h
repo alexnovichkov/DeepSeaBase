@@ -13,6 +13,7 @@
 #include "xlsxglobal.h"
 #include "xlsxshapeproperties.h"
 #include "xlsxutility_p.h"
+#include "xlsxtitle.h"
 
 QT_BEGIN_NAMESPACE_XLSX
 
@@ -77,8 +78,14 @@ public:
     CrossesType crossesType() const;
     void setCrossesAt(CrossesType val);
 
+    void setMajorGridLines(const ShapeProperties &val);
+    void setMinorGridLines(const ShapeProperties &val);
+    void setMajorGridLines(const QColor &color, double width, LineFormat::StrokeType strokeType);
+    void setMinorGridLines(const QColor &color, double width, LineFormat::StrokeType strokeType);
 
-    QString title() const;
+
+    QString titleAsString() const;
+    Title title() const;
     void setTitle(const QString &title);
 
     Scaling *scaling();
@@ -130,8 +137,8 @@ public:
     ShapeProperties majorGridlines;
     ShapeProperties minorGridlines;
 
-    QString title; // temporary solution
-//    Title title;
+   // QString title; // temporary solution
+    Title title;
 //    NumberFormat numberFormat;
 
 //    TickMark majorTickMark;

@@ -11,32 +11,48 @@
 
 QT_BEGIN_NAMESPACE_XLSX
 
-//TextPrivate::TextPrivate() : type(Text::Type::None), dirty(true)
-//{
+class QXlsxTextPrivate : public QSharedData
+{
+public:
+    QXlsxTextPrivate();
+    QXlsxTextPrivate(const QXlsxTextPrivate &other);
+    ~QXlsxTextPrivate();
 
-//}
+    QByteArray idKey() const;
 
-//TextPrivate::TextPrivate(const TextPrivate &other) : QSharedData(other),
-//    type(other.type),
-//    fragmentTexts(other.fragmentTexts),
-//    fragmentFormats(other.fragmentFormats),
-//    _idKey(other.idKey()),
-//    dirty(other.dirty),
-//    ref(other.ref),
-//    textProperties(other.textProperties)
-//{
+    Text::Type type = Text::Type::None;
+    QStringList fragmentTexts;
+    QList<Format> fragmentFormats;
+    QByteArray _idKey;
+    bool dirty = true;
+    QString reference;
 
-//}
+    TextProperties textProperties; //element, required
+    ListStyleProperties paragraphProperties; //element, optional
+};
 
-//TextPrivate::~TextPrivate()
-//{
 
-//}
 
-QByteArray TextPrivate::idKey() const
+QXlsxTextPrivate::QXlsxTextPrivate()
+{
+
+}
+
+QXlsxTextPrivate::QXlsxTextPrivate(const QXlsxTextPrivate &other) : QSharedData(other)
+    //, TODO: write all members
+{
+
+}
+
+QXlsxTextPrivate::~QXlsxTextPrivate()
+{
+
+}
+
+QByteArray QXlsxTextPrivate::idKey() const
 {
     if (dirty) {
-        TextPrivate *t = const_cast<TextPrivate *>(this);
+        QXlsxTextPrivate *t = const_cast<QXlsxTextPrivate *>(this);
         QByteArray bytes;
 
         //Generate a hash value base on QByteArray ?
@@ -48,9 +64,9 @@ QByteArray TextPrivate::idKey() const
             if (fragmentFormats[i].hasFontData())
                 bytes.append(fragmentFormats[i].fontKey());
         }
-        if (!ref.isEmpty()) {
+        if (!reference.isEmpty()) {
             bytes.append("@Ref");
-            bytes.append(ref.toUtf8());
+            bytes.append(reference.toUtf8());
         }
 
         t->_idKey = bytes;
@@ -66,14 +82,14 @@ Text::Text()
 
 Text::Text(const QString &text)
 {
-    d = new TextPrivate;
+    d = new QXlsxTextPrivate;
     d->type = Type::PlainText;
     addFragment(text, Format());
 }
 
 Text::Text(Text::Type type)
 {
-    d = new TextPrivate;
+    d = new QXlsxTextPrivate;
     d->type = type;
 }
 
@@ -84,11 +100,12 @@ Text::Text(const Text &other) : d(other.d)
 
 Text::~Text()
 {
-    delete d;
+
 }
 
 void Text::setType(Type type)
 {
+    if (!d) d = new QXlsxTextPrivate;
     d->type = type;
 
 //    //adjust formatting
@@ -107,24 +124,28 @@ Text::Type Text::type() const
 
 void Text::setPlainString(const QString &s)
 {
+    if (!d) d = new QXlsxTextPrivate;
     d->type = Type::PlainText;
     d->fragmentTexts.clear();
     d->fragmentFormats.clear();
-    d->ref.clear();
+    d->reference.clear();
     d->fragmentTexts << s;
 }
 
 QString Text::toPlainString() const
 {
-    return d->fragmentTexts.join(QString());
+    if (d)
+        return d->fragmentTexts.join(QString());
+    return QString();
 }
 
 void Text::setHtml(const QString &text)
 {
+    if (!d) d = new QXlsxTextPrivate;
     d->type = Type::RichText;
     d->fragmentTexts.clear();
     d->fragmentFormats.clear();
-    d->ref.clear();
+    d->reference.clear();
 
     QTextDocument doc;
     doc.setHtml(text);
@@ -148,53 +169,61 @@ QString Text::toHtml() const
 
 void Text::setStringReference(const QString &ref)
 {
+    if (!d) d = new QXlsxTextPrivate;
     d->type = Type::StringRef;
     d->fragmentTexts.clear();
     d->fragmentFormats.clear();
-    d->ref = ref;
+    d->reference = ref;
 }
 
 void Text::setStringCashe(const QStringList &cashe)
 {
+    if (!d) d = new QXlsxTextPrivate;
     if (d->type != Type::StringRef) return;
     d->fragmentTexts = cashe;
 }
 
 QString Text::stringReference() const
 {
-    if (d->type != Type::StringRef) return QString();
+    if (d && d->type == Type::StringRef)
+        return d->reference;
 
-    return d->ref;
+    return QString();
 }
 
 QStringList Text::stringCashe() const
 {
-    if (d->type != Type::StringRef) return {};
-    return d->fragmentTexts;
+    if (d && d->type == Type::StringRef)
+        return d->fragmentTexts;
+    return {};
 }
 
 bool Text::isRichString() const
 {
+    if (!d) return false;
     return d->type == Type::RichText;
 }
 
 bool Text::isPlainString() const
 {
+    if (!d) return false;
     return d->type == Type::RichText;
 }
 
 bool Text::isStringReference() const
 {
+    if (!d) return false;
     return d->type == Type::StringRef;
 }
 
 bool Text::isNull() const
 {
+    if (!d) return true;
     switch (d->type) {
         case Type::None: return true;
         case Type::PlainText:
         case Type::RichText: return d->fragmentTexts.isEmpty();
-        case Type::StringRef: return d->ref.isNull();
+        case Type::StringRef: return d->reference.isNull();
     }
 
     return true;
@@ -202,11 +231,12 @@ bool Text::isNull() const
 
 bool Text::isEmpty() const
 {
+    if (!d) return true;
     switch (d->type) {
         case Type::None: return true;
         case Type::PlainText:
         case Type::RichText: return d->fragmentTexts.join(QString()).isEmpty();
-        case Type::StringRef: return d->ref.isEmpty();
+        case Type::StringRef: return d->reference.isEmpty();
     }
 
     return true;
@@ -214,11 +244,13 @@ bool Text::isEmpty() const
 
 int Text::fragmentCount() const
 {
-    return d->fragmentTexts.size();
+    if (d) return d->fragmentTexts.size();
+    return 0;
 }
 
 void Text::addFragment(const QString &text, const Format &format)
 {
+    if (!d) d = new QXlsxTextPrivate;
     d->fragmentTexts.append(text);
     d->fragmentFormats.append(format);
     d->dirty = true;
@@ -226,16 +258,22 @@ void Text::addFragment(const QString &text, const Format &format)
 
 QString Text::fragmentText(int index) const
 {
-    return d->fragmentTexts.value(index);
+    if (d)
+        return d->fragmentTexts.value(index);
+    return QString();
 }
 
 Format Text::fragmentFormat(int index) const
 {
-    return d->fragmentFormats.value(index);
+    if (d)
+        return d->fragmentFormats.value(index);
+    return Format();
 }
 
 void Text::read(QXmlStreamReader &reader)
 {
+    if (!d) d = new QXlsxTextPrivate;
+
     const auto &name = reader.name();
 
     while (!reader.atEnd()) {
@@ -253,9 +291,29 @@ void Text::read(QXmlStreamReader &reader)
     }
 }
 
-void Text::write(QXmlStreamWriter &writer)
+void Text::write(QXmlStreamWriter &writer, const QString &name) const
 {
-    //TODO:
+    if (!d) return;
+    if (d->type == Type::None) return;
+
+    writer.writeStartElement(name);
+
+//    <xsd:complexType name="CT_Tx">
+//      <xsd:sequence>
+//        <xsd:choice minOccurs="1" maxOccurs="1">
+//          <xsd:element name="strRef" type="CT_StrRef" minOccurs="1" maxOccurs="1"/>
+//          <xsd:element name="rich" type="a:CT_TextBody" minOccurs="1" maxOccurs="1"/>
+//        </xsd:choice>
+//      </xsd:sequence>
+//    </xsd:complexType>
+
+    switch (d->type) {
+        case Type::StringRef: writeStringReference(writer, QLatin1String("c:strRef")); break;
+        case Type::PlainText: writePlainString(writer, "c:rich"); break;
+        case Type::RichText: writeRichString(writer, "c:rich"); break;
+        default: break;
+    }
+    writer.writeEndElement();
 }
 
 Text &Text::operator=(const Text &other)
@@ -266,6 +324,7 @@ Text &Text::operator=(const Text &other)
 
 void Text::readStringReference(QXmlStreamReader &reader)
 {
+    if (!d) d = new QXlsxTextPrivate;
     d->type = Type::StringRef;
 
     const auto &name = reader.name();
@@ -276,7 +335,7 @@ void Text::readStringReference(QXmlStreamReader &reader)
         auto token = reader.readNext();
         if (token == QXmlStreamReader::StartElement) {
             if (reader.name() == QLatin1String("f")) {
-                d->ref = reader.readElementText();
+                d->reference = reader.readElementText();
             }
             else if (reader.name() == QLatin1String("ptCount")) {
                 count = reader.attributes().value(QLatin1String("val")).toInt();
@@ -307,6 +366,7 @@ void Text::readRichString(QXmlStreamReader &reader)
 //          <xsd:element name="p" type="CT_TextParagraph" minOccurs="1" maxOccurs="unbounded"/>
 //        </xsd:sequence>
 //      </xsd:complexType>
+    if (!d) d = new QXlsxTextPrivate;
     d->type = Type::RichText;
 
     const auto &name = reader.name();
@@ -331,19 +391,17 @@ void Text::readRichString(QXmlStreamReader &reader)
 
 void Text::readParagraph(QXmlStreamReader &reader)
 {
+    if (!d) d = new QXlsxTextPrivate;
     //TODO:
 }
 
-void Text::writeStringReference(QXmlStreamWriter &writer)
+void Text::writeStringReference(QXmlStreamWriter &writer, const QString &name) const
 {
-    if (d->type != Type::StringRef) return;
-    if (d->ref.isEmpty()) {
-        writer.writeEmptyElement(QLatin1String("c:strRef"));
+    if (!d || d->reference.isEmpty())
         return;
-    }
 
-    writer.writeStartElement(QLatin1String("c:strRef"));
-    writer.writeTextElement(QLatin1String("c:f"), d->ref);
+    writer.writeStartElement(name);
+    writer.writeTextElement(QLatin1String("c:f"), d->reference);
     if (!d->fragmentTexts.isEmpty()) {
         writer.writeStartElement(QLatin1String("c:strCashe"));
         writer.writeEmptyElement(QLatin1String("c:ptCount"));
@@ -358,12 +416,38 @@ void Text::writeStringReference(QXmlStreamWriter &writer)
     writer.writeEndElement(); //c:strRef
 }
 
-void Text::writeRichString(QXmlStreamWriter &writer)
+void Text::writeRichString(QXmlStreamWriter &writer, const QString &name) const
 {
-//TODO:
+    if (!d) return;
+
+    //TODO: all properties
+
 }
 
-void Text::writeTextProperties(QXmlStreamWriter &writer)
+void Text::writePlainString(QXmlStreamWriter &writer, const QString &name) const
+{
+    if (!d) return;
+    if (d->fragmentTexts.isEmpty()) return;
+
+    writer.writeStartElement(name);
+
+    writer.writeEmptyElement("a:bodyPr");
+    writer.writeEmptyElement("a:lstStyle");
+
+    writer.writeStartElement("a:p");
+
+    writer.writeStartElement("a:pPr");
+    writer.writeEmptyElement("a:defRPr");
+    writer.writeEndElement(); // a:pPr
+
+    writer.writeStartElement("a:r");
+    writer.writeTextElement("a:t", d->fragmentTexts.join(QString()));
+    writer.writeEndElement(); // a:r
+    writer.writeEndElement(); // a:p
+    writer.writeEndElement(); // name
+}
+
+void Text::writeTextProperties(QXmlStreamWriter &writer) const
 {
     if (!d->textProperties.isValid()) {
         writer.writeEmptyElement(QLatin1String("a:bodyPr"));
@@ -523,89 +607,23 @@ QXlsx::Text::operator QVariant() const
     return QVariant(cref, this);
 }
 
-/*!
-    Returns true if this string \a rs1 is equal to string \a rs2;
-    otherwise returns false.
- */
-bool operator==(const Text &rs1, const Text &rs2)
-{
-    return rs1.d->idKey() == rs2.d->idKey();
-}
-
-/*!
-    Returns true if this string \a rs1 is not equal to string \a rs2;
-    otherwise returns false.
- */
-bool operator!=(const Text &rs1, const Text &rs2)
-{
-    return rs1.d->idKey() != rs2.d->idKey();
-}
-
-/*!
- * \internal
- */
-bool operator<(const Text &rs1, const Text &rs2)
-{
-    return rs1.d->idKey() < rs2.d->idKey();
-}
-
-/*!
-    \overload
-    Returns true if this string \a rs1 is equal to string \a rs2;
-    otherwise returns false.
- */
-bool operator ==(const Text &rs1, const QString &rs2)
-{
-    return rs1.d->fragmentTexts.join(QString()) == rs2;
-}
-
-/*!
-    \overload
-    Returns true if this string \a rs1 is not equal to string \a rs2;
-    otherwise returns false.
- */
-bool operator !=(const Text &rs1, const QString &rs2)
-{
-    return rs1.d->fragmentTexts.join(QString()) != rs2;
-}
-
-/*!
-    \overload
-    Returns true if this string \a rs1 is equal to string \a rs2;
-    otherwise returns false.
- */
-bool operator ==(const QString &rs1, const Text &rs2)
-{
-    return rs2 == rs1;
-}
-
-/*!
-    \overload
-    Returns true if this string \a rs1 is not equal to string \a rs2;
-    otherwise returns false.
- */
-bool operator !=(const QString &rs1, const Text &rs2)
-{
-    return rs2 != rs1;
-}
-
-uint qHash(const Text &rs, uint seed) Q_DECL_NOTHROW
-{
-   return qHash(rs.d->idKey(), seed);
-}
+//uint qHash(const Text &rs, uint seed) Q_DECL_NOTHROW
+//{
+//   return qHash(rs.d->idKey(), seed);
+//}
 
 #ifndef QT_NO_DEBUG_STREAM
 QDebug operator<<(QDebug dbg, const Text &rs)
 {
     switch (rs.d->type) {
         case Text::Type::RichText:
-            dbg.nospace() << "QXlsx::RichString(" << rs.toHtml() << ")";
+            dbg.nospace() << "QXlsx::Text(" << rs.toHtml() << ")";
             break;
         case Text::Type::PlainText:
-            dbg.nospace() << "QXlsx::RichString(" << rs.d->fragmentTexts.join(QString()) << ")";
+            dbg.nospace() << "QXlsx::Text(" << rs.d->fragmentTexts.join(QString()) << ")";
             break;
         case Text::Type::StringRef:
-            dbg.nospace() << "QXlsx::RichString(" << rs.d->ref << ")";
+            dbg.nospace() << "QXlsx::Text(" << rs.d->reference << ")";
         default: break;
     }
     return dbg.space();
@@ -955,24 +973,24 @@ void ParagraphProperties::write(QXmlStreamWriter &writer, const QString &name) c
 
 }
 
-bool ListStypeProperties::isEmpty() const
+bool ListStyleProperties::isEmpty() const
 {
     return vals.isEmpty();
 }
 
-ParagraphProperties ListStypeProperties::getDefault() const
+ParagraphProperties ListStyleProperties::getDefault() const
 {
     if (vals.size()>0) return vals[0];
     return {};
 }
 
-ParagraphProperties ListStypeProperties::value(int level) const
+ParagraphProperties ListStyleProperties::value(int level) const
 {
     if (vals.size()>level && level > 0) return vals[level];
     return {};
 }
 
-void ListStypeProperties::read(QXmlStreamReader &reader)
+void ListStyleProperties::read(QXmlStreamReader &reader)
 {
     const auto &name = reader.name();
 
@@ -1045,7 +1063,7 @@ void ListStypeProperties::read(QXmlStreamReader &reader)
     }
 }
 
-void ListStypeProperties::write(QXmlStreamWriter &writer, const QString &name) const
+void ListStyleProperties::write(QXmlStreamWriter &writer, const QString &name) const
 {
     if (vals.isEmpty()) {
         writer.writeEmptyElement(name);
@@ -1230,5 +1248,6 @@ void TextCharacterProperties::write(QXmlStreamWriter &writer, const QString &nam
     writer.writeEndElement();
 }
 
-
 QT_END_NAMESPACE_XLSX
+
+

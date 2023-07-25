@@ -7,7 +7,7 @@
 #include <QList>
 #include <QVariant>
 #include <QXmlStreamWriter>
-#include <QSharedData>
+#include <QSharedDataPointer>
 
 #include "xlsxglobal.h"
 #include "xlsxcolor.h"
@@ -46,8 +46,16 @@ public:
         std::optional<double> h;
 
         void read(QXmlStreamReader &reader);
-        void write(QXmlStreamWriter &writer);
+        void write(QXmlStreamWriter &writer, const QString &name) const;
     };
+
+    Title();
+    Title(const QString &text);
+    Title(const Title &other);
+    ~Title();
+
+    QString toString() const;
+    void setPlainText(const QString &text);
 
 
     bool isValid() const;

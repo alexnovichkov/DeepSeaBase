@@ -403,7 +403,7 @@ private:
     void writeTabStops(QXmlStreamWriter &writer, const QString &name) const;
 };
 
-class QXLSX_EXPORT ListStypeProperties
+class QXLSX_EXPORT ListStyleProperties
 {
 public:
     QVector<ParagraphProperties> vals;
@@ -414,7 +414,7 @@ public:
     void write(QXmlStreamWriter &writer, const QString &name) const;
 };
 
-class TextPrivate;
+class QXlsxTextPrivate;
 
 class QXLSX_EXPORT Text
 {
@@ -468,7 +468,7 @@ public:
     Format fragmentFormat(int index) const;
 
     void read(QXmlStreamReader &reader);
-    void write(QXmlStreamWriter &writer);
+    void write(QXmlStreamWriter &writer, const QString &name) const;
 
     operator QVariant() const;
 
@@ -478,10 +478,11 @@ private:
     void readRichString(QXmlStreamReader &reader);
     void readParagraph(QXmlStreamReader &reader);
 
+    void writeStringReference(QXmlStreamWriter &writer, const QString &name) const;
+    void writeRichString(QXmlStreamWriter &writer, const QString &name) const;
+    void writePlainString(QXmlStreamWriter &writer, const QString &name) const;
+    void writeTextProperties(QXmlStreamWriter &writer) const;
 
-    void writeStringReference(QXmlStreamWriter &writer);
-    void writeRichString(QXmlStreamWriter &writer);
-    void writeTextProperties(QXmlStreamWriter &writer);
     friend uint qHash(const Text &rs, uint seed) Q_DECL_NOTHROW;
     friend bool operator==(const Text &rs1, const Text &rs2);
     friend bool operator!=(const Text &rs1, const Text &rs2);
@@ -492,41 +493,12 @@ private:
     friend bool operator!=(const QString &rs1, const Text &rs2);
     friend QDebug operator<<(QDebug dbg, const Text &rs);
 
-    //QSharedDataPointer<TextPrivate> d;
-    TextPrivate *d = nullptr;
+    QSharedDataPointer<QXlsxTextPrivate> d;
 };
-
-  bool operator==(const Text &rs1, const Text &rs2);
-  bool operator!=(const Text &rs1, const Text &rs2);
-  bool operator<(const Text &rs1, const Text &rs2);
-  bool operator==(const Text &rs1, const QString &rs2);
-  bool operator==(const QString &rs1, const Text &rs2);
-  bool operator!=(const Text &rs1, const QString &rs2);
-  bool operator!=(const QString &rs1, const Text &rs2);
 
 #ifndef QT_NO_DEBUG_STREAM
 QDebug operator<<(QDebug dbg, const Text &rs);
 #endif
-
-class TextPrivate //: public QSharedData
-{
-public:
-//    TextPrivate();
-//    TextPrivate(const TextPrivate &other);
-//    ~TextPrivate();
-
-    QByteArray idKey() const;
-
-    Text::Type type = Text::Type::None;
-    QStringList fragmentTexts;
-    QList<Format> fragmentFormats;
-    QByteArray _idKey;
-    bool dirty = true;
-    QString ref;
-
-    TextProperties textProperties; //element, required
-    ListStypeProperties paragraphProperties; //element, optional
-};
 
 QT_END_NAMESPACE_XLSX
 

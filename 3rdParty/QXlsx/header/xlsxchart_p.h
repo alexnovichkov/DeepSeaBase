@@ -84,19 +84,7 @@ public:
     void saveXmlAreaChart(QXmlStreamWriter &writer, QList<int> axes) const;
     void saveXmlDoughnutChart(QXmlStreamWriter &writer, QList<int> axes) const;
     void saveXmlSer(QXmlStreamWriter &writer, XlsxSeries *ser, int id) const;
-    void saveXmlAxis(QXmlStreamWriter &writer) const;
     void saveXmlChartLegend(QXmlStreamWriter &writer) const;
-
-protected:
-    void saveXmlAxisCatAx(QXmlStreamWriter &writer, Axis* axis) const;
-    void saveXmlAxisDateAx(QXmlStreamWriter &writer, Axis* axis) const;
-    void saveXmlAxisSerAx(QXmlStreamWriter &writer, Axis* axis) const;
-    void saveXmlAxisValAx(QXmlStreamWriter &writer, Axis* axis) const;
-
-    void saveXmlAxisEG_AxShared(QXmlStreamWriter &writer, Axis* axis) const;
-    void saveXmlAxisEG_AxShared_Title(QXmlStreamWriter &writer, Axis* axis) const;
-    QString GetAxisPosString( Axis::Position axisPos ) const;
-    QString GetAxisName(Axis* ptrXlsxAxis) const;
 
 public:
     Chart::ChartType chartType;

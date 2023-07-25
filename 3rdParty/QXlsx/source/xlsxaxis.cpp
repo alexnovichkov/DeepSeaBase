@@ -165,16 +165,50 @@ void Axis::setCrossesAt(Axis::CrossesType val)
     d->crossesType = val;
 }
 
-QString Axis::title() const
+void Axis::setMajorGridLines(const ShapeProperties &val)
+{
+    if (!d) d = new AxisPrivate;
+    d->majorGridlines = val;
+}
+
+void Axis::setMinorGridLines(const ShapeProperties &val)
+{
+    if (!d) d = new AxisPrivate;
+    d->minorGridlines = val;
+}
+
+void Axis::setMajorGridLines(const QColor &color, double width, LineFormat::StrokeType strokeType)
+{
+    if (!d) d = new AxisPrivate;
+    LineFormat lf(FillProperties::FillType::SolidFill, width, color);
+    lf.setStrokeType(strokeType);
+    d->majorGridlines.setLine(lf);
+}
+
+void Axis::setMinorGridLines(const QColor &color, double width, LineFormat::StrokeType strokeType)
+{
+    if (!d) d = new AxisPrivate;
+    LineFormat lf(FillProperties::FillType::SolidFill, width, color);
+    lf.setStrokeType(strokeType);
+    d->minorGridlines.setLine(lf);
+}
+
+QString Axis::titleAsString() const
+{
+    if (d) return d->title.toString();
+    return QString();
+}
+
+Title Axis::title() const
 {
     if (d) return d->title;
-    return QString();
+    return Title();
 }
 
 void Axis::setTitle(const QString &title)
 {
     if (!d) d = new AxisPrivate;
-    d->title = title;
+    d->title.setPlainText(title);
 }
 
 Axis::Scaling *Axis::scaling()
@@ -238,6 +272,8 @@ void Axis::write(QXmlStreamWriter &writer) const
         d->minorGridlines.write(writer, "c:spPr");
         writer.writeEndElement();
     }
+
+    if (d->title.isValid()) d->title.write(writer);
 
     writer.writeEmptyElement("c:crossAx");
     if (d->crossAxis != -1)
