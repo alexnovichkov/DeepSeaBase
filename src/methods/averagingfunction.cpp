@@ -125,6 +125,11 @@ bool AveragingFunction::compute(FileDescriptor *file)
     QVector<double> data = m_input->getData("input");
     if (data.isEmpty()) return false;
 
+    if (averaging.getAveragingType() == Averaging::NoAveraging) {
+        output = data;
+        return true;
+    }
+
     //данные приходят сразу для всего канала, поэтому мы должны разбить их по блокам
     const int portionsCount = m_input->getParameter("?/portionsCount").toInt();
     const auto format = m_input->getParameter("?/dataFormat").toString();

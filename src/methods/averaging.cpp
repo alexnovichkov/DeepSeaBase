@@ -198,4 +198,5 @@ int Averaging::getAveragingType() const
 void Averaging::setAveragingType(int value)
 {DD;
     averagingType = value;
+    if (value == NoAveraging) maximumAverages = 0;
 }

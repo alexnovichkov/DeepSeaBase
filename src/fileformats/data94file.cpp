@@ -163,6 +163,7 @@ void Data94File::read()
     }
 
     QJsonParseError error;
+
     QJsonDocument doc = QJsonDocument::fromJson(descriptionBuffer, &error);
     if (error.error != QJsonParseError::NoError) {
         LOG(ERROR)<<QString("не удалось распознать описание файла:") << fileName() << error.errorString() << error.offset;
