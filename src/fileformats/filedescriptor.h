@@ -90,6 +90,7 @@ public:
     virtual QString fileType() const = 0;
 
     //переопределите эти методы, если файл поддерживает изменение
+    virtual bool isWritable() const {return false;}
     virtual void write() {};
     virtual void deleteChannels(const QVector<int> &) {};
     virtual void copyChannelsFrom(const QVector<Channel*> &) {};

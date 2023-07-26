@@ -284,6 +284,7 @@ public:
 
     virtual int channelsCount() const override {return channels.size();}
 
+    virtual bool isWritable() const override {return true;}
     void deleteChannels(const QVector<int> &channelsToDelete) override;
     void copyChannelsFrom(const QVector<Channel*> &source) override;
     void addChannelWithData(DataHolder *data, const DataDescription &description) override;

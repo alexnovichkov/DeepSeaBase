@@ -5,6 +5,8 @@
 #include "fileformats/formatfactory.h"
 #include "averaging.h"
 #include "app.h"
+#include "settings.h"
+#include "enums.h"
 
 Averaging *averageChannels(const QList<QPair<FileDescriptor *, int> > &toMean)
 {DD;
@@ -259,6 +261,17 @@ QString saveTimeSegment(FileDescriptor *file, double from, double to, bool chang
     QString suffix = QString("_%1s_%2s").arg(fromString).arg(toString);
 
     QString ext = QFileInfo(file->fileName()).suffix();
+    if (!file->isWritable()) {
+        //невозможно сохранить временную вырезку того же формата, так как формат
+        //не поддерживает сохранение. Выбираем новый формат согласно настройкам
+        //0 - dfd, 1 - d94, 2 - uff
+        int defaultFileFormat = se->getSetting("defaultFileFormat", 0).toInt();
+        switch (defaultFileFormat) {
+            case 0: ext = "dfd"; break;
+            case 1: ext = "d94"; break;
+            case 2: ext = "uff"; break;
+        }
+    }
     QString newFileName = createUniqueFileName("", file->fileName(), suffix, ext, false);
 
     // 2 создаем новый файл

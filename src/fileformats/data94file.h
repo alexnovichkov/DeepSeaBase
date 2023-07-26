@@ -120,6 +120,7 @@ public:
     virtual void copyChannelsFrom(const QVector<Channel*> &source) override;
     void addChannelWithData(DataHolder *data, const DataDescription &description) override;
     virtual void move(bool up, const QVector<int> &indexes, const QVector<int> &newIndexes) override;
+    virtual bool isWritable() const override {return true;}
     virtual Channel *channel(int index) const override;
     static QStringList fileFilters();
     static QStringList suffixes();

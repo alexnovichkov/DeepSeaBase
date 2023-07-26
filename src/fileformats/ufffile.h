@@ -131,6 +131,7 @@ public:
 public:
     virtual void read() override;
     virtual void write() override;
+    virtual bool isWritable() const override {return true;}
     virtual QString icon() const override {return ":/icons/uff.svg";}
     virtual QString fileType() const override {return "uff";}
 
