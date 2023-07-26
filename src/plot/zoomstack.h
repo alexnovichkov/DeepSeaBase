@@ -11,21 +11,21 @@
 #include "enums.h"
 #include "qcustomplot.h"
 
-class Plot;
+class QCPPlot;
 
 class ZoomStack : public QObject
 {
     Q_OBJECT
 
 public:
-    explicit ZoomStack(Plot *m_plot);
+    explicit ZoomStack(QCPPlot *plot);
     ~ZoomStack();
 
     class ScaleBounds
     {
     public:
         // конструктор
-        explicit ScaleBounds(Plot *plot, Enums::AxisType axis);
+        explicit ScaleBounds(QCPPlot *plot, Enums::AxisType axis);
 
          Enums::AxisType axis;   // основная шкала
 
@@ -45,7 +45,7 @@ public:
         double min;
         double max;
 
-        Plot *plot;          // опекаемый график
+        QCPPlot *plot;          // опекаемый график
 
         bool fixed;             // признак фиксации границ
     };
@@ -61,7 +61,7 @@ public:
 signals:
     void replotNeeded();
 private:
-    Plot *m_plot;
+    QCPPlot *m_plot;
     QStack<zoomCoordinates> m_zoomStack;
     QMap<Enums::AxisType, ScaleBounds*> m_scaleBounds;
 };

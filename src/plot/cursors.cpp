@@ -1,6 +1,6 @@
 #include "cursors.h"
 
-#include "plot.h"
+#include "qcpplot.h"
 #include "plotmodel.h"
 #include "curve.h"
 #include "fileformats/filedescriptor.h"
@@ -9,7 +9,7 @@
 #include "qcpcursorharmonic.h"
 #include "logging.h"
 
-Cursors::Cursors(Plot *parent) : QObject(parent), plot{parent}
+Cursors::Cursors(QCPPlot *parent) : QObject(parent), plot{parent}
 {DD;
 }
 
@@ -31,7 +31,7 @@ Cursor *Cursors::addDoubleCursor(const QPoint &pos, Cursor::Style style, bool re
         xVal1 = plot->screenToPlotCoordinates(Enums::AxisType::atBottom, pos.x());
         xVal2 = qMin(xVal1 + range.dist()/10, range.dist()*9/10);
     }
-    c->attach();
+//    c->attach();
     c->moveTo({xVal1, yVal}, {xVal2, yVal});
     m_cursors << c;
     emit cursorsChanged();
@@ -55,7 +55,7 @@ Cursor *Cursors::addSingleCursor(const QPoint &pos, Cursor::Style style)
         xVal = plot->screenToPlotCoordinates(Enums::AxisType::atBottom, pos.x());
         yVal = plot->screenToPlotCoordinates(Enums::AxisType::atLeft, pos.y());
     }
-    c->attach();
+//    c->attach();
     c->moveTo({xVal, yVal});
     m_cursors << c;
     emit cursorsChanged();
@@ -82,7 +82,7 @@ Cursor *Cursors::addHarmonicCursor(const QPoint &pos)
     if (plot) {
         xVal = plot->screenToPlotCoordinates(Enums::AxisType::atBottom, pos.x());
     }
-    c->attach();
+//    c->attach();
     c->moveTo({xVal, yVal});
     m_cursors << c;
     emit cursorsChanged();

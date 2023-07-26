@@ -58,6 +58,7 @@
 #include "methods/calculations.h"
 #include "settingsdialog.h"
 #include "version.h"
+#include "plot/qcpplot.h"
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent), currentTab(0)
@@ -602,9 +603,13 @@ MainWindow::~MainWindow()
 
 PlotArea *MainWindow::createPlotArea()
 {DD;
-    ads::CDockComponentsFactory::setFactory(new PlotDockFactory(this));
+    PlotDockFactory * defaultFactory = new PlotDockFactory();
+    defaultFactory->setReceiver(this);
+    ads::CDockComponentsFactory::setFactory(defaultFactory);
+
     static int plotIndex = 0;
     plotIndex++;
+
     PlotArea *area = new PlotArea(plotIndex, this);
     //это соединение позволяет обновить сразу все вкладки графиков
     connect(this, SIGNAL(updateLegends()), area, SLOT(updateLegends()));
@@ -1572,7 +1577,7 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
     if (toPlot.isEmpty()) return;
 
     //определяем график, на котором будем строить каналы
-    Plot* p = nullptr;
+    QCPPlot* p = nullptr;
     if (currentPlot) {
         p = currentPlot->plot();
         auto type = PlotArea::getPlotType(toPlot);
@@ -2077,12 +2082,8 @@ void MainWindow::rescanBase()
 
     // first we delete all curves affected
     for (auto w: m.values()) {
-        if (auto area = dynamic_cast<PlotArea*>(w)) {
-            if (area->plot()) {
-                area->resetCycling();
-                area->plot()->deleteAllCurves(true);
-            }
-        }
+        if (auto area = dynamic_cast<PlotArea*>(w))
+            area->deleteAllCurves();
     }
 
     Tab *oldTab = currentTab;
@@ -2125,15 +2126,17 @@ void MainWindow::setDescriptor(int direction, bool checked) /*private*/
 {DD;
     //проверяем, есть ли в табе другие записи
     if (currentTab->model->size() < 2) return;
+    if (!currentPlot) return;
+    if (!currentPlot->plot()) return;
 
     //проверяем, в какой вкладке находится та запись, для которой построены графики
     FileDescriptor* d = nullptr;
     //ищем запись первой не фиксированной кривой
     //(фиксированная кривая может быть из другой записи)
-    if (currentPlot && currentPlot->plot()) {
-        auto c = currentPlot->plot()->model()->firstOf([](Curve *c){return !c->fixed;});
-        if (c) d = c->channel->descriptor();
-    }
+
+    auto c = currentPlot->plot()->model()->firstOf([](Curve *c){return !c->fixed;});
+    if (c) d = c->channel->descriptor();
+
     if (!d) return;
 
     int index = -1;
@@ -2159,11 +2162,11 @@ void MainWindow::setDescriptor(int direction, bool checked) /*private*/
             modelIndex = currentTab->sortModel->index(index+1, current.column());
     }
     else if (direction==0) {
-        if (currentPlot && currentPlot->plot()) currentPlot->plot()->sergeiMode = checked;
+        currentPlot->plot()->sergeiMode = checked;
     }
 
     //ниже - только для file up/file down
-    if (modelIndex.isValid() && currentPlot && currentPlot->plot()) {
+    if (modelIndex.isValid()) {
         //это вызывает Tab::updateChannelsTable(FileDescriptor *descriptor)
         //который посылает сигнал в MainWindow, который в свою очередь вызывает currentPlot->replotDescriptor
         currentPlot->plot()->sergeiMode = true;

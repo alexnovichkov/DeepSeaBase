@@ -3,13 +3,13 @@
 
 #include <QObject>
 
-#include "plot.h"
 #include "enums.h"
 #include "selectable.h"
 
 class PointMarker;
 class TrackingCursor;
 class Curve;
+class QCPPlot;
 
 class Picker: public QObject
 {
@@ -21,7 +21,7 @@ public:
         PickLast //Picking only if no dragging or selecting occurred
     };
 
-    Picker(Plot *plot);
+    Picker(QCPPlot *plot);
     inline bool isEnabled() const {return enabled;}
     inline void setEnabled(bool enabled) {this->enabled = enabled;}
     Selected findObject(QMouseEvent *e);
@@ -38,7 +38,7 @@ public:
 signals:
     void removeNeeded(Selectable*);
 private:
-    Plot *plot;
+    QCPPlot *plot;
     bool enabled;
     QPoint startPosition;
 

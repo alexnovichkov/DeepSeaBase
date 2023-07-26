@@ -6,7 +6,7 @@
 #include <QMap>
 #include <QMediaPlayer>
 
-class Plot;
+class QCPPlot;
 class QToolButton;
 class QSlider;
 class QAudioOutput;
@@ -66,7 +66,7 @@ class PlayPanel : public QWidget
 {
     Q_OBJECT
 public:
-    explicit PlayPanel(Plot *parent=0);
+    explicit PlayPanel(QCPPlot *parent=0);
     ~PlayPanel();
     void reset();
 signals:
@@ -93,7 +93,7 @@ private:
     Channel *ch = 0;
     QMap<Channel*,QString> wavFiles;
     QHash<Channel*, double> positions;
-    Plot *plot;
+    QCPPlot *plot;
     Cursor *cursor;
     QComboBox *channelsBox;
 

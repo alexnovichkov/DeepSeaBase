@@ -58,7 +58,6 @@ $${QXLSX_HEADERPATH}xlsxfont.h \
 $${QXLSX_HEADERPATH}xlsxtext.h \
 $${QXLSX_HEADERPATH}xlsxtext_p.h \
 $${QXLSX_HEADERPATH}xlsxtitle.h \
-$${QXLSX_HEADERPATH}xlsxtitle_p.h \
 $${QXLSX_HEADERPATH}xlsxfillproperties_p.h \
 $${QXLSX_HEADERPATH}xlsxfillproperties.h \
 $${QXLSX_HEADERPATH}xlsxmain.h \

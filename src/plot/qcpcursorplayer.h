@@ -12,7 +12,7 @@ class QCPCursorPlayer : public Cursor
 {
     Q_OBJECT
 public:
-    QCPCursorPlayer(Plot *plot = nullptr);
+    QCPCursorPlayer(QCPPlot *plot = nullptr);
     ~QCPCursorPlayer();
 
     virtual void setColor(const QColor &m_color) override;
@@ -21,7 +21,7 @@ public:
     virtual void moveTo(const QPointF &pos1, QCPTrackingCursor *source, bool silent=false) override;
     virtual void moveTo(Qt::Key key, int count, QCPTrackingCursor *source, bool silent=false) override;
     virtual void updatePos() override;
-    virtual void attach() override;
+//    virtual void attach() override;
     virtual void detach() override;
     virtual bool contains(Selectable *selected) const override;
     virtual void update() override;
@@ -36,7 +36,7 @@ private:
     QCPAxisTag *axisTag = nullptr;
     QCPAxisHandle *axisHandle = nullptr;
 
-    Plot *plot;
+    QCPPlot *plot;
 };
 
 #endif // CURSORSINGLE_H

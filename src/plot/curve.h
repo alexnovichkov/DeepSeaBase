@@ -7,7 +7,7 @@ class FileDescriptor;
 class PointLabel;
 class Channel;
 class DataHolder;
-class Plot;
+class QCPPlot;
 class QCPCheckableLegend;
 
 #include <qglobal.h>
@@ -46,8 +46,8 @@ public:
     Curve(Channel *channel);
     virtual ~Curve();
 
-    virtual void attachTo(Plot *plot);
-    virtual void detachFrom(Plot *plot);
+    virtual void attachTo(QCPPlot *plot);
+    virtual void detachFrom(QCPPlot *plot);
 
     virtual QString title() const = 0;
     virtual void setTitle(const QString &title) = 0;
@@ -130,7 +130,7 @@ public:
 protected:
     virtual void updateSelection(SelectedPoint point) override;
     inline virtual bool updateAnyway() const override {return true;}
-    Plot *m_plot = nullptr;
+    QCPPlot *m_plot = nullptr;
     mutable SelectedPoint selectedPoint;
     PointLabel *m_pointMarker = nullptr;
     QPen oldPen;

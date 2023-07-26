@@ -6,7 +6,6 @@
 #include "enums.h"
 #include <QtDebug>
 
-class Plot;
 class QMouseEvent;
 class ZoomStack;
 class Picker;
@@ -37,7 +36,7 @@ public:
                           };
 
 
-    explicit CanvasEventFilter(Plot *parent);
+    explicit CanvasEventFilter(QCPPlot *parent);
     void setZoom(ZoomStack *zoom) {this->zoomStack = zoom;}
     void setPicker(Picker *picker) {this->picker = picker;}
 signals:
@@ -58,7 +57,7 @@ private:
     void mouseLeave(QMouseEvent *event);
     void applyWheel(QEvent *event, Enums::AxisType axis);
 
-    Plot *plot = nullptr;
+    QCPPlot *plot = nullptr;
     ZoomStack *zoomStack = nullptr; //отвечает за запоминание изменений масштаба
     Picker *picker = nullptr;
 

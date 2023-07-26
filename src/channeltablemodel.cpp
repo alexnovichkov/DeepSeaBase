@@ -3,7 +3,7 @@
 #include "logging.h"
 #include "fileformats/filedescriptor.h"
 #include "channelsmimedata.h"
-#include "plot/plot.h"
+#include "plot/qcpplot.h"
 #include "plot/plotmodel.h"
 #include "plot/curve.h"
 #include "settings.h"
@@ -41,7 +41,7 @@ QVector<Channel *> ChannelTableModel::selectedChannels() const
     return result;
 }
 
-void ChannelTableModel::setCurrentPlot(Plot *currentPlot)
+void ChannelTableModel::setCurrentPlot(QCPPlot *currentPlot)
 {DD;
     if (this->currentPlot != currentPlot) {
         beginResetModel();

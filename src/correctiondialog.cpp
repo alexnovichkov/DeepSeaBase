@@ -3,13 +3,13 @@
 #include <QtWidgets>
 #include "settings.h"
 #include "headerview.h"
-#include "plot/plot.h"
+#include "plot/qcpplot.h"
 #include "plot/plotmodel.h"
 #include "plot/curve.h"
 #include "fileformats/dfdfiledescriptor.h"
 #include "logging.h"
 
-CorrectionDialog::CorrectionDialog(Plot *plot, QWidget *parent) : QDialog(parent), plot(plot)
+CorrectionDialog::CorrectionDialog(QCPPlot *plot, QWidget *parent) : QDialog(parent), plot(plot)
 {DD;
     setWindowFlags(Qt::Tool /*| Qt::WindowTitleHint*/);
     setWindowTitle("Поправки");

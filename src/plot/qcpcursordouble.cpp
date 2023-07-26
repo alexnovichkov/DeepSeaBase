@@ -111,19 +111,19 @@ double energy(DataHolder *data, const QCPCursorDouble *cursor, const QList<Curso
     return DataHolder::toLog(cumul, data->threshold(), DataHolder::YValuesUnits::UnitsQuadratic);
 }
 
-QCPCursorDouble::QCPCursorDouble(Cursor::Style style, bool reject, Plot *plot)
+QCPCursorDouble::QCPCursorDouble(Cursor::Style style, bool reject, QCPPlot *plot)
     : Cursor(reject?Cursor::Type::DoubleReject : Cursor::Type::Double, style, plot), m_plot(plot)
 {
     m_cursor1 = new QCPTrackingCursor(m_color, style, this);
     m_cursor2 = new QCPTrackingCursor(m_color, style, this);
 
-    m_axisTag1 = new QCPAxisTag(plot, m_cursor1, Enums::AxisType::atBottom);
-    m_axisTag2 = new QCPAxisTag(plot, m_cursor2, Enums::AxisType::atBottom);
+    m_axisTag1 = new QCPAxisTag(plot, m_cursor1, Enums::AxisType::atBottom, this);
+    m_axisTag2 = new QCPAxisTag(plot, m_cursor2, Enums::AxisType::atBottom, this);
 
     plot->addSelectable(m_cursor1);
     plot->addSelectable(m_cursor2);
 
-    m_zone = new QCPZone(reject?QColor(182,131,64,50):QColor(64,131,182,50), plot->impl());
+    m_zone = new QCPZone(reject?QColor(182,131,64,50):QColor(64,131,182,50), plot);
 
     setColor(reject?QColor(150,40,40):QColor(40,40,150));
 }
@@ -146,11 +146,11 @@ void QCPCursorDouble::moveTo(const QPointF &pos1, const QPointF &pos2, bool sile
 {
     auto pos = m_snapToValues ? correctedPos(pos1) : pos1;
     m_cursor1->moveTo(pos);
-    if (m_axisTag1) m_axisTag1->updatePosition(pos.x());
+    m_axisTag1->updatePosition(pos.x());
 
     pos = m_snapToValues ? correctedPos(pos2) : pos2;
     m_cursor2->moveTo(pos);
-    if (m_axisTag2) m_axisTag2->updatePosition(pos.x());
+    m_axisTag2->updatePosition(pos.x());
 
     if (!silent) emit cursorPositionChanged();
 
@@ -241,10 +241,10 @@ void QCPCursorDouble::updatePos()
     update();
 }
 
-void QCPCursorDouble::attach()
-{
+//void QCPCursorDouble::attach()
+//{
 
-}
+//}
 
 void QCPCursorDouble::detach()
 {
@@ -252,16 +252,13 @@ void QCPCursorDouble::detach()
     m_plot->removeSelectable(m_cursor2);
     m_cursor1->detach();
     m_cursor2->detach();
-    m_plot->impl()->removeItem(m_zone);
-    if (m_axisTag1) {
-        m_plot->removeSelectable(m_axisTag1);
-        m_axisTag1->detach();
-    }
+    m_plot->removeItem(m_zone);
+    m_plot->removeSelectable(m_axisTag1);
+    m_axisTag1->detach();
 
-    if (m_axisTag2) {
-        m_plot->removeSelectable(m_axisTag2);
-        m_axisTag2->detach();
-    }
+    m_plot->removeSelectable(m_axisTag2);
+    m_axisTag2->detach();
+    m_plot->layer("overlay")->replot();
 }
 
 bool QCPCursorDouble::contains(Selectable *selected) const
@@ -276,8 +273,8 @@ bool QCPCursorDouble::contains(Selectable *selected) const
 
 void QCPCursorDouble::update()
 {
-    if (m_axisTag1) m_axisTag1->updateLabel(m_showValues);
-    if (m_axisTag2) m_axisTag2->updateLabel(m_showValues);
+    m_axisTag1->updateLabel(m_showValues);
+    m_axisTag2->updateLabel(m_showValues);
     m_cursor1->replot(); //no need to m_cursor2->replot();
 }
 

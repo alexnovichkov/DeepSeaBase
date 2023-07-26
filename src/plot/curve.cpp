@@ -4,7 +4,7 @@
 #include "logging.h"
 #include "dataholder.h"
 #include "qcppointmarker.h"
-#include "plot.h"
+#include "qcpplot.h"
 #include "checkablelegend.h"
 
 QString Curve::markerShapeDescription(Curve::MarkerShape shape)
@@ -44,7 +44,7 @@ Curve::~Curve()
     }
 }
 
-void Curve::attachTo(Plot *plot)
+void Curve::attachTo(QCPPlot *plot)
 {DD;
     m_plot = plot;
     m_plot->addSelectable(this);
@@ -54,7 +54,7 @@ void Curve::attachTo(Plot *plot)
     if (legend) legend->addItem(this, commonLegendData());
 }
 
-void Curve::detachFrom(Plot *plot)
+void Curve::detachFrom(QCPPlot *plot)
 {
     //detach labels
     for(PointLabel *l: labels)

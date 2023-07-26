@@ -19,7 +19,7 @@ class FileHandler;
 class MainWindow;
 class ChannelsTable;
 class Channel;
-class Plot;
+class QCPPlot;
 
 class Tab : public QSplitter
 {
@@ -33,7 +33,7 @@ public:
     void updateActions();
     void addParentAction(const QString &name, QAction *action);
 
-    void setCurrentPlot(Plot *plot);
+    void setCurrentPlot(QCPPlot *plot);
 
     QLabel *filePathLabel = nullptr;
     FilesTable *filesTable = nullptr;
@@ -59,7 +59,7 @@ private:
     QAction *plotselectedChannelsForAllDescriptorsAct;
     QAction *copyToLegendAct;
     QHash<QString, QAction*> parentActions;
-    Plot *currentPlot = nullptr;
+    QCPPlot *currentPlot = nullptr;
 private slots:
     void filesSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);
     void channelsSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);

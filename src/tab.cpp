@@ -15,7 +15,7 @@
 #include "filehandler.h"
 #include "stepitemdelegate.h"
 #include "channelstable.h"
-#include "plot/plot.h"
+#include "plot/qcpplot.h"
 
 Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
 {DD;
@@ -257,7 +257,7 @@ void Tab::addParentAction(const QString &name, QAction *action)
     parentActions.insert(name, action);
 }
 
-void Tab::setCurrentPlot(Plot *plot)
+void Tab::setCurrentPlot(QCPPlot *plot)
 {DD;
     currentPlot = plot;
     channelModel->setCurrentPlot(plot);

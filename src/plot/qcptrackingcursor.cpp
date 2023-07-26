@@ -12,7 +12,7 @@
 QCPTrackingCursor::QCPTrackingCursor(const QColor &col, Cursor::Style type, Cursor *parent)
     : type(type), parent{parent}
 {DD;
-    impl = parent->plot()->impl();
+    impl = parent->plot();
 
     horizontal = new QCPItemStraightLine(impl);
     horizontal->setPen(col);
@@ -251,7 +251,7 @@ void QCPTrackingCursor::detach()
 {
     impl->removeItem(horizontal);
     impl->removeItem(vertical);
-    impl->layer("overlay")->replot();
+//    impl->layer("overlay")->replot();
 }
 
 void QCPTrackingCursor::setColor(const QColor &color)

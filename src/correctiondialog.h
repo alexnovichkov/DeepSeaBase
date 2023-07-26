@@ -3,7 +3,6 @@
 
 #include <QDialog>
 
-class Plot;
 class QTableView;
 class HeaderView;
 class QPushButton;
@@ -13,12 +12,13 @@ class QLineEdit;
 class QComboBox;
 class QToolButton;
 class Channel;
+class QCPPlot;
 
 class CorrectionDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit CorrectionDialog(Plot *plot, QWidget *parent = 0);
+    explicit CorrectionDialog(QCPPlot *plot, QWidget *parent = 0);
     ~CorrectionDialog();
     void setFiles(const QList<FileDescriptor *> &descriptors);
 private slots:
@@ -29,7 +29,7 @@ private:
 //    void
     void makeCorrectionConstant(Channel *channel);
     QLineEdit *edit;
-    Plot *plot;
+    QCPPlot *plot;
     QTableView *table;
     HeaderView *tableHeader;
     QToolButton *correctButton;

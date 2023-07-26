@@ -1255,10 +1255,10 @@ int Graph2D::findEnd(double sortKey, bool expandedRange) const
     return m_data->findEnd(sortKey, expandedRange);
 }
 
-void Graph2D::detachFrom(Plot *plot)
+void Graph2D::detachFrom(QCPPlot *plot)
 {DD;
     Curve::detachFrom(plot);
-    plot->impl()->removePlottable(this, false);
+    plot->removePlottable(this, false);
     plot->replot();
 }
 

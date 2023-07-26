@@ -30,10 +30,10 @@ bool QCPSpectrogram::isVisible() const
     return visible();
 }
 
-void QCPSpectrogram::detachFrom(Plot *plot)
+void QCPSpectrogram::detachFrom(QCPPlot *plot)
 {
     Curve::detachFrom(plot);
-    plot->impl()->removePlottable(this, false);
+    plot->removePlottable(this, false);
     plot->replot();
 }
 

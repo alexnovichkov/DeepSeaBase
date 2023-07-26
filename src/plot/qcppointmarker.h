@@ -9,7 +9,7 @@ class Graph2D;
 class PointLabel;
 class Curve;
 class QCPTracer;
-class Plot;
+class QCPPlot;
 
 class PointLabel : public QCPItemText, public Selectable
 {
@@ -20,10 +20,10 @@ public:
         YValue,
         XYZValue
     };
-    explicit PointLabel(Plot *plot, Curve *curve);
+    explicit PointLabel(QCPPlot *plot, Curve *curve);
     ~PointLabel() {}
 
-    void detachFrom(Plot *plot);
+    void detachFrom(QCPPlot *plot);
 
     //shadows QCPLayerable::setVisible
     void setVisible(bool visible);
@@ -51,7 +51,7 @@ private:
 
     SelectedPoint m_point;
     Mode m_mode = Mode::XValue;
-    Plot *m_plot = nullptr;
+    QCPPlot *m_plot = nullptr;
     Curve *m_curve = nullptr;
     QCPTracer *m_tracer = nullptr;
 };

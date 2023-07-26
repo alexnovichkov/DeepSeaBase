@@ -42,7 +42,7 @@ void MouseCoordinates::update(QMouseEvent *event)
         else
             parent->setCursor(Qt::CrossCursor);
         auto pos = event->pos();
-        QString text = parent->parent->pointCoordinates({x, y});
+        QString text = parent->pointCoordinates({x, y});
         setText(text);
         pos.rx() += 10;
         pos.ry() -= 10;

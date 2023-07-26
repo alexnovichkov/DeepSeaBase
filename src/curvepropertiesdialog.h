@@ -7,7 +7,7 @@ class Curve;
 class QLineEdit;
 class QSpinBox;
 class QComboBox;
-class Plot;
+class QCPPlot;
 
 #include <QPen>
 #include <QBrush>
@@ -31,7 +31,7 @@ class CurvePropertiesDialog : public QDialog
 {
     Q_OBJECT
 public:
-    explicit CurvePropertiesDialog(Curve *curve, Plot *parent = 0);
+    explicit CurvePropertiesDialog(Curve *curve, QCPPlot *parent = 0);
     
 signals:
     void curveChanged(Curve *curve);
@@ -39,7 +39,7 @@ public slots:
 private:
     QIcon iconForMarker(int shape) const;
     Curve *curve;
-    Plot *plot;
+    QCPPlot *plot;
     QLineEdit *titleEdit;
     QLineEdit *legendEdit;
     QSpinBox *widthSpinBox;

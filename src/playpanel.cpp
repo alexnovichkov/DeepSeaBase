@@ -1,5 +1,5 @@
 #include "playpanel.h"
-#include "plot/plot.h"
+#include "plot/qcpplot.h"
 
 #include "fileformats/filedescriptor.h"
 
@@ -13,7 +13,7 @@
 #include "logging.h"
 
 
-PlayPanel::PlayPanel(Plot *parent) : QWidget(parent->widget()), plot(parent)
+PlayPanel::PlayPanel(QCPPlot *parent) : QWidget(parent), plot(parent)
 {DD;
     player = new QMediaPlayer(this);
     player->setAudioRole(QAudio::MusicRole);
@@ -26,7 +26,7 @@ PlayPanel::PlayPanel(Plot *parent) : QWidget(parent->widget()), plot(parent)
     cursor->setColor(Qt::green);
     cursor->setShowValues(false);
     connect(cursor, &Cursor::cursorPositionChanged, this, &PlayPanel::setValue);
-    cursor->attach();
+//    cursor->attach();
 
     controls = new PlayerControls(this);
     controls->setState(player->state());

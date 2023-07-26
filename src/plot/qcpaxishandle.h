@@ -6,7 +6,7 @@
 #include "plot/selectable.h"
 #include "enums.h"
 
-class Plot;
+class QCPPlot;
 class QCPTrackingCursor;
 class QCPItemRichText;
 
@@ -14,7 +14,7 @@ class QCPAxisHandle : public QObject, public Selectable
 {
   Q_OBJECT
 public:
-  explicit QCPAxisHandle(Plot *parent, QCPTrackingCursor *cursor, Enums::AxisType parentAxis);
+  explicit QCPAxisHandle(QCPPlot *plot, QCPTrackingCursor *cursor, Enums::AxisType parentAxis, QObject *parent = nullptr);
   virtual ~QCPAxisHandle();
 
   // setters:
@@ -28,7 +28,7 @@ public:
   void detach();
 
 protected:
-  Plot *parent = nullptr;
+  QCPPlot *plot = nullptr;
   QCPTrackingCursor *cursor = nullptr;
   QCPAxis *mAxis = nullptr;
   QCPItemLine *mArrow = nullptr;

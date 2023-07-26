@@ -9,8 +9,8 @@
 #include "qcptracer.h"
 #include "logging.h"
 
-PointLabel::PointLabel(Plot *plot, Curve *curve)
-    : QCPItemText(dynamic_cast<QCustomPlot*>(plot->impl())), m_plot(plot), m_curve(curve)
+PointLabel::PointLabel(QCPPlot *plot, Curve *curve)
+    : QCPItemText(dynamic_cast<QCustomPlot*>(plot)), m_plot(plot), m_curve(curve)
 {
     if (se->getSetting("pointLabelRemember", true).toBool()) {
         switch (se->getSetting("pointLabelMode", 0).toInt()) {
@@ -23,7 +23,8 @@ PointLabel::PointLabel(Plot *plot, Curve *curve)
     setBrush(QColor(255,255,255,220));
     setAntialiased(false);
 
-    m_tracer = new QCPTracer(plot->impl());
+    m_tracer = new QCPTracer(plot);
+
     m_tracer->setStyle(QCPTracer::tsSquare);
     m_tracer->setSize(8);
     m_tracer->setAntialiased(false);
@@ -32,7 +33,7 @@ PointLabel::PointLabel(Plot *plot, Curve *curve)
         m_tracer->setGraphIndex(0);
     }
     else {
-        m_tracer->position->setAxes(plot->impl()->xAxis, plot->impl()->yAxis);
+        m_tracer->position->setAxes(plot->xAxis, plot->yAxis);
         m_tracer->position->setType(QCPItemPosition::ptPlotCoords);
     }
 //    m_tracer->setLayer("overlay");
@@ -46,17 +47,17 @@ PointLabel::PointLabel(Plot *plot, Curve *curve)
     m_plot->addSelectable(this);
 }
 
-void PointLabel::detachFrom(Plot *plot)
+void PointLabel::detachFrom(QCPPlot *plot)
 {
     plot->removeSelectable(this);
-    plot->impl()->removeItem(this);
-    plot->impl()->removeItem(m_tracer);
+    plot->removeItem(this);
+    plot->removeItem(m_tracer);
 }
 
 void PointLabel::setVisible(bool visible)
 {DD;
     QCPLayerable::setVisible(visible);
-    if (m_tracer) m_tracer->setVisible(visible);
+    m_tracer->setVisible(visible);
 }
 
 void PointLabel::setMode(PointLabel::Mode mode)

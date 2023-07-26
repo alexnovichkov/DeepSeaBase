@@ -1,5 +1,5 @@
 #include "cursor.h"
-#include "plot.h"
+#include "qcpplot.h"
 #include "plotmodel.h"
 #include "curve.h"
 #include "algorithms.h"
@@ -9,7 +9,7 @@
 #include "app.h"
 #include "logging.h"
 
-Cursor::Cursor(Type type, Style style, Plot *plot)
+Cursor::Cursor(Type type, Style style, QCPPlot *plot)
     : m_type{type}, m_style{style}, m_plot{plot}
 {DD;
     m_snapToValues = se->getSetting("cursorSnapToValues", true).toBool();

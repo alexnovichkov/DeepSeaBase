@@ -12,12 +12,12 @@
 #include "qcpplot.h"
 
 
-QCPCursorHarmonic::QCPCursorHarmonic(Plot *plot) : Cursor(Cursor::Type::Harmonic, Cursor::Style::Vertical, plot),
+QCPCursorHarmonic::QCPCursorHarmonic(QCPPlot *plot) : Cursor(Cursor::Type::Harmonic, Cursor::Style::Vertical, plot),
     plot(plot)
 {DD;
     cursor = new QCPTrackingCursor(m_color, m_style, this);
 
-    label = new QCPAxisTag(plot, cursor, Enums::AxisType::atBottom);
+    label = new QCPAxisTag(plot, cursor, Enums::AxisType::atBottom, this);
 
     plot->addSelectable(cursor);
     setShowValues(false);
@@ -27,7 +27,7 @@ QCPCursorHarmonic::QCPCursorHarmonic(Plot *plot) : Cursor(Cursor::Type::Harmonic
         c->setPen(QPen(Qt::black, 0, Qt::DashDotLine));
         cursors << c;
 
-        auto l = new QCPAxisTag(plot, c, Enums::AxisType::atBottom);
+        auto l = new QCPAxisTag(plot, c, Enums::AxisType::atBottom, this);
         labels << l;
     }
 }
@@ -37,10 +37,8 @@ QCPCursorHarmonic::~QCPCursorHarmonic()
     detach();
 
     delete cursor;
-    delete label;
 
     qDeleteAll(cursors);
-    qDeleteAll(labels);
 }
 
 void QCPCursorHarmonic::setColor(const QColor &color)
@@ -114,10 +112,10 @@ void QCPCursorHarmonic::updatePos()
     update();
 }
 
-void QCPCursorHarmonic::attach()
-{DD;
+//void QCPCursorHarmonic::attach()
+//{DD;
 
-}
+//}
 
 void QCPCursorHarmonic::detach()
 {DD;
@@ -129,6 +127,7 @@ void QCPCursorHarmonic::detach()
         cursors[i]->detach();
         labels[i]->detach();
     }
+    m_plot->layer("overlay")->replot();
 }
 
 bool QCPCursorHarmonic::contains(Selectable *selected) const

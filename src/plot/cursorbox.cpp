@@ -1,6 +1,6 @@
 #include "cursorbox.h"
 
-#include "plot.h"
+#include "qcpplot.h"
 #include "plotmodel.h"
 #include "cursors.h"
 #include "cursor.h"
@@ -14,7 +14,7 @@
 #include <QApplication>
 #include <QClipboard>
 
-CursorBox::CursorBox(Cursors *cursors, Plot *parent) : QTreeWidget(parent->widget()),
+CursorBox::CursorBox(Cursors *cursors, QCPPlot *parent) : QTreeWidget(parent),
     cursors{cursors}, plot{parent}
 {DD;
     setWindowFlag(Qt::Tool);
@@ -34,13 +34,6 @@ CursorBox::CursorBox(Cursors *cursors, Plot *parent) : QTreeWidget(parent->widge
     f = se->instance()->getSetting("cursorDialogFont", f).value<QFont>();
     setFont(f);
     header()->setFont(f);
-
-    connect(se->instance(), &Settings::settingChanged, [this](const QString &key, const QVariant & val){
-        Q_UNUSED(key);
-        auto f = val.value<QFont>();
-        setFont(f);
-        header()->setFont(f);
-    });
 
     header()->setStretchLastSection(false);
     header()->setSectionResizeMode(QHeaderView::ResizeToContents);
@@ -93,6 +86,15 @@ void CursorBox::updateLayout()
     for (int i=0; i<columnCount(); ++i) w += columnWidth(i);
     int h=200;
     resize(w+20,h);
+}
+
+void CursorBox::changeFont(const QString &key, const QVariant &val)
+{
+    if (key == "cursorDialogFont") {
+        auto f = val.value<QFont>();
+        setFont(f);
+        header()->setFont(f);
+    }
 }
 
 void CursorBox::copy()

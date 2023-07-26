@@ -11,12 +11,11 @@
 #include "algorithms.h"
 #include "qcpaxishandle.h"
 
-QCPCursorPlayer::QCPCursorPlayer(Plot *plot) : Cursor(Cursor::Type::Single, Cursor::Style::Vertical, plot), plot(plot)
+QCPCursorPlayer::QCPCursorPlayer(QCPPlot *plot) : Cursor(Cursor::Type::Single, Cursor::Style::Vertical, plot), plot(plot)
 {DD;
     cursor = new QCPTrackingCursor(m_color, Cursor::Style::Vertical, this);
-    axisTag = new QCPAxisTag(plot, cursor, Enums::AxisType::atBottom);
-
-    axisHandle = new QCPAxisHandle(plot, cursor, Enums::AxisType::atBottom);
+    axisTag = new QCPAxisTag(plot, cursor, Enums::AxisType::atBottom, this);
+    axisHandle = new QCPAxisHandle(plot, cursor, Enums::AxisType::atBottom, this);
 
     plot->addSelectable(cursor);
 }
@@ -25,8 +24,6 @@ QCPCursorPlayer::~QCPCursorPlayer()
 {DD;
     detach();
     delete cursor;
-    delete axisTag;
-    delete axisHandle;
 }
 
 void QCPCursorPlayer::setColor(const QColor &color)
@@ -110,10 +107,10 @@ void QCPCursorPlayer::updatePos()
     update();
 }
 
-void QCPCursorPlayer::attach()
-{DD;
+//void QCPCursorPlayer::attach()
+//{DD;
 
-}
+//}
 
 void QCPCursorPlayer::detach()
 {DD;
@@ -127,6 +124,7 @@ void QCPCursorPlayer::detach()
         m_plot->removeSelectable(axisHandle);
         axisHandle->detach();
     }
+    m_plot->layer("overlay")->replot();
 }
 
 bool QCPCursorPlayer::contains(Selectable *selected) const

@@ -50,9 +50,10 @@ private:
 class PlotDockFactory : public ads::CDockComponentsFactory
 {
 public:
-    PlotDockFactory(MainWindow *receiver)
-        : ads::CDockComponentsFactory(), receiver(receiver)
+    PlotDockFactory()
+        : ads::CDockComponentsFactory()
     {}
+    void setReceiver(MainWindow *receiver) {this->receiver = receiver;}
 //    ads::CDockAreaTabBar* createDockAreaTabBar(ads::CDockAreaWidget* DockArea) const override
 //    {
 //        auto tabBar = new CTabBar(DockArea);

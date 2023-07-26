@@ -3,7 +3,8 @@
 #include <QDebug>
 
 #include "xlsxtitle.h"
-#include "xlsxtitle_p.h"
+#include "xlsxtext.h"
+#include "xlsxshapeproperties.h"
 
 QT_BEGIN_NAMESPACE_XLSX
 
@@ -21,7 +22,8 @@ public:
     std::optional<Title::Layout> layout;
     std::optional<bool> overlay; //optional, c:overlay
     ShapeProperties shape;
-    //TextProperties textBody;
+
+    TextProperties textBody;
 
 
     TitlePrivate();

@@ -3,24 +3,25 @@
 
 #include <QTreeWidget>
 
-class Plot;
+class QCPPlot;
 class Cursors;
 
 class CursorBox : public QTreeWidget
 {
     Q_OBJECT
 public:
-    explicit CursorBox(Cursors *cursors, Plot *parent);
+    explicit CursorBox(Cursors *cursors, QCPPlot *parent);
     void update();
 public slots:
     void updateContents();
     void updateLayout();
+    void changeFont(const QString &key, const QVariant &val);
 signals:
     void closeRequested();
 private:
     void copy();
     Cursors *cursors;
-    Plot *plot;
+    QCPPlot *plot;
     bool wasHidden = true;
     QAction *copyAct;
 

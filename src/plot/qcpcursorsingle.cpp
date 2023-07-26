@@ -10,14 +10,14 @@
 #include "qcpplot.h"
 #include "algorithms.h"
 
-QCPCursorSingle::QCPCursorSingle(Style style, Plot *plot) : Cursor(Cursor::Type::Single, style, plot), plot(plot)
+QCPCursorSingle::QCPCursorSingle(Style style, QCPPlot *plot) : Cursor(Cursor::Type::Single, style, plot)
 {DD;
     cursor = new QCPTrackingCursor(m_color, style, this);
     if (style != Cursor::Style::Horizontal)
-        axisTagX = new QCPAxisTag(plot, cursor, Enums::AxisType::atBottom);
+        axisTagX = new QCPAxisTag(plot, cursor, Enums::AxisType::atBottom, this);
 
     if (style != Cursor::Style::Vertical)
-        axisTagY = new QCPAxisTag(plot, cursor, Enums::AxisType::atLeft);
+        axisTagY = new QCPAxisTag(plot, cursor, Enums::AxisType::atLeft, this);
 
     plot->addSelectable(cursor);
 }
@@ -26,8 +26,6 @@ QCPCursorSingle::~QCPCursorSingle()
 {DD;
     detach();
     delete cursor;
-    delete axisTagX;
-    delete axisTagY;
 }
 
 void QCPCursorSingle::setColor(const QColor &color)
@@ -110,10 +108,10 @@ void QCPCursorSingle::updatePos()
     update();
 }
 
-void QCPCursorSingle::attach()
-{DD;
+//void QCPCursorSingle::attach()
+//{DD;
 
-}
+//}
 
 void QCPCursorSingle::detach()
 {DD;
@@ -127,6 +125,7 @@ void QCPCursorSingle::detach()
         m_plot->removeSelectable(axisTagY);
         axisTagY->detach();
     }
+    m_plot->layer("overlay")->replot();
 }
 
 bool QCPCursorSingle::contains(Selectable *selected) const

@@ -31,10 +31,10 @@
 #include "plot/curve.h"
 #include "qcpitemrichtext.h"
 
-QCPAxisHandle::QCPAxisHandle(Plot *parent, QCPTrackingCursor *cursor, Enums::AxisType parentAxis) :
-    QObject(parent), parent(parent), cursor(cursor)
+QCPAxisHandle::QCPAxisHandle(QCPPlot *plot, QCPTrackingCursor *cursor, Enums::AxisType parentAxis, QObject *parent) :
+    QObject(parent), plot(plot), cursor(cursor)
 {
-    mAxis = parent->impl()->axis(parentAxis);
+    mAxis = plot->axis(parentAxis);
     mDummyTracer = new QCPItemTracer(mAxis->parentPlot());
     mDummyTracer->setVisible(false);
 
@@ -82,17 +82,17 @@ QCPAxisHandle::QCPAxisHandle(Plot *parent, QCPTrackingCursor *cursor, Enums::Axi
     mArrow->start->setParentAnchor(mArrow->end);
     mArrow->start->setCoords(0, 15);
 
-    parent->addSelectable(this);
+    plot->addSelectable(this);
 }
 
 QCPAxisHandle::~QCPAxisHandle()
 {
-    parent->removeSelectable(this);
+    plot->removeSelectable(this);
 }
 
 void QCPAxisHandle::setPen(const QPen &pen)
 {
-  mArrow->setPen(pen);
+    mArrow->setPen(pen);
 }
 
 QPen QCPAxisHandle::pen() const
@@ -123,7 +123,7 @@ void QCPAxisHandle::detach()
     auto plot = mAxis->parentPlot();
     plot->removeItem(mArrow);
     plot->removeItem(mDummyTracer);
-    plot->layer("overlay")->replot();
+//    plot->layer("overlay")->replot();
 }
 
 bool QCPAxisHandle::draggable() const

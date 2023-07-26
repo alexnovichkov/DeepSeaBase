@@ -2,7 +2,7 @@
 
 #include <QtWidgets>
 
-#include "plot/plot.h"
+#include "plot/qcpplot.h"
 #include "plot/curve.h"
 #include "fileformats/dfdfiledescriptor.h"
 #include "logging.h"
@@ -15,8 +15,8 @@ void ClickableLabel::mouseReleaseEvent(QMouseEvent *ev)
     QLabel::mouseReleaseEvent(ev);
 }
 
-CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, Plot *parent) :
-    QDialog(parent->widget()), curve(curve), plot(parent)
+CurvePropertiesDialog::CurvePropertiesDialog(Curve *curve, QCPPlot *parent) :
+    QDialog(parent), curve(curve), plot(parent)
 {DD;
     setWindowTitle("Настройки кривой");
 

@@ -2,7 +2,7 @@
 #define CURSORS_H
 
 #include <QObject>
-class Plot;
+class QCPPlot;
 class Selectable;
 
 #include "cursor.h"
@@ -11,7 +11,7 @@ class Cursors : public QObject
 {
     Q_OBJECT
 public:
-    explicit Cursors(Plot *parent = nullptr);
+    explicit Cursors(QCPPlot *parent = nullptr);
     Cursor *addSingleCursor(const QPoint &pos, Cursor::Style style);
     Cursor *addDoubleCursor(const QPoint &pos, Cursor::Style style);
     Cursor *addRejectCursor(const QPoint &pos, Cursor::Style style);
@@ -31,7 +31,7 @@ signals:
     void cursorPositionChanged();
 private:
     Cursor *addDoubleCursor(const QPoint &pos, Cursor::Style style, bool reject);
-    Plot *plot = nullptr;
+    QCPPlot *plot = nullptr;
     QList<Cursor*> m_cursors;
 };
 

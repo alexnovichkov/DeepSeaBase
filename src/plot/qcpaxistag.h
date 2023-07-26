@@ -6,7 +6,7 @@
 #include "plot/selectable.h"
 #include "enums.h"
 
-class Plot;
+class QCPPlot;
 class QCPTrackingCursor;
 class QCPItemRichText;
 
@@ -14,7 +14,7 @@ class QCPAxisTag : public QObject, public Selectable
 {
   Q_OBJECT
 public:
-  explicit QCPAxisTag(Plot *parent, QCPTrackingCursor *cursor, Enums::AxisType parentAxis);
+  explicit QCPAxisTag(QCPPlot *plot, QCPTrackingCursor *cursor, Enums::AxisType parentAxis, QObject *parent = nullptr);
   virtual ~QCPAxisTag();
 
   // setters:
@@ -34,7 +34,7 @@ public:
   void detach();
 
 protected:
-  Plot *parent = nullptr;
+  QCPPlot *parent = nullptr;
   QCPTrackingCursor *cursor = nullptr;
   QCPAxis *mAxis = nullptr;
 

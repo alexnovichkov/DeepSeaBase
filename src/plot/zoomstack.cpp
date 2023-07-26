@@ -1,9 +1,9 @@
 #include "zoomstack.h"
-#include "plot.h"
+#include "qcpplot.h"
 #include "logging.h"
 #include "algorithms.h"
 
-ZoomStack::ZoomStack(Plot *plot) : QObject(plot),  m_plot(plot)
+ZoomStack::ZoomStack(QCPPlot *plot) : QObject(plot),  m_plot(plot)
 {DD;
     m_scaleBounds.insert(Enums::AxisType::atTop, new ScaleBounds(plot,  Enums::AxisType::atTop));
     m_scaleBounds.insert(Enums::AxisType::atBottom, new ScaleBounds(plot,  Enums::AxisType::atBottom));
@@ -92,7 +92,7 @@ void ZoomStack::autoscale(Enums::AxisType axis)
     /**************************************************/
 
 // Конструктор
-ZoomStack::ScaleBounds::ScaleBounds(Plot *plot, Enums::AxisType axis) : axis(axis), plot(plot)
+ZoomStack::ScaleBounds::ScaleBounds(QCPPlot *plot, Enums::AxisType axis) : axis(axis), plot(plot)
 {DD;
     fixed = false;  // границы еще не фиксированы
     min = 0.0;
@@ -134,7 +134,7 @@ void ZoomStack::ScaleBounds::add(double min, double max, bool removePrevious)
 
 void ZoomStack::ScaleBounds::set(double min, double max)
 {DD;
-    plot->setScale(axis, min, max);
+    plot->setAxisRange(axis, min, max);
 }
 
 // Восстановление исходных границ шкалы

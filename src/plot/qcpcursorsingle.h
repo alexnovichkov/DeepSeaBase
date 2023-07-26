@@ -11,7 +11,7 @@ class QCPCursorSingle : public Cursor
 {
     Q_OBJECT
 public:
-    QCPCursorSingle(Style style, Plot *plot = nullptr);
+    QCPCursorSingle(Style style, QCPPlot *plot = nullptr);
     ~QCPCursorSingle();
 
     virtual void setColor(const QColor &m_color) override;
@@ -20,7 +20,7 @@ public:
     virtual void moveTo(const QPointF &pos1, QCPTrackingCursor *source, bool silent=false) override;
     virtual void moveTo(Qt::Key key, int count, QCPTrackingCursor *source, bool silent=false) override;
     virtual void updatePos() override;
-    virtual void attach() override;
+//    virtual void attach() override;
     virtual void detach() override;
     virtual bool contains(Selectable *selected) const override;
     virtual void update() override;
@@ -34,7 +34,6 @@ private:
     QCPTrackingCursor *cursor;
     QCPAxisTag *axisTagX = nullptr;
     QCPAxisTag *axisTagY = nullptr;
-    Plot *plot;
 };
 
 #endif // CURSORSINGLE_H

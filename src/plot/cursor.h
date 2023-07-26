@@ -6,7 +6,7 @@
 #include <QPointF>
 #include <QFlags>
 
-class Plot;
+class QCPPlot;
 class Selectable;
 class QCPTrackingCursor;
 class QMenu;
@@ -43,7 +43,7 @@ public:
     };
     Q_DECLARE_FLAGS(Info, InfoOption)
 
-    Cursor(Type type, Style style, Plot *plot = nullptr);
+    Cursor(Type type, Style style, QCPPlot *plot = nullptr);
     virtual ~Cursor() {}
 
     virtual void setColor(const QColor &color) {this->m_color = color;}
@@ -52,7 +52,7 @@ public:
     virtual void moveTo(Qt::Key key, int count, QCPTrackingCursor *source, bool silent=false) = 0;
     virtual void moveTo(const QPointF &pos, QCPTrackingCursor *source, bool silent=false) = 0;
     virtual void updatePos() = 0;
-    virtual void attach() = 0;
+//    virtual void attach() = 0;
     virtual void detach() = 0;
     virtual bool contains(Selectable*) const = 0;
     virtual void update() = 0;
@@ -62,7 +62,7 @@ public:
     virtual QStringList dataHeader(bool allData) const = 0;
     virtual QList<double> data(int curve, bool allData) const = 0;
 
-    Plot *plot() {return m_plot;}
+    QCPPlot *plot() {return m_plot;}
 
     void saveSpectrum();
     void saveSlice();
@@ -105,7 +105,7 @@ protected:
     Type m_type;
     Style m_style;
     QColor m_color = QColor(Qt::black);
-    Plot *m_plot = nullptr;
+    QCPPlot *m_plot = nullptr;
     bool m_snapToValues = true;
     bool m_showValues = false;
     bool m_showPeaksInfo = false;

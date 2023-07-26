@@ -1,16 +1,18 @@
 #ifndef PLOTAREA_H
 #define PLOTAREA_H
 
+#include <QPointer>
+
 #include "DockWidget.h"
 #include "enums.h"
 
-class Plot;
 class QAction;
 class Curve;
 class FileDescriptor;
 class QGridLayout;
 class Channel;
 class QLabel;
+class QCPPlot;
 
 class PlotArea : public ads::CDockWidget
 {
@@ -18,7 +20,7 @@ class PlotArea : public ads::CDockWidget
 public:
     PlotArea(int index, QWidget *parent);
     ~PlotArea();
-    Plot* plot();
+    QCPPlot* plot();
     void addPlot(Enums::PlotType type);
 
     /**
@@ -49,6 +51,7 @@ public:
     void exportToExcel(bool fullRange, bool dataOnly);
     void updateActions(int filesCount, int channelsCount);
     void deleteCurvesForDescriptor(FileDescriptor *f, const QVector<int> &indexes = QVector<int>());
+    void deleteAllCurves();
 
     /**
      * @brief replotDescriptor вызывается при переходе на предыдущую/следующую запись
@@ -89,9 +92,6 @@ public:
      */
     int curvesCount(int type=-1) const;
 
-
-//    void onDropEvent(bool plotOnLeft, const QVector<Channel*> &channels);
-
     /**
      * @brief resetCycling вызывается для сброса состояния навигации по произвольным записям
      */
@@ -121,7 +121,7 @@ private slots:
 private:
     void exportSonogramToExcel(bool fullRange, bool dataOnly);
     QGridLayout *plotsLayout;
-    Plot *m_plot = nullptr;
+    QPointer<QCPPlot> m_plot;
     QLabel * infoLabel;
 
     QAction *toolBarAction = nullptr;

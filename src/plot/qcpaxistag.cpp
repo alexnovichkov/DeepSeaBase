@@ -31,10 +31,10 @@
 #include "plot/curve.h"
 #include "qcpitemrichtext.h"
 
-QCPAxisTag::QCPAxisTag(Plot *parent, QCPTrackingCursor *cursor, Enums::AxisType parentAxis) :
-    QObject(parent), parent(parent), cursor(cursor)
+QCPAxisTag::QCPAxisTag(QCPPlot *plot, QCPTrackingCursor *cursor, Enums::AxisType parentAxis, QObject *parent) :
+    QObject(parent), parent(plot), cursor(cursor)
 {
-    mAxis = parent->impl()->axis(parentAxis);
+    mAxis = plot->axis(parentAxis);
     mDummyTracer = new QCPItemTracer(mAxis->parentPlot());
     mDummyTracer->setVisible(false);
 
@@ -80,7 +80,7 @@ QCPAxisTag::QCPAxisTag(Plot *parent, QCPTrackingCursor *cursor, Enums::AxisType 
     mLabel->setPositionAlignment(Qt::AlignLeft|Qt::AlignBottom);
     mLabel->position->setParentAnchor(mDummyTracer->position);
     mLabel->position->setCoords(2,-2);
-    parent->addSelectable(this);
+    plot->addSelectable(this);
 }
 
 QCPAxisTag::~QCPAxisTag()
@@ -187,7 +187,7 @@ void QCPAxisTag::detach()
     auto plot = mAxis->parentPlot();
     plot->removeItem(mLabel);
     plot->removeItem(mDummyTracer);
-    plot->layer("overlay")->replot();
+//    plot->layer("overlay")->replot();
 }
 
 

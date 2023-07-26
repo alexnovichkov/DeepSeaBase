@@ -5,13 +5,15 @@
 #include <QApplication>
 #include <QMenu>
 
+#include "qcpplot.h"
+
 QDebug operator<<(QDebug deb, const Selected &o)
 {
     deb << o.point.x << o.point.z << o.object;
     return deb;
 }
 
-Picker::Picker(Plot *plot) : plot(plot)
+Picker::Picker(QCPPlot *plot) : plot(plot)
 {DD;
 //    mode = ModeNone;
 }

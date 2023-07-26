@@ -16,6 +16,7 @@
 #include "xlsxdocument.h"
 #include "xlsxchartsheet.h"
 #include "xlsxchart.h"
+#include "qcpplot.h"
 
 PlotArea::PlotArea(int index, QWidget *parent)
     : ads::CDockWidget(QString("График %1").arg(index), parent)
@@ -198,7 +199,7 @@ PlotArea::PlotArea(int index, QWidget *parent)
     //infoLabel->setF(QColor(150,150,150,150));
     //infoLabel->setBackgroundRole(QColor(255,255,255,150));
     plotsLayout->addWidget(infoLabel,0,0, Qt::AlignCenter);
-    auto w = new QWidget;
+    auto w = new QWidget(this);
     //w->setBackgroundRole(QPalette::Light);
     w->setLayout(plotsLayout);
     setWidget(w);
@@ -206,10 +207,10 @@ PlotArea::PlotArea(int index, QWidget *parent)
 
 PlotArea::~PlotArea()
 {
-    if (m_plot) m_plot->deleteAllCurves(true);
+//    if (m_plot) m_plot->deleteAllCurves(true);
 }
 
-Plot *PlotArea::plot()
+QCPPlot *PlotArea::plot()
 {DD;
     return m_plot;
 }
@@ -218,47 +219,41 @@ void PlotArea::addPlot(Enums::PlotType type)
 {DD;
     if (m_plot) {
         if (m_plot->type() != type) {
-            if (m_plot->toolBarWidget()) toolBar()->removeAction(toolBarAction);
-            delete m_plot->legend;
-            delete m_plot;
+            if (m_plot->toolBarWidget()) {
+                toolBar()->removeAction(toolBarAction);
+                delete m_plot->toolBarWidget(); //при помещении на тулбар виджет меняет хозяина,
+                //так что приходится принудительно удалять
+            }
+            m_plot.clear();
         }
         else return;
     }
     else {
         infoLabel->hide();
     }
+    m_plot = new QCPPlot(type, this);
     switch (type) {
         case Enums::PlotType::Spectrogram:
-        {
-            m_plot = new Spectrogram(this);
             setIcon(QIcon(":/icons/spectrocurve.png"));
             break;
-        }
         case Enums::PlotType::Octave:
-        {
-            m_plot = new Plot(type, this);
             setIcon(QIcon(":/icons/barcurve.png"));
             break;
-        }
         case Enums::PlotType::Time:
-        {
-            m_plot = new Plot(type, this);
             setIcon(QIcon(":/icons/timecurve.png"));
             break;
-        }
-        case Enums::PlotType::General: {
-            m_plot = new Plot(type, this);
+        case Enums::PlotType::General:
             setIcon(QIcon(":/icons/linecurve.png"));
             break;
-        }
     }
-    if (m_plot->toolBarWidget())
+    if (!m_plot) return;
+
+    if (m_plot->toolBarWidget()) {
         toolBarAction = toolBar()->addWidget(m_plot->toolBarWidget());
+    }
 
-
-
-    plotsLayout->addWidget(m_plot->widget(),1,0);
-    plotsLayout->addWidget(m_plot->legend, 1,1);
+    plotsLayout->addWidget(m_plot, 1,0);
+    plotsLayout->addWidget(m_plot->legend(), 1,1);
     plotsLayout->setColumnStretch(0, 1);
 
     connect(m_plot, SIGNAL(curvesCountChanged()), this, SIGNAL(curvesCountChanged()));
@@ -654,13 +649,13 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          // если они были там в программе
          // и меняем название кривой
          auto b = chart->addAxis(QXlsx::Axis::Type::Val, QXlsx::Axis::Position::Bottom);
-         b->setTitle(stripHtml(m_plot->axisTitleText(Enums::AxisType::atBottom)));
+         b->setTitle(stripHtml(m_plot->axisTitle(Enums::AxisType::atBottom)));
          if (someStepIsZero)
              b->scaling()->logBase = 10; // TODO: replace with a method
          b->setRange(int(range.min/10)*10, range.max);
          b->setMajorGridLines(QColor(Qt::darkGray), 0.5, QXlsx::LineFormat::StrokeType::Dash);
          auto l = chart->addAxis(QXlsx::Axis::Type::Val, QXlsx::Axis::Position::Left);
-         l->setTitle(stripHtml(m_plot->axisTitleText(Enums::AxisType::atLeft)));
+         l->setTitle(stripHtml(m_plot->axisTitle(Enums::AxisType::atLeft)));
          l->setCrossAxis(b);
          l->setMajorGridLines(QColor(Qt::darkGray), 0.5, QXlsx::LineFormat::StrokeType::Dash);
          b->setCrossesAt(QXlsx::Axis::CrossesType::Minimum);
@@ -673,7 +668,7 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
                  if (!r) {
                      br = chart->addAxis(QXlsx::Axis::Type::Val, QXlsx::Axis::Position::Bottom);
                      r = chart->addAxis(QXlsx::Axis::Type::Val, QXlsx::Axis::Position::Right);
-                     r->setTitle(stripHtml(m_plot->axisTitleText(Enums::AxisType::atRight)));
+                     r->setTitle(stripHtml(m_plot->axisTitle(Enums::AxisType::atRight)));
                      r->setCrossAxis(br);
                  }
 
@@ -1216,6 +1211,12 @@ void PlotArea::deleteCurvesForDescriptor(FileDescriptor *f, const QVector<int> &
     if (m_plot) m_plot->deleteCurvesForDescriptor(f, indexes);
 }
 
+void PlotArea::deleteAllCurves()
+{
+    resetCycling();
+    if (m_plot) m_plot->deleteAllCurves(true);
+}
+
 //вызывается при переходе на предыдущую/следующую запись
 void PlotArea::replotDescriptor(FileDescriptor *f, int fileIndex)
 {DD;
@@ -1286,20 +1287,13 @@ void PlotArea::dropEvent(QDropEvent *event)
     if (myData) {
         auto type = getPlotType(myData->channels);
         addPlot(type);
-        m_plot->onDropEvent(true /*plot on left*/, myData->channels);
+        if (m_plot) m_plot->onDropEvent(true /*plot on left*/, myData->channels);
         event->acceptProposedAction();
     }
 }
 
-//void PlotArea::onDropEvent(bool plotOnLeft, const QVector<Channel *> &channels)
-//{DD;
-//    auto type = getPlotType(channels);
-//    addPlot(type);
-//    m_plot->onDropEvent(plotOnLeft, channels);
-//}
-
 void PlotArea::resetCycling()
 {DD;
     arbitraryDescriptorAct->setChecked(false);
-    m_plot->sergeiMode = false;
+    if (m_plot) m_plot->sergeiMode = false;
 }

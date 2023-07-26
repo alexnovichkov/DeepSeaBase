@@ -7,7 +7,7 @@
 
 class Channel;
 class FileDescriptor;
-class Plot;
+class QCPPlot;
 
 class ChannelTableModel : public QAbstractTableModel
 {
@@ -20,7 +20,7 @@ public:
     QVector<int> selected()  const {return indexes;}
     QVector<Channel*> selectedChannels() const;
 
-    void setCurrentPlot(Plot *currentPlot);
+    void setCurrentPlot(QCPPlot *currentPlot);
 
 
 
@@ -51,7 +51,7 @@ public:
     virtual Qt::ItemFlags flags(const QModelIndex &index) const override;
 private:
     FileDescriptor *descriptor;
-    Plot *currentPlot = nullptr;
+    QCPPlot *currentPlot = nullptr;
     QVector<int> indexes;
 
     // QAbstractItemModel interface
