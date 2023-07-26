@@ -79,7 +79,7 @@ void Data94File::init(const QVector<Channel *> &source)
 
     QFile f(fileName());
     if (!f.open(QFile::WriteOnly)) {
-        LOG(ERROR)<<"Не удалось открыть файл для записи:"<<fileName();
+        LOG(ERROR)<<QString("Не удалось открыть файл для записи:")<<fileName();
         return;
     }
 
@@ -150,7 +150,7 @@ void Data94File::read()
     QString label = QString::fromLocal8Bit(r.device()->read(8));
 
     if (label != "data94  ") {
-        LOG(ERROR)<<"файл неправильного типа";
+        LOG(ERROR)<<QString("файл неправильного типа");
         return;
     }
 
@@ -158,14 +158,14 @@ void Data94File::read()
     r >> descriptionSize;
     QByteArray descriptionBuffer = r.device()->read(descriptionSize);
     if ((quint32)descriptionBuffer.size() != descriptionSize) {
-        LOG(ERROR)<<"не удалось прочитать описание файла";
+        LOG(ERROR)<<QString("не удалось прочитать описание файла");
         return;
     }
 
     QJsonParseError error;
     QJsonDocument doc = QJsonDocument::fromJson(descriptionBuffer, &error);
     if (error.error != QJsonParseError::NoError) {
-        LOG(ERROR)<<"не удалось распознать описание файла:" << error.errorString() << error.offset;
+        LOG(ERROR)<<QString("не удалось распознать описание файла:") << fileName() << error.errorString() << error.offset;
 //        LOG(DEBUG)<<descriptionBuffer;
     }
     else setDataDescription(DataDescription::fromJson(doc.object()));
@@ -187,13 +187,13 @@ void Data94File::write()
     bool newFile = !f.exists();
 
     if (!f.open(QFile::ReadOnly) && !newFile) {
-        LOG(ERROR)<<"Не удалось открыть файл для чтения";
+        LOG(ERROR)<<QString("Не удалось открыть файл для чтения");
         return;
     }
 
     QTemporaryFile temp;
     if (!temp.open()) {
-        LOG(ERROR)<<"Не удалось открыть временный файл для записи";
+        LOG(ERROR)<<QString("Не удалось открыть временный файл для записи");
         return;
     }
 
@@ -226,10 +226,10 @@ void Data94File::write()
 
     if (QFile::remove(fileName()) || newFile) {
         if (!QFile::copy(temp.fileName(), fileName()))
-            LOG(ERROR)<<"Не удалось сохранить файл"<<fileName();
+            LOG(ERROR)<<QString("Не удалось сохранить файл")<<fileName();
     }
     else {
-        LOG(ERROR)<<"Не удалось удалить исходный файл"<<fileName();
+        LOG(ERROR)<<QString("Не удалось удалить исходный файл")<<fileName();
     }
 }
 
@@ -285,12 +285,12 @@ void Data94File::deleteChannels(const QVector<int> &channelsToDelete)
 
     if (QFile::remove(fileName())) {
         if (!QFile::copy(tempFile.fileName(), fileName())) {
-            LOG(ERROR)<<"Не удалось сохранить файл"<<fileName();
+            LOG(ERROR)<<QString("Не удалось сохранить файл")<<fileName();
             return;
         }
     }
     else {
-        LOG(ERROR)<<"Не удалось удалить исходный файл"<<fileName();
+        LOG(ERROR)<<QString("Не удалось удалить исходный файл")<<fileName();
         return;
     }
 
@@ -307,7 +307,7 @@ void Data94File::copyChannelsFrom(const QVector<Channel *> &source)
 
     QFile f(fileName());
     if (!f.open(QFile::ReadWrite)) {
-        LOG(ERROR)<<"Не удалось открыть файл для записи";
+        LOG(ERROR)<<QString("Не удалось открыть файл для записи");
         return;
     }
     QDataStream r(&f);
@@ -512,7 +512,7 @@ void Data94Channel::read(QDataStream &r)
     QString label = QString::fromLocal8Bit(r.device()->read(8));
 
     if (label != "d94chan ") {
-        LOG(ERROR)<<"канал неправильного типа";
+        LOG(ERROR)<<QString("канал неправильного типа");
         return;
     }
 
@@ -521,14 +521,14 @@ void Data94Channel::read(QDataStream &r)
 
     QByteArray descriptionBuffer = r.device()->read(descriptionSize);
     if ((quint32)descriptionBuffer.size() != descriptionSize) {
-        LOG(ERROR)<<"не удалось прочитать описание канала";
+        LOG(ERROR)<<QString("не удалось прочитать описание канала");
         return;
     }
 
     QJsonParseError error;
     QJsonDocument doc = QJsonDocument::fromJson(descriptionBuffer, &error);
     if (error.error != QJsonParseError::NoError) {
-        LOG(ERROR)<<"не удалось распознать описание канала:"<<error.errorString() << error.offset;
+        LOG(ERROR)<<QString("не удалось распознать описание канала:")<<error.errorString() << error.offset;
     }
     else dataDescription() = DataDescription::fromJson(doc.object());
 
@@ -627,7 +627,7 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
             if (!isComplex) {
                 const QVector<double> yValues = data->rawYValues(block);
                 if (yValues.isEmpty()) {
-                    LOG(ERROR)<<"Отсутствуют данные для записи в канале"<<name();
+                    LOG(ERROR)<<QString("Отсутствуют данные для записи в канале")<<name();
                     continue;
                 }
 
@@ -647,7 +647,7 @@ void Data94Channel::write(QDataStream &r, QDataStream *in, DataHolder *data)
             else {
                 const auto yValues = data->yValuesComplex(block);
                 if (yValues.isEmpty()) {
-                    LOG(ERROR)<<"Отсутствуют данные для записи в канале"<<name();
+                    LOG(ERROR)<<QString("Отсутствуют данные для записи в канале")<<name();
                     continue;
                 }
                 for (cx_double v: qAsConst(yValues)) {
@@ -709,7 +709,7 @@ void Data94Channel::populate()
         const quint64 fullDataSize = zAxisBlock.count * blockSize;
 
         if (dataPosition < 0) {
-            LOG(ERROR)<<"Поврежденный файл: не удалось найти положение данных в файле";
+            LOG(ERROR)<<QString("Поврежденный файл: не удалось найти положение данных в файле");
         }
         else {
             // map file into memory
@@ -756,7 +756,7 @@ void Data94Channel::populate()
         }
     }
     else {
-        LOG(ERROR)<<"Не удалось открыть файл"<<parent->fileName();
+        LOG(ERROR)<<QString("Не удалось открыть файл")<<parent->fileName();
     }
 }
 

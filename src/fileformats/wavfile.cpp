@@ -55,13 +55,13 @@ void WavFile::read()
 {DD;
     QFile wavFile(fileName());
     if (!wavFile.open(QFile::ReadOnly)) {
-        LOG(ERROR)<<"Не удалось открыть файл"<<fileName();
+        LOG(ERROR)<<QString("Не удалось открыть файл")<<fileName();
         m_valid = false;
         return;
     }
 
     if (wavFile.size() < 44) {
-        LOG(ERROR)<<"Файл слишком маленький:"<<fileName();
+        LOG(ERROR)<<QString("Файл слишком маленький:")<<fileName();
         wavFile.close();
         m_valid = false;
         return;
@@ -77,7 +77,7 @@ void WavFile::read()
     r >> u32;
     m_header.ckID = u32;
     if (m_header.ckID != fourCC("RIFF")) {
-        LOG(ERROR)<<"Неизвестный тип файла:"<<fileName();
+        LOG(ERROR)<<QString("Неизвестный тип файла:")<<fileName();
         m_valid = false;
         return;
     }
@@ -85,7 +85,7 @@ void WavFile::read()
     r >> u32; m_header.cksize = u32;
     r >> u32; m_header.waveId = u32;
     if (m_header.waveId != fourCC("WAVE")) {
-        LOG(ERROR)<<"Неизвестный тип файла:"<<fileName();
+        LOG(ERROR)<<QString("Неизвестный тип файла:")<<fileName();
         m_valid = false;
         return;
     }
@@ -98,7 +98,7 @@ void WavFile::read()
 
         if (chunkType == fourCC("fmt ")) {
             if (m_fmtChunk.fmtSize != 0) {
-                LOG(ERROR)<<"Два блока fmt в одном файле:"<<fileName();
+                LOG(ERROR)<<QString("Два блока fmt в одном файле:")<<fileName();
                 m_valid = false;
                 return;
             }
@@ -139,7 +139,7 @@ void WavFile::read()
 
         else if (chunkType == fourCC("fact")) {
             if (m_factChunk.factSize) {
-                LOG(ERROR)<<"Два блока fact в одном файле:"<<fileName();
+                LOG(ERROR)<<QString("Два блока fact в одном файле:")<<fileName();
                 m_valid = false;
                 return;
             }
@@ -150,7 +150,7 @@ void WavFile::read()
 
         else if (chunkType == fourCC("data")) {
             if (m_dataChunk.dataSize != 0) {
-                LOG(ERROR)<<"Два блока data в одном файле:"<<fileName();
+                LOG(ERROR)<<QString("Два блока data в одном файле:")<<fileName();
                 m_valid = false;
                 return;
             }
@@ -161,7 +161,7 @@ void WavFile::read()
 
         else if (chunkType == fourCC("cue ")) {
             if (m_cueChunk.cueSize != 0) {
-                LOG(ERROR)<<"Два блока cue в одном файле:"<<fileName();
+                LOG(ERROR)<<QString("Два блока cue в одном файле:")<<fileName();
                 m_valid = false;
                 return;
             }
@@ -319,7 +319,7 @@ QStringList WavFile::fileFilters()
 
 QStringList WavFile::suffixes()
 {DD;
-    return {"wav"};
+    return {"*.wav"};
 }
 
 void WavFile::init(const QVector<Channel *> &source)

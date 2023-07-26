@@ -53,9 +53,19 @@ public:
         Position,
         AutoZero
     };
+    enum class TickMark
+    {
+        None,
+        In,
+        Out,
+        Cross
+    };
 
+    Axis();
     Axis(Type type, Position position);
     Axis(Type type);
+    Axis(const Axis &other);
+    ~Axis();
 
     bool isValid() const;
 
@@ -83,6 +93,10 @@ public:
     void setMajorGridLines(const QColor &color, double width, LineFormat::StrokeType strokeType);
     void setMinorGridLines(const QColor &color, double width, LineFormat::StrokeType strokeType);
 
+    void setMajorTickMark(TickMark tickMark);
+    void setMinorTickMark(TickMark tickMark);
+    TickMark majorTickMark() const;
+    TickMark minorTickMark() const;
 
     QString titleAsString() const;
     Title title() const;
@@ -102,51 +116,29 @@ public:
 
 private:
     SERIALIZE_ENUM(Type, {
-                       {Type::None, "none"},
-                       {Type::Cat, "cat"},
-                       {Type::None, "none"},
-                       {Type::None, "none"}
-
-                   });
+        {Type::None, "none"},
+        {Type::Cat, "cat"},
+        {Type::None, "none"},
+        {Type::None, "none"}
+    });
 
     SERIALIZE_ENUM(Position, {
-                       {Position::None, "none"},
-                       {Position::Top, "t"},
-                       {Position::Bottom, "b"},
-                       {Position::Left, "l"},
-                       {Position::Right, "r"}
-                   });
+        {Position::None, "none"},
+        {Position::Top, "t"},
+        {Position::Bottom, "b"},
+        {Position::Left, "l"},
+        {Position::Right, "r"}
+    });
+    SERIALIZE_ENUM(TickMark, {
+        {TickMark::None, "none"},
+        {TickMark::In, "in"},
+        {TickMark::Out, "out"},
+        {TickMark::Cross, "cross"},
+    });
+
     friend QDebug operator<<(QDebug, const Axis &axis);
 
     QSharedDataPointer<AxisPrivate> d;
-};
-
-class AxisPrivate : public QSharedData
-{
-public:
-    int id;
-    Axis::Scaling scaling;
-    std::optional<bool> visible;
-    Axis::Position position;
-    Axis::Type type;
-
-    int crossAxis = -1;
-    std::optional<Axis::CrossesType> crossesType;
-    std::optional<double> crossesPosition;
-
-    ShapeProperties majorGridlines;
-    ShapeProperties minorGridlines;
-
-   // QString title; // temporary solution
-    Title title;
-//    NumberFormat numberFormat;
-
-//    TickMark majorTickMark;
-//    TickMark minorTickMark;
-
-    AxisPrivate();
-    AxisPrivate(const AxisPrivate &other);
-    ~AxisPrivate() {}
 };
 
 #ifndef QT_NO_DEBUG_STREAM

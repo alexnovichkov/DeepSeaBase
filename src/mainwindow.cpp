@@ -1157,7 +1157,7 @@ bool MainWindow::copyChannels(const QVector<Channel *> source)
 
     if (!destination) {
         DebugPrint(file);
-        LOG(ERROR)<<"Неизвестный тип файла"<< file;
+        LOG(ERROR)<<QString("Неизвестный тип файла")<< file;
         return false;
     }
 
@@ -1305,7 +1305,7 @@ void MainWindow::calculateMean()
         if (!meanFile) {
             QMessageBox::critical(this, "Расчет среднего", "Не удалось создать файл неизвестного типа:"
                                   + meanFileName);
-            LOG(ERROR)<<"Не удалось создать файл"<<meanFileName;
+            LOG(ERROR)<<QString("Не удалось создать файл")<<meanFileName;
             return;
         }
 
@@ -1802,7 +1802,7 @@ void MainWindow::calculateMovingAvg()
         avg = App->addFile(avgFileName, &isNew);
 
         if (!avg) {
-            LOG(ERROR) << "Не удалось создать файл" << avgFileName;
+            LOG(ERROR) << QString("Не удалось создать файл") << avgFileName;
             return;
         }
 
@@ -1900,7 +1900,7 @@ void MainWindow::saveHorizontalSlice(const QVector<double>& zValues)
         spectre = App->addFile(spectreFileName, &isNew);
 
         if (!spectre) {
-            LOG(ERROR) << "Не удалось создать файл" << spectreFileName;
+            LOG(ERROR) << QString("Не удалось создать файл") << spectreFileName;
             return;
         }
 

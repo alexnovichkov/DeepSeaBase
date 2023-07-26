@@ -653,12 +653,17 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
          if (someStepIsZero)
              b->scaling()->logBase = 10; // TODO: replace with a method
          b->setRange(int(range.min/10)*10, range.max);
-         b->setMajorGridLines(QColor(Qt::darkGray), 0.5, QXlsx::LineFormat::StrokeType::Dash);
+         b->setMajorGridLines(QColor(Qt::black), 0.5, QXlsx::LineFormat::StrokeType::Dash);
          auto l = chart->addAxis(QXlsx::Axis::Type::Val, QXlsx::Axis::Position::Left);
          l->setTitle(stripHtml(m_plot->axisTitle(Enums::AxisType::atLeft)));
          l->setCrossAxis(b);
-         l->setMajorGridLines(QColor(Qt::darkGray), 0.5, QXlsx::LineFormat::StrokeType::Dash);
+         l->setMajorGridLines(QColor(Qt::black), 0.5, QXlsx::LineFormat::StrokeType::Dash);
          b->setCrossesAt(QXlsx::Axis::CrossesType::Minimum);
+
+         b->setMajorTickMark(QXlsx::Axis::TickMark::Out);
+         b->setMinorTickMark(QXlsx::Axis::TickMark::Out);
+         l->setMajorTickMark(QXlsx::Axis::TickMark::Out);
+         l->setMinorTickMark(QXlsx::Axis::TickMark::Out);
 
          for ( int i=0; i<size; ++i) {
              Curve *curve = m_plot->model()->curve(i);
@@ -670,6 +675,8 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
                      r = chart->addAxis(QXlsx::Axis::Type::Val, QXlsx::Axis::Position::Right);
                      r->setTitle(stripHtml(m_plot->axisTitle(Enums::AxisType::atRight)));
                      r->setCrossAxis(br);
+                     r->setMajorTickMark(QXlsx::Axis::TickMark::Out);
+                     r->setMinorTickMark(QXlsx::Axis::TickMark::Out);
                  }
 
                  chart->setSeriesAxes(i, {br->id(), r->id()});
@@ -737,10 +744,9 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
      }
 
      QTemporaryFile tempFile("DeepSeaBase-XXXXXX.xlsx");
-     tempFile.setAutoRemove(false);
+//     tempFile.setAutoRemove(false);
 
      tempFile.open();
-     LOG(DEBUG) << tempFile.fileName();
      output.saveAs(tempFile.fileName());
 
      QDesktopServices::openUrl(QUrl::fromLocalFile(tempFile.fileName()));

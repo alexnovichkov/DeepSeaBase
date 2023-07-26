@@ -166,7 +166,7 @@ bool SplitFunction::compute(FileDescriptor *file)
         }
 
         if (optimalBlockSize < blockSize /2) {
-            LOG(ERROR) << "Слишком маленький размер блока";
+            LOG(ERROR) << QString("Слишком маленький размер блока");
             return false;
         }
         blockSize = optimalBlockSize;

@@ -136,7 +136,7 @@ void UffFileDescriptor::readWithStreams()
 {DD;
     QFile uff(fileName());
     if (!uff.exists()) {
-        LOG(ERROR)<<"Такого файла не существует";
+        LOG(ERROR)<<QString("Такого файла не существует");
         return;
     }
 
@@ -157,7 +157,7 @@ void UffFileDescriptor::readWithStreams()
         }
     }
     else {
-        LOG(ERROR)<<"Не удалось открыть файл"<<fileName();
+        LOG(ERROR)<<QString("Не удалось открыть файл")<<fileName();
     }
 }
 
@@ -1266,13 +1266,13 @@ bool Function::populateWithMmap()
 {DD;
     QFile uff(parent->fileName());
     if (!uff.open(QFile::ReadOnly)) {
-        LOG(ERROR)<<"Не удалось открыть файл"<<parent->fileName();
+        LOG(ERROR)<<QString("Не удалось открыть файл")<<parent->fileName();
         return false;
     }
 
     uchar *mmap = uff.map(0, uff.size());
     if (!mmap) {
-        LOG(ERROR)<<"Ошибка чтения данных с помощью mmap";
+        LOG(ERROR)<<QString("Ошибка чтения данных с помощью mmap");
         return false;
     }
     char *data = reinterpret_cast<char*>(mmap);
@@ -1345,7 +1345,7 @@ bool Function::populateWithStream()
 {DD;
     QFile uff(parent->fileName());
     if (!uff.open(QFile::ReadOnly | QFile::Text)) {
-        LOG(ERROR)<<"Не удалось открыть файл"<<parent->fileName();
+        LOG(ERROR)<<QString("Не удалось открыть файл")<<parent->fileName();
         return false;
     }
 

@@ -29,7 +29,7 @@ D94IO::D94IO(const QVector<Channel *> &source, const QString &fileName, QObject 
 
     QFile f(fileName);
     if (!f.open(QFile::WriteOnly)) {
-        LOG(ERROR)<<"Не удалось открыть файл для записи:"<<fileName;
+        LOG(ERROR)<<QString("Не удалось открыть файл для записи:")<<fileName;
         return;
     }
 
@@ -55,7 +55,7 @@ void D94IO::addChannel(DataDescription *description, DataHolder *data)
 {
     QFile f(fileName);
     if (!f.open(QFile::Append)) {
-        LOG(ERROR)<<"Не удалось открыть файл для записи:"<<fileName;
+        LOG(ERROR)<<QString("Не удалось открыть файл для записи:")<<fileName;
         return;
     }
 

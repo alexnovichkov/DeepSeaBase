@@ -8,6 +8,34 @@
 
 QT_BEGIN_NAMESPACE_XLSX
 
+class AxisPrivate : public QSharedData
+{
+public:
+    int id;
+    Axis::Scaling scaling;
+    std::optional<bool> visible;
+    Axis::Position position;
+    Axis::Type type;
+
+    int crossAxis = -1;
+    std::optional<Axis::CrossesType> crossesType;
+    std::optional<double> crossesPosition;
+
+    ShapeProperties majorGridlines;
+    ShapeProperties minorGridlines;
+
+   // QString title; // temporary solution
+    Title title;
+//    NumberFormat numberFormat;
+
+    std::optional<Axis::TickMark> majorTickMark;
+    std::optional<Axis::TickMark> minorTickMark;
+
+    AxisPrivate();
+    AxisPrivate(const AxisPrivate &other);
+    ~AxisPrivate();
+};
+
 void Axis::Scaling::write(QXmlStreamWriter &writer) const
 {
     writer.writeStartElement(QStringLiteral("c:scaling")); // CT_Scaling (mandatory value)
@@ -58,6 +86,11 @@ void Axis::Scaling::read(QXmlStreamReader &reader)
     }
 }
 
+Axis::Axis()
+{
+
+}
+
 Axis::Axis(Axis::Type type, Axis::Position position)
 {
     d = new AxisPrivate;
@@ -69,6 +102,16 @@ Axis::Axis(Axis::Type type)
 {
     d = new AxisPrivate;
     d->type = type;
+}
+
+Axis::Axis(const Axis &other) : d(other.d)
+{
+
+}
+
+Axis::~Axis()
+{
+
 }
 
 bool Axis::isValid() const
@@ -193,6 +236,32 @@ void Axis::setMinorGridLines(const QColor &color, double width, LineFormat::Stro
     d->minorGridlines.setLine(lf);
 }
 
+void Axis::setMajorTickMark(Axis::TickMark tickMark)
+{
+    if (!d) d = new AxisPrivate;
+    d->majorTickMark = tickMark;
+}
+
+void Axis::setMinorTickMark(Axis::TickMark tickMark)
+{
+    if (!d) d = new AxisPrivate;
+    d->minorTickMark = tickMark;
+}
+
+Axis::TickMark Axis::majorTickMark() const
+{
+    if (d)
+        return d->majorTickMark.value_or(TickMark::Cross); //default is Cross
+    return TickMark::Cross;
+}
+
+Axis::TickMark Axis::minorTickMark() const
+{
+    if (d)
+        return d->minorTickMark.value_or(TickMark::Cross); //default is Cross
+    return TickMark::Cross;
+}
+
 QString Axis::titleAsString() const
 {
     if (d) return d->title.toString();
@@ -296,6 +365,19 @@ void Axis::write(QXmlStreamWriter &writer) const
         }
     }
 
+    if (d->majorTickMark.has_value()) {
+        QString s;
+        toString(d->majorTickMark.value(), s);
+        writer.writeEmptyElement("c:majorTickMark");
+        writer.writeAttribute("val", s);
+    }
+    if (d->minorTickMark.has_value()) {
+        QString s;
+        toString(d->minorTickMark.value(), s);
+        writer.writeEmptyElement("c:minorTickMark");
+        writer.writeAttribute("val", s);
+    }
+
     writer.writeEndElement();
 }
 
@@ -348,11 +430,15 @@ void Axis::read(QXmlStreamReader &reader)
                 d->crossesType = CrossesType::Position;
                 d->crossesPosition = reader.attributes().value(QLatin1String("val")).toDouble();
             }
-            else if (reader.name() == QLatin1String("")) {
-
+            else if (reader.name() == QLatin1String("majorTickMark")) {
+                TickMark t;
+                fromString(reader.attributes().value(QLatin1String("val")).toString(), t);
+                d->majorTickMark = t;
             }
-            else if (reader.name() == QLatin1String("")) {
-
+            else if (reader.name() == QLatin1String("minorTickMark")) {
+                TickMark t;
+                fromString(reader.attributes().value(QLatin1String("val")).toString(), t);
+                d->minorTickMark = t;
             }
             else if (reader.name() == QLatin1String("")) {
 
@@ -388,6 +474,11 @@ AxisPrivate::AxisPrivate() : position(Axis::Position::None), type(Axis::Type::No
 
 AxisPrivate::AxisPrivate(const AxisPrivate &other) : QSharedData(other)
   //TODO: add all members
+{
+
+}
+
+AxisPrivate::~AxisPrivate()
 {
 
 }
