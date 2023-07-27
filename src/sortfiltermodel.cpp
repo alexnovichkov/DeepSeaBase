@@ -2,6 +2,7 @@
 #include <QtCore>
 #include "logging.h"
 #include "model.h"
+#include "algorithms.h"
 
 SortFilterModel::SortFilterModel(QObject *parent) : QSortFilterProxyModel(parent)
 {DD;
@@ -45,8 +46,18 @@ bool SortFilterModel::filterAcceptsRow(int source_row, const QModelIndex &source
         if (filters.at(i).isEmpty()) continue;
         QModelIndex index = sourceModel()->index(source_row, i, source_parent);
         QVariant data = sourceModel()->data(index);
-        if (data.type()==QVariant::Double)
-            accept &= qFuzzyCompare(data.toDouble()+1.0,filters.at(i).toDouble()+1.0);
+        if (data.type()==QVariant::Double) {
+            QString s = filters.at(i);
+            s.replace(',', '.');
+            if (!s.contains('.')) {
+                accept &= (int(std::floor(data.toDouble())) == filters.at(i).toInt());
+            }
+            else {
+                int precision = s.section('.', 1).length();
+                double d = data.toDouble() * std::pow(10, precision);
+                accept &= qFuzzyCompare(std::floor(d), std::floor(s.toDouble() * std::pow(10, precision)));
+            }
+        }
         else if (data.type()==QVariant::Int)
             accept &= (data.toInt()==filters.at(i).toInt());
         else if (data.type()==QVariant::LongLong)

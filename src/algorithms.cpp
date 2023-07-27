@@ -612,3 +612,20 @@ int getRandom(int min, int max)
     std::uniform_int_distribution intDistrib(min, max);
     return intDistrib(g);
 }
+
+double rounded(double val)
+{
+    // округление до ближайшего целого
+    int rounded = qRound(val);
+    if (std::abs(val - double(rounded)) < 0.001) {
+        val = rounded;
+    }
+    else {// пытаемся отловить случаи вроде 0.4999999 или 3.499999
+        double size2 = val*2.0;
+        int rounded2 = qRound(size2);
+        if (std::abs(size2 - double(rounded2)) < 0.0001) {
+            val = double(rounded2)/2.0;
+        }
+    }
+    return val;
+}

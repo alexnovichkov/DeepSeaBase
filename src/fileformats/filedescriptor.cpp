@@ -110,23 +110,10 @@ double FileDescriptor::roundedSize() const
     if (channelsCount()==0) return 0.0;
 
     if (channel(0)->data()->xValuesFormat() == DataHolder::XValuesUniform) {
-        double size = samplesCount() * xStep();
-        // округление до ближайшего целого
-        int rounded = qRound(size);
-        if (std::abs(size - double(rounded)) < 0.001) {
-            size = rounded;
-        }
-        else {// пытаемся отловить случаи вроде 0.4999999 или 3.499999
-            double size2 = size*2.0;
-            int rounded2 = qRound(size2);
-            if (std::abs(size2 - double(rounded2)) < 0.0001) {
-                size = double(rounded2)/2.0;
-            }
-        }
-        return size;
+        return rounded(samplesCount() * xStep());
     }
     else {
-        return channel(0)->data()->xValue(channel(0)->data()->samplesCount()-1);
+        return rounded(channel(0)->data()->xValue(channel(0)->data()->samplesCount()-1));
     }
 }
 

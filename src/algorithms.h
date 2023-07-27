@@ -84,6 +84,8 @@ QVector<T> segment(const QVector<T> &values, int from, int to, int blockSize, in
 
 QString smartDouble(double v, double tickDistance=0.0);
 
+double rounded(double val);
+
 template <typename T, typename D>
 QVector<D> readChunk(QDataStream &readStream, quint64 blockSize, qint64 *actuallyRead)
 {
