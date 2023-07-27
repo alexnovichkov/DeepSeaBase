@@ -36,12 +36,12 @@ public:
     static QString formatToString(YValuesFormat format);
 
     enum YValuesPresentation {
-        ShowAsDefault = -1,
-        ShowAsReals = 1,
-        ShowAsImags = 2,
         ShowAsAmplitudes = 3,
         ShowAsAmplitudesInDB = 4,
-        ShowAsPhases = 5
+        ShowAsPhases = 5,
+        ShowAsReals = 1,
+        ShowAsImags = 2,
+        ShowAsDefault = -1,
     };
 
     enum YValuesUnits {

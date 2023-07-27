@@ -130,6 +130,14 @@ void SettingsDialog::addSettings()
     canvasDoubleClickCursor->setValue(se->getSetting("canvasDoubleClickCursor", 0).toInt());
     canvasDoubleClick->addSubProperty(canvasDoubleClickCursor);
 
+    auto defaultYAxisPresentation = m_manager->addProperty(QtVariantPropertyManager::enumTypeId(), "Формат оси Y по умолчанию");
+    defaultYAxisPresentation->setAttribute("enumNames",
+         QStringList({"Как в файле", "Действительные", "Мнимые", "Амплитуды линейные", "Амплитуды в дБ", "Фазы"}));
+
+    m_displayNames.insert("Формат оси Y по умолчанию", "defaultYAxisPresentation");
+    defaultYAxisPresentation->setValue(se->getSetting("defaultYAxisPresentation", 0).toInt());
+    graphs->addSubProperty(defaultYAxisPresentation);
+
     /* DFD */
     auto dfd = m_manager->addProperty(QVariant::String, "Файлы DFD");
     dfd->setValue(QVariant());

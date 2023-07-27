@@ -57,6 +57,7 @@ bool Settings::hasSetting(const QString &key) const
         "spectrogramTimeScale", //0 - время, 1 - дистанция
         "legendMiddleButton",
         "defaultFileFormat",
+        "defaultYAxisPresentation"
     };
 
     if (key.isEmpty()) return false;

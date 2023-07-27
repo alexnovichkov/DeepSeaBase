@@ -733,20 +733,35 @@ void QCPPlot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     setAxis(Enums::AxisType::atBottom, ch->xName());
     enableAxis(Enums::AxisType::atBottom, true);
 
+    int defaultYAxisPresentation = se->getSetting("defaultYAxisPresentation", 0).toInt();
+
     if (plotType == Enums::PlotType::Spectrogram) {
         yValuesPresentationLeft = DataHolder::ShowAsReals;
         if (m->isEmpty()) {
-            yValuesPresentationRight = ch->data()->yValuesPresentation();
+            if (defaultYAxisPresentation == 0)
+                yValuesPresentationRight = ch->data()->yValuesPresentation();
+            else
+                yValuesPresentationRight = defaultYAxisPresentation;
         }
         ch->data()->setYValuesPresentation(yValuesPresentationRight);
     }
     else {
         // если графиков нет, по умолчанию будем строить амплитуды по первому добавляемому графику
         if (plotOnLeft && m->leftCurvesCount()==0 && !sergeiMode) {
-            yValuesPresentationLeft = ch->data()->yValuesPresentation();
+            if (defaultYAxisPresentation == 0)
+                yValuesPresentationLeft = ch->data()->yValuesPresentation();
+            else
+                yValuesPresentationLeft = defaultYAxisPresentation;
+            if (plotType == Enums::PlotType::Time)
+                yValuesPresentationLeft = DataHolder::ShowAsReals;
         }
         if (!plotOnLeft && m->rightCurvesCount()==0 && !sergeiMode) {
-            yValuesPresentationRight = ch->data()->yValuesPresentation();
+            if (defaultYAxisPresentation == 0)
+                yValuesPresentationRight = ch->data()->yValuesPresentation();
+            else
+                yValuesPresentationRight = defaultYAxisPresentation;
+            if (plotType == Enums::PlotType::Time)
+                yValuesPresentationRight = DataHolder::ShowAsReals;
         }
 
         if (plotOnLeft) ch->data()->setYValuesPresentation(yValuesPresentationLeft);
