@@ -76,6 +76,15 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_DockManager = new ads::CDockManager(this);
     connect(m_DockManager, &ads::CDockManager::focusedDockWidgetChanged, this, &MainWindow::onFocusedDockWidgetChanged);
+    connect(m_DockManager, &ads::CDockManager::dockWidgetAboutToBeRemoved, [=](ads::CDockWidget* DockWidget)
+    {
+        if (auto tab = qobject_cast<Tab *>(DockWidget->widget())) {
+            if (currentTab == tab) currentTab = nullptr;
+        }
+        else if (auto plot = qobject_cast<PlotArea*>(DockWidget)) {
+            if (currentPlot == plot) currentPlot = nullptr;
+        }
+    });
 
     createActions();
 
@@ -2251,7 +2260,7 @@ void MainWindow::updateActions()
 }
 
 void MainWindow::onFocusedDockWidgetChanged(ads::CDockWidget *old, ads::CDockWidget *now)
-{DD;
+{DD0;
     Q_UNUSED(old);
     if (!now) return;
     if (auto tab = qobject_cast<Tab *>(now->widget())) {
