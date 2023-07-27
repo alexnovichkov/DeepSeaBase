@@ -13,6 +13,7 @@ class QGridLayout;
 class Channel;
 class QLabel;
 class QCPPlot;
+class QStackedLayout;
 
 class PlotArea : public ads::CDockWidget
 {
@@ -120,9 +121,11 @@ private slots:
 
 private:
     void exportSonogramToExcel(bool fullRange, bool dataOnly);
-    QGridLayout *plotsLayout;
+//    QGridLayout *plotsLayout;
+    QSplitter *splitter;
     QPointer<QCPPlot> m_plot;
     QLabel * infoLabel;
+    QStackedLayout *stackedL;
 
     QAction *toolBarAction = nullptr;
 

@@ -1445,7 +1445,7 @@ void DfdChannel::populate()
         // map file into memory
         unsigned char *ptr = rawFile.map(0, rawFile.size());
         if (ptr) {//достаточно памяти отобразить весь файл
-            LOG(DEBUG)<<QString("Чтение канала ")<<index()<<QString(" через mmap");
+//            LOG(DEBUG)<<QString("Чтение канала ")<<index()<<QString(" через mmap");
             unsigned char *maxPtr = ptr + rawFile.size();
             unsigned char *ptrCurrent = ptr;
             if (!dataPositions.isEmpty()) {
@@ -1486,7 +1486,7 @@ void DfdChannel::populate()
         } /// mapped
         else {
             //читаем классическим способом через getChunk
-            LOG(DEBUG)<<QString("Чтение канала ")<<index()<<QString(" через потоки");
+//            LOG(DEBUG)<<QString("Чтение канала ")<<index()<<QString(" через потоки");
             QDataStream readStream(&rawFile);
             readStream.setByteOrder(QDataStream::LittleEndian);
             if (IndType==0xC0000004)
@@ -1569,7 +1569,7 @@ void DfdChannel::populate()
     else {
         LOG(ERROR)<<"Cannot read raw file"<<parent->rawFileName;
     }
-    LOG(DEBUG)<<"reading finished";
+//    LOG(DEBUG)<<"reading finished";
 }
 
 quint64 DfdChannel::blockSizeInBytes() const

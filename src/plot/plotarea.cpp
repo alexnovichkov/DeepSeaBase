@@ -188,20 +188,22 @@ PlotArea::PlotArea(int index, QWidget *parent)
     scaleToolBar->addAction(interactionModeAct);
     scaleToolBar->addAction(cursorBoxAct);
 
-    plotsLayout = new QGridLayout;
+    splitter = new QSplitter(Qt::Horizontal, this);
     infoLabel = new QLabel("- Перетащите сюда каналы, чтобы построить их графики\n"
                                 "- Если зажать Ctrl, то будут построены графики для всех\n"
                                 "  выделенных файлов", this);
     QFont font;
-    //font.setBold(true);
     font.setPointSize(12);
     infoLabel->setFont(font);
-    //infoLabel->setF(QColor(150,150,150,150));
-    //infoLabel->setBackgroundRole(QColor(255,255,255,150));
-    plotsLayout->addWidget(infoLabel,0,0, Qt::AlignCenter);
+    infoLabel->setAlignment(Qt::AlignCenter);
+
+    stackedL = new QStackedLayout;
+    stackedL->addWidget(infoLabel);
+    stackedL->addWidget(splitter);
+    stackedL->setCurrentIndex(0);
+
     auto w = new QWidget(this);
-    //w->setBackgroundRole(QPalette::Light);
-    w->setLayout(plotsLayout);
+    w->setLayout(stackedL);
     setWidget(w);
 }
 
@@ -224,12 +226,13 @@ void PlotArea::addPlot(Enums::PlotType type)
                 delete m_plot->toolBarWidget(); //при помещении на тулбар виджет меняет хозяина,
                 //так что приходится принудительно удалять
             }
-            m_plot.clear();
+            delete m_plot->legend(); //при помещении в сплиттер легенда меняет хозяина
+            delete m_plot;
         }
         else return;
     }
     else {
-        infoLabel->hide();
+        stackedL->setCurrentIndex(1);
     }
     m_plot = new QCPPlot(type, this);
     switch (type) {
@@ -252,9 +255,22 @@ void PlotArea::addPlot(Enums::PlotType type)
         toolBarAction = toolBar()->addWidget(m_plot->toolBarWidget());
     }
 
-    plotsLayout->addWidget(m_plot, 1,0);
-    plotsLayout->addWidget(m_plot->legend(), 1,1);
-    plotsLayout->setColumnStretch(0, 1);
+//    plotsLayout->addWidget(m_plot, 1,0);
+//    plotsLayout->addWidget(m_plot->legend(), 1,1);
+//    plotsLayout->setColumnStretch(0, 1);
+    if (splitter->count()>0) {
+        splitter->replaceWidget(0, m_plot);
+        splitter->replaceWidget(1, m_plot->legend());
+    }
+    else {
+        splitter->addWidget(m_plot);
+        splitter->addWidget(m_plot->legend());
+        splitter->setStretchFactor(0,1);
+    }
+
+//    splitter->setStretchFactor(1,10);
+    //splitter->setSizes({30,10});
+//    m_plot->legend()->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     connect(m_plot, SIGNAL(curvesCountChanged()), this, SIGNAL(curvesCountChanged()));
     connect(m_plot, SIGNAL(channelPlotted(Channel*)), this, SIGNAL(channelPlotted(Channel*)));

@@ -2260,7 +2260,7 @@ void MainWindow::updateActions()
 }
 
 void MainWindow::onFocusedDockWidgetChanged(ads::CDockWidget *old, ads::CDockWidget *now)
-{DD0;
+{DD;
     Q_UNUSED(old);
     if (!now) return;
     if (auto tab = qobject_cast<Tab *>(now->widget())) {
