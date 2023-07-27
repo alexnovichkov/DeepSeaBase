@@ -12,6 +12,7 @@
 #include "xlsxlineformat.h"
 #include "xlsxmarkerformat.h"
 #include "xlsxaxis.h"
+#include "xlsxlabel.h"
 
 QT_BEGIN_NAMESPACE_XLSX
 
@@ -63,6 +64,7 @@ public:
     void setSeriesShape(int series, const ShapeProperties &shape);
     void setSeriesMarkerFormat(int series, const MarkerFormat &format);
     void setSeriesAxes(int series, QList<int> axesIds);
+    void setSeriesLabels(int series, QVector<int> labels, QXlsx::Label::ShowParameters show, QXlsx::Label::Position pos);
 public:
     bool loadFromXmlFile(QIODevice *device) override;
     void saveToXmlFile(QIODevice *device) const override;

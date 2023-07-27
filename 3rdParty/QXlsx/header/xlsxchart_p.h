@@ -30,6 +30,9 @@ public:
     ShapeProperties shape;
     MarkerFormat marker;
     QList<int> axes; //2...
+
+    Labels labels;
+    void addLabel(int label, Label::ShowParameters show, Label::Position pos);
 };
 
 class ChartPrivate : public AbstractOOXmlFilePrivate

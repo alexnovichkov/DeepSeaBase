@@ -340,6 +340,16 @@ void Chart::setSeriesAxes(int series, QList<int> axesIds)
     d->seriesList[series]->axes = axesIds;
 }
 
+void Chart::setSeriesLabels(int series, QVector<int> labels, QXlsx::Label::ShowParameters show, QXlsx::Label::Position pos)
+{
+    Q_D(Chart);
+
+    if (series < 0 || series >= d->seriesList.size()) return;
+    for (int label: labels) {
+        d->seriesList[series]->addLabel(label, show, pos);
+    }
+}
+
 /*!
  * \internal
  */
@@ -1426,6 +1436,8 @@ void ChartPrivate::saveXmlSer(QXmlStreamWriter &writer, XlsxSeries *ser, int id)
     if (ser->marker.isValid()) {
         ser->marker.write(writer);
     }
+    if (!ser->labels.isEmpty())
+        ser->labels.write(writer);
 
     if (!ser->axDataSource_numRef.isEmpty())
     {
@@ -2038,6 +2050,11 @@ bool ChartPrivate::loadXmlChartLegend(QXmlStreamReader &reader)
     }
 
     return false;
+}
+
+void XlsxSeries::addLabel(int label, Label::ShowParameters show, Label::Position pos)
+{
+    labels.labels << Label(label, show, pos);
 }
 
 QT_END_NAMESPACE_XLSX

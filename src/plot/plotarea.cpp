@@ -700,6 +700,13 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
              else {
                  chart->setSeriesAxes(i, {b->id(), l->id()});
              }
+
+             QVector<int> labels;
+             for (PointLabel *label: curve->labels)
+                 labels << label->point().x+1;
+
+             chart->setSeriesLabels(i, labels, QXlsx::Label::ShowCategory, QXlsx::Label::Position::Top);
+
          }
 
          // рамка вокруг графика
