@@ -306,33 +306,33 @@ void PlotArea::update()
     if (m_plot) m_plot->update();
 }
 
-void setAxis(QAxObject *xAxis, const QString &title)
-{DD;
-    xAxis->dynamicCall("SetHasTitle(bool)",true);
-    QAxObject *axisTitle = xAxis->querySubObject("AxisTitle()");
-    axisTitle->setProperty("Text", title);
-    xAxis->setProperty("MinorTickMark", /*xlOutside*/3);
-    xAxis->dynamicCall("SetHasMajorGridlines(bool)", true);
-    QAxObject *xGridLines = xAxis->querySubObject("MajorGridlines()");
-    QAxObject *xGridFormat = xGridLines->querySubObject("Format");
-    QAxObject *xGridFormatLine = xGridFormat->querySubObject("Line");
-    xGridFormatLine->setProperty("Visible",true);
-    xGridFormatLine->setProperty("DashStyle",7);
+//void setAxis(QAxObject *xAxis, const QString &title)
+//{DD;
+//    xAxis->dynamicCall("SetHasTitle(bool)",true);
+//    QAxObject *axisTitle = xAxis->querySubObject("AxisTitle()");
+//    axisTitle->setProperty("Text", title);
+//    xAxis->setProperty("MinorTickMark", /*xlOutside*/3);
+//    xAxis->dynamicCall("SetHasMajorGridlines(bool)", true);
+//    QAxObject *xGridLines = xAxis->querySubObject("MajorGridlines()");
+//    QAxObject *xGridFormat = xGridLines->querySubObject("Format");
+//    QAxObject *xGridFormatLine = xGridFormat->querySubObject("Line");
+//    xGridFormatLine->setProperty("Visible",true);
+//    xGridFormatLine->setProperty("DashStyle",7);
 
-    QAxObject *format = xAxis->querySubObject("Format");
-    QAxObject *formatLine = format->querySubObject("Line");
-    formatLine->setProperty("Visible",true);
-    QAxObject *formatLineForeColor = formatLine->querySubObject("ForeColor");
-    formatLineForeColor->setProperty("ObjectThemeColor", 13);
+//    QAxObject *format = xAxis->querySubObject("Format");
+//    QAxObject *formatLine = format->querySubObject("Line");
+//    formatLine->setProperty("Visible",true);
+//    QAxObject *formatLineForeColor = formatLine->querySubObject("ForeColor");
+//    formatLineForeColor->setProperty("ObjectThemeColor", 13);
 
-    delete formatLineForeColor;
-    delete formatLine;
-    delete format;
-    delete xGridFormatLine;
-    delete xGridFormat;
-    delete xGridLines;
-    delete axisTitle;
-}
+//    delete formatLineForeColor;
+//    delete formatLine;
+//    delete format;
+//    delete xGridFormatLine;
+//    delete xGridFormat;
+//    delete xGridLines;
+//    delete axisTitle;
+//}
 
 void PlotArea::exportSonogramToExcel(bool fullRange, bool dataOnly)
 {

@@ -158,6 +158,7 @@ private:
     QStringList tabsNames;
 
     Tab *currentTab = nullptr;
+    PlotArea *currentPlot = nullptr;
 
     QMenu *plotsMenu;
     QMenu *tabsMenu;
@@ -218,7 +219,6 @@ private:
     QAction *aboutAct;
     QAction *addPlotAreaAct;
 
-    PlotArea *currentPlot = nullptr;
     QHash<QString, IConvertPlugin *> loadedPlugins;
 protected:
     void closeEvent(QCloseEvent *event) override;

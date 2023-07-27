@@ -56,6 +56,7 @@ bool Settings::hasSetting(const QString &key) const
         "canvasDoubleClickCursor",
         "spectrogramTimeScale", //0 - время, 1 - дистанция
         "legendMiddleButton",
+        "defaultFileFormat",
     };
 
     if (key.isEmpty()) return false;

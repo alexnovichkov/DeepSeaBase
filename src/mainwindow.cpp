@@ -61,7 +61,7 @@
 #include "plot/qcpplot.h"
 
 MainWindow::MainWindow(QWidget *parent)
-    : QMainWindow(parent), currentTab(0)
+    : QMainWindow(parent)
 {DD;
     setWindowTitle(tr("DeepSea Database ")+DEEPSEABASE_VERSION);
 

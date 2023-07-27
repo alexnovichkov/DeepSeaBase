@@ -72,6 +72,21 @@ void SettingsDialog::addSettings()
     global->addSubProperty(_font);
     propertyTree->setExpanded(item, false);
 
+    /*   Расчеты    */
+    auto calculations = m_manager->addProperty(QVariant::String, "Расчеты");
+    calculations->setValue(QVariant());
+    item = propertyTree->addProperty(calculations);
+
+
+
+    //0 - dfd, 1 - uff, 2 - d94
+    auto defaultFileFormat = m_manager->addProperty(QtVariantPropertyManager::enumTypeId(), "Формат новых файлов по умолчанию");
+    m_displayNames.insert("Формат новых файлов по умолчанию", "defaultFileFormat");
+    defaultFileFormat->setAttribute("enumNames", QStringList({"DFD", "UFF", "D94"}));
+    defaultFileFormat->setValue( se->getSetting("defaultFileFormat", 0));
+    calculations->addSubProperty(defaultFileFormat);
+    propertyTree->setExpanded(item, false);
+
     /*   Графики    */
     auto graphs = m_manager->addProperty(QVariant::String, "Графики");
     graphs->setValue(QVariant());
