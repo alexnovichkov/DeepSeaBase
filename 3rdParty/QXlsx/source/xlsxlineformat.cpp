@@ -36,6 +36,25 @@ LineFormatPrivate::~LineFormatPrivate()
 
 }
 
+bool LineFormatPrivate::operator ==(const LineFormatPrivate &format) const
+{
+    if (fill != format.fill) return false;
+    if (width != format.width) return false;
+    if (compoundLineType != format.compoundLineType) return false;
+    if (strokeType != format.strokeType) return false;
+    if (lineCap != format.lineCap) return false;
+    if (penAlignment != format.penAlignment) return false;
+    if (lineJoin != format.lineJoin) return false;
+    if (tailType != format.tailType) return false;
+    if (headType != format.headType) return false;
+    if (tailLength != format.tailLength) return false;
+    if (headLength != format.headLength) return false;
+    if (tailWidth != format.tailWidth) return false;
+    if (headWidth != format.headWidth) return false;
+
+    return true;
+}
+
 /*!
  *  Creates a new invalid format.
  */
@@ -100,7 +119,7 @@ void LineFormat::setType(FillProperties::FillType type)
 
 Color LineFormat::color() const
 {
-    if (d && d->fill.isValid()) return d->fill.color().value();
+    if (d && d->fill.isValid()) return d->fill.color();
     return Color();
 }
 
@@ -128,10 +147,10 @@ void LineFormat::setFill(const FillProperties &fill)
     d->fill = fill;
 }
 
-std::optional<Coordinate> LineFormat::width() const
+Coordinate LineFormat::width() const
 {
     if (d) return d->width;
-    return {};
+    return Coordinate();
 }
 
 void LineFormat::setWidth(double widthInPt)
@@ -140,7 +159,7 @@ void LineFormat::setWidth(double widthInPt)
     d->width = Coordinate(widthInPt);
 }
 
-void LineFormat::setWidth(qint64 widthInEMU)
+void LineFormat::setWidthEMU(qint64 widthInEMU)
 {
     if (!d) d = new LineFormatPrivate;
     d->width = Coordinate(widthInEMU);
@@ -293,7 +312,7 @@ void LineFormat::write(QXmlStreamWriter &writer) const
     if (!isValid()) return;
 
     writer.writeStartElement("a:ln");
-    if (d->width.has_value()) writer.writeAttribute("w", d->width->toString());
+    if (d->width.isValid()) writer.writeAttribute("w", d->width.toString());
     if (d->compoundLineType.has_value()) {
         QString s;
         toString(d->compoundLineType.value(), s);
@@ -499,21 +518,28 @@ void LineFormat::read(QXmlStreamReader &reader)
     }
 }
 
-/*!
-    Returns true if the \a format is equal to this format.
-*/
-//bool LineFormat::operator ==(const LineFormat &format) const
-//{
-//	return this->formatKey() == format.formatKey();
-//}
+bool LineFormat::operator ==(const LineFormat &other) const
+{
+    if (d == other.d) return true;
+    if (!d || !other.d) return false;
+    return *this->d.constData() == *other.d.constData();
+}
 
-/*!
-    Returns true if the \a format is not equal to this format.
-*/
-//bool LineFormat::operator !=(const LineFormat &format) const
-//{
-//	return this->formatKey() != format.formatKey();
-//}
+bool LineFormat::operator !=(const LineFormat &other) const
+{
+    return !(operator==(other));
+}
+
+QXlsx::LineFormat::operator QVariant() const
+{
+    const auto& cref
+#if QT_VERSION >= 0x060000 // Qt 6.0 or over
+        = QMetaType::fromType<LineFormat>();
+#else
+        = qMetaTypeId<LineFormat>() ;
+#endif
+    return QVariant(cref, this);
+}
 
 #ifndef QT_NO_DEBUG_STREAM
 QDebug operator<<(QDebug dbg, const LineFormat &f)
@@ -522,7 +548,7 @@ QDebug operator<<(QDebug dbg, const LineFormat &f)
 
     dbg.nospace() << "QXlsx::LineFormat(" ;
     dbg.nospace() << f.d->fill << ", ";
-    dbg.nospace() << "width=" << (f.d->width.has_value() ? f.d->width.value().toString() : QString("not set")) << ", ";
+    dbg.nospace() << "width=" << (f.d->width.isValid() ? f.d->width.toString() : QString("not set")) << ", ";
     dbg.nospace() << "strokeType=" << (f.d->strokeType.has_value() ? static_cast<int>(f.d->strokeType.value()) : -1) << ", ";
     dbg.nospace() << "compoundLineType=" << (f.d->compoundLineType.has_value() ? static_cast<int>(f.d->compoundLineType.value()) : -1) << ", ";
     dbg.nospace() << "lineCap=" << (f.d->lineCap.has_value() ? static_cast<int>(f.d->lineCap.value()) : -1) << ", ";

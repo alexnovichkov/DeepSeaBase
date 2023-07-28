@@ -91,8 +91,23 @@ public:
     FillProperties::FillType type() const;
     void setType(FillProperties::FillType type);
 
+    /**
+     * @brief color
+     * @return line color if line fill type is SolidFill,
+     * invalid color otherwise;
+     */
     Color color() const;
+
+    /**
+     * @brief setColor overload, sets line color irrespective of line fill type
+     * @param color color specification (rgb, hsl, scheme, system or preset color)
+     */
     void setColor(const Color &color);
+
+    /**
+     * @brief setColor overload, sets line color irrespective of line fill type
+     * @param color the line color
+     */
     void setColor(const QColor &color); //assume color type is sRGB
 
     FillProperties fill() const;
@@ -102,7 +117,7 @@ public:
      * @brief width returns width in range [0..20116800 EMU] or [0..1584 pt]
      * @return optional value
      */
-    std::optional<Coordinate> width() const;
+    Coordinate width() const;
     /**
      * @brief setWidth sets line width in points
      * @param widthInPt width in range [0..1584 pt]
@@ -113,7 +128,7 @@ public:
      * @brief setWidth sets line width in EMU
      * @param widthInEMU width in range [0..20116800 EMU]
      */
-    void setWidth(qint64 widthInEMU);
+    void setWidthEMU(qint64 widthInEMU);
 
     std::optional<PenAlignment> penAlignment() const;
     void setPenAlignment(PenAlignment val);
@@ -150,8 +165,10 @@ public:
     void write(QXmlStreamWriter &writer) const;
     void read(QXmlStreamReader &reader);
 
-//    bool operator == (const LineFormat &format) const;
-//    bool operator != (const LineFormat &format) const;
+    bool operator == (const LineFormat &other) const;
+    bool operator != (const LineFormat &other) const;
+
+    operator QVariant() const;
 
 private:
     SERIALIZE_ENUM(CompoundLineType, {
@@ -172,5 +189,7 @@ private:
 #endif
 
 QT_END_NAMESPACE_XLSX
+
+Q_DECLARE_METATYPE(QXlsx::LineFormat)
 
 #endif

@@ -62,12 +62,12 @@ public:
     std::optional<VerticalType> verticalOrientation;
     std::optional<Angle> rotation;
     std::optional<bool> wrap;
-    std::optional<Coordinate> leftInset;
-    std::optional<Coordinate> rightInset;
-    std::optional<Coordinate> topInset;
-    std::optional<Coordinate> bottomInset;
+    Coordinate leftInset;
+    Coordinate rightInset;
+    Coordinate topInset;
+    Coordinate bottomInset;
     std::optional<int> columnCount;
-    std::optional<Coordinate> columnSpace;
+    Coordinate columnSpace;
     std::optional<bool> columnsRtl;
     std::optional<bool> fromWordArt;
     std::optional<Anchor> anchor;
@@ -84,7 +84,7 @@ public:
 
     // either text3D or z
     std::optional<Scene3D> text3D;
-    std::optional<Coordinate> z;
+    Coordinate z;
 
     //QByteArray idKey() const;
     bool isValid() const;
@@ -318,12 +318,12 @@ public:
         Decimal
     };
 
-    std::optional<Coordinate> leftMargin;
-    std::optional<Coordinate> rightMargin;
-    std::optional<Coordinate> indent;
+    Coordinate leftMargin;
+    Coordinate rightMargin;
+    Coordinate indent;
     std::optional<int> indentLevel; //[0..8]
     std::optional<TextAlign> align;
-    std::optional<Coordinate> defaultTabSize;
+    Coordinate defaultTabSize;
     std::optional<bool> rtl;
     std::optional<bool> eastAsianLineBreak;
     std::optional<bool> latinLineBreak;

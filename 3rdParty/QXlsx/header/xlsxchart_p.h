@@ -27,7 +27,7 @@ public:
     QString headerH_numRef;
     QString headerV_numRef;
     bool    swapHeader = false;
-    ShapeProperties shape;
+    Shape shape;
     MarkerFormat marker;
     QList<int> axes; //2...
 
@@ -99,8 +99,8 @@ public:
     bool legendOverlay;
     bool majorGridlinesEnabled;
     bool minorGridlinesEnabled;
-    ShapeProperties plotAreaShapeProperties;
-    ShapeProperties chartShapeProperties;
+    Shape plotAreaShapeProperties;
+    Shape chartShapeProperties;
 
     QString layout;             // only for storing a readed file
 };

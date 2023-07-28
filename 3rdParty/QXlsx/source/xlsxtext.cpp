@@ -518,23 +518,23 @@ void Text::writeTextProperties(QXmlStreamWriter &writer) const
         writer.writeAttribute(QLatin1String("wrap"),
                               d->textProperties.wrap.value() ? QLatin1String("square") : QLatin1String("none"));
     }
-    if (d->textProperties.leftInset.has_value()) {
-        writer.writeAttribute(QLatin1String("lIns"), d->textProperties.leftInset->toString());
+    if (d->textProperties.leftInset.isValid()) {
+        writer.writeAttribute(QLatin1String("lIns"), d->textProperties.leftInset.toString());
     }
-    if (d->textProperties.rightInset.has_value()) {
-        writer.writeAttribute(QLatin1String("rIns"), d->textProperties.rightInset->toString());
+    if (d->textProperties.rightInset.isValid()) {
+        writer.writeAttribute(QLatin1String("rIns"), d->textProperties.rightInset.toString());
     }
-    if (d->textProperties.topInset.has_value()) {
-        writer.writeAttribute(QLatin1String("tIns"), d->textProperties.topInset->toString());
+    if (d->textProperties.topInset.isValid()) {
+        writer.writeAttribute(QLatin1String("tIns"), d->textProperties.topInset.toString());
     }
-    if (d->textProperties.bottomInset.has_value()) {
-        writer.writeAttribute(QLatin1String("bIns"), d->textProperties.bottomInset->toString());
+    if (d->textProperties.bottomInset.isValid()) {
+        writer.writeAttribute(QLatin1String("bIns"), d->textProperties.bottomInset.toString());
     }
     if (d->textProperties.columnCount.has_value()) {
         writer.writeAttribute(QLatin1String("numCol"), QString::number(d->textProperties.columnCount.value()));
     }
-    if (d->textProperties.columnSpace.has_value()) {
-        writer.writeAttribute(QLatin1String("spcCol"), d->textProperties.columnSpace->toString());
+    if (d->textProperties.columnSpace.isValid()) {
+        writer.writeAttribute(QLatin1String("spcCol"), d->textProperties.columnSpace.toString());
     }
     if (d->textProperties.columnsRtl.has_value()) {
         writer.writeAttribute(QLatin1String("rtlCol"), toST_Boolean(d->textProperties.columnsRtl.value()));
@@ -588,9 +588,9 @@ void Text::writeTextProperties(QXmlStreamWriter &writer) const
     }
     if (d->textProperties.text3D.has_value())
         d->textProperties.text3D.value().write(writer, QLatin1String("a:sp3d"));
-    else if (d->textProperties.z.has_value()) {
+    else if (d->textProperties.z.isValid()) {
         writer.writeEmptyElement(QLatin1String("a:flatTx"));
-        writer.writeAttribute(QLatin1String("z"), d->textProperties.z.value().toString());
+        writer.writeAttribute(QLatin1String("z"), d->textProperties.z.toString());
     }
 
     writer.writeEndElement();
@@ -631,18 +631,19 @@ QDebug operator<<(QDebug dbg, const Text &rs)
 
 bool TextProperties::isValid() const
 {
+    //TODO: переписать
     if (spcFirstLastPara.has_value()) return true;
     if (verticalOverflow.has_value()) return true;
     if (horizontalOverflow.has_value()) return true;
     if (verticalOrientation.has_value()) return true;
     if (rotation.has_value()) return true;
     if (wrap.has_value()) return true;
-    if (leftInset.has_value()) return true;
-    if (rightInset.has_value()) return true;
-    if (topInset.has_value()) return true;
-    if (bottomInset.has_value()) return true;
+    if (leftInset.isValid()) return true;
+    if (rightInset.isValid()) return true;
+    if (topInset.isValid()) return true;
+    if (bottomInset.isValid()) return true;
     if (columnCount.has_value()) return true;
-    if (columnSpace.has_value()) return true;
+    if (columnSpace.isValid()) return true;
     if (columnsRtl.has_value()) return true;
     if (fromWordArt.has_value()) return true;
     if (anchor.has_value()) return true;

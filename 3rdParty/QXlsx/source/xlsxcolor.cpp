@@ -12,46 +12,63 @@
 
 QT_BEGIN_NAMESPACE_XLSX
 
-Color::Color() : type(ColorType::Invalid)
+Color::Color() : type_(ColorType::Invalid)
 {
 
 }
 
-Color::Color(Color::ColorType type) : type(type)
+Color::Color(Color::ColorType type) : type_(type)
 {
 
 }
 
-Color::Color(Color::ColorType type, QColor color) : type(type)
+Color::Color(Color::ColorType type, QColor color) : type_(type)
 {
     setRgb(color);
 }
 
-bool Color::isInvalid() const
+Color::Color(const Color &other) : val{other.val}, type_{other.type_}, tr{other.tr},
+    lastColor{other.lastColor}
 {
-    return type == ColorType::Invalid || !val.isValid();
+
+}
+
+Color::~Color()
+{
+
+}
+
+bool Color::isValid() const
+{
+    if (type_ == ColorType::Invalid) return false;
+    return val.isValid();
 }
 
 void Color::setRgb(const QColor &color)
 {
-    if (type == ColorType::RGBColor || type == ColorType::CRGBColor || type == ColorType::SimpleColor) {
+    if (type_ == ColorType::RGBColor || type_ == ColorType::CRGBColor || type_ == ColorType::SimpleColor) {
         val = color;
     }
 }
 
+void Color::setHsl(const QColor &color)
+{
+    if (type_ == ColorType::HSLColor) val = color;
+}
+
 void Color::setIndexedColor(int index)
 {
-    if (type == ColorType::SimpleColor) val = index;
+    if (type_ == ColorType::SimpleColor) val = index;
 }
 
 void Color::setAutoColor(bool autoColor)
 {
-    if (type == ColorType::SimpleColor) val = autoColor;
+    if (type_ == ColorType::SimpleColor) val = autoColor;
 }
 
 void Color::setThemeColor(uint theme, double tint)
 {
-    if (type == ColorType::SimpleColor) {
+    if (type_ == ColorType::SimpleColor) {
         QVariantMap map;
         map.insert("theme", theme);
         map.insert("tint", tint);
@@ -61,19 +78,19 @@ void Color::setThemeColor(uint theme, double tint)
 
 void Color::setPresetColor(const QString &colorName)
 {
-    if (type == ColorType::PresetColor && !colorName.isEmpty())
+    if (type_ == ColorType::PresetColor && !colorName.isEmpty())
         val = colorName;
 }
 
 void Color::setSchemeColor(Color::SchemeColor color)
 {
-    if (type == ColorType::SchemeColor)
+    if (type_ == ColorType::SchemeColor)
         val = static_cast<int>(color);
 }
 
 void Color::setSystemColor(Color::SystemColor color)
 {
-    if (type == ColorType::SystemColor)
+    if (type_ == ColorType::SystemColor)
         val = static_cast<int>(color);
 }
 
@@ -82,20 +99,30 @@ void Color::addTransform(ColorTransform::Type transform, QVariant val)
     tr.vals.insert(transform, val);
 }
 
+Color::ColorType Color::type() const
+{
+    return type_;
+}
+
 QColor Color::rgb() const
 {
-    return (type == ColorType::RGBColor || type == ColorType::CRGBColor || type == ColorType::SimpleColor)
+    return (type_ == ColorType::RGBColor || type_ == ColorType::CRGBColor || type_ == ColorType::SimpleColor)
             ? val.value<QColor>() : QColor();
+}
+
+QColor Color::hsl() const
+{
+    return type_ == ColorType::HSLColor ? val.value<QColor>() : QColor();
 }
 
 QColor Color::presetColor() const
 {
-    return (type == ColorType::PresetColor) ? QColor(val.toString()) : QColor();
+    return (type_ == ColorType::PresetColor) ? QColor(val.toString()) : QColor();
 }
 
 QString Color::schemeColor() const
 {
-    if (type != ColorType::SchemeColor) return QString();
+    if (type_ != ColorType::SchemeColor) return QString();
 
     SchemeColor c = static_cast<SchemeColor>(val.toInt());
     QString s;
@@ -106,7 +133,7 @@ QString Color::schemeColor() const
 
 QString Color::systemColor() const
 {
-    if (type != ColorType::SystemColor) return QString();
+    if (type_ != ColorType::SystemColor) return QString();
 
     SystemColor c = static_cast<SystemColor>(val.toInt());
     QString s;
@@ -117,17 +144,17 @@ QString Color::systemColor() const
 
 int Color::indexedColor() const
 {
-    return (type == ColorType::SimpleColor && val.type() == QVariant::Int) ? val.toInt() : -1;
+    return (type_ == ColorType::SimpleColor && val.type() == QVariant::Int) ? val.toInt() : -1;
 }
 
 bool Color::isAutoColor() const
 {
-    return (type == ColorType::SimpleColor && val.type() == QVariant::Bool) ? val.toBool() : false;
+    return (type_ == ColorType::SimpleColor && val.type() == QVariant::Bool) ? val.toBool() : false;
 }
 
 QPair<int, double> Color::themeColor() const
 {
-    if (type != ColorType::SimpleColor || val.type() != QVariant::Map) return {-1, 0.0};
+    if (type_ != ColorType::SimpleColor || val.type() != QVariant::Map) return {-1, 0.0};
 
     auto m = val.toMap();
     return {m.value("theme").toUInt(), m.value("tint").toDouble()};
@@ -135,7 +162,7 @@ QPair<int, double> Color::themeColor() const
 
 bool Color::write(QXmlStreamWriter &writer, const QString &node) const
 {
-    switch (type) {
+    switch (type_) {
         case ColorType::SimpleColor: {
             if (!node.isEmpty())
                 writer.writeEmptyElement(node); //color, bgColor, fgColor
@@ -205,7 +232,9 @@ bool Color::write(QXmlStreamWriter &writer, const QString &node) const
         case ColorType::SystemColor: {
             writer.writeStartElement(QLatin1String("a:sysClr"));
             writer.writeAttribute(QLatin1String("val"), systemColor());
-            //TODO: add writing of lastColor
+
+            if (lastColor.isValid())
+                writer.writeAttribute(QLatin1String("lastClr"), toRGBString(lastColor));
 
             tr.write(writer);
             writer.writeEndElement();
@@ -221,17 +250,17 @@ bool Color::read(QXmlStreamReader &reader)
 {
     const auto& attributes = reader.attributes();
     const auto name = reader.name();
-    if (type == ColorType::Invalid) {
-        if (name == "scrgbClr") type = ColorType::CRGBColor;
-        else if (name == "srgbClr") type = ColorType::RGBColor;
-        else if (name == "sysClr") type = ColorType::SystemColor;
-        else if (name == "hslClr") type = ColorType::HSLColor;
-        else if (name == "prstClr") type = ColorType::PresetColor;
-        else if (name == "schemeClr") type = ColorType::SchemeColor;
-        else type = ColorType::SimpleColor;
+    if (type_ == ColorType::Invalid) {
+        if (name == "scrgbClr") type_ = ColorType::CRGBColor;
+        else if (name == "srgbClr") type_ = ColorType::RGBColor;
+        else if (name == "sysClr") type_ = ColorType::SystemColor;
+        else if (name == "hslClr") type_ = ColorType::HSLColor;
+        else if (name == "prstClr") type_ = ColorType::PresetColor;
+        else if (name == "schemeClr") type_ = ColorType::SchemeColor;
+        else type_ = ColorType::SimpleColor;
     }
     //SimpleColor
-    switch (type) {
+    switch (type_) {
         case ColorType::SimpleColor: {
             if (attributes.hasAttribute(QLatin1String("rgb"))) {
                 const auto& colorString = attributes.value(QLatin1String("rgb")).toString();
@@ -297,10 +326,8 @@ bool Color::read(QXmlStreamReader &reader)
             setSystemColor(col);
             tr.read(reader);
 
-            //TODO: integrate lastColor to val
-//            QColor lastColor;
-//            if (attributes.hasAttribute(QLatin1String("lastClr")))
-//                lastColor = fromARGBString(attributes.value("lastClr").toString());
+            if (attributes.hasAttribute(QLatin1String("lastClr")))
+                lastColor = fromARGBString(attributes.value(QLatin1String("lastClr")).toString());
             break;
         }
         default: break;
@@ -308,11 +335,29 @@ bool Color::read(QXmlStreamReader &reader)
     return true;
 }
 
+bool Color::operator ==(const Color &other) const
+{
+    if (type_ != other.type_) return false;
+    if (val != other.val) return false;
+    if (tr.vals != other.tr.vals) return false;
+    if (lastColor != other.lastColor) return false;
+    return true;
+}
+
+bool Color::operator !=(const Color &other) const
+{
+    if (type_ != other.type_) return true;
+    if (val != other.val) return true;
+    if (tr.vals != other.tr.vals) return true;
+    if (lastColor != other.lastColor) return true;
+    return false;
+}
+
 Color::operator QVariant() const
 {
     const auto& cref
 #if QT_VERSION >= 0x060000 // Qt 6.0 or over
-        = QMetaType::fromType<XlsxColor>();
+        = QMetaType::fromType<Color>();
 #else
         = qMetaTypeId<Color>() ;
 #endif
@@ -341,58 +386,40 @@ QString Color::toRGBString(const QColor &c)
     return QString::asprintf("%02X%02X%02X", c.red(), c.green(), c.blue());
 }
 
-#if !defined(QT_NO_DATASTREAM)
-//QDataStream &operator<<(QDataStream &s, const XlsxColor &color)
-//{
-//    switch (color.type) {
-//        case XlsxColor::ColorType::Invalid: s << 0; break;
-//        case XlsxColor::ColorType::SimpleColor: s << 1 << color.rgb()
-//    }
 
-//    if (color.isInvalid())
-//        s<<0;
-//    else if (color.isRgbColor())
-//        s<<1<<color.rgbColor();
-//    else if (color.isIndexedColor())
-//        s<<2<<color.indexedColor();
-//    else if (color.isThemeColor())
-//        s<<3<<color.themeColor();
-//    else
-//        s<<4;
-
-//    return s;
-//}
-
-//QDataStream &operator>>(QDataStream &s, XlsxColor &color)
-//{
-//    int marker(4);
-//    s>>marker;
-//    if (marker == 0) {
-//        color = XlsxColor();
-//    } else if (marker == 1) {
-//        QColor c;
-//        s>>c;
-//        color = XlsxColor(c);
-//    } else if (marker == 2) {
-//        int indexed;
-//        s>>indexed;
-//        color = XlsxColor(indexed);
-//    } else if (marker == 3) {
-//        QStringList list;
-//        s>>list;
-//        color = XlsxColor(list[0], list[1]);
-//    }
-
-//    return s;
-//}
-
-#endif
-
-#ifndef QT_NO_DEBUG_STREAM
 QDebug operator<<(QDebug dbg, const Color &c)
 {
-//    if (c.isInvalid())
-//        dbg.nospace() << "XlsxColor(invalid)";
+    if (!c.isValid())
+        dbg.nospace() << "Color(invalid)";
+    else switch (c.type_) {
+        case Color::ColorType::RGBColor:
+            dbg.nospace() << "Color(rgb, " << c.rgb();  break;
+        case Color::ColorType::HSLColor:
+            dbg.nospace() << "Color(hsl, " << c.hsl().toHsl();  break;
+        case Color::ColorType::CRGBColor:
+            dbg.nospace() << "Color(crgb, " << c.rgb();  break;
+        case Color::ColorType::PresetColor:
+            dbg.nospace() << "Color(preset, " << c.presetColor();  break;
+        case Color::ColorType::SchemeColor:
+            dbg.nospace() << "Color(scheme, " << c.schemeColor();  break;
+        case Color::ColorType::SystemColor:
+            dbg.nospace() << "Color(system, " << c.systemColor();
+            if (c.lastColor.isValid()) dbg.nospace() << ", lastColor " << c.lastColor;
+            break;
+        case Color::ColorType::SimpleColor:
+            dbg.nospace() << "Color(simple, " << c.rgb();  break;
+        default: break;
+    }
+    if (!c.tr.vals.isEmpty()) {
+        dbg.nospace() << ", transforms ";
+        for (auto key: c.tr.vals.keys()) {
+            QString s;
+            c.tr.toString(key, s);
+            dbg.nospace() << s << ": " << c.tr.vals.value(key);
+        }
+    }
+    dbg.nospace() << ")";
+
 //    else if (c.isRgbColor())
 //        dbg.nospace() << c.rgbColor();
 //    else if (c.isIndexedColor())
@@ -587,8 +614,5 @@ void ColorTransform::write(QXmlStreamWriter &writer) const
         }
     }
 }
-
-#endif
-
 
 QT_END_NAMESPACE_XLSX

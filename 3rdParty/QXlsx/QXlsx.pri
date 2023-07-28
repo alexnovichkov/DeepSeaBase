@@ -54,6 +54,7 @@ INCLUDEPATH += $${QXLSX_HEADERPATH}
 # source code 
 
 HEADERS += \
+$${QXLSX_HEADERPATH}xlsxeffect.h \
 $${QXLSX_HEADERPATH}xlsxlabel.h \
 $${QXLSX_HEADERPATH}xlsxfont.h \
 $${QXLSX_HEADERPATH}xlsxtext.h \
@@ -62,7 +63,6 @@ $${QXLSX_HEADERPATH}xlsxtitle.h \
 $${QXLSX_HEADERPATH}xlsxfillproperties_p.h \
 $${QXLSX_HEADERPATH}xlsxfillproperties.h \
 $${QXLSX_HEADERPATH}xlsxmain.h \
-$${QXLSX_HEADERPATH}xlsxshapeproperties_p.h \
 $${QXLSX_HEADERPATH}xlsxshapeproperties.h \
 $${QXLSX_HEADERPATH}xlsxaxis_p.h \
 $${QXLSX_HEADERPATH}xlsxaxis.h \
@@ -119,6 +119,7 @@ $${QXLSX_HEADERPATH}xlsxzipreader_p.h \
 $${QXLSX_HEADERPATH}xlsxzipwriter_p.h
 
 SOURCES += \
+$${QXLSX_SOURCEPATH}xlsxeffect.cpp \
 $${QXLSX_SOURCEPATH}xlsxlabel.cpp \
 $${QXLSX_SOURCEPATH}xlsxfont.cpp \
 $${QXLSX_SOURCEPATH}xlsxtext.cpp \

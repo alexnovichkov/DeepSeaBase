@@ -433,6 +433,11 @@ public:
      */
     static Coordinate create(const QString &val);
     static Coordinate create(const QStringRef &val);
+
+    bool isValid() const;
+
+    bool operator == (const Coordinate &other) const;
+    bool operator != (const Coordinate &other) const;
 private:
     QVariant val;
 };
@@ -489,7 +494,7 @@ private:
     QVariant val;
 };
 
-void parseAttribute(const QXmlStreamAttributes &a, const QLatin1String &name, std::optional<Coordinate> &target);
+void parseAttribute(const QXmlStreamAttributes &a, const QLatin1String &name, Coordinate &target);
 
 /**
  * @brief The Angle class
@@ -507,7 +512,7 @@ public:
 
     /**
      * @brief Angle creates angle in 60,000ths of a degree
-     * @param angleIn the angle value in 60,000ths of a degree
+     * @param angleInFrac the angle value in 60,000ths of a degree
      */
     explicit Angle(qint64 angleInFrac);
 
@@ -530,11 +535,15 @@ public:
      * @return
      */
     static Angle create(const QStringRef &s);
+
+    bool operator == (const Angle &other) const;
+    bool operator != (const Angle &other) const;
 private:
     qint64 val = 0;
 };
 
 void parseAttribute(const QXmlStreamAttributes &a, const QLatin1String &name, std::optional<Angle> &target);
+void parseAttribute(const QXmlStreamAttributes &a, const QLatin1String &name, Angle &target);
 
 class QXLSX_EXPORT Transform2D
 {
@@ -549,6 +558,9 @@ public:
 
     void write(QXmlStreamWriter &writer, const QString &name) const;
     void read(QXmlStreamReader &reader);
+
+    bool operator == (const Transform2D &other) const;
+    bool operator != (const Transform2D &other) const;
 private:
     friend QDebug operator<<(QDebug, const Transform2D &f);
 };
@@ -559,6 +571,15 @@ struct GeometryGuide
         name(name), formula(formula) {}
     QString name;
     QString formula;
+
+    bool operator == (const GeometryGuide &other) const
+    {
+        return name == other.name && formula == other.formula;
+    }
+    bool operator != (const GeometryGuide &other) const
+    {
+        return name != other.name || formula != other.formula;
+    }
 };
 
 class QXLSX_EXPORT PresetGeometry2D
@@ -569,6 +590,9 @@ public:
 
     void write(QXmlStreamWriter &writer, const QString &name) const;
     void read(QXmlStreamReader &reader);
+
+    bool operator == (const PresetGeometry2D &other) const;
+    bool operator != (const PresetGeometry2D &other) const;
 private:
     friend QDebug operator<<(QDebug, const PresetGeometry2D &f);
 };
@@ -661,8 +685,8 @@ public:
 //        <xsd:attribute name="h" type="ST_PositiveCoordinate" use="optional" default="76200"/>
 //        <xsd:attribute name="prst" type="ST_BevelPresetType" use="optional" default="circle"/>
 //      </xsd:complexType>
-    std::optional<Coordinate> width;
-    std::optional<Coordinate> height;
+    Coordinate width;
+    Coordinate height;
     std::optional<BevelType> type;
 
     void write(QXmlStreamWriter &writer, const QString &name) const;
@@ -711,9 +735,9 @@ public:
     std::optional<Bevel> bevelBottom;
     std::optional<Color> extrusionColor;
     std::optional<Color> contourColor;
-    std::optional<Coordinate> z;
-    std::optional<Coordinate> extrusionHeight;
-    std::optional<Coordinate> contourWidth;
+    Coordinate z;
+    Coordinate extrusionHeight;
+    Coordinate contourWidth;
     std::optional<MaterialType> material;
 
     void write(QXmlStreamWriter &writer, const QString &name) const;
@@ -724,6 +748,8 @@ public:
   QDebug operator<<(QDebug dbg, const Transform2D &f);
   QDebug operator<<(QDebug dbg, const PresetGeometry2D &f);
 #endif
+
+
 
 }
 

@@ -316,7 +316,7 @@ void Chart::setSeriesLineFormat(int series, const LineFormat &format)
     d->seriesList[series]->shape.setLine(format);
 }
 
-void Chart::setSeriesShape(int series, const ShapeProperties &shape)
+void Chart::setSeriesShape(int series, const Shape &shape)
 {
     Q_D(Chart);
 

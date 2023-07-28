@@ -15,7 +15,7 @@ class MarkerFormatPrivate : public QSharedData
 public:
     std::optional<int> size; // [2..72]
     std::optional<MarkerFormat::MarkerType> markerType;
-    ShapeProperties shape;
+    Shape shape;
 
     MarkerFormatPrivate();
     MarkerFormatPrivate(const MarkerFormatPrivate &other);

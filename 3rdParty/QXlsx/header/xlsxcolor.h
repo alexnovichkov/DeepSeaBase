@@ -27,6 +27,10 @@ class Styles;
 //    </xsd:choice>
 //  </xsd:group>
 
+/**
+ * @brief The ColorTransform class
+ * Collects all the color transform values
+ */
 class ColorTransform
 {
 public:
@@ -61,6 +65,36 @@ public:
         Gamma, //<xsd:element name="gamma" type="CT_GammaTransform" minOccurs="1" maxOccurs="1"/>
         InverseGamma, //<xsd:element name="invGamma" type="CT_InverseGammaTransform" minOccurs="1" maxOccurs="1"/>
     };
+    SERIALIZE_ENUM(Type, {
+                       {Type::Tint, "tint"},
+                       {Type::Shade, "shade"},
+                       {Type::Complement, "comp"},
+                       {Type::Inverse, "inv"},
+                       {Type::Grayscale, "gray"},
+                       {Type::Alpha, "alpha"},
+                       {Type::AlphaOff, "alphaOff"},
+                       {Type::AlphaModulation, "alphaMod"},
+                       {Type::Hue, "hue"},
+                       {Type::HueOff, "hueOff"},
+                       {Type::HueModulation, "hueMod"},
+                       {Type::Saturation, "sat"},
+                       {Type::SaturationOff, "satOff"},
+                       {Type::SaturationModulation, "satMod"},
+                       {Type::Luminescence, "lum"},
+                       {Type::LuminescenceOff, "lumOff"},
+                       {Type::LuminescenceModulation, "lumMod"},
+                       {Type::Red, "red"},
+                       {Type::RedOff, "redOff"},
+                       {Type::RedModulation, "redMod"},
+                       {Type::Green, "green"},
+                       {Type::GreenOff, "greenOff"},
+                       {Type::GreenModulation, "greenMod"},
+                       {Type::Blue, "blue"},
+                       {Type::BlueOff, "blueOff"},
+                       {Type::BlueModulation, "blueMod"},
+                       {Type::Gamma, "gamma"},
+                       {Type::InverseGamma, "invGamma"},
+    });
 
     QMap<Type, QVariant> vals;
 
@@ -138,13 +172,16 @@ public:
         MenuBar,
     };
 
-    explicit Color();
+    Color();
     explicit Color(ColorType type);
     explicit Color(ColorType type, QColor color);
+    Color(const Color &other);
+    ~Color();
 
-    bool isInvalid() const;
+    bool isValid() const;
 
     void setRgb(const QColor &color);
+    void setHsl(const QColor &color);
     void setIndexedColor(int index);
     void setAutoColor(bool autoColor);
     void setThemeColor(uint theme, double tint = 0.0);
@@ -154,7 +191,9 @@ public:
 
     void addTransform(ColorTransform::Type transform, QVariant val);
 
+    ColorType type() const;
     QColor rgb() const;
+    QColor hsl() const;
     int indexedColor() const;
     bool isAutoColor() const;
     QPair<int, double> themeColor() const;
@@ -171,6 +210,8 @@ public:
     bool write(QXmlStreamWriter &writer, const QString &node=QString()) const;
     bool read(QXmlStreamReader &reader);
 
+    bool operator == (const Color &other) const;
+    bool operator != (const Color &other) const;
 private:
     SERIALIZE_ENUM(SchemeColor, {
         {SchemeColor::Background1, "bg1"},
@@ -223,25 +264,28 @@ private:
         {SystemColor::MenuHighlight, "menuHighlight"},
         {SystemColor::MenuBar, "menuBar"},
     });
+    SERIALIZE_ENUM(ColorType, {
+        {ColorType::Invalid,     "invalid"},
+        {ColorType::RGBColor,    "rgb"},
+        {ColorType::CRGBColor,   "crgb"},
+        {ColorType::HSLColor,    "hsl"},
+        {ColorType::SystemColor, "system"},
+        {ColorType::SchemeColor, "scheme"},
+        {ColorType::SimpleColor, "simple"},
+        {ColorType::PresetColor, "preset"},
+    });
 
     QVariant val;
-    ColorType type = ColorType::Invalid;
+    ColorType type_ = ColorType::Invalid;
     ColorTransform tr;
-#if !defined(QT_NO_DATASTREAM)
-//    friend QDataStream &operator<<(QDataStream &s, const XlsxColor &color);
-//    friend QDataStream &operator>>(QDataStream &, XlsxColor &);
+
+    // Only used if type == ColorType::SystemColor
+    QColor lastColor;
+
     friend QDebug operator<<(QDebug dbg, const Color &c);
-#endif
 };
 
-#if !defined(QT_NO_DATASTREAM)
-//  QDataStream &operator<<(QDataStream &, const XlsxColor &);
-//  QDataStream &operator>>(QDataStream &, XlsxColor &);
-#endif
-
-#ifndef QT_NO_DEBUG_STREAM
-  QDebug operator<<(QDebug dbg, const Color &c);
-#endif
+QDebug operator<<(QDebug dbg, const Color &c);
 
 QT_END_NAMESPACE_XLSX
 

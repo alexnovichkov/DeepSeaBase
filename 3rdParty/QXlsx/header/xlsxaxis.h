@@ -44,6 +44,8 @@ public:
         std::optional<double> max;
         void write(QXmlStreamWriter &writer) const;
         void read(QXmlStreamReader &reader);
+        bool operator ==(const Scaling &other) const;
+        bool operator !=(const Scaling &other) const;
     };
     enum class Type { None = (-1), Cat, Val, Date, Ser };
     enum class Position { None = (-1), Left, Right, Top, Bottom };
@@ -88,8 +90,8 @@ public:
     CrossesType crossesType() const;
     void setCrossesAt(CrossesType val);
 
-    void setMajorGridLines(const ShapeProperties &val);
-    void setMinorGridLines(const ShapeProperties &val);
+    void setMajorGridLines(const Shape &val);
+    void setMinorGridLines(const Shape &val);
     void setMajorGridLines(const QColor &color, double width, LineFormat::StrokeType strokeType);
     void setMinorGridLines(const QColor &color, double width, LineFormat::StrokeType strokeType);
 
@@ -111,8 +113,8 @@ public:
     void write(QXmlStreamWriter &writer) const;
     void read(QXmlStreamReader &reader);
 
-    bool operator == (const Axis &axis) const;
-    bool operator != (const Axis &axis) const;
+    bool operator == (const Axis &other) const;
+    bool operator != (const Axis &other) const;
 
 private:
     SERIALIZE_ENUM(Type, {

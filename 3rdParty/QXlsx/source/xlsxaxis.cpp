@@ -21,8 +21,8 @@ public:
     std::optional<Axis::CrossesType> crossesType;
     std::optional<double> crossesPosition;
 
-    ShapeProperties majorGridlines;
-    ShapeProperties minorGridlines;
+    Shape majorGridlines;
+    Shape minorGridlines;
 
    // QString title; // temporary solution
     Title title;
@@ -34,6 +34,8 @@ public:
     AxisPrivate();
     AxisPrivate(const AxisPrivate &other);
     ~AxisPrivate();
+
+    bool operator == (const AxisPrivate &other) const;
 };
 
 void Axis::Scaling::write(QXmlStreamWriter &writer) const
@@ -84,6 +86,19 @@ void Axis::Scaling::read(QXmlStreamReader &reader)
             break;
         }
     }
+}
+
+bool Axis::Scaling::operator ==(const Axis::Scaling &other) const
+{
+    return (logBase == other.logBase &&
+            reversed == other.reversed &&
+            min == other.min &&
+            max == other.max);
+}
+
+bool Axis::Scaling::operator !=(const Axis::Scaling &other) const
+{
+    return !operator==(other);
 }
 
 Axis::Axis()
@@ -208,13 +223,13 @@ void Axis::setCrossesAt(Axis::CrossesType val)
     d->crossesType = val;
 }
 
-void Axis::setMajorGridLines(const ShapeProperties &val)
+void Axis::setMajorGridLines(const Shape &val)
 {
     if (!d) d = new AxisPrivate;
     d->majorGridlines = val;
 }
 
-void Axis::setMinorGridLines(const ShapeProperties &val)
+void Axis::setMinorGridLines(const Shape &val)
 {
     if (!d) d = new AxisPrivate;
     d->minorGridlines = val;
@@ -455,16 +470,16 @@ void Axis::read(QXmlStreamReader &reader)
     }
 }
 
-bool Axis::operator ==(const Axis &axis) const
+bool Axis::operator ==(const Axis &other) const
 {
-    //TODO:
-    return true;
+    if (d == other.d) return true;
+    if (!d || !other.d) return false;
+    return *this->d.constData() == *other.d.constData();
 }
 
-bool Axis::operator !=(const Axis &axis) const
+bool Axis::operator !=(const Axis &other) const
 {
-    //TODO:
-    return false;
+    return !(operator==(other));
 }
 
 AxisPrivate::AxisPrivate() : position(Axis::Position::None), type(Axis::Type::None)
@@ -481,6 +496,30 @@ AxisPrivate::AxisPrivate(const AxisPrivate &other) : QSharedData(other)
 AxisPrivate::~AxisPrivate()
 {
 
+}
+
+bool AxisPrivate::operator ==(const AxisPrivate &other) const
+{
+    //int id; //ids are always different
+    if (scaling != other.scaling) return false;
+    if (visible != other.visible) return false;
+    if (position != other.position) return false;
+    if (type != other.type) return false;
+
+    if (crossAxis != other.crossAxis) return false;
+    if (crossesType != other.crossesType) return false;
+    if (crossesPosition != other.crossesPosition) return false;
+
+    if (majorGridlines != other.majorGridlines) return false;
+    if (minorGridlines != other.minorGridlines) return false;
+
+    if (majorTickMark != other.majorTickMark) return false;
+    if (minorTickMark != other.minorTickMark) return false;
+
+    //TODO: the rest of members
+    //if (title != other.title) return false;
+
+    return true;
 }
 
 QT_END_NAMESPACE_XLSX

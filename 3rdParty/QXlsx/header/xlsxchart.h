@@ -50,18 +50,18 @@ public:
 public:
     void addSeries(const CellRange &range, AbstractSheet *sheet = NULL, bool headerH = false, bool headerV = false, bool swapHeaders = false);
     void addSeries(const CellRange &keyRange, const CellRange &valRange, AbstractSheet *sheet = NULL, bool headerH = false);
-    void setChartType(ChartType type);
+    void setChartType(ChartType type_);
     void setChartLineFormat(const LineFormat &format);
     void setPlotAreaLineFormat(const LineFormat &format);
 
-    Axis *addAxis(Axis::Type type, Axis::Position pos, QString title = QString());
+    Axis *addAxis(Axis::Type type_, Axis::Position pos, QString title = QString());
     Axis *axis(int id);
 
     void setChartTitle(QString strchartTitle);
     void setChartLegend(Chart::ChartAxisPos legendPos, bool overlap = false);
     void setGridlinesEnable(bool majorGridlinesEnable = false, bool minorGridlinesEnable = false);
     void setSeriesLineFormat(int series, const LineFormat &format);
-    void setSeriesShape(int series, const ShapeProperties &shape);
+    void setSeriesShape(int series, const Shape &shape);
     void setSeriesMarkerFormat(int series, const MarkerFormat &format);
     void setSeriesAxes(int series, QList<int> axesIds);
     void setSeriesLabels(int series, QVector<int> labels, QXlsx::Label::ShowParameters show, QXlsx::Label::Position pos);

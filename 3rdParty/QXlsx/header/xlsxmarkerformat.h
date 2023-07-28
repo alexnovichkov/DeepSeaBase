@@ -57,8 +57,8 @@ public:
     void write(QXmlStreamWriter &writer);
     void read(QXmlStreamReader &reader);
 
-    ShapeProperties shape() const;
-    void setShape(ShapeProperties shape);
+    Shape shape() const;
+    void setShape(Shape shape);
 
     bool isValid() const;
 

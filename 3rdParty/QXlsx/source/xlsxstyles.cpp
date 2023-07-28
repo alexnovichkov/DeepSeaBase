@@ -1027,23 +1027,23 @@ bool Styles::readBorder(QXmlStreamReader &reader, Format &border)
 
                 if (reader.name() == QLatin1String("left")) {
                     border.setLeftBorderStyle(style);
-                    if (!color.isInvalid())
+                    if (color.isValid())
                         border.setProperty(FormatPrivate::P_Border_LeftColor, color);
                 } else if (reader.name() == QLatin1String("right")) {
                     border.setRightBorderStyle(style);
-                    if (!color.isInvalid())
+                    if (color.isValid())
                         border.setProperty(FormatPrivate::P_Border_RightColor, color);
                 } else if (reader.name() == QLatin1String("top")) {
                     border.setTopBorderStyle(style);
-                    if (!color.isInvalid())
+                    if (color.isValid())
                         border.setProperty(FormatPrivate::P_Border_TopColor, color);
                 } else if (reader.name() == QLatin1String("bottom")) {
                     border.setBottomBorderStyle(style);
-                    if (!color.isInvalid())
+                    if (color.isValid())
                         border.setProperty(FormatPrivate::P_Border_BottomColor, color);
                 } else if (reader.name() == QLatin1String("diagonal")) {
                     border.setDiagonalBorderStyle(style);
-                    if (!color.isInvalid())
+                    if (color.isValid())
                         border.setProperty(FormatPrivate::P_Border_DiagonalColor, color);
                 }
             }

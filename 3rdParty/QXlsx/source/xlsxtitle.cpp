@@ -21,7 +21,7 @@ public:
     Text text; //optional, c:tx
     std::optional<Title::Layout> layout;
     std::optional<bool> overlay; //optional, c:overlay
-    ShapeProperties shape;
+    Shape shape;
 
     TextProperties textBody;
 

@@ -17,9 +17,9 @@
 
 QT_BEGIN_NAMESPACE_XLSX
 
-class ShapePropertiesPrivate;
+class ShapePrivate;
 
-class QXLSX_EXPORT ShapeProperties
+class QXLSX_EXPORT Shape
 {
 public:
     enum class BlackWhiteMode {
@@ -36,11 +36,11 @@ public:
         Hidden, // "hidden
     };
 
-    std::optional<ShapeProperties::BlackWhiteMode> blackWhiteMode() const;
-    void setBlackWhiteMode(ShapeProperties::BlackWhiteMode val);
+    std::optional<Shape::BlackWhiteMode> blackWhiteMode() const;
+    void setBlackWhiteMode(Shape::BlackWhiteMode val);
 
-    std::optional<Transform2D> xfrm() const;
-    void setXfrm(Transform2D val);
+    std::optional<Transform2D> transform2D() const;
+    void setTransform2D(Transform2D val);
 
     std::optional<PresetGeometry2D> presetGeometry() const;
     void setPresetGeometry(PresetGeometry2D val);
@@ -52,29 +52,28 @@ public:
     void setLine(const LineFormat &line);
 
     bool isValid() const;
-    QByteArray formatKey() const;
 
     void write(QXmlStreamWriter &writer, const QString &name) const;
     void read(QXmlStreamReader &reader);
 
-    bool operator == (const ShapeProperties &format) const;
-    bool operator != (const ShapeProperties &format) const;
+    bool operator == (const Shape &other) const;
+    bool operator != (const Shape &other) const;
 
 private:
     QString toString(BlackWhiteMode bwMode) const;
-    friend   QDebug operator<<(QDebug, const ShapeProperties &f);
+    friend   QDebug operator<<(QDebug, const Shape &f);
 
-    QSharedDataPointer<ShapePropertiesPrivate> d;
+    QSharedDataPointer<ShapePrivate> d;
 };
 
 #ifndef QT_NO_DEBUG_STREAM
-QDebug operator<<(QDebug dbg, const ShapeProperties &f);
+QDebug operator<<(QDebug dbg, const Shape &f);
 #endif
 
-class ShapePropertiesPrivate : public QSharedData
+class ShapePrivate : public QSharedData
 {
 public:
-    std::optional<ShapeProperties::BlackWhiteMode> blackWhiteMode; //attribute, optional
+    std::optional<Shape::BlackWhiteMode> blackWhiteMode; //attribute, optional
     std::optional<Transform2D> xfrm; //element, optional
     std::optional<PresetGeometry2D> presetGeometry;
     //TODO: CustomGeometry2D
@@ -86,9 +85,12 @@ public:
     //Shape3D shape3D; // element, optional
     // TODO: extLst
 
-    ShapePropertiesPrivate() {}
-    ShapePropertiesPrivate(const ShapePropertiesPrivate &other);
-    ~ShapePropertiesPrivate() {}
+    ShapePrivate();
+    ShapePrivate(const ShapePrivate &other);
+    ~ShapePrivate();
+
+    bool operator == (const ShapePrivate &other) const;
+    bool operator != (const ShapePrivate &other) const;
 };
 
 QT_END_NAMESPACE_XLSX

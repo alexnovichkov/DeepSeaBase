@@ -117,13 +117,13 @@ void MarkerFormat::read(QXmlStreamReader &reader)
     //TODO: implement marker reading
 }
 
-ShapeProperties MarkerFormat::shape() const
+Shape MarkerFormat::shape() const
 {
     if (d) return d->shape;
     return {};
 }
 
-void MarkerFormat::setShape(ShapeProperties shape)
+void MarkerFormat::setShape(Shape shape)
 {
     if (!d) d = new MarkerFormatPrivate;
     d->shape = shape;

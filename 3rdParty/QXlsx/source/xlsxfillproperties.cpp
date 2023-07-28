@@ -5,6 +5,60 @@
 
 QT_BEGIN_NAMESPACE_XLSX
 
+
+
+FillPropertiesPrivate::FillPropertiesPrivate()
+{
+
+}
+
+FillPropertiesPrivate::FillPropertiesPrivate(const FillPropertiesPrivate &other)
+    : QSharedData(other),
+      type(other.type),
+      color(other.color),
+      gradientList(other.gradientList),
+      linearShadeAngle(other.linearShadeAngle),
+      linearShadeScaled(other.linearShadeScaled),
+      pathShadeType(other.pathShadeType),
+      pathShadeRect(other.pathShadeRect),
+      tileRect(other.tileRect),
+      tileFlipMode(other.tileFlipMode),
+      rotWithShape(other.rotWithShape),
+      foregroundColor(other.foregroundColor),
+      backgroundColor(other.backgroundColor),
+      patternType(other.patternType)
+{
+
+}
+
+FillPropertiesPrivate::~FillPropertiesPrivate()
+{
+
+}
+
+bool FillPropertiesPrivate::operator==(const FillPropertiesPrivate &other) const
+{
+    if (type != other.type) return false;
+    if (color != other.color) return false;
+    if (gradientList != other.gradientList) return false;
+    if (linearShadeAngle != other.linearShadeAngle) return false;
+    if (linearShadeScaled != other.linearShadeScaled) return false;
+    if (pathShadeType != other.pathShadeType) return false;
+    if (pathShadeRect != other.pathShadeRect) return false;
+    if (tileRect != other.tileRect) return false;
+    if (tileFlipMode != other.tileFlipMode) return false;
+    if (rotWithShape != other.rotWithShape) return false;
+    if (foregroundColor != other.foregroundColor) return false;
+    if (backgroundColor != other.backgroundColor) return false;
+    if (patternType != other.patternType) return false;
+    return true;
+}
+
+FillProperties::FillProperties()
+{
+
+}
+
 FillProperties::FillProperties(FillProperties::FillType type)
 {
     d = new FillPropertiesPrivate;
@@ -34,10 +88,10 @@ void FillProperties::setType(FillProperties::FillType type)
     d->type = type;
 }
 
-std::optional<Color> FillProperties::color() const
+Color FillProperties::color() const
 {
     if (d) return d->color;
-    return {};
+    return Color();
 }
 
 void FillProperties::setColor(const Color &color)
@@ -64,19 +118,124 @@ void FillProperties::setGradientList(const QMap<double, Color> &list)
     d->gradientList = list;
 }
 
-std::optional<QPair<Angle, bool> > FillProperties::linearShade() const
+std::optional<Angle> FillProperties::linearShadeAngle() const
 {
-    if (d->linearShadeAngle.has_value() || d->linearShadeScaled.has_value())
-        return std::make_optional<QPair<Angle, bool>>(d->linearShadeAngle.value(),
-                                                       d->linearShadeScaled.value());
+    if (d)  return d->linearShadeAngle;
     return {};
 }
 
-void FillProperties::setLinearShade(QPair<Angle, bool> val)
+void FillProperties::setLinearShadeAngle(Angle val)
 {
     if (!d) d = new FillPropertiesPrivate;
-    d->linearShadeAngle = val.first;
-    d->linearShadeScaled = val.second;
+    d->linearShadeAngle = val;
+}
+
+std::optional<bool> FillProperties::linearShadeScaled() const
+{
+    if (d)  return d->linearShadeScaled;
+    return {};
+}
+
+void FillProperties::setLinearShadeScaled(bool scaled)
+{
+    if (!d) d = new FillPropertiesPrivate;
+    d->linearShadeScaled = scaled;
+}
+
+std::optional<FillProperties::PathShadeType> FillProperties::pathShadeType() const
+{
+    if (d)  return d->pathShadeType;
+    return {};
+}
+
+void FillProperties::setPathShadeType(FillProperties::PathShadeType pathShadeType)
+{
+    if (!d) d = new FillPropertiesPrivate;
+    d->pathShadeType = pathShadeType;
+}
+
+std::optional<QRectF> FillProperties::pathShadeRect() const
+{
+    if (d)  return d->pathShadeRect;
+    return {};
+}
+
+void FillProperties::setPathShadeRect(QRectF rect)
+{
+    if (!d) d = new FillPropertiesPrivate;
+    d->pathShadeRect = rect;
+}
+
+std::optional<QRectF> FillProperties::tileRect() const
+{
+    if (d)  return d->tileRect;
+    return {};
+}
+
+void FillProperties::setTileRect(QRectF rect)
+{
+    if (!d) d = new FillPropertiesPrivate;
+    d->tileRect = rect;
+}
+
+std::optional<FillProperties::TileFlipMode> FillProperties::tileFlipMode() const
+{
+    if (d)  return d->tileFlipMode;
+    return {};
+}
+
+void FillProperties::setTileFlipMode(FillProperties::TileFlipMode tileFlipMode)
+{
+    if (!d) d = new FillPropertiesPrivate;
+    d->tileFlipMode = tileFlipMode;
+}
+
+std::optional<bool> FillProperties::rotateWithShape() const
+{
+    if (d)  return d->rotWithShape;
+    return {};
+}
+
+void FillProperties::setRotateWithShape(bool val)
+{
+    if (!d) d = new FillPropertiesPrivate;
+    d->rotWithShape = val;
+}
+
+Color FillProperties::foregroundColor() const
+{
+    if (d) return d->foregroundColor;
+    return Color();
+}
+
+void FillProperties::setForegroundColor(const Color &color)
+{
+    if (!d) d = new FillPropertiesPrivate;
+    d->foregroundColor = color;
+}
+
+Color FillProperties::backgroundColor() const
+{
+    if (d) return d->backgroundColor;
+    return Color();
+}
+
+void FillProperties::setBackgroundColor(const Color &color)
+{
+    if (!d) d = new FillPropertiesPrivate;
+    d->backgroundColor = color;
+}
+
+std::optional<FillProperties::PatternType> FillProperties::patternType()
+{
+    if (d) return d->patternType;
+    return {};
+}
+
+void FillProperties::setPatternType(FillProperties::PatternType patternType)
+{
+    if (!d) d = new FillPropertiesPrivate;
+    d->patternType = patternType;
 }
 
 bool FillProperties::isValid() const
@@ -92,10 +251,10 @@ void FillProperties::write(QXmlStreamWriter &writer) const
         case FillType::SolidFill : writeSolidFill(writer); break;
 
         case FillType::GradientFill : writeGradientFill(writer); break;
-        //TODO: all other fill types
+        //TODO: blip fill type
 //        case FillType::BlipFill : writeBlipFill(writer); break;
-//        case FillType::PatternFill : writePatternFill(writer); break;
-//        case FillType::GroupFill : writeGroupFill(writer); break;
+        case FillType::PatternFill : writePatternFill(writer); break;
+        case FillType::GroupFill : writeGroupFill(writer); break;
     }
 }
 
@@ -115,12 +274,24 @@ void FillProperties::read(QXmlStreamReader &reader)
         case FillType::SolidFill : readSolidFill(reader); break;
 
         case FillType::GradientFill : readGradientFill(reader); break;
-        //TODO: all other fill types
+        //TODO: blip fill type
 //        case FillType::BlipFill : readBlipFill(reader); break;
-//        case FillType::PatternFill : readPatternFill(reader); break;
-//        case FillType::GroupFill : readGroupFill(reader); break;
+        case FillType::PatternFill : readPatternFill(reader); break;
+        case FillType::GroupFill : readGroupFill(reader); break;
         default: break;
     }
+}
+
+bool FillProperties::operator==(const FillProperties &other) const
+{
+    if (d == other.d) return true;
+    if (!d || !other.d) return false;
+    return *this->d.constData() == *other.d.constData();
+}
+
+bool FillProperties::operator!=(const FillProperties &other) const
+{
+    return !(operator==(other));
 }
 
 void FillProperties::readNoFill(QXmlStreamReader &reader)
@@ -137,7 +308,7 @@ void FillProperties::readSolidFill(QXmlStreamReader &reader)
     while (!reader.atEnd()) {
         auto token = reader.readNext();
         if (token == QXmlStreamReader::StartElement)
-            d->color->read(reader);
+            d->color.read(reader);
         else if (token == QXmlStreamReader::EndElement && reader.name() == QLatin1String("solidFill"))
             break;
     }
@@ -221,7 +392,7 @@ void FillProperties::writeNoFill(QXmlStreamWriter &writer) const
 void FillProperties::writeSolidFill(QXmlStreamWriter &writer) const
 {
     writer.writeStartElement("a:solidFill");
-    d->color->write(writer);
+    d->color.write(writer);
     writer.writeEndElement();
 }
 
@@ -272,6 +443,58 @@ void FillProperties::writeGradientFill(QXmlStreamWriter &writer) const
     writer.writeEndElement();
 }
 
+void FillProperties::readPatternFill(QXmlStreamReader &reader)
+{
+    const auto &name = reader.name();
+    if (reader.attributes().hasAttribute(QLatin1String("prst"))) {
+        PatternType t;
+        fromString(reader.attributes().value(QLatin1String("prst")).toString(), t);
+        d->patternType = t;
+    }
+    while (!reader.atEnd()) {
+        auto token = reader.readNext();
+        if (token == QXmlStreamReader::StartElement) {
+            if (reader.name() == QLatin1String("fgClr")) {
+                d->foregroundColor.read(reader);
+            }
+            else if (reader.name() == QLatin1String("bgClr")) {
+                d->backgroundColor.read(reader);
+            }
+        }
+        else if (token == QXmlStreamReader::EndElement && reader.name() == name)
+            break;
+    }
+}
+
+void FillProperties::writePatternFill(QXmlStreamWriter &writer) const
+{
+    if (!d->backgroundColor.isValid() && !d->foregroundColor.isValid() && !d->patternType.has_value()) {
+        writer.writeEmptyElement(QLatin1String("a:pattFill"));
+        return;
+    }
+
+    writer.writeStartElement(QLatin1String("a:pattFill"));
+    if (d->patternType.has_value()) {
+        QString s;
+        toString(d->patternType.value(), s);
+        writer.writeAttribute(QLatin1String("prst"), s);
+    }
+    if (d->backgroundColor.isValid()) d->backgroundColor.write(writer, QLatin1String("a:bgClr"));
+    if (d->foregroundColor.isValid()) d->foregroundColor.write(writer, QLatin1String("a:fgClr"));
+    writer.writeEndElement();
+}
+
+void FillProperties::readGroupFill(QXmlStreamReader &reader)
+{
+    Q_UNUSED(reader);
+    //no-op
+}
+
+void FillProperties::writeGroupFill(QXmlStreamWriter &writer) const
+{
+    writer.writeEmptyElement(QLatin1String("a:grpFill"));
+}
+
 void FillProperties::readGradientList(QXmlStreamReader &reader)
 {
     while (!reader.atEnd()) {
@@ -293,9 +516,9 @@ void FillProperties::readGradientList(QXmlStreamReader &reader)
 void FillProperties::writeGradientList(QXmlStreamWriter &writer) const
 {
     if (d->gradientList.isEmpty()) return;
-    writer.writeStartElement(QLatin1String("gsLst"));
+    writer.writeStartElement(QLatin1String("c:gsLst"));
     for (auto i = d->gradientList.constBegin(); i!= d->gradientList.constEnd(); ++i) {
-        writer.writeStartElement(QLatin1String("gs"));
+        writer.writeStartElement(QLatin1String("c:gs"));
         writer.writeAttribute("pos", QString::number(i.key()*100)+'%');
         i.value().write(writer);
         writer.writeEndElement();
@@ -303,42 +526,13 @@ void FillProperties::writeGradientList(QXmlStreamWriter &writer) const
     writer.writeEndElement();
 }
 
-FillPropertiesPrivate::FillPropertiesPrivate()
-{
-
-}
-
-FillPropertiesPrivate::FillPropertiesPrivate(const FillPropertiesPrivate &other)
-    : QSharedData(other),
-      type(other.type),
-      color(other.color),
-      gradientList(other.gradientList),
-      linearShadeAngle(other.linearShadeAngle),
-      linearShadeScaled(other.linearShadeScaled),
-      pathShadeType(other.pathShadeType),
-      pathShadeRect(other.pathShadeRect),
-      tileRect(other.tileRect),
-      tileFlipMode(other.tileFlipMode),
-      rotWithShape(other.rotWithShape)
-{
-
-}
-
-FillPropertiesPrivate::~FillPropertiesPrivate()
-{
-
-}
-
 #ifndef QT_NO_DEBUG_STREAM
 QDebug operator<<(QDebug dbg, const FillProperties &f)
 {
+    //TODO: all fill types
     QDebugStateSaver saver(dbg);
 
     dbg.nospace() << "QXlsx::FillProperties(" ;
-    dbg.nospace() << "type=" << f.d->type << ", ";
-    if (f.d->color.has_value())
-        dbg.nospace() << "color=" << f.d->color.value() << ", ";
-    else dbg.nospace() << "color=not set, ";
 
     return dbg;
 
@@ -355,3 +549,7 @@ QDebug operator<<(QDebug dbg, const FillProperties &f)
 #endif
 
 QT_END_NAMESPACE_XLSX
+
+
+
+

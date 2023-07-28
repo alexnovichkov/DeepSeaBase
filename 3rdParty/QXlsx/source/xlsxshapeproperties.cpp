@@ -1,9 +1,13 @@
 #include "xlsxshapeproperties.h"
-#include "xlsxshapeproperties_p.h"
 
 QT_BEGIN_NAMESPACE_XLSX
 
-ShapePropertiesPrivate::ShapePropertiesPrivate(const ShapePropertiesPrivate &other)
+ShapePrivate::ShapePrivate()
+{
+
+}
+
+ShapePrivate::ShapePrivate(const ShapePrivate &other)
     : QSharedData(other) ,
       blackWhiteMode(other.blackWhiteMode),
       xfrm(other.xfrm),
@@ -14,73 +18,100 @@ ShapePropertiesPrivate::ShapePropertiesPrivate(const ShapePropertiesPrivate &oth
 
 }
 
-std::optional<ShapeProperties::BlackWhiteMode> ShapeProperties::blackWhiteMode() const
+ShapePrivate::~ShapePrivate()
+{
+
+}
+
+bool ShapePrivate::operator ==(const ShapePrivate &other) const
+{
+    if (blackWhiteMode != other.blackWhiteMode) return false;
+    if (xfrm != other.xfrm) return false;
+    if (presetGeometry != other.presetGeometry) return false;
+    if (fill != other.fill) return false;
+    if (line != other.line) return false;
+
+    return true;
+}
+
+bool ShapePrivate::operator !=(const ShapePrivate &other) const
+{
+    if (blackWhiteMode != other.blackWhiteMode) return false;
+    if (xfrm != other.xfrm) return false;
+    if (presetGeometry != other.presetGeometry) return false;
+    if (fill != other.fill) return false;
+    if (line != other.line) return false;
+
+    return true;
+}
+
+std::optional<Shape::BlackWhiteMode> Shape::blackWhiteMode() const
 {
     if (d) return d->blackWhiteMode;
     return {};
 }
 
-void ShapeProperties::setBlackWhiteMode(ShapeProperties::BlackWhiteMode val)
+void Shape::setBlackWhiteMode(Shape::BlackWhiteMode val)
 {
-    if (!d) d = new ShapePropertiesPrivate;
+    if (!d) d = new ShapePrivate;
     d->blackWhiteMode = val;
 }
 
-std::optional<Transform2D> ShapeProperties::xfrm() const
+std::optional<Transform2D> Shape::transform2D() const
 {
     if (d) return d->xfrm;
     return {};
 }
 
-void ShapeProperties::setXfrm(Transform2D val)
+void Shape::setTransform2D(Transform2D val)
 {
-    if (!d) d = new ShapePropertiesPrivate;
+    if (!d) d = new ShapePrivate;
     d->xfrm = val;
 }
 
-std::optional<PresetGeometry2D> ShapeProperties::presetGeometry() const
+std::optional<PresetGeometry2D> Shape::presetGeometry() const
 {
     if (d) return d->presetGeometry;
     return {};
 }
 
-void ShapeProperties::setPresetGeometry(PresetGeometry2D val)
+void Shape::setPresetGeometry(PresetGeometry2D val)
 {
-    if (!d) d = new ShapePropertiesPrivate;
+    if (!d) d = new ShapePrivate;
     d->presetGeometry = val;
 }
 
-FillProperties ShapeProperties::fill() const
+FillProperties Shape::fill() const
 {
     if (d) return d->fill;
     return {};
 }
 
-void ShapeProperties::setFill(const FillProperties &val)
+void Shape::setFill(const FillProperties &val)
 {
-    if (!d) d = new ShapePropertiesPrivate;
+    if (!d) d = new ShapePrivate;
     d->fill = val;
 }
 
-LineFormat ShapeProperties::line() const
+LineFormat Shape::line() const
 {
     if (d) return d->line;
     return {};
 }
 
-void ShapeProperties::setLine(const LineFormat &line)
+void Shape::setLine(const LineFormat &line)
 {
-    if (!d) d = new ShapePropertiesPrivate;
+    if (!d) d = new ShapePrivate;
     d->line = line;
 }
 
-bool ShapeProperties::isValid() const
+bool Shape::isValid() const
 {
     if (d) return true;
     return false;
 }
 
-void ShapeProperties::write(QXmlStreamWriter &writer, const QString &name) const
+void Shape::write(QXmlStreamWriter &writer, const QString &name) const
 {
     if (!d) return;
 
@@ -98,9 +129,9 @@ void ShapeProperties::write(QXmlStreamWriter &writer, const QString &name) const
     writer.writeEndElement(); //"a:spPr"
 }
 
-void ShapeProperties::read(QXmlStreamReader &reader)
+void Shape::read(QXmlStreamReader &reader)
 {
-    if (!d) d = new ShapePropertiesPrivate;
+    if (!d) d = new ShapePrivate;
 
     const auto &name = reader.name();
 
@@ -158,7 +189,18 @@ void ShapeProperties::read(QXmlStreamReader &reader)
     }
 }
 
-QString ShapeProperties::toString(BlackWhiteMode bwMode) const
+bool Shape::operator ==(const Shape &other) const
+{
+    if (d == other.d) return true;
+    return *d.constData() == *other.d.constData();
+}
+
+bool Shape::operator !=(const Shape &other) const
+{
+    return *d.constData() != *other.d.constData();
+}
+
+QString Shape::toString(BlackWhiteMode bwMode) const
 {
     switch (bwMode) {
         case BlackWhiteMode::Clear: return QLatin1String("clr");

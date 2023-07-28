@@ -33,7 +33,7 @@ class LineFormatPrivate : public QSharedData
 {
 public:
     FillProperties fill;
-    std::optional<Coordinate> width; //pt or EMU
+    Coordinate width; //pt or EMU
     std::optional<LineFormat::CompoundLineType> compoundLineType;
     std::optional<LineFormat::StrokeType> strokeType;
     std::optional<LineFormat::LineCap> lineCap;
@@ -51,6 +51,8 @@ public:
     LineFormatPrivate();
     LineFormatPrivate(const LineFormatPrivate &other);
     ~LineFormatPrivate();
+
+    bool operator == (const LineFormatPrivate &format) const;
 };
 
 

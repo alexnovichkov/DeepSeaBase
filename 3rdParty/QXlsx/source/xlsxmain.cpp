@@ -66,6 +66,26 @@ void Transform2D::read(QXmlStreamReader &reader)
     }
 }
 
+bool Transform2D::operator ==(const Transform2D &other) const
+{
+    if (offset != other.offset) return false;
+    if (extension != other.extension) return false;
+    if (rotation != other.rotation) return false;
+    if (flipHorizontal != other.flipHorizontal) return false;
+    if (flipVertical != other.flipVertical) return false;
+    return true;
+}
+
+bool Transform2D::operator !=(const Transform2D &other) const
+{
+    if (offset != other.offset) return true;
+    if (extension != other.extension) return true;
+    if (rotation != other.rotation) return true;
+    if (flipHorizontal != other.flipHorizontal) return true;
+    if (flipVertical != other.flipVertical) return true;
+    return false;
+}
+
 void PresetGeometry2D::write(QXmlStreamWriter &writer, const QString &name) const
 {
     writer.writeStartElement(name);
@@ -106,6 +126,20 @@ void PresetGeometry2D::read(QXmlStreamReader &reader)
         else if (token == QXmlStreamReader::EndElement && reader.name() == name)
             break;
     }
+}
+
+bool PresetGeometry2D::operator ==(const PresetGeometry2D &other) const
+{
+    if (avLst != other.avLst) return false;
+    if (prst != other.prst) return false;
+    return true;
+}
+
+bool PresetGeometry2D::operator !=(const PresetGeometry2D &other) const
+{
+    if (avLst != other.avLst) return true;
+    if (prst != other.prst) return true;
+    return false;
 }
 
 #ifndef QT_NO_DEBUG_STREAM
@@ -437,6 +471,21 @@ Coordinate Coordinate::create(const QStringRef &val)
     return Coordinate(val.toString());
 }
 
+bool Coordinate::isValid() const
+{
+    return val.isValid();
+}
+
+bool Coordinate::operator ==(const Coordinate &other) const
+{
+    return val == other.val;
+}
+
+bool Coordinate::operator !=(const Coordinate &other) const
+{
+    return val != other.val;
+}
+
 
 TextPoint::TextPoint(const QString &val)
 {
@@ -495,8 +544,8 @@ TextPoint TextPoint::create(const QStringRef &val)
 void Bevel::write(QXmlStreamWriter &writer, const QString &name) const
 {
     writer.writeEmptyElement(name);
-    if (width.has_value()) writer.writeAttribute(QLatin1String("w"), width.value().toString());
-    if (height.has_value()) writer.writeAttribute(QLatin1String("h"), height.value().toString());
+    if (width.isValid()) writer.writeAttribute(QLatin1String("w"), width.toString());
+    if (height.isValid()) writer.writeAttribute(QLatin1String("h"), height.toString());
     if (type.has_value()) {
         auto meta = QMetaEnum::fromType<BevelType>();
         writer.writeAttribute(QLatin1String("prst"), meta.valueToKey(static_cast<int>(type.value())));
@@ -517,9 +566,9 @@ void Bevel::read(QXmlStreamReader &reader)
 void Shape3D::write(QXmlStreamWriter &writer, const QString &name) const
 {
     writer.writeStartElement(name);
-    if (z.has_value()) writer.writeAttribute(QLatin1String("z"), z.value().toString());
-    if (extrusionHeight.has_value()) writer.writeAttribute(QLatin1String("extrusionH"), extrusionHeight.value().toString());
-    if (contourWidth.has_value()) writer.writeAttribute(QLatin1String("contourW"), contourWidth.value().toString());
+    if (z.isValid()) writer.writeAttribute(QLatin1String("z"), z.toString());
+    if (extrusionHeight.isValid()) writer.writeAttribute(QLatin1String("extrusionH"), extrusionHeight.toString());
+    if (contourWidth.isValid()) writer.writeAttribute(QLatin1String("contourW"), contourWidth.toString());
 
     if (material.has_value()) {
         auto meta = QMetaEnum::fromType<MaterialType>();
@@ -625,14 +674,29 @@ Angle Angle::create(const QStringRef &s)
     return Angle();
 }
 
+bool Angle::operator ==(const Angle &other) const
+{
+    return val == other.val;
+}
+
+bool Angle::operator !=(const Angle &other) const
+{
+    return val != other.val;
+}
+
 void parseAttribute(const QXmlStreamAttributes &a, const QLatin1String &name, std::optional<Angle> &target)
 {
     if (a.hasAttribute(name)) target = Angle::create(a.value(name));
 }
 
-void parseAttribute(const QXmlStreamAttributes &a, const QLatin1String &name, std::optional<Coordinate> &target)
+void parseAttribute(const QXmlStreamAttributes &a, const QLatin1String &name, Coordinate &target)
 {
     if (a.hasAttribute(name)) target = Coordinate::create(a.value(name));
+}
+
+void parseAttribute(const QXmlStreamAttributes &a, const QLatin1String &name, Angle &target)
+{
+    if (a.hasAttribute(name)) target = Angle::create(a.value(name));
 }
 
 #endif
