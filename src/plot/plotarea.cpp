@@ -766,13 +766,15 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
 #endif
      }
 
-     QTemporaryFile tempFile("DeepSeaBase-XXXXXX.xlsx");
+     QTemporaryFile tempFile(QDir::tempPath()+"/DeepSeaBase-XXXXXX.xlsx");
 //     tempFile.setAutoRemove(false);
 
-     tempFile.open();
-     output.saveAs(tempFile.fileName());
+     if (tempFile.open()) {
+         output.saveAs(tempFile.fileName());
 
-     QDesktopServices::openUrl(QUrl::fromLocalFile(tempFile.fileName()));
+         QDesktopServices::openUrl(QUrl::fromLocalFile(tempFile.fileName()));
+     }
+     else QMessageBox::warning(this, "Экспорт в Excel", "Не удалось создать временный файл");
 }
 
 //void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
