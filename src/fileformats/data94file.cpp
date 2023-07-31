@@ -171,6 +171,11 @@ void Data94File::read()
     }
     else setDataDescription(DataDescription::fromJson(doc.object()));
 
+    // Исправление для файлов от Николая Ксенофонтовича:
+    // если dateTime пуст, то копируем его из source.dateTime
+    if (!dataDescription().dateTime().isValid())
+        dataDescription().put("dateTime", dataDescription().get("source.dateTime"));
+
     //дальше - каналы
     quint32 channelsCount;
     r >> channelsCount;
