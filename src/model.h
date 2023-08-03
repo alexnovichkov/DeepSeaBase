@@ -20,6 +20,7 @@
 #define MODEL_COLUMN_DESCRIPTION 9
 #define MODEL_COLUMN_LEGEND 10
 
+class QCPPlot;
 
 class Model : public QAbstractTableModel
 {
@@ -56,6 +57,8 @@ public:
     //Копирует названия выделенных файлов в столбец легенды
     void copyToLegend();
 
+    void setCurrentPlot(QCPPlot *plot);
+
     // QAbstractItemModel interface
 public:
     virtual int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -81,7 +84,7 @@ private:
     QFont bFont;
 
     QVector<int> indexes;
-
+    QCPPlot *currentPlot = nullptr;
 };
 
 #endif // MODEL_H

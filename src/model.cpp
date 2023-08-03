@@ -6,7 +6,9 @@
 #include "logging.h"
 #include <QIcon>
 #include "fileformats/abstractformatfactory.h"
-#include "plot/plottedmodel.h"
+//#include "plot/plottedmodel.h"
+#include "plot/plotmodel.h"
+#include "plot/qcpplot.h"
 
 Model::Model(QObject *parent) : QAbstractTableModel(parent)
 {DD;
@@ -165,6 +167,15 @@ void Model::copyToLegend()
     emit legendsChanged();
 }
 
+void Model::setCurrentPlot(QCPPlot *plot)
+{
+    if (currentPlot != plot) {
+        beginResetModel();
+        currentPlot = plot;
+        endResetModel();
+    }
+}
+
 Model::~Model()
 {DD;
     //clear();
@@ -241,6 +252,11 @@ QVariant Model::data(const QModelIndex &index, int role) const
 
     const F &d = descriptors[row];
     if (!d) return QVariant();
+
+    Curve *curve = nullptr;
+    if (currentPlot) curve = currentPlot->model()->plotted(d.get());
+    const bool plotted = curve != nullptr;
+
     switch (role) {
         case Qt::DisplayRole:
         case Qt::EditRole: {
@@ -277,7 +293,7 @@ QVariant Model::data(const QModelIndex &index, int role) const
         }
         case Qt::FontRole: {
             if (column == MODEL_COLUMN_FILENAME) {
-                if (PlottedModel::instance().plotted(d.get())) {
+                if (plotted) {
                     QFont font;
                     font.setBold(true);
                     return font;

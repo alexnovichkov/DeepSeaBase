@@ -66,6 +66,7 @@ public:
     QVector<PlottedIndex> plottedIndexes() const {return m_plotted;}
     Descriptor::DataType curvesDataType() const;
     Curve * plotted(Channel *channel) const;
+    Curve * plotted(FileDescriptor *descriptor) const;
     bool allCurvesFromSameDescriptor() const;
 
     Curve *curve(int index, bool left) const;

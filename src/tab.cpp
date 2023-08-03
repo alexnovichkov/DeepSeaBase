@@ -261,6 +261,7 @@ void Tab::setCurrentPlot(QCPPlot *plot)
 {DD;
     currentPlot = plot;
     channelModel->setCurrentPlot(plot);
+    model->setCurrentPlot(plot);
 }
 
 void Tab::updateChannelsTable(const QModelIndex &current, const QModelIndex &previous)

@@ -141,6 +141,14 @@ Curve * PlotModel::plotted(Channel *channel) const
     return nullptr;
 }
 
+Curve *PlotModel::plotted(FileDescriptor *descriptor) const
+{
+    for (Curve *curve: qAsConst(m_curves)) {
+        if (curve->channel->descriptor() == descriptor) return curve;
+    }
+    return nullptr;
+}
+
 bool PlotModel::allCurvesFromSameDescriptor() const
 {DD;
     if (m_curves.isEmpty()) return false;

@@ -789,7 +789,7 @@ void QCPPlot::plotChannel(Channel *ch, bool plotOnLeft, int fileIndex)
     pen.setWidth(1);
     g->setPen(pen);
 
-    PlottedModel::instance().add(ch,g);
+//    PlottedModel::instance().add(ch,g);
 
     m->addCurve(g, plotOnLeft);
     g->fileNumber = fileIndex;
@@ -1348,7 +1348,7 @@ void QCPPlot::deleteCurve(Curve *curve, bool doReplot)
 
     bool removedFromLeft = true;
     if (m->deleteCurve(curve, &removedFromLeft)) {
-        PlottedModel::instance().remove(curve);
+//        PlottedModel::instance().remove(curve);
         emit curveDeleted(curve->channel); //->MainWindow.onChannelChanged
         colors->freeColor(curve->pen().color());
 
