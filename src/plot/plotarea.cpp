@@ -226,7 +226,7 @@ void PlotArea::addPlot(Enums::PlotType type)
                 delete m_plot->toolBarWidget(); //при помещении на тулбар виджет меняет хозяина,
                 //так что приходится принудительно удалять
             }
-            delete m_plot->legend(); //при помещении в сплиттер легенда меняет хозяина
+            delete m_plot->legendWidget(); //при помещении в сплиттер легенда меняет хозяина
             delete m_plot;
         }
         else return;
@@ -260,17 +260,13 @@ void PlotArea::addPlot(Enums::PlotType type)
 //    plotsLayout->setColumnStretch(0, 1);
     if (splitter->count()>0) {
         splitter->replaceWidget(0, m_plot);
-        splitter->replaceWidget(1, m_plot->legend());
+        splitter->replaceWidget(1, m_plot->legendWidget());
     }
     else {
         splitter->addWidget(m_plot);
-        splitter->addWidget(m_plot->legend());
+        splitter->addWidget(m_plot->legendWidget());
         splitter->setStretchFactor(0,1);
     }
-
-//    splitter->setStretchFactor(1,10);
-    //splitter->setSizes({30,10});
-//    m_plot->legend()->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     connect(m_plot, SIGNAL(curvesCountChanged()), this, SIGNAL(curvesCountChanged()));
     connect(m_plot, SIGNAL(channelPlotted(Channel*)), this, SIGNAL(channelPlotted(Channel*)));

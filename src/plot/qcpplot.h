@@ -51,7 +51,7 @@ public:
      * @brief legend
      * @return виджет легенды для размещения в plotArea
      */
-    QWidget *legend();
+    QWidget *legendWidget();
 
     /**
      * @brief screenToPlotCoordinates, plotToScreenCoordinates

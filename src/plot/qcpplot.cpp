@@ -534,7 +534,8 @@ void QCPPlot::setColorBarTitle(const QString &title)
 void QCPPlot::importPlot(ImageRenderDialog::PlotRenderOptions options)
 {
     axisRect()->setBorderPen(QPen(Qt::black));
-    checkableLegend->widget()->setVisible(true);
+//    checkableLegend->widget()->setVisible(true);
+    legend->setVisible(true);
     switch (options.legendPosition) {
         case 0: axisRect(0)->insetLayout()->setInsetAlignment(0, Qt::AlignBottom); break;
         case 1: axisRect(0)->insetLayout()->setInsetAlignment(0, Qt::AlignTop); break;
@@ -550,7 +551,7 @@ void QCPPlot::importPlot(ImageRenderDialog::PlotRenderOptions options)
                       -1,
                       options.resolution))
         QMessageBox::critical(this, "Сохранение рисунка", "Не удалось сохранить график");
-    checkableLegend->widget()->setVisible(false);
+    legend->setVisible(false);
     if (options.graphOnly) setSecondaryPlotsVisible(true);
     axisRect()->setBorderPen(Qt::NoPen);
 }
@@ -567,7 +568,7 @@ void QCPPlot::importPlot(QPrinter &printer, ImageRenderDialog::PlotRenderOptions
 
         //настройка отображения графиков
         axisRect()->setBorderPen(QPen(Qt::black));
-        checkableLegend->widget()->setVisible(true);
+        legend->setVisible(true);
         switch (options.legendPosition) {
             case 0: axisRect(0)->insetLayout()->setInsetAlignment(0, Qt::AlignBottom); break;
             case 1: axisRect(0)->insetLayout()->setInsetAlignment(0, Qt::AlignTop); break;
@@ -586,7 +587,7 @@ void QCPPlot::importPlot(QPrinter &printer, ImageRenderDialog::PlotRenderOptions
         toPainter(&painter, pageRect.width(), pageRect.height());
 
         //восстанавливаем параметры графиков
-        checkableLegend->widget()->setVisible(false);
+        legend->setVisible(false);
         if (options.graphOnly) setSecondaryPlotsVisible(true);
         axisRect()->setBorderPen(Qt::NoPen);
     }
@@ -907,7 +908,7 @@ QWidget *QCPPlot::toolBarWidget()
     return playerPanel;
 }
 
-QWidget *QCPPlot::legend()
+QWidget *QCPPlot::legendWidget()
 {
     return checkableLegend->widget();
 }
