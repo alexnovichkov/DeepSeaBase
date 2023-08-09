@@ -157,13 +157,14 @@ void PlayPanel::prepareDataToPlay()
 void PlayPanel::setValue()
 {DD;
     if (!ch) return;
+    positions[ch] = cursor->currentPosition().x();
     player->setPosition(qint64((cursor->currentPosition().x()-ch->data()->xMin()) * 1000.0));
+
 }
 
 void PlayPanel::moveTo(const QPoint &pos)
 {DD;
     const auto xVal = plot->screenToPlotCoordinates(Enums::AxisType::atBottom, pos.x());
-    positions[ch] = xVal;
     cursor->moveTo({xVal, 0}, false);
 }
 
