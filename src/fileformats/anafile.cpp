@@ -297,7 +297,7 @@ void AnaChannel::populate()
 
         YValues.resize(data()->samplesCount());
         postprocess(YValues);
-        _data->setYValues(YValues, _data->yValuesFormat());
+        _data->setYValues(YValues, _data->yValuesFormat(), -1);
         setPopulated(true);
         rawFile.close();
     }

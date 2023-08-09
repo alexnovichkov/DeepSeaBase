@@ -77,7 +77,7 @@ QVector<T> segment(const QVector<T> &values, int from, int to, int blockSize, in
             result.append(d);
         }
     } catch (const std::bad_alloc &bad) {
-        LOG(ERROR)<<"could not allocate"<<length*blocks<<"elements";
+        LOG(ERROR)<<"could not allocate "<<length*blocks<<" elements";
     }
     return result;
 }
@@ -103,7 +103,7 @@ QVector<D> readChunk(QDataStream &readStream, quint64 blockSize, qint64 *actuall
             if (actuallyRead) (*actuallyRead)++;
         }
     } catch (const std::bad_alloc &bad) {
-        LOG(ERROR)<<"could not allocate"<<blockSize<<"elements";
+        LOG(ERROR)<<"could not allocate "<<blockSize<<" elements";
         if (actuallyRead) *actuallyRead = 0;
     }
 
@@ -303,7 +303,7 @@ inline QVector<T> convertFrom(unsigned char *ptr, quint64 length, DataPrecision 
         }
     }
     catch (const std::bad_alloc &bad) {
-        LOG(ERROR)<<"could not allocate"<<(length / step)<<"elements";
+        LOG(ERROR)<<"could not allocate "<<(length / step)<<" elements";
     }
     return temp;
 }

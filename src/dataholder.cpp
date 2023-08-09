@@ -1,5 +1,6 @@
 #include "dataholder.h"
 #include "logging.h"
+#include <QMessageBox>
 
 DataHolder::YValuesFormat DataHolder::formatFromString(const QString &format)
 {DD;
@@ -373,7 +374,8 @@ void DataHolder::setYValues(const QVector<double> &values, YValuesFormat initial
             m_yValues = values;
         }
         catch (const std::bad_alloc& bad) {
-            qDebug()<<"Exception at setting YValues:" << bad.what();
+            LOG(DEBUG)<<"Exception at setting YValues: " << bad.what();
+            QMessageBox::critical(nullptr, "Чтение данных", "Не удалось выделить память под данные канала");
             return;
         }
 
@@ -385,7 +387,8 @@ void DataHolder::setYValues(const QVector<double> &values, YValuesFormat initial
                 m_yValues[block*m_xCount + i] = values.at(i);
         }
         catch (const std::bad_alloc& bad) {
-            qDebug()<<"Exception at setting YValues block:" << bad.what();
+            LOG(DEBUG)<<"Exception at setting YValues block: " << bad.what();
+            QMessageBox::critical(nullptr, "Чтение данных", "Не удалось выделить память под данные канала");
             return;
         }
     }
@@ -397,7 +400,8 @@ void DataHolder::setYValues(const QVector<double> &values, YValuesFormat initial
         recalculateYValues(); // нужно, чтобы подцепился указатель на данные для построения кривых
     }
     catch (const std::bad_alloc& bad) {
-        qDebug()<<"Exception at recalculating YValues:" << bad.what();
+        LOG(DEBUG)<<"Exception at recalculating YValues: " << bad.what();
+        QMessageBox::critical(nullptr, "Чтение данных", "Не удалось выделить память под данные канала");
         return;
     }
 
@@ -405,7 +409,8 @@ void DataHolder::setYValues(const QVector<double> &values, YValuesFormat initial
         recalculateMinMax();
     }
     catch (const std::bad_alloc& bad) {
-        qDebug()<<"Exception at recalculating min & max:" << bad.what();
+        LOG(DEBUG)<<"Exception at recalculating min & max: " << bad.what();
+        QMessageBox::critical(nullptr, "Чтение данных", "Не удалось выделить память под данные канала");
     }
 }
 
