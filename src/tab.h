@@ -48,7 +48,7 @@ public:
     FileDescriptor *record = nullptr;
     FileHandler *fileHandler = nullptr;
 signals:
-    void descriptorChanged();
+    void descriptorChanged(int index, FileDescriptor *record);
     void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels, bool plotAll = false);
     void needUpdateLegends();
 private:

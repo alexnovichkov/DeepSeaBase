@@ -75,6 +75,16 @@ MainWindow::MainWindow(QWidget *parent)
     ads::CDockManager::setConfigFlag(ads::CDockManager::XmlCompressionEnabled, false);
 
     m_DockManager = new ads::CDockManager(this);
+
+
+    QFile adsStyle("ads.css");
+    if (adsStyle.open(QFile::ReadOnly | QFile::Text)) {
+        m_DockManager->setStyleSheet(adsStyle.readAll());
+    }
+    else {
+        LOG(DEBUG) << QString("Не удалось открыть файл стиля для ADS.");
+    }
+
     connect(m_DockManager, &ads::CDockManager::focusedDockWidgetChanged, this, &MainWindow::onFocusedDockWidgetChanged);
     connect(m_DockManager, &ads::CDockManager::dockWidgetAboutToBeRemoved, [=](ads::CDockWidget* DockWidget)
     {
@@ -434,31 +444,32 @@ void MainWindow::createConvertPluginsMenu(QMenu *menu)
 
 void MainWindow::createTab(const QString &name, const QStringList &folders)
 {DD;
-    currentTab = new Tab(this);
+    auto newTab = new Tab(this);
+    currentTab = newTab;
 
-    currentTab->filesTable->addAction(delFilesAct);
-    currentTab->filesTable->addAction(saveAct);
+    newTab->filesTable->addAction(delFilesAct);
+    newTab->filesTable->addAction(saveAct);
 
-    currentTab->addParentAction("addFolder", addFolderAct);
-    currentTab->addParentAction("addFile", addFileAct);
-    currentTab->addParentAction("deleteFiles", delFilesAct);
-    currentTab->addParentAction("calculateSpectre", calculateSpectreAct1);
-    currentTab->addParentAction("calculateSpectreDeepSea", calculateSpectreDeepSeaAct);
-    currentTab->addParentAction("convert", convertAct);
-    currentTab->addParentAction("rename", renameAct);
+    newTab->addParentAction("addFolder", addFolderAct);
+    newTab->addParentAction("addFile", addFileAct);
+    newTab->addParentAction("deleteFiles", delFilesAct);
+    newTab->addParentAction("calculateSpectre", calculateSpectreAct1);
+    newTab->addParentAction("calculateSpectreDeepSea", calculateSpectreDeepSeaAct);
+    newTab->addParentAction("convert", convertAct);
+    newTab->addParentAction("rename", renameAct);
 
-    currentTab->channelsTable->addAction("exportWav", exportChannelsToWavAct);
-    currentTab->channelsTable->addAction("moveUp", moveChannelsUpAct);
-    currentTab->channelsTable->addAction("moveDown", moveChannelsDownAct);
-    currentTab->channelsTable->addAction("delete", deleteChannelsOneAct);
-    currentTab->channelsTable->addAction("deleteBatch", deleteChannelsBatchAct);
-    currentTab->channelsTable->addAction("copy", copyChannelsAct);
-    currentTab->channelsTable->addAction("move", moveChannelsAct);
+    newTab->channelsTable->addAction("exportWav", exportChannelsToWavAct);
+    newTab->channelsTable->addAction("moveUp", moveChannelsUpAct);
+    newTab->channelsTable->addAction("moveDown", moveChannelsDownAct);
+    newTab->channelsTable->addAction("delete", deleteChannelsOneAct);
+    newTab->channelsTable->addAction("deleteBatch", deleteChannelsBatchAct);
+    newTab->channelsTable->addAction("copy", copyChannelsAct);
+    newTab->channelsTable->addAction("move", moveChannelsAct);
 
     //сигнал updateLegends() передается всем имеющимся графикам
-    connect(currentTab->model, SIGNAL(legendsChanged()), this, SIGNAL(updateLegends()));
-    connect(currentTab->channelModel, SIGNAL(legendsChanged()), this, SIGNAL(updateLegends()));
-    connect(currentTab->model, &Model::plotNeedsUpdate, [=]()
+    connect(newTab->model, SIGNAL(legendsChanged()), this, SIGNAL(updateLegends()));
+    connect(newTab->channelModel, SIGNAL(legendsChanged()), this, SIGNAL(updateLegends()));
+    connect(newTab->model, &Model::plotNeedsUpdate, [=]()
     {
         const auto m = m_DockManager->dockWidgetsMap();
         for (auto &w: m.values()) {
@@ -467,16 +478,19 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
         }
     });
 
-    connect(currentTab, &Tab::descriptorChanged, [this](){
-        int idx;
-        currentTab->model->contains(currentTab->record, &idx);
-        if (currentPlot) currentPlot->replotDescriptor(currentTab->record, idx+1);
+//    connect(newTab, &Tab::descriptorChanged, [this](){
+//        int idx;
+//        newTab->model->contains(newTab->record, &idx);
+//        if (currentPlot) currentPlot->replotDescriptor(newTab->record, idx+1);
+//    });
+    connect(newTab, &Tab::descriptorChanged, [this](int idx, FileDescriptor *record){
+        if (currentPlot) currentPlot->replotDescriptor(record, idx+1);
     });
-    connect(currentTab, &Tab::needPlotChannels, this, qOverload<bool,const QVector<Channel*> &,bool>(&MainWindow::onChannelsDropped));
+    connect(newTab, &Tab::needPlotChannels, this, qOverload<bool,const QVector<Channel*> &,bool>(&MainWindow::onChannelsDropped));
 
     ads::CDockComponentsFactory::setFactory(new TabDockFactory(this));
     auto dockWidget = new ads::CDockWidget(name);
-    dockWidget->setWidget(currentTab);
+    dockWidget->setWidget(newTab);
     dockWidget->setFeature(ads::CDockWidget::DockWidgetFloatable, false);
     dockWidget->setFeature(ads::CDockWidget::DockWidgetDeleteOnClose, true);
     dockWidget->setFeature(ads::CDockWidget::DockWidgetFocusable, true);
@@ -492,8 +506,8 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     });
     tabsMenu->addAction(dockWidget->toggleViewAction());
 
-    connect(currentTab->fileHandler, SIGNAL(fileAdded(QString,bool,bool)),this,SLOT(addFolder(QString,bool,bool)));
-    currentTab->fileHandler->setFileNames(folders);
+    connect(newTab->fileHandler, SIGNAL(fileAdded(QString,bool,bool)),this,SLOT(addFolder(QString,bool,bool)));
+    newTab->fileHandler->setFileNames(folders);
     LOG(INFO) << QString("Создана вкладка ")<<name;
 }
 
@@ -512,6 +526,7 @@ void MainWindow::createNewTab()
 void MainWindow::closeTab(ads::CDockWidget *t)
 {DD;
     if (!t) return;
+    if (!currentTab) return;
     auto m = m_DockManager->dockWidgetsMap().values();
     for (const auto &w : m) {
         if (PlotArea *area = dynamic_cast<PlotArea*>(w)) {
@@ -642,12 +657,14 @@ PlotArea *MainWindow::createPlotArea()
 
 void MainWindow::addPlotArea()
 {DD;
-    currentPlot = createPlotArea();
+    auto p = createPlotArea();
+
     if (!bottomArea)
-        bottomArea = m_DockManager->addDockWidget(ads::BottomDockWidgetArea, currentPlot);
+        bottomArea = m_DockManager->addDockWidget(ads::BottomDockWidgetArea, p);
     else
-        m_DockManager->addDockWidget(ads::RightDockWidgetArea, currentPlot, bottomArea);
-    LOG(INFO) << QString("Добавлен график ")<< currentPlot->tabWidget()->text();
+        m_DockManager->addDockWidget(ads::RightDockWidgetArea, p, bottomArea);
+    LOG(INFO) << QString("Добавлен график ")<< p->tabWidget()->text();
+    currentPlot = p;
 }
 
 void MainWindow::addPlotTabbed()
@@ -714,6 +731,7 @@ QString MainWindow::getFolderToAdd(bool withSubfolders)
 
 void MainWindow::addFolder() /*SLOT*/
 {DD;
+    if (!currentTab) return;
     if (auto folder = getFolderToAdd(false /*with subfolders*/); addFolder(folder, false /*with subfolders*/, false /*silent*/)) {
         currentTab->fileHandler->trackFolder(folder, false);
         LOG(INFO) << QString("Добавлена папка ")<<folder;
@@ -723,6 +741,7 @@ void MainWindow::addFolder() /*SLOT*/
 
 void MainWindow::addFolderWithSubfolders() /*SLOT*/
 {DD;
+    if (!currentTab) return;
     if (auto folder = getFolderToAdd(true /*with subfolders*/); addFolder(folder, true /*with subfolders*/, false /*silent*/)) {
         currentTab->fileHandler->trackFolder(folder, true);
         LOG(INFO) << QString("Добавлена папка ")<<folder;
@@ -732,6 +751,7 @@ void MainWindow::addFolderWithSubfolders() /*SLOT*/
 
 void MainWindow::addFile()
 {DD;
+    if (!currentTab) return;
     QString directory = se->getSetting("lastDirectory").toString();
 
     QFileDialog dialog(this, "Добавить файлы", directory);
@@ -2133,6 +2153,7 @@ void MainWindow::setCurrentAndPlot(FileDescriptor *d, int index)
 //Этот метод ищет нужную запись по direction и перемещает на неё выделение
 void MainWindow::setDescriptor(int direction, bool checked) /*private*/
 {DD;
+    if (!currentTab) return;
     //проверяем, есть ли в табе другие записи
     if (currentTab->model->size() < 2) return;
     if (!currentPlot) return;
@@ -2149,9 +2170,8 @@ void MainWindow::setDescriptor(int direction, bool checked) /*private*/
     if (!d) return;
 
     int index = -1;
-    if (currentTab) {
-        currentTab->model->contains(d, &index);
-    }
+    currentTab->model->contains(d, &index);
+
     if (index<0) return; //мы в другой вкладке
 
     //перемещаем фокус на другую запись
@@ -2256,7 +2276,7 @@ void MainWindow::updateActions()
     exportChannelsToWavAct->setEnabled(!timeFiles.isEmpty() && selectedChannelsCount>0);
 
     if (currentPlot) currentPlot->updateActions(filesCount, channelsCount);
-    if (currentTab) currentTab->updateActions();
+    currentTab->updateActions();
 }
 
 void MainWindow::onFocusedDockWidgetChanged(ads::CDockWidget *old, ads::CDockWidget *now)

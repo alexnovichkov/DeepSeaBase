@@ -238,7 +238,9 @@ void Tab::updateChannelsTable(FileDescriptor *descriptor)
 
     filePathLabel->setText(descriptor->fileName());
 
-    emit descriptorChanged();
+    int idx;
+    model->contains(record, &idx);
+    emit descriptorChanged(idx, record);
     //updateActions();
 }
 

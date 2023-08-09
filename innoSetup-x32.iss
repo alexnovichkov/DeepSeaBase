@@ -85,6 +85,8 @@ Source: "E:\My\build\DeepSeaBase\src\DeepSeaBase-logging.bat"; DestDir: "{app}";
 
 Source: "E:\My\build\DeepSeaBase\src\*.html"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: "E:\My\build\DeepSeaBase\src\style.css"; DestDir: "{app}"; Flags: ignoreversion; Components: main
+Source: "E:\My\build\DeepSeaBase\src\ads.css"; DestDir: "{app}"; Flags: ignoreversion; Components: main
+Source: "E:\My\build\DeepSeaBase\src\ads-linux.css"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: "E:\My\build\DeepSeaBase\src\version.js"; DestDir: "{app}"; Flags: ignoreversion; Components: main
 Source: "E:\My\build\DeepSeaBase\src\icons\*.png"; DestDir: "{app}\icons"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
 Source: "E:\My\build\DeepSeaBase\src\icons\*.ico"; DestDir: "{app}\icons"; Flags: ignoreversion recursesubdirs createallsubdirs; Components: main
