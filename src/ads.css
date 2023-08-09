@@ -2,12 +2,13 @@
  * Default style sheet on Windows Platforms with focus highlighting flag enabled
  */
 ads--CDockContainerWidget {
-	background: palette(dark);
+	background: palette(window);
 }
 
 ads--CDockAreaWidget {
 	background: palette(window);
-	border: 1px solid white;
+	/*border: 1px solid palette(dark);*/
+	border: none;
 }
 
 ads--CDockWidgetTab {
@@ -20,9 +21,9 @@ ads--CDockWidgetTab {
 }
 
 ads--CDockWidgetTab[activeTab="true"] {
-	background: qlineargradient(spread : pad, x1 : 0, y1 : 0, x2 : 0, y2 : 0.5, stop : 0
-		palette(window), stop:1 palette(light));
-	/*background: palette(highlight);*/
+	/*background: qlineargradient(spread : pad, x1 : 0, y1 : 0, x2 : 0, y2 : 0.5, stop : 0
+		palette(window), stop:1 palette(light));*/
+	background: palette(base);
 }
 
 ads--CDockWidgetTab QLabel {
@@ -88,7 +89,10 @@ ads--CDockSplitter::handle {
 	background-color: palette(dark);
 	/* uncomment the following line if you would like to change the size of
        the splitter handles */
-	/* height: 1px; */
+	 height: 1px; 
+	 border: none;
+	 /*border-left: 1px solid palette(dark);*/
+	 /*border-right: 1px solid palette(dark);*/
 }
 
 /* Focus related styling */

@@ -20,6 +20,7 @@
 Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
 {DD;
     setOrientation(Qt::Horizontal);
+    setStyleSheet("QSplitter::handle {height: 1px; background-color: palette(dark);}");
 
     model = new Model(this);
     connect(model, &Model::needAddFiles, [=](const QStringList &files){
@@ -59,6 +60,7 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
 
     filesTable = new FilesTable(this);
     filesTable->setModel(sortModel);
+    filesTable->setFrameShape(QFrame::NoFrame);
 
     filterHeader = new FilteredHeaderView(Qt::Horizontal, filesTable);
     filesTable->setHeader(filterHeader);
@@ -117,6 +119,7 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
     fileHandler = new FileHandler(this);
 
     channelsTable = new ChannelsTable(this);
+    channelsTable->setFrameShape(QFrame::NoFrame);
     channelsTable->setContextMenuPolicy(Qt::CustomContextMenu);
     channelsTable->setModel(channelModel);
     connect(channelsTable->selectionModel(),SIGNAL(selectionChanged(QItemSelection,QItemSelection)),

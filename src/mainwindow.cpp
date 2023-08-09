@@ -76,7 +76,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     m_DockManager = new ads::CDockManager(this);
 
-
+    auto state = m_DockManager->saveState();
     QFile adsStyle("ads.css");
     if (adsStyle.open(QFile::ReadOnly | QFile::Text)) {
         m_DockManager->setStyleSheet(adsStyle.readAll());
@@ -84,6 +84,7 @@ MainWindow::MainWindow(QWidget *parent)
     else {
         LOG(DEBUG) << QString("Не удалось открыть файл стиля для ADS.");
     }
+    m_DockManager->restoreState(state);
 
     connect(m_DockManager, &ads::CDockManager::focusedDockWidgetChanged, this, &MainWindow::onFocusedDockWidgetChanged);
     connect(m_DockManager, &ads::CDockManager::dockWidgetAboutToBeRemoved, [=](ads::CDockWidget* DockWidget)
