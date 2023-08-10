@@ -9,7 +9,7 @@
  * Осуществляет передискретизацию временных реализаций
  */
 
-/* Resampling/resampleType - Коэффициент / Частотный диапазон / Частота дискретизации
+/* Resampling/resampleType - Без передискретизации / Коэффициент / Частотный диапазон / Частота дискретизации
  * Resampling/factor - Коэффициент
  * Resampling/frequencyRange - Частотный диапазон
  * Resampling/sampleRate - Частота дискретизации
@@ -44,7 +44,7 @@ protected:
 private:
     Resampler resampler;
     double factor = 1.0; //коэффициент new sample rate = sample rate / factor
-    int currentResamplingType = 0; //тип передискретизации (0=factor, 1=range, 2=sampleRate)
+    int currentResamplingType = 0; //тип передискретизации (0=no, 1=factor, 2=range, 3=sampleRate)
     double xStep = 0.0;
 
     // AbstractFunction interface

@@ -33,7 +33,8 @@ QString ResamplingFunction::m_parameterDescription(const QString &property) cons
                "  \"displayName\" : \"Способ передискретизации\"   ,"
                "  \"defaultValue\": 0         ,"
                "  \"toolTip\"     : \"Коэффициент | Диапазон | Частота дискретизации\","
-               "  \"values\"      : [\"Коэффициент\", \"Частотный диапазон\", \"Частота дискретизации\"]"
+               "  \"values\"      : [\"Без передискретизации\", \"Коэффициент\", "
+               "  \"Частотный диапазон\", \"Частота дискретизации\"]"
                 "}");
     }
     if (property == "factor") {
@@ -159,9 +160,9 @@ void ResamplingFunction::m_setParameter(const QString &property, const QVariant 
 
 bool ResamplingFunction::m_parameterShowsFor(const QString &p) const
 {DD;
-    if (p == "factor" && currentResamplingType != 0) return false;
-    if (p == "frequencyRange" && currentResamplingType != 1) return false;
-    if (p == "sampleRate" && currentResamplingType != 2) return false;
+    if (p == "factor" && currentResamplingType != 1) return false;
+    if (p == "frequencyRange" && currentResamplingType != 2) return false;
+    if (p == "sampleRate" && currentResamplingType != 3) return false;
 
     return true;
 }
@@ -184,7 +185,7 @@ bool ResamplingFunction::compute(FileDescriptor *file)
     if (data.isEmpty())
         return false;
 
-    if (qFuzzyCompare(factor+1.0, 2.0)) {
+    if (currentResamplingType == 0) {
         output = data;
         triggerData = m_input->getData("triggerInput");
     }
