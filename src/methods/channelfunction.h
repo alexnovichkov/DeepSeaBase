@@ -70,7 +70,7 @@ public:
     virtual QString m_parameterDescription(const QString &property) const override;
     virtual bool compute(FileDescriptor *file) override;
     virtual QString displayName() const override;
-
+    virtual DataDescription getFunctionDescription() const override;
 protected:
     virtual QVariant m_getParameter(const QString &property) const override;
     virtual void m_setParameter(const QString &property, const QVariant &val) override;

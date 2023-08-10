@@ -330,9 +330,9 @@ QString ChannelPropertiesDialog::displayName(const QString &property)
     if (property == "logscale") return "Шкала";
     if (property == "responseName") return "Название канала отклика";
     if (property == "responseDirection") return "Направление канала отклика";
-    if (property == "responseNode") return "Узел канала отклика";
+    if (property == "responseNode") return "Номер канала отклика";
     if (property == "referenceName") return "Название опорного канала";
-    if (property == "referenceNode") return "Узел опорного канала";
+    if (property == "referenceNode") return "Номер опорного канала";
     if (property == "referenceDescription") return "Описание опорного канала";
     if (property == "referenceDirection") return "Направление опорного канала";
     if (property == "format") return "Формат данных";

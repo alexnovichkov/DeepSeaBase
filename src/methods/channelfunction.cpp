@@ -27,8 +27,6 @@ QVariant ChannelFunction::m_getParameter(const QString &property) const
 
     if (property.startsWith("?/")) {
         if (property == "?/channelIndex") return channel;
-        if (property == "?//referenceChannelIndex") return -1;
-
         if (property == "?/channels") return selector.indexes();
 
         //это - свойства исходного файла
@@ -250,6 +248,15 @@ bool RefChannelFunction::compute(FileDescriptor *file)
 QString RefChannelFunction::displayName() const
 {DD;
     return "Опорный канал";
+}
+
+DataDescription RefChannelFunction::getFunctionDescription() const
+{
+    auto result = ChannelFunction::getFunctionDescription();
+    result.put("function.referenceNode", channel+1);
+    result.put("function.referenceName", m_file->channel(channel)->name());
+    result.put("function.referenceDescription", m_file->channel(channel)->description());
+    return result;
 }
 
 QVariant RefChannelFunction::m_getParameter(const QString &property) const
