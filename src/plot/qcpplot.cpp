@@ -1045,6 +1045,16 @@ QMenu *QCPPlot::createMenu(Enums::AxisType axis, const QPoint &pos)
         });
 
         menu->addAction(axisScaleAct);
+
+        // определяем, все ли графики представляют временные данные
+        if (const auto type = m->curvesDataType();
+            type == Descriptor::TimeResponse && axis == Enums::AxisType::atBottom) {
+            menu->addAction("Сохранить временной сегмент", [=](){
+                auto range = plotRange(axis);
+
+                emit saveTimeSegment(m->plottedDescriptors(), range.min, range.max);
+            });
+        }
     }
 
     // Попытка написать шкалу дистанции
@@ -1078,16 +1088,6 @@ QMenu *QCPPlot::createMenu(Enums::AxisType axis, const QPoint &pos)
         });
 
         menu->addAction(axisScaleAct);
-    }
-
-    // определяем, все ли графики представляют временные данные
-    if (const auto type = m->curvesDataType();
-        type == Descriptor::TimeResponse && axis == Enums::AxisType::atBottom) {
-        menu->addAction("Сохранить временной сегмент", [=](){
-            auto range = plotRange(axis);
-
-            emit saveTimeSegment(m->plottedDescriptors(), range.min, range.max);
-        });
     }
 
     bool curvesEmpty = true;
@@ -1148,7 +1148,11 @@ QMenu *QCPPlot::createMenu(Enums::AxisType axis, const QPoint &pos)
             m->setYValuesPresentation(leftCurves, presentation);
             *ax = presentation;
             this->recalculateScale(axis);
+            auto sb = zoom->scaleBounds(Enums::AxisType::atBottom);
+            auto fixed = sb->isFixed();
+            sb->setFixed(true); //блокируем обновление границ шкалы х
             this->update();
+            sb->setFixed(fixed, false);
         });
 
         a->setMenu(am);

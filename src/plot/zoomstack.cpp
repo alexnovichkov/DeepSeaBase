@@ -101,11 +101,11 @@ ZoomStack::ScaleBounds::ScaleBounds(QCPPlot *plot, Enums::AxisType axis) : axis(
     set(min, max);
 }
 
-void ZoomStack::ScaleBounds::setFixed(bool fixed)
+void ZoomStack::ScaleBounds::setFixed(bool fixed, bool rescale)
 {DD;
     this->fixed = fixed;
 
-    if (!fixed)
+    if (!fixed && rescale)
         autoscale();
 }
 
@@ -175,3 +175,11 @@ void ZoomStack::ScaleBounds::removeToAutoscale(double min, double max)
     }
 }
 
+
+QDebug operator<<(QDebug dbg, const ZoomStack::ScaleBounds &b)
+{
+    dbg.nospace() << "ScaleBounds(" << static_cast<int>(b.axis) <<
+                     b.fixed << " min: "<<b.min << " "<<b.mins <<
+                     " max: "<<b.max << " "<<b.maxes << ")";
+    return dbg.space();
+}
