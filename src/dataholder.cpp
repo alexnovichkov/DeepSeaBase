@@ -1,6 +1,7 @@
 #include "dataholder.h"
 #include "logging.h"
 #include <QMessageBox>
+#include "settings.h"
 
 DataHolder::YValuesFormat DataHolder::formatFromString(const QString &format)
 {DD;
@@ -446,9 +447,11 @@ bool DataHolder::setYValue(int index, double value, int block)
             case ShowAsImags:
                 m_yValuesComplex[index] = {m_yValuesComplex.at(index).real(), value};
                 return true;
-            case ShowAsPhases:
-                m_yValuesComplex[index] = std::polar(std::abs(m_yValuesComplex.at(index)), value);
+            case ShowAsPhases: {
+                bool radians = se->getSetting("phaseType").toInt() == 0;
+                m_yValuesComplex[index] = std::polar(std::abs(m_yValuesComplex.at(index)), radians ? value : value * M_PI / 180.0);
                 return true;
+            }
             case ShowAsReals:
                 m_yValuesComplex[index] = {value, m_yValuesComplex.at(index).imag()};
                 return true;
@@ -1023,7 +1026,7 @@ void DataHolder::recalculateMinMax()
             if (index >= m_yValuesTemporal.size()) break;
 
             double min = m_yValuesTemporal.at(index);
-            double max = m_yValuesTemporal.at(index);;
+            double max = m_yValuesTemporal.at(index);
             for (int i=1; i<m_xCount; ++i) {
                 index = i+block*m_xCount;
                 if (index >= m_yValuesTemporal.size()) break;
@@ -1040,55 +1043,77 @@ void DataHolder::recalculateMinMax()
 
 void DataHolder::recalculateYValues()
 {DD;
-    if (int(m_yValuesFormat) == int(m_yValuesPresentation)) {
-        m_yValuesTemporal = m_yValues;
-    }
-    else {
-        m_yValuesTemporal.clear();
-        if (m_yValuesFormat == YValuesComplex) {
+    const bool deg = se->getSetting("phaseType").toInt() == 1;
+    m_yValuesTemporal.clear();
+
+    switch (m_yValuesFormat) {
+        case YValuesComplex: {
             switch (m_yValuesPresentation) {
                 case ShowAsDefault:
                 case ShowAsAmplitudesInDB: m_yValuesTemporal = toLog(absolutes(m_yValuesComplex), m_threshold, m_yValuesUnits); break;
                 case ShowAsAmplitudes:     m_yValuesTemporal = absolutes(m_yValuesComplex); break;
                 case ShowAsImags:          m_yValuesTemporal = ::imags(m_yValuesComplex); break;
-                case ShowAsPhases:         m_yValuesTemporal = ::phases(m_yValuesComplex); break;
+                case ShowAsPhases:         m_yValuesTemporal = ::phases(m_yValuesComplex, deg); break;
                 case ShowAsReals:          m_yValuesTemporal = ::reals(m_yValuesComplex); break;
             };
+            break;
         }
-        else {
-            switch (m_yValuesFormat) {
-                case YValuesReals: {
-                    if (m_yValuesPresentation == ShowAsAmplitudes)
-                        m_yValuesTemporal = absolutes(m_yValues);
-                    else if (m_yValuesPresentation == ShowAsAmplitudesInDB)
-                        m_yValuesTemporal = toLog(absolutes(m_yValues), m_threshold, m_yValuesUnits);
-                    else if (m_yValuesPresentation == ShowAsPhases)
-                        m_yValuesTemporal = ::phases(complexesFromReals(m_yValues));
-                    break;
-                }
-                case YValuesImags: {
-                    if (m_yValuesPresentation == ShowAsAmplitudes)
-                        m_yValuesTemporal = absolutes(m_yValues);
-                    else if (m_yValuesPresentation == ShowAsAmplitudesInDB)
-                        m_yValuesTemporal = toLog(absolutes(m_yValues), m_threshold, m_yValuesUnits);
-                    else if (m_yValuesPresentation == ShowAsPhases)
-                        m_yValuesTemporal = ::phases(complexesFromImags(m_yValues));
-                    break;
-                }
-                case YValuesAmplitudes: {
-                    if (m_yValuesPresentation == ShowAsAmplitudesInDB)
-                        m_yValuesTemporal = toLog(m_yValues, m_threshold, m_yValuesUnits);
-                    break;
-                }
-                case YValuesAmplitudesInDB: {
-                    if (m_yValuesPresentation == ShowAsAmplitudes)
-                        m_yValuesTemporal = fromLog(m_yValues, m_threshold, m_yValuesUnits);
-                    break;
-                }
-                default:
-                    break;
-            }
+        case YValuesReals: {
+            switch (m_yValuesPresentation) {
+                case ShowAsDefault:        m_yValuesTemporal = m_yValues; break;
+                case ShowAsAmplitudesInDB: m_yValuesTemporal = toLog(absolutes(m_yValues), m_threshold, m_yValuesUnits); break;
+                case ShowAsAmplitudes:     m_yValuesTemporal = absolutes(m_yValues); break;
+                case ShowAsImags:          m_yValuesTemporal.clear(); break;
+                case ShowAsPhases:         m_yValuesTemporal = ::phases(complexesFromReals(m_yValues), deg); break;
+                case ShowAsReals:          m_yValuesTemporal = m_yValues; break;
+            };
+            break;
         }
+        case YValuesImags: {
+            switch (m_yValuesPresentation) {
+                case ShowAsDefault:        m_yValuesTemporal = m_yValues; break;
+                case ShowAsAmplitudesInDB: m_yValuesTemporal = toLog(absolutes(m_yValues), m_threshold, m_yValuesUnits); break;
+                case ShowAsAmplitudes:     m_yValuesTemporal = absolutes(m_yValues); break;
+                case ShowAsImags:          m_yValuesTemporal = m_yValues; break;
+                case ShowAsPhases:         m_yValuesTemporal = ::phases(complexesFromImags(m_yValues), deg); break;
+                case ShowAsReals:          m_yValuesTemporal.clear(); break;
+            };
+            break;
+        }
+        case YValuesAmplitudes: {
+            switch (m_yValuesPresentation) {
+                case ShowAsDefault:        m_yValuesTemporal = m_yValues; break;
+                case ShowAsAmplitudesInDB: m_yValuesTemporal = toLog(m_yValues, m_threshold, m_yValuesUnits); break;
+                case ShowAsAmplitudes:     m_yValuesTemporal = m_yValues; break;
+                case ShowAsImags:          m_yValuesTemporal.clear(); break;
+                case ShowAsPhases:         m_yValuesTemporal.clear(); break;
+                case ShowAsReals:          m_yValuesTemporal.clear(); break;
+            };
+            break;
+        }
+        case YValuesAmplitudesInDB: {
+            switch (m_yValuesPresentation) {
+                case ShowAsDefault:        m_yValuesTemporal = m_yValues; break;
+                case ShowAsAmplitudesInDB: m_yValuesTemporal = m_yValues; break;
+                case ShowAsAmplitudes:     m_yValuesTemporal = fromLog(m_yValues, m_threshold, m_yValuesUnits); break;
+                case ShowAsImags:          m_yValuesTemporal.clear(); break;
+                case ShowAsPhases:         m_yValuesTemporal.clear(); break;
+                case ShowAsReals:          m_yValuesTemporal.clear(); break;
+            };
+            break;
+        }
+        case YValuesPhases: {
+            switch (m_yValuesPresentation) {
+                case ShowAsDefault:
+                case ShowAsPhases:         m_yValuesTemporal = phasesFromPhases(m_yValues, deg); break;
+                case ShowAsAmplitudesInDB: m_yValuesTemporal.clear(); break;
+                case ShowAsAmplitudes:     m_yValuesTemporal.clear(); break;
+                case ShowAsImags:          m_yValuesTemporal.clear(); break;
+                case ShowAsReals:          m_yValuesTemporal.clear(); break;
+            };
+        }
+        default:
+            break;
     }
 
     if (m_xCount > 0 && m_yValuesTemporal.isEmpty())

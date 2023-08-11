@@ -138,6 +138,14 @@ void SettingsDialog::addSettings()
     defaultYAxisPresentation->setValue(se->getSetting("defaultYAxisPresentation", 0).toInt());
     graphs->addSubProperty(defaultYAxisPresentation);
 
+    auto phaseType = m_manager->addProperty(QtVariantPropertyManager::enumTypeId(), "Строить фазы");
+    phaseType->setAttribute("enumNames",
+         QStringList({"В радианах", "В градусах"}));
+
+    m_displayNames.insert("Строить фазы", "phaseType");
+    phaseType->setValue(se->getSetting("phaseType", 0).toInt());
+    graphs->addSubProperty(phaseType);
+
     /* DFD */
     auto dfd = m_manager->addProperty(QVariant::String, "Файлы DFD");
     dfd->setValue(QVariant());

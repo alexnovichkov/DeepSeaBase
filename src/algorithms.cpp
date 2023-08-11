@@ -2,6 +2,7 @@
 #include "logging.h"
 #include <QDir>
 #include "fileformats/formatfactory.h"
+#include "settings.h"
 
 QDebug operator <<(QDebug debug, const std::complex<double> &val)
 {
@@ -267,13 +268,14 @@ QString changeFileExt(const QString &fileName, const QString &ext)
 //    return result;
 //}
 
-QVector<double> phases(const QVector<cx_double> &values)
+QVector<double> phases(const QVector<cx_double> &values, bool deg)
 {DD;
     const int size = values.size();
     QVector<double> result(size);
 
     for (int i=0; i<size; ++i) {
         result[i] = std::arg(values.at(i));
+        if (deg) result[i] *= 180.0/M_PI;
     }
 
     return result;
@@ -319,7 +321,7 @@ QVector<cx_double> movingAverage(const QVector<cx_double> &spectrum, int window)
 
     // 1. Извлекаем амплитуды и фазы из комплексного спектра
     QVector<double> amplitudes = absolutes(spectrum);
-    QVector<double> phase = phases(spectrum);
+    QVector<double> phase = phases(spectrum, se->getSetting("phaseType").toInt() == 1);
 
     // 2. Сглаживаем получившиеся амплитуды
     amplitudes = movingAverage(amplitudes, window);
@@ -628,4 +630,21 @@ double rounded(double val)
         }
     }
     return val;
+}
+
+QVector<double> phasesFromPhases(const QVector<double> &values, bool deg)
+{
+    if (values.isEmpty()) return values;
+    QVector<double> result;
+
+    //определяем мин и макс вектора
+    auto minmax = std::minmax_element(values.constBegin(), values.constEnd());
+    bool isDeg = (*minmax.first < -M_PI || *minmax.second > M_PI);
+    if (isDeg && !deg) std::transform(values.constBegin(), values.constEnd(), std::back_inserter(result),
+        [](double val){return val * M_PI / 180.0;});
+    else if (!isDeg && deg) std::transform(values.constBegin(), values.constEnd(), std::back_inserter(result),
+        [](double val){return val / M_PI * 180.0;});
+    else result = values;
+
+    return result;
 }

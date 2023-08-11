@@ -331,8 +331,10 @@ QVector<double> absolutes(const QVector<T> &values)
 
     return result;
 }
+// пытается угадать тип фазы - радианы или градусы и при необходимости пересчитывает
+QVector<double> phasesFromPhases(const QVector<double> &values, bool deg);
 // возвращает вектор фаз комплексных чисел
-QVector<double> phases(const QVector<cx_double> &values);
+QVector<double> phases(const QVector<cx_double> &values, bool deg);
 // возвращает вектор действительных частей комплексных чисел
 QVector<double> reals(const QVector<cx_double> &values);
 // возвращает вектор действительных частей комплексных чисел
