@@ -23,6 +23,7 @@ AppPublisher={#MyAppPublisher}
 DefaultDirName={pf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
+OutputDir=..\Output
 OutputBaseFilename=DeepSeaBaseInstall-{#MyAppVersion}-{#CurrentDate}-x64
 Compression=lzma
 SolidCompression=yes
