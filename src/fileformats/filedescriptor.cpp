@@ -14,7 +14,7 @@ FileDescriptor::FileDescriptor(const QString &fileName) :
 
 FileDescriptor::~FileDescriptor()
 {DD;
-    //   LOG(DEBUG)<<"deleting"<<fileName();
+//    LOG(DEBUG)<<"deleting"<<fileName();
 }
 
 bool FileDescriptor::rename(const QString &newName, const QString &newPath)

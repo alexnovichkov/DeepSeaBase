@@ -39,7 +39,7 @@ public:
     QList<QJsonObject> convertPlugins;
     std::unique_ptr<AbstractFormatFactory> formatFactory;
 private:
-    QHash<QString, F> files;
+    QHash<QString, std::weak_ptr<FileDescriptor> > files;
 };
 
 #endif // APP_H

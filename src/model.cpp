@@ -110,8 +110,10 @@ void Model::deleteSelectedFiles()
     for (int i = indexes.size()-1; i>=0; --i) {
         int toDelete = indexes.at(i);
         if (toDelete >= 0 && toDelete < descriptors.size()) {
-            maybeDeleteFile(toDelete);
+            auto name = descriptors[toDelete]->fileName();
+//            maybeDeleteFile(toDelete);
             descriptors.removeAt(toDelete);
+            App->maybeDelFile(name);
         }
     }
     indexes.clear();
@@ -178,15 +180,11 @@ void Model::setCurrentPlot(QCPPlot *plot)
 
 Model::~Model()
 {DD;
-    //clear();
-
     for (int i = descriptors.size()-1; i>=0; --i) {
-        maybeDeleteFile(i);
+        auto name = descriptors[i]->fileName();
+        descriptors.removeAt(i);
+        App->maybeDelFile(name);
     }
-
-    indexes.clear();
-
-    //emit modelChanged();
 }
 
 void Model::maybeDeleteFile(int index)

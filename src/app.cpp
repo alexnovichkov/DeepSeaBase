@@ -70,14 +70,14 @@ Application::~Application()
 
 F Application::find(const QString &name) const
 {DD;
-    return files.value(name);
+    return files.value(name).lock();
 }
 
 F Application::addFile(const QString &name, bool *isNew)
 {DD;
     if (files.contains(name)) {
         if (isNew) *isNew = false;
-        return files.value(name);
+        return files.value(name).lock();
     }
 
     F f(formatFactory->createDescriptor(name));
@@ -92,7 +92,7 @@ F Application::addFile(const FileDescriptor &source, const QString &name, const 
 {DD;
     if (files.contains(name)) {
         if (isNew) *isNew = false;
-        return files.value(name);
+        return files.value(name).lock();
     }
 
     F f(formatFactory->createDescriptor(source, name, indexes));
@@ -107,7 +107,7 @@ F Application::addFile(const QVector<Channel*> &source, const QString &name, boo
 {DD;
     if (files.contains(name)) {
         if (isNew) *isNew = false;
-        return files.value(name);
+        return files.value(name).lock();
     }
 
     F f(formatFactory->createDescriptor(source, name));
@@ -120,9 +120,10 @@ F Application::addFile(const QVector<Channel*> &source, const QString &name, boo
 
 void Application::maybeDelFile(const QString &name)
 {DD;
-    F& f = files[name];
-    if (f.use_count()<2) {
-        f.reset();
+    auto f = files[name];
+
+    if (f.use_count() == 0) {
+//        LOG(DEBUG) << "file" << name << "no longer used";
         files.remove(name);
     }
 }
