@@ -107,7 +107,7 @@ bool AnaConverterDialog::addFiles() const
 
 void AnaConverterDialog::accept()
 {
-    convertedFiles << converter->getNewFiles();
+    convertedFiles = converter->getNewFiles();
     QDialog::accept();
 }
 

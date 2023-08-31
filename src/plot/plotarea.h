@@ -59,7 +59,7 @@ public:
      * @param f
      * @param fileIndex
      */
-    void replotDescriptor(FileDescriptor *f, int fileIndex);
+    void replotDescriptor(int fileIndex, FileDescriptor *f);
 
     /**
      * @brief addCorrection добавляет коррекцию к построенным каналам в отдельном диалоговом окне.

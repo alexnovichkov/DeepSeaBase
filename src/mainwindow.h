@@ -143,13 +143,14 @@ private:
 
     void createTab(const QString &name, const QStringList &folders);
 
-//    FileDescriptor *findDescriptor(const QString &file);
-
     void addFile(F descriptor);
     void setCurrentAndPlot(FileDescriptor *d, int channelIndex);
 
     void setDescriptor(int direction, bool checked);
-//    void cycleChannels(bool up);
+
+    void updatePlotAreas();
+    void dockWidgetAboutToBeRemoved(ads::CDockWidget* dockWidget);
+    void unplotChannel(Channel *channel, bool allChannels);
 
     ads::CDockAreaWidget *bottomArea = nullptr;
     ads::CDockAreaWidget *topArea = nullptr;
@@ -157,7 +158,7 @@ private:
 
     QStringList tabsNames;
 
-    Tab *currentTab = nullptr;
+    std::shared_ptr<Tab> currentTab = nullptr;
     PlotArea *currentPlot = nullptr;
 
     QMenu *plotsMenu;
@@ -225,6 +226,7 @@ protected:
 signals:
     void loading(const QString &file);
     void updateLegends();
+    void descriptorChanged(int index, FileDescriptor *d);
 private:
     bool closeRequested();
     PlotArea *createPlotArea();

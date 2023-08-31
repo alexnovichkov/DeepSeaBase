@@ -46,17 +46,7 @@ Tab::Tab(MainWindow *parent) : QSplitter(parent), parent(parent)
     connect(channelModel, &ChannelTableModel::plotChannel, [=](Channel *channel, bool forAllDescriptors) {
         emit needPlotChannels(true, {channel}, forAllDescriptors);
     });
-    connect(channelModel, &ChannelTableModel::unplotChannel, [=](Channel *channel, bool forAllDescriptors) {
-        if (!currentPlot) return;
-        const int channelIndex = channel->index();
-        if (forAllDescriptors) {
-            const QList<FileDescriptor*> selectedFiles = model->selectedFiles();
-            for (auto descriptor: selectedFiles) currentPlot->deleteCurveForChannelIndex(descriptor, channelIndex);
-        }
-        else {
-            currentPlot->deleteCurveForChannelIndex(channel->descriptor(), channelIndex);
-        }
-    });
+    connect(channelModel, &ChannelTableModel::unplotChannel, this, &Tab::needUnplotChannel);
 
     filesTable = new FilesTable(this);
     filesTable->setModel(sortModel);
@@ -243,7 +233,7 @@ void Tab::updateChannelsTable(FileDescriptor *descriptor)
 
     int idx;
     model->contains(record, &idx);
-    emit descriptorChanged(idx, record);
+    emit descriptorChanged(idx+1, record);
     //updateActions();
 }
 
@@ -264,7 +254,6 @@ void Tab::addParentAction(const QString &name, QAction *action)
 
 void Tab::setCurrentPlot(QCPPlot *plot)
 {DD;
-    currentPlot = plot;
     channelModel->setCurrentPlot(plot);
     model->setCurrentPlot(plot);
 }

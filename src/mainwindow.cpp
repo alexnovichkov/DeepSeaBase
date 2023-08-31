@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 
 #include <QtWidgets>
-
+#include <QtConcurrent/QtConcurrentRun>
 
 #include "deepseaprocessordialog.h"
 #include "filesprocessordialog.h"
@@ -60,6 +60,33 @@
 #include "version.h"
 #include "plot/qcpplot.h"
 
+void checkVersions()
+{
+    QDir distrDir("\\\\192.168.1.6\\Disk 2\\Distributives\\Work\\УЗКС ФП\\DeepSea Database");
+    auto distrList = distrDir.entryInfoList(QDir::Files);
+
+    std::string thisVersion = DEEPSEABASE_VERSION;
+
+    //определяем максимальную версию, выложенную в папке
+    for (auto dist: distrList) {
+        //DeepSeaBaseInstall-2.1.6-12.07.2023-x64
+        QString name = dist.fileName();
+        if (!name.startsWith("DeepSeaBaseInstall-")) continue;
+        std::string version = name.split("-").at(1).toStdString();
+        auto c = CompareVersions(version, thisVersion);
+        if (c > 0) {
+            thisVersion = version;
+        }
+    }
+
+    auto c = CompareVersions(thisVersion, DEEPSEABASE_VERSION);
+    if (c > 0) {
+        QMessageBox::information(0, "DeepSea Database", QString("В папке \"%1\" уже лежит более новая версия программы - %2")
+                                 .arg(distrDir.path())
+                                 .arg(QString::fromStdString(thisVersion)));
+    }
+}
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
 {DD;
@@ -87,15 +114,7 @@ MainWindow::MainWindow(QWidget *parent)
     m_DockManager->restoreState(state);
 
     connect(m_DockManager, &ads::CDockManager::focusedDockWidgetChanged, this, &MainWindow::onFocusedDockWidgetChanged);
-    connect(m_DockManager, &ads::CDockManager::dockWidgetAboutToBeRemoved, [=](ads::CDockWidget* DockWidget)
-    {
-        if (auto tab = qobject_cast<Tab *>(DockWidget->widget())) {
-            if (currentTab == tab) currentTab = nullptr;
-        }
-        else if (auto plot = qobject_cast<PlotArea*>(DockWidget)) {
-            if (currentPlot == plot) currentPlot = nullptr;
-        }
-    });
+    connect(m_DockManager, &ads::CDockManager::dockWidgetAboutToBeRemoved, this, &MainWindow::dockWidgetAboutToBeRemoved);
 
     createActions();
 
@@ -183,29 +202,16 @@ MainWindow::MainWindow(QWidget *parent)
 
     updateActions();
 
-    QDir distrDir("\\\\192.168.1.6\\Disk 2\\Distributives\\Work\\УЗКС ФП\\DeepSea Database");
-    auto distrList = distrDir.entryInfoList(QDir::Files);
+    QtConcurrent::run(checkVersions);
+}
 
-    std::string thisVersion = DEEPSEABASE_VERSION;
-
-    //определяем максимальную версию, выложенную в папке
-    for (auto dist: distrList) {
-        //DeepSeaBaseInstall-2.1.6-12.07.2023-x64
-        QString name = dist.fileName();
-        if (!name.startsWith("DeepSeaBaseInstall-")) continue;
-        std::string version = name.split("-").at(1).toStdString();
-        auto c = CompareVersions(version, thisVersion);
-        if (c > 0) {
-            thisVersion = version;
-        }
+void MainWindow::dockWidgetAboutToBeRemoved(ads::CDockWidget* dockWidget)
+{
+    if (auto tab = qobject_cast<Tab *>(dockWidget->widget())) {
+        if (currentTab.get() == tab) currentTab.reset();
     }
-
-    auto c = CompareVersions(thisVersion, DEEPSEABASE_VERSION);
-    if (c > 0) {
-        QMessageBox::information(this, "DeepSea Database",
-            QString("В папке \"%1\" уже лежит более новая версия программы - %2")
-                                 .arg(distrDir.path())
-                                 .arg(QString::fromStdString(thisVersion)));
+    else if (auto plot = qobject_cast<PlotArea*>(dockWidget)) {
+        if (currentPlot == plot) currentPlot = nullptr;
     }
 }
 
@@ -286,10 +292,10 @@ void MainWindow::createActions()
     connect(plotHelpAct, &QAction::triggered, [](){QDesktopServices::openUrl(QUrl("help.html"));});
 
     aboutAct = new QAction("О программе", this);
-    connect(aboutAct, &QAction::triggered, [=](){
+    connect(aboutAct, &QAction::triggered, [](){
         QString version = QString("DeepSea Database - версия %1\n").arg(DEEPSEABASE_VERSION);
         version.append(sizeof(int*) == sizeof(qint32) ? "32-bit версия" : "64-bit версия");
-        QMessageBox::about(this, tr("О программе"), version);
+        QMessageBox::about(nullptr, tr("О программе"), version);
     });
 
     QIcon calculateSpectreIcon(":/icons/function.png");
@@ -446,7 +452,7 @@ void MainWindow::createConvertPluginsMenu(QMenu *menu)
 void MainWindow::createTab(const QString &name, const QStringList &folders)
 {DD;
     auto newTab = new Tab(this);
-    currentTab = newTab;
+    currentTab.reset(newTab);
 
     newTab->filesTable->addAction(delFilesAct);
     newTab->filesTable->addAction(saveAct);
@@ -470,24 +476,12 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     //сигнал updateLegends() передается всем имеющимся графикам
     connect(newTab->model, SIGNAL(legendsChanged()), this, SIGNAL(updateLegends()));
     connect(newTab->channelModel, SIGNAL(legendsChanged()), this, SIGNAL(updateLegends()));
-    connect(newTab->model, &Model::plotNeedsUpdate, [=]()
-    {
-        const auto m = m_DockManager->dockWidgetsMap();
-        for (auto &w: m.values()) {
-            if (auto plotArea = dynamic_cast<PlotArea*>(w))
-                plotArea->update();
-        }
-    });
+    connect(newTab->model, &Model::plotNeedsUpdate, this, &MainWindow::updatePlotAreas);
 
-//    connect(newTab, &Tab::descriptorChanged, [this](){
-//        int idx;
-//        newTab->model->contains(newTab->record, &idx);
-//        if (currentPlot) currentPlot->replotDescriptor(newTab->record, idx+1);
-//    });
-    connect(newTab, &Tab::descriptorChanged, [this](int idx, FileDescriptor *record){
-        if (currentPlot) currentPlot->replotDescriptor(record, idx+1);
-    });
+    //пересылается в графики для передвижения по записям в режиме Сергея
+    connect(newTab, &Tab::descriptorChanged, this, &MainWindow::descriptorChanged);
     connect(newTab, &Tab::needPlotChannels, this, qOverload<bool,const QVector<Channel*> &,bool>(&MainWindow::onChannelsDropped));
+    connect(newTab, &Tab::needUnplotChannel, this, &MainWindow::unplotChannel);
 
     ads::CDockComponentsFactory::setFactory(new TabDockFactory(this));
     auto dockWidget = new ads::CDockWidget(name);
@@ -507,7 +501,8 @@ void MainWindow::createTab(const QString &name, const QStringList &folders)
     });
     tabsMenu->addAction(dockWidget->toggleViewAction());
 
-    connect(newTab->fileHandler, SIGNAL(fileAdded(QString,bool,bool)),this,SLOT(addFolder(QString,bool,bool)));
+    connect(newTab->fileHandler, qOverload<const QString &,bool,bool>(&FileHandler::fileAdded),
+            this, qOverload<const QString &,bool,bool>(&MainWindow::addFolder));
     newTab->fileHandler->setFileNames(folders);
     LOG(INFO) << QString("Создана вкладка ")<<name;
 }
@@ -527,35 +522,32 @@ void MainWindow::createNewTab()
 void MainWindow::closeTab(ads::CDockWidget *t)
 {DD;
     if (!t) return;
-    if (!currentTab) return;
+    auto tab = dynamic_cast<Tab*>(t->widget());
+    if (!tab) return;
+
+    int tabsLeft = 0;
     auto m = m_DockManager->dockWidgetsMap().values();
     for (const auto &w : m) {
         if (PlotArea *area = dynamic_cast<PlotArea*>(w)) {
-            for (int i=0; i<currentTab->model->size(); ++i) {
-                const F f = currentTab->model->file(i);
-                //use_count==3 if file is only in one tab, (1 for App, 1 for model, 1 for the prev line)
-                //use_count>=4 if file is in more than one tab
-                if (f.use_count()<=3) {
+            for (int i=0; i<tab->model->size(); ++i) {
+                const F f = tab->model->file(i);
+                //use_count==2 if file is only in one tab, (1 for model, 1 for the prev line)
+                //use_count>=3 if file is in more than one tab
+                if (f.use_count()<=2) {
                     area->deleteCurvesForDescriptor(f.get());
                 }
             }
         }
+        else if (dynamic_cast<Tab*>(w->widget()))
+            tabsLeft++;
     }
     currentTab = nullptr;
     auto name = t->tabWidget()->text();
 
     t->closeDockWidget();
 
-    //проверяем, остались ли вкладки
-    bool tabsLeft = false;
-    m = m_DockManager->dockWidgetsMap().values();
-    for (const auto &w : m) {
-        if (dynamic_cast<Tab*>(w->widget())) {
-            tabsLeft = true;
-            break;
-        }
-    }
-    if (!tabsLeft) topArea = nullptr;
+    //этог была последняя вкладка
+    if (tabsLeft==1) topArea = nullptr;
     LOG(INFO) << QString("Закрыта вкладка ")<<name;
 }
 
@@ -648,6 +640,7 @@ PlotArea *MainWindow::createPlotArea()
     connect(area, &PlotArea::saveHorizontalSlice, this, &MainWindow::saveHorizontalSlice);
     connect(area, &PlotArea::saveVerticalSlice, this, &MainWindow::saveVerticalSlice);
     connect(area, &PlotArea::saveTimeSegment, this, &MainWindow::saveTimeSegment);
+    connect(this, &MainWindow::descriptorChanged, area, &PlotArea::replotDescriptor);
 
     plotsMenu->addAction(area->toggleViewAction());
     //в текущей вкладке графика еще нет самого графика
@@ -813,9 +806,9 @@ void MainWindow::deleteFiles()
             const auto indexes = currentTab->model->selected();
             for (int i: indexes) {
                 const F f = currentTab->model->file(i);
-                //use_count==3 if file is only in one tab, (1 for App, 1 for model, 1 for the prev line)
-                //use_count>=4 if file is in more than one tab
-                if (f.use_count()<=3) {
+                //use_count==2 if file is only in one tab, (1 for model, 1 for the prev line)
+                //use_count>=3 if file is in more than one tab
+                if (f.use_count()<=2) {
                     area->deleteCurvesForDescriptor(f.get());
                 }
                 currentTab->fileHandler->untrackFile(f->fileName());
@@ -1479,11 +1472,12 @@ void MainWindow::convertEsoFiles()
 void MainWindow::convertAnaFiles()
 {
     AnaConverterDialog dialog(this);
-    connect(&dialog, &AnaConverterDialog::filesConverted, [=](const QStringList &files){
-        addFiles(files);
+    if (dialog.exec()) {
+        QStringList files = dialog.getConvertedFiles();
+        if (files.isEmpty()) return;
+        this->addFiles(files);
         if (currentTab) currentTab->fileHandler->trackFiles(files);
-    });
-    dialog.exec();
+    }
 }
 
 void MainWindow::saveTimeSegment(const QVector<FileDescriptor *> &files, double from, double to)
@@ -1575,6 +1569,19 @@ void MainWindow::ctrlDownTriggered(bool b)
     }
     else {
         setDescriptor(1, false);
+    }
+}
+
+void MainWindow::unplotChannel(Channel* channel, bool allChannels)
+{
+    if (!currentPlot || !currentPlot->plot()) return;
+    const int channelIndex = channel->index();
+    if (allChannels && currentTab) {
+        const QList<FileDescriptor*> selectedFiles = currentTab->model->selectedFiles();
+        for (auto descriptor: selectedFiles) currentPlot->plot()->deleteCurveForChannelIndex(descriptor, channelIndex);
+    }
+    else {
+        currentPlot->plot()->deleteCurveForChannelIndex(channel->descriptor(), channelIndex);
     }
 }
 
@@ -2205,6 +2212,15 @@ void MainWindow::setDescriptor(int direction, bool checked) /*private*/
     }
 }
 
+void MainWindow::updatePlotAreas()
+{
+    const auto m = m_DockManager->dockWidgetsMap();
+    for (auto &w: m.values()) {
+        if (auto plotArea = dynamic_cast<PlotArea*>(w))
+            plotArea->update();
+    }
+}
+
 void MainWindow::exportChannelsToWav()
 {DD;
     if (!currentTab || !currentTab->record) return;
@@ -2281,7 +2297,7 @@ void MainWindow::updateActions()
 }
 
 void MainWindow::onFocusedDockWidgetChanged(ads::CDockWidget *old, ads::CDockWidget *now)
-{DD;
+{DD0;
     Q_UNUSED(old);
     if (!now) return;
     if (auto tab = qobject_cast<Tab *>(now->widget())) {

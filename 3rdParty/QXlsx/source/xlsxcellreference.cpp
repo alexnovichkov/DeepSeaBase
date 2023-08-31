@@ -54,43 +54,20 @@ int col_from_name(const QString &col_str)
 }
 } //namespace
 
-/*!
-    \class CellReference
-    \brief For one single cell such as "A1"
-    \inmodule QtXlsx
-
-    The CellReference class stores the cell location in a worksheet.
-*/
-
-/*!
-    Constructs an invalid Cell Reference
-*/
 CellReference::CellReference()
-    : _row(-1), _column(-1)
 {
 }
 
-/*!
-    Constructs the Reference from the given \a row, and \a column.
-*/
 CellReference::CellReference(int row, int column)
     : _row(row), _column(column)
 {
 }
 
-/*!
-    \overload
-    Constructs the Reference form the given \a cell string.
-*/
 CellReference::CellReference(const QString &cell)
 {
     init(cell);
 }
 
-/*!
-    \overload
-    Constructs the Reference form the given \a cell string.
-*/
 CellReference::CellReference(const char *cell)
 {
     init(QString::fromLatin1(cell));
@@ -108,44 +85,36 @@ void CellReference::init(const QString &cell_str)
     }
 }
 
-/*!
-    Constructs a Reference by copying the given \a
-    other Reference.
-*/
 CellReference::CellReference(const CellReference &other)
     : _row(other._row), _column(other._column)
 {
 }
 
-/*!
-    Destroys the Reference.
-*/
+CellReference::CellReference(int rowOffset, int columnOffset, const CellReference &other)
+{
+    _row = other._row + rowOffset;
+    _column = other._column + columnOffset;
+}
+
 CellReference::~CellReference()
 {
 }
 
-/*!
-     Convert the Reference to string notation, such as "A1" or "$A$1".
-     If current object is invalid, an empty string will be returned.
-*/
-QString CellReference::toString(bool row_abs, bool col_abs) const
+QString CellReference::toString(bool rowFixed, bool colFixed) const
 {
     if (!isValid())
         return QString();
 
     QString cell_str;
-    if (col_abs)
+    if (colFixed)
         cell_str.append(QLatin1Char('$'));
     cell_str.append(col_to_name(_column));
-    if (row_abs)
+    if (rowFixed)
         cell_str.append(QLatin1Char('$'));
     cell_str.append(QString::number(_row));
     return cell_str;
 }
 
-/*!
- * Returns true if the Reference is valid.
- */
 bool CellReference::isValid() const
 {
     return _row > 0 && _column > 0;

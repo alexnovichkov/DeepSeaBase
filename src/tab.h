@@ -50,6 +50,7 @@ public:
 signals:
     void descriptorChanged(int index, FileDescriptor *record);
     void needPlotChannels(bool plotOnLeft, const QVector<Channel*> &channels, bool plotAll = false);
+    void needUnplotChannel(Channel* channel, bool unplotAll);
     void needUpdateLegends();
 private:
     QAction *openFolderAct;
@@ -59,7 +60,6 @@ private:
     QAction *plotselectedChannelsForAllDescriptorsAct;
     QAction *copyToLegendAct;
     QHash<QString, QAction*> parentActions;
-    QCPPlot *currentPlot = nullptr;
 private slots:
     void filesSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);
     void channelsSelectionChanged(const QItemSelection &newSelection, const QItemSelection &oldSelection);

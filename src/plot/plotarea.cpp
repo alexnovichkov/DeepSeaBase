@@ -1245,7 +1245,7 @@ void PlotArea::deleteAllCurves()
 }
 
 //вызывается при переходе на предыдущую/следующую запись
-void PlotArea::replotDescriptor(FileDescriptor *f, int fileIndex)
+void PlotArea::replotDescriptor(int fileIndex, FileDescriptor *f)
 {DD;
     if (m_plot)
         m_plot->plotCurvesForDescriptor(f, fileIndex);
