@@ -50,6 +50,7 @@ private:
     QCheckBox *addFilesButton;
     QCheckBox *openFolderButton;
     QCheckBox *trimFilesButton;
+    QComboBox *dataFormat;
 };
 
 #endif // ANACONVERTERDIALOG_H

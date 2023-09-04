@@ -3,6 +3,7 @@
 
 #include <QStringList>
 #include <QVector>
+#include <QVariant>
 
 class FileDescriptor;
 class Channel;
@@ -29,7 +30,8 @@ public:
     virtual FileDescriptor *createDescriptor(const QVector<Channel*> &source,
                                             const QString &fileName) = 0;
     virtual FileIO *createIO(const QVector<Channel*> &source,
-                             const QString &fileName) = 0;
+                             const QString &fileName,
+                             const QMap<QString, QVariant> & parameters) = 0;
 };
 
 #endif // ABSTRACTFORMATFACTORY_H

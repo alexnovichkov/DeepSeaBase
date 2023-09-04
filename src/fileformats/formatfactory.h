@@ -56,7 +56,8 @@ public:
                                             const QString &fileName) override;
 
     virtual bool fileExists(const QString &s, const QString &suffix) override;
-    virtual FileIO * createIO(const QVector<Channel *> &source, const QString &fileName) override;
+    virtual FileIO * createIO(const QVector<Channel *> &source, const QString &fileName,
+                              const QMap<QString, QVariant> & parameters) override;
 };
 
 #endif // FORMATFACTORY_H

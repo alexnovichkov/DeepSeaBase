@@ -13,7 +13,7 @@ class FileIO : public QObject
 {
     Q_OBJECT
 public:
-    explicit FileIO(QString fileName, QObject *parent = nullptr);
+    explicit FileIO(QString fileName, QObject *parent = nullptr, const QMap<QString, QVariant> & parameters = {});
     virtual ~FileIO() {}
     void setParameter(const QString &name, const QVariant &value);
     void addChannel(Channel *channel);

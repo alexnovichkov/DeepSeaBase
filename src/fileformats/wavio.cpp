@@ -1,7 +1,8 @@
 #include "wavio.h"
 #include "logging.h"
 
-WavIO::WavIO(const QVector<Channel *> &source, QString fileName, QObject *parent) : FileIO(fileName, parent)
+WavIO::WavIO(const QVector<Channel *> &source, QString fileName, QObject *parent, const QMap<QString, QVariant> &parameters)
+    : FileIO(fileName, parent, parameters)
 {
     Channel *firstChannel = source.first();
 

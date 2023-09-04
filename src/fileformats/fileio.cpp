@@ -2,7 +2,8 @@
 
 #include "filedescriptor.h"
 
-FileIO::FileIO(QString fileName, QObject *parent) : QObject(parent), fileName(fileName)
+FileIO::FileIO(QString fileName, QObject *parent, const QMap<QString, QVariant> &parameters)
+    : QObject(parent), fileName(fileName), m_parameters(parameters)
 {
 
 }

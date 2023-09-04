@@ -8,7 +8,8 @@ class UffIO : public FileIO
 {
     Q_OBJECT
 public:
-    UffIO(const QVector<Channel*> &source, QString fileName, QObject *parent = nullptr);
+    UffIO(const QVector<Channel*> &source, QString fileName, QObject *parent = nullptr,
+          const QMap<QString, QVariant> & parameters = {});
 
     // FileIO interface
 public:

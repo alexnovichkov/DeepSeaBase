@@ -26,6 +26,9 @@ AnaConverterDialog::AnaConverterDialog(QWidget *parent) : QDialog(parent)
     fileFormat->addItems(App->formatFactory->allFilters());
     connect(fileFormat, SIGNAL(currentTextChanged(QString)), SLOT(updateFormat()));
 
+    dataFormat = new QComboBox(this);
+    dataFormat->addItems({"Вещественные числа", "Целые числа"});
+
     edit = new QLineEdit(this);
     edit->setReadOnly(true);
     edit->setPlaceholderText("путь/к/папке/ANP/");
@@ -71,6 +74,8 @@ AnaConverterDialog::AnaConverterDialog(QWidget *parent) : QDialog(parent)
     grid1->addWidget(textEdit,0,0,1,4);
     grid1->addWidget(new QLabel("Сохранять как", this), 1,0,1,1);
     grid1->addWidget(fileFormat, 1,1,1,1);
+    grid1->addWidget(new QLabel("Формат данных", this), 1,2,1,1);
+    grid1->addWidget(dataFormat, 1,3,1,1);
     grid1->addWidget(trimFilesButton,  2,0,1,2);
     grid1->addWidget(openFolderButton, 2,2,1,2);
     grid1->addWidget(addFilesButton,   3,0,1,4);
@@ -164,6 +169,7 @@ void AnaConverterDialog::start()
     converter->setFilesToConvert(toConvert);
     converter->setTrimFiles(trimFilesButton->isChecked());
     converter->setTargetFolder(targetFolderEdit->text());
+    converter->setDataFormat(dataFormat->currentIndex());
 
     if (toConvert.isEmpty()) {
         textEdit->appendHtml("<font color=red>Error!</font> Отсутствуют файлы для конвертации.");

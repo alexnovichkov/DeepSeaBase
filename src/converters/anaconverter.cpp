@@ -32,6 +32,11 @@ void AnaConverter::setTargetFolder(const QString &folder)
     targetFolder = folder;
 }
 
+void AnaConverter::setDataFormat(int dataFormat)
+{
+    this->dataFormat = dataFormat;
+}
+
 bool AnaConverter::convert()
 {
     if (QThread::currentThread()->isInterruptionRequested()) return false;
@@ -78,30 +83,16 @@ bool AnaConverter::convert()
     //Затем сохраняем целевой файл
     emit message("Сохраняю итоговый файл. Не закрывайте это окно");
 
-//    QString fn = destinationFileName;
-//    QTemporaryFile temp;
-//    temp.setAutoRemove(true);
-//    if (truncate) {
-//        //Сохраненный файл мы должны обрезать по минимальной длине. Для этого:
-//        //1. сохраняем во временный файл
-//        //2. сохраняем временную вырезку
-//        //3. переименовываем временную вырезку в нужный нам файл
-//        temp.open();
-//        fn = temp.fileName();
-//        fn.append("."+format);
-//    }
-//    FileDescriptor *destinationFile = App->formatFactory->createDescriptor(anaChannels, fn);
     if (truncate) {
         emit message("Каналы имеют разную длину. Они будут обрезаны по самому короткому.");
-//        QString newFn = saveTimeSegment(destinationFile, 0, double(minCount) * anaChannels.first()->data()->xStep(), false);
-//        FileDescriptor *newFd = App->formatFactory->createDescriptor(newFn);
-//        newFd->read();
-//        newFd->rename(destinationFileName);
     }
 
-    auto io = std::make_unique<FileIO*>(App->formatFactory->createIO(anaChannels, destinationFileName));
+    QMap<QString, QVariant> parameters;
+    parameters.insert("dataFormat", dataFormat);
+    if (truncate) parameters.insert("samplesCount", minCount);
+
+    auto io = std::make_unique<FileIO*>(App->formatFactory->createIO(anaChannels, destinationFileName, parameters));
     if ((*io)) {
-        if (truncate) (*io)->setParameter("samplesCount", minCount);
         connect(*io, SIGNAL(tick()), this, SIGNAL(tick()));
         for (auto ch: anaChannels) {
             (*io)->addChannel(ch);
@@ -113,11 +104,6 @@ bool AnaConverter::convert()
 
     emit tick();
     emit message("Готово.");
-//    if (truncate) {
-//        //мы должны удалить сконвертирвоанный не обрезанный файл
-//        destinationFile->remove();
-//    }
-//    delete destinationFile;
     qDeleteAll(anaFiles);
 
     if (noErrors) emit message("<font color=blue>Конвертация закончена без ошибок.</font>");

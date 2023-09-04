@@ -106,7 +106,6 @@ void DeepseaProcessor::start()
                  "Не забудьте закрыть DeepSea, когда она закончит расчеты");
     QStringList spfFile = getSpfFile(tempFolderName);
     QTemporaryFile file("spffile_XXXXXX.spf");
-    file.setAutoRemove(false);
     if (file.open()) {
         QTextStream out(&file);
         out.setCodec("Windows-1251");

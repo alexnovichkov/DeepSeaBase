@@ -51,7 +51,7 @@ struct DataDescription
     QVariantMap data;
 
     void put(const QString &key, const QVariant &value);
-    QVariant get(const QString &key) const;
+    QVariant get(const QString &key, const QVariant &defaultValue = QVariant()) const;
     QJsonObject toJson() const;
     static DataDescription fromJson(const QJsonObject &o);
     QDateTime dateTime(const QString &key = "dateTime") const;

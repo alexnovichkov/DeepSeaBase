@@ -3,7 +3,8 @@
 #include "logging.h"
 #include "filedescriptor.h"
 
-UffIO::UffIO(const QVector<Channel *> &source, QString fileName, QObject *parent) : FileIO(fileName, parent)
+UffIO::UffIO(const QVector<Channel *> &source, QString fileName, QObject *parent, const QMap<QString, QVariant> &parameters)
+    : FileIO(fileName, parent, parameters)
 {
     auto other = source.first()->descriptor();
 

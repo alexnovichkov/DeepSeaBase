@@ -15,6 +15,7 @@ public:
     void setDestinationFormat(const QString &format);
     void setTrimFiles(bool trim);
     void setTargetFolder(const QString &folder);
+    void setDataFormat(int dataFormat); //0 = float, 1 = int
 public slots:
     bool convert();
 signals:
@@ -27,6 +28,7 @@ private:
     QString format;
     QString targetFolder;
     bool trimFiles;
+    int dataFormat = 0;
 };
 
 #endif // ANACONVERTER_H

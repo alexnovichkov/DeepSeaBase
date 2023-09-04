@@ -9,7 +9,8 @@ class WavIO : public FileIO
 {
     Q_OBJECT
 public:
-    WavIO(const QVector<Channel*> &source, QString fileName, QObject *parent = nullptr);
+    WavIO(const QVector<Channel*> &source, QString fileName, QObject *parent = nullptr,
+          const QMap<QString, QVariant> & parameters = {});
     ~WavIO();
     void setFormat(WavFormat format);
 private:

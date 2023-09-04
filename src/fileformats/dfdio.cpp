@@ -2,8 +2,8 @@
 #include "dfdfiledescriptor.h"
 #include "logging.h"
 
-DfdIO::DfdIO(const QVector<Channel *> &source, const QString &fileName, QObject *parent)
-    : FileIO(fileName, parent)
+DfdIO::DfdIO(const QVector<Channel *> &source, const QString &fileName, QObject *parent, const QMap<QString, QVariant> &parameters)
+    : FileIO(fileName, parent, parameters)
 {
     if (source.isEmpty()) return;
 
@@ -11,6 +11,7 @@ DfdIO::DfdIO(const QVector<Channel *> &source, const QString &fileName, QObject 
         LOG(ERROR)<<QString("Такой файл уже существует: ")<<m_rawFileName;
         return;
     }
+    int dataFormat = m_parameters.value("dataFormat", 0).toInt();
 
     Channel *firstChannel = source.constFirst();
     auto other = firstChannel->descriptor();
@@ -37,6 +38,8 @@ DfdIO::DfdIO(const QVector<Channel *> &source, const QString &fileName, QObject 
     //так как мы вызываем эту функцию только из новых файлов,
     //все сведения из файлов rawChannel нам не нужны
     if (dataType == SourceData) dataType = CuttedData;
+    //time data tweak
+    if (dataFormat == 1) dataType = SourceData;
 
     int samplesCount = m_parameters.value("samplesCount", firstChannel->data()->samplesCount()).toInt();
 
@@ -136,7 +139,9 @@ DfdIO::DfdIO(const QVector<Channel *> &source, const QString &fileName, QObject 
     }
 }
 
-DfdIO::DfdIO(const DataDescription &description, const QString &fileName, QObject *parent) : FileIO(fileName, parent)
+DfdIO::DfdIO(const DataDescription &description, const QString &fileName, QObject *parent,
+             const QMap<QString, QVariant> & parameters)
+    : FileIO(fileName, parent, parameters)
 {
     m_fileExists = QFile::exists(fileName);
 
@@ -165,6 +170,7 @@ DfdIO::DfdIO(const DataDescription &description, const QString &fileName, QObjec
 void DfdIO::addChannel(DataDescription *description, DataHolder *data)
 {
     int samplesCount = data->samplesCount();
+    int dataFormat = m_parameters.value("dataFormat", 0).toInt();
 
     //копируем каналы и записываем данные
     QFile raw(m_rawFileName);
@@ -176,18 +182,8 @@ void DfdIO::addChannel(DataDescription *description, DataHolder *data)
     w.setByteOrder(QDataStream::LittleEndian);
 
     QString precision = description->get("function.precision").toString();
-    uint IndType;
-    if (precision == "uint8") IndType = 0x1;
-    else if (precision == "int8") IndType = 0x80000001;
-    else if (precision == "uint16") IndType = 0x2;
-    else if (precision == "int16") IndType = 0x80000002;
-    else if (precision == "uint32") IndType = 0x4;
-    else if (precision == "int32") IndType = 0x80000004;
-    else if (precision == "uint64") IndType = 0x8;
-    else if (precision == "int64") IndType = 0x80000008;
-    else if (precision == "float") IndType = 0xc0000004;
-    else if (precision == "double") IndType = 0xc0000004; //DeepSea не умеет читать такие файлы
-    else IndType = 0xc0000004; //по умолчанию
+    const uint IndType = dataFormat == 1 ? 0x00000002 : 0xc0000004;
+    const double absvolt = description->get("description.absvolt", 1.0).toDouble();
     w.setFloatingPointPrecision(QDataStream::SinglePrecision);
 
     //dfd не понимает многоблочные файлы
@@ -198,42 +194,14 @@ void DfdIO::addChannel(DataDescription *description, DataHolder *data)
 
     for (auto val: yValues) {
         switch (IndType) {
-            case 0x00000001: {
-                quint8 v = (quint8)val;
-                w << v;
-                break;}
-            case 0x80000001: {
-                qint8 v = (qint8)val;
-                w << v;
-                break;}
             case 0x00000002: {
-                quint16 v = (quint16)val;
-                w << v;
-                break;}
-            case 0x80000002: {
-                qint16 v = (qint16)val;
-                w << v;
-                break;}
-            case 0x00000004: {
-                quint32 v = (quint32)val;
-                w << v;
-                break;}
-            case 0x80000004: {
-                qint32 v = (qint32)val;
-                w << v;
-                break;}
-            case 0x80000008: {
-                qint64 v = (qint64)val;
+                quint16 v = (quint16)(val/absvolt)+32768;
                 w << v;
                 break;}
             case 0xC0000004: {
                 float v = (float)val;
                 w << v;
                 break;}
-            case 0xC0000008:
-            case 0xC000000A:
-                w << val;
-                break;
             default: break;
         }
     }
@@ -257,6 +225,14 @@ void DfdIO::addChannel(DataDescription *description, DataHolder *data)
     dfd << "YNameOld=" << description->get("ynameold").toString() << endl;
     dfd << "InputType="<< description->get("inputType").toString() << endl;
     dfd << "ChanDscr="<< description->get("description").toString() << endl;
+    if (dataFormat == 1) {
+        dfd << "ADC0=" <<  doubletohex(-32768.0 * absvolt).toUpper() << endl;
+        dfd << "ADCStep=" <<  doubletohex(absvolt).toUpper() << endl;
+        dfd << "AmplShift=" << doubletohex(0).toUpper() << endl;
+        dfd << "AmplLevel=" << doubletohex(1).toUpper() << endl;
+        dfd << "Sens0Shift=" << doubletohex(0).toUpper() << endl;
+        dfd << "SensSensitivity=" << doubletohex(1).toUpper() << endl;
+    }
     dfd << "Correction="<< description->get("correction").toString() << endl;
     dfd << "threshold=" << QString::number(data->threshold()) << endl;
     dfd << "units=" << DataHolder::unitsToString(data->yValuesUnits()) << endl;

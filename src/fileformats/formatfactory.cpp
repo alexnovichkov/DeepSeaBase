@@ -134,15 +134,17 @@ bool FormatFactory::fileExists(const QString &s, const QString &suffix)
     return QFile::exists(f);
 }
 
-FileIO *FormatFactory::createIO(const QVector<Channel *> &source, const QString &fileName)
+FileIO *FormatFactory::createIO(const QVector<Channel *> &source, const QString &fileName, const QMap<QString, QVariant> &parameters)
 {
     QString suffix = QFileInfo(fileName).suffix();
-    if (suffix=="dfd") return new DfdIO(source, fileName);
-    if (suffix=="uff") return new UffIO(source, fileName);
-    if (suffix=="d94") return new D94IO(source, fileName);
-    if (suffix=="wav") return new WavIO(source, fileName);
+    FileIO *io = nullptr;
+    if (suffix=="dfd") io = new DfdIO(source, fileName, nullptr, parameters);
+    if (suffix=="uff") io = new UffIO(source, fileName, nullptr, parameters);
+    if (suffix=="d94") io = new D94IO(source, fileName, nullptr, parameters);
+    if (suffix=="wav") io = new WavIO(source, fileName, nullptr, parameters);
 #ifdef WITH_MATIO
-    if (suffix=="mat") return new MatlabIO(source, fileName);
+    if (suffix=="mat") io = new MatlabIO(source, fileName, parameters);
 #endif
-    return nullptr;
+
+    return io;
 }

@@ -506,9 +506,9 @@ void DataDescription::put(const QString &key, const QVariant &value)
     data.insert(key, value);
 }
 
-QVariant DataDescription::get(const QString &key) const
+QVariant DataDescription::get(const QString &key, const QVariant &defaultValue) const
 {DDD;
-    return data.value(key);
+    return data.value(key, defaultValue);
 }
 
 QJsonObject DataDescription::toJson() const

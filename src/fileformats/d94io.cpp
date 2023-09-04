@@ -4,8 +4,8 @@
 #include "data94file.h"
 #include "logging.h"
 
-D94IO::D94IO(const QVector<Channel *> &source, const QString &fileName, QObject *parent)
-    : FileIO(fileName, parent)
+D94IO::D94IO(const QVector<Channel *> &source, const QString &fileName, QObject *parent, const QMap<QString, QVariant> &parameters)
+    : FileIO(fileName, parent, parameters)
 {
     auto d = source.first()->descriptor();
 
