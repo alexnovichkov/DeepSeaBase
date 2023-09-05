@@ -131,7 +131,6 @@ public:
 private:
     QMap<int, int> getMaximalColumnWidth(int firstRow=1, int lastRow=INT_MAX);
 
-
 private:
     Q_DISABLE_COPY(Document) // Disables the use of copy constructors and
                              // assignment operators for the given Class.

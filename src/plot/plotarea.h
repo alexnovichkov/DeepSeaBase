@@ -5,6 +5,7 @@
 
 #include "DockWidget.h"
 #include "enums.h"
+#include "clipboarddata.h"
 
 class QAction;
 class Curve;
@@ -50,6 +51,8 @@ public:
      * @param dataOnly если true, то графики не экспортируются.
      */
     void exportToExcel(bool fullRange, bool dataOnly);
+    void exportToClipboard();
+    void exportSonogramToClipboard();
     void updateActions(int filesCount, int channelsCount);
     void deleteCurvesForDescriptor(FileDescriptor *f, const QVector<int> &indexes = QVector<int>());
     void deleteAllCurves();
@@ -121,6 +124,7 @@ private slots:
 
 private:
     void exportSonogramToExcel(bool fullRange, bool dataOnly);
+    ClipboardData clipboardData() const;
 //    QGridLayout *plotsLayout;
     QSplitter *splitter;
     QPointer<QCPPlot> m_plot;

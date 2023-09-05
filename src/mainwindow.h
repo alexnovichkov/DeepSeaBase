@@ -91,6 +91,7 @@ private slots:
     void exportToExcel();
     void exportToExcelFull();
     void exportToExcelData();
+    void exportToClipboard();
 
     void onChannelChanged(Channel *ch);
 
@@ -138,7 +139,6 @@ private:
     bool copyChannels(FileDescriptor *descriptor, const QVector<int> &channelsToCopy);
     bool copyChannels(const QVector<Channel *> source);
 
-    void exportToExcel(bool fullRange, bool dataOnly=false);
     void updateRecordsTable(const QList<FileDescriptor *> &records);
 
     void createTab(const QString &name, const QStringList &folders);
@@ -212,6 +212,7 @@ private:
     QAction *exportToExcelAct;
     QAction *exportToExcelFullAct;
     QAction *exportToExcelOnlyDataAct;
+    QAction *exportToClipboardAct;
 
     QAction *convertMatFilesAct;
     QAction *convertEsoFilesAct;

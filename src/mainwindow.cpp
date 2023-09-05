@@ -337,6 +337,9 @@ void MainWindow::createActions()
     exportToExcelOnlyDataAct = new QAction("Экспортировать в Excel только данные", this);
     connect(exportToExcelOnlyDataAct, SIGNAL(triggered()), this, SLOT(exportToExcelData()));
     excelMenu->addAction(exportToExcelOnlyDataAct);
+    exportToClipboardAct = new QAction("Копировать данные в буфер обмена", this);
+    connect(exportToClipboardAct, SIGNAL(triggered()), this, SLOT(exportToClipboard()));
+    excelMenu->addAction(exportToClipboardAct);
     exportToExcelAct->setMenu(excelMenu);
 
     meanAct = new QAction(QIcon(":/icons/mean.png"), QString("Вывести среднее (энерг.)"), this);
@@ -2290,6 +2293,7 @@ void MainWindow::updateActions()
     exportToExcelAct->setEnabled(curvesCount>0 /*&& !spectrogram*/);
     exportToExcelFullAct->setEnabled(curvesCount>0);
     exportToExcelOnlyDataAct->setEnabled(curvesCount>0);
+    exportToClipboardAct->setEnabled(curvesCount>0);
     exportChannelsToWavAct->setEnabled(!timeFiles.isEmpty() && selectedChannelsCount>0);
 
     if (currentPlot) currentPlot->updateActions(filesCount, channelsCount);
@@ -2344,6 +2348,11 @@ void MainWindow::exportToExcelFull()
 void MainWindow::exportToExcelData()
 {DD;
     if (currentPlot) currentPlot->exportToExcel(false, true);
+}
+
+void MainWindow::exportToClipboard()
+{
+    if (currentPlot) currentPlot.load()->exportToClipboard();
 }
 
 void MainWindow::onChannelChanged(Channel *ch)

@@ -77,6 +77,7 @@ SOURCES += main.cpp\
     methods/splitfunction.cpp \
     methods/weighting.cpp \
     methods/windowingalgorithm.cpp \
+    plot/clipboarddata.cpp \
     plot/cursor.cpp \
     plot/cursorbox.cpp \
     plot/cursordialog.cpp \
@@ -214,6 +215,7 @@ HEADERS  += mainwindow.h \
     methods/splitfunction.h \
     methods/weighting.h \
     methods/windowingalgorithm.h \
+    plot/clipboarddata.h \
     plot/cursor.h \
     plot/cursorbox.h \
     plot/cursordialog.h \

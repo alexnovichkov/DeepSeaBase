@@ -62,7 +62,10 @@ void ChannelsTable::editYName()
 {DD;
     if (!selectionModel()->hasSelection()) return;
 
-    QString newYName = QInputDialog::getText(this, "Новая единица измерения", "Введите новую единицу");
+    QString newYName = QInputDialog::getText(this, "Новая единица измерения",
+                                             "Введите новую единицу",
+                                             QLineEdit::Normal,
+                                             selectionModel()->selectedIndexes().first().data().toString());
     if (newYName.isEmpty()) return;
 
     emit yNameChanged(newYName);
