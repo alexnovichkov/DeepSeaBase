@@ -42,8 +42,6 @@ public:
      */
     static bool plotTypesCompatible(Enums::PlotType first, Enums::PlotType second);
 
-    void update();
-
     /**
      * @brief exportToExcel экспортирует кривые в Excel и запускает его
      * @param fullRange если true, то будут экспортированы все данные. Если false,
@@ -118,10 +116,14 @@ signals:
     void saveHorizontalSlice(const QVector<double>& zVal);
     void saveVerticalSlice(const QVector<double>& xVal);
     void saveTimeSegment(const QVector<FileDescriptor*> &files, double from, double to);
-public slots:
+    void updatePlot();
     void updateLegends();
 private slots:
-
+    void toggleAutoscaleX(bool toggled);
+    void toggleAutoscaleY(bool toggled);
+    void toggleAutoscaleYSlave(bool toggled);
+    void autoscaleAll();
+    void clearPlot();
 private:
     void exportSonogramToExcel(bool fullRange, bool dataOnly);
     ClipboardData clipboardData() const;

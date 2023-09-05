@@ -22,8 +22,8 @@ public:
 signals:
     void tick();
 protected:
-    QMap<QString, QVariant> m_parameters;
     QString fileName;
+    QMap<QString, QVariant> m_parameters;
 };
 
 #endif // FILEIO_H

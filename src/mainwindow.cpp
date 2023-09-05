@@ -208,7 +208,7 @@ MainWindow::MainWindow(QWidget *parent)
 void MainWindow::dockWidgetAboutToBeRemoved(ads::CDockWidget* dockWidget)
 {
     if (auto tab = qobject_cast<Tab *>(dockWidget->widget())) {
-        if (currentTab.get() == tab) currentTab.reset();
+        if (currentTab == tab) currentTab = nullptr;
     }
     else if (auto plot = qobject_cast<PlotArea*>(dockWidget)) {
         if (currentPlot == plot) currentPlot = nullptr;
@@ -455,7 +455,7 @@ void MainWindow::createConvertPluginsMenu(QMenu *menu)
 void MainWindow::createTab(const QString &name, const QStringList &folders)
 {DD;
     auto newTab = new Tab(this);
-    currentTab.reset(newTab);
+    currentTab = newTab;
 
     newTab->filesTable->addAction(delFilesAct);
     newTab->filesTable->addAction(saveAct);
@@ -632,7 +632,7 @@ PlotArea *MainWindow::createPlotArea()
 
     PlotArea *area = new PlotArea(plotIndex, this);
     //это соединение позволяет обновить сразу все вкладки графиков
-    connect(this, SIGNAL(updateLegends()), area, SLOT(updateLegends()));
+    connect(this, SIGNAL(updateLegends()), area, SIGNAL(updateLegends()));
 
     connect(area, &PlotArea::needPlotChannels, this, qOverload<bool,const QVector<Channel*> &>(&MainWindow::onChannelsDropped));
     connect(area, &PlotArea::curvesCountChanged, this, &MainWindow::updateActions);
@@ -644,12 +644,23 @@ PlotArea *MainWindow::createPlotArea()
     connect(area, &PlotArea::saveVerticalSlice, this, &MainWindow::saveVerticalSlice);
     connect(area, &PlotArea::saveTimeSegment, this, &MainWindow::saveTimeSegment);
     connect(this, &MainWindow::descriptorChanged, area, &PlotArea::replotDescriptor);
+    connect(this, &MainWindow::updatePlotAreas, area, &PlotArea::updatePlot);
 
     plotsMenu->addAction(area->toggleViewAction());
     //в текущей вкладке графика еще нет самого графика
-    if (currentTab) currentTab->setCurrentPlot(nullptr);
+    setCurrentPlot(nullptr);
     updateActions();
     return area;
+}
+
+void MainWindow::setCurrentPlot(QCPPlot *plot)
+{
+    const auto m = m_DockManager->dockWidgetsMap().values();
+    for (const auto &w: m) {
+        if (Tab *t = qobject_cast<Tab *>(w->widget())) {
+            t->setCurrentPlot(plot);
+        }
+    }
 }
 
 void MainWindow::addPlotArea()
@@ -680,7 +691,7 @@ void MainWindow::closePlot(ads::CDockWidget *t)
     if (!t) return;
 
     currentPlot = nullptr;
-    if (currentTab) currentTab->setCurrentPlot(nullptr);
+    setCurrentPlot(nullptr);
     auto name = t->tabWidget()->text();
 
     t->closeDockWidget();
@@ -1036,12 +1047,7 @@ void MainWindow::addCorrections()
     }
 
     if (currentTab) currentTab->updateChannelsTable(currentTab->record);
-    const auto m = m_DockManager->dockWidgetsMap();
-    for (auto w: m.values()) {
-        if (auto area = dynamic_cast<PlotArea*>(w)) {
-            area->update();
-        }
-    }
+    updatePlotAreas();
 
     delete worksheet;
     delete workbook;
@@ -1643,8 +1649,7 @@ void MainWindow::onChannelsDropped(bool plotOnLeft, const QVector<Channel *> &ch
         }
         p = currentPlot->plot();
         //в текущей вкладке графика еще нет самого графика
-        if (currentTab)
-            currentTab->setCurrentPlot(currentPlot->plot());
+        setCurrentPlot(currentPlot->plot());
     }
     if (p) {//график существует
         {//Строим первую кривую и обновляем график, чтобы высота легенды определилась правильно
@@ -2215,15 +2220,6 @@ void MainWindow::setDescriptor(int direction, bool checked) /*private*/
     }
 }
 
-void MainWindow::updatePlotAreas()
-{
-    const auto m = m_DockManager->dockWidgetsMap();
-    for (auto &w: m.values()) {
-        if (auto plotArea = dynamic_cast<PlotArea*>(w))
-            plotArea->update();
-    }
-}
-
 void MainWindow::exportChannelsToWav()
 {DD;
     if (!currentTab || !currentTab->record) return;
@@ -2301,18 +2297,18 @@ void MainWindow::updateActions()
 }
 
 void MainWindow::onFocusedDockWidgetChanged(ads::CDockWidget *old, ads::CDockWidget *now)
-{DD0;
+{DD;
     Q_UNUSED(old);
     if (!now) return;
     if (auto tab = qobject_cast<Tab *>(now->widget())) {
         currentTab = tab;
         ctrlUpTargetsChannels = true;
-        if (currentPlot) currentTab->setCurrentPlot(currentPlot->plot());
+        if (currentPlot) setCurrentPlot(currentPlot->plot());
     }
     else if (auto plot = qobject_cast<PlotArea*>(now)) {
         currentPlot = plot;
         ctrlUpTargetsChannels = false;
-        if (currentTab) currentTab->setCurrentPlot(currentPlot->plot());
+        setCurrentPlot(currentPlot->plot());
     }
     updateActions();
 }
@@ -2352,7 +2348,7 @@ void MainWindow::exportToExcelData()
 
 void MainWindow::exportToClipboard()
 {
-    if (currentPlot) currentPlot.load()->exportToClipboard();
+    if (currentPlot) currentPlot->exportToClipboard();
 }
 
 void MainWindow::onChannelChanged(Channel *ch)

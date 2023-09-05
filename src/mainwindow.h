@@ -17,6 +17,8 @@ class QToolBar;
 class PlotArea;
 class CorrectionDialog;
 class Channel;
+class QCPPlot;
+
 namespace ads {
     class CDockManager;
     class CDockAreaWidget;
@@ -117,6 +119,7 @@ private slots:
     void renameDescriptor();
 
     void onPluginTriggered(const QString &pluginKey);
+    void setCurrentPlot(QCPPlot *plot);
 private:
     void saveTabsState();
     void createActions();
@@ -148,7 +151,6 @@ private:
 
     void setDescriptor(int direction, bool checked);
 
-    void updatePlotAreas();
     void dockWidgetAboutToBeRemoved(ads::CDockWidget* dockWidget);
     void unplotChannel(Channel *channel, bool allChannels);
 
@@ -158,7 +160,7 @@ private:
 
     QStringList tabsNames;
 
-    std::shared_ptr<Tab> currentTab = nullptr;
+    Tab* currentTab = nullptr;
     PlotArea *currentPlot = nullptr;
 
     QMenu *plotsMenu;
@@ -227,6 +229,7 @@ protected:
 signals:
     void loading(const QString &file);
     void updateLegends();
+    void updatePlotAreas();
     void descriptorChanged(int index, FileDescriptor *d);
 private:
     bool closeRequested();
