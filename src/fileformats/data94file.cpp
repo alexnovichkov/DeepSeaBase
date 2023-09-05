@@ -4,6 +4,7 @@
 #include "algorithms.h"
 #include "logging.h"
 #include "unitsconverter.h"
+#include "settings.h"
 
 QDebug operator<<(QDebug dbg, const AxisBlock &b)
 {
@@ -203,6 +204,8 @@ void Data94File::write()
         return;
     }
 
+    temporaryFiles->add(temp.fileName());
+
     QDataStream r(&temp);
     r.setByteOrder(QDataStream::LittleEndian);
     r.setFloatingPointPrecision(QDataStream::SinglePrecision);
@@ -253,6 +256,7 @@ void Data94File::deleteChannels(const QVector<int> &channelsToDelete)
         LOG(ERROR)<<" Couldn't replace raw file with temp file.";
         return;
     }
+    temporaryFiles->add(tempFile.fileName());
 
     QDataStream tempStream(&tempFile);
     tempStream.setByteOrder(QDataStream::LittleEndian);
@@ -380,6 +384,8 @@ void Data94File::move(bool up, const QVector<int> &indexes, const QVector<int> &
         LOG(ERROR)<<"Couldn't open temp file to write";
         return;
     }
+
+    temporaryFiles->add(temp.fileName());
 
     QDataStream out(&temp);
     out.setByteOrder(QDataStream::LittleEndian);

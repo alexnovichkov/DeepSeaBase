@@ -66,6 +66,12 @@ void SettingsDialog::addSettings()
     global->setValue(QVariant());
     auto item = propertyTree->addProperty(global);
 
+    auto deleteTemporaryFiles = m_manager->addProperty(QVariant::Bool, "Удалять временные файлы при закрытии программы");
+    m_displayNames.insert("Удалять временные файлы при закрытии программы", "deleteTemporaryFiles");
+    deleteTemporaryFiles->setValue(se->getSetting("deleteTemporaryFiles", true));
+    global->addSubProperty(deleteTemporaryFiles);
+    propertyTree->setExpanded(item, false);
+
     auto _font = m_manager->addProperty(QVariant::Font, "Шрифт приложения");
     m_displayNames.insert("Шрифт приложения", "font");
     _font->setValue(se->getSetting("font", font()));

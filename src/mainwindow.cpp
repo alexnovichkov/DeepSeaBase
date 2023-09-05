@@ -2405,6 +2405,11 @@ void MainWindow::closeEvent(QCloseEvent *event)
 
 bool MainWindow::closeRequested()
 {DD;
+    //удаляем временные файлы
+    if (se->getSetting("deleteTemporaryFiles", true).toBool()) {
+        temporaryFiles->deleteAll();
+    }
+
     //определяем, были ли изменения
     bool changed = false;
     const auto m = m_DockManager->dockWidgetsMap().values();

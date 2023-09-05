@@ -260,6 +260,7 @@ void UffFileDescriptor::write()
     QTemporaryFile tempFile;
 
     if (tempFile.open()) {
+        temporaryFiles->add(tempFile.fileName());
         QTextStream stream(&tempFile);
 
         UffHeader h(dataDescription());
@@ -297,6 +298,7 @@ void UffFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
         LOG(ERROR)<<"Couldn't open file"<<fileName()<<"to write";
         return;
     }
+    temporaryFiles->add(temp.fileName());
 
     QTextStream stream (&temp);
     UffHeader h(dataDescription());
@@ -413,6 +415,7 @@ void UffFileDescriptor::move(bool up, const QVector<int> &indexes, const QVector
         LOG(ERROR)<<"Couldn't open file to write";
         return;
     }
+    temporaryFiles->add(uff.fileName());
 
     QTextStream stream(&uff);
     UffHeader h(dataDescription());

@@ -349,6 +349,7 @@ void DfdFileDescriptor::write()
         //переписываем с помощью временного файла
         QTemporaryFile tempFile;
         if (tempFile.open()) {
+            temporaryFiles->add(tempFile.fileName());
             QDataStream w(&tempFile);
             w.setByteOrder(QDataStream::LittleEndian);
             //сперва нулевой канал оси X
@@ -516,6 +517,7 @@ void DfdFileDescriptor::deleteChannels(const QVector<int> &channelsToDelete)
     //переписываем с помощью временного файла
     QTemporaryFile tempFile;
     if (tempFile.open()) {
+        temporaryFiles->add(tempFile.fileName());
         QDataStream w(&tempFile);
         w.setByteOrder(QDataStream::LittleEndian);
         //сперва нулевой канал оси X
@@ -770,6 +772,7 @@ bool DfdFileDescriptor::rewriteRawFile(const QVector<QPair<int,int> > &indexesVe
     QFile rawFile(rawFileName);
 
     if (tempFile.open() && rawFile.open(QFile::ReadOnly)) {
+        temporaryFiles->add(tempFile.fileName());
         //работаем через временный файл - читаем один канал и записываем его во временный файл
         if (!channels[0]->dataPositions.isEmpty()) {
 //            LOG(DEBUG)<<"- используем dataPositions";

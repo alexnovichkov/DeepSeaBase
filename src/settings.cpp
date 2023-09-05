@@ -58,7 +58,8 @@ bool Settings::hasSetting(const QString &key) const
         "legendMiddleButton",
         "defaultFileFormat",
         "defaultYAxisPresentation",
-        "phaseType"
+        "phaseType",
+        "deleteTemporaryFiles"
     };
 
     if (key.isEmpty()) return false;
@@ -73,4 +74,27 @@ Settings *Settings::instance()
         inst = new Settings();
     }
     return inst;
+}
+
+TemporaryFiles *TemporaryFiles::instance()
+{
+    static TemporaryFiles *inst = nullptr;
+    if (!inst) inst = new TemporaryFiles;
+    return inst;
+}
+
+void TemporaryFiles::add(const QString &file)
+{
+    files.insert(file);
+}
+
+void TemporaryFiles::deleteAll()
+{
+    for (const auto &file: files) {
+        if (QFile::remove(file))
+            LOG(INFO) << QString("Удален временный файл ") << file << ".";
+        else
+            LOG(INFO) << QString("Временный файл ") << file << QString(" уже не существует.");
+    }
+    files.clear();
 }

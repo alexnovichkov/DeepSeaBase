@@ -13,6 +13,7 @@
 #include "methods/channelselector.h"
 #include "methods/framecutter.h"
 #include "unitsconverter.h"
+#include "settings.h"
 
 DeepseaProcessor::DeepseaProcessor(const QList<FileDescriptor *> &base, const Parameters &p_, QObject *parent) :
     QObject(parent), dataBase(base), p(p_), process(nullptr)
@@ -105,7 +106,7 @@ void DeepseaProcessor::start()
     emit message("Подождите, пока работает DeepSea...\n"
                  "Не забудьте закрыть DeepSea, когда она закончит расчеты");
     QStringList spfFile = getSpfFile(tempFolderName);
-    QTemporaryFile file("spffile_XXXXXX.spf");
+    QTemporaryFile file(QDir::tempPath()+"/spffile_XXXXXX.spf");
     if (file.open()) {
         QTextStream out(&file);
         out.setCodec("Windows-1251");
@@ -113,6 +114,8 @@ void DeepseaProcessor::start()
         file.close();
     }
     else return;
+
+    temporaryFiles->add(file.fileName());
 
     QFileSystemWatcher watcher(QStringList()<<tempFolderName,this);
     connect(&watcher, SIGNAL(directoryChanged(QString)), SIGNAL(tick(QString)));

@@ -1657,6 +1657,8 @@ void QCPPlot::copyToClipboard(bool useDialog) /*SLOT*/
 {DD;
     QTemporaryFile file(QDir::tempPath()+"/DeepSeaBase-XXXXXX.bmp");
     if (file.open()) {
+        temporaryFiles->add(file.fileName());
+
         QString fileName = file.fileName();
         file.close();
 

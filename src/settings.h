@@ -3,6 +3,7 @@
 
 #include <QVariant>
 #include <QObject>
+#include <QSet>
 
 class QSettings;
 
@@ -20,6 +21,17 @@ public:
     static QList<QVariant> toList(const QList<int> &list);
     static QList<int> fromList(const QList<QVariant> &list);
     bool hasSetting(const QString &key) const;
+};
+
+#define temporaryFiles TemporaryFiles::instance()
+
+class TemporaryFiles {
+public:
+    static TemporaryFiles * instance();
+    void add(const QString &file);
+    void deleteAll();
+private:
+    QSet<QString> files;
 };
 
 #endif // SETTINGS_H

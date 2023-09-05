@@ -11,7 +11,7 @@
 #include "plot/plotmodel.h"
 #include "wavexporter.h"
 #include "logging.h"
-
+#include "settings.h"
 
 PlayPanel::PlayPanel(QCPPlot *parent) : QWidget(parent), plot(parent)
 {DD;
@@ -141,6 +141,7 @@ void PlayPanel::prepareDataToPlay()
             QTemporaryFile temp(QDir::tempPath()+"/DeepSeaBase.XXXXXX.wav");
             temp.setAutoRemove(false);
             temp.open();
+            temporaryFiles->add(temp.fileName());
             oldTempFile = temp.fileName();
             expo.setTempFile(oldTempFile);
             expo.start();

@@ -399,8 +399,9 @@ void PlotArea::exportSonogramToExcel(bool fullRange, bool dataOnly)
             output.insertImage(1,1, qApp->clipboard()->image());
         }
 
-        QTemporaryFile tempFile("DeepSeaBase-XXXXXX.xlsx");
+        QTemporaryFile tempFile(QDir::tempPath()+"/DeepSeaBase-XXXXXX.xlsx");
         tempFile.open();
+        temporaryFiles->add(tempFile.fileName());
         output.saveAs(tempFile.fileName());
 
         QDesktopServices::openUrl(QUrl::fromLocalFile(tempFile.fileName()));
@@ -906,9 +907,9 @@ void PlotArea::exportToExcel(bool fullRange, bool dataOnly)
      }
 
      QTemporaryFile tempFile(QDir::tempPath()+"/DeepSeaBase-XXXXXX.xlsx");
-     tempFile.setAutoRemove(true);
 
      if (tempFile.open()) {
+         temporaryFiles->add(tempFile.fileName());
          output.saveAs(tempFile.fileName());
 
          QDesktopServices::openUrl(QUrl::fromLocalFile(tempFile.fileName()));
